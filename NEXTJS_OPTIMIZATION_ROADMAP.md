@@ -32,7 +32,7 @@ Ce qui n'est pas encore pleinement optimise Next:
 Statut apres optimisation guidee par cette roadmap:
 
 - N0 baseline: fait. `npm run perf:architecture` accepte maintenant `COLD_PRODUCT_PATH` / `PRODUCT_PATH` et affiche le chemin mesure.
-- N1 cache serveur: fait cote Next. Les lectures publiques produit/catalogue utilisent `server-only`, `cache()`, `revalidate: 300` et des tags Next (`catalog`, `products`, `product:*`, `category:*`).
+- N1 cache serveur: fait cote Next et Firebase. Les lectures publiques produit/catalogue utilisent `server-only`, `cache()`, `revalidate: 300` et des tags Next (`catalog`, `products`, `product:*`, `category:*`). La Function publique `publicCatalog` est deployee dans le codebase `public`, sans charger Stripe/Gmail.
 - N2 ISR produit: fait pour les produits publies. `generateStaticParams` prerender les meubles publies disponibles au build; `dynamicParams` reste actif pour les nouveaux produits.
 - N3 images premiere visite: ameliore. Le SSR produit privilegie `large/medium` au lieu de `full`; les hosts Storage sandbox sont autorises par `next/image`.
 - N4 hydratation: partiel. Les gros modules admin/checkout restent deja charges dynamiquement via l'architecture clonee, mais la galerie publique reste encore fortement client-side.
@@ -55,7 +55,14 @@ npm run perf:architecture
 
 Resultat cle du build: 40 pages generees, dont `/produit/[slugOrId]` en SSG avec `generateStaticParams` et 35 chemins produit publies.
 
-Limite connue: le deploiement cible `functions:publicCatalog` est bloque tant que les secrets Functions requis par l'entrypoint global, notamment `GMAIL_EMAIL`, ne sont pas definis. Aucune Function n'a ete publiee pendant cet essai; le SSR garde le fallback Firestore/Admin.
+Deploiement Functions: `publicCatalog` est isole dans `functions-public` et deployee avec:
+
+```powershell
+firebase deploy --project secondevienextjsssr --only functions:public:publicCatalog --non-interactive
+firebase functions:artifacts:setpolicy --project secondevienextjsssr --location us-central1 --days 7 --force
+```
+
+Validation endpoint: `https://us-central1-secondevienextjsssr.cloudfunctions.net/publicCatalog?scope=cards&limit=2` repond `200`; CORS OK pour le domaine App Hosting sandbox.
 
 ## Probleme cible: premier affichage d'un meuble jamais consulte
 

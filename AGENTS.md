@@ -16,6 +16,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- app : routes Next App Router, SSR produit/categorie, sitemap, robots et shell client
 |-- tests, playwright.config.mjs : tests E2E et validations Playwright
 |-- firebase.json, firestore.rules, firestore.indexes.json, storage.rules
+|-- functions-public : codebase Functions public isole pour `publicCatalog`, sans secrets Stripe/Gmail
 |-- .env.sandbox.example / .env.production.example : modeles publics; vrais .env locaux ignores par Git
 |-- deploy : dashboard npm de deploiement Firebase/App Hosting sandbox
 |-- src

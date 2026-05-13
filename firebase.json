@@ -6,9 +6,16 @@
   "storage": {
     "rules": "storage.rules"
   },
-  "functions": {
-    "source": "functions"
-  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "main"
+    },
+    {
+      "source": "functions-public",
+      "codebase": "public"
+    }
+  ],
   "apphosting": [
     {
       "backendId": "secondevie-next-sandbox",
@@ -22,6 +29,7 @@
         "test-results",
         "playwright-report",
         "functions",
+        "functions-public",
         "firebase-debug.log",
         "firebase-debug.*.log"
       ]

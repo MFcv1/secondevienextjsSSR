@@ -103,7 +103,13 @@ Options disponibles :
 - Storage rules
 - Tout deployer en sandbox
 
-Note Functions : un deploiement cible `functions:publicCatalog` a ete tente le 2026-05-13 mais bloque par le secret `GMAIL_EMAIL`, exige pendant l'analyse de l'entrypoint Functions global. Ne pas deployer Functions tant que les secrets sandbox requis ne sont pas definis ou tant que `publicCatalog` n'est pas isole dans un entrypoint public separe.
+Note Functions : `publicCatalog` est isole dans le codebase `functions-public` pour pouvoir deployer le cache catalogue sans secrets Stripe/Gmail.
+
+```powershell
+firebase deploy --project secondevienextjsssr --only functions:public:publicCatalog --non-interactive
+```
+
+Les fonctions historiques du dossier `functions` restent dans le codebase `main` et ne doivent pas etre deployees tant que les secrets sandbox `GMAIL_EMAIL`, `GMAIL_PASSWORD`, `STRIPE_SECRET_KEY` et `STRIPE_WH_SECRET` ne sont pas definis.
 
 Controle non interactif :
 
