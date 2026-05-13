@@ -4,8 +4,8 @@
  * Quand l'admin remplace ou retire une image, les anciens fichiers Storage
  * qui ne sont plus references par le document sont supprimes automatiquement.
  */
-const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
+const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { collectStoragePaths, deleteStoragePaths } = require('./mediaCleanup');
 
 async function cleanupRemovedMedia(change, context) {
@@ -30,6 +30,11 @@ async function cleanupRemovedMedia(change, context) {
     return null;
 }
 
-exports.onArtifactUpdated = functions.runWith({ timeoutSeconds: 300 }).firestore
-    .document('artifacts/{appId}/public/data/{collection}/{docId}')
-    .onUpdate(cleanupRemovedMedia);
+exports.onArtifactUpdated = onDocumentUpdated(
+    {
+        document: 'artifacts/{appId}/public/data/{collection}/{docId}',
+        region: 'europe-west1',
+        timeoutSeconds: 300
+    },
+    async (event) => cleanupRemovedMedia(event.data, { params: event.params })
+);

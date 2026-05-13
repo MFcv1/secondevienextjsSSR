@@ -1,5 +1,5 @@
-const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
+const { onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { APP_ID } = require('../../helpers/config');
 const { timestampFromNow, ANALYTICS_ROLLUP_RETENTION_DAYS } = require('../analytics/constants');
 
@@ -40,10 +40,11 @@ async function recomputeInventoryOverview() {
     }, { merge: true });
 }
 
-exports.onInventorySourceWrite = functions.firestore
-    .document('artifacts/{appId}/public/data/{collection}/{docId}')
-    .onWrite(async (change, context) => {
-        if (context.params.collection !== 'furniture') return null;
+exports.onInventorySourceWrite = onDocumentWritten(
+    { document: 'artifacts/{appId}/public/data/{collection}/{docId}', region: 'europe-west1' },
+    async (event) => {
+        if (event.params.collection !== 'furniture') return null;
         await recomputeInventoryOverview();
         return null;
-    });
+    }
+);

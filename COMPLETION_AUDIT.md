@@ -32,6 +32,7 @@ Creer un clone Next.js SSR/SSG maintenable de `SecondevieAnais` dans `C:\Users\m
 | Ne pas promettre que SSR supprime les lags | Rapports indiquent que galerie/mobile doivent rester mesures runtime | OK |
 | Roadmap optimisation Next | `NEXTJS_OPTIMIZATION_ROADMAP.md`; N1 cache tags, N2 ISR produit, N3 images, N5 prefetch; benchmark local optimise | OK partiel |
 | Function `publicCatalog` sandbox | Codebase isole `functions-public`; `firebase deploy --only functions:public:publicCatalog`; endpoint HTTP 200 + CORS App Hosting OK | OK |
+| Functions `main` sandbox | Secrets sandbox/dummy crees; fonctions HTTP/callable deployees en Gen1 `us-central1`; triggers Firestore deployes en Gen2 `europe-west1` | OK avec limites |
 
 ## Residual Risk
 
@@ -39,4 +40,5 @@ Creer un clone Next.js SSR/SSG maintenable de `SecondevieAnais` dans `C:\Users\m
 - La mesure runtime locale couvre requetes, bytes JS/images/total, LCP/CLS approximatifs et long tasks. Les traces longues type Lighthouse/scroll frame gaps sur vrais appareils restent a faire avant decision de migration definitive.
 - La galerie complete reste client-side par choix de fidelite au projet source.
 - `publicCatalog` est deployee sans Stripe/Gmail via le codebase separe `public`; les fonctions commerce/email historiques restent non deployees tant que les secrets sandbox ne sont pas definis.
+- Les fonctions `main` sont maintenant deployees. Stripe et Gmail utilisent des valeurs dummy pour la sandbox : checkout carte et envoi email reel restent volontairement non valides.
 - Les optimisations N1/N2/N3/N5 sont en place; N4 hydratation fine et N6 monitoring App Hosting restent a poursuivre apres deploiement GitHub/App Hosting.

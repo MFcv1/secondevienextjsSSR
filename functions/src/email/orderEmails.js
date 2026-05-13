@@ -4,9 +4,9 @@
  * - onOrderCreated: Email admin + client à la création
  * - onOrderUpdated: Email client pour expédition et livraison
  */
-const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
+const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { GMAIL_EMAIL, GMAIL_PASSWORD } = require('../../helpers/secrets');
 const { getSiteUrl } = require('../../helpers/config');
 
@@ -126,30 +126,34 @@ async function sendNewOrderEmails(orderId, order) {
 }
 
 // --- TRIGGER: Nouvelle Commande ---
-exports.onOrderCreated = functions.runWith({ secrets: [GMAIL_EMAIL, GMAIL_PASSWORD] }).firestore
-    .document('orders/{orderId}')
-    .onCreate(async (snap, context) => {
-        console.log("⚡ onOrderCreated TRIGGERED! ID:", context.params.orderId);
-        const order = snap.data();
+exports.onOrderCreated = onDocumentCreated(
+    { document: 'orders/{orderId}', region: 'europe-west1', secrets: [GMAIL_EMAIL, GMAIL_PASSWORD] },
+    async (event) => {
+        console.log("⚡ onOrderCreated TRIGGERED! ID:", event.params.orderId);
+        const order = event.data?.data();
+        if (!order) return null;
 
         // Si c'est une commande Stripe Elements "pending", on NE FAIT RIEN pour l'instant.
         // L'email sera envoyé via onOrderUpdated une fois le paiement confirmé (status => 'paid')
         if (order.paymentMethod === 'stripe_elements' && order.status === 'pending_payment') {
             console.log("⏸️ Commande pre-créée (Stripe Elements). On attend le paiement pour envoyer l'email.");
-            return;
+            return null;
         }
 
         // Pour les autres cas (paiement différé, ou ancienne commande stripe_checkout direct en paid)
-        await sendNewOrderEmails(context.params.orderId, order);
-    });
+        await sendNewOrderEmails(event.params.orderId, order);
+        return null;
+    }
+);
 
 // --- TRIGGER: Mise à jour commande (confirmation paiement, expédition, livraison) ---
-exports.onOrderUpdated = functions.runWith({ secrets: [GMAIL_EMAIL, GMAIL_PASSWORD] }).firestore
-    .document('orders/{orderId}')
-    .onUpdate(async (change, context) => {
-        const orderBefore = change.before.data();
-        const orderAfter = change.after.data();
-        const orderId = context.params.orderId;
+exports.onOrderUpdated = onDocumentUpdated(
+    { document: 'orders/{orderId}', region: 'europe-west1', secrets: [GMAIL_EMAIL, GMAIL_PASSWORD] },
+    async (event) => {
+        const orderBefore = event.data?.before?.data();
+        const orderAfter = event.data?.after?.data();
+        if (!orderBefore || !orderAfter) return null;
+        const orderId = event.params.orderId;
         const clientEmail = orderAfter.userEmail || orderAfter.shipping?.email;
 
         // --- 1. EMAIL DE CONFIRMATION (Stripe Elements: pending_payment → paid) ---
@@ -212,4 +216,5 @@ exports.onOrderUpdated = functions.runWith({ secrets: [GMAIL_EMAIL, GMAIL_PASSWO
         }
 
         return null;
-    });
+    }
+);

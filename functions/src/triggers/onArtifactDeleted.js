@@ -4,8 +4,8 @@
  * Supprime les images Storage + sous-collections sociales.
  * quand un produit est efface de Firestore.
  */
-const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
+const { onDocumentDeleted } = require('firebase-functions/v2/firestore');
 const { collectStoragePaths, deleteStoragePaths } = require('./mediaCleanup');
 
 const db = admin.firestore();
@@ -53,6 +53,15 @@ async function cleanupDocumentAssets(snap) {
     console.log(`Artifact delete cleanup finished for: ${docPath}`);
 }
 
-exports.onArtifactDeleted = functions.runWith({ timeoutSeconds: 300 }).firestore
-    .document('artifacts/{appId}/public/data/{collection}/{docId}')
-    .onDelete(cleanupDocumentAssets);
+exports.onArtifactDeleted = onDocumentDeleted(
+    {
+        document: 'artifacts/{appId}/public/data/{collection}/{docId}',
+        region: 'europe-west1',
+        timeoutSeconds: 300
+    },
+    async (event) => {
+        if (!event.data) return null;
+        await cleanupDocumentAssets(event.data);
+        return null;
+    }
+);

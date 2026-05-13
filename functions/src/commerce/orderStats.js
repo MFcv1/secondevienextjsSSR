@@ -1,5 +1,5 @@
-const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
+const { onDocumentWritten } = require('firebase-functions/v2/firestore');
 const {
     ANALYTICS_ROLLUP_RETENTION_DAYS,
     timestampFromNow,
@@ -63,11 +63,11 @@ function buildIncrementPayload(delta) {
     return payload;
 }
 
-exports.onOrderStatsWrite = functions.firestore
-    .document('orders/{orderId}')
-    .onWrite(async (change) => {
-        const before = change.before.exists ? change.before.data() : null;
-        const after = change.after.exists ? change.after.data() : null;
+exports.onOrderStatsWrite = onDocumentWritten(
+    { document: 'orders/{orderId}', region: 'europe-west1' },
+    async (event) => {
+        const before = event.data?.before?.exists ? event.data.before.data() : null;
+        const after = event.data?.after?.exists ? event.data.after.data() : null;
 
         const delta = diffMetrics(summarizeOrder(after), summarizeOrder(before));
         if (Object.keys(delta).length === 0) return null;
@@ -88,4 +88,5 @@ exports.onOrderStatsWrite = functions.firestore
         await batch.commit();
 
         return null;
-    });
+    }
+);

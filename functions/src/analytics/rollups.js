@@ -1,6 +1,6 @@
-const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
+const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const {
     ANALYTICS_ROLLUP_RETENTION_DAYS,
     timestampFromNow,
@@ -205,16 +205,16 @@ async function updateDailyRollup(payload, updater) {
     }
 }
 
-exports.onJourneyStepCreated = functions.firestore
-    .document('analytics_sessions/{sessionId}/journey_steps/{stepId}')
-    .onCreate(async (snap, context) => {
-        const step = snap.data() || {};
+exports.onJourneyStepCreated = onDocumentCreated(
+    { document: 'analytics_sessions/{sessionId}/journey_steps/{stepId}', region: 'europe-west1' },
+    async (event) => {
+        const step = event.data?.data() || {};
         const pageKey = step.pageKey || step.page;
         const nodeId = resolveNodeId(step);
 
         await updatePageDailyRollup(step, nodeId, 'view');
 
-        const previousStep = await resolvePreviousJourneyStep(context.params.sessionId, Number(step.timestamp) || Date.now(), step);
+        const previousStep = await resolvePreviousJourneyStep(event.params.sessionId, Number(step.timestamp) || Date.now(), step);
         const previousNodeId = previousStep ? resolveNodeId(previousStep) : null;
         await updateTransitionDailyRollup(step, previousNodeId, nodeId);
 
@@ -230,25 +230,26 @@ exports.onJourneyStepCreated = functions.firestore
         });
 
         return null;
-    });
+    }
+);
 
-exports.onCustomEventCreated = functions.firestore
-    .document('analytics_sessions/{sessionId}/custom_events/{eventId}')
-    .onCreate(async (snap, context) => {
-        const event = snap.data() || {};
-        const eventNodeId = resolveEventNodeId(event);
+exports.onCustomEventCreated = onDocumentCreated(
+    { document: 'analytics_sessions/{sessionId}/custom_events/{eventId}', region: 'europe-west1' },
+    async (event) => {
+        const customEvent = event.data?.data() || {};
+        const eventNodeId = resolveEventNodeId(customEvent);
 
         if (eventNodeId) {
-            await updatePageDailyRollup(event, eventNodeId, 'action');
+            await updatePageDailyRollup(customEvent, eventNodeId, 'action');
 
-            const previousStep = await resolvePreviousJourneyStep(context.params.sessionId, Number(event.timestamp) || Date.now(), event);
+            const previousStep = await resolvePreviousJourneyStep(event.params.sessionId, Number(customEvent.timestamp) || Date.now(), customEvent);
             const previousNodeId = previousStep ? resolveNodeId(previousStep) : null;
-            await updateTransitionDailyRollup(event, previousNodeId, eventNodeId);
+            await updateTransitionDailyRollup(customEvent, previousNodeId, eventNodeId);
         }
 
-        if (!event.itemId) return null;
+        if (!customEvent.itemId) return null;
 
-        await updateDailyRollup(event, (updates, payload, timestamp) => {
+        await updateDailyRollup(customEvent, (updates, payload, timestamp) => {
             updates.nameHint = payload.itemName || null;
             updates.lastInteractedAt = admin.firestore.Timestamp.fromMillis(timestamp);
 
@@ -261,4 +262,5 @@ exports.onCustomEventCreated = functions.firestore
         });
 
         return null;
-    });
+    }
+);

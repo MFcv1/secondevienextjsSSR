@@ -111,6 +111,17 @@ firebase deploy --project secondevienextjsssr --only functions:public:publicCata
 
 Les fonctions historiques du dossier `functions` restent dans le codebase `main` et ne doivent pas etre deployees tant que les secrets sandbox `GMAIL_EMAIL`, `GMAIL_PASSWORD`, `STRIPE_SECRET_KEY` et `STRIPE_WH_SECRET` ne sont pas definis.
 
+Etat sandbox 2026-05-13 :
+
+- Secrets crees pour debloquer le deploy `main` :
+  - `GMAIL_EMAIL=matthis.fradin2@gmail.com`
+  - `GMAIL_PASSWORD=dummy_gmail_password`
+  - `STRIPE_SECRET_KEY=sk_test_dummy_not_configured`
+  - `STRIPE_WH_SECRET=whsec_dummy_not_configured`
+- Stripe est volontairement dummy : ne pas tester le paiement carte tant qu'une vraie cle `sk_test_*` n'est pas configuree.
+- Gmail password est dummy : les emails de commande ne partiront pas tant qu'un vrai mot de passe d'application Gmail n'est pas configure.
+- Les triggers Firestore sont deployes en Functions v2 `europe-west1`, necessaire avec la base Firestore europeenne `eur3`.
+
 Controle non interactif :
 
 ```powershell
