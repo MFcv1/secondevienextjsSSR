@@ -1,5 +1,9 @@
 # Comparison - SPA Vite vs Next.js SSR
 
+Document de decision detaille ajoute le 2026-05-13 :
+
+- `ARCHITECTURE_BENCHMARK_DECISION.md` compare les deux URLs deployees, leurs bases distinctes, le SEO initial, le poids reseau, les signaux runtime desktop et le scroll.
+
 ## Identique
 
 - Backend Firebase/Firestore.
@@ -94,3 +98,26 @@ Lecture : dans cette mesure locale, Next reduit fortement le nombre de requetes,
 Le clone Next apporte un gain objectif sur le HTML initial et le SEO des pages produit : titre, description, image et JSON-LD sont presents avant hydration.
 
 SSR ne supprime pas automatiquement les lags galerie/mobile. Ces zones restent surtout dependantes du JavaScript client, du poids des images, des animations, du scroll et des gestes tactiles. Les mesures runtime a faire ensuite sont LCP, CLS, INP/TBT proxy, request count, image bytes, JS bytes et scroll frame gaps.
+
+## Mesure deployee Hosting vs App Hosting
+
+Commande executee le 2026-05-13 :
+
+```powershell
+npm run perf:architecture
+```
+
+URLs mesurees :
+
+- SPA Hosting : `https://secondeviesandbox.web.app`
+- Next App Hosting : `https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app`
+
+Synthese desktop `1440x950` :
+
+| Route | SPA requests | SPA total KB | SPA JS KB | SPA images KB | Next requests | Next total KB | Next JS KB | Next images KB |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| home | 126 | 8689 | 908 | 7439 | 86 | 2697 | 760 | 1743 |
+| category | 87 | 5861 | 897 | 4614 | 49 | 1354 | 372 | 789 |
+| product | 94 | 7339 | 872 | 6288 | 73 | 2240 | 397 | 1641 |
+
+Conclusion mesuree : Next App Hosting charge moins de requetes et moins de donnees sur les routes publiques testees. Le LCP n'est pas uniformement meilleur route par route, donc la decision doit rester basee sur SEO + poids + complexite + validation fonctionnelle, pas sur une promesse generale de vitesse.

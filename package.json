@@ -15,6 +15,7 @@
     "seo:check": "node scripts/with-env.mjs .env.sandbox node scripts/check-product-ssr.mjs",
     "perf:compare": "node scripts/compare-spa-next.mjs",
     "perf:runtime": "node scripts/compare-runtime.mjs",
+    "perf:architecture": "node scripts/benchmark-architecture.mjs",
     "mobile:contract": "node scripts/check-mobile-marketplace-contract.cjs"
   },
   "dependencies": {
