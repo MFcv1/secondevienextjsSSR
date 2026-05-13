@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://secondevie-a0745.web.app/sitemap.xml

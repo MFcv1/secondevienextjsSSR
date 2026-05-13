@@ -1,0 +1,114 @@
+# Runbook Next.js SSR
+
+## Installation
+
+```powershell
+cd C:\Users\matth\Travail\SecondevieNextjsSSR
+npm install
+```
+
+## Configuration env locale
+
+Les vrais fichiers `.env.sandbox` et `.env.production` ne sont pas commits dans le depot public.
+
+```powershell
+Copy-Item .env.sandbox.example .env.sandbox
+Copy-Item .env.production.example .env.production
+```
+
+Remplir ensuite les valeurs Firebase/Stripe du projet cible. Les credentials serveur Firebase Admin doivent rester sans prefixe `NEXT_PUBLIC_`.
+
+Pour App Hosting, configurer les memes variables publiques et les secrets serveur dans Firebase/App Hosting, pas dans le depot GitHub public.
+
+## Developpement sandbox
+
+```powershell
+npm run dev
+```
+
+Le script charge `.env.sandbox` puis mappe les variables publiques `VITE_*` en `NEXT_PUBLIC_*`.
+
+URL locale par defaut : `http://localhost:3000`.
+
+## Build sandbox
+
+```powershell
+npm run build
+npm run start
+```
+
+`start` charge aussi `.env.sandbox`.
+
+## Developpement prod local
+
+```powershell
+npm run dev:prod
+npm run build:prod
+npm run start:prod
+```
+
+Ne pas utiliser ces commandes pour des tests d'ecriture sans validation explicite.
+
+## Validation
+
+```powershell
+npm run lint
+npm run build
+npm run start
+npm run seo:check
+npm run mobile:contract
+npm run test:e2e
+```
+
+`seo:check` et `test:e2e` attendent un serveur Next actif sur `http://127.0.0.1:3000`.
+
+## Comparaison SPA vs Next
+
+Dans un terminal pour la SPA source, lecture seule :
+
+```powershell
+cd C:\Users\matth\Travail\SecondevieAnais
+npm run dev -- --host 127.0.0.1 --port 4173
+```
+
+Dans le clone Next :
+
+```powershell
+cd C:\Users\matth\Travail\SecondevieNextjsSSR
+$env:SPA_BASE_URL='http://127.0.0.1:4173'
+$env:NEXT_BASE_URL='http://127.0.0.1:3000'
+npm run perf:compare
+npm run perf:runtime
+```
+
+Arreter ensuite le serveur SPA.
+
+## Firebase
+
+Architecture recommandee : Firebase App Hosting.
+
+Lire aussi :
+
+- `DATABASE_MIGRATION_PLAN.md` pour la strategie base de donnees, sandbox, export/import, tests admin/checkout et cutover.
+
+Fichiers utiles :
+
+- `apphosting.yaml`
+- `.env.sandbox`
+- `.env.production`
+- `firebase.json`
+- `firestore.rules`
+- `storage.rules`
+- `functions/`
+
+Regles :
+
+- Garder les secrets serveur hors `NEXT_PUBLIC_*`.
+- Utiliser Secret Manager/App Hosting env secrets pour les secrets reels.
+- Ne pas committer `apphosting.local.yaml`.
+- Ne pas faire de tests destructifs sur production.
+- Utiliser sandbox, read-only production ou emulateur/export-import pour les comparaisons de donnees.
+
+## Note env
+
+Next peut afficher `Environments: .env.production` au build parce que le fichier existe dans le dossier. Les scripts du clone chargent explicitement le fichier voulu avant `next` via `scripts/with-env.mjs`; par defaut, `dev`, `build` et `start` utilisent `.env.sandbox`.

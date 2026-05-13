@@ -1,0 +1,47 @@
+# dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# builds and coverage
+dist/
+coverage/
+playwright-report/
+test-results/
+
+# local env files
+.env
+.env.*
+!.env.example
+!.env.sandbox.example
+!.env.production.example
+
+# Firebase local state
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+
+# local credentials and secrets
+service-account.json
+**/service-account.json
+apphosting.local.yaml
+*.pem
+*.key
+
+# logs and runtime files
+logs/
+*.log
+*.pid
+.next-start.pid
+
+# local visual references
+/video/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

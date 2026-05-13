@@ -1,0 +1,104 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "furniture",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "furniture",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "currentPrice", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "furniture",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "category", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userEmail", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": [
+    {
+      "collectionGroup": "analytics_sessions",
+      "fieldPath": "journey",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analytics_sessions",
+      "fieldPath": "events",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analytics_sessions",
+      "fieldPath": "lastJourneyPreview",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analytics_sessions",
+      "fieldPath": "lastEventPreview",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analytics_sessions",
+      "fieldPath": "userAgent",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analytics_sessions",
+      "fieldPath": "geo",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analytics_item_daily",
+      "fieldPath": "uniqueVisitorKeys",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analytics_page_daily",
+      "fieldPath": "uniqueVisitorKeys",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analytics_transition_daily",
+      "fieldPath": "uniqueVisitorKeys",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analytics_unique_markers",
+      "fieldPath": "scope",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analytics_unique_markers",
+      "fieldPath": "dateKey",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analytics_unique_markers",
+      "fieldPath": "entityHash",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analytics_unique_markers",
+      "fieldPath": "visitorHash",
+      "indexes": []
+    }
+  ]
+}
