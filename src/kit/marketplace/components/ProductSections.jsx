@@ -30,6 +30,7 @@ export const ProductArrivalsSection = ({
     darkMode,
     heading,
     onSelectItem,
+    onPrefetchItem,
     onAddToCart,
     onToggleWishlist,
 }) => {
@@ -83,6 +84,7 @@ export const ProductArrivalsSection = ({
             isDetailOverlayOpen={isDetailOverlayOpen}
             likedOriginalIds={likedOriginalIds}
             onSelectItem={onSelectItem}
+            onPrefetchItem={onPrefetchItem}
             onAddToCart={onAddToCart}
             onToggleWishlist={onToggleWishlist}
             getPriority={(_, index) => !isDetailOverlayOpen && index < 2}
@@ -100,6 +102,7 @@ export const ProductSmallPricesSection = ({
     darkMode,
     heading,
     onSelectItem,
+    onPrefetchItem,
     onAddToCart,
     onToggleWishlist,
 }) => {
@@ -172,6 +175,7 @@ export const ProductSmallPricesSection = ({
             isDetailOverlayOpen={isDetailOverlayOpen}
             likedOriginalIds={likedOriginalIds}
             onSelectItem={onSelectItem}
+            onPrefetchItem={onPrefetchItem}
             onAddToCart={onAddToCart}
             onToggleWishlist={onToggleWishlist}
             getPriority={(_, index) => isNearViewport && index < 2}

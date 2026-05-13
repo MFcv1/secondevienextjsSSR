@@ -356,6 +356,7 @@ const getSmallPriceWarmupItems = (items) => (
 const MarketplaceLayout = ({
     items,
     onSelectItem,
+    onPrefetchItem,
     headerProps,
     darkMode,
     setHeaderProps,
@@ -685,6 +686,7 @@ const MarketplaceLayout = ({
                 darkMode={darkMode}
                 isDetailOverlayOpen={isDetailOverlayOpen}
                 onSelectItem={onSelectItem}
+                onPrefetchItem={onPrefetchItem}
                 onAddToCart={onAddToCart}
                 onToggleWishlist={onToggleWishlist}
             />
@@ -706,6 +708,7 @@ const MarketplaceLayout = ({
                     darkMode={darkMode}
                     isDetailOverlayOpen={isDetailOverlayOpen}
                     onSelectItem={onSelectItem}
+                    onPrefetchItem={onPrefetchItem}
                     onAddToCart={onAddToCart}
                     onToggleWishlist={onToggleWishlist}
                 />

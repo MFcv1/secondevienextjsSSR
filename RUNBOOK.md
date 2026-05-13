@@ -87,6 +87,30 @@ Arreter ensuite le serveur SPA.
 
 Architecture recommandee : Firebase App Hosting.
 
+## Dashboard de deploiement sandbox
+
+```powershell
+npm run dashboard
+```
+
+Le dashboard ne propose que la sandbox du clone Next (`secondevienextjsssr`) et le backend App Hosting `secondevie-next-sandbox`.
+
+Options disponibles :
+
+- App Hosting sandbox : build local de controle puis `firebase deploy --only apphosting:secondevie-next-sandbox --project secondevienextjsssr`
+- Functions uniquement
+- Firestore rules + indexes
+- Storage rules
+- Tout deployer en sandbox
+
+Note Functions : un deploiement cible `functions:publicCatalog` a ete tente le 2026-05-13 mais bloque par le secret `GMAIL_EMAIL`, exige pendant l'analyse de l'entrypoint Functions global. Ne pas deployer Functions tant que les secrets sandbox requis ne sont pas definis ou tant que `publicCatalog` n'est pas isole dans un entrypoint public separe.
+
+Controle non interactif :
+
+```powershell
+npm run dashboard -- --status
+```
+
 Lire aussi :
 
 - `DATABASE_MIGRATION_PLAN.md` pour la strategie base de donnees, sandbox, export/import, tests admin/checkout et cutover.

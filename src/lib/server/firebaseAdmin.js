@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { publicEnv } from './env';
 
@@ -28,11 +29,19 @@ const parseServiceAccount = () => {
 export const getAdminDb = () => {
   if (!publicEnv.projectId) return null;
 
+  return getFirestore(getAdminApp());
+};
+
+export const getAdminAuth = () => {
+  if (!publicEnv.projectId) return null;
+
+  return getAuth(getAdminApp());
+};
+
+const getAdminApp = () => {
   const credential = parseServiceAccount();
-  const app = getApps()[0] || initializeApp({
+  return getApps()[0] || initializeApp({
     projectId: publicEnv.projectId,
     ...(credential ? { credential } : {})
   });
-
-  return getFirestore(app);
 };

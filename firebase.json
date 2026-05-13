@@ -9,6 +9,24 @@
   "functions": {
     "source": "functions"
   },
+  "apphosting": [
+    {
+      "backendId": "secondevie-next-sandbox",
+      "rootDir": ".",
+      "ignore": [
+        "node_modules",
+        ".git",
+        ".next",
+        "dist",
+        "logs",
+        "test-results",
+        "playwright-report",
+        "functions",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ]
+    }
+  ],
   "hosting": {
     "public": "dist",
     "ignore": [

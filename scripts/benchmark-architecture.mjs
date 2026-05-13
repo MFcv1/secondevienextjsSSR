@@ -2,14 +2,30 @@ import { chromium } from '@playwright/test';
 
 const DEFAULT_SPA_BASE_URL = 'https://secondeviesandbox.web.app';
 const DEFAULT_NEXT_BASE_URL = 'https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app';
+const DEFAULT_PRODUCT_PATH = '/produit/buffet-KrTETXPknYNwgak66T8p';
 
 const spaBaseUrl = process.env.SPA_BASE_URL || DEFAULT_SPA_BASE_URL;
 const nextBaseUrl = process.env.NEXT_BASE_URL || DEFAULT_NEXT_BASE_URL;
+const productPath = normalizeRoutePath(
+  process.env.COLD_PRODUCT_PATH || process.env.PRODUCT_PATH || DEFAULT_PRODUCT_PATH
+);
+
+function normalizeRoutePath(value) {
+  const routePath = String(value || '').trim();
+  if (!routePath) return DEFAULT_PRODUCT_PATH;
+
+  try {
+    const url = new URL(routePath);
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return routePath.startsWith('/') ? routePath : `/${routePath}`;
+  }
+}
 
 const routes = [
   { label: 'home', path: '/', scroll: true },
   { label: 'category', path: '/categorie/buffets', scroll: true },
-  { label: 'product', path: '/produit/buffet-KrTETXPknYNwgak66T8p', scroll: false }
+  { label: 'product', path: productPath, scroll: false }
 ];
 
 const desktop = { width: 1440, height: 950 };
@@ -74,6 +90,7 @@ const htmlStats = async (baseUrl, route) => {
   const html = await response.text();
   return {
     route: route.label,
+    path: route.path,
     status: response.status,
     elapsedMs: Math.round(performance.now() - startedAt),
     htmlKB: Math.round(Buffer.byteLength(html) / 1024),
@@ -192,6 +209,7 @@ const runtimeStats = async ({ baseUrl, app, route }) => {
   return {
     app,
     route: route.label,
+    path: route.path,
     status: response?.status() || 0,
     elapsedMs,
     domContentLoadedMs: timing.domContentLoadedMs || 0,
@@ -216,6 +234,7 @@ const printHtmlTable = (rows) => {
   console.table(rows.map((row) => ({
     app: row.app,
     route: row.route,
+    path: row.path,
     status: row.status,
     htmlKB: row.htmlKB,
     hasH1: row.hasH1,
@@ -231,6 +250,7 @@ const printRuntimeTable = (rows) => {
   console.table(rows.map((row) => ({
     app: row.app,
     route: row.route,
+    path: row.path,
     status: row.status,
     requests: row.requests,
     totalKB: row.totalKB,
@@ -250,6 +270,7 @@ const printScrollTable = (rows) => {
     .map((row) => ({
       app: row.app,
       route: row.route,
+      path: row.path,
       maxFrameGapMs: row.scroll.maxFrameGapMs,
       over50msFrames: row.scroll.over50msFrames,
       over100msFrames: row.scroll.over100msFrames,
@@ -260,6 +281,7 @@ const printScrollTable = (rows) => {
 const main = async () => {
   console.log(`SPA_BASE_URL=${spaBaseUrl}`);
   console.log(`NEXT_BASE_URL=${nextBaseUrl}`);
+  console.log(`PRODUCT_PATH=${productPath}`);
 
   const htmlRows = [];
   for (const route of routes) {

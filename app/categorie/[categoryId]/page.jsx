@@ -1,5 +1,8 @@
 import ClientApp from '../../ClientApp';
-import { getPublicCatalog, getPublicCatalogFallback } from '../../../src/lib/server/products';
+import {
+  getPublicCatalog,
+  getPublicCatalogFallback
+} from '../../../src/lib/server/products';
 import { publicEnv } from '../../../src/lib/server/env';
 
 export const revalidate = 300;

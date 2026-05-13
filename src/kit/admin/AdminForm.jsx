@@ -5,6 +5,7 @@ import { storage } from '../config/firebaseStorage';
 import { doc, addDoc, updateDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { PRODUCT_IMAGE_VARIANT_SPECS, compressImage, createProductImageVariantFiles, getImageFileMetadata } from '../../utils/imageUtils'; // [NEW] Import compression utility
+import { getProductUrl } from '../../utils/slug';
 import ImageCropperModal from './components/ImageCropperModal';
 import KIT_CONFIG from '../config/constants';
 import { bumpPublicCatalogVersion } from './publicCatalogInvalidation';
@@ -398,16 +399,22 @@ const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkM
         priceOnRequest: formData.priceOnRequest || false,
       };
 
+      let savedProductId = editData?.id || '';
       if (editData) {
         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', collectionName, editData.id), data);
       } else {
-        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', collectionName), {
+        const createdRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', collectionName), {
           ...data,
           status: 'published',
           createdAt: serverTimestamp()
         });
+        savedProductId = createdRef.id;
       }
-      await bumpPublicCatalogVersion(editData ? 'product_updated' : 'product_created');
+      await bumpPublicCatalogVersion(editData ? 'product_updated' : 'product_created', {
+        productId: savedProductId,
+        categoryIds: data.category ? [data.category] : [],
+        paths: [getProductUrl({ ...data, id: savedProductId })]
+      });
 
       setMsg("✅ Publication réussie !");
       resetForm();

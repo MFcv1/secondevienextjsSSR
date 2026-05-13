@@ -10,6 +10,7 @@
     "build:prod": "node scripts/with-env.mjs .env.production next build",
     "start": "node scripts/with-env.mjs .env.sandbox next start",
     "start:prod": "node scripts/with-env.mjs .env.production next start",
+    "dashboard": "node deploy/dashboard.mjs",
     "lint": "eslint .",
     "test:e2e": "playwright test",
     "seo:check": "node scripts/with-env.mjs .env.sandbox node scripts/check-product-ssr.mjs",

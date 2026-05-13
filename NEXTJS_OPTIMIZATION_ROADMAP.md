@@ -27,6 +27,36 @@ Ce qui n'est pas encore pleinement optimise Next:
 - Les composants panier, wishlist, admin, checkout et detail gardent beaucoup d'hydratation.
 - Les caches serveur Next doivent etre formalises route par route.
 
+## Avancement implementation - 2026-05-13
+
+Statut apres optimisation guidee par cette roadmap:
+
+- N0 baseline: fait. `npm run perf:architecture` accepte maintenant `COLD_PRODUCT_PATH` / `PRODUCT_PATH` et affiche le chemin mesure.
+- N1 cache serveur: fait cote Next. Les lectures publiques produit/catalogue utilisent `server-only`, `cache()`, `revalidate: 300` et des tags Next (`catalog`, `products`, `product:*`, `category:*`).
+- N2 ISR produit: fait pour les produits publies. `generateStaticParams` prerender les meubles publies disponibles au build; `dynamicParams` reste actif pour les nouveaux produits.
+- N3 images premiere visite: ameliore. Le SSR produit privilegie `large/medium` au lieu de `full`; les hosts Storage sandbox sont autorises par `next/image`.
+- N4 hydratation: partiel. Les gros modules admin/checkout restent deja charges dynamiquement via l'architecture clonee, mais la galerie publique reste encore fortement client-side.
+- N5 prefetch intelligent: fait en premiere passe. Les cartes produit prefetchent detail donnees + images sur intention hover/focus, avec garde-fou reseau lent / `saveData`.
+- N6 observabilite: partiel. Le benchmark local/deploye est reproductible; les routes App Hosting doivent encore etre enregistrees dans la console pour suivre p95/5xx/cache hit.
+
+Validation executee apres changements:
+
+```powershell
+npm run lint
+npm run build
+npm run seo:check
+npm run mobile:contract
+npm run test:e2e
+$env:SPA_BASE_URL='https://secondeviesandbox.web.app'
+$env:NEXT_BASE_URL='http://127.0.0.1:4300'
+$env:COLD_PRODUCT_PATH='/produit/buffet-KrTETXPknYNwgak66T8p'
+npm run perf:architecture
+```
+
+Resultat cle du build: 40 pages generees, dont `/produit/[slugOrId]` en SSG avec `generateStaticParams` et 35 chemins produit publies.
+
+Limite connue: le deploiement cible `functions:publicCatalog` est bloque tant que les secrets Functions requis par l'entrypoint global, notamment `GMAIL_EMAIL`, ne sont pas definis. Aucune Function n'a ete publiee pendant cet essai; le SSR garde le fallback Firestore/Admin.
+
 ## Probleme cible: premier affichage d'un meuble jamais consulte
 
 Quand un meuble n'a jamais ete consulte, le premier affichage peut etre plus lent car plusieurs caches sont froids:

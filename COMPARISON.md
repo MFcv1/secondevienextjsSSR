@@ -121,3 +121,32 @@ Synthese desktop `1440x950` :
 | product | 94 | 7339 | 872 | 6288 | 73 | 2240 | 397 | 1641 |
 
 Conclusion mesuree : Next App Hosting charge moins de requetes et moins de donnees sur les routes publiques testees. Le LCP n'est pas uniformement meilleur route par route, donc la decision doit rester basee sur SEO + poids + complexite + validation fonctionnelle, pas sur une promesse generale de vitesse.
+
+## Mesure locale apres optimisations Next
+
+Commande executee le 2026-05-13 sur le build Next optimise, servi localement sur `127.0.0.1:4300`:
+
+```powershell
+$env:SPA_BASE_URL='https://secondeviesandbox.web.app'
+$env:NEXT_BASE_URL='http://127.0.0.1:4300'
+$env:COLD_PRODUCT_PATH='/produit/buffet-KrTETXPknYNwgak66T8p'
+npm run perf:architecture
+```
+
+HTML initial:
+
+| Route | SPA HTML KB | SPA SSR Product | Next HTML KB | Next meta/canonical | Next JSON-LD | Next SSR Product |
+| --- | ---: | --- | ---: | --- | --- | --- |
+| home | 5 | false | 10 | true | false | false |
+| category | 9 | false | 10 | true | false | false |
+| product | 10 | false | 28 | true | true | true |
+
+Runtime desktop `1440x950`:
+
+| Route | SPA requests | SPA total KB | SPA JS KB | SPA image KB | Next requests | Next total KB | Next JS KB | Next image KB |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| home | 126 | 8689 | 908 | 7439 | 77 | 3576 | 1415 | 1699 |
+| category | 87 | 5861 | 897 | 4614 | 48 | 2444 | 1194 | 789 |
+| product | 94 | 7339 | 872 | 6288 | 71 | 3431 | 1266 | 1686 |
+
+Lecture : apres cache/ISR/prefetch/images, le produit Next conserve le HTML SEO serveur et charge environ deux fois moins de donnees totales que la SPA dans ce benchmark. Les JS KB Next restent plus hauts que la SPA sur ces mesures locales pour home/categorie, donc N4 hydratation reste un axe a poursuivre.

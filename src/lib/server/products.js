@@ -4,6 +4,8 @@ import { cache } from 'react';
 import { getAdminDb } from './firebaseAdmin';
 import { publicCatalogUrl, publicEnv } from './env';
 
+export const PUBLIC_DATA_REVALIDATE_SECONDS = 300;
+
 const PUBLIC_PRODUCT_FIELDS = [
   'id',
   'collectionName',
@@ -83,12 +85,37 @@ const getProductViaAdmin = async (id) => {
   return projectPublicProduct(snap.id, data);
 };
 
+const queryProductsViaAdmin = async ({ categoryIds = [], limitCount = 120 } = {}) => {
+  const db = getAdminDb();
+  if (!db) return [];
+
+  let ref = db
+    .collection('artifacts')
+    .doc(publicEnv.appId)
+    .collection('public')
+    .doc('data')
+    .collection('furniture')
+    .where('status', '==', 'published');
+
+  if (categoryIds.length === 1) {
+    ref = ref.where('category', '==', categoryIds[0]);
+  } else if (categoryIds.length > 1) {
+    ref = ref.where('category', 'in', categoryIds.slice(0, 10));
+  }
+
+  const snap = await ref.limit(Math.max(1, Math.min(limitCount, 500))).get();
+  return snap.docs.map((docSnap) => projectPublicProduct(docSnap.id, docSnap.data()));
+};
+
 const getProductViaPublicCatalog = async (id) => {
   const url = publicCatalogUrl('');
   if (!url || !id) return null;
 
   const response = await fetch(url, {
-    next: { revalidate: 300 },
+    next: {
+      revalidate: PUBLIC_DATA_REVALIDATE_SECONDS,
+      tags: ['catalog', 'products', `product:${id}`]
+    },
     headers: { accept: 'application/json' }
   });
   if (!response.ok) return null;
@@ -137,7 +164,12 @@ const getProductViaFirestoreRest = async (id) => {
   if (!baseUrl || !id) return null;
 
   const url = `${baseUrl}/artifacts/${publicEnv.appId}/public/data/furniture/${encodeURIComponent(id)}?key=${encodeURIComponent(publicEnv.apiKey)}`;
-  const response = await fetch(url, { next: { revalidate: 300 } });
+  const response = await fetch(url, {
+    next: {
+      revalidate: PUBLIC_DATA_REVALIDATE_SECONDS,
+      tags: ['products', `product:${id}`]
+    }
+  });
   if (!response.ok) return null;
   const product = fromFirestoreRestDocument(await response.json());
   if (!product || product.status !== 'published') return null;
@@ -183,7 +215,10 @@ const queryProductsViaFirestoreRest = async ({ categoryIds = [], limitCount = 24
   const response = await fetch(`${baseUrl}:runQuery?key=${encodeURIComponent(publicEnv.apiKey)}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    next: { revalidate: 300 },
+    next: {
+      revalidate: PUBLIC_DATA_REVALIDATE_SECONDS,
+      tags: ['catalog', 'products', 'categories', ...categoryIds.map((categoryId) => `category:${categoryId}`)]
+    },
     body: JSON.stringify({
       structuredQuery: {
         from: [{ collectionId: 'furniture' }],
@@ -231,7 +266,10 @@ export const getPublicCatalog = cache(async (params = '') => {
   if (!url) return [];
 
   const response = await fetch(url, {
-    next: { revalidate: 300 },
+    next: {
+      revalidate: PUBLIC_DATA_REVALIDATE_SECONDS,
+      tags: ['catalog', 'products']
+    },
     headers: { accept: 'application/json' }
   });
   if (!response.ok) return [];
@@ -241,9 +279,35 @@ export const getPublicCatalog = cache(async (params = '') => {
 
 export const getPublicCatalogFallback = cache(async ({ categoryIds = [], limitCount = 24 } = {}) => {
   try {
+    const products = await queryProductsViaAdmin({ categoryIds, limitCount });
+    if (products.length) return products;
+  } catch (error) {
+    console.warn('[SSR] Admin catalog fallback unavailable:', error?.message || error);
+  }
+
+  try {
     return await queryProductsViaFirestoreRest({ categoryIds, limitCount });
   } catch (error) {
     console.warn('[SSR] Firestore REST catalog fallback unavailable:', error?.message || error);
     return [];
   }
+});
+
+export const getPublishedProductStaticParams = cache(async (limitCount = 120) => {
+  const limit = Math.max(1, Math.min(limitCount, 500));
+  let products = await getPublicCatalog(`scope=cards&limit=${limit}`);
+  if (!products.length) {
+    products = await getPublicCatalogFallback({ limitCount: limit });
+  }
+  return products
+    .filter((product) => product?.id && product?.status === 'published')
+    .map((product) => ({
+      slugOrId: `${String(product.title || product.name || 'produit')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .replace(/-{2,}/g, '-') || 'produit'}-${encodeURIComponent(product.id)}`
+    }));
 });

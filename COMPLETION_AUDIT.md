@@ -30,9 +30,13 @@ Creer un clone Next.js SSR/SSG maintenable de `SecondevieAnais` dans `C:\Users\m
 | Playwright desktop/mobile | 20 tests passent | OK |
 | Comparaison objective | `scripts/compare-spa-next.mjs`, `scripts/compare-runtime.mjs` + mesures dans `COMPARISON.md` | OK |
 | Ne pas promettre que SSR supprime les lags | Rapports indiquent que galerie/mobile doivent rester mesures runtime | OK |
+| Roadmap optimisation Next | `NEXTJS_OPTIMIZATION_ROADMAP.md`; N1 cache tags, N2 ISR produit, N3 images, N5 prefetch; benchmark local optimise | OK partiel |
+| Function `publicCatalog` sandbox | Tentative `firebase deploy --only functions:publicCatalog`; bloquee par secret Functions `GMAIL_EMAIL` requis par l'entrypoint global | Bloque sans secret |
 
 ## Residual Risk
 
 - Le workflow admin complet avec publication/modification de meuble n'a pas ete execute avec un compte admin sandbox afin d'eviter toute ecriture non validee.
 - La mesure runtime locale couvre requetes, bytes JS/images/total, LCP/CLS approximatifs et long tasks. Les traces longues type Lighthouse/scroll frame gaps sur vrais appareils restent a faire avant decision de migration definitive.
 - La galerie complete reste client-side par choix de fidelite au projet source.
+- `publicCatalog` n'est pas encore deployee dans `secondevienextjsssr`; le code Next garde les fallbacks Admin/Firestore, mais le cache HTTP Function public demandera de definir les secrets Functions ou de separer l'entrypoint public avant de deployer.
+- Les optimisations N1/N2/N3/N5 sont en place; N4 hydratation fine et N6 monitoring App Hosting restent a poursuivre apres deploiement GitHub/App Hosting.

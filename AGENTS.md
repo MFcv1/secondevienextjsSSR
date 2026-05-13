@@ -12,10 +12,12 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- AGENTS.md : consignes agents et rapports; CLAUDE.md / GEMINI.md : consignes agents
 |-- alertemobile.md : invariant mobile marketplace critique
 |-- package*.json, next.config.mjs, eslint.config.mjs, jsconfig.json, tailwind.config.js, postcss.config.js
+|-- apphosting.yaml, .firebaserc : configuration Firebase App Hosting sandbox
 |-- app : routes Next App Router, SSR produit/categorie, sitemap, robots et shell client
 |-- tests, playwright.config.mjs : tests E2E et validations Playwright
 |-- firebase.json, firestore.rules, firestore.indexes.json, storage.rules
 |-- .env.sandbox.example / .env.production.example : modeles publics; vrais .env locaux ignores par Git
+|-- deploy : dashboard npm de deploiement Firebase/App Hosting sandbox
 |-- src
 |   |-- Router.jsx, app.jsx, main.jsx, index.css
 |   |-- kit/admin : back-office, analytics, commandes, SEO, users, exports CSV, docs/etudes techniques admin
@@ -127,6 +129,17 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 - La galerie/cartes produit conserve un contrat different : les cartes restent en `object-cover` pour remplir toute la carte, avec clipping stable sur `.product-card-media` et preference de variante `card/medium` avant `thumb` dans `src/utils/imageUtils.js`.
 - Validation effectuee : `npm run build` en mode sandbox, controle Chrome/CDP mobile `390x844`, verification que la couche visible detail n'a plus de `srcset`, que le frame est `overflow:hidden` + `clip-path round 12px`, et que les cartes galerie remplissent leur cadre en `object-cover`.
 
+## Rapport agent - 2026-05-13
+
+### Goal 6 - Dashboard de deploiement sandbox Next/App Hosting
+
+- Le script `npm run dashboard` a ete remis en place pour ce clone Next via `deploy/dashboard.mjs`.
+- Le dashboard cible uniquement la sandbox `secondevienextjsssr`; aucune option production n'est exposee.
+- Les options disponibles sont : App Hosting sandbox, Functions, Firestore rules + indexes, Storage rules, et deploiement complet sandbox.
+- `firebase.json` declare le backend App Hosting local-source `apphosting:secondevie-next-sandbox`, et `.firebaserc` fixe l'alias `default` sur `secondevienextjsssr`.
+- Les pre-checks verifient Firebase CLI 14.4.0+, `.env.sandbox`, `firebase.json`, le statut git, et le build Next `.next/` avant de deployer l'app.
+- Validation sans deploiement : `node --check deploy/*.mjs`, parsing JSON de `package.json` / `firebase.json` / `.firebaserc`, `npm run dashboard -- --status`, et `firebase apphosting:backends:list --project secondevienextjsssr`.
+
 ## ðŸ› ï¸ Structure des Fichiers .env
 Nous n'utilisons PLUS de fichier `.env` unique. Tout est pilote par des fichiers suffixes locaux :
 - `.env.sandbox` -> charge par les scripts sandbox (`npm run dev`, `npm run build`, `npm run start`)
@@ -144,6 +157,12 @@ Si l'utilisateur demande "Ajoute cette variable d'environnement", vous DEVEZ l'a
 ## ðŸ“¦ Build & Deploy
 - Ne jamais builder la prod sans `--mode production`.
 - Utiliser `npm run build:prod` pour s'assurer que les clÃ©s de prod sont injectÃ©es dans le build final.
+- Pour le clone Next.js SSR, utiliser `npm run dashboard` pour les deploiements Firebase/App Hosting.
+- Le dashboard est sandbox-only : projet Firebase `secondevienextjsssr`, backend App Hosting `secondevie-next-sandbox`, URL `https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app`.
+- Ne pas ajouter d'option production dans `deploy/dashboard.mjs`, `deploy/config.mjs` ou `deploy/runner.mjs` tant que le clone n'a pas d'environnement prod valide.
+- Options autorisees dans le dashboard : App Hosting sandbox, Functions uniquement, Firestore rules + indexes, Storage rules, Tout deployer en sandbox.
+- Commande de controle sans deploy : `npm run dashboard -- --status`.
+- Les deploys doivent toujours passer `--project secondevienextjsssr`; ne pas dependre d'un projet Firebase actif implicite.
 
 ## âš ï¸ Framer Motion - PiÃ¨ges d'animation UI complexes (Mega Menu)
 **NE JAMAIS UTILISER** la propriÃ©tÃ© de style native `style={{ left: offset }}` sur un conteneur principal `motion.div` lorsqu'il possÃ¨de des enfants qui s'animent avec la prop `layout`.

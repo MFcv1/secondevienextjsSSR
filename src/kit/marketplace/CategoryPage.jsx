@@ -142,6 +142,7 @@ const CategoryPage = ({
     items,
     darkMode,
     onSelectItem,
+    onPrefetchItem,
     onBack,
     onAddToCart,
     wishlistItems = [],
@@ -895,8 +896,9 @@ const CategoryPage = ({
                                                 isBig={false}
                                                 darkMode={darkMode}
                                                 compact={true}
-                                                priority={index < 6}
+                                                priority={index < 2}
                                                 onClick={() => onSelectItem(item.id)}
+                                                onPrefetch={() => onPrefetchItem?.(item.id)}
                                                 onAddToCart={onAddToCart}
                                                 isLiked={wishlistItems.some(w => w.originalId === item.id)}
                                                 onToggleLike={onToggleWishlist}
@@ -914,7 +916,7 @@ const CategoryPage = ({
                                                 onSelectItem={onSelectItem}
                                                 isLiked={wishlistItems.some(w => w.originalId === item.id)}
                                                 onToggleWishlist={onToggleWishlist}
-                                                priority={index < 6}
+                                                priority={index < 2}
                                             />
                                         </motion.div>
                                     )
@@ -939,8 +941,9 @@ const CategoryPage = ({
                                             isBig={false}
                                             darkMode={darkMode}
                                             compact={true}
-                                            priority={index < 6}
+                                            priority={index < 2}
                                             onClick={() => onSelectItem(item.id)}
+                                            onPrefetch={() => onPrefetchItem?.(item.id)}
                                             onAddToCart={onAddToCart}
                                             isLiked={wishlistItems.some(w => w.originalId === item.id)}
                                             onToggleLike={onToggleWishlist}

@@ -8,6 +8,7 @@ import KIT_CONFIG from '../config/constants';
 
 const GalleryView = ({
     items, user, onSelectItem, onShowLogin, darkMode = false,
+    onPrefetchItem,
     isPreparingGallery = false,
     onOpenMenu, onOpenCart, toggleTheme, setHeaderProps,
     persistentGalleryState, saveGalleryState,
@@ -75,6 +76,7 @@ const GalleryView = ({
                 palette={palette}
                 viewMode={viewMode}
                 onSelectItem={handleSelectItem}
+                onPrefetchItem={onPrefetchItem}
                 onShowLogin={onShowLogin}
                 darkMode={darkMode}
                 user={user}

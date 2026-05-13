@@ -43,6 +43,7 @@ import { doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db, appId } from './kit/config/firebase';
 import { bumpPublicCatalogVersion } from './kit/admin/publicCatalogInvalidation';
 import KIT_CONFIG from './kit/config/constants';
+import { getProductUrl } from './utils/slug';
 
 const WishlistView = React.lazy(() => import('./kit/marketplace/WishlistView'));
 const CategoryPage = React.lazy(() => import('./kit/marketplace/CategoryPage'));
@@ -181,6 +182,12 @@ const AppRouter = ({
         setSelectedItemId(id);
         setView('detail');
     };
+
+    const prefetchProductDetail = React.useCallback((id) => {
+        if (!id) return;
+        loadProductDetail().catch(() => {});
+        onEnsureProductDetail?.(id)?.catch?.(() => {});
+    }, [onEnsureProductDetail]);
 
     const closeProductDetail = () => {
         const returnTarget = productReturnTargetRef.current;
@@ -399,7 +406,11 @@ const AppRouter = ({
     const handleToggleStatus = async (item, col) => {
         try {
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', col, item.id), { status: item.status === 'published' ? 'draft' : 'published' });
-            await bumpPublicCatalogVersion('product_status_changed');
+            await bumpPublicCatalogVersion('product_status_changed', {
+                productId: item.id,
+                categoryIds: item.category ? [item.category] : [],
+                paths: [getProductUrl(item)]
+            });
         } catch (e) { console.error(e); }
     };
 
@@ -409,7 +420,7 @@ const AppRouter = ({
         if (!confirm("Supprimer ?")) return;
         try {
             await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', col, id));
-            await bumpPublicCatalogVersion('product_deleted');
+            await bumpPublicCatalogVersion('product_deleted', { productId: id });
         } catch (e) { console.error(e); }
     };
 
@@ -421,7 +432,11 @@ const AppRouter = ({
                 stock: 0,
                 soldAt: serverTimestamp()
             });
-            await bumpPublicCatalogVersion('product_sold');
+            await bumpPublicCatalogVersion('product_sold', {
+                productId: item.id,
+                categoryIds: item.category ? [item.category] : [],
+                paths: [getProductUrl(item)]
+            });
             alert("✓ Mis à jour avec succès");
         } catch (e) {
             console.error(e);
@@ -437,7 +452,11 @@ const AppRouter = ({
                 stock: 1,
                 soldAt: null
             });
-            await bumpPublicCatalogVersion('product_available');
+            await bumpPublicCatalogVersion('product_available', {
+                productId: item.id,
+                categoryIds: item.category ? [item.category] : [],
+                paths: [getProductUrl(item)]
+            });
             alert("✓ Remis en vente avec succès");
         } catch (e) {
             console.error(e);
@@ -504,6 +523,7 @@ const AppRouter = ({
                                 isPreparingGallery={isPreparingGallery}
                                 onShowLogin={() => setShowFullLogin(true)}
                                 onSelectItem={(id) => openProductDetail(id, { view: 'gallery' })}
+                                onPrefetchItem={prefetchProductDetail}
                                 darkMode={darkMode}
                                 onOpenMenu={onOpenMenu}
                                 onOpenCart={onOpenCart}
@@ -586,6 +606,7 @@ const AppRouter = ({
                         items={items}
                         darkMode={darkMode}
                         onSelectItem={(id) => openProductDetail(id, { view: 'category', categoryId: activeCategoryId })}
+                        onPrefetchItem={prefetchProductDetail}
                         onBack={() => { setView('gallery'); window.scrollTo(0, 0); }}
                         onAddToCart={addToCart}
                         wishlistItems={wishlistItems}

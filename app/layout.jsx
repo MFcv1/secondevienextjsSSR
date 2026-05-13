@@ -15,6 +15,9 @@ export const metadata = {
     template: `%s | ${siteName}`
   },
   description,
+  alternates: {
+    canonical: '/'
+  },
   openGraph: {
     type: 'website',
     siteName,

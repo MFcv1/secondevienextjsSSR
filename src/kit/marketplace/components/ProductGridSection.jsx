@@ -16,6 +16,7 @@ const ProductGridSection = ({
     isDetailOverlayOpen,
     likedOriginalIds,
     onSelectItem,
+    onPrefetchItem,
     onAddToCart,
     onToggleWishlist,
     getPriority,
@@ -54,6 +55,7 @@ const ProductGridSection = ({
                             priority={Boolean(getPriority?.(item, index))}
                             suspendImageWarmup={isDetailOverlayOpen}
                             onClick={() => onSelectItem(item.id)}
+                            onPrefetch={() => onPrefetchItem?.(item.id)}
                             onAddToCart={onAddToCart}
                             isLiked={likedOriginalIds.has(item.id)}
                             onToggleLike={onToggleWishlist}

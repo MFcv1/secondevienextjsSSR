@@ -3,7 +3,7 @@ const admin = require('firebase-admin');
 const crypto = require('crypto');
 
 const db = admin.firestore();
-const APP_ID = 'secondevie';
+const APP_ID = process.env.PUBLIC_APP_ID || process.env.APP_ID || 'secondevie';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const PUBLIC_COLLECTIONS = ['furniture'];
 const DEFAULT_CATALOG_VERSION = 'unversioned';
@@ -15,9 +15,14 @@ const ALLOWED_ORIGINS = new Set([
     'http://localhost:5173',
     'http://localhost:4173',
     'http://localhost:3000',
+    'http://localhost:4300',
     'http://127.0.0.1:5173',
     'http://127.0.0.1:4173',
-    'http://127.0.0.1:3000'
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:4300',
+    'https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app',
+    'https://secondevienextjsssr.web.app',
+    'https://secondevienextjsssr.firebaseapp.com'
 ]);
 
 let cachedCatalog = null;

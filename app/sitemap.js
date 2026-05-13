@@ -1,9 +1,12 @@
-import { getPublicCatalog } from '../src/lib/server/products';
+import { getPublicCatalog, getPublicCatalogFallback } from '../src/lib/server/products';
 import { publicEnv } from '../src/lib/server/env';
 import { getProductUrl } from '../src/utils/slug';
 
 export default async function sitemap() {
-  const products = await getPublicCatalog('scope=cards&limit=120');
+  let products = await getPublicCatalog('scope=cards&limit=120');
+  if (!products.length) {
+    products = await getPublicCatalogFallback({ limitCount: 120 });
+  }
   const baseUrl = publicEnv.siteUrl.replace(/\/$/, '');
 
   return [

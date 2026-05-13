@@ -1,7 +1,10 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import ClientApp from '../../ClientApp';
-import { getPublicProduct } from '../../../src/lib/server/products';
+import {
+  getPublicProduct,
+  getPublishedProductStaticParams
+} from '../../../src/lib/server/products';
 import { publicEnv } from '../../../src/lib/server/env';
 import { getProductUrl } from '../../../src/utils/slug';
 import { getProductImageItems, PRODUCT_DETAIL_IMAGE_SIZES } from '../../../src/utils/imageUtils';
@@ -12,6 +15,16 @@ import {
 } from '../../../src/lib/seo/productStructuredData';
 
 export const revalidate = 300;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  try {
+    return await getPublishedProductStaticParams(160);
+  } catch (error) {
+    console.warn('[SSR] Product static params unavailable:', error?.message || error);
+    return [];
+  }
+}
 
 const getProductPageData = async (params) => {
   const resolvedParams = await params;
@@ -21,7 +34,7 @@ const getProductPageData = async (params) => {
 const getPrimaryImage = (product) => {
   const [primary] = getProductImageItems(product);
   return {
-    src: primary?.full || primary?.large || primary?.src || product?.imageUrl || product?.thumbnailUrl || '',
+    src: primary?.large || primary?.medium || primary?.src || product?.imageUrl || product?.thumbnailUrl || '',
     width: primary?.metadata?.width || 1200,
     height: primary?.metadata?.height || 1600,
     blurDataURL: primary?.metadata?.blurDataUrl || '',

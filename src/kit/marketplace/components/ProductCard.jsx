@@ -15,6 +15,7 @@ const ProductCard = ({
     isBig,
     compact,
     onClick,
+    onPrefetch,
     onAddToCart,
     isLiked,
     onToggleLike,
@@ -34,6 +35,17 @@ const ProductCard = ({
             decode: false,
         });
     }, [item, suspendImageWarmup]);
+    const prefetchProductIntent = React.useCallback(() => {
+        if (suspendImageWarmup) return;
+
+        const connection = typeof navigator !== 'undefined'
+            ? (navigator.connection || navigator.mozConnection || navigator.webkitConnection)
+            : null;
+        if (connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || '')) return;
+
+        onPrefetch?.(item.id);
+        warmupDetailImages();
+    }, [item.id, onPrefetch, suspendImageWarmup, warmupDetailImages]);
 
     const warmupDetailImagesAfterOpen = React.useCallback(() => {
         if (typeof window === 'undefined') {
@@ -66,7 +78,7 @@ const ProductCard = ({
 
         hoverWarmupTimerRef.current = window.setTimeout(() => {
             hoverWarmupTimerRef.current = null;
-            warmupDetailImages();
+            prefetchProductIntent();
         }, 180);
     };
 
@@ -124,6 +136,8 @@ const ProductCard = ({
             onPointerEnter={(e) => {
                 if (e.pointerType !== 'touch') scheduleHoverWarmup();
             }}
+            onFocus={() => scheduleHoverWarmup()}
+            onBlur={cancelHoverWarmup}
             onPointerLeave={cancelHoverWarmup}
             onPointerUp={handleTouchPointerUp}
             onPointerCancel={() => { touchIntentRef.current = null; }}
@@ -254,6 +268,7 @@ export default React.memo(ProductCard, (prev, next) => {
            prev.isLiked === next.isLiked &&
            prev.priority === next.priority &&
            prev.suspendImageWarmup === next.suspendImageWarmup &&
+           prev.onPrefetch === next.onPrefetch &&
            prev.item?.images === next.item?.images &&
            prev.item?.imageVariants === next.item?.imageVariants &&
            prev.item?.imageMetadata === next.item?.imageMetadata &&
