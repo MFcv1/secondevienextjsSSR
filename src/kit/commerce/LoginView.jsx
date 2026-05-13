@@ -2,6 +2,18 @@ import React, { useState } from 'react';
 import { Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
+const getGoogleLoginErrorMessage = (error) => {
+  if (error?.code === 'auth/unauthorized-domain') {
+    return "Connexion Google bloquee: domaine App Hosting non autorise dans Firebase Authentication.";
+  }
+  if (error?.code === 'auth/operation-not-allowed') {
+    return "Connexion Google desactivee dans Firebase Authentication.";
+  }
+  if (error?.code === 'auth/popup-blocked') return "Popup Google bloquee par le navigateur.";
+  if (error?.code === 'auth/popup-closed-by-user') return "Connexion Google annulee.";
+  return `Erreur Google : ${error?.message || 'connexion impossible'}`;
+};
+
 function LoginView({ onSuccess }) {
   const { loginWithGoogle, loginWithEmail } = useAuth();
   const [email, setEmail] = useState("");
@@ -23,7 +35,7 @@ function LoginView({ onSuccess }) {
         <button
           onClick={async () => {
             try { await loginWithGoogle(); onSuccess(); }
-            catch (e) { setErrorMsg("Erreur Google : " + e.message); }
+            catch (e) { setErrorMsg(getGoogleLoginErrorMessage(e)); }
           }}
           className="w-full py-4 bg-white text-stone-900 border-2 border-stone-200 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg hover:bg-stone-50 hover:border-stone-300 transition-all flex items-center justify-center gap-3"
         >

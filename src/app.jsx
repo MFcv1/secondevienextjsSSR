@@ -75,6 +75,22 @@ const writeJsonStorage = (storage, key, value) => {
   }
 };
 
+const getGoogleLoginErrorMessage = (error) => {
+  if (error?.code === 'auth/unauthorized-domain') {
+    return "Connexion Google bloquee: le domaine App Hosting n'est pas autorise dans Firebase Authentication.";
+  }
+  if (error?.code === 'auth/operation-not-allowed') {
+    return "Connexion Google desactivee dans Firebase Authentication.";
+  }
+  if (error?.code === 'auth/popup-blocked') {
+    return "Popup Google bloquee par le navigateur.";
+  }
+  if (error?.code === 'auth/popup-closed-by-user') {
+    return "Connexion Google annulee.";
+  }
+  return `Erreur Google : ${error?.message || 'connexion impossible'}`;
+};
+
 const mergeItemsById = (currentItems, incomingItems) => {
   const byId = new Map();
   currentItems.forEach((item) => {
@@ -913,7 +929,10 @@ const AppContent = () => {
     try {
       await loginWithGoogle();
       setShowFullLogin(false);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      toast(getGoogleLoginErrorMessage(e), { type: 'error' });
+    }
   };
 
   // --- CART ACTIONS ---
