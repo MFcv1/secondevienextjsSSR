@@ -1,0 +1,227 @@
+# Next.js optimization roadmap - Seconde Vie SSR
+
+Date: 2026-05-13
+
+## Pourquoi ce document existe
+
+Le clone Next.js SSR fonctionne et le benchmark deploye montre deja des gains sur le poids public et le HTML produit. Mais le projet n'est pas encore une architecture Next.js pleinement optimisee. Il reste une partie importante de logique heritee SPA: galerie client, hydration large, chargements image Firebase, panier/wishlist/auth et surfaces admin.
+
+Ce document cadre les prochaines optimisations sans casser le comportement valide.
+
+## Etat actuel
+
+Ce qui est deja en place:
+
+- Next App Router pour les routes publiques.
+- SSR produit avec HTML initial, metadata et JSON-LD.
+- `firebase-admin` reserve au code serveur.
+- App Hosting sandbox sur `secondevienextjssr`.
+- Base Firestore/Storage importee depuis la sandbox source.
+- Benchmark deploye reproductible via `npm run perf:architecture`.
+
+Ce qui n'est pas encore pleinement optimise Next:
+
+- Les pages produit ne sont pas encore materialisees comme pages cachees/ISR avec revalidation ciblee.
+- La galerie reste une experience fortement client-side.
+- Les images Firebase restent le principal poste reseau sur premier affichage.
+- Les composants panier, wishlist, admin, checkout et detail gardent beaucoup d'hydratation.
+- Les caches serveur Next doivent etre formalises route par route.
+
+## Probleme cible: premier affichage d'un meuble jamais consulte
+
+Quand un meuble n'a jamais ete consulte, le premier affichage peut etre plus lent car plusieurs caches sont froids:
+
+- cache navigateur vide;
+- cache CDN/Storage froid pour l'image;
+- lecture Firestore produit;
+- eventuel cold start App Hosting;
+- decode image dans Chrome;
+- hydration React des zones interactives.
+
+Next.js peut ameliorer ce cas, mais seulement si on utilise ses leviers serveur et cache. Le simple portage SPA vers Next ne suffit pas.
+
+## Roadmap
+
+### N0 - Baseline et gates avant toute optimisation
+
+Objectif: savoir si chaque changement ameliore vraiment la route.
+
+Actions:
+
+- Garder `npm run perf:architecture` comme benchmark de reference Hosting vs App Hosting.
+- Ajouter si besoin un mode "cold product" qui ouvre un produit peu consulte avec cache navigateur neuf.
+- Continuer `npm run seo:check`, `npm run mobile:contract`, `npm run test:e2e`.
+- Capturer LCP, CLS, long tasks, request count, JS KB, image KB et scroll frame gaps.
+
+Validation:
+
+```powershell
+npm run lint
+npm run build
+npm run seo:check
+npm run mobile:contract
+npm run test:e2e
+npm run perf:architecture
+```
+
+Risque:
+
+- Ne pas conclure sur une seule valeur LCP. Comparer les tendances route par route.
+
+### N1 - Cache serveur catalogue/produit
+
+Objectif: eviter que chaque visite publique relise Firestore inutilement.
+
+Actions:
+
+- Centraliser les lectures serveur produit/categorie dans un module server-only.
+- Utiliser une strategie de cache Next par produit et par catalogue.
+- Dedupliquer les lectures dans une meme requete avec `cache()` si utile.
+- Ajouter une cle de version type `catalogVersion` pour invalider proprement apres action admin.
+- Ne jamais mettre de secret dans `NEXT_PUBLIC_*`.
+
+Validation:
+
+- Une page produit doit fonctionner sans exposer `firebase-admin` au navigateur.
+- Apres modification admin test, la page SSR doit afficher les nouvelles donnees apres revalidation.
+
+Risque:
+
+- Cache stale si l'invalidation admin est oubliee.
+
+### N2 - Pages produit prerender/ISR
+
+Objectif: reduire le cout du premier visiteur sur les pages produit publiques.
+
+Actions:
+
+- Evaluer `generateStaticParams` pour les produits publies.
+- Utiliser une revalidation raisonnable ou une revalidation ciblee apres publication/modification.
+- Garder les donnees client privees hors du HTML serveur.
+- Ne pas prerender les brouillons.
+
+Validation:
+
+- Le HTML initial contient bien le produit, son image principale, ses metadata et son JSON-LD.
+- Un produit publie apparait apres action admin test.
+- Un brouillon ne sort pas dans sitemap/SSR public.
+
+Risque:
+
+- Prerender trop large si le catalogue grossit fortement. Pour 35 a quelques centaines de meubles, c'est raisonnable.
+
+### N3 - Images produit premiere visite
+
+Objectif: ameliorer le cas "image froide" qui reste visible meme avec SSR.
+
+Actions:
+
+- Servir la meilleure variante pour chaque contexte: card, medium, large, full.
+- Preload uniquement l'image principale produit au-dessus de la ligne de flottaison.
+- Ajouter placeholder stable: ratio, dominant color, blurDataUrl.
+- Verifier les headers cache Storage et les URLs de variantes.
+- Evaluer un loader/proxy image Next seulement si le gain justifie la complexite.
+
+Validation:
+
+- Le premier produit direct ne charge pas full-size si une variante suffit.
+- Pas de CLS image.
+- Pas de flash mobile sur le detail produit.
+
+Risque:
+
+- Trop preloader peut empirer la galerie. Preload doit rester cible.
+
+### N4 - Moins d'hydratation client
+
+Objectif: garder le HTML serveur utile sans forcer tout React a s'hydrater trop tot.
+
+Actions:
+
+- Garder le contenu SEO produit en Server Component quand possible.
+- Isoler panier, wishlist, auth, lightbox et admin en Client Components.
+- Charger checkout, Stripe, cropper, charts et admin uniquement sur route/interaction.
+- Eviter de passer de gros objets du serveur vers des composants client si seules quelques props sont utiles.
+
+Validation:
+
+- JS KB public baisse ou reste stable.
+- La page produit reste interactive apres hydration.
+- Les routes admin/checkout ne polluent pas le parcours public initial.
+
+Risque:
+
+- Mauvais decoupage server/client peut creer de la duplication ou des props serialisees trop lourdes.
+
+### N5 - Prefetch intelligent depuis la galerie
+
+Objectif: rendre le clic produit plus rapide sans tout charger au depart.
+
+Actions:
+
+- Prefetch route produit sur hover/focus desktop.
+- Sur mobile, prefetch avec prudence: seulement cartes visibles/probables, jamais toute la galerie.
+- Precharger l'image detail principale sur intention claire.
+- Annuler ou limiter les preloads pendant scroll rapide.
+
+Validation:
+
+- Le clic produit depuis galerie ameliore le temps percu.
+- Le premier scroll galerie ne se charge pas de requetes inutiles.
+
+Risque:
+
+- Un prefetch trop agressif augmente les couts Storage et peut degrader les petits reseaux.
+
+### N6 - Observabilite App Hosting
+
+Objectif: savoir si App Hosting scale correctement en conditions reelles.
+
+Actions:
+
+- Surveiller cold starts, latence p95, erreurs 5xx, cache hit routes.
+- Comparer Home, categorie, produit direct et produit depuis galerie.
+- Documenter couts App Hosting vs Hosting.
+- Ajouter RUM plus tard pour vrais LCP/INP/CLS utilisateur.
+
+Validation:
+
+- Dashboard App Hosting avec routes cles.
+- Rapport avant/apres apres chaque optimisation majeure.
+
+Risque:
+
+- Les benchmarks locaux ne remplacent pas la mesure terrain.
+
+## Ordre recommande
+
+1. N0 baseline et gates.
+2. N1 cache serveur produit/catalogue.
+3. N3 images premiere visite.
+4. N2 ISR/prerender une fois l'invalidation admin claire.
+5. N4 hydration/bundle.
+6. N5 prefetch intelligent.
+7. N6 observabilite continue.
+
+## Garde-fous
+
+- Ne jamais modifier la production Firebase sans validation explicite.
+- Ne jamais exposer `firebase-admin` ou une cle serveur au navigateur.
+- Ne jamais mettre une variable privee en `NEXT_PUBLIC_*`.
+- Ne pas refactorer la galerie/detail mobile sans relire `alertemobile.md`.
+- Conserver l'invariant:
+
+```jsx
+const shouldUseMobileGalleryScroll = view === 'gallery' || isGalleryDetailOverlay;
+```
+
+- Ne pas promettre que SSR regle tous les lags. Mesurer.
+
+## Documentation liee
+
+- `ARCHITECTURE_BENCHMARK_DECISION.md`
+- `COMPARISON.md`
+- `MIGRATION_REPORT.md`
+- `DATABASE_MIGRATION_PLAN.md`
+- `COMPLETION_AUDIT.md`
+- `alertemobile.md`

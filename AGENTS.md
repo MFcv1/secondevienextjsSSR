@@ -29,10 +29,26 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |   `-- src : analytics, auth, commerce, email, maintenance, public, seo, triggers
 |-- public : favicons, manifest, robots, images, video
 |-- scripts : env bridge, SSR/mobile checks, perf/architecture compare, backfills/audits Storage/images et tooling safe
-|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md
+|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md
 |-- imagehero, pageUI : references visuelles et notes UI
 `-- .next, dist, node_modules, logs, .firebase : generes, hors carte
 ```
+
+## NEXTJS OPTIMIZATION ROADMAP
+
+Avant toute passe d optimisation specifique au clone Next.js SSR, lire `NEXTJS_OPTIMIZATION_ROADMAP.md`.
+
+Cette roadmap cadre les leviers Next autorises et l ordre recommande:
+
+- baseline et gates avant optimisation;
+- cache serveur catalogue/produit;
+- pages produit prerender/ISR;
+- images produit premiere visite;
+- reduction de l hydratation client;
+- prefetch intelligent depuis la galerie;
+- observabilite App Hosting.
+
+Ne pas optimiser au hasard: chaque changement doit etre mesure avec les scripts existants, notamment `npm run perf:architecture`, et documente dans les rapports si le resultat change la decision technique.
 
 ## ALERTE MOBILE - A LIRE AVANT TOUTE MODIF MARKETPLACE MOBILE
 

@@ -30,9 +30,10 @@ const chapters = Object.freeze([
   { id: 'detail-flow', no: '09', title: 'Produit', kicker: 'Effets type Insta' },
   { id: 'guardrails', no: '10', title: 'Garde-fous', kicker: 'Ne pas casser v21.7' },
   { id: 'target', no: '11', title: 'Architecture cible', kicker: 'Compartiments de charge' },
-  { id: 'migration', no: '12', title: 'Plan de migration', kicker: 'Sans tout jeter' },
-  { id: 'checklist', no: '13', title: 'Checklist projet', kicker: 'Gate avant livraison' },
-  { id: 'sources', no: '14', title: 'Sources', kicker: 'Docs officielles' },
+  { id: 'next-ssr', no: '12', title: 'Next SSR', kicker: 'Optimisation du clone' },
+  { id: 'migration', no: '13', title: 'Plan de migration', kicker: 'Sans tout jeter' },
+  { id: 'checklist', no: '14', title: 'Checklist projet', kicker: 'Gate avant livraison' },
+  { id: 'sources', no: '15', title: 'Sources', kicker: 'Docs officielles' },
 ]);
 
 const frameworkRows = Object.freeze([
@@ -581,6 +582,23 @@ const architectureRows = Object.freeze([
   ['Interactions', 'wishlist, panier, devis, login', 'Iles ou chunks conditionnels'],
   ['Admin', 'CRUD, analytics, exports, images', 'Bundle separe, jamais dans parcours public'],
   ['Observabilite', 'LCP, CLS, INP, decode, cache hit, scroll drift', 'RUM + Lighthouse + vrai mobile'],
+]);
+
+const nextSsrOptimizationRows = Object.freeze([
+  ['N0 Baseline', 'Conserver npm run perf:architecture comme comparaison Hosting vs App Hosting, puis ajouter un scenario produit froid si necessaire.', 'lint, build, seo:check, mobile:contract, test:e2e, perf:architecture'],
+  ['N1 Cache serveur', 'Centraliser les lectures produit/categorie server-only, dedupliquer par requete, ajouter cache par produit et version catalogue.', 'firebase-admin server-only, cache(), catalogVersion, invalidation admin'],
+  ['N2 Pages produit ISR', 'Preparer generateStaticParams/revalidate pour les meubles publies afin que le premier visiteur ne paie pas toujours le rendu complet.', 'HTML produit, metadata, JSON-LD, brouillons exclus'],
+  ['N3 Images premiere visite', 'Servir la bonne variante, preloader seulement l image principale, utiliser ratio/dominantColor/blurDataUrl et verifier le cache Storage.', 'pas de full-size inutile, pas de CLS, pas de flash mobile'],
+  ['N4 Hydratation reduite', 'Garder le SEO produit en serveur et isoler wishlist, panier, auth, lightbox, checkout, cropper, charts et admin en client/dynamic.', 'JS public stable ou en baisse, routes admin hors parcours public'],
+  ['N5 Prefetch intelligent', 'Depuis galerie: prefetch route/image sur hover/focus desktop, prudence mobile, annulation ou limitation pendant scroll rapide.', 'clic produit plus rapide sans explosion des requetes Storage'],
+  ['N6 Observabilite', 'Suivre cold starts, latence p95, erreurs 5xx, cache hit et couts App Hosting avant decision production.', 'routes cles App Hosting + rapport avant/apres'],
+]);
+
+const nextSsrDecisionRows = Object.freeze([
+  ['Ce qui est deja gagne', 'Le benchmark deploye montre moins de KB, moins de requetes et un vrai bloc produit SSR sur la page produit.', 'ARCHITECTURE_BENCHMARK_DECISION.md'],
+  ['Ce qui reste SPA-like', 'La galerie, le detail interactif, le panier, la wishlist, le checkout et l admin restent largement client-side.', 'optimisation Next encore a faire'],
+  ['Point dur meuble froid', 'Le premier produit jamais consulte depend encore de caches froids: Storage/CDN, Firestore, App Hosting, decode image et hydration.', 'N1 + N2 + N3 prioritaires'],
+  ['Decision prudente', 'Continuer le clone Next comme cible future, mais ne pas basculer prod avant admin/commerce/mobile/couts.', 'validation sandbox uniquement'],
 ]);
 
 const imageProtocol = Object.freeze([
@@ -1138,8 +1156,56 @@ export default function PerformanceArchitectureStudy({ onBack, embedded = false,
           </div>
         </section>
 
+        <section className="sv-doc-section" id="next-ssr">
+          <SectionHead no="12" eyebrow="Optimisation Next SSR" title="Le clone Next est un socle, pas encore le plafond.">
+            Le benchmark deploye montre un gain reel, mais la prochaine etape consiste a utiliser les leviers propres a
+            Next: cache serveur, pages produit pre-rendues, revalidation admin, images ciblees et hydratation plus fine.
+          </SectionHead>
+          <div className="sv-doc-result-panel">
+            <div className="sv-doc-map-intro">
+              <Gauge aria-hidden="true" />
+              <div>
+                <span>Roadmap documentee</span>
+                <p>
+                  Le fichier <code>NEXTJS_OPTIMIZATION_ROADMAP.md</code> est la reference agent pour cette passe. Il
+                  complete <code>ARCHITECTURE_BENCHMARK_DECISION.md</code> avec un plan d execution centre sur le cas
+                  produit froid et le scale App Hosting.
+                </p>
+              </div>
+            </div>
+            <ProtocolTable rows={nextSsrDecisionRows} />
+            <div className="sv-doc-map-intro sv-doc-map-intro--compact">
+              <Layers3 aria-hidden="true" />
+              <div>
+                <span>Ordre d execution</span>
+                <p>
+                  Priorite: mesurer, cacher cote serveur, stabiliser les images, puis seulement ensuite prerender/ISR et
+                  reduire l hydratation. Le prefetch vient apres pour eviter d augmenter les requetes Storage.
+                </p>
+              </div>
+            </div>
+            <ProtocolTable rows={nextSsrOptimizationRows} />
+            <div className="sv-doc-checklist">
+              <article className="sv-doc-check">
+                <ShieldCheck aria-hidden="true" />
+                <div>
+                  <strong>Garde-fou production</strong>
+                  <p>Ne pas ecrire ni migrer Firebase production pendant cette roadmap. Les validations restent sandbox/App Hosting test.</p>
+                </div>
+              </article>
+              <article className="sv-doc-check">
+                <FileCheck aria-hidden="true" />
+                <div>
+                  <strong>Gate mobile</strong>
+                  <p>Toute optimisation touchant galerie, detail, image mobile ou scroll doit relire alertemobile.md et conserver l invariant Router.</p>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+
         <section className="sv-doc-section" id="migration">
-          <SectionHead no="12" eyebrow="Migration" title="Ne migrez pas pour corriger un symptome deja compris.">
+          <SectionHead no="13" eyebrow="Migration" title="Ne migrez pas pour corriger un symptome deja compris.">
             Le bon mouvement est progressif: extraire les domaines, mesurer, puis prototyper un prochain catalogue en
             Next.js ou Astro. Une migration brute de Seconde Vie augmenterait le risque mobile.
           </SectionHead>
@@ -1147,7 +1213,7 @@ export default function PerformanceArchitectureStudy({ onBack, embedded = false,
         </section>
 
         <section className="sv-doc-section" id="checklist">
-          <SectionHead no="13" eyebrow="Checklist projet" title="Chaque prochain site image-heavy doit passer ces gates.">
+          <SectionHead no="14" eyebrow="Checklist projet" title="Chaque prochain site image-heavy doit passer ces gates.">
             Ces controles doivent etre executes en build preview et sur appareil reel avant de considerer la fluidite comme
             terminee.
           </SectionHead>
@@ -1165,7 +1231,7 @@ export default function PerformanceArchitectureStudy({ onBack, embedded = false,
         </section>
 
         <section className="sv-doc-section" id="sources">
-          <SectionHead no="14" eyebrow="Sources" title="La recommandation est ancree dans les docs officielles consultees.">
+          <SectionHead no="15" eyebrow="Sources" title="La recommandation est ancree dans les docs officielles consultees.">
             Les liens ci-dessous sont les sources primaires utilisees pour comparer les frameworks et definir les protocoles
             de charge. Date de consultation: 12 mai 2026.
           </SectionHead>
