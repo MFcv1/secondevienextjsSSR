@@ -6,8 +6,68 @@ runConfig:
   memoryMiB: 512
 
 env:
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: "AIzaSyDCk2iAaqauhtTEJpNiQvctMQex3s41xNI"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: "secondevienextjsssr.firebaseapp.com"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: "secondevienextjsssr"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: "secondevienextjsssr.firebasestorage.app"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "231220287936"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:231220287936:web:fb5eebec3b0fa2281ed025"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: "G-NTQEFS5RQ8"
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: NEXT_PUBLIC_APP_LOGICAL_NAME
     value: secondevie
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_BRAND_NAME
+    value: "Seconde Vie"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_BRAND_TAGLINE
+    value: "par Anais"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_SITE_DESCRIPTION
+    value: "Mobilier ancien restaure et pieces uniques autour de Marseille. Livraison possible en France selon les pieces."
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_SITE_URL
+    value: "https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_OG_IMAGE
+    value: "/images/gallery-hero-1.webp"
     availability:
       - BUILD
       - RUNTIME
