@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { basename, resolve } from 'node:path';
 
 const require = createRequire(import.meta.url);
 
@@ -36,10 +36,38 @@ const parseEnv = (content) => {
 
 const loaded = existsSync(envPath) ? parseEnv(readFileSync(envPath, 'utf8')) : {};
 const env = { ...process.env, ...loaded };
+const selectedEnvFile = basename(envPath);
+const siblingEnvFile = selectedEnvFile === '.env.sandbox'
+  ? '.env.production'
+  : selectedEnvFile === '.env.production'
+    ? '.env.sandbox'
+    : null;
+const siblingEnvPath = siblingEnvFile ? resolve(process.cwd(), siblingEnvFile) : null;
+const sibling = siblingEnvPath && existsSync(siblingEnvPath)
+  ? parseEnv(readFileSync(siblingEnvPath, 'utf8'))
+  : {};
 
 for (const [key, value] of Object.entries(loaded)) {
   if (key.startsWith('VITE_')) {
     env[`NEXT_PUBLIC_${key.slice('VITE_'.length)}`] = value;
+  }
+}
+
+const hasSelectedEquivalent = (key) => (
+  key in loaded ||
+  (key.startsWith('NEXT_PUBLIC_') && `VITE_${key.slice('NEXT_PUBLIC_'.length)}` in loaded) ||
+  (key.startsWith('VITE_') && `NEXT_PUBLIC_${key.slice('VITE_'.length)}` in loaded)
+);
+
+for (const key of Object.keys(sibling)) {
+  if (!hasSelectedEquivalent(key)) {
+    env[key] = '';
+  }
+  if (key.startsWith('VITE_')) {
+    const nextKey = `NEXT_PUBLIC_${key.slice('VITE_'.length)}`;
+    if (!hasSelectedEquivalent(key)) {
+      env[nextKey] = '';
+    }
   }
 }
 

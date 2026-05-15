@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useEffect } from 'react';
 
 const LegacyApp = dynamic(() => import('../src/app.jsx'), {
   ssr: false,
@@ -8,5 +9,9 @@ const LegacyApp = dynamic(() => import('../src/app.jsx'), {
 });
 
 export default function ClientApp() {
+  useEffect(() => {
+    document.documentElement.dataset.svClientHydrated = 'true';
+  }, []);
+
   return <LegacyApp />;
 }

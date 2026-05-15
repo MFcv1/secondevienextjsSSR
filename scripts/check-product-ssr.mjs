@@ -1,15 +1,44 @@
 const baseUrl = process.env.NEXT_SSR_CHECK_BASE_URL || 'http://127.0.0.1:3000';
 
-const required = [
-  ['product article', /data-ssr-product/],
-  ['h1', /<h1[^>]*>[^<]+<\/h1>/i],
+const commonRequired = [
+  ['h1', /<h1[^>]*>[\s\S]*?<\/h1>/i],
+  ['canonical', /rel="canonical"/i],
   ['json ld', /application\/ld\+json/],
   ['og title', /property="og:title"|name="og:title"/],
-  ['description meta', /name="description"/],
-  ['image', /<img[^>]+(?:src|srcset)=/i]
+  ['twitter card', /name="twitter:card"/],
+  ['description meta', /name="description"/]
 ];
 
-const getFirstProductPath = async () => {
+const routeChecks = [
+  {
+    label: 'home',
+    path: '/',
+    required: [
+      ['home section', /data-ssr-home/],
+      ['image', /<img[^>]+(?:src|srcset)=/i],
+      ['no google fonts css', (html) => !/fonts\.googleapis\.com/i.test(html)]
+    ]
+  },
+  {
+    label: 'about',
+    path: '/a-propos',
+    required: [
+      ['about article', /data-ssr-about/],
+      ['image', /<img[^>]+(?:src|srcset)=/i],
+      ['no client app fallback marker hidden before hydration', (html) => !/data-sv-client-hydrated/i.test(html)]
+    ]
+  }
+];
+
+const slugify = (value) => String(value || 'produit')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '')
+  .replace(/-{2,}/g, '-') || 'produit';
+
+const getFirstPublishedProduct = async () => {
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
   const appId = process.env.NEXT_PUBLIC_APP_LOGICAL_NAME || 'secondevie';
@@ -73,19 +102,51 @@ const getFirstProductPath = async () => {
   }
 
   if (!product?.id) throw new Error('No published product returned by public catalog or direct Firestore fallback.');
-  const slugBase = String(product.title || product.name || 'produit')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-') || 'produit';
-
-  return `/produit/${slugBase}-${encodeURIComponent(product.id)}`;
+  return product;
 };
 
-const main = async () => {
-  const path = process.argv[2] || await getFirstProductPath();
+const getProductPath = (product) => `/produit/${slugify(product.title || product.name)}-${encodeURIComponent(product.id)}`;
+
+const CATEGORY_ROUTE_ALIASES = {
+  mobilier: 'meubles',
+  furniture: 'meubles',
+  assise: 'assises',
+  decoration: 'decorations',
+  'décoration': 'decorations'
+};
+
+const INDEXABLE_CATEGORY_IDS = new Set([
+  'meubles',
+  'assises',
+  'eclairage',
+  'decorations',
+  'armoires',
+  'buffets',
+  'commodes',
+  'tables',
+  'chaises',
+  'fauteuils',
+  'bancs',
+  'miroirs',
+  'deco'
+]);
+
+const getCategoryPath = (product) => {
+  const rawCategory = typeof product?.category === 'string' && product.category.trim()
+    ? product.category.trim().toLowerCase()
+    : 'buffets';
+  const category = CATEGORY_ROUTE_ALIASES[rawCategory] || rawCategory;
+  if (!INDEXABLE_CATEGORY_IDS.has(category)) return '/categorie/buffets';
+  return `/categorie/${encodeURIComponent(category)}`;
+};
+
+const matchesRequirement = (html, requirement) => {
+  const [, pattern] = requirement;
+  if (typeof pattern === 'function') return pattern(html);
+  return pattern.test(html);
+};
+
+const assertRoute = async ({ label, path, required = [] }) => {
   const url = new URL(path, baseUrl);
   const response = await fetch(url);
   const html = await response.text();
@@ -94,15 +155,48 @@ const main = async () => {
     throw new Error(`${url} returned ${response.status}`);
   }
 
-  const missing = required
-    .filter(([, pattern]) => !pattern.test(html))
-    .map(([label]) => label);
+  const missing = [...commonRequired, ...required]
+    .filter((requirement) => !matchesRequirement(html, requirement))
+    .map(([requirementLabel]) => requirementLabel);
 
   if (missing.length) {
-    throw new Error(`Missing SSR evidence for ${url}: ${missing.join(', ')}`);
+    throw new Error(`Missing SSR evidence for ${label} ${url}: ${missing.join(', ')}`);
   }
 
-  console.log(`SSR product check passed: ${url}`);
+  return url;
+};
+
+const main = async () => {
+  const product = await getFirstPublishedProduct();
+  const requestedProductPath = process.argv[2];
+  const checks = [
+    ...routeChecks,
+    {
+      label: 'product',
+      path: requestedProductPath || getProductPath(product),
+      required: [
+        ['product article', /data-ssr-product/],
+        ['product json ld', /"@type":"Product"|"@type":\s*"Product"/],
+        ['image', /<img[^>]+(?:src|srcset)=/i]
+      ]
+    },
+    {
+      label: 'category',
+      path: getCategoryPath(product),
+      required: [
+        ['category section', /data-ssr-category/],
+        ['collection json ld', /"@type":"CollectionPage"|"@type":\s*"CollectionPage"/],
+        ['product links', /href="\/produit\//]
+      ]
+    }
+  ];
+
+  const urls = [];
+  for (const check of checks) {
+    urls.push(await assertRoute(check));
+  }
+
+  console.log(`SSR public checks passed:\n${urls.map((url) => `- ${url}`).join('\n')}`);
 };
 
 main().catch((error) => {

@@ -34,6 +34,7 @@ const AdminIPManager = React.lazy(() => import('./kit/admin/AdminIPManager'));
 const AdminPaymentSettings = React.lazy(() => import('./kit/admin/AdminPaymentSettings'));
 const AdminIPTracker = React.lazy(() => import('./kit/admin/AdminIPTracker'));
 const AdminGlobalInventory = React.lazy(() => import('./kit/admin/GlobalInventoryView'));
+const AdminMaintenance = React.lazy(() => import('./kit/admin/AdminMaintenance'));
 
 const MyOrdersView = React.lazy(() => import('./kit/commerce/MyOrdersView'));
 const OrderSuccessModal = React.lazy(() => import('./kit/commerce/OrderSuccessModal'));
@@ -126,7 +127,7 @@ const AppRouter = ({
         dashboard: Activity, analytics: BarChart3, studio: Palette,
         homepage: Palette, orders: Package, users: Users,
         ip_manager: Globe, seo: Share2, newsletter: Mail, payment_settings: CreditCard,
-        inventory: Grid, performance_study: Gauge
+        inventory: Grid, maintenance: RefreshCw, performance_study: Gauge
     };
     // Collection tabs get Layout / LayoutPanelTop in order
     const COLLECTION_ICONS = [Layout, LayoutPanelTop];
@@ -825,6 +826,8 @@ const AppRouter = ({
                             <AdminPaymentSettings darkMode={darkMode} />
                         ) : adminCollection === 'inventory' ? (
                             <AdminGlobalInventory items={items} darkMode={darkMode} onEdit={(item) => { setAdminCollection('furniture'); setEditingItem(item); window.scrollTo(0, 0); }} />
+                        ) : adminCollection === 'maintenance' ? (
+                            <AdminMaintenance darkMode={darkMode} />
                         ) : (
                             <>
                                 <AdminForm

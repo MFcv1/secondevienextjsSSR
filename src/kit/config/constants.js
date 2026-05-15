@@ -114,6 +114,7 @@ export const KIT_CONFIG = {
     { id: 'seo',              label: 'SEO'         },
     { id: 'newsletter',       label: 'Infos'       },
     { id: 'payment_settings', label: 'Paiement'    },
+    { id: 'maintenance',      label: 'Maintenance' },
     { id: 'performance_study', label: 'Etude Perf' },
   ],
 

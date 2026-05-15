@@ -8,11 +8,11 @@ const config = {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Plus Jakarta Sans', 'sans-serif'],
-                serif: ['Cormorant Garamond', 'serif'],
-                headline: ['Newsreader', 'serif'],
-                body: ['Manrope', 'sans-serif'],
-                label: ['Manrope', 'sans-serif']
+                sans: ['var(--font-plus-jakarta)', 'sans-serif'],
+                serif: ['var(--font-cormorant)', 'serif'],
+                headline: ['var(--font-newsreader)', 'serif'],
+                body: ['var(--font-manrope)', 'sans-serif'],
+                label: ['var(--font-manrope)', 'sans-serif']
             },
             colors: {
                 stone: {

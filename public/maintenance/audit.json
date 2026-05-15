@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-15T14:51:36.259Z",
+  "status": "vulnerability_detected",
+  "statusLabel": "vulnerabilite detectee",
+  "versions": {
+    "next": {
+      "declared": "^15.3.0",
+      "installed": "15.5.18"
+    },
+    "react": {
+      "declared": "^19.1.0",
+      "installed": "19.2.6"
+    },
+    "reactDom": {
+      "declared": "^19.1.0",
+      "installed": "19.2.6"
+    },
+    "firebaseClient": {
+      "declared": "^11.1.0",
+      "installed": "11.10.0"
+    },
+    "firebaseAdminRoot": {
+      "declared": "^13.10.0",
+      "installed": "13.10.0"
+    },
+    "firebaseAdminFunctions": {
+      "declared": "^13.10.0",
+      "installed": "13.10.0"
+    },
+    "firebaseAdminPublicFunctions": {
+      "declared": "^13.10.0",
+      "installed": "13.10.0"
+    },
+    "firebaseFunctions": {
+      "declared": "^7.2.5",
+      "installed": "7.2.5"
+    },
+    "firebaseFunctionsPublic": {
+      "declared": "^7.2.5",
+      "installed": "7.2.5"
+    }
+  },
+  "audit": {
+    "command": "npm audit --omit=dev",
+    "exitCode": 1,
+    "ok": false,
+    "counts": {
+      "info": 0,
+      "low": 8,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 8
+    },
+    "total": 8,
+    "vulnerabilities": [
+      {
+        "name": "@google-cloud/firestore",
+        "severity": "low",
+        "range": "7.5.0-pre.0 || 7.6.0 - 7.11.6",
+        "fixAvailable": {
+          "name": "firebase-admin",
+          "version": "10.3.0",
+          "isSemVerMajor": true
+        },
+        "via": [
+          "google-gax"
+        ],
+        "effects": [
+          "firebase-admin"
+        ]
+      },
+      {
+        "name": "@google-cloud/storage",
+        "severity": "low",
+        "range": ">=5.19.0",
+        "fixAvailable": {
+          "name": "firebase-admin",
+          "version": "10.3.0",
+          "isSemVerMajor": true
+        },
+        "via": [
+          "retry-request",
+          "teeny-request"
+        ],
+        "effects": [
+          "firebase-admin"
+        ]
+      },
+      {
+        "name": "@tootallnate/once",
+        "severity": "low",
+        "range": "<3.0.1",
+        "fixAvailable": {
+          "name": "firebase-admin",
+          "version": "10.3.0",
+          "isSemVerMajor": true
+        },
+        "via": [
+          "@tootallnate/once: @tootallnate/once vulnerable to Incorrect Control Flow Scoping"
+        ],
+        "effects": [
+          "http-proxy-agent"
+        ]
+      },
+      {
+        "name": "firebase-admin",
+        "severity": "low",
+        "range": ">=11.0.0",
+        "fixAvailable": {
+          "name": "firebase-admin",
+          "version": "10.3.0",
+          "isSemVerMajor": true
+        },
+        "via": [
+          "@google-cloud/firestore",
+          "@google-cloud/storage"
+        ],
+        "effects": []
+      },
+      {
+        "name": "google-gax",
+        "severity": "low",
+        "range": "4.0.5-experimental - 4.6.1",
+        "fixAvailable": {
+          "name": "firebase-admin",
+          "version": "10.3.0",
+          "isSemVerMajor": true
+        },
+        "via": [
+          "retry-request"
+        ],
+        "effects": [
+          "@google-cloud/firestore"
+        ]
+      },
+      {
+        "name": "http-proxy-agent",
+        "severity": "low",
+        "range": "4.0.1 - 5.0.0",
+        "fixAvailable": {
+          "name": "firebase-admin",
+          "version": "10.3.0",
+          "isSemVerMajor": true
+        },
+        "via": [
+          "@tootallnate/once"
+        ],
+        "effects": [
+          "teeny-request"
+        ]
+      },
+      {
+        "name": "retry-request",
+        "severity": "low",
+        "range": "7.0.0 - 7.0.2",
+        "fixAvailable": {
+          "name": "firebase-admin",
+          "version": "10.3.0",
+          "isSemVerMajor": true
+        },
+        "via": [
+          "teeny-request"
+        ],
+        "effects": [
+          "@google-cloud/storage",
+          "google-gax"
+        ]
+      },
+      {
+        "name": "teeny-request",
+        "severity": "low",
+        "range": "7.1.3 - 10.1.0",
+        "fixAvailable": {
+          "name": "firebase-admin",
+          "version": "10.3.0",
+          "isSemVerMajor": true
+        },
+        "via": [
+          "http-proxy-agent"
+        ],
+        "effects": [
+          "@google-cloud/storage",
+          "retry-request"
+        ]
+      }
+    ],
+    "parseError": null
+  },
+  "procedure": {
+    "docPath": "_DOCS/maintenance-next.md",
+    "updateCommand": "npm update next react react-dom firebase firebase-admin",
+    "auditCommand": "npm run maintenance:audit",
+    "rollbackRule": "revenir au dernier commit/deploiement App Hosting stable puis redeployer la sandbox",
+    "securityRule": "patcher Next rapidement en cas d advisory securite"
+  }
+}

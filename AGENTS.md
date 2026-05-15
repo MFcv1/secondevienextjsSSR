@@ -13,8 +13,9 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- alertemobile.md : invariant mobile marketplace critique
 |-- package*.json, next.config.mjs, eslint.config.mjs, jsconfig.json, tailwind.config.js, postcss.config.js
 |-- apphosting.yaml, .firebaserc : configuration Firebase App Hosting sandbox
-|-- app : routes Next App Router, SSR produit/categorie, sitemap, robots et shell client
+|-- app : routes Next App Router, SSR produit/categorie, loading/not-found/error, sitemap, robots et shell client
 |-- tests, playwright.config.mjs : tests E2E et validations Playwright
+|-- _DOCS : documentation maintenance Next/dependances
 |-- firebase.json, firestore.rules, firestore.indexes.json, storage.rules
 |-- functions-public : codebase Functions public isole pour `publicCatalog`, sans secrets Stripe/Gmail
 |-- .env.sandbox.example / .env.production.example : modeles publics; vrais .env locaux ignores par Git
@@ -30,9 +31,9 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- functions
 |   |-- index.js, helpers : Firebase Functions entrypoint/config/security
 |   `-- src : analytics, auth, commerce, email, maintenance, public, seo, triggers
-|-- public : favicons, manifest, robots, images, video
-|-- scripts : env bridge, SSR/mobile checks, perf/architecture compare, backfills/audits Storage/images et tooling safe
-|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md
+|-- public : favicons, manifest, robots, images, video, rapport maintenance statique
+|-- scripts : env bridge, SSR/mobile checks, maintenance audit, perf/architecture compare, backfills/audits Storage/images et tooling safe
+|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_SSR_AUDIT_REPORT.md
 |-- imagehero, pageUI : references visuelles et notes UI
 `-- .next, dist, node_modules, logs, .firebase : generes, hors carte
 ```

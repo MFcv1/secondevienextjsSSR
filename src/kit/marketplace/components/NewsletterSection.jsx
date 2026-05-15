@@ -103,7 +103,7 @@ const NewsletterSection = React.memo(function NewsletterSection({ darkMode }) {
                                     darkMode ? 'text-[#f8f1e8]' : 'text-[#191713]'
                                 }`}
                                 style={{
-                                    fontFamily: "'Cormorant Garamond', 'EB Garamond', Georgia, serif",
+                                    fontFamily: "var(--font-cormorant), Georgia, serif",
                                     fontWeight: 500,
                                 }}
                             >
@@ -118,7 +118,7 @@ const NewsletterSection = React.memo(function NewsletterSection({ darkMode }) {
                                 <span
                                     className="inline-flex shrink-0 items-baseline text-[clamp(3.25rem,14vw,4rem)] italic leading-[0.78] tracking-[-0.055em] text-[#9B734A] sm:translate-y-[-3px] sm:text-[clamp(3.9rem,4.2vw,4.95rem)] lg:translate-y-[-4px]"
                                     style={{
-                                        fontFamily: "'Cormorant Garamond', Georgia, serif",
+                                        fontFamily: "var(--font-cormorant), Georgia, serif",
                                         fontWeight: 300,
                                     }}
                                     aria-label="10%"

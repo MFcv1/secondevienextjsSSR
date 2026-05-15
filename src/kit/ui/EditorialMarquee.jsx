@@ -83,7 +83,7 @@ const MarqueeRow = ({ items = [], color, direction = 'left', baseSpeed = 1, clas
                                 {item.type === 'text' ? (
                                     <span
                                         className={`${textClasses} italic uppercase tracking-[-0.03em] text-black leading-[0.8] drop-shadow-sm pb-[1vh]`}
-                                        style={{ fontFamily: '"DM Serif Display", serif' }}
+                                        style={{ fontFamily: 'var(--font-dm-serif), serif' }}
                                     >
                                         {item.content}
                                     </span>

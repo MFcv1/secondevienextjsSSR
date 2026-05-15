@@ -6,18 +6,22 @@
   --breakpoint-monitor: 1920px;
 
   /* Font Families (Optional but good for v4 consistency) */
-  --font-serif: "Cormorant Garamond", serif;
-  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-serif: var(--font-cormorant), serif;
+  --font-sans: var(--font-plus-jakarta), sans-serif;
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* GLOBAL STYLES & UTILITIES */
 
+html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
+  display: none !important;
+}
+
 html,
 body,
 #root {
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: var(--font-sans);
   margin: 0;
   padding: 0;
   width: 100%;
@@ -319,7 +323,7 @@ body.marketplace-mobile-scroll-lock {
 }
 
 .font-serif {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: var(--font-serif);
 }
 
 /* Custom Utilities from HomeView */
