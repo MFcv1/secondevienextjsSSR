@@ -1,11 +1,9 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import ClientApp from './ClientApp';
 import { getPublicCatalog, getPublicCatalogFallback } from '../src/lib/server/products';
 import { publicEnv } from '../src/lib/server/env';
 import KIT_CONFIG from '../src/kit/config/constants';
 import { getCategoryUrl, getProductUrl } from '../src/utils/slug';
-import { getProductCardImage, PRODUCT_CARD_IMAGE_SIZES } from '../src/utils/imageUtils';
 
 export const revalidate = 300;
 
@@ -66,20 +64,27 @@ export default async function Page() {
   return (
     <>
       <section
-        className="min-h-screen bg-[#f7f3ee] text-stone-950"
+        className="fixed inset-0 z-[1] flex min-h-screen items-center justify-center bg-[#0F0F11] text-white"
+        data-public-ssr-fallback
+        data-ssr-home-preloader
+        aria-hidden="true"
+      >
+        <div className="text-center">
+          <p className="mb-8 text-[11px] font-black uppercase tracking-[0.55em] text-stone-400">
+            Entree dans la
+          </p>
+          <p className="font-serif text-6xl leading-none tracking-[0.22em] md:text-8xl">
+            Galerie
+          </p>
+        </div>
+      </section>
+      <section
+        className="sr-only"
         data-public-ssr-fallback
         data-ssr-home
       >
         <div className="grid min-h-screen lg:grid-cols-[0.95fr_1.05fr]">
           <div className="relative min-h-[52vh] overflow-hidden bg-stone-900 lg:min-h-screen">
-            <Image
-              src="/images/gallery-hero-1.webp"
-              alt="Mobilier restaure Seconde Vie"
-              fill
-              priority
-              sizes="(max-width: 1023px) 100vw, 48vw"
-              className="object-cover"
-            />
             <div className="absolute inset-0 bg-gradient-to-t from-stone-950/55 via-stone-950/20 to-transparent" />
           </div>
           <div className="flex flex-col justify-center px-5 py-10 md:px-10 lg:px-14">
@@ -97,7 +102,7 @@ export default async function Page() {
                 <Link className="rounded-full bg-stone-950 px-5 py-3 text-sm font-bold text-white" href="#selection">
                   Voir la selection
                 </Link>
-                <Link className="rounded-full border border-stone-300 px-5 py-3 text-sm font-bold text-stone-800" href="/a-propos">
+                <Link className="rounded-full border border-stone-300 px-5 py-3 text-sm font-bold text-stone-800" href="/a-propos" prefetch={false}>
                   Decouvrir l'atelier
                 </Link>
               </div>
@@ -124,6 +129,7 @@ export default async function Page() {
                   key={category.id}
                   className="rounded-full border border-stone-300 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-stone-600"
                   href={getCategoryUrl(category.id)}
+                  prefetch={false}
                 >
                   {category.label}
                 </Link>
@@ -133,33 +139,16 @@ export default async function Page() {
 
           {products.length ? (
             <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {products.map((product) => {
-                const cardImage = getProductCardImage(product);
-                return (
-                  <li key={product.id}>
-                    <Link className="group block space-y-3 text-inherit no-underline" href={getProductUrl(product)} prefetch={false}>
-                      {cardImage.src ? (
-                        <div className="overflow-hidden rounded-xl bg-[#ebe1d3]">
-                          <Image
-                            src={cardImage.src}
-                            width={cardImage.metadata?.width || 768}
-                            height={cardImage.metadata?.height || 1024}
-                            alt={product.name || product.title || ''}
-                            sizes={PRODUCT_CARD_IMAGE_SIZES}
-                            className="aspect-[3/4] h-auto w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                            placeholder={cardImage.metadata?.blurDataUrl ? 'blur' : 'empty'}
-                            blurDataURL={cardImage.metadata?.blurDataUrl || undefined}
-                          />
-                        </div>
-                      ) : null}
-                      <div className="space-y-1">
-                        <h2 className="font-serif text-2xl leading-tight">{product.name || product.title}</h2>
-                        <p className="text-xs uppercase tracking-[0.18em] text-stone-500">{product.material || 'Piece restauree'}</p>
-                      </div>
-                    </Link>
-                  </li>
-                );
-              })}
+              {products.map((product) => (
+                <li key={product.id}>
+                  <Link className="group block space-y-3 text-inherit no-underline" href={getProductUrl(product)} prefetch={false}>
+                    <div className="space-y-1">
+                      <h2 className="font-serif text-2xl leading-tight">{product.name || product.title}</h2>
+                      <p className="text-xs uppercase tracking-[0.18em] text-stone-500">{product.material || 'Piece restauree'}</p>
+                    </div>
+                  </Link>
+                </li>
+              ))}
             </ul>
           ) : (
             <p className="rounded-xl border border-stone-300 p-6 text-stone-700">

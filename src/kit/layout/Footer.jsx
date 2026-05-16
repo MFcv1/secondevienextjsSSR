@@ -170,29 +170,50 @@ const getMapEmbedUrl = (value) => {
     return trimmed && trimmed !== '#' ? trimmed : defaultMapUrl;
 };
 
-const MapFrame = ({ mapUrl, directionUrl, title, darkMode, className = '' }) => (
-    <div className={`relative overflow-hidden rounded-xl border ${darkMode ? 'border-[#514537] bg-[#151515]' : 'border-[#eee6dd] bg-white'} ${className}`}>
-        <iframe
-            src={mapUrl}
-            title={title}
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            className={`absolute inset-0 h-full w-full border-0 ${darkMode ? 'grayscale invert opacity-60 contrast-125 sepia-[0.18]' : 'saturate-[0.95] contrast-[1.02]'}`}
-        />
-        <a
-            href={directionUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] shadow-lg backdrop-blur-md transition-transform hover:-translate-y-0.5 ${
-                darkMode ? 'bg-[#111110]/90 text-[#f8f2ea]' : 'bg-white/90 text-stone-950'
-            }`}
-            aria-label="Ouvrir l'itinéraire vers l'atelier"
-        >
-            Itinéraire
-            <ArrowRight size={12} strokeWidth={2} />
-        </a>
-    </div>
-);
+const MapFrame = ({ mapUrl, directionUrl, title, darkMode, className = '' }) => {
+    const [isMapActive, setIsMapActive] = useState(false);
+
+    return (
+        <div className={`relative overflow-hidden rounded-xl border ${darkMode ? 'border-[#514537] bg-[#151515]' : 'border-[#eee6dd] bg-white'} ${className}`}>
+            {isMapActive ? (
+                <iframe
+                    src={mapUrl}
+                    title={title}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    className={`absolute inset-0 h-full w-full border-0 ${darkMode ? 'grayscale invert opacity-60 contrast-125 sepia-[0.18]' : 'saturate-[0.95] contrast-[1.02]'}`}
+                />
+            ) : (
+                <button
+                    type="button"
+                    onClick={() => setIsMapActive(true)}
+                    className={`absolute inset-0 flex h-full w-full flex-col items-center justify-center gap-4 px-6 text-center transition-colors ${
+                        darkMode ? 'bg-[#151515] text-[#f8f2ea] hover:bg-[#1d1b18]' : 'bg-[#f7f1ea] text-stone-950 hover:bg-[#f2e9df]'
+                    }`}
+                    aria-label="Afficher la carte Google Maps de l'atelier"
+                >
+                    <span className={`flex h-14 w-14 items-center justify-center rounded-full ${darkMode ? 'bg-[#24211d]' : 'bg-white'}`}>
+                        <MapPin size={25} strokeWidth={1.7} />
+                    </span>
+                    <span className="font-serif text-xl">Notre atelier à Marseille</span>
+                    <span className="text-[11px] font-black uppercase tracking-[0.16em] opacity-65">Afficher la carte</span>
+                </button>
+            )}
+            <a
+                href={directionUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] shadow-lg backdrop-blur-md transition-transform hover:-translate-y-0.5 ${
+                    darkMode ? 'bg-[#111110]/90 text-[#f8f2ea]' : 'bg-white/90 text-stone-950'
+                }`}
+                aria-label="Ouvrir l'itinéraire vers l'atelier"
+            >
+                Itinéraire
+                <ArrowRight size={12} strokeWidth={2} />
+            </a>
+        </div>
+    );
+};
 
 const Footer = ({ darkMode, contactInfo: contactInfoOverride }) => {
     const [contactInfoState, setContactInfoState] = useState(() => {
@@ -291,7 +312,7 @@ const Footer = ({ darkMode, contactInfo: contactInfoOverride }) => {
                             <PaymentChip variant="wero" className="min-w-[56px] px-2.5"><span className="text-[13px] font-black lowercase tracking-[-0.05em]">wero</span></PaymentChip>
                         </div>
                     </div>
-                    <img src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'} alt="Livraison partout à Marseille" loading="lazy" className="mt-6 w-full rounded-md object-contain" />
+                    <img src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'} alt="Livraison partout à Marseille" loading="lazy" decoding="async" fetchPriority="low" className="mt-6 w-full rounded-md object-contain" />
                     <div className={`mt-5 grid grid-cols-3 gap-3 text-[10px] ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
                         <div className="flex flex-col items-center gap-1 text-center"><LockKeyhole size={22} />SSL<br />Secure</div>
                         <div className="flex flex-col items-center gap-1 text-center"><span className="rounded bg-[#168b8f] px-2 py-1 text-sm font-black text-white">PCI</span>DSS<br />Compliant</div>
@@ -482,6 +503,8 @@ const Footer = ({ darkMode, contactInfo: contactInfoOverride }) => {
                                 src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'}
                                 alt="Livraison partout à Marseille - suivi de commande en temps réel"
                                 loading="lazy"
+                                decoding="async"
+                                fetchPriority="low"
                                 className="w-full max-w-[520px] rounded-md object-contain xl:max-w-[600px]"
                             />
                         </div>

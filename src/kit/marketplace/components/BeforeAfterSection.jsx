@@ -136,6 +136,7 @@ const BeforeAfterSection = ({ darkMode, projects = [] }) => {
                                         alt="Projet Restauration Après"
                                         loading="lazy"
                                         decoding="async"
+                                        fetchPriority="low"
                                         initial={{ opacity: 0, scale: 1.015 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         exit={{ opacity: 0 }}
@@ -164,6 +165,7 @@ const BeforeAfterSection = ({ darkMode, projects = [] }) => {
                                             alt="Projet Restauration Avant"
                                             loading="lazy"
                                             decoding="async"
+                                            fetchPriority="low"
                                             initial={{ opacity: 0, scale: 1.015 }}
                                             animate={{ opacity: 1, scale: 1 }}
                                             exit={{ opacity: 0 }}

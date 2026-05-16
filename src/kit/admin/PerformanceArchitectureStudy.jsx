@@ -213,12 +213,12 @@ const currentFindings = Object.freeze([
     id: 'SV-PERF-0005',
     status: 'watch',
     title: 'Le bundle initial peut encore etre allege sans changer de framework.',
-    source: 'src/app.jsx + src/kit/config/firebase.js + src/kit/hooks/useLenis.js',
+    source: 'src/app.jsx + src/kit/config/firebase.js + scroll natif navigateur',
     summary:
-      'Le shell importe encore panier, menu global, popup marketplace, header, footer, Firebase analytics/app-check, Lenis et Framer Motion tres tot. Le prochain gain vient de lazy-loader les surfaces non visibles.',
+      'Le shell importe encore panier, menu global, popup marketplace, header, footer, Firebase analytics/app-check et Framer Motion tres tot. Le prochain gain vient de lazy-loader les surfaces non visibles.',
     evidence: [
       'CartSidebar, GlobalMenu et MarketplaceDiscovery sont importes dans le shell principal.',
-      'Lenis demarre globalement meme quand une page sobre suffit.',
+      'Le scroll global est revenu au natif navigateur, sans boucle RAF globale dediee au scroll.',
       'Le rapport agent demandait une passe fetch priority; le runtime React 18.3 du projet impose finalement l attribut DOM lowercase fetchpriority pour eviter le warning dev.',
     ],
     engineering: [
@@ -330,7 +330,7 @@ const roadmapEvidenceRows = Object.freeze([
   ['P2.2 Card/detail split', 'Fait', 'La carte charge un payload court et ensureProductDetail recharge le document complet au clic/deep link. Les editions admin bumpent public/meta.catalogVersion et purgent le cache session du navigateur courant.'],
   ['P2.3 Metadata images', 'Fait nouveau upload + backfill sandbox', 'AdminForm stocke imageMetadata width/height/ratio/dominantColor/blurDataUrl pour les nouvelles images, publicCatalog projette la premiere metadata carte, et npm run backfill:product-metadata:dry audite les anciens produits. Sandbox: 35 produits publies complets, 0 pending, 0 failed.'],
   ['P3.1 Staging mobile', 'Conserve', 'Le staging currentSrc/decode/double frame reste intact dans ArchitecturalProductDetail.jsx.'],
-  ['P3.2 Contrat mobile automatise', 'Fait garde-fou', 'npm run mobile:contract verifie alertemobile.md, invariant Router, #marketplaceGalleryScroll, data-detail-open, data-lenis-prevent, freeze CSS et staging image mobile.'],
+  ['P3.2 Contrat mobile automatise', 'Fait garde-fou', 'npm run mobile:contract verifie alertemobile.md, invariant Router, #marketplaceGalleryScroll, data-detail-open, data-native-scroll-region, freeze CSS et staging image mobile.'],
   ['P3.3 Gestures/state machine', 'Bloque', 'Pas de refactor detail gestures sans vrai telephone: alertemobile.md impose le test drift image/resume a 0 px.'],
   ['P3.4 Validation appareil', 'Bloque environnement', 'adb n est pas disponible dans cet environnement. Le test vrai telephone galerie -> produit -> Details -> retour -> second produit ne peut donc pas etre execute ici.'],
   ['Desktop first-scroll', 'Fait renforce', 'npm run perf:scroll mesure maintenant le chargement initial, le premier scroll molette, les long tasks et les layout shifts. Resultat preview desktop 1440x950 apres stabilisation des slots lazy: scroll max frame gap 16.8 ms, 0 frame >50 ms, load max frame gap 50 ms, 1 long task de 60 ms, CLS 0.0022.'],
@@ -352,7 +352,7 @@ const productDetailFlow = Object.freeze([
 const guardrailRows = Object.freeze([
   ['Commit reference', 'v21.7 est traite comme reference design/fonctionnement detail produit desktop et mobile.'],
   ['Invariant Router', "Conserver `const shouldUseMobileGalleryScroll = view === 'gallery' || isGalleryDetailOverlay;`."],
-  ['Contrat DOM mobile', 'Ne pas casser marketplace-gallery-shell, marketplace-gallery-scroll, #marketplaceGalleryScroll, data-detail-open, data-lenis-prevent.'],
+  ['Contrat DOM mobile', 'Ne pas casser marketplace-gallery-shell, marketplace-gallery-scroll, #marketplaceGalleryScroll, data-detail-open, data-native-scroll-region.'],
   ['Contrat CSS', 'Conserver marketplace-mobile-scroll-lock, product-detail-scroll-lock et --marketplace-viewport-height.'],
   ['Contrat image', 'Garder product-detail-mobile-image-frame et product-detail-mobile-image-clip comme wrappers de clipping.'],
   ['Staging mobile', 'Ne pas simplifier le decode/currentSrc mobile pendant un refactor gestures.'],
@@ -467,8 +467,8 @@ const implementationLedger = Object.freeze([
     detail: 'scripts/measure-scroll-smoothness.py mesure maintenant load frame gaps, premier scroll molette, long tasks et layout shifts. Derniere validation apres stabilisation des slots lazy: max frame gap scroll 16.8 ms, load max 50 ms, 0 frame scroll au-dessus de 50 ms, 1 long task de 60 ms, layoutShiftTotal 0.0022.',
   },
   {
-    label: 'Lenis premier scroll',
-    detail: 'useLenis initialise Lenis immediatement avec un profil conservateur au lieu d attendre 42 frames de detection ecran. La detection refresh-rate recale ensuite le profil, et ScrollTrigger.update est cadence via requestAnimationFrame.',
+    label: 'Scroll natif global',
+    detail: 'Le scroll global ne passe plus par Lenis: la molette, le tactile et les scrolls programmes utilisent le moteur natif du navigateur. Les animations GSAP gardent leurs ScrollTrigger locaux.',
   },
   {
     label: 'Hero mobile',
@@ -492,7 +492,7 @@ const implementationLedger = Object.freeze([
   },
   {
     label: 'Contrat mobile automatise',
-    detail: 'scripts/check-mobile-marketplace-contract.cjs echoue si l invariant shouldUseMobileGalleryScroll, le shell/scroller galerie, data-detail-open, data-lenis-prevent, le freeze CSS ou le staging image mobile disparaissent.',
+    detail: 'scripts/check-mobile-marketplace-contract.cjs echoue si l invariant shouldUseMobileGalleryScroll, le shell/scroller galerie, data-detail-open, data-native-scroll-region, le freeze CSS ou le staging image mobile disparaissent.',
   },
   {
     label: 'Mesure reseau automatisee',
@@ -543,7 +543,7 @@ const v217DomainRows = Object.freeze([
   ['Shell public', 'v21.7 portait encore menu, panier, footer, success modal, Stripe/facture et plusieurs surfaces en dur.', 'Ces surfaces sont maintenant chargees a la demande: moins de JS initial et moins de code admin/commerce sur le premier ecran public.'],
   ['Galerie', 'MarketplaceLayout etait un gros fichier avec hero, categories, produits, sections basses, Instagram, avis, newsletter.', 'Hero, CategoryRail, ProductSections, ProductGridSection et Reassurance restent le coeur de galerie; BeforeAfter, Instagram, Testimonials et Newsletter sont maintenant des chunks lazy.'],
   ['Nuance bundle', 'Apres la premiere extraction, plusieurs sections restaient encore importees statiquement par MarketplaceLayout.', 'Cette limite est corrigee pour les sections basses lourdes: GalleryView descend de 21.09 kB gzip a 11.66 kB gzip. Le prochain gain reseau concernerait plutot GSAP/Reassurance ou un framework SSR/SSG pour un prochain projet.'],
-  ['Scroll desktop', 'Le premier scroll pouvait cumuler Lenis tardif, ScrollTrigger global et montage de sections basses.', 'Lenis demarre immediatement, ScrollTrigger est cadence, les sections basses montent par slots et perf:scroll mesure load + scroll + CLS.'],
+  ['Scroll desktop', 'Le premier scroll pouvait cumuler un moteur de scroll JS, ScrollTrigger global et montage de sections basses.', 'Le scroll global est natif, les ScrollTrigger restent locaux aux sections, les sections basses montent par slots et perf:scroll mesure load + scroll + CLS.'],
   ['Images hero mobile', 'Le hero mobile utilisait le meme objectPosition que desktop et une image h-[120%] ancree verticalement.', 'Chaque preset a mobileObjectPosition; mobile utilise h-full et desktop garde md:h-[120%]. Validation 390x844: object-position 54% 50%.'],
   ['Catalogue public', 'La premiere charge restait proche d un chargement catalogue general.', 'publicCatalog supporte scope=cards, limit, category/categories, cursor, nextCursor, ETag et catalogVersion.'],
   ['Images produits', 'Les cartes/detail dependaient plus fortement des URLs et ratios disponibles au runtime.', 'AdminForm stocke imageMetadata; ProductCard exploite dominantColor; detail mobile preseed les ratios et garde le staging decode/currentSrc.'],

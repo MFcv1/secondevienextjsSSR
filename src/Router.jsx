@@ -57,7 +57,7 @@ const ProductDetailFallback = ({ darkMode }) => (
     <div
         aria-hidden="true"
         data-product-detail-fallback="true"
-        className={`fixed inset-0 z-[100] w-screen overflow-hidden ${darkMode ? 'bg-[#0e0e0e]' : 'bg-[#e8d9c6]'}`}
+        className={`pointer-events-none fixed inset-0 z-[100] w-screen overflow-hidden ${darkMode ? 'bg-[#0e0e0e]/80' : 'bg-transparent'}`}
         style={{ height: 'var(--marketplace-viewport-height, 100svh)' }}
     />
 );
@@ -510,7 +510,7 @@ const AppRouter = ({
                         ref={galleryScrollRef}
                         className="marketplace-gallery-scroll"
                         data-detail-open={isGalleryDetailOverlay ? 'true' : 'false'}
-                        {...(isMobileMarketplace ? { 'data-lenis-prevent': true } : {})}
+                        {...(isMobileMarketplace ? { 'data-native-scroll-region': true } : {})}
                         onScroll={handleGalleryScroll}
                         onTouchStart={handleGalleryTouchStart}
                         onTouchMove={handleGalleryTouchMove}

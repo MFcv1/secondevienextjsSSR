@@ -69,10 +69,11 @@ export const PRODUCT_IMAGE_VARIANT_SPECS = [
 ];
 
 export const createProductImageVariantFiles = async (file, specs = PRODUCT_IMAGE_VARIANT_SPECS) => {
-    const entries = await Promise.all(specs.map(async (spec) => {
+    const entries = [];
+    for (const spec of specs) {
         const variantFile = await compressImage(file, spec.quality, spec.width);
-        return [spec.key, variantFile];
-    }));
+        entries.push([spec.key, variantFile]);
+    }
 
     return Object.fromEntries(entries);
 };
@@ -355,6 +356,25 @@ export const preloadProductImages = (item, options = {}) => {
     });
 };
 
+export const preloadPrimaryProductDetailImage = (item, options = {}) => {
+    const imageItems = getProductImageItems(item);
+    if (!imageItems.length) return Promise.resolve(null);
+
+    const activeIndex = Math.max(0, Math.min(options.activeIndex || 0, imageItems.length - 1));
+    const image = imageItems[activeIndex];
+    const preferredSrc = options.variant ? image?.[options.variant] : '';
+    const src = preferredSrc || image?.src || image?.large || image?.medium || image?.card || image?.full || image?.thumb || '';
+    if (!src) return Promise.resolve(null);
+
+    return preloadImage(src, {
+        priority: options.priority || 'high',
+        srcSet: options.srcSet === false || preferredSrc ? undefined : image.srcSet,
+        sizes: options.sizes || PRODUCT_DETAIL_IMAGE_SIZES,
+        decode: options.decode !== false,
+        decoding: options.decoding || 'async',
+    }).catch(() => null);
+};
+
 export const prewarmProductListImages = (items, options = {}) => {
     if (!Array.isArray(items) || !items.length || typeof window === 'undefined') return () => {};
 
@@ -383,7 +403,12 @@ export const prewarmProductListImages = (items, options = {}) => {
 
         if (includeDetailPrimary) {
             const primary = getProductImageItems(item)[0];
-            push(primary?.large || primary?.medium || primary?.src || primary?.full);
+            const detailSrc = options.detailVariant
+                ? primary?.[options.detailVariant]
+                : primary?.large || primary?.medium || primary?.src || primary?.full;
+            push(detailSrc, {
+                srcSet: options.detailSrcSet === false || options.detailVariant ? undefined : primary?.srcSet,
+            });
         }
     });
 

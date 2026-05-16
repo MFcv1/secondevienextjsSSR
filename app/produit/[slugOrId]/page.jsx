@@ -182,7 +182,7 @@ export default async function ProductPage({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }}
       />
-      <ClientApp />
+      <ClientApp defer />
     </>
   );
 }

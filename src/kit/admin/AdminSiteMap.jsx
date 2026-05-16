@@ -364,7 +364,7 @@ const Inspector = ({ node, stats, sessions, transitions, now, onClose }) => {
         return (
             <aside className="h-full min-h-0 rounded-[28px] bg-white/[0.045] p-1.5 ring-1 ring-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                 <div
-                    data-lenis-prevent
+                    data-native-scroll-region
                     className="admin-map-scroll h-full overflow-y-auto overscroll-contain rounded-[23px] bg-[#080808] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                     onWheel={(event) => event.stopPropagation()}
                 >
@@ -384,7 +384,7 @@ const Inspector = ({ node, stats, sessions, transitions, now, onClose }) => {
     return (
         <aside className="h-full min-h-0 rounded-[28px] bg-white/[0.045] p-1.5 ring-1 ring-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
             <div
-                data-lenis-prevent
+                data-native-scroll-region
                 className="admin-map-scroll h-full overflow-y-auto overscroll-contain rounded-[23px] bg-[#080808] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                 onWheel={(event) => event.stopPropagation()}
             >
@@ -704,7 +704,7 @@ const AdminSiteMap = ({
                     </div>
 
                     <div
-                        data-lenis-prevent
+                        data-native-scroll-region
                         className="admin-map-scroll mt-5 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1"
                         onWheel={(event) => event.stopPropagation()}
                     >

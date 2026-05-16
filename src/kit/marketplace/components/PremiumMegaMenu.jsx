@@ -315,7 +315,10 @@ export default function PremiumMegaMenu({ darkMode, onOpenAbout, onNavigateCateg
     }, []);
 
     useEffect(() => {
-        const handleScroll = () => {
+        let frameId = 0;
+
+        const processScroll = () => {
+            frameId = 0;
             const currentScrollY = window.scrollY;
             if (!hasScrollBaselineRef.current) {
                 hasScrollBaselineRef.current = true;
@@ -341,9 +344,15 @@ export default function PremiumMegaMenu({ darkMode, onOpenAbout, onNavigateCateg
             lastScrollYRef.current = currentScrollY;
         };
 
+        const handleScroll = () => {
+            if (frameId) return;
+            frameId = window.requestAnimationFrame(processScroll);
+        };
+
         handleScroll();
         window.addEventListener('scroll', handleScroll, { passive: true });
         return () => {
+            if (frameId) window.cancelAnimationFrame(frameId);
             window.removeEventListener('scroll', handleScroll);
         };
     }, []);

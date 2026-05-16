@@ -535,12 +535,9 @@ const GlobalMenu = ({
 
         lockedScrollYRef.current = window.scrollY;
         closingWheelDeltaRef.current = 0;
-        const lenis = window.__lenis;
         const root = document.documentElement;
         const shouldPreserveNativeScrollbar = window.matchMedia('(min-width: 1024px)').matches;
         if (isMenuClosing && shouldPreserveNativeScrollbar) return undefined;
-        const shouldControlLenisStop = !shouldPreserveNativeScrollbar;
-        const shouldResumeLenis = Boolean(shouldControlLenisStop && lenis && !lenis.isStopped);
         const previousBodyPosition = document.body.style.position;
         const previousBodyTop = document.body.style.top;
         const previousBodyLeft = document.body.style.left;
@@ -566,10 +563,6 @@ const GlobalMenu = ({
         }
         root.style.overscrollBehavior = 'none';
         root.style.scrollBehavior = 'auto';
-        lenis?.scrollTo?.(lockedScrollYRef.current, { immediate: true, force: true });
-        if (shouldControlLenisStop) {
-            lenis?.stop?.();
-        }
 
         const getScrollablePanel = (target) => (
             [panelRef.current, mobilePanelRef.current].find((panel) => (
@@ -626,7 +619,7 @@ const GlobalMenu = ({
         const freezeWindowScroll = () => {
             if (!shouldPreserveNativeScrollbar) return;
             if (window.scrollY !== lockedScrollYRef.current) {
-                window.scrollTo({ top: lockedScrollYRef.current, behavior: 'instant' });
+                window.scrollTo({ top: lockedScrollYRef.current, behavior: 'auto' });
             }
             scrollFreezeFrame = window.requestAnimationFrame(freezeWindowScroll);
         };
@@ -655,12 +648,7 @@ const GlobalMenu = ({
             root.style.scrollbarGutter = previousRootScrollbarGutter;
             root.style.overscrollBehavior = previousRootOverscrollBehavior;
             root.style.scrollBehavior = previousRootScrollBehavior;
-            window.scrollTo({ top: restoredScrollY, behavior: 'instant' });
-            lenis?.scrollTo?.(restoredScrollY, { immediate: true, force: true });
-            lenis?.resize?.();
-            if (shouldResumeLenis) {
-                window.requestAnimationFrame(() => lenis?.start?.());
-            }
+            window.scrollTo({ top: restoredScrollY, behavior: 'auto' });
             lastTouchYRef.current = null;
         };
     }, [isMenuOpen, isMenuClosing]);

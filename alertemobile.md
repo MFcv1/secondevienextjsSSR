@@ -29,7 +29,7 @@ Effets secondaires:
 - la galerie mobile repasse en flux normal au lieu de rester dans `marketplace-gallery-shell`;
 - `marketplace-gallery-scroll` n'est plus applique en mode galerie;
 - les handlers mobile `onScroll`, `onTouchStart`, `onTouchMove`, `onTouchEnd`, `onTouchCancel` peuvent etre retires;
-- `data-lenis-prevent` peut ne plus etre pose sur la galerie mobile;
+- `data-native-scroll-region` peut ne plus etre pose sur la galerie mobile;
 - l'etat de scroll / viewport de la galerie devient incoherent avec le detail produit;
 - sur mobile Chrome, un appui vers la zone "Details" peut alors provoquer un decalage visuel de l'image et du bloc bas.
 
@@ -158,7 +158,7 @@ className="marketplace-gallery-scroll"
 En mobile, ne pas conditionner ces handlers uniquement au mode detail:
 
 ```jsx
-{...(isMobileMarketplace ? { 'data-lenis-prevent': true } : {})}
+{...(isMobileMarketplace ? { 'data-native-scroll-region': true } : {})}
 onScroll={handleGalleryScroll}
 onTouchStart={handleGalleryTouchStart}
 onTouchMove={handleGalleryTouchMove}

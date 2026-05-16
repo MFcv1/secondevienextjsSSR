@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plus, Heart } from 'lucide-react';
 import { getProductUrl } from '../../../utils/slug';
-import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, preloadProductImages } from '../../../utils/imageUtils';
+import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, preloadPrimaryProductDetailImage, preloadProductImages } from '../../../utils/imageUtils';
 
 /**
  * COMPOSANT : CARTE PRODUIT (DESIGN ARCHITECTURAL v3)
@@ -22,30 +22,52 @@ const ProductCard = ({
     priority = false,
     suspendImageWarmup = false
 }) => {
+    const cardRef = React.useRef(null);
     const touchIntentRef = React.useRef(null);
     const touchOpenHandledRef = React.useRef(false);
     const hoverWarmupTimerRef = React.useRef(null);
+    const primaryWarmupStartedRef = React.useRef(false);
     const cardImage = React.useMemo(() => getProductCardImage(item), [item]);
-    const warmupDetailImages = React.useCallback(() => {
-        if (suspendImageWarmup) return;
-        preloadProductImages(item, {
-            radius: 1,
-            priority: 'auto',
-            neighborPriority: 'low',
-            decode: false,
-        });
-    }, [item, suspendImageWarmup]);
-    const prefetchProductIntent = React.useCallback(() => {
-        if (suspendImageWarmup) return;
-
+    const [isImageRevealActive, setIsImageRevealActive] = React.useState(priority);
+    const [isImageLoaded, setIsImageLoaded] = React.useState(false);
+    const handleImageLoad = React.useCallback(() => {
+        setIsImageLoaded(true);
+        setIsImageRevealActive(true);
+    }, []);
+    const canWarmupImages = React.useCallback(() => {
+        if (suspendImageWarmup) return false;
         const connection = typeof navigator !== 'undefined'
             ? (navigator.connection || navigator.mozConnection || navigator.webkitConnection)
             : null;
-        if (connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || '')) return;
-
+        return !(connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || ''));
+    }, [suspendImageWarmup]);
+    const warmupPrimaryDetailImage = React.useCallback((options = {}) => {
+        if (!canWarmupImages()) return;
         onPrefetch?.(item.id);
+        if (primaryWarmupStartedRef.current && !options.force) return;
+        primaryWarmupStartedRef.current = true;
+        preloadPrimaryProductDetailImage(item, {
+            priority: options.priority || 'high',
+            decode: options.decode !== false,
+            srcSet: options.srcSet,
+            variant: options.variant,
+        });
+    }, [canWarmupImages, item, onPrefetch]);
+    const warmupDetailImages = React.useCallback(() => {
+        if (!canWarmupImages()) return;
+        warmupPrimaryDetailImage();
+        preloadProductImages(item, {
+            radius: 1,
+            priority: 'low',
+            neighborPriority: 'low',
+            decode: false,
+        });
+    }, [canWarmupImages, item, warmupPrimaryDetailImage]);
+    const prefetchProductIntent = React.useCallback(() => {
+        if (!canWarmupImages()) return;
+        warmupPrimaryDetailImage();
         warmupDetailImages();
-    }, [item.id, onPrefetch, suspendImageWarmup, warmupDetailImages]);
+    }, [canWarmupImages, warmupDetailImages, warmupPrimaryDetailImage]);
 
     const warmupDetailImagesAfterOpen = React.useCallback(() => {
         if (typeof window === 'undefined') {
@@ -54,13 +76,69 @@ const ProductCard = ({
         }
 
         window.setTimeout(() => {
-            if (typeof window.requestAnimationFrame === 'function') {
-                window.requestAnimationFrame(warmupDetailImages);
+            const run = () => {
+                if (typeof window.requestAnimationFrame === 'function') {
+                    window.requestAnimationFrame(warmupDetailImages);
+                    return;
+                }
+                warmupDetailImages();
+            };
+
+            if (typeof window.requestIdleCallback === 'function') {
+                window.requestIdleCallback(run, { timeout: 1200 });
                 return;
             }
-            warmupDetailImages();
-        }, 0);
+
+            run();
+        }, 700);
     }, [warmupDetailImages]);
+
+    React.useEffect(() => {
+        primaryWarmupStartedRef.current = false;
+        setIsImageRevealActive(priority);
+        setIsImageLoaded(false);
+    }, [cardImage.src, item?.id, priority]);
+
+    React.useEffect(() => {
+        if (priority) {
+            setIsImageRevealActive(true);
+            return undefined;
+        }
+
+        if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
+            setIsImageRevealActive(true);
+            return undefined;
+        }
+
+        const node = cardRef.current?.querySelector('.product-card-media');
+        if (!node) return undefined;
+
+        const revealFallbackTimer = window.setTimeout(() => {
+            setIsImageRevealActive(true);
+        }, 900);
+
+        const galleryRoot = document.getElementById('marketplaceGalleryScroll');
+        const root = galleryRoot?.contains(node) ? galleryRoot : null;
+        const observer = new IntersectionObserver((entries) => {
+            const isNearViewport = entries.some((entry) => entry.isIntersecting);
+            if (isNearViewport) {
+                window.clearTimeout(revealFallbackTimer);
+                setIsImageRevealActive(true);
+                observer.disconnect();
+            }
+        }, {
+            root,
+            rootMargin: '0px 0px 420px 0px',
+            threshold: 0.01,
+        });
+
+        observer.observe(node);
+
+        return () => {
+            window.clearTimeout(revealFallbackTimer);
+            observer.disconnect();
+        };
+    }, [cardImage.src, priority]);
 
     React.useEffect(() => () => {
         if (hoverWarmupTimerRef.current) {
@@ -123,6 +201,7 @@ const ProductCard = ({
 
         e.preventDefault();
         touchOpenHandledRef.current = true;
+        warmupPrimaryDetailImage({ priority: 'high', decode: true, variant: 'medium', srcSet: false });
         onClick();
         warmupDetailImagesAfterOpen();
         resetTouchOpenHandled();
@@ -130,6 +209,7 @@ const ProductCard = ({
 
     return (
         <a
+            ref={cardRef}
             href={getProductUrl(item)}
             draggable={false}
             onPointerDown={handleTouchPointerDown}
@@ -153,6 +233,7 @@ const ProductCard = ({
                 if (!e.ctrlKey && !e.metaKey) {
                     e.preventDefault();
                     if (onClick) {
+                        warmupPrimaryDetailImage({ priority: 'high', decode: true });
                         onClick();
                         warmupDetailImagesAfterOpen();
                     }
@@ -163,8 +244,9 @@ const ProductCard = ({
 
             {/* 1. VISUAL BLOCK */}
             <div
-                className={`product-card-media relative bg-[#f7f3ee] dark:bg-[#1A1A1A] overflow-hidden rounded-[12px] ${layoutMode === 'list' ? 'w-1/3 aspect-[4/3]' : 'w-full aspect-[3/4]'} ${isBig ? 'md:aspect-[16/10]' : ''}`}
-                style={cardImage.metadata?.dominantColor ? { backgroundColor: cardImage.metadata.dominantColor } : undefined}
+                className={`product-card-media relative bg-[#fbfaf8] dark:bg-[#1A1A1A] overflow-hidden rounded-[12px] ${layoutMode === 'list' ? 'w-1/3 aspect-[4/3]' : 'w-full aspect-[3/4]'} ${isBig ? 'md:aspect-[16/10]' : ''}`}
+                data-image-reveal={isImageRevealActive ? 'visible' : 'pending'}
+                data-image-loaded={isImageLoaded ? 'true' : 'false'}
             >
                 <img
                     src={cardImage.src}
@@ -176,6 +258,7 @@ const ProductCard = ({
                     loading={priority && !suspendImageWarmup ? 'eager' : 'lazy'}
                     decoding="async"
                     fetchpriority={priority && !suspendImageWarmup ? 'high' : 'auto'}
+                    onLoad={handleImageLoad}
                 />
 
                 {/* PREMIUM OVERLAY (Museum Gallery Hook - Desktop Only) */}

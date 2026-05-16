@@ -10,11 +10,12 @@ import {
   Playfair_Display,
   Plus_Jakarta_Sans,
 } from 'next/font/google';
+import { publicEnv } from '../src/lib/server/env';
 
-const siteName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Seconde Vie';
-const description = process.env.NEXT_PUBLIC_SITE_DESCRIPTION || 'Mobilier restaure avec passion.';
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-const ogImage = process.env.NEXT_PUBLIC_OG_IMAGE || '/og-image.jpg';
+const siteName = publicEnv.siteName;
+const description = publicEnv.siteDescription || 'Mobilier restaure avec passion.';
+const siteUrl = publicEnv.siteUrl;
+const ogImage = publicEnv.ogImage || '/og-image.jpg';
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -24,7 +25,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600'],
+  weight: ['400', '600'],
   style: ['normal', 'italic'],
   variable: '--font-cormorant',
   display: 'swap',
@@ -34,12 +35,14 @@ const newsreader = Newsreader({
   subsets: ['latin'],
   variable: '--font-newsreader',
   display: 'swap',
+  preload: false,
 });
 
 const manrope = Manrope({
   subsets: ['latin'],
   variable: '--font-manrope',
   display: 'swap',
+  preload: false,
 });
 
 const dmSerif = DM_Serif_Display({
@@ -48,6 +51,7 @@ const dmSerif = DM_Serif_Display({
   style: ['normal', 'italic'],
   variable: '--font-dm-serif',
   display: 'swap',
+  preload: false,
 });
 
 const playfair = Playfair_Display({
@@ -56,6 +60,7 @@ const playfair = Playfair_Display({
   style: ['normal', 'italic'],
   variable: '--font-playfair',
   display: 'swap',
+  preload: false,
 });
 
 const fontVariables = [

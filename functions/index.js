@@ -37,7 +37,6 @@ const { trackAdminIP } = require('./src/analytics/adminIP');
 const { updateUserSessions } = require('./src/analytics/updateUserSessions');
 const { onJourneyStepCreated, onCustomEventCreated } = require('./src/analytics/rollups');
 const { onOrderStatsWrite } = require('./src/commerce/orderStats');
-const { publicCatalog } = require('./src/public/catalog');
 
 exports.initLiveSession = initLiveSession;
 exports.syncSession = syncSession;
@@ -51,7 +50,6 @@ exports.updateUserSessions = updateUserSessions;
 exports.onJourneyStepCreated = onJourneyStepCreated;
 exports.onCustomEventCreated = onCustomEventCreated;
 exports.onOrderStatsWrite = onOrderStatsWrite;
-exports.publicCatalog = publicCatalog;
 
 // ── MAINTENANCE ──────────────────────────────────────────
 const { resetAllStats, runGarbageCollector, resetAllUsers, purgeAnonymousUsers, resetAllOrders, purgeAllProducts, getUploadUrl } = require('./src/maintenance/tools');

@@ -32,7 +32,8 @@
         "functions-public",
         "firebase-debug.log",
         "firebase-debug.*.log"
-      ]
+      ],
+      "alwaysDeployFromSource": true
     }
   ],
   "hosting": {

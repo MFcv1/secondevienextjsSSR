@@ -31,9 +31,9 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- functions
 |   |-- index.js, helpers : Firebase Functions entrypoint/config/security
 |   `-- src : analytics, auth, commerce, email, maintenance, public, seo, triggers
-|-- public : favicons, manifest, robots, images, video, rapport maintenance statique
-|-- scripts : env bridge, SSR/mobile checks, maintenance audit, perf/architecture compare, backfills/audits Storage/images et tooling safe
-|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_SSR_AUDIT_REPORT.md
+|-- public : favicons, manifest, images, video, rapport maintenance statique
+|-- scripts : env bridge, SSR/mobile checks, maintenance audit, budget perf Next, perf/architecture compare, backfills/audits Storage/images et tooling safe
+|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_SEO_ROADMAP.md, NEXTJS_HOME_LANDING_ROADMAP.md, NEXTJS_SSR_AUDIT_REPORT.md, NEXTJS_IMAGE_PIPELINE_AUDIT.md
 |-- imagehero, pageUI : references visuelles et notes UI
 `-- .next, dist, node_modules, logs, .firebase : generes, hors carte
 ```
@@ -56,7 +56,7 @@ Ne pas optimiser au hasard: chaque changement doit etre mesure avec les scripts 
 
 ## ALERTE MOBILE - A LIRE AVANT TOUTE MODIF MARKETPLACE MOBILE
 
-Avant toute modification qui touche `src/Router.jsx`, la galerie, une page produit, le detail produit, le scroll mobile, `--marketplace-viewport-height`, `marketplace-gallery-shell`, `marketplace-gallery-scroll`, Lenis ou les handlers touch mobile, lire d'abord `alertemobile.md`.
+Avant toute modification qui touche `src/Router.jsx`, la galerie, une page produit, le detail produit, le scroll mobile, `--marketplace-viewport-height`, `marketplace-gallery-shell`, `marketplace-gallery-scroll`, le scroll natif ou les handlers touch mobile, lire d'abord `alertemobile.md`.
 
 Invariant critique a conserver dans `src/Router.jsx` :
 
@@ -81,7 +81,7 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 
 - `alertemobile.md` a ete relu avant test, et l'invariant critique de `src/Router.jsx` a ete verifie :
   `const shouldUseMobileGalleryScroll = view === 'gallery' || isGalleryDetailOverlay;`
-- Les invariants DOM/handlers ont ete verifies dans `src/Router.jsx` : `marketplace-gallery-shell`, `marketplace-gallery-scroll`, `data-lenis-prevent`, `onScroll`, `onTouchStart`, `onTouchMove`, `onTouchEnd`, `onTouchCancel`.
+- Les invariants DOM/handlers ont ete verifies dans `src/Router.jsx` : `marketplace-gallery-shell`, `marketplace-gallery-scroll`, `data-native-scroll-region`, `onScroll`, `onTouchStart`, `onTouchMove`, `onTouchEnd`, `onTouchCancel`.
 - Un test Chrome mobile emule 390x844 a ete lance sur la sandbox Vite en mode `sandbox`, avec ouverture galerie, produit, taps autour de "Details" / fleche, retour galerie, puis deuxieme produit.
 - Un test sur appareil Android reel detecte par ADB (`SM-X920`) a ensuite ete effectue. La tablette ne declenchait pas naturellement la branche mobile, donc deux controles ont ete faits :
   - Chrome Android reel via CDP avec viewport mobile 390x844.
@@ -141,6 +141,50 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 - `firebase.json` declare le backend App Hosting local-source `apphosting:secondevie-next-sandbox`, et `.firebaserc` fixe l'alias `default` sur `secondevienextjsssr`.
 - Les pre-checks verifient Firebase CLI 14.4.0+, `.env.sandbox`, `firebase.json`, le statut git, et le build Next `.next/` avant de deployer l'app.
 - Validation sans deploiement : `node --check deploy/*.mjs`, parsing JSON de `package.json` / `firebase.json` / `.firebaserc`, `npm run dashboard -- --status`, et `firebase apphosting:backends:list --project secondevienextjsssr`.
+
+## Rapport agent - 2026-05-16
+
+### Goal 7 - Roadmap SEO SSR / budget performance Next
+
+- `NEXTJS_HOME_LANDING_ROADMAP.md` a ete cree pour cadrer l'hypothese d'une home landing SSR/ISR visible avec entree galerie conservee, a etudier le 2026-05-17.
+- `NEXTJS_OPTIMIZATION_ROADMAP.md` et `NEXTJS_SEO_ROADMAP.md` ont ete relus avant de continuer les optimisations.
+- `scripts/check-performance-budget.cjs` a ete remplace par un controle adapte au clone Next SSR : lecture de `.next/app-build-manifest.json`, resolution des assets `.next/static`, budgets JS/CSS initiaux par route SSR publique, controle du plus gros chunk JS differe et du plus gros CSS.
+- Le script verifie aussi les regressions deja identifiees : pas de retour de l'ancien domaine `secondevie-a0745.web.app`, pas de `public/robots.txt` statique qui pourrait ecraser `app/robots.js`, et pas de `/_next/image` dans les sorties serveur tant que la strategie image retenue reste les variantes Firebase.
+- `package.json` expose maintenant `npm run perf:budget`.
+- `NEXTJS_SEO_ROADMAP.md` documente l'avancement S2 : budget perf Next fait, strategie image actuelle rattachee a `NEXTJS_IMAGE_PIPELINE_AUDIT.md`, et `measure-preview-network.py` conserve comme script legacy Vite.
+- `scripts/measure-preview-network.py` annonce maintenant explicitement son statut legacy Vite et renvoie vers `npm run perf:budget` / `npm run perf:architecture`.
+- Validation executee : `npm run perf:budget` OK sur le build `.next` courant. Mesures : routes publiques a environ 106-112 kB JS gzip initial, CSS initial 50.49 kB gzip, plus gros chunk JS differe 114.81 kB gzip, plus gros CSS 44.69 kB gzip.
+- Correction UX home : pour eviter le flash de l'ancienne home SSR avant le preloader galerie, `app/page.jsx` affiche maintenant un placeholder SSR sombre "Entree dans la Galerie" et garde le contenu SEO de la home en `sr-only`; `/` continue de monter `ClientApp` immediatement.
+
+## Rapport agent - 2026-05-15
+
+### Goal 7 - Roadmap et corrections SEO Next SSR
+
+- `NEXTJS_SEO_ROADMAP.md` a ete cree pour suivre les priorites SEO SSR, les validations et le journal d'avancement.
+- `app/layout.jsx` lit maintenant `publicEnv` pour harmoniser `metadataBase`, titre, description et image OG avec les fallbacks `NEXT_PUBLIC_*` puis `VITE_*`.
+- `app/robots.js` lit aussi `publicEnv.siteUrl`; le fichier statique `public/robots.txt` a ete supprime pour eviter que Next serve l'ancien sitemap `secondevie-a0745.web.app`.
+- `app/devis/page.jsx` rend maintenant une couche SSR indexable avec H1, contenu metier, canonical, liens internes et JSON-LD `Service`, tout en conservant `ClientApp` pour le formulaire interactif legacy.
+- `src/lib/seo/categories.js` centralise les categories, les IDs legacy, les labels nettoyes et les schemas categorie.
+- `app/categorie/[categoryId]/page.jsx` reutilise ce helper et injecte maintenant `CollectionPage` + `BreadcrumbList`.
+- `src/lib/seo/productStructuredData.js` normalise prix, stock, images et breadcrumbs; les produits en prix sur demande n'emettent plus d'`Offer` incomplete.
+- `app/sitemap.js` pagine `publicCatalog`, inclut `/devis`, evite les `lastModified` artificiels et reutilise les correspondances categorie partagees.
+- Points restants documentes : reduction du shell legacy `ClientApp`, strategie `next/image` avec `images.unoptimized`, et adaptation des scripts perf legacy Vite.
+- Passe S2 hydration initiale : `app/ClientApp.jsx` accepte `defer`; produit, categorie et devis differencient le montage du legacy shell jusqu'a une interaction ou un idle court. La home `/` garde volontairement `ClientApp` immediat pour conserver le preloader puis la galerie comme entree visuelle historique.
+- `src/app.jsx` pose maintenant `data-sv-client-hydrated="true"` seulement quand l'app legacy est reellement montee; le HTML SSR public n'est plus masque pendant le chargement du chunk legacy.
+- Les routes privees/tunnel sans fallback SSR metier (`/admin`, `/checkout`, `/wishlist`, `/mes-commandes`) gardent le chargement immediat de `ClientApp`.
+- Validation S2 : `npm run lint`, `npm run build`, `npm run seo:check`, inspections runtime home/devis/admin, verification Playwright mobile du passage SSR visible -> legacy hydrate, et `npm run perf:architecture`.
+- Resultat perf a surveiller : le HTML initial Next reste nettement meilleur que la SPA et les routes categorie/produit reduisent requetes/images, mais le JS runtime reste eleve quand le legacy shell finit par charger; prochaine passe recommandee : isoler panier/wishlist/auth/lightbox au lieu de monter toute la SPA publique.
+
+### Goal 8 - Premier clic image produit depuis galerie
+
+- `NEXTJS_OPTIMIZATION_ROADMAP.md` et `alertemobile.md` ont ete relus avant optimisation; l'invariant mobile critique de `src/Router.jsx` est reste intact.
+- Cause confirmee : le rang de la carte n'est pas la vraie cause; le retard vient du premier passage dans le detail client et de la premiere variante detail froide.
+- `src/kit/marketplace/components/ProductCard.jsx` prechauffe maintenant l'image detail primaire avant ouverture : `pointerdown`, touch, click, hover/focus et visibilite via `IntersectionObserver`.
+- `src/utils/imageUtils.js` expose `preloadPrimaryProductDetailImage` avec choix explicite de variante; sur mobile les warmups forcent `medium` sans `srcSet` pour eviter que le DPR choisisse `large`.
+- `src/kit/marketplace/ArchitecturalProductDetail.jsx` garde le premier rendu mobile sur `medium/card/thumb`; le staging `currentSrc/decode` n'upgrade qu'apres le premier paint.
+- `src/kit/marketplace/MarketplaceLayout.jsx` et `src/kit/marketplace/CategoryPage.jsx` appliquent la meme logique mobile `medium` aux prechauffes galerie/categorie.
+- Validation : `npm run mobile:contract`, `npm run lint`, `npm run build`.
+- Mesure Playwright locale production : desktop hover -> image detail principale 424-571 ms; mobile visible tap verifie la variante `medium`, avec temps local encore penalise par le pipeline SPA/Firebase et le scroll Playwright.
 
 ## ðŸ› ï¸ Structure des Fichiers .env
 Nous n'utilisons PLUS de fichier `.env` unique. Tout est pilote par des fichiers suffixes locaux :

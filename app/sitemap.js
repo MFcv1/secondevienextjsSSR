@@ -1,52 +1,105 @@
 import { getPublicCatalog, getPublicCatalogFallback } from '../src/lib/server/products';
-import { publicEnv } from '../src/lib/server/env';
-import KIT_CONFIG from '../src/kit/config/constants';
+import { publicCatalogUrl, publicEnv } from '../src/lib/server/env';
+import { categoryEntries, getMatchingCategoryIds } from '../src/lib/seo/categories';
 import { getCategoryUrl, getProductUrl } from '../src/utils/slug';
 
-const categoryEntries = Array.from(
-  new Map([
-    ...(KIT_CONFIG.categoryGroups || []),
-    ...(KIT_CONFIG.productCategories || [])
-  ].map((category) => [category.id, category])).values()
+const SITEMAP_PAGE_LIMIT = 120;
+const SITEMAP_MAX_PRODUCTS = 1000;
+
+const toDate = (value) => {
+  if (!value) return null;
+  if (value instanceof Date && Number.isFinite(value.getTime())) return value;
+  if (Number.isFinite(value?.seconds)) {
+    return new Date((value.seconds * 1000) + Math.round((value.nanoseconds || 0) / 1000000));
+  }
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date : null;
+};
+
+const getProductUpdatedDate = (product) => (
+  toDate(product.updatedAt) || toDate(product.createdAt)
 );
 
-const getProductUpdatedAt = (product) => product.updatedAt || product.createdAt || null;
+const withLastModified = (entry, date) => (
+  date ? { ...entry, lastModified: date } : entry
+);
+
+const maxDate = (dates) => {
+  const timestamps = dates
+    .filter(Boolean)
+    .map((date) => date.getTime())
+    .filter(Number.isFinite);
+  return timestamps.length ? new Date(Math.max(...timestamps)) : null;
+};
 
 const getCategoryLastModified = (products, categoryId) => {
-  const group = KIT_CONFIG.categoryGroups?.find((category) => category.id === categoryId);
-  const categoryIds = group?.subCategories || [categoryId];
-  const legacyIds = categoryIds.some((id) => ['armoires', 'buffets', 'commodes', 'tables'].includes(id))
-    ? ['mobilier']
-    : [];
-  const matchingIds = new Set([...categoryIds, ...legacyIds]);
-  const timestamps = products
+  const matchingIds = new Set(getMatchingCategoryIds(categoryId));
+  return maxDate(products
     .filter((product) => matchingIds.has(product.category))
-    .map(getProductUpdatedAt)
-    .filter(Boolean)
-    .map((value) => new Date(value).getTime())
-    .filter(Number.isFinite);
+    .map(getProductUpdatedDate));
+};
 
-  if (!timestamps.length) return new Date();
-  return new Date(Math.max(...timestamps));
+const getPublicCatalogPage = async (cursor = '') => {
+  const params = new URLSearchParams({
+    scope: 'cards',
+    limit: String(SITEMAP_PAGE_LIMIT)
+  });
+  if (cursor) params.set('cursor', cursor);
+
+  const url = publicCatalogUrl(params.toString());
+  if (!url) return { products: [], nextCursor: null };
+
+  const response = await fetch(url, {
+    headers: { accept: 'application/json' },
+    next: {
+      revalidate: 300,
+      tags: ['catalog', 'products', 'sitemap']
+    }
+  });
+  if (!response.ok) return { products: [], nextCursor: null };
+
+  const payload = await response.json();
+  return {
+    products: (payload?.collections?.furniture || []).filter((product) => product.status === 'published'),
+    nextCursor: payload?.nextCursor || null
+  };
+};
+
+const getSitemapProducts = async () => {
+  const products = [];
+  let cursor = '';
+
+  for (let page = 0; page < Math.ceil(SITEMAP_MAX_PRODUCTS / SITEMAP_PAGE_LIMIT); page += 1) {
+    const result = await getPublicCatalogPage(cursor);
+    products.push(...result.products);
+    if (!result.nextCursor || products.length >= SITEMAP_MAX_PRODUCTS) break;
+    cursor = result.nextCursor;
+  }
+
+  if (products.length) return products.slice(0, SITEMAP_MAX_PRODUCTS);
+
+  let fallbackProducts = await getPublicCatalog(`scope=cards&limit=${SITEMAP_PAGE_LIMIT}`);
+  if (!fallbackProducts.length) {
+    fallbackProducts = await getPublicCatalogFallback({ limitCount: 500 });
+  }
+  return fallbackProducts.slice(0, SITEMAP_MAX_PRODUCTS);
 };
 
 export default async function sitemap() {
-  let products = await getPublicCatalog('scope=cards&limit=120');
-  if (!products.length) {
-    products = await getPublicCatalogFallback({ limitCount: 120 });
-  }
+  const products = await getSitemapProducts();
   const baseUrl = publicEnv.siteUrl.replace(/\/$/, '');
+  const catalogLastModified = maxDate(products.map(getProductUpdatedDate));
 
   return [
-    { url: `${baseUrl}/`, lastModified: new Date() },
-    { url: `${baseUrl}/a-propos`, lastModified: new Date() },
+    withLastModified({ url: `${baseUrl}/` }, catalogLastModified),
+    { url: `${baseUrl}/a-propos` },
+    { url: `${baseUrl}/devis` },
     ...categoryEntries.map((category) => ({
       url: getCategoryUrl(category.id, baseUrl),
-      lastModified: getCategoryLastModified(products, category.id)
+      ...withLastModified({}, getCategoryLastModified(products, category.id))
     })),
-    ...products.map((product) => ({
-      url: getProductUrl(product, baseUrl),
-      lastModified: product.updatedAt || product.createdAt || new Date()
-    }))
+    ...products.map((product) => withLastModified({
+      url: getProductUrl(product, baseUrl)
+    }, getProductUpdatedDate(product)))
   ];
 }

@@ -1,10 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ProductGridSection from './ProductGridSection';
-import { prewarmProductListImages } from '../../../utils/imageUtils';
 
 const NOUVEAUTES_PAGE_SIZE = 10;
 const PETITS_PRIX_PAGE_SIZE = 10;
-const NOUVEAUTES_PREWARM_IDLE_DELAY_MS = 9000;
 
 const getPublishedItems = (items) => (
     Array.isArray(items) ? items.filter((item) => item.status === 'published') : []
@@ -57,18 +55,6 @@ export const ProductArrivalsSection = ({
         if (!isCatalogComplete) onLoadFullCatalog?.();
         setLimit((previous) => previous + NOUVEAUTES_PAGE_SIZE);
     };
-
-    useEffect(() => {
-        if (isDetailOverlayOpen || !sortedItems.length) return undefined;
-
-        return prewarmProductListImages(sortedItems, {
-            includeDetailPrimary: false,
-            maxItems: 4,
-            initialDelay: NOUVEAUTES_PREWARM_IDLE_DELAY_MS,
-            delay: 650,
-            priority: 'low',
-        });
-    }, [isDetailOverlayOpen, sortedItems]);
 
     return (
         <ProductGridSection
@@ -148,19 +134,6 @@ export const ProductSmallPricesSection = ({
         observer.observe(section);
         return () => observer.disconnect();
     }, [visibleItems.length]);
-
-    useEffect(() => {
-        if (isDetailOverlayOpen || !isNearViewport || !visibleItems.length) return undefined;
-
-        return prewarmProductListImages(visibleItems, {
-            includeDetailPrimary: false,
-            maxItems: 4,
-            initialDelay: 600,
-            delay: 260,
-            priority: 'low',
-            decode: false,
-        });
-    }, [isDetailOverlayOpen, isNearViewport, visibleItems]);
 
     return (
         <ProductGridSection

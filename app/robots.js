@@ -1,11 +1,16 @@
+import { publicEnv } from '../src/lib/server/env';
+
+export const dynamic = 'force-dynamic';
+
 export default function robots() {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const siteUrl = publicEnv.siteUrl.replace(/\/$/, '');
+
   return {
     rules: {
       userAgent: '*',
       allow: '/',
       disallow: ['/admin']
     },
-    sitemap: `${siteUrl.replace(/\/$/, '')}/sitemap.xml`
+    sitemap: `${siteUrl}/sitemap.xml`
   };
 }

@@ -38,9 +38,9 @@ const checks = [
     pattern: /data-detail-open=\{isGalleryDetailOverlay\s*\?\s*'true'\s*:\s*'false'\}/,
   },
   {
-    label: 'Router still prevents Lenis from hijacking the gallery scroller',
+    label: 'Router still marks the gallery as a native isolated scroll region',
     file: files.router,
-    pattern: /data-lenis-prevent/,
+    pattern: /data-native-scroll-region/,
   },
   {
     label: 'CSS freezes the gallery scroller while detail is open',

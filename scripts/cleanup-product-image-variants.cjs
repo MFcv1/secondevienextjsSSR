@@ -29,6 +29,7 @@ function parseArgs(argv) {
         limit: null,
         keepStorage: false,
         allowProduction: false,
+        confirmBreakResponsivePipeline: false,
         help: false,
     };
 
@@ -42,6 +43,7 @@ function parseArgs(argv) {
             options.dryRun = true;
         } else if (arg === '--keep-storage') options.keepStorage = true;
         else if (arg === '--allow-production') options.allowProduction = true;
+        else if (arg === '--confirm-break-responsive-pipeline') options.confirmBreakResponsivePipeline = true;
         else if (arg.startsWith('--env=')) options.env = arg.split('=')[1] || 'sandbox';
         else if (arg.startsWith('--project=')) options.project = arg.split('=')[1] || null;
         else if (arg.startsWith('--bucket=')) options.bucket = arg.split('=')[1] || null;
@@ -67,6 +69,9 @@ function printHelp() {
 Clean legacy product image variants after reverting to the direct WebP pipeline.
 
 Dry-run is the default and never updates Firestore or deletes Storage files.
+WARNING: the current public site expects imageVariants for responsive product images.
+Do not run commit mode unless the responsive variant pipeline has intentionally
+been replaced.
 
 Usage:
   node scripts/cleanup-product-image-variants.cjs --dry-run
@@ -82,6 +87,8 @@ Options:
   --limit=<n>                   Process at most n documents, but still protects all canonical image paths.
   --keep-storage                Only clean Firestore fields; do not delete legacy Storage files.
   --allow-production            Required with --commit --env=production.
+  --confirm-break-responsive-pipeline
+                                Required with --commit because public pages consume imageVariants.
 
 Commit mode:
   - deletes imageVariants from product docs,
@@ -160,6 +167,9 @@ function resolveRuntimeConfig(options) {
 
     if (options.commit && options.env === 'production' && !options.allowProduction) {
         throw new Error('Refusing production cleanup without --allow-production.');
+    }
+    if (options.commit && !options.confirmBreakResponsivePipeline) {
+        throw new Error('Refusing to delete imageVariants without --confirm-break-responsive-pipeline. Current public pages depend on responsive variants.');
     }
 
     return { envName: options.env, projectId, storageBucket, appId, collections };

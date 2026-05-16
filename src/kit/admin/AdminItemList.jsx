@@ -150,7 +150,7 @@ const AdminItemList = ({ collectionName, darkMode, onEdit, onToggleStatus, onDel
 
             {/* List with Scrollable Container (Style AdminOrders) */}
             <div 
-                data-lenis-prevent="true"
+                data-native-scroll-region="true"
                 onWheel={(e) => e.stopPropagation()}
                 className={`grid gap-4 pr-2 overflow-y-auto scrollbar-thin ${darkMode ? 'scrollbar-thumb-stone-700 scrollbar-track-stone-900/20' : 'scrollbar-thumb-stone-200 scrollbar-track-stone-50'} max-h-[750px] custom-scrollbar`}
             >

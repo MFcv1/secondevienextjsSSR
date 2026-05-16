@@ -87,10 +87,16 @@ const ArchitecturalHeader = ({
         typeof window === 'undefined' ? false : window.matchMedia('(max-width: 767px)').matches
     ));
     const [isVisible, setIsVisible] = useState(() => (typeof window === 'undefined' ? true : window.scrollY <= 0));
+    const isVisibleRef = React.useRef(isVisible);
     const lastScrollY = React.useRef(typeof window === 'undefined' ? 0 : window.scrollY); // Use Ref for performance
     const wasMenuOpenRef = React.useRef(isMenuOpen);
     const previousViewRef = React.useRef(currentView);
     const shouldPinUnderMobileBanner = currentView === 'gallery' && isMobileViewport;
+    const updateHeaderVisibility = React.useCallback((nextVisible) => {
+        if (isVisibleRef.current === nextVisible) return;
+        isVisibleRef.current = nextVisible;
+        setIsVisible(nextVisible);
+    }, []);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -105,9 +111,9 @@ const ArchitecturalHeader = ({
 
     useEffect(() => {
         if (shouldPinUnderMobileBanner) {
-            setIsVisible(true);
+            updateHeaderVisibility(true);
         }
-    }, [shouldPinUnderMobileBanner]);
+    }, [shouldPinUnderMobileBanner, updateHeaderVisibility]);
 
     React.useLayoutEffect(() => {
         const previousView = previousViewRef.current;
@@ -122,38 +128,49 @@ const ArchitecturalHeader = ({
             !isMenuOpen
         ) {
             lastScrollY.current = window.scrollY;
-            setIsVisible(false);
+            updateHeaderVisibility(false);
         }
-    }, [currentView, isMenuOpen, shouldPinUnderMobileBanner]);
+    }, [currentView, isMenuOpen, shouldPinUnderMobileBanner, updateHeaderVisibility]);
 
     useEffect(() => {
-        const handleScroll = () => {
+        let frameId = 0;
+
+        const processScroll = () => {
+            frameId = 0;
             if (isMenuOpen) return;
 
             const currentScrollY = window.scrollY;
 
             if (shouldPinUnderMobileBanner) {
-                setIsVisible(true);
+                updateHeaderVisibility(true);
                 lastScrollY.current = currentScrollY;
                 return;
             }
 
             // Immediate reaction: hide on scroll down, show on scroll up
             if (currentScrollY <= 0) {
-                setIsVisible(true);
+                updateHeaderVisibility(true);
             } else if (currentScrollY > lastScrollY.current) {
                 // Scrolling DOWN -> Hide
-                setIsVisible(false);
+                updateHeaderVisibility(false);
             } else if (currentScrollY < lastScrollY.current) {
                 // Scrolling UP -> Show
-                setIsVisible(true);
+                updateHeaderVisibility(true);
             }
             lastScrollY.current = currentScrollY;
         };
 
+        const handleScroll = () => {
+            if (frameId) return;
+            frameId = window.requestAnimationFrame(processScroll);
+        };
+
         window.addEventListener('scroll', handleScroll, { passive: true });
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, [isMenuOpen, shouldPinUnderMobileBanner]);
+        return () => {
+            if (frameId) window.cancelAnimationFrame(frameId);
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, [isMenuOpen, shouldPinUnderMobileBanner, updateHeaderVisibility]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -167,9 +184,9 @@ const ArchitecturalHeader = ({
         lastScrollY.current = currentScrollY;
 
         if (shouldPinUnderMobileBanner || currentScrollY <= 0) {
-            setIsVisible(true);
+            updateHeaderVisibility(true);
         }
-    }, [isMenuOpen, shouldPinUnderMobileBanner]);
+    }, [isMenuOpen, shouldPinUnderMobileBanner, updateHeaderVisibility]);
 
 
     return (

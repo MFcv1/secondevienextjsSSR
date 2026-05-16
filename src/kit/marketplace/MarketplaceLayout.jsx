@@ -172,8 +172,7 @@ const DEFAULT_RESTORATION_PROJECTS = [
 const HERO_DURATION = 5500; // ms par slide
 const HERO_PROGRESS_STEP_COUNT = 4;
 const DEFERRED_SECTION_IDLE_FALLBACK_MS = 16000;
-const DEFERRED_SECTION_ROOT_MARGIN = '1100px 0px 1400px';
-const DESKTOP_GALLERY_QUERY = '(min-width: 1024px)';
+const DEFERRED_SECTION_ROOT_MARGIN = '420px 0px 620px';
 const MOBILE_GALLERY_QUERY = '(max-width: 1023px)';
 
 const normalizeFrenchCopy = (value) => String(value || '')
@@ -251,16 +250,6 @@ const DeferredSectionSlot = ({ children, minHeight, delay = 0, className = '', f
     );
 };
 
-const canPreloadGalleryScrollAssets = () => {
-    if (typeof window === 'undefined') return false;
-    if (!window.matchMedia(DESKTOP_GALLERY_QUERY).matches) return false;
-
-    const connection = navigator?.connection || navigator?.mozConnection || navigator?.webkitConnection;
-    if (connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || '')) return false;
-
-    return true;
-};
-
 const canPreloadMobileGalleryEntryAssets = () => {
     if (typeof window === 'undefined') return false;
     if (!window.matchMedia(MOBILE_GALLERY_QUERY).matches) return false;
@@ -296,18 +285,6 @@ const scheduleGalleryWarmup = (callback, delay, handles) => {
     handles.timeouts.push(timeoutId);
 };
 
-const preloadGalleryDeferredChunks = () => {
-    [
-        loadBeforeAfterSection,
-        loadInstagramSection,
-        loadTestimonialsSection,
-        loadCustomerTestimonialsCarousel,
-        loadNewsletterSection,
-    ].forEach((loadSection) => {
-        loadSection().catch(() => {});
-    });
-};
-
 const preloadCategoryRailImages = (categories, getImageSrc) => {
     if (!Array.isArray(categories) || typeof getImageSrc !== 'function') return;
 
@@ -320,38 +297,6 @@ const preloadCategoryRailImages = (categories, getImageSrc) => {
         }).catch(() => null);
     });
 };
-
-const preloadLowerSectionImages = ({ projects, instagramPosts }) => {
-    const sources = [
-        ...(projects || []).flatMap((project) => [project.avant, project.apres]),
-        ...(instagramPosts || []).map((post) => post.img),
-        '/images/newsletter/discount-sideboard.webp',
-    ].filter(Boolean);
-
-    [...new Set(sources)].slice(0, 14).forEach((src) => {
-        preloadImage(src, {
-            priority: 'low',
-            decode: false,
-            decoding: 'async',
-        }).catch(() => null);
-    });
-};
-
-const getMarketplaceProductPrice = (item) => (
-    item?.currentPrice !== undefined ? item.currentPrice : (item?.price || 0)
-);
-
-const getSmallPriceWarmupItems = (items) => (
-    [...items]
-        .filter((item) => getMarketplaceProductPrice(item) <= 250)
-        .sort((a, b) => {
-            const orderA = a.petitsPrixOrder !== undefined ? a.petitsPrixOrder : 999999;
-            const orderB = b.petitsPrixOrder !== undefined ? b.petitsPrixOrder : 999999;
-            if (orderA !== orderB) return orderA - orderB;
-
-            return getMarketplaceProductPrice(a) - getMarketplaceProductPrice(b);
-        })
-);
 
 const MarketplaceLayout = ({
     items,
@@ -374,7 +319,6 @@ const MarketplaceLayout = ({
 }) => {
     const { filter, setFilter } = headerProps || {};
     const containerRef = useRef(null);
-    const hasStartedDesktopWarmupRef = useRef(false);
     const hasStartedMobileWarmupRef = useRef(false);
 
     const [galleryConfig, setGalleryConfig] = useState(null);
@@ -511,8 +455,6 @@ const MarketplaceLayout = ({
     const publishedItems = useMemo(() => (
         Array.isArray(items) ? items.filter(i => i.status === 'published') : []
     ), [items]);
-    const shouldWarmupDeferredSections = isPreparingGallery && canPreloadGalleryScrollAssets();
-
     const availableCategoryIds = useMemo(() => {
         const ids = new Set();
         publishedItems.forEach((item) => {
@@ -529,47 +471,13 @@ const MarketplaceLayout = ({
         const handles = { timeouts: [], idles: [] };
         const cancelWarmups = [];
 
-        if (isPreparingGallery && canPreloadGalleryScrollAssets() && !hasStartedDesktopWarmupRef.current) {
-            hasStartedDesktopWarmupRef.current = true;
-
-            scheduleGalleryWarmup(preloadGalleryDeferredChunks, 250, handles);
-            scheduleGalleryWarmup(() => {
-                cancelWarmups.push(prewarmProductListImages(publishedItems, {
-                    includeDetailPrimary: false,
-                    maxItems: 10,
-                    initialDelay: 0,
-                    delay: 140,
-                    priority: 'low',
-                    decode: true,
-                    sizes: PRODUCT_CARD_IMAGE_SIZES,
-                }));
-            }, 650, handles);
-            scheduleGalleryWarmup(() => {
-                cancelWarmups.push(prewarmProductListImages(getSmallPriceWarmupItems(publishedItems), {
-                    includeDetailPrimary: false,
-                    maxItems: 10,
-                    initialDelay: 0,
-                    delay: 170,
-                    priority: 'low',
-                    decode: true,
-                    sizes: PRODUCT_CARD_IMAGE_SIZES,
-                }));
-            }, 900, handles);
-            scheduleGalleryWarmup(() => {
-                preloadLowerSectionImages({
-                    projects: dynamicProjects,
-                    instagramPosts: dynamicInsta,
-                });
-            }, 1100, handles);
-        }
-
         if (isPreparingGallery && canPreloadMobileGalleryEntryAssets() && !hasStartedMobileWarmupRef.current) {
             hasStartedMobileWarmupRef.current = true;
 
             scheduleGalleryWarmup(() => {
                 cancelWarmups.push(prewarmProductListImages(publishedItems, {
                     includeDetailPrimary: false,
-                    maxItems: getMobileGalleryWarmupLimit(),
+                    maxItems: Math.min(4, getMobileGalleryWarmupLimit()),
                     initialDelay: 0,
                     delay: 260,
                     priority: 'low',
@@ -591,7 +499,7 @@ const MarketplaceLayout = ({
             }
             cancelWarmups.forEach((cancel) => cancel?.());
         };
-    }, [dynamicInsta, dynamicProjects, isPreparingGallery, publishedItems, visibleCategories]);
+    }, [isPreparingGallery, publishedItems, visibleCategories]);
 
     const scrollToPieces = useCallback(() => {
         const target = containerRef.current?.querySelector('#gallery-pieces');
@@ -692,12 +600,12 @@ const MarketplaceLayout = ({
             />
 
             {/* ÉTAPE 5 : Avant / Après — atelier premium adouci */}
-            <DeferredSectionSlot minHeight="760px" delay={0} forceReady={shouldWarmupDeferredSections}>
+            <DeferredSectionSlot minHeight="760px" delay={0}>
                 <BeforeAfterSection darkMode={darkMode} projects={dynamicProjects} />
             </DeferredSectionSlot>
 
             {/* ÉTAPE 6 : "Le Rattrapage" (Grille Petits Prix) */}
-            <DeferredSectionSlot minHeight="820px" delay={120} forceReady={shouldWarmupDeferredSections}>
+            <DeferredSectionSlot minHeight="820px" delay={120}>
                 <ProductSmallPricesSection
                     heading={<SectionHeading tone="price">Petits Prix</SectionHeading>}
                     items={items}
@@ -715,17 +623,17 @@ const MarketplaceLayout = ({
             </DeferredSectionSlot>
 
             {/* ÉTAPE 7 : "La Connexion Humaine" (Le mur Instagram) - Version Marketplace Stylisée */}
-            <DeferredSectionSlot minHeight="780px" delay={180} forceReady={shouldWarmupDeferredSections}>
+            <DeferredSectionSlot minHeight="780px" delay={180}>
                 <InstagramSection darkMode={darkMode} posts={dynamicInsta} />
             </DeferredSectionSlot>
 
             {/* ÉTAPE 8 : Le "Juge de Paix" (Les Avis Google) */}
-            <DeferredSectionSlot minHeight="520px" delay={240} forceReady={shouldWarmupDeferredSections}>
+            <DeferredSectionSlot minHeight="520px" delay={240}>
                 <TestimonialsSection darkMode={darkMode} />
             </DeferredSectionSlot>
 
             {/* ÉTAPE 9 : "La Capture" (Newsletter Minimaliste) */}
-            <DeferredSectionSlot minHeight="760px" delay={300} forceReady={shouldWarmupDeferredSections}>
+            <DeferredSectionSlot minHeight="760px" delay={300}>
                 <NewsletterSection darkMode={darkMode} />
             </DeferredSectionSlot>
         </div>

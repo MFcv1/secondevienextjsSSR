@@ -3,87 +3,208 @@ const path = require('path');
 const zlib = require('zlib');
 
 const ROOT = path.resolve(__dirname, '..');
-const DIST = path.join(ROOT, 'dist');
-const ASSETS = path.join(DIST, 'assets');
-const INDEX_HTML = path.join(DIST, 'index.html');
+const NEXT_DIR = path.join(ROOT, '.next');
+const STATIC_DIR = path.join(NEXT_DIR, 'static');
+const APP_BUILD_MANIFEST = path.join(NEXT_DIR, 'app-build-manifest.json');
+const SERVER_APP_DIR = path.join(NEXT_DIR, 'server', 'app');
+const PUBLIC_ROBOTS = path.join(ROOT, 'public', 'robots.txt');
 
 const KB = 1024;
+const OLD_HOST = 'secondevie-a0745.web.app';
 
-const budgets = [
-  { label: 'app shell', pattern: /^index-(?!es-).*\.js$/, maxGzipKb: 90, required: true, pick: 'largest' },
-  { label: 'firebase public', pattern: /^firebase-.*\.js$/, maxGzipKb: 160, required: true },
-  { label: 'gallery route', pattern: /^GalleryView-.*\.js$/, maxGzipKb: 25, required: true },
-  { label: 'product detail route', pattern: /^ProductDetail-.*\.js$/, maxGzipKb: 18, required: true },
-  { label: 'category route', pattern: /^CategoryPage-.*\.js$/, maxGzipKb: 9, required: true },
-  { label: 'category catalog loader', pattern: /^categoryCatalogLoader-.*\.js$/, maxGzipKb: 2, required: true },
-  { label: 'firebase storage admin chunk', pattern: /^firebase-storage-.*\.js$/, maxGzipKb: 10, required: true },
-  { label: 'orders route without invoice generator', pattern: /^MyOrdersView-.*\.js$/, maxGzipKb: 8, required: true },
-  { label: 'stripe checkout modal', pattern: /^CheckoutStripeModal-.*\.js$/, maxGzipKb: 9, required: true },
-  { label: 'customer testimonials deferred', pattern: /^CustomerTestimonialsCarousel-.*\.js$/, maxGzipKb: 4, required: true },
+const routeBudgets = [
+  {
+    label: 'home SSR route',
+    keys: ['/layout', '/page'],
+    maxInitialJsGzipKb: 135,
+    maxInitialCssGzipKb: 55,
+  },
+  {
+    label: 'product SSR route',
+    keys: ['/layout', '/produit/[slugOrId]/page'],
+    maxInitialJsGzipKb: 135,
+    maxInitialCssGzipKb: 55,
+  },
+  {
+    label: 'category SSR route',
+    keys: ['/layout', '/categorie/[categoryId]/page'],
+    maxInitialJsGzipKb: 135,
+    maxInitialCssGzipKb: 55,
+  },
+  {
+    label: 'quote SSR route',
+    keys: ['/layout', '/devis/page'],
+    maxInitialJsGzipKb: 135,
+    maxInitialCssGzipKb: 55,
+  },
+  {
+    label: 'admin client tunnel',
+    keys: ['/layout', '/admin/page'],
+    maxInitialJsGzipKb: 125,
+    maxInitialCssGzipKb: 55,
+  },
 ];
 
-const forbiddenInitialChunkMarkers = [
-  'ProductDetail-',
-  'firebase-storage-',
-  'categoryCatalogLoader-',
-  'CustomerTestimonialsCarousel-',
-  'generateInvoice-',
-  'CheckoutStripeModal-',
-];
+const staticBudgets = {
+  maxLargestJsGzipKb: 130,
+  maxLargestCssGzipKb: 55,
+};
 
 const fail = (message) => {
   console.error(`Performance budget failed: ${message}`);
   process.exitCode = 1;
 };
 
-if (!fs.existsSync(ASSETS) || !fs.existsSync(INDEX_HTML)) {
-  fail('dist is missing. Run npm run build first.');
-  process.exit();
-}
-
-const files = fs.readdirSync(ASSETS);
-const gzipSizeKb = (file) => zlib.gzipSync(fs.readFileSync(path.join(ASSETS, file))).length / KB;
-const rawSizeKb = (file) => fs.statSync(path.join(ASSETS, file)).size / KB;
-
-const pickFile = (matches, pick = 'first') => {
-  if (!matches.length) return null;
-  if (pick !== 'largest') return matches[0];
-  return matches.slice().sort((a, b) => rawSizeKb(b) - rawSizeKb(a))[0];
+const assertFile = (filePath, message) => {
+  if (!fs.existsSync(filePath)) {
+    fail(message);
+    return false;
+  }
+  return true;
 };
 
-console.log('Performance budget report');
-budgets.forEach((budget) => {
-  const matches = files.filter((file) => budget.pattern.test(file));
-  const file = pickFile(matches, budget.pick);
+const walk = (dir) => {
+  if (!fs.existsSync(dir)) return [];
 
-  if (!file) {
-    if (budget.required) fail(`${budget.label} chunk not found`);
-    return;
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const absolutePath = path.join(dir, entry.name);
+    if (entry.isDirectory()) return walk(absolutePath);
+    if (!entry.isFile()) return [];
+    return [absolutePath];
+  });
+};
+
+const gzipSizeKb = (filePath) => zlib.gzipSync(fs.readFileSync(filePath)).length / KB;
+const rawSizeKb = (filePath) => fs.statSync(filePath).size / KB;
+const formatKb = (value) => `${value.toFixed(2)} kB`;
+const relative = (filePath) => path.relative(ROOT, filePath).replace(/\\/g, '/');
+
+const loadJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'));
+
+const resolveStaticAsset = (assetPath) => {
+  const normalized = assetPath.replace(/^\/_next\//, '').replace(/^\/+/, '');
+  const absolutePath = path.join(NEXT_DIR, normalized);
+  return fs.existsSync(absolutePath) ? absolutePath : null;
+};
+
+const uniqueFiles = (files) => [...new Set(files.filter(Boolean))];
+
+const sumGzip = (files) => files.reduce((total, filePath) => total + gzipSizeKb(filePath), 0);
+
+const manifestFilesForKeys = (manifest, keys) => {
+  const pages = manifest.pages || {};
+  const assets = keys.flatMap((key) => pages[key] || []);
+  return uniqueFiles(assets.map(resolveStaticAsset));
+};
+
+const collectServerTextFiles = () =>
+  walk(SERVER_APP_DIR).filter((filePath) => /\.(html|xml|txt|json|rsc)$/i.test(filePath));
+
+if (
+  !assertFile(NEXT_DIR, '.next is missing. Run npm run build first.') ||
+  !assertFile(APP_BUILD_MANIFEST, '.next/app-build-manifest.json is missing. Run npm run build first.')
+) {
+  process.exit(process.exitCode || 1);
+}
+
+const appBuildManifest = loadJson(APP_BUILD_MANIFEST);
+const staticFiles = walk(STATIC_DIR);
+const jsFiles = staticFiles.filter((filePath) => filePath.endsWith('.js'));
+const cssFiles = staticFiles.filter((filePath) => filePath.endsWith('.css'));
+
+console.log('Next performance budget report');
+
+for (const budget of routeBudgets) {
+  const files = manifestFilesForKeys(appBuildManifest, budget.keys);
+  const js = files.filter((filePath) => filePath.endsWith('.js'));
+  const css = files.filter((filePath) => filePath.endsWith('.css'));
+  const jsGzip = sumGzip(js);
+  const cssGzip = sumGzip(css);
+
+  const jsStatus = jsGzip <= budget.maxInitialJsGzipKb ? 'OK' : 'FAIL';
+  const cssStatus = cssGzip <= budget.maxInitialCssGzipKb ? 'OK' : 'FAIL';
+  console.log(
+    `${jsStatus} ${budget.label}: ${formatKb(jsGzip)} JS gzip across ${js.length} initial files`,
+  );
+  console.log(
+    `${cssStatus} ${budget.label}: ${formatKb(cssGzip)} CSS gzip across ${css.length} initial files`,
+  );
+
+  if (!files.length) {
+    fail(`${budget.label} assets not found for keys: ${budget.keys.join(', ')}`);
   }
-
-  const gzipKb = gzipSizeKb(file);
-  const rawKb = rawSizeKb(file);
-  const status = gzipKb <= budget.maxGzipKb ? 'OK' : 'FAIL';
-  console.log(`${status} ${budget.label}: ${rawKb.toFixed(2)} kB raw / ${gzipKb.toFixed(2)} kB gzip (${file})`);
-
-  if (gzipKb > budget.maxGzipKb) {
-    fail(`${budget.label} is ${gzipKb.toFixed(2)} kB gzip, max ${budget.maxGzipKb} kB`);
+  if (jsGzip > budget.maxInitialJsGzipKb) {
+    fail(
+      `${budget.label} initial JS is ${formatKb(jsGzip)}, max ${formatKb(
+        budget.maxInitialJsGzipKb,
+      )}`,
+    );
   }
-});
-
-const indexHtml = fs.readFileSync(INDEX_HTML, 'utf8');
-forbiddenInitialChunkMarkers.forEach((marker) => {
-  if (indexHtml.includes(marker)) {
-    fail(`${marker} is referenced by dist/index.html and may load on first paint`);
+  if (cssGzip > budget.maxInitialCssGzipKb) {
+    fail(
+      `${budget.label} initial CSS is ${formatKb(cssGzip)}, max ${formatKb(
+        budget.maxInitialCssGzipKb,
+      )}`,
+    );
   }
-});
+}
 
-if (/Material\+Symbols|material-symbols/i.test(indexHtml)) {
-  fail('Material Symbols stylesheet is still present in dist/index.html');
+const largestJs = jsFiles
+  .map((filePath) => ({ filePath, gzip: gzipSizeKb(filePath), raw: rawSizeKb(filePath) }))
+  .sort((a, b) => b.gzip - a.gzip)[0];
+const largestCss = cssFiles
+  .map((filePath) => ({ filePath, gzip: gzipSizeKb(filePath), raw: rawSizeKb(filePath) }))
+  .sort((a, b) => b.gzip - a.gzip)[0];
+
+if (largestJs) {
+  const status = largestJs.gzip <= staticBudgets.maxLargestJsGzipKb ? 'OK' : 'FAIL';
+  console.log(
+    `${status} largest deferred/static JS: ${formatKb(largestJs.raw)} raw / ${formatKb(
+      largestJs.gzip,
+    )} gzip (${relative(largestJs.filePath)})`,
+  );
+  if (largestJs.gzip > staticBudgets.maxLargestJsGzipKb) {
+    fail(
+      `largest JS chunk is ${formatKb(largestJs.gzip)}, max ${formatKb(
+        staticBudgets.maxLargestJsGzipKb,
+      )}`,
+    );
+  }
+}
+
+if (largestCss) {
+  const status = largestCss.gzip <= staticBudgets.maxLargestCssGzipKb ? 'OK' : 'FAIL';
+  console.log(
+    `${status} largest CSS file: ${formatKb(largestCss.raw)} raw / ${formatKb(
+      largestCss.gzip,
+    )} gzip (${relative(largestCss.filePath)})`,
+  );
+  if (largestCss.gzip > staticBudgets.maxLargestCssGzipKb) {
+    fail(
+      `largest CSS file is ${formatKb(largestCss.gzip)}, max ${formatKb(
+        staticBudgets.maxLargestCssGzipKb,
+      )}`,
+    );
+  }
+}
+
+const serverTextFiles = collectServerTextFiles();
+for (const filePath of serverTextFiles) {
+  const content = fs.readFileSync(filePath, 'utf8');
+  if (content.includes(OLD_HOST)) {
+    fail(`${OLD_HOST} is still present in ${relative(filePath)}`);
+  }
+  if (content.includes('/_next/image')) {
+    fail(`${relative(filePath)} references /_next/image while Firebase variants are the chosen image pipeline`);
+  }
+}
+
+if (fs.existsSync(PUBLIC_ROBOTS)) {
+  fail('public/robots.txt exists and can override app/robots.js');
 }
 
 if (process.exitCode) {
   process.exit(process.exitCode);
 }
 
-console.log('OK first-paint chunk references stay clean.');
+console.log('OK Next performance budget passed.');

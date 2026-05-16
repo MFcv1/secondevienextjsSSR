@@ -22,6 +22,7 @@ const MOBILE_DETAIL_MAX_HEIGHT = 620;
 const MOBILE_LIGHTBOX_MAX_WIDTH = 720;
 const MOBILE_LIGHTBOX_MAX_HEIGHT = 860;
 const MOBILE_DETAIL_RESERVED_REM = 15.5;
+const DEFAULT_DETAIL_BACKDROP_COLOR = '#fafaf9';
 
 const getProductImageFitMode = (ratio) => (
     Number.isFinite(ratio) && ratio > 0 && ratio < TALL_PRODUCT_IMAGE_RATIO ? 'tall' : 'standard'
@@ -278,7 +279,8 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
     const [isDesktopDetailViewport, setIsDesktopDetailViewport] = useState(() => (
         typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches
     ));
-    const [displayedDetailBackdrop, setDisplayedDetailBackdrop] = useState({ src: '', color: '#e8d9c6' });
+    const [displayedDetailBackdrop, setDisplayedDetailBackdrop] = useState({ src: '', color: '' });
+    const [hasPrimaryImagePainted, setHasPrimaryImagePainted] = useState(false);
 
     // REF pour isoler le scroll de la description
     const descScrollRef = useRef(null);
@@ -1157,9 +1159,12 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
     const activeImageFullSrc = activeImage.full || activeImageSrc;
     const activeImageSrcSet = activeImage.srcSet || undefined;
     const detailBackdropSrc = getDetailBackdropImageSrc(activeImage);
-    const detailBackdropColor = activeImage.metadata?.dominantColor || '#e8d9c6';
+    const detailBackdropColor = activeImage.metadata?.dominantColor || DEFAULT_DETAIL_BACKDROP_COLOR;
+    const hasDisplayedDetailBackdrop = Boolean(displayedDetailBackdrop.src);
     const visibleDetailBackdropSrc = displayedDetailBackdrop.src || detailBackdropSrc;
-    const visibleDetailBackdropColor = displayedDetailBackdrop.color || detailBackdropColor;
+    const visibleDetailBackdropColor = hasDisplayedDetailBackdrop
+        ? displayedDetailBackdrop.color || detailBackdropColor
+        : 'transparent';
     const lightboxImageTransform = `translate3d(${lightboxOffset.x}px, ${lightboxOffset.y}px, 0) scale(${lightboxZoom})`;
     const activeImageRatio = imageAspectRatios[activeImageSrc] || imageAspectRatios[activeImageFullSrc] || null;
     const activeImageFitMode = getProductImageFitMode(activeImageRatio);
@@ -1169,10 +1174,17 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
     );
     const mobileDisplayedImage = imageItems[safeMobileDisplayedImageIndex] || activeImage || imageItems[0] || {};
     const mobileDisplayedStagedImage = mobileStagedImages[safeMobileDisplayedImageIndex];
-    const mobileDisplayedImageSrc = mobileDisplayedStagedImage?.src || mobileDisplayedImage.src || mobileDisplayedImage.full || activeImageSrc;
+    const mobileDisplayedPaintedStagedImage = hasPrimaryImagePainted ? mobileDisplayedStagedImage : null;
+    const mobileDisplayedInitialSrc = mobileDisplayedImage.medium
+        || mobileDisplayedImage.card
+        || mobileDisplayedImage.thumb
+        || mobileDisplayedImage.src
+        || mobileDisplayedImage.full
+        || activeImageSrc;
+    const mobileDisplayedImageSrc = mobileDisplayedPaintedStagedImage?.src || mobileDisplayedInitialSrc;
     const mobileDisplayedImageFullSrc = mobileDisplayedImage.full || mobileDisplayedImageSrc;
-    const mobileDisplayedImageSrcSet = mobileDisplayedStagedImage?.src ? undefined : mobileDisplayedImage.srcSet || undefined;
-    const mobileDisplayedImageRatio = mobileDisplayedStagedImage?.ratio
+    const mobileDisplayedImageSrcSet = undefined;
+    const mobileDisplayedImageRatio = mobileDisplayedPaintedStagedImage?.ratio
         || imageAspectRatios[mobileDisplayedImageSrc]
         || imageAspectRatios[mobileDisplayedImageFullSrc]
         || activeImageRatio
@@ -1180,9 +1192,15 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
     const mobileDisplayedImageFitMode = getProductImageFitMode(mobileDisplayedImageRatio);
     const mobilePreviousImage = mobilePreviousImageIndex !== null ? imageItems[mobilePreviousImageIndex] : null;
     const mobilePreviousStagedImage = mobilePreviousImageIndex !== null ? mobileStagedImages[mobilePreviousImageIndex] : null;
-    const mobilePreviousImageSrc = mobilePreviousStagedImage?.src || mobilePreviousImage?.src || mobilePreviousImage?.full || '';
+    const mobilePreviousImageSrc = mobilePreviousStagedImage?.src
+        || mobilePreviousImage?.medium
+        || mobilePreviousImage?.card
+        || mobilePreviousImage?.thumb
+        || mobilePreviousImage?.src
+        || mobilePreviousImage?.full
+        || '';
     const mobilePreviousImageFullSrc = mobilePreviousImage?.full || mobilePreviousImageSrc;
-    const mobilePreviousImageSrcSet = mobilePreviousStagedImage?.src ? undefined : mobilePreviousImage?.srcSet || undefined;
+    const mobilePreviousImageSrcSet = undefined;
     const mobilePreviousImageRatio = mobilePreviousImageSrc
         ? mobilePreviousStagedImage?.ratio || imageAspectRatios[mobilePreviousImageSrc] || imageAspectRatios[mobilePreviousImageFullSrc] || mobileDisplayedImageRatio
         : null;
@@ -1253,6 +1271,11 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
         });
     }, []);
 
+    const handlePrimaryDetailImageLoad = React.useCallback((event) => {
+        setHasPrimaryImagePainted(true);
+        rememberProductImageRatio(event, activeImageSrc, activeImageFullSrc);
+    }, [activeImageFullSrc, activeImageSrc, rememberProductImageRatio]);
+
     const rememberStagedProductImage = React.useCallback((index, resolved, image) => {
         if (!resolved?.src) return;
 
@@ -1308,6 +1331,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
 
     useEffect(() => {
         setActiveImg(0);
+        setHasPrimaryImagePainted(false);
         setMobileDisplayedImageIndex(0);
         setMobilePreviousImageIndex(null);
         setMobileStagedImages({});
@@ -1319,6 +1343,10 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
         }
         wheelAcc.current = 0;
     }, [item?.id]);
+
+    useEffect(() => {
+        setHasPrimaryImagePainted(false);
+    }, [activeImg, item?.id]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return undefined;
@@ -1432,7 +1460,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
         preloadOrder.forEach((index, position) => {
             const run = () => {
                 preloadDetailBackdropImage(imageItems[index], {
-                    priority: position <= 2 ? 'high' : 'low',
+                    priority: 'low',
                     decode: false,
                 });
             };
@@ -1561,19 +1589,35 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
             timeoutIds.add(id);
         };
 
+        if (!preloadOrder.length) return undefined;
+
+        if (isMobileDetail && !hasPrimaryImagePainted) {
+            return () => {
+                cancelled = true;
+                timeoutIds.forEach((id) => window.clearTimeout(id));
+            };
+        }
+
         loadIndex(preloadOrder[0], { priority: 'high', decode: true, decoding: 'async' });
+
+        if (!hasPrimaryImagePainted) {
+            return () => {
+                cancelled = true;
+                timeoutIds.forEach((id) => window.clearTimeout(id));
+            };
+        }
+
         preloadOrder.slice(1, isMobileDetail ? imageItems.length : 5).forEach((index, position) => {
-            const delay = isMobileDetail ? position * 90 : 0;
+            const delay = isMobileDetail ? 160 + position * 120 : position * 60;
             const run = () => {
                 loadIndex(index, {
-                    priority: isMobileDetail ? 'high' : 'auto',
-                    decode: shouldDecodeFullMobileSet,
+                    priority: 'low',
+                    decode: shouldDecodeFullMobileSet && position <= 1,
                     decoding: 'async',
                 });
             };
 
-            if (delay > 0) scheduleTimeout(run, delay);
-            else run();
+            scheduleTimeout(run, delay);
         });
 
         if (isMobileDetail) {
@@ -1593,7 +1637,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
             cancelled = true;
             timeoutIds.forEach((id) => window.clearTimeout(id));
         };
-    }, [activeImg, imageItems, rememberStagedProductImage]);
+    }, [activeImg, hasPrimaryImagePainted, imageItems, rememberStagedProductImage]);
 
     // IMAGE SWITCH ON SCROLL (Global Desktop)
     useEffect(() => {
@@ -1776,9 +1820,12 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
     return (
         <div
             ref={containerRef}
-            data-lenis-prevent
-            className={`fixed inset-0 z-[100] w-screen overflow-hidden font-body selection:bg-secondary-container selection:text-on-secondary-container transition-colors duration-1000 ${darkMode ? 'bg-[#0e0e0e] text-[#e5e5e5]' : 'bg-[#e8d9c6] text-stone-900'}`}
-            style={{ height: 'var(--marketplace-viewport-height, 100svh)' }}
+            data-native-scroll-region
+            className={`fixed inset-0 z-[100] w-screen overflow-hidden font-body selection:bg-secondary-container selection:text-on-secondary-container transition-colors duration-1000 ${darkMode ? 'bg-[#0e0e0e] text-[#e5e5e5]' : 'bg-transparent text-stone-900'}`}
+            style={{
+                height: 'var(--marketplace-viewport-height, 100svh)',
+                backgroundColor: isDesktopDetailViewport ? visibleDetailBackdropColor : undefined,
+            }}
         >
             <SEO
                 title={item.name}
@@ -1849,7 +1896,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                                 style={{
                                                     width: `${mobileThumbSize}px`,
                                                     height: `${mobileThumbSize}px`,
-                                                    backgroundImage: thumbSrc ? `url("${thumbSrc}")` : undefined,
+                                                    backgroundImage: hasPrimaryImagePainted && thumbSrc ? `url("${thumbSrc}")` : undefined,
                                                     backgroundSize: 'cover',
                                                     backgroundPosition: 'center',
                                                     backgroundColor: 'rgba(0,0,0,0.04)',
@@ -1860,9 +1907,9 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                                     srcSet={image.srcSet || undefined}
                                                     className="w-full h-full object-cover rounded-[4px]"
                                                     alt={`Apercu ${idx + 1}`}
-                                                    loading={idx < 8 ? 'eager' : 'lazy'}
+                                                    loading={hasPrimaryImagePainted && idx < 8 ? 'eager' : 'lazy'}
                                                     decoding="async"
-                                                    fetchpriority={idx === activeImg ? 'high' : 'low'}
+                                                    fetchpriority="low"
                                                     sizes={`${mobileThumbSize}px`}
                                                 />
                                             </button>
@@ -1930,7 +1977,10 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                             data-fit-mode={mobileDisplayedImageFitMode}
                                             className="product-detail-mobile-image product-detail-mobile-image-layer--current object-contain select-none"
                                             style={mobileDetailImageStyle}
-                                            onLoad={(event) => rememberProductImageRatio(event, mobileDisplayedImageSrc, mobileDisplayedImageFullSrc)}
+                                            onLoad={(event) => {
+                                                setHasPrimaryImagePainted(true);
+                                                rememberProductImageRatio(event, mobileDisplayedImageSrc, mobileDisplayedImageFullSrc);
+                                            }}
                                             draggable={false}
                                             loading="eager"
                                             decoding="async"
@@ -2158,6 +2208,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                         loading="eager"
                                         decoding="async"
                                         fetchpriority="high"
+                                        onLoad={handlePrimaryDetailImageLoad}
                                         className="block h-auto w-auto max-h-[92%] max-w-full object-contain rounded-2xl shadow-[0_45px_110px_-25px_rgba(0,0,0,0.8)]"
                                     />
                                 </motion.div>
@@ -2273,7 +2324,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                         }`}
                                     style={{
                                         scrollSnapAlign: 'center',
-                                        backgroundImage: thumbSrc ? `url("${thumbSrc}")` : undefined,
+                                        backgroundImage: hasPrimaryImagePainted && thumbSrc ? `url("${thumbSrc}")` : undefined,
                                         backgroundSize: 'cover',
                                         backgroundPosition: 'center',
                                         backgroundColor: darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
@@ -2285,9 +2336,9 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                         sizes="58px"
                                         className="w-full h-full object-cover select-none pointer-events-none"
                                         alt=""
-                                        loading={idx < 8 ? 'eager' : 'lazy'}
+                                        loading={hasPrimaryImagePainted && idx < 8 ? 'eager' : 'lazy'}
                                         decoding="async"
-                                        fetchpriority={idx === activeImg ? 'high' : 'low'}
+                                        fetchpriority="low"
                                     />
                                 </button>
                             );

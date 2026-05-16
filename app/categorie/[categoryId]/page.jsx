@@ -7,55 +7,22 @@ import {
   getPublicCatalogFallback
 } from '../../../src/lib/server/products';
 import { publicEnv } from '../../../src/lib/server/env';
-import KIT_CONFIG from '../../../src/kit/config/constants';
 import { getCategoryUrl, getProductUrl } from '../../../src/utils/slug';
 import { getCategorySeoCopy } from '../../../src/kit/marketplace/seoCopy';
 import { getProductCardImage, PRODUCT_CARD_IMAGE_SIZES } from '../../../src/utils/imageUtils';
+import {
+  buildCategoryBreadcrumbJsonLd,
+  buildCategoryCollectionJsonLd,
+  categoryEntries,
+  cleanCategoryLabel,
+  getCategoryMeta,
+  getMatchingCategoryIds
+} from '../../../src/lib/seo/categories';
 
 export const revalidate = 300;
 export const dynamicParams = false;
 
-const LEGACY_CATEGORY_IDS = {
-  mobilier: ['armoires', 'buffets', 'commodes', 'tables'],
-  assises: ['chaises', 'fauteuils', 'bancs']
-};
-
 const safeJsonLd = (data) => JSON.stringify(data).replace(/</g, '\\u003c');
-
-const allCategoryEntries = Array.from(
-  new Map([
-    ...(KIT_CONFIG.categoryGroups || []),
-    ...(KIT_CONFIG.productCategories || [])
-  ].map((category) => [category.id, category])).values()
-);
-
-const getCategoryMeta = (categoryId) => (
-  allCategoryEntries.find((category) => category.id === categoryId) || null
-);
-
-const cleanCategoryLabel = (label = '') => (
-  String(label)
-    .replace(/^LES\s+/i, '')
-    .replace(/^LA\s+/i, '')
-    .trim()
-);
-
-const getMatchingCategoryIds = (categoryId) => {
-  const group = KIT_CONFIG.categoryGroups?.find((item) => item.id === categoryId);
-  if (group) {
-    const ids = new Set(group.subCategories || []);
-    Object.entries(LEGACY_CATEGORY_IDS).forEach(([legacyId, children]) => {
-      if (children.some((child) => ids.has(child))) ids.add(legacyId);
-    });
-    return [...ids];
-  }
-
-  const ids = new Set([categoryId].filter(Boolean));
-  Object.entries(LEGACY_CATEGORY_IDS).forEach(([legacyId, children]) => {
-    if (children.includes(categoryId)) ids.add(legacyId);
-  });
-  return [...ids];
-};
 
 const getCategoryPageData = async (params) => {
   const { categoryId } = await params;
@@ -77,7 +44,7 @@ const getCategoryPageData = async (params) => {
 };
 
 export function generateStaticParams() {
-  return allCategoryEntries.map((category) => ({ categoryId: category.id }));
+  return categoryEntries.map((category) => ({ categoryId: category.id }));
 }
 
 export async function generateMetadata({ params }) {
@@ -122,22 +89,18 @@ export default async function CategoryPage({ params }) {
   const { categoryId, categoryLabel, products } = data;
   const copy = getCategorySeoCopy(categoryId, categoryLabel);
   const canonical = getCategoryUrl(categoryId, publicEnv.siteUrl);
-  const itemListJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
-    name: `${categoryLabel} restaures`,
+  const itemListJsonLd = buildCategoryCollectionJsonLd({
+    categoryId,
+    categoryLabel,
+    products,
     description: copy.intro,
-    url: canonical,
-    mainEntity: {
-      '@type': 'ItemList',
-      itemListElement: products.slice(0, 24).map((product, index) => ({
-        '@type': 'ListItem',
-        position: index + 1,
-        name: product.name || product.title,
-        url: getProductUrl(product, publicEnv.siteUrl)
-      }))
-    }
-  };
+    siteUrl: publicEnv.siteUrl
+  });
+  const breadcrumbJsonLd = buildCategoryBreadcrumbJsonLd({
+    categoryId,
+    categoryLabel,
+    siteUrl: publicEnv.siteUrl
+  });
 
   return (
     <>
@@ -202,7 +165,11 @@ export default async function CategoryPage({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(itemListJsonLd) }}
       />
-      <ClientApp />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }}
+      />
+      <ClientApp defer />
     </>
   );
 }

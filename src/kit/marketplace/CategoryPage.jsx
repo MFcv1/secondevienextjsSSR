@@ -5,7 +5,7 @@ import ProductCard from './components/ProductCard';
 import PremiumMegaMenu from './components/PremiumMegaMenu';
 import KIT_CONFIG from '../config/constants';
 import { getCategoryUrl, getProductUrl } from '../../utils/slug';
-import { getProductCardImage } from '../../utils/imageUtils';
+import { getProductCardImage, preloadPrimaryProductDetailImage } from '../../utils/imageUtils';
 import { getCategorySeoCopy } from './seoCopy';
 
 const SORT_OPTIONS = [
@@ -82,20 +82,93 @@ const FilterSection = ({ title, isOpen, onToggle, children, darkMode }) => (
 
 const MobileProductRow = ({ item, darkMode, onSelectItem, isLiked, onToggleWishlist, priority = false }) => {
     const price = item.currentPrice || item.startingPrice || item.price;
+    const mediaRef = React.useRef(null);
     const cardImage = React.useMemo(() => getProductCardImage(item), [item]);
+    const [isImageRevealActive, setIsImageRevealActive] = React.useState(priority);
+    const [isImageLoaded, setIsImageLoaded] = React.useState(false);
+    const handleImageLoad = React.useCallback(() => {
+        setIsImageLoaded(true);
+        setIsImageRevealActive(true);
+    }, []);
+    const warmupPrimaryImage = React.useCallback(() => {
+        const connection = typeof navigator !== 'undefined'
+            ? (navigator.connection || navigator.mozConnection || navigator.webkitConnection)
+            : null;
+        if (connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || '')) return;
+        preloadPrimaryProductDetailImage(item, {
+            priority: 'high',
+            decode: true,
+            variant: 'medium',
+            srcSet: false,
+        });
+    }, [item]);
+
+    React.useEffect(() => {
+        setIsImageRevealActive(priority);
+        setIsImageLoaded(false);
+    }, [cardImage.src, item?.id, priority]);
+
+    React.useEffect(() => {
+        if (priority) {
+            setIsImageRevealActive(true);
+            return undefined;
+        }
+
+        if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
+            setIsImageRevealActive(true);
+            return undefined;
+        }
+
+        const node = mediaRef.current;
+        if (!node) return undefined;
+
+        const revealFallbackTimer = window.setTimeout(() => {
+            setIsImageRevealActive(true);
+        }, 900);
+
+        const observer = new IntersectionObserver((entries) => {
+            const isNearViewport = entries.some((entry) => entry.isIntersecting);
+            if (isNearViewport) {
+                window.clearTimeout(revealFallbackTimer);
+                setIsImageRevealActive(true);
+                observer.disconnect();
+            }
+        }, {
+            root: null,
+            rootMargin: '0px 0px 420px 0px',
+            threshold: 0.01,
+        });
+
+        observer.observe(node);
+
+        return () => {
+            window.clearTimeout(revealFallbackTimer);
+            observer.disconnect();
+        };
+    }, [cardImage.src, priority]);
 
     return (
         <a
             href={getProductUrl(item)}
+            onPointerDown={(e) => {
+                if (e.target?.closest?.('button, input, textarea, select, [data-card-action]')) return;
+                warmupPrimaryImage();
+            }}
             onClick={(e) => {
                 if (!e.ctrlKey && !e.metaKey) {
                     e.preventDefault();
+                    warmupPrimaryImage();
                     onSelectItem(item.id);
                 }
             }}
             className={`flex min-h-[96px] gap-3 rounded-xl border p-2 transition-colors ${darkMode ? 'border-stone-800 bg-[#181818]' : 'border-stone-200 bg-[#fffdfb]'}`}
         >
-            <div className="relative h-20 w-[108px] shrink-0 overflow-hidden rounded-lg bg-stone-100">
+            <div
+                ref={mediaRef}
+                className="product-card-media relative h-20 w-[108px] shrink-0 rounded-lg bg-stone-100"
+                data-image-reveal={isImageRevealActive ? 'visible' : 'pending'}
+                data-image-loaded={isImageLoaded ? 'true' : 'false'}
+            >
                 {item.createdAt?.seconds && (Date.now() / 1000 - item.createdAt.seconds) < 604800 && (
                     <span className="absolute left-2 top-2 z-10 rounded-sm bg-[#eef3eb] px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-[#2d4033]">
                         Nouveau
@@ -109,7 +182,8 @@ const MobileProductRow = ({ item, darkMode, onSelectItem, isLiked, onToggleWishl
                     loading={priority ? 'eager' : 'lazy'}
                     decoding={priority ? 'sync' : 'async'}
                     fetchpriority={priority ? 'high' : 'auto'}
-                    className="h-full w-full object-cover"
+                    className="product-card-image h-full w-full object-cover"
+                    onLoad={handleImageLoad}
                 />
             </div>
             <div className="flex min-w-0 flex-1 flex-col justify-center pr-1">

@@ -32,7 +32,6 @@ import { ToastProvider, useToast } from './kit/ui/Toast';
 
 import ArchitecturalHeader from './kit/marketplace/components/ArchitecturalHeader';
 import AnnouncementBanner from './kit/marketplace/components/AnnouncementBanner';
-import useLenis from './kit/hooks/useLenis';
 
 const loadCartSidebar = () => import('./kit/commerce/CartSidebar');
 const loadFooter = () => import('./kit/layout/Footer');
@@ -119,7 +118,6 @@ const isRootGalleryEntryUrl = () => (
 );
 
 const AppContent = () => {
-  useLenis();
   const toast = useToast();
 
   // Use Auth Context
@@ -424,10 +422,11 @@ const AppContent = () => {
 
     return prewarmProductListImages(items, {
       includeDetailPrimary: false,
-      maxItems: 3,
+      maxItems: 4,
       initialDelay: 1800,
       delay: 420,
       priority: 'low',
+      decode: false,
     });
   }, [isPreparingGallery, isTransitioning, items, view]);
 
@@ -1588,6 +1587,13 @@ const AppContent = () => {
 };
 // Wrapper to provide Context
 export default function App() {
+  useEffect(() => {
+    document.documentElement.dataset.svClientHydrated = 'true';
+    return () => {
+      delete document.documentElement.dataset.svClientHydrated;
+    };
+  }, []);
+
   return (
     <AuthProvider>
       <ErrorBoundary>

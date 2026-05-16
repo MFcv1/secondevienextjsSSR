@@ -543,6 +543,9 @@ const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkM
           file: croppedFile,
           preview: newPreview,
           metadata,
+          thumbnailUrl: '',
+          variantUrls: null,
+          isExisting: false,
           isCompressed: true, // It's already optimized by cropper quality
           originalSize: croppedBlob.size
         };
@@ -806,7 +809,7 @@ const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkM
                 />
                 
                 {showColorDropdown && (
-                  <div data-lenis-prevent="true" className={`absolute z-50 w-full mt-2 py-2 rounded-xl border shadow-2xl max-h-48 overflow-y-auto overscroll-contain animate-in fade-in slide-in-from-top-2 ${darkMode ? 'bg-stone-800 border-stone-700' : 'bg-white border-stone-100'}`}>
+                  <div data-native-scroll-region="true" className={`absolute z-50 w-full mt-2 py-2 rounded-xl border shadow-2xl max-h-48 overflow-y-auto overscroll-contain animate-in fade-in slide-in-from-top-2 ${darkMode ? 'bg-stone-800 border-stone-700' : 'bg-white border-stone-100'}`}>
                     {filteredColors.length > 0 ? (
                       filteredColors.map(c => (
                         <div 

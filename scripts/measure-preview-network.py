@@ -9,6 +9,8 @@ from urllib.request import urlopen
 from urllib.error import URLError
 
 
+# Legacy Vite-only probe kept for old SPA comparisons.
+# For the Next SSR clone, prefer `npm run perf:budget` and `npm run perf:architecture`.
 DEFAULT_ROUTES = [
     ("/", 7000),
     ("/categorie/commodes", 6000),
@@ -291,7 +293,12 @@ async def run_measurements(base_url):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Measure Vite preview network weight on mobile viewport.")
+    parser = argparse.ArgumentParser(
+        description=(
+            "Legacy Vite preview network probe. "
+            "For the Next SSR clone, use npm run perf:budget or npm run perf:architecture."
+        )
+    )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=4173)
     parser.add_argument("--no-preview", action="store_true", help="Use an already running preview server.")
@@ -303,6 +310,11 @@ def main():
     baseline_routes = {} if args.no_baseline else load_baseline(args.baseline)
     process = None
     try:
+        print(
+            "Warning: measure-preview-network.py is legacy Vite tooling; "
+            "Next SSR gates are npm run perf:budget and npm run perf:architecture.",
+            file=sys.stderr,
+        )
         if not args.no_preview:
             process = start_preview(base_url, args.host, args.port)
         elif not is_serving(base_url):
