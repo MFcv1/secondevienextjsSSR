@@ -1,7 +1,4 @@
 import '../src/index.css';
-import '../src/kit/ui/TextType.css';
-import '../src/kit/ui/CurvedLoop.css';
-import '../src/kit/admin/PerformanceArchitectureStudy.css';
 import {
   Cormorant_Garamond,
   DM_Serif_Display,

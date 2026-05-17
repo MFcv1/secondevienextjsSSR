@@ -1,6 +1,5 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFunctions } from 'firebase/functions';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 
@@ -41,7 +40,6 @@ if (typeof window !== 'undefined') {
   }
 }
 
-const auth = getAuth(app);
 const db = getFirestore(app);
 const functions = getFunctions(app, 'us-central1');
 
@@ -49,7 +47,31 @@ const functions = getFunctions(app, 'us-central1');
 // ⚠️ CONFIGURER dans .env.local : VITE_APP_LOGICAL_NAME=votre-identifiant
 const appId = process.env.NEXT_PUBLIC_APP_LOGICAL_NAME || 'my-store';
 
-// --- PROVIDERS AUTHENTIFICATION ---
-const googleProvider = new GoogleAuthProvider();
+let authInstance = null;
+let googleProviderInstance = null;
+let authModulePromise = null;
 
-export { app, auth, db, functions, appId, googleProvider };
+const loadAuthModule = () => {
+  if (!authModulePromise) {
+    authModulePromise = import('firebase/auth');
+  }
+  return authModulePromise;
+};
+
+const getFirebaseAuth = async () => {
+  if (!authInstance) {
+    const { getAuth } = await loadAuthModule();
+    authInstance = getAuth(app);
+  }
+  return authInstance;
+};
+
+const getGoogleProvider = async () => {
+  if (!googleProviderInstance) {
+    const { GoogleAuthProvider } = await loadAuthModule();
+    googleProviderInstance = new GoogleAuthProvider();
+  }
+  return googleProviderInstance;
+};
+
+export { app, db, functions, appId, getFirebaseAuth, getGoogleProvider, loadAuthModule };

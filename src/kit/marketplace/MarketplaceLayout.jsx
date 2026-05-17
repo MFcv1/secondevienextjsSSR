@@ -124,10 +124,10 @@ const staticCategories = [
 ];
 
 const categoryImages = {
-    buffets: "/images/categories/buffets.webp",
-    armoires: "/images/categories/armoires.webp",
-    miroirs: "/images/categories/miroirs.webp",
-    commodes: "/images/categories/commodes.webp",
+    buffets: "/images/categories/buffets-rail.webp",
+    armoires: "/images/categories/armoires-rail.webp",
+    miroirs: "/images/categories/miroirs-rail.webp",
+    commodes: "/images/categories/commodes-rail.webp",
 };
 
 const categoryDescriptions = {
@@ -146,8 +146,8 @@ const DEFAULT_RESTORATION_PROJECTS = [
         title: "La Commode Oubliée",
         tag: "Rénovation Complète",
         desc: "Sablage délicat et peinture Céladon.",
-        avant: "/images/before-after/avant.webp",
-        apres: "/images/before-after/apres.webp",
+        avant: "/images/before-after/avant-gallery.webp",
+        apres: "/images/before-after/apres-gallery.webp",
         accent: "#87A08B"
     },
     {
@@ -155,8 +155,8 @@ const DEFAULT_RESTORATION_PROJECTS = [
         title: "La Console d'Époque",
         tag: "Sablage & Patine",
         desc: "Sublimation du veinage naturel du chêne.",
-        avant: "/images/before-after/avantu.webp",
-        apres: "/images/before-after/apresu.webp",
+        avant: "/images/before-after/avantu-gallery.webp",
+        apres: "/images/before-after/apresu-gallery.webp",
         accent: "#C2704E"
     },
     {
@@ -164,8 +164,8 @@ const DEFAULT_RESTORATION_PROJECTS = [
         title: "Le Bureau Vintage",
         tag: "Réparation & Traitement",
         desc: "Consolidation et vernis mat imperméable.",
-        avant: "/images/before-after/avantx.webp",
-        apres: "/images/before-after/apresx.webp",
+        avant: "/images/before-after/avantx-gallery.webp",
+        apres: "/images/before-after/apresx-gallery.webp",
         accent: "#A68A64"
     }
 ];
@@ -401,10 +401,10 @@ const MarketplaceLayout = ({
         categoryImages[id] || galleryConfig?.[`cat_${id}`] || "/images/categories/fallback.webp"
     ), [galleryConfig]);
     const instaDefaults = [
-        { img: "/images/before-after/apresu.webp", rotate: -2, yOffset: 0, aspect: "aspect-[4/5]" },
-        { img: "/images/before-after/avantu.webp", rotate: 1, yOffset: -20, aspect: "aspect-square" },
-        { img: "/images/before-after/apres.webp", rotate: -1, yOffset: 20, aspect: "aspect-[4/5]" },
-        { img: "/images/before-after/apresx.webp", rotate: 2, yOffset: 0, aspect: "aspect-square" }
+        { img: "/images/before-after/apresu-gallery.webp", rotate: -2, yOffset: 0, aspect: "aspect-[4/5]" },
+        { img: "/images/before-after/avantu-gallery.webp", rotate: 1, yOffset: -20, aspect: "aspect-square" },
+        { img: "/images/before-after/apres-gallery.webp", rotate: -1, yOffset: 20, aspect: "aspect-[4/5]" },
+        { img: "/images/before-after/apresx-gallery.webp", rotate: 2, yOffset: 0, aspect: "aspect-square" }
     ];
     const dynamicInsta = useMemo(() => instaDefaults.map((d, i) => ({
         ...d,

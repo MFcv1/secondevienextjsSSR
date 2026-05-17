@@ -200,6 +200,16 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 - Les handlers scroll globaux de `ArchitecturalHeader.jsx` et `PremiumMegaMenu.jsx` ont ete cadences par `requestAnimationFrame` pour eviter des updates React redondantes pendant le scroll.
 - Validations executees : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, puis deploiement App Hosting sandbox `secondevie-next-sandbox`.
 
+### Goal 10 - PageSpeed post-reveal / auth et images locales
+
+- Le rapport PageSpeed desktop du 2026-05-17 16:13 indiquait encore : performance 75, LCP 1.3 s, TBT 280 ms, images a optimiser 240 Kio, JS inutilise 70 Kio, et travail main thread 5.9 s. Le rapport mobile indiquait : performance 70, FCP 1.1 s, LCP 6.1 s, TBT 40 ms.
+- Firebase Auth n'est plus importe ni initialise au premier affichage public. `src/kit/config/firebase.js` expose maintenant `getFirebaseAuth`, `getGoogleProvider` et `loadAuthModule`, charges dynamiquement seulement si une session persiste, si un redirect Google est en cours, si une route auth est ouverte, ou lors d'une action de login.
+- `src/kit/contexts/AuthContext.jsx` ne bloque plus la galerie publique sur `onAuthStateChanged` quand aucun utilisateur n'est persiste. Les visiteurs publics gardent `user=null`, `isAdmin=false`, `loading=false`; les routes `/admin`, `/checkout`, `/wishlist` et `/mes-commandes` initialisent toujours Auth.
+- `src/kit/admin/publicCatalogInvalidation.js` recupere Auth a la demande pour conserver la revalidation catalogue admin sans remettre `firebase/auth` dans le chargement public initial.
+- Des variantes WebP plus legeres ont ete ajoutees pour les visuels PageSpeed visibles : `public/images/categories/*-rail.webp` et `public/images/before-after/*-gallery.webp`. `MarketplaceLayout.jsx` utilise ces variantes pour le rail categories, le bloc avant/apres et les visuels discovery initiaux.
+- Les CSS globaux non utiles au chargement public ont ete sortis du layout racine : `TextType.css` et `CurvedLoop.css` ne sont plus importes globalement, et `PerformanceArchitectureStudy.css` est charge via `app/admin/layout.jsx` au lieu de bloquer toutes les routes publiques.
+- Validation locale : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, controle navigateur local sans erreur console, sans `auth/iframe`/`identitytoolkit` initial, et avec categories servies depuis les variantes `*-rail.webp`. Budget CSS public passe d'environ 50.53 kB gzip a 46.40 kB gzip.
+
 ### Goal 10 - Passe PageSpeed desktop post-reveal
 
 - Rapport PageSpeed lu depuis l'URL partagee (`form_factor=desktop`, rapport du 2026-05-17 14:25:47) : score desktop 59, FCP 0,4 s, LCP 1,2 s, TBT 870 ms, CLS 0.078, Speed Index 6,2 s.
@@ -211,6 +221,15 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 - `src/kit/marketplace/components/ArchitecturalHeader.jsx` ajoute dimensions explicites au logo et un `aria-label` au bouton de recherche desktop; `CategoryRail.jsx` ajoute aussi dimensions/decoding au logo decoratif.
 - Les props `fetchpriority` restantes dans les surfaces marketplace actives ont ete corrigees en `fetchPriority` pour eviter les warnings React et conserver le hint navigateur.
 - Validation locale : `npm run lint`, `npm run build`, `npm run mobile:contract`, `npm run perf:budget`. Controle runtime production local : categories chargees depuis `/images/categories/*.webp`, dots hero sans `style.width`, `transparenttextures.com` absent du markup actif, zero erreur console observee au chargement.
+
+### Goal 11 - Passe PageSpeed mobile/desktop apres score 70/75
+
+- Rapport PageSpeed partage le 2026-05-17 16:13 : desktop 75 puis jusqu'a 88 selon run, mobile 70-73, avec restes principaux sur images, render-blocking CSS, JS inutilise et main thread. Les scores PageSpeed varient d'un run a l'autre; les decisions ont ete prises sur les audits repetes et les budgets locaux.
+- `src/app.jsx` ne charge plus `src/kit/shared/AnalyticsProvider.jsx` dans le bundle galerie immediat. Un `DeferredAnalyticsProvider` affiche les enfants directement, puis importe le provider analytics apres `requestIdleCallback`/fallback timeout. Le tracking public reprend apres idle, sans bloquer le premier rendu ni le scroll initial.
+- Le hero galerie conserve son animation et son slider. `src/kit/marketplace/components/MarketplaceHero.jsx` rend maintenant les images via `<picture>` et utilise une source mobile dediee quand disponible, tout en gardant les sources desktop existantes pour les grands ecrans.
+- `src/kit/config/constants.js` rattache les presets hero aux nouveaux fichiers mobiles `public/images/imagehero/*-mobile.webp`. Ces variantes 1200x675 pesees environ 51-57 kB remplacent les fichiers 1672x941 de 113-131 kB sur viewport mobile.
+- Le pipeline reveal des cartes produit n'a pas ete modifie : `Nouveautes` et `Petits Prix` gardent le chargement progressif par `ProductCard`, `IntersectionObserver`, `src` transparent et fade-in apres image chargee.
+- Validations executees : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, controle sandbox navigateur puis deploiement App Hosting sandbox. Le provider analytics apparait maintenant comme chunk separe `src/app.jsx -> ./kit/shared/AnalyticsProvider`; les budgets publics restent OK avec 106.48 kB JS gzip home et 46.40 kB CSS gzip. La relance PageSpeed API a ete bloquee par `429 Too Many Requests`, donc la verification score finale doit etre refaite quand le quota PageSpeed se libere.
 
 ## ðŸ› ï¸ Structure des Fichiers .env
 Nous n'utilisons PLUS de fichier `.env` unique. Tout est pilote par des fichiers suffixes locaux :

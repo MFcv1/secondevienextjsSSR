@@ -1,5 +1,5 @@
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { appId, auth, db } from '../config/firebase';
+import { appId, db, getFirebaseAuth } from '../config/firebase';
 import { clearPublicCatalogSessionCache } from '../shared/publicCatalogCache';
 
 export const revalidateNextCatalog = async ({
@@ -8,6 +8,7 @@ export const revalidateNextCatalog = async ({
   categoryIds = [],
   paths = [],
 } = {}) => {
+  const auth = await getFirebaseAuth();
   const currentUser = auth.currentUser;
   if (!currentUser || currentUser.isAnonymous) return { skipped: true, reason: 'no_admin_user' };
 

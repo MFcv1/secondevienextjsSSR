@@ -1,24 +1,12 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import {
-    onAuthStateChanged,
-    signInWithPopup,
-    signInWithRedirect,
-    getRedirectResult,
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    signOut,
-    sendEmailVerification,
-    getIdTokenResult
-} from 'firebase/auth';
-import { auth, googleProvider } from '../config/firebase';
+﻿import React, { createContext, useContext, useEffect, useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '../config/firebase';
+import { functions, getFirebaseAuth, getGoogleProvider, loadAuthModule } from '../config/firebase';
 
-// ⚠️ CONFIGURER dans .env.local : VITE_SUPER_ADMIN_EMAIL=votre@email.com
+// âš ï¸ CONFIGURER dans .env.local : VITE_SUPER_ADMIN_EMAIL=votre@email.com
 const SUPER_ADMIN_EMAIL = process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '';
 
 // Detect iOS standalone PWA mode (added to home screen)
-// In this mode, signInWithPopup is blocked by WebKit — must use signInWithRedirect
+// In this mode, signInWithPopup is blocked by WebKit â€” must use signInWithRedirect
 const isIOSStandalone = () => {
     if (typeof window === 'undefined' || typeof navigator === 'undefined' || typeof document === 'undefined') {
         return false;
@@ -33,6 +21,33 @@ const REDIRECT_KEY = 'kit_google_redirect_pending';
 const setRedirectPending = () => sessionStorage.setItem(REDIRECT_KEY, 'true');
 const clearRedirectPending = () => sessionStorage.removeItem(REDIRECT_KEY);
 
+const hasRedirectPending = () => (
+    typeof window !== 'undefined' &&
+    window.sessionStorage.getItem(REDIRECT_KEY) === 'true'
+);
+
+const hasPersistedFirebaseUser = () => {
+    if (typeof window === 'undefined') return false;
+    try {
+        return Object.keys(window.localStorage).some((key) => (
+            key.startsWith('firebase:authUser:')
+        ));
+    } catch {
+        return false;
+    }
+};
+
+const isAuthRoute = () => {
+    if (typeof window === 'undefined') return false;
+    return ['/admin', '/checkout', '/wishlist', '/mes-commandes'].some((path) => (
+        window.location.pathname.startsWith(path)
+    ));
+};
+
+const shouldInitializeAuthOnMount = () => (
+    hasRedirectPending() || hasPersistedFirebaseUser() || isAuthRoute()
+);
+
 // Create the context
 const AuthContext = createContext();
 
@@ -44,46 +59,76 @@ export const useAuth = () => {
 // Provider Component
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(() => shouldInitializeAuthOnMount());
     const [isAdmin, setIsAdmin] = useState(false);
 
     // Authentication relies on Firestore Rules & Custom Claims now.
     // No hardcoded emails in client bundle.
 
-    // 1. Handle redirect result FIRST.
-    // On page reload after signInWithRedirect, getRedirectResult resolves with the Google user.
-    // The sessionStorage flag preserves the redirect lifecycle across reloads.
+    // Public visitors do not need Firebase Auth on the first paint. Keep Auth off
+    // until a persisted/redirected session exists or the user opens an auth route.
     useEffect(() => {
-        let cancelled = false;
-        const handleRedirect = async () => {
-            try {
-                const result = await getRedirectResult(auth);
-                if (result && result.user && !cancelled) {
-                    httpsCallable(functions, 'updateUserSessions')()
-                        .catch(err => console.error('Failed to clean sessions after redirect login:', err));
-                }
-            } catch (error) {
-                if (!cancelled) {
-                    console.error('Redirect auth error:', error);
-                }
-            } finally {
-                // Always clear the flag — redirect is done (success or failure)
-                clearRedirectPending();
-            }
-        };
-        handleRedirect();
-        return () => { cancelled = true; };
-    }, []);
-
-    // 2. Listen to Auth State (Run once)
-    useEffect(() => {
-        const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-            setUser(currentUser);
+        if (!shouldInitializeAuthOnMount()) {
             setLoading(false);
+            return undefined;
+        }
+
+        let cancelled = false;
+        let unsubscribeAuth = null;
+
+        const startAuth = async () => {
+            const auth = await getFirebaseAuth();
+            const { getRedirectResult, onAuthStateChanged } = await loadAuthModule();
+
+            if (hasRedirectPending()) {
+                try {
+                    const result = await getRedirectResult(auth);
+                    if (result && result.user && !cancelled) {
+                        httpsCallable(functions, 'updateUserSessions')()
+                            .catch(err => console.error('Failed to clean sessions after redirect login:', err));
+                    }
+                } catch (error) {
+                    if (!cancelled) {
+                        console.error('Redirect auth error:', error);
+                    }
+                } finally {
+                    clearRedirectPending();
+                }
+            }
+
+            unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+                if (cancelled) return;
+                setUser(currentUser);
+                setLoading(false);
+            });
+        };
+
+        startAuth().catch((error) => {
+            if (!cancelled) {
+                console.error('Auth initialization error:', error);
+                setLoading(false);
+            }
         });
 
-        return () => unsubscribeAuth();
+        return () => {
+            cancelled = true;
+            unsubscribeAuth?.();
+        };
     }, []);
+
+    const syncSignedInUser = async (result) => {
+        if (result?.user) {
+            setUser(result.user);
+            setLoading(false);
+        }
+        return result;
+    };
+
+    const getAuthRuntime = async () => {
+        const auth = await getFirebaseAuth();
+        const module = await loadAuthModule();
+        return { auth, module };
+    };
 
     // 2. Read user role once from claims. Avoid keeping a Firestore listener for every client.
     useEffect(() => {
@@ -96,6 +141,7 @@ export const AuthProvider = ({ children }) => {
 
         const syncAdminClaim = async () => {
             try {
+                const { getIdTokenResult } = await loadAuthModule();
                 const tokenResult = await getIdTokenResult(user, true);
                 if (!cancelled) {
                     setIsAdmin(tokenResult.claims.admin === true || user.email === SUPER_ADMIN_EMAIL);
@@ -118,34 +164,45 @@ export const AuthProvider = ({ children }) => {
     }, [user]);
 
     const loginWithGoogle = async () => {
+        const { auth, module } = await getAuthRuntime();
+        const googleProvider = await getGoogleProvider();
+
         if (isIOSStandalone()) {
             // iOS standalone (PWA home screen): signInWithPopup is blocked by WebKit
-            // Use signInWithRedirect — page will reload and getRedirectResult handles it above
+            // Use signInWithRedirect â€” page will reload and getRedirectResult handles it above
             // Flag persists in sessionStorage so the redirect lifecycle survives reload.
             setRedirectPending();
-            await signInWithRedirect(auth, googleProvider);
+            await module.signInWithRedirect(auth, googleProvider);
             return null; // Page reloads, this line won't execute
         }
         // Normal browser (Safari, Chrome, etc.): signInWithPopup works fine
-        const result = await signInWithPopup(auth, googleProvider);
+        const result = await module.signInWithPopup(auth, googleProvider);
         httpsCallable(functions, 'updateUserSessions')()
             .catch(err => console.error('Failed to clean sessions after login:', err));
-        return result;
+        return syncSignedInUser(result);
     };
 
-    const loginWithEmail = (email, password) => {
-        return signInWithEmailAndPassword(auth, email, password);
+    const loginWithEmail = async (email, password) => {
+        const { auth, module } = await getAuthRuntime();
+        const result = await module.signInWithEmailAndPassword(auth, email, password);
+        return syncSignedInUser(result);
     };
 
-    const signupWithEmail = (email, password) => {
-        return createUserWithEmailAndPassword(auth, email, password);
+    const signupWithEmail = async (email, password) => {
+        const { auth, module } = await getAuthRuntime();
+        const result = await module.createUserWithEmailAndPassword(auth, email, password);
+        return syncSignedInUser(result);
     };
 
-    const logout = () => {
-        return signOut(auth);
+    const logout = async () => {
+        const { auth, module } = await getAuthRuntime();
+        setUser(null);
+        setIsAdmin(false);
+        return module.signOut(auth);
     };
 
-    const verifyEmail = (user) => {
+    const verifyEmail = async (user) => {
+        const { sendEmailVerification } = await loadAuthModule();
         return sendEmailVerification(user, {
             url: window.location.origin + '/',
             handleCodeInApp: true

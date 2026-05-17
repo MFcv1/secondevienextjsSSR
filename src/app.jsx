@@ -20,7 +20,6 @@ import KIT_CONFIG from './kit/config/constants';
 import AppRouter from './Router';
 import ErrorBoundary from './kit/shared/ErrorBoundary';
 import SEO from './kit/shared/SEO';
-import AnalyticsProvider from './kit/shared/AnalyticsProvider';
 import { emitAnalyticsEvent } from './kit/contexts/AnalyticsContext';
 import {
   PUBLIC_ITEMS_CACHE_KEY,
@@ -36,6 +35,7 @@ const loadCartSidebar = () => import('./kit/commerce/CartSidebar');
 const loadFooter = () => import('./kit/layout/Footer');
 const loadMarketplaceDiscovery = () => import('./kit/marketplace/MarketplaceDiscovery');
 const loadGlobalMenu = () => import('./kit/layout/GlobalMenu');
+const loadAnalyticsProvider = () => import('./kit/shared/AnalyticsProvider');
 
 const CartSidebar = React.lazy(loadCartSidebar);
 const Footer = React.lazy(loadFooter);
@@ -53,6 +53,48 @@ const NEXT_VIEW_PATHS = {
   '/wishlist': 'wishlist',
   '/devis': 'devis',
   '/mes-commandes': 'my-orders',
+};
+
+const deferNonCriticalWork = (callback) => {
+  if (typeof window === 'undefined') return () => {};
+
+  if ('requestIdleCallback' in window) {
+    const idleId = window.requestIdleCallback(callback, { timeout: 2500 });
+    return () => window.cancelIdleCallback?.(idleId);
+  }
+
+  const timeoutId = window.setTimeout(callback, 1200);
+  return () => window.clearTimeout(timeoutId);
+};
+
+const DeferredAnalyticsProvider = ({ children, ...analyticsNav }) => {
+  const [AnalyticsProviderComponent, setAnalyticsProviderComponent] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const cancelDeferredWork = deferNonCriticalWork(() => {
+      loadAnalyticsProvider().then((module) => {
+        if (!cancelled) {
+          setAnalyticsProviderComponent(() => module.default);
+        }
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      cancelDeferredWork();
+    };
+  }, []);
+
+  if (!AnalyticsProviderComponent) {
+    return children;
+  }
+
+  return (
+    <AnalyticsProviderComponent {...analyticsNav}>
+      {children}
+    </AnalyticsProviderComponent>
+  );
 };
 
 const readJsonStorage = (storage, key, fallback = null) => {
@@ -1105,7 +1147,7 @@ const AppContent = () => {
   };
 
   return (
-    <AnalyticsProvider {...analyticsNav}>
+    <DeferredAnalyticsProvider {...analyticsNav}>
     <div className={`min-h-screen font-sans selection:bg-stone-300 ${darkMode ? 'bg-[#0A0A0A] text-stone-200' : 'bg-[#FAFAF9] text-stone-900'}`}>
       {view !== 'detail' && !isAdminPerformanceStudyView && <SEO {...pageSeo} />}
 
@@ -1566,7 +1608,7 @@ const AppContent = () => {
         )}
       </AnimatePresence>
     </div >
-    </AnalyticsProvider>
+    </DeferredAnalyticsProvider>
   );
 };
 // Wrapper to provide Context

@@ -77,20 +77,28 @@ const MarketplaceHero = React.memo(function MarketplaceHero({
                             className="absolute inset-0 h-full w-full transition-opacity duration-[1200ms] ease-in-out"
                             style={{ opacity: isActiveHeroImage ? 1 : 0 }}
                         >
-                            <img
-                                src={shouldLoadHeroImage ? img.src : undefined}
-                                sizes="100vw"
-                                alt=""
-                                decoding="async"
-                                fetchPriority={isActiveHeroImage ? 'high' : 'low'}
-                                loading={isActiveHeroImage ? 'eager' : 'lazy'}
-                                className="parallax-bg marketplace-hero-image h-full w-full object-cover md:h-[120%]"
-                                style={{
-                                    '--hero-object-position': img.objectPosition || 'center center',
-                                    '--hero-mobile-object-position': img.mobileObjectPosition || img.objectPosition || 'center center',
-                                    willChange: isActiveHeroImage ? 'transform' : 'auto',
-                                }}
-                            />
+                            <picture className="block h-full w-full">
+                                {img.mobileSrc ? (
+                                    <source
+                                        media="(max-width: 767px)"
+                                        srcSet={shouldLoadHeroImage ? img.mobileSrc : undefined}
+                                    />
+                                ) : null}
+                                <img
+                                    src={shouldLoadHeroImage ? img.src : undefined}
+                                    sizes="100vw"
+                                    alt=""
+                                    decoding="async"
+                                    fetchPriority={isActiveHeroImage ? 'high' : 'low'}
+                                    loading={isActiveHeroImage ? 'eager' : 'lazy'}
+                                    className="parallax-bg marketplace-hero-image h-full w-full object-cover md:h-[120%]"
+                                    style={{
+                                        '--hero-object-position': img.objectPosition || 'center center',
+                                        '--hero-mobile-object-position': img.mobileObjectPosition || img.objectPosition || 'center center',
+                                        willChange: isActiveHeroImage ? 'transform' : 'auto',
+                                    }}
+                                />
+                            </picture>
                         </div>
                     );
                 })}

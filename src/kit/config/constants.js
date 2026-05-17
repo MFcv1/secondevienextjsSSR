@@ -10,10 +10,10 @@ const BRAND_NAME    = process.env.NEXT_PUBLIC_BRAND_NAME    || 'Seconde Vie';
 const BRAND_TAGLINE = process.env.NEXT_PUBLIC_BRAND_TAGLINE || 'par Anais';
 
 export const GALLERY_HERO_PRESETS = [
-  { preset: 'imagehero/1.webp', src: '/images/imagehero/1.webp', objectPosition: 'center center', mobileObjectPosition: '54% center' },
-  { preset: 'imagehero/2.webp', src: '/images/imagehero/2.webp', objectPosition: 'center center', mobileObjectPosition: '56% center' },
-  { preset: 'imagehero/3.webp', src: '/images/imagehero/3.webp', objectPosition: 'center center', mobileObjectPosition: '57% center' },
-  { preset: 'imagehero/4.webp', src: '/images/imagehero/4.webp', objectPosition: 'center center', mobileObjectPosition: '51% center' },
+  { preset: 'imagehero/1.webp', src: '/images/imagehero/1.webp', mobileSrc: '/images/imagehero/1-mobile.webp', objectPosition: 'center center', mobileObjectPosition: '54% center' },
+  { preset: 'imagehero/2.webp', src: '/images/imagehero/2.webp', mobileSrc: '/images/imagehero/2-mobile.webp', objectPosition: 'center center', mobileObjectPosition: '56% center' },
+  { preset: 'imagehero/3.webp', src: '/images/imagehero/3.webp', mobileSrc: '/images/imagehero/3-mobile.webp', objectPosition: 'center center', mobileObjectPosition: '57% center' },
+  { preset: 'imagehero/4.webp', src: '/images/imagehero/4.webp', mobileSrc: '/images/imagehero/4-mobile.webp', objectPosition: 'center center', mobileObjectPosition: '51% center' },
 ];
 
 export const GALLERY_HERO_PRESET_ENTRIES = GALLERY_HERO_PRESETS.map(({ preset, objectPosition, mobileObjectPosition }) => ({
