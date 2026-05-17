@@ -16,7 +16,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- app : routes Next App Router, SSR produit/categorie, loading/not-found/error, sitemap, robots et shell client
 |-- tests, playwright.config.mjs : tests E2E et validations Playwright
 |-- _DOCS : documentation maintenance Next/dependances
-|-- firebase.json, firestore.rules, firestore.indexes.json, storage.rules
+|-- firebase.json, .firebaseignore, firestore.rules, firestore.indexes.json, storage.rules
 |-- functions-public : codebase Functions public isole pour `publicCatalog`, sans secrets Stripe/Gmail
 |-- .env.sandbox.example / .env.production.example : modeles publics; vrais .env locaux ignores par Git
 |-- deploy : dashboard npm de deploiement Firebase/App Hosting sandbox
@@ -230,6 +230,14 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 - `src/kit/config/constants.js` rattache les presets hero aux nouveaux fichiers mobiles `public/images/imagehero/*-mobile.webp`. Ces variantes 1200x675 pesees environ 51-57 kB remplacent les fichiers 1672x941 de 113-131 kB sur viewport mobile.
 - Le pipeline reveal des cartes produit n'a pas ete modifie : `Nouveautes` et `Petits Prix` gardent le chargement progressif par `ProductCard`, `IntersectionObserver`, `src` transparent et fade-in apres image chargee.
 - Validations executees : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, controle sandbox navigateur puis deploiement App Hosting sandbox. Le provider analytics apparait maintenant comme chunk separe `src/app.jsx -> ./kit/shared/AnalyticsProvider`; les budgets publics restent OK avec 106.48 kB JS gzip home et 46.40 kB CSS gzip. La relance PageSpeed API a ete bloquee par `429 Too Many Requests`, donc la verification score finale doit etre refaite quand le quota PageSpeed se libere.
+
+### Goal 12 - Images metier des modules categories hero
+
+- Les quatre cartes categories du hero galerie avaient ete branchees sur des images locales trop generiques (`*-rail.webp`) pendant l'optimisation PageSpeed. Le resultat etait leger mais moins coherent visuellement avec `Buffets`, `Armoires`, `Miroirs` et `Commodes`.
+- Les anciennes images configurees dans `sys_metadata/gallery_app` (`cat_buffets`, `cat_armoires`, `cat_miroirs`, `cat_commodes`) ont ete recuperees depuis Firebase Storage, puis recompressees en variantes locales `public/images/categories/*-config-rail.webp` en 260x325.
+- `src/kit/marketplace/MarketplaceLayout.jsx` pointe maintenant les cartes categories vers ces variantes locales. On garde donc le contenu visuel d'origine tout en evitant les URLs Firebase plus lourdes au premier affichage.
+- `.firebaseignore` a ete ajoute pour exclure les builds, logs et le dossier temporaire local `public/images/categories/source-config/` des deploiements App Hosting.
+- Validations executees : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`. Les nouvelles variantes pesent environ 7.6 a 14.1 kB chacune.
 
 ## ðŸ› ï¸ Structure des Fichiers .env
 Nous n'utilisons PLUS de fichier `.env` unique. Tout est pilote par des fichiers suffixes locaux :

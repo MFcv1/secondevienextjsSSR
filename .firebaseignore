@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+dist/
+coverage/
+playwright-report/
+test-results/
+logs/
+*.log
+*.pid
+.firebase/
+public/images/categories/source-config/

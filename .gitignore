@@ -36,6 +36,7 @@ logs/
 *.log
 *.pid
 .next-start.pid
+public/images/categories/source-config/
 
 # local visual references
 /video/

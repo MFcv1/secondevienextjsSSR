@@ -124,10 +124,10 @@ const staticCategories = [
 ];
 
 const categoryImages = {
-    buffets: "/images/categories/buffets-rail.webp",
-    armoires: "/images/categories/armoires-rail.webp",
-    miroirs: "/images/categories/miroirs-rail.webp",
-    commodes: "/images/categories/commodes-rail.webp",
+    buffets: "/images/categories/buffets-config-rail.webp",
+    armoires: "/images/categories/armoires-config-rail.webp",
+    miroirs: "/images/categories/miroirs-config-rail.webp",
+    commodes: "/images/categories/commodes-config-rail.webp",
 };
 
 const categoryDescriptions = {
