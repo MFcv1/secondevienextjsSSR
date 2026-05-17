@@ -33,7 +33,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |   `-- src : analytics, auth, commerce, email, maintenance, public, seo, triggers
 |-- public : favicons, manifest, images, video, rapport maintenance statique
 |-- scripts : env bridge, SSR/mobile checks, maintenance audit, budget perf Next, perf/architecture compare, backfills/audits Storage/images et tooling safe
-|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_SEO_ROADMAP.md, NEXTJS_HOME_LANDING_ROADMAP.md, NEXTJS_SSR_AUDIT_REPORT.md, NEXTJS_IMAGE_PIPELINE_AUDIT.md
+|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_SEO_ROADMAP.md, NEXTJS_HOME_LANDING_ROADMAP.md, NEXTJS_SSR_AUDIT_REPORT.md, NEXTJS_IMAGE_PIPELINE_AUDIT.md, GALLERY_COLD_SCROLL_OPTIMIZATION_REPORT.md
 |-- imagehero, pageUI : references visuelles et notes UI
 `-- .next, dist, node_modules, logs, .firebase : generes, hors carte
 ```
