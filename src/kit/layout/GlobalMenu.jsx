@@ -430,6 +430,7 @@ const mobilePanelVariants = {
 const GlobalMenu = ({
     isMenuOpen,
     isMenuClosing = false,
+    keepMounted = false,
     setIsMenuOpen,
     setView,
     currentView,
@@ -485,7 +486,7 @@ const GlobalMenu = ({
 
     useEffect(() => {
         if (typeof window === 'undefined') return undefined;
-        if (!isMenuOpen && !isMenuClosing) return undefined;
+        if (!isMenuOpen && !isMenuClosing && !keepMounted) return undefined;
 
         const frameId = window.requestAnimationFrame(syncMenuGeometry);
         window.addEventListener('resize', syncMenuGeometry);
@@ -494,7 +495,7 @@ const GlobalMenu = ({
             window.cancelAnimationFrame(frameId);
             window.removeEventListener('resize', syncMenuGeometry);
         };
-    }, [isMenuClosing, isMenuOpen, syncMenuGeometry]);
+    }, [isMenuClosing, isMenuOpen, keepMounted, syncMenuGeometry]);
 
     useLayoutEffect(() => {
         if (!isMenuOpen || typeof window === 'undefined') return undefined;
@@ -745,17 +746,19 @@ const GlobalMenu = ({
     const isMenuInteractive = isMenuOpen && !isMenuClosing;
     const menuContentAnimationState = isMenuInteractive ? 'visible' : 'hidden';
 
-    if (!isMenuOpen && !isMenuClosing) return null;
+    if (!isMenuOpen && !isMenuClosing && !keepMounted) return null;
+
+    const isMenuDormant = !isMenuOpen && !isMenuClosing;
 
     return (
         <motion.div
             key="global-menu-shell"
-            className={`${isMenuInteractive ? 'pointer-events-auto' : 'pointer-events-none'} fixed inset-0 z-[2000] overflow-hidden`}
+            className={`${isMenuInteractive ? 'pointer-events-auto' : 'pointer-events-none'} ${isMenuDormant ? 'opacity-0' : ''} fixed inset-0 z-[2000] overflow-hidden`}
             role={isMenuInteractive ? 'dialog' : undefined}
             aria-modal={isMenuInteractive ? 'true' : undefined}
             aria-hidden={!isMenuInteractive}
             aria-label="Menu principal"
-            inert={isMenuInteractive ? undefined : ''}
+            inert={isMenuInteractive ? undefined : true}
             variants={shellVariants}
             initial="hidden"
             animate={menuAnimationState}

@@ -35,6 +35,7 @@ const ArchitecturalHeader = ({
     user,
     onShowLogin,
     onOpenMenu,
+    onPrepareMenu,
     isMenuOpen,
     isMenuClosing = false,
     isMenuHeaderActive = isMenuOpen,
@@ -333,6 +334,8 @@ const ArchitecturalHeader = ({
 
                         <motion.button
                             onClick={onOpenMenu}
+                            onPointerEnter={onPrepareMenu}
+                            onFocus={onPrepareMenu}
                             className={menuButtonClass}
                             title="Menu"
                             aria-label={isMenuIconOpen ? 'Fermer le menu' : 'Ouvrir le menu'}

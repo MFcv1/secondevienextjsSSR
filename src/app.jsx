@@ -36,11 +36,21 @@ const loadFooter = () => import('./kit/layout/Footer');
 const loadMarketplaceDiscovery = () => import('./kit/marketplace/MarketplaceDiscovery');
 const loadGlobalMenu = () => import('./kit/layout/GlobalMenu');
 const loadAnalyticsProvider = () => import('./kit/shared/AnalyticsProvider');
+let globalMenuModulePromise = null;
+const preloadGlobalMenu = () => {
+  if (!globalMenuModulePromise) {
+    globalMenuModulePromise = loadGlobalMenu().catch((error) => {
+      globalMenuModulePromise = null;
+      throw error;
+    });
+  }
+  return globalMenuModulePromise;
+};
 
 const CartSidebar = React.lazy(loadCartSidebar);
 const Footer = React.lazy(loadFooter);
 const MarketplaceDiscovery = React.lazy(loadMarketplaceDiscovery);
-const GlobalMenu = React.lazy(loadGlobalMenu);
+const GlobalMenu = React.lazy(preloadGlobalMenu);
 
 const PUBLIC_ITEMS_INITIAL_LIMIT = 36;
 const CONTACT_INFO_CACHE_KEY = 'secondevie:contact-info:v1';
@@ -318,9 +328,11 @@ const AppContent = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMenuClosing, setIsMenuClosing] = useState(false);
   const [isMenuHeaderActive, setIsMenuHeaderActive] = useState(false);
+  const [shouldKeepGlobalMenuMounted, setShouldKeepGlobalMenuMounted] = useState(false);
   const [isMobileAnnouncementCollapsed, setIsMobileAnnouncementCollapsed] = useState(false);
   const menuCloseTimerRef = useRef(null);
   const menuHeaderTimerRef = useRef(null);
+  const isGlobalMenuModuleReadyRef = useRef(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showAuthSuccess, setShowAuthSuccess] = useState(false);
@@ -331,14 +343,42 @@ const AppContent = () => {
   const GLOBAL_MENU_EXIT_MS = 820;
   const GLOBAL_MENU_HEADER_RELEASE_MS = 780;
 
+  const prepareGlobalMenu = useCallback(() => (
+    preloadGlobalMenu()
+      .then(() => {
+        isGlobalMenuModuleReadyRef.current = true;
+        setShouldKeepGlobalMenuMounted(true);
+      })
+      .catch(() => {
+        isGlobalMenuModuleReadyRef.current = false;
+      })
+  ), []);
+
   const openGlobalMenu = () => {
-    loadGlobalMenu().catch(() => {});
-    if (menuCloseTimerRef.current) window.clearTimeout(menuCloseTimerRef.current);
-    if (menuHeaderTimerRef.current) window.clearTimeout(menuHeaderTimerRef.current);
-    setIsMenuClosing(false);
-    setIsMenuHeaderActive(true);
-    setIsMenuOpen(true);
+    const activateMenu = () => {
+      if (menuCloseTimerRef.current) window.clearTimeout(menuCloseTimerRef.current);
+      if (menuHeaderTimerRef.current) window.clearTimeout(menuHeaderTimerRef.current);
+      setIsMenuClosing(false);
+      setIsMenuHeaderActive(true);
+      setIsMenuOpen(true);
+    };
+
+    if (!isGlobalMenuModuleReadyRef.current) {
+      prepareGlobalMenu().then(activateMenu);
+      return;
+    }
+
+    activateMenu();
   };
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || loading) return undefined;
+    if (!window.matchMedia('(min-width: 1024px)').matches) return undefined;
+
+    return deferNonCriticalWork(() => {
+      prepareGlobalMenu();
+    });
+  }, [loading, prepareGlobalMenu]);
 
   const closeGlobalMenu = () => {
     if (!isMenuOpen || isMenuClosing) return;
@@ -1446,11 +1486,12 @@ const AppContent = () => {
 
       {/* --- NAVBAR & MENU GLOBAUX (NE S'AFFICHENT PAS SUR LA PAGE D'ACCUEIL) --- */}
       {/* --- MENU GLOBAL (Toujours disponible sauf Home) --- */}
-      {view !== 'home' && !isAdminPerformanceStudyView && (isMenuOpen || isMenuClosing || isMenuHeaderActive) && (
+      {view !== 'home' && !isAdminPerformanceStudyView && (isMenuOpen || isMenuClosing || isMenuHeaderActive || shouldKeepGlobalMenuMounted) && (
         <Suspense fallback={null}>
           <GlobalMenu
             isMenuOpen={isMenuOpen}
             isMenuClosing={isMenuClosing}
+            keepMounted={shouldKeepGlobalMenuMounted}
             setIsMenuOpen={setGlobalMenuOpen}
             setView={setView}
             currentView={view}
@@ -1488,6 +1529,7 @@ const AppContent = () => {
               user={user}
               onShowLogin={() => setShowFullLogin(true)}
               onOpenMenu={() => (isMenuOpen && !isMenuClosing ? closeGlobalMenu() : openGlobalMenu())}
+              onPrepareMenu={prepareGlobalMenu}
               isMenuOpen={isMenuOpen}
               isMenuClosing={isMenuClosing}
               isMenuHeaderActive={isMenuHeaderActive}

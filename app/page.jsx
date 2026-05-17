@@ -64,21 +64,6 @@ export default async function Page() {
   return (
     <>
       <section
-        className="fixed inset-0 z-[1] flex min-h-screen items-center justify-center bg-[#0F0F11] text-white"
-        data-public-ssr-fallback
-        data-ssr-home-preloader
-        aria-hidden="true"
-      >
-        <div className="text-center">
-          <p className="mb-8 text-[11px] font-black uppercase tracking-[0.55em] text-stone-400">
-            Entree dans la
-          </p>
-          <p className="font-serif text-6xl leading-none tracking-[0.22em] md:text-8xl">
-            Galerie
-          </p>
-        </div>
-      </section>
-      <section
         className="sr-only"
         data-public-ssr-fallback
         data-ssr-home
