@@ -72,6 +72,26 @@ body.marketplace-mobile-scroll-lock {
   overflow: hidden !important;
 }
 
+html.product-detail-scroll-lock,
+body.product-detail-scroll-lock {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+
+html.product-detail-scroll-lock {
+  scrollbar-gutter: auto;
+}
+
+html.gallery-entry-scroll-lock,
+body.gallery-entry-scroll-lock {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+
+html.gallery-entry-scroll-lock {
+  scrollbar-gutter: auto;
+}
+
 @media (max-width: 1023px) {
   html.marketplace-mobile-scroll-lock,
   html.product-detail-scroll-lock {

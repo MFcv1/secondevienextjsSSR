@@ -444,6 +444,25 @@ const AppContent = () => {
   };
 
   useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+
+    if (isTransitioning) {
+      root.classList.add('gallery-entry-scroll-lock');
+      body.classList.add('gallery-entry-scroll-lock');
+      window.scrollTo(0, 0);
+    } else {
+      root.classList.remove('gallery-entry-scroll-lock');
+      body.classList.remove('gallery-entry-scroll-lock');
+    }
+
+    return () => {
+      root.classList.remove('gallery-entry-scroll-lock');
+      body.classList.remove('gallery-entry-scroll-lock');
+    };
+  }, [isTransitioning]);
+
+  useEffect(() => {
     if (!shouldPlayInitialGalleryEntryRef.current || loading) return undefined;
 
     const timer = window.setTimeout(() => {
