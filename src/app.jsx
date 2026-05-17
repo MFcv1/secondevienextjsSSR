@@ -1139,7 +1139,7 @@ const AppContent = () => {
                 transition: { delay: 0.2, duration: 1.1, ease: [0.76, 0, 0.24, 1] }
               }}
             >
-              <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/stucco.png")' }} />
+              <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.32)_1px,transparent_0)] [background-size:14px_14px]" />
             </motion.div>
 
             <motion.div 
@@ -1150,7 +1150,7 @@ const AppContent = () => {
                 transition: { delay: 0.2, duration: 1.1, ease: [0.76, 0, 0.24, 1] }
               }}
             >
-              <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/stucco.png")' }} />
+              <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.32)_1px,transparent_0)] [background-size:14px_14px]" />
             </motion.div>
             
             {/* Arc Ligne architecturale */}

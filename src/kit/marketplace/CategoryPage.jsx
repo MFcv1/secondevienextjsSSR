@@ -181,7 +181,7 @@ const MobileProductRow = ({ item, darkMode, onSelectItem, isLiked, onToggleWishl
                     alt={item.name}
                     loading={priority ? 'eager' : 'lazy'}
                     decoding={priority ? 'sync' : 'async'}
-                    fetchpriority={priority ? 'high' : 'auto'}
+                    fetchPriority={priority ? 'high' : 'auto'}
                     className="product-card-image h-full w-full object-cover"
                     onLoad={handleImageLoad}
                 />

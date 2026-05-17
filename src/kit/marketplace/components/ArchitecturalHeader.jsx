@@ -207,6 +207,9 @@ const ArchitecturalHeader = ({
                         <img 
                             src="/images/logoanais-320.webp"
                             alt="Logo" 
+                            width="320"
+                            height="240"
+                            decoding="async"
                             className={`h-10 w-auto md:h-[50px] object-contain transition-all duration-500 ${darkMode ? 'brightness-0 invert opacity-100' : 'brightness-0 opacity-80'}`} 
                         />
                         <div className="flex flex-col leading-none">
@@ -234,7 +237,11 @@ const ArchitecturalHeader = ({
                                     }}
                                     className={`w-full py-2.5 pl-4 pr-10 bg-transparent outline-none font-sans text-[13px] tracking-wide ${darkMode ? 'text-stone-200 placeholder-stone-500' : 'text-stone-800 placeholder-stone-400'}`}
                                 />
-                                <button className="absolute right-3 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 transition-colors">
+                                <button
+                                    type="button"
+                                    aria-label="Rechercher"
+                                    className="absolute right-3 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 transition-colors"
+                                >
                                     <Search size={16} strokeWidth={1.5} />
                                 </button>
                             </div>

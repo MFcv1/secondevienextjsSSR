@@ -189,6 +189,7 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 ### Goal 9 - Scroll froid galerie / reveal images produit
 
 - `NEXTJS_OPTIMIZATION_ROADMAP.md` et `alertemobile.md` ont ete relus avant correction; l'invariant mobile critique de `src/Router.jsx` est reste intact.
+- Le rapport dense `GALLERY_COLD_SCROLL_OPTIMIZATION_REPORT.md` documente le cas complet : symptomes a froid, ancienne architecture galerie, nouvelle architecture, code modifie, differences `Nouveautes` / `Petits Prix`, validations, limites et pistes suivantes.
 - Audit froid Playwright sur la sandbox App Hosting : le scroll declenchait auparavant des scripts Google Maps depuis le footer et des prechargements galerie trop agressifs. Apres correction, le scroll mesure ne declenche plus que des images, sans script/XHR ni long task observee.
 - `src/kit/layout/Footer.jsx` ne charge plus l'iframe Google Maps automatiquement au scroll. La carte est maintenant opt-in : le placeholder local reste leger, et l'iframe Google ne charge qu'au clic sur "Afficher la carte".
 - `src/kit/marketplace/MarketplaceLayout.jsx` ne force plus le montage/preload desktop des sections basses pendant l'entree galerie. Les slots `DeferredSectionSlot` gardent leurs hauteurs reservees et montent par IntersectionObserver.
@@ -198,6 +199,18 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 - `src/index.css` masque les images de carte tant qu'elles sont en `data-image-reveal="pending"` ou `data-image-loaded="false"`, puis applique le fade `product-card-image-fade-in` quand la vraie image est chargee et visible.
 - Les handlers scroll globaux de `ArchitecturalHeader.jsx` et `PremiumMegaMenu.jsx` ont ete cadences par `requestAnimationFrame` pour eviter des updates React redondantes pendant le scroll.
 - Validations executees : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, puis deploiement App Hosting sandbox `secondevie-next-sandbox`.
+
+### Goal 10 - Passe PageSpeed desktop post-reveal
+
+- Rapport PageSpeed lu depuis l'URL partagee (`form_factor=desktop`, rapport du 2026-05-17 14:25:47) : score desktop 59, FCP 0,4 s, LCP 1,2 s, TBT 870 ms, CLS 0.078, Speed Index 6,2 s.
+- Les optimisations ci-dessous ne modifient pas le pipeline `ProductCard` ni les limites `Nouveautes` / `Petits Prix`; le reveal par IntersectionObserver, le `src` transparent et `getPriority={() => false}` restent en place.
+- `src/kit/contexts/AuthContext.jsx` ne lance plus `signInAnonymously` automatiquement sur la page publique. Cela supprime l'erreur PageSpeed `auth/admin-restricted-operation`, le POST `identitytoolkit accounts:signUp` en 400 et une partie du bruit Firebase client initial.
+- `src/kit/marketplace/MarketplaceLayout.jsx` force le rail categories sur les assets locaux optimises `/images/categories/*.webp` au lieu des images configurables Firebase plus lourdes; les images admin configurees restent disponibles ailleurs, mais le rail d'entree reste stable et leger.
+- `src/app.jsx` remplace la texture reseau `transparenttextures.com/stucco.png` du rideau d'entree par une texture CSS locale, supprimant une requete tierce inutile.
+- `src/kit/marketplace/components/MarketplaceHero.jsx` garde les animations d'images hero, mais remplace l'animation de largeur des dots par une largeur fixe + `transform: scaleX`, pour eviter l'audit "non-composited animation" sur `width`.
+- `src/kit/marketplace/components/ArchitecturalHeader.jsx` ajoute dimensions explicites au logo et un `aria-label` au bouton de recherche desktop; `CategoryRail.jsx` ajoute aussi dimensions/decoding au logo decoratif.
+- Les props `fetchpriority` restantes dans les surfaces marketplace actives ont ete corrigees en `fetchPriority` pour eviter les warnings React et conserver le hint navigateur.
+- Validation locale : `npm run lint`, `npm run build`, `npm run mobile:contract`, `npm run perf:budget`. Controle runtime production local : categories chargees depuis `/images/categories/*.webp`, dots hero sans `style.width`, `transparenttextures.com` absent du markup actif, zero erreur console observee au chargement.
 
 ## ðŸ› ï¸ Structure des Fichiers .env
 Nous n'utilisons PLUS de fichier `.env` unique. Tout est pilote par des fichiers suffixes locaux :

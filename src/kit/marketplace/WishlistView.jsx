@@ -160,7 +160,7 @@ const WishlistView = ({
                                                 className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                                                 loading={priority ? 'eager' : 'lazy'}
                                                 decoding={priority ? 'sync' : 'async'}
-                                                fetchpriority={priority ? 'high' : 'auto'}
+                                                fetchPriority={priority ? 'high' : 'auto'}
                                             />
                                             {item.sold && (
                                                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center">

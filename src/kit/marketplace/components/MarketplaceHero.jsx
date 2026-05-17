@@ -82,7 +82,7 @@ const MarketplaceHero = React.memo(function MarketplaceHero({
                                 sizes="100vw"
                                 alt=""
                                 decoding="async"
-                                fetchpriority={isActiveHeroImage ? 'high' : 'low'}
+                                fetchPriority={isActiveHeroImage ? 'high' : 'low'}
                                 loading={isActiveHeroImage ? 'eager' : 'lazy'}
                                 className="parallax-bg marketplace-hero-image h-full w-full object-cover md:h-[120%]"
                                 style={{
@@ -181,10 +181,14 @@ const MarketplaceHero = React.memo(function MarketplaceHero({
                             <button
                                 key={step.index}
                                 onClick={() => onGoToSlide(step.start)}
-                                className="relative h-[2px] overflow-hidden rounded-full bg-white/30 transition-all duration-500 md:h-[3px]"
-                                style={{ width: isActive ? '34px' : '18px' }}
+                                className="relative h-[2px] w-[34px] overflow-hidden rounded-full md:h-[3px]"
                                 aria-label={`Slides ${step.start + 1} à ${step.end}`}
                             >
+                                <span
+                                    aria-hidden="true"
+                                    className="absolute inset-y-0 left-0 w-full origin-center rounded-full bg-white/30 transition-transform duration-500"
+                                    style={{ transform: isActive ? 'scaleX(1)' : 'scaleX(0.53)' }}
+                                />
                                 <div
                                     key={isActive ? `active-${step.index}-${heroIndex}-${slideVersion}` : step.index}
                                     className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-white"

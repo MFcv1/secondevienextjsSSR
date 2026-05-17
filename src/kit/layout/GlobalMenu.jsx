@@ -919,7 +919,7 @@ const GlobalMenu = ({
                                                         alt={tile.label}
                                                         loading="lazy"
                                                         decoding="async"
-                                                        fetchpriority="low"
+                                                        fetchPriority="low"
                                                         className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.045]"
                                                     />
                                                     <span className="absolute bottom-2 left-2 rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-stone-900 shadow-sm">
@@ -986,7 +986,7 @@ const GlobalMenu = ({
                                                     alt=""
                                                     loading="lazy"
                                                     decoding="async"
-                                                    fetchpriority="low"
+                                                    fetchPriority="low"
                                                     className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.035]"
                                                 />
                                                 <span className="absolute inset-0 rounded-[16px] ring-1 ring-inset ring-stone-200/70" />

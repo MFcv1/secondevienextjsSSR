@@ -397,6 +397,9 @@ const MarketplaceLayout = ({
         `cat_${id}`,
         categoryImages[id] || "/images/categories/fallback.webp"
     );
+    const getCategoryRailImageSrc = useCallback((id) => (
+        categoryImages[id] || galleryConfig?.[`cat_${id}`] || "/images/categories/fallback.webp"
+    ), [galleryConfig]);
     const instaDefaults = [
         { img: "/images/before-after/apresu.webp", rotate: -2, yOffset: 0, aspect: "aspect-[4/5]" },
         { img: "/images/before-after/avantu.webp", rotate: 1, yOffset: -20, aspect: "aspect-square" },
@@ -466,7 +469,7 @@ const MarketplaceLayout = ({
             hasStartedMobileWarmupRef.current = true;
 
             scheduleGalleryWarmup(() => {
-                preloadCategoryRailImages(visibleCategories, (categoryId) => getCatImageEntry(categoryId).src);
+                preloadCategoryRailImages(visibleCategories, getCategoryRailImageSrc);
             }, 420, handles);
         }
 
@@ -478,7 +481,7 @@ const MarketplaceLayout = ({
                 handles.idles.forEach((idleId) => window.cancelIdleCallback(idleId));
             }
         };
-    }, [isPreparingGallery, visibleCategories]);
+    }, [getCategoryRailImageSrc, isPreparingGallery, visibleCategories]);
 
     const scrollToPieces = useCallback(() => {
         const target = containerRef.current?.querySelector('#gallery-pieces');
@@ -517,7 +520,7 @@ const MarketplaceLayout = ({
                 categories={visibleCategories}
                 descriptions={categoryDescriptions}
                 darkMode={darkMode}
-                getImageSrc={(categoryId) => getCatImageEntry(categoryId).src}
+                getImageSrc={getCategoryRailImageSrc}
                 onNavigateCategory={onNavigateCategory}
             />
 

@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
     onAuthStateChanged,
-    signInAnonymously,
     signInWithPopup,
     signInWithRedirect,
     getRedirectResult,
@@ -33,7 +32,6 @@ const isIOSStandalone = () => {
 const REDIRECT_KEY = 'kit_google_redirect_pending';
 const setRedirectPending = () => sessionStorage.setItem(REDIRECT_KEY, 'true');
 const clearRedirectPending = () => sessionStorage.removeItem(REDIRECT_KEY);
-const isRedirectPending = () => sessionStorage.getItem(REDIRECT_KEY) === 'true';
 
 // Create the context
 const AuthContext = createContext();
@@ -52,9 +50,9 @@ export const AuthProvider = ({ children }) => {
     // Authentication relies on Firestore Rules & Custom Claims now.
     // No hardcoded emails in client bundle.
 
-    // 1. Handle redirect result FIRST (before signInAnonymously can fire)
+    // 1. Handle redirect result FIRST.
     // On page reload after signInWithRedirect, getRedirectResult resolves with the Google user.
-    // The sessionStorage flag prevents signInAnonymously from racing with this.
+    // The sessionStorage flag preserves the redirect lifecycle across reloads.
     useEffect(() => {
         let cancelled = false;
         const handleRedirect = async () => {
@@ -82,12 +80,6 @@ export const AuthProvider = ({ children }) => {
         const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
             setLoading(false);
-
-            // Auto-login anonymously — but NOT if a Google redirect is pending
-            // sessionStorage survives page reloads (unlike useRef which resets)
-            if (!currentUser && !isRedirectPending()) {
-                signInAnonymously(auth).catch((error) => console.error("Anonymous auth failed", error));
-            }
         });
 
         return () => unsubscribeAuth();
@@ -129,7 +121,7 @@ export const AuthProvider = ({ children }) => {
         if (isIOSStandalone()) {
             // iOS standalone (PWA home screen): signInWithPopup is blocked by WebKit
             // Use signInWithRedirect — page will reload and getRedirectResult handles it above
-            // Flag persists in sessionStorage so signInAnonymously won't race after reload
+            // Flag persists in sessionStorage so the redirect lifecycle survives reload.
             setRedirectPending();
             await signInWithRedirect(auth, googleProvider);
             return null; // Page reloads, this line won't execute

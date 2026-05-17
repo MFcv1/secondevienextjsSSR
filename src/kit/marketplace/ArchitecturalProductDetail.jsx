@@ -1849,7 +1849,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                         aria-hidden="true"
                         loading="eager"
                         decoding="async"
-                        fetchpriority="high"
+                        fetchPriority="high"
                         className="h-[120%] w-[120%] scale-110 object-cover object-center opacity-50 blur-[80px] saturate-150 dark:opacity-20"
                     />
                 </div>
@@ -1909,7 +1909,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                                     alt={`Apercu ${idx + 1}`}
                                                     loading={hasPrimaryImagePainted && idx < 8 ? 'eager' : 'lazy'}
                                                     decoding="async"
-                                                    fetchpriority="low"
+                                                    fetchPriority="low"
                                                     sizes={`${mobileThumbSize}px`}
                                                 />
                                             </button>
@@ -1966,7 +1966,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                                 draggable={false}
                                                 loading="eager"
                                                 decoding="async"
-                                                fetchpriority="low"
+                                                fetchPriority="low"
                                             />
                                         )}
                                         <img
@@ -1984,7 +1984,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                             draggable={false}
                                             loading="eager"
                                             decoding="async"
-                                            fetchpriority="high"
+                                            fetchPriority="high"
                                         />
                                     </div>
                                 </div>
@@ -2207,7 +2207,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                         alt={item.name}
                                         loading="eager"
                                         decoding="async"
-                                        fetchpriority="high"
+                                        fetchPriority="high"
                                         onLoad={handlePrimaryDetailImageLoad}
                                         className="block h-auto w-auto max-h-[92%] max-w-full object-contain rounded-2xl shadow-[0_45px_110px_-25px_rgba(0,0,0,0.8)]"
                                     />
@@ -2338,7 +2338,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                         alt=""
                                         loading={hasPrimaryImagePainted && idx < 8 ? 'eager' : 'lazy'}
                                         decoding="async"
-                                        fetchpriority="low"
+                                        fetchPriority="low"
                                     />
                                 </button>
                             );
@@ -2425,7 +2425,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                             draggable={false}
                             loading="eager"
                             decoding="async"
-                            fetchpriority="high"
+                            fetchPriority="high"
                         />
                     </div>
                 </div>

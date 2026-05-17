@@ -37,7 +37,7 @@ const CategoryRail = React.memo(function CategoryRail({
                                 alt={cat.label}
                                 loading="eager"
                                 decoding="async"
-                                fetchpriority={index === 0 ? 'high' : 'auto'}
+                                fetchPriority={index === 0 ? 'high' : 'auto'}
                                 className="h-full w-full object-cover transition-transform duration-[1.5s] ease-[cubic-bezier(0.25,1,0.5,1)] group-active:scale-[1.04]"
                             />
                         </div>
@@ -64,7 +64,7 @@ const CategoryRail = React.memo(function CategoryRail({
                                     alt={cat.label}
                                     loading={index < 4 ? 'eager' : 'lazy'}
                                     decoding="async"
-                                    fetchpriority="auto"
+                                    fetchPriority="auto"
                                     className="h-full w-full object-cover object-center"
                                 />
                             </div>
@@ -74,6 +74,10 @@ const CategoryRail = React.memo(function CategoryRail({
                                 src="/images/logoanais-320.webp"
                                 alt=""
                                 aria-hidden="true"
+                                width="320"
+                                height="240"
+                                loading="lazy"
+                                decoding="async"
                                 className={`pointer-events-none absolute bottom-[24px] left-[-20px] z-0 h-[58px] w-auto select-none object-contain grayscale lg:bottom-[28px] lg:left-[-22px] lg:h-[64px] 2xl:bottom-[34px] 2xl:left-[-25px] 2xl:h-[72px] ${darkMode ? 'opacity-[0.12] invert' : 'opacity-[0.15] mix-blend-multiply'}`}
                             />
                             <span className="relative z-[1] w-full">
