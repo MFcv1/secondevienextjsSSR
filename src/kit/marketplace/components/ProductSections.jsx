@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import ProductGridSection from './ProductGridSection';
 
 const NOUVEAUTES_PAGE_SIZE = 10;
@@ -73,7 +73,7 @@ export const ProductArrivalsSection = ({
             onPrefetchItem={onPrefetchItem}
             onAddToCart={onAddToCart}
             onToggleWishlist={onToggleWishlist}
-            getPriority={(_, index) => !isDetailOverlayOpen && index < 2}
+            getPriority={() => false}
         />
     );
 };
@@ -94,7 +94,6 @@ export const ProductSmallPricesSection = ({
 }) => {
     const sectionRef = useRef(null);
     const [limit, setLimit] = useState(PETITS_PRIX_PAGE_SIZE);
-    const [isNearViewport, setIsNearViewport] = useState(false);
     const publishedItems = usePublishedItems(items);
     const likedOriginalIds = useLikedOriginalIds(wishlistItems);
 
@@ -118,23 +117,6 @@ export const ProductSmallPricesSection = ({
         setLimit((previous) => previous + PETITS_PRIX_PAGE_SIZE);
     };
 
-    useEffect(() => {
-        const section = sectionRef.current;
-        if (!section || typeof IntersectionObserver === 'undefined') {
-            setIsNearViewport(true);
-            return undefined;
-        }
-
-        const observer = new IntersectionObserver(([entry]) => {
-            if (!entry.isIntersecting) return;
-            setIsNearViewport(true);
-            observer.disconnect();
-        }, { rootMargin: '700px 0px 260px' });
-
-        observer.observe(section);
-        return () => observer.disconnect();
-    }, [visibleItems.length]);
-
     return (
         <ProductGridSection
             sectionRef={sectionRef}
@@ -151,7 +133,7 @@ export const ProductSmallPricesSection = ({
             onPrefetchItem={onPrefetchItem}
             onAddToCart={onAddToCart}
             onToggleWishlist={onToggleWishlist}
-            getPriority={(_, index) => isNearViewport && index < 2}
+            getPriority={() => false}
             hideWhenEmpty
         />
     );

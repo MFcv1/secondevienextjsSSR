@@ -10,7 +10,7 @@ import { where, orderBy, doc, getDoc } from 'firebase/firestore';
 import useFirestoreSection from '../hooks/useFirestoreSection';
 import { db } from '../config/firebase';
 import { GALLERY_SEO_COPY } from './seoCopy';
-import { PRODUCT_CARD_IMAGE_SIZES, preloadImage, prewarmProductListImages } from '../../utils/imageUtils';
+import { preloadImage } from '../../utils/imageUtils';
 
 const loadBeforeAfterSection = () => import('./components/BeforeAfterSection');
 const loadInstagramSection = () => import('./components/InstagramSection');
@@ -263,14 +263,6 @@ const canPreloadMobileGalleryEntryAssets = () => {
     return true;
 };
 
-const getMobileGalleryWarmupLimit = () => {
-    if (typeof navigator === 'undefined') return 3;
-
-    const deviceMemory = Number(navigator.deviceMemory || 0);
-    if (deviceMemory >= 4) return 4;
-    return 3;
-};
-
 const scheduleGalleryWarmup = (callback, delay, handles) => {
     const timeoutId = window.setTimeout(() => {
         const run = () => callback();
@@ -469,37 +461,24 @@ const MarketplaceLayout = ({
 
     useEffect(() => {
         const handles = { timeouts: [], idles: [] };
-        const cancelWarmups = [];
 
         if (isPreparingGallery && canPreloadMobileGalleryEntryAssets() && !hasStartedMobileWarmupRef.current) {
             hasStartedMobileWarmupRef.current = true;
 
             scheduleGalleryWarmup(() => {
-                cancelWarmups.push(prewarmProductListImages(publishedItems, {
-                    includeDetailPrimary: false,
-                    maxItems: Math.min(4, getMobileGalleryWarmupLimit()),
-                    initialDelay: 0,
-                    delay: 260,
-                    priority: 'low',
-                    decode: false,
-                    sizes: PRODUCT_CARD_IMAGE_SIZES,
-                }));
-            }, 260, handles);
-            scheduleGalleryWarmup(() => {
                 preloadCategoryRailImages(visibleCategories, (categoryId) => getCatImageEntry(categoryId).src);
             }, 420, handles);
         }
 
-        if (!handles.timeouts.length && !handles.idles.length && !cancelWarmups.length) return undefined;
+        if (!handles.timeouts.length && !handles.idles.length) return undefined;
 
         return () => {
             handles.timeouts.forEach((timeoutId) => window.clearTimeout(timeoutId));
             if (typeof window.cancelIdleCallback === 'function') {
                 handles.idles.forEach((idleId) => window.cancelIdleCallback(idleId));
             }
-            cancelWarmups.forEach((cancel) => cancel?.());
         };
-    }, [isPreparingGallery, publishedItems, visibleCategories]);
+    }, [isPreparingGallery, visibleCategories]);
 
     const scrollToPieces = useCallback(() => {
         const target = containerRef.current?.querySelector('#gallery-pieces');

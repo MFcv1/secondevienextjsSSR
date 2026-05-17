@@ -3,6 +3,39 @@ import { Plus, Heart } from 'lucide-react';
 import { getProductUrl } from '../../../utils/slug';
 import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, preloadPrimaryProductDetailImage, preloadProductImages } from '../../../utils/imageUtils';
 
+const TRANSPARENT_IMAGE_SRC = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
+const getProductCardObserverRoot = (node) => {
+    if (typeof window === 'undefined') return null;
+
+    const galleryRoot = document.getElementById('marketplaceGalleryScroll');
+    if (!galleryRoot?.contains(node)) return null;
+
+    const style = window.getComputedStyle(galleryRoot);
+    const isScrollableRoot = (
+        galleryRoot.scrollHeight > galleryRoot.clientHeight + 8 &&
+        ['auto', 'scroll'].includes(style.overflowY)
+    );
+
+    return isScrollableRoot ? galleryRoot : null;
+};
+
+const getProductCardViewportState = (node, root) => {
+    if (!node || typeof window === 'undefined') {
+        return { isNear: true, isVisible: true };
+    }
+
+    const rect = node.getBoundingClientRect();
+    const rootRect = root
+        ? root.getBoundingClientRect()
+        : { top: 0, bottom: window.innerHeight };
+
+    return {
+        isNear: rect.bottom >= rootRect.top - 260 && rect.top <= rootRect.bottom + 340,
+        isVisible: rect.bottom >= rootRect.top && rect.top <= rootRect.bottom,
+    };
+};
+
 /**
  * COMPOSANT : CARTE PRODUIT (DESIGN ARCHITECTURAL v3)
  * - Actions: "Ajouter à la sélection" (Bookmark) + "Détail" (Eye).
@@ -28,11 +61,13 @@ const ProductCard = ({
     const hoverWarmupTimerRef = React.useRef(null);
     const primaryWarmupStartedRef = React.useRef(false);
     const cardImage = React.useMemo(() => getProductCardImage(item), [item]);
+    const [isImageRequested, setIsImageRequested] = React.useState(priority);
     const [isImageRevealActive, setIsImageRevealActive] = React.useState(priority);
     const [isImageLoaded, setIsImageLoaded] = React.useState(false);
-    const handleImageLoad = React.useCallback(() => {
+    const shouldRequestImage = priority || isImageRequested;
+    const handleImageLoad = React.useCallback((event) => {
+        if (event.currentTarget.dataset.realImage !== 'true') return;
         setIsImageLoaded(true);
-        setIsImageRevealActive(true);
     }, []);
     const canWarmupImages = React.useCallback(() => {
         if (suspendImageWarmup) return false;
@@ -95,17 +130,20 @@ const ProductCard = ({
 
     React.useEffect(() => {
         primaryWarmupStartedRef.current = false;
+        setIsImageRequested(priority);
         setIsImageRevealActive(priority);
         setIsImageLoaded(false);
     }, [cardImage.src, item?.id, priority]);
 
     React.useEffect(() => {
         if (priority) {
+            setIsImageRequested(true);
             setIsImageRevealActive(true);
             return undefined;
         }
 
         if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
+            setIsImageRequested(true);
             setIsImageRevealActive(true);
             return undefined;
         }
@@ -113,30 +151,45 @@ const ProductCard = ({
         const node = cardRef.current?.querySelector('.product-card-media');
         if (!node) return undefined;
 
+        const root = getProductCardObserverRoot(node);
         const revealFallbackTimer = window.setTimeout(() => {
-            setIsImageRevealActive(true);
-        }, 900);
+            const { isNear, isVisible } = getProductCardViewportState(node, root);
+            if (isNear) setIsImageRequested(true);
+            if (isVisible) setIsImageRevealActive(true);
+        }, 1400);
 
-        const galleryRoot = document.getElementById('marketplaceGalleryScroll');
-        const root = galleryRoot?.contains(node) ? galleryRoot : null;
-        const observer = new IntersectionObserver((entries) => {
+        const requestObserver = new IntersectionObserver((entries) => {
             const isNearViewport = entries.some((entry) => entry.isIntersecting);
             if (isNearViewport) {
-                window.clearTimeout(revealFallbackTimer);
-                setIsImageRevealActive(true);
-                observer.disconnect();
+                setIsImageRequested(true);
+                requestObserver.disconnect();
             }
         }, {
             root,
-            rootMargin: '0px 0px 420px 0px',
+            rootMargin: '260px 0px 340px 0px',
             threshold: 0.01,
         });
 
-        observer.observe(node);
+        const revealObserver = new IntersectionObserver((entries) => {
+            const isInViewport = entries.some((entry) => entry.isIntersecting);
+            if (isInViewport) {
+                window.clearTimeout(revealFallbackTimer);
+                setIsImageRevealActive(true);
+                revealObserver.disconnect();
+            }
+        }, {
+            root,
+            rootMargin: '0px',
+            threshold: 0.01,
+        });
+
+        requestObserver.observe(node);
+        revealObserver.observe(node);
 
         return () => {
             window.clearTimeout(revealFallbackTimer);
-            observer.disconnect();
+            requestObserver.disconnect();
+            revealObserver.disconnect();
         };
     }, [cardImage.src, priority]);
 
@@ -249,15 +302,16 @@ const ProductCard = ({
                 data-image-loaded={isImageLoaded ? 'true' : 'false'}
             >
                 <img
-                    src={cardImage.src}
-                    srcSet={cardImage.srcSet || undefined}
+                    src={shouldRequestImage ? cardImage.src : TRANSPARENT_IMAGE_SRC}
+                    srcSet={shouldRequestImage ? (cardImage.srcSet || undefined) : undefined}
                     sizes={PRODUCT_CARD_IMAGE_SIZES}
                     alt={item.name}
                     draggable={false}
+                    data-real-image={shouldRequestImage ? 'true' : 'false'}
                     className="product-card-image h-full w-full object-cover transition-transform duration-[800ms] ease-[cubic-bezier(0.23,1,0.32,1)] lg:group-hover:scale-[1.03]"
                     loading={priority && !suspendImageWarmup ? 'eager' : 'lazy'}
                     decoding="async"
-                    fetchpriority={priority && !suspendImageWarmup ? 'high' : 'auto'}
+                    fetchPriority={priority && !suspendImageWarmup ? 'high' : 'auto'}
                     onLoad={handleImageLoad}
                 />
 

@@ -13,7 +13,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 // --- IMPORTS KIT (standardisé) ---
 import { db, appId, functions } from './kit/config/firebase';
 import { getMillis } from './utils/time';
-import { prewarmProductListImages } from './utils/imageUtils';
 import { extractCategoryIdFromPath, extractProductIdFromPath, getCategoryUrl, getProductUrl } from './utils/slug';
 import { useLiveTheme } from './kit/config/theme';
 import KIT_CONFIG from './kit/config/constants';
@@ -414,21 +413,6 @@ const AppContent = () => {
 
     return () => window.clearTimeout(timer);
   }, [loading]);
-
-  useEffect(() => {
-    if (view !== 'gallery') return undefined;
-    if (!isPreparingGallery && !isTransitioning) return undefined;
-    if (!items.length) return undefined;
-
-    return prewarmProductListImages(items, {
-      includeDetailPrimary: false,
-      maxItems: 4,
-      initialDelay: 1800,
-      delay: 420,
-      priority: 'low',
-      decode: false,
-    });
-  }, [isPreparingGallery, isTransitioning, items, view]);
 
   // Deep Linking State
   const [pendingDeepLink, setPendingDeepLink] = useState(null);

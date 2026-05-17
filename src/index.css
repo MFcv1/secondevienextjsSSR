@@ -498,6 +498,11 @@ img {
   -webkit-backface-visibility: visible;
 }
 
+.product-card-media[data-image-reveal="pending"] .product-card-image,
+.product-card-media[data-image-loaded="false"] .product-card-image {
+  opacity: 0;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .product-card-media[data-image-reveal="visible"][data-image-loaded="true"] .product-card-image {
     animation: product-card-image-fade-in 360ms cubic-bezier(.29,.65,.58,1) both;

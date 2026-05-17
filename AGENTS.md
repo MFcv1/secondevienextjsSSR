@@ -186,6 +186,19 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 - Validation : `npm run mobile:contract`, `npm run lint`, `npm run build`.
 - Mesure Playwright locale production : desktop hover -> image detail principale 424-571 ms; mobile visible tap verifie la variante `medium`, avec temps local encore penalise par le pipeline SPA/Firebase et le scroll Playwright.
 
+### Goal 9 - Scroll froid galerie / reveal images produit
+
+- `NEXTJS_OPTIMIZATION_ROADMAP.md` et `alertemobile.md` ont ete relus avant correction; l'invariant mobile critique de `src/Router.jsx` est reste intact.
+- Audit froid Playwright sur la sandbox App Hosting : le scroll declenchait auparavant des scripts Google Maps depuis le footer et des prechargements galerie trop agressifs. Apres correction, le scroll mesure ne declenche plus que des images, sans script/XHR ni long task observee.
+- `src/kit/layout/Footer.jsx` ne charge plus l'iframe Google Maps automatiquement au scroll. La carte est maintenant opt-in : le placeholder local reste leger, et l'iframe Google ne charge qu'au clic sur "Afficher la carte".
+- `src/kit/marketplace/MarketplaceLayout.jsx` ne force plus le montage/preload desktop des sections basses pendant l'entree galerie. Les slots `DeferredSectionSlot` gardent leurs hauteurs reservees et montent par IntersectionObserver.
+- Les warmups produits caches ont ete retires pour les grilles publiques : plus de `prewarmProductListImages` sur l'entree galerie, plus de traitement partiel 4/5 premieres cartes, et `ProductSections.jsx` passe `getPriority={() => false}` pour `Nouveautes` et `Petits Prix`.
+- `src/kit/marketplace/components/ProductCard.jsx` pilote maintenant explicitement le chargement/reveal des images de carte : `src` transparent tant que la carte n'approche pas, demande de l'image reelle via IntersectionObserver, puis fade-in seulement quand la carte devient visible. Le root d'observation utilise `#marketplaceGalleryScroll` seulement s'il est reellement scrollable, sinon le viewport navigateur.
+- Correction importante : le fallback de securite des cartes ne revele plus les images hors ecran. Il verifie la position reelle de la carte avant de demander/reveler l'image, pour conserver le comportement progressif sur `Nouveautes` comme sur `Petits Prix` tout en evitant les cartes blanches si l'observer rate un cas.
+- `src/index.css` masque les images de carte tant qu'elles sont en `data-image-reveal="pending"` ou `data-image-loaded="false"`, puis applique le fade `product-card-image-fade-in` quand la vraie image est chargee et visible.
+- Les handlers scroll globaux de `ArchitecturalHeader.jsx` et `PremiumMegaMenu.jsx` ont ete cadences par `requestAnimationFrame` pour eviter des updates React redondantes pendant le scroll.
+- Validations executees : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, puis deploiement App Hosting sandbox `secondevie-next-sandbox`.
+
 ## ðŸ› ï¸ Structure des Fichiers .env
 Nous n'utilisons PLUS de fichier `.env` unique. Tout est pilote par des fichiers suffixes locaux :
 - `.env.sandbox` -> charge par les scripts sandbox (`npm run dev`, `npm run build`, `npm run start`)
