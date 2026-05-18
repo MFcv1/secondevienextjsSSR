@@ -343,6 +343,16 @@ const AppContent = () => {
   const GLOBAL_MENU_EXIT_MS = 820;
   const GLOBAL_MENU_HEADER_RELEASE_MS = 780;
 
+  const preloadGlobalMenuModule = useCallback(() => (
+    preloadGlobalMenu()
+      .then(() => {
+        isGlobalMenuModuleReadyRef.current = true;
+      })
+      .catch(() => {
+        isGlobalMenuModuleReadyRef.current = false;
+      })
+  ), []);
+
   const prepareGlobalMenu = useCallback(() => (
     preloadGlobalMenu()
       .then(() => {
@@ -372,13 +382,15 @@ const AppContent = () => {
   };
 
   useEffect(() => {
-    if (typeof window === 'undefined' || loading) return undefined;
+    if (typeof window === 'undefined' || view === 'home') return undefined;
     if (!window.matchMedia('(min-width: 1024px)').matches) return undefined;
 
-    return deferNonCriticalWork(() => {
+    const warmupTimer = window.setTimeout(() => {
       prepareGlobalMenu();
-    });
-  }, [loading, prepareGlobalMenu]);
+    }, 360);
+
+    return () => window.clearTimeout(warmupTimer);
+  }, [prepareGlobalMenu, view]);
 
   const closeGlobalMenu = () => {
     if (!isMenuOpen || isMenuClosing) return;
@@ -1529,7 +1541,7 @@ const AppContent = () => {
               user={user}
               onShowLogin={() => setShowFullLogin(true)}
               onOpenMenu={() => (isMenuOpen && !isMenuClosing ? closeGlobalMenu() : openGlobalMenu())}
-              onPrepareMenu={prepareGlobalMenu}
+              onPrepareMenu={preloadGlobalMenuModule}
               isMenuOpen={isMenuOpen}
               isMenuClosing={isMenuClosing}
               isMenuHeaderActive={isMenuHeaderActive}
