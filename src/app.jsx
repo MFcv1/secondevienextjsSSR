@@ -41,11 +41,20 @@ const CartSidebar = React.lazy(loadCartSidebar);
 const Footer = React.lazy(loadFooter);
 const MarketplaceDiscovery = React.lazy(loadMarketplaceDiscovery);
 
+const FooterLoadingPlaceholder = ({ darkMode = false }) => (
+  <div
+    aria-hidden="true"
+    data-footer-loading-placeholder="true"
+    className={darkMode ? 'min-h-[1320px] bg-[#0f0f0e]' : 'min-h-[1320px] bg-[#FAFAF9]'}
+  />
+);
+
 const PUBLIC_ITEMS_INITIAL_LIMIT = 36;
 const CONTACT_INFO_CACHE_KEY = 'secondevie:contact-info:v1';
 const USER_CONNECTION_LOG_TTL_MS = 10 * 60 * 1000;
 const ADMIN_LIVE_ITEM_TABS = new Set(['dashboard', 'furniture', 'inventory']);
 const ABOUT_PATH = '/a-propos';
+const MOBILE_MARKETPLACE_QUERY = '(max-width: 1023px)';
 const NEXT_VIEW_PATHS = {
   '/admin': 'admin',
   '/checkout': 'checkout',
@@ -157,6 +166,11 @@ const isRootGalleryEntryUrl = () => (
   !window.location.hash
 );
 
+const isMobileMarketplaceViewport = () => (
+  typeof window !== 'undefined' &&
+  window.matchMedia(MOBILE_MARKETPLACE_QUERY).matches
+);
+
 const AppContent = () => {
   const toast = useToast();
 
@@ -178,6 +192,7 @@ const AppContent = () => {
 
   const [showMarketplacePopup, setShowMarketplacePopup] = useState(false);
   const footerRef = useRef(null);
+  const [footerSentinelNode, setFooterSentinelNode] = useState(null);
 
 
 
@@ -383,15 +398,71 @@ const AppContent = () => {
     setShowMarketplacePopup(true);
   }, []);
 
+  const revealDeferredFooter = useCallback(() => {
+    setShouldRenderDeferredFooter(true);
+    loadFooter().catch(() => {});
+  }, []);
+
+  const setDeferredFooterSentinel = useCallback((node) => {
+    setFooterSentinelNode(node);
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
-    const timer = window.setTimeout(() => {
-      setShouldRenderDeferredFooter(true);
-      loadFooter().catch(() => {});
-    }, 5200);
+    if (shouldRenderDeferredFooter) return undefined;
 
-    return () => window.clearTimeout(timer);
-  }, []);
+    const sentinel = footerSentinelNode;
+    let frameId = 0;
+    const checkFooterDistance = () => {
+      frameId = 0;
+      if (!sentinel) return;
+
+      if (sentinel.dataset.deferredFooterSentinel === 'gallery') {
+        if (window.scrollY > 3600) {
+          revealDeferredFooter();
+          return;
+        }
+
+        const newsletterSection = document.querySelector('.discount-section');
+        if (!newsletterSection) return;
+        revealDeferredFooter();
+        return;
+      }
+
+      const rect = sentinel.getBoundingClientRect();
+      if (rect.top <= window.innerHeight + 1600) {
+        revealDeferredFooter();
+      }
+    };
+    const scheduleDistanceCheck = () => {
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(checkFooterDistance);
+    };
+
+    scheduleDistanceCheck();
+    window.addEventListener('scroll', scheduleDistanceCheck, { passive: true });
+    window.addEventListener('resize', scheduleDistanceCheck);
+
+    let idleId = null;
+    const timer = window.setTimeout(() => {
+      const run = () => revealDeferredFooter();
+      if (typeof window.requestIdleCallback === 'function') {
+        idleId = window.requestIdleCallback(run, { timeout: 2500 });
+        return;
+      }
+      run();
+    }, 22000);
+
+    return () => {
+      window.removeEventListener('scroll', scheduleDistanceCheck);
+      window.removeEventListener('resize', scheduleDistanceCheck);
+      if (frameId) window.cancelAnimationFrame(frameId);
+      window.clearTimeout(timer);
+      if (idleId !== null && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleId);
+      }
+    };
+  }, [footerSentinelNode, revealDeferredFooter, shouldRenderDeferredFooter]);
 
   useEffect(() => () => {
     if (menuCloseTimerRef.current) window.clearTimeout(menuCloseTimerRef.current);
@@ -455,17 +526,23 @@ const AppContent = () => {
   useEffect(() => {
     const root = document.documentElement;
     const body = document.body;
+    const mediaQuery = window.matchMedia(MOBILE_MARKETPLACE_QUERY);
 
-    if (isTransitioning) {
-      root.classList.add('gallery-entry-scroll-lock');
-      body.classList.add('gallery-entry-scroll-lock');
-      window.scrollTo(0, 0);
-    } else {
-      root.classList.remove('gallery-entry-scroll-lock');
-      body.classList.remove('gallery-entry-scroll-lock');
-    }
+    const syncEntryScrollLock = () => {
+      const shouldLock = isTransitioning && mediaQuery.matches;
+      root.classList.toggle('gallery-entry-scroll-lock', shouldLock);
+      body.classList.toggle('gallery-entry-scroll-lock', shouldLock);
+
+      if (shouldLock) {
+        window.scrollTo(0, 0);
+      }
+    };
+
+    syncEntryScrollLock();
+    mediaQuery.addEventListener?.('change', syncEntryScrollLock);
 
     return () => {
+      mediaQuery.removeEventListener?.('change', syncEntryScrollLock);
       root.classList.remove('gallery-entry-scroll-lock');
       body.classList.remove('gallery-entry-scroll-lock');
     };
@@ -478,7 +555,9 @@ const AppContent = () => {
       setIsPreparingGallery(false);
       setIsInitialGalleryEntry(false);
       setIsTransitioning(false);
-      window.scrollTo(0, 0);
+      if (isMobileMarketplaceViewport()) {
+        window.scrollTo(0, 0);
+      }
     }, 2500);
 
     return () => window.clearTimeout(timer);
@@ -1198,7 +1277,7 @@ const AppContent = () => {
               backgroundColor: "rgba(15, 15, 17, 0)", borderTopLeftRadius: "0%", borderTopRightRadius: "0%",
               transition: { duration: 0, delay: 0.2 }
             }}
-            className="fixed inset-0 z-[9999] overflow-hidden flex flex-col items-center justify-center pointer-events-auto shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+            className="fixed inset-0 z-[9999] overflow-hidden flex flex-col items-center justify-center pointer-events-auto lg:pointer-events-none shadow-[0_0_50px_rgba(0,0,0,0.5)]"
           >
             {/* PANNEAUX LATÉRAUX (Volets coulissants) */}
             <motion.div 
@@ -1565,23 +1644,40 @@ const AppContent = () => {
           onLoadFullCatalog={requestFullCatalog}
           onLoadCategoryCatalog={requestCategoryCatalog}
           onEnsureProductDetail={ensureProductDetailItem}
-          galleryFooter={shouldRenderDeferredFooter ? (
-            <Suspense fallback={null}>
-              <Footer darkMode={darkMode} contactInfo={contactInfo} />
-            </Suspense>
-          ) : null}
+          galleryFooter={(
+            <div
+              ref={setDeferredFooterSentinel}
+              data-deferred-footer-sentinel="gallery"
+              className="min-h-px"
+            >
+              {shouldRenderDeferredFooter ? (
+                <Suspense fallback={<FooterLoadingPlaceholder darkMode={darkMode} />}>
+                  <Footer darkMode={darkMode} contactInfo={contactInfo} />
+                </Suspense>
+              ) : null}
+            </div>
+          )}
         />
       </main>
       {
-        shouldRenderDeferredFooter && ['home', 'detail', 'checkout', 'my-orders', 'category', 'devis'].includes(view) && (
+        ['home', 'detail', 'checkout', 'my-orders', 'category', 'devis'].includes(view) && (
           <div 
             ref={footerRef} 
             className="transition-all duration-700"
           >
-            {/* A propos (home) : footer TOUJOURS dark pour fusionner avec ContactCTASection (bg-[#111]) et rester dissociee du toggle dark/light de la galerie. */}
-            <Suspense fallback={null}>
-              <Footer darkMode={view === 'home' ? true : darkMode} contactInfo={contactInfo} />
-            </Suspense>
+            <div
+              ref={setDeferredFooterSentinel}
+              data-deferred-footer-sentinel={view}
+              className="min-h-px"
+            />
+            {shouldRenderDeferredFooter ? (
+              <>
+                {/* A propos (home) : footer TOUJOURS dark pour fusionner avec ContactCTASection (bg-[#111]) et rester dissociee du toggle dark/light de la galerie. */}
+                <Suspense fallback={<FooterLoadingPlaceholder darkMode={view === 'home' ? true : darkMode} />}>
+                  <Footer darkMode={view === 'home' ? true : darkMode} contactInfo={contactInfo} />
+                </Suspense>
+              </>
+            ) : null}
           </div>
         )
       }

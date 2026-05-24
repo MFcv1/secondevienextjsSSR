@@ -32,8 +32,8 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |   |-- index.js, helpers : Firebase Functions entrypoint/config/security
 |   `-- src : analytics, auth, commerce, email, maintenance, public, seo, triggers
 |-- public : favicons, manifest, images, video, rapport maintenance statique
-|-- scripts : env bridge, SSR/mobile checks, maintenance audit, budget perf Next, perf/architecture compare, backfills/audits Storage/images et tooling safe
-|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_SEO_ROADMAP.md, NEXTJS_HOME_LANDING_ROADMAP.md, NEXTJS_SSR_AUDIT_REPORT.md, NEXTJS_IMAGE_PIPELINE_AUDIT.md, GALLERY_COLD_SCROLL_OPTIMIZATION_REPORT.md
+|-- scripts : env bridge, SSR/mobile checks, maintenance audit, budget perf Next, perf/architecture compare, audit scroll galerie, backfills/audits Storage/images et tooling safe
+|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_SEO_ROADMAP.md, NEXTJS_HOME_LANDING_ROADMAP.md, NEXTJS_SSR_AUDIT_REPORT.md, NEXTJS_IMAGE_PIPELINE_AUDIT.md, GALLERY_COLD_SCROLL_OPTIMIZATION_REPORT.md, GALLERY_SCROLL_LAG_AUDIT.md
 |-- imagehero, pageUI : references visuelles et notes UI
 `-- .next, dist, node_modules, logs, .firebase : generes, hors carte
 ```
@@ -238,6 +238,33 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 - `src/kit/marketplace/MarketplaceLayout.jsx` pointe maintenant les cartes categories vers ces variantes locales. On garde donc le contenu visuel d'origine tout en evitant les URLs Firebase plus lourdes au premier affichage.
 - `.firebaseignore` a ete ajoute pour exclure les builds, logs et le dossier temporaire local `public/images/categories/source-config/` des deploiements App Hosting.
 - Validations executees : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`. Les nouvelles variantes pesent environ 7.6 a 14.1 kB chacune.
+
+## Rapport agent - 2026-05-25
+
+### Goal 13 - Correctif scroll desktop froid galerie / footer newsletter
+
+- Probleme initial : sur desktop froid, l'entree galerie posait `gallery-entry-scroll-lock` sur `html` et `body`, donc `overflow:hidden` bloquait le scroll natif pendant l'hydratation. Les coups de molette etaient accumules puis le document partait quand le lock disparaissait, au moment ou des chunks/images/sections differes continuaient a charger. Cela creait des freezes et des sauts au premier scroll.
+- Correction principale dans `src/app.jsx` : le scroll lock d'entree galerie est maintenant conditionne a la viewport mobile via `MOBILE_MARKETPLACE_QUERY = '(max-width: 1023px)'`. Sur desktop, `gallery-entry-scroll-lock` n'est plus pose pendant l'entree, `window.scrollTo(0, 0)` n'est plus force a la fin de l'entree, et le rideau visuel garde `lg:pointer-events-none` pour ne pas capturer la molette.
+- Invariant mobile conserve : `src/Router.jsx` garde exactement `const shouldUseMobileGalleryScroll = view === 'gallery' || isGalleryDetailOverlay;`. Les classes/contrats `marketplace-gallery-shell`, `marketplace-gallery-scroll`, `data-native-scroll-region` et les handlers touch mobile ne doivent pas etre changes pour ce correctif desktop.
+- Correction du timing des chunks dans `src/kit/marketplace/MarketplaceLayout.jsx` : les anciens `desktopIdleDelay` courts des sections basses ont ete retires. `BeforeAfter`, `Petits Prix`, `Instagram`, `Testimonials` et `Newsletter` montent par `IntersectionObserver` avec hauteur reservee, au lieu de timers 900/1300/1700/2200/2600 ms pendant le premier scroll.
+- Le preload automatique du detail produit apres 9 s sur galerie/categorie/wishlist a ete retire de `src/Router.jsx`. Les prefetch intentionnels restent actifs via hover/focus/click produit (`openProductDetail` et `prefetchProductDetail`), pour ne pas charger `ProductDetail` pendant un scroll froid sans intention d'ouverture produit.
+- Probleme secondaire apres le premier correctif : en scroll normal, l'utilisateur pouvait arriver a la section newsletter "Abonne-toi..." avant que le footer differe soit rendu. Le sentinel footer etait trop fragile car l'effet dependait d'un `ref.current` parfois encore `null`, puis le fallback long laissait un trou sous la newsletter. Avec `Suspense fallback={null}`, la hauteur de page n'etait pas reservee pendant le chargement du chunk footer.
+- Correction du blocage newsletter/footer dans `src/app.jsx` : le footer differe utilise maintenant un callback ref (`setDeferredFooterSentinel`) et un check scroll/resize cadence par `requestAnimationFrame`. Le declenchement galerie se fait avant le bas de page, et un `FooterLoadingPlaceholder` reserve environ 1320 px pendant le chargement du chunk footer. La page peut donc continuer a descendre sans attendre que le footer JS soit decode et monte.
+- Ajustement complementaire dans `MarketplaceLayout.jsx` : la section `Newsletter` garde le montage par `IntersectionObserver`, mais avec un `desktopRootMargin` plus large (`1600px 0px 2200px`) pour eviter que l'utilisateur atteigne son bas avant que le footer ne soit prepare.
+- Mesures locales Playwright/CDP apres correctif, sur `http://127.0.0.1:4300/`, cache desactive et CPU throttle x4 : `gallery-entry-scroll-lock` absent sur desktop, `html/body overflow` non hidden, `scrollY` augmente avant 1 s apres molette immediate, plus de cas `bottom-without-footer-or-placeholder` pendant le scroll normal jusqu'a la newsletter. Le footer placeholder apparait avant la newsletter visible, puis le footer reel remplace le placeholder.
+- Requetes/chunks pendant le scroll mesure : `ProductDetail` ne se charge plus automatiquement pendant le premier scroll. Les sections basses ne partent plus sur timers courts; elles suivent la proximite viewport. Le footer peut maintenant etre demande avant le bas de page, mais avec hauteur reservee pour eviter un blocage visuel.
+- Validations executees : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`. Le budget public reste OK autour de 106.47 kB JS gzip home et 46.53 kB CSS gzip home.
+
+### Roadmap fluidite premier scroll
+
+1. Stabiliser les seuils d'IntersectionObserver desktop avec mesures reelles : conserver les hauteurs reservees, mais profiler `BeforeAfter`, `Petits Prix`, `Instagram`, `Testimonials`, `Newsletter` et `Footer` pour trouver le meilleur compromis entre anticipation et absence de travail pendant les 2-3 premieres secondes de scroll.
+2. Ajouter au script `scripts/audit-gallery-scroll-lag.mjs` un scenario "scroll normal jusqu'a newsletter" en plus du mode "scroll immediat" : mesurer `scrollY`, hauteur document, presence du placeholder footer, chunks demandes, long tasks, frame gaps et temps d'apparition du footer.
+3. Remplacer le placeholder footer brut par un squelette footer ultra leger si l'attente reste visible : meme hauteur, fond coherent dark/light, pas d'image, pas de JS lourd, aucun import differe.
+4. Revoir `NewsletterSection`, `TestimonialsSection` et `InstagramSection` pour separer le markup statique leger du comportement interactif. Objectif : afficher rapidement une structure stable, puis charger les comportements non critiques apres idle ou interaction.
+5. Auditer les images chargees entre `Nouveautes` et `Newsletter` : confirmer que seules les images proches viewport passent du transparent placeholder a l'image reelle, sans fallback qui revele des cartes trop basses.
+6. Isoler encore les chunks bas de page : verifier que `Footer`, `Testimonials`, `Newsletter` et eventuels widgets tiers ne partagent pas un gros chunk commun qui force trop de code au meme moment.
+7. Ajouter une regression gate locale : le test Playwright doit echouer si `gallery-entry-scroll-lock` existe sur desktop, si `overflow:hidden` global revient, si `scrollY` reste a 0 apres molette immediate, ou si le bas de newsletter est atteint sans footer ni placeholder.
+8. Faire une passe UI/UX finale sur la perception : scroll manuel desktop froid, CPU x4, reseau cold, puis ajuster seulement les seuils et placeholders. Pas de retour aux timers courts; la priorite reste le scroll natif fluide et une hauteur de page stable.
 
 ## ðŸ› ï¸ Structure des Fichiers .env
 Nous n'utilisons PLUS de fichier `.env` unique. Tout est pilote par des fichiers suffixes locaux :

@@ -232,29 +232,6 @@ const AppRouter = ({
     }, [isGalleryDetailOverlay]);
 
     React.useEffect(() => {
-        if (!['gallery', 'category', 'wishlist'].includes(view) || typeof window === 'undefined') return undefined;
-
-        let idleId = null;
-        const preload = () => {
-            loadProductDetail().catch(() => {});
-        };
-        const timer = window.setTimeout(() => {
-            if (typeof window.requestIdleCallback === 'function') {
-                idleId = window.requestIdleCallback(preload, { timeout: 3000 });
-                return;
-            }
-            preload();
-        }, 9000);
-
-        return () => {
-            window.clearTimeout(timer);
-            if (idleId !== null && typeof window.cancelIdleCallback === 'function') {
-                window.cancelIdleCallback(idleId);
-            }
-        };
-    }, [view]);
-
-    React.useEffect(() => {
         if (typeof window === 'undefined') return;
 
         const mediaQuery = window.matchMedia(MOBILE_MARKETPLACE_QUERY);

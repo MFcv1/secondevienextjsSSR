@@ -196,7 +196,7 @@ const DeferredSectionSlot = ({
     delay = 0,
     className = '',
     forceReady = false,
-    desktopIdleDelay = null
+    desktopRootMargin = DEFERRED_SECTION_DESKTOP_ROOT_MARGIN
 }) => {
     const slotRef = useRef(null);
     const [isReady, setIsReady] = useState(false);
@@ -210,8 +210,6 @@ const DeferredSectionSlot = ({
 
         let observer = null;
         let timeoutId = 0;
-        let idleTimeoutId = 0;
-        let idleId = 0;
         let hasQueuedReveal = false;
 
         const reveal = () => {
@@ -228,35 +226,16 @@ const DeferredSectionSlot = ({
             reveal();
         };
 
-        const queueIdleReveal = () => {
-            if (hasQueuedReveal) return;
-            const run = () => {
-                idleId = 0;
-                queueReveal();
-            };
-
-            if (typeof window.requestIdleCallback === 'function') {
-                idleId = window.requestIdleCallback(run, { timeout: 1600 });
-                return;
-            }
-
-            run();
-        };
-
         const node = slotRef.current;
         if (node && typeof IntersectionObserver !== 'undefined') {
             const isDesktopGallery = window.matchMedia(DESKTOP_GALLERY_QUERY).matches;
             const rootMargin = isDesktopGallery
-                ? DEFERRED_SECTION_DESKTOP_ROOT_MARGIN
+                ? desktopRootMargin
                 : DEFERRED_SECTION_ROOT_MARGIN;
             observer = new IntersectionObserver(([entry]) => {
                 if (entry.isIntersecting) queueReveal();
             }, { rootMargin });
             observer.observe(node);
-
-            if (isDesktopGallery && Number.isFinite(desktopIdleDelay)) {
-                idleTimeoutId = window.setTimeout(queueIdleReveal, Math.max(0, desktopIdleDelay));
-            }
         }
 
         const fallbackId = window.setTimeout(queueReveal, DEFERRED_SECTION_IDLE_FALLBACK_MS + delay);
@@ -265,10 +244,8 @@ const DeferredSectionSlot = ({
             observer?.disconnect();
             window.clearTimeout(fallbackId);
             if (timeoutId) window.clearTimeout(timeoutId);
-            if (idleTimeoutId) window.clearTimeout(idleTimeoutId);
-            if (idleId && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
         };
-    }, [delay, desktopIdleDelay, forceReady, isReady]);
+    }, [delay, desktopRootMargin, forceReady, isReady]);
 
     const reservedHeight = typeof minHeight === 'number' ? `${minHeight}px` : minHeight;
     const placeholderStyle = {
@@ -620,12 +597,12 @@ const MarketplaceLayout = ({
             />
 
             {/* ÉTAPE 5 : Avant / Après — atelier premium adouci */}
-            <DeferredSectionSlot minHeight="760px" delay={0} desktopIdleDelay={900}>
+            <DeferredSectionSlot minHeight="760px" delay={0}>
                 <BeforeAfterSection darkMode={darkMode} projects={dynamicProjects} />
             </DeferredSectionSlot>
 
             {/* ÉTAPE 6 : "Le Rattrapage" (Grille Petits Prix) */}
-            <DeferredSectionSlot minHeight="1060px" delay={80} desktopIdleDelay={1300}>
+            <DeferredSectionSlot minHeight="1060px" delay={80}>
                 <ProductSmallPricesSection
                     heading={<SectionHeading tone="price">Petits Prix</SectionHeading>}
                     items={items}
@@ -643,17 +620,17 @@ const MarketplaceLayout = ({
             </DeferredSectionSlot>
 
             {/* ÉTAPE 7 : "La Connexion Humaine" (Le mur Instagram) - Version Marketplace Stylisée */}
-            <DeferredSectionSlot minHeight="1060px" delay={120} desktopIdleDelay={1700}>
+            <DeferredSectionSlot minHeight="1060px" delay={120}>
                 <InstagramSection darkMode={darkMode} posts={dynamicInsta} />
             </DeferredSectionSlot>
 
             {/* ÉTAPE 8 : Le "Juge de Paix" (Les Avis Google) */}
-            <DeferredSectionSlot minHeight="640px" delay={160} desktopIdleDelay={2200}>
+            <DeferredSectionSlot minHeight="640px" delay={160}>
                 <TestimonialsSection darkMode={darkMode} />
             </DeferredSectionSlot>
 
             {/* ÉTAPE 9 : "La Capture" (Newsletter Minimaliste) */}
-            <DeferredSectionSlot minHeight="760px" delay={200} desktopIdleDelay={2600}>
+            <DeferredSectionSlot minHeight="760px" delay={200} desktopRootMargin="1600px 0px 2200px">
                 <NewsletterSection darkMode={darkMode} />
             </DeferredSectionSlot>
         </div>
