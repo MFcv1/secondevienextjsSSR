@@ -173,7 +173,9 @@ const HERO_DURATION = 5500; // ms par slide
 const HERO_PROGRESS_STEP_COUNT = 4;
 const DEFERRED_SECTION_IDLE_FALLBACK_MS = 16000;
 const DEFERRED_SECTION_ROOT_MARGIN = '420px 0px 620px';
+const DEFERRED_SECTION_DESKTOP_ROOT_MARGIN = '180px 0px 260px';
 const MOBILE_GALLERY_QUERY = '(max-width: 1023px)';
+const DESKTOP_GALLERY_QUERY = '(min-width: 1024px)';
 
 const normalizeFrenchCopy = (value) => String(value || '')
     .normalize('NFD')
@@ -188,7 +190,14 @@ const isThemeTransitionActive = () => (
     document.documentElement.classList.contains('theme-transitioning')
 );
 
-const DeferredSectionSlot = ({ children, minHeight, delay = 0, className = '', forceReady = false }) => {
+const DeferredSectionSlot = ({
+    children,
+    minHeight,
+    delay = 0,
+    className = '',
+    forceReady = false,
+    desktopIdleDelay = null
+}) => {
     const slotRef = useRef(null);
     const [isReady, setIsReady] = useState(false);
 
@@ -201,6 +210,8 @@ const DeferredSectionSlot = ({ children, minHeight, delay = 0, className = '', f
 
         let observer = null;
         let timeoutId = 0;
+        let idleTimeoutId = 0;
+        let idleId = 0;
         let hasQueuedReveal = false;
 
         const reveal = () => {
@@ -217,12 +228,35 @@ const DeferredSectionSlot = ({ children, minHeight, delay = 0, className = '', f
             reveal();
         };
 
+        const queueIdleReveal = () => {
+            if (hasQueuedReveal) return;
+            const run = () => {
+                idleId = 0;
+                queueReveal();
+            };
+
+            if (typeof window.requestIdleCallback === 'function') {
+                idleId = window.requestIdleCallback(run, { timeout: 1600 });
+                return;
+            }
+
+            run();
+        };
+
         const node = slotRef.current;
         if (node && typeof IntersectionObserver !== 'undefined') {
+            const isDesktopGallery = window.matchMedia(DESKTOP_GALLERY_QUERY).matches;
+            const rootMargin = isDesktopGallery
+                ? DEFERRED_SECTION_DESKTOP_ROOT_MARGIN
+                : DEFERRED_SECTION_ROOT_MARGIN;
             observer = new IntersectionObserver(([entry]) => {
                 if (entry.isIntersecting) queueReveal();
-            }, { rootMargin: DEFERRED_SECTION_ROOT_MARGIN });
+            }, { rootMargin });
             observer.observe(node);
+
+            if (isDesktopGallery && Number.isFinite(desktopIdleDelay)) {
+                idleTimeoutId = window.setTimeout(queueIdleReveal, Math.max(0, desktopIdleDelay));
+            }
         }
 
         const fallbackId = window.setTimeout(queueReveal, DEFERRED_SECTION_IDLE_FALLBACK_MS + delay);
@@ -231,13 +265,17 @@ const DeferredSectionSlot = ({ children, minHeight, delay = 0, className = '', f
             observer?.disconnect();
             window.clearTimeout(fallbackId);
             if (timeoutId) window.clearTimeout(timeoutId);
+            if (idleTimeoutId) window.clearTimeout(idleTimeoutId);
+            if (idleId && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
         };
-    }, [delay, forceReady, isReady]);
+    }, [delay, desktopIdleDelay, forceReady, isReady]);
 
     const reservedHeight = typeof minHeight === 'number' ? `${minHeight}px` : minHeight;
-    const placeholderStyle = isReady
-        ? { minHeight: reservedHeight }
-        : { minHeight: reservedHeight, contentVisibility: 'auto', containIntrinsicSize: reservedHeight };
+    const placeholderStyle = {
+        minHeight: reservedHeight,
+        contentVisibility: 'auto',
+        containIntrinsicSize: reservedHeight,
+    };
 
     return (
         <div ref={slotRef} className={className} style={placeholderStyle}>
@@ -582,12 +620,12 @@ const MarketplaceLayout = ({
             />
 
             {/* ÉTAPE 5 : Avant / Après — atelier premium adouci */}
-            <DeferredSectionSlot minHeight="760px" delay={0}>
+            <DeferredSectionSlot minHeight="760px" delay={0} desktopIdleDelay={900}>
                 <BeforeAfterSection darkMode={darkMode} projects={dynamicProjects} />
             </DeferredSectionSlot>
 
             {/* ÉTAPE 6 : "Le Rattrapage" (Grille Petits Prix) */}
-            <DeferredSectionSlot minHeight="820px" delay={120}>
+            <DeferredSectionSlot minHeight="1060px" delay={80} desktopIdleDelay={1300}>
                 <ProductSmallPricesSection
                     heading={<SectionHeading tone="price">Petits Prix</SectionHeading>}
                     items={items}
@@ -605,17 +643,17 @@ const MarketplaceLayout = ({
             </DeferredSectionSlot>
 
             {/* ÉTAPE 7 : "La Connexion Humaine" (Le mur Instagram) - Version Marketplace Stylisée */}
-            <DeferredSectionSlot minHeight="780px" delay={180}>
+            <DeferredSectionSlot minHeight="1060px" delay={120} desktopIdleDelay={1700}>
                 <InstagramSection darkMode={darkMode} posts={dynamicInsta} />
             </DeferredSectionSlot>
 
             {/* ÉTAPE 8 : Le "Juge de Paix" (Les Avis Google) */}
-            <DeferredSectionSlot minHeight="520px" delay={240}>
+            <DeferredSectionSlot minHeight="640px" delay={160} desktopIdleDelay={2200}>
                 <TestimonialsSection darkMode={darkMode} />
             </DeferredSectionSlot>
 
             {/* ÉTAPE 9 : "La Capture" (Newsletter Minimaliste) */}
-            <DeferredSectionSlot minHeight="760px" delay={300}>
+            <DeferredSectionSlot minHeight="760px" delay={200} desktopIdleDelay={2600}>
                 <NewsletterSection darkMode={darkMode} />
             </DeferredSectionSlot>
         </div>

@@ -61,6 +61,7 @@ const ProductCard = ({
     const hoverWarmupTimerRef = React.useRef(null);
     const primaryWarmupStartedRef = React.useRef(false);
     const cardImage = React.useMemo(() => getProductCardImage(item), [item]);
+    const compactGridSrcSet = cardImage.thumbSrcSet || cardImage.mobileSrcSet;
     const [isImageRequested, setIsImageRequested] = React.useState(priority);
     const [isImageRevealActive, setIsImageRevealActive] = React.useState(priority);
     const [isImageLoaded, setIsImageLoaded] = React.useState(false);
@@ -301,19 +302,37 @@ const ProductCard = ({
                 data-image-reveal={isImageRevealActive ? 'visible' : 'pending'}
                 data-image-loaded={isImageLoaded ? 'true' : 'false'}
             >
-                <img
-                    src={shouldRequestImage ? cardImage.src : TRANSPARENT_IMAGE_SRC}
-                    srcSet={shouldRequestImage ? (cardImage.srcSet || undefined) : undefined}
-                    sizes={PRODUCT_CARD_IMAGE_SIZES}
-                    alt={item.name}
-                    draggable={false}
-                    data-real-image={shouldRequestImage ? 'true' : 'false'}
-                    className="product-card-image h-full w-full object-cover transition-transform duration-[800ms] ease-[cubic-bezier(0.23,1,0.32,1)] lg:group-hover:scale-[1.03]"
-                    loading={priority && !suspendImageWarmup ? 'eager' : 'lazy'}
-                    decoding="async"
-                    fetchPriority={priority && !suspendImageWarmup ? 'high' : 'auto'}
-                    onLoad={handleImageLoad}
-                />
+                <picture className="block h-full w-full">
+                    {shouldRequestImage && compactGridSrcSet && (
+                        <>
+                            <source
+                                media="(max-width: 767px)"
+                                srcSet={compactGridSrcSet}
+                                sizes="50vw"
+                            />
+                            {!isBig && layoutMode === 'grid' && (
+                                <source
+                                    media="(min-width: 1024px)"
+                                    srcSet={compactGridSrcSet}
+                                    sizes="(max-width: 1279px) 25vw, 20vw"
+                                />
+                            )}
+                        </>
+                    )}
+                    <img
+                        src={shouldRequestImage ? cardImage.src : TRANSPARENT_IMAGE_SRC}
+                        srcSet={shouldRequestImage ? (cardImage.srcSet || undefined) : undefined}
+                        sizes={PRODUCT_CARD_IMAGE_SIZES}
+                        alt={item.name}
+                        draggable={false}
+                        data-real-image={shouldRequestImage ? 'true' : 'false'}
+                        className="product-card-image h-full w-full object-cover transition-transform duration-[800ms] ease-[cubic-bezier(0.23,1,0.32,1)] lg:group-hover:scale-[1.03]"
+                        loading={priority && !suspendImageWarmup ? 'eager' : 'lazy'}
+                        decoding="async"
+                        fetchPriority={priority && !suspendImageWarmup ? 'high' : 'auto'}
+                        onLoad={handleImageLoad}
+                    />
+                </picture>
 
                 {/* PREMIUM OVERLAY (Museum Gallery Hook - Desktop Only) */}
                 {/* PREMIUM OVERLAY (Museum Gallery Hook - Desktop Only, Responsive FLUID 1536px+ -> Infinite - REFINED SPACE) */}

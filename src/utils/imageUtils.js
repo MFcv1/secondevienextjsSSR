@@ -253,10 +253,16 @@ export const getProductCardImage = (item) => {
         { src: primary?.card, width: 768 },
         { src: primary?.medium, width: 1024 },
     ]);
+    const mobileSrcSet = buildSrcSet([
+        { src: primary?.thumb, width: 480 },
+    ]);
 
     return {
         src: primary?.card || primary?.medium || primary?.thumb || primary?.src || item?.thumbnailUrl || item?.imageUrl || item?.image || '',
         srcSet: cardSrcSet,
+        thumbSrcSet: mobileSrcSet,
+        mobileSrc: primary?.thumb || primary?.card || primary?.medium || primary?.src || item?.thumbnailUrl || item?.imageUrl || item?.image || '',
+        mobileSrcSet,
         metadata: primary?.metadata || null,
     };
 };

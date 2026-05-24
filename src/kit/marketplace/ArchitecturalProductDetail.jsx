@@ -2177,12 +2177,14 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
 
                     <div className="w-full h-full flex flex-col items-center justify-center relative row-span-1">
                         
-                        <button 
+                        <button
+                            type="button"
                             onClick={onBack}
-                            className={`absolute -top-12 right-8 z-[130] flex items-center justify-center transition-all duration-300 group ${darkMode ? 'text-white/40 hover:text-white' : 'text-stone-900/40 hover:text-stone-900'}`}
+                            aria-label="Fermer la fiche produit"
+                            className="group absolute -top-12 right-8 z-[130] flex items-center justify-center rounded-full text-stone-950 outline-none transition-all duration-300 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/40"
                         >
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all duration-300 ${darkMode ? 'border-white/10 group-hover:border-white/30' : 'border-stone-900/10 group-hover:border-stone-900/30'}`}>
-                                <X size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+                            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/90 shadow-[0_18px_44px_rgba(25,18,10,0.28)] backdrop-blur-md transition-all duration-300 group-hover:border-white group-hover:bg-white group-hover:shadow-[0_22px_54px_rgba(25,18,10,0.36)]">
+                                <X size={20} strokeWidth={2.4} className="drop-shadow-[0_1px_0_rgba(255,255,255,0.45)] transition-transform duration-300 group-hover:rotate-90" />
                             </div>
                         </button>
 
