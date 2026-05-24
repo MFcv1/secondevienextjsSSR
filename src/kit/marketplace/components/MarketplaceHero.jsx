@@ -60,6 +60,7 @@ const MarketplaceHero = React.memo(function MarketplaceHero({
     onOpenQuote,
     heroProgressSteps,
     activeHeroProgressIndex,
+    isHeroCarouselPrimed = true,
     slideVersion,
     onGoToSlide,
     heroDuration,
@@ -198,15 +199,15 @@ const MarketplaceHero = React.memo(function MarketplaceHero({
                                     style={{ transform: isActive ? 'scaleX(1)' : 'scaleX(0.53)' }}
                                 />
                                 <div
-                                    key={isActive ? `active-${step.index}-${heroIndex}-${slideVersion}` : step.index}
+                                    key={isActive ? `active-${step.index}-${heroIndex}-${slideVersion}-${isHeroCarouselPrimed ? 'playing' : 'paused'}` : step.index}
                                     className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-white"
-                                    style={isActive
+                                    style={isActive && isHeroCarouselPrimed
                                         ? {
                                             '--hero-progress-from': progressFrom,
                                             '--hero-progress-to': progressTo,
                                             animation: `hero-segment-progress ${heroDuration}ms linear forwards`,
                                         }
-                                        : { transform: isComplete ? 'scaleX(1)' : 'scaleX(0)' }
+                                        : { transform: isComplete ? 'scaleX(1)' : `scaleX(${progressFrom})` }
                                     }
                                 />
                             </button>

@@ -266,6 +266,19 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 7. Ajouter une regression gate locale : le test Playwright doit echouer si `gallery-entry-scroll-lock` existe sur desktop, si `overflow:hidden` global revient, si `scrollY` reste a 0 apres molette immediate, ou si le bas de newsletter est atteint sans footer ni placeholder.
 8. Faire une passe UI/UX finale sur la perception : scroll manuel desktop froid, CPU x4, reseau cold, puis ajuster seulement les seuils et placeholders. Pas de retour aux timers courts; la priorite reste le scroll natif fluide et une hauteur de page stable.
 
+### Goal 14 - Roadmap scroll appliquee / gates et charges hero-footer
+
+- La roadmap fluidite premier scroll a ete mise en place sans refactor du shell et sans toucher aux handlers mobile marketplace.
+- `scripts/audit-gallery-scroll-lag.mjs` accepte maintenant `--mode=newsletter` pour reproduire le scroll normal froid jusqu'a la zone newsletter/footer. Ce mode mesure `scrollY`, hauteur document, lock desktop, overflow global, footer, placeholder, long tasks, frame gaps et requetes par segment.
+- `package.json` expose deux gates locales : `npm run perf:scroll` pour la molette immediate et `npm run perf:scroll:newsletter` pour le cas "Abonne-toi..." / footer. Les deux utilisent `--assert` et echouent si le lock desktop revient, si `overflow:hidden` global revient, si le scroll ne demarre pas apres document scrollable, ou si le bas est atteint sans footer ni placeholder.
+- `src/app.jsx` remplace le placeholder footer brut par un squelette footer leger reserve en hauteur, sans image ni import lourd. Le but est de garder une page stable si le chunk footer arrive pendant un scroll rapide.
+- `src/kit/marketplace/MarketplaceLayout.jsx` pause le carousel hero au demarrage froid. Tant que l'utilisateur scrolle vite hors du hero, seule l'image hero active est demandee; les slides suivantes ne sont prechargees qu'apres idle si l'utilisateur reste proche du hero, ou apres clic volontaire sur un dot.
+- `src/kit/marketplace/components/MarketplaceHero.jsx` met aussi en pause l'animation de progression du hero tant que le carousel n'est pas prime, pour eviter une jauge qui avancerait sans changement de slide.
+- `src/kit/layout/Footer.jsx` charge l'image "livraison" via `IntersectionObserver` avec dimensions reservees et pixel transparent tant que l'image reelle n'est pas proche/visible. Un garde `offsetParent` evite de charger l'image du layout cache mobile/desktop.
+- Mesure reseau notable : sur le scenario `perf:scroll:newsletter`, le segment de scroll froid est passe d'environ 1.43 MB a environ 0.97 MB apres pause du hero et lazy footer; les images `imagehero/2.webp`, `imagehero/3.webp` et `imagehero/4.webp` ne partent plus pendant ce premier scroll. Les gates scroll restent vertes.
+- Validations executees apres cette passe : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, `npm run perf:scroll`, `npm run perf:scroll:newsletter`.
+- Limite restante : les plus gros frame gaps viennent encore de l'hydratation du shell galerie et des gros chunks initiaux. La prochaine passe utile est l'isolation du shell public galerie / menu / sections interactives, pas le retour a des timers courts.
+
 ## ðŸ› ï¸ Structure des Fichiers .env
 Nous n'utilisons PLUS de fichier `.env` unique. Tout est pilote par des fichiers suffixes locaux :
 - `.env.sandbox` -> charge par les scripts sandbox (`npm run dev`, `npm run build`, `npm run start`)

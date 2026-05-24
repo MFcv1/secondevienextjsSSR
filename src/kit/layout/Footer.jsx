@@ -21,6 +21,7 @@ import { db } from '../config/firebase';
 import KIT_CONFIG from '../config/constants';
 
 const CONTACT_INFO_CACHE_KEY = 'secondevie:contact-info:v1';
+const TRANSPARENT_PIXEL_SRC = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
 const DEFAULT_CONTACT = {
     email: process.env.NEXT_PUBLIC_BUSINESS_EMAIL || 'contact@secondevie-marseille.fr',
@@ -215,6 +216,46 @@ const MapFrame = ({ mapUrl, directionUrl, title, darkMode, className = '' }) => 
     );
 };
 
+const DeferredFooterDeliveryImage = ({ darkMode, className = '', alt }) => {
+    const imageRef = React.useRef(null);
+    const [shouldLoad, setShouldLoad] = useState(false);
+
+    useEffect(() => {
+        if (shouldLoad) return undefined;
+
+        const image = imageRef.current;
+        if (!image || typeof IntersectionObserver === 'undefined') {
+            setShouldLoad(true);
+            return undefined;
+        }
+
+        const observer = new IntersectionObserver(([entry]) => {
+            if (!entry.isIntersecting) return;
+            if (image.offsetParent === null) return;
+            setShouldLoad(true);
+            observer.disconnect();
+        }, { rootMargin: '120px 0px' });
+
+        observer.observe(image);
+        return () => observer.disconnect();
+    }, [shouldLoad]);
+
+    return (
+        <img
+            ref={imageRef}
+            src={shouldLoad ? (darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp') : TRANSPARENT_PIXEL_SRC}
+            alt={alt}
+            width={1536}
+            height={1024}
+            loading="lazy"
+            decoding="async"
+            fetchPriority="low"
+            data-footer-delivery-image={shouldLoad ? 'loaded' : 'deferred'}
+            className={className}
+        />
+    );
+};
+
 const Footer = ({ darkMode, contactInfo: contactInfoOverride }) => {
     const [contactInfoState, setContactInfoState] = useState(() => {
         try {
@@ -312,7 +353,11 @@ const Footer = ({ darkMode, contactInfo: contactInfoOverride }) => {
                             <PaymentChip variant="wero" className="min-w-[56px] px-2.5"><span className="text-[13px] font-black lowercase tracking-[-0.05em]">wero</span></PaymentChip>
                         </div>
                     </div>
-                    <img src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'} alt="Livraison partout à Marseille" loading="lazy" decoding="async" fetchPriority="low" className="mt-6 w-full rounded-md object-contain" />
+                    <DeferredFooterDeliveryImage
+                        darkMode={darkMode}
+                        alt="Livraison partout à Marseille"
+                        className="mt-6 w-full rounded-md object-contain"
+                    />
                     <div className={`mt-5 grid grid-cols-3 gap-3 text-[10px] ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
                         <div className="flex flex-col items-center gap-1 text-center"><LockKeyhole size={22} />SSL<br />Secure</div>
                         <div className="flex flex-col items-center gap-1 text-center"><span className="rounded bg-[#168b8f] px-2 py-1 text-sm font-black text-white">PCI</span>DSS<br />Compliant</div>
@@ -499,12 +544,9 @@ const Footer = ({ darkMode, contactInfo: contactInfoOverride }) => {
                         </div>
 
                         <div className="flex min-w-0 items-center justify-center pt-8 lg:px-6 lg:pt-0 xl:px-8">
-                            <img
-                                src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'}
+                            <DeferredFooterDeliveryImage
+                                darkMode={darkMode}
                                 alt="Livraison partout à Marseille - suivi de commande en temps réel"
-                                loading="lazy"
-                                decoding="async"
-                                fetchPriority="low"
                                 className="w-full max-w-[520px] rounded-md object-contain xl:max-w-[600px]"
                             />
                         </div>

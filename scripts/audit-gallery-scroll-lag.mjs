@@ -32,6 +32,10 @@ const enableTrace = argv.get('trace') !== 'false';
 const mode = String(argv.get('mode') || (argv.has('immediate') ? 'immediate' : 'standard'));
 const immediateSteps = Number(argv.get('steps') || 5);
 const immediateDeltaY = Number(argv.get('deltaY') || 80);
+const normalScrollSteps = Number(argv.get('normalSteps') || 72);
+const normalScrollDeltaY = Number(argv.get('normalDeltaY') || 360);
+const normalScrollPauseMs = Number(argv.get('normalPause') || 170);
+const shouldAssert = argv.has('assert');
 
 const nowStamp = () => new Date().toISOString().replace(/[:.]/g, '-');
 const runId = nowStamp();
@@ -335,6 +339,144 @@ const runImmediateScroll = async (page, snapshots) => {
   };
 };
 
+const evaluateNewsletterScrollState = async (page) => {
+  return page.evaluate(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const htmlStyle = getComputedStyle(html);
+    const bodyStyle = getComputedStyle(body);
+    const viewportHeight = window.innerHeight;
+    const documentHeight = Math.round(html.scrollHeight);
+    const maxScrollY = Math.max(0, documentHeight - viewportHeight);
+    const toRect = (node) => {
+      if (!node) return null;
+      const rect = node.getBoundingClientRect();
+      return {
+        top: Math.round(rect.top),
+        bottom: Math.round(rect.bottom),
+        height: Math.round(rect.height),
+      };
+    };
+
+    const newsletter = document.querySelector('.discount-section');
+    const placeholder = document.querySelector('[data-footer-loading-placeholder="true"]');
+    const footer = document.querySelector('footer');
+    const newsletterRect = toRect(newsletter);
+    const placeholderRect = toRect(placeholder);
+    const footerRect = toRect(footer);
+    const isVisible = (rect) => Boolean(rect && rect.bottom >= 0 && rect.top <= viewportHeight);
+
+    return {
+      time: Math.round(performance.now()),
+      scrollY: Math.round(window.scrollY),
+      maxScrollY,
+      documentHeight,
+      viewportHeight,
+      isAtBottom: window.scrollY >= maxScrollY - 4,
+      hasGalleryEntryScrollLock: html.classList.contains('gallery-entry-scroll-lock') || body.classList.contains('gallery-entry-scroll-lock'),
+      htmlOverflow: htmlStyle.overflow,
+      bodyOverflow: bodyStyle.overflow,
+      htmlOverflowY: htmlStyle.overflowY,
+      bodyOverflowY: bodyStyle.overflowY,
+      newsletterMounted: Boolean(newsletter),
+      newsletterVisible: isVisible(newsletterRect),
+      newsletterRect,
+      footerPlaceholderMounted: Boolean(placeholder),
+      footerPlaceholderVisible: isVisible(placeholderRect),
+      footerPlaceholderRect: placeholderRect,
+      footerMounted: Boolean(footer),
+      footerVisible: isVisible(footerRect),
+      footerRect,
+    };
+  });
+};
+
+const runNewsletterScroll = async (page, snapshots) => {
+  const samples = [];
+  const bottomWithoutFooterOrPlaceholder = [];
+  let footerSupportSeenAfterNewsletter = false;
+  let extraSamplesAfterSupport = 0;
+
+  await page.mouse.move(Math.round(VIEWPORT.width / 2), Math.round(VIEWPORT.height / 2));
+
+  for (let index = 0; index < normalScrollSteps; index += 1) {
+    await page.mouse.wheel(0, normalScrollDeltaY);
+    await page.waitForTimeout(normalScrollPauseMs);
+
+    const sample = await evaluateNewsletterScrollState(page);
+    samples.push(sample);
+
+    const hasFooterSupport = sample.footerMounted || sample.footerPlaceholderMounted;
+    if (
+      sample.isAtBottom &&
+      sample.documentHeight > sample.viewportHeight * 2 &&
+      !hasFooterSupport
+    ) {
+      bottomWithoutFooterOrPlaceholder.push(sample);
+    }
+
+    if (sample.newsletterVisible && hasFooterSupport) {
+      footerSupportSeenAfterNewsletter = true;
+    }
+
+    if (footerSupportSeenAfterNewsletter) {
+      extraSamplesAfterSupport += 1;
+      if (extraSamplesAfterSupport >= 8) break;
+    }
+  }
+
+  await page.waitForTimeout(900);
+  const finalSample = await evaluateNewsletterScrollState(page);
+  samples.push(finalSample);
+  snapshots.push(await evaluateSnapshot(page, 'normal_scroll_newsletter'));
+
+  const firstPositiveScroll = samples.find((sample) => sample.scrollY > 0);
+  const firstNewsletterMounted = samples.find((sample) => sample.newsletterMounted);
+  const firstNewsletterVisible = samples.find((sample) => sample.newsletterVisible);
+  const firstFooterPlaceholder = samples.find((sample) => sample.footerPlaceholderMounted);
+  const firstFooterMounted = samples.find((sample) => sample.footerMounted);
+  const firstFooterSupport = samples.find((sample) => sample.footerMounted || sample.footerPlaceholderMounted);
+  const lockedSamples = samples.filter((sample) => sample.hasGalleryEntryScrollLock);
+  const hiddenOverflowSamples = samples.filter((sample) => (
+    sample.htmlOverflow === 'hidden' ||
+    sample.bodyOverflow === 'hidden' ||
+    sample.htmlOverflowY === 'hidden' ||
+    sample.bodyOverflowY === 'hidden'
+  ));
+
+  return {
+    samples,
+    steps: normalScrollSteps,
+    deltaY: normalScrollDeltaY,
+    pauseMs: normalScrollPauseMs,
+    finalScrollY: finalSample.scrollY,
+    finalMaxScrollY: finalSample.maxScrollY,
+    firstPositiveScrollMs: firstPositiveScroll?.time ?? null,
+    firstNewsletterMountedMs: firstNewsletterMounted?.time ?? null,
+    firstNewsletterVisibleMs: firstNewsletterVisible?.time ?? null,
+    firstFooterPlaceholderMs: firstFooterPlaceholder?.time ?? null,
+    firstFooterMountedMs: firstFooterMounted?.time ?? null,
+    firstFooterSupportMs: firstFooterSupport?.time ?? null,
+    footerSupportBeforeNewsletterVisible: Boolean(
+      firstFooterSupport &&
+      firstNewsletterVisible &&
+      firstFooterSupport.time <= firstNewsletterVisible.time
+    ),
+    footerSupportDelayAfterNewsletterMs: firstFooterSupport && firstNewsletterVisible
+      ? Math.max(0, firstFooterSupport.time - firstNewsletterVisible.time)
+      : null,
+    bottomWithoutFooterOrPlaceholder: bottomWithoutFooterOrPlaceholder.map((sample) => ({
+      time: sample.time,
+      scrollY: sample.scrollY,
+      maxScrollY: sample.maxScrollY,
+      documentHeight: sample.documentHeight,
+      newsletterRect: sample.newsletterRect,
+    })),
+    lockedSampleCount: lockedSamples.length,
+    hiddenOverflowSampleCount: hiddenOverflowSamples.length,
+  };
+};
+
 const percentile = (values, p) => {
   if (!values.length) return 0;
   const sorted = [...values].sort((a, b) => a - b);
@@ -368,6 +510,67 @@ const summarizeRequests = (requests, segmentNames) => {
   return bySegment;
 };
 
+const evaluateAssertions = (summary) => {
+  const checks = [];
+  const add = (name, passed, detail) => {
+    checks.push({ name, passed: Boolean(passed), detail });
+  };
+
+  if (summary.mode === 'immediate' && summary.immediateScroll) {
+    const immediate = summary.immediateScroll;
+    add('desktop entry does not apply gallery-entry-scroll-lock', immediate.lockedSampleCount === 0, {
+      lockedSampleCount: immediate.lockedSampleCount,
+    });
+    add('desktop entry keeps global overflow scrollable', immediate.hiddenOverflowSampleCount === 0, {
+      hiddenOverflowSampleCount: immediate.hiddenOverflowSampleCount,
+    });
+    add('wheel produces scroll within 1s after document becomes scrollable', (
+      immediate.firstScrollAfterScrollableMs !== null &&
+      immediate.firstScrollAfterScrollableMs <= 1000
+    ), {
+      firstScrollableMs: immediate.firstScrollableMs,
+      firstPositiveScrollMs: immediate.firstPositiveScrollMs,
+      firstScrollAfterScrollableMs: immediate.firstScrollAfterScrollableMs,
+    });
+  }
+
+  if (summary.mode === 'newsletter' && summary.normalNewsletterScroll) {
+    const newsletter = summary.normalNewsletterScroll;
+    add('normal scroll keeps desktop lock absent', newsletter.lockedSampleCount === 0, {
+      lockedSampleCount: newsletter.lockedSampleCount,
+    });
+    add('normal scroll keeps global overflow scrollable', newsletter.hiddenOverflowSampleCount === 0, {
+      hiddenOverflowSampleCount: newsletter.hiddenOverflowSampleCount,
+    });
+    add('normal scroll never reaches bottom without footer support', newsletter.bottomWithoutFooterOrPlaceholder.length === 0, {
+      bottomWithoutFooterOrPlaceholder: newsletter.bottomWithoutFooterOrPlaceholder,
+    });
+    add('footer or placeholder is prepared before the newsletter/bottom trap', (
+      newsletter.firstFooterSupportMs !== null &&
+      (
+        newsletter.firstNewsletterVisibleMs === null ||
+        newsletter.footerSupportBeforeNewsletterVisible ||
+        (
+          newsletter.footerSupportDelayAfterNewsletterMs !== null &&
+          newsletter.footerSupportDelayAfterNewsletterMs <= 1200
+        )
+      )
+    ), {
+      firstNewsletterMountedMs: newsletter.firstNewsletterMountedMs,
+      firstNewsletterVisibleMs: newsletter.firstNewsletterVisibleMs,
+      firstFooterSupportMs: newsletter.firstFooterSupportMs,
+      firstFooterPlaceholderMs: newsletter.firstFooterPlaceholderMs,
+      firstFooterMountedMs: newsletter.firstFooterMountedMs,
+      footerSupportDelayAfterNewsletterMs: newsletter.footerSupportDelayAfterNewsletterMs,
+    });
+  }
+
+  return {
+    passed: checks.every((check) => check.passed),
+    checks,
+  };
+};
+
 const main = async () => {
   await fs.mkdir(outDir, { recursive: true });
 
@@ -395,14 +598,21 @@ const main = async () => {
       'immediate_settle',
       'final_settle',
     ]
-    : [
-      'navigation',
-      'settled_before_scroll',
-      'scroll_to_nouveautes',
-      'scroll_to_petits_prix',
-      'scroll_to_lower_sections',
-      'final_settle',
-    ];
+    : mode === 'newsletter'
+      ? [
+        'navigation',
+        'normal_scroll_to_newsletter',
+        'normal_newsletter_settle',
+        'final_settle',
+      ]
+      : [
+        'navigation',
+        'settled_before_scroll',
+        'scroll_to_nouveautes',
+        'scroll_to_petits_prix',
+        'scroll_to_lower_sections',
+        'final_settle',
+      ];
 
   await session.send('Network.enable');
   await session.send('Network.setCacheDisabled', { cacheDisabled: true });
@@ -470,6 +680,7 @@ const main = async () => {
 
   const isLocalSecondeVie = /127\.0\.0\.1|localhost|hosted\.app|secondevie/i.test(targetUrl);
   let immediateScroll = null;
+  let normalNewsletterScroll = null;
 
   if (mode === 'immediate') {
     await setSegment(page, 'immediate_scroll', segmentMarkers);
@@ -477,6 +688,12 @@ const main = async () => {
     await setSegment(page, 'immediate_settle', segmentMarkers);
     await page.waitForTimeout(1800);
     snapshots.push(await evaluateSnapshot(page, 'immediate_settle'));
+  } else if (mode === 'newsletter') {
+    await setSegment(page, 'normal_scroll_to_newsletter', segmentMarkers);
+    normalNewsletterScroll = await runNewsletterScroll(page, snapshots);
+    await setSegment(page, 'normal_newsletter_settle', segmentMarkers);
+    await page.waitForTimeout(1200);
+    snapshots.push(await evaluateSnapshot(page, 'normal_newsletter_settle'));
   } else if (isLocalSecondeVie) {
     await waitForLocalGallery(page);
   } else {
@@ -484,7 +701,7 @@ const main = async () => {
     await page.waitForTimeout(2400);
   }
 
-  if (mode !== 'immediate') {
+  if (mode === 'standard') {
     await setSegment(page, 'settled_before_scroll', segmentMarkers);
     snapshots.push(await evaluateSnapshot(page, 'before_scroll'));
 
@@ -633,11 +850,14 @@ const main = async () => {
       })),
     snapshots,
     immediateScroll,
+    normalNewsletterScroll,
     traceSummary,
     tracePath: traceRaw ? tracePath : null,
     rawRequestsPath: path.join(outDir, `${runId}-requests.json`),
     summaryPath: path.join(outDir, `${runId}-summary.json`),
   };
+
+  summary.assertions = evaluateAssertions(summary);
 
   await fs.writeFile(summary.rawRequestsPath, JSON.stringify(requests, null, 2));
   await fs.writeFile(summary.summaryPath, JSON.stringify(summary, null, 2));
@@ -656,9 +876,33 @@ const main = async () => {
     topImages: summary.topImages.slice(0, 10),
     lazyJsLoadedAfterScroll: summary.lazyJsLoadedAfterScroll,
     immediateScroll: summary.immediateScroll,
+    normalNewsletterScroll: summary.normalNewsletterScroll ? {
+      steps: summary.normalNewsletterScroll.steps,
+      deltaY: summary.normalNewsletterScroll.deltaY,
+      pauseMs: summary.normalNewsletterScroll.pauseMs,
+      finalScrollY: summary.normalNewsletterScroll.finalScrollY,
+      finalMaxScrollY: summary.normalNewsletterScroll.finalMaxScrollY,
+      firstPositiveScrollMs: summary.normalNewsletterScroll.firstPositiveScrollMs,
+      firstNewsletterMountedMs: summary.normalNewsletterScroll.firstNewsletterMountedMs,
+      firstNewsletterVisibleMs: summary.normalNewsletterScroll.firstNewsletterVisibleMs,
+      firstFooterPlaceholderMs: summary.normalNewsletterScroll.firstFooterPlaceholderMs,
+      firstFooterMountedMs: summary.normalNewsletterScroll.firstFooterMountedMs,
+      firstFooterSupportMs: summary.normalNewsletterScroll.firstFooterSupportMs,
+      footerSupportBeforeNewsletterVisible: summary.normalNewsletterScroll.footerSupportBeforeNewsletterVisible,
+      footerSupportDelayAfterNewsletterMs: summary.normalNewsletterScroll.footerSupportDelayAfterNewsletterMs,
+      bottomWithoutFooterOrPlaceholder: summary.normalNewsletterScroll.bottomWithoutFooterOrPlaceholder,
+      lockedSampleCount: summary.normalNewsletterScroll.lockedSampleCount,
+      hiddenOverflowSampleCount: summary.normalNewsletterScroll.hiddenOverflowSampleCount,
+    } : null,
+    assertions: summary.assertions,
     traceSummary: summary.traceSummary,
   };
   console.log(JSON.stringify(printable, null, 2));
+
+  if (shouldAssert && !summary.assertions.passed) {
+    console.error('Scroll audit assertions failed.');
+    process.exit(1);
+  }
 };
 
 main().catch((error) => {

@@ -333,3 +333,37 @@ node scripts/audit-gallery-scroll-lag.mjs --url=http://127.0.0.1:4300/ --label=s
 ```
 
 Limite restante: les gaps les plus longs du scroll immediat viennent encore de l'hydratation galerie et des images hero/categories chargees pendant la creation du document scrollable. Le saut "je scrolle mais rien ne descend, puis tout part quand le lock tombe" est corrige; le cout initial du shell client reste a traiter dans une passe hydration plus large.
+
+## Addendum - roadmap scroll appliquee 2026-05-25
+
+Changements ajoutes apres retour utilisateur sur le blocage newsletter:
+
+- `scripts/audit-gallery-scroll-lag.mjs` ajoute `--mode=newsletter` pour rejouer un scroll froid normal jusqu'a la zone newsletter/footer. Ce mode controle explicitement le lock desktop, l'overflow global, le footer, le placeholder, les long tasks, les frame gaps et les requetes.
+- `package.json` ajoute `npm run perf:scroll` et `npm run perf:scroll:newsletter`. Les deux commandes lancent l'audit avec `--assert`, pour transformer les regressions scroll en echec local.
+- `src/app.jsx` remplace le placeholder footer vide par un squelette footer leger avec hauteur reservee. Le footer peut encore charger en differe, mais la page ne se termine plus visuellement sous la newsletter pendant le chargement.
+- `src/kit/marketplace/MarketplaceLayout.jsx` ne prime plus le carousel hero au demarrage froid: seule l'image active est chargee au depart; le preload/auto-advance des slides suivantes attend un idle long et reste annule si l'utilisateur a deja scrolle loin du hero.
+- `src/kit/marketplace/components/MarketplaceHero.jsx` pause aussi la progression visuelle du hero tant que le carousel n'est pas prime.
+- `src/kit/layout/Footer.jsx` differe l'image "livraison" via IntersectionObserver avec dimensions reservees, pixel transparent et garde sur le layout visible.
+
+Resultats locaux principaux, cache desactive, CPU x4, viewport `1440x950`:
+
+| Scenario | Resultat |
+| --- | --- |
+| `npm run perf:scroll` | OK assertions: 0 lock desktop, 0 overflow hidden, premier scroll effectif 307 ms apres document scrollable |
+| `npm run perf:scroll:newsletter` | OK assertions: 0 lock desktop, 0 overflow hidden, 0 `bottomWithoutFooterOrPlaceholder` |
+| Requetes images hero pendant scroll newsletter | `imagehero/2.webp`, `imagehero/3.webp`, `imagehero/4.webp` absentes du premier scroll |
+| Poids segment scroll newsletter | environ 1.43 MB avant pause hero -> environ 0.97 MB apres passe roadmap |
+
+Validations:
+
+```powershell
+node --check scripts/audit-gallery-scroll-lag.mjs
+npm run lint
+npm run mobile:contract
+npm run build
+npm run perf:budget
+npm run perf:scroll -- --url=http://127.0.0.1:4300/ --label=seconde-vie-immediate-roadmap-final
+npm run perf:scroll:newsletter -- --url=http://127.0.0.1:4300/ --label=seconde-vie-newsletter-roadmap-final-footer-image
+```
+
+Limite restante: les frame gaps >100 ms existent encore sous CPU x4, mais ils sont maintenant lies au cout d'hydratation du shell galerie et aux chunks initiaux. Les prochains gains demandent d'isoler davantage le shell public galerie et les widgets interactifs, pas de remettre du scroll lock ou des timers courts.

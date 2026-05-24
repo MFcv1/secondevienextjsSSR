@@ -23,6 +23,8 @@
     "perf:compare": "node scripts/compare-spa-next.mjs",
     "perf:runtime": "node scripts/compare-runtime.mjs",
     "perf:architecture": "node scripts/benchmark-architecture.mjs",
+    "perf:scroll": "node scripts/audit-gallery-scroll-lag.mjs --mode=immediate --assert --trace=false",
+    "perf:scroll:newsletter": "node scripts/audit-gallery-scroll-lag.mjs --mode=newsletter --assert --trace=false",
     "mobile:contract": "node scripts/check-mobile-marketplace-contract.cjs"
   },
   "dependencies": {

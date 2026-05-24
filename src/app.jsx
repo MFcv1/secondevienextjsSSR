@@ -41,13 +41,81 @@ const CartSidebar = React.lazy(loadCartSidebar);
 const Footer = React.lazy(loadFooter);
 const MarketplaceDiscovery = React.lazy(loadMarketplaceDiscovery);
 
-const FooterLoadingPlaceholder = ({ darkMode = false }) => (
-  <div
-    aria-hidden="true"
-    data-footer-loading-placeholder="true"
-    className={darkMode ? 'min-h-[1320px] bg-[#0f0f0e]' : 'min-h-[1320px] bg-[#FAFAF9]'}
-  />
-);
+const FooterLoadingPlaceholder = ({ darkMode = false }) => {
+  const panelClassName = darkMode
+    ? 'border-[#2e2a25] bg-[#111110]'
+    : 'border-[#eee6dd] bg-[#fdfbf8]';
+  const mutedClassName = darkMode ? 'bg-[#24211d]' : 'bg-[#f3eee7]';
+  const lineClassName = darkMode ? 'bg-[#3a332b]' : 'bg-[#e7ded3]';
+
+  return (
+    <div
+      aria-hidden="true"
+      data-footer-loading-placeholder="true"
+      className={`min-h-[1320px] w-full px-3 pb-6 pt-10 md:px-6 md:pb-8 ${
+        darkMode ? 'bg-[#111] text-[#f4eee6]' : 'bg-[#fbfaf8] text-stone-950'
+      }`}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: '1320px' }}
+    >
+      <div className={`mx-auto hidden w-full max-w-[1760px] overflow-hidden rounded-[18px] border md:block ${panelClassName}`}>
+        <div className={`grid grid-cols-4 divide-x ${darkMode ? 'divide-[#3a332b]' : 'divide-[#eee6dd]'}`}>
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="flex items-center gap-6 px-10 py-8">
+              <span className={`h-16 w-16 shrink-0 rounded-full ${mutedClassName}`} />
+              <span className="flex flex-1 flex-col gap-3">
+                <span className={`h-4 w-36 rounded-full ${lineClassName}`} />
+                <span className={`h-3 w-48 rounded-full ${lineClassName}`} />
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className={`border-t px-12 py-14 ${darkMode ? 'border-[#2e2a25]' : 'border-[#eee6dd]'}`}>
+          <div className="grid grid-cols-[240px_140px_150px_155px_190px_minmax(420px,520px)] gap-9">
+            <div className="space-y-8">
+              <div className="flex items-center gap-4">
+                <span className={`h-16 w-16 rounded-sm ${mutedClassName}`} />
+                <span className="space-y-3">
+                  <span className={`block h-6 w-32 rounded-full ${lineClassName}`} />
+                  <span className={`block h-3 w-28 rounded-full ${lineClassName}`} />
+                </span>
+              </div>
+              <span className={`block h-3 w-full rounded-full ${lineClassName}`} />
+              <span className={`block h-3 w-5/6 rounded-full ${lineClassName}`} />
+              <span className={`block h-3 w-2/3 rounded-full ${lineClassName}`} />
+            </div>
+
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="space-y-7">
+                <span className={`block h-4 w-24 rounded-full ${lineClassName}`} />
+                <div className="space-y-5">
+                  <span className={`block h-3 w-28 rounded-full ${lineClassName}`} />
+                  <span className={`block h-3 w-24 rounded-full ${lineClassName}`} />
+                  <span className={`block h-3 w-32 rounded-full ${lineClassName}`} />
+                  <span className={`block h-3 w-20 rounded-full ${lineClassName}`} />
+                </div>
+              </div>
+            ))}
+
+            <div className="space-y-5">
+              <span className={`block h-4 w-44 rounded-full ${lineClassName}`} />
+              <span className={`block h-[260px] w-full rounded-xl ${mutedClassName}`} />
+              <span className={`block h-20 w-full rounded-lg ${mutedClassName}`} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className={`mx-auto grid w-full max-w-[430px] gap-4 rounded-[24px] border p-6 md:hidden ${panelClassName}`}>
+        <span className={`h-5 w-40 rounded-full ${lineClassName}`} />
+        <span className={`h-[220px] w-full rounded-xl ${mutedClassName}`} />
+        <span className={`h-4 w-full rounded-full ${lineClassName}`} />
+        <span className={`h-4 w-5/6 rounded-full ${lineClassName}`} />
+        <span className={`h-4 w-2/3 rounded-full ${lineClassName}`} />
+      </div>
+    </div>
+  );
+};
 
 const PUBLIC_ITEMS_INITIAL_LIMIT = 36;
 const CONTACT_INFO_CACHE_KEY = 'secondevie:contact-info:v1';

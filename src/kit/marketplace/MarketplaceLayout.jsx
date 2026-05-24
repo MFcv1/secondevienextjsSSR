@@ -170,6 +170,7 @@ const DEFAULT_RESTORATION_PROJECTS = [
     }
 ];
 const HERO_DURATION = 5500; // ms par slide
+const HERO_CAROUSEL_IDLE_DELAY_MS = 9000;
 const HERO_PROGRESS_STEP_COUNT = 4;
 const DEFERRED_SECTION_IDLE_FALLBACK_MS = 16000;
 const DEFERRED_SECTION_ROOT_MARGIN = '420px 0px 620px';
@@ -429,6 +430,7 @@ const MarketplaceLayout = ({
     // --- HERO CAROUSEL ---
     const [heroIndex, setHeroIndex] = useState(0);
     const [slideVersion, setSlideVersion] = useState(0); // force remount du fill actif
+    const [isHeroCarouselPrimed, setIsHeroCarouselPrimed] = useState(false);
     const heroIndexRef = useRef(0);
     const activeHeroProgressIndex = heroProgressSteps.findIndex((step) => (
         heroIndex >= step.start && heroIndex < step.end
@@ -437,25 +439,57 @@ const MarketplaceLayout = ({
     const heroImageIndexesToLoad = useMemo(() => {
         if (!heroSlideCount) return new Set();
 
-        return new Set([
-            heroIndex,
-            (heroIndex + 1) % heroSlideCount,
-        ]);
-    }, [heroIndex, heroSlideCount]);
-    const goToSlide = (idx) => {
+        const indexes = new Set([heroIndex]);
+        if (isHeroCarouselPrimed && heroSlideCount > 1) {
+            indexes.add((heroIndex + 1) % heroSlideCount);
+        }
+        return indexes;
+    }, [heroIndex, heroSlideCount, isHeroCarouselPrimed]);
+    const goToSlide = useCallback((idx) => {
+        setIsHeroCarouselPrimed(true);
         heroIndexRef.current = idx;
         setHeroIndex(idx);
         setSlideVersion(v => v + 1);
-    };
+    }, []);
 
     useEffect(() => {
+        if (isHeroCarouselPrimed || heroSlideCount <= 1) return undefined;
+
+        let idleId = 0;
+        const timeoutId = window.setTimeout(() => {
+            const run = () => {
+                idleId = 0;
+                if (window.scrollY <= 900) {
+                    setIsHeroCarouselPrimed(true);
+                }
+            };
+
+            if (typeof window.requestIdleCallback === 'function') {
+                idleId = window.requestIdleCallback(run, { timeout: 2500 });
+                return;
+            }
+
+            run();
+        }, HERO_CAROUSEL_IDLE_DELAY_MS);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+            if (idleId && typeof window.cancelIdleCallback === 'function') {
+                window.cancelIdleCallback(idleId);
+            }
+        };
+    }, [heroSlideCount, isHeroCarouselPrimed]);
+
+    useEffect(() => {
+        if (!isHeroCarouselPrimed || dynamicHeroImages.length <= 1) return undefined;
+
         const timer = setInterval(() => {
             if (isThemeTransitionActive()) return;
             const next = (heroIndexRef.current + 1) % dynamicHeroImages.length;
             goToSlide(next);
         }, HERO_DURATION);
         return () => clearInterval(timer);
-    }, [dynamicHeroImages.length]);
+    }, [dynamicHeroImages.length, goToSlide, isHeroCarouselPrimed]);
 
     React.useEffect(() => {
         if (setHeaderProps && headerProps) setHeaderProps(headerProps);
@@ -525,6 +559,7 @@ const MarketplaceLayout = ({
                 onOpenQuote={onOpenQuote}
                 heroProgressSteps={heroProgressSteps}
                 activeHeroProgressIndex={activeHeroProgressIndex}
+                isHeroCarouselPrimed={isHeroCarouselPrimed}
                 slideVersion={slideVersion}
                 onGoToSlide={goToSlide}
                 heroDuration={HERO_DURATION}
