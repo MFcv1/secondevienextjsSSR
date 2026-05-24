@@ -3,6 +3,8 @@ import { ArrowUpRight, ChevronLeft, ChevronRight, Heart, Instagram, Sparkles } f
 import { AnimatePresence, motion } from 'framer-motion';
 const INSTAGRAM_URL = 'https://www.instagram.com/secondevie_anais';
 const INSTAGRAM_FOLLOWERS_TARGET = 38.9;
+const INSTAGRAM_DESKTOP_ACTIVE_ROOT_MARGIN = '80px 0px';
+const INSTAGRAM_MOBILE_ACTIVE_ROOT_MARGIN = '240px 0px';
 
 const InstagramFollowerCount = ({ darkMode, compact = false, className = '' }) => {
     const [displayNumber, setDisplayNumber] = useState('0.0');
@@ -144,9 +146,12 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
             setIsInstaSectionActive(true);
             return undefined;
         }
+        const rootMargin = window.matchMedia('(min-width: 1024px)').matches
+            ? INSTAGRAM_DESKTOP_ACTIVE_ROOT_MARGIN
+            : INSTAGRAM_MOBILE_ACTIVE_ROOT_MARGIN;
         const observer = new IntersectionObserver(([entry]) => {
             setIsInstaSectionActive(entry.isIntersecting);
-        }, { rootMargin: '420px 0px' });
+        }, { rootMargin });
         observer.observe(section);
         return () => observer.disconnect();
     }, []);
