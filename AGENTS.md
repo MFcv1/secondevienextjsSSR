@@ -33,7 +33,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |   `-- src : analytics, auth, commerce, email, maintenance, public, seo, triggers
 |-- public : favicons, manifest, images, video, rapport maintenance statique
 |-- scripts : env bridge, SSR/mobile checks, maintenance audit, budget perf Next, perf/architecture compare, audit scroll galerie, backfills/audits Storage/images et tooling safe
-|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_SEO_ROADMAP.md, NEXTJS_HOME_LANDING_ROADMAP.md, NEXTJS_SSR_AUDIT_REPORT.md, NEXTJS_IMAGE_PIPELINE_AUDIT.md, GALLERY_COLD_SCROLL_OPTIMIZATION_REPORT.md, GALLERY_SCROLL_LAG_AUDIT.md, GALLERY_SCROLL_NEXT_ROADMAP.md
+|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_SEO_ROADMAP.md, NEXTJS_HOME_LANDING_ROADMAP.md, NEXTJS_SSR_AUDIT_REPORT.md, NEXTJS_IMAGE_PIPELINE_AUDIT.md, PRODUCT_DETAIL_IMAGE_UX_AUDIT.md, GALLERY_COLD_SCROLL_OPTIMIZATION_REPORT.md, GALLERY_SCROLL_LAG_AUDIT.md, GALLERY_SCROLL_NEXT_ROADMAP.md
 |-- imagehero, pageUI : references visuelles et notes UI
 `-- .next, dist, node_modules, logs, .firebase : generes, hors carte
 ```
@@ -310,6 +310,20 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 - Mesure finale scroll immediat propre (`seconde-vie-immediate-final-client-islands-clean-2`, cache desactive, CPU x4, `http://127.0.0.1:4300/`) : assertions OK, 0 lock desktop, 0 overflow hidden, premier scroll effectif `155 ms` apres document scrollable, 32 requetes, long tasks `4 / 766 ms / max 232 ms`, frame gaps `max 250 ms`, `4` gaps >100 ms. `Petits Prix`, `Testimonials`, `Newsletter`, `Footer` et `ProductDetail` ne montent pas pendant le scroll immediat.
 - Mesure finale newsletter propre (`seconde-vie-newsletter-final-client-islands-clean`) : assertions OK, 0 lock desktop, 0 overflow hidden, 0 `bottomWithoutFooterOrPlaceholder`, footer placeholder prepare a `1043 ms`, footer reel et newsletter montes a `2466 ms`. Le scroll normal descend jusqu'a `7431 px` sans blocage de bas de page.
 - Validations executees : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, `npm run perf:scroll`, `npm run perf:scroll:newsletter`. Attention mesure : fermer les serveurs `next dev` externes avant tout `next build`/`next start`, car ils reecrivent `.next` et rendent les audits production incoherents.
+
+### Goal 17 - Audit UX images detail produit froid
+
+- `NEXTJS_OPTIMIZATION_ROADMAP.md` et `alertemobile.md` ont ete relus avant correction. L'invariant mobile `const shouldUseMobileGalleryScroll = view === 'gallery' || isGalleryDetailOverlay;` est reste intact.
+- `PRODUCT_DETAIL_IMAGE_UX_AUDIT.md` documente le diagnostic, les mesures, les changements et les risques restants pour le parcours galerie -> detail produit.
+- Probleme mesure : a l'ouverture d'un produit froid, le detail pouvait demander en parallele la branche image cachee mobile/desktop, les vignettes avec `srcSet` complet, et plusieurs variantes `large` secondaires. Sur mobile, le staging normal pouvait aussi upgrader l'image visible en `large` via DPR.
+- Correction dans `src/kit/marketplace/ArchitecturalProductDetail.jsx` : le detail rend seulement la branche active mobile ou desktop, le staging mobile conserve `decode/currentSrc` mais force la variante `medium` sans `srcSet`, et les vignettes utilisent l'URL `thumb` explicite.
+- Les warmups secondaires sont bornes autour de l'image active puis differes a idle. Sur desktop, la variante prechargee est choisie selon largeur viewport + DPR (`medium` a 1440x900 DPR 1, `large` seulement quand necessaire).
+- Passe complementaire : le warmup mobile post-paint ne relance plus l'image active `medium` deja chargee. La gate verifie maintenant qu'il n'y a pas de redemande du slot actif `0_medium` apres tap.
+- Les placeholders existants `blurDataUrl` / `dominantColor` stabilisent maintenant le cadre mobile et les vignettes pendant le cache froid. Le flou desktop derriere l'image reste conserve via le backdrop thumbnail.
+- Mesure locale production Playwright, cache desactive, CPU x4, produit `/produit/buffet-KrTETXPknYNwgak66T8p` : desktop sans requetes secondaires `large` dans la waterfall finale; mobile sans variantes detail `large`, avec baisse du total images produit mesure d'environ `1157 kB` a `878 kB`.
+- `scripts/audit-product-detail-images.mjs` et `npm run perf:product-images` ajoutent une gate reproductible : parcours galerie -> detail en desktop/mobile, assertions sans variante `large` inutile, branche active seulement, image visible chargee et backdrop desktop conserve.
+- Validations executees : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, `npm run perf:scroll`, `npm run perf:product-images`, `NEXT_BASE_URL=http://127.0.0.1:4300 npm run perf:architecture`, plus QA Playwright desktop `1440x900` et mobile `390x844`.
+- Tentative vrai mobile : une interface `SAMSUNG Android ADB Interface` est visible et les platform-tools officiels ont ete lances depuis un dossier temporaire, mais `adb devices -l` retourne `R52Y3030D6D offline`. Le test Chrome Android reel reste donc a faire apres deverrouillage/autorisation USB de l'appareil.
 
 ## ðŸ› ï¸ Structure des Fichiers .env
 Nous n'utilisons PLUS de fichier `.env` unique. Tout est pilote par des fichiers suffixes locaux :

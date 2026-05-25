@@ -25,6 +25,7 @@
     "perf:architecture": "node scripts/benchmark-architecture.mjs",
     "perf:scroll": "node scripts/audit-gallery-scroll-lag.mjs --mode=immediate --assert --trace=false",
     "perf:scroll:newsletter": "node scripts/audit-gallery-scroll-lag.mjs --mode=newsletter --assert --trace=false",
+    "perf:product-images": "node scripts/audit-product-detail-images.mjs --assert",
     "mobile:contract": "node scripts/check-mobile-marketplace-contract.cjs"
   },
   "dependencies": {

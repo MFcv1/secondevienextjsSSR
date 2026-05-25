@@ -23,6 +23,9 @@ const MOBILE_LIGHTBOX_MAX_WIDTH = 720;
 const MOBILE_LIGHTBOX_MAX_HEIGHT = 860;
 const MOBILE_DETAIL_RESERVED_REM = 15.5;
 const DEFAULT_DETAIL_BACKDROP_COLOR = '#fafaf9';
+const MOBILE_DETAIL_STAGE_VARIANT = 'medium';
+const DESKTOP_DETAIL_PRELOAD_WINDOW = 3;
+const MOBILE_DETAIL_PRELOAD_WINDOW = 3;
 
 const getProductImageFitMode = (ratio) => (
     Number.isFinite(ratio) && ratio > 0 && ratio < TALL_PRODUCT_IMAGE_RATIO ? 'tall' : 'standard'
@@ -143,15 +146,45 @@ const preloadDetailBackdropImage = (image, options = {}) => {
     }).catch(() => null);
 };
 
+const getDetailDisplayImageSrc = (image, options = {}) => {
+    if (!image) return '';
+
+    if (options.variant && image[options.variant]) return image[options.variant];
+
+    return image.large || image.src || image.medium || image.card || image.full || image.thumb || '';
+};
+
+const getDesktopDetailPreloadVariant = () => {
+    if (typeof window === 'undefined') return 'large';
+
+    const viewportWidth = Math.round(window.visualViewport?.width || window.innerWidth || 1440);
+    const targetWidth = Math.max(1, viewportWidth - 610) * (window.devicePixelRatio || 1);
+
+    return targetWidth <= 1100 ? 'medium' : 'large';
+};
+
+const preloadDetailDisplayImage = (image, options = {}) => {
+    const src = getDetailDisplayImageSrc(image, options);
+    if (!src) return Promise.resolve(null);
+
+    return preloadImage(src, {
+        priority: options.priority || 'auto',
+        decode: options.decode === true,
+        decoding: 'async',
+    }).catch(() => null);
+};
+
 const stagedProductDetailImageCache = new Map();
 
-const getProductDetailStageKey = (image) => {
+const getProductDetailStageKey = (image, options = {}) => {
     if (typeof window === 'undefined') return image?.src || image?.full || '';
     const width = Math.round(window.visualViewport?.width || window.innerWidth || 0);
     const dpr = Math.round((window.devicePixelRatio || 1) * 100) / 100;
     return [
         image?.src || image?.full || '',
         image?.srcSet || '',
+        options.variant || '',
+        options.srcSet === false ? 'no-srcset' : 'srcset',
         width,
         dpr,
     ].join('|');
@@ -168,13 +201,15 @@ const waitForImageFrame = () => new Promise((resolve) => {
     });
 });
 
-const resolveStagedProductDetailImage = async (image) => {
+const resolveStagedProductDetailImage = async (image, options = {}) => {
     if (!image || typeof window === 'undefined') return null;
 
-    const fallbackSrc = image.src || image.full || image.medium || image.card || image.thumb || '';
+    const preferredSrc = options.variant ? image?.[options.variant] : '';
+    const fallbackSrc = preferredSrc || image.src || image.full || image.medium || image.card || image.thumb || '';
     if (!fallbackSrc) return null;
 
-    const cacheKey = getProductDetailStageKey(image);
+    const useSrcSet = options.srcSet !== false && !preferredSrc && Boolean(image.srcSet);
+    const cacheKey = getProductDetailStageKey(image, options);
     const cached = stagedProductDetailImageCache.get(cacheKey);
     if (cached) return cached;
 
@@ -196,8 +231,8 @@ const resolveStagedProductDetailImage = async (image) => {
 
         stageImage.decoding = 'async';
         stageImage.loading = 'eager';
-        if ('fetchPriority' in stageImage) stageImage.fetchPriority = 'high';
-        if (image.srcSet) {
+        if ('fetchPriority' in stageImage) stageImage.fetchPriority = options.priority || 'high';
+        if (useSrcSet) {
             stageImage.srcset = image.srcSet;
             stageImage.sizes = PRODUCT_DETAIL_IMAGE_SIZES;
         }
@@ -1211,8 +1246,12 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
             borderRadius: '0.75rem',
             overflow: 'hidden',
             clipPath: 'inset(0 round 0.75rem)',
+            backgroundColor: mobileDisplayedImage.metadata?.dominantColor || 'transparent',
+            backgroundImage: mobileDisplayedImage.metadata?.blurDataUrl ? `url("${mobileDisplayedImage.metadata.blurDataUrl}")` : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
         }),
-        [mobileDisplayedImageRatio, viewportBox]
+        [mobileDisplayedImage.metadata?.blurDataUrl, mobileDisplayedImage.metadata?.dominantColor, mobileDisplayedImageRatio, viewportBox]
     );
     const mobileDetailImageClipStyle = useMemo(
         () => ({
@@ -1541,7 +1580,10 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
             }, 180);
         };
 
-        resolveStagedProductDetailImage(targetImage)
+        resolveStagedProductDetailImage(targetImage, {
+            variant: MOBILE_DETAIL_STAGE_VARIANT,
+            srcSet: false,
+        })
             .then((resolved) => {
                 if (cancelled || mobileImageSwapRef.current.token !== token) return;
                 rememberStagedProductImage(activeImg, resolved, targetImage);
@@ -1565,12 +1607,17 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
         const shouldDecodeFullMobileSet = isMobileDetail
             && !connection?.saveData
             && !/(^|-)2g$/.test(connection?.effectiveType || '');
+        const desktopPreloadVariant = isMobileDetail ? null : getDesktopDetailPreloadVariant();
         const preloadOrder = buildProductImagePreloadOrder(imageItems.length, activeImg);
         const loadIndex = (index, options = {}) => {
             const image = imageItems[index];
             if (!image || cancelled) return;
             if (isMobileDetail) {
-                resolveStagedProductDetailImage(image)
+                resolveStagedProductDetailImage(image, {
+                    variant: MOBILE_DETAIL_STAGE_VARIANT,
+                    srcSet: false,
+                    priority: options.priority || 'low',
+                })
                     .then((resolved) => {
                         if (!cancelled) rememberStagedProductImage(index, resolved, image);
                     })
@@ -1578,7 +1625,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                 return;
             }
 
-            preloadLightboxImage(image, options);
+            preloadDetailDisplayImage(image, options);
         };
 
         const scheduleTimeout = (callback, delay) => {
@@ -1598,7 +1645,14 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
             };
         }
 
-        loadIndex(preloadOrder[0], { priority: 'high', decode: true, decoding: 'async' });
+        if (!isMobileDetail) {
+            loadIndex(preloadOrder[0], {
+                priority: 'high',
+                decode: true,
+                decoding: 'async',
+                variant: desktopPreloadVariant,
+            });
+        }
 
         if (!hasPrimaryImagePainted) {
             return () => {
@@ -1607,11 +1661,14 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
             };
         }
 
-        preloadOrder.slice(1, isMobileDetail ? imageItems.length : 5).forEach((index, position) => {
-            const delay = isMobileDetail ? 160 + position * 120 : position * 60;
+        const eagerWindow = isMobileDetail ? MOBILE_DETAIL_PRELOAD_WINDOW : DESKTOP_DETAIL_PRELOAD_WINDOW;
+
+        preloadOrder.slice(1, eagerWindow).forEach((index, position) => {
+            const delay = isMobileDetail ? 180 + position * 140 : 120 + position * 90;
             const run = () => {
                 loadIndex(index, {
                     priority: 'low',
+                    variant: isMobileDetail ? MOBILE_DETAIL_STAGE_VARIANT : desktopPreloadVariant,
                     decode: shouldDecodeFullMobileSet && position <= 1,
                     decoding: 'async',
                 });
@@ -1627,10 +1684,20 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
             };
         }
 
-        preloadOrder.slice(5).forEach((index, position) => {
+        preloadOrder.slice(eagerWindow).forEach((index, position) => {
             scheduleTimeout(() => {
-                loadIndex(index, { priority: 'auto', decode: false, decoding: 'async' });
-            }, 120 + position * 80);
+                const run = () => loadIndex(index, {
+                    priority: 'auto',
+                    decode: false,
+                    decoding: 'async',
+                    variant: desktopPreloadVariant,
+                });
+                if (typeof window.requestIdleCallback === 'function') {
+                    window.requestIdleCallback(run, { timeout: 2200 + position * 250 });
+                    return;
+                }
+                run();
+            }, 900 + position * 220);
         });
 
         return () => {
@@ -1861,9 +1928,10 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
             
             <main className="w-full h-full lg:overflow-hidden lg:flex lg:flex-row relative">
                 {/* Mobile Wrapper */}
+                {!isDesktopDetailViewport && (
                 <div
                     ref={mobileShellRef}
-                    className={`lg:hidden fixed inset-0 overflow-hidden overscroll-none transition-colors duration-500 ${mobileTone.surface}`}
+                    className={`fixed inset-0 overflow-hidden overscroll-none transition-colors duration-500 ${mobileTone.surface}`}
                     style={{ height: 'var(--marketplace-viewport-height, 100svh)' }}
                 >
                     
@@ -1886,6 +1954,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                 >
                                     {imageItems.map((image, idx) => {
                                         const thumbSrc = image.thumb || image.card || image.src;
+                                        const thumbPlaceholderSrc = image.metadata?.blurDataUrl || '';
                                         return (
                                             <button
                                                 key={idx}
@@ -1896,15 +1965,16 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                                 style={{
                                                     width: `${mobileThumbSize}px`,
                                                     height: `${mobileThumbSize}px`,
-                                                    backgroundImage: hasPrimaryImagePainted && thumbSrc ? `url("${thumbSrc}")` : undefined,
+                                                    backgroundImage: hasPrimaryImagePainted && thumbSrc
+                                                        ? `url("${thumbSrc}")`
+                                                        : (thumbPlaceholderSrc ? `url("${thumbPlaceholderSrc}")` : undefined),
                                                     backgroundSize: 'cover',
                                                     backgroundPosition: 'center',
-                                                    backgroundColor: 'rgba(0,0,0,0.04)',
+                                                    backgroundColor: image.metadata?.dominantColor || 'rgba(0,0,0,0.04)',
                                                 }}
                                             >
                                                 <img
                                                     src={thumbSrc}
-                                                    srcSet={image.srcSet || undefined}
                                                     className="w-full h-full object-cover rounded-[4px]"
                                                     alt={`Apercu ${idx + 1}`}
                                                     loading={hasPrimaryImagePainted && idx < 8 ? 'eager' : 'lazy'}
@@ -2168,10 +2238,13 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                         </div>
                     </div>
                 </div>
+                )}
 
                 {/* ─── DESKTOP LAYOUT (unchanged) ─── */}
                 {/* LEFT: MAIN IMAGE — Desktop grid layout */}
-                <div className="hidden lg:flex lg:flex-1 lg:h-[100vh] lg:grid lg:grid-rows-[15vh_72vh_13vh] relative overflow-hidden lg:bg-black/5">
+                {isDesktopDetailViewport && (
+                <>
+                <div className="flex flex-1 h-[100vh] grid grid-rows-[15vh_72vh_13vh] relative overflow-hidden bg-black/5">
                     
                     <div className="w-full h-full pointer-events-none" />
 
@@ -2310,11 +2383,12 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                 {images.length > 1 && (
                     <div 
                         ref={thumbListRef}
-                        className={`hidden lg:flex flex-col gap-1.5 py-16 pt-28 pr-5 h-full overflow-y-auto no-scrollbar flex-shrink-0 items-end w-[110px] relative z-30 transition-colors duration-1000 ${darkMode ? 'bg-[#0e0e0e]' : 'bg-[#FAFAFA]'}`}
+                        className={`flex flex-col gap-1.5 py-16 pt-28 pr-5 h-full overflow-y-auto no-scrollbar flex-shrink-0 items-end w-[110px] relative z-30 transition-colors duration-1000 ${darkMode ? 'bg-[#0e0e0e]' : 'bg-[#FAFAFA]'}`}
                         style={{ scrollSnapType: 'y proximity' }}
                     >
                         {imageItems.map((image, idx) => {
                             const thumbSrc = image.thumb || image.card || image.src;
+                            const thumbPlaceholderSrc = image.metadata?.blurDataUrl || '';
                             return (
                                 <button
                                     key={idx}
@@ -2326,15 +2400,16 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                         }`}
                                     style={{
                                         scrollSnapAlign: 'center',
-                                        backgroundImage: hasPrimaryImagePainted && thumbSrc ? `url("${thumbSrc}")` : undefined,
+                                        backgroundImage: hasPrimaryImagePainted && thumbSrc
+                                            ? `url("${thumbSrc}")`
+                                            : (thumbPlaceholderSrc ? `url("${thumbPlaceholderSrc}")` : undefined),
                                         backgroundSize: 'cover',
                                         backgroundPosition: 'center',
-                                        backgroundColor: darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                                        backgroundColor: image.metadata?.dominantColor || (darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
                                     }}
                                 >
                                     <img
                                         src={thumbSrc}
-                                        srcSet={image.srcSet || undefined}
                                         sizes="58px"
                                         className="w-full h-full object-cover select-none pointer-events-none"
                                         alt=""
@@ -2346,6 +2421,8 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                             );
                         })}
                     </div>
+                )}
+                </>
                 )}
             </main>
 
