@@ -190,6 +190,16 @@ Risque:
 
 - Mauvais decoupage server/client peut creer de la duplication ou des props serialisees trop lourdes.
 
+Avancement scroll froid 2026-05-25:
+
+- Fait: le scroll lock desktop d'entree galerie est neutralise, les sections basses montent par proximite viewport, le footer a un placeholder de hauteur, et les gates `perf:scroll` / `perf:scroll:newsletter` protegent ces invariants.
+- Fait: Firebase est sorti autant que possible du chemin public initial via `firebaseEnv.js`, `firebaseCore.js` et `firebaseLazy.js`; Firestore/Functions/Auth/AppCheck sont charges a la demande.
+- Fait: les lectures decoratives `theme_settings`, `contact_info`, `gallery_app` et `announcement_config` sont repoussees a `45 s` + idle, et `publicCatalog` est dedoublonne en vol.
+- Fait: `GlobalMenu` est lazy afin de ne pas imposer son chunk au premier scroll froid.
+- Mesure finale: scroll immediat OK sans lock ni overflow hidden, premier scroll effectif `177 ms` apres document scrollable, 1 cloud-function catalogue, 0 Firestore reseau; les gaps >100 ms restent presents sous CPU x4.
+- Prochaine etape N4: transformer la galerie publique en ilots plus petits. Le HTML/markup stable des sections visibles doit pouvoir exister sans hydrater tout `src/app.jsx`/`Router.jsx`, puis les comportements lourds (menu, carousels, wishlist, admin, animations complexes) doivent se brancher progressivement apres interaction, idle ou proximite viewport.
+- Gate de decision: toute passe N4 doit comparer `perf:scroll`, `perf:scroll:newsletter`, `perf:budget` et un controle mobile `mobile:contract`. Le gain attendu est une baisse des long tasks/frame gaps; le scroll lock desktop ne doit jamais revenir.
+
 ### N5 - Prefetch intelligent depuis la galerie
 
 Objectif: rendre le clic produit plus rapide sans tout charger au depart.

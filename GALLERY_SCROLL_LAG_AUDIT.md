@@ -344,15 +344,18 @@ Changements ajoutes apres retour utilisateur sur le blocage newsletter:
 - `src/kit/marketplace/MarketplaceLayout.jsx` ne prime plus le carousel hero au demarrage froid: seule l'image active est chargee au depart; le preload/auto-advance des slides suivantes attend un idle long et reste annule si l'utilisateur a deja scrolle loin du hero.
 - `src/kit/marketplace/components/MarketplaceHero.jsx` pause aussi la progression visuelle du hero tant que le carousel n'est pas prime.
 - `src/kit/layout/Footer.jsx` differe l'image "livraison" via IntersectionObserver avec dimensions reservees, pixel transparent et garde sur le layout visible.
+- `src/kit/layout/Footer.jsx` initialise maintenant la media-query mobile/desktop au premier rendu pour ne pas observer la variante cachee; l'image livraison ne part plus qu'une fois sur desktop froid.
+- `src/kit/marketplace/components/InstagramSection.jsx` retire `AnimatePresence` sur le carousel Instagram et garde les cartes montees avec transitions `transform`/`opacity`, pour une apparition plus douce et moins de churn React quand la section arrive.
 
 Resultats locaux principaux, cache desactive, CPU x4, viewport `1440x950`:
 
 | Scenario | Resultat |
 | --- | --- |
-| `npm run perf:scroll` | OK assertions: 0 lock desktop, 0 overflow hidden, premier scroll effectif 307 ms apres document scrollable |
+| `npm run perf:scroll` | OK assertions: 0 lock desktop, 0 overflow hidden, premier scroll effectif 250 ms apres document scrollable |
 | `npm run perf:scroll:newsletter` | OK assertions: 0 lock desktop, 0 overflow hidden, 0 `bottomWithoutFooterOrPlaceholder` |
 | Requetes images hero pendant scroll newsletter | `imagehero/2.webp`, `imagehero/3.webp`, `imagehero/4.webp` absentes du premier scroll |
-| Poids segment scroll newsletter | environ 1.43 MB avant pause hero -> environ 0.97 MB apres passe roadmap |
+| Poids segment scroll newsletter | environ 1.43 MB avant pause hero -> environ 0.88 MB apres passe roadmap et garde media footer |
+| Images segment scroll newsletter | 683 KB juste avant le garde media footer -> 551 KB final; `footer-delivery-light.webp` une seule requete |
 
 Validations:
 
@@ -362,8 +365,47 @@ npm run lint
 npm run mobile:contract
 npm run build
 npm run perf:budget
-npm run perf:scroll -- --url=http://127.0.0.1:4300/ --label=seconde-vie-immediate-roadmap-final
-npm run perf:scroll:newsletter -- --url=http://127.0.0.1:4300/ --label=seconde-vie-newsletter-roadmap-final-footer-image
+npm run perf:scroll -- --url=http://127.0.0.1:4300/ --label=seconde-vie-immediate-smooth-final-3
+npm run perf:scroll:newsletter -- --url=http://127.0.0.1:4300/ --label=seconde-vie-newsletter-smooth-final-3
 ```
 
 Limite restante: les frame gaps >100 ms existent encore sous CPU x4, mais ils sont maintenant lies au cout d'hydratation du shell galerie et aux chunks initiaux. Les prochains gains demandent d'isoler davantage le shell public galerie et les widgets interactifs, pas de remettre du scroll lock ou des timers courts.
+
+## Addendum - roadmap hydratation appliquee 2026-05-25
+
+Objectif de cette passe: reduire les gaps restants qui ne venaient plus du scroll lock, du footer ou de la newsletter, mais du travail d'hydratation/chunks initiaux pendant le premier scroll froid.
+
+Changements appliques:
+
+- Firebase est separe en trois niveaux: `firebaseEnv.js` pour les constantes legeres, `firebaseCore.js` pour l'app, `firebaseLazy.js` pour Firestore/Functions/Auth/AppCheck a la demande.
+- `src/app.jsx` n'importe plus Firestore/Functions statiquement sur le chemin public et dedoublonne les appels `publicCatalog` en vol.
+- `src/Router.jsx` charge Firestore et l'invalidation catalogue seulement pour les actions admin/produit qui en ont besoin.
+- `AuthContext`, `Footer`, `theme.js`, `MarketplaceLayout` et `AnnouncementBanner` utilisent le runtime Firebase lazy au lieu d'importer directement Firestore/Functions dans le bundle initial.
+- Les lectures decoratives `theme_settings`, `contact_info`, `gallery_app` et `announcement_config` sont repoussees a `45 s` + idle; les valeurs par defaut/cache restent affichees.
+- `GlobalMenu` passe en `React.lazy`, avec preload seulement sur intention.
+
+Resultats finaux locaux, cache desactive, CPU x4, viewport `1440x950`:
+
+| Scenario | Resultat |
+| --- | --- |
+| Scroll immediat `seconde-vie-immediate-hydration-env-split-final-2` | assertions OK, 0 lock desktop, 0 overflow hidden, premier scroll effectif `177 ms` apres document scrollable |
+| Requetes scroll immediat | 46 total, 1 `cloud-function`, 0 Firestore reseau pendant le segment mesure |
+| Long tasks scroll immediat | 11, total `1805 ms`, max `329 ms` |
+| Frame gaps scroll immediat | max `383 ms`, 6 gaps >100 ms |
+| Scroll newsletter `seconde-vie-newsletter-hydration-env-split-final-2` | assertions OK, 0 lock, 0 overflow hidden, 0 `bottomWithoutFooterOrPlaceholder` |
+| Footer/newsletter | placeholder footer a `1460 ms`, footer reel a `3105 ms`, newsletter montee a `3882 ms` |
+| Requetes newsletter | 51 total, 1 `cloud-function`, 0 Firestore reseau pendant le scroll |
+| Frame gaps newsletter | max `567 ms`, 7 gaps >100 ms |
+
+Validations:
+
+```powershell
+npm run lint
+npm run mobile:contract
+npm run build
+npm run perf:budget
+npm run perf:scroll -- --url=http://127.0.0.1:4300/ --label=seconde-vie-immediate-hydration-env-split-final-2
+npm run perf:scroll:newsletter -- --url=http://127.0.0.1:4300/ --label=seconde-vie-newsletter-hydration-env-split-final-2
+```
+
+Conclusion: le scroll desktop froid n'est plus bloque et les lectures Firebase decoratives ne tombent plus pendant le premier scroll. Les gaps >100 ms restants sont maintenant un sujet d'architecture d'hydratation: shell galerie client encore large, chunks UI/Framer Motion, parse/execute React et raster/paint d'images sous CPU x4. La prochaine optimisation structurante doit etre un decoupage en ilots SSR/client de la galerie publique, avec interactions chargees progressivement.

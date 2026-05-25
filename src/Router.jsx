@@ -40,9 +40,7 @@ const MyOrdersView = React.lazy(() => import('./kit/commerce/MyOrdersView'));
 const OrderSuccessModal = React.lazy(() => import('./kit/commerce/OrderSuccessModal'));
 
 import { useAuth } from './kit/contexts/AuthContext';
-import { doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { db, appId } from './kit/config/firebase';
-import { bumpPublicCatalogVersion } from './kit/admin/publicCatalogInvalidation';
+import { appId } from './kit/config/firebaseEnv';
 import KIT_CONFIG from './kit/config/constants';
 import { getProductUrl } from './utils/slug';
 
@@ -52,6 +50,8 @@ const CategoryPage = React.lazy(() => import('./kit/marketplace/CategoryPage'));
 const MOBILE_MARKETPLACE_QUERY = '(max-width: 1023px)';
 const PULL_REFRESH_THRESHOLD = 74;
 const PULL_REFRESH_MAX_DISTANCE = 96;
+const loadFirebaseRuntime = () => import('./kit/config/firebaseLazy');
+const loadPublicCatalogInvalidation = () => import('./kit/admin/publicCatalogInvalidation');
 
 const ProductDetailFallback = ({ darkMode }) => (
     <div
@@ -381,8 +381,19 @@ const AppRouter = ({
         resetPullRefresh();
     }, [isPullRefreshReady, resetPullRefresh]);
 
+    const getAdminFirestoreRuntime = async () => {
+        const [{ getDb, loadFirestoreModule }, { bumpPublicCatalogVersion }] = await Promise.all([
+            loadFirebaseRuntime(),
+            loadPublicCatalogInvalidation(),
+        ]);
+        const [db, firestore] = await Promise.all([getDb(), loadFirestoreModule()]);
+        return { db, firestore, bumpPublicCatalogVersion };
+    };
+
     const handleToggleStatus = async (item, col) => {
         try {
+            const { db, firestore, bumpPublicCatalogVersion } = await getAdminFirestoreRuntime();
+            const { doc, updateDoc } = firestore;
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', col, item.id), { status: item.status === 'published' ? 'draft' : 'published' });
             await bumpPublicCatalogVersion('product_status_changed', {
                 productId: item.id,
@@ -397,6 +408,8 @@ const AppRouter = ({
     const handleDeleteItem = async (year, id, col) => {
         if (!confirm("Supprimer ?")) return;
         try {
+            const { db, firestore, bumpPublicCatalogVersion } = await getAdminFirestoreRuntime();
+            const { deleteDoc, doc } = firestore;
             await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', col, id));
             await bumpPublicCatalogVersion('product_deleted', { productId: id });
         } catch (e) { console.error(e); }
@@ -405,6 +418,8 @@ const AppRouter = ({
     const handleMarkAsSold = async (item, col) => {
         if (!confirm(`Marquer "${item.name}" comme VENDU ? (Stock à 0)`)) return;
         try {
+            const { db, firestore, bumpPublicCatalogVersion } = await getAdminFirestoreRuntime();
+            const { doc, serverTimestamp, updateDoc } = firestore;
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', col, item.id), {
                 sold: true,
                 stock: 0,
@@ -425,6 +440,8 @@ const AppRouter = ({
     const handleMarkAsAvailable = async (item, col) => {
         if (!confirm(`Remettre "${item.name}" en vente ? (Stock à 1)`)) return;
         try {
+            const { db, firestore, bumpPublicCatalogVersion } = await getAdminFirestoreRuntime();
+            const { doc, updateDoc } = firestore;
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', col, item.id), {
                 sold: false,
                 stock: 1,

@@ -16,8 +16,7 @@ import {
     ShieldCheck,
     Truck,
 } from 'lucide-react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { getDb, loadFirestoreModule } from '../config/firebaseLazy';
 import KIT_CONFIG from '../config/constants';
 
 const CONTACT_INFO_CACHE_KEY = 'secondevie:contact-info:v1';
@@ -216,12 +215,35 @@ const MapFrame = ({ mapUrl, directionUrl, title, darkMode, className = '' }) => 
     );
 };
 
-const DeferredFooterDeliveryImage = ({ darkMode, className = '', alt }) => {
+const DeferredFooterDeliveryImage = ({ darkMode, className = '', alt, mediaQuery = null }) => {
     const imageRef = React.useRef(null);
     const [shouldLoad, setShouldLoad] = useState(false);
+    const [mediaMatches, setMediaMatches] = useState(() => {
+        if (!mediaQuery || typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+            return true;
+        }
+
+        return window.matchMedia(mediaQuery).matches;
+    });
 
     useEffect(() => {
-        if (shouldLoad) return undefined;
+        if (!mediaQuery || typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+            setMediaMatches(true);
+            return undefined;
+        }
+
+        const media = window.matchMedia(mediaQuery);
+        const syncMediaMatches = () => setMediaMatches(media.matches);
+        syncMediaMatches();
+        media.addEventListener?.('change', syncMediaMatches);
+
+        return () => {
+            media.removeEventListener?.('change', syncMediaMatches);
+        };
+    }, [mediaQuery]);
+
+    useEffect(() => {
+        if (shouldLoad || !mediaMatches) return undefined;
 
         const image = imageRef.current;
         if (!image || typeof IntersectionObserver === 'undefined') {
@@ -238,7 +260,7 @@ const DeferredFooterDeliveryImage = ({ darkMode, className = '', alt }) => {
 
         observer.observe(image);
         return () => observer.disconnect();
-    }, [shouldLoad]);
+    }, [mediaMatches, shouldLoad]);
 
     return (
         <img
@@ -271,21 +293,37 @@ const Footer = ({ darkMode, contactInfo: contactInfoOverride }) => {
         if (contactInfoOverride) return undefined;
 
         let mounted = true;
-        getDoc(doc(db, 'sys_metadata', 'contact_info')).then((docSnap) => {
-            if (!mounted) return;
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                setContactInfoState(prev => ({ ...prev, ...data }));
-                try {
-                    localStorage.setItem(CONTACT_INFO_CACHE_KEY, JSON.stringify(data));
-                } catch {
-                    // Cache optional.
+        let idleId = 0;
+        const loadContactInfo = () => {
+            Promise.all([getDb(), loadFirestoreModule()]).then(([db, { doc, getDoc }]) => getDoc(doc(db, 'sys_metadata', 'contact_info'))).then((docSnap) => {
+                if (!mounted) return;
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    setContactInfoState(prev => ({ ...prev, ...data }));
+                    try {
+                        localStorage.setItem(CONTACT_INFO_CACHE_KEY, JSON.stringify(data));
+                    } catch {
+                        // Cache optional.
+                    }
                 }
+            }).catch((error) => {
+                console.error('Footer contact info load error:', error);
+            });
+        };
+        const timeoutId = window.setTimeout(() => {
+            if (typeof window.requestIdleCallback === 'function') {
+                idleId = window.requestIdleCallback(loadContactInfo, { timeout: 6000 });
+                return;
             }
-        }).catch((error) => {
-            console.error('Footer contact info load error:', error);
-        });
-        return () => { mounted = false; };
+            loadContactInfo();
+        }, 45000);
+        return () => {
+            mounted = false;
+            window.clearTimeout(timeoutId);
+            if (idleId && typeof window.cancelIdleCallback === 'function') {
+                window.cancelIdleCallback(idleId);
+            }
+        };
     }, [contactInfoOverride]);
 
     const contactInfo = contactInfoOverride
@@ -356,6 +394,7 @@ const Footer = ({ darkMode, contactInfo: contactInfoOverride }) => {
                     <DeferredFooterDeliveryImage
                         darkMode={darkMode}
                         alt="Livraison partout à Marseille"
+                        mediaQuery="(max-width: 767px)"
                         className="mt-6 w-full rounded-md object-contain"
                     />
                     <div className={`mt-5 grid grid-cols-3 gap-3 text-[10px] ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
@@ -547,6 +586,7 @@ const Footer = ({ darkMode, contactInfo: contactInfoOverride }) => {
                             <DeferredFooterDeliveryImage
                                 darkMode={darkMode}
                                 alt="Livraison partout à Marseille - suivi de commande en temps réel"
+                                mediaQuery="(min-width: 768px)"
                                 className="w-full max-w-[520px] rounded-md object-contain xl:max-w-[600px]"
                             />
                         </div>

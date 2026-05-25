@@ -6,9 +6,7 @@ import ReassuranceSection from './components/ReassuranceSection';
 import { ProductArrivalsSection, ProductSmallPricesSection } from './components/ProductSections';
 import { motion } from 'framer-motion';
 import KIT_CONFIG, { GALLERY_HERO_PRESETS, resolveGalleryHeroImage } from '../config/constants';
-import { where, orderBy, doc, getDoc } from 'firebase/firestore';
-import useFirestoreSection from '../hooks/useFirestoreSection';
-import { db } from '../config/firebase';
+import { getDb, loadFirestoreModule } from '../config/firebaseLazy';
 import { GALLERY_SEO_COPY } from './seoCopy';
 import { preloadImage } from '../../utils/imageUtils';
 
@@ -191,13 +189,40 @@ const isThemeTransitionActive = () => (
     document.documentElement.classList.contains('theme-transitioning')
 );
 
+const DeferredSectionPlaceholder = ({ darkMode, rows = 3 }) => (
+    <div
+        aria-hidden="true"
+        className={`deferred-section-placeholder flex h-full min-h-[inherit] w-full items-center px-4 py-12 md:px-12 lg:px-16 ${
+            darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9]'
+        }`}
+    >
+        <div className="mx-auto grid w-full max-w-[1280px] gap-6 md:grid-cols-[minmax(240px,0.35fr)_minmax(0,1fr)] md:items-center">
+            <div className="space-y-4">
+                <div className={`h-3 w-28 rounded-full ${darkMode ? 'bg-white/10' : 'bg-[#e6ded4]'}`} />
+                <div className={`h-9 w-56 rounded-full ${darkMode ? 'bg-white/12' : 'bg-[#ded3c7]'}`} />
+                <div className={`h-3 w-44 rounded-full ${darkMode ? 'bg-white/8' : 'bg-[#ebe4db]'}`} />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {Array.from({ length: rows }).map((_, index) => (
+                    <div
+                        key={index}
+                        className={`h-44 rounded-[8px] ${darkMode ? 'bg-white/[0.055]' : 'bg-[#efe8df]'}`}
+                    />
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
 const DeferredSectionSlot = ({
     children,
     minHeight,
     delay = 0,
     className = '',
     forceReady = false,
-    desktopRootMargin = DEFERRED_SECTION_DESKTOP_ROOT_MARGIN
+    desktopRootMargin = DEFERRED_SECTION_DESKTOP_ROOT_MARGIN,
+    darkMode = false,
+    placeholderRows = 3
 }) => {
     const slotRef = useRef(null);
     const [isReady, setIsReady] = useState(false);
@@ -256,12 +281,22 @@ const DeferredSectionSlot = ({
     };
 
     return (
-        <div ref={slotRef} className={className} style={placeholderStyle}>
+        <div
+            ref={slotRef}
+            className={className}
+            style={placeholderStyle}
+            data-deferred-section-slot="true"
+            data-deferred-section-ready={isReady ? 'true' : 'false'}
+        >
             {isReady ? (
-                <React.Suspense fallback={null}>
-                    {children}
+                <React.Suspense fallback={<DeferredSectionPlaceholder darkMode={darkMode} rows={placeholderRows} />}>
+                    <div className="deferred-section-reveal">
+                        {children}
+                    </div>
                 </React.Suspense>
-            ) : null}
+            ) : (
+                <DeferredSectionPlaceholder darkMode={darkMode} rows={placeholderRows} />
+            )}
         </div>
     );
 };
@@ -332,13 +367,34 @@ const MarketplaceLayout = ({
     const [galleryConfig, setGalleryConfig] = useState(null);
 
     useEffect(() => {
+        let cancelled = false;
+        let idleId = 0;
+        let timeoutId = 0;
+
         const fetchGalleryConfig = async () => {
              try {
+                 const [db, { doc, getDoc }] = await Promise.all([getDb(), loadFirestoreModule()]);
+                 if (cancelled) return;
                  const snap = await getDoc(doc(db, 'sys_metadata', 'gallery_app'));
-                 if (snap.exists()) setGalleryConfig(snap.data());
+                 if (!cancelled && snap.exists()) setGalleryConfig(snap.data());
              } catch (error) { console.error("Error fetching gallery config:", error); }
         };
-        fetchGalleryConfig();
+
+        timeoutId = window.setTimeout(() => {
+            if (typeof window.requestIdleCallback === 'function') {
+                idleId = window.requestIdleCallback(fetchGalleryConfig, { timeout: 4000 });
+                return;
+            }
+            fetchGalleryConfig();
+        }, 45000);
+
+        return () => {
+            cancelled = true;
+            window.clearTimeout(timeoutId);
+            if (idleId && typeof window.cancelIdleCallback === 'function') {
+                window.cancelIdleCallback(idleId);
+            }
+        };
     }, []);
 
     const customHeroImages = useMemo(() => (
@@ -632,12 +688,12 @@ const MarketplaceLayout = ({
             />
 
             {/* ÉTAPE 5 : Avant / Après — atelier premium adouci */}
-            <DeferredSectionSlot minHeight="760px" delay={0}>
+            <DeferredSectionSlot minHeight="760px" delay={0} darkMode={darkMode} placeholderRows={3}>
                 <BeforeAfterSection darkMode={darkMode} projects={dynamicProjects} />
             </DeferredSectionSlot>
 
             {/* ÉTAPE 6 : "Le Rattrapage" (Grille Petits Prix) */}
-            <DeferredSectionSlot minHeight="1060px" delay={80}>
+            <DeferredSectionSlot minHeight="1060px" delay={80} darkMode={darkMode} placeholderRows={4}>
                 <ProductSmallPricesSection
                     heading={<SectionHeading tone="price">Petits Prix</SectionHeading>}
                     items={items}
@@ -655,17 +711,17 @@ const MarketplaceLayout = ({
             </DeferredSectionSlot>
 
             {/* ÉTAPE 7 : "La Connexion Humaine" (Le mur Instagram) - Version Marketplace Stylisée */}
-            <DeferredSectionSlot minHeight="1060px" delay={120}>
+            <DeferredSectionSlot minHeight="1060px" delay={120} darkMode={darkMode} placeholderRows={4}>
                 <InstagramSection darkMode={darkMode} posts={dynamicInsta} />
             </DeferredSectionSlot>
 
             {/* ÉTAPE 8 : Le "Juge de Paix" (Les Avis Google) */}
-            <DeferredSectionSlot minHeight="640px" delay={160}>
+            <DeferredSectionSlot minHeight="640px" delay={160} darkMode={darkMode} placeholderRows={3}>
                 <TestimonialsSection darkMode={darkMode} />
             </DeferredSectionSlot>
 
             {/* ÉTAPE 9 : "La Capture" (Newsletter Minimaliste) */}
-            <DeferredSectionSlot minHeight="760px" delay={200} desktopRootMargin="1600px 0px 2200px">
+            <DeferredSectionSlot minHeight="760px" delay={200} desktopRootMargin="1600px 0px 2200px" darkMode={darkMode} placeholderRows={4}>
                 <NewsletterSection darkMode={darkMode} />
             </DeferredSectionSlot>
         </div>

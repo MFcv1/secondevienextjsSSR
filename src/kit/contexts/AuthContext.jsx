@@ -1,6 +1,5 @@
 ﻿import React, { createContext, useContext, useEffect, useState } from 'react';
-import { httpsCallable } from 'firebase/functions';
-import { functions, getFirebaseAuth, getGoogleProvider, loadAuthModule } from '../config/firebase';
+import { getCallableFunction, getFirebaseAuth, getGoogleProvider, loadAuthModule } from '../config/firebaseLazy';
 
 // âš ï¸ CONFIGURER dans .env.local : VITE_SUPER_ADMIN_EMAIL=votre@email.com
 const SUPER_ADMIN_EMAIL = process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '';
@@ -84,7 +83,8 @@ export const AuthProvider = ({ children }) => {
                 try {
                     const result = await getRedirectResult(auth);
                     if (result && result.user && !cancelled) {
-                        httpsCallable(functions, 'updateUserSessions')()
+                        getCallableFunction('updateUserSessions')
+                            .then((updateUserSessions) => updateUserSessions())
                             .catch(err => console.error('Failed to clean sessions after redirect login:', err));
                     }
                 } catch (error) {
@@ -177,7 +177,8 @@ export const AuthProvider = ({ children }) => {
         }
         // Normal browser (Safari, Chrome, etc.): signInWithPopup works fine
         const result = await module.signInWithPopup(auth, googleProvider);
-        httpsCallable(functions, 'updateUserSessions')()
+        getCallableFunction('updateUserSessions')
+            .then((updateUserSessions) => updateUserSessions())
             .catch(err => console.error('Failed to clean sessions after login:', err));
         return syncSignedInUser(result);
     };

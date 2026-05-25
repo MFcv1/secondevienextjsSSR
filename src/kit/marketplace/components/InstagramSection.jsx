@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUpRight, ChevronLeft, ChevronRight, Heart, Instagram, Sparkles } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 const INSTAGRAM_URL = 'https://www.instagram.com/secondevie_anais';
 const INSTAGRAM_FOLLOWERS_TARGET = 38.9;
 const INSTAGRAM_DESKTOP_ACTIVE_ROOT_MARGIN = '80px 0px';
@@ -76,39 +76,44 @@ const MOBILE_INSTA_COPY = [
 ];
 
 const MOBILE_INSTA_POSITIONS = {
-    hiddenLeft: { transform: 'translateX(-190%) scale(0.86)', opacity: 1, zIndex: 0, pointerEvents: 'none' },
-    left: { transform: 'translateX(-134%) scale(0.88)', opacity: 1, zIndex: 1, pointerEvents: 'none' },
+    hiddenLeft: { transform: 'translateX(-206%) scale(0.86)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
+    left: { transform: 'translateX(-116%) scale(0.9)', opacity: 0.48, zIndex: 1, pointerEvents: 'none' },
     center: { transform: 'translateX(-50%) scale(1)', opacity: 1, zIndex: 3, pointerEvents: 'auto' },
-    right: { transform: 'translateX(34%) scale(0.88)', opacity: 1, zIndex: 1, pointerEvents: 'none' },
-    hiddenRight: { transform: 'translateX(90%) scale(0.86)', opacity: 1, zIndex: 0, pointerEvents: 'none' }
+    right: { transform: 'translateX(16%) scale(0.9)', opacity: 0.5, zIndex: 1, pointerEvents: 'none' },
+    hiddenRight: { transform: 'translateX(106%) scale(0.86)', opacity: 0, zIndex: 0, pointerEvents: 'none' }
 };
 
 const DESKTOP_INSTA_POSITIONS = {
-    hiddenLeft: { x: '-285%', scale: 0.82, opacity: 0, zIndex: 0, pointerEvents: 'none' },
-    left: { x: '-166%', scale: 0.88, opacity: 1, zIndex: 1, pointerEvents: 'none' },
-    center: { x: '-50%', scale: 1, opacity: 1, zIndex: 3, pointerEvents: 'auto' },
-    right: { x: '66%', scale: 0.88, opacity: 1, zIndex: 1, pointerEvents: 'none' },
-    hiddenRight: { x: '185%', scale: 0.82, opacity: 0, zIndex: 0, pointerEvents: 'none' },
+    hiddenLeft: { transform: 'translateX(-248%) scale(0.88)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
+    left: { transform: 'translateX(-145%) scale(0.92)', opacity: 0.54, zIndex: 1, pointerEvents: 'none' },
+    center: { transform: 'translateX(-50%) scale(1)', opacity: 1, zIndex: 3, pointerEvents: 'auto' },
+    right: { transform: 'translateX(45%) scale(0.92)', opacity: 0.58, zIndex: 1, pointerEvents: 'none' },
+    hiddenRight: { transform: 'translateX(148%) scale(0.88)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
+};
+
+const wrapInstaIndex = (index, count) => (index + count) % count;
+
+const getInstaPosition = (index, activeIndex, count) => {
+    const offset = (index - activeIndex + count) % count;
+    if (offset === 0) return 'center';
+    if (offset === 1) return 'right';
+    if (offset === count - 1) return 'left';
+    return offset > count / 2 ? 'hiddenLeft' : 'hiddenRight';
 };
 
 
 const InstagramSection = ({ darkMode, posts = [] }) => {
     const dynamicInsta = Array.isArray(posts) ? posts : [];
     const [activeInstaIndex, setActiveInstaIndex] = useState(1);
-    const [activeInstaDirection, setActiveInstaDirection] = useState(1);
     const [instaSlideVersion, setInstaSlideVersion] = useState(0);
     const [isInstaSectionActive, setIsInstaSectionActive] = useState(false);
     const activeInstaIndexRef = useRef(1);
     const instaSectionRef = useRef(null);
     const goToInsta = useCallback((idx) => {
         if (!dynamicInsta.length) return;
-        const next = (idx + dynamicInsta.length) % dynamicInsta.length;
         const current = activeInstaIndexRef.current;
-        const forwardDistance = (next - current + dynamicInsta.length) % dynamicInsta.length;
-        const backwardDistance = (current - next + dynamicInsta.length) % dynamicInsta.length;
-        if (next !== current) {
-            setActiveInstaDirection(forwardDistance <= backwardDistance ? 1 : -1);
-        }
+        const next = wrapInstaIndex(typeof idx === 'function' ? idx(current) : idx, dynamicInsta.length);
+        if (next === current) return;
         activeInstaIndexRef.current = next;
         setActiveInstaIndex(next);
         setInstaSlideVersion(v => v + 1);
@@ -119,20 +124,14 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
         if (shouldAdvance) goToInsta(activeInstaIndexRef.current + 1);
         if (shouldRewind) goToInsta(activeInstaIndexRef.current - 1);
     }, [goToInsta]);
-    const getMobileInstaPosition = useCallback((index) => {
-        const offset = (index - activeInstaIndex + dynamicInsta.length) % dynamicInsta.length;
-        if (offset === 0) return 'center';
-        if (offset === 1) return 'right';
-        if (offset === dynamicInsta.length - 1) return 'left';
-        return 'hidden';
-    }, [activeInstaIndex, dynamicInsta.length]);
-    const getDesktopInstaPosition = useCallback((index) => {
-        const offset = (index - activeInstaIndex + dynamicInsta.length) % dynamicInsta.length;
-        if (offset === 0) return 'center';
-        if (offset === 1) return 'right';
-        if (offset === dynamicInsta.length - 1) return 'left';
-        return 'hidden';
-    }, [activeInstaIndex, dynamicInsta.length]);
+    const positionedInsta = useMemo(() => {
+        if (!dynamicInsta.length) return [];
+        return dynamicInsta.map((post, index) => ({
+            post,
+            index,
+            position: getInstaPosition(index, activeInstaIndex, dynamicInsta.length),
+        }));
+    }, [activeInstaIndex, dynamicInsta]);
     useEffect(() => {
         activeInstaIndexRef.current = activeInstaIndex;
     }, [activeInstaIndex]);
@@ -159,15 +158,15 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
         if (!isInstaSectionActive || !dynamicInsta.length) return undefined;
         const timer = setInterval(() => {
             if (isThemeTransitionActive()) return;
-            goToInsta(activeInstaIndexRef.current + 1);
+            goToInsta(current => current + 1);
         }, INSTA_DURATION);
         return () => clearInterval(timer);
     }, [goToInsta, isInstaSectionActive, dynamicInsta.length]);
     const handleInstaSelect = (index) => {
         goToInsta(index);
     };
-    const handlePrevInsta = () => goToInsta(activeInstaIndexRef.current - 1);
-    const handleNextInsta = () => goToInsta(activeInstaIndexRef.current + 1);
+    const handlePrevInsta = () => goToInsta(current => current - 1);
+    const handleNextInsta = () => goToInsta(current => current + 1);
     if (!dynamicInsta.length) return null;
     return (
             <section
@@ -216,19 +215,14 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
                         dragMomentum={false}
                         onDragEnd={handleInstaDragEnd}
                     >
-                        <AnimatePresence initial={false}>
-                            {dynamicInsta.map((post, index) => {
-                                const position = getMobileInstaPosition(index);
-                                if (position === 'hidden') return null;
+                            {positionedInsta.map(({ post, index, position }) => {
                                 const copy = MOBILE_INSTA_COPY[index] || MOBILE_INSTA_COPY[0];
                                 const isCenter = position === 'center';
                                 return (
                                     <motion.article
                                         key={`insta-${index}-${post.img}`}
-                                        initial={MOBILE_INSTA_POSITIONS[activeInstaDirection > 0 ? 'hiddenRight' : 'hiddenLeft']}
                                         animate={MOBILE_INSTA_POSITIONS[position]}
-                                        exit={MOBILE_INSTA_POSITIONS[activeInstaDirection > 0 ? 'hiddenLeft' : 'hiddenRight']}
-                                        transition={{ type: "spring", stiffness: 190, damping: 27, mass: 1.05 }}
+                                        transition={{ type: "spring", stiffness: 230, damping: 31, mass: 0.9 }}
                                         className={`absolute left-1/2 top-0 w-[62vw] max-w-[226px] overflow-hidden rounded-[22px] shadow-[0_18px_38px_rgba(32,26,20,0.12)] will-change-transform md:max-w-[250px] ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}
                                         aria-hidden={!isCenter}
                                     >
@@ -261,7 +255,6 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
                                     </motion.article>
                                 );
                             })}
-                        </AnimatePresence>
                     </motion.div>
 
                     <div className="mx-auto mt-8 flex max-w-[220px] items-center justify-center gap-4 px-5">
@@ -346,20 +339,15 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
                         dragMomentum={false}
                         onDragEnd={handleInstaDragEnd}
                     >
-                        <AnimatePresence initial={false}>
-                            {dynamicInsta.map((post, index) => {
-                                const position = getDesktopInstaPosition(index);
-                                if (position === 'hidden') return null;
+                            {positionedInsta.map(({ post, index, position }) => {
                                 const copy = MOBILE_INSTA_COPY[index] || MOBILE_INSTA_COPY[0];
                                 const isCenter = position === 'center';
 
                                 return (
                                     <motion.article
                                         key={`insta-desktop-${index}-${post.img}`}
-                                        initial={DESKTOP_INSTA_POSITIONS[activeInstaDirection > 0 ? 'hiddenRight' : 'hiddenLeft']}
                                         animate={DESKTOP_INSTA_POSITIONS[position]}
-                                        exit={DESKTOP_INSTA_POSITIONS[activeInstaDirection > 0 ? 'hiddenLeft' : 'hiddenRight']}
-                                        transition={{ type: "spring", stiffness: 145, damping: 32, mass: 1.12 }}
+                                        transition={{ type: "spring", stiffness: 230, damping: 31, mass: 0.9 }}
                                         className={`absolute left-1/2 top-2 w-[min(26vw,312px)] overflow-hidden rounded-[28px] shadow-[0_24px_60px_rgba(32,26,20,0.13)] will-change-transform xl:w-[min(25vw,340px)] xl:rounded-[34px] ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}
                                         aria-hidden={!isCenter}
                                     >
@@ -392,7 +380,6 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
                                     </motion.article>
                                 );
                             })}
-                        </AnimatePresence>
                     </motion.div>
 
                     <div className="mx-auto mt-7 grid w-full max-w-[380px] grid-cols-[52px_1fr_52px] items-center gap-4 xl:mt-9 xl:max-w-[420px] xl:grid-cols-[58px_1fr_58px] xl:gap-5">

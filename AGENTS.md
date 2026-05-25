@@ -25,7 +25,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |   |-- kit/admin : back-office, analytics, commandes, SEO, users, exports CSV, docs/etudes techniques admin
 |   |-- kit/commerce : panier, checkout, login, commandes client
 |   |-- kit/marketplace : galerie, SEO visible, pages categorie/produit, layout, wishlist, devis
-|   |-- kit/layout, kit/shared, kit/ui, kit/hooks, kit/contexts, kit/config
+|   |-- kit/layout, kit/shared, kit/ui, kit/hooks, kit/contexts, kit/config (dont firebaseEnv/firebaseCore/firebaseLazy)
 |   |-- vitrine : HomeView et sections de la page A propos (ancienne vitrine)
 |   `-- assets, utils : images source et helpers
 |-- functions
@@ -275,9 +275,26 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 - `src/kit/marketplace/MarketplaceLayout.jsx` pause le carousel hero au demarrage froid. Tant que l'utilisateur scrolle vite hors du hero, seule l'image hero active est demandee; les slides suivantes ne sont prechargees qu'apres idle si l'utilisateur reste proche du hero, ou apres clic volontaire sur un dot.
 - `src/kit/marketplace/components/MarketplaceHero.jsx` met aussi en pause l'animation de progression du hero tant que le carousel n'est pas prime, pour eviter une jauge qui avancerait sans changement de slide.
 - `src/kit/layout/Footer.jsx` charge l'image "livraison" via `IntersectionObserver` avec dimensions reservees et pixel transparent tant que l'image reelle n'est pas proche/visible. Un garde `offsetParent` evite de charger l'image du layout cache mobile/desktop.
+- `src/kit/marketplace/components/InstagramSection.jsx` garde les cartes montees et anime uniquement `transform`/`opacity`, sans `AnimatePresence` ni montage/demontage de cartes a chaque slide. Les transitions Instagram sont donc moins brutales et generent moins de churn React pendant le scroll bas de page.
 - Mesure reseau notable : sur le scenario `perf:scroll:newsletter`, le segment de scroll froid est passe d'environ 1.43 MB a environ 0.97 MB apres pause du hero et lazy footer; les images `imagehero/2.webp`, `imagehero/3.webp` et `imagehero/4.webp` ne partent plus pendant ce premier scroll. Les gates scroll restent vertes.
+- Passe complementaire : l'etat media-query initial de l'image livraison footer est maintenant calcule au premier rendu, ce qui evite d'observer/charger aussi la variante cachee. L'image reelle fade-in via CSS sous `prefers-reduced-motion: no-preference`. Sur le scenario newsletter final, le segment de scroll descend a environ 0.88 MB et l'image livraison ne part plus qu'une fois.
 - Validations executees apres cette passe : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, `npm run perf:scroll`, `npm run perf:scroll:newsletter`.
 - Limite restante : les plus gros frame gaps viennent encore de l'hydratation du shell galerie et des gros chunks initiaux. La prochaine passe utile est l'isolation du shell public galerie / menu / sections interactives, pas le retour a des timers courts.
+
+### Goal 15 - Roadmap hydratation scroll appliquee
+
+- Probleme traite apres Goal 14 : les locks desktop, le footer/newsletter et les timers courts etaient corriges, mais les audits CPU x4 montraient encore des frame gaps >100 ms pendant le premier scroll. La cause restante etait surtout l'hydratation du shell galerie et les gros chunks initiaux, avec encore trop d'imports Firebase/Firestore decoratifs dans le chemin public.
+- Roadmap implementee : rendre Firebase plus paresseux, dedoublonner le fetch catalogue public, retarder les lectures decoratives non critiques, et sortir le menu global du chunk immediat.
+- `src/kit/config/firebaseEnv.js`, `firebaseCore.js` et `firebaseLazy.js` separent maintenant les constantes publiques legeres, l'initialisation app Firebase, puis les runtimes Firestore/Functions/Auth/AppCheck charges a la demande.
+- `src/app.jsx`, `src/Router.jsx`, `src/kit/contexts/AuthContext.jsx`, `src/kit/layout/Footer.jsx`, `src/kit/config/theme.js`, `src/kit/marketplace/MarketplaceLayout.jsx` et `AnnouncementBanner.jsx` evitent les imports statiques Firestore/Functions/Auth sur le parcours public initial quand ils ne sont pas necessaires.
+- `src/app.jsx` force le chemin `publicCatalog` meme en localhost et dedoublonne les fetches en vol. Dans l'audit scroll immediat final, il reste une seule requete cloud-function catalogue et aucune requete Firestore reseau pendant le segment mesure.
+- Les lectures decoratives `theme_settings`, `contact_info`, `gallery_app` et `announcement_config` sont repoussees a `45 s` + idle. Les valeurs par defaut/cache restent visibles, donc le premier scroll ne depend plus de ces petits documents.
+- `GlobalMenu` est maintenant charge via `React.lazy`; son preload reste possible sur intention, sans imposer son chunk au premier scroll froid.
+- Mobile conserve : l'invariant `const shouldUseMobileGalleryScroll = view === 'gallery' || isGalleryDetailOverlay;` est intact, et les contrats `marketplace-gallery-shell`, `marketplace-gallery-scroll`, `data-native-scroll-region` restent valides.
+- Mesure finale scroll immediat (`seconde-vie-immediate-hydration-env-split-final-2`) : `gallery-entry-scroll-lock` absent, `overflow:hidden` absent, premier scroll effectif en `177 ms` apres document scrollable, 46 requetes, 1 cloud-function, 0 Firestore reseau, long tasks `11 / 1805 ms / max 329 ms`, frame gaps `max 383 ms`, `6` gaps >100 ms.
+- Mesure finale newsletter (`seconde-vie-newsletter-hydration-env-split-final-2`) : assertions OK, 0 lock, 0 overflow hidden, 0 `bottomWithoutFooterOrPlaceholder`, footer placeholder prepare a `1460 ms`, footer reel monte a `3105 ms`, newsletter montee a `3882 ms`, 51 requetes, 1 cloud-function, 0 Firestore reseau, frame gaps `max 567 ms`, `7` gaps >100 ms.
+- Limite restante documentee : les gaps >100 ms ne viennent plus du lock desktop ni de Firestore decoratif pendant le scroll. Ils viennent du cout de parsing/execution du shell galerie, des chunks initiaux (`Router`, sections marketplace, Framer Motion/UI), des images encore demandees plusieurs fois sous cache desactive, et du paint/raster sous CPU x4. La suite utile est une isolation plus profonde du shell public galerie en ilots SSR/client, pas un nouveau timer court.
+- Validations executees apres cette passe : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, `npm run perf:scroll`, `npm run perf:scroll:newsletter`.
 
 ## ðŸ› ï¸ Structure des Fichiers .env
 Nous n'utilisons PLUS de fichier `.env` unique. Tout est pilote par des fichiers suffixes locaux :

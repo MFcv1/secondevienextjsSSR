@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from './firebase';
+import { getDb, loadFirestoreModule } from './firebaseLazy';
 
 const THEME_CACHE_KEY = 'themeSettings';
 let themeSettingsCache = null;
@@ -22,7 +21,8 @@ const loadThemeSettings = () => {
     if (themeSettingsCache) return Promise.resolve(themeSettingsCache);
     if (themeSettingsPromise) return themeSettingsPromise;
 
-    themeSettingsPromise = getDoc(doc(db, 'sys_metadata', 'theme_settings'))
+    themeSettingsPromise = Promise.all([getDb(), loadFirestoreModule()])
+        .then(([db, { doc, getDoc }]) => getDoc(doc(db, 'sys_metadata', 'theme_settings')))
         .then((docSnap) => {
             const data = docSnap.exists() ? docSnap.data() : {};
             themeSettingsCache = { ...data, activeDesignId: 'architectural' };
@@ -57,18 +57,36 @@ export const useLiveTheme = () => {
 
     useEffect(() => {
         let mounted = true;
-        loadThemeSettings().then((data) => {
-            if (!mounted) return;
-            setForcedMode(data.forcedMode || 'light');
-            setIsThemeLoading(false);
-        }).catch((err) => {
-            if (mounted) {
-                console.error("Theme settings load error:", err);
-                setIsThemeLoading(false);
-            }
-        });
+        let idleId = 0;
+        const timeoutId = window.setTimeout(() => {
+            const run = () => {
+                loadThemeSettings().then((data) => {
+                    if (!mounted) return;
+                    setForcedMode(data.forcedMode || 'light');
+                    setIsThemeLoading(false);
+                }).catch((err) => {
+                    if (mounted) {
+                        console.error("Theme settings load error:", err);
+                        setIsThemeLoading(false);
+                    }
+                });
+            };
 
-        return () => { mounted = false; };
+            if (typeof window.requestIdleCallback === 'function') {
+                idleId = window.requestIdleCallback(run, { timeout: 3000 });
+                return;
+            }
+
+            run();
+        }, 45000);
+
+        return () => {
+            mounted = false;
+            window.clearTimeout(timeoutId);
+            if (idleId && typeof window.cancelIdleCallback === 'function') {
+                window.cancelIdleCallback(idleId);
+            }
+        };
     }, []);
 
     // Palette is handled by architectural internal CSS/Tailwind usually, 

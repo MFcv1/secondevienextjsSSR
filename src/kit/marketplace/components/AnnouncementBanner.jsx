@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../../config/firebase';
+import { getDb, loadFirestoreModule } from '../../config/firebaseLazy';
 
 const DEFAULT_MESSAGES = [
     "🔥 Livraison offerte dès 250€ d'achat",
@@ -15,10 +14,15 @@ export default function AnnouncementBanner({ darkMode, isCollapsedOnMobile = fal
     const [messages, setMessages] = useState(DEFAULT_MESSAGES);
 
     useEffect(() => {
+        let cancelled = false;
+        let idleId = 0;
+
         const fetchMessages = async () => {
             try {
+                const [db, { doc, getDoc }] = await Promise.all([getDb(), loadFirestoreModule()]);
+                if (cancelled) return;
                 const snap = await getDoc(doc(db, 'sys_metadata', 'gallery_app'));
-                if (snap.exists()) {
+                if (!cancelled && snap.exists()) {
                     const data = snap.data();
                     const bannerText = data.announcement_banner_text;
                     if (bannerText) {
@@ -32,7 +36,22 @@ export default function AnnouncementBanner({ darkMode, isCollapsedOnMobile = fal
                 console.error("Error fetching announcement banner:", error);
             }
         };
-        fetchMessages();
+
+        const timeoutId = window.setTimeout(() => {
+            if (typeof window.requestIdleCallback === 'function') {
+                idleId = window.requestIdleCallback(fetchMessages, { timeout: 4000 });
+                return;
+            }
+            fetchMessages();
+        }, 45000);
+
+        return () => {
+            cancelled = true;
+            window.clearTimeout(timeoutId);
+            if (idleId && typeof window.cancelIdleCallback === 'function') {
+                window.cancelIdleCallback(idleId);
+            }
+        };
     }, []);
 
     useEffect(() => {

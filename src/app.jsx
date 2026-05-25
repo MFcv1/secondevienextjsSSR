@@ -2,16 +2,12 @@ import React, { Suspense, useState, useEffect, useRef, useCallback } from 'react
 
 import { AuthProvider, useAuth } from './kit/contexts/AuthContext';
 import {
-  onSnapshot, collection, doc, deleteDoc, serverTimestamp, addDoc, setDoc, query, getDocs, getDoc, writeBatch, where, orderBy, limit
-} from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import {
   Hammer, LogOut, ShieldCheck, Menu, X, Eye, EyeOff, ShoppingBag, Sun, Moon, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- IMPORTS KIT (standardisé) ---
-import { db, appId, functions } from './kit/config/firebase';
+import { appId } from './kit/config/firebaseEnv';
 import { getMillis } from './utils/time';
 import { extractCategoryIdFromPath, extractProductIdFromPath, getCategoryUrl, getProductUrl } from './utils/slug';
 import { useLiveTheme } from './kit/config/theme';
@@ -33,12 +29,14 @@ import AnnouncementBanner from './kit/marketplace/components/AnnouncementBanner'
 
 const loadCartSidebar = () => import('./kit/commerce/CartSidebar');
 const loadFooter = () => import('./kit/layout/Footer');
+const loadGlobalMenu = () => import('./kit/layout/GlobalMenu');
 const loadMarketplaceDiscovery = () => import('./kit/marketplace/MarketplaceDiscovery');
 const loadAnalyticsProvider = () => import('./kit/shared/AnalyticsProvider');
-import GlobalMenu from './kit/layout/GlobalMenu';
+const loadFirebaseRuntime = () => import('./kit/config/firebaseLazy');
 
 const CartSidebar = React.lazy(loadCartSidebar);
 const Footer = React.lazy(loadFooter);
+const GlobalMenu = React.lazy(loadGlobalMenu);
 const MarketplaceDiscovery = React.lazy(loadMarketplaceDiscovery);
 
 const FooterLoadingPlaceholder = ({ darkMode = false }) => {
@@ -223,9 +221,10 @@ const mergeItemsById = (currentItems, incomingItems) => {
 const isFullCatalogItem = (item) => item?.__catalogScope === 'full';
 
 const shouldUsePublicCatalogEndpoint = () => {
-  if (typeof window === 'undefined') return true;
-  return !['127.0.0.1', 'localhost'].includes(window.location.hostname);
+  return true;
 };
+
+const publicCatalogFetches = new Map();
 
 const isRootGalleryEntryUrl = () => (
   typeof window !== 'undefined' &&
@@ -251,7 +250,7 @@ const AppContent = () => {
   const [catalogFetchMode, setCatalogFetchMode] = useState('initial');
   const [isCatalogComplete, setIsCatalogComplete] = useState(false);
   const [isLoadingFullCatalog, setIsLoadingFullCatalog] = useState(false);
-  const [contactInfo, setContactInfo] = useState(() => readJsonStorage(
+  const [contactInfo] = useState(() => readJsonStorage(
     typeof window !== 'undefined' ? window.localStorage : null,
     CONTACT_INFO_CACHE_KEY,
     {}
@@ -276,10 +275,13 @@ const AppContent = () => {
   const requestCategoryCatalog = useCallback((categoryId) => {
     if (!categoryId || isCatalogComplete) return Promise.resolve([]);
 
-    return import('./kit/marketplace/categoryCatalogLoader')
-      .then(({ loadCategoryCatalog }) => loadCategoryCatalog({
+    return Promise.all([
+      import('./kit/marketplace/categoryCatalogLoader'),
+      loadFirebaseRuntime(),
+    ])
+      .then(async ([{ loadCategoryCatalog }, { getDb }]) => loadCategoryCatalog({
         categoryId,
-        db,
+        db: await getDb(),
         appId,
         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
         isCatalogComplete,
@@ -303,7 +305,11 @@ const AppContent = () => {
     const inflight = productDetailFetchesRef.current.get(id);
     if (inflight) return inflight;
 
-    const request = getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'furniture', id))
+    const request = loadFirebaseRuntime()
+      .then(async ({ getDb, loadFirestoreModule }) => {
+        const [db, { doc, getDoc }] = await Promise.all([getDb(), loadFirestoreModule()]);
+        return getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'furniture', id));
+      })
       .then((snapshot) => {
         if (!snapshot.exists()) return null;
 
@@ -341,20 +347,6 @@ const AppContent = () => {
     };
   }, []);
 
-  // Fetch Contact Info for Menu/Footer (single read + local cache)
-  useEffect(() => {
-    let mounted = true;
-    getDoc(doc(db, 'sys_metadata', 'contact_info')).then((snap) => {
-      if (!mounted || !snap.exists()) return;
-      const data = snap.data();
-      setContactInfo(data);
-      writeJsonStorage(localStorage, CONTACT_INFO_CACHE_KEY, data);
-    }).catch((error) => {
-      console.error('Contact info load error:', error);
-    });
-    return () => { mounted = false; };
-  }, []);
-
   // Cart State
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -362,6 +354,7 @@ const AppContent = () => {
   // Wishlist State
   const [wishlistItems, setWishlistItems] = useState([]);
   const [cartInteracted, setCartInteracted] = useState(false); // Prevents initial flash
+  const [shouldReserveDeferredFooter, setShouldReserveDeferredFooter] = useState(false);
   const [shouldRenderDeferredFooter, setShouldRenderDeferredFooter] = useState(false);
   const [showOrderSuccess, setShowOrderSuccess] = useState(false);
   const [orderSuccessMethod, setOrderSuccessMethod] = useState(''); // Tracks which payment method was used
@@ -415,6 +408,7 @@ const AppContent = () => {
   const GLOBAL_MENU_HEADER_RELEASE_MS = 780;
 
   const prepareGlobalMenu = useCallback(() => {
+    loadGlobalMenu().catch(() => {});
     setShouldKeepGlobalMenuMounted(true);
   }, []);
 
@@ -467,6 +461,7 @@ const AppContent = () => {
   }, []);
 
   const revealDeferredFooter = useCallback(() => {
+    setShouldReserveDeferredFooter(true);
     setShouldRenderDeferredFooter(true);
     loadFooter().catch(() => {});
   }, []);
@@ -486,6 +481,10 @@ const AppContent = () => {
       if (!sentinel) return;
 
       if (sentinel.dataset.deferredFooterSentinel === 'gallery') {
+        if (window.scrollY > 1200) {
+          setShouldReserveDeferredFooter(true);
+        }
+
         if (window.scrollY > 3600) {
           revealDeferredFooter();
           return;
@@ -750,20 +749,36 @@ const AppContent = () => {
       const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
       const params = full ? '' : `?limit=${PUBLIC_ITEMS_INITIAL_LIMIT}&scope=cards`;
       const url = `https://us-central1-${projectId}.cloudfunctions.net/publicCatalog${params}`;
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`publicCatalog ${response.status}`);
-      const payload = await response.json();
-      const furniture = payload?.collections?.furniture || [];
-      const catalogScope = payload?.scope === 'cards' ? 'cards' : 'full';
-      return {
-        catalogVersion: payload?.catalogVersion || null,
-        items: furniture
-          .map((item) => ({ collectionName: 'furniture', ...item, __catalogScope: catalogScope }))
-          .sort((a, b) => getMillis(b.createdAt) - getMillis(a.createdAt))
-      };
+      const inflight = publicCatalogFetches.get(url);
+      if (inflight) return inflight;
+
+      const request = fetch(url)
+        .then(async (response) => {
+          if (!response.ok) throw new Error(`publicCatalog ${response.status}`);
+          const payload = await response.json();
+          const furniture = payload?.collections?.furniture || [];
+          const catalogScope = payload?.scope === 'cards' ? 'cards' : 'full';
+          return {
+            catalogVersion: payload?.catalogVersion || null,
+            items: furniture
+              .map((item) => ({ collectionName: 'furniture', ...item, __catalogScope: catalogScope }))
+              .sort((a, b) => getMillis(b.createdAt) - getMillis(a.createdAt))
+          };
+        })
+        .finally(() => {
+          publicCatalogFetches.delete(url);
+        });
+
+      publicCatalogFetches.set(url, request);
+      return request;
     };
 
     const fetchPublishedItemsFromFirestore = async (full = false) => {
+      const { getDb, loadFirestoreModule } = await loadFirebaseRuntime();
+      const [db, { collection, getDocs, limit, orderBy, query, where }] = await Promise.all([
+        getDb(),
+        loadFirestoreModule(),
+      ]);
       const constraints = [
         where('status', '==', 'published'),
         orderBy('createdAt', 'desc'),
@@ -839,12 +854,20 @@ const AppContent = () => {
     const isAdminLiveView = view === 'admin' && isAdmin && ADMIN_LIVE_ITEM_TABS.has(adminCollection);
 
     if (isAdminLiveView) {
-      unsubscribe = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'furniture'), (snap) => {
-        setItems(mapItems(snap).map(item => ({ ...item, __catalogScope: 'full' })));
-        lastItemsFetchAtRef.current = Date.now();
-      }, (error) => {
-        console.error("Erreur lecture publications:", error);
-      });
+      loadFirebaseRuntime()
+        .then(async ({ getDb, loadFirestoreModule }) => {
+          const [db, { collection, onSnapshot }] = await Promise.all([getDb(), loadFirestoreModule()]);
+          if (cancelled) return;
+          unsubscribe = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'furniture'), (snap) => {
+            setItems(mapItems(snap).map(item => ({ ...item, __catalogScope: 'full' })));
+            lastItemsFetchAtRef.current = Date.now();
+          }, (error) => {
+            console.error("Erreur lecture publications:", error);
+          });
+        })
+        .catch((error) => {
+          if (!cancelled) console.error("Erreur lecture publications:", error);
+        });
     } else if (isPreparingGallery || ['gallery', 'detail', 'category', 'wishlist', 'checkout', 'my-orders', 'devis'].includes(view)) {
       fetchPublishedItems();
       const handleVisibility = () => {
@@ -880,10 +903,13 @@ const AppContent = () => {
       const lastLogAt = Number(sessionStorage.getItem(storageKey) || 0);
       if (Date.now() - lastLogAt > USER_CONNECTION_LOG_TTL_MS) {
         sessionStorage.setItem(storageKey, String(Date.now()));
-        httpsCallable(functions, 'logUserConnection')().catch(e => {
-          sessionStorage.removeItem(storageKey);
-          console.error("SecLog Error", e);
-        });
+        loadFirebaseRuntime()
+          .then(({ getCallableFunction }) => getCallableFunction('logUserConnection'))
+          .then((logUserConnection) => logUserConnection())
+          .catch(e => {
+            sessionStorage.removeItem(storageKey);
+            console.error("SecLog Error", e);
+          });
       }
     }
 
@@ -901,6 +927,11 @@ const AppContent = () => {
 
         // 3. Vider le panier Firestore réellement
         try {
+          const { getDb, loadFirestoreModule } = await loadFirebaseRuntime();
+          const [db, { collection, getDocs, writeBatch }] = await Promise.all([
+            getDb(),
+            loadFirestoreModule(),
+          ]);
           const cartRef = collection(db, 'users', user.uid, 'cart');
           const snapshot = await getDocs(cartRef);
 
@@ -1084,11 +1115,26 @@ const AppContent = () => {
   // --- WISHLIST SYNC ---
   useEffect(() => {
     if (user && !user.isAnonymous) {
-      const q = query(collection(db, 'users', user.uid, 'wishlist'));
-      const unsub = onSnapshot(q, (snap) => {
-        setWishlistItems(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      });
-      return () => unsub();
+      let cancelled = false;
+      let unsubscribe = null;
+
+      loadFirebaseRuntime()
+        .then(async ({ getDb, loadFirestoreModule }) => {
+          const [db, { collection, onSnapshot, query }] = await Promise.all([getDb(), loadFirestoreModule()]);
+          if (cancelled) return;
+          const q = query(collection(db, 'users', user.uid, 'wishlist'));
+          unsubscribe = onSnapshot(q, (snap) => {
+            setWishlistItems(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+          });
+        })
+        .catch((error) => {
+          if (!cancelled) console.error("Wishlist sync error:", error);
+        });
+
+      return () => {
+        cancelled = true;
+        unsubscribe?.();
+      };
     } else {
       setWishlistItems([]);
     }
@@ -1098,15 +1144,29 @@ const AppContent = () => {
   useEffect(() => {
     if (user && !user.isAnonymous) {
       console.log("Subscribing to cart for user:", user.uid);
-      // Removing orderBy for debugging to avoid index issues
-      const q = query(collection(db, 'users', user.uid, 'cart'));
-      const unsubCart = onSnapshot(q, (snap) => {
-        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setCartItems(items);
-      }, (err) => {
-        console.error("Cart sync error:", err);
-      });
-      return () => unsubCart();
+      let cancelled = false;
+      let unsubscribe = null;
+
+      loadFirebaseRuntime()
+        .then(async ({ getDb, loadFirestoreModule }) => {
+          const [db, { collection, onSnapshot, query }] = await Promise.all([getDb(), loadFirestoreModule()]);
+          if (cancelled) return;
+          const q = query(collection(db, 'users', user.uid, 'cart'));
+          unsubscribe = onSnapshot(q, (snap) => {
+            const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setCartItems(items);
+          }, (err) => {
+            console.error("Cart sync error:", err);
+          });
+        })
+        .catch((error) => {
+          if (!cancelled) console.error("Cart sync error:", error);
+        });
+
+      return () => {
+        cancelled = true;
+        unsubscribe?.();
+      };
     } else {
       setCartItems([]);
     }
@@ -1162,11 +1222,16 @@ const AppContent = () => {
       image: item.images?.[0] || item.imageUrl,
       material: item.material || 'Bois',
       quantity: 1, // [FIX] Required by Firestore Rules
-      addedAt: serverTimestamp()
     };
 
 
     try {
+      const { getDb, loadFirestoreModule } = await loadFirebaseRuntime();
+      const [db, { addDoc, collection, serverTimestamp }] = await Promise.all([
+        getDb(),
+        loadFirestoreModule(),
+      ]);
+      cartItemData.addedAt = serverTimestamp();
       await addDoc(collection(db, 'users', user.uid, 'cart'), cartItemData);
       emitAnalyticsEvent('cart_add', item.id, item.name, {
         price: cartItemData.price,
@@ -1185,6 +1250,8 @@ const AppContent = () => {
   const removeFromCart = async (cartDocId) => {
     if (!user) return;
     const removedItem = cartItems.find(item => item.id === cartDocId);
+    const { getDb, loadFirestoreModule } = await loadFirebaseRuntime();
+    const [db, { deleteDoc, doc }] = await Promise.all([getDb(), loadFirestoreModule()]);
     await deleteDoc(doc(db, 'users', user.uid, 'cart', cartDocId));
     if (removedItem) {
       emitAnalyticsEvent('cart_remove', removedItem.originalId || removedItem.id, removedItem.name, {
@@ -1201,6 +1268,11 @@ const AppContent = () => {
       return;
     }
     const isLiked = wishlistItems.some(w => w.originalId === item.id);
+    const { getDb, loadFirestoreModule } = await loadFirebaseRuntime();
+    const [db, { deleteDoc, doc, serverTimestamp, setDoc }] = await Promise.all([
+      getDb(),
+      loadFirestoreModule(),
+    ]);
     const docRef = doc(db, 'users', user.uid, 'wishlist', item.id);
     try {
       if (isLiked) {
@@ -1233,6 +1305,8 @@ const AppContent = () => {
 
   const clearWishlist = async () => {
     if (!user) return;
+    const { getDb, loadFirestoreModule } = await loadFirebaseRuntime();
+    const [db, { doc, writeBatch }] = await Promise.all([getDb(), loadFirestoreModule()]);
     const batch = writeBatch(db);
     for (const w of wishlistItems) {
       batch.delete(doc(db, 'users', user.uid, 'wishlist', w.id));
@@ -1248,6 +1322,8 @@ const AppContent = () => {
     // We just need to clear the local cart now.
 
     // 2. Clear Cart (Batch — atomique, un seul appel réseau)
+    const { getDb, loadFirestoreModule } = await loadFirebaseRuntime();
+    const [db, { doc, writeBatch }] = await Promise.all([getDb(), loadFirestoreModule()]);
     const cartBatch = writeBatch(db);
     for (const item of cartItems) {
       cartBatch.delete(doc(db, 'users', user.uid, 'cart', item.id));
@@ -1320,6 +1396,7 @@ const AppContent = () => {
     selectedItemPrice: selectedItem?.currentPrice || selectedItem?.price || null,
     urlParams: typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null,
   };
+  const footerContactInfo = contactInfo && Object.keys(contactInfo).length > 0 ? contactInfo : null;
 
   return (
     <DeferredAnalyticsProvider {...analyticsNav}>
@@ -1603,27 +1680,29 @@ const AppContent = () => {
       {/* --- NAVBAR & MENU GLOBAUX (NE S'AFFICHENT PAS SUR LA PAGE D'ACCUEIL) --- */}
       {/* --- MENU GLOBAL (Toujours disponible sauf Home) --- */}
       {view !== 'home' && !isAdminPerformanceStudyView && (isMenuOpen || isMenuClosing || isMenuHeaderActive || shouldKeepGlobalMenuMounted) && (
-        <GlobalMenu
-          isMenuOpen={isMenuOpen}
-          isMenuClosing={isMenuClosing}
-          keepMounted={shouldKeepGlobalMenuMounted}
-          setIsMenuOpen={setGlobalMenuOpen}
-          setView={setView}
-          currentView={view}
-          user={user}
-          isAdmin={isAdmin}
-          darkMode={darkMode}
-          activeDesignId={activeDesignId}
-          contactInfo={contactInfo}
-          onNavigateCategory={(catId) => { setSelectedItemId(null); setActiveCategoryId(catId); setView('category'); closeGlobalMenu(); window.scrollTo(0, 0); }}
-          onShowLogin={() => { closeGlobalMenu(); setShowFullLogin(true); }}
-          onOpenCart={openCart}
-          cartCount={cartItems.length}
-          onOpenWishlist={() => setView('wishlist')}
-          wishlistCount={wishlistItems.length}
-          toggleTheme={() => setDarkMode(!darkMode)}
-          onLogout={logout}
-        />
+        <Suspense fallback={null}>
+          <GlobalMenu
+            isMenuOpen={isMenuOpen}
+            isMenuClosing={isMenuClosing}
+            keepMounted={shouldKeepGlobalMenuMounted}
+            setIsMenuOpen={setGlobalMenuOpen}
+            setView={setView}
+            currentView={view}
+            user={user}
+            isAdmin={isAdmin}
+            darkMode={darkMode}
+            activeDesignId={activeDesignId}
+            contactInfo={footerContactInfo}
+            onNavigateCategory={(catId) => { setSelectedItemId(null); setActiveCategoryId(catId); setView('category'); closeGlobalMenu(); window.scrollTo(0, 0); }}
+            onShowLogin={() => { closeGlobalMenu(); setShowFullLogin(true); }}
+            onOpenCart={openCart}
+            cartCount={cartItems.length}
+            onOpenWishlist={() => setView('wishlist')}
+            wishlistCount={wishlistItems.length}
+            toggleTheme={() => setDarkMode(!darkMode)}
+            onLogout={logout}
+          />
+        </Suspense>
       )}
 
       {/* --- NAVBAR GLOBALE --- */}
@@ -1720,9 +1799,11 @@ const AppContent = () => {
             >
               {shouldRenderDeferredFooter ? (
                 <Suspense fallback={<FooterLoadingPlaceholder darkMode={darkMode} />}>
-                  <Footer darkMode={darkMode} contactInfo={contactInfo} />
+                  <Footer darkMode={darkMode} contactInfo={footerContactInfo} />
                 </Suspense>
-              ) : null}
+              ) : (
+                <FooterLoadingPlaceholder darkMode={darkMode} />
+              )}
             </div>
           )}
         />
@@ -1742,9 +1823,11 @@ const AppContent = () => {
               <>
                 {/* A propos (home) : footer TOUJOURS dark pour fusionner avec ContactCTASection (bg-[#111]) et rester dissociee du toggle dark/light de la galerie. */}
                 <Suspense fallback={<FooterLoadingPlaceholder darkMode={view === 'home' ? true : darkMode} />}>
-                  <Footer darkMode={view === 'home' ? true : darkMode} contactInfo={contactInfo} />
+                  <Footer darkMode={view === 'home' ? true : darkMode} contactInfo={footerContactInfo} />
                 </Suspense>
               </>
+            ) : shouldReserveDeferredFooter ? (
+              <FooterLoadingPlaceholder darkMode={view === 'home' ? true : darkMode} />
             ) : null}
           </div>
         )
