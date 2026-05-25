@@ -9,6 +9,49 @@ const CategoryRail = React.memo(function CategoryRail({
     getImageSrc,
     onNavigateCategory,
 }) {
+    const [isDesktopRail, setIsDesktopRail] = React.useState(() => (
+        typeof window === 'undefined' ? true : window.matchMedia('(min-width: 768px)').matches
+    ));
+    const [showDecorativeLogo, setShowDecorativeLogo] = React.useState(false);
+
+    React.useEffect(() => {
+        if (typeof window === 'undefined') return undefined;
+
+        const mediaQuery = window.matchMedia('(min-width: 768px)');
+        const syncViewport = () => setIsDesktopRail(mediaQuery.matches);
+        syncViewport();
+        mediaQuery.addEventListener?.('change', syncViewport);
+        return () => mediaQuery.removeEventListener?.('change', syncViewport);
+    }, []);
+
+    React.useEffect(() => {
+        if (!isDesktopRail || showDecorativeLogo || typeof window === 'undefined') return undefined;
+
+        let idleId = 0;
+        const timeoutId = window.setTimeout(() => {
+            const revealLogo = () => {
+                idleId = 0;
+                if (window.scrollY <= 1200) {
+                    setShowDecorativeLogo(true);
+                }
+            };
+
+            if (typeof window.requestIdleCallback === 'function') {
+                idleId = window.requestIdleCallback(revealLogo, { timeout: 4500 });
+                return;
+            }
+
+            revealLogo();
+        }, 9000);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+            if (idleId && typeof window.cancelIdleCallback === 'function') {
+                window.cancelIdleCallback(idleId);
+            }
+        };
+    }, [isDesktopRail, showDecorativeLogo]);
+
     const handleCategoryClick = (event, categoryId) => {
         if (event.ctrlKey || event.metaKey) return;
         event.preventDefault();
@@ -22,6 +65,7 @@ const CategoryRail = React.memo(function CategoryRail({
                 className={`pointer-events-none absolute inset-x-0 bottom-0 top-[62px] z-0 md:top-[135px] ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9]'}`}
             />
 
+            {!isDesktopRail && (
             <div className="relative z-10 grid grid-cols-4 gap-3 px-4 pb-3 md:hidden">
                 {categories.slice(0, 4).map((cat, index) => (
                     <a
@@ -47,7 +91,9 @@ const CategoryRail = React.memo(function CategoryRail({
                     </a>
                 ))}
             </div>
+            )}
 
+            {isDesktopRail && (
             <div className="relative z-10 hidden translate-y-[52px] md:mx-auto md:grid md:w-full md:max-w-[900px] md:grid-cols-2 md:gap-[16px] md:px-6 md:pb-10 lg:translate-y-[45px] lg:max-w-[1100px] lg:px-8 lg:pb-14 xl:max-w-[1440px] xl:grid-cols-4 xl:gap-[18px] xl:px-6 xl:pb-16">
                 {categories.map((cat, index) => (
                     <a
@@ -70,16 +116,18 @@ const CategoryRail = React.memo(function CategoryRail({
                             </div>
                         </div>
                         <div className="relative ml-4 flex h-[142px] min-w-0 flex-1 flex-col items-start justify-between overflow-hidden py-1 lg:ml-5 lg:h-[150px] lg:py-1.5 2xl:ml-5 2xl:h-[166px] 2xl:py-2">
-                            <img
-                                src="/images/logoanais-320.webp"
-                                alt=""
-                                aria-hidden="true"
-                                width="320"
-                                height="240"
-                                loading="lazy"
-                                decoding="async"
-                                className={`pointer-events-none absolute bottom-[24px] left-[-20px] z-0 h-[58px] w-auto select-none object-contain grayscale lg:bottom-[28px] lg:left-[-22px] lg:h-[64px] 2xl:bottom-[34px] 2xl:left-[-25px] 2xl:h-[72px] ${darkMode ? 'opacity-[0.12] invert' : 'opacity-[0.15] mix-blend-multiply'}`}
-                            />
+                            {showDecorativeLogo ? (
+                                <img
+                                    src="/images/logoanais-320.webp"
+                                    alt=""
+                                    aria-hidden="true"
+                                    width="320"
+                                    height="240"
+                                    loading="lazy"
+                                    decoding="async"
+                                    className={`pointer-events-none absolute bottom-[24px] left-[-20px] z-0 h-[58px] w-auto select-none object-contain grayscale transition-opacity duration-700 lg:bottom-[28px] lg:left-[-22px] lg:h-[64px] 2xl:bottom-[34px] 2xl:left-[-25px] 2xl:h-[72px] ${darkMode ? 'opacity-[0.12] invert' : 'opacity-[0.15] mix-blend-multiply'}`}
+                                />
+                            ) : null}
                             <span className="relative z-[1] w-full">
                                 <span className={`block w-full truncate text-left font-sans text-[11px] font-semibold uppercase leading-none tracking-[0.16em] lg:text-[12px] 2xl:text-[13px] ${darkMode ? 'text-white/90' : 'text-[#24201c]'}`}>
                                     {cat.label}
@@ -104,6 +152,7 @@ const CategoryRail = React.memo(function CategoryRail({
                     </a>
                 ))}
             </div>
+            )}
         </section>
     );
 });

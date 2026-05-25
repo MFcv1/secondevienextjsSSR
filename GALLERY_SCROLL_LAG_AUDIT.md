@@ -409,3 +409,31 @@ npm run perf:scroll:newsletter -- --url=http://127.0.0.1:4300/ --label=seconde-v
 ```
 
 Conclusion: le scroll desktop froid n'est plus bloque et les lectures Firebase decoratives ne tombent plus pendant le premier scroll. Les gaps >100 ms restants sont maintenant un sujet d'architecture d'hydratation: shell galerie client encore large, chunks UI/Framer Motion, parse/execute React et raster/paint d'images sous CPU x4. La prochaine optimisation structurante doit etre un decoupage en ilots SSR/client de la galerie publique, avec interactions chargees progressivement.
+
+## Addendum - ilots client galerie appliques 2026-05-25
+
+Objectif: traiter la couche restante apres retrait du lock desktop et des charges footer/newsletter, sans gros refactor ni changement mobile. La passe a vise le cout d'hydratation du shell public galerie.
+
+Changements appliques:
+
+- Framer Motion est retire du shell public initial: `src/app.jsx`, `src/Router.jsx`, `Toast.jsx`, `AnnouncementBanner.jsx`, `ArchitecturalHeader.jsx` et `MarketplaceLayout.jsx` utilisent des animations CSS legeres au lieu de `motion`/`AnimatePresence`.
+- `PremiumMegaMenu` devient un ilot differe dans `MarketplaceLayout.jsx`, avec placeholder stable et import seulement apres idle long ou intention utilisateur.
+- `AnalyticsProvider` est repousse a `15 s` + idle long pour eviter ses chunks Firebase/analytics pendant la premiere molette.
+- Les particules decoratives du CTA hero et le logo decoratif des cartes categories sont repoussees apres idle/intention.
+- `CategoryRail` ne rend plus simultanement rail mobile et rail desktop, ce qui limite les doublons d'images sous cache desactive.
+- Le scroll restore modal global ne remet plus `window.scrollY` a `0` si aucune modale n'a ete ouverte.
+
+Mesures propres, cache desactive, CPU x4, `http://127.0.0.1:4300/`:
+
+| Scenario | Resultat |
+| --- | --- |
+| Scroll immediat `seconde-vie-immediate-final-client-islands-clean-2` | assertions OK, 0 lock, 0 overflow hidden, premier scroll `155 ms` apres document scrollable |
+| Long tasks scroll immediat | 4, total `766 ms`, max `232 ms` |
+| Frame gaps scroll immediat | max `250 ms`, 4 gaps >100 ms |
+| Chunks bas de page pendant scroll immediat | `Petits Prix`, `Testimonials`, `Newsletter`, `Footer`, `ProductDetail` non montes |
+| Scroll newsletter `seconde-vie-newsletter-final-client-islands-clean` | assertions OK, 0 lock, 0 overflow hidden, 0 `bottomWithoutFooterOrPlaceholder` |
+| Footer/newsletter | placeholder footer a `1043 ms`, footer reel et newsletter a `2466 ms`, scroll final `7431 px` |
+
+Comparaison avec la passe precedente documentee: le scroll immediat descend de `11 / 1805 ms / max 329 ms` long tasks a `4 / 766 ms / max 232 ms`; les frame gaps >100 ms passent de `6` a `4`. Il reste des gaps sous CPU x4, mais ils sont maintenant concentres sur le parse/execute React et le raster/paint des premiers assets visibles, pas sur le lock, le footer, Firestore decoratif ou les chunks bas de page.
+
+Note de mesure: un `next dev` externe dans le meme repo reecrit `.next` et peut produire des 400/404 sur les chunks lors des audits `next start`. Avant tout audit production, fermer les processus `npm run dev` / `next dev` du repo, supprimer `.next` si elle a ete corrompue, puis relancer `npm run build`.

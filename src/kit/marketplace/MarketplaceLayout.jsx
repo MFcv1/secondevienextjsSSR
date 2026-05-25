@@ -1,21 +1,21 @@
 import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
-import PremiumMegaMenu from './components/PremiumMegaMenu';
 import MarketplaceHero from './components/MarketplaceHero';
 import CategoryRail from './components/CategoryRail';
 import ReassuranceSection from './components/ReassuranceSection';
 import { ProductArrivalsSection, ProductSmallPricesSection } from './components/ProductSections';
-import { motion } from 'framer-motion';
 import KIT_CONFIG, { GALLERY_HERO_PRESETS, resolveGalleryHeroImage } from '../config/constants';
 import { getDb, loadFirestoreModule } from '../config/firebaseLazy';
 import { GALLERY_SEO_COPY } from './seoCopy';
 import { preloadImage } from '../../utils/imageUtils';
 
+const loadPremiumMegaMenu = () => import('./components/PremiumMegaMenu');
 const loadBeforeAfterSection = () => import('./components/BeforeAfterSection');
 const loadInstagramSection = () => import('./components/InstagramSection');
 const loadTestimonialsSection = () => import('./components/TestimonialsSection');
 const loadNewsletterSection = () => import('./components/NewsletterSection');
 const loadCustomerTestimonialsCarousel = () => import('../shared/CustomerTestimonialsCarousel');
 
+const PremiumMegaMenu = React.lazy(loadPremiumMegaMenu);
 const BeforeAfterSection = React.lazy(loadBeforeAfterSection);
 const InstagramSection = React.lazy(loadInstagramSection);
 const TestimonialsSection = React.lazy(loadTestimonialsSection);
@@ -27,23 +27,13 @@ const SectionLogo = ({ tone }) => {
     const isPrice = tone === 'price';
 
     return (
-        <motion.span
-            className={`relative ml-1 inline-flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-[18px] p-[5px] ring-1 shadow-[0_18px_36px_-28px_rgba(28,25,23,0.65)] md:h-[64px] md:w-[64px] md:rounded-[21px] ${
+        <span
+            className={`section-heading-logo relative ml-1 inline-flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-[18px] p-[5px] ring-1 shadow-[0_18px_36px_-28px_rgba(28,25,23,0.65)] md:h-[64px] md:w-[64px] md:rounded-[21px] ${
                 isPrice
                     ? 'rotate-[4deg] bg-[#F1DDD2] ring-[#B35D3E]/18'
                     : '-rotate-[5deg] bg-[#E5EDE3] ring-[#6E7D61]/18'
             }`}
             aria-hidden="true"
-            variants={{
-                hidden: { y: 18, rotate: isPrice ? -8 : 8, scale: 0.74, opacity: 0 },
-                visible: {
-                    y: 0,
-                    rotate: isPrice ? 4 : -5,
-                    scale: 1,
-                    opacity: 1,
-                    transition: { duration: 0.82, ease: [0.16, 1, 0.3, 1] }
-                }
-            }}
         >
             <span className="absolute -inset-1 rounded-[22px] border border-white/75 md:rounded-[25px]" />
             <span className={`relative flex h-full w-full items-center justify-center rounded-[14px] border bg-[#FAFAF9]/82 md:rounded-[17px] ${
@@ -85,32 +75,20 @@ const SectionLogo = ({ tone }) => {
                     )}
                 </svg>
             </span>
-        </motion.span>
+        </span>
     );
 };
 
 const SectionHeading = ({ children, tone = 'arrival' }) => {
     return (
-        <motion.h2
+        <h2
             className="group/section-title flex items-center gap-3 font-serif text-4xl leading-none tracking-[-0.015em] md:gap-4 md:text-5xl"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-12% 0px -8% 0px" }}
-            variants={{
-                hidden: {},
-                visible: { transition: { staggerChildren: 0.12, delayChildren: 0.04 } }
-            }}
         >
-            <motion.span
-                variants={{
-                    hidden: { y: 16, opacity: 0 },
-                    visible: { y: 0, opacity: 1, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } }
-                }}
-            >
+            <span className="section-heading-copy">
                 {children}
-            </motion.span>
+            </span>
             <SectionLogo tone={tone} />
-        </motion.h2>
+        </h2>
     );
 };
 
@@ -175,6 +153,59 @@ const DEFERRED_SECTION_ROOT_MARGIN = '420px 0px 620px';
 const DEFERRED_SECTION_DESKTOP_ROOT_MARGIN = '180px 0px 260px';
 const MOBILE_GALLERY_QUERY = '(max-width: 1023px)';
 const DESKTOP_GALLERY_QUERY = '(min-width: 1024px)';
+
+const MegaMenuPlaceholder = ({ darkMode }) => (
+    <div
+        aria-hidden="true"
+        className={`hidden h-[43px] w-full border-b md:block ${darkMode ? 'bg-[#121212] border-stone-800/20' : 'bg-[#FAFAF9] border-stone-100'}`}
+    />
+);
+
+const DeferredMegaMenuIsland = ({ darkMode, onOpenAbout, onNavigateCategory }) => {
+    const [shouldRenderMenu, setShouldRenderMenu] = useState(false);
+
+    useEffect(() => {
+        if (shouldRenderMenu || typeof window === 'undefined') return undefined;
+
+        let idleId = 0;
+        const timeoutId = window.setTimeout(() => {
+            if (typeof window.requestIdleCallback === 'function') {
+                idleId = window.requestIdleCallback(() => setShouldRenderMenu(true), { timeout: 8000 });
+                return;
+            }
+            setShouldRenderMenu(true);
+        }, 9000);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+            if (idleId && typeof window.cancelIdleCallback === 'function') {
+                window.cancelIdleCallback(idleId);
+            }
+        };
+    }, [shouldRenderMenu]);
+
+    const prepareMenu = useCallback(() => {
+        loadPremiumMegaMenu().catch(() => {});
+        setShouldRenderMenu(true);
+    }, []);
+
+    if (!shouldRenderMenu) {
+        return (
+            <div
+                onPointerEnter={prepareMenu}
+                onFocus={prepareMenu}
+            >
+                <MegaMenuPlaceholder darkMode={darkMode} />
+            </div>
+        );
+    }
+
+    return (
+        <React.Suspense fallback={<MegaMenuPlaceholder darkMode={darkMode} />}>
+            <PremiumMegaMenu darkMode={darkMode} onOpenAbout={onOpenAbout} onNavigateCategory={onNavigateCategory} />
+        </React.Suspense>
+    );
+};
 
 const normalizeFrenchCopy = (value) => String(value || '')
     .normalize('NFD')
@@ -476,7 +507,8 @@ const MarketplaceLayout = ({
         { img: "/images/before-after/apresu-gallery.webp", rotate: -2, yOffset: 0, aspect: "aspect-[4/5]" },
         { img: "/images/before-after/avantu-gallery.webp", rotate: 1, yOffset: -20, aspect: "aspect-square" },
         { img: "/images/before-after/apres-gallery.webp", rotate: -1, yOffset: 20, aspect: "aspect-[4/5]" },
-        { img: "/images/before-after/apresx-gallery.webp", rotate: 2, yOffset: 0, aspect: "aspect-square" }
+        { img: "/images/before-after/apresx-gallery.webp", rotate: 2, yOffset: 0, aspect: "aspect-square" },
+        { img: "/images/before-after/avantx-gallery.webp", rotate: -1, yOffset: 12, aspect: "aspect-[4/5]" }
     ];
     const dynamicInsta = useMemo(() => instaDefaults.map((d, i) => ({
         ...d,
@@ -598,7 +630,7 @@ const MarketplaceLayout = ({
         <div ref={containerRef} className={`gallery-theme-surface w-full min-h-screen transition-colors duration-1000 ${darkMode ? 'bg-[#121212] text-[#f5f5f5]' : 'bg-[#FAFAF9] text-stone-900'}`}>
             
             {/* SUB-NAVIGATION AVANCÉE - MEGA MENU */}
-            <PremiumMegaMenu darkMode={darkMode} onOpenAbout={onOpenAbout} onNavigateCategory={onNavigateCategory} />
+            <DeferredMegaMenuIsland darkMode={darkMode} onOpenAbout={onOpenAbout} onNavigateCategory={onNavigateCategory} />
 
             {/* ÉTAPE 1 : Hero Carousel */}
             <MarketplaceHero

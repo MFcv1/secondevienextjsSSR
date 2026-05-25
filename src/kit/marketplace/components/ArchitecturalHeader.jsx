@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { useLiveTheme } from '../../config/theme';
 import { useAuth } from '../../contexts/AuthContext';
-import { ShoppingBag, Heart, ShieldCheck, LogOut, LogIn, Armchair, Gavel, Search } from 'lucide-react';
-import AnimatedThemeToggler from '../../ui/AnimatedThemeToggler';
+import { ShoppingBag, Heart, ShieldCheck, LogOut, LogIn, Armchair, Gavel, Search, Moon, Sun } from 'lucide-react';
 import KIT_CONFIG from '../../config/constants';
 
 const CuttingBoard = ({ size = 14, strokeWidth = 2, ...props }) => (
@@ -295,7 +293,19 @@ const ArchitecturalHeader = ({
                         {/* DARK MODE TOGGLE (Only if Auto) */}
                         {showToggle && toggleTheme && (
                             <div className="hidden md:block">
-                                <AnimatedThemeToggler isDark={isDark} toggleTheme={toggleTheme} />
+                                <button
+                                    type="button"
+                                    onClick={toggleTheme}
+                                    className={actionButtonClass}
+                                    title={isDark ? 'Mode clair' : 'Mode sombre'}
+                                    aria-label={isDark ? 'Activer le mode clair' : 'Activer le mode sombre'}
+                                >
+                                    {isDark ? (
+                                        <Sun size={18} strokeWidth={1.5} />
+                                    ) : (
+                                        <Moon size={18} strokeWidth={1.5} />
+                                    )}
+                                </button>
                             </div>
                         )}
 
@@ -332,46 +342,40 @@ const ArchitecturalHeader = ({
                             )}
                         </button>
 
-                        <motion.button
+                        <button
                             onClick={onOpenMenu}
                             onPointerEnter={onPrepareMenu}
                             onFocus={onPrepareMenu}
                             className={menuButtonClass}
                             title="Menu"
                             aria-label={isMenuIconOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
-                            whileTap={{ scale: 0.94 }}
                         >
                             <span className="relative block h-4 w-5">
-                                <motion.span
-                                    className="absolute left-0 top-1/2 h-[1.25px] origin-center rounded-full bg-current"
-                                    initial={false}
-                                    animate={isMenuIconOpen
-                                        ? { x: 0, y: 0, width: 19, rotate: 45 }
-                                        : { x: 0, y: -6, width: 20, rotate: 0 }
-                                    }
-                                    transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+                                <span
+                                    className="absolute left-0 top-1/2 h-[1.25px] origin-center rounded-full bg-current transition-all duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                                    style={{
+                                        width: isMenuIconOpen ? 19 : 20,
+                                        transform: isMenuIconOpen ? 'translate3d(0,0,0) rotate(45deg)' : 'translate3d(0,-6px,0) rotate(0deg)',
+                                    }}
                                 />
-                                <motion.span
-                                    className="absolute left-0 top-1/2 h-[1.25px] origin-center rounded-full bg-current"
-                                    initial={false}
-                                    animate={isMenuIconOpen
-                                        ? { x: 0, y: 0, width: 19, opacity: 0, scaleX: 0.2 }
-                                        : { x: 0, y: 0, width: 15, opacity: 1, scaleX: 1 }
-                                    }
-                                    transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                                <span
+                                    className="absolute left-0 top-1/2 h-[1.25px] origin-center rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                                    style={{
+                                        width: isMenuIconOpen ? 19 : 15,
+                                        opacity: isMenuIconOpen ? 0 : 1,
+                                        transform: isMenuIconOpen ? 'scaleX(0.2)' : 'scaleX(1)',
+                                    }}
                                 />
-                                <motion.span
-                                    className="absolute left-0 top-1/2 h-[1.25px] origin-center rounded-full bg-current"
-                                    initial={false}
-                                    animate={isMenuIconOpen
-                                        ? { x: 0, y: 0, width: 19, rotate: -45 }
-                                        : { x: 0, y: 6, width: 10, rotate: 0 }
-                                    }
-                                    transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+                                <span
+                                    className="absolute left-0 top-1/2 h-[1.25px] origin-center rounded-full bg-current transition-all duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                                    style={{
+                                        width: isMenuIconOpen ? 19 : 10,
+                                        transform: isMenuIconOpen ? 'translate3d(0,0,0) rotate(-45deg)' : 'translate3d(0,6px,0) rotate(0deg)',
+                                    }}
                                 />
                             </span>
                             <span className="hidden text-[10px] font-black uppercase tracking-[0.16em] md:inline">Menu</span>
-                        </motion.button>
+                        </button>
                     </div>
                 </div>
             </div>

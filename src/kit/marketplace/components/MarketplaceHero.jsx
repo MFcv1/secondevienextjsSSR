@@ -65,6 +65,42 @@ const MarketplaceHero = React.memo(function MarketplaceHero({
     onGoToSlide,
     heroDuration,
 }) {
+    const [shouldRenderCtaParticles, setShouldRenderCtaParticles] = React.useState(false);
+
+    React.useEffect(() => {
+        if (shouldRenderCtaParticles || typeof window === 'undefined') return undefined;
+
+        let idleId = 0;
+        const timeoutId = window.setTimeout(() => {
+            const revealParticles = () => {
+                idleId = 0;
+                if (window.scrollY <= 900) {
+                    setShouldRenderCtaParticles(true);
+                }
+            };
+
+            if (typeof window.requestIdleCallback === 'function') {
+                idleId = window.requestIdleCallback(revealParticles, { timeout: 5000 });
+                return;
+            }
+
+            revealParticles();
+        }, 7000);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+            if (idleId && typeof window.cancelIdleCallback === 'function') {
+                window.cancelIdleCallback(idleId);
+            }
+        };
+    }, [shouldRenderCtaParticles]);
+
+    const prepareCtaParticles = React.useCallback(() => {
+        if (!shouldRenderCtaParticles) {
+            React.startTransition(() => setShouldRenderCtaParticles(true));
+        }
+    }, [shouldRenderCtaParticles]);
+
     return (
         <section className="relative flex h-[430px] w-full flex-col items-center justify-center overflow-hidden md:h-[65vh] md:min-h-[500px]">
             <div className="absolute inset-0 z-0 parallax-container">
@@ -144,31 +180,35 @@ const MarketplaceHero = React.memo(function MarketplaceHero({
                         <button
                             type="button"
                             onClick={onOpenQuote}
+                            onPointerEnter={prepareCtaParticles}
+                            onFocus={prepareCtaParticles}
                             className="hero-cta-particles hero-cta-particles--glass group/heroCta inline-flex h-[36px] w-full items-center justify-between gap-2 rounded-full border pl-4 pr-1 text-white shadow-[0_10px_24px_rgba(0,0,0,0.10)] backdrop-blur-sm transition-[border-color,box-shadow,background-color] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] min-[380px]:w-auto md:h-[46px] md:gap-3 md:pl-7 md:pr-1.5 md:shadow-[0_14px_34px_rgba(0,0,0,0.10)]"
                         >
-                            <span className="hero-cta-particle-field" aria-hidden="true">
-                                {HERO_CTA_PARTICLES.map((particle, particleIndex) => (
-                                    <span
-                                        key={particleIndex}
-                                        className="hero-cta-particle"
-                                        style={{
-                                            '--particle-x0': particle.x0,
-                                            '--particle-y0': particle.y0,
-                                            '--particle-xm': particle.xm,
-                                            '--particle-ym': particle.ym,
-                                            '--particle-x1': particle.x1,
-                                            '--particle-y1': `${parseFloat(particle.y1) + HERO_CTA_PARTICLE_FALL}%`,
-                                            '--particle-size': particle.s,
-                                            '--particle-opacity': particle.o,
-                                            '--particle-delay': particle.d,
-                                            '--particle-duration': particle.t,
-                                            '--particle-glow': particle.g || '5px',
-                                            '--particle-glow-wide': particle.gw || '12px',
-                                            '--particle-blur': particle.b || '0px',
-                                        }}
-                                    />
-                                ))}
-                            </span>
+                            {shouldRenderCtaParticles ? (
+                                <span className="hero-cta-particle-field" aria-hidden="true">
+                                    {HERO_CTA_PARTICLES.map((particle, particleIndex) => (
+                                        <span
+                                            key={particleIndex}
+                                            className="hero-cta-particle"
+                                            style={{
+                                                '--particle-x0': particle.x0,
+                                                '--particle-y0': particle.y0,
+                                                '--particle-xm': particle.xm,
+                                                '--particle-ym': particle.ym,
+                                                '--particle-x1': particle.x1,
+                                                '--particle-y1': `${parseFloat(particle.y1) + HERO_CTA_PARTICLE_FALL}%`,
+                                                '--particle-size': particle.s,
+                                                '--particle-opacity': particle.o,
+                                                '--particle-delay': particle.d,
+                                                '--particle-duration': particle.t,
+                                                '--particle-glow': particle.g || '5px',
+                                                '--particle-glow-wide': particle.gw || '12px',
+                                                '--particle-blur': particle.b || '0px',
+                                            }}
+                                        />
+                                    ))}
+                                </span>
+                            ) : null}
                             <span className="whitespace-nowrap font-sans text-[7.5px] font-black uppercase tracking-[0.16em] md:text-[10px] md:tracking-[0.21em]">
                                 Faire un devis
                             </span>

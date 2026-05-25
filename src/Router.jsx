@@ -1,7 +1,6 @@
 
 import React, { Suspense } from 'react';
 // Ancienne vitrine : page A propos
-import { motion, AnimatePresence } from 'framer-motion';
 
 // --- CODE SPLITTING: Chargement différé (kit standardisé) ---
 const HomeView = React.lazy(() => import('./vitrine/HomeView'));
@@ -740,55 +739,47 @@ const AppRouter = ({
                         </button>
 
                         {/* Universal Dropdown - Premium Bento Style */}
-                        <AnimatePresence>
-                            {isMoreMenuOpen && (
-                                <>
-                                    <motion.div 
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        onClick={() => setIsMoreMenuOpen(false)}
-                                        className="fixed inset-0 z-40"
-                                    />
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        className={`absolute top-full left-0 right-0 mt-2 z-50 p-3 rounded-[2.5rem] border grid grid-cols-2 md:grid-cols-4 gap-2 max-w-4xl mx-auto ${
-                                            darkMode 
-                                                ? 'bg-[#161616] border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]' 
-                                                : 'bg-white border-stone-200 shadow-[0_20px_50px_rgba(0,0,0,0.1)]'
-                                        }`}
-                                    >
-                                        {adminTabs.slice(4).map((tab, idx) => {
-                                            const realIdx = idx + 4;
-                                            const isDesktopShown = realIdx < 8;
-                                            const Icon = tab.icon;
-                                            const isActive = adminCollection === tab.id;
-                                            
-                                            return (
-                                                <button
-                                                    key={tab.id}
-                                                    onClick={() => { 
-                                                        setAdminCollection(tab.id); 
-                                                        setEditingItem(null); 
-                                                        setIsMoreMenuOpen(false); 
-                                                    }}
-                                                    className={`items-center gap-3 p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${isDesktopShown ? 'md:hidden flex' : 'flex'} ${
-                                                        isActive
-                                                            ? (darkMode ? 'bg-white text-stone-900' : 'bg-stone-900 text-white')
-                                                            : (darkMode ? 'bg-white/5 text-stone-400 hover:text-white' : 'bg-stone-50 text-stone-500 hover:text-stone-900')
-                                                    }`}
-                                                >
-                                                    <Icon size={14} />
-                                                    {tab.label}
-                                                </button>
-                                            );
-                                        })}
-                                    </motion.div>
-                                </>
-                            )}
-                        </AnimatePresence>
+                        {isMoreMenuOpen && (
+                            <>
+                                <div
+                                    onClick={() => setIsMoreMenuOpen(false)}
+                                    className="fixed inset-0 z-40"
+                                />
+                                <div
+                                    className={`admin-more-menu absolute left-0 right-0 top-full z-50 mx-auto mt-2 grid max-w-4xl grid-cols-2 gap-2 rounded-[2.5rem] border p-3 md:grid-cols-4 ${
+                                        darkMode
+                                            ? 'bg-[#161616] border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]'
+                                            : 'bg-white border-stone-200 shadow-[0_20px_50px_rgba(0,0,0,0.1)]'
+                                    }`}
+                                >
+                                    {adminTabs.slice(4).map((tab, idx) => {
+                                        const realIdx = idx + 4;
+                                        const isDesktopShown = realIdx < 8;
+                                        const Icon = tab.icon;
+                                        const isActive = adminCollection === tab.id;
+
+                                        return (
+                                            <button
+                                                key={tab.id}
+                                                onClick={() => {
+                                                    setAdminCollection(tab.id);
+                                                    setEditingItem(null);
+                                                    setIsMoreMenuOpen(false);
+                                                }}
+                                                className={`items-center gap-3 p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${isDesktopShown ? 'md:hidden flex' : 'flex'} ${
+                                                    isActive
+                                                        ? (darkMode ? 'bg-white text-stone-900' : 'bg-stone-900 text-white')
+                                                        : (darkMode ? 'bg-white/5 text-stone-400 hover:text-white' : 'bg-stone-50 text-stone-500 hover:text-stone-900')
+                                                }`}
+                                            >
+                                                <Icon size={14} />
+                                                {tab.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     <div className={`w-full h-px my-6 ${darkMode ? 'bg-white/10' : 'bg-stone-200'}`} />

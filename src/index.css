@@ -1337,3 +1337,185 @@ img {
   animation-play-state: paused !important;
   transition-duration: 0ms !important;
 }
+
+/* Lightweight client-island animations: CSS replaces Framer Motion in the public shell. */
+.gallery-entry-curtain {
+  animation: gallery-entry-curtain-fade 2.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform: translate3d(0, 0, 0);
+}
+
+.gallery-entry-curtain--slide-up {
+  animation-name: gallery-entry-curtain-slide-fade;
+}
+
+.gallery-entry-panel--left {
+  animation: gallery-entry-panel-left 2.5s cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+
+.gallery-entry-panel--right {
+  animation: gallery-entry-panel-right 2.5s cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+
+.gallery-entry-line {
+  animation: gallery-entry-line 1.2s 0.8s ease-out both;
+}
+
+.gallery-entry-kicker {
+  animation: gallery-entry-copy 0.6s 0.9s ease-out both;
+}
+
+.gallery-entry-letter {
+  animation: gallery-entry-letter 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: 50% 70%;
+}
+
+.announcement-banner-message {
+  animation: announcement-banner-message 0.5s ease-in-out both;
+}
+
+.sv-toast,
+.stock-alert-card,
+.admin-more-menu {
+  animation: lightweight-pop-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.section-heading-copy,
+.section-heading-logo {
+  animation: section-heading-soft-in 0.72s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.section-heading-logo {
+  animation-delay: 0.08s;
+}
+
+@keyframes gallery-entry-curtain-fade {
+  0%,
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes gallery-entry-curtain-slide-fade {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 100%, 0);
+    border-top-left-radius: 100%;
+    border-top-right-radius: 100%;
+  }
+  36%,
+  88% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes gallery-entry-panel-left {
+  0%,
+  84% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+
+@keyframes gallery-entry-panel-right {
+  0%,
+  84% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+@keyframes gallery-entry-line {
+  0% {
+    transform: scaleY(0);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes gallery-entry-copy {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 100%, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes gallery-entry-letter {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 100%, 0) rotateX(-40deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotateX(0deg);
+  }
+}
+
+@keyframes announcement-banner-message {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes lightweight-pop-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes section-heading-soft-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-entry-curtain,
+  .gallery-entry-panel--left,
+  .gallery-entry-panel--right,
+  .gallery-entry-line,
+  .gallery-entry-kicker,
+  .gallery-entry-letter,
+  .announcement-banner-message,
+  .sv-toast,
+  .stock-alert-card,
+  .admin-more-menu,
+  .section-heading-copy,
+  .section-heading-logo {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+  }
+}

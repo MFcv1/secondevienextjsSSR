@@ -73,64 +73,99 @@ const MOBILE_INSTA_COPY = [
     { label: "Relooking complet", title: "Buffet parisien" },
     { label: "Atelier", title: "Patine douce" },
     { label: "Avant / Après", title: "Meuble restauré" }
+    , { label: "Inspiration", title: "Piece chinee" },
 ];
 
 const MOBILE_INSTA_POSITIONS = {
-    hiddenLeft: { transform: 'translateX(-206%) scale(0.86)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
-    left: { transform: 'translateX(-116%) scale(0.9)', opacity: 0.48, zIndex: 1, pointerEvents: 'none' },
+    farLeft: { transform: 'translateX(-206%) scale(0.86)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
+    left: { transform: 'translateX(-116%) scale(0.9)', opacity: 0.42, zIndex: 1, pointerEvents: 'none' },
     center: { transform: 'translateX(-50%) scale(1)', opacity: 1, zIndex: 3, pointerEvents: 'auto' },
-    right: { transform: 'translateX(16%) scale(0.9)', opacity: 0.5, zIndex: 1, pointerEvents: 'none' },
-    hiddenRight: { transform: 'translateX(106%) scale(0.86)', opacity: 0, zIndex: 0, pointerEvents: 'none' }
+    right: { transform: 'translateX(16%) scale(0.9)', opacity: 0.46, zIndex: 1, pointerEvents: 'none' },
+    farRight: { transform: 'translateX(106%) scale(0.86)', opacity: 0, zIndex: 0, pointerEvents: 'none' }
 };
 
 const DESKTOP_INSTA_POSITIONS = {
-    hiddenLeft: { transform: 'translateX(-248%) scale(0.88)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
-    left: { transform: 'translateX(-145%) scale(0.92)', opacity: 0.54, zIndex: 1, pointerEvents: 'none' },
+    farLeft: { transform: 'translateX(-248%) scale(0.88)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
+    left: { transform: 'translateX(-145%) scale(0.92)', opacity: 0.52, zIndex: 1, pointerEvents: 'none' },
     center: { transform: 'translateX(-50%) scale(1)', opacity: 1, zIndex: 3, pointerEvents: 'auto' },
     right: { transform: 'translateX(45%) scale(0.92)', opacity: 0.58, zIndex: 1, pointerEvents: 'none' },
-    hiddenRight: { transform: 'translateX(148%) scale(0.88)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
+    farRight: { transform: 'translateX(148%) scale(0.88)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
 };
 
 const wrapInstaIndex = (index, count) => (index + count) % count;
+const MIN_INSTA_CARDS = 5;
 
-const getInstaPosition = (index, activeIndex, count) => {
-    const offset = (index - activeIndex + count) % count;
-    if (offset === 0) return 'center';
-    if (offset === 1) return 'right';
-    if (offset === count - 1) return 'left';
-    return offset > count / 2 ? 'hiddenLeft' : 'hiddenRight';
+const normalizeInstaPosts = (posts) => {
+    const source = Array.isArray(posts) ? posts.filter(Boolean) : [];
+    if (!source.length) return [];
+
+    const slotCount = Math.max(MIN_INSTA_CARDS, source.length);
+    return Array.from({ length: slotCount }, (_, index) => ({
+        ...source[index % source.length],
+        carouselSlotId: `insta-slot-${index}`,
+    }));
 };
 
-
 const InstagramSection = ({ darkMode, posts = [] }) => {
-    const dynamicInsta = Array.isArray(posts) ? posts : [];
+    const dynamicInsta = useMemo(() => normalizeInstaPosts(posts), [posts]);
     const [activeInstaIndex, setActiveInstaIndex] = useState(1);
-    const [instaSlideVersion, setInstaSlideVersion] = useState(0);
     const [isInstaSectionActive, setIsInstaSectionActive] = useState(false);
     const activeInstaIndexRef = useRef(1);
+    const isManualInstaModeRef = useRef(false);
+    const manualResumeTimerRef = useRef(null);
     const instaSectionRef = useRef(null);
-    const goToInsta = useCallback((idx) => {
+    const clearManualInstaMode = useCallback(() => {
+        if (manualResumeTimerRef.current) {
+            clearTimeout(manualResumeTimerRef.current);
+            manualResumeTimerRef.current = null;
+        }
+        isManualInstaModeRef.current = false;
+    }, []);
+    const markManualInstaMode = useCallback(() => {
+        if (manualResumeTimerRef.current) clearTimeout(manualResumeTimerRef.current);
+        isManualInstaModeRef.current = true;
+        manualResumeTimerRef.current = setTimeout(() => {
+            isManualInstaModeRef.current = false;
+            manualResumeTimerRef.current = null;
+        }, 1400);
+    }, []);
+    const goToInsta = useCallback((idx, source = 'manual') => {
         if (!dynamicInsta.length) return;
+        if (source === 'manual') markManualInstaMode();
+        if (source === 'auto' && isManualInstaModeRef.current) return;
+
         const current = activeInstaIndexRef.current;
         const next = wrapInstaIndex(typeof idx === 'function' ? idx(current) : idx, dynamicInsta.length);
         if (next === current) return;
+
         activeInstaIndexRef.current = next;
         setActiveInstaIndex(next);
-        setInstaSlideVersion(v => v + 1);
-    }, [dynamicInsta.length]);
+    }, [dynamicInsta.length, markManualInstaMode]);
+    const handlePrevInsta = useCallback(() => {
+        goToInsta((current) => current - 1);
+    }, [goToInsta]);
+    const handleNextInsta = useCallback(() => {
+        goToInsta((current) => current + 1);
+    }, [goToInsta]);
     const handleInstaDragEnd = useCallback((_, info) => {
         const shouldAdvance = info.offset.x < -42 || info.velocity.x < -360;
         const shouldRewind = info.offset.x > 42 || info.velocity.x > 360;
-        if (shouldAdvance) goToInsta(activeInstaIndexRef.current + 1);
-        if (shouldRewind) goToInsta(activeInstaIndexRef.current - 1);
-    }, [goToInsta]);
+        if (shouldAdvance) handleNextInsta();
+        if (shouldRewind) handlePrevInsta();
+    }, [handleNextInsta, handlePrevInsta]);
     const positionedInsta = useMemo(() => {
         if (!dynamicInsta.length) return [];
-        return dynamicInsta.map((post, index) => ({
-            post,
-            index,
-            position: getInstaPosition(index, activeInstaIndex, dynamicInsta.length),
-        }));
+
+        return dynamicInsta.map((post, index) => {
+            const offset = (index - activeInstaIndex + dynamicInsta.length) % dynamicInsta.length;
+            let position = 'farRight';
+            if (offset === 0) position = 'center';
+            else if (offset === 1) position = 'right';
+            else if (offset === dynamicInsta.length - 1) position = 'left';
+            else if (offset > dynamicInsta.length / 2) position = 'farLeft';
+
+            return { post, index, position };
+        });
     }, [activeInstaIndex, dynamicInsta]);
     useEffect(() => {
         activeInstaIndexRef.current = activeInstaIndex;
@@ -150,23 +185,28 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
             : INSTAGRAM_MOBILE_ACTIVE_ROOT_MARGIN;
         const observer = new IntersectionObserver(([entry]) => {
             setIsInstaSectionActive(entry.isIntersecting);
+            if (!entry.isIntersecting) {
+                clearManualInstaMode();
+            }
         }, { rootMargin });
         observer.observe(section);
         return () => observer.disconnect();
-    }, []);
+    }, [clearManualInstaMode]);
     useEffect(() => {
         if (!isInstaSectionActive || !dynamicInsta.length) return undefined;
         const timer = setInterval(() => {
             if (isThemeTransitionActive()) return;
-            goToInsta(current => current + 1);
+            if (isManualInstaModeRef.current) return;
+            goToInsta(current => current + 1, 'auto');
         }, INSTA_DURATION);
         return () => clearInterval(timer);
     }, [goToInsta, isInstaSectionActive, dynamicInsta.length]);
+    useEffect(() => () => {
+        if (manualResumeTimerRef.current) clearTimeout(manualResumeTimerRef.current);
+    }, []);
     const handleInstaSelect = (index) => {
         goToInsta(index);
     };
-    const handlePrevInsta = () => goToInsta(current => current - 1);
-    const handleNextInsta = () => goToInsta(current => current + 1);
     if (!dynamicInsta.length) return null;
     return (
             <section
@@ -211,7 +251,7 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
                         className="relative mx-auto mt-12 h-[432px] max-w-[430px] overflow-hidden touch-pan-y cursor-grab active:cursor-grabbing md:h-[462px] md:max-w-[560px]"
                         drag="x"
                         dragConstraints={{ left: 0, right: 0 }}
-                        dragElastic={0.12}
+                        dragElastic={0.1}
                         dragMomentum={false}
                         onDragEnd={handleInstaDragEnd}
                     >
@@ -220,7 +260,7 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
                                 const isCenter = position === 'center';
                                 return (
                                     <motion.article
-                                        key={`insta-${index}-${post.img}`}
+                                        key={post.carouselSlotId || `insta-slot-${index}`}
                                         animate={MOBILE_INSTA_POSITIONS[position]}
                                         transition={{ type: "spring", stiffness: 230, damping: 31, mass: 0.9 }}
                                         className={`absolute left-1/2 top-0 w-[62vw] max-w-[226px] overflow-hidden rounded-[22px] shadow-[0_18px_38px_rgba(32,26,20,0.12)] will-change-transform md:max-w-[250px] ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}
@@ -267,12 +307,8 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
                                 aria-label={`Voir la photo ${index + 1}`}
                             >
                                 <span
-                                    key={index === activeInstaIndex ? `insta-active-${instaSlideVersion}` : index}
-                                    className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-[#A68A64]"
-                                    style={index === activeInstaIndex
-                                        ? { animation: `hero-progress ${INSTA_DURATION}ms linear forwards` }
-                                        : { transform: index < activeInstaIndex ? 'scaleX(1)' : 'scaleX(0)' }
-                                    }
+                                    className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-[#A68A64] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                                    style={{ transform: index === activeInstaIndex ? 'scaleX(1)' : 'scaleX(0)' }}
                                 />
                             </button>
                         ))}
@@ -335,7 +371,7 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
                         className="relative mx-auto h-[470px] w-full max-w-[1120px] overflow-visible touch-pan-y cursor-grab active:cursor-grabbing xl:h-[520px] xl:max-w-[1240px]"
                         drag="x"
                         dragConstraints={{ left: 0, right: 0 }}
-                        dragElastic={0.08}
+                        dragElastic={0.1}
                         dragMomentum={false}
                         onDragEnd={handleInstaDragEnd}
                     >
@@ -345,7 +381,7 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
 
                                 return (
                                     <motion.article
-                                        key={`insta-desktop-${index}-${post.img}`}
+                                        key={post.carouselSlotId || `insta-slot-${index}`}
                                         animate={DESKTOP_INSTA_POSITIONS[position]}
                                         transition={{ type: "spring", stiffness: 230, damping: 31, mass: 0.9 }}
                                         className={`absolute left-1/2 top-2 w-[min(26vw,312px)] overflow-hidden rounded-[28px] shadow-[0_24px_60px_rgba(32,26,20,0.13)] will-change-transform xl:w-[min(25vw,340px)] xl:rounded-[34px] ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}
@@ -404,12 +440,8 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
                                     aria-label={`Voir la photo Instagram ${index + 1}`}
                                 >
                                     <span
-                                        key={index === activeInstaIndex ? `insta-desktop-active-${instaSlideVersion}` : index}
-                                        className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-[#A68A64]"
-                                        style={index === activeInstaIndex
-                                            ? { animation: `hero-progress ${INSTA_DURATION}ms linear forwards` }
-                                            : { transform: index < activeInstaIndex ? 'scaleX(1)' : 'scaleX(0)' }
-                                        }
+                                        className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-[#A68A64] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                                        style={{ transform: index === activeInstaIndex ? 'scaleX(1)' : 'scaleX(0)' }}
                                     />
                                 </button>
                             ))}

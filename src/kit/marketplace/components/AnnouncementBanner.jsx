@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { getDb, loadFirestoreModule } from '../../config/firebaseLazy';
 
 const DEFAULT_MESSAGES = [
@@ -71,20 +70,14 @@ export default function AnnouncementBanner({ darkMode, isCollapsedOnMobile = fal
         <div className={`${bgClass} ${isCollapsedOnMobile ? 'max-md:h-0 max-md:border-b-0' : ''} relative z-[2100] flex h-[28px] w-full items-center justify-center overflow-hidden transition-[height,border-color] duration-200 ease-out md:h-[34px]`}>
             {/* Center Carousel */}
             <div className="flex items-center justify-center relative w-full h-full">
-                <AnimatePresence>
-                    <motion.div
-                        key={index}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.5, ease: "easeInOut" }}
-                        className="absolute inset-0 flex items-center justify-center"
-                    >
-                        <span className="px-3 text-center font-sans text-[11px] font-bold tracking-[0.04em] md:px-4 md:text-[12px] md:tracking-[0.05em]">
-                            {messages[index]}
-                        </span>
-                    </motion.div>
-                </AnimatePresence>
+                <div
+                    key={index}
+                    className="announcement-banner-message absolute inset-0 flex items-center justify-center"
+                >
+                    <span className="px-3 text-center font-sans text-[11px] font-bold tracking-[0.04em] md:px-4 md:text-[12px] md:tracking-[0.05em]">
+                        {messages[index]}
+                    </span>
+                </div>
             </div>
             
             {/* Right Language Switcher */}

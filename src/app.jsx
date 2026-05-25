@@ -2,9 +2,8 @@ import React, { Suspense, useState, useEffect, useRef, useCallback } from 'react
 
 import { AuthProvider, useAuth } from './kit/contexts/AuthContext';
 import {
-  Hammer, LogOut, ShieldCheck, Menu, X, Eye, EyeOff, ShoppingBag, Sun, Moon, AlertTriangle
+  ShieldCheck, X, Eye, EyeOff, AlertTriangle
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 // --- IMPORTS KIT (standardisé) ---
 import { appId } from './kit/config/firebaseEnv';
@@ -132,13 +131,27 @@ const NEXT_VIEW_PATHS = {
 const deferNonCriticalWork = (callback) => {
   if (typeof window === 'undefined') return () => {};
 
-  if ('requestIdleCallback' in window) {
-    const idleId = window.requestIdleCallback(callback, { timeout: 2500 });
-    return () => window.cancelIdleCallback?.(idleId);
-  }
+  let idleId = 0;
+  const timeoutId = window.setTimeout(() => {
+    const run = () => {
+      idleId = 0;
+      callback();
+    };
 
-  const timeoutId = window.setTimeout(callback, 1200);
-  return () => window.clearTimeout(timeoutId);
+    if ('requestIdleCallback' in window) {
+      idleId = window.requestIdleCallback(run, { timeout: 8000 });
+      return;
+    }
+
+    run();
+  }, 15000);
+
+  return () => {
+    window.clearTimeout(timeoutId);
+    if (idleId && 'cancelIdleCallback' in window) {
+      window.cancelIdleCallback(idleId);
+    }
+  };
 };
 
 const DeferredAnalyticsProvider = ({ children, ...analyticsNav }) => {
@@ -402,6 +415,7 @@ const AppContent = () => {
   const [showAuthSuccess, setShowAuthSuccess] = useState(false);
   const [pendingItem, setPendingItem] = useState(null);
   const scrollYRef = useRef(0);
+  const wasModalOpenRef = useRef(false);
   const lastItemsFetchAtRef = useRef(0);
 
   const GLOBAL_MENU_EXIT_MS = 820;
@@ -547,12 +561,17 @@ const AppContent = () => {
     const anyModalOpen = showFullLogin || showOrderSuccess || stockAlert;
     if (anyModalOpen) {
       scrollYRef.current = window.scrollY;
+      wasModalOpenRef.current = true;
       document.body.classList.add('modal-open');
       document.body.style.top = `-${scrollYRef.current}px`;
-    } else {
+    } else if (wasModalOpenRef.current) {
+      wasModalOpenRef.current = false;
       document.body.classList.remove('modal-open');
       document.body.style.top = '';
       window.scrollTo(0, scrollYRef.current);
+    } else {
+      document.body.classList.remove('modal-open');
+      document.body.style.top = '';
     }
     return () => {
       document.body.classList.remove('modal-open');
@@ -1405,102 +1424,50 @@ const AppContent = () => {
 
       {/* RIDEAU DE TRANSITION GLOBAL (Masque le switch de page) */}
       {/* RIDEAU DE TRANSITION GLOBAL (Masque le switch de page) */}
-      <AnimatePresence>
-        {isTransitioning && (
-          <motion.div
-            initial={{
-              y: isInitialGalleryEntry ? "0%" : "100%",
-              borderTopLeftRadius: isInitialGalleryEntry ? "0%" : "100%",
-              borderTopRightRadius: isInitialGalleryEntry ? "0%" : "100%",
-              backgroundColor: "#0F0F11"
-            }}
-            animate={{ 
-              y: "0%", borderTopLeftRadius: "0%", borderTopRightRadius: "0%", backgroundColor: "#0F0F11",
-              transition: { duration: 1.0, ease: [0.22, 1, 0.36, 1] }
-            }}
-            exit={{ 
-              backgroundColor: "rgba(15, 15, 17, 0)", borderTopLeftRadius: "0%", borderTopRightRadius: "0%",
-              transition: { duration: 0, delay: 0.2 }
-            }}
-            className="fixed inset-0 z-[9999] overflow-hidden flex flex-col items-center justify-center pointer-events-auto lg:pointer-events-none shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+      {isTransitioning && (
+          <div
+            className={`gallery-entry-curtain fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden bg-[#0F0F11] pointer-events-auto lg:pointer-events-none shadow-[0_0_50px_rgba(0,0,0,0.5)] ${isInitialGalleryEntry ? '' : 'gallery-entry-curtain--slide-up'}`}
           >
-            {/* PANNEAUX LATÉRAUX (Volets coulissants) */}
-            <motion.div 
-              className="absolute inset-y-0 left-0 w-1/2 bg-[#0F0F11]"
-              initial={{ x: 0 }}
-              exit={{ 
-                x: "-100%",
-                transition: { delay: 0.2, duration: 1.1, ease: [0.76, 0, 0.24, 1] }
-              }}
+            {/* PANNEAUX LATERAUX (Volets coulissants) */}
+            <div
+              className="gallery-entry-panel gallery-entry-panel--left absolute inset-y-0 left-0 w-1/2 bg-[#0F0F11]"
             >
               <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.32)_1px,transparent_0)] [background-size:14px_14px]" />
-            </motion.div>
+            </div>
 
-            <motion.div 
-              className="absolute inset-y-0 right-0 w-1/2 bg-[#0F0F11]"
-              initial={{ x: 0 }}
-              exit={{ 
-                x: "100%",
-                transition: { delay: 0.2, duration: 1.1, ease: [0.76, 0, 0.24, 1] }
-              }}
+            <div
+              className="gallery-entry-panel gallery-entry-panel--right absolute inset-y-0 right-0 w-1/2 bg-[#0F0F11]"
             >
               <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.32)_1px,transparent_0)] [background-size:14px_14px]" />
-            </motion.div>
+            </div>
             
             {/* Arc Ligne architecturale */}
-            <motion.div
-              initial={{ scaleY: 0 }}
-              animate={{ 
-                scaleY: 1,
-                transition: { duration: 1.2, delay: 0.8, ease: "easeOut" }
-              }}
-              exit={{ 
-                opacity: 0, scaleY: 0,
-                transition: { duration: 0.4, delay: 0.1 }
-              }}
-              className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-white/10 origin-top z-10"
+            <div
+              className="gallery-entry-line absolute bottom-0 left-1/2 top-0 z-10 w-[1px] origin-top bg-white/10"
             />
             {/* Typography */}
-            <motion.div className="relative z-20 flex flex-col items-center justify-center">
+            <div className="relative z-20 flex flex-col items-center justify-center">
               <div className="overflow-hidden mb-6 md:mb-10">
-                <motion.span
-                  initial={{ y: "100%", opacity: 0 }}
-                  animate={{ 
-                    y: 0, opacity: 1,
-                    transition: { duration: 0.6, delay: 0.9, ease: "easeOut" }
-                  }}
-                  exit={{ 
-                    y: "-100%", opacity: 0,
-                    transition: { duration: 0.3, delay: 0 }
-                  }}
-                  className="block text-[12px] md:text-[16px] font-bold uppercase tracking-[0.6em] text-white/50 shadow-sm"
+                <span
+                  className="gallery-entry-kicker block text-[12px] md:text-[16px] font-bold uppercase tracking-[0.6em] text-white/50 shadow-sm"
                 >
-                  Entrée dans la
-                </motion.span>
+                  Entree dans la
+                </span>
               </div>
               <div className="overflow-hidden flex">
                 {"Galerie".split("").map((char, index) => (
-                  <motion.h2
+                  <h2
                     key={index}
-                    initial={{ y: "100%", opacity: 0, rotateX: -40 }}
-                    animate={{ 
-                      y: 0, opacity: 1, rotateX: 0,
-                      transition: { duration: 0.8, delay: 1.2 + index * 0.05, ease: [0.22, 1, 0.36, 1] }
-                    }}
-                    exit={{ 
-                      y: "-100%", opacity: 0, rotateX: 40,
-                      transition: { duration: 0.3, delay: index * 0.02 }
-                    }}
-                    className="text-[#F9F6F0] font-serif text-5xl md:text-8xl tracking-[0.2em] text-center"
+                    className="gallery-entry-letter text-[#F9F6F0] font-serif text-5xl md:text-8xl tracking-[0.2em] text-center"
+                    style={{ animationDelay: `${1.2 + index * 0.05}s` }}
                   >
                     {char === " " ? "\u00A0" : char}
-                  </motion.h2>
+                  </h2>
                 ))}
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
 
       {/* COMPOSANT PANIER - Global (Disponible dès que la navbar est visible) */}
       {(cartInteracted || isCartOpen) && (
@@ -1851,14 +1818,10 @@ const AppContent = () => {
       )}
 
       {/* MODAL STOCK INSUFFISANT (Premium UI) */}
-      <AnimatePresence>
-        {stockAlert && (
+      {stockAlert && (
           <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 md:p-6 bg-stone-900/40 backdrop-blur-md">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 10 }}
-              className={`max-w-md w-full p-8 md:p-12 rounded-[2.5rem] shadow-2xl text-center space-y-8 relative overflow-hidden ${darkMode ? 'bg-stone-800' : 'bg-white'}`}
+            <div
+              className={`stock-alert-card max-w-md w-full p-8 md:p-12 rounded-[2.5rem] shadow-2xl text-center space-y-8 relative overflow-hidden ${darkMode ? 'bg-stone-800' : 'bg-white'}`}
             >
               <div className="w-20 h-20 bg-amber-500/10 rounded-[2rem] flex items-center justify-center text-amber-500 mx-auto border border-amber-500/20 shadow-inner">
                 <AlertTriangle size={40} className="animate-pulse" />
@@ -1878,10 +1841,9 @@ const AppContent = () => {
               >
                 <span>J'ai compris</span>
               </button>
-            </motion.div>
+            </div>
           </div>
         )}
-      </AnimatePresence>
     </div >
     </DeferredAnalyticsProvider>
   );
@@ -1889,7 +1851,15 @@ const AppContent = () => {
 // Wrapper to provide Context
 export default function App() {
   useEffect(() => {
+    const scrollYBeforeClientSwap = window.scrollY;
     document.documentElement.dataset.svClientHydrated = 'true';
+    if (scrollYBeforeClientSwap > 0) {
+      window.scrollTo(0, scrollYBeforeClientSwap);
+      window.requestAnimationFrame(() => {
+        window.scrollTo(0, scrollYBeforeClientSwap);
+        window.requestAnimationFrame(() => window.scrollTo(0, scrollYBeforeClientSwap));
+      });
+    }
     return () => {
       delete document.documentElement.dataset.svClientHydrated;
     };
