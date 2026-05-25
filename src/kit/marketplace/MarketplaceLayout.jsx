@@ -153,6 +153,7 @@ const DEFERRED_SECTION_ROOT_MARGIN = '420px 0px 620px';
 const DEFERRED_SECTION_DESKTOP_ROOT_MARGIN = '180px 0px 260px';
 const MOBILE_GALLERY_QUERY = '(max-width: 1023px)';
 const DESKTOP_GALLERY_QUERY = '(min-width: 1024px)';
+const revealedDeferredSectionSlots = new Set();
 
 const MegaMenuPlaceholder = ({ darkMode }) => (
     <div
@@ -247,6 +248,7 @@ const DeferredSectionPlaceholder = ({ darkMode, rows = 3 }) => (
 
 const DeferredSectionSlot = ({
     children,
+    slotId,
     minHeight,
     delay = 0,
     className = '',
@@ -257,10 +259,18 @@ const DeferredSectionSlot = ({
     placeholderRows = 3
 }) => {
     const slotRef = useRef(null);
-    const [isReady, setIsReady] = useState(false);
+    const [isReady, setIsReady] = useState(() => (
+        forceReady || (slotId ? revealedDeferredSectionSlots.has(slotId) : false)
+    ));
+    const wasReadyOnMountRef = useRef(isReady);
 
     useEffect(() => {
+        if (slotId && revealedDeferredSectionSlots.has(slotId)) {
+            setIsReady(true);
+            return undefined;
+        }
         if (forceReady) {
+            if (slotId) revealedDeferredSectionSlots.add(slotId);
             setIsReady(true);
             return undefined;
         }
@@ -274,6 +284,7 @@ const DeferredSectionSlot = ({
             hasQueuedReveal = true;
             timeoutId = window.setTimeout(() => {
                 timeoutId = 0;
+                if (slotId) revealedDeferredSectionSlots.add(slotId);
                 React.startTransition(() => setIsReady(true));
             }, delay);
         };
@@ -303,7 +314,7 @@ const DeferredSectionSlot = ({
             window.clearTimeout(fallbackId);
             if (timeoutId) window.clearTimeout(timeoutId);
         };
-    }, [delay, desktopRootMargin, forceReady, isReady]);
+    }, [delay, desktopRootMargin, forceReady, isReady, slotId]);
 
     const reservedHeight = typeof minHeight === 'number' ? `${minHeight}px` : minHeight;
     const placeholderStyle = isReady
@@ -324,7 +335,7 @@ const DeferredSectionSlot = ({
         >
             {isReady ? (
                 <React.Suspense fallback={<DeferredSectionPlaceholder darkMode={darkMode} rows={placeholderRows} />}>
-                    <div className={animateReveal ? 'deferred-section-reveal' : 'deferred-section-reveal deferred-section-reveal--stable'}>
+                    <div className={animateReveal && !wasReadyOnMountRef.current ? 'deferred-section-reveal' : 'deferred-section-reveal deferred-section-reveal--stable'}>
                         {children}
                     </div>
                 </React.Suspense>
@@ -723,12 +734,12 @@ const MarketplaceLayout = ({
             />
 
             {/* ÉTAPE 5 : Avant / Après — atelier premium adouci */}
-            <DeferredSectionSlot minHeight="760px" delay={0} darkMode={darkMode} placeholderRows={3}>
+            <DeferredSectionSlot slotId="before-after" minHeight="760px" delay={0} darkMode={darkMode} placeholderRows={3}>
                 <BeforeAfterSection darkMode={darkMode} projects={dynamicProjects} />
             </DeferredSectionSlot>
 
             {/* ÉTAPE 6 : "Le Rattrapage" (Grille Petits Prix) */}
-            <DeferredSectionSlot minHeight="1060px" delay={80} darkMode={darkMode} placeholderRows={4}>
+            <DeferredSectionSlot slotId="small-prices" minHeight="1060px" delay={80} darkMode={darkMode} placeholderRows={4}>
                 <ProductSmallPricesSection
                     heading={<SectionHeading tone="price">Petits Prix</SectionHeading>}
                     items={items}
@@ -747,6 +758,7 @@ const MarketplaceLayout = ({
 
             {/* ÉTAPE 7 : "La Connexion Humaine" (Le mur Instagram) - Version Marketplace Stylisée */}
             <DeferredSectionSlot
+                slotId="instagram"
                 minHeight="1060px"
                 delay={0}
                 desktopRootMargin="1200px 0px 1400px"
@@ -759,6 +771,7 @@ const MarketplaceLayout = ({
 
             {/* ÉTAPE 8 : Le "Juge de Paix" (Les Avis Google) */}
             <DeferredSectionSlot
+                slotId="testimonials"
                 minHeight="clamp(640px, 58vw, 840px)"
                 delay={0}
                 desktopRootMargin="1200px 0px 1400px"
@@ -770,7 +783,7 @@ const MarketplaceLayout = ({
             </DeferredSectionSlot>
 
             {/* ÉTAPE 9 : "La Capture" (Newsletter Minimaliste) */}
-            <DeferredSectionSlot minHeight="760px" delay={200} desktopRootMargin="1600px 0px 2200px" darkMode={darkMode} placeholderRows={4}>
+            <DeferredSectionSlot slotId="newsletter" minHeight="760px" delay={200} desktopRootMargin="1600px 0px 2200px" darkMode={darkMode} placeholderRows={4}>
                 <NewsletterSection darkMode={darkMode} />
             </DeferredSectionSlot>
         </div>
