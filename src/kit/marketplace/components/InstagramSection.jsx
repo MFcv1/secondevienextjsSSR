@@ -3,54 +3,13 @@ import { ArrowUpRight, ChevronLeft, ChevronRight, Heart, Instagram, Sparkles } f
 import { motion } from 'framer-motion';
 const INSTAGRAM_URL = 'https://www.instagram.com/secondevie_anais';
 const INSTAGRAM_FOLLOWERS_TARGET = 38.9;
-const INSTAGRAM_DESKTOP_ACTIVE_ROOT_MARGIN = '80px 0px';
-const INSTAGRAM_MOBILE_ACTIVE_ROOT_MARGIN = '240px 0px';
-
 const InstagramFollowerCount = ({ darkMode, compact = false, className = '' }) => {
-    const [displayNumber, setDisplayNumber] = useState('0.0');
-    const hasAnimatedRef = useRef(false);
-    const timerRef = useRef(null);
-
-    useEffect(() => () => {
-        if (timerRef.current) clearInterval(timerRef.current);
-    }, []);
-
-    const animateCounter = () => {
-        if (hasAnimatedRef.current) return;
-        hasAnimatedRef.current = true;
-
-        const duration = 2500;
-        const fps = 30;
-        const totalFrames = duration / (1000 / fps);
-        let currentFrame = 0;
-
-        timerRef.current = setInterval(() => {
-            currentFrame += 1;
-            const progress = Math.min(currentFrame / totalFrames, 1);
-            const easeProgress = 1 - Math.pow(1 - progress, 3);
-            const currentValue = INSTAGRAM_FOLLOWERS_TARGET * easeProgress;
-
-            setDisplayNumber(currentValue.toFixed(1));
-
-            if (progress >= 1) {
-                clearInterval(timerRef.current);
-                timerRef.current = null;
-                setDisplayNumber(INSTAGRAM_FOLLOWERS_TARGET.toFixed(1));
-            }
-        }, 1000 / fps);
-    };
-
     return (
-        <motion.div
-            initial={{ filter: 'blur(10px)', opacity: 0, y: compact ? 10 : 14 }}
-            whileInView={{ filter: 'blur(0px)', opacity: 1, y: 0 }}
-            onViewportEnter={animateCounter}
-            viewport={{ once: true, margin: compact ? '-40px' : '-80px' }}
-            transition={{ duration: 0.9, ease: [0.23, 1, 0.32, 1] }}
+        <div
             className={`flex flex-col ${compact ? 'items-center' : 'items-center md:items-end'} ${className}`}
         >
             <div className={`flex origin-bottom translate-y-[-5px] scale-[1.045] items-end font-serif leading-none tracking-normal ${compact ? 'text-[48px]' : 'text-[58px] md:text-[68px]'} ${darkMode ? 'text-[#F9F6F0]' : 'text-[#1A1A1A]'}`}>
-                <span className="transition-all duration-100">{displayNumber}</span>
+                <span>{INSTAGRAM_FOLLOWERS_TARGET.toFixed(1)}</span>
                 <span className={`${compact ? 'mb-1 ml-1 text-[25px]' : 'mb-1.5 ml-1 text-[30px] md:text-[38px]'} italic lowercase tracking-normal text-[#A68A64]`}>
                     k
                 </span>
@@ -58,16 +17,11 @@ const InstagramFollowerCount = ({ darkMode, compact = false, className = '' }) =
             <p className={`${compact ? 'mt-[15px]' : 'mt-[13px]'} font-sans text-[9px] font-black uppercase tracking-[0.24em] ${darkMode ? 'text-white/55' : 'text-[#8f8579]'}`}>
                 abonnés Instagram
             </p>
-        </motion.div>
+        </div>
     );
 };
 
 
-const INSTA_DURATION = 2500;
-const isThemeTransitionActive = () => (
-    typeof document !== 'undefined' &&
-    document.documentElement.classList.contains('theme-transitioning')
-);
 const MOBILE_INSTA_COPY = [
     { label: "Détails", title: "Porte céladon" },
     { label: "Relooking complet", title: "Buffet parisien" },
@@ -107,32 +61,15 @@ const normalizeInstaPosts = (posts) => {
 };
 
 const InstagramSection = ({ darkMode, posts = [] }) => {
-    const dynamicInsta = useMemo(() => normalizeInstaPosts(posts), [posts]);
+    const initialPostsRef = useRef(null);
+    if (initialPostsRef.current === null) {
+        initialPostsRef.current = normalizeInstaPosts(posts);
+    }
+    const dynamicInsta = initialPostsRef.current;
     const [activeInstaIndex, setActiveInstaIndex] = useState(1);
-    const [isInstaSectionActive, setIsInstaSectionActive] = useState(false);
     const activeInstaIndexRef = useRef(1);
-    const isManualInstaModeRef = useRef(false);
-    const manualResumeTimerRef = useRef(null);
-    const instaSectionRef = useRef(null);
-    const clearManualInstaMode = useCallback(() => {
-        if (manualResumeTimerRef.current) {
-            clearTimeout(manualResumeTimerRef.current);
-            manualResumeTimerRef.current = null;
-        }
-        isManualInstaModeRef.current = false;
-    }, []);
-    const markManualInstaMode = useCallback(() => {
-        if (manualResumeTimerRef.current) clearTimeout(manualResumeTimerRef.current);
-        isManualInstaModeRef.current = true;
-        manualResumeTimerRef.current = setTimeout(() => {
-            isManualInstaModeRef.current = false;
-            manualResumeTimerRef.current = null;
-        }, 1400);
-    }, []);
-    const goToInsta = useCallback((idx, source = 'manual') => {
+    const goToInsta = useCallback((idx) => {
         if (!dynamicInsta.length) return;
-        if (source === 'manual') markManualInstaMode();
-        if (source === 'auto' && isManualInstaModeRef.current) return;
 
         const current = activeInstaIndexRef.current;
         const next = wrapInstaIndex(typeof idx === 'function' ? idx(current) : idx, dynamicInsta.length);
@@ -140,7 +77,7 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
 
         activeInstaIndexRef.current = next;
         setActiveInstaIndex(next);
-    }, [dynamicInsta.length, markManualInstaMode]);
+    }, [dynamicInsta.length]);
     const handlePrevInsta = useCallback(() => {
         goToInsta((current) => current - 1);
     }, [goToInsta]);
@@ -174,43 +111,12 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
         if (!dynamicInsta.length) return;
         if (activeInstaIndexRef.current >= dynamicInsta.length) goToInsta(0);
     }, [dynamicInsta.length, goToInsta]);
-    useEffect(() => {
-        const section = instaSectionRef.current;
-        if (!section || typeof IntersectionObserver === 'undefined') {
-            setIsInstaSectionActive(true);
-            return undefined;
-        }
-        const rootMargin = window.matchMedia('(min-width: 1024px)').matches
-            ? INSTAGRAM_DESKTOP_ACTIVE_ROOT_MARGIN
-            : INSTAGRAM_MOBILE_ACTIVE_ROOT_MARGIN;
-        const observer = new IntersectionObserver(([entry]) => {
-            setIsInstaSectionActive(entry.isIntersecting);
-            if (!entry.isIntersecting) {
-                clearManualInstaMode();
-            }
-        }, { rootMargin });
-        observer.observe(section);
-        return () => observer.disconnect();
-    }, [clearManualInstaMode]);
-    useEffect(() => {
-        if (!isInstaSectionActive || !dynamicInsta.length) return undefined;
-        const timer = setInterval(() => {
-            if (isThemeTransitionActive()) return;
-            if (isManualInstaModeRef.current) return;
-            goToInsta(current => current + 1, 'auto');
-        }, INSTA_DURATION);
-        return () => clearInterval(timer);
-    }, [goToInsta, isInstaSectionActive, dynamicInsta.length]);
-    useEffect(() => () => {
-        if (manualResumeTimerRef.current) clearTimeout(manualResumeTimerRef.current);
-    }, []);
     const handleInstaSelect = (index) => {
         goToInsta(index);
     };
     if (!dynamicInsta.length) return null;
     return (
             <section
-                ref={instaSectionRef}
                 className="pt-[48px] pb-[86px] px-0 md:px-6 md:py-[72px] lg:px-[5vw] lg:py-[78px] xl:py-[86px] overflow-hidden relative"
             >
                 <div className="lg:hidden">
@@ -228,14 +134,10 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
                         <div className="mt-5 flex flex-col items-center gap-5">
                             <InstagramFollowerCount darkMode={darkMode} compact />
 
-                            <motion.a
+                            <a
                                 href={INSTAGRAM_URL}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                initial={{ opacity: 0, y: 14, filter: 'blur(8px)' }}
-                                whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                                viewport={{ once: true, margin: '-50px' }}
-                                transition={{ duration: 0.75, delay: 0.12, ease: [0.23, 1, 0.32, 1] }}
                                 className={`mx-auto flex h-[48px] w-full max-w-[286px] items-center justify-between rounded-full border pl-4 pr-1.5 shadow-[0_14px_36px_rgba(32,26,20,0.08)] transition-colors ${darkMode ? 'border-white/10 bg-white/5 text-white' : 'border-stone-200 bg-white text-[#1A1A1A]'}`}
                             >
                                 <Instagram size={16} strokeWidth={1.8} />
@@ -243,7 +145,7 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
                                 <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${darkMode ? 'bg-white text-black' : 'bg-[#1A1A1A] text-white'}`}>
                                     <ArrowUpRight size={16} strokeWidth={2.1} />
                                 </span>
-                            </motion.a>
+                            </a>
                         </div>
                     </div>
 
@@ -259,11 +161,10 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
                                 const copy = MOBILE_INSTA_COPY[index] || MOBILE_INSTA_COPY[0];
                                 const isCenter = position === 'center';
                                 return (
-                                    <motion.article
+                                    <article
                                         key={post.carouselSlotId || `insta-slot-${index}`}
-                                        animate={MOBILE_INSTA_POSITIONS[position]}
-                                        transition={{ type: "spring", stiffness: 230, damping: 31, mass: 0.9 }}
-                                        className={`absolute left-1/2 top-0 w-[62vw] max-w-[226px] overflow-hidden rounded-[22px] shadow-[0_18px_38px_rgba(32,26,20,0.12)] will-change-transform md:max-w-[250px] ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}
+                                        style={MOBILE_INSTA_POSITIONS[position]}
+                                        className={`absolute left-1/2 top-0 w-[62vw] max-w-[226px] overflow-hidden rounded-[22px] shadow-[0_18px_38px_rgba(32,26,20,0.12)] transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform md:max-w-[250px] ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}
                                         aria-hidden={!isCenter}
                                     >
                                         <div className="aspect-[4/5] overflow-hidden bg-stone-100">
@@ -292,7 +193,7 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
                                                 <Heart size={18} strokeWidth={1.8} />
                                             </button>
                                         </div>
-                                    </motion.article>
+                                    </article>
                                 );
                             })}
                     </motion.div>
@@ -326,16 +227,13 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
                 <div className="hidden max-w-[1280px] mx-auto lg:block">
                     {/* En-tête avec Badge */}
                     <div className="flex flex-col items-center text-center mb-10 xl:mb-12">
-                        <motion.div 
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
+                        <div
                             className="flex items-center gap-3 mb-6"
                         >
                             <div className="w-8 h-[1px] bg-[#A68A64]" />
                             <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#A68A64]">Lifestyle & Atelier</span>
                             <div className="w-8 h-[1px] bg-[#A68A64]" />
-                        </motion.div>
+                        </div>
                         
                         <h2 className={`font-serif text-4xl lg:text-5xl xl:text-6xl ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}>
                             Nous aussi on vous aime
@@ -344,14 +242,10 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
                         <div className="mt-6 flex items-center justify-center gap-7 xl:mt-8 xl:gap-8">
                             <InstagramFollowerCount darkMode={darkMode} className="min-w-[168px]" />
 
-                            <motion.a 
+                            <a
                                 href={INSTAGRAM_URL}
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                initial={{ opacity: 0, y: 16, filter: 'blur(8px)' }}
-                                whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                                viewport={{ once: true, margin: '-70px' }}
-                                transition={{ duration: 0.8, delay: 0.16, ease: [0.23, 1, 0.32, 1] }}
                                 className={`group relative flex min-h-[54px] items-center gap-4 overflow-hidden rounded-full border py-2 pl-5 pr-2 transition-all duration-500 backdrop-blur-md ${darkMode ? 'border-white/10 bg-white/5 hover:border-white/40' : 'border-black/5 bg-stone-50 hover:border-black/20'}`}
                             >
                                 <Instagram size={17} className={darkMode ? 'relative z-10 text-white' : 'relative z-10 text-black'} />
@@ -362,7 +256,7 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
                                 <div className={`relative z-10 flex h-10 w-10 rounded-full items-center justify-center transition-colors duration-500 ${darkMode ? 'bg-white text-black group-hover:bg-[#111] group-hover:text-white' : 'bg-[#1A1A1A] text-white group-hover:bg-white group-hover:text-[#1A1A1A]'}`}>
                                     <ArrowUpRight size={17} strokeWidth={2.2} />
                                 </div>
-                            </motion.a>
+                            </a>
                         </div>
                     </div>
 
@@ -380,11 +274,10 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
                                 const isCenter = position === 'center';
 
                                 return (
-                                    <motion.article
+                                    <article
                                         key={post.carouselSlotId || `insta-slot-${index}`}
-                                        animate={DESKTOP_INSTA_POSITIONS[position]}
-                                        transition={{ type: "spring", stiffness: 230, damping: 31, mass: 0.9 }}
-                                        className={`absolute left-1/2 top-2 w-[min(26vw,312px)] overflow-hidden rounded-[28px] shadow-[0_24px_60px_rgba(32,26,20,0.13)] will-change-transform xl:w-[min(25vw,340px)] xl:rounded-[34px] ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}
+                                        style={DESKTOP_INSTA_POSITIONS[position]}
+                                        className={`absolute left-1/2 top-2 w-[min(26vw,312px)] overflow-hidden rounded-[28px] shadow-[0_24px_60px_rgba(32,26,20,0.13)] transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform xl:w-[min(25vw,340px)] xl:rounded-[34px] ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}
                                         aria-hidden={!isCenter}
                                     >
                                     <div className="aspect-[4/5] overflow-hidden bg-stone-100">
@@ -413,7 +306,7 @@ const InstagramSection = ({ darkMode, posts = [] }) => {
                                             <Heart size={20} strokeWidth={1.8} />
                                         </button>
                                     </div>
-                                    </motion.article>
+                                    </article>
                                 );
                             })}
                     </motion.div>

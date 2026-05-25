@@ -548,6 +548,10 @@ img {
   opacity: 1;
 }
 
+.deferred-section-reveal--stable {
+  animation: none !important;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .deferred-section-placeholder {
     animation: deferred-section-placeholder-in 420ms cubic-bezier(.29,.65,.58,1) both;

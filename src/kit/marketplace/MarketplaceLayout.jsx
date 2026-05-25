@@ -251,6 +251,7 @@ const DeferredSectionSlot = ({
     delay = 0,
     className = '',
     forceReady = false,
+    animateReveal = true,
     desktopRootMargin = DEFERRED_SECTION_DESKTOP_ROOT_MARGIN,
     darkMode = false,
     placeholderRows = 3
@@ -305,11 +306,13 @@ const DeferredSectionSlot = ({
     }, [delay, desktopRootMargin, forceReady, isReady]);
 
     const reservedHeight = typeof minHeight === 'number' ? `${minHeight}px` : minHeight;
-    const placeholderStyle = {
-        minHeight: reservedHeight,
-        contentVisibility: 'auto',
-        containIntrinsicSize: reservedHeight,
-    };
+    const placeholderStyle = isReady
+        ? { minHeight: reservedHeight }
+        : {
+            minHeight: reservedHeight,
+            contentVisibility: 'auto',
+            containIntrinsicSize: reservedHeight,
+        };
 
     return (
         <div
@@ -321,7 +324,7 @@ const DeferredSectionSlot = ({
         >
             {isReady ? (
                 <React.Suspense fallback={<DeferredSectionPlaceholder darkMode={darkMode} rows={placeholderRows} />}>
-                    <div className="deferred-section-reveal">
+                    <div className={animateReveal ? 'deferred-section-reveal' : 'deferred-section-reveal deferred-section-reveal--stable'}>
                         {children}
                     </div>
                 </React.Suspense>
@@ -743,12 +746,26 @@ const MarketplaceLayout = ({
             </DeferredSectionSlot>
 
             {/* ÉTAPE 7 : "La Connexion Humaine" (Le mur Instagram) - Version Marketplace Stylisée */}
-            <DeferredSectionSlot minHeight="1060px" delay={120} darkMode={darkMode} placeholderRows={4}>
+            <DeferredSectionSlot
+                minHeight="1060px"
+                delay={0}
+                desktopRootMargin="1200px 0px 1400px"
+                animateReveal={false}
+                darkMode={darkMode}
+                placeholderRows={4}
+            >
                 <InstagramSection darkMode={darkMode} posts={dynamicInsta} />
             </DeferredSectionSlot>
 
             {/* ÉTAPE 8 : Le "Juge de Paix" (Les Avis Google) */}
-            <DeferredSectionSlot minHeight="640px" delay={160} darkMode={darkMode} placeholderRows={3}>
+            <DeferredSectionSlot
+                minHeight="clamp(640px, 58vw, 840px)"
+                delay={0}
+                desktopRootMargin="1200px 0px 1400px"
+                animateReveal={false}
+                darkMode={darkMode}
+                placeholderRows={3}
+            >
                 <TestimonialsSection darkMode={darkMode} />
             </DeferredSectionSlot>
 

@@ -143,16 +143,12 @@ const TestimonialsHeader = ({ headingId, darkMode, compact = false }) => (
             ))}
         </div>
 
-        <motion.h2
+        <h2
             id={headingId}
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
             className={`${compact ? 'text-[34px]' : 'text-[44px]'} font-serif leading-none tracking-normal ${darkMode ? 'text-white' : 'text-[#242221]'}`}
         >
             La parole à nos clients.
-        </motion.h2>
+        </h2>
 
         <p className={`mt-6 text-[10px] font-black uppercase tracking-[0.14em] ${darkMode ? 'text-stone-400' : 'text-[#77716b]'}`}>
             Excellent 4.9/5 - basé sur 124 avis Google
@@ -185,15 +181,17 @@ const TestimonialCard = ({ note, position, positions, size }) => {
     const isDesktop = size === 'desktop';
 
     return (
-        <motion.article
-            animate={positions[position]}
-            transition={{ type: 'spring', stiffness: 230, damping: 31, mass: 0.9 }}
+        <article
+            style={{
+                ...positions[position],
+                backgroundColor: note.color,
+                width: isDesktop ? 'min(29vw, 350px)' : undefined,
+            }}
             className={`absolute left-1/2 top-0 flex flex-col justify-between rounded-[16px] will-change-transform ${
                 isDesktop
                     ? 'h-[306px] px-7 py-8 shadow-[0_16px_38px_rgba(69,57,42,0.08)] xl:h-[332px] xl:px-9 xl:py-10'
                     : 'h-[292px] w-[232px] px-6 py-8 shadow-[0_18px_36px_rgba(69,57,42,0.035)]'
-            }`}
-            style={{ backgroundColor: note.color, width: isDesktop ? 'min(29vw, 350px)' : undefined }}
+            } transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]`}
         >
             <div
                 aria-hidden="true"
@@ -207,7 +205,7 @@ const TestimonialCard = ({ note, position, positions, size }) => {
                 <span className="h-px w-5 bg-[#aaa49b]" />
                 {note.author}
             </p>
-        </motion.article>
+        </article>
     );
 };
 
