@@ -8,7 +8,7 @@ const PRODUCT_CARD_DESKTOP_QUERY = '(min-width: 1024px)';
 const PRODUCT_CARD_IMAGE_BATCH_SIZE = 4;
 const PRODUCT_CARD_IMAGE_BATCH_DELAY_MS = 80;
 const PRODUCT_CARD_DEFAULT_NEAR_MARGIN = { before: 260, after: 340 };
-const PRODUCT_CARD_DESKTOP_NEAR_MARGIN = { before: 120, after: 180 };
+const PRODUCT_CARD_DESKTOP_NEAR_MARGIN = { before: 280, after: 720 };
 
 const productCardImageRequestQueue = [];
 let productCardImageRequestTimer = 0;

@@ -1,13 +1,42 @@
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+
+const TRANSPARENT_IMAGE_SRC = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
 const BeforeAfterSection = ({ darkMode, projects = [] }) => {
     const safeProjects = Array.isArray(projects) ? projects : [];
+    const sectionRef = useRef(null);
     const sliderClipRef = useRef(null);
     const sliderLineRef = useRef(null);
     const sliderInputRef = useRef(null);
     const [activeProjectIndex, setActiveProjectIndex] = useState(0);
+    const [isMediaReady, setIsMediaReady] = useState(false);
     const activeProject = safeProjects[activeProjectIndex] || safeProjects[0];
+
+    React.useEffect(() => {
+        if (isMediaReady) return undefined;
+        if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
+            setIsMediaReady(true);
+            return undefined;
+        }
+
+        const node = sectionRef.current;
+        if (!node) return undefined;
+
+        const observer = new IntersectionObserver(([entry]) => {
+            if (!entry.isIntersecting) return;
+            setIsMediaReady(true);
+            observer.disconnect();
+        }, {
+            rootMargin: '760px 0px 960px',
+            threshold: 0.01,
+        });
+
+        observer.observe(node);
+        return () => observer.disconnect();
+    }, [isMediaReady]);
+
     useLayoutEffect(() => {
         if (sliderClipRef.current) sliderClipRef.current.style.clipPath = 'polygon(0 0, 50% 0, 50% 100%, 0 100%)';
         if (sliderLineRef.current) sliderLineRef.current.style.left = '50%';
@@ -21,8 +50,12 @@ const BeforeAfterSection = ({ darkMode, projects = [] }) => {
     const handleNextProject = () => setActiveProjectIndex((prev) => (safeProjects.length ? (prev + 1) % safeProjects.length : 0));
     const handlePrevProject = () => setActiveProjectIndex((prev) => (safeProjects.length ? (prev - 1 + safeProjects.length) % safeProjects.length : 0));
     if (!activeProject) return null;
+    const apresSrc = isMediaReady ? activeProject.apres : TRANSPARENT_IMAGE_SRC;
+    const avantSrc = isMediaReady ? activeProject.avant : TRANSPARENT_IMAGE_SRC;
+
     return (
             <section
+                ref={sectionRef}
                 className={`before-after-industrial relative flex w-full items-center overflow-hidden px-3 py-10 sm:px-5 sm:py-12 md:min-h-[690px] md:px-7 md:py-14 lg:min-h-[760px] lg:px-8 lg:py-16 2xl:min-h-[780px] 2xl:px-10 ${
                 darkMode ? 'bg-[#141210]' : 'bg-[#f8f1e6]'
             }`}
@@ -130,8 +163,8 @@ const BeforeAfterSection = ({ darkMode, projects = [] }) => {
                                 }`}>
                                 <AnimatePresence mode="wait">
                                     <motion.img
-                                        key={`apres-${activeProject.id}`}
-                                        src={activeProject.apres}
+                                        key={`apres-${activeProject.id}-${isMediaReady ? 'real' : 'placeholder'}`}
+                                        src={apresSrc}
                                         sizes="(max-width: 768px) calc(100vw - 3rem), 700px"
                                         alt="Projet Restauration Après"
                                         loading="lazy"
@@ -159,8 +192,8 @@ const BeforeAfterSection = ({ darkMode, projects = [] }) => {
                                 >
                                     <AnimatePresence mode="wait">
                                         <motion.img
-                                            key={`avant-${activeProject.id}`}
-                                            src={activeProject.avant}
+                                            key={`avant-${activeProject.id}-${isMediaReady ? 'real' : 'placeholder'}`}
+                                            src={avantSrc}
                                             sizes="(max-width: 768px) calc(100vw - 3rem), 700px"
                                             alt="Projet Restauration Avant"
                                             loading="lazy"
