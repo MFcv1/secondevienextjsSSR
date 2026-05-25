@@ -18,6 +18,48 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
   display: none !important;
 }
 
+.product-ssr-visual-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: none;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  .product-ssr-visual-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-right: min(31vw, 610px);
+  }
+
+  .product-ssr-visual-preview__backdrop {
+    position: absolute;
+    inset: -10%;
+    width: 120%;
+    height: 120%;
+    object-fit: cover;
+    opacity: 0.5;
+    filter: blur(80px) saturate(1.5);
+    transform: scale(1.1);
+  }
+
+  .product-ssr-visual-preview__image {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: min(48vw, 620px);
+    max-height: min(78vh, 760px);
+    object-fit: contain;
+    border-radius: 1rem;
+    box-shadow: 0 45px 110px -25px rgba(0, 0, 0, 0.8);
+  }
+}
+
 html,
 body,
 #root {

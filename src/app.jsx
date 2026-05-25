@@ -1853,6 +1853,9 @@ export default function App() {
   useEffect(() => {
     const scrollYBeforeClientSwap = window.scrollY;
     document.documentElement.dataset.svClientHydrated = 'true';
+    const productPreviewRemovalTimer = window.setTimeout(() => {
+      document.querySelectorAll('[data-product-ssr-preview]').forEach((node) => node.remove());
+    }, 4200);
     if (scrollYBeforeClientSwap > 0) {
       window.scrollTo(0, scrollYBeforeClientSwap);
       window.requestAnimationFrame(() => {
@@ -1861,6 +1864,7 @@ export default function App() {
       });
     }
     return () => {
+      window.clearTimeout(productPreviewRemovalTimer);
       delete document.documentElement.dataset.svClientHydrated;
     };
   }, []);

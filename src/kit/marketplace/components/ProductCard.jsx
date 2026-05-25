@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plus, Heart } from 'lucide-react';
 import { getProductUrl } from '../../../utils/slug';
-import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, preloadPrimaryProductDetailImage, preloadProductImages } from '../../../utils/imageUtils';
+import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, preloadPrimaryProductDetailImage, preloadProductImages, rememberInstantProductDetailImage } from '../../../utils/imageUtils';
 
 const TRANSPARENT_IMAGE_SRC = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 const PRODUCT_CARD_DESKTOP_QUERY = '(min-width: 1024px)';
@@ -13,6 +13,16 @@ const PRODUCT_CARD_DESKTOP_NEAR_MARGIN = { before: 280, after: 720 };
 const productCardImageRequestQueue = [];
 let productCardImageRequestTimer = 0;
 let productCardImageRequestFrame = 0;
+let productDetailModuleWarmupPromise = null;
+
+const warmProductDetailModule = () => {
+    if (productDetailModuleWarmupPromise || typeof window === 'undefined') return productDetailModuleWarmupPromise;
+    productDetailModuleWarmupPromise = import('../ProductDetail').catch((error) => {
+        productDetailModuleWarmupPromise = null;
+        throw error;
+    });
+    return productDetailModuleWarmupPromise;
+};
 
 const scheduleProductCardImageQueueFlush = () => {
     if (productCardImageRequestTimer || productCardImageRequestFrame) return;
@@ -53,6 +63,20 @@ const enqueueProductCardImageRequest = (callback, { priority = false } = {}) => 
     }
 
     scheduleProductCardImageQueueFlush();
+};
+
+const scheduleProductDetailModuleWarmup = () => {
+    if (typeof window === 'undefined') return;
+    if (!window.matchMedia?.(PRODUCT_CARD_DESKTOP_QUERY).matches) return;
+
+    const run = () => warmProductDetailModule()?.catch(() => {});
+
+    if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(run, { timeout: 2600 });
+        return;
+    }
+
+    window.setTimeout(run, 1400);
 };
 
 const getProductCardObserverRoot = (node) => {
@@ -144,7 +168,26 @@ const ProductCard = ({
     const handleImageLoad = React.useCallback((event) => {
         if (event.currentTarget.dataset.realImage !== 'true') return;
         setIsImageLoaded(true);
-    }, []);
+        const image = event.currentTarget;
+        rememberInstantProductDetailImage(item, {
+            src: image.currentSrc || image.src,
+            index: 0,
+            width: image.naturalWidth,
+            height: image.naturalHeight,
+        });
+        scheduleProductDetailModuleWarmup();
+    }, [item]);
+
+    const rememberCurrentCardImageForDetail = React.useCallback(() => {
+        const image = cardRef.current?.querySelector('img[data-real-image="true"]');
+        const src = image?.currentSrc || image?.src || cardImage.src;
+        rememberInstantProductDetailImage(item, {
+            src,
+            index: 0,
+            width: image?.naturalWidth || 0,
+            height: image?.naturalHeight || 0,
+        });
+    }, [cardImage.src, item]);
     const canWarmupImages = React.useCallback(() => {
         if (suspendImageWarmup) return false;
         const connection = typeof navigator !== 'undefined'
@@ -155,13 +198,14 @@ const ProductCard = ({
     const warmupPrimaryDetailImage = React.useCallback((options = {}) => {
         if (!canWarmupImages()) return;
         onPrefetch?.(item.id);
+        warmProductDetailModule()?.catch(() => {});
         if (primaryWarmupStartedRef.current && !options.force) return;
         primaryWarmupStartedRef.current = true;
         preloadPrimaryProductDetailImage(item, {
             priority: options.priority || 'high',
             decode: options.decode !== false,
-            srcSet: options.srcSet,
-            variant: options.variant,
+            srcSet: options.srcSet ?? false,
+            variant: options.variant || 'medium',
         });
     }, [canWarmupImages, item, onPrefetch]);
     const warmupDetailImages = React.useCallback(() => {
@@ -172,6 +216,8 @@ const ProductCard = ({
             priority: 'low',
             neighborPriority: 'low',
             decode: false,
+            srcSet: false,
+            variant: 'medium',
         });
     }, [canWarmupImages, item, warmupPrimaryDetailImage]);
     const prefetchProductIntent = React.useCallback(() => {
@@ -366,6 +412,7 @@ const ProductCard = ({
 
         e.preventDefault();
         touchOpenHandledRef.current = true;
+        rememberCurrentCardImageForDetail();
         warmupPrimaryDetailImage({ priority: 'high', decode: true, variant: 'medium', srcSet: false });
         onClick();
         warmupDetailImagesAfterOpen();
@@ -398,6 +445,7 @@ const ProductCard = ({
                 if (!e.ctrlKey && !e.metaKey) {
                     e.preventDefault();
                     if (onClick) {
+                        rememberCurrentCardImageForDetail();
                         warmupPrimaryDetailImage({ priority: 'high', decode: true });
                         onClick();
                         warmupDetailImagesAfterOpen();

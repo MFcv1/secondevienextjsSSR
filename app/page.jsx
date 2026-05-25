@@ -70,6 +70,13 @@ export default async function Page() {
       >
         <div className="grid min-h-screen lg:grid-cols-[0.95fr_1.05fr]">
           <div className="relative min-h-[52vh] overflow-hidden bg-stone-900 lg:min-h-screen">
+            <img
+              src="/images/gallery-hero-1.webp"
+              alt="Mobilier ancien restaure par Seconde Vie"
+              width={1200}
+              height={1500}
+              loading="lazy"
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-stone-950/55 via-stone-950/20 to-transparent" />
           </div>
           <div className="flex flex-col justify-center px-5 py-10 md:px-10 lg:px-14">

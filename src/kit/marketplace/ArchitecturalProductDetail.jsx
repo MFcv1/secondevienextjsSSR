@@ -9,6 +9,7 @@ import {
     getProductImageItems,
     getProductZoomFullImageSrc,
     getProductZoomInitialImageSrc,
+    getInstantProductDetailImage,
     preloadImage,
 } from '../../utils/imageUtils';
 import SEO from '../shared/SEO';
@@ -31,6 +32,8 @@ const MOBILE_LIGHTBOX_MAX_HEIGHT = 860;
 const MOBILE_DETAIL_RESERVED_REM = 15.5;
 const DEFAULT_DETAIL_BACKDROP_COLOR = '#fafaf9';
 const MOBILE_DETAIL_STAGE_VARIANT = 'medium';
+const DESKTOP_DETAIL_IMMEDIATE_VARIANT = 'card';
+const DESKTOP_DETAIL_STAGE_VARIANT = 'medium';
 const DESKTOP_DETAIL_PRELOAD_WINDOW = 3;
 const MOBILE_DETAIL_PRELOAD_WINDOW = 3;
 
@@ -314,6 +317,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
     const [showZoomHint, setShowZoomHint] = useState(false);
     const [lightboxFullImages, setLightboxFullImages] = useState({});
     const [imageAspectRatios, setImageAspectRatios] = useState({});
+    const [desktopStagedImages, setDesktopStagedImages] = useState({});
     const [viewportBox, setViewportBox] = useState(getViewportBox);
     const [isDesktopDetailViewport, setIsDesktopDetailViewport] = useState(() => (
         typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches
@@ -1199,7 +1203,22 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
     }, [imageItems]);
     const images = useMemo(() => imageItems.map((image) => image.src).filter(Boolean), [imageItems]);
     const activeImage = imageItems[activeImg] || imageItems[0] || {};
-    const activeImageSrc = getProductDisplayImageSrc(activeImage, { viewport: 'desktop' }) || activeImage.src || images[0] || '';
+    const activeDesktopInstantImage = isDesktopDetailViewport
+        ? getInstantProductDetailImage(item, activeImg)
+        : null;
+    const activeDesktopImmediateSrc = activeDesktopInstantImage?.src
+        || activeImage.thumb
+        || getProductDisplayImageSrc(activeImage, { variant: DESKTOP_DETAIL_IMMEDIATE_VARIANT })
+        || activeImage.card
+        || activeImage.medium
+        || activeImage.src
+        || images[0]
+        || '';
+    const activeDesktopFallbackSrc = getProductDisplayImageSrc(activeImage, { variant: DESKTOP_DETAIL_STAGE_VARIANT }) || activeImage.src || images[0] || '';
+    const activeDesktopStagedImage = desktopStagedImages[activeImg];
+    const isActiveDesktopImageDecoded = Boolean(activeDesktopStagedImage?.src);
+    const activeImageSrc = activeDesktopStagedImage?.src || activeDesktopImmediateSrc || activeDesktopFallbackSrc;
+    const hasActiveDesktopImageSource = Boolean(activeImageSrc);
     const activeImageZoomFullSrc = getProductZoomFullImageSrc(activeImage) || activeImageSrc;
     const detailBackdropSrc = getDetailBackdropImageSrc(activeImage);
     const detailBackdropColor = activeImage.metadata?.dominantColor || DEFAULT_DETAIL_BACKDROP_COLOR;
@@ -1209,7 +1228,12 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
         ? displayedDetailBackdrop.color || detailBackdropColor
         : 'transparent';
     const lightboxImageTransform = `translate3d(${lightboxOffset.x}px, ${lightboxOffset.y}px, 0) scale(${lightboxZoom})`;
-    const activeImageRatio = imageAspectRatios[activeImageSrc] || imageAspectRatios[activeImageZoomFullSrc] || null;
+    const activeImageRatio = activeDesktopStagedImage?.ratio
+        || activeDesktopInstantImage?.ratio
+        || imageAspectRatios[activeImageSrc]
+        || imageAspectRatios[activeDesktopImmediateSrc]
+        || imageAspectRatios[activeImageZoomFullSrc]
+        || null;
     const activeImageFitMode = getProductImageFitMode(activeImageRatio);
     const safeMobileDisplayedImageIndex = Math.min(
         Math.max(mobileDisplayedImageIndex, 0),
@@ -1331,8 +1355,8 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
 
     const handlePrimaryDetailImageLoad = React.useCallback((event) => {
         setHasPrimaryImagePainted(true);
-        rememberProductImageRatio(event, activeImageSrc, activeImageZoomFullSrc);
-    }, [activeImageSrc, activeImageZoomFullSrc, rememberProductImageRatio]);
+        rememberProductImageRatio(event, activeImageSrc, activeDesktopImmediateSrc, activeImageZoomFullSrc);
+    }, [activeDesktopImmediateSrc, activeImageSrc, activeImageZoomFullSrc, rememberProductImageRatio]);
 
     const rememberStagedProductImage = React.useCallback((index, resolved, image) => {
         if (!resolved?.src) return;
@@ -1520,6 +1544,61 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
     useEffect(() => {
         if (!isDesktopDetailViewport || !imageItems.length || typeof window === 'undefined') return undefined;
 
+        const targetImage = imageItems[activeImg];
+        if (!targetImage) return undefined;
+
+        let cancelled = false;
+
+        resolveStagedProductDetailImage(targetImage, {
+            variant: DESKTOP_DETAIL_STAGE_VARIANT,
+            srcSet: false,
+            priority: 'high',
+        })
+            .then((resolved) => {
+                if (cancelled || !resolved?.src) return;
+
+                setDesktopStagedImages((prev) => {
+                    const previous = prev[activeImg];
+                    if (
+                        previous?.src === resolved.src &&
+                        Math.abs((previous?.ratio || 0) - (resolved.ratio || 0)) <= 0.001
+                    ) {
+                        return prev;
+                    }
+
+                    return {
+                        ...prev,
+                        [activeImg]: resolved,
+                    };
+                });
+
+                if (resolved.ratio) {
+                    setImageAspectRatios((prev) => {
+                        const keys = [resolved.src, activeDesktopImmediateSrc, activeDesktopFallbackSrc, activeImageZoomFullSrc].filter(Boolean);
+                        let changed = false;
+                        const next = { ...prev };
+
+                        keys.forEach((key) => {
+                            if (Math.abs((prev[key] || 0) - resolved.ratio) > 0.001) {
+                                next[key] = resolved.ratio;
+                                changed = true;
+                            }
+                        });
+
+                        return changed ? next : prev;
+                    });
+                }
+            })
+            .catch(() => null);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [activeDesktopFallbackSrc, activeDesktopImmediateSrc, activeImageZoomFullSrc, activeImg, imageItems, isDesktopDetailViewport]);
+
+    useEffect(() => {
+        if (!isDesktopDetailViewport || !imageItems.length || typeof window === 'undefined') return undefined;
+
         const timeoutIds = new Set();
         const seen = new Set();
         const preloadOrder = buildProductImagePreloadOrder(imageItems.length, activeImg).filter((index) => {
@@ -1640,7 +1719,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
         const shouldDecodeNearbyMobileImages = isMobileDetail
             && !connection?.saveData
             && !/(^|-)2g$/.test(connection?.effectiveType || '');
-        const desktopPreloadVariant = isMobileDetail ? null : 'large';
+        const desktopPreloadVariant = isMobileDetail ? null : DESKTOP_DETAIL_STAGE_VARIANT;
         const preloadOrder = buildProductImagePreloadOrder(imageItems.length, activeImg);
         const loadIndex = (index, options = {}) => {
             const image = imageItems[index];
@@ -2280,11 +2359,23 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                 <motion.div
                                     key={activeImg}
                                     className="absolute inset-0 flex items-center justify-center"
-                                    initial={{ opacity: 0, scale: 0.98, filter: 'blur(10px)' }}
+                                    initial={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
                                     animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                                    exit={{ opacity: 0, scale: 1.02, filter: 'blur(10px)' }}
-                                    transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
+                                    exit={{ opacity: 0, scale: 1, filter: 'blur(0px)' }}
+                                    transition={{ duration: 0.12, ease: [0.25, 1, 0.5, 1] }}
                                 >
+                                    {!hasActiveDesktopImageSource && (
+                                        <div
+                                            aria-hidden="true"
+                                            className="absolute h-[min(92%,680px)] w-[min(62%,620px)] rounded-2xl bg-stone-200/45 shadow-[0_45px_110px_-25px_rgba(0,0,0,0.45)]"
+                                            style={{
+                                                backgroundColor: activeImage.metadata?.dominantColor || DEFAULT_DETAIL_BACKDROP_COLOR,
+                                                backgroundImage: activeImage.metadata?.blurDataUrl ? `url("${activeImage.metadata.blurDataUrl}")` : undefined,
+                                                backgroundSize: 'cover',
+                                                backgroundPosition: 'center',
+                                            }}
+                                        />
+                                    )}
                                     <img
                                         src={activeImageSrc}
                                         srcSet={undefined}
@@ -2294,7 +2385,8 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                         decoding="async"
                                         fetchPriority="high"
                                         onLoad={handlePrimaryDetailImageLoad}
-                                        className="block h-auto w-auto max-h-[92%] max-w-full object-contain rounded-2xl shadow-[0_45px_110px_-25px_rgba(0,0,0,0.8)]"
+                                        data-desktop-image-ready={isActiveDesktopImageDecoded ? 'true' : 'preview'}
+                                        className={`block h-auto w-auto max-h-[92%] max-w-full object-contain rounded-2xl shadow-[0_45px_110px_-25px_rgba(0,0,0,0.8)] transition-opacity duration-[120ms] ease-out ${hasActiveDesktopImageSource ? 'opacity-100' : 'opacity-0'}`}
                                     />
                                 </motion.div>
                             </AnimatePresence>

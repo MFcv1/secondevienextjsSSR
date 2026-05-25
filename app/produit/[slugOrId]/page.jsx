@@ -5,13 +5,16 @@ import {
 } from '../../../src/lib/server/products';
 import { publicEnv } from '../../../src/lib/server/env';
 import { getCategoryUrl, getProductUrl } from '../../../src/utils/slug';
-import { getProductDisplayImageSrc, getProductImageItems } from '../../../src/utils/imageUtils';
+import {
+  getProductDisplayImageSrc,
+  getProductImageItems
+} from '../../../src/utils/imageUtils';
 import {
   buildBreadcrumbJsonLd,
   buildProductJsonLd,
   getProductPrice
 } from '../../../src/lib/seo/productStructuredData';
-import ProductPageExperience from '../../../src/kit/marketplace/ProductPageExperience';
+import ClientApp from '../../ClientApp';
 
 export const revalidate = 300;
 export const dynamicParams = true;
@@ -62,6 +65,7 @@ const getClientImages = (product) => getProductImageItems(product).map((image) =
   medium: image.medium || '',
   large: image.large || '',
   full: image.full || '',
+  srcSet: image.srcSet || '',
   ratio: image.ratio || null,
   metadata: image.metadata ? {
     width: image.metadata.width || 0,
@@ -71,25 +75,6 @@ const getClientImages = (product) => getProductImageItems(product).map((image) =
     blurDataUrl: image.metadata.blurDataUrl || '',
   } : null,
 }));
-
-const getClientProduct = (product) => ({
-  id: product.id || '',
-  collectionName: product.collectionName || 'furniture',
-  name: product.name || product.title || 'Produit',
-  title: product.title || product.name || 'Produit',
-  category: product.category || '',
-  description: product.description || '',
-  material: product.material || '',
-  style: product.style || '',
-  origin: product.origin || '',
-  dimensions: product.dimensions || '',
-  currentPrice: product.currentPrice ?? null,
-  startingPrice: product.startingPrice ?? null,
-  price: product.price ?? null,
-  priceOnRequest: Boolean(product.priceOnRequest),
-  sold: Boolean(product.sold),
-  stock: product.stock ?? null,
-});
 
 export async function generateMetadata({ params }) {
   const product = await getProductPageData(params);
@@ -134,9 +119,14 @@ export default async function ProductPage({ params }) {
   const breadcrumbJsonLd = buildBreadcrumbJsonLd(product, publicEnv.siteUrl);
   const categoryHref = product.category ? getCategoryUrl(product.category) : '/';
   const images = getClientImages(product);
-  const primaryPreloadMobile = getProductDisplayImageSrc(images[0], { viewport: 'mobile' });
-  const primaryPreloadDesktop = getProductDisplayImageSrc(images[0], { viewport: 'desktop' });
-  const productPayload = getClientProduct(product);
+  const primaryImmediateImage = images[0]?.thumb
+    || images[0]?.card
+    || getProductDisplayImageSrc(images[0], { variant: 'card' })
+    || images[0]?.medium
+    || images[0]?.large
+    || images[0]?.src
+    || '';
+  const primaryPreviewColor = images[0]?.metadata?.dominantColor || '#8c7b64';
   const priceLabel = price && !product.priceOnRequest ? formatPrice(price) : 'Prix sur demande';
   const facts = compact([
     { label: 'Matiere', value: product.material },
@@ -148,19 +138,72 @@ export default async function ProductPage({ params }) {
 
   return (
     <>
-      {primaryPreloadMobile ? (
-        <link rel="preload" as="image" href={primaryPreloadMobile} media="(max-width: 1023px)" fetchPriority="high" />
+      {primaryImmediateImage ? (
+        <link
+          rel="preload"
+          as="image"
+          href={primaryImmediateImage}
+          fetchPriority="high"
+        />
       ) : null}
-      {primaryPreloadDesktop && primaryPreloadDesktop !== primaryPreloadMobile ? (
-        <link rel="preload" as="image" href={primaryPreloadDesktop} media="(min-width: 1024px)" fetchPriority="high" />
+      <article data-ssr-product className="sr-only">
+        <nav aria-label="Fil d'Ariane">
+          <a href="/">Galerie</a>
+          {product.category ? (
+            <>
+              <span> / </span>
+              <a href={categoryHref}>{product.category}</a>
+            </>
+          ) : null}
+        </nav>
+        <h1>{product.name || product.title || 'Produit'}</h1>
+        <p>{priceLabel}</p>
+        {product.description ? <p>{product.description}</p> : null}
+        {facts.length ? (
+          <dl>
+            {facts.map((fact) => (
+              <div key={fact.label}>
+                <dt>{fact.label}</dt>
+                <dd>{fact.value}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
+        {primaryImmediateImage ? (
+          <img
+            src={primaryImmediateImage}
+            alt={product.name || product.title || 'Produit'}
+            width={images[0].metadata?.width || 768}
+            height={images[0].metadata?.height || 1024}
+          />
+        ) : null}
+      </article>
+      {primaryImmediateImage ? (
+        <div
+          data-product-ssr-preview
+          className="product-ssr-visual-preview"
+          aria-hidden="true"
+          style={{ backgroundColor: primaryPreviewColor }}
+        >
+          <img
+            className="product-ssr-visual-preview__backdrop"
+            src={images[0]?.thumb || primaryImmediateImage}
+            alt=""
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
+          />
+          <img
+            className="product-ssr-visual-preview__image"
+            src={primaryImmediateImage}
+            alt=""
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
+          />
+        </div>
       ) : null}
-      <ProductPageExperience
-        product={productPayload}
-        images={images}
-        facts={facts}
-        categoryHref={categoryHref}
-        priceLabel={priceLabel}
-      />
+      <ClientApp />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}

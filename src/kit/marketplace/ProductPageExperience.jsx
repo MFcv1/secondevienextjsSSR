@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import {
+  PRODUCT_DIRECT_DETAIL_IMAGE_SIZES,
   getProductDisplayImageSrc,
   getProductZoomFullImageSrc,
   getProductZoomInitialImageSrc,
@@ -24,6 +25,10 @@ const TALL_IMAGE_RATIO = 0.72;
 
 const getThumbSrc = (image) => (
   image?.thumb || image?.card || image?.medium || image?.src || image?.large || image?.full || ''
+);
+
+const getDirectDisplayFallbackSrc = (image) => (
+  image?.medium || image?.large || image?.src || image?.card || image?.thumb || image?.full || ''
 );
 
 const scheduleIdle = (callback, delay = 140) => {
@@ -109,8 +114,18 @@ const ProductThumbRail = ({ images, activeIndex, onSelect, className = '', mobil
               type="button"
               data-thumb-index={index}
               aria-label={`Afficher l'image ${index + 1}`}
-              onPointerEnter={() => preloadImage(getProductDisplayImageSrc(image), { priority: 'high', decode: true }).catch(() => null)}
-              onFocus={() => preloadImage(getProductDisplayImageSrc(image), { priority: 'high', decode: true }).catch(() => null)}
+              onPointerEnter={() => preloadImage(getDirectDisplayFallbackSrc(image), {
+                priority: 'high',
+                srcSet: image?.srcSet || undefined,
+                sizes: image?.srcSet ? PRODUCT_DIRECT_DETAIL_IMAGE_SIZES : undefined,
+                decode: true,
+              }).catch(() => null)}
+              onFocus={() => preloadImage(getDirectDisplayFallbackSrc(image), {
+                priority: 'high',
+                srcSet: image?.srcSet || undefined,
+                sizes: image?.srcSet ? PRODUCT_DIRECT_DETAIL_IMAGE_SIZES : undefined,
+                decode: true,
+              }).catch(() => null)}
               onClick={() => onSelect(index)}
               className={[
                 'relative shrink-0 overflow-hidden border transition duration-200',
@@ -151,9 +166,11 @@ export default function ProductPageExperience({
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [isDesktopViewport, setIsDesktopViewport] = useState(false);
   const [visibleDisplaySrc, setVisibleDisplaySrc] = useState('');
+  const [decodedDisplayKey, setDecodedDisplayKey] = useState('');
   const [lightboxBaseSrc, setLightboxBaseSrc] = useState('');
   const [lightboxFullSrc, setLightboxFullSrc] = useState('');
   const [liked, toggleLiked] = useLocalWishlist(product?.id);
+  const mainImageRef = useRef(null);
   const swipeRef = useRef({ x: 0, y: 0 });
   const sheetDragRef = useRef({ y: 0 });
 
@@ -164,8 +181,17 @@ export default function ProductPageExperience({
   const mobileMainSrc = getProductDisplayImageSrc(activeImage, { viewport: 'mobile' });
   const desktopMainSrc = getProductDisplayImageSrc(activeImage, { viewport: 'desktop' });
   const currentDisplaySrc = isDesktopViewport ? desktopMainSrc : mobileMainSrc;
-  const mainSrc = mobileMainSrc;
+  const displaySrcSet = activeImage?.srcSet || '';
+  const mainSrc = getDirectDisplayFallbackSrc(activeImage) || mobileMainSrc;
   const thumbSrc = getThumbSrc(activeImage);
+  const displayKey = [
+    activeIndex,
+    displaySrcSet,
+    mobileMainSrc,
+    desktopMainSrc,
+    mainSrc,
+  ].join('|');
+  const isMainImageReady = decodedDisplayKey === displayKey;
   const lightboxInitialSrc = getProductZoomInitialImageSrc(activeImage, {
     displaySrc: lightboxBaseSrc || visibleDisplaySrc || currentDisplaySrc,
     viewport: isDesktopViewport ? 'desktop' : 'mobile',
@@ -187,9 +213,59 @@ export default function ProductPageExperience({
 
   useEffect(() => {
     setVisibleDisplaySrc('');
+    setDecodedDisplayKey('');
     setLightboxBaseSrc('');
     setLightboxFullSrc('');
-  }, [activeImage]);
+  }, [displayKey]);
+
+  const markMainImageReady = useCallback(async (image) => {
+    if (!image) return;
+
+    const resolvedSrc = image.currentSrc || image.src || mainSrc;
+    setVisibleDisplaySrc(resolvedSrc);
+
+    if (!image.complete) return;
+
+    try {
+      if (typeof image.decode === 'function') {
+        await image.decode();
+      }
+    } catch {
+      // Loaded images can still reject decode; keep the UI usable.
+    }
+
+    if (mainImageRef.current !== image) return;
+
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        if (mainImageRef.current === image) {
+          setDecodedDisplayKey(displayKey);
+        }
+      });
+    });
+  }, [displayKey, mainSrc]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const image = mainImageRef.current;
+    if (!image) return undefined;
+
+    let cancelled = false;
+
+    const run = async () => {
+      await markMainImageReady(image);
+      if (!cancelled && mainImageRef.current === image && image.complete) {
+        setDecodedDisplayKey(displayKey);
+      }
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [displayKey, markMainImageReady]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -211,8 +287,15 @@ export default function ProductPageExperience({
       ]);
       indexes.forEach((index) => {
         const image = safeImages[index];
-        const src = getProductDisplayImageSrc(image);
-        if (src) preloadImage(src, { priority: 'low', decode: false }).catch(() => null);
+        const src = getDirectDisplayFallbackSrc(image);
+        if (src) {
+          preloadImage(src, {
+            priority: 'low',
+            srcSet: image?.srcSet || undefined,
+            sizes: image?.srcSet ? PRODUCT_DIRECT_DETAIL_IMAGE_SIZES : undefined,
+            decode: false,
+          }).catch(() => null);
+        }
       });
     }, 260);
   }, [activeIndex, safeImages]);
@@ -243,7 +326,7 @@ export default function ProductPageExperience({
   const openLightbox = useCallback((event) => {
     const visibleImage = event?.currentTarget?.querySelector?.('[data-product-main-image="true"]');
     const preferredDisplaySrc = isDesktopViewport ? desktopMainSrc : mobileMainSrc;
-    const displaySrc = preferredDisplaySrc || visibleImage?.currentSrc || visibleImage?.src || visibleDisplaySrc || mainSrc;
+    const displaySrc = visibleImage?.currentSrc || visibleImage?.src || visibleDisplaySrc || preferredDisplaySrc || mainSrc;
     setLightboxFullSrc('');
     setLightboxBaseSrc(displaySrc);
     setLightboxOpen(true);
@@ -351,11 +434,18 @@ export default function ProductPageExperience({
                   {mainSrc ? (
                     <picture>
                       {desktopMainSrc && desktopMainSrc !== mainSrc ? (
-                        <source media="(min-width: 1024px)" srcSet={desktopMainSrc} />
+                        <source
+                          media="(min-width: 1024px)"
+                          srcSet={displaySrcSet || desktopMainSrc}
+                          sizes={displaySrcSet ? PRODUCT_DIRECT_DETAIL_IMAGE_SIZES : undefined}
+                        />
                       ) : null}
                       <img
                         key={`${mainSrc}-${desktopMainSrc}-${activeIndex}`}
+                        ref={mainImageRef}
                         src={mainSrc}
+                        srcSet={displaySrcSet || undefined}
+                        sizes={displaySrcSet ? PRODUCT_DIRECT_DETAIL_IMAGE_SIZES : undefined}
                         alt={productTitle}
                         loading="eager"
                         decoding="async"
@@ -363,9 +453,13 @@ export default function ProductPageExperience({
                         data-product-main-image="true"
                         data-display-mobile-src={mobileMainSrc}
                         data-display-desktop-src={desktopMainSrc}
-                        className="product-detail-mobile-image product-detail-mobile-image-layer--current select-none object-contain"
+                        data-image-ready={isMainImageReady ? 'true' : 'false'}
+                        className={[
+                          'product-detail-mobile-image product-detail-mobile-image-layer--current select-none object-contain transition-opacity duration-[120ms] ease-out',
+                          isMainImageReady ? 'opacity-100' : 'opacity-0',
+                        ].join(' ')}
                         onLoad={(event) => {
-                          setVisibleDisplaySrc(event.currentTarget.currentSrc || event.currentTarget.src || mainSrc);
+                          markMainImageReady(event.currentTarget);
                         }}
                         draggable={false}
                       />
