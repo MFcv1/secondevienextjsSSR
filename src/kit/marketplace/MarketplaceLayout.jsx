@@ -734,7 +734,15 @@ const MarketplaceLayout = ({
             />
 
             {/* ÉTAPE 5 : Avant / Après — atelier premium adouci */}
-            <DeferredSectionSlot slotId="before-after" minHeight="760px" delay={0} darkMode={darkMode} placeholderRows={3}>
+            <DeferredSectionSlot
+                slotId="before-after"
+                minHeight="760px"
+                delay={0}
+                forceReady
+                animateReveal={false}
+                darkMode={darkMode}
+                placeholderRows={3}
+            >
                 <BeforeAfterSection darkMode={darkMode} projects={dynamicProjects} />
             </DeferredSectionSlot>
 
