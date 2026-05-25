@@ -33,7 +33,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |   `-- src : analytics, auth, commerce, email, maintenance, public, seo, triggers
 |-- public : favicons, manifest, images, video, rapport maintenance statique
 |-- scripts : env bridge, SSR/mobile checks, maintenance audit, budget perf Next, perf/architecture compare, audit scroll galerie, backfills/audits Storage/images et tooling safe
-|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_SEO_ROADMAP.md, NEXTJS_HOME_LANDING_ROADMAP.md, NEXTJS_SSR_AUDIT_REPORT.md, NEXTJS_IMAGE_PIPELINE_AUDIT.md, PRODUCT_DETAIL_IMAGE_UX_AUDIT.md, GALLERY_COLD_SCROLL_OPTIMIZATION_REPORT.md, GALLERY_SCROLL_LAG_AUDIT.md, GALLERY_SCROLL_NEXT_ROADMAP.md
+|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_SEO_ROADMAP.md, NEXTJS_HOME_LANDING_ROADMAP.md, NEXTJS_SSR_AUDIT_REPORT.md, NEXTJS_IMAGE_PIPELINE_AUDIT.md, PRODUCT_DETAIL_IMAGE_UX_AUDIT.md, PRODUCT_PAGE_NEXT_MIGRATION_REPORT.md, GALLERY_COLD_SCROLL_OPTIMIZATION_REPORT.md, GALLERY_SCROLL_LAG_AUDIT.md, GALLERY_SCROLL_NEXT_ROADMAP.md
 |-- imagehero, pageUI : references visuelles et notes UI
 `-- .next, dist, node_modules, logs, .firebase : generes, hors carte
 ```
@@ -324,6 +324,35 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 - `scripts/audit-product-detail-images.mjs` et `npm run perf:product-images` ajoutent une gate reproductible : parcours galerie -> detail en desktop/mobile, assertions sans variante `large` inutile, branche active seulement, image visible chargee et backdrop desktop conserve.
 - Validations executees : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, `npm run perf:scroll`, `npm run perf:product-images`, `NEXT_BASE_URL=http://127.0.0.1:4300 npm run perf:architecture`, plus QA Playwright desktop `1440x900` et mobile `390x844`.
 - Tentative vrai mobile : une interface `SAMSUNG Android ADB Interface` est visible et les platform-tools officiels ont ete lances depuis un dossier temporaire, mais `adb devices -l` retourne `R52Y3030D6D offline`. Le test Chrome Android reel reste donc a faire apres deverrouillage/autorisation USB de l'appareil.
+
+### Goal 18 - Page produit Next autonome hors SPA legacy
+
+- `NEXTJS_OPTIMIZATION_ROADMAP.md` et `alertemobile.md` ont ete relus avant la migration. L'invariant mobile `const shouldUseMobileGalleryScroll = view === 'gallery' || isGalleryDetailOverlay;` est reste intact dans `src/Router.jsx`.
+- Baseline directe produit locale production, cache desactive, CPU x4, `/produit/buffet-KrTETXPknYNwgak66T8p` : desktop 45 requetes / 2084 kB / 1233 kB JS avec `data-sv-client-hydrated=true`, `.marketplace-gallery-shell` et 10 assets galerie/home; mobile 51 requetes / 2154 kB / 1238 kB JS avec shell galerie et variante `large` demandee.
+- `app/produit/[slugOrId]/page.jsx` ne monte plus `<ClientApp defer />` pour l'experience produit publique. La page garde SSR, metadata, canonical, JSON-LD Product/Breadcrumb et ISR, puis hydrate seulement une ile produit dediee.
+- `src/kit/marketplace/ProductPageExperience.jsx` a ete ajoute : experience produit autonome avec image centrale, flou desktop `thumb`, miniatures, fiche produit, favori local, reservation vers `/devis`, lightbox sur intention, swipe image mobile et panneau bas Details.
+- Le pipeline direct produit utilise `medium` pour l'image visible initiale, `thumb` pour le flou et les miniatures, precharge les voisines en `medium` apres premier paint/idle, et garde `large/full` pour la lightbox ou les grands ecrans qui le justifient.
+- Le parcours galerie -> detail legacy reste volontairement dans `src/Router.jsx` / `ArchitecturalProductDetail.jsx`; il n'a pas ete remplace dans cette passe pour ne pas casser le scroll mobile galerie valide.
+- `scripts/audit-product-page-direct.mjs` et `npm run perf:product-direct` ont ete ajoutes pour prouver que la route directe ne charge plus la SPA legacy, le shell galerie, les assets hero/categories, ni `large/full` avant zoom.
+- Resultat apres migration `perf:product-direct` : desktop 30 requetes / 1387 kB total / 400 kB JS, mobile 31 requetes / 1457 kB total / 400 kB JS apres swipe image, 0 asset galerie/home, 0 marqueur SPA legacy, image visible chargee en `medium`, details mobile OK. Derniere mesure directe : image ready desktop 838 ms, mobile 725 ms sous CPU x4.
+- `perf:architecture` local mesure la route produit Next a 29 requetes / 1323 kB total / 400 kB JS / LCP 620 ms, contre 94 requetes / 7339 kB total / 874 kB JS pour la SPA sandbox.
+- Rapport detaille ajoute dans `PRODUCT_PAGE_NEXT_MIGRATION_REPORT.md`.
+- Validations executees : `npm run lint`, `npm run build`, `npm run mobile:contract`, `npm run perf:budget`, `npm run perf:product-direct`, `npm run perf:product-images`, `NEXT_BASE_URL=http://127.0.0.1:4300 COLD_PRODUCT_PATH=/produit/buffet-KrTETXPknYNwgak66T8p npm run perf:architecture`.
+- `npm run seo:check` a ete tente avec `NEXT_SSR_CHECK_BASE_URL=http://127.0.0.1:4300`, mais il echoue encore sur la home avec `Missing SSR evidence for home ... image`, hors surface produit modifiee.
+- Test vrai mobile non execute : `adb devices -l` echoue car `adb` n'est pas disponible dans le `PATH` courant.
+
+### Goal 19 - Stabilisation display/zoom images produit
+
+- `NEXTJS_OPTIMIZATION_ROADMAP.md`, `NEXTJS_IMAGE_PIPELINE_AUDIT.md` et `alertemobile.md` ont ete relus avant correction. L'invariant mobile `const shouldUseMobileGalleryScroll = view === 'gallery' || isGalleryDetailOverlay;` est reste intact dans `src/Router.jsx`, qui n'a pas ete modifie.
+- Les variantes Storage restent conservees : `thumb` pour blur/fonds/miniatures, `card` pour cartes galerie, `medium` pour display mobile, `large` pour display desktop, `full` seulement pour l'upgrade HD apres ouverture zoom.
+- `src/utils/imageUtils.js` centralise maintenant les roles via `getProductDisplayImageSrc`, `getProductZoomInitialImageSrc` et `getProductZoomFullImageSrc`. Les preloads produit intentionnels ciblent la variante display et ne passent plus par `srcSet`/`full` par defaut.
+- `src/kit/marketplace/ArchitecturalProductDetail.jsx` garde le staging mobile `currentSrc/decode`, mais force l'image visible sur `medium` mobile et `large` desktop. La lightbox demarre sur l'URL display deja visible, puis precharge/decode `full` apres ouverture avant remplacement progressif.
+- `src/kit/marketplace/ProductPageExperience.jsx` applique la meme regle sur la page produit Next autonome : preload SSR mobile/desktop display, image visible stable, zoom initial egal a l'image courante, `full` charge seulement apres clic zoom.
+- `scripts/audit-product-page-direct.mjs` et `scripts/audit-product-detail-images.mjs` verifient maintenant qu'aucun `full` n'est demande avant zoom, que la lightbox initiale reprend l'image visible, et que le detail utilise `medium` mobile / `large` desktop quand disponible.
+- Le warmup detail galerie est borne a la fenetre proche autour de l'image active; le prechargement idle du reste des images produit desktop a ete retire pour respecter le budget reseau.
+- Validations executees : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, `npm run perf:product-direct`, `npm run perf:product-images`, `NEXT_BASE_URL=http://127.0.0.1:4300 npm run perf:architecture`.
+- Resultats mesures : page produit directe desktop visible en `large` et mobile en `medium`; lightbox initiale egale a l'image visible; `full` absent avant zoom puis demande apres ouverture. Parcours galerie -> detail : mobile detail pret en 740 ms avec `medium`, desktop en 481 ms avec `large`, aucun `full` avant zoom.
+- Test vrai mobile non execute pendant cette passe; la validation mobile est Playwright 390x844 et le contrat mobile automatise.
 
 ## ðŸ› ï¸ Structure des Fichiers .env
 Nous n'utilisons PLUS de fichier `.env` unique. Tout est pilote par des fichiers suffixes locaux :

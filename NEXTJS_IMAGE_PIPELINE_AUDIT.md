@@ -126,6 +126,31 @@ Limites de mesure:
 - Les temps locaux ne sont pas strictement comparables a App Hosting deploye: le host, l'auth anonyme sandbox locale et la latence Storage varient. Le signal fiable est le changement de sequence reseau: `medium` part avant le clic ou avant le paint, et `large` ne bloque plus le premier rendu mobile.
 - Un artefact `.next` incoherent a ete nettoye: `index.html` pointait vers un chunk webpack absent apres des runs precedents. Suppression de `.next` puis rebuild propre.
 
+## Passe 2026-05-25 - display stable et zoom progressif
+
+Decision confirmee: les variantes Storage sont conservees. Le probleme n'etait pas leur existence, mais le changement visible de fichier entre detail produit et zoom initial. Le pipeline suit maintenant des roles explicites:
+
+- `thumb`: blur, fond leger et miniatures.
+- `card`: cartes galerie.
+- display mobile: `medium`.
+- display desktop: `large`.
+- zoom initial: meme URL que l'image display deja visible.
+- `full`: upgrade progressif uniquement apres ouverture de la lightbox, apres preload/decode, sans bloquer l'ouverture.
+
+Corrections appliquees:
+
+- `src/utils/imageUtils.js` centralise les choix avec `getProductDisplayImageSrc`, `getProductZoomInitialImageSrc` et `getProductZoomFullImageSrc`.
+- `ArchitecturalProductDetail` et l'ile directe `ProductPageExperience` ouvrent la lightbox sur l'URL visible courante au lieu de demarrer en `full`.
+- Le staging mobile du detail conserve son intention: il attend une image `medium` prete/decodee avant affichage, sans `srcSet` visible qui pourrait choisir `large/full` au dernier moment.
+- Les preloads intentionnels hover/focus/pointerdown visent la variante display et ne chargent plus `full` avant zoom.
+- Le detail galerie ne precharge plus le reste des images produit desktop apres idle; seuls l'image active et les voisines proches sont chauffees.
+
+Preuves locales:
+
+- `npm run perf:product-direct`: page produit directe desktop en `large`, mobile en `medium`, aucun `full` avant zoom, lightbox initiale egale a l'image visible, puis `full` seulement apres ouverture.
+- `npm run perf:product-images`: parcours galerie -> detail desktop/mobile sans requete `full` avant zoom; mobile detail en `medium`, desktop detail en `large`, avec warmup borne aux voisines proches.
+- `NEXT_BASE_URL=http://127.0.0.1:4300 npm run perf:architecture`: route produit Next a 29 requetes / 1338 KB total / 420 KB images dans ce run local, contre 94 requetes / 7339 KB sur la SPA sandbox.
+
 ## Checklist prompt -> preuves
 
 | Demande | Preuve |

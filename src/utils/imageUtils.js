@@ -241,9 +241,47 @@ export const getProductImageItems = (item) => {
 export const PRODUCT_CARD_IMAGE_SIZES = '(max-width: 767px) 50vw, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 20vw';
 export const PRODUCT_DETAIL_IMAGE_SIZES = '(max-width: 1023px) min(94vw, 430px), calc(100vw - 610px)';
 
+export const PRODUCT_DISPLAY_IMAGE_VARIANTS = {
+    mobile: 'medium',
+    desktop: 'large',
+};
+
+const getProductDisplayVariant = (options = {}) => {
+    if (options.variant) return options.variant;
+    if (options.viewport === 'mobile') return PRODUCT_DISPLAY_IMAGE_VARIANTS.mobile;
+    if (options.viewport === 'desktop') return PRODUCT_DISPLAY_IMAGE_VARIANTS.desktop;
+
+    if (typeof window !== 'undefined') {
+        return window.matchMedia?.('(min-width: 1024px)').matches
+            ? PRODUCT_DISPLAY_IMAGE_VARIANTS.desktop
+            : PRODUCT_DISPLAY_IMAGE_VARIANTS.mobile;
+    }
+
+    return PRODUCT_DISPLAY_IMAGE_VARIANTS.desktop;
+};
+
+export const getProductDisplayImageSrc = (image, options = {}) => {
+    if (!image) return '';
+
+    const variant = getProductDisplayVariant(options);
+    if (variant === PRODUCT_DISPLAY_IMAGE_VARIANTS.mobile) {
+        return image.medium || image.large || image.src || image.card || image.thumb || image.full || '';
+    }
+
+    return image.large || image.medium || image.src || image.card || image.thumb || image.full || '';
+};
+
+export const getProductZoomInitialImageSrc = (image, options = {}) => (
+    options.displaySrc || getProductDisplayImageSrc(image, options)
+);
+
+export const getProductZoomFullImageSrc = (image) => (
+    image?.full || image?.large || image?.medium || image?.src || image?.card || image?.thumb || ''
+);
+
 export const getPrimaryProductImage = (item) => {
     const primary = getProductImageItems(item)[0];
-    return primary?.full || primary?.src || item?.imageUrl || item?.thumbnailUrl || '';
+    return getProductDisplayImageSrc(primary, { viewport: 'desktop' }) || item?.imageUrl || item?.thumbnailUrl || '';
 };
 
 export const getProductCardImage = (item) => {
@@ -352,9 +390,13 @@ export const preloadProductImages = (item, options = {}) => {
     return Array.from(indexes).flatMap((index) => {
         const image = imageItems[index];
         const priority = index === activeIndex ? (options.priority || 'high') : (options.neighborPriority || 'auto');
-        return preloadImage(image.src || image.full, {
+        const displaySrc = getProductDisplayImageSrc(image, {
+            variant: options.variant,
+            viewport: options.viewport,
+        });
+        return preloadImage(displaySrc, {
             priority,
-            srcSet: image.srcSet,
+            srcSet: options.srcSet === true ? image.srcSet : undefined,
             sizes: options.sizes || PRODUCT_DETAIL_IMAGE_SIZES,
             decode: options.decode,
             decoding: 'async',
@@ -368,13 +410,15 @@ export const preloadPrimaryProductDetailImage = (item, options = {}) => {
 
     const activeIndex = Math.max(0, Math.min(options.activeIndex || 0, imageItems.length - 1));
     const image = imageItems[activeIndex];
-    const preferredSrc = options.variant ? image?.[options.variant] : '';
-    const src = preferredSrc || image?.src || image?.large || image?.medium || image?.card || image?.full || image?.thumb || '';
+    const src = getProductDisplayImageSrc(image, {
+        variant: options.variant,
+        viewport: options.viewport,
+    });
     if (!src) return Promise.resolve(null);
 
     return preloadImage(src, {
         priority: options.priority || 'high',
-        srcSet: options.srcSet === false || preferredSrc ? undefined : image.srcSet,
+        srcSet: options.srcSet === true ? image.srcSet : undefined,
         sizes: options.sizes || PRODUCT_DETAIL_IMAGE_SIZES,
         decode: options.decode !== false,
         decoding: options.decoding || 'async',
@@ -409,11 +453,12 @@ export const prewarmProductListImages = (items, options = {}) => {
 
         if (includeDetailPrimary) {
             const primary = getProductImageItems(item)[0];
-            const detailSrc = options.detailVariant
-                ? primary?.[options.detailVariant]
-                : primary?.large || primary?.medium || primary?.src || primary?.full;
+            const detailSrc = getProductDisplayImageSrc(primary, {
+                variant: options.detailVariant,
+                viewport: options.detailViewport,
+            });
             push(detailSrc, {
-                srcSet: options.detailSrcSet === false || options.detailVariant ? undefined : primary?.srcSet,
+                srcSet: options.detailSrcSet === true ? primary?.srcSet : undefined,
             });
         }
     });

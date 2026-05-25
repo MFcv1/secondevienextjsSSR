@@ -226,9 +226,9 @@ const buildAssertions = (results) => {
   const desktop = results.find((result) => result.mode === 'desktop');
 
   if (mobile) {
-    const largeMobileDetail = mobile.productImagesAfterClick.filter((image) => image.detailVariant && image.variant === 'large');
+    const fullMobileDetail = mobile.productImagesAfterClick.filter((image) => image.detailVariant && image.variant === 'full');
     const activeMediumDetail = mobile.productImagesAfterClick.filter((image) => image.detailVariant && image.variant === 'medium' && image.slot === 0);
-    add('mobile detail does not request large variants after tap', largeMobileDetail.length === 0, { largeMobileDetail });
+    add('mobile detail does not request full variants before zoom', fullMobileDetail.length === 0, { fullMobileDetail });
     add('mobile does not re-request the active medium detail variant', activeMediumDetail.length <= 1, { activeMediumDetail });
     add('mobile renders the mobile detail shell', mobile.state.mobileShell && !mobile.state.desktopMain, mobile.state);
     add('mobile visible detail image is loaded', mobile.state.complete && mobile.state.naturalWidth > 0, mobile.state);
@@ -236,8 +236,8 @@ const buildAssertions = (results) => {
   }
 
   if (desktop) {
-    const largeDesktopDetail = desktop.productImagesAfterClick.filter((image) => image.detailVariant && image.variant === 'large');
-    add('desktop DPR1 detail does not request large variants at 1440px', largeDesktopDetail.length === 0, { largeDesktopDetail });
+    const fullDesktopDetail = desktop.productImagesAfterClick.filter((image) => image.detailVariant && image.variant === 'full');
+    add('desktop detail does not request full variants before zoom', fullDesktopDetail.length === 0, { fullDesktopDetail });
     add('desktop keeps the blurred backdrop', desktop.state.desktopBackdrop === true, desktop.state);
     add('desktop renders only the desktop detail branch', desktop.state.desktopMain && !desktop.state.mobileShell, desktop.state);
     add('desktop first visible detail image is ready quickly', desktop.readyAfterClickMs > 0 && desktop.readyAfterClickMs <= 1800, { readyAfterClickMs: desktop.readyAfterClickMs });
