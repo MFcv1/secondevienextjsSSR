@@ -33,7 +33,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |   `-- src : analytics, auth, commerce, email, maintenance, public, seo, triggers
 |-- public : favicons, manifest, images, video, rapport maintenance statique
 |-- scripts : env bridge, SSR/mobile checks, maintenance audit, budget perf Next, perf/architecture compare, audit scroll galerie, backfills/audits Storage/images et tooling safe
-|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_SEO_ROADMAP.md, NEXTJS_HOME_LANDING_ROADMAP.md, NEXTJS_SSR_AUDIT_REPORT.md, NEXTJS_IMAGE_PIPELINE_AUDIT.md, PRODUCT_DETAIL_IMAGE_UX_AUDIT.md, PRODUCT_PAGE_NEXT_MIGRATION_REPORT.md, GALLERY_COLD_SCROLL_OPTIMIZATION_REPORT.md, GALLERY_SCROLL_LAG_AUDIT.md, GALLERY_SCROLL_NEXT_ROADMAP.md
+|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_SEO_ROADMAP.md, NEXTJS_HOME_LANDING_ROADMAP.md, NEXTJS_SSR_AUDIT_REPORT.md, NEXTJS_IMAGE_PIPELINE_AUDIT.md, PRODUCT_DETAIL_IMAGE_UX_AUDIT.md, PRODUCT_DETAIL_IMAGE_UX_SESSION_REPORT.md, PRODUCT_PAGE_NEXT_MIGRATION_REPORT.md, GALLERY_COLD_SCROLL_OPTIMIZATION_REPORT.md, GALLERY_SCROLL_LAG_AUDIT.md, GALLERY_SCROLL_NEXT_ROADMAP.md
 |-- imagehero, pageUI : references visuelles et notes UI
 `-- .next, dist, node_modules, logs, .firebase : generes, hors carte
 ```
@@ -353,6 +353,17 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 - Validations executees : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, `npm run perf:product-direct`, `npm run perf:product-images`, `NEXT_BASE_URL=http://127.0.0.1:4300 npm run perf:architecture`.
 - Resultats mesures : page produit directe desktop visible en `large` et mobile en `medium`; lightbox initiale egale a l'image visible; `full` absent avant zoom puis demande apres ouverture. Parcours galerie -> detail : mobile detail pret en 740 ms avec `medium`, desktop en 481 ms avec `large`, aucun `full` avant zoom.
 - Test vrai mobile non execute pendant cette passe; la validation mobile est Playwright 390x844 et le contrat mobile automatise.
+
+### Goal 20 - Session UX image produit medium unifiee
+
+- Rapport detaille ajoute : `PRODUCT_DETAIL_IMAGE_UX_SESSION_REPORT.md`. Il documente la sequence complete de problemes regles pendant la session : double interface produit directe/galerie, passage thumb -> medium au centre, comparaison avec Tous a Table, fond flou en retard, flash navigateur, formats horizontaux, zoom full et validations sandbox.
+- Cette passe supersede les decisions image produit precedentes quand elles parlent de `large` desktop ou de backdrop `thumb` pour le detail normal. La decision courante est : `medium` pour l'image centrale produit, `medium` pour le fond flou desktop, `thumb` seulement pour les miniatures, `full` seulement apres ouverture zoom/lightbox.
+- `app/produit/[slugOrId]/page.jsx` garde le SSR SEO/indexable et monte `ClientApp` pour afficher l'experience legacy `ArchitecturalProductDetail`; la preview SSR visible utilise maintenant la meme URL `medium` pour le backdrop et l'image centrale.
+- `src/kit/marketplace/ArchitecturalProductDetail.jsx` utilise `activeImageSrc` comme source du backdrop detail desktop. Le fallback avant peinture reste une couleur dominante opaque; le `blurDataUrl` et la thumb ne sont plus utilises comme fond desktop principal.
+- `src/index.css` stabilise la preview SSR avec une couche centrale explicite au-dessus du backdrop.
+- Invariant mobile conserve : `src/Router.jsx` n'a pas ete modifie et garde `const shouldUseMobileGalleryScroll = view === 'gallery' || isGalleryDetailOverlay;`.
+- Validations executees : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, `npm run seo:check` en local et sandbox, `npm run perf:product-images` en local et sandbox avec `--throttle=3`.
+- Deploiement effectue sur App Hosting sandbox : `https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app`. Controle SSR sandbox : `product-ssr-visual-preview__backdrop` et `product-ssr-visual-preview__image--main` pointent tous les deux vers la meme URL `..._medium_...webp`.
 
 ## ðŸ› ï¸ Structure des Fichiers .env
 Nous n'utilisons PLUS de fichier `.env` unique. Tout est pilote par des fichiers suffixes locaux :

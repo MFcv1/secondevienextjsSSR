@@ -128,7 +128,6 @@ export default async function ProductPage({ params }) {
     || '';
   const primaryPreviewColor = images[0]?.metadata?.dominantColor || '#8c7b64';
   const primaryPreviewRatio = images[0]?.metadata?.ratio || images[0]?.ratio || 0.75;
-  const primaryPreviewBlur = images[0]?.metadata?.blurDataUrl || '';
   const priceLabel = price && !product.priceOnRequest ? formatPrice(price) : 'Prix sur demande';
   const facts = compact([
     { label: 'Matiere', value: product.material },
@@ -187,22 +186,19 @@ export default async function ProductPage({ params }) {
           aria-hidden="true"
           style={{
             backgroundColor: primaryPreviewColor,
-            backgroundImage: primaryPreviewBlur ? `url("${primaryPreviewBlur}")` : undefined,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
             '--product-preview-ratio': primaryPreviewRatio,
           }}
         >
           <img
             className="product-ssr-visual-preview__backdrop"
-            src={images[0]?.thumb || primaryImmediateImage}
+            src={primaryImmediateImage}
             alt=""
             loading="eager"
             decoding="async"
             fetchPriority="high"
           />
           <img
-            className="product-ssr-visual-preview__image"
+            className="product-ssr-visual-preview__image product-ssr-visual-preview__image--main"
             src={primaryImmediateImage}
             alt=""
             loading="eager"

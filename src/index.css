@@ -47,7 +47,7 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
   }
 
   .product-ssr-visual-preview__image {
-    position: relative;
+    position: absolute;
     z-index: 1;
     display: block;
     width: min(
@@ -60,6 +60,10 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
     object-fit: contain;
     border-radius: 1rem;
     box-shadow: 0 45px 110px -25px rgba(0, 0, 0, 0.8);
+  }
+
+  .product-ssr-visual-preview__image--main {
+    z-index: 2;
   }
 }
 

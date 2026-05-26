@@ -157,7 +157,7 @@ const preloadLightboxImage = (image, options = {}) => {
 };
 
 const getDetailBackdropImageSrc = (image) => (
-    image?.thumb || image?.card || image?.medium || image?.src || image?.full || ''
+    image?.medium || image?.large || image?.src || image?.card || image?.thumb || image?.full || ''
 );
 
 const preloadDetailBackdropImage = (image, options = {}) => {
@@ -1235,8 +1235,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
     const activeImageSrc = activeDesktopStagedImage?.src || activeDesktopImmediateSrc || activeDesktopFallbackSrc;
     const hasActiveDesktopImageSource = Boolean(activeImageSrc);
     const activeImageZoomFullSrc = getProductZoomFullImageSrc(activeImage) || activeImageSrc;
-    const detailBackdropSrc = getDetailBackdropImageSrc(activeImage);
-    const detailBackdropBlurSrc = activeImage.metadata?.blurDataUrl || '';
+    const detailBackdropSrc = activeImageSrc || getDetailBackdropImageSrc(activeImage);
     const detailBackdropColor = activeImage.metadata?.dominantColor || DEFAULT_DETAIL_BACKDROP_COLOR;
     const visibleDetailBackdropSrc = displayedDetailBackdrop.src || detailBackdropSrc;
     const visibleDetailBackdropColor = displayedDetailBackdrop.color || detailBackdropColor;
@@ -2015,9 +2014,6 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                     className="absolute inset-0 z-0 pointer-events-none overflow-hidden hidden lg:flex items-center justify-center"
                     style={{
                         backgroundColor: visibleDetailBackdropColor,
-                        backgroundImage: detailBackdropBlurSrc ? `url("${detailBackdropBlurSrc}")` : undefined,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
                     }}
                 >
                     <img
@@ -2393,7 +2389,6 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                             style={{
                                                 ...desktopDetailImageFrameStyle,
                                                 backgroundColor: activeImage.metadata?.dominantColor || DEFAULT_DETAIL_BACKDROP_COLOR,
-                                                backgroundImage: activeImage.metadata?.blurDataUrl ? `url("${activeImage.metadata.blurDataUrl}")` : undefined,
                                                 backgroundSize: 'cover',
                                                 backgroundPosition: 'center',
                                             }}
@@ -2416,7 +2411,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                             fetchPriority="high"
                                             onLoad={handlePrimaryDetailImageLoad}
                                             data-desktop-image-ready={isActiveDesktopImageDecoded ? 'true' : 'preview'}
-                                            className={`block h-full w-full object-contain transition-opacity duration-[120ms] ease-out ${hasActiveDesktopImageSource ? 'opacity-100' : 'opacity-0'}`}
+                                            className={`relative z-10 block h-full w-full object-contain transition-opacity duration-[120ms] ease-out ${hasActiveDesktopImageSource ? 'opacity-100' : 'opacity-0'}`}
                                         />
                                     </div>
                                 </motion.div>
