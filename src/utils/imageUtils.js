@@ -280,7 +280,7 @@ export const PRODUCT_DIRECT_DETAIL_IMAGE_SIZES = '(max-width: 1023px) min(94vw, 
 
 export const PRODUCT_DISPLAY_IMAGE_VARIANTS = {
     mobile: 'medium',
-    desktop: 'large',
+    desktop: 'medium',
 };
 
 const getProductDisplayVariant = (options = {}) => {
@@ -327,21 +327,25 @@ export const getPrimaryProductImage = (item) => {
 
 export const getProductCardImage = (item) => {
     const primary = getProductImageItems(item)[0];
-    const cardSrcSet = buildSrcSet([
-        { src: primary?.thumb, width: 480 },
-        { src: primary?.card, width: 768 },
-        { src: primary?.medium, width: 1024 },
-    ]);
-    const mobileSrcSet = buildSrcSet([
+    const displaySrc = primary?.medium
+        || primary?.card
+        || primary?.large
+        || primary?.src
+        || primary?.thumb
+        || item?.thumbnailUrl
+        || item?.imageUrl
+        || item?.image
+        || '';
+    const thumbSrcSet = buildSrcSet([
         { src: primary?.thumb, width: 480 },
     ]);
 
     return {
-        src: primary?.card || primary?.medium || primary?.thumb || primary?.src || item?.thumbnailUrl || item?.imageUrl || item?.image || '',
-        srcSet: cardSrcSet,
-        thumbSrcSet: mobileSrcSet,
-        mobileSrc: primary?.thumb || primary?.card || primary?.medium || primary?.src || item?.thumbnailUrl || item?.imageUrl || item?.image || '',
-        mobileSrcSet,
+        src: displaySrc,
+        srcSet: '',
+        thumbSrcSet,
+        mobileSrc: displaySrc,
+        mobileSrcSet: '',
         metadata: primary?.metadata || null,
     };
 };

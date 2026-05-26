@@ -119,14 +119,16 @@ export default async function ProductPage({ params }) {
   const breadcrumbJsonLd = buildBreadcrumbJsonLd(product, publicEnv.siteUrl);
   const categoryHref = product.category ? getCategoryUrl(product.category) : '/';
   const images = getClientImages(product);
-  const primaryImmediateImage = images[0]?.thumb
+  const primaryImmediateImage = images[0]?.medium
+    || getProductDisplayImageSrc(images[0], { variant: 'medium' })
     || images[0]?.card
-    || getProductDisplayImageSrc(images[0], { variant: 'card' })
-    || images[0]?.medium
     || images[0]?.large
     || images[0]?.src
+    || images[0]?.thumb
     || '';
   const primaryPreviewColor = images[0]?.metadata?.dominantColor || '#8c7b64';
+  const primaryPreviewRatio = images[0]?.metadata?.ratio || images[0]?.ratio || 0.75;
+  const primaryPreviewBlur = images[0]?.metadata?.blurDataUrl || '';
   const priceLabel = price && !product.priceOnRequest ? formatPrice(price) : 'Prix sur demande';
   const facts = compact([
     { label: 'Matiere', value: product.material },
@@ -183,7 +185,13 @@ export default async function ProductPage({ params }) {
           data-product-ssr-preview
           className="product-ssr-visual-preview"
           aria-hidden="true"
-          style={{ backgroundColor: primaryPreviewColor }}
+          style={{
+            backgroundColor: primaryPreviewColor,
+            backgroundImage: primaryPreviewBlur ? `url("${primaryPreviewBlur}")` : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            '--product-preview-ratio': primaryPreviewRatio,
+          }}
         >
           <img
             className="product-ssr-visual-preview__backdrop"

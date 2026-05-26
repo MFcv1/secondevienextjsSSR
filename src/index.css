@@ -50,9 +50,12 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
     position: relative;
     z-index: 1;
     display: block;
-    width: auto;
+    width: min(
+      calc(min(74vh, 760px) * var(--product-preview-ratio, 0.75)),
+      min(68vw, 920px)
+    );
     height: auto;
-    max-width: min(48vw, 620px);
+    max-width: min(68vw, 920px);
     max-height: min(78vh, 760px);
     object-fit: contain;
     border-radius: 1rem;

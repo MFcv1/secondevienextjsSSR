@@ -160,7 +160,6 @@ const ProductCard = ({
     const imageRequestQueuedRef = React.useRef(false);
     const imageRequestGenerationRef = React.useRef(0);
     const cardImage = React.useMemo(() => getProductCardImage(item), [item]);
-    const compactGridSrcSet = cardImage.thumbSrcSet || cardImage.mobileSrcSet;
     const [isImageRequested, setIsImageRequested] = React.useState(priority);
     const [isImageRevealActive, setIsImageRevealActive] = React.useState(priority);
     const [isImageLoaded, setIsImageLoaded] = React.useState(false);
@@ -462,22 +461,6 @@ const ProductCard = ({
                 data-image-loaded={isImageLoaded ? 'true' : 'false'}
             >
                 <picture className="block h-full w-full">
-                    {shouldRequestImage && compactGridSrcSet && (
-                        <>
-                            <source
-                                media="(max-width: 767px)"
-                                srcSet={compactGridSrcSet}
-                                sizes="50vw"
-                            />
-                            {!isBig && layoutMode === 'grid' && (
-                                <source
-                                    media="(min-width: 1024px)"
-                                    srcSet={compactGridSrcSet}
-                                    sizes="(max-width: 1279px) 25vw, 20vw"
-                                />
-                            )}
-                        </>
-                    )}
                     <img
                         src={shouldRequestImage ? cardImage.src : TRANSPARENT_IMAGE_SRC}
                         srcSet={shouldRequestImage ? (cardImage.srcSet || undefined) : undefined}

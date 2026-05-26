@@ -63,7 +63,7 @@ const createContext = async (browser, mode) => {
 const collectVisibleDetailState = async (page) => page.evaluate(() => {
   const mobileFrame = document.querySelector('.product-detail-mobile-image-frame');
   const mobileImage = document.querySelector('.product-detail-mobile-image-layer--current');
-  const desktopMain = Array.from(document.querySelectorAll('main img')).find((image) => {
+  const desktopMain = document.querySelector('img[data-desktop-image-ready]') || Array.from(document.querySelectorAll('main img')).find((image) => {
     const rect = image.getBoundingClientRect();
     const className = String(image.className || '');
     return className.includes('max-h-[92%]') && rect.width > 100 && rect.height > 100;
@@ -149,7 +149,7 @@ const runMode = async (browser, mode) => {
 
   await page.waitForFunction(() => {
     const mobileImage = document.querySelector('.product-detail-mobile-image-layer--current');
-    const desktopImage = Array.from(document.querySelectorAll('main img')).find((image) => {
+    const desktopImage = document.querySelector('img[data-desktop-image-ready]') || Array.from(document.querySelectorAll('main img')).find((image) => {
       const rect = image.getBoundingClientRect();
       const className = String(image.className || '');
       return className.includes('max-h-[92%]') && rect.width > 100 && rect.height > 100;
