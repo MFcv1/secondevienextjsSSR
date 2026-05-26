@@ -537,8 +537,6 @@ const GlobalMenu = ({
         lockedScrollYRef.current = window.scrollY;
         closingWheelDeltaRef.current = 0;
         const root = document.documentElement;
-        const shouldPreserveNativeScrollbar = window.matchMedia('(min-width: 1024px)').matches;
-        if (isMenuClosing && shouldPreserveNativeScrollbar) return undefined;
         const previousBodyPosition = document.body.style.position;
         const previousBodyTop = document.body.style.top;
         const previousBodyLeft = document.body.style.left;
@@ -550,18 +548,13 @@ const GlobalMenu = ({
         const previousRootScrollBehavior = root.style.scrollBehavior;
         let scrollFreezeFrame = null;
 
-        if (shouldPreserveNativeScrollbar) {
-            root.style.overflowY = 'scroll';
-            root.style.scrollbarGutter = 'stable';
-        } else {
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${lockedScrollYRef.current}px`;
-            document.body.style.left = '0';
-            document.body.style.right = '0';
-            document.body.style.width = '100%';
-            root.style.overflowY = 'hidden';
-            root.style.scrollbarGutter = 'stable';
-        }
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${lockedScrollYRef.current}px`;
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+        document.body.style.width = '100%';
+        root.style.overflowY = 'hidden';
+        root.style.scrollbarGutter = 'auto';
         root.style.overscrollBehavior = 'none';
         root.style.scrollBehavior = 'auto';
 
@@ -574,7 +567,6 @@ const GlobalMenu = ({
         );
 
         const canScrollPanel = (target, deltaY) => {
-            if (shouldPreserveNativeScrollbar) return false;
             const panel = getScrollablePanel(target);
             if (!panel) return false;
             if (deltaY < 0) return panel.scrollTop > 0;
@@ -618,7 +610,6 @@ const GlobalMenu = ({
         };
 
         const freezeWindowScroll = () => {
-            if (!shouldPreserveNativeScrollbar) return;
             if (window.scrollY !== lockedScrollYRef.current) {
                 window.scrollTo({ top: lockedScrollYRef.current, behavior: 'auto' });
             }
@@ -629,9 +620,7 @@ const GlobalMenu = ({
         window.addEventListener('touchstart', handleTouchStart, { capture: true, passive: true });
         window.addEventListener('touchmove', handleTouchMove, { capture: true, passive: false });
         window.addEventListener('keydown', handleKeyDown, { capture: true });
-        if (shouldPreserveNativeScrollbar) {
-            scrollFreezeFrame = window.requestAnimationFrame(freezeWindowScroll);
-        }
+        scrollFreezeFrame = window.requestAnimationFrame(freezeWindowScroll);
 
         return () => {
             const restoredScrollY = lockedScrollYRef.current;

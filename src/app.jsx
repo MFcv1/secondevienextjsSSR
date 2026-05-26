@@ -474,6 +474,28 @@ const AppContent = () => {
     setShowMarketplacePopup(true);
   }, []);
 
+  const returnToSiteHome = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    setSelectedItemId(null);
+    setActiveCategoryId(null);
+    setShowFullLogin(false);
+    setShowMarketplacePopup(false);
+    setIsCartOpen(false);
+    closeGlobalMenu();
+    window.scrollTo(0, 0);
+
+    if (
+      window.location.pathname === '/' &&
+      document.querySelector('.sv-gallery-launcher-overlay')
+    ) {
+      window.dispatchEvent(new Event('sv:close-gallery-overlay'));
+      return;
+    }
+
+    window.location.assign('/');
+  }, [closeGlobalMenu]);
+
   const revealDeferredFooter = useCallback(() => {
     setShouldReserveDeferredFooter(true);
     setShouldRenderDeferredFooter(true);
@@ -1700,7 +1722,7 @@ const AppContent = () => {
               toggleTheme={() => setDarkMode(!darkMode)}
               darkMode={darkMode}
               showSearch={view === 'gallery' || view === 'wishlist' || view === 'category' || view === 'detail' || view === 'devis'}
-              onGoHome={() => { setSelectedItemId(null); setActiveCategoryId(null); setView('gallery'); window.scrollTo(0, 0); }}
+              onGoHome={returnToSiteHome}
               onOpenDiscovery={openMarketplaceDiscovery}
               setHeaderProps={setHeaderProps}
               persistentGalleryState={persistentGalleryState}

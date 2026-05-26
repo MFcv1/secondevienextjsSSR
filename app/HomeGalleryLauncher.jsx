@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import ClientApp from './ClientApp';
 
-const revealSelector = '.sv-home-section, .sv-home-reveal';
+const revealSelector = '.sv-home-reveal, .sv-home-animate > *';
+const closeGalleryEventName = 'sv:close-gallery-overlay';
 
 export default function HomeGalleryLauncher() {
   const [shouldMountGallery, setShouldMountGallery] = useState(false);
 
   useEffect(() => {
+    const homeTitle = document.title;
     let lastScrollY = window.scrollY;
     let frameId = 0;
     const nav = document.querySelector('.sv-home-nav');
@@ -40,13 +42,22 @@ export default function HomeGalleryLauncher() {
       setShouldMountGallery(true);
     };
 
+    const closeGallery = () => {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      document.title = homeTitle;
+      setNavVisible(true);
+      setShouldMountGallery(false);
+    };
+
     const buttons = Array.from(document.querySelectorAll('[data-gallery-launcher]'));
     buttons.forEach((button) => button.addEventListener('click', launchGallery));
     window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener(closeGalleryEventName, closeGallery);
 
     return () => {
       if (frameId) window.cancelAnimationFrame(frameId);
       window.removeEventListener('scroll', onScroll);
+      window.removeEventListener(closeGalleryEventName, closeGallery);
       buttons.forEach((button) => button.removeEventListener('click', launchGallery));
     };
   }, []);
