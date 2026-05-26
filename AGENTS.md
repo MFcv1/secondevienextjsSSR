@@ -13,7 +13,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- alertemobile.md : invariant mobile marketplace critique
 |-- package*.json, next.config.mjs, eslint.config.mjs, jsconfig.json, tailwind.config.js, postcss.config.js
 |-- apphosting.yaml, .firebaserc : configuration Firebase App Hosting sandbox
-|-- app : routes Next App Router, SSR produit/categorie, loading/not-found/error, sitemap, robots et shell client
+|-- app : routes Next App Router, home landing SEO SSR + launcher galerie, SSR produit/categorie, loading/not-found/error, sitemap, robots et shell client
 |-- tests, playwright.config.mjs : tests E2E et validations Playwright
 |-- _DOCS : documentation maintenance Next/dependances
 |-- firebase.json, .firebaseignore, firestore.rules, firestore.indexes.json, storage.rules
