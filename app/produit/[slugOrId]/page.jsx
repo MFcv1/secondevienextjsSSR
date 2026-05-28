@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
 import {
   getPublicProduct,
-  getPublishedProductStaticParams
+  getPublishedProductStaticParams,
+  isSeoIndexableProduct
 } from '../../../src/lib/server/products';
 import { publicEnv } from '../../../src/lib/server/env';
 import { getCategoryUrl, getProductUrl } from '../../../src/utils/slug';
@@ -88,11 +89,13 @@ export async function generateMetadata({ params }) {
     : publicEnv.siteDescription;
   const image = getPrimaryImage(product);
   const url = getProductUrl(product, publicEnv.siteUrl);
+  const shouldIndex = isSeoIndexableProduct(product);
 
   return {
     title,
     description,
     alternates: { canonical: url },
+    robots: shouldIndex ? undefined : { index: false, follow: true },
     openGraph: {
       type: 'website',
       title,

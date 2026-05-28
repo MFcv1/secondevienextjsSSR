@@ -38,6 +38,29 @@ const PUBLIC_PRODUCT_FIELDS = [
   'updatedAt'
 ];
 
+const WEAK_PRODUCT_TITLES = new Set([
+  'bu',
+  'dd',
+  'demo',
+  'image',
+  'meuble de metier',
+  'meuble de métier',
+  'photo',
+  'test'
+]);
+
+const normalizeSeoTitle = (value) => String(value || '')
+  .trim()
+  .toLowerCase()
+  .replace(/\s+/g, ' ');
+
+export const isSeoIndexableProduct = (product) => {
+  const title = normalizeSeoTitle(product?.name || product?.title);
+  if (!product?.id || title.length < 4 || WEAK_PRODUCT_TITLES.has(title)) return false;
+  if (product?.status && product.status !== 'published') return false;
+  return true;
+};
+
 export const extractProductId = (slugOrId = '') => {
   const decoded = decodeURIComponent(String(slugOrId));
   const separatorIndex = decoded.lastIndexOf('-');
@@ -300,7 +323,7 @@ export const getPublishedProductStaticParams = cache(async (limitCount = 120) =>
     products = await getPublicCatalogFallback({ limitCount: limit });
   }
   return products
-    .filter((product) => product?.id && product?.status === 'published')
+    .filter(isSeoIndexableProduct)
     .map((product) => ({
       slugOrId: `${String(product.title || product.name || 'produit')
         .normalize('NFD')

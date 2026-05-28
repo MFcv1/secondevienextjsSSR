@@ -1,4 +1,4 @@
-import { getPublicCatalog, getPublicCatalogFallback } from '../src/lib/server/products';
+import { getPublicCatalog, getPublicCatalogFallback, isSeoIndexableProduct } from '../src/lib/server/products';
 import { publicCatalogUrl, publicEnv } from '../src/lib/server/env';
 import { categoryEntries, getMatchingCategoryIds } from '../src/lib/seo/categories';
 import { getCategoryUrl, getProductUrl } from '../src/utils/slug';
@@ -60,7 +60,7 @@ const getPublicCatalogPage = async (cursor = '') => {
 
   const payload = await response.json();
   return {
-    products: (payload?.collections?.furniture || []).filter((product) => product.status === 'published'),
+    products: (payload?.collections?.furniture || []).filter(isSeoIndexableProduct),
     nextCursor: payload?.nextCursor || null
   };
 };
@@ -82,7 +82,7 @@ const getSitemapProducts = async () => {
   if (!fallbackProducts.length) {
     fallbackProducts = await getPublicCatalogFallback({ limitCount: 500 });
   }
-  return fallbackProducts.slice(0, SITEMAP_MAX_PRODUCTS);
+  return fallbackProducts.filter(isSeoIndexableProduct).slice(0, SITEMAP_MAX_PRODUCTS);
 };
 
 export default async function sitemap() {

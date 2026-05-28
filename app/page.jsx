@@ -14,6 +14,12 @@ const heroImages = [
   '/images/imagehero/3.webp',
 ];
 
+const heroImageAlts = [
+  'Buffet ancien restauré présenté en intérieur',
+  'Meuble ancien restauré avec patine claire',
+  'Détail de mobilier vintage sélectionné par Seconde Vie',
+];
+
 const categoryCopy = {
   buffets: {
     title: 'Buffets anciens',
@@ -95,14 +101,16 @@ const faqItems = [
 ];
 
 const safeJsonLd = (data) => JSON.stringify(data).replace(/</g, '\\u003c');
+const homeDescription = publicEnv.siteDescription || 'Meubles anciens restaurés, buffets, armoires, commodes et miroirs sélectionnés par Seconde Vie autour de Marseille.';
 
 export const metadata = {
   title: 'Mobilier ancien restauré à Marseille',
-  description: publicEnv.siteDescription || 'Meubles anciens restaurés, buffets, armoires, commodes et miroirs sélectionnés par Seconde Vie autour de Marseille.',
+  description: homeDescription,
   alternates: { canonical: '/' },
   openGraph: {
+    type: 'website',
     title: 'Mobilier ancien restauré à Marseille',
-    description: publicEnv.siteDescription,
+    description: homeDescription,
     url: publicEnv.siteUrl,
     siteName: publicEnv.siteName,
     images: ['/images/imagehero/1.webp'],
@@ -110,7 +118,7 @@ export const metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Mobilier ancien restauré à Marseille',
-    description: publicEnv.siteDescription,
+    description: homeDescription,
     images: ['/images/imagehero/1.webp'],
   },
 };
@@ -293,7 +301,7 @@ const buildJsonLd = (products) => {
         name: publicEnv.siteName,
         url: homeUrl,
         image: `${siteUrl}/images/imagehero/1.webp`,
-        description: publicEnv.siteDescription || 'Galerie de mobilier ancien restauré autour de Marseille.',
+        description: homeDescription,
         address: {
           '@type': 'PostalAddress',
           addressLocality: 'Marseille',
@@ -311,7 +319,7 @@ const buildJsonLd = (products) => {
         '@type': 'CollectionPage',
         '@id': webpageId,
         name: 'Mobilier ancien restauré autour de Marseille',
-        description: publicEnv.siteDescription || 'Sélection de meubles anciens restaurés, pièces uniques et mobilier vintage.',
+        description: homeDescription,
         url: homeUrl,
         isPartOf: { '@id': `${homeUrl}#website` },
         about: { '@id': organizationId },
@@ -355,7 +363,7 @@ export default async function Page() {
         <header className="sv-home-nav">
           <nav className="sv-home-nav__inner" aria-label="Navigation accueil">
             <Link href="/" className="sv-home-brand">
-              <img src="/images/logoanais-320.webp" alt="" width="44" height="33" />
+              <img src="/images/logoanais-320.webp" alt="Seconde Vie par Anaïs" width="44" height="33" />
               <span>
                 <strong>Seconde Vie</strong>
                 <small>par Anaïs</small>
@@ -411,7 +419,7 @@ export default async function Page() {
                   <img
                     key={src}
                     src={src}
-                    alt=""
+                    alt={heroImageAlts[index] || 'Mobilier ancien restauré'}
                     width="240"
                     height="320"
                     loading={index === 0 ? 'eager' : 'lazy'}
@@ -441,7 +449,7 @@ export default async function Page() {
                 prefetch={false}
                 className={`sv-category-card ${index === 0 || index === 3 ? 'sv-category-card--wide' : ''}`}
               >
-                <img src={category.image} alt="" width="520" height="650" loading="lazy" />
+                <img src={category.image} alt={category.title} width="520" height="650" loading="lazy" />
                 <span>{String(index + 1).padStart(2, '0')}</span>
                 <div>
                   <h3>{category.title}</h3>

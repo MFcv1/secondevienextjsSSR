@@ -4,7 +4,8 @@ import Link from 'next/link';
 import ClientApp from '../../ClientApp';
 import {
   getPublicCatalog,
-  getPublicCatalogFallback
+  getPublicCatalogFallback,
+  isSeoIndexableProduct
 } from '../../../src/lib/server/products';
 import { publicEnv } from '../../../src/lib/server/env';
 import { getCategoryUrl, getProductUrl } from '../../../src/utils/slug';
@@ -35,6 +36,7 @@ const getCategoryPageData = async (params) => {
   if (!products.length) {
     products = await getPublicCatalogFallback({ categoryIds: matchingIds, limitCount: 24 });
   }
+  products = products.filter(isSeoIndexableProduct);
 
   return {
     categoryId: decodedCategoryId,
@@ -54,7 +56,7 @@ export async function generateMetadata({ params }) {
   }
 
   const copy = getCategorySeoCopy(data.categoryId, data.categoryLabel);
-  const title = `${data.categoryLabel} restaures`;
+  const title = `${data.categoryLabel} restaurés`;
   const description = copy.intro.replace(/\s+/g, ' ').slice(0, 160);
   const canonical = getCategoryUrl(data.categoryId, publicEnv.siteUrl);
   const firstImage = getProductCardImage(data.products[0]);
@@ -120,7 +122,7 @@ export default async function CategoryPage({ params }) {
             <h1 className="font-serif text-5xl leading-none md:text-7xl">{categoryLabel}</h1>
             <p className="text-base leading-8 text-stone-700">{copy.intro}</p>
             <p className="text-sm leading-7 text-stone-600">{copy.detail}</p>
-            <p className="text-sm font-semibold text-stone-800">{products.length} pieces publiees</p>
+            <p className="text-sm font-semibold text-stone-800">{products.length} pièces publiées</p>
           </div>
 
           {products.length ? (
@@ -156,7 +158,7 @@ export default async function CategoryPage({ params }) {
             </ul>
           ) : (
             <p className="rounded-xl border border-stone-300 p-6 text-stone-700">
-              Aucune piece publiee dans cette categorie pour le moment.
+              Aucune pièce publiée dans cette catégorie pour le moment.
             </p>
           )}
         </div>

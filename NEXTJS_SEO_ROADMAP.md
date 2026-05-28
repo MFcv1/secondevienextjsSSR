@@ -128,6 +128,38 @@ npm run perf:architecture
 - `package.json` expose maintenant `npm run perf:budget`.
 - Validation: `npm run perf:budget` OK sur le build `.next` courant. Mesures principales: routes publiques a 106-112 kB JS gzip initial, CSS initial 50.49 kB gzip, plus gros chunk JS differe 114.81 kB gzip, plus gros CSS 44.69 kB gzip.
 
+### 2026-05-28 - Roadmap audit SEO page complete
+
+Roadmap retenue apres audit runtime de la home:
+
+1. Consolider les signaux head de la home.
+   - Ajouter `og:type=website`.
+   - Utiliser une description metier accentuee et partagee entre metadata, OpenGraph, Twitter et JSON-LD.
+   - Donner un alt utile au logo et aux images categories quand elles portent du contenu.
+
+2. Restaurer une couche SSR utile sur `/a-propos`.
+   - Fournir H1, contenu metier, image, canonical et JSON-LD `AboutPage`.
+   - Garder `ClientApp defer` pour ne pas supprimer l'experience interactive existante.
+
+3. Nettoyer les produits indexables du sitemap.
+   - Exclure les fiches publiees mais non presentables SEO, par exemple titres techniques ou tests comme `dd`, `bu`, `test`, `demo`, `image`, `photo`.
+   - Garder les categories et produits publics valides sans changer les fiches catalogue.
+   - Appliquer le meme critere aux params statiques produit et poser `noindex, follow` si une URL faible reste accessible.
+
+4. Valider par gates.
+   - `npm run lint`.
+   - `npm run build`.
+   - `npm run seo:check` sur le serveur Next local.
+   - `npm run perf:budget`.
+   - Controle runtime home, `/a-propos`, `robots.txt` et `sitemap.xml`.
+
+Application immediate:
+
+- Home: `og:type=website`, description partagee, alt logo et alt categories corriges.
+- `/a-propos`: fallback SSR indexable ajoute avec contenu atelier, image et JSON-LD.
+- Produits: filtre qualite partage ajoute pour le sitemap, les params statiques et les metas `robots` des fiches faibles.
+- Environnements locaux: description publique accentuee pour eviter les metas sans accents.
+
 Reste a traiter dans une passe ulterieure:
 
 - isoler plus finement panier/wishlist/auth/lightbox pour eviter de charger toute la SPA sur les routes SEO;

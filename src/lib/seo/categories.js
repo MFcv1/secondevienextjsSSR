@@ -71,7 +71,7 @@ export const buildCategoryCollectionJsonLd = ({ categoryId, categoryLabel, produ
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
   '@id': `${getCategoryUrl(categoryId, siteUrl)}#collection`,
-  name: `${categoryLabel} restaures`,
+  name: `${categoryLabel} restaurés`,
   description,
   url: getCategoryUrl(categoryId, siteUrl),
   breadcrumb: {
