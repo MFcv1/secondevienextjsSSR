@@ -33,7 +33,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |   `-- src : analytics, auth, commerce, email, maintenance, public, seo, triggers
 |-- public : favicons, manifest, images, video, rapport maintenance statique
 |-- scripts : env bridge, SSR/mobile checks, maintenance audit, budget perf Next, perf/architecture compare, audit scroll galerie, backfills/audits Storage/images et tooling safe
-|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_SEO_ROADMAP.md, NEXTJS_HOME_LANDING_ROADMAP.md, NEXTJS_SSR_AUDIT_REPORT.md, NEXTJS_IMAGE_PIPELINE_AUDIT.md, PRODUCT_DETAIL_IMAGE_UX_AUDIT.md, PRODUCT_DETAIL_IMAGE_UX_SESSION_REPORT.md, PRODUCT_PAGE_NEXT_MIGRATION_REPORT.md, GALLERY_COLD_SCROLL_OPTIMIZATION_REPORT.md, GALLERY_SCROLL_LAG_AUDIT.md, GALLERY_SCROLL_NEXT_ROADMAP.md
+|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_SEO_ROADMAP.md, NEXTJS_HOME_LANDING_ROADMAP.md, NEXTJS_SSR_AUDIT_REPORT.md, NEXTJS_IMAGE_PIPELINE_AUDIT.md, PRODUCT_DETAIL_IMAGE_UX_AUDIT.md, PRODUCT_DETAIL_IMAGE_UX_SESSION_REPORT.md, PRODUCT_PAGE_NEXT_MIGRATION_REPORT.md, SEO_AND_NEXT_ARCHITECTURE_AUDIT_2026-05-28.md, GALLERY_COLD_SCROLL_OPTIMIZATION_REPORT.md, GALLERY_SCROLL_LAG_AUDIT.md, GALLERY_SCROLL_NEXT_ROADMAP.md
 |-- imagehero, pageUI : references visuelles et notes UI
 `-- .next, dist, node_modules, logs, .firebase : generes, hors carte
 ```
