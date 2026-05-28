@@ -91,6 +91,71 @@ export default function HomeGalleryLauncher() {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    let ctx;
+    let cancelled = false;
+    const idleId = window.requestIdleCallback
+      ? window.requestIdleCallback(startMotion, { timeout: 1600 })
+      : window.setTimeout(startMotion, 900);
+
+    function startMotion() {
+      Promise.all([
+        import('gsap'),
+        import('gsap/ScrollTrigger'),
+      ]).then(([gsapModule, scrollTriggerModule]) => {
+        if (cancelled) return;
+        const gsap = gsapModule.default || gsapModule.gsap;
+        const ScrollTrigger = scrollTriggerModule.ScrollTrigger;
+        if (!gsap || !ScrollTrigger || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+        gsap.registerPlugin(ScrollTrigger);
+        ctx = gsap.context(() => {
+          gsap.utils.toArray('.sv-category-card, .sv-product-card, .sv-location-card, .sv-route-visual, .sv-faq-list details').forEach((node, index) => {
+            gsap.fromTo(node,
+              { autoAlpha: 0.72, y: 34, scale: 0.965 },
+              {
+                autoAlpha: 1,
+                y: 0,
+                scale: 1,
+                duration: 0.9,
+                ease: 'power3.out',
+                delay: Math.min(index * 0.025, 0.18),
+                scrollTrigger: {
+                  trigger: node,
+                  start: 'top 88%',
+                  once: true,
+                },
+              }
+            );
+          });
+
+          gsap.utils.toArray('.sv-route-visual img, .sv-product-card__media img').forEach((image) => {
+            gsap.fromTo(image,
+              { scale: 1.035 },
+              {
+                scale: 1,
+                ease: 'none',
+                scrollTrigger: {
+                  trigger: image,
+                  start: 'top bottom',
+                  end: 'bottom top',
+                  scrub: 0.6,
+                },
+              }
+            );
+          });
+        });
+      }).catch(() => {});
+    }
+
+    return () => {
+      cancelled = true;
+      if (window.cancelIdleCallback && typeof idleId === 'number') window.cancelIdleCallback(idleId);
+      else window.clearTimeout(idleId);
+      ctx?.revert();
+    };
+  }, []);
+
   return shouldMountGallery ? (
     <div className="sv-gallery-launcher-overlay">
       <ClientApp />

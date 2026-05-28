@@ -4,7 +4,7 @@ import { getPublicCatalog, getPublicCatalogFallback } from '../src/lib/server/pr
 import { publicEnv } from '../src/lib/server/env';
 import KIT_CONFIG from '../src/kit/config/constants';
 import { getCategoryUrl, getProductUrl } from '../src/utils/slug';
-import { getProductCardImage } from '../src/utils/imageUtils';
+import { getProductCardImage, getProductImageItems } from '../src/utils/imageUtils';
 
 export const revalidate = 300;
 
@@ -55,19 +55,24 @@ const categoryEntries = ['buffets', 'armoires', 'commodes', 'miroirs', 'tables',
   })
   .filter(Boolean);
 
-const proofItems = [
-  ['01', 'Pièces uniques', 'Un seul exemplaire par meuble, documenté avec ses proportions, son état et sa matière.'],
-  ['02', 'Restauration mesurée', 'Nettoyer, réparer, stabiliser et choisir une finition sans gommer l’histoire visible.'],
-  ['03', 'Lecture claire', 'Photos, dimensions et détails utiles pour décider avant la visite ou la livraison.'],
-  ['04', 'Trajet étudié', 'Retrait ou transport organisé selon volume, accès, fragilité et distance depuis Marseille.'],
+const homeSelectionCategoryOrder = ['buffets', 'armoires', 'commodes', 'miroirs'];
+const homeFeaturedProductIds = [
+  'mBZuoKIzWW8EycXDwtdT',
+  '30zeGFFcGWnBkK44YHZj',
+  '9yl4isQ7IjfnApVGQC5C',
+  '0KXe2kmuAn0tJzwqZxOI',
 ];
-
-const proofStatement = ['Choisir', 'une', 'pièce', 'ancienne,', 'c’est', 'lire', 'sa', 'matière', 'avant', 'son', 'prix.'];
+const homeExcludedProductIds = new Set([
+  'RwaaP9TGIw1871LIr7ns',
+  '3uidDZpwH2ydH8v9jiw3',
+  'VdMQLvZvXJL7mKVxCBvb',
+  'bU407t3vFKcMq2UJ1wQL',
+]);
 
 const routeSteps = [
-  ['01', 'Volume', 'Largeur, hauteur, profondeur et poids estimé posent le cadre avant toute promesse.'],
-  ['02', 'Accès', 'Escalier, ascenseur, stationnement, étage et contraintes du lieu sont vérifiés avec précision.'],
-  ['03', 'Trajet', 'Retrait atelier, Marseille proche ou transport dédié: la solution suit la fragilité de la pièce.'],
+  ['01', 'Mesurer', 'Largeur, hauteur, profondeur et contraintes du meuble sont vérifiées avant de promettre un départ.'],
+  ['02', 'Protéger', 'Angles, portes, miroirs, plateaux et patines sont préparés selon la fragilité de chaque pièce.'],
+  ['03', 'Installer', 'Retrait atelier, Marseille proche ou transport dédié: la solution reste ajustée au meuble.'],
 ];
 
 const faqItems = [
@@ -111,9 +116,9 @@ export const metadata = {
 };
 
 const getHomeProducts = async () => {
-  let products = await getPublicCatalog('scope=cards&limit=10');
-  if (!products.length) products = await getPublicCatalogFallback({ limitCount: 10 });
-  return products.slice(0, 10);
+  let products = await getPublicCatalog('scope=cards&limit=24');
+  if (!products.length) products = await getPublicCatalogFallback({ limitCount: 24 });
+  return products.slice(0, 24);
 };
 
 const formatPrice = (product) => {
@@ -130,21 +135,146 @@ const getProductCategoryLabel = (product) => {
 };
 
 const getProductTitle = (product, index) => {
-  const rawTitle = (product?.name || product?.title || '').trim();
-  if (rawTitle.length >= 3) return rawTitle;
+  const rawTitle = (product?.name || product?.title || '').trim().replace(/\s+/g, ' ');
+  if (rawTitle.length >= 3) return rawTitle.charAt(0).toUpperCase() + rawTitle.slice(1);
   return `Pièce restaurée ${String(index + 1).padStart(2, '0')}`;
 };
 
 const getProductDescription = (product) => {
-  const detail = product?.material || product?.style || product?.woodType;
-  if (detail && detail.length > 2) return detail;
-  return 'Meuble ancien restauré et prêt à découvrir dans la galerie.';
+  const material = (product?.material || product?.woodType || '').trim();
+  const materialPrefix = material && material.length > 2 ? `${material}. ` : '';
+  const categoryDescriptions = {
+    buffets: 'Rangement généreux, façade travaillée et patine restaurée pour donner du relief à la pièce.',
+    armoires: 'Une pièce haute, choisie pour sa ligne, sa capacité et la présence douce de sa matière.',
+    commodes: 'Format compact, équilibre visuel et rangement utile sans alourdir un salon ou une chambre.',
+    miroirs: 'Cadre ancien, reflet profond et détail décoratif pour ouvrir la pièce avec caractère.',
+  };
+
+  return `${materialPrefix}${categoryDescriptions[product?.category] || 'Pièce ancienne restaurée, sélectionnée pour sa matière et sa présence.'}`;
 };
 
 const getHomeProductVisual = (product) => {
-  const categoryVisual = categoryCopy[product?.category]?.image;
-  if (categoryVisual) return categoryVisual;
-  return getProductCardImage(product).src;
+  const primaryImage = getProductImageItems(product)[0];
+  return primaryImage?.large
+    || primaryImage?.medium
+    || primaryImage?.src
+    || getProductCardImage(product).src
+    || '';
+};
+
+const getFeaturedProductVisual = (product) => (
+  getHomeProductVisual(product)
+);
+
+const getFeaturedProductImage = (product) => {
+  const primaryImage = getProductImageItems(product)[0];
+  const fallback = getProductCardImage(product).src;
+  const src = primaryImage?.large
+    || primaryImage?.medium
+    || primaryImage?.src
+    || fallback
+    || '';
+  const candidates = [
+    [primaryImage?.medium, 1024],
+    [primaryImage?.large, 1440],
+    [primaryImage?.full, 1920],
+  ];
+  const seen = new Set();
+  const srcSet = candidates
+    .filter(([candidate]) => candidate && !seen.has(candidate) && seen.add(candidate))
+    .map(([candidate, width]) => `${candidate} ${width}w`)
+    .join(', ');
+
+  return {
+    src,
+    srcSet,
+    sizes: '(max-width: 767px) min(92vw, 430px), 480px',
+    ratio: Number(primaryImage?.metadata?.ratio || primaryImage?.ratio || 0) || null,
+  };
+};
+
+const hasDisplayReadyTitle = (product) => {
+  const rawTitle = (product?.name || product?.title || '').trim().toLowerCase();
+  if (rawTitle.length < 4) return false;
+  return !['test', 'demo', 'image', 'photo', 'meuble de metier'].includes(rawTitle);
+};
+
+const hasDisplayReadyPrice = (product) => {
+  if (product?.priceOnRequest) return true;
+  const price = Number(product?.currentPrice || product?.price || product?.startingPrice || 0);
+  return price === 0 || price >= 50;
+};
+
+const isDisplayReadyHomeProduct = (product) => (
+  product?.id &&
+  !homeExcludedProductIds.has(product.id) &&
+  getHomeProductVisual(product) &&
+  product?.category !== 'tables' &&
+  hasDisplayReadyTitle(product) &&
+  hasDisplayReadyPrice(product)
+);
+
+const getHomeProductPriority = (product) => {
+  const rawTitle = (product?.name || product?.title || '').trim().toLowerCase();
+  const price = Number(product?.currentPrice || product?.price || product?.startingPrice || 0);
+  let score = 0;
+  if (price >= 50) score += 2;
+  if (rawTitle.includes('buffet')) score += 2;
+  if (rawTitle.includes('armoire') || rawTitle.includes('miroir') || rawTitle.includes('chevet') || rawTitle.includes('commode')) score += 1;
+  return score;
+};
+
+const getFeaturedProducts = (products, limit = 4) => {
+  const selected = [];
+  const seenVisuals = new Set();
+  const eligibleProducts = products
+    .filter(isDisplayReadyHomeProduct)
+    .sort((a, b) => getHomeProductPriority(b) - getHomeProductPriority(a));
+
+  const addProduct = (product) => {
+    if (selected.length >= limit) return;
+    const visual = getFeaturedProductVisual(product);
+    const visualKey = visual || product?.id || '';
+    if (visualKey && seenVisuals.has(visualKey)) return;
+    if (visualKey) seenVisuals.add(visualKey);
+    selected.push(product);
+  };
+
+  homeFeaturedProductIds.forEach((productId) => {
+    const product = eligibleProducts.find((entry) => entry.id === productId);
+    if (product) addProduct(product);
+  });
+
+  if (selected.length >= limit) return selected;
+
+  homeSelectionCategoryOrder.forEach((categoryId) => {
+    const product = eligibleProducts.find((entry) => entry.category === categoryId);
+    if (product) addProduct(product);
+  });
+
+  if (selected.length >= limit) return selected;
+
+  eligibleProducts.forEach(addProduct);
+
+  if (selected.length >= limit) return selected;
+
+  products.forEach((product) => {
+    if (selected.length >= limit) return;
+    if (selected.some((entry) => entry.id === product.id)) return;
+    selected.push(product);
+  });
+
+  return selected;
+};
+
+const getProductCardClassName = (index) => {
+  const variants = [
+    'sv-product-card--lead',
+    'sv-product-card--wide',
+    'sv-product-card--narrow',
+    'sv-product-card--quiet sv-product-card--offset',
+  ];
+  return variants[index] || 'sv-product-card--narrow';
 };
 
 const buildJsonLd = (products) => {
@@ -216,7 +346,7 @@ const buildJsonLd = (products) => {
 
 export default async function Page() {
   const products = await getHomeProducts();
-  const featuredProducts = products.slice(0, 8);
+  const featuredProducts = getFeaturedProducts(products, 4);
 
   return (
     <>
@@ -293,35 +423,13 @@ export default async function Page() {
           </div>
         </section>
 
-        <section className="sv-home-section sv-proof-chapter sv-home-animate" aria-label="Garanties Seconde Vie">
-          <div className="sv-proof-chapter__statement">
-            <p className="sv-home-kicker">Ce qui compte avant l’achat</p>
-            <h2 aria-label={proofStatement.join(' ')}>
-              {proofStatement.map((word, index) => (
-                <span className="sv-tone-word" key={`${word}-${index}`}>{word} </span>
-              ))}
-            </h2>
-          </div>
-          <div className="sv-proof-rail">
-            {proofItems.map(([number, title, text]) => (
-              <article key={title} className="sv-proof-line">
-                <span>{number}</span>
-                <div>
-                  <h3>{title}</h3>
-                  <p>{text}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
         <section className="sv-home-section sv-category-band">
           <div className="sv-category-band__intro">
             <p className="sv-home-kicker">Choisir par type de pièce</p>
-            <h2>Le bon meuble commence par une silhouette.</h2>
+            <h2>Chaque intérieur appelle une présence.</h2>
             <p>
-              Les catégories gardent le catalogue lisible pour Google comme pour les visiteurs:
-              chaque entrée mène vers une page SSR dédiée.
+              Buffets, armoires, miroirs ou petites pièces: chaque famille garde sa ligne, son usage
+              et son échelle pour entrer dans la galerie sans se perdre.
             </p>
           </div>
 
@@ -348,7 +456,7 @@ export default async function Page() {
           <div className="sv-section-heading sv-selection-heading">
             <div>
               <p className="sv-home-kicker">Dernières pièces</p>
-              <h2>Une galerie vivante, limitée aux pièces disponibles.</h2>
+              <h2>Quatre pièces en vue, choisies pour leur caractère.</h2>
             </div>
             <button type="button" data-gallery-launcher className="sv-home-button sv-home-button--dark">
               Tout voir
@@ -359,20 +467,27 @@ export default async function Page() {
           {featuredProducts.length ? (
             <ul className="sv-product-wall">
               {featuredProducts.map((product, index) => {
-                const productVisual = getHomeProductVisual(product);
+                const productVisual = getFeaturedProductVisual(product);
+                const productImage = getFeaturedProductImage(product);
                 const title = getProductTitle(product, index);
                 return (
-                  <li key={product.id} className={index === 0 ? 'sv-product-card--lead' : undefined}>
+                  <li key={product.id} className={getProductCardClassName(index)}>
                     <Link href={getProductUrl(product)} prefetch={false} className="sv-product-link">
                       <article className="sv-product-card">
-                        <div className="sv-product-card__media">
+                        <div
+                          className="sv-product-card__media"
+                          style={productImage.ratio ? { '--sv-product-image-ratio': productImage.ratio } : undefined}
+                        >
                           {productVisual ? (
                             <img
-                              src={productVisual}
+                              src={productImage.src}
+                              srcSet={productImage.srcSet || undefined}
+                              sizes={productImage.srcSet ? productImage.sizes : undefined}
                               alt={title}
                               width="760"
                               height="920"
                               loading={index < 2 ? 'eager' : 'lazy'}
+                              decoding="async"
                             />
                           ) : (
                             <div className="sv-product-card__placeholder" aria-hidden="true" />
@@ -425,34 +540,37 @@ export default async function Page() {
         </section>
 
         <section className="sv-home-section sv-location-section sv-home-animate">
-          <div>
+          <div className="sv-location-copy">
             <p className="sv-home-kicker">Marseille et livraison</p>
-            <h2>Une pièce se choisit aussi par son trajet.</h2>
+            <h2>Du meuble choisi à sa place chez vous.</h2>
             <p className="sv-location-intro">
-              Pas de promesse vague: chaque meuble passe par une lecture logistique avant de quitter l’atelier.
+              L'achat ne s'arrête pas à la photo: on regarde le volume, les accès, la fragilité
+              et la bonne manière de faire arriver la pièce sans improvisation.
             </p>
           </div>
           <div className="sv-route-board">
-            <div className="sv-route-board__line" aria-hidden="true" />
+            <figure className="sv-route-visual">
+              <img src="/images/menu-delivery-marseille-wide.jpg" alt="Livraison de mobilier ancien à Marseille" width="900" height="480" loading="lazy" />
+            </figure>
             {routeSteps.map(([number, title, text]) => (
-              <article key={title} className="sv-location-card">
+              <article key={title} className={`sv-location-card sv-location-card--${number}`}>
                 <span>{number}</span>
                 <h3>{title}</h3>
                 <p>{text}</p>
               </article>
             ))}
             <aside className="sv-route-note">
-              <strong>Marseille d’abord</strong>
-              <p>Les projets proches sont traités avec priorité; les trajets plus longs sont validés meuble par meuble.</p>
+              <strong>Marseille et alentours</strong>
+              <p>Les projets proches restent simples; les trajets plus longs sont validés meuble par meuble.</p>
             </aside>
           </div>
         </section>
 
         <section id="faq" className="sv-home-section sv-faq-section">
           <div className="sv-faq-heading">
-            <p className="sv-home-kicker">Questions fréquentes</p>
-            <h2>Avant d’entrer dans la galerie.</h2>
+            <p className="sv-home-kicker">Réponses utiles avant la visite</p>
           </div>
+          <div className="sv-faq-mark" aria-hidden="true">FAQ</div>
           <div className="sv-faq-list">
             {faqItems.map((item) => (
               <details key={item.question}>
