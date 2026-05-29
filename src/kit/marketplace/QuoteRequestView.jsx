@@ -1,5 +1,6 @@
+'use client';
+
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
 import {
     ArrowRight,
     Check,
@@ -139,13 +140,6 @@ const formatPhotoName = (name = '') => {
     return `${cleanName.slice(0, 10)}...`;
 };
 
-const fadeUp = {
-    initial: { opacity: 0, y: 24, filter: 'blur(8px)' },
-    whileInView: { opacity: 1, y: 0, filter: 'blur(0px)' },
-    viewport: { once: true, margin: '-80px' },
-    transition: { duration: 0.74, ease: [0.22, 1, 0.36, 1] }
-};
-
 const QuoteRequestView = ({ darkMode = false, setHeaderProps }) => {
     const [selectedType, setSelectedType] = useState('buffet');
     const [activeGroup, setActiveGroup] = useState('bois');
@@ -272,7 +266,7 @@ const QuoteRequestView = ({ darkMode = false, setHeaderProps }) => {
             <SEO
                 title="Demander un devis de restauration - Seconde Vie par Anais"
                 description="Formulaire de demande de devis pour restaurer un meuble ancien ou familial avec Anais."
-                url="/#devis"
+                url="/devis"
             />
 
             <section className="relative overflow-hidden">
@@ -288,7 +282,7 @@ const QuoteRequestView = ({ darkMode = false, setHeaderProps }) => {
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(166,138,100,0.18),transparent_32%),linear-gradient(90deg,rgba(255,255,255,0.62),transparent_58%)] opacity-80" />
 
                 <div className="relative mx-auto grid max-w-[1480px] items-stretch px-4 py-7 sm:px-6 md:py-9 lg:min-h-[540px] lg:px-10 xl:min-h-[560px] xl:px-16">
-                    <motion.div {...fadeUp} className="flex max-w-[540px] flex-col justify-center py-3 md:py-5">
+                    <div className="flex max-w-[540px] flex-col justify-center py-3 md:py-5">
                         <div className={`mb-5 flex items-center gap-2 font-sans text-[10px] font-semibold ${darkMode ? 'text-stone-400' : 'text-[#73675c]'}`}>
                             <span>Accueil</span>
                             <span className="h-px w-4 bg-current opacity-30" />
@@ -314,7 +308,7 @@ const QuoteRequestView = ({ darkMode = false, setHeaderProps }) => {
                                 </div>
                             ))}
                         </div>
-                    </motion.div>
+                    </div>
                     <div className="mt-4 h-[230px] overflow-hidden rounded-[18px] ring-1 ring-black/5 sm:h-[280px] lg:hidden">
                         <img
                             src={quoteRestorationHeroSrc}
@@ -326,7 +320,7 @@ const QuoteRequestView = ({ darkMode = false, setHeaderProps }) => {
             </section>
 
             <form onSubmit={handleSubmit} className="mx-auto max-w-[1480px] px-4 py-8 sm:px-6 md:py-12 lg:px-10 xl:px-16">
-                <motion.section {...fadeUp} className="space-y-5">
+                <section className="space-y-5">
                     <h2 className="font-serif text-2xl leading-tight md:text-[2rem]">1. Quel type de meuble souhaitez-vous faire restaurer ?</h2>
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
                         {furnitureTypes.map(type => {
@@ -359,10 +353,10 @@ const QuoteRequestView = ({ darkMode = false, setHeaderProps }) => {
                             );
                         })}
                     </div>
-                </motion.section>
+                </section>
 
                 <div className="mt-8 grid gap-5 lg:grid-cols-2">
-                    <motion.section {...fadeUp} className={`rounded-[8px] p-4 ring-1 sm:p-6 ${darkMode ? 'bg-white/[0.035] ring-white/8' : 'bg-white/72 ring-[#eee7df]'}`}>
+                    <section className={`rounded-[8px] p-4 ring-1 sm:p-6 ${darkMode ? 'bg-white/[0.035] ring-white/8' : 'bg-white/72 ring-[#eee7df]'}`}>
                         <h2 className="font-serif text-2xl leading-tight">2. Décrivez votre meuble</h2>
                         <div className="mt-5 space-y-4 font-sans">
                             <label className="block">
@@ -414,9 +408,9 @@ const QuoteRequestView = ({ darkMode = false, setHeaderProps }) => {
                                 </div>
                             </div>
                         </div>
-                    </motion.section>
+                    </section>
 
-                    <motion.section {...fadeUp} className={`flex h-full min-h-[420px] flex-col rounded-[8px] p-4 ring-1 sm:p-6 ${darkMode ? 'bg-white/[0.035] ring-white/8' : 'bg-white/72 ring-[#eee7df]'}`}>
+                    <section className={`flex h-full min-h-[420px] flex-col rounded-[8px] p-4 ring-1 sm:p-6 ${darkMode ? 'bg-white/[0.035] ring-white/8' : 'bg-white/72 ring-[#eee7df]'}`}>
                         <h2 className="font-serif text-2xl leading-tight">3. Ajoutez des photos</h2>
                         <p className={`mt-2 font-sans text-[12px] ${darkMode ? 'text-stone-400' : 'text-[#6e655d]'}`}>Plus vous ajoutez de photos, plus le devis sera précis.</p>
                         <button
@@ -465,11 +459,11 @@ const QuoteRequestView = ({ darkMode = false, setHeaderProps }) => {
                                 ))}
                             </div>
                         )}
-                    </motion.section>
+                    </section>
                 </div>
 
                 <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-                    <motion.section {...fadeUp} className={`rounded-[8px] p-4 ring-1 sm:p-6 ${darkMode ? 'bg-white/[0.035] ring-white/8' : 'bg-white/72 ring-[#eee7df]'}`}>
+                    <section className={`rounded-[8px] p-4 ring-1 sm:p-6 ${darkMode ? 'bg-white/[0.035] ring-white/8' : 'bg-white/72 ring-[#eee7df]'}`}>
                         <h2 className="font-serif text-2xl leading-tight md:text-[2rem]">4. Choisissez les prestations souhaitées</h2>
                         <p className={`mt-2 font-sans text-[12px] ${darkMode ? 'text-stone-400' : 'text-[#6e655d]'}`}>Sélectionnez les interventions que vous souhaitez pour votre meuble.</p>
                         <div className="mt-6 space-y-3">
@@ -581,9 +575,9 @@ const QuoteRequestView = ({ darkMode = false, setHeaderProps }) => {
                                 </div>
                             </div>
                         </div>
-                    </motion.section>
+                    </section>
 
-                    <motion.aside {...fadeUp} className="space-y-4 xl:sticky xl:top-28 xl:self-start">
+                    <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
                         <div className={`rounded-[8px] p-6 ring-1 ${darkMode ? 'bg-white/[0.045] ring-white/8' : 'bg-white/82 ring-[#eadfd3]'}`}>
                             <h2 className="font-serif text-2xl leading-tight">Estimation en temps reel</h2>
                             <p className={`mt-2 font-sans text-[12px] leading-relaxed ${darkMode ? 'text-stone-400' : 'text-[#6e655d]'}`}>Le prix varie selon les prestations et l'etat de votre meuble.</p>
@@ -618,11 +612,11 @@ const QuoteRequestView = ({ darkMode = false, setHeaderProps }) => {
                                 Etre rappele
                             </a>
                         </div>
-                    </motion.aside>
+                    </aside>
                 </div>
 
                 <div className="mt-8 grid gap-5 lg:grid-cols-[1fr_1fr]">
-                    <motion.section {...fadeUp} className={`rounded-[8px] p-4 ring-1 sm:p-6 ${darkMode ? 'bg-white/[0.035] ring-white/8' : 'bg-white/72 ring-[#eee7df]'}`}>
+                    <section className={`rounded-[8px] p-4 ring-1 sm:p-6 ${darkMode ? 'bg-white/[0.035] ring-white/8' : 'bg-white/72 ring-[#eee7df]'}`}>
                         <h2 className="font-serif text-2xl leading-tight">5. Vos informations</h2>
                         <div className="mt-5 grid gap-4 font-sans sm:grid-cols-2">
                             {[
@@ -651,9 +645,9 @@ const QuoteRequestView = ({ darkMode = false, setHeaderProps }) => {
                                 />
                             </label>
                         </div>
-                    </motion.section>
+                    </section>
 
-                    <motion.section {...fadeUp} className={`rounded-[8px] p-4 ring-1 sm:p-6 ${darkMode ? 'bg-white/[0.035] ring-white/8' : 'bg-white/72 ring-[#eee7df]'}`}>
+                    <section className={`rounded-[8px] p-4 ring-1 sm:p-6 ${darkMode ? 'bg-white/[0.035] ring-white/8' : 'bg-white/72 ring-[#eee7df]'}`}>
                         <h2 className="font-serif text-2xl leading-tight">6. Informations complementaires <span className="font-sans text-[12px] opacity-55">(facultatif)</span></h2>
                         <label className="mt-5 block font-sans">
                             <span className="text-[12px] font-bold">Souhaitez-vous ajouter des précisions ?</span>
@@ -664,11 +658,11 @@ const QuoteRequestView = ({ darkMode = false, setHeaderProps }) => {
                                 className={`mt-2 w-full resize-none rounded-[6px] p-4 text-[13px] outline-none ring-1 transition-colors ${darkMode ? 'bg-[#151515] ring-white/10 placeholder:text-stone-600 focus:ring-white/24' : 'bg-white ring-[#ddd3c9] placeholder:text-[#a49a91] focus:ring-[#9A714C]/50'}`}
                             />
                         </label>
-                    </motion.section>
+                    </section>
                 </div>
 
                 <div className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,1fr)_390px]">
-                    <motion.section {...fadeUp} className={`rounded-[8px] p-5 ring-1 sm:p-6 ${darkMode ? 'bg-white/[0.035] ring-white/8' : 'bg-white/72 ring-[#eee7df]'}`}>
+                    <section className={`rounded-[8px] p-5 ring-1 sm:p-6 ${darkMode ? 'bg-white/[0.035] ring-white/8' : 'bg-white/72 ring-[#eee7df]'}`}>
                         <h2 className="font-serif text-2xl leading-tight">Comment ca se passe ?</h2>
                         <div className="mt-6 grid gap-5 md:grid-cols-4">
                             {processSteps.map((step, index) => (
@@ -683,9 +677,9 @@ const QuoteRequestView = ({ darkMode = false, setHeaderProps }) => {
                                 </div>
                             ))}
                         </div>
-                    </motion.section>
+                    </section>
 
-                    <motion.section {...fadeUp} className={`rounded-[8px] p-7 text-center ring-1 ${darkMode ? 'bg-white/[0.055] ring-white/8' : 'bg-[#f4eee7] ring-[#eadfd3]'}`}>
+                    <section className={`rounded-[8px] p-7 text-center ring-1 ${darkMode ? 'bg-white/[0.055] ring-white/8' : 'bg-[#f4eee7] ring-[#eadfd3]'}`}>
                         <Wand2 size={24} strokeWidth={1.35} className="mx-auto mb-4 opacity-70" />
                         <h2 className="font-serif text-2xl leading-tight md:text-3xl">Prêt à redonner vie à votre meuble ?</h2>
                         <p className={`mx-auto mt-4 max-w-[18rem] font-sans text-[13px] leading-relaxed ${darkMode ? 'text-stone-400' : 'text-[#6e655d]'}`}>Envoyez votre demande et recevez votre devis personnalisé sous 48h.</p>
@@ -705,7 +699,7 @@ const QuoteRequestView = ({ darkMode = false, setHeaderProps }) => {
                                 Votre email de demande est pret.
                             </div>
                         )}
-                    </motion.section>
+                    </section>
                 </div>
             </form>
         </main>

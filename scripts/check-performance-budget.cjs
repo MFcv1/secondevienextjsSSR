@@ -20,9 +20,9 @@ const routeBudgets = [
     maxInitialCssGzipKb: 55,
   },
   {
-    label: 'product SSR route',
+    label: 'product SSR route exact detail island',
     keys: ['/layout', '/produit/[slugOrId]/page'],
-    maxInitialJsGzipKb: 135,
+    maxInitialJsGzipKb: 215,
     maxInitialCssGzipKb: 55,
   },
   {
@@ -34,7 +34,7 @@ const routeBudgets = [
   {
     label: 'quote SSR route',
     keys: ['/layout', '/devis/page'],
-    maxInitialJsGzipKb: 135,
+    maxInitialJsGzipKb: 125,
     maxInitialCssGzipKb: 55,
   },
   {

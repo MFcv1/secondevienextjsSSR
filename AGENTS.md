@@ -13,7 +13,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- alertemobile.md : invariant mobile marketplace critique
 |-- package*.json, next.config.mjs, eslint.config.mjs, jsconfig.json, tailwind.config.js, postcss.config.js
 |-- apphosting.yaml, .firebaserc : configuration Firebase App Hosting sandbox
-|-- app : routes Next App Router, home landing SEO SSR + launcher galerie, SSR produit/categorie, loading/not-found/error, sitemap, robots et shell client
+|-- app : routes Next App Router, home landing SEO SSR + launcher galerie, SSR produit/categorie, loading/not-found/error, sitemap, robots et shells client
 |-- tests, playwright.config.mjs : tests E2E et validations Playwright
 |-- _DOCS : documentation maintenance Next/dependances
 |-- firebase.json, .firebaseignore, firestore.rules, firestore.indexes.json, storage.rules
@@ -24,7 +24,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |   |-- Router.jsx, app.jsx, main.jsx, index.css
 |   |-- kit/admin : back-office, analytics, commandes, SEO, users, exports CSV, docs/etudes techniques admin
 |   |-- kit/commerce : panier, checkout, login, commandes client
-|   |-- kit/marketplace : galerie, SEO visible, pages categorie/produit, layout, wishlist, devis
+|   |-- kit/marketplace : galerie, SEO visible, pages categorie/produit, ilots route produit Next, layout, wishlist, devis
 |   |-- kit/layout, kit/shared, kit/ui, kit/hooks, kit/contexts, kit/config (dont firebaseEnv/firebaseCore/firebaseLazy)
 |   |-- vitrine : HomeView et sections de la page A propos (ancienne vitrine)
 |   `-- assets, utils : images source et helpers
@@ -364,6 +364,19 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 - Invariant mobile conserve : `src/Router.jsx` n'a pas ete modifie et garde `const shouldUseMobileGalleryScroll = view === 'gallery' || isGalleryDetailOverlay;`.
 - Validations executees : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, `npm run seo:check` en local et sandbox, `npm run perf:product-images` en local et sandbox avec `--throttle=3`.
 - Deploiement effectue sur App Hosting sandbox : `https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app`. Controle SSR sandbox : `product-ssr-visual-preview__backdrop` et `product-ssr-visual-preview__image--main` pointent tous les deux vers la meme URL `..._medium_...webp`.
+
+### Goal 21 - Route produit Next avec design historique exact
+
+- Diagnostic corrige : `ProductPageExperience` etait une ile produit autonome plus performante, mais visuellement differente du detail produit ouvert depuis la galerie. Cela recreait deux interfaces produit selon navigation client ou refresh direct.
+- `app/produit/[slugOrId]/page.jsx` garde le SSR SEO, les metadata, le preload image et les JSON-LD, puis rend `ProductDetailRouteExperience` au lieu de `ProductPageExperience`.
+- `app/produit/[slugOrId]/loading.jsx` a ete supprime pour ne plus afficher le squelette produit Next pendant un refresh dur avant le detail historique.
+- `src/kit/marketplace/ProductDetailRouteExperience.jsx` a ete ajoute pour monter directement `ArchitecturalProductDetail` avec les donnees produit serveur, sans charger `src/app.jsx`, `Router.jsx`, la galerie, ni `LegacyAppShell`.
+- Objectif architectural : une seule interface produit visible, celle de l'ancienne app, mais appelee comme ile Next directe sur refresh dur. La route produit ne doit plus afficher de preview SSR alternative, ni de page autonome approximative, ni le shell SPA complet.
+- `scripts/audit-product-page-direct.mjs` verifie maintenant la presence du detail exact (`split-detail-title` / bottom sheet mobile), l'absence du marqueur SPA legacy, l'absence de galerie et l'absence d'assets home/galerie sur une visite directe.
+- Validation locale production : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, `npm run seo:check` sur `http://127.0.0.1:3001`, `npm run perf:product-direct`. La page produit directe charge le detail exact, sans `data-sv-client-hydrated`, sans `.marketplace-gallery-shell`, sans `data-product-ssr-preview`, sans `aria-busy` et avec `data-ssr-product` dans le HTML initial.
+- Passe visuelle complementaire : l'image principale desktop du detail passe en `object-cover` et le fond du frame reste transparent pour supprimer les bandes de letterbox visibles au refresh. Le frame desktop n'est plus dimensionne par pixels JS dependants du viewport, mais par CSS `vw/vh` avec `--product-detail-sidebar-width`, afin d'eviter l'effet zoom/dezoom entre SSR et hydratation. Controle Playwright local `3000` : frame stable avant/apres 1600 ms, aucune erreur console, aucune galerie et aucun marqueur SPA legacy.
+- Correctif final du zoom au refresh : le frame image desktop ne doit plus utiliser le ratio reel charge apres coup pour calculer sa taille visible. `desktopDetailImageFrameStyle` reste base sur `DEFAULT_PRODUCT_IMAGE_RATIO` afin que le cadre soit identique des le premier paint, puis l'image remplit ce cadre en `object-cover`. Cela evite le passage ratio provisoire -> ratio image qui creait un zoom/dezoom au refresh.
+- Pendant le diagnostic, plusieurs serveurs Next locaux sur `3000/3001/3002` ont provoque des etats visuels differents selon l'onglet. Avant toute validation visuelle produit directe, arreter les anciens processus Next du repo et relancer une seule instance, puis verifier l'URL testee. Derniere validation locale : `npm run dev -- -p 3002`, `npm run lint`, `npm run mobile:contract`, `NEXT_BASE_URL=http://127.0.0.1:3002 npm run perf:product-direct`, plus controle Playwright du frame a `0/100/300/800/1600/2600 ms` sans variation.
 
 ## ðŸ› ï¸ Structure des Fichiers .env
 Nous n'utilisons PLUS de fichier `.env` unique. Tout est pilote par des fichiers suffixes locaux :

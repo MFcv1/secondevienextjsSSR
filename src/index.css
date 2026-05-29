@@ -1729,6 +1729,13 @@ body.modal-open {
 
 :root {
   --marketplace-viewport-height: 100svh;
+  --product-detail-sidebar-width: 450px;
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --product-detail-sidebar-width: 500px;
+  }
 }
 
 html.marketplace-mobile-scroll-lock {

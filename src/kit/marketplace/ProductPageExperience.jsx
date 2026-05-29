@@ -388,7 +388,7 @@ export default function ProductPageExperience({
         </button>
       </header>
 
-      <main className="relative min-h-screen overflow-hidden lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(390px,520px)]">
+      <main className="relative min-h-screen overflow-hidden lg:grid lg:grid-cols-[minmax(0,1fr)_450px_110px] xl:grid-cols-[minmax(0,1fr)_500px_110px]">
         <section
           className="relative flex min-h-[100svh] items-center justify-center overflow-hidden px-3 safe-product-image-stage lg:min-h-screen lg:px-20 lg:py-16"
           style={{ backgroundColor: activeImage?.metadata?.dominantColor || '#eee6dc' }}
@@ -404,13 +404,6 @@ export default function ProductPageExperience({
               className="pointer-events-none absolute inset-0 hidden h-full w-full scale-110 object-cover opacity-50 blur-[80px] saturate-150 lg:block"
             />
           ) : null}
-
-          <ProductThumbRail
-            images={safeImages}
-            activeIndex={activeIndex}
-            onSelect={goToIndex}
-            className="absolute left-6 top-1/2 z-20 hidden max-h-[70vh] -translate-y-1/2 lg:block"
-          />
 
           <button
             type="button"
@@ -519,7 +512,7 @@ export default function ProductPageExperience({
           </div>
         </section>
 
-        <aside className="relative z-20 hidden min-h-screen border-l border-stone-900/10 bg-[#fbf7f1]/90 px-9 py-28 shadow-[-30px_0_80px_rgba(70,50,30,0.08)] backdrop-blur-2xl lg:block">
+        <aside className="relative z-20 hidden h-screen min-h-screen flex-col border-l border-black/5 bg-[#FAFAFA] pb-8 pt-36 shadow-2xl lg:flex">
           <ProductDetails
             product={product}
             title={productTitle}
@@ -530,8 +523,16 @@ export default function ProductPageExperience({
             facts={detailList}
             liked={liked}
             onToggleLiked={toggleLiked}
+            headingTag="h1"
           />
         </aside>
+
+        <ProductThumbRail
+          images={safeImages}
+          activeIndex={activeIndex}
+          onSelect={goToIndex}
+          className="relative z-30 hidden h-screen w-[110px] min-w-[110px] max-w-[110px] flex-shrink-0 bg-[#FAFAFA] py-16 pl-2 pr-5 pt-28 lg:block"
+        />
       </main>
 
       <div
@@ -605,13 +606,72 @@ function ProductDetails({
   liked,
   onToggleLiked,
   mobile = false,
+  headingTag = 'h2',
 }) {
+  if (!mobile) {
+    return (
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="flex-shrink-0 px-10">
+          <header className="mb-10 flex flex-col">
+            <p className="mb-3 font-label text-[10px] uppercase tracking-[0.4em] text-[#757575]">
+              {product?.id ? `Pièce N°${String(product.id).substring(0, 4).toUpperCase()}` : 'Pièce unique'}
+            </p>
+            <h1 className="mb-5 font-serif text-4xl leading-tight tracking-normal text-stone-900 xl:text-5xl">
+              {title}
+            </h1>
+            <div className="font-sans text-3xl font-medium text-stone-900">
+              {priceLabel}
+            </div>
+          </header>
+
+          <div className="mb-10">
+            <div className="rounded-2xl border border-black/5 bg-white/40 p-1 shadow-sm">
+              <Link
+                href={`/devis?produit=${encodeURIComponent(product?.id || '')}`}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-stone-900 py-4 font-label text-[11px] uppercase tracking-[0.1em] text-stone-50 shadow-md transition-all hover:bg-black active:scale-95"
+              >
+                <ShoppingBag size={15} />
+                Ajouter au panier
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-10">
+          <section className="border-t border-zinc-200/70 pb-6 pt-6">
+            <h2 className="mb-4 font-label text-[10px] uppercase tracking-[0.3em] text-[#91a293]">La Pièce</h2>
+            <p className="whitespace-pre-wrap font-sans text-[13px] leading-[1.8] tracking-wide text-stone-600">
+              {description}
+            </p>
+          </section>
+        </div>
+
+        <div className="flex-shrink-0 px-10 pt-2">
+          <section className="border-t border-zinc-200/70 pt-4">
+            <h2 className="mb-4 font-label text-[10px] uppercase tracking-[0.3em] text-[#91a293]">Informations</h2>
+            {facts.length ? (
+              <dl className="space-y-3 font-label text-[9px] uppercase tracking-widest text-[#757575]">
+                {facts.map((fact) => (
+                  <div key={fact.label} className="flex justify-between border-b border-black/5 pb-2">
+                    <dt>{fact.label}</dt>
+                    <dd className="max-w-[58%] text-right font-sans text-zinc-900">{fact.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : null}
+          </section>
+        </div>
+      </div>
+    );
+  }
+
   const textTone = mobile ? 'text-white' : 'text-stone-950';
   const mutedTone = mobile ? 'text-white/55' : 'text-stone-500';
   const borderTone = mobile ? 'border-white/10' : 'border-stone-200';
   const buttonTone = mobile
     ? 'bg-white text-stone-950 hover:bg-stone-100'
     : 'bg-stone-950 text-white hover:bg-black';
+  const Heading = headingTag;
 
   return (
     <div className="space-y-8">
@@ -627,7 +687,7 @@ function ProductDetails({
 
       <div className="space-y-4">
         <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${mutedTone}`}>{statusLabel}</p>
-        <h2 className={`font-serif text-5xl leading-[0.9] lg:text-7xl ${textTone}`}>{title}</h2>
+        <Heading className={`font-serif text-5xl leading-[0.9] lg:text-7xl ${textTone}`}>{title}</Heading>
         <p className={`text-xl font-semibold ${textTone}`}>{priceLabel}</p>
       </div>
 

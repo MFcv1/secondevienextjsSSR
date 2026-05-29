@@ -100,16 +100,17 @@ const getMobileLightboxImageStyle = (ratio, viewport) => {
     );
 };
 
-const getDesktopDetailImageStyle = (ratio, viewport) => {
-    const viewportWidth = viewport?.width || (typeof window !== 'undefined' ? window.innerWidth : 1440);
-    const viewportHeight = viewport?.height || (typeof window !== 'undefined' ? window.innerHeight : 900);
-    const sidebarWidth = viewportWidth >= 1280 ? 500 : 450;
-    const stageWidth = Math.max(320, viewportWidth - sidebarWidth);
-    const maxWidth = Math.min(stageWidth * 0.74, 920);
-    const maxHeight = Math.min(viewportHeight * 0.74, 760);
+const getDesktopDetailImageStyle = (ratio) => {
+    const safeRatio = Number.isFinite(ratio) && ratio > 0 ? roundPixel(ratio) : DEFAULT_PRODUCT_IMAGE_RATIO;
+    const maxWidth = 'min(calc((100vw - var(--product-detail-sidebar-width, 500px)) * 0.74), 920px)';
+    const maxHeight = 'min(74vh, 760px)';
 
     return {
-        ...fitBoxToRatio(ratio, maxWidth, maxHeight),
+        width: `min(${maxWidth}, calc(${maxHeight} * ${safeRatio}))`,
+        height: 'auto',
+        aspectRatio: `${safeRatio}`,
+        maxWidth,
+        maxHeight,
         backgroundColor: 'transparent',
     };
 };
@@ -299,7 +300,18 @@ const resolveStagedProductDetailImage = async (image, options = {}) => {
     return promise;
 };
 
-const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, darkMode, setHeaderProps, cartItems = [], toggleTheme, onOpenMenu }) => {
+const ArchitecturalProductDetail = ({
+    item,
+    onBack,
+    onAddToCart,
+    onOpenCart,
+    darkMode,
+    setHeaderProps,
+    cartItems = [],
+    toggleTheme,
+    onOpenMenu,
+    initialDesktopDetailViewport,
+}) => {
     const { palette } = useLiveTheme();
     const containerRef = useRef(null);
     const thumbListRef = useRef(null);
@@ -330,11 +342,13 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
     const [showZoomHint, setShowZoomHint] = useState(false);
     const [lightboxFullImages, setLightboxFullImages] = useState({});
     const [imageAspectRatios, setImageAspectRatios] = useState({});
+    const [desktopLoadedImageRatios, setDesktopLoadedImageRatios] = useState({});
     const [desktopStagedImages, setDesktopStagedImages] = useState({});
-    const [viewportBox, setViewportBox] = useState(getViewportBox);
-    const [isDesktopDetailViewport, setIsDesktopDetailViewport] = useState(() => (
-        typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches
-    ));
+    const [viewportBox, setViewportBox] = useState(() => ({ width: 0, height: 0, rem: 16 }));
+    const [isDesktopDetailViewport, setIsDesktopDetailViewport] = useState(() => {
+        if (typeof initialDesktopDetailViewport === 'boolean') return initialDesktopDetailViewport;
+        return typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches;
+    });
     const [displayedDetailBackdrop, setDisplayedDetailBackdrop] = useState({ src: '', color: '' });
     const [hasPrimaryImagePainted, setHasPrimaryImagePainted] = useState(false);
 
@@ -1240,11 +1254,12 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
     const visibleDetailBackdropSrc = displayedDetailBackdrop.src || detailBackdropSrc;
     const visibleDetailBackdropColor = displayedDetailBackdrop.color || detailBackdropColor;
     const lightboxImageTransform = `translate3d(${lightboxOffset.x}px, ${lightboxOffset.y}px, 0) scale(${lightboxZoom})`;
-    const activeImageRatio = activeDesktopStagedImage?.ratio
-        || activeDesktopInstantImage?.ratio
+    const activeImageRatio = desktopLoadedImageRatios[activeImg]
         || imageAspectRatios[activeImageSrc]
         || imageAspectRatios[activeDesktopImmediateSrc]
         || imageAspectRatios[activeImageZoomFullSrc]
+        || activeDesktopStagedImage?.ratio
+        || activeDesktopInstantImage?.ratio
         || null;
     const activeImageFitMode = getProductImageFitMode(activeImageRatio);
     const safeMobileDisplayedImageIndex = Math.min(
@@ -1334,8 +1349,8 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
         []
     );
     const desktopDetailImageFrameStyle = useMemo(
-        () => getDesktopDetailImageStyle(activeImageRatio || DEFAULT_PRODUCT_IMAGE_RATIO, viewportBox),
-        [activeImageRatio, viewportBox]
+        () => getDesktopDetailImageStyle(DEFAULT_PRODUCT_IMAGE_RATIO),
+        []
     );
     const lightboxImageStyle = useMemo(
         () => ({
@@ -1372,7 +1387,58 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
     const handlePrimaryDetailImageLoad = React.useCallback((event) => {
         setHasPrimaryImagePainted(true);
         rememberProductImageRatio(event, activeImageSrc, activeDesktopImmediateSrc, activeImageZoomFullSrc);
-    }, [activeDesktopImmediateSrc, activeImageSrc, activeImageZoomFullSrc, rememberProductImageRatio]);
+        const image = event.currentTarget;
+        const ratio = image?.naturalWidth && image?.naturalHeight
+            ? image.naturalWidth / image.naturalHeight
+            : null;
+        if (Number.isFinite(ratio) && ratio > 0) {
+            setDesktopLoadedImageRatios((prev) => (
+                Math.abs((prev[activeImg] || 0) - ratio) <= 0.001
+                    ? prev
+                    : { ...prev, [activeImg]: ratio }
+            ));
+            setDesktopStagedImages((prev) => {
+                const previous = prev[activeImg];
+                if (
+                    previous?.src === activeImageSrc &&
+                    Math.abs((previous?.ratio || 0) - ratio) <= 0.001
+                ) {
+                    return prev;
+                }
+
+                return {
+                    ...prev,
+                    [activeImg]: {
+                        ...(previous || {}),
+                        src: activeImageSrc,
+                        ratio,
+                    },
+                };
+            });
+        }
+    }, [activeDesktopImmediateSrc, activeImageSrc, activeImageZoomFullSrc, activeImg, rememberProductImageRatio]);
+
+    useEffect(() => {
+        if (!isDesktopDetailViewport || typeof window === 'undefined') return undefined;
+
+        let frame = 0;
+        const syncLoadedDesktopImageRatio = () => {
+            const image = desktopImageStageRef.current?.querySelector('img[data-desktop-image-ready]');
+            if (!image?.complete || !image.naturalWidth || !image.naturalHeight) return;
+
+            const ratio = image.naturalWidth / image.naturalHeight;
+            if (!Number.isFinite(ratio) || ratio <= 0) return;
+
+            setDesktopLoadedImageRatios((prev) => (
+                Math.abs((prev[activeImg] || 0) - ratio) <= 0.001
+                    ? prev
+                    : { ...prev, [activeImg]: ratio }
+            ));
+        };
+
+        frame = window.requestAnimationFrame(syncLoadedDesktopImageRatio);
+        return () => window.cancelAnimationFrame(frame);
+    }, [activeImageSrc, activeImg, isDesktopDetailViewport]);
 
     const rememberStagedProductImage = React.useCallback((index, resolved, image) => {
         if (!resolved?.src) return;
@@ -1433,6 +1499,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
         setMobileDisplayedImageIndex(0);
         setMobilePreviousImageIndex(null);
         setMobileStagedImages({});
+        setDesktopLoadedImageRatios({});
         setLightboxFullImages({});
         mobileDisplayedImageIndexRef.current = 0;
         mobileImageSwapRef.current.token += 1;
@@ -2396,10 +2463,11 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                         />
                                     )}
                                     <div
+                                        suppressHydrationWarning
                                         className="relative overflow-hidden rounded-2xl shadow-[0_45px_110px_-25px_rgba(0,0,0,0.8)]"
                                         style={{
                                             ...desktopDetailImageFrameStyle,
-                                            backgroundColor: activeImage.metadata?.dominantColor || 'transparent',
+                                            backgroundColor: 'transparent',
                                         }}
                                     >
                                         <img
@@ -2412,7 +2480,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                                             fetchPriority="high"
                                             onLoad={handlePrimaryDetailImageLoad}
                                             data-desktop-image-ready={isActiveDesktopImageDecoded ? 'true' : 'preview'}
-                                            className={`relative z-10 block h-full w-full object-contain transition-opacity duration-[120ms] ease-out ${hasActiveDesktopImageSource ? 'opacity-100' : 'opacity-0'}`}
+                                            className={`relative z-10 block h-full w-full object-cover transition-opacity duration-[120ms] ease-out ${hasActiveDesktopImageSource ? 'opacity-100' : 'opacity-0'}`}
                                         />
                                     </div>
                                 </motion.div>

@@ -165,3 +165,17 @@ Reste a traiter dans une passe ulterieure:
 - isoler plus finement panier/wishlist/auth/lightbox pour eviter de charger toute la SPA sur les routes SEO;
 - decision image Next long terme seulement si les mesures montrent que le pipeline Firebase variants devient insuffisant;
 - ajouter une mesure terrain/RUM ou Lighthouse ciblee LCP/INP/CLS apres deploiement App Hosting.
+
+### 2026-05-29 - Retour aux vraies routes publiques Next
+
+- Diagnostic corrige: rebrancher le shell legacy complet pour retrouver le design exact supprimait le benefice architectural Next et creait encore des etats visuels aleatoires au refresh dur.
+- `/produit/[slugOrId]` rend maintenant `ProductDetailRouteExperience`, une ile Next qui enveloppe directement `ArchitecturalProductDetail`, le composant historique visible depuis la galerie. La route garde les donnees serveur produit, les metadata et les JSON-LD, sans monter `src/app.jsx`, `Router.jsx`, la galerie ou `LegacyAppShell`.
+- `/devis` rend directement `QuoteRequestView` depuis la route Next avec metadata et JSON-LD `Service`, sans passer par `LegacyAppShell`.
+- `/categorie/[categoryId]` garde son rendu SSR categorie et ne monte plus `ClientApp defer` par-dessus. Cela supprime le double rendu SSR puis SPA sur les pages categorie.
+- `app/LegacyAppShell.jsx` est supprime. Les budgets et `perf:product-direct` sont remis dans le sens attendu: prouver qu'une visite directe produit charge l'ile produit Next, pas le shell galerie legacy.
+- `app/produit/[slugOrId]/loading.jsx` est supprime pour eviter le squelette produit visible pendant le refresh direct; le HTML initial garde seulement une preuve SEO invisible `data-ssr-product` et le detail exact streame ensuite sans page alternative visible.
+- `QuoteRequestView` est maintenant une ile client explicite et n'importe plus `framer-motion`, ce qui fait retomber `/devis` a environ 113 kB JS gzip initial dans le budget Next.
+- Le detail produit direct expose le meme `h1`, la meme composition image/fiche et les memes sections `La Piece` / `Informations` que l'experience produit galerie. `perf:product-direct` verifie maintenant l'absence du marqueur SPA legacy, de la galerie, des assets home/galerie et des images `full` avant zoom.
+- Le budget produit est remonte a environ 209 kB JS gzip initial pour assumer le cout du composant historique exact (`ArchitecturalProductDetail`) tout en gardant les gates contre le retour de la SPA complete.
+- Validations executees: `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, `npm run seo:check` sur `http://127.0.0.1:3001`, `npm run perf:product-direct`, plus controles Playwright `/devis` et `/categorie/buffets` sans `data-sv-client-hydrated`, sans `.marketplace-gallery-shell` et sans fallback public.
+- Reste a poursuivre: extraire la galerie publique hors de `HomeGalleryLauncher`/`ClientApp` pour que l'entree galerie soit elle aussi une vraie surface Next, puis garder `ClientApp` uniquement pour admin/checkout/wishlist/compte ou les tunnels prives.

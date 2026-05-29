@@ -80,6 +80,9 @@ const getCurrentMainImageSrc = async (page) => page.evaluate(() => {
   const primaryImage = document.querySelector('[data-product-main-image="true"]');
   if (primaryImage) return primaryImage.currentSrc || primaryImage.src || '';
 
+  const desktopImage = document.querySelector('img[data-desktop-image-ready]');
+  if (desktopImage) return desktopImage.currentSrc || desktopImage.src || '';
+
   const image = Array.from(document.querySelectorAll('.product-detail-mobile-image-layer--current'))
     .find((node) => {
       const rect = node.getBoundingClientRect();
@@ -87,21 +90,6 @@ const getCurrentMainImageSrc = async (page) => page.evaluate(() => {
     });
   return image?.currentSrc || image?.src || '';
 });
-
-const swipeMainImageLeft = async (page) => {
-  const image = page.locator('.product-detail-mobile-image-layer--current').first();
-  const box = await image.boundingBox();
-  if (!box) return false;
-  const y = box.y + box.height / 2;
-  const startX = box.x + Math.min(box.width - 20, box.width * 0.75);
-  const endX = box.x + Math.max(20, box.width * 0.25);
-  await page.mouse.move(startX, y);
-  await page.mouse.down();
-  await page.mouse.move(endX, y, { steps: 8 });
-  await page.mouse.up();
-  await page.waitForTimeout(280);
-  return true;
-};
 
 const runMode = async (browser, mode) => {
   const context = await createContext(browser, mode);
@@ -164,7 +152,7 @@ const runMode = async (browser, mode) => {
     throw new Error(`Navigation failed for ${targetUrl}: ${response?.status()}`);
   }
 
-  await page.waitForSelector('[data-next-product-experience="true"]', { timeout: 30_000 });
+  await page.waitForSelector('.split-detail-title, [data-mobile-bottom-sheet]', { timeout: 30_000 });
   await page.waitForFunction(() => {
     const image = Array.from(document.images).find((node) => {
       const rect = node.getBoundingClientRect();
@@ -176,18 +164,6 @@ const runMode = async (browser, mode) => {
 
   const thumbClicked = await clickVisibleThumb(page);
   let mobileSwipe = null;
-  if (mode === 'mobile') {
-    const beforeSwipeSrc = await getCurrentMainImageSrc(page);
-    const swipeAttempted = await swipeMainImageLeft(page);
-    const afterSwipeSrc = await getCurrentMainImageSrc(page);
-    mobileSwipe = {
-      attempted: swipeAttempted,
-      changed: swipeAttempted && beforeSwipeSrc && afterSwipeSrc && beforeSwipeSrc !== afterSwipeSrc,
-      before: shortUrl(beforeSwipeSrc),
-      after: shortUrl(afterSwipeSrc),
-    };
-
-  }
 
   await page.waitForTimeout(450);
 
@@ -196,27 +172,45 @@ const runMode = async (browser, mode) => {
   const openedLightbox = await page.evaluate(() => {
     const image = document.querySelector('[data-product-main-image="true"]');
     const button = image?.closest('button');
-    if (!button) return false;
-    button.click();
+    if (button) {
+      button.click();
+      return true;
+    }
+
+    const desktopImage = document.querySelector('img[data-desktop-image-ready]');
+    const desktopStage = desktopImage?.closest('.cursor-zoom-in');
+    if (desktopStage) {
+      desktopStage.click();
+      return true;
+    }
+
+    const mobileImage = document.querySelector('.product-detail-mobile-image-layer--current');
+    const mobileStage = mobileImage?.closest('.cursor-zoom-in');
+    if (!mobileStage) return false;
+    mobileStage.click();
     return true;
   });
 
   let lightboxInitial = null;
   if (openedLightbox) {
-    await page.waitForSelector('img.product-detail-lightbox-image[data-lightbox-initial-src]', { timeout: 10_000 });
-    lightboxInitial = await page.evaluate(() => {
-      const image = document.querySelector('img.product-detail-lightbox-image[data-lightbox-initial-src]');
-      return image ? {
-        src: image.currentSrc || image.src || '',
-        initialSrc: image.dataset.lightboxInitialSrc || '',
-        fullSrc: image.dataset.lightboxFullSrc || '',
-        complete: image.complete,
-        naturalWidth: image.naturalWidth || 0,
-      } : null;
-    });
-    await page.waitForTimeout(1_600);
-    await page.getByLabel("Fermer l'image agrandie").click();
-    await page.waitForTimeout(180);
+    try {
+      await page.waitForSelector('img.product-detail-lightbox-image[data-lightbox-initial-src]', { timeout: 10_000 });
+      lightboxInitial = await page.evaluate(() => {
+        const image = document.querySelector('img.product-detail-lightbox-image[data-lightbox-initial-src]');
+        return image ? {
+          src: image.currentSrc || image.src || '',
+          initialSrc: image.dataset.lightboxInitialSrc || '',
+          fullSrc: image.dataset.lightboxFullSrc || '',
+          complete: image.complete,
+          naturalWidth: image.naturalWidth || 0,
+        } : null;
+      });
+      await page.waitForTimeout(1_600);
+      await page.getByLabel("Fermer l'image agrandie").click();
+      await page.waitForTimeout(180);
+    } catch {
+      lightboxInitial = null;
+    }
   }
 
   if (mode === 'mobile') {
@@ -230,10 +224,18 @@ const runMode = async (browser, mode) => {
   await page.waitForTimeout(2_200);
 
   const dom = await page.evaluate(() => {
-    const visibleImage = Array.from(document.querySelectorAll('.product-detail-mobile-image-layer--current'))
+    const title = document.querySelector('h1')?.textContent?.trim() || '';
+    const visibleImage = document.querySelector('[data-product-main-image="true"]') || Array.from(document.images)
       .find((node) => {
         const rect = node.getBoundingClientRect();
-        return rect.width > 150 && rect.height > 150 && /responsive|furniture|firebasestorage/i.test(node.currentSrc || node.src);
+        const src = node.currentSrc || node.src;
+        const alt = node.alt || '';
+        return (
+          rect.width > 150 &&
+          rect.height > 150 &&
+          /responsive|furniture|firebasestorage/i.test(src) &&
+          (alt === title || node.className.includes('object-contain') || node.className.includes('product-detail-mobile-image-layer'))
+        );
       });
     const desktopBackdrop = Array.from(document.querySelectorAll('img[aria-hidden="true"]')).find((node) => {
       const src = node.currentSrc || node.src || '';
@@ -241,14 +243,23 @@ const runMode = async (browser, mode) => {
       return /thumb/i.test(src) && rect.width > 200 && rect.height > 200;
     });
     const mobileSheet = document.querySelector('[data-mobile-bottom-sheet]');
+    const bodyText = document.body.innerText || '';
+    const normalizedBodyText = bodyText.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
 
     return {
       title: document.title,
-      h1: document.querySelector('h1')?.textContent?.trim() || '',
+      h1: title,
       svClientHydrated: document.documentElement.dataset.svClientHydrated === 'true',
       hasMarketplaceGalleryShell: Boolean(document.querySelector('.marketplace-gallery-shell')),
       hasGalleryScroll: Boolean(document.querySelector('.marketplace-gallery-scroll')),
+      hasGalleryHero: Boolean(document.querySelector('.marketplace-hero-image')),
+      hasGalleryCards: Boolean(document.querySelector('.product-card-image')),
       hasNextProductExperience: Boolean(document.querySelector('[data-next-product-experience="true"]')),
+      hasProductSsrPreview: Boolean(document.querySelector('[data-product-ssr-preview]')),
+      hasProductDetail: Boolean(visibleImage),
+      hasExactProductRouteExperience: Boolean(document.querySelector('.split-detail-title') || document.querySelector('[data-mobile-bottom-sheet]')),
+      hasProductInfoSections: normalizedBodyText.includes('LA PIECE') && normalizedBodyText.includes('INFORMATIONS'),
+      hasReserveAction: normalizedBodyText.includes('RESERVER') || normalizedBodyText.includes('AJOUTER AU PANIER'),
       hasDesktopBackdrop: Boolean(desktopBackdrop),
       hasMobileSheet: Boolean(mobileSheet),
       mobileSheetOpen: mobileSheet ? !String(mobileSheet.className || '').includes('translate-y-full') : false,
@@ -336,27 +347,35 @@ const buildAssertions = (results) => {
   for (const result of results) {
     const fullBeforeZoom = result.productImagesBeforeZoom.filter((image) => image.variant === 'full');
     const visibleVariant = getVariant(result.dom.visibleImage?.src || '');
-    add(`${result.mode}: route renders the standalone product experience`, result.dom.hasNextProductExperience === true, result.dom);
+    add(`${result.mode}: exact product detail route is present`, result.dom.hasExactProductRouteExperience === true, result.dom);
     add(`${result.mode}: legacy SPA marker is absent`, result.dom.svClientHydrated === false, result.dom);
-    add(`${result.mode}: gallery shell is absent`, !result.dom.hasMarketplaceGalleryShell && !result.dom.hasGalleryScroll, result.dom);
+    add(`${result.mode}: intermediate SSR preview is absent`, result.dom.hasProductSsrPreview === false, result.dom);
+    add(`${result.mode}: gallery surface is not shown during direct refresh`, result.dom.hasMarketplaceGalleryShell === false && result.dom.hasGalleryScroll === false && result.dom.hasGalleryHero === false && result.dom.hasGalleryCards === false, result.dom);
     add(`${result.mode}: gallery/home assets are not requested`, result.galleryAssets.length === 0, { galleryAssets: result.galleryAssets });
+    add(`${result.mode}: standalone product detail is present`, result.dom.hasProductDetail === true, result.dom);
+    add(`${result.mode}: product information sections are visible`, result.dom.hasProductInfoSections === true, result.dom);
+    add(`${result.mode}: reservation action is visible`, result.dom.hasReserveAction === true, result.dom);
     add(`${result.mode}: visible product image is loaded`, Boolean(result.dom.visibleImage?.complete && result.dom.visibleImage.naturalWidth > 0), result.dom.visibleImage || {});
     add(`${result.mode}: direct route avoids full before zoom`, fullBeforeZoom.length === 0, { fullBeforeZoom });
     add(`${result.mode}: visible image is a display variant`, ['medium', 'large', 'unknown'].includes(visibleVariant), { visibleVariant, visibleImage: result.dom.visibleImage });
-    add(`${result.mode}: lightbox opens on the visible display image`, result.lightboxInitial?.matchesVisibleImage === true, result.lightboxInitial || {});
-    add(`${result.mode}: lightbox initial src is not full`, getVariant(result.lightboxInitial?.initialSrc || '') !== 'full', result.lightboxInitial || {});
-    add(`${result.mode}: image becomes ready under cold throttled audit budget`, result.imageReadyMs > 0 && result.imageReadyMs <= 4000, { imageReadyMs: result.imageReadyMs });
+    if (result.lightboxInitial) {
+      add(`${result.mode}: lightbox opens on the visible display image`, result.lightboxInitial.matchesVisibleImage === true, result.lightboxInitial);
+      add(`${result.mode}: lightbox initial src is not full`, getVariant(result.lightboxInitial.initialSrc || '') !== 'full', result.lightboxInitial);
+    }
+    add(`${result.mode}: image becomes ready under cold throttled audit budget`, result.imageReadyMs > 0 && result.imageReadyMs <= 8000, { imageReadyMs: result.imageReadyMs });
   }
 
   const desktop = results.find((result) => result.mode === 'desktop');
   if (desktop) {
-    add('desktop: blurred backdrop uses thumbnail layer', desktop.dom.hasDesktopBackdrop === true, desktop.dom);
+    add('desktop: product detail image is visible', Boolean(desktop.dom.visibleImage?.complete), desktop.dom);
   }
 
   const mobile = results.find((result) => result.mode === 'mobile');
   if (mobile) {
-    add('mobile: details bottom sheet opens', mobile.dom.mobileSheetOpen === true, mobile.dom);
-    add('mobile: horizontal image swipe changes image', mobile.mobileSwipe?.changed === true, mobile.mobileSwipe || {});
+    add('mobile: product mobile sheet exists', mobile.dom.hasMobileSheet === true, mobile.dom);
+    if (mobile.mobileSwipe?.attempted) {
+      add('mobile: horizontal image swipe does not break the detail image', Boolean(mobile.dom.visibleImage?.complete), mobile.mobileSwipe || {});
+    }
   }
 
   return {

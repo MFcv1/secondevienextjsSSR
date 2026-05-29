@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import ClientApp from '../../ClientApp';
 import {
   getPublicCatalog,
   getPublicCatalogFallback,
@@ -108,7 +107,6 @@ export default async function CategoryPage({ params }) {
     <>
       <section
         className="min-h-screen bg-[#f7f3ee] px-5 py-10 text-stone-950 md:px-10 md:py-14"
-        data-public-ssr-fallback
         data-ssr-category
       >
         <div className="mx-auto max-w-7xl space-y-10">
@@ -171,7 +169,6 @@ export default async function CategoryPage({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }}
       />
-      <ClientApp defer />
     </>
   );
 }

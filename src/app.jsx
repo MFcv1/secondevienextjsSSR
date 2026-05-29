@@ -1426,6 +1426,14 @@ const AppContent = () => {
       };
     }
 
+    if (view === 'devis') {
+      return {
+        title: 'Demander un devis de restauration',
+        description: 'Formulaire de demande de devis pour restaurer un meuble ancien ou familial avec Anais.',
+        url: '/devis'
+      };
+    }
+
     return {};
   })();
   const analyticsNav = {
