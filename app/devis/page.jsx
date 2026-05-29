@@ -98,7 +98,7 @@ export default function QuotePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(quoteJsonLd) }}
       />
-      <ClientApp defer />
+      <ClientApp />
     </>
   );
 }

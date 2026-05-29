@@ -3011,32 +3011,36 @@ img {
 
 /* Lightweight client-island animations: CSS replaces Framer Motion in the public shell. */
 .gallery-entry-curtain {
-  animation: gallery-entry-curtain-fade 2.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: gallery-entry-curtain-hold 3.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  background: transparent;
   transform: translate3d(0, 0, 0);
+  will-change: transform, opacity;
 }
 
 .gallery-entry-curtain--slide-up {
-  animation-name: gallery-entry-curtain-slide-fade;
+  animation-name: gallery-entry-curtain-slide-hold;
 }
 
 .gallery-entry-panel--left {
-  animation: gallery-entry-panel-left 2.5s cubic-bezier(0.76, 0, 0.24, 1) both;
+  animation: gallery-entry-panel-left 3.35s cubic-bezier(0.76, 0, 0.24, 1) both;
+  will-change: transform;
 }
 
 .gallery-entry-panel--right {
-  animation: gallery-entry-panel-right 2.5s cubic-bezier(0.76, 0, 0.24, 1) both;
+  animation: gallery-entry-panel-right 3.35s cubic-bezier(0.76, 0, 0.24, 1) both;
+  will-change: transform;
 }
 
 .gallery-entry-line {
-  animation: gallery-entry-line 1.2s 0.8s ease-out both;
+  animation: gallery-entry-line 1.6s 0.65s ease-out both;
 }
 
 .gallery-entry-kicker {
-  animation: gallery-entry-copy 0.6s 0.9s ease-out both;
+  animation: gallery-entry-copy 1.25s 0.85s ease-out both;
 }
 
 .gallery-entry-letter {
-  animation: gallery-entry-letter 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: gallery-entry-letter 0.95s cubic-bezier(0.22, 1, 0.36, 1) both;
   transform-origin: 50% 70%;
 }
 
@@ -3059,62 +3063,63 @@ img {
   animation-delay: 0.08s;
 }
 
-@keyframes gallery-entry-curtain-fade {
+@keyframes gallery-entry-curtain-hold {
   0%,
-  88% {
-    opacity: 1;
-  }
   100% {
-    opacity: 0;
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
 }
 
-@keyframes gallery-entry-curtain-slide-fade {
+@keyframes gallery-entry-curtain-slide-hold {
   0% {
     opacity: 1;
     transform: translate3d(0, 100%, 0);
     border-top-left-radius: 100%;
     border-top-right-radius: 100%;
   }
-  36%,
-  88% {
+  30%,
+  100% {
     opacity: 1;
     transform: translate3d(0, 0, 0);
     border-top-left-radius: 0;
     border-top-right-radius: 0;
   }
-  100% {
-    opacity: 0;
-    transform: translate3d(0, 0, 0);
-  }
 }
 
 @keyframes gallery-entry-panel-left {
   0%,
-  84% {
+  72% {
     transform: translate3d(0, 0, 0);
   }
   100% {
-    transform: translate3d(-100%, 0, 0);
+    transform: translate3d(-101%, 0, 0);
   }
 }
 
 @keyframes gallery-entry-panel-right {
   0%,
-  84% {
+  72% {
     transform: translate3d(0, 0, 0);
   }
   100% {
-    transform: translate3d(100%, 0, 0);
+    transform: translate3d(101%, 0, 0);
   }
 }
 
 @keyframes gallery-entry-line {
   0% {
+    opacity: 0;
     transform: scaleY(0);
   }
-  100% {
+  26%,
+  70% {
+    opacity: 1;
     transform: scaleY(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleY(0);
   }
 }
 
@@ -3123,9 +3128,14 @@ img {
     opacity: 0;
     transform: translate3d(0, 100%, 0);
   }
-  100% {
+  30%,
+  70% {
     opacity: 1;
     transform: translate3d(0, 0, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -100%, 0);
   }
 }
 
@@ -3134,9 +3144,14 @@ img {
     opacity: 0;
     transform: translate3d(0, 100%, 0) rotateX(-40deg);
   }
-  100% {
+  48%,
+  72% {
     opacity: 1;
     transform: translate3d(0, 0, 0) rotateX(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -100%, 0) rotateX(40deg);
   }
 }
 

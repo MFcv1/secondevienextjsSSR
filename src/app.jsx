@@ -628,7 +628,7 @@ const AppContent = () => {
     // profiter de l'apparition majestueuse
     setTimeout(() => {
       setIsTransitioning(false);
-    }, 1700);
+    }, 2550);
   };
 
   useEffect(() => {
@@ -666,7 +666,7 @@ const AppContent = () => {
       if (isMobileMarketplaceViewport()) {
         window.scrollTo(0, 0);
       }
-    }, 2500);
+    }, 3350);
 
     return () => window.clearTimeout(timer);
   }, [loading]);
@@ -1448,7 +1448,7 @@ const AppContent = () => {
       {/* RIDEAU DE TRANSITION GLOBAL (Masque le switch de page) */}
       {isTransitioning && (
           <div
-            className={`gallery-entry-curtain fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden bg-[#0F0F11] pointer-events-auto lg:pointer-events-none shadow-[0_0_50px_rgba(0,0,0,0.5)] ${isInitialGalleryEntry ? '' : 'gallery-entry-curtain--slide-up'}`}
+            className={`gallery-entry-curtain fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden pointer-events-auto lg:pointer-events-none shadow-[0_0_50px_rgba(0,0,0,0.5)] ${isInitialGalleryEntry ? '' : 'gallery-entry-curtain--slide-up'}`}
           >
             {/* PANNEAUX LATERAUX (Volets coulissants) */}
             <div

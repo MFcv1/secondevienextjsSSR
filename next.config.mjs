@@ -25,6 +25,7 @@ const nextConfig = {
     ]
   },
   experimental: {
+    devtoolSegmentExplorer: false,
     optimizePackageImports: ['lucide-react']
   }
 };

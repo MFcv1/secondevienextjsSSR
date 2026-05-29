@@ -1886,6 +1886,7 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
     }, []);
 
     const isInCart = cartItems.some(cartItem => cartItem.originalId === item?.id);
+    const shouldReserveDesktopThumbRail = images.length > 1 || item?.__catalogScope !== 'full';
     const mobileTone = darkMode
         ? {
             surface: 'bg-[#0e0e0e]',
@@ -2508,26 +2509,31 @@ const ArchitecturalProductDetail = ({ item, onBack, onAddToCart, onOpenCart, dar
                 </div>
 
                 {/* FAR RIGHT: DESKTOP THUMBNAILS (VERTICAL STRIP) */}
-                {images.length > 1 && (
+                {shouldReserveDesktopThumbRail && (
                     <div 
                         ref={thumbListRef}
-                        className={`flex flex-col gap-1.5 py-16 pt-28 pr-5 h-full overflow-y-auto no-scrollbar flex-shrink-0 items-end w-[110px] relative z-30 transition-colors duration-1000 ${darkMode ? 'bg-[#0e0e0e]' : 'bg-[#FAFAFA]'}`}
-                        style={{ scrollSnapType: 'y proximity' }}
+                        data-desktop-thumb-rail
+                        data-thumb-count={images.length}
+                        className={`flex h-full w-[110px] min-w-[110px] max-w-[110px] flex-shrink-0 flex-col items-end gap-1.5 overflow-y-auto py-16 pt-28 pr-5 no-scrollbar relative z-30 transition-colors duration-1000 ${darkMode ? 'bg-[#0e0e0e]' : 'bg-[#FAFAFA]'}`}
+                        style={{ scrollSnapType: 'y proximity', contain: 'layout paint' }}
                     >
-                        {imageItems.map((image, idx) => {
+                        {images.length > 1 && imageItems.map((image, idx) => {
                             const thumbSrc = image.thumb || image.card || image.src;
                             const thumbPlaceholderSrc = image.metadata?.blurDataUrl || '';
                             return (
                                 <button
                                     key={idx}
+                                    type="button"
+                                    aria-label={`Afficher l'image ${idx + 1}`}
                                     onClick={() => setActiveImg(idx)}
-                                    className={`rounded-xl overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] flex-shrink-0 relative group
+                                    className={`h-[58px] w-[58px] flex-shrink-0 rounded-xl overflow-hidden transition-[opacity,box-shadow,transform] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] relative group
                                         ${activeImg === idx
-                                            ? `w-[58px] h-[58px] shadow-[0_10px_40px_rgba(0,0,0,0.3)] z-10`
-                                            : `w-[48px] h-[48px] z-0 hover:w-[52px] hover:h-[52px]`
+                                            ? `scale-100 shadow-[0_10px_40px_rgba(0,0,0,0.3)] opacity-100 z-10`
+                                            : `scale-[0.83] hover:scale-[0.9] opacity-90 z-0`
                                         }`}
                                     style={{
                                         scrollSnapAlign: 'center',
+                                        transformOrigin: 'right center',
                                         backgroundImage: hasPrimaryImagePainted && thumbSrc
                                             ? `url("${thumbSrc}")`
                                             : (thumbPlaceholderSrc ? `url("${thumbPlaceholderSrc}")` : undefined),
