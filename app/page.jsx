@@ -102,6 +102,19 @@ const faqItems = [
 
 const safeJsonLd = (data) => JSON.stringify(data).replace(/</g, '\\u003c');
 const homeDescription = publicEnv.siteDescription || 'Meubles anciens restaurés, buffets, armoires, commodes et miroirs sélectionnés par Seconde Vie autour de Marseille.';
+const galleryEntryBootstrapScript = `
+(function () {
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var shouldOpenGallery = params.get('page') === 'gallery'
+      || window.location.hash === '#gallery'
+      || window.sessionStorage.getItem('secondevie:open-gallery-on-arrival') === 'true';
+    if (shouldOpenGallery) {
+      document.documentElement.setAttribute('data-sv-force-gallery-entry', 'true');
+    }
+  } catch (error) {}
+})();
+`;
 
 export const metadata = {
   title: 'Mobilier ancien restauré à Marseille',
@@ -358,6 +371,7 @@ export default async function Page() {
 
   return (
     <>
+      <script dangerouslySetInnerHTML={{ __html: galleryEntryBootstrapScript }} />
       <HomeGalleryLauncher />
       <main className="sv-home" data-public-ssr-fallback data-ssr-home>
         <header className="sv-home-nav">

@@ -395,6 +395,7 @@ const ProductCard = ({
 
         if (!isTap) return;
 
+        rememberProductReturnTarget();
         rememberCurrentCardImageForDetail();
         warmupPrimaryDetailImage({ priority: 'high', decode: true, variant: 'medium', srcSet: false });
         warmupDetailImagesAfterOpen();

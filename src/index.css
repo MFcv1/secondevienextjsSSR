@@ -19,6 +19,15 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
   display: none !important;
 }
 
+html[data-sv-force-gallery-entry="true"],
+html[data-sv-force-gallery-entry="true"] body {
+  background: #0f0f11;
+}
+
+html[data-sv-force-gallery-entry="true"] [data-ssr-home] {
+  display: none !important;
+}
+
 .sv-gallery-launcher-overlay {
   position: fixed;
   inset: 0;

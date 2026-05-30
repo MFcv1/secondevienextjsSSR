@@ -204,7 +204,9 @@ export default function ProductDetailShellIsland({
   const touchStateRef = useRef({ startX: 0, startY: 0, endX: 0, endY: 0, startedAt: 0 });
   const descriptionTouchStateRef = useRef({ startY: 0, scrollTop: 0, isScrollable: false, startedAtTop: false, isClosingFromTop: false });
   const galleryExitTimerRef = useRef(0);
+  const galleryExitFallbackTimerRef = useRef(0);
   const isClosingToGalleryRef = useRef(false);
+  const hasNavigatedToGalleryRef = useRef(false);
 
   const safeImages = images?.length ? images : [];
   const activeImage = safeImages[Math.min(activeImg, Math.max(0, safeImages.length - 1))] || {};
@@ -283,6 +285,9 @@ export default function ProductDetailShellIsland({
     if (galleryExitTimerRef.current) {
       window.clearTimeout(galleryExitTimerRef.current);
     }
+    if (galleryExitFallbackTimerRef.current) {
+      window.clearTimeout(galleryExitFallbackTimerRef.current);
+    }
   }, []);
 
   useEffect(() => {
@@ -295,23 +300,28 @@ export default function ProductDetailShellIsland({
       if (!raw) return '';
       const saved = JSON.parse(raw);
       if (!saved?.href || Date.now() - Number(saved.savedAt || 0) > 30 * 60 * 1000) return '';
-      return saved.href.startsWith('/') ? saved.href : '';
+      if (!saved.href.startsWith('/') || saved.href.startsWith('/produit/')) return '';
+      return saved.href;
     } catch {
       return '';
     }
   }, []);
 
-  const handleBack = useCallback(() => {
+  const navigateToGalleryTarget = useCallback(() => {
     if (typeof window === 'undefined') return;
+    if (hasNavigatedToGalleryRef.current) return;
 
-    const savedHref = restoreUrlFromSession();
-    if (savedHref) {
-      window.location.assign(savedHref);
-      return;
-    }
-
-    window.location.assign('/?page=gallery');
+    hasNavigatedToGalleryRef.current = true;
+    const targetHref = restoreUrlFromSession() || '/?page=gallery';
+    try {
+      window.sessionStorage.setItem('secondevie:open-gallery-on-arrival', 'true');
+    } catch {}
+    window.location.href = targetHref;
   }, [restoreUrlFromSession]);
+
+  const handleBack = useCallback(() => {
+    navigateToGalleryTarget();
+  }, [navigateToGalleryTarget]);
 
   const applyLayeredGalleryExit = useCallback((progress) => {
     const p = Math.max(0, Math.min(1, progress));
@@ -355,6 +365,7 @@ export default function ProductDetailShellIsland({
 
     isClosingToGalleryRef.current = true;
     if (galleryExitTimerRef.current) window.clearTimeout(galleryExitTimerRef.current);
+    if (galleryExitFallbackTimerRef.current) window.clearTimeout(galleryExitFallbackTimerRef.current);
 
     [containerRef.current, mobileShellRef.current].forEach((node) => {
       if (node) node.style.transition = 'background-color 0.24s ease-out';
@@ -376,8 +387,9 @@ export default function ProductDetailShellIsland({
     applyLayeredGalleryExit(1);
     if (containerRef.current) containerRef.current.style.pointerEvents = 'none';
 
-    galleryExitTimerRef.current = window.setTimeout(handleBack, 260);
-  }, [applyLayeredGalleryExit, handleBack]);
+    galleryExitTimerRef.current = window.setTimeout(navigateToGalleryTarget, 260);
+    galleryExitFallbackTimerRef.current = window.setTimeout(navigateToGalleryTarget, 620);
+  }, [applyLayeredGalleryExit, navigateToGalleryTarget]);
 
   const openProductLightbox = useCallback(() => {
     const visibleSrc = mainImageRef.current?.currentSrc || mainImageRef.current?.src || activeImageSrc;
@@ -582,12 +594,13 @@ export default function ProductDetailShellIsland({
                         alt={title}
                         data-product-main-image="true"
                         data-fit-mode={activeImageFitMode}
-                        className="product-detail-mobile-image product-detail-mobile-image-layer--current object-contain select-none"
+                        className="product-detail-mobile-image product-detail-mobile-image-layer--current object-cover select-none"
                         style={{
                           width: '100%',
                           height: '100%',
                           maxWidth: 'none',
                           maxHeight: 'none',
+                          objectFit: 'cover',
                           borderRadius: 0,
                           overflow: 'visible',
                           clipPath: 'none',
@@ -695,7 +708,11 @@ export default function ProductDetailShellIsland({
               type="button"
               onClick={handleBack}
               aria-label="Fermer la fiche produit"
-              className="group absolute -top-12 right-8 z-[130] flex items-center justify-center rounded-full text-stone-950 outline-none transition-all duration-300 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/40"
+              className="group fixed z-[130] flex items-center justify-center rounded-full text-stone-950 outline-none transition-all duration-300 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/40"
+              style={{
+                top: 'clamp(5.5rem, 12vh, 8rem)',
+                right: 'calc(clamp(450px, 26vw, 500px) + 110px + 2rem)',
+              }}
             >
               <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/90 shadow-[0_18px_44px_rgba(25,18,10,0.28)] backdrop-blur-md transition-all duration-300 group-hover:border-white group-hover:bg-white group-hover:shadow-[0_22px_54px_rgba(25,18,10,0.36)]">
                 <X size={20} strokeWidth={2.4} className="drop-shadow-[0_1px_0_rgba(255,255,255,0.45)] transition-transform duration-300 group-hover:rotate-90" />

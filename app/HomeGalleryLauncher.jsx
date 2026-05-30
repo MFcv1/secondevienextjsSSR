@@ -6,8 +6,8 @@ import ClientApp from './ClientApp';
 const revealSelector = '.sv-home-reveal, .sv-home-animate > *';
 const closeGalleryEventName = 'sv:close-gallery-overlay';
 
-export default function HomeGalleryLauncher() {
-  const [shouldMountGallery, setShouldMountGallery] = useState(false);
+export default function HomeGalleryLauncher({ initialOpen = false } = {}) {
+  const [shouldMountGallery, setShouldMountGallery] = useState(initialOpen);
 
   useEffect(() => {
     const homeTitle = document.title;
@@ -39,11 +39,20 @@ export default function HomeGalleryLauncher() {
 
     const launchGallery = () => {
       window.scrollTo({ top: 0, behavior: 'instant' });
+      document.documentElement.setAttribute('data-sv-force-gallery-entry', 'true');
+      try {
+        window.sessionStorage.removeItem('secondevie:open-gallery-on-arrival');
+      } catch {}
       setShouldMountGallery(true);
     };
 
     const closeGallery = () => {
       window.scrollTo({ top: 0, behavior: 'instant' });
+      document.documentElement.removeAttribute('data-sv-force-gallery-entry');
+      if (initialOpen) {
+        window.location.href = '/';
+        return;
+      }
       document.title = homeTitle;
       setNavVisible(true);
       setShouldMountGallery(false);
@@ -54,13 +63,23 @@ export default function HomeGalleryLauncher() {
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener(closeGalleryEventName, closeGallery);
 
+    const params = new URLSearchParams(window.location.search);
+    let shouldOpenFromSession = false;
+    try {
+      shouldOpenFromSession = window.sessionStorage.getItem('secondevie:open-gallery-on-arrival') === 'true';
+    } catch {}
+
+    if (!initialOpen && (params.get('page') === 'gallery' || window.location.hash === '#gallery' || shouldOpenFromSession)) {
+      launchGallery();
+    }
+
     return () => {
       if (frameId) window.cancelAnimationFrame(frameId);
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener(closeGalleryEventName, closeGallery);
       buttons.forEach((button) => button.removeEventListener('click', launchGallery));
     };
-  }, []);
+  }, [initialOpen]);
 
   useEffect(() => {
     const animatedNodes = [
