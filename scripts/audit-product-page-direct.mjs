@@ -77,7 +77,11 @@ const clickVisibleThumb = async (page) => page.evaluate(() => {
 });
 
 const getCurrentMainImageSrc = async (page) => page.evaluate(() => {
-  const primaryImage = document.querySelector('[data-product-main-image="true"]');
+  const primaryImage = Array.from(document.querySelectorAll('[data-product-main-image="true"]'))
+    .find((node) => {
+      const rect = node.getBoundingClientRect();
+      return rect.width > 150 && rect.height > 150;
+    });
   if (primaryImage) return primaryImage.currentSrc || primaryImage.src || '';
 
   const desktopImage = document.querySelector('img[data-desktop-image-ready]');
@@ -152,7 +156,11 @@ const runMode = async (browser, mode) => {
     throw new Error(`Navigation failed for ${targetUrl}: ${response?.status()}`);
   }
 
-  await page.waitForSelector('.split-detail-title, [data-mobile-bottom-sheet]', { timeout: 30_000 });
+  if (mode === 'desktop') {
+    await page.waitForSelector('.split-detail-title', { state: 'visible', timeout: 30_000 });
+  } else {
+    await page.waitForSelector('[data-mobile-bottom-sheet]', { state: 'attached', timeout: 30_000 });
+  }
   await page.waitForFunction(() => {
     const image = Array.from(document.images).find((node) => {
       const rect = node.getBoundingClientRect();
@@ -225,7 +233,11 @@ const runMode = async (browser, mode) => {
 
   const dom = await page.evaluate(() => {
     const title = document.querySelector('h1')?.textContent?.trim() || '';
-    const visibleImage = document.querySelector('[data-product-main-image="true"]') || Array.from(document.images)
+    const visibleImage = Array.from(document.querySelectorAll('[data-product-main-image="true"]'))
+      .find((node) => {
+        const rect = node.getBoundingClientRect();
+        return rect.width > 150 && rect.height > 150;
+      }) || Array.from(document.images)
       .find((node) => {
         const rect = node.getBoundingClientRect();
         const src = node.currentSrc || node.src;

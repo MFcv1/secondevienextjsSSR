@@ -80,7 +80,7 @@ const FilterSection = ({ title, isOpen, onToggle, children, darkMode }) => (
     </div>
 );
 
-const MobileProductRow = ({ item, darkMode, onSelectItem, isLiked, onToggleWishlist, priority = false }) => {
+const MobileProductRow = ({ item, darkMode, isLiked, onToggleWishlist, priority = false }) => {
     const price = item.currentPrice || item.startingPrice || item.price;
     const mediaRef = React.useRef(null);
     const cardImage = React.useMemo(() => getProductCardImage(item), [item]);
@@ -155,10 +155,8 @@ const MobileProductRow = ({ item, darkMode, onSelectItem, isLiked, onToggleWishl
                 warmupPrimaryImage();
             }}
             onClick={(e) => {
-                if (!e.ctrlKey && !e.metaKey) {
-                    e.preventDefault();
+                if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
                     warmupPrimaryImage();
-                    onSelectItem(item.id);
                 }
             }}
             className={`flex min-h-[96px] gap-3 rounded-xl border p-2 transition-colors ${darkMode ? 'border-stone-800 bg-[#181818]' : 'border-stone-200 bg-[#fffdfb]'}`}
@@ -987,7 +985,6 @@ const CategoryPage = ({
                                             <MobileProductRow
                                                 item={item}
                                                 darkMode={darkMode}
-                                                onSelectItem={onSelectItem}
                                                 isLiked={wishlistItems.some(w => w.originalId === item.id)}
                                                 onToggleWishlist={onToggleWishlist}
                                                 priority={index < 2}

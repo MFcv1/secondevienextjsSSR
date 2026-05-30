@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Upload, ShoppingCart, Trash2, ShoppingBag, Heart } from 'lucide-react';
 import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage } from '../../utils/imageUtils';
+import { getProductUrl } from '../../utils/slug';
 
 const WishlistView = ({
     wishlistItems = [],
@@ -8,7 +9,6 @@ const WishlistView = ({
     onAddToCart,
     onToggleWishlist,
     onClearWishlist,
-    onSelectItem,
     onOpenAbout,
     onBack,
     darkMode,
@@ -146,11 +146,9 @@ const WishlistView = ({
                                         </button>
 
                                         {/* Image */}
-                                        <div
-                                            className={`relative overflow-hidden aspect-[3/4] cursor-pointer ${darkMode ? 'bg-[#1A1A1A]' : 'bg-white'}`}
-                                            onClick={() => {
-                                                onSelectItem(item.id);
-                                            }}
+                                        <a
+                                            href={getProductUrl(item)}
+                                            className={`relative block overflow-hidden aspect-[3/4] cursor-pointer ${darkMode ? 'bg-[#1A1A1A]' : 'bg-white'}`}
                                         >
                                             <img
                                                 src={cardImage.src}
@@ -167,17 +165,17 @@ const WishlistView = ({
                                                     <span className="text-white text-xs font-black uppercase tracking-widest">Vendu</span>
                                                 </div>
                                             )}
-                                        </div>
+                                        </a>
                                     </div>
 
                                     {/* INFO */}
                                     <div className="pt-3 flex flex-col gap-1 text-center">
-                                        <h3
-                                            className="font-serif text-sm md:text-base leading-tight cursor-pointer hover:opacity-70 transition-opacity"
-                                            onClick={() => onSelectItem(item.id)}
+                                        <a
+                                            href={getProductUrl(item)}
+                                            className="font-serif text-sm md:text-base leading-tight cursor-pointer hover:opacity-70 transition-opacity text-inherit no-underline"
                                         >
                                             {item.name}
-                                        </h3>
+                                        </a>
                                         <p className={`text-sm font-bold ${item.sold ? 'text-red-500' : ''}`}>
                                             {item.sold ? 'VENDU' : (price ? `${price} €` : '—')}
                                         </p>

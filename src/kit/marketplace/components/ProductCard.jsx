@@ -13,16 +13,6 @@ const PRODUCT_CARD_DESKTOP_NEAR_MARGIN = { before: 280, after: 720 };
 const productCardImageRequestQueue = [];
 let productCardImageRequestTimer = 0;
 let productCardImageRequestFrame = 0;
-let productDetailModuleWarmupPromise = null;
-
-const warmProductDetailModule = () => {
-    if (productDetailModuleWarmupPromise || typeof window === 'undefined') return productDetailModuleWarmupPromise;
-    productDetailModuleWarmupPromise = import('../ProductDetail').catch((error) => {
-        productDetailModuleWarmupPromise = null;
-        throw error;
-    });
-    return productDetailModuleWarmupPromise;
-};
 
 const scheduleProductCardImageQueueFlush = () => {
     if (productCardImageRequestTimer || productCardImageRequestFrame) return;
@@ -65,20 +55,6 @@ const enqueueProductCardImageRequest = (callback, { priority = false } = {}) => 
     scheduleProductCardImageQueueFlush();
 };
 
-const scheduleProductDetailModuleWarmup = () => {
-    if (typeof window === 'undefined') return;
-    if (!window.matchMedia?.(PRODUCT_CARD_DESKTOP_QUERY).matches) return;
-
-    const run = () => warmProductDetailModule()?.catch(() => {});
-
-    if (typeof window.requestIdleCallback === 'function') {
-        window.requestIdleCallback(run, { timeout: 2600 });
-        return;
-    }
-
-    window.setTimeout(run, 1400);
-};
-
 const getProductCardObserverRoot = (node) => {
     if (typeof window === 'undefined') return null;
 
@@ -92,6 +68,28 @@ const getProductCardObserverRoot = (node) => {
     );
 
     return isScrollableRoot ? galleryRoot : null;
+};
+
+const rememberProductReturnTarget = () => {
+    if (typeof window === 'undefined') return;
+
+    try {
+        const galleryScroller = document.getElementById('marketplaceGalleryScroll');
+        const pathname = window.location.pathname;
+        const search = window.location.search;
+        const hash = window.location.hash;
+        const isRootGallery = pathname === '/' && !search && !hash;
+        const href = isRootGallery ? '/?page=gallery' : `${pathname}${search || ''}${hash || ''}`;
+
+        window.sessionStorage.setItem('secondevie:product-return:v1', JSON.stringify({
+            href,
+            scrollY: window.scrollY || 0,
+            galleryScrollTop: galleryScroller?.scrollTop || 0,
+            savedAt: Date.now(),
+        }));
+    } catch {
+        // Best effort only: never block navigation because storage is unavailable.
+    }
 };
 
 const getProductCardViewportState = (node, root, nearMargin = PRODUCT_CARD_DEFAULT_NEAR_MARGIN) => {
@@ -142,8 +140,6 @@ const ProductCard = ({
     layoutMode,
     isBig,
     compact,
-    onClick,
-    onPrefetch,
     onAddToCart,
     isLiked,
     onToggleLike,
@@ -152,7 +148,6 @@ const ProductCard = ({
 }) => {
     const cardRef = React.useRef(null);
     const touchIntentRef = React.useRef(null);
-    const touchOpenHandledRef = React.useRef(false);
     const hoverWarmupTimerRef = React.useRef(null);
     const primaryWarmupStartedRef = React.useRef(false);
     const isMountedRef = React.useRef(false);
@@ -174,7 +169,6 @@ const ProductCard = ({
             width: image.naturalWidth,
             height: image.naturalHeight,
         });
-        scheduleProductDetailModuleWarmup();
     }, [item]);
 
     const rememberCurrentCardImageForDetail = React.useCallback(() => {
@@ -196,8 +190,6 @@ const ProductCard = ({
     }, [suspendImageWarmup]);
     const warmupPrimaryDetailImage = React.useCallback((options = {}) => {
         if (!canWarmupImages()) return;
-        onPrefetch?.(item.id);
-        warmProductDetailModule()?.catch(() => {});
         if (primaryWarmupStartedRef.current && !options.force) return;
         primaryWarmupStartedRef.current = true;
         preloadPrimaryProductDetailImage(item, {
@@ -206,7 +198,7 @@ const ProductCard = ({
             srcSet: options.srcSet ?? false,
             variant: options.variant || 'medium',
         });
-    }, [canWarmupImages, item, onPrefetch]);
+    }, [canWarmupImages, item]);
     const warmupDetailImages = React.useCallback(() => {
         if (!canWarmupImages()) return;
         warmupPrimaryDetailImage();
@@ -376,12 +368,6 @@ const ProductCard = ({
         hoverWarmupTimerRef.current = null;
     };
 
-    const resetTouchOpenHandled = () => {
-        window.setTimeout(() => {
-            touchOpenHandledRef.current = false;
-        }, 350);
-    };
-
     const handleTouchPointerDown = (e) => {
         if (e.pointerType !== 'touch' || isActionTarget(e.target)) {
             touchIntentRef.current = null;
@@ -399,7 +385,7 @@ const ProductCard = ({
         const intent = touchIntentRef.current;
         touchIntentRef.current = null;
 
-        if (e.pointerType !== 'touch' || !intent || intent.pointerId !== e.pointerId || isActionTarget(e.target) || !onClick) {
+        if (e.pointerType !== 'touch' || !intent || intent.pointerId !== e.pointerId || isActionTarget(e.target)) {
             return;
         }
 
@@ -409,13 +395,9 @@ const ProductCard = ({
 
         if (!isTap) return;
 
-        e.preventDefault();
-        touchOpenHandledRef.current = true;
         rememberCurrentCardImageForDetail();
         warmupPrimaryDetailImage({ priority: 'high', decode: true, variant: 'medium', srcSet: false });
-        onClick();
         warmupDetailImagesAfterOpen();
-        resetTouchOpenHandled();
     };
 
     return (
@@ -433,22 +415,15 @@ const ProductCard = ({
             onPointerUp={handleTouchPointerUp}
             onPointerCancel={() => { touchIntentRef.current = null; }}
             onClick={(e) => {
-                if (touchOpenHandledRef.current) {
-                    e.preventDefault();
-                    touchOpenHandledRef.current = false;
+                if (isActionTarget(e.target)) {
                     return;
                 }
 
-                // Allow Ctrl/Cmd + Click to open in new tab (native browser behavior)
-                // Otherwise prevent default and let parent handle selection logic
-                if (!e.ctrlKey && !e.metaKey) {
-                    e.preventDefault();
-                    if (onClick) {
-                        rememberCurrentCardImageForDetail();
-                        warmupPrimaryDetailImage({ priority: 'high', decode: true });
-                        onClick();
-                        warmupDetailImagesAfterOpen();
-                    }
+                if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+                    rememberProductReturnTarget();
+                    rememberCurrentCardImageForDetail();
+                    warmupPrimaryDetailImage({ priority: 'high', decode: true });
+                    warmupDetailImagesAfterOpen();
                 }
             }}
             className={`group relative flex touch-manipulation flex-col ${compact ? 'gap-3 md:gap-6' : 'gap-6'} w-full cursor-pointer text-inherit no-underline ${layoutMode === 'list' ? 'flex-row items-center gap-12 border-b border-stone-200 dark:border-stone-800 pb-12' : ''}`}
@@ -566,7 +541,6 @@ export default React.memo(ProductCard, (prev, next) => {
            prev.isLiked === next.isLiked &&
            prev.priority === next.priority &&
            prev.suspendImageWarmup === next.suspendImageWarmup &&
-           prev.onPrefetch === next.onPrefetch &&
            prev.item?.images === next.item?.images &&
            prev.item?.imageVariants === next.item?.imageVariants &&
            prev.item?.imageMetadata === next.item?.imageMetadata &&

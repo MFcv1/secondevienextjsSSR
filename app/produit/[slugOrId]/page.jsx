@@ -11,7 +11,7 @@ import {
   buildBreadcrumbJsonLd,
   buildProductJsonLd
 } from '../../../src/lib/seo/productStructuredData';
-import ProductDetailRouteExperience from '../../../src/kit/marketplace/ProductDetailRouteExperience';
+import ProductDetailServerView from '../../../src/kit/marketplace/ProductDetailServerView';
 
 export const revalidate = 300;
 export const dynamicParams = true;
@@ -119,7 +119,7 @@ export default async function ProductPage({ params }) {
           />
         ) : null}
       </article>
-      <ProductDetailRouteExperience product={product} />
+      <ProductDetailServerView product={product} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}

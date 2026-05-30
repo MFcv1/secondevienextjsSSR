@@ -1,0 +1,806 @@
+'use client';
+
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AlignLeft,
+  Heart,
+  X,
+} from 'lucide-react';
+import {
+  PRODUCT_DETAIL_IMAGE_SIZES,
+  getProductDisplayImageSrc,
+  getProductZoomFullImageSrc,
+  getProductZoomInitialImageSrc,
+  preloadImage,
+} from '../../utils/imageUtils';
+import ProductDetailActionsIsland from './ProductDetailActionsIsland';
+
+const DEFAULT_PRODUCT_IMAGE_RATIO = 0.75;
+const TALL_PRODUCT_IMAGE_RATIO = 0.72;
+const DEFAULT_DETAIL_BACKDROP_COLOR = '#fafaf9';
+
+const getProductImageFitMode = (ratio) => (
+  Number.isFinite(ratio) && ratio > 0 && ratio < TALL_PRODUCT_IMAGE_RATIO ? 'tall' : 'standard'
+);
+
+const getDesktopDetailImageStyle = () => ({
+  width: 'min(min(calc((100vw - var(--product-detail-sidebar-width, 500px)) * 0.74), 920px), calc(min(74vh, 760px) * 0.75))',
+  height: 'auto',
+  aspectRatio: String(DEFAULT_PRODUCT_IMAGE_RATIO),
+  maxWidth: 'min(calc((100vw - var(--product-detail-sidebar-width, 500px)) * 0.74), 920px)',
+  maxHeight: 'min(74vh, 760px)',
+  backgroundColor: 'transparent',
+});
+
+const getMobileDetailImageStyle = (ratio = DEFAULT_PRODUCT_IMAGE_RATIO) => ({
+  aspectRatio: String(Number.isFinite(ratio) && ratio > 0 ? ratio : DEFAULT_PRODUCT_IMAGE_RATIO),
+  width: 'min(94vw, 430px)',
+  maxHeight: 'min(62svh, 620px)',
+  borderRadius: '0.75rem',
+  overflow: 'hidden',
+  clipPath: 'inset(0 round 0.75rem)',
+});
+
+const getThumbSrc = (image) => (
+  image?.thumb || image?.card || image?.medium || image?.src || image?.large || image?.full || ''
+);
+
+const getDisplaySrc = (image, viewport = 'desktop') => (
+  getProductDisplayImageSrc(image, { viewport })
+  || image?.medium
+  || image?.large
+  || image?.src
+  || image?.card
+  || image?.thumb
+  || image?.full
+  || ''
+);
+
+const getBackdropSrc = (image) => (
+  image?.medium || image?.large || image?.src || image?.card || image?.thumb || image?.full || ''
+);
+
+const ProductThumbRail = ({
+  images,
+  activeIndex,
+  onSelect,
+  mobile = false,
+  hasPrimaryImagePainted,
+}) => {
+  if (images.length <= 1) return null;
+
+  if (mobile) {
+    const mobileThumbSize = images.length > 12 ? 30 : 32;
+    const mobileThumbGap = images.length > 12 ? 5 : 6;
+
+    return (
+      <div
+        data-mobile-thumb-rail
+        className="w-full overflow-x-auto overscroll-x-contain no-scrollbar py-2.5"
+        style={{ scrollPaddingInline: '20px' }}
+      >
+        <div
+          data-mobile-thumb-strip
+          className={`flex ${images.length <= 7 ? 'min-w-full justify-center px-4' : 'w-max justify-start px-5'}`}
+          style={{ gap: `${mobileThumbGap}px` }}
+        >
+          {images.map((image, index) => {
+            const thumbSrc = getThumbSrc(image);
+            const thumbPlaceholderSrc = image.metadata?.blurDataUrl || '';
+            return (
+              <button
+                key={`${thumbSrc || index}-${index}`}
+                type="button"
+                data-thumb-index={index}
+                onClick={() => onSelect(index)}
+                className={`rounded-md overflow-hidden flex-shrink-0 border-2 transition-all duration-200 ${activeIndex === index ? 'border-[#D2C4B7] bg-white opacity-100 ring-1 ring-[#EEE7DF]' : 'border-[#EEE9E3] bg-white opacity-100'}`}
+                style={{
+                  width: `${mobileThumbSize}px`,
+                  height: `${mobileThumbSize}px`,
+                  backgroundImage: hasPrimaryImagePainted && thumbSrc
+                    ? `url("${thumbSrc}")`
+                    : (thumbPlaceholderSrc ? `url("${thumbPlaceholderSrc}")` : undefined),
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundColor: image.metadata?.dominantColor || 'rgba(0,0,0,0.04)',
+                }}
+              >
+                {thumbSrc ? (
+                  <img
+                    src={thumbSrc}
+                    className="w-full h-full object-cover rounded-[4px]"
+                    alt={`Apercu ${index + 1}`}
+                    loading={hasPrimaryImagePainted && index < 8 ? 'eager' : 'lazy'}
+                    decoding="async"
+                    fetchPriority="low"
+                    sizes={`${mobileThumbSize}px`}
+                  />
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      data-desktop-thumb-rail
+      data-thumb-count={images.length}
+      className="hidden lg:flex h-full w-[110px] min-w-[110px] max-w-[110px] flex-shrink-0 flex-col items-end gap-1.5 overflow-y-auto py-16 pt-28 pr-5 no-scrollbar relative z-30 bg-[#FAFAFA] transition-colors duration-1000"
+      style={{ scrollSnapType: 'y proximity', contain: 'layout paint' }}
+    >
+      {images.map((image, index) => {
+        const thumbSrc = getThumbSrc(image);
+        const thumbPlaceholderSrc = image.metadata?.blurDataUrl || '';
+        return (
+          <button
+            key={`${thumbSrc || index}-${index}`}
+            type="button"
+            aria-label={`Afficher l'image ${index + 1}`}
+            data-thumb-index={index}
+            onPointerEnter={() => {
+              const src = getDisplaySrc(image, 'desktop');
+              if (src) preloadImage(src, { priority: 'high', decode: false }).catch(() => null);
+            }}
+            onFocus={() => {
+              const src = getDisplaySrc(image, 'desktop');
+              if (src) preloadImage(src, { priority: 'high', decode: false }).catch(() => null);
+            }}
+            onClick={() => onSelect(index)}
+            className={`h-[58px] w-[58px] flex-shrink-0 rounded-xl overflow-hidden transition-[opacity,box-shadow,transform] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] relative group ${activeIndex === index ? 'scale-100 shadow-[0_10px_40px_rgba(0,0,0,0.3)] opacity-100 z-10' : 'scale-[0.83] hover:scale-[0.9] opacity-90 z-0'}`}
+            style={{
+              scrollSnapAlign: 'center',
+              transformOrigin: 'right center',
+              backgroundImage: hasPrimaryImagePainted && thumbSrc
+                ? `url("${thumbSrc}")`
+                : (thumbPlaceholderSrc ? `url("${thumbPlaceholderSrc}")` : undefined),
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundColor: image.metadata?.dominantColor || 'rgba(0,0,0,0.04)',
+            }}
+          >
+            {thumbSrc ? (
+              <img
+                src={thumbSrc}
+                sizes="58px"
+                className="w-full h-full object-cover select-none pointer-events-none"
+                alt=""
+                loading={hasPrimaryImagePainted && index < 8 ? 'eager' : 'lazy'}
+                decoding="async"
+                fetchPriority="low"
+              />
+            ) : null}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+export default function ProductDetailShellIsland({
+  product,
+  images,
+  facts,
+  priceLabel,
+  desktopInfo,
+}) {
+  const [activeImg, setActiveImg] = useState(0);
+  const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxFullSrc, setLightboxFullSrc] = useState('');
+  const [lightboxBaseSrc, setLightboxBaseSrc] = useState('');
+  const [hasPrimaryImagePainted, setHasPrimaryImagePainted] = useState(false);
+  const mainImageRef = useRef(null);
+  const swipeRef = useRef({ x: 0, y: 0 });
+  const wheelStateRef = useRef({ acc: 0, resetTimer: 0 });
+  const containerRef = useRef(null);
+  const mobileShellRef = useRef(null);
+  const mobileThumbLayerRef = useRef(null);
+  const mobileImageStageRef = useRef(null);
+  const mobileSummaryLayerRef = useRef(null);
+  const mobileOriginBadgeRef = useRef(null);
+  const touchStateRef = useRef({ startX: 0, startY: 0, endX: 0, endY: 0, startedAt: 0 });
+  const descriptionTouchStateRef = useRef({ startY: 0, scrollTop: 0, isScrollable: false, startedAtTop: false, isClosingFromTop: false });
+  const galleryExitTimerRef = useRef(0);
+  const isClosingToGalleryRef = useRef(false);
+
+  const safeImages = images?.length ? images : [];
+  const activeImage = safeImages[Math.min(activeImg, Math.max(0, safeImages.length - 1))] || {};
+  const activeImageRatio = activeImage.metadata?.ratio || activeImage.ratio || DEFAULT_PRODUCT_IMAGE_RATIO;
+  const activeImageFitMode = getProductImageFitMode(activeImageRatio);
+  const activeDesktopSrc = getDisplaySrc(activeImage, 'desktop');
+  const activeMobileSrc = getDisplaySrc(activeImage, 'mobile');
+  const activeImageSrc = activeDesktopSrc || activeMobileSrc;
+  const backdropSrc = getBackdropSrc(activeImage);
+  const backdropColor = activeImage.metadata?.dominantColor || DEFAULT_DETAIL_BACKDROP_COLOR;
+  const title = product?.name || product?.title || 'Produit';
+  const description = product?.description || '';
+  const desktopDetailImageFrameStyle = useMemo(() => getDesktopDetailImageStyle(DEFAULT_PRODUCT_IMAGE_RATIO), []);
+  const mobileDetailImageFrameStyle = useMemo(
+    () => ({
+      ...getMobileDetailImageStyle(activeImageRatio || DEFAULT_PRODUCT_IMAGE_RATIO),
+      backgroundColor: activeImage.metadata?.dominantColor || 'transparent',
+      backgroundImage: activeImage.metadata?.blurDataUrl ? `url("${activeImage.metadata.blurDataUrl}")` : undefined,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    }),
+    [activeImage.metadata?.blurDataUrl, activeImage.metadata?.dominantColor, activeImageRatio]
+  );
+  const lightboxInitialSrc = getProductZoomInitialImageSrc(activeImage, {
+    displaySrc: lightboxBaseSrc || activeImageSrc,
+    viewport: 'desktop',
+  });
+  const lightboxSrc = lightboxFullSrc || lightboxInitialSrc;
+
+  const goToIndex = useCallback((index) => {
+    setActiveImg(Math.max(0, Math.min(index, safeImages.length - 1)));
+    setHasPrimaryImagePainted(false);
+    setLightboxFullSrc('');
+    setLightboxBaseSrc('');
+  }, [safeImages.length]);
+
+  const goPrevious = useCallback((event) => {
+    event?.stopPropagation?.();
+    goToIndex(activeImg <= 0 ? safeImages.length - 1 : activeImg - 1);
+  }, [activeImg, goToIndex, safeImages.length]);
+
+  const goNext = useCallback((event) => {
+    event?.stopPropagation?.();
+    goToIndex(activeImg >= safeImages.length - 1 ? 0 : activeImg + 1);
+  }, [activeImg, goToIndex, safeImages.length]);
+
+  const handleDesktopImageWheel = useCallback((event) => {
+    if (safeImages.length <= 1 || isLightboxOpen) return;
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) return;
+
+    event.stopPropagation();
+
+    const wheel = wheelStateRef.current;
+    wheel.acc += Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
+
+    if (Math.abs(wheel.acc) >= 60) {
+      const direction = wheel.acc > 0 ? 1 : -1;
+      setActiveImg((previous) => Math.max(0, Math.min(safeImages.length - 1, previous + direction)));
+      setHasPrimaryImagePainted(false);
+      setLightboxFullSrc('');
+      setLightboxBaseSrc('');
+      wheel.acc = 0;
+    }
+
+    if (wheel.resetTimer) window.clearTimeout(wheel.resetTimer);
+    wheel.resetTimer = window.setTimeout(() => {
+      wheel.acc = 0;
+      wheel.resetTimer = 0;
+    }, 150);
+  }, [isLightboxOpen, safeImages.length]);
+
+  useEffect(() => () => {
+    if (wheelStateRef.current.resetTimer) {
+      window.clearTimeout(wheelStateRef.current.resetTimer);
+    }
+    if (galleryExitTimerRef.current) {
+      window.clearTimeout(galleryExitTimerRef.current);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  const restoreUrlFromSession = useCallback(() => {
+    try {
+      const raw = window.sessionStorage.getItem('secondevie:product-return:v1');
+      if (!raw) return '';
+      const saved = JSON.parse(raw);
+      if (!saved?.href || Date.now() - Number(saved.savedAt || 0) > 30 * 60 * 1000) return '';
+      return saved.href.startsWith('/') ? saved.href : '';
+    } catch {
+      return '';
+    }
+  }, []);
+
+  const handleBack = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    const savedHref = restoreUrlFromSession();
+    if (savedHref) {
+      window.location.assign(savedHref);
+      return;
+    }
+
+    window.location.assign('/?page=gallery');
+  }, [restoreUrlFromSession]);
+
+  const applyLayeredGalleryExit = useCallback((progress) => {
+    const p = Math.max(0, Math.min(1, progress));
+    const viewportHeight = window.visualViewport?.height || window.innerHeight || 800;
+    const background = `rgba(232, 217, 198, ${1 - Math.min(1, p * 1.05)})`;
+
+    [containerRef.current, mobileShellRef.current].forEach((node) => {
+      if (!node) return;
+      node.style.willChange = 'background-color';
+      node.style.backgroundColor = background;
+    });
+
+    if (mobileImageStageRef.current) {
+      const imageProgress = Math.min(1, p * 1.48);
+      mobileImageStageRef.current.style.willChange = 'transform, opacity';
+      mobileImageStageRef.current.style.transform = `translate3d(0, ${p * viewportHeight * 0.54}px, 0) scale(${1 - imageProgress * 0.035})`;
+      mobileImageStageRef.current.style.opacity = `${1 - imageProgress}`;
+    }
+
+    if (mobileSummaryLayerRef.current) {
+      mobileSummaryLayerRef.current.style.willChange = 'transform, opacity';
+      mobileSummaryLayerRef.current.style.transform = `translate3d(0, ${p * viewportHeight * 0.28}px, 0)`;
+      mobileSummaryLayerRef.current.style.opacity = `${1 - Math.pow(p, 1.18)}`;
+    }
+
+    if (mobileOriginBadgeRef.current) {
+      mobileOriginBadgeRef.current.style.willChange = 'transform, opacity';
+      mobileOriginBadgeRef.current.style.transform = `translate3d(0, ${p * viewportHeight * 0.2}px, 0)`;
+      mobileOriginBadgeRef.current.style.opacity = `${1 - Math.pow(p, 1.28)}`;
+    }
+
+    if (mobileThumbLayerRef.current) {
+      mobileThumbLayerRef.current.style.willChange = 'transform, opacity';
+      mobileThumbLayerRef.current.style.transform = `translate3d(0, ${-p * viewportHeight * 0.17}px, 0)`;
+      mobileThumbLayerRef.current.style.opacity = `${1 - Math.pow(p, 1.85)}`;
+    }
+  }, []);
+
+  const closeToGallery = useCallback(() => {
+    if (typeof window === 'undefined' || isClosingToGalleryRef.current) return;
+
+    isClosingToGalleryRef.current = true;
+    if (galleryExitTimerRef.current) window.clearTimeout(galleryExitTimerRef.current);
+
+    [containerRef.current, mobileShellRef.current].forEach((node) => {
+      if (node) node.style.transition = 'background-color 0.24s ease-out';
+    });
+    if (mobileImageStageRef.current) {
+      mobileImageStageRef.current.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.16s ease-out';
+    }
+    if (mobileSummaryLayerRef.current) {
+      mobileSummaryLayerRef.current.style.transition = 'transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease-out';
+    }
+    if (mobileOriginBadgeRef.current) {
+      mobileOriginBadgeRef.current.style.transition = 'transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.18s ease-out';
+    }
+    if (mobileThumbLayerRef.current) {
+      mobileThumbLayerRef.current.style.transition = 'transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.24s ease-out';
+    }
+
+    mobileImageStageRef.current?.getBoundingClientRect();
+    applyLayeredGalleryExit(1);
+    if (containerRef.current) containerRef.current.style.pointerEvents = 'none';
+
+    galleryExitTimerRef.current = window.setTimeout(handleBack, 260);
+  }, [applyLayeredGalleryExit, handleBack]);
+
+  const openProductLightbox = useCallback(() => {
+    const visibleSrc = mainImageRef.current?.currentSrc || mainImageRef.current?.src || activeImageSrc;
+    setLightboxBaseSrc(visibleSrc);
+    setLightboxFullSrc('');
+    setIsLightboxOpen(true);
+
+    const fullSrc = getProductZoomFullImageSrc(activeImage);
+    if (fullSrc && fullSrc !== visibleSrc) {
+      window.setTimeout(() => {
+        preloadImage(fullSrc, { priority: 'auto', decode: true })
+          .then(() => setLightboxFullSrc(fullSrc))
+          .catch(() => null);
+      }, 420);
+    }
+  }, [activeImage, activeImageSrc]);
+
+  const onPointerDown = (event) => {
+    swipeRef.current = { x: event.clientX, y: event.clientY };
+    touchStateRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      endX: event.clientX,
+      endY: event.clientY,
+      startedAt: performance.now(),
+    };
+  };
+
+  const onPointerUp = (event) => {
+    const dx = event.clientX - swipeRef.current.x;
+    const dy = event.clientY - swipeRef.current.y;
+    if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+      if (dx < 0) goNext(event);
+      else goPrevious(event);
+      return;
+    }
+    if (Math.abs(dy) > 58 && Math.abs(dy) > Math.abs(dx) * 1.2 && dy < 0) {
+      setIsMobilePanelOpen(true);
+      return;
+    }
+    if (Math.abs(dy) > 58 && Math.abs(dy) > Math.abs(dx) * 1.2 && dy > 0 && !isMobilePanelOpen) {
+      closeToGallery();
+    }
+  };
+
+  const isDescriptionScrollable = (node) => node.scrollHeight > node.clientHeight + 1;
+
+  const onPanelTouchStart = (event) => {
+    const touch = event.targetTouches[0];
+    touchStateRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      endX: touch.clientX,
+      endY: touch.clientY,
+      startedAt: performance.now(),
+    };
+  };
+
+  const onPanelTouchMove = (event) => {
+    touchStateRef.current.endX = event.targetTouches[0].clientX;
+    touchStateRef.current.endY = event.targetTouches[0].clientY;
+  };
+
+  const onSheetCloseZoneTouchEnd = (event) => {
+    const { startX, startY, endX, endY } = touchStateRef.current;
+    if (!startX || !startY || !endX || !endY) return;
+
+    const dy = startY - endY;
+    const dx = startX - endX;
+    if (dy < -34 && Math.abs(dy) > Math.abs(dx) * 1.05) {
+      setIsMobilePanelOpen(false);
+    }
+    event.stopPropagation();
+  };
+
+  const onDescriptionTouchStart = (event) => {
+    const scroller = event.currentTarget;
+    descriptionTouchStateRef.current = {
+      startY: event.targetTouches[0].clientY,
+      scrollTop: scroller.scrollTop,
+      isScrollable: isDescriptionScrollable(scroller),
+      startedAtTop: scroller.scrollTop <= 1,
+      isClosingFromTop: false,
+    };
+
+    if (!descriptionTouchStateRef.current.isScrollable || descriptionTouchStateRef.current.startedAtTop) {
+      onPointerDown({
+        clientX: event.targetTouches[0].clientX,
+        clientY: event.targetTouches[0].clientY,
+      });
+    }
+
+    event.stopPropagation();
+  };
+
+  const onDescriptionTouchMove = (event) => {
+    const scroller = event.currentTarget;
+    const state = descriptionTouchStateRef.current;
+    if (!state.isScrollable) {
+      onPanelTouchMove(event);
+      event.stopPropagation();
+      return;
+    }
+
+    const currentY = event.targetTouches[0].clientY;
+    const pullDownDistance = currentY - state.startY;
+
+    if (state.startedAtTop && (state.isClosingFromTop || pullDownDistance > 10)) {
+      state.isClosingFromTop = true;
+      onPanelTouchMove(event);
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    scroller.scrollTop = state.scrollTop + (state.startY - currentY);
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const onDescriptionTouchEnd = (event) => {
+    const state = descriptionTouchStateRef.current;
+    if (!state.isScrollable || state.isClosingFromTop) {
+      onSheetCloseZoneTouchEnd(event);
+      return;
+    }
+    event.stopPropagation();
+  };
+
+  const onDescriptionWheel = (event) => {
+    if (event.currentTarget.scrollTop <= 1 && event.deltaY < -80) {
+      setIsMobilePanelOpen(false);
+    }
+    event.stopPropagation();
+  };
+
+  const mobileInfoRows = facts?.filter((fact) => fact?.value) || [];
+  const shouldReserveDesktopThumbRail = safeImages.length > 1 || product?.__catalogScope !== 'full';
+
+  return (
+    <div
+      ref={containerRef}
+      data-next-product-detail-shell="native"
+      data-native-scroll-region
+      className="fixed inset-0 z-[100] w-screen overflow-hidden font-body selection:bg-secondary-container selection:text-on-secondary-container bg-[#f4f1ec] text-stone-900"
+      style={{
+        height: 'var(--marketplace-viewport-height, 100svh)',
+        backgroundColor: backdropColor,
+      }}
+    >
+      {backdropSrc ? (
+        <div
+          className="absolute inset-0 z-0 pointer-events-none overflow-hidden hidden lg:flex items-center justify-center"
+          style={{ backgroundColor: backdropColor }}
+        >
+          <img
+            key={backdropSrc}
+            src={backdropSrc}
+            alt=""
+            aria-hidden="true"
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
+            className="h-[120%] w-[120%] scale-110 object-cover object-center opacity-50 blur-[80px] saturate-150"
+          />
+        </div>
+      ) : null}
+
+      <main className="w-full h-full lg:overflow-hidden lg:flex lg:flex-row relative">
+        <div ref={mobileShellRef} className="fixed inset-0 overflow-hidden overscroll-none transition-colors duration-500 bg-[#FAFAF9] lg:hidden" style={{ height: 'var(--marketplace-viewport-height, 100svh)' }}>
+          <div ref={mobileThumbLayerRef} className={`absolute top-0 left-0 w-full z-20 px-3 safe-pt-product-thumbs pb-1 transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${isMobilePanelOpen ? '-translate-y-full' : 'translate-y-0'}`}>
+            <ProductThumbRail
+              images={safeImages}
+              activeIndex={activeImg}
+              onSelect={goToIndex}
+              mobile
+              hasPrimaryImagePainted={hasPrimaryImagePainted}
+            />
+          </div>
+
+          <div
+            ref={mobileImageStageRef}
+            className="absolute top-0 left-0 w-full flex items-center justify-center px-2 safe-product-image-stage transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] z-10 touch-none"
+            style={{
+              height: 'var(--marketplace-viewport-height, 100svh)',
+              willChange: 'transform',
+              transform: isMobilePanelOpen ? 'translate3d(0, -4rem, 0)' : 'translate3d(0, 0, 0)',
+            }}
+            onPointerDown={onPointerDown}
+            onPointerUp={onPointerUp}
+          >
+            <div className="relative flex h-full w-full cursor-zoom-in items-center justify-center" onClick={openProductLightbox}>
+              <div className="product-detail-mobile-image-shadow pointer-events-none drop-shadow-[0_20px_42px_rgba(92,75,57,0.24)]">
+                <div data-fit-mode={activeImageFitMode} className="product-detail-mobile-image-frame" style={mobileDetailImageFrameStyle}>
+                  <div className="product-detail-mobile-image-clip">
+                    {activeMobileSrc ? (
+                      <img
+                        ref={mainImageRef}
+                        src={activeMobileSrc}
+                        srcSet={undefined}
+                        sizes={PRODUCT_DETAIL_IMAGE_SIZES}
+                        alt={title}
+                        data-product-main-image="true"
+                        data-fit-mode={activeImageFitMode}
+                        className="product-detail-mobile-image product-detail-mobile-image-layer--current object-contain select-none"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          maxWidth: 'none',
+                          maxHeight: 'none',
+                          borderRadius: 0,
+                          overflow: 'visible',
+                          clipPath: 'none',
+                          transition: 'none',
+                        }}
+                        onLoad={() => setHasPrimaryImagePainted(true)}
+                        draggable={false}
+                        loading="eager"
+                        decoding="async"
+                        fetchPriority="high"
+                      />
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {product?.origin ? (
+              <div ref={mobileOriginBadgeRef} className={`absolute top-[80px] left-4 px-3 py-1.5 rounded-full font-label text-[9px] tracking-[0.2em] uppercase backdrop-blur-md border transition-all duration-300 bg-white/80 text-stone-700 border-stone-200 ${isMobilePanelOpen ? 'opacity-0' : 'opacity-100'}`}>
+                {product.origin}
+              </div>
+            ) : null}
+
+            <div ref={mobileSummaryLayerRef} className={`absolute bottom-0 left-0 w-full px-5 safe-pb-product-summary flex items-end justify-between transition-opacity duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] ${isMobilePanelOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+              <div className="absolute -top-[70px] left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none">
+                <svg fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-5 h-5 text-stone-700">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                </svg>
+                <span className="text-[9px] uppercase tracking-[0.4em] font-light translate-x-[0.2em] mt-1 text-stone-500 drop-shadow-[0_1px_6px_rgba(255,255,255,0.9)]">
+                  Détails
+                </span>
+              </div>
+              <div className="flex-1 pr-4">
+                <h2 className="font-serif text-[18px] line-clamp-1 mb-1 text-stone-950 drop-shadow-[0_1px_8px_rgba(255,255,255,0.95)]">{title}</h2>
+                <p className="font-sans text-[12px] line-clamp-2 text-stone-600 drop-shadow-[0_1px_8px_rgba(255,255,255,0.95)]">{description}</p>
+              </div>
+              <div className="flex items-center gap-5 flex-shrink-0 pb-1 text-stone-950 drop-shadow-[0_1px_8px_rgba(255,255,255,0.95)]">
+                <button type="button" onClick={() => setIsMobilePanelOpen(true)} aria-label="Ouvrir les details">
+                  <AlignLeft size={24} strokeWidth={1.5} />
+                </button>
+                <button type="button" aria-label="Favori">
+                  <Heart size={24} strokeWidth={1.5} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div
+            data-mobile-bottom-sheet
+            className={`absolute bottom-0 left-0 w-full backdrop-blur-3xl rounded-t-3xl border-t transition-[transform,background-color,border-color,box-shadow] duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] z-30 flex h-[clamp(30rem,calc(var(--marketplace-viewport-height,100svh)*0.66),40rem)] max-h-[calc(var(--marketplace-viewport-height,100svh)-5.5rem)] flex-col overflow-hidden bg-[#fffdfb]/95 border-stone-200 shadow-[0_-24px_80px_rgba(92,75,57,0.16)] ${isMobilePanelOpen ? 'translate-y-0' : 'translate-y-full'}`}
+          >
+            <div className="flex h-full min-h-0 w-full flex-col px-5 pt-4 safe-pb-product-sheet">
+              <div
+                data-mobile-sheet-close-zone
+                className="flex-shrink-0 touch-pan-y select-none"
+                onTouchStart={onPanelTouchStart}
+                onTouchMove={onPanelTouchMove}
+                onTouchEnd={onSheetCloseZoneTouchEnd}
+              >
+                <button
+                  type="button"
+                  className="block w-12 h-1 rounded-full mx-auto mb-5 cursor-pointer bg-stone-300"
+                  onClick={() => setIsMobilePanelOpen(false)}
+                  aria-label="Fermer les details"
+                />
+                <div className="pb-1">
+                  <h3 className="font-label text-[10px] tracking-[0.3em] uppercase text-[#91a293] mb-3">Informations</h3>
+                  <ul className="space-y-2 font-label text-[9px] tracking-widest uppercase text-[#757575]">
+                    {mobileInfoRows.map((fact) => (
+                      <li key={fact.label} className="flex justify-between border-b pb-1.5 border-stone-200">
+                        <span>{fact.label}</span>
+                        <span className="text-stone-800 font-sans">{fact.value}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="mt-4 flex min-h-0 flex-1 flex-col">
+                <h3 className="font-label text-[10px] tracking-[0.3em] uppercase text-[#91a293] mb-3 flex-shrink-0">La Pièce</h3>
+                <div
+                  data-mobile-description-scroll
+                  className="mobile-description-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y pr-2"
+                  onTouchStart={onDescriptionTouchStart}
+                  onTouchMove={onDescriptionTouchMove}
+                  onTouchEnd={onDescriptionTouchEnd}
+                  onWheel={onDescriptionWheel}
+                >
+                  <p className="font-sans text-[13px] leading-[1.65] whitespace-pre-wrap text-stone-600">{description}</p>
+                </div>
+              </div>
+              <ProductDetailActionsIsland
+                productId={product?.id}
+                productName={title}
+                priceLabel={priceLabel}
+                mobile
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="hidden lg:flex flex-1 h-[100vh] grid grid-rows-[15vh_72vh_13vh] relative overflow-hidden bg-black/5">
+          <div className="w-full h-full pointer-events-none" />
+          <div className="w-full h-full flex flex-col items-center justify-center relative row-span-1">
+            <button
+              type="button"
+              onClick={handleBack}
+              aria-label="Fermer la fiche produit"
+              className="group absolute -top-12 right-8 z-[130] flex items-center justify-center rounded-full text-stone-950 outline-none transition-all duration-300 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/40"
+            >
+              <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/90 shadow-[0_18px_44px_rgba(25,18,10,0.28)] backdrop-blur-md transition-all duration-300 group-hover:border-white group-hover:bg-white group-hover:shadow-[0_22px_54px_rgba(25,18,10,0.36)]">
+                <X size={20} strokeWidth={2.4} className="drop-shadow-[0_1px_0_rgba(255,255,255,0.45)] transition-transform duration-300 group-hover:rotate-90" />
+              </div>
+            </button>
+
+            <div
+              className="relative z-10 w-full h-full flex items-center justify-center cursor-zoom-in"
+              onClick={openProductLightbox}
+              onWheel={handleDesktopImageWheel}
+            >
+              <div className="absolute inset-0 flex items-center justify-center">
+                {!activeImageSrc ? (
+                  <div
+                    aria-hidden="true"
+                    className="absolute rounded-2xl bg-stone-200/45 shadow-[0_45px_110px_-25px_rgba(0,0,0,0.45)]"
+                    style={{
+                      ...desktopDetailImageFrameStyle,
+                      backgroundColor: activeImage.metadata?.dominantColor || DEFAULT_DETAIL_BACKDROP_COLOR,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }}
+                  />
+                ) : null}
+                <div
+                  className="relative overflow-hidden rounded-2xl shadow-[0_45px_110px_-25px_rgba(0,0,0,0.8)]"
+                  style={{
+                    ...desktopDetailImageFrameStyle,
+                    backgroundColor: 'transparent',
+                  }}
+                >
+                  {activeImageSrc ? (
+                    <img
+                      ref={mainImageRef}
+                      src={activeImageSrc}
+                      srcSet={undefined}
+                      sizes={PRODUCT_DETAIL_IMAGE_SIZES}
+                      alt={title}
+                      loading="eager"
+                      decoding="async"
+                      fetchPriority="high"
+                      onLoad={() => setHasPrimaryImagePainted(true)}
+                      data-product-main-image="true"
+                      data-desktop-image-ready="true"
+                      className="relative z-10 block h-full w-full object-cover opacity-100"
+                    />
+                  ) : null}
+                </div>
+              </div>
+
+              {product?.origin ? (
+                <div className="absolute top-4 right-4 bg-black/40 px-3 py-1.5 rounded-full text-white/80 font-label text-[9px] tracking-[0.2em] uppercase backdrop-blur-md z-40 border border-white/10">
+                  {product.origin}
+                </div>
+              ) : null}
+
+            </div>
+          </div>
+          <div className="w-full h-full pointer-events-none" />
+        </div>
+
+        {desktopInfo}
+
+        {shouldReserveDesktopThumbRail ? (
+          <ProductThumbRail
+            images={safeImages}
+            activeIndex={activeImg}
+            onSelect={goToIndex}
+            hasPrimaryImagePainted={hasPrimaryImagePainted}
+          />
+        ) : null}
+      </main>
+
+      {isLightboxOpen ? (
+        <div className="fixed inset-0 z-[3000] flex items-center justify-center animate-in fade-in duration-300 backdrop-blur-md bg-[#FAFAF9]/95 text-stone-700">
+          <button
+            aria-label="Fermer l'image agrandie"
+            onClick={() => setIsLightboxOpen(false)}
+            className="absolute top-4 right-4 md:top-6 md:right-6 z-[3100] w-12 h-12 flex items-center justify-center rounded-full transition-all text-stone-700 border border-[#EEE9E3] bg-white/85 shadow-[0_10px_30px_rgba(92,75,57,0.10)] hover:bg-white hover:text-stone-950"
+          >
+            <X size={20} />
+          </button>
+          <div className="absolute top-6 left-5 md:top-10 md:left-10 z-[3100] text-[10px] font-label uppercase tracking-[0.4em] text-stone-500">
+            {activeImg + 1} / {safeImages.length}
+          </div>
+          <div className="w-full h-full flex items-center justify-center overflow-hidden touch-none p-1 sm:p-3 md:p-12 cursor-zoom-in">
+            {lightboxSrc ? (
+              <img
+                src={lightboxSrc}
+                srcSet={undefined}
+                sizes="100vw"
+                alt="Detail"
+                data-fit-mode={activeImageFitMode}
+                data-lightbox-initial-src={lightboxInitialSrc}
+                data-lightbox-full-src={lightboxFullSrc || ''}
+                className="product-detail-lightbox-image object-contain pointer-events-none select-none will-change-transform drop-shadow-[0_24px_54px_rgba(92,75,57,0.18)]"
+                draggable={false}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+              />
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}

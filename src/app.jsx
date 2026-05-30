@@ -671,6 +671,44 @@ const AppContent = () => {
     return () => window.clearTimeout(timer);
   }, [loading]);
 
+  useEffect(() => {
+    if (loading || view !== 'gallery' || typeof window === 'undefined') return undefined;
+
+    let restoreFrame = 0;
+    let restoreTimer = 0;
+
+    const restore = () => {
+      try {
+        const raw = window.sessionStorage.getItem('secondevie:product-return:v1');
+        if (!raw) return;
+
+        const saved = JSON.parse(raw);
+        if (Date.now() - Number(saved.savedAt || 0) > 30 * 60 * 1000) {
+          window.sessionStorage.removeItem('secondevie:product-return:v1');
+          return;
+        }
+
+        const galleryScroller = document.getElementById('marketplaceGalleryScroll');
+        if (galleryScroller && Number.isFinite(Number(saved.galleryScrollTop))) {
+          galleryScroller.scrollTop = Number(saved.galleryScrollTop) || 0;
+        }
+        window.scrollTo(0, Number(saved.scrollY) || 0);
+        window.sessionStorage.removeItem('secondevie:product-return:v1');
+      } catch {
+        window.sessionStorage.removeItem('secondevie:product-return:v1');
+      }
+    };
+
+    restoreFrame = window.requestAnimationFrame(() => {
+      restoreTimer = window.setTimeout(restore, 120);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(restoreFrame);
+      window.clearTimeout(restoreTimer);
+    };
+  }, [loading, view]);
+
   // Deep Linking State
   const [pendingDeepLink, setPendingDeepLink] = useState(null);
 
