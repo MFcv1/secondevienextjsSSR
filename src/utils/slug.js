@@ -21,15 +21,6 @@ export function getCategoryUrl(categoryId, siteUrl = '') {
   return siteUrl ? `${siteUrl.replace(/\/$/, '')}${path}` : path;
 }
 
-export function extractProductIdFromPath(pathname) {
-  const match = String(pathname || '').match(/^\/produit\/([^/?#]+)\/?$/);
-  if (!match) return null;
-
-  const segment = decodeURIComponent(match[1]);
-  const separatorIndex = segment.lastIndexOf('-');
-  return separatorIndex >= 0 ? segment.slice(separatorIndex + 1) : segment;
-}
-
 export function extractCategoryIdFromPath(pathname) {
   const match = String(pathname || '').match(/^\/categorie\/([^/?#]+)\/?$/);
   return match ? decodeURIComponent(match[1]) : null;

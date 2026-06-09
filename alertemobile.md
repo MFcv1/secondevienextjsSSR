@@ -8,6 +8,21 @@ Le bug observe sur mobile venait de la mecanique de scroll mobile de la galerie 
 
 Le comportement sain, celui de la sandbox de reference, garde la galerie mobile dans un shell fixe avec scroll interne, meme quand on ouvre un detail produit depuis la galerie.
 
+## Mise a jour 2026-06-09 - detail produit legacy retire
+
+Le detail produit SPA legacy a ete retire de `src/Router.jsx`: la route produit active est maintenant la route native Next `app/produit/[slugOrId]/page.jsx`.
+
+Les cartes produit restent des liens vers `/produit/...`; elles ne doivent plus monter `src/kit/marketplace/ProductDetail.jsx` ni `src/kit/marketplace/ArchitecturalProductDetail.jsx`.
+
+L'invariant mobile ci-dessous reste conserve pour proteger le shell fixe de la galerie mobile:
+
+```jsx
+const isGalleryDetailOverlay = false;
+const shouldUseMobileGalleryScroll = view === 'gallery' || isGalleryDetailOverlay;
+```
+
+Les sections suivantes decrivent l'incident historique de l'ancien overlay detail. Elles restent utiles pour ne pas casser la galerie mobile, mais ne doivent pas servir a reintroduire le chemin produit SPA.
+
 ## Cause identifiee
 
 Dans le commit local `b080227` (`v16.7`, 2026-05-01 16:48:47 +0200), cette ligne a ete modifiee:

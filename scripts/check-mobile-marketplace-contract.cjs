@@ -5,7 +5,6 @@ const root = process.cwd();
 const files = {
   router: path.join(root, 'src', 'Router.jsx'),
   css: path.join(root, 'src', 'index.css'),
-  detail: path.join(root, 'src', 'kit', 'marketplace', 'ArchitecturalProductDetail.jsx'),
   alert: path.join(root, 'alertemobile.md'),
 };
 
@@ -18,7 +17,7 @@ const checks = [
     pattern: /shouldUseMobileGalleryScroll\s*=\s*view\s*===\s*'gallery'\s*\|\|\s*isGalleryDetailOverlay/,
   },
   {
-    label: 'Router keeps gallery + detail overlay in the same mobile fixed shell',
+    label: 'Router keeps the gallery mobile fixed shell contract',
     file: files.router,
     pattern: /const\s+shouldUseMobileGalleryScroll\s*=\s*view\s*===\s*'gallery'\s*\|\|\s*isGalleryDetailOverlay\s*;/,
   },
@@ -53,24 +52,10 @@ const checks = [
     pattern: /\.marketplace-gallery-scroll\[data-detail-open="true"\][\s\S]*?-webkit-overflow-scrolling:\s*auto/,
   },
   {
-    label: 'Detail keeps the stable mobile image frame wrapper',
-    file: files.detail,
-    pattern: /product-detail-mobile-image-frame/,
-  },
-  {
-    label: 'Detail keeps the stable mobile image clip wrapper',
-    file: files.detail,
-    pattern: /product-detail-mobile-image-clip/,
-  },
-  {
-    label: 'Detail keeps mobile currentSrc/decode staging',
-    file: files.detail,
-    pattern: /stageImage\.decode\(\)/,
-  },
-  {
-    label: 'Detail waits for animation frames before visible mobile image swap',
-    file: files.detail,
-    pattern: /requestAnimationFrame/,
+    label: 'Router no longer lazy-loads the legacy product detail overlay',
+    file: files.router,
+    pattern: /ProductDetail/,
+    forbidden: true,
   },
 ];
 
@@ -85,8 +70,10 @@ checks.forEach((check) => {
     return;
   }
 
-  if (!check.pattern.test(source)) {
-    failures.push(`${check.label}: missing expected contract in ${path.relative(root, check.file)}`);
+  const matches = check.pattern.test(source);
+  if (check.forbidden ? matches : !matches) {
+    const reason = check.forbidden ? 'forbidden legacy marker found' : 'missing expected contract';
+    failures.push(`${check.label}: ${reason} in ${path.relative(root, check.file)}`);
   }
 });
 

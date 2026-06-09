@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plus, Heart } from 'lucide-react';
 import { getProductUrl } from '../../../utils/slug';
-import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, preloadPrimaryProductDetailImage, preloadProductImages, rememberInstantProductDetailImage } from '../../../utils/imageUtils';
+import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, preloadPrimaryProductDetailImage, preloadProductImages } from '../../../utils/imageUtils';
 
 const TRANSPARENT_IMAGE_SRC = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 const PRODUCT_CARD_DESKTOP_QUERY = '(min-width: 1024px)';
@@ -162,25 +162,7 @@ const ProductCard = ({
     const handleImageLoad = React.useCallback((event) => {
         if (event.currentTarget.dataset.realImage !== 'true') return;
         setIsImageLoaded(true);
-        const image = event.currentTarget;
-        rememberInstantProductDetailImage(item, {
-            src: image.currentSrc || image.src,
-            index: 0,
-            width: image.naturalWidth,
-            height: image.naturalHeight,
-        });
-    }, [item]);
-
-    const rememberCurrentCardImageForDetail = React.useCallback(() => {
-        const image = cardRef.current?.querySelector('img[data-real-image="true"]');
-        const src = image?.currentSrc || image?.src || cardImage.src;
-        rememberInstantProductDetailImage(item, {
-            src,
-            index: 0,
-            width: image?.naturalWidth || 0,
-            height: image?.naturalHeight || 0,
-        });
-    }, [cardImage.src, item]);
+    }, []);
     const canWarmupImages = React.useCallback(() => {
         if (suspendImageWarmup) return false;
         const connection = typeof navigator !== 'undefined'
@@ -396,7 +378,6 @@ const ProductCard = ({
         if (!isTap) return;
 
         rememberProductReturnTarget();
-        rememberCurrentCardImageForDetail();
         warmupPrimaryDetailImage({ priority: 'high', decode: true, variant: 'medium', srcSet: false });
         warmupDetailImagesAfterOpen();
     };
@@ -422,7 +403,6 @@ const ProductCard = ({
 
                 if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
                     rememberProductReturnTarget();
-                    rememberCurrentCardImageForDetail();
                     warmupPrimaryDetailImage({ priority: 'high', decode: true });
                     warmupDetailImagesAfterOpen();
                 }

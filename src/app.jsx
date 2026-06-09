@@ -8,7 +8,7 @@ import {
 // --- IMPORTS KIT (standardisé) ---
 import { appId } from './kit/config/firebaseEnv';
 import { getMillis } from './utils/time';
-import { extractCategoryIdFromPath, extractProductIdFromPath, getCategoryUrl, getProductUrl } from './utils/slug';
+import { extractCategoryIdFromPath, getCategoryUrl } from './utils/slug';
 import { useLiveTheme } from './kit/config/theme';
 import KIT_CONFIG from './kit/config/constants';
 
@@ -124,7 +124,6 @@ const NEXT_VIEW_PATHS = {
   '/admin': 'admin',
   '/checkout': 'checkout',
   '/wishlist': 'wishlist',
-  '/devis': 'devis',
   '/mes-commandes': 'my-orders',
 };
 
@@ -231,8 +230,6 @@ const mergeItemsById = (currentItems, incomingItems) => {
     .sort((a, b) => getMillis(b.createdAt) - getMillis(a.createdAt));
 };
 
-const isFullCatalogItem = (item) => item?.__catalogScope === 'full';
-
 const shouldUsePublicCatalogEndpoint = () => {
   return true;
 };
@@ -257,7 +254,6 @@ const AppContent = () => {
   // Use Auth Context
   const { user, isAdmin, loading: authLoading, loginWithGoogle, loginWithEmail, signupWithEmail, logout, verifyEmail } = useAuth();
   const shouldPlayInitialGalleryEntryRef = useRef(isRootGalleryEntryUrl());
-  const productDetailFetchesRef = useRef(new Map());
 
   const [items, setItems] = useState([]);
   const [catalogFetchMode, setCatalogFetchMode] = useState('initial');
@@ -307,46 +303,6 @@ const AppContent = () => {
       });
   }, [isCatalogComplete]);
 
-  const ensureProductDetailItem = useCallback((id) => {
-    if (!id) return Promise.resolve(null);
-
-    const currentItem = items.find(item => item.id === id);
-    if (isFullCatalogItem(currentItem)) {
-      return Promise.resolve(currentItem);
-    }
-
-    const inflight = productDetailFetchesRef.current.get(id);
-    if (inflight) return inflight;
-
-    const request = loadFirebaseRuntime()
-      .then(async ({ getDb, loadFirestoreModule }) => {
-        const [db, { doc, getDoc }] = await Promise.all([getDb(), loadFirestoreModule()]);
-        return getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'furniture', id));
-      })
-      .then((snapshot) => {
-        if (!snapshot.exists()) return null;
-
-        const fullItem = {
-          id: snapshot.id,
-          collectionName: 'furniture',
-          ...snapshot.data(),
-          __catalogScope: 'full'
-        };
-        setItems(prev => mergeItemsById(prev, [fullItem]));
-        return fullItem;
-      })
-      .catch((error) => {
-        console.warn('Lecture detail produit indisponible:', error);
-        return null;
-      })
-      .finally(() => {
-        productDetailFetchesRef.current.delete(id);
-      });
-
-    productDetailFetchesRef.current.set(id, request);
-    return request;
-  }, [items]);
-
   useEffect(() => {
     const setVh = () => {
       document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
@@ -377,19 +333,21 @@ const AppContent = () => {
   const [view, setView] = useState(() => {
     if (typeof window !== 'undefined') {
       const pathname = window.location.pathname;
-      if (extractProductIdFromPath(pathname)) return 'detail';
       if (extractCategoryIdFromPath(pathname)) return 'category';
       if (pathname === ABOUT_PATH) return 'home';
       if (NEXT_VIEW_PATHS[pathname]) return NEXT_VIEW_PATHS[pathname];
       const hash = window.location.hash.replace('#', '');
       if (hash.startsWith('category/')) { return 'category'; }
-      if (['home', 'gallery', 'login', 'admin', 'my-orders', 'checkout', 'wishlist', 'devis'].includes(hash)) return hash;
+      if (hash === 'devis') {
+        window.location.assign('/devis');
+        return 'gallery';
+      }
+      if (['home', 'gallery', 'login', 'admin', 'my-orders', 'checkout', 'wishlist'].includes(hash)) return hash;
       const params = new URLSearchParams(window.location.search);
       if (params.get('page') === 'gallery') return 'gallery';
     }
     return 'gallery';
-  }); // 'home', 'gallery', 'detail', 'login', 'admin'
-  const [selectedItemId, setSelectedItemId] = useState(null);
+  }); // 'home', 'gallery', 'login', 'admin'
   const [activeCategoryId, setActiveCategoryId] = useState(() => {
     if (typeof window !== 'undefined') {
       const pathCategoryId = extractCategoryIdFromPath(window.location.pathname);
@@ -477,7 +435,6 @@ const AppContent = () => {
   const returnToSiteHome = useCallback(() => {
     if (typeof window === 'undefined') return;
 
-    setSelectedItemId(null);
     setActiveCategoryId(null);
     setShowFullLogin(false);
     setShowMarketplacePopup(false);
@@ -573,7 +530,7 @@ const AppContent = () => {
   }, []);
 
   useEffect(() => {
-    if (view !== 'gallery' && view !== 'detail') {
+    if (view !== 'gallery') {
       setIsMobileAnnouncementCollapsed(false);
     }
   }, [view]);
@@ -708,9 +665,6 @@ const AppContent = () => {
       window.clearTimeout(restoreTimer);
     };
   }, [loading, view]);
-
-  // Deep Linking State
-  const [pendingDeepLink, setPendingDeepLink] = useState(null);
 
   // Header Props for Architectural Design
   const [headerProps, setHeaderProps] = useState(null);
@@ -947,7 +901,7 @@ const AppContent = () => {
         .catch((error) => {
           if (!cancelled) console.error("Erreur lecture publications:", error);
         });
-    } else if (isPreparingGallery || ['gallery', 'detail', 'category', 'wishlist', 'checkout', 'my-orders', 'devis'].includes(view)) {
+    } else if (isPreparingGallery || ['gallery', 'category', 'wishlist', 'checkout', 'my-orders'].includes(view)) {
       fetchPublishedItems();
       const handleVisibility = () => {
         if (document.visibilityState === 'visible') {
@@ -971,7 +925,6 @@ const AppContent = () => {
   useEffect(() => {
     // Logic dependent on user/auth state
     const params = new URLSearchParams(window.location.search);
-    const productId = extractProductIdFromPath(window.location.pathname) || params.get('product');
     const pathCategoryId = extractCategoryIdFromPath(window.location.pathname);
     const hash = window.location.hash.replace('#', '');
 
@@ -1037,26 +990,23 @@ const AppContent = () => {
       setIsSecretGateOpen(true);
       if (isAdmin) setView('admin'); else setView('login');
     } else if (window.location.pathname === ABOUT_PATH) {
-      setSelectedItemId(null);
       setActiveCategoryId(null);
       setView('home');
     } else if (NEXT_VIEW_PATHS[window.location.pathname]) {
-      setSelectedItemId(null);
       setActiveCategoryId(null);
       setView(NEXT_VIEW_PATHS[window.location.pathname]);
-    } else if (productId) {
-      setPendingDeepLink(productId);
     } else if (pathCategoryId) {
-      setSelectedItemId(null);
       setActiveCategoryId(pathCategoryId);
       setView('category');
     } else if (hash.startsWith('category/')) {
-      setSelectedItemId(null);
       setActiveCategoryId(hash.replace('category/', ''));
       setView('category');
     } else {
       if (hash === 'home') setView('home');
-      else if (hash === 'devis') setView('devis');
+      else if (hash === 'devis') {
+        window.location.assign('/devis');
+        return;
+      }
       else if (params.get('page') === 'gallery' || hash === 'gallery' || window.location.pathname === '/') setView('gallery');
     }
     setLoading(false);
@@ -1066,29 +1016,20 @@ const AppContent = () => {
   // --- PERSISTANCE NAVIGATION (PATH, HASH LEGACY & URL) ---
   useEffect(() => {
     const handleLocationChange = () => {
-      const productId = extractProductIdFromPath(window.location.pathname);
-      if (productId) {
-        setPendingDeepLink(productId);
-        return;
-      }
-
       const pathCategoryId = extractCategoryIdFromPath(window.location.pathname);
       if (pathCategoryId) {
-        setSelectedItemId(null);
         setActiveCategoryId(pathCategoryId);
         setView('category');
         return;
       }
 
       if (window.location.pathname === ABOUT_PATH) {
-        setSelectedItemId(null);
         setActiveCategoryId(null);
         setView('home');
         return;
       }
 
       if (NEXT_VIEW_PATHS[window.location.pathname]) {
-        setSelectedItemId(null);
         setActiveCategoryId(null);
         setView(NEXT_VIEW_PATHS[window.location.pathname]);
         return;
@@ -1096,14 +1037,13 @@ const AppContent = () => {
 
       const hash = window.location.hash.replace('#', '');
       if (hash.startsWith('category/')) {
-        setSelectedItemId(null);
         setActiveCategoryId(hash.replace('category/', ''));
         setView('category');
-      } else if (['home', 'gallery', 'admin', 'login', 'my-orders', 'checkout', 'wishlist', 'devis'].includes(hash)) {
-        setSelectedItemId(null);
+      } else if (hash === 'devis') {
+        window.location.assign('/devis');
+      } else if (['home', 'gallery', 'admin', 'login', 'my-orders', 'checkout', 'wishlist'].includes(hash)) {
         setView(hash);
       } else if (window.location.pathname === '/' && !window.location.search) {
-        setSelectedItemId(null);
         setActiveCategoryId(null);
         setView('gallery');
       }
@@ -1118,34 +1058,24 @@ const AppContent = () => {
 
   // Synchronisation URL <-> View State
   useEffect(() => {
-    if (view === 'detail' && selectedItemId) {
-      const selectedItemForUrl = items.find(i => i.id === selectedItemId);
-      if (!selectedItemForUrl) return;
-
-      const newUrl = getProductUrl(selectedItemForUrl);
-      if (window.location.pathname !== newUrl || window.location.search || window.location.hash) {
-        window.history.pushState({ view: 'detail', itemId: selectedItemId }, '', newUrl);
-      }
-    } else if (view === 'category' && activeCategoryId) {
+    if (view === 'category' && activeCategoryId) {
       const categoryUrl = getCategoryUrl(activeCategoryId);
       if (window.location.pathname !== categoryUrl || window.location.search || window.location.hash) {
         window.history.pushState({ view: 'category', categoryId: activeCategoryId }, '', categoryUrl);
       }
     } else if (view === 'gallery') {
-      const isProductPath = Boolean(extractProductIdFromPath(window.location.pathname));
       const isCategoryPath = Boolean(extractCategoryIdFromPath(window.location.pathname));
-      if (isProductPath || isCategoryPath || window.location.pathname !== '/' || window.location.search || window.location.hash) {
+      if (isCategoryPath || window.location.pathname !== '/' || window.location.search || window.location.hash) {
         window.history.pushState({ view: 'gallery' }, '', '/');
       }
-    } else if (view !== 'detail' && view !== 'home') {
+    } else if (view !== 'home') {
       // Autres vues : On utilise le hash (ex: #gallery)
       // On nettoie les URLs dédiées si on sort du détail ou d'une catégorie.
-      const isProductPath = Boolean(extractProductIdFromPath(window.location.pathname));
       const isCategoryPath = Boolean(extractCategoryIdFromPath(window.location.pathname));
       const targetPath = Object.entries(NEXT_VIEW_PATHS).find(([, mappedView]) => mappedView === view)?.[0];
       if (targetPath && window.location.pathname !== targetPath) {
         window.history.pushState({ view }, '', targetPath);
-      } else if (isProductPath || isCategoryPath || window.location.search.includes('product=')) {
+      } else if (isCategoryPath || window.location.search.includes('product=')) {
         const cleanUrl = `/#${view}`;
         window.history.pushState({ view }, '', cleanUrl);
       } else if (!targetPath) {
@@ -1156,40 +1086,7 @@ const AppContent = () => {
         window.history.pushState({ view: 'home' }, '', ABOUT_PATH);
       }
     }
-  }, [view, selectedItemId, activeCategoryId, items]);
-
-  // --- TRAITEMENT DEEP LINK ---
-  useEffect(() => {
-    if (!pendingDeepLink) return undefined;
-
-    let cancelled = false;
-    const targetItem = items.find(i => i.id === pendingDeepLink);
-
-    if (targetItem) {
-      if (!isFullCatalogItem(targetItem)) {
-        ensureProductDetailItem(pendingDeepLink);
-      }
-      console.log("Deep link activated for:", targetItem.name);
-      setSelectedItemId(pendingDeepLink);
-      setView('detail');
-      setPendingDeepLink(null);
-      return undefined;
-    }
-
-    ensureProductDetailItem(pendingDeepLink).then((fullItem) => {
-      if (cancelled) return;
-      if (fullItem) {
-        console.log("Deep link activated for:", fullItem.name);
-        setSelectedItemId(pendingDeepLink);
-        setView('detail');
-      }
-      setPendingDeepLink(null);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [items, pendingDeepLink, ensureProductDetailItem]);
+  }, [view, activeCategoryId]);
 
   // --- WISHLIST SYNC ---
   useEffect(() => {
@@ -1441,7 +1338,6 @@ const AppContent = () => {
   const cartTotal = cartItems.reduce((sum, item) => sum + (item.price || 0), 0);
 
   // Analytics nav context : récupéré depuis l'item sélectionné + filtre galerie persistant.
-  const selectedItem = selectedItemId ? items.find(i => i.id === selectedItemId) : null;
   const activeCategoryMeta = activeCategoryId
     ? [...(KIT_CONFIG.categoryGroups || []), ...(KIT_CONFIG.productCategories || [])].find(category => category.id === activeCategoryId)
     : null;
@@ -1464,23 +1360,12 @@ const AppContent = () => {
       };
     }
 
-    if (view === 'devis') {
-      return {
-        title: 'Demander un devis de restauration',
-        description: 'Formulaire de demande de devis pour restaurer un meuble ancien ou familial avec Anais.',
-        url: '/devis'
-      };
-    }
-
     return {};
   })();
   const analyticsNav = {
     view,
     activeCategoryId,
     galleryFilter: persistentGalleryState?.filter,
-    selectedItemId,
-    selectedItemName: selectedItem?.title || selectedItem?.name || null,
-    selectedItemPrice: selectedItem?.currentPrice || selectedItem?.price || null,
     urlParams: typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null,
   };
   const footerContactInfo = contactInfo && Object.keys(contactInfo).length > 0 ? contactInfo : null;
@@ -1488,7 +1373,7 @@ const AppContent = () => {
   return (
     <DeferredAnalyticsProvider {...analyticsNav}>
     <div className={`min-h-screen font-sans selection:bg-stone-300 ${darkMode ? 'bg-[#0A0A0A] text-stone-200' : 'bg-[#FAFAF9] text-stone-900'}`}>
-      {view !== 'detail' && !isAdminPerformanceStudyView && <SEO {...pageSeo} />}
+      {!isAdminPerformanceStudyView && <SEO {...pageSeo} />}
 
       {/* RIDEAU DE TRANSITION GLOBAL (Masque le switch de page) */}
       {/* RIDEAU DE TRANSITION GLOBAL (Masque le switch de page) */}
@@ -1728,7 +1613,7 @@ const AppContent = () => {
             darkMode={darkMode}
             activeDesignId={activeDesignId}
             contactInfo={footerContactInfo}
-            onNavigateCategory={(catId) => { setSelectedItemId(null); setActiveCategoryId(catId); setView('category'); closeGlobalMenu(); window.scrollTo(0, 0); }}
+            onNavigateCategory={(catId) => { setActiveCategoryId(catId); setView('category'); closeGlobalMenu(); window.scrollTo(0, 0); }}
             onShowLogin={() => { closeGlobalMenu(); setShowFullLogin(true); }}
             onOpenCart={openCart}
             cartCount={cartItems.length}
@@ -1767,14 +1652,14 @@ const AppContent = () => {
               onOpenWishlist={() => setView('wishlist')}
               toggleTheme={() => setDarkMode(!darkMode)}
               darkMode={darkMode}
-              showSearch={view === 'gallery' || view === 'wishlist' || view === 'category' || view === 'detail' || view === 'devis'}
+              showSearch={view === 'gallery' || view === 'wishlist' || view === 'category'}
               onGoHome={returnToSiteHome}
               onOpenDiscovery={openMarketplaceDiscovery}
               setHeaderProps={setHeaderProps}
               persistentGalleryState={persistentGalleryState}
               saveGalleryState={saveGalleryState}
               activeCategoryId={activeCategoryId}
-              onNavigateCategory={(catId) => { setSelectedItemId(null); setActiveCategoryId(catId); setView('category'); window.scrollTo(0, 0); }}
+              onNavigateCategory={(catId) => { setActiveCategoryId(catId); setView('category'); window.scrollTo(0, 0); }}
             />
           ) : null}
         </>
@@ -1794,8 +1679,6 @@ const AppContent = () => {
           activeDesignId={activeDesignId}
           isSecretGateOpen={isSecretGateOpen}
           setShowFullLogin={setShowFullLogin}
-          setSelectedItemId={setSelectedItemId}
-          selectedItemId={selectedItemId}
           addToCart={addToCart}
           cartItems={cartItems}
           cartTotal={cartTotal}
@@ -1818,14 +1701,13 @@ const AppContent = () => {
           persistentGalleryState={persistentGalleryState}
           saveGalleryState={saveGalleryState}
           activeCategoryId={activeCategoryId}
-          onOpenAbout={() => { setSelectedItemId(null); setActiveCategoryId(null); setView('home'); window.scrollTo(0, 0); }}
-          onNavigateCategory={(catId) => { setSelectedItemId(null); setActiveCategoryId(catId); setView('category'); window.scrollTo(0, 0); }}
+          onOpenAbout={() => { setActiveCategoryId(null); setView('home'); window.scrollTo(0, 0); }}
+          onNavigateCategory={(catId) => { setActiveCategoryId(catId); setView('category'); window.scrollTo(0, 0); }}
           onGalleryScrollStateChange={setIsMobileAnnouncementCollapsed}
           isCatalogComplete={isCatalogComplete}
           isLoadingFullCatalog={isLoadingFullCatalog}
           onLoadFullCatalog={requestFullCatalog}
           onLoadCategoryCatalog={requestCategoryCatalog}
-          onEnsureProductDetail={ensureProductDetailItem}
           galleryFooter={(
             <div
               ref={setDeferredFooterSentinel}
@@ -1844,7 +1726,7 @@ const AppContent = () => {
         />
       </main>
       {
-        ['home', 'detail', 'checkout', 'my-orders', 'category', 'devis'].includes(view) && (
+        ['home', 'checkout', 'my-orders', 'category'].includes(view) && (
           <div 
             ref={footerRef} 
             className="transition-all duration-700"

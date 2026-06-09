@@ -5,11 +5,8 @@ import React, { Suspense } from 'react';
 // --- CODE SPLITTING: Chargement différé (kit standardisé) ---
 const HomeView = React.lazy(() => import('./vitrine/HomeView'));
 const GalleryView = React.lazy(() => import('./kit/marketplace/GalleryView'));
-const loadProductDetail = () => import('./kit/marketplace/ProductDetail');
-const ProductDetail = React.lazy(loadProductDetail);
 const CheckoutView = React.lazy(() => import('./kit/commerce/CheckoutView'));
 const LoginView = React.lazy(() => import('./kit/commerce/LoginView'));
-const QuoteRequestView = React.lazy(() => import('./kit/marketplace/QuoteRequestView'));
 const PerformanceArchitectureStudy = React.lazy(() => import('./kit/admin/PerformanceArchitectureStudy'));
 import { Palette,
     CreditCard, Mail, Users, Share2, Globe, Grid,
@@ -52,15 +49,6 @@ const PULL_REFRESH_MAX_DISTANCE = 96;
 const loadFirebaseRuntime = () => import('./kit/config/firebaseLazy');
 const loadPublicCatalogInvalidation = () => import('./kit/admin/publicCatalogInvalidation');
 
-const ProductDetailFallback = ({ darkMode }) => (
-    <div
-        aria-hidden="true"
-        data-product-detail-fallback="true"
-        className={`pointer-events-none fixed inset-0 z-[100] w-screen overflow-hidden ${darkMode ? 'bg-[#0e0e0e]/80' : 'bg-transparent'}`}
-        style={{ height: 'var(--marketplace-viewport-height, 100svh)' }}
-    />
-);
-
 const AppRouter = ({
     view,
     setView,
@@ -72,8 +60,6 @@ const AppRouter = ({
     activeDesignId,
     isSecretGateOpen,
     setShowFullLogin,
-    setSelectedItemId,
-    selectedItemId,
     addToCart,
     cartItems,
     cartTotal,
@@ -103,7 +89,6 @@ const AppRouter = ({
     isLoadingFullCatalog = false,
     onLoadFullCatalog,
     onLoadCategoryCatalog,
-    onEnsureProductDetail,
     galleryFooter
 }) => {
     const { user, isAdmin, logout } = useAuth();
@@ -138,7 +123,6 @@ const AppRouter = ({
             ?? COLLECTION_ICONS[collectionIdx++ % COLLECTION_ICONS.length],
     }));
 
-    const productReturnTargetRef = React.useRef({ view: 'gallery' });
     const setMarketplaceViewportHeight = React.useCallback(() => {
         if (typeof window === 'undefined') return;
 
@@ -148,75 +132,16 @@ const AppRouter = ({
         }
     }, []);
 
-    const freezeMobileGalleryScrollForDetail = React.useCallback(() => {
-        if (
-            typeof window === 'undefined' ||
-            !window.matchMedia(MOBILE_MARKETPLACE_QUERY).matches
-        ) {
-            return;
-        }
+    const openProductRoute = React.useCallback((id) => {
+        const item = items.find(candidate => candidate.id === id);
+        if (!item || typeof window === 'undefined') return;
+        window.location.assign(getProductUrl(item));
+    }, [items]);
 
-        const scroller = galleryScrollRef.current;
-        const scrollTop = scroller?.scrollTop || 0;
-
-        window.scrollTo(0, 0);
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
-
-        if (!scroller) return;
-
-        scroller.style.overflowY = 'hidden';
-        scroller.style.webkitOverflowScrolling = 'auto';
-        scroller.style.touchAction = 'none';
-        scroller.scrollTop = scrollTop;
-    }, []);
-
-    const openProductDetail = (id, returnTarget = { view: 'gallery' }) => {
-        if (returnTarget?.view === 'gallery') {
-            freezeMobileGalleryScrollForDetail();
-        }
-        setMarketplaceViewportHeight();
-        loadProductDetail().catch(() => {});
-        onEnsureProductDetail?.(id)?.catch?.(() => {});
-        productReturnTargetRef.current = returnTarget;
-        setSelectedItemId(id);
-        setView('detail');
-    };
-
-    const prefetchProductDetail = React.useCallback((id) => {
-        if (!id) return;
-        loadProductDetail().catch(() => {});
-        onEnsureProductDetail?.(id)?.catch?.(() => {});
-    }, [onEnsureProductDetail]);
-
-    const closeProductDetail = () => {
-        const returnTarget = productReturnTargetRef.current;
-
-        if (persistentGalleryState) {
-            setHeaderProps(prev => ({
-                ...prev,
-                activeCollection: persistentGalleryState.activeCollection,
-                filter: persistentGalleryState.filter
-            }));
-        }
-
-        if (returnTarget?.view === 'category' && returnTarget.categoryId) {
-            setView('category');
-        } else {
-            setView('gallery');
-        }
-
-        setSelectedItemId(null);
-    };
-
-    const isDetailFromCategory =
-        view === 'detail' &&
-        productReturnTargetRef.current?.view === 'category' &&
-        activeCategoryId;
-    const shouldRenderGallerySurface = view === 'gallery' || isPreparingGallery || (view === 'detail' && !isDetailFromCategory);
-    const shouldShowGallerySurface = view === 'gallery' || (view === 'detail' && !isDetailFromCategory);
-    const shouldRenderCategorySurface = (view === 'category' || isDetailFromCategory) && activeCategoryId;
-    const isGalleryDetailOverlay = view === 'detail' && !isDetailFromCategory;
+    const shouldRenderGallerySurface = view === 'gallery' || isPreparingGallery;
+    const shouldShowGallerySurface = view === 'gallery';
+    const shouldRenderCategorySurface = view === 'category' && activeCategoryId;
+    const isGalleryDetailOverlay = false;
     const shouldUseMobileGalleryScroll = view === 'gallery' || isGalleryDetailOverlay;
 
     React.useEffect(() => {
@@ -249,7 +174,6 @@ const AppRouter = ({
 
         const mediaQuery = window.matchMedia(MOBILE_MARKETPLACE_QUERY);
         const updateViewportHeight = () => {
-            if (view === 'detail') return;
             if (mediaQuery.matches) {
                 setMarketplaceViewportHeight();
             }
@@ -516,8 +440,7 @@ const AppRouter = ({
                                 isAdmin={isAdmin} isSecretGateOpen={isSecretGateOpen} user={user}
                                 isPreparingGallery={isPreparingGallery}
                                 onShowLogin={() => setShowFullLogin(true)}
-                                onSelectItem={(id) => openProductDetail(id, { view: 'gallery' })}
-                                onPrefetchItem={prefetchProductDetail}
+                                onSelectItem={openProductRoute}
                                 darkMode={darkMode}
                                 onOpenMenu={onOpenMenu}
                                 onOpenCart={onOpenCart}
@@ -530,7 +453,7 @@ const AppRouter = ({
                                 onToggleWishlist={toggleWishlist}
                                 onOpenAbout={onOpenAbout}
                                 onNavigateCategory={onNavigateCategory}
-                                onOpenQuote={() => { setView('devis'); window.scrollTo(0, 0); }}
+                                onOpenQuote={() => { window.location.assign('/devis'); }}
                                 isDetailOverlayOpen={isGalleryDetailOverlay}
                                 isCatalogComplete={isCatalogComplete}
                                 isLoadingFullCatalog={isLoadingFullCatalog}
@@ -540,26 +463,6 @@ const AppRouter = ({
                         {view === 'gallery' && galleryFooter}
                     </div>
                 </div>
-            )}
-
-            {view === 'detail' && selectedItemId && (
-                <Suspense fallback={<ProductDetailFallback darkMode={darkMode} />}>
-                    <div className="contents">
-                        <ProductDetail
-                            item={items.find(i => i.id === selectedItemId)}
-                            user={user}
-                            onBack={closeProductDetail}
-                            onAddToCart={addToCart}
-                            cartItems={cartItems}
-                            darkMode={darkMode}
-                            onOpenMenu={onOpenMenu}
-                            onOpenCart={onOpenCart}
-                            onShowLogin={() => setShowFullLogin(true)}
-                            toggleTheme={toggleTheme}
-                            setHeaderProps={setHeaderProps}
-                        />
-                    </div>
-                </Suspense>
             )}
 
             {view === 'checkout' && (
@@ -584,23 +487,13 @@ const AppRouter = ({
                 </Suspense>
             )}
 
-            {view === 'devis' && (
-                <Suspense fallback={<div className="min-h-screen bg-transparent"></div>}>
-                    <QuoteRequestView
-                        darkMode={darkMode}
-                        setHeaderProps={setHeaderProps}
-                    />
-                </Suspense>
-            )}
-
             {shouldRenderCategorySurface && (
                 <Suspense fallback={<div className="min-h-screen bg-transparent"></div>}>
                     <CategoryPage
                         categoryId={activeCategoryId}
                         items={items}
                         darkMode={darkMode}
-                        onSelectItem={(id) => openProductDetail(id, { view: 'category', categoryId: activeCategoryId })}
-                        onPrefetchItem={prefetchProductDetail}
+                        onSelectItem={openProductRoute}
                         onBack={() => { setView('gallery'); window.scrollTo(0, 0); }}
                         onAddToCart={addToCart}
                         wishlistItems={wishlistItems}
@@ -623,7 +516,7 @@ const AppRouter = ({
                         onAddToCart={addToCart}
                         onToggleWishlist={toggleWishlist}
                         onClearWishlist={clearWishlist}
-                        onSelectItem={(id) => openProductDetail(id, { view: 'gallery' })}
+                        onSelectItem={openProductRoute}
                         onOpenAbout={onOpenAbout}
                         onBack={() => setView('gallery')}
                         darkMode={darkMode}

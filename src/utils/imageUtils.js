@@ -59,7 +59,6 @@ export const compressImage = (file, quality = 0.8, maxWidth = 1920) => {
 
 const imageLoadCache = new Map();
 const imageDecodeCache = new Map();
-const instantProductDetailImageCache = new Map();
 
 export const PRODUCT_IMAGE_VARIANT_SPECS = [
     { key: 'thumb', width: 480, quality: 0.74, folder: 'thumbnails' },
@@ -152,41 +151,6 @@ export const getImageFileMetadata = (file) => {
 const getImageLoadCacheKey = (src) => src || '';
 
 const asArray = (value) => Array.isArray(value) ? value.filter(Boolean) : [];
-
-const getProductCacheId = (itemOrId) => {
-    if (!itemOrId) return '';
-    if (typeof itemOrId === 'string') return itemOrId;
-    return itemOrId.id || itemOrId.slug || itemOrId.slugOrId || '';
-};
-
-export const rememberInstantProductDetailImage = (itemOrId, payload = {}) => {
-    const productId = getProductCacheId(itemOrId);
-    const src = payload.src || '';
-    if (!productId || !src || src.startsWith('data:image/gif')) return;
-
-    const index = Math.max(0, Number(payload.index) || 0);
-    const width = Number(payload.width) || 0;
-    const height = Number(payload.height) || 0;
-    const ratio = Number(payload.ratio) || (width > 0 && height > 0 ? width / height : null);
-
-    instantProductDetailImageCache.set(`${productId}:${index}`, {
-        src,
-        width,
-        height,
-        ratio: Number.isFinite(ratio) && ratio > 0 ? ratio : null,
-        at: Date.now(),
-    });
-};
-
-export const getInstantProductDetailImage = (itemOrId, index = 0) => {
-    const productId = getProductCacheId(itemOrId);
-    if (!productId) return null;
-
-    const entry = instantProductDetailImageCache.get(`${productId}:${Math.max(0, Number(index) || 0)}`);
-    if (!entry?.src) return null;
-
-    return entry;
-};
 
 const normalizeVariantSlot = (slot) => {
     if (!slot || typeof slot !== 'object') return {};

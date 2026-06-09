@@ -54,9 +54,6 @@ const AnalyticsProvider = ({
     view,
     activeCategoryId,
     galleryFilter,
-    selectedItemId,
-    selectedItemName,
-    selectedItemPrice,
     urlParams,
     children,
 }) => {
@@ -260,10 +257,7 @@ const AnalyticsProvider = ({
         if (isAdmin) return;
         if (isLikelyBot()) return;
 
-        const nav = { view, activeCategoryId, galleryFilter, selectedItemId, selectedItemName, selectedItemPrice, urlParams };
-
-        // Guard : si on est sur 'detail' mais que le nom/produit n'est pas encore chargé, attendre.
-        if (view === 'detail' && selectedItemId && !selectedItemName) return;
+        const nav = { view, activeCategoryId, galleryFilter, urlParams };
 
         const rawStep = buildStep(nav);
 
@@ -286,7 +280,7 @@ const AnalyticsProvider = ({
                 tryInitSession(step);
             }
         }
-    }, [view, activeCategoryId, galleryFilter, selectedItemId, selectedItemName, selectedItemPrice, user, isAdmin]);
+    }, [view, activeCategoryId, galleryFilter, user, isAdmin]);
 
     // ── Retry init si user/auth devient disponible APRÈS l'entrée ─
     useEffect(() => {

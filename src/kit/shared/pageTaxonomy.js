@@ -19,8 +19,6 @@ export const PAGE_META = {
   category_group:         { label: 'Catégorie · Groupe',         section: 'catalog',  color: '#3b82f6' },
   category_leaf:          { label: 'Catégorie · Feuille',        section: 'catalog',  color: '#06b6d4' },
 
-  product_detail:         { label: 'Produit · Fiche',            section: 'product',  color: '#ec4899' },
-
   wishlist:               { label: "Liste d'envies",             section: 'account',  color: '#f43f5e' },
   quote_request:          { label: 'Devis · Demande',            section: 'commerce', color: '#f59e0b' },
   checkout:               { label: 'Checkout · Panier',          section: 'commerce', color: '#059669' },
@@ -33,7 +31,7 @@ export const PAGE_META = {
 
 // Vues qui déclenchent l'init d'une session (R1).
 // home n'est PAS dedans — une session ne démarre QUE quand on touche la galerie.
-export const SESSION_ENTRY_VIEWS = ['gallery', 'category', 'detail', 'wishlist', 'devis', 'checkout', 'my-orders'];
+export const SESSION_ENTRY_VIEWS = ['gallery', 'category', 'wishlist', 'devis', 'checkout', 'my-orders'];
 
 // Set pour lookup rapide des IDs de groupes (meubles, assises, eclairage, decorations)
 const GROUP_IDS = new Set((KIT_CONFIG.categoryGroups || []).map(g => g.id));
@@ -42,17 +40,14 @@ const GROUP_IDS = new Set((KIT_CONFIG.categoryGroups || []).map(g => g.id));
  * Résout un pageKey à partir de l'état de navigation.
  *
  * @param {object} nav
- * @param {string} nav.view           - 'home' | 'gallery' | 'category' | 'detail' | 'wishlist' | 'devis' | 'checkout' | 'my-orders' | 'login' | 'admin'
+ * @param {string} nav.view           - 'home' | 'gallery' | 'category' | 'wishlist' | 'devis' | 'checkout' | 'my-orders' | 'login' | 'admin'
  * @param {string} [nav.activeCategoryId] - id de catégorie (meubles, chaises, ...)
  * @param {string} [nav.galleryFilter]    - 'fixed'
- * @param {string} [nav.selectedItemId]
- * @param {string} [nav.selectedItemName]
- * @param {number} [nav.selectedItemPrice]
  * @param {object} [nav.urlParams]        - URLSearchParams → { order_success }
  * @returns {{ pageKey:string, pageLabel:string, pageColor:string, section:string, context:object }}
  */
 export function resolvePageKey(nav = {}) {
-  const { view, activeCategoryId, galleryFilter, selectedItemId, selectedItemName, selectedItemPrice, urlParams } = nav;
+  const { view, activeCategoryId, galleryFilter, urlParams } = nav;
 
   let pageKey = 'unknown';
   const context = {};
@@ -73,13 +68,6 @@ export function resolvePageKey(nav = {}) {
       else if (activeCategoryId) pageKey = 'category_leaf';
       else pageKey = 'gallery_landing'; // fallback si activeCategoryId manquant
       if (activeCategoryId) context.categoryId = activeCategoryId;
-      break;
-
-    case 'detail':
-      pageKey = 'product_detail';
-      if (selectedItemId)    context.itemId = selectedItemId;
-      if (selectedItemName)  context.itemName = selectedItemName;
-      if (selectedItemPrice) context.itemPrice = selectedItemPrice;
       break;
 
     case 'wishlist':

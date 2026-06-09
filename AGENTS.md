@@ -11,6 +11,8 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 .
 |-- AGENTS.md : consignes agents et rapports; CLAUDE.md / GEMINI.md : consignes agents
 |-- alertemobile.md : invariant mobile marketplace critique
+|-- nextjsssr.md : agent/playbook audit legacy SPA et migration Next SSR publique
+|-- .agents/skills/nextjsssr : skill Codex local pour appliquer nextjsssr.md
 |-- package*.json, next.config.mjs, eslint.config.mjs, jsconfig.json, tailwind.config.js, postcss.config.js
 |-- apphosting.yaml, .firebaserc : configuration Firebase App Hosting sandbox
 |-- app : routes Next App Router, home landing SEO SSR + launcher galerie, SSR produit/categorie, loading/not-found/error, sitemap, robots et shells client

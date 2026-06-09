@@ -6,15 +6,22 @@ import {
     Check,
     ChevronDown,
     ClipboardCheck,
+    Heart,
     HelpCircle,
     Info,
     Mail,
+    Menu,
+    Moon,
     Phone,
     Ruler,
+    Search,
     ShieldCheck,
     Sparkles,
+    ShoppingBag,
+    Sun,
     Upload,
     Wand2,
+    X,
 } from 'lucide-react';
 import SEO from '../shared/SEO';
 import quoteRestorationHero from '../../assets/quote-restoration-hero.webp';
@@ -134,17 +141,155 @@ const processSteps = [
 
 const MAX_PHOTOS = 10;
 
+const headerLinks = [
+    { label: 'Accueil', href: '/' },
+    { label: 'Galerie', href: '/?page=gallery' },
+    { label: 'Devis', href: '/devis' },
+    { label: 'Wishlist', href: '/wishlist' },
+];
+
+const QuotePageHeader = ({ darkMode = false, onToggleDarkMode }) => {
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [searchValue, setSearchValue] = useState('');
+
+    const handleSearchSubmit = (event) => {
+        event.preventDefault();
+        const query = searchValue.trim();
+        const suffix = query ? `&search=${encodeURIComponent(query)}` : '';
+        window.location.assign(`/?page=gallery${suffix}`);
+    };
+
+    return (
+        <>
+            <header className={`sticky top-0 z-50 safe-pt-header shadow-[0_1px_0_rgba(28,24,20,0.06)] ${darkMode ? 'bg-[#0A0A0A] text-stone-100' : 'bg-white text-stone-900'}`}>
+                <div className="mx-auto flex h-16 max-w-[1920px] items-center justify-between px-3 md:h-[76px] md:px-8">
+                    <a href="/" className="-ml-1 flex shrink-0 items-center gap-1 md:-ml-8" aria-label="Retour a l'accueil Seconde Vie">
+                        <img
+                            src="/images/logoanais-320.webp"
+                            alt="Logo Seconde Vie"
+                            width="320"
+                            height="240"
+                            decoding="async"
+                            className={`h-10 w-auto object-contain md:h-[50px] ${darkMode ? 'brightness-0 invert opacity-100' : 'brightness-0 opacity-80'}`}
+                        />
+                        <span className="flex flex-col leading-none">
+                            <span className={`flex items-center gap-0.5 font-serif text-[16px] font-bold tracking-normal md:text-[24px] ${darkMode ? 'text-stone-100' : 'text-stone-900'}`}>
+                                Seconde Vie<span className="-mb-1 text-[26px] leading-none text-orange-600">.</span>
+                            </span>
+                            <span className={`mt-0.5 font-serif text-[11px] italic md:text-[14px] ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>par Anais</span>
+                        </span>
+                    </a>
+
+                    <form onSubmit={handleSearchSubmit} className="absolute left-1/2 hidden w-full max-w-xl -translate-x-1/2 px-4 lg:block xl:max-w-2xl">
+                        <label className="relative block">
+                            <span className="sr-only">Rechercher un produit</span>
+                            <input
+                                type="search"
+                                value={searchValue}
+                                onChange={(event) => setSearchValue(event.target.value)}
+                                placeholder="Rechercher un produit..."
+                                className={`h-11 w-full rounded-md border py-2.5 pl-4 pr-10 font-sans text-[13px] tracking-wide outline-none transition-colors placeholder:text-stone-400 ${darkMode ? 'border-white/10 bg-[#1A1A1A] text-stone-100 focus:border-white/30' : 'border-transparent bg-[#F2F0ED] text-stone-800 focus:border-stone-300'}`}
+                            />
+                            <Search size={16} strokeWidth={1.5} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                        </label>
+                    </form>
+
+                    <div className="relative z-10 flex shrink-0 items-center gap-2 md:gap-4">
+                        <div className={`flex items-center gap-1 rounded-full p-1 ring-1 ${darkMode ? 'bg-white/[0.045] ring-white/[0.09] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]' : 'bg-stone-100/85 ring-stone-200/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]'}`}>
+                            <a
+                                href="/admin"
+                                className={`group hidden h-9 items-center gap-2 rounded-full px-3 font-sans transition-all duration-300 active:scale-[0.97] md:flex ${darkMode ? 'bg-white/[0.04] text-stone-400 hover:bg-white/[0.09] hover:text-stone-100' : 'bg-white/70 text-stone-500 hover:bg-white hover:text-stone-900'}`}
+                            >
+                                <ShieldCheck size={14} className="text-stone-400 transition-colors group-hover:text-amber-500" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.16em]">Connexion</span>
+                            </a>
+                            <button
+                                type="button"
+                                onClick={onToggleDarkMode}
+                                className={`hidden h-9 w-9 items-center justify-center rounded-full transition-all duration-300 active:scale-[0.96] md:flex ${darkMode ? 'text-stone-200 hover:bg-white/[0.08] hover:text-[#D9B58D]' : 'text-stone-800 hover:bg-white hover:text-[#8B5C42]'}`}
+                                aria-label={darkMode ? 'Activer le mode clair' : 'Activer le mode sombre'}
+                                title={darkMode ? 'Mode clair' : 'Mode sombre'}
+                            >
+                                {darkMode ? <Sun size={18} strokeWidth={1.5} /> : <Moon size={18} strokeWidth={1.5} />}
+                            </button>
+                            <a
+                                href="/wishlist"
+                                className={`flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300 active:scale-[0.96] ${darkMode ? 'text-stone-200 hover:bg-white/[0.08] hover:text-rose-400' : 'text-stone-900 hover:bg-white hover:text-rose-500'}`}
+                                aria-label="Ma wishlist"
+                                title="Ma wishlist"
+                            >
+                                <Heart size={18} strokeWidth={1.5} />
+                            </a>
+                            <a
+                                href="/checkout"
+                                className={`flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300 active:scale-[0.96] ${darkMode ? 'text-stone-200 hover:bg-white/[0.08] hover:text-amber-400' : 'text-stone-900 hover:bg-white hover:text-amber-600'}`}
+                                aria-label="Panier"
+                                title="Panier"
+                            >
+                                <ShoppingBag size={18} strokeWidth={1.5} />
+                            </a>
+                            <button
+                                type="button"
+                                onClick={() => setIsMenuOpen(true)}
+                                className={`mr-1 flex h-10 min-w-10 items-center justify-center gap-2 rounded-full px-2.5 shadow-sm transition-all duration-300 active:scale-[0.96] md:mr-0 md:px-3.5 ${darkMode ? 'bg-white/[0.07] text-stone-100 shadow-black/10 hover:bg-white/[0.12] hover:text-[#D9B58D]' : 'bg-white text-stone-900 shadow-stone-900/5 hover:text-[#8B5C42]'}`}
+                                aria-label="Ouvrir le menu"
+                                title="Menu"
+                            >
+                                <Menu size={20} strokeWidth={1.5} />
+                                <span className="hidden font-sans text-[10px] font-black uppercase tracking-[0.16em] md:inline">Menu</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            {isMenuOpen && (
+                <div className="fixed inset-0 z-[2100] bg-stone-950/35 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)}>
+                    <nav
+                        className={`ml-auto flex h-full w-full max-w-[420px] flex-col px-7 py-6 shadow-2xl ${darkMode ? 'bg-[#111110] text-stone-100' : 'bg-[#fbfaf7] text-stone-950'}`}
+                        aria-label="Menu principal"
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between">
+                            <span className="font-serif text-2xl">Seconde Vie</span>
+                            <button
+                                type="button"
+                                onClick={() => setIsMenuOpen(false)}
+                                className={`flex h-10 w-10 items-center justify-center rounded-full border ${darkMode ? 'border-white/10 bg-white/[0.06]' : 'border-stone-200 bg-white'}`}
+                                aria-label="Fermer le menu"
+                            >
+                                <X size={18} strokeWidth={1.5} />
+                            </button>
+                        </div>
+                        <div className="mt-10 grid gap-3">
+                            {headerLinks.map((link) => (
+                                <a
+                                    key={link.href}
+                                    href={link.href}
+                                    className={`rounded-[8px] border px-4 py-4 font-sans text-sm font-bold transition-colors ${darkMode ? 'border-white/10 bg-white/[0.05] hover:border-[#D9B58D] hover:text-[#D9B58D]' : 'border-stone-200 bg-white hover:border-[#9A714C] hover:text-[#8B5C42]'}`}
+                                >
+                                    {link.label}
+                                </a>
+                            ))}
+                        </div>
+                    </nav>
+                </div>
+            )}
+        </>
+    );
+};
+
 const formatPhotoName = (name = '') => {
     const cleanName = name.replace(/\.[^/.]+$/, '');
     if (cleanName.length <= 10) return cleanName;
     return `${cleanName.slice(0, 10)}...`;
 };
 
-const QuoteRequestView = ({ darkMode = false, setHeaderProps }) => {
+const QuoteRequestView = ({ initialDarkMode = false }) => {
+    const [darkMode, setDarkMode] = useState(initialDarkMode);
     const [selectedType, setSelectedType] = useState('buffet');
     const [activeGroup, setActiveGroup] = useState('bois');
     const [hoveredGroup, setHoveredGroup] = useState(null);
-    const [searchQuery, setSearchQuery] = useState('');
     const [selectedServices, setSelectedServices] = useState(() => {
         const defaults = {};
         serviceGroups.forEach(group => {
@@ -171,15 +316,6 @@ const QuoteRequestView = ({ darkMode = false, setHeaderProps }) => {
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'instant' });
     }, []);
-
-    useEffect(() => {
-        if (!setHeaderProps) return undefined;
-        setHeaderProps({
-            searchQuery,
-            setSearchQuery,
-        });
-        return () => setHeaderProps(null);
-    }, [searchQuery, setHeaderProps]);
 
     const selectedServiceList = useMemo(
         () => serviceGroups.flatMap(group => group.services).filter(service => selectedServices[service.id]),
@@ -262,6 +398,11 @@ const QuoteRequestView = ({ darkMode = false, setHeaderProps }) => {
     };
 
     return (
+        <>
+        <QuotePageHeader
+            darkMode={darkMode}
+            onToggleDarkMode={() => setDarkMode(prev => !prev)}
+        />
         <main className={`overflow-x-hidden ${darkMode ? 'bg-[#0f0f0e] text-[#F8F3EA]' : 'bg-[#fbfaf7] text-[#1f1b17]'}`}>
             <SEO
                 title="Demander un devis de restauration - Seconde Vie par Anais"
@@ -703,6 +844,7 @@ const QuoteRequestView = ({ darkMode = false, setHeaderProps }) => {
                 </div>
             </form>
         </main>
+        </>
     );
 };
 

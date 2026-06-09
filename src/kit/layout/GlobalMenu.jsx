@@ -684,6 +684,11 @@ const GlobalMenu = ({
         onOpenCart?.();
     };
 
+    const openQuoteRequest = () => {
+        closeMenu();
+        window.location.assign('/devis');
+    };
+
     const handleLogin = () => {
         closeMenu();
         onShowLogin?.();
@@ -700,7 +705,7 @@ const GlobalMenu = ({
         { label: 'Accueil', desc: 'Galerie principale', Icon: Home, active: isGalleryContext, action: () => goToView('gallery') },
         { label: 'À propos', desc: 'Atelier et histoire', Icon: UserRound, active: currentView === 'home', action: () => goToView('home') },
         { label: 'Commandes', desc: 'Espace client', Icon: Package, active: currentView === 'my-orders', action: () => (user && !user.isAnonymous ? goToView('my-orders') : handleLogin()) },
-        { label: 'Devis', desc: 'Projet sur mesure', Icon: ClipboardCheck, active: currentView === 'devis', action: () => goToView('devis') },
+        { label: 'Devis', desc: 'Projet sur mesure', Icon: ClipboardCheck, active: false, action: openQuoteRequest },
         ...(isAdmin ? [{ label: 'Admin.', desc: 'Backoffice', Icon: ShieldCheck, active: currentView === 'admin', action: () => goToView('admin') }] : []),
     ];
 

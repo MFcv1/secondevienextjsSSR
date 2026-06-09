@@ -7,6 +7,14 @@ const quoteTitle = 'Devis restauration de meuble ancien';
 const quoteDescription = 'Demander un devis a Seconde Vie pour restaurer, adapter ou reserver un meuble ancien avec une reponse personnalisee.';
 
 const safeJsonLd = (data) => JSON.stringify(data).replace(/</g, '\\u003c');
+const quoteScrollResetScript = `
+try {
+  if ('scrollRestoration' in window.history) {
+    window.history.scrollRestoration = 'manual';
+  }
+  window.scrollTo(0, 0);
+} catch (error) {}
+`;
 
 export const metadata = {
   title: quoteTitle,
@@ -47,6 +55,7 @@ export default function QuotePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(quoteJsonLd) }}
       />
+      <script dangerouslySetInnerHTML={{ __html: quoteScrollResetScript }} />
       <QuoteRequestView />
     </>
   );

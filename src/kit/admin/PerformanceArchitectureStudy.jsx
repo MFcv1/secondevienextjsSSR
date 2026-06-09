@@ -140,13 +140,13 @@ const currentFindings = Object.freeze([
     id: 'SV-PERF-0001',
     status: 'verified',
     title: 'React n est pas la cause principale des bugs images observes.',
-    source: 'src/utils/imageUtils.js + src/kit/marketplace/ArchitecturalProductDetail.jsx',
+    source: 'src/utils/imageUtils.js + src/kit/marketplace/ProductDetailShellIsland.jsx',
     summary:
       'Le projet a deja corrige les vrais points durs: variantes WebP, srcset, staging mobile, ratio mesure et clipping stable. Ces problemes auraient existe aussi dans un autre framework si le pipeline image restait incomplet.',
     evidence: [
       'PRODUCT_IMAGE_VARIANT_SPECS cree thumb/card/medium/large/full.',
       'ProductCard utilise srcSet + sizes + decoding async + priorite sur les premieres cartes.',
-      'ArchitecturalProductDetail resout currentSrc et decode avant swap mobile visible.',
+      'ProductDetailShellIsland porte maintenant le media interactif de la route produit Next native.',
     ],
     engineering: [
       'Garder React est defendable pour Seconde Vie a court terme.',
@@ -163,7 +163,7 @@ const currentFindings = Object.freeze([
       'La SPA porte navigation, auth, catalogue, panier, wishlist, menu global, modales, header, footer et scroll mobile dans deux fichiers centraux. C est lisible aujourd hui, mais fragile pour chaque nouvelle surface.',
     evidence: [
       'app.jsx orchestre les effets auth, catalogue, URL, cart, wishlist et overlays.',
-      'Router.jsx gere a la fois marketplace, detail, checkout, admin, devis, categorie.',
+      'Router.jsx gere marketplace, checkout, admin et categorie; le detail produit est sorti vers la route Next native.',
       'La regle mobile marketplace est critique et doit rester isolee.',
     ],
     engineering: [
@@ -197,11 +197,11 @@ const currentFindings = Object.freeze([
     title: 'Le mobile doit rester une architecture, pas une suite de patches.',
     source: 'alertemobile.md + src/Router.jsx + src/index.css',
     summary:
-      'Le bug historique montre que scroll, viewport, inertie et detail produit sont couples. Pour les prochains projets, le scroll root mobile doit etre defini par layout des le debut.',
+      'Le bug historique montre que scroll, viewport et surfaces image-heavy sont couples. Pour les prochains projets, le scroll root mobile doit etre defini par layout des le debut.',
     evidence: [
       'Invariant conserve: view === gallery || isGalleryDetailOverlay.',
       'marketplace-gallery-shell et marketplace-gallery-scroll partagent le viewport mobile.',
-      'Le scroller est fige avant ouverture detail pour couper l inertie.',
+      'Le chemin detail SPA legacy a ete retire; le shell galerie mobile reste contractualise.',
     ],
     engineering: [
       'Chaque page mobile image-heavy doit avoir un seul scroll root explicite.',
@@ -285,7 +285,7 @@ const roadmapPhases = Object.freeze([
       'Stocker ratio, dimensions, dominant color ou blur placeholder pour stabiliser les images.',
       'Garder les variantes thumb/card/medium/large/full, mais limiter les preload aux vraies images visibles ou probables.',
     ],
-    files: ['functions/src/public/catalog.js', 'src/app.jsx', 'firestore.rules', 'src/kit/shared/publicCatalogCache.js', 'src/kit/admin/publicCatalogInvalidation.js', 'src/kit/admin/AdminForm.jsx', 'src/Router.jsx', 'src/kit/marketplace/categoryCatalogLoader.js', 'src/kit/marketplace/ArchitecturalProductDetail.jsx', 'src/utils/imageUtils.js', 'src/kit/marketplace/components/ProductCard.jsx'],
+    files: ['functions/src/public/catalog.js', 'src/app.jsx', 'firestore.rules', 'src/kit/shared/publicCatalogCache.js', 'src/kit/admin/publicCatalogInvalidation.js', 'src/kit/admin/AdminForm.jsx', 'src/Router.jsx', 'src/kit/marketplace/categoryCatalogLoader.js', 'src/kit/marketplace/ProductDetailShellIsland.jsx', 'src/utils/imageUtils.js', 'src/kit/marketplace/components/ProductCard.jsx'],
     risk: 'Risque moyen: cache stale possible pendant la fenetre HTTP courte, ou incoherence entre carte et detail si un ancien document n a pas encore ses metadata image.',
     validation: [
       'Tests catalogue initial puis chargement complet',
@@ -301,12 +301,12 @@ const roadmapPhases = Object.freeze([
     intent:
       'Rendre le detail produit plus maintenable sans changer les effets type Instagram, le bottom sheet, le retour lateral ou la sortie pull-down.',
     actions: [
-      'Extraire useProductImageStaging, useProductDetailGestures et useLightboxGestures depuis ArchitecturalProductDetail.',
-      'Conserver le staging image mobile actuel: il evite le flash de coins carres.',
+      'Conserver le media produit dans ProductDetailShellIsland, sans reintroduire le detail SPA legacy.',
+      'Conserver les frames mobiles stables de la route produit Next native.',
       'Centraliser les seuils de gestes: distance swipe, vitesse pull-down, tolerance tap, seuil bottom sheet.',
       'Ajouter une mini state machine: idle, detailOpen, pullingToGallery, closingToGallery, sheetOpen, lightboxOpen.',
     ],
-    files: ['src/kit/marketplace/ArchitecturalProductDetail.jsx', 'src/Router.jsx', 'src/index.css', 'alertemobile.md'],
+    files: ['src/kit/marketplace/ProductDetailShellIsland.jsx', 'src/Router.jsx', 'src/index.css', 'alertemobile.md'],
     risk: 'Risque eleve: le moindre changement de scroll root, touch-action, data-detail-open ou staging peut reintroduire le drift mobile.',
     validation: [
       'Relire alertemobile.md avant toute modification',
@@ -318,7 +318,7 @@ const roadmapPhases = Object.freeze([
 ]);
 
 const roadmapEvidenceRows = Object.freeze([
-  ['P0.1 Budgets JS', 'Fait', 'npm run build + npm run perf:budget: app shell 83.1 kB gzip, Firebase public 150.82 kB gzip, galerie 11.66 kB gzip, ProductDetail 14.46 kB gzip, first-paint clean.'],
+  ['P0.1 Budgets JS', 'Fait', 'npm run build + npm run perf:budget: app shell 83.1 kB gzip, Firebase public 150.82 kB gzip, galerie 11.66 kB gzip, first-paint clean.'],
   ['P0.1b Mesure reseau', 'Fait', 'npm run perf:network lance le preview et mesure / + /categorie/commodes en mobile 390x844 avec Playwright Python. Le script echoue si budgets reseau, Web Vitals locaux, chunks interdits ou baseline avant/apres depassent les seuils.'],
   ['P0.2 Lazy shell public', 'Fait', 'CartSidebar, GlobalMenu, MarketplaceDiscovery, Footer, OrderSuccessModal, AdminIPTracker, Stripe et facture PDF sortis du premier rendu.'],
   ['P0.3 LCP/CLS/INP local', 'Fait local', 'PerformanceObserver injecte avant navigation: LCP, CLS et interaction menu sont controles en preview. Le vrai RUM production reste a ajouter pour mesurer les utilisateurs reels.'],
@@ -327,10 +327,10 @@ const roadmapEvidenceRows = Object.freeze([
   ['P1.3 Sections basses', 'Fait + chunks separes', 'Avant/Apres, Instagram, Avis et Newsletter sont maintenant des imports React.lazy derriere DeferredSectionSlot. Petits Prix reste dans ProductSections car il partage la grille produits. Le chunk galerie passe de 75.00 kB raw / 21.09 kB gzip a 35.07 kB raw / 11.66 kB gzip.'],
   ['P1.4 Animations par section', 'Fait hors produit mobile', 'Le slider avant/apres garde son useLayoutEffect local, Instagram garde observer/autoplay/drag local, et MarketplaceLayout ne porte plus GSAP/ScrollTrigger global.'],
   ['P2.1 publicCatalog cards', 'Fait', 'scope=cards, limit initial 36, projection courte, category/categories, cursor, nextCursor, ETag et catalogVersion implementes.'],
-  ['P2.2 Card/detail split', 'Fait', 'La carte charge un payload court et ensureProductDetail recharge le document complet au clic/deep link. Les editions admin bumpent public/meta.catalogVersion et purgent le cache session du navigateur courant.'],
+  ['P2.2 Card/detail split', 'Remplace par Next SSR', 'La carte pointe vers /produit/... et le document produit est resolu par la route Next native, plus par ensureProductDetail dans la SPA.'],
   ['P2.3 Metadata images', 'Fait nouveau upload + backfill sandbox', 'AdminForm stocke imageMetadata width/height/ratio/dominantColor/blurDataUrl pour les nouvelles images, publicCatalog projette la premiere metadata carte, et npm run backfill:product-metadata:dry audite les anciens produits. Sandbox: 35 produits publies complets, 0 pending, 0 failed.'],
-  ['P3.1 Staging mobile', 'Conserve', 'Le staging currentSrc/decode/double frame reste intact dans ArchitecturalProductDetail.jsx.'],
-  ['P3.2 Contrat mobile automatise', 'Fait garde-fou', 'npm run mobile:contract verifie alertemobile.md, invariant Router, #marketplaceGalleryScroll, data-detail-open, data-native-scroll-region, freeze CSS et staging image mobile.'],
+  ['P3.1 Detail mobile', 'Route Next native', 'Le detail mobile actif vit dans ProductDetailShellIsland.jsx; le detail SPA legacy a ete retire.'],
+  ['P3.2 Contrat mobile automatise', 'Fait garde-fou', 'npm run mobile:contract verifie alertemobile.md, invariant Router, #marketplaceGalleryScroll, data-detail-open, data-native-scroll-region, freeze CSS et absence du lazy overlay ProductDetail.'],
   ['P3.3 Gestures/state machine', 'Bloque', 'Pas de refactor detail gestures sans vrai telephone: alertemobile.md impose le test drift image/resume a 0 px.'],
   ['P3.4 Validation appareil', 'Bloque environnement', 'adb n est pas disponible dans cet environnement. Le test vrai telephone galerie -> produit -> Details -> retour -> second produit ne peut donc pas etre execute ici.'],
   ['Desktop first-scroll', 'Fait renforce', 'npm run perf:scroll mesure maintenant le chargement initial, le premier scroll molette, les long tasks et les layout shifts. Resultat preview desktop 1440x950 apres stabilisation des slots lazy: scroll max frame gap 16.8 ms, 0 frame >50 ms, load max frame gap 50 ms, 1 long task de 60 ms, CLS 0.0022.'],
@@ -340,13 +340,13 @@ const roadmapEvidenceRows = Object.freeze([
 
 const productDetailFlow = Object.freeze([
   ['1', 'Galerie mobile', 'La galerie vit dans .marketplace-gallery-shell avec #marketplaceGalleryScroll comme scroller interne. Le document ne porte pas le scroll principal.'],
-  ['2', 'Clic produit', 'openProductDetail freeze le scroller avant setView detail: scrollTop conserve, window.scrollY remis a 0, inertie native coupee.'],
-  ['3', 'Overlay detail', 'Le detail passe au-dessus, la galerie reste montee derriere avec data-detail-open=true et pointer-events none.'],
-  ['4', 'Image centrale', 'Le staging mobile charge srcSet/sizes hors ecran, lit currentSrc, decode, attend deux frames, puis expose un src final stable.'],
-  ['5', 'Gestes horizontaux', 'Swipe gauche/droite change d image. Swipe droit sur la premiere image devient un retour galerie par translation du conteneur.'],
-  ['6', 'Pull-down sortie', 'L image descend et fade, le resume descend moins, les miniatures remontent, le fond devient transparent, puis onBack restaure la galerie.'],
-  ['7', 'Bottom sheet Details', 'Swipe up depuis le resume ouvre le panneau detail; swipe down le ferme; la description interne intercepte son propre scroll.'],
-  ['8', 'Lightbox', 'Tap court ouvre la lightbox; pinch, pan, double tap et swipe image sont separes des gestes de sortie.'],
+  ['2', 'Clic produit', 'La carte est un lien vers /produit/...; elle ne monte plus de detail SPA dans Router.jsx.'],
+  ['3', 'Route Next', 'app/produit/[slugOrId]/page.jsx rend la fiche produit SSR et delegue seulement les medias/actions a des iles client.'],
+  ['4', 'Image centrale', 'ProductDetailShellIsland garde un cadre mobile stable avec product-detail-mobile-image-frame et product-detail-mobile-image-clip.'],
+  ['5', 'Gestes horizontaux', 'Swipe gauche/droite change d image dans l ile produit native.'],
+  ['6', 'Retour', 'Le retour produit se fait par navigation navigateur/route, plus par restauration d overlay SPA.'],
+  ['7', 'Panneau mobile', 'Le panneau mobile produit reste local a ProductDetailShellIsland.'],
+  ['8', 'Lightbox', 'Tap court ouvre la lightbox; pinch, pan, double tap et swipe image restent separes du shell galerie.'],
 ]);
 
 const guardrailRows = Object.freeze([
@@ -354,9 +354,9 @@ const guardrailRows = Object.freeze([
   ['Invariant Router', "Conserver `const shouldUseMobileGalleryScroll = view === 'gallery' || isGalleryDetailOverlay;`."],
   ['Contrat DOM mobile', 'Ne pas casser marketplace-gallery-shell, marketplace-gallery-scroll, #marketplaceGalleryScroll, data-detail-open, data-native-scroll-region.'],
   ['Contrat CSS', 'Conserver marketplace-mobile-scroll-lock, product-detail-scroll-lock et --marketplace-viewport-height.'],
-  ['Contrat image', 'Garder product-detail-mobile-image-frame et product-detail-mobile-image-clip comme wrappers de clipping.'],
-  ['Staging mobile', 'Ne pas simplifier le decode/currentSrc mobile pendant un refactor gestures.'],
-  ['Test obligatoire', 'Toute modif galerie/detail/mobile impose un test vrai telephone avec drift image/resume a 0px.'],
+  ['Contrat image', 'Garder product-detail-mobile-image-frame et product-detail-mobile-image-clip comme wrappers de clipping dans ProductDetailShellIsland.'],
+  ['Route produit', 'Ne pas reintroduire ProductDetail.jsx ou ArchitecturalProductDetail.jsx dans Router.jsx.'],
+  ['Test obligatoire', 'Toute modif galerie/mobile impose un test vrai telephone; toute modif route produit impose le gate produit direct.'],
 ]);
 
 const implementationResults = Object.freeze([
@@ -403,8 +403,8 @@ const implementationLedger = Object.freeze([
     detail: 'firebase/storage est sorti de src/kit/config/firebase.js vers src/kit/config/firebaseStorage.js. AdminForm et AdminHomepage gardent l upload, mais le chunk public Firebase ne transporte plus Storage.',
   },
   {
-    label: 'Detail produit retarde',
-    detail: 'Le chunk ProductDetail n est plus precharge 250 ms apres l arrivee galerie. Il reste charge immediatement au clic produit, avec un prechargement idle tardif apres 9 secondes.',
+    label: 'Detail produit Next natif',
+    detail: 'Le detail produit n est plus un chunk SPA charge depuis Router.jsx. Les cartes pointent vers /produit/... et la route Next rend le contenu SSR.',
   },
   {
     label: 'Images React',
@@ -412,7 +412,7 @@ const implementationLedger = Object.freeze([
   },
   {
     label: 'Data safety',
-    detail: 'Le chargement catalogue complet merge par id, et l ouverture produit/deep link recharge le document detail complet si la carte vient du payload card-only.',
+    detail: 'Le chargement catalogue complet merge par id. Le detail produit complet est lu par la route Next native, pas par un deep link SPA.',
   },
   {
     label: 'Payload cartes',
@@ -452,7 +452,7 @@ const implementationLedger = Object.freeze([
   },
   {
     label: 'P3 no-go',
-    detail: 'Le refactor gestures/state machine du detail produit reste volontairement non implemente: alertemobile.md impose un test vrai telephone, et adb est absent de cet environnement. Continuer sans ce test risquerait de reintroduire le drift mobile historique. npm run mobile:contract protege toutefois les invariants Router/CSS/staging contre les regressions statiques.',
+    detail: 'Le detail produit SPA legacy a ete retire. npm run mobile:contract protege toujours les invariants Router/CSS de galerie mobile et l absence du lazy overlay ProductDetail.',
   },
   {
     label: 'Sections basses',
@@ -488,11 +488,11 @@ const implementationLedger = Object.freeze([
   },
   {
     label: 'Budget automatise',
-    detail: 'scripts/check-performance-budget.cjs controle les tailles gzip des chunks critiques et verifie que ProductDetail, Firebase Storage, facture PDF, Stripe, categoryCatalogLoader et avis clients ne sont pas references par dist/index.html.',
+    detail: 'scripts/check-performance-budget.cjs controle les tailles gzip des chunks critiques et verifie que Firebase Storage, facture PDF, Stripe, categoryCatalogLoader et avis clients ne sont pas references par dist/index.html.',
   },
   {
     label: 'Contrat mobile automatise',
-    detail: 'scripts/check-mobile-marketplace-contract.cjs echoue si l invariant shouldUseMobileGalleryScroll, le shell/scroller galerie, data-detail-open, data-native-scroll-region, le freeze CSS ou le staging image mobile disparaissent.',
+    detail: 'scripts/check-mobile-marketplace-contract.cjs echoue si l invariant shouldUseMobileGalleryScroll, le shell/scroller galerie, data-detail-open, data-native-scroll-region, le freeze CSS disparait, ou si Router.jsx relazy-load ProductDetail.',
   },
   {
     label: 'Mesure reseau automatisee',
@@ -550,7 +550,7 @@ const v217DomainRows = Object.freeze([
   ['Cache/invalidation', 'TTL et session cache existaient sans version publique explicite.', 'public/meta.catalogVersion est bump par les actions admin; caches Function/navigateur utilisent cette version.'],
   ['Admin upload', 'Upload optimisait les images mais ne remplissait pas toutes les metadata utiles.', 'Pipeline ajoute width/height/ratio/dominantColor/blurDataUrl et script backfill pour l ancien stock.'],
   ['Encodage', 'Plusieurs textes visibles contenaient des mojibakes de type selection/pepites/decouvrez casses.', 'Scan src JS/JSX propre; DOM home et Avant/Apres sans marqueur mojibake.'],
-  ['Mobile detail', 'Le detail v21.7 reste la reference UX a ne pas casser.', 'Les invariants Router/shell/staging sont proteges par mobile:contract; le refactor gestures reste volontairement bloque sans vrai telephone.'],
+  ['Mobile detail', 'Le detail actif est maintenant la route produit Next native.', 'Les invariants Router/shell galerie et l absence du lazy overlay produit sont proteges par mobile:contract.'],
 ]);
 
 const v217MetricRows = Object.freeze([
@@ -568,7 +568,7 @@ const v217MetricRows = Object.freeze([
 const v217RiskRows = Object.freeze([
   ['Mieux', 'Le public est plus leger, les images sont plus previsibles, les sections sont compartimentees, les budgets sont automatises.', 'L infra est objectivement meilleure pour un site image-heavy.'],
   ['Pas magique', 'React reste une SPA: le premier rendu public depend encore du JS, de Firebase et du navigateur client.', 'Pour un prochain gros catalogue public, Next.js garderait un avantage structurel avec SSR/SSG et image optimizer.'],
-  ['Risque restant', 'Le detail mobile a beaucoup de gestes couples au scroll, donc P3 reste bloque sans test vrai telephone.', 'Ne pas refactorer ArchitecturalProductDetail/Router mobile sur simple build vert.'],
+  ['Risque restant', 'Le detail mobile a encore des gestes dans ProductDetailShellIsland, mais il ne passe plus par Router.jsx.', 'Ne pas reintroduire ArchitecturalProductDetail/ProductDetail pour corriger un comportement produit.'],
   ['Risque bundle', 'Les sections basses lourdes sont devenues des chunks reseau separes.', 'Le risque restant est ailleurs: GSAP reste un gros chunk partage, et Reassurance/ProductSections restent dans le chemin galerie initial pour preserver le premier ecran.'],
   ['Prochain gain', 'Ajouter RUM production: vrais INP, LCP, CLS, cache hit publicCatalog, decode images, device class.', 'Les mesures locales disent que la structure est meilleure; le RUM dira comment les vrais appareils reagissent.'],
 ]);
@@ -706,7 +706,7 @@ const sourceCards = Object.freeze([
   { label: 'Routeur', path: 'src/Router.jsx', state: 'lazy views + mobile shell critique' },
   { label: 'App shell', path: 'src/app.jsx', state: 'auth, catalogue, cache, URL, overlays' },
   { label: 'Images', path: 'src/utils/imageUtils.js', state: 'variants, srcset, prewarm, decode cache' },
-  { label: 'Detail', path: 'src/kit/marketplace/ArchitecturalProductDetail.jsx', state: 'staging mobile + gestures' },
+  { label: 'Detail', path: 'src/kit/marketplace/ProductDetailShellIsland.jsx', state: 'ile media produit Next native' },
   { label: 'Cards', path: 'src/kit/marketplace/components/ProductCard.jsx', state: 'memo + srcset + intent preload' },
   { label: 'Backend', path: 'functions/src/public/catalog.js', state: 'catalogue public cache' },
 ]);
@@ -1102,8 +1102,8 @@ export default function PerformanceArchitectureStudy({ onBack, embedded = false,
               <div>
                 <span>Invariant Seconde Vie</span>
                 <p>
-                  Conserver le lien galerie/detail: <code>view === 'gallery' || isGalleryDetailOverlay</code>. Une future
-                  architecture doit transformer cette logique en layout mobile dedie, pas en condition fragile dispersee.
+                  Conserver le shell galerie mobile: <code>view === 'gallery' || isGalleryDetailOverlay</code>. Le detail
+                  produit actif est une route Next native, pas un overlay SPA.
                 </p>
               </div>
             </div>
@@ -1117,9 +1117,9 @@ export default function PerformanceArchitectureStudy({ onBack, embedded = false,
         </section>
 
         <section className="sv-doc-section" id="detail-flow">
-          <SectionHead no="09" eyebrow="Produit mobile" title="Les effets type Instagram sont un systeme de couches.">
-            La page produit ne doit pas etre traitee comme une modale standard. Sur mobile, elle combine galerie figee,
-            overlay detail, staging image, bottom sheet, lightbox et sortie animee.
+          <SectionHead no="09" eyebrow="Produit mobile" title="La route produit est sortie du shell SPA.">
+            La page produit ne doit pas etre traitee comme une modale standard. Sur mobile, elle combine SSR Next,
+            ile media, panneau mobile, lightbox et navigation navigateur.
           </SectionHead>
           <ProtocolTable rows={productDetailFlow} />
         </section>
