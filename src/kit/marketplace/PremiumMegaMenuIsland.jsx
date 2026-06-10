@@ -284,11 +284,11 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
 
         {isPanelVisible ? (
           <div
-            className="absolute left-0 top-full z-50 h-2 w-full pointer-events-auto"
+            className="absolute left-0 top-full z-50 h-0 w-full pointer-events-auto"
             onMouseEnter={clearMenuTimers}
           >
             <div
-              className="premium-mega-menu-positioner absolute top-2 pointer-events-auto"
+              className="premium-mega-menu-positioner absolute top-0 pointer-events-auto"
               style={{ transform: `translate3d(${dropdownLeft}px, 0, 0)`, width: activeItem.dropdownWidth || 760 }}
             >
               <div

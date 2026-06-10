@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
-import { ArrowUpRight, ChevronLeft, ChevronRight, Heart, Instagram, Sparkles } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowUpRight, AtSign, Bookmark, ChevronLeft, ChevronRight, Heart, Instagram, MessageCircle, Send, Sparkles } from 'lucide-react';
 
 const INSTAGRAM_URL = 'https://www.instagram.com/secondevie_anais';
 const INSTAGRAM_FOLLOWERS_TARGET = 38.9;
@@ -22,6 +22,149 @@ const DESKTOP_INSTA_POSITIONS = {
   right: { transform: 'translateX(45%) scale(0.92)', opacity: 0.58, zIndex: 1, pointerEvents: 'none' },
   farRight: { transform: 'translateX(148%) scale(0.88)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
 };
+
+const FLOATING_INSTAGRAM_TOKENS = [
+  {
+    id: 'gram',
+    label: 'Instagram',
+    Icon: Instagram,
+    className: 'instagram-floating-token--gram',
+    style: {
+      '--float-x': '6%',
+      '--float-y': '19%',
+      '--float-size': '140px',
+      '--float-delay': '80ms',
+      '--float-enter-duration': '680ms',
+      '--float-arrive-x': '-10px',
+      '--float-arrive-y': '54px',
+      '--float-drift-x': '13px',
+      '--float-drift-y': '-18px',
+      '--float-rotate-start': '-12deg',
+      '--float-rotate-end': '9deg',
+      '--float-duration': '7.4s',
+    },
+  },
+  {
+    id: 'heart',
+    label: 'Coeur',
+    Icon: Heart,
+    className: 'instagram-floating-token--heart',
+    style: {
+      '--float-x': '16%',
+      '--float-y': '63%',
+      '--float-size': '108px',
+      '--float-delay': '520ms',
+      '--float-enter-duration': '600ms',
+      '--float-arrive-x': '-12px',
+      '--float-arrive-y': '48px',
+      '--float-drift-x': '-10px',
+      '--float-drift-y': '-15px',
+      '--float-rotate-start': '10deg',
+      '--float-rotate-end': '-8deg',
+      '--float-duration': '8.2s',
+    },
+  },
+  {
+    id: 'spark',
+    label: 'Etincelle',
+    Icon: Sparkles,
+    className: 'instagram-floating-token--spark',
+    style: {
+      '--float-x': '27%',
+      '--float-y': '24%',
+      '--float-size': '64px',
+      '--float-delay': '260ms',
+      '--float-enter-duration': '540ms',
+      '--float-arrive-x': '8px',
+      '--float-arrive-y': '42px',
+      '--float-drift-x': '8px',
+      '--float-drift-y': '-13px',
+      '--float-rotate-start': '-20deg',
+      '--float-rotate-end': '14deg',
+      '--float-duration': '6.9s',
+    },
+  },
+  {
+    id: 'message',
+    label: 'Commentaire',
+    Icon: MessageCircle,
+    className: 'instagram-floating-token--message',
+    style: {
+      '--float-x': '75%',
+      '--float-y': '28%',
+      '--float-size': '132px',
+      '--float-delay': '680ms',
+      '--float-enter-duration': '660ms',
+      '--float-arrive-x': '12px',
+      '--float-arrive-y': '50px',
+      '--float-drift-x': '-12px',
+      '--float-drift-y': '-17px',
+      '--float-rotate-start': '14deg',
+      '--float-rotate-end': '-10deg',
+      '--float-duration': '7.8s',
+    },
+  },
+  {
+    id: 'send',
+    label: 'Partage',
+    Icon: Send,
+    className: 'instagram-floating-token--send',
+    style: {
+      '--float-x': '90%',
+      '--float-y': '18%',
+      '--float-size': '52px',
+      '--float-delay': '380ms',
+      '--float-enter-duration': '500ms',
+      '--float-arrive-x': '8px',
+      '--float-arrive-y': '34px',
+      '--float-drift-x': '-7px',
+      '--float-drift-y': '-11px',
+      '--float-rotate-start': '-18deg',
+      '--float-rotate-end': '11deg',
+      '--float-duration': '6.4s',
+    },
+  },
+  {
+    id: 'save',
+    label: 'Favori',
+    Icon: Bookmark,
+    className: 'instagram-floating-token--save',
+    style: {
+      '--float-x': '88%',
+      '--float-y': '61%',
+      '--float-size': '98px',
+      '--float-delay': '820ms',
+      '--float-enter-duration': '620ms',
+      '--float-arrive-x': '14px',
+      '--float-arrive-y': '52px',
+      '--float-drift-x': '11px',
+      '--float-drift-y': '-16px',
+      '--float-rotate-start': '18deg',
+      '--float-rotate-end': '-9deg',
+      '--float-duration': '8.6s',
+    },
+  },
+  {
+    id: 'at',
+    label: 'Mention',
+    Icon: AtSign,
+    className: 'instagram-floating-token--at',
+    style: {
+      '--float-x': '82%',
+      '--float-y': '73%',
+      '--float-size': '50px',
+      '--float-delay': '460ms',
+      '--float-enter-duration': '520ms',
+      '--float-arrive-x': '6px',
+      '--float-arrive-y': '40px',
+      '--float-drift-x': '-8px',
+      '--float-drift-y': '-10px',
+      '--float-rotate-start': '-8deg',
+      '--float-rotate-end': '13deg',
+      '--float-duration': '7.1s',
+    },
+  },
+];
 
 const normalizePosts = (posts) => {
   const source = Array.isArray(posts) ? posts.filter(Boolean) : [];
@@ -49,10 +192,52 @@ const InstagramFollowerCount = ({ darkMode, compact = false, className = '' }) =
   </div>
 );
 
+const InstagramFloatingTokens = ({ active = false, darkMode = false } = {}) => (
+  <div
+    className={`instagram-floating-field ${darkMode ? 'instagram-floating-field--dark' : ''}`}
+    data-floating-ready={active ? 'true' : 'false'}
+    aria-hidden="true"
+  >
+    {FLOATING_INSTAGRAM_TOKENS.map(({ id, label, Icon, className, style }) => (
+      <span key={id} className={`instagram-floating-token ${className}`} style={style}>
+        <span className="instagram-floating-token__shell">
+          <span className="instagram-floating-token__shine" />
+          <Icon className="instagram-floating-token__icon" strokeWidth={1.8} aria-label={label} />
+        </span>
+      </span>
+    ))}
+  </div>
+);
+
 export default function InstagramCarouselIsland({ darkMode = false, posts = [] } = {}) {
   const dynamicInsta = useMemo(() => normalizePosts(posts), [posts]);
   const [activeInstaIndex, setActiveInstaIndex] = useState(1);
+  const [floatingTokensReady, setFloatingTokensReady] = useState(false);
+  const sectionRef = useRef(null);
   const dragStartRef = useRef(null);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section || floatingTokensReady) return undefined;
+    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion || !('IntersectionObserver' in window)) {
+      setFloatingTokensReady(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setFloatingTokensReady(true);
+        observer.disconnect();
+      },
+      { rootMargin: '-18% 0px -22% 0px', threshold: 0.18 },
+    );
+
+    observer.observe(section);
+
+    return () => observer.disconnect();
+  }, [floatingTokensReady]);
 
   if (!dynamicInsta.length) return null;
 
@@ -121,8 +306,9 @@ export default function InstagramCarouselIsland({ darkMode = false, posts = [] }
   };
 
   return (
-    <section className="relative overflow-hidden px-0 pb-[86px] pt-[48px] md:px-6 md:py-[72px] lg:px-[5vw] lg:py-[78px] xl:py-[86px]">
-      <div className="lg:hidden">
+    <section ref={sectionRef} className="relative isolate overflow-hidden px-0 pb-[86px] pt-[48px] md:px-6 md:py-[72px] lg:px-[5vw] lg:py-[78px] xl:py-[86px]">
+      <InstagramFloatingTokens active={floatingTokensReady} darkMode={darkMode} />
+      <div className="relative z-10 lg:hidden">
         <div className="mx-auto max-w-[430px] px-5 text-center">
           <div className="mb-8 flex items-center justify-center gap-3">
             <span className="h-px w-8 bg-[#A68A64]" />
@@ -165,7 +351,7 @@ export default function InstagramCarouselIsland({ darkMode = false, posts = [] }
           </p>
         </div>
       </div>
-      <div className="mx-auto hidden max-w-[1280px] lg:block">
+      <div className="relative z-10 mx-auto hidden max-w-[1280px] lg:block">
         <div className="mb-10 flex flex-col items-center text-center xl:mb-12">
           <div className="mb-6 flex items-center gap-3">
             <div className="h-px w-8 bg-[#A68A64]" />
