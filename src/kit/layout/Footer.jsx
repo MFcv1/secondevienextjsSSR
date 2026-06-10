@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { getDb, loadFirestoreModule } from '../config/firebaseLazy';
 import KIT_CONFIG from '../config/constants';
+import { getCategoryUrl } from '../../utils/slug';
 
 const CONTACT_INFO_CACHE_KEY = 'secondevie:contact-info:v1';
 const TRANSPARENT_PIXEL_SRC = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
@@ -98,6 +99,42 @@ const helpLinks = [
     'Politique de confidentialité',
     'CGV',
 ];
+
+const galleryLinkTargets = {
+    [galleryLinks[0]]: '/galerie#gallery-pieces',
+    [galleryLinks[1]]: getCategoryUrl('meubles'),
+    [galleryLinks[2]]: getCategoryUrl('assises'),
+    [galleryLinks[3]]: getCategoryUrl('eclairage'),
+    [galleryLinks[4]]: getCategoryUrl('decorations'),
+    [galleryLinks[5]]: '/galerie#gallery-small-prices',
+};
+
+const aboutLinkTargets = {
+    [aboutLinks[0]]: '/a-propos',
+    [aboutLinks[1]]: '/a-propos#valeurs',
+    [aboutLinks[2]]: '/a-propos#atelier',
+    [aboutLinks[3]]: '/devis',
+    [aboutLinks[4]]: '/#faq',
+    [aboutLinks[5]]: '/devis',
+};
+
+const accountLinkTargets = {
+    [accountLinks[0]]: '/admin',
+    [accountLinks[1]]: '/wishlist',
+    [accountLinks[2]]: '/mes-commandes',
+    [accountLinks[3]]: '/wishlist',
+    [accountLinks[4]]: '/admin',
+    [accountLinks[5]]: '/devis',
+};
+
+const helpLinkTargets = {
+    [helpLinks[0]]: '/devis',
+    [helpLinks[1]]: '/devis',
+    [helpLinks[2]]: '/checkout',
+    [helpLinks[3]]: '/devis',
+    [helpLinks[4]]: '/devis',
+    [helpLinks[5]]: '/devis',
+};
 
 const paymentChipVariants = {
     light: 'border-stone-200 bg-white text-stone-950 dark:border-[#3a332b] dark:bg-white dark:text-stone-950',
@@ -460,7 +497,7 @@ const Footer = ({ darkMode, contactInfo: contactInfoOverride }) => {
                                 <a href={contactInfo.facebook || '#'} target={contactInfo.facebook ? '_blank' : undefined} rel={contactInfo.facebook ? 'noopener noreferrer' : undefined} aria-label="Facebook" className={`flex h-11 w-11 items-center justify-center rounded-full transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}>
                                     <Facebook size={19} />
                                 </a>
-                                <a href="#gallery" aria-label="Pinterest" className={`flex h-11 w-11 items-center justify-center rounded-full text-lg font-semibold transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}>
+                                <a href="/galerie#gallery-pieces" aria-label="Pinterest" className={`flex h-11 w-11 items-center justify-center rounded-full text-lg font-semibold transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}>
                                     p
                                 </a>
                                 <a href={contactInfo.tiktok || '#'} target={contactInfo.tiktok ? '_blank' : undefined} rel={contactInfo.tiktok ? 'noopener noreferrer' : undefined} aria-label="TikTok" className={`flex h-11 w-11 items-center justify-center rounded-full text-xl font-semibold transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}>
@@ -473,7 +510,7 @@ const Footer = ({ darkMode, contactInfo: contactInfoOverride }) => {
                             <SectionTitle darkMode={darkMode}>La Galerie</SectionTitle>
                             <div className="space-y-5 2xl:space-y-6">
                                 {galleryLinks.map((link, index) => (
-                                    <FooterLink key={link} href={index < 5 ? '#gallery' : '#'} showArrow={index < 6} highlight={link === 'Petits prix'} darkMode={darkMode}>
+                                    <FooterLink key={link} href={galleryLinkTargets[link]} showArrow={index < 6} highlight={link === 'Petits prix'} darkMode={darkMode}>
                                         {link}
                                     </FooterLink>
                                 ))}
@@ -484,7 +521,7 @@ const Footer = ({ darkMode, contactInfo: contactInfoOverride }) => {
                             <SectionTitle darkMode={darkMode}>À propos</SectionTitle>
                             <div className="space-y-5 2xl:space-y-6">
                                 {aboutLinks.map(link => (
-                                    <FooterLink key={link} href="#" darkMode={darkMode}>{link}</FooterLink>
+                                    <FooterLink key={link} href={aboutLinkTargets[link]} darkMode={darkMode}>{link}</FooterLink>
                                 ))}
                             </div>
                         </nav>
@@ -493,7 +530,7 @@ const Footer = ({ darkMode, contactInfo: contactInfoOverride }) => {
                             <SectionTitle darkMode={darkMode}>Mon compte</SectionTitle>
                             <div className="space-y-5 2xl:space-y-6">
                                 {accountLinks.map(link => (
-                                    <FooterLink key={link} href={link === 'Se connecter' ? '#login' : '#'} darkMode={darkMode}>{link}</FooterLink>
+                                    <FooterLink key={link} href={accountLinkTargets[link]} darkMode={darkMode}>{link}</FooterLink>
                                 ))}
                             </div>
                         </nav>
@@ -502,7 +539,7 @@ const Footer = ({ darkMode, contactInfo: contactInfoOverride }) => {
                             <SectionTitle darkMode={darkMode}>Besoin d'aide ?</SectionTitle>
                             <div className="space-y-5 2xl:space-y-6">
                                 {helpLinks.map(link => (
-                                    <FooterLink key={link} href="#" darkMode={darkMode}>{link}</FooterLink>
+                                    <FooterLink key={link} href={helpLinkTargets[link]} darkMode={darkMode}>{link}</FooterLink>
                                 ))}
                             </div>
                         </nav>
@@ -618,10 +655,10 @@ const Footer = ({ darkMode, contactInfo: contactInfoOverride }) => {
                     <div className="flex flex-col gap-6 text-sm lg:flex-row lg:items-center lg:justify-between">
                         <p className={darkMode ? 'text-stone-500' : 'text-stone-600'}>© {copyright}</p>
                         <div className={`flex flex-wrap gap-x-7 gap-y-3 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
-                            <a href="#" className="hover:text-orange-500">Mentions légales</a>
-                            <a href="#" className="hover:text-orange-500">CGV</a>
-                            <a href="#" className="hover:text-orange-500">Politique de confidentialité</a>
-                            <a href="#" className="hover:text-orange-500">Cookies</a>
+                            <a href="/devis" className="hover:text-orange-500">Mentions légales</a>
+                            <a href="/devis" className="hover:text-orange-500">CGV</a>
+                            <a href="/devis" className="hover:text-orange-500">Politique de confidentialité</a>
+                            <a href="/devis" className="hover:text-orange-500">Cookies</a>
                         </div>
                         <button
                             type="button"

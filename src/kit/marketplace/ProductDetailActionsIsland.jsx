@@ -19,6 +19,7 @@ export default function ProductDetailActionsIsland({
   productId,
   productName,
   priceLabel,
+  cartItem,
   mobile = false,
 }) {
   const [isInCart, setIsInCart] = useState(false);
@@ -41,14 +42,14 @@ export default function ProductDetailActionsIsland({
 
   const handleCart = useCallback(() => {
     if (isInCart) {
-      window.location.href = '/checkout';
+      window.dispatchEvent(new CustomEvent('sv:open-cart'));
       return;
     }
 
     setIsInCart(true);
     try {
       const event = new CustomEvent('sv:product-added', {
-        detail: { id: productId, name: productName },
+        detail: cartItem || { originalId: productId, id: productId, name: productName, price: 0 },
       });
       window.dispatchEvent(event);
     } catch {

@@ -10,12 +10,14 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 ```text
 .
 |-- AGENTS.md : consignes agents et rapports; CLAUDE.md / GEMINI.md : consignes agents
+|-- context.md : synthese reutilisable du contexte Next SSR, restauration UI legacy et consignes anti-SPA
 |-- alertemobile.md : invariant mobile marketplace critique
 |-- nextjsssr.md : agent/playbook audit legacy SPA et migration Next SSR publique
 |-- .agents/skills/nextjsssr : skill Codex local pour appliquer nextjsssr.md
 |-- package*.json, next.config.mjs, eslint.config.mjs, jsconfig.json, tailwind.config.js, postcss.config.js
+|-- middleware.js : redirections Next ciblees, dont compatibilite `/?page=gallery` vers `/galerie`
 |-- apphosting.yaml, .firebaserc : configuration Firebase App Hosting sandbox
-|-- app : routes Next App Router, home landing SEO SSR + launcher galerie, SSR produit/categorie, loading/not-found/error, sitemap, robots et shells client
+|-- app : routes Next App Router, home landing SEO SSR + galerie Next, SSR produit/categorie, tunnels noindex en iles client dediees, loading/not-found/error, sitemap et robots
 |-- tests, playwright.config.mjs : tests E2E et validations Playwright
 |-- _DOCS : documentation maintenance Next/dependances
 |-- firebase.json, .firebaseignore, firestore.rules, firestore.indexes.json, storage.rules
@@ -23,19 +25,19 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- .env.sandbox.example / .env.production.example : modeles publics; vrais .env locaux ignores par Git
 |-- deploy : dashboard npm de deploiement Firebase/App Hosting sandbox
 |-- src
-|   |-- Router.jsx, app.jsx, main.jsx, index.css
+|   |-- index.css
 |   |-- kit/admin : back-office, analytics, commandes, SEO, users, exports CSV, docs/etudes techniques admin
 |   |-- kit/commerce : panier, checkout, login, commandes client
-|   |-- kit/marketplace : galerie, SEO visible, pages categorie/produit, ilots route produit Next, layout, wishlist, devis
+|   |-- kit/marketplace : galerie serveur, SEO visible, pages categorie/produit, ilots produit, panier/cartes, devis ServerView/FormIsland, wishlist
 |   |-- kit/layout, kit/shared, kit/ui, kit/hooks, kit/contexts, kit/config (dont firebaseEnv/firebaseCore/firebaseLazy)
-|   |-- vitrine : HomeView et sections de la page A propos (ancienne vitrine)
+|   |-- lib : helpers serveur produits/env/theme et SEO structure
 |   `-- assets, utils : images source et helpers
 |-- functions
 |   |-- index.js, helpers : Firebase Functions entrypoint/config/security
 |   `-- src : analytics, auth, commerce, email, maintenance, public, seo, triggers
 |-- public : favicons, manifest, images, video, rapport maintenance statique
 |-- scripts : env bridge, SSR/mobile checks, maintenance audit, budget perf Next, perf/architecture compare, audit scroll galerie, backfills/audits Storage/images et tooling safe
-|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_SEO_ROADMAP.md, NEXTJS_HOME_LANDING_ROADMAP.md, NEXTJS_SSR_AUDIT_REPORT.md, NEXTJS_IMAGE_PIPELINE_AUDIT.md, PRODUCT_DETAIL_IMAGE_UX_AUDIT.md, PRODUCT_DETAIL_IMAGE_UX_SESSION_REPORT.md, PRODUCT_DETAIL_NEXT_NATIVE_SESSION_REPORT.md, PRODUCT_PAGE_NEXT_MIGRATION_REPORT.md, SEO_AND_NEXT_ARCHITECTURE_AUDIT_2026-05-28.md, GALLERY_COLD_SCROLL_OPTIMIZATION_REPORT.md, GALLERY_SCROLL_LAG_AUDIT.md, GALLERY_SCROLL_NEXT_ROADMAP.md
+|-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJSSSR_FULL_NEXT_FINAL_PROMPT_2026-06-09.md et autres rapports/roadmaps Next SSR, SEO, images, galerie et produit
 |-- imagehero, pageUI : references visuelles et notes UI
 `-- .next, dist, node_modules, logs, .firebase : generes, hors carte
 ```
@@ -58,13 +60,11 @@ Ne pas optimiser au hasard: chaque changement doit etre mesure avec les scripts 
 
 ## ALERTE MOBILE - A LIRE AVANT TOUTE MODIF MARKETPLACE MOBILE
 
-Avant toute modification qui touche `src/Router.jsx`, la galerie, une page produit, le detail produit, le scroll mobile, `--marketplace-viewport-height`, `marketplace-gallery-shell`, `marketplace-gallery-scroll`, le scroll natif ou les handlers touch mobile, lire d'abord `alertemobile.md`.
+Avant toute modification qui touche la galerie, `src/kit/marketplace/GalleryServerView.jsx`, `app/GalleryMobileShellIsland.jsx`, une page produit, le detail produit, le scroll mobile, `--marketplace-viewport-height`, `marketplace-gallery-shell`, `marketplace-gallery-scroll`, le scroll natif ou les handlers touch mobile, lire d'abord `alertemobile.md`.
 
-Invariant critique a conserver dans `src/Router.jsx` :
+Invariant critique historique remplace par le contrat Next galerie :
 
-```jsx
-const shouldUseMobileGalleryScroll = view === 'gallery' || isGalleryDetailOverlay;
-```
+`src/kit/marketplace/GalleryServerView.jsx` doit rendre `marketplace-gallery-shell`, `marketplace-gallery-scroll` et `#marketplaceGalleryScroll`; `app/GalleryMobileShellIsland.jsx` doit garder `data-native-scroll-region` en mobile, le scroll lock `marketplace-mobile-scroll-lock` et les handlers touch/pull-refresh tant que la galerie mobile utilise ce shell.
 
 Ne jamais remplacer cette logique par `isGalleryDetailOverlay` seul. La galerie mobile et le detail produit partagent le shell fixe, le scroll lock et la hauteur viewport. Si on casse ce lien, l'image et le bloc bas du detail produit peuvent se decaler sur vrai mobile.
 
@@ -379,7 +379,7 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 - Correctif sortie galerie : `ProductCard` memorise la cible de retour (`secondevie:product-return:v1`) aussi sur tap mobile. `ProductDetailShellIsland` ignore les anciennes cibles `/produit/...`, utilise une navigation ferme vers la galerie apres l'animation de sortie, et garde un timer fallback pour eviter qu'une transition interrompue bloque la fiche produit.
 - `HomeGalleryLauncher` ouvre automatiquement l'overlay galerie quand l'URL arrive avec `?page=gallery`, `#gallery` ou le flag session `secondevie:open-gallery-on-arrival`. La home reste statique SEO : `app/page.jsx` ne lit pas `searchParams`; un bootstrap inline pose seulement `data-sv-force-gallery-entry="true"` avant peinture pour masquer la landing SSR pendant que la galerie se monte.
 - Le bouton de sortie desktop de `ProductDetailShellIsland` doit rester dans la scene image, avant la colonne infos et le rail miniatures : `right: calc(clamp(450px, 26vw, 500px) + 110px + 2rem)` et `top: clamp(5.5rem, 12vh, 8rem)`. Cela evite que le bouton tombe sur le titre produit.
-- `src/kit/marketplace/ProductDetailActionsIsland.jsx` isole les actions interactives panier/favori. Le favori reste local pour la visite publique directe, et le panier est pousse vers `/checkout` sans remonter toute la SPA produit.
+- `src/kit/marketplace/ProductDetailActionsIsland.jsx` isole les actions interactives panier/favori. Le favori reste local pour la visite publique directe, et le panier passe par le panneau `CartSidebar` avant `/checkout`, sans remonter toute la SPA produit.
 - Les cartes produit publiques ne doivent plus intercepter le clic pour monter l'ancien overlay detail. `ProductCard`, les lignes mobile categorie et les cartes wishlist suivent maintenant directement leur lien `/produit/...`; le clic depuis galerie et le refresh dur arrivent donc sur la meme route Next native.
 - `src/kit/marketplace/ProductPageExperience.jsx` et `src/kit/marketplace/ProductDetailRouteExperience.jsx` ont ete supprimes. `ArchitecturalProductDetail.jsx` reste volontairement dans le code pour le detail ouvert depuis la galerie legacy, tant que la galerie n'a pas encore ete migree en route Next native.
 - `scripts/audit-product-page-direct.mjs` verifie la route produit native directe : presence du detail visible, absence du marqueur SPA legacy, absence de shell galerie, absence d'assets home/galerie, absence de preview SSR alternative, image display chargee et image `full` seulement apres intention de zoom.

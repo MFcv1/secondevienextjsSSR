@@ -257,7 +257,7 @@ async def measure_route(playwright, base_url, path, wait_ms):
         "productDetailRequests": len(find("ProductDetail-")),
         "firebaseStorageRequests": len(find("firebase-storage-")),
         "categoryCatalogLoaderRequests": len(find("categoryCatalogLoader-")),
-        "categoryPageRequests": len(find("CategoryPage-")),
+        "legacyCategoryChunkRequests": len(find("category-page-legacy-chunk")),
         "testimonialsRequests": len(find("CustomerTestimonialsCarousel-")),
         "invoiceRequests": len(find("generateInvoice-")),
         "stripeRequests": len(find("CheckoutStripeModal-")),

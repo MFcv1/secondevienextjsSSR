@@ -69,6 +69,17 @@ const fontVariables = [
   playfair.variable,
 ].join(' ');
 
+const themeBootScript = `
+try {
+  var stored = window.localStorage && window.localStorage.getItem('darkMode');
+  var match = document.cookie.match(/(?:^|; )darkMode=([^;]*)/);
+  var cookieValue = match ? decodeURIComponent(match[1]) : '';
+  var isDark = (stored || cookieValue) === 'true';
+  document.documentElement.classList.toggle('dark', isDark);
+  document.documentElement.dataset.svTheme = isDark ? 'dark' : 'light';
+} catch (error) {}
+`;
+
 export const metadata = {
   metadataBase: new URL(siteUrl),
   title: {
@@ -100,6 +111,7 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="" />
         <link rel="preconnect" href="https://firestore.googleapis.com" crossOrigin="" />
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
       <body>{children}</body>
     </html>

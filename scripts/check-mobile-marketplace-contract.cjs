@@ -3,7 +3,8 @@ const path = require('node:path');
 
 const root = process.cwd();
 const files = {
-  router: path.join(root, 'src', 'Router.jsx'),
+  galleryServer: path.join(root, 'src', 'kit', 'marketplace', 'GalleryServerView.jsx'),
+  galleryMobile: path.join(root, 'app', 'GalleryMobileShellIsland.jsx'),
   css: path.join(root, 'src', 'index.css'),
   alert: path.join(root, 'alertemobile.md'),
 };
@@ -12,33 +13,33 @@ const read = (file) => fs.readFileSync(file, 'utf8');
 
 const checks = [
   {
-    label: 'alertemobile.md exists and documents the invariant',
+    label: 'alertemobile.md documents the Next gallery mobile contract',
     file: files.alert,
-    pattern: /shouldUseMobileGalleryScroll\s*=\s*view\s*===\s*'gallery'\s*\|\|\s*isGalleryDetailOverlay/,
+    pattern: /GalleryMobileShellIsland[\s\S]*GalleryServerView/,
   },
   {
-    label: 'Router keeps the gallery mobile fixed shell contract',
-    file: files.router,
-    pattern: /const\s+shouldUseMobileGalleryScroll\s*=\s*view\s*===\s*'gallery'\s*\|\|\s*isGalleryDetailOverlay\s*;/,
+    label: 'Next gallery mobile island keeps the mobile fixed shell contract',
+    file: files.galleryMobile,
+    pattern: /marketplace-mobile-scroll-lock/,
   },
   {
-    label: 'Router still renders the fixed gallery shell',
-    file: files.router,
+    label: 'Next gallery server view renders the fixed gallery shell',
+    file: files.galleryServer,
     pattern: /marketplace-gallery-shell/,
   },
   {
-    label: 'Router still exposes #marketplaceGalleryScroll',
-    file: files.router,
+    label: 'Next gallery server view exposes #marketplaceGalleryScroll',
+    file: files.galleryServer,
     pattern: /id="marketplaceGalleryScroll"/,
   },
   {
-    label: 'Router still marks detail-open state on the gallery scroller',
-    file: files.router,
-    pattern: /data-detail-open=\{isGalleryDetailOverlay\s*\?\s*'true'\s*:\s*'false'\}/,
+    label: 'Next gallery server view marks detail-open state on the gallery scroller',
+    file: files.galleryServer,
+    pattern: /data-detail-open="false"/,
   },
   {
-    label: 'Router still marks the gallery as a native isolated scroll region',
-    file: files.router,
+    label: 'Next gallery mobile island marks the gallery as a native isolated scroll region',
+    file: files.galleryMobile,
     pattern: /data-native-scroll-region/,
   },
   {
@@ -52,8 +53,14 @@ const checks = [
     pattern: /\.marketplace-gallery-scroll\[data-detail-open="true"\][\s\S]*?-webkit-overflow-scrolling:\s*auto/,
   },
   {
-    label: 'Router no longer lazy-loads the legacy product detail overlay',
-    file: files.router,
+    label: 'Next gallery server view no longer lazy-loads the legacy product detail overlay',
+    file: files.galleryServer,
+    pattern: /ProductDetail/,
+    forbidden: true,
+  },
+  {
+    label: 'Next gallery mobile island no longer lazy-loads the legacy product detail overlay',
+    file: files.galleryMobile,
     pattern: /ProductDetail/,
     forbidden: true,
   },

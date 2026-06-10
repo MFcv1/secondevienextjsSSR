@@ -1,5 +1,6 @@
 import { publicEnv } from '../../src/lib/server/env';
-import QuoteRequestView from '../../src/kit/marketplace/QuoteRequestView';
+import { getServerDarkMode } from '../../src/lib/server/theme';
+import QuoteRequestServerView from '../../src/kit/marketplace/QuoteRequestServerView';
 
 const siteRoot = publicEnv.siteUrl.replace(/\/$/, '');
 const quoteUrl = `${siteRoot}/devis`;
@@ -48,7 +49,9 @@ const quoteJsonLd = {
   areaServed: 'Marseille et France selon les pieces'
 };
 
-export default function QuotePage() {
+export default async function QuotePage() {
+  const darkMode = await getServerDarkMode();
+
   return (
     <>
       <script
@@ -56,7 +59,7 @@ export default function QuotePage() {
         dangerouslySetInnerHTML={{ __html: safeJsonLd(quoteJsonLd) }}
       />
       <script dangerouslySetInnerHTML={{ __html: quoteScrollResetScript }} />
-      <QuoteRequestView />
+      <QuoteRequestServerView darkMode={darkMode} />
     </>
   );
 }

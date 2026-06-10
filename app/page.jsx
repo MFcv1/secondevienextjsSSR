@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import HomeGalleryLauncher from './HomeGalleryLauncher';
+import HomeMotionIsland from './HomeMotionIsland';
 import { getPublicCatalog, getPublicCatalogFallback } from '../src/lib/server/products';
 import { publicEnv } from '../src/lib/server/env';
 import KIT_CONFIG from '../src/kit/config/constants';
@@ -102,19 +102,6 @@ const faqItems = [
 
 const safeJsonLd = (data) => JSON.stringify(data).replace(/</g, '\\u003c');
 const homeDescription = publicEnv.siteDescription || 'Meubles anciens restaurés, buffets, armoires, commodes et miroirs sélectionnés par Seconde Vie autour de Marseille.';
-const galleryEntryBootstrapScript = `
-(function () {
-  try {
-    var params = new URLSearchParams(window.location.search);
-    var shouldOpenGallery = params.get('page') === 'gallery'
-      || window.location.hash === '#gallery'
-      || window.sessionStorage.getItem('secondevie:open-gallery-on-arrival') === 'true';
-    if (shouldOpenGallery) {
-      document.documentElement.setAttribute('data-sv-force-gallery-entry', 'true');
-    }
-  } catch (error) {}
-})();
-`;
 
 export const metadata = {
   title: 'Mobilier ancien restauré à Marseille',
@@ -371,8 +358,7 @@ export default async function Page() {
 
   return (
     <>
-      <script dangerouslySetInnerHTML={{ __html: galleryEntryBootstrapScript }} />
-      <HomeGalleryLauncher />
+      <HomeMotionIsland />
       <main className="sv-home" data-public-ssr-fallback data-ssr-home>
         <header className="sv-home-nav">
           <nav className="sv-home-nav__inner" aria-label="Navigation accueil">
@@ -388,10 +374,10 @@ export default async function Page() {
               <a href="#atelier">Atelier</a>
               <a href="#faq">FAQ</a>
             </div>
-            <button type="button" data-gallery-launcher className="sv-home-button sv-home-button--light">
+            <Link href="/galerie" prefetch={false} className="sv-home-button sv-home-button--light">
               Galerie
               <span aria-hidden="true">→</span>
-            </button>
+            </Link>
           </nav>
         </header>
 
@@ -418,10 +404,10 @@ export default async function Page() {
                 puis présentés comme des pièces uniques prêtes à rejoindre un intérieur actuel.
               </p>
               <div className="sv-home-actions">
-                <button type="button" data-gallery-launcher className="sv-home-button sv-home-button--cream">
+                <Link href="/galerie" prefetch={false} className="sv-home-button sv-home-button--cream">
                   Entrer dans la galerie
                   <span aria-hidden="true">→</span>
-                </button>
+                </Link>
                 <a href="#selection" className="sv-home-link-button">Voir les pièces</a>
               </div>
             </div>
@@ -480,10 +466,10 @@ export default async function Page() {
               <p className="sv-home-kicker">Dernières pièces</p>
               <h2>Quatre pièces en vue, choisies pour leur caractère.</h2>
             </div>
-            <button type="button" data-gallery-launcher className="sv-home-button sv-home-button--dark">
+            <Link href="/galerie" prefetch={false} className="sv-home-button sv-home-button--dark">
               Tout voir
               <span aria-hidden="true">→</span>
-            </button>
+            </Link>
           </div>
 
           {featuredProducts.length ? (
@@ -608,10 +594,10 @@ export default async function Page() {
             <p className="sv-home-kicker">Entrée galerie</p>
             <h2>Voir les pièces disponibles maintenant.</h2>
           </div>
-          <button type="button" data-gallery-launcher className="sv-home-button sv-home-button--cream">
+          <Link href="/galerie" prefetch={false} className="sv-home-button sv-home-button--cream">
             Entrer dans la galerie
             <span aria-hidden="true">→</span>
-          </button>
+          </Link>
         </section>
 
         <footer className="sv-home-footer">

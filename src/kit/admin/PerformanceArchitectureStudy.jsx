@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   Boxes,
@@ -156,15 +156,15 @@ const currentFindings = Object.freeze([
   },
   {
     id: 'SV-PERF-0002',
-    status: 'watch',
-    title: 'Le routeur applicatif concentre trop de responsabilites.',
-    source: 'src/app.jsx + src/Router.jsx',
+    status: 'verified',
+    title: 'Le routeur applicatif global a ete supprime.',
+    source: 'app routes + route-specific islands',
     summary:
-      'La SPA porte navigation, auth, catalogue, panier, wishlist, menu global, modales, header, footer et scroll mobile dans deux fichiers centraux. C est lisible aujourd hui, mais fragile pour chaque nouvelle surface.',
+      'La navigation publique et les tunnels prives ne passent plus par un routeur SPA central. Les surfaces SEO sont des routes App Router, et les tunnels prives montent des iles dediees.',
     evidence: [
-      'app.jsx orchestre les effets auth, catalogue, URL, cart, wishlist et overlays.',
-      'Router.jsx gere marketplace, checkout, admin et categorie; le detail produit est sorti vers la route Next native.',
-      'La regle mobile marketplace est critique et doit rester isolee.',
+      'Les routes publiques lisent leurs donnees cote serveur.',
+      'Admin, checkout, wishlist et commandes utilisent des iles route-specifiques.',
+      'La galerie mobile conserve un contrat isole dans GalleryServerView et GalleryMobileShellIsland.',
     ],
     engineering: [
       'Pour les prochains projets, creer des route modules ou layouts par domaine.',
@@ -176,7 +176,7 @@ const currentFindings = Object.freeze([
     id: 'SV-PERF-0003',
     status: 'verified',
     title: 'La facturation Firebase a deja ete optimisee dans la bonne direction.',
-    source: 'functions/src/public/catalog.js + src/app.jsx',
+    source: 'functions/src/public/catalog.js + src/lib/server/products',
     summary:
       'Le endpoint publicCatalog et le cache sessionStorage vont dans le sens d un site fluide: moins de listeners publics, un chargement initial borne et un catalogue complet demande ensuite.',
     evidence: [
@@ -193,13 +193,13 @@ const currentFindings = Object.freeze([
   },
   {
     id: 'SV-PERF-0004',
-    status: 'critical',
+    status: 'verified',
     title: 'Le mobile doit rester une architecture, pas une suite de patches.',
-    source: 'alertemobile.md + src/Router.jsx + src/index.css',
+    source: 'alertemobile.md + GalleryServerView + GalleryMobileShellIsland + src/index.css',
     summary:
       'Le bug historique montre que scroll, viewport et surfaces image-heavy sont couples. Pour les prochains projets, le scroll root mobile doit etre defini par layout des le debut.',
     evidence: [
-      'Invariant conserve: view === gallery || isGalleryDetailOverlay.',
+      'Le shell galerie mobile est rendu par la route Next et controle par une petite ile.',
       'marketplace-gallery-shell et marketplace-gallery-scroll partagent le viewport mobile.',
       'Le chemin detail SPA legacy a ete retire; le shell galerie mobile reste contractualise.',
     ],
@@ -211,13 +211,13 @@ const currentFindings = Object.freeze([
   },
   {
     id: 'SV-PERF-0005',
-    status: 'watch',
-    title: 'Le bundle initial peut encore etre allege sans changer de framework.',
-    source: 'src/app.jsx + src/kit/config/firebase.js + scroll natif navigateur',
+    status: 'verified',
+    title: 'Le bundle public initial est allege par routes natives.',
+    source: 'app/page.jsx + GalleryServerView + route islands',
     summary:
-      'Le shell importe encore panier, menu global, popup marketplace, header, footer, Firebase analytics/app-check et Framer Motion tres tot. Le prochain gain vient de lazy-loader les surfaces non visibles.',
+      'Le shell SPA global ne charge plus panier, menu global, admin et checkout dans le parcours public. La galerie rend maintenant son premier HTML cote serveur.',
     evidence: [
-      'CartSidebar, GlobalMenu et MarketplaceDiscovery sont importes dans le shell principal.',
+      'Le rendu public ne passe plus par ClientApp.',
       'Le scroll global est revenu au natif navigateur, sans boucle RAF globale dediee au scroll.',
       'Le rapport agent demandait une passe fetch priority; le runtime React 18.3 du projet impose finalement l attribut DOM lowercase fetchpriority pour eviter le warning dev.',
     ],
@@ -243,7 +243,7 @@ const roadmapPhases = Object.freeze([
       'Corriger fetch priority dans une passe separee, en validant le comportement exact de la version React utilisee.',
       'Ne pas refactorer les gestures mobile dans cette phase.',
     ],
-    files: ['src/app.jsx', 'src/Router.jsx', 'src/kit/config/firebase.js', 'src/kit/commerce/CheckoutView.jsx', 'src/kit/commerce/CheckoutStripeModal.jsx', 'src/kit/marketplace/components/ProductCard.jsx'],
+    files: ['app/page.jsx', 'src/kit/marketplace/GalleryServerView.jsx', 'app/GalleryMobileShellIsland.jsx', 'src/kit/config/firebase.js', 'src/kit/commerce/CheckoutView.jsx', 'src/kit/commerce/CheckoutStripeModal.jsx', 'src/kit/marketplace/GalleryProductCardServer.jsx'],
     risk: 'Risque faible si la phase reste limitee au shell et aux imports. Le risque principal est un premier clic menu/panier un peu plus lent sans preload idle.',
     validation: [
       'npm run build',
@@ -257,14 +257,14 @@ const roadmapPhases = Object.freeze([
     title: 'Compartimenter la galerie',
     status: 'Premiere extraction structurelle appliquee le 12 mai 2026',
     intent:
-      'Transformer MarketplaceLayout en sections stables et testables, sans changer le rendu ni la choregraphie existante.',
+      'Remplacer la galerie client par GalleryServerView et des iles strictement necessaires, sans changer l intention visuelle.',
     actions: [
-      'Splitter MarketplaceLayout en MarketplaceHero, CategoryRail, ProductSections, BeforeAfterSection, InstagramSection, TestimonialsSection et NewsletterSection.',
+      'Rendre hero, categories, grilles produits, atelier et footer en HTML serveur dans GalleryServerView.',
       'Garder hero, categories et premieres cartes dans le chunk initial.',
       'Charger les sections basses avec IntersectionObserver et placeholders de hauteur stable.',
       'Isoler GSAP/ScrollTrigger par section au lieu de les importer dans un gros bloc galerie global.',
     ],
-    files: ['src/kit/marketplace/MarketplaceLayout.jsx', 'src/kit/marketplace/components/MarketplaceHero.jsx', 'src/kit/marketplace/components/CategoryRail.jsx', 'src/kit/marketplace/components/ProductSections.jsx', 'src/kit/marketplace/components/ProductGridSection.jsx', 'src/kit/marketplace/components/ReassuranceSection.jsx', 'src/kit/marketplace/components/BeforeAfterSection.jsx', 'src/kit/marketplace/components/InstagramSection.jsx', 'src/kit/marketplace/components/TestimonialsSection.jsx', 'src/kit/marketplace/components/NewsletterSection.jsx', 'src/kit/marketplace/GalleryView.jsx', 'src/index.css'],
+    files: ['src/kit/marketplace/GalleryServerView.jsx', 'src/kit/marketplace/GalleryProductCardServer.jsx', 'app/GalleryMobileShellIsland.jsx', 'src/index.css'],
     risk: 'Risque moyen: les animations GSAP, les timers et les hauteurs de sections peuvent creer du CLS ou changer le rythme editorial.',
     validation: [
       'Screenshots desktop/mobile des sections galerie',
@@ -285,7 +285,7 @@ const roadmapPhases = Object.freeze([
       'Stocker ratio, dimensions, dominant color ou blur placeholder pour stabiliser les images.',
       'Garder les variantes thumb/card/medium/large/full, mais limiter les preload aux vraies images visibles ou probables.',
     ],
-    files: ['functions/src/public/catalog.js', 'src/app.jsx', 'firestore.rules', 'src/kit/shared/publicCatalogCache.js', 'src/kit/admin/publicCatalogInvalidation.js', 'src/kit/admin/AdminForm.jsx', 'src/Router.jsx', 'src/kit/marketplace/categoryCatalogLoader.js', 'src/kit/marketplace/ProductDetailShellIsland.jsx', 'src/utils/imageUtils.js', 'src/kit/marketplace/components/ProductCard.jsx'],
+    files: ['functions/src/public/catalog.js', 'src/lib/server/products.js', 'firestore.rules', 'src/kit/shared/publicCatalogCache.js', 'src/kit/admin/publicCatalogInvalidation.js', 'src/kit/admin/AdminForm.jsx', 'src/kit/marketplace/GalleryServerView.jsx', 'src/kit/marketplace/categoryCatalogLoader.js', 'src/kit/marketplace/ProductDetailShellIsland.jsx', 'src/utils/imageUtils.js', 'src/kit/marketplace/GalleryProductCardServer.jsx'],
     risk: 'Risque moyen: cache stale possible pendant la fenetre HTTP courte, ou incoherence entre carte et detail si un ancien document n a pas encore ses metadata image.',
     validation: [
       'Tests catalogue initial puis chargement complet',
@@ -306,7 +306,7 @@ const roadmapPhases = Object.freeze([
       'Centraliser les seuils de gestes: distance swipe, vitesse pull-down, tolerance tap, seuil bottom sheet.',
       'Ajouter une mini state machine: idle, detailOpen, pullingToGallery, closingToGallery, sheetOpen, lightboxOpen.',
     ],
-    files: ['src/kit/marketplace/ProductDetailShellIsland.jsx', 'src/Router.jsx', 'src/index.css', 'alertemobile.md'],
+    files: ['src/kit/marketplace/ProductDetailShellIsland.jsx', 'src/kit/marketplace/GalleryServerView.jsx', 'app/GalleryMobileShellIsland.jsx', 'src/index.css', 'alertemobile.md'],
     risk: 'Risque eleve: le moindre changement de scroll root, touch-action, data-detail-open ou staging peut reintroduire le drift mobile.',
     validation: [
       'Relire alertemobile.md avant toute modification',
@@ -322,10 +322,10 @@ const roadmapEvidenceRows = Object.freeze([
   ['P0.1b Mesure reseau', 'Fait', 'npm run perf:network lance le preview et mesure / + /categorie/commodes en mobile 390x844 avec Playwright Python. Le script echoue si budgets reseau, Web Vitals locaux, chunks interdits ou baseline avant/apres depassent les seuils.'],
   ['P0.2 Lazy shell public', 'Fait', 'CartSidebar, GlobalMenu, MarketplaceDiscovery, Footer, OrderSuccessModal, AdminIPTracker, Stripe et facture PDF sortis du premier rendu.'],
   ['P0.3 LCP/CLS/INP local', 'Fait local', 'PerformanceObserver injecte avant navigation: LCP, CLS et interaction menu sont controles en preview. Le vrai RUM production reste a ajouter pour mesurer les utilisateurs reels.'],
-  ['P1.1 Hero + categories', 'Fait', 'MarketplaceHero.jsx et CategoryRail.jsx crees; hero, categories et premieres cartes restent dans le chunk galerie initial.'],
-  ['P1.2 Grilles produits', 'Fait', 'ProductSections.jsx porte tri, pagination, wishlist set, IntersectionObserver Petits Prix et prewarm; ProductGridSection.jsx reste le rendu grille partage.'],
-  ['P1.3 Sections basses', 'Fait + chunks separes', 'Avant/Apres, Instagram, Avis et Newsletter sont maintenant des imports React.lazy derriere DeferredSectionSlot. Petits Prix reste dans ProductSections car il partage la grille produits. Le chunk galerie passe de 75.00 kB raw / 21.09 kB gzip a 35.07 kB raw / 11.66 kB gzip.'],
-  ['P1.4 Animations par section', 'Fait hors produit mobile', 'Le slider avant/apres garde son useLayoutEffect local, Instagram garde observer/autoplay/drag local, et MarketplaceLayout ne porte plus GSAP/ScrollTrigger global.'],
+  ['P1.1 Hero + categories', 'Fait', 'GalleryServerView rend hero, categories et premieres cartes directement en HTML serveur.'],
+  ['P1.2 Grilles produits', 'Fait', 'GalleryServerView porte le tri serveur des nouveautes/petits prix; GalleryProductCardServer rend les liens produit natifs.'],
+  ['P1.3 Sections basses', 'Fait + chunks separes', 'Les sections basses publiques utiles sont rendues cote serveur; les anciens chunks galerie client ont ete supprimes.'],
+  ['P1.4 Animations par section', 'Fait hors produit mobile', "La galerie publique n'attend plus GSAP/ScrollTrigger pour son premier rendu utile."],
   ['P2.1 publicCatalog cards', 'Fait', 'scope=cards, limit initial 36, projection courte, category/categories, cursor, nextCursor, ETag et catalogVersion implementes.'],
   ['P2.2 Card/detail split', 'Remplace par Next SSR', 'La carte pointe vers /produit/... et le document produit est resolu par la route Next native, plus par ensureProductDetail dans la SPA.'],
   ['P2.3 Metadata images', 'Fait nouveau upload + backfill sandbox', 'AdminForm stocke imageMetadata width/height/ratio/dominantColor/blurDataUrl pour les nouvelles images, publicCatalog projette la premiere metadata carte, et npm run backfill:product-metadata:dry audite les anciens produits. Sandbox: 35 produits publies complets, 0 pending, 0 failed.'],
@@ -351,11 +351,11 @@ const productDetailFlow = Object.freeze([
 
 const guardrailRows = Object.freeze([
   ['Commit reference', 'v21.7 est traite comme reference design/fonctionnement detail produit desktop et mobile.'],
-  ['Invariant Router', "Conserver `const shouldUseMobileGalleryScroll = view === 'gallery' || isGalleryDetailOverlay;`."],
+  ['Contrat galerie mobile', 'Conserver GalleryServerView + GalleryMobileShellIsland comme shell galerie mobile.'],
   ['Contrat DOM mobile', 'Ne pas casser marketplace-gallery-shell, marketplace-gallery-scroll, #marketplaceGalleryScroll, data-detail-open, data-native-scroll-region.'],
   ['Contrat CSS', 'Conserver marketplace-mobile-scroll-lock, product-detail-scroll-lock et --marketplace-viewport-height.'],
   ['Contrat image', 'Garder product-detail-mobile-image-frame et product-detail-mobile-image-clip comme wrappers de clipping dans ProductDetailShellIsland.'],
-  ['Route produit', 'Ne pas reintroduire ProductDetail.jsx ou ArchitecturalProductDetail.jsx dans Router.jsx.'],
+  ['Route produit', 'Ne pas reintroduire les anciens composants detail produit SPA.'],
   ['Test obligatoire', 'Toute modif galerie/mobile impose un test vrai telephone; toute modif route produit impose le gate produit direct.'],
 ]);
 
@@ -374,8 +374,8 @@ const implementationResults = Object.freeze([
   ['Theme settings', 'Plusieurs hooks pouvaient lancer le meme getDoc', 'cache module + promesse inflight partagee', 'lectures Firestore dedupliquees'],
   ['Surfaces sorties du shell', 'Menu, panier, popup, footer, success/admin tracker statiques', 'Chunks lazy + rendu conditionnel', 'moins de JS initial'],
   ['Avis clients bas de page', 'Inclus dans le module galerie', 'CustomerTestimonialsCarousel lazy dans les sections differees', 'charge hors premier ecran'],
-  ['Split hero/categories/produits/reassurance/avant-apres/Instagram/avis/newsletter', 'JSX, tri, pagination, prewarm, slider avant/apres et carousel Instagram dans MarketplaceLayout', 'MarketplaceHero + CategoryRail + ProductSections + ProductGridSection + ReassuranceSection + BeforeAfterSection + InstagramSection + TestimonialsSection + NewsletterSection', 'frontieres P1 plus nettes, chunk galerie mesure par budget'],
-  ['Chunks sections basses', 'BeforeAfter, Instagram, Testimonials et Newsletter importes statiquement dans GalleryView', 'React.lazy + Suspense dans DeferredSectionSlot: BeforeAfter 4.03 kB gzip, Instagram 4.24 kB, Newsletter 4.45 kB, Testimonials wrapper 0.49 kB', 'GalleryView descend de 75.00 kB raw / 21.09 kB gzip a 35.07 kB raw / 11.66 kB gzip'],
+  ['Split hero/categories/produits/reassurance/avant-apres/Instagram/avis/newsletter', 'Rendu initial public dans un grand ilot client galerie', 'GalleryServerView + GalleryProductCardServer + GalleryMobileShellIsland', 'frontieres P1 plus nettes, chunk galerie mesure par budget'],
+  ['Chunks sections basses', 'Galerie publique rendue par un grand ilot client', 'HTML serveur sans grand shell galerie client', 'Les anciens composants galerie client sont supprimes du chemin public'],
   ['Catalogue initial publicCatalog', 'Documents complets limites', '?limit=36&scope=cards', 'JSON carte sans description/full/large'],
   ['Endpoint categorie/cursor', 'Pas de segmentation publique par categorie', 'category/categories + cursor + nextCursor + ETag', 'base pour charger une categorie sans tout le catalogue'],
   ['Version catalogue', 'Cache public base seulement sur TTL', 'public/meta.catalogVersion + cache key Function versionnee + cache HTTP 60/120 s', 'invalidation admin explicite avec fenetre stale reduite'],
@@ -440,15 +440,15 @@ const implementationLedger = Object.freeze([
   },
   {
     label: 'Completeness categories',
-    detail: 'Le fallback Firestore public reprend maintenant le meme tri createdAt desc que la Function, et CategoryPage demande une charge dediee requestCategoryCatalog(categoryId) pour ne pas filtrer seulement les 36 premieres cartes.',
+    detail: 'Le fallback Firestore public reprend maintenant le meme tri createdAt desc que la Function, et la route categorie demande une charge dediee requestCategoryCatalog(categoryId) pour ne pas filtrer seulement les 36 premieres cartes.',
   },
   {
     label: 'P1 structure',
-    detail: 'Le premier ecran galerie est separe en MarketplaceHero, CategoryRail, ReassuranceSection et ProductSections. ProductSections porte tri, pagination, wishlist set, observer Petits Prix et prewarm images; ProductGridSection reste le rendu grille partage. BeforeAfterSection porte le slider imperative/useLayoutEffect, InstagramSection porte observer/autoplay/drag, TestimonialsSection porte le wrapper lazy des avis, et NewsletterSection porte son JSX + sa timeline locale.',
+    detail: 'Le premier rendu galerie est servi par GalleryServerView: hero, categories, grilles, atelier et liens natifs sont presents sans attendre un shell client.',
   },
   {
     label: 'P1 restant',
-    detail: 'Le gros JSX de MarketplaceLayout est maintenant compartimente. Le restant P1 est surtout de surveillance: screenshots desktop/mobile et controle CLS sur scroll long apres chaque modification de section.',
+    detail: "L'ancien JSX galerie client est retire du parcours public; la surveillance porte maintenant sur GalleryServerView et son ile mobile.",
   },
   {
     label: 'P3 no-go',
@@ -456,11 +456,11 @@ const implementationLedger = Object.freeze([
   },
   {
     label: 'Sections basses',
-    detail: 'Avant/Apres, Instagram, avis et newsletter sont charges par React.lazy dans des slots independants. Chaque slot reserve sa hauteur, utilise content-visibility uniquement pendant le placeholder, attend son IntersectionObserver avec marge large, puis monte sous Suspense sans attente idle tardive pour eviter le CLS au premier scroll. Petits Prix reste volontairement dans ProductSections parce qu il partage la grille, le tri, la wishlist et le prewarm produits.',
+    detail: 'Les sections publiques rendues par la galerie serveur gardent des dimensions stables et des liens natifs; les interactions non critiques ne bloquent plus le HTML initial.',
   },
   {
     label: 'Chunks bas de galerie',
-    detail: 'Build du 12 mai 2026: BeforeAfterSection 13.47 kB raw / 4.03 kB gzip, InstagramSection 14.57 kB raw / 4.24 kB gzip, NewsletterSection 13.60 kB raw / 4.45 kB gzip, TestimonialsSection 0.87 kB raw / 0.49 kB gzip. GalleryView tombe a 35.07 kB raw / 11.66 kB gzip, contre 75.00 kB raw / 21.09 kB gzip avant cette passe.',
+    detail: 'Build du 9 juin 2026: la galerie publique ne charge plus de grand ilot client galerie.',
   },
   {
     label: 'Benchmark scroll desktop',
@@ -472,11 +472,11 @@ const implementationLedger = Object.freeze([
   },
   {
     label: 'Hero mobile',
-    detail: 'MarketplaceHero utilise maintenant h-full sur mobile, md:h-[120%] seulement sur desktop, et une variable mobileObjectPosition. Les presets imagehero exposent une position mobile dediee; le desktop garde objectPosition.',
+    detail: 'GalleryServerView utilise les presets imagehero et conserve une source mobile dediee pour le hero galerie.',
   },
   {
     label: 'Encodage visible',
-    detail: 'Les textes mojibake visibles de MarketplaceLayout, BeforeAfterSection, InstagramSection et AdminForm ont ete corriges. Le controle Playwright ne trouve plus de marqueurs mojibake dans le DOM home, et le bloc Avant/Apres affiche bien selection, pepites et decouvrez.',
+    detail: 'Les textes visibles de la galerie serveur sont maintenant portes par GalleryServerView et controles par les audits directs.',
   },
   {
     label: 'Baseline avant/apres',
@@ -535,14 +535,14 @@ const implementationLedger = Object.freeze([
 const v217ChangeRows = Object.freeze([
   ['Reference Git', '81295a7 v21.7', 'Le commit HEAD reste la reference design/fonctionnement. Tout ce chapitre compare le worktree courant a cette base.'],
   ['Surface modifiee', '27 fichiers suivis modifies + 22 entrees nouvelles', 'La modification est large, mais elle est majoritairement une extraction/segmentation de charge, pas une refonte visuelle.'],
-  ['Volume diff suivi', '+1649 / -1978 lignes', 'MarketplaceLayout perd du JSX centralise parce que les sections sortent dans des composants dedies.'],
+  ['Volume diff suivi', '+1649 / -1978 lignes', 'Le graphe client galerie legacy est retire; le rendu public passe par GalleryServerView.'],
   ['Page admin doc', 'Nouvelle documentation vivante', 'PerformanceArchitectureStudy documente la strategie, les chiffres, les gates et les risques dans une vraie page admin.'],
 ]);
 
 const v217DomainRows = Object.freeze([
   ['Shell public', 'v21.7 portait encore menu, panier, footer, success modal, Stripe/facture et plusieurs surfaces en dur.', 'Ces surfaces sont maintenant chargees a la demande: moins de JS initial et moins de code admin/commerce sur le premier ecran public.'],
-  ['Galerie', 'MarketplaceLayout etait un gros fichier avec hero, categories, produits, sections basses, Instagram, avis, newsletter.', 'Hero, CategoryRail, ProductSections, ProductGridSection et Reassurance restent le coeur de galerie; BeforeAfter, Instagram, Testimonials et Newsletter sont maintenant des chunks lazy.'],
-  ['Nuance bundle', 'Apres la premiere extraction, plusieurs sections restaient encore importees statiquement par MarketplaceLayout.', 'Cette limite est corrigee pour les sections basses lourdes: GalleryView descend de 21.09 kB gzip a 11.66 kB gzip. Le prochain gain reseau concernerait plutot GSAP/Reassurance ou un framework SSR/SSG pour un prochain projet.'],
+  ['Galerie', 'La galerie etait un gros ilot client avec hero, categories, produits et sections basses.', "GalleryServerView et GalleryProductCardServer forment le coeur serveur de la galerie; GalleryMobileShellIsland reste l'ile mobile minimale."],
+  ['Nuance bundle', "Apres l'extraction precedente, la galerie restait encore un grand ilot client.", 'Cette limite est corrigee par la migration serveur: les anciens composants galerie client publics sont supprimes.'],
   ['Scroll desktop', 'Le premier scroll pouvait cumuler un moteur de scroll JS, ScrollTrigger global et montage de sections basses.', 'Le scroll global est natif, les ScrollTrigger restent locaux aux sections, les sections basses montent par slots et perf:scroll mesure load + scroll + CLS.'],
   ['Images hero mobile', 'Le hero mobile utilisait le meme objectPosition que desktop et une image h-[120%] ancree verticalement.', 'Chaque preset a mobileObjectPosition; mobile utilise h-full et desktop garde md:h-[120%]. Validation 390x844: object-position 54% 50%.'],
   ['Catalogue public', 'La premiere charge restait proche d un chargement catalogue general.', 'publicCatalog supporte scope=cards, limit, category/categories, cursor, nextCursor, ETag et catalogVersion.'],
@@ -568,8 +568,8 @@ const v217MetricRows = Object.freeze([
 const v217RiskRows = Object.freeze([
   ['Mieux', 'Le public est plus leger, les images sont plus previsibles, les sections sont compartimentees, les budgets sont automatises.', 'L infra est objectivement meilleure pour un site image-heavy.'],
   ['Pas magique', 'React reste une SPA: le premier rendu public depend encore du JS, de Firebase et du navigateur client.', 'Pour un prochain gros catalogue public, Next.js garderait un avantage structurel avec SSR/SSG et image optimizer.'],
-  ['Risque restant', 'Le detail mobile a encore des gestes dans ProductDetailShellIsland, mais il ne passe plus par Router.jsx.', 'Ne pas reintroduire ArchitecturalProductDetail/ProductDetail pour corriger un comportement produit.'],
-  ['Risque bundle', 'Les sections basses lourdes sont devenues des chunks reseau separes.', 'Le risque restant est ailleurs: GSAP reste un gros chunk partage, et Reassurance/ProductSections restent dans le chemin galerie initial pour preserver le premier ecran.'],
+  ['Risque restant', 'Le detail mobile a encore des gestes dans ProductDetailShellIsland, mais il ne passe plus par un routeur SPA.', 'Ne pas reintroduire les anciens composants detail produit SPA pour corriger un comportement produit.'],
+  ['Risque bundle', 'Les sections publiques utiles sont rendues dans le HTML serveur.', "Le risque restant est surtout visuel: conserver la proximite design de l'ancienne galerie tout en gardant le rendu serveur."],
   ['Prochain gain', 'Ajouter RUM production: vrais INP, LCP, CLS, cache hit publicCatalog, decode images, device class.', 'Les mesures locales disent que la structure est meilleure; le RUM dira comment les vrais appareils reagissent.'],
 ]);
 
@@ -703,11 +703,11 @@ const sources = Object.freeze([
 ]);
 
 const sourceCards = Object.freeze([
-  { label: 'Routeur', path: 'src/Router.jsx', state: 'lazy views + mobile shell critique' },
-  { label: 'App shell', path: 'src/app.jsx', state: 'auth, catalogue, cache, URL, overlays' },
+  { label: 'Galerie serveur', path: 'src/kit/marketplace/GalleryServerView.jsx', state: 'HTML galerie public SSR' },
+  { label: 'Ile mobile galerie', path: 'app/GalleryMobileShellIsland.jsx', state: 'viewport, scroll lock, pull refresh' },
   { label: 'Images', path: 'src/utils/imageUtils.js', state: 'variants, srcset, prewarm, decode cache' },
   { label: 'Detail', path: 'src/kit/marketplace/ProductDetailShellIsland.jsx', state: 'ile media produit Next native' },
-  { label: 'Cards', path: 'src/kit/marketplace/components/ProductCard.jsx', state: 'memo + srcset + intent preload' },
+  { label: 'Carte galerie serveur', path: 'src/kit/marketplace/GalleryProductCardServer.jsx', state: 'liens natifs + images carte' },
   { label: 'Backend', path: 'functions/src/public/catalog.js', state: 'catalogue public cache' },
 ]);
 
@@ -915,7 +915,7 @@ export default function PerformanceArchitectureStudy({ onBack, embedded = false,
                 <p>
                   La comparaison part du commit <code>81295a7 v21.7</code>. Le worktree courant contient 27 fichiers
                   suivis modifies et 22 entrees nouvelles; les lignes suivies changent de +1649 / -1978. Le gros retrait
-                  vient surtout du deplacement de JSX hors de MarketplaceLayout vers des composants specialises.
+                  vient surtout du remplacement du grand ilot galerie par un rendu serveur specialise.
                 </p>
               </div>
             </div>
@@ -1102,8 +1102,8 @@ export default function PerformanceArchitectureStudy({ onBack, embedded = false,
               <div>
                 <span>Invariant Seconde Vie</span>
                 <p>
-                  Conserver le shell galerie mobile: <code>view === 'gallery' || isGalleryDetailOverlay</code>. Le detail
-                  produit actif est une route Next native, pas un overlay SPA.
+                  Conserver le shell galerie mobile rendu par <code>GalleryServerView</code> et controle par
+                  <code>GalleryMobileShellIsland</code>. Le detail produit actif est une route Next native.
                 </p>
               </div>
             </div>
@@ -1134,7 +1134,7 @@ export default function PerformanceArchitectureStudy({ onBack, embedded = false,
               <Network aria-hidden="true" />
               <div>
                 <span>Invariant absolu</span>
-                <code>const shouldUseMobileGalleryScroll = view === 'gallery' || isGalleryDetailOverlay;</code>
+                <code>GalleryServerView + GalleryMobileShellIsland + #marketplaceGalleryScroll</code>
               </div>
             </div>
             <ProtocolTable rows={guardrailRows} />

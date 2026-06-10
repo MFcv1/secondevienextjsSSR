@@ -267,7 +267,7 @@ const runMode = async (browser, mode) => {
       hasGalleryHero: Boolean(document.querySelector('.marketplace-hero-image')),
       hasGalleryCards: Boolean(document.querySelector('.product-card-image')),
       hasNextProductExperience: Boolean(document.querySelector('[data-next-product-experience="true"]')),
-      hasProductSsrPreview: Boolean(document.querySelector('[data-product-ssr-preview]')),
+      hasProductSsrPlaceholder: Boolean(document.querySelector('[data-product-ssr-preview]')),
       hasProductDetail: Boolean(visibleImage),
       hasExactProductRouteExperience: Boolean(document.querySelector('.split-detail-title') || document.querySelector('[data-mobile-bottom-sheet]')),
       hasProductInfoSections: normalizedBodyText.includes('LA PIECE') && normalizedBodyText.includes('INFORMATIONS'),
@@ -361,7 +361,7 @@ const buildAssertions = (results) => {
     const visibleVariant = getVariant(result.dom.visibleImage?.src || '');
     add(`${result.mode}: exact product detail route is present`, result.dom.hasExactProductRouteExperience === true, result.dom);
     add(`${result.mode}: legacy SPA marker is absent`, result.dom.svClientHydrated === false, result.dom);
-    add(`${result.mode}: intermediate SSR preview is absent`, result.dom.hasProductSsrPreview === false, result.dom);
+    add(`${result.mode}: intermediate SSR placeholder absent`, result.dom.hasProductSsrPlaceholder === false, result.dom);
     add(`${result.mode}: gallery surface is not shown during direct refresh`, result.dom.hasMarketplaceGalleryShell === false && result.dom.hasGalleryScroll === false && result.dom.hasGalleryHero === false && result.dom.hasGalleryCards === false, result.dom);
     add(`${result.mode}: gallery/home assets are not requested`, result.galleryAssets.length === 0, { galleryAssets: result.galleryAssets });
     add(`${result.mode}: standalone product detail is present`, result.dom.hasProductDetail === true, result.dom);

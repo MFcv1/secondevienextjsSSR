@@ -383,6 +383,16 @@ const ArchSection = () => {
                             </div>
                         </div>
 
+                        <div
+                            className="arch-bg-sketch absolute inset-x-[12vw] top-[18vh] h-[62vh] opacity-[0.15] mix-blend-multiply"
+                            style={{
+                                backgroundImage: 'radial-gradient(circle at 20% 30%, #1A1A1A 0 1px, transparent 1px), radial-gradient(circle at 72% 64%, #A68A64 0 1px, transparent 1px)',
+                                backgroundSize: '18px 18px, 28px 28px',
+                                WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%)',
+                                maskImage: 'linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%)'
+                            }}
+                        />
+
                         {/* UI MARKERS */}
                         <div className="arch-ui-marker absolute top-8 md:top-16 left-6 md:left-12 flex flex-col gap-3">
                             <div className="flex items-center gap-4">

@@ -14,7 +14,12 @@ const getGoogleLoginErrorMessage = (error) => {
   return `Erreur Google : ${error?.message || 'connexion impossible'}`;
 };
 
-function LoginView({ onSuccess }) {
+function LoginView({
+  onSuccess = () => {},
+  title = 'Portail Maître',
+  subtitle = "Accès restreint à l'administration",
+  emailPlaceholder = 'Email artisan',
+}) {
   const { loginWithGoogle, loginWithEmail } = useAuth();
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
@@ -28,8 +33,8 @@ function LoginView({ onSuccess }) {
     <div className="max-w-xs mx-auto py-40 text-center space-y-6 animate-in zoom-in-95 text-stone-900">
       <div className="w-16 h-16 bg-stone-900 text-white rounded-2xl flex items-center justify-center mx-auto shadow-xl transition-transform hover:scale-105 hover:rotate-3"><Lock size={32} /></div>
       <div className="space-y-2 text-stone-900">
-        <h2 className="text-3xl font-black tracking-tighter leading-tight text-stone-900">Portail Maître</h2>
-        <p className="text-stone-400 text-xs italic font-serif">Accès restreint à l&apos;administration</p>
+        <h2 className="text-3xl font-black tracking-tighter leading-tight text-stone-900">{title}</h2>
+        <p className="text-stone-400 text-xs italic font-serif">{subtitle}</p>
       </div>
       <div className="space-y-4">
         <button
@@ -55,7 +60,7 @@ function LoginView({ onSuccess }) {
         </div>
 
         <form onSubmit={handle} className="space-y-3">
-          <input type="email" placeholder="Email artisan" className="w-full p-4 rounded-xl bg-white border border-stone-200 font-bold outline-none focus:ring-4 ring-amber-50 transition-all shadow-sm text-stone-900 text-base" onChange={e => setEmail(e.target.value)} required />
+          <input type="email" placeholder={emailPlaceholder} className="w-full p-4 rounded-xl bg-white border border-stone-200 font-bold outline-none focus:ring-4 ring-amber-50 transition-all shadow-sm text-stone-900 text-base" onChange={e => setEmail(e.target.value)} required />
           <input type="password" placeholder="Mot de passe" className="w-full p-4 rounded-xl bg-white border border-stone-200 font-bold outline-none focus:ring-4 ring-amber-50 transition-all shadow-sm text-stone-900 text-base" onChange={e => setPass(e.target.value)} required />
           {errorMsg && <p className="text-[10px] text-red-600 font-bold bg-red-50 py-2 rounded-lg">{errorMsg}</p>}
           <button type="submit" className="w-full py-4 bg-stone-900 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-lg hover:bg-stone-800 active:scale-95 transition-all">Connexion</button>

@@ -1,0 +1,216 @@
+'use client';
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
+import { ShoppingBag } from 'lucide-react';
+import { getDb, getFirebaseAuth, loadAuthModule, loadFirestoreModule } from '../config/firebaseLazy';
+
+const CartSidebar = dynamic(() => import('../commerce/CartSidebar'), {
+  ssr: false,
+  loading: () => null,
+});
+
+const LegacyLoginModalIsland = dynamic(() => import('./LegacyLoginModalFullIsland'), {
+  ssr: false,
+  loading: () => null,
+});
+
+const hasPersistedFirebaseUser = () => {
+  if (typeof window === 'undefined') return false;
+  try {
+    return Object.keys(window.localStorage).some((key) => key.startsWith('firebase:authUser:'));
+  } catch {
+    return false;
+  }
+};
+
+const getCartTotal = (items) => (
+  items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0)
+);
+
+export default function CartPanelIsland({ className = '', darkMode = false, initialEvent = null, onReady } = {}) {
+  const [user, setUser] = useState(null);
+  const [cartItems, setCartItems] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [interacted, setInteracted] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [pendingCartItem, setPendingCartItem] = useState(null);
+  const consumedInitialEventRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    let unsubscribeAuth = null;
+
+    const applyUser = (nextUser) => {
+      if (cancelled) return;
+      setUser(nextUser || null);
+    };
+
+    const handleAuthChange = (event) => {
+      applyUser(event.detail?.user || null);
+    };
+
+    window.addEventListener('sv:auth-user-changed', handleAuthChange);
+    applyUser(window.__svAuthUser || null);
+
+    if (hasPersistedFirebaseUser()) {
+      Promise.all([getFirebaseAuth(), loadAuthModule()])
+        .then(([auth, { onAuthStateChanged }]) => {
+          if (cancelled) return;
+          unsubscribeAuth = onAuthStateChanged(auth, applyUser);
+        })
+        .catch(() => {});
+    }
+
+    return () => {
+      cancelled = true;
+      unsubscribeAuth?.();
+      window.removeEventListener('sv:auth-user-changed', handleAuthChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!user || user.isAnonymous) {
+      setCartItems([]);
+      return undefined;
+    }
+
+    let cancelled = false;
+    let unsubscribe = null;
+
+    Promise.all([getDb(), loadFirestoreModule()])
+      .then(([db, { collection, onSnapshot, query }]) => {
+        if (cancelled) return;
+        unsubscribe = onSnapshot(
+          query(collection(db, 'users', user.uid, 'cart')),
+          (snap) => setCartItems(snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))),
+          (error) => console.error('Cart sync error:', error)
+        );
+      })
+      .catch((error) => {
+        if (!cancelled) console.error('Cart sync error:', error);
+      });
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [user]);
+
+  const openCart = useCallback(() => {
+    setInteracted(true);
+    setIsOpen(true);
+  }, []);
+
+  const addCartItem = useCallback(async (item) => {
+    if (!item?.originalId && !item?.id) return false;
+
+    if (!user || user.isAnonymous) {
+      setPendingCartItem(item);
+      setLoginOpen(true);
+      return false;
+    }
+
+    const [db, { addDoc, collection, serverTimestamp }] = await Promise.all([getDb(), loadFirestoreModule()]);
+    await addDoc(collection(db, 'users', user.uid, 'cart'), {
+      originalId: item.originalId || item.id,
+      collectionName: item.collectionName || 'furniture',
+      name: item.name || item.title || 'Piece Seconde Vie',
+      price: Number(item.price || item.currentPrice || item.startingPrice || 0),
+      image: item.image || item.imageUrl || '',
+      material: item.material || 'Bois',
+      quantity: Number(item.quantity || 1),
+      addedAt: serverTimestamp(),
+    });
+    openCart();
+    return true;
+  }, [openCart, user]);
+
+  useEffect(() => {
+    const handleProductAdded = (event) => {
+      addCartItem(event.detail || {}).catch((error) => console.error('Add to cart error:', error));
+    };
+
+    window.addEventListener('sv:open-cart', openCart);
+    window.addEventListener('sv:product-added', handleProductAdded);
+    return () => {
+      window.removeEventListener('sv:open-cart', openCart);
+      window.removeEventListener('sv:product-added', handleProductAdded);
+    };
+  }, [addCartItem, openCart]);
+
+  useEffect(() => {
+    onReady?.();
+  }, [onReady]);
+
+  useEffect(() => {
+    if (!initialEvent?.id || consumedInitialEventRef.current === initialEvent.id) return;
+
+    consumedInitialEventRef.current = initialEvent.id;
+
+    if (initialEvent.type === 'sv:open-cart') {
+      openCart();
+      return;
+    }
+
+    if (initialEvent.type === 'sv:product-added') {
+      addCartItem(initialEvent.detail || {}).catch((error) => console.error('Add to cart error:', error));
+    }
+  }, [addCartItem, initialEvent, openCart]);
+
+  useEffect(() => {
+    if (!pendingCartItem || !user || user.isAnonymous) return;
+    addCartItem(pendingCartItem)
+      .then((added) => {
+        if (added) setPendingCartItem(null);
+      })
+      .catch((error) => console.error('Pending cart add error:', error));
+  }, [addCartItem, pendingCartItem, user]);
+
+  const removeFromCart = useCallback(async (cartDocId) => {
+    if (!user || user.isAnonymous) return;
+    const [db, { deleteDoc, doc }] = await Promise.all([getDb(), loadFirestoreModule()]);
+    await deleteDoc(doc(db, 'users', user.uid, 'cart', cartDocId));
+  }, [user]);
+
+  const totalPrice = useMemo(() => getCartTotal(cartItems), [cartItems]);
+
+  const goToCheckout = () => {
+    setIsOpen(false);
+    window.location.assign('/checkout');
+  };
+
+  return (
+    <>
+      <button type="button" className={className} title="Panier" aria-label="Panier" onClick={openCart}>
+        <ShoppingBag size={18} strokeWidth={1.5} className={`transition-colors duration-300 ${darkMode ? 'text-stone-200 group-hover:text-amber-400' : 'text-stone-900 group-hover:text-amber-600'}`} />
+        {cartItems.length > 0 ? (
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-stone-950 px-1 text-[9px] font-black leading-none text-white ring-2 ring-white">
+            {cartItems.length}
+          </span>
+        ) : null}
+      </button>
+
+      {(interacted || isOpen) ? (
+        <CartSidebar
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          cartItems={cartItems}
+          onRemoveItem={removeFromCart}
+          totalPrice={totalPrice}
+          onCheckout={goToCheckout}
+          interacted={interacted}
+          darkMode={darkMode}
+          activeDesignId="architectural"
+        />
+      ) : null}
+      {loginOpen ? (
+        <LegacyLoginModalIsland
+          open={loginOpen}
+          onOpenChange={setLoginOpen}
+          renderTrigger={false}
+        />
+      ) : null}
+    </>
+  );
+}

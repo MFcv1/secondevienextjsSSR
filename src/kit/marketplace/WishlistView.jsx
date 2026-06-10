@@ -40,7 +40,7 @@ const WishlistView = ({
     return (
         <div className={`min-h-screen ${darkMode ? 'bg-[#121212] text-[#f5f5f5]' : 'bg-[#FAFAF9] text-stone-900'}`}>
 
-            {/* SUB-NAVIGATION — même que MarketplaceLayout */}
+            {/* SUB-NAVIGATION marketplace */}
             <nav className={`w-full py-4 hidden md:block ${darkMode ? 'bg-[#121212]' : 'bg-white'}`}>
                 <ul className={`flex items-center justify-center gap-6 lg:gap-8 text-[13px] font-sans tracking-wide ${darkMode ? 'text-stone-300' : 'text-stone-600'}`}>
                     <li onClick={onBack} className={`cursor-pointer transition-colors ${darkMode ? 'hover:text-white' : 'hover:text-black'}`}>Nouveautés</li>

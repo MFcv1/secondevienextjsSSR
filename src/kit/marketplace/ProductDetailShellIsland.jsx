@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
   AlignLeft,
   Heart,
@@ -14,6 +15,11 @@ import {
   preloadImage,
 } from '../../utils/imageUtils';
 import ProductDetailActionsIsland from './ProductDetailActionsIsland';
+
+const CartPanelIsland = dynamic(() => import('./CartPanelIsland'), {
+  ssr: false,
+  loading: () => null,
+});
 
 const DEFAULT_PRODUCT_IMAGE_RATIO = 0.75;
 const TALL_PRODUCT_IMAGE_RATIO = 0.72;
@@ -54,6 +60,10 @@ const getDisplaySrc = (image, viewport = 'desktop') => (
   || image?.thumb
   || image?.full
   || ''
+);
+
+const getPreviewSrc = (image) => (
+  image?.card || image?.thumb || image?.medium || image?.src || image?.large || image?.full || ''
 );
 
 const getBackdropSrc = (image) => (
@@ -97,7 +107,7 @@ const ProductThumbRail = ({
                 style={{
                   width: `${mobileThumbSize}px`,
                   height: `${mobileThumbSize}px`,
-                  backgroundImage: hasPrimaryImagePainted && thumbSrc
+                  backgroundImage: thumbSrc
                     ? `url("${thumbSrc}")`
                     : (thumbPlaceholderSrc ? `url("${thumbPlaceholderSrc}")` : undefined),
                   backgroundSize: 'cover',
@@ -110,7 +120,7 @@ const ProductThumbRail = ({
                     src={thumbSrc}
                     className="w-full h-full object-cover rounded-[4px]"
                     alt={`Apercu ${index + 1}`}
-                    loading={hasPrimaryImagePainted && index < 8 ? 'eager' : 'lazy'}
+                    loading={index < 4 ? 'eager' : 'lazy'}
                     decoding="async"
                     fetchPriority="low"
                     sizes={`${mobileThumbSize}px`}
@@ -153,7 +163,7 @@ const ProductThumbRail = ({
             style={{
               scrollSnapAlign: 'center',
               transformOrigin: 'right center',
-              backgroundImage: hasPrimaryImagePainted && thumbSrc
+              backgroundImage: thumbSrc
                 ? `url("${thumbSrc}")`
                 : (thumbPlaceholderSrc ? `url("${thumbPlaceholderSrc}")` : undefined),
               backgroundSize: 'cover',
@@ -167,7 +177,7 @@ const ProductThumbRail = ({
                 sizes="58px"
                 className="w-full h-full object-cover select-none pointer-events-none"
                 alt=""
-                loading={hasPrimaryImagePainted && index < 8 ? 'eager' : 'lazy'}
+                loading={index < 5 ? 'eager' : 'lazy'}
                 decoding="async"
                 fetchPriority="low"
               />
@@ -185,6 +195,8 @@ export default function ProductDetailShellIsland({
   facts,
   priceLabel,
   desktopInfo,
+  cartItem,
+  darkMode = false,
 }) {
   const [activeImg, setActiveImg] = useState(0);
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
@@ -192,9 +204,10 @@ export default function ProductDetailShellIsland({
   const [lightboxFullSrc, setLightboxFullSrc] = useState('');
   const [lightboxBaseSrc, setLightboxBaseSrc] = useState('');
   const [hasPrimaryImagePainted, setHasPrimaryImagePainted] = useState(false);
+  const [cartPanelEvent, setCartPanelEvent] = useState(null);
   const mainImageRef = useRef(null);
   const swipeRef = useRef({ x: 0, y: 0 });
-  const wheelStateRef = useRef({ acc: 0, resetTimer: 0 });
+  const wheelStateRef = useRef({ acc: 0, resetTimer: 0, lastSwitchAt: 0 });
   const containerRef = useRef(null);
   const mobileShellRef = useRef(null);
   const mobileThumbLayerRef = useRef(null);
@@ -207,6 +220,11 @@ export default function ProductDetailShellIsland({
   const galleryExitFallbackTimerRef = useRef(0);
   const isClosingToGalleryRef = useRef(false);
   const hasNavigatedToGalleryRef = useRef(false);
+  const activeImgRef = useRef(0);
+  const navigationImgRef = useRef(0);
+  const imageSwitchRequestRef = useRef(0);
+  const cartPanelMountedRef = useRef(false);
+  const cartPanelEventIdRef = useRef(0);
 
   const safeImages = images?.length ? images : [];
   const activeImage = safeImages[Math.min(activeImg, Math.max(0, safeImages.length - 1))] || {};
@@ -215,6 +233,7 @@ export default function ProductDetailShellIsland({
   const activeDesktopSrc = getDisplaySrc(activeImage, 'desktop');
   const activeMobileSrc = getDisplaySrc(activeImage, 'mobile');
   const activeImageSrc = activeDesktopSrc || activeMobileSrc;
+  const activePreviewSrc = getPreviewSrc(activeImage);
   const backdropSrc = getBackdropSrc(activeImage);
   const backdropColor = activeImage.metadata?.dominantColor || DEFAULT_DETAIL_BACKDROP_COLOR;
   const title = product?.name || product?.title || 'Produit';
@@ -236,22 +255,81 @@ export default function ProductDetailShellIsland({
   });
   const lightboxSrc = lightboxFullSrc || lightboxInitialSrc;
 
-  const goToIndex = useCallback((index) => {
-    setActiveImg(Math.max(0, Math.min(index, safeImages.length - 1)));
+  const clampImageIndex = useCallback((index) => (
+    Math.max(0, Math.min(index, Math.max(0, safeImages.length - 1)))
+  ), [safeImages.length]);
+
+  const getDetailImageSrcAtIndex = useCallback((index, viewport = 'desktop') => {
+    const image = safeImages[clampImageIndex(index)] || {};
+    const preferredSrc = getDisplaySrc(image, viewport);
+    const fallbackViewport = viewport === 'mobile' ? 'desktop' : 'mobile';
+    return preferredSrc || getDisplaySrc(image, fallbackViewport);
+  }, [clampImageIndex, safeImages]);
+
+  const preloadDetailImageAtIndex = useCallback((index, options = {}) => {
+    const src = getDetailImageSrcAtIndex(index, options.viewport);
+    if (!src) return Promise.resolve(null);
+
+    return preloadImage(src, {
+      priority: options.priority || 'auto',
+      sizes: PRODUCT_DETAIL_IMAGE_SIZES,
+      decode: options.decode === true,
+      decoding: 'async',
+    }).catch(() => null);
+  }, [getDetailImageSrcAtIndex]);
+
+  const commitImageIndex = useCallback((index) => {
+    const nextIndex = clampImageIndex(index);
+    setActiveImg(nextIndex);
     setHasPrimaryImagePainted(false);
     setLightboxFullSrc('');
     setLightboxBaseSrc('');
-  }, [safeImages.length]);
+  }, [clampImageIndex]);
+
+  const requestImageIndex = useCallback((index, options = {}) => {
+    if (!safeImages.length) return false;
+
+    const nextIndex = clampImageIndex(index);
+    if (nextIndex === navigationImgRef.current && nextIndex === activeImgRef.current) return false;
+
+    navigationImgRef.current = nextIndex;
+    const requestId = imageSwitchRequestRef.current + 1;
+    imageSwitchRequestRef.current = requestId;
+
+    const finish = () => {
+      if (imageSwitchRequestRef.current !== requestId) return;
+      commitImageIndex(nextIndex);
+    };
+
+    if (options.waitForDecode) {
+      preloadDetailImageAtIndex(nextIndex, {
+        viewport: options.viewport,
+        priority: 'high',
+        decode: true,
+      }).finally(finish);
+      return true;
+    }
+
+    finish();
+    return true;
+  }, [clampImageIndex, commitImageIndex, preloadDetailImageAtIndex, safeImages.length]);
+
+  const goToIndex = useCallback((index) => {
+    const viewport = typeof window !== 'undefined' && window.innerWidth < 1024 ? 'mobile' : 'desktop';
+    requestImageIndex(index, { viewport });
+  }, [requestImageIndex]);
 
   const goPrevious = useCallback((event) => {
     event?.stopPropagation?.();
-    goToIndex(activeImg <= 0 ? safeImages.length - 1 : activeImg - 1);
-  }, [activeImg, goToIndex, safeImages.length]);
+    const currentIndex = navigationImgRef.current;
+    goToIndex(currentIndex <= 0 ? safeImages.length - 1 : currentIndex - 1);
+  }, [goToIndex, safeImages.length]);
 
   const goNext = useCallback((event) => {
     event?.stopPropagation?.();
-    goToIndex(activeImg >= safeImages.length - 1 ? 0 : activeImg + 1);
-  }, [activeImg, goToIndex, safeImages.length]);
+    const currentIndex = navigationImgRef.current;
+    goToIndex(currentIndex >= safeImages.length - 1 ? 0 : currentIndex + 1);
+  }, [goToIndex, safeImages.length]);
 
   const handleDesktopImageWheel = useCallback((event) => {
     if (safeImages.length <= 1 || isLightboxOpen) return;
@@ -263,11 +341,14 @@ export default function ProductDetailShellIsland({
     wheel.acc += Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
 
     if (Math.abs(wheel.acc) >= 60) {
+      const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      if (now - wheel.lastSwitchAt < 70) {
+        wheel.acc = 0;
+        return;
+      }
       const direction = wheel.acc > 0 ? 1 : -1;
-      setActiveImg((previous) => Math.max(0, Math.min(safeImages.length - 1, previous + direction)));
-      setHasPrimaryImagePainted(false);
-      setLightboxFullSrc('');
-      setLightboxBaseSrc('');
+      const didSwitch = requestImageIndex(navigationImgRef.current + direction, { viewport: 'desktop' });
+      if (didSwitch) wheel.lastSwitchAt = now;
       wheel.acc = 0;
     }
 
@@ -276,7 +357,63 @@ export default function ProductDetailShellIsland({
       wheel.acc = 0;
       wheel.resetTimer = 0;
     }, 150);
-  }, [isLightboxOpen, safeImages.length]);
+  }, [isLightboxOpen, requestImageIndex, safeImages.length]);
+
+  useEffect(() => {
+    activeImgRef.current = activeImg;
+    navigationImgRef.current = activeImg;
+  }, [activeImg]);
+
+  useEffect(() => {
+    const deferCartPanelEvent = (event) => {
+      if (cartPanelMountedRef.current) return;
+      cartPanelEventIdRef.current += 1;
+      setCartPanelEvent({
+        id: cartPanelEventIdRef.current,
+        type: event.type,
+        detail: event.detail || null,
+      });
+    };
+
+    window.addEventListener('sv:open-cart', deferCartPanelEvent);
+    window.addEventListener('sv:product-added', deferCartPanelEvent);
+    return () => {
+      window.removeEventListener('sv:open-cart', deferCartPanelEvent);
+      window.removeEventListener('sv:product-added', deferCartPanelEvent);
+    };
+  }, []);
+
+  const handleCartPanelReady = useCallback(() => {
+    cartPanelMountedRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!safeImages.length || typeof window === 'undefined') return undefined;
+
+    const isDesktop = window.matchMedia?.('(min-width: 1024px)').matches;
+    const viewport = isDesktop ? 'desktop' : 'mobile';
+    const radius = 1;
+    const indexes = [];
+
+    for (let offset = 1; offset <= radius; offset += 1) {
+      if (activeImg + offset < safeImages.length) indexes.push(activeImg + offset);
+      if (activeImg - offset >= 0) indexes.push(activeImg - offset);
+    }
+
+    if (!indexes.length) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      indexes.forEach((index, order) => {
+        preloadDetailImageAtIndex(index, {
+          viewport,
+          priority: order === 0 ? 'auto' : 'low',
+          decode: false,
+        });
+      });
+    }, hasPrimaryImagePainted ? 80 : 180);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [activeImg, hasPrimaryImagePainted, preloadDetailImageAtIndex, safeImages.length]);
 
   useEffect(() => () => {
     if (wheelStateRef.current.resetTimer) {
@@ -312,7 +449,7 @@ export default function ProductDetailShellIsland({
     if (hasNavigatedToGalleryRef.current) return;
 
     hasNavigatedToGalleryRef.current = true;
-    const targetHref = restoreUrlFromSession() || '/?page=gallery';
+    const targetHref = restoreUrlFromSession() || '/galerie';
     try {
       window.sessionStorage.setItem('secondevie:open-gallery-on-arrival', 'true');
     } catch {}
@@ -534,7 +671,7 @@ export default function ProductDetailShellIsland({
       ref={containerRef}
       data-next-product-detail-shell="native"
       data-native-scroll-region
-      className="fixed inset-0 z-[100] w-screen overflow-hidden font-body selection:bg-secondary-container selection:text-on-secondary-container bg-[#f4f1ec] text-stone-900"
+      className={`fixed inset-0 z-[100] w-screen overflow-hidden font-body selection:bg-secondary-container selection:text-on-secondary-container ${darkMode ? 'bg-[#0A0A0A] text-stone-100' : 'bg-[#f4f1ec] text-stone-900'}`}
       style={{
         height: 'var(--marketplace-viewport-height, 100svh)',
         backgroundColor: backdropColor,
@@ -559,7 +696,7 @@ export default function ProductDetailShellIsland({
       ) : null}
 
       <main className="w-full h-full lg:overflow-hidden lg:flex lg:flex-row relative">
-        <div ref={mobileShellRef} className="fixed inset-0 overflow-hidden overscroll-none transition-colors duration-500 bg-[#FAFAF9] lg:hidden" style={{ height: 'var(--marketplace-viewport-height, 100svh)' }}>
+        <div ref={mobileShellRef} className={`fixed inset-0 overflow-hidden overscroll-none transition-colors duration-500 lg:hidden ${darkMode ? 'bg-[#0A0A0A]' : 'bg-[#FAFAF9]'}`} style={{ height: 'var(--marketplace-viewport-height, 100svh)' }}>
           <div ref={mobileThumbLayerRef} className={`absolute top-0 left-0 w-full z-20 px-3 safe-pt-product-thumbs pb-1 transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${isMobilePanelOpen ? '-translate-y-full' : 'translate-y-0'}`}>
             <ProductThumbRail
               images={safeImages}
@@ -585,8 +722,37 @@ export default function ProductDetailShellIsland({
               <div className="product-detail-mobile-image-shadow pointer-events-none drop-shadow-[0_20px_42px_rgba(92,75,57,0.24)]">
                 <div data-fit-mode={activeImageFitMode} className="product-detail-mobile-image-frame" style={mobileDetailImageFrameStyle}>
                   <div className="product-detail-mobile-image-clip">
+                    {activePreviewSrc && activePreviewSrc !== activeMobileSrc ? (
+                      <img
+                        key={`mobile-preview-${activePreviewSrc}`}
+                        src={activePreviewSrc}
+                        sizes={PRODUCT_DETAIL_IMAGE_SIZES}
+                        alt=""
+                        aria-hidden="true"
+                        data-fit-mode={activeImageFitMode}
+                        className="product-detail-mobile-image object-cover select-none"
+                        style={{
+                          zIndex: 1,
+                          width: '100%',
+                          height: '100%',
+                          maxWidth: 'none',
+                          maxHeight: 'none',
+                          objectFit: 'cover',
+                          borderRadius: 0,
+                          overflow: 'visible',
+                          clipPath: 'none',
+                          transition: 'none',
+                        }}
+                        draggable={false}
+                        loading="eager"
+                        decoding="async"
+                        fetchPriority="high"
+                        onLoad={() => setHasPrimaryImagePainted(true)}
+                      />
+                    ) : null}
                     {activeMobileSrc ? (
                       <img
+                        key={`mobile-${activeMobileSrc}`}
                         ref={mainImageRef}
                         src={activeMobileSrc}
                         srcSet={undefined}
@@ -596,6 +762,7 @@ export default function ProductDetailShellIsland({
                         data-fit-mode={activeImageFitMode}
                         className="product-detail-mobile-image product-detail-mobile-image-layer--current object-cover select-none"
                         style={{
+                          zIndex: 2,
                           width: '100%',
                           height: '100%',
                           maxWidth: 'none',
@@ -695,6 +862,7 @@ export default function ProductDetailShellIsland({
                 productId={product?.id}
                 productName={title}
                 priceLabel={priceLabel}
+                cartItem={cartItem}
                 mobile
               />
             </div>
@@ -741,24 +909,44 @@ export default function ProductDetailShellIsland({
                   className="relative overflow-hidden rounded-2xl shadow-[0_45px_110px_-25px_rgba(0,0,0,0.8)]"
                   style={{
                     ...desktopDetailImageFrameStyle,
-                    backgroundColor: 'transparent',
+                    backgroundColor: activeImage.metadata?.dominantColor || 'transparent',
+                    backgroundImage: activeImage.metadata?.blurDataUrl ? `url("${activeImage.metadata.blurDataUrl}")` : undefined,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
                   }}
                 >
                   {activeImageSrc ? (
-                    <img
-                      ref={mainImageRef}
-                      src={activeImageSrc}
-                      srcSet={undefined}
-                      sizes={PRODUCT_DETAIL_IMAGE_SIZES}
-                      alt={title}
-                      loading="eager"
-                      decoding="async"
-                      fetchPriority="high"
-                      onLoad={() => setHasPrimaryImagePainted(true)}
-                      data-product-main-image="true"
-                      data-desktop-image-ready="true"
-                      className="relative z-10 block h-full w-full object-cover opacity-100"
-                    />
+                    <>
+                      {activePreviewSrc && activePreviewSrc !== activeImageSrc ? (
+                        <img
+                          key={`desktop-preview-${activePreviewSrc}`}
+                          src={activePreviewSrc}
+                          sizes={PRODUCT_DETAIL_IMAGE_SIZES}
+                          alt=""
+                          aria-hidden="true"
+                          loading="eager"
+                          decoding="async"
+                          fetchPriority="high"
+                          className="absolute inset-0 z-10 block h-full w-full object-cover opacity-100"
+                          onLoad={() => setHasPrimaryImagePainted(true)}
+                        />
+                      ) : null}
+                      <img
+                        key={`desktop-${activeImageSrc}`}
+                        ref={mainImageRef}
+                        src={activeImageSrc}
+                        srcSet={undefined}
+                        sizes={PRODUCT_DETAIL_IMAGE_SIZES}
+                        alt={title}
+                        loading="eager"
+                        decoding="async"
+                        fetchPriority="high"
+                        onLoad={() => setHasPrimaryImagePainted(true)}
+                        data-product-main-image="true"
+                        data-desktop-image-ready="true"
+                        className="absolute inset-0 z-20 block h-full w-full object-cover opacity-100"
+                      />
+                    </>
                   ) : null}
                 </div>
               </div>
@@ -817,6 +1005,9 @@ export default function ProductDetailShellIsland({
             ) : null}
           </div>
         </div>
+      ) : null}
+      {cartPanelEvent ? (
+        <CartPanelIsland className="hidden" initialEvent={cartPanelEvent} onReady={handleCartPanelReady} />
       ) : null}
     </div>
   );

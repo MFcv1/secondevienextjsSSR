@@ -1,10 +1,10 @@
 import { notFound } from 'next/navigation';
 import {
   getPublicProduct,
-  getPublishedProductStaticParams,
   isSeoIndexableProduct
 } from '../../../src/lib/server/products';
 import { publicEnv } from '../../../src/lib/server/env';
+import { getServerDarkMode } from '../../../src/lib/server/theme';
 import { getProductUrl } from '../../../src/utils/slug';
 import { getProductImageItems } from '../../../src/utils/imageUtils';
 import {
@@ -14,20 +14,51 @@ import {
 import ProductDetailServerView from '../../../src/kit/marketplace/ProductDetailServerView';
 
 export const revalidate = 300;
+export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 const safeJsonLd = (data) => JSON.stringify(data).replace(/</g, '\\u003c');
 
 const normalizeText = (value, fallback = '') => String(value || fallback).replace(/\s+/g, ' ').trim();
 
-export async function generateStaticParams() {
-  try {
-    return await getPublishedProductStaticParams(160);
-  } catch (error) {
-    console.warn('[SSR] Product static params unavailable:', error?.message || error);
-    return [];
-  }
-}
+const getDisplayImageSrc = (image) => (
+  image?.medium
+  || image?.large
+  || image?.src
+  || image?.card
+  || image?.thumb
+  || ''
+);
+
+const getPreviewImageSrc = (image) => (
+  image?.card
+  || image?.thumb
+  || image?.medium
+  || image?.src
+  || image?.large
+  || ''
+);
+
+const getInitialDetailImagePreloads = (product) => {
+  const seen = new Set();
+  const imageItems = getProductImageItems(product);
+
+  return [
+    {
+      href: getDisplayImageSrc(imageItems[0]),
+      priority: 'high'
+    },
+    ...imageItems.slice(1, 2).map((image, index) => ({
+      href: getPreviewImageSrc(image),
+      priority: index === 0 ? 'auto' : 'low'
+    }))
+  ]
+    .filter(({ href }) => {
+      if (!href || seen.has(href)) return false;
+      seen.add(href);
+      return true;
+    });
+};
 
 const getProductPageData = async (params) => {
   const resolvedParams = await params;
@@ -84,29 +115,27 @@ export async function generateMetadata({ params }) {
 export default async function ProductPage({ params }) {
   const product = await getProductPageData(params);
   if (!product) notFound();
+  const darkMode = await getServerDarkMode();
 
   const jsonLd = buildProductJsonLd(product, publicEnv.siteUrl);
   const breadcrumbJsonLd = buildBreadcrumbJsonLd(product, publicEnv.siteUrl);
   const [primaryProductImage] = getProductImageItems(product);
-  const primaryImmediateImage = primaryProductImage?.medium
-    || primaryProductImage?.large
-    || primaryProductImage?.src
-    || primaryProductImage?.card
-    || primaryProductImage?.thumb
-    || '';
+  const detailImagePreloads = getInitialDetailImagePreloads(product);
+  const primaryImmediateImage = detailImagePreloads[0]?.href || '';
   const productTitle = normalizeText(product.name || product.title, 'Produit Seconde Vie');
   const productDescription = normalizeText(product.description, publicEnv.siteDescription);
 
   return (
     <>
-      {primaryImmediateImage ? (
+      {detailImagePreloads.map((image) => (
         <link
+          key={image.href}
           rel="preload"
           as="image"
-          href={primaryImmediateImage}
-          fetchPriority="high"
+          href={image.href}
+          fetchPriority={image.priority}
         />
-      ) : null}
+      ))}
       <article data-ssr-product className="sr-only">
         <h1>{productTitle}</h1>
         <p>{productDescription}</p>
@@ -119,7 +148,7 @@ export default async function ProductPage({ params }) {
           />
         ) : null}
       </article>
-      <ProductDetailServerView product={product} />
+      <ProductDetailServerView product={product} darkMode={darkMode} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}

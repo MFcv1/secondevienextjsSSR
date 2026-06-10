@@ -1,11 +1,11 @@
 ﻿import React, { createContext, useContext, useEffect, useState } from 'react';
 import { getCallableFunction, getFirebaseAuth, getGoogleProvider, loadAuthModule } from '../config/firebaseLazy';
 
-// âš ï¸ CONFIGURER dans .env.local : VITE_SUPER_ADMIN_EMAIL=votre@email.com
+// CONFIGURER dans .env.local : VITE_SUPER_ADMIN_EMAIL=votre@email.com
 const SUPER_ADMIN_EMAIL = process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '';
 
 // Detect iOS standalone PWA mode (added to home screen)
-// In this mode, signInWithPopup is blocked by WebKit â€” must use signInWithRedirect
+// In this mode, signInWithPopup is blocked by WebKit: must use signInWithRedirect
 const isIOSStandalone = () => {
     if (typeof window === 'undefined' || typeof navigator === 'undefined' || typeof document === 'undefined') {
         return false;
@@ -46,6 +46,11 @@ const isAuthRoute = () => {
 const shouldInitializeAuthOnMount = () => (
     hasRedirectPending() || hasPersistedFirebaseUser() || isAuthRoute()
 );
+
+const emitAuthUserChanged = (user) => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent('sv:auth-user-changed', { detail: { user: user || null } }));
+};
 
 // Create the context
 const AuthContext = createContext();
@@ -99,6 +104,7 @@ export const AuthProvider = ({ children }) => {
             unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
                 if (cancelled) return;
                 setUser(currentUser);
+                emitAuthUserChanged(currentUser);
                 setLoading(false);
             });
         };
@@ -116,9 +122,22 @@ export const AuthProvider = ({ children }) => {
         };
     }, []);
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return undefined;
+
+        const handleExternalAuthChange = (event) => {
+            setUser(event.detail?.user || null);
+            setLoading(false);
+        };
+
+        window.addEventListener('sv:auth-user-changed', handleExternalAuthChange);
+        return () => window.removeEventListener('sv:auth-user-changed', handleExternalAuthChange);
+    }, []);
+
     const syncSignedInUser = async (result) => {
         if (result?.user) {
             setUser(result.user);
+            emitAuthUserChanged(result.user);
             setLoading(false);
         }
         return result;
@@ -169,7 +188,7 @@ export const AuthProvider = ({ children }) => {
 
         if (isIOSStandalone()) {
             // iOS standalone (PWA home screen): signInWithPopup is blocked by WebKit
-            // Use signInWithRedirect â€” page will reload and getRedirectResult handles it above
+            // Use signInWithRedirect: page will reload and getRedirectResult handles it above
             // Flag persists in sessionStorage so the redirect lifecycle survives reload.
             setRedirectPending();
             await module.signInWithRedirect(auth, googleProvider);
@@ -199,6 +218,7 @@ export const AuthProvider = ({ children }) => {
         const { auth, module } = await getAuthRuntime();
         setUser(null);
         setIsAdmin(false);
+        emitAuthUserChanged(null);
         return module.signOut(auth);
     };
 

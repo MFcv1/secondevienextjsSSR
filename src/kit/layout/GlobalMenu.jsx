@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -30,6 +32,7 @@ import {
     Wrench
 } from 'lucide-react';
 import KIT_CONFIG from '../config/constants';
+import { getCategoryUrl } from '../../utils/slug';
 
 const CATEGORY_ICONS = {
     armoires: DoorClosed,
@@ -433,13 +436,11 @@ const GlobalMenu = ({
     isMenuClosing = false,
     keepMounted = false,
     setIsMenuOpen,
-    setView,
     currentView,
     user,
     isAdmin,
     darkMode,
     contactInfo,
-    onNavigateCategory,
     onShowLogin,
     onOpenCart,
     cartCount = 0,
@@ -538,24 +539,14 @@ const GlobalMenu = ({
         lockedScrollYRef.current = window.scrollY;
         closingWheelDeltaRef.current = 0;
         const root = document.documentElement;
-        const previousBodyPosition = document.body.style.position;
-        const previousBodyTop = document.body.style.top;
-        const previousBodyLeft = document.body.style.left;
-        const previousBodyRight = document.body.style.right;
-        const previousBodyWidth = document.body.style.width;
         const previousRootOverflowY = root.style.overflowY;
         const previousRootScrollbarGutter = root.style.scrollbarGutter;
         const previousRootOverscrollBehavior = root.style.overscrollBehavior;
         const previousRootScrollBehavior = root.style.scrollBehavior;
         let scrollFreezeFrame = null;
 
-        document.body.style.position = 'fixed';
-        document.body.style.top = `-${lockedScrollYRef.current}px`;
-        document.body.style.left = '0';
-        document.body.style.right = '0';
-        document.body.style.width = '100%';
-        root.style.overflowY = 'hidden';
-        root.style.scrollbarGutter = 'auto';
+        root.style.overflowY = 'scroll';
+        root.style.scrollbarGutter = 'stable';
         root.style.overscrollBehavior = 'none';
         root.style.scrollBehavior = 'auto';
 
@@ -630,11 +621,6 @@ const GlobalMenu = ({
             window.removeEventListener('touchmove', handleTouchMove, { capture: true });
             window.removeEventListener('keydown', handleKeyDown, { capture: true });
             if (scrollFreezeFrame) window.cancelAnimationFrame(scrollFreezeFrame);
-            document.body.style.position = previousBodyPosition;
-            document.body.style.top = previousBodyTop;
-            document.body.style.left = previousBodyLeft;
-            document.body.style.right = previousBodyRight;
-            document.body.style.width = previousBodyWidth;
             root.style.overflowY = previousRootOverflowY;
             root.style.scrollbarGutter = previousRootScrollbarGutter;
             root.style.overscrollBehavior = previousRootOverscrollBehavior;
@@ -659,22 +645,23 @@ const GlobalMenu = ({
         requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
     };
 
-    const goToView = (view) => {
-        if (view === 'home') window.hasShownPreloader = true;
-        setView(view);
+    const navigateToPath = (path) => {
         closeMenu();
-        scrollTop();
+        window.location.assign(path);
+    };
+
+    const openAbout = () => {
+        closeMenu();
+        window.location.assign('/a-propos');
     };
 
     const goToCategory = (categoryId) => {
-        if (onNavigateCategory) onNavigateCategory(categoryId);
-        closeMenu();
-        scrollTop();
+        navigateToPath(getCategoryUrl(categoryId));
     };
 
     const openWishlist = () => {
         if (onOpenWishlist) onOpenWishlist();
-        else setView('wishlist');
+        else window.location.assign('/wishlist');
         closeMenu();
         scrollTop();
     };
@@ -699,24 +686,30 @@ const GlobalMenu = ({
         onLogout?.();
     };
 
-    const isGalleryContext = ['gallery', 'category', 'detail', 'wishlist'].includes(currentView);
+    const openAccount = () => {
+        navigateToPath('/mes-commandes');
+    };
+
+    const isSignedIn = user && !user.isAnonymous;
+
+    const isGalleryContext = ['gallery', 'wishlist'].includes(currentView);
 
     const primaryLinks = [
-        { label: 'Accueil', desc: 'Galerie principale', Icon: Home, active: isGalleryContext, action: () => goToView('gallery') },
-        { label: 'À propos', desc: 'Atelier et histoire', Icon: UserRound, active: currentView === 'home', action: () => goToView('home') },
-        { label: 'Commandes', desc: 'Espace client', Icon: Package, active: currentView === 'my-orders', action: () => (user && !user.isAnonymous ? goToView('my-orders') : handleLogin()) },
+        { label: 'Accueil', desc: 'Galerie principale', Icon: Home, active: isGalleryContext, action: () => navigateToPath('/galerie') },
+        { label: 'À propos', desc: 'Atelier et histoire', Icon: UserRound, active: false, action: openAbout },
+        { label: 'Commandes', desc: 'Espace client', Icon: Package, active: currentView === 'my-orders', action: () => (isSignedIn ? navigateToPath('/mes-commandes') : handleLogin()) },
         { label: 'Devis', desc: 'Projet sur mesure', Icon: ClipboardCheck, active: false, action: openQuoteRequest },
-        ...(isAdmin ? [{ label: 'Admin.', desc: 'Backoffice', Icon: ShieldCheck, active: currentView === 'admin', action: () => goToView('admin') }] : []),
+        ...(isAdmin ? [{ label: 'Admin.', desc: 'Backoffice', Icon: ShieldCheck, active: currentView === 'admin', action: () => navigateToPath('/admin') }] : []),
     ];
 
     const mobileRows = [
-        { label: 'Nouveautés', badge: 'Nouveau', Icon: Sparkles, action: () => goToView('gallery') },
+        { label: 'Nouveautés', badge: 'Nouveau', Icon: Sparkles, action: () => navigateToPath('/galerie') },
         { label: 'Meubles', Icon: DoorOpen, action: () => goToCategory('meubles') },
         { label: 'Assises', Icon: Armchair, action: () => goToCategory('assises') },
         { label: 'Éclairage', Icon: Lamp, action: () => goToCategory('eclairage') },
         { label: 'Décorations', Icon: Flower2, action: () => goToCategory('decorations') },
-        { label: 'Prix bas', Icon: BadgeEuro, accent: true, action: () => goToView('gallery') },
-        { label: 'À propos', Icon: UserRound, action: () => goToView('home') },
+        { label: 'Prix bas', Icon: BadgeEuro, accent: true, action: () => navigateToPath('/galerie') },
+        { label: 'À propos', Icon: UserRound, action: openAbout },
     ];
 
     const panelTone = darkMode
@@ -749,7 +742,8 @@ const GlobalMenu = ({
     return (
         <motion.div
             key="global-menu-shell"
-            className={`${isMenuInteractive ? 'pointer-events-auto' : 'pointer-events-none'} ${isMenuDormant ? 'opacity-0' : ''} fixed inset-0 z-[2000] overflow-hidden`}
+            className={`${isMenuInteractive ? 'pointer-events-auto' : 'pointer-events-none'} ${isMenuDormant ? 'opacity-0' : ''} fixed inset-x-0 bottom-0 z-[2000] overflow-hidden`}
+            style={{ top: menuTop }}
             role={isMenuInteractive ? 'dialog' : undefined}
             aria-modal={isMenuInteractive ? 'true' : undefined}
             aria-hidden={!isMenuInteractive}
@@ -762,7 +756,6 @@ const GlobalMenu = ({
                     <motion.button
                         type="button"
                         className={`${isMenuInteractive ? 'pointer-events-auto' : 'pointer-events-none'} absolute inset-0 h-full w-full bg-stone-950/20 lg:bg-stone-950/45 lg:backdrop-blur-sm`}
-                        style={{ top: menuTop }}
                         onClick={closeMenu}
                         onWheel={(event) => event.preventDefault()}
                         aria-label="Fermer le menu"
@@ -776,7 +769,7 @@ const GlobalMenu = ({
                         variants={desktopPanelVariants}
                         custom={desktopPanelMaxHeight}
                         style={{
-                            top: menuTop,
+                            top: 0,
                             maxHeight: desktopPanelMaxHeight,
                             transformOrigin: 'top center',
                             pointerEvents: 'auto',
@@ -815,19 +808,26 @@ const GlobalMenu = ({
                                     </motion.nav>
 
                                     <motion.div className={`border-t px-1.5 pt-6 ${softBorder}`} variants={menuItemVariants}>
-                                        {user && !user.isAnonymous ? (
-                                            <div className="flex items-center gap-3">
+                                        {isSignedIn ? (
+                                            <motion.button
+                                                type="button"
+                                                onClick={openAccount}
+                                                className={`global-menu-hover flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left ${darkMode ? 'bg-white/5' : 'bg-stone-50'}`}
+                                                variants={menuItemVariants}
+                                                whileHover={textHoverMotion}
+                                                whileTap={textTapMotion}
+                                            >
                                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#9A654B] text-sm font-black text-white">
                                                     {(user.email || user.displayName || 'M').charAt(0).toUpperCase()}
                                                 </div>
-                                                <div className="min-w-0">
-                                                    <p className="truncate text-[11px] font-black">{user.email || user.displayName}</p>
-                                                    <p className={`mt-1 text-[11px] ${mutedText}`}>
-                                                        Connecté en tant qu’admin
-                                                        {user.emailVerified && <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-bold text-blue-500">Vérifié</span>}
-                                                    </p>
-                                                </div>
-                                            </div>
+                                                <span className="min-w-0">
+                                                    <span className="global-menu-hover__label block text-[12px] font-black">Mon espace</span>
+                                                    <span className={`global-menu-hover__desc block truncate text-[11px] ${mutedText}`}>
+                                                        Commandes et suivi
+                                                    </span>
+                                                </span>
+                                                <ChevronRight size={18} strokeWidth={1.4} className="ml-auto shrink-0 text-[#9A654B]" />
+                                            </motion.button>
                                         ) : (
                                             <motion.button
                                                 type="button"
@@ -870,7 +870,7 @@ const GlobalMenu = ({
                                         </motion.div>
                                         <motion.button
                                             type="button"
-                                            onClick={() => goToView('gallery')}
+                                            onClick={() => navigateToPath('/galerie')}
                                             className={`global-menu-hover global-menu-hover--ambient mt-auto flex items-center gap-3 border-t pt-6 font-serif text-[16px] font-semibold text-[#8B5C42] ${softBorder}`}
                                             variants={menuItemVariants}
                                             whileHover={textHoverMotion}
@@ -929,7 +929,7 @@ const GlobalMenu = ({
                                         </motion.div>
                                         <motion.button
                                             type="button"
-                                            onClick={() => goToView('gallery')}
+                                            onClick={() => navigateToPath('/galerie')}
                                             className={`global-menu-hover mt-4 flex w-full items-center justify-between rounded-[14px] px-5 py-4 text-left ${darkMode ? 'bg-white/5' : 'bg-[#f5f0ec]'}`}
                                             variants={menuItemVariants}
                                             whileHover={textHoverMotion}
@@ -956,7 +956,7 @@ const GlobalMenu = ({
                                                     <motion.button
                                                         key={label}
                                                         type="button"
-                                                        onClick={() => goToView('home')}
+                                                        onClick={openAbout}
                                                         className="global-menu-hover global-menu-hover--ambient group flex items-start gap-3 rounded-lg text-left"
                                                         variants={menuItemVariants}
                                                         whileHover={textHoverMotion}
@@ -975,7 +975,7 @@ const GlobalMenu = ({
                                         <motion.div className="space-y-3" variants={menuColumnVariants} custom={MENU_SEQUENCE.atelierMedia}>
                                             <motion.button
                                                 type="button"
-                                                onClick={() => goToView('gallery')}
+                                                onClick={() => navigateToPath('/galerie')}
                                                 aria-label="Découvrir la livraison offerte"
                                                 className="group relative h-[206px] w-full overflow-hidden rounded-[16px] bg-[#f8f4ee] text-left"
                                                 variants={menuTileVariants}
@@ -993,7 +993,7 @@ const GlobalMenu = ({
 
                                             <motion.button
                                                 type="button"
-                                                onClick={() => goToView('home')}
+                                                onClick={openAbout}
                                                 className={`group grid h-[206px] w-full grid-cols-[minmax(0,1fr)_140px] overflow-hidden rounded-[16px] text-left ${darkMode ? 'bg-white/5' : 'bg-[#f4eee8]'}`}
                                                 variants={menuTileVariants}
                                             >
@@ -1040,7 +1040,7 @@ const GlobalMenu = ({
                         className={`${isMenuInteractive ? 'pointer-events-auto' : 'pointer-events-none'} thin-scrollbar absolute bottom-0 left-0 right-0 overflow-y-auto overscroll-contain lg:hidden ${panelTone}`}
                         variants={mobilePanelVariants}
                         style={{
-                            top: menuTop,
+                            top: 0,
                             maxHeight: `calc(100dvh - ${menuTop}px)`,
                             pointerEvents: 'auto',
                             WebkitOverflowScrolling: 'touch',
@@ -1060,7 +1060,7 @@ const GlobalMenu = ({
                                         placeholder="Rechercher un produit..."
                                         className={`h-full w-full rounded-lg bg-transparent pl-4 pr-12 text-[15px] outline-none placeholder:text-stone-400 ${darkMode ? 'text-stone-100' : 'text-stone-800'}`}
                                         onKeyDown={(event) => {
-                                            if (event.key === 'Enter') goToView('gallery');
+                                            if (event.key === 'Enter') navigateToPath('/galerie');
                                         }}
                                     />
                                     <Search className="absolute right-4 text-stone-500" size={21} strokeWidth={1.5} />
@@ -1123,10 +1123,10 @@ const GlobalMenu = ({
                             </motion.div>
 
                             <motion.div className={`border-t px-6 py-5 ${softBorder}`} variants={mobileRevealItemVariants}>
-                                {user && !user.isAnonymous ? (
+                                {isSignedIn ? (
                                     <motion.button
                                         type="button"
-                                        onClick={isAdmin ? () => goToView('admin') : () => goToView('my-orders')}
+                                        onClick={openAccount}
                                         className="flex w-full items-center gap-4 text-left"
                                         whileTap={textTapMotion}
                                     >
@@ -1135,10 +1135,10 @@ const GlobalMenu = ({
                                         </span>
                                         <span className="min-w-0 flex-1">
                                             <span className="block truncate text-[14px] font-black">
-                                                {user.email || user.displayName}
+                                                Mon espace
                                                 {user.emailVerified && <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-500">Vérifié</span>}
                                             </span>
-                                            <span className={`mt-1 block text-[13px] ${mutedText}`}>Connecté en tant qu’admin</span>
+                                            <span className={`mt-1 block truncate text-[13px] ${mutedText}`}>{user.email || user.displayName || 'Commandes et suivi'}</span>
                                         </span>
                                         <ChevronRight size={24} strokeWidth={1.4} />
                                     </motion.button>

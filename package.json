@@ -26,6 +26,10 @@
     "perf:scroll": "node scripts/audit-gallery-scroll-lag.mjs --mode=immediate --assert --trace=false",
     "perf:scroll:newsletter": "node scripts/audit-gallery-scroll-lag.mjs --mode=newsletter --assert --trace=false",
     "perf:product-direct": "node scripts/audit-product-page-direct.mjs --assert",
+    "perf:category-direct": "node scripts/audit-category-direct.mjs --assert",
+    "perf:about-direct": "node scripts/audit-about-direct.mjs --assert",
+    "perf:quote-direct": "node scripts/audit-quote-direct.mjs --assert",
+    "perf:gallery-direct": "node scripts/audit-gallery-direct.mjs --assert",
     "perf:product-images": "node scripts/audit-product-detail-images.mjs --assert",
     "mobile:contract": "node scripts/check-mobile-marketplace-contract.cjs"
   },

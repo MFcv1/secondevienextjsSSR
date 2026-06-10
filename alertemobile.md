@@ -1,5 +1,25 @@
 # Alerte mobile - Galerie / Detail produit
 
+## Mise a jour 2026-06-09 - shell SPA global supprime
+
+`src/Router.jsx`, `src/app.jsx`, `app/ClientApp.jsx` et l'ancien gros `app/GalleryShellIsland.jsx` ont ete supprimes pendant la migration full Next App Router.
+
+Le contrat mobile actif est maintenant separe:
+
+- `src/kit/marketplace/GalleryServerView.jsx` rend le shell et le scroller en HTML serveur;
+- `app/GalleryMobileShellIsland.jsx` attache uniquement la hauteur viewport, le scroll lock mobile et les handlers touch strictement necessaires.
+
+Invariant actif a conserver:
+
+- `.marketplace-gallery-shell` reste le shell fixe de la galerie;
+- `#marketplaceGalleryScroll.marketplace-gallery-scroll` reste le scroller interne;
+- `data-native-scroll-region` reste pose en viewport mobile;
+- `marketplace-mobile-scroll-lock` reste pose sur `html` et `body` en galerie mobile;
+- les handlers touch restent attaches au scroller tant que le pull-refresh/scroll mobile natif existe;
+- le detail produit ne doit pas repasser par un overlay SPA legacy.
+
+Le script `npm run mobile:contract` verifie maintenant ce contrat dans `src/kit/marketplace/GalleryServerView.jsx` et `app/GalleryMobileShellIsland.jsx`.
+
 Date incident: 2026-05-01
 
 ## Resume

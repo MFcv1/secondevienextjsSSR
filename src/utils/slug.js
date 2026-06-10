@@ -20,8 +20,3 @@ export function getCategoryUrl(categoryId, siteUrl = '') {
   const path = `/categorie/${cleanId}`;
   return siteUrl ? `${siteUrl.replace(/\/$/, '')}${path}` : path;
 }
-
-export function extractCategoryIdFromPath(pathname) {
-  const match = String(pathname || '').match(/^\/categorie\/([^/?#]+)\/?$/);
-  return match ? decodeURIComponent(match[1]) : null;
-}

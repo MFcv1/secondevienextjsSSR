@@ -92,6 +92,7 @@ export default async function sitemap() {
 
   return [
     withLastModified({ url: `${baseUrl}/` }, catalogLastModified),
+    withLastModified({ url: `${baseUrl}/galerie` }, catalogLastModified),
     { url: `${baseUrl}/a-propos` },
     { url: `${baseUrl}/devis` },
     ...categoryEntries.map((category) => ({

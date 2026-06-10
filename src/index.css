@@ -19,39 +19,6 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
   display: none !important;
 }
 
-html[data-sv-force-gallery-entry="true"],
-html[data-sv-force-gallery-entry="true"] body {
-  background: #0f0f11;
-}
-
-html[data-sv-force-gallery-entry="true"] [data-ssr-home] {
-  display: none !important;
-}
-
-.sv-gallery-launcher-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9998;
-  background: #0f0f11;
-}
-
-@media (min-width: 1024px) {
-  .sv-gallery-launcher-overlay {
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-  }
-}
-
-@media (max-width: 1023px) {
-  .sv-gallery-launcher-overlay {
-    height: var(--marketplace-viewport-height, 100svh);
-    max-height: var(--marketplace-viewport-height, 100svh);
-    overflow: hidden;
-  }
-}
-
 /* Seconde Vie SSR home */
 .sv-home {
   --sv-ink: #18130f;
@@ -94,6 +61,24 @@ html[data-sv-force-gallery-entry="true"] [data-ssr-home] {
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes svMarqueeLeft {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-25%);
+  }
+}
+
+@keyframes svMarqueeRight {
+  from {
+    transform: translateX(-25%);
+  }
+  to {
+    transform: translateX(0);
   }
 }
 
@@ -2022,7 +2007,7 @@ html.gallery-entry-scroll-lock {
   font-family: var(--font-serif);
 }
 
-/* Custom Utilities from HomeView */
+/* Custom Utilities from legacy public surfaces */
 #main-cursor {
   position: fixed;
   width: 6px;

@@ -89,12 +89,15 @@ const BeforeAfterSection = () => {
                     });
                 }
 
-                gsap.from([titleLinesRef.current[0], titleLinesRef.current[3]], {
-                    y: 40, opacity: 0, filter: "blur(8px)",
-                    duration: 2, stagger: 0.15, delay: 0.4,
-                    ease: "power3.out",
-                    scrollTrigger: { trigger: containerRef.current, start: "top 70%" }
-                });
+                const supportingLines = [titleLinesRef.current[0], titleLinesRef.current[3]].filter(Boolean);
+                if (supportingLines.length) {
+                    gsap.from(supportingLines, {
+                        y: 40, opacity: 0, filter: "blur(8px)",
+                        duration: 2, stagger: 0.15, delay: 0.4,
+                        ease: "power3.out",
+                        scrollTrigger: { trigger: containerRef.current, start: "top 70%" }
+                    });
+                }
             });
 
             // ─── DESKTOP (>= 768px) — animation 3D originale intacte ─────────
@@ -124,12 +127,15 @@ const BeforeAfterSection = () => {
                     });
                 }
 
-                gsap.from([titleLinesRef.current[0], titleLinesRef.current[3]], {
-                    y: 40, opacity: 0, filter: "blur(8px)",
-                    duration: 2.5, stagger: 0.15, delay: 0.4,
-                    ease: "power3.out",
-                    scrollTrigger: { trigger: containerRef.current, start: "top 70%" }
-                });
+                const supportingLines = [titleLinesRef.current[0], titleLinesRef.current[3]].filter(Boolean);
+                if (supportingLines.length) {
+                    gsap.from(supportingLines, {
+                        y: 40, opacity: 0, filter: "blur(8px)",
+                        duration: 2.5, stagger: 0.15, delay: 0.4,
+                        ease: "power3.out",
+                        scrollTrigger: { trigger: containerRef.current, start: "top 70%" }
+                    });
+                }
             });
 
         }, containerRef);
