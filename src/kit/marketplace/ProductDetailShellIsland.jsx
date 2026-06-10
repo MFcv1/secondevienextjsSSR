@@ -453,7 +453,7 @@ export default function ProductDetailShellIsland({
     try {
       window.sessionStorage.setItem('secondevie:open-gallery-on-arrival', 'true');
     } catch {}
-    window.location.href = targetHref;
+    window.location.replace(targetHref);
   }, [restoreUrlFromSession]);
 
   const handleBack = useCallback(() => {

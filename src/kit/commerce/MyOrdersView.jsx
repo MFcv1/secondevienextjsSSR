@@ -284,8 +284,8 @@ const MyOrdersView = ({
 
     return (
         <div className={`min-h-screen transition-colors duration-700 ${darkMode ? 'bg-[#151515] text-[#f8f1e8]' : 'bg-[#fbfaf7] text-[#181716]'}`}>
-            <div className="mx-auto max-w-[1560px] px-4 pb-16 pt-10 sm:px-6 md:px-10 lg:px-12 lg:pb-24 lg:pt-12">
-                <header ref={topRef} className="relative mb-9 grid scroll-mt-28 items-end gap-8 lg:grid-cols-[minmax(0,560px)_1fr]">
+            <div className="mx-auto max-w-[1560px] px-4 pb-16 pt-5 sm:px-6 md:px-10 lg:px-12 lg:pb-24 lg:pt-6">
+                <header ref={topRef} className="relative mb-9 grid scroll-mt-28 items-center gap-8 lg:grid-cols-[minmax(0,560px)_1fr]">
                     <motion.div
                         initial={{ opacity: 0, y: 18, filter: 'blur(8px)' }}
                         animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
@@ -305,7 +305,7 @@ const MyOrdersView = ({
                         initial={{ opacity: 0, x: 34, filter: 'blur(10px)' }}
                         animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
                         transition={{ duration: 0.95, delay: 0.08, ease: [0.23, 1, 0.32, 1] }}
-                        className="relative min-h-[210px] overflow-hidden rounded-[10px] bg-[#eee6dc] shadow-[0_18px_52px_rgba(72,55,39,0.08)] lg:min-h-[300px]"
+                        className="relative min-h-[260px] overflow-hidden rounded-[10px] bg-[#eee6dc] shadow-[0_18px_52px_rgba(72,55,39,0.08)] md:min-h-[340px] lg:min-h-[420px]"
                     >
                         <img
                             src={ACCOUNT_HERO_IMAGE}

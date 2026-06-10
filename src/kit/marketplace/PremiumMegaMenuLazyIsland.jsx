@@ -8,5 +8,9 @@ const PremiumMegaMenuIsland = dynamic(() => import('./PremiumMegaMenuIsland'), {
 });
 
 export default function PremiumMegaMenuLazyIsland({ darkMode = false } = {}) {
-  return <PremiumMegaMenuIsland darkMode={darkMode} />;
+  return (
+    <div className="hidden min-h-[50.5px] w-full md:block">
+      <PremiumMegaMenuIsland darkMode={darkMode} />
+    </div>
+  );
 }

@@ -10,17 +10,11 @@ const GlobalMenu = dynamic(() => import('../layout/GlobalMenu'), {
   loading: () => null,
 });
 
-const LegacyLoginModalContent = dynamic(
-  () => import('./LegacyLoginModalFullIsland').then((module) => module.LegacyLoginModalContent),
-  { ssr: false, loading: () => null },
-);
-
 function GlobalMenuPanelAuthContent({ darkMode = false, panelOpen = false, setPanelOpen }) {
   const { user, isAdmin, logout } = useAuth();
   const [authUser, setAuthUser] = useState(() => (
     typeof window === 'undefined' ? null : window.__svAuthUser || null
   ));
-  const [loginOpen, setLoginOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -43,8 +37,8 @@ function GlobalMenuPanelAuthContent({ darkMode = false, panelOpen = false, setPa
   };
 
   const openLogin = () => {
+    window.dispatchEvent(new CustomEvent('sv:open-login'));
     setPanelOpen(false);
-    setLoginOpen(true);
   };
 
   const openCart = () => {
@@ -70,7 +64,6 @@ function GlobalMenuPanelAuthContent({ darkMode = false, panelOpen = false, setPa
           onLogout={logout}
         />
       ) : null}
-      {loginOpen ? <LegacyLoginModalContent open={loginOpen} onOpenChange={setLoginOpen} /> : null}
     </>
   );
 }

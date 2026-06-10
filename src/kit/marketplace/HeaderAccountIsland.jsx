@@ -59,7 +59,12 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
       applyUser(event.detail?.user || null);
     };
 
+    const handleOpenLogin = () => {
+      setLoginOpen(true);
+    };
+
     window.addEventListener('sv:auth-user-changed', handleExternalAuthChange);
+    window.addEventListener('sv:open-login', handleOpenLogin);
 
     if (hasPersistedFirebaseUser()) {
       import('../config/firebaseLazy')
@@ -76,6 +81,7 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
       cancelled = true;
       unsubscribeAuth?.();
       window.removeEventListener('sv:auth-user-changed', handleExternalAuthChange);
+      window.removeEventListener('sv:open-login', handleOpenLogin);
     };
   }, []);
 

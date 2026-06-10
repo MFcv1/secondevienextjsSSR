@@ -4,7 +4,7 @@ import { getPublicCatalog, getPublicCatalogFallback } from '../../src/lib/server
 
 export const dynamic = 'force-dynamic';
 export const metadata = {
-  title: 'Mes commandes',
+  title: 'Mon espace',
   robots: { index: false, follow: false }
 };
 

@@ -10,6 +10,86 @@ export const revalidate = 300;
 
 const galleryDescription = GALLERY_SEO_COPY.intro;
 const galleryUrl = '/galerie';
+const galleryReturnRestoreScript = `(() => {
+  const RETURN_KEY = 'secondevie:product-return:v1';
+  const ARRIVAL_KEY = 'secondevie:open-gallery-on-arrival';
+  const MAX_AGE_MS = 30 * 60 * 1000;
+
+  const rememberProductReturnTarget = (event) => {
+    const link = event.target?.closest?.('a[href^="/produit/"]');
+    if (!link) return;
+
+    try {
+      const scroller = document.getElementById('marketplaceGalleryScroll');
+      window.sessionStorage.removeItem(ARRIVAL_KEY);
+      window.sessionStorage.setItem(RETURN_KEY, JSON.stringify({
+        href: window.location.pathname + (window.location.search || '') + (window.location.hash || ''),
+        scrollY: window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0,
+        galleryScrollTop: scroller?.scrollTop || 0,
+        savedAt: Date.now(),
+      }));
+    } catch {
+      // Links must remain normal navigation even if storage is unavailable.
+    }
+  };
+
+  document.addEventListener('pointerdown', rememberProductReturnTarget, { capture: true, passive: true });
+  document.addEventListener('touchstart', rememberProductReturnTarget, { capture: true, passive: true });
+  document.addEventListener('click', rememberProductReturnTarget, { capture: true, passive: true });
+
+  try {
+    if (window.sessionStorage.getItem(ARRIVAL_KEY) !== 'true') return;
+    window.sessionStorage.removeItem(ARRIVAL_KEY);
+
+    const raw = window.sessionStorage.getItem(RETURN_KEY);
+    if (!raw) return;
+
+    const saved = JSON.parse(raw);
+    if (!saved || Date.now() - Number(saved.savedAt || 0) > MAX_AGE_MS) return;
+
+    const target = new URL(saved.href || '/galerie', window.location.origin);
+    if (target.pathname !== window.location.pathname || target.search !== window.location.search) return;
+
+    const galleryTop = Math.max(0, Number(saved.galleryScrollTop || 0));
+    const windowTop = Math.max(0, Number(saved.scrollY || 0));
+    const root = document.documentElement;
+    const previousScrollBehavior = root.style.scrollBehavior;
+
+    root.style.scrollBehavior = 'auto';
+
+    const apply = () => {
+      const scroller = document.getElementById('marketplaceGalleryScroll');
+      if (scroller && galleryTop > 0) {
+        const maxTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+        scroller.scrollTop = maxTop > 0 ? Math.min(galleryTop, maxTop) : galleryTop;
+      }
+      if (windowTop > 0) {
+        window.scrollTo(0, windowTop);
+      }
+    };
+
+    apply();
+
+    let frame = 0;
+    const settle = () => {
+      apply();
+      frame += 1;
+      if (frame < 12) {
+        window.requestAnimationFrame(settle);
+        return;
+      }
+      window.setTimeout(apply, 220);
+      window.setTimeout(apply, 720);
+      window.setTimeout(() => {
+        root.style.scrollBehavior = previousScrollBehavior;
+      }, 760);
+    };
+
+    window.requestAnimationFrame(settle);
+  } catch {
+    // Best effort scroll restoration only.
+  }
+})();`;
 
 export const metadata = {
   title: 'Galerie de mobilier ancien restauré',
@@ -107,6 +187,7 @@ export default async function GaleriePage() {
     <>
       <GalleryServerView items={products} darkMode={darkMode} />
       <GalleryMobileShellIsland />
+      <script dangerouslySetInnerHTML={{ __html: galleryReturnRestoreScript }} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(buildGalleryJsonLd(products)) }}
