@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import KIT_CONFIG from '../config/constants';
 import { getCategoryUrl } from '../../utils/slug';
+import FooterBackToTopButtonIsland from './FooterBackToTopButtonIsland';
 
 const DEFAULT_CONTACT = {
   email: process.env.NEXT_PUBLIC_BUSINESS_EMAIL || 'contact@secondevie-marseille.fr',
@@ -99,6 +100,36 @@ const PaymentChip = ({ children, variant = 'light', className = '' }) => {
   );
 };
 
+const MastercardLogo = () => (
+  <svg viewBox="0 0 52 32" className="h-[22px] w-9" aria-hidden="true">
+    <circle cx="20" cy="16" r="12" fill="#EB001B" />
+    <circle cx="32" cy="16" r="12" fill="#F79E1B" />
+    <path d="M26 7.4a12 12 0 0 1 0 17.2 12 12 0 0 1 0-17.2Z" fill="#FF5F00" />
+  </svg>
+);
+
+const GooglePayLogo = () => (
+  <span className="flex items-center gap-1.5 text-[13px] font-semibold tracking-normal">
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <path fill="#4285F4" d="M22.6 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.75h3.56c2.08-1.92 3.28-4.74 3.28-8.08Z" />
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.67l-3.56-2.75c-.98.66-2.23 1.05-3.72 1.05-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z" />
+      <path fill="#FBBC05" d="M5.84 14.1A6.61 6.61 0 0 1 5.5 12c0-.73.12-1.44.34-2.1V7.06H2.18A11 11 0 0 0 1 12c0 1.77.42 3.45 1.18 4.94l3.66-2.84Z" />
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.2 1.64l3.15-3.15C17.45 2.1 14.97 1 12 1A11 11 0 0 0 2.18 7.06L5.84 9.9C6.71 7.31 9.14 5.38 12 5.38Z" />
+    </svg>
+    <span className="text-[#5f6368]">Pay</span>
+  </span>
+);
+
+const ApplePayLogo = () => (
+  <span className="flex items-center gap-1 text-[12px] font-semibold tracking-normal">
+    <svg viewBox="0 0 18 22" className="h-4 w-3.5 fill-current" aria-hidden="true">
+      <path d="M14.7 11.5c0-2.1 1.7-3.1 1.8-3.2-1-1.5-2.6-1.7-3.1-1.7-1.3-.1-2.6.8-3.3.8-.7 0-1.8-.8-2.9-.8-1.5 0-2.9.9-3.7 2.2-1.6 2.8-.4 6.9 1.1 9.2.8 1.1 1.7 2.3 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.2.9-1.3 1.2-2.5 1.2-2.6-.1 0-2.8-1.1-2.8-4Z" />
+      <path d="M12.6 5.2c.6-.7 1-1.7.9-2.7-.9 0-1.9.6-2.5 1.3-.6.6-1 1.7-.9 2.6 1 0 1.9-.5 2.5-1.2Z" />
+    </svg>
+    <span>Pay</span>
+  </span>
+);
+
 const SectionTitle = ({ children, darkMode }) => (
   <div className="space-y-4">
     <h3 className={`font-serif text-[15px] uppercase tracking-normal ${darkMode ? 'text-stone-100' : 'text-stone-950'}`}>{children}</h3>
@@ -160,6 +191,57 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
             <div className="flex items-center gap-4 py-3"><Clock size={17} /> <span>Lun - Sam : 10h - 19h</span></div>
           </div>
         </div>
+
+        <div className={`rounded-[24px] border p-6 ${darkMode ? 'border-[#2e2a25] bg-[#111110]' : 'border-[#eee6dd] bg-[#fdfbf8]'}`}>
+          <h3 className={`mb-4 text-[11px] font-black uppercase tracking-widest ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>Moyens de paiement acceptes</h3>
+          <div className={`rounded-xl border p-4 ${darkMode ? 'border-[#2e2a25] bg-[#111110]' : 'border-[#eee6dd] bg-white/45'}`}>
+            <div className="mb-3 flex items-center gap-3">
+              <LockKeyhole size={20} />
+              <div>
+                <p className="font-serif text-base">Carte / Wallets</p>
+                <p className="text-xs opacity-60">Rapide & securise</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <PaymentChip className="min-w-[52px] px-2.5"><span className="text-[12px] font-black italic tracking-normal text-[#1434cb]">VISA</span></PaymentChip>
+              <PaymentChip className="min-w-[50px] px-2"><MastercardLogo /></PaymentChip>
+              <PaymentChip variant="dark" className="min-w-[66px] px-2.5"><ApplePayLogo /></PaymentChip>
+              <PaymentChip className="min-w-[62px] px-2.5"><GooglePayLogo /></PaymentChip>
+              <PaymentChip variant="paypal" className="min-w-[68px] px-2.5"><span className="text-[12px] font-black italic tracking-normal">PayPal</span></PaymentChip>
+            </div>
+          </div>
+          <div className={`mt-3 rounded-xl border p-4 ${darkMode ? 'border-[#2e2a25] bg-[#111110]' : 'border-[#eee6dd] bg-white/45'}`}>
+            <div className="mb-3 flex items-center gap-3">
+              <Landmark size={20} />
+              <div>
+                <p className="font-serif text-base">Virement</p>
+                <p className="text-xs opacity-60">Instructions via email</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <PaymentChip variant="bank" className="min-w-[92px] gap-2 px-2.5"><Landmark size={13} strokeWidth={1.8} /><span className="text-[11px] font-black uppercase tracking-[0.08em]">Virement</span></PaymentChip>
+              <PaymentChip variant="wero" className="min-w-[56px] px-2.5"><span className="text-[13px] font-black lowercase tracking-normal">wero</span></PaymentChip>
+            </div>
+          </div>
+          <img
+            src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'}
+            alt="Livraison partout a Marseille"
+            width={1536}
+            height={1024}
+            loading="lazy"
+            decoding="async"
+            fetchPriority="low"
+            data-footer-delivery-image="loaded"
+            className="mt-6 w-full rounded-md object-contain"
+          />
+          <div className={`mt-5 grid grid-cols-3 gap-3 text-[10px] ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
+            <div className="flex flex-col items-center gap-1 text-center"><LockKeyhole size={22} />SSL<br />Secure</div>
+            <div className="flex flex-col items-center gap-1 text-center"><span className="rounded bg-[#168b8f] px-2 py-1 text-sm font-black text-white">PCI</span>DSS<br />Compliant</div>
+            <div className="flex flex-col items-center gap-1 text-center"><ShieldCheck size={22} />3D<br />Secure</div>
+          </div>
+        </div>
+
+        <FooterBackToTopButtonIsland darkMode={darkMode} />
       </div>
 
       <div className={`mx-auto hidden w-full max-w-[1760px] overflow-hidden rounded-[18px] border shadow-sm md:block ${darkMode ? 'border-[#2e2a25] bg-[#111110] shadow-black/20' : 'border-[#eee6dd] bg-[#fdfbf8] shadow-stone-200/50'}`}>

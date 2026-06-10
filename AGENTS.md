@@ -28,7 +28,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |   |-- index.css
 |   |-- kit/admin : back-office, analytics, commandes, SEO, users, exports CSV, docs/etudes techniques admin
 |   |-- kit/commerce : panier, checkout, login, commandes client
-|   |-- kit/marketplace : galerie serveur, SEO visible, pages categorie/produit, ilots produit, panier/cartes, devis ServerView/FormIsland, wishlist
+|   |-- kit/marketplace : galerie serveur, SEO visible, pages categorie/produit, ilots produit, footer mobile, panier/cartes, devis ServerView/FormIsland, wishlist
 |   |-- kit/layout, kit/shared, kit/ui, kit/hooks, kit/contexts, kit/config (dont firebaseEnv/firebaseCore/firebaseLazy)
 |   |-- lib : helpers serveur produits/env/theme et SEO structure
 |   `-- assets, utils : images source et helpers

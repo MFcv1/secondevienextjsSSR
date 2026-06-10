@@ -207,6 +207,7 @@ export default function ProductDetailShellIsland({
   const [activeImg, setActiveImg] = useState(0);
   const [pendingImg, setPendingImg] = useState(null);
   const [underlayImg, setUnderlayImg] = useState(null);
+  const [navTransition, setNavTransition] = useState({ direction: 0, fromX: 0, toX: 0 });
   const [sharpSrcs, setSharpSrcs] = useState({});
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
@@ -236,6 +237,9 @@ export default function ProductDetailShellIsland({
   const cartPanelEventIdRef = useRef(0);
   const sharpSrcsRef = useRef({});
   const underlayClearTimerRef = useRef(0);
+  const mobileImageDragRef = useRef(null);
+  const imageDragStateRef = useRef({ pointerId: null, startX: 0, startY: 0, dx: 0, dy: 0, axis: null, lastX: 0, lastT: 0, velocity: 0, width: 1 });
+  const suppressImageClickRef = useRef(false);
 
   const safeImages = images?.length ? images : [];
   const activeImage = safeImages[Math.min(activeImg, Math.max(0, safeImages.length - 1))] || {};
@@ -296,9 +300,37 @@ export default function ProductDetailShellIsland({
     }).catch(() => null);
   }, [getDetailImageSrcAtIndex]);
 
-  const commitImageIndex = useCallback((index) => {
+  const commitImageIndex = useCallback((index, direction = 0) => {
     const nextIndex = clampImageIndex(index);
     const previousIndex = activeImgRef.current;
+    const dragNode = mobileImageDragRef.current;
+    let fromX = 0;
+
+    if (direction !== 0 && dragNode && typeof window !== 'undefined') {
+      const computedTransform = window.getComputedStyle(dragNode).transform;
+      if (computedTransform && computedTransform !== 'none') {
+        try {
+          fromX = new DOMMatrixReadOnly(computedTransform).m41 || 0;
+        } catch {
+          fromX = imageDragStateRef.current.dx || 0;
+        }
+      } else {
+        fromX = imageDragStateRef.current.dx || 0;
+      }
+    }
+
+    if (dragNode) {
+      dragNode.style.transition = 'none';
+      dragNode.style.transform = '';
+      dragNode.style.opacity = '';
+    }
+
+    const viewportWidth = typeof window !== 'undefined' ? (window.innerWidth || 390) : 390;
+    setNavTransition({
+      direction,
+      fromX,
+      toX: direction === 0 ? 0 : (direction > 0 ? -1 : 1) * Math.max(viewportWidth * 0.5, Math.abs(fromX) + 120),
+    });
     setUnderlayImg(previousIndex === nextIndex ? null : previousIndex);
     setActiveImg(nextIndex);
     setPendingImg(null);
@@ -328,7 +360,7 @@ export default function ProductDetailShellIsland({
 
     const finish = () => {
       if (imageSwitchRequestRef.current !== requestId) return;
-      commitImageIndex(nextIndex);
+      commitImageIndex(nextIndex, options.direction || 0);
     };
 
     if (options.waitForDecode) {
@@ -356,15 +388,17 @@ export default function ProductDetailShellIsland({
 
   const goPrevious = useCallback((event) => {
     event?.stopPropagation?.();
+    const viewport = typeof window !== 'undefined' && window.innerWidth < 1024 ? 'mobile' : 'desktop';
     const currentIndex = navigationImgRef.current;
-    goToIndex(currentIndex <= 0 ? safeImages.length - 1 : currentIndex - 1);
-  }, [goToIndex, safeImages.length]);
+    requestImageIndex(currentIndex <= 0 ? safeImages.length - 1 : currentIndex - 1, { viewport, waitForDecode: true, direction: -1 });
+  }, [requestImageIndex, safeImages.length]);
 
   const goNext = useCallback((event) => {
     event?.stopPropagation?.();
+    const viewport = typeof window !== 'undefined' && window.innerWidth < 1024 ? 'mobile' : 'desktop';
     const currentIndex = navigationImgRef.current;
-    goToIndex(currentIndex >= safeImages.length - 1 ? 0 : currentIndex + 1);
-  }, [goToIndex, safeImages.length]);
+    requestImageIndex(currentIndex >= safeImages.length - 1 ? 0 : currentIndex + 1, { viewport, waitForDecode: true, direction: 1 });
+  }, [requestImageIndex, safeImages.length]);
 
   const handleDesktopImageWheel = useCallback((event) => {
     if (safeImages.length <= 1 || isLightboxOpen) return;
@@ -627,6 +661,7 @@ export default function ProductDetailShellIsland({
   }, [applyLayeredGalleryExit, navigateToGalleryTarget]);
 
   const openProductLightbox = useCallback(() => {
+    if (suppressImageClickRef.current) return;
     const visibleSrc = mainImageRef.current?.currentSrc || mainImageRef.current?.src || activeImageSrc;
     setLightboxBaseSrc(visibleSrc);
     setLightboxFullSrc('');
@@ -642,6 +677,16 @@ export default function ProductDetailShellIsland({
     }
   }, [activeImage, activeImageSrc]);
 
+  const resetImageDrag = (animated) => {
+    const node = mobileImageDragRef.current;
+    if (!node) return;
+    node.style.transition = animated
+      ? 'transform 240ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease-out'
+      : 'none';
+    node.style.transform = '';
+    node.style.opacity = '';
+  };
+
   const onPointerDown = (event) => {
     swipeRef.current = { x: event.clientX, y: event.clientY };
     touchStateRef.current = {
@@ -651,16 +696,87 @@ export default function ProductDetailShellIsland({
       endY: event.clientY,
       startedAt: performance.now(),
     };
+    const drag = imageDragStateRef.current;
+    drag.pointerId = event.pointerId ?? null;
+    drag.startX = event.clientX;
+    drag.startY = event.clientY;
+    drag.dx = 0;
+    drag.dy = 0;
+    drag.axis = null;
+    drag.lastX = event.clientX;
+    drag.lastT = performance.now();
+    drag.velocity = 0;
+    drag.width = (typeof window !== 'undefined' && window.innerWidth) || 390;
+    const node = mobileImageDragRef.current;
+    if (node) {
+      node.style.transition = 'none';
+      node.style.willChange = 'transform, opacity';
+    }
+  };
+
+  const onImagePointerMove = (event) => {
+    const drag = imageDragStateRef.current;
+    if (drag.pointerId === null || event.pointerId !== drag.pointerId) return;
+    if (isMobilePanelOpen || isLightboxOpen) return;
+
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    drag.dx = dx;
+    drag.dy = dy;
+
+    const now = performance.now();
+    const dt = now - drag.lastT;
+    if (dt > 0) {
+      drag.velocity = (event.clientX - drag.lastX) / dt;
+      drag.lastX = event.clientX;
+      drag.lastT = now;
+    }
+
+    if (!drag.axis) {
+      if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.2) drag.axis = 'x';
+      else if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx) * 1.2) drag.axis = 'y';
+    }
+
+    if (drag.axis !== 'x' || safeImages.length <= 1) return;
+
+    const node = mobileImageDragRef.current;
+    if (!node) return;
+    const progress = Math.min(1, Math.abs(dx) / drag.width);
+    node.style.transform = `translate3d(${dx}px, 0, 0) scale(${1 - progress * 0.05})`;
+    node.style.opacity = `${1 - progress * 0.4}`;
+  };
+
+  const onImagePointerCancel = () => {
+    imageDragStateRef.current.pointerId = null;
+    imageDragStateRef.current.axis = null;
+    resetImageDrag(true);
   };
 
   const onPointerUp = (event) => {
+    const drag = imageDragStateRef.current;
+    const axis = drag.axis;
+    drag.pointerId = null;
     const dx = event.clientX - swipeRef.current.x;
     const dy = event.clientY - swipeRef.current.y;
-    if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.3) {
-      if (dx < 0) goNext(event);
-      else goPrevious(event);
+
+    if (axis === 'x' && safeImages.length > 1 && !isMobilePanelOpen && !isLightboxOpen) {
+      const flick = Math.abs(drag.velocity) > 0.45 && Math.abs(dx) > 24;
+      const shouldCommit = Math.abs(dx) > drag.width * 0.18 || flick;
+      if (shouldCommit) {
+        suppressImageClickRef.current = true;
+        window.setTimeout(() => {
+          suppressImageClickRef.current = false;
+        }, 420);
+        if (dx < 0) goNext(event);
+        else goPrevious(event);
+        return;
+      }
+      resetImageDrag(true);
       return;
     }
+
+    resetImageDrag(false);
+
     if (Math.abs(dy) > 58 && Math.abs(dy) > Math.abs(dx) * 1.2 && dy < 0) {
       setIsMobilePanelOpen(true);
       return;
@@ -814,10 +930,12 @@ export default function ProductDetailShellIsland({
               transform: isMobilePanelOpen ? 'translate3d(0, -4rem, 0)' : 'translate3d(0, 0, 0)',
             }}
             onPointerDown={onPointerDown}
+            onPointerMove={onImagePointerMove}
             onPointerUp={onPointerUp}
+            onPointerCancel={onImagePointerCancel}
           >
             <div className="relative flex h-full w-full cursor-zoom-in items-center justify-center" onClick={openProductLightbox}>
-              <div className="product-detail-mobile-image-shadow pointer-events-none drop-shadow-[0_20px_42px_rgba(92,75,57,0.24)]">
+              <div ref={mobileImageDragRef} className="product-detail-mobile-image-shadow pointer-events-none drop-shadow-[0_20px_42px_rgba(92,75,57,0.24)]">
                 <div data-fit-mode={activeImageFitMode} className="product-detail-mobile-image-frame" style={mobileDetailImageFrameStyle}>
                   <div className="product-detail-mobile-image-clip">
                     {underlayMobileSrc && underlayMobileSrc !== activeMobileSrc ? (
@@ -827,9 +945,11 @@ export default function ProductDetailShellIsland({
                         alt=""
                         aria-hidden="true"
                         data-fit-mode={activeImageFitMode}
-                        className="product-detail-mobile-image object-cover select-none"
+                        className={`product-detail-mobile-image ${navTransition.direction !== 0 ? 'product-detail-mobile-image-underlay-exit' : ''} object-cover select-none`}
                         style={{
                           zIndex: 1,
+                          '--sv-image-exit-from': `${navTransition.fromX}px`,
+                          '--sv-image-exit-to': `${navTransition.toX}px`,
                           width: '100%',
                           height: '100%',
                           maxWidth: 'none',
@@ -856,7 +976,7 @@ export default function ProductDetailShellIsland({
                         alt={title}
                         data-product-main-image="true"
                         data-fit-mode={activeImageFitMode}
-                        className="product-detail-mobile-image product-detail-mobile-image-layer--current product-detail-main-image-fade object-cover select-none"
+                        className={`product-detail-mobile-image product-detail-mobile-image-layer--current ${navTransition.direction === 1 ? 'product-detail-mobile-image-enter--next' : navTransition.direction === -1 ? 'product-detail-mobile-image-enter--prev' : 'product-detail-main-image-fade'} object-cover select-none`}
                         style={{
                           zIndex: 2,
                           width: '100%',

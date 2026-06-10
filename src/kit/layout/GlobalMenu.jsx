@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, MotionConfig, useReducedMotion } from 'framer-motion';
 import {
     Archive,
     Armchair,
@@ -99,22 +99,32 @@ const formatCategoryLabel = (label = '') => {
 
 const MENU_EASE = [0.22, 1, 0.36, 1];
 const MENU_FADE_EASE = [0.16, 1, 0.3, 1];
-const MENU_PANEL_OPEN_EASE = [0.18, 1, 0.22, 1];
+const MENU_PANEL_OPEN_EASE = [0.16, 1, 0.3, 1];
+const MENU_CONTAINER_EASE = [0.21, 1.02, 0.43, 1.01];
 const RAINMAKER_PANEL_EASE = [0.88, 0, 0.18, 1];
 const MENU_CLOSE_EASE = [0.76, 0, 0.24, 1];
 const MENU_SEQUENCE = {
-    sidebar: { delay: 0.02 },
-    categories: { delay: 0.07 },
-    rooms: { delay: 0.1 },
-    selection: { delay: 0.14 },
-    atelier: { delay: 0.18 },
-    atelierMedia: { delay: 0.07 },
-    services: { delay: 0.26 },
+    sidebar: { delay: 0.54 },
+    categories: { delay: 0.72 },
+    discovery: { delay: 0.92 },
+    atelier: { delay: 1.12 },
+    atelierInner: { delay: 0.08 },
+    atelierMedia: { delay: 0.18 },
+    services: { delay: 1.28 },
 };
 
 const getMenuStage = (stage = {}) => (
     typeof stage === 'number' ? { delay: stage } : stage
 );
+
+const getMenuStageDelay = (stage = {}) => {
+    const { delay = 0, reduceMotion = false } = getMenuStage(stage);
+    return reduceMotion ? 0 : delay;
+};
+
+const getDesktopRevealStyle = (stage = {}) => ({
+    '--global-menu-delay': `${Math.round((getMenuStage(stage).delay || 0) * 1000)}ms`,
+});
 
 const shellVariants = {
     hidden: {},
@@ -126,7 +136,7 @@ const backdropVariants = {
     hidden: { opacity: 0 },
     visible: {
         opacity: 1,
-        transition: { duration: 0.42, ease: MENU_EASE },
+        transition: { duration: 0.28, ease: MENU_FADE_EASE },
     },
     exit: {
         opacity: 0,
@@ -137,45 +147,49 @@ const backdropVariants = {
 const desktopPanelVariants = {
     hidden: {
         opacity: 0,
-        y: -8,
-        clipPath: 'inset(0 0 100% 0)',
+        y: -14,
+        scaleY: 0.965,
+        clipPath: 'inset(0 0 100% 0 round 0px)',
         pointerEvents: 'none',
     },
-    visible: () => ({
+    visible: ({ reduceMotion = false } = {}) => ({
         opacity: 1,
         y: 0,
-        clipPath: 'inset(0 0 0% 0)',
+        scaleY: 1,
+        clipPath: 'inset(0 0 0% 0 round 0px)',
         pointerEvents: 'auto',
         transition: {
-            duration: 0.58,
+            duration: reduceMotion ? 0.01 : 0.72,
             ease: MENU_PANEL_OPEN_EASE,
-            opacity: { duration: 0.12, ease: MENU_FADE_EASE },
-            delayChildren: 0.02,
+            opacity: { duration: reduceMotion ? 0.01 : 0.24, ease: MENU_FADE_EASE },
+            scaleY: { duration: reduceMotion ? 0.01 : 0.7, ease: MENU_PANEL_OPEN_EASE },
+            clipPath: { duration: reduceMotion ? 0.01 : 0.72, ease: MENU_PANEL_OPEN_EASE },
         },
     }),
     exit: {
         opacity: 0,
-        y: -6,
-        clipPath: 'inset(0 0 100% 0)',
+        y: -10,
+        scaleY: 0.982,
+        clipPath: 'inset(0 0 100% 0 round 0px)',
         pointerEvents: 'none',
         transition: {
-            duration: 0.42,
+            duration: 0.52,
             ease: RAINMAKER_PANEL_EASE,
+            opacity: { duration: 0.22, ease: MENU_CLOSE_EASE, delay: 0.16 },
+            scaleY: { duration: 0.5, ease: RAINMAKER_PANEL_EASE },
+            clipPath: { duration: 0.52, ease: RAINMAKER_PANEL_EASE },
         },
     },
 };
 
 const desktopMenuContentVariants = {
-    hidden: {
-        opacity: 0,
-    },
-    visible: {
+    hidden: {},
+    visible: ({ reduceMotion = false } = {}) => ({
         opacity: 1,
         transition: {
-            opacity: { duration: 0.22, ease: MENU_FADE_EASE, delay: 0.02 },
-            delayChildren: 0.02,
+            delayChildren: reduceMotion ? 0 : 0.01,
         },
-    },
+    }),
     exit: {},
 };
 
@@ -240,21 +254,32 @@ const menuGroupVariants = {
 };
 
 const menuColumnVariants = {
-    hidden: (stage = {}) => ({
-        x: 0,
-        y: 0,
-        opacity: 0,
-    }),
+    hidden: (stage = {}) => {
+        const { reduceMotion = false } = getMenuStage(stage);
+        return {
+            x: reduceMotion ? 0 : -24,
+            y: reduceMotion ? 0 : 8,
+            opacity: 0,
+            filter: reduceMotion ? 'none' : 'blur(14px)',
+            transition: {
+                duration: reduceMotion ? 0.01 : 0.12,
+                ease: MENU_CLOSE_EASE,
+            },
+        };
+    },
     visible: (stage = {}) => ({
         y: 0,
         x: 0,
         opacity: 1,
+        filter: 'blur(0px)',
         transition: {
-            duration: 0.36,
-            ease: MENU_FADE_EASE,
-            delay: getMenuStage(stage).delay ?? 0,
-            delayChildren: 0.03,
-            staggerChildren: 0.024,
+            duration: getMenuStage(stage).reduceMotion ? 0.01 : 0.58,
+            ease: MENU_CONTAINER_EASE,
+            delay: getMenuStageDelay(stage),
+            opacity: { duration: getMenuStage(stage).reduceMotion ? 0.01 : 0.42, ease: MENU_FADE_EASE },
+            filter: { duration: getMenuStage(stage).reduceMotion ? 0.01 : 0.46, ease: MENU_FADE_EASE },
+            delayChildren: getMenuStage(stage).reduceMotion ? 0 : 0.12,
+            staggerChildren: getMenuStage(stage).reduceMotion ? 0 : 0.035,
         },
     }),
     exit: {
@@ -449,6 +474,16 @@ const GlobalMenu = ({
     toggleTheme,
     onLogout,
 }) => {
+    const prefersReducedMotion = useReducedMotion();
+    const desktopMotionContext = useMemo(() => ({
+        reduceMotion: Boolean(prefersReducedMotion),
+    }), [prefersReducedMotion]);
+
+    const withDesktopMotionContext = useCallback((stage = {}) => ({
+        ...getMenuStage(stage),
+        ...desktopMotionContext,
+    }), [desktopMotionContext]);
+
     const categories = useMemo(() => (
         KIT_CONFIG.productCategories.map((category) => ({
             ...category,
@@ -740,6 +775,7 @@ const GlobalMenu = ({
     const isMenuDormant = !isMenuOpen && !isMenuClosing;
 
     return (
+        <MotionConfig reducedMotion="user">
         <motion.div
             key="global-menu-shell"
             className={`${isMenuInteractive ? 'pointer-events-auto' : 'pointer-events-none'} ${isMenuDormant ? 'opacity-0' : ''} fixed inset-x-0 bottom-0 z-[2000] overflow-hidden`}
@@ -767,7 +803,7 @@ const GlobalMenu = ({
                         ref={panelRef}
                         className={`${isMenuInteractive ? 'pointer-events-auto' : 'pointer-events-none'} global-menu-scrollbarless absolute left-0 right-0 hidden overflow-hidden overscroll-contain shadow-[0_28px_80px_rgba(28,25,23,0.13)] lg:block ${panelTone}`}
                         variants={desktopPanelVariants}
-                        custom={desktopPanelMaxHeight}
+                        custom={desktopMotionContext}
                         style={{
                             top: 0,
                             maxHeight: desktopPanelMaxHeight,
@@ -775,18 +811,20 @@ const GlobalMenu = ({
                             pointerEvents: 'auto',
                             overflowAnchor: 'none',
                             contain: 'layout paint',
-                            willChange: 'clip-path, transform, opacity',
+                            willChange: 'transform, opacity',
                         }}
                         >
                             <motion.div
                             ref={desktopContentRef}
-                            className="w-full px-5 pb-7 pt-6 xl:px-7 2xl:px-9"
+                            className="global-menu-desktop-content w-full px-5 pb-7 pt-6 xl:px-7 2xl:px-9"
                             variants={desktopMenuContentVariants}
                             initial="hidden"
                             animate={menuContentAnimationState}
+                            custom={desktopMotionContext}
+                            data-motion-ready={menuContentAnimationState === 'visible' ? 'true' : 'false'}
                         >
-                            <motion.div className="grid grid-cols-[250px_minmax(0,1fr)] gap-4 xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-5" variants={menuGroupVariants}>
-                                <motion.aside className={`flex min-h-[540px] flex-col justify-between rounded-[22px] p-3.5 xl:p-4 ${desktopSoftCard}`} variants={menuColumnVariants} custom={MENU_SEQUENCE.sidebar}>
+                            <motion.div className="grid grid-cols-[250px_minmax(0,1fr)] gap-4 xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-5">
+                                <motion.aside className={`global-menu-reveal-container flex h-[540px] flex-col justify-between rounded-[22px] p-3.5 xl:p-4 ${desktopSoftCard}`} style={getDesktopRevealStyle(MENU_SEQUENCE.sidebar)}>
                                     <motion.nav className="space-y-2" variants={menuGroupVariants}>
                                         {primaryLinks.map(({ label, desc, Icon, active, action }) => (
                                             <motion.button
@@ -847,8 +885,8 @@ const GlobalMenu = ({
                                     </motion.div>
                                 </motion.aside>
 
-                                <motion.div className="grid grid-cols-[minmax(0,0.7fr)_minmax(0,0.5fr)_minmax(0,0.86fr)_minmax(0,1.98fr)] gap-3 xl:gap-4" variants={menuGroupVariants}>
-                                    <motion.section className={`flex min-h-[540px] flex-col rounded-[22px] px-4 py-4 xl:px-5 xl:py-5 2xl:px-6 ${desktopCard}`} variants={menuColumnVariants} custom={MENU_SEQUENCE.categories}>
+                                <motion.div className="grid grid-cols-[minmax(230px,0.72fr)_minmax(420px,1.34fr)_minmax(560px,1.94fr)] gap-3 xl:gap-4">
+                                    <motion.section className={`global-menu-reveal-container flex h-[540px] flex-col rounded-[22px] px-4 py-4 xl:px-5 xl:py-5 2xl:px-6 ${desktopCard}`} style={getDesktopRevealStyle(MENU_SEQUENCE.categories)}>
                                         <motion.h2 className="mb-6 text-[12px] font-black uppercase tracking-[0.18em]" variants={menuRevealVariants}>Meubles par catégorie</motion.h2>
                                         <motion.div className="grid gap-2" variants={menuGroupVariants}>
                                             {categories.map(({ id, label, Icon }) => (
@@ -881,36 +919,48 @@ const GlobalMenu = ({
                                         </motion.button>
                                     </motion.section>
 
-                                    <motion.section className={`min-h-[540px] rounded-[22px] px-4 py-4 xl:px-5 xl:py-5 2xl:px-6 ${desktopCard}`} variants={menuColumnVariants} custom={MENU_SEQUENCE.rooms}>
-                                        <motion.h2 className="mb-7 text-[12px] font-black uppercase tracking-[0.18em]" variants={menuRevealVariants}>Meubles par pièce</motion.h2>
-                                        <motion.div className="space-y-[20px]" variants={menuGroupVariants}>
+                                    <motion.section className={`global-menu-reveal-container flex h-[540px] flex-col rounded-[22px] px-4 py-4 xl:px-5 xl:py-5 2xl:px-6 ${desktopCard}`} style={getDesktopRevealStyle(MENU_SEQUENCE.discovery)}>
+                                        <motion.div className="mb-4" variants={menuRevealVariants}>
+                                            <h2 className="text-[12px] font-black uppercase tracking-[0.18em]">Explorer la maison</h2>
+                                            <p className={`mt-2 max-w-[34ch] text-[12px] leading-5 ${mutedText}`}>
+                                                Pièces de vie, rangements et coups de cœur.
+                                            </p>
+                                        </motion.div>
+
+                                        <motion.div className="grid grid-cols-2 gap-2" variants={menuGroupVariants}>
                                             {ROOM_LINKS.map((room) => (
                                                 <motion.button
                                                     key={room.label}
                                                     type="button"
                                                     onClick={() => goToCategory(room.categoryId)}
-                                                    className="global-menu-hover group -mx-2 block min-h-9 rounded-md px-2 text-left"
+                                                    className={`global-menu-hover group flex min-h-[46px] items-center justify-between rounded-[12px] px-3 py-2 text-left ${darkMode ? 'bg-white/5' : 'bg-white/55'}`}
                                                     variants={menuItemVariants}
                                                     whileHover={textHoverMotion}
                                                     whileTap={textTapMotion}
                                                 >
-                                                    <span className="global-menu-hover__label font-serif text-[20px] font-semibold leading-[1.08] text-stone-900 dark:text-stone-100">
+                                                    <span className="global-menu-hover__label font-serif text-[16.5px] font-semibold leading-tight text-stone-900 dark:text-stone-100">
                                                         {room.label}
                                                     </span>
+                                                    <ChevronRight size={15} strokeWidth={1.4} className="global-menu-hover__chevron shrink-0 text-[#9A654B]" />
                                                 </motion.button>
                                             ))}
                                         </motion.div>
-                                    </motion.section>
 
-                                    <motion.section className={`flex min-h-[540px] flex-col rounded-[22px] px-4 py-4 xl:px-5 xl:py-5 2xl:px-6 ${desktopCard}`} variants={menuColumnVariants} custom={MENU_SEQUENCE.selection}>
-                                        <motion.h2 className="mb-6 text-[12px] font-black uppercase tracking-[0.18em]" variants={menuRevealVariants}>Notre sélection</motion.h2>
-                                        <motion.div className="grid grid-cols-2 gap-3" variants={menuGroupVariants}>
+                                        <motion.div className="mt-6" variants={menuRevealVariants}>
+                                            <span className="block h-px w-full bg-gradient-to-r from-transparent via-[#e5d8cb]/85 to-transparent dark:via-white/10" />
+                                            <div className="flex items-center justify-between pt-4">
+                                                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-stone-400">Notre sélection</span>
+                                                <span className={`text-[11px] ${mutedText}`}>4 entrées rapides</span>
+                                            </div>
+                                        </motion.div>
+
+                                        <motion.div className="mb-5 mt-3 grid grid-cols-2 gap-2.5" variants={menuGroupVariants}>
                                             {SELECTION_TILES.map((tile) => (
                                                 <motion.button
                                                     key={tile.label}
                                                     type="button"
                                                     onClick={() => goToCategory(tile.categoryId)}
-                                                    className="group relative aspect-[1.08] overflow-hidden rounded-[14px] bg-stone-100 text-left shadow-[inset_0_0_0_1px_rgba(255,255,255,0.24)]"
+                                                    className="relative min-h-[104px] overflow-hidden rounded-[14px] bg-stone-100 text-left shadow-[inset_0_0_0_1px_rgba(255,255,255,0.24)] outline-none ring-[#9A654B]/0 transition-[box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-[#9A654B]/55 xl:min-h-[112px]"
                                                     variants={selectionTileVariants}
                                                 >
                                                     <img
@@ -919,39 +969,41 @@ const GlobalMenu = ({
                                                         loading="lazy"
                                                         decoding="async"
                                                         fetchPriority="low"
-                                                        className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.045]"
+                                                        className="absolute inset-0 h-full w-full object-cover"
                                                     />
-                                                    <span className="absolute bottom-2 left-2 rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-stone-900 shadow-sm">
+                                                    <span className="absolute inset-0 bg-gradient-to-t from-stone-950/48 via-stone-950/8 to-transparent" />
+                                                    <span className="absolute bottom-3 left-3 font-serif text-[17px] font-bold leading-none text-white drop-shadow-sm">
                                                         {tile.label}
                                                     </span>
                                                 </motion.button>
                                             ))}
                                         </motion.div>
+
                                         <motion.button
                                             type="button"
                                             onClick={() => navigateToPath('/galerie')}
-                                            className={`global-menu-hover mt-4 flex w-full items-center justify-between rounded-[14px] px-5 py-4 text-left ${darkMode ? 'bg-white/5' : 'bg-[#f5f0ec]'}`}
+                                            className={`global-menu-hover mt-auto flex w-full items-center justify-between rounded-[14px] px-4 py-3.5 text-left ${darkMode ? 'bg-white/5' : 'bg-[#f5f0ec]'}`}
                                             variants={menuItemVariants}
                                             whileHover={textHoverMotion}
                                             whileTap={textTapMotion}
                                         >
-                                            <span className="flex items-center gap-4">
-                                                <span className="global-menu-hover__icon flex h-10 w-10 items-center justify-center rounded-full border border-[#9A654B]/30 text-[#9A654B]">
-                                                    <Sparkles size={18} strokeWidth={1.5} />
+                                            <span className="flex items-center gap-3">
+                                                <span className="global-menu-hover__icon flex h-9 w-9 items-center justify-center rounded-full border border-[#9A654B]/30 text-[#9A654B]">
+                                                    <Sparkles size={17} strokeWidth={1.5} />
                                                 </span>
                                                 <span>
-                                                    <span className="global-menu-hover__label block font-serif text-[18px] font-bold">Pièces uniques</span>
-                                                    <span className={`global-menu-hover__desc mt-1 block text-[12px] ${mutedText}`}>Découvrez nos coups de cœur</span>
+                                                    <span className="global-menu-hover__label block font-serif text-[17px] font-bold">Voir toutes les pièces</span>
+                                                    <span className={`global-menu-hover__desc mt-1 block text-[11.5px] ${mutedText}`}>Nouveautés, petits prix et pièces uniques</span>
                                                 </span>
                                             </span>
-                                            <ChevronRight size={22} strokeWidth={1.5} className="global-menu-hover__chevron text-[#9A654B]" />
+                                            <ChevronRight size={20} strokeWidth={1.5} className="global-menu-hover__chevron text-[#9A654B]" />
                                         </motion.button>
                                     </motion.section>
 
-                                    <motion.section className={`grid min-h-[540px] grid-cols-[minmax(218px,0.92fr)_minmax(0,1.38fr)] gap-2 rounded-[22px] p-1.5 ${desktopWarmCard}`} variants={menuColumnVariants} custom={MENU_SEQUENCE.atelier}>
-                                        <motion.div className={`rounded-[18px] px-4 py-4 xl:px-4 xl:py-5 ${desktopInsetCard}`} variants={menuColumnVariants}>
-                                            <motion.h2 className="mb-7 text-[12px] font-black uppercase tracking-[0.18em]" variants={menuRevealVariants}>L’atelier Seconde Vie</motion.h2>
-                                            <motion.div className="space-y-5" variants={menuGroupVariants}>
+                                    <motion.section className={`global-menu-reveal-container grid h-[540px] grid-cols-[minmax(220px,0.86fr)_minmax(0,1.44fr)] gap-2 rounded-[22px] p-1.5 ${desktopWarmCard}`} style={getDesktopRevealStyle(MENU_SEQUENCE.atelier)}>
+                                        <motion.div className={`flex min-h-0 flex-col rounded-[18px] px-4 py-4 xl:px-4 xl:py-5 ${desktopInsetCard}`} variants={menuColumnVariants} custom={withDesktopMotionContext(MENU_SEQUENCE.atelierInner)}>
+                                            <motion.h2 className="mb-6 text-[12px] font-black uppercase tracking-[0.18em]" variants={menuRevealVariants}>L’atelier Seconde Vie</motion.h2>
+                                            <motion.div className="flex flex-1 flex-col justify-evenly py-2" variants={menuGroupVariants}>
                                                 {ATELIER_LINKS.map(({ label, desc, Icon }) => (
                                                     <motion.button
                                                         key={label}
@@ -970,14 +1022,29 @@ const GlobalMenu = ({
                                                     </motion.button>
                                                 ))}
                                             </motion.div>
+
+                                            <motion.button
+                                                type="button"
+                                                onClick={openQuoteRequest}
+                                                className={`global-menu-hover mt-3 flex w-full items-center justify-between rounded-[16px] px-4 py-3.5 text-left ${darkMode ? 'bg-white/5' : 'bg-[#f4eee8]'}`}
+                                                variants={menuItemVariants}
+                                                whileHover={textHoverMotion}
+                                                whileTap={textTapMotion}
+                                            >
+                                                <span>
+                                                    <span className="global-menu-hover__label block font-serif text-[17px] font-bold leading-tight">Projet sur-mesure</span>
+                                                    <span className={`global-menu-hover__desc mt-1 block text-[11.5px] leading-5 ${mutedText}`}>Décrivez votre meuble à restaurer</span>
+                                                </span>
+                                                <ChevronRight size={18} strokeWidth={1.5} className="global-menu-hover__chevron shrink-0 text-[#9A654B]" />
+                                            </motion.button>
                                         </motion.div>
 
-                                        <motion.div className="space-y-3" variants={menuColumnVariants} custom={MENU_SEQUENCE.atelierMedia}>
+                                        <motion.div className="flex min-h-0 flex-col gap-3" variants={menuColumnVariants} custom={withDesktopMotionContext(MENU_SEQUENCE.atelierMedia)}>
                                             <motion.button
                                                 type="button"
                                                 onClick={() => navigateToPath('/galerie')}
                                                 aria-label="Découvrir la livraison offerte"
-                                                className="group relative h-[206px] w-full overflow-hidden rounded-[16px] bg-[#f8f4ee] text-left"
+                                                className="relative h-[172px] w-full overflow-hidden rounded-[16px] bg-[#f8f4ee] text-left outline-none ring-[#9A654B]/0 transition-[box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-[#9A654B]/55"
                                                 variants={menuTileVariants}
                                             >
                                                 <img
@@ -986,31 +1053,41 @@ const GlobalMenu = ({
                                                     loading="lazy"
                                                     decoding="async"
                                                     fetchPriority="low"
-                                                    className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.035]"
+                                                    className="absolute inset-0 h-full w-full object-cover object-center"
                                                 />
+                                                <span className="absolute inset-x-0 bottom-0 px-5 pb-4 pt-10 text-[10px] font-black uppercase tracking-[0.16em] text-[#8B5C42] [background:linear-gradient(0deg,rgba(248,244,238,0.92),rgba(248,244,238,0))]">
+                                                    Atelier & livraison autour de Marseille
+                                                </span>
                                                 <span className="absolute inset-0 rounded-[16px] ring-1 ring-inset ring-stone-200/70" />
                                             </motion.button>
 
                                             <motion.button
                                                 type="button"
                                                 onClick={openAbout}
-                                                className={`group grid h-[206px] w-full grid-cols-[minmax(0,1fr)_140px] overflow-hidden rounded-[16px] text-left ${darkMode ? 'bg-white/5' : 'bg-[#f4eee8]'}`}
+                                                className={`grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_156px] overflow-hidden rounded-[16px] text-left outline-none ring-[#9A654B]/0 transition-[box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-[#9A654B]/55 ${darkMode ? 'bg-white/5' : 'bg-[#f4eee8]'}`}
                                                 variants={menuTileVariants}
                                             >
-                                                <span className="flex flex-col justify-between p-6">
+                                                <span className="flex min-h-0 flex-col justify-between p-5">
                                                     <span>
+                                                        <span className="mb-4 block text-[10px] font-black uppercase tracking-[0.16em] text-[#9A654B]">Transformation</span>
                                                         <span className="block font-serif text-[24px] font-bold leading-tight">Rénovation</span>
                                                         <span className="block font-serif text-[24px] font-bold leading-tight">sur-mesure</span>
                                                     </span>
-                                                    <span className={`text-[12px] leading-5 ${mutedText}`}>Donnez une seconde vie à vos meubles</span>
-                                                    <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#9A654B] text-[#9A654B]">
-                                                        <ChevronRight size={19} />
+                                                    <span className={`mt-4 max-w-[26ch] text-[12px] leading-5 ${mutedText}`}>Donnez une seconde vie à vos meubles avec une finition pensée pour votre intérieur.</span>
+                                                    <span className="mt-4 flex items-center justify-between gap-4 border-t border-[#e7dcd2]/80 pt-3 dark:border-white/10">
+                                                        <span className="min-w-0">
+                                                            <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-[#9A654B]">Conseil atelier</span>
+                                                            <span className={`mt-1 block text-[11.5px] leading-5 ${mutedText}`}>Photos et dimensions avant rendez-vous</span>
+                                                        </span>
+                                                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#9A654B] text-[#9A654B]">
+                                                            <ChevronRight size={19} />
+                                                        </span>
                                                     </span>
                                                 </span>
                                                 <img
                                                     src="/images/before-after/apresu.webp"
                                                     alt=""
-                                                    className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
+                                                    className="h-full w-full object-cover"
                                                 />
                                             </motion.button>
                                         </motion.div>
@@ -1018,7 +1095,7 @@ const GlobalMenu = ({
                                 </motion.div>
                             </motion.div>
 
-                            <motion.div className={`mt-6 grid grid-cols-4 overflow-hidden rounded-[22px] ${desktopSoftCard}`} variants={menuColumnVariants} custom={MENU_SEQUENCE.services}>
+                            <motion.div className={`global-menu-reveal-container mt-6 grid grid-cols-4 overflow-hidden rounded-[22px] ${desktopSoftCard}`} style={getDesktopRevealStyle(MENU_SEQUENCE.services)}>
                                 {SERVICE_ITEMS.map(({ title, text, Icon }, index) => (
                                     <motion.div key={title} className={`flex items-center gap-5 px-8 py-5 ${index > 0 ? `border-l ${softBorder}` : ''}`} variants={menuItemVariants}>
                                         <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${darkMode ? 'bg-white/5' : 'bg-white/60'} text-[#9A654B]`}>
@@ -1174,6 +1251,7 @@ const GlobalMenu = ({
                         </motion.div>
                     </motion.aside>
                 </motion.div>
+        </MotionConfig>
     );
 };
 

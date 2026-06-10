@@ -10,7 +10,17 @@ const GlobalMenu = dynamic(() => import('../layout/GlobalMenu'), {
   loading: () => null,
 });
 
-function GlobalMenuPanelAuthContent({ darkMode = false, panelOpen = false, setPanelOpen }) {
+export function preloadGlobalMenu() {
+  return GlobalMenu.preload?.();
+}
+
+function GlobalMenuPanelAuthContent({
+  darkMode = false,
+  panelOpen = false,
+  isMenuClosing = false,
+  keepMounted = false,
+  setPanelOpen,
+}) {
   const { user, isAdmin, logout } = useAuth();
   const [authUser, setAuthUser] = useState(() => (
     typeof window === 'undefined' ? null : window.__svAuthUser || null
@@ -48,9 +58,11 @@ function GlobalMenuPanelAuthContent({ darkMode = false, panelOpen = false, setPa
 
   return (
     <>
-      {panelOpen ? (
+      {panelOpen || isMenuClosing || keepMounted ? (
         <GlobalMenu
           isMenuOpen={panelOpen}
+          isMenuClosing={isMenuClosing}
+          keepMounted={keepMounted}
           setIsMenuOpen={setPanelOpen}
           currentView="gallery"
           user={user || authUser}

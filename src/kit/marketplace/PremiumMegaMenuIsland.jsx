@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Archive,
   Armchair,
@@ -120,7 +120,7 @@ function NouveautesContent({ darkMode }) {
 
   return (
     <div className="flex w-[550px] lg:w-[680px]">
-      <div className="flex w-[240px] shrink-0 flex-col justify-center px-4 py-6">
+      <div className="mega-menu-col mega-menu-col-left flex w-[240px] shrink-0 flex-col justify-center px-4 py-6">
         <ul className="relative flex w-full flex-col gap-0.5">
           {NOUVEAUTES_ITEMS.map((item) => (
             <li key={item.id} onMouseEnter={() => setHoveredId(item.id)} className="relative flex items-center">
@@ -143,7 +143,7 @@ function NouveautesContent({ darkMode }) {
           </li>
         </ul>
       </div>
-      <div className={`flex w-full items-stretch border-l p-6 ${darkMode ? 'border-white/5 bg-[#151515]' : 'border-stone-100 bg-[#F2F2F0]'}`}>
+      <div className={`mega-menu-col mega-menu-col-right flex w-full items-stretch border-l p-6 ${darkMode ? 'border-white/5 bg-[#151515]' : 'border-stone-100 bg-[#F2F2F0]'}`}>
         <a
           href="/galerie#gallery-pieces"
           className={`group flex w-full cursor-pointer rounded-[16px] border p-5 shadow-sm no-underline ${
@@ -176,24 +176,65 @@ function NouveautesContent({ darkMode }) {
 
 export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
   const [hoveredTab, setHoveredTab] = useState(null);
+  const [renderedTab, setRenderedTab] = useState(null);
+  const [menuMotionState, setMenuMotionState] = useState('closed');
   const [dropdownLeft, setDropdownLeft] = useState(0);
   const timeoutRef = useRef(null);
+  const exitTimeoutRef = useRef(null);
+  const frameRef = useRef(null);
   const navRef = useRef(null);
 
-  useEffect(() => {
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') setHoveredTab(null);
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => {
-      window.removeEventListener('keydown', onKeyDown);
-      if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
-    };
+  const clearMenuTimers = useCallback(() => {
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (exitTimeoutRef.current) {
+      window.clearTimeout(exitTimeoutRef.current);
+      exitTimeoutRef.current = null;
+    }
+    if (frameRef.current) {
+      window.cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
   }, []);
 
-  const openTab = (item, event) => {
+  const openPanel = useCallback((itemId) => {
+    clearMenuTimers();
+    setRenderedTab(itemId);
+    setMenuMotionState((state) => (state === 'open' ? 'open' : 'opening'));
+    frameRef.current = window.requestAnimationFrame(() => {
+      frameRef.current = window.requestAnimationFrame(() => {
+        setMenuMotionState('open');
+        frameRef.current = null;
+      });
+    });
+  }, [clearMenuTimers]);
+
+  const closeTab = useCallback((delay = 160) => {
     if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+    timeoutRef.current = window.setTimeout(() => {
+      if (frameRef.current) {
+        window.cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
+      setHoveredTab(null);
+      setMenuMotionState('closing');
+      exitTimeoutRef.current = window.setTimeout(() => {
+        setRenderedTab(null);
+        setMenuMotionState('closed');
+        exitTimeoutRef.current = null;
+      }, 360);
+      timeoutRef.current = null;
+    }, delay);
+  }, []);
+
+  const openTab = useCallback((item, event) => {
     setHoveredTab(item.id);
+    if (!item.hasMega) {
+      closeTab(80);
+      return;
+    }
     if (!event?.currentTarget || !navRef.current) return;
     const itemRect = event.currentTarget.getBoundingClientRect();
     const navRect = navRef.current.getBoundingClientRect();
@@ -201,13 +242,22 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
     let left = itemRect.left - navRect.left + 12;
     if (left + width > navRect.width - 20) left = Math.max(0, itemRect.right - navRect.left - width + 12);
     setDropdownLeft(left);
-  };
+    openPanel(item.id);
+  }, [closeTab, openPanel]);
 
-  const closeTab = () => {
-    timeoutRef.current = window.setTimeout(() => setHoveredTab(null), 200);
-  };
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') closeTab(0);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      clearMenuTimers();
+    };
+  }, [clearMenuTimers, closeTab]);
 
-  const activeItem = MENU_ITEMS.find((item) => item.id === hoveredTab && item.hasMega);
+  const activeItem = MENU_ITEMS.find((item) => item.id === renderedTab && item.hasMega);
+  const isPanelVisible = Boolean(activeItem && menuMotionState !== 'closed');
 
   return (
     <>
@@ -225,59 +275,65 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
             >
               <a href={item.href} className="relative z-10 flex items-center gap-1.5 text-inherit no-underline">
                 {item.label}
-                {item.hasMega ? <span className={`text-[7px] transition-transform duration-300 ${hoveredTab === item.id ? '-rotate-180' : 'rotate-0'}`}>v</span> : null}
+                {item.hasMega ? <span className={`text-[7px] transition-transform duration-300 ${hoveredTab === item.id || renderedTab === item.id ? '-rotate-180' : 'rotate-0'}`}>v</span> : null}
               </a>
-              {hoveredTab === item.id ? <span className={`absolute inset-0 -z-10 rounded-full ${darkMode ? 'bg-white/10' : 'bg-black/5'}`} /> : null}
+              {hoveredTab === item.id || renderedTab === item.id ? <span className={`absolute inset-0 -z-10 rounded-full ${darkMode ? 'bg-white/10' : 'bg-black/5'}`} /> : null}
             </li>
           ))}
         </ul>
 
-        {activeItem ? (
-          <div className="absolute left-0 top-full z-50 mt-[1px] w-full">
+        {isPanelVisible ? (
+          <div className="absolute left-0 top-full z-50 mt-[1px] w-full pointer-events-none">
             <div
-              className={`absolute top-2 origin-top-left overflow-hidden rounded-[20px] shadow-2xl backdrop-blur-2xl transition-[opacity,transform] duration-200 ${darkMode ? 'bg-[#1A1A1A]/95 shadow-[0_30px_60px_rgba(0,0,0,0.6)] ring-1 ring-white/10' : 'bg-white/95 shadow-[0_30px_60px_rgba(0,0,0,0.12)] ring-1 ring-stone-200/60'}`}
+              className="premium-mega-menu-positioner absolute top-2 pointer-events-auto"
               style={{ transform: `translate3d(${dropdownLeft}px, 0, 0)`, width: activeItem.dropdownWidth || 760 }}
-              onMouseEnter={() => {
-                if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
-              }}
             >
-              {activeItem.customType === 'preview-list' ? (
-                <NouveautesContent darkMode={darkMode} />
-              ) : (
-                <div className="flex">
-                  <div className={`p-8 ${activeItem.singleColumn ? 'w-[300px]' : 'w-[500px]'}`}>
-                    <h3 className={`mb-6 text-[10px] font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
-                      Explorer {activeItem.label}
-                    </h3>
-                    <div className={`grid ${activeItem.singleColumn ? 'grid-cols-1 gap-y-8' : 'grid-cols-2 gap-x-6 gap-y-8'}`}>
-                      {activeItem.links?.map(({ Icon, title, desc, href }) => (
-                        <a key={title} href={href} className={`group/link -m-3 flex gap-4 rounded-xl p-3 transition-colors ${darkMode ? 'hover:bg-white/5' : 'hover:bg-stone-100/80'}`}>
-                          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border transition-all duration-300 ${darkMode ? 'border-white/5 bg-white/5 group-hover/link:bg-white/10' : 'border-stone-100 bg-stone-50 group-hover/link:border-stone-200 group-hover/link:bg-stone-100'}`}>
-                            <Icon size={20} strokeWidth={1.5} className={`transition-all duration-300 group-hover/link:scale-110 group-hover/link:rotate-6 ${darkMode ? 'text-stone-400 group-hover/link:text-white' : 'text-stone-400 group-hover/link:text-stone-800'}`} />
-                          </span>
-                          <span>
-                            <span className={`mb-1 block text-[13px] font-bold transition-colors ${darkMode ? 'text-stone-200 group-hover/link:text-white' : 'text-stone-800 group-hover/link:text-black'}`}>{title}</span>
-                            <span className="block text-[11px] leading-tight text-stone-500">{desc}</span>
-                          </span>
-                        </a>
-                      ))}
+              <div
+                className={`mega-menu-panel overflow-hidden rounded-[20px] shadow-2xl backdrop-blur-2xl ${darkMode ? 'bg-[#1A1A1A]/95 shadow-[0_30px_60px_rgba(0,0,0,0.6)] ring-1 ring-white/10' : 'bg-white/95 shadow-[0_30px_60px_rgba(0,0,0,0.12)] ring-1 ring-stone-200/60'}`}
+                data-menu-state={menuMotionState}
+                onMouseEnter={() => {
+                  clearMenuTimers();
+                  setMenuMotionState('open');
+                }}
+              >
+                {activeItem.customType === 'preview-list' ? (
+                  <NouveautesContent darkMode={darkMode} key={activeItem.id} />
+                ) : (
+                  <div className="flex" key={activeItem.id}>
+                    <div className={`mega-menu-col mega-menu-col-left p-8 ${activeItem.singleColumn ? 'w-[300px]' : 'w-[500px]'}`}>
+                      <h3 className={`mb-6 text-[10px] font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
+                        Explorer {activeItem.label}
+                      </h3>
+                      <div className={`grid ${activeItem.singleColumn ? 'grid-cols-1 gap-y-8' : 'grid-cols-2 gap-x-6 gap-y-8'}`}>
+                        {activeItem.links?.map(({ Icon, title, desc, href }) => (
+                          <a key={title} href={href} className={`group/link -m-3 flex gap-4 rounded-xl p-3 transition-colors ${darkMode ? 'hover:bg-white/5' : 'hover:bg-stone-100/80'}`}>
+                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border transition-all duration-300 ${darkMode ? 'border-white/5 bg-white/5 group-hover/link:bg-white/10' : 'border-stone-100 bg-stone-50 group-hover/link:border-stone-200 group-hover/link:bg-stone-100'}`}>
+                              <Icon size={20} strokeWidth={1.5} className={`transition-all duration-300 group-hover/link:scale-110 group-hover/link:rotate-6 ${darkMode ? 'text-stone-400 group-hover/link:text-white' : 'text-stone-400 group-hover/link:text-stone-800'}`} />
+                            </span>
+                            <span>
+                              <span className={`mb-1 block text-[13px] font-bold transition-colors ${darkMode ? 'text-stone-200 group-hover/link:text-white' : 'text-stone-800 group-hover/link:text-black'}`}>{title}</span>
+                              <span className="block text-[11px] leading-tight text-stone-500">{desc}</span>
+                            </span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                    <div className={`mega-menu-col mega-menu-col-right w-[260px] shrink-0 border-l p-8 ${darkMode ? 'border-white/5 bg-[#151515]' : 'border-stone-100 bg-[#FAFAF9]'}`}>
+                      <h3 className={`mb-6 text-[10px] font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
+                        Ressources cles
+                      </h3>
+                      <div className="flex flex-col gap-5">
+                        {(activeItem.resources || []).map((title) => (
+                          <a key={title} href="/devis" className={`-mx-2.5 flex items-center gap-2 rounded-lg p-2.5 text-[13px] font-medium transition-colors ${darkMode ? 'text-stone-400 hover:bg-white/5 hover:text-white' : 'text-stone-500 hover:bg-stone-100/80 hover:text-black'}`}>
+                            <span>-&gt;</span>
+                            {title}
+                          </a>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                  <div className={`w-[260px] shrink-0 border-l p-8 ${darkMode ? 'border-white/5 bg-[#151515]' : 'border-stone-100 bg-[#FAFAF9]'}`}>
-                    <h3 className={`mb-6 text-[10px] font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
-                      Ressources cles
-                    </h3>
-                    <div className="flex flex-col gap-5">
-                      {(activeItem.resources || []).map((title) => (
-                        <a key={title} href="/devis" className={`-mx-2.5 flex items-center gap-2 rounded-lg p-2.5 text-[13px] font-medium transition-colors ${darkMode ? 'text-stone-400 hover:bg-white/5 hover:text-white' : 'text-stone-500 hover:bg-stone-100/80 hover:text-black'}`}>
-                          <span>-&gt;</span>
-                          {title}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         ) : null}

@@ -1,12 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 
 const GlobalMenuPanelAuthIsland = dynamic(() => import('./GlobalMenuPanelAuthIsland'), {
   ssr: false,
   loading: () => null,
 });
+
+let globalMenuPanelPreloadPromise = null;
+
+const preloadGlobalMenuPanel = () => {
+  GlobalMenuPanelAuthIsland.preload?.();
+
+  if (!globalMenuPanelPreloadPromise) {
+    globalMenuPanelPreloadPromise = import('./GlobalMenuPanelAuthIsland')
+      .then(async (module) => {
+        await module.preloadGlobalMenu?.();
+        return module;
+      })
+      .catch((error) => {
+        globalMenuPanelPreloadPromise = null;
+        throw error;
+      });
+  }
+
+  return globalMenuPanelPreloadPromise;
+};
 
 function MenuIcon({ open }) {
   return (
@@ -20,12 +40,81 @@ function MenuIcon({ open }) {
 
 export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   const [panelOpen, setPanelOpen] = useState(false);
+  const [panelMounted, setPanelMounted] = useState(false);
+  const [panelClosing, setPanelClosing] = useState(false);
+  const closeTimerRef = useRef(null);
+  const warmGlobalMenuPanel = useCallback(() => {
+    preloadGlobalMenuPanel().catch(() => null);
+  }, []);
+
+  const clearCloseTimer = useCallback(() => {
+    if (!closeTimerRef.current) return;
+    window.clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const desktopQuery = window.matchMedia('(min-width: 1024px)');
+    if (!desktopQuery.matches) return undefined;
+
+    if ('requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(warmGlobalMenuPanel, { timeout: 2200 });
+      return () => window.cancelIdleCallback?.(idleId);
+    }
+
+    const timeoutId = window.setTimeout(warmGlobalMenuPanel, 1600);
+    return () => window.clearTimeout(timeoutId);
+  }, [warmGlobalMenuPanel]);
+
+  useEffect(() => () => {
+    clearCloseTimer();
+  }, [clearCloseTimer]);
+
+  const openPanel = useCallback(() => {
+    clearCloseTimer();
+    warmGlobalMenuPanel();
+    setPanelMounted(true);
+    setPanelClosing(false);
+    setPanelOpen(true);
+  }, [clearCloseTimer, warmGlobalMenuPanel]);
+
+  const closePanel = useCallback(() => {
+    clearCloseTimer();
+    setPanelOpen(false);
+    setPanelClosing(true);
+    closeTimerRef.current = window.setTimeout(() => {
+      setPanelClosing(false);
+      setPanelMounted(false);
+      closeTimerRef.current = null;
+    }, 780);
+  }, [clearCloseTimer]);
+
+  const setPanelOpenWithMotion = useCallback((nextValue) => {
+    const resolvedValue = typeof nextValue === 'function' ? nextValue(panelOpen) : nextValue;
+    if (resolvedValue) {
+      openPanel();
+      return;
+    }
+    closePanel();
+  }, [closePanel, openPanel, panelOpen]);
+
+  const togglePanel = () => {
+    if (panelOpen) {
+      closePanel();
+      return;
+    }
+    openPanel();
+  };
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setPanelOpen((value) => !value)}
+        onClick={togglePanel}
+        onFocus={warmGlobalMenuPanel}
+        onPointerDown={warmGlobalMenuPanel}
+        onPointerEnter={warmGlobalMenuPanel}
         className={`relative mr-1 flex h-10 min-w-10 items-center justify-center gap-2 rounded-full px-2.5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] md:mr-0 md:px-3.5 ${darkMode ? 'bg-white/[0.07] text-stone-100 hover:bg-white/[0.12] hover:text-[#D9B58D]' : 'bg-white text-stone-900 shadow-sm shadow-stone-900/5 hover:text-[#8B5C42]'}`}
         aria-label={panelOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
         aria-expanded={panelOpen}
@@ -33,7 +122,15 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
         <MenuIcon open={panelOpen} />
         <span className="hidden text-[10px] font-black uppercase tracking-[0.16em] md:inline">Menu</span>
       </button>
-      {panelOpen ? <GlobalMenuPanelAuthIsland darkMode={darkMode} panelOpen={panelOpen} setPanelOpen={setPanelOpen} /> : null}
+      {panelMounted ? (
+        <GlobalMenuPanelAuthIsland
+          darkMode={darkMode}
+          panelOpen={panelOpen}
+          isMenuClosing={panelClosing}
+          keepMounted={panelMounted}
+          setPanelOpen={setPanelOpenWithMotion}
+        />
+      ) : null}
     </>
   );
 }
