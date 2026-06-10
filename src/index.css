@@ -1957,6 +1957,25 @@ html.gallery-entry-scroll-lock {
   animation: product-detail-mobile-image-release 180ms ease-out forwards;
 }
 
+.product-detail-main-image-fade {
+  animation: product-detail-main-image-fade 160ms ease-out;
+}
+
+@keyframes product-detail-main-image-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-detail-main-image-fade {
+    animation: none;
+  }
+}
+
 .product-detail-mobile-image-layer--current {
   z-index: 2;
 }

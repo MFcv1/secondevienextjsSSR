@@ -62,13 +62,19 @@ const getDisplaySrc = (image, viewport = 'desktop') => (
   || ''
 );
 
-const getPreviewSrc = (image) => (
-  image?.card || image?.thumb || image?.medium || image?.src || image?.large || image?.full || ''
+const getBackdropSrc = (image) => (
+  image?.thumb || image?.card || image?.medium || image?.src || image?.large || image?.full || ''
 );
 
-const getBackdropSrc = (image) => (
-  image?.medium || image?.large || image?.src || image?.card || image?.thumb || image?.full || ''
-);
+const IMAGE_SWITCH_DECODE_BUDGET_MS = 500;
+const IMAGE_PREWARM_STEP_MS = 140;
+const IMAGE_PREWARM_MAX = 11;
+
+const isConstrainedConnection = () => {
+  if (typeof navigator === 'undefined') return false;
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  return Boolean(connection?.saveData) || /(^|-)2g$/.test(connection?.effectiveType || '');
+};
 
 const ProductThumbRail = ({
   images,
@@ -152,11 +158,11 @@ const ProductThumbRail = ({
             data-thumb-index={index}
             onPointerEnter={() => {
               const src = getDisplaySrc(image, 'desktop');
-              if (src) preloadImage(src, { priority: 'high', decode: false }).catch(() => null);
+              if (src) preloadImage(src, { priority: 'high', decode: true }).catch(() => null);
             }}
             onFocus={() => {
               const src = getDisplaySrc(image, 'desktop');
-              if (src) preloadImage(src, { priority: 'high', decode: false }).catch(() => null);
+              if (src) preloadImage(src, { priority: 'high', decode: true }).catch(() => null);
             }}
             onClick={() => onSelect(index)}
             className={`h-[58px] w-[58px] flex-shrink-0 rounded-xl overflow-hidden transition-[opacity,box-shadow,transform] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] relative group ${activeIndex === index ? 'scale-100 shadow-[0_10px_40px_rgba(0,0,0,0.3)] opacity-100 z-10' : 'scale-[0.83] hover:scale-[0.9] opacity-90 z-0'}`}
@@ -199,6 +205,9 @@ export default function ProductDetailShellIsland({
   darkMode = false,
 }) {
   const [activeImg, setActiveImg] = useState(0);
+  const [pendingImg, setPendingImg] = useState(null);
+  const [underlayImg, setUnderlayImg] = useState(null);
+  const [sharpSrcs, setSharpSrcs] = useState({});
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxFullSrc, setLightboxFullSrc] = useState('');
@@ -225,15 +234,21 @@ export default function ProductDetailShellIsland({
   const imageSwitchRequestRef = useRef(0);
   const cartPanelMountedRef = useRef(false);
   const cartPanelEventIdRef = useRef(0);
+  const sharpSrcsRef = useRef({});
+  const underlayClearTimerRef = useRef(0);
 
   const safeImages = images?.length ? images : [];
   const activeImage = safeImages[Math.min(activeImg, Math.max(0, safeImages.length - 1))] || {};
   const activeImageRatio = activeImage.metadata?.ratio || activeImage.ratio || DEFAULT_PRODUCT_IMAGE_RATIO;
   const activeImageFitMode = getProductImageFitMode(activeImageRatio);
-  const activeDesktopSrc = getDisplaySrc(activeImage, 'desktop');
-  const activeMobileSrc = getDisplaySrc(activeImage, 'mobile');
+  const activeSharpSrc = sharpSrcs[activeImg] || '';
+  const activeDesktopSrc = activeSharpSrc || getDisplaySrc(activeImage, 'desktop');
+  const activeMobileSrc = activeSharpSrc || getDisplaySrc(activeImage, 'mobile');
   const activeImageSrc = activeDesktopSrc || activeMobileSrc;
-  const activePreviewSrc = getPreviewSrc(activeImage);
+  const underlayImage = underlayImg != null ? safeImages[underlayImg] : null;
+  const underlaySharpSrc = underlayImg != null ? (sharpSrcs[underlayImg] || '') : '';
+  const underlayDesktopSrc = underlayImage ? (underlaySharpSrc || getDisplaySrc(underlayImage, 'desktop')) : '';
+  const underlayMobileSrc = underlayImage ? (underlaySharpSrc || getDisplaySrc(underlayImage, 'mobile')) : '';
   const backdropSrc = getBackdropSrc(activeImage);
   const backdropColor = activeImage.metadata?.dominantColor || DEFAULT_DETAIL_BACKDROP_COLOR;
   const title = product?.name || product?.title || 'Produit';
@@ -260,7 +275,10 @@ export default function ProductDetailShellIsland({
   ), [safeImages.length]);
 
   const getDetailImageSrcAtIndex = useCallback((index, viewport = 'desktop') => {
-    const image = safeImages[clampImageIndex(index)] || {};
+    const clampedIndex = clampImageIndex(index);
+    const sharpSrc = sharpSrcsRef.current[clampedIndex];
+    if (sharpSrc) return sharpSrc;
+    const image = safeImages[clampedIndex] || {};
     const preferredSrc = getDisplaySrc(image, viewport);
     const fallbackViewport = viewport === 'mobile' ? 'desktop' : 'mobile';
     return preferredSrc || getDisplaySrc(image, fallbackViewport);
@@ -280,11 +298,23 @@ export default function ProductDetailShellIsland({
 
   const commitImageIndex = useCallback((index) => {
     const nextIndex = clampImageIndex(index);
+    const previousIndex = activeImgRef.current;
+    setUnderlayImg(previousIndex === nextIndex ? null : previousIndex);
     setActiveImg(nextIndex);
+    setPendingImg(null);
     setHasPrimaryImagePainted(false);
     setLightboxFullSrc('');
     setLightboxBaseSrc('');
   }, [clampImageIndex]);
+
+  const handleMainImageLoad = useCallback(() => {
+    setHasPrimaryImagePainted(true);
+    if (underlayClearTimerRef.current) window.clearTimeout(underlayClearTimerRef.current);
+    underlayClearTimerRef.current = window.setTimeout(() => {
+      underlayClearTimerRef.current = 0;
+      setUnderlayImg(null);
+    }, 260);
+  }, []);
 
   const requestImageIndex = useCallback((index, options = {}) => {
     if (!safeImages.length) return false;
@@ -302,11 +332,16 @@ export default function ProductDetailShellIsland({
     };
 
     if (options.waitForDecode) {
-      preloadDetailImageAtIndex(nextIndex, {
+      setPendingImg(nextIndex);
+      const decodePromise = preloadDetailImageAtIndex(nextIndex, {
         viewport: options.viewport,
         priority: 'high',
         decode: true,
-      }).finally(finish);
+      });
+      const decodeBudget = new Promise((resolve) => {
+        window.setTimeout(resolve, IMAGE_SWITCH_DECODE_BUDGET_MS);
+      });
+      Promise.race([decodePromise, decodeBudget]).then(finish, finish);
       return true;
     }
 
@@ -316,7 +351,7 @@ export default function ProductDetailShellIsland({
 
   const goToIndex = useCallback((index) => {
     const viewport = typeof window !== 'undefined' && window.innerWidth < 1024 ? 'mobile' : 'desktop';
-    requestImageIndex(index, { viewport });
+    requestImageIndex(index, { viewport, waitForDecode: true });
   }, [requestImageIndex]);
 
   const goPrevious = useCallback((event) => {
@@ -347,7 +382,7 @@ export default function ProductDetailShellIsland({
         return;
       }
       const direction = wheel.acc > 0 ? 1 : -1;
-      const didSwitch = requestImageIndex(navigationImgRef.current + direction, { viewport: 'desktop' });
+      const didSwitch = requestImageIndex(navigationImgRef.current + direction, { viewport: 'desktop', waitForDecode: true });
       if (didSwitch) wheel.lastSwitchAt = now;
       wheel.acc = 0;
     }
@@ -363,6 +398,16 @@ export default function ProductDetailShellIsland({
     activeImgRef.current = activeImg;
     navigationImgRef.current = activeImg;
   }, [activeImg]);
+
+  useEffect(() => {
+    sharpSrcsRef.current = sharpSrcs;
+  }, [sharpSrcs]);
+
+  useEffect(() => {
+    if (underlayImg == null) return undefined;
+    const timeoutId = window.setTimeout(() => setUnderlayImg(null), 1600);
+    return () => window.clearTimeout(timeoutId);
+  }, [underlayImg, activeImg]);
 
   useEffect(() => {
     const deferCartPanelEvent = (event) => {
@@ -388,32 +433,75 @@ export default function ProductDetailShellIsland({
   }, []);
 
   useEffect(() => {
-    if (!safeImages.length || typeof window === 'undefined') return undefined;
+    if (safeImages.length <= 1 || typeof window === 'undefined') return undefined;
+    if (isConstrainedConnection()) return undefined;
 
     const isDesktop = window.matchMedia?.('(min-width: 1024px)').matches;
     const viewport = isDesktop ? 'desktop' : 'mobile';
-    const radius = 1;
-    const indexes = [];
+    const pending = [];
 
-    for (let offset = 1; offset <= radius; offset += 1) {
-      if (activeImg + offset < safeImages.length) indexes.push(activeImg + offset);
-      if (activeImg - offset >= 0) indexes.push(activeImg - offset);
+    for (let offset = 1; offset < safeImages.length && pending.length < IMAGE_PREWARM_MAX; offset += 1) {
+      if (activeImg + offset < safeImages.length) pending.push(activeImg + offset);
+      if (activeImg - offset >= 0) pending.push(activeImg - offset);
     }
 
-    if (!indexes.length) return undefined;
+    if (!pending.length) return undefined;
 
-    const timeoutId = window.setTimeout(() => {
-      indexes.forEach((index, order) => {
-        preloadDetailImageAtIndex(index, {
-          viewport,
-          priority: order === 0 ? 'auto' : 'low',
-          decode: false,
-        });
+    let cancelled = false;
+    let timerId = 0;
+
+    const runNext = () => {
+      if (cancelled || !pending.length) return;
+      const index = pending.shift();
+      preloadDetailImageAtIndex(index, {
+        viewport,
+        priority: 'low',
+        decode: true,
       });
-    }, hasPrimaryImagePainted ? 80 : 180);
+      if (pending.length) timerId = window.setTimeout(runNext, IMAGE_PREWARM_STEP_MS);
+    };
 
-    return () => window.clearTimeout(timeoutId);
+    timerId = window.setTimeout(runNext, hasPrimaryImagePainted ? 120 : 400);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timerId);
+    };
   }, [activeImg, hasPrimaryImagePainted, preloadDetailImageAtIndex, safeImages.length]);
+
+  useEffect(() => {
+    if (!hasPrimaryImagePainted || typeof window === 'undefined') return undefined;
+    if (isConstrainedConnection()) return undefined;
+
+    const image = safeImages[activeImg];
+    const largeSrc = image?.variants?.large || '';
+    if (!largeSrc || sharpSrcs[activeImg] === largeSrc) return undefined;
+
+    const isDesktop = window.innerWidth >= 1024;
+    const baseSrc = getDisplaySrc(image, isDesktop ? 'desktop' : 'mobile');
+    if (!baseSrc || largeSrc === baseSrc) return undefined;
+
+    const dpr = window.devicePixelRatio || 1;
+    const frameWidth = isDesktop
+      ? Math.min((window.innerWidth - 610) * 0.74, 920)
+      : Math.min(window.innerWidth * 0.94, 430);
+    if (frameWidth * dpr <= 1100) return undefined;
+
+    let cancelled = false;
+    const timerId = window.setTimeout(() => {
+      preloadImage(largeSrc, { priority: 'low', decode: true })
+        .then(() => {
+          if (cancelled) return;
+          setSharpSrcs((prev) => (prev[activeImg] === largeSrc ? prev : { ...prev, [activeImg]: largeSrc }));
+        })
+        .catch(() => null);
+    }, 420);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timerId);
+    };
+  }, [activeImg, hasPrimaryImagePainted, safeImages, sharpSrcs]);
 
   useEffect(() => () => {
     if (wheelStateRef.current.resetTimer) {
@@ -425,10 +513,20 @@ export default function ProductDetailShellIsland({
     if (galleryExitFallbackTimerRef.current) {
       window.clearTimeout(galleryExitFallbackTimerRef.current);
     }
+    if (underlayClearTimerRef.current) {
+      window.clearTimeout(underlayClearTimerRef.current);
+    }
   }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
+    const node = mainImageRef.current;
+    if (node?.complete && node.naturalWidth > 0) {
+      setHasPrimaryImagePainted(true);
+    }
   }, []);
 
   const restoreUrlFromSession = useCallback(() => {
@@ -689,7 +787,7 @@ export default function ProductDetailShellIsland({
             aria-hidden="true"
             loading="eager"
             decoding="async"
-            fetchPriority="high"
+            fetchPriority="low"
             className="h-[120%] w-[120%] scale-110 object-cover object-center opacity-50 blur-[80px] saturate-150"
           />
         </div>
@@ -700,7 +798,7 @@ export default function ProductDetailShellIsland({
           <div ref={mobileThumbLayerRef} className={`absolute top-0 left-0 w-full z-20 px-3 safe-pt-product-thumbs pb-1 transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${isMobilePanelOpen ? '-translate-y-full' : 'translate-y-0'}`}>
             <ProductThumbRail
               images={safeImages}
-              activeIndex={activeImg}
+              activeIndex={pendingImg ?? activeImg}
               onSelect={goToIndex}
               mobile
               hasPrimaryImagePainted={hasPrimaryImagePainted}
@@ -722,11 +820,10 @@ export default function ProductDetailShellIsland({
               <div className="product-detail-mobile-image-shadow pointer-events-none drop-shadow-[0_20px_42px_rgba(92,75,57,0.24)]">
                 <div data-fit-mode={activeImageFitMode} className="product-detail-mobile-image-frame" style={mobileDetailImageFrameStyle}>
                   <div className="product-detail-mobile-image-clip">
-                    {activePreviewSrc && activePreviewSrc !== activeMobileSrc ? (
+                    {underlayMobileSrc && underlayMobileSrc !== activeMobileSrc ? (
                       <img
-                        key={`mobile-preview-${activePreviewSrc}`}
-                        src={activePreviewSrc}
-                        sizes={PRODUCT_DETAIL_IMAGE_SIZES}
+                        key={`mobile-under-${underlayMobileSrc}`}
+                        src={underlayMobileSrc}
                         alt=""
                         aria-hidden="true"
                         data-fit-mode={activeImageFitMode}
@@ -747,12 +844,11 @@ export default function ProductDetailShellIsland({
                         loading="eager"
                         decoding="async"
                         fetchPriority="high"
-                        onLoad={() => setHasPrimaryImagePainted(true)}
                       />
                     ) : null}
                     {activeMobileSrc ? (
                       <img
-                        key={`mobile-${activeMobileSrc}`}
+                        key={`mobile-${activeImg}`}
                         ref={mainImageRef}
                         src={activeMobileSrc}
                         srcSet={undefined}
@@ -760,7 +856,7 @@ export default function ProductDetailShellIsland({
                         alt={title}
                         data-product-main-image="true"
                         data-fit-mode={activeImageFitMode}
-                        className="product-detail-mobile-image product-detail-mobile-image-layer--current object-cover select-none"
+                        className="product-detail-mobile-image product-detail-mobile-image-layer--current product-detail-main-image-fade object-cover select-none"
                         style={{
                           zIndex: 2,
                           width: '100%',
@@ -773,7 +869,7 @@ export default function ProductDetailShellIsland({
                           clipPath: 'none',
                           transition: 'none',
                         }}
-                        onLoad={() => setHasPrimaryImagePainted(true)}
+                        onLoad={handleMainImageLoad}
                         draggable={false}
                         loading="eager"
                         decoding="async"
@@ -915,38 +1011,34 @@ export default function ProductDetailShellIsland({
                     backgroundPosition: 'center',
                   }}
                 >
+                  {underlayDesktopSrc && underlayDesktopSrc !== activeImageSrc ? (
+                    <img
+                      key={`desktop-under-${underlayDesktopSrc}`}
+                      src={underlayDesktopSrc}
+                      alt=""
+                      aria-hidden="true"
+                      loading="eager"
+                      decoding="async"
+                      fetchPriority="high"
+                      className="absolute inset-0 z-10 block h-full w-full object-cover"
+                    />
+                  ) : null}
                   {activeImageSrc ? (
-                    <>
-                      {activePreviewSrc && activePreviewSrc !== activeImageSrc ? (
-                        <img
-                          key={`desktop-preview-${activePreviewSrc}`}
-                          src={activePreviewSrc}
-                          sizes={PRODUCT_DETAIL_IMAGE_SIZES}
-                          alt=""
-                          aria-hidden="true"
-                          loading="eager"
-                          decoding="async"
-                          fetchPriority="high"
-                          className="absolute inset-0 z-10 block h-full w-full object-cover opacity-100"
-                          onLoad={() => setHasPrimaryImagePainted(true)}
-                        />
-                      ) : null}
-                      <img
-                        key={`desktop-${activeImageSrc}`}
-                        ref={mainImageRef}
-                        src={activeImageSrc}
-                        srcSet={undefined}
-                        sizes={PRODUCT_DETAIL_IMAGE_SIZES}
-                        alt={title}
-                        loading="eager"
-                        decoding="async"
-                        fetchPriority="high"
-                        onLoad={() => setHasPrimaryImagePainted(true)}
-                        data-product-main-image="true"
-                        data-desktop-image-ready="true"
-                        className="absolute inset-0 z-20 block h-full w-full object-cover opacity-100"
-                      />
-                    </>
+                    <img
+                      key={`desktop-${activeImg}`}
+                      ref={mainImageRef}
+                      src={activeImageSrc}
+                      srcSet={undefined}
+                      sizes={PRODUCT_DETAIL_IMAGE_SIZES}
+                      alt={title}
+                      loading="eager"
+                      decoding="async"
+                      fetchPriority="high"
+                      onLoad={handleMainImageLoad}
+                      data-product-main-image="true"
+                      data-desktop-image-ready="true"
+                      className="product-detail-main-image-fade absolute inset-0 z-20 block h-full w-full object-cover opacity-100"
+                    />
                   ) : null}
                 </div>
               </div>
@@ -967,7 +1059,7 @@ export default function ProductDetailShellIsland({
         {shouldReserveDesktopThumbRail ? (
           <ProductThumbRail
             images={safeImages}
-            activeIndex={activeImg}
+            activeIndex={pendingImg ?? activeImg}
             onSelect={goToIndex}
             hasPrimaryImagePainted={hasPrimaryImagePainted}
           />

@@ -6,7 +6,7 @@ import {
 import { publicEnv } from '../../../src/lib/server/env';
 import { getServerDarkMode } from '../../../src/lib/server/theme';
 import { getProductUrl } from '../../../src/utils/slug';
-import { getProductImageItems } from '../../../src/utils/imageUtils';
+import { getProductDisplayImageSrc, getProductImageItems } from '../../../src/utils/imageUtils';
 import {
   buildBreadcrumbJsonLd,
   buildProductJsonLd
@@ -21,37 +21,29 @@ const safeJsonLd = (data) => JSON.stringify(data).replace(/</g, '\\u003c');
 
 const normalizeText = (value, fallback = '') => String(value || fallback).replace(/\s+/g, ' ').trim();
 
-const getDisplayImageSrc = (image) => (
-  image?.medium
-  || image?.large
-  || image?.src
-  || image?.card
-  || image?.thumb
-  || ''
-);
-
-const getPreviewImageSrc = (image) => (
-  image?.card
-  || image?.thumb
-  || image?.medium
-  || image?.src
-  || image?.large
-  || ''
-);
-
 const getInitialDetailImagePreloads = (product) => {
   const seen = new Set();
   const imageItems = getProductImageItems(product);
+  const primary = imageItems[0];
+  const neighbor = imageItems[1];
 
   return [
     {
-      href: getDisplayImageSrc(imageItems[0]),
+      href: getProductDisplayImageSrc(primary, { viewport: 'desktop' }),
       priority: 'high'
     },
-    ...imageItems.slice(1, 2).map((image, index) => ({
-      href: getPreviewImageSrc(image),
-      priority: index === 0 ? 'auto' : 'low'
-    }))
+    {
+      href: getProductDisplayImageSrc(primary, { viewport: 'mobile' }),
+      priority: 'high'
+    },
+    {
+      href: primary?.thumb || '',
+      priority: 'low'
+    },
+    {
+      href: getProductDisplayImageSrc(neighbor, { viewport: 'desktop' }),
+      priority: 'low'
+    }
   ]
     .filter(({ href }) => {
       if (!href || seen.has(href)) return false;
