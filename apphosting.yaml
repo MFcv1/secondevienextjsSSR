@@ -60,6 +60,11 @@ env:
     value: "matthis.fradin2@gmail.com"
     availability:
       - RUNTIME
+  - variable: NEXT_PUBLIC_SUPER_ADMIN_EMAIL
+    value: "matthis.fradin2@gmail.com"
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: NEXT_PUBLIC_SITE_DESCRIPTION
     value: "Mobilier ancien restaure et pieces uniques autour de Marseille. Livraison possible en France selon les pieces."
     availability:

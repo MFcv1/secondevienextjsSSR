@@ -1,6 +1,6 @@
 import { getProductUrl } from '../../utils/slug';
 import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, getProductImageItems } from '../../utils/imageUtils';
-import GalleryCardActionsIsland from './GalleryCardActionsIsland';
+import { Heart, Plus } from 'lucide-react';
 
 const formatPrice = (item) => {
   if (item?.sold) return 'VENDU';
@@ -41,17 +41,23 @@ export default function GalleryProductCardServer({
   } : null;
 
   const productUrl = getProductUrl(item);
+  const warmupSrc = warmupImage?.medium || warmupImage?.src || warmupImage?.card || warmupImage?.thumb || '';
+  const cartPayload = JSON.stringify(cartItem);
+  const productId = item?.id || '';
 
   return (
     <div
       className={`group relative flex touch-manipulation flex-col ${compact ? 'gap-3 md:gap-6' : 'gap-6'} w-full text-inherit ${layoutMode === 'list' ? 'flex-row items-center gap-12 border-b border-stone-200 pb-12' : ''}`}
+      data-gallery-product-card
+      data-product-url={productUrl}
+      data-warmup-src={warmupSrc}
     >
       <div
         className={`product-card-media relative overflow-hidden rounded-[12px] bg-[#fbfaf8] ${layoutMode === 'list' ? 'w-1/3 aspect-[4/3]' : 'w-full aspect-[3/4]'} ${isBig ? 'md:aspect-[16/10]' : ''}`}
         data-image-reveal="visible"
         data-image-loaded={cardImage.src ? 'true' : 'false'}
       >
-        <a href={productUrl} draggable={false} className="block h-full w-full cursor-pointer text-inherit no-underline" aria-label={`Découvrir ${title}`}>
+        <a href={productUrl} draggable={false} data-gallery-product-link className="block h-full w-full cursor-pointer text-inherit no-underline" aria-label={`Découvrir ${title}`}>
           {cardImage.src ? (
             <picture className="block h-full w-full">
               <img
@@ -83,10 +89,35 @@ export default function GalleryProductCardServer({
           </div>
         </a>
 
-        <GalleryCardActionsIsland item={cartItem} productUrl={productUrl} warmupImage={warmupImage} />
+        {productId && !item?.sold ? (
+          <div className="absolute right-2 top-2 z-20 flex flex-col gap-1.5 opacity-100 transition-opacity duration-300 md:right-3 md:top-3 md:gap-2 lg:opacity-0 lg:group-hover:opacity-100">
+            <button
+              type="button"
+              data-gallery-cart-button
+              data-cart-item={cartPayload}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-[#8B5C42] text-white shadow-md transition-colors hover:bg-[#6f4630] md:h-9 md:w-9"
+              title="Ajouter au panier"
+              aria-label="Ajouter au panier"
+            >
+              <Plus className="h-3.5 w-3.5 md:h-4 md:w-4" strokeWidth={2.5} />
+            </button>
+            <button
+              type="button"
+              data-gallery-wishlist-button
+              data-product-id={productId}
+              data-liked="false"
+              aria-pressed="false"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-stone-700 shadow-md transition-colors hover:bg-rose-500 hover:text-white data-[liked=true]:bg-rose-500 data-[liked=true]:text-white md:h-9 md:w-9"
+              title="Ajouter aux favoris"
+              aria-label="Ajouter aux favoris"
+            >
+              <Heart data-gallery-wishlist-heart className="h-[13px] w-[13px] md:h-[15px] md:w-[15px]" strokeWidth={2} fill="none" />
+            </button>
+          </div>
+        ) : null}
       </div>
 
-      <a href={productUrl} draggable={false} className={`flex cursor-pointer text-inherit no-underline ${compact ? 'flex-col gap-1 md:flex-row md:items-start md:justify-between md:gap-4' : 'items-start justify-between gap-2 md:gap-4'} ${layoutMode === 'list' ? 'flex-1 pt-6' : compact ? 'pt-1 md:pt-4' : 'pt-4'}`}>
+      <a href={productUrl} draggable={false} data-gallery-product-link className={`flex cursor-pointer text-inherit no-underline ${compact ? 'flex-col gap-1 md:flex-row md:items-start md:justify-between md:gap-4' : 'items-start justify-between gap-2 md:gap-4'} ${layoutMode === 'list' ? 'flex-1 pt-6' : compact ? 'pt-1 md:pt-4' : 'pt-4'}`}>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5 md:gap-1">
           <div className={`truncate font-black uppercase tracking-widest opacity-50 ${compact ? 'text-[8px] md:text-[9px]' : 'text-[9px]'}`}>
             {item?.material || 'Matiere inconnue'}

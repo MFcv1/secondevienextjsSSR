@@ -4,6 +4,7 @@ import ArchitecturalHeaderServer from './ArchitecturalHeaderServer';
 import MarketplaceHeroServer from './MarketplaceHeroServer';
 import CategoryRailServer from './CategoryRailServer';
 import FooterServer from './FooterServer';
+import GalleryGridActionsIsland from './GalleryGridActionsIsland';
 import {
   BeforeAfterSectionServer,
   InstagramSectionServer,
@@ -153,6 +154,7 @@ export default function GalleryServerView({ items = [], darkMode = false } = {})
           <FooterServer darkMode={darkMode} />
         </div>
       </div>
+      <GalleryGridActionsIsland />
     </main>
   );
 }

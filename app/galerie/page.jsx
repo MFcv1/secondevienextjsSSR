@@ -1,12 +1,12 @@
 import GalleryMobileShellIsland from '../GalleryMobileShellIsland';
 import { getPublicCatalog, getPublicCatalogFallback } from '../../src/lib/server/products';
 import { publicEnv } from '../../src/lib/server/env';
-import { getServerDarkMode } from '../../src/lib/server/theme';
 import GalleryServerView from '../../src/kit/marketplace/GalleryServerView';
 import { GALLERY_SEO_COPY } from '../../src/kit/marketplace/seoCopy';
 import { getProductUrl } from '../../src/utils/slug';
 
 export const revalidate = 300;
+export const dynamic = 'force-static';
 
 const galleryDescription = GALLERY_SEO_COPY.intro;
 const galleryUrl = '/galerie';
@@ -181,11 +181,10 @@ const buildGalleryJsonLd = (products) => {
 
 export default async function GaleriePage() {
   const products = await getGalleryProducts();
-  const darkMode = await getServerDarkMode();
 
   return (
     <>
-      <GalleryServerView items={products} darkMode={darkMode} />
+      <GalleryServerView items={products} darkMode={false} />
       <GalleryMobileShellIsland />
       <script dangerouslySetInnerHTML={{ __html: galleryReturnRestoreScript }} />
       <script

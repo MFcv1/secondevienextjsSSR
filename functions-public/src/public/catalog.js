@@ -124,6 +124,44 @@ const readPublicCollection = async (collectionName, options = {}) => {
   };
 };
 
+const readPublicProduct = async (id, catalogVersion) => {
+  const productId = String(id || '').trim();
+  if (!productId) return null;
+
+  const cacheKey = `${catalogVersion}:product:${productId}`;
+  const cached = limitedCatalogCache.get(cacheKey);
+  if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) return cached.catalog;
+
+  for (const collectionName of PUBLIC_COLLECTIONS) {
+    const snap = await db
+      .collection('artifacts')
+      .doc(APP_ID)
+      .collection('public')
+      .doc('data')
+      .collection(collectionName)
+      .doc(productId)
+      .get();
+
+    if (!snap.exists) continue;
+    const data = serializeValue(snap.data());
+    if (data?.status !== 'published') return null;
+    const result = {
+      appId: APP_ID,
+      catalogVersion,
+      generatedAt: new Date().toISOString(),
+      product: {
+        id: snap.id,
+        collectionName,
+        ...data
+      }
+    };
+    limitedCatalogCache.set(cacheKey, { cachedAt: Date.now(), catalog: result });
+    return result;
+  }
+
+  return null;
+};
+
 const firstImageVariantForCard = (imageVariants) => {
   const firstVariant = Array.isArray(imageVariants) ? imageVariants[0] : null;
   if (!firstVariant || typeof firstVariant !== 'object') return [];
@@ -327,6 +365,16 @@ exports.publicCatalog = functions.https.onRequest(async (req, res) => {
     const categories = parseCategories(req.query);
     const cursor = req.query.cursor ? String(req.query.cursor) : '';
     const catalogVersion = await readCatalogVersion();
+    const id = req.query.id ? String(req.query.id) : '';
+    if (id) {
+      const productCatalog = await readPublicProduct(id, catalogVersion);
+      if (!productCatalog) {
+        res.status(404).json({ error: 'product_not_found' });
+        return;
+      }
+      sendCatalogResponse(req, res, productCatalog);
+      return;
+    }
     sendCatalogResponse(req, res, await readPublicCatalog(limit, scope, { categories, cursor, catalogVersion }));
   } catch (error) {
     console.error('Public catalog failed:', error);

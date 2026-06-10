@@ -1,29 +1,15 @@
-import AboutVitrineIsland from './AboutVitrineIsland';
+import AboutServerView from '../../src/kit/vitrine/AboutServerView';
+import { getFaqItems } from '../../src/kit/vitrine/aboutContent';
+import { getAboutPersonalization } from '../../src/lib/server/about';
 import { publicEnv } from '../../src/lib/server/env';
 
 const siteRoot = publicEnv.siteUrl.replace(/\/$/, '');
 const aboutUrl = `${siteRoot}/a-propos`;
-const aboutTitle = 'À propos - Seconde Vie par Anaïs';
-const aboutDescription = "L'histoire de l'atelier Seconde Vie par Anaïs, entre mobilier restauré, pièces uniques et savoir-faire artisanal.";
+const aboutTitle = 'A propos - Seconde Vie par Anais';
+const aboutDescription = "L'histoire de l'atelier Seconde Vie par Anais, entre mobilier restaure, pieces uniques et savoir-faire artisanal.";
+const faqItems = getFaqItems();
 
-const faqItems = [
-  {
-    question: "Comment se passe la livraison d'un meuble volumineux ?",
-    answer: "Nous travaillons avec un transporteur spécialisé dans le mobilier fragile. Votre meuble est soigneusement emballé et livré directement dans la pièce de votre choix, partout en France.",
-  },
-  {
-    question: "Puis-je vous confier la restauration d'un meuble de famille ?",
-    answer: "Absolument. C'est même le cœur de notre métier. Envoyez-nous des photos de votre meuble via le formulaire de devis, nous vous établirons un diagnostic personnalisé.",
-  },
-  {
-    question: "Qu'est-ce que l'aérogommage exactement ?",
-    answer: "C'est une technique de décapage à très basse pression. Elle retire vernis et peintures sans creuser ni abîmer les veines du bois.",
-  },
-  {
-    question: 'Comment entretenir vos meubles patinés au quotidien ?',
-    answer: "Nos finitions sont conçues pour être durables. Pour l'entretien courant, un chiffon doux légèrement humide suffit. Une fiche de conseils accompagne chaque pièce.",
-  },
-];
+export const revalidate = 300;
 
 export const metadata = {
   title: aboutTitle,
@@ -55,7 +41,7 @@ const aboutJsonLd = {
       '@id': `${siteRoot}/#localbusiness`,
       name: publicEnv.siteName,
       url: siteRoot,
-      areaServed: 'Marseille et France selon les pièces',
+      areaServed: 'Marseille et France selon les pieces',
       image: 'https://images.unsplash.com/photo-1765288115711-25db755b8e31?auto=format&fit=crop&q=80&w=2560',
       address: {
         '@type': 'PostalAddress',
@@ -87,7 +73,9 @@ const aboutJsonLd = {
   ],
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const personalization = await getAboutPersonalization();
+
   return (
     <>
       <main data-public-ssr-fallback data-ssr-about>
@@ -95,7 +83,7 @@ export default function AboutPage() {
           <a href="/galerie">Galerie</a>
           <a href="/devis">Devis</a>
         </nav>
-        <AboutVitrineIsland />
+        <AboutServerView personalization={personalization} />
       </main>
       <script
         type="application/ld+json"

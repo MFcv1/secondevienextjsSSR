@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
+const vm = require('vm');
 
 const ROOT = path.resolve(__dirname, '..');
 const NEXT_DIR = path.join(ROOT, '.next');
@@ -26,9 +27,21 @@ const routeBudgets = [
     maxInitialCssGzipKb: 55,
   },
   {
+    label: 'gallery SSR route',
+    keys: ['/layout', '/galerie/page'],
+    maxInitialJsGzipKb: 190,
+    maxInitialCssGzipKb: 55,
+  },
+  {
     label: 'category SSR route',
     keys: ['/layout', '/categorie/[categoryId]/page'],
-    maxInitialJsGzipKb: 135,
+    maxInitialJsGzipKb: 130,
+    maxInitialCssGzipKb: 55,
+  },
+  {
+    label: 'about native SSR route',
+    keys: ['/layout', '/a-propos/page'],
+    maxInitialJsGzipKb: 170,
     maxInitialCssGzipKb: 55,
   },
   {
@@ -40,8 +53,8 @@ const routeBudgets = [
   {
     label: 'admin client tunnel',
     keys: ['/layout', '/admin/page'],
-    maxInitialJsGzipKb: 125,
-    maxInitialCssGzipKb: 55,
+    maxInitialJsGzipKb: 135,
+    maxInitialCssGzipKb: 60,
   },
 ];
 
@@ -94,7 +107,39 @@ const sumGzip = (files) => files.reduce((total, filePath) => total + gzipSizeKb(
 const manifestFilesForKeys = (manifest, keys) => {
   const pages = manifest.pages || {};
   const assets = keys.flatMap((key) => pages[key] || []);
-  return uniqueFiles(assets.map(resolveStaticAsset));
+  return uniqueFiles([
+    ...assets.map(resolveStaticAsset),
+    ...keys.flatMap(clientReferenceFilesForKey),
+  ]);
+};
+
+const clientReferencePathForKey = (key) => {
+  if (!key.endsWith('/page')) return null;
+  return path.join(SERVER_APP_DIR, `${key.replace(/^\/+/, '')}_client-reference-manifest.js`);
+};
+
+const readClientReferenceManifest = (key) => {
+  const manifestPath = clientReferencePathForKey(key);
+  if (!manifestPath || !fs.existsSync(manifestPath)) return null;
+
+  const sandbox = {};
+  vm.runInNewContext(fs.readFileSync(manifestPath, 'utf8'), sandbox, { filename: manifestPath });
+  return sandbox.__RSC_MANIFEST?.[key] || null;
+};
+
+const clientReferenceFilesForKey = (key) => {
+  const manifest = readClientReferenceManifest(key);
+  if (!manifest) return [];
+
+  const chunkPaths = Object.values(manifest.clientModules || {})
+    .flatMap((clientModule) => clientModule.chunks || [])
+    .filter((chunkPath) => typeof chunkPath === 'string' && chunkPath.startsWith('static/'));
+  const cssPaths = Object.values(manifest.entryCSSFiles || {})
+    .flatMap((files) => files || [])
+    .map((file) => file.path)
+    .filter(Boolean);
+
+  return uniqueFiles([...chunkPaths, ...cssPaths].map(resolveStaticAsset));
 };
 
 const collectServerTextFiles = () =>

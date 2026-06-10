@@ -31,6 +31,7 @@
     "perf:quote-direct": "node scripts/audit-quote-direct.mjs --assert",
     "perf:gallery-direct": "node scripts/audit-gallery-direct.mjs --assert",
     "perf:product-images": "node scripts/audit-product-detail-images.mjs --assert",
+    "next:routes": "node scripts/check-next-route-classification.cjs",
     "mobile:contract": "node scripts/check-mobile-marketplace-contract.cjs"
   },
   "dependencies": {

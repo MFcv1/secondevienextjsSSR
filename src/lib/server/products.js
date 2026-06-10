@@ -5,6 +5,7 @@ import { getAdminDb } from './firebaseAdmin';
 import { publicCatalogUrl, publicEnv } from './env';
 
 export const PUBLIC_DATA_REVALIDATE_SECONDS = 300;
+const ADMIN_FALLBACK_TIMEOUT_MS = 1800;
 
 const PUBLIC_PRODUCT_FIELDS = [
   'id',
@@ -53,6 +54,22 @@ const normalizeSeoTitle = (value) => String(value || '')
   .trim()
   .toLowerCase()
   .replace(/\s+/g, ' ');
+
+const withTimeout = (promise, timeoutMs, label) => new Promise((resolve, reject) => {
+  const timer = setTimeout(() => {
+    reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+  }, timeoutMs);
+
+  Promise.resolve(promise)
+    .then((value) => {
+      clearTimeout(timer);
+      resolve(value);
+    })
+    .catch((error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
+});
 
 export const isSeoIndexableProduct = (product) => {
   const title = normalizeSeoTitle(product?.name || product?.title);
@@ -131,7 +148,7 @@ const queryProductsViaAdmin = async ({ categoryIds = [], limitCount = 120 } = {}
 };
 
 const getProductViaPublicCatalog = async (id) => {
-  const url = publicCatalogUrl('');
+  const url = publicCatalogUrl(`id=${encodeURIComponent(id)}`);
   if (!url || !id) return null;
 
   const response = await fetch(url, {
@@ -144,7 +161,7 @@ const getProductViaPublicCatalog = async (id) => {
   if (!response.ok) return null;
 
   const payload = await response.json();
-  const product = (payload?.collections?.furniture || []).find((item) => item.id === id);
+  const product = payload?.product || (payload?.collections?.furniture || []).find((item) => item.id === id);
   if (!product || product.status !== 'published') return null;
   return projectPublicProduct(product.id, product);
 };
@@ -263,17 +280,21 @@ const queryProductsViaFirestoreRest = async ({ categoryIds = [], limitCount = 24
 export const getPublicProduct = cache(async (slugOrId) => {
   const id = extractProductId(slugOrId);
   try {
-    const product = await getProductViaAdmin(id);
-    if (product) return product;
-  } catch (error) {
-    console.warn('[SSR] Admin product read unavailable, falling back to publicCatalog:', error?.message || error);
-  }
-
-  try {
     const product = await getProductViaPublicCatalog(id);
     if (product) return product;
   } catch (error) {
-    console.warn('[SSR] publicCatalog product fallback unavailable:', error?.message || error);
+    console.warn('[SSR] publicCatalog product read unavailable, falling back to Admin:', error?.message || error);
+  }
+
+  try {
+    const product = await withTimeout(
+      getProductViaAdmin(id),
+      ADMIN_FALLBACK_TIMEOUT_MS,
+      'Admin product read'
+    );
+    if (product) return product;
+  } catch (error) {
+    console.warn('[SSR] Admin product fallback unavailable:', error?.message || error);
   }
 
   try {
@@ -302,7 +323,11 @@ export const getPublicCatalog = cache(async (params = '') => {
 
 export const getPublicCatalogFallback = cache(async ({ categoryIds = [], limitCount = 24 } = {}) => {
   try {
-    const products = await queryProductsViaAdmin({ categoryIds, limitCount });
+    const products = await withTimeout(
+      queryProductsViaAdmin({ categoryIds, limitCount }),
+      ADMIN_FALLBACK_TIMEOUT_MS,
+      'Admin catalog fallback'
+    );
     if (products.length) return products;
   } catch (error) {
     console.warn('[SSR] Admin catalog fallback unavailable:', error?.message || error);

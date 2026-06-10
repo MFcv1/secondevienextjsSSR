@@ -50,6 +50,7 @@ const runMode = async (browser, mode) => {
     h1: document.querySelector('h1')?.textContent?.trim() || '',
     canonical: document.querySelector('link[rel="canonical"]')?.href || '',
     hasSsrCategory: Boolean(document.querySelector('[data-ssr-category]')),
+    hasNativeCategoryView: Boolean(document.querySelector('[data-category-native-view]')),
     svClientHydrated: document.documentElement.dataset.svClientHydrated === 'true',
     hasMarketplaceGalleryShell: Boolean(document.querySelector('.marketplace-gallery-shell')),
     hasGalleryScroll: Boolean(document.querySelector('.marketplace-gallery-scroll')),
@@ -76,6 +77,7 @@ const checks = [];
 const add = (name, passed, detail = {}) => checks.push({ name, passed, detail });
 for (const result of results) {
   add(`${result.mode}: SSR category marker is present`, result.dom.hasSsrCategory === true, result.dom);
+  add(`${result.mode}: native category view marker is present`, result.dom.hasNativeCategoryView === true, result.dom);
   add(`${result.mode}: legacy ClientApp hydration marker is absent`, result.dom.svClientHydrated === false, result.dom);
   add(`${result.mode}: gallery shell is absent`, result.dom.hasMarketplaceGalleryShell === false && result.dom.hasGalleryScroll === false, result.dom);
   add(`${result.mode}: category H1 is present`, result.dom.h1.length > 0, result.dom);

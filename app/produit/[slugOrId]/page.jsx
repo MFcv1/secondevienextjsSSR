@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import {
   getPublicProduct,
+  getPublishedProductStaticParams,
   isSeoIndexableProduct
 } from '../../../src/lib/server/products';
 import { publicEnv } from '../../../src/lib/server/env';
@@ -14,7 +15,6 @@ import {
 import ProductDetailServerView from '../../../src/kit/marketplace/ProductDetailServerView';
 
 export const revalidate = 300;
-export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 const safeJsonLd = (data) => JSON.stringify(data).replace(/</g, '\\u003c');
@@ -56,6 +56,10 @@ const getProductPageData = async (params) => {
   const resolvedParams = await params;
   return getPublicProduct(resolvedParams.slugOrId);
 };
+
+export async function generateStaticParams() {
+  return getPublishedProductStaticParams(120);
+}
 
 const getPrimaryImage = (product) => {
   const [primary] = getProductImageItems(product);

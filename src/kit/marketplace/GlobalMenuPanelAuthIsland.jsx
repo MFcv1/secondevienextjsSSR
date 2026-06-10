@@ -10,6 +10,8 @@ const GlobalMenu = dynamic(() => import('../layout/GlobalMenu'), {
   loading: () => null,
 });
 
+const SUPER_ADMIN_EMAIL = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+
 export function preloadGlobalMenu() {
   return GlobalMenu.preload?.();
 }
@@ -56,6 +58,12 @@ function GlobalMenuPanelAuthContent({
     window.dispatchEvent(new CustomEvent('sv:open-cart'));
   };
 
+  const effectiveUser = user || authUser;
+  const effectiveIsAdmin = isAdmin || (
+    Boolean(SUPER_ADMIN_EMAIL) &&
+    effectiveUser?.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  );
+
   return (
     <>
       {panelOpen || isMenuClosing || keepMounted ? (
@@ -65,8 +73,8 @@ function GlobalMenuPanelAuthContent({
           keepMounted={keepMounted}
           setIsMenuOpen={setPanelOpen}
           currentView="gallery"
-          user={user || authUser}
-          isAdmin={isAdmin}
+          user={effectiveUser}
+          isAdmin={effectiveIsAdmin}
           darkMode={darkMode}
           onShowLogin={openLogin}
           onOpenWishlist={() => navigateClient('/wishlist')}

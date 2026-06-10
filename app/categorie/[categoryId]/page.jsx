@@ -10,20 +10,41 @@ import { getCategoryUrl } from '../../../src/utils/slug';
 import { getCategorySeoCopy } from '../../../src/kit/marketplace/seoCopy';
 import { getProductCardImage } from '../../../src/utils/imageUtils';
 import ArchitecturalHeaderServer from '../../../src/kit/marketplace/ArchitecturalHeaderServer';
-import CategoryLegacyExperienceIsland from '../../../src/kit/marketplace/CategoryLegacyExperienceIsland';
+import CategoryServerView from '../../../src/kit/marketplace/CategoryServerView';
 import FooterServer from '../../../src/kit/marketplace/FooterServer';
 import {
   buildCategoryBreadcrumbJsonLd,
   buildCategoryCollectionJsonLd,
+  categoryEntries,
   cleanCategoryLabel,
   getCategoryMeta,
   getMatchingCategoryIds,
 } from '../../../src/lib/seo/categories';
 
 export const revalidate = 300;
-export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
 
 const safeJsonLd = (data) => JSON.stringify(data).replace(/</g, '\\u003c');
+const categoryReturnRestoreScript = `(() => {
+  const RETURN_KEY = 'secondevie:product-return:v1';
+  const rememberProductReturnTarget = (event) => {
+    const link = event.target?.closest?.('a[href^="/produit/"]');
+    if (!link) return;
+    try {
+      window.sessionStorage.setItem(RETURN_KEY, JSON.stringify({
+        href: window.location.pathname + (window.location.search || '') + (window.location.hash || ''),
+        scrollY: window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0,
+        galleryScrollTop: 0,
+        savedAt: Date.now(),
+      }));
+    } catch {
+      // Links must remain normal navigation even if storage is unavailable.
+    }
+  };
+  document.addEventListener('pointerdown', rememberProductReturnTarget, { capture: true, passive: true });
+  document.addEventListener('touchstart', rememberProductReturnTarget, { capture: true, passive: true });
+  document.addEventListener('click', rememberProductReturnTarget, { capture: true, passive: true });
+})();`;
 
 const getProductQualityRank = (product) => {
   let rank = 0;
@@ -54,6 +75,12 @@ const getCategoryRouteData = async (params) => {
     products,
   };
 };
+
+export async function generateStaticParams() {
+  return categoryEntries.map((category) => ({
+    categoryId: encodeURIComponent(category.id)
+  }));
+}
 
 export async function generateMetadata({ params }) {
   const data = await getCategoryRouteData(params);
@@ -88,10 +115,11 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default async function CategoryRoutePage({ params }) {
+export default async function CategoryRoutePage({ params, searchParams }) {
   const data = await getCategoryRouteData(params);
   if (!data) notFound();
   const darkMode = await getServerDarkMode();
+  const resolvedSearchParams = await searchParams;
 
   const { categoryId, categoryLabel, products } = data;
   const copy = getCategorySeoCopy(categoryId, categoryLabel);
@@ -112,15 +140,17 @@ export default async function CategoryRoutePage({ params }) {
     <>
       <main className={`min-h-screen ${darkMode ? 'bg-[#0A0A0A] text-stone-200' : 'bg-[#FAFAF9] text-stone-950'}`} data-ssr-category>
         <ArchitecturalHeaderServer darkMode={darkMode} />
-        <CategoryLegacyExperienceIsland
+        <CategoryServerView
           categoryId={categoryId}
           categoryLabel={categoryLabel}
           products={products}
           copy={copy}
           darkMode={darkMode}
+          searchParams={resolvedSearchParams}
         />
         <FooterServer darkMode={darkMode} />
       </main>
+      <script dangerouslySetInnerHTML={{ __html: categoryReturnRestoreScript }} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(itemListJsonLd) }}

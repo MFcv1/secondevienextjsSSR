@@ -9,7 +9,11 @@ const LegacyLoginModalIsland = dynamic(() => import('./LegacyLoginModalFullIslan
   loading: () => null,
 });
 
-const SUPER_ADMIN_EMAIL = process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '';
+const SUPER_ADMIN_EMAIL = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+
+const isSuperAdminEmail = (email) => (
+  Boolean(SUPER_ADMIN_EMAIL) && email?.toLowerCase() === SUPER_ADMIN_EMAIL
+);
 
 const hasPersistedFirebaseUser = () => {
   if (typeof window === 'undefined') return false;
@@ -34,7 +38,7 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
         setIsAdmin(false);
         return;
       }
-      if (nextUser.email === SUPER_ADMIN_EMAIL) {
+      if (isSuperAdminEmail(nextUser.email)) {
         setIsAdmin(true);
         return;
       }

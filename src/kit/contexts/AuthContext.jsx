@@ -2,7 +2,11 @@
 import { getCallableFunction, getFirebaseAuth, getGoogleProvider, loadAuthModule } from '../config/firebaseLazy';
 
 // CONFIGURER dans .env.local : VITE_SUPER_ADMIN_EMAIL=votre@email.com
-const SUPER_ADMIN_EMAIL = process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '';
+const SUPER_ADMIN_EMAIL = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+
+const isSuperAdminEmail = (email) => (
+    Boolean(SUPER_ADMIN_EMAIL) && email?.toLowerCase() === SUPER_ADMIN_EMAIL
+);
 
 // Detect iOS standalone PWA mode (added to home screen)
 // In this mode, signInWithPopup is blocked by WebKit: must use signInWithRedirect
@@ -163,17 +167,17 @@ export const AuthProvider = ({ children }) => {
                 const { getIdTokenResult } = await loadAuthModule();
                 const tokenResult = await getIdTokenResult(user, true);
                 if (!cancelled) {
-                    setIsAdmin(tokenResult.claims.admin === true || user.email === SUPER_ADMIN_EMAIL);
+                    setIsAdmin(tokenResult.claims.admin === true || isSuperAdminEmail(user.email));
                 }
             } catch (err) {
                 console.error("Error reading admin claim:", err);
-                if (!cancelled) setIsAdmin(user.email === SUPER_ADMIN_EMAIL);
+                if (!cancelled) setIsAdmin(isSuperAdminEmail(user.email));
             }
         };
 
         syncAdminClaim();
 
-        if (user.email === SUPER_ADMIN_EMAIL) {
+        if (isSuperAdminEmail(user.email)) {
             setIsAdmin(true);
         }
 
