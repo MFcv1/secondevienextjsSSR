@@ -87,7 +87,7 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
       setPanelClosing(false);
       setPanelMounted(false);
       closeTimerRef.current = null;
-    }, 780);
+    }, 1120);
   }, [clearCloseTimer]);
 
   const setPanelOpenWithMotion = useCallback((nextValue) => {

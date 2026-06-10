@@ -104,13 +104,13 @@ const MENU_CONTAINER_EASE = [0.21, 1.02, 0.43, 1.01];
 const RAINMAKER_PANEL_EASE = [0.88, 0, 0.18, 1];
 const MENU_CLOSE_EASE = [0.76, 0, 0.24, 1];
 const MENU_SEQUENCE = {
-    sidebar: { delay: 0.54 },
-    categories: { delay: 0.72 },
-    discovery: { delay: 0.92 },
-    atelier: { delay: 1.12 },
+    sidebar: { delay: 0.54, exitDelay: 0.16 },
+    categories: { delay: 0.72, exitDelay: 0.11 },
+    discovery: { delay: 0.92, exitDelay: 0.07 },
+    atelier: { delay: 1.12, exitDelay: 0.03 },
     atelierInner: { delay: 0.08 },
     atelierMedia: { delay: 0.18 },
-    services: { delay: 1.28 },
+    services: { delay: 1.28, exitDelay: 0 },
 };
 
 const getMenuStage = (stage = {}) => (
@@ -124,6 +124,7 @@ const getMenuStageDelay = (stage = {}) => {
 
 const getDesktopRevealStyle = (stage = {}) => ({
     '--global-menu-delay': `${Math.round((getMenuStage(stage).delay || 0) * 1000)}ms`,
+    '--global-menu-exit-delay': `${Math.round((getMenuStage(stage).exitDelay || 0) * 1000)}ms`,
 });
 
 const shellVariants = {
@@ -167,17 +168,17 @@ const desktopPanelVariants = {
         },
     }),
     exit: {
-        opacity: 0,
-        y: -10,
-        scaleY: 0.982,
+        opacity: 1,
+        y: -12,
+        scaleY: 0.972,
         clipPath: 'inset(0 0 100% 0 round 0px)',
         pointerEvents: 'none',
         transition: {
-            duration: 0.52,
             ease: RAINMAKER_PANEL_EASE,
-            opacity: { duration: 0.22, ease: MENU_CLOSE_EASE, delay: 0.16 },
-            scaleY: { duration: 0.5, ease: RAINMAKER_PANEL_EASE },
-            clipPath: { duration: 0.52, ease: RAINMAKER_PANEL_EASE },
+            opacity: { duration: 0.01, delay: 0.98 },
+            y: { duration: 0.74, ease: RAINMAKER_PANEL_EASE, delay: 0.24 },
+            scaleY: { duration: 0.74, ease: RAINMAKER_PANEL_EASE, delay: 0.24 },
+            clipPath: { duration: 0.76, ease: RAINMAKER_PANEL_EASE, delay: 0.24 },
         },
     },
 };
@@ -822,21 +823,22 @@ const GlobalMenu = ({
                             animate={menuContentAnimationState}
                             custom={desktopMotionContext}
                             data-motion-ready={menuContentAnimationState === 'visible' ? 'true' : 'false'}
+                            data-motion-state={menuAnimationState}
                         >
                             <motion.div className="grid grid-cols-[250px_minmax(0,1fr)] gap-4 xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-5">
                                 <motion.aside className={`global-menu-reveal-container flex h-[540px] flex-col justify-between rounded-[22px] p-3.5 xl:p-4 ${desktopSoftCard}`} style={getDesktopRevealStyle(MENU_SEQUENCE.sidebar)}>
                                     <motion.nav className="space-y-2" variants={menuGroupVariants}>
-                                        {primaryLinks.map(({ label, desc, Icon, active, action }) => (
+                                        {primaryLinks.map(({ label, desc, Icon, action }) => (
                                             <motion.button
                                                 key={label}
                                                 type="button"
                                                 onClick={action}
-                                                className={`global-menu-hover group flex w-full items-center gap-3.5 rounded-lg px-4 py-3.5 text-left ${active ? (darkMode ? 'bg-white/10' : 'bg-[#f3efeb]') : ''}`}
+                                                className="global-menu-hover group flex w-full items-center gap-3.5 rounded-lg px-4 py-3.5 text-left"
                                                 variants={menuItemVariants}
                                                 whileHover={textHoverMotion}
                                                 whileTap={textTapMotion}
                                             >
-                                                <Icon size={22} strokeWidth={1.35} className={`global-menu-hover__icon ${active ? 'text-[#9A654B]' : mutedText}`} />
+                                                <Icon size={22} strokeWidth={1.35} className={`global-menu-hover__icon ${mutedText}`} />
                                                 <span>
                                                     <span className="global-menu-hover__label block font-serif text-[18px] font-semibold leading-tight">{label}</span>
                                                     <span className={`global-menu-hover__desc mt-1 block text-[12px] ${mutedText}`}>{desc}</span>
