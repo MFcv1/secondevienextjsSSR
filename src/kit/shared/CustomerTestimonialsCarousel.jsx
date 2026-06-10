@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Quote, Star } from 'lucide-react';
 
 const TESTIMONIALS = [
@@ -135,13 +135,61 @@ const CustomerTestimonialsCarousel = ({
     );
 };
 
-const TestimonialsHeader = ({ headingId, darkMode, compact = false }) => (
-    <div className="mx-auto flex max-w-[420px] flex-col items-center px-4 text-center">
-        <div className={`mb-7 flex items-center gap-2 ${darkMode ? 'text-[#ff9d10]' : 'text-[#ff9200]'}`}>
-            {Array.from({ length: 5 }).map((_, index) => (
-                <Star key={index} size={compact ? 21 : 23} fill="currentColor" strokeWidth={0} />
-            ))}
-        </div>
+const TestimonialsHeader = ({ headingId, darkMode, compact = false }) => {
+    const shouldReduceMotion = useReducedMotion();
+    const starSize = compact ? 21 : 23;
+
+    return (
+        <div className="mx-auto flex max-w-[420px] flex-col items-center px-4 text-center">
+            <motion.div
+                className={`relative mb-7 flex items-center gap-2 ${darkMode ? 'text-[#ff9d10]' : 'text-[#ff9200]'}`}
+                initial={shouldReduceMotion ? false : { opacity: 0.88, y: 8 }}
+                whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: false, amount: 0.75 }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            >
+                {!shouldReduceMotion && (
+                    <>
+                        <motion.span
+                            aria-hidden="true"
+                            className={`absolute left-1/2 top-1/2 h-10 w-[152px] -translate-x-1/2 -translate-y-1/2 rounded-full border ${darkMode ? 'border-[#ffb34d]/18' : 'border-[#ff9200]/18'}`}
+                            animate={{ scaleX: [0.68, 1.16, 0.68], scaleY: [0.68, 1.05, 0.68], opacity: [0, 0.34, 0] }}
+                            transition={{ duration: 2.9, repeat: Infinity, ease: 'easeInOut' }}
+                        />
+                        <motion.span
+                            aria-hidden="true"
+                            className={`absolute left-1/2 top-1/2 h-px w-[178px] -translate-x-1/2 -translate-y-1/2 ${darkMode ? 'bg-gradient-to-r from-transparent via-[#ffb34d]/35 to-transparent' : 'bg-gradient-to-r from-transparent via-[#ff9200]/35 to-transparent'}`}
+                            animate={{ x: [-14, 14, -14], opacity: [0.08, 0.42, 0.08] }}
+                            transition={{ duration: 2.9, repeat: Infinity, ease: 'easeInOut' }}
+                        />
+                    </>
+                )}
+                {Array.from({ length: 5 }).map((_, index) => (
+                    <motion.span
+                        key={index}
+                        className="relative z-10 inline-flex will-change-transform"
+                        animate={shouldReduceMotion ? undefined : {
+                            y: [0, -6, 0, 2, 0],
+                            scale: [1, 1.16, 1, 0.98, 1],
+                            filter: [
+                                'drop-shadow(0 0 0 rgba(255,146,0,0))',
+                                'drop-shadow(0 7px 12px rgba(255,146,0,0.22))',
+                                'drop-shadow(0 0 0 rgba(255,146,0,0))',
+                                'drop-shadow(0 0 0 rgba(255,146,0,0))',
+                                'drop-shadow(0 0 0 rgba(255,146,0,0))',
+                            ],
+                        }}
+                        transition={{
+                            duration: 2.4,
+                            repeat: Infinity,
+                            ease: [0.45, 0, 0.2, 1],
+                            delay: index * 0.13,
+                        }}
+                    >
+                        <Star size={starSize} fill="currentColor" strokeWidth={0} />
+                    </motion.span>
+                ))}
+            </motion.div>
 
         <h2
             id={headingId}
@@ -154,7 +202,8 @@ const TestimonialsHeader = ({ headingId, darkMode, compact = false }) => (
             Excellent 4.9/5 - basé sur 124 avis Google
         </p>
     </div>
-);
+    );
+};
 
 const CarouselStage = ({ cards, positions, cardSize, className, onDragEnd }) => (
     <motion.div

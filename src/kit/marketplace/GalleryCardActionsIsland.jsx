@@ -162,7 +162,7 @@ export default function GalleryCardActionsIsland({ item, productUrl = '', warmup
       <button
         type="button"
         onClick={addToCart}
-        className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2f241d] text-white shadow-md transition-colors hover:bg-[#7a4f35] md:h-9 md:w-9"
+        className="flex h-8 w-8 items-center justify-center rounded-full bg-[#8B5C42] text-white shadow-md transition-colors hover:bg-[#6f4630] md:h-9 md:w-9"
         title="Ajouter au panier"
         aria-label="Ajouter au panier"
       >

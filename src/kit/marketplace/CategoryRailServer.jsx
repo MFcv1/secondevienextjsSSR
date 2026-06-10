@@ -44,7 +44,7 @@ export default function CategoryRailServer({
             key={cat.id}
             href={getCategoryUrl(cat.id)}
             prefetch={false}
-            className={`relative flex h-[152px] min-w-0 items-center rounded-[16px] p-[5px] text-inherit no-underline shadow-[0_18px_42px_rgba(33,27,19,0.07)] lg:h-[162px] lg:p-[6px] 2xl:h-[178px] 2xl:p-[6px] ${darkMode ? 'bg-[#1A1A1A] text-white' : 'bg-white text-[#181716]'}`}
+            className={`category-rail-card relative flex h-[152px] min-w-0 items-center rounded-[16px] p-[5px] text-inherit no-underline shadow-[0_18px_42px_rgba(33,27,19,0.07)] lg:h-[162px] lg:p-[6px] 2xl:h-[178px] 2xl:p-[6px] ${darkMode ? 'bg-[#1A1A1A] text-white' : 'bg-white text-[#181716]'}`}
           >
             <div className={`h-[142px] w-[118px] flex-none overflow-hidden rounded-[11px] border lg:h-[150px] lg:w-[130px] 2xl:h-[166px] 2xl:w-[150px] ${darkMode ? 'border-white/14 bg-white/[0.04]' : 'border-[#d8cfc5] bg-[#f8f4ef]'}`}>
               <div className="h-full w-full overflow-hidden rounded-[10px] bg-stone-100">

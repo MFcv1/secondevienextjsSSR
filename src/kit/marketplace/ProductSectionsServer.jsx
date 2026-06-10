@@ -23,7 +23,27 @@ const SectionLogo = ({ tone }) => {
       <span className="absolute -inset-1 rounded-[22px] border border-white/75 md:rounded-[25px]" />
       <span className={`relative flex h-full w-full items-center justify-center rounded-[14px] border bg-[#FAFAF9]/82 md:rounded-[17px] ${isPrice ? 'border-[#B35D3E]/28 text-[#9E563F]' : 'border-[#6E7D61]/28 text-[#5F6E55]'}`}>
         {isPrice ? (
-          <span className="font-serif text-3xl leading-none">EUR</span>
+          <svg viewBox="0 0 42 42" className="h-[35px] w-[35px] overflow-visible md:h-[42px] md:w-[42px]" fill="none" aria-hidden="true">
+            <path
+              d="M21 3.8 25.1 6.7 30 5.6 32.2 10.1 36.8 12 35.9 16.9 39 21 35.9 25.1 36.8 30 32.2 31.9 30 36.4 25.1 35.3 21 38.2 16.9 35.3 12 36.4 9.8 31.9 5.2 30 6.1 25.1 3 21 6.1 16.9 5.2 12 9.8 10.1 12 5.6 16.9 6.7 21 3.8Z"
+              fill="currentColor"
+              fillOpacity="0.055"
+              stroke="currentColor"
+              strokeWidth="1.35"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+            <text
+              x="21"
+              y="27"
+              textAnchor="middle"
+              className="fill-current font-serif"
+              fontSize="20"
+              fontWeight="500"
+            >
+              €
+            </text>
+          </svg>
         ) : (
           <svg viewBox="0 0 42 42" className="h-[43px] w-[43px] overflow-visible md:h-[50px] md:w-[50px]" fill="none" aria-hidden="true">
             <g stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke">
