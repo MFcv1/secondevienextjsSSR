@@ -11,6 +11,14 @@ const warmupQueue = [];
 let activeWarmups = 0;
 const MAX_ACTIVE_WARMUPS = 2;
 
+const getUniqueSources = (sources) => {
+  const unique = [];
+  sources.forEach((src) => {
+    if (src && !unique.includes(src)) unique.push(src);
+  });
+  return unique;
+};
+
 const readWishlist = () => {
   if (typeof window === 'undefined') return [];
   try {
@@ -94,7 +102,10 @@ export default function GalleryGridActionsIsland() {
   const warmupProduct = useCallback((card, intent = 'hover') => {
     if (!card || (intent === 'hover' && shouldSkipSoftWarmup())) return;
     const productUrl = card.dataset.productUrl || '';
-    const src = card.dataset.warmupSrc || '';
+    const sources = getUniqueSources([
+      card.dataset.warmupSrc || '',
+      card.dataset.warmupBackdropSrc || '',
+    ]);
 
     if (productUrl && !prefetchedRoutes.has(productUrl)) {
       prefetchedRoutes.add(productUrl);
@@ -105,11 +116,13 @@ export default function GalleryGridActionsIsland() {
       }
     }
 
-    if (!src || warmedImages.has(src)) return;
-    warmedImages.add(src);
-    enqueueWarmup(() => preloadWarmupImage(src, {
-      priority: intent === 'press' ? 'high' : 'auto',
-    }));
+    sources.forEach((src) => {
+      if (warmedImages.has(src)) return;
+      warmedImages.add(src);
+      enqueueWarmup(() => preloadWarmupImage(src, {
+        priority: intent === 'press' ? 'high' : 'auto',
+      }));
+    });
   }, [router]);
 
   useEffect(() => {

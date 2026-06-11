@@ -54,10 +54,26 @@ const galleryReturnRestoreScript = `(() => {
     const windowTop = Math.max(0, Number(saved.scrollY || 0));
     const root = document.documentElement;
     const previousScrollBehavior = root.style.scrollBehavior;
+    const previousScrollRestoration = 'scrollRestoration' in window.history
+      ? window.history.scrollRestoration
+      : null;
+    let cancelledByUser = false;
 
     root.style.scrollBehavior = 'auto';
+    if (previousScrollRestoration !== null) {
+      window.history.scrollRestoration = 'manual';
+    }
+
+    const cancelRestore = () => {
+      cancelledByUser = true;
+    };
+
+    window.addEventListener('wheel', cancelRestore, { passive: true, once: true });
+    window.addEventListener('touchstart', cancelRestore, { passive: true, once: true });
+    window.addEventListener('keydown', cancelRestore, { passive: true, once: true });
 
     const apply = () => {
+      if (cancelledByUser) return;
       const scroller = document.getElementById('marketplaceGalleryScroll');
       if (scroller && galleryTop > 0) {
         const maxTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
@@ -74,15 +90,20 @@ const galleryReturnRestoreScript = `(() => {
     const settle = () => {
       apply();
       frame += 1;
-      if (frame < 12) {
+      if (!cancelledByUser && frame < 8) {
         window.requestAnimationFrame(settle);
         return;
       }
-      window.setTimeout(apply, 220);
-      window.setTimeout(apply, 720);
       window.setTimeout(() => {
+        window.removeEventListener('wheel', cancelRestore);
+        window.removeEventListener('touchstart', cancelRestore);
+        window.removeEventListener('keydown', cancelRestore);
+        window.sessionStorage.removeItem(RETURN_KEY);
         root.style.scrollBehavior = previousScrollBehavior;
-      }, 760);
+        if (previousScrollRestoration !== null) {
+          window.history.scrollRestoration = previousScrollRestoration;
+        }
+      }, 40);
     };
 
     window.requestAnimationFrame(settle);

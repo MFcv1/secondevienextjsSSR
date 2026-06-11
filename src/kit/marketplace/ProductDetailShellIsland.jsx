@@ -10,11 +10,14 @@ import {
 import {
   PRODUCT_DETAIL_IMAGE_SIZES,
   getProductDisplayImageSrc,
-  getProductZoomFullImageSrc,
-  getProductZoomInitialImageSrc,
   preloadImage,
 } from '../../utils/imageUtils';
 import ProductDetailActionsIsland from './ProductDetailActionsIsland';
+
+const ProductDetailLightboxIsland = dynamic(() => import('./ProductDetailLightboxIsland'), {
+  ssr: false,
+  loading: () => null,
+});
 
 const CartPanelIsland = dynamic(() => import('./CartPanelIsland'), {
   ssr: false,
@@ -211,7 +214,6 @@ export default function ProductDetailShellIsland({
   const [sharpSrcs, setSharpSrcs] = useState({});
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const [lightboxFullSrc, setLightboxFullSrc] = useState('');
   const [lightboxBaseSrc, setLightboxBaseSrc] = useState('');
   const [hasPrimaryImagePainted, setHasPrimaryImagePainted] = useState(false);
   const [cartPanelEvent, setCartPanelEvent] = useState(null);
@@ -254,6 +256,7 @@ export default function ProductDetailShellIsland({
   const underlayDesktopSrc = underlayImage ? (underlaySharpSrc || getDisplaySrc(underlayImage, 'desktop')) : '';
   const underlayMobileSrc = underlayImage ? (underlaySharpSrc || getDisplaySrc(underlayImage, 'mobile')) : '';
   const backdropSrc = getBackdropSrc(activeImage);
+  const backdropPlaceholderSrc = activeImage.metadata?.blurDataUrl || '';
   const backdropColor = activeImage.metadata?.dominantColor || DEFAULT_DETAIL_BACKDROP_COLOR;
   const title = product?.name || product?.title || 'Produit';
   const description = product?.description || '';
@@ -268,12 +271,6 @@ export default function ProductDetailShellIsland({
     }),
     [activeImage.metadata?.blurDataUrl, activeImage.metadata?.dominantColor, activeImageRatio]
   );
-  const lightboxInitialSrc = getProductZoomInitialImageSrc(activeImage, {
-    displaySrc: lightboxBaseSrc || activeImageSrc,
-    viewport: 'desktop',
-  });
-  const lightboxSrc = lightboxFullSrc || lightboxInitialSrc;
-
   const clampImageIndex = useCallback((index) => (
     Math.max(0, Math.min(index, Math.max(0, safeImages.length - 1)))
   ), [safeImages.length]);
@@ -335,7 +332,6 @@ export default function ProductDetailShellIsland({
     setActiveImg(nextIndex);
     setPendingImg(null);
     setHasPrimaryImagePainted(false);
-    setLightboxFullSrc('');
     setLightboxBaseSrc('');
   }, [clampImageIndex]);
 
@@ -664,18 +660,8 @@ export default function ProductDetailShellIsland({
     if (suppressImageClickRef.current) return;
     const visibleSrc = mainImageRef.current?.currentSrc || mainImageRef.current?.src || activeImageSrc;
     setLightboxBaseSrc(visibleSrc);
-    setLightboxFullSrc('');
     setIsLightboxOpen(true);
-
-    const fullSrc = getProductZoomFullImageSrc(activeImage);
-    if (fullSrc && fullSrc !== visibleSrc) {
-      window.setTimeout(() => {
-        preloadImage(fullSrc, { priority: 'auto', decode: true })
-          .then(() => setLightboxFullSrc(fullSrc))
-          .catch(() => null);
-      }, 420);
-    }
-  }, [activeImage, activeImageSrc]);
+  }, [activeImageSrc]);
 
   const resetImageDrag = (animated) => {
     const node = mobileImageDragRef.current;
@@ -891,21 +877,31 @@ export default function ProductDetailShellIsland({
         backgroundColor: backdropColor,
       }}
     >
-      {backdropSrc ? (
+      {backdropSrc || backdropPlaceholderSrc ? (
         <div
           className="absolute inset-0 z-0 pointer-events-none overflow-hidden hidden lg:flex items-center justify-center"
           style={{ backgroundColor: backdropColor }}
         >
-          <img
-            key={backdropSrc}
-            src={backdropSrc}
-            alt=""
-            aria-hidden="true"
-            loading="eager"
-            decoding="async"
-            fetchPriority="low"
-            className="h-[120%] w-[120%] scale-110 object-cover object-center opacity-50 blur-[80px] saturate-150"
-          />
+          {backdropPlaceholderSrc ? (
+            <div
+              key={`backdrop-placeholder-${activeImg}`}
+              aria-hidden="true"
+              className="absolute h-[120%] w-[120%] scale-110 bg-cover bg-center opacity-50 blur-[80px] saturate-150"
+              style={{ backgroundImage: `url("${backdropPlaceholderSrc}")` }}
+            />
+          ) : null}
+          {backdropSrc ? (
+            <img
+              key={backdropSrc}
+              src={backdropSrc}
+              alt=""
+              aria-hidden="true"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              className="h-[120%] w-[120%] scale-110 object-cover object-center opacity-50 blur-[80px] saturate-150"
+            />
+          ) : null}
         </div>
       ) : null}
 
@@ -1187,36 +1183,17 @@ export default function ProductDetailShellIsland({
       </main>
 
       {isLightboxOpen ? (
-        <div className="fixed inset-0 z-[3000] flex items-center justify-center animate-in fade-in duration-300 backdrop-blur-md bg-[#FAFAF9]/95 text-stone-700">
-          <button
-            aria-label="Fermer l'image agrandie"
-            onClick={() => setIsLightboxOpen(false)}
-            className="absolute top-4 right-4 md:top-6 md:right-6 z-[3100] w-12 h-12 flex items-center justify-center rounded-full transition-all text-stone-700 border border-[#EEE9E3] bg-white/85 shadow-[0_10px_30px_rgba(92,75,57,0.10)] hover:bg-white hover:text-stone-950"
-          >
-            <X size={20} />
-          </button>
-          <div className="absolute top-6 left-5 md:top-10 md:left-10 z-[3100] text-[10px] font-label uppercase tracking-[0.4em] text-stone-500">
-            {activeImg + 1} / {safeImages.length}
-          </div>
-          <div className="w-full h-full flex items-center justify-center overflow-hidden touch-none p-1 sm:p-3 md:p-12 cursor-zoom-in">
-            {lightboxSrc ? (
-              <img
-                src={lightboxSrc}
-                srcSet={undefined}
-                sizes="100vw"
-                alt="Detail"
-                data-fit-mode={activeImageFitMode}
-                data-lightbox-initial-src={lightboxInitialSrc}
-                data-lightbox-full-src={lightboxFullSrc || ''}
-                className="product-detail-lightbox-image object-contain pointer-events-none select-none will-change-transform drop-shadow-[0_24px_54px_rgba(92,75,57,0.18)]"
-                draggable={false}
-                loading="eager"
-                decoding="async"
-                fetchPriority="high"
-              />
-            ) : null}
-          </div>
-        </div>
+        <ProductDetailLightboxIsland
+          activeImage={activeImage}
+          activeImageSrc={activeImageSrc}
+          activeImageFitMode={activeImageFitMode}
+          activeIndex={activeImg}
+          imageCount={safeImages.length}
+          baseSrc={lightboxBaseSrc}
+          onClose={() => setIsLightboxOpen(false)}
+          onPrevious={goPrevious}
+          onNext={goNext}
+        />
       ) : null}
       {cartPanelEvent ? (
         <CartPanelIsland className="hidden" initialEvent={cartPanelEvent} onReady={handleCartPanelReady} />

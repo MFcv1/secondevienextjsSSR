@@ -42,6 +42,7 @@ export default function GalleryProductCardServer({
 
   const productUrl = getProductUrl(item);
   const warmupSrc = warmupImage?.medium || warmupImage?.src || warmupImage?.card || warmupImage?.thumb || '';
+  const warmupBackdropSrc = warmupImage?.thumb || warmupImage?.card || warmupImage?.medium || warmupImage?.src || '';
   const cartPayload = JSON.stringify(cartItem);
   const productId = item?.id || '';
 
@@ -51,6 +52,7 @@ export default function GalleryProductCardServer({
       data-gallery-product-card
       data-product-url={productUrl}
       data-warmup-src={warmupSrc}
+      data-warmup-backdrop-src={warmupBackdropSrc}
     >
       <div
         className={`product-card-media relative overflow-hidden rounded-[12px] bg-[#fbfaf8] ${layoutMode === 'list' ? 'w-1/3 aspect-[4/3]' : 'w-full aspect-[3/4]'} ${isBig ? 'md:aspect-[16/10]' : ''}`}
