@@ -62,9 +62,11 @@ function AccountDashboardFallback({ darkMode = false, isSignedOut = false }) {
 
 function OrdersPageContent({ initialItems = [] }) {
   const { user, loading, logout } = useAuth();
+  const [hasMounted, setHasMounted] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
+    setHasMounted(true);
     try {
       setDarkMode(window.localStorage.getItem('darkMode') === 'true');
     } catch {
@@ -72,7 +74,7 @@ function OrdersPageContent({ initialItems = [] }) {
     }
   }, []);
 
-  if (loading) return <AccountDashboardFallback darkMode={darkMode} />;
+  if (!hasMounted || loading) return null;
   if (!user || user.isAnonymous) {
     return <AccountDashboardFallback darkMode={darkMode} isSignedOut />;
   }

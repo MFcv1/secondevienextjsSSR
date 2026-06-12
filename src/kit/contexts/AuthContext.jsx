@@ -47,8 +47,8 @@ const isAuthRoute = () => {
     ));
 };
 
-const shouldInitializeAuthOnMount = () => (
-    hasRedirectPending() || hasPersistedFirebaseUser() || isAuthRoute()
+const shouldInitializeAuthOnMount = (forceInitialize = false) => (
+    forceInitialize || hasRedirectPending() || hasPersistedFirebaseUser() || isAuthRoute()
 );
 
 const emitAuthUserChanged = (user) => {
@@ -65,9 +65,9 @@ export const useAuth = () => {
 };
 
 // Provider Component
-export const AuthProvider = ({ children }) => {
+export const AuthProvider = ({ children, forceInitialize = false }) => {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(() => shouldInitializeAuthOnMount());
+    const [loading, setLoading] = useState(() => shouldInitializeAuthOnMount(forceInitialize));
     const [isAdmin, setIsAdmin] = useState(false);
 
     // Authentication relies on Firestore Rules & Custom Claims now.
@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }) => {
     // Public visitors do not need Firebase Auth on the first paint. Keep Auth off
     // until a persisted/redirected session exists or the user opens an auth route.
     useEffect(() => {
-        if (!shouldInitializeAuthOnMount()) {
+        if (!shouldInitializeAuthOnMount(forceInitialize)) {
             setLoading(false);
             return undefined;
         }
@@ -124,7 +124,7 @@ export const AuthProvider = ({ children }) => {
             cancelled = true;
             unsubscribeAuth?.();
         };
-    }, []);
+    }, [forceInitialize]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return undefined;

@@ -90,7 +90,7 @@ function GlobalMenuPanelAuthContent({
 
 export default function GlobalMenuPanelAuthIsland(props) {
   return (
-    <AuthProvider>
+    <AuthProvider forceInitialize>
       <ToastProvider>
         <GlobalMenuPanelAuthContent {...props} />
       </ToastProvider>

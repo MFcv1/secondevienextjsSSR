@@ -15,15 +15,6 @@ const isSuperAdminEmail = (email) => (
   Boolean(SUPER_ADMIN_EMAIL) && email?.toLowerCase() === SUPER_ADMIN_EMAIL
 );
 
-const hasPersistedFirebaseUser = () => {
-  if (typeof window === 'undefined') return false;
-  try {
-    return Object.keys(window.localStorage).some((key) => key.startsWith('firebase:authUser:'));
-  } catch {
-    return false;
-  }
-};
-
 export default function HeaderAccountIsland({ darkMode = false } = {}) {
   const [loginOpen, setLoginOpen] = useState(false);
   const [user, setUser] = useState(null);
@@ -70,7 +61,7 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
     window.addEventListener('sv:auth-user-changed', handleExternalAuthChange);
     window.addEventListener('sv:open-login', handleOpenLogin);
 
-    if (hasPersistedFirebaseUser()) {
+    const startAuthProbe = () => {
       import('../config/firebaseLazy')
         .then(async ({ getFirebaseAuth, loadAuthModule }) => {
           const auth = await getFirebaseAuth();
@@ -79,11 +70,18 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
           unsubscribeAuth = onAuthStateChanged(auth, applyUser);
         })
         .catch(() => {});
-    }
+    };
+
+    const usesIdleCallback = typeof window.requestIdleCallback === 'function';
+    const idleId = usesIdleCallback
+      ? window.requestIdleCallback(startAuthProbe, { timeout: 1800 })
+      : window.setTimeout(startAuthProbe, 900);
 
     return () => {
       cancelled = true;
       unsubscribeAuth?.();
+      if (usesIdleCallback && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
+      else window.clearTimeout(idleId);
       window.removeEventListener('sv:auth-user-changed', handleExternalAuthChange);
       window.removeEventListener('sv:open-login', handleOpenLogin);
     };
