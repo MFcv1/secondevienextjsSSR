@@ -380,7 +380,7 @@ Prod:
 4. Verifier App Check (`NEXT_PUBLIC_RECAPTCHA_SITE_KEY`) et domaines autorises Auth.
 5. Durcir `.firebaseignore` / ignore App Hosting pour exclure explicitement `.env*`, `service-account.json`, `apphosting.local.yaml`, cles `.pem/.key`.
 6. Clarifier `NEXT_PUBLIC_SUPER_ADMIN_EMAIL`: public donc visible; l'autorisation serveur doit rester `SUPER_ADMIN_EMAIL` / custom claims.
-7. Verifier que `functions-public` et non le duplicat `functions/src/public/catalog.js` est bien l'endpoint public deploye.
+7. Verifier que `functions-public` reste l'unique endpoint public deploye pour `publicCatalog`.
 8. Auditer `sendTestEmail`: appele cote admin mais export Function non trouve.
 9. Encadrer les fonctions maintenance destructives par backup + QA.
 
@@ -430,13 +430,6 @@ Ces fichiers etaient sans import actif selon `rg` et ont ete supprimes:
 - `src/kit/hooks/useLiveTheme.js`
 - `src/kit/hooks/useFirestoreSection.js`
 
-### Phase 2 - legacy a confirmer
-
-- `functions/src/public/catalog.js`: duplicat probable de `functions-public/src/public/catalog.js`, mais certaines docs/admin peuvent encore le mentionner.
-- `scripts/measure-preview-network.py`, `scripts/perf-network-baseline.json`: legacy Vite documente.
-- `scripts/measure-scroll-smoothness.py`, `scripts/dev-ports-dashboard.mjs`: encore orientes Vite.
-- `scripts/make_boilerplate.ps1`, `scripts/README_BOILERPLATE_GENERATOR.md`: tooling generique hors flux Next SSR.
-
 ### Phase 2 - nettoyee le 2026-06-13
 
 Apres verification `rg`, l'ancienne home SPA vitrine n'etait plus importee par `/a-propos`, ni par les routes publiques, ni par l'admin actif. Le bloc a ete supprime:
@@ -444,15 +437,26 @@ Apres verification `rg`, l'ancienne home SPA vitrine n'etait plus importee par `
 - `src/vitrine/HomeView.jsx`
 - `src/vitrine/components/*`
 
+Autres suppressions hors affichage actif:
+
+- `functions/src/public/catalog.js` (doublon non exporte; l'endpoint actif vit dans `functions-public/src/public/catalog.js`)
+- `scripts/measure-preview-network.py`
+- `scripts/perf-network-baseline.json`
+- `scripts/measure-scroll-smoothness.py`
+- `scripts/dev-ports-dashboard.mjs`
+- `scripts/make_boilerplate.ps1`
+- `scripts/README_BOILERPLATE_GENERATOR.md`
+
 ### Assets candidats archive
 
-Apres verification visuelle:
+Audit `rg` du 2026-06-13, sans suppression d'assets visibles. Les fichiers ci-dessous ont 0 reference textuelle directe par nom de fichier dans `app`, `src`, `public`, `scripts` et les rapports scannes. A confirmer par capture/inspection avant suppression, car certains noms peuvent etre construits dynamiquement ou servir de reserve visuelle.
 
 - `public/images/categories/source-config/*`
 - `src/assets/quote-restoration-hero.png` si le `.webp` est seul utilise
 - `src/assets/marseille-vieux-port-blueprint.png`
 - `src/assets/marseille-notre-dame-blueprint.png`
 - doublons PNG/JPG non references quand WebP actif: `gallery-hero-*.png`, `footer-delivery-*.png`, `newsletter/*.png`, `about/*.png`, `before-after/*.png`, `hero/*.png`
+- gros candidats mesures: `public/images/gallery-hero-1.png` (~6.8 MB), `gallery-hero-2.png` (~5.5 MB), `newsletter/discount-sideboard*.png` (~2.5 MB chacun), blueprints Marseille (~2.3-2.5 MB chacun), `quote-restoration-hero.png` (~2.1 MB).
 
 Ne pas supprimer vite:
 
@@ -474,6 +478,15 @@ Ne pas nettoyer automatiquement:
 - `functions/src/seo/seoTools.js` et bloc `hosting` de `firebase.json`: compat legacy Firebase Hosting/SPA a clarifier.
 - Champs data legacy: `imageVariants`, `thumbnailUrl`, `LEGACY_CATEGORY_IDS`, categories historiques.
 - Scripts data/Storage: `copy-firestore-project`, `replace-firestore-string`, `purge-expired-firestore`, `cleanup-product-image-variants`, backfills images.
+
+## P2 Public Next - audit sans modification visuelle
+
+Decision du 2026-06-13: ne pas modifier les composants qui constituent le rendu actuel des pages publiques tant que la demande porte sur le nettoyage du code mort.
+
+- `/devis`: la page est active et visuellement en cours de finalisation. Le budget est au-dessus du seuil courant quand elle utilise le header unifie, mais aucune modification du header ou du design n'est faite dans cette passe. Optimisation a traiter plus tard comme decision UX/perf explicite.
+- `/galerie`: route active, sensible mobile, protegee par `alertemobile.md`. Aucun decoupage d'ilot ni suppression de composant rendu n'est fait dans une passe "code mort".
+- `/a-propos`: ancienne SPA vitrine supprimee; la page active Next `src/kit/vitrine/*` reste intacte. Les assets candidats restent seulement documentes.
+- `publicCatalog`: l'endpoint actif est `functions-public/src/public/catalog.js`. Le doublon non exporte `functions/src/public/catalog.js` a ete supprime.
 
 ## Ordre de travail recommande
 

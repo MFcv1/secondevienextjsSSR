@@ -63,7 +63,7 @@ Audit effectue avec agents specialises et verification runtime locale:
 
 3. Nettoyer les scripts legacy Vite non applicables au clone Next.
    - `scripts/check-performance-budget.cjs` est adapte au build Next `.next`.
-   - `scripts/measure-preview-network.py` reste legacy Vite et l'annonce dans son aide; utiliser `npm run perf:architecture` pour le comparatif SSR/SPA.
+   - Les anciens scripts reseau Vite ont ete retires du flux actif le 2026-06-13; utiliser `npm run perf:budget`, `npm run perf:architecture` et les audits direct-refresh.
 
 ## Gates de validation
 
@@ -122,7 +122,7 @@ npm run perf:architecture
 ### 2026-05-16 - Budget performance Next
 
 - `scripts/check-performance-budget.cjs` ne lit plus `dist/assets` ni les noms de chunks Vite; il inspecte maintenant `.next/app-build-manifest.json` et `.next/static`.
-- `scripts/measure-preview-network.py` annonce explicitement son statut legacy Vite et renvoie vers les gates Next.
+- Les anciens scripts reseau Vite (`measure-preview-network.py` et baseline associee) ont ete retires; les gates Next restent `perf:budget`, `perf:architecture` et les audits directs.
 - Le nouveau script verifie les budgets JS/CSS initiaux des routes SSR publiques home, produit, categorie et devis, plus le tunnel admin.
 - Il garde aussi des garde-fous SEO/runtime: absence de l'ancien domaine `secondevie-a0745.web.app`, absence de `public/robots.txt`, et absence de `/_next/image` dans les sorties serveur tant que les variantes Firebase sont la strategie image retenue.
 - `package.json` expose maintenant `npm run perf:budget`.

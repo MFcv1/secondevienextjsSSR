@@ -276,18 +276,15 @@ const MyOrdersView = ({
     return (
         <div className={`min-h-screen transition-colors duration-700 ${darkMode ? 'bg-[#151515] text-[#f8f1e8]' : 'bg-[#fbfaf7] text-[#181716]'}`}>
             <div className="mx-auto max-w-[1560px] px-4 pb-16 pt-6 sm:px-6 md:px-10 lg:px-12 lg:pb-24 lg:pt-7">
-                <header ref={topRef} className="relative mb-6 scroll-mt-28">
+                <header ref={topRef} className="relative mb-4 scroll-mt-28">
                     <motion.div
                         initial={false}
-                        className="relative z-10"
+                        className="relative z-10 -translate-y-2 md:-translate-y-3"
                     >
                         <h1 className="font-serif text-[clamp(2.55rem,6.2vw,4.05rem)] leading-[1.02] tracking-normal">
                             Mon espace<span className="text-[#d8552f]">.</span>
                         </h1>
                         <p className="mt-4 font-serif text-[22px] leading-tight">Bonjour {customerName},</p>
-                        <p className={`mt-2 max-w-[440px] text-[15px] leading-[1.65] ${darkMode ? 'text-stone-300' : 'text-[#5f5a55]'}`}>
-                            Retrouvez ici toutes vos informations, commandes et coups de cœur.
-                        </p>
                     </motion.div>
 
                 </header>

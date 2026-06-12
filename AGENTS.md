@@ -125,7 +125,7 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 ### Goal 4 - Optimisation facturation Firebase
 
 - Le dernier `AGENTS.md` de `C:\Users\matth\Travail\Tous Ã  Table` a ete relu, notamment le playbook optimisation Firebase: catalogue public cache, suppression des listeners publics non critiques, lectures admin bornees, petits documents publics caches.
-- Un endpoint HTTP `publicCatalog` a ete ajoute dans `functions/src/public/catalog.js` et exporte depuis `functions/index.js`. Il sert les meubles publies via cache memoire 5 minutes et cache HTTP, avec fallback front Firestore si l'endpoint est indisponible.
+- Un endpoint HTTP `publicCatalog` avait ete ajoute dans `functions/src/public/catalog.js`; l'endpoint actif vit maintenant dans le codebase isole `functions-public/src/public/catalog.js`, sans secrets Stripe/Gmail.
 - `src/app.jsx` utilise maintenant `publicCatalog` + cache `sessionStorage` pour les visiteurs publics, ne charge plus le catalogue sur la page A propos tant que l'utilisateur n'entre pas vers la galerie, garde le listener Firestore seulement pour les vues admin utiles, et remplace le listener `contact_info` par `getDoc` + cache local.
 - `src/kit/config/theme.js`, `src/kit/layout/Footer.jsx` et `src/kit/commerce/CheckoutView.jsx` remplacent les listeners publics de petits documents (`theme_settings`, `contact_info`, `delivery`, `payment_settings`) par des lectures simples cachees. Le listener stock checkout reste conserve car il protege le panier en temps reel.
 - `src/kit/contexts/AuthContext.jsx` ne maintient plus de listener permanent sur `users/{uid}` pour chaque client connecte; les claims admin sont relus au chargement.
@@ -166,8 +166,8 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 - `scripts/check-performance-budget.cjs` a ete remplace par un controle adapte au clone Next SSR : lecture de `.next/app-build-manifest.json`, resolution des assets `.next/static`, budgets JS/CSS initiaux par route SSR publique, controle du plus gros chunk JS differe et du plus gros CSS.
 - Le script verifie aussi les regressions deja identifiees : pas de retour de l'ancien domaine `secondevie-a0745.web.app`, pas de `public/robots.txt` statique qui pourrait ecraser `app/robots.js`, et pas de `/_next/image` dans les sorties serveur tant que la strategie image retenue reste les variantes Firebase.
 - `package.json` expose maintenant `npm run perf:budget`.
-- `NEXTJS_SEO_ROADMAP.md` documente l'avancement S2 : budget perf Next fait, strategie image actuelle rattachee a `NEXTJS_IMAGE_PIPELINE_AUDIT.md`, et `measure-preview-network.py` conserve comme script legacy Vite.
-- `scripts/measure-preview-network.py` annonce maintenant explicitement son statut legacy Vite et renvoie vers `npm run perf:budget` / `npm run perf:architecture`.
+- `NEXTJS_SEO_ROADMAP.md` documente l'avancement S2 : budget perf Next fait et strategie image actuelle rattachee a `NEXTJS_IMAGE_PIPELINE_AUDIT.md`.
+- Les anciens scripts reseau Vite ont ete retires du flux actif; utiliser les gates Next `npm run perf:budget`, `npm run perf:architecture` et les audits directs.
 - Validation executee : `npm run perf:budget` OK sur le build `.next` courant. Mesures : routes publiques a environ 106-112 kB JS gzip initial, CSS initial 50.49 kB gzip, plus gros chunk JS differe 114.81 kB gzip, plus gros CSS 44.69 kB gzip.
 - Correction UX home : pour eviter le flash de l'ancienne home SSR avant le preloader galerie, `app/page.jsx` affiche maintenant un placeholder SSR sombre "Entree dans la Galerie" et garde le contenu SEO de la home en `sr-only`; `/` continue de monter `ClientApp` immediatement.
 

@@ -176,7 +176,7 @@ const currentFindings = Object.freeze([
     id: 'SV-PERF-0003',
     status: 'verified',
     title: 'La facturation Firebase a deja ete optimisee dans la bonne direction.',
-    source: 'functions/src/public/catalog.js + src/lib/server/products',
+    source: 'functions-public/src/public/catalog.js + src/lib/server/products',
     summary:
       'Le endpoint publicCatalog et le cache sessionStorage vont dans le sens d un site fluide: moins de listeners publics, un chargement initial borne et un catalogue complet demande ensuite.',
     evidence: [
@@ -285,7 +285,7 @@ const roadmapPhases = Object.freeze([
       'Stocker ratio, dimensions, dominant color ou blur placeholder pour stabiliser les images.',
       'Garder les variantes thumb/card/medium/large/full, mais limiter les preload aux vraies images visibles ou probables.',
     ],
-    files: ['functions/src/public/catalog.js', 'functions-public/src/public/catalog.js', 'src/lib/server/products.js', 'firestore.rules', 'src/kit/shared/publicCatalogCache.js', 'src/kit/admin/publicCatalogInvalidation.js', 'src/kit/admin/AdminForm.jsx', 'src/kit/marketplace/GalleryServerView.jsx', 'src/kit/marketplace/ProductDetailShellIsland.jsx', 'src/utils/imageUtils.js', 'src/kit/marketplace/GalleryProductCardServer.jsx'],
+    files: ['functions-public/src/public/catalog.js', 'src/lib/server/products.js', 'firestore.rules', 'src/kit/shared/publicCatalogCache.js', 'src/kit/admin/publicCatalogInvalidation.js', 'src/kit/admin/AdminForm.jsx', 'src/kit/marketplace/GalleryServerView.jsx', 'src/kit/marketplace/ProductDetailShellIsland.jsx', 'src/utils/imageUtils.js', 'src/kit/marketplace/GalleryProductCardServer.jsx'],
     risk: 'Risque moyen: cache stale possible pendant la fenetre HTTP courte, ou incoherence entre carte et detail si un ancien document n a pas encore ses metadata image.',
     validation: [
       'Tests catalogue initial puis chargement complet',
@@ -383,7 +383,7 @@ const implementationResults = Object.freeze([
   ['Pages categories', 'Filtrage possible sur les 36 cartes initiales', 'requestCategoryCatalog(categoryId) avec endpoint segmente puis fallback Firestore', 'inventaire categorie complet sans charger tout le catalogue'],
   ['Categorie commodes preview', 'Charge categorie via catalogue complet', '42 requetes / 501.2 kB / 84.3 kB images / LCP 172 ms / CLS 0', 'route categorie ciblee'],
   ['Budget build automatise', 'Controle manuel uniquement', 'npm run perf:budget apres build', 'alerte sur regression chunks'],
-  ['Mesure reseau reproductible', 'Script temporaire Playwright', 'npm run perf:network + scripts/perf-network-baseline.json', 'JSON home + categorie mobile preview + comparaison avant/apres automatique'],
+  ['Mesure reseau reproductible', 'Gates Next actuels', 'npm run perf:budget + audits directs Playwright', 'Budgets .next et refresh direct des routes publiques'],
   ['Scroll desktop premier chargement', 'Sections basses montees plus tot par observer elargi et sans attente idle tardive', 'npm run perf:scroll: max frame gap 16.8 ms, load max 50 ms, 1 long task de 60 ms, CLS 0.0022, 0 frame scroll >50 ms', 'frame pacing dans le budget et CLS lazy stabilise'],
   ['Espace client', '446.36 kB MyOrdersView', '23.20 kB MyOrdersView + facture au clic', '-423.16 kB sur la route commandes'],
   ['Checkout Stripe', 'Modale paiement et Elements dans CheckoutView', '29.95 kB CheckoutView + 20.41 kB modal Stripe lazy', 'Stripe charge seulement apres PaymentIntent'],
@@ -464,7 +464,7 @@ const implementationLedger = Object.freeze([
   },
   {
     label: 'Benchmark scroll desktop',
-    detail: 'scripts/measure-scroll-smoothness.py mesure maintenant load frame gaps, premier scroll molette, long tasks et layout shifts. Derniere validation apres stabilisation des slots lazy: max frame gap scroll 16.8 ms, load max 50 ms, 0 frame scroll au-dessus de 50 ms, 1 long task de 60 ms, layoutShiftTotal 0.0022.',
+    detail: 'scripts/audit-gallery-scroll-lag.mjs mesure maintenant load frame gaps, premier scroll molette, long tasks et layout shifts. Derniere validation apres stabilisation des slots lazy: max frame gap scroll 16.8 ms, load max 50 ms, 0 frame scroll au-dessus de 50 ms, 1 long task de 60 ms, layoutShiftTotal 0.0022.',
   },
   {
     label: 'Scroll natif global',
@@ -480,7 +480,7 @@ const implementationLedger = Object.freeze([
   },
   {
     label: 'Baseline avant/apres',
-    detail: 'scripts/perf-network-baseline.json versionne les chiffres avant optimisation du home mobile. npm run perf:network compare maintenant les requetes, le transfert total et les bytes image courants a cette baseline, avec un seuil minimum de gain.',
+    detail: 'Les anciens scripts reseau Vite ont ete retires. La surveillance courante passe par npm run perf:budget, les audits directs et npm run perf:scroll.',
   },
   {
     label: 'Avis clients lazy',
@@ -496,7 +496,7 @@ const implementationLedger = Object.freeze([
   },
   {
     label: 'Mesure reseau automatisee',
-    detail: 'scripts/measure-preview-network.py lance le preview Vite si besoin et mesure les requetes, transferts, chunks interdits, LCP, CLS et interaction menu sur home + categorie commodes en viewport mobile 390x844. Le script sort en erreur si un budget est depasse.',
+    detail: 'Les mesures reseau Vite legacy ont ete retirees du flux actif; les routes publiques Next sont controlees par les audits direct-refresh et les budgets .next.',
   },
   {
     label: 'Hero carousel',
@@ -708,7 +708,7 @@ const sourceCards = Object.freeze([
   { label: 'Images', path: 'src/utils/imageUtils.js', state: 'variants, srcset, prewarm, decode cache' },
   { label: 'Detail', path: 'src/kit/marketplace/ProductDetailShellIsland.jsx', state: 'ile media produit Next native' },
   { label: 'Carte galerie serveur', path: 'src/kit/marketplace/GalleryProductCardServer.jsx', state: 'liens natifs + images carte' },
-  { label: 'Backend', path: 'functions/src/public/catalog.js', state: 'catalogue public cache' },
+  { label: 'Backend', path: 'functions-public/src/public/catalog.js', state: 'catalogue public cache' },
 ]);
 
 const statusLabel = {
