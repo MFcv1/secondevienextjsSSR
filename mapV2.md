@@ -472,7 +472,7 @@ Ne pas supprimer vite:
 Ne pas nettoyer automatiquement:
 
 - `src/kit/admin/*`: nombreux modules lazy-loades par `AdminAppIsland`.
-- `src/kit/admin/AdminComments.jsx`: non importe trouve, mais touche commentaires Firestore; audit metier avant suppression.
+- `src/kit/admin/AdminComments.jsx`: supprime le 2026-06-13 apres audit; aucune gestion commentaires produit n'est active dans l'admin/site. Les routines Functions qui nettoient d'anciennes sous-collections `comments` restent conservees.
 - `functions/*`: exports appeles par `httpsCallable`, triggers ou deploy Firebase, meme si non importes par React.
 - `functions-public/*`: endpoint public actif.
 - `functions/src/seo/seoTools.js` et bloc `hosting` de `firebase.json`: compat legacy Firebase Hosting/SPA a clarifier.

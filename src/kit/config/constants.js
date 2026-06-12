@@ -122,7 +122,6 @@ export const KIT_CONFIG = {
   features: {
     newsletter:      true,
     analytics:       true,
-    comments:        true,
     darkMode:        true,
     threeBackground: false,
     pwa:             true,

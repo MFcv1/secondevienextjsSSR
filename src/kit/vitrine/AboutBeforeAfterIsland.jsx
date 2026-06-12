@@ -25,28 +25,28 @@ export default function AboutBeforeAfterIsland({ projects }) {
   };
 
   return (
-    <section className="relative z-[20] flex min-h-[100svh] w-full flex-col bg-[#F9F6F0] p-3 md:p-5 lg:p-6">
-      <div className="relative mt-8 flex w-full flex-grow flex-col overflow-hidden rounded-2xl bg-[#1A1A1A] shadow-[0_30px_60px_rgba(0,0,0,0.18)] md:mt-16 md:rounded-[2.5rem] xl:flex-row">
+    <section className="about-before-after relative z-[20] flex min-h-[100svh] w-full flex-col bg-[#F9F6F0] p-3 md:p-5 lg:p-6">
+      <div className="about-before-card relative mt-8 flex w-full flex-grow flex-col overflow-hidden rounded-2xl bg-[#1A1A1A] shadow-[0_30px_60px_rgba(0,0,0,0.18)] md:mt-16 md:rounded-[2.5rem] xl:flex-row">
         <div className="absolute left-0 top-0 z-10 h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         <div className="relative z-10 flex w-full flex-col justify-between p-8 md:p-12 lg:p-16 xl:w-[40%]">
           <div>
-            <div className="mb-6 flex items-center gap-3 overflow-hidden">
+            <div className="about-before-kicker mb-6 flex items-center gap-3 overflow-hidden">
               <span className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-white/50 md:text-xs">La Renaissance</span>
             </div>
             <h2 className="font-serif text-4xl leading-[1.1] tracking-tighter text-white md:text-[5.5rem] md:leading-[1]">
-              <span className="block overflow-hidden py-2 text-5xl font-bold uppercase md:text-[6.5rem]">LE POUVOIR</span>
-              <span className="block overflow-hidden py-4 font-light lowercase italic text-[#A68A64]">du geste.</span>
+              <span className="about-before-title-line block overflow-hidden py-2 text-5xl font-bold uppercase md:text-[6.5rem]">LE POUVOIR</span>
+              <span className="about-before-title-line block overflow-hidden py-4 font-light lowercase italic text-[#A68A64]">du geste.</span>
             </h2>
           </div>
 
           <div className="flex flex-grow flex-col justify-center py-10 xl:py-0">
-            <p className="max-w-md font-sans text-sm leading-relaxed text-white/60 md:text-base">
+            <p className="about-before-copy max-w-md font-sans text-sm leading-relaxed text-white/60 md:text-base">
               Sous la patine du temps se cache souvent une ame intacte. Decouvrez notre processus de transformation ou l'artisanat redonne vie aux objets oublies.
             </p>
           </div>
 
           <div className="mt-4 xl:mt-0">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl md:p-8">
+            <div className="about-before-project rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl md:p-8">
               <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: activeProject.accent }}>
                 {activeProject.tag}
               </span>
@@ -69,7 +69,7 @@ export default function AboutBeforeAfterIsland({ projects }) {
           </div>
         </div>
 
-        <div className="relative h-[50vh] min-h-[350px] w-full md:h-[60vh] md:min-h-[500px] xl:h-auto xl:w-[60%]">
+        <div className="about-before-visual relative h-[50vh] min-h-[350px] w-full md:h-[60vh] md:min-h-[500px] xl:h-auto xl:w-[60%]">
           <div className="absolute inset-0 h-full w-full bg-[#111]" onTouchMove={handleTouchMove}>
             <img src={activeProject.apres} alt="Apres la restauration" className="absolute inset-0 h-full w-full object-cover" />
             <div className="pointer-events-none absolute right-6 top-6 z-0">
