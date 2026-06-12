@@ -907,7 +907,7 @@ const GlobalMenu = ({
                                                     whileTap={textTapMotion}
                                                 >
                                                     <Icon size={20} strokeWidth={1.35} className="global-menu-hover__icon text-[#9A654B]" />
-                                                    <span className="global-menu-hover__label font-serif text-[20px] font-semibold leading-[1.08] text-stone-900 dark:text-stone-100">
+                                                    <span className={`global-menu-hover__label font-serif text-[20px] font-semibold leading-[1.08] ${darkMode ? 'text-stone-100' : 'text-stone-900'}`}>
                                                         {label}
                                                     </span>
                                                 </motion.button>
@@ -945,7 +945,7 @@ const GlobalMenu = ({
                                                     whileHover={textHoverMotion}
                                                     whileTap={textTapMotion}
                                                 >
-                                                    <span className="global-menu-hover__label font-serif text-[16.5px] font-semibold leading-tight text-stone-900 dark:text-stone-100">
+                                                    <span className={`global-menu-hover__label font-serif text-[16.5px] font-semibold leading-tight ${darkMode ? 'text-stone-100' : 'text-stone-900'}`}>
                                                         {room.label}
                                                     </span>
                                                     <ChevronRight size={15} strokeWidth={1.4} className="global-menu-hover__chevron shrink-0 text-[#9A654B]" />
@@ -954,7 +954,7 @@ const GlobalMenu = ({
                                         </motion.div>
 
                                         <motion.div className="mt-6" variants={menuRevealVariants}>
-                                            <span className="block h-px w-full bg-gradient-to-r from-transparent via-[#e5d8cb]/85 to-transparent dark:via-white/10" />
+                                            <span className={`block h-px w-full bg-gradient-to-r from-transparent to-transparent ${darkMode ? 'via-white/10' : 'via-[#e5d8cb]/85'}`} />
                                             <div className="flex items-center justify-between pt-4">
                                                 <span className="text-[10px] font-black uppercase tracking-[0.18em] text-stone-400">Notre sélection</span>
                                                 <span className={`text-[11px] ${mutedText}`}>4 entrées rapides</span>
@@ -1081,7 +1081,7 @@ const GlobalMenu = ({
                                                         <span className="block font-serif text-[24px] font-bold leading-tight">sur-mesure</span>
                                                     </span>
                                                     <span className={`mt-4 max-w-[26ch] text-[12px] leading-5 ${mutedText}`}>Donnez une seconde vie à vos meubles avec une finition pensée pour votre intérieur.</span>
-                                                    <span className="mt-4 flex items-center justify-between gap-4 border-t border-[#e7dcd2]/80 pt-3 dark:border-white/10">
+                                                    <span className={`mt-4 flex items-center justify-between gap-4 border-t pt-3 ${darkMode ? 'border-white/10' : 'border-[#e7dcd2]/80'}`}>
                                                         <span className="min-w-0">
                                                             <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-[#9A654B]">Conseil atelier</span>
                                                             <span className={`mt-1 block text-[11.5px] leading-5 ${mutedText}`}>Photos et dimensions avant rendez-vous</span>
@@ -1169,7 +1169,7 @@ const GlobalMenu = ({
 
                                 <motion.div className={`my-5 h-px origin-center ${darkMode ? 'bg-stone-800' : 'bg-stone-200'}`} variants={mobileDividerVariants} />
 
-                                <motion.nav className="divide-y divide-stone-200/80 dark:divide-stone-800" variants={mobileRevealGroupVariants}>
+                                <motion.nav className={`divide-y ${darkMode ? 'divide-stone-800' : 'divide-stone-200/80'}`} variants={mobileRevealGroupVariants}>
                                     {mobileRows.map(({ label, Icon, badge, accent, action }) => (
                                         <motion.button
                                             key={label}
