@@ -48,14 +48,14 @@ Le socle public est majoritairement sain:
 
 - Pas de `ClientApp`, `src/app.jsx`, `src/Router.jsx` ou `setView(` actif dans les routes publiques `app/**/page.jsx`.
 - `/`, `/galerie`, `/a-propos`, `/devis` et `/sitemap.xml` sont presents dans `.next/prerender-manifest.json` comme routes prerender/cachees.
-- `/produit/[slugOrId]` et `/categorie/[categoryId]` ont l'intention ISR (`generateStaticParams`, `revalidate=300`), mais le build courant ne les liste pas dans le prerender manifest. Cause probable observee: lecture serveur du cookie `darkMode` via `getServerDarkMode()` / `cookies()`.
+- `/produit/[slugOrId]` et `/categorie/[categoryId]` sortent en `SSG` dans le tableau `next build` frais (`●` avec chemins generes). Le `prerender-manifest` local ne liste pas ces chemins dynamiques, donc il faut un gate plus robuste que ce manifeste seul.
 - Les tunnels prives `/admin`, `/checkout`, `/wishlist`, `/mes-commandes` sont correctement `force-dynamic` et `noindex`.
 - L'infra de deploiement est encore sandbox-only. Il n'existe pas de rail App Hosting prod propre dans ce clone.
 
 Conclusion:
 
 - Ne pas attaquer SEO/perf avant d'avoir verrouille la classification et l'infra prod.
-- Priorite technique de rendu: decider si produit/categorie doivent vraiment etre ISR. Si oui, retirer la dependance cookie serveur de ces pages publiques et laisser le theme se resoudre cote client ou via CSS non bloquant.
+- Priorite technique de rendu: ajouter une preuve automatique fiable pour produit/categorie (`next build` output ou artefacts serveur), puis decider si la lecture cookie theme doit rester cote serveur ou passer cote client.
 - Priorite infra: creer un rail prod distinct plutot que recycler `apphosting.yaml` sandbox.
 - Priorite nettoyage: supprimer par petites passes prouvees par `rg`, build et gates, jamais par intuition.
 
@@ -85,7 +85,8 @@ Conclusion:
 Legende:
 
 - `[ISR]` : route prerender/cachee avec revalidation.
-- `[ISR?]` : intention ISR dans le code, mais le build courant ne prouve pas le prerender effectif.
+- `[SSG]` : chemins prerender au build via `generateStaticParams`.
+- `[SSG?]` : `next build` indique SSG, mais le gate automatique doit encore mieux le prouver.
 - `[SSR-DYN]` : rendu dynamique par requete, souvent volontaire pour auth/cookies/donnees privees.
 - `[CLIENT]` : ile client ou tunnel client, charge pour interaction/auth.
 - `[API]` : route HTTP serveur.
@@ -122,19 +123,19 @@ SecondeVieNextjsSSR
 |   |   `-- GalleryMobileShellIsland.jsx               [CLIENT mobile shell]
 |   |       `-- marketplace-gallery-shell/scroll        [RISK mobile contract]
 |   |
-|   |-- produit/[slugOrId]/page.jsx                    [ISR? -> SSR-DYN observe]
-|   |   |-- generateStaticParams(120)                   [intention prerender]
+|   |-- produit/[slugOrId]/page.jsx                    [SSG? + revalidate source]
+|   |   |-- generateStaticParams(120)                   [next build: chemins generes]
 |   |   |-- src/lib/server/products                    [DATA product + cache tags]
-|   |   |-- src/lib/server/theme                       [RISK cookies() bloque vrai ISR]
+|   |   |-- src/lib/server/theme                       [RISK cookies(), gate cache a renforcer]
 |   |   |-- src/lib/seo/productStructuredData          [JSON-LD]
 |   |   `-- src/kit/marketplace/ProductDetailServerView
 |   |       |-- ProductDetailShellIsland                [CLIENT media/swipe/lightbox]
 |   |       `-- ProductDetailActionsIsland              [CLIENT cart/favori]
 |   |
-|   |-- categorie/[categoryId]/page.jsx                [ISR? -> SSR-DYN observe]
-|   |   |-- generateStaticParams(categoryEntries)       [intention prerender]
+|   |-- categorie/[categoryId]/page.jsx                [SSG? + revalidate source]
+|   |   |-- generateStaticParams(categoryEntries)       [next build: chemins generes]
 |   |   |-- src/lib/server/products                    [DATA catalog categories]
-|   |   |-- src/lib/server/theme                       [RISK cookies() bloque vrai ISR]
+|   |   |-- src/lib/server/theme                       [RISK cookies(), gate cache a renforcer]
 |   |   |-- src/lib/seo/categories                     [JSON-LD/categories legacy data]
 |   |   `-- src/kit/marketplace/CategoryServerView
 |   |       `-- CategoryControlsIsland                  [CLIENT filtres/tri]
@@ -203,19 +204,15 @@ SecondeVieNextjsSSR
 |   |   |-- ProductDetailServerView                     [Server produit]
 |   |   |-- CategoryServerView                          [Server categorie]
 |   |   |-- QuoteRequestServerView                      [Server devis]
-|   |   |-- WishlistView                                [CLIENT wishlist]
-|   |   |-- CategoryLegacyExperienceIsland              [DEAD?]
-|   |   |-- categoryCatalogLoader.js                    [DEAD?]
-|   |   |-- MarketplaceDiscovery.jsx                    [DEAD?]
-|   |   `-- LegacyLoginModalIsland.jsx                 [DEAD? wrapper; FullIsland actif]
+|   |   `-- WishlistView                                [CLIENT wishlist]
 |   |
 |   |-- vitrine/                                      [/a-propos native Next]
 |   |-- commerce/                                     [CLIENT checkout/panier/commandes]
 |   |-- admin/                                        [CLIENT backoffice lazy]
 |   |-- config/                                       [Firebase lazy/core/env, Stripe]
 |   |-- contexts/                                     [Auth/Analytics providers]
-|   |-- ui/                                           [Shared UI; plusieurs DEAD?]
-|   `-- hooks/                                        [Hooks; plusieurs DEAD?]
+|   |-- ui/                                           [Shared UI actif]
+|   `-- hooks/                                        [Hooks projet, wrappers morts supprimes]
 |
 |-- functions-public/                                [FUNC codebase public]
 |   `-- publicCatalog                                [FUNC catalogue public cache/ETag]
@@ -256,7 +253,7 @@ SecondeVieNextjsSSR
 ```text
 PUBLIC INDEXABLE
   [ISR]    /, /galerie, /a-propos, /devis
-  [ISR?]   /produit/[slugOrId], /categorie/[categoryId]
+  [SSG?]   /produit/[slugOrId], /categorie/[categoryId]
   [SPECIAL] sitemap.xml, robots.txt
 
 PRIVATE / COMPTE / COMMERCE
@@ -281,8 +278,8 @@ CLEANUP
 | `/galerie` | `app/galerie/page.jsx`, `app/GalleryMobileShellIsland.jsx`, `src/kit/marketplace/GalleryServerView.jsx` | ISR force, `dynamic='force-static'`, `revalidate=300`, prerender manifest OK | Catalogue `limit=48`, fallback serveur | shell mobile, actions grille, header/menu/cart/dark, carousels | Pertinent: catalogue public cacheable | Garder ISR. Toute modif mobile doit relire `alertemobile.md`. |
 | `/a-propos` | `app/a-propos/page.jsx`, `src/kit/vitrine/AboutServerView.jsx` | ISR, `revalidate=300`, prerender manifest OK | `getAboutPersonalization()` via cache 300s | iles nav, before/after, FAQ, testimonials | Pertinent | Peut devenir SSG pur si personnalisation admin retiree. Pas prioritaire. |
 | `/devis` | `app/devis/page.jsx`, `src/kit/marketplace/QuoteRequestServerView.jsx` | ISR, `revalidate=300`, prerender manifest OK | env public + contenu quasi statique | `QuoteFormIsland`, dark toggle | Fonctionne; pourrait etre static pur | Garder stable pour l'instant. SEO/perf plus tard. |
-| `/categorie/[categoryId]` | `app/categorie/[categoryId]/page.jsx`, `CategoryServerView.jsx` | Intention ISR, mais non present dans dynamicRoutes/prerender manifest courant | `generateStaticParams(categoryEntries)`, catalogue filtre, `searchParams`, cookie dark mode | `CategoryControlsIsland`, header/menu/cart/dark | Public SEO: idealement vrai ISR | Retirer `getServerDarkMode()` serveur si l'objectif est ISR. Ajouter gate qui prouve les chemins categories. |
-| `/produit/[slugOrId]` | `app/produit/[slugOrId]/page.jsx`, `ProductDetailServerView.jsx` | Intention ISR, mais non present dans dynamicRoutes/prerender manifest courant | `generateStaticParams(120)`, `getPublicProduct`, JSON-LD, cookie dark mode | `ProductDetailShellIsland`, actions, lightbox/cart | Public SEO: idealement vrai ISR | Retirer `getServerDarkMode()` serveur si l'objectif est ISR. Ajouter gate qui prouve les chemins produits. |
+| `/categorie/[categoryId]` | `app/categorie/[categoryId]/page.jsx`, `CategoryServerView.jsx` | `next build` affiche `SSG` avec chemins generes; revalidate source present | `generateStaticParams(categoryEntries)`, catalogue filtre, `searchParams`, cookie dark mode | `CategoryControlsIsland`, header/menu/cart/dark | Pertinent pour public SEO | Ajouter un gate qui prouve les chemins categories depuis le build. Revoir `getServerDarkMode()` seulement si un futur gate cache montre une regression. |
+| `/produit/[slugOrId]` | `app/produit/[slugOrId]/page.jsx`, `ProductDetailServerView.jsx` | `next build` affiche `SSG` avec chemins generes; revalidate source present | `generateStaticParams(120)`, `getPublicProduct`, JSON-LD, cookie dark mode | `ProductDetailShellIsland`, actions, lightbox/cart | Pertinent pour public SEO | Ajouter un gate qui prouve les chemins produits depuis le build. Revoir `getServerDarkMode()` seulement si un futur gate cache montre une regression. |
 | `/admin` | `app/admin/page.jsx`, `app/admin/AdminAppIsland.jsx`, `app/admin/layout.jsx` | SSR dynamique prive, `force-dynamic`, noindex | initial catalog `limit=120`, puis Auth/Firestore client | `RouteClientProviders`, modules admin lazy | Pertinent | Sanctuariser. Ne pas convertir SSG/ISR. |
 | `/checkout` | `app/checkout/page.jsx`, `CheckoutPageIsland.jsx` | SSR dynamique prive, `force-dynamic`, noindex | cookie dark mode, cart Firestore, callable Functions, Stripe | providers auth/toast, checkout island | Pertinent | Sanctuariser. Tester paiement avant prod. |
 | `/wishlist` | `app/wishlist/page.jsx`, `WishlistPageIsland.jsx` | SSR dynamique prive, `force-dynamic`, noindex | initial catalog, wishlist/cart Firestore | providers auth/toast | Pertinent | Sanctuariser. |
@@ -312,17 +309,17 @@ Pourquoi:
 
 Routes: `/produit/[slugOrId]`, `/categorie/[categoryId]`.
 
-Decision cible recommandee: vrai ISR avec chemins prerender et `dynamicParams=true` pour nouveaux produits/categories.
+Decision cible recommandee: garder le prerender indique par `next build` et `dynamicParams=true` pour nouveaux produits/categories.
 
 Condition:
 
-- Retirer les lectures serveur liees a la requete (`cookies()` via `getServerDarkMode()`).
+- Ne retirer les lectures serveur liees a la requete (`cookies()` via `getServerDarkMode()`) que si un gate prouve qu'elles font perdre le caching attendu.
 - Garder les interactions panier/favori/media en iles client.
-- Prouver avec `.next/prerender-manifest.json` ou un gate dedie que des chemins produit/categorie sortent en prerender.
+- Prouver avec un gate dedie que des chemins produit/categorie sortent bien comme `SSG` dans le build. Le `prerender-manifest` seul n'est pas suffisant dans le build observe.
 
 Si le theme serveur par cookie est juge indispensable:
 
-- Accepter SSR dynamique cacheable pour produit/categorie.
+- Accepter SSR dynamique cacheable pour produit/categorie seulement si le build/gate futur montre que le cookie theme force vraiment le rendu a la demande.
 - Documenter que `generateStaticParams` ne donne pas le benefice ISR attendu dans le build courant.
 
 ### Tunnels prives
@@ -402,7 +399,7 @@ npm run mobile:contract
 Gates manquants recommandes:
 
 - `prod:env-check`: echoue si `NEXT_PUBLIC_SITE_URL`/`VITE_SITE_URL` manque ou pointe localhost/sandbox.
-- `next:dynamic-prerender`: prouve au moins un chemin produit et categorie dans les artefacts de build si la cible est ISR.
+- `next:dynamic-prerender`: prouve au moins un chemin produit et categorie dans le build output ou les artefacts serveur.
 - `prod:public-catalog-check`: verifie `scope=cards`, `?id=`, pagination/cursor, ETag et CORS prod.
 - `prod:admin-smoke`: login super admin, CRUD produit, publication/brouillon, upload image, bump `catalogVersion`, revalidation.
 - `prod:checkout-smoke`: paiement differe, Stripe success/failure/cancel, webhook signe, stock, emails.
@@ -411,13 +408,14 @@ Gates manquants recommandes:
 
 Regle: rien ne part sans preuve `rg`, build et gates. Les suppressions doivent etre petites.
 
-### Phase 1 - candidats faible risque
+### Phase 1 - nettoyee le 2026-06-13
 
-Ces fichiers ne montrent pas d'import actif selon `rg`; verifier encore avant suppression:
+Ces fichiers etaient sans import actif selon `rg` et ont ete supprimes:
 
 - `src/kit/marketplace/CategoryLegacyExperienceIsland.jsx`
 - `src/kit/marketplace/categoryCatalogLoader.js`
-- `src/kit/marketplace/LegacyLoginModalIsland.jsx` (ne pas supprimer `LegacyLoginModalFullIsland.jsx`)
+- `src/kit/marketplace/GalleryCardActionsIsland.jsx`
+- `src/kit/marketplace/LegacyLoginModalIsland.jsx` (`LegacyLoginModalFullIsland.jsx` reste actif)
 - `src/kit/marketplace/MarketplaceDiscovery.jsx`
 - `src/vitrine/components/MarketplaceDiscovery.jsx`
 - `src/kit/ui/AnimatedPrice.jsx`
@@ -519,6 +517,6 @@ npm run build:prod
 ## Decisions ouvertes
 
 - Garder ou supprimer le skill local `nextjsssr`? Decision actuelle: le garder comme garde-fou historique anti-SPA/mobile, mais ne pas le traiter comme source normative.
-- Produit/categorie doivent-ils absolument sortir en ISR? Recommandation technique: oui, si on peut retirer la lecture cookie serveur.
+- Produit/categorie doivent-ils absolument sortir en ISR/SSG prouve automatiquement? Recommandation: oui, et le build actuel les annonce deja en SSG; il manque surtout un gate robuste.
 - Faut-il conserver le bloc Firebase Hosting legacy dans `firebase.json`? A decider avant nettoyage Functions SEO.
 - Faut-il garder les rapports historiques racine? Recommandation: archiver/compacter, pas supprimer brutalement.

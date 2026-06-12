@@ -112,7 +112,6 @@ Fichiers concernes :
 - `src/kit/marketplace/GlobalMenuTriggerIsland.jsx`
 - `src/kit/marketplace/GlobalMenuPanelAuthIsland.jsx`
 - `src/kit/marketplace/HeaderAccountIsland.jsx`
-- `src/kit/marketplace/LegacyLoginModalIsland.jsx`
 - `src/kit/marketplace/LegacyLoginModalFullIsland.jsx`
 
 Important :
@@ -166,7 +165,7 @@ Etat actuel :
 
 - `HeaderAccountIsland.jsx` gere Connexion / Mon compte / Quitter.
 - `LegacyLoginModalFullIsland.jsx` contient la modale login video.
-- `LegacyLoginModalIsland.jsx` sert de wrapper leger lazy-load.
+- L'ancien wrapper `LegacyLoginModalIsland.jsx` a ete supprime; les iles actives chargent directement `LegacyLoginModalFullIsland.jsx`.
 - `AuthContext.jsx` emet `sv:auth-user-changed` apres login/logout.
 - Les iles header/menu ecoutent cet evenement pour se synchroniser.
 
