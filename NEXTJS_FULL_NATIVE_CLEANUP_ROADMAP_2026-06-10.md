@@ -2,7 +2,9 @@
 
 Objectif: retirer les derniers residus architecturaux publics sans regressions visuelles, puis abaisser progressivement les budgets JS une fois les pages transposees en Server Components + iles ciblees.
 
-## Baseline ciblee
+## Baseline ciblee initiale
+
+Note 2026-06-13: cette section decrit l'etat avant les migrations Next natives et avant le nettoyage legacy. Les lignes ci-dessous sont conservees comme historique de decision, pas comme etat courant.
 
 - `/a-propos`: residu public principal. `AboutVitrineIsland` monte encore l'ancien `HomeView`, avec environ 339 kB JS gzip route + layout.
 - `/categorie/[categoryId]`: data et metadata Next, mais experience visible encore concentree dans `CategoryLegacyExperienceIsland`.
@@ -36,4 +38,5 @@ Objectif: retirer les derniers residus architecturaux publics sans regressions v
 - `/galerie`: lecture cookie serveur retiree, `dynamic = 'force-static'`; le build classe `/galerie` en statique ISR avec revalidate 300.
 - `/a-propos`: `AboutVitrineIsland/HomeView` retire de la route, remplacement par `AboutServerView` serveur + iles fines; build statique, budget abaisse a 170 kB JS gzip.
 - Categorie: `CategoryLegacyExperienceIsland` retire de la route, remplacement par `CategoryServerView` serveur + `CategoryControlsIsland`; build SSG, budget abaisse a 130 kB JS gzip.
-- Restes a surveiller: QA visuelle fine `/a-propos` car le scrollytelling GSAP legacy est simplifie, et eventuel nettoyage des fichiers legacy morts apres une passe `rg`/captures.
+- Nettoyage legacy 2026-06-13: `CategoryLegacyExperienceIsland`, `categoryCatalogLoader`, `GalleryCardActionsIsland`, l'ancienne home SPA `src/vitrine/HomeView.jsx` et `src/vitrine/components/*` ont ete supprimes apres verification `rg`.
+- Restes a surveiller: QA visuelle fine `/a-propos` car le scrollytelling GSAP legacy est simplifie, puis nettoyage des scripts/docs/tooling prouves hors flux Next SSR.

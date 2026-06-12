@@ -105,7 +105,7 @@ const InventoryTile = React.memo(({
                     alt={item.name}
                     loading="lazy"
                     decoding="async"
-                    fetchpriority="low"
+                    fetchPriority="low"
                     draggable={false}
                 />
 

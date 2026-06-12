@@ -31,8 +31,8 @@ Note: `.next/prerender-manifest.json` ne liste pas les chemins dynamiques App Ro
 ## Preuves anti-SPA
 
 - Aucun import public actif de `ClientApp` dans les pages publiques.
-- `HomeView` n'est plus importe; il reste seulement comme fichier orphelin dans `src/vitrine/HomeView.jsx`.
-- `CategoryLegacyExperienceIsland` n'est plus importe; il reste seulement comme fichier orphelin dans `src/kit/marketplace/CategoryLegacyExperienceIsland.jsx`.
+- `HomeView` et `src/vitrine/components/*` ont ete supprimes lors de la passe de nettoyage du 2026-06-13.
+- `CategoryLegacyExperienceIsland` a ete supprime lors de la passe de nettoyage du 2026-06-13.
 - L'ancien `/?page=gallery` est une compat URL middleware vers `/galerie`, pas un router SPA.
 - Les audits directs existants couvrent `/galerie`, `/a-propos`, `/categorie`, `/produit` et `/devis`.
 
@@ -50,16 +50,19 @@ Source: `npm run perf:budget`.
 | `/devis` | 115.20 kB | 54.46 kB | Dynamic mais leger |
 | admin tunnel | 128.76 kB | 58.46 kB | Tunnel prive |
 
-## Archive design legacy conservee
+## Legacy public retire
 
-Decision utilisateur du 2026-06-10: ne pas supprimer tout de suite les fichiers legacy morts, afin de garder une reference de design en cas de regression visuelle.
+Decision utilisateur du 2026-06-13: les fichiers legacy morts peuvent etre retires quand `rg`, build et gates prouvent qu'ils ne servent plus a afficher le site ou le backoffice.
 
-Fichiers archives en place:
+Fichiers retires:
 
-- `src/vitrine/HomeView.jsx`: ancienne vitrine client, non importee par `/a-propos`.
-- `src/kit/marketplace/CategoryLegacyExperienceIsland.jsx`: ancienne experience categorie client, non importee par `/categorie/[categoryId]`.
+- `src/vitrine/HomeView.jsx`
+- `src/vitrine/components/*`
+- `src/kit/marketplace/CategoryLegacyExperienceIsland.jsx`
+- `src/kit/marketplace/GalleryCardActionsIsland.jsx`
+- `src/kit/marketplace/categoryCatalogLoader.js`
 
-Regle: ces fichiers peuvent rester comme references temporaires, mais ils ne doivent pas redevenir des imports de routes publiques. Le gate `npm run next:routes` doit echouer si une route publique les rebranche.
+Regle: ces chemins ne doivent pas redevenir des imports de routes publiques. Le gate `npm run next:routes` doit continuer a echouer si une route publique les rebranche.
 
 ## Patch roadmap precise
 
@@ -80,15 +83,14 @@ Gates:
 - `npm run perf:budget`
 - nouveau gate route-classification
 
-### P1 - Archivage legacy mort
+### P1 - Retrait legacy mort
 
-But: retirer les faux residus de l'architecture active sans perdre les references design.
+But: retirer les faux residus de l'architecture active sans casser l'UI publique ou le backoffice.
 
 Actions:
-- conserver `src/kit/marketplace/CategoryLegacyExperienceIsland.jsx` comme archive design temporaire;
-- conserver `src/vitrine/HomeView.jsx` comme archive design temporaire;
+- verifier par `rg` qu'aucune route publique ni surface admin active ne les importe;
+- supprimer les fichiers orphelins confirmes;
 - interdire leur reimport par les routes publiques via le gate `next:routes`;
-- auditer ensuite `src/vitrine/components/*` et `src/kit/marketplace/categoryCatalogLoader.js` avant toute suppression future;
 - garder les rapports historiques, mais mettre a jour les docs operationnelles si elles mentionnent ces fichiers comme actifs.
 
 Gates:
@@ -122,7 +124,7 @@ But: garder la galerie ISR et le design actuel, mais baisser le JS initial et le
 
 Cibles:
 - `GalleryMobileShellIsland` reste necessaire tant que le contrat mobile existe;
-- `GalleryCardActionsIsland` est hydrate par carte;
+- `GalleryGridActionsIsland` centralise maintenant les actions de grille par delegation;
 - sections basses et carousels ajoutent des iles client.
 
 Actions:
@@ -201,7 +203,7 @@ Gates:
 Fait:
 
 - P0: gate `npm run next:routes` ajoute via `scripts/check-next-route-classification.cjs`.
-- P1: archive design documentee; `HomeView.jsx` et `CategoryLegacyExperienceIsland.jsx` conserves sur disque mais interdits d'import public par le gate.
+- P1: fichiers legacy publics orphelins retires le 2026-06-13 (`HomeView.jsx`, `src/vitrine/components/*`, `CategoryLegacyExperienceIsland.jsx`, `GalleryCardActionsIsland.jsx`, `categoryCatalogLoader.js`) et imports publics interdits par le gate.
 - P2: `/devis` ne lit plus `getServerDarkMode()` cote serveur; la route est maintenant `STATIC`, revalidate 5m au build.
 - P3 premiere passe: les actions galerie ne montent plus une ile React par carte; `GalleryGridActionsIsland` centralise wishlist, panier, prefetch et warmup par delegation d'evenements.
 - P5 premiere passe: `publicCatalog` accepte un `id` produit cible dans le code Functions public, et `getPublicProduct` le demande avant fallback Admin/REST. Tant que la Function n'est pas redeployee, le code reste compatible avec l'ancien retour catalogue complet.
@@ -213,7 +215,7 @@ Reste:
 - P4: decouper `ProductDetailShellIsland` sans casser zoom/swipe/bottom sheet mobile.
 - P5 suite: redeployer `functions-public` pour activer vraiment la lecture produit ciblee.
 - P6 suite: reduire le CSS public sous 52 kB gzip; la premiere passe descend seulement a environ 54.00 kB.
-- `GalleryCardActionsIsland.jsx` est maintenant orphelin et conserve temporairement comme archive implementation avant suppression future.
+- Nettoyage legacy public phase 2 effectue le 2026-06-13; les prochaines suppressions doivent cibler seulement les scripts/docs/tooling prouves hors flux Next SSR.
 
 ## Definition de pret SEO/perf
 
@@ -221,7 +223,7 @@ Le clone pourra etre considere pret pour une passe SEO intensive quand:
 
 - toutes les routes publiques SEO affichent le contenu utile sans `ClientApp`;
 - `/`, `/galerie`, `/a-propos`, `/categorie`, `/produit`, `/devis`, `/sitemap.xml` sont gates;
-- les fichiers legacy morts sont explicitement archives et interdits d'import public;
+- les fichiers legacy morts sont retires ou explicitement documentes comme hors flux actif;
 - `/galerie` passe sous 165 kB JS gzip ou la depassement est justifie;
 - CSS public descend sous 52 kB gzip;
 - le parcours galerie -> produit -> retour reste valide mobile et desktop.

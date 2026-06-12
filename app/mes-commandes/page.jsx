@@ -1,5 +1,6 @@
 import RouteClientProviders from '../RouteClientProviders';
 import OrdersPageIsland from './OrdersPageIsland';
+import ArchitecturalHeaderServer from '../../src/kit/marketplace/ArchitecturalHeaderServer';
 import { getPublicCatalog, getPublicCatalogFallback } from '../../src/lib/server/products';
 
 export const dynamic = 'force-dynamic';
@@ -17,8 +18,11 @@ const getOrdersInitialItems = async () => {
 export default async function OrdersPage() {
   const initialItems = await getOrdersInitialItems();
   return (
-    <RouteClientProviders>
-      <OrdersPageIsland initialItems={initialItems} />
-    </RouteClientProviders>
+    <>
+      <ArchitecturalHeaderServer darkMode={false} />
+      <RouteClientProviders>
+        <OrdersPageIsland initialItems={initialItems} />
+      </RouteClientProviders>
+    </>
   );
 }

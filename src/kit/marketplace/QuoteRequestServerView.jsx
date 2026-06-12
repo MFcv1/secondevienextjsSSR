@@ -1,13 +1,10 @@
 import {
     ClipboardCheck,
-    Heart,
-    Search,
     ShieldCheck,
-    ShoppingBag,
     Sparkles,
 } from 'lucide-react';
 import quoteRestorationHero from '../../assets/quote-restoration-hero.webp';
-import DarkModeToggleIsland from './DarkModeToggleIsland';
+import ArchitecturalHeaderServer from './ArchitecturalHeaderServer';
 import QuoteFormIsland from './QuoteFormIsland';
 
 const quoteRestorationHeroSrc = typeof quoteRestorationHero === 'string'
@@ -33,86 +30,11 @@ const processSteps = [
     },
 ];
 
-const headerLinks = [
-    { label: 'Accueil', href: '/' },
-    { label: 'Galerie', href: '/galerie' },
-    { label: 'Devis', href: '/devis' },
-    { label: 'Wishlist', href: '/wishlist' },
-];
-
 const proofItems = [
     { icon: ClipboardCheck, text: 'Devis personnalise sous 48h' },
     { icon: Sparkles, text: 'Artisanat francais & eco-responsable' },
     { icon: ShieldCheck, text: 'Un accompagnement sur-mesure' },
 ];
-
-const QuotePageHeader = ({ darkMode = false } = {}) => {
-    const actionButtonClass = `flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300 active:scale-[0.96] ${darkMode ? 'text-stone-200 hover:bg-white/[0.08] hover:text-[#D9B58D]' : 'text-stone-900 hover:bg-white hover:text-[#8B5C42]'}`;
-
-    return (
-        <header className={`sticky top-0 z-50 safe-pt-header shadow-[0_1px_0_rgba(28,24,20,0.06)] ${darkMode ? 'bg-[#0A0A0A] text-stone-200' : 'bg-white text-stone-900'}`}>
-            <div className="mx-auto flex h-16 max-w-[1920px] items-center justify-between px-3 md:h-[76px] md:px-8">
-                <a href="/" className="-ml-1 flex shrink-0 items-center gap-1 md:-ml-8" aria-label="Retour a l'accueil Seconde Vie">
-                    <img
-                        src="/images/logoanais-320.webp"
-                        alt="Logo Seconde Vie"
-                        width="320"
-                        height="240"
-                        decoding="async"
-                        className={`h-10 w-auto object-contain md:h-[50px] ${darkMode ? 'brightness-0 invert opacity-100' : 'brightness-0 opacity-80'}`}
-                    />
-                    <span className="flex flex-col leading-none">
-                        <span className={`flex items-center gap-0.5 font-serif text-[16px] font-bold tracking-normal md:text-[24px] ${darkMode ? 'text-stone-200' : 'text-stone-900'}`}>
-                            Seconde Vie<span className="-mb-1 text-[26px] leading-none text-orange-600">.</span>
-                        </span>
-                        <span className={`mt-0.5 font-serif text-[11px] italic md:text-[14px] ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>par Anais</span>
-                    </span>
-                </a>
-
-                <form action="/galerie" className="absolute left-1/2 hidden w-full max-w-xl -translate-x-1/2 px-4 lg:block xl:max-w-2xl">
-                    <label className="relative block">
-                        <span className="sr-only">Rechercher un produit</span>
-                        <input
-                            type="search"
-                            name="q"
-                            placeholder="Rechercher un produit..."
-                            className={`h-11 w-full rounded-md border py-2.5 pl-4 pr-10 font-sans text-[13px] tracking-wide outline-none transition-colors ${darkMode ? 'border-white/10 bg-[#1A1A1A] text-stone-200 placeholder:text-stone-500 focus:border-white/30' : 'border-transparent bg-[#F2F0ED] text-stone-800 placeholder:text-stone-400 focus:border-stone-300'}`}
-                        />
-                        <Search size={16} strokeWidth={1.5} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-stone-400" />
-                    </label>
-                </form>
-
-                <div className="relative z-10 flex shrink-0 items-center gap-2 md:gap-4">
-                    <div className={`flex items-center gap-1 rounded-full p-1 ring-1 ${darkMode ? 'bg-white/[0.045] ring-white/[0.09]' : 'bg-stone-100/85 ring-stone-200/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]'}`}>
-                        <a href="/admin" className={`group hidden h-9 items-center gap-2 rounded-full px-3 font-sans transition-all duration-300 active:scale-[0.97] md:flex ${darkMode ? 'bg-white/[0.04] text-stone-400 hover:bg-white/[0.09] hover:text-stone-100' : 'bg-white/70 text-stone-500 hover:bg-white hover:text-stone-900'}`}>
-                            <ShieldCheck size={14} className="text-stone-400 transition-colors group-hover:text-amber-500" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.16em]">Connexion</span>
-                        </a>
-                        <DarkModeToggleIsland className={actionButtonClass} />
-                        <a href="/wishlist" className={actionButtonClass} aria-label="Ma wishlist" title="Ma wishlist">
-                            <Heart size={18} strokeWidth={1.5} />
-                        </a>
-                        <a href="/checkout" className={actionButtonClass} aria-label="Panier" title="Panier">
-                            <ShoppingBag size={18} strokeWidth={1.5} />
-                        </a>
-                        <details className="relative">
-                            <summary className={`mr-1 flex h-10 min-w-10 cursor-pointer list-none items-center justify-center gap-2 rounded-full px-2.5 font-sans text-[10px] font-black uppercase tracking-[0.16em] transition-all duration-300 active:scale-[0.96] md:mr-0 md:px-3.5 ${darkMode ? 'bg-white/[0.07] text-stone-100 hover:text-[#D9B58D]' : 'bg-white text-stone-900 shadow-sm hover:text-[#8B5C42]'}`}>
-                                Menu
-                            </summary>
-                            <nav className={`absolute right-0 top-12 z-[2100] grid w-64 gap-2 rounded-[18px] border p-3 text-sm font-bold shadow-2xl ${darkMode ? 'border-white/10 bg-[#121212]' : 'border-stone-200 bg-[#fbfaf7]'}`} aria-label="Menu principal">
-                                {headerLinks.map((link) => (
-                                    <a key={link.href} href={link.href} className={`rounded-[8px] border px-4 py-3 transition-colors ${darkMode ? 'border-white/10 bg-white/[0.04] hover:border-[#D9B58D] hover:text-[#D9B58D]' : 'border-stone-200 bg-white hover:border-[#9A714C] hover:text-[#8B5C42]'}`}>
-                                        {link.label}
-                                    </a>
-                                ))}
-                            </nav>
-                        </details>
-                    </div>
-                </div>
-            </div>
-        </header>
-    );
-};
 
 const QuoteHero = ({ darkMode = false } = {}) => (
     <section className="relative overflow-hidden">
@@ -186,7 +108,7 @@ const QuoteProcessSection = ({ darkMode = false } = {}) => (
 export default function QuoteRequestServerView({ darkMode = false } = {}) {
     return (
         <main data-ssr-quote="true" className={`overflow-x-hidden ${darkMode ? 'bg-[#0A0A0A] text-stone-100' : 'bg-[#fbfaf7] text-[#1f1b17]'}`}>
-            <QuotePageHeader darkMode={darkMode} />
+            <ArchitecturalHeaderServer darkMode={darkMode} />
             <QuoteHero darkMode={darkMode} />
             <QuoteFormIsland darkMode={darkMode} />
             <QuoteProcessSection darkMode={darkMode} />

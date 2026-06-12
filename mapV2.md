@@ -432,11 +432,17 @@ Ces fichiers etaient sans import actif selon `rg` et ont ete supprimes:
 
 ### Phase 2 - legacy a confirmer
 
-- `src/vitrine/HomeView.jsx` et `src/vitrine/components/*`: ancienne home SPA autonome, utile comme source historique UI. Archiver ou supprimer seulement apres validation visuelle.
 - `functions/src/public/catalog.js`: duplicat probable de `functions-public/src/public/catalog.js`, mais certaines docs/admin peuvent encore le mentionner.
 - `scripts/measure-preview-network.py`, `scripts/perf-network-baseline.json`: legacy Vite documente.
 - `scripts/measure-scroll-smoothness.py`, `scripts/dev-ports-dashboard.mjs`: encore orientes Vite.
 - `scripts/make_boilerplate.ps1`, `scripts/README_BOILERPLATE_GENERATOR.md`: tooling generique hors flux Next SSR.
+
+### Phase 2 - nettoyee le 2026-06-13
+
+Apres verification `rg`, l'ancienne home SPA vitrine n'etait plus importee par `/a-propos`, ni par les routes publiques, ni par l'admin actif. Le bloc a ete supprime:
+
+- `src/vitrine/HomeView.jsx`
+- `src/vitrine/components/*`
 
 ### Assets candidats archive
 

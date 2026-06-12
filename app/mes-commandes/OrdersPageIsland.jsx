@@ -4,21 +4,19 @@ import { useEffect, useState } from 'react';
 import MyOrdersView from '../../src/kit/commerce/MyOrdersView';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
 
-const ACCOUNT_HERO_IMAGE = '/images/newsletter/discount-sideboard.webp';
-
 function AccountDashboardFallback({ darkMode = false, isSignedOut = false }) {
   return (
     <main className={`min-h-screen transition-colors duration-700 ${darkMode ? 'bg-[#151515] text-[#f8f1e8]' : 'bg-[#fbfaf7] text-[#181716]'}`}>
-      <div className="mx-auto max-w-[1560px] px-4 pb-16 pt-5 sm:px-6 md:px-10 lg:px-12 lg:pb-24 lg:pt-6">
-        <header className="relative mb-9 grid items-center gap-8 lg:grid-cols-[minmax(0,560px)_1fr]">
+      <div className="mx-auto max-w-[1560px] px-4 pb-16 pt-6 sm:px-6 md:px-10 lg:px-12 lg:pb-24 lg:pt-7">
+        <header className="relative mb-6">
           <div className="relative z-10">
-            <h1 className="font-serif text-[clamp(3.1rem,8.5vw,4.8rem)] leading-[1.02] tracking-normal">
+            <h1 className="font-serif text-[clamp(2.55rem,6.2vw,4.05rem)] leading-[1.02] tracking-normal">
               Mon espace<span className="text-[#d8552f]">.</span>
             </h1>
-            <p className="mt-7 font-serif text-[24px] leading-tight">
+            <p className="mt-4 font-serif text-[22px] leading-tight">
               {isSignedOut ? 'Connectez-vous pour continuer.' : 'Chargement de votre espace...'}
             </p>
-            <p className={`mt-3 max-w-[440px] text-[16px] leading-[1.8] ${darkMode ? 'text-stone-300' : 'text-[#5f5a55]'}`}>
+            <p className={`mt-2 max-w-[440px] text-[15px] leading-[1.65] ${darkMode ? 'text-stone-300' : 'text-[#5f5a55]'}`}>
               Retrouvez ici toutes vos informations, commandes et coups de coeur.
             </p>
             {isSignedOut && (
@@ -30,18 +28,9 @@ function AccountDashboardFallback({ darkMode = false, isSignedOut = false }) {
               </a>
             )}
           </div>
-
-          <div className="relative min-h-[260px] overflow-hidden rounded-[10px] bg-[#eee6dc] shadow-[0_18px_52px_rgba(72,55,39,0.08)] md:min-h-[340px] lg:min-h-[420px]">
-            <img
-              src={ACCOUNT_HERO_IMAGE}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover object-center"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#fbfaf7]/72 via-[#fbfaf7]/10 to-transparent lg:from-transparent" />
-          </div>
         </header>
 
-        <div className="grid gap-7 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
           <aside className="hidden min-w-0 lg:block">
             <div className="rounded-[6px] border border-[#e7ded5] bg-white/58 p-5 shadow-[0_16px_46px_rgba(72,55,39,0.035)]">
               <div className="h-[54px] rounded-[5px] bg-[#f2ede8]" />

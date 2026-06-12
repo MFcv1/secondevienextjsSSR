@@ -32,7 +32,6 @@ const BUSINESS_PHONE_TEL = BUSINESS_PHONE.replace(/\s/g, '');
 const CONTACT_NAME = process.env.NEXT_PUBLIC_CONTACT_NAME || KIT_CONFIG.brandName;
 const REVIEW_URL = process.env.NEXT_PUBLIC_REVIEW_URL || '';
 
-const ACCOUNT_HERO_IMAGE = '/images/newsletter/discount-sideboard.webp';
 const FALLBACK_ITEM_IMAGES = [
     '/images/before-after/apresu.webp',
     '/images/before-after/apres.webp',
@@ -61,7 +60,7 @@ const getOrderTotal = (order) => {
 const getItemImage = (item) => (
     Array.isArray(item?.images) ? item.images[0] :
     Array.isArray(item?.image) ? item.image[0] :
-    item?.image || item?.imageUrl || item?.mainImage || ACCOUNT_HERO_IMAGE
+    item?.image || item?.imageUrl || item?.mainImage || FALLBACK_ITEM_IMAGES[0]
 );
 
 const getOrderImage = (order, index = 0) => (
@@ -276,38 +275,24 @@ const MyOrdersView = ({
 
     return (
         <div className={`min-h-screen transition-colors duration-700 ${darkMode ? 'bg-[#151515] text-[#f8f1e8]' : 'bg-[#fbfaf7] text-[#181716]'}`}>
-            <div className="mx-auto max-w-[1560px] px-4 pb-16 pt-5 sm:px-6 md:px-10 lg:px-12 lg:pb-24 lg:pt-6">
-                <header ref={topRef} className="relative mb-9 grid scroll-mt-28 items-center gap-8 lg:grid-cols-[minmax(0,560px)_1fr]">
+            <div className="mx-auto max-w-[1560px] px-4 pb-16 pt-6 sm:px-6 md:px-10 lg:px-12 lg:pb-24 lg:pt-7">
+                <header ref={topRef} className="relative mb-6 scroll-mt-28">
                     <motion.div
                         initial={false}
                         className="relative z-10"
                     >
-                        <h1 className="font-serif text-[clamp(3.1rem,8.5vw,4.8rem)] leading-[1.02] tracking-normal">
+                        <h1 className="font-serif text-[clamp(2.55rem,6.2vw,4.05rem)] leading-[1.02] tracking-normal">
                             Mon espace<span className="text-[#d8552f]">.</span>
                         </h1>
-                        <p className="mt-7 font-serif text-[24px] leading-tight">Bonjour {customerName},</p>
-                        <p className={`mt-3 max-w-[440px] text-[16px] leading-[1.8] ${darkMode ? 'text-stone-300' : 'text-[#5f5a55]'}`}>
+                        <p className="mt-4 font-serif text-[22px] leading-tight">Bonjour {customerName},</p>
+                        <p className={`mt-2 max-w-[440px] text-[15px] leading-[1.65] ${darkMode ? 'text-stone-300' : 'text-[#5f5a55]'}`}>
                             Retrouvez ici toutes vos informations, commandes et coups de cœur.
                         </p>
                     </motion.div>
 
-                    <motion.div
-                        initial={false}
-                        className="relative min-h-[260px] overflow-hidden rounded-[10px] bg-[#eee6dc] shadow-[0_18px_52px_rgba(72,55,39,0.08)] md:min-h-[340px] lg:min-h-[420px]"
-                    >
-                        <img
-                            src={ACCOUNT_HERO_IMAGE}
-                            alt=""
-                            loading="eager"
-                            fetchPriority="high"
-                            decoding="async"
-                            className="absolute inset-0 h-full w-full object-cover object-center"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#fbfaf7]/72 via-[#fbfaf7]/10 to-transparent lg:from-transparent" />
-                    </motion.div>
                 </header>
 
-                <div className="grid gap-7 lg:grid-cols-[320px_minmax(0,1fr)]">
+                <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
                     <aside className="min-w-0 lg:row-span-2">
                         <AccountPanel className="overflow-hidden p-3 lg:sticky lg:top-28 lg:p-5">
                             <nav className="flex max-w-full gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:flex-col lg:overflow-visible">

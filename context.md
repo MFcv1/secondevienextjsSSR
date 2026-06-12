@@ -169,6 +169,10 @@ Etat actuel :
 - `AuthContext.jsx` emet `sv:auth-user-changed` apres login/logout.
 - Les iles header/menu ecoutent cet evenement pour se synchroniser.
 
+Note nettoyage 2026-06-13:
+
+- L'ancienne home SPA `src/vitrine/HomeView.jsx` et ses composants `src/vitrine/components/*` ont ete supprimes apres verification qu'ils n'etaient plus importes par `/a-propos`, par les routes publiques ou par l'admin actif.
+
 A tester encore :
 
 - Cycle reel avec un vrai compte Firebase.

@@ -219,7 +219,7 @@ const currentFindings = Object.freeze([
     evidence: [
       'Le rendu public ne passe plus par ClientApp.',
       'Le scroll global est revenu au natif navigateur, sans boucle RAF globale dediee au scroll.',
-      'Le rapport agent demandait une passe fetch priority; le runtime React 18.3 du projet impose finalement l attribut DOM lowercase fetchpriority pour eviter le warning dev.',
+      'Le rapport agent demandait une passe fetch priority; le runtime React 19 du projet utilise la prop JSX camelCase fetchPriority.',
     ],
     engineering: [
       'Reporter analytics/app-check apres premier paint ou idle si possible.',
@@ -238,7 +238,7 @@ const roadmapPhases = Object.freeze([
       'Installer une base de mesure et reduire le poids initial sans toucher aux gestes produit, au scroll mobile ou au design v21.7.',
     actions: [
       'Definir les budgets LCP, CLS, INP, poids JS initial, nombre d images eager et poids image first viewport.',
-      'Lazy-loader CartSidebar, GlobalMenu, MarketplaceDiscovery, certaines modales et surfaces admin non visibles au premier ecran.',
+      'Lazy-loader CartSidebar, GlobalMenu, certaines modales et surfaces admin non visibles au premier ecran; l ancien MarketplaceDiscovery legacy est supprime.',
       'Reporter analytics et App Check apres first paint ou idle si les tests Firebase le valident.',
       'Corriger fetch priority dans une passe separee, en validant le comportement exact de la version React utilisee.',
       'Ne pas refactorer les gestures mobile dans cette phase.',
@@ -285,7 +285,7 @@ const roadmapPhases = Object.freeze([
       'Stocker ratio, dimensions, dominant color ou blur placeholder pour stabiliser les images.',
       'Garder les variantes thumb/card/medium/large/full, mais limiter les preload aux vraies images visibles ou probables.',
     ],
-    files: ['functions/src/public/catalog.js', 'src/lib/server/products.js', 'firestore.rules', 'src/kit/shared/publicCatalogCache.js', 'src/kit/admin/publicCatalogInvalidation.js', 'src/kit/admin/AdminForm.jsx', 'src/kit/marketplace/GalleryServerView.jsx', 'src/kit/marketplace/categoryCatalogLoader.js', 'src/kit/marketplace/ProductDetailShellIsland.jsx', 'src/utils/imageUtils.js', 'src/kit/marketplace/GalleryProductCardServer.jsx'],
+    files: ['functions/src/public/catalog.js', 'functions-public/src/public/catalog.js', 'src/lib/server/products.js', 'firestore.rules', 'src/kit/shared/publicCatalogCache.js', 'src/kit/admin/publicCatalogInvalidation.js', 'src/kit/admin/AdminForm.jsx', 'src/kit/marketplace/GalleryServerView.jsx', 'src/kit/marketplace/ProductDetailShellIsland.jsx', 'src/utils/imageUtils.js', 'src/kit/marketplace/GalleryProductCardServer.jsx'],
     risk: 'Risque moyen: cache stale possible pendant la fenetre HTTP courte, ou incoherence entre carte et detail si un ancien document n a pas encore ses metadata image.',
     validation: [
       'Tests catalogue initial puis chargement complet',
@@ -320,7 +320,7 @@ const roadmapPhases = Object.freeze([
 const roadmapEvidenceRows = Object.freeze([
   ['P0.1 Budgets JS', 'Fait', 'npm run build + npm run perf:budget: app shell 83.1 kB gzip, Firebase public 150.82 kB gzip, galerie 11.66 kB gzip, first-paint clean.'],
   ['P0.1b Mesure reseau', 'Fait', 'npm run perf:network lance le preview et mesure / + /categorie/commodes en mobile 390x844 avec Playwright Python. Le script echoue si budgets reseau, Web Vitals locaux, chunks interdits ou baseline avant/apres depassent les seuils.'],
-  ['P0.2 Lazy shell public', 'Fait', 'CartSidebar, GlobalMenu, MarketplaceDiscovery, Footer, OrderSuccessModal, AdminIPTracker, Stripe et facture PDF sortis du premier rendu.'],
+  ['P0.2 Lazy shell public', 'Fait', 'CartSidebar, GlobalMenu, Footer, OrderSuccessModal, AdminIPTracker, Stripe et facture PDF sortis du premier rendu; MarketplaceDiscovery legacy retire.'],
   ['P0.3 LCP/CLS/INP local', 'Fait local', 'PerformanceObserver injecte avant navigation: LCP, CLS et interaction menu sont controles en preview. Le vrai RUM production reste a ajouter pour mesurer les utilisateurs reels.'],
   ['P1.1 Hero + categories', 'Fait', 'GalleryServerView rend hero, categories et premieres cartes directement en HTML serveur.'],
   ['P1.2 Grilles produits', 'Fait', 'GalleryServerView porte le tri serveur des nouveautes/petits prix; GalleryProductCardServer rend les liens produit natifs.'],
@@ -392,7 +392,7 @@ const implementationResults = Object.freeze([
 const implementationLedger = Object.freeze([
   {
     label: 'P0 applique',
-    detail: 'CartSidebar, GlobalMenu, MarketplaceDiscovery, Footer, OrderSuccessModal et AdminIPTracker sont charges a la demande avec Suspense.',
+    detail: 'CartSidebar, GlobalMenu, Footer, OrderSuccessModal et AdminIPTracker sont charges a la demande avec Suspense; MarketplaceDiscovery legacy a ete retire du code actif.',
   },
   {
     label: 'Firebase analytics retire',
@@ -408,7 +408,7 @@ const implementationLedger = Object.freeze([
   },
   {
     label: 'Images React',
-    detail: 'Les props JSX de priorite image utilisent fetchpriority en lowercase, car React 18.3 du projet avertit encore sur fetchPriority. Les priorites existantes sont conservees.',
+    detail: 'Les props JSX de priorite image utilisent fetchPriority en camelCase, conforme au runtime React 19. Les priorites existantes sont conservees.',
   },
   {
     label: 'Data safety',
@@ -488,7 +488,7 @@ const implementationLedger = Object.freeze([
   },
   {
     label: 'Budget automatise',
-    detail: 'scripts/check-performance-budget.cjs controle les tailles gzip des chunks critiques et verifie que Firebase Storage, facture PDF, Stripe, categoryCatalogLoader et avis clients ne sont pas references par dist/index.html.',
+    detail: 'scripts/check-performance-budget.cjs controle les tailles gzip des chunks critiques et verifie que Firebase Storage, facture PDF, Stripe, le catalogue client legacy et avis clients ne sont pas references par dist/index.html.',
   },
   {
     label: 'Contrat mobile automatise',

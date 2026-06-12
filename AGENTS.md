@@ -4,6 +4,17 @@ Ce document est spÃ©cifiquement destinÃ© aux assistants IA pour ne pas casse
 
 ---
 
+## PRIORITE - Limite de validation des correctifs
+
+Quand l'utilisateur demande un correctif, appliquer le changement demande puis s'arreter des que le correctif est en place, sauf demande explicite de validation.
+
+- Ne pas lancer de verifications longues, build, serveur local, Playwright, navigateur, screenshot ou test manuel si l'utilisateur ne le demande pas clairement.
+- Les validations automatiques doivent rester limitees au strict minimum necessaire pour eviter une erreur evidente de syntaxe ou de lint locale, et seulement si elles ne rallongent pas inutilement le cycle.
+- Si l'utilisateur dit qu'il peut verifier lui-meme, respecter cette priorite et ne pas continuer en validation visuelle ou runtime.
+- Dans le compte rendu, indiquer simplement ce qui a ete modifie et, si aucune validation n'a ete lancee, le dire clairement.
+
+---
+
 ## Code map
 L'agent doit garder cette carte a jour lors de chaque creation, suppression, renommage ou deplacement de fichier. Si une modification change clairement le role d'un fichier, ajuster aussi son libelle. Garder la carte compacte : grouper les assets, logs, builds et dossiers temporaires au lieu de tout lister.
 
