@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { ToastProvider } from '../ui/Toast';
 
@@ -23,6 +24,7 @@ function GlobalMenuPanelAuthContent({
   keepMounted = false,
   setPanelOpen,
 }) {
+  const router = useRouter();
   const { user, isAdmin, logout } = useAuth();
   const [authUser, setAuthUser] = useState(() => (
     typeof window === 'undefined' ? null : window.__svAuthUser || null
@@ -45,7 +47,7 @@ function GlobalMenuPanelAuthContent({
 
   const navigateClient = (path) => {
     setPanelOpen(false);
-    window.location.assign(path);
+    router.push(path);
   };
 
   const openLogin = () => {
@@ -76,6 +78,7 @@ function GlobalMenuPanelAuthContent({
           user={effectiveUser}
           isAdmin={effectiveIsAdmin}
           darkMode={darkMode}
+          onNavigate={navigateClient}
           onShowLogin={openLogin}
           onOpenWishlist={() => navigateClient('/wishlist')}
           onOpenCart={openCart}
@@ -90,7 +93,7 @@ function GlobalMenuPanelAuthContent({
 
 export default function GlobalMenuPanelAuthIsland(props) {
   return (
-    <AuthProvider forceInitialize>
+    <AuthProvider forceInitialize deferUntilReady={false}>
       <ToastProvider>
         <GlobalMenuPanelAuthContent {...props} />
       </ToastProvider>

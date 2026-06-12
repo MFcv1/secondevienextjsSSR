@@ -467,6 +467,7 @@ const GlobalMenu = ({
     isAdmin,
     darkMode,
     contactInfo,
+    onNavigate,
     onShowLogin,
     onOpenCart,
     cartCount = 0,
@@ -683,7 +684,11 @@ const GlobalMenu = ({
 
     const navigateToPath = (path) => {
         closeMenu();
-        window.location.assign(path);
+        if (onNavigate) {
+            onNavigate(path);
+        } else {
+            window.location.assign(path);
+        }
     };
 
     const openAbout = () => {

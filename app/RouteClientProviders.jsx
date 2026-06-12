@@ -6,11 +6,10 @@ import { ToastProvider } from '../src/kit/ui/Toast';
 
 export default function RouteClientProviders({ children }) {
   return (
-    <AuthProvider>
+    <AuthProvider forceInitialize>
       <ErrorBoundary>
         <ToastProvider>{children}</ToastProvider>
       </ErrorBoundary>
     </AuthProvider>
   );
 }
-

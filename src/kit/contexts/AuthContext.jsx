@@ -65,7 +65,7 @@ export const useAuth = () => {
 };
 
 // Provider Component
-export const AuthProvider = ({ children, forceInitialize = false }) => {
+export const AuthProvider = ({ children, forceInitialize = false, deferUntilReady = true }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(() => shouldInitializeAuthOnMount(forceInitialize));
     const [isAdmin, setIsAdmin] = useState(false);
@@ -247,7 +247,7 @@ export const AuthProvider = ({ children, forceInitialize = false }) => {
 
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children}
+            {(!loading || !deferUntilReady) && children}
         </AuthContext.Provider>
     );
 };
