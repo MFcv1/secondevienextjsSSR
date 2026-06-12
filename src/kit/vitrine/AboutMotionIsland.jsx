@@ -307,16 +307,21 @@ function animateBeforeAfter(gsap, root) {
   const visual = select(section, '.about-before-visual');
 
   gsap.fromTo(card,
-    { y: 90, scale: 0.97, filter: 'blur(14px)' },
     {
-      y: 0,
+      clipPath: 'inset(12% 12% 12% 12% round 3rem)',
+      scale: 0.95,
+      filter: 'blur(10px)',
+      transformOrigin: 'center center',
+    },
+    {
+      clipPath: 'inset(0% 0% 0% 0% round 2.5rem)',
       scale: 1,
       filter: 'blur(0px)',
-      duration: 1.25,
-      ease: 'power3.out',
+      duration: 2.2,
+      ease: 'power3.inOut',
       scrollTrigger: {
         trigger: section,
-        start: 'top 76%',
+        start: 'top 80%',
       },
     }
   );
@@ -354,16 +359,15 @@ function animateBeforeAfter(gsap, root) {
   );
 
   gsap.fromTo(visual,
-    { x: 50, scale: 1.02, filter: 'blur(10px)' },
+    { scale: 1.035, filter: 'blur(8px)', transformOrigin: 'center center' },
     {
-      x: 0,
       scale: 1,
       filter: 'blur(0px)',
-      duration: 1.1,
-      ease: 'power3.out',
+      duration: 2,
+      ease: 'power3.inOut',
       scrollTrigger: {
         trigger: section,
-        start: 'top 70%',
+        start: 'top 78%',
       },
     }
   );
