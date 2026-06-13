@@ -438,7 +438,7 @@ export default async function Page() {
         <section className="sv-home-hero">
           <div className="sv-home-hero__media" aria-hidden="true">
             <picture>
-              <source media="(max-width: 767px)" srcSet="/images/imagehero/1-mobile.webp" />
+              <source media="(max-width: 767px)" srcSet="/images/imagehero/1-mobile-v2.webp" />
               <img
                 src="/images/imagehero/1.webp"
                 alt=""
