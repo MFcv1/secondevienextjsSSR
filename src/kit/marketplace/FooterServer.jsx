@@ -90,7 +90,7 @@ const PaymentChip = ({ children, variant = 'light', className = '' }) => {
     light: 'border-stone-200 bg-white text-stone-950 dark:border-[#3a332b] dark:bg-white dark:text-stone-950',
     dark: 'border-[#3b3835] bg-[#2a2826] text-white',
     paypal: 'border-[#064fa8] bg-[#064fa8] text-white',
-    bank: 'border-[#3f3b37] bg-[#34312e] text-white',
+    bank: 'border-[#2b241e] bg-[#15110e] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_18px_rgba(0,0,0,0.18)]',
     wero: 'border-[#095cae] bg-[#095cae] text-white',
   };
   return (
@@ -307,8 +307,9 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
               <h3 className={`font-serif text-[15px] uppercase ${darkMode ? 'text-stone-100' : 'text-stone-950'}`}>Moyens de paiement acceptes</h3>
               <div className="flex flex-wrap gap-2">
                 <PaymentChip><span className="text-[13px] font-black italic tracking-normal text-[#1434cb]">VISA</span></PaymentChip>
-                <PaymentChip variant="dark"><span className="text-[12px] font-semibold">Apple Pay</span></PaymentChip>
-                <PaymentChip><span className="text-[12px] font-semibold text-[#5f6368]">Google Pay</span></PaymentChip>
+                <PaymentChip className="min-w-[52px] px-2"><MastercardLogo /></PaymentChip>
+                <PaymentChip variant="dark" className="min-w-[70px] px-2.5"><ApplePayLogo /></PaymentChip>
+                <PaymentChip className="min-w-[64px] px-2.5"><GooglePayLogo /></PaymentChip>
                 <PaymentChip variant="paypal"><span className="text-[13px] font-black italic tracking-normal">PayPal</span></PaymentChip>
                 <PaymentChip variant="bank" className="gap-2"><Landmark size={13} strokeWidth={1.8} /><span className="text-[11px] font-black uppercase tracking-[0.08em]">Virement</span></PaymentChip>
                 <PaymentChip variant="wero"><span className="text-[13px] font-black lowercase tracking-normal">wero</span></PaymentChip>

@@ -140,7 +140,7 @@ const paymentChipVariants = {
     light: 'border-stone-200 bg-white text-stone-950 dark:border-[#3a332b] dark:bg-white dark:text-stone-950',
     dark: 'border-[#3b3835] bg-[#2a2826] text-white dark:border-[#4a4640] dark:bg-[#2a2826] dark:text-white',
     paypal: 'border-[#064fa8] bg-[#064fa8] text-white dark:border-[#064fa8] dark:bg-[#064fa8] dark:text-white',
-    bank: 'border-[#3f3b37] bg-[#34312e] text-white dark:border-[#4b4640] dark:bg-[#34312e] dark:text-white',
+    bank: 'border-[#2b241e] bg-[#15110e] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_18px_rgba(0,0,0,0.18)] dark:border-[#3c332a] dark:bg-[#15110e] dark:text-white',
     wero: 'border-[#095cae] bg-[#095cae] text-white dark:border-[#095cae] dark:bg-[#095cae] dark:text-white',
 };
 

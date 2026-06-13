@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const revealSelector = '.sv-home-reveal, .sv-home-animate > *';
 
 export default function HomeMotionIsland() {
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
   useEffect(() => {
     let lastScrollY = window.scrollY;
     let frameId = 0;
@@ -23,6 +25,7 @@ export default function HomeMotionIsland() {
       frameId = window.requestAnimationFrame(() => {
         frameId = 0;
         const currentScrollY = window.scrollY;
+        setShowBackToTop(currentScrollY > 520);
         if (currentScrollY < 24 || currentScrollY < lastScrollY) {
           setNavVisible(true);
         } else if (currentScrollY > lastScrollY + 4) {
@@ -33,6 +36,7 @@ export default function HomeMotionIsland() {
     };
 
     window.addEventListener('scroll', onScroll, { passive: true });
+    setShowBackToTop(window.scrollY > 520);
     return () => {
       if (frameId) window.cancelAnimationFrame(frameId);
       window.removeEventListener('scroll', onScroll);
@@ -128,5 +132,21 @@ export default function HomeMotionIsland() {
     };
   }, []);
 
-  return null;
+  const handleBackToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  return (
+    <button
+      type="button"
+      aria-label="Retour en haut"
+      className="sv-home-back-to-top"
+      data-visible={showBackToTop ? 'true' : 'false'}
+      onClick={handleBackToTop}
+    >
+      <span className="sv-home-back-to-top__core" aria-hidden="true">
+        <span className="sv-home-back-to-top__chevron" />
+      </span>
+    </button>
+  );
 }

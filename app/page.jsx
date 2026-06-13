@@ -24,22 +24,22 @@ const categoryCopy = {
   buffets: {
     title: 'Buffets anciens',
     text: 'Volumes de rangement, façades travaillées et présence immédiate pour une entrée, une salle à manger ou un salon.',
-    image: '/images/categories/buffets-config-rail.webp',
+    image: '/images/categories/buffets-home.webp',
   },
   armoires: {
     title: 'Armoires restaurées',
     text: 'Pièces hautes et utiles, choisies pour leur ligne, leur capacité et la qualité de leur matière.',
-    image: '/images/categories/armoires-config-rail.webp',
+    image: '/images/categories/armoires-home.webp',
   },
   commodes: {
     title: 'Commodes et chevets',
     text: 'Formats plus compacts pour installer une patine, un équilibre et du rangement sans alourdir la pièce.',
-    image: '/images/categories/commodes-config-rail.webp',
+    image: '/images/categories/commodes-home.webp',
   },
   miroirs: {
     title: 'Miroirs anciens',
     text: 'Cadres, reflets et détails décoratifs qui agrandissent l’espace sans effacer son caractère.',
-    image: '/images/categories/miroirs-config-rail.webp',
+    image: '/images/categories/miroirs-home.webp',
   },
   tables: {
     title: 'Tables et plateaux',
@@ -428,7 +428,7 @@ export default async function Page() {
               <a href="#atelier">Atelier</a>
               <a href="#faq">FAQ</a>
             </div>
-            <Link href="/galerie" prefetch={false} className="sv-home-button sv-home-button--light">
+            <Link href="/galerie" prefetch={false} className="sv-home-button sv-home-button--light sv-home-button--nav">
               Galerie
               <span aria-hidden="true">→</span>
             </Link>
@@ -657,16 +657,192 @@ export default async function Page() {
         </section>
 
         <footer className="sv-home-footer">
-          <div>
-            <p>Seconde Vie</p>
-            <span>Galerie de mobilier ancien restauré, pièces uniques, atelier et livraison étudiée autour de Marseille.</span>
+          <div className="sv-home-footer__shell">
+            <div className="sv-home-footer__brand">
+              <Link href="/" prefetch={false} className="sv-home-footer__logo">
+                <img src="/images/logoanais-320.webp" alt="Seconde Vie par Anais" width="64" height="48" loading="lazy" />
+                <span>
+                  <strong>Seconde Vie<span>.</span></strong>
+                  <small>par Anais</small>
+                </span>
+              </Link>
+              <p>Galerie de mobilier ancien restaure, pieces uniques, atelier et livraison etudiee autour de Marseille.</p>
+              <div className="sv-home-footer__socials" aria-label="Reseaux sociaux">
+                <a href={KIT_CONFIG.socialLinks.instagram || '/galerie'} aria-label="Instagram">IG</a>
+                <a href={KIT_CONFIG.socialLinks.facebook || '/galerie'} aria-label="Facebook">FB</a>
+                <Link href="/galerie#gallery-pieces" prefetch={false} aria-label="Voir la galerie">SV</Link>
+              </div>
+            </div>
+
+            <nav className="sv-home-footer__panel sv-home-footer__links" aria-label="Liens du pied de page">
+              <div className="sv-home-footer__links-column">
+                <h3>La galerie</h3>
+                <Link href="/galerie#gallery-pieces" prefetch={false}>Nouveautes <span aria-hidden="true">{'->'}</span></Link>
+                <Link href={getCategoryUrl('meubles')} prefetch={false}>Meubles <span aria-hidden="true">{'->'}</span></Link>
+                <Link href={getCategoryUrl('assises')} prefetch={false}>Assises <span aria-hidden="true">{'->'}</span></Link>
+                <Link href={getCategoryUrl('eclairage')} prefetch={false}>Eclairage <span aria-hidden="true">{'->'}</span></Link>
+                <Link href={getCategoryUrl('decorations')} prefetch={false}>Decorations <span aria-hidden="true">{'->'}</span></Link>
+                <Link href="/galerie#gallery-small-prices" prefetch={false}>Petits prix <span aria-hidden="true">{'v ->'}</span></Link>
+              </div>
+              <div className="sv-home-footer__links-column">
+                <h3>A propos</h3>
+                <Link href="/a-propos" prefetch={false}>Notre histoire</Link>
+                <Link href="/a-propos#valeurs" prefetch={false}>Nos valeurs</Link>
+                <Link href="/a-propos#atelier" prefetch={false}>Atelier & Renovations</Link>
+                <Link href="/devis" prefetch={false}>Livraison</Link>
+                <Link href="/#faq" prefetch={false}>FAQ</Link>
+                <Link href="/devis" prefetch={false}>Contact</Link>
+              </div>
+              <div className="sv-home-footer__links-column">
+                <h3>Mon compte</h3>
+                <Link href="/admin" prefetch={false}>Se connecter</Link>
+                <Link href="/wishlist" prefetch={false}>Creer un compte</Link>
+                <Link href="/mes-commandes" prefetch={false}>Mes commandes</Link>
+                <Link href="/wishlist" prefetch={false}>Mes favoris</Link>
+                <Link href="/admin" prefetch={false}>Mes annonces</Link>
+                <Link href="/devis" prefetch={false}>Vendre un objet</Link>
+              </div>
+              <div className="sv-home-footer__links-column">
+                <h3>Besoin d'aide ?</h3>
+                <Link href="/devis" prefetch={false}>Centre d'aide</Link>
+                <Link href="/devis" prefetch={false}>Livraison & Retours</Link>
+                <Link href="/checkout" prefetch={false}>Paiement securise</Link>
+                <Link href="/devis" prefetch={false}>Conditions d'utilisation</Link>
+                <Link href="/devis" prefetch={false}>Politique de confidentialite</Link>
+                <Link href="/devis" prefetch={false}>CGV</Link>
+              </div>
+            </nav>
+
+            <section className="sv-home-footer__panel sv-home-footer__atelier" aria-labelledby="home-footer-atelier">
+              <h3 id="home-footer-atelier">Notre atelier a Marseille</h3>
+              <div className="sv-home-footer__map">
+                <iframe
+                  src="https://www.google.com/maps?q=Marseille%2C%20France&z=13&output=embed"
+                  title="Carte de l'atelier a Marseille"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+              <div className="sv-home-footer__contact">
+                <a href="mailto:contact@secondevie-marseille.fr"><span>Mail</span>contact@secondevie-marseille.fr</a>
+                <a href="tel:+33612345678"><span>Tel</span>+33 6 12 34 56 78</a>
+                <p><span>Horaires</span>Lun - Sam : 10h - 19h</p>
+              </div>
+            </section>
+
+            <section className="sv-home-footer__panel sv-home-footer__payments" aria-labelledby="home-footer-payments">
+              <h3 id="home-footer-payments">Moyens de paiement acceptes</h3>
+              <div className="sv-home-footer__payment-card">
+                <div className="sv-home-footer__payment-heading">
+                  <span aria-hidden="true" className="sv-home-footer__payment-icon">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                      <path d="M4.75 8.5h14.5v10H4.75z" />
+                      <path d="M7.5 8.5V6.75a4.5 4.5 0 0 1 9 0V8.5" />
+                      <path d="M7.75 13h2" />
+                    </svg>
+                  </span>
+                  <span>
+                    <strong>Carte / Wallets</strong>
+                    <small>Rapide & securise</small>
+                  </span>
+                </div>
+                <div className="sv-home-footer__payment-chip-row">
+                  <span className="sv-payment-chip sv-payment-chip--visa">VISA</span>
+                  <span className="sv-payment-chip sv-payment-chip--mastercard" aria-label="Mastercard">
+                    <svg viewBox="0 0 52 32" focusable="false" aria-hidden="true">
+                      <circle cx="20" cy="16" r="12" fill="#EB001B" />
+                      <circle cx="32" cy="16" r="12" fill="#F79E1B" />
+                      <path d="M26 7.4a12 12 0 0 1 0 17.2 12 12 0 0 1 0-17.2Z" fill="#FF5F00" />
+                    </svg>
+                  </span>
+                  <span className="sv-payment-chip sv-payment-chip--apple" aria-label="Apple Pay">
+                    <svg viewBox="0 0 18 22" focusable="false" aria-hidden="true">
+                      <path d="M14.7 11.5c0-2.1 1.7-3.1 1.8-3.2-1-1.5-2.6-1.7-3.1-1.7-1.3-.1-2.6.8-3.3.8-.7 0-1.8-.8-2.9-.8-1.5 0-2.9.9-3.7 2.2-1.6 2.8-.4 6.9 1.1 9.2.8 1.1 1.7 2.3 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.2.9-1.3 1.2-2.5 1.2-2.6-.1 0-2.8-1.1-2.8-4Z" />
+                      <path d="M12.6 5.2c.6-.7 1-1.7.9-2.7-.9 0-1.9.6-2.5 1.3-.6.6-1 1.7-.9 2.6 1 0 1.9-.5 2.5-1.2Z" />
+                    </svg>
+                    Pay
+                  </span>
+                  <span className="sv-payment-chip sv-payment-chip--google" aria-label="Google Pay">
+                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                      <path fill="#4285F4" d="M22.6 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.75h3.56c2.08-1.92 3.28-4.74 3.28-8.08Z" />
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.67l-3.56-2.75c-.98.66-2.23 1.05-3.72 1.05-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z" />
+                      <path fill="#FBBC05" d="M5.84 14.1A6.61 6.61 0 0 1 5.5 12c0-.73.12-1.44.34-2.1V7.06H2.18A11 11 0 0 0 1 12c0 1.77.42 3.45 1.18 4.94l3.66-2.84Z" />
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.2 1.64l3.15-3.15C17.45 2.1 14.97 1 12 1A11 11 0 0 0 2.18 7.06L5.84 9.9C6.71 7.31 9.14 5.38 12 5.38Z" />
+                    </svg>
+                    Pay
+                  </span>
+                  <span className="sv-payment-chip sv-payment-chip--paypal">PayPal</span>
+                </div>
+              </div>
+              <div className="sv-home-footer__payment-card">
+                <div className="sv-home-footer__payment-heading">
+                  <span aria-hidden="true" className="sv-home-footer__payment-icon">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                      <path d="M3 10h18L12 4 3 10Z" />
+                      <path d="M5 10v8" />
+                      <path d="M9 10v8" />
+                      <path d="M15 10v8" />
+                      <path d="M19 10v8" />
+                      <path d="M4 18h16" />
+                    </svg>
+                  </span>
+                  <span>
+                    <strong>Virement</strong>
+                    <small>Instructions via email</small>
+                  </span>
+                </div>
+                <div className="sv-home-footer__payment-chip-row">
+                  <span className="sv-payment-chip sv-payment-chip--bank">
+                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                      <path d="M3 10h18L12 4 3 10Z" />
+                      <path d="M5 10v8" />
+                      <path d="M9 10v8" />
+                      <path d="M15 10v8" />
+                      <path d="M19 10v8" />
+                      <path d="M4 18h16" />
+                    </svg>
+                    Virement
+                  </span>
+                  <span className="sv-payment-chip sv-payment-chip--wero">wero</span>
+                </div>
+              </div>
+            </section>
+
+            <section className="sv-home-footer__panel sv-home-footer__delivery" aria-labelledby="home-footer-delivery">
+              <h3 id="home-footer-delivery">Livraison & securite</h3>
+              <img src="/images/footer-delivery-dark.webp" alt="Livraison partout a Marseille" width="768" height="512" loading="lazy" />
+              <div className="sv-home-footer__trust">
+                <div className="sv-home-footer__trust-title">
+                  <span aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                      <path d="M12 3.75 19.25 7v5.25c0 4.6-3.05 7.55-7.25 8.75-4.2-1.2-7.25-4.15-7.25-8.75V7L12 3.75Z" />
+                      <path d="m8.8 12.15 2.1 2.1 4.45-4.55" />
+                    </svg>
+                  </span>
+                  Site securise
+                </div>
+                <span className="sv-home-footer__trust-item">
+                  <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                    <path d="M6.5 10V7.75a5.5 5.5 0 0 1 11 0V10" />
+                    <path d="M5 10h14v10H5z" />
+                    <path d="M12 14v2.5" />
+                  </svg>
+                  <span>SSL<br />Secure</span>
+                </span>
+                <span className="sv-home-footer__trust-item">
+                  <strong>PCI</strong>
+                  <span>DSS<br />Compliant</span>
+                </span>
+                <span className="sv-home-footer__trust-item">
+                  <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                    <path d="M12 3.75 19 6.9v5.35c0 4.25-2.85 7.05-7 8.25-4.15-1.2-7-4-7-8.25V6.9l7-3.15Z" />
+                    <path d="m9.15 12.15 1.9 1.9 3.95-4.1" />
+                  </svg>
+                  <span>3D<br />Secure</span>
+                </span>
+              </div>
+            </section>
           </div>
-          <nav aria-label="Liens de pied de page">
-            <Link href={getCategoryUrl('buffets')} prefetch={false}>Buffets</Link>
-            <Link href={getCategoryUrl('armoires')} prefetch={false}>Armoires</Link>
-            <Link href="/a-propos" prefetch={false}>Atelier</Link>
-            <Link href="/devis" prefetch={false}>Devis</Link>
-          </nav>
         </footer>
       </main>
       <script
