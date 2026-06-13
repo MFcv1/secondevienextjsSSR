@@ -774,6 +774,13 @@ export default async function Page() {
                   <span className="sv-payment-chip sv-payment-chip--paypal">PayPal</span>
                 </div>
               </div>
+              <div className="sv-home-footer__payment-separator" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="m8 7 4-4 4 4" />
+                  <path d="M12 3v18" />
+                  <path d="m8 17 4 4 4-4" />
+                </svg>
+              </div>
               <div className="sv-home-footer__payment-card">
                 <div className="sv-home-footer__payment-heading">
                   <span aria-hidden="true" className="sv-home-footer__payment-icon">

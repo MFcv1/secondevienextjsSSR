@@ -2,6 +2,7 @@ import Link from 'next/link';
 import {
   ArrowRight,
   BadgeCheck,
+  ChevronsUpDown,
   Clock,
   Facebook,
   Instagram,
@@ -190,15 +191,15 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
 
         <div className={`rounded-[24px] border p-6 ${darkMode ? 'border-[#2e2a25] bg-[#111110]' : 'border-[#eee6dd] bg-[#fdfbf8]'}`}>
           <h3 className={`mb-4 text-[11px] font-black uppercase tracking-widest ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>Moyens de paiement acceptes</h3>
-          <div className={`rounded-xl border p-4 ${darkMode ? 'border-[#2e2a25] bg-[#111110]' : 'border-[#eee6dd] bg-white/45'}`}>
+          <div className={`rounded-xl border px-4 py-3.5 ${darkMode ? 'border-[#2e2a25] bg-[#111110]' : 'border-[#eee6dd] bg-white/45'}`}>
             <div className="mb-3 flex items-center gap-3">
-              <LockKeyhole size={20} />
+              <LockKeyhole size={18} />
               <div>
                 <p className="font-serif text-base">Carte / Wallets</p>
                 <p className="text-xs opacity-60">Rapide & securise</p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 pl-8">
               <PaymentChip className="min-w-[52px] px-2.5"><span className="text-[12px] font-black italic tracking-normal text-[#1434cb]">VISA</span></PaymentChip>
               <PaymentChip className="min-w-[50px] px-2"><MastercardLogo /></PaymentChip>
               <PaymentChip variant="dark" className="min-w-[66px] px-2.5"><ApplePayLogo /></PaymentChip>
@@ -206,15 +207,21 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
               <PaymentChip variant="paypal" className="min-w-[68px] px-2.5"><span className="text-[12px] font-black italic tracking-normal">PayPal</span></PaymentChip>
             </div>
           </div>
-          <div className={`mt-3 rounded-xl border p-4 ${darkMode ? 'border-[#2e2a25] bg-[#111110]' : 'border-[#eee6dd] bg-white/45'}`}>
+          <div className={`relative z-10 mx-auto -my-1 flex h-7 w-14 items-center justify-center rounded-full ${darkMode ? 'text-[#c98b45]' : 'text-stone-500'}`} aria-hidden="true">
+            <span className={`absolute left-[-36px] right-[-36px] top-1/2 h-px -translate-y-1/2 ${darkMode ? 'bg-gradient-to-r from-transparent via-[#c98b45]/35 to-transparent' : 'bg-gradient-to-r from-transparent via-stone-300 to-transparent'}`} />
+            <span className={`relative flex h-6 w-6 items-center justify-center rounded-full border ${darkMode ? 'border-[#c98b45]/50 bg-[#111110]' : 'border-[#e8ded2] bg-[#fdfbf8]'}`}>
+              <ChevronsUpDown size={15} strokeWidth={1.9} />
+            </span>
+          </div>
+          <div className={`rounded-xl border px-4 py-3.5 ${darkMode ? 'border-[#2e2a25] bg-[#111110]' : 'border-[#eee6dd] bg-white/45'}`}>
             <div className="mb-3 flex items-center gap-3">
-              <Landmark size={20} />
+              <Landmark size={18} />
               <div>
                 <p className="font-serif text-base">Virement</p>
                 <p className="text-xs opacity-60">Instructions via email</p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 pl-8">
               <PaymentChip variant="bank" className="min-w-[92px] gap-2 px-2.5"><Landmark size={13} strokeWidth={1.8} /><span className="text-[11px] font-black uppercase tracking-[0.08em]">Virement</span></PaymentChip>
               <PaymentChip variant="wero" className="min-w-[56px] px-2.5"><span className="text-[13px] font-black lowercase tracking-normal">wero</span></PaymentChip>
             </div>

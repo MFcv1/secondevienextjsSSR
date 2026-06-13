@@ -1,11 +1,156 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const revealSelector = '.sv-home-reveal, .sv-home-animate > *';
 
 export default function HomeMotionIsland() {
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const cursorRootRef = useRef(null);
+  const cursorDotRef = useRef(null);
+  const cursorRingRef = useRef(null);
+  const cursorTextRef = useRef(null);
+  const cursorTrailRefs = useRef([]);
+
+  useEffect(() => {
+    const root = cursorRootRef.current;
+    const dot = cursorDotRef.current;
+    const ring = cursorRingRef.current;
+    const text = cursorTextRef.current;
+    const trails = cursorTrailRefs.current.filter(Boolean);
+    const canUseCursor = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+      && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!root || !dot || !ring || !text || !canUseCursor) return undefined;
+
+    document.documentElement.classList.add('sv-custom-cursor-ready');
+
+    let frameId = 0;
+    let pressTimeoutId = 0;
+    let idleTimeoutId = 0;
+    let scrollTimeoutId = 0;
+    let lastPointerMoveAt = 0;
+    const idleDelay = 260;
+    const scrollSettleDelay = 180;
+    const target = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    const dotPoint = { ...target };
+    const ringPoint = { ...target };
+    const trailPoints = trails.map(() => ({ ...target }));
+
+    const render = () => {
+      dotPoint.x += (target.x - dotPoint.x) * 0.42;
+      dotPoint.y += (target.y - dotPoint.y) * 0.42;
+      ringPoint.x += (target.x - ringPoint.x) * 0.17;
+      ringPoint.y += (target.y - ringPoint.y) * 0.17;
+
+      dot.style.transform = `translate3d(${dotPoint.x}px, ${dotPoint.y}px, 0) translate(-50%, -50%)`;
+      ring.style.transform = `translate3d(${ringPoint.x}px, ${ringPoint.y}px, 0) translate(-50%, -50%)`;
+      text.style.transform = `translate3d(${ringPoint.x}px, ${ringPoint.y}px, 0) translate(-50%, -50%)`;
+
+      trails.forEach((trail, index) => {
+        const previous = index === 0 ? ringPoint : trailPoints[index - 1];
+        const point = trailPoints[index];
+        point.x += (previous.x - point.x) * 0.2;
+        point.y += (previous.y - point.y) * 0.2;
+        trail.style.transform = `translate3d(${point.x}px, ${point.y}px, 0) translate(-50%, -50%) scale(${1 - index * 0.085})`;
+      });
+
+      frameId = window.requestAnimationFrame(render);
+    };
+
+    const setVisible = (visible) => {
+      root.dataset.visible = visible ? 'true' : 'false';
+    };
+
+    const clearIdleTimer = () => {
+      if (!idleTimeoutId) return;
+      window.clearTimeout(idleTimeoutId);
+      idleTimeoutId = 0;
+    };
+
+    const scheduleIdle = () => {
+      clearIdleTimer();
+      idleTimeoutId = window.setTimeout(() => {
+        if (window.performance.now() - lastPointerMoveAt < idleDelay - 12) {
+          scheduleIdle();
+          return;
+        }
+        root.dataset.motion = 'idle';
+        idleTimeoutId = 0;
+      }, idleDelay);
+    };
+
+    const onPointerMove = (event) => {
+      if (event.pointerType && event.pointerType !== 'mouse') return;
+      const isInteractive = event.target?.closest?.('a, button, summary, input, select, textarea, [role="button"]');
+      target.x = event.clientX;
+      target.y = event.clientY;
+      lastPointerMoveAt = window.performance.now();
+      setVisible(true);
+
+      if (isInteractive) {
+        root.dataset.intent = 'action';
+        root.dataset.motion = 'idle';
+        clearIdleTimer();
+        return;
+      }
+
+      root.dataset.motion = 'moving';
+      scheduleIdle();
+    };
+
+    const onPointerOver = (event) => {
+      const targetNode = event.target;
+      const isInteractive = targetNode?.closest?.('a, button, summary, input, select, textarea, [role="button"]');
+      root.dataset.intent = isInteractive ? 'action' : 'default';
+    };
+
+    const onPointerDown = () => {
+      root.dataset.pressed = 'true';
+      if (pressTimeoutId) window.clearTimeout(pressTimeoutId);
+      pressTimeoutId = window.setTimeout(() => {
+        root.dataset.pressed = 'false';
+        pressTimeoutId = 0;
+      }, 160);
+    };
+
+    const onScroll = () => {
+      root.dataset.motion = 'scrolling';
+      clearIdleTimer();
+      if (scrollTimeoutId) window.clearTimeout(scrollTimeoutId);
+      scrollTimeoutId = window.setTimeout(() => {
+        root.dataset.motion = 'moving';
+        if (root.dataset.intent !== 'action') scheduleIdle();
+        scrollTimeoutId = 0;
+      }, scrollSettleDelay);
+    };
+
+    const onPointerLeave = () => {
+      setVisible(false);
+      root.dataset.motion = 'moving';
+      clearIdleTimer();
+    };
+
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('pointerover', onPointerOver, { passive: true });
+    window.addEventListener('pointerdown', onPointerDown, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
+    document.documentElement.addEventListener('mouseleave', onPointerLeave);
+    frameId = window.requestAnimationFrame(render);
+
+    return () => {
+      document.documentElement.classList.remove('sv-custom-cursor-ready');
+      if (frameId) window.cancelAnimationFrame(frameId);
+      if (pressTimeoutId) window.clearTimeout(pressTimeoutId);
+      if (idleTimeoutId) window.clearTimeout(idleTimeoutId);
+      if (scrollTimeoutId) window.clearTimeout(scrollTimeoutId);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerover', onPointerOver);
+      window.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('scroll', onScroll);
+      document.documentElement.removeEventListener('mouseleave', onPointerLeave);
+    };
+  }, []);
 
   useEffect(() => {
     let lastScrollY = window.scrollY;
@@ -137,16 +282,39 @@ export default function HomeMotionIsland() {
   };
 
   return (
-    <button
-      type="button"
-      aria-label="Retour en haut"
-      className="sv-home-back-to-top"
-      data-visible={showBackToTop ? 'true' : 'false'}
-      onClick={handleBackToTop}
-    >
-      <span className="sv-home-back-to-top__core" aria-hidden="true">
-        <span className="sv-home-back-to-top__chevron" />
-      </span>
-    </button>
+    <>
+      <div ref={cursorRootRef} className="sv-home-cursor" data-visible="false" data-intent="default" data-motion="moving" data-pressed="false" aria-hidden="true">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <span
+            key={index}
+            ref={(node) => {
+              cursorTrailRefs.current[index] = node;
+            }}
+            className="sv-home-cursor__trail"
+            style={{
+              '--trail-index': index,
+              '--trail-border-alpha': 0.22 - (index * 0.028),
+              '--trail-fill-alpha': 0.095 - (index * 0.012),
+              '--trail-opacity': 0.34 - (index * 0.045),
+            }}
+          />
+        ))}
+        <span ref={cursorRingRef} className="sv-home-cursor__ring" />
+        <span ref={cursorTextRef} className="sv-home-cursor__text">Scroll</span>
+        <span ref={cursorDotRef} className="sv-home-cursor__dot" />
+      </div>
+
+      <button
+        type="button"
+        aria-label="Retour en haut"
+        className="sv-home-back-to-top"
+        data-visible={showBackToTop ? 'true' : 'false'}
+        onClick={handleBackToTop}
+      >
+        <span className="sv-home-back-to-top__core" aria-hidden="true">
+          <span className="sv-home-back-to-top__chevron" />
+        </span>
+      </button>
+    </>
   );
 }
