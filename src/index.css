@@ -1270,6 +1270,12 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
 }
 
 @media (max-width: 900px) {
+  .sv-home {
+    --sv-mobile-section-y: 24px;
+    --sv-mobile-section-x: 16px;
+    --sv-mobile-panel-gap: 34px;
+  }
+
   .sv-home-nav {
     top: 12px;
     width: calc(100% - 20px);
@@ -1333,8 +1339,8 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
   .sv-home-section,
   .sv-final-cta {
     width: min(calc(100% - 32px), 1500px);
-    padding-top: 70px;
-    padding-bottom: 70px;
+    padding-top: var(--sv-mobile-section-y);
+    padding-bottom: var(--sv-mobile-section-y);
   }
 
   .sv-product-wall,
@@ -1358,7 +1364,11 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
   .sv-category-band,
   .sv-atelier-section,
   .sv-faq-section {
-    padding: 82px 16px;
+    padding: var(--sv-mobile-section-y) var(--sv-mobile-section-x);
+  }
+
+  .sv-category-band {
+    margin-top: 16px;
   }
 
   .sv-category-grid {
@@ -1375,10 +1385,6 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
 
   .sv-category-card--wide {
     grid-column: auto;
-  }
-
-  .sv-category-card:nth-last-child(-n + 2) {
-    aspect-ratio: 4 / 5;
   }
 
   .sv-category-card > span {
@@ -1418,7 +1424,7 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
 
   .sv-atelier-section {
     grid-template-columns: 1fr;
-    gap: 34px;
+    gap: var(--sv-mobile-panel-gap);
   }
 
   .sv-atelier-images {
@@ -1657,8 +1663,8 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
   .sv-faq-section {
     gap: 14px;
     width: calc(100% - 24px);
-    margin: 0 auto;
-    padding: 64px 16px 112px;
+    margin: 16px auto 22px;
+    padding: var(--sv-mobile-section-y) var(--sv-mobile-section-x) calc(var(--sv-mobile-section-y) + 56px);
     border: 1px solid rgba(255, 243, 226, 0.08);
     border-radius: 30px 30px 24px 24px;
     background:
@@ -1721,8 +1727,13 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
 
   .sv-faq-mark {
     left: 22px;
-    bottom: 32px;
+    bottom: 28px;
     font-size: clamp(4.8rem, 24vw, 6.6rem);
+  }
+
+  .sv-final-cta {
+    margin: 40px auto;
+    padding: calc(var(--sv-mobile-section-y) + 2px) 36px;
   }
 
   .sv-home-footer {

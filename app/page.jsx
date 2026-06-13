@@ -130,6 +130,54 @@ const getHomeProducts = async () => {
   return products.slice(0, 24);
 };
 
+const getCategoryImageFromProducts = (products = [], usedImages = new Set(), matcher = null) => {
+  const product = products.find((item) => {
+    if (matcher && !matcher(item)) return false;
+    const image = getProductCardImage(item).src || getHomeProductVisual(item);
+    return image && !usedImages.has(image);
+  });
+  const image = product ? (getProductCardImage(product).src || getHomeProductVisual(product)) : '';
+  if (image) usedImages.add(image);
+  return image;
+};
+
+const normalizeHomeSearchText = (value) => String(value || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase();
+
+const isAssiseProduct = (product) => {
+  const category = normalizeHomeSearchText(product?.category);
+  const text = normalizeHomeSearchText([
+    product?.name,
+    product?.title,
+    product?.material,
+    product?.description,
+  ].filter(Boolean).join(' '));
+
+  return ['assises', 'chaises', 'fauteuils', 'bancs'].includes(category)
+    || /\b(assise|chaise|chaises|fauteuil|fauteuils|banc|bancs)\b/.test(text);
+};
+
+const getHomeCategoryImages = async (homeProducts = []) => {
+  const usedImages = new Set(Object.values(categoryCopy).map((entry) => entry.image).filter(Boolean));
+  const entries = await Promise.all([
+    ['tables', ['tables']],
+    ['chaises', ['assises', 'chaises', 'fauteuils', 'bancs']],
+  ].map(async ([id, categoryIds]) => {
+    let products = await getPublicCatalog(`scope=cards&limit=6&categories=${categoryIds.join(',')}`);
+    if (!products.length) {
+      products = await getPublicCatalogFallback({ categoryIds, limitCount: 6 });
+    }
+    const matcher = id === 'chaises' ? isAssiseProduct : null;
+    const image = getCategoryImageFromProducts(products, usedImages, matcher)
+      || (id === 'chaises' ? getCategoryImageFromProducts(homeProducts, usedImages, matcher) : '');
+    return [id, image];
+  }));
+
+  return Object.fromEntries(entries.filter(([, image]) => image));
+};
+
 const formatPrice = (product) => {
   if (product?.priceOnRequest) return 'Prix sur demande';
   const price = product?.currentPrice || product?.price || product?.startingPrice;
@@ -355,7 +403,12 @@ const buildJsonLd = (products) => {
 
 export default async function Page() {
   const products = await getHomeProducts();
+  const categoryImages = await getHomeCategoryImages(products);
   const featuredProducts = getFeaturedProducts(products, 4);
+  const displayCategoryEntries = categoryEntries.map((category) => ({
+    ...category,
+    image: categoryImages[category.id] || category.image,
+  }));
 
   return (
     <>
@@ -443,7 +496,7 @@ export default async function Page() {
           </div>
 
           <div className="sv-category-grid">
-            {categoryEntries.map((category, index) => (
+            {displayCategoryEntries.map((category, index) => (
               <Link
                 key={category.id}
                 href={getCategoryUrl(category.id)}
