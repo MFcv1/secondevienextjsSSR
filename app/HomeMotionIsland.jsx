@@ -3,6 +3,32 @@
 import { useEffect, useRef, useState } from 'react';
 
 const revealSelector = '.sv-home-reveal, .sv-home-animate > *';
+const cursorActionSelector = [
+  'a[href]',
+  'button:not([disabled])',
+  'summary',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[role="button"]',
+  '[data-cursor-action="true"]',
+].join(',');
+const cursorForcedActionSelector = [
+  'button:not([disabled])',
+  '[role="button"]',
+  '[data-cursor-action="true"]',
+  '.sv-home-button',
+  '.sv-home-link-button',
+  '.sv-home-nav a',
+  '.sv-home-footer__socials a',
+  '.hero-cta-particles',
+].join(',');
+const cursorAmbientLinkSelector = [
+  '.sv-product-link',
+  '.sv-category-card',
+  '[data-gallery-product-link]',
+  '.product-card-wrap a',
+].join(',');
 
 export default function HomeMotionIsland() {
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -29,9 +55,12 @@ export default function HomeMotionIsland() {
     let pressTimeoutId = 0;
     let idleTimeoutId = 0;
     let scrollTimeoutId = 0;
+    let postScrollGuardTimeoutId = 0;
     let lastPointerMoveAt = 0;
+    let activeActionTarget = null;
     const idleDelay = 260;
     const scrollSettleDelay = 180;
+    const postScrollGuardDelay = 320;
     const target = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
     const dotPoint = { ...target };
     const ringPoint = { ...target };
@@ -68,11 +97,57 @@ export default function HomeMotionIsland() {
       idleTimeoutId = 0;
     };
 
+    const clearPostScrollGuard = () => {
+      if (!postScrollGuardTimeoutId) return;
+      window.clearTimeout(postScrollGuardTimeoutId);
+      postScrollGuardTimeoutId = 0;
+    };
+
+    const isActionAffordance = (node) => {
+      if (!node?.matches) return false;
+      if (node.matches(cursorAmbientLinkSelector)) return false;
+      if (node.matches(cursorForcedActionSelector)) return true;
+
+      const rect = node.getBoundingClientRect();
+      const isLargeSurface = rect.width > 260 || rect.height > 160 || rect.width * rect.height > 32000;
+      return !isLargeSurface;
+    };
+
+    const getActionTarget = (node) => {
+      const candidate = node?.closest?.(cursorActionSelector) || null;
+      return isActionAffordance(candidate) ? candidate : null;
+    };
+
+    const getAmbientTarget = (node) => node?.closest?.(cursorAmbientLinkSelector) || null;
+
+    const getActionTargetAtPointer = () => {
+      const node = document.elementFromPoint(target.x, target.y);
+      return getActionTarget(node);
+    };
+
+    const setActionTarget = (node) => {
+      activeActionTarget = node;
+      root.dataset.intent = node ? 'action' : 'default';
+    };
+
+    const verifyActionTarget = () => {
+      if (!activeActionTarget) return false;
+      const nodeAtPointer = getActionTargetAtPointer();
+      if (nodeAtPointer && nodeAtPointer === activeActionTarget) return true;
+      setActionTarget(null);
+      return false;
+    };
+
     const scheduleIdle = () => {
       clearIdleTimer();
       idleTimeoutId = window.setTimeout(() => {
         if (window.performance.now() - lastPointerMoveAt < idleDelay - 12) {
           scheduleIdle();
+          return;
+        }
+        if (!verifyActionTarget()) {
+          root.dataset.motion = 'idle';
+          idleTimeoutId = 0;
           return;
         }
         root.dataset.motion = 'idle';
@@ -82,27 +157,46 @@ export default function HomeMotionIsland() {
 
     const onPointerMove = (event) => {
       if (event.pointerType && event.pointerType !== 'mouse') return;
-      const isInteractive = event.target?.closest?.('a, button, summary, input, select, textarea, [role="button"]');
+      const actionTarget = getActionTarget(event.target);
+      const ambientTarget = getAmbientTarget(event.target);
       target.x = event.clientX;
       target.y = event.clientY;
       lastPointerMoveAt = window.performance.now();
       setVisible(true);
 
-      if (isInteractive) {
-        root.dataset.intent = 'action';
+      if (actionTarget) {
+        setActionTarget(actionTarget);
         root.dataset.motion = 'idle';
         clearIdleTimer();
         return;
       }
 
+      setActionTarget(null);
+      root.dataset.intent = ambientTarget ? 'ambient' : 'default';
       root.dataset.motion = 'moving';
       scheduleIdle();
     };
 
     const onPointerOver = (event) => {
-      const targetNode = event.target;
-      const isInteractive = targetNode?.closest?.('a, button, summary, input, select, textarea, [role="button"]');
-      root.dataset.intent = isInteractive ? 'action' : 'default';
+      const actionTarget = getActionTarget(event.target);
+      if (actionTarget) {
+        setActionTarget(actionTarget);
+        return;
+      }
+      setActionTarget(null);
+      root.dataset.intent = getAmbientTarget(event.target) ? 'ambient' : 'default';
+    };
+
+    const onPointerOut = (event) => {
+      if (!activeActionTarget) return;
+      const nextTarget = event.relatedTarget;
+      if (nextTarget && activeActionTarget.contains(nextTarget)) return;
+      window.requestAnimationFrame(() => {
+        if (!verifyActionTarget()) {
+          root.dataset.motion = 'moving';
+          scheduleIdle();
+        }
+      });
     };
 
     const onPointerDown = () => {
@@ -115,12 +209,24 @@ export default function HomeMotionIsland() {
     };
 
     const onScroll = () => {
+      setActionTarget(null);
       root.dataset.motion = 'scrolling';
       clearIdleTimer();
+      clearPostScrollGuard();
       if (scrollTimeoutId) window.clearTimeout(scrollTimeoutId);
       scrollTimeoutId = window.setTimeout(() => {
+        const actionTarget = getActionTargetAtPointer();
+        if (actionTarget) {
+          setActionTarget(actionTarget);
+          root.dataset.motion = 'idle';
+          scrollTimeoutId = 0;
+          return;
+        }
         root.dataset.motion = 'moving';
-        if (root.dataset.intent !== 'action') scheduleIdle();
+        postScrollGuardTimeoutId = window.setTimeout(() => {
+          if (!getActionTargetAtPointer()) scheduleIdle();
+          postScrollGuardTimeoutId = 0;
+        }, postScrollGuardDelay);
         scrollTimeoutId = 0;
       }, scrollSettleDelay);
     };
@@ -128,11 +234,13 @@ export default function HomeMotionIsland() {
     const onPointerLeave = () => {
       setVisible(false);
       root.dataset.motion = 'moving';
+      setActionTarget(null);
       clearIdleTimer();
     };
 
     window.addEventListener('pointermove', onPointerMove, { passive: true });
     window.addEventListener('pointerover', onPointerOver, { passive: true });
+    window.addEventListener('pointerout', onPointerOut, { passive: true });
     window.addEventListener('pointerdown', onPointerDown, { passive: true });
     window.addEventListener('scroll', onScroll, { passive: true });
     document.documentElement.addEventListener('mouseleave', onPointerLeave);
@@ -144,8 +252,10 @@ export default function HomeMotionIsland() {
       if (pressTimeoutId) window.clearTimeout(pressTimeoutId);
       if (idleTimeoutId) window.clearTimeout(idleTimeoutId);
       if (scrollTimeoutId) window.clearTimeout(scrollTimeoutId);
+      if (postScrollGuardTimeoutId) window.clearTimeout(postScrollGuardTimeoutId);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerover', onPointerOver);
+      window.removeEventListener('pointerout', onPointerOut);
       window.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('scroll', onScroll);
       document.documentElement.removeEventListener('mouseleave', onPointerLeave);

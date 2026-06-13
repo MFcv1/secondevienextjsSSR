@@ -792,10 +792,12 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
       0 12px 28px rgba(0, 0, 0, 0.16);
     backdrop-filter: blur(5px) saturate(0.82);
     -webkit-backdrop-filter: blur(5px) saturate(0.82);
+    transition-duration: 140ms, 140ms, 220ms, 220ms, 220ms, 140ms, 220ms;
   }
 
   .sv-home-cursor[data-motion="scrolling"] .sv-home-cursor__trail {
     opacity: 0.18;
+    transition-duration: 140ms;
   }
 
   .sv-home-cursor[data-intent="action"] .sv-home-cursor__ring {
@@ -825,6 +827,7 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
   }
 
   .sv-home-cursor[data-intent="action"] .sv-home-cursor__text,
+  .sv-home-cursor[data-intent="ambient"] .sv-home-cursor__text,
   .sv-home-cursor[data-motion="scrolling"] .sv-home-cursor__text {
     opacity: 0;
     filter: blur(1px);
@@ -837,6 +840,10 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
     background:
       radial-gradient(circle at 36% 32%, rgba(255, 243, 226, 0.08), transparent 42%),
       rgba(31, 22, 16, 0.04);
+  }
+
+  .sv-home-cursor[data-motion="moving"] .sv-home-cursor__ring {
+    transition-duration: 180ms, 180ms, 260ms, 260ms, 260ms, 180ms, 260ms;
   }
 
   .sv-home-cursor[data-intent="action"] .sv-home-cursor__dot {
@@ -2063,7 +2070,7 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
   grid-area: payments;
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 16px;
 }
 
 .sv-home-footer__delivery {
@@ -2089,6 +2096,13 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
   background: rgba(255, 243, 226, 0.055);
 }
 
+.sv-home-footer__payment-stack {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+}
+
 @media (min-width: 1181px) {
   .sv-home-footer__payments {
     align-self: stretch;
@@ -2096,14 +2110,15 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
 
   .sv-home-footer__payments .sv-home-footer__payment-card {
     display: flex;
-    min-height: 128px;
+    min-height: 132px;
     flex-direction: column;
     justify-content: center;
     padding: 20px 24px;
   }
 
-  .sv-home-footer__payments .sv-home-footer__payment-card:first-of-type {
-    min-height: 150px;
+  .sv-home-footer__payments .sv-home-footer__payment-card:last-of-type {
+    min-height: 176px;
+    justify-content: flex-start;
   }
 }
 
