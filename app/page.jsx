@@ -522,16 +522,6 @@ export default async function Page() {
         </section>
 
         <section id="atelier" className="sv-home-section sv-atelier-section">
-          <div className="sv-atelier-images">
-            <figure>
-              <img src="/images/before-after/avant-gallery.webp" alt="Meuble avant restauration" width="700" height="900" loading="eager" />
-              <figcaption>Avant</figcaption>
-            </figure>
-            <figure>
-              <img src="/images/before-after/apres-gallery.webp" alt="Meuble après restauration" width="700" height="900" loading="eager" />
-              <figcaption>Après</figcaption>
-            </figure>
-          </div>
           <div className="sv-atelier-copy">
             <p className="sv-home-kicker">Atelier et savoir-faire</p>
             <h2>Restaurer sans effacer l’histoire.</h2>
@@ -544,6 +534,16 @@ export default async function Page() {
               <Link href="/a-propos" prefetch={false} className="sv-home-link-button sv-home-link-button--dark">Découvrir l’atelier</Link>
               <Link href="/devis" prefetch={false} className="sv-home-button sv-home-button--dark">Demander un devis</Link>
             </div>
+          </div>
+          <div className="sv-atelier-images">
+            <figure>
+              <img src="/images/before-after/avant-gallery.webp" alt="Meuble avant restauration" width="700" height="900" loading="eager" />
+              <figcaption>Avant</figcaption>
+            </figure>
+            <figure>
+              <img src="/images/before-after/apres-gallery.webp" alt="Meuble après restauration" width="700" height="900" loading="eager" />
+              <figcaption>Après</figcaption>
+            </figure>
           </div>
         </section>
 

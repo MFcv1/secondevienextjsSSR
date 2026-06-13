@@ -148,7 +148,7 @@ const FooterLink = ({ children, href, highlight = false, showArrow = false, dark
 const MapFrame = ({ darkMode, address }) => {
   const directionUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address || 'Marseille, France')}`;
   return (
-    <div className={`relative overflow-hidden rounded-xl border ${darkMode ? 'border-[#514537] bg-[#151515]' : 'border-[#eee6dd] bg-white'}`}>
+    <div className={`relative h-full w-full overflow-hidden rounded-xl border ${darkMode ? 'border-[#514537] bg-[#151515]' : 'border-[#eee6dd] bg-white'}`}>
       <a
         href={directionUrl}
         target="_blank"
