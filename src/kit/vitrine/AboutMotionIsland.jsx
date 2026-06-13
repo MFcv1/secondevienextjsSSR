@@ -317,11 +317,11 @@ function animateBeforeAfter(gsap, root) {
       clipPath: 'inset(0% 0% 0% 0% round 2.5rem)',
       scale: 1,
       filter: 'blur(0px)',
-      duration: 2.2,
+      duration: 1.65,
       ease: 'power3.inOut',
       scrollTrigger: {
         trigger: section,
-        start: 'top 80%',
+        start: 'top 84%',
       },
     }
   );
@@ -363,11 +363,11 @@ function animateBeforeAfter(gsap, root) {
     {
       scale: 1,
       filter: 'blur(0px)',
-      duration: 2,
+      duration: 1.55,
       ease: 'power3.inOut',
       scrollTrigger: {
         trigger: section,
-        start: 'top 78%',
+        start: 'top 82%',
       },
     }
   );

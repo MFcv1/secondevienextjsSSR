@@ -893,21 +893,21 @@ const GlobalMenu = ({
                                 </motion.aside>
 
                                 <motion.div className="grid grid-cols-[minmax(230px,0.72fr)_minmax(420px,1.34fr)_minmax(560px,1.94fr)] gap-3 xl:gap-4">
-                                    <motion.section className={`global-menu-reveal-container flex h-[540px] flex-col rounded-[22px] px-4 py-4 xl:px-5 xl:py-5 2xl:px-6 ${desktopCard}`} style={getDesktopRevealStyle(MENU_SEQUENCE.categories)}>
-                                        <motion.h2 className="mb-6 text-[12px] font-black uppercase tracking-[0.18em]" variants={menuRevealVariants}>Meubles par catégorie</motion.h2>
-                                        <motion.div className="grid gap-2" variants={menuGroupVariants}>
+                                    <motion.section className={`global-menu-reveal-container flex h-[540px] flex-col overflow-hidden rounded-[22px] px-4 py-4 xl:px-5 xl:py-5 2xl:px-6 ${desktopCard}`} style={getDesktopRevealStyle(MENU_SEQUENCE.categories)}>
+                                        <motion.h2 className="mb-4 text-[11px] font-black uppercase tracking-[0.17em]" variants={menuRevealVariants}>Meubles par catégorie</motion.h2>
+                                        <motion.div className="grid gap-1.5" variants={menuGroupVariants}>
                                             {categories.map(({ id, label, Icon }) => (
                                                 <motion.button
                                                     key={id}
                                                     type="button"
                                                     onClick={() => goToCategory(id)}
-                                                    className="global-menu-hover group -mx-2 flex min-h-9 items-center gap-3.5 rounded-md px-2 text-left"
+                                                    className="global-menu-hover group -mx-2 flex min-h-8 items-center gap-2.5 rounded-md px-2 text-left"
                                                     variants={menuItemVariants}
                                                     whileHover={textHoverMotion}
                                                     whileTap={textTapMotion}
                                                 >
-                                                    <Icon size={20} strokeWidth={1.35} className="global-menu-hover__icon text-[#9A654B]" />
-                                                    <span className={`global-menu-hover__label font-serif text-[20px] font-semibold leading-[1.08] ${darkMode ? 'text-stone-100' : 'text-stone-900'}`}>
+                                                    <Icon size={18} strokeWidth={1.35} className="global-menu-hover__icon text-[#9A654B]" />
+                                                    <span className={`global-menu-hover__label font-serif text-[18px] font-semibold leading-[1.05] ${darkMode ? 'text-stone-100' : 'text-stone-900'}`}>
                                                         {label}
                                                     </span>
                                                 </motion.button>
@@ -916,36 +916,36 @@ const GlobalMenu = ({
                                         <motion.button
                                             type="button"
                                             onClick={() => navigateToPath('/galerie')}
-                                            className={`global-menu-hover global-menu-hover--ambient mt-auto flex items-center gap-3 border-t pt-6 font-serif text-[16px] font-semibold text-[#8B5C42] ${softBorder}`}
+                                            className={`global-menu-hover global-menu-hover--ambient mt-auto flex min-h-10 items-center gap-2 border-t pt-3 font-serif text-[14px] font-semibold leading-none text-[#8B5C42] ${softBorder}`}
                                             variants={menuItemVariants}
                                             whileHover={textHoverMotion}
                                             whileTap={textTapMotion}
                                         >
                                             <span className="global-menu-hover__label">Voir toutes les catégories</span>
-                                            <ChevronRight size={17} className="global-menu-hover__chevron" />
+                                            <ChevronRight size={15} className="global-menu-hover__chevron shrink-0" />
                                         </motion.button>
                                     </motion.section>
 
-                                    <motion.section className={`global-menu-reveal-container flex h-[540px] flex-col rounded-[22px] px-4 py-4 xl:px-5 xl:py-5 2xl:px-6 ${desktopCard}`} style={getDesktopRevealStyle(MENU_SEQUENCE.discovery)}>
-                                        <motion.div className="mb-4" variants={menuRevealVariants}>
+                                    <motion.section className={`global-menu-reveal-container flex h-[540px] flex-col overflow-hidden rounded-[22px] px-4 py-4 xl:px-5 xl:py-5 2xl:px-6 ${desktopCard}`} style={getDesktopRevealStyle(MENU_SEQUENCE.discovery)}>
+                                        <motion.div className="mb-3" variants={menuRevealVariants}>
                                             <h2 className="text-[12px] font-black uppercase tracking-[0.18em]">Explorer la maison</h2>
-                                            <p className={`mt-2 max-w-[34ch] text-[12px] leading-5 ${mutedText}`}>
+                                            <p className={`mt-2 max-w-[34ch] text-[12px] leading-[1.45] ${mutedText}`}>
                                                 Pièces de vie, rangements et coups de cœur.
                                             </p>
                                         </motion.div>
 
-                                        <motion.div className="grid grid-cols-2 gap-2" variants={menuGroupVariants}>
+                                        <motion.div className="grid grid-cols-2 gap-1.5" variants={menuGroupVariants}>
                                             {ROOM_LINKS.map((room) => (
                                                 <motion.button
                                                     key={room.label}
                                                     type="button"
                                                     onClick={() => goToCategory(room.categoryId)}
-                                                    className={`global-menu-hover group flex min-h-[46px] items-center justify-between rounded-[12px] px-3 py-2 text-left ${darkMode ? 'bg-white/5' : 'bg-white/55'}`}
+                                                    className={`global-menu-hover group flex min-h-8 items-center justify-between rounded-[10px] px-3 py-1 text-left ${darkMode ? 'bg-white/5' : 'bg-white/55'}`}
                                                     variants={menuItemVariants}
                                                     whileHover={textHoverMotion}
                                                     whileTap={textTapMotion}
                                                 >
-                                                    <span className={`global-menu-hover__label font-serif text-[16.5px] font-semibold leading-tight ${darkMode ? 'text-stone-100' : 'text-stone-900'}`}>
+                                                    <span className={`global-menu-hover__label font-serif text-[15.5px] font-semibold leading-tight ${darkMode ? 'text-stone-100' : 'text-stone-900'}`}>
                                                         {room.label}
                                                     </span>
                                                     <ChevronRight size={15} strokeWidth={1.4} className="global-menu-hover__chevron shrink-0 text-[#9A654B]" />
@@ -953,21 +953,21 @@ const GlobalMenu = ({
                                             ))}
                                         </motion.div>
 
-                                        <motion.div className="mt-6" variants={menuRevealVariants}>
+                                        <motion.div className="mt-3" variants={menuRevealVariants}>
                                             <span className={`block h-px w-full bg-gradient-to-r from-transparent to-transparent ${darkMode ? 'via-white/10' : 'via-[#e5d8cb]/85'}`} />
-                                            <div className="flex items-center justify-between pt-4">
+                                            <div className="flex items-center justify-between pt-2.5">
                                                 <span className="text-[10px] font-black uppercase tracking-[0.18em] text-stone-400">Notre sélection</span>
                                                 <span className={`text-[11px] ${mutedText}`}>4 entrées rapides</span>
                                             </div>
                                         </motion.div>
 
-                                        <motion.div className="mb-5 mt-3 grid grid-cols-2 gap-2.5" variants={menuGroupVariants}>
+                                        <motion.div className="mb-3 mt-2 grid grid-cols-2 gap-2" variants={menuGroupVariants}>
                                             {SELECTION_TILES.map((tile) => (
                                                 <motion.button
                                                     key={tile.label}
                                                     type="button"
                                                     onClick={() => goToCategory(tile.categoryId)}
-                                                    className="relative min-h-[104px] overflow-hidden rounded-[14px] bg-stone-100 text-left shadow-[inset_0_0_0_1px_rgba(255,255,255,0.24)] outline-none ring-[#9A654B]/0 transition-[box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-[#9A654B]/55 xl:min-h-[112px]"
+                                                    className="relative min-h-[94px] overflow-hidden rounded-[13px] bg-stone-100 text-left shadow-[inset_0_0_0_1px_rgba(255,255,255,0.24)] outline-none ring-[#9A654B]/0 transition-[box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-[#9A654B]/55 xl:min-h-[100px]"
                                                     variants={selectionTileVariants}
                                                 >
                                                     <img
@@ -979,7 +979,7 @@ const GlobalMenu = ({
                                                         className="absolute inset-0 h-full w-full object-cover"
                                                     />
                                                     <span className="absolute inset-0 bg-gradient-to-t from-stone-950/48 via-stone-950/8 to-transparent" />
-                                                    <span className="absolute bottom-3 left-3 font-serif text-[17px] font-bold leading-none text-white drop-shadow-sm">
+                                                    <span className="absolute bottom-2.5 left-3 font-serif text-[15px] font-bold leading-none text-white drop-shadow-sm">
                                                         {tile.label}
                                                     </span>
                                                 </motion.button>
@@ -989,21 +989,21 @@ const GlobalMenu = ({
                                         <motion.button
                                             type="button"
                                             onClick={() => navigateToPath('/galerie')}
-                                            className={`global-menu-hover mt-auto flex w-full items-center justify-between rounded-[14px] px-4 py-3.5 text-left ${darkMode ? 'bg-white/5' : 'bg-[#f5f0ec]'}`}
+                                            className={`global-menu-hover mt-auto flex w-full items-center justify-between rounded-[14px] px-3.5 py-2.5 text-left ${darkMode ? 'bg-white/5' : 'bg-[#f5f0ec]'}`}
                                             variants={menuItemVariants}
                                             whileHover={textHoverMotion}
                                             whileTap={textTapMotion}
                                         >
-                                            <span className="flex items-center gap-3">
-                                                <span className="global-menu-hover__icon flex h-9 w-9 items-center justify-center rounded-full border border-[#9A654B]/30 text-[#9A654B]">
-                                                    <Sparkles size={17} strokeWidth={1.5} />
+                                            <span className="flex items-center gap-2.5">
+                                                <span className="global-menu-hover__icon flex h-8 w-8 items-center justify-center rounded-full border border-[#9A654B]/30 text-[#9A654B]">
+                                                    <Sparkles size={15} strokeWidth={1.5} />
                                                 </span>
                                                 <span>
-                                                    <span className="global-menu-hover__label block font-serif text-[17px] font-bold">Voir toutes les pièces</span>
-                                                    <span className={`global-menu-hover__desc mt-1 block text-[11.5px] ${mutedText}`}>Nouveautés, petits prix et pièces uniques</span>
+                                                    <span className="global-menu-hover__label block font-serif text-[15.5px] font-bold leading-tight">Voir toutes les pièces</span>
+                                                    <span className={`global-menu-hover__desc mt-0.5 block text-[11px] ${mutedText}`}>Nouveautés, petits prix et pièces uniques</span>
                                                 </span>
                                             </span>
-                                            <ChevronRight size={20} strokeWidth={1.5} className="global-menu-hover__chevron text-[#9A654B]" />
+                                            <ChevronRight size={18} strokeWidth={1.5} className="global-menu-hover__chevron shrink-0 text-[#9A654B]" />
                                         </motion.button>
                                     </motion.section>
 
