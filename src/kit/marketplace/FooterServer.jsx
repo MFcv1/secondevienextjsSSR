@@ -146,21 +146,17 @@ const FooterLink = ({ children, href, highlight = false, showArrow = false, dark
 );
 
 const MapFrame = ({ darkMode, address }) => {
-  const directionUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address || 'Marseille, France')}`;
+  const mapQuery = encodeURIComponent(address || 'Marseille, France');
+  const mapUrl = `https://www.google.com/maps?q=${mapQuery}&z=13&output=embed`;
   return (
     <div className={`relative h-full w-full overflow-hidden rounded-xl border ${darkMode ? 'border-[#514537] bg-[#151515]' : 'border-[#eee6dd] bg-white'}`}>
-      <a
-        href={directionUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`absolute inset-0 flex h-full w-full flex-col items-center justify-center gap-4 px-6 text-center transition-colors ${darkMode ? 'bg-[#151515] text-[#f8f2ea] hover:bg-[#1d1b18]' : 'bg-[#f7f1ea] text-stone-950 hover:bg-[#f2e9df]'}`}
-      >
-        <span className={`flex h-14 w-14 items-center justify-center rounded-full ${darkMode ? 'bg-[#24211d]' : 'bg-white'}`}>
-          <MapPin size={25} strokeWidth={1.7} />
-        </span>
-        <span className="font-serif text-xl">Notre atelier a Marseille</span>
-        <span className="text-[11px] font-black uppercase tracking-[0.16em] opacity-65">Ouvrir la carte</span>
-      </a>
+      <iframe
+        src={mapUrl}
+        title="Carte de l'atelier a Marseille"
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+        className="absolute inset-0 h-full w-full"
+      />
     </div>
   );
 };

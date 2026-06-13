@@ -78,7 +78,8 @@ const homeExcludedProductIds = new Set([
 const routeSteps = [
   ['01', 'Mesurer', 'Largeur, hauteur, profondeur et contraintes du meuble sont vérifiées avant de promettre un départ.'],
   ['02', 'Protéger', 'Angles, portes, miroirs, plateaux et patines sont préparés selon la fragilité de chaque pièce.'],
-  ['03', 'Installer', 'Retrait atelier, Marseille proche ou transport dédié: la solution reste ajustée au meuble.'],
+  ['03', 'Transporter', 'Retrait atelier, Marseille proche ou transport dédié: la solution reste ajustée au meuble.'],
+  ['04', 'Installer', 'La pièce est déposée à sa place avec les dernières précautions utiles.'],
 ];
 
 const faqItems = [
@@ -560,13 +561,15 @@ export default async function Page() {
             <figure className="sv-route-visual">
               <img src="/images/menu-delivery-marseille-wide.jpg" alt="Livraison de mobilier ancien à Marseille" width="900" height="480" loading="lazy" />
             </figure>
-            {routeSteps.map(([number, title, text]) => (
-              <article key={title} className={`sv-location-card sv-location-card--${number}`}>
-                <span>{number}</span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </article>
-            ))}
+            <div className="sv-location-card-grid">
+              {routeSteps.map(([number, title, text]) => (
+                <article key={title} className={`sv-location-card sv-location-card--${number}`}>
+                  <span>{number}</span>
+                  <h3>{title}</h3>
+                  <p>{text}</p>
+                </article>
+              ))}
+            </div>
             <aside className="sv-route-note">
               <strong>Marseille et alentours</strong>
               <p>Les projets proches restent simples; les trajets plus longs sont validés meuble par meuble.</p>

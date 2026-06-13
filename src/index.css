@@ -791,9 +791,9 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
 
 .sv-atelier-section {
   display: grid;
-  grid-template-columns: 1.06fr 0.94fr;
+  grid-template-columns: minmax(340px, 0.9fr) minmax(420px, 1.1fr);
   align-items: center;
-  gap: clamp(34px, 5vw, 78px);
+  gap: clamp(32px, 4.6vw, 68px);
   width: 100%;
   max-width: none;
   padding: 112px max(40px, calc((100vw - 1500px) / 2));
@@ -804,10 +804,12 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
 .sv-atelier-images {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  padding: 10px;
+  gap: 8px;
+  align-self: center;
+  max-width: 720px;
+  padding: 8px;
   border: 1px solid var(--sv-line);
-  border-radius: 34px;
+  border-radius: 28px;
   background: #eadbc8;
 }
 
@@ -815,12 +817,12 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
   position: relative;
   margin: 0;
   overflow: hidden;
-  border-radius: 25px;
+  border-radius: 21px;
 }
 
 .sv-atelier-images img {
   width: 100%;
-  height: min(56vw, 620px);
+  height: clamp(360px, 38vw, 520px);
   object-fit: cover;
 }
 
@@ -846,7 +848,7 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
 }
 
 .sv-atelier-copy > p:not(.sv-home-kicker) {
-  max-width: 700px;
+  max-width: 620px;
   margin: 28px 0 0;
 }
 
@@ -889,7 +891,7 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
 
 .sv-route-visual {
   position: relative;
-  grid-column: span 7;
+  grid-column: span 6;
   min-height: 320px;
   margin: 0;
   overflow: hidden;
@@ -918,21 +920,23 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
 .sv-location-card,
 .sv-route-note {
   position: relative;
-  padding: 26px;
+  padding: 22px;
   border-radius: 24px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0)),
     #fffaf3;
 }
 
-.sv-location-card {
-  grid-column: span 5;
-  min-height: 154px;
+.sv-location-card-grid {
+  grid-column: span 6;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
-.sv-location-card--02,
-.sv-location-card--03 {
-  grid-column: span 6;
+.sv-location-card {
+  min-height: 0;
+  aspect-ratio: 1;
 }
 
 .sv-location-card span {
@@ -953,8 +957,8 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
 .sv-location-card h3,
 .sv-route-note strong {
   display: block;
-  margin-top: 28px;
-  font-size: clamp(30px, 2.7vw, 48px);
+  margin-top: 20px;
+  font-size: clamp(25px, 2.2vw, 38px);
   font-family: var(--font-serif);
   font-weight: 600;
   line-height: 0.92;
@@ -966,10 +970,10 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
 
 .sv-location-card p,
 .sv-route-note p {
-  margin: 18px 0 0;
+  margin: 14px 0 0;
   color: var(--sv-muted);
-  font-size: 14px;
-  line-height: 1.75;
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .sv-route-note {
@@ -1341,6 +1345,7 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
   .sv-product-card--lead,
   .sv-product-wall li:not(.sv-product-card--lead),
   .sv-route-visual,
+  .sv-location-card-grid,
   .sv-location-card,
   .sv-location-card--02,
   .sv-location-card--03,
@@ -1411,12 +1416,39 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
     font-size: clamp(3.1rem, 15vw, 5rem);
   }
 
-  .sv-atelier-images {
+  .sv-atelier-section {
     grid-template-columns: 1fr;
+    gap: 34px;
+  }
+
+  .sv-atelier-images {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(100%, 620px);
+    margin: 2px auto 0;
+    gap: 7px;
+    padding: 8px;
+    border-radius: 24px;
+  }
+
+  .sv-atelier-images figure {
+    border-radius: 17px;
   }
 
   .sv-atelier-images img {
-    height: 360px;
+    height: auto;
+    aspect-ratio: 2 / 3;
+  }
+
+  .sv-atelier-images figcaption {
+    left: 10px;
+    bottom: 10px;
+    padding: 6px 8px;
+    font-size: 8px;
+    letter-spacing: 0.14em;
+  }
+
+  .sv-atelier-copy > p:not(.sv-home-kicker) {
+    max-width: 34rem;
   }
 
   .sv-product-card__media img,
@@ -1574,12 +1606,42 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
     min-height: 240px;
   }
 
+  .sv-location-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .sv-location-card {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .sv-location-card span {
+    width: 36px;
+    height: 36px;
+    font-size: 10px;
+  }
+
   .sv-location-card,
   .sv-route-note {
     min-height: auto;
   }
 
-  .sv-location-card h3,
+  .sv-location-card h3 {
+    margin-top: 14px;
+    font-size: clamp(22px, 6.6vw, 28px);
+  }
+
+  .sv-location-card p {
+    display: -webkit-box;
+    margin-top: 9px;
+    overflow: hidden;
+    font-size: 11.5px;
+    line-height: 1.35;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+  }
+
   .sv-route-note strong {
     margin-top: 30px;
   }
@@ -1594,9 +1656,28 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
 
   .sv-faq-section {
     gap: 14px;
-    margin-top: 0;
-    padding-top: 62px;
-    padding-bottom: 112px;
+    width: calc(100% - 24px);
+    margin: 0 auto;
+    padding: 64px 16px 112px;
+    border: 1px solid rgba(255, 243, 226, 0.08);
+    border-radius: 30px 30px 24px 24px;
+    background:
+      radial-gradient(ellipse at 8% 10%, rgba(189, 155, 118, 0.16), transparent 18rem),
+      radial-gradient(ellipse at 92% 82%, rgba(255, 243, 226, 0.07), transparent 20rem),
+      linear-gradient(180deg, #16100c 0%, #201710 52%, #120d0a 100%);
+    box-shadow:
+      0 -18px 38px rgba(18, 13, 10, 0.22),
+      0 22px 48px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 243, 226, 0.08);
+  }
+
+  .sv-faq-section::after {
+    border-radius: inherit;
+    background:
+      linear-gradient(90deg, rgba(0, 0, 0, 0.2), transparent 24%, transparent 76%, rgba(0, 0, 0, 0.2)),
+      linear-gradient(180deg, rgba(255, 243, 226, 0.075), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.24));
+    opacity: 0.68;
+    mask-image: none;
   }
 
   .sv-faq-list {
@@ -1606,6 +1687,14 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
 
   .sv-faq-list details {
     border-radius: 20px;
+    border-color: rgba(255, 243, 226, 0.16);
+    background:
+      linear-gradient(120deg, rgba(255, 243, 226, 0.12), rgba(255, 243, 226, 0.045) 58%, rgba(255, 243, 226, 0.02)),
+      rgba(43, 33, 25, 0.76);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 4px 0 0 rgba(189, 155, 118, 0.28),
+      0 12px 24px rgba(0, 0, 0, 0.14);
   }
 
   .sv-faq-list details::before {
