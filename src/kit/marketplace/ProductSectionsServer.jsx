@@ -71,59 +71,40 @@ const ProductGridSectionServer = ({
   heading,
   items = [],
   badgeLabel,
-  sectionCode = '01',
-  sectionLabel = 'Selection',
-  ornamentTone = 'arrival',
   darkMode = false,
   hideWhenEmpty = false,
 } = {}) => {
   if (hideWhenEmpty && !items.length) return null;
 
   return (
-    <section id={id} className={`${className} gallery-product-section gallery-product-section--${ornamentTone}`}>
-      <div className="gallery-section-ornaments" aria-hidden="true">
-        <span className="gallery-section-ornaments__field gallery-section-ornaments__field--left" />
-        <span className="gallery-section-ornaments__field gallery-section-ornaments__field--right" />
-        <span className="gallery-section-ornaments__ring gallery-section-ornaments__ring--top" />
-        <span className="gallery-section-ornaments__ring gallery-section-ornaments__ring--bottom" />
-        <span className="gallery-section-ornaments__rail" />
+    <section id={id} className={className}>
+      <div className="mb-10 flex items-center justify-between">
+        {heading}
+        <a href="/galerie#gallery-pieces" className="hidden items-center gap-2 border-b border-transparent font-sans text-[10px] uppercase tracking-widest transition-colors hover:border-current md:flex">
+          Voir plus <ArrowRight size={12} />
+        </a>
       </div>
 
-      <div className="gallery-product-section__inner">
-        <div className="mb-10 flex items-center justify-between">
-          <div className="gallery-product-section__heading-wrap">
-            <span className="gallery-product-section__chapter" aria-hidden="true">
-              <span>{sectionCode}</span>
-              <span>{sectionLabel}</span>
-            </span>
-            {heading}
+      <div className="anim-grid grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-4 xl:grid-cols-5 xl:gap-6">
+        {items.map((item, index) => (
+          <div key={item.id || index} className="product-card-wrap relative">
+            {badgeLabel ? (
+              <div className="absolute left-2 top-2 z-10 rounded-sm bg-[#d4e1d9] px-2 py-1 text-[8px] font-bold uppercase tracking-widest text-[#2d4033] md:text-[9px]">
+                {badgeLabel}
+              </div>
+            ) : null}
+            <GalleryProductCardServer item={item} layoutMode="grid" compact priority={false} />
           </div>
-          <a href="/galerie#gallery-pieces" className="hidden items-center gap-2 border-b border-transparent font-sans text-[10px] uppercase tracking-widest transition-colors hover:border-current md:flex">
-            Voir plus <ArrowRight size={12} />
-          </a>
-        </div>
+        ))}
+      </div>
 
-        <div className="anim-grid grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-4 xl:grid-cols-5 xl:gap-6">
-          {items.map((item, index) => (
-            <div key={item.id || index} className="product-card-wrap relative">
-              {badgeLabel ? (
-                <div className="absolute left-2 top-2 z-10 rounded-sm bg-[#d4e1d9] px-2 py-1 text-[8px] font-bold uppercase tracking-widest text-[#2d4033] md:text-[9px]">
-                  {badgeLabel}
-                </div>
-              ) : null}
-              <GalleryProductCardServer item={item} layoutMode="grid" compact priority={false} />
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-10 flex justify-center md:hidden">
-          <a
-            href="/galerie#gallery-pieces"
-            className={`flex items-center gap-2 rounded-full px-8 py-3 font-sans text-[10px] font-bold uppercase tracking-widest transition-colors ${darkMode ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-stone-100 text-stone-800 hover:bg-stone-200'}`}
-          >
-            Voir plus <ArrowRight size={12} />
-          </a>
-        </div>
+      <div className="mt-10 flex justify-center md:hidden">
+        <a
+          href="/galerie#gallery-pieces"
+          className={`flex items-center gap-2 rounded-full px-8 py-3 font-sans text-[10px] font-bold uppercase tracking-widest transition-colors ${darkMode ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-stone-100 text-stone-800 hover:bg-stone-200'}`}
+        >
+          Voir plus <ArrowRight size={12} />
+        </a>
       </div>
     </section>
   );
@@ -159,9 +140,6 @@ export const ProductArrivalsSectionServer = ({ items, darkMode = false } = {}) =
     heading={<SectionHeading>Nouveautes</SectionHeading>}
     items={getNewestItems(items)}
     badgeLabel="Nouveau"
-    sectionCode="01"
-    sectionLabel="Dernieres pieces"
-    ornamentTone="arrival"
     darkMode={darkMode}
   />
 );
@@ -172,9 +150,6 @@ export const ProductSmallPricesSectionServer = ({ items, darkMode = false } = {}
     className="px-4 pb-[48px] pt-[60px] md:px-12 md:py-[60px] lg:px-16"
     heading={<SectionHeading tone="price">Petits Prix</SectionHeading>}
     items={getSmallPriceItems(items)}
-    sectionCode="02"
-    sectionLabel="Prix doux"
-    ornamentTone="price"
     darkMode={darkMode}
     hideWhenEmpty
   />
@@ -187,53 +162,31 @@ const reassuranceUnits = [
 ];
 
 export const ReassuranceSectionServer = ({ darkMode = false } = {}) => (
-  <>
-    <section className={`gallery-mobile-service-strip relative isolate overflow-hidden px-4 pb-4 pt-5 md:hidden ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9]'}`} aria-label="Services Seconde Vie">
-      <div className="gallery-mobile-service-strip__ornaments" aria-hidden="true" />
-      <div className="relative grid grid-cols-3 gap-2">
-        {reassuranceUnits.map(({ Icon, ...unit }) => (
-          <article key={unit.code} className={`gallery-mobile-service-card relative min-h-[112px] overflow-hidden rounded-[14px] p-[1px] ${darkMode ? 'bg-white/[0.08]' : 'bg-[#e5d8c8]'}`}>
-            <div className={`relative flex h-full flex-col justify-between rounded-[13px] px-2.5 py-3 ring-1 ${darkMode ? 'bg-[#1d1712] text-[#f6eee4] ring-white/8' : 'bg-[#fff9ef] text-[#1d1813] ring-white/70'}`}>
-              <span className={`absolute right-2 top-2 font-mono text-[8px] font-bold tracking-[0.12em] ${darkMode ? 'text-[#bca78c]/55' : 'text-[#9a7651]/62'}`}>{unit.code}</span>
-              <span className={`flex h-8 w-8 items-center justify-center rounded-full ring-1 ${darkMode ? 'bg-white/[0.055] text-[#d7bea0] ring-white/12' : 'bg-[#f3e7d9] text-[#8b5c42] ring-[#dfcbb5]'}`}>
-                <Icon size={15} strokeWidth={1.45} aria-hidden="true" />
-              </span>
-              <div>
-                <h4 className="max-w-[6.5rem] font-serif text-[12px] font-semibold leading-[1.02] tracking-normal">{unit.label}</h4>
-                <span className={`mt-2 block h-px w-8 ${darkMode ? 'bg-[#b9854f]/42' : 'bg-[#b9854f]/34'}`} aria-hidden="true" />
+  <section className={`post-hero-service-section relative mt-4 mb-8 hidden overflow-hidden md:block md:mt-[92px] lg:mt-[92px] ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9]'}`}>
+    <div className="relative mx-auto max-w-[1760px] px-4 py-6 md:px-7 lg:px-8 xl:px-10">
+      <div className="relative mx-auto max-w-[1380px]">
+        <span className={`pointer-events-none absolute left-1/2 top-0 h-px w-screen -translate-x-1/2 ${darkMode ? 'bg-white/10' : 'bg-stone-200'}`} aria-hidden="true" />
+        <span className={`pointer-events-none absolute bottom-0 left-1/2 h-px w-screen -translate-x-1/2 ${darkMode ? 'bg-white/10' : 'bg-stone-200'}`} aria-hidden="true" />
+        <div className="grid items-stretch md:grid-cols-3">
+          {reassuranceUnits.map(({ Icon, ...unit }) => (
+            <article key={unit.code} className={`post-hero-service-card group relative flex min-h-[172px] flex-col items-center justify-center px-5 py-8 text-center md:min-h-[188px] lg:min-h-[196px] xl:min-h-[206px] 2xl:min-h-[214px] ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}>
+              <div className={`flex h-[48px] w-[48px] items-center justify-center border transition-colors duration-300 ${darkMode ? 'border-white/16 bg-white/[0.03] group-hover:border-white/28' : 'border-stone-300 bg-[#faf9f7] group-hover:border-[#1A1A1A]'}`}>
+                <Icon size={22} strokeWidth={1.25} />
               </div>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
-
-    <section className={`post-hero-service-section relative mt-4 mb-8 hidden overflow-hidden md:block md:mt-[92px] lg:mt-[92px] ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9]'}`}>
-      <div className="relative mx-auto max-w-[1760px] px-4 py-6 md:px-7 lg:px-8 xl:px-10">
-        <div className="relative mx-auto max-w-[1380px]">
-          <span className={`pointer-events-none absolute left-1/2 top-0 h-px w-screen -translate-x-1/2 ${darkMode ? 'bg-white/10' : 'bg-stone-200'}`} aria-hidden="true" />
-          <span className={`pointer-events-none absolute bottom-0 left-1/2 h-px w-screen -translate-x-1/2 ${darkMode ? 'bg-white/10' : 'bg-stone-200'}`} aria-hidden="true" />
-          <div className="grid items-stretch md:grid-cols-3">
-            {reassuranceUnits.map(({ Icon, ...unit }) => (
-              <article key={unit.code} className={`post-hero-service-card group relative flex min-h-[172px] flex-col items-center justify-center px-5 py-8 text-center md:min-h-[188px] lg:min-h-[196px] xl:min-h-[206px] 2xl:min-h-[214px] ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}>
-                <div className={`flex h-[48px] w-[48px] items-center justify-center border transition-colors duration-300 ${darkMode ? 'border-white/16 bg-white/[0.03] group-hover:border-white/28' : 'border-stone-300 bg-[#faf9f7] group-hover:border-[#1A1A1A]'}`}>
-                  <Icon size={22} strokeWidth={1.25} />
-                </div>
-                <div className="mt-6">
-                  <h4 className="font-sans text-[11px] font-black uppercase leading-none tracking-[0.2em] xl:text-[12px]">{unit.label}</h4>
-                  <p className={`mx-auto mt-4 max-w-[18rem] font-sans text-[13px] leading-[1.55] ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>{unit.text}</p>
-                </div>
-                <div className={`mt-6 flex items-center gap-3 border-t pt-4 ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
-                  <span className="h-[5px] w-[5px] bg-[#c6a27e]" aria-hidden="true" />
-                  <samp className={`font-mono text-[8px] font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-white/38' : 'text-stone-400'}`}>{unit.meta}</samp>
-                </div>
-              </article>
-            ))}
-          </div>
+              <div className="mt-6">
+                <h4 className="font-sans text-[11px] font-black uppercase leading-none tracking-[0.2em] xl:text-[12px]">{unit.label}</h4>
+                <p className={`mx-auto mt-4 max-w-[18rem] font-sans text-[13px] leading-[1.55] ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>{unit.text}</p>
+              </div>
+              <div className={`mt-6 flex items-center gap-3 border-t pt-4 ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
+                <span className="h-[5px] w-[5px] bg-[#c6a27e]" aria-hidden="true" />
+                <samp className={`font-mono text-[8px] font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-white/38' : 'text-stone-400'}`}>{unit.meta}</samp>
+              </div>
+            </article>
+          ))}
         </div>
       </div>
-    </section>
-  </>
+    </div>
+  </section>
 );
 
 const restorationProjects = [
