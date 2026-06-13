@@ -127,6 +127,15 @@ export default function GalleryServerView({ items = [], darkMode = false } = {})
           className="marketplace-gallery-scroll"
           data-detail-open="false"
         >
+          <div className="gallery-mobile-depth-field" aria-hidden="true">
+            <span className="gallery-mobile-depth-field__dots gallery-mobile-depth-field__dots--left" />
+            <span className="gallery-mobile-depth-field__dots gallery-mobile-depth-field__dots--right" />
+            <span className="gallery-mobile-depth-field__orb gallery-mobile-depth-field__orb--top" />
+            <span className="gallery-mobile-depth-field__orb gallery-mobile-depth-field__orb--bottom" />
+            <span className="gallery-mobile-depth-field__rail gallery-mobile-depth-field__rail--left" />
+            <span className="gallery-mobile-depth-field__rail gallery-mobile-depth-field__rail--right" />
+          </div>
+
           <MarketplaceHeroServer
             darkMode={darkMode}
             heroImages={GALLERY_HERO_PRESETS}

@@ -75,13 +75,6 @@ const homeExcludedProductIds = new Set([
   'bU407t3vFKcMq2UJ1wQL',
 ]);
 
-const routeSteps = [
-  ['01', 'Mesurer', 'Largeur, hauteur, profondeur et contraintes du meuble sont vérifiées avant de promettre un départ.'],
-  ['02', 'Protéger', 'Angles, portes, miroirs, plateaux et patines sont préparés selon la fragilité de chaque pièce.'],
-  ['03', 'Transporter', 'Retrait atelier, Marseille proche ou transport dédié: la solution reste ajustée au meuble.'],
-  ['04', 'Installer', 'La pièce est déposée à sa place avec les dernières précautions utiles.'],
-];
-
 const faqItems = [
   {
     question: 'La livraison est-elle possible hors Marseille ?',
@@ -604,28 +597,18 @@ export default async function Page() {
         <section className="sv-home-section sv-location-section sv-home-animate">
           <div className="sv-location-copy">
             <p className="sv-home-kicker">Marseille et livraison</p>
-            <h2>Du meuble choisi à sa place chez vous.</h2>
+            <h2>Livraison à 20 km autour de Marseille.</h2>
             <p className="sv-location-intro">
-              L'achat ne s'arrête pas à la photo: on regarde le volume, les accès, la fragilité
-              et la bonne manière de faire arriver la pièce sans improvisation.
+              On organise simplement le retrait ou la livraison proche, selon le meuble et les accès.
             </p>
           </div>
           <div className="sv-route-board">
             <figure className="sv-route-visual">
               <img src="/images/menu-delivery-marseille-wide.jpg" alt="Livraison de mobilier ancien à Marseille" width="900" height="480" loading="lazy" />
             </figure>
-            <div className="sv-location-card-grid">
-              {routeSteps.map(([number, title, text]) => (
-                <article key={title} className={`sv-location-card sv-location-card--${number}`}>
-                  <span>{number}</span>
-                  <h3>{title}</h3>
-                  <p>{text}</p>
-                </article>
-              ))}
-            </div>
             <aside className="sv-route-note">
-              <strong>Marseille et alentours</strong>
-              <p>Les projets proches restent simples; les trajets plus longs sont validés meuble par meuble.</p>
+              <strong>Livraison locale</strong>
+              <p>Disponible autour de Marseille, dans un rayon d'environ 20 km.</p>
             </aside>
           </div>
         </section>

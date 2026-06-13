@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/with-env.mjs .env.sandbox next dev",
+    "dev:host": "node scripts/with-env.mjs .env.sandbox next dev -H 0.0.0.0",
     "dev:prod": "node scripts/with-env.mjs .env.production next dev",
     "build": "node scripts/with-env.mjs .env.sandbox next build",
     "build:prod": "node scripts/with-env.mjs .env.production next build",
