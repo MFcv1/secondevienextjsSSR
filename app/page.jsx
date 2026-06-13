@@ -178,12 +178,6 @@ const formatPrice = (product) => {
   return `${Number(price).toLocaleString('fr-FR')} €`;
 };
 
-const getProductCategoryLabel = (product) => {
-  const category = [...(KIT_CONFIG.categoryGroups || []), ...(KIT_CONFIG.productCategories || [])]
-    .find((entry) => entry.id === product?.category);
-  return category?.label?.replace(/^LES\s+/i, '') || product?.material || 'Pièce restaurée';
-};
-
 const getProductTitle = (product, index) => {
   const rawTitle = (product?.name || product?.title || '').trim().replace(/\s+/g, ' ');
   if (rawTitle.length >= 3) return rawTitle.charAt(0).toUpperCase() + rawTitle.slice(1);
@@ -549,10 +543,6 @@ export default async function Page() {
                           )}
                         </div>
                         <div className="sv-product-card__body">
-                          <p>
-                            <span>{String(index + 1).padStart(2, '0')}</span>
-                            {getProductCategoryLabel(product)}
-                          </p>
                           <h3>{title}</h3>
                           <span>{getProductDescription(product)}</span>
                           <strong>{formatPrice(product)}</strong>
@@ -629,14 +619,26 @@ export default async function Page() {
         </section>
 
         <section className="sv-home-section sv-final-cta">
-          <div>
-            <p className="sv-home-kicker">Entrée galerie</p>
-            <h2>Voir les pièces disponibles maintenant.</h2>
+          <div className="sv-final-cta__inner">
+            <div className="sv-final-cta__copy">
+              <p className="sv-home-kicker">Entrée galerie</p>
+              <h2>Voir les pièces disponibles maintenant.</h2>
+            </div>
+            <img
+              src="/images/logoanais-320.webp"
+              alt=""
+              width="96"
+              height="72"
+              loading="lazy"
+              decoding="async"
+              className="sv-final-cta__logo"
+              aria-hidden="true"
+            />
+            <Link href="/galerie" prefetch={false} className="sv-home-button sv-home-button--cream">
+              Entrer dans la galerie
+              <span aria-hidden="true">→</span>
+            </Link>
           </div>
-          <Link href="/galerie" prefetch={false} className="sv-home-button sv-home-button--cream">
-            Entrer dans la galerie
-            <span aria-hidden="true">→</span>
-          </Link>
         </section>
 
         <footer className="sv-home-footer">
