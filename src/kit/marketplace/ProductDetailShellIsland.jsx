@@ -565,8 +565,9 @@ export default function ProductDetailShellIsland({
       if (!raw) return '';
       const saved = JSON.parse(raw);
       if (!saved?.href || Date.now() - Number(saved.savedAt || 0) > 30 * 60 * 1000) return '';
-      if (!saved.href.startsWith('/') || saved.href.startsWith('/produit/')) return '';
-      return saved.href;
+      const target = new URL(saved.href, window.location.origin);
+      if (target.origin !== window.location.origin || target.pathname !== '/galerie') return '';
+      return `${target.pathname}${target.search}${target.hash}`;
     } catch {
       return '';
     }
@@ -584,14 +585,10 @@ export default function ProductDetailShellIsland({
     window.location.replace(targetHref);
   }, [restoreUrlFromSession]);
 
-  const handleBack = useCallback(() => {
-    navigateToGalleryTarget();
-  }, [navigateToGalleryTarget]);
-
   const applyLayeredGalleryExit = useCallback((progress) => {
     const p = Math.max(0, Math.min(1, progress));
     const viewportHeight = window.visualViewport?.height || window.innerHeight || 800;
-    const background = `rgba(232, 217, 198, ${1 - Math.min(1, p * 1.05)})`;
+    const background = '#FAFAF9';
 
     [containerRef.current, mobileShellRef.current].forEach((node) => {
       if (!node) return;
@@ -633,27 +630,27 @@ export default function ProductDetailShellIsland({
     if (galleryExitFallbackTimerRef.current) window.clearTimeout(galleryExitFallbackTimerRef.current);
 
     [containerRef.current, mobileShellRef.current].forEach((node) => {
-      if (node) node.style.transition = 'background-color 0.24s ease-out';
+      if (node) node.style.transition = 'background-color 0.16s ease-out';
     });
     if (mobileImageStageRef.current) {
-      mobileImageStageRef.current.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.16s ease-out';
+      mobileImageStageRef.current.style.transition = 'transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.12s ease-out';
     }
     if (mobileSummaryLayerRef.current) {
-      mobileSummaryLayerRef.current.style.transition = 'transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease-out';
+      mobileSummaryLayerRef.current.style.transition = 'transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.14s ease-out';
     }
     if (mobileOriginBadgeRef.current) {
-      mobileOriginBadgeRef.current.style.transition = 'transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.18s ease-out';
+      mobileOriginBadgeRef.current.style.transition = 'transform 0.16s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.12s ease-out';
     }
     if (mobileThumbLayerRef.current) {
-      mobileThumbLayerRef.current.style.transition = 'transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.24s ease-out';
+      mobileThumbLayerRef.current.style.transition = 'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.16s ease-out';
     }
 
     mobileImageStageRef.current?.getBoundingClientRect();
     applyLayeredGalleryExit(1);
     if (containerRef.current) containerRef.current.style.pointerEvents = 'none';
 
-    galleryExitTimerRef.current = window.setTimeout(navigateToGalleryTarget, 260);
-    galleryExitFallbackTimerRef.current = window.setTimeout(navigateToGalleryTarget, 620);
+    galleryExitTimerRef.current = window.setTimeout(navigateToGalleryTarget, 150);
+    galleryExitFallbackTimerRef.current = window.setTimeout(navigateToGalleryTarget, 380);
   }, [applyLayeredGalleryExit, navigateToGalleryTarget]);
 
   const openProductLightbox = useCallback(() => {
@@ -1086,7 +1083,7 @@ export default function ProductDetailShellIsland({
           <div className="w-full h-full flex flex-col items-center justify-center relative row-span-1">
             <button
               type="button"
-              onClick={handleBack}
+              onClick={closeToGallery}
               aria-label="Fermer la fiche produit"
               className="group fixed z-[130] flex items-center justify-center rounded-full text-stone-950 outline-none transition-all duration-300 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/40"
               style={{

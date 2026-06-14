@@ -8,6 +8,11 @@ import { getProductCardImage, getProductImageItems } from '../src/utils/imageUti
 
 export const revalidate = 300;
 
+export const viewport = {
+  themeColor: '#18100c',
+  colorScheme: 'dark',
+};
+
 const heroImages = [
   '/images/imagehero/1.webp',
   '/images/imagehero/2.webp',

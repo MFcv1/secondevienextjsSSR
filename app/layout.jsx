@@ -80,8 +80,8 @@ export const viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#18100c',
-  colorScheme: 'dark',
+  themeColor: '#FAFAF9',
+  colorScheme: 'light',
 };
 
 export default function RootLayout({ children }) {
