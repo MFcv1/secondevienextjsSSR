@@ -1,6 +1,6 @@
 # mapV2 - Cartographie Next SSR/SSG/ISR, infra prod et nettoyage
 
-Derniere mise a jour: 2026-06-13
+Derniere mise a jour: 2026-06-14
 
 ## Objectif
 
@@ -76,7 +76,7 @@ Conclusion:
 |-- functions-public : codebase Functions public pour publicCatalog
 |-- functions : codebase Functions principal, commerce, admin, analytics, maintenance, SEO legacy, triggers
 |-- deploy : dashboard sandbox-only
-|-- scripts : gates SSR/perf/mobile/images et outils data
+|-- scripts : gates SSR/perf/mobile/images, audit infra env/secrets et outils data
 |-- public : assets publics servis par Next/App Hosting
 ```
 
@@ -240,6 +240,7 @@ SecondeVieNextjsSSR
 |-- scripts/                                         [Gates + data tooling]
 |   |-- check-next-route-classification.cjs           [gate next:routes]
 |   |-- audit-*-direct.mjs                            [gates refresh direct]
+|   |-- audit-infra-env.cjs                           [gate infra env/secrets Phase 2]
 |   |-- check-mobile-marketplace-contract.cjs         [gate mobile]
 |   |-- check-performance-budget.cjs                  [gate budget]
 |   `-- data/storage scripts                          [RISK pas nettoyage aveugle]

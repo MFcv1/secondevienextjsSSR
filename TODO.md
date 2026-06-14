@@ -19,20 +19,20 @@ Objectif demain: commencer par assainir l'infra prod avant de reprendre SEO/perf
 - [ ] Verifier la configuration App Check Firebase cote sandbox/prod.
 - [ ] Reevaluer `NEXT_PUBLIC_SUPER_ADMIN_EMAIL`:
   - [ ] confirmer si c'est uniquement une info publique;
-  - [ ] si c'est une logique d'autorisation, deplacer vers claims/serveur.
-- [ ] Cartographier les variables:
-  - [ ] publiques Next `NEXT_PUBLIC_*`;
-  - [ ] serveur App Hosting;
-  - [ ] Functions main;
-  - [ ] Functions public;
-  - [ ] Stripe;
-  - [ ] Gmail/email;
-  - [ ] revalidation interne;
-  - [ ] admin/security.
+  - [x] si c'est une logique d'autorisation, deplacer vers claims/serveur.
+- [x] Cartographier les variables:
+  - [x] publiques Next `NEXT_PUBLIC_*`;
+  - [x] serveur App Hosting;
+  - [x] Functions main;
+  - [x] Functions public;
+  - [x] Stripe;
+  - [x] Gmail/email;
+  - [x] revalidation interne;
+  - [x] admin/security.
 
 ### P0 - Hygiene deploy
 
-- [ ] Durcir `.firebaseignore` avec exclusions explicites:
+- [x] Durcir `.firebaseignore` avec exclusions explicites:
 
 ```text
 .env*
@@ -64,8 +64,8 @@ mutation admin -> publicCatalogVersion/cache bump -> /api/revalidate-catalog -> 
   - [ ] `/categorie/[categoryId]`;
   - [ ] `/produit/[slugOrId]`;
   - [ ] `/sitemap.xml`.
-- [ ] Confirmer que la revalidation ne depend pas d'un secret expose en `NEXT_PUBLIC_*`.
-- [ ] Documenter les gates ou commandes exactes dans le rapport infra.
+- [x] Confirmer que la revalidation ne depend pas d'un secret expose en `NEXT_PUBLIC_*`.
+- [x] Documenter les gates ou commandes exactes dans le rapport infra.
 
 ### P0 - Stripe sandbox complet
 
@@ -82,12 +82,12 @@ mutation admin -> publicCatalogVersion/cache bump -> /api/revalidate-catalog -> 
   - [ ] restauration stock;
   - [ ] coherence espace client;
   - [ ] coherence admin commandes.
-- [ ] Reevaluer `return_url` Stripe actuellement compatible legacy `/?order_success=true`.
+- [x] Reevaluer `return_url` Stripe actuellement compatible legacy `/?order_success=true`.
 - [ ] Verifier que les webhooks utilisent bien les secrets sandbox/prod separes.
 
 ### P1 - Risques infra deja identifies
 
-- [ ] `sendTestEmail`: appel admin trouve sans Function exportee; corriger ou retirer le bouton diagnostic.
+- [x] `sendTestEmail`: appel admin trouve sans Function exportee; corriger ou retirer le bouton diagnostic.
 - [ ] `public/og-image.jpg`: absent alors que reference par metadata; a traiter en phase SEO, mais noter l'impact prod.
 - [ ] `functions/src/seo/seoTools.js` + rewrites Firebase Hosting: clarifier legacy encore utile ou a retirer plus tard.
 - [ ] Verifier que `functions-public/src/public/catalog.js` reste le seul endpoint catalogue public actif.
@@ -132,11 +132,11 @@ Ne commencer cette phase qu'apres les P0 infra.
 
 ## Rapports attendus
 
-- [ ] Creer ou mettre a jour un rapport infra prod precis apres la Phase 2.
-- [ ] Reporter:
-  - [ ] fichiers touches;
-  - [ ] variables validees;
-  - [ ] risques restants;
-  - [ ] commandes/gates lancees;
-  - [ ] decisions sandbox/prod.
+- [x] Creer ou mettre a jour un rapport infra prod precis apres la Phase 2.
+- [x] Reporter:
+  - [x] fichiers touches;
+  - [x] variables validees;
+  - [x] risques restants;
+  - [x] commandes/gates lancees;
+  - [x] decisions sandbox/prod.
 - [ ] Ne passer a la Phase 3 que quand les P0 infra sont traites ou explicitement reportes.

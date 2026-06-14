@@ -17,6 +17,10 @@ const db = admin.firestore();
 const Stripe = require('stripe');
 
 exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_WH_SECRET] }).https.onRequest(async (req, res) => {
+    if (req.method !== 'POST') {
+        return res.status(405).send('Method Not Allowed');
+    }
+
     const stripe = Stripe(STRIPE_SECRET_KEY.value());
     const sig = req.headers['stripe-signature'];
     const endpointSecret = STRIPE_WH_SECRET.value();
@@ -28,7 +32,11 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
 
     let event;
     try {
-        const rawBody = req.rawBody || req.body;
+        const rawBody = req.rawBody;
+        if (!rawBody) {
+            console.error("Missing raw request body. Blocking webhook signature verification.");
+            return res.status(400).send('Missing raw body');
+        }
         if (endpointSecret && sig) {
             event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
         } else {
@@ -43,24 +51,47 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
     // ============================================================
     // IDEMPOTENCE: dedup par event.id (Stripe peut retry le même event)
     // ============================================================
+    const idempRef = db.doc(`sys_idempotency/stripe_${event.id}`);
+    const markWebhookFailed = async (reason) => {
+        try {
+            await idempRef.set({
+                status: 'failed',
+                failedAt: admin.firestore.FieldValue.serverTimestamp(),
+                failureReason: String(reason?.message || reason || 'unknown').slice(0, 500)
+            }, { merge: true });
+        } catch (error) {
+            console.error("Idempotence failure marker error:", error);
+        }
+    };
     try {
-        const idempRef = db.doc(`sys_idempotency/stripe_${event.id}`);
-        const created = await db.runTransaction(async (tx) => {
+        const shouldProcess = await db.runTransaction(async (tx) => {
             const snap = await tx.get(idempRef);
-            if (snap.exists) return false;
-            tx.set(idempRef, {
+            if (snap.exists) {
+                const status = snap.data()?.status;
+                if (status === 'failed') {
+                    tx.update(idempRef, {
+                        status: 'processing',
+                        retryAt: admin.firestore.FieldValue.serverTimestamp()
+                    });
+                    return true;
+                }
+                return false;
+            }
+            tx.create(idempRef, {
                 type: event.type,
+                status: 'processing',
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
             });
             return true;
         });
-        if (!created) {
+        if (!shouldProcess) {
             console.log(`⏭️ Webhook déjà traité (dedup): ${event.id}`);
             return res.json({ received: true, deduped: true });
         }
     } catch (e) {
-        console.error("Idempotence check error (continuing):", e);
+        console.error("Idempotence check error:", e);
+        return res.status(500).send('Webhook idempotence check error');
     }
 
     // ============================================================
@@ -112,6 +143,8 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
             console.log("✅ Commande confirmée (paid):", orderId);
         } catch (error) {
             console.error("❌ CRITICAL Webhook Error (payment_intent.succeeded):", error);
+            await markWebhookFailed(error);
+            return res.status(500).send('Webhook handler error');
         }
     }
 
@@ -200,6 +233,8 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
             console.log("✅ Commande Stripe créée avec succès:", orderRef.id);
         } catch (error) {
             console.error("❌ Erreur CRITIQUE Webhook:", error);
+            await markWebhookFailed(error);
+            return res.status(500).send('Webhook handler error');
         }
     }
 
@@ -253,6 +288,8 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
                 }
             } catch (e) {
                 console.error("Error handling payment_failed:", e);
+                await markWebhookFailed(e);
+                return res.status(500).send('Webhook handler error');
             }
         }
     }
@@ -305,8 +342,20 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
                 }
             } catch (e) {
                 console.error("Error handling payment_intent.canceled:", e);
+                await markWebhookFailed(e);
+                return res.status(500).send('Webhook handler error');
             }
         }
+    }
+
+    try {
+        await idempRef.set({
+            status: 'processed',
+            processedAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+    } catch (e) {
+        console.error("Idempotence write error:", e);
+        return res.status(500).send('Webhook idempotence error');
     }
 
     res.json({ received: true });

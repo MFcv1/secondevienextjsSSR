@@ -11,8 +11,6 @@ const GlobalMenu = dynamic(() => import('../layout/GlobalMenu'), {
   loading: () => null,
 });
 
-const SUPER_ADMIN_EMAIL = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
-
 export function preloadGlobalMenu() {
   return GlobalMenu.preload?.();
 }
@@ -61,10 +59,7 @@ function GlobalMenuPanelAuthContent({
   };
 
   const effectiveUser = user || authUser;
-  const effectiveIsAdmin = isAdmin || (
-    Boolean(SUPER_ADMIN_EMAIL) &&
-    effectiveUser?.email?.toLowerCase() === SUPER_ADMIN_EMAIL
-  );
+  const effectiveIsAdmin = isAdmin;
 
   return (
     <>

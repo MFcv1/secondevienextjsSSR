@@ -12,6 +12,7 @@
     "start": "node scripts/with-env.mjs .env.sandbox next start",
     "start:prod": "node scripts/with-env.mjs .env.production next start",
     "dashboard": "node deploy/dashboard.mjs",
+    "infra:env": "node scripts/audit-infra-env.cjs",
     "maintenance:audit": "node scripts/maintenance-audit.mjs",
     "lint": "eslint .",
     "test:e2e": "playwright test",

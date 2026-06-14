@@ -9,12 +9,6 @@ const LegacyLoginModalIsland = dynamic(() => import('./LegacyLoginModalFullIslan
   loading: () => null,
 });
 
-const SUPER_ADMIN_EMAIL = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
-
-const isSuperAdminEmail = (email) => (
-  Boolean(SUPER_ADMIN_EMAIL) && email?.toLowerCase() === SUPER_ADMIN_EMAIL
-);
-
 export default function HeaderAccountIsland({ darkMode = false } = {}) {
   const [loginOpen, setLoginOpen] = useState(false);
   const [user, setUser] = useState(null);
@@ -27,10 +21,6 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
     const syncAdminClaim = async (nextUser) => {
       if (!nextUser || nextUser.isAnonymous) {
         setIsAdmin(false);
-        return;
-      }
-      if (isSuperAdminEmail(nextUser.email)) {
-        setIsAdmin(true);
         return;
       }
       try {

@@ -18,6 +18,14 @@ const normalizePath = (path) => {
   return path;
 };
 
+const pathKey = ({ path, type }) => `${path}:${type || ''}`;
+
+const addRevalidationPath = (pathEntries, path, type) => {
+  const normalizedPath = normalizePath(path);
+  if (!normalizedPath) return;
+  pathEntries.set(pathKey({ path: normalizedPath, type }), { path: normalizedPath, type });
+};
+
 const assertAdmin = async (request) => {
   const token = getBearerToken(request);
   if (!token) {
@@ -60,19 +68,27 @@ export async function POST(request) {
 
   tags.forEach((tag) => revalidateTag(tag));
 
-  const defaultPaths = ['/', '/sitemap.xml'];
-  categoryIds.forEach((categoryId) => defaultPaths.push(`/categorie/${encodeURIComponent(categoryId)}`));
-  if (productId) defaultPaths.push(`/produit/${encodeURIComponent(productId)}`);
+  const pathEntries = new Map();
+  addRevalidationPath(pathEntries, '/');
+  addRevalidationPath(pathEntries, '/galerie');
+  addRevalidationPath(pathEntries, '/sitemap.xml');
+  addRevalidationPath(pathEntries, '/categorie/[categoryId]', 'page');
+  addRevalidationPath(pathEntries, '/produit/[slugOrId]', 'page');
+  categoryIds.forEach((categoryId) => addRevalidationPath(pathEntries, `/categorie/${encodeURIComponent(categoryId)}`));
+  if (productId) addRevalidationPath(pathEntries, `/produit/${encodeURIComponent(productId)}`);
+  paths.forEach((path) => addRevalidationPath(pathEntries, path));
 
-  Array.from(new Set([...defaultPaths, ...paths])).forEach((path) => {
-    revalidatePath(path);
+  Array.from(pathEntries.values()).forEach(({ path, type }) => {
+    if (type) revalidatePath(path, type);
+    else revalidatePath(path);
   });
 
   return NextResponse.json({
     ok: true,
     projectId: publicEnv.projectId,
     tags: Array.from(tags),
-    paths: Array.from(new Set([...defaultPaths, ...paths])),
+    paths: Array.from(pathEntries.values()).map(({ path }) => path),
+    pathEntries: Array.from(pathEntries.values()),
     reason: body.reason || 'admin_update'
   });
 }

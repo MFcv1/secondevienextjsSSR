@@ -8,5 +8,9 @@ test-results/
 logs/
 *.log
 *.pid
+.env*
+service-account.json
+*.pem
+*.key
 .firebase/
 public/images/categories/source-config/

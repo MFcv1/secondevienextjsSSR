@@ -5,10 +5,12 @@
  * - onOrderUpdated: Email client pour expédition et livraison
  */
 const admin = require('firebase-admin');
+const functions = require('firebase-functions/v1');
 const nodemailer = require('nodemailer');
 const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { GMAIL_EMAIL, GMAIL_PASSWORD } = require('../../helpers/secrets');
 const { getSiteUrl } = require('../../helpers/config');
+const { checkIsAdmin } = require('../../helpers/security');
 
 const db = admin.firestore();
 
@@ -124,6 +126,36 @@ async function sendNewOrderEmails(orderId, order) {
         console.error("❌ Erreur Envoi Email:", e);
     }
 }
+
+exports.sendTestEmail = functions.runWith({ secrets: [GMAIL_EMAIL, GMAIL_PASSWORD] }).https.onCall(async (data, context) => {
+    checkIsAdmin(context);
+
+    const adminEmail = GMAIL_EMAIL.value();
+    const gmailPassword = GMAIL_PASSWORD.value();
+    if (!adminEmail || !gmailPassword) {
+        throw new functions.https.HttpsError('failed-precondition', 'Configuration email incomplète.');
+    }
+
+    const recipient = context.auth?.token?.email || adminEmail;
+    const SITE_URL = getSiteUrl();
+    const transporter = createTransporter();
+
+    await transporter.sendMail({
+        from: `Diagnostic Seconde Vie <${adminEmail}>`,
+        to: recipient,
+        subject: 'Diagnostic email Seconde Vie',
+        html: `
+            <div style="font-family: sans-serif; color: #1c1917; max-width: 600px;">
+                <h1>Diagnostic email OK</h1>
+                <p>Le transport Gmail des Cloud Functions est opérationnel.</p>
+                <p>Projet : <a href="${SITE_URL}">${SITE_URL}</a></p>
+                <p style="color:#78716c;font-size:12px;">Message généré par sendTestEmail.</p>
+            </div>
+        `
+    });
+
+    return { success: true, to: recipient };
+});
 
 // --- TRIGGER: Nouvelle Commande ---
 exports.onOrderCreated = onDocumentCreated(

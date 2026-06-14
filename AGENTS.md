@@ -27,6 +27,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- mapV2.md : cartographie routes Next SSR/SSG/ISR, infra prod, risques backoffice et nettoyage code mort
 |-- DEAD_CODE_AUDIT.md : audit multi-agent code vivant/mort, candidats suppression et assets a archiver
 |-- TODO.md : checklist Phase 2 infra prod puis Phase 3 hydratation/perf
+|-- INFRA_PROD_PHASE2_REPORT_2026-06-14.md : rapport infra prod Phase 2, decisions env/secrets/revalidation/Stripe et risques restants
 |-- .agents/skills/nextjsssr : skill Codex local pour appliquer nextjsssr.md
 |-- package*.json, next.config.mjs, eslint.config.mjs, jsconfig.json, tailwind.config.js, postcss.config.js
 |-- middleware.js : redirections Next ciblees, dont compatibilite `/?page=gallery` vers `/galerie`
@@ -51,7 +52,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |   |-- index.js, helpers : Firebase Functions entrypoint/config/security
 |   `-- src : analytics, auth, commerce, email, maintenance, public, seo, triggers
 |-- public : favicons, manifest, images, video, rapport maintenance statique
-|-- scripts : env bridge, SSR/mobile checks, maintenance audit, budget perf Next, gate classification routes Next, perf/architecture compare, audit scroll galerie, backfills/audits Storage/images et tooling safe
+|-- scripts : env bridge, audit infra env/secrets, SSR/mobile checks, maintenance audit, budget perf Next, gate classification routes Next, perf/architecture compare, audit scroll galerie, backfills/audits Storage/images et tooling safe
 |-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_FULL_NATIVE_CLEANUP_ROADMAP_2026-06-10.md, NEXTJS_FULL_NATIVE_AUDIT_ROADMAP_2026-06-10.md, NEXTJSSSR_FULL_NEXT_FINAL_PROMPT_2026-06-09.md et autres rapports/roadmaps Next SSR, SEO, images, galerie et produit
 |-- imagehero, pageUI : references visuelles et notes UI
 `-- .next, dist, node_modules, logs, .firebase : generes, hors carte

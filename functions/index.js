@@ -26,10 +26,11 @@ exports.logUserConnection = logUserConnection;
 exports.getUserStats = getUserStats;
 
 // ── EMAIL (Triggers) ─────────────────────────────────────
-const { onOrderCreated, onOrderUpdated } = require('./src/email/orderEmails');
+const { onOrderCreated, onOrderUpdated, sendTestEmail } = require('./src/email/orderEmails');
 
 exports.onOrderCreated = onOrderCreated;
 exports.onOrderUpdated = onOrderUpdated;
+exports.sendTestEmail = sendTestEmail;
 
 // ── ANALYTICS ────────────────────────────────────────────
 const { initLiveSession, syncSession, syncSessionBeacon, deleteSession, clearAllSessions, clearAllAnalytics, cleanupExpiredAnalytics } = require('./src/analytics/sessions');
