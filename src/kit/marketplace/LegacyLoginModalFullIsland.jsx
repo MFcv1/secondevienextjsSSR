@@ -10,6 +10,7 @@ import { ToastProvider, useToast } from '../ui/Toast';
 
 const PASSKEY_ENABLED_KEY = 'secondevie:passkey-enabled';
 const PASSKEY_EMAIL_KEY = 'secondevie:passkey-email';
+const PASSKEY_EMAILS_KEY = 'secondevie:passkey-emails';
 
 const getAuthErrorMessage = (error) => {
   if (error?.code === 'auth/email-already-in-use') return 'Cet email est deja associe a un compte. Connectez-vous.';
@@ -29,32 +30,72 @@ const getAuthErrorMessage = (error) => {
 const normalizeEmailValue = (email) => String(email || '').trim().toLowerCase();
 
 const readLocalPasskeyState = () => {
-  if (typeof window === 'undefined') return { enabled: false, email: '' };
+  if (typeof window === 'undefined') return { enabled: false, email: '', emails: [] };
   try {
+    const legacyEmail = normalizeEmailValue(window.localStorage.getItem(PASSKEY_EMAIL_KEY) || '');
+    const parsedEmails = JSON.parse(window.localStorage.getItem(PASSKEY_EMAILS_KEY) || '[]');
+    const emails = Array.from(new Set([
+      ...(Array.isArray(parsedEmails) ? parsedEmails.map(normalizeEmailValue) : []),
+      legacyEmail,
+    ].filter(Boolean)));
+
     return {
       enabled: window.localStorage.getItem(PASSKEY_ENABLED_KEY) === 'true',
-      email: normalizeEmailValue(window.localStorage.getItem(PASSKEY_EMAIL_KEY) || ''),
+      email: emails[0] || '',
+      emails,
     };
   } catch {
-    return { enabled: false, email: '' };
+    return { enabled: false, email: '', emails: [] };
   }
 };
 
 const saveLocalPasskeyState = (email) => {
   if (typeof window === 'undefined') return;
+  const normalizedEmail = normalizeEmailValue(email);
+  if (!normalizedEmail) return;
   try {
+    const currentState = readLocalPasskeyState();
+    const emails = [
+      normalizedEmail,
+      ...currentState.emails.filter((storedEmail) => storedEmail !== normalizedEmail),
+    ].slice(0, 5);
+
     window.localStorage.setItem(PASSKEY_ENABLED_KEY, 'true');
-    window.localStorage.setItem(PASSKEY_EMAIL_KEY, normalizeEmailValue(email));
+    window.localStorage.setItem(PASSKEY_EMAIL_KEY, normalizedEmail);
+    window.localStorage.setItem(PASSKEY_EMAILS_KEY, JSON.stringify(emails));
   } catch {
     // Local storage is only a display hint; passkey security stays server-side.
   }
 };
 
-const clearLocalPasskeyState = () => {
+const hasLocalPasskeyForEmail = (email) => {
+  const normalizedEmail = normalizeEmailValue(email);
+  if (!normalizedEmail) return false;
+  return readLocalPasskeyState().emails.includes(normalizedEmail);
+};
+
+const clearLocalPasskeyState = (email = '') => {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.removeItem(PASSKEY_ENABLED_KEY);
-    window.localStorage.removeItem(PASSKEY_EMAIL_KEY);
+    const normalizedEmail = normalizeEmailValue(email);
+    if (!normalizedEmail) {
+      window.localStorage.removeItem(PASSKEY_ENABLED_KEY);
+      window.localStorage.removeItem(PASSKEY_EMAIL_KEY);
+      window.localStorage.removeItem(PASSKEY_EMAILS_KEY);
+      return;
+    }
+
+    const emails = readLocalPasskeyState().emails.filter((storedEmail) => storedEmail !== normalizedEmail);
+    if (emails.length === 0) {
+      window.localStorage.removeItem(PASSKEY_ENABLED_KEY);
+      window.localStorage.removeItem(PASSKEY_EMAIL_KEY);
+      window.localStorage.removeItem(PASSKEY_EMAILS_KEY);
+      return;
+    }
+
+    window.localStorage.setItem(PASSKEY_ENABLED_KEY, 'true');
+    window.localStorage.setItem(PASSKEY_EMAIL_KEY, emails[0]);
+    window.localStorage.setItem(PASSKEY_EMAILS_KEY, JSON.stringify(emails));
   } catch {
     // Ignore private browsing/localStorage failures.
   }
@@ -116,14 +157,16 @@ const preparePasskeyAuthentication = async (email) => {
   };
 };
 
-const loginWithPasskey = async (email, preparedAuthentication = null) => {
+const loginWithPasskey = async (email, preparedAuthentication = null, onStepChange = null) => {
   const normalizedEmail = normalizeEmailValue(email);
   const prepared = preparedAuthentication?.email === normalizedEmail
     ? preparedAuthentication
     : await preparePasskeyAuthentication(normalizedEmail);
 
   const verifyAuthentication = httpsCallable(functions, 'verifyPasskeyAuthentication');
+  onStepChange?.('biometric');
   const response = await prepared.startAuthentication({ optionsJSON: prepared.options });
+  onStepChange?.('verifying');
   const result = await verifyAuthentication({
     challenge: prepared.options.challenge,
     response,
@@ -150,15 +193,22 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
   const [emailVerificationMessage, setEmailVerificationMessage] = useState('');
   const [emailValue, setEmailValue] = useState('');
   const [hasLocalPasskey, setHasLocalPasskey] = useState(false);
+  const [localPasskeyEmails, setLocalPasskeyEmails] = useState([]);
   const [usePasswordFallback, setUsePasswordFallback] = useState(false);
+  const [showPasskeyAccountChoices, setShowPasskeyAccountChoices] = useState(false);
   const [preparedPasskeyAuth, setPreparedPasskeyAuth] = useState(null);
+  const [passkeyLoginStep, setPasskeyLoginStep] = useState('idle');
   const showPasskeyFirst = hasLocalPasskey && !isSignUp && !usePasswordFallback;
+  const passkeyLoginLabel = passkeyStatus === 'pending'
+    ? (passkeyLoginStep === 'verifying' ? 'Verification...' : 'Empreinte...')
+    : 'Connexion rapide sur cet appareil';
 
   useEffect(() => {
     if (!open) return undefined;
 
     const localPasskey = readLocalPasskeyState();
     setHasLocalPasskey(localPasskey.enabled);
+    setLocalPasskeyEmails(localPasskey.emails);
     if (localPasskey.enabled && localPasskey.email) {
       setEmailValue((current) => current || localPasskey.email);
     }
@@ -197,9 +247,12 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
         if (cancelled) return;
         setPreparedPasskeyAuth(null);
         if (error?.code === 'functions/not-found') {
-          clearLocalPasskeyState();
-          setHasLocalPasskey(false);
-          setUsePasswordFallback(true);
+          clearLocalPasskeyState(normalizedEmail);
+          const localPasskey = readLocalPasskeyState();
+          setEmailValue(localPasskey.email);
+          setHasLocalPasskey(localPasskey.enabled);
+          setLocalPasskeyEmails(localPasskey.emails);
+          setUsePasswordFallback(!localPasskey.enabled);
         }
       });
 
@@ -217,12 +270,19 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     setPasskeyMessage('');
     setEmailVerificationMessage('');
     setUsePasswordFallback(false);
+    setShowPasskeyAccountChoices(false);
     setPreparedPasskeyAuth(null);
+    setPasskeyLoginStep('idle');
     onOpenChange(false);
   };
 
   const offerPasskeyOrClose = (user) => {
     if (!user || user.isAnonymous) {
+      close();
+      return;
+    }
+    if (hasLocalPasskeyForEmail(user.email)) {
+      saveLocalPasskeyState(user.email);
       close();
       return;
     }
@@ -238,6 +298,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     try {
       await registerPasskey();
       saveLocalPasskeyState(passkeyUser.email);
+      setLocalPasskeyEmails(readLocalPasskeyState().emails);
       setHasLocalPasskey(true);
       setPasskeyStatus('success');
       setPasskeyMessage('Connexion rapide activee sur cet appareil.');
@@ -258,20 +319,26 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
 
   const handlePasskeyLogin = async () => {
     setPasskeyStatus('pending');
+    setPasskeyLoginStep('biometric');
     setPasskeyMessage('');
     try {
-      const result = await loginWithPasskey(emailValue, preparedPasskeyAuth);
+      const result = await loginWithPasskey(emailValue, preparedPasskeyAuth, setPasskeyLoginStep);
       saveLocalPasskeyState(result?.email || emailValue);
+      setLocalPasskeyEmails(readLocalPasskeyState().emails);
       close();
       result.signInPromise.catch((error) => {
         console.error('Passkey Firebase sign-in error:', error);
       });
     } catch (error) {
       if (error?.code === 'functions/not-found') {
-        clearLocalPasskeyState();
-        setHasLocalPasskey(false);
-        setUsePasswordFallback(true);
+        clearLocalPasskeyState(emailValue);
+        const localPasskey = readLocalPasskeyState();
+        setEmailValue(localPasskey.email);
+        setHasLocalPasskey(localPasskey.enabled);
+        setLocalPasskeyEmails(localPasskey.emails);
+        setUsePasswordFallback(!localPasskey.enabled);
       }
+      setPasskeyLoginStep('idle');
       setPasskeyStatus('error');
       setPasskeyMessage(error?.message || 'Connexion rapide indisponible.');
       toast(error?.message || 'Connexion rapide indisponible.', { type: 'error' });
@@ -466,19 +533,61 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                     type="button"
                     onClick={handlePasskeyLogin}
                     disabled={passkeyStatus === 'pending'}
-                    className="mb-4 flex w-full items-center justify-center gap-3 rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm font-bold text-amber-100 transition-all hover:bg-amber-400/15 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-3 rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm font-bold text-amber-100 transition-all hover:bg-amber-400/15 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    <KeyRound size={16} />
-                    <span>{passkeyStatus === 'pending' ? 'Verification...' : 'Connexion rapide sur cet appareil'}</span>
+                    <KeyRound size={16} className={passkeyStatus === 'pending' ? 'animate-pulse' : ''} />
+                    <span>{passkeyLoginLabel}</span>
                   </button>
+                  <div className="text-center text-[11px] font-semibold text-stone-500">
+                    <span>Pour {emailValue}</span>
+                    {localPasskeyEmails.length > 1 ? (
+                      <>
+                        <span className="mx-2 text-stone-700">.</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowPasskeyAccountChoices((value) => !value)}
+                          className="text-amber-200 transition-colors hover:text-amber-100"
+                        >
+                          Changer
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
                   {passkeyMessage && !passkeyUser ? (
                     <p className="text-center text-xs font-semibold text-amber-300">{passkeyMessage}</p>
+                  ) : null}
+                  {localPasskeyEmails.length > 1 && showPasskeyAccountChoices ? (
+                    <div className="space-y-1 rounded-2xl border border-[#2A2A2E] bg-[#101014] p-2">
+                      {localPasskeyEmails.map((storedEmail) => (
+                        <button
+                          key={storedEmail}
+                          type="button"
+                          onClick={() => {
+                            setEmailValue(storedEmail);
+                            setPasskeyStatus('idle');
+                            setPasskeyLoginStep('idle');
+                            setPasskeyMessage('');
+                            setPreparedPasskeyAuth(null);
+                            setShowPasskeyAccountChoices(false);
+                          }}
+                          className={`w-full rounded-lg px-3 py-2 text-left text-xs font-semibold transition-colors ${
+                            storedEmail === emailValue
+                              ? 'bg-amber-400/10 text-amber-100'
+                              : 'text-stone-400 hover:bg-white/5 hover:text-white'
+                          }`}
+                        >
+                          {storedEmail}
+                        </button>
+                      ))}
+                    </div>
                   ) : null}
                   <button
                     type="button"
                     onClick={() => {
                       setUsePasswordFallback(true);
+                      setShowPasskeyAccountChoices(false);
                       setPasskeyStatus('idle');
+                      setPasskeyLoginStep('idle');
                       setPasskeyMessage('');
                     }}
                     className="w-full text-center text-xs font-bold text-stone-400 transition-colors hover:text-white"
@@ -553,8 +662,10 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                 onClick={() => {
                   setIsSignUp((value) => !value);
                   setUsePasswordFallback(false);
+                  setShowPasskeyAccountChoices(false);
                   setPasskeyMessage('');
                   setPasskeyStatus('idle');
+                  setPasskeyLoginStep('idle');
                 }}
                 className="mt-6 w-full text-center text-xs font-bold text-stone-400 transition-colors hover:text-white"
               >
