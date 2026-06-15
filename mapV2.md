@@ -76,7 +76,7 @@ Conclusion:
 |-- functions-public : codebase Functions public pour publicCatalog
 |-- functions : codebase Functions principal, commerce, admin, analytics, maintenance, SEO legacy, triggers
 |-- deploy : dashboard sandbox-only
-|-- scripts : gates SSR/perf/mobile/images, audits infra env/secrets/deploy et outils data
+|-- scripts : gates SSR/perf/mobile/images, audits infra env/secrets/deploy, E2E hosted Stripe checkout sandbox et outils data
 |-- public : assets publics servis par Next/App Hosting
 ```
 

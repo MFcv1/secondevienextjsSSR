@@ -10,6 +10,27 @@ import { useToast } from '../ui/Toast';
 const DELIVERY_SETTINGS_CACHE_KEY = 'secondevie:delivery-settings:v1';
 const PAYMENT_SETTINGS_CACHE_KEY = 'paymentSettings';
 const CheckoutStripeModal = lazy(() => import('./CheckoutStripeModal'));
+const RELIABLE_EMAIL_PROVIDER_IDS = new Set(['google.com']);
+
+const normalizeCheckoutEmail = (email) => String(email || '').trim().toLowerCase();
+
+const hasReliableEmailProvider = (user, checkoutEmail) => {
+    if (!user || user.isAnonymous) return false;
+
+    const normalizedCheckoutEmail = normalizeCheckoutEmail(checkoutEmail);
+    const normalizedUserEmail = normalizeCheckoutEmail(user.email);
+
+    if (!normalizedCheckoutEmail || normalizedCheckoutEmail !== normalizedUserEmail) {
+        return false;
+    }
+
+    if (user.emailVerified) return true;
+
+    return (user.providerData || []).some((provider) => (
+        RELIABLE_EMAIL_PROVIDER_IDS.has(provider?.providerId)
+        && (!provider?.email || normalizeCheckoutEmail(provider.email) === normalizedCheckoutEmail)
+    ));
+};
 
 /**
  * PremiumActionBtn — Bouton Ultra-Premium (Mouse Tracking + Morphing Loading)
@@ -233,8 +254,24 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
     
     const [clientSecret, setClientSecret] = useState(null);
     const [createdOrderId, setCreatedOrderId] = useState(null);
+    const [createdOrderOtpToken, setCreatedOrderOtpToken] = useState('');
     const [unavailableItems, setUnavailableItems] = useState([]);
     const [isCleaningUp, setIsCleaningUp] = useState(false);
+    const [guestOtp, setGuestOtp] = useState({
+        status: 'idle',
+        email: '',
+        code: '',
+        token: '',
+        error: ''
+    });
+
+    const normalizedCheckoutEmail = normalizeCheckoutEmail(formData.email);
+    const requiresGuestCheckoutOtp = !hasReliableEmailProvider(user, formData.email);
+    const hasVerifiedGuestCheckoutOtp = !requiresGuestCheckoutOtp || (
+        guestOtp.status === 'verified'
+        && guestOtp.email === normalizedCheckoutEmail
+        && Boolean(guestOtp.token)
+    );
 
     // Annule la commande pending_payment et restaure le stock quand l'utilisateur
     // ferme le modal Stripe sans payer — évite les commandes orphelines et le stock bloqué
@@ -243,7 +280,11 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
             setIsCleaningUp(true);
             try {
                 const cancelOrder = httpsCallable(functions, 'cancelOrderClient');
-                await cancelOrder({ orderId: createdOrderId });
+                await cancelOrder({
+                    orderId: createdOrderId,
+                    email: normalizedCheckoutEmail,
+                    checkoutOtpToken: createdOrderOtpToken || ''
+                });
                 
                 // FORCE le nettoyage côté Frontend pour ignorer la latence de Firestore.
                 // Sinon, le onSnapshot n'aura pas encore reçu "sold: false" et affichera "Victime de son succès".
@@ -259,6 +300,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                 }, 500);
             }
             setCreatedOrderId(null);
+            setCreatedOrderOtpToken('');
             setClientSecret(null);
         }
         setCheckoutState('editing');
@@ -401,9 +443,22 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        if (name === 'email') {
+            setGuestOtp({
+                status: 'idle',
+                email: '',
+                code: '',
+                error: ''
+            });
+        }
         if (checkoutState === 'ready_to_pay') {
             setCheckoutState('editing');
         }
+    };
+
+    const handleOtpCodeChange = (e) => {
+        const code = e.target.value.replace(/\D/g, '').slice(0, 6);
+        setGuestOtp(prev => ({ ...prev, code, error: '' }));
     };
 
     const isFormValid = useMemo(() => {
@@ -415,9 +470,92 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                rgpdAccepted && formData.deliveryMode;
     }, [formData, rgpdAccepted]);
 
+    const isOtpEmailReady = useMemo(() => {
+        const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return regexEmail.test(formData.email.trim());
+    }, [formData.email]);
+
+    const sendGuestCheckoutOtp = async () => {
+        if (!isOtpEmailReady) {
+            setGuestOtp(prev => ({ ...prev, error: 'Saisissez un email valide avant de demander le code.' }));
+            return;
+        }
+
+            setGuestOtp(prev => ({
+                ...prev,
+                status: 'sending',
+                email: normalizedCheckoutEmail,
+                code: '',
+                token: '',
+                error: ''
+            }));
+
+        try {
+            const sendOtp = httpsCallable(functions, 'sendGuestCheckoutOtp');
+            await sendOtp({ email: normalizedCheckoutEmail });
+            setGuestOtp(prev => ({
+                ...prev,
+                status: 'sent',
+                email: normalizedCheckoutEmail,
+                code: '',
+                token: '',
+                error: ''
+            }));
+            toast('Code envoye par email.', { type: 'success' });
+        } catch (error) {
+            console.error('Guest checkout OTP send error:', error);
+            setGuestOtp(prev => ({
+                ...prev,
+                status: 'idle',
+                error: error.message || "Impossible d'envoyer le code pour le moment."
+            }));
+            toast(error.message || "Impossible d'envoyer le code pour le moment.", { type: 'error' });
+        }
+    };
+
+    const verifyGuestCheckoutOtp = async () => {
+        if (guestOtp.code.length !== 6) {
+            setGuestOtp(prev => ({ ...prev, error: 'Le code doit contenir 6 chiffres.' }));
+            return;
+        }
+
+        setGuestOtp(prev => ({ ...prev, status: 'verifying', error: '' }));
+
+        try {
+            const verifyOtp = httpsCallable(functions, 'verifyGuestCheckoutOtp');
+            const result = await verifyOtp({
+                email: normalizedCheckoutEmail,
+                code: guestOtp.code
+            });
+            if (!result.data?.success) {
+                throw new Error('Validation OTP incomplete.');
+            }
+            setGuestOtp(prev => ({
+                ...prev,
+                status: 'verified',
+                email: normalizedCheckoutEmail,
+                token: result.data?.checkoutOtpToken || '',
+                error: ''
+            }));
+            toast('Email verifie.', { type: 'success' });
+        } catch (error) {
+            console.error('Guest checkout OTP verify error:', error);
+            setGuestOtp(prev => ({
+                ...prev,
+                status: 'sent',
+                error: error.message || 'Code invalide ou expire.'
+            }));
+            toast(error.message || 'Code invalide ou expire.', { type: 'error' });
+        }
+    };
+
     // --- SUBMIT ACTION : FETCH STRIPE OU CONFIRM DEFERRED ---
     const handleActionClick = async () => {
         if (!isFormValid) return;
+        if (requiresGuestCheckoutOtp && !hasVerifiedGuestCheckoutOtp) {
+            toast('Validez le code envoye par email avant de confirmer la commande.', { type: 'warning' });
+            return;
+        }
         if (unavailableItems.length > 0) {
             toast("Attention : Un article de votre panier n'est plus disponible.", { type: 'warning' });
             return;
@@ -441,6 +579,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                     shipping: formData,
                     paymentMethod,
                     items: itemsWithCol,
+                    checkoutOtpToken: guestOtp.token || '',
                     total: finalTotal
                 }
             });
@@ -450,6 +589,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                     if (result.data.clientSecret) {
                         setClientSecret(result.data.clientSecret);
                         setCreatedOrderId(result.data.orderId);
+                        setCreatedOrderOtpToken(guestOtp.token || '');
                         setCheckoutState('ready_to_pay');
                     } else {
                         throw new Error("Client secret manquant.");
@@ -590,8 +730,59 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                             </div>
                             <div>
                                 <label htmlFor="checkout-email" className="sr-only">Email</label>
-                                <input id="checkout-email" name="email" value={formData.email} onChange={handleChange} placeholder="Email" type="email" className={inputClasses} required />
+                                <input id="checkout-email" name="email" value={formData.email} onChange={handleChange} placeholder="Email" type="email" autoComplete="email" className={inputClasses} required />
                             </div>
+                            {requiresGuestCheckoutOtp ? (
+                                <div className={`rounded-2xl border p-4 space-y-3 ${darkMode ? 'border-stone-800 bg-stone-950/40' : 'border-stone-200 bg-stone-50'}`}>
+                                    <div className="flex flex-col gap-1">
+                                        <span className={`text-[10px] font-black uppercase tracking-widest ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>Verification email</span>
+                                        <p className={`text-xs font-medium leading-relaxed ${darkMode ? 'text-stone-500' : 'text-stone-500'}`}>
+                                            Entrez le code a 6 chiffres envoye a cette adresse pour continuer en invite.
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={sendGuestCheckoutOtp}
+                                            disabled={!isOtpEmailReady || guestOtp.status === 'sending' || guestOtp.status === 'verifying'}
+                                            className={`h-12 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest transition-colors ${darkMode ? 'bg-white text-stone-950 disabled:bg-stone-800 disabled:text-stone-500' : 'bg-stone-950 text-white disabled:bg-stone-200 disabled:text-stone-400'}`}
+                                        >
+                                            {guestOtp.status === 'sending' ? 'Envoi...' : guestOtp.status === 'verified' ? 'Renvoyer un code' : 'Envoyer le code'}
+                                        </button>
+                                        <div className="flex gap-2">
+                                            <label htmlFor="checkout-otp-code" className="sr-only">Code email</label>
+                                            <input
+                                                id="checkout-otp-code"
+                                                name="guestCheckoutOtp"
+                                                value={guestOtp.code}
+                                                onChange={handleOtpCodeChange}
+                                                placeholder="000000"
+                                                inputMode="numeric"
+                                                autoComplete="one-time-code"
+                                                pattern="[0-9]*"
+                                                maxLength={6}
+                                                disabled={guestOtp.status === 'verified'}
+                                                className={`${inputClasses} text-center tracking-[0.35em]`}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={verifyGuestCheckoutOtp}
+                                                disabled={guestOtp.code.length !== 6 || guestOtp.status === 'sending' || guestOtp.status === 'verifying' || guestOtp.status === 'verified'}
+                                                className={`h-12 shrink-0 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest transition-colors ${darkMode ? 'border border-stone-700 text-white disabled:text-stone-600' : 'border border-stone-300 text-stone-900 disabled:text-stone-400'}`}
+                                            >
+                                                {guestOtp.status === 'verifying' ? '...' : guestOtp.status === 'verified' ? 'OK' : 'Valider'}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {guestOtp.status === 'verified' ? (
+                                        <p className="text-xs font-bold text-emerald-600">Email verifie pour cette commande.</p>
+                                    ) : guestOtp.error ? (
+                                        <p className="text-xs font-bold text-red-500">{guestOtp.error}</p>
+                                    ) : null}
+                                </div>
+                            ) : null}
                             
                             {/* ADRESSE AVEC AUTOCOMPLÉTION INTELLIGENTE */}
                             <div className="flex flex-col gap-3 md:gap-4" ref={suggestionRef}>
@@ -884,8 +1075,8 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                             <div className="flex flex-col gap-4 items-center">
                                 <PremiumActionBtn
                                     onClick={handleActionClick}
-                                    disabled={!isFormValid}
-                                    isLoading={checkoutState === 'fetching_stripe' || checkoutState === 'processing_deferred'}
+                                    disabled={!isFormValid || !hasVerifiedGuestCheckoutOtp}
+                                    isLoading={checkoutState === 'fetching_stripe' || checkoutState === 'processing_deferred' || guestOtp.status === 'sending' || guestOtp.status === 'verifying'}
                                     darkMode={darkMode}
                                 >
                                     {paymentMethod === 'stripe_elements' ? (

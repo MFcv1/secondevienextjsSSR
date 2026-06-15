@@ -31,6 +31,14 @@ service cloud.firestore {
       ];
     }
 
+    function hasTrustedCheckoutAuth() {
+      return request.auth != null && (
+        request.auth.token.email_verified == true ||
+        request.auth.token.firebase.sign_in_provider == 'google.com' ||
+        request.auth.token.firebase.identities['google.com'] is list
+      );
+    }
+
     match /users/{userId} {
       allow read: if isOwner(userId) || isArtisan();
       allow create: if isOwner(userId) && ownerProfileCreateIsSafe();
@@ -92,9 +100,18 @@ service cloud.firestore {
     // Commandes
     match /orders/{orderId} {
       allow read, write: if isArtisan();
-      allow read: if request.auth != null && request.auth.token.email_verified == true && (
-        request.auth.uid == resource.data.userId ||
-        request.auth.token.email == resource.data.userEmail
+      allow read: if request.auth != null && (
+        (
+          hasTrustedCheckoutAuth() &&
+          (
+            request.auth.uid == resource.data.userId ||
+            request.auth.token.email == resource.data.userEmail
+          )
+        ) ||
+        (
+          resource.data.checkoutAuthMethod == 'guest_email_otp' &&
+          request.auth.uid == resource.data.userId
+        )
       );
       allow create: if false; // Via Cloud Function uniquement
     }

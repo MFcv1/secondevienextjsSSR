@@ -52,11 +52,21 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |   |-- index.js, helpers : Firebase Functions entrypoint/config/security
 |   `-- src : analytics, auth, commerce, email, maintenance, public, seo, triggers
 |-- public : favicons, manifest, images, video, rapport maintenance statique
-|-- scripts : env bridge, audits infra env/secrets/deploy, SSR/mobile checks, maintenance audit, budget perf Next, gate classification routes Next, perf/architecture compare, audit scroll galerie, backfills/audits Storage/images et tooling safe
+|-- scripts : env bridge, audits infra env/secrets/deploy, E2E hosted Stripe checkout sandbox, SSR/mobile checks, maintenance audit, budget perf Next, gate classification routes Next, perf/architecture compare, audit scroll galerie, backfills/audits Storage/images et tooling safe
 |-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_FULL_NATIVE_CLEANUP_ROADMAP_2026-06-10.md, NEXTJS_FULL_NATIVE_AUDIT_ROADMAP_2026-06-10.md, NEXTJSSSR_FULL_NEXT_FINAL_PROMPT_2026-06-09.md et autres rapports/roadmaps Next SSR, SEO, images, galerie et produit
 |-- imagehero, pageUI : references visuelles et notes UI
 `-- .next, dist, node_modules, logs, .firebase : generes, hors carte
 ```
+
+## Rapport agent - 2026-06-15
+
+### Goal 13 - E2E Stripe sandbox heberge
+
+- `scripts/e2e-hosted-stripe-checkout.mjs` a ete stabilise pour le run App Hosting sandbox avec App Check debug token: login reutilisable via `E2E_PASSWORD`, nettoyage panier Firestore REST, selection d'un produit a prix positif avec stock visible, et evitement des articles deja epuises/reserves pendant les tests (`Buffet`, `dd`, `Chaise`).
+- Le script evite maintenant de doubler l'ajout panier si le panneau n'apparait pas immediatement: il ouvre le panier au lieu de recliquer sur le produit.
+- Le test complet heberge a ete execute avec le compte verifie `loa.gto15+fulltest...@gmail.com`, produit `Paire de chevets`, carte Stripe sandbox `4242 4242 4242 4242`.
+- Resultat runtime: login OK, panier OK, checkout OK, paiement Stripe sandbox OK, ecran final `Paiement valide` / `Votre commande est confirmee` visible. Le run fonctionnel a seulement echoue sur une assertion Playwright trop stricte car deux textes de succes etaient visibles; l'assertion a ete corrigee pour les prochains runs.
+- Restant a verifier separement: logs Functions/webhook Stripe signe, email de confirmation et scenario annulation/restauration stock.
 
 ## NEXTJS OPTIMIZATION ROADMAP
 

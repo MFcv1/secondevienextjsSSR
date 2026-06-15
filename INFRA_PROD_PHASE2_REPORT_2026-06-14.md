@@ -22,7 +22,8 @@ Passe initiale appliquee dans l'ordre de priorite `TODO.md`, sans validation lon
 - `.env.sandbox.example` et `.env.production.example` exposent les placeholders publics Next manquants `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` et `NEXT_PUBLIC_STRIPE_PUBLIC_KEY`.
 - `scripts/audit-infra-env.cjs` cartographie les variables publiques Next, App Hosting, Functions, Stripe, Gmail/email, revalidation et admin/security.
 - `scripts/audit-infra-deploy.cjs` verifie le rail sandbox, les ignores App Hosting, les codebases Functions, les chemins rules/indexes, les secrets interdits dans App Hosting/public Functions, et signale les rewrites Hosting SEO legacy.
-- `package.json` expose `npm run infra:env` et `npm run infra:deploy`.
+- `scripts/e2e-hosted-stripe-checkout.mjs` ajoute un parcours E2E sur l'URL App Hosting sandbox: creation compte email, ajout panier, checkout, Payment Element Stripe test, puis attente du modal de succes.
+- `package.json` expose `npm run infra:env`, `npm run infra:deploy` et `npm run e2e:hosted-stripe`.
 - `/api/revalidate-catalog` revalide maintenant aussi `/galerie`, `/sitemap.xml`, les patterns dynamiques `/categorie/[categoryId]` et `/produit/[slugOrId]`, et garde les chemins precis envoyes par l'admin.
 - Les surfaces publiques `AuthContext`, `HeaderAccountIsland` et `GlobalMenuPanelAuthIsland` ne donnent plus le statut admin via `NEXT_PUBLIC_SUPER_ADMIN_EMAIL`; elles s'appuient sur les custom claims `admin` / `superAdmin`.
 - `AdminDashboard` et `AdminUsers` ne lisent plus `NEXT_PUBLIC_SUPER_ADMIN_EMAIL`; les commandes critiques et le statut proprietaire viennent du claim `superAdmin` ou du document serveur `admin_users`.
@@ -95,6 +96,40 @@ Passe initiale appliquee dans l'ordre de priorite `TODO.md`, sans validation lon
 - Verification post-secret webhook:
   - `firebase functions:secrets:get STRIPE_WH_SECRET --project secondevienextjsssr`: version 2 `ENABLED`.
   - `firebase functions:list --project secondevienextjsssr`: `stripeWebhook` HTTPS est deployee en `us-central1`.
+- Rollout App Hosting sandbox apres configuration Stripe/App Check:
+  - `npm run build`: OK.
+  - `firebase deploy --only apphosting:secondevie-next-sandbox --project secondevienextjsssr`: source uploadee vers App Hosting; la CLI a ensuite renvoye un conflit `409 unable to queue the operation`, coherent avec une operation de rollout deja en cours.
+  - Validation reseau locale depuis Codex non concluante ensuite: `curl.exe` tente de passer par `127.0.0.1` et ne rejoint pas le domaine hosted.app; validation runtime reportee au script E2E heberge.
+- Script E2E Stripe sandbox cree:
+  - commande: `E2E_EMAIL=<email-test> npm run e2e:hosted-stripe`;
+  - option: `E2E_PASSWORD=<mot-de-passe>` pour reutiliser un compte deja cree; sinon le script genere un mot de passe de test et l'ecrit dans `logs/hosted-stripe-e2e-*.json`;
+  - option: `E2E_APPCHECK_DEBUG_TOKEN=<token-debug>` pour les runs Playwright/CI sur App Check;
+  - option: `E2E_HEADLESS=true` pour lancer Chromium sans fenetre.
+- Validation technique du script:
+  - `node --check scripts\e2e-hosted-stripe-checkout.mjs`: OK.
+  - parsing `package.json`: OK.
+- Validation E2E hebergee du 2026-06-15:
+  - Debug token App Check `Codex E2E Stripe` ajoute dans Firebase Console par Matthieu et utilise par le script.
+  - App Check ne remonte plus de 403 bloquant apres ajout du debug token.
+  - Avec `loa.gto15@gmail.com`, la creation/login ne produit pas de session Firebase Auth persistante dans le navigateur Playwright; la creation renvoie une erreur 400 cote Firebase Auth et la connexion avec le mot de passe genere precedemment ne persiste pas d'utilisateur.
+  - Un alias Gmail `loa.gto15+e2e...@gmail.com` a permis de passer creation compte, panier et checkout jusqu'a l'ouverture du flux Stripe; l'etape paiement reste a finaliser apres stabilisation du login email cible et des selecteurs Stripe.
+- Validation E2E hebergee supplementaire du 2026-06-15:
+  - Un compte test frais `loa.gto15+fulltest...@gmail.com` a passe creation de compte, ajout d'un meuble au panier, ouverture panier, navigation checkout et remplissage formulaire.
+  - Le paiement Stripe n'a pas pu etre lance car `createOrder` bloque correctement les comptes email non verifies avec le message serveur: `Veuillez verifier votre email avant de passer commande`.
+  - Conclusion runtime: un utilisateur connecte peut aller sur un meuble, l'ajouter au panier et atteindre le checkout; le paiement Stripe exige un email Firebase verifie.
+  - Le script E2E detecte maintenant explicitement ce blocage email-verification au lieu d'attendre un iframe Stripe generique.
+- Validation E2E hebergee apres verification manuelle Gmail:
+  - Connexion email/mot de passe OK sur le compte test verifie `loa.gto15+fulltest...@gmail.com`.
+  - Le compte est confirme `emailVerified=true` par Firebase Auth.
+  - Le parcours atteint a nouveau le panier et le checkout.
+  - Le paiement Stripe ne demarre pas car `createOrder` refuse l'article selectionne avec `Article indisponible (Stock epuise): dd`.
+  - Conclusion runtime actualisee: le tunnel utilisateur fonctionne jusqu'a la protection de stock; pour valider Stripe bout en bout, il faut utiliser un produit avec stock disponible non reserve par les runs precedents ou reinitialiser le stock d'un produit de test dedie.
+- Validation E2E hebergee complete du 2026-06-15:
+  - Le script `scripts/e2e-hosted-stripe-checkout.mjs` nettoie maintenant le panier utilisateur via Firestore REST avant chaque run, choisit un produit avec prix positif et stock visible, evite les produits deja constates epuises/reserves (`Buffet`, `dd`, `Chaise`) et evite de doubler l'ajout panier.
+  - Run sur `loa.gto15+fulltest...@gmail.com`: App Check debug OK, connexion Firebase Auth OK, panier nettoye (`cartClear.deleted=2`), produit choisi `Paire de chevets` avec `stock=1`.
+  - Paiement Stripe sandbox effectue avec la carte test `4242 4242 4242 4242`; l'ecran final affiche `Paiement valide !` et `Votre commande est confirmee.`
+  - Le script a ete corrige pour attendre les iframes Stripe en `attached`, car Stripe cree des iframes controleurs invisibles avant les champs carte.
+  - Limite restante: le run fonctionnel a echoue seulement sur l'assertion Playwright finale a cause de deux textes de succes correspondant au meme etat; l'assertion est corrigee avec `.first()` pour les prochains runs. Webhook signe et email de confirmation restent a verifier dans les consoles Stripe/Firebase ou les logs Functions.
 - Audit des valeurs publiques business/facture: `.env.sandbox` et `.env.production` ne contiennent pas les cles `NEXT_PUBLIC_*` correspondantes; seul `VITE_CONTACT_NAME` est present localement. Les autres valeurs doivent etre fournies avant synchronisation App Hosting.
 
 ## Risques restants
@@ -105,5 +140,5 @@ Passe initiale appliquee dans l'ordre de priorite `TODO.md`, sans validation lon
 - Ajouter aussi `NEXT_PUBLIC_STRIPE_PUBLIC_KEY` et les variables publiques business/contact/facture dans App Hosting si elles doivent alimenter les factures et surfaces publiques deployees.
 - Verifier `NEXT_PUBLIC_STRIPE_PUBLIC_KEY` App Hosting et la separation des secrets webhook sandbox/prod.
 - Tester le flux runtime complet: mutation admin, bump `public/meta.catalogVersion`, appel `/api/revalidate-catalog`, puis mise a jour `/galerie`, `/categorie/[categoryId]`, `/produit/[slugOrId]` et `/sitemap.xml`.
-- Tester Stripe sandbox complet avec webhook signe, creation commande, decrement stock, emails, annulation et restauration.
+- Verifier cote Stripe/Firebase Functions le webhook signe et l'email de confirmation du paiement sandbox deja valide cote UI, puis tester annulation/restauration stock.
 - Clarifier plus tard `public/og-image.jpg` absent et les fonctions SEO legacy liees aux rewrites Firebase Hosting.

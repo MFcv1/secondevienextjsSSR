@@ -13,13 +13,17 @@ const isIOSStandalone = () => {
 };
 
 // Persist redirect flag across page reloads (useRef resets on reload, sessionStorage doesn't)
-const REDIRECT_KEY = 'kit_google_redirect_pending';
+const REDIRECT_KEY = 'kit_auth_redirect_pending';
+const LEGACY_GOOGLE_REDIRECT_KEY = 'kit_google_redirect_pending';
 const setRedirectPending = () => sessionStorage.setItem(REDIRECT_KEY, 'true');
-const clearRedirectPending = () => sessionStorage.removeItem(REDIRECT_KEY);
+const clearRedirectPending = () => {
+    sessionStorage.removeItem(REDIRECT_KEY);
+    sessionStorage.removeItem(LEGACY_GOOGLE_REDIRECT_KEY);
+};
 
 const hasRedirectPending = () => (
     typeof window !== 'undefined' &&
-    window.sessionStorage.getItem(REDIRECT_KEY) === 'true'
+    (window.sessionStorage.getItem(REDIRECT_KEY) === 'true' || window.sessionStorage.getItem(LEGACY_GOOGLE_REDIRECT_KEY) === 'true')
 );
 
 const hasPersistedFirebaseUser = () => {
@@ -46,7 +50,13 @@ const shouldInitializeAuthOnMount = (forceInitialize = false) => (
 
 const emitAuthUserChanged = (user) => {
     if (typeof window === 'undefined') return;
+    window.__svAuthUser = user || null;
     window.dispatchEvent(new CustomEvent('sv:auth-user-changed', { detail: { user: user || null } }));
+};
+
+const getEmailVerificationReturnUrl = () => {
+    if (typeof window === 'undefined') return undefined;
+    return window.location.href || `${window.location.origin}/`;
 };
 
 // Create the context
@@ -191,24 +201,28 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         };
     }, [user]);
 
-    const loginWithGoogle = async () => {
+    const loginWithProvider = async (provider) => {
         const { auth, module } = await getAuthRuntime();
-        const googleProvider = await getGoogleProvider();
 
         if (isIOSStandalone()) {
             // iOS standalone (PWA home screen): signInWithPopup is blocked by WebKit
             // Use signInWithRedirect: page will reload and getRedirectResult handles it above
             // Flag persists in sessionStorage so the redirect lifecycle survives reload.
             setRedirectPending();
-            await module.signInWithRedirect(auth, googleProvider);
+            await module.signInWithRedirect(auth, provider);
             return null; // Page reloads, this line won't execute
         }
         // Normal browser (Safari, Chrome, etc.): signInWithPopup works fine
-        const result = await module.signInWithPopup(auth, googleProvider);
+        const result = await module.signInWithPopup(auth, provider);
         getCallableFunction('updateUserSessions')
             .then((updateUserSessions) => updateUserSessions())
             .catch(err => console.error('Failed to clean sessions after login:', err));
         return syncSignedInUser(result);
+    };
+
+    const loginWithGoogle = async () => {
+        const googleProvider = await getGoogleProvider();
+        return loginWithProvider(googleProvider);
     };
 
     const loginWithEmail = async (email, password) => {
@@ -235,7 +249,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
     const verifyEmail = async (user) => {
         const { sendEmailVerification } = await loadAuthModule();
         return sendEmailVerification(user, {
-            url: window.location.origin + '/',
+            url: getEmailVerificationReturnUrl(),
             handleCodeInApp: true
         });
     };

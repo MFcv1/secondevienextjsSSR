@@ -90,20 +90,24 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
 
   const loginButtonClass = `group hidden h-9 items-center gap-2 rounded-full px-3 text-inherit no-underline transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] md:flex ${darkMode ? 'bg-white/[0.04] text-stone-400 hover:bg-white/[0.09] hover:text-stone-100' : 'bg-white/70 text-stone-500 hover:bg-white hover:text-stone-900'}`;
   const logoutButtonClass = `group flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] sm:w-auto sm:gap-2 sm:px-3 ${darkMode ? 'text-stone-400 hover:bg-red-400/10 hover:text-red-300' : 'text-stone-500 hover:bg-red-50 hover:text-red-600'}`;
+  const loginModal = loginOpen ? <LegacyLoginModalIsland open={loginOpen} onOpenChange={setLoginOpen} renderTrigger={false} /> : null;
 
   if (user && !user.isAnonymous) {
     return (
-      <div className="flex items-center gap-2">
-        {isAdmin ? (
-          <div className={`hidden rounded-full px-2.5 py-1 sm:block ${darkMode ? 'bg-emerald-400/10' : 'bg-emerald-50'}`}>
-            <span className="cursor-default text-[9px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Admin</span>
-          </div>
-        ) : null}
-        <button type="button" onClick={logout} className={logoutButtonClass} title="Se deconnecter" aria-label="Se deconnecter">
-          <LogOut size={16} />
-          <span className="hidden text-[9px] font-bold uppercase tracking-widest sm:inline">Quitter</span>
-        </button>
-      </div>
+      <>
+        <div className="flex items-center gap-2">
+          {isAdmin ? (
+            <div className={`hidden rounded-full px-2.5 py-1 sm:block ${darkMode ? 'bg-emerald-400/10' : 'bg-emerald-50'}`}>
+              <span className="cursor-default text-[9px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Admin</span>
+            </div>
+          ) : null}
+          <button type="button" onClick={logout} className={logoutButtonClass} title="Se deconnecter" aria-label="Se deconnecter">
+            <LogOut size={16} />
+            <span className="hidden text-[9px] font-bold uppercase tracking-widest sm:inline">Quitter</span>
+          </button>
+        </div>
+        {loginModal}
+      </>
     );
   }
 
@@ -113,7 +117,7 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
         <ShieldCheck size={14} className="text-stone-400 transition-colors group-hover:text-amber-500" />
         <span className="text-[10px] font-black uppercase tracking-[0.16em]">Connexion</span>
       </button>
-      {loginOpen ? <LegacyLoginModalIsland open={loginOpen} onOpenChange={setLoginOpen} renderTrigger={false} /> : null}
+      {loginModal}
     </>
   );
 }

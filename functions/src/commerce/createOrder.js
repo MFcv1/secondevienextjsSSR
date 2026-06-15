@@ -5,7 +5,7 @@
  * OUTPUT: { success: true, url: string } (Stripe) ou { success: true, orderId: string } (Manuel)
  * 
  * SÉCURITÉ:
- * - Auth requise + email_verified
+ * - Auth requise + email_verified/provider fiable ou OTP invite valide
  * - Prix recalculé côté serveur (jamais confiance au front)
  * - Stock vérifié en transaction atomique
  */
@@ -15,23 +15,48 @@ const { normalizeProductCollection, normalizeFirestoreId, normalizeQuantity } = 
 const { STRIPE_SECRET_KEY, GMAIL_EMAIL, GMAIL_PASSWORD } = require('../../helpers/secrets');
 const { APP_ID } = require('../../helpers/config');
 const { timestampFromNow, SYSTEM_DOC_RETENTION_DAYS } = require('../analytics/constants');
+const { assertGuestCheckoutOtpVerified, normalizeGuestCheckoutEmail } = require('../auth/guestCheckoutOtp');
 
 const db = admin.firestore();
 const Stripe = require('stripe');
+const crypto = require('crypto');
 
-exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMAIL, GMAIL_PASSWORD] }).https.onCall(async (data, context) => {
-    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Auth requise.');
+function hashOrderIdentity(value) {
+    return crypto.createHash('sha256').update(String(value)).digest('hex');
+}
 
-    // Sécurité: Email vérifié obligatoire
-    if (!context.auth.token.email_verified) {
-        throw new functions.https.HttpsError('failed-precondition',
-            'Veuillez vérifier votre email avant de passer commande. Consultez votre boîte de réception (ou spams).'
-        );
+function hasTrustedCheckoutAuth(context, checkoutEmail) {
+    const token = context.auth?.token || {};
+    const tokenEmail = token.email ? normalizeGuestCheckoutEmail(token.email) : '';
+    const normalizedCheckoutEmail = checkoutEmail ? normalizeGuestCheckoutEmail(checkoutEmail) : '';
+    const provider = token.firebase?.sign_in_provider || '';
+    const identities = token.firebase?.identities || {};
+    const hasTrustedProvider = provider === 'google.com' ||
+        Array.isArray(identities['google.com']);
+
+    return Boolean(tokenEmail) &&
+        tokenEmail === normalizedCheckoutEmail &&
+        (token.email_verified === true || hasTrustedProvider);
+}
+
+async function resolveCheckoutIdentity(context, orderData) {
+    if (hasTrustedCheckoutAuth(context, orderData.shipping?.email)) {
+        return {
+            email: normalizeGuestCheckoutEmail(context.auth.token.email),
+            method: 'firebase_auth'
+        };
     }
 
+    const verifiedEmail = await assertGuestCheckoutOtpVerified(context.auth?.uid || null, orderData.shipping?.email, orderData.checkoutOtpToken);
+    return {
+        email: verifiedEmail,
+        method: 'guest_email_otp'
+    };
+}
+
+exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMAIL, GMAIL_PASSWORD] }).https.onCall(async (data, context) => {
     const stripe = Stripe(STRIPE_SECRET_KEY.value());
 
-    const userId = context.auth.uid;
     const rawOrderData = data?.orderData;
 
     if (!rawOrderData || !rawOrderData.items || !Array.isArray(rawOrderData.items) || rawOrderData.items.length === 0 || rawOrderData.items.length > 20) {
@@ -55,6 +80,12 @@ exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMA
                 quantity: normalizeQuantity(item.quantity, 20)
             };
         })
+    };
+    const checkoutIdentity = await resolveCheckoutIdentity(context, orderData);
+    const userId = context.auth?.uid || `guest_${hashOrderIdentity(checkoutIdentity.email).slice(0, 24)}`;
+    const verifiedShipping = {
+        ...(orderData.shipping || {}),
+        email: checkoutIdentity.email
     };
 
     // --- RATE LIMITING ATOMIQUE (3 commandes/minute/utilisateur) ---
@@ -147,9 +178,10 @@ exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMA
                 }
                 transaction.set(orderRef, {
                     userId: userId,
-                    userEmail: context.auth.token.email || orderData.shipping?.email,
+                    userEmail: checkoutIdentity.email,
+                    checkoutAuthMethod: checkoutIdentity.method,
                     items: serverItems,
-                    shipping: orderData.shipping || {},
+                    shipping: verifiedShipping,
                     paymentMethod: 'deferred',
                     total: txTotalManual,
                     status: 'pending_payment',
@@ -255,7 +287,7 @@ exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMA
                 // --- CALCUL DES FRAIS DE PORT ---
                 let shippingCost = 0;
                 if (orderData.shipping && orderData.shipping.deliveryMode) {
-                    const mode = orderData.shipping.deliveryMode;
+                    const mode = verifiedShipping.deliveryMode;
                     if (deliveryData && deliveryData[mode]) {
                         shippingCost = Number(deliveryData[mode].price) || 0;
                     } else {
@@ -278,9 +310,10 @@ exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMA
 
                 transaction.set(orderRef, {
                     userId: userId,
-                    userEmail: context.auth.token.email || orderData.shipping?.email,
+                    userEmail: checkoutIdentity.email,
+                    checkoutAuthMethod: checkoutIdentity.method,
                     items: serverItems,
-                    shipping: orderData.shipping || {},
+                    shipping: verifiedShipping,
                     total: txTotal,
                     paymentMethod: 'stripe_elements',
                     status: 'pending_payment',
@@ -295,13 +328,13 @@ exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMA
         }
 
         // Créer le PaymentIntent (après la réservation du stock)
-        const shippingData = orderData.shipping || {};
+        const shippingData = verifiedShipping;
         try {
             const paymentIntent = await stripe.paymentIntents.create({
                 amount: Math.round(serverTotalAmount * 100),
                 currency: 'eur',
                 automatic_payment_methods: { enabled: true },
-                receipt_email: context.auth.token.email,
+                receipt_email: checkoutIdentity.email,
                 shipping: {
                     name: shippingData.fullName || '',
                     address: {
@@ -314,7 +347,8 @@ exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMA
                 },
                 metadata: {
                     userId: userId,
-                    userEmail: context.auth.token.email || '',
+                    userEmail: checkoutIdentity.email,
+                    checkoutAuthMethod: checkoutIdentity.method,
                     orderId: orderRef.id,
                     shippingMeta: JSON.stringify(shippingData).substring(0, 500),
                     itemsMeta: JSON.stringify(orderData.items.map(i => ({ id: i.originalId || i.id, col: i.collectionName || 'furniture', qty: i.quantity || 1 }))).substring(0, 500)

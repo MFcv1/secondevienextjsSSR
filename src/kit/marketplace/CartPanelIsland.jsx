@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { ShoppingBag } from 'lucide-react';
-import { getDb, getFirebaseAuth, loadAuthModule, loadFirestoreModule } from '../config/firebaseLazy';
+import { getDb, loadFirestoreModule } from '../config/firebaseLazy';
+import { addGuestCartItem, GUEST_CART_CHANGED_EVENT, readGuestCart, removeGuestCartItem } from '../commerce/guestCart';
 
 const CartSidebar = dynamic(() => import('../commerce/CartSidebar'), {
   ssr: false,
@@ -70,8 +71,8 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
   }, []);
 
   useEffect(() => {
-    if (!user || user.isAnonymous) {
-      setCartItems([]);
+    if (!user) {
+      setCartItems(readGuestCart());
       return undefined;
     }
 
@@ -97,6 +98,17 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
     };
   }, [user]);
 
+  useEffect(() => {
+    if (user) return undefined;
+
+    const handleGuestCartChanged = (event) => {
+      setCartItems(Array.isArray(event.detail?.items) ? event.detail.items : readGuestCart());
+    };
+
+    window.addEventListener(GUEST_CART_CHANGED_EVENT, handleGuestCartChanged);
+    return () => window.removeEventListener(GUEST_CART_CHANGED_EVENT, handleGuestCartChanged);
+  }, [user]);
+
   const openCart = useCallback(() => {
     setInteracted(true);
     setIsOpen(true);
@@ -105,14 +117,15 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
   const addCartItem = useCallback(async (item) => {
     if (!item?.originalId && !item?.id) return false;
 
-    if (!user || user.isAnonymous) {
-      setPendingCartItem(item);
-      setLoginOpen(true);
-      return false;
+    let cartUser = user;
+    if (!cartUser) {
+      setCartItems(addGuestCartItem(item));
+      openCart();
+      return true;
     }
 
     const [db, { addDoc, collection, serverTimestamp }] = await Promise.all([getDb(), loadFirestoreModule()]);
-    await addDoc(collection(db, 'users', user.uid, 'cart'), {
+    await addDoc(collection(db, 'users', cartUser.uid, 'cart'), {
       originalId: item.originalId || item.id,
       collectionName: item.collectionName || 'furniture',
       name: item.name || item.title || 'Piece Seconde Vie',
@@ -159,7 +172,7 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
   }, [addCartItem, initialEvent, openCart]);
 
   useEffect(() => {
-    if (!pendingCartItem || !user || user.isAnonymous) return;
+    if (!pendingCartItem || !user) return;
     addCartItem(pendingCartItem)
       .then((added) => {
         if (added) setPendingCartItem(null);
@@ -168,7 +181,10 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
   }, [addCartItem, pendingCartItem, user]);
 
   const removeFromCart = useCallback(async (cartDocId) => {
-    if (!user || user.isAnonymous) return;
+    if (!user) {
+      setCartItems(removeGuestCartItem(cartDocId));
+      return;
+    }
     const [db, { deleteDoc, doc }] = await Promise.all([getDb(), loadFirestoreModule()]);
     await deleteDoc(doc(db, 'users', user.uid, 'cart', cartDocId));
   }, [user]);

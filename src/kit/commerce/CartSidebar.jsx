@@ -1,4 +1,4 @@
-import { X, Trash2, ShoppingBag, ArrowRight, ShieldCheck, Truck, Minus, Plus } from 'lucide-react';
+import { X, Trash2, ShoppingBag, ShieldCheck, Truck, Minus, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onCheckout, interacted, darkMode, activeDesignId }) => {
@@ -116,17 +116,11 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
                         </div>
                         <button
                             onClick={onCheckout}
-                            className={`group flex w-full items-center justify-center gap-3 rounded-md py-4 text-sm font-black transition-all shadow-xl md:py-5 md:text-xs md:uppercase md:tracking-[0.2em] ${
+                            className={`flex w-full items-center justify-center rounded-md py-4 text-sm font-black transition-all shadow-xl md:py-5 md:text-xs md:uppercase md:tracking-[0.2em] ${
                                 isArch
                                     ? 'bg-stone-900 text-white hover:bg-stone-700 dark:bg-stone-100 dark:text-black dark:hover:bg-stone-300'
                                     : (darkMode ? 'bg-white text-stone-900 hover:bg-amber-500 hover:text-white' : 'bg-stone-900 text-white hover:bg-amber-600')
                             }`}
-                        >
-                            Voir le panier <ArrowRight size={16} className="hidden transition-transform group-hover:translate-x-1 md:block" />
-                        </button>
-                        <button
-                            onClick={onCheckout}
-                            className={`w-full rounded-md border py-4 text-sm font-bold transition-colors ${darkMode ? 'border-stone-700 text-stone-100 hover:bg-white/10' : 'border-stone-900 text-stone-950 hover:bg-stone-100'}`}
                         >
                             Commander
                         </button>

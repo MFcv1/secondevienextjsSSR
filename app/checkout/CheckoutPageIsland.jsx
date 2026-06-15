@@ -5,6 +5,7 @@ import CheckoutView from '../../src/kit/commerce/CheckoutView';
 import OrderSuccessModal from '../../src/kit/commerce/OrderSuccessModal';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
 import { getDb, loadFirestoreModule } from '../../src/kit/config/firebaseLazy';
+import { clearGuestCart, GUEST_CART_CHANGED_EVENT, readGuestCart } from '../../src/kit/commerce/guestCart';
 
 const getCartTotal = (items) => (
   items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0)
@@ -26,8 +27,8 @@ function CheckoutPageContent() {
   }, []);
 
   useEffect(() => {
-    if (!user || user.isAnonymous) {
-      setCartItems([]);
+    if (!user) {
+      setCartItems(readGuestCart());
       return undefined;
     }
 
@@ -53,10 +54,26 @@ function CheckoutPageContent() {
     };
   }, [user]);
 
+  useEffect(() => {
+    if (user) return undefined;
+
+    const handleGuestCartChanged = (event) => {
+      setCartItems(Array.isArray(event.detail?.items) ? event.detail.items : readGuestCart());
+    };
+
+    window.addEventListener(GUEST_CART_CHANGED_EVENT, handleGuestCartChanged);
+    return () => window.removeEventListener(GUEST_CART_CHANGED_EVENT, handleGuestCartChanged);
+  }, [user]);
+
   const total = useMemo(() => getCartTotal(cartItems), [cartItems]);
 
   const clearCartAfterOrder = async () => {
-    if (!user || user.isAnonymous || cartItems.length === 0) return;
+    if (cartItems.length === 0) return;
+    if (!user) {
+      clearGuestCart();
+      setCartItems([]);
+      return;
+    }
     const [db, { doc, writeBatch }] = await Promise.all([getDb(), loadFirestoreModule()]);
     const batch = writeBatch(db);
     cartItems.forEach((item) => {

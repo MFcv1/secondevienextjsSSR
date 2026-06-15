@@ -78,13 +78,17 @@ mutation admin -> publicCatalogVersion/cache bump -> /api/revalidate-catalog -> 
 
 - [x] Ajouter `NEXT_PUBLIC_STRIPE_PUBLIC_KEY` sandbox App Hosting depuis le compte Stripe test de Matthieu (`pk_test_...` uniquement).
 - [ ] Tester commande sandbox complete:
-  - [ ] panier;
-  - [ ] checkout;
-  - [ ] paiement Stripe sandbox;
+  - [x] script E2E heberge cree: `npm run e2e:hosted-stripe`;
+  - [x] debug token App Check E2E ajoute et pris en charge par le script;
+  - [x] panier;
+  - [x] checkout;
+  - [x] paiement Stripe sandbox;
   - [ ] webhook signe;
-  - [ ] creation commande;
-  - [ ] decrement stock;
+  - [x] creation commande confirmee cote UI apres paiement;
+  - [x] decrement/reservation stock observe pendant le parcours sandbox;
   - [ ] email si applicable.
+  - [x] precondition: email utilisateur verifie avant paiement Stripe.
+  - [x] precondition: produit test avec stock disponible/non reserve pour finaliser Stripe.
 - [ ] Tester annulation/restauration:
   - [ ] annulation commande;
   - [ ] restauration stock;
@@ -150,3 +154,184 @@ Ne commencer cette phase qu'apres les P0 infra.
   - [x] commandes/gates lancees;
   - [x] decisions sandbox/prod.
 - [ ] Ne passer a la Phase 3 que quand les P0 infra sont traites ou explicitement reportes.
+
+## Phase 2.5 - Solidification proche prod post-E2E
+
+Date d'ajout: 2026-06-15
+Origine: retours multi-agents apres tests App Check + Stripe sandbox heberge.
+Objectif: rendre le tunnel client, les paiements, les stocks, l'auth admin et l'observabilite assez solides pour une version proche production.
+
+Sources primaires a garder sous la main:
+- Stripe PaymentIntents lifecycle: https://docs.stripe.com/payments/paymentintents/lifecycle
+- Stripe webhooks/signatures: https://docs.stripe.com/webhooks/signatures
+- Stripe refunds: https://docs.stripe.com/refunds
+- Stripe Payment Element: https://docs.stripe.com/payments/payment-element
+- Firebase App Check Web reCAPTCHA v3: https://firebase.google.com/docs/app-check/web/recaptcha-provider
+- Firebase App Check debug provider: https://firebase.google.com/docs/app-check/web/debug-provider
+- Firebase Auth custom claims: https://firebase.google.com/docs/auth/admin/custom-claims
+
+### P0 - Securite admin et claims
+
+- [ ] Exiger `email_verified === true` avant toute attribution serveur de claim `admin` / `superAdmin`:
+  - [ ] `grantAdminOnAuth`: ne pas promouvoir un email pending/admin non verifie;
+  - [ ] `syncSuperAdminClaim`: refuser le bootstrap si l'email n'est pas verifie;
+  - [ ] ajouter un test negatif: email super-admin non verifie => aucun claim admin;
+  - [ ] ajouter un test negatif: email pending admin non verifie => aucun claim admin.
+- [ ] Rendre le bootstrap super-admin explicite, rare et auditable:
+  - [ ] ne plus appeler `syncSuperAdminClaim` pour chaque client connecte standard;
+  - [ ] supprimer les erreurs CORS `syncSuperAdminClaim` des runs checkout;
+  - [ ] documenter la procedure owner dans le runbook.
+
+### P0 - Paiement Stripe, remboursement et annulation
+
+- [ ] Bloquer l'annulation automatique d'une commande Stripe deja `paid` sans remboursement Stripe:
+  - [ ] cote client `Mes commandes`: ne pas proposer l'annulation libre d'une commande payee carte;
+  - [ ] cote Function `cancelOrderClient`: refuser ou router les commandes `paid` vers un flux remboursement;
+  - [ ] cote admin: ne jamais supprimer/restaurer une commande payee sans trace ni refund;
+  - [ ] definir les statuts `refund_pending`, `refunded`, `refund_failed` si remboursement gere.
+- [ ] Creer un flux serveur de remboursement/annulation payee:
+  - [ ] appeler Stripe Refund avec idempotence;
+  - [ ] conserver la commande dans l'historique client/admin;
+  - [ ] restaurer le stock seulement apres decision explicite et tracee;
+  - [ ] verifier dans Stripe Dashboard que le PaymentIntent porte le remboursement.
+- [ ] Verifier et aligner les events webhook Stripe configures:
+  - [ ] si `payment_intent.canceled` est gere dans le code, l'ajouter dans le dashboard Stripe;
+  - [ ] si `checkout.session.expired` reste configure, ajouter un handler ou le retirer;
+  - [ ] documenter pour chaque event configure: handler, effet attendu, test de preuve.
+
+### P0 - Reservation stock et commandes orphelines
+
+- [ ] Ajouter un cleanup serveur programme des commandes `pending_payment` abandonnees:
+  - [ ] detecter les commandes `pending_payment` agees de X minutes;
+  - [ ] verifier l'etat Stripe du PaymentIntent avant toute restauration;
+  - [ ] annuler le PaymentIntent si necessaire;
+  - [ ] restaurer le stock et passer `stockReserved=false`;
+  - [ ] garantir qu'un paiement reussi tardif ne restaure jamais le stock.
+- [ ] Tester les scenarios `payment_intent.payment_failed` et `payment_intent.canceled`:
+  - [ ] statut commande attendu: `payment_failed` ou `canceled`;
+  - [ ] stock restaure;
+  - [ ] espace client coherent;
+  - [ ] admin commandes coherent;
+  - [ ] logs Functions sans erreur critique.
+
+### P0 - Confirmation paiement et webhook
+
+- [ ] Corriger le succes UI pour attendre une confirmation durable:
+  - [ ] apres `confirmPayment`, poller ou ecouter `orders/{orderId}` jusqu'a `status=paid`;
+  - [ ] afficher un etat intermediaire honnete: paiement recu, confirmation en cours;
+  - [ ] vider le panier seulement apres confirmation durable;
+  - [ ] ne promettre l'email que si l'envoi est confirme ou reformuler le texte.
+- [ ] Gerer le retour Stripe redirect sur `/checkout`:
+  - [ ] lire `order_success`, `order_id`, `payment_intent_client_secret`, `redirect_status`;
+  - [ ] restaurer l'etat succes/echec/en-cours apres retour redirect;
+  - [ ] tester au moins un moyen de paiement redirect en sandbox.
+- [ ] Corriger la preuve E2E serveur:
+  - [ ] le JSON E2E doit inclure `orderId`, `paymentIntentId`, produit choisi, stock avant/apres;
+  - [ ] verifier Firestore `orders/{orderId}.status === paid`;
+  - [ ] verifier `sys_idempotency/stripe_*` en `processed`;
+  - [ ] verifier event Stripe `payment_intent.succeeded` livre en `2xx`;
+  - [ ] verifier email de confirmation si applicable.
+
+### P0 - UX checkout client
+
+- [ ] Ajouter un gate email-verifie avant le formulaire checkout:
+  - [ ] aucun appel `createOrder` si `emailVerified=false`;
+  - [ ] afficher un ecran clair avec renvoi d'email;
+  - [ ] bouton `J'ai verifie` qui fait `user.reload()` puis reprend le panier;
+  - [ ] conserver le panier pendant la verification.
+- [ ] Centraliser une regle `isPurchasable`:
+  - [ ] condition: `!sold && stock > 0 && price > 0 && !priceOnRequest`;
+  - [ ] cartes galerie: aucun bouton panier si non achetable;
+  - [ ] fiche produit: remplacer par `Vendu`, `Deja reserve` ou `Demander un devis`;
+  - [ ] checkout: surveiller `stock <= 0` en plus de `sold`;
+  - [ ] message panier clair si le produit devient indisponible.
+- [ ] Eviter les doublons panier:
+  - [ ] document panier deterministe par produit ou merge avant ajout;
+  - [ ] double clic = une seule ligne;
+  - [ ] afficher `Deja dans le panier` quand applicable;
+  - [ ] ne plus creer d'erreur stock par doublon du meme article.
+- [ ] Ajouter des etats clairs pour `/checkout` direct:
+  - [ ] non connecte => inviter a se connecter;
+  - [ ] connecte sans panier => panier vide + retour galerie;
+  - [ ] jamais afficher un formulaire checkout anonyme ou vide.
+
+### P1 - Moyens de paiement et coherence Stripe live
+
+- [ ] Aligner UI et moyens de paiement vraiment actifs dans Stripe:
+  - [ ] masquer PayPal/Amazon/Klarna/Apple Pay si non actives ou domaine non verifie;
+  - [ ] verifier Apple Pay domain verification avant live;
+  - [ ] zero warning Stripe `payment method not activated` en run prod-like;
+  - [ ] documenter les methodes activees sandbox puis prod.
+- [ ] Etudier migration moyen terme vers Checkout Sessions / Payment Element custom:
+  - [ ] comparer avec l'architecture PaymentIntent actuelle;
+  - [ ] garder la reservation stock atomique comme contrainte;
+  - [ ] ne migrer que si le gain simplifie redirect, webhooks et maintenance.
+
+### P1 - App Check et chemins Firebase
+
+- [ ] Rendre App Check enforceable progressivement:
+  - [ ] inventorier les imports restants de `src/kit/config/firebase.js` et `firebaseStorage.js`;
+  - [ ] faire passer Firestore/Functions/Storage par un chemin qui initialise App Check;
+  - [ ] sandbox: conserver `UNENFORCED` jusqu'a telemetrie verte;
+  - [ ] tester enforcement service par service: Firestore, Storage, Identity Toolkit;
+  - [ ] prod: vraie `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`, aucun debug token hors CI controlee.
+- [ ] Reduire les details d'erreur publics:
+  - [ ] `/api/revalidate-catalog`: ne pas renvoyer `error.message` brut au client sur token invalide;
+  - [ ] log serveur interne uniquement;
+  - [ ] reponse publique stable: `invalid_token`.
+- [ ] Nettoyer les restes env publics super-admin:
+  - [ ] retirer `VITE_SUPER_ADMIN_EMAIL` des `.env.*.example` si inutile;
+  - [ ] verifier que le bridge `VITE_ -> NEXT_PUBLIC_` ne peut pas reexposer un owner.
+
+### P1 - Observabilite et runbooks
+
+- [ ] Ajouter un runbook `preuve webhook signe`:
+  - [ ] verifier endpoint Stripe sandbox, events, secret separe sandbox/prod;
+  - [ ] verifier event livre en `2xx` dans Stripe Dashboard;
+  - [ ] verifier logs Functions correspondants;
+  - [ ] verifier idempotence Firestore `sys_idempotency`.
+- [ ] Mettre a jour `RUNBOOK.md`:
+  - [ ] remplacer les mentions Stripe dummy par l'etat 2026-06-15;
+  - [ ] documenter paiement sandbox valide cote UI;
+  - [ ] documenter webhook/email encore a prouver;
+  - [ ] documenter rollback App Hosting.
+- [ ] Etendre le dashboard deploy:
+  - [ ] afficher URL rollout App Hosting;
+  - [ ] health check `/galerie`;
+  - [ ] commandes `infra:env`, `infra:deploy`, logs Functions;
+  - [ ] procedure rollback ou lien console.
+
+### P1 - Donnees de test et E2E repetable
+
+- [ ] Creer un produit sandbox dedie aux tests Stripe:
+  - [ ] invisible ou clairement marque test;
+  - [ ] stock connu et restaurable;
+  - [ ] jamais melange au catalogue client utile;
+  - [ ] reset possible avant/apres run.
+- [ ] Creer ou documenter un compte client test verifie dedie:
+  - [ ] email verifie;
+  - [ ] mot de passe stocke hors repo;
+  - [ ] rotation si partage accidentel.
+- [ ] Supprimer les exclusions fragiles par nom dans le script E2E:
+  - [ ] ne plus eviter manuellement `Buffet`, `dd`, `Chaise`;
+  - [ ] choisir le produit test dedie;
+  - [ ] E2E complet repetable 3 fois sans consommer le catalogue.
+- [ ] Redacter les logs E2E:
+  - [ ] masquer `password`;
+  - [ ] masquer App Check debug token;
+  - [ ] masquer `idToken`, `refreshToken`, `Authorization`, `clientSecret`;
+  - [ ] classifier les erreurs connues et echouer seulement sur erreurs inattendues.
+
+### P2 - Details client/admin et confiance
+
+- [ ] Normaliser l'adresse de livraison:
+  - [ ] harmoniser `shipping.zip` et `shipping.postalCode`;
+  - [ ] email client/admin affiche toujours le code postal;
+  - [ ] export CSV et fiche admin coherents.
+- [ ] Nettoyer les petites frictions panier/compte:
+  - [ ] retirer les boutons quantite `- / +` s'ils ne sont pas actifs;
+  - [ ] synchroniser les compteurs panier/wishlist du menu global;
+  - [ ] garder les commandes annulees visibles avec statut `Annulee`.
+- [ ] Harmoniser rules et claims:
+  - [ ] verifier si `superAdmin == true` doit etre accepte explicitement dans Firestore/Storage rules;
+  - [ ] conserver `admin == true` comme chemin principal si les Functions posent toujours les deux.

@@ -18,6 +18,13 @@ exports.cancelOrderClient = cancelOrderClient;
 // ── AUTH ──────────────────────────────────────────────────
 const { grantAdminOnAuth } = require('./src/auth/grantAdmin');
 const { addAdminUser, removeAdminUser, logUserConnection, getUserStats, syncSuperAdminClaim } = require('./src/auth/adminManagement');
+const { sendGuestCheckoutOtp, verifyGuestCheckoutOtp } = require('./src/auth/guestCheckoutOtp');
+const {
+    generatePasskeyRegistrationOptions,
+    verifyPasskeyRegistration,
+    generatePasskeyAuthenticationOptions,
+    verifyPasskeyAuthentication
+} = require('./src/auth/passkeys');
 
 exports.grantAdminOnAuth = grantAdminOnAuth;
 exports.addAdminUser = addAdminUser;
@@ -25,6 +32,12 @@ exports.removeAdminUser = removeAdminUser;
 exports.logUserConnection = logUserConnection;
 exports.getUserStats = getUserStats;
 exports.syncSuperAdminClaim = syncSuperAdminClaim;
+exports.sendGuestCheckoutOtp = sendGuestCheckoutOtp;
+exports.verifyGuestCheckoutOtp = verifyGuestCheckoutOtp;
+exports.generatePasskeyRegistrationOptions = generatePasskeyRegistrationOptions;
+exports.verifyPasskeyRegistration = verifyPasskeyRegistration;
+exports.generatePasskeyAuthenticationOptions = generatePasskeyAuthenticationOptions;
+exports.verifyPasskeyAuthentication = verifyPasskeyAuthentication;
 
 // ── EMAIL (Triggers) ─────────────────────────────────────
 const { onOrderCreated, onOrderUpdated, sendTestEmail } = require('./src/email/orderEmails');

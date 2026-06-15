@@ -9,15 +9,17 @@ const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const { APP_ID } = require('../../helpers/config');
 const { normalizeFirestoreId, normalizeProductCollection } = require('../../helpers/security');
+const { assertGuestCheckoutOtpVerified } = require('../auth/guestCheckoutOtp');
 
 const db = admin.firestore();
 
 exports.cancelOrderClient = functions.https.onCall(async (data, context) => {
-    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Authentification requise.');
-
     const orderId = normalizeFirestoreId(data?.orderId, 'ID commande');
 
-    const userId = context.auth.uid;
+    const userId = context.auth?.uid || null;
+    const verifiedGuestEmail = userId
+        ? null
+        : await assertGuestCheckoutOtpVerified(null, data?.email, data?.checkoutOtpToken);
     const orderRef = db.collection('orders').doc(orderId);
 
     return db.runTransaction(async (transaction) => {
@@ -29,12 +31,15 @@ exports.cancelOrderClient = functions.https.onCall(async (data, context) => {
         const orderData = orderSnap.data();
 
         // Vérifier que c'est bien SA commande
-        if (orderData.userId !== userId) {
+        if (userId && orderData.userId !== userId) {
             throw new functions.https.HttpsError('permission-denied', 'Cette commande ne vous appartient pas.');
+        }
+        if (!userId && (orderData.checkoutAuthMethod !== 'guest_email_otp' || orderData.userEmail !== verifiedGuestEmail || orderData.status !== 'pending_payment')) {
+            throw new functions.https.HttpsError('permission-denied', 'Cette commande ne peut pas etre annulee en invite.');
         }
 
         // Vérifier que la commande n'est pas déjà annulée/expédiée
-        if (['cancelled_by_client', 'shipped', 'completed'].includes(orderData.status)) {
+        if (['cancelled_by_client', 'shipped', 'completed', 'paid', 'confirmed', 'payment_received'].includes(orderData.status)) {
             throw new functions.https.HttpsError('failed-precondition', 'Cette commande ne peut plus être annulée.');
         }
 
