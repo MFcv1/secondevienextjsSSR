@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Archive,
   Armchair,
@@ -124,7 +126,7 @@ function NouveautesContent({ darkMode }) {
         <ul className="relative flex w-full flex-col gap-0.5">
           {NOUVEAUTES_ITEMS.map((item) => (
             <li key={item.id} onMouseEnter={() => setHoveredId(item.id)} className="relative flex items-center">
-              <a
+              <Link
                 href="/galerie#gallery-pieces"
                 className={`relative z-10 w-full rounded-lg px-4 py-2.5 text-[13px] transition-colors ${
                   hoveredId === item.id
@@ -133,18 +135,18 @@ function NouveautesContent({ darkMode }) {
                 }`}
               >
                 {item.title}
-              </a>
+              </Link>
             </li>
           ))}
           <li className="mt-4 border-t border-stone-200/20 px-4 pt-4">
-            <a href="/galerie#gallery-pieces" className={`flex w-full items-center justify-between text-[11px] font-bold uppercase tracking-widest transition-colors group ${darkMode ? 'text-stone-400 hover:text-white' : 'text-stone-500 hover:text-black'}`}>
+            <Link href="/galerie#gallery-pieces" className={`flex w-full items-center justify-between text-[11px] font-bold uppercase tracking-widest transition-colors group ${darkMode ? 'text-stone-400 hover:text-white' : 'text-stone-500 hover:text-black'}`}>
               Voir le catalogue <span className="transition-transform group-hover:translate-x-1">-&gt;</span>
-            </a>
+            </Link>
           </li>
         </ul>
       </div>
       <div className={`mega-menu-col mega-menu-col-right flex w-full items-stretch border-l p-6 ${darkMode ? 'border-white/5 bg-[#151515]' : 'border-stone-100 bg-[#F2F2F0]'}`}>
-        <a
+        <Link
           href="/galerie#gallery-pieces"
           className={`group flex w-full cursor-pointer rounded-[16px] border p-5 shadow-sm no-underline ${
             darkMode ? 'border-white/10 bg-[#1A1A1A] shadow-black/40' : 'border-stone-100 bg-white shadow-[0_10px_30px_rgba(0,0,0,0.03)]'
@@ -168,13 +170,14 @@ function NouveautesContent({ darkMode }) {
             <img src={activeItem.image} alt={activeItem.title} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
             <span className="absolute inset-0 bg-stone-900/10 mix-blend-multiply transition-opacity group-hover:opacity-0" />
           </span>
-        </a>
+        </Link>
       </div>
     </div>
   );
 }
 
 export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
+  const router = useRouter();
   const [hoveredTab, setHoveredTab] = useState(null);
   const [renderedTab, setRenderedTab] = useState(null);
   const [menuMotionState, setMenuMotionState] = useState('closed');
@@ -198,6 +201,17 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
       frameRef.current = null;
     }
   }, []);
+
+  const prefetchMenuHref = useCallback((href) => {
+    if (!href || !href.startsWith('/')) return;
+    router.prefetch(href);
+  }, [router]);
+
+  const prefetchMenuItem = useCallback((item) => {
+    prefetchMenuHref(item?.href);
+    item?.links?.forEach((link) => prefetchMenuHref(link.href));
+    if (item?.resources?.length) prefetchMenuHref('/devis');
+  }, [prefetchMenuHref]);
 
   const openPanel = useCallback((itemId) => {
     clearMenuTimers();
@@ -231,6 +245,7 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
 
   const openTab = useCallback((item, event) => {
     setHoveredTab(item.id);
+    prefetchMenuItem(item);
     if (!item.hasMega) {
       closeTab(80);
       return;
@@ -243,7 +258,7 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
     if (left + width > navRect.width - 20) left = Math.max(0, itemRect.right - navRect.left - width + 12);
     setDropdownLeft(left);
     openPanel(item.id);
-  }, [closeTab, openPanel]);
+  }, [closeTab, openPanel, prefetchMenuItem]);
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -271,12 +286,13 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
             <li
               key={item.id}
               onMouseEnter={(event) => openTab(item, event)}
+              onFocus={(event) => openTab(item, event)}
               className={`relative z-10 flex cursor-pointer items-center gap-1.5 px-3 py-[6px] font-medium transition-colors ${item.customColor || (darkMode ? 'text-stone-300 hover:text-white' : 'text-stone-600 hover:text-black')}`}
             >
-              <a href={item.href} className="relative z-10 flex items-center gap-1.5 text-inherit no-underline">
+              <Link href={item.href} className="relative z-10 flex items-center gap-1.5 text-inherit no-underline">
                 {item.label}
                 {item.hasMega ? <span className={`text-[7px] transition-transform duration-300 ${hoveredTab === item.id || renderedTab === item.id ? '-rotate-180' : 'rotate-0'}`}>v</span> : null}
-              </a>
+              </Link>
               {hoveredTab === item.id || renderedTab === item.id ? <span className={`absolute inset-0 -z-10 rounded-full ${darkMode ? 'bg-white/10' : 'bg-black/5'}`} /> : null}
             </li>
           ))}
@@ -309,7 +325,7 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
                       </h3>
                       <div className={`grid ${activeItem.singleColumn ? 'grid-cols-1 gap-y-8' : 'grid-cols-2 gap-x-6 gap-y-8'}`}>
                         {activeItem.links?.map(({ Icon, title, desc, href }) => (
-                          <a key={title} href={href} className={`group/link -m-3 flex gap-4 rounded-xl p-3 transition-colors ${darkMode ? 'hover:bg-white/5' : 'hover:bg-stone-100/80'}`}>
+                          <Link key={title} href={href} className={`group/link -m-3 flex gap-4 rounded-xl p-3 transition-colors ${darkMode ? 'hover:bg-white/5' : 'hover:bg-stone-100/80'}`}>
                             <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border transition-all duration-300 ${darkMode ? 'border-white/5 bg-white/5 group-hover/link:bg-white/10' : 'border-stone-100 bg-stone-50 group-hover/link:border-stone-200 group-hover/link:bg-stone-100'}`}>
                               <Icon size={20} strokeWidth={1.5} className={`transition-all duration-300 group-hover/link:scale-110 group-hover/link:rotate-6 ${darkMode ? 'text-stone-400 group-hover/link:text-white' : 'text-stone-400 group-hover/link:text-stone-800'}`} />
                             </span>
@@ -317,7 +333,7 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
                               <span className={`mb-1 block text-[13px] font-bold transition-colors ${darkMode ? 'text-stone-200 group-hover/link:text-white' : 'text-stone-800 group-hover/link:text-black'}`}>{title}</span>
                               <span className="block text-[11px] leading-tight text-stone-500">{desc}</span>
                             </span>
-                          </a>
+                          </Link>
                         ))}
                       </div>
                     </div>
@@ -327,10 +343,10 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
                       </h3>
                       <div className="flex flex-col gap-5">
                         {(activeItem.resources || []).map((title) => (
-                          <a key={title} href="/devis" className={`-mx-2.5 flex items-center gap-2 rounded-lg p-2.5 text-[13px] font-medium transition-colors ${darkMode ? 'text-stone-400 hover:bg-white/5 hover:text-white' : 'text-stone-500 hover:bg-stone-100/80 hover:text-black'}`}>
+                          <Link key={title} href="/devis" className={`-mx-2.5 flex items-center gap-2 rounded-lg p-2.5 text-[13px] font-medium transition-colors ${darkMode ? 'text-stone-400 hover:bg-white/5 hover:text-white' : 'text-stone-500 hover:bg-stone-100/80 hover:text-black'}`}>
                             <span>-&gt;</span>
                             {title}
-                          </a>
+                          </Link>
                         ))}
                       </div>
                     </div>

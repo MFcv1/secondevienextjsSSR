@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import {
   getPublicCatalog,
@@ -5,7 +6,6 @@ import {
   isSeoIndexableProduct,
 } from '../../../src/lib/server/products';
 import { publicEnv } from '../../../src/lib/server/env';
-import { getServerDarkMode } from '../../../src/lib/server/theme';
 import { getCategoryUrl } from '../../../src/utils/slug';
 import { getCategorySeoCopy } from '../../../src/kit/marketplace/seoCopy';
 import { getProductCardImage } from '../../../src/utils/imageUtils';
@@ -54,8 +54,7 @@ const getProductQualityRank = (product) => {
   return rank;
 };
 
-const getCategoryRouteData = async (params) => {
-  const { categoryId } = await params;
+const getCategoryRouteData = cache(async (categoryId) => {
   const decodedCategoryId = decodeURIComponent(categoryId || '');
   const categoryMeta = getCategoryMeta(decodedCategoryId);
   if (!categoryMeta) return null;
@@ -74,6 +73,11 @@ const getCategoryRouteData = async (params) => {
     categoryLabel: cleanCategoryLabel(categoryMeta.label || decodedCategoryId),
     products,
   };
+});
+
+const getCategoryRouteDataFromParams = async (params) => {
+  const { categoryId } = await params;
+  return getCategoryRouteData(categoryId);
 };
 
 export async function generateStaticParams() {
@@ -83,7 +87,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }) {
-  const data = await getCategoryRouteData(params);
+  const data = await getCategoryRouteDataFromParams(params);
   if (!data) notFound();
 
   const copy = getCategorySeoCopy(data.categoryId, data.categoryLabel);
@@ -116,9 +120,9 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function CategoryRoutePage({ params, searchParams }) {
-  const data = await getCategoryRouteData(params);
+  const data = await getCategoryRouteDataFromParams(params);
   if (!data) notFound();
-  const darkMode = await getServerDarkMode();
+  const darkMode = false;
   const resolvedSearchParams = await searchParams;
 
   const { categoryId, categoryLabel, products } = data;

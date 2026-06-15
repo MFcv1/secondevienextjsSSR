@@ -6,7 +6,7 @@ import { ToastProvider } from '../src/kit/ui/Toast';
 
 export default function RouteClientProviders({ children }) {
   return (
-    <AuthProvider forceInitialize>
+    <AuthProvider forceInitialize deferUntilReady={false}>
       <ErrorBoundary>
         <ToastProvider>{children}</ToastProvider>
       </ErrorBoundary>

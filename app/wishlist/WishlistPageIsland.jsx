@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import WishlistView from '../../src/kit/marketplace/WishlistView';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
 import { getDb, loadFirestoreModule } from '../../src/kit/config/firebaseLazy';
 
 function WishlistPageContent({ initialItems = [] }) {
+  const router = useRouter();
   const { user, loading } = useAuth();
   const [wishlistItems, setWishlistItems] = useState([]);
   const [darkMode, setDarkMode] = useState(false);
@@ -91,7 +93,23 @@ function WishlistPageContent({ initialItems = [] }) {
     await batch.commit();
   };
 
-  if (loading) return <div className="min-h-screen bg-[#FAFAF9]" />;
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#FAFAF9] px-5 py-10 text-stone-950 md:px-10 md:py-14" aria-busy="true">
+        <div className="mx-auto max-w-7xl space-y-8">
+          <div className="space-y-4">
+            <div className="h-12 w-56 animate-pulse rounded-2xl bg-stone-200" />
+            <div className="h-4 w-72 max-w-full animate-pulse rounded-full bg-stone-100" />
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div className="aspect-[3/4] animate-pulse rounded-xl bg-[#e6dccf]" key={index} />
+            ))}
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <WishlistView
@@ -100,11 +118,11 @@ function WishlistPageContent({ initialItems = [] }) {
       onAddToCart={addToCart}
       onToggleWishlist={toggleWishlist}
       onClearWishlist={clearWishlist}
-      onOpenAbout={() => { window.location.href = '/a-propos'; }}
-      onBack={() => { window.location.href = '/galerie'; }}
+      onOpenAbout={() => { router.push('/a-propos'); }}
+      onBack={() => { router.push('/galerie'); }}
       darkMode={darkMode}
       user={user}
-      onShowLogin={() => { window.location.href = '/admin'; }}
+      onShowLogin={() => { router.push('/admin'); }}
     />
   );
 }

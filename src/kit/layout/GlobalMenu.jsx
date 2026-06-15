@@ -692,8 +692,7 @@ const GlobalMenu = ({
     };
 
     const openAbout = () => {
-        closeMenu();
-        window.location.assign('/a-propos');
+        navigateToPath('/a-propos');
     };
 
     const goToCategory = (categoryId) => {
@@ -713,8 +712,7 @@ const GlobalMenu = ({
     };
 
     const openQuoteRequest = () => {
-        closeMenu();
-        window.location.assign('/devis');
+        navigateToPath('/devis');
     };
 
     const handleLogin = () => {
@@ -744,12 +742,12 @@ const GlobalMenu = ({
     ];
 
     const mobileRows = [
-        { label: 'Nouveautés', badge: 'Nouveau', Icon: Sparkles, action: () => navigateToPath('/galerie') },
+        { label: 'Nouveautés', badge: 'Nouveau', Icon: Sparkles, action: () => navigateToPath('/galerie#gallery-pieces') },
         { label: 'Meubles', Icon: DoorOpen, action: () => goToCategory('meubles') },
         { label: 'Assises', Icon: Armchair, action: () => goToCategory('assises') },
         { label: 'Éclairage', Icon: Lamp, action: () => goToCategory('eclairage') },
         { label: 'Décorations', Icon: Flower2, action: () => goToCategory('decorations') },
-        { label: 'Prix bas', Icon: BadgeEuro, accent: true, action: () => navigateToPath('/galerie') },
+        { label: 'Prix bas', Icon: BadgeEuro, accent: true, action: () => navigateToPath('/galerie#gallery-small-prices') },
         { label: 'À propos', Icon: UserRound, action: openAbout },
     ];
 
@@ -1049,7 +1047,7 @@ const GlobalMenu = ({
                                         <motion.div className="flex min-h-0 flex-col gap-3" variants={menuColumnVariants} custom={withDesktopMotionContext(MENU_SEQUENCE.atelierMedia)}>
                                             <motion.button
                                                 type="button"
-                                                onClick={() => navigateToPath('/galerie')}
+                                                onClick={() => navigateToPath('/devis')}
                                                 aria-label="Découvrir la livraison offerte"
                                                 className="relative h-[172px] w-full overflow-hidden rounded-[16px] bg-[#f8f4ee] text-left outline-none ring-[#9A654B]/0 transition-[box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-[#9A654B]/55"
                                                 variants={menuTileVariants}

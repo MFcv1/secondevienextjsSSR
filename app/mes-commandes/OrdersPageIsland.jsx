@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import MyOrdersView from '../../src/kit/commerce/MyOrdersView';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
 
@@ -47,6 +48,7 @@ function AccountDashboardFallback({ darkMode = false, isSignedOut = false }) {
 }
 
 function OrdersPageContent({ initialItems = [] }) {
+  const router = useRouter();
   const { user, loading, logout } = useAuth();
   const [hasMounted, setHasMounted] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -60,7 +62,7 @@ function OrdersPageContent({ initialItems = [] }) {
     }
   }, []);
 
-  if (!hasMounted || loading) return null;
+  if (!hasMounted || loading) return <AccountDashboardFallback darkMode={darkMode} />;
   if (!user || user.isAnonymous) {
     return <AccountDashboardFallback darkMode={darkMode} isSignedOut />;
   }
@@ -68,12 +70,12 @@ function OrdersPageContent({ initialItems = [] }) {
   return (
     <MyOrdersView
       user={user}
-      onBack={() => { window.location.href = '/galerie'; }}
+      onBack={() => { router.push('/galerie'); }}
       darkMode={darkMode}
       activeDesignId="architectural"
       wishlistItems={[]}
       items={initialItems}
-      onOpenWishlist={() => { window.location.href = '/wishlist'; }}
+      onOpenWishlist={() => { router.push('/wishlist'); }}
       onLogout={logout}
     />
   );
