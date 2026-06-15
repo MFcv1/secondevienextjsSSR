@@ -5,12 +5,10 @@ import {
 } from 'lucide-react';
 import { collection, doc, getDoc, getDocs, limit, orderBy, query } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { db, appId, functions } from '../config/firebase';
+import { db, appId, functions, loadAuthModule } from '../config/firebase';
 import { getMillis } from '../../utils/time';
 import KIT_CONFIG from '../config/constants';
 import { downloadCsv } from './exportCsv';
-
-const SUPER_ADMIN_EMAIL = process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '';
 
 // ─── CUSTOM SVG CHARTS ───
 
@@ -202,6 +200,7 @@ const LoadingProgress = ({ progress, text, darkMode }) => (
 
 
 const AdminDashboard = ({ user, darkMode = false }) => {
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [stats, setStats] = useState({
         totalRevenue: 0,
         totalOrders: 0,
@@ -236,6 +235,33 @@ const AdminDashboard = ({ user, darkMode = false }) => {
     // Progress states
     const [progressValue, setProgressValue] = useState(0);
     const [progressSubtitle, setProgressSubtitle] = useState('');
+
+    useEffect(() => {
+        if (!user || user.isAnonymous) {
+            setIsSuperAdmin(false);
+            return undefined;
+        }
+
+        let cancelled = false;
+        const syncSuperAdminClaim = async () => {
+            try {
+                const { getIdTokenResult } = await loadAuthModule();
+                const tokenResult = await getIdTokenResult(user, true);
+                if (!cancelled) {
+                    setIsSuperAdmin(tokenResult.claims.superAdmin === true);
+                }
+            } catch (error) {
+                console.error('Error reading super admin claim:', error);
+                if (!cancelled) setIsSuperAdmin(false);
+            }
+        };
+
+        syncSuperAdminClaim();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [user]);
 
     const executeWithProgress = async (actionFn, estimatedMs = 8000) => {
         setProgressValue(0);
@@ -752,7 +778,7 @@ const AdminDashboard = ({ user, darkMode = false }) => {
             <hr className={`my-4 border-t ${darkMode ? 'border-white/5' : 'border-stone-200'}`} />
 
             {/* MODULE 5: ADMIN CONTROLS (Dashed Red Zone style) */}
-            {SUPER_ADMIN_EMAIL && user?.email === SUPER_ADMIN_EMAIL && (
+            {isSuperAdmin && (
                 <div className="flex flex-col lg:flex-row gap-6">
                     {/* Diagnostic */}
                     <div className={`p-6 rounded-[24px] border border-solid w-full lg:w-1/3 flex flex-col justify-center ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-200 shadow-sm'}`}>

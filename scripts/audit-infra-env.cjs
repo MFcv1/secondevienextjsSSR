@@ -156,11 +156,14 @@ if (!hasAny(productionExample, ['NEXT_PUBLIC_RECAPTCHA_SITE_KEY', 'VITE_RECAPTCH
 const serverSuperAdmin = appHostingByName.get('SUPER_ADMIN_EMAIL');
 const publicSuperAdmin = appHostingByName.get('NEXT_PUBLIC_SUPER_ADMIN_EMAIL');
 if (!serverSuperAdmin) addFinding('error', 'admin-security', 'apphosting.yaml missing server-only SUPER_ADMIN_EMAIL used by /api/revalidate-catalog');
+if (serverSuperAdmin?.value) {
+  addFinding('error', 'admin-security', 'SUPER_ADMIN_EMAIL must be referenced as a Secret Manager secret, not stored as a plain apphosting.yaml value');
+}
 if (publicSuperAdmin) {
   addFinding(
-    'warn',
+    'error',
     'admin-security',
-    'NEXT_PUBLIC_SUPER_ADMIN_EMAIL is intentionally public if it only drives UI labels/visibility; server authorization still depends on SUPER_ADMIN_EMAIL and custom claims'
+    'NEXT_PUBLIC_SUPER_ADMIN_EMAIL must not be exposed; admin UI must rely on Firebase custom claims and server-only SUPER_ADMIN_EMAIL'
   );
 }
 
@@ -224,7 +227,7 @@ const map = {
   stripe: ['NEXT_PUBLIC_STRIPE_PUBLIC_KEY', 'STRIPE_SECRET_KEY', 'STRIPE_WH_SECRET'].filter((key) => envUsage[key]),
   email: ['GMAIL_EMAIL', 'GMAIL_PASSWORD'].filter((key) => envUsage[key]),
   revalidation: ['SUPER_ADMIN_EMAIL', 'FIREBASE_SERVICE_ACCOUNT_JSON', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY', 'FIREBASE_PROJECT_ID'].filter((key) => envUsage[key]),
-  adminSecurity: ['NEXT_PUBLIC_SUPER_ADMIN_EMAIL', 'SUPER_ADMIN_EMAIL'].filter((key) => envUsage[key])
+  adminSecurity: ['SUPER_ADMIN_EMAIL'].filter((key) => envUsage[key])
 };
 
 const output = {

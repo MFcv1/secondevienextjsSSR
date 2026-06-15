@@ -4,7 +4,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { functions, db } from '../config/firebase';
 import { Users, UserPlus, Trash2, Shield, Loader, AlertCircle } from 'lucide-react';
 
-const SUPER_ADMIN_EMAIL = process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '';
+const isOwnerAdminRecord = (user) => user?.superAdmin === true || user?.role === 'owner';
 
 const AdminUsers = ({ darkMode }) => {
     const [users, setUsers] = useState([]); // Array of user objects
@@ -124,7 +124,7 @@ const AdminUsers = ({ darkMode }) => {
                             </div>
 
                             {/* Bouton Supprimer */}
-                            {user.email !== SUPER_ADMIN_EMAIL && (
+                            {!isOwnerAdminRecord(user) && (
                                 <button
                                     onClick={() => handleRemoveUser(user.uid, user.email)}
                                     className={`p-3 rounded-xl transition-all duration-300 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 ${darkMode ? 'bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white' : 'bg-red-50 hover:bg-red-500 text-red-500 hover:text-white'}`}
@@ -142,12 +142,12 @@ const AdminUsers = ({ darkMode }) => {
                             </div>
 
                             <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border-2 transition-colors ${
-                                user.email === SUPER_ADMIN_EMAIL 
+                                isOwnerAdminRecord(user)
                                     ? (darkMode ? 'bg-amber-500/5 border-amber-500/20 text-amber-500' : 'bg-amber-50 border-amber-200 text-amber-600') 
                                     : (darkMode ? 'bg-white/5 border-white/5 text-white/40' : 'bg-stone-50 border-stone-100 text-stone-400')
                             }`}>
                                 <Users size={12} />
-                                {user.email === SUPER_ADMIN_EMAIL ? 'Propriétaire' : (user.role || 'Administrateur')}
+                                {isOwnerAdminRecord(user) ? 'Propriétaire' : (user.role || 'Administrateur')}
                             </div>
                         </div>
                     </div>

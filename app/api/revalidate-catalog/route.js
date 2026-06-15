@@ -40,7 +40,7 @@ const assertAdmin = async (request) => {
   try {
     const decoded = await auth.verifyIdToken(token, true);
     const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || '';
-    const isAdmin = decoded.admin === true || (superAdminEmail && decoded.email === superAdminEmail);
+    const isAdmin = decoded.admin === true || decoded.superAdmin === true || (superAdminEmail && decoded.email === superAdminEmail);
     if (!isAdmin) {
       return { ok: false, response: NextResponse.json({ error: 'forbidden' }, { status: 403 }) };
     }

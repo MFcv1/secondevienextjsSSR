@@ -19,7 +19,7 @@ exports.updateUserSessions = functions.https.onCall(async (data, context) => {
     const email = context.auth.token.email;
 
     // Vérifier si c'est un admin (custom claim OU super admin OU dans la whitelist)
-    let isAdmin = context.auth.token.admin === true || email === SUPER_ADMIN_EMAIL;
+    let isAdmin = context.auth.token.admin === true || context.auth.token.superAdmin === true || email === SUPER_ADMIN_EMAIL;
 
     // Si pas encore détecté comme admin, vérifier dans Firestore
     if (!isAdmin) {

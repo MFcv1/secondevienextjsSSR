@@ -14,11 +14,18 @@ Objectif demain: commencer par assainir l'infra prod avant de reprendre SEO/perf
 
 ### P0 - Environnement et secrets
 
-- [ ] Valider `NEXT_PUBLIC_SITE_URL` prod et sandbox.
-- [ ] Ajouter/valider `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` pour App Check.
-- [ ] Verifier la configuration App Check Firebase cote sandbox/prod.
-- [ ] Reevaluer `NEXT_PUBLIC_SUPER_ADMIN_EMAIL`:
-  - [ ] confirmer si c'est uniquement une info publique;
+- [ ] Valider `NEXT_PUBLIC_SITE_URL` prod et sandbox:
+  - [x] sandbox: valeur App Hosting confirmee et domaine HTTPS repond en 200;
+  - [ ] prod: a definir quand le rail prod existe.
+- [x] Ajouter/valider `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` pour App Check sandbox.
+- [ ] Verifier la configuration App Check Firebase cote sandbox/prod:
+  - [x] sandbox: app Web enregistree reCAPTCHA v3;
+  - [x] sandbox: enforcement laisse en monitoring (`UNENFORCED`);
+  - [ ] sandbox: verifier les requetes App Check apres prochain rollout;
+  - [ ] prod: a configurer/verifier quand le rail prod existe.
+- [x] Creer/valider le secret App Hosting `SUPER_ADMIN_EMAIL` avant rollout.
+- [x] Reevaluer `NEXT_PUBLIC_SUPER_ADMIN_EMAIL`:
+  - [x] supprimer l'exposition publique du super-admin;
   - [x] si c'est une logique d'autorisation, deplacer vers claims/serveur.
 - [x] Cartographier les variables:
   - [x] publiques Next `NEXT_PUBLIC_*`;
@@ -41,15 +48,15 @@ service-account.json
 *.key
 ```
 
-- [ ] Verifier qu'aucun secret local ou config sensible n'est embarque dans App Hosting/Functions.
-- [ ] Verifier separation sandbox/prod:
-  - [ ] `.firebaserc`;
-  - [ ] `apphosting.yaml`;
-  - [ ] `firebase.json`;
-  - [ ] codebase `functions`;
-  - [ ] codebase `functions-public`;
-  - [ ] Firestore rules/indexes;
-  - [ ] Storage rules.
+- [x] Verifier qu'aucun secret local ou config sensible n'est embarque dans App Hosting/Functions.
+- [x] Verifier separation sandbox/prod:
+  - [x] `.firebaserc`;
+  - [x] `apphosting.yaml`;
+  - [x] `firebase.json`;
+  - [x] codebase `functions`;
+  - [x] codebase `functions-public`;
+  - [x] Firestore rules/indexes;
+  - [x] Storage rules.
 
 ### P0 - Revalidation catalogue
 
@@ -69,6 +76,7 @@ mutation admin -> publicCatalogVersion/cache bump -> /api/revalidate-catalog -> 
 
 ### P0 - Stripe sandbox complet
 
+- [x] Ajouter `NEXT_PUBLIC_STRIPE_PUBLIC_KEY` sandbox App Hosting depuis le compte Stripe test de Matthieu (`pk_test_...` uniquement).
 - [ ] Tester commande sandbox complete:
   - [ ] panier;
   - [ ] checkout;
@@ -83,14 +91,16 @@ mutation admin -> publicCatalogVersion/cache bump -> /api/revalidate-catalog -> 
   - [ ] coherence espace client;
   - [ ] coherence admin commandes.
 - [x] Reevaluer `return_url` Stripe actuellement compatible legacy `/?order_success=true`.
-- [ ] Verifier que les webhooks utilisent bien les secrets sandbox/prod separes.
+- [ ] Verifier que les webhooks utilisent bien les secrets sandbox/prod separes:
+  - [x] `STRIPE_SECRET_KEY` sandbox cree en secret Firebase Functions et deploye sur `createOrder` / `stripeWebhook`;
+  - [x] `STRIPE_WH_SECRET` sandbox cree depuis l'endpoint webhook Stripe et deploye sur `stripeWebhook`.
 
 ### P1 - Risques infra deja identifies
 
 - [x] `sendTestEmail`: appel admin trouve sans Function exportee; corriger ou retirer le bouton diagnostic.
 - [ ] `public/og-image.jpg`: absent alors que reference par metadata; a traiter en phase SEO, mais noter l'impact prod.
 - [ ] `functions/src/seo/seoTools.js` + rewrites Firebase Hosting: clarifier legacy encore utile ou a retirer plus tard.
-- [ ] Verifier que `functions-public/src/public/catalog.js` reste le seul endpoint catalogue public actif.
+- [x] Verifier que `functions-public/src/public/catalog.js` reste le seul endpoint catalogue public actif.
 
 ## Phase 3 - Hydratation / perf
 

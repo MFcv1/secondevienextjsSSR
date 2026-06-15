@@ -62,6 +62,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(() => shouldInitializeAuthOnMount(forceInitialize));
     const [isAdmin, setIsAdmin] = useState(false);
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
     // Authentication relies on Firestore Rules & Custom Claims now.
     // No hardcoded emails in client bundle.
@@ -150,6 +151,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
     useEffect(() => {
         if (!user || user.isAnonymous) {
             setIsAdmin(false);
+            setIsSuperAdmin(false);
             return;
         }
 
@@ -158,13 +160,27 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         const syncAdminClaim = async () => {
             try {
                 const { getIdTokenResult } = await loadAuthModule();
-                const tokenResult = await getIdTokenResult(user, true);
+                let tokenResult = await getIdTokenResult(user, true);
+                if (tokenResult.claims.admin !== true && tokenResult.claims.superAdmin !== true) {
+                    try {
+                        const syncSuperAdminClaim = await getCallableFunction('syncSuperAdminClaim');
+                        await syncSuperAdminClaim();
+                        tokenResult = await getIdTokenResult(user, true);
+                    } catch {
+                        // Non-super-admin users are expected to be rejected by the server bootstrap.
+                    }
+                }
                 if (!cancelled) {
-                    setIsAdmin(tokenResult.claims.admin === true);
+                    const hasSuperAdminClaim = tokenResult.claims.superAdmin === true;
+                    setIsSuperAdmin(hasSuperAdminClaim);
+                    setIsAdmin(tokenResult.claims.admin === true || hasSuperAdminClaim);
                 }
             } catch (err) {
                 console.error("Error reading admin claim:", err);
-                if (!cancelled) setIsAdmin(false);
+                if (!cancelled) {
+                    setIsAdmin(false);
+                    setIsSuperAdmin(false);
+                }
             }
         };
 
@@ -211,6 +227,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         const { auth, module } = await getAuthRuntime();
         setUser(null);
         setIsAdmin(false);
+        setIsSuperAdmin(false);
         emitAuthUserChanged(null);
         return module.signOut(auth);
     };
@@ -226,6 +243,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
     const value = {
         user,
         isAdmin,
+        isSuperAdmin,
         loading,
         loginWithGoogle,
         loginWithEmail,

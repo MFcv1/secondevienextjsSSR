@@ -8,21 +8,70 @@ const { timestampFromNow, SYSTEM_DOC_RETENTION_DAYS } = require('../analytics/co
 
 const db = admin.firestore();
 
+exports.syncSuperAdminClaim = functions.https.onCall(async (data, context) => {
+    checkIsSuperAdmin(context);
+
+    try {
+        const userRecord = await admin.auth().getUser(context.auth.uid);
+        const email = (userRecord.email || context.auth.token.email || '').trim().toLowerCase();
+        const name = userRecord.displayName || 'Admin';
+        await admin.auth().setCustomUserClaims(context.auth.uid, {
+            ...(userRecord.customClaims || {}),
+            admin: true,
+            superAdmin: true
+        });
+
+        await db.doc('sys_metadata/admin_users').set({
+            users: {
+                [context.auth.uid]: {
+                    uid: context.auth.uid,
+                    email,
+                    name,
+                    addedBy: 'system',
+                    status: 'active',
+                    role: 'owner',
+                    superAdmin: true
+                }
+            }
+        }, { merge: true });
+
+        await db.collection('users').doc(context.auth.uid).set({
+            role: 'owner',
+            superAdmin: true,
+            email,
+            name,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        return { success: true };
+    } catch (error) {
+        if (error instanceof functions.https.HttpsError) throw error;
+        console.error("Erreur Sync Super Admin:", error);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+
 // --- AJOUTER UN ADMIN ---
 exports.addAdminUser = functions.https.onCall(async (data, context) => {
     checkIsSuperAdmin(context);
-    const { email, name } = data;
-    if (!email) throw new functions.https.HttpsError('invalid-argument', 'Email requis.');
+    const normalizedEmail = (data?.email || '').trim().toLowerCase();
+    const name = data?.name;
+    if (!normalizedEmail) throw new functions.https.HttpsError('invalid-argument', 'Email requis.');
 
     let targetUid = null;
     let userExists = false;
 
     try {
+        const isTargetSuperAdmin = Boolean(SUPER_ADMIN_EMAIL) && normalizedEmail === SUPER_ADMIN_EMAIL.trim().toLowerCase();
         try {
-            const userRecord = await admin.auth().getUserByEmail(email);
+            const userRecord = await admin.auth().getUserByEmail(normalizedEmail);
             targetUid = userRecord.uid;
             userExists = true;
-            await admin.auth().setCustomUserClaims(userRecord.uid, { admin: true });
+            await admin.auth().setCustomUserClaims(userRecord.uid, {
+                ...(userRecord.customClaims || {}),
+                admin: true,
+                superAdmin: isTargetSuperAdmin || userRecord.customClaims?.superAdmin === true
+            });
         } catch (e) {
             targetUid = `pending_${Date.now()}`;
         }
@@ -32,18 +81,21 @@ exports.addAdminUser = functions.https.onCall(async (data, context) => {
             users: {
                 [targetUid]: {
                     uid: targetUid,
-                    email: email,
+                    email: normalizedEmail,
                     name: name || 'Admin',
                     addedBy: callerEmail,
-                    status: userExists ? 'active' : 'pending'
+                    status: userExists ? 'active' : 'pending',
+                    role: isTargetSuperAdmin ? 'owner' : 'admin',
+                    superAdmin: isTargetSuperAdmin
                 }
             }
         }, { merge: true });
 
         if (userExists && targetUid) {
             await db.collection('users').doc(targetUid).set({
-                role: 'admin',
-                email: email,
+                role: isTargetSuperAdmin ? 'owner' : 'admin',
+                superAdmin: isTargetSuperAdmin,
+                email: normalizedEmail,
                 name: name || 'Admin',
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
@@ -58,13 +110,23 @@ exports.addAdminUser = functions.https.onCall(async (data, context) => {
 // --- RÉVOQUER UN ADMIN ---
 exports.removeAdminUser = functions.https.onCall(async (data, context) => {
     checkIsSuperAdmin(context);
-    const { uid, email } = data;
+    const { uid } = data;
+    const email = (data?.email || '').trim().toLowerCase();
 
-    if (email === SUPER_ADMIN_EMAIL) {
+    if (email === SUPER_ADMIN_EMAIL.trim().toLowerCase()) {
         throw new functions.https.HttpsError('failed-precondition', 'Impossible de révoquer le super-administrateur.');
     }
 
     try {
+        const adminUsersSnap = await db.doc('sys_metadata/admin_users').get();
+        const adminUsers = adminUsersSnap.exists ? (adminUsersSnap.data().users || {}) : {};
+        const currentRecord = adminUsers[uid] || Object.values(adminUsers).find((entry) => (
+            (entry.email || '').trim().toLowerCase() === email
+        ));
+        if (currentRecord?.superAdmin === true || currentRecord?.role === 'owner') {
+            throw new functions.https.HttpsError('failed-precondition', 'Impossible de rÃ©voquer le super-administrateur.');
+        }
+
         let targetUid = uid;
         if (email && (!targetUid || targetUid.startsWith('pending_'))) {
             try {
@@ -74,7 +136,12 @@ exports.removeAdminUser = functions.https.onCall(async (data, context) => {
         }
 
         if (targetUid && !targetUid.startsWith('pending_')) {
-            await admin.auth().setCustomUserClaims(targetUid, { admin: false });
+            const userRecord = await admin.auth().getUser(targetUid).catch(() => null);
+            await admin.auth().setCustomUserClaims(targetUid, {
+                ...(userRecord?.customClaims || {}),
+                admin: false,
+                superAdmin: userRecord?.customClaims?.superAdmin === true
+            });
             await db.collection('users').doc(targetUid).update({ role: 'user' }).catch(() => { });
         }
 
@@ -84,6 +151,7 @@ exports.removeAdminUser = functions.https.onCall(async (data, context) => {
 
         return { success: true };
     } catch (error) {
+        if (error instanceof functions.https.HttpsError) throw error;
         console.error("Erreur Remove Admin:", error);
         throw new functions.https.HttpsError('internal', error.message);
     }

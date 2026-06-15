@@ -17,7 +17,7 @@ exports.trackAdminIP = functions.https.onCall(async (data, context) => {
     if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Auth requise.');
 
     const email = context.auth.token.email;
-    let isAdmin = context.auth.token.admin === true || email === SUPER_ADMIN_EMAIL;
+    let isAdmin = context.auth.token.admin === true || context.auth.token.superAdmin === true || email === SUPER_ADMIN_EMAIL;
 
     // Vérifier aussi dans Firestore si le custom claim n'est pas encore défini
     if (!isAdmin) {

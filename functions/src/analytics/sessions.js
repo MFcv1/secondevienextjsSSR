@@ -412,7 +412,7 @@ exports.syncSessionBeacon = functions.https.onRequest(async (req, res) => {
 });
 
 exports.deleteSession = functions.https.onCall(async (data, context) => {
-    if (!context.auth || (!context.auth.token.admin && context.auth.token.email !== require('../../helpers/security').SUPER_ADMIN_EMAIL)) {
+    if (!context.auth || (!context.auth.token.admin && !context.auth.token.superAdmin && context.auth.token.email !== require('../../helpers/security').SUPER_ADMIN_EMAIL)) {
         throw new functions.https.HttpsError('permission-denied', 'Admin only');
     }
     const { sessionId } = data;
@@ -422,7 +422,7 @@ exports.deleteSession = functions.https.onCall(async (data, context) => {
 });
 
 exports.clearAllSessions = functions.https.onCall(async (data, context) => {
-    if (!context.auth || (!context.auth.token.admin && context.auth.token.email !== require('../../helpers/security').SUPER_ADMIN_EMAIL)) {
+    if (!context.auth || (!context.auth.token.admin && !context.auth.token.superAdmin && context.auth.token.email !== require('../../helpers/security').SUPER_ADMIN_EMAIL)) {
         throw new functions.https.HttpsError('permission-denied', 'Admin only');
     }
 

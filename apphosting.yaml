@@ -41,6 +41,11 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+    value: "6Lf3-h4tAAAAAN9itbLCTe_1tn_Z-AzdhBETXwkE"
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: NEXT_PUBLIC_APP_LOGICAL_NAME
     value: secondevie
     availability:
@@ -57,11 +62,11 @@ env:
       - BUILD
       - RUNTIME
   - variable: SUPER_ADMIN_EMAIL
-    value: "matthis.fradin2@gmail.com"
+    secret: SUPER_ADMIN_EMAIL
     availability:
       - RUNTIME
-  - variable: NEXT_PUBLIC_SUPER_ADMIN_EMAIL
-    value: "matthis.fradin2@gmail.com"
+  - variable: NEXT_PUBLIC_STRIPE_PUBLIC_KEY
+    value: "pk_test_51SugGzRdWb0VNdZqaaB2DDnQJelextDRyXEneJRDmzZ5I8wobSLp37IislepaMHoRg3k7aIvQW0NLhucum18m8y5004IFJQ1pM"
     availability:
       - BUILD
       - RUNTIME

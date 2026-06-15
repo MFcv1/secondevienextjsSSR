@@ -76,7 +76,7 @@ Conclusion:
 |-- functions-public : codebase Functions public pour publicCatalog
 |-- functions : codebase Functions principal, commerce, admin, analytics, maintenance, SEO legacy, triggers
 |-- deploy : dashboard sandbox-only
-|-- scripts : gates SSR/perf/mobile/images, audit infra env/secrets et outils data
+|-- scripts : gates SSR/perf/mobile/images, audits infra env/secrets/deploy et outils data
 |-- public : assets publics servis par Next/App Hosting
 ```
 
@@ -241,6 +241,7 @@ SecondeVieNextjsSSR
 |   |-- check-next-route-classification.cjs           [gate next:routes]
 |   |-- audit-*-direct.mjs                            [gates refresh direct]
 |   |-- audit-infra-env.cjs                           [gate infra env/secrets Phase 2]
+|   |-- audit-infra-deploy.cjs                        [gate separation Firebase/App Hosting Phase 2]
 |   |-- check-mobile-marketplace-contract.cjs         [gate mobile]
 |   |-- check-performance-budget.cjs                  [gate budget]
 |   `-- data/storage scripts                          [RISK pas nettoyage aveugle]
@@ -380,7 +381,7 @@ Prod:
 3. Definir `PUBLIC_ALLOWED_ORIGINS` pour le domaine prod.
 4. Verifier App Check (`NEXT_PUBLIC_RECAPTCHA_SITE_KEY`) et domaines autorises Auth.
 5. Durcir `.firebaseignore` / ignore App Hosting pour exclure explicitement `.env*`, `service-account.json`, `apphosting.local.yaml`, cles `.pem/.key`.
-6. Clarifier `NEXT_PUBLIC_SUPER_ADMIN_EMAIL`: public donc visible; l'autorisation serveur doit rester `SUPER_ADMIN_EMAIL` / custom claims.
+6. `NEXT_PUBLIC_SUPER_ADMIN_EMAIL` retire: les commandes admin critiques s'appuient sur le claim `superAdmin`; `SUPER_ADMIN_EMAIL` reste runtime serveur via Secret Manager.
 7. Verifier que `functions-public` reste l'unique endpoint public deploye pour `publicCatalog`.
 8. Auditer `sendTestEmail`: appele cote admin mais export Function non trouve.
 9. Encadrer les fonctions maintenance destructives par backup + QA.
