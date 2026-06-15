@@ -9,6 +9,30 @@ const LegacyLoginModalIsland = dynamic(() => import('./LegacyLoginModalFullIslan
   loading: () => null,
 });
 
+const REDIRECT_KEY = 'kit_auth_redirect_pending';
+const LEGACY_GOOGLE_REDIRECT_KEY = 'kit_google_redirect_pending';
+
+const hasAuthRedirectPending = () => {
+  if (typeof window === 'undefined') return false;
+  try {
+    return (
+      window.sessionStorage.getItem(REDIRECT_KEY) === 'true' ||
+      window.sessionStorage.getItem(LEGACY_GOOGLE_REDIRECT_KEY) === 'true'
+    );
+  } catch {
+    return false;
+  }
+};
+
+const hasPersistedFirebaseUser = () => {
+  if (typeof window === 'undefined') return false;
+  try {
+    return Object.keys(window.localStorage).some((key) => key.startsWith('firebase:authUser:'));
+  } catch {
+    return false;
+  }
+};
+
 export default function HeaderAccountIsland({ darkMode = false } = {}) {
   const [loginOpen, setLoginOpen] = useState(false);
   const [user, setUser] = useState(null);
@@ -51,7 +75,12 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
     window.addEventListener('sv:auth-user-changed', handleExternalAuthChange);
     window.addEventListener('sv:open-login', handleOpenLogin);
 
+    const shouldProbeAuth = () => (
+      Boolean(window.__svAuthUser) || hasAuthRedirectPending() || hasPersistedFirebaseUser()
+    );
+
     const startAuthProbe = () => {
+      if (!shouldProbeAuth()) return;
       import('../config/firebaseLazy')
         .then(async ({ getFirebaseAuth, loadAuthModule }) => {
           const auth = await getFirebaseAuth();

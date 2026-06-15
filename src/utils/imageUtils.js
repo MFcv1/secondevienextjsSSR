@@ -291,8 +291,8 @@ export const getPrimaryProductImage = (item) => {
 
 export const getProductCardImage = (item) => {
     const primary = getProductImageItems(item)[0];
-    const displaySrc = primary?.medium
-        || primary?.card
+    const displaySrc = primary?.card
+        || primary?.medium
         || primary?.large
         || primary?.src
         || primary?.thumb
@@ -300,16 +300,21 @@ export const getProductCardImage = (item) => {
         || item?.imageUrl
         || item?.image
         || '';
+    const cardSrcSet = buildSrcSet([
+        { src: primary?.thumb, width: 480 },
+        { src: primary?.card, width: 768 },
+        { src: primary?.medium, width: 1024 },
+    ]);
     const thumbSrcSet = buildSrcSet([
         { src: primary?.thumb, width: 480 },
     ]);
 
     return {
         src: displaySrc,
-        srcSet: '',
+        srcSet: cardSrcSet,
         thumbSrcSet,
         mobileSrc: displaySrc,
-        mobileSrcSet: '',
+        mobileSrcSet: cardSrcSet,
         metadata: primary?.metadata || null,
     };
 };
