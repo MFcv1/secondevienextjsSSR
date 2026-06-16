@@ -639,14 +639,24 @@ export default async function Page() {
           <div className="sv-faq-heading">
             <p className="sv-home-kicker">Réponses utiles avant la visite</p>
           </div>
-          <div className="sv-faq-mark" aria-hidden="true">FAQ</div>
-          <div className="sv-faq-list">
-            {faqItems.map((item) => (
-              <details key={item.question}>
-                <summary>{item.question}</summary>
-                <p>{item.answer}</p>
-              </details>
-            ))}
+          <div className="sv-faq-panel">
+            <div className="sv-faq-mark" aria-hidden="true">FAQ</div>
+            <div className="sv-faq-list">
+              {faqItems.map((item, index) => (
+                <details key={item.question} className="sv-faq-item">
+                  <summary>
+                    <span className="sv-faq-item__index" aria-hidden="true">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <span className="sv-faq-item__question">{item.question}</span>
+                    <span className="sv-faq-item__toggle" aria-hidden="true" />
+                  </summary>
+                  <div className="sv-faq-item__answer">
+                    <p>{item.answer}</p>
+                  </div>
+                </details>
+              ))}
+            </div>
           </div>
         </section>
 
