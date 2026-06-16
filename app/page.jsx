@@ -640,7 +640,6 @@ export default async function Page() {
             <p className="sv-home-kicker">Réponses utiles avant la visite</p>
           </div>
           <div className="sv-faq-panel">
-            <div className="sv-faq-mark" aria-hidden="true">FAQ</div>
             <div className="sv-faq-list">
               {faqItems.map((item, index) => (
                 <details key={item.question} className="sv-faq-item">
@@ -656,6 +655,9 @@ export default async function Page() {
                   </div>
                 </details>
               ))}
+            </div>
+            <div className="sv-faq-mark-zone" aria-hidden="true">
+              <div className="sv-faq-mark">FAQ</div>
             </div>
           </div>
         </section>
