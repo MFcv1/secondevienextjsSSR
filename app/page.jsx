@@ -180,13 +180,33 @@ const formatPrice = (product) => {
   if (product?.priceOnRequest) return 'Prix sur demande';
   const price = product?.currentPrice || product?.price || product?.startingPrice;
   if (!price) return 'Voir la pièce';
-  return `${Number(price).toLocaleString('fr-FR')} €`;
+  return `${Number(price).toLocaleString('fr-FR')}\u202F€`;
 };
 
 const getProductTitle = (product, index) => {
-  const rawTitle = (product?.name || product?.title || '').trim().replace(/\s+/g, ' ');
+  const rawTitle = (product?.name || product?.title || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/\.+$/u, '');
   if (rawTitle.length >= 3) return rawTitle.charAt(0).toUpperCase() + rawTitle.slice(1);
   return `Pièce restaurée ${String(index + 1).padStart(2, '0')}`;
+};
+
+const formatCardTitle = (title) => {
+  const cleaned = title
+    .replace(/\btrumeau\b/giu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!cleaned) return title.trim();
+
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  if (words.length < 2) {
+    return words[0].charAt(0).toUpperCase() + words[0].slice(1);
+  }
+  const lastWord = words.pop();
+  const previousWord = words.pop();
+  const prefix = words.length ? `${words.join(' ')} ` : '';
+  return `${prefix}${previousWord}\u00A0${lastWord}`;
 };
 
 const getProductDescription = (product) => {
@@ -519,7 +539,8 @@ export default async function Page() {
           </div>
 
           {featuredProducts.length ? (
-            <ul className="sv-product-wall">
+            <div className="sv-selection-panel">
+              <ul className="sv-product-wall">
               {featuredProducts.map((product, index) => {
                 const productVisual = getFeaturedProductVisual(product);
                 const productImage = getFeaturedProductImage(product);
@@ -528,6 +549,9 @@ export default async function Page() {
                   <li key={product.id} className={getProductCardClassName(index)}>
                     <Link href={getProductUrl(product)} prefetch={false} className="sv-product-link">
                       <article className="sv-product-card">
+                        <span className="sv-product-card__index" aria-hidden="true">
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
                         <div
                           className="sv-product-card__media"
                           style={productImage.ratio ? { '--sv-product-image-ratio': productImage.ratio } : undefined}
@@ -548,16 +572,19 @@ export default async function Page() {
                           )}
                         </div>
                         <div className="sv-product-card__body">
-                          <h3>{title}</h3>
+                          <h3>{formatCardTitle(title)}</h3>
                           <span>{getProductDescription(product)}</span>
-                          <strong>{formatPrice(product)}</strong>
+                          <span className="sv-product-card__price">
+                            <strong>{formatPrice(product)}</strong>
+                          </span>
                         </div>
                       </article>
                     </Link>
                   </li>
                 );
               })}
-            </ul>
+              </ul>
+            </div>
           ) : (
             <p className="sv-empty-selection">Aucune pièce publiée pour le moment.</p>
           )}
