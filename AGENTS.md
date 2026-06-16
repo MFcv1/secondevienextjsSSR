@@ -28,6 +28,8 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- DEAD_CODE_AUDIT.md : audit multi-agent code vivant/mort, candidats suppression et assets a archiver
 |-- TODO.md : checklist Phase 2 infra prod puis Phase 3 hydratation/perf
 |-- INFRA_PROD_PHASE2_REPORT_2026-06-14.md : rapport infra prod Phase 2, decisions env/secrets/revalidation/Stripe et risques restants
+|-- MENU_NAVIGATION_CATEGORY_LOADING_REPORT_2026-06-16.md : rapport navigation menu, prefetch cible, suppression loading categorie et deploy App Hosting sandbox
+|-- AI_QUOTE_ASSISTANT_MVP.md : cadrage MVP assistant IA devis, base metier, garde-fous OpenAI et integration admin
 |-- .agents/skills/nextjsssr : skill Codex local pour appliquer nextjsssr.md
 |-- package*.json, next.config.mjs, eslint.config.mjs, jsconfig.json, tailwind.config.js, postcss.config.js
 |-- middleware.js : redirections Next ciblees, dont compatibilite `/?page=gallery` vers `/galerie`
@@ -67,6 +69,21 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 - Le test complet heberge a ete execute avec le compte verifie `loa.gto15+fulltest...@gmail.com`, produit `Paire de chevets`, carte Stripe sandbox `4242 4242 4242 4242`.
 - Resultat runtime: login OK, panier OK, checkout OK, paiement Stripe sandbox OK, ecran final `Paiement valide` / `Votre commande est confirmee` visible. Le run fonctionnel a seulement echoue sur une assertion Playwright trop stricte car deux textes de succes etaient visibles; l'assertion a ete corrigee pour les prochains runs.
 - Restant a verifier separement: logs Functions/webhook Stripe signe, email de confirmation et scenario annulation/restauration stock.
+
+## Rapport agent - 2026-06-16
+
+### Goal 22 - Navigation menu et chargement categories
+
+- `MENU_NAVIGATION_CATEGORY_LOADING_REPORT_2026-06-16.md` documente le diagnostic et les decisions de la passe.
+- Cause principale traitee: le grand squelette visible avant les pages categorie venait de `app/categorie/[categoryId]/loading.jsx`, affiche automatiquement par Next pendant la navigation client. Ce fichier a ete supprime pour eviter l'ecran intermediaire.
+- `app/categorie/[categoryId]/page.jsx` memoise les donnees categorie via `cache()` et ne lit plus `getServerDarkMode()`, afin de garder les routes categorie publiques plus favorables au prerendu/cache. Le build confirme `/categorie/[categoryId]` en SSG avec les categories attendues.
+- `src/kit/marketplace/PremiumMegaMenuIsland.jsx` utilise maintenant `next/link` pour les liens internes et precharge au survol/focus les routes visibles du mega menu, dont les sous-categories et `/devis` pour les ressources.
+- `src/kit/marketplace/GlobalMenuPanelAuthIsland.jsx` precharge a l'ouverture du menu global les routes critiques: galerie/ancres, categories principales, sous-categories, `/a-propos`, `/devis`, `/mes-commandes`, `/wishlist`.
+- `src/kit/layout/GlobalMenu.jsx` ne force plus `window.location.assign` pour `/a-propos` et `/devis`; `Nouveautes` pointe vers `/galerie#gallery-pieces`, `Prix bas` vers `/galerie#gallery-small-prices`, et la tuile livraison/atelier vers `/devis`.
+- Les routes compte visibles dans le menu ont recu des fallbacks visibles et des navigations `router.push`: `app/RouteClientProviders.jsx`, `app/mes-commandes/OrdersPageIsland.jsx`, `app/wishlist/WishlistPageIsland.jsx`.
+- `src/kit/marketplace/QuoteRequestServerView.jsx` passe maintenant `initialDarkMode` a `QuoteFormIsland`.
+- Validation executee: `git diff --check` OK, `npm run build` OK apres relance hors sandbox a cause d'un `spawn EPERM` initial. Deploiement App Hosting sandbox effectue sur `secondevie-next-sandbox` / projet `secondevienextjsssr`, URL `https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app`.
+- Decision a conserver: ne pas restaurer un grand `loading.jsx` specifique aux categories sans mesurer l'impact UX; garder un prefetch menu cible plutot qu'un prefetch massif du catalogue.
 
 ## NEXTJS OPTIMIZATION ROADMAP
 

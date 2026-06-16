@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Eye, EyeOff, KeyRound, ShieldCheck, X } from 'lucide-react';
+import { KeyRound, Mail, RotateCcw, ShieldCheck, X } from 'lucide-react';
 import { httpsCallable } from 'firebase/functions';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { functions } from '../config/firebase';
@@ -13,11 +13,9 @@ const PASSKEY_EMAIL_KEY = 'secondevie:passkey-email';
 const PASSKEY_EMAILS_KEY = 'secondevie:passkey-emails';
 
 const getAuthErrorMessage = (error) => {
-  if (error?.code === 'auth/email-already-in-use') return 'Cet email est deja associe a un compte. Connectez-vous.';
-  if (error?.code === 'auth/weak-password') return 'Le mot de passe doit contenir au moins 6 caracteres.';
   if (error?.code === 'auth/invalid-email') return "L'adresse email n'est pas valide.";
   if (error?.code === 'auth/user-not-found' || error?.code === 'auth/wrong-password' || error?.code === 'auth/invalid-credential') {
-    return 'Email ou mot de passe incorrect.';
+    return 'Identifiants incorrects.';
   }
   if (error?.code === 'auth/unauthorized-domain') return 'Connexion bloquee: domaine non autorise dans Firebase.';
   if (error?.code === 'auth/operation-not-allowed') return 'Ce mode de connexion est desactive dans Firebase.';
@@ -28,6 +26,15 @@ const getAuthErrorMessage = (error) => {
 };
 
 const normalizeEmailValue = (email) => String(email || '').trim().toLowerCase();
+
+const maskEmail = (email) => {
+  const normalized = normalizeEmailValue(email);
+  const [name = '', domain = ''] = normalized.split('@');
+  if (!name || !domain) return normalized;
+  const visibleStart = name.slice(0, Math.min(2, name.length));
+  const visibleEnd = name.length > 3 ? name.slice(-1) : '';
+  return `${visibleStart}${'*'.repeat(Math.max(3, name.length - visibleStart.length - visibleEnd.length))}${visibleEnd}@${domain}`;
+};
 
 const readLocalPasskeyState = () => {
   if (typeof window === 'undefined') return { enabled: false, email: '', emails: [] };
@@ -181,24 +188,24 @@ const loginWithPasskey = async (email, preparedAuthentication = null, onStepChan
 };
 
 export function LegacyLoginModalContent({ open, onOpenChange }) {
-  const { loginWithGoogle, loginWithEmail, signupWithEmail, verifyEmail } = useAuth();
+  const { loginWithGoogle, loginWithCustomToken } = useAuth();
   const toast = useToast();
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showAuthSuccess, setShowAuthSuccess] = useState(false);
   const [passkeyUser, setPasskeyUser] = useState(null);
   const [passkeyStatus, setPasskeyStatus] = useState('idle');
   const [passkeyMessage, setPasskeyMessage] = useState('');
-  const [emailVerificationMessage, setEmailVerificationMessage] = useState('');
   const [emailValue, setEmailValue] = useState('');
   const [hasLocalPasskey, setHasLocalPasskey] = useState(false);
   const [localPasskeyEmails, setLocalPasskeyEmails] = useState([]);
-  const [usePasswordFallback, setUsePasswordFallback] = useState(false);
+  const [useEmailCodeFallback, setUseEmailCodeFallback] = useState(false);
   const [showPasskeyAccountChoices, setShowPasskeyAccountChoices] = useState(false);
   const [preparedPasskeyAuth, setPreparedPasskeyAuth] = useState(null);
   const [passkeyLoginStep, setPasskeyLoginStep] = useState('idle');
-  const showPasskeyFirst = hasLocalPasskey && !isSignUp && !usePasswordFallback;
+  const [otpStep, setOtpStep] = useState('email');
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const [otpStatus, setOtpStatus] = useState('idle');
+  const [otpMessage, setOtpMessage] = useState('');
+  const [resendAfter, setResendAfter] = useState(0);
+  const showPasskeyFirst = hasLocalPasskey && !useEmailCodeFallback;
   const passkeyLoginLabel = passkeyStatus === 'pending'
     ? (passkeyLoginStep === 'verifying' ? 'Verification...' : 'Empreinte...')
     : 'Connexion rapide sur cet appareil';
@@ -252,7 +259,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
           setEmailValue(localPasskey.email);
           setHasLocalPasskey(localPasskey.enabled);
           setLocalPasskeyEmails(localPasskey.emails);
-          setUsePasswordFallback(!localPasskey.enabled);
+          setUseEmailCodeFallback(!localPasskey.enabled);
         }
       });
 
@@ -261,18 +268,29 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     };
   }, [emailValue, open, showPasskeyFirst]);
 
+  useEffect(() => {
+    if (!open || resendAfter <= 0) return undefined;
+    const timer = window.setInterval(() => {
+      setResendAfter((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [open, resendAfter]);
+
   if (!open) return null;
 
   const close = () => {
-    setShowAuthSuccess(false);
     setPasskeyUser(null);
     setPasskeyStatus('idle');
     setPasskeyMessage('');
-    setEmailVerificationMessage('');
-    setUsePasswordFallback(false);
+    setUseEmailCodeFallback(false);
     setShowPasskeyAccountChoices(false);
     setPreparedPasskeyAuth(null);
     setPasskeyLoginStep('idle');
+    setOtpStep('email');
+    setOtpDigits(['', '', '', '', '', '']);
+    setOtpStatus('idle');
+    setOtpMessage('');
+    setResendAfter(0);
     onOpenChange(false);
   };
 
@@ -336,7 +354,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
         setEmailValue(localPasskey.email);
         setHasLocalPasskey(localPasskey.enabled);
         setLocalPasskeyEmails(localPasskey.emails);
-        setUsePasswordFallback(!localPasskey.enabled);
+        setUseEmailCodeFallback(!localPasskey.enabled);
       }
       setPasskeyLoginStep('idle');
       setPasskeyStatus('error');
@@ -345,40 +363,80 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     }
   };
 
-  const handleSubmit = async (event) => {
+  const requestCustomerLoginCode = async (event) => {
     event.preventDefault();
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const email = String(formData.get('email') || '');
-    const password = String(formData.get('password') || '');
-    const confirmPassword = String(formData.get('confirmPassword') || '');
-
-    try {
-      if (isSignUp) {
-        if (password !== confirmPassword) throw new Error('password_mismatch');
-        const userCredential = await signupWithEmail(email, password);
-        setPasskeyUser(userCredential.user);
-        setShowAuthSuccess(true);
-        setEmailVerificationMessage("Envoi du lien de confirmation en cours...");
-        verifyEmail(userCredential.user)
-          .then(() => {
-            setEmailVerificationMessage("Un lien de confirmation vient d'etre envoye. Pensez a regarder dans vos spams.");
-          })
-          .catch((error) => {
-            console.error('Email verification send error:', error);
-            setEmailVerificationMessage("Compte cree. Le lien de confirmation n'a pas pu etre envoye pour le moment.");
-          });
-      } else {
-        const userCredential = await loginWithEmail(email, password);
-        offerPasskeyOrClose(userCredential?.user);
-      }
-    } catch (error) {
-      if (error?.message === 'password_mismatch') {
-        toast('Les mots de passe ne correspondent pas.', { type: 'error' });
-      } else {
-        toast(getAuthErrorMessage(error), { type: 'error' });
-      }
+    const email = normalizeEmailValue(emailValue);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast("Saisissez une adresse email valide.", { type: 'error' });
+      return;
     }
+
+    setOtpStatus('sending');
+    setOtpMessage('');
+    try {
+      const sendOtp = httpsCallable(functions, 'sendCustomerLoginOtp');
+      const result = await sendOtp({ email });
+      setOtpStep('code');
+      setOtpDigits(['', '', '', '', '', '']);
+      setResendAfter(Number(result.data?.resendAfterSeconds || 60));
+      setOtpStatus('sent');
+      setOtpMessage(`Code envoye a ${maskEmail(email)}.`);
+    } catch (error) {
+      const message = error?.message || "Impossible d'envoyer le code pour le moment.";
+      setOtpStatus('error');
+      setOtpMessage(message);
+      toast(message, { type: 'error' });
+    }
+  };
+
+  const verifyCustomerLoginCode = async (event) => {
+    event.preventDefault();
+    const email = normalizeEmailValue(emailValue);
+    const code = otpDigits.join('');
+    if (!/^\d{6}$/.test(code)) {
+      toast('Saisissez les 6 chiffres du code.', { type: 'error' });
+      return;
+    }
+
+    setOtpStatus('verifying');
+    setOtpMessage('');
+    try {
+      const verifyOtp = httpsCallable(functions, 'verifyCustomerLoginOtp');
+      const result = await verifyOtp({ email, code });
+      if (!result.data?.token) throw new Error('Token de connexion manquant.');
+      const userCredential = await loginWithCustomToken(result.data.token);
+      setOtpStatus('success');
+      setOtpMessage('Email verifie. Connexion ouverte.');
+      offerPasskeyOrClose(userCredential?.user);
+    } catch (error) {
+      const message = error?.message || 'Code invalide ou expire.';
+      setOtpStatus('error');
+      setOtpMessage(message);
+      toast(message, { type: 'error' });
+    }
+  };
+
+  const handleOtpDigitChange = (index, value) => {
+    const nextValue = String(value || '').replace(/\D/g, '').slice(-1);
+    setOtpDigits((current) => current.map((digit, digitIndex) => (
+      digitIndex === index ? nextValue : digit
+    )));
+    if (nextValue && typeof document !== 'undefined') {
+      document.querySelector(`[data-otp-index="${index + 1}"]`)?.focus();
+    }
+  };
+
+  const handleOtpPaste = (event) => {
+    const pastedCode = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (pastedCode.length < 2) return;
+    event.preventDefault();
+    setOtpDigits(Array.from({ length: 6 }, (_, index) => pastedCode[index] || ''));
+    document.querySelector(`[data-otp-index="${Math.min(pastedCode.length, 5)}"]`)?.focus();
+  };
+
+  const handleOtpKeyDown = (index, event) => {
+    if (event.key !== 'Backspace' || otpDigits[index] || index === 0) return;
+    document.querySelector(`[data-otp-index="${index - 1}"]`)?.focus();
   };
 
   return (
@@ -407,54 +465,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
         </div>
 
         <div className="safe-pb-auth safe-pt-auth flex w-full flex-col justify-center overflow-y-auto px-6 text-white md:w-1/2 md:px-14">
-          {showAuthSuccess ? (
-            <div className="space-y-6 text-center animate-in fade-in slide-in-from-bottom-4">
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 shadow-sm">
-                <ShieldCheck size={40} />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-2xl font-bold tracking-tight text-white">Verifiez vos emails !</h3>
-                <p className="px-2 text-sm font-medium leading-relaxed text-stone-400">
-                  {emailVerificationMessage || "Compte cree. Vous pouvez activer la connexion rapide."}
-                </p>
-              </div>
-              {passkeyUser ? (
-                <div className="rounded-2xl border border-[#2A2A2E] bg-[#141417] p-4 text-left">
-                  <div className="flex items-start gap-3">
-                    <KeyRound size={18} className="mt-0.5 shrink-0 text-amber-400" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-bold text-white">Connexion rapide/passkey</p>
-                      <p className="text-xs leading-relaxed text-stone-400">
-                        Activez Face ID, empreinte ou code appareil pour les prochaines connexions.
-                      </p>
-                    </div>
-                  </div>
-                  {passkeyMessage ? (
-                    <p className={`mt-3 text-xs font-semibold ${passkeyStatus === 'success' ? 'text-emerald-400' : 'text-amber-300'}`}>
-                      {passkeyMessage}
-                    </p>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={handleCreatePasskey}
-                    disabled={passkeyStatus === 'pending' || passkeyStatus === 'success'}
-                    className="mt-4 w-full rounded-xl border border-[#2A2A2E] bg-white/5 py-3 text-xs font-bold uppercase tracking-[0.14em] text-white transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {passkeyStatus === 'pending' ? 'Activation...' : passkeyStatus === 'success' ? 'Passkey activee' : 'Activer sur cet appareil'}
-                  </button>
-                </div>
-              ) : null}
-              <button
-                type="button"
-                onClick={close}
-                className="mt-4 w-full rounded-xl bg-[#24242B] py-4 font-bold tracking-wide text-white transition-all hover:bg-[#2F2F37]"
-              >
-                C'est compris
-              </button>
-            </div>
-          ) : (
-            <>
-              {passkeyUser ? (
+          {passkeyUser ? (
                 <div className="space-y-6 text-center animate-in fade-in slide-in-from-bottom-4">
                   <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 shadow-sm">
                     <ShieldCheck size={40} />
@@ -504,7 +515,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                   Bienvenue sur Seconde Vie
                 </h3>
                 <p className="text-sm leading-relaxed text-stone-400">
-                  {isSignUp ? 'Creez votre espace client pour suivre vos commandes.' : 'Connectez-vous a votre espace client.'}
+                  Entrez votre email, puis le code a 6 chiffres recu dans votre boite mail.
                 </p>
               </div>
 
@@ -522,7 +533,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
               <div className="my-6 flex items-center gap-4">
                 <div className="h-px flex-1 bg-[#2A2A2E]" />
                 <span className="text-[10px] font-black uppercase tracking-[0.18em] text-stone-500">
-                  {showPasskeyFirst ? 'Connexion locale' : 'Ou par email'}
+                  {showPasskeyFirst ? 'Connexion locale' : 'Code par email'}
                 </span>
                 <div className="h-px flex-1 bg-[#2A2A2E]" />
               </div>
@@ -584,7 +595,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                   <button
                     type="button"
                     onClick={() => {
-                      setUsePasswordFallback(true);
+                      setUseEmailCodeFallback(true);
                       setShowPasskeyAccountChoices(false);
                       setPasskeyStatus('idle');
                       setPasskeyLoginStep('idle');
@@ -592,76 +603,113 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                     }}
                     className="w-full text-center text-xs font-bold text-stone-400 transition-colors hover:text-white"
                   >
-                    Utiliser email et mot de passe
+                    Recevoir un code par email
                   </button>
                 </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-4" data-signup={isSignUp ? 'true' : 'false'}>
-                  <input
-                    name="email"
-                    type="email"
-                    placeholder="Adresse email"
-                    value={emailValue}
-                    onChange={(event) => setEmailValue(event.target.value)}
-                    className="w-full rounded-xl border border-[#2A2A2E] bg-[#141417] p-4 text-sm text-white outline-none transition-all placeholder:text-stone-500 focus:border-[#4f4f56]"
-                    required
-                    autoComplete="email"
-                  />
-
-                  <label className="relative block">
-                    <input
-                      name="password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Mot de passe"
-                      className="w-full rounded-xl border border-[#2A2A2E] bg-[#141417] p-4 pr-12 text-sm text-white outline-none transition-all placeholder:text-stone-500 focus:border-[#4f4f56]"
-                      required
-                      autoComplete={isSignUp ? 'new-password' : 'current-password'}
-                    />
+              ) : otpStep === 'code' ? (
+                  <form onSubmit={verifyCustomerLoginCode} className="space-y-4">
+                    <div className="rounded-2xl border border-[#2A2A2E] bg-[#141417] p-4">
+                      <div className="flex items-start gap-3">
+                        <Mail size={18} className="mt-0.5 shrink-0 text-emerald-300" />
+                        <div className="space-y-1 text-left">
+                          <p className="text-sm font-bold text-white">Code envoye</p>
+                          <p className="text-xs leading-relaxed text-stone-400">
+                            Saisissez le code recu a {maskEmail(emailValue)}.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-6 gap-2" onPaste={handleOtpPaste}>
+                      {otpDigits.map((digit, index) => (
+                        <input
+                          key={index}
+                          data-otp-index={index}
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete={index === 0 ? 'one-time-code' : 'off'}
+                          value={digit}
+                          onChange={(event) => handleOtpDigitChange(index, event.target.value)}
+                          onKeyDown={(event) => handleOtpKeyDown(index, event)}
+                          className="h-12 rounded-xl border border-[#2A2A2E] bg-[#141417] text-center text-lg font-black text-white outline-none transition-all placeholder:text-stone-500 focus:border-emerald-300/80 md:h-14"
+                          aria-label={`Chiffre ${index + 1} du code`}
+                          maxLength={1}
+                        />
+                      ))}
+                    </div>
+                    {otpMessage ? (
+                      <p className={`text-center text-xs font-semibold ${otpStatus === 'error' ? 'text-amber-300' : 'text-emerald-300'}`}>
+                        {otpMessage}
+                      </p>
+                    ) : null}
                     <button
-                      type="button"
-                      onClick={() => setShowPassword((value) => !value)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 transition-colors hover:text-white"
-                      aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                      type="submit"
+                      disabled={otpStatus === 'verifying'}
+                      className="w-full rounded-xl bg-white p-4 text-sm font-bold text-[#0F0F11] transition-all hover:bg-stone-200 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      {otpStatus === 'verifying' ? 'Verification...' : 'Se connecter'}
                     </button>
-                  </label>
-
-                  {isSignUp ? (
-                    <label className="relative block">
-                      <input
-                        name="confirmPassword"
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        placeholder="Confirmer le mot de passe"
-                        className="w-full rounded-xl border border-[#2A2A2E] bg-[#141417] p-4 pr-12 text-sm text-white outline-none transition-all placeholder:text-stone-500 focus:border-[#4f4f56]"
-                        required
-                        autoComplete="new-password"
-                      />
+                    <div className="flex items-center justify-between gap-3 text-xs font-bold text-stone-400">
                       <button
                         type="button"
-                        onClick={() => setShowConfirmPassword((value) => !value)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 transition-colors hover:text-white"
-                        aria-label={showConfirmPassword ? 'Masquer la confirmation' : 'Afficher la confirmation'}
+                        onClick={() => {
+                          setOtpStep('email');
+                          setOtpDigits(['', '', '', '', '', '']);
+                          setOtpMessage('');
+                          setOtpStatus('idle');
+                        }}
+                        className="transition-colors hover:text-white"
                       >
-                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        Modifier l'email
                       </button>
-                    </label>
-                  ) : null}
-
-                  <button
-                    type="submit"
-                    className="w-full rounded-xl bg-white p-4 text-sm font-bold text-[#0F0F11] transition-all hover:bg-stone-200"
-                  >
-                    {isSignUp ? 'Creer mon compte' : 'Connexion'}
-                  </button>
-                </form>
-              )}
+                      <button
+                        type="button"
+                        onClick={requestCustomerLoginCode}
+                        disabled={resendAfter > 0 || otpStatus === 'sending'}
+                        className="inline-flex items-center gap-1 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <RotateCcw size={13} />
+                        {resendAfter > 0 ? `Renvoyer dans ${resendAfter}s` : 'Renvoyer le code'}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <form onSubmit={requestCustomerLoginCode} className="space-y-4">
+                    <input
+                      name="email"
+                      type="email"
+                      placeholder="Adresse email"
+                      value={emailValue}
+                      onChange={(event) => {
+                        setEmailValue(event.target.value);
+                        setOtpMessage('');
+                      }}
+                      className="w-full rounded-xl border border-[#2A2A2E] bg-[#141417] p-4 text-sm text-white outline-none transition-all placeholder:text-stone-500 focus:border-[#4f4f56]"
+                      required
+                      autoComplete="email"
+                    />
+                    {otpMessage ? (
+                      <p className={`text-center text-xs font-semibold ${otpStatus === 'error' ? 'text-amber-300' : 'text-emerald-300'}`}>
+                        {otpMessage}
+                      </p>
+                    ) : null}
+                    <button
+                      type="submit"
+                      disabled={otpStatus === 'sending'}
+                      className="w-full rounded-xl bg-white p-4 text-sm font-bold text-[#0F0F11] transition-all hover:bg-stone-200 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {otpStatus === 'sending' ? 'Envoi du code...' : 'Recevoir mon code'}
+                    </button>
+                  </form>
+                )
+              }
 
               <button
                 type="button"
                 onClick={() => {
-                  setIsSignUp((value) => !value);
-                  setUsePasswordFallback(false);
+                  setOtpStep('email');
+                  setOtpDigits(['', '', '', '', '', '']);
+                  setOtpMessage('');
+                  setUseEmailCodeFallback(false);
                   setShowPasskeyAccountChoices(false);
                   setPasskeyMessage('');
                   setPasskeyStatus('idle');
@@ -669,7 +717,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                 }}
                 className="mt-6 w-full text-center text-xs font-bold text-stone-400 transition-colors hover:text-white"
               >
-                {isSignUp ? 'J’ai deja un compte' : 'Creer un compte client'}
+                Code email = connexion et creation de compte
               </button>
 
               <div className="mt-8 text-center text-[11px] leading-relaxed text-stone-500">
@@ -678,8 +726,6 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                 {' '}et de la{' '}
                 <button type="button" className="font-bold text-stone-400 hover:text-white">Politique de confidentialite</button>
               </div>
-            </>
-              )}
             </>
           )}
         </div>

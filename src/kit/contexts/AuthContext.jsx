@@ -237,6 +237,12 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         return syncSignedInUser(result);
     };
 
+    const loginWithCustomToken = async (token) => {
+        const { auth, module } = await getAuthRuntime();
+        const result = await module.signInWithCustomToken(auth, token);
+        return syncSignedInUser(result);
+    };
+
     const logout = async () => {
         const { auth, module } = await getAuthRuntime();
         setUser(null);
@@ -261,6 +267,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         loading,
         loginWithGoogle,
         loginWithEmail,
+        loginWithCustomToken,
         signupWithEmail,
         logout,
         verifyEmail

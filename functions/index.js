@@ -19,6 +19,7 @@ exports.cancelOrderClient = cancelOrderClient;
 const { grantAdminOnAuth } = require('./src/auth/grantAdmin');
 const { addAdminUser, removeAdminUser, logUserConnection, getUserStats, syncSuperAdminClaim } = require('./src/auth/adminManagement');
 const { sendGuestCheckoutOtp, verifyGuestCheckoutOtp } = require('./src/auth/guestCheckoutOtp');
+const { sendCustomerLoginOtp, verifyCustomerLoginOtp } = require('./src/auth/customerLoginOtp');
 const {
     generatePasskeyRegistrationOptions,
     verifyPasskeyRegistration,
@@ -34,6 +35,8 @@ exports.getUserStats = getUserStats;
 exports.syncSuperAdminClaim = syncSuperAdminClaim;
 exports.sendGuestCheckoutOtp = sendGuestCheckoutOtp;
 exports.verifyGuestCheckoutOtp = verifyGuestCheckoutOtp;
+exports.sendCustomerLoginOtp = sendCustomerLoginOtp;
+exports.verifyCustomerLoginOtp = verifyCustomerLoginOtp;
 exports.generatePasskeyRegistrationOptions = generatePasskeyRegistrationOptions;
 exports.verifyPasskeyRegistration = verifyPasskeyRegistration;
 exports.generatePasskeyAuthenticationOptions = generatePasskeyAuthenticationOptions;
