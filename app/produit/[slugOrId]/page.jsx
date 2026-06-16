@@ -5,7 +5,6 @@ import {
   isSeoIndexableProduct
 } from '../../../src/lib/server/products';
 import { publicEnv } from '../../../src/lib/server/env';
-import { getServerDarkMode } from '../../../src/lib/server/theme';
 import { getProductUrl } from '../../../src/utils/slug';
 import { getProductDisplayImageSrc, getProductImageItems } from '../../../src/utils/imageUtils';
 import {
@@ -111,7 +110,7 @@ export async function generateMetadata({ params }) {
 export default async function ProductPage({ params }) {
   const product = await getProductPageData(params);
   if (!product) notFound();
-  const darkMode = await getServerDarkMode();
+  const darkMode = false;
 
   const jsonLd = buildProductJsonLd(product, publicEnv.siteUrl);
   const breadcrumbJsonLd = buildBreadcrumbJsonLd(product, publicEnv.siteUrl);

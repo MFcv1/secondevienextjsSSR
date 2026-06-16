@@ -30,6 +30,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- INFRA_PROD_PHASE2_REPORT_2026-06-14.md : rapport infra prod Phase 2, decisions env/secrets/revalidation/Stripe et risques restants
 |-- MENU_NAVIGATION_CATEGORY_LOADING_REPORT_2026-06-16.md : rapport navigation menu, prefetch cible, suppression loading categorie et deploy App Hosting sandbox
 |-- AI_QUOTE_ASSISTANT_MVP.md : cadrage MVP assistant IA devis, base metier, garde-fous OpenAI et integration admin
+|-- NEXT_PUBLIC_ROUTES_STATIC_ARCHITECTURE_ROADMAP_2026-06-16.md : roadmap routes publiques cacheables, theme sans cookie serveur, categories canonique/facettes client et gates prerender
 |-- .agents/skills/nextjsssr : skill Codex local pour appliquer nextjsssr.md
 |-- package*.json, next.config.mjs, eslint.config.mjs, jsconfig.json, tailwind.config.js, postcss.config.js
 |-- middleware.js : redirections Next ciblees, dont compatibilite `/?page=gallery` vers `/galerie`
@@ -72,6 +73,19 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 
 ## Rapport agent - 2026-06-16
 
+### Goal 23 - Routes publiques statiques, theme et facettes categories
+
+- `NEXT_PUBLIC_ROUTES_STATIC_ARCHITECTURE_ROADMAP_2026-06-16.md` a ete cree et relie dans la code map ainsi que dans les consignes operationnelles `AGENTS.md`.
+- Objectif long terme acte: routes publiques SEO stables et ISR-friendly, preferences UI hors rendu serveur public, categories canoniques cacheables, facettes query params gerees cote client sauf vraies routes SEO dediees.
+- Trois side agents ont travaille en parallele sur des perimetres disjoints: produit/theme, categories/facettes, gates/prerender.
+- `app/produit/[slugOrId]/page.jsx` ne lit plus `getServerDarkMode()` et ne declenche plus `cookies()` cote serveur pour le theme public; le rendu serveur produit utilise maintenant un theme stable comme la categorie.
+- `app/categorie/[categoryId]/page.jsx` ne declare plus `searchParams` et ne passe plus les query params au rendu serveur.
+- `src/kit/marketplace/CategoryControlsIsland.jsx` lit et synchronise les query params cote client, applique filtres/tri/vues via DOM progressif, utilise `history.pushState` et gere `popstate`.
+- `src/kit/marketplace/CategoryServerView.jsx` rend la categorie canonique par defaut et expose les metadonnees necessaires a l'ile client sans reintroduire un gros rendu produit React.
+- `src/kit/marketplace/categoryViewModel.js` accepte maintenant `URLSearchParams` et les timestamps numeriques pour partager la logique serveur/client.
+- `scripts/check-next-route-classification.cjs` bloque les imports/accès request-time (`next/headers`, `cookies()`, `headers()`, `draftMode()`) depuis les graphes de routes publiques SEO, interdit `searchParams` dans les pages publiques, et verifie que les tunnels prives/API restent `force-dynamic`.
+- Validation courte executee: `npm run next:routes` OK. Pas de build, serveur local, Playwright ou validation visuelle lance dans cette passe.
+
 ### Goal 22 - Navigation menu et chargement categories
 
 - `MENU_NAVIGATION_CATEGORY_LOADING_REPORT_2026-06-16.md` documente le diagnostic et les decisions de la passe.
@@ -86,6 +100,12 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 - Decision a conserver: ne pas restaurer un grand `loading.jsx` specifique aux categories sans mesurer l'impact UX; garder un prefetch menu cible plutot qu'un prefetch massif du catalogue.
 
 ## NEXTJS OPTIMIZATION ROADMAP
+
+## NEXT PUBLIC ROUTES STATIC ARCHITECTURE ROADMAP
+
+Avant toute passe qui vise le theme public, le retrait de `cookies()` sur les routes SEO, les categories sans `searchParams` serveur, les facettes client, ou les gates de classification prerender/cache, lire `NEXT_PUBLIC_ROUTES_STATIC_ARCHITECTURE_ROADMAP_2026-06-16.md`.
+
+Cette roadmap fixe la cible long terme: routes publiques SEO stables et ISR-friendly, preferences UI hors rendu serveur public, categories canoniques cacheables, facettes query params gerees cote client sauf vraies routes SEO dediees.
 
 Avant toute passe d optimisation specifique au clone Next.js SSR, lire `NEXTJS_OPTIMIZATION_ROADMAP.md`.
 

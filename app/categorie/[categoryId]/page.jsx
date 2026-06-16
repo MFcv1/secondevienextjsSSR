@@ -119,11 +119,10 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default async function CategoryRoutePage({ params, searchParams }) {
+export default async function CategoryRoutePage({ params }) {
   const data = await getCategoryRouteDataFromParams(params);
   if (!data) notFound();
   const darkMode = false;
-  const resolvedSearchParams = await searchParams;
 
   const { categoryId, categoryLabel, products } = data;
   const copy = getCategorySeoCopy(categoryId, categoryLabel);
@@ -150,7 +149,6 @@ export default async function CategoryRoutePage({ params, searchParams }) {
           products={products}
           copy={copy}
           darkMode={darkMode}
-          searchParams={resolvedSearchParams}
         />
         <FooterServer darkMode={darkMode} />
       </main>

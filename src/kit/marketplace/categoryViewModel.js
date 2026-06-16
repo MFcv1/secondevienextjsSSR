@@ -15,6 +15,7 @@ const LEGACY_CATEGORY_IDS = {
 export const getCategoryProductCreatedTime = (item) => {
   const value = item?.createdAt;
   if (!value) return 0;
+  if (typeof value === 'number') return value;
   if (typeof value === 'string') return Date.parse(value) || 0;
   if (typeof value?.seconds === 'number') return value.seconds * 1000;
   return 0;
@@ -35,9 +36,16 @@ const asArray = (value) => {
 
 const getSearchParamValue = (searchParams, key) => {
   if (!searchParams) return undefined;
+  if (typeof searchParams.get === 'function') return searchParams.get(key) || undefined;
   const value = searchParams[key];
   if (Array.isArray(value)) return value[0];
   return value;
+};
+
+const getSearchParamArray = (searchParams, key) => {
+  if (!searchParams) return [];
+  if (typeof searchParams.getAll === 'function') return asArray(searchParams.getAll(key));
+  return asArray(searchParams[key]);
 };
 
 const clampView = (value, allowed, fallback) => (
@@ -118,9 +126,9 @@ export const getCategoryQueryState = (searchParams = {}, filterOptions = {}) => 
     sortBy: CATEGORY_SORT_OPTIONS.some((option) => option.id === sortBy) ? sortBy : 'newest',
     viewMode: clampView(getSearchParamValue(searchParams, 'view'), ['grid', 'list'], 'grid'),
     mobileViewMode: clampView(getSearchParamValue(searchParams, 'mobileView'), ['grid', 'list'], 'list'),
-    selectedMaterials: asArray(searchParams.material),
-    selectedStyles: asArray(searchParams.style),
-    selectedCollections: asArray(searchParams.collection),
+    selectedMaterials: getSearchParamArray(searchParams, 'material'),
+    selectedStyles: getSearchParamArray(searchParams, 'style'),
+    selectedCollections: getSearchParamArray(searchParams, 'collection'),
     availabilityFilter: clampView(getSearchParamValue(searchParams, 'availability'), ['all', 'in-stock', 'sold'], 'all'),
     searchQuery: String(getSearchParamValue(searchParams, 'q') || '').trim(),
     priceRange: [0, Math.min(Math.max(0, priceMax), roundedMax)],
