@@ -1817,7 +1817,7 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
 .sv-faq-panel {
   --sv-faq-panel-pad: clamp(28px, 4.8vw, 40px);
   --sv-faq-mark-space: clamp(5.2rem, 14.4vw, 6.8rem);
-  --sv-faq-q-clearance: 0.34rem;
+  --sv-faq-q-clearance: 0.26rem;
   --sv-faq-mark-gap: 0.55rem;
   position: relative;
   z-index: 1;
@@ -3562,7 +3562,7 @@ html[data-sv-client-hydrated="true"] [data-public-ssr-fallback] {
   .sv-faq-panel {
     --sv-faq-panel-pad: clamp(22px, 6.8vw, 30px);
     --sv-faq-mark-space: clamp(4.8rem, 17.5vw, 6.2rem);
-    --sv-faq-q-clearance: 0.48rem;
+    --sv-faq-q-clearance: 0.38rem;
     --sv-faq-mark-gap: 0.85rem;
     width: 100%;
     border-radius: 26px;
@@ -5692,6 +5692,210 @@ img {
   transition-duration: 0ms !important;
 }
 
+/* Client-side dark mode bridge for public ISR/SSG pages. */
+html.dark,
+html.dark body {
+  background: #0a0a0a;
+  color: #f5f5f4;
+  color-scheme: dark;
+}
+
+html.dark .safe-pt-header,
+html.dark [data-footer-mounted="true"],
+html.dark [data-ssr-home],
+html.dark [data-ssr-about],
+html.dark [data-ssr-gallery],
+html.dark [data-ssr-category],
+html.dark [data-ssr-quote],
+html.dark [data-category-native-view],
+html.dark [data-next-product-detail-shell="native"],
+html.dark .gallery-theme-surface {
+  background-color: #0a0a0a !important;
+  color: #f5f5f4 !important;
+}
+
+html.dark .safe-pt-header {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark [data-ssr-gallery] [class*="bg-[#FAFAF9]"],
+html.dark [data-ssr-gallery] [class*="bg-[#fbfaf8]"],
+html.dark [data-ssr-gallery] [class*="bg-[#fbfaf7]"],
+html.dark [data-ssr-gallery] [class*="bg-[#F2F0ED]"],
+html.dark [data-ssr-gallery] [class*="bg-[#f8f1e6]"],
+html.dark [data-ssr-gallery] [class*="bg-[#f7f1ea]"],
+html.dark [data-ssr-gallery] [class*="bg-[#fffaf3]"],
+html.dark [data-ssr-gallery] [class*="bg-[#fffdf8]"],
+html.dark [data-ssr-gallery] [class*="bg-[#fffbf5]"],
+html.dark [data-ssr-gallery] [class*="bg-[#f3e8dc]"],
+html.dark [data-ssr-gallery] [class*="bg-[#f2e5d4]"],
+html.dark [data-ssr-gallery] [class*="bg-[#f5ede3]"],
+html.dark [data-ssr-gallery] [class*="bg-[#fff8ee]"],
+html.dark [data-ssr-category] [class*="bg-[#FAFAF9]"],
+html.dark [data-ssr-category] [class*="bg-[#fbfaf8]"],
+html.dark [data-category-native-view] [class*="bg-[#FAFAF9]"],
+html.dark [data-category-native-view] [class*="bg-[#fbfaf8]"],
+html.dark [data-ssr-quote] [class*="bg-[#FAFAF9]"],
+html.dark [data-ssr-quote] [class*="bg-[#fbfaf8]"],
+html.dark [data-ssr-quote] [class*="bg-[#fbfaf7]"],
+html.dark [data-footer-mounted="true"] [class*="bg-[#fbfaf8]"],
+html.dark [data-footer-mounted="true"] [class*="bg-[#fdfbf8]"] {
+  background-color: #111110 !important;
+}
+
+html.dark [data-ssr-gallery] [class*="bg-white"],
+html.dark [data-ssr-gallery] [class*="bg-stone-100"],
+html.dark [data-ssr-gallery] [class*="bg-[#faf9f7]"] {
+  background-color: rgba(255, 255, 255, 0.055) !important;
+}
+
+html.dark [data-ssr-gallery] [class*="text-stone-900"],
+html.dark [data-ssr-gallery] [class*="text-stone-800"],
+html.dark [data-ssr-gallery] [class*="text-stone-700"],
+html.dark [data-ssr-gallery] [class*="text-[#181716]"],
+html.dark [data-ssr-gallery] [class*="text-[#191713]"],
+html.dark [data-ssr-gallery] [class*="text-[#1A1A1A]"],
+html.dark [data-ssr-gallery] [class*="text-[#1d1914]"],
+html.dark [data-ssr-gallery] [class*="text-[#242221]"],
+html.dark [data-ssr-gallery] [class*="text-[#26221D]"],
+html.dark [data-ssr-category] [class*="text-stone-950"],
+html.dark [data-ssr-category] [class*="text-stone-900"],
+html.dark [data-ssr-category] [class*="text-stone-800"],
+html.dark [data-ssr-category] [class*="text-stone-700"],
+html.dark [data-category-native-view] [class*="text-stone-900"],
+html.dark [data-category-native-view] [class*="text-stone-800"],
+html.dark [data-category-native-view] [class*="text-stone-700"],
+html.dark [data-ssr-quote] [class*="text-[#1f1b17]"],
+html.dark [data-footer-mounted="true"] [class*="text-stone-950"],
+html.dark [data-footer-mounted="true"] [class*="text-stone-900"],
+html.dark [data-footer-mounted="true"] [class*="text-stone-700"] {
+  color: #f5f5f4 !important;
+}
+
+html.dark [data-ssr-gallery] [class*="text-stone-600"],
+html.dark [data-ssr-gallery] [class*="text-stone-500"],
+html.dark [data-ssr-gallery] [class*="text-[#62584e]"],
+html.dark [data-ssr-gallery] [class*="text-[#62584f]"],
+html.dark [data-ssr-gallery] [class*="text-[#5f554a]"],
+html.dark [data-ssr-gallery] [class*="text-[#4f463e]"],
+html.dark [data-ssr-gallery] [class*="text-[#75695f]"],
+html.dark [data-ssr-gallery] [class*="text-[#91877b]"] {
+  color: rgba(245, 245, 244, 0.68) !important;
+}
+
+html.dark [data-ssr-gallery] [class*="border-stone-200"],
+html.dark [data-ssr-gallery] [class*="border-stone-300"],
+html.dark [data-ssr-gallery] [class*="border-[#d8c8ba]"],
+html.dark [data-ssr-gallery] [class*="border-[#d8c5af]"],
+html.dark [data-ssr-gallery] [class*="border-[#d7c4ad]"],
+html.dark [data-ssr-gallery] [class*="border-[#ead8c4]"],
+html.dark [data-ssr-gallery] [class*="border-[#e4d7c7]"],
+html.dark [data-ssr-gallery] [class*="border-[#e6d9c9]"],
+html.dark [data-ssr-gallery] [class*="border-[#dccab8]"],
+html.dark [data-ssr-gallery] [class*="border-[#dfd1c2]"],
+html.dark [data-ssr-gallery] [class*="border-white"] {
+  border-color: rgba(255, 255, 255, 0.11) !important;
+}
+
+html.dark [data-ssr-gallery] [class*="ring-[#d8c9b6]"],
+html.dark [data-ssr-gallery] [class*="ring-[#d9c9b5]"],
+html.dark [data-ssr-gallery] [class*="ring-[#d8c5af]"],
+html.dark [data-ssr-gallery] [class*="ring-[#d4bea4]"],
+html.dark [data-ssr-gallery] [class*="ring-[#d9c4aa]"],
+html.dark [data-ssr-gallery] [class*="ring-[#dccab8]"],
+html.dark [data-ssr-gallery] [class*="ring-[#dfd1c2]"],
+html.dark [data-ssr-gallery] [class*="ring-white"] {
+  --tw-ring-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+html.dark .category-rail-card {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.09), rgba(255,255,255,0.035)) !important;
+  color: #f5f5f4 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 22px 48px -34px rgba(0,0,0,0.9) !important;
+}
+
+html.dark .category-rail-card .category-cta-neon {
+  background-color: rgba(255,255,255,0.06) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+}
+
+html.dark .post-hero-service-section {
+  background:
+    linear-gradient(180deg, #0a0a0a 0%, #10100f 48%, #0a0a0a 100%) !important;
+}
+
+html.dark .post-hero-service-section .post-hero-service-card {
+  color: #f5f5f4 !important;
+}
+
+html.dark .post-hero-service-section [class*="bg-stone-200"],
+html.dark .post-hero-service-section [class*="border-stone-200"] {
+  background-color: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+
+html.dark .before-after-industrial,
+html.dark .discount-section {
+  background:
+    radial-gradient(circle at 78% 24%, rgba(153, 108, 61, 0.16), transparent 30%),
+    radial-gradient(circle at 18% 72%, rgba(100, 118, 91, 0.1), transparent 32%),
+    linear-gradient(180deg, #0b0a09 0%, #11100e 54%, #0b0a09 100%) !important;
+}
+
+html.dark .before-after-industrial > .relative,
+html.dark .discount-section > .relative {
+  box-shadow:
+    0 30px 90px -68px rgba(0,0,0,0.95),
+    inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+
+html.dark .discount-industrial-card {
+  background:
+    linear-gradient(135deg, rgba(123, 84, 43, 0.38), rgba(255,255,255,0.055), rgba(17,15,13,0.96)) !important;
+}
+
+html.dark .product-card-media {
+  background-color: rgba(255,255,255,0.055) !important;
+}
+
+html.dark [data-gallery-wishlist-button] {
+  background-color: rgba(16, 15, 14, 0.88) !important;
+  color: #f5f5f4 !important;
+}
+
+html.dark [data-footer-mounted="true"] [class*="border-[#eee6dd]"],
+html.dark [data-footer-mounted="true"] [class*="border-[#e8ded2]"],
+html.dark [data-footer-mounted="true"] [class*="border-stone-200"],
+html.dark [data-footer-mounted="true"] [class*="divide-[#eee6dd]"],
+html.dark [data-footer-mounted="true"] [class*="divide-stone"] {
+  border-color: rgba(213, 181, 141, 0.16) !important;
+  --tw-divide-opacity: 1 !important;
+  --tw-divide-color: rgba(213, 181, 141, 0.16) !important;
+}
+
+html.dark [data-footer-mounted="true"] [class*="bg-[#fbfaf8]"],
+html.dark [data-footer-mounted="true"] [class*="bg-[#fdfbf8]"],
+html.dark [data-footer-mounted="true"] [class*="bg-[#f3eee7]"],
+html.dark [data-footer-mounted="true"] [class*="bg-[#ece3d8]"],
+html.dark [data-footer-mounted="true"] [class*="bg-white/45"] {
+  background-color: rgba(255, 255, 255, 0.045) !important;
+}
+
+html.dark [data-footer-mounted="true"] [class*="text-stone-950"],
+html.dark [data-footer-mounted="true"] [class*="text-stone-700"],
+html.dark [data-footer-mounted="true"] [class*="text-stone-600"],
+html.dark [data-footer-mounted="true"] [class*="text-stone-500"] {
+  color: rgba(245, 239, 230, 0.78) !important;
+}
+
+html.dark [data-footer-mounted="true"] [class*="divide-[#eee6dd]"] > :not([hidden]) ~ :not([hidden]),
+html.dark [data-footer-mounted="true"] [class*="divide-stone"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(213, 181, 141, 0.16) !important;
+}
+
 /* Lightweight client-island animations: CSS replaces Framer Motion in the public shell. */
 .gallery-entry-curtain {
   animation: gallery-entry-curtain-hold 3.35s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -5971,5 +6175,51 @@ img {
     filter: none !important;
     transform: none !important;
   }
+}
+
+@keyframes sv-auth-shimmer {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes sv-auth-loading {
+  0% {
+    transform: translateX(-110%);
+  }
+  50% {
+    transform: translateX(70%);
+  }
+  100% {
+    transform: translateX(210%);
+  }
+}
+
+.sv-auth-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+  animation: sv-auth-shimmer 1.2s linear infinite;
+}
+
+.sv-auth-loading-bar {
+  animation: sv-auth-loading 1.15s ease-in-out infinite;
+}
+
+@keyframes sv-auth-step-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.sv-auth-step {
+  animation: sv-auth-step-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: opacity, transform;
 }
 

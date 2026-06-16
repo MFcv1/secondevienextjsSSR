@@ -112,7 +112,7 @@ const MENU_ITEMS = [
     ],
     resources: ['Inspiration Galerie'],
   },
-  { id: 'prix-bas', label: 'Prix bas', href: '/galerie#gallery-small-prices', customColor: 'text-[#d9534f] hover:text-red-700' },
+  { id: 'prix-bas', label: 'Prix bas', href: '/galerie#gallery-small-prices', customColor: 'text-[#d9534f] hover:text-red-700 dark:text-[#ff6f61] dark:hover:text-[#ffa095]' },
   { id: 'propos', label: 'A propos', href: '/a-propos' },
 ];
 
@@ -130,39 +130,39 @@ function NouveautesContent({ darkMode }) {
                 href="/galerie#gallery-pieces"
                 className={`relative z-10 w-full rounded-lg px-4 py-2.5 text-[13px] transition-colors ${
                   hoveredId === item.id
-                    ? (darkMode ? 'bg-white/10 font-medium text-white' : 'bg-stone-200 font-medium text-black')
-                    : (darkMode ? 'text-stone-400 hover:text-stone-300' : 'text-stone-500 hover:text-stone-700')
+                    ? (darkMode ? 'bg-white/10 font-medium text-white' : 'bg-stone-200 font-medium text-black dark:bg-white/10 dark:text-white')
+                    : (darkMode ? 'text-stone-400 hover:text-stone-300' : 'text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200')
                 }`}
               >
                 {item.title}
               </Link>
             </li>
           ))}
-          <li className="mt-4 border-t border-stone-200/20 px-4 pt-4">
-            <Link href="/galerie#gallery-pieces" className={`flex w-full items-center justify-between text-[11px] font-bold uppercase tracking-widest transition-colors group ${darkMode ? 'text-stone-400 hover:text-white' : 'text-stone-500 hover:text-black'}`}>
+          <li className="mt-4 border-t border-stone-200/20 px-4 pt-4 dark:border-white/10">
+            <Link href="/galerie#gallery-pieces" className={`flex w-full items-center justify-between text-[11px] font-bold uppercase tracking-widest transition-colors group ${darkMode ? 'text-stone-400 hover:text-white' : 'text-stone-500 hover:text-black dark:text-stone-400 dark:hover:text-white'}`}>
               Voir le catalogue <span className="transition-transform group-hover:translate-x-1">-&gt;</span>
             </Link>
           </li>
         </ul>
       </div>
-      <div className={`mega-menu-col mega-menu-col-right flex w-full items-stretch border-l p-6 ${darkMode ? 'border-white/5 bg-[#151515]' : 'border-stone-100 bg-[#F2F2F0]'}`}>
+      <div className={`mega-menu-col mega-menu-col-right flex w-full items-stretch border-l p-6 ${darkMode ? 'border-white/5 bg-[#151515]' : 'border-stone-100 bg-[#F2F2F0] dark:border-white/5 dark:bg-[#151515]'}`}>
         <Link
           href="/galerie#gallery-pieces"
           className={`group flex w-full cursor-pointer rounded-[16px] border p-5 shadow-sm no-underline ${
-            darkMode ? 'border-white/10 bg-[#1A1A1A] shadow-black/40' : 'border-stone-100 bg-white shadow-[0_10px_30px_rgba(0,0,0,0.03)]'
+            darkMode ? 'border-white/10 bg-[#1A1A1A] shadow-black/40' : 'border-stone-100 bg-white shadow-[0_10px_30px_rgba(0,0,0,0.03)] dark:border-white/10 dark:bg-[#1A1A1A] dark:shadow-black/40'
           }`}
         >
           <span className="flex flex-1 flex-col justify-center pr-6">
-            <span className={`mb-2 block text-[9px] font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-stone-500' : 'text-[#A08E77]'}`}>
+            <span className={`mb-2 block text-[9px] font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-stone-500' : 'text-[#A08E77] dark:text-stone-500'}`}>
               En vedette
             </span>
-            <span className={`mb-2 block font-serif text-[15px] font-medium leading-tight transition-colors ${darkMode ? 'text-stone-200 group-hover:text-white' : 'text-stone-800 group-hover:text-black'}`}>
+            <span className={`mb-2 block font-serif text-[15px] font-medium leading-tight transition-colors ${darkMode ? 'text-stone-200 group-hover:text-white' : 'text-stone-800 group-hover:text-black dark:text-stone-200 dark:group-hover:text-white'}`}>
               {activeItem.title}
             </span>
-            <span className={`mb-5 block line-clamp-3 text-[11.5px] leading-relaxed ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
+            <span className={`mb-5 block line-clamp-3 text-[11.5px] leading-relaxed ${darkMode ? 'text-stone-400' : 'text-stone-500 dark:text-stone-400'}`}>
               {activeItem.desc}
             </span>
-            <span className={`mt-auto flex items-center gap-1.5 text-[11px] font-bold ${darkMode ? 'text-[#cfa471]' : 'text-stone-900'} group-hover:underline underline-offset-4 decoration-[#cfa471]/30`}>
+            <span className={`mt-auto flex items-center gap-1.5 text-[11px] font-bold ${darkMode ? 'text-[#cfa471]' : 'text-stone-900 dark:text-[#cfa471]'} group-hover:underline underline-offset-4 decoration-[#cfa471]/30`}>
               Voir la piece <span className="transition-transform group-hover:translate-x-1">-&gt;</span>
             </span>
           </span>
@@ -278,7 +278,7 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
     <>
       <nav
         ref={navRef}
-        className={`relative z-40 hidden w-full border-b py-[9px] md:block ${darkMode ? 'border-stone-800/20 bg-[#121212]' : 'border-stone-100 bg-[#FAFAF9]'}`}
+        className={`relative z-40 hidden w-full border-b py-[9px] md:block ${darkMode ? 'border-white/[0.06] bg-[#0d0d0c]' : 'border-stone-100 bg-[#FAFAF9] dark:border-white/[0.06] dark:bg-[#0d0d0c]'}`}
         onMouseLeave={closeTab}
       >
         <ul className="relative mx-auto flex max-w-7xl items-center justify-center gap-4 font-sans text-[13px] tracking-[0.05em] lg:gap-8">
@@ -287,13 +287,13 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
               key={item.id}
               onMouseEnter={(event) => openTab(item, event)}
               onFocus={(event) => openTab(item, event)}
-              className={`relative z-10 flex cursor-pointer items-center gap-1.5 px-3 py-[6px] font-medium transition-colors ${item.customColor || (darkMode ? 'text-stone-300 hover:text-white' : 'text-stone-600 hover:text-black')}`}
+              className={`relative z-10 flex cursor-pointer items-center gap-1.5 px-3 py-[6px] font-medium transition-colors ${item.customColor || (darkMode ? 'text-stone-300 hover:text-white' : 'text-stone-600 hover:text-black dark:text-stone-400 dark:hover:text-stone-100')}`}
             >
               <Link href={item.href} className="relative z-10 flex items-center gap-1.5 text-inherit no-underline">
                 {item.label}
                 {item.hasMega ? <span className={`text-[7px] transition-transform duration-300 ${hoveredTab === item.id || renderedTab === item.id ? '-rotate-180' : 'rotate-0'}`}>v</span> : null}
               </Link>
-              {hoveredTab === item.id || renderedTab === item.id ? <span className={`absolute inset-0 -z-10 rounded-full ${darkMode ? 'bg-white/10' : 'bg-black/5'}`} /> : null}
+              {hoveredTab === item.id || renderedTab === item.id ? <span className={`absolute inset-0 -z-10 rounded-full ${darkMode ? 'bg-white/10' : 'bg-black/5 dark:bg-white/10'}`} /> : null}
             </li>
           ))}
         </ul>
@@ -308,7 +308,7 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
               style={{ transform: `translate3d(${dropdownLeft}px, 0, 0)`, width: activeItem.dropdownWidth || 760 }}
             >
               <div
-                className={`mega-menu-panel overflow-hidden rounded-[20px] shadow-2xl backdrop-blur-2xl ${darkMode ? 'bg-[#1A1A1A]/95 shadow-[0_30px_60px_rgba(0,0,0,0.6)] ring-1 ring-white/10' : 'bg-white/95 shadow-[0_30px_60px_rgba(0,0,0,0.12)] ring-1 ring-stone-200/60'}`}
+                className={`mega-menu-panel overflow-hidden rounded-[20px] shadow-2xl backdrop-blur-2xl ${darkMode ? 'bg-[#151412]/96 shadow-[0_30px_60px_rgba(0,0,0,0.6)] ring-1 ring-white/10' : 'bg-white/95 shadow-[0_30px_60px_rgba(0,0,0,0.12)] ring-1 ring-stone-200/60 dark:bg-[#151412]/96 dark:shadow-[0_30px_60px_rgba(0,0,0,0.6)] dark:ring-white/10'}`}
                 data-menu-state={menuMotionState}
                 onMouseEnter={() => {
                   clearMenuTimers();
@@ -320,30 +320,30 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
                 ) : (
                   <div className="flex" key={activeItem.id}>
                     <div className={`mega-menu-col mega-menu-col-left p-8 ${activeItem.singleColumn ? 'w-[300px]' : 'w-[500px]'}`}>
-                      <h3 className={`mb-6 text-[10px] font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
+                      <h3 className={`mb-6 text-[10px] font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-stone-500' : 'text-stone-400 dark:text-stone-500'}`}>
                         Explorer {activeItem.label}
                       </h3>
                       <div className={`grid ${activeItem.singleColumn ? 'grid-cols-1 gap-y-8' : 'grid-cols-2 gap-x-6 gap-y-8'}`}>
                         {activeItem.links?.map(({ Icon, title, desc, href }) => (
-                          <Link key={title} href={href} className={`group/link -m-3 flex gap-4 rounded-xl p-3 transition-colors ${darkMode ? 'hover:bg-white/5' : 'hover:bg-stone-100/80'}`}>
-                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border transition-all duration-300 ${darkMode ? 'border-white/5 bg-white/5 group-hover/link:bg-white/10' : 'border-stone-100 bg-stone-50 group-hover/link:border-stone-200 group-hover/link:bg-stone-100'}`}>
-                              <Icon size={20} strokeWidth={1.5} className={`transition-all duration-300 group-hover/link:scale-110 group-hover/link:rotate-6 ${darkMode ? 'text-stone-400 group-hover/link:text-white' : 'text-stone-400 group-hover/link:text-stone-800'}`} />
+                          <Link key={title} href={href} className={`group/link -m-3 flex gap-4 rounded-xl p-3 transition-colors ${darkMode ? 'hover:bg-white/5' : 'hover:bg-stone-100/80 dark:hover:bg-white/5'}`}>
+                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border transition-all duration-300 ${darkMode ? 'border-white/5 bg-white/5 group-hover/link:bg-white/10' : 'border-stone-100 bg-stone-50 group-hover/link:border-stone-200 group-hover/link:bg-stone-100 dark:border-white/5 dark:bg-white/5 dark:group-hover/link:bg-white/10'}`}>
+                              <Icon size={20} strokeWidth={1.5} className={`transition-all duration-300 group-hover/link:scale-110 group-hover/link:rotate-6 ${darkMode ? 'text-stone-400 group-hover/link:text-white' : 'text-stone-400 group-hover/link:text-stone-800 dark:text-stone-400 dark:group-hover/link:text-white'}`} />
                             </span>
                             <span>
-                              <span className={`mb-1 block text-[13px] font-bold transition-colors ${darkMode ? 'text-stone-200 group-hover/link:text-white' : 'text-stone-800 group-hover/link:text-black'}`}>{title}</span>
-                              <span className="block text-[11px] leading-tight text-stone-500">{desc}</span>
+                              <span className={`mb-1 block text-[13px] font-bold transition-colors ${darkMode ? 'text-stone-200 group-hover/link:text-white' : 'text-stone-800 group-hover/link:text-black dark:text-stone-200 dark:group-hover/link:text-white'}`}>{title}</span>
+                              <span className="block text-[11px] leading-tight text-stone-500 dark:text-stone-400">{desc}</span>
                             </span>
                           </Link>
                         ))}
                       </div>
                     </div>
-                    <div className={`mega-menu-col mega-menu-col-right w-[260px] shrink-0 border-l p-8 ${darkMode ? 'border-white/5 bg-[#151515]' : 'border-stone-100 bg-[#FAFAF9]'}`}>
-                      <h3 className={`mb-6 text-[10px] font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
+                    <div className={`mega-menu-col mega-menu-col-right w-[260px] shrink-0 border-l p-8 ${darkMode ? 'border-white/5 bg-[#11100f]' : 'border-stone-100 bg-[#FAFAF9] dark:border-white/5 dark:bg-[#11100f]'}`}>
+                      <h3 className={`mb-6 text-[10px] font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-stone-500' : 'text-stone-400 dark:text-stone-500'}`}>
                         Ressources cles
                       </h3>
                       <div className="flex flex-col gap-5">
                         {(activeItem.resources || []).map((title) => (
-                          <Link key={title} href="/devis" className={`-mx-2.5 flex items-center gap-2 rounded-lg p-2.5 text-[13px] font-medium transition-colors ${darkMode ? 'text-stone-400 hover:bg-white/5 hover:text-white' : 'text-stone-500 hover:bg-stone-100/80 hover:text-black'}`}>
+                          <Link key={title} href="/devis" className={`-mx-2.5 flex items-center gap-2 rounded-lg p-2.5 text-[13px] font-medium transition-colors ${darkMode ? 'text-stone-400 hover:bg-white/5 hover:text-white' : 'text-stone-500 hover:bg-stone-100/80 hover:text-black dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-white'}`}>
                             <span>-&gt;</span>
                             {title}
                           </Link>

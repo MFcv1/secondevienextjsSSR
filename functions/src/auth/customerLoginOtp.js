@@ -72,12 +72,34 @@ function buildEmailHtml(code) {
             <p style="margin:0 0 12px;color:#78716c;font-size:13px;">Connexion Seconde Vie</p>
             <h1 style="margin:0 0 16px;font-size:24px;">Votre code de connexion</h1>
             <p style="margin:0 0 18px;">Saisissez ce code pour ouvrir votre espace client :</p>
-            <p style="font-size:34px; letter-spacing:10px; font-weight:800; margin:24px 0; color:#0f0f11;">${code}</p>
+            <div style="margin:24px 0;">
+                <div style="display:inline-block;border:1px solid #d6d3d1;border-radius:16px;background:#fafaf9;padding:16px 18px;">
+                    <div style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#78716c;margin:0 0 8px;">Code de connexion</div>
+                    <div style="font-size:36px;letter-spacing:8px;font-weight:800;color:#0f0f11;line-height:1;user-select:all;-webkit-user-select:all;">${code}</div>
+                </div>
+                <p style="margin:8px 0 0;color:#78716c;font-size:12px;">Selectionnez le code pour le copier depuis votre application mail.</p>
+            </div>
             <p style="margin:0 0 12px;">Ce code expire dans 10 minutes et ne peut etre utilise qu'une seule fois.</p>
             <p style="color:#78716c;font-size:12px;">Si vous n'etes pas a l'origine de cette demande, ignorez cet email.</p>
             <p style="color:#78716c;font-size:12px;">${siteUrl}</p>
         </div>
     `;
+}
+
+function buildEmailText(code) {
+    const siteUrl = getSiteUrl();
+    return [
+        'Connexion Seconde Vie',
+        '',
+        'Votre code de connexion',
+        '',
+        `Code: ${code}`,
+        '',
+        "Ce code expire dans 10 minutes et ne peut etre utilise qu'une seule fois.",
+        "Si vous n'etes pas a l'origine de cette demande, ignorez cet email.",
+        '',
+        siteUrl
+    ].join('\n');
 }
 
 async function clearOtpAfterMailFailure(emailRef, error) {
@@ -218,6 +240,7 @@ exports.sendCustomerLoginOtp = functions
                 from: `Seconde Vie <${adminEmail}>`,
                 to: email,
                 subject: 'Votre code de connexion Seconde Vie',
+                text: buildEmailText(code),
                 html: buildEmailHtml(code)
             });
         } catch (error) {

@@ -199,9 +199,9 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
   return (
     <>
       <button type="button" className={className} title="Panier" aria-label="Panier" onClick={openCart}>
-        <ShoppingBag size={18} strokeWidth={1.5} className={`transition-colors duration-300 ${darkMode ? 'text-stone-200 group-hover:text-amber-400' : 'text-stone-900 group-hover:text-amber-600'}`} />
+        <ShoppingBag size={18} strokeWidth={1.5} className={`transition-colors duration-300 ${darkMode ? 'text-stone-200 group-hover:text-[#D9B58D]' : 'text-stone-900 group-hover:text-amber-600 dark:text-stone-200 dark:group-hover:text-[#D9B58D]'}`} />
         {cartItems.length > 0 ? (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-stone-950 px-1 text-[9px] font-black leading-none text-white ring-2 ring-white">
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-stone-950 px-1 text-[9px] font-black leading-none text-white ring-2 ring-white dark:bg-[#D9B58D] dark:text-stone-950 dark:ring-[#080807]">
             {cartItems.length}
           </span>
         ) : null}

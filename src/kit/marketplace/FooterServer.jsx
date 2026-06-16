@@ -227,7 +227,7 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
             </div>
           </div>
           <img
-            src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'}
+            src="/images/footer-delivery-light.webp"
             alt="Livraison partout a Marseille"
             width={1536}
             height={1024}
@@ -235,7 +235,18 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
             decoding="async"
             fetchPriority="low"
             data-footer-delivery-image="loaded"
-            className="mt-6 w-full rounded-md object-contain"
+            className={`mt-6 w-full rounded-md object-contain ${darkMode ? 'hidden' : 'block dark:hidden'}`}
+          />
+          <img
+            src="/images/footer-delivery-dark.webp"
+            alt="Livraison partout a Marseille"
+            width={1536}
+            height={1024}
+            loading="lazy"
+            decoding="async"
+            fetchPriority="low"
+            data-footer-delivery-image="loaded"
+            className={`mt-6 w-full rounded-md object-contain ${darkMode ? 'block' : 'hidden dark:block'}`}
           />
           <div className={`mt-5 grid grid-cols-3 gap-3 text-[10px] ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
             <div className="flex flex-col items-center gap-1 text-center"><LockKeyhole size={22} />SSL<br />Secure</div>
@@ -323,7 +334,20 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
               </div>
             </div>
             <div className="flex min-w-0 items-center justify-center pt-8 lg:px-6 lg:pt-0 xl:px-8">
-              <img src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'} alt="Livraison partout a Marseille" loading="lazy" decoding="async" className="w-full max-w-[520px] rounded-md object-contain xl:max-w-[600px]" />
+              <img
+                src="/images/footer-delivery-light.webp"
+                alt="Livraison partout a Marseille"
+                loading="lazy"
+                decoding="async"
+                className={`w-full max-w-[520px] rounded-md object-contain xl:max-w-[600px] ${darkMode ? 'hidden' : 'block dark:hidden'}`}
+              />
+              <img
+                src="/images/footer-delivery-dark.webp"
+                alt="Livraison partout a Marseille"
+                loading="lazy"
+                decoding="async"
+                className={`w-full max-w-[520px] rounded-md object-contain xl:max-w-[600px] ${darkMode ? 'block' : 'hidden dark:block'}`}
+              />
             </div>
             <div className="space-y-7 pt-8 lg:pl-8 lg:pt-0 xl:pl-10">
               <div className="flex items-center gap-5"><BadgeCheck size={28} strokeWidth={1.6} /><h3 className={`font-serif text-[15px] uppercase ${darkMode ? 'text-stone-100' : 'text-stone-950'}`}>Site securise</h3></div>

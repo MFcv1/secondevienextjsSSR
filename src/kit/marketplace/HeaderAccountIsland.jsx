@@ -117,8 +117,8 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
     await signOut(auth);
   };
 
-  const loginButtonClass = `group hidden h-9 items-center gap-2 rounded-full px-3 text-inherit no-underline transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] md:flex ${darkMode ? 'bg-white/[0.04] text-stone-400 hover:bg-white/[0.09] hover:text-stone-100' : 'bg-white/70 text-stone-500 hover:bg-white hover:text-stone-900'}`;
-  const logoutButtonClass = `group flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] sm:w-auto sm:gap-2 sm:px-3 ${darkMode ? 'text-stone-400 hover:bg-red-400/10 hover:text-red-300' : 'text-stone-500 hover:bg-red-50 hover:text-red-600'}`;
+  const loginButtonClass = `group hidden h-9 items-center gap-2 rounded-full px-3 text-inherit no-underline transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5C42]/25 dark:focus-visible:ring-[#D9B58D]/45 md:flex ${darkMode ? 'bg-white/[0.055] text-stone-300 ring-1 ring-white/[0.06] hover:bg-white/[0.12] hover:text-stone-50' : 'bg-white/70 text-stone-500 hover:bg-white hover:text-stone-900 dark:bg-white/[0.055] dark:text-stone-300 dark:ring-1 dark:ring-white/[0.06] dark:hover:bg-white/[0.12] dark:hover:text-stone-50'}`;
+  const logoutButtonClass = `group flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/25 dark:focus-visible:ring-red-300/35 sm:w-auto sm:gap-2 sm:px-3 ${darkMode ? 'text-stone-300 hover:bg-red-400/10 hover:text-red-200' : 'text-stone-500 hover:bg-red-50 hover:text-red-600 dark:text-stone-300 dark:hover:bg-red-400/10 dark:hover:text-red-200'}`;
   const loginModal = loginOpen ? <LegacyLoginModalIsland open={loginOpen} onOpenChange={setLoginOpen} renderTrigger={false} /> : null;
 
   if (user && !user.isAnonymous) {
@@ -126,7 +126,7 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
       <>
         <div className="flex items-center gap-2">
           {isAdmin ? (
-            <div className={`hidden rounded-full px-2.5 py-1 sm:block ${darkMode ? 'bg-emerald-400/10' : 'bg-emerald-50'}`}>
+            <div className={`hidden rounded-full px-2.5 py-1 sm:block ${darkMode ? 'bg-emerald-400/10 ring-1 ring-emerald-300/10' : 'bg-emerald-50 dark:bg-emerald-400/10 dark:ring-1 dark:ring-emerald-300/10'}`}>
               <span className="cursor-default text-[9px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Admin</span>
             </div>
           ) : null}
@@ -143,7 +143,7 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
   return (
     <>
       <button type="button" className={loginButtonClass} onClick={() => setLoginOpen(true)} aria-label="Ouvrir la connexion">
-        <ShieldCheck size={14} className="text-stone-400 transition-colors group-hover:text-amber-500" />
+        <ShieldCheck size={14} className="text-stone-400 transition-colors group-hover:text-amber-500 dark:text-stone-300 dark:group-hover:text-[#D9B58D]" />
         <span className="text-[10px] font-black uppercase tracking-[0.16em]">Connexion</span>
       </button>
       {loginModal}

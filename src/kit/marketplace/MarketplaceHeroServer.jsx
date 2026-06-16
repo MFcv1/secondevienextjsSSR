@@ -71,12 +71,13 @@ export default function MarketplaceHeroServer({
             </picture>
           </div>
         ))}
-        <div className={`absolute inset-0 ${darkMode ? 'bg-black/50' : 'bg-black/25'}`} />
+        <div className={`absolute inset-0 ${darkMode ? 'bg-black/50' : 'bg-black/25 dark:bg-black/58'}`} />
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#080807]/92 via-[#080807]/36 to-transparent opacity-0 dark:opacity-100" aria-hidden="true" />
       </div>
 
       <div className="relative z-10 flex w-full max-w-4xl translate-y-5 flex-col items-center px-4 text-center md:-translate-y-12">
         {heroBannerText ? (
-          <div className="mb-3.5 inline-flex max-w-[calc(100vw-2.5rem)] items-center justify-center rounded-full border border-white/30 bg-white/20 px-3.5 py-1.5 text-center text-[9px] font-bold uppercase leading-none tracking-widest text-white shadow-lg backdrop-blur-md md:mb-6 md:px-4 md:text-[10px]">
+          <div className="mb-3.5 inline-flex max-w-[calc(100vw-2.5rem)] items-center justify-center rounded-full border border-white/30 bg-white/20 px-3.5 py-1.5 text-center text-[9px] font-bold uppercase leading-none tracking-widest text-white shadow-lg backdrop-blur-md dark:border-[#e6c18a]/35 dark:bg-[#0f0d0a]/42 dark:text-[#f5eadb] md:mb-6 md:px-4 md:text-[10px]">
             {heroBannerText}
           </div>
         ) : null}
@@ -98,16 +99,16 @@ export default function MarketplaceHeroServer({
           </p>
 
           <div className="relative mx-auto flex w-full max-w-[280px] flex-col items-stretch justify-center gap-2 min-[380px]:max-w-none min-[380px]:flex-row min-[380px]:items-center md:top-[8px] md:gap-3">
-            <a href="#gallery-pieces" className="hero-cta-particles hero-cta-particles--light hero-cta-particles--static group/heroCta inline-flex h-[36px] w-full items-center justify-between gap-2 rounded-full border pl-4 pr-1 text-[#1A1A1A] shadow-[0_10px_24px_rgba(0,0,0,0.14)] transition-[border-color,box-shadow,background-color] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] min-[380px]:w-auto md:h-[46px] md:gap-3 md:pl-7 md:pr-1.5 md:shadow-[0_14px_34px_rgba(0,0,0,0.16)]">
+            <a href="#gallery-pieces" className="hero-cta-particles hero-cta-particles--light hero-cta-particles--static group/heroCta inline-flex h-[36px] w-full items-center justify-between gap-2 rounded-full border pl-4 pr-1 text-[#1A1A1A] shadow-[0_10px_24px_rgba(0,0,0,0.14)] transition-[border-color,box-shadow,background-color] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] dark:border-[#e6c18a]/28 dark:bg-[#f5eadb] dark:text-[#17120d] dark:shadow-[0_18px_42px_rgba(0,0,0,0.34)] min-[380px]:w-auto md:h-[46px] md:gap-3 md:pl-7 md:pr-1.5 md:shadow-[0_14px_34px_rgba(0,0,0,0.16)]">
               <span className="whitespace-nowrap font-sans text-[7.5px] font-black uppercase tracking-[0.16em] md:text-[10px] md:tracking-[0.21em]">
                 {heroButtonLabel}
               </span>
-              <span className="hero-cta-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#1A1A1A]/12 bg-[#F6F2EC] text-[#1A1A1A] md:h-9 md:w-9">
+              <span className="hero-cta-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#1A1A1A]/12 bg-[#F6F2EC] text-[#1A1A1A] dark:border-[#17120d]/12 dark:bg-[#17120d] dark:text-[#f5eadb] md:h-9 md:w-9">
                 <ArrowUpRight className="hero-cta-arrow" size={14} strokeWidth={1.7} />
               </span>
             </a>
 
-            <Link href="/devis" prefetch={false} className="hero-cta-particles hero-cta-particles--glass group/heroCta inline-flex h-[36px] w-full items-center justify-between gap-2 rounded-full border pl-4 pr-1 text-white shadow-[0_10px_24px_rgba(0,0,0,0.10)] backdrop-blur-sm transition-[border-color,box-shadow,background-color] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] min-[380px]:w-auto md:h-[46px] md:gap-3 md:pl-7 md:pr-1.5 md:shadow-[0_14px_34px_rgba(0,0,0,0.10)]">
+            <Link href="/devis" prefetch={false} className="hero-cta-particles hero-cta-particles--glass group/heroCta inline-flex h-[36px] w-full items-center justify-between gap-2 rounded-full border pl-4 pr-1 text-white shadow-[0_10px_24px_rgba(0,0,0,0.10)] backdrop-blur-sm transition-[border-color,box-shadow,background-color] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] dark:border-[#e6c18a]/34 dark:bg-[#120f0b]/38 dark:text-[#f7efe5] dark:shadow-[0_18px_42px_rgba(0,0,0,0.26)] min-[380px]:w-auto md:h-[46px] md:gap-3 md:pl-7 md:pr-1.5 md:shadow-[0_14px_34px_rgba(0,0,0,0.10)]">
               <span className="hero-cta-particle-field" aria-hidden="true">
                 {HERO_CTA_PARTICLES.map((particle, particleIndex) => (
                   <span

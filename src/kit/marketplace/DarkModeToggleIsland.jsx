@@ -30,11 +30,14 @@ export default function DarkModeToggleIsland({ className = '' } = {}) {
 
   const toggle = () => {
     const nextDark = !isDark;
+    document.documentElement.classList.add('theme-transitioning');
     setIsDark(nextDark);
     persistTheme(nextDark);
     syncDocumentTheme(nextDark);
     window.dispatchEvent(new CustomEvent('sv:theme-change', { detail: { darkMode: nextDark } }));
-    window.setTimeout(() => window.location.reload(), 80);
+    window.setTimeout(() => {
+      document.documentElement.classList.remove('theme-transitioning');
+    }, 80);
   };
 
   return (
