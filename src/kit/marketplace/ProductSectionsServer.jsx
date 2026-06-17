@@ -162,7 +162,7 @@ const reassuranceUnits = [
 ];
 
 export const ReassuranceSectionServer = ({ darkMode = false } = {}) => (
-  <section className={`post-hero-service-section relative mt-4 mb-8 hidden overflow-hidden md:block md:mt-[92px] lg:mt-[92px] ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9] dark:bg-[#080807]'}`}>
+  <section className={`post-hero-service-section relative hidden overflow-hidden pb-8 pt-4 md:block md:pt-[92px] lg:pt-[92px] ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9] dark:bg-[#080807]'}`}>
     <div className="relative mx-auto max-w-[1760px] px-4 py-6 md:px-7 lg:px-8 xl:px-10">
       <div className="relative mx-auto max-w-[1380px]">
         <span className={`pointer-events-none absolute left-1/2 top-0 h-px w-screen -translate-x-1/2 ${darkMode ? 'bg-white/10' : 'bg-stone-200 dark:bg-[#e6c18a]/14'}`} aria-hidden="true" />
@@ -177,9 +177,9 @@ export const ReassuranceSectionServer = ({ darkMode = false } = {}) => (
                 <h4 className="font-sans text-[11px] font-black uppercase leading-none tracking-[0.2em] xl:text-[12px]">{unit.label}</h4>
                 <p className={`mx-auto mt-4 max-w-[18rem] font-sans text-[13px] leading-[1.55] ${darkMode ? 'text-stone-400' : 'text-stone-500 dark:text-[#c8bbaa]/72'}`}>{unit.text}</p>
               </div>
-              <div className={`mx-auto mt-6 flex w-fit min-w-[112px] items-center justify-center gap-2.5 border-t px-1 pt-4 ${darkMode ? 'border-[#d8ad73]/12' : 'border-stone-200 dark:border-[#e6c18a]/12'}`}>
-                <span className="h-[5px] w-[5px] bg-[#c6a27e]" aria-hidden="true" />
-                <samp className={`inline-flex items-center justify-center text-center font-mono text-[8px] font-bold uppercase leading-none tracking-[0.18em] ${darkMode ? 'text-[#c8bbaa]/44' : 'text-stone-400 dark:text-[#c8bbaa]/44'}`}>{unit.meta}</samp>
+              <div className={`post-hero-service-meta mx-auto mt-6 flex min-h-[24px] w-[132px] items-center justify-center gap-2 border px-3 ${darkMode ? 'border-[#d8ad73]/10 bg-[#17130f]/72' : 'border-stone-200 bg-stone-100/60 dark:border-[#e6c18a]/10 dark:bg-[#17130f]/72'}`}>
+                <span className="h-[5px] w-[5px] shrink-0 bg-[#c6a27e]" aria-hidden="true" />
+                <samp className={`inline-flex min-w-0 flex-1 items-center justify-center text-center font-mono text-[7px] font-bold uppercase leading-none tracking-[0.14em] ${darkMode ? 'text-[#c8bbaa]/50' : 'text-stone-400 dark:text-[#c8bbaa]/50'}`}>{unit.meta}</samp>
               </div>
             </article>
           ))}
@@ -297,10 +297,10 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
     <div className="pointer-events-none absolute inset-0 opacity-[0.16] [background-image:radial-gradient(rgba(121,91,61,0.20)_0.7px,transparent_0.7px)] [background-size:11px_11px] dark:opacity-[0.08] dark:[background-image:radial-gradient(rgba(220,176,116,0.18)_0.7px,transparent_0.7px)]" />
     <div className={`pointer-events-none absolute inset-x-0 top-0 h-36 dark:bg-gradient-to-b dark:from-[#0e0d0c] dark:via-[#0e0d0c] dark:to-transparent dark:opacity-80 ${darkMode ? 'bg-gradient-to-b from-[#141210] via-[#141210] to-transparent opacity-80' : 'bg-gradient-to-b from-[#FAFAF9] via-[#f7f1ea] to-transparent'}`} />
 
-    <div className={`relative mx-auto w-full max-w-[1480px] overflow-hidden rounded-[26px] p-[1px] shadow-[0_30px_86px_-68px_rgba(37,29,22,0.56),0_10px_30px_-28px_rgba(124,88,55,0.38)] ring-1 dark:bg-[#15110e] dark:ring-[#d8ad73]/12 dark:shadow-[0_30px_86px_-72px_rgba(0,0,0,0.96)] ${darkMode ? 'bg-white/[0.025] ring-[#d8ad73]/12' : 'bg-gradient-to-br from-[#e1d1bd] via-[#fffaf3] to-[#d7c5b2] ring-[#d8c9b6]'}`}>
-      <div className={`relative overflow-hidden rounded-[25px] p-1.5 dark:bg-[#181511] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.045)] ${darkMode ? 'bg-[#1d1a16] shadow-[inset_0_1px_0_rgba(255,255,255,0.045)]' : 'bg-[#fffaf3] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]'}`}>
-        <div className={`pointer-events-none absolute inset-1.5 rounded-[21px] ring-1 dark:ring-[#d8ad73]/8 ${darkMode ? 'ring-[#d8ad73]/8' : 'ring-[#d9c9b5]'}`} />
-        <div className={`relative grid overflow-hidden rounded-[20px] ring-1 lg:grid-cols-[minmax(0,1.02fr)_minmax(370px,0.98fr)] dark:bg-[#181511] dark:ring-[#332b23] ${darkMode ? 'bg-[#1d1a16] ring-[#332b23]' : 'bg-[#fffdf8] ring-[#e4d7c7]'}`}>
+    <div className={`discount-shell relative mx-auto w-full max-w-[1480px] overflow-hidden rounded-[26px] p-[1px] shadow-[0_30px_86px_-68px_rgba(37,29,22,0.56),0_10px_30px_-28px_rgba(124,88,55,0.38)] ring-1 dark:bg-[#19140f] dark:ring-[#3a3027]/85 dark:shadow-[0_30px_86px_-72px_rgba(0,0,0,0.96)] ${darkMode ? 'bg-[#19140f] ring-[#3a3027]/85' : 'bg-gradient-to-br from-[#e1d1bd] via-[#fffaf3] to-[#d7c5b2] ring-[#d8c9b6]'}`}>
+      <div className={`relative overflow-hidden rounded-[25px] p-1.5 dark:bg-[#181511] dark:shadow-[inset_0_1px_0_rgba(216,173,115,0.035)] ${darkMode ? 'bg-[#1d1a16] shadow-[inset_0_1px_0_rgba(216,173,115,0.035)]' : 'bg-[#fffaf3] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]'}`}>
+        <div className={`pointer-events-none absolute inset-1.5 rounded-[21px] ring-1 dark:ring-[#d8ad73]/6 ${darkMode ? 'ring-[#d8ad73]/6' : 'ring-[#d9c9b5]'}`} />
+        <div className={`relative grid overflow-hidden rounded-[20px] ring-1 lg:grid-cols-[minmax(0,1.02fr)_minmax(370px,0.98fr)] dark:bg-[#181511] dark:ring-[#302820] ${darkMode ? 'bg-[#1d1a16] ring-[#302820]' : 'bg-[#fffdf8] ring-[#e4d7c7]'}`}>
           <div className={`relative flex min-h-[340px] flex-col justify-center overflow-hidden border-b p-5 sm:min-h-[360px] sm:p-7 md:p-8 lg:min-h-[470px] lg:border-b-0 lg:border-r lg:p-9 xl:p-10 2xl:p-12 dark:border-[#302820] dark:bg-[#181511] ${darkMode ? 'border-[#332b23] bg-[#1d1a16]' : 'border-[#e4d7c7] bg-[#fffdf8]'}`}>
             <div className={`pointer-events-none absolute inset-0 dark:bg-[radial-gradient(circle_at_90%_14%,rgba(184,132,72,0.11),transparent_26%),radial-gradient(ellipse_at_6%_44%,rgba(101,81,58,0.12),transparent_21%)] ${darkMode ? 'bg-[radial-gradient(circle_at_90%_14%,rgba(184,132,72,0.11),transparent_26%)]' : 'bg-[radial-gradient(circle_at_89%_13%,rgba(166,138,100,0.12),transparent_24%),radial-gradient(ellipse_at_6%_44%,rgba(119,91,61,0.09),transparent_21%)]'}`} />
             <div className="pointer-events-none absolute -left-16 top-28 hidden h-56 w-32 rotate-[-18deg] rounded-full bg-[#5e4b37]/10 blur-2xl dark:bg-[#b9864f]/10 lg:block" />

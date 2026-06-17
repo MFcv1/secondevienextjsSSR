@@ -82,7 +82,7 @@ const CustomerTestimonialsCarousel = ({
 
     return (
         <section
-            className={`relative z-20 w-full overflow-hidden ${darkMode ? 'bg-[#151515] text-white' : 'bg-white text-[#242221]'} ${sectionClassName}`}
+            className={`customer-testimonials-section relative z-20 w-full overflow-hidden dark:bg-[#0b0a09] dark:text-[#f8f1e8] ${darkMode ? 'bg-[#0b0a09] text-[#f8f1e8]' : 'bg-white text-[#242221]'} ${sectionClassName}`}
             aria-labelledby={headingId}
         >
             <div className="hidden px-8 py-20 lg:block lg:px-12 xl:px-16 xl:py-24">
@@ -193,12 +193,12 @@ const TestimonialsHeader = ({ headingId, darkMode, compact = false }) => {
 
         <h2
             id={headingId}
-            className={`${compact ? 'text-[34px]' : 'text-[44px]'} font-serif leading-none tracking-normal ${darkMode ? 'text-white' : 'text-[#242221]'}`}
+            className={`${compact ? 'text-[34px]' : 'text-[44px]'} font-serif leading-none tracking-normal dark:text-[#f8f1e8] ${darkMode ? 'text-[#f8f1e8]' : 'text-[#242221]'}`}
         >
             La parole à nos clients.
         </h2>
 
-        <p className={`mt-6 text-[10px] font-black uppercase tracking-[0.14em] ${darkMode ? 'text-stone-400' : 'text-[#77716b]'}`}>
+        <p className={`mt-6 text-[10px] font-black uppercase tracking-[0.14em] dark:text-[#a99b8c] ${darkMode ? 'text-[#a99b8c]' : 'text-[#77716b]'}`}>
             Excellent 4.9/5 - basé sur 124 avis Google
         </p>
     </div>
@@ -233,10 +233,10 @@ const TestimonialCard = ({ note, position, positions, size }) => {
         <article
             style={{
                 ...positions[position],
-                backgroundColor: note.color,
+                '--testimonial-card-bg': note.color,
                 width: isDesktop ? 'min(29vw, 350px)' : undefined,
             }}
-            className={`absolute left-1/2 top-0 flex flex-col justify-between rounded-[16px] will-change-transform ${
+            className={`customer-testimonial-card absolute left-1/2 top-0 flex flex-col justify-between rounded-[16px] bg-[color:var(--testimonial-card-bg)] ring-1 ring-transparent will-change-transform dark:bg-[#1b1814] dark:ring-[#d8ad73]/10 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.045),0_22px_54px_-40px_rgba(0,0,0,0.95)] ${
                 isDesktop
                     ? 'h-[306px] px-7 py-8 shadow-[0_16px_38px_rgba(69,57,42,0.08)] xl:h-[332px] xl:px-9 xl:py-10'
                     : 'h-[292px] w-[232px] px-6 py-8 shadow-[0_18px_36px_rgba(69,57,42,0.035)]'
@@ -244,14 +244,14 @@ const TestimonialCard = ({ note, position, positions, size }) => {
         >
             <div
                 aria-hidden="true"
-                className="absolute left-1/2 top-0 h-6 w-16 -translate-x-1/2 -translate-y-[45%] bg-white/60 shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
+                className="absolute left-1/2 top-0 h-6 w-16 -translate-x-1/2 -translate-y-[45%] bg-white/60 shadow-[0_2px_10px_rgba(0,0,0,0.04)] dark:bg-[#d8ad73]/10 dark:shadow-none"
             />
-            <Quote size={isDesktop ? 30 : 27} className="text-[#b8b1a8]/55" strokeWidth={2.4} />
-            <p className={`${isDesktop ? 'text-[clamp(18px,1.72vw,24px)]' : 'text-[20px]'} font-serif leading-[1.36] tracking-normal text-[#252321]`}>
+            <Quote size={isDesktop ? 30 : 27} className="text-[#b8b1a8]/55 dark:text-[#d8ad73]/30" strokeWidth={2.4} />
+            <p className={`${isDesktop ? 'text-[clamp(18px,1.72vw,24px)]' : 'text-[20px]'} font-serif leading-[1.36] tracking-normal text-[#252321] dark:text-[#f5eadc]`}>
                 "{note.text}"
             </p>
-            <p className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.15em] text-[#8c877f]">
-                <span className="h-px w-5 bg-[#aaa49b]" />
+            <p className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.15em] text-[#8c877f] dark:text-[#b7a895]">
+                <span className="h-px w-5 bg-[#aaa49b] dark:bg-[#d8ad73]/24" />
                 {note.author}
             </p>
         </article>
@@ -268,21 +268,21 @@ const CarouselControls = ({ activeIndex, count, onPrevious, onNext, onSelect, da
 
         <div className={`relative flex min-w-0 flex-col items-center justify-center ${compact ? 'gap-5 py-1' : 'gap-6 py-2'}`}>
             <div className={`relative z-10 flex w-full items-center justify-center ${compact ? 'gap-3' : 'gap-4'}`}>
-                <span aria-hidden="true" className={`h-[3px] w-[3px] rounded-full ${darkMode ? 'bg-white/22' : 'bg-[#d8cec1]'}`} />
-                <span aria-hidden="true" className={`${compact ? 'w-9' : 'w-14'} h-px ${darkMode ? 'bg-white/18' : 'bg-[#bca486]'}`} />
+                <span aria-hidden="true" className={`h-[3px] w-[3px] rounded-full dark:bg-[#d8ad73]/24 ${darkMode ? 'bg-[#d8ad73]/24' : 'bg-[#d8cec1]'}`} />
+                <span aria-hidden="true" className={`${compact ? 'w-9' : 'w-14'} h-px dark:bg-[#d8ad73]/22 ${darkMode ? 'bg-[#d8ad73]/22' : 'bg-[#bca486]'}`} />
                 <span
-                    className={`font-serif ${compact ? 'text-[17px]' : 'text-[20px]'} font-semibold leading-none tracking-[0.05em] ${
-                        darkMode ? 'text-stone-100' : 'text-[#181716]'
+                    className={`font-serif ${compact ? 'text-[17px]' : 'text-[20px]'} font-semibold leading-none tracking-[0.05em] dark:text-[#f5eadc] ${
+                        darkMode ? 'text-[#f5eadc]' : 'text-[#181716]'
                     }`}
                 >
                     {String(activeIndex + 1).padStart(2, '0')}
-                    <span className={darkMode ? 'mx-2 font-normal text-stone-500' : 'mx-2 font-normal text-[#b9aa98]'}>/</span>
-                    <span className={darkMode ? 'font-normal text-stone-400' : 'font-normal text-[#8f8579]'}>
+                    <span className={darkMode ? 'mx-2 font-normal text-[#7c6d5e]' : 'mx-2 font-normal text-[#b9aa98] dark:text-[#7c6d5e]'}>/</span>
+                    <span className={darkMode ? 'font-normal text-[#a99b8c]' : 'font-normal text-[#8f8579] dark:text-[#a99b8c]'}>
                         {String(count).padStart(2, '0')}
                     </span>
                 </span>
-                <span aria-hidden="true" className={`${compact ? 'w-9' : 'w-14'} h-px ${darkMode ? 'bg-white/18' : 'bg-[#bca486]'}`} />
-                <span aria-hidden="true" className={`h-[3px] w-[3px] rounded-full ${darkMode ? 'bg-white/22' : 'bg-[#d8cec1]'}`} />
+                <span aria-hidden="true" className={`${compact ? 'w-9' : 'w-14'} h-px dark:bg-[#d8ad73]/22 ${darkMode ? 'bg-[#d8ad73]/22' : 'bg-[#bca486]'}`} />
+                <span aria-hidden="true" className={`h-[3px] w-[3px] rounded-full dark:bg-[#d8ad73]/24 ${darkMode ? 'bg-[#d8ad73]/24' : 'bg-[#d8cec1]'}`} />
             </div>
 
             <div className={`relative z-10 flex items-center ${compact ? 'gap-2.5' : 'gap-3'}`}>
@@ -296,7 +296,7 @@ const CarouselControls = ({ activeIndex, count, onPrevious, onNext, onSelect, da
                         className={`rounded-full transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
                             index === activeIndex
                                 ? `${compact ? 'h-2 w-7' : 'h-2.5 w-8'} bg-[#ff9200] shadow-[0_0_0_4px_rgba(255,146,0,0.09),0_5px_12px_rgba(255,146,0,0.16)]`
-                                : `${compact ? 'h-1.5 w-1.5' : 'h-2 w-2'} ${darkMode ? 'bg-white/20 hover:bg-white/34' : 'bg-[#d6ccbf] hover:bg-[#bdaa96]'}`
+                                : `${compact ? 'h-1.5 w-1.5' : 'h-2 w-2'} ${darkMode ? 'bg-[#d8ad73]/24 hover:bg-[#d8ad73]/38' : 'bg-[#d6ccbf] hover:bg-[#bdaa96] dark:bg-[#d8ad73]/24 dark:hover:bg-[#d8ad73]/38'}`
                         }`}
                     />
                 ))}
@@ -316,15 +316,15 @@ const CarouselButton = ({ children, label, onClick, darkMode, compact = false })
         onClick={onClick}
         className={`group relative flex ${compact ? 'h-[48px] w-[48px]' : 'h-[58px] w-[58px]'} items-center justify-center rounded-full p-1 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 active:scale-[0.96] ${
             darkMode
-                ? 'bg-white/[0.045] text-white ring-1 ring-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_16px_32px_rgba(0,0,0,0.18)] hover:bg-white/[0.07] hover:ring-white/20'
-                : 'bg-[#fbf8f2] text-[#655d54] ring-1 ring-[#e8ded1] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_16px_34px_rgba(92,72,42,0.08)] hover:text-[#242221] hover:ring-[#dacbb9]'
+                ? 'bg-white/[0.045] text-[#f8f1e8] ring-1 ring-[#d8ad73]/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_16px_32px_rgba(0,0,0,0.18)] hover:bg-white/[0.07] hover:ring-[#d8ad73]/18'
+                : 'bg-[#fbf8f2] text-[#655d54] ring-1 ring-[#e8ded1] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_16px_34px_rgba(92,72,42,0.08)] hover:text-[#242221] hover:ring-[#dacbb9] dark:bg-white/[0.045] dark:text-[#f8f1e8] dark:ring-[#d8ad73]/10 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_16px_32px_rgba(0,0,0,0.18)] dark:hover:bg-white/[0.07] dark:hover:ring-[#d8ad73]/18'
         }`}
     >
         <span
             className={`flex h-full w-full items-center justify-center rounded-full transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.04] ${
                 darkMode
-                    ? 'bg-[#1c1b19] ring-1 ring-white/10'
-                    : 'bg-white ring-1 ring-[#f1ebe3]'
+                    ? 'bg-[#1c1b19] ring-1 ring-[#d8ad73]/10'
+                    : 'bg-white ring-1 ring-[#f1ebe3] dark:bg-[#15120f] dark:ring-[#d8ad73]/10'
             }`}
         >
             {children}

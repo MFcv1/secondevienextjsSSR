@@ -5834,8 +5834,7 @@ html.dark .category-rail-card .category-cta-neon {
 }
 
 html.dark .post-hero-service-section {
-  background:
-    linear-gradient(180deg, #0a0a0a 0%, #10100f 48%, #0a0a0a 100%) !important;
+  background: #0a0a09 !important;
 }
 
 html.dark .post-hero-service-section .post-hero-service-card {
@@ -5861,6 +5860,30 @@ html.dark .discount-section > .relative {
   box-shadow:
     0 30px 90px -68px rgba(0,0,0,0.95),
     inset 0 1px 0 rgba(216,173,115,0.045) !important;
+}
+
+html.dark .customer-testimonials-section {
+  background:
+    radial-gradient(circle at 50% 20%, rgba(153, 108, 61, 0.04), transparent 32%),
+    linear-gradient(180deg, #0b0a09 0%, #0e0d0c 54%, #0b0a09 100%) !important;
+  color: #f8f1e8 !important;
+}
+
+html.dark .customer-testimonial-card {
+  background-color: #1b1814 !important;
+  border-color: rgba(216, 173, 115, 0.08) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(216, 173, 115, 0.045),
+    0 22px 54px -40px rgba(0, 0, 0, 0.95) !important;
+}
+
+html.dark .discount-section .discount-shell {
+  background:
+    linear-gradient(135deg, rgba(58, 48, 39, 0.92), rgba(25, 20, 15, 0.96), rgba(13, 11, 9, 0.98)) !important;
+  --tw-ring-color: rgba(58, 48, 39, 0.85) !important;
+  box-shadow:
+    0 30px 86px -72px rgba(0, 0, 0, 0.96),
+    inset 0 1px 0 rgba(216, 173, 115, 0.025) !important;
 }
 
 html.dark .discount-industrial-card {
@@ -6125,6 +6148,7 @@ html.dark [data-footer-mounted="true"] [class*="divide-stone"] > :not([hidden]) 
   will-change: transform, opacity;
 }
 
+.mega-menu-panel[data-menu-state="opening"],
 .mega-menu-panel[data-menu-state="open"] {
   opacity: 1;
   clip-path: inset(0 0 0 0 round 20px);
@@ -6149,11 +6173,13 @@ html.dark [data-footer-mounted="true"] [class*="divide-stone"] > :not([hidden]) 
   will-change: transform, opacity, filter;
 }
 
+.mega-menu-panel[data-menu-state="opening"] .mega-menu-col-left,
 .mega-menu-panel[data-menu-state="open"] .mega-menu-col-left {
   animation: megaMenuColEnter 0.28s cubic-bezier(0.21, 1.02, 0.43, 1.01) both;
   animation-delay: 0.11s;
 }
 
+.mega-menu-panel[data-menu-state="opening"] .mega-menu-col-right,
 .mega-menu-panel[data-menu-state="open"] .mega-menu-col-right {
   animation: megaMenuColEnter 0.34s cubic-bezier(0.21, 1.02, 0.43, 1.01) both;
   animation-delay: 0.18s;
