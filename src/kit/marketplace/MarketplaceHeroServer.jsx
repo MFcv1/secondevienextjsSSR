@@ -99,11 +99,11 @@ export default function MarketplaceHeroServer({
           </p>
 
           <div className="relative mx-auto flex w-full max-w-[280px] flex-col items-stretch justify-center gap-2 min-[380px]:max-w-none min-[380px]:flex-row min-[380px]:items-center md:top-[8px] md:gap-3">
-            <a href="#gallery-pieces" className="hero-cta-particles hero-cta-particles--light hero-cta-particles--static group/heroCta inline-flex h-[36px] w-full items-center justify-between gap-2 rounded-full border pl-4 pr-1 text-[#1A1A1A] shadow-[0_10px_24px_rgba(0,0,0,0.14)] transition-[border-color,box-shadow,background-color] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] dark:border-[#e6c18a]/28 dark:bg-[#f5eadb] dark:text-[#17120d] dark:shadow-[0_18px_42px_rgba(0,0,0,0.34)] min-[380px]:w-auto md:h-[46px] md:gap-3 md:pl-7 md:pr-1.5 md:shadow-[0_14px_34px_rgba(0,0,0,0.16)]">
+            <a href="#gallery-pieces" className="hero-cta-particles hero-cta-particles--light hero-cta-particles--static group/heroCta inline-flex h-[36px] w-full items-center justify-between gap-2 rounded-full border pl-4 pr-1 text-[#1A1A1A] shadow-[0_10px_24px_rgba(0,0,0,0.14)] transition-[border-color,box-shadow,background-color] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] dark:border-[#d8ad73]/30 dark:bg-[#17130f]/88 dark:text-[#f5eadb] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_18px_42px_rgba(0,0,0,0.34)] min-[380px]:w-auto md:h-[46px] md:gap-3 md:pl-7 md:pr-1.5 md:shadow-[0_14px_34px_rgba(0,0,0,0.16)]">
               <span className="whitespace-nowrap font-sans text-[7.5px] font-black uppercase tracking-[0.16em] md:text-[10px] md:tracking-[0.21em]">
                 {heroButtonLabel}
               </span>
-              <span className="hero-cta-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#1A1A1A]/12 bg-[#F6F2EC] text-[#1A1A1A] dark:border-[#17120d]/12 dark:bg-[#17120d] dark:text-[#f5eadb] md:h-9 md:w-9">
+              <span className="hero-cta-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#1A1A1A]/12 bg-[#F6F2EC] text-[#1A1A1A] dark:border-[#e4ba7e]/24 dark:bg-[#d8ad73] dark:text-[#15110d] md:h-9 md:w-9">
                 <ArrowUpRight className="hero-cta-arrow" size={14} strokeWidth={1.7} />
               </span>
             </a>

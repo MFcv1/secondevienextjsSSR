@@ -170,16 +170,16 @@ export const ReassuranceSectionServer = ({ darkMode = false } = {}) => (
         <div className="grid items-stretch md:grid-cols-3">
           {reassuranceUnits.map(({ Icon, ...unit }) => (
             <article key={unit.code} className={`post-hero-service-card group relative flex min-h-[172px] flex-col items-center justify-center px-5 py-8 text-center md:min-h-[188px] lg:min-h-[196px] xl:min-h-[206px] 2xl:min-h-[214px] ${darkMode ? 'text-white' : 'text-[#1A1A1A] dark:text-[#f5efe6]'}`}>
-              <div className={`flex h-[48px] w-[48px] items-center justify-center border transition-colors duration-300 ${darkMode ? 'border-white/16 bg-white/[0.03] group-hover:border-white/28' : 'border-stone-300 bg-[#faf9f7] group-hover:border-[#1A1A1A] dark:border-[#e6c18a]/18 dark:bg-[#15120f] dark:text-[#d9c6ad] dark:group-hover:border-[#e6c18a]/34'}`}>
+              <div className={`flex h-[48px] w-[48px] items-center justify-center border transition-colors duration-300 ${darkMode ? 'border-[#d8ad73]/14 bg-[#15120f] group-hover:border-[#d8ad73]/24' : 'border-stone-300 bg-[#faf9f7] group-hover:border-[#1A1A1A] dark:border-[#e6c18a]/14 dark:bg-[#15120f] dark:text-[#d9c6ad] dark:group-hover:border-[#e6c18a]/24'}`}>
                 <Icon size={22} strokeWidth={1.25} />
               </div>
               <div className="mt-6">
                 <h4 className="font-sans text-[11px] font-black uppercase leading-none tracking-[0.2em] xl:text-[12px]">{unit.label}</h4>
                 <p className={`mx-auto mt-4 max-w-[18rem] font-sans text-[13px] leading-[1.55] ${darkMode ? 'text-stone-400' : 'text-stone-500 dark:text-[#c8bbaa]/72'}`}>{unit.text}</p>
               </div>
-              <div className={`mt-6 flex items-center gap-3 border-t pt-4 ${darkMode ? 'border-white/10' : 'border-stone-200 dark:border-[#e6c18a]/16'}`}>
+              <div className={`mx-auto mt-6 flex w-fit min-w-[112px] items-center justify-center gap-2.5 border-t px-1 pt-4 ${darkMode ? 'border-[#d8ad73]/12' : 'border-stone-200 dark:border-[#e6c18a]/12'}`}>
                 <span className="h-[5px] w-[5px] bg-[#c6a27e]" aria-hidden="true" />
-                <samp className={`font-mono text-[8px] font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-white/38' : 'text-stone-400 dark:text-[#c8bbaa]/48'}`}>{unit.meta}</samp>
+                <samp className={`inline-flex items-center justify-center text-center font-mono text-[8px] font-bold uppercase leading-none tracking-[0.18em] ${darkMode ? 'text-[#c8bbaa]/44' : 'text-stone-400 dark:text-[#c8bbaa]/44'}`}>{unit.meta}</samp>
               </div>
             </article>
           ))}
@@ -223,7 +223,7 @@ export const BeforeAfterSectionServer = ({ darkMode = false, projects = restorat
         </div>
 
         <div className={`relative flex min-h-full flex-col justify-center gap-4 rounded-b-[24px] p-2 sm:p-4 md:gap-4 md:p-5 lg:rounded-r-[26px] lg:rounded-bl-none lg:p-6 dark:bg-[#181511] ${darkMode ? 'bg-[#1d1a16]' : 'bg-[#fffaf3]'}`}>
-          <div className="dark:[&>div]:bg-white/[0.045] dark:[&>div]:ring-white/10 dark:[&>div]:shadow-[0_24px_72px_-58px_rgba(0,0,0,0.95)] dark:[&>div>div]:bg-[#211d18] dark:[&>div>div]:ring-white/[0.08] dark:[&>div>div>div]:bg-[#111] dark:[&>div>div>div]:ring-white/[0.08] dark:[&_button]:bg-[#241f19] dark:[&_button]:text-[#f8f1e8] dark:[&_button]:ring-white/[0.12] dark:[&_h3]:text-[#f8f1e8] dark:[&_p]:text-stone-300">
+          <div>
             <BeforeAfterSliderIsland projects={projects} darkMode={darkMode} />
           </div>
         </div>
@@ -297,9 +297,9 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
     <div className="pointer-events-none absolute inset-0 opacity-[0.16] [background-image:radial-gradient(rgba(121,91,61,0.20)_0.7px,transparent_0.7px)] [background-size:11px_11px] dark:opacity-[0.08] dark:[background-image:radial-gradient(rgba(220,176,116,0.18)_0.7px,transparent_0.7px)]" />
     <div className={`pointer-events-none absolute inset-x-0 top-0 h-36 dark:bg-gradient-to-b dark:from-[#0e0d0c] dark:via-[#0e0d0c] dark:to-transparent dark:opacity-80 ${darkMode ? 'bg-gradient-to-b from-[#141210] via-[#141210] to-transparent opacity-80' : 'bg-gradient-to-b from-[#FAFAF9] via-[#f7f1ea] to-transparent'}`} />
 
-    <div className={`relative mx-auto w-full max-w-[1480px] overflow-hidden rounded-[26px] p-[1px] shadow-[0_30px_86px_-68px_rgba(37,29,22,0.56),0_10px_30px_-28px_rgba(124,88,55,0.38)] ring-1 dark:bg-[#18130f] dark:ring-[#392f27]/85 dark:shadow-[0_30px_86px_-72px_rgba(0,0,0,0.96)] ${darkMode ? 'bg-white/[0.04] ring-[#3a332a]/90' : 'bg-gradient-to-br from-[#e1d1bd] via-[#fffaf3] to-[#d7c5b2] ring-[#d8c9b6]'}`}>
+    <div className={`relative mx-auto w-full max-w-[1480px] overflow-hidden rounded-[26px] p-[1px] shadow-[0_30px_86px_-68px_rgba(37,29,22,0.56),0_10px_30px_-28px_rgba(124,88,55,0.38)] ring-1 dark:bg-[#15110e] dark:ring-[#d8ad73]/12 dark:shadow-[0_30px_86px_-72px_rgba(0,0,0,0.96)] ${darkMode ? 'bg-white/[0.025] ring-[#d8ad73]/12' : 'bg-gradient-to-br from-[#e1d1bd] via-[#fffaf3] to-[#d7c5b2] ring-[#d8c9b6]'}`}>
       <div className={`relative overflow-hidden rounded-[25px] p-1.5 dark:bg-[#181511] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.045)] ${darkMode ? 'bg-[#1d1a16] shadow-[inset_0_1px_0_rgba(255,255,255,0.045)]' : 'bg-[#fffaf3] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]'}`}>
-        <div className={`pointer-events-none absolute inset-1.5 rounded-[21px] ring-1 dark:ring-[#3a332a]/80 ${darkMode ? 'ring-[#3a332a]/80' : 'ring-[#d9c9b5]'}`} />
+        <div className={`pointer-events-none absolute inset-1.5 rounded-[21px] ring-1 dark:ring-[#d8ad73]/8 ${darkMode ? 'ring-[#d8ad73]/8' : 'ring-[#d9c9b5]'}`} />
         <div className={`relative grid overflow-hidden rounded-[20px] ring-1 lg:grid-cols-[minmax(0,1.02fr)_minmax(370px,0.98fr)] dark:bg-[#181511] dark:ring-[#332b23] ${darkMode ? 'bg-[#1d1a16] ring-[#332b23]' : 'bg-[#fffdf8] ring-[#e4d7c7]'}`}>
           <div className={`relative flex min-h-[340px] flex-col justify-center overflow-hidden border-b p-5 sm:min-h-[360px] sm:p-7 md:p-8 lg:min-h-[470px] lg:border-b-0 lg:border-r lg:p-9 xl:p-10 2xl:p-12 dark:border-[#302820] dark:bg-[#181511] ${darkMode ? 'border-[#332b23] bg-[#1d1a16]' : 'border-[#e4d7c7] bg-[#fffdf8]'}`}>
             <div className={`pointer-events-none absolute inset-0 dark:bg-[radial-gradient(circle_at_90%_14%,rgba(184,132,72,0.11),transparent_26%),radial-gradient(ellipse_at_6%_44%,rgba(101,81,58,0.12),transparent_21%)] ${darkMode ? 'bg-[radial-gradient(circle_at_90%_14%,rgba(184,132,72,0.11),transparent_26%)]' : 'bg-[radial-gradient(circle_at_89%_13%,rgba(166,138,100,0.12),transparent_24%),radial-gradient(ellipse_at_6%_44%,rgba(119,91,61,0.09),transparent_21%)]'}`} />

@@ -150,7 +150,7 @@ const MapFrame = ({ darkMode, address }) => {
   const mapQuery = encodeURIComponent(address || 'Marseille, France');
   const mapUrl = `https://www.google.com/maps?q=${mapQuery}&z=13&output=embed`;
   return (
-    <div className={`relative h-full w-full overflow-hidden rounded-xl border ${darkMode ? 'border-[#514537] bg-[#151515]' : 'border-[#eee6dd] bg-white'}`}>
+    <div className={`relative h-full w-full overflow-hidden rounded-xl border ${darkMode ? 'border-[#d5b58d]/12 bg-[#151515]' : 'border-[#eee6dd] bg-white dark:border-[#d5b58d]/12 dark:bg-[#151515]'}`}>
       <iframe
         src={mapUrl}
         title="Carte de l'atelier a Marseille"
@@ -174,7 +174,7 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
 
   return (
     <footer
-      className={`relative z-10 w-full px-3 pb-6 pt-10 transition-colors duration-500 md:px-6 md:pb-8 ${darkMode ? 'bg-[#111] text-[#f4eee6]' : 'bg-[#fbfaf8] text-stone-950'}`}
+      className={`relative z-10 w-full px-3 pb-6 pt-10 transition-colors duration-500 md:px-6 md:pb-8 ${darkMode ? 'bg-[#111] text-[#f4eee6]' : 'bg-[#fbfaf8] text-stone-950 dark:bg-[#0f0f0e] dark:text-[#f4eee6]'}`}
       data-footer-mounted="true"
     >
       <div className="mx-auto grid w-full max-w-[430px] gap-4 md:hidden">
@@ -258,22 +258,22 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
         <FooterBackToTopButtonIsland darkMode={darkMode} />
       </div>
 
-      <div className={`mx-auto hidden w-full max-w-[1760px] overflow-hidden rounded-[18px] border shadow-sm md:block ${darkMode ? 'border-[#2e2a25] bg-[#111110] shadow-black/20' : 'border-[#eee6dd] bg-[#fdfbf8] shadow-stone-200/50'}`}>
-        <div className={`grid grid-cols-1 divide-y lg:grid-cols-4 lg:divide-x lg:divide-y-0 ${darkMode ? 'divide-[#3a332b]' : 'divide-[#eee6dd]'}`}>
+      <div className={`mx-auto hidden w-full max-w-[1760px] overflow-hidden rounded-[18px] border md:block ${darkMode ? 'border-[#d5b58d]/8 bg-[#111110] shadow-[0_24px_70px_-62px_rgba(0,0,0,0.8)]' : 'border-[#eee6dd] bg-[#fdfbf8] shadow-sm shadow-stone-200/50 dark:border-[#d5b58d]/8 dark:bg-[#111110] dark:shadow-[0_24px_70px_-62px_rgba(0,0,0,0.8)]'}`}>
+        <div className={`grid grid-cols-1 divide-y lg:grid-cols-4 lg:divide-x lg:divide-y-0 ${darkMode ? 'divide-[#d5b58d]/10' : 'divide-[#eee6dd] dark:divide-[#d5b58d]/10'}`}>
           {benefitItems.map(({ icon: Icon, title, text }) => (
-            <div key={title} className="flex items-center gap-6 px-7 py-8 md:px-10">
-              <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-full ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc]' : 'bg-[#f3eee7] text-stone-950'}`}>
-                <Icon size={30} strokeWidth={1.6} />
+            <div key={title} className="grid grid-cols-[56px_minmax(0,1fr)] items-start gap-6 px-7 py-8 md:px-10">
+              <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${darkMode ? 'bg-white/[0.045] text-[#d8c6b2]' : 'bg-[#f3eee7] text-stone-950 dark:bg-white/[0.045] dark:text-[#d8c6b2]'}`}>
+                <Icon size={26} strokeWidth={1.55} />
               </div>
-              <div className="space-y-3">
-                <p className={`font-serif text-[16px] font-semibold leading-tight ${darkMode ? 'text-[#f8f2ea]' : 'text-stone-950'}`}>{title}</p>
-                <p className={`max-w-[240px] text-sm leading-7 ${darkMode ? 'text-[#d4ccc1]' : 'text-stone-600'}`}>{text}</p>
+              <div className="space-y-2 pt-0.5">
+                <p className={`font-serif text-[16px] font-semibold leading-tight ${darkMode ? 'text-[#f8f2ea]' : 'text-stone-950 dark:text-[#f8f2ea]'}`}>{title}</p>
+                <p className={`max-w-[250px] text-sm leading-7 ${darkMode ? 'text-[#d4ccc1]/78' : 'text-stone-600 dark:text-[#d4ccc1]/78'}`}>{text}</p>
               </div>
             </div>
           ))}
         </div>
 
-        <div className={`border-t px-7 py-12 md:px-10 md:py-14 xl:px-12 2xl:px-14 ${darkMode ? 'border-[#2e2a25]' : 'border-[#eee6dd]'}`}>
+        <div className={`border-t px-7 py-12 md:px-10 md:py-14 xl:px-12 2xl:px-14 ${darkMode ? 'border-[#d5b58d]/8' : 'border-[#eee6dd] dark:border-[#d5b58d]/8'}`}>
           <div className="grid grid-cols-1 gap-11 lg:grid-cols-[minmax(280px,0.9fr)_minmax(180px,0.55fr)_minmax(180px,0.55fr)] lg:gap-x-10 lg:gap-y-10 xl:grid-cols-[205px_100px_120px_120px_145px_minmax(330px,1fr)] xl:gap-x-4 xl:gap-y-9 2xl:grid-cols-[240px_140px_150px_155px_190px_minmax(420px,520px)] 2xl:gap-9">
             <div className="space-y-9 lg:row-span-2 xl:row-span-1 xl:space-y-8 2xl:space-y-9">
               <Link href="/" prefetch={false} className="group inline-flex items-center gap-5 xl:gap-4 2xl:gap-5">
@@ -307,7 +307,7 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
             <div className="min-w-0 w-full max-w-[680px] justify-self-end space-y-5 lg:col-span-3 xl:col-span-1 xl:col-start-auto xl:max-w-none 2xl:max-w-[560px]">
               <h3 className={`font-serif text-[15px] uppercase tracking-normal ${darkMode ? 'text-stone-100' : 'text-stone-950'}`}>Notre atelier a Marseille</h3>
               <div className="h-[240px] xl:h-[260px]"><MapFrame darkMode={darkMode} address={address} /></div>
-              <div className={`rounded-lg border px-5 py-4 xl:px-6 ${darkMode ? 'border-[#514537] bg-[#121110]' : 'border-[#eee6dd] bg-[#fdfbf8]'}`}>
+              <div className={`rounded-lg border px-5 py-4 xl:px-6 ${darkMode ? 'border-[#d5b58d]/12 bg-[#121110]' : 'border-[#eee6dd] bg-[#fdfbf8] dark:border-[#d5b58d]/12 dark:bg-[#121110]'}`}>
                 <div className={`grid gap-0 divide-y text-sm ${darkMode ? 'divide-[#211f1b] text-[#ded6cc]' : 'divide-[#eee6dd] text-stone-700'}`}>
                   <a href={directionUrl} target="_blank" rel="noopener noreferrer" className="flex gap-5 py-4 transition-colors hover:text-orange-500"><MapPin size={18} className="mt-0.5 shrink-0" /><span><span className={`block ${darkMode ? 'text-[#f8f2ea]' : 'text-stone-950'}`}>{address}</span><span className="mt-1 block text-xs opacity-70">Quartier du Panier, 13002</span></span></a>
                   <a href={`mailto:${email}`} className="flex items-center gap-5 py-4 transition-colors hover:text-orange-500"><Mail size={18} className="shrink-0" /><span className="break-words text-[13px]">{email}</span></a>
@@ -319,8 +319,8 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
           </div>
         </div>
 
-        <div className={`border-t px-7 py-9 md:px-10 xl:px-12 2xl:px-14 ${darkMode ? 'border-[#2e2a25]' : 'border-[#eee6dd]'}`}>
-          <div className={`grid gap-9 divide-y lg:grid-cols-[0.95fr_1.25fr_0.95fr] lg:divide-x lg:divide-y-0 xl:grid-cols-[0.95fr_1.35fr_0.95fr] ${darkMode ? 'divide-[#3a332b]' : 'divide-[#eee6dd]'}`}>
+        <div className={`border-t px-7 py-9 md:px-10 xl:px-12 2xl:px-14 ${darkMode ? 'border-[#d5b58d]/8' : 'border-[#eee6dd] dark:border-[#d5b58d]/8'}`}>
+          <div className={`grid gap-9 divide-y lg:grid-cols-[0.95fr_1.25fr_0.95fr] lg:divide-x lg:divide-y-0 xl:grid-cols-[0.95fr_1.35fr_0.95fr] ${darkMode ? 'divide-[#d5b58d]/10' : 'divide-[#eee6dd] dark:divide-[#d5b58d]/10'}`}>
             <div className="space-y-6 lg:pr-0 xl:pr-8">
               <h3 className={`font-serif text-[15px] uppercase ${darkMode ? 'text-stone-100' : 'text-stone-950'}`}>Moyens de paiement acceptes</h3>
               <div className="flex flex-wrap gap-2">
@@ -360,7 +360,7 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
           </div>
         </div>
 
-        <div className={`border-t px-7 py-6 md:px-12 xl:px-14 ${darkMode ? 'border-[#2e2a25] bg-[#121110]' : 'border-[#eee6dd] bg-[#fbfaf8]'}`}>
+        <div className={`border-t px-7 py-6 md:px-12 xl:px-14 ${darkMode ? 'border-[#d5b58d]/8 bg-[#121110]' : 'border-[#eee6dd] bg-[#fbfaf8] dark:border-[#d5b58d]/8 dark:bg-[#121110]'}`}>
           <div className="flex flex-col gap-6 text-sm lg:flex-row lg:items-center lg:justify-between">
             <p className={darkMode ? 'text-stone-500' : 'text-stone-600'}>© {copyright}</p>
             <div className={`flex flex-wrap gap-x-7 gap-y-3 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>

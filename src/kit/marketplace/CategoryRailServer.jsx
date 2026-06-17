@@ -44,7 +44,7 @@ export default function CategoryRailServer({
             key={cat.id}
             href={getCategoryUrl(cat.id)}
             prefetch={false}
-            className={`category-rail-card relative flex h-[152px] min-w-0 items-center rounded-[16px] p-[5px] text-inherit no-underline shadow-[0_18px_42px_rgba(33,27,19,0.07)] ring-1 ring-transparent transition-[background-color,border-color,box-shadow] duration-700 lg:h-[162px] lg:p-[6px] 2xl:h-[178px] 2xl:p-[6px] ${darkMode ? 'bg-[#1A1A1A] text-white' : 'bg-white text-[#181716] dark:bg-[#16130f] dark:text-[#f6efe5] dark:ring-[#e6c18a]/12 dark:shadow-[0_24px_70px_rgba(0,0,0,0.34)]'}`}
+            className={`category-rail-card relative flex h-[152px] min-w-0 items-center rounded-[18px] p-[5px] text-inherit no-underline shadow-[0_18px_42px_rgba(33,27,19,0.07)] ring-1 ring-transparent transition-[background-color,border-color,box-shadow] duration-700 lg:h-[162px] lg:p-[6px] 2xl:h-[178px] 2xl:p-[6px] ${darkMode ? 'bg-[#1A1A1A] text-white' : 'bg-white text-[#181716] dark:bg-[#16130f] dark:text-[#f6efe5] dark:ring-[#e6c18a]/10 dark:shadow-[0_24px_70px_rgba(0,0,0,0.34)]'}`}
           >
             <div className={`h-[142px] w-[118px] flex-none overflow-hidden rounded-[11px] border lg:h-[150px] lg:w-[130px] 2xl:h-[166px] 2xl:w-[150px] ${darkMode ? 'border-white/14 bg-white/[0.04]' : 'border-[#d8cfc5] bg-[#f8f4ef] dark:border-[#e6c18a]/16 dark:bg-[#211b15]'}`}>
               <div className="h-full w-full overflow-hidden rounded-[10px] bg-stone-100 dark:bg-[#211b15]">
@@ -83,9 +83,9 @@ export default function CategoryRailServer({
                 </span>
               </span>
             </div>
-            <span className={`category-cta-neon category-cta-neon--corner group/cta bottom-[5px] right-[5px] z-[2] inline-flex w-[118px] items-center justify-between gap-1.5 rounded-full border py-1 pl-4 pr-1 transition-[border-color,box-shadow,background-color] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] lg:bottom-[6px] lg:right-[6px] lg:w-[124px] 2xl:w-[132px] ${darkMode ? 'category-cta-neon--dark text-white' : 'text-[#181716] dark:border-[#e6c18a]/18 dark:bg-[#0d0b09]/72 dark:text-[#efe3d2]'}`}>
+            <span className={`category-cta-neon category-cta-neon--corner group/cta bottom-[5px] right-[5px] z-[2] inline-flex w-[118px] items-center justify-between gap-1.5 rounded-full border py-1 pl-4 pr-1 transition-[border-color,box-shadow,background-color] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] lg:bottom-[6px] lg:right-[6px] lg:w-[124px] 2xl:w-[132px] ${darkMode ? 'category-cta-neon--dark text-white' : 'text-[#181716] dark:border-[#e6c18a]/14 dark:bg-[#0d0b09]/72 dark:text-[#efe3d2]'}`}>
               <span className="relative z-[1] font-sans text-[11px] leading-none tracking-normal lg:text-[11.5px]">Decouvrir</span>
-              <span className={`relative z-[1] flex h-[26px] w-[26px] flex-none rotate-0 transform-gpu items-center justify-center rounded-full transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover/cta:rotate-45 lg:h-[27px] lg:w-[27px] 2xl:h-[28px] 2xl:w-[28px] ${darkMode ? 'bg-white text-[#181716]' : 'bg-[#181716] text-white dark:bg-[#f5eadb] dark:text-[#17120d]'}`}>
+              <span className={`relative z-[1] flex h-[26px] w-[26px] flex-none rotate-0 transform-gpu items-center justify-center rounded-full transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover/cta:rotate-45 lg:h-[27px] lg:w-[27px] 2xl:h-[28px] 2xl:w-[28px] ${darkMode ? 'bg-[#d8ad73] text-[#15110d]' : 'bg-[#181716] text-white dark:bg-[#d8ad73] dark:text-[#15110d]'}`}>
                 <ArrowUpRight size={13} strokeWidth={1.75} />
               </span>
             </span>
