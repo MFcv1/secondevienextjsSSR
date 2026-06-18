@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import WishlistView from '../../src/kit/marketplace/WishlistView';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
 import { getDb, loadFirestoreModule } from '../../src/kit/config/firebaseLazy';
+import { getProductStockAmount, isPurchasable } from '../../src/kit/commerce/purchasability';
 
 function WishlistPageContent({ initialItems = [] }) {
   const router = useRouter();
@@ -50,12 +51,16 @@ function WishlistPageContent({ initialItems = [] }) {
 
   const addToCart = async (item) => {
     if (!user || user.isAnonymous) return;
+    if (!isPurchasable(item)) return;
     const [db, { addDoc, collection, serverTimestamp }] = await Promise.all([getDb(), loadFirestoreModule()]);
     await addDoc(collection(db, 'users', user.uid, 'cart'), {
       originalId: item.id,
       collectionName: item.collectionName || 'furniture',
       name: item.name,
       price: item.currentPrice || item.startingPrice || item.price || 0,
+      stock: getProductStockAmount(item),
+      sold: Boolean(item.sold),
+      priceOnRequest: Boolean(item.priceOnRequest),
       image: item.images?.[0] || item.imageUrl || item.image || '',
       material: item.material || 'Bois',
       quantity: 1,

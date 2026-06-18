@@ -22,6 +22,8 @@ export default function ProductDetailActionsIsland({
   cartItem,
   mobile = false,
   isUnavailable = false,
+  unavailableLabel = 'Indisponible',
+  quoteHref = '',
 }) {
   const [isInCart, setIsInCart] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -42,7 +44,10 @@ export default function ProductDetailActionsIsland({
   }, [productId]);
 
   const handleCart = useCallback(() => {
-    if (isUnavailable) return;
+    if (isUnavailable) {
+      if (quoteHref) window.location.assign(quoteHref);
+      return;
+    }
 
     if (isInCart) {
       window.dispatchEvent(new CustomEvent('sv:open-cart'));
@@ -58,25 +63,28 @@ export default function ProductDetailActionsIsland({
     } catch {
       // The local route can work without the global cart shell.
     }
-  }, [cartItem, isInCart, isUnavailable, productId, productName]);
+  }, [cartItem, isInCart, isUnavailable, productId, productName, quoteHref]);
+
+  const disabled = isUnavailable && !quoteHref;
+  const actionLabel = isUnavailable ? unavailableLabel : isInCart ? 'Voir panier' : 'Ajouter au panier';
 
   if (mobile) {
     return (
       <div className="w-full mt-4 border-t border-stone-200 pt-4 flex-shrink-0">
         <button
           type="button"
-          disabled={isUnavailable}
-          aria-disabled={isUnavailable}
+          disabled={disabled}
+          aria-disabled={disabled}
           className={`w-full rounded-xl py-3.5 flex items-center justify-center gap-2 font-label text-[11px] tracking-[0.1em] uppercase active:scale-95 transition-all duration-300 ${
-            isUnavailable
+            disabled
               ? 'cursor-not-allowed bg-stone-200 text-stone-500'
               : 'bg-stone-900 text-white hover:bg-black shadow-[0_16px_32px_rgba(28,25,23,0.18)]'
           }`}
           onClick={handleCart}
         >
           <ShoppingBag size={15} />
-          {isUnavailable ? 'Indisponible' : isInCart ? 'Voir panier' : 'Ajouter au panier'}
-          {priceLabel ? <span className="opacity-50 ml-1">· {priceLabel}</span> : null}
+          {actionLabel}
+          {priceLabel && !isUnavailable ? <span className="opacity-50 ml-1">· {priceLabel}</span> : null}
         </button>
         <button
           type="button"
@@ -96,16 +104,16 @@ export default function ProductDetailActionsIsland({
         <button
           type="button"
           onClick={handleCart}
-          disabled={isUnavailable}
-          aria-disabled={isUnavailable}
+          disabled={disabled}
+          aria-disabled={disabled}
           className={`w-full py-4 rounded-xl flex justify-center items-center gap-2 font-label text-[11px] tracking-[0.1em] uppercase transition-all active:scale-95 ${
-            isUnavailable
+            disabled
               ? 'cursor-not-allowed bg-stone-200 text-stone-500'
               : 'bg-stone-900 text-stone-50 hover:bg-black shadow-md'
           }`}
         >
           {isUnavailable ? (
-            'Indisponible'
+            actionLabel
           ) : isInCart ? (
             <>
               <ShoppingBag size={15} /> Voir au panier

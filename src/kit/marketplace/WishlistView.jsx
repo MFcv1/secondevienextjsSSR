@@ -2,6 +2,7 @@ import React from 'react';
 import { X, Upload, ShoppingCart, Trash2, ShoppingBag, Heart } from 'lucide-react';
 import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage } from '../../utils/imageUtils';
 import { getProductUrl } from '../../utils/slug';
+import { getPurchaseUnavailableLabel, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
 
 const WishlistView = ({
     wishlistItems = [],
@@ -24,9 +25,11 @@ const WishlistView = ({
 
     const handleAddAll = async () => {
         for (const item of enrichedItems) {
-            if (!item.sold) await onAddToCart(item);
+            if (isPurchasable(item)) await onAddToCart(item);
         }
     };
+
+    const purchasableItems = enrichedItems.filter(isPurchasable);
 
     const handleShare = () => {
         const url = window.location.href;
@@ -88,8 +91,8 @@ const WishlistView = ({
                         Partager ma wishlist
                     </button>
                     <button
-                        onClick={enrichedItems.filter(i => !i.sold).length > 0 ? handleAddAll : undefined}
-                        className={`flex items-center gap-2 px-5 py-2 text-sm transition-colors ${enrichedItems.filter(i => !i.sold).length === 0 ? 'opacity-30 pointer-events-none' : (darkMode ? 'text-stone-400 hover:text-white' : 'text-stone-500 hover:text-stone-900')}`}
+                        onClick={purchasableItems.length > 0 ? handleAddAll : undefined}
+                        className={`flex items-center gap-2 px-5 py-2 text-sm transition-colors ${purchasableItems.length === 0 ? 'opacity-30 pointer-events-none' : (darkMode ? 'text-stone-400 hover:text-white' : 'text-stone-500 hover:text-stone-900')}`}
                     >
                         <ShoppingCart size={15} strokeWidth={1.5} />
                         Tout ajouter au panier
@@ -132,6 +135,8 @@ const WishlistView = ({
                             const price = item.currentPrice || item.startingPrice || item.price;
                             const priority = index < 6;
                             const cardImage = getProductCardImage(item);
+                            const purchasable = isPurchasable(item);
+                            const unavailableLabel = getPurchaseUnavailableLabel(item);
                             return (
                                 <div key={item.id} className="group relative flex flex-col">
                                     {/* IMAGE + X */}
@@ -160,9 +165,9 @@ const WishlistView = ({
                                                 decoding={priority ? 'sync' : 'async'}
                                                 fetchPriority={priority ? 'high' : 'auto'}
                                             />
-                                            {item.sold && (
+                                            {!purchasable && !shouldRequestQuote(item) && (
                                                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                                    <span className="text-white text-xs font-black uppercase tracking-widest">Vendu</span>
+                                                    <span className="text-white text-xs font-black uppercase tracking-widest">{unavailableLabel}</span>
                                                 </div>
                                             )}
                                         </a>
@@ -176,18 +181,18 @@ const WishlistView = ({
                                         >
                                             {item.name}
                                         </a>
-                                        <p className={`text-sm font-bold ${item.sold ? 'text-red-500' : ''}`}>
-                                            {item.sold ? 'VENDU' : (price ? `${price} €` : '—')}
+                                        <p className={`text-sm font-bold ${!purchasable ? 'text-red-500' : ''}`}>
+                                            {purchasable ? `${price} €` : shouldRequestQuote(item) ? 'Sur demande' : unavailableLabel}
                                         </p>
                                     </div>
 
                                     {/* BOUTON PANIER */}
                                     <button
-                                        onClick={() => !item.sold && onAddToCart(item)}
-                                        disabled={item.sold}
+                                        onClick={() => purchasable && onAddToCart(item)}
+                                        disabled={!purchasable}
                                         className={`mt-3 w-full py-3 text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed ${darkMode ? 'bg-stone-800 text-stone-100 hover:bg-stone-700' : 'bg-stone-900 text-white hover:bg-stone-700'}`}
                                     >
-                                        {item.sold ? 'Indisponible' : 'Ajouter au panier'}
+                                        {purchasable ? 'Ajouter au panier' : unavailableLabel}
                                     </button>
                                 </div>
                             );

@@ -31,6 +31,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- INFRA_PROD_PHASE2_REPORT_2026-06-14.md : rapport infra prod Phase 2, decisions env/secrets/revalidation/Stripe et risques restants
 |-- MENU_NAVIGATION_CATEGORY_LOADING_REPORT_2026-06-16.md : rapport navigation menu, prefetch cible, suppression loading categorie et deploy App Hosting sandbox
 |-- AI_QUOTE_ASSISTANT_MVP.md : cadrage MVP assistant IA devis, base metier, garde-fous OpenAI et integration admin
+|-- docs/CGV_RETOURS_DRAFT_2026-06-19.md : brouillon CGV/retours/retractation Seconde Vie a faire valider par un juriste
 |-- NEXT_PUBLIC_ROUTES_STATIC_ARCHITECTURE_ROADMAP_2026-06-16.md : roadmap routes publiques cacheables, theme sans cookie serveur, categories canonique/facettes client et gates prerender
 |-- .agents/skills/nextjsssr : skill Codex local pour appliquer nextjsssr.md
 |-- package*.json, next.config.mjs, eslint.config.mjs, jsconfig.json, tailwind.config.js, postcss.config.js
@@ -47,7 +48,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- src
 |   |-- index.css
 |   |-- kit/admin : back-office, analytics, commandes, SEO, users, exports CSV, docs/etudes techniques admin
-|   |-- kit/commerce : panier, checkout, login, commandes client
+|   |-- kit/commerce : panier, checkout, login, commandes client, regle isPurchasable
 |   |-- kit/marketplace : galerie serveur, SEO visible, pages categorie/produit, ilots produit/lightbox, footer mobile, panier/cartes, devis ServerView/FormIsland, wishlist
 |   |-- kit/vitrine : vue serveur et iles fines de la page /a-propos native Next
 |   |-- kit/layout, kit/shared, kit/ui, kit/hooks, kit/contexts, kit/config (dont firebaseEnv/firebaseCore/firebaseLazy)

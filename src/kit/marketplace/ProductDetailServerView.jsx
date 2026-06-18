@@ -1,14 +1,15 @@
 import React from 'react';
 import { getProductCardImage, getProductImageItems } from '../../utils/imageUtils';
+import { getProductPriceAmount, getProductStockAmount, getPurchaseUnavailableLabel, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
 import ProductDetailActionsIsland from './ProductDetailActionsIsland';
 import ProductDetailShellIsland from './ProductDetailShellIsland';
 
 const normalizeText = (value, fallback = '') => String(value || fallback).replace(/\s+/g, ' ').trim();
 
 const formatPrice = (product) => {
-  if (product?.priceOnRequest) return 'Sur demande';
-  const amount = Number(product?.currentPrice || product?.startingPrice || product?.price || 0);
-  if (!Number.isFinite(amount) || amount <= 0) return '';
+  if (shouldRequestQuote(product)) return 'Sur demande';
+  const amount = getProductPriceAmount(product);
+  if (amount <= 0) return '';
   return `${Math.round(amount).toLocaleString('fr-FR')} €`;
 };
 
@@ -25,7 +26,7 @@ const getFacts = (product) => [
   { label: 'Matériau', value: product?.material || '' },
   { label: 'Dimension', value: getDimensions(product) },
   { label: 'Poids', value: product?.weight ? `${product.weight} kg` : '' },
-  { label: 'Disponibilité', value: product?.sold || Number(product?.stock) === 0 ? 'Vendu' : 'Disponible' },
+  { label: 'Disponibilité', value: isPurchasable(product) ? 'Disponible' : getPurchaseUnavailableLabel(product) },
 ].filter((fact) => fact.value);
 
 const getCartItemPayload = (product, title) => {
@@ -37,6 +38,9 @@ const getCartItemPayload = (product, title) => {
     name: title,
     title,
     price: Number(product?.currentPrice || product?.startingPrice || product?.price || 0),
+    stock: getProductStockAmount(product),
+    sold: Boolean(product?.sold),
+    priceOnRequest: Boolean(product?.priceOnRequest),
     image: cardImage?.src || product?.imageUrl || product?.thumbnailUrl || '',
     imageUrl: cardImage?.src || product?.imageUrl || product?.thumbnailUrl || '',
     material: product?.material || 'Bois',
@@ -45,7 +49,9 @@ const getCartItemPayload = (product, title) => {
 };
 
 function ProductDetailDesktopInfo({ product, title, description, priceLabel, facts, cartItem, darkMode = false }) {
-  const isUnavailable = product?.sold || Number(product?.stock) === 0;
+  const purchasable = isPurchasable(product);
+  const unavailableLabel = getPurchaseUnavailableLabel(product);
+  const quoteHref = shouldRequestQuote(product) ? `/devis?produit=${encodeURIComponent(product?.id || '')}` : '';
   return (
     <div className={`hidden lg:flex w-[450px] xl:w-[500px] flex-shrink-0 flex-col z-20 transition-colors duration-1000 h-[100dvh] pt-36 pb-8 border-l shadow-2xl ${darkMode ? 'bg-[#0A0A0A] border-white/10 text-stone-200' : 'bg-[#FAFAFA] border-black/5 text-stone-900'}`}>
       <div className="flex-shrink-0 px-10">
@@ -73,7 +79,9 @@ function ProductDetailDesktopInfo({ product, title, description, priceLabel, fac
           productName={title}
           priceLabel={priceLabel}
           cartItem={cartItem}
-          isUnavailable={isUnavailable}
+          isUnavailable={!purchasable}
+          unavailableLabel={unavailableLabel}
+          quoteHref={quoteHref}
         />
       </div>
 
@@ -110,7 +118,9 @@ export default function ProductDetailServerView({ product, darkMode = false }) {
   const priceLabel = formatPrice(product);
   const facts = getFacts(product);
   const cartItem = getCartItemPayload(product, title);
-  const isUnavailable = product?.sold || Number(product?.stock) === 0;
+  const purchasable = isPurchasable(product);
+  const unavailableLabel = getPurchaseUnavailableLabel(product);
+  const quoteHref = shouldRequestQuote(product) ? `/devis?produit=${encodeURIComponent(product?.id || '')}` : '';
 
   return (
     <ProductDetailShellIsland
@@ -119,7 +129,9 @@ export default function ProductDetailServerView({ product, darkMode = false }) {
       facts={facts}
       priceLabel={priceLabel}
       cartItem={cartItem}
-      isUnavailable={isUnavailable}
+      isUnavailable={!purchasable}
+      unavailableLabel={unavailableLabel}
+      quoteHref={quoteHref}
       darkMode={darkMode}
       desktopInfo={(
         <ProductDetailDesktopInfo

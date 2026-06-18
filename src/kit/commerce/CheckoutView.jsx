@@ -6,6 +6,7 @@ import { functions, db, appId } from '../config/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { useToast } from '../ui/Toast';
+import { getPurchaseUnavailableLabel, isPurchasable } from './purchasability';
 
 const DELIVERY_SETTINGS_CACHE_KEY = 'secondevie:delivery-settings:v1';
 const PAYMENT_SETTINGS_CACHE_KEY = 'paymentSettings';
@@ -444,10 +445,10 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
             return onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', collectionName, item.originalId || item.id), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    if (data.sold) {
+                    if (!isPurchasable(data)) {
                         setUnavailableItems(prev => {
                             if (prev.find(i => i.id === item.id)) return prev;
-                            return [...prev, { id: item.id, name: item.name }];
+                            return [...prev, { id: item.id, name: item.name, reason: getPurchaseUnavailableLabel(data) }];
                         });
                     }
                 } else {
@@ -697,6 +698,9 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
     // On ne bloque pas non plus si on est en cours de nettoyage (isCleaningUp) après avoir fermé la modale Stripe, 
     // pour laisser le temps au serveur de remettre sold=false sans déclencher l'alerte !
     if (unavailableItems.length > 0 && checkoutState !== 'processing_deferred' && checkoutState !== 'fetching_stripe' && checkoutState !== 'ready_to_pay' && checkoutState !== 'order_success' && !isCleaningUp) {
+        const unavailableMessage = unavailableItems.length === 1
+            ? `L'article "${unavailableItems[0].name}" n'est plus disponible au paiement en ligne (${unavailableItems[0].reason || 'indisponible'}).`
+            : "Certains articles ne sont plus disponibles au paiement en ligne.";
         return (
             <div className={`min-h-screen pt-12 px-6 flex items-center justify-center bg-transparent`}>
                 <div className={`p-8 rounded-3xl shadow-xl max-w-md text-center space-y-6 border ${darkMode ? 'bg-stone-900 border-stone-800' : 'bg-white border-stone-100'}`}>
@@ -705,9 +709,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                     </div>
                     <h2 className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-stone-900'}`}>Victime de son succès</h2>
                     <p className={darkMode ? 'text-stone-400' : 'text-stone-500'}>
-                        {unavailableItems.length === 1
-                            ? `L'article "${unavailableItems[0].name}" vient d'être réservé par un autre passionné.`
-                            : "Certains articles viennent d'être réservés."}
+                        {unavailableMessage}
                     </p>
                     <button onClick={onBack} className={`w-full py-4 rounded-xl font-bold uppercase text-xs tracking-widest transition-all text-stone-900 bg-amber-500 hover:bg-amber-400`}>
                         Retourner à la boutique

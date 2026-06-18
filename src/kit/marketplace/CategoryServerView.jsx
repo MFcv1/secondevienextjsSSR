@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronLeft, Grid3X3, LayoutGrid, List, SlidersHorizontal, X } from 'lucide-react';
 import { getCategoryUrl, getProductUrl } from '../../utils/slug';
 import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage } from '../../utils/imageUtils';
+import { getProductStockAmount, getPurchaseUnavailableLabel, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
 import CategoryControlsIsland from './CategoryControlsIsland';
 import {
   CATEGORY_SORT_OPTIONS,
@@ -43,6 +44,7 @@ const CategoryProductCard = ({ item, layoutMode = 'grid', compact = true, priori
   const cardImage = getProductCardImage(item);
   const title = item?.name || item?.title || 'Pi\u00e8ce restaur\u00e9e';
   const price = getCategoryProductPrice(item);
+  const purchasable = isPurchasable(item);
 
   return (
     <a
@@ -98,10 +100,10 @@ const CategoryProductCard = ({ item, layoutMode = 'grid', compact = true, priori
 
         <div className={`flex shrink-0 ${compact ? 'flex-row items-center justify-between md:flex-col md:items-end' : 'flex-col items-end'} gap-0.5 text-right md:gap-1`}>
           <div className={`whitespace-nowrap font-black uppercase tracking-widest opacity-50 ${compact ? 'text-[8px] md:text-[9px]' : 'text-[9px]'}`}>
-            {item?.sold ? 'Stock: 0' : `Stock: ${item?.stock !== undefined ? item.stock : 1}`}
+            {item?.sold ? 'Stock: 0' : `Stock: ${getProductStockAmount(item)}`}
           </div>
-          <p className={`whitespace-nowrap font-bold tabular-nums ${compact ? 'text-[10px] md:text-xs lg:text-sm' : 'text-[11px] md:text-xs lg:text-sm'} ${item?.sold ? 'text-red-500' : ''}`}>
-            {item?.sold ? 'VENDU' : item?.priceOnRequest ? '' : price ? `${price} EUR` : ''}
+          <p className={`whitespace-nowrap font-bold tabular-nums ${compact ? 'text-[10px] md:text-xs lg:text-sm' : 'text-[11px] md:text-xs lg:text-sm'} ${!purchasable ? 'text-red-500' : ''}`}>
+            {purchasable ? `${price} EUR` : shouldRequestQuote(item) ? 'Sur demande' : getPurchaseUnavailableLabel(item)}
           </p>
         </div>
       </div>
@@ -113,6 +115,7 @@ const MobileProductRow = ({ item, darkMode, priority = false }) => {
   const cardImage = getProductCardImage(item);
   const title = item?.name || item?.title || 'Pi\u00e8ce restaur\u00e9e';
   const price = getCategoryProductPrice(item);
+  const purchasable = isPurchasable(item);
 
   return (
     <a
@@ -137,7 +140,7 @@ const MobileProductRow = ({ item, darkMode, priority = false }) => {
         <h3 className={`font-serif text-[15px] leading-tight ${darkMode ? 'text-stone-100' : 'text-stone-900'}`}>{title}</h3>
         <p className={`mt-1 text-[12px] ${darkMode ? 'text-stone-500' : 'text-stone-500'}`}>{item?.material || 'Ch\u00eane'}</p>
         <p className={`mt-1.5 text-[14px] font-bold tabular-nums ${darkMode ? 'text-stone-100' : 'text-stone-950'}`}>
-          {item?.sold ? 'VENDU' : item?.priceOnRequest ? 'Sur demande' : price ? `${price} EUR` : ''}
+          {purchasable ? `${price} EUR` : shouldRequestQuote(item) ? 'Sur demande' : getPurchaseUnavailableLabel(item)}
         </p>
       </div>
     </a>

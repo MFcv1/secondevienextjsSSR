@@ -57,10 +57,9 @@ exports.refundOrderAdmin = functions
     .https.onCall(async (data, context) => {
         const adminInfo = checkIsAdmin(context);
         const orderId = normalizeFirestoreId(data?.orderId, 'ID commande');
-        const restoreStock = data?.restoreStock === true;
         const refundReason = typeof data?.reason === 'string' && data.reason.trim()
             ? data.reason.trim().slice(0, 500)
-            : 'Remboursement admin';
+            : 'Remboursement admin avec remise en vente';
         const orderRef = db.collection('orders').doc(orderId);
         const stripe = Stripe(STRIPE_SECRET_KEY.value());
 
@@ -90,7 +89,7 @@ exports.refundOrderAdmin = functions
                 refundRequestedAt: admin.firestore.FieldValue.serverTimestamp(),
                 refundRequestedBy: context.auth.uid,
                 refundRequestedByEmail: context.auth.token.email || null,
-                refundRestoreStockRequested: restoreStock,
+                refundRestoreStockRequested: true,
                 refundReason,
                 refundIsSuperAdmin: adminInfo.isSuper === true
             });
@@ -117,7 +116,7 @@ exports.refundOrderAdmin = functions
                 metadata: {
                     orderId,
                     adminUid: context.auth.uid,
-                    restoreStock: restoreStock ? 'true' : 'false',
+                    restoreStock: 'true',
                     note: refundReason
                 }
             }, { idempotencyKey });
@@ -138,7 +137,7 @@ exports.refundOrderAdmin = functions
             }
 
             const freshOrder = snap.data();
-            if (restoreStock && finalStatus === 'refunded' && freshOrder.stockRestoredAfterRefund !== true) {
+            if (finalStatus === 'refunded' && freshOrder.stockRestoredAfterRefund !== true) {
                 await restoreOrderStock(transaction, freshOrder, orderId);
             }
 
@@ -149,7 +148,7 @@ exports.refundOrderAdmin = functions
                 refundedAt: finalStatus === 'refunded'
                     ? admin.firestore.FieldValue.serverTimestamp()
                     : admin.firestore.FieldValue.delete(),
-                stockRestoredAfterRefund: restoreStock && finalStatus === 'refunded',
+                stockRestoredAfterRefund: finalStatus === 'refunded',
                 refundAmount: refund.amount || null,
                 refundCurrency: refund.currency || null,
                 refundUpdatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -161,6 +160,6 @@ exports.refundOrderAdmin = functions
             refundId: refund.id,
             status: refund.status,
             orderStatus: finalStatus,
-            stockRestored: restoreStock && finalStatus === 'refunded'
+            stockRestored: finalStatus === 'refunded'
         };
     });

@@ -242,6 +242,27 @@ async function handleCheckoutSessionCompleted(stripe, session) {
     console.log('Stripe Checkout session created paid order:', orderRef.id);
 }
 
+async function handleCheckoutSessionExpired(session) {
+    console.log('Webhook: Checkout session expired:', session.id);
+    const orderId = session.metadata?.orderId || null;
+    if (!orderId) return;
+
+    const orderRef = db.collection('orders').doc(orderId);
+    await db.runTransaction(async (transaction) => {
+        const orderSnap = await transaction.get(orderRef);
+        if (!orderSnap.exists) return;
+        const order = orderSnap.data() || {};
+        if (order.status === 'paid' || order.paidAt) return;
+        if (order.stripeSessionId && order.stripeSessionId !== session.id) return;
+
+        await restoreReservedStockForUnpaidOrder(transaction, orderRef, order, {
+            status: 'canceled',
+            canceledAt: admin.firestore.FieldValue.serverTimestamp(),
+            cancelReason: 'checkout_session_expired'
+        });
+    });
+}
+
 async function handlePaymentIntentTerminal(pi, nextOrderFields) {
     const orderId = pi.metadata?.orderId;
     if (!orderId) return;
@@ -353,6 +374,11 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
             const session = event.data.object;
             console.log('Webhook: Checkout session completed:', session.id);
             await handleCheckoutSessionCompleted(stripe, session);
+        }
+
+        if (event.type === 'checkout.session.expired') {
+            const session = event.data.object;
+            await handleCheckoutSessionExpired(session);
         }
 
         if (event.type === 'payment_intent.payment_failed') {

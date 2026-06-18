@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { ShoppingBag } from 'lucide-react';
 import { getDb, getFirebaseAuth, loadFirestoreModule } from '../config/firebaseLazy';
 import { addGuestCartItem, GUEST_CART_CHANGED_EVENT, readGuestCart, removeGuestCartItem } from '../commerce/guestCart';
+import { isPurchasable } from '../commerce/purchasability';
 
 const CartSidebar = dynamic(() => import('../commerce/CartSidebar'), {
   ssr: false,
@@ -116,6 +117,7 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
 
   const addCartItem = useCallback(async (item) => {
     if (!item?.originalId && !item?.id) return false;
+    if (!isPurchasable(item)) return false;
 
     let cartUser = user;
     if (!cartUser) {
@@ -130,6 +132,9 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
       collectionName: item.collectionName || 'furniture',
       name: item.name || item.title || 'Piece Seconde Vie',
       price: Number(item.price || item.currentPrice || item.startingPrice || 0),
+      stock: Number(item.stock || 0),
+      sold: Boolean(item.sold),
+      priceOnRequest: Boolean(item.priceOnRequest),
       image: item.image || item.imageUrl || '',
       material: item.material || 'Bois',
       quantity: Number(item.quantity || 1),

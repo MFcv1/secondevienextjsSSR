@@ -1,4 +1,5 @@
 import KIT_CONFIG from '../config/constants';
+import { getProductPriceAmount, isPurchasable } from '../commerce/purchasability';
 
 export const CATEGORY_SORT_OPTIONS = [
   { id: 'newest', label: 'Plus r\u00e9cent' },
@@ -22,7 +23,7 @@ export const getCategoryProductCreatedTime = (item) => {
 };
 
 export const getCategoryProductPrice = (item) => (
-  Number(item?.currentPrice ?? item?.startingPrice ?? item?.price ?? 0)
+  getProductPriceAmount(item)
 );
 
 const asArray = (value) => {
@@ -172,7 +173,7 @@ export const filterAndSortCategoryItems = (products = [], state, maxPrice) => {
   }
 
   if (state.availabilityFilter === 'in-stock') {
-    result = result.filter((item) => (item.stock > 0 || item.stock === undefined) && !item.sold);
+    result = result.filter(isPurchasable);
   } else if (state.availabilityFilter === 'sold') {
     result = result.filter((item) => item.sold);
   }

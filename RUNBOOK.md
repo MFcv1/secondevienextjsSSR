@@ -132,15 +132,11 @@ firebase deploy --project secondevienextjsssr --only functions:public:publicCata
 
 Les fonctions historiques du dossier `functions` restent dans le codebase `main` et ne doivent pas etre deployees tant que les secrets sandbox `GMAIL_EMAIL`, `GMAIL_PASSWORD`, `STRIPE_SECRET_KEY` et `STRIPE_WH_SECRET` ne sont pas definis.
 
-Etat sandbox 2026-05-13 :
+Etat sandbox 2026-06-18 :
 
-- Secrets crees pour debloquer le deploy `main` :
-  - `GMAIL_EMAIL=matthis.fradin2@gmail.com`
-  - `GMAIL_PASSWORD=dummy_gmail_password`
-  - `STRIPE_SECRET_KEY=sk_test_dummy_not_configured`
-  - `STRIPE_WH_SECRET=whsec_dummy_not_configured`
-- Stripe est volontairement dummy : ne pas tester le paiement carte tant qu'une vraie cle `sk_test_*` n'est pas configuree.
-- Gmail password est dummy : les emails de commande ne partiront pas tant qu'un vrai mot de passe d'application Gmail n'est pas configure.
+- Les secrets Functions `STRIPE_SECRET_KEY` et `STRIPE_WH_SECRET` pointent vers le compte Stripe test sandbox et sont deployes sur `createOrder` / `stripeWebhook`.
+- Le secret `GMAIL_PASSWORD` est un mot de passe d'application Gmail fonctionnel pour les emails E2E sandbox.
+- Le paiement Stripe sandbox a ete valide cote UI, webhook signe, Firestore, email client/admin et stock.
 - Les triggers Firestore sont deployes en Functions v2 `europe-west1`, necessaire avec la base Firestore europeenne `eur3`.
 
 Controle non interactif :
@@ -170,6 +166,60 @@ Regles :
 - Ne pas committer `apphosting.local.yaml`.
 - Ne pas faire de tests destructifs sur production.
 - Utiliser sandbox, read-only production ou emulateur/export-import pour les comparaisons de donnees.
+
+## Stripe Sandbox Et Webhooks Signes
+
+Endpoint sandbox attendu :
+
+```text
+https://us-central1-secondevienextjsssr.cloudfunctions.net/stripeWebhook
+```
+
+Events Stripe sandbox configures au 2026-06-18 :
+
+```text
+checkout.session.completed
+checkout.session.expired
+payment_intent.succeeded
+payment_intent.payment_failed
+payment_intent.canceled
+```
+
+Etat des handlers :
+
+- `payment_intent.succeeded` : handler actif. Valide statut, montant, devise, PaymentIntent id, metadata, statut commande et stock reserve avant de passer `paid`.
+- `payment_intent.payment_failed` : handler actif. Passe la commande en `payment_failed`, restaure le stock si `stockReserved === true`, puis marque `stockReserved=false`.
+- `payment_intent.canceled` : handler actif. Passe la commande en `canceled`, restaure le stock si `stockReserved === true`, puis marque `stockReserved=false`.
+- `checkout.session.completed` : handler legacy actif pour retrocompatibilite Stripe Checkout historique.
+- `checkout.session.expired` : handler actif. Journalise l'expiration et, si une commande legacy est referencee en metadata, restaure une commande non payee avec `cancelReason=checkout_session_expired`.
+
+Preuves sandbox recentes :
+
+- Succes paiement + webhook + emails + stock : `logs/hosted-stripe-e2e-2026-06-18T18-20-27-462Z.json`
+- Carte refusee + `payment_intent.payment_failed` + restauration stock : `logs/hosted-stripe-e2e-2026-06-18T18-24-35-852Z.json`
+- Refund admin Stripe + stock : commande `q1tUtmNyjNpSeUTjGyFW`, refund `re_3TjkYbRdWb0VNdZq1SLulN7D`
+- Retry `createOrder` + `payment_intent.canceled` + webhook `processed` + stock restaure : `logs/stripe-hardening-proof-2026-06-18T21-26-40.json`
+
+Decision metier 2026-06-19 :
+
+- Une commande Stripe deja payee ne s'annule pas librement cote client.
+- Le back-office expose un seul flux : `Rembourser et remettre en vente`.
+- Si Stripe accepte le remboursement, la commande passe `refunded` et le stock est restaure automatiquement.
+- L'espace client indique un remboursement initie/confirme et annonce un delai indicatif Stripe d'environ 5 a 10 jours ouvrables selon la banque.
+- Reference Stripe : `https://docs.stripe.com/refunds`.
+
+Commande logs utile :
+
+```powershell
+firebase functions:log --only stripeWebhook --project secondevienextjsssr
+```
+
+Verification attendue :
+
+- Stripe Dashboard indique une livraison `2xx` pour l'event.
+- `stripeWebhook` affiche l'event correspondant et finit en status code `200`.
+- Firestore `sys_idempotency/stripe_<eventId>` passe en `processed`.
+- La commande conserve l'historique metier; le stock n'est restaure que si `stockReserved === true`.
 
 ## Note env
 

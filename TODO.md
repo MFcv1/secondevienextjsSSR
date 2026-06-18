@@ -89,11 +89,11 @@ mutation admin -> publicCatalogVersion/cache bump -> /api/revalidate-catalog -> 
   - [ ] email si applicable.
   - [x] precondition: email utilisateur verifie avant paiement Stripe.
   - [x] precondition: produit test avec stock disponible/non reserve pour finaliser Stripe.
-- [ ] Tester annulation/restauration:
-  - [ ] annulation commande;
-  - [ ] restauration stock;
-  - [ ] coherence espace client;
-  - [ ] coherence admin commandes.
+- [x] Tester annulation/restauration:
+  - [x] annulation commande;
+  - [x] restauration stock;
+  - [x] coherence espace client;
+  - [x] coherence admin commandes.
 - [x] Reevaluer `return_url` Stripe actuellement compatible legacy `/?order_success=true`.
 - [ ] Verifier que les webhooks utilisent bien les secrets sandbox/prod separes:
   - [x] `STRIPE_SECRET_KEY` sandbox cree en secret Firebase Functions et deploye sur `createOrder` / `stripeWebhook`;
@@ -199,15 +199,17 @@ Avancement 2026-06-18:
   - [x] cote Function `cancelOrderClient`: refuser ou router les commandes `paid` vers un flux remboursement;
   - [x] cote admin: ne jamais supprimer/restaurer une commande payee sans trace ni refund;
   - [x] definir les statuts `refund_pending`, `refunded`, `refund_failed` si remboursement gere.
-- [ ] Creer un flux serveur de remboursement/annulation payee:
+- [x] Creer un flux serveur de remboursement/annulation payee:
   - [x] appeler Stripe Refund avec idempotence;
   - [x] conserver la commande dans l'historique client/admin;
-  - [x] restaurer le stock seulement apres decision explicite et tracee;
-  - [ ] verifier dans Stripe Dashboard que le PaymentIntent porte le remboursement.
-- [ ] Verifier et aligner les events webhook Stripe configures:
-  - [ ] si `payment_intent.canceled` est gere dans le code, l'ajouter dans le dashboard Stripe;
-  - [ ] si `checkout.session.expired` reste configure, ajouter un handler ou le retirer;
-  - [ ] documenter pour chaque event configure: handler, effet attendu, test de preuve.
+  - [x] restaurer automatiquement le stock apres remboursement reussi;
+  - [x] verifier dans Stripe Dashboard/API que le PaymentIntent porte le remboursement.
+- [x] Simplifier le back-office vers un flux unique `Rembourser et remettre en vente`.
+- [x] Ajouter un brouillon CGV/retours a faire valider par juriste: `docs/CGV_RETOURS_DRAFT_2026-06-19.md`.
+- [x] Verifier et aligner les events webhook Stripe configures:
+  - [x] si `payment_intent.canceled` est gere dans le code, l'ajouter dans le dashboard Stripe;
+  - [x] si `checkout.session.expired` reste configure, ajouter un handler ou le retirer;
+  - [x] documenter pour chaque event configure: handler, effet attendu, test de preuve.
 
 ### P0 - Reservation stock et commandes orphelines
 
@@ -217,12 +219,12 @@ Avancement 2026-06-18:
   - [x] annuler le PaymentIntent si necessaire;
   - [x] restaurer le stock et passer `stockReserved=false`;
   - [x] garantir qu'un paiement reussi tardif ne restaure jamais le stock.
-- [ ] Tester les scenarios `payment_intent.payment_failed` et `payment_intent.canceled`:
+- [x] Tester les scenarios `payment_intent.payment_failed` et `payment_intent.canceled`:
   - [x] statut commande attendu: `payment_failed` ou `canceled`;
   - [x] stock restaure;
-  - [ ] espace client coherent;
-  - [ ] admin commandes coherent;
-  - [ ] logs Functions sans erreur critique.
+  - [x] espace client coherent;
+  - [x] admin commandes coherent;
+  - [x] logs Functions sans erreur critique.
 
 ### P0 - Confirmation paiement et webhook
 
@@ -254,12 +256,12 @@ Avancement 2026-06-18:
   - [x] utilisateur invite => meme code a 6 chiffres demande dans la page checkout avant `createOrder`;
   - [x] pas de deuxieme lien Firebase `sendEmailVerification` dans le tunnel checkout;
   - [x] conserver le panier pendant la verification OTP.
-- [ ] Centraliser une regle `isPurchasable`:
-  - [ ] condition: `!sold && stock > 0 && price > 0 && !priceOnRequest`;
-  - [ ] cartes galerie: aucun bouton panier si non achetable;
-  - [ ] fiche produit: remplacer par `Vendu`, `Deja reserve` ou `Demander un devis`;
-  - [ ] checkout: surveiller `stock <= 0` en plus de `sold`;
-  - [ ] message panier clair si le produit devient indisponible.
+- [x] Centraliser une regle `isPurchasable`:
+  - [x] condition: `!sold && stock > 0 && price > 0 && !priceOnRequest`;
+  - [x] cartes galerie: aucun bouton panier si non achetable;
+  - [x] fiche produit: remplacer par `Vendu`, `Deja reserve` ou `Demander un devis`;
+  - [x] checkout: surveiller `stock <= 0` en plus de `sold`;
+  - [x] message panier clair si le produit devient indisponible.
 - [ ] Eviter les doublons panier:
   - [ ] document panier deterministe par produit ou merge avant ajout;
   - [ ] double clic = une seule ligne;
@@ -301,14 +303,14 @@ Avancement 2026-06-18:
 ### P1 - Observabilite et runbooks
 
 - [ ] Ajouter un runbook `preuve webhook signe`:
-  - [ ] verifier endpoint Stripe sandbox, events, secret separe sandbox/prod;
-  - [ ] verifier event livre en `2xx` dans Stripe Dashboard;
-  - [ ] verifier logs Functions correspondants;
-  - [ ] verifier idempotence Firestore `sys_idempotency`.
+  - [x] verifier endpoint Stripe sandbox, events, secret separe sandbox/prod;
+  - [x] verifier event livre en `2xx` dans Stripe Dashboard;
+  - [x] verifier logs Functions correspondants;
+  - [x] verifier idempotence Firestore `sys_idempotency`.
 - [ ] Mettre a jour `RUNBOOK.md`:
-  - [ ] remplacer les mentions Stripe dummy par l'etat 2026-06-15;
-  - [ ] documenter paiement sandbox valide cote UI;
-  - [ ] documenter webhook/email encore a prouver;
+  - [x] remplacer les mentions Stripe dummy par l'etat 2026-06-18;
+  - [x] documenter paiement sandbox valide cote UI;
+  - [x] documenter webhook/email prouves;
   - [ ] documenter rollback App Hosting.
 - [ ] Etendre le dashboard deploy:
   - [ ] afficher URL rollout App Hosting;

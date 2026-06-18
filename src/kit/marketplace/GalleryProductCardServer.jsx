@@ -1,11 +1,12 @@
 import { getProductUrl } from '../../utils/slug';
 import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, getProductImageItems } from '../../utils/imageUtils';
+import { getProductPriceAmount, getProductStockAmount, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
 import { Heart, Plus } from 'lucide-react';
 
 const formatPrice = (item) => {
   if (item?.sold) return 'VENDU';
-  if (item?.priceOnRequest) return '';
-  const price = item?.currentPrice || item?.startingPrice || item?.price;
+  if (shouldRequestQuote(item)) return 'Sur demande';
+  const price = getProductPriceAmount(item);
   return price ? `${Number(price).toLocaleString('fr-FR')} EUR` : '';
 };
 
@@ -16,6 +17,9 @@ const getCartItemPayload = (item, cardImage, title) => ({
   name: title,
   title,
   price: Number(item?.currentPrice || item?.startingPrice || item?.price || 0),
+  stock: getProductStockAmount(item),
+  sold: Boolean(item?.sold),
+  priceOnRequest: Boolean(item?.priceOnRequest),
   image: cardImage?.src || item?.imageUrl || item?.thumbnailUrl || '',
   imageUrl: cardImage?.src || item?.imageUrl || item?.thumbnailUrl || '',
   material: item?.material || 'Bois',
@@ -32,6 +36,7 @@ export default function GalleryProductCardServer({
   const cardImage = getProductCardImage(item);
   const [primaryDetailImage] = getProductImageItems(item);
   const title = item?.name || item?.title || 'Piece restauree';
+  const purchasable = isPurchasable(item);
   const cartItem = getCartItemPayload(item, cardImage, title);
   const warmupImage = primaryDetailImage ? {
     medium: primaryDetailImage.medium || '',
@@ -91,18 +96,20 @@ export default function GalleryProductCardServer({
           </div>
         </a>
 
-        {productId && !item?.sold ? (
+        {productId ? (
           <div className="absolute right-2 top-2 z-20 flex flex-col gap-1.5 opacity-100 transition-opacity duration-300 md:right-3 md:top-3 md:gap-2 lg:opacity-0 lg:group-hover:opacity-100">
-            <button
-              type="button"
-              data-gallery-cart-button
-              data-cart-item={cartPayload}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-[#8B5C42] text-white shadow-md transition-colors hover:bg-[#6f4630] md:h-9 md:w-9"
-              title="Ajouter au panier"
-              aria-label="Ajouter au panier"
-            >
-              <Plus className="h-3.5 w-3.5 md:h-4 md:w-4" strokeWidth={2.5} />
-            </button>
+            {purchasable ? (
+              <button
+                type="button"
+                data-gallery-cart-button
+                data-cart-item={cartPayload}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#8B5C42] text-white shadow-md transition-colors hover:bg-[#6f4630] md:h-9 md:w-9"
+                title="Ajouter au panier"
+                aria-label="Ajouter au panier"
+              >
+                <Plus className="h-3.5 w-3.5 md:h-4 md:w-4" strokeWidth={2.5} />
+              </button>
+            ) : null}
             <button
               type="button"
               data-gallery-wishlist-button
@@ -131,7 +138,7 @@ export default function GalleryProductCardServer({
 
         <div className={`flex shrink-0 ${compact ? 'flex-row items-center justify-between md:flex-col md:items-end' : 'flex-col items-end'} gap-0.5 text-right md:gap-1`}>
           <div className={`whitespace-nowrap font-black uppercase tracking-widest opacity-50 ${compact ? 'text-[8px] md:text-[9px]' : 'text-[9px]'}`}>
-            {item?.sold ? 'Stock: 0' : `Stock: ${item?.stock !== undefined ? item.stock : 1}`}
+            {item?.sold ? 'Stock: 0' : `Stock: ${getProductStockAmount(item)}`}
           </div>
           <p className={`whitespace-nowrap font-bold tabular-nums ${compact ? 'text-[10px] md:text-xs lg:text-sm' : 'text-[11px] md:text-xs lg:text-sm'} ${item?.sold ? 'text-red-500' : ''}`}>
             {formatPrice(item)}

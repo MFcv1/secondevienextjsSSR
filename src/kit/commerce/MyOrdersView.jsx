@@ -89,6 +89,14 @@ const getStatusInfo = (status = '') => {
         case 'cancelled':
         case 'canceled':
             return { label: 'Annulée', tone: 'bg-red-50 text-red-600', dot: 'bg-red-500', icon: XCircle };
+        case 'payment_failed':
+            return { label: 'Paiement echoue', tone: 'bg-red-50 text-red-600', dot: 'bg-red-500', icon: XCircle };
+        case 'refund_pending':
+            return { label: 'Remboursement en cours', tone: 'bg-amber-50 text-amber-700', dot: 'bg-amber-500', icon: WalletCards };
+        case 'refunded':
+            return { label: 'Remboursee', tone: 'bg-sky-50 text-sky-700', dot: 'bg-sky-500', icon: CheckCircle };
+        case 'refund_failed':
+            return { label: 'Remboursement a verifier', tone: 'bg-red-50 text-red-600', dot: 'bg-red-500', icon: AlertTriangle };
         case 'paid':
             return { label: 'Payée', tone: 'bg-[#e8e9e3] text-[#62655d]', dot: 'bg-[#9ba08f]', icon: CheckCircle };
         default:
@@ -104,11 +112,24 @@ const canCancel = (order) => {
         && status !== 'pending_payment'
     );
     if (isPaidStripeOrder) return false;
-    if (status === 'shipped' || status === 'completed' || status === 'canceled' || status.includes('cancelled')) return false;
+    if (status === 'shipped' || status === 'completed' || status === 'canceled' || status === 'payment_failed' || status.includes('cancelled')) return false;
     if (!order?.createdAt?.seconds) return false;
     const orderDate = new Date(order.createdAt.seconds * 1000);
     const diffDays = (new Date() - orderDate) / (1000 * 60 * 60 * 24);
     return diffDays <= 7;
+};
+
+const getRefundHelpText = (status = '') => {
+    if (status === 'refund_pending') {
+        return 'Le remboursement a ete initie par l atelier. Stripe indique un credit visible sous environ 5 a 10 jours ouvrables selon votre banque.';
+    }
+    if (status === 'refunded') {
+        return 'Le remboursement a ete confirme. Selon votre banque, le credit peut apparaitre sous quelques jours ouvrables.';
+    }
+    if (status === 'refund_failed') {
+        return 'Le remboursement doit etre verifie par l atelier. Contactez-nous si vous n avez pas deja ete recontacte.';
+    }
+    return '';
 };
 
 const StatCard = ({ icon: Icon, value, label, action, onClick }) => (
@@ -229,7 +250,7 @@ const MyOrdersView = ({
         const unsub = onSnapshot(q, (snap) => {
             const fetchedOrders = snap.docs
                 .map(d => ({ id: d.id, ...d.data() }))
-                .filter(o => o.status !== 'cancelled_by_client' && o.status !== 'cancelled' && o.status !== 'canceled');
+                .filter(o => o.status !== 'cancelled_by_client' && o.status !== 'cancelled');
 
             setOrders(fetchedOrders);
             setLoading(false);
@@ -367,6 +388,7 @@ const MyOrdersView = ({
                                 <div className="divide-y divide-[#e7ded5]">
                                     {recentOrders.map((order, index) => {
                                         const status = getStatusInfo(order.status);
+                                        const refundHelpText = getRefundHelpText(order.status);
                                         return (
                                             <div key={order.id} className="grid items-center gap-4 py-4 md:grid-cols-[82px_1fr_150px_110px_28px]">
                                                 <div className="h-[70px] w-[70px] overflow-hidden rounded-[5px] bg-[#eee6dc]">
@@ -387,6 +409,9 @@ const MyOrdersView = ({
                                                             Annuler
                                                         </button>
                                                     )}
+                                                    {refundHelpText ? (
+                                                        <p className="mt-2 max-w-xl text-[12px] leading-5 text-[#7b746e]">{refundHelpText}</p>
+                                                    ) : null}
                                                 </div>
                                                 <span className={`inline-flex w-fit items-center justify-center rounded-full px-5 py-1.5 text-[12px] ${status.tone}`}>
                                                     {status.label}

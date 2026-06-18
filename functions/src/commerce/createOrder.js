@@ -206,8 +206,12 @@ async function createOrderHandler(data, context) {
 
                     const itemDb = itemDoc.data();
                     const quantity = item.quantity;
-                    const currentStock = itemDb.stock !== undefined ? Number(itemDb.stock) : 1;
+                    const currentStock = Number(itemDb.stock || 0);
                     const alreadyTaken = stockTrackerManual[realItemId] || 0;
+                    const realPrice = Number(itemDb.currentPrice || itemDb.startingPrice || itemDb.price || 0);
+                    if (itemDb.priceOnRequest || realPrice <= 0) {
+                        throw new functions.https.HttpsError('failed-precondition', `Article non achetable en ligne: ${itemDb.name}`);
+                    }
                     if (currentStock - alreadyTaken < quantity || itemDb.sold) {
                         throw new functions.https.HttpsError('failed-precondition', `Article indisponible: ${itemDb.name}`);
                     }
@@ -222,7 +226,6 @@ async function createOrderHandler(data, context) {
 
                     writeOps.push({ ref: itemRef, updates });
                     stockTrackerManual[realItemId] = alreadyTaken + quantity;
-                    const realPrice = itemDb.currentPrice || itemDb.startingPrice || 0;
                     txTotalManual += realPrice * quantity;
                     serverItems.push({
                         id: realItemId,
@@ -332,16 +335,20 @@ async function createOrderHandler(data, context) {
 
                     const itemDb = itemDoc.data();
                     const alreadyTaken = stockTracker[realItemId] || 0;
-                    const currentStock = itemDb.stock !== undefined ? Number(itemDb.stock) : 1;
+                    const currentStock = Number(itemDb.stock || 0);
+                    const realPrice = Number(itemDb.currentPrice || itemDb.startingPrice || itemDb.price || 0);
 
                     const quantity = item.quantity;
+
+                    if (itemDb.priceOnRequest || realPrice <= 0) {
+                        throw new functions.https.HttpsError('failed-precondition', `Article non achetable en ligne: ${itemDb.name}`);
+                    }
 
                     if (currentStock - alreadyTaken < quantity || itemDb.sold) {
                         throw new functions.https.HttpsError('failed-precondition', `Article indisponible (Stock épuisé): ${itemDb.name}`);
                     }
 
                     // Prix recalculé côté serveur (jamais confiance au client)
-                    const realPrice = itemDb.currentPrice || itemDb.startingPrice || 0;
                     txTotal += realPrice * quantity;
 
                     serverItems.push({

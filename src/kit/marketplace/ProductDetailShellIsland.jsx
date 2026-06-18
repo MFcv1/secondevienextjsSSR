@@ -206,6 +206,8 @@ export default function ProductDetailShellIsland({
   desktopInfo,
   cartItem,
   isUnavailable = false,
+  unavailableLabel = 'Indisponible',
+  quoteHref = '',
   darkMode = false,
 }) {
   const [activeImg, setActiveImg] = useState(0);
@@ -1074,6 +1076,8 @@ export default function ProductDetailShellIsland({
                 priceLabel={priceLabel}
                 cartItem={cartItem}
                 isUnavailable={isUnavailable}
+                unavailableLabel={unavailableLabel}
+                quoteHref={quoteHref}
                 mobile
               />
             </div>
