@@ -170,24 +170,34 @@ Sources primaires a garder sous la main:
 - Firebase App Check debug provider: https://firebase.google.com/docs/app-check/web/debug-provider
 - Firebase Auth custom claims: https://firebase.google.com/docs/auth/admin/custom-claims
 
+Avancement 2026-06-18:
+- [x] Blocage annulation/restauration libre des commandes Stripe deja payees cote client, Function et admin.
+- [x] Confirmation UI durable: succes affiche seulement apres confirmation Firestore/webhook `paid`, avec etat intermediaire clair.
+- [x] Cleanup serveur programme des commandes `pending_payment` abandonnees avec verification Stripe avant restauration stock.
+- [x] Claims admin durcis: attribution `admin` / `superAdmin` refusee si l'email Firebase n'est pas verifie.
+- [x] Popup succes paiement modernisee et plus sobre.
+- [x] Bug checkout corrige: pendant le paiement, le recap conserve le snapshot panier/sous-total meme si la reservation stock fait disparaitre l'article du panier live.
+- [x] Deploiement sandbox Functions + App Hosting effectue, puis redeploiement App Hosting apres correction du snapshot checkout.
+- [ ] Preuve manuelle restante: refaire un paiement sandbox et verifier recap panier, total, statut Firestore `paid`, webhook Stripe `2xx`, email et stock final.
+
 ### P0 - Securite admin et claims
 
 - [ ] Exiger `email_verified === true` avant toute attribution serveur de claim `admin` / `superAdmin`:
-  - [ ] `grantAdminOnAuth`: ne pas promouvoir un email pending/admin non verifie;
-  - [ ] `syncSuperAdminClaim`: refuser le bootstrap si l'email n'est pas verifie;
+  - [x] `grantAdminOnAuth`: ne pas promouvoir un email pending/admin non verifie;
+  - [x] `syncSuperAdminClaim`: refuser le bootstrap si l'email n'est pas verifie;
   - [ ] ajouter un test negatif: email super-admin non verifie => aucun claim admin;
   - [ ] ajouter un test negatif: email pending admin non verifie => aucun claim admin.
 - [ ] Rendre le bootstrap super-admin explicite, rare et auditable:
-  - [ ] ne plus appeler `syncSuperAdminClaim` pour chaque client connecte standard;
-  - [ ] supprimer les erreurs CORS `syncSuperAdminClaim` des runs checkout;
-  - [ ] documenter la procedure owner dans le runbook.
+  - [x] ne plus appeler `syncSuperAdminClaim` pour chaque client connecte standard;
+  - [x] supprimer les erreurs CORS `syncSuperAdminClaim` des runs checkout;
+  - [x] documenter la procedure owner dans le runbook.
 
 ### P0 - Paiement Stripe, remboursement et annulation
 
 - [ ] Bloquer l'annulation automatique d'une commande Stripe deja `paid` sans remboursement Stripe:
-  - [ ] cote client `Mes commandes`: ne pas proposer l'annulation libre d'une commande payee carte;
-  - [ ] cote Function `cancelOrderClient`: refuser ou router les commandes `paid` vers un flux remboursement;
-  - [ ] cote admin: ne jamais supprimer/restaurer une commande payee sans trace ni refund;
+  - [x] cote client `Mes commandes`: ne pas proposer l'annulation libre d'une commande payee carte;
+  - [x] cote Function `cancelOrderClient`: refuser ou router les commandes `paid` vers un flux remboursement;
+  - [x] cote admin: ne jamais supprimer/restaurer une commande payee sans trace ni refund;
   - [ ] definir les statuts `refund_pending`, `refunded`, `refund_failed` si remboursement gere.
 - [ ] Creer un flux serveur de remboursement/annulation payee:
   - [ ] appeler Stripe Refund avec idempotence;
@@ -202,11 +212,11 @@ Sources primaires a garder sous la main:
 ### P0 - Reservation stock et commandes orphelines
 
 - [ ] Ajouter un cleanup serveur programme des commandes `pending_payment` abandonnees:
-  - [ ] detecter les commandes `pending_payment` agees de X minutes;
-  - [ ] verifier l'etat Stripe du PaymentIntent avant toute restauration;
-  - [ ] annuler le PaymentIntent si necessaire;
-  - [ ] restaurer le stock et passer `stockReserved=false`;
-  - [ ] garantir qu'un paiement reussi tardif ne restaure jamais le stock.
+  - [x] detecter les commandes `pending_payment` agees de X minutes;
+  - [x] verifier l'etat Stripe du PaymentIntent avant toute restauration;
+  - [x] annuler le PaymentIntent si necessaire;
+  - [x] restaurer le stock et passer `stockReserved=false`;
+  - [x] garantir qu'un paiement reussi tardif ne restaure jamais le stock.
 - [ ] Tester les scenarios `payment_intent.payment_failed` et `payment_intent.canceled`:
   - [ ] statut commande attendu: `payment_failed` ou `canceled`;
   - [ ] stock restaure;
@@ -216,14 +226,14 @@ Sources primaires a garder sous la main:
 
 ### P0 - Confirmation paiement et webhook
 
-- [ ] Corriger le succes UI pour attendre une confirmation durable:
-  - [ ] apres `confirmPayment`, poller ou ecouter `orders/{orderId}` jusqu'a `status=paid`;
-  - [ ] afficher un etat intermediaire honnete: paiement recu, confirmation en cours;
-  - [ ] vider le panier seulement apres confirmation durable;
-  - [ ] ne promettre l'email que si l'envoi est confirme ou reformuler le texte.
+- [x] Corriger le succes UI pour attendre une confirmation durable:
+  - [x] apres `confirmPayment`, poller ou ecouter `orders/{orderId}` jusqu'a `status=paid`;
+  - [x] afficher un etat intermediaire honnete: paiement recu, confirmation en cours;
+  - [x] vider le panier seulement apres confirmation durable;
+  - [x] ne promettre l'email que si l'envoi est confirme ou reformuler le texte.
 - [ ] Gerer le retour Stripe redirect sur `/checkout`:
-  - [ ] lire `order_success`, `order_id`, `payment_intent_client_secret`, `redirect_status`;
-  - [ ] restaurer l'etat succes/echec/en-cours apres retour redirect;
+  - [x] lire `order_success`, `order_id`, `payment_intent_client_secret`, `redirect_status`;
+  - [x] restaurer l'etat succes/echec/en-cours apres retour redirect;
   - [ ] tester au moins un moyen de paiement redirect en sandbox.
 - [ ] Corriger la preuve E2E serveur:
   - [ ] le JSON E2E doit inclure `orderId`, `paymentIntentId`, produit choisi, stock avant/apres;
@@ -234,11 +244,15 @@ Sources primaires a garder sous la main:
 
 ### P0 - UX checkout client
 
-- [ ] Ajouter un gate email-verifie avant le formulaire checkout:
-  - [ ] aucun appel `createOrder` si `emailVerified=false`;
-  - [ ] afficher un ecran clair avec renvoi d'email;
-  - [ ] bouton `J'ai verifie` qui fait `user.reload()` puis reprend le panier;
-  - [ ] conserver le panier pendant la verification.
+- [x] Verrouiller le recap checkout pendant le paiement:
+  - [x] conserver les articles et le sous-total du panier au moment de `createOrder`;
+  - [x] garder `prix meubles + frais de port` visible pendant Stripe, meme si le panier live change apres reservation stock;
+  - [x] liberer le snapshot si le client ferme le paiement ou si la creation de commande echoue.
+- [x] Garder un seul gate email coherent au checkout:
+  - [x] connexion client par code a 6 chiffres => email Firebase marque verifie cote serveur;
+  - [x] utilisateur invite => meme code a 6 chiffres demande dans la page checkout avant `createOrder`;
+  - [x] pas de deuxieme lien Firebase `sendEmailVerification` dans le tunnel checkout;
+  - [x] conserver le panier pendant la verification OTP.
 - [ ] Centraliser une regle `isPurchasable`:
   - [ ] condition: `!sold && stock > 0 && price > 0 && !priceOnRequest`;
   - [ ] cartes galerie: aucun bouton panier si non achetable;

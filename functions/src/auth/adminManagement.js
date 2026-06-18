@@ -13,6 +13,9 @@ exports.syncSuperAdminClaim = functions.https.onCall(async (data, context) => {
 
     try {
         const userRecord = await admin.auth().getUser(context.auth.uid);
+        if (userRecord.emailVerified !== true) {
+            throw new functions.https.HttpsError('failed-precondition', 'Email verifie requis avant bootstrap super-admin.');
+        }
         const email = (userRecord.email || context.auth.token.email || '').trim().toLowerCase();
         const name = userRecord.displayName || 'Admin';
         await admin.auth().setCustomUserClaims(context.auth.uid, {
@@ -60,6 +63,7 @@ exports.addAdminUser = functions.https.onCall(async (data, context) => {
 
     let targetUid = null;
     let userExists = false;
+    let targetEmailVerified = false;
 
     try {
         const isTargetSuperAdmin = Boolean(SUPER_ADMIN_EMAIL) && normalizedEmail === SUPER_ADMIN_EMAIL.trim().toLowerCase();
@@ -67,11 +71,14 @@ exports.addAdminUser = functions.https.onCall(async (data, context) => {
             const userRecord = await admin.auth().getUserByEmail(normalizedEmail);
             targetUid = userRecord.uid;
             userExists = true;
-            await admin.auth().setCustomUserClaims(userRecord.uid, {
-                ...(userRecord.customClaims || {}),
-                admin: true,
-                superAdmin: isTargetSuperAdmin || userRecord.customClaims?.superAdmin === true
-            });
+            targetEmailVerified = userRecord.emailVerified === true;
+            if (targetEmailVerified) {
+                await admin.auth().setCustomUserClaims(userRecord.uid, {
+                    ...(userRecord.customClaims || {}),
+                    admin: true,
+                    superAdmin: isTargetSuperAdmin || userRecord.customClaims?.superAdmin === true
+                });
+            }
         } catch (e) {
             targetUid = `pending_${Date.now()}`;
         }
@@ -84,7 +91,7 @@ exports.addAdminUser = functions.https.onCall(async (data, context) => {
                     email: normalizedEmail,
                     name: name || 'Admin',
                     addedBy: callerEmail,
-                    status: userExists ? 'active' : 'pending',
+                    status: userExists ? (targetEmailVerified ? 'active' : 'pending_email_verification') : 'pending',
                     role: isTargetSuperAdmin ? 'owner' : 'admin',
                     superAdmin: isTargetSuperAdmin
                 }
@@ -92,6 +99,9 @@ exports.addAdminUser = functions.https.onCall(async (data, context) => {
         }, { merge: true });
 
         if (userExists && targetUid) {
+            if (!targetEmailVerified) {
+                return { success: true, userExists, uid: targetUid, pendingEmailVerification: true };
+            }
             await db.collection('users').doc(targetUid).set({
                 role: isTargetSuperAdmin ? 'owner' : 'admin',
                 superAdmin: isTargetSuperAdmin,

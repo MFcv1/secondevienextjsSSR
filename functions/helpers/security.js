@@ -20,7 +20,8 @@ function checkIsAdmin(context) {
     const email = context.auth.token.email;
     const isAdminClaim = context.auth.token.admin === true;
     const isSuperClaim = context.auth.token.superAdmin === true;
-    const isSuperEmail = Boolean(SUPER_ADMIN_EMAIL) && email === SUPER_ADMIN_EMAIL;
+    const isVerifiedEmail = context.auth.token.email_verified === true;
+    const isSuperEmail = Boolean(SUPER_ADMIN_EMAIL) && isVerifiedEmail && email === SUPER_ADMIN_EMAIL;
 
     if (!isAdminClaim && !isSuperClaim && !isSuperEmail) {
         throw new functions.https.HttpsError('permission-denied', 'Accès refusé : droits administrateur requis.');
@@ -37,7 +38,8 @@ function checkIsSuperAdmin(context) {
         throw new functions.https.HttpsError('unauthenticated', 'Authentification requise.');
     }
     const isSuperClaim = context.auth.token.superAdmin === true;
-    const isSuperEmail = Boolean(SUPER_ADMIN_EMAIL) && context.auth.token.email === SUPER_ADMIN_EMAIL;
+    const isVerifiedEmail = context.auth.token.email_verified === true;
+    const isSuperEmail = Boolean(SUPER_ADMIN_EMAIL) && isVerifiedEmail && context.auth.token.email === SUPER_ADMIN_EMAIL;
     if (!isSuperClaim && !isSuperEmail) {
         throw new functions.https.HttpsError('permission-denied', 'Accès refusé : Super Admin uniquement.');
     }

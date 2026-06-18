@@ -10,10 +10,12 @@ admin.initializeApp();
 const { createOrder } = require('./src/commerce/createOrder');
 const { stripeWebhook } = require('./src/commerce/stripeWebhook');
 const { cancelOrderClient } = require('./src/commerce/cancelOrder');
+const { cleanupPendingPayments } = require('./src/commerce/cleanupPendingPayments');
 
 exports.createOrder = createOrder;
 exports.stripeWebhook = stripeWebhook;
 exports.cancelOrderClient = cancelOrderClient;
+exports.cleanupPendingPayments = cleanupPendingPayments;
 
 // ── AUTH ──────────────────────────────────────────────────
 const { grantAdminOnAuth } = require('./src/auth/grantAdmin');

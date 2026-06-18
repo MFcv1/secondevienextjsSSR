@@ -87,6 +87,27 @@ Arreter ensuite le serveur SPA.
 
 Architecture recommandee : Firebase App Hosting.
 
+## Bootstrap owner / super-admin
+
+Le bootstrap super-admin doit rester une operation rare, explicite et auditable.
+
+Prerequis :
+
+- `SUPER_ADMIN_EMAIL` est configure uniquement cote serveur, via Secret Manager/App Hosting, jamais en `NEXT_PUBLIC_*`.
+- Le compte Firebase Auth correspondant existe et `emailVerified === true`.
+- L'operateur est deja connecte avec ce compte owner et dispose d'un ID token frais.
+
+Procedure :
+
+1. Verifier dans Firebase Authentication que l'email owner est bien verifie.
+2. Ouvrir le back-office avec le compte owner.
+3. Lancer uniquement l'action d'administration qui appelle `syncSuperAdminClaim`.
+4. Forcer un refresh du token cote client, puis rouvrir le back-office.
+5. Controler `sys_metadata/admin_users` et `users/{uid}` : role `owner`, `admin=true`, `superAdmin=true`.
+6. Noter la date, l'UID, l'email et le motif dans le rapport agent ou le journal d'exploitation.
+
+Ne pas appeler `syncSuperAdminClaim` pendant les parcours client standard, les runs checkout ou les tests E2E. Si l'email owner n'est pas verifie, la Function doit refuser le bootstrap et aucun claim admin ne doit etre attribue.
+
 ## Dashboard de deploiement sandbox
 
 ```powershell

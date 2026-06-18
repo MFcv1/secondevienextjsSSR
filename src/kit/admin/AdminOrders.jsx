@@ -26,6 +26,16 @@ const AdminOrders = ({ darkMode = false }) => {
         await updateDoc(doc(db, 'orders', order.id), { status: newStatus });
     };
 
+    const isPaidStripeOrder = (order) => (
+        order?.status === 'paid'
+        || Boolean(order?.paidAt)
+        || (
+            Boolean(order?.stripePaymentIntentId)
+            && order?.paymentMethod !== 'deferred'
+            && order?.status !== 'pending_payment'
+        )
+    );
+
     // Helper to get collection name (handles inconsistencies/legacy data)
     const getCollectionFromItem = (item) => {
         if (item.collection) return item.collection; // New Stripe Format
@@ -36,6 +46,11 @@ const AdminOrders = ({ darkMode = false }) => {
     };
 
     const handleCancelAndRestore = async (order) => {
+        if (isPaidStripeOrder(order)) {
+            alert("Commande payee par Stripe : annulation bloquee. Creez d'abord un remboursement Stripe, puis archivez la commande avec une trace claire.");
+            return;
+        }
+
         if (!window.confirm("⚠️ ATTENTION : \n\nVous allez ANNULER cette commande.\n\nACTIONS AUTOMATIQUES :\n1. Le stock des produits sera REMIS à jour (+1).\n2. Les produits seront marqués comme 'Non Vendu'.\n3. La commande sera SUPPRIMÉE définitivement (invisible client/admin).\n\nConfirmer ?")) return;
 
         try {
@@ -97,7 +112,12 @@ const AdminOrders = ({ darkMode = false }) => {
         switch (status) {
             case 'shipped': return { color: 'text-indigo-500', bg: 'bg-indigo-500', bgLight: 'bg-indigo-50', bgDark: 'bg-indigo-900/40', label: 'Expédiée' };
             case 'completed': return { color: 'text-emerald-600', bg: 'bg-emerald-500', bgLight: 'bg-emerald-50', bgDark: 'bg-emerald-900/40', label: 'Terminée' };
+            case 'paid': return { color: 'text-emerald-600', bg: 'bg-emerald-500', bgLight: 'bg-emerald-50', bgDark: 'bg-emerald-900/40', label: 'Payee' };
+            case 'refund_pending': return { color: 'text-amber-600', bg: 'bg-amber-500', bgLight: 'bg-amber-50', bgDark: 'bg-amber-900/40', label: 'Remboursement' };
+            case 'refunded': return { color: 'text-sky-600', bg: 'bg-sky-500', bgLight: 'bg-sky-50', bgDark: 'bg-sky-900/40', label: 'Remboursee' };
+            case 'payment_failed': return { color: 'text-red-600', bg: 'bg-red-500', bgLight: 'bg-red-50', bgDark: 'bg-red-900/40', label: 'Paiement echoue' };
             case 'cancelled':
+            case 'canceled':
             case 'cancelled_by_client': return { color: 'text-red-600', bg: 'bg-red-500', bgLight: 'bg-red-50', bgDark: 'bg-red-900/40', label: 'Annulée' };
             default: return { color: 'text-amber-600', bg: 'bg-amber-500', bgLight: 'bg-amber-50', bgDark: 'bg-amber-900/40', label: 'En attente' };
         }
@@ -158,7 +178,7 @@ const AdminOrders = ({ darkMode = false }) => {
                             >
                                 <div className="flex items-center gap-4">
                                     <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white ${badge.bg}`}>
-                                        {order.status === 'shipped' ? <Truck size={18} /> : (order.status === 'completed' ? <CheckCircle size={18} /> : (order.status?.includes('cancelled') ? <XCircle size={18} /> : <Clock size={18} />))}
+                                        {order.status === 'shipped' ? <Truck size={18} /> : ((order.status === 'completed' || order.status === 'paid') ? <CheckCircle size={18} /> : (order.status?.includes('cancelled') || order.status === 'canceled' || order.status === 'payment_failed' ? <XCircle size={18} /> : <Clock size={18} />))}
                                     </div>
                                     <div className="min-w-0">
                                         <h3 className={`font-bold truncate text-sm md:text-base ${darkMode ? 'text-white' : 'text-stone-900'}`}>{order.shipping?.fullName || 'Client Inconnu'}</h3>
@@ -269,14 +289,18 @@ const AdminOrders = ({ darkMode = false }) => {
                                                         handleCancelAndRestore(order);
                                                     }}
                                                     className={`group w-full py-4 xl:py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all duration-300 border-2 flex items-center justify-center gap-2 ${
-                                                        darkMode 
-                                                            ? 'bg-red-500/5 border-red-500/10 text-red-500 hover:bg-red-500 hover:text-white' 
-                                                            : 'bg-red-50 border-red-100 text-red-600 hover:bg-red-600 hover:text-white'
+                                                        isPaidStripeOrder(order)
+                                                            ? (darkMode
+                                                                ? 'bg-amber-500/5 border-amber-500/15 text-amber-400'
+                                                                : 'bg-amber-50 border-amber-100 text-amber-700')
+                                                            : (darkMode
+                                                                ? 'bg-red-500/5 border-red-500/10 text-red-500 hover:bg-red-500 hover:text-white'
+                                                                : 'bg-red-50 border-red-100 text-red-600 hover:bg-red-600 hover:text-white')
                                                     }`}
-                                                    title="Annuler : Remet le stock et supprime la commande"
+                                                    title={isPaidStripeOrder(order) ? 'Remboursement Stripe requis avant annulation' : 'Annuler : Remet le stock et supprime la commande'}
                                                 >
                                                     <XCircle size={16} className="group-hover:rotate-90 transition-transform" />
-                                                    Annuler & Restaurer
+                                                    {isPaidStripeOrder(order) ? 'Refund Stripe requis' : 'Annuler & Restaurer'}
                                                 </button>
                                             </div>                                     </div>
                                         </div>

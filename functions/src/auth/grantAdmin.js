@@ -25,6 +25,11 @@ exports.grantAdminOnAuth = functions.auth.user().onCreate(async (user) => {
         (val.email || '').trim().toLowerCase() === normalizedUserEmail
     )) || [];
 
+    if ((pendingData || isConfiguredSuperAdmin) && user.emailVerified !== true) {
+        console.warn(`Admin claim refused for unverified email: ${user.email}`);
+        return;
+    }
+
     if (pendingData || isConfiguredSuperAdmin) {
         console.log(`🎯 Nouvel utilisateur Admin détecté: ${user.email}. Attribution des droits...`);
 

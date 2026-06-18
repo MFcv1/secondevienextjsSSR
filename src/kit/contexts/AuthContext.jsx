@@ -170,16 +170,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         const syncAdminClaim = async () => {
             try {
                 const { getIdTokenResult } = await loadAuthModule();
-                let tokenResult = await getIdTokenResult(user, true);
-                if (tokenResult.claims.admin !== true && tokenResult.claims.superAdmin !== true) {
-                    try {
-                        const syncSuperAdminClaim = await getCallableFunction('syncSuperAdminClaim');
-                        await syncSuperAdminClaim();
-                        tokenResult = await getIdTokenResult(user, true);
-                    } catch {
-                        // Non-super-admin users are expected to be rejected by the server bootstrap.
-                    }
-                }
+                const tokenResult = await getIdTokenResult(user, true);
                 if (!cancelled) {
                     const hasSuperAdminClaim = tokenResult.claims.superAdmin === true;
                     setIsSuperAdmin(hasSuperAdminClaim);

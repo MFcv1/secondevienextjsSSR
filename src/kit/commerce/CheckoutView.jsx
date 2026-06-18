@@ -13,6 +13,9 @@ const CheckoutStripeModal = lazy(() => import('./CheckoutStripeModal'));
 const RELIABLE_EMAIL_PROVIDER_IDS = new Set(['google.com']);
 
 const normalizeCheckoutEmail = (email) => String(email || '').trim().toLowerCase();
+const getCheckoutItemsTotal = (items = []) => (
+    items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0)
+);
 
 const hasReliableEmailProvider = (user, checkoutEmail) => {
     if (!user || user.isAnonymous) return false;
@@ -220,10 +223,6 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
         return () => { mounted = false; };
     }, []);
 
-    const selectedDelivery = formData.deliveryMode ? deliverySettings[formData.deliveryMode] : null;
-    const shippingCost = selectedDelivery ? selectedDelivery.price : 0;
-    const finalTotal = total + shippingCost;
-    
     const [stripeEnabled, setStripeEnabled] = useState(() => {
         try { const c = localStorage.getItem('paymentSettings'); if (c) return JSON.parse(c).stripeEnabled !== false; } catch { /* ignore error */ }
         return true;
@@ -255,6 +254,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
     const [clientSecret, setClientSecret] = useState(null);
     const [createdOrderId, setCreatedOrderId] = useState(null);
     const [createdOrderOtpToken, setCreatedOrderOtpToken] = useState('');
+    const [lockedOrderDraft, setLockedOrderDraft] = useState(null);
     const [unavailableItems, setUnavailableItems] = useState([]);
     const [isCleaningUp, setIsCleaningUp] = useState(false);
     const [guestOtp, setGuestOtp] = useState({
@@ -272,6 +272,13 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
         && guestOtp.email === normalizedCheckoutEmail
         && Boolean(guestOtp.token)
     );
+    const hasVerifiedCheckoutEmail = hasVerifiedGuestCheckoutOtp;
+    const isCheckoutLocked = ['fetching_stripe', 'ready_to_pay', 'processing_deferred'].includes(checkoutState);
+    const checkoutItems = isCheckoutLocked && lockedOrderDraft?.items?.length ? lockedOrderDraft.items : cartItems;
+    const checkoutSubtotal = isCheckoutLocked && lockedOrderDraft ? lockedOrderDraft.subtotal : total;
+    const selectedDelivery = formData.deliveryMode ? deliverySettings[formData.deliveryMode] : null;
+    const shippingCost = selectedDelivery ? selectedDelivery.price : 0;
+    const finalTotal = checkoutSubtotal + shippingCost;
 
     // Annule la commande pending_payment et restaure le stock quand l'utilisateur
     // ferme le modal Stripe sans payer — évite les commandes orphelines et le stock bloqué
@@ -302,6 +309,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
             setCreatedOrderId(null);
             setCreatedOrderOtpToken('');
             setClientSecret(null);
+            setLockedOrderDraft(null);
         }
         setCheckoutState('editing');
     };
@@ -552,6 +560,10 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
     // --- SUBMIT ACTION : FETCH STRIPE OU CONFIRM DEFERRED ---
     const handleActionClick = async () => {
         if (!isFormValid) return;
+        if (cartItems.length === 0) {
+            toast('Votre panier est vide.', { type: 'warning' });
+            return;
+        }
         if (requiresGuestCheckoutOtp && !hasVerifiedGuestCheckoutOtp) {
             toast('Validez le code envoye par email avant de confirmer la commande.', { type: 'warning' });
             return;
@@ -561,6 +573,16 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
             return;
         }
 
+        const itemsWithCol = cartItems.map(i => ({
+            ...i,
+            collectionName: i.collectionName || 'furniture'
+        }));
+        const draftSubtotal = getCheckoutItemsTotal(itemsWithCol);
+        setLockedOrderDraft({
+            items: itemsWithCol,
+            subtotal: draftSubtotal
+        });
+
         if (paymentMethod === 'stripe_elements') {
             setCheckoutState('fetching_stripe');
         } else {
@@ -569,10 +591,6 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
 
         try {
             const createOrder = httpsCallable(functions, 'createOrder');
-            const itemsWithCol = cartItems.map(i => ({
-                ...i,
-                collectionName: i.collectionName || 'furniture'
-            }));
 
             const result = await createOrder({
                 orderData: {
@@ -609,6 +627,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
         } catch (error) {
             console.error("Order error:", error);
             setCheckoutState('editing');
+            setLockedOrderDraft(null);
             let msg = "Une erreur est survenue lors de la commande.";
             if (error.message.includes('vendu')) {
                 msg = "Désolé, cet article vient d'être vendu à l'instant.";
@@ -1042,7 +1061,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                                     <h3 className="text-xl font-black mb-6 text-white">Résumé de la commande</h3>
                                     
                                     <div className="space-y-4 mb-4">
-                                        {cartItems.map((item, index) => (
+                                        {checkoutItems.map((item, index) => (
                                             <div key={item.id || index} className="flex justify-between items-start text-sm">
                                                 <div className="flex flex-col max-w-[70%]">
                                                     <span className="text-stone-300 font-medium">{item.name}</span>
@@ -1075,7 +1094,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                             <div className="flex flex-col gap-4 items-center">
                                 <PremiumActionBtn
                                     onClick={handleActionClick}
-                                    disabled={!isFormValid || !hasVerifiedGuestCheckoutOtp}
+                                    disabled={!isFormValid || !hasVerifiedCheckoutEmail}
                                     isLoading={checkoutState === 'fetching_stripe' || checkoutState === 'processing_deferred' || guestOtp.status === 'sending' || guestOtp.status === 'verifying'}
                                     darkMode={darkMode}
                                 >
@@ -1108,7 +1127,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                 <CheckoutStripeModal
                     darkMode={darkMode}
                     finalTotal={finalTotal}
-                    orderTotal={total}
+                    orderTotal={checkoutSubtotal}
                     createdOrderId={createdOrderId}
                     formData={formData}
                     stripeElementsOptions={stripeElementsOptions}

@@ -38,8 +38,15 @@ exports.cancelOrderClient = functions.https.onCall(async (data, context) => {
             throw new functions.https.HttpsError('permission-denied', 'Cette commande ne peut pas etre annulee en invite.');
         }
 
+        if (
+            ['paid', 'confirmed', 'payment_received'].includes(orderData.status)
+            || orderData.paidAt
+        ) {
+            throw new functions.https.HttpsError('failed-precondition', 'Commande deja payee: remboursement Stripe requis avant annulation.');
+        }
+
         // Vérifier que la commande n'est pas déjà annulée/expédiée
-        if (['cancelled_by_client', 'shipped', 'completed', 'paid', 'confirmed', 'payment_received'].includes(orderData.status)) {
+        if (['cancelled_by_client', 'shipped', 'completed', 'refund_pending', 'refunded'].includes(orderData.status)) {
             throw new functions.https.HttpsError('failed-precondition', 'Cette commande ne peut plus être annulée.');
         }
 

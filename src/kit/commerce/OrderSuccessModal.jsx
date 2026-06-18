@@ -1,71 +1,82 @@
 import React from 'react';
-import { CheckCircle, ArrowRight, ShoppingBag } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Clock3, ReceiptText, ShoppingBag } from 'lucide-react';
 
 const OrderSuccessModal = ({ onClose, paymentMethod }) => {
     const isStripe = paymentMethod === 'stripe_elements';
+    const steps = isStripe
+        ? [
+            ['Paiement', 'Confirme par Stripe'],
+            ['Commande', 'Validee cote serveur'],
+            ['Suivi', 'Disponible dans votre espace client']
+        ]
+        : [
+            ['Reservation', 'Articles mis de cote'],
+            ['Reglement', 'Instructions envoyees'],
+            ['Suivi', 'Disponible dans votre espace client']
+        ];
 
     return (
-        <div className="fixed inset-0 z-[300] bg-stone-900/80 backdrop-blur-md flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
-            <div className="bg-white rounded-3xl md:rounded-[2.5rem] shadow-2xl max-w-md w-full max-h-[85dvh] overflow-y-auto ios-modal-scroll p-6 md:p-10 text-center relative overflow-hidden animate-in zoom-in-95 duration-300 slide-in-from-bottom-4">
-
-                {/* Decorative Background */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl"></div>
-
-                <div className="relative z-10 space-y-4 md:space-y-6">
-                    <div className="w-16 h-16 md:w-20 md:h-20 bg-emerald-100 text-emerald-600 rounded-2xl md:rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-inner">
-                        <CheckCircle size={32} strokeWidth={2.5} className="md:w-10 md:h-10" />
-                    </div>
-
-                    <div className="w-full">
-                        <h2 className="text-2xl md:text-3xl font-black tracking-tighter text-stone-900 mb-2">
-                            {isStripe ? "Paiement validé !" : "Presque terminé !"}
-                        </h2>
-                        <h3 className="text-base md:text-lg font-bold text-stone-900 mb-4 md:mb-6">
-                            {isStripe ? "Votre commande est confirmée." : "Commande réservée."}
-                        </h3>
-
-                        <div className="bg-amber-50 border border-amber-200/50 rounded-2xl md:rounded-[1.5rem] p-4 md:p-6 text-left space-y-4 shadow-sm">
-                            <div>
-                                <h4 className="text-sm md:text-base text-amber-900 font-black mb-1.5 flex items-center gap-2">
-                                    <ShoppingBag size={16} className="text-amber-600" />
-                                    <span>{isStripe ? "Récapitulatif" : "Finaliser la commande"}</span>
-                                </h4>
-                                <p className="text-xs md:text-sm text-amber-800 leading-relaxed">
-                                    {isStripe ? (
-                                        <>Votre paiement sécurisé par carte/wallet a bien été <strong className="font-black text-amber-900">enregistré</strong>.</>
-                                    ) : (
-                                        <>Merci d'effectuer le règlement par <strong className="font-black text-amber-900">Virement</strong> ou <strong className="font-black text-amber-900">Wero</strong>.</>
-                                    )}
-                                </p>
-                            </div>
-
-                            <div className="bg-white rounded-xl p-3 md:p-4 shadow-sm border border-amber-100">
-                                <p className="text-xs md:text-sm text-stone-600 leading-relaxed">
-                                    Toutes les informations sont disponibles dans votre <br />
-                                    <strong className="text-stone-900 font-black mt-1 inline-block">Espace Client (onglet Mes Commandes)</strong>.
-                                </p>
-                            </div>
+        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-[#f5f5f7]/92 p-4 backdrop-blur-2xl md:p-6 animate-in fade-in duration-300">
+            <div className="relative w-full max-w-[520px] overflow-hidden rounded-[32px] border border-black/5 bg-white text-[#1d1d1f] shadow-[0_28px_90px_rgba(0,0,0,0.16)] animate-in zoom-in-95 slide-in-from-bottom-3 duration-300">
+                <div className="px-6 pb-6 pt-7 md:px-8 md:pb-8 md:pt-9">
+                    <div className="mb-7 flex items-start justify-between gap-4">
+                        <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#86868b]">
+                                {isStripe ? 'Paiement confirme' : 'Commande reservee'}
+                            </p>
+                            <h2 className="mt-3 text-[32px] font-semibold leading-[1.05] tracking-[-0.035em] text-[#1d1d1f] md:text-[40px]">
+                                {isStripe ? 'C est confirme.' : 'Presque termine.'}
+                            </h2>
+                        </div>
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#1d1d1f] text-white">
+                            {isStripe ? <CheckCircle2 size={24} strokeWidth={1.8} /> : <Clock3 size={24} strokeWidth={1.8} />}
                         </div>
                     </div>
 
-                    <div className="px-1 md:px-2 pt-2">
-                        <p className="text-[10px] md:text-[11px] text-stone-600 font-medium flex items-start md:items-center justify-center gap-2 md:gap-3 bg-stone-50 p-3 md:p-3.5 rounded-xl border border-stone-100 shadow-sm leading-relaxed text-left md:text-center">
-                            <span className="text-base md:text-lg flex-shrink-0 mt-0.5 md:mt-0">💡</span>
-                            <span>{isStripe ? "Un email d'aperçu de confirmation de paiement vous a été envoyé." : "Un email récapitulatif avec les coordonnées bancaires vous a été envoyé."}</span>
+                    <div className="rounded-[24px] bg-[#f5f5f7] p-5 md:p-6">
+                        <div className="flex items-start gap-4">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#1d1d1f] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)]">
+                                <ShoppingBag size={20} strokeWidth={1.7} />
+                            </div>
+                            <div>
+                                <h3 className="text-[17px] font-semibold tracking-[-0.01em]">
+                                    {isStripe ? 'Votre commande est validee.' : 'Vos pieces sont reservees.'}
+                                </h3>
+                                <p className="mt-2 text-[14px] leading-6 text-[#6e6e73]">
+                                    {isStripe
+                                        ? "Le paiement est confirme durablement. Le recapitulatif est accessible dans Mes commandes."
+                                        : "Les instructions de reglement sont envoyees par email et restent disponibles dans Mes commandes."}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 grid gap-2">
+                            {steps.map(([label, value]) => (
+                                <div key={label} className="grid grid-cols-[112px_1fr] items-center gap-3 border-t border-black/[0.06] pt-3 first:border-t-0 first:pt-0">
+                                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#86868b]">{label}</span>
+                                    <span className="text-[14px] font-medium text-[#1d1d1f]">{value}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="mt-5 flex items-start gap-3 rounded-[18px] border border-black/[0.06] px-4 py-3.5">
+                        <ReceiptText size={18} strokeWidth={1.6} className="mt-0.5 shrink-0 text-[#6e6e73]" />
+                        <p className="text-[13px] leading-5 text-[#6e6e73]">
+                            {isStripe
+                                ? "Un email de confirmation part apres validation serveur. En cas de delai, l espace client reste la source la plus fiable."
+                                : "Un email recapitulatif contient les coordonnees de reglement et les informations de livraison."}
                         </p>
                     </div>
 
-                    <div className="pt-4 md:pt-6">
-                        <button
-                            onClick={onClose}
-                            className="w-full py-3.5 md:py-4 bg-stone-900 text-white rounded-xl font-black text-[11px] md:text-xs uppercase tracking-widest hover:bg-stone-800 shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 group"
-                        >
-                            <span>Retour à la boutique</span>
-                            <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                        </button>
-                    </div>
+                    <button
+                        onClick={onClose}
+                        className="mt-6 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#1d1d1f] px-6 text-[14px] font-semibold text-white transition-colors hover:bg-black focus:outline-none focus-visible:ring-4 focus-visible:ring-black/15 active:scale-[0.99]"
+                    >
+                        Retour a la galerie
+                        <ArrowRight size={17} strokeWidth={1.8} />
+                    </button>
                 </div>
-
             </div>
         </div>
     );

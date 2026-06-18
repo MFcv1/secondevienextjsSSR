@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import CheckoutView from '../../src/kit/commerce/CheckoutView';
 import OrderSuccessModal from '../../src/kit/commerce/OrderSuccessModal';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
@@ -17,6 +17,7 @@ function CheckoutPageContent() {
   const [darkMode, setDarkMode] = useState(false);
   const [showOrderSuccess, setShowOrderSuccess] = useState(false);
   const [orderSuccessMethod, setOrderSuccessMethod] = useState('');
+  const handledStripeReturnRef = useRef(false);
 
   useEffect(() => {
     try {
@@ -67,21 +68,26 @@ function CheckoutPageContent() {
 
   const total = useMemo(() => getCartTotal(cartItems), [cartItems]);
 
-  const clearCartAfterOrder = async () => {
-    if (cartItems.length === 0) return;
+  const clearCartAfterOrder = useCallback(async () => {
     if (!user) {
       clearGuestCart();
       setCartItems([]);
       return;
     }
-    const [db, { doc, writeBatch }] = await Promise.all([getDb(), loadFirestoreModule()]);
+    const [db, { collection, doc, getDocs, writeBatch }] = await Promise.all([getDb(), loadFirestoreModule()]);
     const batch = writeBatch(db);
-    cartItems.forEach((item) => {
+    let itemsToDelete = cartItems;
+    if (itemsToDelete.length === 0) {
+      const cartSnap = await getDocs(collection(db, 'users', user.uid, 'cart'));
+      itemsToDelete = cartSnap.docs.map((docSnap) => ({ id: docSnap.id }));
+    }
+    if (itemsToDelete.length === 0) return;
+    itemsToDelete.forEach((item) => {
       batch.delete(doc(db, 'users', user.uid, 'cart', item.id));
     });
     await batch.commit();
     setCartItems([]);
-  };
+  }, [cartItems, user]);
 
   const handlePlaceOrder = async (orderData = {}) => {
     await clearCartAfterOrder();
@@ -93,6 +99,66 @@ function CheckoutPageContent() {
     setShowOrderSuccess(false);
     window.location.href = '/galerie';
   };
+
+  useEffect(() => {
+    if (handledStripeReturnRef.current || typeof window === 'undefined') return undefined;
+
+    const params = new URLSearchParams(window.location.search);
+    const isStripeReturn = params.get('order_success') === 'true';
+    const orderId = params.get('order_id');
+    const paymentIntentClientSecret = params.get('payment_intent_client_secret');
+    const redirectStatus = params.get('redirect_status');
+
+    if (!isStripeReturn || !orderId) return undefined;
+    if (paymentIntentClientSecret) {
+      console.info('Stripe redirect returned a payment intent client secret; waiting for server-side order confirmation.');
+    }
+
+    handledStripeReturnRef.current = true;
+    let unsubscribe = null;
+    let timeoutId = null;
+    let cancelled = false;
+
+    if (redirectStatus && !['succeeded', 'processing'].includes(redirectStatus)) {
+      window.history.replaceState({}, '', '/checkout');
+      return undefined;
+    }
+
+    Promise.all([getDb(), loadFirestoreModule()])
+      .then(([db, { doc, onSnapshot }]) => {
+        if (cancelled) return;
+        timeoutId = window.setTimeout(() => {
+          if (cancelled) return;
+          window.history.replaceState({}, '', '/checkout');
+        }, 45000);
+        unsubscribe = onSnapshot(doc(db, 'orders', orderId), async (snap) => {
+          if (!snap.exists()) return;
+          const order = snap.data();
+          if (order.status !== 'paid') return;
+          if (cancelled) return;
+          cancelled = true;
+          window.clearTimeout(timeoutId);
+          unsubscribe?.();
+          await clearCartAfterOrder();
+          setOrderSuccessMethod('stripe_elements');
+          setShowOrderSuccess(true);
+          window.history.replaceState({}, '', '/checkout');
+        }, (error) => {
+          console.error('Stripe return confirmation error:', error);
+          window.history.replaceState({}, '', '/checkout');
+        });
+      })
+      .catch((error) => {
+        console.error('Stripe return setup error:', error);
+        window.history.replaceState({}, '', '/checkout');
+      });
+
+    return () => {
+      cancelled = true;
+      if (timeoutId) window.clearTimeout(timeoutId);
+      unsubscribe?.();
+    };
+  }, [cartItems, clearCartAfterOrder, user]);
 
   if (loading) {
     return <div className="min-h-screen bg-[#FAFAF9]" />;

@@ -80,6 +80,7 @@ const getStatusInfo = (status = '') => {
             return { label: 'Expédiée', tone: 'bg-[#e9ecef] text-[#5d6470]', dot: 'bg-[#8d98a8]', icon: Truck };
         case 'cancelled_by_client':
         case 'cancelled':
+        case 'canceled':
             return { label: 'Annulée', tone: 'bg-red-50 text-red-600', dot: 'bg-red-500', icon: XCircle };
         case 'paid':
             return { label: 'Payée', tone: 'bg-[#e8e9e3] text-[#62655d]', dot: 'bg-[#9ba08f]', icon: CheckCircle };
@@ -90,7 +91,13 @@ const getStatusInfo = (status = '') => {
 
 const canCancel = (order) => {
     const status = order?.status || '';
-    if (status === 'shipped' || status === 'completed' || status.includes('cancelled')) return false;
+    const isPaidStripeOrder = status === 'paid' || Boolean(order?.paidAt) || (
+        Boolean(order?.stripePaymentIntentId)
+        && order?.paymentMethod !== 'deferred'
+        && status !== 'pending_payment'
+    );
+    if (isPaidStripeOrder) return false;
+    if (status === 'shipped' || status === 'completed' || status === 'canceled' || status.includes('cancelled')) return false;
     if (!order?.createdAt?.seconds) return false;
     const orderDate = new Date(order.createdAt.seconds * 1000);
     const diffDays = (new Date() - orderDate) / (1000 * 60 * 60 * 24);
@@ -215,7 +222,7 @@ const MyOrdersView = ({
         const unsub = onSnapshot(q, (snap) => {
             const fetchedOrders = snap.docs
                 .map(d => ({ id: d.id, ...d.data() }))
-                .filter(o => o.status !== 'cancelled_by_client' && o.status !== 'cancelled');
+                .filter(o => o.status !== 'cancelled_by_client' && o.status !== 'cancelled' && o.status !== 'canceled');
 
             setOrders(fetchedOrders);
             setLoading(false);
@@ -590,7 +597,7 @@ const MyOrdersView = ({
                         <div>
                             <h3 className="font-serif text-[30px]">Confirmer l'annulation</h3>
                             <p className={`mt-4 text-sm leading-7 ${darkMode ? 'text-stone-300' : 'text-[#6f6861]'}`}>
-                                En confirmant, votre commande sera annulée et les articles seront remis en vente.
+                                Cette action annule uniquement une commande non payee ou en attente de paiement. Une commande carte deja payee demande un remboursement traite par l'atelier.
                             </p>
                         </div>
                         <div className="grid grid-cols-2 gap-3 pt-2">
