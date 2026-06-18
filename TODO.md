@@ -178,7 +178,7 @@ Avancement 2026-06-18:
 - [x] Popup succes paiement modernisee et plus sobre.
 - [x] Bug checkout corrige: pendant le paiement, le recap conserve le snapshot panier/sous-total meme si la reservation stock fait disparaitre l'article du panier live.
 - [x] Deploiement sandbox Functions + App Hosting effectue, puis redeploiement App Hosting apres correction du snapshot checkout.
-- [ ] Preuve manuelle restante: refaire un paiement sandbox et verifier recap panier, total, statut Firestore `paid`, webhook Stripe `2xx`, email et stock final.
+- [x] Preuve manuelle paiement sandbox: recap panier/total conserves, statut Firestore `paid`, webhook Stripe traite, email client/admin envoye et stock final vendu/reserve verifies le 2026-06-18 via `logs/hosted-stripe-e2e-2026-06-18T17-12-44-576Z.proof.json`.
 
 ### P0 - Securite admin et claims
 
@@ -236,11 +236,12 @@ Avancement 2026-06-18:
   - [x] restaurer l'etat succes/echec/en-cours apres retour redirect;
   - [ ] tester au moins un moyen de paiement redirect en sandbox.
 - [ ] Corriger la preuve E2E serveur:
-  - [ ] le JSON E2E doit inclure `orderId`, `paymentIntentId`, produit choisi, stock avant/apres;
-  - [ ] verifier Firestore `orders/{orderId}.status === paid`;
-  - [ ] verifier `sys_idempotency/stripe_*` en `processed`;
-  - [ ] verifier event Stripe `payment_intent.succeeded` livre en `2xx`;
-  - [ ] verifier email de confirmation si applicable.
+  - [x] le JSON de preuve inclut `orderId`, `paymentIntentId`, produit choisi et stock final;
+  - [x] verifier Firestore `orders/{orderId}.status === paid`;
+  - [x] verifier `sys_idempotency/stripe_*` en `processed`;
+  - [x] verifier event Stripe `payment_intent.succeeded` traite par webhook;
+  - [x] verifier email de confirmation si applicable.
+  - [ ] ajouter explicitement le stock avant paiement dans le JSON de preuve automatique.
 
 ### P0 - UX checkout client
 

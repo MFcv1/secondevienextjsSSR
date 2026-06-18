@@ -1,10 +1,30 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import tls from 'node:tls';
 import { chromium, expect } from '@playwright/test';
+
+const loadLocalEnvFile = (filePath) => {
+  if (!fs.existsSync(filePath)) return;
+  const lines = fs.readFileSync(filePath, 'utf8').split(/\r?\n/);
+  for (const line of lines) {
+    if (!line || line.trim().startsWith('#') || !line.includes('=')) continue;
+    const [key, ...rest] = line.split('=');
+    if (!process.env[key]) process.env[key] = rest.join('=').trim();
+  }
+};
+
+loadLocalEnvFile(path.join(process.cwd(), 'logs', 'e2e-mail.env'));
+if (!process.env.E2E_PROOF_TOKEN) {
+  const proofTokenPath = path.join(process.cwd(), 'logs', 'e2e-proof-token.txt');
+  if (fs.existsSync(proofTokenPath)) {
+    process.env.E2E_PROOF_TOKEN = fs.readFileSync(proofTokenPath, 'utf8').trim();
+  }
+}
 
 const HOSTED_URL = 'https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app';
 const baseUrl = (process.env.NEXT_BASE_URL || HOSTED_URL).replace(/\/$/, '');
 const email = process.env.E2E_EMAIL;
+const mailboxUser = process.env.E2E_MAILBOX_USER || email;
 const passwordProvided = Boolean(process.env.E2E_PASSWORD);
 const password = process.env.E2E_PASSWORD || `SvTest-${Date.now()}-Aa1!`;
 const headless = String(process.env.E2E_HEADLESS || 'false').toLowerCase() === 'true';
@@ -16,6 +36,9 @@ const otpCode = String(process.env.E2E_OTP_CODE || '').replace(/\D/g, '').slice(
 const sendOtpOnly = String(process.env.E2E_SEND_OTP_ONLY || 'false').toLowerCase() === 'true';
 const confirmStripePayment = String(process.env.E2E_CONFIRM_STRIPE || 'true').toLowerCase() !== 'false';
 const allowNonSandboxTarget = String(process.env.E2E_ALLOW_NON_SANDBOX || 'false').toLowerCase() === 'true';
+const proofToken = process.env.E2E_PROOF_TOKEN || '';
+const proofUrl = process.env.E2E_PROOF_URL || 'https://us-central1-secondevienextjsssr.cloudfunctions.net/e2eCheckoutProof';
+const gmailAppPassword = String(process.env.E2E_GMAIL_APP_PASSWORD || '').replace(/\s/g, '');
 
 const allowedCheckoutModes = new Set(['verified-user', 'guest-otp']);
 const isSandboxOrLocalTarget = (
@@ -67,6 +90,42 @@ const clickFirstVisible = async (locators, label) => {
     }
   }
   throw new Error(`Unable to click ${label}`);
+};
+
+const clickEnabledButtonContaining = async (page, text, label) => {
+  const clicked = await page.evaluate((needle) => {
+    const normalizedNeedle = String(needle).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const buttons = Array.from(document.querySelectorAll('button'));
+    if (buttons.some((candidate) => {
+      const normalizedText = (candidate.textContent || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      return normalizedText.includes('securisation');
+    })) return true;
+    const button = buttons.find((candidate) => {
+      const normalizedText = (candidate.textContent || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      return !candidate.disabled && normalizedText.includes(normalizedNeedle);
+    });
+    if (!button) return false;
+    button.scrollIntoView({ block: 'center', inline: 'center' });
+    button.click();
+    return true;
+  }, text);
+  if (!clicked) {
+    result.checkoutButtonDebug = await page.evaluate(() => ({
+      buttons: Array.from(document.querySelectorAll('button')).map((button) => ({
+        text: (button.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 120),
+        disabled: button.disabled,
+        visible: Boolean(button.offsetParent)
+      })).filter((button) => button.text || button.visible).slice(-20),
+      requiredFields: Array.from(document.querySelectorAll('input[required], select[required], textarea[required]')).map((field) => ({
+        id: field.id || '',
+        name: field.name || '',
+        type: field.type || '',
+        checked: field.type === 'checkbox' ? field.checked : undefined,
+        hasValue: field.type === 'checkbox' ? undefined : Boolean(field.value)
+      }))
+    }));
+    throw new Error(`Unable to click ${label}`);
+  }
 };
 
 const extractStockFromText = (text) => {
@@ -373,6 +432,144 @@ const syncBrowserAuthEvent = async (page) => {
   }, storedUser);
 };
 
+const escapeImapString = (value) => String(value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+
+const createImapClient = async ({ user, pass }) => new Promise((resolve, reject) => {
+  const socket = tls.connect(993, 'imap.gmail.com', { servername: 'imap.gmail.com' });
+  socket.setEncoding('utf8');
+
+  let buffer = '';
+  let tagIndex = 0;
+  let ready = false;
+  const pending = [];
+
+  const cleanup = () => {
+    socket.removeAllListeners();
+    socket.end();
+  };
+
+  const runPending = () => {
+    if (!ready || pending.length === 0) return;
+    const next = pending.shift();
+    next();
+  };
+
+  const send = (command) => new Promise((commandResolve, commandReject) => {
+    const execute = () => {
+      const tag = `A${String(++tagIndex).padStart(4, '0')}`;
+      const chunks = [];
+      const onData = (chunk) => {
+        buffer += chunk;
+        const taggedIndex = buffer.indexOf(`${tag} `);
+        if (taggedIndex === -1) return;
+        chunks.push(buffer.slice(0, taggedIndex));
+        const lineEnd = buffer.indexOf('\n', taggedIndex);
+        if (lineEnd === -1) return;
+        const taggedLine = buffer.slice(taggedIndex, lineEnd + 1);
+        chunks.push(taggedLine);
+        buffer = buffer.slice(lineEnd + 1);
+        socket.off('data', onData);
+        runPending();
+        if (/\bOK\b/i.test(taggedLine)) commandResolve(chunks.join(''));
+        else commandReject(new Error(`IMAP command failed: ${taggedLine.trim()}`));
+      };
+      socket.on('data', onData);
+      socket.write(`${tag} ${command}\r\n`);
+    };
+    pending.push(execute);
+    runPending();
+  });
+
+  socket.on('error', (error) => {
+    cleanup();
+    reject(error);
+  });
+  const onGreetingData = (chunk) => {
+    buffer += chunk;
+    if (!ready && /^\* OK/im.test(buffer)) {
+      ready = true;
+      buffer = '';
+      socket.off('data', onGreetingData);
+      resolve({ send, cleanup });
+      runPending();
+    }
+  };
+  socket.on('data', onGreetingData);
+});
+
+const parseEmailDate = (rawMessage) => {
+  const match = String(rawMessage || '').match(/^Date:\s*(.+)$/im);
+  if (!match) return 0;
+  const timestamp = Date.parse(match[1].trim());
+  return Number.isFinite(timestamp) ? timestamp : 0;
+};
+
+const extractOtpFromMail = (rawMessage, afterTimestamp) => {
+  const messageDate = parseEmailDate(rawMessage);
+  if (messageDate && afterTimestamp && messageDate < afterTimestamp - 5_000) return '';
+  const decoded = String(rawMessage || '').replace(/=\r?\n/g, '').replace(/=([0-9A-F]{2})/gi, (_, hex) => {
+    try {
+      return String.fromCharCode(parseInt(hex, 16));
+    } catch {
+      return '';
+    }
+  });
+  const body = decoded.split(/\r?\n\r?\n/).slice(1).join('\n');
+  const text = body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  const candidates = [
+    /votre code de validation seconde vie est\s*:?\s*(\d{6})/i,
+    /code de validation(?:\s|&nbsp;|[^\d]){0,120}(\d{6})/i,
+  ];
+  for (const pattern of candidates) {
+    const match = text.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+  return '';
+};
+
+const readLatestOtpFromGmail = async ({ user, pass, afterTimestamp }) => {
+  const imap = await createImapClient({ user, pass });
+  try {
+    await imap.send(`LOGIN "${escapeImapString(user)}" "${escapeImapString(pass)}"`);
+    await imap.send('SELECT "INBOX"');
+    const searchResponse = await imap.send('UID SEARCH ALL');
+    const searchLine = searchResponse.split(/\r?\n/).find((line) => /^\* SEARCH/i.test(line)) || '';
+    const uids = searchLine.replace(/^\* SEARCH\s*/i, '').trim().split(/\s+/).filter(Boolean).slice(-20).reverse();
+    for (const uid of uids) {
+      const response = await imap.send(`UID FETCH ${uid} (BODY.PEEK[])`);
+      const code = extractOtpFromMail(response, afterTimestamp);
+      if (code) return code;
+    }
+    return '';
+  } finally {
+    await imap.send('LOGOUT').catch(() => null);
+    imap.cleanup();
+  }
+};
+
+const waitForGmailOtp = async ({ afterTimestamp }) => {
+  if (!gmailAppPassword) return '';
+  const startedAt = Date.now();
+  let lastError = null;
+  while (Date.now() - startedAt < 90_000) {
+    try {
+      const code = await readLatestOtpFromGmail({
+        user: mailboxUser,
+        pass: gmailAppPassword,
+        afterTimestamp,
+      });
+      if (code) return code;
+    } catch (error) {
+      lastError = error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 5_000));
+  }
+  if (lastError) {
+    result.mailOtpError = lastError.message || String(lastError);
+  }
+  return '';
+};
+
 const createAccountIfNeeded = async (page) => {
   const loginDialog = page.getByRole('dialog', { name: /Connexion Seconde Vie/i });
   await expect(loginDialog).toBeVisible({ timeout: 30_000 });
@@ -434,37 +631,53 @@ const handleGuestOtpIfNeeded = async (page) => {
 
   const otpInput = page.locator('#checkout-otp-code');
   await expect(otpInput).toBeVisible({ timeout: 15_000 });
+  const otpRequestedAfter = Date.now();
   result.guestOtp = {
     required: true,
     sent: false,
     verified: false,
     hasProvidedCode: otpCode.length === 6,
+    canReadMailbox: Boolean(gmailAppPassword),
   };
 
-  if (!otpCode && !sendOtpOnly) {
+  if (!otpCode && !gmailAppPassword && !sendOtpOnly) {
     result.guestOtp.reason = 'missing-e2e-otp-code';
     return false;
   }
 
-  await clickFirstVisible([
-    page.getByRole('button', { name: /Envoyer le code|Renvoyer un code/i }),
-    page.locator('button').filter({ hasText: /Envoyer le code|Renvoyer un code/i }),
-  ], 'send guest checkout OTP');
-
-  result.guestOtp.sent = true;
-
   if (!otpCode) {
-    result.guestOtp.reason = 'otp-sent-awaiting-code';
-    return false;
+    await clickFirstVisible([
+      page.getByRole('button', { name: /Envoyer le code|Renvoyer un code/i }),
+      page.locator('button').filter({ hasText: /Envoyer le code|Renvoyer un code/i }),
+    ], 'send guest checkout OTP');
+
+    result.guestOtp.sent = true;
+    await expect(page.getByRole('button', { name: /Envoyer le code|Renvoyer un code/i }).first()).toBeEnabled({ timeout: 30_000 });
   }
 
-  await otpInput.fill(otpCode);
+  if (!otpCode) {
+    const mailboxCode = await waitForGmailOtp({ afterTimestamp: otpRequestedAfter });
+    if (!mailboxCode) {
+      result.guestOtp.reason = 'otp-sent-awaiting-code';
+      return false;
+    }
+    result.guestOtp.readFromMailbox = true;
+    await otpInput.click();
+    await otpInput.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
+    await otpInput.type(mailboxCode, { delay: 25 });
+  } else {
+    await otpInput.click();
+    await otpInput.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
+    await otpInput.type(otpCode, { delay: 25 });
+  }
+
+  await expect(page.getByRole('button', { name: /Valider/i }).first()).toBeEnabled({ timeout: 10_000 });
   await clickFirstVisible([
     page.getByRole('button', { name: /Valider/i }),
     page.locator('button').filter({ hasText: /Valider/i }),
   ], 'verify guest checkout OTP');
 
-  await expect(page.getByText(/Email verifie|Email vérifié/i)).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/Email verifie|Email vérifié/i).first()).toBeVisible({ timeout: 30_000 });
   result.guestOtp.verified = true;
   return true;
 };
@@ -479,6 +692,7 @@ const fillCheckout = async (page) => {
   await page.locator('#checkout-address').fill('1 Rue de la Paix');
   await page.locator('#checkout-zip').fill('75002');
   await page.locator('#checkout-city').fill('Paris');
+  await page.getByText(/Retrait . l'atelier|Retrait à l'atelier/i).click({ timeout: 10_000 }).catch(() => {});
 
   const rgpd = page.locator('input[type="checkbox"]').last();
   if (!(await rgpd.isChecked().catch(() => false))) {
@@ -492,7 +706,7 @@ const fillCheckout = async (page) => {
   await clickFirstVisible([
     page.getByRole('button', { name: /Proceder au paiement securise|Procéder au paiement sécurisé/i }),
     page.locator('button').filter({ hasText: /paiement/i }),
-  ], 'checkout payment button');
+  ], 'checkout payment button').catch(() => clickEnabledButtonContaining(page, 'paiement', 'checkout payment button'));
   return true;
 };
 
@@ -560,6 +774,41 @@ const fillStripePaymentElement = async (page) => {
   ], 'Stripe pay button');
 
   return true;
+};
+
+const fetchCheckoutProof = async () => {
+  if (!proofToken) {
+    result.proof = { skipped: true, reason: 'missing-e2e-proof-token' };
+    return;
+  }
+
+  const response = await fetch(proofUrl, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-e2e-proof-token': proofToken,
+    },
+    body: JSON.stringify({ email }),
+  });
+
+  const body = await response.text();
+  let payload = null;
+  try {
+    payload = JSON.parse(body);
+  } catch {
+    payload = { raw: body.slice(0, 2000) };
+  }
+
+  result.proof = {
+    status: response.status,
+    ok: response.ok,
+    url: proofUrl,
+    payload,
+  };
+
+  if (!response.ok) {
+    throw new Error(`Checkout proof failed: HTTP ${response.status}`);
+  }
 };
 
 const browser = await chromium.launch({ headless });
@@ -639,9 +888,7 @@ try {
 
   const cartButton = await pickCartButton(page);
   await clickCartButton(cartButton);
-  if (checkoutMode === 'guest-otp') {
-    await syncBrowserAuthEvent(page);
-  } else if (!loggedInBeforeCart) {
+  if (checkoutMode !== 'guest-otp' && !loggedInBeforeCart) {
     await createAccountIfNeeded(page);
   }
 
@@ -668,7 +915,8 @@ try {
       result.status = 'stripe-ready-confirm-skipped';
       result.finalUrl = page.url();
     } else {
-      await expect(page.getByText(/Paiement valide|Paiement valid.|Votre commande est confirmee|Votre commande est confirm.e/i).first()).toBeVisible({ timeout: 60_000 });
+      await expect(page.getByText(/Paiement valide|Paiement valid.|Paiement confirme|Paiement confirmé|Votre commande est confirmee|Votre commande est confirm.e|Votre commande est validee|Votre commande est validée/i).first()).toBeVisible({ timeout: 60_000 });
+      await fetchCheckoutProof();
       result.status = 'passed';
       result.finalUrl = page.url();
     }

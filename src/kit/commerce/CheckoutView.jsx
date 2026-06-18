@@ -1129,6 +1129,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                     finalTotal={finalTotal}
                     orderTotal={checkoutSubtotal}
                     createdOrderId={createdOrderId}
+                    checkoutOtpToken={createdOrderOtpToken}
                     formData={formData}
                     stripeElementsOptions={stripeElementsOptions}
                     onClose={handleClosePaymentModal}

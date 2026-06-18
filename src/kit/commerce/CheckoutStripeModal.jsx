@@ -2,11 +2,47 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Elements } from '@stripe/react-stripe-js';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { isStripeConfigured, stripePromise } from '../config/stripe';
-import { db } from '../config/firebase';
+import { db, functions } from '../config/firebase';
 import CheckoutPaymentStep from './CheckoutPaymentStep';
 
-const waitForPaidOrder = (orderId, timeoutMs = 45000) => new Promise((resolve, reject) => {
+const isTerminalPaymentFailure = (status) => ['payment_failed', 'canceled', 'cancelled', 'cancelled_by_client'].includes(status);
+
+const waitForPaidOrderViaFunction = ({ orderId, email, checkoutOtpToken }, timeoutMs = 45000) => new Promise((resolve, reject) => {
+    const getOrderStatusClient = httpsCallable(functions, 'getOrderStatusClient');
+    const startedAt = Date.now();
+
+    const tick = async () => {
+        try {
+            const result = await getOrderStatusClient({ orderId, email, checkoutOtpToken });
+            const order = result.data?.order || {};
+            if (order.status === 'paid') {
+                resolve(order);
+                return;
+            }
+            if (isTerminalPaymentFailure(order.status)) {
+                reject(new Error('Le paiement n a pas ete confirme. Aucun panier ne sera vide.'));
+                return;
+            }
+        } catch (error) {
+            if (Date.now() - startedAt > timeoutMs) {
+                reject(error);
+                return;
+            }
+        }
+
+        if (Date.now() - startedAt > timeoutMs) {
+            reject(new Error('Paiement recu. Confirmation de commande encore en cours.'));
+            return;
+        }
+        window.setTimeout(tick, 2500);
+    };
+
+    tick();
+});
+
+const waitForPaidOrder = ({ orderId, email, checkoutOtpToken }, timeoutMs = 45000) => new Promise((resolve, reject) => {
     if (!orderId) {
         reject(new Error('Commande introuvable pour confirmer le paiement.'));
         return;
@@ -30,7 +66,7 @@ const waitForPaidOrder = (orderId, timeoutMs = 45000) => new Promise((resolve, r
             resolve(order);
             return;
         }
-        if (['payment_failed', 'canceled', 'cancelled', 'cancelled_by_client'].includes(order.status)) {
+        if (isTerminalPaymentFailure(order.status)) {
             settled = true;
             window.clearTimeout(timeout);
             unsubscribe();
@@ -38,10 +74,9 @@ const waitForPaidOrder = (orderId, timeoutMs = 45000) => new Promise((resolve, r
         }
     }, (error) => {
         if (settled) return;
-        settled = true;
         window.clearTimeout(timeout);
         unsubscribe();
-        reject(error);
+        waitForPaidOrderViaFunction({ orderId, email, checkoutOtpToken }, timeoutMs).then(resolve, reject);
     });
 });
 
@@ -78,6 +113,7 @@ const CheckoutStripeModal = ({
     finalTotal,
     orderTotal,
     createdOrderId,
+    checkoutOtpToken,
     formData,
     stripeElementsOptions,
     onClose,
@@ -142,7 +178,11 @@ const CheckoutStripeModal = ({
                                     setConfirmationState('waiting');
                                     setConfirmationMessage('');
                                     try {
-                                        await waitForPaidOrder(createdOrderId);
+                                        await waitForPaidOrder({
+                                            orderId: createdOrderId,
+                                            email: formData.email,
+                                            checkoutOtpToken
+                                        });
                                         setCheckoutState('editing');
                                         await onPlaceOrder({
                                             id: createdOrderId,

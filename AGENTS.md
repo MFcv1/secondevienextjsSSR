@@ -27,6 +27,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- mapV2.md : cartographie routes Next SSR/SSG/ISR, infra prod, risques backoffice et nettoyage code mort
 |-- DEAD_CODE_AUDIT.md : audit multi-agent code vivant/mort, candidats suppression et assets a archiver
 |-- TODO.md : checklist Phase 2 infra prod puis Phase 3 hydratation/perf
+|-- E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md : recap preuve paiement sandbox, compte admin test `loa.gto15@gmail.com`, bugs E2E et roadmap tests client/back-office
 |-- INFRA_PROD_PHASE2_REPORT_2026-06-14.md : rapport infra prod Phase 2, decisions env/secrets/revalidation/Stripe et risques restants
 |-- MENU_NAVIGATION_CATEGORY_LOADING_REPORT_2026-06-16.md : rapport navigation menu, prefetch cible, suppression loading categorie et deploy App Hosting sandbox
 |-- AI_QUOTE_ASSISTANT_MVP.md : cadrage MVP assistant IA devis, base metier, garde-fous OpenAI et integration admin

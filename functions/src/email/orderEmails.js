@@ -115,16 +115,32 @@ async function sendNewOrderEmails(orderId, order) {
         `
     } : null;
 
+    const emailProof = {
+        attemptedAt: admin.firestore.FieldValue.serverTimestamp(),
+        admin: { to: adminEmail, sent: false },
+        client: { to: clientEmail || null, sent: false }
+    };
+
     try {
         await transporter.sendMail(adminMailOptions);
+        emailProof.admin.sent = true;
         console.log("✅ Email Admin envoyé.");
         if (clientMailOptions) {
             await transporter.sendMail(clientMailOptions);
+            emailProof.client.sent = true;
             console.log("✅ Email Client envoyé à", clientEmail);
         }
     } catch (e) {
+        emailProof.error = String(e?.message || e || 'unknown').slice(0, 500);
         console.error("❌ Erreur Envoi Email:", e);
     }
+
+    await db.collection('orders').doc(orderId).set({
+        emailProof,
+        emailProofUpdatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true }).catch((error) => {
+        console.error("Email proof write error:", error);
+    });
 }
 
 exports.sendTestEmail = functions.runWith({ secrets: [GMAIL_EMAIL, GMAIL_PASSWORD] }).https.onCall(async (data, context) => {

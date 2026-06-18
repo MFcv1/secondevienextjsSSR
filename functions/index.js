@@ -11,11 +11,15 @@ const { createOrder } = require('./src/commerce/createOrder');
 const { stripeWebhook } = require('./src/commerce/stripeWebhook');
 const { cancelOrderClient } = require('./src/commerce/cancelOrder');
 const { cleanupPendingPayments } = require('./src/commerce/cleanupPendingPayments');
+const { e2eCheckoutProof } = require('./src/commerce/e2eCheckoutProof');
+const { getOrderStatusClient } = require('./src/commerce/orderStatus');
 
 exports.createOrder = createOrder;
 exports.stripeWebhook = stripeWebhook;
 exports.cancelOrderClient = cancelOrderClient;
 exports.cleanupPendingPayments = cleanupPendingPayments;
+exports.e2eCheckoutProof = e2eCheckoutProof;
+exports.getOrderStatusClient = getOrderStatusClient;
 
 // ── AUTH ──────────────────────────────────────────────────
 const { grantAdminOnAuth } = require('./src/auth/grantAdmin');
