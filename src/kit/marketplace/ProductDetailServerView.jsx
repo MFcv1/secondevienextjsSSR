@@ -45,6 +45,7 @@ const getCartItemPayload = (product, title) => {
 };
 
 function ProductDetailDesktopInfo({ product, title, description, priceLabel, facts, cartItem, darkMode = false }) {
+  const isUnavailable = product?.sold || Number(product?.stock) === 0;
   return (
     <div className={`hidden lg:flex w-[450px] xl:w-[500px] flex-shrink-0 flex-col z-20 transition-colors duration-1000 h-[100dvh] pt-36 pb-8 border-l shadow-2xl ${darkMode ? 'bg-[#0A0A0A] border-white/10 text-stone-200' : 'bg-[#FAFAFA] border-black/5 text-stone-900'}`}>
       <div className="flex-shrink-0 px-10">
@@ -72,6 +73,7 @@ function ProductDetailDesktopInfo({ product, title, description, priceLabel, fac
           productName={title}
           priceLabel={priceLabel}
           cartItem={cartItem}
+          isUnavailable={isUnavailable}
         />
       </div>
 
@@ -108,6 +110,7 @@ export default function ProductDetailServerView({ product, darkMode = false }) {
   const priceLabel = formatPrice(product);
   const facts = getFacts(product);
   const cartItem = getCartItemPayload(product, title);
+  const isUnavailable = product?.sold || Number(product?.stock) === 0;
 
   return (
     <ProductDetailShellIsland
@@ -116,6 +119,7 @@ export default function ProductDetailServerView({ product, darkMode = false }) {
       facts={facts}
       priceLabel={priceLabel}
       cartItem={cartItem}
+      isUnavailable={isUnavailable}
       darkMode={darkMode}
       desktopInfo={(
         <ProductDetailDesktopInfo

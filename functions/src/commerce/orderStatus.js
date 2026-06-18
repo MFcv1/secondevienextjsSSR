@@ -9,9 +9,16 @@ function hasTrustedOrderReadAuth(context, orderData) {
     const uid = context.auth?.uid || '';
     const token = context.auth?.token || {};
     const tokenEmail = token.email ? normalizeGuestCheckoutEmail(token.email) : '';
+    const orderEmail = orderData.userEmail ? normalizeGuestCheckoutEmail(orderData.userEmail) : '';
+    const provider = token.firebase?.sign_in_provider || '';
+    const identities = token.firebase?.identities || {};
+    const hasTrustedProvider = provider === 'google.com' ||
+        Array.isArray(identities['google.com']);
+    const hasTrustedEmail = Boolean(tokenEmail) &&
+        tokenEmail === orderEmail &&
+        (token.email_verified === true || hasTrustedProvider);
 
-    if (uid && uid === orderData.userId) return true;
-    return Boolean(tokenEmail && tokenEmail === orderData.userEmail);
+    return Boolean(uid && uid === orderData.userId && hasTrustedEmail) || hasTrustedEmail;
 }
 
 exports.getOrderStatusClient = functions.https.onCall(async (data, context) => {

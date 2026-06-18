@@ -106,6 +106,7 @@ exports.e2eCheckoutProof = functions
         }
 
         const payload = req.body || {};
+        const stockBefore = Number(payload.stockBefore);
         const order = await findOrder({
             orderId: safeString(payload.orderId),
             paymentIntentId: safeString(payload.paymentIntentId),
@@ -157,6 +158,8 @@ exports.e2eCheckoutProof = functions
                 idempotencyStatus: idempotencySnap?.exists ? idempotencySnap.data()?.status || null : null,
                 idempotencyProcessedAt: serialize(idempotencySnap?.exists ? idempotencySnap.data()?.processedAt || null : null)
             },
+            selectedProduct: safeString(payload.selectedProduct) || null,
+            stockBefore: Number.isFinite(stockBefore) ? stockBefore : null,
             stock: stockProof
         };
 
@@ -167,6 +170,9 @@ exports.e2eCheckoutProof = functions
             webhookProcessed: proof.webhook.idempotencyStatus === 'processed',
             emailAttempted: Boolean(proof.order.emailProof?.attemptedAt),
             clientEmailSent: proof.order.emailProof?.client?.sent === true,
+            stockDecrementedFromBefore: Number.isFinite(stockBefore)
+                ? stockProof.some((item) => item.exists && item.stock === Math.max(0, stockBefore - item.orderedQuantity))
+                : null,
             stockStillReservedForOrder: stockProof.every((item) => item.exists && (
                 item.sold === true || Number.isFinite(item.stock)
             ))

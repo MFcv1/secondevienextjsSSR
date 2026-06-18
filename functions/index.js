@@ -12,14 +12,18 @@ const { stripeWebhook } = require('./src/commerce/stripeWebhook');
 const { cancelOrderClient } = require('./src/commerce/cancelOrder');
 const { cleanupPendingPayments } = require('./src/commerce/cleanupPendingPayments');
 const { e2eCheckoutProof } = require('./src/commerce/e2eCheckoutProof');
+const { e2eStripeHardeningProof } = require('./src/commerce/e2eStripeHardeningProof');
 const { getOrderStatusClient } = require('./src/commerce/orderStatus');
+const { refundOrderAdmin } = require('./src/commerce/refundOrder');
 
 exports.createOrder = createOrder;
 exports.stripeWebhook = stripeWebhook;
 exports.cancelOrderClient = cancelOrderClient;
 exports.cleanupPendingPayments = cleanupPendingPayments;
 exports.e2eCheckoutProof = e2eCheckoutProof;
+exports.e2eStripeHardeningProof = e2eStripeHardeningProof;
 exports.getOrderStatusClient = getOrderStatusClient;
+exports.refundOrderAdmin = refundOrderAdmin;
 
 // ── AUTH ──────────────────────────────────────────────────
 const { grantAdminOnAuth } = require('./src/auth/grantAdmin');

@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, limit } from 'firebase/firestore';
-import { db, appId } from '../config/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, appId, functions } from '../config/firebase';
 import { Package, Clock, CheckCircle, Mail, ChevronDown, ChevronUp, Download, Loader2, Truck, XCircle } from 'lucide-react';
 import { downloadCsv } from './exportCsv';
 
 const AdminOrders = ({ darkMode = false }) => {
     const [orders, setOrders] = useState([]);
     const [expandedOrder, setExpandedOrder] = useState(null);
-    const [orderLimit, setOrderLimit] = useState(10);
+    const [orderLimit, setOrderLimit] = useState(50);
     const [isLoading, setIsLoading] = useState(true);
+    const [refundingOrderId, setRefundingOrderId] = useState(null);
 
     useEffect(() => {
         setIsLoading(true);
@@ -102,6 +104,30 @@ const AdminOrders = ({ darkMode = false }) => {
         }
     };
 
+    const handleRefundOrder = async (order, restoreStock = false) => {
+        const stockText = restoreStock
+            ? "\n\nLe stock des articles sera aussi remis en vente apres remboursement reussi."
+            : "\n\nLe stock restera reserve/vendu. Utilisez l'option stock seulement si l'article doit revenir en vente.";
+        if (!window.confirm(`Confirmer le remboursement Stripe de la commande ${order.id} ?${stockText}`)) return;
+
+        try {
+            setRefundingOrderId(order.id);
+            const refundOrderAdmin = httpsCallable(functions, 'refundOrderAdmin');
+            const result = await refundOrderAdmin({
+                orderId: order.id,
+                restoreStock,
+                reason: restoreStock ? 'Remboursement admin avec remise en stock' : 'Remboursement admin'
+            });
+            const refundId = result.data?.refundId ? `\nRefund: ${result.data.refundId}` : '';
+            alert(`Remboursement Stripe lance avec succes.${refundId}`);
+        } catch (error) {
+            console.error("Error refunding order:", error);
+            alert("Erreur lors du remboursement : " + (error.message || error));
+        } finally {
+            setRefundingOrderId(null);
+        }
+    };
+
     const formatPrice = (price) => `${price} €`;
     const formatDate = (timestamp) => {
         if (!timestamp) return '-';
@@ -133,6 +159,10 @@ const AdminOrders = ({ darkMode = false }) => {
             'Téléphone': order.shipping?.phone || 'N/A',
             'Adresse': `${order.shipping?.address || ''}, ${order.shipping?.postalCode || ''} ${order.shipping?.city || ''}`,
             'Méthode Paiement': order.paymentMethod === 'deferred' ? 'Différé' : 'Carte (Stripe)',
+            'Stripe PaymentIntent': order.stripePaymentIntentId || '',
+            'Verification Checkout': order.checkoutAuthMethod || '',
+            'Email Client Envoye': order.emailProof?.client?.sent ? 'oui' : 'non',
+            'Email Admin Envoye': order.emailProof?.admin?.sent ? 'oui' : 'non',
             'Statut': order.status,
             'Total (€)': order.total,
             'Articles': order.items?.map(i => `${i.quantity || 1}x ${i.name}`).join(', ') || ''
@@ -226,6 +256,15 @@ const AdminOrders = ({ darkMode = false }) => {
                                                 <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Tél:</strong> {order.shipping?.phone}</p>
                                                 <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Adresse:</strong> {order.shipping?.address}, {order.shipping?.zip} {order.shipping?.city}</p>
                                                 <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Paiement:</strong> {order.paymentMethod === 'deferred' ? 'Différé (Virement/Chèque)' : 'Stripe'}</p>
+                                                {order.stripePaymentIntentId ? (
+                                                    <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>PaymentIntent:</strong> <span className="font-mono text-[11px] break-all">{order.stripePaymentIntentId}</span></p>
+                                                ) : null}
+                                                {order.checkoutAuthMethod ? (
+                                                    <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Verification:</strong> {order.checkoutAuthMethod}</p>
+                                                ) : null}
+                                                {order.emailProof ? (
+                                                    <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Emails:</strong> client {order.emailProof?.client?.sent ? 'envoye' : 'non confirme'} / admin {order.emailProof?.admin?.sent ? 'envoye' : 'non confirme'}</p>
+                                                ) : null}
                                                 <p className="text-[10px] opacity-50 mt-2 font-mono">UID: {order.userId}</p>
                                             <div className="flex flex-col gap-3 pt-6">
                                                 <div className="flex flex-col xl:flex-row gap-3">
@@ -267,7 +306,7 @@ const AdminOrders = ({ darkMode = false }) => {
                                                             <CheckCircle size={16} className="group-hover:scale-110 transition-transform" />
                                                             Livrée
                                                         </button>
-                                                    ) : order.status === 'completed' ? (
+                                                    ) : order.status === 'completed' && !isPaidStripeOrder(order) ? (
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); updateOrderStatus(order, 'pending_payment'); }}
                                                             className={`group flex-1 py-4 xl:py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all duration-300 border-2 flex items-center justify-center gap-2 ${
@@ -282,26 +321,63 @@ const AdminOrders = ({ darkMode = false }) => {
                                                     ) : null}
                                                 </div>
 
-                                                {/* Smart Cancel Button */}
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleCancelAndRestore(order);
-                                                    }}
-                                                    className={`group w-full py-4 xl:py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all duration-300 border-2 flex items-center justify-center gap-2 ${
-                                                        isPaidStripeOrder(order)
-                                                            ? (darkMode
-                                                                ? 'bg-amber-500/5 border-amber-500/15 text-amber-400'
-                                                                : 'bg-amber-50 border-amber-100 text-amber-700')
-                                                            : (darkMode
-                                                                ? 'bg-red-500/5 border-red-500/10 text-red-500 hover:bg-red-500 hover:text-white'
-                                                                : 'bg-red-50 border-red-100 text-red-600 hover:bg-red-600 hover:text-white')
-                                                    }`}
-                                                    title={isPaidStripeOrder(order) ? 'Remboursement Stripe requis avant annulation' : 'Annuler : Remet le stock et supprime la commande'}
-                                                >
-                                                    <XCircle size={16} className="group-hover:rotate-90 transition-transform" />
-                                                    {isPaidStripeOrder(order) ? 'Refund Stripe requis' : 'Annuler & Restaurer'}
-                                                </button>
+                                                {isPaidStripeOrder(order) && order.status !== 'refund_pending' && order.status !== 'refunded' ? (
+                                                    <div className="grid sm:grid-cols-2 gap-3">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleRefundOrder(order, false);
+                                                            }}
+                                                            disabled={refundingOrderId === order.id}
+                                                            className={`group w-full py-4 xl:py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all duration-300 border-2 flex items-center justify-center gap-2 ${
+                                                                darkMode
+                                                                    ? 'bg-amber-500/5 border-amber-500/15 text-amber-400 hover:bg-amber-500 hover:text-stone-950'
+                                                                    : 'bg-amber-50 border-amber-100 text-amber-700 hover:bg-amber-500 hover:text-white'
+                                                            } disabled:opacity-60 disabled:cursor-wait`}
+                                                            title="Rembourser Stripe sans remettre le stock en vente"
+                                                        >
+                                                            {refundingOrderId === order.id ? <Loader2 size={16} className="animate-spin" /> : <XCircle size={16} />}
+                                                            Rembourser
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleRefundOrder(order, true);
+                                                            }}
+                                                            disabled={refundingOrderId === order.id}
+                                                            className={`group w-full py-4 xl:py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all duration-300 border-2 flex items-center justify-center gap-2 ${
+                                                                darkMode
+                                                                    ? 'bg-sky-500/5 border-sky-500/15 text-sky-300 hover:bg-sky-500 hover:text-stone-950'
+                                                                    : 'bg-sky-50 border-sky-100 text-sky-700 hover:bg-sky-600 hover:text-white'
+                                                            } disabled:opacity-60 disabled:cursor-wait`}
+                                                            title="Rembourser Stripe et remettre le stock en vente"
+                                                        >
+                                                            {refundingOrderId === order.id ? <Loader2 size={16} className="animate-spin" /> : <Package size={16} />}
+                                                            Refund + stock
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleCancelAndRestore(order);
+                                                        }}
+                                                        disabled={order.status === 'refund_pending' || order.status === 'refunded'}
+                                                        className={`group w-full py-4 xl:py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all duration-300 border-2 flex items-center justify-center gap-2 ${
+                                                            order.status === 'refund_pending' || order.status === 'refunded'
+                                                                ? (darkMode
+                                                                    ? 'bg-white/5 border-white/5 text-white/35'
+                                                                    : 'bg-stone-100 border-stone-200 text-stone-400')
+                                                                : (darkMode
+                                                                    ? 'bg-red-500/5 border-red-500/10 text-red-500 hover:bg-red-500 hover:text-white'
+                                                                    : 'bg-red-50 border-red-100 text-red-600 hover:bg-red-600 hover:text-white')
+                                                        } disabled:cursor-not-allowed`}
+                                                        title="Annuler : remet le stock et supprime la commande"
+                                                    >
+                                                        <XCircle size={16} className="group-hover:rotate-90 transition-transform" />
+                                                        {order.status === 'refunded' ? 'Remboursee' : order.status === 'refund_pending' ? 'Remboursement en cours' : 'Annuler & Restaurer'}
+                                                    </button>
+                                                )}
                                             </div>                                     </div>
                                         </div>
 

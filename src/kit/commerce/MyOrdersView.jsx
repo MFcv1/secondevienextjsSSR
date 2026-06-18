@@ -72,6 +72,13 @@ const getOrderNumber = (order) => {
     return `Commande n°CMD-${String(id).slice(0, 10).toUpperCase()}`;
 };
 
+const getOrderItemsSummary = (order) => (
+    (order?.items || [])
+        .map((item) => item?.name)
+        .filter(Boolean)
+        .join(', ')
+);
+
 const getStatusInfo = (status = '') => {
     switch (status) {
         case 'completed':
@@ -368,6 +375,9 @@ const MyOrdersView = ({
                                                 <div>
                                                     <p className="text-[16px] font-medium text-[#252321]">{getOrderNumber(order)}</p>
                                                     <p className="mt-1 text-[13px] text-[#7b746e]">{formatDate(order.createdAt?.seconds)}</p>
+                                                    {getOrderItemsSummary(order) ? (
+                                                        <p className="mt-1 text-[13px] leading-5 text-[#5f5a55]">{getOrderItemsSummary(order)}</p>
+                                                    ) : null}
                                                     {canCancel(order) && (
                                                         <button
                                                             type="button"
@@ -511,7 +521,7 @@ const MyOrdersView = ({
                                 ) : (
                                     <div className="divide-y divide-[#e7ded5]">
                                         {invoiceRows.map((order) => {
-                                            const status = getStatusInfo(order.status === 'pending_payment' ? 'pending' : 'paid');
+                                            const status = getStatusInfo(order.status || 'pending');
                                             return (
                                                 <button
                                                     key={`invoice-${order.id}`}

@@ -198,11 +198,11 @@ Avancement 2026-06-18:
   - [x] cote client `Mes commandes`: ne pas proposer l'annulation libre d'une commande payee carte;
   - [x] cote Function `cancelOrderClient`: refuser ou router les commandes `paid` vers un flux remboursement;
   - [x] cote admin: ne jamais supprimer/restaurer une commande payee sans trace ni refund;
-  - [ ] definir les statuts `refund_pending`, `refunded`, `refund_failed` si remboursement gere.
+  - [x] definir les statuts `refund_pending`, `refunded`, `refund_failed` si remboursement gere.
 - [ ] Creer un flux serveur de remboursement/annulation payee:
-  - [ ] appeler Stripe Refund avec idempotence;
-  - [ ] conserver la commande dans l'historique client/admin;
-  - [ ] restaurer le stock seulement apres decision explicite et tracee;
+  - [x] appeler Stripe Refund avec idempotence;
+  - [x] conserver la commande dans l'historique client/admin;
+  - [x] restaurer le stock seulement apres decision explicite et tracee;
   - [ ] verifier dans Stripe Dashboard que le PaymentIntent porte le remboursement.
 - [ ] Verifier et aligner les events webhook Stripe configures:
   - [ ] si `payment_intent.canceled` est gere dans le code, l'ajouter dans le dashboard Stripe;
@@ -218,8 +218,8 @@ Avancement 2026-06-18:
   - [x] restaurer le stock et passer `stockReserved=false`;
   - [x] garantir qu'un paiement reussi tardif ne restaure jamais le stock.
 - [ ] Tester les scenarios `payment_intent.payment_failed` et `payment_intent.canceled`:
-  - [ ] statut commande attendu: `payment_failed` ou `canceled`;
-  - [ ] stock restaure;
+  - [x] statut commande attendu: `payment_failed` ou `canceled`;
+  - [x] stock restaure;
   - [ ] espace client coherent;
   - [ ] admin commandes coherent;
   - [ ] logs Functions sans erreur critique.
@@ -241,7 +241,7 @@ Avancement 2026-06-18:
   - [x] verifier `sys_idempotency/stripe_*` en `processed`;
   - [x] verifier event Stripe `payment_intent.succeeded` traite par webhook;
   - [x] verifier email de confirmation si applicable.
-  - [ ] ajouter explicitement le stock avant paiement dans le JSON de preuve automatique.
+  - [x] ajouter explicitement le stock avant paiement dans le JSON de preuve automatique.
 
 ### P0 - UX checkout client
 

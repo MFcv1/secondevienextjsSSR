@@ -41,6 +41,18 @@ Preuves obtenues:
 - Produit du run: `Paire de chevets`.
 - Total du run: `140 EUR`.
 
+Run hardening Stripe/Firebase complementaire:
+
+- Fichier preuve serveur: `logs/stripe-hardening-proof-2026-06-18T21-26-40.json`
+- Helper serveur protege: `e2eStripeHardeningProof`
+- Le helper a active `payment_intent.canceled` sur l'endpoint webhook Stripe sandbox.
+- Un ordre E2E precedent reste reserve apres absence de webhook `canceled` a ete nettoye (`staleCleanupCount: 1`).
+- Double appel `createOrder` avec le meme `clientOrderId`: meme `orderId`, meme `PaymentIntent`, second appel marque `reused: true`.
+- Stripe PaymentIntent annule: `status = canceled`.
+- Webhook `payment_intent.canceled`: idempotence `processed`.
+- Firestore order final: `status = canceled`, `stockReserved = false`.
+- Stock produit restaure au niveau initial.
+
 Assertions preuve serveur:
 
 ```json
@@ -95,6 +107,44 @@ Assertions preuve serveur:
 
 7. Le JSON de preuve serveur ne contient pas encore le stock avant paiement.
    - TODO: enrichir le script pour enregistrer `stockBefore` au moment de la selection produit.
+
+## Reprise Codex - 2026-06-18 soir
+
+Tests et corrections ajoutes pendant la reprise:
+
+- Phase 3 back-office testee en local Next `http://localhost:3010` branche sur la sandbox, avec le compte admin `loa.gto15@gmail.com`.
+- Resultat Phase 3 local: acces admin autorise, aucun libelle super-admin visible, commande payee invite visible apres ouverture de l'onglet `Ventes`, statut paye, produit `Paire de chevets`, total `140`, paiement Stripe, blocage `Refund Stripe requis`, PaymentIntent visible, preuves email client/admin visibles.
+- Export CSV admin teste: telechargement OK, email commande present, PaymentIntent present, colonnes preuves email presentes.
+- Phase 2 espace client: le parcours OTP client sur l'alias de commande a prouve l'acces a `/mes-commandes`, la commande payee, le total, l'adresse/facture et l'absence de bouton `Annuler` pour la commande Stripe payee. Une relance apres ajout du libelle produit a ete instable a cause du flux OTP/modal apres plusieurs codes; a retester au calme ou via un harnais auth dedie.
+- Blocage UX corrige: le fallback signe-out de `/mes-commandes` propose maintenant un bouton direct `Se connecter` en plus du retour galerie, utile surtout mobile ou la connexion header est cachee.
+- Lisibilite client corrigee: les lignes de commandes affichent maintenant un resume des articles, par exemple `Paire de chevets`.
+- Bug post-paiement corrige: apres confirmation Stripe durable, le checkout passe en etat terminal `order_success` et vide les indisponibilites locales pour eviter que `Victime de son succes` masque le succes commande.
+- Admin corrige: l'onglet commandes charge 50 commandes par defaut, affiche PaymentIntent, methode de verification et preuves email, exporte ces traces en CSV, et ne propose plus `Reouvrir` sur une commande Stripe deja payee/livree.
+- Fiche produit corrigee: une fiche produit vendue/stock 0 desactive les boutons panier desktop et mobile avec le libelle `Indisponible`.
+- Phase 4 corrigee cote webhook: si un `payment_intent.payment_failed` temporaire restaure le stock puis qu'un retry du meme PaymentIntent reussit, le handler `payment_intent.succeeded` tente de reserver a nouveau le stock en transaction avant de marquer la commande `paid`; en cas de conflit, la commande est marquee avec `fulfillmentConflict`.
+
+Validations lancees:
+
+- `node --check functions/src/commerce/stripeWebhook.js` OK.
+- `git diff --check` OK.
+- `npm run lint` OK.
+- Playwright local admin Phase 3 OK sur `http://localhost:3010` avec donnees sandbox.
+
+Reprise suivante - 2026-06-18 soir:
+
+- Phase 5 implementee cote serveur/UI: `refundOrderAdmin` appelle Stripe Refund avec cle d'idempotence par commande/PaymentIntent, conserve la commande, expose les statuts `refund_pending`, `refunded`, `refund_failed`, et ne remet le stock en vente que via l'action admin explicite `Refund + stock`.
+- Back-office branche sur le refund serveur: une commande Stripe payee affiche `Rembourser` et `Refund + stock` au lieu d'une annulation/suppression libre.
+- Preuve E2E enrichie: `scripts/e2e-hosted-stripe-checkout.mjs` envoie `stockBefore` et `selectedProduct` a `e2eCheckoutProof`; la preuve expose `stockBefore` et l'assertion `stockDecrementedFromBefore`.
+- Scenarios negatifs prepares: le script E2E accepte `E2E_STRIPE_CARD` et `E2E_EXPECT_STRIPE_FAILURE=true` pour rejouer une carte Stripe refusee sans dupliquer le parcours.
+- Deploy sandbox effectue: codebase Functions `main` redeploye, `refundOrderAdmin` actif, `stripeWebhook` version 16, `e2eCheckoutProof` redeploye, puis App Hosting `secondevie-next-sandbox` relance.
+- Run succes heberge OK: `logs/hosted-stripe-e2e-2026-06-18T18-20-27-462Z.json`, commande `q1tUtmNyjNpSeUTjGyFW`, PaymentIntent `pi_3TjkYbRdWb0VNdZq1dXDmDiR`, statut `paid`, webhook `processed`, emails client/admin envoyes, stock `Table` `1 -> 0`.
+- Run negatif carte refusee OK: `logs/hosted-stripe-e2e-2026-06-18T18-24-35-852Z.json`, puis preuve serveur apres webhook: commande `4HTLjAn3nsA1prJEUq6S`, statut `payment_failed`, PaymentIntent `requires_payment_method`, stock `Paire de chevets` restaure `1`, produit non vendu.
+- Refund admin sandbox OK: callable `refundOrderAdmin` appelee avec admin test sur la commande succes, Refund Stripe `re_3TjkYbRdWb0VNdZq1SLulN7D`, statut commande `refunded`, stock `Table` restaure `1`, produit non vendu.
+
+Limites restantes:
+
+- Phase 4 `payment_intent.payment_failed` est validee par carte refusee et restauration stock; `payment_intent.canceled` reste a verifier via Stripe Dashboard/CLI ou un harnais serveur dedie.
+- Phase 5 refund serveur est validee par l'API Stripe sandbox; il reste seulement a verifier visuellement le Refund dans Stripe Dashboard si besoin.
 
 ## Commandes de reprise
 

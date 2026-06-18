@@ -248,7 +248,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
         return () => { mounted = false; };
     }, []);
 
-    // Status global : 'editing' -> 'fetching_stripe' -> 'ready_to_pay' -> 'processing_deferred'
+    // Status global : 'editing' -> 'fetching_stripe' -> 'ready_to_pay' -> 'processing_deferred' -> 'order_success'
     const [checkoutState, setCheckoutState] = useState('editing'); 
     
     const [clientSecret, setClientSecret] = useState(null);
@@ -257,6 +257,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
     const [lockedOrderDraft, setLockedOrderDraft] = useState(null);
     const [unavailableItems, setUnavailableItems] = useState([]);
     const [isCleaningUp, setIsCleaningUp] = useState(false);
+    const checkoutClientOrderIdRef = useRef(null);
     const [guestOtp, setGuestOtp] = useState({
         status: 'idle',
         email: '',
@@ -273,12 +274,22 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
         && Boolean(guestOtp.token)
     );
     const hasVerifiedCheckoutEmail = hasVerifiedGuestCheckoutOtp;
-    const isCheckoutLocked = ['fetching_stripe', 'ready_to_pay', 'processing_deferred'].includes(checkoutState);
+    const isCheckoutLocked = ['fetching_stripe', 'ready_to_pay', 'processing_deferred', 'order_success'].includes(checkoutState);
     const checkoutItems = isCheckoutLocked && lockedOrderDraft?.items?.length ? lockedOrderDraft.items : cartItems;
     const checkoutSubtotal = isCheckoutLocked && lockedOrderDraft ? lockedOrderDraft.subtotal : total;
     const selectedDelivery = formData.deliveryMode ? deliverySettings[formData.deliveryMode] : null;
     const shippingCost = selectedDelivery ? selectedDelivery.price : 0;
     const finalTotal = checkoutSubtotal + shippingCost;
+    const getCheckoutClientOrderId = () => {
+        if (!checkoutClientOrderIdRef.current) {
+            const randomPart = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+            checkoutClientOrderIdRef.current = `checkout_${randomPart}`;
+        }
+        return checkoutClientOrderIdRef.current;
+    };
+    const resetCheckoutClientOrderId = () => {
+        checkoutClientOrderIdRef.current = null;
+    };
 
     // Annule la commande pending_payment et restaure le stock quand l'utilisateur
     // ferme le modal Stripe sans payer — évite les commandes orphelines et le stock bloqué
@@ -310,6 +321,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
             setCreatedOrderOtpToken('');
             setClientSecret(null);
             setLockedOrderDraft(null);
+            resetCheckoutClientOrderId();
         }
         setCheckoutState('editing');
     };
@@ -598,6 +610,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                     paymentMethod,
                     items: itemsWithCol,
                     checkoutOtpToken: guestOtp.token || '',
+                    clientOrderId: getCheckoutClientOrderId(),
                     total: finalTotal
                 }
             });
@@ -620,6 +633,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                         paymentMethod,
                         total: finalTotal
                     });
+                    resetCheckoutClientOrderId();
                 }
             } else {
                 throw new Error("Erreur de création de commande.");
@@ -682,7 +696,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
     // mis le stock à sold=true pour le réserver !
     // On ne bloque pas non plus si on est en cours de nettoyage (isCleaningUp) après avoir fermé la modale Stripe, 
     // pour laisser le temps au serveur de remettre sold=false sans déclencher l'alerte !
-    if (unavailableItems.length > 0 && checkoutState !== 'processing_deferred' && checkoutState !== 'fetching_stripe' && checkoutState !== 'ready_to_pay' && !isCleaningUp) {
+    if (unavailableItems.length > 0 && checkoutState !== 'processing_deferred' && checkoutState !== 'fetching_stripe' && checkoutState !== 'ready_to_pay' && checkoutState !== 'order_success' && !isCleaningUp) {
         return (
             <div className={`min-h-screen pt-12 px-6 flex items-center justify-center bg-transparent`}>
                 <div className={`p-8 rounded-3xl shadow-xl max-w-md text-center space-y-6 border ${darkMode ? 'bg-stone-900 border-stone-800' : 'bg-white border-stone-100'}`}>
@@ -1134,6 +1148,11 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                     stripeElementsOptions={stripeElementsOptions}
                     onClose={handleClosePaymentModal}
                     onPlaceOrder={onPlaceOrder}
+                    onPaymentConfirmed={() => {
+                        setUnavailableItems([]);
+                        setCheckoutState('order_success');
+                        resetCheckoutClientOrderId();
+                    }}
                     setCheckoutState={setCheckoutState}
                 />
             </Suspense>

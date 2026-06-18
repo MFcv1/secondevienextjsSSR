@@ -118,6 +118,7 @@ const CheckoutStripeModal = ({
     stripeElementsOptions,
     onClose,
     onPlaceOrder,
+    onPaymentConfirmed,
     setCheckoutState,
 }) => {
     const [confirmationState, setConfirmationState] = useState('idle');
@@ -183,7 +184,7 @@ const CheckoutStripeModal = ({
                                             email: formData.email,
                                             checkoutOtpToken
                                         });
-                                        setCheckoutState('editing');
+                                        onPaymentConfirmed?.();
                                         await onPlaceOrder({
                                             id: createdOrderId,
                                             ...formData,

@@ -25,6 +25,58 @@ function hashOrderIdentity(value) {
     return crypto.createHash('sha256').update(String(value)).digest('hex');
 }
 
+function normalizeClientOrderId(value) {
+    if (!value) return null;
+    return normalizeFirestoreId(String(value).trim(), 'clientOrderId');
+}
+
+function getCreateOrderIdempotencyRef(userId, checkoutEmail, clientOrderId) {
+    if (!clientOrderId) return null;
+    const identityKey = hashOrderIdentity(`${userId || ''}:${checkoutEmail || ''}`).slice(0, 32);
+    return db.doc(`sys_idempotency/create_order_${identityKey}_${clientOrderId}`);
+}
+
+async function resolveExistingCreateOrder(stripe, idempRef, paymentMethod) {
+    if (!idempRef) return null;
+    const snap = await idempRef.get();
+    if (!snap.exists) return null;
+
+    const data = snap.data() || {};
+    if (data.paymentMethod !== paymentMethod) {
+        throw new functions.https.HttpsError('already-exists', 'Cette cle de commande est deja utilisee pour un autre mode de paiement.');
+    }
+
+    if (data.orderId && paymentMethod === 'stripe_elements') {
+        let paymentIntentId = data.paymentIntentId || null;
+        if (!paymentIntentId) {
+            const orderSnap = await db.collection('orders').doc(data.orderId).get();
+            paymentIntentId = orderSnap.exists ? orderSnap.data()?.stripePaymentIntentId || null : null;
+        }
+        if (!paymentIntentId) {
+            throw new functions.https.HttpsError('aborted', 'Commande deja en cours de creation. Reessayez dans quelques secondes.');
+        }
+
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        return {
+            success: true,
+            reused: true,
+            clientSecret: paymentIntent.client_secret,
+            paymentIntentId: paymentIntent.id,
+            orderId: data.orderId
+        };
+    }
+
+    if (data.orderId && paymentMethod !== 'stripe_elements') {
+        return {
+            success: true,
+            reused: true,
+            orderId: data.orderId
+        };
+    }
+
+    throw new functions.https.HttpsError('aborted', 'Commande deja en cours de creation. Reessayez dans quelques secondes.');
+}
+
 function hasTrustedCheckoutAuth(context, checkoutEmail) {
     const token = context.auth?.token || {};
     const tokenEmail = token.email ? normalizeGuestCheckoutEmail(token.email) : '';
@@ -54,7 +106,7 @@ async function resolveCheckoutIdentity(context, orderData) {
     };
 }
 
-exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMAIL, GMAIL_PASSWORD] }).https.onCall(async (data, context) => {
+async function createOrderHandler(data, context) {
     const stripe = Stripe(STRIPE_SECRET_KEY.value());
 
     const rawOrderData = data?.orderData;
@@ -87,6 +139,10 @@ exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMA
         ...(orderData.shipping || {}),
         email: checkoutIdentity.email
     };
+    const clientOrderId = normalizeClientOrderId(orderData.clientOrderId);
+    const createOrderIdempRef = getCreateOrderIdempotencyRef(userId, checkoutIdentity.email, clientOrderId);
+    const existingCreateOrder = await resolveExistingCreateOrder(stripe, createOrderIdempRef, orderData.paymentMethod);
+    if (existingCreateOrder) return existingCreateOrder;
 
     // --- RATE LIMITING ATOMIQUE (3 commandes/minute/utilisateur) ---
     // Protège contre les floods / tests automatiques en production.
@@ -125,6 +181,12 @@ exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMA
         try {
             await db.runTransaction(async (transaction) => {
                 // PHASE 1 — READS
+                if (createOrderIdempRef) {
+                    const idempSnap = await transaction.get(createOrderIdempRef);
+                    if (idempSnap.exists) {
+                        throw new functions.https.HttpsError('aborted', 'Commande deja en cours de creation.');
+                    }
+                }
                 const itemReads = [];
                 for (const item of orderData.items) {
                     const colName = item.collectionName;
@@ -180,6 +242,7 @@ exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMA
                     userId: userId,
                     userEmail: checkoutIdentity.email,
                     checkoutAuthMethod: checkoutIdentity.method,
+                    clientOrderId: clientOrderId || null,
                     items: serverItems,
                     shipping: verifiedShipping,
                     paymentMethod: 'deferred',
@@ -189,6 +252,18 @@ exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMA
                     createdAt: admin.firestore.FieldValue.serverTimestamp(),
                     stripeSessionId: null
                 });
+                if (createOrderIdempRef) {
+                    transaction.create(createOrderIdempRef, {
+                        type: 'create_order',
+                        status: 'completed',
+                        paymentMethod: orderData.paymentMethod,
+                        orderId: orderRef.id,
+                        userId,
+                        userEmail: checkoutIdentity.email,
+                        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                        expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
+                    });
+                }
             });
 
             return { success: true, orderId: orderRef.id };
@@ -220,6 +295,12 @@ exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMA
                 // ====================================================================
                 // PHASE 1 — TOUS LES READS EN PREMIER (obligation Firestore transaction)
                 // ====================================================================
+                if (createOrderIdempRef) {
+                    const idempSnap = await transaction.get(createOrderIdempRef);
+                    if (idempSnap.exists) {
+                        throw new functions.https.HttpsError('aborted', 'Commande deja en cours de creation.');
+                    }
+                }
                 const itemReads = [];
                 for (const item of orderData.items) {
                     const colName = item.collectionName;
@@ -312,6 +393,7 @@ exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMA
                     userId: userId,
                     userEmail: checkoutIdentity.email,
                     checkoutAuthMethod: checkoutIdentity.method,
+                    clientOrderId: clientOrderId || null,
                     items: serverItems,
                     shipping: verifiedShipping,
                     total: txTotal,
@@ -321,6 +403,18 @@ exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMA
                     createdAt: admin.firestore.FieldValue.serverTimestamp(),
                     stripePaymentIntentId: null
                 });
+                if (createOrderIdempRef) {
+                    transaction.create(createOrderIdempRef, {
+                        type: 'create_order',
+                        status: 'reserved',
+                        paymentMethod: orderData.paymentMethod,
+                        orderId: orderRef.id,
+                        userId,
+                        userEmail: checkoutIdentity.email,
+                        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                        expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
+                    });
+                }
             });
         } catch (e) {
             console.error("Stock Reservation Error:", e);
@@ -355,7 +449,17 @@ exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMA
                 }
             });
 
-            await orderRef.update({ stripePaymentIntentId: paymentIntent.id });
+            const paymentIntentBatch = db.batch();
+            paymentIntentBatch.update(orderRef, { stripePaymentIntentId: paymentIntent.id });
+            if (createOrderIdempRef) {
+                paymentIntentBatch.set(createOrderIdempRef, {
+                    status: 'completed',
+                    paymentIntentId: paymentIntent.id,
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
+                }, { merge: true });
+            }
+            await paymentIntentBatch.commit();
 
             return {
                 success: true,
@@ -383,6 +487,9 @@ exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMA
                     });
                 }
                 batch.delete(orderRef);
+                if (createOrderIdempRef) {
+                    batch.delete(createOrderIdempRef);
+                }
                 await batch.commit();
             } catch (restoreError) {
                 console.error("CRITICAL: Stock restore failed after PI error:", restoreError);
@@ -393,4 +500,7 @@ exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMA
 
     // Fallback: méthode de paiement non reconnue
     throw new functions.https.HttpsError('invalid-argument', 'Méthode de paiement non supportée.');
-});
+}
+
+exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMAIL, GMAIL_PASSWORD] }).https.onCall(createOrderHandler);
+exports.createOrderHandler = createOrderHandler;

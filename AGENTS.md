@@ -39,6 +39,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- app : routes Next App Router, home landing SEO SSR + galerie Next, SSR produit/categorie, tunnels noindex en iles client dediees, loading/not-found/error, sitemap et robots
 |-- tests, playwright.config.mjs : tests E2E et validations Playwright
 |-- _DOCS : documentation maintenance Next/dependances
+|-- docs : roadmaps techniques dont `ROADMAP_STRIPE_FIREBASE_HARDENING.md` pour durcissement Stripe/Firebase
 |-- firebase.json, .firebaseignore, firestore.rules, firestore.indexes.json, storage.rules
 |-- functions-public : codebase Functions public isole pour `publicCatalog`, sans secrets Stripe/Gmail
 |-- .env.sandbox.example / .env.production.example : modeles publics; vrais .env locaux ignores par Git
@@ -54,9 +55,9 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |   `-- assets, utils : images source et helpers
 |-- functions
 |   |-- index.js, helpers : Firebase Functions entrypoint/config/security
-|   `-- src : analytics, auth, commerce, email, maintenance, public, seo, triggers
+|   `-- src : analytics, auth, commerce dont refund admin Stripe et helpers E2E proteges, email, maintenance, public, seo, triggers
 |-- public : favicons, manifest, images, video, rapport maintenance statique
-|-- scripts : env bridge, audits infra env/secrets/deploy, E2E hosted Stripe checkout sandbox, SSR/mobile checks, maintenance audit, budget perf Next, gate classification routes Next, perf/architecture compare, audit scroll galerie, backfills/audits Storage/images et tooling safe
+|-- scripts : env bridge, audits infra env/secrets/deploy, E2E hosted Stripe checkout sandbox succes/echec, SSR/mobile checks, maintenance audit, budget perf Next, gate classification routes Next, perf/architecture compare, audit scroll galerie, backfills/audits Storage/images et tooling safe
 |-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_FULL_NATIVE_CLEANUP_ROADMAP_2026-06-10.md, NEXTJS_FULL_NATIVE_AUDIT_ROADMAP_2026-06-10.md, NEXTJSSSR_FULL_NEXT_FINAL_PROMPT_2026-06-09.md et autres rapports/roadmaps Next SSR, SEO, images, galerie et produit
 |-- imagehero, pageUI : references visuelles et notes UI
 `-- .next, dist, node_modules, logs, .firebase : generes, hors carte

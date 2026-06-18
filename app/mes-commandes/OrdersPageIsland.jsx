@@ -6,6 +6,10 @@ import MyOrdersView from '../../src/kit/commerce/MyOrdersView';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
 
 function AccountDashboardFallback({ darkMode = false, isSignedOut = false }) {
+  const openLogin = () => {
+    window.dispatchEvent(new CustomEvent('sv:open-login'));
+  };
+
   return (
     <main className={`min-h-screen transition-colors duration-700 ${darkMode ? 'bg-[#151515] text-[#f8f1e8]' : 'bg-[#fbfaf7] text-[#181716]'}`}>
       <div className="mx-auto max-w-[1560px] px-4 pb-16 pt-6 sm:px-6 md:px-10 lg:px-12 lg:pb-24 lg:pt-7">
@@ -18,12 +22,21 @@ function AccountDashboardFallback({ darkMode = false, isSignedOut = false }) {
               {isSignedOut ? 'Connectez-vous pour continuer.' : 'Chargement de votre espace...'}
             </p>
             {isSignedOut && (
-              <a
-                href="/galerie"
-                className="mt-7 inline-flex min-h-[52px] items-center justify-center rounded-[4px] bg-[#181716] px-7 text-[11px] font-black uppercase tracking-[0.18em] text-white shadow-[0_16px_34px_rgba(24,23,22,0.16)] transition-colors hover:bg-[#2a2825]"
-              >
-                Retour galerie
-              </a>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={openLogin}
+                  className="inline-flex min-h-[52px] items-center justify-center rounded-[4px] bg-[#181716] px-7 text-[11px] font-black uppercase tracking-[0.18em] text-white shadow-[0_16px_34px_rgba(24,23,22,0.16)] transition-colors hover:bg-[#2a2825]"
+                >
+                  Se connecter
+                </button>
+                <a
+                  href="/galerie"
+                  className="inline-flex min-h-[52px] items-center justify-center rounded-[4px] border border-[#d8cec3] px-7 text-[11px] font-black uppercase tracking-[0.18em] text-[#181716] transition-colors hover:bg-white"
+                >
+                  Retour galerie
+                </a>
+              </div>
             )}
           </div>
         </header>

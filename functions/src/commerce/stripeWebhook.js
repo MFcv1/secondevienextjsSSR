@@ -1,11 +1,11 @@
 /**
- * COMMERCE: Webhook Stripe (Validation paiement)
- * 
- * Type: onRequest (HTTP endpoint, pas onCall)
- * Vérifie la signature cryptographique du webhook Stripe.
- * Crée la commande dans Firestore + marque les produits comme vendus.
- * 
- * SÉCURITÉ: Signature Stripe obligatoire (pas de fallback non-sécurisé)
+ * COMMERCE: Stripe webhook.
+ *
+ * Security:
+ * - Stripe signature is mandatory.
+ * - Stripe events are deduped by event.id.
+ * - payment_intent.succeeded never trusts metadata alone: it validates the
+ *   order id, user id, user email, amount, currency, PI id and order status.
  */
 const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
@@ -15,6 +15,255 @@ const { timestampFromNow, SYSTEM_DOC_RETENTION_DAYS } = require('../analytics/co
 
 const db = admin.firestore();
 const Stripe = require('stripe');
+
+const EXPECTED_PAYMENT_INTENT_CURRENCY = 'eur';
+const EXPECTED_PAYMENT_INTENT_ORDER_STATUS = 'pending_payment';
+
+function toCents(value) {
+    const numberValue = Number(value);
+    if (!Number.isFinite(numberValue)) return null;
+    return Math.round(numberValue * 100);
+}
+
+function normalizeEmail(value) {
+    return String(value || '').trim().toLowerCase();
+}
+
+function validateSucceededPaymentIntent(paymentIntent, order, orderId) {
+    const errors = [];
+    const expectedAmount = toCents(order.total);
+
+    if (paymentIntent.status !== 'succeeded') {
+        errors.push('payment_intent_status_not_succeeded');
+    }
+    if (String(paymentIntent.currency || '').toLowerCase() !== EXPECTED_PAYMENT_INTENT_CURRENCY) {
+        errors.push('currency_mismatch');
+    }
+    if (expectedAmount === null || Number(paymentIntent.amount_received) !== expectedAmount) {
+        errors.push('amount_received_mismatch');
+    }
+    if (paymentIntent.id !== order.stripePaymentIntentId) {
+        errors.push('payment_intent_id_mismatch');
+    }
+    if (paymentIntent.metadata?.orderId !== orderId) {
+        errors.push('metadata_order_id_mismatch');
+    }
+    if (paymentIntent.metadata?.userId !== order.userId) {
+        errors.push('metadata_user_id_mismatch');
+    }
+    if (normalizeEmail(paymentIntent.metadata?.userEmail) !== normalizeEmail(order.userEmail)) {
+        errors.push('metadata_user_email_mismatch');
+    }
+    if ((order.status || '') !== EXPECTED_PAYMENT_INTENT_ORDER_STATUS) {
+        errors.push('order_status_not_pending_payment');
+    }
+    if (order.stockReserved !== true) {
+        errors.push('stock_not_reserved');
+    }
+
+    return errors;
+}
+
+async function restoreReservedStockForUnpaidOrder(transaction, orderRef, order, nextOrderFields) {
+    if (order.stockReserved !== true || order.status === 'paid' || order.paidAt) {
+        transaction.update(orderRef, nextOrderFields);
+        return;
+    }
+
+    const entries = (order.items || [])
+        .map((item) => {
+            const itemId = item.id || item.originalId;
+            const col = item.collectionName || item.collection || 'furniture';
+            if (!itemId) return null;
+            return {
+                item,
+                ref: db.doc(`artifacts/${APP_ID}/public/data/${col}/${itemId}`)
+            };
+        })
+        .filter(Boolean);
+
+    const snaps = [];
+    for (const entry of entries) {
+        snaps.push({ ...entry, snap: await transaction.get(entry.ref) });
+    }
+
+    const conflicts = [];
+    const writes = [];
+    for (const { item, ref, snap } of snaps) {
+        const itemId = item.id || item.originalId || null;
+        if (!snap.exists) {
+            conflicts.push({ itemId, reason: 'missing_product' });
+            continue;
+        }
+
+        const current = snap.data();
+        const quantity = Number(item.quantity) || 1;
+        const currentStock = Number(current.stock ?? 0);
+        const currentBuyerId = current.buyerId || null;
+
+        if (currentBuyerId && currentBuyerId !== order.userId) {
+            conflicts.push({ itemId, reason: 'reserved_by_other_buyer' });
+            continue;
+        }
+
+        writes.push({ ref, stock: currentStock + quantity });
+    }
+
+    for (const write of writes) {
+        transaction.update(write.ref, {
+            stock: write.stock,
+            sold: false,
+            soldAt: admin.firestore.FieldValue.delete(),
+            buyerId: admin.firestore.FieldValue.delete()
+        });
+    }
+
+    transaction.update(orderRef, {
+        ...nextOrderFields,
+        stockReserved: false,
+        stockRestoredAt: conflicts.length === 0 ? admin.firestore.FieldValue.serverTimestamp() : admin.firestore.FieldValue.delete(),
+        stockRestoreConflict: conflicts.length > 0,
+        stockRestoreConflictDetails: conflicts.length > 0 ? conflicts : admin.firestore.FieldValue.delete()
+    });
+}
+
+async function handlePaymentIntentSucceeded(paymentIntent, idempRef) {
+    const orderId = paymentIntent.metadata?.orderId;
+    if (!orderId) {
+        console.warn('PaymentIntent succeeded without metadata.orderId:', paymentIntent.id);
+        await idempRef.set({
+            status: 'ignored',
+            ignoredAt: admin.firestore.FieldValue.serverTimestamp(),
+            ignoreReason: 'missing_order_id'
+        }, { merge: true });
+        return;
+    }
+
+    const orderRef = db.collection('orders').doc(orderId);
+    const result = await db.runTransaction(async (transaction) => {
+        const freshOrderSnap = await transaction.get(orderRef);
+        if (!freshOrderSnap.exists) {
+            return { ok: true, skipped: true, reason: 'missing_order' };
+        }
+
+        const freshOrder = freshOrderSnap.data();
+        if (freshOrder.status === 'paid') {
+            if (freshOrder.stripePaymentIntentId !== paymentIntent.id) {
+                return { ok: false, reason: 'paid_order_payment_intent_mismatch' };
+            }
+            return { ok: true, skipped: true, reason: 'already_paid' };
+        }
+
+        const validationErrors = validateSucceededPaymentIntent(paymentIntent, freshOrder, orderId);
+        if (validationErrors.length > 0) {
+            transaction.update(orderRef, {
+                paymentValidationError: validationErrors.join(','),
+                paymentValidationFailedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+            return { ok: false, reason: validationErrors.join(',') };
+        }
+
+        transaction.update(orderRef, {
+            status: 'paid',
+            paidAt: admin.firestore.FieldValue.serverTimestamp(),
+            stripePaymentIntentId: paymentIntent.id,
+            paymentMethod: 'stripe'
+        });
+        return { ok: true, confirmed: true };
+    });
+
+    if (!result.ok) {
+        throw new Error(`PaymentIntent validation failed: ${result.reason}`);
+    }
+    console.log('Stripe PaymentIntent confirmed order:', orderId, result);
+}
+
+async function handleCheckoutSessionCompleted(stripe, session) {
+    const userId = session.metadata?.userId || null;
+    const shippingMeta = session.metadata?.shippingMeta ? JSON.parse(session.metadata.shippingMeta) : {};
+    const total = Number(session.amount_total || 0) / 100;
+
+    const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
+        expand: ['data.price.product']
+    });
+
+    const items = lineItems.data.map((li) => {
+        const product = li.price.product;
+        return {
+            id: product.metadata?.id || product.metadata?.firestoreId || null,
+            collectionName: product.metadata?.collection || product.metadata?.collectionName || 'furniture',
+            name: product.name,
+            price: li.amount_total / 100,
+            quantity: li.quantity || 1
+        };
+    });
+
+    const orderRef = db.collection('orders').doc();
+    const orderData = {
+        userId,
+        userEmail: session.customer_details?.email || session.customer_email || null,
+        items,
+        total,
+        shipping: shippingMeta,
+        paymentMethod: 'stripe',
+        stripeSessionId: session.id,
+        status: 'paid',
+        stockReserved: true,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    await db.runTransaction(async (transaction) => {
+        const productReads = [];
+        for (const item of items) {
+            if (!item.id) continue;
+            const colName = item.collectionName || 'furniture';
+            const itemRef = db.doc(`artifacts/${APP_ID}/public/data/${colName}/${item.id}`);
+            const itemSnap = await transaction.get(itemRef);
+            productReads.push({ item, itemRef, itemSnap });
+        }
+
+        for (const { item, itemRef, itemSnap } of productReads) {
+            if (!itemSnap.exists) continue;
+            const itemDb = itemSnap.data();
+            const currentStock = itemDb.stock !== undefined ? Number(itemDb.stock) : 1;
+            const quantity = Number(item.quantity) || 1;
+            const nextStock = Math.max(0, currentStock - quantity);
+            transaction.update(itemRef, {
+                stock: nextStock,
+                sold: nextStock === 0,
+                buyerId: userId,
+                soldAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+        }
+
+        transaction.set(orderRef, orderData);
+    });
+
+    console.log('Stripe Checkout session created paid order:', orderRef.id);
+}
+
+async function handlePaymentIntentTerminal(pi, nextOrderFields) {
+    const orderId = pi.metadata?.orderId;
+    if (!orderId) return;
+
+    const orderRef = db.collection('orders').doc(orderId);
+    await db.runTransaction(async (transaction) => {
+        const orderSnap = await transaction.get(orderRef);
+        if (!orderSnap.exists) return;
+
+        const order = orderSnap.data();
+        if (order.status === 'paid' || order.paidAt) return;
+        if (order.stripePaymentIntentId && order.stripePaymentIntentId !== pi.id) {
+            transaction.update(orderRef, {
+                paymentValidationError: 'terminal_event_payment_intent_id_mismatch',
+                paymentValidationFailedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+            return;
+        }
+
+        await restoreReservedStockForUnpaidOrder(transaction, orderRef, order, nextOrderFields);
+    });
+}
 
 exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_WH_SECRET] }).https.onRequest(async (req, res) => {
     if (req.method !== 'POST') {
@@ -26,7 +275,7 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
     const endpointSecret = STRIPE_WH_SECRET.value();
 
     if (!endpointSecret) {
-        console.error("❌ STRIPE_WH_SECRET not configured. Rejecting webhook.");
+        console.error('STRIPE_WH_SECRET not configured. Rejecting webhook.');
         return res.status(500).send('Webhook secret not configured');
     }
 
@@ -34,23 +283,19 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
     try {
         const rawBody = req.rawBody;
         if (!rawBody) {
-            console.error("Missing raw request body. Blocking webhook signature verification.");
+            console.error('Missing raw request body. Blocking webhook signature verification.');
             return res.status(400).send('Missing raw body');
         }
-        if (endpointSecret && sig) {
-            event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
-        } else {
-            console.error("❌ Missing signature. Blocking unsigned webhook.");
+        if (!sig) {
+            console.error('Missing Stripe signature. Blocking unsigned webhook.');
             return res.status(400).send('Missing signature');
         }
+        event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
     } catch (err) {
-        console.error(`❌ Webhook Security Error: ${err.message}`);
+        console.error(`Webhook Security Error: ${err.message}`);
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    // ============================================================
-    // IDEMPOTENCE: dedup par event.id (Stripe peut retry le même event)
-    // ============================================================
     const idempRef = db.doc(`sys_idempotency/stripe_${event.id}`);
     const markWebhookFailed = async (reason) => {
         try {
@@ -60,9 +305,10 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
                 failureReason: String(reason?.message || reason || 'unknown').slice(0, 500)
             }, { merge: true });
         } catch (error) {
-            console.error("Idempotence failure marker error:", error);
+            console.error('Idempotence failure marker error:', error);
         }
     };
+
     try {
         const shouldProcess = await db.runTransaction(async (tx) => {
             const snap = await tx.get(idempRef);
@@ -77,6 +323,7 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
                 }
                 return false;
             }
+
             tx.create(idempRef, {
                 type: event.type,
                 status: 'processing',
@@ -85,278 +332,57 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
             });
             return true;
         });
+
         if (!shouldProcess) {
-            console.log(`⏭️ Webhook déjà traité (dedup): ${event.id}`);
+            console.log('Stripe webhook already processed:', event.id);
             return res.json({ received: true, deduped: true });
         }
     } catch (e) {
-        console.error("Idempotence check error:", e);
+        console.error('Idempotence check error:', e);
         return res.status(500).send('Webhook idempotence check error');
     }
 
-    // ============================================================
-    // HANDLER: payment_intent.succeeded (Stripe Elements / PaymentElement)
-    // ============================================================
-    if (event.type === 'payment_intent.succeeded') {
-        const paymentIntent = event.data.object;
-        console.log("💰 Webhook: PaymentIntent Succeeded:", paymentIntent.id);
-
-        const orderId = paymentIntent.metadata?.orderId;
-        const userId = paymentIntent.metadata?.userId;
-
-        if (!orderId) {
-            console.warn("PaymentIntent sans orderId dans metadata.");
-            return res.json({ received: true });
-        }
-
-        try {
-            const orderRef = db.collection('orders').doc(orderId);
-            const orderSnap = await orderRef.get();
-
-            if (!orderSnap.exists) {
-                console.error("Commande introuvable pour orderId:", orderId);
-                return res.json({ received: true });
-            }
-
-            const order = orderSnap.data();
-
-            // Protection idempotence: ne pas traiter 2 fois
-            if (order.status === 'paid') {
-                console.log("Commande déjà marquée paid, skip:", orderId);
-                return res.json({ received: true });
-            }
-
-            await db.runTransaction(async (transaction) => {
-                // Le stock a déjà été réservé/décrémenté par createOrder (stockReserved: true).
-                // On ne décrémente plus jamais le stock ici au webhook (fix bug double décrément).
-                // On ne gère ici que la confirmation de la commande.
-
-                // Confirmer la commande
-                transaction.update(orderRef, {
-                    status: 'paid',
-                    paidAt: admin.firestore.FieldValue.serverTimestamp(),
-                    stripePaymentIntentId: paymentIntent.id,
-                    paymentMethod: 'stripe'
-                });
-            });
-
-            console.log("✅ Commande confirmée (paid):", orderId);
-        } catch (error) {
-            console.error("❌ CRITICAL Webhook Error (payment_intent.succeeded):", error);
-            await markWebhookFailed(error);
-            return res.status(500).send('Webhook handler error');
-        }
-    }
-
-    // ============================================================
-    // HANDLER: checkout.session.completed (Stripe Checkout — rétrocompatibilité)
-    // ============================================================
-    if (event.type === 'checkout.session.completed') {
-        const session = event.data.object;
-        console.log("💰 Webhook: Session Completed:", session.id);
-
-        const userId = session.metadata.userId;
-        const shippingMeta = session.metadata.shippingMeta ? JSON.parse(session.metadata.shippingMeta) : {};
-        const total = session.amount_total / 100;
-
-        try {
-            console.log("🔍 Fetching line items with product expansion...");
-            const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
-                expand: ['data.price.product']
-            });
-
-            const items = lineItems.data.map(li => {
-                const product = li.price.product;
-                return {
-                    id: product.metadata?.id || product.metadata?.firestoreId || null,
-                    collectionName: product.metadata?.collection || product.metadata?.collectionName || 'furniture',
-                    name: product.name,
-                    price: li.amount_total / 100,
-                    quantity: li.quantity,
-                };
-            });
-
-            console.log("🛒 Items extracted:", JSON.stringify(items));
-
-            const orderRef = db.collection('orders').doc();
-            const orderData = {
-                userId: userId,
-                userEmail: session.customer_details.email || session.customer_email,
-                items: items,
-                total: total,
-                shipping: shippingMeta,
-                paymentMethod: 'stripe',
-                stripeSessionId: session.id,
-                status: 'paid',
-                stockReserved: true,
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            };
-
-            await db.runTransaction(async (transaction) => {
-                // Check if an existing order already reserved stock (stockReserved flag)
-                // If so, skip stock decrement to avoid double-decrement
-                const existingOrderSnap = await transaction.get(orderRef);
-                const skipStockDecrement = existingOrderSnap.exists && existingOrderSnap.data().stockReserved === true;
-
-                if (!skipStockDecrement) {
-                    for (const item of items) {
-                        if (!item.id) {
-                            console.warn("⚠️ Item sans ID Firestore (Metadata manquantes ?):", item.name);
-                            continue;
-                        }
-                        const colName = item.collectionName || 'furniture';
-                        const itemRef = db.doc(`artifacts/${APP_ID}/public/data/${colName}/${item.id}`);
-                        const itemSnap = await transaction.get(itemRef);
-
-                        if (!itemSnap.exists) continue;
-                        const itemDb = itemSnap.data();
-                        const currentStock = itemDb.stock !== undefined ? itemDb.stock : 1;
-
-                        const updates = {};
-                        if (currentStock <= 1) {
-                            updates.sold = true;
-                            updates.buyerId = userId;
-                            updates.soldAt = admin.firestore.FieldValue.serverTimestamp();
-                            console.log(`🔒 Item SOLD OUT: ${item.id}`);
-                        } else {
-                            updates.stock = currentStock - 1;
-                        }
-
-                        transaction.update(itemRef, updates);
-                    }
-                } else {
-                    console.log("⚡ Stock already reserved (stockReserved=true), skipping decrement for session:", session.id);
-                }
-                transaction.set(orderRef, orderData);
-            });
-
-            console.log("✅ Commande Stripe créée avec succès:", orderRef.id);
-        } catch (error) {
-            console.error("❌ Erreur CRITIQUE Webhook:", error);
-            await markWebhookFailed(error);
-            return res.status(500).send('Webhook handler error');
-        }
-    }
-
-    // ============================================================
-    // HANDLER: payment_intent.payment_failed (Log + restauration stock)
-    // ============================================================
-    if (event.type === 'payment_intent.payment_failed') {
-        const pi = event.data.object;
-        const orderId = pi.metadata?.orderId;
-        console.error(`❌ Payment FAILED for PI ${pi.id}, Order: ${orderId || 'N/A'}, Reason: ${pi.last_payment_error?.message || 'unknown'}`);
-
-        if (orderId) {
-            try {
-                const orderRef = db.collection('orders').doc(orderId);
-                const orderSnap = await orderRef.get();
-
-                if (!orderSnap.exists) return res.json({ received: true });
-                const order = orderSnap.data();
-
-                // Si le stock a été réservé à la création de la commande, le restaurer
-                if (order.stockReserved && order.status !== 'paid') {
-                    const batch = db.batch();
-                    for (const item of (order.items || [])) {
-                        const itemId = item.id || item.originalId;
-                        const col = item.collectionName || item.collection || 'furniture';
-                        if (!itemId) continue;
-
-                        const itemRef = db.doc(`artifacts/${APP_ID}/public/data/${col}/${itemId}`);
-                        const qtyToRestore = item.quantity || 1;
-                        batch.update(itemRef, {
-                            stock: admin.firestore.FieldValue.increment(qtyToRestore),
-                            sold: false,
-                            soldAt: admin.firestore.FieldValue.delete(),
-                            buyerId: admin.firestore.FieldValue.delete()
-                        });
-                    }
-                    batch.update(orderRef, {
-                        status: 'payment_failed',
-                        failedAt: admin.firestore.FieldValue.serverTimestamp(),
-                        failureReason: pi.last_payment_error?.message || 'Payment failed',
-                        stockReserved: false
-                    });
-                    await batch.commit();
-                    console.log(`♻️ Stock restauré après échec de paiement: ${orderId}`);
-                } else {
-                    await orderRef.update({
-                        status: 'payment_failed',
-                        failedAt: admin.firestore.FieldValue.serverTimestamp(),
-                        failureReason: pi.last_payment_error?.message || 'Payment failed'
-                    });
-                }
-            } catch (e) {
-                console.error("Error handling payment_failed:", e);
-                await markWebhookFailed(e);
-                return res.status(500).send('Webhook handler error');
-            }
-        }
-    }
-
-    // ============================================================
-    // HANDLER: payment_intent.canceled (PaymentIntent expiré ou annulé)
-    // ============================================================
-    if (event.type === 'payment_intent.canceled') {
-        const pi = event.data.object;
-        const orderId = pi.metadata?.orderId;
-        console.warn(`⏰ Payment CANCELED for PI ${pi.id}, Order: ${orderId || 'N/A'}`);
-
-        if (orderId) {
-            try {
-                const orderRef = db.collection('orders').doc(orderId);
-                const orderSnap = await orderRef.get();
-
-                if (!orderSnap.exists) return res.json({ received: true });
-                const order = orderSnap.data();
-
-                // Si le stock a été réservé à la création de la commande, le restaurer
-                if (order.stockReserved && order.status !== 'paid') {
-                    const batch = db.batch();
-                    for (const item of (order.items || [])) {
-                        const itemId = item.id || item.originalId;
-                        const col = item.collectionName || item.collection || 'furniture';
-                        if (!itemId) continue;
-
-                        const itemRef = db.doc(`artifacts/${APP_ID}/public/data/${col}/${itemId}`);
-                        const qtyToRestore = item.quantity || 1;
-                        batch.update(itemRef, {
-                            stock: admin.firestore.FieldValue.increment(qtyToRestore),
-                            sold: false,
-                            soldAt: admin.firestore.FieldValue.delete(),
-                            buyerId: admin.firestore.FieldValue.delete()
-                        });
-                    }
-                    batch.update(orderRef, {
-                        status: 'canceled',
-                        canceledAt: admin.firestore.FieldValue.serverTimestamp(),
-                        stockReserved: false
-                    });
-                    await batch.commit();
-                    console.log(`♻️ Stock restauré après annulation/expiration PI: ${orderId}`);
-                } else {
-                    await orderRef.update({
-                        status: 'canceled',
-                        canceledAt: admin.firestore.FieldValue.serverTimestamp()
-                    });
-                }
-            } catch (e) {
-                console.error("Error handling payment_intent.canceled:", e);
-                await markWebhookFailed(e);
-                return res.status(500).send('Webhook handler error');
-            }
-        }
-    }
-
     try {
+        if (event.type === 'payment_intent.succeeded') {
+            const paymentIntent = event.data.object;
+            console.log('Webhook: PaymentIntent succeeded:', paymentIntent.id);
+            await handlePaymentIntentSucceeded(paymentIntent, idempRef);
+        }
+
+        if (event.type === 'checkout.session.completed') {
+            const session = event.data.object;
+            console.log('Webhook: Checkout session completed:', session.id);
+            await handleCheckoutSessionCompleted(stripe, session);
+        }
+
+        if (event.type === 'payment_intent.payment_failed') {
+            const pi = event.data.object;
+            console.error(`Payment failed for PI ${pi.id}, Order: ${pi.metadata?.orderId || 'N/A'}, Reason: ${pi.last_payment_error?.message || 'unknown'}`);
+            await handlePaymentIntentTerminal(pi, {
+                status: 'payment_failed',
+                failedAt: admin.firestore.FieldValue.serverTimestamp(),
+                failureReason: pi.last_payment_error?.message || 'Payment failed'
+            });
+        }
+
+        if (event.type === 'payment_intent.canceled') {
+            const pi = event.data.object;
+            console.warn(`PaymentIntent canceled for PI ${pi.id}, Order: ${pi.metadata?.orderId || 'N/A'}`);
+            await handlePaymentIntentTerminal(pi, {
+                status: 'canceled',
+                canceledAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+        }
+
         await idempRef.set({
             status: 'processed',
             processedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
-    } catch (e) {
-        console.error("Idempotence write error:", e);
-        return res.status(500).send('Webhook idempotence error');
-    }
 
-    res.json({ received: true });
+        return res.json({ received: true });
+    } catch (error) {
+        console.error(`Stripe webhook handler error (${event.type}):`, error);
+        await markWebhookFailed(error);
+        return res.status(500).send('Webhook handler error');
+    }
 });
