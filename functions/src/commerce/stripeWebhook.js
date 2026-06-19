@@ -18,6 +18,7 @@ const Stripe = require('stripe');
 
 const EXPECTED_PAYMENT_INTENT_CURRENCY = 'eur';
 const EXPECTED_PAYMENT_INTENT_ORDER_STATUS = 'pending_payment';
+const REFUND_FAILURE_STATUSES = new Set(['failed', 'canceled']);
 
 function toCents(value) {
     const numberValue = Number(value);
@@ -62,6 +63,152 @@ function validateSucceededPaymentIntent(paymentIntent, order, orderId) {
     }
 
     return errors;
+}
+
+function getOrderStatusFromRefund(refund) {
+    if (refund?.status === 'succeeded') return 'refunded';
+    if (REFUND_FAILURE_STATUSES.has(refund?.status)) return 'refund_failed';
+    return 'refund_pending';
+}
+
+function getRefundPaymentIntentId(refund) {
+    return typeof refund?.payment_intent === 'string'
+        ? refund.payment_intent
+        : refund?.payment_intent?.id || null;
+}
+
+function validateRefundForOrder(refund, order, orderId) {
+    const errors = [];
+    const expectedAmount = toCents(order.total);
+    const paymentIntentId = getRefundPaymentIntentId(refund);
+
+    if (!refund?.id) errors.push('missing_refund_id');
+    if (paymentIntentId !== order.stripePaymentIntentId) errors.push('payment_intent_mismatch');
+    if (refund?.metadata?.orderId && refund.metadata.orderId !== orderId) errors.push('metadata_order_id_mismatch');
+    if (String(refund?.currency || '').toLowerCase() !== EXPECTED_PAYMENT_INTENT_CURRENCY) errors.push('currency_mismatch');
+    if (expectedAmount === null || Number(refund?.amount || 0) < expectedAmount) errors.push('partial_refund_requires_manual_review');
+
+    return errors;
+}
+
+async function restoreStockAfterPaidRefund(transaction, order, orderId) {
+    const entries = (order.items || [])
+        .map((item) => {
+            const itemId = item.id || item.originalId;
+            const col = item.collectionName || item.collection || 'furniture';
+            if (!itemId) return null;
+            return {
+                item,
+                ref: db.doc(`artifacts/${APP_ID}/public/data/${col}/${itemId}`)
+            };
+        })
+        .filter(Boolean);
+
+    const snaps = [];
+    for (const entry of entries) {
+        snaps.push({ ...entry, snap: await transaction.get(entry.ref) });
+    }
+
+    const conflicts = [];
+    for (const { item, ref, snap } of snaps) {
+        const itemId = item.id || item.originalId || null;
+        if (!snap.exists) {
+            conflicts.push({ itemId, reason: 'missing_product' });
+            continue;
+        }
+        const currentBuyerId = snap.data()?.buyerId || null;
+        if (currentBuyerId && currentBuyerId !== order.userId) {
+            conflicts.push({ itemId, reason: 'reserved_by_other_buyer' });
+            continue;
+        }
+        const quantity = Number(item.quantity) || 1;
+        const currentStock = Number(snap.data()?.stock ?? 0);
+        transaction.update(ref, {
+            stock: currentStock + quantity,
+            sold: false,
+            refundedFromOrderId: orderId,
+            refundedAt: admin.firestore.FieldValue.serverTimestamp(),
+            soldAt: admin.firestore.FieldValue.delete(),
+            buyerId: admin.firestore.FieldValue.delete()
+        });
+    }
+
+    return conflicts;
+}
+
+async function findOrderRefForRefund(refund) {
+    const orderId = refund?.metadata?.orderId || null;
+    if (orderId) return db.collection('orders').doc(orderId);
+
+    const paymentIntentId = typeof refund?.payment_intent === 'string'
+        ? refund.payment_intent
+        : refund?.payment_intent?.id;
+    if (!paymentIntentId) return null;
+
+    const snap = await db.collection('orders')
+        .where('stripePaymentIntentId', '==', paymentIntentId)
+        .limit(1)
+        .get();
+    if (snap.empty) return null;
+    return snap.docs[0].ref;
+}
+
+async function handleStripeRefundEvent(refund) {
+    const orderRef = await findOrderRefForRefund(refund);
+    if (!orderRef) {
+        console.warn('Stripe refund event without matching order:', refund?.id);
+        return;
+    }
+
+    await db.runTransaction(async (transaction) => {
+        const orderSnap = await transaction.get(orderRef);
+        if (!orderSnap.exists) return;
+
+        const order = orderSnap.data();
+        const orderId = orderSnap.id;
+        const refundPaymentIntentId = getRefundPaymentIntentId(refund);
+        if (refundPaymentIntentId !== order.stripePaymentIntentId) {
+            console.warn('Stripe refund event ignored: payment intent mismatch', {
+                refundId: refund?.id,
+                orderId,
+                refundPaymentIntentId,
+                orderPaymentIntentId: order.stripePaymentIntentId
+            });
+            return;
+        }
+
+        let nextStatus = getOrderStatusFromRefund(refund);
+        const refundValidationErrors = validateRefundForOrder(refund, order, orderId);
+        let failureReason = refund.failure_reason || null;
+
+        if (nextStatus === 'refunded' && refundValidationErrors.length > 0) {
+            nextStatus = 'refund_failed';
+            failureReason = failureReason || refundValidationErrors.join(',');
+        }
+
+        let stockRestoreConflicts = [];
+        if (nextStatus === 'refunded' && order.stockRestoredAfterRefund !== true) {
+            stockRestoreConflicts = await restoreStockAfterPaidRefund(transaction, order, orderId);
+        }
+        const stockRestored = nextStatus === 'refunded' && stockRestoreConflicts.length === 0;
+
+        transaction.update(orderRef, {
+            status: nextStatus,
+            refundStatus: refund.status || null,
+            stripeRefundId: refund.id || order.stripeRefundId || null,
+            refundAmount: refund.amount || order.refundAmount || null,
+            refundCurrency: refund.currency || order.refundCurrency || null,
+            refundFailureReason: failureReason,
+            refundValidationError: refundValidationErrors.length > 0 ? refundValidationErrors.join(',') : admin.firestore.FieldValue.delete(),
+            refundUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            refundedAt: nextStatus === 'refunded'
+                ? (order.refundedAt || admin.firestore.FieldValue.serverTimestamp())
+                : admin.firestore.FieldValue.delete(),
+            stockRestoredAfterRefund: stockRestored || order.stockRestoredAfterRefund === true,
+            stockRestoreConflict: stockRestoreConflicts.length > 0,
+            stockRestoreConflictDetails: stockRestoreConflicts.length > 0 ? stockRestoreConflicts : admin.firestore.FieldValue.delete()
+        });
+    });
 }
 
 async function restoreReservedStockForUnpaidOrder(transaction, orderRef, order, nextOrderFields) {
@@ -398,6 +545,25 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
                 status: 'canceled',
                 canceledAt: admin.firestore.FieldValue.serverTimestamp()
             });
+        }
+
+        if (event.type === 'refund.created' || event.type === 'refund.updated' || event.type === 'refund.failed') {
+            const refund = event.data.object;
+            console.log('Webhook: Refund event:', event.type, refund.id, refund.status);
+            await handleStripeRefundEvent(refund);
+        }
+
+        if (event.type === 'charge.refunded') {
+            const charge = event.data.object;
+            const refunds = Array.isArray(charge.refunds?.data) ? charge.refunds.data : [];
+            const latestRefund = refunds.sort((a, b) => Number(b.created || 0) - Number(a.created || 0))[0];
+            if (latestRefund) {
+                console.log('Webhook: Charge refunded:', charge.id, latestRefund.id, latestRefund.status);
+                await handleStripeRefundEvent({
+                    ...latestRefund,
+                    payment_intent: latestRefund.payment_intent || charge.payment_intent
+                });
+            }
         }
 
         await idempRef.set({

@@ -12,7 +12,10 @@ let appCheckPromise = null;
 const ensureAppCheck = () => {
   if (typeof window === 'undefined') return Promise.resolve(null);
 
-  if ((process.env.NODE_ENV !== 'production') || window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.') || window.location.hostname === '127.0.0.1') {
+  if (
+    typeof window.FIREBASE_APPCHECK_DEBUG_TOKEN === 'undefined' &&
+    ((process.env.NODE_ENV !== 'production') || window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.') || window.location.hostname === '127.0.0.1')
+  ) {
     window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
   }
 

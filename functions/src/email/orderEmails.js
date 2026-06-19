@@ -10,9 +10,10 @@ const nodemailer = require('nodemailer');
 const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { GMAIL_EMAIL, GMAIL_PASSWORD } = require('../../helpers/secrets');
 const { getSiteUrl } = require('../../helpers/config');
-const { checkIsAdmin } = require('../../helpers/security');
+const { checkIsAdmin, normalizeFirestoreId } = require('../../helpers/security');
 
 const db = admin.firestore();
+const REFUND_EMAIL_STATUSES = new Set(['refund_pending', 'refunded', 'refund_failed']);
 
 function escapeHtml(unsafe) {
     if (!unsafe || typeof unsafe !== 'string') return unsafe;
@@ -143,6 +144,40 @@ async function sendNewOrderEmails(orderId, order) {
     });
 }
 
+function formatRefundAmount(order) {
+    const amount = Number(order.refundAmount);
+    if (Number.isFinite(amount) && amount > 0) {
+        const currency = String(order.refundCurrency || 'eur').toUpperCase();
+        return `${(amount / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+    }
+    const total = Number(order.total);
+    return Number.isFinite(total) ? `${total.toLocaleString('fr-FR')} EUR` : 'montant de la commande';
+}
+
+function getRefundEmailCopy(order) {
+    if (order.status === 'refunded') {
+        return {
+            subject: 'Votre remboursement est confirme',
+            title: 'Remboursement confirme',
+            body: 'Stripe a confirme le remboursement. Selon votre banque, le credit peut encore prendre quelques jours ouvrables avant d apparaitre sur votre compte.'
+        };
+    }
+
+    if (order.status === 'refund_failed') {
+        return {
+            subject: 'Information sur votre remboursement',
+            title: 'Remboursement en verification',
+            body: 'Une verification est necessaire cote atelier ou cote Stripe. Nous revenons vers vous des que la situation est debloquee.'
+        };
+    }
+
+    return {
+        subject: 'Votre remboursement a ete initie',
+        title: 'Remboursement initie',
+        body: 'Le remboursement a ete lance via Stripe sur le moyen de paiement initial. Le credit apparait generalement sous 5 a 10 jours ouvrables selon votre banque.'
+    };
+}
+
 exports.sendTestEmail = functions.runWith({ secrets: [GMAIL_EMAIL, GMAIL_PASSWORD] }).https.onCall(async (data, context) => {
     checkIsAdmin(context);
 
@@ -171,6 +206,88 @@ exports.sendTestEmail = functions.runWith({ secrets: [GMAIL_EMAIL, GMAIL_PASSWOR
     });
 
     return { success: true, to: recipient };
+});
+
+exports.sendRefundStatusEmailAdmin = functions.runWith({ secrets: [GMAIL_EMAIL, GMAIL_PASSWORD] }).https.onCall(async (data, context) => {
+    checkIsAdmin(context);
+    const orderId = normalizeFirestoreId(data?.orderId, 'ID commande');
+    const orderRef = db.collection('orders').doc(orderId);
+    const snap = await orderRef.get();
+    if (!snap.exists) {
+        throw new functions.https.HttpsError('not-found', 'Commande introuvable.');
+    }
+
+    const order = snap.data();
+    if (!REFUND_EMAIL_STATUSES.has(order.status)) {
+        throw new functions.https.HttpsError('failed-precondition', 'La commande n est pas dans un statut de remboursement.');
+    }
+    if (!order.stripeRefundId && order.status !== 'refund_failed') {
+        throw new functions.https.HttpsError('failed-precondition', 'Aucune reference refund Stripe disponible.');
+    }
+    const force = data?.force === true;
+    if (!force
+        && order.refundEmailProof?.sent === true
+        && order.refundEmailProof?.status === order.status
+        && (order.refundEmailProof?.stripeRefundId || null) === (order.stripeRefundId || null)) {
+        return {
+            success: true,
+            skipped: true,
+            to: order.refundEmailProof.to || order.userEmail || order.shipping?.email || null,
+            status: order.status || null
+        };
+    }
+
+    const clientEmail = order.userEmail || order.shipping?.email;
+    if (!clientEmail) {
+        throw new functions.https.HttpsError('failed-precondition', 'Aucun email client disponible pour cette commande.');
+    }
+
+    const adminEmail = GMAIL_EMAIL.value();
+    const gmailPassword = GMAIL_PASSWORD.value();
+    if (!adminEmail || !gmailPassword) {
+        throw new functions.https.HttpsError('failed-precondition', 'Configuration email incomplete.');
+    }
+
+    const copy = getRefundEmailCopy(order);
+    const transporter = createTransporter();
+    const refundId = order.stripeRefundId ? `<p style="color:#78716c;font-size:12px;">Reference Stripe : ${escapeHtml(order.stripeRefundId)}</p>` : '';
+    const itemsHtml = (order.items || []).map(item =>
+        `<li>${item.quantity || 1}x <b>${escapeHtml(item.name || "Article")}</b></li>`
+    ).join('');
+
+    await transporter.sendMail({
+        from: `Seconde Vie <${adminEmail}>`,
+        to: clientEmail,
+        subject: copy.subject,
+        html: `
+            <div style="font-family: Arial, sans-serif; color: #1c1917; max-width: 620px;">
+                <h1 style="margin-bottom: 8px;">${copy.title}</h1>
+                <p>Bonjour ${escapeHtml(order.shipping?.fullName || '')},</p>
+                <p>${copy.body}</p>
+                <div style="background:#f5f5f4;border:1px solid #e7e5e4;padding:18px;border-radius:12px;margin:20px 0;">
+                    <p style="margin:0 0 8px;"><b>Commande :</b> #${escapeHtml(orderId.slice(0, 8))}</p>
+                    <p style="margin:0 0 8px;"><b>Montant rembourse :</b> ${formatRefundAmount(order)}</p>
+                    ${itemsHtml ? `<ul style="margin:10px 0 0;padding-left:20px;">${itemsHtml}</ul>` : ''}
+                    ${refundId}
+                </div>
+                <p>Si votre banque affiche encore le debit pendant quelques jours, c est normal pendant le traitement interbancaire.</p>
+                <p style="margin-top:24px;">A tres vite,<br/>L equipe Seconde Vie</p>
+            </div>
+        `
+    });
+
+    await orderRef.set({
+        refundEmailProof: {
+            to: clientEmail,
+            sent: true,
+            status: order.status || null,
+            stripeRefundId: order.stripeRefundId || null,
+            sentAt: admin.firestore.FieldValue.serverTimestamp()
+        },
+        refundEmailProofUpdatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    return { success: true, to: clientEmail, status: order.status || null };
 });
 
 // --- TRIGGER: Nouvelle Commande ---

@@ -15,6 +15,7 @@ import {
   Mail,
   Palette,
   RefreshCw,
+  RotateCcw,
   Share2,
   Users,
   Package,
@@ -29,6 +30,7 @@ import { getProductUrl } from '../../src/utils/slug';
 const AdminDashboard = React.lazy(() => import('../../src/kit/admin/AdminDashboard'));
 const AdminHomepage = React.lazy(() => import('../../src/kit/admin/AdminHomepage'));
 const AdminOrders = React.lazy(() => import('../../src/kit/admin/AdminOrders'));
+const AdminReturns = React.lazy(() => import('../../src/kit/admin/AdminReturns'));
 const AdminLivraison = React.lazy(() => import('../../src/kit/admin/AdminLivraison'));
 const AdminStudio = React.lazy(() => import('../../src/kit/admin/AdminStudio'));
 const AdminForm = React.lazy(() => import('../../src/kit/admin/AdminForm'));
@@ -50,6 +52,7 @@ const TAB_ICONS = {
   studio: Palette,
   homepage: Palette,
   orders: Package,
+  returns: RotateCcw,
   users: Users,
   ip_manager: Globe,
   seo: Share2,
@@ -272,6 +275,8 @@ function AdminContent({ initialItems = [] }) {
             <AdminHomepage darkMode={darkMode} />
           ) : adminCollection === 'orders' ? (
             <AdminOrders darkMode={darkMode} />
+          ) : adminCollection === 'returns' ? (
+            <AdminReturns darkMode={darkMode} />
           ) : adminCollection === 'livraison' ? (
             <AdminLivraison darkMode={darkMode} />
           ) : adminCollection === 'studio' ? (
@@ -334,4 +339,3 @@ function AdminContent({ initialItems = [] }) {
 export default function AdminAppIsland(props) {
   return <AdminContent {...props} />;
 }
-

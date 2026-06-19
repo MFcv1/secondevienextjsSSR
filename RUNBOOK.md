@@ -185,6 +185,15 @@ payment_intent.payment_failed
 payment_intent.canceled
 ```
 
+Events supplementaires a ajouter au webhook Stripe pour le suivi temps reel des remboursements :
+
+```text
+refund.created
+refund.updated
+refund.failed
+charge.refunded
+```
+
 Etat des handlers :
 
 - `payment_intent.succeeded` : handler actif. Valide statut, montant, devise, PaymentIntent id, metadata, statut commande et stock reserve avant de passer `paid`.
@@ -192,6 +201,8 @@ Etat des handlers :
 - `payment_intent.canceled` : handler actif. Passe la commande en `canceled`, restaure le stock si `stockReserved === true`, puis marque `stockReserved=false`.
 - `checkout.session.completed` : handler legacy actif pour retrocompatibilite Stripe Checkout historique.
 - `checkout.session.expired` : handler actif. Journalise l'expiration et, si une commande legacy est referencee en metadata, restaure une commande non payee avec `cancelReason=checkout_session_expired`.
+- `refund.created` / `refund.updated` / `refund.failed` : handler actif. Relie le refund a la commande, met a jour `refundStatus`, et restaure le stock seulement si le remboursement complet reussit.
+- `charge.refunded` : handler fallback actif pour les endpoints Stripe qui envoient l'objet Charge rembourse.
 
 Preuves sandbox recentes :
 
@@ -204,7 +215,9 @@ Decision metier 2026-06-19 :
 
 - Une commande Stripe deja payee ne s'annule pas librement cote client.
 - Le back-office expose un seul flux : `Rembourser et remettre en vente`.
+- La section admin `Retours` centralise les commandes Stripe remboursables, les refunds en attente, la synchronisation Stripe et l'email client.
 - Si Stripe accepte le remboursement, la commande passe `refunded` et le stock est restaure automatiquement.
+- Si un refund est partiel ou ambigu, le stock n'est pas restaure automatiquement et la commande passe en verification.
 - L'espace client indique un remboursement initie/confirme et annonce un delai indicatif Stripe d'environ 5 a 10 jours ouvrables selon la banque.
 - Reference Stripe : `https://docs.stripe.com/refunds`.
 

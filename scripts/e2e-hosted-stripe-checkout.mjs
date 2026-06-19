@@ -949,7 +949,10 @@ try {
 
   await waitForSettled(page);
   const checkoutReady = await fillCheckout(page);
-  if (!checkoutReady) {
+  if (sendOtpOnly) {
+    result.status = result.guestOtp?.sent ? 'otp-sent-awaiting-code' : 'otp-smoke-complete';
+    result.finalUrl = page.url();
+  } else if (!checkoutReady) {
     result.status = result.guestOtp?.sent ? 'otp-sent-awaiting-code' : 'otp-code-required';
     result.finalUrl = page.url();
   } else {

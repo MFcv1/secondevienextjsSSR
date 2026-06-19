@@ -28,6 +28,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- DEAD_CODE_AUDIT.md : audit multi-agent code vivant/mort, candidats suppression et assets a archiver
 |-- TODO.md : checklist Phase 2 infra prod puis Phase 3 hydratation/perf
 |-- E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md : recap preuve paiement sandbox, compte admin test `loa.gto15@gmail.com`, bugs E2E et roadmap tests client/back-office
+|-- E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md : plan d'execution multi-agents pour debloquer App Check, prouver achat invite neuf puis refund admin sandbox
 |-- INFRA_PROD_PHASE2_REPORT_2026-06-14.md : rapport infra prod Phase 2, decisions env/secrets/revalidation/Stripe et risques restants
 |-- MENU_NAVIGATION_CATEGORY_LOADING_REPORT_2026-06-16.md : rapport navigation menu, prefetch cible, suppression loading categorie et deploy App Hosting sandbox
 |-- AI_QUOTE_ASSISTANT_MVP.md : cadrage MVP assistant IA devis, base metier, garde-fous OpenAI et integration admin
@@ -47,7 +48,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- deploy : dashboard npm de deploiement Firebase/App Hosting sandbox
 |-- src
 |   |-- index.css
-|   |-- kit/admin : back-office, analytics, commandes, SEO, users, exports CSV, docs/etudes techniques admin
+|   |-- kit/admin : back-office, analytics, commandes, retours/remboursements Stripe, SEO, users, exports CSV, docs/etudes techniques admin
 |   |-- kit/commerce : panier, checkout, login, commandes client, regle isPurchasable
 |   |-- kit/marketplace : galerie serveur, SEO visible, pages categorie/produit, ilots produit/lightbox, footer mobile, panier/cartes, devis ServerView/FormIsland, wishlist
 |   |-- kit/vitrine : vue serveur et iles fines de la page /a-propos native Next

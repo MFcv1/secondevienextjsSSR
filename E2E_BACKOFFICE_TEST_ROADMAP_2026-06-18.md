@@ -250,3 +250,111 @@ Get-ChildItem logs -Filter 'hosted-stripe-e2e-*.json' |
 4. Preferer les alias Gmail pour eviter le rate-limit OTP.
 5. Apres chaque run paye, interroger `e2eCheckoutProof` et archiver le JSON de preuve dans `logs/`.
 6. Mettre a jour ce fichier avec chaque bug rencontre, correction appliquee et preuve obtenue.
+
+## Reprise Codex - 2026-06-19 refund/admin Retours
+
+- Nouveau run achat invite tente sur App Hosting sandbox avec alias `loa.gto15+sv-refund-...@gmail.com`.
+- Resultat: OTP invite envoye et valide, checkout rempli, produit `Table`, CGV cochees, bouton paiement visible, mais le run echoue avant Stripe Elements: `logs/hosted-stripe-e2e-2026-06-18T23-39-26-602Z.json`.
+- Symptome principal: App Check renvoie `403` puis throttle 24h dans la session Playwright; aucun `E2E_APPCHECK_DEBUG_TOKEN` local trouve dans `logs/e2e-mail.env` / `logs/e2e-admin.env`.
+- Screenshot echec achat: `logs/hosted-stripe-e2e-2026-06-18T23-39-26-602Z.png`.
+- Audit subagents applique:
+  - validation stricte refund/commande/PaymentIntent/montant/devise avant remise en stock;
+  - blocage des refunds partiels/ambigus en verification;
+  - garde conflit stock si le produit n'appartient plus a la commande;
+  - `sendRefundStatusEmailAdmin` borne aux statuts refund et dedoublonne les emails;
+  - admin commandes ne propose plus `Expediee/Livree` pour une commande Stripe `pending_payment`;
+  - admin Retours permet de reessayer un `refund_failed` sans `stripeRefundId`;
+  - succes paiement propose maintenant `Voir ma commande`;
+  - retour Stripe echoue/annule affiche un message au lieu de nettoyer l'URL silencieusement;
+  - espace client affiche une ligne avoir/remboursement dans les factures refund.
+- Smoke local `http://127.0.0.1:3011` OK:
+  - `/admin` -> onglet `Retours` visible, stats remboursements et doc simple visibles: `logs/admin-returns-local-3011.png`;
+  - `/checkout?order_success=true&order_id=test&redirect_status=failed` affiche `Paiement annule ou non finalise...`: `logs/checkout-return-failed-local-3011.png`.
+- Deploiement sandbox effectue:
+  - Functions codebase `main` redeploye apres durcissement refund/webhook/email;
+  - App Hosting `secondevie-next-sandbox` redeploye apres ajout de l'onglet `Retours` et correctifs UX checkout/mes-commandes.
+- Test refund admin reel via page `Retours` locale branchee sur Functions sandbox:
+  - commande cible: `gLY7sKXttufADjFlsgZt`;
+  - PaymentIntent: `pi_3TjjV5RdWb0VNdZq0qQ6TLtm`;
+  - produit: `Paire de chevets`;
+  - refund Stripe cree: `re_3TjjV5RdWb0VNdZq0nzjphbf`;
+  - statut UI apres action: `Remboursee`, `Stock remis`;
+  - sync Stripe: `succeeded`;
+  - email client refund envoye a `loa.gto15+sv-e2e-20260618191243@gmail.com`;
+  - screenshot apres email: `logs/admin-returns-gly-after-email-local-3011.png`.
+- Incoherence UX rencontree puis corrigee: apres remboursement, la liste globale pouvait faire cliquer `Sync Stripe` / `Email client` sur une autre commande remboursee plus recente. La page filtre maintenant automatiquement sur la commande traitee apres refund/sync/email.
+- Controle hosted post-deploiement OK:
+  - `/admin` sandbox affiche l'onglet `Retours`;
+  - page `Retours & remboursements` chargee et visible: `logs/admin-returns-hosted-open-after-deploy.png`.
+- Validations lancees: `node --check` sur `refundOrder.js`, `stripeWebhook.js`, `orderEmails.js`; `git diff --check`; `npm run lint`; `npm run build`.
+- Non fait: creation d'une nouvelle commande payee dans ce run puis refund de cette meme commande. Bloque par App Check debug/throttle pendant l'E2E heberge.
+
+## Reprise Codex - 2026-06-19 execution roadmap refund
+
+- Roadmap d'execution creee et utilisee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
+- Preconditions locales verifiees sans afficher les secrets: `logs/e2e-mail.env`, `logs/e2e-admin.env`, `logs/e2e-proof-token.txt` existent et `logs/` est ignore par Git.
+- Verification script E2E: `scripts/e2e-hosted-stripe-checkout.mjs` injecte `E2E_APPCHECK_DEBUG_TOKEN` via `context.addInitScript` avant `page.goto`.
+- Run court App Check/OTP lance avec alias `loa.gto15+sv-appcheck-...@gmail.com`:
+  - artefact: `logs/hosted-stripe-e2e-2026-06-19T13-28-47-295Z.json`;
+  - screenshot echec: `logs/hosted-stripe-e2e-2026-06-19T13-28-47-295Z.png`;
+  - OTP invite envoye et valide;
+  - le SDK Firebase a genere un debug token App Check;
+  - le token a ete ajoute localement dans `logs/e2e-mail.env` sous `E2E_APPCHECK_DEBUG_TOKEN`, sans affichage de la valeur.
+- Blocage App Check restant:
+  - tentative API `debugTokens.create` avec `matthis.fradin2@gmail.com`: `403`;
+  - tentative API `debugTokens.create` avec `jardinchawi@gmail.com`: `403`;
+  - tentative `exchangeDebugToken` du token local: `403`;
+  - conclusion: le token local doit encore etre enregistre dans Firebase Console App Check sandbox par un compte ayant les droits App Check Admin.
+- Correctif harnais E2E applique: `E2E_SEND_OTP_ONLY=true` s'arrete maintenant avant Stripe meme si le checkout devient pret, pour eviter les smokes destructifs.
+- Stripe webhook sandbox aligne via API Stripe test, sans afficher la cle:
+  - endpoint confirme: `https://us-central1-secondevienextjsssr.cloudfunctions.net/stripeWebhook`;
+  - statut endpoint: `enabled`;
+  - events actifs apres mise a jour: `charge.refunded`, `checkout.session.completed`, `checkout.session.expired`, `payment_intent.canceled`, `payment_intent.payment_failed`, `payment_intent.succeeded`, `refund.created`, `refund.failed`, `refund.updated`.
+- App Check debug token enregistre manuellement dans Firebase Console par Matthieu, puis smoke OTP/App Check relance:
+  - artefact: `logs/hosted-stripe-e2e-2026-06-19T13-53-21-933Z.json`;
+  - resultat: `otp-sent-awaiting-code`, OTP invite valide, pas de `403` App Check.
+- Achat invite neuf complet OK:
+  - artefact: `logs/hosted-stripe-e2e-2026-06-19T13-54-24-129Z.json`;
+  - alias: `loa.gto15+sv-refund-20260619155423@gmail.com`;
+  - commande: `9RkYKEaaRCrBWVxU6ALb`;
+  - produit: `Paire de chevets`;
+  - PaymentIntent: `pi_3Tk2slRdWb0VNdZq0gTPdTnK`;
+  - statut commande Firestore: `paid`;
+  - webhook paiement: `evt_3Tk2slRdWb0VNdZq0RwFlnhs`, idempotence `processed`;
+  - emails client/admin envoyes;
+  - stock avant/apres: `1 -> 0`, produit vendu/reserve pour la commande.
+- Refund de cette meme commande effectue via callables admin sandbox:
+  - `refundOrderAdmin`, `syncRefundStatusAdmin`, `sendRefundStatusEmailAdmin`;
+  - Refund Stripe: `re_3Tk2slRdWb0VNdZq09JdFKvU`;
+  - resultat refund: `succeeded`;
+  - commande: `status=refunded`, `refundStatus=succeeded`, `stockRestoredAfterRefund=true`;
+  - produit `Paire de chevets`: `stock=1`, `sold=false`, `refundedFromOrderId=9RkYKEaaRCrBWVxU6ALb`;
+  - email client refund envoye a l'alias de commande.
+- Webhook refund prouve:
+  - logs Functions `stripeWebhook`: `PaymentIntent succeeded`, `refund.created`, `refund.updated`;
+  - event `refund.created`: `evt_3Tk2slRdWb0VNdZq0fdyRupx`, idempotence `processed`;
+  - event `refund.updated`: `evt_3Tk2slRdWb0VNdZq0PpfGT28`, idempotence `processed`;
+  - event Stripe observe `charge.refund.updated`: `evt_3Tk2slRdWb0VNdZq0mCjehbw`, pas de doc idempotence car le handler metier actuel ecoute `charge.refunded` comme fallback.
+- Non fait dans cette relance: verification visuelle UI hebergee de l'onglet `Retours` et verification UI `/mes-commandes` apres refund. Les preuves serveur/admin callable sont OK.
+
+## Reprise Codex - 2026-06-19 preuves UI refund
+
+- Browser plugin tente pour la QA visuelle, mais l'instance `iab` etait indisponible; fallback Playwright headless utilise.
+- Admin heberge `/admin` -> onglet `Retours` prouve visuellement:
+  - screenshot: `logs/ui-admin-returns-after-sync-email-2026-06-19.png`;
+  - proof JSON: `logs/ui-admin-returns-proof-2026-06-19.json`;
+  - filtre conserve sur `9RkYKEaaRCrBWVxU6ALb`;
+  - commande visible avec email client, produit `Paire de chevets`, statut `Remboursee`, badge `Stock remis`, PaymentIntent et Refund `re_3Tk2slRdWb0VNdZq09JdFKvU`;
+  - boutons `Sync Stripe` et `Email client` visibles;
+  - `Sync Stripe` et `Email client` ont ete cliques dans l'UI hebergee; le filtre est reste sur la commande.
+- Nuance admin: le bouton `Rembourser` n'a pas ete clique dans l'UI hebergee pendant cette relance car la commande avait deja ete remboursee par les callables admin sandbox; l'UI ne propose donc plus l'action de refund, ce qui est coherent.
+- Espace client heberge `/mes-commandes` prouve visuellement:
+  - screenshot: `logs/ui-client-orders-refunded-2026-06-19.png`;
+  - proof JSON: `logs/ui-client-orders-refunded-proof-2026-06-19.json`;
+  - connexion client effectuee pour l'alias `loa.gto15+sv-refund-20260619155423@gmail.com`;
+  - commande affichee comme `Commande n°CMD-9RKYKEAARC`;
+  - statut visible `Remboursee`;
+  - texte visible: remboursement confirme et credit bancaire sous quelques jours ouvrables;
+  - facture visible avec `Avoir / remboursement: 140,00 €`;
+  - aucun bouton `Annuler` libre detecte.
+- Console Playwright sur les preuves finales: pas d'erreur applicative retenue apres filtrage des bruits externes non bloquants.

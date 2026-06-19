@@ -108,6 +108,7 @@ export const KIT_CONFIG = {
     { id: 'studio',           label: 'Studio'      },
     { id: 'homepage',         label: 'Personnalisation' },
     { id: 'orders',           label: 'Ventes'      },
+    { id: 'returns',          label: 'Retours'     },
     { id: 'livraison',        label: 'Livraison'   },
     { id: 'users',            label: 'Clients'     },
     { id: 'ip_manager',       label: 'Sécurité'    },

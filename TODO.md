@@ -205,11 +205,59 @@ Avancement 2026-06-18:
   - [x] restaurer automatiquement le stock apres remboursement reussi;
   - [x] verifier dans Stripe Dashboard/API que le PaymentIntent porte le remboursement.
 - [x] Simplifier le back-office vers un flux unique `Rembourser et remettre en vente`.
+- [x] Creer une section admin dediee `Retours` pour initier les refunds, synchroniser Stripe et informer le client.
+- [x] Ajouter une synchro serveur `syncRefundStatusAdmin` pour relire le statut Refund Stripe et remettre le stock si le refund reussit.
+- [x] Ajouter la reception webhook `refund.*` / `charge.refunded` pour suivre les refunds Stripe hors back-office.
 - [x] Ajouter un brouillon CGV/retours a faire valider par juriste: `docs/CGV_RETOURS_DRAFT_2026-06-19.md`.
 - [x] Verifier et aligner les events webhook Stripe configures:
   - [x] si `payment_intent.canceled` est gere dans le code, l'ajouter dans le dashboard Stripe;
   - [x] si `checkout.session.expired` reste configure, ajouter un handler ou le retirer;
   - [x] documenter pour chaque event configure: handler, effet attendu, test de preuve.
+
+### P0 - Reprise demain: debloquer E2E refund complet
+
+Blocage observe le 2026-06-19 pendant le run achat -> refund:
+
+Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
+
+- [ ] Debloquer App Check E2E sandbox:
+  - [x] generer/recuperer un debug token App Check Web pour Playwright;
+  - [x] l'enregistrer dans Firebase Console App Check sandbox;
+  - [x] ajouter localement `E2E_APPCHECK_DEBUG_TOKEN` dans un fichier ignore Git ou une procedure claire;
+  - [x] verifier que `scripts/e2e-hosted-stripe-checkout.mjs` injecte bien le token avant initialisation Firebase;
+  - [x] relancer l'achat invite E2E et verifier disparition des `AppCheck 403` / throttle 24h.
+- [x] Ajouter dans Stripe Dashboard sandbox les events refund suivis par le webhook:
+  - [x] `refund.created`;
+  - [x] `refund.updated`;
+  - [x] `refund.failed`;
+  - [x] `charge.refunded` en fallback si utile avec la version API/endpoint actuelle.
+- [x] Relancer un parcours complet neuf:
+  - [x] achat invite avec alias Gmail;
+  - [x] PaymentIntent `succeeded`;
+  - [x] commande Firestore `paid`;
+  - [x] webhook paiement `processed`;
+  - [x] email commande client/admin;
+  - [x] stock produit passe vendu/reserve.
+- [ ] Depuis l'admin sandbox heberge:
+  - [x] ouvrir `Retours`;
+  - [x] retrouver la nouvelle commande payee/remboursee;
+  - [ ] cliquer `Rembourser`;
+  - [x] verifier `refundId`, statut `refunded`, `Stock remis`;
+  - [x] cliquer `Sync Stripe`;
+  - [x] envoyer `Email client`;
+  - [x] verifier que la page filtre bien sur la commande traitee apres chaque action.
+- [x] Verifier l'espace client apres refund:
+  - [x] la commande affiche `Remboursee` ou `Remboursement en cours`;
+  - [x] le texte annonce le delai bancaire Stripe;
+  - [x] la section factures affiche la ligne `Avoir / remboursement`;
+  - [x] aucune annulation libre n'est proposee.
+- [ ] Verifier les preuves et logs:
+  - [x] nouveau JSON `logs/hosted-stripe-e2e-*.json`;
+  - [x] screenshot checkout/succes/admin/client si utile;
+  - [x] logs `stripeWebhook` pour paiement + refund;
+  - [x] Firestore order: `refundStatus`, `stripeRefundId`, `stockRestoredAfterRefund`, `refundEmailProof`;
+  - [x] Stripe Dashboard/API: refund visible et events webhook traites.
+- [x] Mettre a jour `E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md` avec les preuves finales.
 
 ### P0 - Reservation stock et commandes orphelines
 

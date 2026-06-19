@@ -14,7 +14,7 @@ const { cleanupPendingPayments } = require('./src/commerce/cleanupPendingPayment
 const { e2eCheckoutProof } = require('./src/commerce/e2eCheckoutProof');
 const { e2eStripeHardeningProof } = require('./src/commerce/e2eStripeHardeningProof');
 const { getOrderStatusClient } = require('./src/commerce/orderStatus');
-const { refundOrderAdmin } = require('./src/commerce/refundOrder');
+const { refundOrderAdmin, syncRefundStatusAdmin } = require('./src/commerce/refundOrder');
 
 exports.createOrder = createOrder;
 exports.stripeWebhook = stripeWebhook;
@@ -24,6 +24,7 @@ exports.e2eCheckoutProof = e2eCheckoutProof;
 exports.e2eStripeHardeningProof = e2eStripeHardeningProof;
 exports.getOrderStatusClient = getOrderStatusClient;
 exports.refundOrderAdmin = refundOrderAdmin;
+exports.syncRefundStatusAdmin = syncRefundStatusAdmin;
 
 // ── AUTH ──────────────────────────────────────────────────
 const { grantAdminOnAuth } = require('./src/auth/grantAdmin');
@@ -53,11 +54,12 @@ exports.generatePasskeyAuthenticationOptions = generatePasskeyAuthenticationOpti
 exports.verifyPasskeyAuthentication = verifyPasskeyAuthentication;
 
 // ── EMAIL (Triggers) ─────────────────────────────────────
-const { onOrderCreated, onOrderUpdated, sendTestEmail } = require('./src/email/orderEmails');
+const { onOrderCreated, onOrderUpdated, sendTestEmail, sendRefundStatusEmailAdmin } = require('./src/email/orderEmails');
 
 exports.onOrderCreated = onOrderCreated;
 exports.onOrderUpdated = onOrderUpdated;
 exports.sendTestEmail = sendTestEmail;
+exports.sendRefundStatusEmailAdmin = sendRefundStatusEmailAdmin;
 
 // ── ANALYTICS ────────────────────────────────────────────
 const { initLiveSession, syncSession, syncSessionBeacon, deleteSession, clearAllSessions, clearAllAnalytics, cleanupExpiredAnalytics } = require('./src/analytics/sessions');

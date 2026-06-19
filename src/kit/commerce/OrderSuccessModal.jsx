@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowRight, CheckCircle2, Clock3, ReceiptText, ShoppingBag } from 'lucide-react';
 
-const OrderSuccessModal = ({ onClose, paymentMethod }) => {
+const OrderSuccessModal = ({ onClose, onViewOrders, paymentMethod }) => {
     const isStripe = paymentMethod === 'stripe_elements';
     const steps = isStripe
         ? [
@@ -69,13 +69,21 @@ const OrderSuccessModal = ({ onClose, paymentMethod }) => {
                         </p>
                     </div>
 
-                    <button
-                        onClick={onClose}
-                        className="mt-6 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#1d1d1f] px-6 text-[14px] font-semibold text-white transition-colors hover:bg-black focus:outline-none focus-visible:ring-4 focus-visible:ring-black/15 active:scale-[0.99]"
-                    >
-                        Retour a la galerie
-                        <ArrowRight size={17} strokeWidth={1.8} />
-                    </button>
+                    <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                        <button
+                            onClick={onViewOrders}
+                            className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-[#1d1d1f] px-6 text-[14px] font-semibold text-white transition-colors hover:bg-black focus:outline-none focus-visible:ring-4 focus-visible:ring-black/15 active:scale-[0.99]"
+                        >
+                            Voir ma commande
+                            <ArrowRight size={17} strokeWidth={1.8} />
+                        </button>
+                        <button
+                            onClick={onClose}
+                            className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full border border-black/[0.08] bg-white px-6 text-[14px] font-semibold text-[#1d1d1f] transition-colors hover:bg-[#f5f5f7] focus:outline-none focus-visible:ring-4 focus-visible:ring-black/10 active:scale-[0.99]"
+                        >
+                            Retour a la galerie
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -17,6 +17,7 @@ function CheckoutPageContent() {
   const [darkMode, setDarkMode] = useState(false);
   const [showOrderSuccess, setShowOrderSuccess] = useState(false);
   const [orderSuccessMethod, setOrderSuccessMethod] = useState('');
+  const [checkoutReturnNotice, setCheckoutReturnNotice] = useState('');
   const handledStripeReturnRef = useRef(false);
 
   useEffect(() => {
@@ -100,6 +101,11 @@ function CheckoutPageContent() {
     window.location.href = '/galerie';
   };
 
+  const viewOrderAfterSuccess = () => {
+    setShowOrderSuccess(false);
+    window.location.href = '/mes-commandes';
+  };
+
   useEffect(() => {
     if (handledStripeReturnRef.current || typeof window === 'undefined') return undefined;
 
@@ -120,6 +126,7 @@ function CheckoutPageContent() {
     let cancelled = false;
 
     if (redirectStatus && !['succeeded', 'processing'].includes(redirectStatus)) {
+      setCheckoutReturnNotice('Paiement annule ou non finalise. Votre panier est conserve, vous pouvez reprendre le paiement.');
       window.history.replaceState({}, '', '/checkout');
       return undefined;
     }
@@ -141,6 +148,7 @@ function CheckoutPageContent() {
           unsubscribe?.();
           await clearCartAfterOrder();
           setOrderSuccessMethod('stripe_elements');
+          setCheckoutReturnNotice('');
           setShowOrderSuccess(true);
           window.history.replaceState({}, '', '/checkout');
         }, (error) => {
@@ -166,6 +174,11 @@ function CheckoutPageContent() {
 
   return (
     <>
+      {checkoutReturnNotice ? (
+        <div className="fixed left-1/2 top-24 z-[250] w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-800 shadow-xl shadow-amber-200/30">
+          {checkoutReturnNotice}
+        </div>
+      ) : null}
       <CheckoutView
         cartItems={cartItems}
         total={total}
@@ -178,6 +191,7 @@ function CheckoutPageContent() {
         <OrderSuccessModal
           paymentMethod={orderSuccessMethod}
           onClose={closeOrderSuccess}
+          onViewOrders={viewOrderAfterSuccess}
         />
       ) : null}
     </>

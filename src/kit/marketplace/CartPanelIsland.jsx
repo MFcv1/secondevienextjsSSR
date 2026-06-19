@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { ShoppingBag } from 'lucide-react';
-import { getDb, getFirebaseAuth, loadFirestoreModule } from '../config/firebaseLazy';
+import { getDb, getFirebaseAuth, loadAuthModule, loadFirestoreModule } from '../config/firebaseLazy';
 import { addGuestCartItem, GUEST_CART_CHANGED_EVENT, readGuestCart, removeGuestCartItem } from '../commerce/guestCart';
 import { isPurchasable } from '../commerce/purchasability';
 

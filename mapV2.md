@@ -32,6 +32,7 @@ Sources locales non normatives mais utiles:
 - `nextjsssr.md`: playbook local anti-SPA. A garder comme garde-fou projet, pas comme source d'autorite Next.js.
 - `context.md`: contexte de migration legacy UI vers Next natif.
 - `NEXTJS_OPTIMIZATION_ROADMAP.md`: historique perf/cache/images.
+- `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`: plan d'execution multi-agents pour prouver achat invite neuf puis refund admin sandbox.
 - Scripts gates: `next:routes`, `perf:*`, `mobile:contract`.
 
 Regles Next.js retenues pour cette carte:

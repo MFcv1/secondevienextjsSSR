@@ -285,7 +285,7 @@ const AdminOrders = ({ darkMode = false }) => {
                                             <div className="flex flex-col gap-3 pt-6">
                                                 <div className="flex flex-col xl:flex-row gap-3">
                                                     {/* Status Actions */}
-                                                    {(order.status === 'pending_payment' || order.status === 'paid' || !order.status) ? (
+                                                    {((order.status === 'pending_payment' && !order.stripePaymentIntentId) || order.status === 'paid' || !order.status) ? (
                                                         <>
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); updateOrderStatus(order, 'shipped'); }}
