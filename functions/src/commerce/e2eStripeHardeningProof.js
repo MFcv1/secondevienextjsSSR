@@ -24,7 +24,34 @@ function serialize(value) {
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, serialize(item)]));
 }
 
-async function pickProofProduct(skipPattern) {
+async function readDedicatedProofProduct(productId) {
+    const cleanProductId = safeString(productId);
+    if (!cleanProductId) return null;
+
+    const snap = await db.doc(`artifacts/${APP_ID}/public/data/furniture/${cleanProductId}`).get();
+    if (!snap.exists) return null;
+
+    const data = snap.data() || {};
+    const price = Number(data.currentPrice || data.startingPrice || data.price || 0);
+    const stock = Number(data.stock ?? 0);
+    if (data.status !== 'published' || price <= 0 || stock <= 0 || data.sold === true) {
+        throw new functions.https.HttpsError('failed-precondition', `Produit E2E dedie indisponible: ${cleanProductId}`);
+    }
+
+    return {
+        id: snap.id,
+        collectionName: 'furniture',
+        name: data.name || snap.id,
+        price,
+        stockBefore: stock,
+        image: Array.isArray(data.images) ? data.images[0] || null : data.imageUrl || null
+    };
+}
+
+async function pickProofProduct({ productId, skipPattern }) {
+    const dedicated = await readDedicatedProofProduct(productId);
+    if (dedicated) return dedicated;
+
     const snap = await db.collection(`artifacts/${APP_ID}/public/data/furniture`).limit(80).get();
     const skipRegex = skipPattern ? new RegExp(skipPattern, 'i') : null;
     const candidates = snap.docs
@@ -223,7 +250,10 @@ exports.e2eStripeHardeningProof = functions
             const staleCleanupCount = await cleanupStaleE2eCanceledOrders(stripe);
             const runId = `e2e_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
             const clientOrderId = `hardening_${runId}`;
-            const product = await pickProofProduct(safeString(payload.skipProductsRegex) || 'buffet|^dd$|chaise');
+            const product = await pickProofProduct({
+                productId: safeString(payload.productId) || 'sv-e2e-stripe-refund-product',
+                skipPattern: safeString(payload.skipProductsRegex)
+            });
             const context = {
                 auth: {
                     uid: runId,

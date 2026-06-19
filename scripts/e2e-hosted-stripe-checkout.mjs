@@ -37,12 +37,50 @@ const sendOtpOnly = String(process.env.E2E_SEND_OTP_ONLY || 'false').toLowerCase
 const confirmStripePayment = String(process.env.E2E_CONFIRM_STRIPE || 'true').toLowerCase() !== 'false';
 const stripeCardNumber = String(process.env.E2E_STRIPE_CARD || '4242424242424242').replace(/\s/g, '');
 const expectStripeFailure = String(process.env.E2E_EXPECT_STRIPE_FAILURE || 'false').toLowerCase() === 'true';
-const skipProductsPattern = String(process.env.E2E_SKIP_PRODUCTS_REGEX || 'buffet|^dd$|chaise').trim();
+const targetProductId = String(process.env.E2E_STRIPE_PRODUCT_ID || 'sv-e2e-stripe-refund-product').trim();
+const skipProductsPattern = String(process.env.E2E_SKIP_PRODUCTS_REGEX || '').trim();
 const skipProductsRegex = skipProductsPattern ? new RegExp(skipProductsPattern, 'i') : null;
 const allowNonSandboxTarget = String(process.env.E2E_ALLOW_NON_SANDBOX || 'false').toLowerCase() === 'true';
 const proofToken = process.env.E2E_PROOF_TOKEN || '';
 const proofUrl = process.env.E2E_PROOF_URL || 'https://us-central1-secondevienextjsssr.cloudfunctions.net/e2eCheckoutProof';
 const gmailAppPassword = String(process.env.E2E_GMAIL_APP_PASSWORD || '').replace(/\s/g, '');
+
+const redactSensitiveText = (value) => {
+  let text = String(value ?? '');
+  const replacements = [
+    [/(E2E_PASSWORD|password|pass|motDePasse|mot_de_passe)(["'\s:=]+)([^"',\s&]+)/gi, '$1$2<redacted>'],
+    [/(E2E_APPCHECK_DEBUG_TOKEN|appCheckDebugToken|FIREBASE_APPCHECK_DEBUG_TOKEN)(["'\s:=]+)([^"',\s&]+)/gi, '$1$2<redacted>'],
+    [/(idToken|refreshToken|accessToken|Authorization|authorization)(["'\s:=]+)(Bearer\s+)?([^"',\s&]+)/gi, '$1$2$3<redacted>'],
+    [/(clientSecret|client_secret|payment_intent_client_secret)(["'\s:=]+)([^"',\s&]+)/gi, '$1$2<redacted>'],
+    [/([?&]payment_intent_client_secret=)[^&\s]+/gi, '$1<redacted>'],
+    [/([?&]client_secret=)[^&\s]+/gi, '$1<redacted>'],
+    [/Bearer\s+[A-Za-z0-9._\-]+/g, 'Bearer <redacted>'],
+    [/eyJ[A-Za-z0-9._\-]+/g, '<jwt-redacted>'],
+    [/([A-Za-z0-9_-]{8}-[A-Za-z0-9_-]{4}-[A-Za-z0-9_-]{4}-[A-Za-z0-9_-]{4}-[A-Za-z0-9_-]{12})/g, '<uuid-redacted>'],
+  ];
+
+  for (const [pattern, replacement] of replacements) {
+    text = text.replace(pattern, replacement);
+  }
+  return text;
+};
+
+const redactSensitiveValue = (value) => {
+  if (typeof value === 'string') return redactSensitiveText(value);
+  if (Array.isArray(value)) return value.map(redactSensitiveValue);
+  if (!value || typeof value !== 'object') return value;
+
+  return Object.fromEntries(Object.entries(value).map(([key, item]) => {
+    if (/password|token|authorization|clientsecret|client_secret|secret/i.test(key)) {
+      return [key, item ? '<redacted>' : item];
+    }
+    return [key, redactSensitiveValue(item)];
+  }));
+};
+
+const writeResult = () => {
+  fs.writeFileSync(resultPath, JSON.stringify(redactSensitiveValue(result), null, 2));
+};
 
 const allowedCheckoutModes = new Set(['verified-user', 'guest-otp']);
 const isSandboxOrLocalTarget = (
@@ -148,6 +186,7 @@ const pickCartButton = async (page) => {
   await page.waitForSelector('[data-gallery-cart-button]', { timeout: 30_000 });
   const buttons = await page.locator('[data-gallery-cart-button]').elementHandles();
   const candidates = [];
+  let targetCandidate = null;
 
   for (const button of buttons) {
     const raw = await button.getAttribute('data-cart-item');
@@ -162,32 +201,39 @@ const pickCartButton = async (page) => {
       });
       const stock = extractStockFromText(cardText);
       const isKnownUnavailable = skipProductsRegex ? skipProductsRegex.test(name.trim()) : false;
+      const id = String(item.id || item.originalId || '').trim();
 
       if (price <= 0 || isKnownUnavailable || stock === 0) continue;
 
-      candidates.push({
+      const candidate = {
         button,
+        id,
         name,
         stock,
         score: [
-          /chaise/i.test(name) ? 100 : 0,
+          id === targetProductId ? 1000 : 0,
           Number.isFinite(stock) && stock >= 2 ? 50 : 0,
           Number.isFinite(stock) && stock >= 1 ? 25 : 0,
           price > 0 ? 10 : 0,
         ].reduce((total, value) => total + value, 0),
-      });
+      };
+      if (targetProductId && id === targetProductId) targetCandidate = candidate;
+      candidates.push(candidate);
     } catch {
       continue;
     }
   }
 
   candidates.sort((a, b) => b.score - a.score);
-  const selected = candidates[0];
+  const selected = targetProductId ? targetCandidate : candidates[0];
   if (!selected) {
-    throw new Error('No available product with positive price and visible stock was found for checkout.');
+    throw new Error(targetProductId
+      ? `Dedicated E2E product "${targetProductId}" was not found with positive price and visible stock. Run npm run e2e:seed-stripe-product first.`
+      : 'No available product with positive price and visible stock was found for checkout.');
   }
 
   result.selectedProduct = {
+    id: selected.id,
     name: selected.name,
     stock: selected.stock,
     stockBefore: selected.stock,
@@ -811,6 +857,7 @@ const fetchCheckoutProof = async () => {
     body: JSON.stringify({
       email,
       stockBefore: result.selectedProduct?.stockBefore,
+      productId: result.selectedProduct?.id || targetProductId || null,
       selectedProduct: result.selectedProduct?.name || null,
     }),
   });
@@ -873,6 +920,8 @@ const result = {
   checkoutMode,
   generatedPassword: false,
   password: passwordProvided ? '<provided>' : null,
+  targetProductId,
+  skipProductsRegex: skipProductsPattern || null,
   sendOtpOnly,
   confirmStripePayment,
   expectStripeFailure,
@@ -887,12 +936,12 @@ const result = {
 };
 
 page.on('console', (message) => {
-  result.console.push({ type: message.type(), text: message.text() });
+  result.console.push({ type: message.type(), text: redactSensitiveText(message.text()) });
 });
 
 page.on('requestfailed', (request) => {
   result.requestFailures.push({
-    url: request.url(),
+    url: redactSensitiveText(request.url()),
     method: request.method(),
     failure: request.failure()?.errorText || 'unknown',
   });
@@ -909,9 +958,9 @@ page.on('response', async (response) => {
   }
   result.identityToolkitResponses = result.identityToolkitResponses || [];
   result.identityToolkitResponses.push({
-    url,
+    url: redactSensitiveText(url),
     status: response.status(),
-    body: body.slice(0, 1200),
+    body: redactSensitiveText(body.slice(0, 1200)),
   });
 });
 
@@ -951,35 +1000,35 @@ try {
   const checkoutReady = await fillCheckout(page);
   if (sendOtpOnly) {
     result.status = result.guestOtp?.sent ? 'otp-sent-awaiting-code' : 'otp-smoke-complete';
-    result.finalUrl = page.url();
+    result.finalUrl = redactSensitiveText(page.url());
   } else if (!checkoutReady) {
     result.status = result.guestOtp?.sent ? 'otp-sent-awaiting-code' : 'otp-code-required';
-    result.finalUrl = page.url();
+    result.finalUrl = redactSensitiveText(page.url());
   } else {
     const stripeSubmitted = await fillStripePaymentElement(page);
     if (!stripeSubmitted) {
       result.status = 'stripe-ready-confirm-skipped';
-      result.finalUrl = page.url();
+      result.finalUrl = redactSensitiveText(page.url());
     } else if (expectStripeFailure) {
       await expect(page.getByText(/erreur de paiement|fonds insuffisants|paiement.*echou|paiement.*echec|paiement.*refus|carte.*refus|payment.*fail|declined/i).first()).toBeVisible({ timeout: 60_000 });
       await waitForFailedPaymentProof();
       result.status = 'payment-failure-passed';
-      result.finalUrl = page.url();
+      result.finalUrl = redactSensitiveText(page.url());
     } else {
       await expect(page.getByText(/Paiement valide|Paiement valid.|Paiement confirme|Paiement confirmé|Votre commande est confirmee|Votre commande est confirm.e|Votre commande est validee|Votre commande est validée/i).first()).toBeVisible({ timeout: 60_000 });
       await fetchCheckoutProof();
       result.status = 'passed';
-      result.finalUrl = page.url();
+      result.finalUrl = redactSensitiveText(page.url());
     }
   }
 } catch (error) {
   result.status = 'failed';
   result.error = error?.message || String(error);
-  result.finalUrl = page.url();
+  result.finalUrl = redactSensitiveText(page.url());
   await page.screenshot({ path: path.join(logDir, `hosted-stripe-e2e-${runId}.png`), fullPage: true }).catch(() => {});
   throw error;
 } finally {
-  fs.writeFileSync(resultPath, JSON.stringify(result, null, 2));
+  writeResult();
   await browser.close();
   console.log(`E2E result written to ${resultPath}`);
 }

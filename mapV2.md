@@ -77,7 +77,7 @@ Conclusion:
 |-- functions-public : codebase Functions public pour publicCatalog
 |-- functions : codebase Functions principal, commerce, admin, analytics, maintenance, SEO legacy, triggers
 |-- deploy : dashboard sandbox-only
-|-- scripts : gates SSR/perf/mobile/images, audits infra env/secrets/deploy, E2E hosted Stripe checkout sandbox et outils data
+|-- scripts : gates SSR/perf/mobile/images, audits infra env/secrets/deploy, E2E hosted Stripe checkout sandbox, seed/reset produit test Stripe sandbox et outils data
 |-- public : assets publics servis par Next/App Hosting
 ```
 
@@ -243,6 +243,7 @@ SecondeVieNextjsSSR
 |   |-- audit-*-direct.mjs                            [gates refresh direct]
 |   |-- audit-infra-env.cjs                           [gate infra env/secrets Phase 2]
 |   |-- audit-infra-deploy.cjs                        [gate separation Firebase/App Hosting Phase 2]
+|   |-- seed-e2e-stripe-product.mjs                   [tool sandbox produit test Stripe repetable]
 |   |-- check-mobile-marketplace-contract.cjs         [gate mobile]
 |   |-- check-performance-budget.cjs                  [gate budget]
 |   `-- data/storage scripts                          [RISK pas nettoyage aveugle]

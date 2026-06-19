@@ -279,6 +279,15 @@ Critere de sortie:
 
 ## Commandes utiles
 
+Creer ou remettre a stock connu le produit dedie E2E Stripe sandbox:
+
+```powershell
+$env:FIREBASE_PROJECT_ID = "secondevienextjsssr"
+npm run e2e:seed-stripe-product
+```
+
+Le produit cible par defaut est `sv-e2e-stripe-refund-product`, avec le libelle public `[TEST STRIPE SANDBOX] Produit refund repetable`. Le script bump `public/meta.catalogVersion` pour eviter de relancer l'E2E sur un cache catalogue stale.
+
 Verifier les fichiers secrets locaux sans afficher leur contenu:
 
 ```powershell
@@ -411,3 +420,13 @@ Restant:
 - Verification visuelle de l'onglet admin `Retours` heberge: faite le 2026-06-19 avec `logs/ui-admin-returns-after-sync-email-2026-06-19.png` et `logs/ui-admin-returns-proof-2026-06-19.json`.
 - Verification UI `/mes-commandes` apres refund: faite le 2026-06-19 avec `logs/ui-client-orders-refunded-2026-06-19.png` et `logs/ui-client-orders-refunded-proof-2026-06-19.json`.
 - Seule nuance restante: le clic UI `Rembourser` n'a pas ete rejoue apres coup, car la commande etait deja `refunded`; les clics UI `Sync Stripe` et `Email client` ont ete prouves et le refund lui-meme a ete prouve via callable admin + Stripe + Firestore + webhook.
+
+## Journal execution - 2026-06-19 stabilisation repetabilite
+
+- `scripts/seed-e2e-stripe-product.mjs` ajoute un seed/reset sandbox pour le produit dedie `sv-e2e-stripe-refund-product`.
+- `package.json` expose `npm run e2e:seed-stripe-product`.
+- `scripts/e2e-hosted-stripe-checkout.mjs` cible maintenant `E2E_STRIPE_PRODUCT_ID` par defaut et n'utilise plus les exclusions fragiles `Buffet`, `dd`, `Chaise`.
+- Le JSON E2E est redacte avant ecriture pour masquer `password`, token App Check, `idToken`, `refreshToken`, `Authorization`, `accessToken` et `clientSecret` / `payment_intent_client_secret`.
+- `functions/src/commerce/e2eStripeHardeningProof.js` prefere le produit dedie fourni par `productId` avant son fallback catalogue.
+- Compte client test verifie: mot de passe a garder uniquement hors repo via `E2E_PASSWORD` dans `logs/e2e-mail.env` ou dans l'environnement shell du run.
+- Seed execute avec succes sur la sandbox `secondevienextjsssr`: produit `sv-e2e-stripe-refund-product`, stock `1`, prix `140 EUR`.

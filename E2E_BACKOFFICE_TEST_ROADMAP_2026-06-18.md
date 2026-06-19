@@ -159,6 +159,8 @@ Test-Path logs/e2e-proof-token.txt
 Relancer un paiement invite complet avec alias Gmail:
 
 ```powershell
+$env:FIREBASE_PROJECT_ID = "secondevienextjsssr"
+npm run e2e:seed-stripe-product
 $stamp = Get-Date -Format 'yyyyMMddHHmmss'
 $env:E2E_EMAIL = "loa.gto15+sv-e2e-$stamp@gmail.com"
 $env:E2E_MAILBOX_USER = "loa.gto15@gmail.com"
@@ -166,6 +168,8 @@ $env:E2E_HEADLESS = "true"
 Remove-Item Env:E2E_OTP_CODE -ErrorAction SilentlyContinue
 npm run e2e:hosted-stripe
 ```
+
+Le run cible par defaut le produit sandbox dedie `sv-e2e-stripe-refund-product`, libelle `[TEST STRIPE SANDBOX] Produit refund repetable`, au lieu de consommer un meuble du catalogue utile. Pour un compte client verifie reutilisable, definir `E2E_CHECKOUT_MODE=verified-user` et `E2E_PASSWORD` uniquement dans `logs/e2e-mail.env` ou dans l'environnement shell local ignore Git.
 
 Lire le dernier resultat:
 
@@ -358,3 +362,10 @@ Get-ChildItem logs -Filter 'hosted-stripe-e2e-*.json' |
   - facture visible avec `Avoir / remboursement: 140,00 €`;
   - aucun bouton `Annuler` libre detecte.
 - Console Playwright sur les preuves finales: pas d'erreur applicative retenue apres filtrage des bruits externes non bloquants.
+
+## Reprise Codex - 2026-06-19 repetabilite E2E Stripe
+
+- Ajout du seed/reset `scripts/seed-e2e-stripe-product.mjs` et du script npm `e2e:seed-stripe-product`.
+- Le script E2E checkout cible maintenant `E2E_STRIPE_PRODUCT_ID` par defaut `sv-e2e-stripe-refund-product`; les exclusions historiques par nom `Buffet`, `dd`, `Chaise` ne sont plus appliquees par defaut.
+- Les artefacts JSON E2E sont redactes avant ecriture: `password`, token App Check, `idToken`, `refreshToken`, `accessToken`, `Authorization` et `clientSecret` sont masques.
+- La preuve serveur hardening Stripe accepte le meme `productId` et prefere ce produit dedie avant tout fallback catalogue.

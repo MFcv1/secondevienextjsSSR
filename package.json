@@ -14,6 +14,7 @@
     "dashboard": "node deploy/dashboard.mjs",
     "infra:env": "node scripts/audit-infra-env.cjs",
     "infra:deploy": "node scripts/audit-infra-deploy.cjs",
+    "e2e:seed-stripe-product": "node scripts/seed-e2e-stripe-product.mjs",
     "e2e:hosted-stripe": "node scripts/e2e-hosted-stripe-checkout.mjs",
     "maintenance:audit": "node scripts/maintenance-audit.mjs",
     "lint": "eslint .",

@@ -369,22 +369,23 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
 ### P1 - Donnees de test et E2E repetable
 
 - [ ] Creer un produit sandbox dedie aux tests Stripe:
-  - [ ] invisible ou clairement marque test;
-  - [ ] stock connu et restaurable;
-  - [ ] jamais melange au catalogue client utile;
-  - [ ] reset possible avant/apres run.
+  - [x] script de seed/reset ajoute: `npm run e2e:seed-stripe-product`;
+  - [x] produit clairement marque test: `[TEST STRIPE SANDBOX] Produit refund repetable`;
+  - [x] stock connu et restaurable via `E2E_STRIPE_PRODUCT_STOCK`;
+  - [x] produit effectivement cree/verifie dans Firestore sandbox apres execution du seed;
+  - [x] reset possible avant/apres run.
 - [ ] Creer ou documenter un compte client test verifie dedie:
   - [ ] email verifie;
-  - [ ] mot de passe stocke hors repo;
+  - [x] mot de passe attendu hors repo via `E2E_PASSWORD` dans `logs/e2e-mail.env` ou env shell ignore Git;
   - [ ] rotation si partage accidentel.
 - [ ] Supprimer les exclusions fragiles par nom dans le script E2E:
-  - [ ] ne plus eviter manuellement `Buffet`, `dd`, `Chaise`;
-  - [ ] choisir le produit test dedie;
+  - [x] ne plus eviter manuellement `Buffet`, `dd`, `Chaise`;
+  - [x] choisir le produit test dedie via `E2E_STRIPE_PRODUCT_ID` par defaut `sv-e2e-stripe-refund-product`;
   - [ ] E2E complet repetable 3 fois sans consommer le catalogue.
 - [ ] Redacter les logs E2E:
-  - [ ] masquer `password`;
-  - [ ] masquer App Check debug token;
-  - [ ] masquer `idToken`, `refreshToken`, `Authorization`, `clientSecret`;
+  - [x] masquer `password`;
+  - [x] masquer App Check debug token;
+  - [x] masquer `idToken`, `refreshToken`, `Authorization`, `clientSecret`;
   - [ ] classifier les erreurs connues et echouer seulement sur erreurs inattendues.
 
 ### P2 - Details client/admin et confiance
