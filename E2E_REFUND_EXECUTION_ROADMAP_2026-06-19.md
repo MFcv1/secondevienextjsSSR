@@ -430,3 +430,37 @@ Restant:
 - `functions/src/commerce/e2eStripeHardeningProof.js` prefere le produit dedie fourni par `productId` avant son fallback catalogue.
 - Compte client test verifie: mot de passe a garder uniquement hors repo via `E2E_PASSWORD` dans `logs/e2e-mail.env` ou dans l'environnement shell du run.
 - Seed execute avec succes sur la sandbox `secondevienextjsssr`: produit `sv-e2e-stripe-refund-product`, stock `1`, prix `140 EUR`.
+
+## Journal execution - 2026-06-19 tests concrets repetabilite
+
+- Browser plugin tente mais indisponible (`iab` non disponible); fallback Playwright headless utilise.
+- Compte test `loa.gto15@gmail.com` verifie via Identity Toolkit: `emailVerified=true`, uid `VReuoj5dgiRByGXcCptaX9S0vhF3`.
+- `E2E_PASSWORD` absent de `logs/e2e-mail.env`: le mode `verified-user` reste a tester apres ajout local du secret; les runs ci-dessous utilisent le flux invite OTP Gmail.
+- Correctifs harnais appliques pendant les tests:
+  - `/galerie?e2e_run=<runId>` pour eviter le cache App Hosting/Next qui ne montrait pas encore le produit seed sur `/galerie`;
+  - etat bouton `Securisation...` accepte comme transition valide vers Stripe.
+- Cycle 1 achat + refund + UI:
+  - JSON achat: `logs/hosted-stripe-e2e-2026-06-19T15-37-24-853Z.json`;
+  - email: `loa.gto15+sv-repeat-20260619173724@gmail.com`;
+  - orderId: `eZvt3uzFtk5s09xmCU0x`;
+  - PaymentIntent: `pi_3Tk4UPRdWb0VNdZq1UT1hjtE`;
+  - webhook paiement: `evt_3Tk4UPRdWb0VNdZq11aDEo7X`, idempotence `processed`;
+  - Refund: `re_3Tk4UPRdWb0VNdZq1kWKvM03`;
+  - admin UI: `logs/ui-admin-returns-repeatable-e2e-2026-06-19.png`;
+  - client UI: `logs/ui-client-orders-repeatable-e2e-2026-06-19.png`;
+  - client UI montre `CMD-EZVT3UZFTK`, `Remboursee`, `Avoir / remboursement: 140,00 EUR`, sans bouton `Annuler`.
+- Cycle 2 achat + refund:
+  - JSON achat: `logs/hosted-stripe-e2e-2026-06-19T15-42-14-500Z.json`;
+  - orderId: `ICul6VAjBFihlT7mVmOH`;
+  - PaymentIntent: `pi_3Tk4Z0RdWb0VNdZq1dWeDec8`;
+  - webhook paiement: `evt_3Tk4Z0RdWb0VNdZq1HJ6ELhU`, idempotence `processed`;
+  - Refund: `re_3Tk4Z0RdWb0VNdZq1BGW8hC9`;
+  - stock final produit dedie: `1`, `sold=false`.
+- Cycle 3 achat + refund:
+  - JSON achat: `logs/hosted-stripe-e2e-2026-06-19T15-43-20-795Z.json`;
+  - orderId: `TtilagQaNDjBnvYcOD0X`;
+  - Refund: `re_3Tk4a4RdWb0VNdZq17N5ZXKb`;
+  - Firestore REST direct confirme produit dedie: `stock=1`, `sold=false`, `refundedFromOrderId=TtilagQaNDjBnvYcOD0X`.
+- Findings a traiter ensuite:
+  - Stripe Elements loggue des warnings car PayPal/Klarna/Amazon Pay ne sont pas actives et Apple Pay domain non verifie; le P1 moyens de paiement reste pertinent.
+  - `/galerie` peut servir un cache sans le produit tout juste seed; le harnais utilise un query param E2E pour contourner, mais la revalidation catalogue publique reste a tester proprement.

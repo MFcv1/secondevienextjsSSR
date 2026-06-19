@@ -120,6 +120,11 @@ const waitForSettled = async (page) => {
   await page.waitForTimeout(600);
 };
 
+const galleryUrl = () => {
+  if (!targetProductId) return `${baseUrl}/galerie`;
+  return `${baseUrl}/galerie?e2e_run=${encodeURIComponent(runId)}`;
+};
+
 const clickFirstVisible = async (locators, label) => {
   for (const locator of locators) {
     const count = await locator.count().catch(() => 0);
@@ -965,7 +970,7 @@ page.on('response', async (response) => {
 });
 
 try {
-  await page.goto(`${baseUrl}/galerie`, { waitUntil: 'domcontentloaded' });
+  await page.goto(galleryUrl(), { waitUntil: 'domcontentloaded' });
   await waitForSettled(page);
 
   const loggedInBeforeCart = checkoutMode === 'verified-user'
@@ -973,7 +978,7 @@ try {
     : false;
   if (loggedInBeforeCart) {
     await clearCartIfNeeded(page);
-    await page.goto(`${baseUrl}/galerie`, { waitUntil: 'domcontentloaded' });
+    await page.goto(galleryUrl(), { waitUntil: 'domcontentloaded' });
     await waitForSettled(page);
     await syncBrowserAuthEvent(page);
   }

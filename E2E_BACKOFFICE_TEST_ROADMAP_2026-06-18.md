@@ -369,3 +369,24 @@ Get-ChildItem logs -Filter 'hosted-stripe-e2e-*.json' |
 - Le script E2E checkout cible maintenant `E2E_STRIPE_PRODUCT_ID` par defaut `sv-e2e-stripe-refund-product`; les exclusions historiques par nom `Buffet`, `dd`, `Chaise` ne sont plus appliquees par defaut.
 - Les artefacts JSON E2E sont redactes avant ecriture: `password`, token App Check, `idToken`, `refreshToken`, `accessToken`, `Authorization` et `clientSecret` sont masques.
 - La preuve serveur hardening Stripe accepte le meme `productId` et prefere ce produit dedie avant tout fallback catalogue.
+
+## Reprise Codex - 2026-06-19 tests concrets achat/refund repetables
+
+- Browser plugin indisponible (`iab`), fallback Playwright headless.
+- `loa.gto15@gmail.com` confirme `emailVerified=true`; `E2E_PASSWORD` reste absent de `logs/e2e-mail.env`, donc le mode `verified-user` par mot de passe est reporte.
+- Trois cycles achat invite OTP Gmail + Stripe + preuve serveur + refund admin ont ete executes sur le produit dedie `sv-e2e-stripe-refund-product`, sans consommer le vrai catalogue.
+- Cycle 1:
+  - `logs/hosted-stripe-e2e-2026-06-19T15-37-24-853Z.json`;
+  - order `eZvt3uzFtk5s09xmCU0x`, PaymentIntent `pi_3Tk4UPRdWb0VNdZq1UT1hjtE`, Refund `re_3Tk4UPRdWb0VNdZq1kWKvM03`;
+  - admin UI `logs/ui-admin-returns-repeatable-e2e-2026-06-19.png`;
+  - client UI `logs/ui-client-orders-repeatable-e2e-2026-06-19.png`.
+- Cycle 2:
+  - `logs/hosted-stripe-e2e-2026-06-19T15-42-14-500Z.json`;
+  - order `ICul6VAjBFihlT7mVmOH`, PaymentIntent `pi_3Tk4Z0RdWb0VNdZq1dWeDec8`, Refund `re_3Tk4Z0RdWb0VNdZq1BGW8hC9`.
+- Cycle 3:
+  - `logs/hosted-stripe-e2e-2026-06-19T15-43-20-795Z.json`;
+  - order `TtilagQaNDjBnvYcOD0X`, Refund `re_3Tk4a4RdWb0VNdZq17N5ZXKb`;
+  - Firestore direct confirme `stock=1`, `sold=false`, `refundedFromOrderId=TtilagQaNDjBnvYcOD0X`.
+- Findings:
+  - le cache `/galerie` heberge ne montre pas toujours immediatement le produit seed; le harnais utilise maintenant `/galerie?e2e_run=<runId>`;
+  - Stripe loggue encore les moyens non actives PayPal/Klarna/Amazon Pay et Apple Pay domaine non verifie.

@@ -375,13 +375,14 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
   - [x] produit effectivement cree/verifie dans Firestore sandbox apres execution du seed;
   - [x] reset possible avant/apres run.
 - [ ] Creer ou documenter un compte client test verifie dedie:
-  - [ ] email verifie;
+  - [x] email verifie confirme pour `loa.gto15@gmail.com` via Identity Toolkit;
   - [x] mot de passe attendu hors repo via `E2E_PASSWORD` dans `logs/e2e-mail.env` ou env shell ignore Git;
+  - [ ] ajouter effectivement `E2E_PASSWORD` dans l'env local pour tester le mode `verified-user`;
   - [ ] rotation si partage accidentel.
 - [ ] Supprimer les exclusions fragiles par nom dans le script E2E:
   - [x] ne plus eviter manuellement `Buffet`, `dd`, `Chaise`;
   - [x] choisir le produit test dedie via `E2E_STRIPE_PRODUCT_ID` par defaut `sv-e2e-stripe-refund-product`;
-  - [ ] E2E complet repetable 3 fois sans consommer le catalogue.
+  - [x] E2E complet repetable 3 fois sans consommer le catalogue.
 - [ ] Redacter les logs E2E:
   - [x] masquer `password`;
   - [x] masquer App Check debug token;
