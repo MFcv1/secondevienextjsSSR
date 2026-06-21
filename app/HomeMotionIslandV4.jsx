@@ -143,15 +143,15 @@ export default function HomeMotionIslandV4() {
               const images = gsap.utils.toArray('[data-panel-image]');
               if (panels.length < 2 || images.length < 2) return;
 
-              gsap.set(panels.slice(1), { autoAlpha: 0, y: 48 });
-              gsap.set(images.slice(1), { autoAlpha: 0, scale: 1.08 });
+              gsap.set(panels.slice(1), { autoAlpha: 0, y: 32 });
+              gsap.set(images.slice(1), { autoAlpha: 0, scale: 1.04 });
 
               const tl = gsap.timeline({
                 scrollTrigger: {
                   trigger: pinRoot,
                   start: 'top top',
-                  end: () => `+=${panels.length * window.innerHeight}`,
-                  scrub: 0.8,
+                  end: () => `+=${panels.length * window.innerHeight * 1.2}`, // Give a bit more scroll space for smoothness
+                  scrub: 1.2, // Smoother scrub
                   pin: true,
                   anticipatePin: 1,
                 },
@@ -159,10 +159,12 @@ export default function HomeMotionIslandV4() {
 
               panels.forEach((panel, i) => {
                 if (i === 0) return;
-                tl.to(panels[i - 1], { autoAlpha: 0, y: -36, duration: 0.45 }, i)
-                  .to(images[i - 1], { autoAlpha: 0, scale: 0.96, duration: 0.45 }, i)
-                  .to(panel, { autoAlpha: 1, y: 0, duration: 0.55 }, i + 0.05)
-                  .to(images[i], { autoAlpha: 1, scale: 1, duration: 0.65 }, i + 0.05);
+                
+                // Add overlapping crossfades with power2 easing for maximum elegance
+                tl.to(panels[i - 1], { autoAlpha: 0, y: -24, duration: 0.5, ease: "power2.inOut" }, i)
+                  .to(images[i - 1], { autoAlpha: 0, scale: 0.98, duration: 0.5, ease: "power2.inOut" }, i)
+                  .to(panel, { autoAlpha: 1, y: 0, duration: 0.5, ease: "power2.out" }, i + 0.3)
+                  .to(images[i], { autoAlpha: 1, scale: 1, duration: 0.5, ease: "power2.out" }, i + 0.3);
               });
             });
 

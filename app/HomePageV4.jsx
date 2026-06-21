@@ -39,19 +39,26 @@ export default function HomePageV4() {
       {/* ─── NAV ─── */}
       <nav className="sv4-nav">
         <div className="sv4-wrap sv4-nav__inner">
-          <div className="sv4-nav__wordmark">
-            Seconde Vie
-            <small>Atelier de restauration</small>
-          </div>
+          <Link href="/" className="sv4-nav__logo" aria-label="Seconde Vie - Retour à l'accueil">
+            <img src="/images/logoanais.png" alt="Seconde Vie" />
+          </Link>
           <div className="sv4-nav__right">
-            <Link href="/galerie">Galerie</Link>
-            <Link href="/a-propos">Atelier</Link>
-            <Link href="/devis">Restauration</Link>
+            <Link href="/galerie" className="sv4-nav__link">
+              <span>Galerie</span>
+            </Link>
+            <Link href="/a-propos" className="sv4-nav__link">
+              <span>Atelier</span>
+            </Link>
+            <Link href="/devis" className="sv4-nav__link">
+              <span>Restauration</span>
+            </Link>
             <Link href="/galerie" className="sv4-nav__cta">
-              Catalogue
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
+              <span className="sv4-nav__cta-text">Catalogue</span>
+              <span className="sv4-nav__cta-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </span>
             </Link>
           </div>
         </div>
@@ -166,16 +173,19 @@ export default function HomePageV4() {
         <section className="sv4-pinned">
           <div className="sv4-pinned__copy">
             <article data-panel className="sv4-pinned__panel">
+              <img src="https://images.unsplash.com/photo-1542013936693-884638332954?auto=format&fit=crop&q=80&w=800" alt="Outils ébénisterie" className="sv4-pinned__mobile-img" />
               <p className="sv4-pinned__kicker">Étape 01</p>
               <h2>Le décapage</h2>
               <p>Chaque pièce arrive avec des décennies de vernis, de peinture et de cire. Nous mettons le bois à nu par aérogommage basse pression, une méthode douce qui préserve la fibre et dévoile la vraie nature du meuble sans le brûler.</p>
             </article>
             <article data-panel className="sv4-pinned__panel">
+              <img src="https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&q=80&w=800" alt="Atelier bois" className="sv4-pinned__mobile-img" />
               <p className="sv4-pinned__kicker">Étape 02</p>
               <h2>L'ébénisterie</h2>
               <p>Un tiroir qui frotte, un pied bancal, un placage boursouflé. L'atelier reprend la structure. Chevilles bois, colle d'os, greffes de placage : nous utilisons les techniques d'origine pour rendre au meuble sa solidité sans effacer son âge.</p>
             </article>
             <article data-panel className="sv4-pinned__panel">
+              <img src="https://images.unsplash.com/photo-1610453406560-f10f44485542?auto=format&fit=crop&q=80&w=800" alt="Meuble restauré" className="sv4-pinned__mobile-img" />
               <p className="sv4-pinned__kicker">Étape 03</p>
               <h2>La finition</h2>
               <p>Selon l'essence de bois et la destination du meuble : huile dure naturelle mate, vernis polyuréthane invisible ou patine à la cire d'abeille. Une protection conçue pour vivre au quotidien sans trahir l'âme de la pièce.</p>
@@ -202,14 +212,15 @@ export default function HomePageV4() {
           
           <div className="sv4-products-grid">
             {[
-              { title: "Enfilade scandinave teck", price: "890€", img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=600" },
-              { title: "Fauteuil crapaud velours", price: "340€", img: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&q=80&w=600" },
-              { title: "Table de ferme chêne massif", price: "1200€", img: "https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?auto=format&fit=crop&q=80&w=600" },
-              { title: "Commode parisienne", price: "550€", img: "https://images.unsplash.com/photo-1595428774223-ef52624120d2?auto=format&fit=crop&q=80&w=600" }
+              { title: "Enfilade scandinave teck", price: "890€", img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=600", hoverImg: "https://images.unsplash.com/photo-1582582621959-48d27397dc69?auto=format&fit=crop&q=80&w=600" },
+              { title: "Fauteuil crapaud velours", price: "340€", img: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&q=80&w=600", hoverImg: "https://images.unsplash.com/photo-1519947486511-46149fa0a254?auto=format&fit=crop&q=80&w=600" },
+              { title: "Table de ferme chêne massif", price: "1200€", img: "https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?auto=format&fit=crop&q=80&w=600", hoverImg: "https://images.unsplash.com/photo-1604578762246-41134e37f9cc?auto=format&fit=crop&q=80&w=600" },
+              { title: "Commode parisienne", price: "550€", img: "https://images.unsplash.com/photo-1595428774223-ef52624120d2?auto=format&fit=crop&q=80&w=600", hoverImg: "https://images.unsplash.com/photo-1581428982868-e410dd147a90?auto=format&fit=crop&q=80&w=600" }
             ].map((p, i) => (
               <Link href="/galerie" className="sv4-product sv4-reveal" key={i}>
                 <div className="sv4-product__media">
-                  <img src={p.img} alt={p.title} />
+                  <img src={p.img} alt={p.title} className="sv4-product__img-primary" />
+                  <img src={p.hoverImg} alt={`${p.title} - Détail`} className="sv4-product__img-hover" />
                 </div>
                 <div className="sv4-product__info">
                   <h3 className="sv4-product__name">{p.title}</h3>
