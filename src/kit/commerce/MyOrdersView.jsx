@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { db, functions } from '../config/firebase';
 import KIT_CONFIG from '../config/constants';
+import { formatShippingCityLine } from '../../utils/shippingAddress';
 
 const BUSINESS_PHONE = process.env.NEXT_PUBLIC_BUSINESS_PHONE || '';
 const BUSINESS_PHONE_TEL = BUSINESS_PHONE.replace(/\s/g, '');
@@ -236,7 +237,7 @@ const MyOrdersView = ({
         ? [
             latestShipping.name || customerName,
             latestShipping.address || latestShipping.street,
-            [latestShipping.zip || latestShipping.postalCode, latestShipping.city].filter(Boolean).join(' '),
+            formatShippingCityLine(latestShipping),
             latestShipping.country || 'France',
             latestShipping.phone || user?.phoneNumber,
         ].filter(Boolean)
@@ -274,8 +275,7 @@ const MyOrdersView = ({
 
         const unsub = onSnapshot(q, (snap) => {
             const fetchedOrders = snap.docs
-                .map(d => ({ id: d.id, ...d.data() }))
-                .filter(o => o.status !== 'cancelled_by_client' && o.status !== 'cancelled');
+                .map(d => ({ id: d.id, ...d.data() }));
 
             setOrders(fetchedOrders);
             setLoading(false);

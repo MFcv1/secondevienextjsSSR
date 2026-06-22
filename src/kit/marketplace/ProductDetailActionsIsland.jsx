@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { Heart, ShoppingBag } from 'lucide-react';
+import { CART_STATE_CHANGED_EVENT, getCartDocumentId, readGuestCart } from '../commerce/guestCart';
 
 const WISHLIST_STORAGE_KEY = 'sv_public_product_wishlist';
 
@@ -32,6 +33,28 @@ export default function ProductDetailActionsIsland({
     if (!productId) return;
     setLiked(readWishlist().includes(productId));
   }, [productId]);
+
+  useEffect(() => {
+    if (!productId || typeof window === 'undefined') return undefined;
+    const cartDocId = getCartDocumentId(cartItem || { originalId: productId, id: productId });
+    if (!cartDocId) return undefined;
+
+    const hasProduct = (items = []) => items.some((item) => (
+      item.id === cartDocId
+      || getCartDocumentId(item) === cartDocId
+      || item.originalId === productId
+      || item.id === productId
+    ));
+
+    setIsInCart(hasProduct(readGuestCart()));
+
+    const handleCartStateChanged = (event) => {
+      setIsInCart(hasProduct(Array.isArray(event.detail?.items) ? event.detail.items : []));
+    };
+
+    window.addEventListener(CART_STATE_CHANGED_EVENT, handleCartStateChanged);
+    return () => window.removeEventListener(CART_STATE_CHANGED_EVENT, handleCartStateChanged);
+  }, [cartItem, productId]);
 
   const toggleLiked = useCallback(() => {
     if (!productId || typeof window === 'undefined') return;
@@ -66,7 +89,7 @@ export default function ProductDetailActionsIsland({
   }, [cartItem, isInCart, isUnavailable, productId, productName, quoteHref]);
 
   const disabled = isUnavailable && !quoteHref;
-  const actionLabel = isUnavailable ? unavailableLabel : isInCart ? 'Voir panier' : 'Ajouter au panier';
+  const actionLabel = isUnavailable ? unavailableLabel : isInCart ? 'Deja dans le panier' : 'Ajouter au panier';
 
   if (mobile) {
     return (
@@ -116,7 +139,7 @@ export default function ProductDetailActionsIsland({
             actionLabel
           ) : isInCart ? (
             <>
-              <ShoppingBag size={15} /> Voir au panier
+              <ShoppingBag size={15} /> Deja dans le panier
             </>
           ) : (
             'Ajouter au panier'

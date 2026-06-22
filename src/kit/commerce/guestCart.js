@@ -1,12 +1,22 @@
 export const GUEST_CART_STORAGE_KEY = 'secondevie:guest-cart:v1';
 export const GUEST_CART_CHANGED_EVENT = 'sv:guest-cart-changed';
+export const CART_STATE_CHANGED_EVENT = 'sv:cart-state-changed';
+
+const encodeCartKeyPart = (value) => encodeURIComponent(String(value || '').trim()).replace(/\./g, '%2E');
+
+export const getCartDocumentId = (item = {}) => {
+  const productId = item.originalId || item.productId || item.id;
+  if (!productId) return '';
+  const collectionName = item.collectionName || 'furniture';
+  return `cart_${encodeCartKeyPart(collectionName)}_${encodeCartKeyPart(productId)}`;
+};
 
 const normalizeGuestCartItem = (item = {}) => {
   const productId = item.originalId || item.productId || item.id;
   if (!productId) return null;
 
   return {
-    id: `guest-${productId}`,
+    id: getCartDocumentId(item),
     originalId: productId,
     collectionName: item.collectionName || 'furniture',
     name: item.name || item.title || 'Piece Seconde Vie',
@@ -35,6 +45,7 @@ export const writeGuestCart = (items) => {
     .filter(Boolean);
   window.localStorage.setItem(GUEST_CART_STORAGE_KEY, JSON.stringify(normalizedItems));
   window.dispatchEvent(new CustomEvent(GUEST_CART_CHANGED_EVENT, { detail: { items: normalizedItems } }));
+  window.dispatchEvent(new CustomEvent(CART_STATE_CHANGED_EVENT, { detail: { items: normalizedItems } }));
 };
 
 export const addGuestCartItem = (item) => {

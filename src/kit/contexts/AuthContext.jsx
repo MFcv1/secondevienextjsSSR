@@ -222,6 +222,26 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         return syncSignedInUser(result);
     };
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return undefined;
+        const isE2ERun = new URLSearchParams(window.location.search).has('e2e_run');
+        const isSandboxHost = window.location.hostname.includes('hosted.app') || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (!isE2ERun || !isSandboxHost) return undefined;
+
+        window.__svE2ELoginWithEmail = async ({ email, password }) => {
+            const result = await loginWithEmail(email, password);
+            return {
+                uid: result?.user?.uid || null,
+                email: result?.user?.email || null,
+                emailVerified: Boolean(result?.user?.emailVerified),
+            };
+        };
+
+        return () => {
+            delete window.__svE2ELoginWithEmail;
+        };
+    }, []);
+
     const signupWithEmail = async (email, password) => {
         const { auth, module } = await getAuthRuntime();
         const result = await module.createUserWithEmailAndPassword(auth, email, password);

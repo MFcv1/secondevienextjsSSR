@@ -102,7 +102,7 @@ mutation admin -> publicCatalogVersion/cache bump -> /api/revalidate-catalog -> 
 ### P1 - Risques infra deja identifies
 
 - [x] `sendTestEmail`: appel admin trouve sans Function exportee; corriger ou retirer le bouton diagnostic.
-- [ ] `public/og-image.jpg`: absent alors que reference par metadata; a traiter en phase SEO, mais noter l'impact prod.
+- [x] `public/og-image.jpg`: absent alors que reference par metadata; a traiter en phase SEO, mais noter l'impact prod.
 - [ ] `functions/src/seo/seoTools.js` + rewrites Firebase Hosting: clarifier legacy encore utile ou a retirer plus tard.
 - [x] Verifier que `functions-public/src/public/catalog.js` reste le seul endpoint catalogue public actif.
 
@@ -185,8 +185,8 @@ Avancement 2026-06-18:
 - [ ] Exiger `email_verified === true` avant toute attribution serveur de claim `admin` / `superAdmin`:
   - [x] `grantAdminOnAuth`: ne pas promouvoir un email pending/admin non verifie;
   - [x] `syncSuperAdminClaim`: refuser le bootstrap si l'email n'est pas verifie;
-  - [ ] ajouter un test negatif: email super-admin non verifie => aucun claim admin;
-  - [ ] ajouter un test negatif: email pending admin non verifie => aucun claim admin.
+  - [x] ajouter un test negatif: email super-admin non verifie => aucun claim admin;
+  - [x] ajouter un test negatif: email pending admin non verifie => aucun claim admin.
 - [ ] Rendre le bootstrap super-admin explicite, rare et auditable:
   - [x] ne plus appeler `syncSuperAdminClaim` pour chaque client connecte standard;
   - [x] supprimer les erreurs CORS `syncSuperAdminClaim` des runs checkout;
@@ -311,14 +311,14 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
   - [x] checkout: surveiller `stock <= 0` en plus de `sold`;
   - [x] message panier clair si le produit devient indisponible.
 - [ ] Eviter les doublons panier:
-  - [ ] document panier deterministe par produit ou merge avant ajout;
-  - [ ] double clic = une seule ligne;
-  - [ ] afficher `Deja dans le panier` quand applicable;
-  - [ ] ne plus creer d'erreur stock par doublon du meme article.
-- [ ] Ajouter des etats clairs pour `/checkout` direct:
-  - [ ] non connecte => inviter a se connecter;
-  - [ ] connecte sans panier => panier vide + retour galerie;
-  - [ ] jamais afficher un formulaire checkout anonyme ou vide.
+  - [x] document panier deterministe par produit ou merge avant ajout;
+  - [x] double clic = une seule ligne;
+  - [x] afficher `Deja dans le panier` quand applicable;
+  - [x] ne plus creer d'erreur stock par doublon du meme article.
+- [x] Ajouter des etats clairs pour `/checkout` direct:
+  - [x] non connecte => inviter a se connecter;
+  - [x] connecte sans panier => panier vide + retour galerie;
+  - [x] jamais afficher un formulaire checkout anonyme ou vide.
 
 ### P1 - Moyens de paiement et coherence Stripe live
 
@@ -340,13 +340,13 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
   - [ ] sandbox: conserver `UNENFORCED` jusqu'a telemetrie verte;
   - [ ] tester enforcement service par service: Firestore, Storage, Identity Toolkit;
   - [ ] prod: vraie `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`, aucun debug token hors CI controlee.
-- [ ] Reduire les details d'erreur publics:
-  - [ ] `/api/revalidate-catalog`: ne pas renvoyer `error.message` brut au client sur token invalide;
-  - [ ] log serveur interne uniquement;
-  - [ ] reponse publique stable: `invalid_token`.
-- [ ] Nettoyer les restes env publics super-admin:
-  - [ ] retirer `VITE_SUPER_ADMIN_EMAIL` des `.env.*.example` si inutile;
-  - [ ] verifier que le bridge `VITE_ -> NEXT_PUBLIC_` ne peut pas reexposer un owner.
+- [x] Reduire les details d'erreur publics:
+  - [x] `/api/revalidate-catalog`: ne pas renvoyer `error.message` brut au client sur token invalide;
+  - [x] log serveur interne uniquement;
+  - [x] reponse publique stable: `invalid_token`.
+- [x] Nettoyer les restes env publics super-admin:
+  - [x] retirer `VITE_SUPER_ADMIN_EMAIL` des `.env.*.example` si inutile;
+  - [x] verifier que le bridge `VITE_ -> NEXT_PUBLIC_` ne peut pas reexposer un owner.
 
 ### P1 - Observabilite et runbooks
 
@@ -355,16 +355,16 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
   - [x] verifier event livre en `2xx` dans Stripe Dashboard;
   - [x] verifier logs Functions correspondants;
   - [x] verifier idempotence Firestore `sys_idempotency`.
-- [ ] Mettre a jour `RUNBOOK.md`:
+- [x] Mettre a jour `RUNBOOK.md`:
   - [x] remplacer les mentions Stripe dummy par l'etat 2026-06-18;
   - [x] documenter paiement sandbox valide cote UI;
   - [x] documenter webhook/email prouves;
-  - [ ] documenter rollback App Hosting.
-- [ ] Etendre le dashboard deploy:
-  - [ ] afficher URL rollout App Hosting;
-  - [ ] health check `/galerie`;
-  - [ ] commandes `infra:env`, `infra:deploy`, logs Functions;
-  - [ ] procedure rollback ou lien console.
+  - [x] documenter rollback App Hosting.
+- [x] Etendre le dashboard deploy:
+  - [x] afficher URL rollout App Hosting;
+  - [x] health check `/galerie`;
+  - [x] commandes `infra:env`, `infra:deploy`, logs Functions;
+  - [x] procedure rollback ou lien console.
 
 ### P1 - Donnees de test et E2E repetable
 
@@ -387,18 +387,18 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
   - [x] masquer `password`;
   - [x] masquer App Check debug token;
   - [x] masquer `idToken`, `refreshToken`, `Authorization`, `clientSecret`;
-  - [ ] classifier les erreurs connues et echouer seulement sur erreurs inattendues.
+  - [x] classifier les erreurs connues et echouer seulement sur erreurs inattendues.
 
 ### P2 - Details client/admin et confiance
 
-- [ ] Normaliser l'adresse de livraison:
-  - [ ] harmoniser `shipping.zip` et `shipping.postalCode`;
-  - [ ] email client/admin affiche toujours le code postal;
-  - [ ] export CSV et fiche admin coherents.
+- [x] Normaliser l'adresse de livraison:
+  - [x] harmoniser `shipping.zip` et `shipping.postalCode`;
+  - [x] email client/admin affiche toujours le code postal;
+  - [x] export CSV et fiche admin coherents.
 - [ ] Nettoyer les petites frictions panier/compte:
   - [ ] retirer les boutons quantite `- / +` s'ils ne sont pas actifs;
   - [ ] synchroniser les compteurs panier/wishlist du menu global;
-  - [ ] garder les commandes annulees visibles avec statut `Annulee`.
+  - [x] garder les commandes annulees visibles avec statut `Annulee`.
 - [ ] Harmoniser rules et claims:
-  - [ ] verifier si `superAdmin == true` doit etre accepte explicitement dans Firestore/Storage rules;
+  - [x] verifier si `superAdmin == true` doit etre accepte explicitement dans Firestore/Storage rules;
   - [ ] conserver `admin == true` comme chemin principal si les Functions posent toujours les deux.

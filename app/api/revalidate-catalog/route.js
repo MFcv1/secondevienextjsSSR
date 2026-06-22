@@ -46,9 +46,13 @@ const assertAdmin = async (request) => {
     }
     return { ok: true, decoded };
   } catch (error) {
+    console.warn('[revalidate-catalog] invalid Firebase ID token', {
+      code: error?.code || 'unknown',
+      message: error?.message || String(error),
+    });
     return {
       ok: false,
-      response: NextResponse.json({ error: 'invalid_token', detail: error?.message || String(error) }, { status: 401 })
+      response: NextResponse.json({ error: 'invalid_token' }, { status: 401 })
     };
   }
 };

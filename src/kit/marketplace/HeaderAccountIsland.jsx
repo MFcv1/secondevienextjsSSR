@@ -106,6 +106,30 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
     };
   }, []);
 
+  useEffect(() => {
+    const isE2ERun = new URLSearchParams(window.location.search).has('e2e_run');
+    const isSandboxHost = window.location.hostname.includes('hosted.app') || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (!isE2ERun || !isSandboxHost) return undefined;
+
+    window.__svE2ELoginWithEmail = async ({ email, password }) => {
+      const { getFirebaseAuth, loadAuthModule } = await import('../config/firebaseLazy');
+      const auth = await getFirebaseAuth();
+      const { signInWithEmailAndPassword } = await loadAuthModule();
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      window.__svAuthUser = result.user;
+      window.dispatchEvent(new CustomEvent('sv:auth-user-changed', { detail: { user: result.user } }));
+      return {
+        uid: result.user?.uid || null,
+        email: result.user?.email || null,
+        emailVerified: Boolean(result.user?.emailVerified),
+      };
+    };
+
+    return () => {
+      delete window.__svE2ELoginWithEmail;
+    };
+  }, []);
+
   const logout = async () => {
     window.__svAuthUser = null;
     setUser(null);

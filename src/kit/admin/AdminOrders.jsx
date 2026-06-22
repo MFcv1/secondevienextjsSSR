@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, limit } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, limit, serverTimestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, appId, functions } from '../config/firebase';
 import { Package, Clock, CheckCircle, Mail, ChevronDown, ChevronUp, Download, Loader2, Truck, XCircle } from 'lucide-react';
 import { downloadCsv } from './exportCsv';
+import { formatShippingAddress } from '../../utils/shippingAddress';
 
 const AdminOrders = ({ darkMode = false }) => {
     const [orders, setOrders] = useState([]);
@@ -63,7 +64,7 @@ const AdminOrders = ({ darkMode = false }) => {
             return;
         }
 
-        if (!window.confirm("⚠️ ATTENTION : \n\nVous allez ANNULER cette commande.\n\nACTIONS AUTOMATIQUES :\n1. Le stock des produits sera REMIS à jour (+1).\n2. Les produits seront marqués comme 'Non Vendu'.\n3. La commande sera SUPPRIMÉE définitivement (invisible client/admin).\n\nConfirmer ?")) return;
+        if (!window.confirm("ATTENTION : \n\nVous allez ANNULER cette commande.\n\nACTIONS AUTOMATIQUES :\n1. Le stock des produits sera REMIS a jour (+1).\n2. Les produits seront marques comme 'Non Vendu'.\n3. La commande restera visible avec le statut Annulee.\n\nConfirmer ?")) return;
 
         try {
             setIsLoading(true);
@@ -100,11 +101,16 @@ const AdminOrders = ({ darkMode = false }) => {
                 }
             }
 
-            // 2. Supprimer la commande
-            await deleteDoc(doc(db, 'orders', order.id));
+            // 2. Conserver la commande en historique avec un statut terminal.
+            await updateDoc(doc(db, 'orders', order.id), {
+                status: 'cancelled',
+                cancelledAt: serverTimestamp(),
+                stockReserved: false,
+                clientNote: 'Annulee par admin - stock restaure'
+            });
 
             // UI Update handled by snapshot
-            alert("Commande annulée et stocks restaurés avec succès !");
+            alert("Commande annulee, visible en historique, et stocks restaures avec succes !");
 
         } catch (error) {
             console.error("Error cancelling order:", error);
@@ -170,7 +176,7 @@ const AdminOrders = ({ darkMode = false }) => {
             'Client': order.shipping?.fullName || 'N/A',
             'Email': order.shipping?.email || 'N/A',
             'Téléphone': order.shipping?.phone || 'N/A',
-            'Adresse': `${order.shipping?.address || ''}, ${order.shipping?.postalCode || ''} ${order.shipping?.city || ''}`,
+            'Adresse': formatShippingAddress(order.shipping),
             'Méthode Paiement': order.paymentMethod === 'deferred' ? 'Différé' : 'Carte (Stripe)',
             'Stripe PaymentIntent': order.stripePaymentIntentId || '',
             'Verification Checkout': order.checkoutAuthMethod || '',
@@ -270,7 +276,7 @@ const AdminOrders = ({ darkMode = false }) => {
                                                 <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Compte:</strong> {order.userEmail}</p>
                                                 <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Livraison:</strong> {order.shipping?.email}</p>
                                                 <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Tél:</strong> {order.shipping?.phone}</p>
-                                                <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Adresse:</strong> {order.shipping?.address}, {order.shipping?.zip} {order.shipping?.city}</p>
+                                                <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Adresse:</strong> {formatShippingAddress(order.shipping) || 'Non renseignee'}</p>
                                                 <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Paiement:</strong> {order.paymentMethod === 'deferred' ? 'Différé (Virement/Chèque)' : 'Stripe'}</p>
                                                 {order.stripePaymentIntentId ? (
                                                     <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>PaymentIntent:</strong> <span className="font-mono text-[11px] break-all">{order.stripePaymentIntentId}</span></p>
@@ -384,7 +390,7 @@ const AdminOrders = ({ darkMode = false }) => {
                                                                     ? 'bg-red-500/5 border-red-500/10 text-red-500 hover:bg-red-500 hover:text-white'
                                                                     : 'bg-red-50 border-red-100 text-red-600 hover:bg-red-600 hover:text-white')
                                                         } disabled:cursor-not-allowed`}
-                                                        title="Annuler : remet le stock et supprime la commande"
+                                                        title="Annuler : remet le stock et conserve la commande en historique"
                                                     >
                                                         <XCircle size={16} className="group-hover:rotate-90 transition-transform" />
                                                         {order.status === 'refunded' ? 'Remboursee' : order.status === 'refund_pending' ? 'Remboursement en cours' : order.status === 'refund_failed' ? 'Remboursement a verifier' : 'Annuler & Restaurer'}

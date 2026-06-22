@@ -8,6 +8,8 @@ export const SANDBOX = {
   buildScript: 'build',
   appHostingBackendId: 'secondevie-next-sandbox',
   url: 'https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app',
+  healthPath: '/galerie',
+  rolloutConsoleUrl: 'https://console.firebase.google.com/project/secondevienextjsssr/apphosting/backends/secondevie-next-sandbox',
   label: 'SANDBOX',
 };
 

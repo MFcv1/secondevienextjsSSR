@@ -18,6 +18,7 @@ function CheckoutPageContent() {
   const [showOrderSuccess, setShowOrderSuccess] = useState(false);
   const [orderSuccessMethod, setOrderSuccessMethod] = useState('');
   const [checkoutReturnNotice, setCheckoutReturnNotice] = useState('');
+  const [cartLoading, setCartLoading] = useState(true);
   const handledStripeReturnRef = useRef(false);
 
   useEffect(() => {
@@ -31,23 +32,34 @@ function CheckoutPageContent() {
   useEffect(() => {
     if (!user) {
       setCartItems(readGuestCart());
+      setCartLoading(false);
       return undefined;
     }
 
     let cancelled = false;
     let unsubscribe = null;
+    setCartLoading(true);
 
     Promise.all([getDb(), loadFirestoreModule()])
       .then(([db, { collection, onSnapshot, query }]) => {
         if (cancelled) return;
         unsubscribe = onSnapshot(
           query(collection(db, 'users', user.uid, 'cart')),
-          (snap) => setCartItems(snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))),
-          (error) => console.error('Checkout cart sync error:', error)
+          (snap) => {
+            setCartItems(snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() })));
+            setCartLoading(false);
+          },
+          (error) => {
+            setCartLoading(false);
+            console.error('Checkout cart sync error:', error);
+          }
         );
       })
       .catch((error) => {
-        if (!cancelled) console.error('Checkout cart sync error:', error);
+        if (!cancelled) {
+          setCartLoading(false);
+          console.error('Checkout cart sync error:', error);
+        }
       });
 
     return () => {
@@ -168,8 +180,34 @@ function CheckoutPageContent() {
     };
   }, [cartItems, clearCartAfterOrder, user]);
 
-  if (loading) {
+  if (loading || cartLoading) {
     return <div className="min-h-screen bg-[#FAFAF9]" />;
+  }
+
+  if (!user) {
+    return (
+      <CheckoutState
+        darkMode={darkMode}
+        title="Connexion requise"
+        message="Connectez-vous pour retrouver votre panier et finaliser votre commande en toute securite."
+        primaryLabel="Se connecter"
+        onPrimary={() => { window.location.href = '/admin'; }}
+        secondaryLabel="Retour galerie"
+        onSecondary={() => { window.location.href = '/galerie'; }}
+      />
+    );
+  }
+
+  if (cartItems.length === 0) {
+    return (
+      <CheckoutState
+        darkMode={darkMode}
+        title="Panier vide"
+        message="Ajoutez une piece depuis la galerie avant de lancer le checkout."
+        primaryLabel="Retour galerie"
+        onPrimary={() => { window.location.href = '/galerie'; }}
+      />
+    );
   }
 
   return (
@@ -200,4 +238,41 @@ function CheckoutPageContent() {
 
 export default function CheckoutPageIsland() {
   return <CheckoutPageContent />;
+}
+
+function CheckoutState({
+  darkMode,
+  title,
+  message,
+  primaryLabel,
+  onPrimary,
+  secondaryLabel = '',
+  onSecondary,
+}) {
+  return (
+    <section className="min-h-[60vh] px-5 py-20">
+      <div className={`mx-auto max-w-lg rounded-3xl border px-6 py-8 text-center shadow-xl md:px-10 md:py-12 ${darkMode ? 'border-stone-800 bg-stone-900 text-stone-100' : 'border-stone-100 bg-white text-stone-950'}`}>
+        <h1 className="font-serif text-3xl font-normal tracking-tight">{title}</h1>
+        <p className={`mt-4 text-sm leading-6 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>{message}</p>
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <button
+            type="button"
+            onClick={onPrimary}
+            className={`rounded-md px-5 py-3 text-xs font-black uppercase tracking-[0.18em] ${darkMode ? 'bg-stone-100 text-stone-950' : 'bg-stone-950 text-white'}`}
+          >
+            {primaryLabel}
+          </button>
+          {secondaryLabel ? (
+            <button
+              type="button"
+              onClick={onSecondary}
+              className={`rounded-md border px-5 py-3 text-xs font-black uppercase tracking-[0.18em] ${darkMode ? 'border-stone-700 text-stone-200' : 'border-stone-200 text-stone-700'}`}
+            >
+              {secondaryLabel}
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
 }

@@ -390,3 +390,31 @@ Get-ChildItem logs -Filter 'hosted-stripe-e2e-*.json' |
 - Findings:
   - le cache `/galerie` heberge ne montre pas toujours immediatement le produit seed; le harnais utilise maintenant `/galerie?e2e_run=<runId>`;
   - Stripe loggue encore les moyens non actives PayPal/Klarna/Amazon Pay et Apple Pay domaine non verifie.
+
+## Reprise Codex - 2026-06-22 worker Stripe/E2E proof
+
+- Les preuves refund existantes ont ete re-verifiees sans relancer d'UI live:
+  - `logs/ui-admin-returns-proof-2026-06-19.json` prouve l'onglet admin `Retours` heberge filtre sur `9RkYKEaaRCrBWVxU6ALb`, le statut `Remboursee`, `Stock remis`, le PaymentIntent `pi_3Tk2slRdWb0VNdZq0gTPdTnK`, le refund `re_3Tk2slRdWb0VNdZq09JdFKvU`, et les actions UI `Sync Stripe` / `Email client`;
+  - `logs/ui-client-orders-refunded-proof-2026-06-19.json` prouve `/mes-commandes` heberge avec `Remboursee`, delai bancaire, `Avoir / remboursement: 140,00 EUR`, et aucun bouton `Annuler`;
+  - les JSON `logs/hosted-stripe-e2e-2026-06-19T15-37-24-853Z.json`, `...15-42-14-500Z.json`, `...15-43-20-795Z.json` prouvent trois achats Stripe repetables sur `sv-e2e-stripe-refund-product`, avec webhooks paiement `processed` et preuve serveur.
+- Nuance laissee ouverte explicitement: le clic UI `Rembourser` sur la commande neuve hebergee n'a pas ete rejoue apres coup, car la commande etait deja `refunded`; le refund lui-meme reste prouve via callable admin sandbox + Stripe + Firestore + webhook, et l'UI hebergee prouve les etats post-refund ainsi que les clics `Sync Stripe` et `Email client`.
+- `scripts/e2e-hosted-stripe-checkout.mjs` classe maintenant les blocages connus (`App Check`, OTP/rate-limit, produit seed absent, proof token absent/refuse, carte refusee attendue) en statuts `known-*` dans le JSON et ne sort en erreur process que pour les erreurs inattendues.
+- Commande cible preparee pour un smoke redirect Stripe sandbox, a lancer seulement si les secrets locaux existent et sans l'executer automatiquement:
+
+```powershell
+if ((Test-Path logs/e2e-mail.env) -and (Test-Path logs/e2e-proof-token.txt)) {
+  $stamp = Get-Date -Format 'yyyyMMddHHmmss'
+  $env:FIREBASE_PROJECT_ID = "secondevienextjsssr"
+  $env:E2E_EMAIL = "loa.gto15+sv-redirect-$stamp@gmail.com"
+  $env:E2E_MAILBOX_USER = "loa.gto15@gmail.com"
+  $env:E2E_HEADLESS = "false"
+  $env:E2E_CONFIRM_STRIPE = "false"
+  Remove-Item Env:E2E_OTP_CODE -ErrorAction SilentlyContinue
+  npm run e2e:seed-stripe-product
+  npm run e2e:hosted-stripe
+} else {
+  Write-Host "Secrets locaux manquants: logs/e2e-mail.env ou logs/e2e-proof-token.txt. Redirect sandbox non lance."
+}
+```
+
+- Limite redirect: le harnais prepare le checkout jusqu'a Stripe avec confirmation desactivee; le choix d'un moyen redirect sandbox dans le Payment Element reste manuel tant que le script ne pilote pas explicitement une methode redirect.

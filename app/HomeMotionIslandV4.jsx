@@ -35,9 +35,9 @@ export default function HomeMotionIslandV4() {
         setShowBtt(y > 500);
         if (nav) {
           if (y < 60 || y < lastY) {
-            nav.style.transform = 'translateY(0)';
+            nav.style.transform = 'translate(-50%, 0)';
           } else if (y > lastY + 6) {
-            nav.style.transform = 'translateY(-110%)';
+            nav.style.transform = 'translate(-50%, -150%)';
           }
         }
         lastY = y;
@@ -133,40 +133,7 @@ export default function HomeMotionIslandV4() {
               );
             });
 
-            /* Pinned scroll narrative (desktop only) */
-            const mm = gsap.matchMedia();
-            mm.add('(min-width: 900px)', () => {
-              const pinRoot = document.querySelector('.sv4-pinned');
-              if (!pinRoot) return;
-
-              const panels = gsap.utils.toArray('[data-panel]');
-              const images = gsap.utils.toArray('[data-panel-image]');
-              if (panels.length < 2 || images.length < 2) return;
-
-              gsap.set(panels.slice(1), { autoAlpha: 0, y: 32 });
-              gsap.set(images.slice(1), { autoAlpha: 0, scale: 1.04 });
-
-              const tl = gsap.timeline({
-                scrollTrigger: {
-                  trigger: pinRoot,
-                  start: 'top top',
-                  end: () => `+=${panels.length * window.innerHeight * 1.2}`, // Give a bit more scroll space for smoothness
-                  scrub: 1.2, // Smoother scrub
-                  pin: true,
-                  anticipatePin: 1,
-                },
-              });
-
-              panels.forEach((panel, i) => {
-                if (i === 0) return;
-                
-                // Add overlapping crossfades with power2 easing for maximum elegance
-                tl.to(panels[i - 1], { autoAlpha: 0, y: -24, duration: 0.5, ease: "power2.inOut" }, i)
-                  .to(images[i - 1], { autoAlpha: 0, scale: 0.98, duration: 0.5, ease: "power2.inOut" }, i)
-                  .to(panel, { autoAlpha: 1, y: 0, duration: 0.5, ease: "power2.out" }, i + 0.3)
-                  .to(images[i], { autoAlpha: 1, scale: 1, duration: 0.5, ease: "power2.out" }, i + 0.3);
-              });
-            });
+            // The pinned narrative (Atelier) is now handled natively via Framer Motion Sticky Island.
 
             /* Scrubbing text word-by-word opacity */
             const scrubWords = gsap.utils.toArray('.sv4-scrub-word');

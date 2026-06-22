@@ -30,6 +30,15 @@ function normalizeClientOrderId(value) {
     return normalizeFirestoreId(String(value).trim(), 'clientOrderId');
 }
 
+function normalizeShippingAddress(shipping = {}) {
+    const postalCode = String(shipping.postalCode || shipping.zip || '').trim();
+    return {
+        ...shipping,
+        postalCode,
+        zip: postalCode
+    };
+}
+
 function getCreateOrderIdempotencyRef(userId, checkoutEmail, clientOrderId) {
     if (!clientOrderId) return null;
     const identityKey = hashOrderIdentity(`${userId || ''}:${checkoutEmail || ''}`).slice(0, 32);
@@ -135,10 +144,10 @@ async function createOrderHandler(data, context) {
     };
     const checkoutIdentity = await resolveCheckoutIdentity(context, orderData);
     const userId = context.auth?.uid || `guest_${hashOrderIdentity(checkoutIdentity.email).slice(0, 24)}`;
-    const verifiedShipping = {
+    const verifiedShipping = normalizeShippingAddress({
         ...(orderData.shipping || {}),
         email: checkoutIdentity.email
-    };
+    });
     const clientOrderId = normalizeClientOrderId(orderData.clientOrderId);
     const createOrderIdempRef = getCreateOrderIdempotencyRef(userId, checkoutIdentity.email, clientOrderId);
     const existingCreateOrder = await resolveExistingCreateOrder(stripe, createOrderIdempRef, orderData.paymentMethod);
@@ -441,7 +450,7 @@ async function createOrderHandler(data, context) {
                     address: {
                         line1: shippingData.address || '',
                         city: shippingData.city || '',
-                        postal_code: shippingData.zip || '',
+                        postal_code: shippingData.postalCode || shippingData.zip || '',
                         country: 'FR',
                     },
                     phone: shippingData.phone || '',

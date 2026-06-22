@@ -145,6 +145,34 @@ Controle non interactif :
 npm run dashboard -- --status
 ```
 
+Le statut affiche aussi :
+
+- l'URL App Hosting sandbox actuellement ciblee ;
+- le health check public `GET /galerie` ;
+- le lien console Firebase des rollouts App Hosting ;
+- les commandes `infra:env`, `infra:deploy` et logs Functions utiles.
+
+## Rollback App Hosting Sandbox
+
+Le rollback App Hosting se fait depuis la console Firebase, sur le backend sandbox :
+
+```text
+https://console.firebase.google.com/project/secondevienextjsssr/apphosting/backends/secondevie-next-sandbox
+```
+
+Procedure :
+
+1. Ouvrir le backend App Hosting `secondevie-next-sandbox`.
+2. Dans les rollouts, choisir le dernier rollout stable connu.
+3. Lancer l'action `Roll back` depuis la console Firebase.
+4. Attendre la fin du rollout de rollback.
+5. Verifier `https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app/galerie`.
+6. Controler les logs si besoin :
+
+```powershell
+firebase functions:log --project secondevienextjsssr
+```
+
 Lire aussi :
 
 - `DATABASE_MIGRATION_PLAN.md` pour la strategie base de donnees, sandbox, export/import, tests admin/checkout et cutover.

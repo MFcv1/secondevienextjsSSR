@@ -25,6 +25,16 @@ function escapeHtml(unsafe) {
          .replace(/'/g, "&#039;");
 }
 
+function getShippingPostalCode(shipping = {}) {
+    return String(shipping.postalCode || shipping.zip || '').trim();
+}
+
+function formatShippingInfo(shipping = {}) {
+    const address = shipping.address || shipping.street || '';
+    const cityLine = [getShippingPostalCode(shipping), shipping.city].filter(Boolean).join(' ');
+    return [address, cityLine].filter(Boolean).map(escapeHtml).join(', ') || 'Non specifie';
+}
+
 function createTransporter() {
     return nodemailer.createTransport({
         service: 'gmail',
@@ -57,8 +67,7 @@ async function sendNewOrderEmails(orderId, order) {
         `<li>${item.quantity || 1}x <b>${escapeHtml(item.name || "Article")}</b> - ${item.price}€</li>`
     ).join('');
 
-    const shippingInfo = order.shipping ?
-        `${escapeHtml(order.shipping.address)}, ${escapeHtml(order.shipping.city)} (${escapeHtml(order.shipping.postalCode)})` : "Non spécifié";
+    const shippingInfo = order.shipping ? formatShippingInfo(order.shipping) : "Non specifie";
 
     // Email Admin
     const adminMailOptions = {

@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import KIT_CONFIG from '../kit/config/constants';
+import { formatShippingCityLine } from './shippingAddress';
 
 export const generateInvoice = async (order) => {
     return new Promise((resolve, reject) => {
@@ -39,7 +40,7 @@ export const generateInvoice = async (order) => {
             // --- CLIENT INFO ---
             const customerName = order.shipping?.fullName || order.userEmail || "Client";
             const customerAddress = order.shipping?.address || "";
-            const customerCityZip = `${order.shipping?.zip || ""} ${order.shipping?.city || ""}`.trim();
+            const customerCityZip = formatShippingCityLine(order.shipping);
 
             doc.setFontSize(9);
             doc.setFont("helvetica", "bold");

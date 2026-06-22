@@ -47,8 +47,17 @@ const sibling = siblingEnvPath && existsSync(siblingEnvPath)
   ? parseEnv(readFileSync(siblingEnvPath, 'utf8'))
   : {};
 
+const PUBLIC_ENV_BRIDGE_DENYLIST = new Set([
+  'VITE_SUPER_ADMIN_EMAIL',
+]);
+
+const FORBIDDEN_PUBLIC_OWNER_KEYS = [
+  'VITE_SUPER_ADMIN_EMAIL',
+  'NEXT_PUBLIC_SUPER_ADMIN_EMAIL',
+];
+
 for (const [key, value] of Object.entries(loaded)) {
-  if (key.startsWith('VITE_')) {
+  if (key.startsWith('VITE_') && !PUBLIC_ENV_BRIDGE_DENYLIST.has(key)) {
     env[`NEXT_PUBLIC_${key.slice('VITE_'.length)}`] = value;
   }
 }
@@ -69,6 +78,10 @@ for (const key of Object.keys(sibling)) {
       env[nextKey] = '';
     }
   }
+}
+
+for (const key of FORBIDDEN_PUBLIC_OWNER_KEYS) {
+  env[key] = '';
 }
 
 env.NEXT_TELEMETRY_DISABLED = env.NEXT_TELEMETRY_DISABLED || '1';

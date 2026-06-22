@@ -4,7 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { ShoppingBag } from 'lucide-react';
 import { getDb, getFirebaseAuth, loadAuthModule, loadFirestoreModule } from '../config/firebaseLazy';
-import { addGuestCartItem, GUEST_CART_CHANGED_EVENT, readGuestCart, removeGuestCartItem } from '../commerce/guestCart';
+import {
+  addGuestCartItem,
+  CART_STATE_CHANGED_EVENT,
+  getCartDocumentId,
+  GUEST_CART_CHANGED_EVENT,
+  readGuestCart,
+  removeGuestCartItem,
+} from '../commerce/guestCart';
 import { isPurchasable } from '../commerce/purchasability';
 
 const CartSidebar = dynamic(() => import('../commerce/CartSidebar'), {
@@ -110,6 +117,11 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
     return () => window.removeEventListener(GUEST_CART_CHANGED_EVENT, handleGuestCartChanged);
   }, [user]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent(CART_STATE_CHANGED_EVENT, { detail: { items: cartItems } }));
+  }, [cartItems]);
+
   const openCart = useCallback(() => {
     setInteracted(true);
     setIsOpen(true);
@@ -126,8 +138,11 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
       return true;
     }
 
-    const [db, { addDoc, collection, serverTimestamp }] = await Promise.all([getDb(), loadFirestoreModule()]);
-    await addDoc(collection(db, 'users', cartUser.uid, 'cart'), {
+    const cartDocId = getCartDocumentId(item);
+    if (!cartDocId) return false;
+
+    const [db, { doc, serverTimestamp, setDoc }] = await Promise.all([getDb(), loadFirestoreModule()]);
+    await setDoc(doc(db, 'users', cartUser.uid, 'cart', cartDocId), {
       originalId: item.originalId || item.id,
       collectionName: item.collectionName || 'furniture',
       name: item.name || item.title || 'Piece Seconde Vie',
@@ -139,7 +154,7 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
       material: item.material || 'Bois',
       quantity: Number(item.quantity || 1),
       addedAt: serverTimestamp(),
-    });
+    }, { merge: true });
     openCart();
     return true;
   }, [openCart, user]);

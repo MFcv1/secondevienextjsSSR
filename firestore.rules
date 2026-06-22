@@ -4,7 +4,10 @@ service cloud.firestore {
 
     // Fonction Admin SECURISEE - Custom Claim Firebase Auth requis.
     function isArtisan() {
-      return request.auth != null && request.auth.token.admin == true;
+      return request.auth != null && (
+        request.auth.token.admin == true ||
+        request.auth.token.superAdmin == true
+      );
     }
 
     // Fonction Validation User (Basic)
@@ -80,9 +83,30 @@ service cloud.firestore {
     function isValidCartItem() {
       let data = request.resource.data;
       return
-        data.keys().size() < 10 &&
+        data.keys().hasOnly([
+          'originalId',
+          'collectionName',
+          'name',
+          'price',
+          'stock',
+          'sold',
+          'priceOnRequest',
+          'image',
+          'material',
+          'quantity',
+          'addedAt'
+        ]) &&
         (data.quantity is number && data.quantity > 0) &&
-        (data.price is number && data.price >= 0);
+        (data.price is number && data.price >= 0) &&
+        (!('originalId' in data) || data.originalId is string) &&
+        (!('collectionName' in data) || data.collectionName is string) &&
+        (!('name' in data) || data.name is string) &&
+        (!('stock' in data) || data.stock is number) &&
+        (!('sold' in data) || data.sold is bool) &&
+        (!('priceOnRequest' in data) || data.priceOnRequest is bool) &&
+        (!('image' in data) || data.image is string) &&
+        (!('material' in data) || data.material is string) &&
+        (!('addedAt' in data) || data.addedAt is timestamp);
     }
 
     // Panier utilisateur

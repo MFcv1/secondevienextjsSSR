@@ -118,7 +118,7 @@ const collectReachableSourceFiles = (entryRelativePath) => {
 };
 
 const publicSeoRoutes = [
-  { route: '/', file: 'app/page.jsx', artifact: 'index.html', revalidate: 300 },
+  { route: '/', file: 'app/page.jsx', artifact: 'index.html', revalidate: 3600 },
   { route: '/galerie', file: 'app/galerie/page.jsx', artifact: 'galerie.html', revalidate: 300, forceStatic: true },
   { route: '/a-propos', file: 'app/a-propos/page.jsx', artifact: 'a-propos.html', revalidate: 300 },
   { route: '/categorie/[categoryId]', file: 'app/categorie/[categoryId]/page.jsx', revalidate: 300, staticParams: true },

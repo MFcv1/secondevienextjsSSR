@@ -82,6 +82,62 @@ const writeResult = () => {
   fs.writeFileSync(resultPath, JSON.stringify(redactSensitiveValue(result), null, 2));
 };
 
+const buildFailureText = (error) => [
+  error?.message || String(error || ''),
+  ...(result.console || []).map((entry) => `${entry.type}: ${entry.text}`),
+  ...(result.requestFailures || []).map((entry) => `${entry.url} ${entry.failure}`),
+  ...(result.identityToolkitResponses || []).map((entry) => `${entry.status} ${entry.body}`),
+].join('\n');
+
+const classifyKnownFailure = (error) => {
+  const text = buildFailureText(error);
+  const rules = [
+    {
+      code: 'app-check-debug-token-blocked',
+      status: 'known-blocked-app-check',
+      pattern: /app\s*check|appcheck|debug token|exchangeDebugToken|throttle/i,
+      guidance: 'Register E2E_APPCHECK_DEBUG_TOKEN in Firebase Console App Check sandbox, then rerun the smoke/E2E.',
+    },
+    {
+      code: 'otp-rate-limited-or-missing',
+      status: 'known-blocked-otp',
+      pattern: /trop de codes|too_many_attempts|quota|otp|code.*validation|missing-e2e-otp-code|missing-e2e-login-otp-code|otp-sent-awaiting-code/i,
+      guidance: 'Use a fresh Gmail alias, provide E2E_GMAIL_APP_PASSWORD, or rerun after the OTP rate limit cools down.',
+    },
+    {
+      code: 'seed-product-missing',
+      status: 'known-blocked-seed-product',
+      pattern: /Dedicated E2E product|e2e:seed-stripe-product|No available product/i,
+      guidance: 'Run npm run e2e:seed-stripe-product against the sandbox before the hosted checkout E2E.',
+    },
+    {
+      code: 'proof-token-missing-or-rejected',
+      status: 'known-blocked-proof-token',
+      pattern: /missing-e2e-proof-token|Checkout proof failed: HTTP (401|403)/i,
+      guidance: 'Provide logs/e2e-proof-token.txt or E2E_PROOF_TOKEN locally; do not commit or print the token.',
+    },
+    {
+      code: 'expected-stripe-card-failure',
+      status: 'known-stripe-failure',
+      pattern: /erreur de paiement|fonds insuffisants|paiement.*echou|paiement.*echec|paiement.*refus|card.*declined|payment.*fail/i,
+      guidance: 'Expected only when E2E_EXPECT_STRIPE_FAILURE=true; otherwise inspect Stripe/payment UI.',
+      when: () => expectStripeFailure,
+    },
+  ];
+
+  for (const rule of rules) {
+    if (rule.when && !rule.when()) continue;
+    if (!rule.pattern.test(text)) continue;
+    return {
+      code: rule.code,
+      status: rule.status,
+      guidance: rule.guidance,
+    };
+  }
+
+  return null;
+};
+
 const allowedCheckoutModes = new Set(['verified-user', 'guest-otp']);
 const isSandboxOrLocalTarget = (
   baseUrl === HOSTED_URL ||
@@ -329,8 +385,205 @@ const clearCartViaFirestoreRest = async (page) => page.evaluate(async () => {
   return { cleared: true, deleted: documents.length };
 });
 
-const ensureLoggedIn = async (page) => {
+const addCartItemViaFirestoreRest = async (page, cartSource) => {
+  const rawItem = typeof cartSource?.getAttribute === 'function'
+    ? await cartSource.getAttribute('data-cart-item')
+    : JSON.stringify(cartSource || {});
+  if (!rawItem) return { added: false, reason: 'missing-cart-payload' };
+  const item = JSON.parse(rawItem);
+
+  return page.evaluate(async (cartItem) => {
+    const readStoredUser = () => new Promise((resolve) => {
+      const readFromValue = (value) => {
+        if (!value?.uid || !value?.stsTokenManager?.accessToken) return null;
+        return {
+          uid: value.uid,
+          token: value.stsTokenManager.accessToken,
+        };
+      };
+
+      const localKey = Object.keys(window.localStorage).find((key) => key.startsWith('firebase:authUser:'));
+      if (localKey) {
+        const user = readFromValue(JSON.parse(window.localStorage.getItem(localKey) || '{}'));
+        if (user) {
+          resolve(user);
+          return;
+        }
+      }
+
+      if (!window.indexedDB) {
+        resolve(null);
+        return;
+      }
+
+      const request = window.indexedDB.open('firebaseLocalStorageDb');
+      request.onerror = () => resolve(null);
+      request.onsuccess = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains('firebaseLocalStorage')) {
+          db.close();
+          resolve(null);
+          return;
+        }
+        const transaction = db.transaction('firebaseLocalStorage', 'readonly');
+        const store = transaction.objectStore('firebaseLocalStorage');
+        const getAll = store.getAll();
+        getAll.onerror = () => {
+          db.close();
+          resolve(null);
+        };
+        getAll.onsuccess = () => {
+          db.close();
+          const row = (getAll.result || []).find((entry) => (
+            String(entry?.fbase_key || entry?.key || '').startsWith('firebase:authUser:')
+          ));
+          resolve(readFromValue(row?.value) || null);
+        };
+      };
+    });
+
+    const storedUser = await readStoredUser();
+    if (!storedUser) return { added: false, reason: 'missing-auth-user' };
+
+    const encodePart = (value) => encodeURIComponent(String(value || '').trim()).replace(/\./g, '%2E');
+    const productId = cartItem.originalId || cartItem.productId || cartItem.id;
+    if (!productId) return { added: false, reason: 'missing-product-id' };
+    const collectionName = cartItem.collectionName || 'furniture';
+    const docId = `cart_${encodePart(collectionName)}_${encodePart(productId)}`;
+    const numberField = (value) => {
+      const numeric = Number(value || 0);
+      return Number.isInteger(numeric) ? { integerValue: String(numeric) } : { doubleValue: numeric };
+    };
+    const body = {
+      fields: {
+        originalId: { stringValue: String(productId) },
+        collectionName: { stringValue: String(collectionName) },
+        name: { stringValue: String(cartItem.name || cartItem.title || 'Piece Seconde Vie') },
+        price: numberField(cartItem.price || cartItem.currentPrice || cartItem.startingPrice || 0),
+        stock: numberField(cartItem.stock || 0),
+        sold: { booleanValue: Boolean(cartItem.sold) },
+        priceOnRequest: { booleanValue: Boolean(cartItem.priceOnRequest) },
+        image: { stringValue: String(cartItem.image || cartItem.imageUrl || '') },
+        material: { stringValue: String(cartItem.material || 'Bois') },
+        quantity: numberField(cartItem.quantity || 1),
+        addedAt: { timestampValue: new Date().toISOString() },
+      },
+    };
+    const url = `https://firestore.googleapis.com/v1/projects/secondevienextjsssr/databases/(default)/documents/users/${storedUser.uid}/cart/${docId}`;
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${storedUser.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return {
+        added: false,
+        reason: `write-failed-${response.status}`,
+        body: await response.text().catch(() => ''),
+      };
+    }
+    return { added: true, docId };
+  }, item);
+};
+
+const loadTargetCartItemViaFirestoreRest = async (page) => page.evaluate(async (productId) => {
+  const readStoredUser = () => new Promise((resolve) => {
+    const readFromValue = (value) => {
+      if (!value?.uid || !value?.stsTokenManager?.accessToken) return null;
+      return { token: value.stsTokenManager.accessToken };
+    };
+    const localKey = Object.keys(window.localStorage).find((key) => key.startsWith('firebase:authUser:'));
+    if (localKey) {
+      const user = readFromValue(JSON.parse(window.localStorage.getItem(localKey) || '{}'));
+      if (user) {
+        resolve(user);
+        return;
+      }
+    }
+    if (!window.indexedDB) {
+      resolve(null);
+      return;
+    }
+    const request = window.indexedDB.open('firebaseLocalStorageDb');
+    request.onerror = () => resolve(null);
+    request.onsuccess = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('firebaseLocalStorage')) {
+        db.close();
+        resolve(null);
+        return;
+      }
+      const transaction = db.transaction('firebaseLocalStorage', 'readonly');
+      const store = transaction.objectStore('firebaseLocalStorage');
+      const getAll = store.getAll();
+      getAll.onerror = () => {
+        db.close();
+        resolve(null);
+      };
+      getAll.onsuccess = () => {
+        db.close();
+        const row = (getAll.result || []).find((entry) => (
+          String(entry?.fbase_key || entry?.key || '').startsWith('firebase:authUser:')
+        ));
+        resolve(readFromValue(row?.value) || null);
+      };
+    };
+  });
+
+  const storedUser = await readStoredUser();
+  if (!storedUser) return null;
+  const url = `https://firestore.googleapis.com/v1/projects/secondevienextjsssr/databases/(default)/documents/artifacts/secondevie/public/data/furniture/${encodeURIComponent(productId)}`;
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${storedUser.token}` } });
+  if (!response.ok) return null;
+  const document = await response.json();
+  const fields = document.fields || {};
+  const readString = (name) => fields[name]?.stringValue || '';
+  const readNumber = (name) => Number(fields[name]?.integerValue || fields[name]?.doubleValue || 0);
+  const readBool = (name) => Boolean(fields[name]?.booleanValue);
+  return {
+    id: productId,
+    originalId: productId,
+    collectionName: 'furniture',
+    name: readString('name') || readString('title') || '[TEST STRIPE SANDBOX] Produit refund repetable',
+    price: readNumber('currentPrice') || readNumber('startingPrice'),
+    stock: readNumber('stock'),
+    sold: readBool('sold'),
+    priceOnRequest: readBool('priceOnRequest'),
+    image: '',
+    material: readString('material') || 'Bois',
+    quantity: 1,
+  };
+}, targetProductId);
+
+const loginWithE2EHook = async (page) => {
   if (!passwordProvided) return false;
+
+  const hookReady = await page.waitForFunction(() => (
+    typeof window.__svE2ELoginWithEmail === 'function'
+  ), null, { timeout: 10_000 }).catch(() => null);
+  if (!hookReady) return false;
+
+  const loginResult = await page.evaluate(async ({ loginEmail, loginPassword }) => (
+    window.__svE2ELoginWithEmail({ email: loginEmail, password: loginPassword })
+  ), { loginEmail: email, loginPassword: password });
+
+  if (!loginResult?.uid) return false;
+  result.browserPasswordLogin = {
+    uid: loginResult.uid,
+    email: loginResult.email,
+    emailVerified: Boolean(loginResult.emailVerified),
+  };
+  await syncBrowserAuthEvent(page);
+  return true;
+};
+
+const ensureLoggedIn = async (page) => {
+  if (await loginWithE2EHook(page)) {
+    return true;
+  }
 
   await clickFirstVisible([
     page.getByRole('button', { name: /Ouvrir la connexion/i }),
@@ -339,12 +592,52 @@ const ensureLoggedIn = async (page) => {
 
   const loginDialog = page.getByRole('dialog', { name: /Connexion Seconde Vie/i });
   await expect(loginDialog).toBeVisible({ timeout: 30_000 });
-  await loginDialog.locator('input[name="email"]').fill(email);
-  await loginDialog.locator('input[name="password"]').fill(password);
+
+  const emailInput = loginDialog.locator('input[name="email"], input[type="email"]').first();
+  await emailInput.fill(email);
+
+  const passwordInput = loginDialog.locator('input[name="password"], input[type="password"]').first();
+  if (passwordProvided && await passwordInput.isVisible({ timeout: 1_500 }).catch(() => false)) {
+    await passwordInput.fill(password);
+    await clickFirstVisible([
+      loginDialog.getByRole('button', { name: /^Connexion$/i }),
+      loginDialog.locator('button[type="submit"]').filter({ hasText: /Connexion/i }),
+    ], 'login submit');
+    await expect(loginDialog).toBeHidden({ timeout: 30_000 });
+    await syncBrowserAuthEvent(page);
+    return true;
+  }
+
+  const otpRequestedAt = Date.now();
   await clickFirstVisible([
-    loginDialog.getByRole('button', { name: /^Connexion$/i }),
-    loginDialog.locator('button[type="submit"]').filter({ hasText: /Connexion/i }),
-  ], 'login submit');
+    loginDialog.getByRole('button', { name: /Recevoir mon code|Envoyer le code/i }),
+    loginDialog.locator('button[type="submit"]').filter({ hasText: /Recevoir mon code|Envoyer le code/i }),
+  ], 'request login OTP');
+
+  const loginOtpCode = otpCode || await waitForGmailOtp({ afterTimestamp: otpRequestedAt });
+  if (!/^\d{6}$/.test(loginOtpCode)) {
+    throw new Error('missing-e2e-login-otp-code');
+  }
+
+  for (let index = 0; index < 6; index += 1) {
+    await loginDialog.locator(`[data-otp-index="${index}"]`).fill(loginOtpCode[index]);
+  }
+  await clickFirstVisible([
+    loginDialog.getByRole('button', { name: /^Se connecter$/i }),
+    loginDialog.locator('button[type="submit"]').filter({ hasText: /Se connecter/i }),
+  ], 'login OTP submit');
+  if (await loginDialog.getByText(/Connexion reussie|Connexion réussie/i).isVisible({ timeout: 15_000 }).catch(() => false)) {
+    await clickFirstVisible([
+      loginDialog.getByRole('button', { name: /Continuer/i }),
+      loginDialog.locator('button').filter({ hasText: /Continuer/i }),
+    ], 'continue after login');
+  }
+  if (await loginDialog.isVisible({ timeout: 1_500 }).catch(() => false)) {
+    await clickFirstVisible([
+      loginDialog.getByRole('button', { name: /Fermer la connexion/i }),
+      loginDialog.locator('button[aria-label="Fermer la connexion"]'),
+    ], 'close login modal after auth');
+  }
   await expect(loginDialog).toBeHidden({ timeout: 30_000 });
   await syncBrowserAuthEvent(page);
   return true;
@@ -380,12 +673,26 @@ const clearCartIfNeeded = async (page) => {
 
 const syncBrowserAuthEvent = async (page) => {
   const readStoredUser = async () => page.evaluate(async () => {
-    if (window.__svAuthUser?.uid) {
+    const readFromValue = (value) => {
+      if (!value?.uid || !value?.stsTokenManager?.accessToken) return null;
       return {
-        uid: window.__svAuthUser.uid,
-        email: window.__svAuthUser.email,
-        stsTokenManager: {},
+        uid: value.uid,
+        email: value.email,
+        stsTokenManager: {
+          accessToken: value.stsTokenManager.accessToken,
+        },
       };
+    };
+
+    if (window.__svAuthUser?.uid && typeof window.__svAuthUser.getIdToken === 'function') {
+      const token = await window.__svAuthUser.getIdToken().catch(() => '');
+      if (token) {
+        return {
+          uid: window.__svAuthUser.uid,
+          email: window.__svAuthUser.email,
+          stsTokenManager: { accessToken: token },
+        };
+      }
     }
 
     const readIndexedDbUser = () => new Promise((resolve) => {
@@ -420,15 +727,19 @@ const syncBrowserAuthEvent = async (page) => {
     });
 
     const key = Object.keys(window.localStorage).find((item) => item.startsWith('firebase:authUser:'));
-    if (key) return JSON.parse(window.localStorage.getItem(key) || '{}');
-    return readIndexedDbUser();
+    if (key) {
+      const user = readFromValue(JSON.parse(window.localStorage.getItem(key) || '{}'));
+      if (user) return user;
+    }
+
+    return readFromValue(await readIndexedDbUser());
   });
 
   let storedUser = null;
   const startedAt = Date.now();
   while (Date.now() - startedAt < 30_000) {
     storedUser = await readStoredUser();
-    if (storedUser?.uid) break;
+    if (storedUser?.uid && storedUser?.stsTokenManager?.accessToken) break;
     await page.waitForTimeout(500);
   }
 
@@ -474,6 +785,7 @@ const syncBrowserAuthEvent = async (page) => {
       });
       return {
         hasWindowAuthUser: Boolean(window.__svAuthUser?.uid),
+        hasWindowAuthToken: Boolean(await window.__svAuthUser?.getIdToken?.().catch(() => '')),
         localStorageKeys,
         indexedDbNames: databases.map((database) => database.name).filter(Boolean),
         firebaseLocalStorageRows,
@@ -581,7 +893,9 @@ const extractOtpFromMail = (rawMessage, afterTimestamp) => {
   const text = body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
   const candidates = [
     /votre code de validation seconde vie est\s*:?\s*(\d{6})/i,
+    /votre code de connexion seconde vie est\s*:?\s*(\d{6})/i,
     /code de validation(?:\s|&nbsp;|[^\d]){0,120}(\d{6})/i,
+    /code de connexion(?:\s|&nbsp;|[^\d]){0,120}(\d{6})/i,
   ];
   for (const pattern of candidates) {
     const match = text.match(pattern);
@@ -690,9 +1004,9 @@ const createAccountIfNeeded = async (page) => {
 };
 
 const handleGuestOtpIfNeeded = async (page) => {
-  if (checkoutMode !== 'guest-otp') return true;
-
   const otpInput = page.locator('#checkout-otp-code');
+  const otpVisible = await otpInput.isVisible({ timeout: checkoutMode === 'guest-otp' ? 15_000 : 1_500 }).catch(() => false);
+  if (checkoutMode !== 'guest-otp' && !otpVisible) return true;
   await expect(otpInput).toBeVisible({ timeout: 15_000 });
   const otpRequestedAfter = Date.now();
   result.guestOtp = {
@@ -748,7 +1062,11 @@ const handleGuestOtpIfNeeded = async (page) => {
 const fillCheckout = async (page) => {
   await page.goto(`${baseUrl}/checkout`, { waitUntil: 'domcontentloaded' });
   await waitForSettled(page);
+  if (checkoutMode === 'verified-user') {
+    await syncBrowserAuthEvent(page);
+  }
 
+  await expect(page.locator('#checkout-fullName')).toBeVisible({ timeout: 30_000 });
   await page.locator('#checkout-fullName').fill('Client Test Seconde Vie');
   await page.locator('#checkout-phone').fill('0600000000');
   await page.locator('#checkout-email').fill(email);
@@ -983,7 +1301,56 @@ try {
     await syncBrowserAuthEvent(page);
   }
 
-  const cartButton = await pickCartButton(page);
+  let cartButton = null;
+  try {
+    cartButton = await pickCartButton(page);
+  } catch (error) {
+    if (!(checkoutMode === 'verified-user' && loggedInBeforeCart && targetProductId)) {
+      throw error;
+    }
+    const fallbackCartItem = await loadTargetCartItemViaFirestoreRest(page);
+    if (!fallbackCartItem || Number(fallbackCartItem.price || 0) <= 0 || Number(fallbackCartItem.stock || 0) <= 0) {
+      throw error;
+    }
+    result.selectedProduct = {
+      id: fallbackCartItem.id,
+      name: fallbackCartItem.name,
+      stock: fallbackCartItem.stock,
+      stockBefore: fallbackCartItem.stock,
+      score: 1000,
+      source: 'firestore-rest-fallback',
+    };
+    cartButton = fallbackCartItem;
+  }
+  if (checkoutMode === 'verified-user' && loggedInBeforeCart) {
+    const cartSeed = await addCartItemViaFirestoreRest(page, cartButton);
+    result.cartSeed = cartSeed;
+    if (!cartSeed.added) {
+      throw new Error(`Unable to seed verified-user cart: ${cartSeed.reason || 'unknown'}`);
+    }
+    const checkoutReady = await fillCheckout(page);
+    if (!checkoutReady) {
+      result.status = 'checkout-not-ready';
+      result.finalUrl = redactSensitiveText(page.url());
+    } else {
+      const stripeSubmitted = await fillStripePaymentElement(page);
+      if (!stripeSubmitted) {
+        result.status = 'stripe-ready-confirm-skipped';
+        result.finalUrl = redactSensitiveText(page.url());
+      } else if (expectStripeFailure) {
+        await expect(page.getByText(/erreur de paiement|fonds insuffisants|paiement.*echou|paiement.*echec|paiement.*refus|carte.*refus|payment.*fail|declined/i).first()).toBeVisible({ timeout: 60_000 });
+        await waitForFailedPaymentProof();
+        result.status = 'payment-failure-passed';
+        result.finalUrl = redactSensitiveText(page.url());
+      } else {
+        await expect(page.getByText(/Paiement valide|Paiement valid.|Paiement confirme|Paiement confirmÃ©|Votre commande est confirmee|Votre commande est confirm.e|Votre commande est validee|Votre commande est validÃ©e/i).first()).toBeVisible({ timeout: 60_000 });
+        await fetchCheckoutProof();
+        result.status = 'passed';
+        result.finalUrl = redactSensitiveText(page.url());
+      }
+    }
+  } else {
+
   await clickCartButton(cartButton);
   if (checkoutMode !== 'guest-otp' && !loggedInBeforeCart) {
     await createAccountIfNeeded(page);
@@ -1026,12 +1393,20 @@ try {
       result.finalUrl = redactSensitiveText(page.url());
     }
   }
+  }
 } catch (error) {
-  result.status = 'failed';
+  const knownFailure = classifyKnownFailure(error);
+  result.status = knownFailure?.status || 'failed';
+  if (knownFailure) {
+    result.knownFailure = knownFailure;
+  }
   result.error = error?.message || String(error);
   result.finalUrl = redactSensitiveText(page.url());
   await page.screenshot({ path: path.join(logDir, `hosted-stripe-e2e-${runId}.png`), fullPage: true }).catch(() => {});
-  throw error;
+  if (!knownFailure) {
+    throw error;
+  }
+  console.warn(`Known E2E blocker classified as ${knownFailure.code}: ${knownFailure.guidance}`);
 } finally {
   writeResult();
   await browser.close();

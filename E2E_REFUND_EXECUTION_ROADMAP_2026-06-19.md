@@ -464,3 +464,14 @@ Restant:
 - Findings a traiter ensuite:
   - Stripe Elements loggue des warnings car PayPal/Klarna/Amazon Pay ne sont pas actives et Apple Pay domain non verifie; le P1 moyens de paiement reste pertinent.
   - `/galerie` peut servir un cache sans le produit tout juste seed; le harnais utilise un query param E2E pour contourner, mais la revalidation catalogue publique reste a tester proprement.
+
+## Journal execution - 2026-06-22 worker Stripe/E2E proof
+
+- Aucun secret ni UI live n'a ete utilise pendant cette passe.
+- Preuves existantes relues:
+  - `logs/ui-admin-returns-proof-2026-06-19.json`: admin `Retours` heberge filtre sur `9RkYKEaaRCrBWVxU6ALb`, commande `Remboursee`, `Stock remis`, refund `re_3Tk2slRdWb0VNdZq09JdFKvU`, boutons `Sync Stripe` / `Email client` visibles et cliques dans le run precedent;
+  - `logs/ui-client-orders-refunded-proof-2026-06-19.json`: espace client heberge en `Remboursee`, delai bancaire affiche, avoir/facture refund visible, aucun bouton `Annuler`;
+  - derniers JSON E2E repetables du produit dedie: `logs/hosted-stripe-e2e-2026-06-19T15-37-24-853Z.json`, `...15-42-14-500Z.json`, `...15-43-20-795Z.json`.
+- Decision: ne pas cocher retrospectivement le clic UI `Rembourser`; il reste ouvert au sens strict car la commande neuve avait deja ete remboursee via callable admin sandbox avant la preuve UI hebergee. Les preuves Stripe/Firestore/webhook/UI post-refund sont suffisantes pour documenter l'etat, pas pour pretendre que ce clic precis a ete rejoue.
+- Le harnais `scripts/e2e-hosted-stripe-checkout.mjs` classe maintenant les erreurs connues et laisse echouer le process uniquement sur erreur inattendue. Statuts ajoutes: `known-blocked-app-check`, `known-blocked-otp`, `known-blocked-seed-product`, `known-blocked-proof-token`, `known-stripe-failure`.
+- Commande redirect sandbox preparee dans `E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`; elle est volontairement gatee par `Test-Path logs/e2e-mail.env` et `logs/e2e-proof-token.txt`, et n'a pas ete executee.

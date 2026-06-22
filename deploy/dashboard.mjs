@@ -58,8 +58,41 @@ function showHeader() {
   console.log('');
   console.log(chalk.gray('  ' + '-'.repeat(64)));
   console.log(`  ${chalk.cyan('App Hosting')}  ${chalk.underline(SANDBOX.url)}`);
+  console.log(`  ${chalk.cyan('Health URL')}    ${chalk.underline(new URL(SANDBOX.healthPath, SANDBOX.url).toString())}`);
+  console.log(`  ${chalk.cyan('Rollouts')}      ${chalk.underline(SANDBOX.rolloutConsoleUrl)}`);
   console.log(`  ${chalk.cyan('Backend ID')}    ${SANDBOX.appHostingBackendId}`);
   console.log(chalk.gray('  ' + '-'.repeat(64)));
+  console.log('');
+}
+
+async function checkGalleryHealth() {
+  const url = new URL(SANDBOX.healthPath, SANDBOX.url).toString();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      redirect: 'follow',
+      signal: controller.signal,
+    });
+    return { ok: response.ok, status: response.status, url };
+  } catch (err) {
+    return { ok: false, error: err.message, url };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function showInfraCommands() {
+  step('COMMANDES INFRA ET OBSERVABILITE');
+  console.log(chalk.gray('  npm run infra:env'));
+  console.log(chalk.gray('  npm run infra:deploy'));
+  console.log(chalk.gray(`  firebase functions:log --project ${SANDBOX.projectId}`));
+  console.log(chalk.gray(`  firebase functions:log --only stripeWebhook --project ${SANDBOX.projectId}`));
+  console.log('');
+  console.log(`  Rollback App Hosting : ${chalk.underline(SANDBOX.rolloutConsoleUrl)}`);
+  console.log(chalk.gray('  Ouvrir le backend App Hosting, choisir un rollout stable, puis lancer Roll back depuis la console Firebase.'));
   console.log('');
 }
 
@@ -141,6 +174,11 @@ async function runAppDeploy() {
   const duration = ((Date.now() - start) / 1000).toFixed(1);
   ok(`App Hosting sandbox deploye en ${duration}s`);
   console.log(`  URL : ${chalk.underline(SANDBOX.url)}`);
+  console.log(`  Rollouts : ${chalk.underline(SANDBOX.rolloutConsoleUrl)}`);
+  const health = await checkGalleryHealth();
+  health.ok
+    ? ok(`Health /galerie OK (${health.status}) - ${health.url}`)
+    : warn(`Health /galerie non confirme : ${health.error || `HTTP ${health.status}`} - ${health.url}`);
   console.log('');
 }
 
@@ -217,6 +255,11 @@ async function runEverythingDeploy() {
   const duration = ((Date.now() - start) / 1000).toFixed(1);
   ok(`Tout deploye en sandbox en ${duration}s`);
   console.log(`  URL : ${chalk.underline(SANDBOX.url)}`);
+  console.log(`  Rollouts : ${chalk.underline(SANDBOX.rolloutConsoleUrl)}`);
+  const health = await checkGalleryHealth();
+  health.ok
+    ? ok(`Health /galerie OK (${health.status}) - ${health.url}`)
+    : warn(`Health /galerie non confirme : ${health.error || `HTTP ${health.status}`} - ${health.url}`);
   console.log('');
 }
 
@@ -247,6 +290,11 @@ async function showStatus() {
   const build = checkBuildArtifact();
   build.ok ? ok('.next/ verifie pour la sandbox') : warn(build.error);
 
+  const health = await checkGalleryHealth();
+  health.ok
+    ? ok(`Health /galerie OK (${health.status}) - ${health.url}`)
+    : warn(`Health /galerie non confirme : ${health.error || `HTTP ${health.status}`} - ${health.url}`);
+
   const git = checkGitStatus();
   if (git.ok) {
     git.clean
@@ -254,6 +302,7 @@ async function showStatus() {
       : warn(`Git : branch "${git.branch}" - ${git.changes} fichier(s) non commite(s)`);
   }
 
+  showInfraCommands();
   console.log('');
 }
 

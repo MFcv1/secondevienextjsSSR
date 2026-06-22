@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import HomeMotionIslandV4 from './HomeMotionIslandV4';
+import AtelierStickyIsland from './AtelierStickyIsland';
 import '../src/home-v4.css';
 
 /**
@@ -38,11 +39,13 @@ export default function HomePageV4() {
 
       {/* ─── NAV ─── */}
       <nav className="sv4-nav">
-        <div className="sv4-wrap sv4-nav__inner">
+        <div className="sv4-nav__inner">
           <Link href="/" className="sv4-nav__logo" aria-label="Seconde Vie - Retour à l'accueil">
             <img src="/images/logoanais.png" alt="Seconde Vie" />
+            <span className="sv4-nav__logo-text">Seconde Vie</span>
           </Link>
-          <div className="sv4-nav__right">
+          
+          <div className="sv4-nav__center">
             <Link href="/galerie" className="sv4-nav__link">
               <span>Galerie</span>
             </Link>
@@ -52,6 +55,9 @@ export default function HomePageV4() {
             <Link href="/devis" className="sv4-nav__link">
               <span>Restauration</span>
             </Link>
+          </div>
+
+          <div className="sv4-nav__right">
             <Link href="/galerie" className="sv4-nav__cta">
               <span className="sv4-nav__cta-text">Catalogue</span>
               <span className="sv4-nav__cta-icon">
@@ -68,7 +74,17 @@ export default function HomePageV4() {
         {/* ─── HERO ─── */}
         <header className="sv4-hero">
           <div className="sv4-hero__bg">
-            <img src="https://images.unsplash.com/photo-1595515106969-1ce29566ff1c?auto=format&fit=crop&q=80&w=2000" alt="Intérieur chaleureux" />
+            <video 
+              autoPlay 
+              loop 
+              muted 
+              playsInline 
+              className="sv4-hero__video"
+              poster="https://images.unsplash.com/photo-1595515106969-1ce29566ff1c?auto=format&fit=crop&q=80&w=2000"
+            >
+              <source src="https://assets.mixkit.co/videos/preview/mixkit-interior-of-a-beautiful-living-room-4198-large.mp4" type="video/mp4" />
+            </video>
+            <div className="sv4-hero__overlay"></div>
           </div>
           
           <div className="sv4-hero__content">
@@ -169,34 +185,8 @@ export default function HomePageV4() {
           </h2>
         </section>
 
-        {/* ─── PINNED NARRATIVE (ATELIER) ─── */}
-        <section className="sv4-pinned">
-          <div className="sv4-pinned__copy">
-            <article data-panel className="sv4-pinned__panel">
-              <img src="https://images.unsplash.com/photo-1542013936693-884638332954?auto=format&fit=crop&q=80&w=800" alt="Outils ébénisterie" className="sv4-pinned__mobile-img" />
-              <p className="sv4-pinned__kicker">Étape 01</p>
-              <h2>Le décapage</h2>
-              <p>Chaque pièce arrive avec des décennies de vernis, de peinture et de cire. Nous mettons le bois à nu par aérogommage basse pression, une méthode douce qui préserve la fibre et dévoile la vraie nature du meuble sans le brûler.</p>
-            </article>
-            <article data-panel className="sv4-pinned__panel">
-              <img src="https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&q=80&w=800" alt="Atelier bois" className="sv4-pinned__mobile-img" />
-              <p className="sv4-pinned__kicker">Étape 02</p>
-              <h2>L'ébénisterie</h2>
-              <p>Un tiroir qui frotte, un pied bancal, un placage boursouflé. L'atelier reprend la structure. Chevilles bois, colle d'os, greffes de placage : nous utilisons les techniques d'origine pour rendre au meuble sa solidité sans effacer son âge.</p>
-            </article>
-            <article data-panel className="sv4-pinned__panel">
-              <img src="https://images.unsplash.com/photo-1610453406560-f10f44485542?auto=format&fit=crop&q=80&w=800" alt="Meuble restauré" className="sv4-pinned__mobile-img" />
-              <p className="sv4-pinned__kicker">Étape 03</p>
-              <h2>La finition</h2>
-              <p>Selon l'essence de bois et la destination du meuble : huile dure naturelle mate, vernis polyuréthane invisible ou patine à la cire d'abeille. Une protection conçue pour vivre au quotidien sans trahir l'âme de la pièce.</p>
-            </article>
-          </div>
-          <div className="sv4-pinned__media" aria-hidden="true">
-            <img data-panel-image src="https://images.unsplash.com/photo-1542013936693-884638332954?auto=format&fit=crop&q=80&w=800" alt="Outils ébénisterie" />
-            <img data-panel-image src="https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&q=80&w=800" alt="Atelier bois" />
-            <img data-panel-image src="https://images.unsplash.com/photo-1610453406560-f10f44485542?auto=format&fit=crop&q=80&w=800" alt="Meuble restauré" />
-          </div>
-        </section>
+        {/* ─── NARRATIVE (ATELIER) - FRAMER MOTION STICKY ─── */}
+        <AtelierStickyIsland />
 
         {/* ─── FEATURED PRODUCTS ─── */}
         <section className="sv4-wrap sv4-selection">

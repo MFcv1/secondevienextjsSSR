@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import WishlistView from '../../src/kit/marketplace/WishlistView';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
 import { getDb, loadFirestoreModule } from '../../src/kit/config/firebaseLazy';
+import { getCartDocumentId } from '../../src/kit/commerce/guestCart';
 import { getProductStockAmount, isPurchasable } from '../../src/kit/commerce/purchasability';
 
 function WishlistPageContent({ initialItems = [] }) {
@@ -52,9 +53,8 @@ function WishlistPageContent({ initialItems = [] }) {
   const addToCart = async (item) => {
     if (!user || user.isAnonymous) return;
     if (!isPurchasable(item)) return;
-    const [db, { addDoc, collection, serverTimestamp }] = await Promise.all([getDb(), loadFirestoreModule()]);
-    await addDoc(collection(db, 'users', user.uid, 'cart'), {
-      originalId: item.id,
+    const cartItem = {
+      originalId: item.originalId || item.id,
       collectionName: item.collectionName || 'furniture',
       name: item.name,
       price: item.currentPrice || item.startingPrice || item.price || 0,
@@ -64,8 +64,14 @@ function WishlistPageContent({ initialItems = [] }) {
       image: item.images?.[0] || item.imageUrl || item.image || '',
       material: item.material || 'Bois',
       quantity: 1,
+    };
+    const cartDocId = getCartDocumentId(cartItem);
+    if (!cartDocId) return;
+    const [db, { doc, serverTimestamp, setDoc }] = await Promise.all([getDb(), loadFirestoreModule()]);
+    await setDoc(doc(db, 'users', user.uid, 'cart', cartDocId), {
+      ...cartItem,
       addedAt: serverTimestamp(),
-    });
+    }, { merge: true });
   };
 
   const toggleWishlist = async (item) => {
