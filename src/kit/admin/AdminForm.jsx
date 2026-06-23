@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Upload, Trash2, Download } from 'lucide-react';
 import { db, appId } from '../config/firebase';
-import { storage } from '../config/firebaseStorage';
+import { getStorageInstance } from '../config/firebaseStorage';
 import { doc, addDoc, updateDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { PRODUCT_IMAGE_VARIANT_SPECS, compressImage, createProductImageVariantFiles, getImageFileMetadata } from '../../utils/imageUtils'; // [NEW] Import compression utility
@@ -297,6 +297,7 @@ const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkM
     const variantFiles = await createProductImageVariantFiles(sourceFile);
     const uploadStamp = Date.now();
     const uploaded = {};
+    const storage = await getStorageInstance();
 
     for (const spec of PRODUCT_IMAGE_VARIANT_SPECS) {
       const variantFile = variantFiles[spec.key];
@@ -360,6 +361,7 @@ const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkM
 
             setMsg(`⏳ ${progressPrefix} Envoi de l'image...`);
             const uploadStamp = Date.now();
+            const storage = await getStorageInstance();
             const imageRef = ref(storage, `${collectionName}/${uploadStamp}_tat_${fileToUpload.name}`);
             await uploadBytes(imageRef, fileToUpload, {
               cacheControl: 'public, max-age=31536000, immutable',

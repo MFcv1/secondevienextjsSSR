@@ -1,4 +1,4 @@
-import { X, Trash2, ShoppingBag, ShieldCheck, Truck, Minus, Plus } from 'lucide-react';
+import { X, Trash2, ShoppingBag, ShieldCheck, Truck } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onCheckout, interacted, darkMode, activeDesignId }) => {
@@ -81,11 +81,7 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
                                     </h3>
                                     <p className={`mt-1 truncate text-xs ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>{item.material}</p>
                                     <p className={`mt-1.5 text-sm font-black ${darkMode ? 'text-stone-100' : 'text-stone-950'}`}>{item.price} €</p>
-                                    <div className={`mt-2 flex w-fit items-center overflow-hidden rounded-md border ${darkMode ? 'border-stone-700' : 'border-stone-200'}`}>
-                                        <span className="flex h-8 w-8 items-center justify-center opacity-60"><Minus size={13} /></span>
-                                        <span className="flex h-8 min-w-8 items-center justify-center text-xs">1</span>
-                                        <span className="flex h-8 w-8 items-center justify-center opacity-60"><Plus size={13} /></span>
-                                    </div>
+                                    <p className={`mt-2 text-[11px] uppercase tracking-[0.14em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Quantite 1</p>
                                 </div>
                                 <button
                                     onClick={() => onRemoveItem(item.id)}

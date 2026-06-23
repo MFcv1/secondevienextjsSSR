@@ -21,7 +21,9 @@ Objectif demain: commencer par assainir l'infra prod avant de reprendre SEO/perf
 - [ ] Verifier la configuration App Check Firebase cote sandbox/prod:
   - [x] sandbox: app Web enregistree reCAPTCHA v3;
   - [x] sandbox: enforcement laisse en monitoring (`UNENFORCED`);
-  - [ ] sandbox: verifier les requetes App Check apres prochain rollout;
+  - [x] sandbox: debug token Playwright enregistre et `exchangeDebugToken` verifie (`ttl=3600s`);
+  - [x] sandbox: flux auth email OTP A/Z sans erreur console App Check via `npm run e2e:auth-email`;
+  - [ ] sandbox: verifier telemetrie Firestore/Functions/Storage avant tout enforcement;
   - [ ] prod: a configurer/verifier quand le rail prod existe.
 - [x] Creer/valider le secret App Hosting `SUPER_ADMIN_EMAIL` avant rollout.
 - [x] Reevaluer `NEXT_PUBLIC_SUPER_ADMIN_EMAIL`:
@@ -66,6 +68,10 @@ service-account.json
 mutation admin -> publicCatalogVersion/cache bump -> /api/revalidate-catalog -> produit/categorie/sitemap
 ```
 
+  - [x] script E2E ajoute: `npm run e2e:revalidate-catalog`;
+  - [x] le script lit le sitemap, choisit une categorie et un produit reels, puis controle les routes publiques apres appel API;
+  - [x] dernier run classe le blocage auth admin: `admin_requires_google_or_passkey` pour `loa.gto15@gmail.com`;
+  - [ ] fournir un ID token admin automatisable hors Google interactif pour debloquer l'appel `/api/revalidate-catalog`;
 - [ ] Verifier que les pages suivantes se mettent a jour correctement:
   - [ ] `/galerie`;
   - [ ] `/categorie/[categoryId]`;
@@ -182,19 +188,19 @@ Avancement 2026-06-18:
 
 ### P0 - Securite admin et claims
 
-- [ ] Exiger `email_verified === true` avant toute attribution serveur de claim `admin` / `superAdmin`:
+- [x] Exiger `email_verified === true` avant toute attribution serveur de claim `admin` / `superAdmin`:
   - [x] `grantAdminOnAuth`: ne pas promouvoir un email pending/admin non verifie;
   - [x] `syncSuperAdminClaim`: refuser le bootstrap si l'email n'est pas verifie;
   - [x] ajouter un test negatif: email super-admin non verifie => aucun claim admin;
   - [x] ajouter un test negatif: email pending admin non verifie => aucun claim admin.
-- [ ] Rendre le bootstrap super-admin explicite, rare et auditable:
+- [x] Rendre le bootstrap super-admin explicite, rare et auditable:
   - [x] ne plus appeler `syncSuperAdminClaim` pour chaque client connecte standard;
   - [x] supprimer les erreurs CORS `syncSuperAdminClaim` des runs checkout;
   - [x] documenter la procedure owner dans le runbook.
 
 ### P0 - Paiement Stripe, remboursement et annulation
 
-- [ ] Bloquer l'annulation automatique d'une commande Stripe deja `paid` sans remboursement Stripe:
+- [x] Bloquer l'annulation automatique d'une commande Stripe deja `paid` sans remboursement Stripe:
   - [x] cote client `Mes commandes`: ne pas proposer l'annulation libre d'une commande payee carte;
   - [x] cote Function `cancelOrderClient`: refuser ou router les commandes `paid` vers un flux remboursement;
   - [x] cote admin: ne jamais supprimer/restaurer une commande payee sans trace ni refund;
@@ -220,7 +226,7 @@ Blocage observe le 2026-06-19 pendant le run achat -> refund:
 
 Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
 
-- [ ] Debloquer App Check E2E sandbox:
+- [x] Debloquer App Check E2E sandbox:
   - [x] generer/recuperer un debug token App Check Web pour Playwright;
   - [x] l'enregistrer dans Firebase Console App Check sandbox;
   - [x] ajouter localement `E2E_APPCHECK_DEBUG_TOKEN` dans un fichier ignore Git ou une procedure claire;
@@ -251,7 +257,7 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
   - [x] le texte annonce le delai bancaire Stripe;
   - [x] la section factures affiche la ligne `Avoir / remboursement`;
   - [x] aucune annulation libre n'est proposee.
-- [ ] Verifier les preuves et logs:
+- [x] Verifier les preuves et logs:
   - [x] nouveau JSON `logs/hosted-stripe-e2e-*.json`;
   - [x] screenshot checkout/succes/admin/client si utile;
   - [x] logs `stripeWebhook` pour paiement + refund;
@@ -261,7 +267,7 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
 
 ### P0 - Reservation stock et commandes orphelines
 
-- [ ] Ajouter un cleanup serveur programme des commandes `pending_payment` abandonnees:
+- [x] Ajouter un cleanup serveur programme des commandes `pending_payment` abandonnees:
   - [x] detecter les commandes `pending_payment` agees de X minutes;
   - [x] verifier l'etat Stripe du PaymentIntent avant toute restauration;
   - [x] annuler le PaymentIntent si necessaire;
@@ -285,7 +291,7 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
   - [x] lire `order_success`, `order_id`, `payment_intent_client_secret`, `redirect_status`;
   - [x] restaurer l'etat succes/echec/en-cours apres retour redirect;
   - [ ] tester au moins un moyen de paiement redirect en sandbox.
-- [ ] Corriger la preuve E2E serveur:
+- [x] Corriger la preuve E2E serveur:
   - [x] le JSON de preuve inclut `orderId`, `paymentIntentId`, produit choisi et stock final;
   - [x] verifier Firestore `orders/{orderId}.status === paid`;
   - [x] verifier `sys_idempotency/stripe_*` en `processed`;
@@ -310,7 +316,7 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
   - [x] fiche produit: remplacer par `Vendu`, `Deja reserve` ou `Demander un devis`;
   - [x] checkout: surveiller `stock <= 0` en plus de `sold`;
   - [x] message panier clair si le produit devient indisponible.
-- [ ] Eviter les doublons panier:
+- [x] Eviter les doublons panier:
   - [x] document panier deterministe par produit ou merge avant ajout;
   - [x] double clic = une seule ligne;
   - [x] afficher `Deja dans le panier` quand applicable;
@@ -335,8 +341,10 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
 ### P1 - App Check et chemins Firebase
 
 - [ ] Rendre App Check enforceable progressivement:
-  - [ ] inventorier les imports restants de `src/kit/config/firebase.js` et `firebaseStorage.js`;
-  - [ ] faire passer Firestore/Functions/Storage par un chemin qui initialise App Check;
+  - [x] inventorier les imports restants de `src/kit/config/firebase.js` et `firebaseStorage.js` avec `npm run appcheck:audit`;
+  - [x] faire passer Storage par `getStorageInstance()` pour initialiser App Check avant `getStorage`;
+  - [ ] migrer les 51 chemins Firestore/Functions/legacy-config signales par `npm run appcheck:audit`;
+  - [ ] faire passer Firestore/Functions par un chemin qui initialise App Check;
   - [ ] sandbox: conserver `UNENFORCED` jusqu'a telemetrie verte;
   - [ ] tester enforcement service par service: Firestore, Storage, Identity Toolkit;
   - [ ] prod: vraie `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`, aucun debug token hors CI controlee.
@@ -368,7 +376,15 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
 
 ### P1 - Donnees de test et E2E repetable
 
-- [ ] Creer un produit sandbox dedie aux tests Stripe:
+- [x] Ajouter un E2E auth email OTP permanent:
+  - [x] script ajoute: `npm run e2e:auth-email`;
+  - [x] genere un alias Gmail frais `loa.gto15+auth-a-z-...@gmail.com`;
+  - [x] lit uniquement un UID Gmail plus recent que le dernier mail connu pour cet alias;
+  - [x] prouve la creation implicite du compte par OTP;
+  - [x] prouve la deconnexion puis reconnexion du meme compte;
+  - [x] verifie que la reconnexion conserve le meme UID Firebase;
+  - [x] dernier run OK: `logs/auth-email-otp-e2e-2026-06-22T14-16-55-637Z.json`.
+- [x] Creer un produit sandbox dedie aux tests Stripe:
   - [x] script de seed/reset ajoute: `npm run e2e:seed-stripe-product`;
   - [x] produit clairement marque test: `[TEST STRIPE SANDBOX] Produit refund repetable`;
   - [x] stock connu et restaurable via `E2E_STRIPE_PRODUCT_STOCK`;
@@ -377,13 +393,14 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
 - [ ] Creer ou documenter un compte client test verifie dedie:
   - [x] email verifie confirme pour `loa.gto15@gmail.com` via Identity Toolkit;
   - [x] mot de passe attendu hors repo via `E2E_PASSWORD` dans `logs/e2e-mail.env` ou env shell ignore Git;
+  - [x] alternative sans mot de passe: creation/reconnexion client verifiee par OTP avec alias frais via `npm run e2e:auth-email`;
   - [ ] ajouter effectivement `E2E_PASSWORD` dans l'env local pour tester le mode `verified-user`;
   - [ ] rotation si partage accidentel.
-- [ ] Supprimer les exclusions fragiles par nom dans le script E2E:
+- [x] Supprimer les exclusions fragiles par nom dans le script E2E:
   - [x] ne plus eviter manuellement `Buffet`, `dd`, `Chaise`;
   - [x] choisir le produit test dedie via `E2E_STRIPE_PRODUCT_ID` par defaut `sv-e2e-stripe-refund-product`;
   - [x] E2E complet repetable 3 fois sans consommer le catalogue.
-- [ ] Redacter les logs E2E:
+- [x] Redacter les logs E2E:
   - [x] masquer `password`;
   - [x] masquer App Check debug token;
   - [x] masquer `idToken`, `refreshToken`, `Authorization`, `clientSecret`;
@@ -396,8 +413,8 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
   - [x] email client/admin affiche toujours le code postal;
   - [x] export CSV et fiche admin coherents.
 - [ ] Nettoyer les petites frictions panier/compte:
-  - [ ] retirer les boutons quantite `- / +` s'ils ne sont pas actifs;
-  - [ ] synchroniser les compteurs panier/wishlist du menu global;
+  - [x] retirer les boutons quantite `- / +` s'ils ne sont pas actifs;
+  - [x] synchroniser les compteurs panier/wishlist du menu global;
   - [x] garder les commandes annulees visibles avec statut `Annulee`.
 - [ ] Harmoniser rules et claims:
   - [x] verifier si `superAdmin == true` doit etre accepte explicitement dans Firestore/Storage rules;

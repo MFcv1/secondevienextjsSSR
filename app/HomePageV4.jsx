@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import HomeMotionIslandV4 from './HomeMotionIslandV4';
 import AtelierStickyIsland from './AtelierStickyIsland';
+import HeroVideoSliderIsland from './HeroVideoSliderIsland';
 import '../src/home-v4.css';
 
 /**
@@ -73,19 +74,7 @@ export default function HomePageV4() {
       <main>
         {/* ─── HERO ─── */}
         <header className="sv4-hero">
-          <div className="sv4-hero__bg">
-            <video 
-              autoPlay 
-              loop 
-              muted 
-              playsInline 
-              className="sv4-hero__video"
-              poster="https://images.unsplash.com/photo-1595515106969-1ce29566ff1c?auto=format&fit=crop&q=80&w=2000"
-            >
-              <source src="https://assets.mixkit.co/videos/preview/mixkit-interior-of-a-beautiful-living-room-4198-large.mp4" type="video/mp4" />
-            </video>
-            <div className="sv4-hero__overlay"></div>
-          </div>
+          <HeroVideoSliderIsland />
           
           <div className="sv4-hero__content">
             <h1 className="sv4-hero__title" aria-label="Donner une nouvelle âme au mobilier d'hier">

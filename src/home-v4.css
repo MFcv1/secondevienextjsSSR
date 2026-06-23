@@ -109,6 +109,7 @@
   will-change: transform;
   transition: transform 640ms var(--ease), background 400ms ease, border-color 400ms ease;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  color: var(--c-bone); /* Fix: Force all inherited text inside nav to be bone colored */
 }
 
 .sv4-nav:hover {
@@ -279,24 +280,31 @@
 }
 
 .sv4-hero__video {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: brightness(0.7) saturate(0.85);
+  opacity: 0;
+  filter: brightness(0.85) saturate(0.95);
   transform: scale(1.02);
-  will-change: transform;
+  will-change: opacity, filter;
+  transition: opacity 1.2s ease-in-out, filter 1.2s ease;
+}
+
+.sv4-hero__video.is-active {
+  opacity: 1;
 }
 
 .sv4-hero__overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(20, 15, 10, 0.2) 0%,
-    rgba(20, 15, 10, 0.4) 40%,
-    rgba(20, 15, 10, 0.9) 100%
-  );
+  background: 
+    linear-gradient(to bottom, rgba(20, 15, 10, 0.3) 0%, rgba(20, 15, 10, 0.1) 40%, rgba(20, 15, 10, 0.85) 100%),
+    radial-gradient(circle at center, transparent 0%, rgba(10, 5, 0, 0.45) 100%);
   z-index: 1;
+  mix-blend-mode: multiply;
+  pointer-events: none;
 }
 
 .sv4-hero__content {

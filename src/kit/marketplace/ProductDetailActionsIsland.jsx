@@ -5,6 +5,7 @@ import { Heart, ShoppingBag } from 'lucide-react';
 import { CART_STATE_CHANGED_EVENT, getCartDocumentId, readGuestCart } from '../commerce/guestCart';
 
 const WISHLIST_STORAGE_KEY = 'sv_public_product_wishlist';
+const WISHLIST_CHANGED_EVENT = 'sv:wishlist-state-changed';
 
 const readWishlist = () => {
   if (typeof window === 'undefined') return [];
@@ -63,6 +64,7 @@ export default function ProductDetailActionsIsland({
       ? current.filter((id) => id !== productId)
       : [...current, productId];
     window.localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent(WISHLIST_CHANGED_EVENT, { detail: { items: next } }));
     setLiked(next.includes(productId));
   }, [productId]);
 

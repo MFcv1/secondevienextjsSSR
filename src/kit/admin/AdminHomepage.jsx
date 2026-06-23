@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 
 import { db } from '../config/firebase';
-import { storage } from '../config/firebaseStorage';
+import { getStorageInstance } from '../config/firebaseStorage';
 import KIT_CONFIG, { GALLERY_HERO_PRESET_ENTRIES, GALLERY_HERO_PRESETS, resolveGalleryHeroImage } from '../config/constants';
 import AdminImageCard from './components/AdminImageCard';
 import ImageCropperModal from './components/ImageCropperModal';
@@ -380,6 +380,7 @@ const deleteStorageUrl = async (url) => {
     const path = getStoragePathFromUrl(url);
     if (!path) return;
     try {
+        const storage = await getStorageInstance();
         await deleteObject(ref(storage, path));
     } catch (error) {
         console.warn('Static media cleanup skipped:', error.message);
@@ -411,6 +412,7 @@ const uploadStaticWebpImage = async (file, item, uploadKey) => {
         type: 'image/webp',
         lastModified: Date.now(),
     });
+    const storage = await getStorageInstance();
     const storageRef = ref(storage, `${folder}/${sourceFile.name}`);
     const uploadedUrls = [];
 

@@ -4,6 +4,7 @@ import { useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 const WISHLIST_STORAGE_KEY = 'sv_public_product_wishlist';
+const WISHLIST_CHANGED_EVENT = 'sv:wishlist-state-changed';
 const PRODUCT_DETAIL_IMAGE_SIZES = '(max-width: 1023px) min(94vw, 430px), calc(100vw - 610px)';
 const warmedImages = new Set();
 const prefetchedRoutes = new Set();
@@ -31,6 +32,7 @@ const readWishlist = () => {
 
 const writeWishlist = (items) => {
   window.localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(items));
+  window.dispatchEvent(new CustomEvent(WISHLIST_CHANGED_EVENT, { detail: { items } }));
 };
 
 const shouldSkipSoftWarmup = () => {

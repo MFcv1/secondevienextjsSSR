@@ -3,9 +3,11 @@ import { app } from './firebaseCore';
 let firestoreModulePromise = null;
 let functionsModulePromise = null;
 let authModulePromise = null;
+let storageModulePromise = null;
 let dbInstance = null;
 let functionsInstance = null;
 let authInstance = null;
+let storageInstance = null;
 let googleProviderInstance = null;
 let appCheckPromise = null;
 
@@ -73,6 +75,22 @@ export const getFunctionsInstance = async () => {
     functionsInstance = getFunctions(app, 'us-central1');
   }
   return functionsInstance;
+};
+
+export const loadStorageModule = () => {
+  if (!storageModulePromise) {
+    storageModulePromise = import('firebase/storage');
+  }
+  return storageModulePromise;
+};
+
+export const getStorageInstance = async () => {
+  if (!storageInstance) {
+    await ensureAppCheck();
+    const { getStorage } = await loadStorageModule();
+    storageInstance = getStorage(app);
+  }
+  return storageInstance;
 };
 
 export const getCallableFunction = async (name) => {
