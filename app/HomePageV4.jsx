@@ -59,13 +59,13 @@ export default function HomePageV4() {
           </div>
 
           <div className="sv4-nav__right">
-            <Link href="/galerie" className="sv4-nav__cta">
-              <span className="sv4-nav__cta-text">Catalogue</span>
-              <span className="sv4-nav__cta-icon">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
+            <Link href="/galerie" className="sv4-nav__cta sv4-btn-reveal">
+              <span className="sv4-btn-text-mask">
+                <span className="sv4-btn-text-inner" data-text="Catalogue">Catalogue</span>
               </span>
+              <svg className="sv4-btn-icon-flat" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
             </Link>
           </div>
         </div>
@@ -84,14 +84,18 @@ export default function HomePageV4() {
               Nous chinons, restaurons et sublimons des pièces de caractère. Un artisanat d'art en Provence, pour un intérieur qui a du sens.
             </p>
             <div className="sv4-hero__actions sv4-reveal">
-              <Link href="/galerie" className="sv4-hero__btn-primary">
-                <span>Découvrir la collection</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <Link href="/galerie" className="sv4-hero__btn-primary sv4-btn-reveal">
+                <span className="sv4-btn-text-mask">
+                  <span className="sv4-btn-text-inner" data-text="Découvrir la collection">Découvrir la collection</span>
+                </span>
+                <svg className="sv4-btn-icon-flat" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>
               </Link>
-              <Link href="/devis" className="sv4-hero__btn-ghost">
-                <span>Confier un meuble</span>
+              <Link href="/devis" className="sv4-hero__btn-ghost sv4-btn-reveal">
+                <span className="sv4-btn-text-mask">
+                  <span className="sv4-btn-text-inner" data-text="Confier un meuble">Confier un meuble</span>
+                </span>
               </Link>
             </div>
           </div>

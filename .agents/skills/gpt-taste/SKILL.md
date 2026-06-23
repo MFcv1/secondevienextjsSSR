@@ -46,6 +46,7 @@ The Hero must breathe. It must NOT be a narrow, 6-line text wall.
 ## 5. ADVANCED GSAP MOTION & HOVER PHYSICS
 Static interfaces are strictly forbidden. You must write real GSAP (`@gsap/react`, `ScrollTrigger`).
 - **Hover Physics:** Every clickable card and image must react. Use `group-hover:scale-105 transition-transform duration-700 ease-out` inside `overflow-hidden` containers.
+- **Text Slide Mask Reveal (Buttons):** For premium buttons, avoid basic background or scale hovers. Instead, use an `overflow-hidden` mask on the text. On hover, translate the text up (`-translate-y-full`) and reveal an identical pseudo-element (`::after` with `content: attr(data-text)`) sliding up from below. Use extreme cubic-beziers (e.g., `cubic-bezier(0.85, 0, 0.15, 1)`) for a razor-sharp text switch.
 - **Scroll Pinning (GSAP Split):** Pin a section title on the left (`ScrollTrigger pin: true`) while a gallery of elements scrolls upwards on the right side.
 - **Image Scale & Fade Scroll:** Images must start small (`scale: 0.8`). As they scroll into view, they grow to `scale: 1.0`. As they scroll out of view, they smoothly darken and fade out (`opacity: 0.2`).
 - **Scrubbing Text Reveals:** Opacity of central paragraph words starts at 0.1 and scrubs to 1.0 sequentially as the user scrolls.
