@@ -47,6 +47,9 @@
   --content-max: 1400px;
   --content-px: clamp(20px, 4vw, 64px);
 
+  /* True Liquid Glass Noise Map */
+  --liquid-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E");
+
   background: var(--c-bone);
   color: var(--c-espresso);
   font-family: var(--f-body);
@@ -101,23 +104,49 @@
   width: calc(100% - 48px);
   max-width: 1400px;
   z-index: 1000;
-  background: rgba(20, 15, 10, 0.4);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  
+  /* Extremely subtle physical tint */
+  background: 
+    radial-gradient(150% 100% at 50% 0%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%),
+    rgba(255, 255, 255, 0.02);
+  
+  /* The core Apple blur */
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  
+  /* The physical glass edge: 
+     1. Drop shadow
+     2. Outer border (1px solid via inset)
+     3. Top specular light
+     4. Bottom bevel shadow */
+  box-shadow: 
+    0 24px 48px -12px rgba(0, 0, 0, 0.25),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.1);
+    
+  border: none;
   border-radius: var(--r-pill);
-  will-change: transform;
-  transition: transform 640ms var(--ease), background 400ms ease, border-color 400ms ease;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
-  color: var(--c-bone); /* Fix: Force all inherited text inside nav to be bone colored */
+  color: var(--c-bone);
+  
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease, background 0.4s ease;
 }
 
 .sv4-nav:hover {
-  background: rgba(20, 15, 10, 0.6);
-  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateX(-50%) translateY(-2px);
+  background: 
+    radial-gradient(150% 100% at 50% 0%, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 100%),
+    rgba(255, 255, 255, 0.04);
+  box-shadow: 
+    0 32px 64px -16px rgba(0, 0, 0, 0.3),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .sv4-nav__inner {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -375,51 +404,138 @@
 }
 
 .sv4-hero__btn-primary {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 32px;
-  background: var(--c-bone);
+  gap: 12px;
+  padding: 16px 36px;
+  
+  /* Luminous Frost Material */
+  background: 
+    radial-gradient(100% 100% at 20% 0%, rgba(250, 246, 239, 0.95) 0%, rgba(220, 215, 205, 0.7) 100%);
+  
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  
   color: var(--c-espresso);
   border-radius: var(--r-pill);
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  transition: transform var(--dur-ui) var(--ease), box-shadow 400ms ease;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.2);
-  cursor: pointer;
   border: none;
+  
+  /* Deep structural shadows */
+  box-shadow: 
+    0 12px 32px -8px rgba(0, 0, 0, 0.25),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+    inset 0 1px 2px rgba(255, 255, 255, 1),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+    
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease;
+  text-decoration: none;
+}
+
+/* Add an under-glow that sits behind the button to give environmental depth */
+.sv4-hero__btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: -10px; /* extends beyond the button */
+  background: rgba(250, 246, 239, 0.4);
+  border-radius: var(--r-pill);
+  filter: blur(20px);
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
 }
 
 .sv4-hero__btn-primary:hover {
-  transform: scale(0.97);
-  box-shadow: 0 18px 56px rgba(0,0,0,0.3);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 
+    0 24px 48px -12px rgba(0, 0, 0, 0.3),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.8),
+    inset 0 1px 2px rgba(255, 255, 255, 1),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.sv4-hero__btn-primary:hover::before {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.sv4-hero__btn-primary > * {
+  position: relative;
+  z-index: 1;
 }
 
 .sv4-hero__btn-ghost {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 16px 36px; /* Exactly matched to primary button */
+  padding: 16px 36px;
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.08em; /* Matched to primary button */
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--c-bone);
-  /* Premium Glassmorphism */
-  background: rgba(250, 246, 239, 0.08); 
-  border: 1px solid rgba(250, 246, 239, 0.15);
+  
+  /* True Depth Transparent Glass */
+  background: 
+    radial-gradient(120% 120% at 10% 0%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%),
+    rgba(255, 255, 255, 0.01);
+    
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  
+  border: none;
   border-radius: var(--r-pill);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: background 400ms ease, border-color 400ms ease, transform 400ms var(--ease);
+  
+  box-shadow: 
+    0 16px 32px -10px rgba(0, 0, 0, 0.3),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+    inset 0 1px 1px rgba(255, 255, 255, 0.5),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.1);
+    
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease, background 0.4s ease;
+  text-decoration: none;
+}
+
+/* Deep under-glow */
+.sv4-hero__btn-ghost::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--r-pill);
+  filter: blur(24px);
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
 }
 
 .sv4-hero__btn-ghost:hover {
-  background: rgba(250, 246, 239, 0.15);
-  border-color: rgba(250, 246, 239, 0.3);
-  transform: scale(0.98);
+  transform: translateY(-4px) scale(1.02);
+  background: 
+    radial-gradient(120% 120% at 10% 0%, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 100%),
+    rgba(255, 255, 255, 0.03);
+  box-shadow: 
+    0 24px 48px -12px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.sv4-hero__btn-ghost:hover::before {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.sv4-hero__btn-ghost > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Scroll hint */
