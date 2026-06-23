@@ -73,7 +73,7 @@ export default function HomePageV4() {
 
       <main>
         {/* ─── HERO ─── */}
-        <header className="sv4-hero">
+        <header className="sv4-hero" data-nav-theme="dark">
           <HeroVideoSliderIsland />
           
           <div className="sv4-hero__content">
@@ -136,7 +136,7 @@ export default function HomePageV4() {
             </Link>
           </div>
           
-          <div className="sv4-accordion sv4-reveal" style={{ marginTop: '40px' }}>
+          <div className="sv4-accordion sv4-reveal" style={{ marginTop: '40px' }} data-nav-theme="dark">
             <Link href="/galerie?category=assises" className="sv4-accordion__slice">
               <img src="https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?auto=format&fit=crop&q=80&w=800" alt="Assises" />
               <div className="sv4-accordion__overlay" />

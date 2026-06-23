@@ -34,7 +34,20 @@ export default function HomeMotionIslandV4() {
         const y = window.scrollY;
         setShowBtt(y > 500);
         if (nav) {
-          if (y > window.innerHeight - 100) {
+          let isDarkTheme = false;
+          const darkSections = document.querySelectorAll('[data-nav-theme="dark"]');
+          const navRect = nav.getBoundingClientRect();
+          const navCenter = navRect.top + (navRect.height / 2);
+          
+          for (let i = 0; i < darkSections.length; i++) {
+            const rect = darkSections[i].getBoundingClientRect();
+            if (navCenter >= rect.top - 10 && navCenter <= rect.bottom + 10) {
+              isDarkTheme = true;
+              break;
+            }
+          }
+
+          if (!isDarkTheme) {
             nav.setAttribute('data-scrolled', 'true');
           } else {
             nav.setAttribute('data-scrolled', 'false');
