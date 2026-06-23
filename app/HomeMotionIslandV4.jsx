@@ -34,6 +34,12 @@ export default function HomeMotionIslandV4() {
         const y = window.scrollY;
         setShowBtt(y > 500);
         if (nav) {
+          if (y > window.innerHeight - 100) {
+            nav.setAttribute('data-scrolled', 'true');
+          } else {
+            nav.setAttribute('data-scrolled', 'false');
+          }
+          
           if (y < 60 || y < lastY) {
             nav.style.transform = 'translate(-50%, 0)';
           } else if (y > lastY + 6) {

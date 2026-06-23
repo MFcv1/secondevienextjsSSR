@@ -148,7 +148,7 @@
   align-items: center;
   gap: 12px;
   color: var(--c-bone);
-  transition: opacity 300ms ease;
+  transition: opacity 300ms ease, color 400ms ease;
 }
 
 .sv4-nav__logo:hover {
@@ -160,6 +160,7 @@
   width: auto;
   object-fit: contain;
   filter: brightness(0) invert(1); /* Make the logo white to match bone color text */
+  transition: filter 400ms ease;
 }
 
 .sv4-nav__logo-text {
@@ -224,7 +225,7 @@
   color: var(--c-bone);
   padding: 4px 0;
   opacity: 0.7;
-  transition: opacity 300ms ease;
+  transition: opacity 300ms ease, color 400ms ease;
 }
 
 .sv4-nav__link:hover {
@@ -241,12 +242,45 @@
   background: var(--c-bone);
   transform: scaleX(0);
   transform-origin: right center;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 400ms ease;
 }
 
 .sv4-nav__link:hover::after {
   transform: scaleX(1);
   transform-origin: left center;
+}
+
+/* --- SCROLLED NAV STATE --- */
+.sv4-nav[data-scrolled="true"] {
+  background: rgba(250, 246, 239, 0.95);
+  box-shadow: 
+    0 12px 32px -8px rgba(0, 0, 0, 0.08),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.05),
+    inset 0 1px 1px rgba(255, 255, 255, 0.8);
+}
+
+.sv4-nav[data-scrolled="true"] .sv4-nav__logo,
+.sv4-nav[data-scrolled="true"] .sv4-nav__link {
+  color: var(--c-espresso);
+}
+
+.sv4-nav[data-scrolled="true"] .sv4-nav__link::after {
+  background: var(--c-espresso);
+}
+
+.sv4-nav[data-scrolled="true"] .sv4-nav__logo img {
+  filter: none;
+}
+
+.sv4-nav[data-scrolled="true"] .sv4-nav__cta {
+  background: var(--c-espresso);
+  color: var(--c-bone);
+  border-color: transparent;
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.2);
+}
+
+.sv4-nav[data-scrolled="true"] .sv4-nav__cta:hover {
+  background: #000;
 }
 
 /* ──────────────────────────────────────
