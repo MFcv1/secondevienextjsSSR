@@ -968,13 +968,13 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                                             </div>
                                             <div className="flex-1">
                                                 <div className="flex justify-between items-center">
-                                                    <span className={`font-black text-base ${darkMode ? 'text-white' : 'text-stone-900'}`}>Carte / Wallets</span>
+                                                    <span className={`font-black text-base ${darkMode ? 'text-white' : 'text-stone-900'}`}>Paiement Stripe</span>
                                                 </div>
-                                                <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest mt-0.5">Rapide & Sécurisé</p>
+                                                <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest mt-0.5">Carte et options disponibles</p>
                                             </div>
                                         </div>
                                         
-                                        {/* LOGOS CARTE / WALLET (SUR LEUR PROPRE LIGNE) */}
+                                        {/* METHODES STRIPE GENERIQUES : le Payment Element affiche seulement les moyens actifs et eligibles. */}
                                         <div className="flex flex-wrap items-center gap-2">
                                             {/* VISA */}
                                             <div className={`h-7 px-2.5 flex items-center justify-center rounded-md border ${darkMode ? 'bg-white border-stone-700' : 'bg-white border-stone-200 shadow-sm'}`}>
@@ -985,17 +985,12 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                                                 <div className="w-4 h-4 rounded-full bg-[#EB001B] mix-blend-multiply absolute -translate-x-1.5" />
                                                 <div className="w-4 h-4 rounded-full bg-[#F79E1B] mix-blend-multiply absolute justify-center translate-x-1.5" />
                                             </div>
-                                            {/* APPLE PAY */}
-                                            <div className={`h-7 px-2.5 flex items-center justify-center rounded-md border ${darkMode ? 'bg-stone-800 border-stone-700 text-white' : 'bg-black border-black text-white'}`}>
-                                                <span className="text-[10px] font-medium flex items-center gap-1.5"><svg viewBox="0 0 384 512" className="w-3 h-3 fill-current" xmlns="http://www.w3.org/2000/svg"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg> Pay</span>
+                                            {/* METHODES DYNAMIQUES */}
+                                            <div className={`h-7 px-2.5 flex items-center justify-center rounded-md border ${darkMode ? 'bg-stone-800 border-stone-700 text-stone-300' : 'bg-stone-100 border-stone-200 text-stone-600 shadow-sm'}`}>
+                                                <span className="text-[10px] font-bold uppercase tracking-wider leading-none">Selon Stripe</span>
                                             </div>
-                                            {/* GOOGLE PAY */}
-                                            <div className={`h-7 px-2.5 flex items-center justify-center rounded-md border ${darkMode ? 'bg-white border-stone-700' : 'bg-white border-stone-200 shadow-sm'}`}>
-                                                <span className="text-[10px] font-medium text-stone-700 flex items-center gap-1.5"><svg viewBox="0 0 488 512" className="w-3 h-3 fill-current text-[#4285F4]" xmlns="http://www.w3.org/2000/svg"><path d="M488 261.8C488 240.8 486.1 221.1 482.6 202H248v118.9h135.2c-5.8 38.6-28.9 71.3-61.6 93.1v77.5h99.6c58.2-53.6 91.8-132.7 91.8-229.7z" fill="#4285F4" /><path d="M248 512c67.4 0 124.1-22.3 165.4-60.5l-99.6-77.5c-22.4 15-51 23.9-82.8 23.9-63.7 0-117.7-43.1-136.9-101.1H-5.4v79.4C44.7 475.2 138.8 512 248 512z" fill="#34A853"/><path d="M111.1 296.8c-4.9-14.6-7.7-30.2-7.7-46.3s2.8-31.7 7.7-46.3V124.8H-5.4C-18.7 151.3-26.1 181.7-26.1 213.5s7.4 62.2 20.7 88.7l116.5-5.4z" fill="#FBBC04"/><path d="M248 102.1c36.7 0 69.6 12.6 95.5 37.4l71.7-71.7C372 26.2 315.3 0 248 0 138.8 0 44.7 36.8-5.4 124.8L111.1 204c19.2-58 73.2-101.9 136.9-101.9z" fill="#EA4335"/></svg> Pay</span>
-                                            </div>
-                                            {/* PAYPAL */}
-                                            <div className={`h-7 px-2.5 flex items-center justify-center rounded-md border ${darkMode ? 'bg-[#003087] border-[#003087]' : 'bg-[#003087] border-[#003087] shadow-sm'}`}>
-                                                <span className="text-[11px] font-black italic text-white tracking-tighter">PayPal</span>
+                                            <div className={`h-7 px-2.5 flex items-center justify-center rounded-md border ${darkMode ? 'bg-stone-800 border-stone-700 text-stone-300' : 'bg-stone-100 border-stone-200 text-stone-600 shadow-sm'}`}>
+                                                <span className="text-[10px] font-bold uppercase tracking-wider leading-none">Wallets eligibles</span>
                                             </div>
                                         </div>
                                     </div>

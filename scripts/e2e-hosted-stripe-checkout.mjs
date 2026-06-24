@@ -36,6 +36,9 @@ const otpCode = String(process.env.E2E_OTP_CODE || '').replace(/\D/g, '').slice(
 const sendOtpOnly = String(process.env.E2E_SEND_OTP_ONLY || 'false').toLowerCase() === 'true';
 const confirmStripePayment = String(process.env.E2E_CONFIRM_STRIPE || 'true').toLowerCase() !== 'false';
 const stripeCardNumber = String(process.env.E2E_STRIPE_CARD || '4242424242424242').replace(/\s/g, '');
+const stripePaymentMethod = String(process.env.E2E_STRIPE_PAYMENT_METHOD || 'card').trim().toLowerCase();
+const stripeIdealBank = String(process.env.E2E_STRIPE_IDEAL_BANK || 'ING').trim();
+const authorizeStripeRedirect = String(process.env.E2E_STRIPE_AUTHORIZE_REDIRECT || 'true').toLowerCase() !== 'false';
 const expectStripeFailure = String(process.env.E2E_EXPECT_STRIPE_FAILURE || 'false').toLowerCase() === 'true';
 const targetProductId = String(process.env.E2E_STRIPE_PRODUCT_ID || 'sv-e2e-stripe-refund-product').trim();
 const skipProductsPattern = String(process.env.E2E_SKIP_PRODUCTS_REGEX || '').trim();
@@ -95,7 +98,7 @@ const classifyKnownFailure = (error) => {
     {
       code: 'app-check-debug-token-blocked',
       status: 'known-blocked-app-check',
-      pattern: /app\s*check|appcheck|debug token|exchangeDebugToken|throttle/i,
+      pattern: /AppCheck.*(403|blocked|failed|error)|App Check.*(403|blocked|failed|error)|exchangeDebugToken.*(403|blocked|failed|error)|debug token.*(blocked|rejected|invalid)|throttle/i,
       guidance: 'Register E2E_APPCHECK_DEBUG_TOKEN in Firebase Console App Check sandbox, then rerun the smoke/E2E.',
     },
     {
@@ -123,6 +126,13 @@ const classifyKnownFailure = (error) => {
       guidance: 'Expected only when E2E_EXPECT_STRIPE_FAILURE=true; otherwise inspect Stripe/payment UI.',
       when: () => expectStripeFailure,
     },
+    {
+      code: 'stripe-redirect-method-unavailable',
+      status: 'known-blocked-stripe-redirect-method',
+      pattern: /iDEAL payment method was not visible|Enable iDEAL|payment method.*not.*available|payment method.*not activated/i,
+      guidance: 'Enable iDEAL/Wero for Stripe sandbox dynamic payment methods, then rerun with E2E_STRIPE_PAYMENT_METHOD=ideal.',
+      when: () => stripePaymentMethod === 'ideal',
+    },
   ];
 
   for (const rule of rules) {
@@ -138,7 +148,9 @@ const classifyKnownFailure = (error) => {
   return null;
 };
 
-const allowedCheckoutModes = new Set(['verified-user', 'guest-otp']);
+const loggedInCheckoutModes = new Set(['verified-user', 'otp-user']);
+const allowedCheckoutModes = new Set([...loggedInCheckoutModes, 'guest-otp']);
+const allowedStripePaymentMethods = new Set(['card', 'ideal']);
 const isSandboxOrLocalTarget = (
   baseUrl === HOSTED_URL ||
   /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/i.test(baseUrl)
@@ -154,8 +166,13 @@ if (!allowedCheckoutModes.has(checkoutMode)) {
   process.exit(1);
 }
 
+if (!allowedStripePaymentMethods.has(stripePaymentMethod)) {
+  console.error(`Unsupported E2E_STRIPE_PAYMENT_METHOD="${stripePaymentMethod}". Use card or ideal.`);
+  process.exit(1);
+}
+
 if (checkoutMode === 'verified-user' && !passwordProvided) {
-  console.error('E2E_CHECKOUT_MODE=verified-user requires E2E_PASSWORD for a pre-verified Firebase user.');
+  console.error('E2E_CHECKOUT_MODE=verified-user requires E2E_PASSWORD for a pre-verified Firebase user. Use E2E_CHECKOUT_MODE=otp-user for Gmail OTP login.');
   process.exit(1);
 }
 
@@ -236,6 +253,139 @@ const waitForStripeIntentOpening = async (page) => {
     page.waitForSelector('iframe[src*="stripe.com"], iframe[name^="__privateStripeFrame"]', { timeout: 45_000, state: 'attached' }),
     page.getByText(/securisation|chargement/i).first().waitFor({ timeout: 10_000 }).catch(() => null),
   ]).catch(() => null);
+};
+
+const clickStripeFrameText = async (page, pattern, label, timeout = 15_000) => {
+  const startedAt = Date.now();
+  let lastError = null;
+  while (Date.now() - startedAt < timeout) {
+    for (const frame of page.frames()) {
+      const candidate = frame.getByText(pattern).first();
+      if (!(await candidate.isVisible({ timeout: 500 }).catch(() => false))) continue;
+      await candidate.click({ timeout: 5_000 }).catch(async (error) => {
+        lastError = error;
+        await candidate.click({ force: true, timeout: 5_000 });
+      });
+      return true;
+    }
+    await page.waitForTimeout(500);
+  }
+  if (lastError) {
+    result.stripeFrameClickError = {
+      label,
+      message: lastError.message || String(lastError),
+    };
+  }
+  return false;
+};
+
+const fillStripeFrameField = async (page, pattern, value, label, timeout = 15_000) => {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeout) {
+    for (const frame of page.frames()) {
+      const candidates = [
+        frame.getByLabel(pattern),
+        frame.getByPlaceholder(pattern),
+        frame.locator('input').filter({ hasText: pattern }),
+      ];
+      for (const candidate of candidates) {
+        const count = await candidate.count().catch(() => 0);
+        for (let index = 0; index < count; index += 1) {
+          const field = candidate.nth(index);
+          if (!(await field.isVisible().catch(() => false))) continue;
+          await field.fill(value).catch(async () => {
+            await field.click();
+            await field.pressSequentially(value);
+          });
+          return true;
+        }
+      }
+    }
+    await page.waitForTimeout(500);
+  }
+  throw new Error(`Stripe field was not found: ${label}`);
+};
+
+const selectStripeIdealPaymentMethod = async (page) => {
+  const selected = await clickStripeFrameText(page, /iDEAL|Wero/i, 'iDEAL payment method', 20_000);
+  if (!selected) {
+    throw new Error('Stripe iDEAL payment method was not visible. Enable iDEAL/Wero in Stripe sandbox payment method settings before rerunning.');
+  }
+
+  await page.waitForTimeout(1_000);
+  const bankLabelPattern = /bank|banque|select your bank|choisir.*banque|selectionner.*banque|sélectionner.*banque/i;
+  const selectedBank = await clickStripeFrameText(page, new RegExp(stripeIdealBank.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), `iDEAL bank ${stripeIdealBank}`, 8_000);
+  if (selectedBank) return;
+
+  for (const frame of page.frames()) {
+    const selects = frame.locator('select');
+    const count = await selects.count().catch(() => 0);
+    for (let index = 0; index < count; index += 1) {
+      const select = selects.nth(index);
+      if (!(await select.isVisible().catch(() => false))) continue;
+      const optionCount = await select.locator('option').count().catch(() => 0);
+      for (let optionIndex = 0; optionIndex < optionCount; optionIndex += 1) {
+        const option = select.locator('option').nth(optionIndex);
+        const label = await option.textContent().catch(() => '');
+        const value = await option.getAttribute('value').catch(() => '');
+        if (!value || !new RegExp(stripeIdealBank.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(label || value)) continue;
+        await select.selectOption(value);
+        return;
+      }
+      const firstValue = await select.locator('option').nth(1).getAttribute('value').catch(() => '');
+      if (firstValue) {
+        await select.selectOption(firstValue);
+        result.stripeRedirect = {
+          ...(result.stripeRedirect || {}),
+          selectedBankFallback: firstValue,
+        };
+        return;
+      }
+    }
+  }
+
+  const openedBankPicker = await clickStripeFrameText(page, bankLabelPattern, 'iDEAL bank picker', 5_000);
+  if (openedBankPicker) {
+    const pickedBank = await clickStripeFrameText(page, new RegExp(stripeIdealBank.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), `iDEAL bank ${stripeIdealBank}`, 8_000);
+    if (pickedBank) return;
+  }
+
+  throw new Error(`Stripe iDEAL bank "${stripeIdealBank}" was not selectable.`);
+};
+
+const authorizeStripeRedirectIfNeeded = async (page) => {
+  if (stripePaymentMethod !== 'ideal' || !authorizeStripeRedirect || !confirmStripePayment) return false;
+
+  await Promise.race([
+    page.waitForURL((url) => /stripe\.com|hooks\.stripe\.com|checkout\.stripe\.com/i.test(url.href), { timeout: 30_000 }),
+    page.getByText(/Authorize test payment|Fail test payment|Autoriser|Echouer|Échouer/i).first().waitFor({ timeout: 30_000 }),
+  ]).catch(() => null);
+
+  const redirectedUrl = redactSensitiveText(page.url());
+  result.stripeRedirect = {
+    ...(result.stripeRedirect || {}),
+    reachedRedirectPage: /stripe\.com|hooks\.stripe\.com|checkout\.stripe\.com/i.test(page.url()),
+    redirectedUrl,
+  };
+
+  const authorizeSelectors = [
+    page.getByRole('button', { name: /Authorize test payment/i }),
+    page.getByRole('link', { name: /Authorize test payment/i }),
+    page.getByText(/Authorize test payment/i).first(),
+    page.getByRole('button', { name: /Autoriser|Confirmer|Continuer|Success|Succès/i }),
+    page.getByText(/Autoriser|Confirmer|Continuer|Success|Succès/i).first(),
+  ];
+
+  for (const locator of authorizeSelectors) {
+    if (!(await locator.isVisible({ timeout: 2_000 }).catch(() => false))) continue;
+    await locator.click({ timeout: 5_000 }).catch(async () => locator.click({ force: true, timeout: 5_000 }));
+    result.stripeRedirect.authorized = true;
+    await page.waitForURL((url) => url.href.startsWith(`${baseUrl}/checkout`) || url.href.includes('/checkout?'), { timeout: 60_000 }).catch(() => null);
+    result.stripeRedirect.returnUrl = redactSensitiveText(page.url());
+    return true;
+  }
+
+  throw new Error('Stripe redirect authorization page was reached, but the authorize test payment action was not clickable.');
 };
 
 const extractStockFromText = (text) => {
@@ -614,7 +764,7 @@ const ensureLoggedIn = async (page) => {
     loginDialog.locator('button[type="submit"]').filter({ hasText: /Recevoir mon code|Envoyer le code/i }),
   ], 'request login OTP');
 
-  const loginOtpCode = otpCode || await waitForGmailOtp({ afterTimestamp: otpRequestedAt });
+  const loginOtpCode = otpCode || await waitForGmailOtp({ afterTimestamp: otpRequestedAt, intent: 'login' });
   if (!/^\d{6}$/.test(loginOtpCode)) {
     throw new Error('missing-e2e-login-otp-code');
   }
@@ -678,6 +828,11 @@ const syncBrowserAuthEvent = async (page) => {
       return {
         uid: value.uid,
         email: value.email,
+        emailVerified: Boolean(value.emailVerified),
+        providerData: Array.isArray(value.providerData) ? value.providerData.map((provider) => ({
+          providerId: provider?.providerId || '',
+          email: provider?.email || value.email || '',
+        })) : [],
         stsTokenManager: {
           accessToken: value.stsTokenManager.accessToken,
         },
@@ -690,6 +845,11 @@ const syncBrowserAuthEvent = async (page) => {
         return {
           uid: window.__svAuthUser.uid,
           email: window.__svAuthUser.email,
+          emailVerified: Boolean(window.__svAuthUser.emailVerified),
+          providerData: Array.isArray(window.__svAuthUser.providerData) ? window.__svAuthUser.providerData.map((provider) => ({
+            providerId: provider?.providerId || '',
+            email: provider?.email || window.__svAuthUser.email || '',
+          })) : [],
           stsTokenManager: { accessToken: token },
         };
       }
@@ -799,6 +959,8 @@ const syncBrowserAuthEvent = async (page) => {
     const user = {
       uid: storedUserValue.uid,
       email: storedUserValue.email,
+      emailVerified: Boolean(storedUserValue.emailVerified),
+      providerData: Array.isArray(storedUserValue.providerData) ? storedUserValue.providerData : [],
       isAnonymous: false,
       getIdToken: () => Promise.resolve(storedUserValue.stsTokenManager?.accessToken || ''),
     };
@@ -879,7 +1041,7 @@ const parseEmailDate = (rawMessage) => {
   return Number.isFinite(timestamp) ? timestamp : 0;
 };
 
-const extractOtpFromMail = (rawMessage, afterTimestamp) => {
+const extractOtpFromMail = (rawMessage, afterTimestamp, intent = 'any') => {
   const messageDate = parseEmailDate(rawMessage);
   if (messageDate && afterTimestamp && messageDate < afterTimestamp - 5_000) return '';
   const decoded = String(rawMessage || '').replace(/=\r?\n/g, '').replace(/=([0-9A-F]{2})/gi, (_, hex) => {
@@ -891,12 +1053,19 @@ const extractOtpFromMail = (rawMessage, afterTimestamp) => {
   });
   const body = decoded.split(/\r?\n\r?\n/).slice(1).join('\n');
   const text = body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-  const candidates = [
+  const checkoutCandidates = [
     /votre code de validation seconde vie est\s*:?\s*(\d{6})/i,
-    /votre code de connexion seconde vie est\s*:?\s*(\d{6})/i,
     /code de validation(?:\s|&nbsp;|[^\d]){0,120}(\d{6})/i,
+  ];
+  const loginCandidates = [
+    /votre code de connexion seconde vie est\s*:?\s*(\d{6})/i,
     /code de connexion(?:\s|&nbsp;|[^\d]){0,120}(\d{6})/i,
   ];
+  const candidates = intent === 'checkout'
+    ? checkoutCandidates
+    : intent === 'login'
+      ? loginCandidates
+      : [...checkoutCandidates, ...loginCandidates];
   for (const pattern of candidates) {
     const match = text.match(pattern);
     if (match?.[1]) return match[1];
@@ -904,7 +1073,7 @@ const extractOtpFromMail = (rawMessage, afterTimestamp) => {
   return '';
 };
 
-const readLatestOtpFromGmail = async ({ user, pass, afterTimestamp }) => {
+const readLatestOtpFromGmail = async ({ user, pass, afterTimestamp, intent = 'any' }) => {
   const imap = await createImapClient({ user, pass });
   try {
     await imap.send(`LOGIN "${escapeImapString(user)}" "${escapeImapString(pass)}"`);
@@ -914,7 +1083,7 @@ const readLatestOtpFromGmail = async ({ user, pass, afterTimestamp }) => {
     const uids = searchLine.replace(/^\* SEARCH\s*/i, '').trim().split(/\s+/).filter(Boolean).slice(-20).reverse();
     for (const uid of uids) {
       const response = await imap.send(`UID FETCH ${uid} (BODY.PEEK[])`);
-      const code = extractOtpFromMail(response, afterTimestamp);
+      const code = extractOtpFromMail(response, afterTimestamp, intent);
       if (code) return code;
     }
     return '';
@@ -924,7 +1093,7 @@ const readLatestOtpFromGmail = async ({ user, pass, afterTimestamp }) => {
   }
 };
 
-const waitForGmailOtp = async ({ afterTimestamp }) => {
+const waitForGmailOtp = async ({ afterTimestamp, intent = 'any' }) => {
   if (!gmailAppPassword) return '';
   const startedAt = Date.now();
   let lastError = null;
@@ -934,6 +1103,7 @@ const waitForGmailOtp = async ({ afterTimestamp }) => {
         user: mailboxUser,
         pass: gmailAppPassword,
         afterTimestamp,
+        intent,
       });
       if (code) return code;
     } catch (error) {
@@ -1033,7 +1203,7 @@ const handleGuestOtpIfNeeded = async (page) => {
   }
 
   if (!otpCode) {
-    const mailboxCode = await waitForGmailOtp({ afterTimestamp: otpRequestedAfter });
+    const mailboxCode = await waitForGmailOtp({ afterTimestamp: otpRequestedAfter, intent: 'checkout' });
     if (!mailboxCode) {
       result.guestOtp.reason = 'otp-sent-awaiting-code';
       return false;
@@ -1062,7 +1232,7 @@ const handleGuestOtpIfNeeded = async (page) => {
 const fillCheckout = async (page) => {
   await page.goto(`${baseUrl}/checkout`, { waitUntil: 'domcontentloaded' });
   await waitForSettled(page);
-  if (checkoutMode === 'verified-user') {
+  if (loggedInCheckoutModes.has(checkoutMode)) {
     await syncBrowserAuthEvent(page);
   }
 
@@ -1084,7 +1254,10 @@ const fillCheckout = async (page) => {
   if (!canProceedAfterOtp) return false;
 
   await page.getByText(/Carte \/ Wallets/i).click({ timeout: 10_000 }).catch(() => {});
-  await clickEnabledButtonContaining(page, 'paiement', 'checkout payment button');
+  await clickFirstVisible([
+    page.getByRole('button', { name: /Proceder au paiement securise|ProcÃ©der au paiement sÃ©curisÃ©|Procéder au paiement sécurisé/i }),
+    page.locator('button').filter({ hasText: /paiement/i }),
+  ], 'checkout payment button');
   await waitForStripeIntentOpening(page);
   if (await Promise.resolve(true)) return true;
   await clickFirstVisible([
@@ -1107,6 +1280,29 @@ const fillStripePaymentElement = async (page) => {
 
   await page.waitForSelector('iframe[src*="stripe.com"], iframe[name^="__privateStripeFrame"]', { timeout: 45_000, state: 'attached' });
   await page.waitForTimeout(2_000);
+
+  if (stripePaymentMethod === 'ideal') {
+    await selectStripeIdealPaymentMethod(page);
+    result.stripe = {
+      paymentElementReady: true,
+      paymentMethod: stripePaymentMethod,
+      confirmSkipped: !confirmStripePayment,
+      testCard: null,
+      idealBank: stripeIdealBank,
+      authorizeRedirect: authorizeStripeRedirect,
+      expectFailure: expectStripeFailure,
+    };
+
+    if (!confirmStripePayment) return false;
+
+    await clickFirstVisible([
+      page.getByRole('button', { name: /Payer/i }),
+      page.locator('button[type="submit"]').filter({ hasText: /Payer/i }),
+    ], 'Stripe pay button');
+
+    await authorizeStripeRedirectIfNeeded(page);
+    return true;
+  }
 
   const fillStrategies = ([
     { pattern: /card number|numero de carte|numéro de carte/i, value: '4242424242424242' },
@@ -1150,8 +1346,11 @@ const fillStripePaymentElement = async (page) => {
 
   result.stripe = {
     paymentElementReady: true,
+    paymentMethod: stripePaymentMethod,
     confirmSkipped: !confirmStripePayment,
     testCard: stripeCardNumber.replace(/(.{4})/g, '$1 ').trim(),
+    idealBank: null,
+    authorizeRedirect: false,
     expectFailure: expectStripeFailure,
   };
 
@@ -1207,6 +1406,41 @@ const fetchCheckoutProof = async () => {
   return result.proof;
 };
 
+const waitForSuccessfulCheckoutProof = async () => {
+  let proof = null;
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    proof = await fetchCheckoutProof();
+    const assertions = proof?.payload?.assertions || {};
+    if (
+      assertions.orderPaid === true
+      && assertions.paymentIntentSucceeded === true
+      && assertions.metadataMatchesOrder === true
+      && assertions.webhookProcessed === true
+    ) {
+      return proof;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+  }
+
+  const assertions = proof?.payload?.assertions || {};
+  throw new Error(`Checkout proof did not reach paid/succeeded/webhook state: ${JSON.stringify(assertions)}`);
+};
+
+const captureCheckoutFinalState = async (page) => {
+  result.checkoutFinalState = await page.evaluate(() => {
+    const bodyText = document.body?.innerText || '';
+    return {
+      url: window.location.href,
+      orderSuccessParam: new URL(window.location.href).searchParams.get('order_success') === 'true',
+      hasSuccessCopy: /Paiement valid|Paiement confirm|commande est confirm|commande est valid/i.test(bodyText),
+      hasEmptyCartCopy: /Panier vide|Ajoutez une piece depuis la galerie/i.test(bodyText),
+      hasPaymentVerificationCopy: /Paiement recu|Finalisation en cours|Confirmation securisee|Paiement a verifier/i.test(bodyText),
+    };
+  }).catch((error) => ({
+    error: error?.message || String(error),
+  }));
+};
+
 const waitForFailedPaymentProof = async () => {
   let proof = null;
   for (let attempt = 0; attempt < 8; attempt += 1) {
@@ -1247,6 +1481,9 @@ const result = {
   skipProductsRegex: skipProductsPattern || null,
   sendOtpOnly,
   confirmStripePayment,
+  stripePaymentMethod,
+  stripeIdealBank: stripePaymentMethod === 'ideal' ? stripeIdealBank : null,
+  authorizeStripeRedirect: stripePaymentMethod === 'ideal' ? authorizeStripeRedirect : false,
   expectStripeFailure,
   sandboxGuard: {
     isSandboxOrLocalTarget,
@@ -1291,7 +1528,7 @@ try {
   await page.goto(galleryUrl(), { waitUntil: 'domcontentloaded' });
   await waitForSettled(page);
 
-  const loggedInBeforeCart = checkoutMode === 'verified-user'
+  const loggedInBeforeCart = loggedInCheckoutModes.has(checkoutMode)
     ? await ensureLoggedIn(page)
     : false;
   if (loggedInBeforeCart) {
@@ -1305,7 +1542,7 @@ try {
   try {
     cartButton = await pickCartButton(page);
   } catch (error) {
-    if (!(checkoutMode === 'verified-user' && loggedInBeforeCart && targetProductId)) {
+    if (!(loggedInCheckoutModes.has(checkoutMode) && loggedInBeforeCart && targetProductId)) {
       throw error;
     }
     const fallbackCartItem = await loadTargetCartItemViaFirestoreRest(page);
@@ -1322,7 +1559,21 @@ try {
     };
     cartButton = fallbackCartItem;
   }
-  if (checkoutMode === 'verified-user' && loggedInBeforeCart) {
+  if (loggedInCheckoutModes.has(checkoutMode) && loggedInBeforeCart) {
+    if (targetProductId) {
+      const freshCartItem = await loadTargetCartItemViaFirestoreRest(page);
+      if (freshCartItem && Number(freshCartItem.price || 0) > 0 && Number(freshCartItem.stock || 0) > 0) {
+        result.selectedProduct = {
+          id: freshCartItem.id,
+          name: freshCartItem.name,
+          stock: freshCartItem.stock,
+          stockBefore: freshCartItem.stock,
+          score: 1100,
+          source: 'firestore-rest-target-refresh',
+        };
+        cartButton = freshCartItem;
+      }
+    }
     const cartSeed = await addCartItemViaFirestoreRest(page, cartButton);
     result.cartSeed = cartSeed;
     if (!cartSeed.added) {
@@ -1343,8 +1594,8 @@ try {
         result.status = 'payment-failure-passed';
         result.finalUrl = redactSensitiveText(page.url());
       } else {
-        await expect(page.getByText(/Paiement valide|Paiement valid.|Paiement confirme|Paiement confirmÃ©|Votre commande est confirmee|Votre commande est confirm.e|Votre commande est validee|Votre commande est validÃ©e/i).first()).toBeVisible({ timeout: 60_000 });
-        await fetchCheckoutProof();
+        await waitForSuccessfulCheckoutProof();
+        await captureCheckoutFinalState(page);
         result.status = 'passed';
         result.finalUrl = redactSensitiveText(page.url());
       }
@@ -1387,8 +1638,8 @@ try {
       result.status = 'payment-failure-passed';
       result.finalUrl = redactSensitiveText(page.url());
     } else {
-      await expect(page.getByText(/Paiement valide|Paiement valid.|Paiement confirme|Paiement confirmé|Votre commande est confirmee|Votre commande est confirm.e|Votre commande est validee|Votre commande est validée/i).first()).toBeVisible({ timeout: 60_000 });
-      await fetchCheckoutProof();
+      await waitForSuccessfulCheckoutProof();
+      await captureCheckoutFinalState(page);
       result.status = 'passed';
       result.finalUrl = redactSensitiveText(page.url());
     }

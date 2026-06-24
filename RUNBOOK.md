@@ -238,6 +238,8 @@ Preuves sandbox recentes :
 - Carte refusee + `payment_intent.payment_failed` + restauration stock : `logs/hosted-stripe-e2e-2026-06-18T18-24-35-852Z.json`
 - Refund admin Stripe + stock : commande `q1tUtmNyjNpSeUTjGyFW`, refund `re_3TjkYbRdWb0VNdZq1SLulN7D`
 - Retry `createOrder` + `payment_intent.canceled` + webhook `processed` + stock restaure : `logs/stripe-hardening-proof-2026-06-18T21-26-40.json`
+- Checkout heberge stabilise jusqu'au Payment Element + carte sandbox passee : `logs/hosted-stripe-e2e-2026-06-24T20-50-15-627Z.json`
+- Clic UI strict `Rembourser` depuis admin `Retours` + stock restaure : `logs/ui-admin-returns-strict-refund-2026-06-24-xxHfLd2NLLWyFN5VXz01.json`
 
 Decision metier 2026-06-19 :
 
@@ -301,6 +303,96 @@ status=passed
 /sitemap.xml=200
 /api/revalidate-catalog=200
 ```
+
+## App Check Enforcement Readiness
+
+Etat sandbox prouve le 2026-06-24 dans:
+
+```text
+APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md
+```
+
+Commande read-only de reprise:
+
+```powershell
+node scripts/audit-app-check-service-state.mjs
+```
+
+Decision actuelle:
+
+- Firestore: rester `UNENFORCED`, trafic recent non verifie observe.
+- Identity Toolkit/Auth: rester `UNENFORCED`, trafic recent non verifie observe.
+- Storage: rester `UNENFORCED`, pas assez de trafic mesure pour juger.
+- Functions: pas de bouton global traite; definir une strategie par endpoint/callable, en excluant les webhooks Stripe et endpoints publics.
+
+Ne pas activer enforcement App Check global tant qu'une fenetre de telemetrie propre n'est pas obtenue et qu'un rollback vers `UNENFORCED` n'est pas pret.
+
+## Rail Prod
+
+Etat au 2026-06-24:
+
+```text
+RAIL_PROD_AUDIT_REPORT_2026-06-24.md
+```
+
+Decision: rail prod absent / non cable dans ce clone.
+
+`npm run infra:env` expose un bloc `railProd` qui classe l'etat sans afficher de secrets. Le resultat courant attendu est:
+
+```text
+railProd.decision = prod-absent-or-not-wired
+```
+
+Ne pas deployer en production tant que le backend App Hosting prod, le domaine final, App Check prod, Stripe live, CORS/origins, secrets live et gates prod ne sont pas explicitement configures.
+
+## Checkout Redirect Sandbox
+
+Etat au 2026-06-24:
+
+```text
+CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md
+```
+
+Le harnais `scripts/e2e-hosted-stripe-checkout.mjs` supporte maintenant:
+
+```text
+E2E_STRIPE_PAYMENT_METHOD=ideal
+E2E_STRIPE_IDEAL_BANK=ING
+E2E_STRIPE_AUTHORIZE_REDIRECT=true
+E2E_CHECKOUT_MODE=otp-user
+```
+
+La preuve runtime redirect n'est pas encore acquise. Le checkout heberge atteint maintenant le Stripe Payment Element et la carte sandbox passe, mais le dernier run iDEAL `logs/hosted-stripe-e2e-2026-06-24T20-51-01-227Z.json` est classe `known-blocked-stripe-redirect-method`: iDEAL/Wero n'est pas selectable dans la configuration Stripe sandbox courante.
+
+## Stripe Payment Methods UI
+
+Etat au 2026-06-24:
+
+- Le checkout ne promet plus statiquement Apple Pay, Google Pay ou PayPal dans `src/kit/commerce/CheckoutView.jsx`.
+- L'UI affiche un choix generique `Paiement Stripe` et laisse le Payment Element afficher les moyens actifs/eligibles.
+
+Avant live, verifier dans Stripe Dashboard:
+
+- moyens de paiement actifs sandbox puis prod;
+- Apple Pay domain verification si Apple Pay doit etre visible;
+- absence de warning `payment method not activated` sur un run prod-like.
+
+## Refund UI Strict
+
+Etat au 2026-06-24:
+
+```text
+REFUND_UI_STRICT_PROOF_2026-06-24.md
+```
+
+La preuve stricte du clic UI `Rembourser` sur une commande fraiche `paid` est acquise:
+
+```text
+logs/ui-admin-returns-strict-refund-2026-06-24-xxHfLd2NLLWyFN5VXz01.json
+logs/ui-admin-returns-strict-refund-2026-06-24-xxHfLd2NLLWyFN5VXz01.png
+```
+
+Preuve: `clickedRefund=true`, confirm natif accepte, commande `xxHfLd2NLLWyFN5VXz01` en `refunded`, `refundStatus=succeeded`, refund `re_3TlxoeRdWb0VNdZq1RL5SfaS`, `stockRestoredAfterRefund=true`, produit restaure `stock=1`, `sold=false`.
 
 ## Note env
 

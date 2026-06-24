@@ -99,18 +99,38 @@ const formatCategoryLabel = (label = '') => {
 
 const MENU_EASE = [0.22, 1, 0.36, 1];
 const MENU_FADE_EASE = [0.16, 1, 0.3, 1];
-const MENU_PANEL_OPEN_EASE = [0.16, 1, 0.3, 1];
-const MENU_CONTAINER_EASE = [0.21, 1.02, 0.43, 1.01];
+const MENU_PANEL_OPEN_EASE = [0.22, 1, 0.36, 1];
+const MENU_CONTAINER_EASE = [0.22, 1, 0.36, 1];
 const RAINMAKER_PANEL_EASE = [0.88, 0, 0.18, 1];
 const MENU_CLOSE_EASE = [0.76, 0, 0.24, 1];
 const MENU_SEQUENCE = {
-    sidebar: { delay: 0.54, exitDelay: 0.16 },
-    categories: { delay: 0.72, exitDelay: 0.11 },
-    discovery: { delay: 0.92, exitDelay: 0.07 },
-    atelier: { delay: 1.12, exitDelay: 0.03 },
-    atelierInner: { delay: 0.08 },
-    atelierMedia: { delay: 0.18 },
-    services: { delay: 1.28, exitDelay: 0 },
+    sidebar: { delay: 0.18, exitDelay: 0.16 },
+    categories: { delay: 0.24, exitDelay: 0.11 },
+    discovery: { delay: 0.3, exitDelay: 0.07 },
+    atelier: { delay: 0.36, exitDelay: 0.03 },
+    atelierInner: { delay: 0.04 },
+    atelierMedia: { delay: 0.1 },
+    services: { delay: 0.44, exitDelay: 0 },
+};
+
+let menuImagesWarmPromise = null;
+
+export const preloadGlobalMenuImages = () => {
+    if (typeof window === 'undefined') return Promise.resolve();
+    if (menuImagesWarmPromise) return menuImagesWarmPromise;
+
+    menuImagesWarmPromise = Promise.allSettled(MENU_IMAGE_SOURCES.map((src) => (
+        new Promise((resolve) => {
+            const image = new Image();
+            image.decoding = 'async';
+            image.onload = resolve;
+            image.onerror = resolve;
+            image.src = src;
+            image.decode?.().then(resolve).catch(resolve);
+        })
+    )));
+
+    return menuImagesWarmPromise;
 };
 
 const getMenuStage = (stage = {}) => (
@@ -160,11 +180,11 @@ const desktopPanelVariants = {
         clipPath: 'inset(0 0 0% 0 round 0px)',
         pointerEvents: 'auto',
         transition: {
-            duration: reduceMotion ? 0.01 : 0.72,
+            duration: reduceMotion ? 0.01 : 0.82,
             ease: MENU_PANEL_OPEN_EASE,
-            opacity: { duration: reduceMotion ? 0.01 : 0.24, ease: MENU_FADE_EASE },
-            scaleY: { duration: reduceMotion ? 0.01 : 0.7, ease: MENU_PANEL_OPEN_EASE },
-            clipPath: { duration: reduceMotion ? 0.01 : 0.72, ease: MENU_PANEL_OPEN_EASE },
+            opacity: { duration: reduceMotion ? 0.01 : 0.4, ease: MENU_FADE_EASE },
+            scaleY: { duration: reduceMotion ? 0.01 : 0.82, ease: MENU_PANEL_OPEN_EASE },
+            clipPath: { duration: reduceMotion ? 0.01 : 0.82, ease: MENU_PANEL_OPEN_EASE },
         },
     }),
     exit: {
@@ -261,7 +281,7 @@ const menuColumnVariants = {
             x: reduceMotion ? 0 : -24,
             y: reduceMotion ? 0 : 8,
             opacity: 0,
-            filter: reduceMotion ? 'none' : 'blur(14px)',
+            filter: reduceMotion ? 'none' : 'blur(3px)',
             transition: {
                 duration: reduceMotion ? 0.01 : 0.12,
                 ease: MENU_CLOSE_EASE,
@@ -278,7 +298,7 @@ const menuColumnVariants = {
             ease: MENU_CONTAINER_EASE,
             delay: getMenuStageDelay(stage),
             opacity: { duration: getMenuStage(stage).reduceMotion ? 0.01 : 0.42, ease: MENU_FADE_EASE },
-            filter: { duration: getMenuStage(stage).reduceMotion ? 0.01 : 0.46, ease: MENU_FADE_EASE },
+            filter: { duration: getMenuStage(stage).reduceMotion ? 0.01 : 0.28, ease: MENU_FADE_EASE },
             delayChildren: getMenuStage(stage).reduceMotion ? 0 : 0.12,
             staggerChildren: getMenuStage(stage).reduceMotion ? 0 : 0.035,
         },
@@ -549,12 +569,7 @@ const GlobalMenu = ({
         if (typeof window === 'undefined') return undefined;
 
         const warmImages = () => {
-            MENU_IMAGE_SOURCES.forEach((src) => {
-                const image = new Image();
-                image.decoding = 'async';
-                image.src = src;
-                image.decode?.().catch(() => {});
-            });
+            preloadGlobalMenuImages().catch(() => {});
         };
 
         if ('requestIdleCallback' in window) {

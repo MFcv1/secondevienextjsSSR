@@ -1,9 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight, CreditCard, HeartHandshake, LockKeyhole, Mail, ShieldCheck, Sparkles, Tag, Truck } from 'lucide-react';
 import GalleryProductCardServer from './GalleryProductCardServer';
-import BeforeAfterSliderIsland from './BeforeAfterSliderIsland';
-import InstagramCarouselIsland from './InstagramCarouselIsland';
-import TestimonialsCarouselIsland from './TestimonialsCarouselIsland';
+import DeferredGalleryIsland from './DeferredGalleryIsland';
 
 const getPublishedItems = (items) => (
   Array.isArray(items) ? items.filter((item) => item?.status === 'published') : []
@@ -195,6 +193,30 @@ const restorationProjects = [
   { title: 'Le Bureau Vintage', tag: 'Reparation & Traitement', desc: 'Consolidation et vernis mat impermeable.', avant: '/images/before-after/avantx-gallery.webp', apres: '/images/before-after/apresx-gallery.webp' },
 ];
 
+const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], darkMode = false } = {}) => (
+  <div
+    className={`relative min-h-[430px] overflow-hidden rounded-[22px] ring-1 md:min-h-[480px] lg:min-h-[520px] ${
+      darkMode ? 'bg-[#14110f] ring-[#3a3027]' : 'bg-[#f6eadb] ring-[#e1ccb4]'
+    }`}
+    aria-hidden="true"
+  >
+    <div className="absolute inset-0 grid grid-cols-2">
+      <img src={project.avant} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover opacity-80" />
+      <img src={project.apres} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+    </div>
+    <div className="absolute inset-0 bg-gradient-to-t from-black/42 via-black/0 to-black/12" />
+    <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4 text-white">
+      <div>
+        <p className="font-sans text-[9px] font-black uppercase tracking-[0.22em] text-white/72">{project.tag}</p>
+        <p className="mt-2 font-serif text-[28px] leading-none tracking-normal md:text-[34px]">{project.title}</p>
+      </div>
+      <span className="hidden rounded-full bg-white/14 px-4 py-2 font-sans text-[8px] font-black uppercase tracking-[0.18em] ring-1 ring-white/20 sm:inline-flex">
+        Avant / Apres
+      </span>
+    </div>
+  </div>
+);
+
 export const BeforeAfterSectionServer = ({ darkMode = false, projects = restorationProjects } = {}) => {
   return (
     <section className={`before-after-industrial relative flex w-full items-center overflow-hidden px-3 py-10 sm:px-5 sm:py-12 md:min-h-[690px] md:px-7 md:py-14 lg:min-h-[760px] lg:px-8 lg:py-16 2xl:min-h-[780px] 2xl:px-10 dark:bg-[#0e0d0c] ${darkMode ? 'bg-[#141210]' : 'bg-[#f8f1e6]'}`}>
@@ -224,7 +246,9 @@ export const BeforeAfterSectionServer = ({ darkMode = false, projects = restorat
 
         <div className={`relative flex min-h-full flex-col justify-center gap-4 rounded-b-[24px] p-2 sm:p-4 md:gap-4 md:p-5 lg:rounded-r-[26px] lg:rounded-bl-none lg:p-6 dark:bg-[#181511] ${darkMode ? 'bg-[#1d1a16]' : 'bg-[#fffaf3]'}`}>
           <div>
-            <BeforeAfterSliderIsland projects={projects} darkMode={darkMode} />
+            <DeferredGalleryIsland type="before-after" projects={projects} darkMode={darkMode} rootMargin="1100px 0px">
+              <BeforeAfterSliderPlaceholder project={projects[0]} darkMode={darkMode} />
+            </DeferredGalleryIsland>
           </div>
         </div>
       </div>
@@ -240,12 +264,109 @@ const instaPosts = [
   { img: '/images/before-after/avantx-gallery.webp', label: 'Inspiration', title: 'Piece chinee' },
 ];
 
+const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } = {}) => (
+  <section
+    className="relative isolate min-h-[690px] overflow-hidden px-0 pb-[86px] pt-[48px] md:px-6 md:py-[72px] lg:px-[5vw] lg:py-[78px] xl:py-[86px]"
+    aria-hidden="true"
+  >
+    <div className="relative z-10 mx-auto flex max-w-[1280px] flex-col items-center text-center">
+      <div className="mb-6 flex items-center gap-3">
+        <div className="h-px w-8 bg-[#A68A64]" />
+        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#A68A64]">Lifestyle & Atelier</span>
+        <div className="h-px w-8 bg-[#A68A64]" />
+      </div>
+      <h2 className={`font-serif text-[38px] leading-[1.02] tracking-normal lg:text-5xl xl:text-6xl ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}>
+        Nous aussi on vous aime
+      </h2>
+      <div className="relative mt-12 h-[432px] w-full max-w-[1120px] overflow-hidden lg:h-[470px] xl:h-[520px]">
+        <div className="absolute inset-x-5 top-0 grid grid-cols-3 gap-5 opacity-95 md:inset-x-10 lg:inset-x-0">
+          {posts.slice(0, 3).map((post, index) => (
+            <article
+              key={post.title}
+              className={`overflow-hidden rounded-[22px] shadow-[0_24px_60px_rgba(32,26,20,0.13)] ${
+                index === 1 ? 'translate-y-0' : 'translate-y-10 opacity-55'
+              } ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}
+            >
+              <div className="aspect-[4/5] overflow-hidden bg-stone-100">
+                <img src={post.img} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+              </div>
+              <div className={`min-h-[88px] px-4 pb-5 pt-4 text-left ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}>
+                <p className="text-[8px] font-black uppercase tracking-[0.18em] text-[#A68A64]">{post.label}</p>
+                <h3 className={`mt-1.5 font-serif text-[20px] leading-tight tracking-normal ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}>
+                  {post.title}
+                </h3>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
 export const InstagramSectionServer = ({ darkMode = false } = {}) => (
-  <InstagramCarouselIsland darkMode={darkMode} posts={instaPosts} />
+  <DeferredGalleryIsland type="instagram" posts={instaPosts} darkMode={darkMode} rootMargin="1200px 0px" idleTimeout={6800}>
+    <InstagramCarouselPlaceholder darkMode={darkMode} posts={instaPosts} />
+  </DeferredGalleryIsland>
+);
+
+const TestimonialsCarouselPlaceholder = ({ darkMode = false } = {}) => (
+  <section
+    className={`customer-testimonials-section relative z-20 min-h-[520px] w-full overflow-hidden dark:bg-[#0b0a09] dark:text-[#f8f1e8] ${
+      darkMode ? 'bg-[#0b0a09] text-[#f8f1e8]' : 'bg-white text-[#242221]'
+    }`}
+    aria-hidden="true"
+  >
+    <div className="hidden px-8 py-20 lg:block lg:px-12 xl:px-16 xl:py-24">
+      <div className="mx-auto flex w-full max-w-[1280px] flex-col items-center">
+        <div className="mx-auto flex max-w-[420px] flex-col items-center px-4 text-center">
+          <div className={`relative mb-7 flex items-center gap-2 ${darkMode ? 'text-[#ff9d10]' : 'text-[#ff9200]'}`}>
+            {Array.from({ length: 5 }).map((_, index) => (
+              <Sparkles key={index} size={23} strokeWidth={1.8} />
+            ))}
+          </div>
+          <h2 className="font-serif text-[44px] leading-none tracking-normal">La parole a nos clients.</h2>
+          <p className={`mt-6 text-[10px] font-black uppercase tracking-[0.14em] ${darkMode ? 'text-[#a99b8c]' : 'text-[#77716b]'}`}>
+            Excellent 4.9/5 - base sur 124 avis Google
+          </p>
+        </div>
+        <div className="mt-12 grid h-[328px] w-full max-w-[1120px] grid-cols-3 gap-6 overflow-hidden xl:h-[352px] xl:max-w-[1240px]">
+          {['Sophie L.', 'Caroline V.', 'Julie M.'].map((author, index) => (
+            <article
+              key={author}
+              className={`flex flex-col justify-between rounded-[16px] px-7 py-8 shadow-[0_16px_38px_rgba(69,57,42,0.08)] ${
+                index === 1 ? 'bg-[#F2E8D8]' : 'bg-[#F7EEE7] opacity-55'
+              } dark:bg-[#1b1814]`}
+            >
+              <p className="font-serif text-[clamp(18px,1.72vw,24px)] leading-[1.36] tracking-normal">"{author === 'Caroline V.' ? "J'ai pleure en voyant la restauration du vieux chevet." : 'Un travail magnifique et un respect de l ame du meuble.'}"</p>
+              <p className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.15em] text-[#8c877f]">
+                <span className="h-px w-5 bg-[#aaa49b]" />
+                {author}
+              </p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </div>
+    <div className="mx-auto flex min-h-[520px] w-full max-w-[430px] flex-col items-center px-0 pb-16 pt-14 lg:hidden">
+      <h2 className="px-4 text-center font-serif text-[34px] leading-none tracking-normal">La parole a nos clients.</h2>
+      <div className="mt-11 h-[318px] w-full overflow-hidden">
+        <article className="mx-auto flex h-[292px] w-[232px] flex-col justify-between rounded-[16px] bg-[#F2E8D8] px-6 py-8 shadow-[0_18px_36px_rgba(69,57,42,0.035)] dark:bg-[#1b1814]">
+          <p className="font-serif text-[20px] leading-[1.36] tracking-normal">"Un travail magnifique et un respect de l ame du meuble."</p>
+          <p className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.15em] text-[#8c877f]">
+            <span className="h-px w-5 bg-[#aaa49b]" />
+            Sophie L.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
 );
 
 export const TestimonialsSectionServer = ({ darkMode = false } = {}) => (
-  <TestimonialsCarouselIsland darkMode={darkMode} />
+  <DeferredGalleryIsland type="testimonials" darkMode={darkMode} rootMargin="1200px 0px" idleTimeout={7200}>
+    <TestimonialsCarouselPlaceholder darkMode={darkMode} />
+  </DeferredGalleryIsland>
 );
 
 const discountCards = [

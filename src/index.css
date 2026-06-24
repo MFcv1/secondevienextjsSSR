@@ -4330,9 +4330,9 @@ html.gallery-entry-scroll-lock {
 .global-menu-desktop-content[data-motion-ready="true"] > .grid .global-menu-reveal-container,
 .global-menu-desktop-content[data-motion-ready="true"] > .global-menu-reveal-container {
   opacity: 0;
-  filter: blur(6px);
-  transform: translate3d(-18px, 8px, 0) scale(0.99);
-  animation: global-menu-container-in 620ms cubic-bezier(0.21, 1.02, 0.43, 1.01) both;
+  filter: blur(2px);
+  transform: translate3d(-10px, 5px, 0) scale(0.995);
+  animation: global-menu-container-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: var(--global-menu-delay, 240ms);
   will-change: transform, opacity, filter;
 }
@@ -4350,8 +4350,8 @@ html.gallery-entry-scroll-lock {
 @keyframes global-menu-container-in {
   0% {
     opacity: 0;
-    filter: blur(6px);
-    transform: translate3d(-18px, 8px, 0) scale(0.99);
+    filter: blur(2px);
+    transform: translate3d(-10px, 5px, 0) scale(0.995);
   }
 
   42% {

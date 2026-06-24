@@ -20,6 +20,28 @@ const parseDotEnvKeys = (relativePath) => {
   return keys;
 };
 
+const parseDotEnvValues = (relativePath) => {
+  const content = readText(relativePath);
+  const values = {};
+  for (const rawLine of content.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+    if (!match) continue;
+    values[match[1]] = match[2].trim().replace(/^["']|["']$/g, '');
+  }
+  return values;
+};
+
+const readJson = (relativePath) => {
+  try {
+    const content = readText(relativePath);
+    return content ? JSON.parse(content) : null;
+  } catch {
+    return null;
+  }
+};
+
 const parseAppHostingEnv = () => {
   const content = readText('apphosting.yaml');
   const entries = [];
@@ -113,6 +135,10 @@ const appHostingEntries = parseAppHostingEnv();
 const appHostingByName = new Map(appHostingEntries.map((entry) => [entry.variable, entry]));
 const sandboxExample = parseDotEnvKeys('.env.sandbox.example');
 const productionExample = parseDotEnvKeys('.env.production.example');
+const sandboxEnv = parseDotEnvValues('.env.sandbox');
+const productionEnv = parseDotEnvValues('.env.production');
+const firebaseRc = readJson('.firebaserc') || {};
+const firebaseJson = readJson('firebase.json') || {};
 const envUsage = scanEnvUsage(['app', 'src', 'functions', 'functions-public']);
 const firebaseIgnore = readText('.firebaseignore');
 
@@ -212,6 +238,107 @@ if (modelOnlyViteKeys.length) {
   );
 }
 
+const getFirstEnvValue = (env, keys) => {
+  for (const key of keys) {
+    if (env[key]) return env[key];
+  }
+  return '';
+};
+
+const classifyUrl = (value) => {
+  if (!value) return 'missing';
+  if (/localhost|127\.0\.0\.1/i.test(value)) return 'local';
+  if (/secondevie-next-sandbox--secondevienextjsssr\.europe-west4\.hosted\.app/i.test(value)) return 'sandbox-hosted-app';
+  if (/secondevie-a0745/i.test(value)) return 'legacy-hosting';
+  if (/^https:\/\//i.test(value)) return 'https-candidate';
+  return 'non-https-or-unknown';
+};
+
+const classifyStripePublicKey = (value) => {
+  if (!value) return 'missing';
+  if (value.startsWith('pk_test_')) return 'pk_test';
+  if (value.startsWith('pk_live_')) return 'pk_live';
+  return 'unknown-format';
+};
+
+const classifyPresence = (value) => (value ? 'present' : 'missing');
+
+const firebaseProjects = firebaseRc.projects || {};
+const appHostingConfigs = Array.isArray(firebaseJson.apphosting) ? firebaseJson.apphosting : [];
+const localBackendIds = appHostingConfigs.map((backend) => backend.backendId).filter(Boolean);
+const prodBackendIds = localBackendIds.filter((backendId) => !/sandbox/i.test(backendId));
+const appHostingSiteUrl = appHostingByName.get('NEXT_PUBLIC_SITE_URL')?.value || '';
+const appHostingStripeKey = appHostingByName.get('NEXT_PUBLIC_STRIPE_PUBLIC_KEY')?.value || '';
+const sandboxProjectId = getFirstEnvValue(sandboxEnv, ['NEXT_PUBLIC_FIREBASE_PROJECT_ID', 'VITE_FIREBASE_PROJECT_ID']);
+const productionProjectId = getFirstEnvValue(productionEnv, ['NEXT_PUBLIC_FIREBASE_PROJECT_ID', 'VITE_FIREBASE_PROJECT_ID']);
+const productionSiteUrl = getFirstEnvValue(productionEnv, ['NEXT_PUBLIC_SITE_URL', 'VITE_SITE_URL', 'SITE_URL']);
+const productionStripePublicKey = getFirstEnvValue(productionEnv, ['NEXT_PUBLIC_STRIPE_PUBLIC_KEY', 'VITE_STRIPE_PUBLIC_KEY']);
+const productionRecaptchaKey = getFirstEnvValue(productionEnv, ['NEXT_PUBLIC_RECAPTCHA_SITE_KEY', 'VITE_RECAPTCHA_SITE_KEY']);
+const productionAuthDomain = getFirstEnvValue(productionEnv, ['NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN', 'VITE_FIREBASE_AUTH_DOMAIN']);
+const productionStorageBucket = getFirstEnvValue(productionEnv, ['NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET', 'VITE_FIREBASE_STORAGE_BUCKET']);
+const explicitProdAlias = firebaseProjects.prod || firebaseProjects.production || '';
+const defaultProject = firebaseProjects.default || '';
+
+const prodRailReasons = [];
+if (!explicitProdAlias) prodRailReasons.push('.firebaserc has no prod/production alias');
+if (!prodBackendIds.length) prodRailReasons.push('firebase.json has no non-sandbox App Hosting backend');
+if (classifyUrl(appHostingSiteUrl) === 'sandbox-hosted-app') prodRailReasons.push('apphosting.yaml NEXT_PUBLIC_SITE_URL points to sandbox hosted.app');
+if (classifyStripePublicKey(appHostingStripeKey) === 'pk_test') prodRailReasons.push('apphosting.yaml uses a Stripe test public key');
+if (!productionProjectId) prodRailReasons.push('.env.production lacks a concrete Firebase project id');
+if (productionProjectId && sandboxProjectId && productionProjectId === sandboxProjectId) {
+  prodRailReasons.push('.env.production Firebase project id matches sandbox');
+}
+if (classifyUrl(productionSiteUrl) !== 'https-candidate') {
+  prodRailReasons.push('.env.production SITE_URL/NEXT_PUBLIC_SITE_URL is not a distinct https production candidate');
+}
+if (classifyStripePublicKey(productionStripePublicKey) !== 'pk_live') {
+  prodRailReasons.push('.env.production Stripe public key is not classified as pk_live');
+}
+if (!productionRecaptchaKey) prodRailReasons.push('.env.production lacks a concrete App Check reCAPTCHA site key');
+
+const railProd = {
+  decision: prodRailReasons.length ? 'prod-absent-or-not-wired' : 'prod-candidate-local-env-present',
+  currentRail: {
+    firebaseDefaultProject: defaultProject || 'missing',
+    firebaseProdAlias: explicitProdAlias || 'missing',
+    appHostingBackendIds: localBackendIds,
+    appHostingSiteUrlClass: classifyUrl(appHostingSiteUrl),
+    appHostingStripePublicKeyClass: classifyStripePublicKey(appHostingStripeKey)
+  },
+  localProductionEnv: {
+    fileExists: fs.existsSync(path.join(ROOT, '.env.production')),
+    projectIdClass: productionProjectId
+      ? (sandboxProjectId && productionProjectId === sandboxProjectId ? 'same-as-sandbox' : 'present')
+      : 'missing',
+    siteUrlClass: classifyUrl(productionSiteUrl),
+    authDomain: classifyPresence(productionAuthDomain),
+    storageBucket: classifyPresence(productionStorageBucket),
+    recaptchaSiteKey: classifyPresence(productionRecaptchaKey),
+    stripePublicKeyClass: classifyStripePublicKey(productionStripePublicKey)
+  },
+  requiredBeforeProdRail: [
+    'Create or select the production Firebase project and add a prod/production alias in .firebaserc.',
+    'Create a dedicated production App Hosting backend and do not reuse secondevie-next-sandbox.',
+    'Set NEXT_PUBLIC_SITE_URL/VITE_SITE_URL to the final HTTPS production domain.',
+    'Register the final production domain in Firebase Auth authorized domains.',
+    'Create a production App Check Web reCAPTCHA v3 key for the production web app and keep debug tokens out of prod.',
+    'Set PUBLIC_ALLOWED_ORIGINS and any Functions CORS/origin allowlists to the production domain.',
+    'Create separate Stripe live secrets: NEXT_PUBLIC_STRIPE_PUBLIC_KEY=pk_live_*, STRIPE_SECRET_KEY=sk_live_*, STRIPE_WH_SECRET=whsec_* for the live endpoint.',
+    'Create/separate Gmail or email provider secrets for production if email sending is enabled.',
+    'Verify Storage bucket, Firestore rules/indexes, Functions codebases and App Hosting runtime env in the Firebase Console before deploy.',
+    'Run prod gates intentionally: npm run build:prod, npm run next:routes, npm run infra:env, then prod smoke tests only after explicit approval.'
+  ],
+  reasons: prodRailReasons
+};
+
+if (railProd.decision === 'prod-absent-or-not-wired') {
+  addFinding(
+    'warn',
+    'prod-rail',
+    `Production rail is not configured locally: ${prodRailReasons.join('; ')}`
+  );
+}
+
 const map = {
   publicNext: Object.keys(envUsage).filter((key) => key.startsWith('NEXT_PUBLIC_')),
   appHosting: appHostingEntries.map((entry) => ({
@@ -236,8 +363,10 @@ const output = {
   manualChecks: [
     'Verify Firebase Console App Check registration/enforcement for sandbox and prod web apps; this static audit only checks client initialization and env wiring.',
     'Verify App Hosting rollout environment values in Firebase Console, because console values override apphosting.yaml.',
-    'Verify Functions secrets values and separation per Firebase project: STRIPE_SECRET_KEY, STRIPE_WH_SECRET, GMAIL_EMAIL, GMAIL_PASSWORD.'
+    'Verify Functions secrets values and separation per Firebase project: STRIPE_SECRET_KEY, STRIPE_WH_SECRET, GMAIL_EMAIL, GMAIL_PASSWORD.',
+    'Verify railProd.requiredBeforeProdRail before creating or validating a production App Hosting rail.'
   ],
+  railProd,
   map,
   envUsage
 };

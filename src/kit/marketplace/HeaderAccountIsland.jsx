@@ -45,15 +45,26 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
     const syncAdminClaim = async (nextUser) => {
       if (!nextUser || nextUser.isAnonymous) {
         setIsAdmin(false);
+        window.__svAuthIsAdmin = false;
+        window.dispatchEvent(new CustomEvent('sv:auth-admin-changed', { detail: { isAdmin: false } }));
         return;
       }
       try {
         const { loadAuthModule } = await import('../config/firebaseLazy');
         const { getIdTokenResult } = await loadAuthModule();
         const tokenResult = await getIdTokenResult(nextUser, true);
-        if (!cancelled) setIsAdmin(tokenResult.claims.admin === true);
+        if (!cancelled) {
+          const nextIsAdmin = tokenResult.claims.admin === true;
+          setIsAdmin(nextIsAdmin);
+          window.__svAuthIsAdmin = nextIsAdmin;
+          window.dispatchEvent(new CustomEvent('sv:auth-admin-changed', { detail: { isAdmin: nextIsAdmin } }));
+        }
       } catch {
-        if (!cancelled) setIsAdmin(false);
+        if (!cancelled) {
+          setIsAdmin(false);
+          window.__svAuthIsAdmin = false;
+          window.dispatchEvent(new CustomEvent('sv:auth-admin-changed', { detail: { isAdmin: false } }));
+        }
       }
     };
 
@@ -132,9 +143,11 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
 
   const logout = async () => {
     window.__svAuthUser = null;
+    window.__svAuthIsAdmin = false;
     setUser(null);
     setIsAdmin(false);
     window.dispatchEvent(new CustomEvent('sv:auth-user-changed', { detail: { user: null } }));
+    window.dispatchEvent(new CustomEvent('sv:auth-admin-changed', { detail: { isAdmin: false } }));
     const { getFirebaseAuth, loadAuthModule } = await import('../config/firebaseLazy');
     const auth = await getFirebaseAuth();
     const { signOut } = await loadAuthModule();

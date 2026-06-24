@@ -4,13 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { getDb, loadFirestoreModule } from '../config/firebaseLazy';
-import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import {
   CART_STATE_CHANGED_EVENT,
   GUEST_CART_CHANGED_EVENT,
   readGuestCart,
 } from '../commerce/guestCart';
-import { ToastProvider } from '../ui/Toast';
 
 const GlobalMenu = dynamic(() => import('../layout/GlobalMenu'), {
   ssr: false,
@@ -39,8 +37,6 @@ const MENU_PREFETCH_PATHS = [
   '/categorie/miroirs',
   '/a-propos',
   '/devis',
-  '/mes-commandes',
-  '/wishlist',
 ];
 
 const readPublicWishlist = () => {
@@ -54,7 +50,12 @@ const readPublicWishlist = () => {
 };
 
 export function preloadGlobalMenu() {
-  return GlobalMenu.preload?.();
+  GlobalMenu.preload?.();
+  return import('../layout/GlobalMenu')
+    .then((module) => {
+      module.preloadGlobalMenuImages?.();
+      return module;
+    });
 }
 
 function GlobalMenuPanelAuthContent({
@@ -65,37 +66,51 @@ function GlobalMenuPanelAuthContent({
   setPanelOpen,
 }) {
   const router = useRouter();
-  const { user, isAdmin, logout } = useAuth();
   const [authUser, setAuthUser] = useState(() => (
     typeof window === 'undefined' ? null : window.__svAuthUser || null
+  ));
+  const [authIsAdmin, setAuthIsAdmin] = useState(() => (
+    typeof window === 'undefined' ? false : window.__svAuthIsAdmin === true
   ));
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
 
   useEffect(() => {
-    if (user) {
-      setAuthUser(user);
-    }
-  }, [user]);
-
-  useEffect(() => {
     const handleAuthChange = (event) => {
       setAuthUser(event.detail?.user || null);
     };
+    const handleAdminChange = (event) => {
+      setAuthIsAdmin(event.detail?.isAdmin === true);
+    };
 
     window.addEventListener('sv:auth-user-changed', handleAuthChange);
-    return () => window.removeEventListener('sv:auth-user-changed', handleAuthChange);
+    window.addEventListener('sv:auth-admin-changed', handleAdminChange);
+    return () => {
+      window.removeEventListener('sv:auth-user-changed', handleAuthChange);
+      window.removeEventListener('sv:auth-admin-changed', handleAdminChange);
+    };
   }, []);
 
   useEffect(() => {
     if (!panelOpen) return;
-    MENU_PREFETCH_PATHS.forEach((path) => {
-      router.prefetch(path);
-    });
+
+    const prefetchMenuPaths = () => {
+      MENU_PREFETCH_PATHS.forEach((path) => {
+        router.prefetch(path);
+      });
+    };
+
+    if ('requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(prefetchMenuPaths, { timeout: 1200 });
+      return () => window.cancelIdleCallback?.(idleId);
+    }
+
+    const timeoutId = window.setTimeout(prefetchMenuPaths, 650);
+    return () => window.clearTimeout(timeoutId);
   }, [panelOpen, router]);
 
-  const effectiveUser = user || authUser;
-  const effectiveIsAdmin = isAdmin;
+  const effectiveUser = authUser;
+  const effectiveIsAdmin = authIsAdmin;
   const signedUser = effectiveUser && !effectiveUser.isAnonymous ? effectiveUser : null;
 
   useEffect(() => {
@@ -212,6 +227,19 @@ function GlobalMenuPanelAuthContent({
     window.dispatchEvent(new CustomEvent('sv:open-cart'));
   };
 
+  const logout = async () => {
+    window.__svAuthUser = null;
+    window.__svAuthIsAdmin = false;
+    setAuthUser(null);
+    setAuthIsAdmin(false);
+    window.dispatchEvent(new CustomEvent('sv:auth-user-changed', { detail: { user: null } }));
+    window.dispatchEvent(new CustomEvent('sv:auth-admin-changed', { detail: { isAdmin: false } }));
+    const { getFirebaseAuth, loadAuthModule } = await import('../config/firebaseLazy');
+    const auth = await getFirebaseAuth();
+    const { signOut } = await loadAuthModule();
+    await signOut(auth);
+  };
+
   return (
     <>
       {panelOpen || isMenuClosing || keepMounted ? (
@@ -239,10 +267,6 @@ function GlobalMenuPanelAuthContent({
 
 export default function GlobalMenuPanelAuthIsland(props) {
   return (
-    <AuthProvider forceInitialize deferUntilReady={false}>
-      <ToastProvider>
-        <GlobalMenuPanelAuthContent {...props} />
-      </ToastProvider>
-    </AuthProvider>
+    <GlobalMenuPanelAuthContent {...props} />
   );
 }

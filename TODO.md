@@ -17,13 +17,16 @@ Objectif demain: commencer par assainir l'infra prod avant de reprendre SEO/perf
 - [ ] Valider `NEXT_PUBLIC_SITE_URL` prod et sandbox:
   - [x] sandbox: valeur App Hosting confirmee et domaine HTTPS repond en 200;
   - [ ] prod: a definir quand le rail prod existe.
+  - [x] decision 2026-06-24: rail prod explicitement absent/non cable dans ce clone; voir `RAIL_PROD_AUDIT_REPORT_2026-06-24.md`.
 - [x] Ajouter/valider `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` pour App Check sandbox.
 - [ ] Verifier la configuration App Check Firebase cote sandbox/prod:
   - [x] sandbox: app Web enregistree reCAPTCHA v3;
   - [x] sandbox: enforcement laisse en monitoring (`UNENFORCED`);
   - [x] sandbox: debug token Playwright enregistre et `exchangeDebugToken` verifie (`ttl=3600s`);
   - [x] sandbox: flux auth email OTP A/Z sans erreur console App Check via `npm run e2e:auth-email`;
-  - [ ] sandbox: verifier telemetrie Firestore/Functions/Storage avant tout enforcement;
+  - [x] sandbox: verifier telemetrie Firestore/Functions/Storage avant tout enforcement;
+    - [x] preuve API/Monitoring 2026-06-24: `APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`;
+    - [x] decision: garder Firestore, Storage et Identity Toolkit en `UNENFORCED`; Firestore/Auth ont encore du trafic `MISSING`/`INVALID`, Storage manque de trafic representatif, Functions necessite une strategie par endpoint/callable.
   - [ ] prod: a configurer/verifier quand le rail prod existe.
 - [x] Creer/valider le secret App Hosting `SUPER_ADMIN_EMAIL` avant rollout.
 - [x] Reevaluer `NEXT_PUBLIC_SUPER_ADMIN_EMAIL`:
@@ -249,11 +252,11 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
   - [x] webhook paiement `processed`;
   - [x] email commande client/admin;
   - [x] stock produit passe vendu/reserve.
-- [ ] Depuis l'admin sandbox heberge:
+- [x] Depuis l'admin sandbox heberge:
   - [x] ouvrir `Retours`;
   - [x] retrouver la nouvelle commande payee/remboursee;
-  - [ ] cliquer `Rembourser`;
-    - [ ] nuance documentee: le refund de la commande neuve a ete prouve via callables admin sandbox + Stripe + Firestore + webhook, mais le clic UI strict `Rembourser` n'a pas ete rejoue apres coup car la commande etait deja `refunded`; ne cocher que si un nouveau run prouve ce clic avant remboursement.
+  - [x] cliquer `Rembourser`;
+    - [x] preuve stricte 2026-06-24: commande fraiche `xxHfLd2NLLWyFN5VXz01`, clic UI `Rembourser`, confirm natif accepte, refund `re_3TlxoeRdWb0VNdZq1RL5SfaS`; voir `logs/ui-admin-returns-strict-refund-2026-06-24-xxHfLd2NLLWyFN5VXz01.json`.
   - [x] verifier `refundId`, statut `refunded`, `Stock remis`;
   - [x] cliquer `Sync Stripe`;
   - [x] envoyer `Email client`;
@@ -297,6 +300,9 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
   - [x] lire `order_success`, `order_id`, `payment_intent_client_secret`, `redirect_status`;
   - [x] restaurer l'etat succes/echec/en-cours apres retour redirect;
   - [ ] tester au moins un moyen de paiement redirect en sandbox.
+    - [x] harnais prepare 2026-06-24: `E2E_STRIPE_PAYMENT_METHOD=ideal`, selection banque et autorisation redirect dans `scripts/e2e-hosted-stripe-checkout.mjs`;
+    - [x] checkout heberge stabilise jusqu'au Payment Element: run carte `logs/hosted-stripe-e2e-2026-06-24T20-50-15-627Z.json` en `passed`;
+    - [ ] preuve redirect non obtenue: dernier run iDEAL `logs/hosted-stripe-e2e-2026-06-24T20-51-01-227Z.json` classe `known-blocked-stripe-redirect-method`, iDEAL/Wero non selectable dans la config Stripe sandbox courante.
 - [x] Corriger la preuve E2E serveur:
   - [x] le JSON de preuve inclut `orderId`, `paymentIntentId`, produit choisi et stock final;
   - [x] verifier Firestore `orders/{orderId}.status === paid`;
@@ -335,10 +341,12 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
 ### P1 - Moyens de paiement et coherence Stripe live
 
 - [ ] Aligner UI et moyens de paiement vraiment actifs dans Stripe:
-  - [ ] masquer PayPal/Amazon/Klarna/Apple Pay si non actives ou domaine non verifie;
+  - [x] masquer PayPal/Amazon/Klarna/Apple Pay si non actives ou domaine non verifie;
+    - [x] implementation 2026-06-24: `src/kit/commerce/CheckoutView.jsx` ne promet plus Apple Pay/Google Pay/PayPal statiquement; libelles generiques `Selon Stripe` / `Wallets eligibles`.
   - [ ] verifier Apple Pay domain verification avant live;
   - [ ] zero warning Stripe `payment method not activated` en run prod-like;
   - [ ] documenter les methodes activees sandbox puis prod.
+    - [ ] reste a confirmer dans Stripe Dashboard sandbox/prod; le Payment Element reste dynamique.
 - [ ] Etudier migration moyen terme vers Checkout Sessions / Payment Element custom:
   - [ ] comparer avec l'architecture PaymentIntent actuelle;
   - [ ] garder la reservation stock atomique comme contrainte;
@@ -353,8 +361,10 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
   - [x] faire passer Firestore/Functions par un chemin qui initialise App Check;
     - [x] implementation 2026-06-24: `src/kit/config/firebase.js` initialise App Check avant les instances legacy `db` / `functions`, et `npm run appcheck:audit` distingue maintenant les creations d'instances des imports modulaires utilitaires;
     - [x] validation courte: `npm run appcheck:audit` OK, `findingCount=0`.
-  - [ ] sandbox: conserver `UNENFORCED` jusqu'a telemetrie verte;
+  - [x] sandbox: conserver `UNENFORCED` jusqu'a telemetrie verte;
+    - [x] decision 2026-06-24: enforcement refuse pour l'instant, voir `APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`.
   - [ ] tester enforcement service par service: Firestore, Storage, Identity Toolkit;
+    - [ ] reporte: ne pas tester tant que Firestore/Auth ont du trafic non verifie et que Storage n'a pas de smoke representatif.
   - [ ] prod: vraie `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`, aucun debug token hors CI controlee.
 - [x] Reduire les details d'erreur publics:
   - [x] `/api/revalidate-catalog`: ne pas renvoyer `error.message` brut au client sur token invalide;

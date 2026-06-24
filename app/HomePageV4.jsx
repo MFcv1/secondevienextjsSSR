@@ -34,7 +34,7 @@ export const revalidate = 3600;
 
 export default function HomePageV4() {
   return (
-    <div className="sv4">
+    <div className="sv4" data-ssr-home>
       {/* Motion & Scroll triggers */}
       <HomeMotionIslandV4 />
 

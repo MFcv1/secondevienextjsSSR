@@ -395,7 +395,7 @@ Prochaine premiere tache:
 - [ ] `/api/revalidate-catalog` prouve sur galerie/categorie/produit/sitemap.
 - [ ] Stripe webhook signe sandbox prouve.
 - [ ] Email commande sandbox prouve ou explicitement non applicable.
-- [ ] Incoherence refund `cliquer Rembourser` clarifiee.
+- [x] Incoherence refund `cliquer Rembourser` clarifiee.
 - [ ] Checkout redirect sandbox prouve.
 - [ ] `npm run appcheck:audit` traite ou reste documente par lots.
 - [ ] Decision Phase 3 ecrite.
@@ -411,3 +411,10 @@ Prochaine premiere tache:
 - `src/kit/config/firebase.js` initialise App Check avant les instances legacy `db` / `functions`, afin de securiser les consommateurs existants sans refactor massif du back-office.
 - `scripts/audit-app-check-paths.cjs` distingue maintenant les creations reelles d'instances Firebase des imports modulaires utilitaires. Validation: `npm run appcheck:audit` OK avec `findingCount=0`.
 - `TODO.md` clarifie l'incoherence refund: le refund est prouve via callables admin + Stripe + Firestore + webhook, mais le clic UI strict `Rembourser` reste non coche car il n'a pas ete rejoue avant remboursement sur la commande deja `refunded`.
+- App Check readiness traite par agent dedie: `APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`. Decision: ne pas activer enforcement maintenant; Firestore/Auth ont encore du trafic non verifie et Storage manque de trafic representatif.
+- Rail prod traite par agent dedie: `RAIL_PROD_AUDIT_REPORT_2026-06-24.md`. Decision: rail prod absent/non cable; `npm run infra:env` expose maintenant `railProd.decision = prod-absent-or-not-wired`.
+- Stripe UI moyens de paiement: `src/kit/commerce/CheckoutView.jsx` ne promet plus Apple Pay/Google Pay/PayPal statiquement; le Payment Element reste dynamique selon Stripe.
+- Checkout redirect: `CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md`. Le harnais supporte `E2E_STRIPE_PAYMENT_METHOD=ideal`, mais la preuve runtime redirect reste non acquise car le run heberge bloque en `known-blocked-otp` avant Stripe Payment Element.
+- Checkout heberge stabilise jusqu'au Stripe Payment Element: run carte `logs/hosted-stripe-e2e-2026-06-24T20-50-15-627Z.json` en `passed`.
+- Checkout redirect: iDEAL reste non prouve, mais le blocage est maintenant isole cote configuration Stripe sandbox (`logs/hosted-stripe-e2e-2026-06-24T20-51-01-227Z.json`, `known-blocked-stripe-redirect-method`), plus cote auth/checkout avant Stripe.
+- Refund UI strict: `REFUND_UI_STRICT_PROOF_2026-06-24.md`. La preuve du clic UI `Rembourser` avant remboursement est acquise via `logs/ui-admin-returns-strict-refund-2026-06-24-xxHfLd2NLLWyFN5VXz01.json`.

@@ -242,3 +242,34 @@ Quand l'utilisateur voudra passer a l'implementation, verifier au minimum:
 - petit mega menu horizontal toujours intact;
 - hamburger mobile non regresse si un fichier partage est touche;
 - aucune degradation du premier scroll galerie.
+
+## Implementation - 2026-06-24
+
+Changements appliques:
+
+- `GlobalMenuPanelAuthIsland` n'enveloppe plus le simple affichage du menu dans `AuthProvider forceInitialize`; l'ouverture publique lit seulement `window.__svAuthUser` / `window.__svAuthIsAdmin` et charge Firebase Auth uniquement au logout.
+- `HeaderAccountIsland` expose maintenant l'etat admin via `sv:auth-admin-changed`, pour conserver le lien admin du menu quand l'utilisateur est deja connu.
+- `GlobalMenuTriggerIsland` prechauffe le panneau plus tot en desktop, memorise l'etat pret du chunk et evite de declencher l'ouverture visuelle avant un court frame de stabilisation quand le chunk est froid.
+- `GlobalMenu` exporte `preloadGlobalMenuImages()`; les images du menu sont prechauffees avec le chunk, sans bloquer l'ouverture.
+- La cinematique du fond blanc/beige est adoucie: opacite plus progressive, courbe moins nerveuse, reveal des containers avance et blur reduit.
+- Le prefetch route du menu est repousse a l'idle et limite aux routes publiques; `/wishlist` et `/mes-commandes` ne sont plus prefetchees automatiquement a l'ouverture publique.
+- `scripts/audit-desktop-global-menu.mjs` et `npm run perf:menu-desktop` ajoutent un gate navigateur froid pour le hamburger desktop.
+
+Validation finale:
+
+```powershell
+npm run build
+node scripts\audit-desktop-global-menu.mjs --url=http://127.0.0.1:4304 --assert --settle=650
+```
+
+Resultat audit production froid, viewport `1920x1032`:
+
+- shell menu visible: `425 ms`;
+- premier container visible: `595 ms`;
+- tous les containers visibles: `864 ms`;
+- long tasks pendant ouverture: `0`;
+- requetes Firebase Auth / Firestore / App Check pendant ouverture publique: `0`;
+- fermeture: OK;
+- capture: `logs/menu-desktop-audit/2026-06-24T22-00-20-690Z-open.png`.
+
+Limite observee pendant validation: un premier rebuild apres nettoyage `.next` a echoue sur une course Windows autour de `.next/export/500.html`, puis le build relance sans nettoyage est passe. Le build final est vert.

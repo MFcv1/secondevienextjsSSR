@@ -33,6 +33,11 @@ Sources locales non normatives mais utiles:
 - `context.md`: contexte de migration legacy UI vers Next natif.
 - `NEXTJS_OPTIMIZATION_ROADMAP.md`: historique perf/cache/images.
 - `P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md`: plan de fermeture des derniers P0 infra avant Phase 3 perf.
+- `APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`: etat App Check sandbox, telemetrie Cloud Monitoring et decision enforcement par service.
+- `RAIL_PROD_AUDIT_REPORT_2026-06-24.md`: audit du rail prod absent/non cable et bloc `railProd` de `npm run infra:env`.
+- `CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md`: support E2E iDEAL/Wero, checkout heberge stabilise jusqu'au Payment Element, blocage restant cote configuration Stripe sandbox.
+- `REFUND_UI_STRICT_PROOF_2026-06-24.md`: preuve stricte clic UI `Rembourser` sur commande fraiche `paid`, refund Stripe et stock restaure.
+- `PHASE3_PERF_BASELINE_2026-06-24.md`: baseline Phase 3 perf/hydratation, P0 galerie, chunks initiaux et dettes P1/P2.
 - `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`: plan d'execution multi-agents pour prouver achat invite neuf puis refund admin sandbox.
 - Scripts gates: `next:routes`, `perf:*`, `mobile:contract`.
 
@@ -280,7 +285,7 @@ CLEANUP
 | Route | Fichiers principaux | Strategie actuelle observee | Data/cache | Iles client | Pertinence | Action recommandee |
 | --- | --- | --- | --- | --- | --- | --- |
 | `/` | `app/page.jsx`, `app/HomeMotionIsland.jsx` | ISR statique, `revalidate=300`, prerender manifest OK | `getPublicCatalog(scope=cards&limit=24)`, fallback Admin/REST, tags `catalog/products` | `HomeMotionIsland` | Pertinent: landing publique cacheable | Garder ISR. Ajouter un audit home direct si besoin. |
-| `/galerie` | `app/galerie/page.jsx`, `app/GalleryMobileShellIsland.jsx`, `src/kit/marketplace/GalleryServerView.jsx` | ISR force, `dynamic='force-static'`, `revalidate=300`, prerender manifest OK | Catalogue `limit=48`, fallback serveur | shell mobile, actions grille, header/menu/cart/dark, carousels | Pertinent: catalogue public cacheable | Garder ISR. Toute modif mobile doit relire `alertemobile.md`. |
+| `/galerie` | `app/galerie/page.jsx`, `app/GalleryMobileShellIsland.jsx`, `src/kit/marketplace/GalleryServerView.jsx`, `src/kit/marketplace/DeferredGalleryIsland.jsx` | ISR force, `dynamic='force-static'`, `revalidate=300`, prerender manifest OK | Catalogue `limit=48`, fallback serveur | shell mobile, actions grille, header/menu/cart/dark, carousels bas differees | Pertinent: catalogue public cacheable | Garder ISR. Toute modif mobile doit relire `alertemobile.md`. P1 restant: orchestration header public. |
 | `/a-propos` | `app/a-propos/page.jsx`, `src/kit/vitrine/AboutServerView.jsx` | ISR, `revalidate=300`, prerender manifest OK | `getAboutPersonalization()` via cache 300s | iles nav, before/after, FAQ, testimonials | Pertinent | Peut devenir SSG pur si personnalisation admin retiree. Pas prioritaire. |
 | `/devis` | `app/devis/page.jsx`, `src/kit/marketplace/QuoteRequestServerView.jsx` | ISR, `revalidate=300`, prerender manifest OK | env public + contenu quasi statique | `QuoteFormIsland`, dark toggle | Fonctionne; pourrait etre static pur | Garder stable pour l'instant. SEO/perf plus tard. |
 | `/categorie/[categoryId]` | `app/categorie/[categoryId]/page.jsx`, `CategoryServerView.jsx` | `next build` affiche `SSG` avec chemins generes; revalidate source present | `generateStaticParams(categoryEntries)`, catalogue filtre, `searchParams`, cookie dark mode | `CategoryControlsIsland`, header/menu/cart/dark | Pertinent pour public SEO | Ajouter un gate qui prouve les chemins categories depuis le build. Revoir `getServerDarkMode()` seulement si un futur gate cache montre une regression. |

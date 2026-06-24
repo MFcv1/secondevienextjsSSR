@@ -28,8 +28,13 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- DEAD_CODE_AUDIT.md : audit multi-agent code vivant/mort, candidats suppression et assets a archiver
 |-- TODO.md : checklist Phase 2 infra prod puis Phase 3 hydratation/perf
 |-- P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md : roadmap de cloture P0 infra avant Phase 3 perf, couvrant prod rail, App Check, revalidation, Stripe webhook/refund et checkout redirect
+|-- PHASE3_PERF_BASELINE_2026-06-24.md : baseline Phase 3 perf/hydratation, passe P0 galerie, chunks `/galerie`, gates et dettes P1/P2
+|-- APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md : rapport App Check sandbox, etat enforcement, telemetrie Cloud Monitoring et decision service par service
+|-- RAIL_PROD_AUDIT_REPORT_2026-06-24.md : audit dedie rail prod, etat sandbox/prod, gate `railProd` et prerequis avant creation d'un backend App Hosting prod
+|-- CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md : rapport checkout redirect sandbox, checkout heberge stabilise jusqu'au Payment Element et iDEAL bloque par configuration Stripe sandbox
 |-- E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md : recap preuve paiement sandbox, compte admin test `loa.gto15@gmail.com`, bugs E2E et roadmap tests client/back-office
 |-- E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md : plan d'execution multi-agents pour debloquer App Check, prouver achat invite neuf puis refund admin sandbox
+|-- REFUND_UI_STRICT_PROOF_2026-06-24.md : preuve stricte clic UI admin `Rembourser`, refund Stripe, Firestore et stock restaure
 |-- INFRA_PROD_PHASE2_REPORT_2026-06-14.md : rapport infra prod Phase 2, decisions env/secrets/revalidation/Stripe et risques restants
 |-- MENU_NAVIGATION_CATEGORY_LOADING_REPORT_2026-06-16.md : rapport navigation menu, prefetch cible, suppression loading categorie et deploy App Hosting sandbox
 |-- MEGA_MENU_DESKTOP_OPTIMIZATION_ROADMAP_2026-06-24.md : diagnostic et roadmap stricte pour retard a froid du menu hamburger desktop sans changer le design
@@ -61,7 +66,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |   |-- index.js, helpers : Firebase Functions entrypoint/config/security
 |   `-- src : analytics, auth, commerce dont refund admin Stripe et helpers E2E proteges, email, maintenance, public, seo, triggers
 |-- public : favicons, manifest, image OG, images, video, rapport maintenance statique
-|-- scripts : env bridge, audits infra env/secrets/deploy/App Check paths, E2E auth email OTP, E2E revalidation catalogue, E2E hosted Stripe checkout sandbox succes/echec, seed/reset produit test Stripe sandbox, SSR/mobile checks, maintenance audit, budget perf Next, gate classification routes Next, perf/architecture compare, audit scroll galerie, backfills/audits Storage/images et tooling safe
+|-- scripts : env bridge, audits infra env/secrets/deploy/App Check paths/service state, E2E auth email OTP, E2E revalidation catalogue, E2E hosted Stripe checkout sandbox succes/echec, seed/reset produit test Stripe sandbox, SSR/mobile checks, maintenance audit, budget perf Next, gate classification routes Next, perf/architecture compare, audits scroll galerie/menu desktop, backfills/audits Storage/images et tooling safe
 |-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_FULL_NATIVE_CLEANUP_ROADMAP_2026-06-10.md, NEXTJS_FULL_NATIVE_AUDIT_ROADMAP_2026-06-10.md, NEXTJSSSR_FULL_NEXT_FINAL_PROMPT_2026-06-09.md et autres rapports/roadmaps Next SSR, SEO, images, galerie et produit
 |-- imagehero, pageUI : references visuelles et notes UI
 `-- .next, dist, node_modules, logs, .firebase : generes, hors carte

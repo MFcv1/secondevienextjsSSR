@@ -46,8 +46,15 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   const [panelMounted, setPanelMounted] = useState(false);
   const [panelClosing, setPanelClosing] = useState(false);
   const closeTimerRef = useRef(null);
+  const pendingOpenTimerRef = useRef(null);
+  const panelReadyRef = useRef(false);
   const warmGlobalMenuPanel = useCallback(() => {
-    preloadGlobalMenuPanel().catch(() => null);
+    const promise = preloadGlobalMenuPanel()
+      .then(() => {
+        panelReadyRef.current = true;
+      })
+      .catch(() => null);
+    return promise;
   }, []);
 
   useEffect(() => {
@@ -76,28 +83,56 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
     if (!desktopQuery.matches) return undefined;
 
     if ('requestIdleCallback' in window) {
-      const idleId = window.requestIdleCallback(warmGlobalMenuPanel, { timeout: 2200 });
+      const idleId = window.requestIdleCallback(warmGlobalMenuPanel, { timeout: 1200 });
       return () => window.cancelIdleCallback?.(idleId);
     }
 
-    const timeoutId = window.setTimeout(warmGlobalMenuPanel, 1600);
+    const timeoutId = window.setTimeout(warmGlobalMenuPanel, 900);
     return () => window.clearTimeout(timeoutId);
   }, [warmGlobalMenuPanel]);
 
   useEffect(() => () => {
     clearCloseTimer();
+    if (pendingOpenTimerRef.current) {
+      window.clearTimeout(pendingOpenTimerRef.current);
+      pendingOpenTimerRef.current = null;
+    }
   }, [clearCloseTimer]);
 
   const openPanel = useCallback(() => {
     clearCloseTimer();
-    warmGlobalMenuPanel();
+    if (pendingOpenTimerRef.current) {
+      window.clearTimeout(pendingOpenTimerRef.current);
+      pendingOpenTimerRef.current = null;
+    }
+    const warmPromise = warmGlobalMenuPanel();
     setPanelMounted(true);
     setPanelClosing(false);
-    setPanelOpen(true);
-  }, [clearCloseTimer, warmGlobalMenuPanel]);
+
+    const revealPanel = () => {
+      pendingOpenTimerRef.current = null;
+      window.requestAnimationFrame(() => setPanelOpen(true));
+    };
+
+    if (panelReadyRef.current) {
+      revealPanel();
+      return;
+    }
+
+    pendingOpenTimerRef.current = window.setTimeout(revealPanel, 140);
+    warmPromise.finally(() => {
+      if (!pendingOpenTimerRef.current || panelOpen) return;
+      window.clearTimeout(pendingOpenTimerRef.current);
+      revealPanel();
+    });
+  }, [clearCloseTimer, panelOpen, warmGlobalMenuPanel]);
 
   const closePanel = useCallback(() => {
     clearCloseTimer();
+    if (pendingOpenTimerRef.current) {
+      window.clearTimeout(pendingOpenTimerRef.current);
+      pendingOpenTimerRef.current = null;
+    }
     setPanelOpen(false);
     setPanelClosing(true);
     closeTimerRef.current = window.setTimeout(() => {

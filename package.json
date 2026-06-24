@@ -39,6 +39,7 @@
     "perf:about-direct": "node scripts/audit-about-direct.mjs --assert",
     "perf:quote-direct": "node scripts/audit-quote-direct.mjs --assert",
     "perf:gallery-direct": "node scripts/audit-gallery-direct.mjs --assert",
+    "perf:menu-desktop": "node scripts/audit-desktop-global-menu.mjs --assert",
     "perf:product-images": "node scripts/audit-product-detail-images.mjs --assert",
     "next:routes": "node scripts/check-next-route-classification.cjs",
     "mobile:contract": "node scripts/check-mobile-marketplace-contract.cjs"
