@@ -839,6 +839,12 @@
   box-shadow: 0 20px 40px rgba(26, 19, 12, 0.06);
 }
 
+.sv4-atelier__reveal-zoom {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+
 .sv4-atelier__img {
   position: absolute;
   inset: 0;

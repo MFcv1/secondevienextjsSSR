@@ -1,6 +1,6 @@
 # mapV2 - Cartographie Next SSR/SSG/ISR, infra prod et nettoyage
 
-Derniere mise a jour: 2026-06-14
+Derniere mise a jour: 2026-06-24
 
 ## Objectif
 
@@ -32,6 +32,7 @@ Sources locales non normatives mais utiles:
 - `nextjsssr.md`: playbook local anti-SPA. A garder comme garde-fou projet, pas comme source d'autorite Next.js.
 - `context.md`: contexte de migration legacy UI vers Next natif.
 - `NEXTJS_OPTIMIZATION_ROADMAP.md`: historique perf/cache/images.
+- `P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md`: plan de fermeture des derniers P0 infra avant Phase 3 perf.
 - `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`: plan d'execution multi-agents pour prouver achat invite neuf puis refund admin sandbox.
 - Scripts gates: `next:routes`, `perf:*`, `mobile:contract`.
 

@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import tls from 'node:tls';
+import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { chromium, expect } from '@playwright/test';
 
 const HOSTED_URL = 'https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app';
@@ -15,15 +17,20 @@ const loadLocalEnvFile = (filePath) => {
   }
 };
 
+loadLocalEnvFile(path.join(process.cwd(), '.env.sandbox'));
 loadLocalEnvFile(path.join(process.cwd(), 'logs', 'e2e-mail.env'));
 
 const baseUrl = (process.env.NEXT_BASE_URL || HOSTED_URL).replace(/\/$/, '');
 const adminEmail = process.env.E2E_REVALIDATE_EMAIL || process.env.E2E_ADMIN_EMAIL || 'loa.gto15@gmail.com';
+const adminUid = process.env.E2E_REVALIDATE_ADMIN_UID || process.env.E2E_ADMIN_UID || '';
 const mailboxUser = process.env.E2E_MAILBOX_USER || process.env.E2E_EMAIL || 'loa.gto15@gmail.com';
 const gmailAppPassword = String(process.env.E2E_GMAIL_APP_PASSWORD || '').replace(/\s/g, '');
 const appCheckDebugToken = process.env.E2E_APPCHECK_DEBUG_TOKEN || '';
+const firebaseApiKey = process.env.E2E_FIREBASE_API_KEY || process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || '';
+const firebaseProjectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || '';
 const headless = String(process.env.E2E_HEADLESS || 'true').toLowerCase() !== 'false';
 const allowNonSandboxTarget = String(process.env.E2E_ALLOW_NON_SANDBOX || 'false').toLowerCase() === 'true';
+const allowProdAdminToken = String(process.env.E2E_ALLOW_PROD_ADMIN_TOKEN || 'false').toLowerCase() === 'true';
 
 const logDir = path.join(process.cwd(), 'logs');
 fs.mkdirSync(logDir, { recursive: true });
@@ -40,12 +47,20 @@ if (!isSandboxOrLocalTarget && !allowNonSandboxTarget) {
   console.error(`Refusing to run revalidation E2E against non-sandbox target: ${baseUrl}`);
   process.exit(1);
 }
-if (!gmailAppPassword) {
+if (adminUid && !isSandboxOrLocalTarget && !allowProdAdminToken) {
+  console.error(`Refusing to mint an automated admin token against non-sandbox target: ${baseUrl}`);
+  process.exit(1);
+}
+if (!adminUid && !gmailAppPassword) {
   console.error('Missing E2E_GMAIL_APP_PASSWORD in environment or logs/e2e-mail.env.');
   process.exit(1);
 }
 if (!appCheckDebugToken) {
   console.error('Missing E2E_APPCHECK_DEBUG_TOKEN in environment or logs/e2e-mail.env.');
+  process.exit(1);
+}
+if (adminUid && !firebaseApiKey) {
+  console.error('Missing E2E_FIREBASE_API_KEY / NEXT_PUBLIC_FIREBASE_API_KEY / VITE_FIREBASE_API_KEY for custom token exchange.');
   process.exit(1);
 }
 
@@ -61,10 +76,82 @@ const result = {
 };
 
 const redactSensitiveText = (value) => String(value ?? '')
-  .replace(/(E2E_GMAIL_APP_PASSWORD|E2E_APPCHECK_DEBUG_TOKEN)(["'\s:=]+)([^"',\s&]+)/gi, '$1$2<redacted>')
+  .replace(/(E2E_GMAIL_APP_PASSWORD|E2E_APPCHECK_DEBUG_TOKEN|E2E_FIREBASE_API_KEY|NEXT_PUBLIC_FIREBASE_API_KEY|VITE_FIREBASE_API_KEY)(["'\s:=]+)([^"',\s&]+)/gi, '$1$2<redacted>')
   .replace(/Bearer\s+[A-Za-z0-9._-]+/g, 'Bearer <redacted>')
+  .replace(/"idToken"\s*:\s*"[^"]+"/g, '"idToken":"<redacted>"')
+  .replace(/"refreshToken"\s*:\s*"[^"]+"/g, '"refreshToken":"<redacted>"')
   .replace(/\b[A-Za-z0-9_-]{80,}\b/g, '<token-redacted>')
   .replace(/\b\d{6}\b/g, '<otp-redacted>');
+
+const parseServiceAccountCredential = () => {
+  const rawJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (rawJson) {
+    const parsed = JSON.parse(rawJson);
+    if (parsed.private_key) parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
+    return cert(parsed);
+  }
+
+  if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+    return cert({
+      projectId: firebaseProjectId || undefined,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    });
+  }
+
+  return null;
+};
+
+const getAdminTokenFromCustomToken = async () => {
+  const credential = parseServiceAccountCredential();
+  if (!credential) {
+    throw new Error('Automated admin token requires FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_CLIENT_EMAIL/FIREBASE_PRIVATE_KEY');
+  }
+
+  const app = getApps()[0] || initializeApp({
+    ...(firebaseProjectId ? { projectId: firebaseProjectId } : {}),
+    credential,
+  });
+  const auth = getAuth(app);
+  const user = await auth.getUser(adminUid);
+  const customClaims = user.customClaims || {};
+  const isAdmin = customClaims.admin === true || customClaims.superAdmin === true;
+  if (!isAdmin) {
+    throw new Error(`E2E admin uid ${adminUid} does not have admin/superAdmin custom claims`);
+  }
+  if (user.emailVerified !== true) {
+    throw new Error(`E2E admin uid ${adminUid} email is not verified`);
+  }
+
+  const customToken = await auth.createCustomToken(adminUid);
+  const exchangeResponse = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${encodeURIComponent(firebaseApiKey)}`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({ token: customToken, returnSecureToken: true }),
+    }
+  );
+  const payload = await exchangeResponse.json().catch(() => ({}));
+  if (!exchangeResponse.ok || !payload.idToken) {
+    throw new Error(`Custom token exchange failed: HTTP ${exchangeResponse.status} ${redactSensitiveText(JSON.stringify(payload))}`);
+  }
+
+  result.steps.push({
+    phase: 'admin_custom_token',
+    user: {
+      uid: user.uid,
+      email: user.email || '',
+      emailVerified: user.emailVerified,
+      claims: {
+        admin: customClaims.admin === true,
+        superAdmin: customClaims.superAdmin === true,
+      },
+    },
+  });
+
+  return payload.idToken;
+};
 
 const writeResult = () => {
   fs.writeFileSync(resultPath, JSON.stringify(result, null, 2));
@@ -183,6 +270,8 @@ const openLoginDialog = async (page) => {
 };
 
 const loginAndGetIdToken = async (page) => {
+  if (adminUid) return getAdminTokenFromCustomToken();
+
   const minUid = await latestOtpUidForEmail(adminEmail);
   const dialog = await openLoginDialog(page);
 
