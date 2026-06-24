@@ -104,13 +104,13 @@ const MENU_CONTAINER_EASE = [0.22, 1, 0.36, 1];
 const RAINMAKER_PANEL_EASE = [0.88, 0, 0.18, 1];
 const MENU_CLOSE_EASE = [0.76, 0, 0.24, 1];
 const MENU_SEQUENCE = {
-    sidebar: { delay: 0.18, exitDelay: 0.16 },
-    categories: { delay: 0.24, exitDelay: 0.11 },
-    discovery: { delay: 0.3, exitDelay: 0.07 },
-    atelier: { delay: 0.36, exitDelay: 0.03 },
-    atelierInner: { delay: 0.04 },
-    atelierMedia: { delay: 0.1 },
-    services: { delay: 0.44, exitDelay: 0 },
+    sidebar: { delay: 0.14, exitDelay: 0.16 },
+    categories: { delay: 0.38, exitDelay: 0.11 },
+    discovery: { delay: 0.62, exitDelay: 0.07 },
+    atelier: { delay: 0.86, exitDelay: 0.03 },
+    atelierInner: { delay: 0.1 },
+    atelierMedia: { delay: 0.22 },
+    services: { delay: 1.12, exitDelay: 0 },
 };
 
 let menuImagesWarmPromise = null;
@@ -294,13 +294,13 @@ const menuColumnVariants = {
         opacity: 1,
         filter: 'blur(0px)',
         transition: {
-            duration: getMenuStage(stage).reduceMotion ? 0.01 : 0.58,
+            duration: getMenuStage(stage).reduceMotion ? 0.01 : 0.68,
             ease: MENU_CONTAINER_EASE,
             delay: getMenuStageDelay(stage),
-            opacity: { duration: getMenuStage(stage).reduceMotion ? 0.01 : 0.42, ease: MENU_FADE_EASE },
-            filter: { duration: getMenuStage(stage).reduceMotion ? 0.01 : 0.28, ease: MENU_FADE_EASE },
-            delayChildren: getMenuStage(stage).reduceMotion ? 0 : 0.12,
-            staggerChildren: getMenuStage(stage).reduceMotion ? 0 : 0.035,
+            opacity: { duration: getMenuStage(stage).reduceMotion ? 0.01 : 0.5, ease: MENU_FADE_EASE },
+            filter: { duration: getMenuStage(stage).reduceMotion ? 0.01 : 0.32, ease: MENU_FADE_EASE },
+            delayChildren: getMenuStage(stage).reduceMotion ? 0 : 0.16,
+            staggerChildren: getMenuStage(stage).reduceMotion ? 0 : 0.045,
         },
     }),
     exit: {
