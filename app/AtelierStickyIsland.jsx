@@ -34,7 +34,7 @@ export default function AtelierStickyIsland() {
           <div key={i} className="sv4-atelier__panel">
             <motion.div 
               onViewportEnter={() => setActiveIndex(i)}
-              viewport={{ margin: "-40% 0px -40% 0px", amount: "some" }}
+              viewport={{ margin: "-30% 0px -15% 0px", amount: "some" }}
             >
               {/* Mobile inline image */}
               <img src={step.img} alt={step.title} className="sv4-atelier__mobile-img" />
@@ -71,10 +71,11 @@ export default function AtelierStickyIsland() {
                   initial={false}
                   animate={{ 
                     opacity: isActive ? 1 : 0,
-                    scale: isActive ? 1 : 1.04,
+                    scale: isActive ? 1 : 1.12,
+                    clipPath: isActive ? 'inset(0% round var(--r-card))' : 'inset(9% round var(--r-card))',
                     zIndex: isActive ? 2 : 1
                   }}
-                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
                 />
               );
             })}

@@ -399,3 +399,15 @@ Prochaine premiere tache:
 - [ ] Checkout redirect sandbox prouve.
 - [ ] `npm run appcheck:audit` traite ou reste documente par lots.
 - [ ] Decision Phase 3 ecrite.
+
+## Journal implementation - 2026-06-24
+
+- `scripts/e2e-revalidate-catalog.mjs` supporte maintenant un mode admin non interactif via `E2E_ADMIN_UID`: custom token Firebase Admin, echange Identity Toolkit, appel `/api/revalidate-catalog`, puis controle galerie/categorie/produit/sitemap.
+- Le script charge `.env.sandbox`, `logs/e2e-mail.env` et `logs/e2e-admin.env`, force le quota/project sandbox pour eviter les restes d'anciens projets, et classe les erreurs connues (`known-admin-otp-blocked`, `known-adc-project-mismatch`, `known-adc-signer-missing`, `known-iam-signblob-missing`).
+- Run tente le 2026-06-24: le script atteint la creation de custom token mais l'ADC local n'a pas `iam.serviceAccounts.signBlob` sur le service account signataire. La revalidation effective reste donc a prouver apres correction IAM ou fourniture d'un service account local hors repo.
+- Suite 2026-06-24: `roles/iam.serviceAccountTokenCreator` a ete ajoute pour `matthis.fradin2@gmail.com` sur `secondevienextjsssr@appspot.gserviceaccount.com` puis au niveau projet sandbox, mais `sign-blob` restait refuse sur ce service account.
+- Fallback implemente et prouve: si `E2E_ADMIN_PASSWORD` est present hors repo, le script obtient un ID token admin via Identity Toolkit `signInWithPassword`.
+- Preuve revalidation passee: `logs/revalidate-catalog-e2e-2026-06-24T16-05-12-902Z.json`, API 200, `/galerie`, `/categorie/meubles`, `/produit/buffet-VdMQLvZvXJL7mKVxCBvb` et `/sitemap.xml` en 200.
+- `src/kit/config/firebase.js` initialise App Check avant les instances legacy `db` / `functions`, afin de securiser les consommateurs existants sans refactor massif du back-office.
+- `scripts/audit-app-check-paths.cjs` distingue maintenant les creations reelles d'instances Firebase des imports modulaires utilitaires. Validation: `npm run appcheck:audit` OK avec `findingCount=0`.
+- `TODO.md` clarifie l'incoherence refund: le refund est prouve via callables admin + Stripe + Firestore + webhook, mais le clic UI strict `Rembourser` reste non coche car il n'a pas ete rejoue avant remboursement sur la commande deja `refunded`.

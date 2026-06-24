@@ -9,7 +9,30 @@ const FIREBASE_SERVICES = ['firestore', 'functions', 'storage', 'auth', 'app-che
 const ALLOWED_FIREBASE_IMPORT_FILES = new Set([
   'src/kit/config/firebaseLazy.js',
   'src/kit/config/firebaseCore.js',
+  'src/kit/config/firebase.js',
 ]);
+
+const LEGACY_CONFIG_FILE = 'src/kit/config/firebase.js';
+
+const readRelative = (relative) => {
+  const filePath = path.join(ROOT, relative);
+  return fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf8') : '';
+};
+
+const legacyConfigInitializesAppCheck = () => {
+  const content = readRelative(LEGACY_CONFIG_FILE);
+  const appCheckIndex = content.indexOf('initializeAppCheckBeforeLegacyServices();');
+  const firestoreIndex = content.indexOf('getFirestore(app)');
+  const functionsIndex = content.indexOf('getFunctions(app');
+  return (
+    appCheckIndex !== -1 &&
+    firestoreIndex !== -1 &&
+    functionsIndex !== -1 &&
+    appCheckIndex < firestoreIndex &&
+    appCheckIndex < functionsIndex &&
+    content.includes('ReCaptchaV3Provider')
+  );
+};
 
 const toRelative = (filePath) => path.relative(ROOT, filePath).replace(/\\/g, '/');
 
@@ -38,12 +61,13 @@ const findMatches = () => {
   const findings = [];
   const importPattern = /(?:from\s+['"]firebase\/([^'"]+)['"]|import\(\s*['"]firebase\/([^'"]+)['"]\s*\))/g;
   const legacyConfigPattern = /(?:from\s+['"][^'"]*config\/firebase['"]|import\(\s*['"][^'"]*config\/firebase['"]\s*\))/g;
+  const safeLegacyConfig = legacyConfigInitializesAppCheck();
 
   for (const file of SCAN_ROOTS.flatMap(walk)) {
     const relative = toRelative(file);
     const content = fs.readFileSync(file, 'utf8');
 
-    if (relative !== 'src/kit/config/firebase.js' && legacyConfigPattern.test(content)) {
+    if (relative !== LEGACY_CONFIG_FILE && legacyConfigPattern.test(content) && !safeLegacyConfig) {
       findings.push({
         service: 'legacy-config',
         file: relative,
@@ -59,6 +83,11 @@ const findMatches = () => {
       const serviceRoot = service.split('/')[0];
       if (!FIREBASE_SERVICES.includes(serviceRoot)) continue;
       if (ALLOWED_FIREBASE_IMPORT_FILES.has(relative)) continue;
+      const isServiceInstanceCreation =
+        (serviceRoot === 'firestore' && /\bgetFirestore\s*\(/.test(content)) ||
+        (serviceRoot === 'functions' && /\bgetFunctions\s*\(/.test(content)) ||
+        (serviceRoot === 'storage' && /\bgetStorage\s*\(/.test(content));
+      if (!isServiceInstanceCreation && serviceRoot !== 'app-check') continue;
       if (serviceRoot === 'storage') {
         const lineStart = content.lastIndexOf('\n', match.index) + 1;
         const lineEnd = content.indexOf('\n', match.index);

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import tls from 'node:tls';
-import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { applicationDefault, cert, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { chromium, expect } from '@playwright/test';
 
@@ -19,15 +19,21 @@ const loadLocalEnvFile = (filePath) => {
 
 loadLocalEnvFile(path.join(process.cwd(), '.env.sandbox'));
 loadLocalEnvFile(path.join(process.cwd(), 'logs', 'e2e-mail.env'));
+loadLocalEnvFile(path.join(process.cwd(), 'logs', 'e2e-admin.env'));
 
 const baseUrl = (process.env.NEXT_BASE_URL || HOSTED_URL).replace(/\/$/, '');
 const adminEmail = process.env.E2E_REVALIDATE_EMAIL || process.env.E2E_ADMIN_EMAIL || 'loa.gto15@gmail.com';
 const adminUid = process.env.E2E_REVALIDATE_ADMIN_UID || process.env.E2E_ADMIN_UID || '';
+const adminPassword = process.env.E2E_REVALIDATE_PASSWORD || process.env.E2E_ADMIN_PASSWORD || '';
 const mailboxUser = process.env.E2E_MAILBOX_USER || process.env.E2E_EMAIL || 'loa.gto15@gmail.com';
 const gmailAppPassword = String(process.env.E2E_GMAIL_APP_PASSWORD || '').replace(/\s/g, '');
 const appCheckDebugToken = process.env.E2E_APPCHECK_DEBUG_TOKEN || '';
 const firebaseApiKey = process.env.E2E_FIREBASE_API_KEY || process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || '';
-const firebaseProjectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || '';
+const firebaseProjectId = process.env.E2E_FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || '';
+if (firebaseProjectId && !process.env.GOOGLE_CLOUD_QUOTA_PROJECT) {
+  process.env.GOOGLE_CLOUD_QUOTA_PROJECT = firebaseProjectId;
+}
+const signerServiceAccount = process.env.E2E_ADMIN_SIGNER_SERVICE_ACCOUNT || (firebaseProjectId ? `${firebaseProjectId}@appspot.gserviceaccount.com` : '');
 const headless = String(process.env.E2E_HEADLESS || 'true').toLowerCase() !== 'false';
 const allowNonSandboxTarget = String(process.env.E2E_ALLOW_NON_SANDBOX || 'false').toLowerCase() === 'true';
 const allowProdAdminToken = String(process.env.E2E_ALLOW_PROD_ADMIN_TOKEN || 'false').toLowerCase() === 'true';
@@ -51,11 +57,11 @@ if (adminUid && !isSandboxOrLocalTarget && !allowProdAdminToken) {
   console.error(`Refusing to mint an automated admin token against non-sandbox target: ${baseUrl}`);
   process.exit(1);
 }
-if (!adminUid && !gmailAppPassword) {
+if (!adminUid && !adminPassword && !gmailAppPassword) {
   console.error('Missing E2E_GMAIL_APP_PASSWORD in environment or logs/e2e-mail.env.');
   process.exit(1);
 }
-if (!appCheckDebugToken) {
+if (!adminUid && !appCheckDebugToken) {
   console.error('Missing E2E_APPCHECK_DEBUG_TOKEN in environment or logs/e2e-mail.env.');
   process.exit(1);
 }
@@ -83,6 +89,23 @@ const redactSensitiveText = (value) => String(value ?? '')
   .replace(/\b[A-Za-z0-9_-]{80,}\b/g, '<token-redacted>')
   .replace(/\b\d{6}\b/g, '<otp-redacted>');
 
+const classifyKnownError = (error) => {
+  const message = error?.message || String(error);
+  if (/iam\.serviceAccounts\.signBlob/i.test(message)) {
+    return 'known-iam-signblob-missing';
+  }
+  if (/Project .* has been deleted/i.test(message)) {
+    return 'known-adc-project-mismatch';
+  }
+  if (/Failed to determine service account/i.test(message)) {
+    return 'known-adc-signer-missing';
+  }
+  if (/admin_requires_google_or_passkey/i.test(message)) {
+    return 'known-admin-otp-blocked';
+  }
+  return 'unexpected';
+};
+
 const parseServiceAccountCredential = () => {
   const rawJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (rawJson) {
@@ -99,19 +122,27 @@ const parseServiceAccountCredential = () => {
     });
   }
 
-  return null;
+  return applicationDefault();
 };
 
 const getAdminTokenFromCustomToken = async () => {
   const credential = parseServiceAccountCredential();
-  if (!credential) {
-    throw new Error('Automated admin token requires FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_CLIENT_EMAIL/FIREBASE_PRIVATE_KEY');
-  }
-
-  const app = getApps()[0] || initializeApp({
-    ...(firebaseProjectId ? { projectId: firebaseProjectId } : {}),
-    credential,
+  result.steps.push({
+    phase: 'admin_token_project',
+    projectId: firebaseProjectId || '<default>',
+    credential: process.env.FIREBASE_SERVICE_ACCOUNT_JSON
+      ? 'service_account_json'
+      : process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY
+        ? 'service_account_fields'
+        : 'application_default',
+    signerServiceAccount: signerServiceAccount || '<default>',
   });
+
+  const app = initializeApp({
+    ...(firebaseProjectId ? { projectId: firebaseProjectId } : {}),
+    ...(signerServiceAccount ? { serviceAccountId: signerServiceAccount } : {}),
+    credential,
+  }, `e2e-revalidate-${runId}`);
   const auth = getAuth(app);
   const user = await auth.getUser(adminUid);
   const customClaims = user.customClaims || {};
@@ -150,6 +181,34 @@ const getAdminTokenFromCustomToken = async () => {
     },
   });
 
+  return payload.idToken;
+};
+
+const getAdminTokenFromPassword = async () => {
+  if (!adminEmail || !adminPassword) return '';
+
+  const response = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(firebaseApiKey)}`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({
+        email: adminEmail,
+        password: adminPassword,
+        returnSecureToken: true,
+      }),
+    }
+  );
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload.idToken) {
+    throw new Error(`Admin password sign-in failed: HTTP ${response.status} ${redactSensitiveText(JSON.stringify(payload))}`);
+  }
+
+  result.steps.push({
+    phase: 'admin_password_token',
+    email: adminEmail,
+    localId: payload.localId || '',
+  });
   return payload.idToken;
 };
 
@@ -270,6 +329,8 @@ const openLoginDialog = async (page) => {
 };
 
 const loginAndGetIdToken = async (page) => {
+  const passwordToken = await getAdminTokenFromPassword();
+  if (passwordToken) return passwordToken;
   if (adminUid) return getAdminTokenFromCustomToken();
 
   const minUid = await latestOtpUidForEmail(adminEmail);
@@ -325,11 +386,29 @@ const readSitemapTargets = async () => {
   if (!response.ok) throw new Error(`Initial sitemap fetch failed: HTTP ${response.status}`);
   const xml = await response.text();
   const urls = Array.from(xml.matchAll(/<loc>([^<]+)<\/loc>/g)).map((match) => match[1]);
-  const categoryUrl = urls.find((url) => /\/categorie\//.test(url));
-  const productUrl = urls.find((url) => /\/produit\//.test(url));
+
+  const findReachablePath = async (candidates, fallback = '') => {
+    for (const url of candidates.slice(0, 40)) {
+      const pathname = new URL(url).pathname;
+      const check = await fetch(`${baseUrl}${pathname}`, { headers: { accept: 'text/html,*/*' } }).catch(() => null);
+      if (check?.ok) return pathname;
+      result.steps.push({ phase: 'sitemap_candidate_skipped', path: pathname, status: check?.status || 0 });
+    }
+    return fallback;
+  };
+
+  const categoryPath = await findReachablePath(
+    urls.filter((url) => /\/categorie\//.test(url)),
+    '/categorie/meubles'
+  );
+  const productPath = await findReachablePath(
+    urls.filter((url) => /\/produit\//.test(url)),
+    ''
+  );
+
   return {
-    categoryPath: categoryUrl ? new URL(categoryUrl).pathname : '/categorie/meubles',
-    productPath: productUrl ? new URL(productUrl).pathname : '',
+    categoryPath,
+    productPath,
   };
 };
 
@@ -347,24 +426,29 @@ const checkRoute = async (pathToCheck, pattern) => {
   if (!ok) throw new Error(`Route check failed for ${pathToCheck}: HTTP ${response.status}`);
 };
 
-const browser = await chromium.launch({ headless });
+let browser = null;
+let context = null;
+let page = null;
 try {
   const { categoryPath, productPath } = await readSitemapTargets();
   if (!productPath) throw new Error('No product URL found in sitemap for revalidation proof');
   result.steps.push({ phase: 'sitemap_targets', categoryPath, productPath });
 
-  const context = await browser.newContext({
-    viewport: { width: 1440, height: 1100 },
-    locale: 'fr-FR',
-  });
-  await context.addInitScript((token) => {
-    self.FIREBASE_APPCHECK_DEBUG_TOKEN = token;
-  }, appCheckDebugToken);
+  if (!adminUid) {
+    browser = await chromium.launch({ headless });
+    context = await browser.newContext({
+      viewport: { width: 1440, height: 1100 },
+      locale: 'fr-FR',
+    });
+    await context.addInitScript((token) => {
+      self.FIREBASE_APPCHECK_DEBUG_TOKEN = token;
+    }, appCheckDebugToken);
 
-  const page = await context.newPage();
-  page.on('console', (message) => {
-    if (message.type() === 'error') result.consoleErrors.push(redactSensitiveText(message.text()).slice(0, 240));
-  });
+    page = await context.newPage();
+    page.on('console', (message) => {
+      if (message.type() === 'error') result.consoleErrors.push(redactSensitiveText(message.text()).slice(0, 240));
+    });
+  }
 
   const idToken = await loginAndGetIdToken(page);
   const revalidateResponse = await fetch(`${baseUrl}/api/revalidate-catalog`, {
@@ -395,14 +479,15 @@ try {
   await checkRoute('/sitemap.xml', /<urlset|<url>/i);
 
   result.status = 'passed';
-  await context.close();
+  await context?.close();
 } catch (error) {
   result.status = 'failed';
+  result.failureClass = classifyKnownError(error);
   result.error = redactSensitiveText(error?.message || String(error));
-  await browser.contexts()[0]?.pages()[0]?.screenshot({ path: screenshotPath, fullPage: true }).catch(() => null);
+  await page?.screenshot({ path: screenshotPath, fullPage: true }).catch(() => null);
   throw error;
 } finally {
   writeResult();
-  await browser.close();
+  await browser?.close();
   console.log(`Revalidation E2E result written to ${resultPath}`);
 }

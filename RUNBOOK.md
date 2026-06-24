@@ -262,6 +262,46 @@ Verification attendue :
 - Firestore `sys_idempotency/stripe_<eventId>` passe en `processed`.
 - La commande conserve l'historique metier; le stock n'est restaure que si `stockReserved === true`.
 
+## Revalidation Catalogue E2E Admin
+
+Commande sandbox:
+
+```powershell
+npm run e2e:revalidate-catalog
+```
+
+Mode non interactif ajoute le 2026-06-24:
+
+- `scripts/e2e-revalidate-catalog.mjs` charge `.env.sandbox`, `logs/e2e-mail.env` et `logs/e2e-admin.env`.
+- Si `E2E_ADMIN_PASSWORD` ou `E2E_REVALIDATE_PASSWORD` est present hors repo, le script obtient directement un ID token Firebase via Identity Toolkit `signInWithPassword`.
+- Si `E2E_ADMIN_UID` ou `E2E_REVALIDATE_ADMIN_UID` est fourni, le script n'ouvre pas Playwright: il cree un custom token Firebase Admin, l'echange contre un ID token via Identity Toolkit, puis appelle `/api/revalidate-catalog`.
+- Le projet cible est force depuis `E2E_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID` ou `VITE_FIREBASE_PROJECT_ID`; `FIREBASE_PROJECT_ID` n'est qu'un fallback pour eviter les restes d'anciens projets.
+- Le service account signataire est `E2E_ADMIN_SIGNER_SERVICE_ACCOUNT` ou, par defaut, `secondevienextjsssr@appspot.gserviceaccount.com`.
+- En local avec Application Default Credentials, l'identite ADC doit avoir `iam.serviceAccounts.signBlob` sur ce service account, sinon le JSON E2E classe l'echec en `known-iam-signblob-missing`.
+- Note 2026-06-24: le role `roles/iam.serviceAccountTokenCreator` a ete ajoute pour `matthis.fradin2@gmail.com`, mais le test direct `sign-blob` sur `secondevienextjsssr@appspot.gserviceaccount.com` restait refuse. Le run E2E valide utilise donc le fallback password admin hors repo.
+
+Variables utiles hors repo:
+
+```text
+E2E_ADMIN_UID=<uid admin sandbox email verifie avec claim admin/superAdmin>
+E2E_ADMIN_SIGNER_SERVICE_ACCOUNT=<service-account@project.iam.gserviceaccount.com>
+E2E_ADMIN_PASSWORD=<mot de passe admin sandbox hors repo>
+```
+
+Ne jamais stocker ni afficher l'ID token complet. Les logs du script redigent `idToken`, `refreshToken`, `Authorization`, tokens longs et OTP.
+
+Preuve sandbox:
+
+```text
+logs/revalidate-catalog-e2e-2026-06-24T16-05-12-902Z.json
+status=passed
+/galerie=200
+/categorie/meubles=200
+/produit/buffet-VdMQLvZvXJL7mKVxCBvb=200
+/sitemap.xml=200
+/api/revalidate-catalog=200
+```
+
 ## Note env
 
 Next peut afficher `Environments: .env.production` au build parce que le fichier existe dans le dossier. Les scripts du clone chargent explicitement le fichier voulu avant `next` via `scripts/with-env.mjs`; par defaut, `dev`, `build` et `start` utilisent `.env.sandbox`.

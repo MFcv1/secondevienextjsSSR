@@ -6,6 +6,8 @@ Date: 2026-06-24
 
 Cette roadmap concerne le retard a froid et le petit freeze d'apparition du grand panneau hamburger desktop, visible sur la galerie et les routes publiques qui utilisent `ArchitecturalHeaderServer`.
 
+Quand on parle ici de "mega menu desktop", il s'agit bien de toute la grande nappe ouverte par le bouton `Menu`: fond blanc/beige sous le header, colonnes Accueil / categories / Explorer / Atelier, visuels atelier, overlay gris sur la page et rangée de services. Ce n'est pas seulement le petit menu horizontal sous le header.
+
 Deux surfaces sont a distinguer:
 
 - `src/kit/marketplace/PremiumMegaMenuIsland.jsx`: petit mega menu horizontal sous le header.
@@ -49,6 +51,15 @@ Dans `GlobalMenu` et `src/index.css`, l'ouverture desktop combine:
 - prechauffage des images seulement apres `isMenuOpen`.
 
 Le design est coherent, mais la premiere ouverture cumule trop de travail au meme moment.
+
+### Ressenti ouverture / fermeture du fond beige
+
+Le volet de fond blanc/beige peut effectivement paraitre s'ouvrir trop fort par rapport a la fermeture. Le code confirme une asymetrie:
+
+- ouverture: le panneau passe visible avec `opacity` courte (`0.24 s`) et `clipPath/scaleY` sur `0.72 s`, avec une courbe tres rapide en debut (`MENU_PANEL_OPEN_EASE = [0.16, 1, 0.3, 1]`);
+- fermeture: le panneau utilise une courbe plus retenue (`RAINMAKER_PANEL_EASE`) avec delai (`0.24 s`) et une sortie plus longue, tandis que l'opacite ne tombe qu'a la fin.
+
+Ce contraste peut donner l'impression que la grande nappe beige "claque" a l'ouverture alors qu'elle respire mieux a la sortie. Une optimisation valide peut donc rendre l'ouverture plus progressive sans changer le design final.
 
 ## Regles strictes a ne pas casser
 
@@ -145,6 +156,7 @@ Pistes:
   - tester `clip-path` vs transform-only pour le panneau, sans changer le rendu final.
 - Rendre les containers principaux visibles plus tot, puis animer les micro-elements ensuite.
 - Harmoniser ouverture/fermeture: ouverture un peu plus douce mais moins "staggered tardif"; fermeture peut rester expressive.
+- Traiter explicitement le fond blanc/beige: adoucir son arrivee pour qu'il ne claque pas avant les containers, tout en gardant sa position, sa hauteur, sa couleur et son rendu final identiques.
 
 Fichiers cibles:
 
@@ -230,4 +242,3 @@ Quand l'utilisateur voudra passer a l'implementation, verifier au minimum:
 - petit mega menu horizontal toujours intact;
 - hamburger mobile non regresse si un fichier partage est touche;
 - aucune degradation du premier scroll galerie.
-

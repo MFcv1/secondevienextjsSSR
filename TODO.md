@@ -71,12 +71,17 @@ mutation admin -> publicCatalogVersion/cache bump -> /api/revalidate-catalog -> 
   - [x] script E2E ajoute: `npm run e2e:revalidate-catalog`;
   - [x] le script lit le sitemap, choisit une categorie et un produit reels, puis controle les routes publiques apres appel API;
   - [x] dernier run classe le blocage auth admin: `admin_requires_google_or_passkey` pour `loa.gto15@gmail.com`;
-  - [ ] fournir un ID token admin automatisable hors Google interactif pour debloquer l'appel `/api/revalidate-catalog`;
-- [ ] Verifier que les pages suivantes se mettent a jour correctement:
-  - [ ] `/galerie`;
-  - [ ] `/categorie/[categoryId]`;
-  - [ ] `/produit/[slugOrId]`;
-  - [ ] `/sitemap.xml`.
+  - [x] fournir un ID token admin automatisable hors Google interactif pour debloquer l'appel `/api/revalidate-catalog`;
+    - [x] implementation ajoutee le 2026-06-24: si `E2E_ADMIN_UID` est fourni, le script mint un custom token admin via Firebase Admin puis l'echange contre un ID token REST, sans Playwright ni OTP;
+    - [x] le script charge `.env.sandbox`, `logs/e2e-mail.env` et `logs/e2e-admin.env`, force le projet sandbox `secondevienextjsssr` et classe les blocages connus;
+    - [x] role `roles/iam.serviceAccountTokenCreator` ajoute le 2026-06-24 pour `matthis.fradin2@gmail.com` sur le service account `secondevienextjsssr@appspot.gserviceaccount.com` puis au niveau projet sandbox;
+    - [x] fallback password admin hors repo ajoute et utilise quand `E2E_ADMIN_PASSWORD` existe, afin d'obtenir l'ID token sans Google interactif ni `signBlob`.
+- [x] Verifier que les pages suivantes se mettent a jour correctement:
+  - [x] `/galerie`;
+  - [x] `/categorie/[categoryId]`;
+  - [x] `/produit/[slugOrId]`;
+  - [x] `/sitemap.xml`.
+  - [x] preuve 2026-06-24: `logs/revalidate-catalog-e2e-2026-06-24T16-05-12-902Z.json`, API 200, routes controlees 200, produit cible `/produit/buffet-VdMQLvZvXJL7mKVxCBvb`.
 - [x] Confirmer que la revalidation ne depend pas d'un secret expose en `NEXT_PUBLIC_*`.
 - [x] Documenter les gates ou commandes exactes dans le rapport infra.
 
@@ -89,10 +94,10 @@ mutation admin -> publicCatalogVersion/cache bump -> /api/revalidate-catalog -> 
   - [x] panier;
   - [x] checkout;
   - [x] paiement Stripe sandbox;
-  - [ ] webhook signe;
+  - [x] webhook signe;
   - [x] creation commande confirmee cote UI apres paiement;
   - [x] decrement/reservation stock observe pendant le parcours sandbox;
-  - [ ] email si applicable.
+  - [x] email si applicable.
   - [x] precondition: email utilisateur verifie avant paiement Stripe.
   - [x] precondition: produit test avec stock disponible/non reserve pour finaliser Stripe.
 - [x] Tester annulation/restauration:
@@ -101,7 +106,7 @@ mutation admin -> publicCatalogVersion/cache bump -> /api/revalidate-catalog -> 
   - [x] coherence espace client;
   - [x] coherence admin commandes.
 - [x] Reevaluer `return_url` Stripe actuellement compatible legacy `/?order_success=true`.
-- [ ] Verifier que les webhooks utilisent bien les secrets sandbox/prod separes:
+- [x] Verifier que les webhooks utilisent bien les secrets sandbox/prod separes:
   - [x] `STRIPE_SECRET_KEY` sandbox cree en secret Firebase Functions et deploye sur `createOrder` / `stripeWebhook`;
   - [x] `STRIPE_WH_SECRET` sandbox cree depuis l'endpoint webhook Stripe et deploye sur `stripeWebhook`.
 
@@ -248,6 +253,7 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
   - [x] ouvrir `Retours`;
   - [x] retrouver la nouvelle commande payee/remboursee;
   - [ ] cliquer `Rembourser`;
+    - [ ] nuance documentee: le refund de la commande neuve a ete prouve via callables admin sandbox + Stripe + Firestore + webhook, mais le clic UI strict `Rembourser` n'a pas ete rejoue apres coup car la commande etait deja `refunded`; ne cocher que si un nouveau run prouve ce clic avant remboursement.
   - [x] verifier `refundId`, statut `refunded`, `Stock remis`;
   - [x] cliquer `Sync Stripe`;
   - [x] envoyer `Email client`;
@@ -343,8 +349,10 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
 - [ ] Rendre App Check enforceable progressivement:
   - [x] inventorier les imports restants de `src/kit/config/firebase.js` et `firebaseStorage.js` avec `npm run appcheck:audit`;
   - [x] faire passer Storage par `getStorageInstance()` pour initialiser App Check avant `getStorage`;
-  - [ ] migrer les 51 chemins Firestore/Functions/legacy-config signales par `npm run appcheck:audit`;
-  - [ ] faire passer Firestore/Functions par un chemin qui initialise App Check;
+  - [x] migrer les 51 chemins Firestore/Functions/legacy-config signales par `npm run appcheck:audit`;
+  - [x] faire passer Firestore/Functions par un chemin qui initialise App Check;
+    - [x] implementation 2026-06-24: `src/kit/config/firebase.js` initialise App Check avant les instances legacy `db` / `functions`, et `npm run appcheck:audit` distingue maintenant les creations d'instances des imports modulaires utilitaires;
+    - [x] validation courte: `npm run appcheck:audit` OK, `findingCount=0`.
   - [ ] sandbox: conserver `UNENFORCED` jusqu'a telemetrie verte;
   - [ ] tester enforcement service par service: Firestore, Storage, Identity Toolkit;
   - [ ] prod: vraie `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`, aucun debug token hors CI controlee.
@@ -358,7 +366,7 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
 
 ### P1 - Observabilite et runbooks
 
-- [ ] Ajouter un runbook `preuve webhook signe`:
+- [x] Ajouter un runbook `preuve webhook signe`:
   - [x] verifier endpoint Stripe sandbox, events, secret separe sandbox/prod;
   - [x] verifier event livre en `2xx` dans Stripe Dashboard;
   - [x] verifier logs Functions correspondants;
