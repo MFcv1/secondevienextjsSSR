@@ -12,6 +12,12 @@ const GlobalMenuPanelAuthIsland = dynamic(() => import('./GlobalMenuPanelAuthIsl
 let globalMenuPanelPreloadPromise = null;
 const THEME_STORAGE_KEY = 'darkMode';
 
+const getCurrentMenuTop = () => {
+  if (typeof window === 'undefined') return 110;
+  const headerBottom = document.querySelector('header')?.getBoundingClientRect?.().bottom;
+  return Math.max(0, Math.round(headerBottom || 110));
+};
+
 const preloadGlobalMenuPanel = () => {
   GlobalMenuPanelAuthIsland.preload?.();
 
@@ -40,11 +46,63 @@ function MenuIcon({ open }) {
   );
 }
 
+function GlobalMenuOpeningShell({ darkMode = false, menuTop = 110, open = false, closing = false, onClose } = {}) {
+  const interactive = open && !closing;
+  const viewportHeight = typeof window === 'undefined' ? 900 : window.innerHeight;
+  const panelTone = darkMode
+    ? 'border-stone-800 bg-[#111111] text-stone-100'
+    : 'border-stone-200 bg-[#fffdfb] text-stone-900';
+  const cardTone = darkMode
+    ? 'border-white/10 bg-white/[0.045]'
+    : 'border-stone-200/70 bg-[#fbfaf8]/95';
+
+  return (
+    <div
+      className={`${interactive ? 'pointer-events-auto' : 'pointer-events-none'} fixed inset-x-0 bottom-0 z-[2000] overflow-hidden`}
+      style={{ top: menuTop }}
+      role={interactive ? 'dialog' : undefined}
+      aria-modal={interactive ? 'true' : undefined}
+      aria-hidden={!interactive}
+      aria-label="Menu principal"
+    >
+      <button
+        type="button"
+        className={`absolute inset-0 h-full w-full bg-stone-950/20 transition-opacity duration-200 lg:bg-stone-950/35 ${interactive ? 'opacity-100' : 'opacity-0'}`}
+        onClick={onClose}
+        aria-label="Fermer le menu"
+      />
+      <section
+        className={`global-menu-scrollbarless absolute left-0 right-0 hidden overflow-hidden overscroll-contain shadow-[0_28px_80px_rgba(28,25,23,0.13)] transition-[opacity,transform] duration-300 lg:block ${panelTone} ${interactive ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'}`}
+        style={{
+          top: 0,
+          maxHeight: Math.max(0, viewportHeight - menuTop),
+          transformOrigin: 'top center',
+          contain: 'layout paint',
+        }}
+      >
+        <div className="w-full px-5 pb-7 pt-6 xl:px-7 2xl:px-9" aria-hidden="true">
+          <div className="grid grid-cols-[250px_minmax(0,1fr)] gap-4 xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-5">
+            <div className={`h-[540px] rounded-[22px] ${cardTone}`} />
+            <div className="grid grid-cols-[minmax(230px,0.72fr)_minmax(420px,1.34fr)_minmax(560px,1.94fr)] gap-3 xl:gap-4">
+              <div className={`h-[540px] rounded-[22px] ${cardTone}`} />
+              <div className={`h-[540px] rounded-[22px] ${cardTone}`} />
+              <div className={`h-[540px] rounded-[22px] ${cardTone}`} />
+            </div>
+          </div>
+          <div className={`mt-6 h-[90px] rounded-[22px] ${cardTone}`} />
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   const [effectiveDarkMode, setEffectiveDarkMode] = useState(darkMode);
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelMounted, setPanelMounted] = useState(false);
   const [panelClosing, setPanelClosing] = useState(false);
+  const [panelReady, setPanelReady] = useState(false);
+  const [fallbackMenuTop, setFallbackMenuTop] = useState(110);
   const closeTimerRef = useRef(null);
   const pendingOpenTimerRef = useRef(null);
   const panelReadyRef = useRef(false);
@@ -52,6 +110,7 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
     const promise = preloadGlobalMenuPanel()
       .then(() => {
         panelReadyRef.current = true;
+        setPanelReady(true);
       })
       .catch(() => null);
     return promise;
@@ -82,13 +141,21 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
     const desktopQuery = window.matchMedia('(min-width: 1024px)');
     if (!desktopQuery.matches) return undefined;
 
+    const kickoffId = window.setTimeout(warmGlobalMenuPanel, 260);
+
     if ('requestIdleCallback' in window) {
       const idleId = window.requestIdleCallback(warmGlobalMenuPanel, { timeout: 1200 });
-      return () => window.cancelIdleCallback?.(idleId);
+      return () => {
+        window.clearTimeout(kickoffId);
+        window.cancelIdleCallback?.(idleId);
+      };
     }
 
     const timeoutId = window.setTimeout(warmGlobalMenuPanel, 900);
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      window.clearTimeout(kickoffId);
+      window.clearTimeout(timeoutId);
+    };
   }, [warmGlobalMenuPanel]);
 
   useEffect(() => () => {
@@ -106,6 +173,7 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
       pendingOpenTimerRef.current = null;
     }
     const warmPromise = warmGlobalMenuPanel();
+    setFallbackMenuTop(getCurrentMenuTop());
     setPanelMounted(true);
     setPanelClosing(false);
 
@@ -114,12 +182,7 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
       window.requestAnimationFrame(() => setPanelOpen(true));
     };
 
-    if (panelReadyRef.current) {
-      revealPanel();
-      return;
-    }
-
-    pendingOpenTimerRef.current = window.setTimeout(revealPanel, 140);
+    pendingOpenTimerRef.current = window.setTimeout(revealPanel, panelReadyRef.current ? 0 : 40);
     warmPromise.finally(() => {
       if (!pendingOpenTimerRef.current || panelOpen) return;
       window.clearTimeout(pendingOpenTimerRef.current);
@@ -175,13 +238,26 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
         <span className="hidden text-[10px] font-black uppercase tracking-[0.16em] md:inline">Menu</span>
       </button>
       {panelMounted && typeof document !== 'undefined' ? createPortal(
-        <GlobalMenuPanelAuthIsland
-          darkMode={effectiveDarkMode}
-          panelOpen={panelOpen}
-          isMenuClosing={panelClosing}
-          keepMounted={panelMounted}
-          setPanelOpen={setPanelOpenWithMotion}
-        />,
+        <>
+          {!panelReady ? (
+            <GlobalMenuOpeningShell
+              darkMode={effectiveDarkMode}
+              menuTop={fallbackMenuTop}
+              open={panelOpen}
+              closing={panelClosing}
+              onClose={closePanel}
+            />
+          ) : null}
+          {panelReady ? (
+            <GlobalMenuPanelAuthIsland
+              darkMode={effectiveDarkMode}
+              panelOpen={panelOpen}
+              isMenuClosing={panelClosing}
+              keepMounted={panelMounted}
+              setPanelOpen={setPanelOpenWithMotion}
+            />
+          ) : null}
+        </>,
         document.body
       ) : null}
     </>
