@@ -193,7 +193,7 @@ export default function HomePageV4() {
             </Link>
           </div>
           
-          <div className="sv4-products-grid">
+          <div className="sv4-products-grid" data-nav-theme="dark">
             {[
               { title: "Enfilade scandinave teck", price: "890€", img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=600", hoverImg: "https://images.unsplash.com/photo-1582582621959-48d27397dc69?auto=format&fit=crop&q=80&w=600" },
               { title: "Fauteuil crapaud velours", price: "340€", img: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&q=80&w=600", hoverImg: "https://images.unsplash.com/photo-1519947486511-46149fa0a254?auto=format&fit=crop&q=80&w=600" },
