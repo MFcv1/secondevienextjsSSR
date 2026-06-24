@@ -204,13 +204,34 @@
 }
 
 /* Sophisticated glowing gradient border on hover */
+@property --sv4-border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes sv4-spin-border {
+  to {
+    --sv4-border-angle: 360deg;
+  }
+}
+
 .sv4-nav__cta::before {
   content: '';
   position: absolute;
   inset: -1px;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.2) 30%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, 0.4));
+  background: conic-gradient(
+    from var(--sv4-border-angle),
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.9) 15%,
+    rgba(255, 255, 255, 0.1) 30%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.9) 65%,
+    rgba(255, 255, 255, 0.1) 80%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -221,6 +242,7 @@
 
 .sv4-nav__cta:hover::before {
   opacity: 1;
+  animation: sv4-spin-border 4s linear infinite;
 }
 
 .sv4-nav__cta:hover {
