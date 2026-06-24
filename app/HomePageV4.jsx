@@ -282,16 +282,53 @@ export default function HomePageV4() {
           </div>
         </section>
 
-        {/* ─── DELIVERY ─── */}
-        <section className="sv4-wrap" style={{ marginTop: 'var(--section-gap)' }}>
-          <div className="sv4-delivery">
-            <div className="sv4-delivery__visual sv4-reveal">
-              <img src="https://images.unsplash.com/photo-1580130089851-40915655ebf8?auto=format&fit=crop&q=80&w=1000" alt="Emballage meuble" />
+        {/* ─── DELIVERY - FULL CODE ARCHITECTURE ─── */}
+        <section className="sv4-delivery-section" style={{ marginTop: 'var(--section-gap)' }}>
+          {/* Map background is absolutely positioned to only cover the right side */}
+          <div className="sv4-delivery-map-bg"></div>
+          
+          <div className="sv4-delivery-grid">
+            {/* LEFT: Arch Container */}
+            <div className="sv4-delivery-left">
+              <div className="sv4-delivery-arch-frame sv4-reveal">
+                <div className="sv4-delivery-arch-image-wrap">
+                  <img 
+                    src="/images/marseille_photo.png" 
+                    alt="Vue de Marseille et Notre-Dame de la Garde" 
+                  />
+                  {/* Inner shadow overlay for realistic depth */}
+                  <div className="sv4-delivery-arch-inner-shadow"></div>
+                </div>
+                {/* Stone sill at the bottom */}
+                <div className="sv4-delivery-arch-sill"></div>
+              </div>
             </div>
-            <div className="sv4-delivery__text sv4-reveal">
-              <h2>Expédition soignée</h2>
-              <p>Nous apportons autant de soin à l'emballage de nos meubles qu'à leur restauration. Chaque pièce est filmée, protégée par du carton ondulé et des couvertures renforcées.</p>
-              <p>Nous travaillons exclusivement avec un réseau de transporteurs indépendants spécialisés dans le mobilier, assurant une livraison en main propre dans la pièce de votre choix, partout en France métropolitaine et en Europe limitrophe.</p>
+            
+            {/* RIGHT: Content */}
+            <div className="sv4-delivery-right sv4-reveal">
+              <div className="sv4-delivery-content-wrapper">
+                <h2 className="sv4-delivery-title">
+                  <span className="sv4-delivery-title-line">Expédition</span>
+                  <span className="sv4-delivery-title-line">soignée</span>
+                </h2>
+                
+                <div className="sv4-delivery-desc">
+                  <p>
+                    Jusqu'à 20 km autour de Marseille,<br/>
+                    nous assurons la livraison en direct.<br/>
+                    Au-delà, nous confions chaque pièce à des<br/>
+                    transporteurs spécialisés, avec le même soin<br/>
+                    et la même exigence.
+                  </p>
+                  <div className="sv4-delivery-divider"></div>
+                  <p>
+                    Chaque meuble est emballé avec des matériaux<br/>
+                    de protection haut de gamme et manipulé<br/>
+                    avec le plus grand soin pour garantir qu'il<br/>
+                    arrive en parfait état.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>

@@ -321,8 +321,17 @@
   box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.2);
 }
 
+.sv4-nav[data-scrolled="true"] .sv4-nav__cta::before {
+  opacity: 0; /* hide border */
+}
+
 .sv4-nav[data-scrolled="true"] .sv4-nav__cta:hover {
   background: #000;
+}
+
+.sv4-nav[data-scrolled="true"] .sv4-nav__cta:hover::before {
+  opacity: 0; /* ensure hidden on hover */
+  animation: none;
 }
 
 /* ──────────────────────────────────────
@@ -1113,39 +1122,214 @@
 }
 
 /* ──────────────────────────────────────
-   DELIVERY
+   DELIVERY - FULL CODE ARCHITECTURE
    ────────────────────────────────────── */
-.sv4-delivery {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: clamp(40px, 5vw, 80px);
-  align-items: center;
-}
-
-.sv4-delivery__text h2 {
-  font-family: var(--f-display);
-  font-size: clamp(2rem, 3.5vw, 3.2rem);
-  font-weight: 400;
-  line-height: 1.02;
-  letter-spacing: -0.02em;
-}
-
-.sv4-delivery__text p {
-  font-size: 15px;
-  color: var(--c-warmgray);
-  line-height: 1.7;
-  margin: 24px 0 36px;
-  max-width: 42ch;
-}
-
-.sv4-delivery__visual {
-  border-radius: var(--r-card);
+.sv4-delivery-section {
+  position: relative;
+  width: 100%;
+  padding: 120px 0;
+  background-color: var(--c-bone);
   overflow: hidden;
 }
 
-.sv4-delivery__visual img {
+.sv4-delivery-map-bg {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 65%;
+  background-image: url('/images/marseille_map_truck.png');
+  background-size: cover;
+  background-position: center right;
+  /* Fade out the map smoothly towards the left, so the left half is pure --c-bone */
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.1) 15%, rgba(0,0,0,1) 50%);
+  mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.1) 15%, rgba(0,0,0,1) 50%);
+  /* Allow the user's generated image to shine through strongly */
+  opacity: 0.95;
+  mix-blend-mode: multiply;
+  z-index: 1;
+}
+
+.sv4-delivery-grid {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: clamp(40px, 6vw, 100px);
+  padding-left: clamp(20px, 5vw, 100px); /* Push the whole group slightly from the extreme left */
+  padding-right: 20px;
+}
+
+/* Left part containing the arch */
+.sv4-delivery-left {
+  flex: 0 0 auto;
+  display: flex;
+}
+
+/* Right part containing the text */
+.sv4-delivery-right {
+  flex: 0 0 auto;
+  display: block;
+}
+
+.sv4-delivery-content-wrapper {
+  text-align: left;
+  max-width: 440px;
+}
+
+/* Beautiful pure CSS stone arch container */
+.sv4-delivery-arch-frame {
+  position: relative;
   width: 100%;
-  height: auto;
+  max-width: 440px;
+  height: 680px; /* Force an elegant, tall height */
+  margin: 0;
+  /* Cut out the arch shape */
+  border-radius: 220px 220px 0 0;
+  background-color: var(--c-bone);
+  
+  /* Simulate the cutout depth from the wall */
+  padding: 24px 24px 0 24px;
+  
+  /* Soft outer glow/shadow if needed, but in the mockup it's a hole in the wall. 
+     We'll use a very soft drop shadow just to define it if the background matches exactly. */
+  box-shadow: 
+    0 30px 60px rgba(0,0,0,0.08), 
+    inset 0 4px 12px rgba(255,255,255,0.8), /* subtle top highlight */
+    inset 8px 0 16px rgba(255,255,255,0.4), /* subtle left highlight */
+    inset -8px 0 16px rgba(0,0,0,0.03); /* subtle right shadow */
+}
+
+/* Stone sill at the bottom */
+.sv4-delivery-arch-sill {
+  position: absolute;
+  bottom: 0;
+  left: -12px;
+  right: -12px;
+  height: 28px;
+  background-color: var(--c-cream);
+  border-radius: 4px;
+  box-shadow: 
+    0 10px 20px rgba(0,0,0,0.08),
+    inset 0 4px 6px rgba(255,255,255,0.9),
+    inset 0 -2px 4px rgba(0,0,0,0.05);
+  z-index: 3;
+}
+
+.sv4-delivery-arch-image-wrap {
+  width: 100%;
+  height: 100%;
+  border-radius: 196px 196px 0 0;
+  overflow: hidden;
+  position: relative;
+  background-color: var(--c-cream);
+}
+
+.sv4-delivery-arch-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.05);
+  display: block;
+}
+
+/* Inner shadow overlay for realistic depth */
+.sv4-delivery-arch-inner-shadow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 
+    inset 0px 24px 48px rgba(0,0,0,0.35),
+    inset 24px 0px 48px rgba(0,0,0,0.25),
+    inset -16px 0px 32px rgba(255,255,255,0.4);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.sv4-delivery-title {
+  font-family: var(--f-display);
+  font-size: clamp(3.5rem, 6vw, 5.5rem);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--c-espresso);
+  margin-bottom: 32px;
+}
+
+.sv4-delivery-title-line {
+  display: block;
+}
+
+.sv4-delivery-desc p {
+  font-size: 15px;
+  color: var(--c-espresso);
+  line-height: 1.8;
+  font-weight: 500;
+  margin: 0;
+  max-width: 420px;
+}
+
+.sv4-delivery-divider {
+  width: 40px;
+  height: 1px;
+  background-color: var(--c-espresso);
+  margin: 24px 0;
+  opacity: 0.3;
+}
+
+@media (max-width: 1024px) {
+  .sv4-delivery-map-bg {
+    width: 100%;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, rgba(0,0,0,0.3) 30%, rgba(0,0,0,1) 60%);
+    mask-image: linear-gradient(to bottom, transparent, rgba(0,0,0,0.3) 30%, rgba(0,0,0,1) 60%);
+  }
+  .sv4-delivery-grid {
+    flex-direction: column;
+    gap: 60px;
+  }
+  .sv4-delivery-left {
+    flex: none;
+    justify-content: center;
+    padding-left: 0;
+  }
+  .sv4-delivery-right {
+    flex: none;
+    padding-right: 0;
+    padding: 0 20px;
+    align-items: center; /* Center the wrapper horizontally on mobile */
+  }
+  .sv4-delivery-content-wrapper {
+    text-align: center; /* Center text on mobile */
+  }
+  .sv4-delivery-arch-frame {
+    height: 500px;
+    max-width: 340px;
+  }
+  .sv4-delivery-title-line {
+    display: inline;
+    margin-right: 12px;
+  }
+  .sv4-delivery-desc p {
+    margin: 0 auto;
+  }
+  .sv4-delivery-divider {
+    margin: 24px auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .sv4-delivery-section {
+    padding: 80px 0;
+  }
+  .sv4-delivery-arch-frame {
+    height: 420px;
+    max-width: 280px;
+    padding: 16px 16px 0 16px;
+  }
+  .sv4-delivery-title {
+    font-size: clamp(2.5rem, 8vw, 3.5rem);
+  }
 }
 
 /* ──────────────────────────────────────
