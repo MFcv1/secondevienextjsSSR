@@ -1404,34 +1404,226 @@ details[open] .sv4-faq__toggle::after { transform: rotate(90deg); opacity: 0; }
 }
 
 /* ──────────────────────────────────────
-   FINAL CTA — Massive, centered, glow
+   FINAL CTA — "THRESHOLD PORTAL"
+   Concentric arches + breathing glow + drifting sparks
    ────────────────────────────────────── */
 .sv4-cta-final {
   text-align: center;
-  padding: clamp(8rem, 16vw, 16rem) var(--content-px);
+  padding: clamp(9rem, 18vw, 18rem) var(--content-px);
   position: relative;
+  overflow: hidden;
+  isolation: isolate;
 }
 
-.sv4-cta-final::before {
-  content: '';
+/* ---- Portal stage (behind content) ---- */
+.sv4-cta-final__portal {
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    ellipse at 50% 50%,
-    rgba(196, 149, 106, 0.07) 0%,
-    transparent 55%
-  );
+  z-index: 0;
   pointer-events: none;
+  display: grid;
+  place-items: center;
+}
+
+/* Breathing radial glow */
+.sv4-cta-final__glow {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: min(1100px, 124vw);
+  height: min(1100px, 124vw);
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    circle at 50% 48%,
+    rgba(196, 149, 106, 0.28) 0%,
+    rgba(196, 149, 106, 0.12) 26%,
+    rgba(61, 46, 31, 0.05) 48%,
+    transparent 66%
+  );
+  filter: blur(6px);
+  animation: sv4-portal-breathe 9s var(--ease) infinite;
+}
+
+/* Concentric doorway arches */
+.sv4-cta-final__arch {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-origin: 50% 100%;
+  transform: translate(-50%, -50%) scale(0.4);
+  opacity: 0;
+  border: 1.5px solid rgba(196, 149, 106, 0.45);
+  border-bottom: none;
+  border-radius: 50% 50% 0 0 / 64% 64% 0 0;
+  background: linear-gradient(
+    to top,
+    rgba(196, 149, 106, 0.09) 0%,
+    rgba(61, 46, 31, 0.03) 30%,
+    transparent 62%
+  );
+}
+
+.sv4-cta-final__arch--1 {
+  --arch-o: 1;
+  width: min(520px, 78vw);
+  height: min(440px, 56vh);
+  border-color: rgba(196, 149, 106, 0.55);
+}
+.sv4-cta-final__arch--2 {
+  --arch-o: 0.7;
+  width: min(740px, 92vw);
+  height: min(600px, 70vh);
+}
+.sv4-cta-final__arch--3 {
+  --arch-o: 0.42;
+  width: min(960px, 100vw);
+  height: min(760px, 86vh);
+}
+
+/* Entrance fires the moment the section is revealed (inner -> outer) */
+.sv4-cta-final.sv4-revealed .sv4-cta-final__arch {
+  animation: sv4-arch-enter 1.5s var(--ease) both;
+}
+.sv4-cta-final.sv4-revealed .sv4-cta-final__arch--1 { animation-delay: 0.05s; }
+.sv4-cta-final.sv4-revealed .sv4-cta-final__arch--2 { animation-delay: 0.28s; }
+.sv4-cta-final.sv4-revealed .sv4-cta-final__arch--3 { animation-delay: 0.5s; }
+
+/* Gentle continuous life once opened (group breathing, no per-arch conflict) */
+.sv4-cta-final.sv4-revealed .sv4-cta-final__portal {
+  animation: sv4-portal-drift 8s ease-in-out 1.6s infinite;
+}
+
+/* Drifting sparks (warm dust) */
+.sv4-cta-final__spark {
+  position: absolute;
+  bottom: 20%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--c-terracotta);
+  box-shadow: 0 0 8px rgba(196, 149, 106, 0.7);
+  opacity: 0;
+  animation: sv4-portal-spark 6.5s ease-in-out infinite;
+}
+.sv4-cta-final__spark--a { left: 30%; animation-delay: 0s; }
+.sv4-cta-final__spark--b {
+  left: 58%; width: 3px; height: 3px;
+  background: var(--c-sandstone);
+  box-shadow: 0 0 6px rgba(181, 168, 152, 0.7);
+  animation-delay: 2.4s; animation-duration: 7.8s;
+}
+.sv4-cta-final__spark--c {
+  left: 44%; width: 6px; height: 6px;
+  box-shadow: 0 0 10px rgba(196, 149, 106, 0.85);
+  animation-delay: 4.1s; animation-duration: 8.5s;
+}
+.sv4-cta-final__spark--d {
+  left: 68%; width: 4px; height: 4px;
+  background: var(--c-tobacco);
+  box-shadow: 0 0 7px rgba(61, 46, 31, 0.5);
+  animation-delay: 1.3s; animation-duration: 7.2s;
+}
+.sv4-cta-final__spark--e {
+  left: 22%; width: 3px; height: 3px;
+  background: var(--c-sandstone);
+  animation-delay: 5.2s; animation-duration: 9s;
+}
+.sv4-cta-final__spark--f {
+  left: 52%; width: 4px; height: 4px;
+  box-shadow: 0 0 9px rgba(196, 149, 106, 0.8);
+  animation-delay: 3.3s; animation-duration: 6.8s;
+}
+
+/* ---- Content ---- */
+.sv4-cta-final__inner {
+  position: relative;
+  z-index: 2;
+}
+
+.sv4-cta-final__kicker {
+  font-family: var(--f-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--c-terracotta);
+  margin-bottom: 22px;
 }
 
 .sv4-cta-final h2 {
   font-family: var(--f-display);
   font-size: clamp(2.6rem, 5vw, 5rem);
   font-weight: 400;
-  line-height: 0.98;
-  letter-spacing: -0.025em;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
   position: relative;
-  margin-bottom: 44px;
+  margin: 0 auto 44px;
+  max-width: 22ch;
+}
+
+/* ---- Magnetic button: attracting halo + arrow nudge ---- */
+.sv4-cta-final__btn {
+  position: relative;
+  overflow: visible;
+}
+.sv4-cta-final__btn::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(196, 149, 106, 0.5);
+  opacity: 0;
+  z-index: -1;
+  animation: sv4-portal-halo 3.2s var(--ease) infinite;
+}
+.sv4-cta-final__btn svg {
+  transition: transform 0.5s var(--ease-spring);
+}
+.sv4-cta-final__btn:hover svg {
+  transform: translateX(5px);
+}
+
+/* ---- Interactive depth: hovering the CTA energises the portal ---- */
+.sv4-cta-final:hover .sv4-cta-final__glow {
+  animation-duration: 4.5s;
+}
+
+@keyframes sv4-portal-breathe {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.85; }
+  50%      { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
+}
+
+@keyframes sv4-arch-enter {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  60% {
+    opacity: var(--arch-o, 1);
+    transform: translate(-50%, -50%) scale(1.04);
+  }
+  100% {
+    opacity: var(--arch-o, 1);
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes sv4-portal-drift {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.04); }
+}
+
+@keyframes sv4-portal-spark {
+  0%   { transform: translateY(0); opacity: 0; }
+  15%  { opacity: 1; }
+  70%  { opacity: 0.6; }
+  100% { transform: translateY(-280px); opacity: 0; }
+}
+
+@keyframes sv4-portal-halo {
+  0%   { opacity: 0.55; transform: scale(1); }
+  70%  { opacity: 0; transform: scale(1.28); }
+  100% { opacity: 0; transform: scale(1.28); }
 }
 
 /* ──────────────────────────────────────

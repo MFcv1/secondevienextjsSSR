@@ -371,15 +371,30 @@ export default function HomePageV4() {
           </div>
         </section>
 
-        {/* ─── FINAL CTA ─── */}
+        {/* ─── FINAL CTA — PORTAL ─── */}
         <section className="sv4-cta-final sv4-reveal">
-          <h2>Trouvez la pièce qui manque à votre intérieur</h2>
-          <Link href="/galerie" className="sv4-hero__btn-primary">
-            Voir le catalogue
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
-          </Link>
+          <div className="sv4-cta-final__portal" aria-hidden="true">
+            <span className="sv4-cta-final__glow" />
+            <span className="sv4-cta-final__arch sv4-cta-final__arch--3" />
+            <span className="sv4-cta-final__arch sv4-cta-final__arch--2" />
+            <span className="sv4-cta-final__arch sv4-cta-final__arch--1" />
+            <span className="sv4-cta-final__spark sv4-cta-final__spark--a" />
+            <span className="sv4-cta-final__spark sv4-cta-final__spark--b" />
+            <span className="sv4-cta-final__spark sv4-cta-final__spark--c" />
+            <span className="sv4-cta-final__spark sv4-cta-final__spark--d" />
+            <span className="sv4-cta-final__spark sv4-cta-final__spark--e" />
+            <span className="sv4-cta-final__spark sv4-cta-final__spark--f" />
+          </div>
+          <div className="sv4-cta-final__inner">
+            <p className="sv4-cta-final__kicker">Franchissez le seuil</p>
+            <h2>Trouvez la pièce qui manque à votre intérieur</h2>
+            <Link href="/galerie" className="sv4-hero__btn-primary sv4-cta-final__btn">
+              Voir le catalogue
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </Link>
+          </div>
         </section>
       </main>
 
