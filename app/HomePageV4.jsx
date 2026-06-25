@@ -21,6 +21,46 @@ function SplitText({ text }) {
   );
 }
 
+const reviews = [
+  {
+    initials: 'SM',
+    text: "L'enfilade est magnifique, le bois a retrouvé toute sa chaleur. On sent le soin apporté aux moindres détails. Livraison impeccable à Paris.",
+    name: 'Sophie M.',
+    city: 'Paris 11e',
+  },
+  {
+    initials: 'TL',
+    text: "J'ai confié la vieille commode de ma grand-mère à l'atelier. Le résultat est époustouflant, moderne sans perdre son âme.",
+    name: 'Thomas L.',
+    city: 'Aix-en-Provence',
+  },
+  {
+    initials: 'CB',
+    text: "Des chaises bistrot parfaites pour mon restaurant. Solides, patinées avec goût. Merci pour le suivi très professionnel.",
+    name: 'Camille B.',
+    city: 'Lyon',
+  },
+];
+
+const faqs = [
+  {
+    q: "D'où viennent vos meubles ?",
+    a: "Nous chinons nos meubles principalement dans le sud de la France, chez des particuliers, lors de successions, ou dans des brocantes professionnelles. Nous privilégions les meubles des années 30 à 70 fabriqués en Europe.",
+  },
+  {
+    q: "Quels délais pour une restauration sur-mesure ?",
+    a: "Pour un meuble que vous nous confiez, le délai varie de 4 à 8 semaines selon la complexité du travail (décapage, réparations structurelles, finition) et le planning actuel de l'atelier.",
+  },
+  {
+    q: "Livrez-vous à l'étage ?",
+    a: "Oui, par défaut nos transporteurs livrent en RDC, mais une option \u00ab Livraison à l'étage dans la pièce de destination \u00bb est toujours proposée lors du devis de transport, souvent effectuée par 2 livreurs.",
+  },
+  {
+    q: "Puis-je voir les meubles en vrai ?",
+    a: "Notre atelier est situé en Provence et est ouvert aux visites sur rendez-vous. Nous pouvons également organiser des appels vidéo pour vous montrer un meuble sous tous ses angles.",
+  },
+];
+
 export const metadata = {
   title: 'Seconde Vie | Meubles d\'exception',
   description: 'Mobilier de seconde main restauré avec passion en Provence.',
@@ -218,67 +258,34 @@ export default function HomePageV4() {
           </div>
         </section>
 
-        {/* ─── TRUST PILLARS ─── */}
-        <section className="sv4-wrap" style={{ marginTop: 'var(--section-gap)' }}>
-          <div className="sv4-section-head sv4-reveal">
-            <h2>Notre promesse</h2>
-          </div>
-          
-          <div className="sv4-trust">
-            <div className="sv4-trust__item">
-              <div className="sv4-trust__num">01</div>
-              <h3>Pièces Authentiques</h3>
-              <p>Pas de reproduction. Chaque meuble est une véritable pièce d'époque, chinée pour son caractère et sa qualité de fabrication originelle.</p>
-            </div>
-            <div className="sv4-trust__item">
-              <div className="sv4-trust__num">02</div>
-              <h3>Restauration Durable</h3>
-              <p>Des produits respectueux de l'environnement, sans COV, et des techniques d'ébénisterie traditionnelles pour un meuble qui durera encore 50 ans.</p>
-            </div>
-            <div className="sv4-trust__item">
-              <div className="sv4-trust__num">03</div>
-              <h3>Prix Justes</h3>
-              <p>Un tarif qui reflète le prix d'achat, les heures de travail à l'atelier et la qualité des matériaux de finition. Sans intermédiaire.</p>
-            </div>
-            <div className="sv4-trust__item">
-              <div className="sv4-trust__num">04</div>
-              <h3>Livraison Premium</h3>
-              <p>Livraison dans toute la France par des transporteurs spécialisés. Votre meuble arrive monté, protégé par des couvertures, directement chez vous.</p>
-            </div>
-          </div>
-        </section>
 
         {/* ─── REVIEWS ─── */}
-        <section className="sv4-wrap" style={{ marginTop: 'var(--section-gap)' }}>
-          <div className="sv4-section-head sv4-reveal">
+        <section className="sv4-wrap sv4-reviews-section">
+          <div className="sv4-reviews-head sv4-reveal">
+            <span className="sv4-eyebrow">Témoignages</span>
             <h2>Ils nous font confiance</h2>
+            <div className="sv4-reviews-rating">
+              <span className="sv4-reviews-rating__stars">★★★★★</span>
+              <span className="sv4-reviews-rating__score">4,9/5</span>
+              <span className="sv4-reviews-rating__count">· 120+ avis vérifiés</span>
+            </div>
           </div>
-          
-          <div className="sv4-reviews">
-            <div className="sv4-review-row sv4-reveal">
-              <div className="sv4-review-row__stars">★★★★★</div>
-              <p className="sv4-review-row__text">"L'enfilade est magnifique, le bois a retrouvé toute sa chaleur. On sent le soin apporté aux moindres détails. Livraison impeccable à Paris."</p>
-              <div className="sv4-review-row__author">
-                <span className="sv4-review-row__name">Sophie M.</span>
-                <span className="sv4-review-row__city">Paris 11e</span>
-              </div>
-            </div>
-            <div className="sv4-review-row sv4-reveal">
-              <div className="sv4-review-row__stars">★★★★★</div>
-              <p className="sv4-review-row__text">"J'ai confié la vieille commode de ma grand-mère à l'atelier. Le résultat est époustouflant, moderne sans perdre son âme."</p>
-              <div className="sv4-review-row__author">
-                <span className="sv4-review-row__name">Thomas L.</span>
-                <span className="sv4-review-row__city">Aix-en-Provence</span>
-              </div>
-            </div>
-            <div className="sv4-review-row sv4-reveal">
-              <div className="sv4-review-row__stars">★★★★★</div>
-              <p className="sv4-review-row__text">"Des chaises bistrot parfaites pour mon restaurant. Solides, patinées avec goût. Merci pour le suivi très professionnel."</p>
-              <div className="sv4-review-row__author">
-                <span className="sv4-review-row__name">Camille B.</span>
-                <span className="sv4-review-row__city">Lyon</span>
-              </div>
-            </div>
+
+          <div className="sv4-reviews-grid">
+            {reviews.map((r, i) => (
+              <figure className="sv4-review-card sv4-reveal" key={i} style={{ '--card-i': i }}>
+                <span className="sv4-review-card__mark" aria-hidden="true">&ldquo;</span>
+                <div className="sv4-review-card__stars">★★★★★</div>
+                <blockquote className="sv4-review-card__text">{r.text}</blockquote>
+                <figcaption className="sv4-review-card__author">
+                  <span className="sv4-review-card__avatar" aria-hidden="true">{r.initials}</span>
+                  <span className="sv4-review-card__meta">
+                    <span className="sv4-review-card__name">{r.name}</span>
+                    <span className="sv4-review-card__city">{r.city}</span>
+                  </span>
+                </figcaption>
+              </figure>
+            ))}
           </div>
         </section>
 
@@ -334,40 +341,34 @@ export default function HomePageV4() {
         </section>
 
         {/* ─── FAQ ─── */}
-        <section className="sv4-wrap" style={{ marginTop: 'var(--section-gap)' }}>
-          <div className="sv4-section-head sv4-reveal" style={{ justifyContent: 'center', textAlign: 'center' }}>
-            <h2>Questions fréquentes</h2>
-          </div>
-          
-          <div className="sv4-faq sv4-reveal">
-            <details name="faq">
-              <summary>
-                <span className="sv4-faq__q">D'où viennent vos meubles ?</span>
-                <div className="sv4-faq__toggle" />
-              </summary>
-              <p className="sv4-faq__a">Nous chinons nos meubles principalement dans le sud de la France, chez des particuliers, lors de successions, ou dans des brocantes professionnelles. Nous privilégions les meubles des années 30 à 70 fabriqués en Europe.</p>
-            </details>
-            <details name="faq">
-              <summary>
-                <span className="sv4-faq__q">Quels délais pour une restauration sur-mesure ?</span>
-                <div className="sv4-faq__toggle" />
-              </summary>
-              <p className="sv4-faq__a">Pour un meuble que vous nous confiez, le délai varie de 4 à 8 semaines selon la complexité du travail (décapage, réparations structurelles, finition) et le planning actuel de l'atelier.</p>
-            </details>
-            <details name="faq">
-              <summary>
-                <span className="sv4-faq__q">Livrez-vous à l'étage ?</span>
-                <div className="sv4-faq__toggle" />
-              </summary>
-              <p className="sv4-faq__a">Oui, par défaut nos transporteurs livrent en RDC, mais une option "Livraison à l'étage dans la pièce de destination" est toujours proposée lors du devis de transport, souvent effectuée par 2 livreurs.</p>
-            </details>
-            <details name="faq">
-              <summary>
-                <span className="sv4-faq__q">Puis-je voir les meubles en vrai ?</span>
-                <div className="sv4-faq__toggle" />
-              </summary>
-              <p className="sv4-faq__a">Notre atelier est situé en Provence et est ouvert aux visites sur rendez-vous. Nous pouvons également organiser des appels vidéo pour vous montrer un meuble sous tous ses angles.</p>
-            </details>
+        <section className="sv4-wrap sv4-faq-section">
+          <div className="sv4-faq-layout">
+            <aside className="sv4-faq-intro sv4-reveal">
+              <span className="sv4-eyebrow">FAQ</span>
+              <h2>Questions fréquentes</h2>
+              <p className="sv4-faq-intro__lead">Tout ce qu'il faut savoir avant de confier ou d'adopter une pièce restaurée à l'atelier.</p>
+              <Link href="/devis" className="sv4-faq-intro__cta">
+                Une autre question ? Écrivez-nous
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </Link>
+            </aside>
+
+            <div className="sv4-faq sv4-reveal">
+              {faqs.map((item, i) => (
+                <details name="faq" key={i} open={i === 0}>
+                  <summary>
+                    <span className="sv4-faq__index">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="sv4-faq__q">{item.q}</span>
+                    <span className="sv4-faq__toggle" />
+                  </summary>
+                  <div className="sv4-faq__a-wrap">
+                    <p className="sv4-faq__a">{item.a}</p>
+                  </div>
+                </details>
+              ))}
+            </div>
           </div>
         </section>
 
