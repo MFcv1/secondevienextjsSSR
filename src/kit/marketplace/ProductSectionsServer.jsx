@@ -246,7 +246,7 @@ export const BeforeAfterSectionServer = ({ darkMode = false, projects = restorat
 
         <div className={`relative flex min-h-full flex-col justify-center gap-4 rounded-b-[24px] p-2 sm:p-4 md:gap-4 md:p-5 lg:rounded-r-[26px] lg:rounded-bl-none lg:p-6 dark:bg-[#181511] ${darkMode ? 'bg-[#1d1a16]' : 'bg-[#fffaf3]'}`}>
           <div>
-            <DeferredGalleryIsland type="before-after" projects={projects} darkMode={darkMode} rootMargin="1100px 0px">
+            <DeferredGalleryIsland type="before-after" projects={projects} darkMode={darkMode} rootMargin="760px 0px" intersectionDelayMs={120}>
               <BeforeAfterSliderPlaceholder project={projects[0]} darkMode={darkMode} />
             </DeferredGalleryIsland>
           </div>
@@ -305,7 +305,7 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
 );
 
 export const InstagramSectionServer = ({ darkMode = false } = {}) => (
-  <DeferredGalleryIsland type="instagram" posts={instaPosts} darkMode={darkMode} rootMargin="1200px 0px" idleTimeout={6800}>
+  <DeferredGalleryIsland type="instagram" posts={instaPosts} darkMode={darkMode} rootMargin="900px 0px" enableIdleFallback={false} intersectionDelayMs={80}>
     <InstagramCarouselPlaceholder darkMode={darkMode} posts={instaPosts} />
   </DeferredGalleryIsland>
 );
@@ -364,7 +364,7 @@ const TestimonialsCarouselPlaceholder = ({ darkMode = false } = {}) => (
 );
 
 export const TestimonialsSectionServer = ({ darkMode = false } = {}) => (
-  <DeferredGalleryIsland type="testimonials" darkMode={darkMode} rootMargin="1200px 0px" idleTimeout={7200}>
+  <DeferredGalleryIsland type="testimonials" darkMode={darkMode} rootMargin="240px 0px" enableIdleFallback={false} intersectionDelayMs={220}>
     <TestimonialsCarouselPlaceholder darkMode={darkMode} />
   </DeferredGalleryIsland>
 );

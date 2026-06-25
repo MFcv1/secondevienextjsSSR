@@ -19,6 +19,7 @@ import {
 import KIT_CONFIG from '../config/constants';
 import { getCategoryUrl } from '../../utils/slug';
 import FooterBackToTopButtonIsland from './FooterBackToTopButtonIsland';
+import FooterMapFrameIsland from './FooterMapFrameIsland';
 
 const DEFAULT_CONTACT = {
   email: process.env.NEXT_PUBLIC_BUSINESS_EMAIL || 'contact@secondevie-marseille.fr',
@@ -146,22 +147,6 @@ const FooterLink = ({ children, href, highlight = false, showArrow = false, dark
   </a>
 );
 
-const MapFrame = ({ darkMode, address }) => {
-  const mapQuery = encodeURIComponent(address || 'Marseille, France');
-  const mapUrl = `https://www.google.com/maps?q=${mapQuery}&z=13&output=embed`;
-  return (
-    <div className={`relative h-full w-full overflow-hidden rounded-xl border ${darkMode ? 'border-[#d5b58d]/12 bg-[#151515]' : 'border-[#eee6dd] bg-white dark:border-[#d5b58d]/12 dark:bg-[#151515]'}`}>
-      <iframe
-        src={mapUrl}
-        title="Carte de l'atelier a Marseille"
-        loading="lazy"
-        referrerPolicy="no-referrer-when-downgrade"
-        className="absolute inset-0 h-full w-full"
-      />
-    </div>
-  );
-};
-
 export default function FooterServer({ darkMode = false, contactInfo: contactInfoOverride } = {}) {
   const contactInfo = { ...DEFAULT_CONTACT, ...(contactInfoOverride || {}) };
   const email = contactInfo.email || DEFAULT_CONTACT.email;
@@ -180,7 +165,7 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
       <div className="mx-auto grid w-full max-w-[430px] gap-4 md:hidden">
         <div className={`rounded-[24px] border p-6 ${darkMode ? 'border-[#2e2a25] bg-[#111110]' : 'border-[#eee6dd] bg-[#fdfbf8]'}`}>
           <h3 className={`font-serif text-[15px] uppercase tracking-normal ${darkMode ? 'text-stone-100' : 'text-stone-950'}`}>Notre atelier a Marseille</h3>
-          <div className="mt-4 h-[220px]"><MapFrame darkMode={darkMode} address={address} /></div>
+          <div className="mt-4 h-[220px]"><FooterMapFrameIsland darkMode={darkMode} address={address} /></div>
           <div className={`mt-4 grid divide-y text-sm ${darkMode ? 'divide-[#211f1b] text-[#ded6cc]' : 'divide-[#eee6dd] text-stone-700'}`}>
             <a href={directionUrl} target="_blank" rel="noopener noreferrer" className="flex gap-4 py-3"><MapPin size={17} className="mt-0.5 shrink-0" /><span><span className="block">{address}</span><span className="block text-xs opacity-70">Quartier du Panier, 13002</span></span></a>
             <a href={`mailto:${email}`} className="flex items-center gap-4 py-3"><Mail size={17} /> <span className="break-all">{email}</span></a>
@@ -227,7 +212,7 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
             </div>
           </div>
           <img
-            src="/images/footer-delivery-light.webp"
+            src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'}
             alt="Livraison partout a Marseille"
             width={1536}
             height={1024}
@@ -235,18 +220,7 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
             decoding="async"
             fetchPriority="low"
             data-footer-delivery-image="loaded"
-            className={`mt-6 w-full rounded-md object-contain ${darkMode ? 'hidden' : 'block dark:hidden'}`}
-          />
-          <img
-            src="/images/footer-delivery-dark.webp"
-            alt="Livraison partout a Marseille"
-            width={1536}
-            height={1024}
-            loading="lazy"
-            decoding="async"
-            fetchPriority="low"
-            data-footer-delivery-image="loaded"
-            className={`mt-6 w-full rounded-md object-contain ${darkMode ? 'block' : 'hidden dark:block'}`}
+            className="mt-6 w-full rounded-md object-contain"
           />
           <div className={`mt-5 grid grid-cols-3 gap-3 text-[10px] ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
             <div className="flex flex-col items-center gap-1 text-center"><LockKeyhole size={22} />SSL<br />Secure</div>
@@ -306,7 +280,7 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
 
             <div className="min-w-0 w-full max-w-[680px] justify-self-end space-y-5 lg:col-span-3 xl:col-span-1 xl:col-start-auto xl:max-w-none 2xl:max-w-[560px]">
               <h3 className={`font-serif text-[15px] uppercase tracking-normal ${darkMode ? 'text-stone-100' : 'text-stone-950'}`}>Notre atelier a Marseille</h3>
-              <div className="h-[240px] xl:h-[260px]"><MapFrame darkMode={darkMode} address={address} /></div>
+              <div className="h-[240px] xl:h-[260px]"><FooterMapFrameIsland darkMode={darkMode} address={address} /></div>
               <div className={`rounded-lg border px-5 py-4 xl:px-6 ${darkMode ? 'border-[#d5b58d]/12 bg-[#121110]' : 'border-[#eee6dd] bg-[#fdfbf8] dark:border-[#d5b58d]/12 dark:bg-[#121110]'}`}>
                 <div className={`grid gap-0 divide-y text-sm ${darkMode ? 'divide-[#211f1b] text-[#ded6cc]' : 'divide-[#eee6dd] text-stone-700'}`}>
                   <a href={directionUrl} target="_blank" rel="noopener noreferrer" className="flex gap-5 py-4 transition-colors hover:text-orange-500"><MapPin size={18} className="mt-0.5 shrink-0" /><span><span className={`block ${darkMode ? 'text-[#f8f2ea]' : 'text-stone-950'}`}>{address}</span><span className="mt-1 block text-xs opacity-70">Quartier du Panier, 13002</span></span></a>
@@ -335,18 +309,11 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
             </div>
             <div className="flex min-w-0 items-center justify-center pt-8 lg:px-6 lg:pt-0 xl:px-8">
               <img
-                src="/images/footer-delivery-light.webp"
+                src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'}
                 alt="Livraison partout a Marseille"
                 loading="lazy"
                 decoding="async"
-                className={`w-full max-w-[520px] rounded-md object-contain xl:max-w-[600px] ${darkMode ? 'hidden' : 'block dark:hidden'}`}
-              />
-              <img
-                src="/images/footer-delivery-dark.webp"
-                alt="Livraison partout a Marseille"
-                loading="lazy"
-                decoding="async"
-                className={`w-full max-w-[520px] rounded-md object-contain xl:max-w-[600px] ${darkMode ? 'block' : 'hidden dark:block'}`}
+                className="w-full max-w-[520px] rounded-md object-contain xl:max-w-[600px]"
               />
             </div>
             <div className="space-y-7 pt-8 lg:pl-8 lg:pt-0 xl:pl-10">

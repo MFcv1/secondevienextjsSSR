@@ -1,22 +1,6 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
-
-const DeferredBeforeAfterSlider = dynamic(() => import('./BeforeAfterSliderIsland'), {
-  ssr: false,
-  loading: () => null,
-});
-
-const DeferredInstagramCarousel = dynamic(() => import('./InstagramCarouselIsland'), {
-  ssr: false,
-  loading: () => null,
-});
-
-const DeferredTestimonialsCarousel = dynamic(() => import('./TestimonialsCarouselIsland'), {
-  ssr: false,
-  loading: () => null,
-});
 
 const requestIdle = (callback, timeout) => {
   if (typeof window === 'undefined') return undefined;
@@ -42,25 +26,45 @@ export default function DeferredGalleryIsland({
   posts,
   rootMargin = '900px 0px',
   idleTimeout = 5200,
+  enableIdleFallback = true,
+  intersectionDelayMs = 140,
+  intersectionIdleTimeout = 1200,
+  threshold = 0.01,
   children,
 } = {}) {
   const anchorRef = useRef(null);
   const [shouldLoad, setShouldLoad] = useState(false);
+  const [LoadedComponent, setLoadedComponent] = useState(null);
 
   useEffect(() => {
     if (shouldLoad) return undefined;
     const anchor = anchorRef.current;
     let disposed = false;
     let idleHandle;
+    let settleHandle;
 
     const load = () => {
       if (!disposed) setShouldLoad(true);
     };
 
+    const scheduleLoad = (delayMs, timeout) => {
+      const requestLoad = () => {
+        idleHandle = requestIdle(load, timeout);
+      };
+
+      if (delayMs > 0) {
+        settleHandle = window.setTimeout(requestLoad, delayMs);
+        return;
+      }
+
+      requestLoad();
+    };
+
     if (!anchor || !('IntersectionObserver' in window)) {
-      idleHandle = requestIdle(load, 900);
+      scheduleLoad(0, 900);
       return () => {
         disposed = true;
+        window.clearTimeout(settleHandle);
         cancelIdle(idleHandle);
       };
     }
@@ -69,32 +73,68 @@ export default function DeferredGalleryIsland({
       ([entry]) => {
         if (!entry?.isIntersecting) return;
         observer.disconnect();
-        load();
+        window.clearTimeout(settleHandle);
+        cancelIdle(idleHandle);
+        scheduleLoad(intersectionDelayMs, intersectionIdleTimeout);
       },
-      { rootMargin, threshold: 0.01 },
+      { rootMargin, threshold },
     );
 
     observer.observe(anchor);
-    idleHandle = requestIdle(load, idleTimeout);
+    if (enableIdleFallback) {
+      idleHandle = requestIdle(load, idleTimeout);
+    }
 
     return () => {
       disposed = true;
       observer.disconnect();
+      window.clearTimeout(settleHandle);
       cancelIdle(idleHandle);
     };
-  }, [idleTimeout, rootMargin, shouldLoad]);
+  }, [enableIdleFallback, idleTimeout, intersectionDelayMs, intersectionIdleTimeout, rootMargin, shouldLoad, threshold]);
+
+  useEffect(() => {
+    if (!shouldLoad || LoadedComponent) return undefined;
+    let disposed = false;
+
+    const loadModule = async () => {
+      let module;
+      if (type === 'before-after') {
+        module = await import('./BeforeAfterSliderIsland');
+      } else if (type === 'instagram') {
+        module = await import('./InstagramCarouselIsland');
+      } else if (type === 'testimonials') {
+        module = await import('./TestimonialsCarouselIsland');
+      }
+
+      if (!disposed && module?.default) {
+        setLoadedComponent(() => module.default);
+      }
+    };
+
+    loadModule();
+
+    return () => {
+      disposed = true;
+    };
+  }, [LoadedComponent, shouldLoad, type]);
 
   let rendered = children;
-  if (shouldLoad && type === 'before-after') {
-    rendered = <DeferredBeforeAfterSlider projects={projects} darkMode={darkMode} />;
-  } else if (shouldLoad && type === 'instagram') {
-    rendered = <DeferredInstagramCarousel posts={posts} darkMode={darkMode} />;
-  } else if (shouldLoad && type === 'testimonials') {
-    rendered = <DeferredTestimonialsCarousel darkMode={darkMode} />;
+  if (LoadedComponent && type === 'before-after') {
+    rendered = <LoadedComponent projects={projects} darkMode={darkMode} />;
+  } else if (LoadedComponent && type === 'instagram') {
+    rendered = <LoadedComponent posts={posts} darkMode={darkMode} />;
+  } else if (LoadedComponent && type === 'testimonials') {
+    rendered = <LoadedComponent darkMode={darkMode} />;
   }
 
   return (
-    <div ref={anchorRef} data-deferred-gallery-island={type} data-loaded={shouldLoad ? 'true' : 'false'}>
+    <div
+      ref={anchorRef}
+      data-deferred-gallery-island={type}
+      data-load-requested={shouldLoad ? 'true' : 'false'}
+      data-loaded={LoadedComponent ? 'true' : 'false'}
+    >
       {rendered}
     </div>
   );

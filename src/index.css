@@ -4560,6 +4560,9 @@ img {
   transform:
     translate3d(-50%, -50%, 0)
     scale(1);
+}
+
+.instagram-floating-field[data-floating-ready="true"]:not([data-floating-settled="true"]) .instagram-floating-token {
   will-change: opacity, transform;
 }
 

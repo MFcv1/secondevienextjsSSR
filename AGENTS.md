@@ -57,7 +57,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |   |-- index.css
 |   |-- kit/admin : back-office, analytics, commandes, retours/remboursements Stripe, SEO, users, exports CSV, docs/etudes techniques admin
 |   |-- kit/commerce : panier, checkout, login, commandes client, regle isPurchasable
-|   |-- kit/marketplace : galerie serveur, SEO visible, pages categorie/produit, ilots produit/lightbox, footer mobile, panier/cartes, devis ServerView/FormIsland, wishlist
+|   |-- kit/marketplace : galerie serveur, SEO visible, pages categorie/produit, ilots produit/lightbox, footer mobile et carte footer opt-in, panier/cartes, devis ServerView/FormIsland, wishlist
 |   |-- kit/vitrine : vue serveur et iles fines de la page /a-propos native Next
 |   |-- kit/layout, kit/shared, kit/ui, kit/hooks, kit/contexts, kit/config (dont firebaseEnv/firebaseCore/firebaseLazy)
 |   |-- lib : helpers serveur produits/env/theme/about et SEO structure

@@ -37,14 +37,25 @@ const getCartTotal = (items) => (
   items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0)
 );
 
+const isDesktopViewport = () => (
+  typeof window !== 'undefined'
+  && typeof window.matchMedia === 'function'
+  && window.matchMedia('(min-width: 768px)').matches
+);
+
 export default function CartPanelIsland({ className = '', darkMode = false, initialEvent = null, onReady } = {}) {
   const [user, setUser] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [interacted, setInteracted] = useState(false);
+  const [isCartPrimed, setIsCartPrimed] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [pendingCartItem, setPendingCartItem] = useState(null);
   const consumedInitialEventRef = useRef(null);
+
+  const primeCart = useCallback(() => {
+    setIsCartPrimed(true);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -122,10 +133,27 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
     window.dispatchEvent(new CustomEvent(CART_STATE_CHANGED_EVENT, { detail: { items: cartItems } }));
   }, [cartItems]);
 
+  useEffect(() => {
+    if (!isDesktopViewport()) return undefined;
+
+    let cancelled = false;
+    const requestIdle = window.requestIdleCallback || ((callback) => window.setTimeout(callback, 800));
+    const cancelIdle = window.cancelIdleCallback || window.clearTimeout;
+    const idleId = requestIdle(() => {
+      if (!cancelled) primeCart();
+    });
+
+    return () => {
+      cancelled = true;
+      cancelIdle(idleId);
+    };
+  }, [primeCart]);
+
   const openCart = useCallback(() => {
+    primeCart();
     setInteracted(true);
     setIsOpen(true);
-  }, []);
+  }, [primeCart]);
 
   const addCartItem = useCallback(async (item) => {
     if (!item?.originalId && !item?.id) return false;
@@ -218,7 +246,7 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
 
   return (
     <>
-      <button type="button" className={className} title="Panier" aria-label="Panier" onClick={openCart}>
+      <button type="button" className={className} title="Panier" aria-label="Panier" onPointerEnter={primeCart} onFocus={primeCart} onClick={openCart}>
         <ShoppingBag size={18} strokeWidth={1.5} className={`transition-colors duration-300 ${darkMode ? 'text-stone-200 group-hover:text-[#D9B58D]' : 'text-stone-900 group-hover:text-amber-600 dark:text-stone-200 dark:group-hover:text-[#D9B58D]'}`} />
         {cartItems.length > 0 ? (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-stone-950 px-1 text-[9px] font-black leading-none text-white ring-2 ring-white dark:bg-[#D9B58D] dark:text-stone-950 dark:ring-[#080807]">
@@ -227,7 +255,7 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
         ) : null}
       </button>
 
-      {(interacted || isOpen) ? (
+      {(isCartPrimed || interacted || isOpen) ? (
         <CartSidebar
           isOpen={isOpen}
           onClose={() => setIsOpen(false)}

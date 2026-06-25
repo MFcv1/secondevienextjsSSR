@@ -1,27 +1,58 @@
 import { X, Trash2, ShoppingBag, ShieldCheck, Truck } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onCheckout, interacted, darkMode, activeDesignId }) => {
+    const [isOverlayVisible, setIsOverlayVisible] = useState(isOpen);
+    const [isPresentedOpen, setIsPresentedOpen] = useState(false);
     const transitionEnabled = interacted || isOpen;
     const baseTransition = transitionEnabled ? 'duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]' : 'duration-0';
+    const panelOpen = isOpen && isPresentedOpen;
 
     const isArch = activeDesignId === 'architectural';
     const bgClass = isArch
         ? (darkMode ? 'bg-[#0A0A0A] border-stone-800 text-stone-200' : 'bg-[#FAFAF9] border-stone-200 text-stone-900')
         : (darkMode ? 'bg-[#0A0A0A] border-stone-800 text-white' : 'bg-[#FAFAF9] text-stone-900');
 
+    useEffect(() => {
+        if (!isOpen) {
+            setIsPresentedOpen(false);
+            const timeoutId = window.setTimeout(() => {
+                setIsOverlayVisible(false);
+            }, 700);
+            return () => window.clearTimeout(timeoutId);
+        }
+
+        setIsOverlayVisible(true);
+        return undefined;
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen || !isOverlayVisible) {
+            return undefined;
+        }
+
+        const frameId = window.requestAnimationFrame(() => {
+            setIsPresentedOpen(true);
+        });
+
+        return () => window.cancelAnimationFrame(frameId);
+    }, [isOpen, isOverlayVisible]);
+
     return (
-        <div className={`fixed inset-0 z-[2500] ${isOpen ? 'visible' : 'invisible delay-700'}`}>
+        <div data-cart-sidebar className={`fixed inset-0 z-[2500] ${isOverlayVisible ? 'visible' : 'invisible'}`}>
             <div
-                className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${isOpen ? 'opacity-100' : 'opacity-0'} ${darkMode ? 'bg-stone-900/60 backdrop-blur-md' : 'bg-stone-900/40 backdrop-blur-md'}`}
+                data-cart-backdrop
+                className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${panelOpen ? 'opacity-100' : 'opacity-0'} ${darkMode ? 'bg-stone-900/60 backdrop-blur-md' : 'bg-stone-900/40 backdrop-blur-md'}`}
                 onClick={onClose}
             />
 
             <div
-                className={`absolute inset-x-0 bottom-0 h-[92dvh] rounded-t-[28px] border-t shadow-2xl transition-all ${baseTransition} transform-gpu
+                data-cart-panel
+                className={`absolute inset-x-0 bottom-0 h-[92dvh] rounded-t-[28px] border-t shadow-2xl transition-[transform,opacity] ${baseTransition} transform-gpu
                 px-5 safe-pb-cart safe-pt-cart
                 md:inset-y-0 md:left-auto md:right-0 md:h-auto md:w-[500px] md:rounded-none md:border-l md:border-t-0 md:p-8 md:pt-6
-                flex flex-col safe-area-bottom ${isOpen ? 'translate-y-0 md:translate-x-0 opacity-100' : 'translate-y-full md:translate-y-0 md:translate-x-full opacity-0'} ${bgClass}`}
+                flex flex-col safe-area-bottom ${panelOpen ? 'translate-y-0 md:translate-x-0 opacity-100' : 'translate-y-full md:translate-y-0 md:translate-x-full opacity-0'} ${bgClass}`}
             >
                 <div className={`mx-auto mb-5 h-1 w-14 rounded-full md:hidden ${darkMode ? 'bg-stone-700' : 'bg-stone-300'}`} />
 
@@ -35,14 +66,11 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
 
                     <div className="relative flex h-10 w-10 items-center justify-center md:h-12 md:w-12">
                         <motion.button
-                            onClick={(e) => {
-                                const btn = e.currentTarget;
-                                btn.style.transition = 'transform 0.4s cubic-bezier(0.23, 1, 0.32, 1)';
-                                btn.style.transform = 'rotate(45deg)';
-                                setTimeout(() => onClose(), 400);
-                            }}
+                            onClick={onClose}
+                            aria-label="Fermer le panier"
                             initial={{ rotate: 0, opacity: 0 }}
                             animate={{ rotate: 0, opacity: 1 }}
+                            whileTap={{ rotate: 45, scale: 0.92 }}
                             transition={{
                                 rotate: { type: 'spring', stiffness: 450, damping: 25 },
                                 opacity: { duration: 0.3 }

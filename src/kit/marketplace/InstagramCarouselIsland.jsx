@@ -7,6 +7,23 @@ const INSTAGRAM_URL = 'https://www.instagram.com/secondevie_anais';
 const INSTAGRAM_FOLLOWERS_TARGET = 38.9;
 const MIN_INSTA_CARDS = 5;
 
+const requestIdle = (callback, timeout = 1200) => {
+  if (typeof window === 'undefined') return undefined;
+  if ('requestIdleCallback' in window) {
+    return window.requestIdleCallback(callback, { timeout });
+  }
+  return window.setTimeout(callback, Math.min(timeout, 900));
+};
+
+const cancelIdle = (handle) => {
+  if (handle === undefined || typeof window === 'undefined') return;
+  if ('cancelIdleCallback' in window) {
+    window.cancelIdleCallback(handle);
+    return;
+  }
+  window.clearTimeout(handle);
+};
+
 const MOBILE_INSTA_POSITIONS = {
   farLeft: { transform: 'translateX(-206%) scale(0.86)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
   left: { transform: 'translateX(-116%) scale(0.9)', opacity: 0.42, zIndex: 1, pointerEvents: 'none' },
@@ -53,7 +70,7 @@ const FLOATING_INSTAGRAM_TOKENS = [
       '--float-x': '16%',
       '--float-y': '63%',
       '--float-size': '108px',
-      '--float-delay': '520ms',
+      '--float-delay': '760ms',
       '--float-enter-duration': '600ms',
       '--float-arrive-x': '-12px',
       '--float-arrive-y': '48px',
@@ -73,7 +90,7 @@ const FLOATING_INSTAGRAM_TOKENS = [
       '--float-x': '27%',
       '--float-y': '24%',
       '--float-size': '64px',
-      '--float-delay': '260ms',
+      '--float-delay': '190ms',
       '--float-enter-duration': '540ms',
       '--float-arrive-x': '8px',
       '--float-arrive-y': '42px',
@@ -93,7 +110,7 @@ const FLOATING_INSTAGRAM_TOKENS = [
       '--float-x': '75%',
       '--float-y': '28%',
       '--float-size': '132px',
-      '--float-delay': '680ms',
+      '--float-delay': '460ms',
       '--float-enter-duration': '660ms',
       '--float-arrive-x': '12px',
       '--float-arrive-y': '50px',
@@ -113,7 +130,7 @@ const FLOATING_INSTAGRAM_TOKENS = [
       '--float-x': '90%',
       '--float-y': '18%',
       '--float-size': '52px',
-      '--float-delay': '380ms',
+      '--float-delay': '310ms',
       '--float-enter-duration': '500ms',
       '--float-arrive-x': '8px',
       '--float-arrive-y': '34px',
@@ -133,7 +150,7 @@ const FLOATING_INSTAGRAM_TOKENS = [
       '--float-x': '88%',
       '--float-y': '61%',
       '--float-size': '98px',
-      '--float-delay': '820ms',
+      '--float-delay': '940ms',
       '--float-enter-duration': '620ms',
       '--float-arrive-x': '14px',
       '--float-arrive-y': '52px',
@@ -153,7 +170,7 @@ const FLOATING_INSTAGRAM_TOKENS = [
       '--float-x': '82%',
       '--float-y': '73%',
       '--float-size': '50px',
-      '--float-delay': '460ms',
+      '--float-delay': '1120ms',
       '--float-enter-duration': '520ms',
       '--float-arrive-x': '6px',
       '--float-arrive-y': '40px',
@@ -192,10 +209,11 @@ const InstagramFollowerCount = ({ darkMode, compact = false, className = '' }) =
   </div>
 );
 
-const InstagramFloatingTokens = ({ active = false, darkMode = false } = {}) => (
+const InstagramFloatingTokens = ({ active = false, settled = false, darkMode = false } = {}) => (
   <div
     className={`instagram-floating-field ${darkMode ? 'instagram-floating-field--dark' : ''}`}
     data-floating-ready={active ? 'true' : 'false'}
+    data-floating-settled={settled ? 'true' : 'false'}
     aria-hidden="true"
   >
     {FLOATING_INSTAGRAM_TOKENS.map(({ id, label, Icon, className, style }) => (
@@ -213,30 +231,63 @@ export default function InstagramCarouselIsland({ darkMode = false, posts = [] }
   const dynamicInsta = useMemo(() => normalizePosts(posts), [posts]);
   const [activeInstaIndex, setActiveInstaIndex] = useState(1);
   const [floatingTokensReady, setFloatingTokensReady] = useState(false);
+  const [floatingTokensSettled, setFloatingTokensSettled] = useState(false);
   const sectionRef = useRef(null);
   const dragStartRef = useRef(null);
 
   useEffect(() => {
     const section = sectionRef.current;
     if (!section || floatingTokensReady) return undefined;
+    let disposed = false;
+    let idleHandle;
+    let delayHandle;
+    let settleHandle;
+
+    const activateTokens = () => {
+      if (disposed) return;
+      setFloatingTokensReady(true);
+      settleHandle = window.setTimeout(() => {
+        if (!disposed) setFloatingTokensSettled(true);
+      }, 2200);
+    };
+
+    const scheduleTokenActivation = () => {
+      window.clearTimeout(delayHandle);
+      cancelIdle(idleHandle);
+      delayHandle = window.setTimeout(() => {
+        idleHandle = requestIdle(activateTokens, 1400);
+      }, 90);
+    };
+
     const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion || !('IntersectionObserver' in window)) {
-      setFloatingTokensReady(true);
-      return undefined;
+      scheduleTokenActivation();
+      return () => {
+        disposed = true;
+        window.clearTimeout(delayHandle);
+        window.clearTimeout(settleHandle);
+        cancelIdle(idleHandle);
+      };
     }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry?.isIntersecting) return;
-        setFloatingTokensReady(true);
         observer.disconnect();
+        scheduleTokenActivation();
       },
-      { rootMargin: '-18% 0px -22% 0px', threshold: 0.18 },
+      { rootMargin: '0px 0px -12% 0px', threshold: 0.12 },
     );
 
     observer.observe(section);
 
-    return () => observer.disconnect();
+    return () => {
+      disposed = true;
+      observer.disconnect();
+      window.clearTimeout(delayHandle);
+      window.clearTimeout(settleHandle);
+      cancelIdle(idleHandle);
+    };
   }, [floatingTokensReady]);
 
   if (!dynamicInsta.length) return null;
@@ -268,7 +319,7 @@ export default function InstagramCarouselIsland({ darkMode = false, posts = [] }
       <article
         key={`${desktop ? 'desktop' : 'mobile'}-${post.carouselSlotId}`}
         style={style}
-        className={`absolute left-1/2 top-0 overflow-hidden shadow-[0_24px_60px_rgba(32,26,20,0.13)] transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
+        className={`absolute left-1/2 top-0 overflow-hidden shadow-[0_24px_60px_rgba(32,26,20,0.13)] transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           desktop
             ? 'top-2 w-[min(26vw,312px)] rounded-[28px] xl:w-[min(25vw,340px)] xl:rounded-[34px]'
             : 'w-[62vw] max-w-[226px] rounded-[22px] md:max-w-[250px]'
@@ -307,7 +358,7 @@ export default function InstagramCarouselIsland({ darkMode = false, posts = [] }
 
   return (
     <section ref={sectionRef} className="relative isolate overflow-hidden px-0 pb-[86px] pt-[48px] md:px-6 md:py-[72px] lg:px-[5vw] lg:py-[78px] xl:py-[86px]">
-      <InstagramFloatingTokens active={floatingTokensReady} darkMode={darkMode} />
+      <InstagramFloatingTokens active={floatingTokensReady} settled={floatingTokensSettled} darkMode={darkMode} />
       <div className="relative z-10 lg:hidden">
         <div className="mx-auto max-w-[430px] px-5 text-center">
           <div className="mb-8 flex items-center justify-center gap-3">
