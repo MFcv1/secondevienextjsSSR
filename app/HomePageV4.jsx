@@ -3,6 +3,7 @@ import Link from 'next/link';
 import HomeMotionIslandV4 from './HomeMotionIslandV4';
 import AtelierStickyIsland from './AtelierStickyIsland';
 import HeroVideoSliderIsland from './HeroVideoSliderIsland';
+import TestimonialsCarouselIsland from '../src/kit/marketplace/TestimonialsCarouselIsland';
 import '../src/home-v4.css';
 
 /**
@@ -20,27 +21,6 @@ function SplitText({ text }) {
     </>
   );
 }
-
-const reviews = [
-  {
-    initials: 'SM',
-    text: "L'enfilade est magnifique, le bois a retrouvé toute sa chaleur. On sent le soin apporté aux moindres détails. Livraison impeccable à Paris.",
-    name: 'Sophie M.',
-    city: 'Paris 11e',
-  },
-  {
-    initials: 'TL',
-    text: "J'ai confié la vieille commode de ma grand-mère à l'atelier. Le résultat est époustouflant, moderne sans perdre son âme.",
-    name: 'Thomas L.',
-    city: 'Aix-en-Provence',
-  },
-  {
-    initials: 'CB',
-    text: "Des chaises bistrot parfaites pour mon restaurant. Solides, patinées avec goût. Merci pour le suivi très professionnel.",
-    name: 'Camille B.',
-    city: 'Lyon',
-  },
-];
 
 const faqs = [
   {
@@ -259,35 +239,8 @@ export default function HomePageV4() {
         </section>
 
 
-        {/* ─── REVIEWS ─── */}
-        <section className="sv4-wrap sv4-reviews-section">
-          <div className="sv4-reviews-head sv4-reveal">
-            <span className="sv4-eyebrow">Témoignages</span>
-            <h2>Ils nous font confiance</h2>
-            <div className="sv4-reviews-rating">
-              <span className="sv4-reviews-rating__stars">★★★★★</span>
-              <span className="sv4-reviews-rating__score">4,9/5</span>
-              <span className="sv4-reviews-rating__count">· 120+ avis vérifiés</span>
-            </div>
-          </div>
-
-          <div className="sv4-reviews-grid">
-            {reviews.map((r, i) => (
-              <figure className="sv4-review-card sv4-reveal" key={i} style={{ '--card-i': i }}>
-                <span className="sv4-review-card__mark" aria-hidden="true">&ldquo;</span>
-                <div className="sv4-review-card__stars">★★★★★</div>
-                <blockquote className="sv4-review-card__text">{r.text}</blockquote>
-                <figcaption className="sv4-review-card__author">
-                  <span className="sv4-review-card__avatar" aria-hidden="true">{r.initials}</span>
-                  <span className="sv4-review-card__meta">
-                    <span className="sv4-review-card__name">{r.name}</span>
-                    <span className="sv4-review-card__city">{r.city}</span>
-                  </span>
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-        </section>
+        {/* ─── REVIEWS — shared carousel (same as gallery, unified) ─── */}
+        <TestimonialsCarouselIsland />
 
         {/* ─── DELIVERY - FULL CODE ARCHITECTURE ─── */}
         <section className="sv4-delivery-section" style={{ marginTop: 'var(--section-gap)' }}>

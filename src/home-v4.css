@@ -83,12 +83,6 @@
   margin: 0 auto;
 }
 
-/* Restore inter-section gap for the redesigned sections (was inline) */
-.sv4-reviews-section,
-.sv4-faq-section {
-  margin-top: var(--section-gap);
-}
-
 /* ──────────────────────────────────────
    HAIRLINE DIVIDER
    ────────────────────────────────────── */
@@ -1091,165 +1085,10 @@
   color: var(--c-terracotta);
 }
 
-/* ──────────────────────────────────────
-   REVIEWS — Quote cards
-   ────────────────────────────────────── */
-.sv4-reviews-head {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-}
-
-.sv4-reviews-head h2 {
-  font-family: var(--f-display);
-  font-size: clamp(2rem, 3.5vw, 3.4rem);
-  font-weight: 400;
-  line-height: 1.02;
-  letter-spacing: -0.02em;
-}
-
-.sv4-reviews-rating {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 18px;
-  border: 1px solid var(--c-line-strong);
-  border-radius: var(--r-pill);
-  background: var(--c-white);
-}
-
-.sv4-reviews-rating__stars {
-  color: var(--c-terracotta);
-  font-size: 13px;
-  letter-spacing: 2px;
-}
-
-.sv4-reviews-rating__score {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.sv4-reviews-rating__count {
-  font-size: 12px;
-  color: var(--c-warmgray);
-}
-
-.sv4-reviews-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin-top: 64px;
-}
-
-.sv4-review-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 40px 32px 32px;
-  background: var(--c-white);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-card);
-  box-shadow: 0 1px 2px rgba(26, 19, 12, 0.03);
-  overflow: hidden;
-  transition: transform 500ms var(--ease), box-shadow 500ms var(--ease), border-color 500ms var(--ease);
-}
-
-.sv4-review-card::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 3px;
-  background: linear-gradient(90deg, var(--c-terracotta), transparent);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 600ms var(--ease);
-}
-
-.sv4-review-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 24px 48px rgba(26, 19, 12, 0.1);
-  border-color: var(--c-line-strong);
-}
-
-.sv4-review-card:hover::before { transform: scaleX(1); }
-
-.sv4-review-card__mark {
-  position: absolute;
-  top: 6px;
-  right: 22px;
-  font-family: var(--f-display);
-  font-size: 120px;
-  line-height: 1;
-  color: var(--c-terracotta);
-  opacity: 0.14;
-  pointer-events: none;
-}
-
-.sv4-review-card__stars {
-  color: var(--c-terracotta);
-  font-size: 13px;
-  letter-spacing: 3px;
-  position: relative;
-  z-index: 1;
-}
-
-.sv4-review-card__text {
-  margin: 0;
-  font-family: var(--f-display);
-  font-size: clamp(18px, 1.5vw, 21px);
-  line-height: 1.45;
-  font-style: italic;
-  color: var(--c-espresso);
-  flex: 1;
-  position: relative;
-  z-index: 1;
-}
-
-.sv4-review-card__author {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding-top: 22px;
-  border-top: 1px solid var(--c-line);
-}
-
-.sv4-review-card__avatar {
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--c-cream);
-  border: 1px solid var(--c-line-strong);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--c-tobacco);
-}
-
-.sv4-review-card__meta {
-  display: flex;
-  flex-direction: column;
-}
-
-.sv4-review-card__name {
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.sv4-review-card__city {
-  font-size: 12px;
-  color: var(--c-warmgray);
-  margin-top: 2px;
-}
+/* Reviews now use the shared <TestimonialsCarouselIsland /> (gallery design).
+   It renders inside .sv4, whose `p { margin: 0 }` reset would otherwise eat
+   the carousel header's Tailwind `mt-6` spacing — restore it explicitly. */
+.sv4 .customer-testimonials-section .mt-6 { margin-top: 1.5rem; }
 
 /* ──────────────────────────────────────
    DELIVERY - FULL CODE ARCHITECTURE
@@ -1938,40 +1777,79 @@ details[open] .sv4-faq__toggle::after { transform: rotate(90deg); opacity: 0; }
 }
 
 /* ──────────────────────────────────────
-   SECTION RHYTHM — Desktop vertical symmetry
-   One uniform --section-gap between every top-level
-   section. Previously some sections baked the gap into
-   their own vertical padding while neighbours added a
-   margin too, producing doubled blank bands. The gap
-   now comes solely from this single margin-top.
+   SECTION RHYTHM — Uniform vertical symmetry
+   One --section-gap between every top-level section
+   (mobile + desktop). Padded sections previously baked
+   the gap into vertical padding which doubled with
+   neighbour margins; the gap now comes solely from this
+   single margin-top. Per-breakpoint size via --section-gap.
    ────────────────────────────────────── */
-@media (min-width: 768px) {
-  .sv4 main > section {
-    margin-top: var(--section-gap);
-  }
-  /* Marquee hugs the hero — no leading gap */
-  .sv4 main > .sv4-marquee {
-    margin-top: 0;
-  }
-  /* Strip rhythm-padding so it no longer stacks with the margin */
-  .sv4-scrub-section { padding-top: 0; padding-bottom: 0; }
-  .sv4-atelier { padding-top: 0; padding-bottom: 0; }
-  .sv4-selection { padding-top: 0; padding-bottom: 0; }
-  .sv4-delivery-section { padding-top: 0; padding-bottom: 0; }
-}
+.sv4 main > section { margin-top: var(--section-gap); }
+/* Marquee hugs the hero — no leading gap */
+.sv4 main > .sv4-marquee { margin-top: 0; }
+/* Strip rhythm-padding so it no longer stacks with the margin */
+.sv4-scrub-section { padding-top: 0; padding-bottom: 0; }
+.sv4-atelier { padding-top: 0; padding-bottom: 0; }
+.sv4-selection { padding-top: 0; padding-bottom: 0; }
+.sv4-delivery-section { padding-top: 0; padding-bottom: 0; }
 
 /* ──────────────────────────────────────
    RESPONSIVE — MOBILE < 768px
    ────────────────────────────────────── */
 @media (max-width: 767px) {
+  /* Tighter, uniform inter-section rhythm on mobile */
+  .sv4 { --section-gap: clamp(4.5rem, 13vw, 7rem); }
+
   .sv4-nav__right a:not(.sv4-nav__cta) { display: none; }
   .sv4-nav__inner { height: 56px; }
 
-  .sv4-hero { padding: 96px 20px 60px; min-height: 90svh; }
+  /* Hero video fills the whole screen — no peek of the next band */
+  .sv4-hero { padding: 110px 20px 84px; min-height: 100svh; }
   .sv4-hero__title { font-size: clamp(2.6rem, 10vw, 3.8rem); }
   .sv4 .sv4-hero__sub { margin: 24px auto 32px; }
   .sv4-hero__actions { flex-direction: column; }
   .sv4-hero__scroll-hint { display: none; }
+
+  /* Section heads: stack title + link so they never collide */
+  .sv4-section-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding-bottom: 26px;
+  }
+  .sv4-section-head h2 { font-size: clamp(1.9rem, 8.5vw, 2.6rem); }
+
+  /* Atelier narrative -> stacked editorial cards (sticky media dropped) */
+  .sv4-atelier {
+    display: block;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .sv4-atelier__visual { display: none; }
+  .sv4-atelier__copy { gap: 18px; }
+  .sv4-atelier__panel {
+    min-height: 0;
+    max-width: none;
+    padding: 16px;
+    background: var(--c-white);
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-card);
+    box-shadow: 0 6px 20px rgba(26, 19, 12, 0.05);
+  }
+  .sv4-atelier__panel > div { display: flex; flex-direction: column; }
+  .sv4-atelier__mobile-img {
+    display: block !important;
+    width: 100%;
+    height: 210px;
+    object-fit: cover;
+    border-radius: calc(var(--r-card) - 6px);
+    margin-bottom: 18px;
+  }
+  .sv4-atelier__panel h2 {
+    font-size: clamp(2rem, 9vw, 2.6rem);
+    margin: 0.2em 0 0.5em;
+  }
+  .sv4-atelier__panel p { max-width: none; }
 
   /* Accordion -> Stack */
   .sv4-accordion {
@@ -2060,24 +1938,6 @@ details[open] .sv4-faq__toggle::after { transform: rotate(90deg); opacity: 0; }
     padding: 32px 24px;
   }
 
-  /* Reviews -> Horizontal swipeable cards */
-  .sv4-reviews-grid {
-    display: flex;
-    flex-direction: row;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    gap: 16px;
-    margin: 40px -20px 0;
-    padding: 0 20px 24px;
-    scrollbar-width: none;
-  }
-  .sv4-reviews-grid::-webkit-scrollbar { display: none; }
-  .sv4-review-card {
-    flex: 0 0 82%;
-    scroll-snap-align: start;
-    padding: 32px 24px 26px;
-  }
-
   /* FAQ -> Single column, non-sticky intro */
   .sv4-faq-layout {
     grid-template-columns: 1fr;
@@ -2093,6 +1953,12 @@ details[open] .sv4-faq__toggle::after { transform: rotate(90deg); opacity: 0; }
     grid-template-columns: 1fr;
     gap: 32px;
   }
+
+  /* Final CTA -> wider, less stretched arches that fit a phone */
+  .sv4-cta-final { padding: clamp(6rem, 18vw, 9rem) 20px; }
+  .sv4-cta-final__arch--1 { width: min(320px, 80vw); height: min(260px, 34vh); }
+  .sv4-cta-final__arch--2 { width: min(400px, 94vw); height: min(330px, 42vh); }
+  .sv4-cta-final__arch--3 { width: min(480px, 108vw); height: min(400px, 50vh); }
 
   /* Footer */
   .sv4-footer__grid {
@@ -2112,8 +1978,7 @@ details[open] .sv4-faq__toggle::after { transform: rotate(90deg); opacity: 0; }
   .sv4-pinned { display: block; padding: 4rem 32px; }
   .sv4-pinned__panel { position: static; }
   .sv4-pinned__media { margin-top: 2rem; }
-  /* Redesigned sections need more room than 3 cramped columns */
-  .sv4-reviews-grid { grid-template-columns: 1fr; max-width: 600px; margin-left: auto; margin-right: auto; }
+  /* Redesigned FAQ needs full width on tablet */
   .sv4-faq-layout { grid-template-columns: 1fr; gap: 40px; }
   .sv4-faq-intro { position: static; top: auto; }
 }
