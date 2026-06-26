@@ -55,6 +55,7 @@ export default function AboutMotionIsland() {
         animateServices(gsap, SplitType, registerSplit, root);
         animateInterlude(gsap, root);
         animateSimpleReveals(gsap, root);
+        animateInstagramCounter(gsap, ScrollTrigger, root);
 
         window.setTimeout(() => ScrollTrigger.refresh(), 450);
       }, root);
@@ -468,6 +469,86 @@ function animateInterlude(gsap, root) {
     { xPercent: -25 },
     { xPercent: 0, duration: 38, repeat: -1, ease: 'none' }
   );
+}
+
+function animateInstagramCounter(_gsap, ScrollTrigger, root) {
+  const counter = select(root, '.about-ig-counter');
+  const valueEl = select(counter, '.about-ig-counter__value');
+  if (!counter || !valueEl) return;
+
+  const TARGET = 38.9;
+  let intervalId = null;
+
+  const runCasino = () => {
+    if (counter.dataset.animated === 'true') return;
+    counter.dataset.animated = 'true';
+    window.clearInterval(intervalId);
+
+    const duration = 2.5;
+    const fps = 30;
+    const totalFrames = Math.round(duration * fps);
+    let currentFrame = 0;
+
+    valueEl.textContent = '0.0';
+
+    intervalId = window.setInterval(() => {
+      currentFrame += 1;
+      const progress = currentFrame / totalFrames;
+      const easeProgress = 1 - (1 - progress) ** 3;
+      let currentValue;
+
+      if (progress < 0.62) {
+        currentValue = TARGET * easeProgress;
+      } else if (progress < 0.9) {
+        const tumble = TARGET * (0.35 + Math.random() * 0.85);
+        currentValue = Math.min(TARGET * 1.08, tumble);
+      } else {
+        currentValue = TARGET;
+      }
+
+      valueEl.textContent = currentValue.toFixed(1);
+
+      if (currentFrame >= totalFrames) {
+        window.clearInterval(intervalId);
+        valueEl.textContent = TARGET.toFixed(1);
+      }
+    }, 1000 / fps);
+  };
+
+  const runIfVisible = () => {
+    const rect = counter.getBoundingClientRect();
+    const vh = window.innerHeight;
+    if (rect.top < vh * 0.9 && rect.bottom > vh * 0.08) {
+      runCasino();
+    }
+  };
+
+  ScrollTrigger.create({
+    trigger: counter,
+    start: 'top 90%',
+    once: true,
+    onEnter: runCasino,
+  });
+
+  ScrollTrigger.create({
+    trigger: select(root, '.about-instagram') || counter,
+    start: 'top 70%',
+    once: true,
+    onEnter: runCasino,
+  });
+
+  runIfVisible();
+  window.setTimeout(runIfVisible, 500);
+  window.setTimeout(runIfVisible, 1200);
+
+  const scrollUntilPlay = () => {
+    if (counter.dataset.animated === 'true') {
+      window.removeEventListener('scroll', scrollUntilPlay);
+      return;
+    }
+    runIfVisible();
+  };
+  window.addEventListener('scroll', scrollUntilPlay, { passive: true });
 }
 
 function animateSimpleReveals(gsap, root) {

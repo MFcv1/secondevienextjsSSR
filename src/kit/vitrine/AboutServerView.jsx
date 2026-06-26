@@ -48,24 +48,32 @@ function ArchSection() {
           </div>
 
           <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-[#F9F6F0]">
+            <div 
+              className="absolute inset-0 z-0 pointer-events-none" 
+              style={{ 
+                WebkitMaskImage: 'linear-gradient(to right, transparent 5%, black 25%, black 75%, transparent 95%)', 
+                maskImage: 'linear-gradient(to right, transparent 5%, black 25%, black 75%, transparent 95%)' 
+              }}
+            >
+              <div
+                className="arch-grid absolute inset-0 mix-blend-multiply opacity-[0.05] pointer-events-none"
+                style={{
+                  backgroundImage: 'linear-gradient(black 1px, transparent 1px), linear-gradient(90deg, black 1px, transparent 1px)',
+                  backgroundSize: '4rem 4rem',
+                  WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)',
+                  maskImage: 'linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)',
+                }}
+              />
+            </div>
             <div
-              className="arch-map absolute inset-0 z-0 bg-cover bg-center bg-fixed mix-blend-multiply opacity-60 pointer-events-none"
+              className="arch-map absolute inset-0 z-[1] bg-cover bg-center bg-fixed mix-blend-multiply opacity-100 pointer-events-none"
               style={{
                 backgroundImage: "url('/images/map-marseille.png')"
               }}
             />
-            <div
-              className="arch-grid absolute inset-0 z-0 mix-blend-multiply opacity-[0.05] pointer-events-none"
-              style={{
-                backgroundImage: 'linear-gradient(black 1px, transparent 1px), linear-gradient(90deg, black 1px, transparent 1px)',
-                backgroundSize: '4rem 4rem',
-                WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)',
-                maskImage: 'linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)',
-              }}
-            />
 
 
-            <div className="arch-art-print absolute left-[3vw] top-[9vh] flex h-[24vh] w-[52vw] flex-col opacity-0 md:left-[2vw] md:top-[15vh] md:h-[60vh] md:w-[20vw] lg:left-[5vw]">
+            <div className="arch-art-print absolute left-[3vw] top-[9vh] z-10 flex h-[24vh] w-[52vw] flex-col opacity-0 md:left-[2vw] md:top-[15vh] md:h-[60vh] md:w-[20vw] lg:left-[5vw]">
               <div className="relative h-full w-full border border-[#1A1A1A]/10 bg-[#F9F6F0] p-2 shadow-2xl md:h-[85%] md:p-3">
                 <div className="relative h-full w-full overflow-hidden">
                   <img
@@ -82,7 +90,7 @@ function ArchSection() {
               </div>
             </div>
 
-            <div className="arch-art-print absolute bottom-[8vh] right-[3vw] flex h-[24vh] w-[52vw] flex-col opacity-0 md:bottom-auto md:right-[2vw] md:top-[25vh] md:h-[50vh] md:w-[22vw] lg:right-[5vw]">
+            <div className="arch-art-print absolute bottom-[8vh] right-[3vw] z-10 flex h-[24vh] w-[52vw] flex-col opacity-0 md:bottom-auto md:right-[2vw] md:top-[25vh] md:h-[50vh] md:w-[22vw] lg:right-[5vw]">
               <div className="mb-4 hidden w-full items-end justify-between px-2 md:flex">
                 <span className="font-sans text-[9px] font-bold uppercase tracking-[0.3em] text-[#1A1A1A]/40">FIG. 02</span>
                 <span className="font-serif text-sm italic text-[#1A1A1A]/70">Sainte-Baume</span>
@@ -144,20 +152,16 @@ function ArchSection() {
             </div>
 
             <div className="arch-text-content absolute inset-0 z-20 flex flex-col items-center justify-center px-4 text-[#F9F6F0]">
-              <div className="arch-inner-frame group relative flex flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-[#F9F6F0]/20 bg-[#1A1A1A]/20 p-5 text-center shadow-2xl backdrop-blur-md md:rounded-[3rem] md:p-12 lg:p-16">
-                <div className="pointer-events-none absolute inset-0 opacity-10 mix-blend-overlay" style={textureStyle} />
+              <div className="arch-inner-frame group relative flex w-[90vw] max-w-2xl flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-[#F9F6F0]/20 bg-[#1A1A1A]/20 py-14 text-center shadow-2xl backdrop-blur-md md:rounded-[3rem] md:py-20 lg:py-24">
                 <div className="arch-text-reveal relative z-10 mb-6 flex w-full items-center justify-center gap-4 md:mb-10">
                   <div className="h-px w-8 bg-[#E8E3DA]/60 md:w-16" />
                   <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#E8E3DA] md:text-xs">Seconde Vie</span>
                   <div className="h-px w-8 bg-[#E8E3DA]/60 md:w-16" />
                 </div>
-                <h2 className="relative z-10 flex flex-col items-center font-serif text-[10vw] leading-[0.85] tracking-tighter drop-shadow-2xl md:text-[9vw] lg:text-[7vw] xl:text-[7rem]">
-                  <span className="arch-text-reveal mb-2 block font-light italic text-[#A68A64]">La Galerie</span>
-                  <span className="arch-text-reveal block pr-4">des Merveilles</span>
+                <h2 className="relative z-10 flex flex-col items-center font-serif text-3xl leading-tight tracking-tighter drop-shadow-2xl md:text-4xl lg:text-5xl xl:text-6xl">
+                  <span className="arch-text-reveal mb-3 block font-light italic text-[#A68A64] text-[2.5rem] md:text-[3.5rem] lg:text-[4.2rem] xl:text-[5rem]">Designed by Anaïs</span>
+                  <span className="arch-text-reveal block pr-4">with love ❤️</span>
                 </h2>
-                <p className="arch-text-reveal relative z-10 mx-auto mt-10 max-w-[45ch] text-center text-sm font-light leading-relaxed text-[#E8E3DA]/80 text-pretty md:text-base lg:text-lg">
-                  Chaque piece est meticuleusement chinee dans le Sud de la France, reparee et sublimee pour demarrer une nouvelle vie dans votre decoration.
-                </p>
               </div>
             </div>
           </div>
