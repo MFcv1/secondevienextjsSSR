@@ -184,21 +184,21 @@ function ArchSection() {
             />
             <div className="arch-overlay pointer-events-none absolute inset-0 h-full w-full bg-black mix-blend-multiply" />
 
-            <div className="arch-entry-header pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center gap-y-2 pt-[20vh] md:gap-y-4">
+            <div className="arch-entry-header pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center gap-y-2 px-[11vw] pt-[20vh] md:gap-y-4 md:px-[31vw]">
               <div className="flex flex-wrap items-center justify-center gap-x-3 font-serif leading-[0.9] tracking-tighter text-[#F9F6F0] drop-shadow-2xl md:gap-x-5">
                 <span className="inline-block overflow-hidden px-2 pb-2">
-                  <span className="arch-entry-word block font-bold uppercase not-italic text-[10vw] will-change-transform md:text-[8vw] lg:text-[7vw] xl:text-[6vw]">Provence</span>
+                  <span className="arch-entry-word block font-bold uppercase not-italic text-[8.2vw] will-change-transform md:text-[6.3vw] lg:text-[5.4vw] xl:text-[4.6vw]">Provence</span>
                 </span>
                 <span className="inline-block overflow-hidden px-2 pb-2">
-                  <span className="arch-entry-word block font-light italic text-[8vw] will-change-transform md:text-[6vw] lg:text-[5vw] xl:text-[4vw]">Alpes</span>
+                  <span className="arch-entry-word block font-light italic text-[6.5vw] will-change-transform md:text-[4.6vw] lg:text-[3.8vw] xl:text-[3.2vw]">Alpes</span>
                 </span>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-x-3 font-serif leading-[0.9] tracking-tighter text-[#F9F6F0] drop-shadow-2xl md:gap-x-5">
                 <span className="inline-block overflow-hidden px-2 pb-2">
-                  <span className="arch-entry-word block font-bold uppercase not-italic text-[10vw] will-change-transform md:text-[8vw] lg:text-[7vw] xl:text-[6vw]">Cote</span>
+                  <span className="arch-entry-word block font-bold uppercase not-italic text-[8.2vw] will-change-transform md:text-[6.3vw] lg:text-[5.4vw] xl:text-[4.6vw]">Cote</span>
                 </span>
                 <span className="inline-block overflow-hidden px-2 pb-2">
-                  <span className="arch-entry-word block font-light italic text-[8vw] will-change-transform md:text-[6vw] lg:text-[5vw] xl:text-[4vw]">d'Azur</span>
+                  <span className="arch-entry-word block font-light italic text-[6.5vw] will-change-transform md:text-[4.6vw] lg:text-[3.8vw] xl:text-[3.2vw]">d'Azur</span>
                 </span>
               </div>
             </div>
