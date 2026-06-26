@@ -405,21 +405,36 @@
   font-family: var(--f-display);
   font-size: clamp(3rem, 7vw, 7rem);
   font-weight: 400;
-  line-height: 1.05; /* Increased from 0.95 to prevent vertical overlapping of lines */
+  line-height: 1.12;
   letter-spacing: -0.03em;
   color: var(--c-bone);
   text-wrap: balance;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: center;
   justify-content: center;
-  gap: 0 0.2em;
+  gap: 0.1em;
   padding-bottom: 0; /* Centering adjustment: Title padding-bottom set to 0. Gap to subtitle is handled by subtitle's margin-top. */
+}
+
+.sv4-hero__title-row {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0 0.28em;
+  width: 100%;
+  max-width: 100%;
+  padding-bottom: 0.06em;
 }
 
 .sv4-split-word {
   display: inline-block;
   overflow: hidden;
-  padding-bottom: 0.05em;
+  padding-bottom: 0.16em;
+  margin-bottom: 0.02em;
+  vertical-align: bottom;
 }
 
 .sv4-split-word > span {
@@ -1957,11 +1972,44 @@ details[open] .sv4-faq__toggle::after { transform: rotate(90deg); opacity: 0; }
   }
 
   /* Hero video fills the whole screen — no peek of the next band */
-  .sv4-hero { padding: 110px 20px 84px; min-height: 100svh; }
-  .sv4-hero__title { font-size: clamp(2.6rem, 10vw, 3.8rem); }
-  .sv4 .sv4-hero__sub { margin: 24px auto 32px; }
+  .sv4-hero { padding: 110px 20px 112px; min-height: 100svh; }
+  .sv4-hero__content {
+    width: 100%;
+    max-width: 100%;
+  }
+  .sv4-hero__title {
+    font-size: clamp(2.85rem, 10.5vw, 3.8rem);
+    max-width: none;
+    width: 100%;
+    margin-inline: auto;
+    gap: 0.12em;
+    line-height: 1.14;
+  }
+  .sv4-hero__title-row {
+    gap: 0 0.32em;
+    padding-bottom: 0.08em;
+  }
+  .sv4-split-word {
+    padding-bottom: 0.18em;
+  }
+  .sv4 .sv4-hero__sub {
+    margin: 24px auto 32px;
+    max-width: min(20rem, 86vw);
+    width: 100%;
+    font-size: clamp(15px, 3.9vw, 17px);
+    line-height: 1.55;
+  }
   .sv4-hero__actions { flex-direction: column; }
-  .sv4-hero__scroll-hint { display: none; }
+  .sv4-hero__scroll-hint {
+    display: flex;
+    bottom: max(20px, env(safe-area-inset-bottom, 20px));
+    gap: 6px;
+    z-index: 3;
+    pointer-events: none;
+  }
+  .sv4-hero__scroll-line {
+    height: 36px;
+  }
 
   /* Section heads: stack title + link so they never collide */
   .sv4-section-head {

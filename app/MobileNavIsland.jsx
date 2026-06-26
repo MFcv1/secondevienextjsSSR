@@ -22,7 +22,7 @@ export default function MobileNavIsland() {
   const [portalTarget, setPortalTarget] = useState(null);
 
   useEffect(() => {
-    setPortalTarget(document.querySelector('.sv4') || document.body);
+    setPortalTarget(document.querySelector('[data-sv4-shell]') || document.querySelector('.sv4') || document.body);
   }, []);
 
   // Lock body scroll + close on Escape while the menu is open

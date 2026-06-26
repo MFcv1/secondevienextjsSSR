@@ -48,7 +48,6 @@ export default function AboutMotionIsland() {
       gsap.registerPlugin(ScrollTrigger);
 
       ctx = gsap.context(() => {
-        animateHero(gsap, ScrollTrigger, root);
         animateArch(gsap, ScrollTrigger, SplitType, registerSplit, root);
         animateShowcase(gsap, root);
         animateBeforeAfter(gsap, root);
@@ -71,79 +70,6 @@ export default function AboutMotionIsland() {
   }, []);
 
   return null;
-}
-
-function animateHero(gsap, ScrollTrigger, root) {
-  const hero = select(root, '.about-hero');
-  if (!hero) return;
-
-  gsap.from(selectAll(hero, '.hero-text'), {
-    y: 50,
-    opacity: 0,
-    filter: 'blur(12px)',
-    duration: 1.4,
-    stagger: 0.1,
-    ease: 'power3.out',
-    delay: 0.2,
-  });
-
-  gsap.fromTo(selectAll(hero, '.arch-line'),
-    { scaleY: 0, scaleX: 0 },
-    { scaleY: 1, scaleX: 1, duration: 1.5, ease: 'expo.inOut', delay: 0.5 }
-  );
-
-  gsap.from(select(hero, '.hero-bg-scale'), {
-    scale: 1.05,
-    duration: 2.5,
-    ease: 'expo.out',
-  });
-
-  gsap.from(selectAll(hero, '.floating-blob'), {
-    scale: 0.8,
-    opacity: 0,
-    duration: 2,
-    stagger: 0.2,
-    ease: 'back.out(1.2)',
-    delay: 0.8,
-  });
-
-  const mm = gsap.matchMedia();
-  mm.add('(min-width: 1024px)', () => {
-    gsap.to(select(hero, '.hero-bg-parallax'), {
-      yPercent: 15,
-      ease: 'none',
-      scrollTrigger: {
-        trigger: hero,
-        start: 'top top',
-        end: 'bottom top',
-        scrub: 0.5,
-      },
-    });
-
-    gsap.to(selectAll(hero, '.blob-fast'), {
-      yPercent: -60,
-      rotation: 3,
-      ease: 'none',
-      scrollTrigger: {
-        trigger: hero,
-        start: 'top top',
-        end: 'bottom top',
-        scrub: 1,
-      },
-    });
-
-    gsap.to(selectAll(hero, '.blob-slow'), {
-      yPercent: -30,
-      rotation: -2,
-      ease: 'none',
-      scrollTrigger: {
-        trigger: hero,
-        start: 'top top',
-        end: 'bottom top',
-        scrub: 1.5,
-      },
-    });
-  });
 }
 
 function animateArch(gsap, ScrollTrigger, SplitType, registerSplit, root) {
@@ -234,6 +160,8 @@ function animateArch(gsap, ScrollTrigger, SplitType, registerSplit, root) {
       ease: 'power2.out',
       stagger: introMobile ? 0.5 : 0.6,
     }, 0);
+
+
     tl.to(selectAll(section, '.arch-art-print'), {
       opacity: 0,
       y: -20,

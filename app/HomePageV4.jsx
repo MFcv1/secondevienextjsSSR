@@ -2,26 +2,10 @@ import React from 'react';
 import Link from 'next/link';
 import HomeMotionIslandV4 from './HomeMotionIslandV4';
 import AtelierStickyIsland from './AtelierStickyIsland';
-import HeroVideoSliderIsland from './HeroVideoSliderIsland';
-import MobileNavIsland from './MobileNavIsland';
 import TestimonialsCarouselIsland from '../src/kit/marketplace/TestimonialsCarouselIsland';
+import Sv4HomeHero from '../src/kit/vitrine/Sv4HomeHero';
+import Sv4SiteNav from '../src/kit/vitrine/Sv4SiteNav';
 import '../src/home-v4.css';
-
-/**
- * Helper to split text into words wrapped in spans for GSAP / CSS animation
- */
-function SplitText({ text }) {
-  const words = text.split(' ');
-  return (
-    <>
-      {words.map((word, i) => (
-        <span className="sv4-split-word" key={`${word}-${i}`}>
-          <span style={{ '--i': i }}>{word}</span>
-        </span>
-      ))}
-    </>
-  );
-}
 
 const faqs = [
   {
@@ -55,80 +39,15 @@ export const revalidate = 3600;
 
 export default function HomePageV4() {
   return (
-    <div className="sv4" data-ssr-home>
+    <div className="sv4" data-ssr-home data-sv4-shell>
       {/* Motion & Scroll triggers */}
       <HomeMotionIslandV4 />
 
-      {/* ─── NAV ─── */}
-      <nav className="sv4-nav">
-        <div className="sv4-nav__inner">
-          <Link href="/" className="sv4-nav__logo" aria-label="Seconde Vie - Retour à l'accueil">
-            <img src="/images/logoanais.png" alt="Seconde Vie" />
-            <span className="sv4-nav__logo-text">Seconde Vie</span>
-          </Link>
-          
-          <div className="sv4-nav__center">
-            <Link href="/galerie" className="sv4-nav__link">
-              <span>Galerie</span>
-            </Link>
-            <Link href="/a-propos" className="sv4-nav__link">
-              <span>Atelier</span>
-            </Link>
-            <Link href="/devis" className="sv4-nav__link">
-              <span>Restauration</span>
-            </Link>
-          </div>
-
-          <div className="sv4-nav__right">
-            <Link href="/galerie" className="sv4-nav__cta sv4-btn-reveal">
-              <span className="sv4-btn-text-mask">
-                <span className="sv4-btn-text-inner" data-text="Catalogue">Catalogue</span>
-              </span>
-              <svg className="sv4-btn-icon-flat" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
-            </Link>
-          </div>
-
-          {/* Mobile-only hamburger + overlay menu */}
-          <MobileNavIsland />
-        </div>
-      </nav>
+      <Sv4SiteNav />
 
       <main>
         {/* ─── HERO ─── */}
-        <header className="sv4-hero" data-nav-theme="dark">
-          <HeroVideoSliderIsland />
-          
-          <div className="sv4-hero__content">
-            <h1 className="sv4-hero__title" aria-label="Donner une nouvelle âme au mobilier d'hier">
-              <SplitText text="Donner une nouvelle âme au mobilier d'hier" />
-            </h1>
-            <p className="sv4-hero__sub sv4-reveal">
-              Nous chinons, restaurons et sublimons des pièces de caractère. Un artisanat d'art en Provence, pour un intérieur qui a du sens.
-            </p>
-            <div className="sv4-hero__actions sv4-reveal">
-              <Link href="/galerie" className="sv4-hero__btn-primary sv4-btn-reveal">
-                <span className="sv4-btn-text-mask">
-                  <span className="sv4-btn-text-inner" data-text="Découvrir la collection">Découvrir la collection</span>
-                </span>
-                <svg className="sv4-btn-icon-flat" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </Link>
-              <Link href="/devis" className="sv4-hero__btn-ghost sv4-btn-reveal">
-                <span className="sv4-btn-text-mask">
-                  <span className="sv4-btn-text-inner" data-text="Confier un meuble">Confier un meuble</span>
-                </span>
-              </Link>
-            </div>
-          </div>
-
-          <div className="sv4-hero__scroll-hint">
-            <span>Découvrir</span>
-            <div className="sv4-hero__scroll-line" />
-          </div>
-        </header>
+        <Sv4HomeHero />
 
         {/* ─── MARQUEE ─── */}
         <section className="sv4-marquee" aria-hidden="true">

@@ -1,0 +1,13 @@
+/* À propos: reuse home V4 shell tokens without full-page home chrome */
+.sv4-about-shell {
+  background: #f9f6f0;
+  color: #1a1a1a;
+}
+
+.sv4-about-shell::after {
+  display: none;
+}
+
+.about-sv4-hero-shell .sv4-hero {
+  width: 100%;
+}
