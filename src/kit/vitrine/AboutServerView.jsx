@@ -1,3 +1,4 @@
+import React from 'react';
 import { ArrowRight, CheckCircle2, Instagram, Mail, Palette, Search, Shield } from 'lucide-react';
 import '../../home-v4.css';
 import './about-sv4-hero.css';
@@ -461,6 +462,27 @@ function ContactSection() {
   );
 }
 
+function MarqueeSection() {
+  return (
+    <section className="sv4-marquee" aria-hidden="true" style={{ backgroundColor: '#FAF6EF' }}>
+      <div className="sv4-marquee__track">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <React.Fragment key={`marquee-${i}`}>
+            <span className="sv4-marquee__item">Artisanat Français</span>
+            <span className="sv4-marquee__dot">•</span>
+            <span className="sv4-marquee__item">Mobilier Restauré</span>
+            <span className="sv4-marquee__dot">•</span>
+            <span className="sv4-marquee__item">Pièces Uniques</span>
+            <span className="sv4-marquee__dot">•</span>
+            <span className="sv4-marquee__item">Éco-responsable</span>
+            <span className="sv4-marquee__dot">•</span>
+          </React.Fragment>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function AboutServerView({ personalization = {} }) {
   const showcase = getShowcaseItems(personalization);
   const steps = getProcessSteps(personalization);
@@ -472,6 +494,7 @@ export default function AboutServerView({ personalization = {} }) {
       <Sv4SiteNav />
       <Sv4HomeHero withAboutShell />
       <AboutSv4HeroMotionIsland />
+      <MarqueeSection />
       <ArchSection />
       <ShowcaseSection items={showcase} />
       <AboutBeforeAfterIsland projects={restorationProjects} />
