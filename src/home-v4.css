@@ -334,6 +334,10 @@
   animation: none;
 }
 
+/* Mobile hamburger + overlay menu are hidden on desktop */
+.sv4-nav__burger { display: none; }
+.sv4-mobile-menu { display: none; }
+
 /* ──────────────────────────────────────
    HERO — Cinematic center, NOT split
    Full viewport, word-by-word rise
@@ -793,13 +797,14 @@
   padding: 10vh 0;
 }
 
-.sv4-atelier__kicker {
+.sv4-atelier__panel p.sv4-atelier__kicker {
   font-family: var(--f-body);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--c-warmgray);
+  margin: 0;
 }
 
 .sv4-atelier__panel h2 {
@@ -1107,7 +1112,7 @@
   right: 0;
   bottom: 0;
   width: 65%;
-  background-image: url('/images/marseille_map_truck.png');
+  background-image: url('/images/169.png');
   background-size: cover;
   background-position: center right;
   /* Fade out the map smoothly towards the left, so the left half is pure --c-bone */
@@ -1250,6 +1255,7 @@
 @media (max-width: 1024px) {
   .sv4-delivery-map-bg {
     width: 100%;
+    background-image: url('/images/916.png');
     -webkit-mask-image: linear-gradient(to bottom, transparent, rgba(0,0,0,0.3) 30%, rgba(0,0,0,1) 60%);
     mask-image: linear-gradient(to bottom, transparent, rgba(0,0,0,0.3) 30%, rgba(0,0,0,1) 60%);
   }
@@ -1358,6 +1364,8 @@
 }
 
 .sv4-faq details {
+  position: relative;
+  overflow: hidden;
   background: var(--c-white);
   border: 1px solid var(--c-line);
   border-radius: var(--r-card);
@@ -1365,10 +1373,27 @@
   transition: border-color 300ms ease, box-shadow 300ms ease, background 300ms ease;
 }
 
-.sv4-faq details[open] {
-  border-color: var(--c-line-strong);
-  box-shadow: 0 12px 30px rgba(26, 19, 12, 0.06);
+/* Terracotta accent that grows down the side of the open card */
+.sv4-faq details::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--c-terracotta);
+  transform: scaleY(0);
+  transform-origin: top center;
+  transition: transform 450ms var(--ease);
 }
+
+.sv4-faq details[open] {
+  background: var(--c-cream);
+  border-color: var(--c-line-strong);
+  box-shadow: 0 14px 34px rgba(26, 19, 12, 0.07);
+}
+
+.sv4-faq details[open]::before { transform: scaleY(1); }
 
 .sv4-faq summary {
   display: flex;
@@ -1385,13 +1410,15 @@
 .sv4-faq summary::marker { display: none; content: ''; }
 
 .sv4-faq__index {
-  font-family: var(--f-body);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-family: var(--f-display);
+  font-size: 17px;
+  font-weight: 500;
+  font-style: italic;
+  letter-spacing: 0.01em;
   color: var(--c-terracotta);
   flex-shrink: 0;
-  min-width: 22px;
+  min-width: 26px;
+  line-height: 1;
 }
 
 .sv4-faq__q {
@@ -1800,8 +1827,134 @@ details[open] .sv4-faq__toggle::after { transform: rotate(90deg); opacity: 0; }
   /* Tighter, uniform inter-section rhythm on mobile */
   .sv4 { --section-gap: clamp(4.5rem, 13vw, 7rem); }
 
-  .sv4-nav__right a:not(.sv4-nav__cta) { display: none; }
+  /* Nav -> logo + hamburger only; inline links/CTA move into the overlay */
+  .sv4-nav__center { display: none; }
+  .sv4-nav__right { display: none; }
   .sv4-nav__inner { height: 56px; }
+
+  .sv4-nav__burger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    margin-right: -6px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--c-bone);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sv4-nav[data-scrolled="true"] .sv4-nav__burger { color: var(--c-espresso); }
+
+  .sv4-nav__burger-lines {
+    position: relative;
+    display: block;
+    width: 20px;
+    height: 13px;
+  }
+  .sv4-nav__burger-lines span {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 1.5px;
+    background: currentColor;
+    border-radius: 2px;
+    transition: transform 380ms var(--ease), top 380ms var(--ease);
+  }
+  .sv4-nav__burger-lines span:nth-child(1) { top: 3px; }
+  .sv4-nav__burger-lines span:nth-child(2) { top: 9px; }
+  .sv4-nav__burger[data-open="true"] .sv4-nav__burger-lines span:nth-child(1) { top: 6px; transform: rotate(45deg); }
+  .sv4-nav__burger[data-open="true"] .sv4-nav__burger-lines span:nth-child(2) { top: 6px; transform: rotate(-45deg); }
+
+  /* Full-screen overlay menu (sits below the nav pill) */
+  .sv4-mobile-menu {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 990;
+    background: linear-gradient(180deg, rgba(26, 19, 12, 0.97), rgba(13, 9, 5, 0.99));
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 420ms var(--ease), visibility 0s linear 420ms;
+  }
+  .sv4-mobile-menu[data-open="true"] {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 420ms var(--ease);
+  }
+  .sv4-mobile-menu__inner {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+    padding: 128px 32px max(40px, env(safe-area-inset-bottom));
+  }
+  .sv4-mobile-menu__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .sv4-mobile-menu__list li {
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 520ms var(--ease), transform 520ms var(--ease);
+    transition-delay: calc(var(--mm-i) * 70ms + 90ms);
+  }
+  .sv4-mobile-menu[data-open="true"] .sv4-mobile-menu__list li {
+    opacity: 1;
+    transform: none;
+  }
+  .sv4-mobile-menu__list a {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 20px 2px;
+    font-family: var(--f-display);
+    font-size: clamp(2rem, 11vw, 3rem);
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--c-bone);
+  }
+  .sv4-mobile-menu__num {
+    font-family: var(--f-body);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--c-terracotta);
+  }
+  .sv4-mobile-menu__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 18px 28px;
+    background: var(--c-bone);
+    color: var(--c-espresso);
+    border-radius: var(--r-pill);
+    font-family: var(--f-body);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 520ms var(--ease) 340ms, transform 520ms var(--ease) 340ms, background 280ms ease;
+  }
+  .sv4-mobile-menu[data-open="true"] .sv4-mobile-menu__cta {
+    opacity: 1;
+    transform: none;
+  }
 
   /* Hero video fills the whole screen — no peek of the next band */
   .sv4-hero { padding: 110px 20px 84px; min-height: 100svh; }
@@ -1819,37 +1972,66 @@ details[open] .sv4-faq__toggle::after { transform: rotate(90deg); opacity: 0; }
   }
   .sv4-section-head h2 { font-size: clamp(1.9rem, 8.5vw, 2.6rem); }
 
-  /* Atelier narrative -> stacked editorial cards (sticky media dropped) */
+  /* Atelier narrative -> compact editorial cards, step number overlaid */
   .sv4-atelier {
     display: block;
     padding-left: 20px;
     padding-right: 20px;
   }
   .sv4-atelier__visual { display: none; }
-  .sv4-atelier__copy { gap: 18px; }
+  .sv4-atelier__copy { gap: 16px; }
   .sv4-atelier__panel {
     min-height: 0;
     max-width: none;
-    padding: 16px;
+    padding: 0;
     background: var(--c-white);
     border: 1px solid var(--c-line);
     border-radius: var(--r-card);
     box-shadow: 0 6px 20px rgba(26, 19, 12, 0.05);
+    overflow: hidden;
   }
-  .sv4-atelier__panel > div { display: flex; flex-direction: column; }
+  .sv4-atelier__panel > div { position: relative; display: flex; flex-direction: column; }
   .sv4-atelier__mobile-img {
     display: block !important;
     width: 100%;
-    height: 210px;
+    height: 148px;
     object-fit: cover;
-    border-radius: calc(var(--r-card) - 6px);
-    margin-bottom: 18px;
+    margin-bottom: 0;
+  }
+  /* "Étape 0X" as a microscopic, ultra-premium machined pill (High-End Visual Design) */
+  .sv4-atelier__panel p.sv4-atelier__kicker {
+    position: absolute;
+    top: 18px;
+    left: 18px; /* Perfectly aligned with the 18px margin of the h2 below */
+    margin: 0;
+    padding: 4px 10px;
+    background: linear-gradient(135deg, rgba(250, 246, 239, 0.95) 0%, rgba(240, 235, 225, 0.8) 100%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
+    border-radius: var(--r-pill);
+    color: var(--c-espresso);
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    font-weight: 600; /* Thinner font makes it look less bulky */
+    /* Double-Bezel simulated via advanced box-shadows */
+    box-shadow: 
+      0 4px 8px -2px rgba(0, 0, 0, 0.12),
+      0 0 0 1px rgba(0, 0, 0, 0.04),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.9),
+      inset 0 1px 1px rgba(255, 255, 255, 1),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.03);
   }
   .sv4-atelier__panel h2 {
-    font-size: clamp(2rem, 9vw, 2.6rem);
-    margin: 0.2em 0 0.5em;
+    font-size: clamp(1.7rem, 7vw, 2.1rem);
+    line-height: 1;
+    margin: 18px 18px 8px;
   }
-  .sv4-atelier__panel p { max-width: none; }
+  .sv4-atelier__panel p {
+    max-width: none;
+    font-size: 13.5px;
+    line-height: 1.55;
+    margin: 0 18px 20px;
+  }
 
   /* Accordion -> Stack */
   .sv4-accordion {
@@ -1901,21 +2083,25 @@ details[open] .sv4-faq__toggle::after { transform: rotate(90deg); opacity: 0; }
   }
   .sv4-pinned__panel h2 { font-size: 28px; }
 
-  /* Products Grid -> Horizontal swipeable */
+  /* Products Grid -> Horizontal swipeable.
+     Break out by exactly --content-px so the first card lines up
+     with the heading instead of hugging the screen edge. */
   .sv4-products-grid {
     display: flex;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
-    gap: 12px;
-    margin: 32px -20px 0;
-    padding: 0 20px 32px;
+    scroll-padding-left: var(--content-px);
+    gap: 14px;
+    margin: 28px calc(var(--content-px) * -1) 0;
+    padding: 0 var(--content-px) 32px;
     scrollbar-width: none;
   }
   .sv4-products-grid::-webkit-scrollbar { display: none; }
   .sv4-product {
-    flex: 0 0 75%;
+    flex: 0 0 78%;
     scroll-snap-align: start;
     border-radius: var(--r-card);
+    overflow: hidden;
   }
 
   /* Trust Pillars -> Horizontal swipeable */

@@ -7,19 +7,19 @@ const steps = [
   {
     kicker: "Étape 01",
     title: "Le décapage",
-    desc: "Chaque pièce arrive avec des décennies de vernis, de peinture et de cire. Nous mettons le bois à nu par aérogommage basse pression, une méthode douce qui préserve la fibre et dévoile la vraie nature du meuble sans le brûler.",
+    desc: "Aérogommage basse pression : on remet le bois à nu en douceur, sans jamais brûler la fibre.",
     img: "https://images.unsplash.com/photo-1542013936693-884638332954?auto=format&fit=crop&q=80&w=800"
   },
   {
     kicker: "Étape 02",
     title: "L'ébénisterie",
-    desc: "Un tiroir qui frotte, un pied bancal, un placage boursouflé. L'atelier reprend la structure. Chevilles bois, colle d'os, greffes de placage : nous utilisons les techniques d'origine pour rendre au meuble sa solidité sans effacer son âge.",
+    desc: "Chevilles bois, colle d'os, greffes de placage : la structure retrouve sa solidité, l'âge reste.",
     img: "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&q=80&w=800"
   },
   {
     kicker: "Étape 03",
     title: "La finition",
-    desc: "Selon l'essence de bois et la destination du meuble : huile dure naturelle mate, vernis polyuréthane invisible ou patine à la cire d'abeille. Une protection conçue pour vivre au quotidien sans trahir l'âme de la pièce.",
+    desc: "Huile dure, cire d'abeille ou vernis invisible : une protection pensée pour le quotidien.",
     img: "https://images.unsplash.com/photo-1610453406560-f10f44485542?auto=format&fit=crop&q=80&w=800"
   }
 ];

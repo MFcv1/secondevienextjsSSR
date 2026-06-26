@@ -3,6 +3,7 @@ import Link from 'next/link';
 import HomeMotionIslandV4 from './HomeMotionIslandV4';
 import AtelierStickyIsland from './AtelierStickyIsland';
 import HeroVideoSliderIsland from './HeroVideoSliderIsland';
+import MobileNavIsland from './MobileNavIsland';
 import TestimonialsCarouselIsland from '../src/kit/marketplace/TestimonialsCarouselIsland';
 import '../src/home-v4.css';
 
@@ -25,19 +26,19 @@ function SplitText({ text }) {
 const faqs = [
   {
     q: "D'où viennent vos meubles ?",
-    a: "Nous chinons nos meubles principalement dans le sud de la France, chez des particuliers, lors de successions, ou dans des brocantes professionnelles. Nous privilégions les meubles des années 30 à 70 fabriqués en Europe.",
+    a: "Chinés en Provence : particuliers, successions et brocantes pro. Surtout des pièces européennes des années 30 à 70.",
   },
   {
     q: "Quels délais pour une restauration sur-mesure ?",
-    a: "Pour un meuble que vous nous confiez, le délai varie de 4 à 8 semaines selon la complexité du travail (décapage, réparations structurelles, finition) et le planning actuel de l'atelier.",
+    a: "Comptez 4 à 8 semaines, selon l'ampleur du travail et le planning de l'atelier.",
   },
   {
     q: "Livrez-vous à l'étage ?",
-    a: "Oui, par défaut nos transporteurs livrent en RDC, mais une option \u00ab Livraison à l'étage dans la pièce de destination \u00bb est toujours proposée lors du devis de transport, souvent effectuée par 2 livreurs.",
+    a: "Oui. Livraison en RDC par défaut, avec une option \u00ab montée à l'étage \u00bb (souvent à deux) proposée au devis.",
   },
   {
     q: "Puis-je voir les meubles en vrai ?",
-    a: "Notre atelier est situé en Provence et est ouvert aux visites sur rendez-vous. Nous pouvons également organiser des appels vidéo pour vous montrer un meuble sous tous ses angles.",
+    a: "Oui : à l'atelier en Provence sur rendez-vous, ou en visio pour découvrir la pièce sous tous les angles.",
   },
 ];
 
@@ -88,6 +89,9 @@ export default function HomePageV4() {
               </svg>
             </Link>
           </div>
+
+          {/* Mobile-only hamburger + overlay menu */}
+          <MobileNavIsland />
         </div>
       </nav>
 
@@ -299,7 +303,7 @@ export default function HomePageV4() {
             <aside className="sv4-faq-intro sv4-reveal">
               <span className="sv4-eyebrow">FAQ</span>
               <h2>Questions fréquentes</h2>
-              <p className="sv4-faq-intro__lead">Tout ce qu'il faut savoir avant de confier ou d'adopter une pièce restaurée à l'atelier.</p>
+              <p className="sv4-faq-intro__lead">L'essentiel avant de confier ou d'adopter une pièce de l'atelier.</p>
               <Link href="/devis" className="sv4-faq-intro__cta">
                 Une autre question ? Écrivez-nous
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
