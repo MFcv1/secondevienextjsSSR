@@ -420,8 +420,8 @@ function FaqSection({ items }) {
 
 function ContactSection() {
   return (
-    <section id="vitrine-contact" className="about-contact relative z-20 w-full overflow-hidden pb-0" style={{ marginTop: '-15vh', marginBottom: '-1px' }}>
-      <div className="relative mx-auto flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-[#111] px-6 pb-24 pt-[25vh] text-center text-white shadow-[0_-30px_60px_rgba(0,0,0,0.3)] md:px-12 md:pb-32 md:pt-[40vh]">
+    <section id="vitrine-contact" className="about-contact relative z-50 w-full overflow-hidden pb-0" style={{ marginTop: '-15vh', marginBottom: '-1px' }}>
+      <div className="relative mx-auto flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-[#111] px-6 py-24 text-center text-white shadow-[0_-30px_60px_rgba(0,0,0,0.3)] md:px-12 md:py-28 lg:py-32">
         <div className="pointer-events-none absolute inset-0 opacity-10 mix-blend-overlay" style={textureStyle} />
         <div className="pointer-events-none absolute inset-0 z-0 hidden md:block">
           <div className="relative mx-auto h-full w-full max-w-[1920px] md:px-6">
@@ -432,18 +432,15 @@ function ContactSection() {
           </div>
         </div>
         <div className="relative z-10 flex max-w-4xl flex-col items-center">
-          <div className="relative -top-6 mb-20 flex items-center gap-3">
+          <div className="mb-20 flex items-center gap-3">
             <div className="h-px w-8 bg-[#A68A64]" />
             <span className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-[#A68A64] md:text-xs">Votre Projet</span>
             <div className="h-px w-8 bg-[#A68A64]" />
           </div>
-          <h2 className="mb-16 font-serif text-5xl uppercase leading-[0.85] tracking-tighter text-[#F9F6F0] md:text-7xl lg:text-[7rem]">
-            <span className="mb-4 block">PRET A ECRIRE LA</span>
+          <h2 className="font-serif text-5xl uppercase leading-[0.85] tracking-tighter text-[#F9F6F0] md:text-7xl lg:text-[7rem]" style={{ marginBottom: '8rem' }}>
+            <span className="mb-4 block">PRÊT À ÉCRIRE LA</span>
             <span className="block font-light lowercase italic text-[#A68A64]">suite de l'histoire ?</span>
           </h2>
-          <p className="mx-auto mb-8 max-w-xl text-base font-light leading-relaxed text-white/60 md:text-lg lg:text-xl">
-            Meuble de famille, trouvaille en brocante ou envie de changement. Parlons de votre idee, nous lui donnerons la patine qu'elle merite.
-          </p>
           <div className="flex flex-col items-center gap-6 sm:flex-row">
             <a href="/devis" className="group relative flex items-center justify-center gap-3 overflow-hidden rounded-full bg-[#F9F6F0] px-8 py-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#1A1A1A] transition-transform duration-500 hover:scale-105 md:px-10 md:py-5 md:text-xs">
               <Mail size={16} className="relative z-10 text-[#A68A64]" />

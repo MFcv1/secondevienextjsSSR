@@ -484,7 +484,7 @@ function animateInstagramCounter(_gsap, ScrollTrigger, root) {
     counter.dataset.animated = 'true';
     window.clearInterval(intervalId);
 
-    const duration = 2.5;
+    const duration = 2.4;
     const fps = 30;
     const totalFrames = Math.round(duration * fps);
     let currentFrame = 0;
@@ -493,16 +493,11 @@ function animateInstagramCounter(_gsap, ScrollTrigger, root) {
 
     intervalId = window.setInterval(() => {
       currentFrame += 1;
-      const progress = currentFrame / totalFrames;
+      const progress = Math.min(1, currentFrame / totalFrames);
       const easeProgress = 1 - (1 - progress) ** 3;
-      let currentValue;
+      let currentValue = TARGET * easeProgress;
 
-      if (progress < 0.62) {
-        currentValue = TARGET * easeProgress;
-      } else if (progress < 0.9) {
-        const tumble = TARGET * (0.35 + Math.random() * 0.85);
-        currentValue = Math.min(TARGET * 1.08, tumble);
-      } else {
+      if (progress >= 0.94) {
         currentValue = TARGET;
       }
 
@@ -510,12 +505,14 @@ function animateInstagramCounter(_gsap, ScrollTrigger, root) {
 
       if (currentFrame >= totalFrames) {
         window.clearInterval(intervalId);
+        intervalId = null;
         valueEl.textContent = TARGET.toFixed(1);
       }
     }, 1000 / fps);
   };
 
   const runIfVisible = () => {
+    if (counter.dataset.animated === 'true') return;
     const rect = counter.getBoundingClientRect();
     const vh = window.innerHeight;
     if (rect.top < vh * 0.9 && rect.bottom > vh * 0.08) {
@@ -525,21 +522,12 @@ function animateInstagramCounter(_gsap, ScrollTrigger, root) {
 
   ScrollTrigger.create({
     trigger: counter,
-    start: 'top 90%',
+    start: 'top 88%',
     once: true,
     onEnter: runCasino,
   });
 
-  ScrollTrigger.create({
-    trigger: select(root, '.about-instagram') || counter,
-    start: 'top 70%',
-    once: true,
-    onEnter: runCasino,
-  });
-
-  runIfVisible();
-  window.setTimeout(runIfVisible, 500);
-  window.setTimeout(runIfVisible, 1200);
+  window.setTimeout(runIfVisible, 600);
 
   const scrollUntilPlay = () => {
     if (counter.dataset.animated === 'true') {
@@ -559,7 +547,6 @@ function animateSimpleReveals(gsap, root) {
     '.about-faq details',
     '.about-contact h2',
     '.about-contact p',
-    '.about-contact a',
   ].forEach((selector) => {
     selectAll(root, selector).forEach((node, index) => {
       gsap.fromTo(node,
