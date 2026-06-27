@@ -123,8 +123,23 @@ async function restoreStockAfterPaidRefund(transaction, order, orderId) {
         }
         const quantity = Number(item.quantity) || 1;
         const currentStock = Number(snap.data()?.stock ?? 0);
+        const stockBefore = Number(item.stockBefore);
+        const targetStock = Number.isFinite(stockBefore) && stockBefore >= quantity
+            ? Math.max(currentStock, stockBefore)
+            : currentStock + quantity;
+        const alreadyAvailable = !currentBuyerId && snap.data()?.sold !== true && currentStock >= quantity;
+        if (!Number.isFinite(stockBefore) && alreadyAvailable) {
+            transaction.update(ref, {
+                sold: false,
+                refundedFromOrderId: orderId,
+                refundedAt: admin.firestore.FieldValue.serverTimestamp(),
+                soldAt: admin.firestore.FieldValue.delete(),
+                buyerId: admin.firestore.FieldValue.delete()
+            });
+            continue;
+        }
         transaction.update(ref, {
-            stock: currentStock + quantity,
+            stock: targetStock,
             sold: false,
             refundedFromOrderId: orderId,
             refundedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -253,16 +268,28 @@ async function restoreReservedStockForUnpaidOrder(transaction, orderRef, order, 
             continue;
         }
 
-        writes.push({ ref, stock: currentStock + quantity });
+        const stockBefore = Number(item.stockBefore);
+        const targetStock = Number.isFinite(stockBefore) && stockBefore >= quantity
+            ? Math.max(currentStock, stockBefore)
+            : currentStock + quantity;
+        const alreadyAvailable = !currentBuyerId && current.sold !== true && currentStock >= quantity;
+
+        if (alreadyAvailable && !Number.isFinite(stockBefore)) {
+            writes.push({ ref, stock: null });
+            continue;
+        }
+
+        writes.push({ ref, stock: targetStock });
     }
 
     for (const write of writes) {
-        transaction.update(write.ref, {
-            stock: write.stock,
+        const updates = {
             sold: false,
             soldAt: admin.firestore.FieldValue.delete(),
             buyerId: admin.firestore.FieldValue.delete()
-        });
+        };
+        if (write.stock !== null) updates.stock = write.stock;
+        transaction.update(write.ref, updates);
     }
 
     transaction.update(orderRef, {

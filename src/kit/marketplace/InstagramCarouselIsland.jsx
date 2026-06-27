@@ -26,9 +26,9 @@ const cancelIdle = (handle) => {
 
 const MOBILE_INSTA_POSITIONS = {
   farLeft: { transform: 'translateX(-206%) scale(0.86)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
-  left: { transform: 'translateX(-116%) scale(0.9)', opacity: 0.42, zIndex: 1, pointerEvents: 'none' },
+  left: { transform: 'translateX(-106%) scale(0.88)', opacity: 0.3, zIndex: 1, pointerEvents: 'none' },
   center: { transform: 'translateX(-50%) scale(1)', opacity: 1, zIndex: 3, pointerEvents: 'auto' },
-  right: { transform: 'translateX(16%) scale(0.9)', opacity: 0.46, zIndex: 1, pointerEvents: 'none' },
+  right: { transform: 'translateX(6%) scale(0.88)', opacity: 0.32, zIndex: 1, pointerEvents: 'none' },
   farRight: { transform: 'translateX(106%) scale(0.86)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
 };
 
@@ -197,13 +197,13 @@ const wrapIndex = (index, count) => (index + count) % count;
 
 const InstagramFollowerCount = ({ darkMode, compact = false, className = '' }) => (
   <div className={`flex flex-col ${compact ? 'items-center' : 'items-center md:items-end'} ${className}`}>
-    <div className={`flex origin-bottom translate-y-[-5px] scale-[1.045] items-end font-serif leading-none tracking-normal ${compact ? 'text-[48px]' : 'text-[58px] md:text-[68px]'} ${darkMode ? 'text-[#F9F6F0]' : 'text-[#1A1A1A]'}`}>
+    <div className={`flex origin-bottom translate-y-[-5px] scale-[1.045] items-end font-serif leading-none tracking-normal ${compact ? 'text-[42px] min-[390px]:text-[46px]' : 'text-[58px] md:text-[68px]'} ${darkMode ? 'text-[#F9F6F0]' : 'text-[#1A1A1A]'}`}>
       <span>{INSTAGRAM_FOLLOWERS_TARGET.toFixed(1)}</span>
-      <span className={`${compact ? 'mb-1 ml-1 text-[25px]' : 'mb-1.5 ml-1 text-[30px] md:text-[38px]'} italic lowercase tracking-normal text-[#A68A64]`}>
+      <span className={`${compact ? 'mb-1 ml-1 text-[22px] min-[390px]:text-[24px]' : 'mb-1.5 ml-1 text-[30px] md:text-[38px]'} italic lowercase tracking-normal text-[#A68A64]`}>
         k
       </span>
     </div>
-    <p className={`${compact ? 'mt-[15px]' : 'mt-[13px]'} font-sans text-[9px] font-black uppercase tracking-[0.24em] ${darkMode ? 'text-white/55' : 'text-[#8f8579]'}`}>
+    <p className={`${compact ? 'mt-[12px]' : 'mt-[13px]'} font-sans text-[8px] font-black uppercase tracking-[0.22em] min-[390px]:text-[9px] ${darkMode ? 'text-white/55' : 'text-[#8f8579]'}`}>
       abonnes Instagram
     </p>
   </div>
@@ -322,7 +322,7 @@ export default function InstagramCarouselIsland({ darkMode = false, posts = [] }
         className={`absolute left-1/2 top-0 overflow-hidden shadow-[0_24px_60px_rgba(32,26,20,0.13)] transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           desktop
             ? 'top-2 w-[min(26vw,312px)] rounded-[28px] xl:w-[min(25vw,340px)] xl:rounded-[34px]'
-            : 'w-[62vw] max-w-[226px] rounded-[22px] md:max-w-[250px]'
+            : 'w-[56vw] max-w-[206px] rounded-[20px] min-[390px]:max-w-[216px] md:max-w-[250px] md:rounded-[22px]'
         } ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}
         aria-hidden={!isCenter}
       >
@@ -336,20 +336,20 @@ export default function InstagramCarouselIsland({ darkMode = false, posts = [] }
             className={`h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${isCenter ? 'scale-100' : 'scale-[1.03]'}`}
           />
         </div>
-        <div className={`relative min-h-[88px] px-4 pb-5 pt-4 text-left ${desktop ? 'xl:min-h-[96px] xl:px-6 xl:pb-6 xl:pt-5' : ''} ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}>
-          <p className="text-[8px] font-black uppercase tracking-[0.18em] text-[#A68A64] md:text-[9px] md:tracking-[0.2em]">
+        <div className={`relative min-h-[76px] px-3.5 pb-4 pt-3.5 text-left md:min-h-[88px] md:px-4 md:pb-5 md:pt-4 ${desktop ? 'xl:min-h-[96px] xl:px-6 xl:pb-6 xl:pt-5' : ''} ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}>
+          <p className="text-[7px] font-black uppercase tracking-[0.16em] text-[#A68A64] min-[390px]:text-[8px] md:text-[9px] md:tracking-[0.2em]">
             {post.label}
           </p>
-          <h3 className={`mt-1.5 pr-12 font-serif text-[20px] leading-tight tracking-normal md:mt-2 md:text-[23px] xl:pr-14 xl:text-[26px] ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}>
+          <h3 className={`mt-1 pr-10 font-serif text-[18px] leading-tight tracking-normal min-[390px]:text-[19px] md:mt-2 md:pr-12 md:text-[23px] xl:pr-14 xl:text-[26px] ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}>
             {post.title}
           </h3>
           <button
             type="button"
             tabIndex={isCenter ? 0 : -1}
-            className={`absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full shadow-[0_14px_30px_rgba(32,26,20,0.12)] transition-transform duration-300 hover:-translate-y-0.5 active:scale-95 xl:right-5 xl:top-5 xl:h-12 xl:w-12 ${darkMode ? 'bg-white/10 text-white' : 'bg-white text-[#9A714C]'}`}
+            className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full shadow-[0_14px_30px_rgba(32,26,20,0.12)] transition-transform duration-300 hover:-translate-y-0.5 active:scale-95 md:right-4 md:top-4 md:h-10 md:w-10 xl:right-5 xl:top-5 xl:h-12 xl:w-12 ${darkMode ? 'bg-white/10 text-white' : 'bg-white text-[#9A714C]'}`}
             aria-label="Ajouter aux favoris"
           >
-            <Heart size={desktop ? 20 : 18} strokeWidth={1.8} />
+            <Heart size={desktop ? 20 : 17} strokeWidth={1.8} />
           </button>
         </div>
       </article>
@@ -357,47 +357,47 @@ export default function InstagramCarouselIsland({ darkMode = false, posts = [] }
   };
 
   return (
-    <section ref={sectionRef} className="relative isolate overflow-hidden px-0 pb-[86px] pt-[48px] md:px-6 md:py-[72px] lg:px-[5vw] lg:py-[78px] xl:py-[86px]">
+    <section ref={sectionRef} className="relative isolate overflow-hidden px-0 pb-[64px] pt-[38px] md:px-6 md:py-[72px] lg:px-[5vw] lg:py-[78px] xl:py-[86px]">
       <InstagramFloatingTokens active={floatingTokensReady} settled={floatingTokensSettled} darkMode={darkMode} />
       <div className="relative z-10 lg:hidden">
-        <div className="mx-auto max-w-[430px] px-5 text-center">
-          <div className="mb-8 flex items-center justify-center gap-3">
-            <span className="h-px w-8 bg-[#A68A64]" />
-            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#A68A64]">Lifestyle & Atelier</span>
-            <span className="h-px w-8 bg-[#A68A64]" />
+        <div className="mx-auto max-w-[430px] px-4 text-center">
+          <div className="mb-6 flex items-center justify-center gap-2.5">
+            <span className="h-px w-6 bg-[#A68A64]" />
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#A68A64]">Lifestyle & Atelier</span>
+            <span className="h-px w-6 bg-[#A68A64]" />
           </div>
-          <h2 className={`font-serif text-[38px] leading-[1.02] tracking-normal ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}>
+          <h2 className={`font-serif text-[31px] leading-[1.04] tracking-normal min-[390px]:text-[34px] ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}>
             Nous aussi on vous aime
           </h2>
-          <div className="mt-5 flex flex-col items-center gap-5">
+          <div className="mt-4 flex flex-col items-center gap-4">
             <InstagramFollowerCount darkMode={darkMode} compact />
-            <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className={`mx-auto flex h-[48px] w-full max-w-[286px] items-center justify-between rounded-full border pl-4 pr-1.5 shadow-[0_14px_36px_rgba(32,26,20,0.08)] transition-colors ${darkMode ? 'border-white/10 bg-white/5 text-white' : 'border-stone-200 bg-white text-[#1A1A1A]'}`}>
-              <Instagram size={16} strokeWidth={1.8} />
-              <span className="text-[9px] font-black uppercase tracking-[0.2em]">Rejoindre Instagram</span>
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${darkMode ? 'bg-white text-black' : 'bg-[#1A1A1A] text-white'}`}>
-                <ArrowUpRight size={16} strokeWidth={2.1} />
+            <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className={`mx-auto flex h-[44px] w-full max-w-[266px] items-center justify-between rounded-full border pl-3.5 pr-1.5 shadow-[0_14px_36px_rgba(32,26,20,0.08)] transition-colors ${darkMode ? 'border-white/10 bg-white/5 text-white' : 'border-stone-200 bg-white text-[#1A1A1A]'}`}>
+              <Instagram size={15} strokeWidth={1.8} />
+              <span className="text-[8px] font-black uppercase tracking-[0.18em] min-[390px]:text-[9px]">Rejoindre Instagram</span>
+              <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${darkMode ? 'bg-white text-black' : 'bg-[#1A1A1A] text-white'}`}>
+                <ArrowUpRight size={15} strokeWidth={2.1} />
               </span>
             </a>
           </div>
         </div>
         <div
-          className="relative mx-auto mt-12 h-[432px] max-w-[430px] overflow-hidden touch-pan-y cursor-grab active:cursor-grabbing md:h-[462px] md:max-w-[560px]"
+          className="relative mx-auto mt-10 h-[366px] max-w-[430px] overflow-hidden touch-pan-y cursor-grab active:cursor-grabbing min-[390px]:h-[386px] md:h-[462px] md:max-w-[560px]"
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
         >
           {getPositioned(MOBILE_INSTA_POSITIONS).map((entry) => renderCard(entry))}
         </div>
-        <div className="mx-auto mt-8 flex max-w-[220px] items-center justify-center gap-4 px-5">
+        <div className="mx-auto mt-6 flex max-w-[200px] items-center justify-center gap-3 px-5">
           {dynamicInsta.map((_, index) => (
             <button key={index} type="button" onClick={() => goToInsta(index)} className={`relative h-[2px] flex-1 overflow-hidden rounded-full transition-colors ${darkMode ? 'bg-white/15' : 'bg-stone-200'}`} aria-label={`Voir la photo ${index + 1}`}>
               <span className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-[#A68A64] transition-transform duration-300" style={{ transform: index === activeInstaIndex ? 'scaleX(1)' : 'scaleX(0)' }} />
             </button>
           ))}
         </div>
-        <div className="mt-12 px-6 pt-9 text-center">
-          <Sparkles className="mx-auto mb-4 text-[#A68A64]" size={30} strokeWidth={1.6} />
-          <p className="text-[12px] font-black uppercase tracking-[0.22em] text-[#A68A64]">Creations uniques</p>
-          <p className={`mx-auto mt-4 max-w-[330px] text-[16px] leading-7 ${darkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>
+        <div className="mt-9 px-6 pt-7 text-center">
+          <Sparkles className="mx-auto mb-3 text-[#A68A64]" size={26} strokeWidth={1.6} />
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#A68A64]">Creations uniques</p>
+          <p className={`mx-auto mt-3 max-w-[310px] text-[14px] leading-6 ${darkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>
             Chaque meuble est chine, restaure et sublime a la main dans notre atelier.
           </p>
         </div>

@@ -85,8 +85,23 @@ async function restoreOrderStock(transaction, order, orderId) {
         }
         const quantity = Number(item.quantity || 1);
         const currentStock = Number(itemSnap.data()?.stock ?? 0);
+        const stockBefore = Number(item.stockBefore);
+        const targetStock = Number.isFinite(stockBefore) && stockBefore >= quantity
+            ? Math.max(currentStock, stockBefore)
+            : currentStock + quantity;
+        const alreadyAvailable = !currentBuyerId && itemSnap.data()?.sold !== true && currentStock >= quantity;
+        if (!Number.isFinite(stockBefore) && alreadyAvailable) {
+            transaction.update(itemRef, {
+                sold: false,
+                refundedFromOrderId: orderId,
+                refundedAt: admin.firestore.FieldValue.serverTimestamp(),
+                soldAt: admin.firestore.FieldValue.delete(),
+                buyerId: admin.firestore.FieldValue.delete()
+            });
+            continue;
+        }
         transaction.update(itemRef, {
-            stock: currentStock + quantity,
+            stock: targetStock,
             sold: false,
             refundedFromOrderId: orderId,
             refundedAt: admin.firestore.FieldValue.serverTimestamp(),

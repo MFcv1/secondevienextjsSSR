@@ -242,6 +242,7 @@ async function createOrderHandler(data, context) {
                         name: itemDb.name,
                         price: realPrice,
                         quantity,
+                        stockBefore: currentStock - alreadyTaken,
                         image: item.image || (itemDb.images && itemDb.images.length > 0 ? itemDb.images[0] : (itemDb.imageUrl || null))
                     });
                 }
@@ -366,6 +367,7 @@ async function createOrderHandler(data, context) {
                         name: itemDb.name,
                         price: realPrice,
                         quantity,
+                        stockBefore: currentStock - alreadyTaken,
                         image: item.image || (itemDb.images && itemDb.images.length > 0 ? itemDb.images[0] : (itemDb.imageUrl || null))
                     });
 

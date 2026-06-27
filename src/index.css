@@ -4841,33 +4841,59 @@ img {
 
 @media (max-width: 1023px) {
   .instagram-floating-token--gram {
-    --float-x: 9%;
-    --float-y: 9%;
-    --float-size: 58px;
+    --float-rest-opacity: 0.74;
+    left: 8%;
+    top: 82px;
+    width: 48px;
+    height: 48px;
   }
 
   .instagram-floating-token--heart {
-    --float-x: 86%;
-    --float-y: 37%;
-    --float-size: 52px;
+    --float-rest-opacity: 0.62;
+    left: 24%;
+    top: 650px;
+    width: 44px;
+    height: 44px;
   }
 
   .instagram-floating-token--spark {
-    --float-x: 82%;
-    --float-y: 15%;
-    --float-size: 38px;
+    --float-rest-opacity: 0.54;
+    left: 82%;
+    top: 174px;
+    width: 28px;
+    height: 28px;
   }
 
   .instagram-floating-token--message {
-    --float-x: 15%;
-    --float-y: 58%;
-    --float-size: 54px;
+    --float-rest-opacity: 0.48;
+    left: 91%;
+    top: 112px;
+    width: 34px;
+    height: 34px;
   }
 
-  .instagram-floating-token--send,
-  .instagram-floating-token--save,
+  .instagram-floating-token--send {
+    --float-rest-opacity: 0.44;
+    left: 15%;
+    top: 236px;
+    width: 42px;
+    height: 42px;
+  }
+
+  .instagram-floating-token--save {
+    --float-rest-opacity: 0.54;
+    left: 83%;
+    top: 260px;
+    width: 40px;
+    height: 40px;
+  }
+
   .instagram-floating-token--at {
-    display: none;
+    --float-rest-opacity: 0.42;
+    left: 80%;
+    top: 690px;
+    width: 32px;
+    height: 32px;
   }
 }
 
