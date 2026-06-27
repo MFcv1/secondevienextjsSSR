@@ -735,8 +735,8 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
             <div className="max-w-[1240px] mx-auto w-full">
                 {/* HEADER RETOUR */}
                 <div className="mb-8 md:mb-12">
-                    <button onClick={onBack} aria-label="Retour au panier" className={`flex items-center gap-2 font-bold text-[10px] md:text-xs uppercase tracking-widest transition-colors mb-6 ${darkMode ? 'text-stone-500 hover:text-white' : 'text-stone-400 hover:text-stone-900'}`}>
-                        <ArrowLeft size={14} /> Retour au panier
+                    <button onClick={onBack} aria-label="Continuer mes achats" className={`flex items-center gap-2 font-bold text-[10px] md:text-xs uppercase tracking-widest transition-colors mb-6 ${darkMode ? 'text-stone-500 hover:text-white' : 'text-stone-400 hover:text-stone-900'}`}>
+                        <ArrowLeft size={14} /> Continuer mes achats
                     </button>
                     <h2 className={`text-3xl md:text-5xl font-black tracking-tighter ${darkMode ? 'text-white' : 'text-stone-900'}`}>
                         Finaliser la commande.

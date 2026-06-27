@@ -11,6 +11,7 @@ const GlobalMenuPanelAuthIsland = dynamic(() => import('./GlobalMenuPanelAuthIsl
 
 let globalMenuPanelPreloadPromise = null;
 const THEME_STORAGE_KEY = 'darkMode';
+const CLOSE_NAVIGATION_OVERLAYS_EVENT = 'sv:close-navigation-overlays';
 
 const getCurrentMenuTop = () => {
   if (typeof window === 'undefined') return 110;
@@ -205,6 +206,17 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
     }, 1120);
   }, [clearCloseTimer]);
 
+  const closePanelInstantly = useCallback(() => {
+    clearCloseTimer();
+    if (pendingOpenTimerRef.current) {
+      window.clearTimeout(pendingOpenTimerRef.current);
+      pendingOpenTimerRef.current = null;
+    }
+    setPanelOpen(false);
+    setPanelClosing(false);
+    setPanelMounted(false);
+  }, [clearCloseTimer]);
+
   const setPanelOpenWithMotion = useCallback((nextValue) => {
     const resolvedValue = typeof nextValue === 'function' ? nextValue(panelOpen) : nextValue;
     if (resolvedValue) {
@@ -221,6 +233,11 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
     }
     openPanel();
   };
+
+  useEffect(() => {
+    window.addEventListener(CLOSE_NAVIGATION_OVERLAYS_EVENT, closePanelInstantly);
+    return () => window.removeEventListener(CLOSE_NAVIGATION_OVERLAYS_EVENT, closePanelInstantly);
+  }, [closePanelInstantly]);
 
   return (
     <>
@@ -255,6 +272,7 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
               isMenuClosing={panelClosing}
               keepMounted={panelMounted}
               setPanelOpen={setPanelOpenWithMotion}
+              closePanelInstantly={closePanelInstantly}
             />
           ) : null}
         </>,

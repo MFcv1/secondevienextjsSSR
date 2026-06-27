@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { getCategoryUrl } from '../../utils/slug';
 
+const CLOSE_NAVIGATION_OVERLAYS_EVENT = 'sv:close-navigation-overlays';
+
 const NOUVEAUTES_ITEMS = [
   {
     id: 'n1',
@@ -243,6 +245,19 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
     }, delay);
   }, []);
 
+  const closeTabInstantly = useCallback(() => {
+    clearMenuTimers();
+    setHoveredTab(null);
+    setRenderedTab(null);
+    setMenuMotionState('closed');
+  }, [clearMenuTimers]);
+
+  const handleMenuClickCapture = useCallback((event) => {
+    const link = event.target?.closest?.('a[href]');
+    if (!link || !navRef.current?.contains(link)) return;
+    closeTabInstantly();
+  }, [closeTabInstantly]);
+
   const openTab = useCallback((item, event) => {
     setHoveredTab(item.id);
     prefetchMenuItem(item);
@@ -265,11 +280,13 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
       if (event.key === 'Escape') closeTab(0);
     };
     window.addEventListener('keydown', onKeyDown);
+    window.addEventListener(CLOSE_NAVIGATION_OVERLAYS_EVENT, closeTabInstantly);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener(CLOSE_NAVIGATION_OVERLAYS_EVENT, closeTabInstantly);
       clearMenuTimers();
     };
-  }, [clearMenuTimers, closeTab]);
+  }, [clearMenuTimers, closeTab, closeTabInstantly]);
 
   const activeItem = MENU_ITEMS.find((item) => item.id === renderedTab && item.hasMega);
   const isPanelVisible = Boolean(activeItem && menuMotionState !== 'closed');
@@ -280,6 +297,7 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
         ref={navRef}
         className={`relative z-40 hidden w-full border-b py-[9px] md:block ${darkMode ? 'border-white/[0.06] bg-[#0d0d0c]' : 'border-stone-100 bg-[#FAFAF9] dark:border-white/[0.06] dark:bg-[#0d0d0c]'}`}
         onMouseLeave={closeTab}
+        onClickCapture={handleMenuClickCapture}
       >
         <ul className="relative mx-auto flex max-w-7xl items-center justify-center gap-4 font-sans text-[13px] tracking-[0.05em] lg:gap-8">
           {MENU_ITEMS.map((item) => (

@@ -27,6 +27,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- mapV2.md : cartographie routes Next SSR/SSG/ISR, infra prod, risques backoffice et nettoyage code mort
 |-- DEAD_CODE_AUDIT.md : audit multi-agent code vivant/mort, candidats suppression et assets a archiver
 |-- TODO.md : checklist Phase 2 infra prod puis Phase 3 hydratation/perf
+|-- UX_MICRO_FRICTIONS_PLAYBOOK.md : playbook agent pour detecter les micro-frictions UI/UX, conflits d'overlays, wording et parcours
 |-- P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md : roadmap de cloture P0 infra avant Phase 3 perf, couvrant prod rail, App Check, revalidation, Stripe webhook/refund et checkout redirect
 |-- PHASE3_PERF_BASELINE_2026-06-24.md : baseline Phase 3 perf/hydratation, passe P0 galerie, chunks `/galerie`, gates et dettes P1/P2
 |-- APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md : rapport App Check sandbox, etat enforcement, telemetrie Cloud Monitoring et decision service par service

@@ -9,6 +9,11 @@ const LegacyLoginModalIsland = dynamic(() => import('./LegacyLoginModalFullIslan
   loading: () => null,
 });
 
+export const preloadLoginModal = () => {
+  LegacyLoginModalIsland.preload?.();
+  return import('./LegacyLoginModalFullIsland').catch(() => null);
+};
+
 const REDIRECT_KEY = 'kit_auth_redirect_pending';
 const LEGACY_GOOGLE_REDIRECT_KEY = 'kit_google_redirect_pending';
 
@@ -79,7 +84,8 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
       applyUser(event.detail?.user || null);
     };
 
-    const handleOpenLogin = () => {
+    const handleOpenLogin = async () => {
+      await preloadLoginModal();
       setLoginOpen(true);
     };
 
@@ -179,7 +185,7 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
 
   return (
     <>
-      <button type="button" className={loginButtonClass} onClick={() => setLoginOpen(true)} aria-label="Ouvrir la connexion">
+      <button type="button" className={loginButtonClass} onPointerEnter={preloadLoginModal} onFocus={preloadLoginModal} onClick={async () => { await preloadLoginModal(); setLoginOpen(true); }} aria-label="Ouvrir la connexion">
         <ShieldCheck size={14} className="text-stone-400 transition-colors group-hover:text-amber-500 dark:text-stone-300 dark:group-hover:text-[#D9B58D]" />
         <span className="text-[10px] font-black uppercase tracking-[0.16em]">Connexion</span>
       </button>

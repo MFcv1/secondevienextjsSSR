@@ -5,11 +5,55 @@ import CheckoutView from '../../src/kit/commerce/CheckoutView';
 import OrderSuccessModal from '../../src/kit/commerce/OrderSuccessModal';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
 import { getDb, loadFirestoreModule } from '../../src/kit/config/firebaseLazy';
-import { clearGuestCart, GUEST_CART_CHANGED_EVENT, readGuestCart } from '../../src/kit/commerce/guestCart';
+import {
+  clearCheckoutCartHandoff,
+  clearGuestCart,
+  getCartDocumentId,
+  GUEST_CART_CHANGED_EVENT,
+  readCheckoutCartHandoff,
+  readGuestCart,
+} from '../../src/kit/commerce/guestCart';
 
 const getCartTotal = (items) => (
   items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0)
 );
+
+const getUserCartPayload = (item = {}, serverTimestamp) => ({
+  originalId: item.originalId || item.productId || item.id,
+  collectionName: item.collectionName || 'furniture',
+  name: item.name || item.title || 'Piece Seconde Vie',
+  price: Number(item.price || item.currentPrice || item.startingPrice || 0),
+  stock: Number(item.stock || 0),
+  sold: Boolean(item.sold),
+  priceOnRequest: Boolean(item.priceOnRequest),
+  image: item.image || item.imageUrl || '',
+  material: item.material || 'Bois',
+  quantity: Number(item.quantity || 1),
+  addedAt: serverTimestamp(),
+});
+
+const migrateGuestCartToUserCart = async (db, firestore, user) => {
+  const guestItems = readGuestCart();
+  if (!user || guestItems.length === 0) return false;
+
+  const batch = firestore.writeBatch(db);
+  let hasWrites = false;
+  guestItems.forEach((item) => {
+    const cartDocId = getCartDocumentId(item);
+    if (!cartDocId) return;
+    batch.set(
+      firestore.doc(db, 'users', user.uid, 'cart', cartDocId),
+      getUserCartPayload(item, firestore.serverTimestamp),
+      { merge: true }
+    );
+    hasWrites = true;
+  });
+
+  if (!hasWrites) return false;
+  await batch.commit();
+  clearGuestCart();
+  return true;
+};
 
 function CheckoutPageContent() {
   const { user, loading } = useAuth();
@@ -30,6 +74,13 @@ function CheckoutPageContent() {
   }, []);
 
   useEffect(() => {
+    const handoffItems = readCheckoutCartHandoff();
+    if (handoffItems.length === 0) return;
+    setCartItems(handoffItems);
+    setCartLoading(false);
+  }, []);
+
+  useEffect(() => {
     if (!user) {
       setCartItems(readGuestCart());
       setCartLoading(false);
@@ -38,15 +89,27 @@ function CheckoutPageContent() {
 
     let cancelled = false;
     let unsubscribe = null;
-    setCartLoading(true);
+    const handoffItems = readCheckoutCartHandoff();
+    const guestItems = readGuestCart();
+    const fallbackItems = handoffItems.length > 0 ? handoffItems : guestItems;
+    if (fallbackItems.length > 0) {
+      setCartItems(fallbackItems);
+      setCartLoading(false);
+    } else {
+      setCartLoading(true);
+    }
 
     Promise.all([getDb(), loadFirestoreModule()])
-      .then(([db, { collection, onSnapshot, query }]) => {
+      .then(async ([db, firestore]) => {
         if (cancelled) return;
+        await migrateGuestCartToUserCart(db, firestore, user);
+        if (cancelled) return;
+        const { collection, onSnapshot, query } = firestore;
         unsubscribe = onSnapshot(
           query(collection(db, 'users', user.uid, 'cart')),
           (snap) => {
             setCartItems(snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() })));
+            clearCheckoutCartHandoff();
             setCartLoading(false);
           },
           (error) => {
@@ -83,6 +146,7 @@ function CheckoutPageContent() {
 
   const clearCartAfterOrder = useCallback(async () => {
     if (!user) {
+      clearCheckoutCartHandoff();
       clearGuestCart();
       setCartItems([]);
       return;
@@ -99,6 +163,7 @@ function CheckoutPageContent() {
       batch.delete(doc(db, 'users', user.uid, 'cart', item.id));
     });
     await batch.commit();
+    clearCheckoutCartHandoff();
     setCartItems([]);
   }, [cartItems, user]);
 
@@ -117,6 +182,10 @@ function CheckoutPageContent() {
     setShowOrderSuccess(false);
     window.location.href = '/mes-commandes';
   };
+
+  const handleContinueShopping = useCallback(() => {
+    window.location.href = '/galerie';
+  }, []);
 
   useEffect(() => {
     if (handledStripeReturnRef.current || typeof window === 'undefined') return undefined;
@@ -184,20 +253,6 @@ function CheckoutPageContent() {
     return <div className="min-h-screen bg-[#FAFAF9]" />;
   }
 
-  if (!user) {
-    return (
-      <CheckoutState
-        darkMode={darkMode}
-        title="Connexion requise"
-        message="Connectez-vous pour retrouver votre panier et finaliser votre commande en toute securite."
-        primaryLabel="Se connecter"
-        onPrimary={() => { window.location.href = '/admin'; }}
-        secondaryLabel="Retour galerie"
-        onSecondary={() => { window.location.href = '/galerie'; }}
-      />
-    );
-  }
-
   if (cartItems.length === 0) {
     return (
       <CheckoutState
@@ -222,7 +277,7 @@ function CheckoutPageContent() {
         total={total}
         user={user}
         darkMode={darkMode}
-        onBack={() => { window.location.href = '/galerie'; }}
+        onBack={handleContinueShopping}
         onPlaceOrder={handlePlaceOrder}
       />
       {showOrderSuccess ? (

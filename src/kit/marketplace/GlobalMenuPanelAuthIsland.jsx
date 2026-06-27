@@ -9,6 +9,7 @@ import {
   GUEST_CART_CHANGED_EVENT,
   readGuestCart,
 } from '../commerce/guestCart';
+import { preloadLoginModal } from './HeaderAccountIsland';
 
 const GlobalMenu = dynamic(() => import('../layout/GlobalMenu'), {
   ssr: false,
@@ -64,6 +65,7 @@ function GlobalMenuPanelAuthContent({
   isMenuClosing = false,
   keepMounted = false,
   setPanelOpen,
+  closePanelInstantly,
 }) {
   const router = useRouter();
   const [authUser, setAuthUser] = useState(() => (
@@ -74,6 +76,13 @@ function GlobalMenuPanelAuthContent({
   ));
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
+  const closeForAction = useCallback(() => {
+    if (closePanelInstantly) {
+      closePanelInstantly();
+      return;
+    }
+    setPanelOpen(false);
+  }, [closePanelInstantly, setPanelOpen]);
 
   useEffect(() => {
     const handleAuthChange = (event) => {
@@ -95,6 +104,7 @@ function GlobalMenuPanelAuthContent({
     if (!panelOpen) return;
 
     const prefetchMenuPaths = () => {
+      preloadLoginModal();
       MENU_PREFETCH_PATHS.forEach((path) => {
         router.prefetch(path);
       });
@@ -213,17 +223,20 @@ function GlobalMenuPanelAuthContent({
 
   const navigateClient = useCallback((path) => {
     if (!path) return;
-    setPanelOpen(false);
+    closeForAction();
     router.push(path);
-  }, [router, setPanelOpen]);
+  }, [closeForAction, router]);
 
-  const openLogin = () => {
-    window.dispatchEvent(new CustomEvent('sv:open-login'));
-    setPanelOpen(false);
+  const openLogin = async () => {
+    await preloadLoginModal();
+    closeForAction();
+    window.requestAnimationFrame(() => {
+      window.dispatchEvent(new CustomEvent('sv:open-login'));
+    });
   };
 
   const openCart = () => {
-    setPanelOpen(false);
+    closeForAction();
     window.dispatchEvent(new CustomEvent('sv:open-cart'));
   };
 

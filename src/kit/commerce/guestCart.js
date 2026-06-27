@@ -1,4 +1,5 @@
 export const GUEST_CART_STORAGE_KEY = 'secondevie:guest-cart:v1';
+export const CHECKOUT_CART_HANDOFF_KEY = 'secondevie:checkout-cart-handoff:v1';
 export const GUEST_CART_CHANGED_EVENT = 'sv:guest-cart-changed';
 export const CART_STATE_CHANGED_EVENT = 'sv:cart-state-changed';
 
@@ -21,6 +22,9 @@ const normalizeGuestCartItem = (item = {}) => {
     collectionName: item.collectionName || 'furniture',
     name: item.name || item.title || 'Piece Seconde Vie',
     price: Number(item.price || item.currentPrice || item.startingPrice || 0),
+    stock: Number(item.stock || 0),
+    sold: Boolean(item.sold),
+    priceOnRequest: Boolean(item.priceOnRequest),
     image: item.image || item.imageUrl || '',
     material: item.material || 'Bois',
     quantity: Number(item.quantity || 1),
@@ -74,3 +78,31 @@ export const removeGuestCartItem = (cartItemId) => {
 };
 
 export const clearGuestCart = () => writeGuestCart([]);
+
+export const readCheckoutCartHandoff = () => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const parsed = JSON.parse(window.sessionStorage.getItem(CHECKOUT_CART_HANDOFF_KEY) || '[]');
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(normalizeGuestCartItem).filter(Boolean);
+  } catch {
+    return [];
+  }
+};
+
+export const writeCheckoutCartHandoff = (items) => {
+  if (typeof window === 'undefined') return;
+  const normalizedItems = (Array.isArray(items) ? items : [])
+    .map(normalizeGuestCartItem)
+    .filter(Boolean);
+  if (normalizedItems.length === 0) {
+    window.sessionStorage.removeItem(CHECKOUT_CART_HANDOFF_KEY);
+    return;
+  }
+  window.sessionStorage.setItem(CHECKOUT_CART_HANDOFF_KEY, JSON.stringify(normalizedItems));
+};
+
+export const clearCheckoutCartHandoff = () => {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.removeItem(CHECKOUT_CART_HANDOFF_KEY);
+};

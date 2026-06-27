@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { ShoppingBag } from 'lucide-react';
 import { getDb, getFirebaseAuth, loadAuthModule, loadFirestoreModule } from '../config/firebaseLazy';
 import {
@@ -11,6 +12,7 @@ import {
   GUEST_CART_CHANGED_EVENT,
   readGuestCart,
   removeGuestCartItem,
+  writeCheckoutCartHandoff,
 } from '../commerce/guestCart';
 import { isPurchasable } from '../commerce/purchasability';
 
@@ -18,6 +20,8 @@ const CartSidebar = dynamic(() => import('../commerce/CartSidebar'), {
   ssr: false,
   loading: () => null,
 });
+
+const CLOSE_NAVIGATION_OVERLAYS_EVENT = 'sv:close-navigation-overlays';
 
 const LegacyLoginModalIsland = dynamic(() => import('./LegacyLoginModalFullIsland'), {
   ssr: false,
@@ -43,7 +47,35 @@ const isDesktopViewport = () => (
   && window.matchMedia('(min-width: 768px)').matches
 );
 
+const resolvePersistedAuthUser = async () => {
+  if (typeof window === 'undefined' || !hasPersistedFirebaseUser()) return null;
+  if (window.__svAuthUser) return window.__svAuthUser;
+
+  const [auth, { onAuthStateChanged }] = await Promise.all([getFirebaseAuth(), loadAuthModule()]);
+  if (auth.currentUser) return auth.currentUser;
+
+  return new Promise((resolve) => {
+    let settled = false;
+    let unsubscribe = null;
+    const timeoutId = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      unsubscribe?.();
+      resolve(auth.currentUser || window.__svAuthUser || null);
+    }, 1200);
+
+    unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeoutId);
+      unsubscribe?.();
+      resolve(currentUser || null);
+    });
+  });
+};
+
 export default function CartPanelIsland({ className = '', darkMode = false, initialEvent = null, onReady } = {}) {
+  const router = useRouter();
   const [user, setUser] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -149,7 +181,13 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
     };
   }, [primeCart]);
 
-  const openCart = useCallback(() => {
+  const openCart = useCallback((event) => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent(CLOSE_NAVIGATION_OVERLAYS_EVENT));
+    }
+    if (Array.isArray(event?.detail?.items) && event.detail.items.length > 0) {
+      setCartItems(event.detail.items);
+    }
     primeCart();
     setInteracted(true);
     setIsOpen(true);
@@ -159,7 +197,12 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
     if (!item?.originalId && !item?.id) return false;
     if (!isPurchasable(item)) return false;
 
-    let cartUser = user;
+    let cartUser = user || (typeof window !== 'undefined' ? window.__svAuthUser : null);
+    if (!cartUser) {
+      cartUser = await resolvePersistedAuthUser();
+      if (cartUser) setUser(cartUser);
+    }
+
     if (!cartUser) {
       setCartItems(addGuestCartItem(item));
       openCart();
@@ -240,8 +283,9 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
   const totalPrice = useMemo(() => getCartTotal(cartItems), [cartItems]);
 
   const goToCheckout = () => {
+    writeCheckoutCartHandoff(cartItems);
     setIsOpen(false);
-    window.location.assign('/checkout');
+    router.push('/checkout');
   };
 
   return (

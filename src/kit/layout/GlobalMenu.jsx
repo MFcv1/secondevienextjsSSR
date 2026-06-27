@@ -698,12 +698,12 @@ const GlobalMenu = ({
     };
 
     const navigateToPath = (path) => {
-        closeMenu();
         if (onNavigate) {
             onNavigate(path);
-        } else {
-            window.location.assign(path);
+            return;
         }
+        closeMenu();
+        window.location.assign(path);
     };
 
     const openAbout = () => {
@@ -715,15 +715,21 @@ const GlobalMenu = ({
     };
 
     const openWishlist = () => {
-        if (onOpenWishlist) onOpenWishlist();
-        else window.location.assign('/wishlist');
+        if (onOpenWishlist) {
+            onOpenWishlist();
+            return;
+        }
         closeMenu();
+        window.location.assign('/wishlist');
         scrollTop();
     };
 
     const openCart = () => {
+        if (onOpenCart) {
+            onOpenCart();
+            return;
+        }
         closeMenu();
-        onOpenCart?.();
     };
 
     const openQuoteRequest = () => {
@@ -731,8 +737,11 @@ const GlobalMenu = ({
     };
 
     const handleLogin = () => {
+        if (onShowLogin) {
+            onShowLogin();
+            return;
+        }
         closeMenu();
-        onShowLogin?.();
     };
 
     const handleLogout = () => {
