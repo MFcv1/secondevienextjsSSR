@@ -4228,12 +4228,13 @@ html.gallery-entry-scroll-lock {
 
 .product-detail-lightbox-image {
   display: block;
-  width: min(calc(100vw - 0.5rem), 720px);
+  width: min(calc(100vw - 1rem), 760px);
   height: auto;
-  max-width: calc(100vw - 0.5rem);
-  max-height: calc(100vh - 0.5rem);
+  max-width: calc(100vw - 1rem);
+  max-height: calc(100svh - 7.5rem);
   border-radius: 0;
   background: transparent;
+  transform-origin: top left;
 }
 
 @media (min-width: 768px) {

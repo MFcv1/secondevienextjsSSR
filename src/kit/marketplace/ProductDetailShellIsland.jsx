@@ -218,6 +218,7 @@ export default function ProductDetailShellIsland({
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxBaseSrc, setLightboxBaseSrc] = useState('');
+  const [lightboxOriginRect, setLightboxOriginRect] = useState(null);
   const [hasPrimaryImagePainted, setHasPrimaryImagePainted] = useState(false);
   const [cartPanelEvent, setCartPanelEvent] = useState(null);
   const mainImageRef = useRef(null);
@@ -642,7 +643,17 @@ export default function ProductDetailShellIsland({
 
   const openProductLightbox = useCallback(() => {
     if (suppressImageClickRef.current) return;
-    const visibleSrc = mainImageRef.current?.currentSrc || mainImageRef.current?.src || activeImageSrc;
+    const imageNode = mainImageRef.current;
+    const visibleSrc = imageNode?.currentSrc || imageNode?.src || activeImageSrc;
+    const rect = imageNode?.getBoundingClientRect?.();
+    setLightboxOriginRect(rect && rect.width > 0 && rect.height > 0
+      ? {
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height,
+      }
+      : null);
     setLightboxBaseSrc(visibleSrc);
     setIsLightboxOpen(true);
   }, [activeImageSrc]);
@@ -1177,6 +1188,7 @@ export default function ProductDetailShellIsland({
           activeIndex={activeImg}
           imageCount={safeImages.length}
           baseSrc={lightboxBaseSrc}
+          originRect={lightboxOriginRect}
           onClose={() => setIsLightboxOpen(false)}
           onPrevious={goPrevious}
           onNext={goNext}
