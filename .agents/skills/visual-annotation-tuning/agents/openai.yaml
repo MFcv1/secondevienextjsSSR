@@ -1,0 +1,4 @@
+interface:
+  display_name: "Visual Annotation Tuning"
+  short_description: "Tune UI from annotated screenshots"
+  default_prompt: "Use $visual-annotation-tuning to adjust the highlighted UI element from this annotated screenshot."

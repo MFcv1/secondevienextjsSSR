@@ -43,7 +43,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- docs/CGV_RETOURS_DRAFT_2026-06-19.md : brouillon CGV/retours/retractation Seconde Vie a faire valider par un juriste
 |-- optimisation : rapports d'optimisation terrain, dont exemple galerie Instagram/avis/Maps a froid
 |-- NEXT_PUBLIC_ROUTES_STATIC_ARCHITECTURE_ROADMAP_2026-06-16.md : roadmap routes publiques cacheables, theme sans cookie serveur, categories canonique/facettes client et gates prerender
-|-- .agents/skills/nextjsssr : skill Codex local pour appliquer nextjsssr.md
+|-- .agents/skills/nextjsssr : skill Codex local pour appliquer nextjsssr.md; visual-annotation-tuning : skill local pour ajustements UI depuis captures annotees
 |-- package*.json, next.config.mjs, eslint.config.mjs, jsconfig.json, tailwind.config.js, postcss.config.js
 |-- middleware.js : redirections Next ciblees, dont `/` et compatibilite `/?page=gallery` vers `/galerie`
 |-- apphosting.yaml, .firebaserc : configuration Firebase App Hosting sandbox
