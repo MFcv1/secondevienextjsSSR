@@ -85,25 +85,25 @@ export const processSteps = [
 export const instagramPosts = [
   {
     id: 1,
-    img: '/images/before-after/apresu.webp',
+    img: '/images/before-after/apresu.png',
     alt: 'Atelier bois',
     className: 'col-span-2 row-span-2 aspect-square md:aspect-auto',
   },
   {
     id: 2,
-    img: '/images/before-after/avantu.webp',
+    img: '/images/before-after/avantu.png',
     alt: 'Detail patine',
     className: 'col-span-1 row-span-1 aspect-square',
   },
   {
     id: 3,
-    img: '/images/before-after/apres.webp',
+    img: '/images/before-after/apres.png',
     alt: 'Outils artisan',
     className: 'col-span-1 row-span-1 aspect-square',
   },
   {
     id: 4,
-    img: '/images/before-after/apresx.webp',
+    img: '/images/before-after/apresx.png',
     alt: 'Interieur provencal',
     className: 'col-span-2 row-span-1 aspect-[2/1] md:aspect-auto',
   },

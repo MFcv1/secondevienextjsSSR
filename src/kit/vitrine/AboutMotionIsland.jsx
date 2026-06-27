@@ -522,9 +522,10 @@ function animateInstagramDomeParallax(gsap, ScrollTrigger, root) {
       const img = select(card, '.about-instagram-card-image');
       if (!img) return;
       gsap.fromTo(img,
-        { yPercent: -15 },
+        { yPercent: -3.5, scale: 1.08 },
         {
-          yPercent: 15,
+          yPercent: 3.5,
+          scale: 1.08,
           ease: 'none',
           scrollTrigger: {
             trigger: card,

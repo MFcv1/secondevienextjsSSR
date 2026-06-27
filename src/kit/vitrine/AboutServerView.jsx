@@ -373,7 +373,7 @@ function InstagramSection() {
               <a href="https://www.instagram.com/seconde_vie_pour_nos_objets/" target="_blank" rel="noreferrer" key={post.id} className={`about-instagram-card group relative cursor-pointer overflow-hidden rounded-2xl border border-white/5 bg-[#1A1A1A] shadow-xl md:rounded-3xl ${post.className}`}>
                 <div className="absolute inset-0 z-10 bg-black/30 mix-blend-color transition-opacity duration-700 group-hover:opacity-0" />
                 <div className="absolute inset-0 z-10 bg-[#A68A64]/10 mix-blend-multiply transition-opacity duration-700 group-hover:opacity-0" />
-                <img src={post.img} alt={post.alt} className="about-instagram-card-image absolute inset-0 h-full w-full scale-[1.3] object-cover object-center grayscale-[20%] transition-all duration-1000 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:grayscale-0" loading="lazy" />
+                <img src={post.img} alt={post.alt} className="about-instagram-card-image absolute inset-0 h-full w-full scale-[1.08] object-cover object-center grayscale-[20%] transition-all duration-1000 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:grayscale-0" loading="lazy" />
                 <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center opacity-0 transition-opacity duration-500 group-hover:opacity-100">
                   <div className="flex h-16 w-16 scale-75 items-center justify-center rounded-full border border-white/20 bg-black/40 shadow-2xl backdrop-blur-md transition-transform duration-500 group-hover:scale-100">
                     <Instagram className="text-white" size={24} />
