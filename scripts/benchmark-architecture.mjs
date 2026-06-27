@@ -23,7 +23,7 @@ function normalizeRoutePath(value) {
 }
 
 const routes = [
-  { label: 'home', path: '/', scroll: true },
+  { label: 'root-gallery', path: '/', scroll: true },
   { label: 'category', path: '/categorie/buffets', scroll: true },
   { label: 'product', path: productPath, scroll: false }
 ];

@@ -5714,7 +5714,6 @@ html.dark body {
 
 html.dark .safe-pt-header,
 html.dark [data-footer-mounted="true"],
-html.dark [data-ssr-home],
 html.dark [data-ssr-about],
 html.dark [data-ssr-gallery],
 html.dark [data-ssr-category],

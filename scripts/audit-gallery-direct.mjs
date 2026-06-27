@@ -44,12 +44,12 @@ const collectDom = () => ({
   quoteLinks: Array.from(document.querySelectorAll('a[href="/devis"], button')).filter((node) => /devis/i.test(node.textContent || '')).length,
 });
 
-const isGalleryPath = (pathSuffix) => pathSuffix === '/galerie' || pathSuffix.includes('page=gallery');
+const isGalleryPath = (pathSuffix) => pathSuffix === '/' || pathSuffix === '/galerie' || pathSuffix.includes('page=gallery');
 
-const checkLegacyGalleryRedirect = async () => {
-  const response = await fetch(`${baseUrl}/?page=gallery`, { redirect: 'manual' });
+const checkRedirect = async (pathSuffix) => {
+  const response = await fetch(`${baseUrl}${pathSuffix}`, { redirect: 'manual' });
   return {
-    pathSuffix: '/?page=gallery',
+    pathSuffix,
     status: response.status,
     location: response.headers.get('location') || '',
   };
@@ -72,8 +72,6 @@ const runMode = async (browser, mode, pathSuffix) => {
   if (isGalleryPath(pathSuffix)) {
     await page.waitForSelector('[data-ssr-gallery]', { state: 'attached', timeout: 30_000 });
     await page.waitForSelector('.marketplace-gallery-shell', { state: 'attached', timeout: 45_000 });
-  } else {
-    await page.waitForSelector('[data-ssr-home]', { state: 'attached', timeout: 30_000 });
   }
   await page.waitForTimeout(2_500);
   const dom = await page.evaluate(collectDom);
@@ -85,9 +83,11 @@ const runMode = async (browser, mode, pathSuffix) => {
 await fs.mkdir(outDir, { recursive: true });
 const browser = await chromium.launch({ headless: true });
 let results;
+let rootRedirect;
 let legacyRedirect;
 try {
-  legacyRedirect = await checkLegacyGalleryRedirect();
+  rootRedirect = await checkRedirect('/');
+  legacyRedirect = await checkRedirect('/?page=gallery');
   results = [
     await runMode(browser, 'desktop', '/'),
     await runMode(browser, 'mobile', '/'),
@@ -108,26 +108,27 @@ const getUrlPathname = (href) => {
   }
 };
 for (const result of results) {
+  add(`${result.mode} gallery entry: gallery SSR marker is present`, result.dom.hasSsrGallery === true, result.dom);
+  add(`${result.mode} gallery entry: legacy home marker is absent`, result.dom.hasSsrHome === false, result.dom);
+  add(`${result.mode} gallery entry: legacy ClientApp marker is absent`, result.dom.svClientHydrated === false, result.dom);
+  add(`${result.mode} gallery entry: gallery shell is present`, result.dom.hasMarketplaceGalleryShell === true && result.dom.hasGalleryScroll === true, result.dom);
+  add(`${result.mode} gallery entry: product/category links are stable URLs`, result.dom.productLinks > 0 && result.dom.categoryLinks > 0, result.dom);
+  add(`${result.mode} gallery entry: canonical targets /galerie`, getUrlPathname(result.dom.canonical) === '/galerie', result.dom);
+  add(`${result.mode} gallery entry: structured data is present`, result.dom.jsonLdCount >= 1, result.dom);
+  add(`${result.mode} gallery entry: legacy launcher overlay is absent`, result.dom.hasGalleryLauncherOverlay === false, result.dom);
   if (result.pathSuffix === '/') {
-    add(`${result.mode} /: home SSR marker is present`, result.dom.hasSsrHome === true, result.dom);
-    add(`${result.mode} /: ClientApp is not mounted before gallery launch`, result.dom.svClientHydrated === false, result.dom);
-    add(`${result.mode} /: gallery shell is absent before launch`, result.dom.hasMarketplaceGalleryShell === false, result.dom);
-  } else {
-    add(`${result.mode} gallery entry: gallery SSR marker is present`, result.dom.hasSsrGallery === true, result.dom);
-    add(`${result.mode} gallery entry: legacy ClientApp marker is absent`, result.dom.svClientHydrated === false, result.dom);
-    add(`${result.mode} gallery entry: gallery shell is present`, result.dom.hasMarketplaceGalleryShell === true && result.dom.hasGalleryScroll === true, result.dom);
-    add(`${result.mode} gallery entry: product/category links are stable URLs`, result.dom.productLinks > 0 && result.dom.categoryLinks > 0, result.dom);
-    add(`${result.mode} gallery entry: canonical targets /galerie`, getUrlPathname(result.dom.canonical) === '/galerie', result.dom);
-    add(`${result.mode} gallery entry: structured data is present`, result.dom.jsonLdCount >= 1, result.dom);
-    add(`${result.mode} gallery entry: legacy launcher overlay is absent`, result.dom.hasGalleryLauncherOverlay === false, result.dom);
+    add(`${result.mode} root entry: final URL is /galerie`, getUrlPathname(result.finalUrl) === '/galerie', result.dom);
   }
 }
+add('root entry: returns a permanent redirect', rootRedirect.status === 308, rootRedirect);
+add('root entry: redirect target is /galerie', getUrlPathname(rootRedirect.location) === '/galerie', rootRedirect);
 add('legacy gallery query: returns a permanent redirect', legacyRedirect.status === 308, legacyRedirect);
 add('legacy gallery query: redirect target is /galerie', getUrlPathname(legacyRedirect.location) === '/galerie', legacyRedirect);
 
 const summary = {
   baseUrl,
   generatedAt: new Date().toISOString(),
+  rootRedirect,
   legacyRedirect,
   results: results.map(({ screenshot, ...result }) => result),
   assertions: { passed: checks.every((check) => check.passed), checks },
@@ -136,7 +137,7 @@ const runId = new Date().toISOString().replace(/[:.]/g, '-');
 const summaryPath = path.join(outDir, `${runId}-summary.json`);
 await fs.writeFile(summaryPath, `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
 await Promise.all(results.map((result) => fs.writeFile(
-  path.join(outDir, `${runId}-${result.mode}-${result.pathSuffix === '/' ? 'home' : 'gallery'}.png`),
+  path.join(outDir, `${runId}-${result.mode}-${result.pathSuffix === '/' ? 'root-gallery' : 'gallery'}.png`),
   result.screenshot
 )));
 

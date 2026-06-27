@@ -11,10 +11,11 @@ const commonRequired = [
 
 const routeChecks = [
   {
-    label: 'home',
+    label: 'root gallery redirect',
     path: '/',
     required: [
-      ['home section', /data-ssr-home/],
+      ['gallery section', /data-ssr-gallery/],
+      ['gallery shell', /marketplace-gallery-shell/],
       ['image', /<img[^>]+(?:src|srcset)=/i],
       ['no google fonts css', (html) => !/fonts\.googleapis\.com/i.test(html)]
     ]

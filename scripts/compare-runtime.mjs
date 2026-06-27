@@ -4,7 +4,7 @@ const spaBaseUrl = process.env.SPA_BASE_URL || 'http://127.0.0.1:4173';
 const nextBaseUrl = process.env.NEXT_BASE_URL || 'http://127.0.0.1:3000';
 
 const routes = [
-  { label: 'home', path: '/' },
+  { label: 'root-gallery', path: '/' },
   { label: 'category', path: '/categorie/buffets' },
   { label: 'product', path: '/produit/buffet-KrTETXPknYNwgak66T8p' }
 ];

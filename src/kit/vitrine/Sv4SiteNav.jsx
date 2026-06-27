@@ -6,7 +6,7 @@ export default function Sv4SiteNav() {
   return (
     <nav className="sv4-nav">
       <div className="sv4-nav__inner">
-        <Link href="/" className="sv4-nav__logo" aria-label="Seconde Vie - Retour à l'accueil">
+        <Link href="/galerie" className="sv4-nav__logo" aria-label="Seconde Vie - Retour a la galerie">
           <img src="/images/logoanais.png" alt="Seconde Vie" />
           <span className="sv4-nav__logo-text">Seconde Vie</span>
         </Link>

@@ -43,11 +43,11 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- NEXT_PUBLIC_ROUTES_STATIC_ARCHITECTURE_ROADMAP_2026-06-16.md : roadmap routes publiques cacheables, theme sans cookie serveur, categories canonique/facettes client et gates prerender
 |-- .agents/skills/nextjsssr : skill Codex local pour appliquer nextjsssr.md
 |-- package*.json, next.config.mjs, eslint.config.mjs, jsconfig.json, tailwind.config.js, postcss.config.js
-|-- middleware.js : redirections Next ciblees, dont compatibilite `/?page=gallery` vers `/galerie`
+|-- middleware.js : redirections Next ciblees, dont `/` et compatibilite `/?page=gallery` vers `/galerie`
 |-- apphosting.yaml, .firebaserc : configuration Firebase App Hosting sandbox
-|-- app : routes Next App Router, home landing SEO SSR + galerie Next, SSR produit/categorie, tunnels noindex en iles client dediees, loading/not-found/error, sitemap et robots
+|-- app : routes Next App Router, `/` redirige vers `/galerie`, galerie Next SSR de reference, SSR produit/categorie, tunnels noindex en iles client dediees, loading/not-found/error, sitemap et robots
 |-- tests, playwright.config.mjs : tests E2E et validations Playwright
-|-- _DOCS : documentation maintenance Next/dependances
+|-- _DOCS : documentation maintenance Next/dependances et archives UI dont home V3/V4
 |-- docs : roadmaps techniques dont `ROADMAP_STRIPE_FIREBASE_HARDENING.md` pour durcissement Stripe/Firebase
 |-- firebase.json, .firebaseignore, firestore.rules, firestore.indexes.json, storage.rules
 |-- functions-public : codebase Functions public isole pour `publicCatalog`, sans secrets Stripe/Gmail
@@ -467,6 +467,18 @@ Test obligatoire apres toute modif mobile marketplace : ouvrir la galerie sur un
 - `scripts/audit-product-page-direct.mjs` verifie la route produit native directe : presence du detail visible, absence du marqueur SPA legacy, absence de shell galerie, absence d'assets home/galerie, absence de preview SSR alternative, image display chargee et image `full` seulement apres intention de zoom.
 - Validations executees : `npm run lint`, `npm run mobile:contract`, `npm run build`, `npm run perf:budget`, `NEXT_BASE_URL=http://127.0.0.1:3001 npm run perf:product-direct`. Le build mesure `/produit/[slugOrId]` a environ `9.86 kB` de route et `113 kB First Load JS`; le budget produit est a environ `111.36 kB` JS gzip initial. L'audit produit direct confirme `svClientHydrated: false`, aucune `.marketplace-gallery-shell`, aucune galerie, aucune preview `data-product-ssr-preview`. Controle Playwright desktop `1916x1030` : galerie `?page=gallery` -> clic premiere carte `/produit/...` -> refresh, `native: true`, `legacy: false`, frame image identique `435 x 580` avant/apres refresh. Controle molette desktop sur `http://127.0.0.1:3001/produit/buffet-KrTETXPknYNwgak66T8p` : wheel down passe de l'image `0` a l'image `1`, wheel up revient a l'image `0`, frame stable `435 x 580`, console sans erreur. Controle mobile `390x844` et fenetre etroite `500x820` : rail mobile horizontal visible, premiere miniature `32 x 32`, rail desktop `display:none`, console sans erreur. Controle desktop large : rail mobile cache, rail desktop visible. Controle final local production `http://127.0.0.1:3002` : mobile `412x915`, image centrale `objectFit: cover`, frame et image `387 x 567`, `legacy:false`; swipe de sortie -> galerie visible (`overlay:true`, `.marketplace-gallery-shell:true`, cartes produit presentes). Desktop `1440x900` : bouton fermer visible dans le viewport, clic -> galerie visible. Controle final `http://127.0.0.1:3000` apres build propre : `/` reste statique dans le build (`○ /`), bouton sortie desktop `44 x 44` a `x=1232 y=124` en viewport `1916x1030`, image visible `435 x 580`, `legacy:false`; 500 ms apres clic sortie, `homeVisible:false`, `overlay:true`, `.marketplace-gallery-shell:true`; apres montee galerie, 10 cartes produit et console sans erreur.
 - Pendant les validations visuelles, plusieurs ports Next locaux peuvent encore creer de la confusion dans les onglets. Toujours relancer une seule instance de test et verifier l'URL exacte avant de conclure sur un refresh produit.
+
+## Rapport agent - 2026-06-27
+
+### Goal 25 - Suppression home V4, galerie comme entree principale
+
+- Audit archive ajoute dans `_DOCS/archive/HOME_TO_GALLERY_AUDIT_2026-06-27.md`.
+- La home V4 active a ete sortie de `app` et archivee dans `_DOCS/archive/page-home-v4-2026-06-27.jsx`; son ile dediee `AtelierStickyIsland` a ete archivee dans `_DOCS/archive/AtelierStickyIsland-home-v4-2026-06-27.jsx`.
+- `app/page.jsx` ne rend plus la home et redirige maintenant de facon permanente vers `/galerie`; `middleware.js` applique aussi la redirection `/` et conserve la compatibilite `/?page=gallery`.
+- `/galerie` reste la page de reference SEO: sitemap garde `/galerie` et retire l'entree racine `/`.
+- Les gates et scripts d'audit ont ete ajustes pour ne plus attendre `data-ssr-home` sur `/`, mais une entree galerie SSR apres redirection.
+- `GalleryServerView`, `GalleryMobileShellIsland` et les invariants mobile marketplace n'ont pas ete modifies.
+- Validation limitee a des scans statiques courts: `git diff --check` OK, `node --check` des scripts modifies OK, `rg "HomePageV4|AtelierStickyIsland" app src scripts` sans appel actif. `npm run next:routes` passe les controles source puis echoue sur les artefacts post-build `.next` absents/stales; aucun build, serveur local, Playwright, navigateur ou screenshot lance dans cette passe.
 
 ## ðŸ› ï¸ Structure des Fichiers .env
 Nous n'utilisons PLUS de fichier `.env` unique. Tout est pilote par des fichiers suffixes locaux :

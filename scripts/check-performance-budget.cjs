@@ -15,7 +15,7 @@ const OLD_HOST = 'secondevie-a0745.web.app';
 
 const routeBudgets = [
   {
-    label: 'home SSR route',
+    label: 'root gallery redirect route',
     keys: ['/layout', '/page'],
     maxInitialJsGzipKb: 135,
     maxInitialCssGzipKb: 55,

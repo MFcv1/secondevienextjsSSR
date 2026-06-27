@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 
 export function middleware(request) {
-  if (request.nextUrl.pathname === '/' && request.nextUrl.searchParams.get('page') === 'gallery') {
-    const host = request.headers.get('host') || request.nextUrl.host;
-    const protocol = request.headers.get('x-forwarded-proto') || request.nextUrl.protocol.replace(/:$/, '');
-    const url = new URL(`${protocol}://${host}/galerie`);
+  if (request.nextUrl.pathname === '/') {
+    const url = request.nextUrl.clone();
+    url.pathname = '/galerie';
+    url.searchParams.delete('page');
     return NextResponse.redirect(url, 308);
   }
 

@@ -1,5 +1,5 @@
 const routes = [
-  { label: 'home', spa: '/', next: '/' },
+  { label: 'root-gallery', spa: '/', next: '/' },
   { label: 'category', spa: '/categorie/buffets', next: '/categorie/buffets' },
   {
     label: 'product',
