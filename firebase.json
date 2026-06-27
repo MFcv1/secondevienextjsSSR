@@ -26,12 +26,22 @@
         ".next",
         "dist",
         "logs",
+        "/docs",
+        "/_DOCS",
+        "/imagediag",
+        "/imageexport",
+        "/imagehero",
+        "/imageproduit",
+        "/pageUI",
+        "/video",
+        "/videohero",
         "test-results",
         "playwright-report",
         "functions",
         "functions-public",
         "firebase-debug.log",
-        "firebase-debug.*.log"
+        "firebase-debug.*.log",
+        "*.md"
       ],
       "alwaysDeployFromSource": true
     }
