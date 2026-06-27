@@ -342,8 +342,8 @@ function InterludeSection() {
 
 function InstagramSection() {
   return (
-    <section className="about-instagram relative z-30 -mt-[5vh] flex w-full flex-col bg-[#111111] pb-[20vh] md:mt-0">
-      <div className="relative mx-auto flex w-full flex-grow flex-col px-6 pb-32 pt-[15vh] md:px-12 md:pt-[20vh] lg:px-20">
+    <section className="about-instagram relative z-30 -mt-[5vh] flex w-full flex-col overflow-hidden bg-[#111111] pb-[20vh] md:mt-0">
+      <div className="about-instagram-content relative mx-auto flex w-full flex-grow flex-col px-6 pb-32 pt-[15vh] md:px-12 md:pt-[20vh] lg:px-20">
         <div className="pointer-events-none absolute inset-0 opacity-10 mix-blend-overlay" style={textureStyle} />
         <div className="relative z-10 mx-auto flex w-full max-w-[1600px] flex-col">
           <div className="about-instagram-head mb-16 flex flex-col justify-between gap-12 md:mb-24 xl:flex-row xl:items-end">
@@ -370,10 +370,10 @@ function InstagramSection() {
           </div>
           <div className="mt-auto grid grid-cols-2 grid-rows-[auto] gap-4 md:grid-cols-4 md:grid-rows-[300px_300px] md:gap-6 lg:grid-rows-[400px_400px]">
             {instagramPosts.map((post) => (
-              <a href="https://www.instagram.com/seconde_vie_pour_nos_objets/" target="_blank" rel="noreferrer" key={post.id} className={`group relative cursor-pointer overflow-hidden rounded-2xl border border-white/5 bg-[#1A1A1A] shadow-xl md:rounded-3xl ${post.className}`}>
+              <a href="https://www.instagram.com/seconde_vie_pour_nos_objets/" target="_blank" rel="noreferrer" key={post.id} className={`about-instagram-card group relative cursor-pointer overflow-hidden rounded-2xl border border-white/5 bg-[#1A1A1A] shadow-xl md:rounded-3xl ${post.className}`}>
                 <div className="absolute inset-0 z-10 bg-black/30 mix-blend-color transition-opacity duration-700 group-hover:opacity-0" />
                 <div className="absolute inset-0 z-10 bg-[#A68A64]/10 mix-blend-multiply transition-opacity duration-700 group-hover:opacity-0" />
-                <img src={post.img} alt={post.alt} className="absolute inset-0 h-full w-full scale-[1.3] object-cover object-center grayscale-[20%] transition-all duration-1000 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:grayscale-0" loading="lazy" />
+                <img src={post.img} alt={post.alt} className="about-instagram-card-image absolute inset-0 h-full w-full scale-[1.3] object-cover object-center grayscale-[20%] transition-all duration-1000 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:grayscale-0" loading="lazy" />
                 <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center opacity-0 transition-opacity duration-500 group-hover:opacity-100">
                   <div className="flex h-16 w-16 scale-75 items-center justify-center rounded-full border border-white/20 bg-black/40 shadow-2xl backdrop-blur-md transition-transform duration-500 group-hover:scale-100">
                     <Instagram className="text-white" size={24} />
@@ -390,7 +390,7 @@ function InstagramSection() {
 
 function FaqSection({ items }) {
   return (
-    <section className="about-faq relative z-40 -mt-[15vh] flex w-full flex-col overflow-hidden bg-white shadow-[0_-30px_60px_rgba(0,0,0,0.2)]">
+    <section className="about-faq relative z-40 -mt-[15vh] flex w-full flex-col overflow-hidden bg-white pb-[7vh] shadow-[0_-30px_60px_rgba(0,0,0,0.2)] md:pb-[9vh]">
       <div className="relative mx-auto flex min-h-screen w-full flex-col justify-center bg-white px-6 pb-[20vh] pt-[20vh] md:px-12 md:pb-[25vh] md:pt-[25vh] lg:px-20">
         <div className="absolute bottom-0 top-0 left-[33%] hidden w-px bg-black/5 lg:block" />
         <div className="relative z-10 mx-auto my-auto flex w-full max-w-[1200px] flex-col items-center gap-16 lg:flex-row lg:gap-24">

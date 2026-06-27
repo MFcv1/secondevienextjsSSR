@@ -54,6 +54,8 @@ export default function AboutMotionIsland() {
         animateTransitionToServices(gsap, ScrollTrigger, SplitType, registerSplit, root);
         animateServices(gsap, SplitType, registerSplit, root);
         animateInterlude(gsap, root);
+        animateInstagramDomeParallax(gsap, ScrollTrigger, root);
+        animateFaqDepth(gsap, ScrollTrigger, root);
         animateSimpleReveals(gsap, root);
         animateInstagramCounter(gsap, ScrollTrigger, root);
 
@@ -469,6 +471,111 @@ function animateInterlude(gsap, root) {
     { xPercent: -25 },
     { xPercent: 0, duration: 38, repeat: -1, ease: 'none' }
   );
+}
+
+function animateInstagramDomeParallax(gsap, ScrollTrigger, root) {
+  const section = select(root, '.about-instagram');
+  const content = select(section, '.about-instagram-content');
+  if (!section || !content) return;
+
+  const mm = gsap.matchMedia();
+
+  const buildDome = ({ radius, contentY, mobile = false }) => {
+    gsap.fromTo(section,
+      { borderRadius: `50% 50% 0 0 / ${radius} ${radius} 0 0` },
+      {
+        borderRadius: '0% 0% 0 0 / 0vh 0vh 0 0',
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: section,
+          start: 'top bottom',
+          end: 'top 10%',
+          scrub: 1.5,
+        },
+      }
+    );
+
+    gsap.fromTo(content,
+      { y: contentY, opacity: 0, filter: 'blur(8px)' },
+      {
+        y: 0,
+        opacity: 1,
+        filter: 'blur(0px)',
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: section,
+          start: 'top 75%',
+          end: 'top 25%',
+          scrub: 1,
+        },
+      }
+    );
+
+    if (mobile) {
+      selectAll(section, '.about-instagram-card-image').forEach((img) => {
+        gsap.set(img, { yPercent: 0, scale: 1.05 });
+      });
+      return;
+    }
+
+    selectAll(section, '.about-instagram-card').forEach((card) => {
+      const img = select(card, '.about-instagram-card-image');
+      if (!img) return;
+      gsap.fromTo(img,
+        { yPercent: -15 },
+        {
+          yPercent: 15,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: card,
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: true,
+          },
+        }
+      );
+    });
+  };
+
+  mm.add('(max-width: 767px)', () => buildDome({ radius: '30vh', contentY: 60, mobile: true }));
+  mm.add('(min-width: 768px)', () => buildDome({ radius: '40vh', contentY: 80 }));
+}
+
+function animateFaqDepth(gsap, ScrollTrigger, root) {
+  const section = select(root, '.about-faq');
+  const content = section?.firstElementChild;
+  const nextSection = section?.nextElementSibling;
+  if (!section || !content || !nextSection) return;
+
+  const mm = gsap.matchMedia();
+
+  mm.add('(max-width: 767px)', () => {
+    gsap.to(content, {
+      opacity: 0.3,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: nextSection,
+        start: 'top bottom',
+        end: 'top top',
+        scrub: true,
+      },
+    });
+  });
+
+  mm.add('(min-width: 768px)', () => {
+    gsap.to(content, {
+      scale: 0.9,
+      opacity: 0.3,
+      y: 100,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: nextSection,
+        start: 'top bottom',
+        end: 'top top',
+        scrub: true,
+      },
+    });
+  });
 }
 
 function animateInstagramCounter(_gsap, ScrollTrigger, root) {
