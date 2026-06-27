@@ -82,7 +82,7 @@ const CustomerTestimonialsCarousel = ({
 
     return (
         <section
-            className={`customer-testimonials-section relative z-20 w-full overflow-hidden dark:bg-[#0b0a09] dark:text-[#f8f1e8] ${darkMode ? 'bg-[#0b0a09] text-[#f8f1e8]' : 'bg-white text-[#242221]'} ${sectionClassName}`}
+            className={`customer-testimonials-section relative z-20 min-h-[520px] w-full overflow-hidden dark:bg-[#0b0a09] dark:text-[#f8f1e8] lg:min-h-[828px] ${darkMode ? 'bg-[#0b0a09] text-[#f8f1e8]' : 'bg-white text-[#242221]'} ${sectionClassName}`}
             aria-labelledby={headingId}
         >
             <div className="hidden px-8 py-20 lg:block lg:px-12 xl:px-16 xl:py-24">

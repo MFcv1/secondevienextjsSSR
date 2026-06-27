@@ -40,6 +40,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- MEGA_MENU_DESKTOP_OPTIMIZATION_ROADMAP_2026-06-24.md : diagnostic et roadmap stricte pour retard a froid du menu hamburger desktop sans changer le design
 |-- AI_QUOTE_ASSISTANT_MVP.md : cadrage MVP assistant IA devis, base metier, garde-fous OpenAI et integration admin
 |-- docs/CGV_RETOURS_DRAFT_2026-06-19.md : brouillon CGV/retours/retractation Seconde Vie a faire valider par un juriste
+|-- optimisation : rapports d'optimisation terrain, dont exemple galerie Instagram/avis/Maps a froid
 |-- NEXT_PUBLIC_ROUTES_STATIC_ARCHITECTURE_ROADMAP_2026-06-16.md : roadmap routes publiques cacheables, theme sans cookie serveur, categories canonique/facettes client et gates prerender
 |-- .agents/skills/nextjsssr : skill Codex local pour appliquer nextjsssr.md
 |-- package*.json, next.config.mjs, eslint.config.mjs, jsconfig.json, tailwind.config.js, postcss.config.js

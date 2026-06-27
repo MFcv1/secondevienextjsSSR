@@ -312,7 +312,7 @@ export const InstagramSectionServer = ({ darkMode = false } = {}) => (
 
 const TestimonialsCarouselPlaceholder = ({ darkMode = false } = {}) => (
   <section
-    className={`customer-testimonials-section relative z-20 min-h-[520px] w-full overflow-hidden dark:bg-[#0b0a09] dark:text-[#f8f1e8] ${
+    className={`customer-testimonials-section relative z-20 min-h-[520px] w-full overflow-hidden dark:bg-[#0b0a09] dark:text-[#f8f1e8] lg:min-h-[828px] ${
       darkMode ? 'bg-[#0b0a09] text-[#f8f1e8]' : 'bg-white text-[#242221]'
     }`}
     aria-hidden="true"
@@ -364,7 +364,7 @@ const TestimonialsCarouselPlaceholder = ({ darkMode = false } = {}) => (
 );
 
 export const TestimonialsSectionServer = ({ darkMode = false } = {}) => (
-  <DeferredGalleryIsland type="testimonials" darkMode={darkMode} rootMargin="240px 0px" enableIdleFallback={false} intersectionDelayMs={220}>
+  <DeferredGalleryIsland type="testimonials" darkMode={darkMode} rootMargin="900px 0px" enableIdleFallback={false} intersectionDelayMs={100}>
     <TestimonialsCarouselPlaceholder darkMode={darkMode} />
   </DeferredGalleryIsland>
 );
