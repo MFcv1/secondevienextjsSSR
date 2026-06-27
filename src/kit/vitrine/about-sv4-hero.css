@@ -25,18 +25,18 @@
   mix-blend-mode: screen;
   opacity: var(--about-spotlight-opacity);
   -webkit-mask-image: radial-gradient(
-    circle 320px at var(--about-spotlight-x) var(--about-spotlight-y),
+    circle 240px at var(--about-spotlight-x) var(--about-spotlight-y),
     #000 0%,
-    rgba(0, 0, 0, 0.72) 22%,
-    rgba(0, 0, 0, 0.28) 52%,
-    transparent 78%
+    rgba(0, 0, 0, 0.64) 20%,
+    rgba(0, 0, 0, 0.22) 50%,
+    transparent 76%
   );
   mask-image: radial-gradient(
-    circle 320px at var(--about-spotlight-x) var(--about-spotlight-y),
+    circle 240px at var(--about-spotlight-x) var(--about-spotlight-y),
     #000 0%,
-    rgba(0, 0, 0, 0.72) 22%,
-    rgba(0, 0, 0, 0.28) 52%,
-    transparent 78%
+    rgba(0, 0, 0, 0.64) 20%,
+    rgba(0, 0, 0, 0.22) 50%,
+    transparent 76%
   );
   transition: opacity 180ms ease-out;
   will-change: opacity, -webkit-mask-image, mask-image;
@@ -47,9 +47,9 @@
   position: absolute;
   inset: 0;
   background: radial-gradient(
-    circle 340px at var(--about-spotlight-x) var(--about-spotlight-y),
-    rgba(255, 255, 255, 0.045) 0%,
-    rgba(166, 138, 100, 0.025) 34%,
+    circle 260px at var(--about-spotlight-x) var(--about-spotlight-y),
+    rgba(255, 255, 255, 0.032) 0%,
+    rgba(166, 138, 100, 0.018) 32%,
     transparent 72%
   );
 }

@@ -350,7 +350,7 @@ function InstagramSection() {
     <section className="about-instagram relative z-30 -mt-[5vh] flex w-full flex-col overflow-hidden bg-[#111111] pb-[20vh] md:mt-0">
       <div className="pointer-events-none absolute inset-0 z-0 opacity-80" style={instagramTextureStyle} />
       <div className="about-instagram-spotlight pointer-events-none absolute inset-0 z-[1]" aria-hidden="true" />
-      <div className="about-instagram-content relative mx-auto flex w-full flex-grow flex-col px-6 pb-32 pt-[15vh] md:px-12 md:pt-[20vh] lg:px-20">
+      <div className="about-instagram-content relative z-10 mx-auto flex w-full flex-grow flex-col px-6 pb-32 pt-[15vh] md:px-12 md:pt-[20vh] lg:px-20">
         <div className="relative z-10 mx-auto flex w-full max-w-[1600px] flex-col">
           <div className="about-instagram-head mb-16 flex flex-col justify-between gap-12 md:mb-24 xl:flex-row xl:items-end">
             <div className="flex max-w-2xl flex-col">
