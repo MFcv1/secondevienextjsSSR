@@ -11,3 +11,51 @@
 .about-sv4-hero-shell .sv4-hero {
   width: 100%;
 }
+
+.about-instagram {
+  --about-spotlight-x: 50%;
+  --about-spotlight-y: 35%;
+  --about-spotlight-opacity: 0;
+}
+
+.about-instagram-spotlight {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.82) 0 1.15px, transparent 1.6px);
+  background-position: 0 0;
+  background-size: 32px 32px;
+  mix-blend-mode: screen;
+  opacity: var(--about-spotlight-opacity);
+  -webkit-mask-image: radial-gradient(
+    circle 320px at var(--about-spotlight-x) var(--about-spotlight-y),
+    #000 0%,
+    rgba(0, 0, 0, 0.72) 22%,
+    rgba(0, 0, 0, 0.28) 52%,
+    transparent 78%
+  );
+  mask-image: radial-gradient(
+    circle 320px at var(--about-spotlight-x) var(--about-spotlight-y),
+    #000 0%,
+    rgba(0, 0, 0, 0.72) 22%,
+    rgba(0, 0, 0, 0.28) 52%,
+    transparent 78%
+  );
+  transition: opacity 180ms ease-out;
+  will-change: opacity, -webkit-mask-image, mask-image;
+}
+
+.about-instagram-spotlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle 340px at var(--about-spotlight-x) var(--about-spotlight-y),
+    rgba(255, 255, 255, 0.045) 0%,
+    rgba(166, 138, 100, 0.025) 34%,
+    transparent 72%
+  );
+}
+
+@media (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .about-instagram-spotlight {
+    display: none;
+  }
+}

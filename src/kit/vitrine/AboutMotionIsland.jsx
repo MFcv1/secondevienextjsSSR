@@ -9,7 +9,15 @@ export default function AboutMotionIsland() {
   useLayoutEffect(() => {
     let cancelled = false;
     let ctx = null;
+    const cleanupFns = [];
     const splitInstances = [];
+
+    const cleanupEffects = () => {
+      while (cleanupFns.length) {
+        const cleanup = cleanupFns.pop();
+        cleanup?.();
+      }
+    };
 
     const cleanupSplits = () => {
       while (splitInstances.length) {
@@ -47,6 +55,9 @@ export default function AboutMotionIsland() {
 
       gsap.registerPlugin(ScrollTrigger);
 
+      const spotlightCleanup = bindInstagramSpotlight(root);
+      if (spotlightCleanup) cleanupFns.push(spotlightCleanup);
+
       ctx = gsap.context(() => {
         animateArch(gsap, ScrollTrigger, SplitType, registerSplit, root);
         animateShowcase(gsap, root);
@@ -68,6 +79,7 @@ export default function AboutMotionIsland() {
     return () => {
       cancelled = true;
       ctx?.revert?.();
+      cleanupEffects();
       cleanupSplits();
     };
   }, []);
@@ -540,6 +552,56 @@ function animateInstagramDomeParallax(gsap, ScrollTrigger, root) {
 
   mm.add('(max-width: 767px)', () => buildDome({ radius: '30vh', contentY: 60, mobile: true }));
   mm.add('(min-width: 768px)', () => buildDome({ radius: '40vh', contentY: 80 }));
+}
+
+function bindInstagramSpotlight(root) {
+  const section = select(root, '.about-instagram');
+  const supportsHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  if (!section || !supportsHover) return null;
+
+  let raf = 0;
+  let pointerX = 0;
+  let pointerY = 0;
+
+  const flush = () => {
+    raf = 0;
+    const rect = section.getBoundingClientRect();
+    const x = ((pointerX - rect.left) / rect.width) * 100;
+    const y = ((pointerY - rect.top) / rect.height) * 100;
+    const nextX = Math.max(0, Math.min(100, x));
+    const nextY = Math.max(0, Math.min(100, y));
+
+    section.style.setProperty('--about-spotlight-x', `${nextX}%`);
+    section.style.setProperty('--about-spotlight-y', `${nextY}%`);
+  };
+
+  const updatePosition = (event) => {
+    pointerX = event.clientX;
+    pointerY = event.clientY;
+    section.style.setProperty('--about-spotlight-opacity', '1');
+
+    if (!raf) {
+      raf = window.requestAnimationFrame(flush);
+    }
+  };
+
+  const hideSpotlight = () => {
+    section.style.setProperty('--about-spotlight-opacity', '0');
+  };
+
+  section.addEventListener('pointerenter', updatePosition, { passive: true });
+  section.addEventListener('pointermove', updatePosition, { passive: true });
+  section.addEventListener('pointerleave', hideSpotlight, { passive: true });
+
+  return () => {
+    if (raf) window.cancelAnimationFrame(raf);
+    section.removeEventListener('pointerenter', updatePosition);
+    section.removeEventListener('pointermove', updatePosition);
+    section.removeEventListener('pointerleave', hideSpotlight);
+    section.style.removeProperty('--about-spotlight-x');
+    section.style.removeProperty('--about-spotlight-y');
+    section.style.removeProperty('--about-spotlight-opacity');
+  };
 }
 
 function animateFaqDepth(gsap, ScrollTrigger, root) {
