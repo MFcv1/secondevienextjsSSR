@@ -4850,8 +4850,8 @@ img {
 
   .instagram-floating-token--heart {
     --float-rest-opacity: 0.62;
-    left: 24%;
-    top: 674px;
+    left: 19%;
+    top: 652px;
     width: 50px;
     height: 50px;
   }
@@ -4874,7 +4874,7 @@ img {
 
   .instagram-floating-token--send {
     --float-rest-opacity: 0.44;
-    left: 15%;
+    left: 9%;
     top: 236px;
     width: 42px;
     height: 42px;
@@ -4890,8 +4890,8 @@ img {
 
   .instagram-floating-token--at {
     --float-rest-opacity: 0.42;
-    left: 80%;
-    top: 700px;
+    left: 86%;
+    top: 678px;
     width: 44px;
     height: 44px;
   }

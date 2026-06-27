@@ -371,7 +371,7 @@ export default function InstagramCarouselIsland({ darkMode = false, posts = [] }
           </h2>
           <div className="mt-4 flex flex-col items-center gap-4">
             <InstagramFollowerCount darkMode={darkMode} compact />
-            <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className={`mx-auto flex h-[44px] w-full max-w-[266px] items-center justify-between rounded-full border pl-3.5 pr-1.5 shadow-[0_14px_36px_rgba(32,26,20,0.08)] transition-colors ${darkMode ? 'border-white/10 bg-white/5 text-white' : 'border-stone-200 bg-white text-[#1A1A1A]'}`}>
+            <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className={`mx-auto flex h-[44px] w-full max-w-[252px] items-center justify-between rounded-full border pl-3.5 pr-1.5 shadow-[0_14px_36px_rgba(32,26,20,0.08)] transition-colors ${darkMode ? 'border-white/10 bg-white/5 text-white' : 'border-stone-200 bg-white text-[#1A1A1A]'}`}>
               <Instagram size={15} strokeWidth={1.8} />
               <span className="text-[8px] font-black uppercase tracking-[0.18em] min-[390px]:text-[9px]">Rejoindre Instagram</span>
               <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${darkMode ? 'bg-white text-black' : 'bg-[#1A1A1A] text-white'}`}>
