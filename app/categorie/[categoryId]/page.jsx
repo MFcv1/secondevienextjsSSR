@@ -27,6 +27,7 @@ export const dynamicParams = true;
 const safeJsonLd = (data) => JSON.stringify(data).replace(/</g, '\\u003c');
 const categoryReturnRestoreScript = `(() => {
   const RETURN_KEY = 'secondevie:product-return:v1';
+  const MAX_AGE_MS = 30 * 60 * 1000;
   const rememberProductReturnTarget = (event) => {
     const link = event.target?.closest?.('a[href^="/produit/"]');
     if (!link) return;
@@ -44,6 +45,45 @@ const categoryReturnRestoreScript = `(() => {
   document.addEventListener('pointerdown', rememberProductReturnTarget, { capture: true, passive: true });
   document.addEventListener('touchstart', rememberProductReturnTarget, { capture: true, passive: true });
   document.addEventListener('click', rememberProductReturnTarget, { capture: true, passive: true });
+
+  try {
+    const raw = window.sessionStorage.getItem(RETURN_KEY);
+    if (!raw) return;
+
+    const saved = JSON.parse(raw);
+    if (!saved || Date.now() - Number(saved.savedAt || 0) > MAX_AGE_MS) return;
+
+    const target = new URL(saved.href || '', window.location.origin);
+    if (target.pathname !== window.location.pathname || target.search !== window.location.search) return;
+
+    const windowTop = Math.max(0, Number(saved.scrollY || 0));
+    if (windowTop <= 0) {
+      window.sessionStorage.removeItem(RETURN_KEY);
+      return;
+    }
+
+    const root = document.documentElement;
+    const previousScrollBehavior = root.style.scrollBehavior;
+    root.style.scrollBehavior = 'auto';
+
+    let frame = 0;
+    const apply = () => {
+      window.scrollTo(0, windowTop);
+      frame += 1;
+      if (frame < 8) {
+        window.requestAnimationFrame(apply);
+        return;
+      }
+      window.setTimeout(() => {
+        window.sessionStorage.removeItem(RETURN_KEY);
+        root.style.scrollBehavior = previousScrollBehavior;
+      }, 40);
+    };
+
+    window.requestAnimationFrame(apply);
+  } catch {
+    // Best effort return restoration only.
+  }
 })();`;
 
 const getProductQualityRank = (product) => {

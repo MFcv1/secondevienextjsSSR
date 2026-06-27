@@ -267,12 +267,9 @@ export default function ProductDetailShellIsland({
   const mobileDetailImageFrameStyle = useMemo(
     () => ({
       ...getMobileDetailImageStyle(activeImageRatio || DEFAULT_PRODUCT_IMAGE_RATIO),
-      backgroundColor: activeImage.metadata?.dominantColor || 'transparent',
-      backgroundImage: activeImage.metadata?.blurDataUrl ? `url("${activeImage.metadata.blurDataUrl}")` : undefined,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
+      backgroundColor: 'transparent',
     }),
-    [activeImage.metadata?.blurDataUrl, activeImage.metadata?.dominantColor, activeImageRatio]
+    [activeImageRatio]
   );
   const clampImageIndex = useCallback((index) => (
     Math.max(0, Math.min(index, Math.max(0, safeImages.length - 1)))
@@ -338,13 +335,23 @@ export default function ProductDetailShellIsland({
     setLightboxBaseSrc('');
   }, [clampImageIndex]);
 
-  const handleMainImageLoad = useCallback(() => {
-    setHasPrimaryImagePainted(true);
-    if (underlayClearTimerRef.current) window.clearTimeout(underlayClearTimerRef.current);
-    underlayClearTimerRef.current = window.setTimeout(() => {
-      underlayClearTimerRef.current = 0;
-      setUnderlayImg(null);
-    }, 260);
+  const handleMainImageLoad = useCallback((event) => {
+    const image = event?.currentTarget;
+    const reveal = () => {
+      setHasPrimaryImagePainted(true);
+      if (underlayClearTimerRef.current) window.clearTimeout(underlayClearTimerRef.current);
+      underlayClearTimerRef.current = window.setTimeout(() => {
+        underlayClearTimerRef.current = 0;
+        setUnderlayImg(null);
+      }, 260);
+    };
+
+    if (image && typeof image.decode === 'function') {
+      image.decode().then(reveal, reveal);
+      return;
+    }
+
+    reveal();
   }, []);
 
   const requestImageIndex = useCallback((index, options = {}) => {
@@ -368,6 +375,11 @@ export default function ProductDetailShellIsland({
         viewport: options.viewport,
         priority: 'high',
         decode: true,
+      }).then((image) => {
+        const decodedSrc = image?.currentSrc || image?.src || getDetailImageSrcAtIndex(nextIndex, options.viewport);
+        if (!decodedSrc) return image;
+        setSharpSrcs((prev) => (prev[nextIndex] === decodedSrc ? prev : { ...prev, [nextIndex]: decodedSrc }));
+        return image;
       });
       const decodeBudget = new Promise((resolve) => {
         window.setTimeout(resolve, IMAGE_SWITCH_DECODE_BUDGET_MS);
@@ -502,40 +514,6 @@ export default function ProductDetailShellIsland({
     };
   }, [activeImg, hasPrimaryImagePainted, preloadDetailImageAtIndex, safeImages.length]);
 
-  useEffect(() => {
-    if (!hasPrimaryImagePainted || typeof window === 'undefined') return undefined;
-    if (isConstrainedConnection()) return undefined;
-
-    const image = safeImages[activeImg];
-    const largeSrc = image?.variants?.large || '';
-    if (!largeSrc || sharpSrcs[activeImg] === largeSrc) return undefined;
-
-    const isDesktop = window.innerWidth >= 1024;
-    const baseSrc = getDisplaySrc(image, isDesktop ? 'desktop' : 'mobile');
-    if (!baseSrc || largeSrc === baseSrc) return undefined;
-
-    const dpr = window.devicePixelRatio || 1;
-    const frameWidth = isDesktop
-      ? Math.min((window.innerWidth - 610) * 0.74, 920)
-      : Math.min(window.innerWidth * 0.94, 430);
-    if (frameWidth * dpr <= 1100) return undefined;
-
-    let cancelled = false;
-    const timerId = window.setTimeout(() => {
-      preloadImage(largeSrc, { priority: 'low', decode: true })
-        .then(() => {
-          if (cancelled) return;
-          setSharpSrcs((prev) => (prev[activeImg] === largeSrc ? prev : { ...prev, [activeImg]: largeSrc }));
-        })
-        .catch(() => null);
-    }, 420);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timerId);
-    };
-  }, [activeImg, hasPrimaryImagePainted, safeImages, sharpSrcs]);
-
   useEffect(() => () => {
     if (wheelStateRef.current.resetTimer) {
       window.clearTimeout(wheelStateRef.current.resetTimer);
@@ -569,7 +547,8 @@ export default function ProductDetailShellIsland({
       const saved = JSON.parse(raw);
       if (!saved?.href || Date.now() - Number(saved.savedAt || 0) > 30 * 60 * 1000) return '';
       const target = new URL(saved.href, window.location.origin);
-      if (target.origin !== window.location.origin || target.pathname !== '/galerie') return '';
+      if (target.origin !== window.location.origin) return '';
+      if (target.pathname !== '/galerie' && !target.pathname.startsWith('/categorie/')) return '';
       return `${target.pathname}${target.search}${target.hash}`;
     } catch {
       return '';
@@ -583,7 +562,12 @@ export default function ProductDetailShellIsland({
     hasNavigatedToGalleryRef.current = true;
     const targetHref = restoreUrlFromSession() || '/galerie';
     try {
-      window.sessionStorage.setItem('secondevie:open-gallery-on-arrival', 'true');
+      const target = new URL(targetHref, window.location.origin);
+      if (target.pathname === '/galerie') {
+        window.sessionStorage.setItem('secondevie:open-gallery-on-arrival', 'true');
+      } else {
+        window.sessionStorage.removeItem('secondevie:open-gallery-on-arrival');
+      }
     } catch {}
     window.location.replace(targetHref);
   }, [restoreUrlFromSession]);
@@ -865,6 +849,7 @@ export default function ProductDetailShellIsland({
 
   const mobileInfoRows = facts?.filter((fact) => fact?.value) || [];
   const shouldReserveDesktopThumbRail = safeImages.length > 1 || product?.__catalogScope !== 'full';
+  const mainImageVisibilityStyle = hasPrimaryImagePainted ? { opacity: 1 } : { opacity: 0 };
 
   return (
     <div
@@ -972,8 +957,9 @@ export default function ProductDetailShellIsland({
                         alt={title}
                         data-product-main-image="true"
                         data-fit-mode={activeImageFitMode}
-                        className={`product-detail-mobile-image product-detail-mobile-image-layer--current ${navTransition.direction === 1 ? 'product-detail-mobile-image-enter--next' : navTransition.direction === -1 ? 'product-detail-mobile-image-enter--prev' : 'product-detail-main-image-fade'} object-cover select-none`}
+                        className={`product-detail-mobile-image product-detail-mobile-image-layer--current ${navTransition.direction === 1 ? 'product-detail-mobile-image-enter--next' : navTransition.direction === -1 ? 'product-detail-mobile-image-enter--prev' : ''} object-cover select-none`}
                         style={{
+                          ...mainImageVisibilityStyle,
                           zIndex: 2,
                           width: '100%',
                           height: '100%',
@@ -1124,10 +1110,7 @@ export default function ProductDetailShellIsland({
                   className="relative overflow-hidden rounded-2xl shadow-[0_45px_110px_-25px_rgba(0,0,0,0.8)]"
                   style={{
                     ...desktopDetailImageFrameStyle,
-                    backgroundColor: activeImage.metadata?.dominantColor || 'transparent',
-                    backgroundImage: activeImage.metadata?.blurDataUrl ? `url("${activeImage.metadata.blurDataUrl}")` : undefined,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
+                    backgroundColor: 'transparent',
                   }}
                 >
                   {underlayDesktopSrc && underlayDesktopSrc !== activeImageSrc ? (
@@ -1156,7 +1139,8 @@ export default function ProductDetailShellIsland({
                       onLoad={handleMainImageLoad}
                       data-product-main-image="true"
                       data-desktop-image-ready="true"
-                      className="product-detail-main-image-fade absolute inset-0 z-20 block h-full w-full object-cover opacity-100"
+                      className="absolute inset-0 z-20 block h-full w-full object-cover opacity-100"
+                      style={mainImageVisibilityStyle}
                     />
                   ) : null}
                 </div>
