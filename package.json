@@ -41,6 +41,7 @@
     "perf:gallery-direct": "node scripts/audit-gallery-direct.mjs --assert",
     "perf:menu-desktop": "node scripts/audit-desktop-global-menu.mjs --assert",
     "perf:product-images": "node scripts/audit-product-detail-images.mjs --assert",
+    "perf:product-images:cold": "node scripts/with-env.mjs .env.sandbox node scripts/audit-product-detail-images-cold.mjs",
     "next:routes": "node scripts/check-next-route-classification.cjs",
     "mobile:contract": "node scripts/check-mobile-marketplace-contract.cjs"
   },

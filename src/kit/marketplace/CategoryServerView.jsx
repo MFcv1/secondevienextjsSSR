@@ -338,7 +338,7 @@ export default function CategoryServerView({
 
   return (
     <div className={`min-h-screen w-full transition-colors duration-500 ${darkMode ? 'bg-[#121212] text-[#f5f5f5]' : 'bg-[#FAFAF9] text-stone-900'}`} data-category-native-view>
-      <GalleryGridActionsIsland />
+      <GalleryGridActionsIsland observeVisibleWarmup />
       <div className={`border-b ${darkMode ? 'border-stone-800' : 'border-stone-200'}`}>
         <div className="mx-auto max-w-7xl px-4 pb-4 pt-5 md:px-8 md:py-8 lg:px-12">
           <div className="mb-4 hidden items-center gap-3 md:flex">

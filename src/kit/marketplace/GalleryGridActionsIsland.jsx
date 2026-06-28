@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 const WISHLIST_STORAGE_KEY = 'sv_public_product_wishlist';
 const WISHLIST_CHANGED_EVENT = 'sv:wishlist-state-changed';
 const PRODUCT_DETAIL_IMAGE_SIZES = '(max-width: 1023px) min(94vw, 430px), calc(100vw - 610px)';
+const VISIBLE_WARMUP_ROOT_MARGIN = '650px 0px';
 const warmedImages = new Set();
 const prefetchedRoutes = new Set();
 const warmupQueue = [];
@@ -91,7 +92,7 @@ const setWishlistButtonState = (button, liked) => {
   if (icon) icon.setAttribute('fill', liked ? 'currentColor' : 'none');
 };
 
-export default function GalleryGridActionsIsland() {
+export default function GalleryGridActionsIsland({ observeVisibleWarmup = false } = {}) {
   const router = useRouter();
 
   const syncWishlistButtons = useCallback(() => {
@@ -102,7 +103,7 @@ export default function GalleryGridActionsIsland() {
   }, []);
 
   const warmupProduct = useCallback((card, intent = 'hover') => {
-    if (!card || (intent === 'hover' && shouldSkipSoftWarmup())) return;
+    if (!card || (intent !== 'press' && shouldSkipSoftWarmup())) return;
     const productUrl = card.dataset.productUrl || '';
     const sources = getUniqueSources([
       card.dataset.warmupSrc || '',
@@ -190,6 +191,53 @@ export default function GalleryGridActionsIsland() {
       window.removeEventListener('storage', onStorage);
     };
   }, [syncWishlistButtons, warmupProduct]);
+
+  useEffect(() => {
+    if (!observeVisibleWarmup || typeof window === 'undefined') return undefined;
+    if (!('IntersectionObserver' in window)) return undefined;
+    if (shouldSkipSoftWarmup()) return undefined;
+
+    let cancelled = false;
+    let idleId = 0;
+    let timeoutId = 0;
+    let observer = null;
+
+    const setupObserver = () => {
+      if (cancelled) return;
+      const cards = Array.from(document.querySelectorAll('[data-category-native-view] [data-gallery-product-card]'))
+        .filter((card) => card.dataset.warmupSrc || card.dataset.warmupBackdropSrc);
+
+      if (!cards.length) return;
+
+      observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const card = entry.target;
+          observer?.unobserve(card);
+          warmupProduct(card, 'visible');
+        });
+      }, {
+        root: null,
+        rootMargin: VISIBLE_WARMUP_ROOT_MARGIN,
+        threshold: 0.01,
+      });
+
+      cards.forEach((card) => observer.observe(card));
+    };
+
+    if (typeof window.requestIdleCallback === 'function') {
+      idleId = window.requestIdleCallback(setupObserver, { timeout: 1200 });
+    } else {
+      timeoutId = window.setTimeout(setupObserver, 240);
+    }
+
+    return () => {
+      cancelled = true;
+      if (idleId && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
+      if (timeoutId) window.clearTimeout(timeoutId);
+      observer?.disconnect();
+    };
+  }, [observeVisibleWarmup, warmupProduct]);
 
   return null;
 }
