@@ -84,7 +84,6 @@ const ProductThumbRail = ({
   activeIndex,
   onSelect,
   mobile = false,
-  hasPrimaryImagePainted,
 }) => {
   if (images.length <= 1) return null;
 
@@ -129,9 +128,9 @@ const ProductThumbRail = ({
                     src={thumbSrc}
                     className="w-full h-full object-cover rounded-[4px]"
                     alt={`Apercu ${index + 1}`}
-                    loading={index < 4 ? 'eager' : 'lazy'}
+                    loading={index === activeIndex ? 'eager' : 'lazy'}
                     decoding="async"
-                    fetchPriority="low"
+                    fetchPriority={index === activeIndex ? 'auto' : 'low'}
                     sizes={`${mobileThumbSize}px`}
                   />
                 ) : null}
@@ -186,9 +185,9 @@ const ProductThumbRail = ({
                 sizes="58px"
                 className="w-full h-full object-cover select-none pointer-events-none"
                 alt=""
-                loading={index < 5 ? 'eager' : 'lazy'}
+                loading={index === activeIndex ? 'eager' : 'lazy'}
                 decoding="async"
-                fetchPriority="low"
+                fetchPriority={index === activeIndex ? 'auto' : 'low'}
               />
             ) : null}
           </button>
@@ -860,7 +859,8 @@ export default function ProductDetailShellIsland({
 
   const mobileInfoRows = facts?.filter((fact) => fact?.value) || [];
   const shouldReserveDesktopThumbRail = safeImages.length > 1 || product?.__catalogScope !== 'full';
-  const mainImageVisibilityStyle = hasPrimaryImagePainted ? { opacity: 1 } : { opacity: 0 };
+  const shouldGateMainImagePaint = underlayImg != null || navTransition.direction !== 0;
+  const mainImageVisibilityStyle = shouldGateMainImagePaint && !hasPrimaryImagePainted ? { opacity: 0 } : { opacity: 1 };
 
   return (
     <div
@@ -894,7 +894,7 @@ export default function ProductDetailShellIsland({
               aria-hidden="true"
               loading="eager"
               decoding="async"
-              fetchPriority="high"
+              fetchPriority="low"
               className="h-[120%] w-[120%] scale-110 object-cover object-center opacity-50 blur-[80px] saturate-150"
             />
           ) : null}
@@ -909,7 +909,6 @@ export default function ProductDetailShellIsland({
               activeIndex={pendingImg ?? activeImg}
               onSelect={goToIndex}
               mobile
-              hasPrimaryImagePainted={hasPrimaryImagePainted}
             />
           </div>
 
@@ -1175,7 +1174,6 @@ export default function ProductDetailShellIsland({
             images={safeImages}
             activeIndex={pendingImg ?? activeImg}
             onSelect={goToIndex}
-            hasPrimaryImagePainted={hasPrimaryImagePainted}
           />
         ) : null}
       </main>

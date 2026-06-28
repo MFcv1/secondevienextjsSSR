@@ -88,6 +88,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="fr" className={fontVariables} suppressHydrationWarning>
       <head>
+        <link rel="dns-prefetch" href="//firebasestorage.googleapis.com" />
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="" />
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>

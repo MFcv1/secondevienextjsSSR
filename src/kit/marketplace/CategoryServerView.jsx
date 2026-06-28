@@ -1,8 +1,9 @@
 import { ChevronDown, ChevronLeft, Grid3X3, LayoutGrid, List, SlidersHorizontal, X } from 'lucide-react';
 import { getCategoryUrl, getProductUrl } from '../../utils/slug';
-import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage } from '../../utils/imageUtils';
+import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, getProductImageItems } from '../../utils/imageUtils';
 import { getProductStockAmount, getPurchaseUnavailableLabel, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
 import CategoryControlsIsland from './CategoryControlsIsland';
+import GalleryGridActionsIsland from './GalleryGridActionsIsland';
 import {
   CATEGORY_SORT_OPTIONS,
   buildCategoryHref,
@@ -42,6 +43,7 @@ const FilterSection = ({ title, children, darkMode }) => (
 
 const CategoryProductCard = ({ item, layoutMode = 'grid', compact = true, priority = false }) => {
   const cardImage = getProductCardImage(item);
+  const warmup = getCategoryProductWarmup(item);
   const title = item?.name || item?.title || 'Pi\u00e8ce restaur\u00e9e';
   const price = getCategoryProductPrice(item);
   const purchasable = isPurchasable(item);
@@ -50,6 +52,11 @@ const CategoryProductCard = ({ item, layoutMode = 'grid', compact = true, priori
     <a
       href={getProductUrl(item)}
       draggable={false}
+      data-gallery-product-card
+      data-gallery-product-link
+      data-product-url={warmup.productUrl}
+      data-warmup-src={warmup.src}
+      data-warmup-backdrop-src={warmup.backdropSrc}
       className={`group relative flex touch-manipulation flex-col ${compact ? 'gap-3 md:gap-6' : 'gap-6'} w-full cursor-pointer text-inherit no-underline ${layoutMode === 'list' ? 'flex-row items-center gap-12 border-b border-stone-200 pb-12' : ''}`}
     >
       <div
@@ -113,6 +120,7 @@ const CategoryProductCard = ({ item, layoutMode = 'grid', compact = true, priori
 
 const MobileProductRow = ({ item, darkMode, priority = false }) => {
   const cardImage = getProductCardImage(item);
+  const warmup = getCategoryProductWarmup(item);
   const title = item?.name || item?.title || 'Pi\u00e8ce restaur\u00e9e';
   const price = getCategoryProductPrice(item);
   const purchasable = isPurchasable(item);
@@ -120,6 +128,11 @@ const MobileProductRow = ({ item, darkMode, priority = false }) => {
   return (
     <a
       href={getProductUrl(item)}
+      data-gallery-product-card
+      data-gallery-product-link
+      data-product-url={warmup.productUrl}
+      data-warmup-src={warmup.src}
+      data-warmup-backdrop-src={warmup.backdropSrc}
       className={`flex min-h-[96px] gap-3 rounded-xl border p-2 transition-colors ${darkMode ? 'border-stone-800 bg-[#181818]' : 'border-stone-200 bg-[#fffdfb]'}`}
     >
       <div className="product-card-media relative h-20 w-[108px] shrink-0 rounded-lg bg-stone-100" data-image-reveal="visible" data-image-loaded={cardImage.src ? 'true' : 'false'}>
@@ -162,6 +175,15 @@ const getCategoryProductDataset = (item) => ({
     item?.material,
   ].filter(Boolean).join(' ').toLocaleLowerCase('fr-FR'),
 });
+
+const getCategoryProductWarmup = (item) => {
+  const [primary] = getProductImageItems(item);
+  return {
+    productUrl: getProductUrl(item),
+    src: primary?.medium || primary?.src || primary?.card || primary?.thumb || '',
+    backdropSrc: primary?.thumb || primary?.card || primary?.medium || primary?.src || '',
+  };
+};
 
 const FilterForm = ({
   categoryId,
@@ -316,6 +338,7 @@ export default function CategoryServerView({
 
   return (
     <div className={`min-h-screen w-full transition-colors duration-500 ${darkMode ? 'bg-[#121212] text-[#f5f5f5]' : 'bg-[#FAFAF9] text-stone-900'}`} data-category-native-view>
+      <GalleryGridActionsIsland />
       <div className={`border-b ${darkMode ? 'border-stone-800' : 'border-stone-200'}`}>
         <div className="mx-auto max-w-7xl px-4 pb-4 pt-5 md:px-8 md:py-8 lg:px-12">
           <div className="mb-4 hidden items-center gap-3 md:flex">

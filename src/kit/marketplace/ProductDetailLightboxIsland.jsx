@@ -323,7 +323,8 @@ export default function ProductDetailLightboxIsland({
       <div
         ref={controlsRef}
         data-lightbox-controls="bottom"
-        className="absolute bottom-[max(1rem,calc(env(safe-area-inset-bottom,0px)+1rem))] left-1/2 z-[3100] flex -translate-x-1/2 items-center gap-1 rounded-full border border-[#fff8ef]/18 bg-[#17130f]/88 p-1 text-[#fff8ef] shadow-[0_20px_60px_rgba(38,24,12,0.32)] backdrop-blur-xl"
+        className="absolute bottom-[max(1rem,calc(env(safe-area-inset-bottom,0px)+1rem))] left-1/2 z-[3100] flex items-center gap-1 rounded-full border border-[#fff8ef]/18 bg-[#17130f]/88 p-1 text-[#fff8ef] shadow-[0_20px_60px_rgba(38,24,12,0.32)] backdrop-blur-xl"
+        style={{ transform: 'translate3d(-50%, 0, 0)' }}
         onPointerDown={(event) => event.stopPropagation()}
         onWheel={(event) => event.stopPropagation()}
       >

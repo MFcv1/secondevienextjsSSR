@@ -24,7 +24,6 @@ const getInitialDetailImagePreloads = (product) => {
   const seen = new Set();
   const imageItems = getProductImageItems(product);
   const primary = imageItems[0];
-  const neighbor = imageItems[1];
 
   return [
     {
@@ -37,10 +36,6 @@ const getInitialDetailImagePreloads = (product) => {
     },
     {
       href: primary?.thumb || '',
-      priority: 'low'
-    },
-    {
-      href: getProductDisplayImageSrc(neighbor, { viewport: 'desktop' }),
       priority: 'low'
     }
   ]
