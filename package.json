@@ -27,6 +27,8 @@
     "images:audit": "node scripts/backfill-product-image-metadata.cjs --dry-run --published-only --env=sandbox && node scripts/backfill-product-image-variants.cjs --dry-run --published-only --env=sandbox && node scripts/audit-storage-orphans.cjs --dry-run --env=sandbox",
     "images:metadata:dry": "node scripts/backfill-product-image-metadata.cjs --dry-run --published-only --env=sandbox",
     "images:variants:dry": "node scripts/backfill-product-image-variants.cjs --dry-run --published-only --env=sandbox",
+    "images:detail-fast:dry": "node scripts/backfill-product-image-detail-fast.cjs --dry-run --published-only --env=sandbox",
+    "images:detail-fast:commit": "node scripts/backfill-product-image-detail-fast.cjs --commit --confirm=DETAIL_FAST --published-only --env=sandbox",
     "images:orphans:dry": "node scripts/audit-storage-orphans.cjs --dry-run --env=sandbox",
     "perf:budget": "node scripts/check-performance-budget.cjs",
     "perf:compare": "node scripts/compare-spa-next.mjs",

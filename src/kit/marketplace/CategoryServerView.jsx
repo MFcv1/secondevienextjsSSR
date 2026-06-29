@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronLeft, Grid3X3, LayoutGrid, List, SlidersHorizontal, X } from 'lucide-react';
 import { getCategoryUrl, getProductUrl } from '../../utils/slug';
-import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, getProductImageItems } from '../../utils/imageUtils';
+import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, getProductDisplayImageSrc, getProductImageItems } from '../../utils/imageUtils';
 import { getProductStockAmount, getPurchaseUnavailableLabel, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
 import CategoryControlsIsland from './CategoryControlsIsland';
 import GalleryGridActionsIsland from './GalleryGridActionsIsland';
@@ -180,7 +180,7 @@ const getCategoryProductWarmup = (item) => {
   const [primary] = getProductImageItems(item);
   return {
     productUrl: getProductUrl(item),
-    src: primary?.medium || primary?.src || primary?.card || primary?.thumb || '',
+    src: getProductDisplayImageSrc(primary, { viewport: 'desktop' }) || primary?.medium || primary?.src || primary?.card || primary?.thumb || '',
     backdropSrc: primary?.thumb || primary?.card || primary?.medium || primary?.src || '',
   };
 };

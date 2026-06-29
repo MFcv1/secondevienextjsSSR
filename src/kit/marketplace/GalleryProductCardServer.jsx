@@ -1,5 +1,5 @@
 import { getProductUrl } from '../../utils/slug';
-import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, getProductImageItems } from '../../utils/imageUtils';
+import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, getProductDisplayImageSrc, getProductImageItems } from '../../utils/imageUtils';
 import { getProductPriceAmount, getProductStockAmount, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
 import { Heart, Plus } from 'lucide-react';
 
@@ -39,6 +39,7 @@ export default function GalleryProductCardServer({
   const purchasable = isPurchasable(item);
   const cartItem = getCartItemPayload(item, cardImage, title);
   const warmupImage = primaryDetailImage ? {
+    detailFast: primaryDetailImage.detailFast || '',
     medium: primaryDetailImage.medium || '',
     card: primaryDetailImage.card || '',
     thumb: primaryDetailImage.thumb || '',
@@ -46,7 +47,7 @@ export default function GalleryProductCardServer({
   } : null;
 
   const productUrl = getProductUrl(item);
-  const warmupSrc = warmupImage?.medium || warmupImage?.src || warmupImage?.card || warmupImage?.thumb || '';
+  const warmupSrc = getProductDisplayImageSrc(primaryDetailImage, { viewport: 'desktop' }) || warmupImage?.medium || warmupImage?.src || warmupImage?.card || warmupImage?.thumb || '';
   const warmupBackdropSrc = warmupImage?.thumb || warmupImage?.card || warmupImage?.medium || warmupImage?.src || '';
   const cartPayload = JSON.stringify(cartItem);
   const productId = item?.id || '';

@@ -29,6 +29,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- TODO.md : checklist Phase 2 infra prod puis Phase 3 hydratation/perf
 |-- UX_MICRO_FRICTIONS_PLAYBOOK.md : playbook agent pour detecter les micro-frictions UI/UX, conflits d'overlays, wording et parcours
 |-- OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md : rapport operationnel image centrale produit, preconnect Storage, warmup categorie/scroll et audit froid images detail
+|-- DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md : cadrage et suivi reversible variante image `detailFast`, upload admin, backfill Storage/Firestore, rollback et gates
 |-- P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md : roadmap de cloture P0 infra avant Phase 3 perf, couvrant prod rail, App Check, revalidation, Stripe webhook/refund et checkout redirect
 |-- PHASE3_PERF_BASELINE_2026-06-24.md : baseline Phase 3 perf/hydratation, passe P0 galerie, chunks `/galerie`, gates et dettes P1/P2
 |-- APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md : rapport App Check sandbox, etat enforcement, telemetrie Cloud Monitoring et decision service par service
@@ -69,7 +70,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |   |-- index.js, helpers : Firebase Functions entrypoint/config/security
 |   `-- src : analytics, auth, commerce dont refund admin Stripe et helpers E2E proteges, email, maintenance, public, seo, triggers
 |-- public : favicons, manifest, image OG, images, video, rapport maintenance statique
-|-- scripts : env bridge, audits infra env/secrets/deploy/App Check paths/service state, E2E auth email OTP, E2E revalidation catalogue, E2E hosted Stripe checkout sandbox succes/echec, seed/reset produit test Stripe sandbox, SSR/mobile checks, maintenance audit, budget perf Next, gate classification routes Next, perf/architecture compare, audits scroll galerie/menu desktop, audit froid images detail produit, backfills/audits Storage/images et tooling safe
+|-- scripts : env bridge, audits infra env/secrets/deploy/App Check paths/service state, E2E auth email OTP, E2E revalidation catalogue, E2E hosted Stripe checkout sandbox succes/echec, seed/reset produit test Stripe sandbox, SSR/mobile checks, maintenance audit, budget perf Next, gate classification routes Next, perf/architecture compare, audits scroll galerie/menu desktop, audit froid images detail produit, backfill detailFast, backfills/audits Storage/images et tooling safe
 |-- MIGRATION_REPORT.md, COMPARISON.md, RUNBOOK.md, DATABASE_MIGRATION_PLAN.md, COMPLETION_AUDIT.md, ARCHITECTURE_BENCHMARK_DECISION.md, NEXTJS_OPTIMIZATION_ROADMAP.md, NEXTJS_FULL_NATIVE_CLEANUP_ROADMAP_2026-06-10.md, NEXTJS_FULL_NATIVE_AUDIT_ROADMAP_2026-06-10.md, NEXTJSSSR_FULL_NEXT_FINAL_PROMPT_2026-06-09.md et autres rapports/roadmaps Next SSR, SEO, images, galerie et produit
 |-- imagehero, pageUI : references visuelles et notes UI
 `-- .next, dist, node_modules, logs, .firebase : generes, hors carte
@@ -132,6 +133,8 @@ Cette roadmap fixe la cible long terme: routes publiques SEO stables et ISR-frie
 Avant toute passe d optimisation specifique au clone Next.js SSR, lire `NEXTJS_OPTIMIZATION_ROADMAP.md`.
 
 Avant toute passe qui touche l'affichage image centrale produit, les preloads Storage, le warmup categorie/galerie ou l'audit froid images detail, lire aussi `OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md`.
+
+Avant de lancer ou modifier le chantier `detailFast`, lire `DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md` et respecter son dry-run, ses logs de rollback et ses gates.
 
 Cette roadmap cadre les leviers Next autorises et l ordre recommande:
 

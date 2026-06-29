@@ -230,6 +230,60 @@ Validation App Hosting de la premiere passe:
 4. Evaluer ensuite seulement un `srcSet/sizes` de l'image centrale, avec beaucoup de prudence.
 5. Garder l'option CDN/proxy image pour une passe infra plus large, pas comme correction UI rapide.
 
+## Passe detailFast - 2026-06-29
+
+Le chantier `detailFast` a ete lance comme levier reversible apres les gains du warmup categorie/scroll.
+
+Principe retenu:
+
+```text
+image centrale fiche produit = detailFast || medium || large || src || card || thumb || full
+zoom/lightbox = full || large || medium
+```
+
+Le layout ne change pas:
+
+- meme container desktop/mobile;
+- meme `object-fit`;
+- meme fond flou desktop;
+- meme lightbox haute qualite;
+- pas de retour du voile flou central.
+
+Fichiers concernes:
+
+- `src/utils/imageUtils.js`: ajoute la variante `detailFast` largeur cible 900 px, qualite 0.78, et la choisit pour l'image centrale.
+- `src/kit/admin/AdminForm.jsx`: utilise deja `PRODUCT_IMAGE_VARIANT_SPECS`, donc les nouvelles publications generent automatiquement `detailFast`.
+- `src/kit/marketplace/CategoryServerView.jsx` et `src/kit/marketplace/GalleryProductCardServer.jsx`: le warmup charge maintenant la meme URL que la fiche produit.
+- `functions-public/src/public/catalog.js`: `scope=cards` garde `detailFast` pour ne pas prechauffer `medium` alors que la fiche affiche `detailFast`.
+- `scripts/backfill-product-image-detail-fast.cjs`: dry-run par defaut, commit protege et log JSON pour les produits existants.
+
+Test pilote sandbox:
+
+```text
+bU407t3vFKcMq2UJ1wQL
+medium     359 Ko, mediane 917 ms
+detailFast 325 Ko, mediane 887 ms
+
+3uidDZpwH2ydH8v9jiw3
+medium     359 Ko, mediane 915 ms
+detailFast 325 Ko, mediane 901 ms
+```
+
+Lecture du resultat:
+
+- gain modere mais reel sur ces deux fichiers;
+- les sources ne font que 816 px de large, donc `detailFast` ne peut pas faire de resize important;
+- le gain vient surtout de la recompression WebP;
+- la qualite visuelle dans le cadre central reste jugee correcte;
+- l'optimisation reste utile pour les nouvelles publications et les images sources plus larges.
+
+Decision:
+
+- conserver `detailFast` comme variante prioritaire de l'image centrale;
+- garder `medium`, `large` et `full` intacts pour fallback et zoom;
+- ne pas generaliser de nettoyage Storage sans logs;
+- continuer a mesurer avec `perf:product-images:cold` avant toute recompression plus agressive.
+
 ## Regles a ne pas casser
 
 - Le fond flou desktop derriere le produit est voulu.

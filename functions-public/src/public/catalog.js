@@ -165,10 +165,11 @@ const readPublicProduct = async (id, catalogVersion) => {
 const firstImageVariantForCard = (imageVariants) => {
   const firstVariant = Array.isArray(imageVariants) ? imageVariants[0] : null;
   if (!firstVariant || typeof firstVariant !== 'object') return [];
-  const { thumb, card, medium } = firstVariant;
+  const { thumb, card, detailFast, medium } = firstVariant;
   const projected = {};
   if (thumb) projected.thumb = thumb;
   if (card) projected.card = card;
+  if (detailFast) projected.detailFast = detailFast;
   if (medium) projected.medium = medium;
   return Object.keys(projected).length ? [projected] : [];
 };

@@ -63,6 +63,7 @@ const imageDecodeCache = new Map();
 export const PRODUCT_IMAGE_VARIANT_SPECS = [
     { key: 'thumb', width: 480, quality: 0.74, folder: 'thumbnails' },
     { key: 'card', width: 768, quality: 0.78, folder: 'responsive' },
+    { key: 'detailFast', width: 900, quality: 0.78, folder: 'responsive' },
     { key: 'medium', width: 1024, quality: 0.8, folder: 'responsive' },
     { key: 'large', width: 1440, quality: 0.82, folder: 'responsive' },
     { key: 'full', width: 1920, quality: 0.85, folder: 'responsive' },
@@ -213,11 +214,13 @@ export const getProductImageItems = (item) => {
         const full = variants.full || source;
         const large = variants.large || full;
         const medium = variants.medium || large;
+        const detailFast = variants.detailFast || '';
         const card = variants.card || legacyThumb || medium;
         const thumb = variants.thumb || legacyThumb || card;
         const srcSet = buildSrcSet([
             { src: thumb, width: 480 },
             { src: card, width: 768 },
+            { src: detailFast, width: 900 },
             { src: medium, width: 1024 },
             { src: large, width: 1440 },
             { src: full, width: 1920 },
@@ -227,6 +230,7 @@ export const getProductImageItems = (item) => {
             src: large || full || medium || card || thumb || source,
             thumb,
             card,
+            detailFast,
             medium,
             large,
             full,
@@ -243,8 +247,8 @@ export const PRODUCT_DETAIL_IMAGE_SIZES = '(max-width: 1023px) min(94vw, 430px),
 export const PRODUCT_DIRECT_DETAIL_IMAGE_SIZES = '(max-width: 1023px) min(94vw, 430px), 820px';
 
 export const PRODUCT_DISPLAY_IMAGE_VARIANTS = {
-    mobile: 'medium',
-    desktop: 'medium',
+    mobile: 'detailFast',
+    desktop: 'detailFast',
 };
 
 const getProductDisplayVariant = (options = {}) => {
@@ -269,11 +273,7 @@ export const getProductDisplayImageSrc = (image, options = {}) => {
         return image[variant];
     }
 
-    if (variant === PRODUCT_DISPLAY_IMAGE_VARIANTS.mobile) {
-        return image.medium || image.large || image.src || image.card || image.thumb || image.full || '';
-    }
-
-    return image.large || image.medium || image.src || image.card || image.thumb || image.full || '';
+    return image.detailFast || image.medium || image.large || image.src || image.card || image.thumb || image.full || '';
 };
 
 export const getProductZoomInitialImageSrc = (image, options = {}) => (

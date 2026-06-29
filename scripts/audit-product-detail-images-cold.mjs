@@ -42,7 +42,7 @@ const shortUrl = (url) => {
   }
 };
 
-const getVariant = (url) => (String(url).match(/_(thumb|card|medium|large|full)_/i) || [null, 'unknown'])[1].toLowerCase();
+const getVariant = (url) => (String(url).match(/_(thumb|card|detailFast|medium|large|full)_/i) || [null, 'unknown'])[1].toLowerCase();
 
 const getProductsFromPayload = (payload) => {
   if (Array.isArray(payload)) return payload;
