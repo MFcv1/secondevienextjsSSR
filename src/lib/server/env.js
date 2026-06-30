@@ -2,7 +2,7 @@ import 'server-only';
 
 export const publicEnv = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || '',
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || '',
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || 'secondevienextjsssr',
   appId: process.env.NEXT_PUBLIC_APP_LOGICAL_NAME || process.env.VITE_APP_LOGICAL_NAME || 'secondevie',
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL || process.env.VITE_SITE_URL || 'http://localhost:3000',
   siteName: process.env.NEXT_PUBLIC_BRAND_NAME || process.env.VITE_BRAND_NAME || 'Seconde Vie',

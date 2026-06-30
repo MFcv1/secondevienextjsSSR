@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { ArrowRight, CreditCard, HeartHandshake, LockKeyhole, Mail, ShieldCheck, Sparkles, Tag, Truck } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, AtSign, Bookmark, ChevronLeft, ChevronRight, CreditCard, Heart, HeartHandshake, Instagram, LockKeyhole, Mail, MessageCircle, Quote, Send, ShieldCheck, Sparkles, Star, Tag, Truck } from 'lucide-react';
 import GalleryProductCardServer from './GalleryProductCardServer';
-import DeferredGalleryIsland from './DeferredGalleryIsland';
+import GalleryFixedSectionsInteractions from './GalleryFixedSectionsInteractions';
+import InstagramFloatingTokensReveal from './InstagramFloatingTokensReveal';
 
 const getPublishedItems = (items) => (
   Array.isArray(items) ? items.filter((item) => item?.status === 'published') : []
@@ -193,26 +194,118 @@ const restorationProjects = [
   { title: 'Le Bureau Vintage', tag: 'Reparation & Traitement', desc: 'Consolidation et vernis mat impermeable.', avant: '/images/before-after/avantx-gallery.webp', apres: '/images/before-after/apresx-gallery.webp' },
 ];
 
-const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], darkMode = false } = {}) => (
-  <div
-    className={`relative min-h-[430px] overflow-hidden rounded-[22px] ring-1 md:min-h-[480px] lg:min-h-[520px] ${
-      darkMode ? 'bg-[#14110f] ring-[#3a3027]' : 'bg-[#f6eadb] ring-[#e1ccb4]'
-    }`}
-    aria-hidden="true"
-  >
-    <div className="absolute inset-0 grid grid-cols-2">
-      <img src={project.avant} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover opacity-80" />
-      <img src={project.apres} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
-    </div>
-    <div className="absolute inset-0 bg-gradient-to-t from-black/42 via-black/0 to-black/12" />
-    <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4 text-white">
-      <div>
-        <p className="font-sans text-[9px] font-black uppercase tracking-[0.22em] text-white/72">{project.tag}</p>
-        <p className="mt-2 font-serif text-[28px] leading-none tracking-normal md:text-[34px]">{project.title}</p>
+const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projects = restorationProjects, darkMode = false } = {}) => (
+  <div data-before-after-section data-projects={JSON.stringify(projects)}>
+    <div className={`relative mx-auto w-full max-w-[780px] rounded-[22px] p-1.5 ring-1 md:rounded-[26px] ${
+      darkMode
+        ? 'bg-[#15120f] ring-[#d8ad73]/12 shadow-[0_26px_82px_-58px_rgba(0,0,0,0.95)]'
+        : 'bg-[#f2e5d4] ring-[#d4bea4] shadow-[0_30px_80px_-56px_rgba(82,54,28,0.86)] dark:bg-[#15120f] dark:ring-[#d8ad73]/12 dark:shadow-[0_26px_82px_-58px_rgba(0,0,0,0.95)]'
+    }`}>
+      <div className={`rounded-[20px] p-1.5 ring-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] md:rounded-[23px] ${
+        darkMode ? 'bg-[#1a1713] ring-[#d8ad73]/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]' : 'bg-[#fff9ef] ring-white/90 dark:bg-[#1a1713] dark:ring-[#d8ad73]/10 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]'
+      }`}>
+        <div className={`relative aspect-[4/3] w-full overflow-hidden rounded-[16px] ring-1 md:aspect-[16/9.7] sm:rounded-[19px] ${
+          darkMode ? 'bg-[#0f0e0c] ring-[#d8ad73]/10' : 'bg-[#e8dbc9] ring-[#d7c3aa] dark:bg-[#0f0e0c] dark:ring-[#d8ad73]/10'
+        }`}>
+          <img
+            src={project.apres}
+            sizes="(max-width: 768px) calc(100vw - 3rem), 700px"
+            alt="Projet restauration apres"
+            loading="lazy"
+            decoding="async"
+            data-ba-after-img
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="pointer-events-none absolute right-3 top-3 z-20 sm:right-5 sm:top-5">
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-sans text-[7.5px] font-extrabold uppercase tracking-[0.16em] shadow-[0_14px_30px_-22px_rgba(24,18,12,0.72)] ring-1 sm:px-3.5 sm:py-2 sm:text-[9px] ${
+              darkMode ? 'bg-[#0f0d0a]/84 text-[#d8ad73] ring-[#d8ad73]/14' : 'bg-[#fffaf3]/94 text-[#3e352c] ring-white/90 dark:bg-[#0f0d0a]/84 dark:text-[#d8ad73] dark:ring-[#d8ad73]/14'
+            }`}>
+              Apres
+            </span>
+          </div>
+          <div data-ba-clip className="absolute inset-0 z-10 h-full w-full" style={{ clipPath: 'polygon(0 0, 50% 0, 50% 100%, 0 100%)' }}>
+            <img
+              src={project.avant}
+              sizes="(max-width: 768px) calc(100vw - 3rem), 700px"
+              alt="Projet restauration avant"
+              loading="lazy"
+              decoding="async"
+              data-ba-before-img
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="pointer-events-none absolute left-3 top-3 sm:left-5 sm:top-5">
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-sans text-[7.5px] font-extrabold uppercase tracking-[0.16em] shadow-[0_14px_30px_-22px_rgba(24,18,12,0.72)] ring-1 sm:px-3.5 sm:py-2 sm:text-[9px] ${
+                darkMode ? 'bg-[#0f0d0a]/84 text-[#d8ad73] ring-[#d8ad73]/14' : 'bg-[#fffaf3]/94 text-[#3e352c] ring-white/90 dark:bg-[#0f0d0a]/84 dark:text-[#d8ad73] dark:ring-[#d8ad73]/14'
+              }`}>
+                <span className="h-1 w-1 rounded-full bg-[#b9854f] sm:h-1.5 sm:w-1.5" />
+                Avant
+              </span>
+            </div>
+          </div>
+          <div
+            data-ba-line
+            className={`pointer-events-none absolute bottom-0 top-0 z-[25] w-px ${darkMode ? 'bg-[#f1d6aa]/58 shadow-[0_0_0_1px_rgba(216,173,115,0.1),0_0_16px_rgba(0,0,0,0.2)]' : 'bg-white/[0.95] shadow-[0_0_0_1px_rgba(64,43,24,0.18),0_0_18px_rgba(0,0,0,0.18)] dark:bg-[#f1d6aa]/58 dark:shadow-[0_0_0_1px_rgba(216,173,115,0.1),0_0_16px_rgba(0,0,0,0.2)]'}`}
+            style={{ left: '50%', transform: 'translateX(-50%)' }}
+          >
+            <span className={`absolute left-1/2 top-1/2 z-30 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full shadow-[0_18px_38px_rgba(37,27,17,0.2),inset_0_1px_0_rgba(255,255,255,0.88)] ring-1 sm:h-11 sm:w-11 ${
+              darkMode ? 'bg-[#17130f] text-[#f5eadb] ring-[#d8ad73]/16 shadow-[0_16px_34px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.06)]' : 'bg-[#fffaf3] text-[#151515] ring-[#d9c3a6] dark:bg-[#17130f] dark:text-[#f5eadb] dark:ring-[#d8ad73]/16 dark:shadow-[0_16px_34px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.06)]'
+            }`}>
+              <ChevronLeft size={14} strokeWidth={1.45} />
+              <span className="mx-0.5 h-3.5 w-px bg-[#d4c1aa]" />
+              <ChevronRight size={14} strokeWidth={1.45} />
+            </span>
+          </div>
+          <input
+            data-ba-range
+            type="range"
+            min="0"
+            max="100"
+            defaultValue="50"
+            className="absolute inset-0 z-30 h-full w-full cursor-ew-resize opacity-0 touch-pan-y"
+            aria-label="Curseur Avant Apres"
+          />
+        </div>
       </div>
-      <span className="hidden rounded-full bg-white/14 px-4 py-2 font-sans text-[8px] font-black uppercase tracking-[0.18em] ring-1 ring-white/20 sm:inline-flex">
-        Avant / Apres
-      </span>
+    </div>
+    <div className={`relative mx-auto mt-4 grid w-full max-w-[780px] gap-2 overflow-hidden rounded-[18px] p-1 ring-1 md:mt-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-3 md:rounded-[22px] md:p-1.5 ${
+      darkMode ? 'bg-transparent ring-[#d8ad73]/8 shadow-none' : 'bg-[#f2e5d4] ring-[#d9c4aa] shadow-[0_26px_68px_-56px_rgba(82,54,28,0.82)] dark:bg-transparent dark:ring-[#d8ad73]/8 dark:shadow-none'
+    }`}>
+      <div className={`relative rounded-[14px] px-3.5 py-2.5 ring-1 md:rounded-[18px] md:p-3.5 ${
+        darkMode ? 'bg-[#11100e] ring-[#d8ad73]/10' : 'bg-[#fffaf3] ring-white/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)] dark:bg-[#11100e] dark:ring-[#d8ad73]/10 dark:shadow-none'
+      }`}>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className="h-1.5 w-1.5 rotate-45 bg-[#b9854f]" aria-hidden="true" />
+          <span data-ba-tag className="font-sans text-[8px] font-extrabold uppercase tracking-[0.2em] text-[#7F946E] sm:text-[10px] sm:tracking-[0.22em]">
+            {project.tag}
+          </span>
+          <span className={`hidden h-px w-14 sm:block ${darkMode ? 'bg-[#d8ad73]/16' : 'bg-[#dfd1c2] dark:bg-[#d8ad73]/16'}`} />
+        </div>
+        <h3 data-ba-title className={`mt-2 font-serif text-[1.2rem] font-semibold leading-none tracking-normal sm:mt-2.5 sm:text-[1.5rem] ${
+          darkMode ? 'text-[#f8f1e8]' : 'text-[#191713]'
+        }`}>
+          {project.title}
+        </h3>
+        <p data-ba-desc className={`mt-1.5 font-sans text-[11px] leading-[1.55] sm:text-[12px] ${
+          darkMode ? 'text-stone-300' : 'text-[#62584e]'
+        }`}>
+          {project.desc}
+        </p>
+      </div>
+      <div className="relative flex items-center justify-between gap-2 px-1 md:justify-end md:gap-2.5 md:px-2.5 md:pb-1">
+        <div className="flex gap-2">
+          <button type="button" data-ba-prev className={`flex h-8 w-8 items-center justify-center rounded-full ring-1 md:h-9 md:w-9 ${darkMode ? 'bg-[#17130f] text-[#f8f1e8] ring-[#d8ad73]/14' : 'bg-[#fffaf3] text-[#151515] ring-[#dfd1c2] shadow-[0_14px_26px_-20px_rgba(43,31,19,0.78)] dark:bg-[#17130f] dark:text-[#f8f1e8] dark:ring-[#d8ad73]/14 dark:shadow-none'}`} aria-label="Projet precedent">
+            <ChevronLeft size={16} strokeWidth={1.45} />
+          </button>
+          <button type="button" data-ba-next className={`flex h-8 w-8 items-center justify-center rounded-full ring-1 md:h-9 md:w-9 ${darkMode ? 'bg-[#17130f] text-[#f8f1e8] ring-[#d8ad73]/14' : 'bg-[#fffaf3] text-[#151515] ring-[#dfd1c2] shadow-[0_14px_26px_-20px_rgba(43,31,19,0.78)] dark:bg-[#17130f] dark:text-[#f8f1e8] dark:ring-[#d8ad73]/14 dark:shadow-none'}`} aria-label="Projet suivant">
+            <ChevronRight size={16} strokeWidth={1.45} />
+          </button>
+        </div>
+        <span data-ba-count className={`rounded-full px-3 py-1.5 font-sans text-[8px] font-extrabold uppercase tracking-[0.16em] ring-1 md:px-3.5 md:text-[8.5px] ${
+          darkMode ? 'bg-[#17130f] text-[#d8c9b8] ring-[#d8ad73]/12' : 'bg-[#fff8ee] text-[#9A714C] ring-[#dfd1c2] dark:bg-[#17130f] dark:text-[#d8c9b8] dark:ring-[#d8ad73]/12'
+        }`}>
+          01 / 03
+        </span>
+      </div>
     </div>
   </div>
 );
@@ -246,12 +339,11 @@ export const BeforeAfterSectionServer = ({ darkMode = false, projects = restorat
 
         <div className={`relative flex min-h-full flex-col justify-center gap-4 rounded-b-[24px] p-2 sm:p-4 md:gap-4 md:p-5 lg:rounded-r-[26px] lg:rounded-bl-none lg:p-6 dark:bg-[#181511] ${darkMode ? 'bg-[#1d1a16]' : 'bg-[#fffaf3]'}`}>
           <div>
-            <DeferredGalleryIsland type="before-after" projects={projects} darkMode={darkMode} rootMargin="760px 0px" intersectionDelayMs={120}>
-              <BeforeAfterSliderPlaceholder project={projects[0]} darkMode={darkMode} />
-            </DeferredGalleryIsland>
+            <BeforeAfterSliderPlaceholder project={projects[0]} projects={projects} darkMode={darkMode} />
           </div>
         </div>
       </div>
+      <GalleryFixedSectionsInteractions />
     </section>
   );
 };
@@ -264,109 +356,385 @@ const instaPosts = [
   { img: '/images/before-after/avantx-gallery.webp', label: 'Inspiration', title: 'Piece chinee' },
 ];
 
+const INSTAGRAM_URL = 'https://www.instagram.com/secondevie_anais';
+
+const instagramFloatingTokens = [
+  { id: 'gram', Icon: Instagram, className: 'instagram-floating-token--gram', style: { '--float-x': '6%', '--float-y': '19%', '--float-size': '140px', '--float-delay': '80ms', '--float-enter-duration': '680ms', '--float-arrive-x': '-10px', '--float-arrive-y': '54px', '--float-drift-x': '13px', '--float-drift-y': '-18px', '--float-rotate-start': '-12deg', '--float-rotate-end': '9deg', '--float-duration': '7.4s' } },
+  { id: 'heart', Icon: Heart, className: 'instagram-floating-token--heart', style: { '--float-x': '16%', '--float-y': '63%', '--float-size': '108px', '--float-delay': '760ms', '--float-enter-duration': '600ms', '--float-arrive-x': '-12px', '--float-arrive-y': '48px', '--float-drift-x': '-10px', '--float-drift-y': '-15px', '--float-rotate-start': '10deg', '--float-rotate-end': '-8deg', '--float-duration': '8.2s' } },
+  { id: 'spark', Icon: Sparkles, className: 'instagram-floating-token--spark', style: { '--float-x': '27%', '--float-y': '24%', '--float-size': '64px', '--float-delay': '190ms', '--float-enter-duration': '540ms', '--float-arrive-x': '8px', '--float-arrive-y': '42px', '--float-drift-x': '8px', '--float-drift-y': '-13px', '--float-rotate-start': '-20deg', '--float-rotate-end': '14deg', '--float-duration': '6.9s' } },
+  { id: 'message', Icon: MessageCircle, className: 'instagram-floating-token--message', style: { '--float-x': '75%', '--float-y': '28%', '--float-size': '132px', '--float-delay': '460ms', '--float-enter-duration': '660ms', '--float-arrive-x': '12px', '--float-arrive-y': '50px', '--float-drift-x': '-12px', '--float-drift-y': '-17px', '--float-rotate-start': '14deg', '--float-rotate-end': '-10deg', '--float-duration': '7.8s' } },
+  { id: 'send', Icon: Send, className: 'instagram-floating-token--send', style: { '--float-x': '90%', '--float-y': '18%', '--float-size': '52px', '--float-delay': '310ms', '--float-enter-duration': '500ms', '--float-arrive-x': '8px', '--float-arrive-y': '34px', '--float-drift-x': '-7px', '--float-drift-y': '-11px', '--float-rotate-start': '-18deg', '--float-rotate-end': '11deg', '--float-duration': '6.4s' } },
+  { id: 'save', Icon: Bookmark, className: 'instagram-floating-token--save', style: { '--float-x': '88%', '--float-y': '61%', '--float-size': '98px', '--float-delay': '940ms', '--float-enter-duration': '620ms', '--float-arrive-x': '14px', '--float-arrive-y': '52px', '--float-drift-x': '11px', '--float-drift-y': '-16px', '--float-rotate-start': '18deg', '--float-rotate-end': '-9deg', '--float-duration': '8.6s' } },
+  { id: 'at', Icon: AtSign, className: 'instagram-floating-token--at', style: { '--float-x': '82%', '--float-y': '73%', '--float-size': '50px', '--float-delay': '1120ms', '--float-enter-duration': '520ms', '--float-arrive-x': '6px', '--float-arrive-y': '40px', '--float-drift-x': '-8px', '--float-drift-y': '-10px', '--float-rotate-start': '-8deg', '--float-rotate-end': '13deg', '--float-duration': '7.1s' } },
+];
+
+const desktopInstaCardStyles = [
+  { transform: 'translateX(-145%) scale(0.92)', opacity: 0.52, zIndex: 1 },
+  { transform: 'translateX(-50%) scale(1)', opacity: 1, zIndex: 3 },
+  { transform: 'translateX(45%) scale(0.92)', opacity: 0.58, zIndex: 1 },
+];
+
 const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } = {}) => (
   <section
-    className="relative isolate min-h-[690px] overflow-hidden px-0 pb-[86px] pt-[48px] md:px-6 md:py-[72px] lg:px-[5vw] lg:py-[78px] xl:py-[86px]"
-    aria-hidden="true"
+    data-instagram-carousel
+    data-items={JSON.stringify(posts)}
+    className="relative isolate overflow-hidden px-0 pb-[64px] pt-[38px] md:px-6 md:py-[72px] lg:min-h-[690px] lg:px-[5vw] lg:py-[78px] xl:py-[86px]"
   >
-    <div className="relative z-10 mx-auto flex max-w-[1280px] flex-col items-center text-center">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="h-px w-8 bg-[#A68A64]" />
-        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#A68A64]">Lifestyle & Atelier</span>
-        <div className="h-px w-8 bg-[#A68A64]" />
+    <div
+      className={`instagram-floating-field ${darkMode ? 'instagram-floating-field--dark' : ''}`}
+      data-instagram-floating-field="true"
+      data-floating-ready="false"
+      data-floating-settled="false"
+      aria-hidden="true"
+    >
+      {instagramFloatingTokens.map(({ id, Icon, className, style }) => (
+        <span key={id} className={`instagram-floating-token ${className}`} style={style}>
+          <span className="instagram-floating-token__shell">
+            <span className="instagram-floating-token__shine" />
+            <Icon className="instagram-floating-token__icon" strokeWidth={1.8} />
+          </span>
+        </span>
+      ))}
+    </div>
+    <InstagramFloatingTokensReveal />
+
+    <div className="relative z-10 lg:hidden">
+      <div className="mx-auto max-w-[430px] px-4 text-center">
+        <div className="mb-6 flex items-center justify-center gap-2.5">
+          <span className="h-px w-6 bg-[#A68A64]" />
+          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#A68A64]">Lifestyle & Atelier</span>
+          <span className="h-px w-6 bg-[#A68A64]" />
+        </div>
+        <h2 className={`font-serif text-[31px] leading-[1.04] tracking-normal min-[390px]:text-[34px] ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}>
+          Nous aussi on vous aime
+        </h2>
+        <div className="mt-4 flex flex-col items-center gap-4">
+          <div className="text-center">
+            <p className={`font-serif text-[33px] leading-none tracking-normal ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}>
+              38.9<span className="text-[0.52em] italic text-[#A68A64]">k</span>
+            </p>
+            <p className="mt-2 text-[8px] font-black uppercase tracking-[0.22em] text-[#A68A64]">Abonnes Instagram</p>
+          </div>
+          <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" className={`mx-auto flex h-[44px] w-full max-w-[252px] items-center justify-between rounded-full border pl-3.5 pr-1.5 shadow-[0_14px_36px_rgba(32,26,20,0.08)] ${darkMode ? 'border-white/10 bg-white/5 text-white' : 'border-stone-200 bg-white text-[#1A1A1A]'}`}>
+            <Instagram size={15} strokeWidth={1.8} />
+            <span className="text-[8px] font-black uppercase tracking-[0.18em] min-[390px]:text-[9px]">Rejoindre Instagram</span>
+            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${darkMode ? 'bg-white text-black' : 'bg-[#1A1A1A] text-white'}`}>
+              <ArrowUpRight size={15} strokeWidth={2.1} />
+            </span>
+          </a>
+        </div>
       </div>
-      <h2 className={`font-serif text-[38px] leading-[1.02] tracking-normal lg:text-5xl xl:text-6xl ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}>
-        Nous aussi on vous aime
-      </h2>
-      <div className="relative mt-12 h-[432px] w-full max-w-[1120px] overflow-hidden lg:h-[470px] xl:h-[520px]">
-        <div className="absolute inset-x-5 top-0 grid grid-cols-3 gap-5 opacity-95 md:inset-x-10 lg:inset-x-0">
-          {posts.slice(0, 3).map((post, index) => (
+      <div className="relative mx-auto mt-10 h-[366px] max-w-[430px] overflow-hidden min-[390px]:h-[386px] md:h-[462px] md:max-w-[560px]">
+        {posts.slice(0, 3).map((post, index) => {
+          const positionClass = index === 0
+            ? '-translate-x-[106%] scale-[0.88] opacity-30'
+            : index === 1
+              ? '-translate-x-1/2 scale-100 opacity-100'
+              : 'translate-x-[6%] scale-[0.88] opacity-30';
+          return (
             <article
               key={post.title}
-              className={`overflow-hidden rounded-[22px] shadow-[0_24px_60px_rgba(32,26,20,0.13)] ${
-                index === 1 ? 'translate-y-0' : 'translate-y-10 opacity-55'
-              } ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}
+              data-insta-card={index}
+              className={`absolute left-1/2 top-0 w-[56vw] max-w-[206px] overflow-hidden rounded-[20px] shadow-[0_24px_60px_rgba(32,26,20,0.13)] min-[390px]:max-w-[216px] md:max-w-[250px] md:rounded-[22px] ${positionClass} ${index === 1 ? 'z-[3]' : 'z-[1]'} ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}
             >
               <div className="aspect-[4/5] overflow-hidden bg-stone-100">
-                <img src={post.img} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                <img data-insta-img src={post.img} alt="" loading="lazy" decoding="async" className={`h-full w-full object-cover ${index === 1 ? 'scale-100' : 'scale-[1.03]'}`} />
               </div>
-              <div className={`min-h-[88px] px-4 pb-5 pt-4 text-left ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}>
-                <p className="text-[8px] font-black uppercase tracking-[0.18em] text-[#A68A64]">{post.label}</p>
-                <h3 className={`mt-1.5 font-serif text-[20px] leading-tight tracking-normal ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}>
+              <div className={`relative min-h-[76px] px-3.5 pb-4 pt-3.5 text-left md:min-h-[88px] md:px-4 md:pb-5 md:pt-4 ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}>
+                <p data-insta-label className="text-[7px] font-black uppercase tracking-[0.16em] text-[#A68A64] min-[390px]:text-[8px] md:text-[9px] md:tracking-[0.2em]">{post.label}</p>
+                <h3 data-insta-title className={`mt-1 pr-10 font-serif text-[18px] leading-tight tracking-normal min-[390px]:text-[19px] md:mt-2 md:pr-12 md:text-[23px] ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}>
                   {post.title}
                 </h3>
+                <span className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full shadow-[0_14px_30px_rgba(32,26,20,0.12)] md:right-4 md:top-4 md:h-10 md:w-10 ${darkMode ? 'bg-white/10 text-white' : 'bg-white text-[#9A714C]'}`}>
+                  <Heart size={17} strokeWidth={1.8} />
+                </span>
               </div>
             </article>
+          );
+        })}
+      </div>
+      <div className="mx-auto mt-6 flex max-w-[200px] items-center justify-center gap-3 px-5">
+        {posts.map((post, index) => (
+          <button key={post.title} type="button" data-insta-dot className={`relative h-[2px] flex-1 overflow-hidden rounded-full ${darkMode ? 'bg-white/15' : 'bg-stone-200'}`} aria-label={`Voir la photo ${index + 1}`}>
+            <span data-dot-bar className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-[#A68A64]" style={{ transform: index === 1 ? 'scaleX(1)' : 'scaleX(0)' }} />
+          </button>
+        ))}
+      </div>
+      <div className="mt-9 px-6 pt-7 text-center">
+        <Sparkles className="mx-auto mb-3 text-[#A68A64]" size={26} strokeWidth={1.6} />
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#A68A64]">Creations uniques</p>
+        <p className={`mx-auto mt-3 max-w-[310px] text-[14px] leading-6 ${darkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>
+          Chaque meuble est chine, restaure et sublime a la main dans notre atelier.
+        </p>
+      </div>
+    </div>
+
+    <div className="relative z-10 mx-auto hidden max-w-[1280px] flex-col items-center text-center lg:flex">
+      <div className="mb-10 flex flex-col items-center text-center xl:mb-12">
+        <div className="mb-6 flex items-center gap-3">
+          <div className="h-px w-8 bg-[#A68A64]" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#A68A64]">Lifestyle & Atelier</span>
+          <div className="h-px w-8 bg-[#A68A64]" />
+        </div>
+        <h2 className={`font-serif text-4xl leading-none tracking-normal lg:text-5xl xl:text-6xl ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}>
+          Nous aussi on vous aime
+        </h2>
+      </div>
+      <div className="mb-11 grid w-full max-w-[560px] grid-cols-[auto_auto] items-center justify-center gap-x-7">
+        <div className="flex flex-col items-center md:items-end">
+          <div className={`flex origin-bottom translate-y-[-5px] scale-[1.045] items-end font-serif text-[58px] leading-none tracking-normal md:text-[68px] ${darkMode ? 'text-[#F9F6F0]' : 'text-[#1A1A1A]'}`}>
+            <span>38.9</span>
+            <span className="mb-1.5 ml-1 text-[30px] italic lowercase tracking-normal text-[#A68A64] md:text-[38px]">k</span>
+          </div>
+          <p className={`mt-[13px] font-sans text-[8px] font-black uppercase tracking-[0.22em] min-[390px]:text-[9px] ${darkMode ? 'text-white/55' : 'text-[#8f8579]'}`}>
+            abonnes Instagram
+          </p>
+        </div>
+        <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" className={`flex h-[58px] min-w-[360px] items-center justify-between rounded-full border pl-6 pr-2 shadow-[0_18px_48px_rgba(32,26,20,0.07)] ${darkMode ? 'border-white/10 bg-white/5 text-white' : 'border-[#ece7df] bg-white/82 text-[#1A1A1A]'}`}>
+          <span className="flex items-center gap-5">
+            <Instagram size={18} strokeWidth={1.8} />
+            <span className="text-[11px] font-black uppercase tracking-[0.24em]">Rejoindre la communaute</span>
+          </span>
+          <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${darkMode ? 'bg-white text-black' : 'bg-[#1A1A1A] text-white'}`}>
+            <ArrowUpRight size={18} strokeWidth={2.1} />
+          </span>
+        </a>
+      </div>
+      <div className="relative mx-auto h-[535px] w-full max-w-[1120px] overflow-visible xl:h-[570px]">
+        {posts.slice(0, 3).map((post, index) => (
+          <article
+            key={post.title}
+            data-insta-card={index}
+            className={`absolute left-1/2 top-0 w-[340px] overflow-hidden rounded-[22px] shadow-[0_24px_60px_rgba(32,26,20,0.13)] transition-none xl:w-[380px] ${
+              darkMode ? 'bg-zinc-900' : 'bg-white'
+            }`}
+            style={desktopInstaCardStyles[index]}
+          >
+            <div className="aspect-[4/5] overflow-hidden bg-stone-100">
+              <img data-insta-img src={post.img} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+            </div>
+            <div className={`relative min-h-[92px] px-6 pb-6 pt-5 text-left ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}>
+              <p data-insta-label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#A68A64]">{post.label}</p>
+              <h3 data-insta-title className={`mt-1.5 pr-14 font-serif text-[26px] leading-tight tracking-normal ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}>
+                {post.title}
+              </h3>
+              <span className={`absolute right-5 top-5 flex h-12 w-12 items-center justify-center rounded-full shadow-[0_14px_30px_rgba(32,26,20,0.12)] ${darkMode ? 'bg-white/10 text-white' : 'bg-white text-[#9A714C]'}`}>
+                <Heart size={21} strokeWidth={1.8} />
+              </span>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="relative z-20 mt-9 grid w-full max-w-[380px] grid-cols-[52px_1fr_52px] items-center gap-5">
+        <button type="button" data-insta-prev className={`flex h-[52px] w-[52px] items-center justify-center rounded-full border shadow-[0_14px_34px_rgba(35,28,20,0.08)] ${darkMode ? 'border-white/10 bg-white/7 text-white' : 'border-[#eee6da] bg-white text-[#6d6258]'}`} aria-label="Photo Instagram precedente">
+          <ChevronLeft size={22} strokeWidth={1.7} />
+        </button>
+        <div className="flex items-center justify-center gap-3">
+          {posts.map((post, index) => (
+            <button key={post.title} type="button" data-insta-dot className={`block h-[4px] rounded-full ${index === 1 ? 'w-10 bg-[#A68A64]' : `w-6 ${darkMode ? 'bg-white/16' : 'bg-stone-200'}`}`} aria-label={`Voir la photo Instagram ${index + 1}`} />
           ))}
         </div>
+        <button type="button" data-insta-next className={`flex h-[52px] w-[52px] items-center justify-center rounded-full border shadow-[0_14px_34px_rgba(35,28,20,0.08)] ${darkMode ? 'border-white/10 bg-white/7 text-white' : 'border-[#eee6da] bg-white text-[#6d6258]'}`} aria-label="Photo Instagram suivante">
+          <ChevronRight size={22} strokeWidth={1.7} />
+        </button>
       </div>
     </div>
   </section>
 );
 
 export const InstagramSectionServer = ({ darkMode = false } = {}) => (
-  <DeferredGalleryIsland type="instagram" posts={instaPosts} darkMode={darkMode} rootMargin="900px 0px" enableIdleFallback={false} intersectionDelayMs={80}>
-    <InstagramCarouselPlaceholder darkMode={darkMode} posts={instaPosts} />
-  </DeferredGalleryIsland>
+  <InstagramCarouselPlaceholder darkMode={darkMode} posts={instaPosts} />
+);
+
+const testimonials = [
+  {
+    id: 1,
+    text: "La commode celadon a completement transforme notre chambre. Un travail magnifique et un respect de l'ame du meuble qui force l'admiration.",
+    author: 'Sophie L.',
+    color: '#F7EEE7',
+    mobilePosition: 'translateX(-116%) scale(0.9)',
+    desktopPosition: 'translateX(-145%) scale(0.92)',
+    opacity: 0.52,
+    zIndex: 1,
+  },
+  {
+    id: 2,
+    text: "J'ai pleure en voyant la restauration du vieux chevet de ma grand-mere. L'or et la patine sont d'une douceur absolue.",
+    author: 'Caroline V.',
+    color: '#F2E8D8',
+    mobilePosition: 'translateX(-50%) scale(1)',
+    desktopPosition: 'translateX(-50%) scale(1)',
+    opacity: 1,
+    zIndex: 3,
+  },
+  {
+    id: 3,
+    text: "Le meuble est encore plus incroyable en vrai. On a retrouve une piece de famille, restauree avec une grace folle.",
+    author: 'Julie M.',
+    color: '#E5EBDD',
+    mobilePosition: 'translateX(16%) scale(0.9)',
+    desktopPosition: 'translateX(45%) scale(0.92)',
+    opacity: 0.58,
+    zIndex: 1,
+  },
+  {
+    id: 4,
+    text: "Anais a compris exactement l'ambiance que je voulais. La livraison a Marseille etait douce, precise, sans stress.",
+    author: 'Marc & Chloe',
+    color: '#EFE6DC',
+    mobilePosition: 'translateX(106%) scale(0.86)',
+    desktopPosition: 'translateX(148%) scale(0.88)',
+    opacity: 0,
+    zIndex: 0,
+  },
+  {
+    id: 5,
+    text: "Une vraie seconde vie pour notre table de ferme. Elle garde ses marques, mais elle respire a nouveau.",
+    author: 'Julien B.',
+    color: '#F4EEE4',
+    mobilePosition: 'translateX(-206%) scale(0.86)',
+    desktopPosition: 'translateX(-248%) scale(0.88)',
+    opacity: 0,
+    zIndex: 0,
+  },
+];
+
+const TestimonialsHeader = ({ darkMode = false, compact = false } = {}) => (
+  <div className="mx-auto flex max-w-[420px] flex-col items-center px-4 text-center">
+    <div className={`relative mb-7 flex items-center gap-2 ${darkMode ? 'text-[#ff9d10]' : 'text-[#ff9200]'}`}>
+      {Array.from({ length: 5 }).map((_, index) => (
+        <span key={index} className="relative z-10 inline-flex">
+          <Star size={compact ? 21 : 23} fill="currentColor" strokeWidth={0} />
+        </span>
+      ))}
+    </div>
+    <h2 className={`${compact ? 'text-[34px]' : 'text-[44px]'} font-serif leading-none tracking-normal dark:text-[#f8f1e8] ${darkMode ? 'text-[#f8f1e8]' : 'text-[#242221]'}`}>
+      La parole a nos clients.
+    </h2>
+    <p className={`mt-6 text-[10px] font-black uppercase tracking-[0.14em] dark:text-[#a99b8c] ${darkMode ? 'text-[#a99b8c]' : 'text-[#77716b]'}`}>
+      Excellent 4.9/5 - base sur 124 avis Google
+    </p>
+  </div>
+);
+
+const TestimonialCardServer = ({ note, darkMode = false, size = 'mobile' } = {}) => {
+  const isDesktop = size === 'desktop';
+  return (
+    <article
+      data-testimonial-card={note.id === 1 ? 0 : note.id === 2 ? 1 : 2}
+      style={{
+        '--testimonial-card-bg': note.color,
+        transform: isDesktop ? note.desktopPosition : note.mobilePosition,
+        opacity: note.opacity,
+        zIndex: note.zIndex,
+        width: isDesktop ? 'min(29vw, 350px)' : undefined,
+      }}
+      className={`customer-testimonial-card absolute left-1/2 top-0 flex flex-col justify-between rounded-[16px] bg-[color:var(--testimonial-card-bg)] ring-1 ring-transparent dark:bg-[#1b1814] dark:ring-[#d8ad73]/10 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.045),0_22px_54px_-40px_rgba(0,0,0,0.95)] ${
+        isDesktop
+          ? 'h-[306px] px-7 py-8 shadow-[0_16px_38px_rgba(69,57,42,0.08)] xl:h-[332px] xl:px-9 xl:py-10'
+          : 'h-[292px] w-[232px] px-6 py-8 shadow-[0_18px_36px_rgba(69,57,42,0.035)]'
+      } ${darkMode ? '' : ''}`}
+    >
+      <div
+        aria-hidden="true"
+        className="absolute left-1/2 top-0 h-6 w-16 -translate-x-1/2 -translate-y-[45%] bg-white/60 shadow-[0_2px_10px_rgba(0,0,0,0.04)] dark:bg-[#d8ad73]/10 dark:shadow-none"
+      />
+      <Quote size={isDesktop ? 30 : 27} className="text-[#b8b1a8]/55 dark:text-[#d8ad73]/30" strokeWidth={2.4} />
+      <p data-testimonial-text className={`${isDesktop ? 'text-[clamp(18px,1.72vw,24px)]' : 'text-[20px]'} font-serif leading-[1.36] tracking-normal text-[#252321] dark:text-[#f5eadc]`}>
+        "{note.text}"
+      </p>
+      <p className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.15em] text-[#8c877f] dark:text-[#b7a895]">
+        <span className="h-px w-5 bg-[#aaa49b] dark:bg-[#d8ad73]/24" />
+        <span data-testimonial-author>{note.author}</span>
+      </p>
+    </article>
+  );
+};
+
+const TestimonialControlsServer = ({ darkMode = false, compact = false } = {}) => (
+  <div className={`mx-auto grid w-full ${compact ? 'grid-cols-[52px_1fr_52px] gap-2 px-0 max-w-[286px] mt-4' : 'grid-cols-[60px_1fr_60px] gap-4 px-0 max-w-[360px] mt-6 xl:mt-8 xl:max-w-[380px]'} items-center`}>
+    <button type="button" data-testimonial-prev className={`group relative flex ${compact ? 'h-[48px] w-[48px]' : 'h-[58px] w-[58px]'} items-center justify-center rounded-full p-1 ${
+      darkMode
+        ? 'bg-white/[0.045] text-[#f8f1e8] ring-1 ring-[#d8ad73]/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_16px_32px_rgba(0,0,0,0.18)]'
+        : 'bg-[#fbf8f2] text-[#655d54] ring-1 ring-[#e8ded1] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_16px_34px_rgba(92,72,42,0.08)] dark:bg-white/[0.045] dark:text-[#f8f1e8] dark:ring-[#d8ad73]/10'
+    }`} aria-label="Avis precedent">
+      <span className={`flex h-full w-full items-center justify-center rounded-full ${darkMode ? 'bg-[#1c1b19] ring-1 ring-[#d8ad73]/10' : 'bg-white ring-1 ring-[#f1ebe3] dark:bg-[#15120f] dark:ring-[#d8ad73]/10'}`}>
+        <ChevronLeft size={compact ? 20 : 24} strokeWidth={1.8} />
+      </span>
+    </button>
+
+    <div className={`relative flex min-w-0 flex-col items-center justify-center ${compact ? 'gap-5 py-1' : 'gap-6 py-2'}`}>
+      <div className={`relative z-10 flex w-full items-center justify-center ${compact ? 'gap-3' : 'gap-4'}`}>
+        <span aria-hidden="true" className={`h-[3px] w-[3px] rounded-full ${darkMode ? 'bg-[#d8ad73]/24' : 'bg-[#d8cec1]'}`} />
+        <span aria-hidden="true" className={`${compact ? 'w-9' : 'w-14'} h-px ${darkMode ? 'bg-[#d8ad73]/22' : 'bg-[#bca486]'}`} />
+        <span className={`font-serif ${compact ? 'text-[17px]' : 'text-[20px]'} font-semibold leading-none tracking-[0.05em] ${darkMode ? 'text-[#f5eadc]' : 'text-[#181716]'}`}>
+          <span data-testimonial-count>02</span><span className={darkMode ? 'mx-2 font-normal text-[#7c6d5e]' : 'mx-2 font-normal text-[#b9aa98]'}>/</span><span className={darkMode ? 'font-normal text-[#a99b8c]' : 'font-normal text-[#8f8579]'}>05</span>
+        </span>
+        <span aria-hidden="true" className={`${compact ? 'w-9' : 'w-14'} h-px ${darkMode ? 'bg-[#d8ad73]/22' : 'bg-[#bca486]'}`} />
+        <span aria-hidden="true" className={`h-[3px] w-[3px] rounded-full ${darkMode ? 'bg-[#d8ad73]/24' : 'bg-[#d8cec1]'}`} />
+      </div>
+
+      <div className={`relative z-10 flex items-center ${compact ? 'gap-2.5' : 'gap-3'}`}>
+        {Array.from({ length: 5 }).map((_, index) => (
+          <button
+            key={index}
+            type="button"
+            data-testimonial-dot
+            className={`rounded-full ${index === 1
+              ? `${compact ? 'h-2 w-7' : 'h-2.5 w-8'} bg-[#ff9200] shadow-[0_0_0_4px_rgba(255,146,0,0.09),0_5px_12px_rgba(255,146,0,0.16)]`
+              : `${compact ? 'h-1.5 w-1.5' : 'h-2 w-2'} ${darkMode ? 'bg-[#d8ad73]/24' : 'bg-[#d6ccbf]'}`
+            }`}
+            aria-label={`Afficher l'avis ${index + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+
+    <button type="button" data-testimonial-next className={`group relative flex ${compact ? 'h-[48px] w-[48px]' : 'h-[58px] w-[58px]'} items-center justify-center rounded-full p-1 ${
+      darkMode
+        ? 'bg-white/[0.045] text-[#f8f1e8] ring-1 ring-[#d8ad73]/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_16px_32px_rgba(0,0,0,0.18)]'
+        : 'bg-[#fbf8f2] text-[#655d54] ring-1 ring-[#e8ded1] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_16px_34px_rgba(92,72,42,0.08)] dark:bg-white/[0.045] dark:text-[#f8f1e8] dark:ring-[#d8ad73]/10'
+    }`} aria-label="Avis suivant">
+      <span className={`flex h-full w-full items-center justify-center rounded-full ${darkMode ? 'bg-[#1c1b19] ring-1 ring-[#d8ad73]/10' : 'bg-white ring-1 ring-[#f1ebe3] dark:bg-[#15120f] dark:ring-[#d8ad73]/10'}`}>
+        <ChevronRight size={compact ? 20 : 24} strokeWidth={1.8} />
+      </span>
+    </button>
+  </div>
 );
 
 const TestimonialsCarouselPlaceholder = ({ darkMode = false } = {}) => (
   <section
+    data-testimonials-carousel
+    data-items={JSON.stringify(testimonials)}
     className={`customer-testimonials-section relative z-20 min-h-[520px] w-full overflow-hidden dark:bg-[#0b0a09] dark:text-[#f8f1e8] lg:min-h-[828px] ${
       darkMode ? 'bg-[#0b0a09] text-[#f8f1e8]' : 'bg-white text-[#242221]'
     }`}
-    aria-hidden="true"
   >
     <div className="hidden px-8 py-20 lg:block lg:px-12 xl:px-16 xl:py-24">
       <div className="mx-auto flex w-full max-w-[1280px] flex-col items-center">
-        <div className="mx-auto flex max-w-[420px] flex-col items-center px-4 text-center">
-          <div className={`relative mb-7 flex items-center gap-2 ${darkMode ? 'text-[#ff9d10]' : 'text-[#ff9200]'}`}>
-            {Array.from({ length: 5 }).map((_, index) => (
-              <Sparkles key={index} size={23} strokeWidth={1.8} />
-            ))}
-          </div>
-          <h2 className="font-serif text-[44px] leading-none tracking-normal">La parole a nos clients.</h2>
-          <p className={`mt-6 text-[10px] font-black uppercase tracking-[0.14em] ${darkMode ? 'text-[#a99b8c]' : 'text-[#77716b]'}`}>
-            Excellent 4.9/5 - base sur 124 avis Google
-          </p>
-        </div>
-        <div className="mt-12 grid h-[328px] w-full max-w-[1120px] grid-cols-3 gap-6 overflow-hidden xl:h-[352px] xl:max-w-[1240px]">
-          {['Sophie L.', 'Caroline V.', 'Julie M.'].map((author, index) => (
-            <article
-              key={author}
-              className={`flex flex-col justify-between rounded-[16px] px-7 py-8 shadow-[0_16px_38px_rgba(69,57,42,0.08)] ${
-                index === 1 ? 'bg-[#F2E8D8]' : 'bg-[#F7EEE7] opacity-55'
-              } dark:bg-[#1b1814]`}
-            >
-              <p className="font-serif text-[clamp(18px,1.72vw,24px)] leading-[1.36] tracking-normal">"{author === 'Caroline V.' ? "J'ai pleure en voyant la restauration du vieux chevet." : 'Un travail magnifique et un respect de l ame du meuble.'}"</p>
-              <p className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.15em] text-[#8c877f]">
-                <span className="h-px w-5 bg-[#aaa49b]" />
-                {author}
-              </p>
-            </article>
+        <TestimonialsHeader darkMode={darkMode} />
+        <div className="relative mt-12 h-[328px] w-full max-w-[1120px] overflow-visible xl:h-[352px] xl:max-w-[1240px]">
+          {testimonials.slice(0, 3).map((note) => (
+            <TestimonialCardServer key={note.id} note={note} darkMode={darkMode} size="desktop" />
           ))}
         </div>
+        <TestimonialControlsServer darkMode={darkMode} />
       </div>
     </div>
-    <div className="mx-auto flex min-h-[520px] w-full max-w-[430px] flex-col items-center px-0 pb-16 pt-14 lg:hidden">
-      <h2 className="px-4 text-center font-serif text-[34px] leading-none tracking-normal">La parole a nos clients.</h2>
-      <div className="mt-11 h-[318px] w-full overflow-hidden">
-        <article className="mx-auto flex h-[292px] w-[232px] flex-col justify-between rounded-[16px] bg-[#F2E8D8] px-6 py-8 shadow-[0_18px_36px_rgba(69,57,42,0.035)] dark:bg-[#1b1814]">
-          <p className="font-serif text-[20px] leading-[1.36] tracking-normal">"Un travail magnifique et un respect de l ame du meuble."</p>
-          <p className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.15em] text-[#8c877f]">
-            <span className="h-px w-5 bg-[#aaa49b]" />
-            Sophie L.
-          </p>
-        </article>
+    <div className="mx-auto flex w-full max-w-[430px] flex-col items-center px-0 pb-16 pt-14 lg:hidden">
+      <TestimonialsHeader darkMode={darkMode} compact />
+      <div className="relative mt-11 h-[318px] w-full overflow-hidden">
+        {testimonials.slice(0, 3).map((note) => (
+          <TestimonialCardServer key={note.id} note={note} darkMode={darkMode} size="mobile" />
+        ))}
       </div>
+      <TestimonialControlsServer darkMode={darkMode} compact />
     </div>
   </section>
 );
 
 export const TestimonialsSectionServer = ({ darkMode = false } = {}) => (
-  <DeferredGalleryIsland type="testimonials" darkMode={darkMode} rootMargin="900px 0px" enableIdleFallback={false} intersectionDelayMs={100}>
-    <TestimonialsCarouselPlaceholder darkMode={darkMode} />
-  </DeferredGalleryIsland>
+  <TestimonialsCarouselPlaceholder darkMode={darkMode} />
 );
 
 const discountCards = [

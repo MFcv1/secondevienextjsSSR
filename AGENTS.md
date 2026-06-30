@@ -30,6 +30,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |-- UX_MICRO_FRICTIONS_PLAYBOOK.md : playbook agent pour detecter les micro-frictions UI/UX, conflits d'overlays, wording et parcours
 |-- OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md : rapport operationnel image centrale produit, preconnect Storage, warmup categorie/scroll et audit froid images detail
 |-- DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md : cadrage et suivi reversible variante image `detailFast`, upload admin, backfill Storage/Firestore, rollback et gates
+|-- DEFERRED_GALLERY_FINAL_RENDER_ROADMAP_2026-06-30.md : roadmap suppression des placeholders differes Avant/Apres, Instagram et avis pour rendu final direct multi-formats
 |-- P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md : roadmap de cloture P0 infra avant Phase 3 perf, couvrant prod rail, App Check, revalidation, Stripe webhook/refund et checkout redirect
 |-- PHASE3_PERF_BASELINE_2026-06-24.md : baseline Phase 3 perf/hydratation, passe P0 galerie, chunks `/galerie`, gates et dettes P1/P2
 |-- APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md : rapport App Check sandbox, etat enforcement, telemetrie Cloud Monitoring et decision service par service
@@ -61,7 +62,7 @@ L'agent doit garder cette carte a jour lors de chaque creation, suppression, ren
 |   |-- index.css
 |   |-- kit/admin : back-office, analytics, commandes, retours/remboursements Stripe, SEO, users, exports CSV, docs/etudes techniques admin
 |   |-- kit/commerce : panier, checkout, login, commandes client, regle isPurchasable
-|   |-- kit/marketplace : galerie serveur, SEO visible, pages categorie/produit, ilots produit/lightbox, footer mobile et carte footer opt-in, panier/cartes, devis ServerView/FormIsland, wishlist
+|   |-- kit/marketplace : galerie serveur, SEO visible, pages categorie/produit, ilots produit/lightbox, sections fixes SSR avec interactions client fines, section Insta SSR + reveal pastilles, footer mobile et carte footer opt-in, panier/cartes, devis ServerView/FormIsland, wishlist
 |   |-- kit/vitrine : vue serveur et iles fines de la page /a-propos native Next
 |   |-- kit/layout, kit/shared, kit/ui, kit/hooks, kit/contexts, kit/config (dont firebaseEnv/firebaseCore/firebaseLazy)
 |   |-- lib : helpers serveur produits/env/theme/about et SEO structure
