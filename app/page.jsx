@@ -1,12 +1,13 @@
-import { permanentRedirect } from 'next/navigation';
+import GalleryRoutePage, {
+  buildGalleryMetadata,
+  galleryCanonicalPath,
+} from '../src/kit/marketplace/GalleryRoutePage';
 
+export const revalidate = 300;
 export const dynamic = 'force-static';
 
-export const metadata = {
-  alternates: { canonical: '/galerie' },
-  robots: { index: false, follow: true },
-};
+export const metadata = buildGalleryMetadata(galleryCanonicalPath);
 
 export default function HomePage() {
-  permanentRedirect('/galerie');
+  return <GalleryRoutePage canonicalPath={galleryCanonicalPath} />;
 }

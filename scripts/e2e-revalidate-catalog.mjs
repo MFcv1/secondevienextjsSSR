@@ -317,7 +317,7 @@ const waitForFreshOtp = async ({ email, minUid }) => {
 };
 
 const openLoginDialog = async (page) => {
-  await page.goto(`${baseUrl}/galerie?e2e_run=revalidate-catalog-${encodeURIComponent(runId)}`, {
+  await page.goto(`${baseUrl}/?e2e_run=revalidate-catalog-${encodeURIComponent(runId)}`, {
     waitUntil: 'domcontentloaded',
     timeout: 60_000,
   });
@@ -473,6 +473,7 @@ try {
     throw new Error(`Revalidation API failed: HTTP ${revalidateResponse.status} ${redactSensitiveText(JSON.stringify(revalidatePayload))}`);
   }
 
+  await checkRoute('/', /Seconde Vie|Galerie|meuble/i);
   await checkRoute('/galerie', /Seconde Vie|Galerie|meuble/i);
   await checkRoute(categoryPath, /categorie|cat.gorie|Seconde Vie|meuble/i);
   await checkRoute(productPath, /produit|Seconde Vie|€|EUR/i);

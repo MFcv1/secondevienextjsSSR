@@ -10,8 +10,8 @@ La passe P0 galerie est implementee sans redesign et sans toucher au contrat mob
 
 - `/galerie` reste SSR/ISR native, avec canonical, JSON-LD, liens produit/categorie natifs et sans `ClientApp`.
 - `GalleryServerView`, `GalleryMobileShellIsland`, `.marketplace-gallery-shell` et `#marketplaceGalleryScroll` restent en place.
-- Les iles basses interactives `BeforeAfterSliderIsland`, `InstagramCarouselIsland` et `TestimonialsCarouselIsland` ne sont plus importees directement par `ProductSectionsServer`.
-- `DeferredGalleryIsland` charge ces iles au voisinage viewport/idle, avec placeholders serveur a hauteur stable.
+- Mise a jour 2026-06-30: les sections fixes Avant/Apres, Instagram et Avis sont rendues directement en HTML serveur final par `ProductSectionsServer`.
+- Les interactions basses passent par `GalleryFixedSectionsInteractions` et `InstagramFloatingTokensReveal`; `DeferredGalleryIsland` et les anciennes iles lourdes orphelines ont ete retirees.
 - La home V4 expose a nouveau `data-ssr-home`, ce qui remet `npm run perf:gallery-direct` en phase avec la page actuelle.
 
 ## Avant / Apres

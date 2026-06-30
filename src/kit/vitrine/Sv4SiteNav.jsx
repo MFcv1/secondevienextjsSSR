@@ -6,13 +6,13 @@ export default function Sv4SiteNav() {
   return (
     <nav className="sv4-nav">
       <div className="sv4-nav__inner">
-        <Link href="/galerie" className="sv4-nav__logo" aria-label="Seconde Vie - Retour a la galerie">
+        <Link href="/" className="sv4-nav__logo" aria-label="Seconde Vie - Retour a la galerie">
           <img src="/images/logoanais.png" alt="Seconde Vie" />
           <span className="sv4-nav__logo-text">Seconde Vie</span>
         </Link>
 
         <div className="sv4-nav__center">
-          <Link href="/galerie" className="sv4-nav__link">
+          <Link href="/" className="sv4-nav__link">
             <span>Galerie</span>
           </Link>
           <Link href="/a-propos" className="sv4-nav__link">
@@ -24,7 +24,7 @@ export default function Sv4SiteNav() {
         </div>
 
         <div className="sv4-nav__right">
-          <Link href="/galerie" className="sv4-nav__cta sv4-btn-reveal">
+          <Link href="/" className="sv4-nav__cta sv4-btn-reveal">
             <span className="sv4-btn-text-mask">
               <span className="sv4-btn-text-inner" data-text="Catalogue">
                 Catalogue

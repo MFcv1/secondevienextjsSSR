@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 
 const LINKS = [
-  { href: '/galerie', label: 'Galerie' },
+  { href: '/', label: 'Galerie' },
   { href: '/a-propos', label: 'Atelier' },
   { href: '/devis', label: 'Restauration' },
 ];
@@ -77,7 +77,7 @@ export default function MobileNavIsland() {
                 </ul>
 
                 <Link
-                  href="/galerie"
+                  href="/"
                   className="sv4-mobile-menu__cta"
                   onClick={() => setOpen(false)}
                 >

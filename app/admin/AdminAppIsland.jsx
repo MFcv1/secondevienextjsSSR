@@ -190,7 +190,7 @@ function AdminContent({ initialItems = [] }) {
             <h2 className="text-4xl font-black tracking-tighter md:text-5xl">Gestion Boutique</h2>
           </div>
           <a
-            href="/galerie"
+            href="/"
             className={`group flex items-center gap-2 rounded-2xl border-2 px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all ${darkMode ? 'border-white/10 hover:border-white hover:bg-white hover:text-stone-900' : 'border-stone-900 hover:bg-stone-900 hover:text-white'}`}
           >
             <ChevronLeft size={14} className="transition-transform group-hover:-translate-x-1" />

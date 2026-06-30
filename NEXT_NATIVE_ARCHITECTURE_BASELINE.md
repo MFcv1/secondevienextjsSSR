@@ -10,8 +10,8 @@ Le projet Seconde Vie est maintenant une application Next.js App Router native p
 
 | Route | Mode attendu | Contrat |
 | --- | --- | --- |
-| `/` | statique | redirection permanente vers `/galerie` |
-| `/galerie` | `force-static` + ISR `revalidate = 300` | galerie SSR, contenu indexable, shell mobile conserve, sections fixes rendues directement |
+| `/` | `force-static` + ISR `revalidate = 300` | home canonique, galerie SSR, contenu indexable, shell mobile conserve, sections fixes rendues directement |
+| `/galerie` | `force-static` + ISR `revalidate = 300` | alias compatible de la galerie, canonical vers `/` |
 | `/categorie/[categoryId]` | SSG + ISR `revalidate = 300` | `generateStaticParams`, rendu canonique serveur, facettes/tri cote client |
 | `/produit/[slugOrId]` | SSG + ISR `revalidate = 300` | `generateStaticParams`, metadata produit, JSON-LD, actions panier/favori en iles client |
 | `/a-propos` | ISR `revalidate = 300` | page vitrine serveur + iles fines |
@@ -25,7 +25,7 @@ Le projet Seconde Vie est maintenant une application Next.js App Router native p
 - Les pages publiques ne doivent pas lire `cookies()`, `headers()`, `draftMode()` ou `searchParams` cote serveur pour des preferences UI.
 - Les donnees publiques catalogue passent par les helpers serveur et les tags/cache/revalidation existants.
 - Les interactions doivent etre des iles client bornees: auth, panier, wishlist, menu, lightbox, carousel, slider, formulaires.
-- Les boutons publics doivent naviguer avec des URLs stables: `/galerie`, `/categorie/...`, `/produit/...`, `/devis`, `/wishlist`, `/mes-commandes`.
+- Les boutons publics doivent naviguer avec des URLs stables: `/`, `/#gallery-pieces`, `/categorie/...`, `/produit/...`, `/devis`, `/wishlist`, `/mes-commandes`.
 - Les sections fixes de galerie ne doivent plus passer par un rendu provisoire remplace par un composant client complet.
 
 ## Galerie
@@ -34,7 +34,8 @@ La galerie est la surface publique la plus sensible.
 
 Contrat actuel:
 
-- `app/galerie/page.jsx` rend `GalleryServerView`.
+- `app/page.jsx` et `app/galerie/page.jsx` rendent `GalleryRoutePage`; `/` est la canonique, `/galerie` reste compatible.
+- `GalleryRoutePage` rend `GalleryServerView`.
 - `GalleryServerView` expose `data-ssr-gallery`, `.marketplace-gallery-shell`, `.marketplace-gallery-scroll` et `#marketplaceGalleryScroll`.
 - `GalleryMobileShellIsland` attache seulement les comportements mobile necessaires.
 - Les sections Avant/Apres, Instagram, Avis et Newsletter ont leur rendu final directement dans le HTML serveur.

@@ -20,9 +20,10 @@ const WISHLIST_STORAGE_KEY = 'sv_public_product_wishlist';
 const WISHLIST_CHANGED_EVENT = 'sv:wishlist-state-changed';
 
 const MENU_PREFETCH_PATHS = [
+  '/',
   '/galerie',
-  '/galerie#gallery-pieces',
-  '/galerie#gallery-small-prices',
+  '/#gallery-pieces',
+  '/#gallery-small-prices',
   '/categorie/meubles',
   '/categorie/buffets',
   '/categorie/armoires',

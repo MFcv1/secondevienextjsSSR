@@ -102,12 +102,12 @@ const helpLinks = [
 ];
 
 const galleryLinkTargets = {
-    [galleryLinks[0]]: '/galerie#gallery-pieces',
+    [galleryLinks[0]]: '/#gallery-pieces',
     [galleryLinks[1]]: getCategoryUrl('meubles'),
     [galleryLinks[2]]: getCategoryUrl('assises'),
     [galleryLinks[3]]: getCategoryUrl('eclairage'),
     [galleryLinks[4]]: getCategoryUrl('decorations'),
-    [galleryLinks[5]]: '/galerie#gallery-small-prices',
+    [galleryLinks[5]]: '/#gallery-small-prices',
 };
 
 const aboutLinkTargets = {
@@ -504,7 +504,7 @@ const Footer = ({ darkMode, contactInfo: contactInfoOverride }) => {
                                 <a href={contactInfo.facebook || '#'} target={contactInfo.facebook ? '_blank' : undefined} rel={contactInfo.facebook ? 'noopener noreferrer' : undefined} aria-label="Facebook" className={`flex h-11 w-11 items-center justify-center rounded-full transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}>
                                     <Facebook size={19} />
                                 </a>
-                                <a href="/galerie#gallery-pieces" aria-label="Pinterest" className={`flex h-11 w-11 items-center justify-center rounded-full text-lg font-semibold transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}>
+                                <a href="/#gallery-pieces" aria-label="Pinterest" className={`flex h-11 w-11 items-center justify-center rounded-full text-lg font-semibold transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}>
                                     p
                                 </a>
                                 <a href={contactInfo.tiktok || '#'} target={contactInfo.tiktok ? '_blank' : undefined} rel={contactInfo.tiktok ? 'noopener noreferrer' : undefined} aria-label="TikTok" className={`flex h-11 w-11 items-center justify-center rounded-full text-xl font-semibold transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}>

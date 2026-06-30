@@ -194,8 +194,8 @@ const waitForSettled = async (page) => {
 };
 
 const galleryUrl = () => {
-  if (!targetProductId) return `${baseUrl}/galerie`;
-  return `${baseUrl}/galerie?e2e_run=${encodeURIComponent(runId)}`;
+  if (!targetProductId) return `${baseUrl}/`;
+  return `${baseUrl}/?e2e_run=${encodeURIComponent(runId)}`;
 };
 
 const clickFirstVisible = async (locators, label) => {

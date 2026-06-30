@@ -60,7 +60,7 @@ const NOUVEAUTES_ITEMS = [
 ];
 
 const MENU_ITEMS = [
-  { id: 'nouveautes', label: 'Nouveautes', href: '/galerie#gallery-pieces', hasMega: true, customType: 'preview-list', dropdownWidth: 680 },
+  { id: 'nouveautes', label: 'Nouveautes', href: '/#gallery-pieces', hasMega: true, customType: 'preview-list', dropdownWidth: 680 },
   {
     id: 'meubles',
     label: 'Meubles',
@@ -114,7 +114,7 @@ const MENU_ITEMS = [
     ],
     resources: ['Inspiration Galerie'],
   },
-  { id: 'prix-bas', label: 'Prix bas', href: '/galerie#gallery-small-prices', customColor: 'text-[#d9534f] hover:text-red-700 dark:text-[#ff6f61] dark:hover:text-[#ffa095]' },
+  { id: 'prix-bas', label: 'Prix bas', href: '/#gallery-small-prices', customColor: 'text-[#d9534f] hover:text-red-700 dark:text-[#ff6f61] dark:hover:text-[#ffa095]' },
   { id: 'propos', label: 'A propos', href: '/a-propos' },
 ];
 
@@ -129,7 +129,7 @@ function NouveautesContent({ darkMode }) {
           {NOUVEAUTES_ITEMS.map((item) => (
             <li key={item.id} onMouseEnter={() => setHoveredId(item.id)} className="relative flex items-center">
               <Link
-                href="/galerie#gallery-pieces"
+                href="/#gallery-pieces"
                 className={`relative z-10 w-full rounded-lg px-4 py-2.5 text-[13px] transition-colors ${
                   hoveredId === item.id
                     ? (darkMode ? 'bg-white/10 font-medium text-white' : 'bg-stone-200 font-medium text-black dark:bg-white/10 dark:text-white')
@@ -141,7 +141,7 @@ function NouveautesContent({ darkMode }) {
             </li>
           ))}
           <li className="mt-4 border-t border-stone-200/20 px-4 pt-4 dark:border-white/10">
-            <Link href="/galerie#gallery-pieces" className={`flex w-full items-center justify-between text-[11px] font-bold uppercase tracking-widest transition-colors group ${darkMode ? 'text-stone-400 hover:text-white' : 'text-stone-500 hover:text-black dark:text-stone-400 dark:hover:text-white'}`}>
+            <Link href="/#gallery-pieces" className={`flex w-full items-center justify-between text-[11px] font-bold uppercase tracking-widest transition-colors group ${darkMode ? 'text-stone-400 hover:text-white' : 'text-stone-500 hover:text-black dark:text-stone-400 dark:hover:text-white'}`}>
               Voir le catalogue <span className="transition-transform group-hover:translate-x-1">-&gt;</span>
             </Link>
           </li>
@@ -149,7 +149,7 @@ function NouveautesContent({ darkMode }) {
       </div>
       <div className={`mega-menu-col mega-menu-col-right flex w-full items-stretch border-l p-6 ${darkMode ? 'border-white/5 bg-[#151515]' : 'border-stone-100 bg-[#F2F2F0] dark:border-white/5 dark:bg-[#151515]'}`}>
         <Link
-          href="/galerie#gallery-pieces"
+          href="/#gallery-pieces"
           className={`group flex w-full cursor-pointer rounded-[16px] border p-5 shadow-sm no-underline ${
             darkMode ? 'border-white/10 bg-[#1A1A1A] shadow-black/40' : 'border-stone-100 bg-white shadow-[0_10px_30px_rgba(0,0,0,0.03)] dark:border-white/10 dark:bg-[#1A1A1A] dark:shadow-black/40'
           }`}

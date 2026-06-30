@@ -174,7 +174,7 @@ const setupInstagram = () => {
         }, resumeDelayMs);
         return;
       }
-      render({ animateProgress: true, direction: resolvedDirection });
+      render({ animateProgress: true });
     };
 
     root.querySelectorAll('[data-insta-prev]').forEach((button) => {

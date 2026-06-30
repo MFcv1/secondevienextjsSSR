@@ -113,10 +113,7 @@ SecondeVieNextjsSSR
 |   |   |-- next/font/google
 |   |   `-- src/lib/server/env                         [DATA env public]
 |   |
-|   |-- page.jsx                                       [ISR 300s]
-|   |   |-- src/lib/server/products                    [DATA publicCatalog + fallback]
-|   |   |-- src/utils/imageUtils
-|   |   `-- HomeMotionIsland.jsx                       [CLIENT motion]
+|   |-- page.jsx                                       [ISR force-static 300s, galerie home canonique]
 |   |
 |   |-- galerie/page.jsx                               [ISR force-static 300s]
 |   |   |-- src/lib/server/products                    [DATA publicCatalog limit=48]
@@ -284,8 +281,8 @@ CLEANUP
 
 | Route | Fichiers principaux | Strategie actuelle observee | Data/cache | Iles client | Pertinence | Action recommandee |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/` | `app/page.jsx`, `app/HomeMotionIsland.jsx` | ISR statique, `revalidate=300`, prerender manifest OK | `getPublicCatalog(scope=cards&limit=24)`, fallback Admin/REST, tags `catalog/products` | `HomeMotionIsland` | Pertinent: landing publique cacheable | Garder ISR. Ajouter un audit home direct si besoin. |
-| `/galerie` | `app/galerie/page.jsx`, `app/GalleryMobileShellIsland.jsx`, `src/kit/marketplace/GalleryServerView.jsx`, `src/kit/marketplace/DeferredGalleryIsland.jsx` | ISR force, `dynamic='force-static'`, `revalidate=300`, prerender manifest OK | Catalogue `limit=48`, fallback serveur | shell mobile, actions grille, header/menu/cart/dark, carousels bas differees | Pertinent: catalogue public cacheable | Garder ISR. Toute modif mobile doit relire `alertemobile.md`. P1 restant: orchestration header public. |
+| `/` | `app/page.jsx`, `src/kit/marketplace/GalleryRoutePage.jsx`, `app/GalleryMobileShellIsland.jsx`, `src/kit/marketplace/GalleryServerView.jsx`, `src/kit/marketplace/ProductSectionsServer.jsx` | ISR force, `dynamic='force-static'`, `revalidate=300`, prerender manifest OK | Catalogue `limit=48`, fallback serveur | shell mobile, actions grille, header/menu/cart/dark, interactions sections fixes legeres | Pertinent: home canonique galerie | Garder ISR. Toute modif mobile doit relire `alertemobile.md`. |
+| `/galerie` | `app/galerie/page.jsx`, `src/kit/marketplace/GalleryRoutePage.jsx`, `app/GalleryMobileShellIsland.jsx`, `src/kit/marketplace/GalleryServerView.jsx`, `src/kit/marketplace/ProductSectionsServer.jsx` | ISR force, `dynamic='force-static'`, `revalidate=300`, canonical vers `/` | Catalogue `limit=48`, fallback serveur | shell mobile, actions grille, header/menu/cart/dark, interactions sections fixes legeres | Pertinent: alias compatible anciens liens | Garder l'alias cacheable; ne pas recreer de home SPA. |
 | `/a-propos` | `app/a-propos/page.jsx`, `src/kit/vitrine/AboutServerView.jsx` | ISR, `revalidate=300`, prerender manifest OK | `getAboutPersonalization()` via cache 300s | iles nav, before/after, FAQ, testimonials | Pertinent | Peut devenir SSG pur si personnalisation admin retiree. Pas prioritaire. |
 | `/devis` | `app/devis/page.jsx`, `src/kit/marketplace/QuoteRequestServerView.jsx` | ISR, `revalidate=300`, prerender manifest OK | env public + contenu quasi statique | `QuoteFormIsland`, dark toggle | Fonctionne; pourrait etre static pur | Garder stable pour l'instant. SEO/perf plus tard. |
 | `/categorie/[categoryId]` | `app/categorie/[categoryId]/page.jsx`, `CategoryServerView.jsx` | `next build` affiche `SSG` avec chemins generes; revalidate source present | `generateStaticParams(categoryEntries)`, catalogue filtre, `searchParams`, cookie dark mode | `CategoryControlsIsland`, header/menu/cart/dark | Pertinent pour public SEO | Ajouter un gate qui prouve les chemins categories depuis le build. Revoir `getServerDarkMode()` seulement si un futur gate cache montre une regression. |
@@ -494,7 +491,7 @@ Ne pas nettoyer automatiquement:
 Decision du 2026-06-13: ne pas modifier les composants qui constituent le rendu actuel des pages publiques tant que la demande porte sur le nettoyage du code mort.
 
 - `/devis`: la page est active et visuellement en cours de finalisation. Le budget est au-dessus du seuil courant quand elle utilise le header unifie, mais aucune modification du header ou du design n'est faite dans cette passe. Optimisation a traiter plus tard comme decision UX/perf explicite.
-- `/galerie`: route active, sensible mobile, protegee par `alertemobile.md`. Aucun decoupage d'ilot ni suppression de composant rendu n'est fait dans une passe "code mort".
+- `/`: home galerie canonique, sensible mobile, protegee par `alertemobile.md`. `/galerie` reste une alias compatible. Aucun decoupage d'ilot ni suppression de composant rendu n'est fait dans une passe "code mort".
 - `/a-propos`: ancienne SPA vitrine supprimee; la page active Next `src/kit/vitrine/*` reste intacte. Les assets candidats restent seulement documentes.
 - `publicCatalog`: l'endpoint actif est `functions-public/src/public/catalog.js`. Le doublon non exporte `functions/src/public/catalog.js` a ete supprime.
 

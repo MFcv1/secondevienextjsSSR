@@ -83,10 +83,10 @@ const runMode = async (browser, mode, pathSuffix) => {
 await fs.mkdir(outDir, { recursive: true });
 const browser = await chromium.launch({ headless: true });
 let results;
-let rootRedirect;
+let rootResponse;
 let legacyRedirect;
 try {
-  rootRedirect = await checkRedirect('/');
+  rootResponse = await checkRedirect('/');
   legacyRedirect = await checkRedirect('/?page=gallery');
   results = [
     await runMode(browser, 'desktop', '/'),
@@ -113,22 +113,21 @@ for (const result of results) {
   add(`${result.mode} gallery entry: legacy ClientApp marker is absent`, result.dom.svClientHydrated === false, result.dom);
   add(`${result.mode} gallery entry: gallery shell is present`, result.dom.hasMarketplaceGalleryShell === true && result.dom.hasGalleryScroll === true, result.dom);
   add(`${result.mode} gallery entry: product/category links are stable URLs`, result.dom.productLinks > 0 && result.dom.categoryLinks > 0, result.dom);
-  add(`${result.mode} gallery entry: canonical targets /galerie`, getUrlPathname(result.dom.canonical) === '/galerie', result.dom);
+  add(`${result.mode} gallery entry: canonical targets /`, getUrlPathname(result.dom.canonical) === '/', result.dom);
   add(`${result.mode} gallery entry: structured data is present`, result.dom.jsonLdCount >= 1, result.dom);
   add(`${result.mode} gallery entry: legacy launcher overlay is absent`, result.dom.hasGalleryLauncherOverlay === false, result.dom);
   if (result.pathSuffix === '/') {
-    add(`${result.mode} root entry: final URL is /galerie`, getUrlPathname(result.finalUrl) === '/galerie', result.dom);
+    add(`${result.mode} root entry: final URL stays /`, getUrlPathname(result.finalUrl) === '/', result.dom);
   }
 }
-add('root entry: returns a permanent redirect', rootRedirect.status === 308, rootRedirect);
-add('root entry: redirect target is /galerie', getUrlPathname(rootRedirect.location) === '/galerie', rootRedirect);
+add('root entry: returns the gallery home directly', rootResponse.status === 200, rootResponse);
 add('legacy gallery query: returns a permanent redirect', legacyRedirect.status === 308, legacyRedirect);
-add('legacy gallery query: redirect target is /galerie', getUrlPathname(legacyRedirect.location) === '/galerie', legacyRedirect);
+add('legacy gallery query: redirect target is /', getUrlPathname(legacyRedirect.location) === '/', legacyRedirect);
 
 const summary = {
   baseUrl,
   generatedAt: new Date().toISOString(),
-  rootRedirect,
+  rootResponse,
   legacyRedirect,
   results: results.map(({ screenshot, ...result }) => result),
   assertions: { passed: checks.every((check) => check.passed), checks },

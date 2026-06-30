@@ -91,7 +91,7 @@ export default async function sitemap() {
   const catalogLastModified = maxDate(products.map(getProductUpdatedDate));
 
   return [
-    withLastModified({ url: `${baseUrl}/galerie` }, catalogLastModified),
+    withLastModified({ url: `${baseUrl}/` }, catalogLastModified),
     { url: `${baseUrl}/a-propos` },
     { url: `${baseUrl}/devis` },
     ...categoryEntries.map((category) => ({

@@ -36,7 +36,7 @@ export default function Sv4HomeHero({ withAboutShell = false }) {
           Nous chinons, restaurons et sublimons des pièces de caractère. Un artisanat d'art en Provence, pour un intérieur qui a du sens.
         </p>
         <div className="sv4-hero__actions sv4-reveal">
-          <Link href="/galerie" className="sv4-hero__btn-primary sv4-btn-reveal">
+          <Link href="/" className="sv4-hero__btn-primary sv4-btn-reveal">
             <span className="sv4-btn-text-mask">
               <span className="sv4-btn-text-inner" data-text="Découvrir la collection">
                 Découvrir la collection

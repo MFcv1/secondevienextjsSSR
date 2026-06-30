@@ -2,6 +2,8 @@
 
 Date: 2026-06-30
 
+Statut closeout 2026-06-30: le rendu final direct est en place. `DeferredGalleryIsland` et les anciennes iles client lourdes `BeforeAfterSliderIsland`, `InstagramCarouselIsland` et `TestimonialsCarouselIsland` ont ete retirees du code actif; les sections fixes utilisent maintenant le HTML serveur final et des iles d'interactions fines.
+
 ## Probleme
 
 Sur la galerie, certains modules fixes affichent d'abord un rendu provisoire SSR, puis un autre design environ une seconde plus tard quand `DeferredGalleryIsland` charge l'ilot client final.
@@ -16,7 +18,7 @@ Les modules concernes sont:
 
 Le module newsletter `Abonne-toi et recois ton code promotionnel` ne presente pas ce probleme car il est rendu directement par `NewsletterSectionServer`, sans placeholder remplace par un ilot client.
 
-## Cause technique
+## Cause technique historique
 
 `src/kit/marketplace/DeferredGalleryIsland.jsx` garde d'abord ses enfants SSR, puis remplace tout le sous-arbre par un composant charge via `import()`:
 

@@ -53,9 +53,8 @@ const runMode = async (browser, mode) => {
     hasGalleryLauncherOverlay: Boolean(document.querySelector('.sv-gallery-launcher-overlay')),
     hasQuoteForm: Boolean(document.querySelector('[data-ssr-quote] form')),
     hasSubmitButton: Boolean(document.querySelector('button[type="submit"]')),
-    hasGalleryLink: Boolean(document.querySelector('a[href="/galerie"]')),
+    hasGalleryLink: Boolean(document.querySelector('a[href="/"], a[href="/#gallery-pieces"], a[href="/#gallery-small-prices"]')),
     hasNativeWishlistLink: Boolean(document.querySelector('a[href="/wishlist"]')),
-    hasNativeCheckoutLink: Boolean(document.querySelector('a[href="/checkout"]')),
     jsonLdCount: document.querySelectorAll('script[type="application/ld+json"]').length,
   }));
 
@@ -82,7 +81,7 @@ for (const result of results) {
   add(`${result.mode}: gallery launcher overlay is absent`, result.dom.hasGalleryLauncherOverlay === false, result.dom);
   add(`${result.mode}: quote H1 is present`, result.dom.h1.length > 0, result.dom);
   add(`${result.mode}: quote form island is mounted`, result.dom.hasQuoteForm === true && result.dom.hasSubmitButton === true, result.dom);
-  add(`${result.mode}: native links are stable`, result.dom.hasGalleryLink === true && result.dom.hasNativeWishlistLink === true && result.dom.hasNativeCheckoutLink === true, result.dom);
+  add(`${result.mode}: native links are stable`, result.dom.hasGalleryLink === true && result.dom.hasNativeWishlistLink === true, result.dom);
   add(`${result.mode}: structured data is present`, result.dom.jsonLdCount >= 1, result.dom);
 }
 

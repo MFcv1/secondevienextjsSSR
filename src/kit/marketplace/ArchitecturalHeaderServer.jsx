@@ -44,7 +44,7 @@ export default function ArchitecturalHeaderServer({ darkMode = false } = {}) {
             </Link>
           </div>
 
-          <form action="/galerie" className="absolute left-1/2 z-0 hidden w-full max-w-xl -translate-x-1/2 px-4 lg:flex xl:max-w-2xl">
+          <form action="/" className="absolute left-1/2 z-0 hidden w-full max-w-xl -translate-x-1/2 px-4 lg:flex xl:max-w-2xl">
             <div className={`relative flex w-full items-center overflow-hidden rounded-md border transition-[background-color,border-color,box-shadow] duration-300 ${darkMode ? 'border-white/10 bg-[#151412] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus-within:border-[#D9B58D]/45 focus-within:shadow-[0_0_0_3px_rgba(217,181,141,0.10)]' : 'border-transparent bg-[#F2F0ED] focus-within:border-stone-300 dark:border-white/10 dark:bg-[#151412] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] dark:focus-within:border-[#D9B58D]/45 dark:focus-within:shadow-[0_0_0_3px_rgba(217,181,141,0.10)]'}`}>
               <input
                 type="search"

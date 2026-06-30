@@ -118,15 +118,12 @@ const collectReachableSourceFiles = (entryRelativePath) => {
 };
 
 const publicSeoRoutes = [
+  { route: '/', file: 'app/page.jsx', artifact: 'index.html', revalidate: 300, forceStatic: true },
   { route: '/galerie', file: 'app/galerie/page.jsx', artifact: 'galerie.html', revalidate: 300, forceStatic: true },
   { route: '/a-propos', file: 'app/a-propos/page.jsx', artifact: 'a-propos.html', revalidate: 300 },
   { route: '/categorie/[categoryId]', file: 'app/categorie/[categoryId]/page.jsx', revalidate: 300, staticParams: true },
   { route: '/produit/[slugOrId]', file: 'app/produit/[slugOrId]/page.jsx', revalidate: 300, staticParams: true },
   { route: '/devis', file: 'app/devis/page.jsx', artifact: 'devis.html', revalidate: 300 },
-];
-
-const publicRedirectRoutes = [
-  { route: '/', file: 'app/page.jsx', redirectTo: '/galerie', forceStatic: true },
 ];
 
 const publicMetadataRoutes = [
@@ -136,7 +133,6 @@ const publicMetadataRoutes = [
 
 const requestTimePublicEntries = [
   { route: 'root layout', file: 'app/layout.jsx' },
-  ...publicRedirectRoutes,
   ...publicSeoRoutes,
   ...publicMetadataRoutes,
 ];
@@ -169,6 +165,7 @@ const forbiddenRequestTimePatterns = [
 if (!fs.existsSync(NEXT_SERVER_APP_DIR)) {
   warn('.next/server/app is missing; post-build artifact checks require npm run build');
 } else {
+  assertExists('.next/server/app/index.html', 'root gallery static artifact');
   assertExists('.next/server/app/galerie.html', 'gallery static artifact');
   assertExists('.next/server/app/a-propos.html', 'about static artifact');
   assertExists('.next/server/app/devis.html', 'quote static artifact');
@@ -193,8 +190,8 @@ if (fs.existsSync(NEXT_PRERENDER_MANIFEST)) {
   warn('.next/prerender-manifest.json is missing; post-build route classification skipped');
 }
 
-assertSourceIncludes('app/page.jsx', /permanentRedirect\s*\(\s*['"]\/galerie['"]\s*\)/, 'root permanent gallery redirect');
-assertSourceIncludes('app/page.jsx', /dynamic\s*=\s*['"]force-static['"]/, 'root redirect force-static export');
+assertSourceIncludes('app/page.jsx', /GalleryRoutePage/, 'root gallery route render');
+assertSourceIncludes('app/page.jsx', /dynamic\s*=\s*['"]force-static['"]/, 'root gallery force-static export');
 assertSourceIncludes('app/galerie/page.jsx', /dynamic\s*=\s*['"]force-static['"]/, 'gallery force-static export');
 for (const route of publicSeoRoutes) {
   assertSourceIncludes(route.file, new RegExp(`revalidate\\s*=\\s*${route.revalidate}`), `${route.route} ISR revalidate`);
@@ -211,7 +208,7 @@ for (const route of dynamicRouteAllowlist) {
   assertSourceIncludes(route.file, /dynamic\s*=\s*['"]force-dynamic['"]/, `${route.route} explicit force-dynamic tunnel`);
 }
 
-const publicRouteFiles = [...publicRedirectRoutes, ...publicSeoRoutes, ...publicMetadataRoutes].map((route) => route.file);
+const publicRouteFiles = [...publicSeoRoutes, ...publicMetadataRoutes].map((route) => route.file);
 
 const legacyCheckStartFailures = failureCount;
 for (const relativePath of publicRouteFiles) {
@@ -226,7 +223,7 @@ if (failureCount === legacyCheckStartFailures) {
   ok('public route files do not import legacy SPA shells');
 }
 
-for (const route of [...publicRedirectRoutes, ...publicSeoRoutes]) {
+for (const route of publicSeoRoutes) {
   const content = stripComments(read(route.file));
   if (/\bsearchParams\b/.test(content)) {
     fail(`${route.route} must not declare, await, or pass searchParams in ${route.file}`);

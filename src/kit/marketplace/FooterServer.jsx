@@ -44,12 +44,12 @@ const sections = [
   {
     title: 'La Galerie',
     links: [
-      ['Nouveautes', '/galerie#gallery-pieces', true],
+      ['Nouveautes', '/#gallery-pieces', true],
       ['Meubles', getCategoryUrl('meubles'), true],
       ['Assises', getCategoryUrl('assises'), true],
       ['Eclairage', getCategoryUrl('eclairage'), true],
       ['Decorations', getCategoryUrl('decorations'), true],
-      ['Petits prix', '/galerie#gallery-small-prices', true, true],
+      ['Petits prix', '/#gallery-small-prices', true, true],
     ],
   },
   {
@@ -263,7 +263,7 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
               <div className="flex items-center gap-4">
                 <a href={contactInfo.instagram || '#'} aria-label="Instagram" className={`flex h-11 w-11 items-center justify-center rounded-full transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}><Instagram size={19} /></a>
                 <a href={contactInfo.facebook || '#'} aria-label="Facebook" className={`flex h-11 w-11 items-center justify-center rounded-full transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}><Facebook size={19} /></a>
-                <a href="/galerie#gallery-pieces" aria-label="Pinterest" className={`flex h-11 w-11 items-center justify-center rounded-full text-lg font-semibold transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}>p</a>
+                <a href="/#gallery-pieces" aria-label="Pinterest" className={`flex h-11 w-11 items-center justify-center rounded-full text-lg font-semibold transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}>p</a>
               </div>
             </div>
 

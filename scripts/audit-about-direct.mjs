@@ -52,7 +52,7 @@ const runMode = async (browser, mode) => {
     hasGalleryScroll: Boolean(document.querySelector('.marketplace-gallery-scroll')),
     hasGalleryLauncherOverlay: Boolean(document.querySelector('.sv-gallery-launcher-overlay')),
     hasQuoteLink: Boolean(document.querySelector('a[href="/devis"]')),
-    hasGalleryLink: Boolean(document.querySelector('a[href="/galerie"]')),
+    hasGalleryLink: Boolean(document.querySelector('a[href="/"], a[href="/#gallery-pieces"], a[href="/#gallery-small-prices"]')),
     jsonLdCount: document.querySelectorAll('script[type="application/ld+json"]').length,
   }));
 

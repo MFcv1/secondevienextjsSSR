@@ -10,8 +10,8 @@ Reference principale: `NEXT_NATIVE_ARCHITECTURE_BASELINE.md`.
 
 ## Architecture publique
 
-- `/` redirige vers `/galerie`.
-- `/galerie` est une route publique cacheable: `force-static` + `revalidate = 300`.
+- `/` affiche directement la galerie et sert de home canonique cacheable: `force-static` + `revalidate = 300`.
+- `/galerie` reste une alias publique cacheable compatible, avec canonical vers `/`.
 - `/categorie/[categoryId]` et `/produit/[slugOrId]` sont en SSG/ISR avec `generateStaticParams`.
 - `/a-propos` et `/devis` sont rendues cote serveur avec ISR.
 - `/admin`, `/checkout`, `/wishlist` et `/mes-commandes` restent des tunnels dynamiques.

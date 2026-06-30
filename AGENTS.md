@@ -18,7 +18,8 @@ Lire `NEXT_NATIVE_ARCHITECTURE_BASELINE.md` avant toute passe architecture, docu
 Etat courant:
 
 - Routes publiques Next App Router natives.
-- `/galerie`: `force-static` + ISR `revalidate = 300`.
+- `/`: home galerie canonique, `force-static` + ISR `revalidate = 300`.
+- `/galerie`: alias compatible de la galerie, `force-static` + ISR `revalidate = 300`, canonical vers `/`.
 - `/categorie/[categoryId]` et `/produit/[slugOrId]`: SSG/ISR avec `generateStaticParams`.
 - `/a-propos` et `/devis`: rendu serveur + ISR.
 - `/admin`, `/checkout`, `/wishlist`, `/mes-commandes`: tunnels dynamiques.
@@ -33,6 +34,7 @@ Interdits sur routes publiques:
 ## Docs a lire selon la zone
 
 - Architecture Next native: `NEXT_NATIVE_ARCHITECTURE_BASELINE.md`, `context.md`, `mapV2.md`.
+- Home galerie canonique: `_DOCS/architecture/GALLERY_HOME_CANONICAL_IMPLEMENTATION_2026-07-01.md`.
 - Galerie mobile/shell/scroll/detail: `alertemobile.md`.
 - Performance/hydratation/cache: `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md`, `_DOCS/perf/PHASE3_PERF_BASELINE_2026-06-24.md`.
 - Images produit/Storage/detailFast: `_DOCS/images/NEXTJS_IMAGE_PIPELINE_AUDIT.md`, `_DOCS/images/OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md`, `_DOCS/images/DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md`.
@@ -74,6 +76,7 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |-- docs : brouillons legaux/metier non operationnels, dont CGV/retours
 |-- _DOCS : documentation active organisee par theme et archives
 |   |-- architecture : baseline routes publiques, SEO, cache et decisions Next
+|   |   `-- GALLERY_HOME_CANONICAL_IMPLEMENTATION_2026-07-01.md : decision `/` home galerie et `/galerie` alias
 |   |-- perf : roadmaps/gates perf, hydratation, galerie et rendu final direct
 |   |-- images : pipeline images produit, Storage, detailFast et audits UX image
 |   |-- infra : App Hosting, rail prod, App Check et closeout infra

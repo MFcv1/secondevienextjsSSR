@@ -15,7 +15,7 @@ function AccountDashboardFallback({ darkMode = false, isSignedOut = false }) {
       <div className="mx-auto max-w-[1120px] px-4 pb-16 pt-6 sm:px-6 lg:px-8 lg:pb-24">
         <header className="border-b border-[#d2d2d7] pb-5">
           <a
-            href="/galerie"
+            href="/"
             className="inline-flex min-h-10 items-center rounded-full border border-[#d2d2d7] bg-white px-4 text-[13px] font-medium text-[#1d1d1f] transition-colors hover:border-[#a1a1a6]"
           >
             Retour galerie
@@ -81,7 +81,7 @@ function OrdersPageContent({ initialItems = [] }) {
   return (
     <MyOrdersView
       user={user}
-      onBack={() => { router.push('/galerie'); }}
+      onBack={() => { router.push('/'); }}
       darkMode={darkMode}
       activeDesignId="architectural"
       wishlistItems={[]}

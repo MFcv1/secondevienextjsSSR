@@ -177,7 +177,7 @@ const waitForFreshOtp = async ({ email, minUid }) => {
 };
 
 const openLoginDialog = async (page) => {
-  await page.goto(`${baseUrl}/galerie?e2e_run=auth-email-otp-${encodeURIComponent(runId)}`, {
+  await page.goto(`${baseUrl}/?e2e_run=auth-email-otp-${encodeURIComponent(runId)}`, {
     waitUntil: 'domcontentloaded',
     timeout: 60_000,
   });

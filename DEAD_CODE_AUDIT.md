@@ -52,8 +52,8 @@ rg "setView" app src scripts
 
 | Route | Statut | Fichiers actifs | Iles client actives | Gates |
 | --- | --- | --- | --- | --- |
-| `/` | `ACTIVE_CONFIRMED` | `app/page.jsx`, `app/HomeMotionIsland.jsx`, `src/lib/server/products.js` | `HomeMotionIsland`, `gsap` dynamique | `next:routes`, `perf:budget`; pas encore de `perf:home-direct` dedie |
-| `/galerie` | `ACTIVE_CONFIRMED` + mobile sensible | `app/galerie/page.jsx`, `GalleryServerView.jsx`, `GalleryMobileShellIsland.jsx` | `GalleryGridActionsIsland`, `HeroMotionIsland`, carousel/slider, header/menu/cart | `perf:gallery-direct`, `mobile:contract`, `next:routes` |
+| `/` | `ACTIVE_CONFIRMED` + home canonique | `app/page.jsx`, `GalleryRoutePage.jsx`, `GalleryServerView.jsx`, `ProductSectionsServer.jsx`, `GalleryMobileShellIsland.jsx` | `GalleryGridActionsIsland`, `HeroMotionIsland`, `GalleryFixedSectionsInteractions`, `InstagramFloatingTokensReveal`, header/menu/cart | `perf:gallery-direct`, `mobile:contract`, `next:routes`, `perf:budget` |
+| `/galerie` | `ACTIVE_CONFIRMED` + alias compatible | `app/galerie/page.jsx`, `GalleryRoutePage.jsx`, `GalleryServerView.jsx`, `ProductSectionsServer.jsx`, `GalleryMobileShellIsland.jsx` | `GalleryGridActionsIsland`, `HeroMotionIsland`, `GalleryFixedSectionsInteractions`, `InstagramFloatingTokensReveal`, header/menu/cart | `perf:gallery-direct`, `mobile:contract`, `next:routes` |
 | `/categorie/[categoryId]` | `ACTIVE_CONFIRMED` | `app/categorie/[categoryId]/page.jsx`, `CategoryServerView.jsx`, `categoryViewModel.js` | `CategoryControlsIsland`, header/menu/cart | `perf:category-direct`, `next:routes` |
 | `/produit/[slugOrId]` | `ACTIVE_CONFIRMED` | `app/produit/[slugOrId]/page.jsx`, `ProductDetailServerView.jsx`, `ProductDetailShellIsland.jsx` | actions, shell media, lightbox dynamique, cart panel | `perf:product-direct`, `seo:check`, `mobile:contract` |
 | `/a-propos` | `ACTIVE_CONFIRMED` | `app/a-propos/page.jsx`, `src/kit/vitrine/AboutServerView.jsx`, `aboutContent.js` | nav, before/after, FAQ, testimonials | `perf:about-direct` |
@@ -61,7 +61,7 @@ rg "setView" app src scripts
 
 ### Decision
 
-Aucun `DELETE_CANDIDATE` dans les routes publiques. Les anciens chemins SPA publics sont absents, pas "a supprimer" dans cette passe:
+Aucun `DELETE_CANDIDATE` dans les routes publiques. Les anciens chemins SPA publics sont absents, pas "a supprimer" dans cette passe. Nettoyage applique le 2026-06-30: ancien `HomeMotionIsland`, `DeferredGalleryIsland` et iles galerie lourdes orphelines retires:
 
 ```text
 HomeView

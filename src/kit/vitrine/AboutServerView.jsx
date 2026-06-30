@@ -453,7 +453,7 @@ function ContactSection() {
               <span className="relative z-10 text-[#1A1A1A] transition-colors duration-500 group-hover:text-white">Demander un devis</span>
               <span className="absolute inset-0 translate-y-full bg-[#A68A64] transition-transform duration-500 group-hover:translate-y-0" />
             </a>
-            <a href="/galerie" className="group relative flex cursor-pointer items-center gap-3 px-6 py-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 transition-colors duration-300 hover:text-white md:text-xs">
+            <a href="/" className="group relative flex cursor-pointer items-center gap-3 px-6 py-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 transition-colors duration-300 hover:text-white md:text-xs">
               <span className="relative">
                 Explorer le catalogue
                 <span className="absolute left-0 bottom-[-4px] h-px w-full origin-left scale-x-0 bg-[#A68A64] transition-transform duration-500 group-hover:scale-x-100" />

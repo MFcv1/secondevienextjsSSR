@@ -130,7 +130,7 @@ function WishlistPageContent({ initialItems = [] }) {
       onToggleWishlist={toggleWishlist}
       onClearWishlist={clearWishlist}
       onOpenAbout={() => { router.push('/a-propos'); }}
-      onBack={() => { router.push('/galerie'); }}
+      onBack={() => { router.push('/'); }}
       darkMode={darkMode}
       user={user}
       onShowLogin={() => { router.push('/admin'); }}

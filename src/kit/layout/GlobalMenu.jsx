@@ -758,7 +758,7 @@ const GlobalMenu = ({
     const isGalleryContext = ['gallery', 'wishlist'].includes(currentView);
 
     const primaryLinks = [
-        { label: 'Accueil', desc: 'Galerie principale', Icon: Home, active: isGalleryContext, action: () => navigateToPath('/galerie') },
+        { label: 'Accueil', desc: 'Galerie principale', Icon: Home, active: isGalleryContext, action: () => navigateToPath('/') },
         { label: 'À propos', desc: 'Atelier et histoire', Icon: UserRound, active: false, action: openAbout },
         { label: 'Commandes', desc: 'Espace client', Icon: Package, active: currentView === 'my-orders', action: () => (isSignedIn ? navigateToPath('/mes-commandes') : handleLogin()) },
         { label: 'Devis', desc: 'Projet sur mesure', Icon: ClipboardCheck, active: false, action: openQuoteRequest },
@@ -766,12 +766,12 @@ const GlobalMenu = ({
     ];
 
     const mobileRows = [
-        { label: 'Nouveautés', badge: 'Nouveau', Icon: Sparkles, action: () => navigateToPath('/galerie#gallery-pieces') },
+        { label: 'Nouveautés', badge: 'Nouveau', Icon: Sparkles, action: () => navigateToPath('/#gallery-pieces') },
         { label: 'Meubles', Icon: DoorOpen, action: () => goToCategory('meubles') },
         { label: 'Assises', Icon: Armchair, action: () => goToCategory('assises') },
         { label: 'Éclairage', Icon: Lamp, action: () => goToCategory('eclairage') },
         { label: 'Décorations', Icon: Flower2, action: () => goToCategory('decorations') },
-        { label: 'Prix bas', Icon: BadgeEuro, accent: true, action: () => navigateToPath('/galerie#gallery-small-prices') },
+        { label: 'Prix bas', Icon: BadgeEuro, accent: true, action: () => navigateToPath('/#gallery-small-prices') },
         { label: 'À propos', Icon: UserRound, action: openAbout },
     ];
 
@@ -937,7 +937,7 @@ const GlobalMenu = ({
                                         </motion.div>
                                         <motion.button
                                             type="button"
-                                            onClick={() => navigateToPath('/galerie')}
+                                            onClick={() => navigateToPath('/')}
                                             className={`global-menu-hover global-menu-hover--ambient mt-auto flex min-h-10 items-center gap-2 border-t pt-3 font-serif text-[14px] font-semibold leading-none text-[#8B5C42] ${softBorder}`}
                                             variants={menuItemVariants}
                                             whileHover={textHoverMotion}
@@ -1010,7 +1010,7 @@ const GlobalMenu = ({
 
                                         <motion.button
                                             type="button"
-                                            onClick={() => navigateToPath('/galerie')}
+                                            onClick={() => navigateToPath('/')}
                                             className={`global-menu-hover mt-auto flex w-full items-center justify-between rounded-[14px] px-3.5 py-2.5 text-left ${darkMode ? 'bg-white/5' : 'bg-[#f5f0ec]'}`}
                                             variants={menuItemVariants}
                                             whileHover={textHoverMotion}
@@ -1166,7 +1166,7 @@ const GlobalMenu = ({
                                         placeholder="Rechercher un produit..."
                                         className={`h-full w-full rounded-lg bg-transparent pl-4 pr-12 text-[15px] outline-none placeholder:text-stone-400 ${darkMode ? 'text-stone-100' : 'text-stone-800'}`}
                                         onKeyDown={(event) => {
-                                            if (event.key === 'Enter') navigateToPath('/galerie');
+                                            if (event.key === 'Enter') navigateToPath('/');
                                         }}
                                     />
                                     <Search className="absolute right-4 text-stone-500" size={21} strokeWidth={1.5} />

@@ -80,7 +80,7 @@ export default async function AboutPage() {
     <>
       <main data-public-ssr-fallback data-ssr-about>
         <nav className="sr-only" aria-label="Liens directs A propos">
-          <a href="/galerie">Galerie</a>
+          <a href="/">Galerie</a>
           <a href="/devis">Devis</a>
         </nav>
         <AboutServerView personalization={personalization} />

@@ -1105,7 +1105,7 @@
   color: var(--c-terracotta);
 }
 
-/* Reviews now use the shared <TestimonialsCarouselIsland /> (gallery design).
+/* Reviews now use the shared CustomerTestimonialsCarousel gallery design.
    It renders inside .sv4, whose `p { margin: 0 }` reset would otherwise eat
    the carousel header's Tailwind `mt-6` spacing — restore it explicitly. */
 .sv4 .customer-testimonials-section .mt-6 { margin-top: 1.5rem; }

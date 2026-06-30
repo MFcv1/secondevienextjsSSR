@@ -548,7 +548,7 @@ export default function ProductDetailShellIsland({
       if (!saved?.href || Date.now() - Number(saved.savedAt || 0) > 30 * 60 * 1000) return '';
       const target = new URL(saved.href, window.location.origin);
       if (target.origin !== window.location.origin) return '';
-      if (target.pathname !== '/galerie' && !target.pathname.startsWith('/categorie/')) return '';
+      if (target.pathname !== '/' && target.pathname !== '/galerie' && !target.pathname.startsWith('/categorie/')) return '';
       return `${target.pathname}${target.search}${target.hash}`;
     } catch {
       return '';
@@ -560,10 +560,10 @@ export default function ProductDetailShellIsland({
     if (hasNavigatedToGalleryRef.current) return;
 
     hasNavigatedToGalleryRef.current = true;
-    const targetHref = restoreUrlFromSession() || '/galerie';
+    const targetHref = restoreUrlFromSession() || '/';
     try {
       const target = new URL(targetHref, window.location.origin);
-      if (target.pathname === '/galerie') {
+      if (target.pathname === '/' || target.pathname === '/galerie') {
         window.sessionStorage.setItem('secondevie:open-gallery-on-arrival', 'true');
       } else {
         window.sessionStorage.removeItem('secondevie:open-gallery-on-arrival');

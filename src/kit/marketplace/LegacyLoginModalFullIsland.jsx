@@ -348,7 +348,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
       setPasskeyMessage('Connexion rapide activee sur cet appareil.');
       window.setTimeout(() => {
         onOpenChange(false);
-        window.location.assign('/galerie');
+        window.location.assign('/');
       }, 450);
     } catch (error) {
       setPasskeyStatus('error');

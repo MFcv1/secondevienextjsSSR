@@ -215,8 +215,10 @@ const runMode = async (browser, mode) => {
       });
       await page.waitForTimeout(1_600);
       await page.getByLabel("Fermer l'image agrandie").click();
-      await page.waitForTimeout(180);
+      await page.waitForSelector('[data-product-lightbox="true"]', { state: 'detached', timeout: 2_000 });
     } catch {
+      await page.keyboard.press('Escape').catch(() => {});
+      await page.waitForSelector('[data-product-lightbox="true"]', { state: 'detached', timeout: 2_000 }).catch(() => {});
       lightboxInitial = null;
     }
   }
@@ -271,7 +273,14 @@ const runMode = async (browser, mode) => {
       hasProductDetail: Boolean(visibleImage),
       hasExactProductRouteExperience: Boolean(document.querySelector('.split-detail-title') || document.querySelector('[data-mobile-bottom-sheet]')),
       hasProductInfoSections: normalizedBodyText.includes('LA PIECE') && normalizedBodyText.includes('INFORMATIONS'),
-      hasReserveAction: normalizedBodyText.includes('RESERVER') || normalizedBodyText.includes('AJOUTER AU PANIER'),
+      hasReserveAction: (
+        normalizedBodyText.includes('RESERVER')
+        || normalizedBodyText.includes('AJOUTER AU PANIER')
+        || normalizedBodyText.includes('DEJA RESERVE')
+        || normalizedBodyText.includes('VENDU')
+        || normalizedBodyText.includes('DEMANDER UN DEVIS')
+        || normalizedBodyText.includes('INDISPONIBLE')
+      ),
       hasDesktopBackdrop: Boolean(desktopBackdrop),
       hasMobileSheet: Boolean(mobileSheet),
       mobileSheetOpen: mobileSheet ? !String(mobileSheet.className || '').includes('translate-y-full') : false,

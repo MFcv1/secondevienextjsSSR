@@ -373,7 +373,7 @@ const implementationResults = Object.freeze([
   ['Police Material Symbols', '1 CSS Google Fonts inutilisee', '0 requete Material Symbols', '-1 requete externe'],
   ['Theme settings', 'Plusieurs hooks pouvaient lancer le meme getDoc', 'cache module + promesse inflight partagee', 'lectures Firestore dedupliquees'],
   ['Surfaces sorties du shell', 'Menu, panier, popup, footer, success/admin tracker statiques', 'Chunks lazy + rendu conditionnel', 'moins de JS initial'],
-  ['Avis clients bas de page', 'Inclus dans le module galerie', 'CustomerTestimonialsCarousel lazy dans les sections differees', 'charge hors premier ecran'],
+  ['Avis clients bas de page', 'Inclus dans le module galerie', 'HTML serveur final + interactions fines', 'pas de remplacement de sous-arbre au scroll'],
   ['Split hero/categories/produits/reassurance/avant-apres/Instagram/avis/newsletter', 'Rendu initial public dans un grand ilot client galerie', 'GalleryServerView + GalleryProductCardServer + GalleryMobileShellIsland', 'frontieres P1 plus nettes, chunk galerie mesure par budget'],
   ['Chunks sections basses', 'Galerie publique rendue par un grand ilot client', 'HTML serveur sans grand shell galerie client', 'Les anciens composants galerie client sont supprimes du chemin public'],
   ['Catalogue initial publicCatalog', 'Documents complets limites', '?limit=36&scope=cards', 'JSON carte sans description/full/large'],
@@ -484,7 +484,7 @@ const implementationLedger = Object.freeze([
   },
   {
     label: 'Avis clients lazy',
-    detail: 'CustomerTestimonialsCarousel est charge via React.lazy uniquement quand les sections basses sont montees, avec un placeholder stable pour eviter le saut de layout.',
+    detail: 'Les avis galerie sont rendus en HTML serveur final; les interactions fines sont rattachees sans charger un carousel de remplacement.',
   },
   {
     label: 'Budget automatise',

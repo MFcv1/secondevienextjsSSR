@@ -175,7 +175,7 @@ function CheckoutPageContent() {
 
   const closeOrderSuccess = () => {
     setShowOrderSuccess(false);
-    window.location.href = '/galerie';
+    window.location.href = '/';
   };
 
   const viewOrderAfterSuccess = () => {
@@ -184,7 +184,7 @@ function CheckoutPageContent() {
   };
 
   const handleContinueShopping = useCallback(() => {
-    window.location.href = '/galerie';
+    window.location.href = '/';
   }, []);
 
   useEffect(() => {
@@ -260,7 +260,7 @@ function CheckoutPageContent() {
         title="Panier vide"
         message="Ajoutez une piece depuis la galerie avant de lancer le checkout."
         primaryLabel="Retour galerie"
-        onPrimary={() => { window.location.href = '/galerie'; }}
+        onPrimary={() => { window.location.href = '/'; }}
       />
     );
   }

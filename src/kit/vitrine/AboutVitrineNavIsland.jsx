@@ -52,7 +52,7 @@ export default function AboutVitrineNavIsland() {
   };
 
   const goGallery = () => {
-    window.location.assign('/galerie');
+    window.location.assign('/');
   };
 
   return (

@@ -11,7 +11,7 @@ const commonRequired = [
 
 const routeChecks = [
   {
-    label: 'root gallery redirect',
+    label: 'root gallery home',
     path: '/',
     required: [
       ['gallery section', /data-ssr-gallery/],
