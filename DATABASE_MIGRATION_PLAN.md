@@ -218,4 +218,4 @@ La base peut etre consideree prete pour une migration Next seulement quand :
 - une page produit modifiee en admin apparait correctement en SSR;
 - les scripts `seo:check`, `test:e2e`, `mobile:contract`, `perf:compare` et `perf:runtime` passent;
 - aucun secret serveur n'apparait dans `.next/static`;
-- les limites et gains mesures sont documentes dans `COMPARISON.md`.
+- les limites et gains mesures historiques sont documentes dans `_DOCS/archive/migration-spa-to-next/COMPARISON.md`.
