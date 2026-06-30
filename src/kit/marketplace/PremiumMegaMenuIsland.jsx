@@ -300,20 +300,26 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
         onClickCapture={handleMenuClickCapture}
       >
         <ul className="relative mx-auto flex max-w-7xl items-center justify-center gap-4 font-sans text-[13px] tracking-[0.05em] lg:gap-8">
-          {MENU_ITEMS.map((item) => (
-            <li
-              key={item.id}
-              onMouseEnter={(event) => openTab(item, event)}
-              onFocus={(event) => openTab(item, event)}
-              className={`relative z-10 flex cursor-pointer items-center gap-1.5 px-3 py-[6px] font-medium transition-colors ${item.customColor || (darkMode ? 'text-stone-300 hover:text-white' : 'text-stone-600 hover:text-black dark:text-stone-400 dark:hover:text-stone-100')}`}
-            >
-              <Link href={item.href} className="relative z-10 flex items-center gap-1.5 text-inherit no-underline">
-                {item.label}
-                {item.hasMega ? <span className={`text-[7px] transition-transform duration-300 ${hoveredTab === item.id || renderedTab === item.id ? '-rotate-180' : 'rotate-0'}`}>v</span> : null}
-              </Link>
-              {hoveredTab === item.id || renderedTab === item.id ? <span className={`absolute inset-0 -z-10 rounded-full ${darkMode ? 'bg-white/10' : 'bg-black/5 dark:bg-white/10'}`} /> : null}
-            </li>
-          ))}
+          {MENU_ITEMS.map((item) => {
+            const isItemActive = hoveredTab === item.id || renderedTab === item.id;
+
+            return (
+              <li
+                key={item.id}
+                onMouseEnter={(event) => openTab(item, event)}
+                onFocus={(event) => openTab(item, event)}
+                className={`group relative z-10 flex cursor-pointer items-center gap-1.5 px-3 py-[6px] font-medium transition-colors ${item.customColor || (darkMode ? 'text-stone-300 hover:text-white' : 'text-stone-600 hover:text-black dark:text-stone-400 dark:hover:text-stone-100')}`}
+              >
+                <Link href={item.href} className="relative z-10 flex items-center gap-1.5 text-inherit no-underline">
+                  {item.label}
+                  {item.hasMega ? <span className={`text-[7px] transition-transform duration-300 ${isItemActive ? '-rotate-180' : 'rotate-0'}`}>v</span> : null}
+                </Link>
+                <span
+                  className={`absolute inset-0 -z-10 rounded-full transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 ${isItemActive ? 'opacity-100' : 'opacity-0'} ${darkMode ? 'bg-white/10' : 'bg-black/5 dark:bg-white/10'}`}
+                />
+              </li>
+            );
+          })}
         </ul>
 
         {isPanelVisible ? (
