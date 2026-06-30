@@ -36,7 +36,7 @@ Interdits sur routes publiques:
 - Architecture Next native: `NEXT_NATIVE_ARCHITECTURE_BASELINE.md`, `context.md`, `mapV2.md`.
 - Home galerie canonique: `_DOCS/architecture/GALLERY_HOME_CANONICAL_IMPLEMENTATION_2026-07-01.md`.
 - Galerie mobile/shell/scroll/detail: `alertemobile.md`.
-- Performance/hydratation/cache: `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md`, `_DOCS/perf/PHASE3_PERF_BASELINE_2026-06-24.md`.
+- Performance/hydratation/cache: `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md`, `_DOCS/perf/PHASE3_PERF_BASELINE_2026-06-24.md`, `_DOCS/perf/PUBLIC_SEO_BUDGET_VISUAL_CLOSEOUT_2026-07-01.md`.
 - Images produit/Storage/detailFast: `_DOCS/images/NEXTJS_IMAGE_PIPELINE_AUDIT.md`, `_DOCS/images/OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md`, `_DOCS/images/DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md`.
 - Infra prod/App Hosting/App Check: `_DOCS/infra/P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md`, `_DOCS/infra/INFRA_PROD_PHASE2_REPORT_2026-06-14.md`, `_DOCS/infra/APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`, `_DOCS/infra/RAIL_PROD_AUDIT_REPORT_2026-06-24.md`.
 - Checkout/refund/E2E: `_DOCS/commerce/CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md`, `_DOCS/commerce/E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`, `_DOCS/commerce/E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`, `_DOCS/commerce/REFUND_UI_STRICT_PROOF_2026-06-24.md`.
@@ -78,6 +78,7 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |   |-- architecture : baseline routes publiques, SEO, cache et decisions Next
 |   |   `-- GALLERY_HOME_CANONICAL_IMPLEMENTATION_2026-07-01.md : decision `/` home galerie et `/galerie` alias
 |   |-- perf : roadmaps/gates perf, hydratation, galerie et rendu final direct
+|   |   `-- PUBLIC_SEO_BUDGET_VISUAL_CLOSEOUT_2026-07-01.md : closeout budgets publics avec preuves visuelles
 |   |-- images : pipeline images produit, Storage, detailFast et audits UX image
 |   |-- infra : App Hosting, rail prod, App Check et closeout infra
 |   |-- commerce : checkout, refund, E2E backoffice et Stripe/Firebase hardening

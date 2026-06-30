@@ -1,11 +1,10 @@
 import React from 'react';
 import { ArrowRight, CheckCircle2, Instagram, Mail, Palette, Search, Shield } from 'lucide-react';
-import '../../home-v4.css';
-import './about-sv4-hero.css';
 import AboutBeforeAfterIsland from './AboutBeforeAfterIsland';
 import AboutFaqIsland from './AboutFaqIsland';
 import AboutInstagramCounterIsland from './AboutInstagramCounterIsland';
-import AboutMotionIsland from './AboutMotionIsland';
+import AboutMotionDeferredIsland from './AboutMotionDeferredIsland';
+import AboutStylesIsland from './AboutStylesIsland';
 import AboutSv4HeroMotionIsland from './AboutSv4HeroMotionIsland';
 import AboutTestimonialsIsland from './AboutTestimonialsIsland';
 import Sv4HomeHero from './Sv4HomeHero';
@@ -497,6 +496,7 @@ export default function AboutServerView({ personalization = {} }) {
 
   return (
     <div className="sv4 sv4-about-shell min-h-screen bg-[#F9F6F0] text-[#1A1A1A]" data-about-native="true" data-sv4-shell>
+      <AboutStylesIsland />
       <HomeMotionIslandV4 />
       <Sv4SiteNav />
       <Sv4HomeHero withAboutShell />
@@ -512,7 +512,7 @@ export default function AboutServerView({ personalization = {} }) {
       <InstagramSection />
       <FaqSection items={faqs} />
       <ContactSection />
-      <AboutMotionIsland />
+      <AboutMotionDeferredIsland />
     </div>
   );
 }

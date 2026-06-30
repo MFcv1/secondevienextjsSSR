@@ -5,7 +5,7 @@ import PremiumMegaMenuLazyIsland from './PremiumMegaMenuLazyIsland';
 import DarkModeToggleIsland from './DarkModeToggleIsland';
 import HeaderAccountIsland from './HeaderAccountIsland';
 import GlobalMenuTriggerIsland from './GlobalMenuTriggerIsland';
-import CartPanelIsland from './CartPanelIsland';
+import LazyCartPanelIsland from './LazyCartPanelIsland';
 
 export default function ArchitecturalHeaderServer({ darkMode = false } = {}) {
   const surfaceTone = darkMode
@@ -72,7 +72,7 @@ export default function ArchitecturalHeaderServer({ darkMode = false } = {}) {
                 <Heart size={18} strokeWidth={1.5} className={`transition-colors duration-300 ${darkMode ? 'text-stone-200 group-hover:text-rose-300' : 'text-stone-900 group-hover:text-rose-500 dark:text-stone-200 dark:group-hover:text-rose-300'}`} />
               </Link>
 
-              <CartPanelIsland className={actionButtonClass} darkMode={darkMode} />
+              <LazyCartPanelIsland className={actionButtonClass} darkMode={darkMode} />
 
               <GlobalMenuTriggerIsland darkMode={darkMode} />
             </div>

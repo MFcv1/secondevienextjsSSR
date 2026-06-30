@@ -126,11 +126,17 @@ export default function CategoryControlsIsland({
   categoryId,
   items = [],
   filterOptions = {},
-  children,
 }) {
   const rootRef = React.useRef(null);
 
   React.useEffect(() => () => setBodyLocked(false), []);
+
+  React.useEffect(() => {
+    rootRef.current = document.querySelector('[data-category-native-view]');
+    return () => {
+      rootRef.current = null;
+    };
+  }, []);
 
   const applyState = React.useCallback((state, { push = false } = {}) => {
     const root = rootRef.current;
@@ -277,9 +283,23 @@ export default function CategoryControlsIsland({
     if (rootRef.current) setDrawerOpen(rootRef.current, false);
   }, [applyState, filterOptions]);
 
-  return (
-    <div ref={rootRef} onClick={handleClick} onChange={handleChange} onInput={handleInput} onSubmit={handleSubmit}>
-      {children}
-    </div>
-  );
+  React.useEffect(() => {
+    const root = rootRef.current || document.querySelector('[data-category-native-view]');
+    if (!root) return undefined;
+
+    rootRef.current = root;
+    root.addEventListener('click', handleClick);
+    root.addEventListener('change', handleChange);
+    root.addEventListener('input', handleInput);
+    root.addEventListener('submit', handleSubmit);
+
+    return () => {
+      root.removeEventListener('click', handleClick);
+      root.removeEventListener('change', handleChange);
+      root.removeEventListener('input', handleInput);
+      root.removeEventListener('submit', handleSubmit);
+    };
+  }, [handleChange, handleClick, handleInput, handleSubmit]);
+
+  return null;
 }

@@ -1,18 +1,101 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-    ArrowRight,
-    Check,
-    ChevronDown,
-    HelpCircle,
-    Info,
-    Mail,
-    Phone,
-    Ruler,
-    Upload,
-    Wand2,
-} from 'lucide-react';
+
+const IconBase = ({ size = 24, strokeWidth = 1.5, className = '', children }) => (
+    <svg
+        aria-hidden="true"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+    >
+        {children}
+    </svg>
+);
+
+const ArrowRight = (props) => (
+    <IconBase {...props}>
+        <path d="M5 12h14" />
+        <path d="m13 6 6 6-6 6" />
+    </IconBase>
+);
+
+const Check = (props) => (
+    <IconBase {...props}>
+        <path d="m20 6-11 11-5-5" />
+    </IconBase>
+);
+
+const ChevronDown = (props) => (
+    <IconBase {...props}>
+        <path d="m6 9 6 6 6-6" />
+    </IconBase>
+);
+
+const HelpCircle = (props) => (
+    <IconBase {...props}>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M9.1 9a3 3 0 1 1 5.8 1c-.6 1-1.6 1.4-2.2 2.2-.4.5-.6 1-.6 1.8" />
+        <path d="M12 17h.01" />
+    </IconBase>
+);
+
+const Info = (props) => (
+    <IconBase {...props}>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 16v-4" />
+        <path d="M12 8h.01" />
+    </IconBase>
+);
+
+const Mail = (props) => (
+    <IconBase {...props}>
+        <rect width="18" height="14" x="3" y="5" rx="2" />
+        <path d="m3 7 9 6 9-6" />
+    </IconBase>
+);
+
+const Phone = (props) => (
+    <IconBase {...props}>
+        <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7A2 2 0 0 1 22 16.9Z" />
+    </IconBase>
+);
+
+const Ruler = (props) => (
+    <IconBase {...props}>
+        <path d="M21.3 15.3 15.3 21.3a2.4 2.4 0 0 1-3.4 0L2.7 12.1a2.4 2.4 0 0 1 0-3.4l6-6a2.4 2.4 0 0 1 3.4 0l9.2 9.2a2.4 2.4 0 0 1 0 3.4Z" />
+        <path d="m14.5 4.5-2 2" />
+        <path d="m18.5 8.5-2 2" />
+        <path d="m10.5 8.5-2 2" />
+        <path d="m14.5 12.5-2 2" />
+    </IconBase>
+);
+
+const Upload = (props) => (
+    <IconBase {...props}>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <path d="M17 8 12 3 7 8" />
+        <path d="M12 3v12" />
+    </IconBase>
+);
+
+const Wand2 = (props) => (
+    <IconBase {...props}>
+        <path d="m21.6 3.6-2.2-2.2a1.4 1.4 0 0 0-2 0L2.4 16.4a1.4 1.4 0 0 0 0 2l2.2 2.2a1.4 1.4 0 0 0 2 0l15-15a1.4 1.4 0 0 0 0-2Z" />
+        <path d="m14 5 5 5" />
+        <path d="M5 2v3" />
+        <path d="M19 14v3" />
+        <path d="M10 2v2" />
+        <path d="M7 8H4" />
+        <path d="M21 19h-3" />
+    </IconBase>
+);
 
 const furnitureTypes = [
     { id: 'buffet', label: 'Buffet', image: '/images/newsletter/discount-sideboard.webp' },
@@ -131,6 +214,10 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
     const fileInputRef = useRef(null);
     const photoPreviewsRef = useRef([]);
     const serviceGroupRefs = useRef({});
+
+    useEffect(() => {
+        document.getElementById('quote-ssr-form-shell')?.setAttribute('hidden', '');
+    }, []);
 
     useEffect(() => {
         photoPreviewsRef.current = photoPreviews;

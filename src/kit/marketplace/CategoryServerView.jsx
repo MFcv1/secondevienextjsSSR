@@ -380,7 +380,8 @@ export default function CategoryServerView({
         categoryId={categoryId}
         items={clientItems}
         filterOptions={filterOptions}
-      >
+      />
+
         <div className={`border-b ${darkMode ? 'border-stone-800' : 'border-stone-200'}`}>
           <div className="mx-auto max-w-7xl px-4 py-3 md:px-8 lg:px-12">
             <div className="mb-4 flex items-center justify-between gap-3 md:mb-0">
@@ -550,7 +551,6 @@ export default function CategoryServerView({
             </div>
           </div>
         </div>
-      </CategoryControlsIsland>
 
       {(relatedCategories.length > 0 || copy?.faq?.length > 0) ? (
         <section className={`border-t px-4 py-8 md:px-8 lg:px-12 ${darkMode ? 'border-stone-800' : 'border-stone-200'}`} aria-labelledby="category-seo-more">

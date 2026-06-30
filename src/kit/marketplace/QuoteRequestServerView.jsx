@@ -5,7 +5,8 @@ import {
 } from 'lucide-react';
 import quoteRestorationHero from '../../assets/quote-restoration-hero.webp';
 import ArchitecturalHeaderServer from './ArchitecturalHeaderServer';
-import QuoteFormIsland from './QuoteFormIsland';
+import QuoteFormDeferredIsland from './QuoteFormDeferredIsland';
+import QuoteFormSsrShell from './QuoteFormSsrShell';
 
 const quoteRestorationHeroSrc = typeof quoteRestorationHero === 'string'
     ? quoteRestorationHero
@@ -110,7 +111,8 @@ export default function QuoteRequestServerView({ darkMode = false } = {}) {
         <main data-ssr-quote="true" className={`overflow-x-hidden ${darkMode ? 'bg-[#0A0A0A] text-stone-100' : 'bg-[#fbfaf7] text-[#1f1b17]'}`}>
             <ArchitecturalHeaderServer darkMode={darkMode} />
             <QuoteHero darkMode={darkMode} />
-            <QuoteFormIsland initialDarkMode={darkMode} />
+            <QuoteFormSsrShell darkMode={darkMode} />
+            <QuoteFormDeferredIsland initialDarkMode={darkMode} />
             <QuoteProcessSection darkMode={darkMode} />
         </main>
     );
