@@ -225,19 +225,42 @@ const setupTestimonials = () => {
     if (!items.length) return;
     let activeIndex = 1 % items.length;
 
-    const setCard = (card, itemIndex) => {
-      const item = items[wrapIndex(itemIndex, items.length)];
-      card.style.setProperty('--testimonial-card-bg', item.color);
-      const text = card.querySelector('[data-testimonial-text]');
-      const author = card.querySelector('[data-testimonial-author]');
-      if (text) text.textContent = `"${item.text}"`;
-      if (author) author.textContent = item.author;
+    const mobilePositions = {
+      farLeft: { transform: 'translateX(-206%) scale(0.86)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
+      left: { transform: 'translateX(-116%) scale(0.9)', opacity: 0.42, zIndex: 1, pointerEvents: 'none' },
+      center: { transform: 'translateX(-50%) scale(1)', opacity: 1, zIndex: 3, pointerEvents: 'auto' },
+      right: { transform: 'translateX(16%) scale(0.9)', opacity: 0.46, zIndex: 1, pointerEvents: 'none' },
+      farRight: { transform: 'translateX(106%) scale(0.86)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
+    };
+    const desktopPositions = {
+      farLeft: { transform: 'translateX(-248%) scale(0.88)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
+      left: { transform: 'translateX(-145%) scale(0.92)', opacity: 0.52, zIndex: 1, pointerEvents: 'none' },
+      center: { transform: 'translateX(-50%) scale(1)', opacity: 1, zIndex: 3, pointerEvents: 'auto' },
+      right: { transform: 'translateX(45%) scale(0.92)', opacity: 0.58, zIndex: 1, pointerEvents: 'none' },
+      farRight: { transform: 'translateX(148%) scale(0.88)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
+    };
+
+    const getPosition = (index) => {
+      const offset = (index - activeIndex + items.length) % items.length;
+      if (offset === 0) return 'center';
+      if (offset === 1) return 'right';
+      if (offset === items.length - 1) return 'left';
+      if (offset > items.length / 2) return 'farLeft';
+      return 'farRight';
+    };
+
+    const applyPosition = (card, positions) => {
+      const index = Number(card.dataset.testimonialCard || 0);
+      const style = positions[getPosition(index)] || positions.farRight;
+      card.style.transform = style.transform;
+      card.style.opacity = String(style.opacity);
+      card.style.zIndex = String(style.zIndex);
+      card.style.pointerEvents = style.pointerEvents;
     };
 
     const render = () => {
       root.querySelectorAll('[data-testimonial-card]').forEach((card) => {
-        const slot = Number(card.dataset.testimonialCard || 0);
-        setCard(card, activeIndex + slot - 1);
+        applyPosition(card, card.dataset.testimonialLayout === 'desktop' ? desktopPositions : mobilePositions);
       });
       root.querySelectorAll('[data-testimonial-count]').forEach((count) => {
         count.textContent = String(activeIndex + 1).padStart(2, '0');
@@ -247,6 +270,7 @@ const setupTestimonials = () => {
         inactiveColor: 'rgba(214,204,191,1)',
         activeWidth: '1.75rem',
         inactiveWidth: '0.375rem',
+        itemCount: items.length,
       });
     };
 
@@ -264,7 +288,7 @@ const setupTestimonials = () => {
     });
     root.querySelectorAll('[data-testimonial-dot]').forEach((dot, index) => {
       dot.addEventListener('click', () => {
-        activeIndex = index;
+        activeIndex = index % items.length;
         render();
       });
     });

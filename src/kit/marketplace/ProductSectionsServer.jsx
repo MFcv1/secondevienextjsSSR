@@ -576,52 +576,58 @@ const testimonials = [
     text: "La commode celadon a completement transforme notre chambre. Un travail magnifique et un respect de l'ame du meuble qui force l'admiration.",
     author: 'Sophie L.',
     color: '#F7EEE7',
-    mobilePosition: 'translateX(-116%) scale(0.9)',
-    desktopPosition: 'translateX(-145%) scale(0.92)',
-    opacity: 0.52,
-    zIndex: 1,
   },
   {
     id: 2,
     text: "J'ai pleure en voyant la restauration du vieux chevet de ma grand-mere. L'or et la patine sont d'une douceur absolue.",
     author: 'Caroline V.',
     color: '#F2E8D8',
-    mobilePosition: 'translateX(-50%) scale(1)',
-    desktopPosition: 'translateX(-50%) scale(1)',
-    opacity: 1,
-    zIndex: 3,
   },
   {
     id: 3,
     text: "Le meuble est encore plus incroyable en vrai. On a retrouve une piece de famille, restauree avec une grace folle.",
     author: 'Julie M.',
     color: '#E5EBDD',
-    mobilePosition: 'translateX(16%) scale(0.9)',
-    desktopPosition: 'translateX(45%) scale(0.92)',
-    opacity: 0.58,
-    zIndex: 1,
   },
   {
     id: 4,
     text: "Anais a compris exactement l'ambiance que je voulais. La livraison a Marseille etait douce, precise, sans stress.",
     author: 'Marc & Chloe',
     color: '#EFE6DC',
-    mobilePosition: 'translateX(106%) scale(0.86)',
-    desktopPosition: 'translateX(148%) scale(0.88)',
-    opacity: 0,
-    zIndex: 0,
   },
   {
     id: 5,
     text: "Une vraie seconde vie pour notre table de ferme. Elle garde ses marques, mais elle respire a nouveau.",
     author: 'Julien B.',
     color: '#F4EEE4',
-    mobilePosition: 'translateX(-206%) scale(0.86)',
-    desktopPosition: 'translateX(-248%) scale(0.88)',
-    opacity: 0,
-    zIndex: 0,
   },
 ];
+
+const mobileTestimonialPositions = {
+  farLeft: { transform: 'translateX(-206%) scale(0.86)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
+  left: { transform: 'translateX(-116%) scale(0.9)', opacity: 0.42, zIndex: 1, pointerEvents: 'none' },
+  center: { transform: 'translateX(-50%) scale(1)', opacity: 1, zIndex: 3, pointerEvents: 'auto' },
+  right: { transform: 'translateX(16%) scale(0.9)', opacity: 0.46, zIndex: 1, pointerEvents: 'none' },
+  farRight: { transform: 'translateX(106%) scale(0.86)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
+};
+
+const desktopTestimonialPositions = {
+  farLeft: { transform: 'translateX(-248%) scale(0.88)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
+  left: { transform: 'translateX(-145%) scale(0.92)', opacity: 0.52, zIndex: 1, pointerEvents: 'none' },
+  center: { transform: 'translateX(-50%) scale(1)', opacity: 1, zIndex: 3, pointerEvents: 'auto' },
+  right: { transform: 'translateX(45%) scale(0.92)', opacity: 0.58, zIndex: 1, pointerEvents: 'none' },
+  farRight: { transform: 'translateX(148%) scale(0.88)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
+};
+
+const getTestimonialPositionStyle = (index, activeIndex, positions) => {
+  const count = testimonials.length;
+  const offset = (index - activeIndex + count) % count;
+  if (offset === 0) return positions.center;
+  if (offset === 1) return positions.right;
+  if (offset === count - 1) return positions.left;
+  if (offset > count / 2) return positions.farLeft;
+  return positions.farRight;
+};
 
 const TestimonialsHeader = ({ darkMode = false, compact = false } = {}) => (
   <div className="mx-auto flex max-w-[420px] flex-col items-center px-4 text-center">
@@ -643,21 +649,25 @@ const TestimonialsHeader = ({ darkMode = false, compact = false } = {}) => (
 
 const TestimonialCardServer = ({ note, darkMode = false, size = 'mobile' } = {}) => {
   const isDesktop = size === 'desktop';
+  const index = testimonials.findIndex((item) => item.id === note.id);
+  const positionStyle = getTestimonialPositionStyle(index, 1, isDesktop ? desktopTestimonialPositions : mobileTestimonialPositions);
   return (
     <article
-      data-testimonial-card={note.id === 1 ? 0 : note.id === 2 ? 1 : 2}
+      data-testimonial-card={index}
+      data-testimonial-layout={isDesktop ? 'desktop' : 'mobile'}
       style={{
         '--testimonial-card-bg': note.color,
-        transform: isDesktop ? note.desktopPosition : note.mobilePosition,
-        opacity: note.opacity,
-        zIndex: note.zIndex,
+        transform: positionStyle.transform,
+        opacity: positionStyle.opacity,
+        zIndex: positionStyle.zIndex,
+        pointerEvents: positionStyle.pointerEvents,
         width: isDesktop ? 'min(29vw, 350px)' : undefined,
       }}
       className={`customer-testimonial-card absolute left-1/2 top-0 flex flex-col justify-between rounded-[16px] bg-[color:var(--testimonial-card-bg)] ring-1 ring-transparent dark:bg-[#1b1814] dark:ring-[#d8ad73]/10 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.045),0_22px_54px_-40px_rgba(0,0,0,0.95)] ${
         isDesktop
           ? 'h-[306px] px-7 py-8 shadow-[0_16px_38px_rgba(69,57,42,0.08)] xl:h-[332px] xl:px-9 xl:py-10'
           : 'h-[292px] w-[232px] px-6 py-8 shadow-[0_18px_36px_rgba(69,57,42,0.035)]'
-      } ${darkMode ? '' : ''}`}
+      } transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${darkMode ? '' : ''}`}
     >
       <div
         aria-hidden="true"
@@ -738,7 +748,7 @@ const TestimonialsCarouselPlaceholder = ({ darkMode = false } = {}) => (
       <div className="mx-auto flex w-full max-w-[1280px] flex-col items-center">
         <TestimonialsHeader darkMode={darkMode} />
         <div className="relative mt-12 h-[328px] w-full max-w-[1120px] overflow-visible xl:h-[352px] xl:max-w-[1240px]">
-          {testimonials.slice(0, 3).map((note) => (
+          {testimonials.map((note) => (
             <TestimonialCardServer key={note.id} note={note} darkMode={darkMode} size="desktop" />
           ))}
         </div>
@@ -748,7 +758,7 @@ const TestimonialsCarouselPlaceholder = ({ darkMode = false } = {}) => (
     <div className="mx-auto flex w-full max-w-[430px] flex-col items-center px-0 pb-16 pt-14 lg:hidden">
       <TestimonialsHeader darkMode={darkMode} compact />
       <div className="relative mt-11 h-[318px] w-full overflow-hidden">
-        {testimonials.slice(0, 3).map((note) => (
+        {testimonials.map((note) => (
           <TestimonialCardServer key={note.id} note={note} darkMode={darkMode} size="mobile" />
         ))}
       </div>
