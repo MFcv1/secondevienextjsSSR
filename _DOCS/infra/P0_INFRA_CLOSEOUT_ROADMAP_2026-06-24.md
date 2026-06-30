@@ -18,12 +18,12 @@ Ne pas modifier le design public ou back-office dans cette roadmap. Ne pas suppr
 
 1. `AGENTS.md`
 2. `TODO.md`
-3. `INFRA_PROD_PHASE2_REPORT_2026-06-14.md`
-4. `E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`
-5. `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`
+3. `_DOCS/infra/INFRA_PROD_PHASE2_REPORT_2026-06-14.md`
+4. `_DOCS/commerce/E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`
+5. `_DOCS/commerce/E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`
 6. `RUNBOOK.md`
 7. `mapV2.md`
-8. `NEXT_PUBLIC_ROUTES_STATIC_ARCHITECTURE_ROADMAP_2026-06-16.md` si la passe touche revalidation, cache public, produit, categorie ou sitemap.
+8. `_DOCS/architecture/NEXT_PUBLIC_ROUTES_STATIC_ARCHITECTURE_ROADMAP_2026-06-16.md` si la passe touche revalidation, cache public, produit, categorie ou sitemap.
 9. `alertemobile.md` seulement si une modification touche galerie, produit mobile, scroll mobile ou shell marketplace.
 
 Sources techniques primaires deja retenues par le projet:
@@ -287,8 +287,8 @@ Dans `TODO.md`, `cliquer Rembourser` reste non coche, alors que `refundId`, `ref
 
 ### Actions
 
-- Relire `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
-- Relire `E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`.
+- Relire `_DOCS/commerce/E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
+- Relire `_DOCS/commerce/E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`.
 - Verifier les logs/preuves mentionnes dans `logs/hosted-stripe-e2e-*.json` si presents localement.
 - Decider:
   - si une preuve montre que le clic UI `Rembourser` a bien ete effectue, cocher la ligne et ajouter une note courte;
@@ -411,10 +411,10 @@ Prochaine premiere tache:
 - `src/kit/config/firebase.js` initialise App Check avant les instances legacy `db` / `functions`, afin de securiser les consommateurs existants sans refactor massif du back-office.
 - `scripts/audit-app-check-paths.cjs` distingue maintenant les creations reelles d'instances Firebase des imports modulaires utilitaires. Validation: `npm run appcheck:audit` OK avec `findingCount=0`.
 - `TODO.md` clarifie l'incoherence refund: le refund est prouve via callables admin + Stripe + Firestore + webhook, mais le clic UI strict `Rembourser` reste non coche car il n'a pas ete rejoue avant remboursement sur la commande deja `refunded`.
-- App Check readiness traite par agent dedie: `APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`. Decision: ne pas activer enforcement maintenant; Firestore/Auth ont encore du trafic non verifie et Storage manque de trafic representatif.
-- Rail prod traite par agent dedie: `RAIL_PROD_AUDIT_REPORT_2026-06-24.md`. Decision: rail prod absent/non cable; `npm run infra:env` expose maintenant `railProd.decision = prod-absent-or-not-wired`.
+- App Check readiness traite par agent dedie: `_DOCS/infra/APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`. Decision: ne pas activer enforcement maintenant; Firestore/Auth ont encore du trafic non verifie et Storage manque de trafic representatif.
+- Rail prod traite par agent dedie: `_DOCS/infra/RAIL_PROD_AUDIT_REPORT_2026-06-24.md`. Decision: rail prod absent/non cable; `npm run infra:env` expose maintenant `railProd.decision = prod-absent-or-not-wired`.
 - Stripe UI moyens de paiement: `src/kit/commerce/CheckoutView.jsx` ne promet plus Apple Pay/Google Pay/PayPal statiquement; le Payment Element reste dynamique selon Stripe.
-- Checkout redirect: `CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md`. Le harnais supporte `E2E_STRIPE_PAYMENT_METHOD=ideal`, mais la preuve runtime redirect reste non acquise car le run heberge bloque en `known-blocked-otp` avant Stripe Payment Element.
+- Checkout redirect: `_DOCS/commerce/CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md`. Le harnais supporte `E2E_STRIPE_PAYMENT_METHOD=ideal`, mais la preuve runtime redirect reste non acquise car le run heberge bloque en `known-blocked-otp` avant Stripe Payment Element.
 - Checkout heberge stabilise jusqu'au Stripe Payment Element: run carte `logs/hosted-stripe-e2e-2026-06-24T20-50-15-627Z.json` en `passed`.
 - Checkout redirect: iDEAL reste non prouve, mais le blocage est maintenant isole cote configuration Stripe sandbox (`logs/hosted-stripe-e2e-2026-06-24T20-51-01-227Z.json`, `known-blocked-stripe-redirect-method`), plus cote auth/checkout avant Stripe.
-- Refund UI strict: `REFUND_UI_STRICT_PROOF_2026-06-24.md`. La preuve du clic UI `Rembourser` avant remboursement est acquise via `logs/ui-admin-returns-strict-refund-2026-06-24-xxHfLd2NLLWyFN5VXz01.json`.
+- Refund UI strict: `_DOCS/commerce/REFUND_UI_STRICT_PROOF_2026-06-24.md`. La preuve du clic UI `Rembourser` avant remboursement est acquise via `logs/ui-admin-returns-strict-refund-2026-06-24-xxHfLd2NLLWyFN5VXz01.json`.

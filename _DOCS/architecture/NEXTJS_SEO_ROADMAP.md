@@ -6,7 +6,7 @@ Date: 2026-05-15
 
 Amener le clone Next.js SSR au meilleur niveau SEO raisonnable pour un catalogue e-commerce public: HTML serveur fiable, canonicals stables, sitemap exact, donnees structurees coherentes, pages indexables utiles, et cout d'hydratation public sous controle.
 
-Cette roadmap complete `NEXTJS_OPTIMIZATION_ROADMAP.md`. Elle ne remplace pas les gates existants: chaque passe doit rester mesurable avec `npm run build`, `npm run seo:check`, et si le changement touche le parcours public ou la performance, `npm run perf:architecture`.
+Cette roadmap complete `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md`. Elle ne remplace pas les gates existants: chaque passe doit rester mesurable avec `npm run build`, `npm run seo:check`, et si le changement touche le parcours public ou la performance, `npm run perf:architecture`.
 
 ## Baseline du 2026-05-15
 
@@ -59,7 +59,7 @@ Audit effectue avec agents specialises et verification runtime locale:
 2. Clarifier la strategie images Next.
    - `images.unoptimized: true` signifie que `formats`, `qualities` et `minimumCacheTTL` ne donnent pas le meme gain qu'un pipeline `/_next/image`.
    - Continuer a servir les variantes Firebase adaptees tant que ce choix est volontaire.
-   - Decision courante: conserver les variantes Firebase comme source de verite; voir `NEXTJS_IMAGE_PIPELINE_AUDIT.md`.
+   - Decision courante: conserver les variantes Firebase comme source de verite; voir `_DOCS/images/NEXTJS_IMAGE_PIPELINE_AUDIT.md`.
 
 3. Nettoyer les scripts legacy Vite non applicables au clone Next.
    - `scripts/check-performance-budget.cjs` est adapte au build Next `.next`.

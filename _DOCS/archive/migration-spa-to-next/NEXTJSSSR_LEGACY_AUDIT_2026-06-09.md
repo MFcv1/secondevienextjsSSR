@@ -1,6 +1,6 @@
 # Audit Next SSR / residus SPA legacy - 2026-06-09
 
-Audit realise avec le playbook `nextjsssr.md`.
+Audit historique realise avec l'ancien playbook local Next SSR, supprime depuis la migration Next native.
 
 ## Resume
 

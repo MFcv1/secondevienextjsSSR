@@ -34,10 +34,10 @@ Interdits sur routes publiques:
 
 - Architecture Next native: `NEXT_NATIVE_ARCHITECTURE_BASELINE.md`, `context.md`, `mapV2.md`.
 - Galerie mobile/shell/scroll/detail: `alertemobile.md`.
-- Performance/hydratation/cache: `NEXTJS_OPTIMIZATION_ROADMAP.md`, `PHASE3_PERF_BASELINE_2026-06-24.md`.
-- Images produit/Storage/detailFast: `NEXTJS_IMAGE_PIPELINE_AUDIT.md`, `OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md`, `DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md`.
-- Infra prod/App Hosting/App Check: `P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md`, `INFRA_PROD_PHASE2_REPORT_2026-06-14.md`, `APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`, `RAIL_PROD_AUDIT_REPORT_2026-06-24.md`.
-- Checkout/refund/E2E: `CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md`, `E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`, `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`, `REFUND_UI_STRICT_PROOF_2026-06-24.md`.
+- Performance/hydratation/cache: `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md`, `_DOCS/perf/PHASE3_PERF_BASELINE_2026-06-24.md`.
+- Images produit/Storage/detailFast: `_DOCS/images/NEXTJS_IMAGE_PIPELINE_AUDIT.md`, `_DOCS/images/OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md`, `_DOCS/images/DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md`.
+- Infra prod/App Hosting/App Check: `_DOCS/infra/P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md`, `_DOCS/infra/INFRA_PROD_PHASE2_REPORT_2026-06-14.md`, `_DOCS/infra/APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`, `_DOCS/infra/RAIL_PROD_AUDIT_REPORT_2026-06-24.md`.
+- Checkout/refund/E2E: `_DOCS/commerce/CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md`, `_DOCS/commerce/E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`, `_DOCS/commerce/E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`, `_DOCS/commerce/REFUND_UI_STRICT_PROOF_2026-06-24.md`.
 
 ## Gates utiles
 
@@ -71,18 +71,17 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |-- RUNBOOK.md : commandes et exploitation Next/Firebase
 |-- TODO.md : backlog infra/perf/backoffice
 |-- DEAD_CODE_AUDIT.md : audit code vivant/mort, assets, scripts et gates
-|-- NEXT_PUBLIC_ROUTES_STATIC_ARCHITECTURE_ROADMAP_2026-06-16.md : routes publiques cacheables et gates request-time
-|-- NEXTJS_OPTIMIZATION_ROADMAP.md, PHASE3_PERF_BASELINE_2026-06-24.md : perf/hydratation/cache
-|-- NEXTJS_IMAGE_PIPELINE_AUDIT.md, OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md, DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md : pipeline images produit/Storage/detailFast
-|-- DEFERRED_GALLERY_FINAL_RENDER_ROADMAP_2026-06-30.md : suppression des rendus differes Avant/Apres, Instagram et Avis
-|-- P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md, INFRA_PROD_PHASE2_REPORT_2026-06-14.md, APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md, RAIL_PROD_AUDIT_REPORT_2026-06-24.md : infra prod/App Hosting/App Check
-|-- CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md, E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md, E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md, REFUND_UI_STRICT_PROOF_2026-06-24.md : checkout/refund/E2E
-|-- UX_MICRO_FRICTIONS_PLAYBOOK.md, MEGA_MENU_DESKTOP_OPTIMIZATION_ROADMAP_2026-06-24.md, MENU_NAVIGATION_CATEGORY_LOADING_REPORT_2026-06-16.md : UX/navigation
-|-- AI_QUOTE_ASSISTANT_MVP.md : cadrage assistant IA devis
-|-- docs : CGV/retours brouillon et hardening Stripe/Firebase
-|-- _DOCS : maintenance Next, revalidation, archives
-|   `-- archive/migration-spa-to-next : rapports historiques de migration SPA vers Next, non operationnels
-|-- optimisation : rapports d'optimisation terrain conserves
+|-- docs : brouillons legaux/metier non operationnels, dont CGV/retours
+|-- _DOCS : documentation active organisee par theme et archives
+|   |-- architecture : baseline routes publiques, SEO, cache et decisions Next
+|   |-- perf : roadmaps/gates perf, hydratation, galerie et rendu final direct
+|   |-- images : pipeline images produit, Storage, detailFast et audits UX image
+|   |-- infra : App Hosting, rail prod, App Check et closeout infra
+|   |-- commerce : checkout, refund, E2E backoffice et Stripe/Firebase hardening
+|   |-- ux : navigation, mega menu et micro-frictions
+|   |-- ai : cadrage assistant IA devis
+|   |-- data : migration/base de donnees
+|   `-- archive : rapports historiques non operationnels, dont migration SPA vers Next et notes UI
 |-- .agents/skills : skills locaux UI/design, dont visual-annotation-tuning
 |-- app : routes Next App Router, metadata, loading/not-found/error, sitemap, robots, iles de route
 |-- src

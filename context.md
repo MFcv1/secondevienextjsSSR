@@ -43,9 +43,9 @@ La strategie image active repose sur les variantes WebP Firebase Storage, pas su
 
 Docs utiles:
 
-- `NEXTJS_IMAGE_PIPELINE_AUDIT.md`
-- `OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md`
-- `DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md`
+- `_DOCS/images/NEXTJS_IMAGE_PIPELINE_AUDIT.md`
+- `_DOCS/images/OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md`
+- `_DOCS/images/DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md`
 
 Le budget CSS/JS initial reste un chantier separe. Ne pas le melanger avec le nettoyage documentation/arborescence.
 

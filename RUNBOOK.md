@@ -175,7 +175,7 @@ firebase functions:log --project secondevienextjsssr
 
 Lire aussi :
 
-- `DATABASE_MIGRATION_PLAN.md` pour la strategie base de donnees, sandbox, export/import, tests admin/checkout et cutover.
+- `_DOCS/data/DATABASE_MIGRATION_PLAN.md` pour la strategie base de donnees, sandbox, export/import, tests admin/checkout et cutover.
 
 Fichiers utiles :
 
@@ -309,7 +309,7 @@ status=passed
 Etat sandbox prouve le 2026-06-24 dans:
 
 ```text
-APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md
+_DOCS/infra/APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md
 ```
 
 Commande read-only de reprise:
@@ -332,7 +332,7 @@ Ne pas activer enforcement App Check global tant qu'une fenetre de telemetrie pr
 Etat au 2026-06-24:
 
 ```text
-RAIL_PROD_AUDIT_REPORT_2026-06-24.md
+_DOCS/infra/RAIL_PROD_AUDIT_REPORT_2026-06-24.md
 ```
 
 Decision: rail prod absent / non cable dans ce clone.
@@ -350,7 +350,7 @@ Ne pas deployer en production tant que le backend App Hosting prod, le domaine f
 Etat au 2026-06-24:
 
 ```text
-CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md
+_DOCS/commerce/CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md
 ```
 
 Le harnais `scripts/e2e-hosted-stripe-checkout.mjs` supporte maintenant:
@@ -382,7 +382,7 @@ Avant live, verifier dans Stripe Dashboard:
 Etat au 2026-06-24:
 
 ```text
-REFUND_UI_STRICT_PROOF_2026-06-24.md
+_DOCS/commerce/REFUND_UI_STRICT_PROOF_2026-06-24.md
 ```
 
 La preuve stricte du clic UI `Rembourser` sur une commande fraiche `paid` est acquise:

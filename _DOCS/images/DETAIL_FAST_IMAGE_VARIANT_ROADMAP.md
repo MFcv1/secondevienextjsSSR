@@ -106,7 +106,7 @@ Backfill / audit:
 
 Documentation:
 
-- `OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md`
+- `_DOCS/images/OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md`
 - `AGENTS.md`
 
 ## Implementation proposee

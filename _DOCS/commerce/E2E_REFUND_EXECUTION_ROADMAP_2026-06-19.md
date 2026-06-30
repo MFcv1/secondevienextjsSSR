@@ -15,7 +15,7 @@ Cette roadmap decoupe le travail en agents specialises. Les agents peuvent trava
 - Ne pas modifier le design public ou back-office pendant cette passe.
 - Ne pas lancer la Phase 3 perf tant que cette preuve P0 refund n'est pas close ou explicitement reportee.
 - Ne pas committer `logs/*.env`, tokens App Check, mots de passe, `clientSecret`, `idToken`, `refreshToken` ou headers `Authorization`.
-- Mettre a jour `TODO.md`, `E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`, `AGENTS.md` et `mapV2.md` si un fichier est cree, supprime, renomme ou deplace.
+- Mettre a jour `TODO.md`, `_DOCS/commerce/E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`, `AGENTS.md` et `mapV2.md` si un fichier est cree, supprime, renomme ou deplace.
 
 ## Agent 0 - Coordinateur de run
 
@@ -24,7 +24,7 @@ Mission: piloter l'ordre, verrouiller les preconditions et centraliser les preuv
 Entrees:
 
 - `TODO.md`, section `P0 - Reprise demain: debloquer E2E refund complet`.
-- `E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`.
+- `_DOCS/commerce/E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`.
 - Secrets locaux ignores Git: `logs/e2e-mail.env`, `logs/e2e-admin.env`, `logs/e2e-proof-token.txt`.
 
 Actions:
@@ -240,11 +240,11 @@ Entrees:
 
 - Sorties des agents 0 a 6.
 - `TODO.md`.
-- `E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`.
+- `_DOCS/commerce/E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`.
 
 Actions:
 
-- Mettre a jour `E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md` avec:
+- Mettre a jour `_DOCS/commerce/E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md` avec:
   - alias email utilise;
   - produit;
   - `orderId`;
@@ -474,4 +474,4 @@ Restant:
   - derniers JSON E2E repetables du produit dedie: `logs/hosted-stripe-e2e-2026-06-19T15-37-24-853Z.json`, `...15-42-14-500Z.json`, `...15-43-20-795Z.json`.
 - Decision: ne pas cocher retrospectivement le clic UI `Rembourser`; il reste ouvert au sens strict car la commande neuve avait deja ete remboursee via callable admin sandbox avant la preuve UI hebergee. Les preuves Stripe/Firestore/webhook/UI post-refund sont suffisantes pour documenter l'etat, pas pour pretendre que ce clic precis a ete rejoue.
 - Le harnais `scripts/e2e-hosted-stripe-checkout.mjs` classe maintenant les erreurs connues et laisse echouer le process uniquement sur erreur inattendue. Statuts ajoutes: `known-blocked-app-check`, `known-blocked-otp`, `known-blocked-seed-product`, `known-blocked-proof-token`, `known-stripe-failure`.
-- Commande redirect sandbox preparee dans `E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`; elle est volontairement gatee par `Test-Path logs/e2e-mail.env` et `logs/e2e-proof-token.txt`, et n'a pas ete executee.
+- Commande redirect sandbox preparee dans `_DOCS/commerce/E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`; elle est volontairement gatee par `Test-Path logs/e2e-mail.env` et `logs/e2e-proof-token.txt`, et n'a pas ete executee.

@@ -103,4 +103,4 @@ Sur `http://127.0.0.1:4300/`, cache desactive, CPU throttle x4:
 - Ne pas toucher aux handlers touch mobile sauf necessite absolue.
 - Ne pas remettre de timers courts pour masquer un probleme de structure.
 - Ne pas charger le footer/newsletter/product detail pendant le premier scroll froid.
-- Documenter les mesures avant/apres dans `GALLERY_SCROLL_LAG_AUDIT.md`.
+- Documenter les mesures avant/apres dans `_DOCS/perf/GALLERY_SCROLL_LAG_AUDIT.md`.

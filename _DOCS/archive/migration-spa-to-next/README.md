@@ -7,7 +7,6 @@ Ils ne sont plus des consignes operationnelles actives. L'etat courant du projet
 - `NEXT_NATIVE_ARCHITECTURE_BASELINE.md`
 - `AGENTS.md`
 - `context.md`
-- `nextjsssr.md`
 - `mapV2.md`
 
 Ne pas utiliser ces rapports pour reintroduire `ClientApp`, `src/app.jsx`, `src/Router.jsx`, un routing `setView`, ou un fallback SPA public.

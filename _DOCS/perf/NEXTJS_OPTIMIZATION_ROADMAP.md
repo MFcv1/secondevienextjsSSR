@@ -272,9 +272,9 @@ const shouldUseMobileGalleryScroll = view === 'gallery' || isGalleryDetailOverla
 
 ## Documentation liee
 
-- `ARCHITECTURE_BENCHMARK_DECISION.md`
+- `_DOCS/architecture/ARCHITECTURE_BENCHMARK_DECISION.md`
 - `_DOCS/archive/migration-spa-to-next/COMPARISON.md`
 - `_DOCS/archive/migration-spa-to-next/MIGRATION_REPORT.md`
-- `DATABASE_MIGRATION_PLAN.md`
+- `_DOCS/data/DATABASE_MIGRATION_PLAN.md`
 - `_DOCS/archive/migration-spa-to-next/COMPLETION_AUDIT.md`
 - `alertemobile.md`

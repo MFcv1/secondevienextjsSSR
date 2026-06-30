@@ -295,7 +295,7 @@ Get-ChildItem logs -Filter 'hosted-stripe-e2e-*.json' |
 
 ## Reprise Codex - 2026-06-19 execution roadmap refund
 
-- Roadmap d'execution creee et utilisee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
+- Roadmap d'execution creee et utilisee: `_DOCS/commerce/E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
 - Preconditions locales verifiees sans afficher les secrets: `logs/e2e-mail.env`, `logs/e2e-admin.env`, `logs/e2e-proof-token.txt` existent et `logs/` est ignore par Git.
 - Verification script E2E: `scripts/e2e-hosted-stripe-checkout.mjs` injecte `E2E_APPCHECK_DEBUG_TOKEN` via `context.addInitScript` avant `page.goto`.
 - Run court App Check/OTP lance avec alias `loa.gto15+sv-appcheck-...@gmail.com`:

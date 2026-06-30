@@ -25,12 +25,12 @@ Creer un clone Next.js SSR/SSG maintenable de `SecondevieAnais` dans `C:\Users\m
 | Admin ecriture sandbox testee | Aucun compte admin sandbox ni validation ecriture fournis; pas d'ecriture lancee volontairement | Limite connue |
 | Checkout/panier/wishlist | Modules et routes presents; tests non destructifs route shell OK | OK non destructif |
 | Docs livrees | `MIGRATION_REPORT.md`, `COMPARISON.md`, `RUNBOOK.md` | OK |
-| Strategie base de donnees | `DATABASE_MIGRATION_PLAN.md` documente pourquoi le clone existe, les collections, sandbox/export-import, tests restants et cutover | OK |
+| Strategie base de donnees | `_DOCS/data/DATABASE_MIGRATION_PLAN.md` documente pourquoi le clone existe, les collections, sandbox/export-import, tests restants et cutover | OK |
 | Commandes attendues | `npm install`, `npm run dev`, `npm run build`, `npm run lint`, `npm run seo:check`, `npm run mobile:contract`, `npm run test:e2e` | OK |
 | Playwright desktop/mobile | 20 tests passent | OK |
 | Comparaison objective | `scripts/compare-spa-next.mjs`, `scripts/compare-runtime.mjs` + mesures dans `COMPARISON.md` | OK |
 | Ne pas promettre que SSR supprime les lags | Rapports indiquent que galerie/mobile doivent rester mesures runtime | OK |
-| Roadmap optimisation Next | `NEXTJS_OPTIMIZATION_ROADMAP.md`; N1 cache tags, N2 ISR produit, N3 images, N5 prefetch; benchmark local optimise | OK partiel |
+| Roadmap optimisation Next | `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md`; N1 cache tags, N2 ISR produit, N3 images, N5 prefetch; benchmark local optimise | OK partiel |
 | Function `publicCatalog` sandbox | Codebase isole `functions-public`; `firebase deploy --only functions:public:publicCatalog`; endpoint HTTP 200 + CORS App Hosting OK | OK |
 | Functions `main` sandbox | Secrets sandbox/dummy crees; fonctions HTTP/callable deployees en Gen1 `us-central1`; triggers Firestore deployes en Gen2 `europe-west1` | OK avec limites |
 

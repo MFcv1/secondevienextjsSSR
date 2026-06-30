@@ -2,7 +2,7 @@
 
 ## Resume executif
 
-Audit realise sur le clone local `SecondevieNextjsSSR` le 2026-05-28, avec lecture prealable de `AGENTS.md`, `NEXTJS_SEO_ROADMAP.md` et `NEXTJS_OPTIMIZATION_ROADMAP.md`. Aucune ecriture Firestore/admin n'a ete faite. Les seules modifications de repo prevues par ce livrable sont la creation de ce rapport et la mise a jour de la carte `AGENTS.md`.
+Audit realise sur le clone local `SecondevieNextjsSSR` le 2026-05-28, avec lecture prealable de `AGENTS.md`, `_DOCS/architecture/NEXTJS_SEO_ROADMAP.md` et `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md`. Aucune ecriture Firestore/admin n'a ete faite. Les seules modifications de repo prevues par ce livrable sont la creation de ce rapport et la mise a jour de la carte `AGENTS.md`.
 
 Score global estime : **Bon, avec dette architecture importante**.
 

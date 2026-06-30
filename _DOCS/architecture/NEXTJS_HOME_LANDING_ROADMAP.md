@@ -57,7 +57,7 @@ Choisir le comportement de `/`:
 
 ### H0 - Audit rapide de l'existant
 
-- Relire `NEXTJS_OPTIMIZATION_ROADMAP.md`, `NEXTJS_SEO_ROADMAP.md` et cette roadmap.
+- Relire `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md`, `_DOCS/architecture/NEXTJS_SEO_ROADMAP.md` et cette roadmap.
 - Capturer l'etat actuel de `/`: HTML, H1, title, description, liens internes, JS charge, LCP.
 - Verifier les mots cles et intentions deja couverts par produits/categories.
 

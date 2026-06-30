@@ -6,7 +6,7 @@ Audit demande pour comprendre les lags/sauts au premier chargement froid desktop
 
 Contraintes respectees:
 
-- `AGENTS.md`, `NEXTJS_OPTIMIZATION_ROADMAP.md` et `alertemobile.md` relus avant audit.
+- `AGENTS.md`, `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md` et `alertemobile.md` relus avant audit.
 - `git status --short` execute en premier: worktree propre au debut.
 - Aucun refactor comportemental applicatif.
 - Invariant mobile conserve: `const shouldUseMobileGalleryScroll = view === 'gallery' || isGalleryDetailOverlay;`.

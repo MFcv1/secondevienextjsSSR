@@ -55,7 +55,7 @@ Decision active:
 - Les variantes WebP Firebase Storage restent la source de verite.
 - `next/image` est configure avec `images.unoptimized: true`.
 - Les variantes sont choisies par contexte: carte, detail, zoom, mobile, desktop.
-- Les audits et backfills image vivent dans `NEXTJS_IMAGE_PIPELINE_AUDIT.md`, `OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md` et `DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md`.
+- Les audits et backfills image vivent dans `_DOCS/images/NEXTJS_IMAGE_PIPELINE_AUDIT.md`, `_DOCS/images/OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md` et `_DOCS/images/DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md`.
 
 Gates utiles:
 
@@ -93,14 +93,13 @@ Conserver comme base de travail:
 
 - `AGENTS.md`: consignes agents et code map compacte.
 - `context.md`: synthese courte de l'etat projet.
-- `nextjsssr.md`: playbook de garde Next natif.
 - `alertemobile.md`: invariant mobile galerie.
 - `mapV2.md`: cartographie routes/infra.
 - `RUNBOOK.md`: commandes et exploitation.
-- `NEXTJS_OPTIMIZATION_ROADMAP.md`: perf/hydratation.
-- `NEXT_PUBLIC_ROUTES_STATIC_ARCHITECTURE_ROADMAP_2026-06-16.md`: routes publiques cacheables.
-- `NEXTJS_IMAGE_PIPELINE_AUDIT.md`, `OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md`, `DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md`: pipeline images.
-- `P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md`, `APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`, `RAIL_PROD_AUDIT_REPORT_2026-06-24.md`: infra prod.
+- `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md`: perf/hydratation.
+- `_DOCS/architecture/NEXT_PUBLIC_ROUTES_STATIC_ARCHITECTURE_ROADMAP_2026-06-16.md`: routes publiques cacheables.
+- `_DOCS/images/NEXTJS_IMAGE_PIPELINE_AUDIT.md`, `_DOCS/images/OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md`, `_DOCS/images/DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md`: pipeline images.
+- `_DOCS/infra/P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md`, `_DOCS/infra/APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`, `_DOCS/infra/RAIL_PROD_AUDIT_REPORT_2026-06-24.md`: infra prod.
 
 Les rapports de migration SPA sont archives dans `_DOCS/archive/migration-spa-to-next/` et ne sont plus des consignes operationnelles.
 

@@ -2,7 +2,7 @@
 
 Document de decision detaille ajoute le 2026-05-13 :
 
-- `ARCHITECTURE_BENCHMARK_DECISION.md` compare les deux URLs deployees, leurs bases distinctes, le SEO initial, le poids reseau, les signaux runtime desktop et le scroll.
+- `_DOCS/architecture/ARCHITECTURE_BENCHMARK_DECISION.md` compare les deux URLs deployees, leurs bases distinctes, le SEO initial, le poids reseau, les signaux runtime desktop et le scroll.
 
 ## Identique
 

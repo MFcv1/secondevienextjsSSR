@@ -8,8 +8,8 @@ This pass did not modify App Check, Stripe payment method UI, checkout code, or 
 
 ## Existing proof reviewed
 
-- `E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`: documents previous refund proofs through callable admin, Stripe, Firestore, webhook, email, and hosted UI post-refund state.
-- `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`: explicitly keeps the strict UI click `Rembourser` open because the fresh order had already been refunded before hosted UI proof.
+- `_DOCS/commerce/E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`: documents previous refund proofs through callable admin, Stripe, Firestore, webhook, email, and hosted UI post-refund state.
+- `_DOCS/commerce/E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`: explicitly keeps the strict UI click `Rembourser` open because the fresh order had already been refunded before hosted UI proof.
 - `logs/ui-admin-returns-proof-2026-06-19.json`: proves hosted admin `Retours` post-refund state for order `9RkYKEaaRCrBWVxU6ALb`, including `Remboursee`, `Stock remis`, refund id, and `Sync Stripe` / `Email client`.
 - `logs/ui-client-orders-refunded-proof-2026-06-19.json`: proves client `/mes-commandes` post-refund state.
 

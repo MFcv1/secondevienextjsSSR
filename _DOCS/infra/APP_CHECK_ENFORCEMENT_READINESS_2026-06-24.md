@@ -31,7 +31,7 @@ Aucune modification de `TODO.md`, `RUNBOOK.md`, Stripe, checkout, refund ou fonc
 
 ```powershell
 git status --short
-rg -n "App Check|appcheck|app check|enforcement|enforce|debug token|audit-app-check" TODO.md RUNBOOK.md P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md scripts package.json firebase.json apphosting.yaml .firebaserc
+rg -n "App Check|appcheck|app check|enforcement|enforce|debug token|audit-app-check" TODO.md RUNBOOK.md _DOCS/infra/P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md scripts package.json firebase.json apphosting.yaml .firebaserc
 Get-Content -Path scripts\audit-app-check-paths.cjs
 firebase --version
 firebase appcheck --help

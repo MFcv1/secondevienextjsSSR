@@ -29,16 +29,16 @@ Sources normatives:
 Sources locales non normatives mais utiles:
 
 - `AGENTS.md`: contraintes projet, env, mobile, deploy sandbox.
-- `nextjsssr.md`: playbook local anti-SPA. A garder comme garde-fou projet, pas comme source d'autorite Next.js.
-- `context.md`: contexte de migration legacy UI vers Next natif.
-- `NEXTJS_OPTIMIZATION_ROADMAP.md`: historique perf/cache/images.
-- `P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md`: plan de fermeture des derniers P0 infra avant Phase 3 perf.
-- `APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`: etat App Check sandbox, telemetrie Cloud Monitoring et decision enforcement par service.
-- `RAIL_PROD_AUDIT_REPORT_2026-06-24.md`: audit du rail prod absent/non cable et bloc `railProd` de `npm run infra:env`.
-- `CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md`: support E2E iDEAL/Wero, checkout heberge stabilise jusqu'au Payment Element, blocage restant cote configuration Stripe sandbox.
-- `REFUND_UI_STRICT_PROOF_2026-06-24.md`: preuve stricte clic UI `Rembourser` sur commande fraiche `paid`, refund Stripe et stock restaure.
-- `PHASE3_PERF_BASELINE_2026-06-24.md`: baseline Phase 3 perf/hydratation, P0 galerie, chunks initiaux et dettes P1/P2.
-- `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`: plan d'execution multi-agents pour prouver achat invite neuf puis refund admin sandbox.
+- `NEXT_NATIVE_ARCHITECTURE_BASELINE.md`: source active pour routes Next natives, ISR/SSG/SSR, gates et docs utiles.
+- `context.md`: synthese courte de l'etat projet Next natif.
+- `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md`: historique perf/cache/images.
+- `_DOCS/infra/P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md`: plan de fermeture des derniers P0 infra avant Phase 3 perf.
+- `_DOCS/infra/APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`: etat App Check sandbox, telemetrie Cloud Monitoring et decision enforcement par service.
+- `_DOCS/infra/RAIL_PROD_AUDIT_REPORT_2026-06-24.md`: audit du rail prod absent/non cable et bloc `railProd` de `npm run infra:env`.
+- `_DOCS/commerce/CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md`: support E2E iDEAL/Wero, checkout heberge stabilise jusqu'au Payment Element, blocage restant cote configuration Stripe sandbox.
+- `_DOCS/commerce/REFUND_UI_STRICT_PROOF_2026-06-24.md`: preuve stricte clic UI `Rembourser` sur commande fraiche `paid`, refund Stripe et stock restaure.
+- `_DOCS/perf/PHASE3_PERF_BASELINE_2026-06-24.md`: baseline Phase 3 perf/hydratation, P0 galerie, chunks initiaux et dettes P1/P2.
+- `_DOCS/commerce/E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`: plan d'execution multi-agents pour prouver achat invite neuf puis refund admin sandbox.
 - Scripts gates: `next:routes`, `perf:*`, `mobile:contract`.
 
 Regles Next.js retenues pour cette carte:

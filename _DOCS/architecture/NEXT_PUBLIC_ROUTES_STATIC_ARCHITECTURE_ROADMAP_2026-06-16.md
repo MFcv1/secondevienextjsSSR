@@ -19,8 +19,8 @@ Le principe cible est simple:
 Lire avant toute implementation:
 
 - `AGENTS.md`
-- `nextjsssr.md`
-- `NEXTJS_OPTIMIZATION_ROADMAP.md`
+- `NEXT_NATIVE_ARCHITECTURE_BASELINE.md`
+- `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md`
 - `alertemobile.md` si une modification touche la galerie mobile, le detail produit, le shell/scroller marketplace ou les gestes mobile.
 
 Regles Next a respecter:

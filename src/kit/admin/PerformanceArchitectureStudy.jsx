@@ -1167,9 +1167,9 @@ export default function PerformanceArchitectureStudy({ onBack, embedded = false,
               <div>
                 <span>Roadmap documentee</span>
                 <p>
-                  Le fichier <code>NEXTJS_OPTIMIZATION_ROADMAP.md</code> est la reference agent pour cette passe. Il
-                  complete <code>ARCHITECTURE_BENCHMARK_DECISION.md</code> avec un plan d execution centre sur le cas
-                  produit froid et le scale App Hosting.
+                  Le fichier <code>_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md</code> est la reference agent pour cette
+                  passe. Il complete <code>_DOCS/architecture/ARCHITECTURE_BENCHMARK_DECISION.md</code> avec un plan
+                  d execution centre sur le cas produit froid et le scale App Hosting.
                 </p>
               </div>
             </div>

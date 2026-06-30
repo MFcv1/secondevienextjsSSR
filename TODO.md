@@ -17,7 +17,7 @@ Objectif demain: commencer par assainir l'infra prod avant de reprendre SEO/perf
 - [ ] Valider `NEXT_PUBLIC_SITE_URL` prod et sandbox:
   - [x] sandbox: valeur App Hosting confirmee et domaine HTTPS repond en 200;
   - [ ] prod: a definir quand le rail prod existe.
-  - [x] decision 2026-06-24: rail prod explicitement absent/non cable dans ce clone; voir `RAIL_PROD_AUDIT_REPORT_2026-06-24.md`.
+  - [x] decision 2026-06-24: rail prod explicitement absent/non cable dans ce clone; voir `_DOCS/infra/RAIL_PROD_AUDIT_REPORT_2026-06-24.md`.
 - [x] Ajouter/valider `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` pour App Check sandbox.
 - [ ] Verifier la configuration App Check Firebase cote sandbox/prod:
   - [x] sandbox: app Web enregistree reCAPTCHA v3;
@@ -25,7 +25,7 @@ Objectif demain: commencer par assainir l'infra prod avant de reprendre SEO/perf
   - [x] sandbox: debug token Playwright enregistre et `exchangeDebugToken` verifie (`ttl=3600s`);
   - [x] sandbox: flux auth email OTP A/Z sans erreur console App Check via `npm run e2e:auth-email`;
   - [x] sandbox: verifier telemetrie Firestore/Functions/Storage avant tout enforcement;
-    - [x] preuve API/Monitoring 2026-06-24: `APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`;
+    - [x] preuve API/Monitoring 2026-06-24: `_DOCS/infra/APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`;
     - [x] decision: garder Firestore, Storage et Identity Toolkit en `UNENFORCED`; Firestore/Auth ont encore du trafic `MISSING`/`INVALID`, Storage manque de trafic representatif, Functions necessite une strategie par endpoint/callable.
   - [ ] prod: a configurer/verifier quand le rail prod existe.
 - [x] Creer/valider le secret App Hosting `SUPER_ADMIN_EMAIL` avant rollout.
@@ -232,7 +232,7 @@ Avancement 2026-06-18:
 
 Blocage observe le 2026-06-19 pendant le run achat -> refund:
 
-Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
+Roadmap d'execution dediee: `_DOCS/commerce/E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
 
 - [x] Debloquer App Check E2E sandbox:
   - [x] generer/recuperer un debug token App Check Web pour Playwright;
@@ -272,7 +272,7 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
   - [x] logs `stripeWebhook` pour paiement + refund;
   - [x] Firestore order: `refundStatus`, `stripeRefundId`, `stockRestoredAfterRefund`, `refundEmailProof`;
   - [x] Stripe Dashboard/API: refund visible et events webhook traites.
-- [x] Mettre a jour `E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md` avec les preuves finales.
+- [x] Mettre a jour `_DOCS/commerce/E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md` avec les preuves finales.
 
 ### P0 - Reservation stock et commandes orphelines
 
@@ -362,7 +362,7 @@ Roadmap d'execution dediee: `E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`.
     - [x] implementation 2026-06-24: `src/kit/config/firebase.js` initialise App Check avant les instances legacy `db` / `functions`, et `npm run appcheck:audit` distingue maintenant les creations d'instances des imports modulaires utilitaires;
     - [x] validation courte: `npm run appcheck:audit` OK, `findingCount=0`.
   - [x] sandbox: conserver `UNENFORCED` jusqu'a telemetrie verte;
-    - [x] decision 2026-06-24: enforcement refuse pour l'instant, voir `APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`.
+    - [x] decision 2026-06-24: enforcement refuse pour l'instant, voir `_DOCS/infra/APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`.
   - [ ] tester enforcement service par service: Firestore, Storage, Identity Toolkit;
     - [ ] reporte: ne pas tester tant que Firestore/Auth ont du trafic non verifie et que Storage n'a pas de smoke representatif.
   - [ ] prod: vraie `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`, aucun debug token hors CI controlee.

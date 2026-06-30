@@ -358,7 +358,7 @@ Ne pas reintroduire:
 Avant toute nouvelle optimisation produit/mobile/galerie:
 
 1. relire `alertemobile.md`;
-2. verifier `NEXTJS_OPTIMIZATION_ROADMAP.md` si la modification touche les performances Next/SSR;
+2. verifier `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md` si la modification touche les performances Next/SSR;
 3. lancer au minimum `npm run lint`, `npm run mobile:contract`, `npm run build`;
 4. si la route produit SSR change, lancer `npm run seo:check`;
 5. si le pipeline image change, lancer `npm run perf:product-images`.
