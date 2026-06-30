@@ -374,6 +374,32 @@ const desktopInstaCardStyles = [
   { transform: 'translateX(45%) scale(0.92)', opacity: 0.58, zIndex: 1 },
 ];
 
+const mobileInstaPositions = {
+  farLeft: { transform: 'translateX(-206%) scale(0.86)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
+  left: { transform: 'translateX(-106%) scale(0.88)', opacity: 0.3, zIndex: 1, pointerEvents: 'none' },
+  center: { transform: 'translateX(-50%) scale(1)', opacity: 1, zIndex: 3, pointerEvents: 'auto' },
+  right: { transform: 'translateX(6%) scale(0.88)', opacity: 0.32, zIndex: 1, pointerEvents: 'none' },
+  farRight: { transform: 'translateX(106%) scale(0.86)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
+};
+
+const desktopInstaPositions = {
+  farLeft: { transform: 'translateX(-248%) scale(0.88)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
+  left: desktopInstaCardStyles[0],
+  center: desktopInstaCardStyles[1],
+  right: desktopInstaCardStyles[2],
+  farRight: { transform: 'translateX(148%) scale(0.88)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
+};
+
+const getInstaPositionStyle = (index, activeIndex, positions) => {
+  const count = instaPosts.length;
+  const offset = (index - activeIndex + count) % count;
+  if (offset === 0) return positions.center;
+  if (offset === 1) return positions.right;
+  if (offset === count - 1) return positions.left;
+  if (offset > count / 2) return positions.farLeft;
+  return positions.farRight;
+};
+
 const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } = {}) => (
   <section
     data-instagram-carousel
@@ -425,17 +451,13 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
         </div>
       </div>
       <div className="relative mx-auto mt-10 h-[366px] max-w-[430px] overflow-hidden min-[390px]:h-[386px] md:h-[462px] md:max-w-[560px]">
-        {posts.slice(0, 3).map((post, index) => {
-          const positionClass = index === 0
-            ? '-translate-x-[106%] scale-[0.88] opacity-30'
-            : index === 1
-              ? '-translate-x-1/2 scale-100 opacity-100'
-              : 'translate-x-[6%] scale-[0.88] opacity-30';
-          return (
+        {posts.map((post, index) => (
             <article
               key={post.title}
               data-insta-card={index}
-              className={`absolute left-1/2 top-0 w-[56vw] max-w-[206px] overflow-hidden rounded-[20px] shadow-[0_24px_60px_rgba(32,26,20,0.13)] min-[390px]:max-w-[216px] md:max-w-[250px] md:rounded-[22px] ${positionClass} ${index === 1 ? 'z-[3]' : 'z-[1]'} ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}
+              data-insta-layout="mobile"
+              className={`absolute left-1/2 top-0 w-[56vw] max-w-[206px] overflow-hidden rounded-[20px] shadow-[0_24px_60px_rgba(32,26,20,0.13)] transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform min-[390px]:max-w-[216px] md:max-w-[250px] md:rounded-[22px] ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}
+              style={getInstaPositionStyle(index, 1, mobileInstaPositions)}
             >
               <div className="aspect-[4/5] overflow-hidden bg-stone-100">
                 <img data-insta-img src={post.img} alt="" loading="lazy" decoding="async" className={`h-full w-full object-cover ${index === 1 ? 'scale-100' : 'scale-[1.03]'}`} />
@@ -450,8 +472,7 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
                 </span>
               </div>
             </article>
-          );
-        })}
+        ))}
       </div>
       <div className="mx-auto mt-6 flex max-w-[200px] items-center justify-center gap-3 px-5">
         {posts.map((post, index) => (
@@ -501,14 +522,15 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
         </a>
       </div>
       <div className="relative mx-auto h-[535px] w-full max-w-[1120px] overflow-visible xl:h-[570px]">
-        {posts.slice(0, 3).map((post, index) => (
+        {posts.map((post, index) => (
           <article
             key={post.title}
             data-insta-card={index}
-            className={`absolute left-1/2 top-0 w-[340px] overflow-hidden rounded-[22px] shadow-[0_24px_60px_rgba(32,26,20,0.13)] transition-none xl:w-[380px] ${
+            data-insta-layout="desktop"
+            className={`absolute left-1/2 top-0 w-[340px] overflow-hidden rounded-[22px] shadow-[0_24px_60px_rgba(32,26,20,0.13)] transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform xl:w-[380px] ${
               darkMode ? 'bg-zinc-900' : 'bg-white'
             }`}
-            style={desktopInstaCardStyles[index]}
+            style={getInstaPositionStyle(index, 1, desktopInstaPositions)}
           >
             <div className="aspect-[4/5] overflow-hidden bg-stone-100">
               <img data-insta-img src={post.img} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
@@ -531,7 +553,9 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
         </button>
         <div className="flex items-center justify-center gap-3">
           {posts.map((post, index) => (
-            <button key={post.title} type="button" data-insta-dot className={`block h-[4px] rounded-full ${index === 1 ? 'w-10 bg-[#A68A64]' : `w-6 ${darkMode ? 'bg-white/16' : 'bg-stone-200'}`}`} aria-label={`Voir la photo Instagram ${index + 1}`} />
+            <button key={post.title} type="button" data-insta-dot className={`relative block h-[4px] overflow-hidden rounded-full ${index === 1 ? 'w-10 bg-[#A68A64]' : `w-6 ${darkMode ? 'bg-white/16' : 'bg-stone-200'}`}`} aria-label={`Voir la photo Instagram ${index + 1}`}>
+              <span data-dot-bar className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-[#A68A64]" style={{ transform: index === 1 ? 'scaleX(1)' : 'scaleX(0)' }} />
+            </button>
           ))}
         </div>
         <button type="button" data-insta-next className={`flex h-[52px] w-[52px] items-center justify-center rounded-full border shadow-[0_14px_34px_rgba(35,28,20,0.08)] ${darkMode ? 'border-white/10 bg-white/7 text-white' : 'border-[#eee6da] bg-white text-[#6d6258]'}`} aria-label="Photo Instagram suivante">
