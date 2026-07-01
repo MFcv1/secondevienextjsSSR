@@ -9,6 +9,8 @@ const VIDEOS = [
   '/video/hero/5-mustard-buffet.mp4'
 ];
 
+const HERO_VIDEO_READY_EVENT = 'sv:hero-video-ready';
+
 export default function HeroVideoSliderIsland() {
   const [activeIndex, setActiveIndex] = useState(0);
   const videoRefs = useRef([]);
@@ -42,6 +44,11 @@ export default function HeroVideoSliderIsland() {
     }
   }, []);
 
+  const emitHeroVideoReady = (index) => {
+    if (index !== 0 || typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent(HERO_VIDEO_READY_EVENT));
+  };
+
   return (
     <div className="sv4-hero__bg">
       {VIDEOS.map((src, i) => (
@@ -49,9 +56,13 @@ export default function HeroVideoSliderIsland() {
           key={src}
           ref={el => videoRefs.current[i] = el}
           src={src}
+          autoPlay={i === 0}
           muted
           playsInline
+          preload={i === 0 ? 'auto' : 'metadata'}
           className={`sv4-hero__video ${i === activeIndex ? 'is-active' : ''}`}
+          onCanPlay={() => emitHeroVideoReady(i)}
+          onPlaying={() => emitHeroVideoReady(i)}
           onTimeUpdate={(e) => handleTimeUpdate(e, i)}
           onEnded={() => {
              // Fallback in case onTimeUpdate didn't catch the window

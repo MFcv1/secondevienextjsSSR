@@ -72,6 +72,7 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |-- mapV2.md : cartographie routes, infra prod, backoffice, risques et nettoyage
 |-- RUNBOOK.md : commandes et exploitation Next/Firebase
 |-- TODO.md : backlog infra/perf/backoffice
+|-- TODO_NEXT16_UPGRADE.md : rappel migration Next 16/Turbopack et plan de test
 |-- DEAD_CODE_AUDIT.md : audit code vivant/mort, assets, scripts et gates
 |-- docs : brouillons legaux/metier non operationnels, dont CGV/retours
 |-- _DOCS : documentation active organisee par theme et archives
@@ -87,7 +88,7 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |   |-- data : migration/base de donnees
 |   `-- archive : rapports historiques non operationnels, dont migration SPA vers Next et notes UI
 |-- .agents/skills : skills locaux UI/design, dont visual-annotation-tuning
-|-- app : routes Next App Router, metadata, loading/not-found/error, sitemap, robots, iles de route
+|-- app : routes Next App Router, metadata, loading/not-found/error, sitemap, robots, iles de route et transition `/a-propos`
 |-- src
 |   |-- index.css
 |   |-- kit/admin : back-office, analytics, commandes, retours/remboursements Stripe, SEO, users, exports

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight, CheckCircle2, Instagram, Mail, Palette, Search, Shield } from 'lucide-react';
 import AboutBeforeAfterIsland from './AboutBeforeAfterIsland';
+import AboutCriticalStyles from './AboutCriticalStyles';
 import AboutFaqIsland from './AboutFaqIsland';
 import AboutInstagramCounterIsland from './AboutInstagramCounterIsland';
 import AboutMotionDeferredIsland from './AboutMotionDeferredIsland';
@@ -496,6 +497,7 @@ export default function AboutServerView({ personalization = {} }) {
 
   return (
     <div className="sv4 sv4-about-shell min-h-screen bg-[#F9F6F0] text-[#1A1A1A]" data-about-native="true" data-sv4-shell>
+      <AboutCriticalStyles />
       <AboutStylesIsland />
       <HomeMotionIslandV4 />
       <Sv4SiteNav />

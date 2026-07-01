@@ -31,6 +31,8 @@ Notes:
 | `CategoryControlsIsland` devient une ile comportementale attachee au DOM SSR | La page categorie ne passe plus tout son rendu dans une frontiere client | Rendu SSR des filtres, tri, cartes et liens conserve | `/categorie`: 137.00 -> 124.44 kB JS gzip; `perf:category-direct` OK |
 | `/devis` passe en shell SSR + enhancement differe | Le formulaire complet client sort du chemin initial | Formulaire visible en SSR; experience interactive complete montee apres idle/interaction; pas de blanc car le shell reste visible jusqu'au montage client | `/devis`: 141.92 -> 122.18 kB JS gzip; `perf:quote-direct` OK; screenshots OK |
 | CSS specifique `/a-propos` charge via `AboutStylesIsland` | Retire le CSS about non critique du CSS initial | Rendu final identique apres stabilisation; pas de changement de couleurs/typos/layout cible | `/a-propos` CSS: 62.49 -> 54.11 kB gzip; screenshots apres OK |
+| CSS critique inline `/a-propos` pour nav + hero | Evite le flash de pre-rendu brut a froid sans recharger tout `home-v4.css` en initial | Le premier paint affiche deja nav pill, logo taille correcte, hero plein ecran et boutons styles | Test cold avec JS off/early: nav fixed, radius 9999px, hero background image present |
+| Autoplay/preload de la premiere video hero | Demande le MP4 hero directement, sans attendre l'hydratation React | Pas d'image poster/fallback; le hero est porte par la video des qu'elle est disponible | Test deploy: `bgImage=none`, `videoPoster=""`, `videoAutoplay=true`, `videoPreload=auto`, video prete a 1.5s |
 | Motion lourde `/a-propos` via `AboutMotionDeferredIsland` | Retire l'ile GSAP/SplitType non critique du JS initial | DOM SSR et hero visibles identiques; seules les animations avancees demarrent apres idle | `/a-propos` JS: 183.48 -> 168.50 kB gzip; `perf:about-direct` OK |
 | Icônes locales dans `QuoteFormIsland` | Evite un couplage lucide inutile dans le formulaire differe | Pictos visuellement equivalents | Build/lint OK; formulaire interactif conserve |
 
@@ -67,6 +69,7 @@ Verification visuelle:
 - Header, hero, grille galerie, cartes categorie, formulaire devis, sections about et navigation restent presents.
 - Les screenshots apres ne remontent pas d'erreur console dans `logs/public-seo-closeout/after-screenshots/summary.json`.
 - Le cadrage tres large du hero `/a-propos` mobile etait deja visible dans le screenshot avant; il n'a pas ete introduit par cette passe.
+- Correction cold-start ajoutee apres observation deploy: `logs/public-seo-closeout/about-critical-cold-v2/summary.json` confirme que le premier viewport `/a-propos` garde le style critique meme avant hydratation. Le fallback image a ensuite ete retire a la demande produit: la version deployee charge directement `/video/hero/1-wood-buffet.mp4`.
 
 ## Gates Lances
 

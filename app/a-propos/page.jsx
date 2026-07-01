@@ -78,6 +78,12 @@ export default async function AboutPage() {
 
   return (
     <>
+      <link
+        rel="preload"
+        as="video"
+        href="/video/hero/1-wood-buffet.mp4"
+        type="video/mp4"
+      />
       <main data-public-ssr-fallback data-ssr-about>
         <nav className="sr-only" aria-label="Liens directs A propos">
           <a href="/">Galerie</a>

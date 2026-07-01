@@ -4,6 +4,7 @@ import {
   DM_Serif_Display,
   Plus_Jakarta_Sans,
 } from 'next/font/google';
+import RouteTransitionIsland from './RouteTransitionIsland';
 import { publicEnv } from '../src/lib/server/env';
 
 const siteName = publicEnv.siteName;
@@ -92,7 +93,10 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="" />
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <RouteTransitionIsland />
+      </body>
     </html>
   );
 }
