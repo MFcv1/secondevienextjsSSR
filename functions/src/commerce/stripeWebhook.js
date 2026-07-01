@@ -9,7 +9,7 @@
  */
 const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
-const { STRIPE_SECRET_KEY, STRIPE_WH_SECRET } = require('../../helpers/secrets');
+const { STRIPE_SECRET_KEY, STRIPE_WH_SECRET, STRIPE_CONNECT_WH_SECRET } = require('../../helpers/secrets');
 const { APP_ID } = require('../../helpers/config');
 const { timestampFromNow, SYSTEM_DOC_RETENTION_DAYS } = require('../analytics/constants');
 
@@ -91,6 +91,13 @@ function validateRefundForOrder(refund, order, orderId) {
     return errors;
 }
 
+function validateEventConnectedAccount(order, eventAccountId) {
+    const orderAccountId = order.stripeConnectedAccountId || null;
+    if (orderAccountId && !eventAccountId) return 'missing_connect_event_account';
+    if (eventAccountId && orderAccountId !== eventAccountId) return 'connect_account_mismatch';
+    return null;
+}
+
 async function restoreStockAfterPaidRefund(transaction, order, orderId) {
     const entries = (order.items || [])
         .map((item) => {
@@ -168,7 +175,7 @@ async function findOrderRefForRefund(refund) {
     return snap.docs[0].ref;
 }
 
-async function handleStripeRefundEvent(refund) {
+async function handleStripeRefundEvent(refund, eventAccountId = null) {
     const orderRef = await findOrderRefForRefund(refund);
     if (!orderRef) {
         console.warn('Stripe refund event without matching order:', refund?.id);
@@ -181,6 +188,20 @@ async function handleStripeRefundEvent(refund) {
 
         const order = orderSnap.data();
         const orderId = orderSnap.id;
+        const accountValidationError = validateEventConnectedAccount(order, eventAccountId);
+        if (accountValidationError) {
+            transaction.update(orderRef, {
+                refundValidationError: accountValidationError,
+                refundUpdatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+            console.warn('Stripe refund event ignored: connected account mismatch', {
+                refundId: refund?.id,
+                orderId,
+                eventAccountId,
+                orderAccountId: order.stripeConnectedAccountId || null
+            });
+            return;
+        }
         const refundPaymentIntentId = getRefundPaymentIntentId(refund);
         if (refundPaymentIntentId !== order.stripePaymentIntentId) {
             console.warn('Stripe refund event ignored: payment intent mismatch', {
@@ -301,7 +322,7 @@ async function restoreReservedStockForUnpaidOrder(transaction, orderRef, order, 
     });
 }
 
-async function handlePaymentIntentSucceeded(paymentIntent, idempRef) {
+async function handlePaymentIntentSucceeded(paymentIntent, idempRef, eventAccountId = null) {
     const orderId = paymentIntent.metadata?.orderId;
     if (!orderId) {
         console.warn('PaymentIntent succeeded without metadata.orderId:', paymentIntent.id);
@@ -321,6 +342,14 @@ async function handlePaymentIntentSucceeded(paymentIntent, idempRef) {
         }
 
         const freshOrder = freshOrderSnap.data();
+        const accountValidationError = validateEventConnectedAccount(freshOrder, eventAccountId);
+        if (accountValidationError) {
+            transaction.update(orderRef, {
+                paymentValidationError: accountValidationError,
+                paymentValidationFailedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+            return { ok: false, reason: accountValidationError };
+        }
         if (freshOrder.status === 'paid') {
             if (freshOrder.stripePaymentIntentId !== paymentIntent.id) {
                 return { ok: false, reason: 'paid_order_payment_intent_mismatch' };
@@ -437,7 +466,7 @@ async function handleCheckoutSessionExpired(session) {
     });
 }
 
-async function handlePaymentIntentTerminal(pi, nextOrderFields) {
+async function handlePaymentIntentTerminal(pi, nextOrderFields, eventAccountId = null) {
     const orderId = pi.metadata?.orderId;
     if (!orderId) return;
 
@@ -447,6 +476,14 @@ async function handlePaymentIntentTerminal(pi, nextOrderFields) {
         if (!orderSnap.exists) return;
 
         const order = orderSnap.data();
+        const accountValidationError = validateEventConnectedAccount(order, eventAccountId);
+        if (accountValidationError) {
+            transaction.update(orderRef, {
+                paymentValidationError: accountValidationError,
+                paymentValidationFailedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+            return;
+        }
         if (order.status === 'paid' || order.paidAt) return;
         if (order.stripePaymentIntentId && order.stripePaymentIntentId !== pi.id) {
             transaction.update(orderRef, {
@@ -460,38 +497,10 @@ async function handlePaymentIntentTerminal(pi, nextOrderFields) {
     });
 }
 
-exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_WH_SECRET] }).https.onRequest(async (req, res) => {
-    if (req.method !== 'POST') {
-        return res.status(405).send('Method Not Allowed');
-    }
-
-    const stripe = Stripe(STRIPE_SECRET_KEY.value());
-    const sig = req.headers['stripe-signature'];
-    const endpointSecret = STRIPE_WH_SECRET.value();
-
-    if (!endpointSecret) {
-        console.error('STRIPE_WH_SECRET not configured. Rejecting webhook.');
-        return res.status(500).send('Webhook secret not configured');
-    }
-
-    let event;
-    try {
-        const rawBody = req.rawBody;
-        if (!rawBody) {
-            console.error('Missing raw request body. Blocking webhook signature verification.');
-            return res.status(400).send('Missing raw body');
-        }
-        if (!sig) {
-            console.error('Missing Stripe signature. Blocking unsigned webhook.');
-            return res.status(400).send('Missing signature');
-        }
-        event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
-    } catch (err) {
-        console.error(`Webhook Security Error: ${err.message}`);
-        return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-
-    const idempRef = db.doc(`sys_idempotency/stripe_${event.id}`);
+async function processStripeEvent(stripe, event, res) {
+    const eventAccountId = event.account || null;
+    const safeAccountKey = eventAccountId ? String(eventAccountId).replace(/[^A-Za-z0-9_]/g, '_') : 'platform';
+    const idempRef = db.doc(`sys_idempotency/stripe_${safeAccountKey}_${event.id}`);
     const markWebhookFailed = async (reason) => {
         try {
             await idempRef.set({
@@ -521,6 +530,7 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
 
             tx.create(idempRef, {
                 type: event.type,
+                stripeAccount: eventAccountId,
                 status: 'processing',
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
@@ -529,7 +539,7 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
         });
 
         if (!shouldProcess) {
-            console.log('Stripe webhook already processed:', event.id);
+            console.log('Stripe webhook already processed:', event.id, eventAccountId || 'platform');
             return res.json({ received: true, deduped: true });
         }
     } catch (e) {
@@ -538,10 +548,21 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
     }
 
     try {
+        if (event.type === 'account.updated') {
+            const account = event.data.object;
+            await db.doc('sys_metadata/stripe_connect').set({
+                lastWebhookAt: admin.firestore.FieldValue.serverTimestamp(),
+                lastWebhookAccountId: account.id || eventAccountId || null,
+                webhookChargesEnabled: account.charges_enabled === true,
+                webhookPayoutsEnabled: account.payouts_enabled === true,
+                webhookDetailsSubmitted: account.details_submitted === true
+            }, { merge: true });
+        }
+
         if (event.type === 'payment_intent.succeeded') {
             const paymentIntent = event.data.object;
             console.log('Webhook: PaymentIntent succeeded:', paymentIntent.id);
-            await handlePaymentIntentSucceeded(paymentIntent, idempRef);
+            await handlePaymentIntentSucceeded(paymentIntent, idempRef, eventAccountId);
         }
 
         if (event.type === 'checkout.session.completed') {
@@ -562,7 +583,7 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
                 status: 'payment_failed',
                 failedAt: admin.firestore.FieldValue.serverTimestamp(),
                 failureReason: pi.last_payment_error?.message || 'Payment failed'
-            });
+            }, eventAccountId);
         }
 
         if (event.type === 'payment_intent.canceled') {
@@ -571,13 +592,13 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
             await handlePaymentIntentTerminal(pi, {
                 status: 'canceled',
                 canceledAt: admin.firestore.FieldValue.serverTimestamp()
-            });
+            }, eventAccountId);
         }
 
         if (event.type === 'refund.created' || event.type === 'refund.updated' || event.type === 'refund.failed') {
             const refund = event.data.object;
             console.log('Webhook: Refund event:', event.type, refund.id, refund.status);
-            await handleStripeRefundEvent(refund);
+            await handleStripeRefundEvent(refund, eventAccountId);
         }
 
         if (event.type === 'charge.refunded') {
@@ -589,7 +610,7 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
                 await handleStripeRefundEvent({
                     ...latestRefund,
                     payment_intent: latestRefund.payment_intent || charge.payment_intent
-                });
+                }, eventAccountId);
             }
         }
 
@@ -604,4 +625,52 @@ exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_
         await markWebhookFailed(error);
         return res.status(500).send('Webhook handler error');
     }
+}
+
+function constructStripeEvent(req, res, stripe, endpointSecret, secretName) {
+    if (req.method !== 'POST') {
+        res.status(405).send('Method Not Allowed');
+        return null;
+    }
+
+    const sig = req.headers['stripe-signature'];
+
+    if (!endpointSecret) {
+        console.error(`${secretName} not configured. Rejecting webhook.`);
+        res.status(500).send('Webhook secret not configured');
+        return null;
+    }
+
+    try {
+        const rawBody = req.rawBody;
+        if (!rawBody) {
+            console.error('Missing raw request body. Blocking webhook signature verification.');
+            res.status(400).send('Missing raw body');
+            return null;
+        }
+        if (!sig) {
+            console.error('Missing Stripe signature. Blocking unsigned webhook.');
+            res.status(400).send('Missing signature');
+            return null;
+        }
+        return stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
+    } catch (err) {
+        console.error(`Webhook Security Error: ${err.message}`);
+        res.status(400).send(`Webhook Error: ${err.message}`);
+        return null;
+    }
+}
+
+exports.stripeWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_WH_SECRET] }).https.onRequest(async (req, res) => {
+    const stripe = Stripe(STRIPE_SECRET_KEY.value());
+    const event = constructStripeEvent(req, res, stripe, STRIPE_WH_SECRET.value(), 'STRIPE_WH_SECRET');
+    if (!event) return null;
+    return processStripeEvent(stripe, event, res);
+});
+
+exports.stripeConnectWebhook = functions.runWith({ secrets: [STRIPE_SECRET_KEY, STRIPE_CONNECT_WH_SECRET] }).https.onRequest(async (req, res) => {
+    const stripe = Stripe(STRIPE_SECRET_KEY.value());
+    const event = constructStripeEvent(req, res, stripe, STRIPE_CONNECT_WH_SECRET.value(), 'STRIPE_CONNECT_WH_SECRET');
+    if (!event) return null;
+    return processStripeEvent(stripe, event, res);
 });

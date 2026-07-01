@@ -51,6 +51,7 @@ exports.getOrderStatusClient = functions.https.onCall(async (data, context) => {
             status: orderData.status || null,
             paymentStatus: orderData.paymentStatus || null,
             stripePaymentIntentId: orderData.stripePaymentIntentId || null,
+            stripeConnectedAccountId: orderData.stripeConnectedAccountId || null,
             total: orderData.total || 0,
             userEmail: orderData.userEmail || null
         }

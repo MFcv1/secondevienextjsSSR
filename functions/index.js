@@ -8,16 +8,24 @@ admin.initializeApp();
 
 // ── COMMERCE ──────────────────────────────────────────────
 const { createOrder } = require('./src/commerce/createOrder');
-const { stripeWebhook } = require('./src/commerce/stripeWebhook');
+const { stripeWebhook, stripeConnectWebhook } = require('./src/commerce/stripeWebhook');
 const { cancelOrderClient } = require('./src/commerce/cancelOrder');
 const { cleanupPendingPayments } = require('./src/commerce/cleanupPendingPayments');
 const { e2eCheckoutProof } = require('./src/commerce/e2eCheckoutProof');
 const { e2eStripeHardeningProof } = require('./src/commerce/e2eStripeHardeningProof');
 const { getOrderStatusClient } = require('./src/commerce/orderStatus');
 const { refundOrderAdmin, syncRefundStatusAdmin } = require('./src/commerce/refundOrder');
+const {
+    getStripeConnectStatus,
+    startStripeConnectOnboarding,
+    syncStripeConnectAccount,
+    requestStripeConnectReconnect,
+    confirmStripeConnectReconnect
+} = require('./src/commerce/stripeConnect');
 
 exports.createOrder = createOrder;
 exports.stripeWebhook = stripeWebhook;
+exports.stripeConnectWebhook = stripeConnectWebhook;
 exports.cancelOrderClient = cancelOrderClient;
 exports.cleanupPendingPayments = cleanupPendingPayments;
 exports.e2eCheckoutProof = e2eCheckoutProof;
@@ -25,6 +33,11 @@ exports.e2eStripeHardeningProof = e2eStripeHardeningProof;
 exports.getOrderStatusClient = getOrderStatusClient;
 exports.refundOrderAdmin = refundOrderAdmin;
 exports.syncRefundStatusAdmin = syncRefundStatusAdmin;
+exports.getStripeConnectStatus = getStripeConnectStatus;
+exports.startStripeConnectOnboarding = startStripeConnectOnboarding;
+exports.syncStripeConnectAccount = syncStripeConnectAccount;
+exports.requestStripeConnectReconnect = requestStripeConnectReconnect;
+exports.confirmStripeConnectReconnect = confirmStripeConnectReconnect;
 
 // ── AUTH ──────────────────────────────────────────────────
 const { grantAdminOnAuth } = require('./src/auth/grantAdmin');

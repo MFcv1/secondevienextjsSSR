@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Elements } from '@stripe/react-stripe-js';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { isStripeConfigured, stripePromise } from '../config/stripe';
+import { getStripePromise, isStripeConfigured } from '../config/stripe';
 import { db, functions } from '../config/firebase';
 import CheckoutPaymentStep from './CheckoutPaymentStep';
 
@@ -114,6 +114,7 @@ const CheckoutStripeModal = ({
     orderTotal,
     createdOrderId,
     checkoutOtpToken,
+    stripeConnectedAccountId,
     formData,
     stripeElementsOptions,
     onClose,
@@ -123,6 +124,7 @@ const CheckoutStripeModal = ({
 }) => {
     const [confirmationState, setConfirmationState] = useState('idle');
     const [confirmationMessage, setConfirmationMessage] = useState('');
+    const stripePromise = getStripePromise(stripeConnectedAccountId || '');
 
     if (typeof document === 'undefined') return null;
     const canClose = confirmationState === 'idle' || confirmationState === 'error';

@@ -255,6 +255,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
     const [clientSecret, setClientSecret] = useState(null);
     const [createdOrderId, setCreatedOrderId] = useState(null);
     const [createdOrderOtpToken, setCreatedOrderOtpToken] = useState('');
+    const [createdStripeConnectedAccountId, setCreatedStripeConnectedAccountId] = useState('');
     const [lockedOrderDraft, setLockedOrderDraft] = useState(null);
     const [unavailableItems, setUnavailableItems] = useState([]);
     const [isCleaningUp, setIsCleaningUp] = useState(false);
@@ -320,6 +321,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
             }
             setCreatedOrderId(null);
             setCreatedOrderOtpToken('');
+            setCreatedStripeConnectedAccountId('');
             setClientSecret(null);
             setLockedOrderDraft(null);
             resetCheckoutClientOrderId();
@@ -622,6 +624,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                         setClientSecret(result.data.clientSecret);
                         setCreatedOrderId(result.data.orderId);
                         setCreatedOrderOtpToken(guestOtp.token || '');
+                        setCreatedStripeConnectedAccountId(result.data.stripeConnectedAccountId || '');
                         setCheckoutState('ready_to_pay');
                     } else {
                         throw new Error("Client secret manquant.");
@@ -1141,6 +1144,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                     orderTotal={checkoutSubtotal}
                     createdOrderId={createdOrderId}
                     checkoutOtpToken={createdOrderOtpToken}
+                    stripeConnectedAccountId={createdStripeConnectedAccountId}
                     formData={formData}
                     stripeElementsOptions={stripeElementsOptions}
                     onClose={handleClosePaymentModal}

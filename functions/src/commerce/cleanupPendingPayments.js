@@ -38,10 +38,11 @@ async function restoreReservedStock(transaction, orderRef, order) {
     });
 }
 
-async function cancelPaymentIntentIfNeeded(stripe, paymentIntentId) {
+async function cancelPaymentIntentIfNeeded(stripe, paymentIntentId, stripeConnectedAccountId = null) {
     if (!paymentIntentId) return { status: 'missing_payment_intent' };
 
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    const stripeOptions = stripeConnectedAccountId ? { stripeAccount: stripeConnectedAccountId } : undefined;
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, stripeOptions);
 
     if (paymentIntent.status === 'succeeded') {
         return { status: 'succeeded', paymentIntent };
@@ -52,7 +53,9 @@ async function cancelPaymentIntentIfNeeded(stripe, paymentIntentId) {
     }
 
     if (paymentIntent.status !== 'processing') {
-        const canceled = await stripe.paymentIntents.cancel(paymentIntentId);
+        const canceled = stripeOptions
+            ? await stripe.paymentIntents.cancel(paymentIntentId, {}, stripeOptions)
+            : await stripe.paymentIntents.cancel(paymentIntentId);
         return { status: canceled.status, paymentIntent: canceled };
     }
 
@@ -85,7 +88,11 @@ exports.cleanupPendingPayments = functions
             }
 
             try {
-                const paymentState = await cancelPaymentIntentIfNeeded(stripe, order.stripePaymentIntentId);
+                const paymentState = await cancelPaymentIntentIfNeeded(
+                    stripe,
+                    order.stripePaymentIntentId,
+                    order.stripeConnectedAccountId || null
+                );
 
                 if (paymentState.status === 'succeeded') {
                     await orderRef.update({

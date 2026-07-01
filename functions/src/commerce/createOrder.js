@@ -16,6 +16,7 @@ const { STRIPE_SECRET_KEY, GMAIL_EMAIL, GMAIL_PASSWORD } = require('../../helper
 const { APP_ID } = require('../../helpers/config');
 const { timestampFromNow, SYSTEM_DOC_RETENTION_DAYS } = require('../analytics/constants');
 const { assertGuestCheckoutOtpVerified, normalizeGuestCheckoutEmail } = require('../auth/guestCheckoutOtp');
+const { getStripeConnectRouting } = require('./stripeConnect');
 
 const db = admin.firestore();
 const Stripe = require('stripe');
@@ -57,21 +58,28 @@ async function resolveExistingCreateOrder(stripe, idempRef, paymentMethod) {
 
     if (data.orderId && paymentMethod === 'stripe_elements') {
         let paymentIntentId = data.paymentIntentId || null;
+        let stripeConnectedAccountId = data.stripeConnectedAccountId || null;
         if (!paymentIntentId) {
             const orderSnap = await db.collection('orders').doc(data.orderId).get();
-            paymentIntentId = orderSnap.exists ? orderSnap.data()?.stripePaymentIntentId || null : null;
+            if (orderSnap.exists) {
+                const orderData = orderSnap.data() || {};
+                paymentIntentId = orderData.stripePaymentIntentId || null;
+                stripeConnectedAccountId = orderData.stripeConnectedAccountId || null;
+            }
         }
         if (!paymentIntentId) {
             throw new functions.https.HttpsError('aborted', 'Commande deja en cours de creation. Reessayez dans quelques secondes.');
         }
 
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        const stripeOptions = stripeConnectedAccountId ? { stripeAccount: stripeConnectedAccountId } : undefined;
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, stripeOptions);
         return {
             success: true,
             reused: true,
             clientSecret: paymentIntent.client_secret,
             paymentIntentId: paymentIntent.id,
-            orderId: data.orderId
+            orderId: data.orderId,
+            stripeConnectedAccountId
         };
     }
 
@@ -152,6 +160,16 @@ async function createOrderHandler(data, context) {
     const createOrderIdempRef = getCreateOrderIdempotencyRef(userId, checkoutIdentity.email, clientOrderId);
     const existingCreateOrder = await resolveExistingCreateOrder(stripe, createOrderIdempRef, orderData.paymentMethod);
     if (existingCreateOrder) return existingCreateOrder;
+    const stripeConnectRouting = orderData.paymentMethod === 'stripe_elements'
+        ? await getStripeConnectRouting()
+        : { enabled: false, ready: false, accountId: null };
+    if (stripeConnectRouting.enabled && stripeConnectRouting.ready !== true) {
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'Stripe Connect doit etre finalise avant de proposer le paiement par carte.'
+        );
+    }
+    const stripeConnectedAccountId = stripeConnectRouting.ready ? stripeConnectRouting.accountId : null;
 
     // --- RATE LIMITING ATOMIQUE (3 commandes/minute/utilisateur) ---
     // Protège contre les floods / tests automatiques en production.
@@ -419,7 +437,9 @@ async function createOrderHandler(data, context) {
                     status: 'pending_payment',
                     stockReserved: true,
                     createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                    stripePaymentIntentId: null
+                    stripePaymentIntentId: null,
+                    stripeConnectedAccountId,
+                    stripeConnectMode: stripeConnectedAccountId ? 'direct_charges' : null
                 });
                 if (createOrderIdempRef) {
                     transaction.create(createOrderIdempRef, {
@@ -427,6 +447,7 @@ async function createOrderHandler(data, context) {
                         status: 'reserved',
                         paymentMethod: orderData.paymentMethod,
                         orderId: orderRef.id,
+                        stripeConnectedAccountId,
                         userId,
                         userEmail: checkoutIdentity.email,
                         createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -462,10 +483,12 @@ async function createOrderHandler(data, context) {
                     userEmail: checkoutIdentity.email,
                     checkoutAuthMethod: checkoutIdentity.method,
                     orderId: orderRef.id,
+                    stripeConnectedAccountId: stripeConnectedAccountId || '',
+                    stripeConnectMode: stripeConnectedAccountId ? 'direct_charges' : 'legacy_direct',
                     shippingMeta: JSON.stringify(shippingData).substring(0, 500),
                     itemsMeta: JSON.stringify(orderData.items.map(i => ({ id: i.originalId || i.id, col: i.collectionName || 'furniture', qty: i.quantity || 1 }))).substring(0, 500)
                 }
-            });
+            }, stripeConnectedAccountId ? { stripeAccount: stripeConnectedAccountId } : undefined);
 
             const paymentIntentBatch = db.batch();
             paymentIntentBatch.update(orderRef, { stripePaymentIntentId: paymentIntent.id });
@@ -473,6 +496,7 @@ async function createOrderHandler(data, context) {
                 paymentIntentBatch.set(createOrderIdempRef, {
                     status: 'completed',
                     paymentIntentId: paymentIntent.id,
+                    stripeConnectedAccountId,
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                     expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
                 }, { merge: true });
@@ -483,7 +507,8 @@ async function createOrderHandler(data, context) {
                 success: true,
                 clientSecret: paymentIntent.client_secret,
                 paymentIntentId: paymentIntent.id,
-                orderId: orderRef.id
+                orderId: orderRef.id,
+                stripeConnectedAccountId
             };
         } catch (error) {
             // Échec Stripe : restaurer le stock + supprimer la commande en transaction

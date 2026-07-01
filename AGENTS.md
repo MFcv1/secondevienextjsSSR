@@ -39,7 +39,7 @@ Interdits sur routes publiques:
 - Performance/hydratation/cache: `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md`, `_DOCS/perf/PHASE3_PERF_BASELINE_2026-06-24.md`, `_DOCS/perf/PUBLIC_SEO_BUDGET_VISUAL_CLOSEOUT_2026-07-01.md`.
 - Images produit/Storage/detailFast: `_DOCS/images/NEXTJS_IMAGE_PIPELINE_AUDIT.md`, `_DOCS/images/OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md`, `_DOCS/images/DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md`.
 - Infra prod/App Hosting/App Check: `_DOCS/infra/P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md`, `_DOCS/infra/INFRA_PROD_PHASE2_REPORT_2026-06-14.md`, `_DOCS/infra/APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`, `_DOCS/infra/RAIL_PROD_AUDIT_REPORT_2026-06-24.md`.
-- Checkout/refund/E2E: `_DOCS/commerce/CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md`, `_DOCS/commerce/E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`, `_DOCS/commerce/E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`, `_DOCS/commerce/REFUND_UI_STRICT_PROOF_2026-06-24.md`.
+- Checkout/refund/E2E/Stripe Connect: `_DOCS/commerce/STRIPE_CONNECT_INTEGRATION_PLAN_2026-07-01.md`, `_DOCS/commerce/CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md`, `_DOCS/commerce/E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`, `_DOCS/commerce/E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`, `_DOCS/commerce/REFUND_UI_STRICT_PROOF_2026-06-24.md`.
 
 ## Gates utiles
 
@@ -83,6 +83,7 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |   |-- images : pipeline images produit, Storage, detailFast et audits UX image
 |   |-- infra : App Hosting, rail prod, App Check et closeout infra
 |   |-- commerce : checkout, refund, E2E backoffice et Stripe/Firebase hardening
+|   |   `-- STRIPE_CONNECT_INTEGRATION_PLAN_2026-07-01.md : roadmap integration Stripe Connect, securite admin et preuves par phase
 |   |-- ux : navigation, mega menu et micro-frictions
 |   |-- ai : cadrage assistant IA devis
 |   |-- data : migration/base de donnees

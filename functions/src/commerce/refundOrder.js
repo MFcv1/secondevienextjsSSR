@@ -170,6 +170,9 @@ exports.refundOrderAdmin = functions
         }
 
         let refund;
+        const stripeOptions = orderForRefund.stripeConnectedAccountId
+            ? { stripeAccount: orderForRefund.stripeConnectedAccountId }
+            : undefined;
         try {
             refund = await stripe.refunds.create({
                 payment_intent: orderForRefund.stripePaymentIntentId,
@@ -177,10 +180,11 @@ exports.refundOrderAdmin = functions
                 metadata: {
                     orderId,
                     adminUid: context.auth.uid,
+                    stripeConnectedAccountId: orderForRefund.stripeConnectedAccountId || '',
                     restoreStock: 'true',
                     note: refundReason
                 }
-            }, { idempotencyKey });
+            }, { idempotencyKey, ...(stripeOptions || {}) });
         } catch (error) {
             await orderRef.set({
                 status: 'refund_failed',
@@ -254,7 +258,10 @@ exports.syncRefundStatusAdmin = functions
 
         let refund;
         try {
-            refund = await stripe.refunds.retrieve(refundId);
+            refund = await stripe.refunds.retrieve(
+                refundId,
+                order.stripeConnectedAccountId ? { stripeAccount: order.stripeConnectedAccountId } : undefined
+            );
         } catch (error) {
             throw new functions.https.HttpsError('internal', `Lecture Stripe impossible: ${error?.message || error}`);
         }

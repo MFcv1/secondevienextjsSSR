@@ -4,11 +4,12 @@
 const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const { checkIsAdmin, checkIsSuperAdmin, SUPER_ADMIN_EMAIL } = require('../../helpers/security');
+const { SUPER_ADMIN_EMAIL: SUPER_ADMIN_EMAIL_SECRET } = require('../../helpers/secrets');
 const { timestampFromNow, SYSTEM_DOC_RETENTION_DAYS } = require('../analytics/constants');
 
 const db = admin.firestore();
 
-exports.syncSuperAdminClaim = functions.https.onCall(async (data, context) => {
+exports.syncSuperAdminClaim = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
     checkIsSuperAdmin(context);
 
     try {
@@ -55,7 +56,7 @@ exports.syncSuperAdminClaim = functions.https.onCall(async (data, context) => {
 });
 
 // --- AJOUTER UN ADMIN ---
-exports.addAdminUser = functions.https.onCall(async (data, context) => {
+exports.addAdminUser = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
     checkIsSuperAdmin(context);
     const normalizedEmail = (data?.email || '').trim().toLowerCase();
     const name = data?.name;
@@ -118,7 +119,7 @@ exports.addAdminUser = functions.https.onCall(async (data, context) => {
 });
 
 // --- RÉVOQUER UN ADMIN ---
-exports.removeAdminUser = functions.https.onCall(async (data, context) => {
+exports.removeAdminUser = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
     checkIsSuperAdmin(context);
     const { uid } = data;
     const email = (data?.email || '').trim().toLowerCase();

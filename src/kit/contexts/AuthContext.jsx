@@ -71,6 +71,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children, forceInitialize = false, deferUntilReady = true }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(() => shouldInitializeAuthOnMount(forceInitialize));
+    const [claimsLoading, setClaimsLoading] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
@@ -160,17 +161,28 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
     // 2. Read user role once from claims. Avoid keeping a Firestore listener for every client.
     useEffect(() => {
         if (!user || user.isAnonymous) {
+            setClaimsLoading(false);
             setIsAdmin(false);
             setIsSuperAdmin(false);
             return;
         }
 
         let cancelled = false;
+        setClaimsLoading(true);
 
         const syncAdminClaim = async () => {
             try {
                 const { getIdTokenResult } = await loadAuthModule();
-                const tokenResult = await getIdTokenResult(user, true);
+                let tokenResult = await getIdTokenResult(user, true);
+                if (tokenResult.claims.superAdmin !== true) {
+                    try {
+                        const syncSuperAdminClaim = await getCallableFunction('syncSuperAdminClaim');
+                        await syncSuperAdminClaim();
+                        tokenResult = await getIdTokenResult(user, true);
+                    } catch {
+                        // Only the configured owner email can bootstrap this claim.
+                    }
+                }
                 if (!cancelled) {
                     const hasSuperAdminClaim = tokenResult.claims.superAdmin === true;
                     setIsSuperAdmin(hasSuperAdminClaim);
@@ -182,6 +194,8 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
                     setIsAdmin(false);
                     setIsSuperAdmin(false);
                 }
+            } finally {
+                if (!cancelled) setClaimsLoading(false);
             }
         };
 
@@ -275,7 +289,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         user,
         isAdmin,
         isSuperAdmin,
-        loading,
+        loading: loading || claimsLoading,
         loginWithGoogle,
         loginWithEmail,
         loginWithCustomToken,

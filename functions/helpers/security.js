@@ -6,7 +6,18 @@ const functions = require('firebase-functions/v1');
 const { PRODUCT_COLLECTIONS } = require('./config');
 
 // ⚠️ CONFIGURER: Email du Super Admin (doit correspondre à VITE_SUPER_ADMIN_EMAIL)
-const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || '';
+function normalizeEmail(value) {
+    return String(value || '').trim().toLowerCase();
+}
+
+function getSuperAdminEmail() {
+    try {
+        const { SUPER_ADMIN_EMAIL } = require('./secrets');
+        return normalizeEmail(process.env.SUPER_ADMIN_EMAIL || SUPER_ADMIN_EMAIL.value());
+    } catch {
+        return normalizeEmail(process.env.SUPER_ADMIN_EMAIL);
+    }
+}
 
 /**
  * Vérifie que l'appelant est un Admin (Custom Claim ou Super Admin email)
@@ -17,11 +28,12 @@ function checkIsAdmin(context) {
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'Authentification requise.');
     }
-    const email = context.auth.token.email;
+    const email = normalizeEmail(context.auth.token.email);
     const isAdminClaim = context.auth.token.admin === true;
     const isSuperClaim = context.auth.token.superAdmin === true;
     const isVerifiedEmail = context.auth.token.email_verified === true;
-    const isSuperEmail = Boolean(SUPER_ADMIN_EMAIL) && isVerifiedEmail && email === SUPER_ADMIN_EMAIL;
+    const superAdminEmail = getSuperAdminEmail();
+    const isSuperEmail = Boolean(superAdminEmail) && isVerifiedEmail && email === superAdminEmail;
 
     if (!isAdminClaim && !isSuperClaim && !isSuperEmail) {
         throw new functions.https.HttpsError('permission-denied', 'Accès refusé : droits administrateur requis.');
@@ -39,9 +51,22 @@ function checkIsSuperAdmin(context) {
     }
     const isSuperClaim = context.auth.token.superAdmin === true;
     const isVerifiedEmail = context.auth.token.email_verified === true;
-    const isSuperEmail = Boolean(SUPER_ADMIN_EMAIL) && isVerifiedEmail && context.auth.token.email === SUPER_ADMIN_EMAIL;
+    const superAdminEmail = getSuperAdminEmail();
+    const isSuperEmail = Boolean(superAdminEmail) && isVerifiedEmail && normalizeEmail(context.auth.token.email) === superAdminEmail;
     if (!isSuperClaim && !isSuperEmail) {
         throw new functions.https.HttpsError('permission-denied', 'Accès refusé : Super Admin uniquement.');
+    }
+}
+
+function checkRecentSuperAdmin(context, maxAgeSeconds = 900) {
+    checkIsSuperAdmin(context);
+    const authTime = Number(context.auth?.token?.auth_time || 0);
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    if (!authTime || nowSeconds - authTime > maxAgeSeconds) {
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'Session admin trop ancienne. Reconnectez-vous avant cette action sensible.'
+        );
     }
 }
 
@@ -92,10 +117,15 @@ function sanitizeStorageFileName(fileName) {
 module.exports = {
     checkIsAdmin,
     checkIsSuperAdmin,
+    checkRecentSuperAdmin,
     normalizeProductCollection,
     normalizeFirestoreId,
     normalizeQuantity,
     normalizeImageContentType,
     sanitizeStorageFileName,
-    SUPER_ADMIN_EMAIL
+    normalizeEmail,
+    getSuperAdminEmail,
+    get SUPER_ADMIN_EMAIL() {
+        return getSuperAdminEmail();
+    }
 };
