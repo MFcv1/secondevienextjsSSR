@@ -51,10 +51,10 @@ const ROOM_LINKS = [
 ];
 
 const SELECTION_TILES = [
-    { label: 'Buffets', categoryId: 'buffets', image: '/images/gallery-hero-1.webp' },
-    { label: 'Armoires', categoryId: 'armoires', image: '/images/gallery-hero-2.webp' },
-    { label: 'Miroirs', categoryId: 'miroirs', image: '/images/before-after/apres.webp' },
-    { label: 'Commodes', categoryId: 'commodes', image: '/images/gallery-hero-4.webp' },
+    { label: 'Buffets', categoryId: 'buffets', image: '/images/categories/buffets-config-rail.webp' },
+    { label: 'Armoires', categoryId: 'armoires', image: '/images/categories/armoires-config-rail.webp' },
+    { label: 'Miroirs', categoryId: 'miroirs', image: '/images/categories/miroirs-config-rail.webp' },
+    { label: 'Commodes', categoryId: 'commodes', image: '/images/categories/commodes-config-rail.webp' },
 ];
 
 const MENU_IMAGE_SOURCES = [

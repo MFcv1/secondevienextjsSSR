@@ -4,7 +4,7 @@ import { getPublicCatalog, getPublicCatalogFallback } from '../../src/lib/server
 
 export const dynamic = 'force-dynamic';
 export const metadata = {
-  title: 'Wishlist',
+  title: 'Liste de souhaits',
   robots: { index: false, follow: false }
 };
 

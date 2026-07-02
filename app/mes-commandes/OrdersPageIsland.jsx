@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import MyOrdersView from '../../src/kit/commerce/MyOrdersView';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
-import { getDb, loadFirestoreModule } from '../../src/kit/config/firebaseLazy';
+import { readWishlistIds, subscribeWishlistItems } from '../../src/kit/marketplace/wishlistState';
 
 function AccountDashboardFallback({ darkMode = false, isSignedOut = false }) {
   const openLogin = () => {
@@ -64,7 +64,9 @@ function OrdersPageContent({ initialItems = [] }) {
   const { user, loading, logout } = useAuth();
   const [hasMounted, setHasMounted] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [wishlistItems, setWishlistItems] = useState([]);
+  const [wishlistItems, setWishlistItems] = useState(() => (
+    readWishlistIds().map((id) => ({ id, originalId: id }))
+  ));
 
   useEffect(() => {
     setHasMounted(true);
@@ -76,37 +78,11 @@ function OrdersPageContent({ initialItems = [] }) {
   }, []);
 
   useEffect(() => {
-    if (!user || user.isAnonymous) {
-      setWishlistItems([]);
-      return undefined;
-    }
-
-    let cancelled = false;
-    let unsubscribe = null;
-
-    Promise.all([getDb(), loadFirestoreModule()])
-      .then(([db, { collection, onSnapshot, query }]) => {
-        if (cancelled) return;
-        unsubscribe = onSnapshot(
-          query(collection(db, 'users', user.uid, 'wishlist')),
-          (snap) => setWishlistItems(snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))),
-          (error) => {
-            console.error('Account wishlist sync error:', error);
-            setWishlistItems([]);
-          }
-        );
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          console.error('Account wishlist sync error:', error);
-          setWishlistItems([]);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-      unsubscribe?.();
-    };
+    return subscribeWishlistItems(
+      user,
+      (items) => setWishlistItems(items),
+      (error) => console.error('Account liste de souhaits sync error:', error)
+    );
   }, [user]);
 
   if (!hasMounted || loading) return <AccountDashboardFallback darkMode={darkMode} />;

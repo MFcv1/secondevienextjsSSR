@@ -632,19 +632,11 @@ const getTestimonialPositionStyle = (index, activeIndex, positions) => {
 const TestimonialsHeader = ({ darkMode = false, compact = false } = {}) => (
   <div className="mx-auto flex max-w-[420px] flex-col items-center px-4 text-center">
     <div className={`testimonial-star-cluster relative mb-7 flex items-center gap-2 ${darkMode ? 'text-[#ff9d10]' : 'text-[#ff9200]'}`}>
-      <span
-        aria-hidden="true"
-        className={`testimonial-star-halo absolute left-1/2 top-1/2 h-10 w-[152px] -translate-x-1/2 -translate-y-1/2 rounded-full border ${darkMode ? 'border-[#ffb34d]/18' : 'border-[#ff9200]/18'}`}
-      />
-      <span
-        aria-hidden="true"
-        className={`testimonial-star-line absolute left-1/2 top-1/2 h-px w-[178px] -translate-x-1/2 -translate-y-1/2 ${darkMode ? 'bg-gradient-to-r from-transparent via-[#ffb34d]/35 to-transparent' : 'bg-gradient-to-r from-transparent via-[#ff9200]/35 to-transparent'}`}
-      />
       {Array.from({ length: 5 }).map((_, index) => (
         <span
           key={index}
           className="testimonial-star relative z-10 inline-flex will-change-transform"
-          style={{ '--testimonial-star-delay': `${index * 95}ms` }}
+          style={{ '--testimonial-star-delay': `${index * 145}ms` }}
         >
           <Star size={compact ? 21 : 23} fill="currentColor" strokeWidth={0} />
         </span>

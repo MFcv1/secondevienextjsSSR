@@ -68,7 +68,7 @@ export default function ArchitecturalHeaderServer({ darkMode = false } = {}) {
 
               <DarkModeToggleIsland className={actionButtonClass} />
 
-              <Link href="/wishlist" prefetch={false} className={actionButtonClass} title="Ma wishlist" aria-label="Ma wishlist">
+              <Link href="/wishlist" prefetch={false} className={actionButtonClass} title="Ma liste de souhaits" aria-label="Ma liste de souhaits">
                 <Heart size={18} strokeWidth={1.5} className={`transition-colors duration-300 ${darkMode ? 'text-stone-200 group-hover:text-rose-300' : 'text-stone-900 group-hover:text-rose-500 dark:text-stone-200 dark:group-hover:text-rose-300'}`} />
               </Link>
 

@@ -87,7 +87,7 @@ const accountLinks = [
     'Se connecter',
     'Créer un compte',
     'Mes commandes',
-    'Mes favoris',
+    'Liste de souhaits',
     'Mes annonces',
     'Vendre un objet',
 ];

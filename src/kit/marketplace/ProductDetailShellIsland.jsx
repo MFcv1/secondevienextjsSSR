@@ -14,6 +14,7 @@ import {
   preloadImage,
 } from '../../utils/imageUtils';
 import ProductDetailActionsIsland from './ProductDetailActionsIsland';
+import { getCurrentWishlistUser, readWishlistIds, setWishlistItem } from './wishlistState';
 
 const ProductDetailLightboxIsland = dynamic(() => import('./ProductDetailLightboxIsland'), {
   ssr: false,
@@ -217,6 +218,7 @@ export default function ProductDetailShellIsland({
   const [navTransition, setNavTransition] = useState({ direction: 0, fromX: 0, toX: 0 });
   const [sharpSrcs, setSharpSrcs] = useState({});
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
+  const [isSummaryLiked, setIsSummaryLiked] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxBaseSrc, setLightboxBaseSrc] = useState('');
   const [lightboxOriginRect, setLightboxOriginRect] = useState(null);
@@ -265,6 +267,38 @@ export default function ProductDetailShellIsland({
   const backdropColor = activeImage.metadata?.dominantColor || DEFAULT_DETAIL_BACKDROP_COLOR;
   const title = product?.name || product?.title || 'Produit';
   const description = product?.description || '';
+  const productId = product?.id || '';
+  useEffect(() => {
+    if (!productId || typeof window === 'undefined') return undefined;
+
+    const syncLiked = () => {
+      setIsSummaryLiked(readWishlistIds().includes(productId));
+    };
+
+    syncLiked();
+    window.addEventListener('sv:wishlist-state-changed', syncLiked);
+    window.addEventListener('storage', syncLiked);
+    return () => {
+      window.removeEventListener('sv:wishlist-state-changed', syncLiked);
+      window.removeEventListener('storage', syncLiked);
+    };
+  }, [productId]);
+
+  const toggleSummaryWishlist = useCallback(() => {
+    if (!productId) return;
+    const liked = !readWishlistIds().includes(productId);
+    setIsSummaryLiked(liked);
+    setWishlistItem({
+      ...(cartItem || {}),
+      id: productId,
+      originalId: productId,
+      name: cartItem?.name || cartItem?.title || title,
+      title: cartItem?.title || cartItem?.name || title,
+    }, liked, getCurrentWishlistUser()).catch((error) => {
+      console.error('Product detail wishlist sync error:', error);
+      setIsSummaryLiked(readWishlistIds().includes(productId));
+    });
+  }, [cartItem, productId, title]);
   const desktopDetailImageFrameStyle = useMemo(() => getDesktopDetailImageStyle(DEFAULT_PRODUCT_IMAGE_RATIO), []);
   const mobileDetailImageFrameStyle = useMemo(
     () => ({
@@ -1018,8 +1052,13 @@ export default function ProductDetailShellIsland({
                 <button type="button" onClick={() => setIsMobilePanelOpen(true)} aria-label="Ouvrir les details">
                   <AlignLeft size={24} strokeWidth={1.5} />
                 </button>
-                <button type="button" aria-label="Favori">
-                  <Heart size={24} strokeWidth={1.5} />
+                <button
+                  type="button"
+                  onClick={toggleSummaryWishlist}
+                  aria-pressed={isSummaryLiked}
+                  aria-label={isSummaryLiked ? 'Retirer de la liste de souhaits' : 'Ajouter a la liste de souhaits'}
+                >
+                  <Heart size={24} strokeWidth={1.5} className={isSummaryLiked ? 'fill-rose-500 text-rose-500' : ''} />
                 </button>
               </div>
             </div>

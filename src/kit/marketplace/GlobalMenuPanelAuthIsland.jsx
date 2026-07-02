@@ -9,14 +9,13 @@ import {
   GUEST_CART_CHANGED_EVENT,
   readGuestCart,
 } from '../commerce/guestCart';
+import { subscribeWishlistItems } from './wishlistState';
 
 const GlobalMenu = dynamic(() => import('../layout/GlobalMenu'), {
   ssr: false,
   loading: () => null,
 });
 
-const WISHLIST_STORAGE_KEY = 'sv_public_product_wishlist';
-const WISHLIST_CHANGED_EVENT = 'sv:wishlist-state-changed';
 const HOLD_MENU_UNTIL_ROUTE_PATHS = new Set(['/admin']);
 
 const MENU_PREFETCH_PATHS = [
@@ -40,16 +39,6 @@ const MENU_PREFETCH_PATHS = [
   '/a-propos',
   '/devis',
 ];
-
-const readPublicWishlist = () => {
-  if (typeof window === 'undefined') return [];
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(WISHLIST_STORAGE_KEY) || '[]');
-    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
-  } catch {
-    return [];
-  }
-};
 
 export function preloadGlobalMenu() {
   GlobalMenu.preload?.();
@@ -213,54 +202,16 @@ function GlobalMenuPanelAuthContent({
     };
   }, [canHydrateRemoteCounts, signedUser?.uid]);
 
-  useEffect(() => {
-    if (signedUser?.uid) return undefined;
-
-    const refreshPublicWishlistCount = (event) => {
-      const items = Array.isArray(event?.detail?.items) ? event.detail.items : readPublicWishlist();
-      setWishlistCount(items.length);
-    };
-
-    refreshPublicWishlistCount();
-    window.addEventListener(WISHLIST_CHANGED_EVENT, refreshPublicWishlistCount);
-    window.addEventListener('storage', refreshPublicWishlistCount);
-
-    return () => {
-      window.removeEventListener(WISHLIST_CHANGED_EVENT, refreshPublicWishlistCount);
-      window.removeEventListener('storage', refreshPublicWishlistCount);
-    };
-  }, [signedUser?.uid]);
-
-  useEffect(() => {
-    if (!signedUser?.uid || !canHydrateRemoteCounts) return undefined;
-
-    let cancelled = false;
-    let unsubscribe = null;
-
-    Promise.all([getDb(), loadFirestoreModule()])
-      .then(([db, { collection, onSnapshot, query }]) => {
-        if (cancelled) return;
-        unsubscribe = onSnapshot(
-          query(collection(db, 'users', signedUser.uid, 'wishlist')),
-          (snap) => setWishlistCount(snap.size),
-          (error) => {
-            console.error('Global menu wishlist count sync error:', error);
-            setWishlistCount(0);
-          }
-        );
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          console.error('Global menu wishlist count sync error:', error);
-          setWishlistCount(0);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-      unsubscribe?.();
-    };
-  }, [canHydrateRemoteCounts, signedUser?.uid]);
+  useEffect(() => (
+    subscribeWishlistItems(
+      signedUser,
+      (_items, ids) => setWishlistCount(ids.length),
+      (error) => {
+        console.error('Global menu liste de souhaits sync error:', error);
+        setWishlistCount(0);
+      }
+    )
+  ), [signedUser]);
 
   const navigateClient = useCallback((path) => {
     if (!path) return;

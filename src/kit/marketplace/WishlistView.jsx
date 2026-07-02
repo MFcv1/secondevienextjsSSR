@@ -34,7 +34,7 @@ const WishlistView = ({
     const handleShare = () => {
         const url = window.location.href;
         if (navigator.share) {
-            navigator.share({ title: 'Ma Wishlist', url });
+            navigator.share({ title: 'Ma liste de souhaits', url });
         } else {
             navigator.clipboard.writeText(url);
         }
@@ -56,14 +56,14 @@ const WishlistView = ({
                 </ul>
             </nav>
 
-            {/* WISHLIST HEADER — centré comme Debongout */}
+            {/* Liste de souhaits header */}
             <div className={`py-10 md:py-14 text-center border-b ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
-                <h1 className="font-serif text-4xl md:text-5xl mb-4">Wishlist</h1>
+                <h1 className="font-serif text-4xl md:text-5xl mb-4">Liste de souhaits</h1>
 
                 {/* Message connexion (si non connecté) */}
                 {!isLoggedIn && (
                     <p className={`text-sm mb-6 ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
-                        Pour sauvegarder votre wishlist{' '}
+                        Pour sauvegarder votre liste de souhaits{' '}
                         <button
                             onClick={onShowLogin}
                             className={`underline underline-offset-2 transition-colors ${darkMode ? 'text-stone-200 hover:text-white' : 'text-stone-800 hover:text-black'}`}
@@ -88,7 +88,7 @@ const WishlistView = ({
                         className={`flex items-center gap-2 px-5 py-2 text-sm transition-colors ${darkMode ? 'text-stone-400 hover:text-white' : 'text-stone-500 hover:text-stone-900'}`}
                     >
                         <Upload size={15} strokeWidth={1.5} />
-                        Partager ma wishlist
+                        Partager ma liste de souhaits
                     </button>
                     <button
                         onClick={purchasableItems.length > 0 ? handleAddAll : undefined}
@@ -102,7 +102,7 @@ const WishlistView = ({
                         className={`flex items-center gap-2 px-5 py-2 text-sm transition-colors ${wishlistItems.length === 0 ? 'opacity-30 pointer-events-none' : (darkMode ? 'text-stone-400 hover:text-red-400' : 'text-stone-500 hover:text-red-500')}`}
                     >
                         <X size={15} strokeWidth={1.5} />
-                        Vider ma wishlist
+                        Vider ma liste de souhaits
                     </button>
                 </div>
             </div>
@@ -116,7 +116,7 @@ const WishlistView = ({
                             <Heart size={32} strokeWidth={1} className={darkMode ? 'text-stone-600' : 'text-stone-300'} />
                         </div>
                         <div>
-                            <p className={`font-serif text-2xl mb-2 ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>Votre wishlist est vide</p>
+                            <p className={`font-serif text-2xl mb-2 ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>Votre liste de souhaits est vide</p>
                             <p className={`text-xs uppercase tracking-widest font-bold ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>
                                 Ajoutez des pièces qui vous font envie
                             </p>
@@ -145,7 +145,7 @@ const WishlistView = ({
                                         <button
                                             onClick={() => onToggleWishlist(item)}
                                             className={`absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold transition-all shadow ${darkMode ? 'bg-[#1a1a1a] text-stone-300 hover:bg-red-900/40 hover:text-red-400 border border-white/10' : 'bg-white text-stone-500 hover:bg-red-50 hover:text-red-500 border border-stone-200'}`}
-                                            title="Retirer des favoris"
+                                            title="Retirer de la liste de souhaits"
                                         >
                                             <X size={12} strokeWidth={2.5} />
                                         </button>

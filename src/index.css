@@ -2053,45 +2053,10 @@ html.dark .customer-testimonial-card {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .testimonial-star-halo {
-    animation: testimonial-star-halo-pulse 2.9s ease-in-out infinite;
-    transform-origin: center;
-  }
-
-  .testimonial-star-line {
-    animation: testimonial-star-line-sweep 2.9s ease-in-out infinite;
-  }
-
   .testimonial-star {
-    animation: testimonial-star-wave 1.45s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    animation: testimonial-star-wave 2.35s cubic-bezier(0.34, 1.18, 0.64, 1) infinite;
     animation-delay: var(--testimonial-star-delay, 0ms);
     transform-origin: center;
-  }
-}
-
-@keyframes testimonial-star-halo-pulse {
-  0%,
-  100% {
-    opacity: 0;
-    transform: translate3d(-50%, -50%, 0) scaleX(0.68) scaleY(0.68);
-  }
-
-  50% {
-    opacity: 0.34;
-    transform: translate3d(-50%, -50%, 0) scaleX(1.16) scaleY(1.05);
-  }
-}
-
-@keyframes testimonial-star-line-sweep {
-  0%,
-  100% {
-    opacity: 0.08;
-    transform: translate3d(calc(-50% - 14px), -50%, 0);
-  }
-
-  50% {
-    opacity: 0.42;
-    transform: translate3d(calc(-50% + 14px), -50%, 0);
   }
 }
 

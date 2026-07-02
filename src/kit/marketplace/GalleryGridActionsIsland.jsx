@@ -2,9 +2,12 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  getCurrentWishlistUser,
+  readWishlistIds,
+  setWishlistItem,
+} from './wishlistState';
 
-const WISHLIST_STORAGE_KEY = 'sv_public_product_wishlist';
-const WISHLIST_CHANGED_EVENT = 'sv:wishlist-state-changed';
 const PRODUCT_DETAIL_IMAGE_SIZES = '(max-width: 1023px) min(94vw, 430px), calc(100vw - 610px)';
 const VISIBLE_WARMUP_ROOT_MARGIN = '650px 0px';
 const warmedImages = new Set();
@@ -20,21 +23,6 @@ const getUniqueSources = (sources) => {
     if (src && !unique.includes(src)) unique.push(src);
   });
   return unique;
-};
-
-const readWishlist = () => {
-  if (typeof window === 'undefined') return [];
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(WISHLIST_STORAGE_KEY) || '[]');
-    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
-  } catch {
-    return [];
-  }
-};
-
-const writeWishlist = (items) => {
-  window.localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(items));
-  window.dispatchEvent(new CustomEvent(WISHLIST_CHANGED_EVENT, { detail: { items } }));
 };
 
 const shouldSkipSoftWarmup = () => {
@@ -87,8 +75,8 @@ const parseJsonAttribute = (element, name) => {
 const setWishlistButtonState = (button, liked) => {
   button.dataset.liked = liked ? 'true' : 'false';
   button.setAttribute('aria-pressed', liked ? 'true' : 'false');
-  button.setAttribute('aria-label', liked ? 'Retirer des favoris' : 'Ajouter aux favoris');
-  button.setAttribute('title', liked ? 'Retirer des favoris' : 'Ajouter aux favoris');
+  button.setAttribute('aria-label', liked ? 'Retirer de la liste de souhaits' : 'Ajouter a la liste de souhaits');
+  button.setAttribute('title', liked ? 'Retirer de la liste de souhaits' : 'Ajouter a la liste de souhaits');
   const icon = button.querySelector('[data-gallery-wishlist-heart]');
   if (icon) icon.setAttribute('fill', liked ? 'currentColor' : 'none');
 };
@@ -96,9 +84,10 @@ const setWishlistButtonState = (button, liked) => {
 export default function GalleryGridActionsIsland({ observeVisibleWarmup = false } = {}) {
   const router = useRouter();
   const lastScrollIntentAtRef = useRef(0);
+  const authUserRef = useRef(null);
 
   const syncWishlistButtons = useCallback(() => {
-    const wishlist = new Set(readWishlist());
+    const wishlist = new Set(readWishlistIds());
     document.querySelectorAll('[data-gallery-wishlist-button][data-product-id]').forEach((button) => {
       setWishlistButtonState(button, wishlist.has(button.dataset.productId));
     });
@@ -153,12 +142,16 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false 
       event.preventDefault();
       event.stopPropagation();
       const productId = wishlistButton.dataset.productId;
-      const current = readWishlist();
-      const next = current.includes(productId)
-        ? current.filter((id) => id !== productId)
-        : [...current, productId];
-      writeWishlist(next);
-      setWishlistButtonState(wishlistButton, next.includes(productId));
+      const current = readWishlistIds();
+      const liked = !current.includes(productId);
+      const item = parseJsonAttribute(wishlistButton, 'data-wishlist-item') || { id: productId, originalId: productId };
+
+      setWishlistButtonState(wishlistButton, liked);
+      setWishlistItem(item, liked, authUserRef.current || getCurrentWishlistUser())
+        .catch((error) => {
+          console.error('Gallery wishlist sync error:', error);
+          syncWishlistButtons();
+        });
     };
 
     const onPointerOver = (event) => {
@@ -178,9 +171,14 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false 
       if (link) warmupProduct(link.closest('[data-gallery-product-card]'), 'hover');
     };
 
-    const onStorage = (event) => {
-      if (event.key === WISHLIST_STORAGE_KEY) syncWishlistButtons();
+    const onWishlistStateChanged = () => syncWishlistButtons();
+    const onStorage = () => syncWishlistButtons();
+    const onAuthUserChanged = (event) => {
+      authUserRef.current = event.detail?.user || null;
+      syncWishlistButtons();
     };
+
+    authUserRef.current = getCurrentWishlistUser();
 
     document.addEventListener('click', onClick);
     document.addEventListener('pointerover', onPointerOver, { passive: true });
@@ -191,6 +189,8 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false 
     window.addEventListener('scroll', markScrollIntent, { passive: true });
     window.addEventListener('touchmove', markScrollIntent, { passive: true });
     window.addEventListener('storage', onStorage);
+    window.addEventListener('sv:wishlist-state-changed', onWishlistStateChanged);
+    window.addEventListener('sv:auth-user-changed', onAuthUserChanged);
 
     return () => {
       document.removeEventListener('click', onClick);
@@ -202,6 +202,8 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false 
       window.removeEventListener('scroll', markScrollIntent);
       window.removeEventListener('touchmove', markScrollIntent);
       window.removeEventListener('storage', onStorage);
+      window.removeEventListener('sv:wishlist-state-changed', onWishlistStateChanged);
+      window.removeEventListener('sv:auth-user-changed', onAuthUserChanged);
     };
   }, [syncWishlistButtons, warmupProduct]);
 

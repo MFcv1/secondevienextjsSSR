@@ -50,6 +50,7 @@ export default function GalleryProductCardServer({
   const warmupSrc = getProductDisplayImageSrc(primaryDetailImage, { viewport: 'desktop' }) || warmupImage?.medium || warmupImage?.src || warmupImage?.card || warmupImage?.thumb || '';
   const warmupBackdropSrc = warmupImage?.thumb || warmupImage?.card || warmupImage?.medium || warmupImage?.src || '';
   const cartPayload = JSON.stringify(cartItem);
+  const wishlistPayload = JSON.stringify(cartItem);
   const productId = item?.id || '';
 
   return (
@@ -115,11 +116,12 @@ export default function GalleryProductCardServer({
               type="button"
               data-gallery-wishlist-button
               data-product-id={productId}
+              data-wishlist-item={wishlistPayload}
               data-liked="false"
               aria-pressed="false"
               className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-stone-700 shadow-md transition-colors hover:bg-rose-500 hover:text-white data-[liked=true]:bg-rose-500 data-[liked=true]:text-white md:h-9 md:w-9"
-              title="Ajouter aux favoris"
-              aria-label="Ajouter aux favoris"
+              title="Ajouter a la liste de souhaits"
+              aria-label="Ajouter a la liste de souhaits"
             >
               <Heart data-gallery-wishlist-heart className="h-[13px] w-[13px] md:h-[15px] md:w-[15px]" strokeWidth={2} fill="none" />
             </button>

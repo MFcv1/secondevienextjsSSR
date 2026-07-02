@@ -376,6 +376,11 @@ Roadmap d'execution dediee: `_DOCS/commerce/E2E_REFUND_EXECUTION_ROADMAP_2026-06
 
 ### P1 - Observabilite et runbooks
 
+- [ ] Optimiser la configuration App Hosting pour la prod quand le rail prod existe:
+  - [ ] mesurer cold starts, latence p95/p99, 5xx, cache hit et cout reel;
+  - [ ] evaluer `minInstances: 1` pour garder un serveur chaud si le gain perf justifie le cout;
+  - [ ] ajuster `concurrency`, `cpu`, `memoryMiB` et `maxInstances` seulement avec preuves de saturation ou latence;
+  - [ ] documenter la decision sandbox/prod dans le runbook ou le rapport infra.
 - [x] Ajouter un runbook `preuve webhook signe`:
   - [x] verifier endpoint Stripe sandbox, events, secret separe sandbox/prod;
   - [x] verifier event livre en `2xx` dans Stripe Dashboard;

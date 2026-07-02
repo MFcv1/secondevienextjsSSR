@@ -321,7 +321,7 @@ const MyOrdersView = ({
     const navItems = [
         { label: 'Commandes', Icon: ShoppingBag, active: true, action: () => scrollToSection(ordersRef) },
         { label: 'Factures', Icon: FileText, action: () => scrollToSection(invoicesRef) },
-        { label: 'Wishlist', Icon: Heart, action: openWishlist },
+        { label: 'Liste de souhaits', Icon: Heart, action: openWishlist },
         { label: 'Adresse', Icon: MapPin, action: () => scrollToSection(addressesRef) },
         { label: 'Profil', Icon: UserRound, action: () => scrollToSection(infoRef) },
         { label: 'Support', Icon: Headphones, action: () => scrollToSection(helpRef) },
@@ -379,7 +379,7 @@ const MyOrdersView = ({
                 <main className="space-y-6">
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                         <MetricButton icon={ShoppingBag} value={orders.length} label="Commandes" action="Historique complet" onClick={() => scrollToSection(ordersRef)} />
-                        <MetricButton icon={Heart} value={wishlistItems.length} label="Pieces suivies" action="Wishlist" onClick={openWishlist} />
+                        <MetricButton icon={Heart} value={wishlistItems.length} label="Pieces suivies" action="Liste de souhaits" onClick={openWishlist} />
                         <MetricButton icon={MapPin} value={addressCount} label="Adresse" action="Livraison et facturation" onClick={() => scrollToSection(addressesRef)} />
                         <MetricButton icon={WalletCards} value={formatPrice(refundedTotal)} label="Avoir / remboursements" action="Suivi Stripe" onClick={() => scrollToSection(invoicesRef)} />
                     </div>
@@ -536,7 +536,7 @@ const MyOrdersView = ({
                         <AccountPanel sectionRef={wishlistRef} className="scroll-mt-28 p-4 md:p-6">
                             <SectionHeader
                                 eyebrow="Selection"
-                                title="Wishlist"
+                                title="Liste de souhaits"
                                 action={(
                                     <button type="button" onClick={openWishlist} className="inline-flex items-center gap-2 text-[13px] font-medium text-[#0066cc]">
                                         Ouvrir
@@ -550,7 +550,7 @@ const MyOrdersView = ({
                             {wishlistPreview.length === 0 ? (
                                 <div className="rounded-[8px] border border-dashed border-[#d2d2d7] px-5 py-12 text-center">
                                     <Heart size={34} strokeWidth={1.35} className="mx-auto text-[#86868b]" />
-                                    <p className="mt-4 text-[18px] font-semibold text-[#1d1d1f]">Votre wishlist est vide</p>
+                                    <p className="mt-4 text-[18px] font-semibold text-[#1d1d1f]">Votre liste de souhaits est vide</p>
                                     <p className="mx-auto mt-2 max-w-sm text-[14px] leading-6 text-[#6e6e73]">
                                         Les pieces ajoutees au coeur apparaitront ici.
                                     </p>
@@ -559,7 +559,7 @@ const MyOrdersView = ({
                                         onClick={openWishlist}
                                         className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-full border border-[#d2d2d7] px-4 text-[13px] font-medium text-[#1d1d1f] transition-colors hover:border-[#a1a1a6]"
                                     >
-                                        Ouvrir la wishlist
+                                        Ouvrir la liste de souhaits
                                         <ArrowRight size={15} />
                                     </button>
                                 </div>

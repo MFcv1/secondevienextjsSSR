@@ -19,7 +19,7 @@ export const PAGE_META = {
   category_group:         { label: 'Catégorie · Groupe',         section: 'catalog',  color: '#3b82f6' },
   category_leaf:          { label: 'Catégorie · Feuille',        section: 'catalog',  color: '#06b6d4' },
 
-  wishlist:               { label: "Liste d'envies",             section: 'account',  color: '#f43f5e' },
+  wishlist:               { label: 'Liste de souhaits',          section: 'account',  color: '#f43f5e' },
   quote_request:          { label: 'Devis · Demande',            section: 'commerce', color: '#f59e0b' },
   checkout:               { label: 'Checkout · Panier',          section: 'commerce', color: '#059669' },
   checkout_success:       { label: 'Checkout · Succès',          section: 'commerce', color: '#22c55e' },

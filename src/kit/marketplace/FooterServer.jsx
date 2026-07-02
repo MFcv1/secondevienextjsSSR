@@ -69,7 +69,7 @@ const sections = [
       ['Se connecter', '/admin'],
       ['Creer un compte', '/wishlist'],
       ['Mes commandes', '/mes-commandes'],
-      ['Mes favoris', '/wishlist'],
+      ['Liste de souhaits', '/wishlist'],
       ['Mes annonces', '/admin'],
       ['Vendre un objet', '/devis'],
     ],

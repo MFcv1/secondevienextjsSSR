@@ -4,19 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Heart, ShoppingBag } from 'lucide-react';
 import { CART_STATE_CHANGED_EVENT, getCartDocumentId, readGuestCart } from '../commerce/guestCart';
-
-const WISHLIST_STORAGE_KEY = 'sv_public_product_wishlist';
-const WISHLIST_CHANGED_EVENT = 'sv:wishlist-state-changed';
-
-const readWishlist = () => {
-  if (typeof window === 'undefined') return [];
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(WISHLIST_STORAGE_KEY) || '[]');
-    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
-  } catch {
-    return [];
-  }
-};
+import { getCurrentWishlistUser, readWishlistIds, setWishlistItem } from './wishlistState';
 
 export default function ProductDetailActionsIsland({
   productId,
@@ -34,7 +22,23 @@ export default function ProductDetailActionsIsland({
 
   useEffect(() => {
     if (!productId) return;
-    setLiked(readWishlist().includes(productId));
+    setLiked(readWishlistIds().includes(productId));
+  }, [productId]);
+
+  useEffect(() => {
+    if (!productId || typeof window === 'undefined') return undefined;
+
+    const syncLiked = () => {
+      setLiked(readWishlistIds().includes(productId));
+    };
+
+    syncLiked();
+    window.addEventListener('sv:wishlist-state-changed', syncLiked);
+    window.addEventListener('storage', syncLiked);
+    return () => {
+      window.removeEventListener('sv:wishlist-state-changed', syncLiked);
+      window.removeEventListener('storage', syncLiked);
+    };
   }, [productId]);
 
   useEffect(() => {
@@ -61,14 +65,19 @@ export default function ProductDetailActionsIsland({
 
   const toggleLiked = useCallback(() => {
     if (!productId || typeof window === 'undefined') return;
-    const current = readWishlist();
-    const next = current.includes(productId)
-      ? current.filter((id) => id !== productId)
-      : [...current, productId];
-    window.localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(next));
-    window.dispatchEvent(new CustomEvent(WISHLIST_CHANGED_EVENT, { detail: { items: next } }));
-    setLiked(next.includes(productId));
-  }, [productId]);
+    const nextLiked = !readWishlistIds().includes(productId);
+    setLiked(nextLiked);
+    setWishlistItem({
+      ...(cartItem || {}),
+      id: productId,
+      originalId: productId,
+      name: cartItem?.name || cartItem?.title || productName,
+      title: cartItem?.title || cartItem?.name || productName,
+    }, nextLiked, getCurrentWishlistUser()).catch((error) => {
+      console.error('Product detail wishlist sync error:', error);
+      setLiked(readWishlistIds().includes(productId));
+    });
+  }, [cartItem, productId, productName]);
 
   const handleCart = useCallback(() => {
     if (isUnavailable) {
@@ -119,7 +128,7 @@ export default function ProductDetailActionsIsland({
           className="mt-3 w-full rounded-xl py-3 flex items-center justify-center gap-2 border border-stone-200 bg-white/70 font-label text-[11px] tracking-[0.1em] uppercase text-stone-800 active:scale-95 transition-all"
         >
           <Heart size={15} className={liked ? 'fill-rose-400 text-rose-400' : ''} />
-          Favori
+          Liste de souhaits
         </button>
       </div>
     );
