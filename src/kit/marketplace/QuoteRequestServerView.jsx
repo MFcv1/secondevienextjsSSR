@@ -1,4 +1,5 @@
 import {
+    ChevronLeft,
     ClipboardCheck,
     ShieldCheck,
     Sparkles,
@@ -52,10 +53,14 @@ const QuoteHero = ({ darkMode = false } = {}) => (
 
         <div className="relative mx-auto grid max-w-[1480px] items-stretch px-4 py-7 sm:px-6 md:py-9 lg:min-h-[540px] lg:px-10 xl:min-h-[560px] xl:px-16">
             <div className="flex max-w-[540px] flex-col justify-center py-3 md:py-5">
-                <div className={`mb-5 flex items-center gap-2 font-sans text-[10px] font-semibold ${darkMode ? 'text-stone-500' : 'text-[#73675c]'}`}>
-                    <span>Accueil</span>
-                    <span className="h-px w-4 bg-current opacity-30" />
-                    <span>Demander un devis</span>
+                <div className="mb-5 hidden items-center gap-3 md:flex">
+                    <a href="/" className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${darkMode ? 'text-stone-500 hover:text-white' : 'text-stone-400 hover:text-stone-900'}`}>
+                        <ChevronLeft size={14} /> Galerie
+                    </a>
+                    <span className={`text-[10px] ${darkMode ? 'text-stone-700' : 'text-stone-300'}`}>/</span>
+                    <span className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>
+                        Devis
+                    </span>
                 </div>
                 <h1 className="max-w-[500px] font-serif text-[clamp(2.35rem,5vw,3.75rem)] leading-[0.98] tracking-normal">
                     Demandez un devis de restauration
