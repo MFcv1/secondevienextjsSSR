@@ -16,7 +16,7 @@ const GlobalMenu = dynamic(() => import('../layout/GlobalMenu'), {
   loading: () => null,
 });
 
-const HOLD_MENU_UNTIL_ROUTE_PATHS = new Set(['/admin']);
+const HOLD_MENU_UNTIL_ROUTE_PATHS = new Set(['/admin', '/mes-commandes', '/devis']);
 
 const MENU_PREFETCH_PATHS = [
   '/',
@@ -38,6 +38,7 @@ const MENU_PREFETCH_PATHS = [
   '/categorie/miroirs',
   '/a-propos',
   '/devis',
+  '/mes-commandes',
 ];
 
 export function preloadGlobalMenu() {

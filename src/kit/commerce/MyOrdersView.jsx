@@ -564,17 +564,14 @@ const MyOrdersView = ({
                                     </button>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-2">
+                                <div className="grid grid-cols-[repeat(auto-fit,minmax(128px,1fr))] gap-3 sm:grid-cols-[repeat(auto-fit,minmax(140px,1fr))]">
                                     {wishlistPreview.map((item, index) => {
                                         const image = getItemImage(item) || FALLBACK_ITEM_IMAGES[index % FALLBACK_ITEM_IMAGES.length];
                                         const price = item.currentPrice || item.startingPrice || item.price;
                                         return (
                                             <article key={`${item.id || index}-wishlist-preview`} className="group min-w-0">
-                                                <div className="relative aspect-[4/4.8] overflow-hidden rounded-[8px] bg-[#f5f5f7]">
-                                                    <img src={image} alt={item.name || 'Piece restauree'} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]" />
-                                                    <span className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-[#1d1d1f] ring-1 ring-[#e8e8ed]">
-                                                        <Heart size={16} strokeWidth={1.6} />
-                                                    </span>
+                                                <div className="relative aspect-[3/4] overflow-hidden rounded-[8px] bg-[#f5f5f7]">
+                                                    <img src={image} alt={item.name || 'Piece restauree'} className="h-full w-full object-cover" />
                                                 </div>
                                                 <h3 className="mt-3 truncate text-[14px] font-semibold text-[#1d1d1f]">{item.name || 'Piece restauree'}</h3>
                                                 <p className="mt-1 text-[13px] text-[#6e6e73]">{price ? formatPrice(price) : 'Prix sur demande'}</p>

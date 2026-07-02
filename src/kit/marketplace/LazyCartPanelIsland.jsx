@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ShoppingBag } from 'lucide-react';
 
 const GUEST_CART_STORAGE_KEY = 'secondevie:guest-cart:v1';
 const GUEST_CART_CHANGED_EVENT = 'sv:guest-cart-changed';
@@ -30,22 +31,12 @@ const readGuestCartCount = () => {
   }
 };
 
-function ShoppingBagIcon({ darkMode = false } = {}) {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={`h-[18px] w-[18px] transition-colors duration-300 ${darkMode ? 'text-stone-200 group-hover:text-[#D9B58D]' : 'text-stone-900 group-hover:text-amber-600 dark:text-stone-200 dark:group-hover:text-[#D9B58D]'}`}
-    >
-      <path d="M6.5 8.5h11l1 11h-13l1-11Z" />
-      <path d="M9 8.5V7a3 3 0 0 1 6 0v1.5" />
-    </svg>
-  );
+function CartHeaderIcon({ darkMode = false } = {}) {
+  const iconTone = darkMode
+    ? 'text-stone-200'
+    : 'text-stone-900 dark:text-stone-200';
+
+  return <ShoppingBag size={18} strokeWidth={1.5} className={iconTone} />;
 }
 
 export default function LazyCartPanelIsland({ className = '', darkMode = false } = {}) {
@@ -105,7 +96,7 @@ export default function LazyCartPanelIsland({ className = '', darkMode = false }
       onFocus={() => loadCartPanel().then((Component) => setCartPanel(() => Component)).catch(() => {})}
       onClick={() => ensureCartPanel('sv:open-cart')}
     >
-      <ShoppingBagIcon darkMode={darkMode} />
+      <CartHeaderIcon darkMode={darkMode} />
       {cartCount > 0 ? (
         <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-stone-950 px-1 text-[9px] font-black leading-none text-white ring-2 ring-white dark:bg-[#D9B58D] dark:text-stone-950 dark:ring-[#080807]">
           {cartCount}

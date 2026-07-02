@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Upload, ShoppingCart, Trash2, ShoppingBag, Heart } from 'lucide-react';
+import { ArrowRight, X, Upload, ShoppingCart, Heart } from 'lucide-react';
 import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage } from '../../utils/imageUtils';
 import { getProductUrl } from '../../utils/slug';
 import { getPurchaseUnavailableLabel, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
@@ -10,7 +10,6 @@ const WishlistView = ({
     onAddToCart,
     onToggleWishlist,
     onClearWishlist,
-    onOpenAbout,
     onBack,
     darkMode,
     user,
@@ -43,21 +42,8 @@ const WishlistView = ({
     return (
         <div className={`min-h-screen ${darkMode ? 'bg-[#121212] text-[#f5f5f5]' : 'bg-[#FAFAF9] text-stone-900'}`}>
 
-            {/* SUB-NAVIGATION marketplace */}
-            <nav className={`w-full py-4 hidden md:block ${darkMode ? 'bg-[#121212]' : 'bg-white'}`}>
-                <ul className={`flex items-center justify-center gap-6 lg:gap-8 text-[13px] font-sans tracking-wide ${darkMode ? 'text-stone-300' : 'text-stone-600'}`}>
-                    <li onClick={onBack} className={`cursor-pointer transition-colors ${darkMode ? 'hover:text-white' : 'hover:text-black'}`}>Nouveautés</li>
-                    <li onClick={onBack} className={`cursor-pointer transition-colors flex items-center gap-1 ${darkMode ? 'hover:text-white' : 'hover:text-black'}`}>Meubles <span className="text-[8px]">▼</span></li>
-                    <li onClick={onBack} className={`cursor-pointer transition-colors flex items-center gap-1 ${darkMode ? 'hover:text-white' : 'hover:text-black'}`}>Assises <span className="text-[8px]">▼</span></li>
-                    <li onClick={onBack} className={`cursor-pointer transition-colors flex items-center gap-1 ${darkMode ? 'hover:text-white' : 'hover:text-black'}`}>Éclairage <span className="text-[8px]">▼</span></li>
-                    <li onClick={onBack} className={`cursor-pointer transition-colors flex items-center gap-1 ${darkMode ? 'hover:text-white' : 'hover:text-black'}`}>Décorations <span className="text-[8px]">▼</span></li>
-                    <li onClick={onBack} className="cursor-pointer transition-colors text-[#d9534f] hover:text-red-700 font-medium">Prix bas ⚡</li>
-                    <li onClick={() => (onOpenAbout ? onOpenAbout() : onBack())} className={`cursor-pointer transition-colors flex items-center gap-1 ${darkMode ? 'hover:text-white' : 'hover:text-black'}`}>À propos <span className="text-[8px]">▼</span></li>
-                </ul>
-            </nav>
-
             {/* Liste de souhaits header */}
-            <div className={`py-10 md:py-14 text-center border-b ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
+            <div className={`px-4 py-10 md:py-14 text-center border-b ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
                 <h1 className="font-serif text-4xl md:text-5xl mb-4">Liste de souhaits</h1>
 
                 {/* Message connexion (si non connecté) */}
@@ -82,7 +68,16 @@ const WishlistView = ({
                 )}
 
                 {/* Boutons d'action */}
-                <div className={`flex flex-wrap items-center justify-center gap-1 md:gap-0 divide-x ${darkMode ? 'divide-white/10' : 'divide-stone-200'}`}>
+                <div className={`flex flex-wrap items-center justify-center gap-1 md:gap-0 md:divide-x ${darkMode ? 'divide-white/10' : 'divide-stone-200'}`}>
+                    {enrichedItems.length > 0 && (
+                        <button
+                            onClick={onBack}
+                            className={`flex items-center gap-2 px-5 py-2 text-sm font-medium transition-colors ${darkMode ? 'text-stone-200 hover:text-white' : 'text-stone-900 hover:text-stone-600'}`}
+                        >
+                            <ArrowRight size={15} strokeWidth={1.7} className="rotate-180" />
+                            Retour galerie
+                        </button>
+                    )}
                     <button
                         onClick={handleShare}
                         className={`flex items-center gap-2 px-5 py-2 text-sm transition-colors ${darkMode ? 'text-stone-400 hover:text-white' : 'text-stone-500 hover:text-stone-900'}`}
@@ -108,7 +103,7 @@ const WishlistView = ({
             </div>
 
             {/* CONTENU */}
-            <div className="px-4 md:px-12 lg:px-16 py-12">
+            <div className="px-4 py-10 md:px-8 md:py-12 lg:px-12">
                 {enrichedItems.length === 0 ? (
                     /* ÉTAT VIDE */
                     <div className="flex flex-col items-center justify-center py-32 gap-6 text-center">
@@ -130,7 +125,7 @@ const WishlistView = ({
                     </div>
                 ) : (
                     /* GRILLE PRODUITS — style Debongout */
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
+                    <div className="mx-auto grid max-w-[1320px] grid-cols-[repeat(auto-fit,minmax(150px,220px))] justify-center gap-x-4 gap-y-8 sm:grid-cols-[repeat(auto-fit,minmax(170px,230px))] md:gap-x-6 md:gap-y-10 lg:grid-cols-[repeat(auto-fill,minmax(190px,240px))] xl:grid-cols-[repeat(auto-fill,minmax(205px,250px))]">
                         {enrichedItems.map((item, index) => {
                             const price = item.currentPrice || item.startingPrice || item.price;
                             const priority = index < 6;
@@ -138,7 +133,7 @@ const WishlistView = ({
                             const purchasable = isPurchasable(item);
                             const unavailableLabel = getPurchaseUnavailableLabel(item);
                             return (
-                                <div key={item.id} className="group relative flex flex-col">
+                                <div key={item.id} className="group relative flex min-w-0 flex-col">
                                     {/* IMAGE + X */}
                                     <div className="relative">
                                         {/* Bouton X retirer */}
@@ -153,7 +148,7 @@ const WishlistView = ({
                                         {/* Image */}
                                         <a
                                             href={getProductUrl(item)}
-                                            className={`relative block overflow-hidden aspect-[3/4] cursor-pointer ${darkMode ? 'bg-[#1A1A1A]' : 'bg-white'}`}
+                                            className={`relative block overflow-hidden rounded-[12px] aspect-[3/4] cursor-pointer ${darkMode ? 'bg-[#1A1A1A]' : 'bg-white'}`}
                                         >
                                             <img
                                                 src={cardImage.src}
@@ -174,10 +169,10 @@ const WishlistView = ({
                                     </div>
 
                                     {/* INFO */}
-                                    <div className="pt-3 flex flex-col gap-1 text-center">
+                                    <div className="pt-3 flex flex-col gap-1 text-left">
                                         <a
                                             href={getProductUrl(item)}
-                                            className="font-serif text-sm md:text-base leading-tight cursor-pointer hover:opacity-70 transition-opacity text-inherit no-underline"
+                                            className="truncate font-serif text-sm md:text-base leading-tight cursor-pointer hover:opacity-70 transition-opacity text-inherit no-underline"
                                         >
                                             {item.name}
                                         </a>
@@ -190,7 +185,7 @@ const WishlistView = ({
                                     <button
                                         onClick={() => purchasable && onAddToCart(item)}
                                         disabled={!purchasable}
-                                        className={`mt-3 w-full py-3 text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed ${darkMode ? 'bg-stone-800 text-stone-100 hover:bg-stone-700' : 'bg-stone-900 text-white hover:bg-stone-700'}`}
+                                        className={`mt-3 w-full rounded-[6px] py-2.5 text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed ${darkMode ? 'bg-stone-800 text-stone-100 hover:bg-stone-700' : 'bg-stone-900 text-white hover:bg-stone-700'}`}
                                     >
                                         {purchasable ? 'Ajouter au panier' : unavailableLabel}
                                     </button>

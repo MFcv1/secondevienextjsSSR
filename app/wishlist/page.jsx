@@ -1,5 +1,6 @@
 import RouteClientProviders from '../RouteClientProviders';
 import WishlistPageIsland from './WishlistPageIsland';
+import ArchitecturalHeaderServer from '../../src/kit/marketplace/ArchitecturalHeaderServer';
 import { getPublicCatalog, getPublicCatalogFallback } from '../../src/lib/server/products';
 
 export const dynamic = 'force-dynamic';
@@ -18,6 +19,7 @@ export default async function WishlistPage() {
   const initialItems = await getWishlistInitialItems();
   return (
     <RouteClientProviders>
+      <ArchitecturalHeaderServer darkMode={false} />
       <WishlistPageIsland initialItems={initialItems} />
     </RouteClientProviders>
   );

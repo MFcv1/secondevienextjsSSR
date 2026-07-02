@@ -1,10 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import MyOrdersView from '../../src/kit/commerce/MyOrdersView';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
 import { readWishlistIds, subscribeWishlistItems } from '../../src/kit/marketplace/wishlistState';
+
+const readCachedAuthUser = () => (
+  typeof window === 'undefined' ? null : window.__svAuthUser || null
+);
 
 function AccountDashboardFallback({ darkMode = false, isSignedOut = false }) {
   const openLogin = () => {
@@ -63,13 +67,16 @@ function OrdersPageContent({ initialItems = [] }) {
   const router = useRouter();
   const { user, loading, logout } = useAuth();
   const [hasMounted, setHasMounted] = useState(false);
+  const [cachedUser, setCachedUser] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
   const [wishlistItems, setWishlistItems] = useState(() => (
     readWishlistIds().map((id) => ({ id, originalId: id }))
   ));
+  const effectiveUser = user || cachedUser;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setHasMounted(true);
+    setCachedUser(readCachedAuthUser());
     try {
       setDarkMode(window.localStorage.getItem('darkMode') === 'true');
     } catch {
@@ -78,21 +85,30 @@ function OrdersPageContent({ initialItems = [] }) {
   }, []);
 
   useEffect(() => {
+    const handleAuthChange = (event) => {
+      setCachedUser(event.detail?.user || null);
+    };
+
+    window.addEventListener('sv:auth-user-changed', handleAuthChange);
+    return () => window.removeEventListener('sv:auth-user-changed', handleAuthChange);
+  }, []);
+
+  useEffect(() => {
     return subscribeWishlistItems(
-      user,
+      effectiveUser,
       (items) => setWishlistItems(items),
       (error) => console.error('Account liste de souhaits sync error:', error)
     );
-  }, [user]);
+  }, [effectiveUser]);
 
-  if (!hasMounted || loading) return <AccountDashboardFallback darkMode={darkMode} />;
-  if (!user || user.isAnonymous) {
+  if (!hasMounted || (loading && !effectiveUser)) return <AccountDashboardFallback darkMode={darkMode} />;
+  if (!effectiveUser || effectiveUser.isAnonymous) {
     return <AccountDashboardFallback darkMode={darkMode} isSignedOut />;
   }
 
   return (
     <MyOrdersView
-      user={user}
+      user={effectiveUser}
       onBack={() => { router.push('/'); }}
       darkMode={darkMode}
       activeDesignId="architectural"
