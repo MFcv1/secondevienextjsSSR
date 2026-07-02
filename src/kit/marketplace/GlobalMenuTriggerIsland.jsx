@@ -105,12 +105,9 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   const [panelReady, setPanelReady] = useState(false);
   const [fallbackMenuTop, setFallbackMenuTop] = useState(110);
   const closeTimerRef = useRef(null);
-  const pendingOpenTimerRef = useRef(null);
-  const panelReadyRef = useRef(false);
   const warmGlobalMenuPanel = useCallback(() => {
     const promise = preloadGlobalMenuPanel()
       .then(() => {
-        panelReadyRef.current = true;
         setPanelReady(true);
       })
       .catch(() => null);
@@ -161,42 +158,19 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
 
   useEffect(() => () => {
     clearCloseTimer();
-    if (pendingOpenTimerRef.current) {
-      window.clearTimeout(pendingOpenTimerRef.current);
-      pendingOpenTimerRef.current = null;
-    }
   }, [clearCloseTimer]);
 
   const openPanel = useCallback(() => {
     clearCloseTimer();
-    if (pendingOpenTimerRef.current) {
-      window.clearTimeout(pendingOpenTimerRef.current);
-      pendingOpenTimerRef.current = null;
-    }
-    const warmPromise = warmGlobalMenuPanel();
+    warmGlobalMenuPanel();
     setFallbackMenuTop(getCurrentMenuTop());
     setPanelMounted(true);
     setPanelClosing(false);
-
-    const revealPanel = () => {
-      pendingOpenTimerRef.current = null;
-      window.requestAnimationFrame(() => setPanelOpen(true));
-    };
-
-    pendingOpenTimerRef.current = window.setTimeout(revealPanel, panelReadyRef.current ? 0 : 40);
-    warmPromise.finally(() => {
-      if (!pendingOpenTimerRef.current || panelOpen) return;
-      window.clearTimeout(pendingOpenTimerRef.current);
-      revealPanel();
-    });
-  }, [clearCloseTimer, panelOpen, warmGlobalMenuPanel]);
+    window.requestAnimationFrame(() => setPanelOpen(true));
+  }, [clearCloseTimer, warmGlobalMenuPanel]);
 
   const closePanel = useCallback(() => {
     clearCloseTimer();
-    if (pendingOpenTimerRef.current) {
-      window.clearTimeout(pendingOpenTimerRef.current);
-      pendingOpenTimerRef.current = null;
-    }
     setPanelOpen(false);
     setPanelClosing(true);
     closeTimerRef.current = window.setTimeout(() => {
@@ -208,10 +182,6 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
 
   const closePanelInstantly = useCallback(() => {
     clearCloseTimer();
-    if (pendingOpenTimerRef.current) {
-      window.clearTimeout(pendingOpenTimerRef.current);
-      pendingOpenTimerRef.current = null;
-    }
     setPanelOpen(false);
     setPanelClosing(false);
     setPanelMounted(false);

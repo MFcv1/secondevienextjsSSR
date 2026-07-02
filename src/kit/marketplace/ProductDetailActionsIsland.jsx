@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Heart, ShoppingBag } from 'lucide-react';
 import { CART_STATE_CHANGED_EVENT, getCartDocumentId, readGuestCart } from '../commerce/guestCart';
 
@@ -27,6 +28,7 @@ export default function ProductDetailActionsIsland({
   unavailableLabel = 'Indisponible',
   quoteHref = '',
 }) {
+  const router = useRouter();
   const [isInCart, setIsInCart] = useState(false);
   const [liked, setLiked] = useState(false);
 
@@ -70,7 +72,7 @@ export default function ProductDetailActionsIsland({
 
   const handleCart = useCallback(() => {
     if (isUnavailable) {
-      if (quoteHref) window.location.assign(quoteHref);
+      if (quoteHref) router.push(quoteHref);
       return;
     }
 
@@ -88,7 +90,7 @@ export default function ProductDetailActionsIsland({
     } catch {
       // The local route can work without the global cart shell.
     }
-  }, [cartItem, isInCart, isUnavailable, productId, productName, quoteHref]);
+  }, [cartItem, isInCart, isUnavailable, productId, productName, quoteHref, router]);
 
   const disabled = isUnavailable && !quoteHref;
   const actionLabel = isUnavailable ? unavailableLabel : isInCart ? 'Deja dans le panier' : 'Ajouter au panier';

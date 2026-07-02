@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Suspense, useState } from 'react';
+import Link from 'next/link';
 import {
   Activity,
   BarChart3,
@@ -156,9 +157,9 @@ function AdminContent({ initialItems = [] }) {
       <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-5 px-6 text-center text-stone-900">
         <h1 className="text-3xl font-black tracking-tight">Acces admin refuse</h1>
         <p className="text-sm text-stone-500">Ce compte n'a pas les droits administrateur.</p>
-        <a className="rounded-full bg-stone-950 px-5 py-3 text-sm font-bold text-white" href="/">
+        <Link className="rounded-full bg-stone-950 px-5 py-3 text-sm font-bold text-white" href="/">
           Retour au site
-        </a>
+        </Link>
       </div>
     );
   }
@@ -189,13 +190,13 @@ function AdminContent({ initialItems = [] }) {
             <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Systeme de Controle</p>
             <h2 className="text-4xl font-black tracking-tighter md:text-5xl">Gestion Boutique</h2>
           </div>
-          <a
+          <Link
             href="/"
             className={`group flex items-center gap-2 rounded-2xl border-2 px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all ${darkMode ? 'border-white/10 hover:border-white hover:bg-white hover:text-stone-900' : 'border-stone-900 hover:bg-stone-900 hover:text-white'}`}
           >
             <ChevronLeft size={14} className="transition-transform group-hover:-translate-x-1" />
             Retour au site
-          </a>
+          </Link>
         </div>
 
         <div className="relative flex flex-col items-center">

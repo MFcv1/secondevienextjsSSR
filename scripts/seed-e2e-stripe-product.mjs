@@ -1,4 +1,4 @@
-import { initializeApp, applicationDefault, getApps } from 'firebase-admin/app';
+import { initializeApp, applicationDefault, cert, getApps } from 'firebase-admin/app';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || 'secondevienextjsssr';
@@ -18,8 +18,12 @@ if (!Number.isFinite(PRICE) || PRICE <= 0) {
 }
 
 if (!getApps().length) {
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
+    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
+    : null;
+
   initializeApp({
-    credential: applicationDefault(),
+    credential: serviceAccountJson ? cert(serviceAccountJson) : applicationDefault(),
     projectId: PROJECT_ID,
   });
 }

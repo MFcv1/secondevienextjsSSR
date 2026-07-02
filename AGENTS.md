@@ -54,6 +54,8 @@ npm run perf:product-direct
 npm run perf:category-direct
 npm run perf:about-direct
 npm run perf:quote-direct
+npm run perf:menu-desktop
+npm run perf:menu-mobile
 npm run perf:budget
 ```
 
@@ -78,8 +80,9 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |-- _DOCS : documentation active organisee par theme et archives
 |   |-- architecture : baseline routes publiques, SEO, cache et decisions Next
 |   |   `-- GALLERY_HOME_CANONICAL_IMPLEMENTATION_2026-07-01.md : decision `/` home galerie et `/galerie` alias
-|   |-- perf : roadmaps/gates perf, hydratation, galerie et rendu final direct
-|   |   `-- PUBLIC_SEO_BUDGET_VISUAL_CLOSEOUT_2026-07-01.md : closeout budgets publics avec preuves visuelles
+|   |-- perf : roadmaps/gates perf, hydratation, galerie, menus split desktop/mobile et rendu final direct
+|   |   |-- PUBLIC_SEO_BUDGET_VISUAL_CLOSEOUT_2026-07-01.md : closeout budgets publics avec preuves visuelles
+|   |   `-- MENU_COLD_OPEN_AUDIT_2026-07-02.md : audit delai ouverture menu principal/mega menu desktop et mobile
 |   |-- images : pipeline images produit, Storage, detailFast et audits UX image
 |   |-- infra : App Hosting, rail prod, App Check et closeout infra
 |   |-- commerce : checkout, refund, E2E backoffice et Stripe/Firebase hardening
@@ -96,10 +99,11 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |   |-- kit/commerce : panier, checkout, login, commandes client, regle isPurchasable
 |   |-- kit/marketplace : galerie SSR, categories/produits, sections fixes SSR, iles interactions, header/menu/cart/wishlist/devis
 |   |-- kit/vitrine : page `/a-propos` serveur et iles fines
-|   |-- kit/layout, kit/shared, kit/ui, kit/hooks, kit/contexts, kit/config
+|   |-- kit/layout : layout partage, footer et menu global split en shell/desktop/mobile
+|   |-- kit/shared, kit/ui, kit/hooks, kit/contexts, kit/config
 |   |-- lib : helpers serveur produits/env/theme/about et SEO structure
 |   `-- assets, utils : assets source et helpers image/formatting
-|-- scripts : env bridge, gates Next, audits perf/direct/mobile, E2E sandbox, backfills images, infra audits
+|-- scripts : env bridge, gates Next, audits perf/direct/mobile/menus, E2E sandbox, backfills images, infra audits
 |-- functions-public : Functions publiques isolees pour `publicCatalog`
 |-- functions : Functions privees/admin/commerce/auth/email/seo/triggers
 |-- public : favicons, manifest, images, videos et assets statiques

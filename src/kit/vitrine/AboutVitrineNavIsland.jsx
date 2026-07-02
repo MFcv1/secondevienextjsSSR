@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 
 export default function AboutVitrineNavIsland() {
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isNavVisible, setIsNavVisible] = useState(true);
   const [scrollbarWidth, setScrollbarWidth] = useState(0);
@@ -52,7 +54,8 @@ export default function AboutVitrineNavIsland() {
   };
 
   const goGallery = () => {
-    window.location.assign('/');
+    closeMenu();
+    router.push('/');
   };
 
   return (

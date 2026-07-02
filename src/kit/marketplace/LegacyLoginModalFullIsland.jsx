@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { KeyRound, Loader2, Mail, RotateCcw, ShieldCheck, X } from 'lucide-react';
 import { httpsCallable } from 'firebase/functions';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
@@ -199,6 +200,7 @@ const loginWithPasskey = async (email, preparedAuthentication = null, onStepChan
 };
 
 export function LegacyLoginModalContent({ open, onOpenChange }) {
+  const router = useRouter();
   const { loginWithGoogle, loginWithCustomToken } = useAuth();
   const toast = useToast();
   const [passkeyUser, setPasskeyUser] = useState(null);
@@ -348,7 +350,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
       setPasskeyMessage('Connexion rapide activee sur cet appareil.');
       window.setTimeout(() => {
         onOpenChange(false);
-        window.location.assign('/');
+        router.push('/');
       }, 450);
     } catch (error) {
       setPasskeyStatus('error');

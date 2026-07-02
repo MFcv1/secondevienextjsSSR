@@ -57,12 +57,12 @@ const findOrder = async ({ orderId, paymentIntentId, email }) => {
     return { id: doc.id, data: doc.data() };
 };
 
-const findStripeSucceededEvent = async (stripe, paymentIntentId) => {
+const findStripeSucceededEvent = async (stripe, paymentIntentId, stripeOptions = undefined) => {
     if (!paymentIntentId) return null;
     const events = await stripe.events.list({
         type: 'payment_intent.succeeded',
         limit: 25
-    });
+    }, stripeOptions);
     return events.data.find((event) => event?.data?.object?.id === paymentIntentId) || null;
 };
 
@@ -120,12 +120,17 @@ exports.e2eCheckoutProof = functions
         const stripe = Stripe(STRIPE_SECRET_KEY.value());
         const orderData = order.data || {};
         const paymentIntentId = orderData.stripePaymentIntentId || safeString(payload.paymentIntentId);
+        const stripeConnectedAccountId = orderData.stripeConnectedAccountId || null;
+        const stripeOptions = stripeConnectedAccountId
+            ? { stripeAccount: stripeConnectedAccountId }
+            : undefined;
         const paymentIntent = paymentIntentId
-            ? await stripe.paymentIntents.retrieve(paymentIntentId).catch((error) => ({ error: error.message }))
+            ? await stripe.paymentIntents.retrieve(paymentIntentId, stripeOptions).catch((error) => ({ error: error.message }))
             : null;
-        const succeededEvent = await findStripeSucceededEvent(stripe, paymentIntentId).catch((error) => ({ error: error.message }));
+        const succeededEvent = await findStripeSucceededEvent(stripe, paymentIntentId, stripeOptions).catch((error) => ({ error: error.message }));
+        const safeAccountKey = stripeConnectedAccountId || 'platform';
         const idempotencySnap = succeededEvent?.id
-            ? await db.doc(`sys_idempotency/stripe_${succeededEvent.id}`).get()
+            ? await db.doc(`sys_idempotency/stripe_${safeAccountKey}_${succeededEvent.id}`).get()
             : null;
         const stockProof = await readStockProof(orderData.items || []);
 
@@ -141,6 +146,8 @@ exports.e2eCheckoutProof = functions
                 createdAt: orderData.createdAt || null,
                 paidAt: orderData.paidAt || null,
                 stripePaymentIntentId: paymentIntentId || null,
+                stripeConnectedAccountId,
+                stripeConnectMode: orderData.stripeConnectMode || null,
                 emailProof: orderData.emailProof || null
             }),
             stripe: paymentIntent?.error ? {

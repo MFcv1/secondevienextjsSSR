@@ -77,6 +77,27 @@ const AdminPaymentSettings = ({ darkMode }) => {
         }
     };
 
+    const syncConnectAccount = async ({ action = 'sync', clearReturnParam = false } = {}) => {
+        setConnectAction(action);
+        setConnectError('');
+        try {
+            const syncAccount = httpsCallable(functions, 'syncStripeConnectAccount');
+            const result = await syncAccount();
+            setConnectState(result.data?.connect || { status: 'not_connected' });
+            if (clearReturnParam && typeof window !== 'undefined') {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('stripe_connect');
+                window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+            }
+        } catch (error) {
+            console.error('Stripe Connect sync error:', error);
+            setConnectError(error.message || 'Synchronisation Stripe impossible.');
+        } finally {
+            setConnectLoading(false);
+            setConnectAction('');
+        }
+    };
+
     useEffect(() => {
         const unsub = onSnapshot(doc(db, 'sys_metadata', 'payment_settings'), (snap) => {
             if (snap.exists()) {
@@ -96,7 +117,9 @@ const AdminPaymentSettings = ({ darkMode }) => {
         if (typeof window !== 'undefined') {
             const params = new URLSearchParams(window.location.search);
             if (params.get('stripe_connect') === 'return' || params.get('stripe_connect') === 'refresh') {
-                window.setTimeout(() => refreshConnectStatus({ silent: false }), 400);
+                window.setTimeout(() => {
+                    syncConnectAccount({ action: 'return-sync', clearReturnParam: true });
+                }, 400);
             }
         }
     }, []);
@@ -147,18 +170,7 @@ const AdminPaymentSettings = ({ darkMode }) => {
     };
 
     const syncConnect = async () => {
-        setConnectAction('sync');
-        setConnectError('');
-        try {
-            const syncAccount = httpsCallable(functions, 'syncStripeConnectAccount');
-            const result = await syncAccount();
-            setConnectState(result.data?.connect || { status: 'not_connected' });
-        } catch (error) {
-            console.error('Stripe Connect sync error:', error);
-            setConnectError(error.message || 'Synchronisation Stripe impossible.');
-        } finally {
-            setConnectAction('');
-        }
+        await syncConnectAccount({ action: 'sync' });
     };
 
     const requestReconnect = async () => {
@@ -197,6 +209,9 @@ const AdminPaymentSettings = ({ darkMode }) => {
 
     const connectCopy = statusCopy[connectState.status] || statusCopy.not_connected;
     const stripeReady = connectState.chargesEnabled === true || connectState.status === 'not_connected';
+    const stripeDashboardUrl = connectState.livemode
+        ? 'https://dashboard.stripe.com'
+        : 'https://dashboard.stripe.com/test/dashboard';
 
     return (
         <div className={`space-y-8 animate-in fade-in ${darkMode ? 'text-white' : 'text-stone-900'}`}>
@@ -211,11 +226,15 @@ const AdminPaymentSettings = ({ darkMode }) => {
             </div>
 
             <div className={`p-6 md:p-8 rounded-[2rem] ring-1 shadow-sm ${darkMode ? 'bg-stone-900 ring-stone-800' : 'bg-white ring-stone-200'}`}>
-                {connectAction === 'connect' ? (
+                {connectAction === 'connect' || connectAction === 'return-sync' ? (
                     <div className={`mb-5 overflow-hidden rounded-2xl border ${darkMode ? 'border-indigo-300/20 bg-indigo-300/10 text-indigo-100' : 'border-indigo-100 bg-indigo-50 text-indigo-950'}`}>
                         <div className="flex items-center gap-3 px-4 py-3 text-sm font-bold">
                             <RefreshCw size={16} className="animate-spin" />
-                            <span>{connectRedirecting ? 'Redirection vers Stripe...' : 'Preparation de la connexion Stripe...'}</span>
+                            <span>
+                                {connectAction === 'return-sync'
+                                    ? 'Finalisation de la connexion Stripe...'
+                                    : connectRedirecting ? 'Redirection vers Stripe...' : 'Preparation de la connexion Stripe...'}
+                            </span>
                             <span className={`ml-auto h-2 w-2 rounded-full ${darkMode ? 'bg-indigo-200' : 'bg-indigo-500'} animate-pulse`} />
                         </div>
                         <div className={`h-1 w-full ${darkMode ? 'bg-white/10' : 'bg-indigo-100'}`}>
@@ -278,6 +297,17 @@ const AdminPaymentSettings = ({ darkMode }) => {
                             <RefreshCw size={14} className={connectAction === 'sync' ? 'animate-spin' : ''} />
                             Synchroniser
                         </button>
+                        {connectState.hasActiveAccount ? (
+                            <a
+                                href={stripeDashboardUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className={`flex items-center justify-center gap-2 rounded-2xl border px-5 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${darkMode ? 'border-emerald-300/20 text-emerald-200 hover:bg-emerald-300/10' : 'border-emerald-100 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}
+                            >
+                                <ExternalLink size={14} />
+                                Dashboard Stripe
+                            </a>
+                        ) : null}
                     </div>
                 </div>
 

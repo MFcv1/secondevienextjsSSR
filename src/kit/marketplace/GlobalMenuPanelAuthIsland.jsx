@@ -2,14 +2,13 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { getDb, loadFirestoreModule } from '../config/firebaseLazy';
 import {
   CART_STATE_CHANGED_EVENT,
   GUEST_CART_CHANGED_EVENT,
   readGuestCart,
 } from '../commerce/guestCart';
-import { preloadLoginModal } from './HeaderAccountIsland';
 
 const GlobalMenu = dynamic(() => import('../layout/GlobalMenu'), {
   ssr: false,
@@ -18,6 +17,7 @@ const GlobalMenu = dynamic(() => import('../layout/GlobalMenu'), {
 
 const WISHLIST_STORAGE_KEY = 'sv_public_product_wishlist';
 const WISHLIST_CHANGED_EVENT = 'sv:wishlist-state-changed';
+const HOLD_MENU_UNTIL_ROUTE_PATHS = new Set(['/admin']);
 
 const MENU_PREFETCH_PATHS = [
   '/',
@@ -55,7 +55,7 @@ export function preloadGlobalMenu() {
   GlobalMenu.preload?.();
   return import('../layout/GlobalMenu')
     .then((module) => {
-      module.preloadGlobalMenuImages?.();
+      module.preloadCurrentGlobalMenuView?.();
       return module;
     });
 }
@@ -69,14 +69,17 @@ function GlobalMenuPanelAuthContent({
   closePanelInstantly,
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [authUser, setAuthUser] = useState(() => (
     typeof window === 'undefined' ? null : window.__svAuthUser || null
   ));
   const [authIsAdmin, setAuthIsAdmin] = useState(() => (
     typeof window === 'undefined' ? false : window.__svAuthIsAdmin === true
   ));
+  const [heldNavigationPath, setHeldNavigationPath] = useState(null);
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
+  const [canHydrateRemoteCounts, setCanHydrateRemoteCounts] = useState(false);
   const closeForAction = useCallback(() => {
     if (closePanelInstantly) {
       closePanelInstantly();
@@ -105,24 +108,61 @@ function GlobalMenuPanelAuthContent({
     if (!panelOpen) return;
 
     const prefetchMenuPaths = () => {
-      preloadLoginModal();
       MENU_PREFETCH_PATHS.forEach((path) => {
         router.prefetch(path);
       });
     };
 
-    if ('requestIdleCallback' in window) {
-      const idleId = window.requestIdleCallback(prefetchMenuPaths, { timeout: 1200 });
-      return () => window.cancelIdleCallback?.(idleId);
+    let idleId = null;
+    let fallbackId = null;
+    const afterOpenId = window.setTimeout(() => {
+      if ('requestIdleCallback' in window) {
+        idleId = window.requestIdleCallback(prefetchMenuPaths, { timeout: 1800 });
+        return;
+      }
+      fallbackId = window.setTimeout(prefetchMenuPaths, 700);
+    }, 900);
+
+    return () => {
+      window.clearTimeout(afterOpenId);
+      if (idleId !== null) window.cancelIdleCallback?.(idleId);
+      if (fallbackId !== null) window.clearTimeout(fallbackId);
+    };
+  }, [panelOpen, router]);
+
+  useEffect(() => {
+    if (!panelOpen) {
+      setCanHydrateRemoteCounts(false);
+      return undefined;
     }
 
-    const timeoutId = window.setTimeout(prefetchMenuPaths, 650);
-    return () => window.clearTimeout(timeoutId);
-  }, [panelOpen, router]);
+    let idleId = null;
+    const afterOpenId = window.setTimeout(() => {
+      if ('requestIdleCallback' in window) {
+        idleId = window.requestIdleCallback(() => setCanHydrateRemoteCounts(true), { timeout: 1800 });
+        return;
+      }
+
+      setCanHydrateRemoteCounts(true);
+    }, 1000);
+
+    return () => {
+      window.clearTimeout(afterOpenId);
+      if (idleId !== null) window.cancelIdleCallback?.(idleId);
+    };
+  }, [panelOpen]);
 
   const effectiveUser = authUser;
   const effectiveIsAdmin = authIsAdmin;
   const signedUser = effectiveUser && !effectiveUser.isAnonymous ? effectiveUser : null;
+
+  useEffect(() => {
+    if (!heldNavigationPath) return;
+    if (pathname === heldNavigationPath || pathname?.startsWith(`${heldNavigationPath}/`)) {
+      closeForAction();
+      setHeldNavigationPath(null);
+    }
+  }, [closeForAction, heldNavigationPath, pathname]);
 
   useEffect(() => {
     if (signedUser?.uid) return undefined;
@@ -143,7 +183,7 @@ function GlobalMenuPanelAuthContent({
   }, [signedUser?.uid]);
 
   useEffect(() => {
-    if (!signedUser?.uid) return undefined;
+    if (!signedUser?.uid || !canHydrateRemoteCounts) return undefined;
 
     let cancelled = false;
     let unsubscribe = null;
@@ -171,7 +211,7 @@ function GlobalMenuPanelAuthContent({
       cancelled = true;
       unsubscribe?.();
     };
-  }, [signedUser?.uid]);
+  }, [canHydrateRemoteCounts, signedUser?.uid]);
 
   useEffect(() => {
     if (signedUser?.uid) return undefined;
@@ -192,7 +232,7 @@ function GlobalMenuPanelAuthContent({
   }, [signedUser?.uid]);
 
   useEffect(() => {
-    if (!signedUser?.uid) return undefined;
+    if (!signedUser?.uid || !canHydrateRemoteCounts) return undefined;
 
     let cancelled = false;
     let unsubscribe = null;
@@ -220,15 +260,22 @@ function GlobalMenuPanelAuthContent({
       cancelled = true;
       unsubscribe?.();
     };
-  }, [signedUser?.uid]);
+  }, [canHydrateRemoteCounts, signedUser?.uid]);
 
   const navigateClient = useCallback((path) => {
     if (!path) return;
+    const targetPath = path.split(/[?#]/)[0] || '/';
+    if (HOLD_MENU_UNTIL_ROUTE_PATHS.has(targetPath) && pathname !== targetPath) {
+      setHeldNavigationPath(targetPath);
+      router.push(path);
+      return;
+    }
     closeForAction();
     router.push(path);
-  }, [closeForAction, router]);
+  }, [closeForAction, pathname, router]);
 
   const openLogin = async () => {
+    const { preloadLoginModal } = await import('./HeaderAccountIsland');
     await preloadLoginModal();
     closeForAction();
     window.requestAnimationFrame(() => {

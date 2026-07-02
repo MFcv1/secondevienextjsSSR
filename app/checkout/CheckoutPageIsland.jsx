@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import CheckoutView from '../../src/kit/commerce/CheckoutView';
 import OrderSuccessModal from '../../src/kit/commerce/OrderSuccessModal';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
@@ -56,6 +57,7 @@ const migrateGuestCartToUserCart = async (db, firestore, user) => {
 };
 
 function CheckoutPageContent() {
+  const router = useRouter();
   const { user, loading } = useAuth();
   const [cartItems, setCartItems] = useState([]);
   const [darkMode, setDarkMode] = useState(false);
@@ -175,17 +177,17 @@ function CheckoutPageContent() {
 
   const closeOrderSuccess = () => {
     setShowOrderSuccess(false);
-    window.location.href = '/';
+    router.push('/');
   };
 
   const viewOrderAfterSuccess = () => {
     setShowOrderSuccess(false);
-    window.location.href = '/mes-commandes';
+    router.push('/mes-commandes');
   };
 
   const handleContinueShopping = useCallback(() => {
-    window.location.href = '/';
-  }, []);
+    router.push('/');
+  }, [router]);
 
   useEffect(() => {
     if (handledStripeReturnRef.current || typeof window === 'undefined') return undefined;
@@ -260,7 +262,7 @@ function CheckoutPageContent() {
         title="Panier vide"
         message="Ajoutez une piece depuis la galerie avant de lancer le checkout."
         primaryLabel="Retour galerie"
-        onPrimary={() => { window.location.href = '/'; }}
+        onPrimary={() => { router.push('/'); }}
       />
     );
   }

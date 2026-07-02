@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import {
   AlignLeft,
   Heart,
@@ -209,6 +210,7 @@ export default function ProductDetailShellIsland({
   quoteHref = '',
   darkMode = false,
 }) {
+  const router = useRouter();
   const [activeImg, setActiveImg] = useState(0);
   const [pendingImg, setPendingImg] = useState(null);
   const [underlayImg, setUnderlayImg] = useState(null);
@@ -569,8 +571,8 @@ export default function ProductDetailShellIsland({
         window.sessionStorage.removeItem('secondevie:open-gallery-on-arrival');
       }
     } catch {}
-    window.location.replace(targetHref);
-  }, [restoreUrlFromSession]);
+    router.replace(targetHref);
+  }, [restoreUrlFromSession, router]);
 
   const applyLayeredGalleryExit = useCallback((progress) => {
     const p = Math.max(0, Math.min(1, progress));

@@ -31,11 +31,11 @@ Le chantier Connect doit donc ajouter la couche compte connecte sans casser ces 
 | --- | --- | --- | --- | --- |
 | 0 - Documentation | Valide local | Creer cette roadmap et la lier aux consignes agents | Diff doc + lien `AGENTS.md` | `_DOCS/commerce/STRIPE_CONNECT_INTEGRATION_PLAN_2026-07-01.md` cree et `AGENTS.md` lie |
 | 1 - Fondations securite | Valide local | Secrets, helpers super-admin recents, stockage Connect backend-only, callables Connect | `node --check` Functions + rules relues | `node --check functions/src/commerce/stripeConnect.js`, `node --check functions/helpers/security.js`, `npm run lint`, `npm run build` OK |
-| 2 - Routage paiement | Valide local, runtime a faire | PaymentIntent sur compte connecte si actif, legacy direct sinon | `node --check createOrder` + preuve PI avec `acct_...` | `node --check functions/src/commerce/createOrder.js`, `npm run lint`, `npm run build` OK; preuve PI Connect a faire apres setup Stripe |
-| 3 - Webhooks Connect | Valide local, runtime a faire | Endpoint webhook Connect, validation `event.account`, idempotence account-aware | Livraison Stripe `2xx` + order `paid` | `node --check functions/src/commerce/stripeWebhook.js`, `npm run lint`, `npm run build` OK; livraison Stripe Connect a faire |
-| 4 - Refund/cleanup Connect | Valide local, runtime a faire | Refund et cleanup sur le compte stocke dans la commande | Refund `re_...` sur meme `acct_...` | `node --check functions/src/commerce/refundOrder.js`, `node --check functions/src/commerce/cleanupPendingPayments.js`, `npm run lint`, `npm run build` OK; refund Connect runtime a faire |
-| 5 - UI admin | Valide local, runtime a faire | Page Paiement avec onboarding, statut, sync, double validation reconnect | Capture/admin state + appels refuses admin normal | `npm run lint`, `npm run build` OK; preuve UI connectee a faire apres deploy Functions |
-| 6 - E2E complet sandbox | A faire | Achat + webhook + refund + stock avec Connect | JSON E2E + event ids + Firestore | A renseigner |
+| 2 - Routage paiement | Valide runtime | PaymentIntent sur compte connecte si actif, legacy direct sinon | `node --check createOrder` + preuve PI avec `acct_...` | OK 2026-07-02: commande `5vl59e9mT5FiK8FEAsEY`, PI `pi_3TokDrRnGkmlBCey1wAzB7SR`, compte `acct_1ToRDgRnGkmlBCey`, mode `direct_charges` |
+| 3 - Webhooks Connect | Valide runtime | Endpoint webhook Connect, validation `event.account`, idempotence account-aware | Livraison Stripe `2xx` + order `paid` | OK 2026-07-02: event `evt_3TokDrRnGkmlBCey1A7SsJZZ`, idempotence `processed`, commande `paid` |
+| 4 - Refund/cleanup Connect | Valide runtime | Refund et cleanup sur le compte stocke dans la commande | Refund `re_...` sur meme `acct_...` | OK 2026-07-02: refund `re_3TokDrRnGkmlBCey1ixxBBV0`, status `succeeded`, meme PI, stock restaure |
+| 5 - UI admin | Valide runtime sandbox | Page Paiement avec onboarding, statut, sync, double validation reconnect | Capture/admin state + appels refuses admin normal | OK 2026-07-02: onboarding Standard sandbox finalise, statut `Paiements actifs`, retour Stripe autosync ajoute |
+| 6 - E2E complet sandbox | Valide runtime | Achat + webhook + refund + stock avec Connect | JSON E2E + event ids + Firestore | OK 2026-07-02: `logs/hosted-stripe-e2e-2026-07-02T12-59-41-310Z.json`, achat carte `4242`, OTP email, stock `1 -> 0`, refund `refunded`, stock restaure |
 | 7 - Closeout prod | A faire | Procedure cliente, secrets live plateforme, webhook live, rollback | Checklist prod signee | A renseigner |
 
 ## Donnees
@@ -216,5 +216,12 @@ Preuves runtime restantes:
 - deployer Functions avec le nouveau secret `STRIPE_CONNECT_WH_SECRET`: OK 2026-07-01, `stripeConnectWebhook` cree, callables Connect crees, fonctions paiement/refund mises a jour;
 - deployer App Hosting admin sandbox: OK 2026-07-01, backend `secondevie-next-sandbox` publie;
 - configurer le webhook Connect Stripe sandbox: OK 2026-07-01, endpoint `stripeConnectWebhook`, 8 events Connect, secret `STRIPE_CONNECT_WH_SECRET` version 1 active;
-- connecter un compte Standard sandbox depuis l'admin;
-- prouver achat, webhook `event.account`, refund et stock restaure.
+- connecter un compte Standard sandbox depuis l'admin: OK 2026-07-02, compte `acct_1ToRDgRnGkmlBCey` actif;
+- prouver achat, webhook `event.account`, refund et stock restaure: OK 2026-07-02, commande `5vl59e9mT5FiK8FEAsEY`, PI `pi_3TokDrRnGkmlBCey1wAzB7SR`, event `evt_3TokDrRnGkmlBCey1A7SsJZZ`, refund `re_3TokDrRnGkmlBCey1ixxBBV0`.
+
+Note E2E 2026-07-02:
+
+- `scripts/seed-e2e-stripe-product.mjs` sait utiliser `FIREBASE_SERVICE_ACCOUNT_JSON` local pour preparer le produit sandbox.
+- `functions/src/commerce/e2eCheckoutProof.js` est compatible Connect: lecture PI/event/idempotence avec `stripeAccount`.
+- `scripts/e2e-refund-latest-stripe-order.mjs` ajoute une preuve refund reutilisable.
+- Warnings observes mais non bloquants: App Check debug token non enregistre pour Playwright et moyens Stripe `klarna`, `bancontact`, `ideal`, `apple_pay` non actives/verifies en sandbox.

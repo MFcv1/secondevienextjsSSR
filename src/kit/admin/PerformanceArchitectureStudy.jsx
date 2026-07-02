@@ -1,4 +1,5 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   Boxes,
@@ -719,6 +720,7 @@ const statusLabel = {
 };
 
 export default function PerformanceArchitectureStudy({ onBack, embedded = false, seo = true }) {
+  const router = useRouter();
   const [activeChapter, setActiveChapter] = useState(0);
   const [progress, setProgress] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -728,6 +730,13 @@ export default function PerformanceArchitectureStudy({ onBack, embedded = false,
     () => ({ transform: `translateY(${activeChapter * 42}px)` }),
     [activeChapter]
   );
+  const navigateBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+    router.push('/');
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -782,9 +791,8 @@ export default function PerformanceArchitectureStudy({ onBack, embedded = false,
 
       <header className="sv-doc-topbar">
         <a className="sv-doc-brand" href="/" onClick={(event) => {
-          if (!onBack) return;
           event.preventDefault();
-          onBack();
+          navigateBack();
         }}>
           Seconde Vie
         </a>
@@ -795,7 +803,7 @@ export default function PerformanceArchitectureStudy({ onBack, embedded = false,
             {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
             {copied ? 'Citation copied' : 'Copy citation'}
           </button>
-          <button className="sv-doc-icon-button" onClick={onBack || (() => { window.location.href = '/'; })} aria-label={embedded ? 'Retour admin' : 'Retour au site'} type="button">
+          <button className="sv-doc-icon-button" onClick={navigateBack} aria-label={embedded ? 'Retour admin' : 'Retour au site'} type="button">
             <ArrowLeft aria-hidden="true" />
           </button>
         </div>
