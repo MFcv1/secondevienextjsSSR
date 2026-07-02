@@ -222,11 +222,8 @@ const MyOrdersView = ({
 
     const wishlistPreview = useMemo(() => {
         if (enrichedWishlist.length > 0) return enrichedWishlist.slice(0, 4);
-        return (items || [])
-            .filter(item => item.status === 'published')
-            .slice(0, 4)
-            .map((item, index) => ({ ...item, images: item.images?.length ? item.images : [FALLBACK_ITEM_IMAGES[index % FALLBACK_ITEM_IMAGES.length]] }));
-    }, [enrichedWishlist, items]);
+        return [];
+    }, [enrichedWishlist]);
 
     const latestOrder = orders[0];
     const latestShipping = latestOrder?.shipping || {};
@@ -550,24 +547,42 @@ const MyOrdersView = ({
                                 Les pieces que vous gardez sous la main.
                             </SectionHeader>
 
-                            <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-2">
-                                {wishlistPreview.map((item, index) => {
-                                    const image = getItemImage(item) || FALLBACK_ITEM_IMAGES[index % FALLBACK_ITEM_IMAGES.length];
-                                    const price = item.currentPrice || item.startingPrice || item.price;
-                                    return (
-                                        <article key={`${item.id || index}-wishlist-preview`} className="group min-w-0">
-                                            <div className="relative aspect-[4/4.8] overflow-hidden rounded-[8px] bg-[#f5f5f7]">
-                                                <img src={image} alt={item.name || 'Piece restauree'} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]" />
-                                                <span className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-[#1d1d1f] ring-1 ring-[#e8e8ed]">
-                                                    <Heart size={16} strokeWidth={1.6} />
-                                                </span>
-                                            </div>
-                                            <h3 className="mt-3 truncate text-[14px] font-semibold text-[#1d1d1f]">{item.name || 'Piece restauree'}</h3>
-                                            <p className="mt-1 text-[13px] text-[#6e6e73]">{price ? formatPrice(price) : 'Prix sur demande'}</p>
-                                        </article>
-                                    );
-                                })}
-                            </div>
+                            {wishlistPreview.length === 0 ? (
+                                <div className="rounded-[8px] border border-dashed border-[#d2d2d7] px-5 py-12 text-center">
+                                    <Heart size={34} strokeWidth={1.35} className="mx-auto text-[#86868b]" />
+                                    <p className="mt-4 text-[18px] font-semibold text-[#1d1d1f]">Votre wishlist est vide</p>
+                                    <p className="mx-auto mt-2 max-w-sm text-[14px] leading-6 text-[#6e6e73]">
+                                        Les pieces ajoutees au coeur apparaitront ici.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={openWishlist}
+                                        className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-full border border-[#d2d2d7] px-4 text-[13px] font-medium text-[#1d1d1f] transition-colors hover:border-[#a1a1a6]"
+                                    >
+                                        Ouvrir la wishlist
+                                        <ArrowRight size={15} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-2">
+                                    {wishlistPreview.map((item, index) => {
+                                        const image = getItemImage(item) || FALLBACK_ITEM_IMAGES[index % FALLBACK_ITEM_IMAGES.length];
+                                        const price = item.currentPrice || item.startingPrice || item.price;
+                                        return (
+                                            <article key={`${item.id || index}-wishlist-preview`} className="group min-w-0">
+                                                <div className="relative aspect-[4/4.8] overflow-hidden rounded-[8px] bg-[#f5f5f7]">
+                                                    <img src={image} alt={item.name || 'Piece restauree'} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]" />
+                                                    <span className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-[#1d1d1f] ring-1 ring-[#e8e8ed]">
+                                                        <Heart size={16} strokeWidth={1.6} />
+                                                    </span>
+                                                </div>
+                                                <h3 className="mt-3 truncate text-[14px] font-semibold text-[#1d1d1f]">{item.name || 'Piece restauree'}</h3>
+                                                <p className="mt-1 text-[13px] text-[#6e6e73]">{price ? formatPrice(price) : 'Prix sur demande'}</p>
+                                            </article>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </AccountPanel>
                     </div>
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import MyOrdersView from '../../src/kit/commerce/MyOrdersView';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
+import { getDb, loadFirestoreModule } from '../../src/kit/config/firebaseLazy';
 
 function AccountDashboardFallback({ darkMode = false, isSignedOut = false }) {
   const openLogin = () => {
@@ -63,6 +64,7 @@ function OrdersPageContent({ initialItems = [] }) {
   const { user, loading, logout } = useAuth();
   const [hasMounted, setHasMounted] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [wishlistItems, setWishlistItems] = useState([]);
 
   useEffect(() => {
     setHasMounted(true);
@@ -72,6 +74,40 @@ function OrdersPageContent({ initialItems = [] }) {
       setDarkMode(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!user || user.isAnonymous) {
+      setWishlistItems([]);
+      return undefined;
+    }
+
+    let cancelled = false;
+    let unsubscribe = null;
+
+    Promise.all([getDb(), loadFirestoreModule()])
+      .then(([db, { collection, onSnapshot, query }]) => {
+        if (cancelled) return;
+        unsubscribe = onSnapshot(
+          query(collection(db, 'users', user.uid, 'wishlist')),
+          (snap) => setWishlistItems(snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))),
+          (error) => {
+            console.error('Account wishlist sync error:', error);
+            setWishlistItems([]);
+          }
+        );
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error('Account wishlist sync error:', error);
+          setWishlistItems([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [user]);
 
   if (!hasMounted || loading) return <AccountDashboardFallback darkMode={darkMode} />;
   if (!user || user.isAnonymous) {
@@ -84,7 +120,7 @@ function OrdersPageContent({ initialItems = [] }) {
       onBack={() => { router.push('/'); }}
       darkMode={darkMode}
       activeDesignId="architectural"
-      wishlistItems={[]}
+      wishlistItems={wishlistItems}
       items={initialItems}
       onOpenWishlist={() => { router.push('/wishlist'); }}
       onLogout={logout}

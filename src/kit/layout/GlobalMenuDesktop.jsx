@@ -43,11 +43,11 @@ const CATEGORY_ICONS = {
 
 const ROOM_LINKS = [
     { label: 'Salon', categoryId: 'meubles' },
-    { label: 'Salle Ã  manger', categoryId: 'tables' },
+    { label: 'Salle à manger', categoryId: 'tables' },
     { label: 'Chambre', categoryId: 'armoires' },
-    { label: 'EntrÃ©e', categoryId: 'commodes' },
+    { label: 'Entrée', categoryId: 'commodes' },
     { label: 'Bureau', categoryId: 'tables' },
-    { label: 'ExtÃ©rieur', categoryId: 'meubles' },
+    { label: 'Extérieur', categoryId: 'meubles' },
 ];
 
 const SELECTION_TILES = [
@@ -64,17 +64,17 @@ const MENU_IMAGE_SOURCES = [
 ];
 
 const ATELIER_LINKS = [
-    { label: 'RÃ©novation surâ€‘mesure', desc: 'Confiez-nous vos meubles', Icon: Wrench },
+    { label: 'Rénovation sur‑mesure', desc: 'Confiez-nous vos meubles', Icon: Wrench },
     { label: 'Patines & Finitions', desc: 'Des finitions artisanales', Icon: Paintbrush },
-    { label: 'Avant / AprÃ¨s', desc: 'Nos transformations', Icon: Sparkles },
-    { label: 'Atelier sur rendezâ€‘vous', desc: 'Venez nous rencontrer', Icon: ShieldCheck },
+    { label: 'Avant / Après', desc: 'Nos transformations', Icon: Sparkles },
+    { label: 'Atelier sur rendez‑vous', desc: 'Venez nous rencontrer', Icon: ShieldCheck },
 ];
 
 const SERVICE_ITEMS = [
-    { title: 'Livraison soignÃ©e', text: 'Partout en France', Icon: Truck },
-    { title: 'Paiement sÃ©curisÃ©', text: 'et 4x sans frais', Icon: ShieldCheck },
-    { title: 'Meubles uniques', text: 'SÃ©lectionnÃ©s avec passion', Icon: Sparkles },
-    { title: 'Une Ã©quipe humaine', text: 'Ã  votre Ã©coute', Icon: Headphones },
+    { title: 'Livraison soignée', text: 'Partout en France', Icon: Truck },
+    { title: 'Paiement sécurisé', text: 'et 4x sans frais', Icon: ShieldCheck },
+    { title: 'Meubles uniques', text: 'Sélectionnés avec passion', Icon: Sparkles },
+    { title: 'Une équipe humaine', text: 'à votre écoute', Icon: Headphones },
 ];
 
 const formatCategoryLabel = (label = '') => {
@@ -82,7 +82,7 @@ const formatCategoryLabel = (label = '') => {
         .replace(/^LES\s+/i, '')
         .replace(/^LE\s+/i, '')
         .replace(/^LA\s+/i, '')
-        .replace(/^L['â€™]\s*/i, '');
+        .replace(/^L['’]\s*/i, '');
 
     return cleaned
         .toLocaleLowerCase('fr-FR')
@@ -352,7 +352,7 @@ export default function GlobalMenuDesktop({
 
     const primaryLinks = [
         { label: 'Accueil', desc: 'Galerie principale', Icon: Home, active: isGalleryContext, action: () => navigateToPath('/') },
-        { label: 'Ã€ propos', desc: 'Atelier et histoire', Icon: UserRound, active: false, action: openAbout },
+        { label: 'À propos', desc: 'Atelier et histoire', Icon: UserRound, active: false, action: openAbout },
         { label: 'Commandes', desc: 'Espace client', Icon: Package, active: currentView === 'my-orders', action: () => (isSignedIn ? navigateToPath('/mes-commandes') : handleLogin()) },
         { label: 'Devis', desc: 'Projet sur mesure', Icon: ClipboardCheck, active: false, action: openQuoteRequest },
         ...(isAdmin ? [{ label: 'Admin.', desc: 'Backoffice', Icon: ShieldCheck, active: currentView === 'admin', action: () => navigateToPath('/admin') }] : []),
@@ -442,7 +442,7 @@ export default function GlobalMenuDesktop({
                                         <UserRound size={18} className="global-menu-hover__icon" />
                                         <span>
                                             <span className="global-menu-hover__label block text-[12px] font-black">Se connecter</span>
-                                            <span className={`global-menu-hover__desc text-[11px] ${mutedText}`}>AccÃ©der Ã  votre espace</span>
+                                            <span className={`global-menu-hover__desc text-[11px] ${mutedText}`}>Accéder à votre espace</span>
                                         </span>
                                     </motion.button>
                                 )}
@@ -451,7 +451,7 @@ export default function GlobalMenuDesktop({
 
                         <motion.div className="grid grid-cols-[minmax(230px,0.72fr)_minmax(420px,1.34fr)_minmax(560px,1.94fr)] gap-3 xl:gap-4">
                             <motion.section className={`global-menu-reveal-container flex h-[540px] flex-col overflow-hidden rounded-[22px] px-4 py-4 xl:px-5 xl:py-5 2xl:px-6 ${desktopCard}`} style={getDesktopRevealStyle(MENU_SEQUENCE.categories)}>
-                                <motion.h2 className="mb-4 text-[11px] font-black uppercase tracking-[0.17em]" variants={menuRevealVariants}>Meubles par catÃ©gorie</motion.h2>
+                                <motion.h2 className="mb-4 text-[11px] font-black uppercase tracking-[0.17em]" variants={menuRevealVariants}>Meubles par catégorie</motion.h2>
                                 <motion.div className="grid gap-1.5" variants={menuGroupVariants}>
                                     {categories.map(({ id, label, Icon }) => (
                                         <motion.button
@@ -478,7 +478,7 @@ export default function GlobalMenuDesktop({
                                     whileHover={textHoverMotion}
                                     whileTap={textTapMotion}
                                 >
-                                    <span className="global-menu-hover__label">Voir toutes les catÃ©gories</span>
+                                    <span className="global-menu-hover__label">Voir toutes les catégories</span>
                                     <ChevronRight size={15} className="global-menu-hover__chevron shrink-0" />
                                 </motion.button>
                             </motion.section>
@@ -487,7 +487,7 @@ export default function GlobalMenuDesktop({
                                 <motion.div className="mb-3" variants={menuRevealVariants}>
                                     <h2 className="text-[12px] font-black uppercase tracking-[0.18em]">Explorer la maison</h2>
                                     <p className={`mt-2 max-w-[34ch] text-[12px] leading-[1.45] ${mutedText}`}>
-                                        PiÃ¨ces de vie, rangements et coups de cÅ“ur.
+                                        Pièces de vie, rangements et coups de cœur.
                                     </p>
                                 </motion.div>
 
@@ -513,8 +513,8 @@ export default function GlobalMenuDesktop({
                                 <motion.div className="mt-3" variants={menuRevealVariants}>
                                     <span className={`block h-px w-full bg-gradient-to-r from-transparent to-transparent ${darkMode ? 'via-white/10' : 'via-[#e5d8cb]/85'}`} />
                                     <div className="flex items-center justify-between pt-2.5">
-                                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-stone-400">Notre sÃ©lection</span>
-                                        <span className={`text-[11px] ${mutedText}`}>4 entrÃ©es rapides</span>
+                                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-stone-400">Notre sélection</span>
+                                        <span className={`text-[11px] ${mutedText}`}>4 entrées rapides</span>
                                     </div>
                                 </motion.div>
 
@@ -556,8 +556,8 @@ export default function GlobalMenuDesktop({
                                             <Sparkles size={15} strokeWidth={1.5} />
                                         </span>
                                         <span>
-                                            <span className="global-menu-hover__label block font-serif text-[15.5px] font-bold leading-tight">Voir toutes les piÃ¨ces</span>
-                                            <span className={`global-menu-hover__desc mt-0.5 block text-[11px] ${mutedText}`}>NouveautÃ©s, petits prix et piÃ¨ces uniques</span>
+                                            <span className="global-menu-hover__label block font-serif text-[15.5px] font-bold leading-tight">Voir toutes les pièces</span>
+                                            <span className={`global-menu-hover__desc mt-0.5 block text-[11px] ${mutedText}`}>Nouveautés, petits prix et pièces uniques</span>
                                         </span>
                                     </span>
                                     <ChevronRight size={18} strokeWidth={1.5} className="global-menu-hover__chevron shrink-0 text-[#9A654B]" />
@@ -566,7 +566,7 @@ export default function GlobalMenuDesktop({
 
                             <motion.section className={`global-menu-reveal-container grid h-[540px] grid-cols-[minmax(220px,0.86fr)_minmax(0,1.44fr)] gap-2 rounded-[22px] p-1.5 ${desktopWarmCard}`} style={getDesktopRevealStyle(MENU_SEQUENCE.atelier)}>
                                 <motion.div className={`flex min-h-0 flex-col rounded-[18px] px-4 py-4 xl:px-4 xl:py-5 ${desktopInsetCard}`} variants={menuColumnVariants} custom={withDesktopMotionContext(MENU_SEQUENCE.atelierInner)}>
-                                    <motion.h2 className="mb-6 text-[12px] font-black uppercase tracking-[0.18em]" variants={menuRevealVariants}>Lâ€™atelier Seconde Vie</motion.h2>
+                                    <motion.h2 className="mb-6 text-[12px] font-black uppercase tracking-[0.18em]" variants={menuRevealVariants}>L’atelier Seconde Vie</motion.h2>
                                     <motion.div className="flex flex-1 flex-col justify-evenly py-2" variants={menuGroupVariants}>
                                         {ATELIER_LINKS.map(({ label, desc, Icon }) => (
                                             <motion.button
@@ -597,7 +597,7 @@ export default function GlobalMenuDesktop({
                                     >
                                         <span>
                                             <span className="global-menu-hover__label block font-serif text-[17px] font-bold leading-tight">Projet sur-mesure</span>
-                                            <span className={`global-menu-hover__desc mt-1 block text-[11.5px] leading-5 ${mutedText}`}>DÃ©crivez votre meuble Ã  restaurer</span>
+                                            <span className={`global-menu-hover__desc mt-1 block text-[11.5px] leading-5 ${mutedText}`}>Décrivez votre meuble à restaurer</span>
                                         </span>
                                         <ChevronRight size={18} strokeWidth={1.5} className="global-menu-hover__chevron shrink-0 text-[#9A654B]" />
                                     </motion.button>
@@ -607,7 +607,7 @@ export default function GlobalMenuDesktop({
                                     <motion.button
                                         type="button"
                                         onClick={() => navigateToPath('/devis')}
-                                        aria-label="DÃ©couvrir la livraison offerte"
+                                        aria-label="Découvrir la livraison offerte"
                                         className="relative h-[172px] w-full overflow-hidden rounded-[16px] bg-[#f8f4ee] text-left outline-none ring-[#9A654B]/0 transition-[box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-[#9A654B]/55"
                                         variants={menuTileVariants}
                                     >
@@ -634,10 +634,10 @@ export default function GlobalMenuDesktop({
                                         <span className="flex min-h-0 flex-col justify-between p-5">
                                             <span>
                                                 <span className="mb-4 block text-[10px] font-black uppercase tracking-[0.16em] text-[#9A654B]">Transformation</span>
-                                                <span className="block font-serif text-[24px] font-bold leading-tight">RÃ©novation</span>
+                                                <span className="block font-serif text-[24px] font-bold leading-tight">Rénovation</span>
                                                 <span className="block font-serif text-[24px] font-bold leading-tight">sur-mesure</span>
                                             </span>
-                                            <span className={`mt-4 max-w-[26ch] text-[12px] leading-5 ${mutedText}`}>Donnez une seconde vie Ã  vos meubles avec une finition pensÃ©e pour votre intÃ©rieur.</span>
+                                            <span className={`mt-4 max-w-[26ch] text-[12px] leading-5 ${mutedText}`}>Donnez une seconde vie à vos meubles avec une finition pensée pour votre intérieur.</span>
                                             <span className={`mt-4 flex items-center justify-between gap-4 border-t pt-3 ${darkMode ? 'border-white/10' : 'border-[#e7dcd2]/80'}`}>
                                                 <span className="min-w-0">
                                                     <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-[#9A654B]">Conseil atelier</span>

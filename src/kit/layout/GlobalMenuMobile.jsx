@@ -25,9 +25,9 @@ const MENU_FADE_EASE = [0.16, 1, 0.3, 1];
 const MENU_CLOSE_EASE = [0.76, 0, 0.24, 1];
 
 const SERVICE_ITEMS = [
-    { title: 'Livraison soignÃ©e', text: 'Partout en France', Icon: Truck },
-    { title: 'Paiement sÃ©curisÃ©', text: 'et 4x sans frais', Icon: ShieldCheck },
-    { title: 'Meubles uniques', text: 'SÃ©lectionnÃ©s avec passion', Icon: Sparkles },
+    { title: 'Livraison soignée', text: 'Partout en France', Icon: Truck },
+    { title: 'Paiement sécurisé', text: 'et 4x sans frais', Icon: ShieldCheck },
+    { title: 'Meubles uniques', text: 'Sélectionnés avec passion', Icon: Sparkles },
 ];
 
 const menuContentVariants = {
@@ -183,20 +183,20 @@ export default function GlobalMenuMobile({
 
     const primaryLinks = [
         { label: 'Accueil', desc: 'Galerie principale', Icon: Home, active: isGalleryContext, action: () => navigateToPath('/') },
-        { label: 'Ã€ propos', desc: 'Atelier et histoire', Icon: UserRound, active: false, action: openAbout },
+        { label: 'À propos', desc: 'Atelier et histoire', Icon: UserRound, active: false, action: openAbout },
         { label: 'Commandes', desc: 'Espace client', Icon: Package, active: currentView === 'my-orders', action: () => (isSignedIn ? navigateToPath('/mes-commandes') : handleLogin()) },
         { label: 'Devis', desc: 'Projet sur mesure', Icon: ClipboardCheck, active: false, action: openQuoteRequest },
         ...(isAdmin ? [{ label: 'Admin.', desc: 'Backoffice', Icon: ShieldCheck, active: currentView === 'admin', action: () => navigateToPath('/admin') }] : []),
     ];
 
     const mobileRows = [
-        { label: 'NouveautÃ©s', badge: 'Nouveau', Icon: Sparkles, action: () => navigateToPath('/#gallery-pieces') },
+        { label: 'Nouveautés', badge: 'Nouveau', Icon: Sparkles, action: () => navigateToPath('/#gallery-pieces') },
         { label: 'Meubles', Icon: DoorOpen, action: () => goToCategory('meubles') },
         { label: 'Assises', Icon: Armchair, action: () => goToCategory('assises') },
-        { label: 'Ã‰clairage', Icon: Lamp, action: () => goToCategory('eclairage') },
-        { label: 'DÃ©corations', Icon: Flower2, action: () => goToCategory('decorations') },
+        { label: 'Éclairage', Icon: Lamp, action: () => goToCategory('eclairage') },
+        { label: 'Décorations', Icon: Flower2, action: () => goToCategory('decorations') },
         { label: 'Prix bas', Icon: BadgeEuro, accent: true, action: () => navigateToPath('/#gallery-small-prices') },
-        { label: 'Ã€ propos', Icon: UserRound, action: openAbout },
+        { label: 'À propos', Icon: UserRound, action: openAbout },
     ];
 
     return (
@@ -304,7 +304,7 @@ export default function GlobalMenuMobile({
                                 <span className="min-w-0 flex-1">
                                     <span className="block truncate text-[14px] font-black">
                                         Mon espace
-                                        {user.emailVerified && <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-500">VÃ©rifiÃ©</span>}
+                                        {user.emailVerified && <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-500">Vérifié</span>}
                                     </span>
                                     <span className={`mt-1 block truncate text-[13px] ${mutedText}`}>{user.email || user.displayName || 'Commandes et suivi'}</span>
                                 </span>
@@ -322,7 +322,7 @@ export default function GlobalMenuMobile({
                                 </span>
                                 <span className="min-w-0 flex-1">
                                     <span className="block text-[14px] font-black">Connexion</span>
-                                    <span className={`mt-1 block text-[13px] ${mutedText}`}>AccÃ©der Ã  votre espace</span>
+                                    <span className={`mt-1 block text-[13px] ${mutedText}`}>Accéder à votre espace</span>
                                 </span>
                                 <ChevronRight size={24} strokeWidth={1.4} />
                             </motion.button>

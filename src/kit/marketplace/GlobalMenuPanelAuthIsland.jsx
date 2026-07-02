@@ -271,7 +271,9 @@ function GlobalMenuPanelAuthContent({
       return;
     }
     closeForAction();
-    router.push(path);
+    window.requestAnimationFrame(() => {
+      router.push(path);
+    });
   }, [closeForAction, pathname, router]);
 
   const openLogin = async () => {
