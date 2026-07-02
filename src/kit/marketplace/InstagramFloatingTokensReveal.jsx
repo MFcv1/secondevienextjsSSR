@@ -11,11 +11,11 @@ export default function InstagramFloatingTokensReveal() {
       field.setAttribute('data-floating-ready', 'true');
       window.setTimeout(() => {
         field.setAttribute('data-floating-settled', 'true');
-      }, 2200);
+      }, 2800);
     };
 
     if (!('IntersectionObserver' in window)) {
-      const timeout = window.setTimeout(reveal, 240);
+      const timeout = window.setTimeout(reveal, 180);
       return () => window.clearTimeout(timeout);
     }
 
@@ -23,9 +23,9 @@ export default function InstagramFloatingTokensReveal() {
       (entries) => {
         if (!entries.some((entry) => entry.isIntersecting)) return;
         observer.disconnect();
-        window.setTimeout(reveal, 120);
+        window.setTimeout(reveal, 40);
       },
-      { rootMargin: '-8% 0px -18% 0px', threshold: 0.18 },
+      { rootMargin: '32% 0px 8% 0px', threshold: 0.01 },
     );
 
     observer.observe(field);

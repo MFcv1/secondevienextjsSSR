@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 const WISHLIST_STORAGE_KEY = 'sv_public_product_wishlist';
@@ -12,6 +12,7 @@ const prefetchedRoutes = new Set();
 const warmupQueue = [];
 let activeWarmups = 0;
 const MAX_ACTIVE_WARMUPS = 2;
+const SCROLL_HOVER_WARMUP_COOLDOWN_MS = 420;
 
 const getUniqueSources = (sources) => {
   const unique = [];
@@ -94,6 +95,7 @@ const setWishlistButtonState = (button, liked) => {
 
 export default function GalleryGridActionsIsland({ observeVisibleWarmup = false } = {}) {
   const router = useRouter();
+  const lastScrollIntentAtRef = useRef(0);
 
   const syncWishlistButtons = useCallback(() => {
     const wishlist = new Set(readWishlist());
@@ -131,6 +133,10 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false 
   useEffect(() => {
     syncWishlistButtons();
 
+    const markScrollIntent = () => {
+      lastScrollIntentAtRef.current = Date.now();
+    };
+
     const onClick = (event) => {
       const cartButton = event.target.closest?.('[data-gallery-cart-button]');
       if (cartButton) {
@@ -157,6 +163,7 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false 
 
     const onPointerOver = (event) => {
       if (event.pointerType === 'touch') return;
+      if (Date.now() - lastScrollIntentAtRef.current < SCROLL_HOVER_WARMUP_COOLDOWN_MS) return;
       const link = event.target.closest?.('[data-gallery-product-link]');
       if (link) warmupProduct(link.closest('[data-gallery-product-card]'), 'hover');
     };
@@ -180,6 +187,9 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false 
     document.addEventListener('pointerdown', onPointerDown, { passive: true });
     document.addEventListener('touchstart', onPointerDown, { passive: true });
     document.addEventListener('focusin', onFocusIn);
+    window.addEventListener('wheel', markScrollIntent, { passive: true });
+    window.addEventListener('scroll', markScrollIntent, { passive: true });
+    window.addEventListener('touchmove', markScrollIntent, { passive: true });
     window.addEventListener('storage', onStorage);
 
     return () => {
@@ -188,6 +198,9 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false 
       document.removeEventListener('pointerdown', onPointerDown);
       document.removeEventListener('touchstart', onPointerDown);
       document.removeEventListener('focusin', onFocusIn);
+      window.removeEventListener('wheel', markScrollIntent);
+      window.removeEventListener('scroll', markScrollIntent);
+      window.removeEventListener('touchmove', markScrollIntent);
       window.removeEventListener('storage', onStorage);
     };
   }, [syncWishlistButtons, warmupProduct]);
