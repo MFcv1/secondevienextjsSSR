@@ -97,14 +97,14 @@ const MENU_PANEL_OPEN_EASE = [0.22, 1, 0.36, 1];
 const MENU_CONTAINER_EASE = [0.22, 1, 0.36, 1];
 const MENU_CLOSE_EASE = [0.7, 0, 0.3, 1];
 const MENU_SEQUENCE = {
-    sidebar: { delay: 0.08, exitDelay: 0.09 },
-    categories: { delay: 0.24, exitDelay: 0.06 },
-    categoriesColumn: { delay: 0.34 },
-    discovery: { delay: 0.52 },
-    atelier: { delay: 0.7, exitDelay: 0.03 },
-    atelierInner: { delay: 0.82 },
-    atelierMedia: { delay: 0.98 },
-    services: { delay: 1.16, exitDelay: 0 },
+    sidebar: { delay: 0.22, exitDelay: 0.09 },
+    categories: { delay: 0.38, exitDelay: 0.06 },
+    categoriesColumn: { delay: 0.48 },
+    discovery: { delay: 0.66 },
+    atelier: { delay: 0.84, exitDelay: 0.03 },
+    atelierInner: { delay: 0.96 },
+    atelierMedia: { delay: 1.12 },
+    services: { delay: 1.3, exitDelay: 0 },
 };
 
 let menuImagesWarmPromise = null;
