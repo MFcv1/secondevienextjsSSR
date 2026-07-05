@@ -12,6 +12,8 @@ const GlobalMenuPanelAuthIsland = dynamic(() => import('./GlobalMenuPanelAuthIsl
 let globalMenuPanelPreloadPromise = null;
 const THEME_STORAGE_KEY = 'darkMode';
 const CLOSE_NAVIGATION_OVERLAYS_EVENT = 'sv:close-navigation-overlays';
+const MENU_OPEN_LOCK_MS = 760;
+const MENU_CLOSE_LOCK_MS = 560;
 
 const getCurrentMenuTop = () => {
   if (typeof window === 'undefined') return 110;
@@ -105,6 +107,10 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   const [panelReady, setPanelReady] = useState(false);
   const [fallbackMenuTop, setFallbackMenuTop] = useState(110);
   const closeTimerRef = useRef(null);
+  const openFrameRef = useRef(null);
+  const transitionLockTimerRef = useRef(null);
+  const transitionLockedRef = useRef(false);
+  const [transitionLocked, setTransitionLocked] = useState(false);
   const warmGlobalMenuPanel = useCallback(() => {
     const promise = preloadGlobalMenuPanel()
       .then(() => {
@@ -134,6 +140,25 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
     closeTimerRef.current = null;
   }, []);
 
+  const clearOpenFrame = useCallback(() => {
+    if (!openFrameRef.current) return;
+    window.cancelAnimationFrame(openFrameRef.current);
+    openFrameRef.current = null;
+  }, []);
+
+  const lockTransition = useCallback((duration) => {
+    transitionLockedRef.current = true;
+    setTransitionLocked(true);
+    if (transitionLockTimerRef.current) {
+      window.clearTimeout(transitionLockTimerRef.current);
+    }
+    transitionLockTimerRef.current = window.setTimeout(() => {
+      transitionLockedRef.current = false;
+      setTransitionLocked(false);
+      transitionLockTimerRef.current = null;
+    }, duration);
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
     const desktopQuery = window.matchMedia('(min-width: 1024px)');
@@ -158,38 +183,59 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
 
   useEffect(() => () => {
     clearCloseTimer();
-  }, [clearCloseTimer]);
+    clearOpenFrame();
+    if (transitionLockTimerRef.current) {
+      window.clearTimeout(transitionLockTimerRef.current);
+      transitionLockTimerRef.current = null;
+    }
+  }, [clearCloseTimer, clearOpenFrame]);
 
   const openPanel = useCallback(() => {
     clearCloseTimer();
+    clearOpenFrame();
+    lockTransition(MENU_OPEN_LOCK_MS);
     warmGlobalMenuPanel();
     setFallbackMenuTop(getCurrentMenuTop());
     setPanelMounted(true);
     setPanelClosing(false);
-    window.requestAnimationFrame(() => setPanelOpen(true));
-  }, [clearCloseTimer, warmGlobalMenuPanel]);
+    setPanelOpen(false);
+    openFrameRef.current = window.requestAnimationFrame(() => {
+      setPanelOpen(true);
+      openFrameRef.current = null;
+    });
+  }, [clearCloseTimer, clearOpenFrame, lockTransition, warmGlobalMenuPanel]);
 
   const closePanel = useCallback(() => {
     clearCloseTimer();
+    clearOpenFrame();
+    lockTransition(MENU_CLOSE_LOCK_MS);
     setPanelOpen(false);
     setPanelClosing(true);
     closeTimerRef.current = window.setTimeout(() => {
       setPanelClosing(false);
       setPanelMounted(false);
       closeTimerRef.current = null;
-    }, 1120);
-  }, [clearCloseTimer]);
+    }, 540);
+  }, [clearCloseTimer, clearOpenFrame, lockTransition]);
 
   const closePanelInstantly = useCallback(() => {
     clearCloseTimer();
+    clearOpenFrame();
+    if (transitionLockTimerRef.current) {
+      window.clearTimeout(transitionLockTimerRef.current);
+      transitionLockTimerRef.current = null;
+    }
+    transitionLockedRef.current = false;
+    setTransitionLocked(false);
     setPanelOpen(false);
     setPanelClosing(false);
     setPanelMounted(false);
-  }, [clearCloseTimer]);
+  }, [clearCloseTimer, clearOpenFrame]);
 
   const setPanelOpenWithMotion = useCallback((nextValue) => {
     const resolvedValue = typeof nextValue === 'function' ? nextValue(panelOpen) : nextValue;
     if (resolvedValue) {
+      if (transitionLockedRef.current) return;
       openPanel();
       return;
     }
@@ -197,6 +243,7 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   }, [closePanel, openPanel, panelOpen]);
 
   const togglePanel = () => {
+    if (transitionLockedRef.current) return;
     if (panelOpen) {
       closePanel();
       return;
@@ -217,6 +264,8 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
         onFocus={warmGlobalMenuPanel}
         onPointerDown={warmGlobalMenuPanel}
         onPointerEnter={warmGlobalMenuPanel}
+        disabled={transitionLocked}
+        aria-disabled={transitionLocked}
         className={`relative mr-1 flex h-10 min-w-10 items-center justify-center gap-2 rounded-full px-2.5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5C42]/25 dark:focus-visible:ring-[#D9B58D]/45 md:mr-0 md:px-3.5 ${effectiveDarkMode ? 'bg-white/[0.08] text-stone-100 ring-1 ring-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:bg-white/[0.14] hover:text-[#D9B58D]' : 'bg-white text-stone-900 shadow-sm shadow-stone-900/5 hover:text-[#8B5C42] dark:bg-white/[0.08] dark:text-stone-100 dark:ring-1 dark:ring-white/[0.08] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] dark:hover:bg-white/[0.14] dark:hover:text-[#D9B58D]'}`}
         aria-label={panelOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
         aria-expanded={panelOpen}

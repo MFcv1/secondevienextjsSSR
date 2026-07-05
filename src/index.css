@@ -467,73 +467,10 @@ html.gallery-entry-scroll-lock {
   background: rgba(120, 113, 108, 0.56);
 }
 
-.global-menu-desktop-content,
-.global-menu-reveal-container {
+.global-menu-desktop-content {
   transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-}
-
-.global-menu-desktop-content[data-motion-ready="true"] > .grid .global-menu-reveal-container,
-.global-menu-desktop-content[data-motion-ready="true"] > .global-menu-reveal-container {
-  opacity: 0;
-  filter: blur(2px);
-  transform: translate3d(-10px, 5px, 0) scale(0.995);
-  animation: global-menu-container-in 680ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: var(--global-menu-delay, 240ms);
-  will-change: transform, opacity, filter;
-}
-
-.global-menu-desktop-content[data-motion-state="exit"] > .grid .global-menu-reveal-container,
-.global-menu-desktop-content[data-motion-state="exit"] > .global-menu-reveal-container {
-  opacity: 1;
-  filter: blur(0);
-  transform: translate3d(0, 0, 0) scale(1);
-  animation: global-menu-container-out 260ms cubic-bezier(0.76, 0, 0.24, 1) both;
-  animation-delay: var(--global-menu-exit-delay, 0ms);
-  will-change: transform, opacity, filter;
-}
-
-@keyframes global-menu-container-in {
-  0% {
-    opacity: 0;
-    filter: blur(2px);
-    transform: translate3d(-10px, 5px, 0) scale(0.995);
-  }
-
-  52% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 1;
-    filter: blur(0);
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-
-@keyframes global-menu-container-out {
-  0% {
-    opacity: 1;
-    filter: blur(0);
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-
-  100% {
-    opacity: 0;
-    filter: blur(4px);
-    transform: translate3d(14px, -5px, 0) scale(0.992);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .global-menu-reveal-container {
-    animation: none !important;
-    opacity: 1 !important;
-    filter: none !important;
-    transform: none !important;
-    will-change: auto !important;
-  }
 }
 
 /* PERFORMANCE OPTIMIZATION */
@@ -1136,11 +1073,7 @@ img {
   z-index: -1;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--gmenu-hover-bg), transparent 78%);
-  transform: scaleX(0.84);
-  transform-origin: left center;
-  transition:
-    opacity 120ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 120ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .global-menu-hover::after {
@@ -1150,23 +1083,17 @@ img {
   height: 1px;
   border-radius: 999px;
   background: linear-gradient(90deg, var(--gmenu-hover-line), transparent);
-  transform: scaleX(0.2);
-  transform-origin: left center;
-  transition:
-    opacity 100ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 100ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .global-menu-hover:hover::before,
 .global-menu-hover:focus-visible::before {
   opacity: 1;
-  transform: scaleX(1);
 }
 
 .global-menu-hover:hover::after,
 .global-menu-hover:focus-visible::after {
   opacity: 1;
-  transform: scaleX(1);
 }
 
 .global-menu-hover--ambient::before {
@@ -1182,35 +1109,29 @@ img {
 .global-menu-hover__label,
 .global-menu-hover__desc,
 .global-menu-hover__chevron {
-  transform: translate3d(0, 0, 0);
   transition:
     color 130ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 130ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 130ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .global-menu-hover:hover .global-menu-hover__icon,
 .global-menu-hover:focus-visible .global-menu-hover__icon {
   color: var(--gmenu-hover-text);
-  transform: translate3d(2px, 0, 0) scale(1.08) rotate(-3deg);
 }
 
 .global-menu-hover:hover .global-menu-hover__label,
 .global-menu-hover:focus-visible .global-menu-hover__label {
   color: var(--gmenu-hover-text);
-  transform: translate3d(2px, 0, 0);
 }
 
 .global-menu-hover:hover .global-menu-hover__desc,
 .global-menu-hover:focus-visible .global-menu-hover__desc {
   opacity: 0.86;
-  transform: translate3d(2px, 0, 0);
 }
 
 .global-menu-hover:hover .global-menu-hover__chevron,
 .global-menu-hover:focus-visible .global-menu-hover__chevron {
   color: var(--gmenu-hover-text);
-  transform: translate3d(4px, 0, 0);
 }
 
 /* Reduce motion for users who prefer it */
@@ -2342,7 +2263,7 @@ html.dark [data-footer-mounted="true"] [class*="divide-stone"] > :not([hidden]) 
 .mega-menu-panel {
   opacity: 0;
   clip-path: inset(0 0 100% 0 round 20px);
-  transform: translate3d(0, -10px, 0) scale(0.992);
+  transform: translate3d(0, -10px, 0);
   transform-origin: top center;
   contain: paint;
   backface-visibility: hidden;
@@ -2358,13 +2279,13 @@ html.dark [data-footer-mounted="true"] [class*="divide-stone"] > :not([hidden]) 
 .mega-menu-panel[data-menu-state="open"] {
   opacity: 1;
   clip-path: inset(0 0 0 0 round 20px);
-  transform: translate3d(0, 0, 0) scale(1);
+  transform: translate3d(0, 0, 0);
 }
 
 .mega-menu-panel[data-menu-state="closing"] {
   opacity: 0;
   clip-path: inset(0 0 0 0 round 20px);
-  transform: translate3d(0, -4px, 0) scale(0.996);
+  transform: translate3d(0, -4px, 0);
   transition:
     opacity 120ms ease,
     transform 120ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -2372,34 +2293,31 @@ html.dark [data-footer-mounted="true"] [class*="divide-stone"] > :not([hidden]) 
 
 .mega-menu-col {
   opacity: 0;
-  filter: blur(4px);
   transform: translate3d(-10px, 6px, 0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  will-change: transform, opacity, filter;
+  will-change: transform, opacity;
 }
 
 .mega-menu-panel[data-menu-state="opening"] .mega-menu-col-left,
 .mega-menu-panel[data-menu-state="open"] .mega-menu-col-left {
-  animation: megaMenuColEnter 0.28s cubic-bezier(0.21, 1.02, 0.43, 1.01) both;
-  animation-delay: 0.11s;
+  animation: megaMenuColEnter 0.32s cubic-bezier(0.21, 1.02, 0.43, 1.01) both;
+  animation-delay: 0.14s;
 }
 
 .mega-menu-panel[data-menu-state="opening"] .mega-menu-col-right,
 .mega-menu-panel[data-menu-state="open"] .mega-menu-col-right {
-  animation: megaMenuColEnter 0.34s cubic-bezier(0.21, 1.02, 0.43, 1.01) both;
-  animation-delay: 0.18s;
+  animation: megaMenuColEnter 0.36s cubic-bezier(0.21, 1.02, 0.43, 1.01) both;
+  animation-delay: 0.34s;
 }
 
 @keyframes megaMenuColEnter {
   0% {
     opacity: 0;
-    filter: blur(4px);
     transform: translate3d(-10px, 6px, 0);
   }
   100% {
     opacity: 1;
-    filter: blur(0);
     transform: translate3d(0, 0, 0);
   }
 }

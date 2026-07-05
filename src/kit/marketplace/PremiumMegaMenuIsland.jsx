@@ -171,8 +171,8 @@ function NouveautesContent({ darkMode }) {
             </span>
           </span>
           <span className="relative flex h-full w-[170px] shrink-0 items-center overflow-hidden rounded-xl shadow-inner">
-            <img src={activeItem.image} alt={activeItem.title} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-            <span className="absolute inset-0 bg-stone-900/10 mix-blend-multiply transition-opacity group-hover:opacity-0" />
+            <img src={activeItem.image} alt={activeItem.title} className="absolute inset-0 h-full w-full object-cover" />
+            <span className="absolute inset-0 bg-stone-900/10 mix-blend-multiply" />
           </span>
         </Link>
       </div>
