@@ -95,6 +95,7 @@ const GlobalMenu = ({
         const header = document.querySelector('header');
         const headerBottom = header?.getBoundingClientRect().bottom || 0;
         const headerHeight = header?.offsetHeight || 110;
+        document.documentElement.style.setProperty('--global-menu-header-height', `${Math.max(0, Math.round(headerHeight))}px`);
         const nextMenuTop = Math.max(0, Math.round(headerBottom > 0 ? headerBottom : headerHeight));
         const availableHeight = Math.max(0, Math.round(window.innerHeight - nextMenuTop));
         const measuredContentHeight = isDesktopMenuViewport
@@ -167,10 +168,12 @@ const GlobalMenu = ({
             syncMenuGeometry();
             return () => {
                 root.classList.remove(DESKTOP_MENU_OPEN_CLASS);
+                root.style.removeProperty('--global-menu-header-height');
             };
         }
 
         root.classList.remove(DESKTOP_MENU_OPEN_CLASS);
+        root.style.removeProperty('--global-menu-header-height');
         return undefined;
     }, [isDesktopMenuViewport, isMenuClosing, isMenuOpen, syncMenuGeometry]);
 

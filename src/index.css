@@ -166,6 +166,10 @@ html.gallery-entry-scroll-lock {
     z-index: 2101;
     transform: none !important;
   }
+
+  html.global-menu-desktop-open header + div {
+    margin-top: var(--global-menu-header-height, 76px);
+  }
 }
 
 /* iOS-safe modal container */
