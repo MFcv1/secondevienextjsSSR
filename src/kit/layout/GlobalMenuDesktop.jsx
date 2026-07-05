@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, MotionConfig, useReducedMotion } from 'framer-motion';
 import {
     Archive,
@@ -323,6 +323,8 @@ export default function GlobalMenuDesktop({
 }) {
     const prefersReducedMotion = useReducedMotion();
     const [shouldAnimateOpen, setShouldAnimateOpen] = useState(() => isMenuOpen && !isMenuClosing);
+    const [openCycle, setOpenCycle] = useState(0);
+    const openFrameRef = useRef(null);
     const desktopMotionContext = useMemo(() => ({
         reduceMotion: Boolean(prefersReducedMotion),
     }), [prefersReducedMotion]);
@@ -342,12 +344,27 @@ export default function GlobalMenuDesktop({
 
     useEffect(() => {
         if (!isMenuOpen || isMenuClosing) {
+            if (openFrameRef.current) {
+                window.cancelAnimationFrame(openFrameRef.current);
+                openFrameRef.current = null;
+            }
             setShouldAnimateOpen(false);
             return undefined;
         }
 
-        setShouldAnimateOpen(true);
-        return undefined;
+        setShouldAnimateOpen(false);
+        setOpenCycle((cycle) => cycle + 1);
+        openFrameRef.current = window.requestAnimationFrame(() => {
+            setShouldAnimateOpen(true);
+            openFrameRef.current = null;
+        });
+
+        return () => {
+            if (openFrameRef.current) {
+                window.cancelAnimationFrame(openFrameRef.current);
+                openFrameRef.current = null;
+            }
+        };
     }, [isMenuClosing, isMenuOpen]);
 
     const isSignedIn = user && !user.isAnonymous;
@@ -402,6 +419,7 @@ export default function GlobalMenuDesktop({
                 }}
             >
                 <motion.div
+                    key={`desktop-menu-open-${openCycle}`}
                     ref={desktopContentRef}
                     className="global-menu-desktop-content w-full px-5 pb-7 pt-6 xl:px-7 2xl:px-9"
                     variants={desktopMenuContentVariants}
