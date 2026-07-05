@@ -448,10 +448,12 @@ export default function ProductDetailShellIsland({
   }, [requestImageIndex, safeImages.length]);
 
   const handleDesktopImageWheel = useCallback((event) => {
-    if (safeImages.length <= 1 || isLightboxOpen) return;
     if (typeof window !== 'undefined' && window.innerWidth < 1024) return;
 
+    event.preventDefault();
     event.stopPropagation();
+
+    if (safeImages.length <= 1 || isLightboxOpen) return;
 
     const wheel = wheelStateRef.current;
     wheel.acc += Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
@@ -567,6 +569,17 @@ export default function ProductDetailShellIsland({
 
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    root.classList.add('product-detail-scroll-lock');
+    body.classList.add('product-detail-scroll-lock');
+    return () => {
+      root.classList.remove('product-detail-scroll-lock');
+      body.classList.remove('product-detail-scroll-lock');
+    };
   }, []);
 
   useEffect(() => {
@@ -1121,7 +1134,10 @@ export default function ProductDetailShellIsland({
           </div>
         </div>
 
-        <div className="hidden lg:flex flex-1 h-[100vh] grid grid-rows-[15vh_72vh_13vh] relative overflow-hidden bg-black/5">
+        <div
+          className="hidden lg:flex flex-1 h-[100vh] grid grid-rows-[15vh_72vh_13vh] relative overflow-hidden bg-black/5"
+          onWheel={handleDesktopImageWheel}
+        >
           <div className="w-full h-full pointer-events-none" />
           <div className="w-full h-full flex flex-col items-center justify-center relative row-span-1">
             <button
@@ -1131,7 +1147,7 @@ export default function ProductDetailShellIsland({
               className="group fixed z-[130] flex items-center justify-center rounded-full text-stone-950 outline-none transition-all duration-300 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/40"
               style={{
                 top: 'clamp(5.5rem, 12vh, 8rem)',
-                right: 'calc(clamp(450px, 26vw, 500px) + 110px + 2rem)',
+                right: 'calc(var(--product-detail-sidebar-width, 500px) + 110px + 2rem)',
               }}
             >
               <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/90 shadow-[0_18px_44px_rgba(25,18,10,0.28)] backdrop-blur-md transition-all duration-300 group-hover:border-white group-hover:bg-white group-hover:shadow-[0_22px_54px_rgba(25,18,10,0.36)]">
