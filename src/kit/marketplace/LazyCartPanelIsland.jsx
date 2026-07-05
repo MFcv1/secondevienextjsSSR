@@ -21,6 +21,10 @@ const loadCartPanel = () => {
   return cartPanelPromise;
 };
 
+const warmCartPanel = () => {
+  loadCartPanel().catch(() => {});
+};
+
 const readGuestCartCount = () => {
   if (typeof window === 'undefined') return 0;
   try {
@@ -71,6 +75,24 @@ export default function LazyCartPanelIsland({ className = '', darkMode = false }
   }, []);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const preload = () => {
+      loadCartPanel()
+        .then((Component) => setCartPanel(() => Component))
+        .catch(() => {});
+    };
+
+    if ('requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(preload, { timeout: 1800 });
+      return () => window.cancelIdleCallback?.(idleId);
+    }
+
+    const timeoutId = window.setTimeout(preload, 900);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
+  useEffect(() => {
     const openCart = (event) => ensureCartPanel('sv:open-cart', event?.detail || {});
     const productAdded = (event) => ensureCartPanel('sv:product-added', event?.detail || {});
 
@@ -92,6 +114,7 @@ export default function LazyCartPanelIsland({ className = '', darkMode = false }
       className={className}
       title="Panier"
       aria-label="Panier"
+      onPointerDown={warmCartPanel}
       onPointerEnter={() => loadCartPanel().then((Component) => setCartPanel(() => Component)).catch(() => {})}
       onFocus={() => loadCartPanel().then((Component) => setCartPanel(() => Component)).catch(() => {})}
       onClick={() => ensureCartPanel('sv:open-cart')}

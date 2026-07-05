@@ -17,14 +17,14 @@ export default function ArchitecturalHeaderServer({ darkMode = false } = {}) {
   const actionButtonTone = darkMode
     ? 'text-stone-200 hover:bg-white/[0.10] hover:text-[#D9B58D] focus-visible:ring-[#D9B58D]/45'
     : 'text-stone-800 hover:bg-white hover:text-[#8B5C42] focus-visible:ring-[#8B5C42]/25 dark:text-stone-200 dark:hover:bg-white/[0.10] dark:hover:text-[#D9B58D] dark:focus-visible:ring-[#D9B58D]/45';
-  const actionButtonClass = `relative group flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${actionButtonTone}`;
+  const actionButtonClass = `relative group flex h-9 w-9 touch-manipulation items-center justify-center rounded-full transition-all duration-150 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${actionButtonTone}`;
 
   return (
     <>
       <header className={`sticky top-0 z-50 border-b transition-[transform,background-color,border-color,color,box-shadow] duration-150 ease-in-out safe-pt-header ${surfaceTone}`}>
         <div className="relative mx-auto flex h-16 max-w-[1920px] items-center justify-between px-3 md:h-[76px] md:px-8">
           <div className="z-10 -ml-1 flex shrink-0 items-center md:-ml-8">
-            <Link href="/" prefetch={false} className="group flex items-center gap-1 text-inherit no-underline">
+            <Link href="/" prefetch className="group flex touch-manipulation items-center gap-1 text-inherit no-underline" aria-label="Retour a la galerie Seconde Vie">
               <img
                 src="/images/logoanais-320.webp"
                 alt="Seconde Vie"
@@ -68,7 +68,7 @@ export default function ArchitecturalHeaderServer({ darkMode = false } = {}) {
 
               <DarkModeToggleIsland className={actionButtonClass} />
 
-              <Link href="/wishlist" prefetch={false} className={actionButtonClass} title="Ma liste de souhaits" aria-label="Ma liste de souhaits">
+              <Link href="/wishlist" prefetch className={actionButtonClass} title="Ma liste de souhaits" aria-label="Ma liste de souhaits">
                 <Heart size={18} strokeWidth={1.5} className={`transition-colors duration-300 ${darkMode ? 'text-stone-200 group-hover:text-rose-300' : 'text-stone-900 group-hover:text-rose-500 dark:text-stone-200 dark:group-hover:text-rose-300'}`} />
               </Link>
 

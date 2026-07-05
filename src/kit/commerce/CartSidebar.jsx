@@ -6,7 +6,7 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
     const [isOverlayVisible, setIsOverlayVisible] = useState(isOpen);
     const [isPresentedOpen, setIsPresentedOpen] = useState(false);
     const transitionEnabled = interacted || isOpen;
-    const baseTransition = transitionEnabled ? 'duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]' : 'duration-0';
+    const baseTransition = transitionEnabled ? 'duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]' : 'duration-0';
     const panelOpen = isOpen && isPresentedOpen;
 
     const isArch = activeDesignId === 'architectural';
@@ -19,7 +19,7 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
             setIsPresentedOpen(false);
             const timeoutId = window.setTimeout(() => {
                 setIsOverlayVisible(false);
-            }, 700);
+            }, 300);
             return () => window.clearTimeout(timeoutId);
         }
 
@@ -43,23 +43,24 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
         <div data-cart-sidebar className={`fixed inset-0 z-[2500] ${isOverlayVisible ? 'visible' : 'invisible'}`}>
             <div
                 data-cart-backdrop
-                className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${panelOpen ? 'opacity-100' : 'opacity-0'} ${darkMode ? 'bg-stone-900/60 backdrop-blur-md' : 'bg-stone-900/40 backdrop-blur-md'}`}
+                className={`absolute inset-0 transition-opacity duration-300 ease-out ${panelOpen ? 'opacity-100' : 'opacity-0'} ${darkMode ? 'bg-stone-950/62 backdrop-blur-sm' : 'bg-stone-950/24 backdrop-blur-sm'}`}
                 onClick={onClose}
             />
 
             <div
                 data-cart-panel
-                className={`absolute inset-x-0 bottom-0 h-[92dvh] rounded-t-[28px] border-t shadow-2xl transition-[transform,opacity] ${baseTransition} transform-gpu
-                px-5 safe-pb-cart safe-pt-cart
+                className={`absolute inset-0 h-full overscroll-contain border-l shadow-2xl transition-[transform,opacity] ${baseTransition} transform-gpu
+                px-4 pb-4 pt-[max(0.85rem,env(safe-area-inset-top,0px))] safe-pb-cart
                 md:inset-y-0 md:left-auto md:right-0 md:h-auto md:w-[500px] md:rounded-none md:border-l md:border-t-0 md:p-8 md:pt-6
-                flex flex-col safe-area-bottom ${panelOpen ? 'translate-y-0 md:translate-x-0 opacity-100' : 'translate-y-full md:translate-y-0 md:translate-x-full opacity-0'} ${bgClass}`}
+                flex flex-col safe-area-bottom ${panelOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'} ${bgClass}`}
             >
-                <div className={`mx-auto mb-5 h-1 w-14 rounded-full md:hidden ${darkMode ? 'bg-stone-700' : 'bg-stone-300'}`} />
-
-                <div className={`mb-6 flex items-center justify-between border-b pb-5 md:mb-10 md:pb-6 ${darkMode ? 'border-stone-800' : 'border-stone-200'}`}>
+                <div className={`mb-4 flex items-center justify-between border-b pb-4 md:mb-10 md:pb-6 ${darkMode ? 'border-stone-800' : 'border-stone-200'}`}>
                     <div className="flex items-center gap-3">
+                        <span className={`flex h-10 w-10 items-center justify-center rounded-full md:hidden ${darkMode ? 'bg-white/5 text-stone-200' : 'bg-stone-100 text-stone-900'}`}>
+                            <ShoppingBag size={18} strokeWidth={1.5} />
+                        </span>
                         <ShoppingBag size={24} className={`hidden md:block ${isArch ? (darkMode ? 'text-stone-200' : 'text-stone-900') : (darkMode ? 'text-white' : 'text-stone-900')}`} />
-                        <h2 className={`text-2xl font-black tracking-tight ${isArch ? 'font-serif font-normal tracking-wide' : ''}`}>
+                        <h2 className={`text-[22px] font-black tracking-tight md:text-2xl ${isArch ? 'font-serif font-normal tracking-wide' : ''}`}>
                             {isArch ? 'Votre panier' : 'Votre Panier'}
                         </h2>
                     </div>
@@ -75,14 +76,14 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
                                 rotate: { type: 'spring', stiffness: 450, damping: 25 },
                                 opacity: { duration: 0.3 }
                             }}
-                            className={`flex items-center justify-center will-change-transform ${darkMode ? 'text-stone-500' : 'text-stone-500'}`}
+                            className={`flex h-10 w-10 touch-manipulation items-center justify-center rounded-full will-change-transform ${darkMode ? 'bg-white/5 text-stone-300' : 'bg-stone-100 text-stone-600'}`}
                         >
                             <X size={24} strokeWidth={1} />
                         </motion.button>
                     </div>
                 </div>
 
-                <div className="ios-modal-scroll flex-1 space-y-3 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-stone-200 md:space-y-6 md:pr-2">
+                <div className="ios-modal-scroll min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain pr-1 scrollbar-thin scrollbar-thumb-stone-200 md:space-y-6 md:pr-2">
                     {cartItems.length === 0 ? (
                         <div className="flex h-full flex-col items-center justify-center gap-4 text-stone-400 opacity-60">
                             <ShoppingBag size={48} strokeWidth={1} />
@@ -92,7 +93,7 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
                         cartItems.map((item) => (
                             <div
                                 key={item.id}
-                                className={`group relative flex gap-3 rounded-2xl p-0 animate-in slide-in-from-right-8 duration-500 md:gap-4 md:border md:p-4 md:shadow-sm ${
+                                className={`group relative flex gap-3 rounded-2xl p-2 md:gap-4 md:border md:p-4 md:shadow-sm ${
                                     isArch
                                         ? 'border-stone-200 bg-transparent dark:border-stone-800'
                                         : (darkMode ? 'border-stone-700 bg-stone-800/50' : 'border-stone-100 bg-white')
@@ -113,7 +114,7 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
                                 </div>
                                 <button
                                     onClick={() => onRemoveItem(item.id)}
-                                    className={`absolute right-0 top-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors md:right-4 md:top-4 ${darkMode ? 'bg-stone-900/50 text-stone-500 hover:bg-red-500/20 hover:text-red-400' : 'bg-stone-50 text-stone-400 hover:bg-red-50 hover:text-red-500'}`}
+                                    className={`absolute right-2 top-3 flex h-9 w-9 shrink-0 touch-manipulation items-center justify-center rounded-full transition-colors active:scale-95 md:right-4 md:top-4 ${darkMode ? 'bg-stone-900/50 text-stone-500 hover:bg-red-500/20 hover:text-red-400' : 'bg-stone-50 text-stone-400 hover:bg-red-50 hover:text-red-500'}`}
                                 >
                                     <Trash2 size={14} />
                                 </button>
@@ -140,7 +141,7 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
                         </div>
                         <button
                             onClick={onCheckout}
-                            className={`flex w-full items-center justify-center rounded-md py-4 text-sm font-black transition-all shadow-xl md:py-5 md:text-xs md:uppercase md:tracking-[0.2em] ${
+                            className={`flex w-full touch-manipulation items-center justify-center rounded-md py-4 text-sm font-black shadow-xl transition-all active:scale-[0.99] md:py-5 md:text-xs md:uppercase md:tracking-[0.2em] ${
                                 isArch
                                     ? 'bg-stone-900 text-white hover:bg-stone-700 dark:bg-stone-100 dark:text-black dark:hover:bg-stone-300'
                                     : (darkMode ? 'bg-white text-stone-900 hover:bg-amber-500 hover:text-white' : 'bg-stone-900 text-white hover:bg-amber-600')
