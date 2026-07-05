@@ -15,7 +15,6 @@ import {
     Search,
     ShieldCheck,
     Sparkles,
-    Truck,
     UserRound
 } from 'lucide-react';
 import { getCategoryUrl } from '../../utils/slug';
@@ -23,12 +22,6 @@ import { getCategoryUrl } from '../../utils/slug';
 const MENU_EASE = [0.22, 1, 0.36, 1];
 const MENU_FADE_EASE = [0.16, 1, 0.3, 1];
 const MENU_CLOSE_EASE = [0.76, 0, 0.24, 1];
-
-const SERVICE_ITEMS = [
-    { title: 'Livraison soignée', text: 'Partout en France', Icon: Truck },
-    { title: 'Paiement sécurisé', text: 'et 4x sans frais', Icon: ShieldCheck },
-    { title: 'Meubles uniques', text: 'Sélectionnés avec passion', Icon: Sparkles },
-];
 
 const menuContentVariants = {
     hidden: {
@@ -186,8 +179,25 @@ export default function GlobalMenuMobile({
         { label: 'À propos', desc: 'Atelier et histoire', Icon: UserRound, active: false, action: openAbout },
         { label: 'Commandes', desc: 'Espace client', Icon: Package, active: currentView === 'my-orders', action: () => (isSignedIn ? navigateToPath('/mes-commandes') : handleLogin()) },
         { label: 'Devis', desc: 'Projet sur mesure', Icon: ClipboardCheck, active: false, action: openQuoteRequest },
-        ...(isAdmin ? [{ label: 'Admin.', desc: 'Backoffice', Icon: ShieldCheck, active: currentView === 'admin', action: () => navigateToPath('/admin') }] : []),
     ];
+    const adminLink = isAdmin
+        ? { label: 'Admin.', desc: 'Backoffice', Icon: ShieldCheck, active: currentView === 'admin', action: () => navigateToPath('/admin') }
+        : null;
+    const accountTile = isSignedIn
+        ? {
+            label: 'Mon espace',
+            desc: user.email || user.displayName || 'Commandes et suivi',
+            action: openAccount,
+            initial: (user.email || user.displayName || 'M').charAt(0).toUpperCase(),
+        }
+        : {
+            label: 'Connexion',
+            desc: 'Accéder à votre espace',
+            action: handleLogin,
+            Icon: UserRound,
+        };
+    const AccountIcon = accountTile.Icon || UserRound;
+    const AdminIcon = adminLink?.Icon;
 
     const mobileRows = [
         { label: 'Nouveautés', badge: 'Nouveau', Icon: Sparkles, action: () => navigateToPath('/#gallery-pieces') },
@@ -249,6 +259,35 @@ export default function GlobalMenuMobile({
                                     <span className={`mt-1 text-[10px] leading-tight ${mutedText}`}>{desc}</span>
                                 </motion.button>
                             ))}
+                            <motion.button
+                                type="button"
+                                onClick={accountTile.action}
+                                className={`col-span-2 flex min-h-[78px] items-center gap-3 rounded-lg px-4 text-left sm:min-h-[86px] ${softBg}`}
+                                variants={mobileRevealItemVariants}
+                                whileTap={textTapMotion}
+                            >
+                                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#9A654B] text-sm font-black text-white">
+                                    {accountTile.initial || <AccountIcon size={20} />}
+                                </span>
+                                <span className="min-w-0">
+                                    <span className="block truncate text-[13px] font-black">{accountTile.label}</span>
+                                    <span className={`mt-1 block truncate text-[12px] ${mutedText}`}>{accountTile.desc}</span>
+                                </span>
+                                <ChevronRight size={20} strokeWidth={1.4} className="ml-auto shrink-0" />
+                            </motion.button>
+                            {adminLink && (
+                                <motion.button
+                                    type="button"
+                                    onClick={adminLink.action}
+                                    className="flex min-h-[78px] flex-col items-center justify-center text-center sm:min-h-[86px]"
+                                    variants={mobileRevealItemVariants}
+                                    whileTap={textTapMotion}
+                                >
+                                    <AdminIcon size={25} strokeWidth={1.45} />
+                                    <span className="mt-2 font-serif text-[15px] font-bold leading-tight sm:text-[16px]">{adminLink.label}</span>
+                                    <span className={`mt-1 text-[10px] leading-tight ${mutedText}`}>{adminLink.desc}</span>
+                                </motion.button>
+                            )}
                         </motion.div>
 
                         <motion.div className={`my-5 h-px origin-center ${darkMode ? 'bg-stone-800' : 'bg-stone-200'}`} variants={mobileDividerVariants} />
@@ -277,56 +316,6 @@ export default function GlobalMenuMobile({
                             ))}
                         </motion.nav>
 
-                        <motion.div className={`mt-8 grid grid-cols-1 rounded-lg min-[390px]:grid-cols-3 ${softBg}`} variants={mobileRevealGroupVariants}>
-                            {SERVICE_ITEMS.slice(0, 3).map(({ title, text, Icon }, index) => (
-                                <motion.div key={title} className={`px-3 py-4 min-[390px]:py-5 ${index > 0 ? `border-t min-[390px]:border-l min-[390px]:border-t-0 ${softBorder}` : ''}`} variants={mobileRevealItemVariants}>
-                                    <span className={`mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full min-[390px]:h-12 min-[390px]:w-12 ${darkMode ? 'bg-white/5' : 'bg-white/60'} text-[#9A654B]`}>
-                                        <Icon size={23} strokeWidth={1.4} />
-                                    </span>
-                                    <span className="block text-center font-serif text-[17px] font-bold leading-tight min-[390px]:text-[18px]">{title}</span>
-                                    <span className={`mt-2 block text-center text-[12px] leading-4 ${mutedText}`}>{text}</span>
-                                </motion.div>
-                            ))}
-                        </motion.div>
-                    </motion.div>
-
-                    <motion.div className={`border-t px-6 py-5 ${softBorder}`} variants={mobileRevealItemVariants}>
-                        {isSignedIn ? (
-                            <motion.button
-                                type="button"
-                                onClick={openAccount}
-                                className="flex w-full items-center gap-4 text-left"
-                                whileTap={textTapMotion}
-                            >
-                                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#9A654B] text-lg font-black text-white">
-                                    {(user.email || user.displayName || 'M').charAt(0).toUpperCase()}
-                                </span>
-                                <span className="min-w-0 flex-1">
-                                    <span className="block truncate text-[14px] font-black">
-                                        Mon espace
-                                        {user.emailVerified && <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-500">Vérifié</span>}
-                                    </span>
-                                    <span className={`mt-1 block truncate text-[13px] ${mutedText}`}>{user.email || user.displayName || 'Commandes et suivi'}</span>
-                                </span>
-                                <ChevronRight size={24} strokeWidth={1.4} />
-                            </motion.button>
-                        ) : (
-                            <motion.button
-                                type="button"
-                                onClick={handleLogin}
-                                className="flex w-full items-center gap-4 text-left"
-                                whileTap={textTapMotion}
-                            >
-                                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#9A654B] text-white">
-                                    <UserRound size={22} />
-                                </span>
-                                <span className="min-w-0 flex-1">
-                                    <span className="block text-[14px] font-black">Connexion</span>
-                                    <span className={`mt-1 block text-[13px] ${mutedText}`}>Accéder à votre espace</span>
-                                </span>
-                                <ChevronRight size={24} strokeWidth={1.4} />
-                            </motion.button>
-                        )}
                     </motion.div>
 
                     {contactInfo?.email && (
