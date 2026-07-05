@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import WishlistView from '../../src/kit/marketplace/WishlistView';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
-import { getDb, loadFirestoreModule } from '../../src/kit/config/firebaseLazy';
 import { getCartDocumentId } from '../../src/kit/commerce/guestCart';
 import { getProductStockAmount, isPurchasable } from '../../src/kit/commerce/purchasability';
 import {
@@ -32,6 +31,11 @@ function WishlistPageContent({ initialItems = [] }) {
   }, []);
 
   useEffect(() => {
+    router.prefetch('/');
+    router.prefetch('/checkout');
+  }, [router]);
+
+  useEffect(() => {
     return subscribeWishlistItems(
       user,
       (items) => setWishlistItems(items),
@@ -40,7 +44,6 @@ function WishlistPageContent({ initialItems = [] }) {
   }, [user]);
 
   const addToCart = async (item) => {
-    if (!user || user.isAnonymous) return;
     if (!isPurchasable(item)) return;
     const cartItem = {
       originalId: item.originalId || item.id,
@@ -56,21 +59,35 @@ function WishlistPageContent({ initialItems = [] }) {
     };
     const cartDocId = getCartDocumentId(cartItem);
     if (!cartDocId) return;
-    const [db, { doc, serverTimestamp, setDoc }] = await Promise.all([getDb(), loadFirestoreModule()]);
-    await setDoc(doc(db, 'users', user.uid, 'cart', cartDocId), {
-      ...cartItem,
-      addedAt: serverTimestamp(),
-    }, { merge: true });
+    window.dispatchEvent(new CustomEvent('sv:product-added', { detail: cartItem }));
   };
 
   const toggleWishlist = async (item) => {
     const originalId = getWishlistProductId(item);
     const exists = wishlistItems.some((entry) => getWishlistProductId(entry) === originalId);
-    await setWishlistItem(item, !exists, user);
+    const previousItems = wishlistItems;
+    setWishlistItems((currentItems) => (
+      exists
+        ? currentItems.filter((entry) => getWishlistProductId(entry) !== originalId)
+        : [...currentItems, item]
+    ));
+    try {
+      await setWishlistItem(item, !exists, user);
+    } catch (error) {
+      setWishlistItems(previousItems);
+      console.error('Liste de souhaits update error:', error);
+    }
   };
 
   const handleClearWishlist = async () => {
-    await clearWishlist(wishlistItems, user);
+    const previousItems = wishlistItems;
+    setWishlistItems([]);
+    try {
+      await clearWishlist(previousItems, user);
+    } catch (error) {
+      setWishlistItems(previousItems);
+      console.error('Liste de souhaits clear error:', error);
+    }
   };
 
   return (

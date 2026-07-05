@@ -94,6 +94,7 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
   const consumedInitialEventRef = useRef(null);
 
   const primeCart = useCallback(() => {
+    CartSidebar.preload?.();
     setIsCartPrimed(true);
   }, []);
 

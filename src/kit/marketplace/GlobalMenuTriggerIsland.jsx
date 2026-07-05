@@ -33,6 +33,7 @@ const CLOSE_NAVIGATION_OVERLAYS_EVENT = 'sv:close-navigation-overlays';
 const MENU_OPEN_LOCK_MS = 260;
 const MENU_CLOSE_LOCK_MS = 220;
 const DESKTOP_MENU_CLOSE_MS = 280;
+const MOBILE_SHELL_HANDOFF_MS = 420;
 const DESKTOP_MENU_QUERY = '(min-width: 1024px)';
 const DESKTOP_MENU_OPEN_CLASS = 'global-menu-desktop-open';
 const MENU_PANEL_EASE = 'cubic-bezier(0.22,1,0.36,1)';
@@ -122,8 +123,17 @@ function MenuIcon({ open }) {
   );
 }
 
-function GlobalMenuOpeningShell({ darkMode = false, menuTop = 110, open = false, closing = false, onClose } = {}) {
+function GlobalMenuOpeningShell({
+  darkMode = false,
+  menuTop = 110,
+  open = false,
+  closing = false,
+  user = null,
+  isAdmin = false,
+  onClose,
+} = {}) {
   const interactive = open && !closing;
+  const signedUser = user && !user.isAnonymous ? user : null;
   const viewportHeight = typeof window === 'undefined' ? 900 : window.innerHeight;
   const panelTone = darkMode
     ? 'border-stone-800 bg-[#111111] text-stone-100'
@@ -152,6 +162,10 @@ function GlobalMenuOpeningShell({ darkMode = false, menuTop = 110, open = false,
     window.requestAnimationFrame(() => {
       window.dispatchEvent(new CustomEvent('sv:open-login'));
     });
+  };
+
+  const openAccount = () => {
+    navigateInstant(signedUser ? '/mes-commandes' : '/mes-commandes');
   };
 
   const handleSearchKeyDown = (event) => {
@@ -216,15 +230,17 @@ function GlobalMenuOpeningShell({ darkMode = false, menuTop = 110, open = false,
               ))}
               <button
                 type="button"
-                onClick={openLogin}
+                onClick={signedUser ? openAccount : openLogin}
                 className={`global-menu-mobile-account col-span-2 flex items-center gap-3 rounded-lg px-3.5 text-left active:scale-[0.992] ${softBg}`}
               >
                 <span className="global-menu-mobile-account-icon flex shrink-0 items-center justify-center rounded-full bg-[#9A654B] text-sm font-black text-white">
-                  <UserRound className="h-5 w-5" />
+                  {signedUser ? (signedUser.email || signedUser.displayName || 'M').charAt(0).toUpperCase() : <UserRound className="h-5 w-5" />}
                 </span>
                 <span className="min-w-0">
-                  <span className="global-menu-mobile-account-label block truncate font-black">Connexion</span>
-                  <span className={`global-menu-mobile-account-desc mt-0.5 block truncate ${mutedText}`}>Acceder a votre espace</span>
+                  <span className="global-menu-mobile-account-label block truncate font-black">{signedUser ? 'Mon espace' : 'Connexion'}</span>
+                  <span className={`global-menu-mobile-account-desc mt-0.5 block truncate ${mutedText}`}>
+                    {signedUser ? 'Commandes et suivi' : 'Acceder a votre espace'}
+                  </span>
                 </span>
                 <ChevronRight size={18} strokeWidth={1.4} className="ml-auto shrink-0" />
               </button>
@@ -233,7 +249,10 @@ function GlobalMenuOpeningShell({ darkMode = false, menuTop = 110, open = false,
             <div className={`global-menu-mobile-divider h-px origin-center ${darkMode ? 'bg-stone-800' : 'bg-stone-200'}`} />
 
             <nav className={`global-menu-mobile-nav flex min-h-0 flex-1 flex-col divide-y ${darkMode ? 'divide-stone-800' : 'divide-stone-200/80'}`}>
-              {INSTANT_MOBILE_ROWS.map(({ label, Icon, badge, accent, path }) => (
+              {[
+                ...(isAdmin ? [{ label: 'Admin.', Icon: ShieldCheck, path: '/admin' }] : []),
+                ...INSTANT_MOBILE_ROWS,
+              ].map(({ label, Icon, badge, accent, path }) => (
                 <button
                   key={label}
                   type="button"
@@ -598,12 +617,24 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
     clearCloseTimer();
     clearOpenFrame();
     const isDesktopOpen = isDesktopMenuViewport();
-    setInstantShellActive(!isDesktopOpen && !panelReadyRef.current);
+    setInstantShellActive(!isDesktopOpen);
     if (!isDesktopOpen) {
       warmGlobalMenuPanel();
     }
     presentPanel();
   }, [clearCloseTimer, clearOpenFrame, presentPanel, warmGlobalMenuPanel]);
+
+  useEffect(() => {
+    if (desktopMenuViewport || !panelOpen || !panelReady || !instantShellActive) {
+      return undefined;
+    }
+
+    const handoffTimer = window.setTimeout(() => {
+      setInstantShellActive(false);
+    }, MOBILE_SHELL_HANDOFF_MS);
+
+    return () => window.clearTimeout(handoffTimer);
+  }, [desktopMenuViewport, instantShellActive, panelOpen, panelReady]);
 
   const closePanel = useCallback(() => {
     clearCloseTimer();
@@ -753,29 +784,29 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
               onLogout={() => {}}
             />
           ) : (
-            panelMounted ? (
-              <>
-                {(!panelReady || instantShellActive) ? (
-                  <GlobalMenuOpeningShell
-                    darkMode={effectiveDarkMode}
-                    menuTop={fallbackMenuTop}
-                    open={panelOpen}
-                    closing={panelClosing}
-                    onClose={closePanel}
-                  />
-                ) : null}
-                {(panelReady && !instantShellActive) ? (
-                  <GlobalMenuPanelAuthIsland
-                    darkMode={effectiveDarkMode}
-                    panelOpen={panelOpen}
-                    isMenuClosing={panelClosing}
-                    keepMounted={panelMounted}
-                    setPanelOpen={setPanelOpenWithMotion}
-                    closePanelInstantly={closePanelInstantly}
-                  />
-                ) : null}
-              </>
-            ) : null
+            <>
+              {(!panelMounted || !panelReady || instantShellActive) ? (
+                <GlobalMenuOpeningShell
+                  darkMode={effectiveDarkMode}
+                  menuTop={fallbackMenuTop}
+                  open={panelOpen}
+                  closing={panelClosing}
+                  user={criticalAuthUser}
+                  isAdmin={criticalAuthIsAdmin}
+                  onClose={closePanel}
+                />
+              ) : null}
+              {(panelMounted && panelReady && !instantShellActive) ? (
+                <GlobalMenuPanelAuthIsland
+                  darkMode={effectiveDarkMode}
+                  panelOpen={panelOpen}
+                  isMenuClosing={panelClosing}
+                  keepMounted={panelMounted}
+                  setPanelOpen={setPanelOpenWithMotion}
+                  closePanelInstantly={closePanelInstantly}
+                />
+              ) : null}
+            </>
           )}
         </>,
         document.body
