@@ -27,6 +27,15 @@ export const preloadCurrentGlobalMenuView = () => {
         : import('./GlobalMenuMobile');
 };
 
+export const preloadDesktopGlobalMenuView = () => {
+    if (typeof window === 'undefined') return Promise.resolve(null);
+    if (!getIsDesktopMenuViewport()) return Promise.resolve(null);
+
+    const preloadView = GlobalMenuDesktop.preload?.();
+    return Promise.all([preloadView, import('./GlobalMenuDesktop')])
+        .then(([, module]) => module);
+};
+
 const useDesktopMenuViewport = () => {
     const [isDesktopMenuViewport, setIsDesktopMenuViewport] = useState(getIsDesktopMenuViewport);
 

@@ -10,10 +10,17 @@ const GlobalMenuPanelAuthIsland = dynamic(() => import('./GlobalMenuPanelAuthIsl
 });
 
 let globalMenuPanelPreloadPromise = null;
+let desktopGlobalMenuPanelPreloadPromise = null;
 const THEME_STORAGE_KEY = 'darkMode';
 const CLOSE_NAVIGATION_OVERLAYS_EVENT = 'sv:close-navigation-overlays';
 const MENU_OPEN_LOCK_MS = 260;
 const MENU_CLOSE_LOCK_MS = 220;
+const DESKTOP_MENU_QUERY = '(min-width: 1024px)';
+
+const isDesktopMenuViewport = () => (
+  typeof window !== 'undefined'
+  && window.matchMedia(DESKTOP_MENU_QUERY).matches
+);
 
 const getCurrentMenuTop = () => {
   if (typeof window === 'undefined') return 110;
@@ -21,8 +28,24 @@ const getCurrentMenuTop = () => {
   return Math.max(0, Math.round(headerBottom || 110));
 };
 
-const preloadGlobalMenuPanel = () => {
+const preloadGlobalMenuPanel = ({ waitForDesktopView = false } = {}) => {
   GlobalMenuPanelAuthIsland.preload?.();
+
+  if (waitForDesktopView) {
+    if (!desktopGlobalMenuPanelPreloadPromise) {
+      desktopGlobalMenuPanelPreloadPromise = import('./GlobalMenuPanelAuthIsland')
+        .then(async (module) => {
+          await module.preloadGlobalMenu?.({ waitForDesktopView: true });
+          return module;
+        })
+        .catch((error) => {
+          desktopGlobalMenuPanelPreloadPromise = null;
+          throw error;
+        });
+    }
+
+    return desktopGlobalMenuPanelPreloadPromise;
+  }
 
   if (!globalMenuPanelPreloadPromise) {
     globalMenuPanelPreloadPromise = import('./GlobalMenuPanelAuthIsland')
@@ -112,7 +135,7 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   const transitionLockedRef = useRef(false);
   const [transitionLocked, setTransitionLocked] = useState(false);
   const warmGlobalMenuPanel = useCallback(() => {
-    const promise = preloadGlobalMenuPanel()
+    const promise = preloadGlobalMenuPanel({ waitForDesktopView: isDesktopMenuViewport() })
       .then(() => {
         setPanelReady(true);
       })
@@ -161,22 +184,22 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
-    const desktopQuery = window.matchMedia('(min-width: 1024px)');
+    const desktopQuery = window.matchMedia(DESKTOP_MENU_QUERY);
     if (!desktopQuery.matches) return undefined;
 
-    const kickoffId = window.setTimeout(warmGlobalMenuPanel, 260);
+    const kickoffId = window.requestAnimationFrame(warmGlobalMenuPanel);
 
     if ('requestIdleCallback' in window) {
       const idleId = window.requestIdleCallback(warmGlobalMenuPanel, { timeout: 1200 });
       return () => {
-        window.clearTimeout(kickoffId);
+        window.cancelAnimationFrame(kickoffId);
         window.cancelIdleCallback?.(idleId);
       };
     }
 
     const timeoutId = window.setTimeout(warmGlobalMenuPanel, 900);
     return () => {
-      window.clearTimeout(kickoffId);
+      window.cancelAnimationFrame(kickoffId);
       window.clearTimeout(timeoutId);
     };
   }, [warmGlobalMenuPanel]);

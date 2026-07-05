@@ -41,11 +41,15 @@ const MENU_PREFETCH_PATHS = [
   '/mes-commandes',
 ];
 
-export function preloadGlobalMenu() {
+export function preloadGlobalMenu({ waitForDesktopView = false } = {}) {
   GlobalMenu.preload?.();
   return import('../layout/GlobalMenu')
-    .then((module) => {
-      module.preloadCurrentGlobalMenuView?.();
+    .then(async (module) => {
+      if (waitForDesktopView) {
+        await module.preloadDesktopGlobalMenuView?.();
+      } else {
+        module.preloadCurrentGlobalMenuView?.();
+      }
       return module;
     });
 }
