@@ -322,7 +322,7 @@ export default function GlobalMenuDesktop({
     handleLogin,
 }) {
     const prefersReducedMotion = useReducedMotion();
-    const [shouldAnimateOpen, setShouldAnimateOpen] = useState(false);
+    const [shouldAnimateOpen, setShouldAnimateOpen] = useState(() => isMenuOpen && !isMenuClosing);
     const desktopMotionContext = useMemo(() => ({
         reduceMotion: Boolean(prefersReducedMotion),
     }), [prefersReducedMotion]);
@@ -346,17 +346,8 @@ export default function GlobalMenuDesktop({
             return undefined;
         }
 
-        let secondFrameId = null;
-        const firstFrameId = window.requestAnimationFrame(() => {
-            secondFrameId = window.requestAnimationFrame(() => {
-                setShouldAnimateOpen(true);
-            });
-        });
-
-        return () => {
-            window.cancelAnimationFrame(firstFrameId);
-            if (secondFrameId !== null) window.cancelAnimationFrame(secondFrameId);
-        };
+        setShouldAnimateOpen(true);
+        return undefined;
     }, [isMenuClosing, isMenuOpen]);
 
     const isSignedIn = user && !user.isAnonymous;

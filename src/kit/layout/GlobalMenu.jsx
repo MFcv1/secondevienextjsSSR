@@ -2,11 +2,7 @@
 
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-
-const GlobalMenuDesktop = dynamic(() => import('./GlobalMenuDesktop'), {
-    ssr: false,
-    loading: () => null,
-});
+import GlobalMenuDesktop from './GlobalMenuDesktop';
 
 const GlobalMenuMobile = dynamic(() => import('./GlobalMenuMobile'), {
     ssr: false,
@@ -14,6 +10,7 @@ const GlobalMenuMobile = dynamic(() => import('./GlobalMenuMobile'), {
 });
 
 const DESKTOP_MENU_QUERY = '(min-width: 1024px)';
+const DESKTOP_MENU_OPEN_CLASS = 'global-menu-desktop-open';
 
 const getIsDesktopMenuViewport = () => (
     typeof window !== 'undefined'
@@ -22,18 +19,24 @@ const getIsDesktopMenuViewport = () => (
 
 export const preloadCurrentGlobalMenuView = () => {
     if (typeof window === 'undefined') return Promise.resolve(null);
-    return getIsDesktopMenuViewport()
-        ? import('./GlobalMenuDesktop')
+    const isDesktopMenuViewport = getIsDesktopMenuViewport();
+    if (isDesktopMenuViewport) return Promise.resolve(GlobalMenuDesktop);
+
+    const preloadView = isDesktopMenuViewport
+        ? null
+        : GlobalMenuMobile.preload?.();
+    const importView = isDesktopMenuViewport
+        ? Promise.resolve({ default: GlobalMenuDesktop })
         : import('./GlobalMenuMobile');
+
+    return Promise.all([preloadView, importView])
+        .then(([, module]) => module);
 };
 
 export const preloadDesktopGlobalMenuView = () => {
     if (typeof window === 'undefined') return Promise.resolve(null);
     if (!getIsDesktopMenuViewport()) return Promise.resolve(null);
-
-    const preloadView = GlobalMenuDesktop.preload?.();
-    return Promise.all([preloadView, import('./GlobalMenuDesktop')])
-        .then(([, module]) => module);
+    return Promise.resolve(GlobalMenuDesktop);
 };
 
 const useDesktopMenuViewport = () => {
@@ -90,8 +93,9 @@ const GlobalMenu = ({
         if (typeof window === 'undefined') return;
 
         const header = document.querySelector('header');
-        const headerBottom = header?.getBoundingClientRect().bottom;
-        const nextMenuTop = Math.max(0, Math.round(headerBottom || 110));
+        const headerBottom = header?.getBoundingClientRect().bottom || 0;
+        const headerHeight = header?.offsetHeight || 110;
+        const nextMenuTop = Math.max(0, Math.round(headerBottom > 0 ? headerBottom : headerHeight));
         const availableHeight = Math.max(0, Math.round(window.innerHeight - nextMenuTop));
         const measuredContentHeight = isDesktopMenuViewport
             ? (desktopContentRef.current?.scrollHeight || availableHeight)
@@ -154,6 +158,23 @@ const GlobalMenu = ({
     }, [isMenuClosing]);
 
     useLayoutEffect(() => {
+        if (typeof window === 'undefined' || !isDesktopMenuViewport) return undefined;
+
+        const root = document.documentElement;
+        const menuIsActive = isMenuOpen || isMenuClosing;
+        if (menuIsActive) {
+            root.classList.add(DESKTOP_MENU_OPEN_CLASS);
+            syncMenuGeometry();
+            return () => {
+                root.classList.remove(DESKTOP_MENU_OPEN_CLASS);
+            };
+        }
+
+        root.classList.remove(DESKTOP_MENU_OPEN_CLASS);
+        return undefined;
+    }, [isDesktopMenuViewport, isMenuClosing, isMenuOpen, syncMenuGeometry]);
+
+    useLayoutEffect(() => {
         if (!isMenuOpen || typeof window === 'undefined') return undefined;
 
         lockedScrollYRef.current = window.scrollY;
@@ -176,13 +197,17 @@ const GlobalMenu = ({
         root.style.scrollbarGutter = 'stable';
         root.style.overscrollBehavior = 'none';
         root.style.scrollBehavior = 'auto';
-        body.style.position = 'fixed';
-        body.style.top = `-${lockedScrollYRef.current}px`;
-        body.style.left = '0';
-        body.style.right = '0';
-        body.style.width = '100%';
+        if (!isDesktopMenuViewport) {
+            body.style.position = 'fixed';
+            body.style.top = `-${lockedScrollYRef.current}px`;
+            body.style.left = '0';
+            body.style.right = '0';
+            body.style.width = '100%';
+        }
         body.style.overflowY = 'hidden';
-        body.style.touchAction = 'none';
+        if (!isDesktopMenuViewport) {
+            body.style.touchAction = 'none';
+        }
 
         const getScrollablePanel = (target) => (
             [(isDesktopMenuViewport ? panelRef.current : mobilePanelRef.current)].find((panel) => (
@@ -250,14 +275,18 @@ const GlobalMenu = ({
             root.style.scrollbarGutter = previousRootScrollbarGutter;
             root.style.overscrollBehavior = previousRootOverscrollBehavior;
             root.style.scrollBehavior = previousRootScrollBehavior;
-            body.style.position = previousBodyPosition;
-            body.style.top = previousBodyTop;
-            body.style.left = previousBodyLeft;
-            body.style.right = previousBodyRight;
-            body.style.width = previousBodyWidth;
+            if (!isDesktopMenuViewport) {
+                body.style.position = previousBodyPosition;
+                body.style.top = previousBodyTop;
+                body.style.left = previousBodyLeft;
+                body.style.right = previousBodyRight;
+                body.style.width = previousBodyWidth;
+            }
             body.style.overflowY = previousBodyOverflowY;
-            body.style.touchAction = previousBodyTouchAction;
-            window.scrollTo({ top: restoredScrollY, behavior: 'auto' });
+            if (!isDesktopMenuViewport) {
+                body.style.touchAction = previousBodyTouchAction;
+                window.scrollTo({ top: restoredScrollY, behavior: 'auto' });
+            }
             lastTouchYRef.current = null;
         };
     }, [isDesktopMenuViewport, isMenuOpen, isMenuClosing]);

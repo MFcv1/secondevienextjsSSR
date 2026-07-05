@@ -34,6 +34,7 @@ Interdits sur routes publiques:
 ## Docs a lire selon la zone
 
 - Architecture Next native: `NEXT_NATIVE_ARCHITECTURE_BASELINE.md`, `context.md`, `mapV2.md`.
+- Mega menu desktop/Rainmaker-like et piste mobile: `megamenuupdate.md`.
 - Home galerie canonique: `_DOCS/architecture/GALLERY_HOME_CANONICAL_IMPLEMENTATION_2026-07-01.md`.
 - Galerie mobile/shell/scroll/detail: `alertemobile.md`.
 - Performance/hydratation/cache: `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md`, `_DOCS/perf/PHASE3_PERF_BASELINE_2026-06-24.md`, `_DOCS/perf/PUBLIC_SEO_BUDGET_VISUAL_CLOSEOUT_2026-07-01.md`.
@@ -72,6 +73,7 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |-- context.md : synthese courte de l'etat projet Next natif
 |-- alertemobile.md : contrat mobile galerie/shell/scroller/detail
 |-- mapV2.md : cartographie routes, infra prod, backoffice, risques et nettoyage
+|-- megamenuupdate.md : architecture menu desktop Rainmaker-like et plan mobile shell critique
 |-- RUNBOOK.md : commandes et exploitation Next/Firebase
 |-- TODO.md : backlog infra/perf/backoffice
 |-- TODO_NEXT16_UPGRADE.md : rappel migration Next 16/Turbopack et plan de test
@@ -108,7 +110,7 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |-- functions : Functions privees/admin/commerce/auth/email/seo/triggers
 |-- public : favicons, manifest, images, videos et assets statiques
 |-- deploy : dashboard deploiement sandbox
-|-- package*.json, next.config.mjs, eslint.config.mjs, jsconfig.json, tailwind.config.js, postcss.config.js
+|-- package*.json, pnpm-workspace.yaml, next.config.mjs, eslint.config.mjs, jsconfig.json, tailwind.config.js, postcss.config.js
 |-- middleware.js, apphosting.yaml, firebase.json, firestore.rules, firestore.indexes.json, storage.rules
 `-- .next, dist, node_modules, logs, .firebase : generes, hors carte
 ```

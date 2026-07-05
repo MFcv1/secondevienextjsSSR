@@ -1,13 +1,44 @@
 import { X, Trash2, ShoppingBag, ShieldCheck, Truck } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, MotionConfig } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
-const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onCheckout, interacted, darkMode, activeDesignId }) => {
+const CART_FADE_EASE = [0.16, 1, 0.3, 1];
+const CART_CLOSE_EASE = [0.76, 0, 0.24, 1];
+
+const cartPanelVariants = {
+    hidden: {
+        x: '100%',
+        opacity: 0.96,
+    },
+    visible: {
+        x: 0,
+        opacity: 1,
+        transition: {
+            type: 'spring',
+            stiffness: 520,
+            damping: 44,
+            mass: 0.78,
+            opacity: { duration: 0.16, ease: CART_FADE_EASE },
+        },
+    },
+    exit: {
+        x: '100%',
+        opacity: 0.98,
+        transition: {
+            type: 'spring',
+            stiffness: 560,
+            damping: 48,
+            mass: 0.72,
+            opacity: { duration: 0.12, ease: CART_CLOSE_EASE },
+        },
+    },
+};
+
+const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onCheckout, darkMode, activeDesignId }) => {
     const [isOverlayVisible, setIsOverlayVisible] = useState(isOpen);
     const [isPresentedOpen, setIsPresentedOpen] = useState(false);
-    const transitionEnabled = interacted || isOpen;
-    const baseTransition = transitionEnabled ? 'duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]' : 'duration-0';
     const panelOpen = isOpen && isPresentedOpen;
+    const panelAnimationState = panelOpen ? 'visible' : 'exit';
 
     const isArch = activeDesignId === 'architectural';
     const bgClass = isArch
@@ -40,6 +71,7 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
     }, [isOpen, isOverlayVisible]);
 
     return (
+        <MotionConfig reducedMotion="user">
         <div data-cart-sidebar className={`fixed inset-0 z-[2500] ${isOverlayVisible ? 'visible' : 'invisible'}`}>
             <div
                 data-cart-backdrop
@@ -47,12 +79,22 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
                 onClick={onClose}
             />
 
-            <div
+            <motion.aside
                 data-cart-panel
-                className={`absolute inset-0 h-full overscroll-contain border-l shadow-2xl transition-[transform,opacity] ${baseTransition} transform-gpu
+                variants={cartPanelVariants}
+                initial="hidden"
+                animate={panelAnimationState}
+                className={`absolute inset-0 h-full overscroll-contain border-l shadow-2xl
                 px-4 pb-4 pt-[max(0.85rem,env(safe-area-inset-top,0px))] safe-pb-cart
                 md:inset-y-0 md:left-auto md:right-0 md:h-auto md:w-[500px] md:rounded-none md:border-l md:border-t-0 md:p-8 md:pt-6
-                flex flex-col safe-area-bottom ${panelOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'} ${bgClass}`}
+                flex flex-col safe-area-bottom ${bgClass}`}
+                style={{
+                    contain: 'layout paint',
+                    transformOrigin: 'right center',
+                    willChange: 'transform, opacity',
+                    WebkitBackfaceVisibility: 'hidden',
+                    backfaceVisibility: 'hidden',
+                }}
             >
                 <div className={`mb-4 flex items-center justify-between border-b pb-4 md:mb-10 md:pb-6 ${darkMode ? 'border-stone-800' : 'border-stone-200'}`}>
                     <div className="flex items-center gap-3">
@@ -155,8 +197,9 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
                         </div>
                     </div>
                 )}
-            </div>
+            </motion.aside>
         </div>
+        </MotionConfig>
     );
 };
 

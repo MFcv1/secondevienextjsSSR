@@ -298,7 +298,7 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
 
   return (
     <>
-      <button type="button" className={className} title="Panier" aria-label="Panier" onPointerEnter={primeCart} onFocus={primeCart} onClick={openCart}>
+      <button type="button" className={className} title="Panier" aria-label="Panier" onPointerDown={primeCart} onPointerEnter={primeCart} onFocus={primeCart} onClick={openCart}>
         <CartHeaderIcon darkMode={darkMode} />
         {cartItems.length > 0 ? (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-stone-950 px-1 text-[9px] font-black leading-none text-white ring-2 ring-white dark:bg-[#D9B58D] dark:text-stone-950 dark:ring-[#080807]">

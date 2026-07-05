@@ -156,6 +156,16 @@ html.gallery-entry-scroll-lock {
   .marketplace-gallery-scroll {
     display: contents;
   }
+
+  html.global-menu-desktop-open header {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 2101;
+    transform: none !important;
+  }
 }
 
 /* iOS-safe modal container */
