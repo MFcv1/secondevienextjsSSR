@@ -56,6 +56,16 @@ global-menu-desktop-open
 
 `src/index.css` force alors le header en `fixed top: 0` au-dessus du menu. Cela evite l'anomalie ou un morceau de contenu scrolle apparaissait au-dessus du mega menu.
 
+Point important: un header `fixed` sort du flux de page. Pour eviter que la galerie remonte puis redescende a la fermeture, `GlobalMenu.jsx` mesure la hauteur reelle du header et pose:
+
+```text
+--global-menu-header-height
+```
+
+`src/index.css` applique ensuite cette hauteur comme reserve sur le bloc qui suit le header pendant `global-menu-desktop-open`.
+
+Ne pas remplacer ce couple par un simple `sticky`: au scroll profond, le header peut ne plus etre visible dans son contexte sticky et laisser un trou au-dessus du mega menu.
+
 ### Anti-spam desktop
 
 Le verrou de transition a ete assoupli sur desktop:
@@ -63,6 +73,24 @@ Le verrou de transition a ete assoupli sur desktop:
 - fermeture puis reclic peut rouvrir;
 - le verrou dur reste principalement reserve au mobile;
 - le bouton desktop ne tombe plus dans un etat ou les clics sont ignores pendant une fermeture.
+- le delai `DESKTOP_MENU_CLOSE_MS` doit rester aligne avec la duree reelle de l'animation Framer de fermeture. S'il est trop court, le panneau est demonte avant la fin du clip/fade et la fermeture parait brutale.
+
+### Re-armement des animations desktop
+
+Le mega menu desktop reste monte ferme pour etre instantane a froid. Cette architecture impose une vigilance sur les animations Framer Motion:
+
+- si les enfants restent montes en etat final, les staggers peuvent finir par ne plus rejouer;
+- certains variants `exit` gardent volontairement `opacity: 1` pour eviter un flash a la fermeture;
+- apres plusieurs ouvertures/fermetures, le bloc "Meubles par categorie" pouvait donc apparaitre d'un coup.
+
+Correction dans `src/kit/layout/GlobalMenuDesktop.jsx`:
+
+- `openCycle` s'incremente a chaque ouverture;
+- le contenu desktop recoit une `key` basee sur ce cycle;
+- l'ouverture force d'abord `hidden`;
+- la frame suivante passe a `visible`.
+
+Cela garde le menu pre-monte pour la reactivite, mais reinitialise la sequence interne a chaque ouverture. Le stagger des categories doit donc repartir proprement, meme apres beaucoup de cycles open/close.
 
 ## Fichiers principaux
 
@@ -131,6 +159,8 @@ La version mobile appliquee:
 - Ne pas remettre `GlobalMenuDesktop` en import dynamique pour le desktop.
 - Ne pas rendre le mobile plus lourd sans mesure de budget.
 - Ne pas supprimer les animations, seulement sortir les chargements de la fenetre critique.
+- Re-armer les animations internes si une surface reste montee fermee pour la reactivite.
+- Garder `fixed + reserve de hauteur` pour le header desktop pendant le mega menu; ne pas revenir a `sticky` seul.
 
 ## Extension aux surfaces panier, wishlist et hero
 
