@@ -19,7 +19,9 @@ export default function GalleryMobileShellIsland() {
     const root = document.documentElement;
     const body = document.body;
     const galleryScroll = document.getElementById('marketplaceGalleryScroll');
+    const announcementBanner = document.querySelector('[data-gallery-announcement]');
     const mediaQuery = window.matchMedia(MOBILE_MARKETPLACE_QUERY);
+    const announcementMediaQuery = window.matchMedia('(max-width: 767px)');
 
     const setViewportHeight = () => {
       const height = Math.round(window.visualViewport?.height || window.innerHeight || 0);
@@ -37,6 +39,16 @@ export default function GalleryMobileShellIsland() {
         if (shouldLock) galleryScroll.setAttribute('data-native-scroll-region', 'true');
         else galleryScroll.removeAttribute('data-native-scroll-region');
       }
+    };
+
+    const syncAnnouncementBanner = () => {
+      if (!announcementBanner) return;
+      const shouldCollapse = Boolean(
+        announcementMediaQuery.matches
+        && galleryScroll
+        && galleryScroll.scrollTop > 8
+      );
+      announcementBanner.setAttribute('data-announcement-collapsed', shouldCollapse ? 'true' : 'false');
     };
 
     const setIndicator = (distance, ready = false) => {
@@ -104,9 +116,12 @@ export default function GalleryMobileShellIsland() {
     };
 
     syncMobileShell();
+    syncAnnouncementBanner();
     mediaQuery.addEventListener?.('change', syncMobileShell);
+    announcementMediaQuery.addEventListener?.('change', syncAnnouncementBanner);
     window.addEventListener('resize', syncMobileShell);
     window.visualViewport?.addEventListener('resize', syncMobileShell);
+    galleryScroll?.addEventListener('scroll', syncAnnouncementBanner, { passive: true });
     galleryScroll?.addEventListener('touchstart', onTouchStart, { passive: true });
     galleryScroll?.addEventListener('touchmove', onTouchMove, { passive: false });
     galleryScroll?.addEventListener('touchend', onTouchEnd, { passive: true });
@@ -114,14 +129,17 @@ export default function GalleryMobileShellIsland() {
 
     return () => {
       mediaQuery.removeEventListener?.('change', syncMobileShell);
+      announcementMediaQuery.removeEventListener?.('change', syncAnnouncementBanner);
       window.removeEventListener('resize', syncMobileShell);
       window.visualViewport?.removeEventListener('resize', syncMobileShell);
+      galleryScroll?.removeEventListener('scroll', syncAnnouncementBanner);
       galleryScroll?.removeEventListener('touchstart', onTouchStart);
       galleryScroll?.removeEventListener('touchmove', onTouchMove);
       galleryScroll?.removeEventListener('touchend', onTouchEnd);
       galleryScroll?.removeEventListener('touchcancel', resetPullRefresh);
       root.classList.remove('marketplace-mobile-scroll-lock');
       body.classList.remove('marketplace-mobile-scroll-lock');
+      announcementBanner?.setAttribute('data-announcement-collapsed', 'false');
       galleryScroll?.removeAttribute('data-native-scroll-region');
     };
   }, []);

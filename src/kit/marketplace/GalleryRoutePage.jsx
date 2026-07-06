@@ -1,4 +1,5 @@
 import GalleryMobileShellIsland from '../../../app/GalleryMobileShellIsland';
+import { getGalleryPersonalization } from '../../lib/server/galleryPersonalization';
 import { getPublicCatalog, getPublicCatalogFallback } from '../../lib/server/products';
 import { publicEnv } from '../../lib/server/env';
 import { getProductUrl } from '../../utils/slug';
@@ -195,11 +196,18 @@ const buildGalleryJsonLd = (products, canonicalPath = galleryCanonicalPath) => {
 };
 
 export default async function GalleryRoutePage({ canonicalPath = galleryCanonicalPath } = {}) {
-  const products = await getGalleryProducts();
+  const [products, personalization] = await Promise.all([
+    getGalleryProducts(),
+    getGalleryPersonalization(),
+  ]);
 
   return (
     <>
-      <GalleryServerView items={products} darkMode={false} />
+      <GalleryServerView
+        items={products}
+        darkMode={false}
+        announcementMessages={personalization.announcementMessages}
+      />
       <GalleryMobileShellIsland />
       <script dangerouslySetInnerHTML={{ __html: galleryReturnRestoreScript }} />
       <script

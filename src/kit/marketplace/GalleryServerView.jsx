@@ -1,5 +1,6 @@
 import KIT_CONFIG, { GALLERY_HERO_PRESETS } from '../config/constants';
 import { GALLERY_SEO_COPY } from './seoCopy';
+import AnnouncementBannerServer from './AnnouncementBannerServer';
 import ArchitecturalHeaderServer from './ArchitecturalHeaderServer';
 import MarketplaceHeroServer from './MarketplaceHeroServer';
 import CategoryRailServer from './CategoryRailServer';
@@ -116,7 +117,7 @@ const GallerySeoIntro = ({ darkMode = false } = {}) => (
   </section>
 );
 
-export default function GalleryServerView({ items = [], darkMode = false } = {}) {
+export default function GalleryServerView({ items = [], darkMode = false, announcementMessages = [] } = {}) {
   const heroTexts = getGalleryHeroTexts();
   const visibleCategories = staticCategories.filter((category) => (
     [...(KIT_CONFIG.categoryGroups || []), ...(KIT_CONFIG.productCategories || [])]
@@ -130,6 +131,7 @@ export default function GalleryServerView({ items = [], darkMode = false } = {})
       data-next-gallery-experience="server"
       data-public-ssr-fallback
     >
+      <AnnouncementBannerServer darkMode={darkMode} messages={announcementMessages} />
       <ArchitecturalHeaderServer darkMode={darkMode} />
 
       <div className="marketplace-gallery-shell animate-in fade-in duration-500" data-detail-open="false">
