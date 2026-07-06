@@ -60,6 +60,12 @@ const normalizeCategoryList = (categories = []) => (
   [...new Set(categories.map((category) => String(category || '').trim()).filter(Boolean))].slice(0, 10)
 );
 
+const isPublicCatalogItem = (item) => (
+  item?.status === 'published'
+  && item.e2eOnly !== true
+  && !String(item.e2ePurpose || '').trim()
+);
+
 const encodeCursor = (item) => {
   const createdAt = item?.createdAt;
   if (!Number.isFinite(createdAt?.seconds)) return null;
@@ -112,11 +118,13 @@ const readPublicCollection = async (collectionName, options = {}) => {
   const snap = await ref.get();
   const docs = snap.docs.slice(0, limitCount || snap.docs.length);
   const hasMore = Boolean(limitCount && snap.docs.length > limitCount);
-  const items = docs.map((doc) => ({
-    id: doc.id,
-    collectionName,
-    ...serializeValue(doc.data())
-  }));
+  const items = docs
+    .map((doc) => ({
+      id: doc.id,
+      collectionName,
+      ...serializeValue(doc.data())
+    }))
+    .filter(isPublicCatalogItem);
 
   return {
     items,
@@ -144,7 +152,7 @@ const readPublicProduct = async (id, catalogVersion) => {
 
     if (!snap.exists) continue;
     const data = serializeValue(snap.data());
-    if (data?.status !== 'published') return null;
+    if (!isPublicCatalogItem(data)) return null;
     const result = {
       appId: APP_ID,
       catalogVersion,

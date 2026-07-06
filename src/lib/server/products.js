@@ -55,6 +55,12 @@ const normalizeSeoTitle = (value) => String(value || '')
   .toLowerCase()
   .replace(/\s+/g, ' ');
 
+const isPublicProductData = (product) => (
+  product?.status === 'published'
+  && product.e2eOnly !== true
+  && !String(product.e2ePurpose || '').trim()
+);
+
 const withTimeout = (promise, timeoutMs, label) => new Promise((resolve, reject) => {
   const timer = setTimeout(() => {
     reject(new Error(`${label} timed out after ${timeoutMs}ms`));
@@ -74,7 +80,7 @@ const withTimeout = (promise, timeoutMs, label) => new Promise((resolve, reject)
 export const isSeoIndexableProduct = (product) => {
   const title = normalizeSeoTitle(product?.name || product?.title);
   if (!product?.id || title.length < 4 || WEAK_PRODUCT_TITLES.has(title)) return false;
-  if (product?.status && product.status !== 'published') return false;
+  if (!isPublicProductData(product)) return false;
   return true;
 };
 
@@ -121,7 +127,7 @@ const getProductViaAdmin = async (id) => {
 
   if (!snap.exists) return null;
   const data = snap.data();
-  if (data?.status !== 'published') return null;
+  if (!isPublicProductData(data)) return null;
   return projectPublicProduct(snap.id, data);
 };
 
@@ -144,7 +150,10 @@ const queryProductsViaAdmin = async ({ categoryIds = [], limitCount = 120 } = {}
   }
 
   const snap = await ref.limit(Math.max(1, Math.min(limitCount, 500))).get();
-  return snap.docs.map((docSnap) => projectPublicProduct(docSnap.id, docSnap.data()));
+  return snap.docs
+    .map((docSnap) => ({ id: docSnap.id, data: docSnap.data() }))
+    .filter(({ data }) => isPublicProductData(data))
+    .map(({ id, data }) => projectPublicProduct(id, data));
 };
 
 const getProductViaPublicCatalog = async (id) => {
@@ -162,7 +171,7 @@ const getProductViaPublicCatalog = async (id) => {
 
   const payload = await response.json();
   const product = payload?.product || (payload?.collections?.furniture || []).find((item) => item.id === id);
-  if (!product || product.status !== 'published') return null;
+  if (!isPublicProductData(product)) return null;
   return projectPublicProduct(product.id, product);
 };
 
@@ -186,12 +195,11 @@ const fromFirestoreRestValue = (value) => {
 const fromFirestoreRestDocument = (document) => {
   if (!document?.fields) return null;
   const id = String(document.name || '').split('/').pop();
-  return projectPublicProduct(
-    id,
-    Object.fromEntries(
-      Object.entries(document.fields).map(([key, value]) => [key, fromFirestoreRestValue(value)])
-    )
+  const data = Object.fromEntries(
+    Object.entries(document.fields).map(([key, value]) => [key, fromFirestoreRestValue(value)])
   );
+  if (!isPublicProductData(data)) return null;
+  return projectPublicProduct(id, data);
 };
 
 const firestoreRestBaseUrl = () => {
@@ -212,7 +220,7 @@ const getProductViaFirestoreRest = async (id) => {
   });
   if (!response.ok) return null;
   const product = fromFirestoreRestDocument(await response.json());
-  if (!product || product.status !== 'published') return null;
+  if (!product) return null;
   return product;
 };
 
@@ -274,7 +282,7 @@ const queryProductsViaFirestoreRest = async ({ categoryIds = [], limitCount = 24
   const rows = await response.json();
   return rows
     .map((row) => fromFirestoreRestDocument(row.document))
-    .filter((product) => product?.status === 'published');
+    .filter(Boolean);
 };
 
 export const getPublicProduct = cache(async (slugOrId) => {
@@ -318,7 +326,7 @@ export const getPublicCatalog = cache(async (params = '') => {
   });
   if (!response.ok) return [];
   const payload = await response.json();
-  return (payload?.collections?.furniture || []).filter((item) => item.status === 'published');
+  return (payload?.collections?.furniture || []).filter(isPublicProductData);
 });
 
 export const getPublicCatalogFallback = cache(async ({ categoryIds = [], limitCount = 24 } = {}) => {

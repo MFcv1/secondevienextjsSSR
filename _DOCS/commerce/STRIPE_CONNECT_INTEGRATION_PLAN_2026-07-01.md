@@ -153,7 +153,7 @@ node --check functions/src/commerce/cleanupPendingPayments.js
 Test bout en bout cible:
 
 ```powershell
-npm run e2e:seed-stripe-product
+$env:E2E_STRIPE_PRODUCT_ID = "<produit-sandbox-leger-explicite>"
 npm run e2e:hosted-stripe
 ```
 
@@ -221,7 +221,7 @@ Preuves runtime restantes:
 
 Note E2E 2026-07-02:
 
-- `scripts/seed-e2e-stripe-product.mjs` sait utiliser `FIREBASE_SERVICE_ACCOUNT_JSON` local pour preparer le produit sandbox.
+- Note 2026-07-06: le seed local du produit Stripe sandbox dedie a ete retire; utiliser `E2E_STRIPE_PRODUCT_ID` seulement avec un produit sandbox explicite si un nouveau run checkout est necessaire.
 - `functions/src/commerce/e2eCheckoutProof.js` est compatible Connect: lecture PI/event/idempotence avec `stripeAccount`.
 - `scripts/e2e-refund-latest-stripe-order.mjs` ajoute une preuve refund reutilisable.
 - Warnings observes mais non bloquants: App Check debug token non enregistre pour Playwright et moyens Stripe `klarna`, `bancontact`, `ideal`, `apple_pay` non actives/verifies en sandbox.

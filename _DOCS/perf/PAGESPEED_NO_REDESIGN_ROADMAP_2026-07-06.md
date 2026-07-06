@@ -17,19 +17,21 @@ Les corrections doivent rester invisibles ou quasi invisibles:
 
 ## Priorite 1 - Produit test avec image carte enorme
 
-Constat PageSpeed:
+Statut 2026-07-06: termine. Le produit de test a ete supprime de Firestore sandbox, `catalogVersion` a ete bump, `/api/revalidate-catalog` a repondu 200, `publicCatalog` a ete redeploye, et les controles publics ne retrouvent plus ni son id ni son libelle dans `/` et `/galerie`.
 
-Le produit public de test `[TEST STRIPE SANDBOX] Produit refund repetable` utilise `/images/gallery-hero-1.webp` comme image carte. Lighthouse estime environ 639 KiB gaspilles sur ce seul item.
+Constat PageSpeed initial:
 
-Action recommandee:
+Le produit public de test `[TEST STRIPE SANDBOX] Produit refund repetable` utilisait `/images/gallery-hero-1.webp` comme image carte. Lighthouse estimait environ 639 KiB gaspilles sur ce seul item.
 
-1. Retirer ce produit test du catalogue public.
-2. Ou lui donner une vraie miniature legere compatible carte.
-3. Verifier qu'il reste accessible uniquement dans le contexte test/admin si necessaire.
+Action realisee:
+
+1. Document Firestore sandbox `sv-e2e-stripe-refund-product` supprime.
+2. Revalidation catalogue lancee avec succes.
+3. Function publique `publicCatalog` redeployee avec le filtre `e2eOnly` / `e2ePurpose`.
+4. Verification post-deploiement OK: catalogue public, `/` et `/galerie` ne contiennent plus le produit.
 
 Garde-fous:
 
-- ne pas supprimer les donnees de test utiles au checkout/refund;
 - ne pas masquer des produits reels;
 - ne pas changer le layout galerie.
 
@@ -174,11 +176,10 @@ Puis audit headers sandbox avec captures HTTP avant/apres.
 
 ## Ordre recommande
 
-1. Corriger le produit test public a image enorme.
-2. Backfill sandbox `thumb320/thumb384`.
-3. Ajouter/corriger `/favicon.ico`.
-4. Corriger les points accessibilite desktop sans redesign.
-5. Auditer et corriger les headers `no-store` publics si confirme.
+1. Backfill sandbox `thumb320/thumb384`.
+2. Ajouter/corriger `/favicon.ico`.
+3. Corriger les points accessibilite desktop sans redesign.
+4. Auditer et corriger les headers `no-store` publics si confirme.
 
 ## Gates de cloture
 
@@ -200,4 +201,3 @@ npm run images:card-thumbs:dry -- --published-only --env=sandbox
 ```
 
 Production uniquement dans une passe separee, apres validation explicite.
-

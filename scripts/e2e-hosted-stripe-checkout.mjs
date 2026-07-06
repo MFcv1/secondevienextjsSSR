@@ -40,7 +40,7 @@ const stripePaymentMethod = String(process.env.E2E_STRIPE_PAYMENT_METHOD || 'car
 const stripeIdealBank = String(process.env.E2E_STRIPE_IDEAL_BANK || 'ING').trim();
 const authorizeStripeRedirect = String(process.env.E2E_STRIPE_AUTHORIZE_REDIRECT || 'true').toLowerCase() !== 'false';
 const expectStripeFailure = String(process.env.E2E_EXPECT_STRIPE_FAILURE || 'false').toLowerCase() === 'true';
-const targetProductId = String(process.env.E2E_STRIPE_PRODUCT_ID || 'sv-e2e-stripe-refund-product').trim();
+const targetProductId = String(process.env.E2E_STRIPE_PRODUCT_ID || '').trim();
 const skipProductsPattern = String(process.env.E2E_SKIP_PRODUCTS_REGEX || '').trim();
 const skipProductsRegex = skipProductsPattern ? new RegExp(skipProductsPattern, 'i') : null;
 const allowNonSandboxTarget = String(process.env.E2E_ALLOW_NON_SANDBOX || 'false').toLowerCase() === 'true';
@@ -108,10 +108,10 @@ const classifyKnownFailure = (error) => {
       guidance: 'Use a fresh Gmail alias, provide E2E_GMAIL_APP_PASSWORD, or rerun after the OTP rate limit cools down.',
     },
     {
-      code: 'seed-product-missing',
-      status: 'known-blocked-seed-product',
-      pattern: /Dedicated E2E product|e2e:seed-stripe-product|No available product/i,
-      guidance: 'Run npm run e2e:seed-stripe-product against the sandbox before the hosted checkout E2E.',
+      code: 'checkout-product-unavailable',
+      status: 'known-blocked-product-unavailable',
+      pattern: /Target checkout product|No available product/i,
+      guidance: 'Publish a lightweight sandbox product or set E2E_STRIPE_PRODUCT_ID to a known available sandbox product before running the checkout E2E.',
     },
     {
       code: 'proof-token-missing-or-rejected',
@@ -439,7 +439,7 @@ const pickCartButton = async (page) => {
   const selected = targetProductId ? targetCandidate : candidates[0];
   if (!selected) {
     throw new Error(targetProductId
-      ? `Dedicated E2E product "${targetProductId}" was not found with positive price and visible stock. Run npm run e2e:seed-stripe-product first.`
+      ? `Target checkout product "${targetProductId}" was not found with positive price and visible stock.`
       : 'No available product with positive price and visible stock was found for checkout.');
   }
 
@@ -697,7 +697,7 @@ const loadTargetCartItemViaFirestoreRest = async (page) => page.evaluate(async (
     id: productId,
     originalId: productId,
     collectionName: 'furniture',
-    name: readString('name') || readString('title') || '[TEST STRIPE SANDBOX] Produit refund repetable',
+    name: readString('name') || readString('title') || 'Piece Seconde Vie',
     price: readNumber('currentPrice') || readNumber('startingPrice'),
     stock: readNumber('stock'),
     sold: readBool('sold'),

@@ -408,11 +408,10 @@ Roadmap d'execution dediee: `_DOCS/commerce/E2E_REFUND_EXECUTION_ROADMAP_2026-06
   - [x] verifie que la reconnexion conserve le meme UID Firebase;
   - [x] dernier run OK: `logs/auth-email-otp-e2e-2026-06-22T14-16-55-637Z.json`.
 - [x] Creer un produit sandbox dedie aux tests Stripe:
-  - [x] script de seed/reset ajoute: `npm run e2e:seed-stripe-product`;
-  - [x] produit clairement marque test: `[TEST STRIPE SANDBOX] Produit refund repetable`;
-  - [x] stock connu et restaurable via `E2E_STRIPE_PRODUCT_STOCK`;
-  - [x] produit effectivement cree/verifie dans Firestore sandbox apres execution du seed;
-  - [x] reset possible avant/apres run.
+  - [x] historique 2026-06: produit dedie utilise pour les preuves refund repetables;
+  - [x] nettoyage 2026-07-06: ancien script npm de seed Stripe et seed local supprimes;
+  - [x] nettoyage 2026-07-06: lectures publiques filtrent les documents `e2eOnly` / `e2ePurpose`;
+  - [x] nettoyage 2026-07-06: document Firestore sandbox supprime, `catalogVersion` bump, revalidation API 200, `publicCatalog` redeploye.
 - [ ] Creer ou documenter un compte client test verifie dedie:
   - [x] email verifie confirme pour `loa.gto15@gmail.com` via Identity Toolkit;
   - [x] mot de passe attendu hors repo via `E2E_PASSWORD` dans `logs/e2e-mail.env` ou env shell ignore Git;
@@ -421,7 +420,7 @@ Roadmap d'execution dediee: `_DOCS/commerce/E2E_REFUND_EXECUTION_ROADMAP_2026-06
   - [ ] rotation si partage accidentel.
 - [x] Supprimer les exclusions fragiles par nom dans le script E2E:
   - [x] ne plus eviter manuellement `Buffet`, `dd`, `Chaise`;
-  - [x] choisir le produit test dedie via `E2E_STRIPE_PRODUCT_ID` par defaut `sv-e2e-stripe-refund-product`;
+  - [x] nettoyage 2026-07-06: aucun produit test n'est cible par defaut; `E2E_STRIPE_PRODUCT_ID` reste optionnel pour un produit sandbox explicite;
   - [x] E2E complet repetable 3 fois sans consommer le catalogue.
 - [x] Redacter les logs E2E:
   - [x] masquer `password`;
