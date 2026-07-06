@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import {
   AlignLeft,
+  ChevronLeft,
   Heart,
   X,
 } from 'lucide-react';
@@ -952,6 +953,24 @@ export default function ProductDetailShellIsland({
 
       <main className="w-full h-full lg:overflow-hidden lg:flex lg:flex-row relative">
         <div ref={mobileShellRef} className={`fixed inset-0 overflow-hidden overscroll-none transition-colors duration-500 lg:hidden ${darkMode ? 'bg-[#0A0A0A]' : 'bg-[#FAFAF9]'}`} style={{ height: 'var(--marketplace-viewport-height, 100svh)' }}>
+          <nav
+            className={`absolute left-4 top-[calc(env(safe-area-inset-top)+0.75rem)] z-30 flex max-w-[calc(100%-2rem)] items-center gap-2 rounded-full px-3 py-1.5 shadow-[0_14px_34px_rgba(24,18,12,0.14)] backdrop-blur-md ring-1 ${darkMode ? 'bg-[#111111]/82 text-stone-200 ring-white/10' : 'bg-white/82 text-stone-900 ring-white/70'}`}
+            aria-label="Fil d'Ariane"
+          >
+            <button
+              type="button"
+              onClick={closeToGallery}
+              className={`inline-flex min-h-8 items-center gap-1 text-[9px] font-black uppercase tracking-[0.16em] transition-colors ${darkMode ? 'text-stone-300 active:text-white' : 'text-stone-600 active:text-stone-950'}`}
+            >
+              <ChevronLeft size={13} strokeWidth={1.7} />
+              Galerie
+            </button>
+            <span className={darkMode ? 'text-stone-600' : 'text-stone-300'}>/</span>
+            <span className={`max-w-[9.5rem] truncate text-[9px] font-black uppercase tracking-[0.16em] ${darkMode ? 'text-stone-100' : 'text-stone-700'}`}>
+              {title}
+            </span>
+          </nav>
+
           <div ref={mobileThumbLayerRef} className={`absolute top-0 left-0 w-full z-20 px-3 safe-pt-product-thumbs pb-1 transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${isMobilePanelOpen ? '-translate-y-full' : 'translate-y-0'}`}>
             <ProductThumbRail
               images={safeImages}

@@ -1,8 +1,9 @@
 import React from 'react';
-import { ChevronLeft, X, Upload, ShoppingCart, Heart } from 'lucide-react';
+import { X, Upload, ShoppingCart, Heart } from 'lucide-react';
 import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage } from '../../utils/imageUtils';
 import { getProductUrl } from '../../utils/slug';
 import { getPurchaseUnavailableLabel, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
+import PageBreadcrumb from './PageBreadcrumb';
 
 const WishlistView = ({
     wishlistItems = [],
@@ -45,20 +46,12 @@ const WishlistView = ({
             {/* Liste de souhaits header */}
             <div className={`px-4 py-10 md:py-14 text-center border-b ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
                 <div className="mx-auto max-w-[1480px]">
-                    <nav className="mb-8 hidden items-center gap-3 text-left md:flex" aria-label="Fil d'Ariane">
-                        <button
-                            type="button"
-                            onClick={onBack}
-                            className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${darkMode ? 'text-stone-500 hover:text-white' : 'text-stone-400 hover:text-stone-900'}`}
-                        >
-                            <ChevronLeft size={14} />
-                            Galerie
-                        </button>
-                        <span className={`text-[10px] ${darkMode ? 'text-stone-700' : 'text-stone-300'}`}>/</span>
-                        <span className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>
-                            Liste de souhaits
-                        </span>
-                    </nav>
+                    <PageBreadcrumb
+                        current="Liste de souhaits"
+                        darkMode={darkMode}
+                        onLinkClick={onBack}
+                        className="mb-8"
+                    />
 
                 <h1 className="font-serif text-4xl md:text-5xl mb-4">Liste de souhaits</h1>
 

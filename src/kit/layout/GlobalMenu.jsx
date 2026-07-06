@@ -1,13 +1,8 @@
 'use client';
 
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import dynamic from 'next/dynamic';
 import GlobalMenuDesktop from './GlobalMenuDesktop';
-
-const GlobalMenuMobile = dynamic(() => import('./GlobalMenuMobile'), {
-    ssr: false,
-    loading: () => null,
-});
+import GlobalMenuMobile from './GlobalMenuMobile';
 
 const DESKTOP_MENU_QUERY = '(min-width: 1024px)';
 const DESKTOP_MENU_OPEN_CLASS = 'global-menu-desktop-open';
@@ -20,17 +15,7 @@ const getIsDesktopMenuViewport = () => (
 export const preloadCurrentGlobalMenuView = () => {
     if (typeof window === 'undefined') return Promise.resolve(null);
     const isDesktopMenuViewport = getIsDesktopMenuViewport();
-    if (isDesktopMenuViewport) return Promise.resolve(GlobalMenuDesktop);
-
-    const preloadView = isDesktopMenuViewport
-        ? null
-        : GlobalMenuMobile.preload?.();
-    const importView = isDesktopMenuViewport
-        ? Promise.resolve({ default: GlobalMenuDesktop })
-        : import('./GlobalMenuMobile');
-
-    return Promise.all([preloadView, importView])
-        .then(([, module]) => module);
+    return Promise.resolve(isDesktopMenuViewport ? GlobalMenuDesktop : GlobalMenuMobile);
 };
 
 export const preloadDesktopGlobalMenuView = () => {

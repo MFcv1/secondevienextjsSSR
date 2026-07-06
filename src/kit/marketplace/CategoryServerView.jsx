@@ -1,9 +1,10 @@
-import { ChevronDown, ChevronLeft, Grid3X3, LayoutGrid, List, SlidersHorizontal, X } from 'lucide-react';
+import { ChevronDown, Grid3X3, LayoutGrid, List, SlidersHorizontal, X } from 'lucide-react';
 import { getCategoryUrl, getProductUrl } from '../../utils/slug';
 import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, getProductDisplayImageSrc, getProductImageItems } from '../../utils/imageUtils';
 import { getProductStockAmount, getPurchaseUnavailableLabel, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
 import CategoryControlsIsland from './CategoryControlsIsland';
 import GalleryGridActionsIsland from './GalleryGridActionsIsland';
+import PageBreadcrumb from './PageBreadcrumb';
 import {
   CATEGORY_SORT_OPTIONS,
   buildCategoryHref,
@@ -341,15 +342,7 @@ export default function CategoryServerView({
       <GalleryGridActionsIsland observeVisibleWarmup />
       <div className={`border-b ${darkMode ? 'border-stone-800' : 'border-stone-200'}`}>
         <div className="mx-auto max-w-7xl px-4 pb-4 pt-5 md:px-8 md:py-8 lg:px-12">
-          <div className="mb-4 hidden items-center gap-3 md:flex">
-            <a href="/" className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${darkMode ? 'text-stone-500 hover:text-white' : 'text-stone-400 hover:text-stone-900'}`}>
-              <ChevronLeft size={14} /> Galerie
-            </a>
-            <span className={`text-[10px] ${darkMode ? 'text-stone-700' : 'text-stone-300'}`}>/</span>
-            <span className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>
-              {categoryLabel}
-            </span>
-          </div>
+          <PageBreadcrumb current={categoryLabel} darkMode={darkMode} className="mb-4" />
 
           <h1 className="font-serif text-[34px] leading-tight tracking-normal md:text-4xl lg:text-5xl">
             {categoryTitle}
