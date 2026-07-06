@@ -251,7 +251,7 @@ export const getProductImageItems = (item) => {
 };
 
 export const PRODUCT_CARD_IMAGE_SIZES = '(max-width: 767px) 50vw, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 20vw';
-export const PRODUCT_DETAIL_IMAGE_SIZES = '(max-width: 1023px) min(94vw, 430px), calc(100vw - 610px)';
+export const PRODUCT_DETAIL_IMAGE_SIZES = '(max-width: 1023px) min(88vw, 390px), calc(100vw - 610px)';
 export const PRODUCT_DIRECT_DETAIL_IMAGE_SIZES = '(max-width: 1023px) min(94vw, 430px), 820px';
 
 export const PRODUCT_DISPLAY_IMAGE_VARIANTS = {

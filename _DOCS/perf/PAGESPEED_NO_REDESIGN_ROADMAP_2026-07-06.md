@@ -46,27 +46,28 @@ Puis Lighthouse mobile/desktop sur Hosting sandbox.
 
 ## Priorite 2 - Backfill des variantes carte Firebase
 
-Statut:
+Statut 2026-07-06: termine en sandbox.
 
-Le code supporte maintenant `thumb320` et `thumb384`, mais les anciennes donnees doivent etre backfillees pour produire le gain complet.
+Le code supporte `thumb320` et `thumb384`, et les anciennes donnees sandbox ont ete backfillees.
 
-Action recommandee:
+Action realisee:
 
-1. Configurer les credentials Google locaux sandbox.
-2. Lancer:
+1. `scripts/backfill-product-image-card-thumbs.cjs` accepte maintenant `FIREBASE_SERVICE_ACCOUNT_JSON` / `FIREBASE_CLIENT_EMAIL` + `FIREBASE_PRIVATE_KEY`, sans fichier secret local.
+2. Dry-run sandbox OK:
 
 ```bash
 npm run images:card-thumbs:dry -- --published-only --env=sandbox
 ```
 
-3. Verifier le nombre de produits/images candidates, les chemins cibles et les estimations de poids.
-4. Si le dry-run est coherent:
+3. Commit sandbox OK:
 
 ```bash
 npm run images:card-thumbs:commit -- --published-only --env=sandbox
 ```
 
-5. Relancer les gates perf et PageSpeed sandbox.
+4. Resultat: 38 produits scannes, 309 images, 618 variantes creees, 38 documents mis a jour, `catalogVersion` bump, 0 erreur.
+5. `publicCatalog?scope=cards` expose `thumb320` et `thumb384` pour 38/38 produits.
+6. App Hosting sandbox redeploye et revalide; `/` et `/galerie` contiennent les nouvelles URLs `_thumb320_` / `_thumb384_`.
 
 Interdits:
 
@@ -77,11 +78,59 @@ Interdits:
 
 Preuves attendues:
 
-- logs JSON dans `logs/card-thumbs/`;
-- `catalogVersion` bump quand des produits sont mis a jour;
-- cartes choisissant majoritairement `thumb320`, `thumb384` ou `thumb`, pas `card/medium`.
+- dry-run: `logs/card-thumbs/2026-07-06T13-54-45-097Z-dry-run.json`;
+- commit: `logs/card-thumbs/2026-07-06T14-04-20-161Z-commit.json`;
+- revalidation: `logs/revalidate-after-card-thumbs-2026-07-06T14-05-11-112Z.json`;
+- gates sandbox OK: `mobile:contract`, `perf:product-images`, `perf:gallery-direct`, `perf:category-direct`.
 
-## Priorite 3 - Favicon 404
+## Parenthese UX - Image centrale produit mobile
+
+Statut 2026-07-06: termine et deploye sandbox.
+
+Constat:
+
+Sur mobile, l'image centrale de la fiche produit peut paraitre trop grande, proche de la taille ressentie apres ouverture du zoom/lightbox. Le zoom perd alors une partie de son role, et le titre ainsi que le bouton `Details` respirent moins.
+
+Ce point est separe du backfill `thumb320/thumb384`: il ne concerne pas les cartes galerie/categorie et ne demande aucune mutation Storage/Firestore.
+
+Etat variantes:
+
+- l'image centrale produit utilise deja `detailFast` avec fallback `medium`, `large`;
+- le zoom/lightbox garde `full` / `large` pour la haute qualite;
+- ne pas creer de nouvelle variante image pour cette parenthese sans audit dedie.
+
+Idee d'ajustement layout:
+
+```js
+width: 'min(88vw, 390px)'
+maxHeight: 'min(56svh, 560px)'
+```
+
+Effet attendu:
+
+- image centrale un peu plus elegante, moins envahissante;
+- plus de respiration autour du meuble;
+- le bouton `Details` et le titre respirent mieux;
+- le zoom retrouve un vrai role;
+- aucun changement de donnees Storage necessaire;
+- impact perf limite, sauf si la variante chargee change aussi.
+
+Garde-fous:
+
+- ne pas toucher au shell mobile galerie;
+- ne pas changer les variantes chargees sans preuve;
+- tester la page produit mobile et le zoom, car ce reglage touche le ressenti principal.
+
+Preuves attendues si ce point est traite:
+
+```bash
+npm run mobile:contract
+npm run perf:product-images
+```
+
+Puis controle visuel mobile sur une fiche produit representative.
+
+## Priorite 4 - Favicon 404
 
 Constat PageSpeed:
 
@@ -101,7 +150,7 @@ npm run build
 
 Puis controle HTTP direct sur `/favicon.ico`.
 
-## Priorite 4 - Accessibilite desktop sans redesign
+## Priorite 5 - Accessibilite desktop sans redesign
 
 Constat PageSpeed:
 
@@ -138,7 +187,7 @@ npm run perf:gallery-direct
 
 Puis Lighthouse accessibilite desktop sandbox.
 
-## Priorite 5 - Headers cache et bfcache
+## Priorite 6 - Headers cache et bfcache
 
 Constat PageSpeed:
 
@@ -176,10 +225,9 @@ Puis audit headers sandbox avec captures HTTP avant/apres.
 
 ## Ordre recommande
 
-1. Backfill sandbox `thumb320/thumb384`.
-2. Ajouter/corriger `/favicon.ico`.
-3. Corriger les points accessibilite desktop sans redesign.
-4. Auditer et corriger les headers `no-store` publics si confirme.
+1. Ajouter/corriger `/favicon.ico`.
+2. Corriger les points accessibilite desktop sans redesign.
+3. Auditer et corriger les headers `no-store` publics si confirme.
 
 ## Gates de cloture
 

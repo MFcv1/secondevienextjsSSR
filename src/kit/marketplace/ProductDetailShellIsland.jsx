@@ -46,8 +46,8 @@ const getDesktopDetailImageStyle = () => ({
 
 const getMobileDetailImageStyle = (ratio = DEFAULT_PRODUCT_IMAGE_RATIO) => ({
   aspectRatio: String(Number.isFinite(ratio) && ratio > 0 ? ratio : DEFAULT_PRODUCT_IMAGE_RATIO),
-  width: 'min(94vw, 430px)',
-  maxHeight: 'min(62svh, 620px)',
+  width: 'min(88vw, 390px)',
+  maxHeight: 'min(56svh, 560px)',
   borderRadius: '0.75rem',
   overflow: 'hidden',
   clipPath: 'inset(0 round 0.75rem)',

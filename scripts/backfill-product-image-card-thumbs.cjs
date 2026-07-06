@@ -205,6 +205,27 @@ function resolveCredential(options) {
     }
 
     if (options.serviceAccount) throw new Error(`Service account not found: ${requestedPath}`);
+
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+        const parsed = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+        if (parsed.private_key) parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
+        return {
+            credential: admin.credential.cert(parsed),
+            source: 'FIREBASE_SERVICE_ACCOUNT_JSON',
+        };
+    }
+
+    if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+        return {
+            credential: admin.credential.cert({
+                projectId: process.env.FIREBASE_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+            }),
+            source: 'FIREBASE_CLIENT_EMAIL/FIREBASE_PRIVATE_KEY',
+        };
+    }
+
     return { credential: null, source: 'Application Default Credentials / Firebase environment' };
 }
 

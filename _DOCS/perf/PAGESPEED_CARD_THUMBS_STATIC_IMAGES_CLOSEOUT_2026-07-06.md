@@ -1,7 +1,7 @@
 # PageSpeed - variantes cartes et images statiques galerie
 
 Date: 2026-07-06  
-Statut: implemente localement, sans mutation Storage production
+Statut: implemente, backfill sandbox execute, sans mutation Storage production
 
 ## Objectif
 
@@ -124,8 +124,36 @@ Resultat:
 Points bloques non lies a cette optimisation:
 
 - `npm run lint` echoue sur le probleme existant `@rushstack/eslint-patch` avec ESLint 9;
-- `npm run images:card-thumbs:dry -- --limit=1` echoue sans credentials Google locaux;
-- aucune mutation Storage n'a donc ete lancee.
+- avant reprise, `npm run images:card-thumbs:dry -- --limit=1` echouait sans credentials Google locaux.
+
+## Backfill sandbox execute
+
+Reprise 2026-07-06:
+
+- le script `scripts/backfill-product-image-card-thumbs.cjs` accepte maintenant les credentials `FIREBASE_SERVICE_ACCOUNT_JSON` ou `FIREBASE_CLIENT_EMAIL` + `FIREBASE_PRIVATE_KEY`, sans ecrire de secret local;
+- dry-run sandbox OK: `logs/card-thumbs/2026-07-06T13-54-45-097Z-dry-run.json`;
+- commit sandbox OK: `logs/card-thumbs/2026-07-06T14-04-20-161Z-commit.json`;
+- revalidation catalogue OK: `logs/revalidate-after-card-thumbs-2026-07-06T14-05-11-112Z.json`;
+- App Hosting sandbox redeploye apres commit.
+
+Resultat commit:
+
+```text
+Docs scanned: 38
+Docs with images: 38
+Docs needing update: 38
+Image slots: 309
+Created variants: 618
+Docs updated: 38
+Catalog version bumped: yes
+Errors: 0
+```
+
+Verification publique:
+
+- `publicCatalog?scope=cards`: 38/38 produits avec `thumb320` et `thumb384` sur la premiere image;
+- `/` et `/galerie` sandbox: HTML 200 avec URLs `_thumb320_` et `_thumb384_`;
+- gates sandbox OK: `mobile:contract`, `perf:product-images`, `perf:gallery-direct`, `perf:category-direct`.
 
 ## Rollback
 
@@ -137,4 +165,3 @@ Rollback code simple:
 - supprimer les sources AVIF dans la section Avant/Apres si un artefact visuel est constate.
 
 Les fichiers Storage crees par un futur backfill peuvent rester en place sans impact si le code ne les reference plus.
-
