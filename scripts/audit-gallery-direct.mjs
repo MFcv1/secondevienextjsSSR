@@ -122,7 +122,7 @@ for (const result of results) {
 }
 add('root entry: returns the gallery home directly', rootResponse.status === 200, rootResponse);
 add('legacy gallery query: returns a permanent redirect', legacyRedirect.status === 308, legacyRedirect);
-add('legacy gallery query: redirect target is /', getUrlPathname(legacyRedirect.location) === '/', legacyRedirect);
+add('legacy gallery query: redirect target is / or /galerie', ['/', '/galerie'].includes(getUrlPathname(legacyRedirect.location)), legacyRedirect);
 
 const summary = {
   baseUrl,

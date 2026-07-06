@@ -31,8 +31,8 @@ La compatibilite `/galerie` est conservee pour ne pas casser les favoris, liens 
 - `app/page.jsx` rend la galerie directement.
 - `app/galerie/page.jsx` rend le meme composant que `/`.
 - `src/kit/marketplace/GalleryRoutePage.jsx` factorise le rendu serveur galerie, les metadata, le JSON-LD et le script de retour produit.
-- `middleware.js` ne redirige plus `/` vers `/galerie`.
-- `middleware.js` nettoie seulement l'ancien `/?page=gallery` vers `/`.
+- `middleware.js` a ete retire pour ne pas forcer `Cache-Control: no-store` sur `/`.
+- `next.config.mjs` redirige l'ancien `/?page=gallery` vers `/galerie` via une redirection statique, sans middleware; `/galerie` conserve ensuite son canonical vers `/`.
 
 ### SEO
 
@@ -136,7 +136,7 @@ Ces echecs ne doivent pas etre corriges pendant une passe routing/home galerie s
 - `src/kit/marketplace/GalleryRoutePage.jsx`
 - `src/kit/marketplace/GalleryServerView.jsx`
 - `app/GalleryMobileShellIsland.jsx`
-- `middleware.js`
+- `next.config.mjs`
 - `app/sitemap.js`
 - `scripts/check-next-route-classification.cjs`
 - `scripts/audit-gallery-direct.mjs`

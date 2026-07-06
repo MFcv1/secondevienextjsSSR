@@ -114,6 +114,6 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |-- public : favicons, manifest, images, videos et assets statiques
 |-- deploy : dashboard deploiement sandbox
 |-- package*.json, pnpm-workspace.yaml, next.config.mjs, eslint.config.mjs, jsconfig.json, tailwind.config.js, postcss.config.js
-|-- middleware.js, apphosting.yaml, firebase.json, firestore.rules, firestore.indexes.json, storage.rules
+|-- apphosting.yaml, firebase.json, firestore.rules, firestore.indexes.json, storage.rules
 `-- .next, dist, node_modules, logs, .firebase : generes, hors carte
 ```

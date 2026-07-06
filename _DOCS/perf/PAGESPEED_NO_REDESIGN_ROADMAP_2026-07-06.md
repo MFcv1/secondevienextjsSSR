@@ -1,7 +1,7 @@
 # Roadmap PageSpeed sans redesign
 
 Date: 2026-07-06  
-Statut: suite recommandee apres la passe `thumb320/thumb384` + AVIF galerie
+Statut: chantiers principaux traites en sandbox; reste une mesure Lighthouse finale mobile/desktop si besoin de preuve PageSpeed externe
 
 ## Principe
 
@@ -154,6 +154,8 @@ Puis controle HTTP direct sur `/favicon.ico`.
 
 ## Priorite 5 - Accessibilite desktop sans redesign
 
+Statut 2026-07-06: termine et deploye sandbox.
+
 Constat PageSpeed:
 
 Score desktop autour de 87, surtout a cause de details de markup/classes.
@@ -174,6 +176,14 @@ Action recommandee:
 4. Quand le panier est masque, retirer les focusables du flux ou utiliser `inert`.
 5. Retablir un ordre de titres coherent.
 
+Action realisee:
+
+1. Les micro-labels de reassurance sont plus lisibles, et `FRANCE / CAVE` est remplace par `FRANCE / RETRAIT`.
+2. Le lien logo annonce `Seconde Vie par Anais - retour a la galerie`.
+3. Les dots avis gardent leur apparence, avec une surface interactive plus grande et une surbrillance active coherente.
+4. Les panneaux panier masques utilisent `inert` / `aria-hidden` pour sortir les elements focusables du parcours clavier.
+5. Les titres de la zone reassurance utilisent un niveau plus coherent autour de `LIVRAISON SOIGNEE`.
+
 Garde-fous:
 
 - garder le look global;
@@ -187,9 +197,17 @@ npm run mobile:contract
 npm run perf:gallery-direct
 ```
 
-Puis Lighthouse accessibilite desktop sandbox.
+Preuves realisees:
+
+- validation syntaxe JSX ciblee OK;
+- `git diff --check` OK;
+- deploiement App Hosting sandbox OK.
+
+Preuve restante optionnelle: Lighthouse accessibilite desktop sandbox.
 
 ## Priorite 6 - Headers cache et bfcache
+
+Statut 2026-07-06: termine et deploye sandbox.
 
 Constat PageSpeed:
 
@@ -211,6 +229,24 @@ Action recommandee:
 2. Identifier si `no-store` vient de Firebase/App Hosting, middleware, API, auth, ou service worker.
 3. Corriger uniquement les routes publiques si confirme.
 
+Audit realise:
+
+- `/` repondait en `Cache-Control: no-store` parce que le middleware passait sur la home.
+- `/galerie`, `/categorie/[categoryId]`, `/produit/[slugOrId]`, `/a-propos` et `/devis` etaient deja en ISR correct.
+
+Action realisee:
+
+1. `middleware.js` supprime.
+2. La compatibilite de l'ancien `/?page=gallery` est deplacee dans `next.config.mjs` via une redirection statique vers `/galerie`.
+3. La documentation architecture et le gate `perf:gallery-direct` ont ete ajustes pour ce nouveau chemin sans middleware.
+4. App Hosting sandbox redeploye.
+
+Resultat apres deploiement:
+
+- `/`, `/galerie`, `/categorie/buffets`, `/produit/buffet-KrTETXPknYNwgak66T8p`, `/a-propos` et `/devis`: `200 OK`, `Cache-Control: s-maxage=300, stale-while-revalidate=31535700`;
+- `/?page=gallery`: `308 Permanent Redirect` vers `/galerie?page=gallery`;
+- plus de header middleware detecte sur les routes publiques auditees.
+
 Garde-fous:
 
 - ne pas changer les tunnels dynamiques `/admin`, `/checkout`, `/wishlist`, `/mes-commandes`;
@@ -223,13 +259,18 @@ Preuves attendues:
 npm run next:routes
 ```
 
-Puis audit headers sandbox avec captures HTTP avant/apres.
+Preuves realisees:
+
+- `mobile:contract` OK;
+- `perf:gallery-direct --assert` OK sur Hosting sandbox;
+- audit headers HTTP direct OK sur les routes publiques listees ci-dessus;
+- `next:routes` source OK, mais la partie post-build locale n'a pas pu etre conclue sans artefacts `.next/server/app` locaux apres deploiement cloud.
 
 ## Ordre recommande
 
-1. Ajouter/corriger `/favicon.ico`.
-2. Corriger les points accessibilite desktop sans redesign.
-3. Auditer et corriger les headers `no-store` publics si confirme.
+1. Ajouter/corriger `/favicon.ico`: termine sandbox.
+2. Corriger les points accessibilite desktop sans redesign: termine sandbox.
+3. Auditer et corriger les headers `no-store` publics si confirme: termine sandbox.
 
 ## Gates de cloture
 

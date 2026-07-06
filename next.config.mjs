@@ -26,7 +26,23 @@ const nextConfig = {
   },
   experimental: {
     optimizePackageImports: ['lucide-react']
-  }
+  },
+  async redirects() {
+    return [
+      {
+        source: '/',
+        has: [
+          {
+            type: 'query',
+            key: 'page',
+            value: 'gallery',
+          },
+        ],
+        destination: '/galerie',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
