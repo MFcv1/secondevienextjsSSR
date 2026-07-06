@@ -61,6 +61,12 @@ const createContext = async (browser, mode) => {
 };
 
 const collectVisibleDetailState = async (page) => page.evaluate(() => {
+  const isVisible = (element) => {
+    if (!element) return false;
+    const rect = element.getBoundingClientRect();
+    const style = window.getComputedStyle(element);
+    return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || 1) !== 0;
+  };
   const mobileFrame = document.querySelector('.product-detail-mobile-image-frame');
   const mobileImage = document.querySelector('.product-detail-mobile-image-layer--current');
   const desktopMain = document.querySelector('img[data-desktop-image-ready]') || Array.from(document.querySelectorAll('main img')).find((image) => {
@@ -72,13 +78,20 @@ const collectVisibleDetailState = async (page) => page.evaluate(() => {
     const className = String(image.className || '');
     return className.includes('blur-[80px]');
   });
-  const image = mobileImage || desktopMain;
+  const mobileShellVisible = isVisible(mobileFrame);
+  const mobileImageVisible = isVisible(mobileImage);
+  const desktopMainVisible = isVisible(desktopMain);
+  const desktopBackdropVisible = isVisible(desktopBackdrop);
+  const image = mobileImageVisible ? mobileImage : desktopMainVisible ? desktopMain : mobileImage || desktopMain;
   const rect = image?.getBoundingClientRect();
 
   return {
     mobileShell: Boolean(mobileFrame),
     desktopMain: Boolean(desktopMain),
     desktopBackdrop: Boolean(desktopBackdrop),
+    mobileShellVisible,
+    desktopMainVisible,
+    desktopBackdropVisible,
     currentSrc: image?.currentSrc || image?.src || '',
     complete: Boolean(image?.complete),
     naturalWidth: image?.naturalWidth || 0,
@@ -134,17 +147,26 @@ const runMode = async (browser, mode) => {
 
   await waitForReady(page);
 
-  const firstCard = page.locator('a:has(.product-card-media)').first();
-  const href = await firstCard.evaluate((node) => node.href);
+  const firstCard = page.locator('[data-gallery-product-card]:has(.product-card-media)').first();
+  const firstOpenTarget = page.locator('[data-gallery-product-card]:has(.product-card-media) [data-gallery-product-link], a[data-gallery-product-card]:has(.product-card-media)').first();
+  const href = await firstCard.evaluate((node) => node.href || node.dataset.productUrl || node.querySelector('[data-gallery-product-link]')?.href || '');
 
   await page.evaluate(() => window.__productImageAudit.mark('before-open'));
+  const waitsForProductRoute = href.includes('/produit/');
+  const navigationPromise = waitsForProductRoute
+    ? page.waitForURL((url) => url.pathname.startsWith('/produit/'), { timeout: 30000 }).catch(() => null)
+    : null;
   if (mode === 'mobile') {
-    await firstCard.tap();
+    await firstOpenTarget.tap();
   } else {
     await firstCard.hover();
     await page.waitForTimeout(250);
-    await firstCard.click();
+    await firstOpenTarget.click();
   }
+  if (navigationPromise) {
+    await navigationPromise;
+  }
+  await page.waitForLoadState('domcontentloaded', { timeout: 30000 }).catch(() => {});
   await page.evaluate(() => window.__productImageAudit.mark('after-click'));
 
   await page.waitForFunction(() => {
@@ -230,7 +252,7 @@ const buildAssertions = (results) => {
     const activeMediumDetail = mobile.productImagesAfterClick.filter((image) => image.detailVariant && image.variant === 'medium' && image.slot === 0);
     add('mobile detail does not request full variants before zoom', fullMobileDetail.length === 0, { fullMobileDetail });
     add('mobile does not re-request the active medium detail variant', activeMediumDetail.length <= 1, { activeMediumDetail });
-    add('mobile renders the mobile detail shell', mobile.state.mobileShell && !mobile.state.desktopMain, mobile.state);
+    add('mobile renders the visible mobile detail shell', mobile.state.mobileShellVisible && !mobile.state.desktopMainVisible, mobile.state);
     add('mobile visible detail image is loaded', mobile.state.complete && mobile.state.naturalWidth > 0, mobile.state);
     add('mobile first visible detail image is ready quickly', mobile.readyAfterClickMs > 0 && mobile.readyAfterClickMs <= 1600, { readyAfterClickMs: mobile.readyAfterClickMs });
   }
@@ -238,8 +260,8 @@ const buildAssertions = (results) => {
   if (desktop) {
     const fullDesktopDetail = desktop.productImagesAfterClick.filter((image) => image.detailVariant && image.variant === 'full');
     add('desktop detail does not request full variants before zoom', fullDesktopDetail.length === 0, { fullDesktopDetail });
-    add('desktop keeps the blurred backdrop', desktop.state.desktopBackdrop === true, desktop.state);
-    add('desktop renders only the desktop detail branch', desktop.state.desktopMain && !desktop.state.mobileShell, desktop.state);
+    add('desktop keeps the visible blurred backdrop', desktop.state.desktopBackdropVisible === true, desktop.state);
+    add('desktop renders only the visible desktop detail branch', desktop.state.desktopMainVisible && !desktop.state.mobileShellVisible, desktop.state);
     add('desktop first visible detail image is ready quickly', desktop.readyAfterClickMs > 0 && desktop.readyAfterClickMs <= 1800, { readyAfterClickMs: desktop.readyAfterClickMs });
   }
 

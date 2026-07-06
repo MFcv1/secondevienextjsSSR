@@ -165,8 +165,10 @@ const readPublicProduct = async (id, catalogVersion) => {
 const firstImageVariantForCard = (imageVariants) => {
   const firstVariant = Array.isArray(imageVariants) ? imageVariants[0] : null;
   if (!firstVariant || typeof firstVariant !== 'object') return [];
-  const { thumb, card, detailFast, medium } = firstVariant;
+  const { thumb320, thumb384, thumb, card, detailFast, medium } = firstVariant;
   const projected = {};
+  if (thumb320) projected.thumb320 = thumb320;
+  if (thumb384) projected.thumb384 = thumb384;
   if (thumb) projected.thumb = thumb;
   if (card) projected.card = card;
   if (detailFast) projected.detailFast = detailFast;
@@ -208,7 +210,7 @@ const projectCardItem = (item) => {
     petitsPrixOrder: item.petitsPrixOrder,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
-    thumbnailUrl: item.thumbnailUrl || firstThumbnail || firstVariants[0]?.thumb || '',
+    thumbnailUrl: item.thumbnailUrl || firstThumbnail || firstVariants[0]?.thumb384 || firstVariants[0]?.thumb || '',
     imageUrl: item.imageUrl || firstVariants[0]?.card || firstVariants[0]?.medium || firstImage || '',
     thumbnails: firstThumbnail ? [firstThumbnail] : [],
     imageVariants: firstVariants,

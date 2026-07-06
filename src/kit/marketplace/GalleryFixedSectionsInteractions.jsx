@@ -57,6 +57,8 @@ const setupBeforeAfter = () => {
     const range = root.querySelector('[data-ba-range]');
     const beforeImg = root.querySelector('[data-ba-before-img]');
     const afterImg = root.querySelector('[data-ba-after-img]');
+    const beforeSource = root.querySelector('[data-ba-before-source]');
+    const afterSource = root.querySelector('[data-ba-after-source]');
     const tag = root.querySelector('[data-ba-tag]');
     const title = root.querySelector('[data-ba-title]');
     const desc = root.querySelector('[data-ba-desc]');
@@ -71,6 +73,8 @@ const setupBeforeAfter = () => {
     const setProject = (nextIndex) => {
       activeIndex = wrapIndex(nextIndex, projects.length);
       const project = projects[activeIndex];
+      if (beforeSource && project.avantAvif) beforeSource.setAttribute('srcset', project.avantAvif);
+      if (afterSource && project.apresAvif) afterSource.setAttribute('srcset', project.apresAvif);
       if (beforeImg) beforeImg.src = project.avant;
       if (afterImg) afterImg.src = project.apres;
       if (tag) tag.textContent = project.tag;

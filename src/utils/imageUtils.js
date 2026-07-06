@@ -61,6 +61,8 @@ const imageLoadCache = new Map();
 const imageDecodeCache = new Map();
 
 export const PRODUCT_IMAGE_VARIANT_SPECS = [
+    { key: 'thumb320', width: 320, quality: 0.73, folder: 'thumbnails' },
+    { key: 'thumb384', width: 384, quality: 0.74, folder: 'thumbnails' },
     { key: 'thumb', width: 480, quality: 0.74, folder: 'thumbnails' },
     { key: 'card', width: 768, quality: 0.78, folder: 'responsive' },
     { key: 'detailFast', width: 900, quality: 0.78, folder: 'responsive' },
@@ -217,7 +219,11 @@ export const getProductImageItems = (item) => {
         const detailFast = variants.detailFast || '';
         const card = variants.card || legacyThumb || medium;
         const thumb = variants.thumb || legacyThumb || card;
+        const thumb384 = variants.thumb384 || '';
+        const thumb320 = variants.thumb320 || '';
         const srcSet = buildSrcSet([
+            { src: thumb320, width: 320 },
+            { src: thumb384, width: 384 },
             { src: thumb, width: 480 },
             { src: card, width: 768 },
             { src: detailFast, width: 900 },
@@ -228,6 +234,8 @@ export const getProductImageItems = (item) => {
 
         return {
             src: large || full || medium || card || thumb || source,
+            thumb320,
+            thumb384,
             thumb,
             card,
             detailFast,
@@ -291,21 +299,25 @@ export const getPrimaryProductImage = (item) => {
 
 export const getProductCardImage = (item) => {
     const primary = getProductImageItems(item)[0];
-    const displaySrc = primary?.card
+    const displaySrc = primary?.thumb384
+        || primary?.thumb
+        || primary?.card
         || primary?.medium
         || primary?.large
         || primary?.src
-        || primary?.thumb
         || item?.thumbnailUrl
         || item?.imageUrl
         || item?.image
         || '';
     const cardSrcSet = buildSrcSet([
+        { src: primary?.thumb320, width: 320 },
+        { src: primary?.thumb384, width: 384 },
         { src: primary?.thumb, width: 480 },
         { src: primary?.card, width: 768 },
-        { src: primary?.medium, width: 1024 },
     ]);
     const thumbSrcSet = buildSrcSet([
+        { src: primary?.thumb320, width: 320 },
+        { src: primary?.thumb384, width: 384 },
         { src: primary?.thumb, width: 480 },
     ]);
 

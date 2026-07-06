@@ -30,6 +30,8 @@
     "images:variants:dry": "node scripts/backfill-product-image-variants.cjs --dry-run --published-only --env=sandbox",
     "images:detail-fast:dry": "node scripts/backfill-product-image-detail-fast.cjs --dry-run --published-only --env=sandbox",
     "images:detail-fast:commit": "node scripts/backfill-product-image-detail-fast.cjs --commit --confirm=DETAIL_FAST --published-only --env=sandbox",
+    "images:card-thumbs:dry": "node scripts/backfill-product-image-card-thumbs.cjs --dry-run --published-only --env=sandbox",
+    "images:card-thumbs:commit": "node scripts/backfill-product-image-card-thumbs.cjs --commit --confirm=CARD_THUMBS --published-only --env=sandbox",
     "images:orphans:dry": "node scripts/audit-storage-orphans.cjs --dry-run --env=sandbox",
     "perf:budget": "node scripts/check-performance-budget.cjs",
     "perf:compare": "node scripts/compare-spa-next.mjs",
