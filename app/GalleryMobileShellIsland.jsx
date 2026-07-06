@@ -48,6 +48,7 @@ export default function GalleryMobileShellIsland() {
         && galleryScroll
         && galleryScroll.scrollTop > 8
       );
+      root.classList.toggle('gallery-announcement-collapsed', shouldCollapse);
       announcementBanner.setAttribute('data-announcement-collapsed', shouldCollapse ? 'true' : 'false');
     };
 
@@ -138,6 +139,7 @@ export default function GalleryMobileShellIsland() {
       galleryScroll?.removeEventListener('touchend', onTouchEnd);
       galleryScroll?.removeEventListener('touchcancel', resetPullRefresh);
       root.classList.remove('marketplace-mobile-scroll-lock');
+      root.classList.remove('gallery-announcement-collapsed');
       body.classList.remove('marketplace-mobile-scroll-lock');
       announcementBanner?.setAttribute('data-announcement-collapsed', 'false');
       galleryScroll?.removeAttribute('data-native-scroll-region');

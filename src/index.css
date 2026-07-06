@@ -100,6 +100,18 @@ html.gallery-entry-scroll-lock {
 }
 
 @media (max-width: 1023px) {
+  html {
+    --gallery-mobile-announcement-height: 28px;
+    --gallery-mobile-header-height: calc(64px + env(safe-area-inset-top, 0px));
+    --gallery-mobile-initial-shell-offset: calc(28px + var(--gallery-mobile-header-height));
+    --gallery-mobile-shell-offset: calc(var(--gallery-mobile-announcement-height) + var(--gallery-mobile-header-height));
+    --gallery-mobile-first-screen-reserve: 104px;
+  }
+
+  html.gallery-announcement-collapsed {
+    --gallery-mobile-announcement-height: 0px;
+  }
+
   html.marketplace-mobile-scroll-lock,
   html.product-detail-scroll-lock {
     overscroll-behavior: none;
@@ -118,13 +130,19 @@ html.gallery-entry-scroll-lock {
 
   .marketplace-gallery-shell {
     position: fixed;
-    inset: 0;
+    inset-inline: 0;
+    top: var(--gallery-mobile-shell-offset);
+    bottom: 0;
     z-index: 20;
     width: 100%;
-    height: var(--marketplace-viewport-height, 100svh);
-    max-height: var(--marketplace-viewport-height, 100svh);
+    height: calc(var(--marketplace-viewport-height, 100svh) - var(--gallery-mobile-shell-offset));
+    max-height: calc(var(--marketplace-viewport-height, 100svh) - var(--gallery-mobile-shell-offset));
     overflow: hidden;
     background: transparent;
+    transition:
+      top 200ms ease,
+      height 200ms ease,
+      max-height 200ms ease;
   }
 
   .marketplace-gallery-shell[data-detail-open="true"],
@@ -148,6 +166,19 @@ html.gallery-entry-scroll-lock {
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
     scrollbar-gutter: stable;
+  }
+}
+
+@media (max-width: 767px) {
+  [data-gallery-hero] {
+    height: max(
+      492px,
+      calc(
+        var(--marketplace-viewport-height, 100svh)
+        - var(--gallery-mobile-initial-shell-offset, 92px)
+        - var(--gallery-mobile-first-screen-reserve, 104px)
+      )
+    );
   }
 }
 
