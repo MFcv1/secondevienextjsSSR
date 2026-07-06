@@ -83,20 +83,20 @@ const GallerySeoIntro = ({ darkMode = false } = {}) => (
   <section className={`relative z-10 px-4 pb-7 pt-7 md:px-8 md:pb-8 md:pt-24 lg:px-12 ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9] dark:bg-[#0c0b0a]'}`} aria-labelledby="gallery-seo-title">
     <div className="mx-auto grid max-w-6xl gap-7 md:grid-cols-[1.1fr_0.9fr] md:items-end">
       <div>
-        <p className={`mb-3 font-sans text-[10px] font-black uppercase tracking-[0.26em] ${darkMode ? 'text-[#bca78c]' : 'text-[#8a6848] dark:text-[#c7a071]'}`}>
+        <p className={`mb-2 font-sans text-[8.5px] font-black uppercase tracking-[0.22em] md:mb-3 md:text-[10px] md:tracking-[0.26em] ${darkMode ? 'text-[#bca78c]' : 'text-[#8a6848] dark:text-[#c7a071]'}`}>
           {GALLERY_SEO_COPY.eyebrow}
         </p>
-        <h2 id="gallery-seo-title" className={`font-serif text-[28px] leading-tight tracking-normal md:text-[38px] ${darkMode ? 'text-white' : 'text-[#181716] dark:text-[#f5efe6]'}`}>
+        <h2 id="gallery-seo-title" className={`font-serif text-[21px] leading-[1.15] tracking-normal md:text-[38px] md:leading-tight ${darkMode ? 'text-white' : 'text-[#181716] dark:text-[#f5efe6]'}`}>
           {GALLERY_SEO_COPY.title}
         </h2>
-        <p className={`mt-4 max-w-3xl text-[14px] leading-[1.8] md:text-[15px] ${darkMode ? 'text-stone-300/82' : 'text-[#62584f] dark:text-[#c8bbaa]/82'}`}>
+        <p className={`mt-3 max-w-3xl text-[11.5px] leading-[1.56] md:mt-4 md:text-[15px] md:leading-[1.8] ${darkMode ? 'text-stone-300/82' : 'text-[#62584f] dark:text-[#c8bbaa]/82'}`}>
           {GALLERY_SEO_COPY.intro}
         </p>
       </div>
       <ul className={`grid gap-2 border-t pt-4 md:border-l md:border-t-0 md:pl-7 md:pt-0 ${darkMode ? 'border-white/10' : 'border-[#d8c8ba] dark:border-[#b99569]/22'}`}>
         {GALLERY_SEO_COPY.highlights.map((highlight) => (
-          <li key={highlight} className={`flex items-start gap-3 text-[12px] font-semibold leading-[1.65] ${darkMode ? 'text-stone-300' : 'text-[#4f463e] dark:text-[#d6cab9]/80'}`}>
-            <span className={`mt-[8px] h-1.5 w-1.5 shrink-0 rounded-full ${darkMode ? 'bg-[#d4b48c]' : 'bg-[#9A654B] dark:bg-[#c7a071]'}`} />
+          <li key={highlight} className={`flex items-start gap-2.5 text-[11px] font-semibold leading-[1.55] md:gap-3 md:text-[12px] md:leading-[1.65] ${darkMode ? 'text-stone-300' : 'text-[#4f463e] dark:text-[#d6cab9]/80'}`}>
+            <span className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full md:mt-[8px] ${darkMode ? 'bg-[#d4b48c]' : 'bg-[#9A654B] dark:bg-[#c7a071]'}`} />
             <span>{highlight}</span>
           </li>
         ))}
