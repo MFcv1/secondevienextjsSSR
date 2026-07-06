@@ -724,12 +724,17 @@ const TestimonialControlsServer = ({ darkMode = false, compact = false } = {}) =
             key={index}
             type="button"
             data-testimonial-dot
-            className={`rounded-full ${index === 1
-              ? `${compact ? 'h-2 w-7' : 'h-2.5 w-8'} bg-[#ff9200] shadow-[0_0_0_4px_rgba(255,146,0,0.09),0_5px_12px_rgba(255,146,0,0.16)]`
-              : `${compact ? 'h-1.5 w-1.5' : 'h-2 w-2'} ${darkMode ? 'bg-[#d8ad73]/24' : 'bg-[#d6ccbf]'}`
-            }`}
+            className="flex h-7 min-w-7 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff9200]/35"
             aria-label={`Afficher l'avis ${index + 1}`}
-          />
+          >
+            <span
+              data-dot-visual
+              className={`rounded-full ${index === 1
+                ? `${compact ? 'h-2 w-7' : 'h-2.5 w-8'} bg-[#ff9200] shadow-[0_0_0_4px_rgba(255,146,0,0.09),0_5px_12px_rgba(255,146,0,0.16)]`
+                : `${compact ? 'h-1.5 w-1.5' : 'h-2 w-2'} ${darkMode ? 'bg-[#d8ad73]/24' : 'bg-[#d6ccbf]'}`
+              }`}
+            />
+          </button>
         ))}
       </div>
     </div>

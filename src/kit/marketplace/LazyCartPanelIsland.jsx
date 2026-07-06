@@ -79,6 +79,7 @@ function InstantCartShell({
     <div
       className={`${interactive ? 'pointer-events-auto' : 'pointer-events-none'} fixed inset-0 z-[2400] overflow-hidden`}
       aria-hidden={!interactive}
+      inert={!interactive ? '' : undefined}
     >
       <button
         type="button"

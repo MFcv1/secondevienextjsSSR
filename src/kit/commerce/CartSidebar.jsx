@@ -72,7 +72,12 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
 
     return (
         <MotionConfig reducedMotion="user">
-        <div data-cart-sidebar className={`fixed inset-0 z-[2500] ${isOverlayVisible ? 'visible' : 'invisible'}`}>
+        <div
+            data-cart-sidebar
+            className={`fixed inset-0 z-[2500] ${isOverlayVisible ? 'visible' : 'invisible'}`}
+            aria-hidden={!panelOpen}
+            inert={!panelOpen ? '' : undefined}
+        >
             <div
                 data-cart-backdrop
                 className={`absolute inset-0 transition-opacity duration-300 ease-out ${panelOpen ? 'opacity-100' : 'opacity-0'} ${darkMode ? 'bg-stone-950/62 backdrop-blur-sm' : 'bg-stone-950/24 backdrop-blur-sm'}`}

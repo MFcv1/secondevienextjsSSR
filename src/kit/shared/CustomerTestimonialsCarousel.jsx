@@ -293,12 +293,17 @@ const CarouselControls = ({ activeIndex, count, onPrevious, onNext, onSelect, da
                         aria-label={`Afficher l'avis ${index + 1}`}
                         aria-current={index === activeIndex ? 'true' : undefined}
                         onClick={() => onSelect(index)}
-                        className={`rounded-full transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-                            index === activeIndex
-                                ? `${compact ? 'h-2 w-7' : 'h-2.5 w-8'} bg-[#ff9200] shadow-[0_0_0_4px_rgba(255,146,0,0.09),0_5px_12px_rgba(255,146,0,0.16)]`
-                                : `${compact ? 'h-1.5 w-1.5' : 'h-2 w-2'} ${darkMode ? 'bg-[#d8ad73]/24 hover:bg-[#d8ad73]/38' : 'bg-[#d6ccbf] hover:bg-[#bdaa96] dark:bg-[#d8ad73]/24 dark:hover:bg-[#d8ad73]/38'}`
-                        }`}
-                    />
+                        className="group flex h-7 min-w-7 items-center justify-center rounded-full transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff9200]/35"
+                    >
+                        <span
+                            data-dot-visual
+                            className={`rounded-full transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                                index === activeIndex
+                                    ? `${compact ? 'h-2 w-7' : 'h-2.5 w-8'} bg-[#ff9200] shadow-[0_0_0_4px_rgba(255,146,0,0.09),0_5px_12px_rgba(255,146,0,0.16)]`
+                                    : `${compact ? 'h-1.5 w-1.5' : 'h-2 w-2'} ${darkMode ? 'bg-[#d8ad73]/24 group-hover:bg-[#d8ad73]/38' : 'bg-[#d6ccbf] group-hover:bg-[#bdaa96] dark:bg-[#d8ad73]/24 dark:group-hover:bg-[#d8ad73]/38'}`
+                            }`}
+                        />
+                    </button>
                 ))}
             </div>
         </div>

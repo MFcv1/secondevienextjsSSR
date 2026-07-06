@@ -18,6 +18,10 @@ const setProgressDots = (root, selector, activeIndex, {
   inactiveColor = '#e7e5e4',
   activeWidth = '2.5rem',
   inactiveWidth = '1.5rem',
+  activeHeight,
+  inactiveHeight,
+  activeBoxShadow,
+  inactiveBoxShadow,
   progressDurationMs = 0,
   itemCount,
 } = {}) => {
@@ -25,10 +29,18 @@ const setProgressDots = (root, selector, activeIndex, {
     const dotIndex = itemCount ? index % itemCount : index;
     const isActive = dotIndex === activeIndex;
     dot.setAttribute('aria-current', isActive ? 'true' : 'false');
-    dot.style.width = isActive ? activeWidth : inactiveWidth;
+    const visualDot = dot.querySelector('[data-dot-visual]');
+    const paintTarget = visualDot || dot;
+    paintTarget.style.width = isActive ? activeWidth : inactiveWidth;
+    if (activeHeight && inactiveHeight) {
+      paintTarget.style.height = isActive ? activeHeight : inactiveHeight;
+    }
+    if (activeBoxShadow !== undefined || inactiveBoxShadow !== undefined) {
+      paintTarget.style.boxShadow = isActive ? (activeBoxShadow || '') : (inactiveBoxShadow || 'none');
+    }
     const bar = dot.querySelector('[data-dot-bar]');
     if (bar) {
-      dot.style.backgroundColor = inactiveColor;
+      paintTarget.style.backgroundColor = inactiveColor;
       bar.style.transition = 'none';
       bar.style.transform = 'scaleX(0)';
       if (isActive) {
@@ -39,7 +51,7 @@ const setProgressDots = (root, selector, activeIndex, {
       }
       return;
     }
-    dot.style.backgroundColor = isActive ? color : inactiveColor;
+    paintTarget.style.backgroundColor = isActive ? color : inactiveColor;
   });
 };
 
@@ -274,6 +286,10 @@ const setupTestimonials = () => {
         inactiveColor: 'rgba(214,204,191,1)',
         activeWidth: '1.75rem',
         inactiveWidth: '0.375rem',
+        activeHeight: '0.625rem',
+        inactiveHeight: '0.5rem',
+        activeBoxShadow: '0 0 0 4px rgba(255, 146, 0, 0.09), 0 5px 12px rgba(255, 146, 0, 0.16)',
+        inactiveBoxShadow: 'none',
         itemCount: items.length,
       });
     };
