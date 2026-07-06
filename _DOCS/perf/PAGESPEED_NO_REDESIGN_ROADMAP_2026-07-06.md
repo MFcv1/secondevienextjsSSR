@@ -132,6 +132,8 @@ Puis controle visuel mobile sur une fiche produit representative.
 
 ## Priorite 4 - Favicon 404
 
+Statut 2026-07-06: termine et deploye sandbox. `public/favicon.ico` a ete genere depuis le favicon PNG existant, la metadata Next declare explicitement `/favicon.ico`, `/favicon_final.png` et `apple-touch-icon.png`, et le controle HTTP sandbox confirme `200 OK` sur `/favicon.ico`.
+
 Constat PageSpeed:
 
 `/favicon.ico` ressort en 404 et ajoute un warning console.

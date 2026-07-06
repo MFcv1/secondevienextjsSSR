@@ -62,6 +62,15 @@ export const metadata = {
   alternates: {
     canonical: '/'
   },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '32x32' },
+      { url: '/favicon_final.png', type: 'image/png', sizes: '32x32' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '192x192', type: 'image/png' },
+    ],
+  },
   openGraph: {
     type: 'website',
     siteName,
