@@ -24,7 +24,7 @@ export default function ArchitecturalHeaderServer({ darkMode = false } = {}) {
       <header className={`sticky top-0 z-50 border-b transition-[transform,background-color,border-color,color,box-shadow] duration-150 ease-in-out safe-pt-header ${surfaceTone}`}>
         <div className="relative mx-auto flex h-16 max-w-[1920px] items-center justify-between px-3 md:h-[76px] md:px-8">
           <div className="z-10 -ml-1 flex shrink-0 items-center md:-ml-8">
-            <Link href="/" prefetch className="group flex touch-manipulation items-center gap-1 text-inherit no-underline" aria-label="Retour a la galerie Seconde Vie">
+            <Link href="/" prefetch className="group flex touch-manipulation items-center gap-1 text-inherit no-underline" aria-label="Seconde Vie par Anais - retour a la galerie">
               <img
                 src="/images/logoanais-320.webp"
                 alt="Seconde Vie"

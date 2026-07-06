@@ -74,7 +74,7 @@ const getBackdropSrc = (image) => (
 const IMAGE_SWITCH_DECODE_BUDGET_MS = 500;
 const IMAGE_PREWARM_STEP_MS = 140;
 const IMAGE_PREWARM_MAX = 11;
-const PRODUCT_SWIPE_EXIT_HINT_STORAGE_KEY = 'secondevie:product-swipe-exit-hint:v1';
+const PRODUCT_SWIPE_EXIT_HINT_STORAGE_KEY = 'secondevie:product-swipe-exit-hint:v2';
 
 const isConstrainedConnection = () => {
   if (typeof navigator === 'undefined') return false;
@@ -1062,10 +1062,19 @@ export default function ProductDetailShellIsland({
 
             {showSwipeExitHint && !isMobilePanelOpen && !isLightboxOpen ? (
               <div className="product-detail-swipe-exit-hint" aria-hidden="true">
-                <span className="product-detail-swipe-exit-hint__arrow" />
-                <span className="product-detail-swipe-exit-hint__hand">
-                  <span className="product-detail-swipe-exit-hint__finger" />
-                  <span className="product-detail-swipe-exit-hint__palm" />
+                <span className="product-detail-swipe-exit-hint__gesture">
+                  <span className="product-detail-swipe-exit-hint__gesture-trail" />
+                  <span className="product-detail-swipe-exit-hint__gesture-ring" />
+                  <span className="product-detail-swipe-exit-hint__gesture-dot" />
+                  <span className="product-detail-swipe-exit-hint__gesture-chevron" />
+                </span>
+                <span className="product-detail-swipe-exit-hint__pill">
+                  <span className="product-detail-swipe-exit-hint__line product-detail-swipe-exit-hint__line--main">
+                    <span className="product-detail-swipe-exit-hint__line-text">Glisser vers le bas</span>
+                  </span>
+                  <span className="product-detail-swipe-exit-hint__line product-detail-swipe-exit-hint__line--sub">
+                    <span className="product-detail-swipe-exit-hint__line-text">pour sortir</span>
+                  </span>
                 </span>
               </div>
             ) : null}

@@ -155,7 +155,7 @@ export const ProductSmallPricesSectionServer = ({ items, darkMode = false } = {}
 );
 
 const reassuranceUnits = [
-  { code: '01', Icon: Truck, label: 'Livraison soignee', text: 'Partout en France metropolitaine', meta: 'FRANCE / CAVE' },
+  { code: '01', Icon: Truck, label: 'Livraison soignee', text: 'Partout en France metropolitaine', meta: 'FRANCE / RETRAIT' },
   { code: '02', Icon: CreditCard, label: 'Paiement 4x sans frais', text: 'Echelonnez vos paiements facilement', meta: '2X / 3X / FRAIS 0%' },
   { code: '03', Icon: HeartHandshake, label: 'On est la pour vous', text: 'Une equipe humaine a votre ecoute', meta: 'CONSEILS / SUPPORT' },
 ];
@@ -173,12 +173,12 @@ export const ReassuranceSectionServer = ({ darkMode = false } = {}) => (
                 <Icon size={22} strokeWidth={1.25} />
               </div>
               <div className="mt-6">
-                <h4 className="font-sans text-[11px] font-black uppercase leading-none tracking-[0.2em] xl:text-[12px]">{unit.label}</h4>
-                <p className={`mx-auto mt-4 max-w-[18rem] font-sans text-[13px] leading-[1.55] ${darkMode ? 'text-stone-400' : 'text-stone-500 dark:text-[#c8bbaa]/72'}`}>{unit.text}</p>
+                <h3 className="font-sans text-[11px] font-black uppercase leading-none tracking-[0.2em] xl:text-[12px]">{unit.label}</h3>
+                <p className={`mx-auto mt-4 max-w-[18rem] font-sans text-[13px] leading-[1.55] ${darkMode ? 'text-stone-300' : 'text-stone-600 dark:text-[#d8c9b8]'}`}>{unit.text}</p>
               </div>
-              <div className={`post-hero-service-meta mx-auto mt-6 flex min-h-[24px] w-[132px] items-center justify-center gap-2 border px-3 ${darkMode ? 'border-[#d8ad73]/10 bg-[#17130f]/72' : 'border-stone-200 bg-stone-100/60 dark:border-[#e6c18a]/10 dark:bg-[#17130f]/72'}`}>
-                <span className="h-[5px] w-[5px] shrink-0 bg-[#c6a27e]" aria-hidden="true" />
-                <samp className={`inline-flex min-w-0 flex-1 items-center justify-center text-center font-mono text-[7px] font-bold uppercase leading-none tracking-[0.14em] ${darkMode ? 'text-[#c8bbaa]/50' : 'text-stone-400 dark:text-[#c8bbaa]/50'}`}>{unit.meta}</samp>
+              <div className={`post-hero-service-meta mx-auto mt-6 flex min-h-[32px] w-[168px] items-center justify-center gap-2.5 border px-4 ${darkMode ? 'border-[#d8ad73]/24 bg-[#1b1712]/88' : 'border-stone-300 bg-white/74 shadow-[0_10px_26px_rgba(84,64,42,0.035)] dark:border-[#e6c18a]/24 dark:bg-[#1b1712]/88'}`}>
+                <span className="h-[6px] w-[6px] shrink-0 bg-[#b5835f]" aria-hidden="true" />
+                <samp className={`inline-flex min-w-0 flex-1 items-center justify-center text-center font-mono text-[8px] font-black uppercase leading-none tracking-[0.16em] xl:text-[9px] ${darkMode ? 'text-[#eadbc8]' : 'text-stone-700 dark:text-[#eadbc8]'}`}>{unit.meta}</samp>
               </div>
             </article>
           ))}
