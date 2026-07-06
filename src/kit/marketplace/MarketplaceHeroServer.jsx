@@ -75,9 +75,9 @@ export default function MarketplaceHeroServer({
         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#080807]/92 via-[#080807]/36 to-transparent opacity-0 dark:opacity-100" aria-hidden="true" />
       </div>
 
-      <div className="relative z-10 flex w-full max-w-4xl translate-y-3 flex-col items-center px-4 text-center md:-translate-y-12">
+      <div className="relative z-10 flex w-full max-w-4xl -translate-y-3 flex-col items-center px-4 text-center md:-translate-y-12">
         {heroBannerText ? (
-          <div className="mb-4 inline-flex max-w-[calc(100vw-2.5rem)] items-center justify-center rounded-full border border-white/30 bg-white/20 px-3.5 py-1.5 text-center text-[9px] font-bold uppercase leading-none tracking-widest text-white shadow-lg backdrop-blur-md dark:border-[#e6c18a]/35 dark:bg-[#0f0d0a]/42 dark:text-[#f5eadb] md:mb-6 md:px-4 md:text-[10px]">
+          <div className="mb-[18px] inline-flex max-w-[calc(100vw-2.5rem)] items-center justify-center rounded-full border border-white/30 bg-white/20 px-3.5 py-1.5 text-center text-[9px] font-bold uppercase leading-none tracking-widest text-white shadow-lg backdrop-blur-md dark:border-[#e6c18a]/35 dark:bg-[#0f0d0a]/42 dark:text-[#f5eadb] md:mb-6 md:px-4 md:text-[10px]">
             {heroBannerText}
           </div>
         ) : null}
@@ -94,7 +94,7 @@ export default function MarketplaceHeroServer({
               heroTitle
             )}
           </h1>
-          <p className="mb-5 font-serif text-[14px] text-white opacity-90 drop-shadow-md min-[380px]:text-[15px] md:mb-10 md:text-2xl">
+          <p className="mb-6 font-serif text-[14px] text-white opacity-90 drop-shadow-md min-[380px]:text-[15px] md:mb-10 md:text-2xl">
             {heroSubtitle}
           </p>
 
@@ -142,7 +142,7 @@ export default function MarketplaceHeroServer({
           </div>
         </div>
 
-        <div className="mt-9 flex items-center gap-2 md:mt-10 md:gap-3">
+        <div className="mt-10 flex items-center gap-2 md:mt-10 md:gap-3">
           {safeImages.map((_, index) => (
             <button
               key={index}
