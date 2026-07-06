@@ -135,7 +135,7 @@ export const getSmallPriceItems = (items, limit = 10) => (
 export const ProductArrivalsSectionServer = ({ items, darkMode = false } = {}) => (
   <ProductGridSectionServer
     id="gallery-pieces"
-    className="scroll-mt-24 bg-[#FAFAF9] px-4 pb-[48px] pt-7 text-[#181716] transition-colors duration-700 dark:bg-[#080807] dark:text-[#f5efe6] md:px-12 md:py-[60px] lg:px-16"
+    className="scroll-mt-24 bg-[#FAFAF9] px-4 pb-[48px] pt-2 text-[#181716] transition-colors duration-700 dark:bg-[#080807] dark:text-[#f5efe6] md:px-12 md:py-[60px] lg:px-16"
     heading={<SectionHeading>Nouveautes</SectionHeading>}
     items={getNewestItems(items)}
     badgeLabel="Nouveau"

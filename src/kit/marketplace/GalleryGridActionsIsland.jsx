@@ -81,7 +81,7 @@ const setWishlistButtonState = (button, liked) => {
   if (icon) icon.setAttribute('fill', liked ? 'currentColor' : 'none');
 };
 
-export default function GalleryGridActionsIsland({ observeVisibleWarmup = false } = {}) {
+export default function GalleryGridActionsIsland({ observeVisibleWarmup = false, observeSeoIntro = false } = {}) {
   const router = useRouter();
   const lastScrollIntentAtRef = useRef(0);
   const authUserRef = useRef(null);
@@ -253,6 +253,37 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false 
       observer?.disconnect();
     };
   }, [observeVisibleWarmup, warmupProduct]);
+
+  useEffect(() => {
+    if (!observeSeoIntro || typeof window === 'undefined') return undefined;
+
+    const section = document.querySelector('[data-gallery-seo-intro]');
+    if (!section) return undefined;
+
+    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    if (prefersReducedMotion || !('IntersectionObserver' in window)) {
+      section.dataset.gallerySeoMotion = 'visible';
+      return undefined;
+    }
+
+    section.dataset.gallerySeoMotion = 'pending';
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        section.dataset.gallerySeoMotion = 'visible';
+        observer.disconnect();
+      });
+    }, {
+      root: document.getElementById('marketplaceGalleryScroll') || null,
+      rootMargin: '0px 0px -12% 0px',
+      threshold: 0.16,
+    });
+
+    observer.observe(section);
+
+    return () => observer.disconnect();
+  }, [observeSeoIntro]);
 
   return null;
 }
