@@ -81,12 +81,12 @@ const getGalleryHeroTexts = () => {
 
 const GallerySeoIntro = ({ darkMode = false } = {}) => (
   <section
-    className={`relative z-10 px-4 pb-2 pt-5 md:px-8 md:pb-8 md:pt-24 lg:px-12 ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9] dark:bg-[#0c0b0a]'}`}
+    className={`relative z-10 px-4 pb-2 pt-4 md:px-8 md:pb-8 md:pt-24 lg:px-12 ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9] dark:bg-[#0c0b0a]'}`}
     aria-labelledby="gallery-seo-title"
     data-gallery-seo-intro
   >
     <div className="gallery-seo-shell mx-auto max-w-6xl">
-      <div className="gallery-seo-core relative px-4 pb-2 pt-5 md:px-7 md:py-7">
+      <div className="gallery-seo-core relative px-4 pb-2 pt-4 md:px-7 md:py-7">
         <span className={`gallery-seo-glint ${darkMode ? 'bg-[#d4b48c]/24' : 'bg-[#9A654B]/22'}`} aria-hidden="true" />
         <div className="grid gap-5 md:grid-cols-[1.1fr_0.9fr] md:items-end md:gap-7">
           <div className="gallery-seo-reveal" style={{ '--gallery-seo-delay': '40ms' }}>

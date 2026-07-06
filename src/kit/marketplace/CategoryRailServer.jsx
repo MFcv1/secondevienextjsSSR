@@ -17,7 +17,7 @@ export default function CategoryRailServer({
         className={`pointer-events-none absolute inset-x-0 bottom-0 top-[58px] z-0 md:top-[135px] ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9] dark:bg-[#080807]'}`}
       />
 
-      <div className="relative z-10 grid grid-cols-4 gap-2.5 px-4 pb-3 md:hidden">
+      <div className="relative z-10 grid grid-cols-4 gap-2.5 px-4 pb-2 md:hidden">
         {safeCategories.slice(0, 4).map((cat, index) => (
           <Link key={cat.id} href={getCategoryUrl(cat.id)} prefetch={false} className="group flex min-w-0 cursor-pointer flex-col items-center text-inherit no-underline">
             <div className={`mb-2 h-[124px] w-full max-w-[82px] overflow-hidden rounded-[999px] border-[4px] shadow-[0_12px_26px_rgba(0,0,0,0.17)] ${darkMode ? 'border-[#1A1A1A]' : 'border-white dark:border-[#191511]'}`}>
