@@ -97,9 +97,9 @@ const GallerySeoIntro = ({ darkMode = false } = {}) => (
       <ul className="relative grid self-center pl-4 md:translate-x-20 md:pl-7">
         <span className={`pointer-events-none absolute -left-10 -top-5 hidden h-[calc(100%+2.5rem)] w-[2px] rounded-full bg-gradient-to-b from-transparent to-transparent md:block ${darkMode ? 'via-white/16' : 'via-[#c9b49e] dark:via-[#b99569]/26'}`} aria-hidden="true" />
         {GALLERY_SEO_COPY.highlights.map((highlight, index) => (
-          <li key={highlight} className={`grid grid-cols-[24px_1fr] items-baseline gap-0 py-1.5 text-[12px] font-semibold leading-[1.5] md:grid-cols-[40px_1fr] md:py-2 ${darkMode ? 'text-stone-300' : 'text-[#4f463e] dark:text-[#d6cab9]/80'}`}>
-            <span className={`font-sans text-[12px] font-semibold tabular-nums leading-none tracking-wide md:text-[13px] ${darkMode ? 'text-[#d4b48c]' : 'text-[#9A654B] dark:text-[#c7a071]'}`}>
-              {String(index + 1).padStart(2, '0')}
+          <li key={highlight} className={`grid grid-cols-[30px_1fr] items-baseline gap-1 py-1.5 text-[12px] font-semibold leading-[1.5] md:grid-cols-[40px_1fr] md:py-2 ${darkMode ? 'text-stone-300' : 'text-[#4f463e] dark:text-[#d6cab9]/80'}`}>
+            <span className={`font-serif text-[17px] font-normal italic leading-none md:text-[20px] ${darkMode ? 'text-[#d4b48c]' : 'text-[#9A654B] dark:text-[#c7a071]'}`}>
+              {String(index + 1).padStart(2, '0')}&nbsp;.
             </span>
             <span>{highlight}</span>
           </li>
