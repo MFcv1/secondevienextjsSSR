@@ -39,7 +39,7 @@ const proofItems = [
 ];
 
 const QuoteHero = ({ darkMode = false } = {}) => (
-    <section className="relative overflow-hidden min-h-[calc(100dvh-var(--global-menu-header-height,112px))] lg:min-h-[540px]">
+    <section className="relative overflow-hidden h-[calc(100dvh-92px)] lg:h-auto lg:min-h-[540px]">
         <div className={`absolute inset-0 ${darkMode ? 'bg-[#12100d]' : 'bg-[#f4eee5]'}`} />
         <div className="absolute inset-y-0 right-0 hidden w-[56%] lg:block">
             <img
@@ -51,7 +51,7 @@ const QuoteHero = ({ darkMode = false } = {}) => (
         </div>
         <div className={`absolute inset-0 opacity-80 ${darkMode ? 'bg-[radial-gradient(circle_at_18%_20%,rgba(166,138,100,0.16),transparent_32%),linear-gradient(90deg,rgba(0,0,0,0.58),transparent_58%)]' : 'bg-[radial-gradient(circle_at_18%_20%,rgba(166,138,100,0.18),transparent_32%),linear-gradient(90deg,rgba(255,255,255,0.62),transparent_58%)]'}`} />
 
-        <div className="relative mx-auto flex flex-col justify-start max-w-[1480px] px-4 pt-3.5 pb-7 sm:px-6 md:pt-6 md:pb-9 min-h-[calc(100dvh-var(--global-menu-header-height,112px))] lg:min-h-[540px] lg:px-10 xl:min-h-[560px] xl:px-16">
+        <div className="relative mx-auto flex flex-col justify-start max-w-[1480px] px-4 pt-3.5 pb-7 sm:px-6 md:pt-6 md:pb-9 h-full lg:h-auto lg:min-h-[540px] lg:px-10 xl:min-h-[560px] xl:px-16">
             <div className="w-full mb-4">
                 <PageBreadcrumb current="Devis" darkMode={darkMode} />
             </div>
@@ -74,7 +74,7 @@ const QuoteHero = ({ darkMode = false } = {}) => (
                     ))}
                 </div>
             </div>
-            <div className={`mt-4 h-[230px] overflow-hidden rounded-[18px] ring-1 sm:h-[280px] lg:hidden ${darkMode ? 'ring-white/10' : 'ring-black/5'}`}>
+            <div className={`mt-4 flex-1 min-h-[140px] overflow-hidden rounded-[18px] ring-1 sm:h-[280px] sm:flex-none lg:hidden ${darkMode ? 'ring-white/10' : 'ring-black/5'}`}>
                 <img
                     src={quoteRestorationHeroSrc}
                     alt="Meuble ancien en restauration"
