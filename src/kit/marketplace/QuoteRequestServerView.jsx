@@ -60,8 +60,11 @@ const QuoteHero = ({ darkMode = false } = {}) => (
                 <h1 className="max-w-[500px] font-serif text-[clamp(2.35rem,5vw,3.75rem)] leading-[0.98] tracking-normal">
                     Demandez un devis de restauration
                 </h1>
-                <p className={`mt-4 max-w-[33rem] font-sans text-[14px] leading-[1.65] md:text-[16px] ${darkMode ? 'text-stone-300' : 'text-[#3f3933]'}`}>
-                    Vous avez un meuble a restaurer ? Anais vous accompagne pour lui offrir une seconde vie.
+                <p className={`mt-5 max-w-[33rem] font-sans text-[13px] leading-[1.65] md:text-[16px] ${darkMode ? 'text-stone-300' : 'text-[#3f3933]'}`}>
+                    Vous avez un meuble à restaurer ?
+                </p>
+                <p className={`mt-2.5 max-w-[33rem] font-sans text-[13px] leading-[1.65] md:text-[16px] ${darkMode ? 'text-stone-300' : 'text-[#3f3933]'}`}>
+                    Anaïs vous accompagne pour lui offrir une seconde vie.
                 </p>
                 <div className="mt-5 grid gap-3 font-sans text-[12px] font-semibold sm:grid-cols-3 lg:grid-cols-1">
                     {proofItems.map(({ icon: Icon, text }) => (
