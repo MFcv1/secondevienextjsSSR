@@ -1,6 +1,5 @@
 import KIT_CONFIG, { GALLERY_HERO_PRESETS } from '../config/constants';
 import { GALLERY_SEO_COPY } from './seoCopy';
-import AnnouncementBannerServer from './AnnouncementBannerServer';
 import ArchitecturalHeaderServer from './ArchitecturalHeaderServer';
 import MarketplaceHeroServer from './MarketplaceHeroServer';
 import CategoryRailServer from './CategoryRailServer';
@@ -124,8 +123,7 @@ export default function GalleryServerView({ items = [], darkMode = false, announ
       data-next-gallery-experience="server"
       data-public-ssr-fallback
     >
-      <AnnouncementBannerServer darkMode={darkMode} messages={announcementMessages} />
-      <ArchitecturalHeaderServer darkMode={darkMode} />
+      <ArchitecturalHeaderServer darkMode={darkMode} announcementMessages={announcementMessages} />
 
       <div className="marketplace-gallery-shell animate-in fade-in duration-500" data-detail-open="false">
         <div

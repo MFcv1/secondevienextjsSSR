@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { ShoppingBag } from 'lucide-react';
@@ -92,6 +93,11 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
   const [loginOpen, setLoginOpen] = useState(false);
   const [pendingCartItem, setPendingCartItem] = useState(null);
   const consumedInitialEventRef = useRef(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const primeCart = useCallback(() => {
     CartSidebar.preload?.();
@@ -308,7 +314,7 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
         ) : null}
       </button>
 
-      {(isCartPrimed || interacted || isOpen) ? (
+      {mounted && typeof document !== 'undefined' && (isCartPrimed || interacted || isOpen) ? createPortal(
         <CartSidebar
           isOpen={isOpen}
           onClose={() => setIsOpen(false)}
@@ -319,7 +325,8 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
           interacted={interacted}
           darkMode={darkMode}
           activeDesignId="architectural"
-        />
+        />,
+        document.body
       ) : null}
       {loginOpen ? (
         <LegacyLoginModalIsland

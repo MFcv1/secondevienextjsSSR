@@ -1,6 +1,7 @@
 import { X, Trash2, ShoppingBag, ShieldCheck, Truck } from 'lucide-react';
 import { motion, MotionConfig } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import PageBreadcrumb from '../marketplace/PageBreadcrumb';
 
 const CART_FADE_EASE = [0.16, 1, 0.3, 1];
 const CART_CLOSE_EASE = [0.76, 0, 0.24, 1];
@@ -40,6 +41,36 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
     const panelOpen = isOpen && isPresentedOpen;
     const panelAnimationState = panelOpen ? 'visible' : 'exit';
 
+    const [menuTop, setMenuTop] = useState(110);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return undefined;
+
+        const media = window.matchMedia('(min-width: 768px)');
+        const syncMobile = () => setIsMobile(!media.matches);
+
+        syncMobile();
+        media.addEventListener('change', syncMobile);
+        return () => media.removeEventListener('change', syncMobile);
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || !isOpen) return undefined;
+
+        const syncGeometry = () => {
+            const header = document.querySelector('header');
+            const headerBottom = header?.getBoundingClientRect().bottom || 0;
+            const headerHeight = header?.offsetHeight || 76;
+            const nextMenuTop = Math.max(0, Math.round(headerBottom > 0 ? headerBottom : headerHeight));
+            setMenuTop(nextMenuTop);
+        };
+
+        syncGeometry();
+        window.addEventListener('resize', syncGeometry);
+        return () => window.removeEventListener('resize', syncGeometry);
+    }, [isOpen]);
+
     const isArch = activeDesignId === 'architectural';
     const bgClass = isArch
         ? (darkMode ? 'bg-[#0A0A0A] border-stone-800 text-stone-200' : 'bg-[#FAFAF9] border-stone-200 text-stone-900')
@@ -74,7 +105,10 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
         <MotionConfig reducedMotion="user">
         <div
             data-cart-sidebar
-            className={`fixed inset-0 z-[2500] ${isOverlayVisible ? 'visible' : 'invisible'}`}
+            className={`fixed inset-x-0 bottom-0 z-[2500] ${isOverlayVisible ? 'visible' : 'invisible'}`}
+            style={{
+                top: isMobile ? `${menuTop}px` : '0px',
+            }}
             aria-hidden={!panelOpen}
             inert={!panelOpen ? '' : undefined}
         >
@@ -90,7 +124,7 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
                 initial="hidden"
                 animate={panelAnimationState}
                 className={`absolute inset-0 h-full overscroll-contain border-l shadow-2xl
-                px-4 pb-4 pt-[max(0.85rem,env(safe-area-inset-top,0px))] safe-pb-cart
+                px-4 pb-4 pt-3.5 safe-pb-cart
                 md:inset-y-0 md:left-auto md:right-0 md:h-auto md:w-[500px] md:rounded-none md:border-l md:border-t-0 md:p-8 md:pt-6
                 flex flex-col safe-area-bottom ${bgClass}`}
                 style={{
@@ -101,18 +135,26 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
                     backfaceVisibility: 'hidden',
                 }}
             >
-                <div className={`mb-4 flex items-center justify-between border-b pb-4 md:mb-10 md:pb-6 ${darkMode ? 'border-stone-800' : 'border-stone-200'}`}>
+                {/* Fil d'Ariane mobile */}
+                <div className="md:hidden mb-4 pb-1">
+                    <PageBreadcrumb
+                        current="Votre panier"
+                        linkLabel="Galerie"
+                        darkMode={darkMode}
+                        onLinkClick={onClose}
+                    />
+                </div>
+
+                {/* Header desktop original */}
+                <div className={`hidden md:flex items-center justify-between border-b pb-6 md:mb-10 md:pb-6 ${darkMode ? 'border-stone-800' : 'border-stone-200'}`}>
                     <div className="flex items-center gap-3">
-                        <span className={`flex h-10 w-10 items-center justify-center rounded-full md:hidden ${darkMode ? 'bg-white/5 text-stone-200' : 'bg-stone-100 text-stone-900'}`}>
-                            <ShoppingBag size={18} strokeWidth={1.5} />
-                        </span>
-                        <ShoppingBag size={24} className={`hidden md:block ${isArch ? (darkMode ? 'text-stone-200' : 'text-stone-900') : (darkMode ? 'text-white' : 'text-stone-900')}`} />
+                        <ShoppingBag size={24} className={isArch ? (darkMode ? 'text-stone-200' : 'text-stone-900') : (darkMode ? 'text-white' : 'text-stone-900')} />
                         <h2 className={`text-[22px] font-black tracking-tight md:text-2xl ${isArch ? 'font-serif font-normal tracking-wide' : ''}`}>
                             {isArch ? 'Votre panier' : 'Votre Panier'}
                         </h2>
                     </div>
 
-                    <div className="relative flex h-10 w-10 items-center justify-center md:h-12 md:w-12">
+                    <div className="relative flex h-12 w-12 items-center justify-center">
                         <motion.button
                             onClick={onClose}
                             aria-label="Fermer le panier"

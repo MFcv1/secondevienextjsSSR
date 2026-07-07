@@ -144,20 +144,26 @@ const GlobalMenu = ({
     }, [isMenuClosing]);
 
     useLayoutEffect(() => {
-        if (typeof window === 'undefined' || !isDesktopMenuViewport) return undefined;
+        if (typeof window === 'undefined') return undefined;
 
         const root = document.documentElement;
         const menuIsActive = isMenuOpen || isMenuClosing;
         if (menuIsActive) {
-            root.classList.add(DESKTOP_MENU_OPEN_CLASS);
+            if (isDesktopMenuViewport) {
+                root.classList.add(DESKTOP_MENU_OPEN_CLASS);
+            } else {
+                root.classList.add('global-menu-mobile-open');
+            }
             syncMenuGeometry();
             return () => {
                 root.classList.remove(DESKTOP_MENU_OPEN_CLASS);
+                root.classList.remove('global-menu-mobile-open');
                 root.style.removeProperty('--global-menu-header-height');
             };
         }
 
         root.classList.remove(DESKTOP_MENU_OPEN_CLASS);
+        root.classList.remove('global-menu-mobile-open');
         root.style.removeProperty('--global-menu-header-height');
         return undefined;
     }, [isDesktopMenuViewport, isMenuClosing, isMenuOpen, syncMenuGeometry]);

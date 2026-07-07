@@ -43,17 +43,21 @@ const WishlistView = ({
     return (
         <div className={`min-h-screen ${darkMode ? 'bg-[#121212] text-[#f5f5f5]' : 'bg-[#FAFAF9] text-stone-900'}`}>
 
-            {/* Liste de souhaits header */}
-            <div className={`px-4 py-10 md:py-14 text-center border-b ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
+            {/* Fil d'Ariane normalise */}
+            <div className="pt-3.5 px-4 pb-1 md:px-8 md:pt-6 md:pb-2">
                 <div className="mx-auto max-w-[1480px]">
                     <PageBreadcrumb
                         current="Liste de souhaits"
                         darkMode={darkMode}
                         onLinkClick={onBack}
-                        className="mb-8"
                     />
+                </div>
+            </div>
 
-                <h1 className="font-serif text-4xl md:text-5xl mb-4">Liste de souhaits</h1>
+            {/* Liste de souhaits header */}
+            <div className={`px-4 pb-10 pt-4 md:pb-14 md:pt-6 text-center border-b ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
+                <div className="mx-auto max-w-[1480px]">
+                    <h1 className="font-serif text-4xl md:text-5xl mb-4">Liste de souhaits</h1>
 
                 {/* Message connexion (si non connecté) */}
                 {!isLoggedIn && (

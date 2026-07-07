@@ -6,8 +6,9 @@ import DarkModeToggleIsland from './DarkModeToggleIsland';
 import HeaderAccountIsland from './HeaderAccountIsland';
 import GlobalMenuTriggerIsland from './GlobalMenuTriggerIsland';
 import LazyCartPanelIsland from './LazyCartPanelIsland';
+import AnnouncementBannerServer from './AnnouncementBannerServer';
 
-export default function ArchitecturalHeaderServer({ darkMode = false } = {}) {
+export default function ArchitecturalHeaderServer({ darkMode = false, announcementMessages = undefined } = {}) {
   const surfaceTone = darkMode
     ? 'border-white/[0.06] bg-[#080807] text-stone-100 shadow-[0_1px_0_rgba(255,255,255,0.04)]'
     : 'border-stone-100 bg-white text-stone-900 shadow-none dark:border-white/[0.06] dark:bg-[#080807] dark:text-stone-100 dark:shadow-[0_1px_0_rgba(255,255,255,0.04)]';
@@ -21,6 +22,7 @@ export default function ArchitecturalHeaderServer({ darkMode = false } = {}) {
 
   return (
     <>
+      <AnnouncementBannerServer darkMode={darkMode} messages={announcementMessages} />
       <header className={`sticky top-0 z-50 border-b transition-[transform,background-color,border-color,color,box-shadow] duration-150 ease-in-out safe-pt-header ${surfaceTone}`}>
         <div className="relative mx-auto flex h-16 max-w-[1920px] items-center justify-between px-3 md:h-[76px] md:px-8">
           <div className="z-10 -ml-1 flex shrink-0 items-center md:-ml-8">

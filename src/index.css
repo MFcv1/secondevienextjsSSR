@@ -173,6 +173,11 @@ html.gallery-entry-scroll-lock {
   }
 }
 
+html.global-menu-mobile-open header {
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+}
+
 @media (min-width: 1024px) {
   .marketplace-gallery-shell,
   .marketplace-gallery-scroll {

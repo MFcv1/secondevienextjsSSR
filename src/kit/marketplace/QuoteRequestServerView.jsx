@@ -51,9 +51,12 @@ const QuoteHero = ({ darkMode = false } = {}) => (
         </div>
         <div className={`absolute inset-0 opacity-80 ${darkMode ? 'bg-[radial-gradient(circle_at_18%_20%,rgba(166,138,100,0.16),transparent_32%),linear-gradient(90deg,rgba(0,0,0,0.58),transparent_58%)]' : 'bg-[radial-gradient(circle_at_18%_20%,rgba(166,138,100,0.18),transparent_32%),linear-gradient(90deg,rgba(255,255,255,0.62),transparent_58%)]'}`} />
 
-        <div className="relative mx-auto grid max-w-[1480px] items-stretch px-4 py-7 sm:px-6 md:py-9 lg:min-h-[540px] lg:px-10 xl:min-h-[560px] xl:px-16">
-            <div className="flex max-w-[540px] flex-col justify-center py-3 md:py-5">
-                <PageBreadcrumb current="Devis" darkMode={darkMode} className="mb-5" />
+        <div className="relative mx-auto flex flex-col justify-between max-w-[1480px] px-4 pt-3.5 pb-7 sm:px-6 md:pt-6 md:pb-9 lg:min-h-[540px] lg:px-10 xl:min-h-[560px] xl:px-16">
+            <div className="w-full">
+                <PageBreadcrumb current="Devis" darkMode={darkMode} />
+            </div>
+
+            <div className="flex max-w-[540px] flex-col justify-center flex-1 pt-4 md:pt-6 pb-3 md:pb-5">
                 <h1 className="max-w-[500px] font-serif text-[clamp(2.35rem,5vw,3.75rem)] leading-[0.98] tracking-normal">
                     Demandez un devis de restauration
                 </h1>
