@@ -81,38 +81,30 @@ const getGalleryHeroTexts = () => {
 };
 
 const GallerySeoIntro = ({ darkMode = false } = {}) => (
-  <section
-    className={`relative z-10 px-4 pb-2 pt-4 md:px-8 md:pb-8 md:pt-24 lg:px-12 ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9] dark:bg-[#0c0b0a]'}`}
-    aria-labelledby="gallery-seo-title"
-    data-gallery-seo-intro
-  >
-    <div className="gallery-seo-shell mx-auto max-w-6xl">
-      <div className="gallery-seo-core relative px-4 pb-2 pt-4 md:px-7 md:py-7">
-        <span className={`gallery-seo-glint ${darkMode ? 'bg-[#d4b48c]/24' : 'bg-[#9A654B]/22'}`} aria-hidden="true" />
-        <div className="grid gap-5 md:grid-cols-[1.1fr_0.9fr] md:items-end md:gap-7">
-          <div className="gallery-seo-reveal" style={{ '--gallery-seo-delay': '40ms' }}>
-            <p className={`mb-2 font-sans text-[8.5px] font-black uppercase tracking-[0.22em] md:mb-3 md:text-[10px] md:tracking-[0.26em] ${darkMode ? 'text-[#bca78c]' : 'text-[#8a6848] dark:text-[#c7a071]'}`}>
-              {GALLERY_SEO_COPY.eyebrow}
-            </p>
-            <h2 id="gallery-seo-title" className={`font-serif text-[21px] leading-[1.15] tracking-normal md:text-[38px] md:leading-tight ${darkMode ? 'text-white' : 'text-[#181716] dark:text-[#f5efe6]'}`}>
-              {GALLERY_SEO_COPY.title}
-            </h2>
-            <p className={`mt-3 max-w-3xl text-[11.5px] leading-[1.56] md:mt-4 md:text-[15px] md:leading-[1.8] ${darkMode ? 'text-stone-300/82' : 'text-[#62584f] dark:text-[#c8bbaa]/82'}`}>
-              {GALLERY_SEO_COPY.intro}
-            </p>
-          </div>
-          <ul className="gallery-seo-proofs gallery-seo-reveal grid" style={{ '--gallery-seo-delay': '140ms' }}>
-            {GALLERY_SEO_COPY.highlights.map((highlight, index) => (
-              <li key={highlight} className={`gallery-seo-proof-item grid grid-cols-[24px_1fr] items-baseline gap-3 py-2.5 text-[11px] font-semibold leading-[1.48] md:grid-cols-[30px_1fr] md:text-[12px] md:leading-[1.58] ${darkMode ? 'text-stone-300' : 'text-[#4f463e] dark:text-[#d6cab9]/80'}`} style={{ '--gallery-seo-delay': `${180 + index * 70}ms` }}>
-                <span className={`font-serif text-[13px] font-normal italic leading-none md:text-[15px] ${darkMode ? 'text-[#d4b48c]' : 'text-[#9A654B] dark:text-[#c7a071]'}`}>
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <span>{highlight}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+  <section className={`relative z-10 px-4 pb-7 pt-7 md:px-8 md:pb-8 md:pt-24 lg:px-12 ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9] dark:bg-[#0c0b0a]'}`} aria-labelledby="gallery-seo-title">
+    <div className="mx-auto grid max-w-6xl gap-7 md:grid-cols-[1.1fr_0.9fr] md:items-end">
+      <div>
+        <p className={`mb-3 font-sans text-[10px] font-black uppercase tracking-[0.26em] ${darkMode ? 'text-[#bca78c]' : 'text-[#8a6848] dark:text-[#c7a071]'}`}>
+          {GALLERY_SEO_COPY.eyebrow}
+        </p>
+        <h2 id="gallery-seo-title" className={`font-serif text-[28px] leading-tight tracking-normal md:text-[38px] ${darkMode ? 'text-white' : 'text-[#181716] dark:text-[#f5efe6]'}`}>
+          {GALLERY_SEO_COPY.title}
+        </h2>
+        <p className={`mt-4 max-w-3xl text-[14px] leading-[1.8] md:text-[15px] ${darkMode ? 'text-stone-300/82' : 'text-[#62584f] dark:text-[#c8bbaa]/82'}`}>
+          {GALLERY_SEO_COPY.intro}
+        </p>
       </div>
+      <ul className="relative grid self-center md:translate-x-20 md:pl-7">
+        <span className={`pointer-events-none absolute -left-10 -top-5 hidden h-[calc(100%+2.5rem)] w-[2px] rounded-full bg-gradient-to-b from-transparent to-transparent md:block ${darkMode ? 'via-white/16' : 'via-[#c9b49e] dark:via-[#b99569]/26'}`} aria-hidden="true" />
+        {GALLERY_SEO_COPY.highlights.map((highlight, index) => (
+          <li key={highlight} className={`grid grid-cols-[34px_1fr] items-baseline gap-3 py-1.5 text-[12px] font-semibold leading-[1.5] md:grid-cols-[40px_1fr] md:py-2 ${darkMode ? 'text-stone-300' : 'text-[#4f463e] dark:text-[#d6cab9]/80'}`}>
+            <span className={`font-serif text-[14px] font-normal italic leading-none md:text-[16px] ${darkMode ? 'text-[#d4b48c]' : 'text-[#9A654B] dark:text-[#c7a071]'}`}>
+              {String(index + 1).padStart(2, '0')}
+            </span>
+            <span>{highlight}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   </section>
 );
@@ -167,7 +159,7 @@ export default function GalleryServerView({ items = [], darkMode = false, announ
           <FooterServer darkMode={darkMode} />
         </div>
       </div>
-      <GalleryGridActionsIsland observeSeoIntro />
+      <GalleryGridActionsIsland />
     </main>
   );
 }
