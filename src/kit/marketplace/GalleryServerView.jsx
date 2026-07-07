@@ -83,7 +83,8 @@ const getGalleryHeroTexts = () => {
 const GallerySeoIntro = ({ darkMode = false } = {}) => (
   <section className={`relative z-10 px-4 pb-7 pt-7 md:px-8 md:pb-8 md:pt-24 lg:px-12 ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9] dark:bg-[#0c0b0a]'}`} aria-labelledby="gallery-seo-title">
     <div className="mx-auto grid max-w-6xl gap-7 md:grid-cols-[1.1fr_0.9fr] md:items-end">
-      <div>
+      <div className="relative">
+        <span className={`pointer-events-none absolute -left-16 -top-10 hidden select-none font-serif text-[100px] leading-none md:block lg:-left-24 ${darkMode ? 'text-[#b99569]/50' : 'text-[#c9b49e]/60 dark:text-[#b99569]/50'}`} aria-hidden="true">❝</span>
         <p className={`mb-3 font-sans text-[10px] font-black uppercase tracking-[0.26em] ${darkMode ? 'text-[#bca78c]' : 'text-[#8a6848] dark:text-[#c7a071]'}`}>
           {GALLERY_SEO_COPY.eyebrow}
         </p>
