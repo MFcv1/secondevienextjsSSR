@@ -246,7 +246,7 @@ html.dark .gallery-announcement-banner {
   line-height: 1.1;
   opacity: 0;
   transform: translate3d(0, 8px, 0);
-  animation: gallery-announcement-cycle var(--announcement-duration, 15s) cubic-bezier(0.45, 0, 0.2, 1) infinite;
+  animation: gallery-announcement-cycle var(--announcement-duration, 15s) ease-in-out infinite;
   animation-delay: var(--announcement-delay, 0s);
   will-change: transform, opacity;
 }
@@ -286,16 +286,29 @@ html.dark .gallery-announcement-language {
 }
 
 @keyframes gallery-announcement-cycle {
-  0%,
-  22% {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+
+  3% {
     opacity: 1;
     transform: translate3d(0, 0, 0);
   }
 
-  28%,
+  28% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  33.33% {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0);
+  }
+
   100% {
     opacity: 0;
-    transform: translate3d(0, -8px, 0);
+    transform: translate3d(0, -6px, 0);
   }
 }
 
