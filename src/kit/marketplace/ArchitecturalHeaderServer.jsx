@@ -1,11 +1,12 @@
 import Link from 'next/link';
-import { Heart, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import KIT_CONFIG from '../config/constants';
 import PremiumMegaMenuLazyIsland from './PremiumMegaMenuLazyIsland';
 import DarkModeToggleIsland from './DarkModeToggleIsland';
 import HeaderAccountIsland from './HeaderAccountIsland';
 import GlobalMenuTriggerIsland from './GlobalMenuTriggerIsland';
 import LazyCartPanelIsland from './LazyCartPanelIsland';
+import WishlistToggleIsland from './WishlistToggleIsland';
 import AnnouncementBannerServer from './AnnouncementBannerServer';
 
 export default function ArchitecturalHeaderServer({ darkMode = false, announcementMessages = undefined } = {}) {
@@ -70,9 +71,7 @@ export default function ArchitecturalHeaderServer({ darkMode = false, announceme
 
               <DarkModeToggleIsland className={actionButtonClass} />
 
-              <Link href="/wishlist" prefetch className={actionButtonClass} title="Ma liste de souhaits" aria-label="Ma liste de souhaits">
-                <Heart size={18} strokeWidth={1.5} className={`transition-colors duration-300 ${darkMode ? 'text-stone-200 group-hover:text-rose-300' : 'text-stone-900 group-hover:text-rose-500 dark:text-stone-200 dark:group-hover:text-rose-300'}`} />
-              </Link>
+              <WishlistToggleIsland className={actionButtonClass} darkMode={darkMode} />
 
               <LazyCartPanelIsland className={actionButtonClass} darkMode={darkMode} />
 
