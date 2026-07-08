@@ -81,52 +81,25 @@ const getGalleryHeroTexts = () => {
 
 const GallerySeoQuoteMark = ({ darkMode = false } = {}) => (
   <span
-    className={`pointer-events-none absolute -left-16 -top-8 hidden h-[74px] w-[74px] -rotate-[6deg] select-none items-center justify-center rounded-[22px] p-[7px] ring-1 shadow-[0_22px_42px_-34px_rgba(65,45,28,0.72)] md:flex lg:-left-24 lg:-top-10 lg:h-[86px] lg:w-[86px] lg:rounded-[26px] ${
+    className={`pointer-events-none absolute -left-16 -top-8 hidden h-[54px] w-[64px] -rotate-[7deg] select-none md:block lg:-left-24 lg:-top-10 lg:h-[62px] lg:w-[74px] ${
       darkMode
-        ? 'bg-[#1a1510]/88 ring-[#d8ad73]/18'
-        : 'bg-[#efe7dc]/84 ring-[#bfa286]/34 dark:bg-[#1a1510]/88 dark:ring-[#d8ad73]/18'
+        ? 'text-[#d8ad73]/58'
+        : 'text-[#c9b49e]/82 dark:text-[#b99569]/58'
     }`}
     aria-hidden="true"
   >
-    <span className="absolute inset-[5px] rounded-[18px] border border-white/72 dark:border-[#f0d2a5]/12 lg:rounded-[22px]" />
-    <span
-      className={`relative flex h-full w-full rotate-[6deg] items-center justify-center rounded-[17px] border shadow-[inset_0_1px_0_rgba(255,255,255,0.52)] lg:rounded-[21px] ${
-        darkMode
-          ? 'border-[#d8ad73]/18 bg-[#100d0a]/72 text-[#d8ad73]'
-          : 'border-[#b99272]/26 bg-[#fbfaf7]/80 text-[#9a654b] dark:border-[#d8ad73]/18 dark:bg-[#100d0a]/72 dark:text-[#d8ad73]'
-      }`}
-    >
-      <svg viewBox="0 0 64 64" className="h-[58px] w-[58px] overflow-visible lg:h-[66px] lg:w-[66px]" fill="none">
-        <path
-          d="M15 15.5h34"
-          stroke="currentColor"
-          strokeOpacity="0.36"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        />
-        <path
-          d="M15 48.5h34"
-          stroke="currentColor"
-          strokeOpacity="0.24"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        />
-        <path
-          d="M25.8 24.2c-4.8 2.9-7.2 6.6-7.2 11.2 0 4.1 2.5 7.2 6.3 7.2 3.1 0 5.4-2.2 5.4-5.2 0-2.8-1.9-4.8-4.7-5.1.6-2.1 2.4-4.1 5.1-5.9l-4.9-2.2Z"
-          fill="currentColor"
-          fillOpacity="0.72"
-        />
-        <path
-          d="M42.4 24.2c-4.8 2.9-7.2 6.6-7.2 11.2 0 4.1 2.5 7.2 6.3 7.2 3.1 0 5.4-2.2 5.4-5.2 0-2.8-1.9-4.8-4.7-5.1.6-2.1 2.4-4.1 5.1-5.9l-4.9-2.2Z"
-          fill="currentColor"
-          fillOpacity="0.92"
-        />
-        <circle cx="16" cy="16" r="2" fill="currentColor" fillOpacity="0.18" />
-        <circle cx="48" cy="48" r="2" fill="currentColor" fillOpacity="0.18" />
-      </svg>
-    </span>
+    <svg viewBox="0 0 74 62" className="h-full w-full overflow-visible drop-shadow-[0_8px_14px_rgba(91,64,42,0.08)]" fill="none">
+      <path
+        d="M31.8 11.2c-12.2 5.2-18.9 14.1-18.9 25.2 0 8.4 5 14.4 12.7 14.4 6.7 0 11.5-4.6 11.5-10.9 0-5.8-3.8-9.7-9.4-10.3 1.2-4.6 4.6-8.6 10.3-12l-6.2-6.4Z"
+        fill="currentColor"
+        fillOpacity="0.72"
+      />
+      <path
+        d="M60.4 11.2c-12.2 5.2-18.9 14.1-18.9 25.2 0 8.4 5 14.4 12.7 14.4 6.7 0 11.5-4.6 11.5-10.9 0-5.8-3.8-9.7-9.4-10.3 1.2-4.6 4.6-8.6 10.3-12l-6.2-6.4Z"
+        fill="currentColor"
+        fillOpacity="0.96"
+      />
+    </svg>
   </span>
 );
 
