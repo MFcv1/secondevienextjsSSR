@@ -1800,12 +1800,12 @@ html.dark .gallery-seo-proof-item {
 }
 
 .instagram-desktop-stage {
-  height: clamp(456px, calc(28.75vw + 82px), 570px);
-  max-width: clamp(980px, calc(35vw + 532px), 1120px);
+  height: clamp(420px, calc(23.4375vw + 120px), 570px);
+  max-width: clamp(900px, calc(34.375vw + 460px), 1120px);
 }
 
 .instagram-desktop-card {
-  width: clamp(286px, calc(23.5vw - 15px), 380px);
+  width: clamp(240px, calc(21.875vw - 40px), 380px);
 }
 
 @media (min-width: 1024px) and (max-width: 1279px) {
@@ -1814,12 +1814,12 @@ html.dark .gallery-seo-proof-item {
   }
 
   .instagram-desktop-stage {
-    height: 450px;
-    max-width: 980px;
+    height: 408px;
+    max-width: 860px;
   }
 
   .instagram-desktop-card {
-    width: 270px;
+    width: 230px;
   }
 
   .instagram-floating-token--gram {
@@ -1895,7 +1895,7 @@ html.dark .gallery-seo-proof-item {
 
 @media (min-width: 1280px) {
   .instagram-carousel-section {
-    min-height: clamp(628px, calc(15.5vw + 430px), 690px);
+    min-height: clamp(600px, calc(14.0625vw + 420px), 690px);
   }
 }
 
