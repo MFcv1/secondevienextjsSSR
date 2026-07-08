@@ -161,7 +161,7 @@ const reassuranceUnits = [
 ];
 
 export const ReassuranceSectionServer = ({ darkMode = false } = {}) => (
-  <section className={`post-hero-service-section relative hidden overflow-hidden pb-8 pt-4 md:block md:pt-[84px] lg:pt-[84px] ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9] dark:bg-[#080807]'}`}>
+  <section className={`post-hero-service-section relative hidden overflow-hidden pb-8 pt-4 md:block md:pt-[108px] lg:pt-[108px] ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9] dark:bg-[#080807]'}`}>
     <div className="relative mx-auto max-w-[1760px] px-4 py-6 md:px-7 lg:px-8 xl:px-10">
       <div className="relative mx-auto max-w-[1380px]">
         <span className={`pointer-events-none absolute left-1/2 top-0 h-px w-screen -translate-x-1/2 ${darkMode ? 'bg-white/10' : 'bg-stone-200 dark:bg-[#e6c18a]/14'}`} aria-hidden="true" />

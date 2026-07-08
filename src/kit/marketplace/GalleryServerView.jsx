@@ -104,7 +104,7 @@ const GallerySeoQuoteMark = ({ darkMode = false } = {}) => (
 );
 
 const GallerySeoIntro = ({ darkMode = false } = {}) => (
-  <section className={`relative z-10 px-4 pb-7 pt-7 md:px-8 md:pb-0 md:pt-[136px] lg:px-12 ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9] dark:bg-[#0c0b0a]'}`} aria-labelledby="gallery-seo-title">
+  <section className={`relative z-10 px-4 pb-7 pt-7 md:px-8 md:pb-0 md:pt-[112px] lg:px-12 ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9] dark:bg-[#0c0b0a]'}`} aria-labelledby="gallery-seo-title">
     <div className="mx-auto grid max-w-6xl gap-7 md:grid-cols-[1.1fr_0.9fr] md:items-end">
       <div className="gallery-seo-copy-block relative">
         <GallerySeoQuoteMark darkMode={darkMode} />
