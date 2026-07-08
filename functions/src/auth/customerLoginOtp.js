@@ -178,7 +178,7 @@ async function getOrCreateCustomerUser(email) {
 }
 
 exports.sendCustomerLoginOtp = functions
-    .runWith({ secrets: [GMAIL_EMAIL, GMAIL_PASSWORD] })
+    .runWith({ enforceAppCheck: true, secrets: [GMAIL_EMAIL, GMAIL_PASSWORD] })
     .https.onCall(async (data, context) => {
         const email = normalizeEmail(data?.email);
         const adminEmail = GMAIL_EMAIL.value();
@@ -254,7 +254,7 @@ exports.sendCustomerLoginOtp = functions
     });
 
 exports.verifyCustomerLoginOtp = functions
-    .runWith({ secrets: [GMAIL_PASSWORD] })
+    .runWith({ enforceAppCheck: true, secrets: [GMAIL_PASSWORD] })
     .https.onCall(async (data) => {
         const email = normalizeEmail(data?.email);
         const code = normalizeCode(data?.code);

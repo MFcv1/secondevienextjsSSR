@@ -14,7 +14,7 @@ const { assertGuestCheckoutOtpVerified } = require('../auth/guestCheckoutOtp');
 const db = admin.firestore();
 const CLIENT_CANCELLABLE_STATUSES = new Set(['pending_payment', 'payment_failed', 'canceled']);
 
-exports.cancelOrderClient = functions.https.onCall(async (data, context) => {
+exports.cancelOrderClient = functions.runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
     const orderId = normalizeFirestoreId(data?.orderId, 'ID commande');
 
     const userId = context.auth?.uid || null;

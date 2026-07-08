@@ -4,20 +4,24 @@
 const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const {
+    assertConfirmText,
     checkIsAdmin,
-    checkIsSuperAdmin,
+    checkRecentAdmin,
+    checkRecentSuperAdmin,
+    getSuperAdminEmail,
     normalizeProductCollection,
     normalizeImageContentType,
     sanitizeStorageFileName,
-    SUPER_ADMIN_EMAIL
+    writeSecurityAudit
 } = require('../../helpers/security');
 const { APP_ID, PRODUCT_COLLECTIONS } = require('../../helpers/config');
 const { collectStoragePaths } = require('../triggers/mediaCleanup');
 const db = admin.firestore();
 
 // --- RESET STATS (Compteurs produits) ---
-exports.resetAllStats = functions.https.onCall(async (data, context) => {
-    checkIsSuperAdmin(context);
+exports.resetAllStats = functions.runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+    checkRecentSuperAdmin(context);
+    assertConfirmText(data, 'RESET STATS', 'reset stats');
     let totalOp = 0;
     try {
         for (const colName of PRODUCT_COLLECTIONS) {
@@ -40,6 +44,7 @@ exports.resetAllStats = functions.https.onCall(async (data, context) => {
             const results = await Promise.all(itemPromises);
             totalOp += results.reduce((acc, curr) => acc + curr, 0);
         }
+        await writeSecurityAudit('maintenance.reset_all_stats', context, { count: totalOp });
         return { success: true, count: totalOp };
     } catch (error) {
         console.error("Erreur Reset Stats:", error);
@@ -48,8 +53,9 @@ exports.resetAllStats = functions.https.onCall(async (data, context) => {
 });
 
 // --- GARBAGE COLLECTOR (Storage orphelin) ---
-exports.runGarbageCollector = functions.runWith({ timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
-    checkIsAdmin(context);
+exports.runGarbageCollector = functions.runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
+    checkRecentAdmin(context);
+    assertConfirmText(data, 'NETTOYER CLOUD', 'nettoyage cloud');
     const bucket = admin.storage().bucket();
     let stats = { scanDate: new Date().toISOString(), ghostDocsDeleted: 0, orphanedImagesDeleted: 0, errors: [] };
 
@@ -92,6 +98,7 @@ exports.runGarbageCollector = functions.runWith({ timeoutSeconds: 540, memory: '
                 }
             }
         }
+        await writeSecurityAudit('maintenance.run_garbage_collector', context, { stats });
         return { success: true, stats };
     } catch (error) {
         console.error("Critical GC Error:", error);
@@ -100,9 +107,11 @@ exports.runGarbageCollector = functions.runWith({ timeoutSeconds: 540, memory: '
 });
 
 // --- PURGE UTILISATEURS (Super Admin) ---
-exports.resetAllUsers = functions.runWith({ timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
-    checkIsSuperAdmin(context);
+exports.resetAllUsers = functions.runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
+    checkRecentSuperAdmin(context);
+    assertConfirmText(data, 'PURGER CLIENTS', 'purge clients');
     try {
+        const superAdminEmail = getSuperAdminEmail();
         let nextPageToken;
         let usersDeleted = 0;
         const preservedUids = [];
@@ -110,7 +119,7 @@ exports.resetAllUsers = functions.runWith({ timeoutSeconds: 540, memory: '1GB' }
             const listUsersResult = await admin.auth().listUsers(1000, nextPageToken);
             const toDelete = [];
             for (const user of listUsersResult.users) {
-                if (user.email === SUPER_ADMIN_EMAIL) {
+                if (superAdminEmail && String(user.email || '').trim().toLowerCase() === superAdminEmail) {
                     preservedUids.push(user);
                     continue;
                 }
@@ -123,6 +132,10 @@ exports.resetAllUsers = functions.runWith({ timeoutSeconds: 540, memory: '1GB' }
             nextPageToken = listUsersResult.pageToken;
         } while (nextPageToken);
 
+        await writeSecurityAudit('maintenance.reset_all_users', context, {
+            usersDeleted,
+            preservedCount: preservedUids.length
+        });
         return { success: true, count: usersDeleted, message: `${usersDeleted} comptes supprimés.` };
     } catch (error) {
         console.error("❌ Erreur Purge :", error);
@@ -131,8 +144,9 @@ exports.resetAllUsers = functions.runWith({ timeoutSeconds: 540, memory: '1GB' }
 });
 
 // --- PURGE ANONYMES ---
-exports.purgeAnonymousUsers = functions.runWith({ timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
-    checkIsSuperAdmin(context);
+exports.purgeAnonymousUsers = functions.runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
+    checkRecentSuperAdmin(context);
+    assertConfirmText(data, 'PURGER ANONYMES', 'purge anonymes');
     try {
         let nextPageToken;
         let totalDeleted = 0;
@@ -150,6 +164,7 @@ exports.purgeAnonymousUsers = functions.runWith({ timeoutSeconds: 540, memory: '
             }
             nextPageToken = listUsersResult.pageToken;
         } while (nextPageToken);
+        await writeSecurityAudit('maintenance.purge_anonymous_users', context, { totalDeleted });
         return { success: true, count: totalDeleted };
     } catch (error) {
         throw new functions.https.HttpsError('internal', error.message);
@@ -157,8 +172,9 @@ exports.purgeAnonymousUsers = functions.runWith({ timeoutSeconds: 540, memory: '
 });
 
 // --- PURGE MEUBLES (Tous les produits + images + sous-collections) ---
-exports.purgeAllProducts = functions.runWith({ timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
-    checkIsSuperAdmin(context);
+exports.purgeAllProducts = functions.runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
+    checkRecentSuperAdmin(context);
+    assertConfirmText(data, 'PURGER MEUBLES', 'purge meubles');
     const bucket = admin.storage().bucket();
     let totalDocsDeleted = 0;
     let totalImagesDeleted = 0;
@@ -208,6 +224,11 @@ exports.purgeAllProducts = functions.runWith({ timeoutSeconds: 540, memory: '1GB
             }
         }
 
+        await writeSecurityAudit('maintenance.purge_all_products', context, {
+            totalDocsDeleted,
+            totalImagesDeleted
+        });
+
         return {
             success: true,
             docsDeleted: totalDocsDeleted,
@@ -221,13 +242,15 @@ exports.purgeAllProducts = functions.runWith({ timeoutSeconds: 540, memory: '1GB
 });
 
 // --- PURGE COMMANDES ---
-exports.resetAllOrders = functions.https.onCall(async (data, context) => {
-    checkIsSuperAdmin(context);
+exports.resetAllOrders = functions.runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+    checkRecentSuperAdmin(context);
+    assertConfirmText(data, 'PURGER COMMANDES', 'purge commandes');
     try {
         const ordersSnap = await db.collection('orders').get();
         const batch = db.batch();
         ordersSnap.forEach(doc => batch.delete(doc.ref));
         await batch.commit();
+        await writeSecurityAudit('maintenance.reset_all_orders', context, { count: ordersSnap.size });
         return { success: true, count: ordersSnap.size };
     } catch (error) {
         throw new functions.https.HttpsError('internal', error.message);
@@ -235,7 +258,7 @@ exports.resetAllOrders = functions.https.onCall(async (data, context) => {
 });
 
 // --- UPLOAD SÉCURISÉ (URL Signée) ---
-exports.getUploadUrl = functions.https.onCall(async (data, context) => {
+exports.getUploadUrl = functions.runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
     checkIsAdmin(context);
     const { fileName, contentType, collectionName } = data;
     if (!fileName || !contentType) throw new functions.https.HttpsError('invalid-argument', 'Params manquants.');

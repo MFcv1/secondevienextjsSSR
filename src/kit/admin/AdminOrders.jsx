@@ -128,13 +128,16 @@ const AdminOrders = ({ darkMode = false }) => {
             'Le client voit generalement le credit sous environ 5 a 10 jours ouvrables selon sa banque.'
         ].join('\n');
         if (!window.confirm(message)) return;
+        const confirmText = window.prompt('Tapez REMBOURSER COMMANDE pour confirmer le remboursement Stripe.');
+        if (confirmText !== 'REMBOURSER COMMANDE') return;
 
         try {
             setRefundingOrderId(order.id);
             const refundOrderAdmin = httpsCallable(functions, 'refundOrderAdmin');
             const result = await refundOrderAdmin({
                 orderId: order.id,
-                reason: 'Remboursement admin avec remise en vente'
+                reason: 'Remboursement admin avec remise en vente',
+                confirmText
             });
             const refundId = result.data?.refundId ? `\nRefund: ${result.data.refundId}` : '';
             alert(`Remboursement Stripe lance avec succes. Stock remis en vente si le remboursement est reussi.${refundId}`);

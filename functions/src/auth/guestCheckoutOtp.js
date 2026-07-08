@@ -116,7 +116,7 @@ function mapMailError(error) {
 }
 
 exports.sendGuestCheckoutOtp = functions
-    .runWith({ secrets: [GMAIL_EMAIL, GMAIL_PASSWORD] })
+    .runWith({ enforceAppCheck: true, secrets: [GMAIL_EMAIL, GMAIL_PASSWORD] })
     .https.onCall(async (data, context) => {
         const email = normalizeEmail(data?.email);
         const adminEmail = GMAIL_EMAIL.value();
@@ -196,7 +196,7 @@ exports.sendGuestCheckoutOtp = functions
     });
 
 exports.verifyGuestCheckoutOtp = functions
-    .runWith({ secrets: [GMAIL_PASSWORD] })
+    .runWith({ enforceAppCheck: true, secrets: [GMAIL_PASSWORD] })
     .https.onCall(async (data, context) => {
         const email = normalizeEmail(data?.email);
         const code = normalizeCode(data?.code);

@@ -50,7 +50,8 @@ const AdminUsers = ({ darkMode }) => {
             // Call Cloud Function
             const result = await addAdminFn({
                 email: newEmail,
-                name: newName
+                name: newName,
+                confirmText: 'AJOUTER ADMIN'
             });
 
             if (result.data.success) {
@@ -75,7 +76,7 @@ const AdminUsers = ({ darkMode }) => {
 
         try {
             const removeAdminFn = httpsCallable(functions, 'removeAdminUser');
-            await removeAdminFn({ uid, email });
+            await removeAdminFn({ uid, email, confirmText: 'RETIRER ADMIN' });
             // Firestore sync is automatic via onSnapshot
         } catch (error) {
             console.error(error);

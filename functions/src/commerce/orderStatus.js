@@ -21,7 +21,7 @@ function hasTrustedOrderReadAuth(context, orderData) {
     return Boolean(uid && uid === orderData.userId && hasTrustedEmail) || hasTrustedEmail;
 }
 
-exports.getOrderStatusClient = functions.https.onCall(async (data, context) => {
+exports.getOrderStatusClient = functions.runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
     const orderId = normalizeFirestoreId(data?.orderId, 'ID commande');
     const orderSnap = await db.collection('orders').doc(orderId).get();
 

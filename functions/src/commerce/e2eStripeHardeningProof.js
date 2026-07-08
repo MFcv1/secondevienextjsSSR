@@ -10,6 +10,22 @@ const db = admin.firestore();
 
 const safeString = (value) => String(value || '').trim();
 
+function getRuntimeProjectId() {
+    if (process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT) {
+        return process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;
+    }
+    try {
+        return JSON.parse(process.env.FIREBASE_CONFIG || '{}').projectId || '';
+    } catch {
+        return '';
+    }
+}
+
+function isE2eProofAllowed() {
+    if (String(process.env.E2E_PROOF_ENABLED || '').toLowerCase() === 'true') return true;
+    return getRuntimeProjectId() === 'secondevienextjsssr';
+}
+
 function hasMatchingToken(provided, expected) {
     const left = Buffer.from(safeString(provided));
     const right = Buffer.from(safeString(expected));
@@ -227,6 +243,10 @@ async function waitForCancellationProof(stripe, orderId, paymentIntentId, produc
 exports.e2eStripeHardeningProof = functions
     .runWith({ secrets: [STRIPE_SECRET_KEY, E2E_PROOF_TOKEN], timeoutSeconds: 180, memory: '512MB' })
     .https.onRequest(async (req, res) => {
+        if (!isE2eProofAllowed()) {
+            return res.status(403).json({ error: 'e2e_proof_disabled' });
+        }
+
         if (req.method !== 'POST') {
             return res.status(405).json({ error: 'method_not_allowed' });
         }

@@ -3,7 +3,10 @@
  * Fonctions de vérification admin/super-admin réutilisables.
  */
 const functions = require('firebase-functions/v1');
+const admin = require('firebase-admin');
 const { PRODUCT_COLLECTIONS } = require('./config');
+
+const SECURITY_AUDIT_COLLECTION = 'sys_audit_security';
 
 // ⚠️ CONFIGURER: Email du Super Admin (doit correspondre à VITE_SUPER_ADMIN_EMAIL)
 function normalizeEmail(value) {
@@ -70,6 +73,56 @@ function checkRecentSuperAdmin(context, maxAgeSeconds = 900) {
     }
 }
 
+function checkRecentAdmin(context, maxAgeSeconds = 900) {
+    checkIsAdmin(context);
+    const authTime = Number(context.auth?.token?.auth_time || 0);
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    if (!authTime || nowSeconds - authTime > maxAgeSeconds) {
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'Session admin trop ancienne. Reconnectez-vous avant cette action sensible.'
+        );
+    }
+}
+
+function assertConfirmText(data, expectedText, label = 'confirmation') {
+    const provided = String(data?.confirmText || '').trim();
+    if (provided !== expectedText) {
+        throw new functions.https.HttpsError(
+            'invalid-argument',
+            `Phrase de ${label} invalide.`
+        );
+    }
+}
+
+function getCallerAuditInfo(context) {
+    return {
+        uid: context.auth?.uid || null,
+        email: normalizeEmail(context.auth?.token?.email),
+        isAdmin: context.auth?.token?.admin === true,
+        isSuperAdmin: context.auth?.token?.superAdmin === true,
+        authTime: context.auth?.token?.auth_time || null,
+        ip: String(context.rawRequest?.headers?.['x-forwarded-for'] || context.rawRequest?.ip || '').slice(0, 180),
+        userAgent: String(context.rawRequest?.headers?.['user-agent'] || '').slice(0, 500)
+    };
+}
+
+async function writeSecurityAudit(eventType, context, payload = {}) {
+    try {
+        await admin.firestore().collection(SECURITY_AUDIT_COLLECTION).add({
+            eventType,
+            caller: getCallerAuditInfo(context),
+            payload,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+    } catch (error) {
+        console.error('Security audit write failed:', {
+            eventType,
+            message: error?.message || String(error)
+        });
+    }
+}
+
 function normalizeProductCollection(collectionName = 'furniture') {
     if (typeof collectionName !== 'string' || !PRODUCT_COLLECTIONS.includes(collectionName)) {
         throw new functions.https.HttpsError('invalid-argument', 'Collection produit invalide.');
@@ -118,6 +171,9 @@ module.exports = {
     checkIsAdmin,
     checkIsSuperAdmin,
     checkRecentSuperAdmin,
+    checkRecentAdmin,
+    assertConfirmText,
+    writeSecurityAudit,
     normalizeProductCollection,
     normalizeFirestoreId,
     normalizeQuantity,

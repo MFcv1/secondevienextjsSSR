@@ -172,12 +172,15 @@ const AdminReturns = ({ darkMode = false }) => {
             'Le client recevra son credit bancaire selon les delais de sa banque.'
         ].join('\n');
         if (!window.confirm(message)) return;
+        const confirmText = window.prompt('Tapez REMBOURSER COMMANDE pour confirmer le remboursement Stripe.');
+        if (confirmText !== 'REMBOURSER COMMANDE') return;
 
         await runAction(order.id, 'refund', async () => {
             const refundOrderAdmin = httpsCallable(functions, 'refundOrderAdmin');
             const res = await refundOrderAdmin({
                 orderId: order.id,
-                reason: 'Remboursement admin depuis gestion retours'
+                reason: 'Remboursement admin depuis gestion retours',
+                confirmText
             });
             setSearch(order.id);
             return `Remboursement lance. Reference Stripe: ${res.data?.refundId || 'en attente'}.`;

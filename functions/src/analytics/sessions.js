@@ -26,7 +26,45 @@ const GEO_CACHE_MS = 24 * 60 * 60 * 1000;
 const GEO_CACHE_MAX = 1000;
 const MAX_JOURNEY_CHUNK = 24;
 const MAX_EVENT_CHUNK = 24;
+const MAX_ANALYTICS_PAYLOAD_BYTES = 24 * 1024;
 const geoCache = new Map();
+
+function byteLength(value) {
+    return Buffer.byteLength(JSON.stringify(value || {}), 'utf8');
+}
+
+function assertAnalyticsPayloadSize(payload) {
+    if (byteLength(payload) > MAX_ANALYTICS_PAYLOAD_BYTES) {
+        throw new functions.https.HttpsError('invalid-argument', 'Payload analytics trop volumineux.');
+    }
+}
+
+function getRequestIp(requestLike = {}) {
+    const rawIp = requestLike.headers?.['x-forwarded-for'] || requestLike.ip || requestLike.connection?.remoteAddress;
+    return rawIp ? String(rawIp).split(',')[0].trim() : 'Unknown';
+}
+
+async function assertAnalyticsRateLimit(kind, requestLike, maxPerMinute = 120) {
+    const ip = getRequestIp(requestLike);
+    const key = crypto.createHash('sha1').update(`${kind}:${ip}`).digest('hex').slice(0, 24);
+    const ref = db.doc(`sys_ratelimit/analytics_${key}`);
+    const now = Date.now();
+
+    await db.runTransaction(async (tx) => {
+        const snap = await tx.get(ref);
+        const state = snap.exists ? snap.data() : {};
+        const resetAt = Number(state.resetAt || 0);
+        const count = now < resetAt ? Number(state.count || 0) : 0;
+        if (count >= maxPerMinute) {
+            throw new functions.https.HttpsError('resource-exhausted', 'Trop de requetes analytics.');
+        }
+        tx.set(ref, {
+            count: count + 1,
+            resetAt: now < resetAt ? resetAt : now + 60 * 1000,
+            expireAt: timestampFromNow(ANALYTICS_DETAIL_RETENTION_DAYS)
+        }, { merge: true });
+    });
+}
 
 function computeVisitorKey(ip, userAgent) {
     if (!ip) return null;
@@ -231,9 +269,10 @@ async function deleteSessionRecursively(sessionId) {
     await db.recursiveDelete(sessionRef);
 }
 
-exports.initLiveSession = functions.https.onCall(async (data, context) => {
-    const rawIp = context.rawRequest.headers['x-forwarded-for'] || context.rawRequest.connection.remoteAddress;
-    const ip = rawIp ? rawIp.split(',')[0].trim() : 'Unknown';
+exports.initLiveSession = functions.runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+    assertAnalyticsPayloadSize(data);
+    await assertAnalyticsRateLimit('init', context.rawRequest, 60);
+    const ip = getRequestIp(context.rawRequest);
     const userAgent = context.rawRequest.headers['user-agent'] || 'Unknown';
     const { userId, email, type, device, browser, os, entryPageKey } = data;
 
@@ -277,7 +316,9 @@ exports.initLiveSession = functions.https.onCall(async (data, context) => {
     }
 });
 
-exports.syncSession = functions.https.onCall(async (data) => {
+exports.syncSession = functions.runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+    assertAnalyticsPayloadSize(data);
+    await assertAnalyticsRateLimit('sync', context.rawRequest, 180);
     const {
         sessionId,
         journey,
@@ -330,6 +371,9 @@ exports.syncSessionBeacon = functions.https.onRequest(async (req, res) => {
             .split(',')
             .map((origin) => origin.trim())
             .filter(Boolean),
+        'https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app',
+        'https://secondevienextjsssr.web.app',
+        'https://secondevienextjsssr.firebaseapp.com',
         'http://localhost:5173',
         'http://localhost:3000'
     ];
@@ -341,7 +385,8 @@ exports.syncSessionBeacon = functions.https.onRequest(async (req, res) => {
         res.status(403).send('Forbidden origin');
         return;
     } else {
-        res.set('Access-Control-Allow-Origin', allowedOrigins[0]);
+        res.status(403).send('Missing origin');
+        return;
     }
     res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.set('Access-Control-Allow-Headers', 'Content-Type');
@@ -352,6 +397,13 @@ exports.syncSessionBeacon = functions.https.onRequest(async (req, res) => {
     }
 
     try {
+        const rawSize = req.rawBody ? req.rawBody.length : Buffer.byteLength(JSON.stringify(req.body || {}), 'utf8');
+        if (rawSize > MAX_ANALYTICS_PAYLOAD_BYTES) {
+            res.status(413).send('Payload too large');
+            return;
+        }
+        await assertAnalyticsRateLimit('beacon', req, 180);
+
         let payload;
         if (typeof req.body === 'string') {
             payload = JSON.parse(req.body);
@@ -361,8 +413,7 @@ exports.syncSessionBeacon = functions.https.onRequest(async (req, res) => {
             payload = req.body;
         }
 
-        const rawIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress;
-        const ip = rawIp ? rawIp.split(',')[0].trim() : 'Unknown';
+        const ip = getRequestIp(req);
         const userAgent = req.headers['user-agent'] || 'Unknown';
 
         const {
@@ -406,6 +457,10 @@ exports.syncSessionBeacon = functions.https.onRequest(async (req, res) => {
 
         res.status(200).send('Session synced via beacon');
     } catch (error) {
+        if (error instanceof functions.https.HttpsError && error.code === 'resource-exhausted') {
+            res.status(429).send('Too many analytics requests');
+            return;
+        }
         console.error('Beacon Sync Error:', error);
         res.status(500).send('Beacon sync failed');
     }

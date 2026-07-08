@@ -545,5 +545,5 @@ async function createOrderHandler(data, context) {
     throw new functions.https.HttpsError('invalid-argument', 'Méthode de paiement non supportée.');
 }
 
-exports.createOrder = functions.runWith({ secrets: [STRIPE_SECRET_KEY, GMAIL_EMAIL, GMAIL_PASSWORD] }).https.onCall(createOrderHandler);
+exports.createOrder = functions.runWith({ enforceAppCheck: true, secrets: [STRIPE_SECRET_KEY, GMAIL_EMAIL, GMAIL_PASSWORD] }).https.onCall(createOrderHandler);
 exports.createOrderHandler = createOrderHandler;

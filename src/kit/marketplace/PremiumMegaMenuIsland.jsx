@@ -349,9 +349,9 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
                       <h3 className={`mb-6 text-[10px] font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-stone-500' : 'text-stone-400 dark:text-stone-500'}`}>
                         Explorer {activeItem.label}
                       </h3>
-                      <div className={`grid ${activeItem.singleColumn ? 'grid-cols-1 gap-y-8' : 'grid-cols-2 gap-x-6 gap-y-8'}`}>
+                      <div className={`grid ${activeItem.singleColumn ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-3'}`}>
                         {activeItem.links?.map(({ Icon, title, desc, href }) => (
-                          <Link key={title} href={href} prefetch={false} className={`group/link -m-3 flex gap-4 rounded-xl p-3 transition-colors ${darkMode ? 'hover:bg-white/5' : 'hover:bg-stone-100/80 dark:hover:bg-white/5'}`}>
+                          <Link key={title} href={href} prefetch={false} className={`group/link flex min-h-[76px] w-full gap-4 rounded-xl p-3 transition-colors ${darkMode ? 'hover:bg-white/5' : 'hover:bg-stone-100/80 dark:hover:bg-white/5'}`}>
                             <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border transition-all duration-300 ${darkMode ? 'border-white/5 bg-white/5 group-hover/link:bg-white/10' : 'border-stone-100 bg-stone-50 group-hover/link:border-stone-200 group-hover/link:bg-stone-100 dark:border-white/5 dark:bg-white/5 dark:group-hover/link:bg-white/10'}`}>
                               <Icon size={20} strokeWidth={1.5} className={`transition-all duration-300 group-hover/link:scale-110 group-hover/link:rotate-6 ${darkMode ? 'text-stone-400 group-hover/link:text-white' : 'text-stone-400 group-hover/link:text-stone-800 dark:text-stone-400 dark:group-hover/link:text-white'}`} />
                             </span>
@@ -367,9 +367,9 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
                       <h3 className={`mb-6 text-[10px] font-bold uppercase tracking-[0.2em] ${darkMode ? 'text-stone-500' : 'text-stone-400 dark:text-stone-500'}`}>
                         Ressources cles
                       </h3>
-                      <div className="flex flex-col gap-5">
+                      <div className="flex flex-col gap-3">
                         {(activeItem.resources || []).map((title) => (
-                          <Link key={title} href="/devis" prefetch={false} className={`-mx-2.5 flex items-center gap-2 rounded-lg p-2.5 text-[13px] font-medium transition-colors ${darkMode ? 'text-stone-400 hover:bg-white/5 hover:text-white' : 'text-stone-500 hover:bg-stone-100/80 hover:text-black dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-white'}`}>
+                          <Link key={title} href="/devis" prefetch={false} className={`flex min-h-[40px] w-full items-center gap-2 rounded-lg p-2.5 text-[13px] font-medium transition-colors ${darkMode ? 'text-stone-400 hover:bg-white/5 hover:text-white' : 'text-stone-500 hover:bg-stone-100/80 hover:text-black dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-white'}`}>
                             <span>-&gt;</span>
                             {title}
                           </Link>

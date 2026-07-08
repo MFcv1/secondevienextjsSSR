@@ -508,6 +508,10 @@ const AdminDashboard = ({ user, darkMode = false }) => {
 
     // ─── ACTIONS ───
     const handleResetOrdersClick = () => setIsOrderResetModalOpen(true);
+    const requireConfirmText = (expectedText) => {
+        const value = window.prompt(`Tapez ${expectedText} pour confirmer cette action.`);
+        return value === expectedText ? value : null;
+    };
 
     const exportToCsv = async (orders) => {
         const exportOrders = orders && orders.length > 0
@@ -524,11 +528,13 @@ const AdminDashboard = ({ user, darkMode = false }) => {
     };
 
     const confirmResetOrders = async () => {
+        const confirmText = requireConfirmText('PURGER COMMANDES');
+        if (!confirmText) return;
         setResettingOrders(true);
         try {
             await exportToCsv(allOrders);
             const resetOrdersFn = httpsCallable(functions, 'resetAllOrders');
-            const result = await executeWithProgress(() => resetOrdersFn(), 5000);
+            const result = await executeWithProgress(() => resetOrdersFn({ confirmText }), 5000);
             const count = result.data.count;
             setStats(prev => ({ ...prev, totalRevenue: 0, totalOrders: 0, averageOrderValue: 0 }));
             setRecentOrders([]);
@@ -546,10 +552,12 @@ const AdminDashboard = ({ user, darkMode = false }) => {
     };
 
     const confirmCleaning = async () => {
+        const confirmText = requireConfirmText('NETTOYER CLOUD');
+        if (!confirmText) return;
         setCleaningCloud(true);
         try {
             const garbageCollectorFn = httpsCallable(functions, 'runGarbageCollector');
-            const result = await executeWithProgress(() => garbageCollectorFn(), 12000);
+            const result = await executeWithProgress(() => garbageCollectorFn({ confirmText }), 12000);
             const s = result.data.stats;
             const freedMb = (s.storageSpaceFreedBytes / (1024 * 1024)).toFixed(2);
             setIsCleaningModalOpen(false);
@@ -559,10 +567,12 @@ const AdminDashboard = ({ user, darkMode = false }) => {
     };
 
     const confirmResetUsers = async () => {
+        const confirmText = requireConfirmText('PURGER CLIENTS');
+        if (!confirmText) return;
         setResettingUsers(true);
         try {
             const resetUsersFn = httpsCallable(functions, 'resetAllUsers');
-            const result = await executeWithProgress(() => resetUsersFn(), 4000);
+            const result = await executeWithProgress(() => resetUsersFn({ confirmText }), 4000);
             setIsResetUsersModalOpen(false);
             alert(`✅ Succès !\n${result.data.message}`);
         } catch (error) { console.error(error); alert("Erreur purge utilisateurs: " + error.message); }
@@ -570,10 +580,12 @@ const AdminDashboard = ({ user, darkMode = false }) => {
     };
 
     const confirmPurgeAnonymous = async () => {
+        const confirmText = requireConfirmText('PURGER ANONYMES');
+        if (!confirmText) return;
         setPurgingAnonymous(true);
         try {
             const purgeAnonymousFn = httpsCallable(functions, 'purgeAnonymousUsers');
-            const result = await executeWithProgress(() => purgeAnonymousFn(), 4000);
+            const result = await executeWithProgress(() => purgeAnonymousFn({ confirmText }), 4000);
             setIsPurgeAnonymousModalOpen(false);
             alert(`✅ Succès !\n${result.data.message}`);
         } catch (error) { console.error(error); alert("Erreur purge anonymes: " + error.message); } 
@@ -581,10 +593,12 @@ const AdminDashboard = ({ user, darkMode = false }) => {
     };
 
     const confirmPurgeProducts = async () => {
+        const confirmText = requireConfirmText('PURGER MEUBLES');
+        if (!confirmText) return;
         setPurgingProducts(true);
         try {
             const purgeProductsFn = httpsCallable(functions, 'purgeAllProducts');
-            const result = await executeWithProgress(() => purgeProductsFn(), 15000);
+            const result = await executeWithProgress(() => purgeProductsFn({ confirmText }), 15000);
             setIsPurgeProductsModalOpen(false);
             alert(`✅ Purge terminée !\n${result.data.message}`);
         } catch (error) { console.error(error); alert("Erreur purge meubles: " + error.message); }

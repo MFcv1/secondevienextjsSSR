@@ -4,9 +4,12 @@ const Stripe = require('stripe');
 const { APP_ID } = require('../../helpers/config');
 const { STRIPE_SECRET_KEY } = require('../../helpers/secrets');
 const {
+    assertConfirmText,
     checkIsAdmin,
+    checkRecentAdmin,
     normalizeFirestoreId,
-    normalizeProductCollection
+    normalizeProductCollection,
+    writeSecurityAudit
 } = require('../../helpers/security');
 
 const db = admin.firestore();
@@ -114,9 +117,11 @@ async function restoreOrderStock(transaction, order, orderId) {
 }
 
 exports.refundOrderAdmin = functions
-    .runWith({ secrets: [STRIPE_SECRET_KEY] })
+    .runWith({ enforceAppCheck: true, secrets: [STRIPE_SECRET_KEY] })
     .https.onCall(async (data, context) => {
         const adminInfo = checkIsAdmin(context);
+        checkRecentAdmin(context);
+        assertConfirmText(data, 'REMBOURSER COMMANDE', 'remboursement');
         const orderId = normalizeFirestoreId(data?.orderId, 'ID commande');
         const refundReason = typeof data?.reason === 'string' && data.reason.trim()
             ? data.reason.trim().slice(0, 500)
@@ -228,6 +233,19 @@ exports.refundOrderAdmin = functions
             });
         });
 
+        await writeSecurityAudit('commerce.refund_order_admin', context, {
+            orderId,
+            refundId: refund.id,
+            refundStatus: refund.status || null,
+            orderStatus: finalStatus,
+            amount: refund.amount || null,
+            currency: refund.currency || null,
+            paymentIntentId: orderForRefund.stripePaymentIntentId || null,
+            stripeConnectedAccountId: orderForRefund.stripeConnectedAccountId || null,
+            stockRestored: finalStatus === 'refunded' && refundValidationErrors.length === 0,
+            refundValidationErrors
+        });
+
         return {
             success: true,
             refundId: refund.id,
@@ -238,7 +256,7 @@ exports.refundOrderAdmin = functions
     });
 
 exports.syncRefundStatusAdmin = functions
-    .runWith({ secrets: [STRIPE_SECRET_KEY] })
+    .runWith({ enforceAppCheck: true, secrets: [STRIPE_SECRET_KEY] })
     .https.onCall(async (data, context) => {
         checkIsAdmin(context);
         const orderId = normalizeFirestoreId(data?.orderId, 'ID commande');

@@ -3,14 +3,26 @@
  */
 const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
-const { checkIsAdmin, checkIsSuperAdmin, SUPER_ADMIN_EMAIL } = require('../../helpers/security');
+const {
+    assertConfirmText,
+    checkIsAdmin,
+    checkRecentSuperAdmin,
+    getSuperAdminEmail,
+    normalizeEmail,
+    writeSecurityAudit
+} = require('../../helpers/security');
 const { SUPER_ADMIN_EMAIL: SUPER_ADMIN_EMAIL_SECRET } = require('../../helpers/secrets');
 const { timestampFromNow, SYSTEM_DOC_RETENTION_DAYS } = require('../analytics/constants');
 
 const db = admin.firestore();
 
-exports.syncSuperAdminClaim = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
-    checkIsSuperAdmin(context);
+exports.syncSuperAdminClaim = functions.runWith({ enforceAppCheck: true, secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
+    checkRecentSuperAdmin(context);
+    const configuredSuperAdminEmail = getSuperAdminEmail();
+    const callerEmail = normalizeEmail(context.auth?.token?.email);
+    if (!configuredSuperAdminEmail || callerEmail !== configuredSuperAdminEmail) {
+        throw new functions.https.HttpsError('permission-denied', 'Bootstrap super-admin reserve au compte proprietaire configure.');
+    }
 
     try {
         const userRecord = await admin.auth().getUser(context.auth.uid);
@@ -47,6 +59,11 @@ exports.syncSuperAdminClaim = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SE
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
+        await writeSecurityAudit('admin.sync_super_admin_claim', context, {
+            uid: context.auth.uid,
+            email
+        });
+
         return { success: true };
     } catch (error) {
         if (error instanceof functions.https.HttpsError) throw error;
@@ -56,9 +73,10 @@ exports.syncSuperAdminClaim = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SE
 });
 
 // --- AJOUTER UN ADMIN ---
-exports.addAdminUser = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
-    checkIsSuperAdmin(context);
-    const normalizedEmail = (data?.email || '').trim().toLowerCase();
+exports.addAdminUser = functions.runWith({ enforceAppCheck: true, secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
+    checkRecentSuperAdmin(context);
+    assertConfirmText(data, 'AJOUTER ADMIN', 'ajout admin');
+    const normalizedEmail = normalizeEmail(data?.email);
     const name = data?.name;
     if (!normalizedEmail) throw new functions.https.HttpsError('invalid-argument', 'Email requis.');
 
@@ -67,7 +85,8 @@ exports.addAdminUser = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }
     let targetEmailVerified = false;
 
     try {
-        const isTargetSuperAdmin = Boolean(SUPER_ADMIN_EMAIL) && normalizedEmail === SUPER_ADMIN_EMAIL.trim().toLowerCase();
+        const configuredSuperAdminEmail = getSuperAdminEmail();
+        const isTargetSuperAdmin = Boolean(configuredSuperAdminEmail) && normalizedEmail === configuredSuperAdminEmail;
         try {
             const userRecord = await admin.auth().getUserByEmail(normalizedEmail);
             targetUid = userRecord.uid;
@@ -101,6 +120,13 @@ exports.addAdminUser = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }
 
         if (userExists && targetUid) {
             if (!targetEmailVerified) {
+                await writeSecurityAudit('admin.add_admin_user', context, {
+                    targetUid,
+                    targetEmail: normalizedEmail,
+                    userExists,
+                    targetEmailVerified,
+                    isTargetSuperAdmin
+                });
                 return { success: true, userExists, uid: targetUid, pendingEmailVerification: true };
             }
             await db.collection('users').doc(targetUid).set({
@@ -111,6 +137,13 @@ exports.addAdminUser = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
         }
+        await writeSecurityAudit('admin.add_admin_user', context, {
+            targetUid,
+            targetEmail: normalizedEmail,
+            userExists,
+            targetEmailVerified,
+            isTargetSuperAdmin
+        });
         return { success: true, userExists, uid: targetUid };
     } catch (error) {
         console.error("Erreur Add Admin:", error);
@@ -119,12 +152,14 @@ exports.addAdminUser = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }
 });
 
 // --- RÉVOQUER UN ADMIN ---
-exports.removeAdminUser = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
-    checkIsSuperAdmin(context);
+exports.removeAdminUser = functions.runWith({ enforceAppCheck: true, secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
+    checkRecentSuperAdmin(context);
+    assertConfirmText(data, 'RETIRER ADMIN', 'retrait admin');
     const { uid } = data;
-    const email = (data?.email || '').trim().toLowerCase();
+    const email = normalizeEmail(data?.email);
+    const configuredSuperAdminEmail = getSuperAdminEmail();
 
-    if (email === SUPER_ADMIN_EMAIL.trim().toLowerCase()) {
+    if (configuredSuperAdminEmail && email === configuredSuperAdminEmail) {
         throw new functions.https.HttpsError('failed-precondition', 'Impossible de révoquer le super-administrateur.');
     }
 
@@ -158,6 +193,11 @@ exports.removeAdminUser = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET
 
         await db.doc('sys_metadata/admin_users').update({
             [`users.${uid || targetUid}`]: admin.firestore.FieldValue.delete()
+        });
+
+        await writeSecurityAudit('admin.remove_admin_user', context, {
+            targetUid: targetUid || uid || null,
+            targetEmail: email || null
         });
 
         return { success: true };
