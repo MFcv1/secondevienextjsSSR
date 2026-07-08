@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import WishlistView from '../../src/kit/marketplace/WishlistView';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
@@ -14,13 +14,56 @@ import {
   subscribeWishlistItems,
 } from '../../src/kit/marketplace/wishlistState';
 
+const publicCatalogProductCache = new Map();
+const PUBLIC_CATALOG_PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'secondevienextjsssr';
+
+const getPublicCatalogProductUrl = (id) => (
+  `https://us-central1-${PUBLIC_CATALOG_PROJECT_ID}.cloudfunctions.net/publicCatalog?id=${encodeURIComponent(id)}`
+);
+
+const normalizePublicCatalogProduct = (product, fallbackId) => {
+  if (!product) return null;
+  const id = String(product.id || fallbackId || '').trim();
+  if (!id) return null;
+  return {
+    ...product,
+    id,
+    originalId: id,
+    collectionName: product.collectionName || 'furniture',
+  };
+};
+
+const fetchPublicCatalogProduct = async (id) => {
+  const productId = String(id || '').trim();
+  if (!productId) return null;
+  if (publicCatalogProductCache.has(productId)) return publicCatalogProductCache.get(productId);
+
+  const productPromise = fetch(getPublicCatalogProductUrl(productId), {
+    headers: { accept: 'application/json' },
+  })
+    .then((response) => (response.ok ? response.json() : null))
+    .then((payload) => {
+      const product = payload?.product
+        || (payload?.collections?.furniture || []).find((item) => item.id === productId);
+      return normalizePublicCatalogProduct(product, productId);
+    })
+    .catch(() => null);
+
+  publicCatalogProductCache.set(productId, productPromise);
+  return productPromise;
+};
+
 function WishlistPageContent({ initialItems = [] }) {
   const router = useRouter();
   const { user } = useAuth();
   const [wishlistItems, setWishlistItems] = useState(() => (
     readWishlistIds().map((id) => ({ id, originalId: id }))
   ));
+  const [catalogItems, setCatalogItems] = useState(initialItems);
   const [darkMode, setDarkMode] = useState(false);
+  const wishlistIds = useMemo(() => (
+    Array.from(new Set(wishlistItems.map(getWishlistProductId).filter(Boolean)))
+  ), [wishlistItems]);
 
   useEffect(() => {
     try {
@@ -42,6 +85,33 @@ function WishlistPageContent({ initialItems = [] }) {
       (error) => console.error('Liste de souhaits sync error:', error)
     );
   }, [user]);
+
+  useEffect(() => {
+    if (!wishlistIds.length) return undefined;
+
+    const knownIds = new Set(catalogItems.map((item) => getWishlistProductId(item)));
+    const missingIds = wishlistIds.filter((id) => !knownIds.has(id));
+    if (!missingIds.length) return undefined;
+
+    let cancelled = false;
+    Promise.all(missingIds.map(fetchPublicCatalogProduct))
+      .then((products) => {
+        if (cancelled) return;
+        const nextProducts = products.filter(Boolean);
+        if (!nextProducts.length) return;
+        setCatalogItems((currentItems) => {
+          const byId = new Map(currentItems.map((item) => [getWishlistProductId(item), item]));
+          nextProducts.forEach((product) => {
+            byId.set(getWishlistProductId(product), product);
+          });
+          return Array.from(byId.values());
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [catalogItems, wishlistIds]);
 
   const addToCart = async (item) => {
     if (!isPurchasable(item)) return;
@@ -93,7 +163,7 @@ function WishlistPageContent({ initialItems = [] }) {
   return (
     <WishlistView
       wishlistItems={wishlistItems}
-      items={initialItems}
+      items={catalogItems}
       onAddToCart={addToCart}
       onToggleWishlist={toggleWishlist}
       onClearWishlist={handleClearWishlist}
