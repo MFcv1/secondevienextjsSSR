@@ -89,7 +89,7 @@ const CategoryProductCard = ({ item, layoutMode = 'grid', compact = true, priori
             <div className="absolute bottom-0 left-0 h-3 w-3 translate-x-2 -translate-y-2 border-b border-l border-white/40 transition-all duration-[600ms] group-hover:translate-x-0 group-hover:translate-y-0" />
             <div className="absolute bottom-0 right-0 h-3 w-3 -translate-x-2 -translate-y-2 border-b border-r border-white/40 transition-all duration-[600ms] group-hover:translate-x-0 group-hover:translate-y-0" />
             <span className="translate-y-2 text-[9px] font-black uppercase tracking-[0.4em] text-white transition-transform duration-[600ms] group-hover:translate-y-0">
-              D\u00e9couvrir
+              D&eacute;couvrir
             </span>
             <div className="h-[1.5px] w-8 origin-center scale-x-0 bg-white/30 transition-transform duration-[800ms] group-hover:scale-x-100" />
           </div>

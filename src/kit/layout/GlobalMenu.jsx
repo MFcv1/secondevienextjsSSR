@@ -6,6 +6,7 @@ import GlobalMenuMobile from './GlobalMenuMobile';
 
 const DESKTOP_MENU_QUERY = '(min-width: 1024px)';
 const DESKTOP_MENU_OPEN_CLASS = 'global-menu-desktop-open';
+const DESKTOP_ANNOUNCEMENT_VISIBLE_CLASS = 'global-menu-announcement-visible';
 
 const getIsDesktopMenuViewport = () => (
     typeof window !== 'undefined'
@@ -162,12 +163,14 @@ const GlobalMenu = ({
                     desktopAnnouncementHeightRef.current = Math.max(0, Math.round(visibleAnnouncementHeight));
                 }
                 root.classList.add(DESKTOP_MENU_OPEN_CLASS);
+                root.classList.toggle(DESKTOP_ANNOUNCEMENT_VISIBLE_CLASS, desktopAnnouncementHeightRef.current > 0);
             } else {
                 root.classList.add('global-menu-mobile-open');
             }
             syncMenuGeometry();
             return () => {
                 root.classList.remove(DESKTOP_MENU_OPEN_CLASS);
+                root.classList.remove(DESKTOP_ANNOUNCEMENT_VISIBLE_CLASS);
                 root.classList.remove('global-menu-mobile-open');
                 desktopAnnouncementHeightRef.current = null;
                 root.style.removeProperty('--global-menu-announcement-height');
@@ -176,6 +179,7 @@ const GlobalMenu = ({
         }
 
         root.classList.remove(DESKTOP_MENU_OPEN_CLASS);
+        root.classList.remove(DESKTOP_ANNOUNCEMENT_VISIBLE_CLASS);
         root.classList.remove('global-menu-mobile-open');
         desktopAnnouncementHeightRef.current = null;
         root.style.removeProperty('--global-menu-announcement-height');

@@ -106,11 +106,12 @@ export default function ProductDetailActionsIsland({
 
   if (mobile) {
     return (
-      <div className="w-full mt-4 border-t border-stone-200 pt-4 flex-shrink-0">
+      <div className="w-full mt-4 border-t border-stone-200 pt-4 flex-shrink-0" data-product-detail-actions>
         <button
           type="button"
           disabled={disabled}
           aria-disabled={disabled}
+          data-product-detail-action-button
           className={`w-full rounded-xl py-3.5 flex items-center justify-center gap-2 font-label text-[11px] tracking-[0.1em] uppercase active:scale-95 transition-all duration-300 ${
             disabled
               ? 'cursor-not-allowed bg-stone-200 text-stone-500'
@@ -135,13 +136,14 @@ export default function ProductDetailActionsIsland({
   }
 
   return (
-    <div className="mb-10 detail-stagger">
+    <div className="mb-10 detail-stagger" data-product-detail-actions>
       <div className="p-1 rounded-2xl border bg-white/40 border-black/5 shadow-sm transition-colors duration-1000">
         <button
           type="button"
           onClick={handleCart}
           disabled={disabled}
           aria-disabled={disabled}
+          data-product-detail-action-button
           className={`w-full py-4 rounded-xl flex justify-center items-center gap-2 font-label text-[11px] tracking-[0.1em] uppercase transition-all active:scale-95 ${
             disabled
               ? 'cursor-not-allowed bg-stone-200 text-stone-500'
