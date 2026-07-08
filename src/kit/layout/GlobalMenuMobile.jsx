@@ -12,12 +12,12 @@ import {
     Home,
     Lamp,
     Package,
-    Search,
     ShieldCheck,
     Sparkles,
     UserRound
 } from 'lucide-react';
 import { getCategoryUrl } from '../../utils/slug';
+import SearchSuggestIsland from '../marketplace/SearchSuggestIsland';
 
 const MENU_EASE = [0.22, 1, 0.36, 1];
 const MENU_FADE_EASE = [0.16, 1, 0.3, 1];
@@ -229,18 +229,14 @@ export default function GlobalMenuMobile({
             >
                 <motion.div className="global-menu-mobile-content flex h-full min-h-0 flex-col safe-pb-menu" variants={menuContentVariants}>
                     <motion.div className="global-menu-mobile-inner flex min-h-0 flex-1 flex-col px-4 pb-3 pt-3 sm:px-5" variants={mobileRevealGroupVariants}>
-                        <motion.label className={`global-menu-mobile-search relative flex items-center rounded-lg ${softBg}`} variants={mobileRevealItemVariants}>
-                            <span className="sr-only">Rechercher</span>
-                            <input
-                                type="search"
-                                placeholder="Rechercher un produit..."
-                                className={`h-full w-full rounded-lg bg-transparent pl-4 pr-11 text-[15px] outline-none placeholder:text-stone-400 ${darkMode ? 'text-stone-100' : 'text-stone-800'}`}
-                                onKeyDown={(event) => {
-                                    if (event.key === 'Enter') navigateToPath('/');
-                                }}
+                        <motion.div variants={mobileRevealItemVariants}>
+                            <SearchSuggestIsland
+                                darkMode={darkMode}
+                                variant="mobile"
+                                wrapperClassName={`global-menu-mobile-search relative flex items-center rounded-lg ${softBg}`}
+                                inputClassName={`h-full w-full rounded-lg bg-transparent pl-4 pr-11 text-[15px] outline-none placeholder:text-stone-400 ${darkMode ? 'text-stone-100' : 'text-stone-800'}`}
                             />
-                            <Search className="absolute right-3.5 text-stone-500" size={20} strokeWidth={1.5} />
-                        </motion.label>
+                        </motion.div>
 
                         <motion.div className="global-menu-mobile-actions grid grid-cols-3 gap-2 sm:grid-cols-4" variants={mobileRevealGroupVariants}>
                             {primaryLinks.map(({ label, desc, Icon, action }) => (

@@ -1,10 +1,9 @@
 const crypto = require('crypto');
 const admin = require('firebase-admin');
-const functions = require('firebase-functions/v1');
+const { functions, regionalFunctions, logFunctionPerf } = require('../../helpers/runtime');
 const nodemailer = require('nodemailer');
-const { GMAIL_EMAIL, GMAIL_PASSWORD } = require('../../helpers/secrets');
+const { GMAIL_EMAIL, GMAIL_PASSWORD, SUPER_ADMIN_EMAIL } = require('../../helpers/secrets');
 const { getSiteUrl } = require('../../helpers/config');
-const { SUPER_ADMIN_EMAIL } = require('../../helpers/security');
 const { timestampFromNow, SYSTEM_DOC_RETENTION_DAYS } = require('../analytics/constants');
 
 const db = admin.firestore();
@@ -14,6 +13,7 @@ const MIN_RESEND_MS = 60 * 1000;
 const MAX_EMAIL_SENDS_PER_HOUR = 5;
 const MAX_IP_SENDS_PER_HOUR = 20;
 const MAX_VERIFY_ATTEMPTS = 5;
+let gmailTransporter = null;
 
 function normalizeEmail(email) {
     const normalized = String(email || '').trim().toLowerCase();
@@ -55,14 +55,23 @@ function getIpRef(context) {
     return db.doc(`sys_ratelimit/customer_login_otp_ip_${sha256(ip)}`);
 }
 
-function createTransporter() {
-    return nodemailer.createTransport({
+function getTransporter() {
+    if (gmailTransporter) return gmailTransporter;
+
+    gmailTransporter = nodemailer.createTransport({
         service: 'gmail',
+        pool: true,
+        maxConnections: 2,
+        maxMessages: 100,
+        connectionTimeout: 5000,
+        greetingTimeout: 5000,
+        socketTimeout: 10000,
         auth: {
             user: GMAIL_EMAIL.value(),
             pass: GMAIL_PASSWORD.value()
         }
     });
+    return gmailTransporter;
 }
 
 function buildEmailHtml(code) {
@@ -135,7 +144,8 @@ function mapMailError(error) {
 }
 
 async function isAdminEmail(email, tx = null) {
-    if (SUPER_ADMIN_EMAIL && email === SUPER_ADMIN_EMAIL.trim().toLowerCase()) return true;
+    const superAdminEmail = String(process.env.SUPER_ADMIN_EMAIL || SUPER_ADMIN_EMAIL.value() || '').trim().toLowerCase();
+    if (superAdminEmail && email === superAdminEmail) return true;
 
     const adminRef = db.doc('sys_metadata/admin_users');
     const adminDoc = tx ? await tx.get(adminRef) : await adminRef.get();
@@ -178,10 +188,12 @@ async function getOrCreateCustomerUser(email) {
     return userRecord;
 }
 
-exports.sendCustomerLoginOtp = functions
+exports.sendCustomerLoginOtp = regionalFunctions()
     .runWith({ enforceAppCheck: true, secrets: [GMAIL_EMAIL, GMAIL_PASSWORD] })
     .https.onCall(async (data, context) => {
+        const startedAt = Date.now();
         const email = normalizeEmail(data?.email);
+        const emailHash = sha256(email);
         const adminEmail = GMAIL_EMAIL.value();
         const gmailPassword = GMAIL_PASSWORD.value();
         if (!adminEmail || !gmailPassword) {
@@ -235,7 +247,7 @@ exports.sendCustomerLoginOtp = functions
             }, { merge: true });
         });
 
-        const transporter = createTransporter();
+        const transporter = getTransporter();
         try {
             await transporter.sendMail({
                 from: `Seconde Vie <${adminEmail}>`,
@@ -248,16 +260,28 @@ exports.sendCustomerLoginOtp = functions
             await clearOtpAfterMailFailure(emailRef, error).catch((cleanupError) => {
                 console.error('Customer login OTP cleanup error:', cleanupError);
             });
+            logFunctionPerf('sendCustomerLoginOtp', startedAt, {
+                phase: 'mail_error',
+                emailHash,
+                code: error?.code || null,
+                responseCode: error?.responseCode || null
+            });
             throw mapMailError(error);
         }
 
+        logFunctionPerf('sendCustomerLoginOtp', startedAt, {
+            phase: 'success',
+            emailHash
+        });
         return { success: true, expiresInSeconds: Math.floor(OTP_TTL_MS / 1000), resendAfterSeconds: Math.floor(MIN_RESEND_MS / 1000) };
     });
 
-exports.verifyCustomerLoginOtp = functions
-    .runWith({ enforceAppCheck: true, secrets: [GMAIL_PASSWORD] })
+exports.verifyCustomerLoginOtp = regionalFunctions()
+    .runWith({ enforceAppCheck: true, secrets: [GMAIL_PASSWORD, SUPER_ADMIN_EMAIL] })
     .https.onCall(async (data) => {
+        const startedAt = Date.now();
         const email = normalizeEmail(data?.email);
+        const emailHash = sha256(email);
         const code = normalizeCode(data?.code);
         const now = Date.now();
         const otpRef = getOtpRef(email);
@@ -322,5 +346,9 @@ exports.verifyCustomerLoginOtp = functions
             signInProvider: 'email_otp'
         });
 
+        logFunctionPerf('verifyCustomerLoginOtp', startedAt, {
+            phase: 'success',
+            emailHash
+        });
         return { success: true, token };
     });

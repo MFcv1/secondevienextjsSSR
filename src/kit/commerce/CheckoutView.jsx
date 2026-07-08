@@ -7,6 +7,7 @@ import { httpsCallable } from 'firebase/functions';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { useToast } from '../ui/Toast';
 import { getPurchaseUnavailableLabel, isPurchasable } from './purchasability';
+import { logClientPerf, startClientPerf } from '../shared/clientPerf';
 
 const DELIVERY_SETTINGS_CACHE_KEY = 'secondevie:delivery-settings:v1';
 const PAYMENT_SETTINGS_CACHE_KEY = 'paymentSettings';
@@ -414,9 +415,11 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                 error: ''
             }));
 
+        const startedAt = startClientPerf();
         try {
             const sendOtp = httpsCallable(functions, 'sendGuestCheckoutOtp');
             await sendOtp({ email: normalizedCheckoutEmail });
+            logClientPerf('checkout.guest.sendGuestCheckoutOtp', startedAt, { phase: 'success' });
             setGuestOtp(prev => ({
                 ...prev,
                 status: 'sent',
@@ -427,6 +430,10 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
             }));
             toast('Code envoye par email.', { type: 'success' });
         } catch (error) {
+            logClientPerf('checkout.guest.sendGuestCheckoutOtp', startedAt, {
+                phase: 'error',
+                code: error?.code || null
+            });
             console.error('Guest checkout OTP send error:', error);
             setGuestOtp(prev => ({
                 ...prev,
@@ -447,6 +454,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
 
         guestOtpVerifyInFlightRef.current = true;
         setGuestOtp(prev => ({ ...prev, status: 'verifying', error: '' }));
+        const startedAt = startClientPerf();
 
         try {
             const verifyOtp = httpsCallable(functions, 'verifyGuestCheckoutOtp');
@@ -454,6 +462,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                 email: normalizedCheckoutEmail,
                 code
             });
+            logClientPerf('checkout.guest.verifyGuestCheckoutOtp', startedAt, { phase: 'success' });
             if (!result.data?.success) {
                 throw new Error('Validation OTP incomplete.');
             }
@@ -466,6 +475,10 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
             }));
             toast('Email verifie.', { type: 'success' });
         } catch (error) {
+            logClientPerf('checkout.guest.verifyGuestCheckoutOtp', startedAt, {
+                phase: 'error',
+                code: error?.code || null
+            });
             console.error('Guest checkout OTP verify error:', error);
             setGuestOtp(prev => ({
                 ...prev,
@@ -510,6 +523,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
             setCheckoutState('processing_deferred');
         }
 
+        const createOrderStartedAt = startClientPerf();
         try {
             const createOrder = httpsCallable(functions, 'createOrder');
 
@@ -525,6 +539,10 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
             });
 
             if (result.data.success) {
+                logClientPerf('checkout.createOrder', createOrderStartedAt, {
+                    phase: 'success',
+                    paymentMethod
+                });
                 if (paymentMethod === 'stripe_elements') {
                     if (result.data.clientSecret) {
                         setClientSecret(result.data.clientSecret);
@@ -549,6 +567,11 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                 throw new Error("Erreur de création de commande.");
             }
         } catch (error) {
+            logClientPerf('checkout.createOrder', createOrderStartedAt, {
+                phase: 'error',
+                paymentMethod,
+                code: error?.code || null
+            });
             console.error("Order error:", error);
             setCheckoutState('editing');
             setLockedOrderDraft(null);

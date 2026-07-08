@@ -173,16 +173,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         const syncAdminClaim = async () => {
             try {
                 const { getIdTokenResult } = await loadAuthModule();
-                let tokenResult = await getIdTokenResult(user, true);
-                if (tokenResult.claims.superAdmin !== true) {
-                    try {
-                        const syncSuperAdminClaim = await getCallableFunction('syncSuperAdminClaim');
-                        await syncSuperAdminClaim();
-                        tokenResult = await getIdTokenResult(user, true);
-                    } catch {
-                        // Only the configured owner email can bootstrap this claim.
-                    }
-                }
+                const tokenResult = await getIdTokenResult(user, true);
                 if (!cancelled) {
                     const hasSuperAdminClaim = tokenResult.claims.superAdmin === true;
                     setIsSuperAdmin(hasSuperAdminClaim);

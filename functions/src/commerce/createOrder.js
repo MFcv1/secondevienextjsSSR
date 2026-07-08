@@ -9,7 +9,7 @@
  * - Prix recalculé côté serveur (jamais confiance au front)
  * - Stock vérifié en transaction atomique
  */
-const functions = require('firebase-functions/v1');
+const { functions, regionalFunctions, logFunctionPerf } = require('../../helpers/runtime');
 const admin = require('firebase-admin');
 const { normalizeProductCollection, normalizeFirestoreId, normalizeQuantity } = require('../../helpers/security');
 const { STRIPE_SECRET_KEY, GMAIL_EMAIL, GMAIL_PASSWORD } = require('../../helpers/secrets');
@@ -545,5 +545,25 @@ async function createOrderHandler(data, context) {
     throw new functions.https.HttpsError('invalid-argument', 'Méthode de paiement non supportée.');
 }
 
-exports.createOrder = functions.runWith({ enforceAppCheck: true, secrets: [STRIPE_SECRET_KEY, GMAIL_EMAIL, GMAIL_PASSWORD] }).https.onCall(createOrderHandler);
+exports.createOrder = regionalFunctions()
+    .runWith({ enforceAppCheck: true, secrets: [STRIPE_SECRET_KEY, GMAIL_EMAIL, GMAIL_PASSWORD] })
+    .https.onCall(async (data, context) => {
+        const startedAt = Date.now();
+        const paymentMethod = String(data?.orderData?.paymentMethod || '');
+        try {
+            const result = await createOrderHandler(data, context);
+            logFunctionPerf('createOrder', startedAt, {
+                phase: 'success',
+                paymentMethod
+            });
+            return result;
+        } catch (error) {
+            logFunctionPerf('createOrder', startedAt, {
+                phase: 'error',
+                paymentMethod,
+                code: error?.code || null
+            });
+            throw error;
+        }
+    });
 exports.createOrderHandler = createOrderHandler;

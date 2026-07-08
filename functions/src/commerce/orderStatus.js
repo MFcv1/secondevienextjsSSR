@@ -1,4 +1,4 @@
-const functions = require('firebase-functions/v1');
+const { functions, regionalFunctions, logFunctionPerf } = require('../../helpers/runtime');
 const admin = require('firebase-admin');
 const { normalizeFirestoreId } = require('../../helpers/security');
 const { assertGuestCheckoutOtpVerified, normalizeGuestCheckoutEmail } = require('../auth/guestCheckoutOtp');
@@ -21,39 +21,50 @@ function hasTrustedOrderReadAuth(context, orderData) {
     return Boolean(uid && uid === orderData.userId && hasTrustedEmail) || hasTrustedEmail;
 }
 
-exports.getOrderStatusClient = functions.runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+exports.getOrderStatusClient = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+    const startedAt = Date.now();
     const orderId = normalizeFirestoreId(data?.orderId, 'ID commande');
-    const orderSnap = await db.collection('orders').doc(orderId).get();
 
-    if (!orderSnap.exists) {
-        throw new functions.https.HttpsError('not-found', 'Commande introuvable.');
-    }
+    try {
+        const orderSnap = await db.collection('orders').doc(orderId).get();
 
-    const orderData = orderSnap.data();
-    if (!hasTrustedOrderReadAuth(context, orderData)) {
-        const verifiedGuestEmail = await assertGuestCheckoutOtpVerified(
-            context.auth?.uid || null,
-            data?.email,
-            data?.checkoutOtpToken
-        );
-        if (
-            orderData.checkoutAuthMethod !== 'guest_email_otp' ||
-            orderData.userEmail !== verifiedGuestEmail
-        ) {
-            throw new functions.https.HttpsError('permission-denied', 'Cette commande ne vous appartient pas.');
+        if (!orderSnap.exists) {
+            throw new functions.https.HttpsError('not-found', 'Commande introuvable.');
         }
-    }
 
-    return {
-        success: true,
-        order: {
-            id: orderSnap.id,
-            status: orderData.status || null,
-            paymentStatus: orderData.paymentStatus || null,
-            stripePaymentIntentId: orderData.stripePaymentIntentId || null,
-            stripeConnectedAccountId: orderData.stripeConnectedAccountId || null,
-            total: orderData.total || 0,
-            userEmail: orderData.userEmail || null
+        const orderData = orderSnap.data();
+        if (!hasTrustedOrderReadAuth(context, orderData)) {
+            const verifiedGuestEmail = await assertGuestCheckoutOtpVerified(
+                context.auth?.uid || null,
+                data?.email,
+                data?.checkoutOtpToken
+            );
+            if (
+                orderData.checkoutAuthMethod !== 'guest_email_otp' ||
+                orderData.userEmail !== verifiedGuestEmail
+            ) {
+                throw new functions.https.HttpsError('permission-denied', 'Cette commande ne vous appartient pas.');
+            }
         }
-    };
+
+        logFunctionPerf('getOrderStatusClient', startedAt, { phase: 'success' });
+        return {
+            success: true,
+            order: {
+                id: orderSnap.id,
+                status: orderData.status || null,
+                paymentStatus: orderData.paymentStatus || null,
+                stripePaymentIntentId: orderData.stripePaymentIntentId || null,
+                stripeConnectedAccountId: orderData.stripeConnectedAccountId || null,
+                total: orderData.total || 0,
+                userEmail: orderData.userEmail || null
+            }
+        };
+    } catch (error) {
+        logFunctionPerf('getOrderStatusClient', startedAt, {
+            phase: 'error',
+            code: error?.code || null
+        });
+        throw error;
+    }
 });

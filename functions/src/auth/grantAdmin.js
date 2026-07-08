@@ -7,16 +7,18 @@
  */
 const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
-const { SUPER_ADMIN_EMAIL } = require('../../helpers/security');
+const { SUPER_ADMIN_EMAIL: SUPER_ADMIN_EMAIL_SECRET } = require('../../helpers/secrets');
+const { getSuperAdminEmail } = require('../../helpers/security');
 
 const db = admin.firestore();
 
-exports.grantAdminOnAuth = functions.auth.user().onCreate(async (user) => {
+exports.grantAdminOnAuth = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }).auth.user().onCreate(async (user) => {
     const adminDocRef = db.doc('sys_metadata/admin_users');
     const docSnap = await adminDocRef.get();
     const normalizedUserEmail = (user.email || '').trim().toLowerCase();
 
-    const isConfiguredSuperAdmin = Boolean(SUPER_ADMIN_EMAIL) && normalizedUserEmail === SUPER_ADMIN_EMAIL.trim().toLowerCase();
+    const superAdminEmail = getSuperAdminEmail();
+    const isConfiguredSuperAdmin = Boolean(superAdminEmail) && normalizedUserEmail === superAdminEmail;
 
     if (!docSnap.exists && !isConfiguredSuperAdmin) return;
 

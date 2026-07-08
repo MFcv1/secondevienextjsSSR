@@ -6,20 +6,22 @@
  */
 const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
-const { SUPER_ADMIN_EMAIL } = require('../../helpers/security');
+const { SUPER_ADMIN_EMAIL: SUPER_ADMIN_EMAIL_SECRET } = require('../../helpers/secrets');
+const { getSuperAdminEmail } = require('../../helpers/security');
 
 const db = admin.firestore();
 
-exports.updateUserSessions = functions.https.onCall(async (data, context) => {
+exports.updateUserSessions = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
     if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Authentification requise.');
 
     const rawIp = context.rawRequest.headers['x-forwarded-for'] || context.rawRequest.connection.remoteAddress;
     const ip = rawIp ? rawIp.split(',')[0].trim() : 'Unknown';
     const userId = context.auth.uid;
-    const email = context.auth.token.email;
+    const email = String(context.auth.token.email || '').trim().toLowerCase();
 
     // Vérifier si c'est un admin (custom claim OU super admin OU dans la whitelist)
-    let isAdmin = context.auth.token.admin === true || context.auth.token.superAdmin === true || email === SUPER_ADMIN_EMAIL;
+    const superAdminEmail = getSuperAdminEmail();
+    let isAdmin = context.auth.token.admin === true || context.auth.token.superAdmin === true || email === superAdminEmail;
 
     // Si pas encore détecté comme admin, vérifier dans Firestore
     if (!isAdmin) {

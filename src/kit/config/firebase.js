@@ -1,7 +1,7 @@
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getFirestore } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
-import { app, appId } from './firebaseCore';
+import { app, appId, functionsRegion } from './firebaseCore';
 import { getFirebaseAuth, getGoogleProvider, loadAuthModule } from './firebaseLazy';
 
 const initializeAppCheckBeforeLegacyServices = () => {
@@ -38,13 +38,14 @@ const initializeAppCheckBeforeLegacyServices = () => {
 initializeAppCheckBeforeLegacyServices();
 
 const db = getFirestore(app);
-const functions = getFunctions(app, 'us-central1');
+const functions = getFunctions(app, functionsRegion);
 
 export {
   app,
   db,
   functions,
   appId,
+  functionsRegion,
   getFirebaseAuth,
   getGoogleProvider,
   loadAuthModule,

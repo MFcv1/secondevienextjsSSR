@@ -99,12 +99,12 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |   |-- data : migration/base de donnees
 |   `-- archive : rapports historiques non operationnels, dont migration SPA vers Next et notes UI
 |-- .agents/skills : skills locaux UI/design, dont visual-annotation-tuning
-|-- app : routes Next App Router, metadata, loading/not-found/error, sitemap, robots, iles de route et transition `/a-propos`
+|-- app : routes Next App Router, metadata, loading/not-found/error, sitemap, robots, recherche catalogue, iles de route et transition `/a-propos`
 |-- src
 |   |-- index.css
 |   |-- kit/admin : back-office, analytics, commandes, retours/remboursements Stripe, SEO, users, exports
 |   |-- kit/commerce : panier, checkout, login, commandes client, regle isPurchasable
-|   |-- kit/marketplace : galerie SSR, categories/produits, sections fixes SSR, iles interactions, header/menu/cart/wishlist/devis
+|   |-- kit/marketplace : galerie SSR, recherche catalogue, categories/produits, sections fixes SSR, iles interactions, header/menu/cart/wishlist/devis
 |   |-- kit/vitrine : page `/a-propos` serveur et iles fines
 |   |-- kit/layout : layout partage, footer et menu global split en shell/desktop/mobile
 |   |-- kit/shared, kit/ui, kit/hooks, kit/contexts, kit/config

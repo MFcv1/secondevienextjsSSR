@@ -1,4 +1,4 @@
-import { app } from './firebaseCore';
+import { app, functionsRegion } from './firebaseCore';
 
 let firestoreModulePromise = null;
 let functionsModulePromise = null;
@@ -72,7 +72,7 @@ export const getFunctionsInstance = async () => {
   if (!functionsInstance) {
     await ensureAppCheck();
     const { getFunctions } = await loadFunctionsModule();
-    functionsInstance = getFunctions(app, 'us-central1');
+    functionsInstance = getFunctions(app, functionsRegion);
   }
   return functionsInstance;
 };

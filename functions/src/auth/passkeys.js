@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const admin = require('firebase-admin');
-const functions = require('firebase-functions/v1');
+const { functions, regionalFunctions, logFunctionPerf } = require('../../helpers/runtime');
 const {
     generateRegistrationOptions,
     verifyRegistrationResponse,
@@ -81,7 +81,8 @@ function toWebAuthnCredential(passkey) {
     };
 }
 
-exports.generatePasskeyRegistrationOptions = functions.https.onCall(async (data, context) => {
+exports.generatePasskeyRegistrationOptions = regionalFunctions().https.onCall(async (data, context) => {
+    const startedAt = Date.now();
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'Connexion requise.');
     }
@@ -118,10 +119,12 @@ exports.generatePasskeyRegistrationOptions = functions.https.onCall(async (data,
         expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS),
     });
 
+    logFunctionPerf('generatePasskeyRegistrationOptions', startedAt, { phase: 'success' });
     return { options };
 });
 
-exports.verifyPasskeyRegistration = functions.https.onCall(async (data, context) => {
+exports.verifyPasskeyRegistration = regionalFunctions().https.onCall(async (data, context) => {
+    const startedAt = Date.now();
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'Connexion requise.');
     }
@@ -153,7 +156,8 @@ exports.verifyPasskeyRegistration = functions.https.onCall(async (data, context)
 
     const { credential, credentialDeviceType, credentialBackedUp } = verification.registrationInfo;
     const credentialId = credential.id;
-    await db.doc(`users/${uid}/passkeys/${credentialId}`).set({
+    await Promise.all([
+        db.doc(`users/${uid}/passkeys/${credentialId}`).set({
         credentialId,
         publicKey: toBase64Url(credential.publicKey),
         counter: credential.counter || 0,
@@ -163,14 +167,17 @@ exports.verifyPasskeyRegistration = functions.https.onCall(async (data, context)
         email: normalizeEmail(context.auth.token.email || data?.email),
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
-
-    await challengeRef.delete();
+        }, { merge: true }),
+        challengeRef.delete(),
+    ]);
+    logFunctionPerf('verifyPasskeyRegistration', startedAt, { phase: 'success' });
     return { success: true };
 });
 
-exports.generatePasskeyAuthenticationOptions = functions.https.onCall(async (data) => {
+exports.generatePasskeyAuthenticationOptions = regionalFunctions().https.onCall(async (data) => {
+    const startedAt = Date.now();
     const email = normalizeEmail(data?.email);
+    const emailHash = hash(email);
     const origin = getExpectedOrigin(data?.origin);
     const rpID = getRpIdFromOrigin(origin);
     let userRecord;
@@ -212,10 +219,15 @@ exports.generatePasskeyAuthenticationOptions = functions.https.onCall(async (dat
         expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS),
     });
 
+    logFunctionPerf('generatePasskeyAuthenticationOptions', startedAt, {
+        phase: 'success',
+        emailHash
+    });
     return { options };
 });
 
-exports.verifyPasskeyAuthentication = functions.https.onCall(async (data) => {
+exports.verifyPasskeyAuthentication = regionalFunctions().https.onCall(async (data) => {
+    const startedAt = Date.now();
     const challenge = String(data?.challenge || '');
     const challengeRef = db.doc(`sys_ratelimit/passkey_auth_${hash(challenge)}`);
     const challengeSnap = await challengeRef.get();
@@ -272,5 +284,6 @@ exports.verifyPasskeyAuthentication = functions.https.onCall(async (data) => {
         );
     }
 
+    logFunctionPerf('verifyPasskeyAuthentication', startedAt, { phase: 'success' });
     return { success: true, token };
 });

@@ -41,6 +41,11 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_FUNCTIONS_REGION
+    value: "europe-west1"
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
     value: "6Lf3-h4tAAAAAN9itbLCTe_1tn_Z-AzdhBETXwkE"
     availability:

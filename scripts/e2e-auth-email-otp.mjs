@@ -204,10 +204,17 @@ const requestAndVerifyOtp = async (page, email, label) => {
     await dialog.locator(`[data-otp-index="${index}"]`).fill(code[index]);
   }
 
-  await dialog.getByRole('button', { name: /Se connecter/i }).click();
-  await expect(
-    dialog.getByText(/Email verifie|Email vérifié|Connexion ouverte|Connexion reussie|Connexion réussie/i)
-  ).toBeVisible({ timeout: 45_000 });
+  const successMessage = dialog.getByText(/Email verifie|Email vérifié|Connexion ouverte|Connexion reussie|Connexion réussie/i);
+  const autoVerified = await successMessage.waitFor({ state: 'visible', timeout: 12_000 })
+    .then(() => true)
+    .catch(() => false);
+  if (!autoVerified) {
+    const submitButton = dialog.getByRole('button', { name: /Se connecter/i });
+    if (await submitButton.isEnabled({ timeout: 5_000 }).catch(() => false)) {
+      await submitButton.click();
+    }
+  }
+  await expect(successMessage).toBeVisible({ timeout: 45_000 });
   result.steps.push({ label, phase: 'otp_verified' });
 
   const user = await page.waitForFunction(() => (
@@ -252,6 +259,9 @@ try {
   const signedOut = await page.evaluate(() => !window.__svAuthUser);
   result.steps.push({ label: 'fresh_create', phase: 'signed_out', signedOut });
   if (!signedOut) throw new Error('User did not sign out after fresh auth flow');
+
+  await page.waitForTimeout(65_000);
+  result.steps.push({ label: 'existing_login', phase: 'resend_cooldown_waited' });
 
   const secondUser = await requestAndVerifyOtp(page, freshAlias, 'existing_login');
   result.sameUidOnSecondLogin = firstUser.uid === secondUser.uid;

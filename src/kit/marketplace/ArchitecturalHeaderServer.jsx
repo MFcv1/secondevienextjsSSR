@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { Search } from 'lucide-react';
 import KIT_CONFIG from '../config/constants';
 import PremiumMegaMenuLazyIsland from './PremiumMegaMenuLazyIsland';
 import DarkModeToggleIsland from './DarkModeToggleIsland';
@@ -8,6 +7,7 @@ import GlobalMenuTriggerIsland from './GlobalMenuTriggerIsland';
 import LazyCartPanelIsland from './LazyCartPanelIsland';
 import WishlistToggleIsland from './WishlistToggleIsland';
 import AnnouncementBannerServer from './AnnouncementBannerServer';
+import SearchSuggestIsland from './SearchSuggestIsland';
 
 export default function ArchitecturalHeaderServer({ darkMode = false, announcementMessages = undefined } = {}) {
   const surfaceTone = darkMode
@@ -47,23 +47,13 @@ export default function ArchitecturalHeaderServer({ darkMode = false, announceme
             </Link>
           </div>
 
-          <form action="/" className="absolute left-1/2 z-0 hidden w-full max-w-xl -translate-x-1/2 px-4 lg:flex xl:max-w-2xl">
-            <div className={`relative flex w-full items-center overflow-hidden rounded-md border transition-[background-color,border-color,box-shadow] duration-300 ${darkMode ? 'border-white/10 bg-[#151412] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus-within:border-[#D9B58D]/45 focus-within:shadow-[0_0_0_3px_rgba(217,181,141,0.10)]' : 'border-transparent bg-[#F2F0ED] focus-within:border-stone-300 dark:border-white/10 dark:bg-[#151412] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] dark:focus-within:border-[#D9B58D]/45 dark:focus-within:shadow-[0_0_0_3px_rgba(217,181,141,0.10)]'}`}>
-              <input
-                type="search"
-                name="q"
-                placeholder="Rechercher un produit..."
-                className={`w-full bg-transparent py-2.5 pl-4 pr-10 font-sans text-[13px] tracking-wide outline-none ${darkMode ? 'text-stone-100 placeholder-stone-500' : 'text-stone-800 placeholder-stone-400 dark:text-stone-100 dark:placeholder-stone-500'}`}
-              />
-              <button
-                type="submit"
-                aria-label="Rechercher"
-                className="absolute right-3 text-stone-400 transition-colors hover:text-stone-600 focus-visible:outline-none focus-visible:text-[#8B5C42] dark:text-stone-500 dark:hover:text-[#D9B58D] dark:focus-visible:text-[#D9B58D]"
-              >
-                <Search size={16} strokeWidth={1.5} />
-              </button>
-            </div>
-          </form>
+          <SearchSuggestIsland
+            darkMode={darkMode}
+            formClassName="absolute left-1/2 z-0 hidden w-full max-w-xl -translate-x-1/2 px-4 lg:flex xl:max-w-2xl"
+            wrapperClassName={`relative flex w-full items-center overflow-hidden rounded-md border transition-[background-color,border-color,box-shadow] duration-300 ${darkMode ? 'border-white/10 bg-[#151412] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus-within:border-[#D9B58D]/45 focus-within:shadow-[0_0_0_3px_rgba(217,181,141,0.10)]' : 'border-transparent bg-[#F2F0ED] focus-within:border-stone-300 dark:border-white/10 dark:bg-[#151412] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] dark:focus-within:border-[#D9B58D]/45 dark:focus-within:shadow-[0_0_0_3px_rgba(217,181,141,0.10)]'}`}
+            inputClassName={`w-full bg-transparent py-2.5 pl-4 pr-10 font-sans text-[13px] tracking-wide outline-none ${darkMode ? 'text-stone-100 placeholder-stone-500' : 'text-stone-800 placeholder-stone-400 dark:text-stone-100 dark:placeholder-stone-500'}`}
+            buttonClassName="absolute right-3 text-stone-400 transition-colors hover:text-stone-600 focus-visible:outline-none focus-visible:text-[#8B5C42] dark:text-stone-500 dark:hover:text-[#D9B58D] dark:focus-visible:text-[#D9B58D]"
+          />
 
           <div className="z-10 flex shrink-0 items-center gap-2 md:gap-4">
             <div className={`flex items-center gap-1 rounded-full p-1 ring-1 ${actionClusterTone}`}>

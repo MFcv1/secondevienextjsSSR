@@ -6,18 +6,20 @@
  */
 const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
-const { SUPER_ADMIN_EMAIL } = require('../../helpers/security');
+const { SUPER_ADMIN_EMAIL: SUPER_ADMIN_EMAIL_SECRET } = require('../../helpers/secrets');
+const { getSuperAdminEmail } = require('../../helpers/security');
 
 const db = admin.firestore();
 const ADMIN_IP_CACHE_MS = 5 * 60 * 1000;
 let adminIpCache = { expiresAt: 0, ips: null };
 
 // Mettre à jour les IPs des admins lorsqu'ils se connectent
-exports.trackAdminIP = functions.https.onCall(async (data, context) => {
+exports.trackAdminIP = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
     if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Auth requise.');
 
-    const email = context.auth.token.email;
-    let isAdmin = context.auth.token.admin === true || context.auth.token.superAdmin === true || email === SUPER_ADMIN_EMAIL;
+    const email = String(context.auth.token.email || '').trim().toLowerCase();
+    const superAdminEmail = getSuperAdminEmail();
+    let isAdmin = context.auth.token.admin === true || context.auth.token.superAdmin === true || email === superAdminEmail;
 
     // Vérifier aussi dans Firestore si le custom claim n'est pas encore défini
     if (!isAdmin) {

@@ -7,11 +7,13 @@ import { httpsCallable } from 'firebase/functions';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { functions } from '../config/firebase';
 import { getFirebaseAuth, loadAuthModule } from '../config/firebaseLazy';
+import { logClientPerf, startClientPerf } from '../shared/clientPerf';
 import { ToastProvider, useToast } from '../ui/Toast';
 
 const PASSKEY_ENABLED_KEY = 'secondevie:passkey-enabled';
 const PASSKEY_EMAIL_KEY = 'secondevie:passkey-email';
 const PASSKEY_EMAILS_KEY = 'secondevie:passkey-emails';
+const PASSKEY_PREPARED_TTL_MS = 4 * 60 * 1000;
 
 const getAuthErrorMessage = (error) => {
   if (error?.code === 'auth/invalid-email') return "L'adresse email n'est pas valide.";
@@ -124,19 +126,40 @@ const getPasskeySupportMessage = async () => {
   return null;
 };
 
-const registerPasskey = async (onStepChange = null) => {
+const preparePasskeyRegistration = async () => {
   const supportMessage = await getPasskeySupportMessage();
   if (supportMessage) throw new Error(supportMessage);
 
-  onStepChange?.('preparing');
-  const { startRegistration } = await import('@simplewebauthn/browser');
   const generateOptions = httpsCallable(functions, 'generatePasskeyRegistrationOptions');
+  const generateStartedAt = startClientPerf();
+  const [{ startRegistration }, optionsResult] = await Promise.all([
+    import('@simplewebauthn/browser'),
+    generateOptions({ origin: window.location.origin }),
+  ]);
+  logClientPerf('passkey.registration.generateOptions', generateStartedAt, { phase: 'success' });
+  return {
+    createdAt: Date.now(),
+    options: optionsResult.data.options,
+    startRegistration,
+  };
+};
+
+const registerPasskey = async (preparedRegistration = null, onStepChange = null) => {
+  const prepared = preparedRegistration && Date.now() - preparedRegistration.createdAt < PASSKEY_PREPARED_TTL_MS
+    ? preparedRegistration
+    : null;
+  const registration = prepared || await (async () => {
+    onStepChange?.('preparing');
+    return preparePasskeyRegistration();
+  })();
   const verifyRegistration = httpsCallable(functions, 'verifyPasskeyRegistration');
-  const optionsResult = await generateOptions({ origin: window.location.origin });
+
   onStepChange?.('confirming');
-  const response = await startRegistration({ optionsJSON: optionsResult.data.options });
+  const response = await registration.startRegistration({ optionsJSON: registration.options });
   onStepChange?.('verifying');
+  const verifyStartedAt = startClientPerf();
   const result = await verifyRegistration({ response });
+  logClientPerf('passkey.registration.verify', verifyStartedAt, { phase: 'success' });
   if (!result.data?.success) throw new Error('Passkey non valide.');
 };
 
@@ -150,6 +173,7 @@ const preparePasskeyAuthentication = async (email) => {
   }
 
   const generateOptions = httpsCallable(functions, 'generatePasskeyAuthenticationOptions');
+  const generateStartedAt = startClientPerf();
   const [{ startAuthentication }, optionsResult] = await Promise.all([
     import('@simplewebauthn/browser'),
     generateOptions({
@@ -159,6 +183,7 @@ const preparePasskeyAuthentication = async (email) => {
     getFirebaseAuth(),
     loadAuthModule(),
   ]);
+  logClientPerf('passkey.authentication.generateOptions', generateStartedAt, { phase: 'success' });
   return {
     email: normalizedEmail,
     options: optionsResult.data.options,
@@ -176,16 +201,21 @@ const loginWithPasskey = async (email, preparedAuthentication = null, onStepChan
   onStepChange?.('biometric');
   const response = await prepared.startAuthentication({ optionsJSON: prepared.options });
   onStepChange?.('verifying');
+  const verifyStartedAt = startClientPerf();
   const result = await verifyAuthentication({
     challenge: prepared.options.challenge,
     response,
   });
+  logClientPerf('passkey.authentication.verify', verifyStartedAt, { phase: 'success' });
   if (!result.data?.token) throw new Error('Token passkey manquant.');
 
   const [auth, module] = await Promise.all([getFirebaseAuth(), loadAuthModule()]);
+  const signInStartedAt = startClientPerf();
   return {
     email: normalizedEmail,
-    signInPromise: module.signInWithCustomToken(auth, result.data.token),
+    signInPromise: module.signInWithCustomToken(auth, result.data.token).finally(() => {
+      logClientPerf('passkey.authentication.signInWithCustomToken', signInStartedAt, { phase: 'complete' });
+    }),
   };
 };
 
@@ -203,6 +233,8 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
   const [showPasskeyAccountChoices, setShowPasskeyAccountChoices] = useState(false);
   const [preparedPasskeyAuth, setPreparedPasskeyAuth] = useState(null);
   const [passkeyPrepareStatus, setPasskeyPrepareStatus] = useState('idle');
+  const [preparedPasskeyRegistration, setPreparedPasskeyRegistration] = useState(null);
+  const [passkeyRegistrationPrepareStatus, setPasskeyRegistrationPrepareStatus] = useState('idle');
   const [passkeyLoginStep, setPasskeyLoginStep] = useState('idle');
   const [passkeyRegistrationStep, setPasskeyRegistrationStep] = useState('idle');
   const [otpStep, setOtpStep] = useState('email');
@@ -296,6 +328,35 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
   }, [emailValue, open, showPasskeyFirst]);
 
   useEffect(() => {
+    if (!open || !passkeyUser) {
+      setPreparedPasskeyRegistration(null);
+      setPasskeyRegistrationPrepareStatus('idle');
+      return undefined;
+    }
+
+    let cancelled = false;
+    setPasskeyRegistrationPrepareStatus('preparing');
+
+    preparePasskeyRegistration()
+      .then((prepared) => {
+        if (!cancelled) {
+          setPreparedPasskeyRegistration(prepared);
+          setPasskeyRegistrationPrepareStatus('ready');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPreparedPasskeyRegistration(null);
+          setPasskeyRegistrationPrepareStatus('idle');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, passkeyUser?.uid]);
+
+  useEffect(() => {
     if (!open || resendAfter <= 0) return undefined;
     const timer = window.setInterval(() => {
       setResendAfter((current) => Math.max(0, current - 1));
@@ -312,6 +373,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     setUseEmailCodeFallback(false);
     setShowPasskeyAccountChoices(false);
     setPreparedPasskeyAuth(null);
+    setPreparedPasskeyRegistration(null);
     setPasskeyLoginStep('idle');
     setPasskeyRegistrationStep('idle');
     setOtpStep('email');
@@ -337,16 +399,24 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     setPasskeyStatus('idle');
     setPasskeyMessage('');
     setPasskeyPrepareStatus('idle');
+    setPreparedPasskeyRegistration(null);
+    setPasskeyRegistrationPrepareStatus('idle');
     setPasskeyRegistrationStep('idle');
   };
 
   const handleCreatePasskey = async () => {
     if (!passkeyUser) return;
     setPasskeyStatus('pending');
-    setPasskeyRegistrationStep('preparing');
+    setPasskeyRegistrationStep(
+      passkeyRegistrationPrepareStatus === 'ready' && preparedPasskeyRegistration
+        ? 'confirming'
+        : 'preparing'
+    );
     setPasskeyMessage('');
     try {
-      await registerPasskey(setPasskeyRegistrationStep);
+      const preparedRegistration = preparedPasskeyRegistration;
+      setPreparedPasskeyRegistration(null);
+      await registerPasskey(preparedRegistration, setPasskeyRegistrationStep);
       saveLocalPasskeyState(passkeyUser.email);
       setLocalPasskeyEmails(readLocalPasskeyState().emails);
       setHasLocalPasskey(true);
@@ -417,13 +487,19 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     window.setTimeout(() => {
       document.querySelector('[data-otp-index="0"]')?.focus();
     }, 320);
+    const startedAt = startClientPerf();
     try {
       const sendOtp = httpsCallable(functions, 'sendCustomerLoginOtp');
       const result = await sendOtp({ email });
+      logClientPerf('auth.email.sendCustomerLoginOtp', startedAt, { phase: 'success' });
       setResendAfter(Number(result.data?.resendAfterSeconds || 60));
       setOtpStatus('sent');
       setOtpMessage(`Code envoye a ${email}.`);
     } catch (error) {
+      logClientPerf('auth.email.sendCustomerLoginOtp', startedAt, {
+        phase: 'error',
+        code: error?.code || null
+      });
       const message = error?.message || "Impossible d'envoyer le code pour le moment.";
       setOtpStatus('error');
       setOtpMessage(message);
@@ -445,16 +521,24 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     otpVerifyInFlightRef.current = true;
     setOtpStatus('verifying');
     setOtpMessage('');
+    const verifyStartedAt = startClientPerf();
     try {
       const verifyOtp = httpsCallable(functions, 'verifyCustomerLoginOtp');
       const result = await verifyOtp({ email, code });
+      logClientPerf('auth.email.verifyCustomerLoginOtp', verifyStartedAt, { phase: 'success' });
       if (!result.data?.token) throw new Error('Token de connexion manquant.');
       setOtpStatus('signing-in');
+      const signInStartedAt = startClientPerf();
       const userCredential = await loginWithCustomToken(result.data.token);
+      logClientPerf('auth.email.signInWithCustomToken', signInStartedAt, { phase: 'success' });
       setOtpStatus('success');
       setOtpMessage('Email verifie. Connexion ouverte.');
       offerPasskeyOrClose(userCredential?.user);
     } catch (error) {
+      logClientPerf('auth.email.verifyCustomerLoginOtp', verifyStartedAt, {
+        phase: 'error',
+        code: error?.code || null
+      });
       const message = error?.message || 'Code invalide ou expire.';
       setOtpStatus('error');
       setOtpMessage(message);
