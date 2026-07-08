@@ -60,6 +60,10 @@ body.modal-open {
   /* background-color: black empêche le fond gris sur Android/iOS pendant le scroll lock */
 }
 
+body.modal-open .gallery-announcement-banner {
+  display: none !important;
+}
+
 :root {
   --marketplace-viewport-height: 100svh;
   --product-detail-sidebar-width: 450px;
@@ -3588,15 +3592,6 @@ html.dark [data-footer-mounted="true"] [class*="divide-stone"] > :not([hidden]) 
   }
 }
 
-@keyframes sv-auth-shimmer {
-  0% {
-    transform: translateX(-120%);
-  }
-  100% {
-    transform: translateX(120%);
-  }
-}
-
 @keyframes sv-auth-loading {
   0% {
     transform: translateX(-110%);
@@ -3607,11 +3602,6 @@ html.dark [data-footer-mounted="true"] [class*="divide-stone"] > :not([hidden]) 
   100% {
     transform: translateX(210%);
   }
-}
-
-.sv-auth-shimmer {
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
-  animation: sv-auth-shimmer 1.2s linear infinite;
 }
 
 .sv-auth-loading-bar {

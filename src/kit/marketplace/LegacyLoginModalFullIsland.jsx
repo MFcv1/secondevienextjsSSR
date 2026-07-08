@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { KeyRound, Loader2, Mail, RotateCcw, ShieldCheck, X } from 'lucide-react';
 import { httpsCallable } from 'firebase/functions';
@@ -28,25 +28,12 @@ const getAuthErrorMessage = (error) => {
 
 const normalizeEmailValue = (email) => String(email || '').trim().toLowerCase();
 
-function AuthLoadingState({ tone = 'emerald', children }) {
-  const toneClass = tone === 'amber'
-    ? 'border-amber-300/25 bg-amber-300/10 text-amber-100'
-    : 'border-emerald-300/25 bg-emerald-300/10 text-emerald-100';
-  const barClass = tone === 'amber' ? 'bg-amber-300' : 'bg-emerald-300';
-
-  return (
-    <div className={`overflow-hidden rounded-xl border ${toneClass}`}>
-      <div className="flex items-center gap-2 px-3 py-2 text-xs font-semibold">
-        <Loader2 size={14} className="animate-spin" />
-        <span>{children}</span>
-        <span className={`ml-auto h-2 w-2 rounded-full ${barClass} animate-pulse`} />
-      </div>
-      <div className="h-px w-full bg-white/10">
-        <div className={`h-full w-1/2 ${barClass} sv-auth-loading-bar`} />
-      </div>
-    </div>
-  );
-}
+const preloadOtpSignInRuntime = () => {
+  if (typeof window === 'undefined') return;
+  Promise.all([getFirebaseAuth(), loadAuthModule()]).catch((error) => {
+    console.warn('OTP sign-in runtime preload failed:', error);
+  });
+};
 
 const readLocalPasskeyState = () => {
   if (typeof window === 'undefined') return { enabled: false, email: '', emails: [] };
@@ -137,15 +124,18 @@ const getPasskeySupportMessage = async () => {
   return null;
 };
 
-const registerPasskey = async () => {
+const registerPasskey = async (onStepChange = null) => {
   const supportMessage = await getPasskeySupportMessage();
   if (supportMessage) throw new Error(supportMessage);
 
+  onStepChange?.('preparing');
   const { startRegistration } = await import('@simplewebauthn/browser');
   const generateOptions = httpsCallable(functions, 'generatePasskeyRegistrationOptions');
   const verifyRegistration = httpsCallable(functions, 'verifyPasskeyRegistration');
   const optionsResult = await generateOptions({ origin: window.location.origin });
+  onStepChange?.('confirming');
   const response = await startRegistration({ optionsJSON: optionsResult.data.options });
+  onStepChange?.('verifying');
   const result = await verifyRegistration({ response });
   if (!result.data?.success) throw new Error('Passkey non valide.');
 };
@@ -214,22 +204,32 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
   const [preparedPasskeyAuth, setPreparedPasskeyAuth] = useState(null);
   const [passkeyPrepareStatus, setPasskeyPrepareStatus] = useState('idle');
   const [passkeyLoginStep, setPasskeyLoginStep] = useState('idle');
+  const [passkeyRegistrationStep, setPasskeyRegistrationStep] = useState('idle');
   const [otpStep, setOtpStep] = useState('email');
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const [otpStatus, setOtpStatus] = useState('idle');
   const [otpMessage, setOtpMessage] = useState('');
   const [resendAfter, setResendAfter] = useState(0);
+  const otpVerifyInFlightRef = useRef(false);
   const showPasskeyFirst = hasLocalPasskey && !useEmailCodeFallback;
   const passkeyLoginLabel = passkeyStatus === 'pending'
     ? (passkeyLoginStep === 'verifying' ? 'Verification...' : 'Empreinte...')
     : 'Connexion rapide sur cet appareil';
+  const passkeyRegistrationLabel = passkeyStatus === 'pending'
+    ? (
+      passkeyRegistrationStep === 'verifying'
+        ? 'Verification...'
+        : passkeyRegistrationStep === 'confirming'
+          ? 'Confirmez sur cet appareil'
+          : 'Ouverture...'
+    )
+    : passkeyStatus === 'success' ? 'Passkey activee' : 'Activer sur cet appareil';
   const isPasskeyBusy = passkeyStatus === 'pending';
   const isPasskeyPreparing = passkeyPrepareStatus === 'preparing';
   const isOtpSending = otpStatus === 'sending';
   const isOtpVerifying = otpStatus === 'verifying';
-  const passkeyProgressLabel = passkeyLoginStep === 'verifying'
-    ? 'Verification securisee en cours...'
-    : 'Ouverture de la verification locale...';
+  const isOtpSigningIn = otpStatus === 'signing-in';
+  const isOtpBusy = isOtpSending || isOtpVerifying || isOtpSigningIn;
 
   useEffect(() => {
     if (!open) return undefined;
@@ -313,11 +313,13 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     setShowPasskeyAccountChoices(false);
     setPreparedPasskeyAuth(null);
     setPasskeyLoginStep('idle');
+    setPasskeyRegistrationStep('idle');
     setOtpStep('email');
     setOtpDigits(['', '', '', '', '', '']);
     setOtpStatus('idle');
     setOtpMessage('');
     setResendAfter(0);
+    otpVerifyInFlightRef.current = false;
     onOpenChange(false);
   };
 
@@ -335,14 +337,16 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     setPasskeyStatus('idle');
     setPasskeyMessage('');
     setPasskeyPrepareStatus('idle');
+    setPasskeyRegistrationStep('idle');
   };
 
   const handleCreatePasskey = async () => {
     if (!passkeyUser) return;
     setPasskeyStatus('pending');
+    setPasskeyRegistrationStep('preparing');
     setPasskeyMessage('');
     try {
-      await registerPasskey();
+      await registerPasskey(setPasskeyRegistrationStep);
       saveLocalPasskeyState(passkeyUser.email);
       setLocalPasskeyEmails(readLocalPasskeyState().emails);
       setHasLocalPasskey(true);
@@ -353,6 +357,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
         router.push('/');
       }, 450);
     } catch (error) {
+      setPasskeyRegistrationStep('idle');
       setPasskeyStatus('error');
       setPasskeyMessage(error?.message || 'Passkey indisponible sur cet appareil.');
     }
@@ -408,6 +413,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     setOtpStep('code');
     setOtpDigits(['', '', '', '', '', '']);
     setResendAfter(0);
+    preloadOtpSignInRuntime();
     window.setTimeout(() => {
       document.querySelector('[data-otp-index="0"]')?.focus();
     }, 320);
@@ -425,21 +431,25 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     }
   };
 
-  const verifyCustomerLoginCode = async (event) => {
-    event.preventDefault();
+  const verifyCustomerLoginCode = async (event, codeOverride = '') => {
+    event?.preventDefault?.();
+    if (otpVerifyInFlightRef.current) return;
+
     const email = normalizeEmailValue(emailValue);
-    const code = otpDigits.join('');
+    const code = codeOverride || otpDigits.join('');
     if (!/^\d{6}$/.test(code)) {
       toast('Saisissez les 6 chiffres du code.', { type: 'error' });
       return;
     }
 
+    otpVerifyInFlightRef.current = true;
     setOtpStatus('verifying');
     setOtpMessage('');
     try {
       const verifyOtp = httpsCallable(functions, 'verifyCustomerLoginOtp');
       const result = await verifyOtp({ email, code });
       if (!result.data?.token) throw new Error('Token de connexion manquant.');
+      setOtpStatus('signing-in');
       const userCredential = await loginWithCustomToken(result.data.token);
       setOtpStatus('success');
       setOtpMessage('Email verifie. Connexion ouverte.');
@@ -449,16 +459,22 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
       setOtpStatus('error');
       setOtpMessage(message);
       toast(message, { type: 'error' });
+    } finally {
+      otpVerifyInFlightRef.current = false;
     }
   };
 
   const handleOtpDigitChange = (index, value) => {
     const nextValue = String(value || '').replace(/\D/g, '').slice(-1);
-    setOtpDigits((current) => current.map((digit, digitIndex) => (
+    const nextDigits = otpDigits.map((digit, digitIndex) => (
       digitIndex === index ? nextValue : digit
-    )));
+    ));
+    setOtpDigits(nextDigits);
     if (nextValue && typeof document !== 'undefined') {
       document.querySelector(`[data-otp-index="${index + 1}"]`)?.focus();
+    }
+    if (nextDigits.every(Boolean) && !otpVerifyInFlightRef.current) {
+      window.setTimeout(() => verifyCustomerLoginCode(null, nextDigits.join('')), 0);
     }
   };
 
@@ -466,8 +482,12 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     const pastedCode = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
     if (pastedCode.length < 2) return;
     event.preventDefault();
-    setOtpDigits(Array.from({ length: 6 }, (_, index) => pastedCode[index] || ''));
+    const nextDigits = Array.from({ length: 6 }, (_, index) => pastedCode[index] || '');
+    setOtpDigits(nextDigits);
     document.querySelector(`[data-otp-index="${Math.min(pastedCode.length, 5)}"]`)?.focus();
+    if (pastedCode.length === 6 && !otpVerifyInFlightRef.current) {
+      window.setTimeout(() => verifyCustomerLoginCode(null, nextDigits.join('')), 0);
+    }
   };
 
   const handleOtpKeyDown = (index, event) => {
@@ -512,13 +532,9 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                       Vous pouvez continuer, ou activer la connexion rapide sur cet appareil.
                     </p>
                   </div>
-                  <div className={`rounded-2xl border bg-[#141417] p-4 text-left transition-all ${
-                    isPasskeyBusy
-                      ? 'border-emerald-300/40 shadow-[0_0_32px_rgba(16,185,129,0.18)]'
-                      : 'border-[#2A2A2E]'
-                  }`}>
+                  <div className="rounded-2xl border border-[#2A2A2E] bg-[#141417] p-4 text-left transition-colors">
                     <div className="flex items-start gap-3">
-                      <KeyRound size={18} className={`mt-0.5 shrink-0 text-amber-400 ${isPasskeyBusy ? 'animate-pulse' : ''}`} />
+                      <KeyRound size={18} className="mt-0.5 shrink-0 text-amber-400" />
                       <div className="space-y-1">
                         <p className="text-sm font-bold text-white">Connexion rapide/passkey</p>
                         <p className="text-xs leading-relaxed text-stone-400">
@@ -535,17 +551,14 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                       type="button"
                       onClick={handleCreatePasskey}
                       disabled={isPasskeyBusy || passkeyStatus === 'success'}
-                      className={`relative mt-4 flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl border border-[#2A2A2E] bg-white/5 py-3 text-xs font-bold uppercase tracking-[0.14em] text-white transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-75 ${
-                        isPasskeyBusy ? 'shadow-[0_0_28px_rgba(16,185,129,0.2)]' : ''
-                      }`}
+                      className="relative mt-4 flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-white py-3 text-xs font-bold uppercase tracking-[0.14em] text-[#0F0F11] transition-colors hover:bg-stone-200 disabled:cursor-not-allowed disabled:opacity-80"
                     >
-                      {isPasskeyBusy ? <span className="sv-auth-shimmer absolute inset-0" /> : null}
                       {isPasskeyBusy ? <Loader2 size={15} className="relative animate-spin" /> : null}
                       <span className="relative">
-                        {passkeyStatus === 'pending' ? 'Verification...' : passkeyStatus === 'success' ? 'Passkey activee' : 'Activer sur cet appareil'}
+                        {passkeyRegistrationLabel}
                       </span>
                       {isPasskeyBusy ? (
-                        <span className="absolute inset-x-0 bottom-0 h-1 bg-white/10">
+                        <span className="absolute inset-x-0 bottom-0 h-1 bg-stone-300">
                           <span className="sv-auth-loading-bar block h-full w-1/2 bg-emerald-400" />
                         </span>
                       ) : null}
@@ -598,20 +611,16 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                       type="button"
                       onClick={handlePasskeyLogin}
                       disabled={isPasskeyBusy || isPasskeyPreparing}
-                      className={`relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm font-bold text-amber-100 transition-all hover:bg-amber-400/15 disabled:cursor-not-allowed disabled:opacity-75 ${
-                        isPasskeyBusy || isPasskeyPreparing ? 'shadow-[0_0_34px_rgba(251,191,36,0.18)]' : ''
-                      }`}
+                      className="relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl border border-[#2A2A2E] bg-[#141417] p-4 text-sm font-bold text-white transition-colors hover:bg-[#1f1f22] disabled:cursor-not-allowed disabled:opacity-80"
                     >
-                      {(isPasskeyBusy || isPasskeyPreparing) ? <span className="sv-auth-shimmer absolute inset-0" /> : null}
                       {isPasskeyBusy || isPasskeyPreparing ? <Loader2 size={16} className="relative animate-spin" /> : <KeyRound size={16} />}
                       <span className="relative">{isPasskeyPreparing ? 'Preparation...' : passkeyLoginLabel}</span>
+                      {isPasskeyBusy || isPasskeyPreparing ? (
+                        <span className="absolute inset-x-0 bottom-0 h-1 bg-stone-700">
+                          <span className="sv-auth-loading-bar block h-full w-1/2 bg-emerald-400" />
+                        </span>
+                      ) : null}
                     </button>
-                    {isPasskeyPreparing ? (
-                      <AuthLoadingState tone="amber">Preparation de la connexion rapide...</AuthLoadingState>
-                    ) : null}
-                    {isPasskeyBusy ? (
-                      <AuthLoadingState tone="amber">{passkeyProgressLabel}</AuthLoadingState>
-                    ) : null}
                   </div>
                   <div className="text-center text-[11px] font-semibold text-stone-500">
                     <span>Pour {emailValue}</span>
@@ -697,6 +706,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                           value={digit}
                           onChange={(event) => handleOtpDigitChange(index, event.target.value)}
                           onKeyDown={(event) => handleOtpKeyDown(index, event)}
+                          disabled={isOtpBusy}
                           className="h-12 rounded-xl border border-[#2A2A2E] bg-[#141417] text-center text-lg font-black text-white outline-none transition-all placeholder:text-stone-500 focus:border-emerald-300/80 md:h-14"
                           aria-label={`Chiffre ${index + 1} du code`}
                           maxLength={1}
@@ -710,12 +720,12 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                     ) : null}
                     <button
                       type="submit"
-                      disabled={isOtpSending || isOtpVerifying}
+                      disabled={isOtpBusy || !otpDigits.every(Boolean)}
                       className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-white p-4 text-sm font-bold text-[#0F0F11] transition-all hover:bg-stone-200 disabled:cursor-not-allowed disabled:opacity-80"
                     >
-                      {isOtpSending || isOtpVerifying ? <Loader2 size={16} className="animate-spin" /> : null}
-                      {isOtpSending ? 'Envoi du code...' : isOtpVerifying ? 'Verification...' : 'Se connecter'}
-                      {isOtpSending || isOtpVerifying ? (
+                      {isOtpBusy ? <Loader2 size={16} className="animate-spin" /> : null}
+                      {isOtpSending ? 'Envoi du code...' : isOtpVerifying ? 'Verification...' : isOtpSigningIn ? 'Connexion...' : 'Se connecter'}
+                      {isOtpBusy ? (
                         <span className="absolute inset-x-0 bottom-0 h-1 bg-stone-300">
                           <span className="sv-auth-loading-bar block h-full w-1/2 bg-emerald-400" />
                         </span>
@@ -737,7 +747,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                       <button
                         type="button"
                         onClick={requestCustomerLoginCode}
-                        disabled={resendAfter > 0 || isOtpSending}
+                        disabled={resendAfter > 0 || isOtpBusy}
                         className="inline-flex items-center gap-1 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {isOtpSending ? <Loader2 size={13} className="animate-spin" /> : <RotateCcw size={13} />}

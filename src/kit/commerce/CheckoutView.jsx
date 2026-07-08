@@ -1,7 +1,7 @@
 import React, { lazy, Suspense, useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, CreditCard, Truck, AlertCircle, Landmark, Wallet } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, CreditCard, Truck, AlertCircle, Landmark, Wallet, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { functions, db, appId } from '../config/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
@@ -36,141 +36,37 @@ const hasReliableEmailProvider = (user, checkoutEmail) => {
     ));
 };
 
-/**
- * PremiumActionBtn — Bouton Ultra-Premium (Mouse Tracking + Morphing Loading)
- * Design inspiré par Apple / Linear. Zéro scale on hover, effets de lumière dynamiques.
- */
 const PremiumActionBtn = ({ children, isLoading, disabled, onClick, darkMode }) => {
-    const buttonRef = React.useRef(null);
-    const [mousePosition, setMousePosition] = React.useState({ x: 0, y: 0 });
-    const [isHovered, setIsHovered] = React.useState(false);
-
-    const handleMouseMove = (e) => {
-        if (!buttonRef.current || disabled) return;
-        const rect = buttonRef.current.getBoundingClientRect();
-        setMousePosition({
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top,
-        });
-    };
-
-    // Couleurs globales partagées avec la carte de résumé (CheckoutView)
     const bgColor = darkMode ? 'bg-stone-900' : 'bg-white';
     const disabledBg = darkMode ? 'bg-stone-900/50' : 'bg-stone-100';
 
     return (
         <motion.button
-            ref={buttonRef}
             layout
             onClick={onClick}
             disabled={disabled || isLoading}
-            onMouseMove={handleMouseMove}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            whileHover={{}} // ABSOLUMENT AUCUN SCALE AU HOVER (Premium Static Layout)
             whileTap={!disabled && !isLoading ? { scale: 0.985 } : {}}
-            transition={{ layout: { type: "spring", stiffness: 450, damping: 35 } }}
-            className={`relative overflow-hidden font-black uppercase text-sm tracking-widest flex items-center justify-center mx-auto transition-colors duration-700 outline-none w-full h-[64px] py-0 px-4 rounded-[1.25rem]
+            transition={{ layout: { type: 'spring', stiffness: 450, damping: 35 } }}
+            className={`relative mx-auto flex h-[64px] w-full items-center justify-center gap-3 overflow-hidden rounded-[1.25rem] px-4 py-0 text-sm font-black uppercase tracking-widest outline-none transition-colors duration-300
                 ${isLoading ? 'cursor-wait' : 'cursor-pointer'}
-                ${disabled 
+                ${disabled
                     ? `${disabledBg} ${darkMode ? 'text-stone-600 border border-stone-800/50' : 'text-stone-400 border border-stone-200'} opacity-60`
                     : `${bgColor} ${darkMode ? 'text-white' : 'text-stone-900'} shadow-[0_8px_30px_rgba(0,0,0,0.15)]`
                 }
             `}
         >
-            {/* 1. MAGNETIC SPOTLIGHT BORDER GLOW (Épaissi à 2px, Suit la souris) */}
-            {!disabled && !isLoading && (
-                <motion.div
-                    className="absolute inset-0 pointer-events-none z-0 p-[2px] rounded-[1.25rem]"
-                    animate={{ opacity: isHovered ? 1 : 0 }}
-                    transition={{ duration: isHovered ? 0.3 : 0.6, ease: "easeOut" }}
-                    style={{
-                        background: `radial-gradient(160px circle at ${mousePosition.x}px ${mousePosition.y}px, ${darkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)'}, transparent 60%)`,
-                    }}
-                >
-                    {/* Le masque interne opaque garantit que seule la bordure est éclairée */}
-                    <div className={`w-full h-full rounded-[calc(1.25rem-2px)] ${bgColor}`} />
-                </motion.div>
-            )}
-
-            {/* 2. INNER MAGNETIC GLOW (Reflet interne délicat suivant la souris) */}
-            {!disabled && !isLoading && (
-                <motion.div
-                    className="absolute inset-0 pointer-events-none z-10 rounded-[1.25rem]"
-                    animate={{ opacity: isHovered ? 1 : 0 }}
-                    transition={{ duration: isHovered ? 0.3 : 0.6, ease: "easeOut" }}
-                    style={{
-                        background: `radial-gradient(100px circle at ${mousePosition.x}px ${mousePosition.y}px, ${darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}, transparent 50%)`,
-                    }}
-                />
-            )}
-
-            {/* 3. NEON BORDER LOADING TRANSITION (Faisceau lumineux balayant le grand rectangle) */}
-            <AnimatePresence>
-                {isLoading && (
-                    <motion.div
-                        key="neon-spinner"
-                        className="absolute inset-0 pointer-events-none z-0 p-[2px] rounded-[1.25rem] overflow-hidden"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.4 }} // Fade in très fluide
-                    >
-                        {/* Le conteneur à -300% assure que le centre du dégradé (la source lumineuse) est très loin pour lécher les bords horizontaux */}
-                        <motion.div 
-                            animate={{ rotate: 360 }}
-                            transition={{ repeat: Infinity, duration: 2.5, ease: "linear" }}
-                            className="absolute top-1/2 left-1/2 w-[300%] aspect-square -translate-x-1/2 -translate-y-1/2 z-0"
-                            style={{
-                                background: darkMode 
-                                    ? "conic-gradient(from 0deg, transparent 0%, rgba(255,255,255,0) 25%, rgba(255,255,255,1) 50%, rgba(255,255,255,0) 75%, transparent 100%)"
-                                    : "conic-gradient(from 0deg, transparent 0%, rgba(0,0,0,0) 25%, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 75%, transparent 100%)",
-                            }}
-                        />
-                        <div className={`relative z-10 w-full h-full rounded-[calc(1.25rem-2px)] ${bgColor}`} />
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* 4. APPLE-STYLE 3D TOP HIGHLIGHT (Bord supérieur légèrement lumineux au repos) */}
-            {!disabled && !isLoading && (
-                <div className={`absolute inset-0 pointer-events-none z-10 rounded-[1.25rem] bg-gradient-to-b ${darkMode ? 'from-white/10' : 'from-black/5'} to-transparent opacity-60`} style={{ maskImage: 'linear-gradient(to bottom, black 5%, transparent 30%)', WebkitMaskImage: 'linear-gradient(to bottom, black 5%, transparent 30%)' }} />
-            )}
-
-            {/* CONTENT TRANSITION (Texte -> Loader pur minimaliste) */}
-            <AnimatePresence mode="wait">
-                {isLoading ? (
-                    <motion.div
-                        key="loading"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                        className="flex items-center justify-center absolute inset-0 z-20 gap-3"
-                    >
-                        <svg className={`animate-spin h-5 w-5 ${darkMode ? 'opacity-70' : 'text-stone-900 opacity-70'}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-100" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span className={darkMode ? "text-white/80" : "text-stone-900/80"}>Sécurisation...</span>
-                    </motion.div>
-                ) : (
-                    <motion.div
-                        key="text"
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -5 }}
-                        transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-                        className="relative z-20 flex items-center justify-center w-full whitespace-nowrap gap-3"
-                    >
-                        {children}
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {isLoading ? <Loader2 size={18} className="relative animate-spin opacity-70" /> : null}
+            <span className="relative z-10 flex items-center justify-center gap-3 whitespace-nowrap">
+                {isLoading ? 'Securisation...' : children}
+            </span>
+            {isLoading ? (
+                <span className={`absolute inset-x-0 bottom-0 h-1 ${darkMode ? 'bg-stone-700' : 'bg-stone-300'}`}>
+                    <span className="sv-auth-loading-bar block h-full w-1/2 bg-emerald-400" />
+                </span>
+            ) : null}
         </motion.button>
     );
 };
-
 
 /**
  * CheckoutView — Flow Single Page Premium (Mars 2026)
@@ -267,6 +163,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
         token: '',
         error: ''
     });
+    const guestOtpVerifyInFlightRef = useRef(false);
 
     const normalizedCheckoutEmail = normalizeCheckoutEmail(formData.email);
     const requiresGuestCheckoutOtp = !hasReliableEmailProvider(user, formData.email);
@@ -471,6 +368,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                 status: 'idle',
                 email: '',
                 code: '',
+                token: '',
                 error: ''
             });
         }
@@ -482,6 +380,9 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
     const handleOtpCodeChange = (e) => {
         const code = e.target.value.replace(/\D/g, '').slice(0, 6);
         setGuestOtp(prev => ({ ...prev, code, error: '' }));
+        if (code.length === 6 && !guestOtpVerifyInFlightRef.current && guestOtp.status !== 'verified') {
+            window.setTimeout(() => verifyGuestCheckoutOtp(code), 0);
+        }
     };
 
     const isFormValid = useMemo(() => {
@@ -536,19 +437,22 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
         }
     };
 
-    const verifyGuestCheckoutOtp = async () => {
-        if (guestOtp.code.length !== 6) {
+    const verifyGuestCheckoutOtp = async (codeOverride = '') => {
+        const code = codeOverride || guestOtp.code;
+        if (guestOtpVerifyInFlightRef.current) return;
+        if (code.length !== 6) {
             setGuestOtp(prev => ({ ...prev, error: 'Le code doit contenir 6 chiffres.' }));
             return;
         }
 
+        guestOtpVerifyInFlightRef.current = true;
         setGuestOtp(prev => ({ ...prev, status: 'verifying', error: '' }));
 
         try {
             const verifyOtp = httpsCallable(functions, 'verifyGuestCheckoutOtp');
             const result = await verifyOtp({
                 email: normalizedCheckoutEmail,
-                code: guestOtp.code
+                code
             });
             if (!result.data?.success) {
                 throw new Error('Validation OTP incomplete.');
@@ -569,6 +473,8 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                 error: error.message || 'Code invalide ou expire.'
             }));
             toast(error.message || 'Code invalide ou expire.', { type: 'error' });
+        } finally {
+            guestOtpVerifyInFlightRef.current = false;
         }
     };
 
@@ -784,9 +690,15 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                                             type="button"
                                             onClick={sendGuestCheckoutOtp}
                                             disabled={!isOtpEmailReady || guestOtp.status === 'sending' || guestOtp.status === 'verifying'}
-                                            className={`h-12 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest transition-colors ${darkMode ? 'bg-white text-stone-950 disabled:bg-stone-800 disabled:text-stone-500' : 'bg-stone-950 text-white disabled:bg-stone-200 disabled:text-stone-400'}`}
+                                            className={`relative h-12 overflow-hidden rounded-xl px-4 text-[10px] font-black uppercase tracking-widest transition-colors ${darkMode ? 'bg-white text-stone-950 disabled:bg-stone-800 disabled:text-stone-500' : 'bg-stone-950 text-white disabled:bg-stone-200 disabled:text-stone-400'}`}
                                         >
+                                            {guestOtp.status === 'sending' ? <Loader2 size={13} className="mr-2 inline animate-spin" /> : null}
                                             {guestOtp.status === 'sending' ? 'Envoi...' : guestOtp.status === 'verified' ? 'Renvoyer un code' : 'Envoyer le code'}
+                                            {guestOtp.status === 'sending' ? (
+                                                <span className={`absolute inset-x-0 bottom-0 h-1 ${darkMode ? 'bg-stone-700' : 'bg-stone-300'}`}>
+                                                    <span className="sv-auth-loading-bar block h-full w-1/2 bg-emerald-400" />
+                                                </span>
+                                            ) : null}
                                         </button>
                                         <div className="flex gap-2">
                                             <label htmlFor="checkout-otp-code" className="sr-only">Code email</label>
@@ -805,11 +717,17 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                                             />
                                             <button
                                                 type="button"
-                                                onClick={verifyGuestCheckoutOtp}
+                                                onClick={() => verifyGuestCheckoutOtp()}
                                                 disabled={guestOtp.code.length !== 6 || guestOtp.status === 'sending' || guestOtp.status === 'verifying' || guestOtp.status === 'verified'}
-                                                className={`h-12 shrink-0 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest transition-colors ${darkMode ? 'border border-stone-700 text-white disabled:text-stone-600' : 'border border-stone-300 text-stone-900 disabled:text-stone-400'}`}
+                                                className={`relative h-12 shrink-0 overflow-hidden rounded-xl px-4 text-[10px] font-black uppercase tracking-widest transition-colors ${darkMode ? 'border border-stone-700 text-white disabled:text-stone-600' : 'border border-stone-300 text-stone-900 disabled:text-stone-400'}`}
                                             >
-                                                {guestOtp.status === 'verifying' ? '...' : guestOtp.status === 'verified' ? 'OK' : 'Valider'}
+                                                {guestOtp.status === 'verifying' ? <Loader2 size={13} className="mr-2 inline animate-spin" /> : null}
+                                                {guestOtp.status === 'verifying' ? 'Verification...' : guestOtp.status === 'verified' ? 'OK' : 'Valider'}
+                                                {guestOtp.status === 'verifying' ? (
+                                                    <span className={`absolute inset-x-0 bottom-0 h-1 ${darkMode ? 'bg-stone-700' : 'bg-stone-300'}`}>
+                                                        <span className="sv-auth-loading-bar block h-full w-1/2 bg-emerald-400" />
+                                                    </span>
+                                                ) : null}
                                             </button>
                                         </div>
                                     </div>
@@ -938,22 +856,8 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                                     }}
                                     className={`relative group p-[1.5px] rounded-[1.125rem] overflow-hidden cursor-pointer w-full transition-all`}
                                 >
-                                    {/* NEON LAYER - ONLY VISIBLE IF SELECTED */}
                                     {paymentMethod === 'stripe_elements' && (
-                                        <motion.div
-                                            initial={{ opacity: 0, rotate: 0 }}
-                                            animate={{ opacity: 1, rotate: -360 }}
-                                            transition={{ 
-                                                opacity: { duration: 0.3, delay: 0.1 }, 
-                                                rotate: { repeat: Infinity, duration: 6, ease: "linear" } 
-                                            }}
-                                            className="absolute top-1/2 left-1/2 w-[300%] aspect-square -translate-x-1/2 -translate-y-1/2 z-0"
-                                            style={{
-                                                background: darkMode 
-                                                    ? "conic-gradient(from 0deg, transparent 30%, rgba(255,255,255,0) 35%, rgba(255,255,255,1) 50%, rgba(255,255,255,0) 65%, transparent 70%)"
-                                                    : "conic-gradient(from 0deg, transparent 30%, rgba(0,0,0,0) 35%, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 65%, transparent 70%)",
-                                            }}
-                                        />
+                                        <div className={`absolute inset-0 z-0 rounded-[1.125rem] border-2 ${darkMode ? 'border-white/50' : 'border-stone-900'}`} />
                                     )}
 
                                     {/* DEFAULT BORDER FALLBACK */}
@@ -1007,22 +911,8 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
                                     }}
                                     className={`relative group p-[1.5px] rounded-[1.125rem] overflow-hidden cursor-pointer w-full transition-all`}
                                 >
-                                    {/* NEON LAYER - ONLY VISIBLE IF SELECTED */}
                                     {paymentMethod === 'deferred' && (
-                                        <motion.div
-                                            initial={{ opacity: 0, rotate: 0 }}
-                                            animate={{ opacity: 1, rotate: -360 }}
-                                            transition={{ 
-                                                opacity: { duration: 0.3, delay: 0.1 }, 
-                                                rotate: { repeat: Infinity, duration: 6, ease: "linear" } 
-                                            }}
-                                            className="absolute top-1/2 left-1/2 w-[300%] aspect-square -translate-x-1/2 -translate-y-1/2 z-0"
-                                            style={{
-                                                background: darkMode 
-                                                    ? "conic-gradient(from 0deg, transparent 30%, rgba(255,255,255,0) 35%, rgba(255,255,255,1) 50%, rgba(255,255,255,0) 65%, transparent 70%)"
-                                                    : "conic-gradient(from 0deg, transparent 30%, rgba(0,0,0,0) 35%, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 65%, transparent 70%)",
-                                            }}
-                                        />
+                                        <div className={`absolute inset-0 z-0 rounded-[1.125rem] border-2 ${darkMode ? 'border-white/50' : 'border-stone-900'}`} />
                                     )}
 
                                     {/* DEFAULT BORDER FALLBACK */}

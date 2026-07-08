@@ -134,10 +134,11 @@ function mapMailError(error) {
     );
 }
 
-async function isAdminEmail(email) {
+async function isAdminEmail(email, tx = null) {
     if (SUPER_ADMIN_EMAIL && email === SUPER_ADMIN_EMAIL.trim().toLowerCase()) return true;
 
-    const adminDoc = await db.doc('sys_metadata/admin_users').get();
+    const adminRef = db.doc('sys_metadata/admin_users');
+    const adminDoc = tx ? await tx.get(adminRef) : await adminRef.get();
     if (!adminDoc.exists) return false;
 
     return Object.values(adminDoc.data().users || {}).some((entry) => (
@@ -261,14 +262,7 @@ exports.verifyCustomerLoginOtp = functions
         const now = Date.now();
         const otpRef = getOtpRef(email);
 
-        if (await isAdminEmail(email)) {
-            throw new functions.https.HttpsError(
-                'permission-denied',
-                'Connexion par code reservee aux comptes clients. Utilisez Google, passkey ou l acces admin.'
-            );
-        }
-
-        await db.runTransaction(async (tx) => {
+        const verificationResult = await db.runTransaction(async (tx) => {
             const snap = await tx.get(otpRef);
             if (!snap.exists) {
                 throw new functions.https.HttpsError('failed-precondition', 'Code invalide ou expire.');
@@ -295,7 +289,17 @@ exports.verifyCustomerLoginOtp = functions
                     attempts: admin.firestore.FieldValue.increment(1),
                     expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
                 });
-                throw new functions.https.HttpsError('permission-denied', 'Code invalide.');
+                return {
+                    success: false,
+                    error: new functions.https.HttpsError('permission-denied', 'Code invalide.')
+                };
+            }
+
+            if (await isAdminEmail(email, tx)) {
+                throw new functions.https.HttpsError(
+                    'permission-denied',
+                    'Connexion par code reservee aux comptes clients. Utilisez Google, passkey ou l acces admin.'
+                );
             }
 
             tx.update(otpRef, {
@@ -305,7 +309,13 @@ exports.verifyCustomerLoginOtp = functions
                 otpHash: admin.firestore.FieldValue.delete(),
                 expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
             });
+
+            return { success: true };
         });
+
+        if (!verificationResult.success) {
+            throw verificationResult.error;
+        }
 
         const userRecord = await getOrCreateCustomerUser(email);
         const token = await admin.auth().createCustomToken(userRecord.uid, {

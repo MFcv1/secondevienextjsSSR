@@ -205,7 +205,7 @@ exports.verifyGuestCheckoutOtp = functions
         const checkoutOtpToken = createCheckoutOtpToken();
         const checkoutOtpTokenHash = sha256(checkoutOtpToken);
 
-        await db.runTransaction(async (tx) => {
+        const verificationResult = await db.runTransaction(async (tx) => {
             const snap = await tx.get(otpRef);
             if (!snap.exists) {
                 throw new functions.https.HttpsError('failed-precondition', 'Code invalide ou expire.');
@@ -229,7 +229,10 @@ exports.verifyGuestCheckoutOtp = functions
                     attempts: admin.firestore.FieldValue.increment(1),
                     expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
                 });
-                throw new functions.https.HttpsError('permission-denied', 'Code invalide.');
+                return {
+                    success: false,
+                    error: new functions.https.HttpsError('permission-denied', 'Code invalide.')
+                };
             }
 
             tx.update(otpRef, {
@@ -242,7 +245,13 @@ exports.verifyGuestCheckoutOtp = functions
                 otpHash: admin.firestore.FieldValue.delete(),
                 expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
             });
+
+            return { success: true };
         });
+
+        if (!verificationResult.success) {
+            throw verificationResult.error;
+        }
 
         return { success: true, checkoutOtpToken, verifiedForSeconds: Math.floor(VERIFIED_TTL_MS / 1000) };
     });
