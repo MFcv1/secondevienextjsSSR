@@ -242,7 +242,7 @@ const FilterForm = ({
       </FilterSection>
 
       {filterOptions.materials.length > 0 ? (
-        <FilterSection title="Mati\u00e8re" darkMode={darkMode}>
+        <FilterSection title="Mati&egrave;re" darkMode={darkMode}>
           <div className="space-y-2">
             {filterOptions.materials.map((material) => (
               <label key={material} className={`group flex cursor-pointer items-center gap-3 ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>
@@ -269,7 +269,7 @@ const FilterForm = ({
         </FilterSection>
       ) : null}
 
-      <FilterSection title="Disponibilit\u00e9" darkMode={darkMode}>
+      <FilterSection title="Disponibilit&eacute;" darkMode={darkMode}>
         <div className="space-y-2">
           {[
             { id: 'all', label: 'Tout voir' },
@@ -389,7 +389,7 @@ export default function CategoryServerView({
               </div>
 
               <div className="flex items-center gap-3">
-                <div className={`hidden items-center overflow-hidden rounded-lg border md:flex ${darkMode ? 'border-stone-700' : 'border-stone-200'}`}>
+                <div className={`hidden items-center overflow-hidden rounded-lg border md:flex ${darkMode ? 'border-stone-700' : 'border-stone-200'}`} data-category-view-switcher>
                   <a href={buildCategoryHref(categoryId, state, { viewMode: 'grid' })} data-category-view-link="desktop" data-category-view-value="grid" className={`p-2 transition-colors ${state.viewMode === 'grid' ? (darkMode ? 'bg-white/10 text-white' : 'bg-stone-100 text-stone-900') : (darkMode ? 'text-stone-500 hover:text-stone-300' : 'text-stone-400 hover:text-stone-600')}`} aria-label="Vue grille">
                     <Grid3X3 size={16} />
                   </a>

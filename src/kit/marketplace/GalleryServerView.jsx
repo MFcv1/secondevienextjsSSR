@@ -79,11 +79,62 @@ const getGalleryHeroTexts = () => {
   };
 };
 
+const GallerySeoQuoteMark = ({ darkMode = false } = {}) => (
+  <span
+    className={`pointer-events-none absolute -left-16 -top-8 hidden h-[74px] w-[74px] -rotate-[6deg] select-none items-center justify-center rounded-[22px] p-[7px] ring-1 shadow-[0_22px_42px_-34px_rgba(65,45,28,0.72)] md:flex lg:-left-24 lg:-top-10 lg:h-[86px] lg:w-[86px] lg:rounded-[26px] ${
+      darkMode
+        ? 'bg-[#1a1510]/88 ring-[#d8ad73]/18'
+        : 'bg-[#efe7dc]/84 ring-[#bfa286]/34 dark:bg-[#1a1510]/88 dark:ring-[#d8ad73]/18'
+    }`}
+    aria-hidden="true"
+  >
+    <span className="absolute inset-[5px] rounded-[18px] border border-white/72 dark:border-[#f0d2a5]/12 lg:rounded-[22px]" />
+    <span
+      className={`relative flex h-full w-full rotate-[6deg] items-center justify-center rounded-[17px] border shadow-[inset_0_1px_0_rgba(255,255,255,0.52)] lg:rounded-[21px] ${
+        darkMode
+          ? 'border-[#d8ad73]/18 bg-[#100d0a]/72 text-[#d8ad73]'
+          : 'border-[#b99272]/26 bg-[#fbfaf7]/80 text-[#9a654b] dark:border-[#d8ad73]/18 dark:bg-[#100d0a]/72 dark:text-[#d8ad73]'
+      }`}
+    >
+      <svg viewBox="0 0 64 64" className="h-[58px] w-[58px] overflow-visible lg:h-[66px] lg:w-[66px]" fill="none">
+        <path
+          d="M15 15.5h34"
+          stroke="currentColor"
+          strokeOpacity="0.36"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+        />
+        <path
+          d="M15 48.5h34"
+          stroke="currentColor"
+          strokeOpacity="0.24"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+        />
+        <path
+          d="M25.8 24.2c-4.8 2.9-7.2 6.6-7.2 11.2 0 4.1 2.5 7.2 6.3 7.2 3.1 0 5.4-2.2 5.4-5.2 0-2.8-1.9-4.8-4.7-5.1.6-2.1 2.4-4.1 5.1-5.9l-4.9-2.2Z"
+          fill="currentColor"
+          fillOpacity="0.72"
+        />
+        <path
+          d="M42.4 24.2c-4.8 2.9-7.2 6.6-7.2 11.2 0 4.1 2.5 7.2 6.3 7.2 3.1 0 5.4-2.2 5.4-5.2 0-2.8-1.9-4.8-4.7-5.1.6-2.1 2.4-4.1 5.1-5.9l-4.9-2.2Z"
+          fill="currentColor"
+          fillOpacity="0.92"
+        />
+        <circle cx="16" cy="16" r="2" fill="currentColor" fillOpacity="0.18" />
+        <circle cx="48" cy="48" r="2" fill="currentColor" fillOpacity="0.18" />
+      </svg>
+    </span>
+  </span>
+);
+
 const GallerySeoIntro = ({ darkMode = false } = {}) => (
   <section className={`relative z-10 px-4 pb-7 pt-7 md:px-8 md:pb-8 md:pt-24 lg:px-12 ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9] dark:bg-[#0c0b0a]'}`} aria-labelledby="gallery-seo-title">
     <div className="mx-auto grid max-w-6xl gap-7 md:grid-cols-[1.1fr_0.9fr] md:items-end">
-      <div className="relative">
-        <span className={`pointer-events-none absolute -left-16 -top-10 hidden select-none font-serif text-[100px] leading-none md:block lg:-left-24 ${darkMode ? 'text-[#b99569]/50' : 'text-[#c9b49e]/60 dark:text-[#b99569]/50'}`} aria-hidden="true">❝</span>
+      <div className="gallery-seo-copy-block relative">
+        <GallerySeoQuoteMark darkMode={darkMode} />
         <p className={`mb-3 font-sans text-[10px] font-black uppercase tracking-[0.26em] ${darkMode ? 'text-[#bca78c]' : 'text-[#8a6848] dark:text-[#c7a071]'}`}>
           {GALLERY_SEO_COPY.eyebrow}
         </p>
