@@ -2875,6 +2875,17 @@ html.dark [data-next-product-detail-shell="native"] [data-product-detail-action-
   color: rgba(245, 245, 244, 0.48) !important;
 }
 
+html.dark [data-next-product-detail-shell="native"] [aria-label="Fermer la fiche produit"] > div {
+  background-color: #111110 !important;
+  border-color: transparent !important;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34) !important;
+}
+
+html.dark [data-next-product-detail-shell="native"] [aria-label="Fermer la fiche produit"]:hover > div {
+  background-color: #181817 !important;
+  border-color: transparent !important;
+}
+
 html.dark [data-next-product-detail-shell="native"] .drop-shadow-\[0_1px_8px_rgba\(255\2c 255\2c 255\2c 0\.95\)\] {
   filter: drop-shadow(0 1px 8px rgba(0, 0, 0, 0.72)) !important;
 }
