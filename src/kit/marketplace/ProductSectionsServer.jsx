@@ -176,9 +176,9 @@ export const ReassuranceSectionServer = ({ darkMode = false } = {}) => (
                 <h3 className="font-sans text-[11px] font-black uppercase leading-none tracking-[0.2em] xl:text-[12px]">{unit.label}</h3>
                 <p className={`mx-auto mt-4 max-w-[18rem] font-sans text-[13px] leading-[1.55] ${darkMode ? 'text-stone-300' : 'text-stone-600 dark:text-[#d8c9b8]'}`}>{unit.text}</p>
               </div>
-              <div className={`post-hero-service-meta mx-auto mt-6 flex min-h-[32px] w-[168px] items-center justify-center gap-2.5 border px-4 ${darkMode ? 'border-[#d8ad73]/24 bg-[#1b1712]/88' : 'border-stone-300 bg-white/74 shadow-[0_10px_26px_rgba(84,64,42,0.035)] dark:border-[#e6c18a]/24 dark:bg-[#1b1712]/88'}`}>
+              <div className={`post-hero-service-meta mx-auto mt-6 flex min-h-[32px] w-[196px] items-center justify-center gap-2.5 border px-4 md:w-[188px] lg:w-[202px] ${darkMode ? 'border-[#d8ad73]/24 bg-[#1b1712]/88' : 'border-stone-300 bg-white/74 shadow-[0_10px_26px_rgba(84,64,42,0.035)] dark:border-[#e6c18a]/24 dark:bg-[#1b1712]/88'}`}>
                 <span className="h-[6px] w-[6px] shrink-0 bg-[#b5835f]" aria-hidden="true" />
-                <samp className={`inline-flex min-w-0 flex-1 items-center justify-center text-center font-mono text-[8px] font-black uppercase leading-none tracking-[0.16em] xl:text-[9px] ${darkMode ? 'text-[#eadbc8]' : 'text-stone-700 dark:text-[#eadbc8]'}`}>{unit.meta}</samp>
+                <samp className={`inline-flex min-w-0 flex-1 items-center justify-center whitespace-nowrap text-center font-mono text-[8px] font-black uppercase leading-none tracking-[0.12em] xl:text-[9px] ${darkMode ? 'text-[#eadbc8]' : 'text-stone-700 dark:text-[#eadbc8]'}`}>{unit.meta}</samp>
               </div>
             </article>
           ))}
@@ -414,7 +414,7 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
   <section
     data-instagram-carousel
     data-items={JSON.stringify(posts)}
-    className="relative isolate overflow-hidden px-0 pb-[64px] pt-[38px] md:px-6 md:py-[72px] lg:min-h-[690px] lg:px-[5vw] lg:py-[78px] xl:py-[86px]"
+    className="instagram-carousel-section relative isolate overflow-hidden px-0 pb-[64px] pt-[38px] md:px-6 md:py-[72px] lg:min-h-[690px] lg:px-[5vw] lg:py-[78px] xl:py-[86px]"
   >
     <div
       className={`instagram-floating-field ${darkMode ? 'instagram-floating-field--dark' : ''}`}
@@ -531,13 +531,13 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
           </span>
         </a>
       </div>
-      <div className="relative mx-auto h-[535px] w-full max-w-[1120px] overflow-visible xl:h-[570px]">
+      <div className="instagram-desktop-stage relative mx-auto w-full overflow-visible">
         {posts.map((post, index) => (
           <article
             key={post.title}
             data-insta-card={index}
             data-insta-layout="desktop"
-            className={`absolute left-1/2 top-0 w-[340px] overflow-hidden rounded-[22px] shadow-[0_24px_60px_rgba(32,26,20,0.13)] transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform xl:w-[380px] ${
+            className={`instagram-desktop-card absolute left-1/2 top-0 overflow-hidden rounded-[22px] shadow-[0_24px_60px_rgba(32,26,20,0.13)] transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
               darkMode ? 'bg-zinc-900' : 'bg-white'
             }`}
             style={getInstaPositionStyle(index, 1, desktopInstaPositions)}
