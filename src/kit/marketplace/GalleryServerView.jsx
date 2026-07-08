@@ -81,7 +81,7 @@ const getGalleryHeroTexts = () => {
 
 const GallerySeoQuoteMark = ({ darkMode = false } = {}) => (
   <span
-    className={`pointer-events-none absolute -left-16 -top-8 hidden h-[54px] w-[64px] -rotate-[7deg] select-none md:block lg:-left-24 lg:-top-10 lg:h-[62px] lg:w-[74px] ${
+    className={`pointer-events-none absolute -left-20 -top-10 hidden h-[54px] w-[64px] -rotate-[7deg] select-none md:block lg:-left-28 lg:-top-12 lg:h-[62px] lg:w-[74px] ${
       darkMode
         ? 'text-[#d8ad73]/58'
         : 'text-[#c9b49e]/82 dark:text-[#b99569]/58'
@@ -108,7 +108,7 @@ const GallerySeoIntro = ({ darkMode = false } = {}) => (
     <div className="mx-auto grid max-w-6xl gap-7 md:grid-cols-[1.1fr_0.9fr] md:items-end">
       <div className="gallery-seo-copy-block relative">
         <GallerySeoQuoteMark darkMode={darkMode} />
-        <p className={`mb-3 font-sans text-[10px] font-black uppercase tracking-[0.26em] ${darkMode ? 'text-[#bca78c]' : 'text-[#8a6848] dark:text-[#c7a071]'}`}>
+        <p className={`relative mb-3 -translate-y-3 font-sans text-[10px] font-black uppercase tracking-[0.26em] md:-translate-y-4 ${darkMode ? 'text-[#bca78c]' : 'text-[#8a6848] dark:text-[#c7a071]'}`}>
           {GALLERY_SEO_COPY.eyebrow}
         </p>
         <h2 id="gallery-seo-title" className={`font-serif text-[28px] leading-tight tracking-normal md:text-[38px] ${darkMode ? 'text-white' : 'text-[#181716] dark:text-[#f5efe6]'}`}>

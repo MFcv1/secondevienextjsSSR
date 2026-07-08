@@ -66,6 +66,7 @@ const GlobalMenu = ({
     const desktopContentRef = useRef(null);
     const mobilePanelRef = useRef(null);
     const lockedScrollYRef = useRef(0);
+    const desktopAnnouncementHeightRef = useRef(null);
     const isMenuClosingRef = useRef(false);
     const closingWheelDeltaRef = useRef(0);
     const lastTouchYRef = useRef(null);
@@ -77,12 +78,11 @@ const GlobalMenu = ({
     const syncMenuGeometry = useCallback(() => {
         if (typeof window === 'undefined') return;
 
+        const announcementHeight = desktopAnnouncementHeightRef.current ?? 0;
+        document.documentElement.style.setProperty('--global-menu-announcement-height', `${Math.max(0, Math.round(announcementHeight))}px`);
         const header = document.querySelector('header');
-        const announcementBanner = document.querySelector('.gallery-announcement-banner');
-        const announcementHeight = announcementBanner?.offsetHeight || 0;
         const headerBottom = header?.getBoundingClientRect().bottom || 0;
         const headerHeight = header?.offsetHeight || 110;
-        document.documentElement.style.setProperty('--global-menu-announcement-height', `${Math.max(0, Math.round(announcementHeight))}px`);
         document.documentElement.style.setProperty('--global-menu-header-height', `${Math.max(0, Math.round(headerHeight))}px`);
         const nextMenuTop = Math.max(0, Math.round(headerBottom > 0 ? headerBottom : headerHeight));
         const availableHeight = Math.max(0, Math.round(window.innerHeight - nextMenuTop));
@@ -153,6 +153,14 @@ const GlobalMenu = ({
         const menuIsActive = isMenuOpen || isMenuClosing;
         if (menuIsActive) {
             if (isDesktopMenuViewport) {
+                if (desktopAnnouncementHeightRef.current === null) {
+                    const announcementBanner = document.querySelector('.gallery-announcement-banner');
+                    const announcementRect = announcementBanner?.getBoundingClientRect();
+                    const visibleAnnouncementHeight = announcementRect && announcementRect.bottom > 0
+                        ? Math.min(announcementRect.height, announcementRect.bottom)
+                        : 0;
+                    desktopAnnouncementHeightRef.current = Math.max(0, Math.round(visibleAnnouncementHeight));
+                }
                 root.classList.add(DESKTOP_MENU_OPEN_CLASS);
             } else {
                 root.classList.add('global-menu-mobile-open');
@@ -161,6 +169,7 @@ const GlobalMenu = ({
             return () => {
                 root.classList.remove(DESKTOP_MENU_OPEN_CLASS);
                 root.classList.remove('global-menu-mobile-open');
+                desktopAnnouncementHeightRef.current = null;
                 root.style.removeProperty('--global-menu-announcement-height');
                 root.style.removeProperty('--global-menu-header-height');
             };
@@ -168,6 +177,7 @@ const GlobalMenu = ({
 
         root.classList.remove(DESKTOP_MENU_OPEN_CLASS);
         root.classList.remove('global-menu-mobile-open');
+        desktopAnnouncementHeightRef.current = null;
         root.style.removeProperty('--global-menu-announcement-height');
         root.style.removeProperty('--global-menu-header-height');
         return undefined;
