@@ -28,10 +28,13 @@ const validProduct = {
 
   const productRoute = read('app/produit/[slugOrId]/page.jsx');
   const categoryRoute = read('app/categorie/[categoryId]/page.jsx');
+  const searchRoute = read('app/api/search/route.js');
   const sitemap = read('app/sitemap.js');
 
   assert.match(productRoute, /robots:\s*shouldIndex\s*\?\s*undefined\s*:\s*\{\s*index:\s*false/, 'la route produit doit traduire le contrat en robots noindex');
   assert.match(categoryRoute, /isSeoIndexableCategory/, 'la route catégorie doit appliquer son contrat d’indexabilité');
+  assert.doesNotMatch(categoryRoute, /filter\(isSeoIndexableProduct\)/, 'la boutique doit afficher tous les produits publics, même noindex');
+  assert.doesNotMatch(searchRoute, /isSeoIndexableProduct/, 'la recherche doit retourner tous les produits publics, même noindex');
   assert.match(sitemap, /filter\(\(category\)\s*=>\s*isSeoIndexableCategory/, 'le sitemap ne doit publier que les catégories indexables');
   assert.match(sitemap, /filter\(isSeoIndexableProduct\)/, 'le sitemap ne doit publier que les produits indexables');
 
