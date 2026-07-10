@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import {
   getPublicCatalog,
   getPublicCatalogFallback,
-  isSeoIndexableProduct,
 } from '../../../src/lib/server/products';
 import { buildSearchResponse } from '../../../src/kit/marketplace/searchModel';
 
@@ -13,7 +12,7 @@ const getCatalog = async () => {
   if (!products.length) {
     products = await getPublicCatalogFallback({ limitCount: 160 });
   }
-  return products.filter(isSeoIndexableProduct);
+  return products;
 };
 
 export async function GET(request) {
