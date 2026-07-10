@@ -54,9 +54,17 @@ export default function MarketplaceHeroServer({
             style={{ opacity: index === 0 ? 1 : 0 }}
           >
             <picture className="block h-full w-full">
-              {img.mobileSrc ? <source media="(max-width: 767px)" srcSet={img.mobileSrc} /> : null}
+              {img.mobileSrc ? (
+                <source
+                  media="(max-width: 767px)"
+                  srcSet={index === 0 ? img.mobileSrc : undefined}
+                  data-hero-mobile-src={index === 0 ? undefined : img.mobileSrc}
+                />
+              ) : null}
               <img
-                src={img.src}
+                src={index === 0 ? img.src : undefined}
+                data-hero-src={index === 0 ? undefined : img.src}
+                data-hero-image={index}
                 sizes="100vw"
                 alt=""
                 decoding="async"

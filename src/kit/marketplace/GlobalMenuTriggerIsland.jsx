@@ -1,9 +1,19 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
-import GlobalMenu from '../layout/GlobalMenu';
+
+let globalMenuPromise = null;
+
+const loadGlobalMenu = () => {
+  if (!globalMenuPromise) {
+    globalMenuPromise = import('../layout/GlobalMenu');
+  }
+  return globalMenuPromise;
+};
+
+const GlobalMenu = lazy(loadGlobalMenu);
 
 const THEME_STORAGE_KEY = 'darkMode';
 const CLOSE_NAVIGATION_OVERLAYS_EVENT = 'sv:close-navigation-overlays';
@@ -33,6 +43,7 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelClosing, setPanelClosing] = useState(false);
   const [hasClientMounted, setHasClientMounted] = useState(false);
+  const [hasPanelMounted, setHasPanelMounted] = useState(false);
   const [desktopMenuViewport, setDesktopMenuViewport] = useState(false);
   const [criticalAuthUser, setCriticalAuthUser] = useState(null);
   const [criticalAuthIsAdmin, setCriticalAuthIsAdmin] = useState(false);
@@ -138,6 +149,7 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   const presentPanel = useCallback(() => {
     clearCloseTimer();
     clearOpenFrame();
+    setHasPanelMounted(true);
     const isDesktopOpen = isDesktopMenuViewport();
 
     if (isDesktopOpen) {
@@ -226,6 +238,7 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   };
 
   const handlePointerDown = (event) => {
+    void loadGlobalMenu();
     const isDesktopOpen = isDesktopMenuViewport();
     if (event.button !== undefined && event.button !== 0) return;
     if (isDesktopOpen) {
@@ -273,6 +286,8 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
         type="button"
         onClick={togglePanel}
         onPointerDown={handlePointerDown}
+        onPointerEnter={() => { void loadGlobalMenu(); }}
+        onFocus={() => { void loadGlobalMenu(); }}
         aria-disabled={transitionLocked && !desktopMenuViewport}
         className={`relative mr-1 flex h-10 min-w-10 touch-manipulation items-center justify-center gap-2 rounded-full px-2.5 transition-all duration-150 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5C42]/25 dark:focus-visible:ring-[#D9B58D]/45 md:mr-0 md:px-3.5 ${effectiveDarkMode ? 'bg-white/[0.08] text-stone-100 ring-1 ring-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:bg-white/[0.14] hover:text-[#D9B58D]' : 'bg-white text-stone-900 shadow-sm shadow-stone-900/5 hover:text-[#8B5C42] dark:bg-white/[0.08] dark:text-stone-100 dark:ring-1 dark:ring-white/[0.08] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] dark:hover:bg-white/[0.14] dark:hover:text-[#D9B58D]'}`}
         aria-label={panelOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
@@ -281,22 +296,24 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
         <MenuIcon open={panelOpen} />
         <span className="hidden text-[10px] font-black uppercase tracking-[0.16em] md:inline">Menu</span>
       </button>
-      {hasClientMounted && typeof document !== 'undefined' ? createPortal(
-        <GlobalMenu
-          darkMode={effectiveDarkMode}
-          isMenuOpen={panelOpen}
-          isMenuClosing={panelClosing}
-          keepMounted
-          setIsMenuOpen={setPanelOpenWithMotion}
-          currentView="gallery"
-          user={criticalAuthUser}
-          isAdmin={criticalAuthIsAdmin}
-          onNavigate={navigateCriticalDesktop}
-          onShowLogin={openCriticalDesktopLogin}
-          onOpenWishlist={() => navigateCriticalDesktop('/wishlist')}
-          onOpenCart={openCriticalDesktopCart}
-          onLogout={() => {}}
-        />,
+      {hasClientMounted && hasPanelMounted && typeof document !== 'undefined' ? createPortal(
+        <Suspense fallback={null}>
+          <GlobalMenu
+            darkMode={effectiveDarkMode}
+            isMenuOpen={panelOpen}
+            isMenuClosing={panelClosing}
+            keepMounted
+            setIsMenuOpen={setPanelOpenWithMotion}
+            currentView="gallery"
+            user={criticalAuthUser}
+            isAdmin={criticalAuthIsAdmin}
+            onNavigate={navigateCriticalDesktop}
+            onShowLogin={openCriticalDesktopLogin}
+            onOpenWishlist={() => navigateCriticalDesktop('/wishlist')}
+            onOpenCart={openCriticalDesktopCart}
+            onLogout={() => {}}
+          />
+        </Suspense>,
         document.body
       ) : null}
     </>

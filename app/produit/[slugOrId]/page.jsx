@@ -72,9 +72,10 @@ export async function generateMetadata({ params }) {
     notFound();
   }
 
-  const title = product.name || product.title || 'Produit';
-  const description = product.description
-    ? String(product.description).replace(/\s+/g, ' ').slice(0, 160)
+  const title = product.seoTitle || product.name || product.title || 'Produit';
+  const descriptionSource = product.seoDescription || product.description;
+  const description = descriptionSource
+    ? String(descriptionSource).replace(/\s+/g, ' ').slice(0, 160)
     : publicEnv.siteDescription;
   const image = getPrimaryImage(product);
   const url = getProductUrl(product, publicEnv.siteUrl);

@@ -3,6 +3,7 @@ import 'server-only';
 import { cache } from 'react';
 import { getAdminDb } from './firebaseAdmin';
 import { publicCatalogUrl, publicEnv } from './env';
+import { getProductSeoDecision, isProductPublicVisible, isProductSeoIndexable } from '../seo/indexability';
 
 export const PUBLIC_DATA_REVALIDATE_SECONDS = 300;
 const ADMIN_FALLBACK_TIMEOUT_MS = 1800;
@@ -14,6 +15,9 @@ const PUBLIC_PRODUCT_FIELDS = [
   'name',
   'title',
   'description',
+  'seoTitle',
+  'seoDescription',
+  'seoIndexable',
   'category',
   'material',
   'style',
@@ -39,27 +43,7 @@ const PUBLIC_PRODUCT_FIELDS = [
   'updatedAt'
 ];
 
-const WEAK_PRODUCT_TITLES = new Set([
-  'bu',
-  'dd',
-  'demo',
-  'image',
-  'meuble de metier',
-  'meuble de métier',
-  'photo',
-  'test'
-]);
-
-const normalizeSeoTitle = (value) => String(value || '')
-  .trim()
-  .toLowerCase()
-  .replace(/\s+/g, ' ');
-
-const isPublicProductData = (product) => (
-  product?.status === 'published'
-  && product.e2eOnly !== true
-  && !String(product.e2ePurpose || '').trim()
-);
+const isPublicProductData = isProductPublicVisible;
 
 const withTimeout = (promise, timeoutMs, label) => new Promise((resolve, reject) => {
   const timer = setTimeout(() => {
@@ -78,10 +62,8 @@ const withTimeout = (promise, timeoutMs, label) => new Promise((resolve, reject)
 });
 
 export const isSeoIndexableProduct = (product) => {
-  const title = normalizeSeoTitle(product?.name || product?.title);
-  if (!product?.id || title.length < 4 || WEAK_PRODUCT_TITLES.has(title)) return false;
   if (!isPublicProductData(product)) return false;
-  return true;
+  return isProductSeoIndexable(product);
 };
 
 export const extractProductId = (slugOrId = '') => {
@@ -357,13 +339,5 @@ export const getPublishedProductStaticParams = cache(async (limitCount = 120) =>
   }
   return products
     .filter(isSeoIndexableProduct)
-    .map((product) => ({
-      slugOrId: `${String(product.title || product.name || 'produit')
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .replace(/-{2,}/g, '-') || 'produit'}-${encodeURIComponent(product.id)}`
-    }));
+    .map((product) => ({ slugOrId: getProductSeoDecision(product).canonicalSlug }));
 });

@@ -378,6 +378,20 @@ const instagramFloatingTokens = [
   { id: 'left-mini', Icon: HeartHandshake, className: 'instagram-floating-token--left-mini', style: { '--float-x': '7.6%', '--float-y': '78.5%', '--float-size': '42px', '--float-delay': '1180ms', '--float-enter-duration': '520ms', '--float-arrive-x': '-6px', '--float-arrive-y': '36px', '--float-drift-x': '6px', '--float-drift-y': '-9px', '--float-rotate-start': '9deg', '--float-rotate-end': '-6deg', '--float-duration': '6.8s' } },
 ];
 
+const instagramFloatingRevealRanks = {
+  gram: { desktop: 1, mobile: 1 },
+  spark: { desktop: 1, mobile: 2 },
+  send: { desktop: 1, mobile: 3 },
+  mail: { desktop: 2, mobile: 2 },
+  message: { desktop: 2, mobile: 2 },
+  'left-star': { desktop: 3, mobile: 5 },
+  'right-tag': { desktop: 3, mobile: 5 },
+  heart: { desktop: 4, mobile: 4 },
+  save: { desktop: 4, mobile: 3 },
+  at: { desktop: 5, mobile: 4 },
+  'left-mini': { desktop: 5, mobile: 5 },
+};
+
 const desktopInstaCardStyles = [
   { transform: 'translateX(-145%) scale(0.92)', opacity: 0.52, zIndex: 1 },
   { transform: 'translateX(-50%) scale(1)', opacity: 1, zIndex: 3 },
@@ -413,18 +427,26 @@ const getInstaPositionStyle = (index, activeIndex, positions) => {
 const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } = {}) => (
   <section
     data-instagram-carousel
-    data-items={JSON.stringify(posts)}
+    data-item-count={posts.length}
     className="instagram-carousel-section relative isolate overflow-hidden px-0 pb-[64px] pt-[38px] md:px-6 md:py-[72px] lg:min-h-[690px] lg:px-[5vw] lg:py-[78px] xl:py-[86px]"
   >
     <div
       className={`instagram-floating-field ${darkMode ? 'instagram-floating-field--dark' : ''}`}
       data-instagram-floating-field="true"
-      data-floating-ready="false"
-      data-floating-settled="false"
+      data-floating-prepared="false"
       aria-hidden="true"
     >
       {instagramFloatingTokens.map(({ id, Icon, className, style }) => (
-        <span key={id} className={`instagram-floating-token ${className}`} style={style}>
+        <span
+          key={id}
+          className={`instagram-floating-token ${className}`}
+          style={style}
+          data-floating-rank-desktop={instagramFloatingRevealRanks[id]?.desktop || 5}
+          data-floating-rank-mobile={instagramFloatingRevealRanks[id]?.mobile || 5}
+          data-floating-prepared="false"
+          data-floating-revealed="false"
+          data-floating-settled="false"
+        >
           <span className="instagram-floating-token__shell">
             <span className="instagram-floating-token__shine" />
             <Icon className="instagram-floating-token__icon" strokeWidth={1.8} />
@@ -645,7 +667,7 @@ const TestimonialsHeader = ({ darkMode = false, compact = false } = {}) => (
       {Array.from({ length: 5 }).map((_, index) => (
         <span
           key={index}
-          className="testimonial-star relative z-10 inline-flex will-change-transform"
+          className="testimonial-star relative z-10 inline-flex"
           style={{ '--testimonial-star-delay': `${index * 145}ms` }}
         >
           <Star size={compact ? 21 : 23} fill="currentColor" strokeWidth={0} />
@@ -669,6 +691,8 @@ const TestimonialCardServer = ({ note, darkMode = false, size = 'mobile' } = {})
     <article
       data-testimonial-card={index}
       data-testimonial-layout={isDesktop ? 'desktop' : 'mobile'}
+      data-testimonial-prepared="false"
+      data-testimonial-transitioning="false"
       style={{
         '--testimonial-card-bg': note.color,
         transform: positionStyle.transform,
@@ -681,7 +705,7 @@ const TestimonialCardServer = ({ note, darkMode = false, size = 'mobile' } = {})
         isDesktop
           ? 'h-[306px] px-7 py-8 shadow-[0_16px_38px_rgba(69,57,42,0.08)] xl:h-[332px] xl:px-9 xl:py-10'
           : 'h-[292px] w-[232px] px-6 py-8 shadow-[0_18px_36px_rgba(69,57,42,0.035)]'
-      } transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${darkMode ? '' : ''}`}
+      } transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${darkMode ? '' : ''}`}
     >
       <div
         aria-hidden="true"
@@ -758,7 +782,8 @@ const TestimonialControlsServer = ({ darkMode = false, compact = false } = {}) =
 const TestimonialsCarouselPlaceholder = ({ darkMode = false } = {}) => (
   <section
     data-testimonials-carousel
-    data-items={JSON.stringify(testimonials)}
+    data-item-count={testimonials.length}
+    data-testimonials-prepared="false"
     className={`customer-testimonials-section relative z-20 min-h-[520px] w-full overflow-hidden dark:bg-[#0b0a09] dark:text-[#f8f1e8] lg:min-h-[828px] ${
       darkMode ? 'bg-[#0b0a09] text-[#f8f1e8]' : 'bg-white text-[#242221]'
     }`}

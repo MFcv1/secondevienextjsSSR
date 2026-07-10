@@ -33,14 +33,14 @@ Interdits sur routes publiques:
 
 ## Docs a lire selon la zone
 
-- Architecture Next native: `NEXT_NATIVE_ARCHITECTURE_BASELINE.md`, `context.md`, `mapV2.md`.
+- Architecture Next native: `NEXT_NATIVE_ARCHITECTURE_BASELINE.md`, `context.md`, `mapV2.md`, `_DOCS/architecture/ARCHITECTURE_SEO_COLD_SCROLL_IMPLEMENTATION_ROADMAP_2026-07-10.md`.
 - Mega menu desktop/Rainmaker-like et piste mobile: `megamenuupdate.md`.
 - Home galerie canonique: `_DOCS/architecture/GALLERY_HOME_CANONICAL_IMPLEMENTATION_2026-07-01.md`.
 - Galerie mobile/shell/scroll/detail: `alertemobile.md`.
 - Performance/hydratation/cache: `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md`, `_DOCS/perf/PHASE3_PERF_BASELINE_2026-06-24.md`, `_DOCS/perf/PUBLIC_SEO_BUDGET_VISUAL_CLOSEOUT_2026-07-01.md`.
 - PageSpeed images/accessibilite/cache publics: `_DOCS/perf/PAGESPEED_CARD_THUMBS_STATIC_IMAGES_CLOSEOUT_2026-07-06.md`, `_DOCS/perf/PAGESPEED_NO_REDESIGN_ROADMAP_2026-07-06.md`.
 - Images produit/Storage/detailFast: `_DOCS/images/NEXTJS_IMAGE_PIPELINE_AUDIT.md`, `_DOCS/images/OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md`, `_DOCS/images/DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md`.
-- Infra prod/App Hosting/App Check: `_DOCS/infra/P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md`, `_DOCS/infra/INFRA_PROD_PHASE2_REPORT_2026-06-14.md`, `_DOCS/infra/APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`, `_DOCS/infra/RAIL_PROD_AUDIT_REPORT_2026-06-24.md`.
+- Infra prod/App Hosting/App Check: `_DOCS/infra/NEXT_FIREBASE_SITUATIONAL_AUDIT_2026-07-10.md`, `_DOCS/infra/P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md`, `_DOCS/infra/INFRA_PROD_PHASE2_REPORT_2026-06-14.md`, `_DOCS/infra/APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`, `_DOCS/infra/RAIL_PROD_AUDIT_REPORT_2026-06-24.md`.
 - Securite strategique Next/Firebase: `_DOCS/security/SECURITY_STRATEGIC_AUDIT_2026-07-08.md`.
 - Checkout/refund/E2E/Stripe Connect: `_DOCS/commerce/STRIPE_CONNECT_INTEGRATION_PLAN_2026-07-01.md`, `_DOCS/commerce/CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md`, `_DOCS/commerce/E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`, `_DOCS/commerce/E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`, `_DOCS/commerce/REFUND_UI_STRICT_PROOF_2026-06-24.md`.
 
@@ -80,10 +80,12 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |-- TODO.md : backlog infra/perf/backoffice
 |-- TODO_NEXT16_UPGRADE.md : rappel migration Next 16/Turbopack et plan de test
 |-- DEAD_CODE_AUDIT.md : audit code vivant/mort, assets, scripts et gates
+|-- .github/workflows/quality.yml : CI Node 22/pnpm avec lint, build, routes, SEO et budget public
 |-- docs : brouillons legaux/metier non operationnels, dont CGV/retours
 |-- _DOCS : documentation active organisee par theme et archives
 |   |-- architecture : baseline routes publiques, SEO, cache et decisions Next
-|   |   `-- GALLERY_HOME_CANONICAL_IMPLEMENTATION_2026-07-01.md : decision `/` home galerie et `/galerie` alias
+|   |   |-- GALLERY_HOME_CANONICAL_IMPLEMENTATION_2026-07-01.md : decision `/` home galerie et `/galerie` alias
+|   |   `-- ARCHITECTURE_SEO_COLD_SCROLL_IMPLEMENTATION_ROADMAP_2026-07-10.md : plan architecture/SEO puis suppression des freezes de premier scroll sans retirer les animations
 |   |-- perf : roadmaps/gates perf, hydratation, galerie, menus split desktop/mobile et rendu final direct
 |   |   |-- PUBLIC_SEO_BUDGET_VISUAL_CLOSEOUT_2026-07-01.md : closeout budgets publics avec preuves visuelles
 |   |   |-- MENU_COLD_OPEN_AUDIT_2026-07-02.md : audit delai ouverture menu principal/mega menu desktop et mobile
@@ -91,6 +93,7 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |   |   `-- PAGESPEED_NO_REDESIGN_ROADMAP_2026-07-06.md : roadmap PageSpeed restante sans redesign
 |   |-- images : pipeline images produit, Storage, detailFast et audits UX image
 |   |-- infra : App Hosting, rail prod, App Check et closeout infra
+|   |   `-- NEXT_FIREBASE_SITUATIONAL_AUDIT_2026-07-10.md : audit objectif du rendu Next, SEO, cache, Firebase, performance et maturite prod
 |   |-- commerce : checkout, refund, E2E backoffice et Stripe/Firebase hardening
 |   |   `-- STRIPE_CONNECT_INTEGRATION_PLAN_2026-07-01.md : roadmap integration Stripe Connect, securite admin et preuves par phase
 |   |-- security : audit strategique manuel Next/Firebase avant presentation cliente
@@ -108,9 +111,9 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |   |-- kit/vitrine : page `/a-propos` serveur et iles fines
 |   |-- kit/layout : layout partage, footer et menu global split en shell/desktop/mobile
 |   |-- kit/shared, kit/ui, kit/hooks, kit/contexts, kit/config
-|   |-- lib : helpers serveur produits/env/theme/about et SEO structure
+|   |-- lib : helpers serveur produits/env/theme/about, SEO structure et contrat `seo/indexability.js`
 |   `-- assets, utils : assets source et helpers image/formatting
-|-- scripts : env bridge, gates Next, audits perf/direct/mobile/menus, E2E sandbox, backfills images, infra audits
+|-- scripts : env bridge, gates Next, audits perf/direct/mobile/menus/cold-sections, gates SEO, E2E sandbox, backfills images, infra audits
 |-- functions-public : Functions publiques isolees pour `publicCatalog`
 |-- functions : Functions privees/admin/commerce/auth/email/seo/triggers
 |-- public : favicons, manifest, images, videos et assets statiques

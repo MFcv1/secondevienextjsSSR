@@ -154,8 +154,8 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
 
     const getAuthRuntime = async () => {
         const auth = await getFirebaseAuth();
-        const module = await loadAuthModule();
-        return { auth, module };
+        const authModule = await loadAuthModule();
+        return { auth, authModule };
     };
 
     // 2. Read user role once from claims. Avoid keeping a Firestore listener for every client.
@@ -198,18 +198,18 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
     }, [user]);
 
     const loginWithProvider = async (provider) => {
-        const { auth, module } = await getAuthRuntime();
+        const { auth, authModule } = await getAuthRuntime();
 
         if (isIOSStandalone()) {
             // iOS standalone (PWA home screen): signInWithPopup is blocked by WebKit
             // Use signInWithRedirect: page will reload and getRedirectResult handles it above
             // Flag persists in sessionStorage so the redirect lifecycle survives reload.
             setRedirectPending();
-            await module.signInWithRedirect(auth, provider);
+            await authModule.signInWithRedirect(auth, provider);
             return null; // Page reloads, this line won't execute
         }
         // Normal browser (Safari, Chrome, etc.): signInWithPopup works fine
-        const result = await module.signInWithPopup(auth, provider);
+        const result = await authModule.signInWithPopup(auth, provider);
         getCallableFunction('updateUserSessions')
             .then((updateUserSessions) => updateUserSessions())
             .catch(err => console.error('Failed to clean sessions after login:', err));
@@ -222,8 +222,8 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
     };
 
     const loginWithEmail = async (email, password) => {
-        const { auth, module } = await getAuthRuntime();
-        const result = await module.signInWithEmailAndPassword(auth, email, password);
+        const { auth, authModule } = await getAuthRuntime();
+        const result = await authModule.signInWithEmailAndPassword(auth, email, password);
         return syncSignedInUser(result);
     };
 
@@ -248,24 +248,24 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
     }, []);
 
     const signupWithEmail = async (email, password) => {
-        const { auth, module } = await getAuthRuntime();
-        const result = await module.createUserWithEmailAndPassword(auth, email, password);
+        const { auth, authModule } = await getAuthRuntime();
+        const result = await authModule.createUserWithEmailAndPassword(auth, email, password);
         return syncSignedInUser(result);
     };
 
     const loginWithCustomToken = async (token) => {
-        const { auth, module } = await getAuthRuntime();
-        const result = await module.signInWithCustomToken(auth, token);
+        const { auth, authModule } = await getAuthRuntime();
+        const result = await authModule.signInWithCustomToken(auth, token);
         return syncSignedInUser(result);
     };
 
     const logout = async () => {
-        const { auth, module } = await getAuthRuntime();
+        const { auth, authModule } = await getAuthRuntime();
         setUser(null);
         setIsAdmin(false);
         setIsSuperAdmin(false);
         emitAuthUserChanged(null);
-        return module.signOut(auth);
+        return authModule.signOut(auth);
     };
 
     const verifyEmail = async (user) => {

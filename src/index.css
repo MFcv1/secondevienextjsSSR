@@ -1450,14 +1450,15 @@ html.dark .gallery-seo-proof-item {
   transition-delay: var(--float-delay);
 }
 
-.instagram-floating-field[data-floating-ready="true"] .instagram-floating-token {
+.instagram-floating-token[data-floating-revealed="true"] {
   opacity: var(--float-rest-opacity, 0.82);
   transform:
     translate3d(-50%, -50%, 0)
     scale(1);
 }
 
-.instagram-floating-field[data-floating-ready="true"]:not([data-floating-settled="true"]) .instagram-floating-token {
+.instagram-floating-token[data-floating-prepared="true"][data-floating-revealed="false"],
+.instagram-floating-token[data-floating-revealed="true"][data-floating-settled="false"] {
   will-change: opacity, transform;
 }
 
@@ -1485,7 +1486,7 @@ html.dark .gallery-seo-proof-item {
   transform-style: flat;
 }
 
-.instagram-floating-field[data-floating-settled="true"] .instagram-floating-token__shell {
+.instagram-floating-token[data-floating-settled="true"] .instagram-floating-token__shell {
   animation: instagram-token-float var(--float-duration) ease-in-out infinite alternate;
   animation-delay: 0ms;
 }
@@ -1768,8 +1769,12 @@ html.dark .gallery-seo-proof-item {
   transform: translate3d(0, 0, 16px) scale(0.92);
 }
 
-.instagram-floating-field--dark .instagram-floating-token {
+.instagram-floating-field--dark .instagram-floating-token[data-floating-revealed="false"] {
   opacity: 0;
+}
+
+.instagram-floating-field--dark .instagram-floating-token[data-floating-revealed="true"] {
+  opacity: var(--float-rest-opacity, 0.82);
 }
 
 .instagram-floating-field--dark .instagram-floating-token__shell {
@@ -2106,7 +2111,7 @@ html.dark .gallery-seo-proof-item {
 
 @media (prefers-reduced-motion: reduce) {
   .instagram-floating-field .instagram-floating-token,
-  .instagram-floating-field[data-floating-ready="true"] .instagram-floating-token {
+  .instagram-floating-field .instagram-floating-token[data-floating-revealed="true"] {
     opacity: var(--float-rest-opacity, 0.68);
     animation: none !important;
     transform:
@@ -2118,7 +2123,7 @@ html.dark .gallery-seo-proof-item {
   }
 
   .instagram-floating-field .instagram-floating-token__shell,
-  .instagram-floating-field[data-floating-ready="true"] .instagram-floating-token__shell {
+  .instagram-floating-token[data-floating-settled="true"] .instagram-floating-token__shell {
     animation: none !important;
     transform: none;
   }
@@ -3228,11 +3233,18 @@ html.dark .customer-testimonial-card {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .testimonial-star {
+  [data-testimonials-prepared='true'] .testimonial-star {
     animation: testimonial-star-wave 2.35s cubic-bezier(0.34, 1.18, 0.64, 1) infinite;
     animation-delay: var(--testimonial-star-delay, 0ms);
     transform-origin: center;
+    will-change: transform;
   }
+}
+
+[data-testimonial-prepared='true'],
+[data-testimonial-transitioning='true'] {
+  backface-visibility: hidden;
+  will-change: transform, opacity;
 }
 
 @keyframes testimonial-star-wave {

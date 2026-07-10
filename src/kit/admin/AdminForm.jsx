@@ -94,6 +94,9 @@ const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkM
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    seoTitle: '',
+    seoDescription: '',
+    seoIndexable: true,
     startingPrice: 0,
     material: '',
     color: '',
@@ -154,6 +157,9 @@ const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkM
       setFormData({
         name: editData.name || '',
         description: editData.description || '',
+        seoTitle: editData.seoTitle || '',
+        seoDescription: editData.seoDescription || '',
+        seoIndexable: editData.seoIndexable !== false,
         startingPrice: editData.startingPrice || 0,
         stock: editData.stock !== undefined ? editData.stock : '', // [NEW] Load stock
         material: material,
@@ -199,6 +205,9 @@ const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkM
     setFormData({
       name: '',
       description: '',
+      seoTitle: '',
+      seoDescription: '',
+      seoIndexable: true,
       startingPrice: 0,
       stock: '', // [NEW] Reset stock
       material: '',
@@ -321,6 +330,15 @@ const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkM
     // ── Validation catégorie obligatoire ──
     if (!formData.category) {
       setMsg("⚠️ Choisis un type de publication (Mobilier, Tables, Miroirs…)");
+      return;
+    }
+    const effectiveSeoDescription = String(formData.seoDescription || formData.description || '').trim();
+    if (formData.seoIndexable && effectiveSeoDescription.length < 48) {
+      setMsg("⚠️ SEO : ajoute une description utile d'au moins 48 caractères, ou désactive l'indexation");
+      return;
+    }
+    if (formData.seoIndexable && galleryItems.length === 0) {
+      setMsg("⚠️ SEO : ajoute une image principale, ou désactive l'indexation");
       return;
     }
     setUploading(true);
@@ -910,6 +928,40 @@ const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkM
               onChange={e => setFormData({ ...formData, description: e.target.value })}
               onWheelCapture={handleDescriptionWheelCapture}
             />
+          </div>
+          <div className={`space-y-4 rounded-2xl p-5 ring-1 ${darkMode ? 'bg-stone-900/60 ring-stone-700' : 'bg-stone-50 ring-stone-100'}`}>
+            <div>
+              <label htmlFor="product-seo-title" className="ml-2 text-[9px] font-black uppercase text-stone-400">Titre SEO optionnel</label>
+              <input
+                id="product-seo-title"
+                type="text"
+                maxLength={70}
+                className={`mt-1.5 w-full rounded-xl border-none px-4 py-3 text-sm font-bold outline-none focus:ring-4 ${darkMode ? 'bg-stone-950 text-white ring-stone-700' : 'bg-white text-stone-900 ring-stone-100'}`}
+                value={formData.seoTitle}
+                onChange={e => setFormData({ ...formData, seoTitle: e.target.value })}
+                placeholder={formData.name || 'Fallback automatique sur le nom'}
+              />
+            </div>
+            <div>
+              <label htmlFor="product-seo-description" className="ml-2 text-[9px] font-black uppercase text-stone-400">Description SEO optionnelle</label>
+              <textarea
+                id="product-seo-description"
+                maxLength={180}
+                className={`mt-1.5 h-24 w-full resize-none rounded-xl border-none px-4 py-3 text-sm font-bold outline-none focus:ring-4 ${darkMode ? 'bg-stone-950 text-white ring-stone-700' : 'bg-white text-stone-900 ring-stone-100'}`}
+                value={formData.seoDescription}
+                onChange={e => setFormData({ ...formData, seoDescription: e.target.value })}
+                placeholder="Fallback automatique sur l'histoire de l'objet"
+              />
+            </div>
+            <label className="flex cursor-pointer items-center gap-3 text-[10px] font-black uppercase tracking-wide text-stone-500">
+              <input
+                type="checkbox"
+                checked={formData.seoIndexable}
+                onChange={e => setFormData({ ...formData, seoIndexable: e.target.checked })}
+                className="h-4 w-4 accent-stone-900"
+              />
+              Autoriser l'indexation Google
+            </label>
           </div>
         </div>
       </div>

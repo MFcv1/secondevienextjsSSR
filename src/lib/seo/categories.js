@@ -7,12 +7,18 @@ export const LEGACY_CATEGORY_IDS = {
   assises: ['chaises', 'fauteuils', 'bancs']
 };
 
-export const categoryEntries = Array.from(
+const allCategoryEntries = Array.from(
   new Map([
     ...(KIT_CONFIG.categoryGroups || []),
     ...(KIT_CONFIG.productCategories || [])
   ].map((category) => [category.id, category])).values()
 );
+
+export const CATEGORY_CANONICAL_ALIASES = {
+  deco: 'decorations'
+};
+
+export const categoryEntries = allCategoryEntries.filter((category) => !CATEGORY_CANONICAL_ALIASES[category.id]);
 
 export const cleanCategoryLabel = (label = '') => (
   String(label)
@@ -22,7 +28,26 @@ export const cleanCategoryLabel = (label = '') => (
 );
 
 export const getCategoryMeta = (categoryId) => (
-  categoryEntries.find((category) => category.id === categoryId) || null
+  allCategoryEntries.find((category) => category.id === categoryId) || null
+);
+
+const CATEGORY_SEO_TITLES = {
+  meubles: 'Meubles anciens restaurés',
+  assises: 'Assises anciennes restaurées',
+  eclairage: 'Éclairage ancien restauré',
+  decorations: 'Décoration vintage restaurée',
+  armoires: 'Armoires anciennes restaurées',
+  buffets: 'Buffets anciens restaurés',
+  commodes: 'Commodes et chevets restaurés',
+  tables: 'Tables anciennes restaurées',
+  chaises: 'Chaises anciennes restaurées',
+  fauteuils: 'Fauteuils anciens restaurés',
+  bancs: 'Bancs anciens restaurés',
+  miroirs: 'Miroirs anciens restaurés'
+};
+
+export const getCategorySeoTitle = (categoryId, fallbackLabel = '') => (
+  CATEGORY_SEO_TITLES[categoryId] || `${cleanCategoryLabel(fallbackLabel || categoryId)} restauré`
 );
 
 export const getCategoryLabel = (categoryId) => {
@@ -45,6 +70,12 @@ export const getMatchingCategoryIds = (categoryId) => {
     if (children.includes(categoryId)) ids.add(legacyId);
   });
   return [...ids];
+};
+
+export const isSeoIndexableCategory = (categoryId, products = []) => {
+  if (!getCategoryMeta(categoryId)) return false;
+  const matchingIds = new Set(getMatchingCategoryIds(categoryId));
+  return products.some((product) => matchingIds.has(product?.category));
 };
 
 export const buildCategoryBreadcrumbJsonLd = ({ categoryId, categoryLabel, siteUrl }) => ({
@@ -71,7 +102,7 @@ export const buildCategoryCollectionJsonLd = ({ categoryId, categoryLabel, produ
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
   '@id': `${getCategoryUrl(categoryId, siteUrl)}#collection`,
-  name: `${categoryLabel} restaurés`,
+  name: getCategorySeoTitle(categoryId, categoryLabel),
   description,
   url: getCategoryUrl(categoryId, siteUrl),
   breadcrumb: {

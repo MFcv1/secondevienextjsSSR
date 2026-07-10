@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "node scripts/with-env.mjs .env.sandbox next dev",
     "dev:host": "node scripts/with-env.mjs .env.sandbox next dev -H 0.0.0.0",
@@ -24,6 +28,7 @@
     "test:functions:auth": "node tests/auth-claims.test.cjs",
     "test:e2e": "playwright test",
     "seo:check": "node scripts/with-env.mjs .env.sandbox node scripts/check-product-ssr.mjs",
+    "seo:surface": "node scripts/check-seo-indexability.cjs",
     "images:audit": "node scripts/backfill-product-image-metadata.cjs --dry-run --published-only --env=sandbox && node scripts/backfill-product-image-variants.cjs --dry-run --published-only --env=sandbox && node scripts/audit-storage-orphans.cjs --dry-run --env=sandbox",
     "images:metadata:dry": "node scripts/backfill-product-image-metadata.cjs --dry-run --published-only --env=sandbox",
     "images:variants:dry": "node scripts/backfill-product-image-variants.cjs --dry-run --published-only --env=sandbox",
@@ -38,6 +43,7 @@
     "perf:architecture": "node scripts/benchmark-architecture.mjs",
     "perf:scroll": "node scripts/audit-gallery-scroll-lag.mjs --mode=immediate --assert --trace=false",
     "perf:scroll:newsletter": "node scripts/audit-gallery-scroll-lag.mjs --mode=newsletter --assert --trace=false",
+    "perf:scroll:cold-sections": "node scripts/audit-gallery-scroll-lag.mjs --mode=cold-sections --assert --trace=false",
     "perf:product-direct": "node scripts/audit-product-page-direct.mjs --assert",
     "perf:category-direct": "node scripts/audit-category-direct.mjs --assert",
     "perf:about-direct": "node scripts/audit-about-direct.mjs --assert",
@@ -79,11 +85,16 @@
     "postcss": "$postcss"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@next/eslint-plugin-next": "^15.5.20",
     "@playwright/test": "^1.60.0",
     "autoprefixer": "^10.4.23",
     "chalk": "^5.3.0",
     "eslint": "^9.39.1",
-    "eslint-config-next": "^15.3.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^14.0.0",
     "inquirer": "^9.3.7",
     "ora": "^8.1.0",
     "postcss": "^8.5.6",

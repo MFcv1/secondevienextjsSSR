@@ -1,6 +1,6 @@
 import { getPublicCatalog, getPublicCatalogFallback, isSeoIndexableProduct } from '../src/lib/server/products';
 import { publicCatalogUrl, publicEnv } from '../src/lib/server/env';
-import { categoryEntries, getMatchingCategoryIds } from '../src/lib/seo/categories';
+import { categoryEntries, getMatchingCategoryIds, isSeoIndexableCategory } from '../src/lib/seo/categories';
 import { getCategoryUrl, getProductUrl } from '../src/utils/slug';
 
 const SITEMAP_PAGE_LIMIT = 120;
@@ -94,7 +94,7 @@ export default async function sitemap() {
     withLastModified({ url: `${baseUrl}/` }, catalogLastModified),
     { url: `${baseUrl}/a-propos` },
     { url: `${baseUrl}/devis` },
-    ...categoryEntries.map((category) => ({
+    ...categoryEntries.filter((category) => isSeoIndexableCategory(category.id, products)).map((category) => ({
       url: getCategoryUrl(category.id, baseUrl),
       ...withLastModified({}, getCategoryLastModified(products, category.id))
     })),

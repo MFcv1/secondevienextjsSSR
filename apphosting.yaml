@@ -85,6 +85,16 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: NEXT_STRICT_PUBLIC_ORIGIN
+    value: "true"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: PUBLIC_CATALOG_REGION
+    value: "us-central1"
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: NEXT_PUBLIC_OG_IMAGE
     value: "/images/gallery-hero-1.webp"
     availability:

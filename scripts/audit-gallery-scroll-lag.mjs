@@ -258,7 +258,9 @@ const setSegment = async (page, segment, markers) => {
 
 const waitForLocalGallery = async (page) => {
   await page.waitForLoadState('domcontentloaded', { timeout: 45_000 });
-  await page.waitForFunction(() => document.documentElement.dataset.svClientHydrated === 'true', null, { timeout: 45_000 }).catch(() => null);
+  await page.waitForFunction(() => (
+    document.querySelector('[data-instagram-carousel]')?.dataset.carouselReady === 'true'
+  ), null, { timeout: 12_000 }).catch(() => null);
   await page.waitForTimeout(3600);
   await page.waitForFunction(() => !document.documentElement.classList.contains('gallery-entry-scroll-lock'), null, { timeout: 20_000 }).catch(() => null);
 };
@@ -268,6 +270,9 @@ const findHeadingTop = async (page, text) => {
     const normalizedNeedle = needle.toLocaleLowerCase('fr-FR');
     const match = Array.from(document.querySelectorAll('h1,h2,h3')).find((node) => (
       (node.textContent || '').toLocaleLowerCase('fr-FR').includes(normalizedNeedle)
+      && node.getBoundingClientRect().width > 0
+      && node.getBoundingClientRect().height > 0
+      && getComputedStyle(node).visibility !== 'hidden'
     ));
     if (!match) return null;
     const rect = match.getBoundingClientRect();
@@ -278,7 +283,9 @@ const findHeadingTop = async (page, text) => {
 const wheelUntilHeading = async (page, text, maxSteps = 16) => {
   for (let index = 0; index < maxSteps; index += 1) {
     const heading = await findHeadingTop(page, text);
-    if (heading && heading.top >= 80 && heading.top <= 460) return heading;
+    // A 680px wheel step can cross the 80px boundary in one frame. Accept a
+    // slightly passed heading so the audit does not continue to the footer.
+    if (heading && heading.top >= -180 && heading.top <= 460) return heading;
     await page.mouse.wheel(0, 680);
     await page.waitForTimeout(120);
   }
@@ -291,6 +298,13 @@ const fastWheel = async (page, steps, deltaY = 740) => {
     await page.waitForTimeout(105);
   }
 };
+
+const evaluateColdSectionState = async (page) => page.evaluate(() => ({
+  instagramPrepared: document.querySelector('[data-instagram-floating-field]')?.dataset.floatingPrepared === 'true',
+  instagramRevealedTokens: document.querySelectorAll('[data-floating-revealed="true"]').length,
+  testimonialsPrepared: document.querySelector('[data-testimonials-carousel]')?.dataset.testimonialsPrepared === 'true',
+  testimonialPreparedCards: document.querySelectorAll('[data-testimonial-prepared="true"]').length,
+}));
 
 const runImmediateScroll = async (page, snapshots) => {
   const samples = [];
@@ -565,6 +579,21 @@ const evaluateAssertions = (summary) => {
     });
   }
 
+  if (summary.mode === 'cold-sections' && summary.coldSections) {
+    const instagramGap = summary.frameGaps.bySegment.cold_scroll_instagram?.maxMs || 0;
+    const testimonialsGap = summary.frameGaps.bySegment.cold_scroll_testimonials?.maxMs || 0;
+    add('instagram prepares and progressively reveals before/during first exposure', (
+      summary.coldSections.instagram?.instagramPrepared
+      && summary.coldSections.instagram.instagramRevealedTokens > 0
+    ), summary.coldSections.instagram);
+    add('testimonials prepare rendering layers before first visible interaction', (
+      summary.coldSections.testimonials?.testimonialsPrepared
+    ), summary.coldSections.testimonials);
+    add('cold section scroll keeps frame gaps below 120ms under configured throttle', (
+      instagramGap <= 120 && testimonialsGap <= 120
+    ), { instagramGap, testimonialsGap, throttle: summary.cpuThrottleRate });
+  }
+
   return {
     passed: checks.every((check) => check.passed),
     checks,
@@ -605,7 +634,16 @@ const main = async () => {
         'normal_newsletter_settle',
         'final_settle',
       ]
-      : [
+      : mode === 'cold-sections'
+        ? [
+          'navigation',
+          'cold_scroll_instagram',
+          'instagram_settle',
+          'cold_scroll_testimonials',
+          'testimonials_settle',
+          'final_settle',
+        ]
+        : [
         'navigation',
         'settled_before_scroll',
         'scroll_to_nouveautes',
@@ -681,6 +719,7 @@ const main = async () => {
   const isLocalSecondeVie = /127\.0\.0\.1|localhost|hosted\.app|secondevie/i.test(targetUrl);
   let immediateScroll = null;
   let normalNewsletterScroll = null;
+  let coldSections = null;
 
   if (mode === 'immediate') {
     await setSegment(page, 'immediate_scroll', segmentMarkers);
@@ -694,6 +733,30 @@ const main = async () => {
     await setSegment(page, 'normal_newsletter_settle', segmentMarkers);
     await page.waitForTimeout(1200);
     snapshots.push(await evaluateSnapshot(page, 'normal_newsletter_settle'));
+  } else if (mode === 'cold-sections') {
+    // Intentionally start immediately after DOMContentLoaded. Waiting for the
+    // retired SPA hydration marker made this scenario 45 seconds too warm and
+    // hid the exact first-visit contention users report.
+    await page.waitForTimeout(40);
+
+    await setSegment(page, 'cold_scroll_instagram', segmentMarkers);
+    await wheelUntilHeading(page, 'Nous aussi on vous aime', 42);
+    await page.waitForTimeout(240);
+    const instagram = await evaluateColdSectionState(page);
+    snapshots.push(await evaluateSnapshot(page, 'cold_instagram'));
+
+    await setSegment(page, 'instagram_settle', segmentMarkers);
+    await page.waitForTimeout(520);
+
+    await setSegment(page, 'cold_scroll_testimonials', segmentMarkers);
+    await wheelUntilHeading(page, 'La parole', 16);
+    await page.waitForTimeout(240);
+    const testimonials = await evaluateColdSectionState(page);
+    snapshots.push(await evaluateSnapshot(page, 'cold_testimonials'));
+
+    await setSegment(page, 'testimonials_settle', segmentMarkers);
+    await page.waitForTimeout(520);
+    coldSections = { instagram, testimonials };
   } else if (isLocalSecondeVie) {
     await waitForLocalGallery(page);
   } else {
@@ -851,6 +914,7 @@ const main = async () => {
     snapshots,
     immediateScroll,
     normalNewsletterScroll,
+    coldSections,
     traceSummary,
     tracePath: traceRaw ? tracePath : null,
     rawRequestsPath: path.join(outDir, `${runId}-requests.json`),

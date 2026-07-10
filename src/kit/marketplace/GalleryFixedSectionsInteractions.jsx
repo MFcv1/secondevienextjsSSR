@@ -55,6 +55,13 @@ const setProgressDots = (root, selector, activeIndex, {
   });
 };
 
+const getInteractionItems = (node) => {
+  const itemCount = Number.parseInt(node.dataset.itemCount || '', 10);
+  return Number.isFinite(itemCount) && itemCount > 0
+    ? Array.from({ length: itemCount }, () => true)
+    : parseItems(node);
+};
+
 const setupBeforeAfter = () => {
   document.querySelectorAll('[data-before-after-section]').forEach((root) => {
     if (root.dataset.interactionsReady === 'true') return;
@@ -108,7 +115,7 @@ const setupInstagram = () => {
     if (root.dataset.carouselReady === 'true') return;
     root.dataset.carouselReady = 'true';
 
-    const items = parseItems(root);
+    const items = getInteractionItems(root);
     if (!items.length) return;
     const autoplayDelayMs = 4200;
     const resumeDelayMs = 6500;
@@ -237,9 +244,55 @@ const setupTestimonials = () => {
     if (root.dataset.carouselReady === 'true') return;
     root.dataset.carouselReady = 'true';
 
-    const items = parseItems(root);
+    const items = getInteractionItems(root);
     if (!items.length) return;
     let activeIndex = 1 % items.length;
+
+    const prepareRenderingLayers = () => {
+      if (root.dataset.testimonialsPrepared === 'true') return;
+      root.dataset.testimonialsPrepared = 'true';
+
+      const cards = Array.from(root.querySelectorAll('[data-testimonial-card]'));
+      let cursor = 0;
+      const prepareBatch = () => {
+        cards.slice(cursor, cursor + 2).forEach((card) => {
+          card.dataset.testimonialPrepared = 'true';
+        });
+        cursor += 2;
+        if (cursor < cards.length) window.requestAnimationFrame(prepareBatch);
+      };
+      window.requestAnimationFrame(prepareBatch);
+    };
+
+    if ('IntersectionObserver' in window) {
+      const mobileScrollRoot = window.matchMedia('(max-width: 1023px)').matches
+        ? document.getElementById('marketplaceGalleryScroll')
+        : null;
+      const verticalMargin = Math.max(640, mobileScrollRoot?.clientHeight || window.innerHeight || 0);
+      const observer = new IntersectionObserver((entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        observer.disconnect();
+        prepareRenderingLayers();
+
+        const releaseObserver = new IntersectionObserver((visibleEntries) => {
+          if (!visibleEntries.some((entry) => entry.isIntersecting)) return;
+          releaseObserver.disconnect();
+          window.setTimeout(() => {
+            root.querySelectorAll('[data-testimonial-card]').forEach((card) => {
+              card.dataset.testimonialPrepared = 'false';
+            });
+          }, 850);
+        }, { root: mobileScrollRoot, threshold: 0.08 });
+        releaseObserver.observe(root);
+      }, {
+        root: mobileScrollRoot,
+        rootMargin: `${verticalMargin}px 0px`,
+        threshold: 0.01,
+      });
+      observer.observe(root);
+    } else {
+      prepareRenderingLayers();
+    }
 
     const mobilePositions = {
       farLeft: { transform: 'translateX(-206%) scale(0.86)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
@@ -274,8 +327,16 @@ const setupTestimonials = () => {
       card.style.pointerEvents = style.pointerEvents;
     };
 
-    const render = () => {
+    const render = ({ interactive = false } = {}) => {
       root.querySelectorAll('[data-testimonial-card]').forEach((card) => {
+        if (interactive) {
+          card.dataset.testimonialTransitioning = 'true';
+          const releaseLayer = () => {
+            card.dataset.testimonialTransitioning = 'false';
+          };
+          card.addEventListener('transitionend', releaseLayer, { once: true });
+          window.setTimeout(releaseLayer, 650);
+        }
         applyPosition(card, card.dataset.testimonialLayout === 'desktop' ? desktopPositions : mobilePositions);
       });
       root.querySelectorAll('[data-testimonial-count]').forEach((count) => {
@@ -297,19 +358,19 @@ const setupTestimonials = () => {
     root.querySelectorAll('[data-testimonial-prev]').forEach((button) => {
       button.addEventListener('click', () => {
         activeIndex = wrapIndex(activeIndex - 1, items.length);
-        render();
+        render({ interactive: true });
       });
     });
     root.querySelectorAll('[data-testimonial-next]').forEach((button) => {
       button.addEventListener('click', () => {
         activeIndex = wrapIndex(activeIndex + 1, items.length);
-        render();
+        render({ interactive: true });
       });
     });
     root.querySelectorAll('[data-testimonial-dot]').forEach((dot, index) => {
       dot.addEventListener('click', () => {
         activeIndex = index % items.length;
-        render();
+        render({ interactive: true });
       });
     });
     render();

@@ -18,7 +18,9 @@ import {
   categoryEntries,
   cleanCategoryLabel,
   getCategoryMeta,
+  getCategorySeoTitle,
   getMatchingCategoryIds,
+  isSeoIndexableCategory,
 } from '../../../src/lib/seo/categories';
 
 export const revalidate = 300;
@@ -131,10 +133,11 @@ export async function generateMetadata({ params }) {
   if (!data) notFound();
 
   const copy = getCategorySeoCopy(data.categoryId, data.categoryLabel);
-  const title = `${data.categoryLabel} restaurés`;
+  const title = getCategorySeoTitle(data.categoryId, data.categoryLabel);
   const description = copy.intro.replace(/\s+/g, ' ').slice(0, 160);
   const canonical = getCategoryUrl(data.categoryId, publicEnv.siteUrl);
   const firstImage = getProductCardImage(data.products[0]);
+  const shouldIndex = isSeoIndexableCategory(data.categoryId, data.products);
 
   return {
     title,
@@ -142,6 +145,7 @@ export async function generateMetadata({ params }) {
     alternates: {
       canonical,
     },
+    robots: shouldIndex ? undefined : { index: false, follow: true },
     openGraph: {
       type: 'website',
       title,
