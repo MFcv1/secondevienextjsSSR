@@ -40,6 +40,8 @@ Restant externe ou dépendant d'une décision de production : création du backe
 
 ## Validation App Hosting sandbox du 2026-07-10
 
+> Mise a jour : les chiffres de 50 ms / 33,4 ms ci-dessous correspondent a un premier gate cible, utile mais trop optimiste pour representer le pire premier chargement. Le scenario `true cold fling` execute ensuite a mesure 650 ms avant optimisation, puis 199,9 ms sur le palier sandbox stable et 183,4 ms sur la meilleure variante locale. La reference active est `_DOCS/perf/COLD_SCROLL_FIRST_VISIT_DIAGNOSTIC_2026-07-10.md` ; le seuil strict de 120 ms reste non atteint.
+
 - build Next complet réussi avec 22 pages statiques générées et routes SSG/ISR conservées ;
 - rollout `secondevie-next-sandbox` réussi sur App Hosting ;
 - réponse publique `200`, CSP Next présente et nouveaux contrats Instagram/avis présents dans le HTML servi ;

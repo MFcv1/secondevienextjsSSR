@@ -52,6 +52,7 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   const transitionLockTimerRef = useRef(null);
   const transitionLockedRef = useRef(false);
   const pointerOpenedRef = useRef(false);
+  const pointerOpenedTimerRef = useRef(null);
   const [transitionLocked, setTransitionLocked] = useState(false);
 
   useEffect(() => {
@@ -120,6 +121,10 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
       window.clearTimeout(transitionLockTimerRef.current);
       transitionLockTimerRef.current = null;
     }
+    if (pointerOpenedTimerRef.current) {
+      window.clearTimeout(pointerOpenedTimerRef.current);
+      pointerOpenedTimerRef.current = null;
+    }
     transitionLockedRef.current = false;
     setTransitionLocked(false);
   }, []);
@@ -154,7 +159,6 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
 
     if (isDesktopOpen) {
       unlockTransition();
-      document.documentElement.classList.add(DESKTOP_MENU_OPEN_CLASS);
       setPanelClosing(false);
       setPanelOpen(true);
       return;
@@ -244,6 +248,11 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
     if (isDesktopOpen) {
       if (panelOpen) return;
       pointerOpenedRef.current = true;
+      if (pointerOpenedTimerRef.current) window.clearTimeout(pointerOpenedTimerRef.current);
+      pointerOpenedTimerRef.current = window.setTimeout(() => {
+        pointerOpenedRef.current = false;
+        pointerOpenedTimerRef.current = null;
+      }, 350);
       openPanel();
       return;
     }
@@ -283,6 +292,7 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   return (
     <>
       <button
+        data-global-menu-trigger
         type="button"
         onClick={togglePanel}
         onPointerDown={handlePointerDown}

@@ -159,8 +159,9 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
 
   return (
     <footer
-      className={`relative z-10 w-full px-3 pb-6 pt-10 transition-colors duration-500 md:px-6 md:pb-8 ${darkMode ? 'bg-[#111] text-[#f4eee6]' : 'bg-[#fbfaf8] text-stone-950 dark:bg-[#0f0f0e] dark:text-[#f4eee6]'}`}
+      className={`gallery-deferred-render relative z-10 w-full px-3 pb-6 pt-10 transition-colors duration-500 md:px-6 md:pb-8 ${darkMode ? 'bg-[#111] text-[#f4eee6]' : 'bg-[#fbfaf8] text-stone-950 dark:bg-[#0f0f0e] dark:text-[#f4eee6]'}`}
       data-footer-mounted="true"
+      data-cold-scroll-deferred-images="true"
     >
       <div className="mx-auto grid w-full max-w-[430px] gap-4 md:hidden">
         <div className={`rounded-[24px] border p-6 ${darkMode ? 'border-[#2e2a25] bg-[#111110]' : 'border-[#eee6dd] bg-[#fdfbf8]'}`}>
@@ -212,7 +213,8 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
             </div>
           </div>
           <img
-            src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'}
+            data-cold-scroll-deferred-image="true"
+            data-cold-scroll-deferred-src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'}
             alt="Livraison partout a Marseille"
             width={1536}
             height={1024}
@@ -309,8 +311,11 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
             </div>
             <div className="flex min-w-0 items-center justify-center pt-8 lg:px-6 lg:pt-0 xl:px-8">
               <img
-                src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'}
+                data-cold-scroll-deferred-image="true"
+                data-cold-scroll-deferred-src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'}
                 alt="Livraison partout a Marseille"
+                width={1536}
+                height={1024}
                 loading="lazy"
                 decoding="async"
                 className="w-full max-w-[520px] rounded-md object-contain xl:max-w-[600px]"

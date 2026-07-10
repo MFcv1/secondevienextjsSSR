@@ -1415,6 +1415,69 @@ html.dark .gallery-seo-proof-item {
   contain: layout paint style;
 }
 
+/*
+ * Keep every public chapter in the server HTML for SEO, but let Chromium
+ * isolate layout/paint work until that chapter approaches the viewport.
+ */
+.gallery-deferred-render {
+  --gallery-intrinsic-block-size: 800px;
+  content-visibility: auto;
+  contain-intrinsic-size: auto var(--gallery-intrinsic-block-size);
+}
+
+.product-card-wrap {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 420px;
+}
+
+#gallery-pieces.gallery-deferred-render,
+#gallery-small-prices.gallery-deferred-render {
+  --gallery-intrinsic-block-size: 760px;
+}
+
+.instagram-carousel-section.gallery-deferred-render {
+  --gallery-intrinsic-block-size: 720px;
+}
+
+.customer-testimonials-section.gallery-deferred-render {
+  --gallery-intrinsic-block-size: 828px;
+}
+
+footer.gallery-deferred-render {
+  --gallery-intrinsic-block-size: 940px;
+}
+
+@media (max-width: 767px) {
+  .product-card-wrap {
+    contain-intrinsic-size: auto 350px;
+  }
+
+  #gallery-pieces.gallery-deferred-render,
+  #gallery-small-prices.gallery-deferred-render {
+    --gallery-intrinsic-block-size: 1700px;
+  }
+
+  .before-after-industrial.gallery-deferred-render {
+    --gallery-intrinsic-block-size: 760px;
+  }
+
+  .instagram-carousel-section.gallery-deferred-render {
+    --gallery-intrinsic-block-size: 780px;
+  }
+
+  .customer-testimonials-section.gallery-deferred-render {
+    --gallery-intrinsic-block-size: 520px;
+  }
+
+  .discount-section.gallery-deferred-render {
+    --gallery-intrinsic-block-size: 980px;
+  }
+
+  footer.gallery-deferred-render {
+    --gallery-intrinsic-block-size: 2100px;
+  }
+}
+
 .instagram-floating-token {
   --float-x: 50%;
   --float-y: 50%;
@@ -3241,6 +3304,7 @@ html.dark .customer-testimonial-card {
   }
 }
 
+[data-insta-transitioning='true'],
 [data-testimonial-prepared='true'],
 [data-testimonial-transitioning='true'] {
   backface-visibility: hidden;

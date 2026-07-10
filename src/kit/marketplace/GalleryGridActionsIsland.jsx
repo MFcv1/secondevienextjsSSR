@@ -16,6 +16,8 @@ const warmupQueue = [];
 let activeWarmups = 0;
 const MAX_ACTIVE_WARMUPS = 2;
 const SCROLL_HOVER_WARMUP_COOLDOWN_MS = 420;
+const DEFERRED_IMAGE_INPUT_SETTLE_MS = 240;
+const DEFERRED_IMAGE_BATCH_GAP_MS = 92;
 
 const getUniqueSources = (sources) => {
   const unique = [];
@@ -206,6 +208,94 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
       window.removeEventListener('sv:auth-user-changed', onAuthUserChanged);
     };
   }, [syncWishlistButtons, warmupProduct]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const roots = Array.from(document.querySelectorAll('[data-cold-scroll-deferred-images="true"]'));
+    if (!roots.length) return undefined;
+
+    let cancelled = false;
+    let timer = 0;
+    let observer = null;
+    const queue = [];
+    const queued = new Set();
+
+    const activateImage = (image) => {
+      if (!image?.isConnected || image.dataset.coldScrollDeferredImage !== 'true') return;
+
+      const source = image.parentElement?.querySelector('source[data-cold-scroll-deferred-source="true"]');
+      if (source?.dataset.coldScrollDeferredSrcset) {
+        source.srcset = source.dataset.coldScrollDeferredSrcset;
+        source.removeAttribute('data-cold-scroll-deferred-source');
+        source.removeAttribute('data-cold-scroll-deferred-srcset');
+      }
+
+      const media = image.closest('[data-image-loaded]');
+      if (media) {
+        image.addEventListener('load', () => {
+          media.dataset.imageLoaded = 'true';
+        }, { once: true });
+      }
+
+      if (image.dataset.coldScrollDeferredSrcset) {
+        image.srcset = image.dataset.coldScrollDeferredSrcset;
+      }
+      if (image.dataset.coldScrollDeferredSrc) {
+        image.src = image.dataset.coldScrollDeferredSrc;
+      }
+      image.removeAttribute('data-cold-scroll-deferred-image');
+      image.removeAttribute('data-cold-scroll-deferred-src');
+      image.removeAttribute('data-cold-scroll-deferred-srcset');
+    };
+
+    const pump = () => {
+      timer = 0;
+      if (cancelled || !queue.length) return;
+
+      const calmFor = Date.now() - lastScrollIntentAtRef.current;
+      if (calmFor < DEFERRED_IMAGE_INPUT_SETTLE_MS) {
+        timer = window.setTimeout(
+          pump,
+          DEFERRED_IMAGE_INPUT_SETTLE_MS - calmFor + 40,
+        );
+        return;
+      }
+
+      const image = queue.shift();
+      activateImage(image);
+      if (queue.length) timer = window.setTimeout(pump, DEFERRED_IMAGE_BATCH_GAP_MS);
+    };
+
+    const enqueueRoot = (root) => {
+      root.querySelectorAll('img[data-cold-scroll-deferred-image="true"]').forEach((image) => {
+        if (queued.has(image)) return;
+        if (image.offsetParent === null && root.matches('footer')) return;
+        queued.add(image);
+        queue.push(image);
+      });
+      if (!timer && queue.length) timer = window.setTimeout(pump, DEFERRED_IMAGE_INPUT_SETTLE_MS);
+    };
+
+    if ('IntersectionObserver' in window) {
+      observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          observer?.unobserve(entry.target);
+          enqueueRoot(entry.target);
+        });
+      }, { rootMargin: '0px', threshold: 0.01 });
+      roots.forEach((root) => observer.observe(root));
+    } else {
+      roots.forEach(enqueueRoot);
+    }
+
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+      observer?.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     if (!observeVisibleWarmup || typeof window === 'undefined') return undefined;

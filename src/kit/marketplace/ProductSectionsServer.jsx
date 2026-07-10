@@ -72,11 +72,16 @@ const ProductGridSectionServer = ({
   badgeLabel,
   darkMode = false,
   hideWhenEmpty = false,
+  deferImagesUntilCalm = false,
 } = {}) => {
   if (hideWhenEmpty && !items.length) return null;
 
   return (
-    <section id={id} className={className}>
+    <section
+      id={id}
+      className={`gallery-deferred-render ${className}`}
+      data-cold-scroll-deferred-images={deferImagesUntilCalm ? 'true' : undefined}
+    >
       <div className="mb-10 flex items-center justify-between">
         {heading}
         <a href="/#gallery-pieces" className="hidden items-center gap-2 border-b border-transparent font-sans text-[10px] uppercase tracking-widest transition-colors hover:border-current md:flex">
@@ -92,7 +97,13 @@ const ProductGridSectionServer = ({
                 {badgeLabel}
               </div>
             ) : null}
-            <GalleryProductCardServer item={item} layoutMode="grid" compact priority={false} />
+            <GalleryProductCardServer
+              item={item}
+              layoutMode="grid"
+              compact
+              priority={false}
+              deferImageUntilCalm={deferImagesUntilCalm}
+            />
           </div>
         ))}
       </div>
@@ -151,6 +162,7 @@ export const ProductSmallPricesSectionServer = ({ items, darkMode = false } = {}
     items={getSmallPriceItems(items)}
     darkMode={darkMode}
     hideWhenEmpty
+    deferImagesUntilCalm
   />
 );
 
@@ -195,7 +207,11 @@ const restorationProjects = [
 ];
 
 const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projects = restorationProjects, darkMode = false } = {}) => (
-  <div data-before-after-section data-projects={JSON.stringify(projects)}>
+  <div
+    data-before-after-section
+    data-cold-scroll-deferred-images="true"
+    data-projects={JSON.stringify(projects)}
+  >
     <div className={`relative mx-auto w-full max-w-[780px] rounded-[22px] p-1.5 ring-1 md:rounded-[26px] ${
       darkMode
         ? 'bg-[#15120f] ring-[#d8ad73]/12 shadow-[0_26px_82px_-58px_rgba(0,0,0,0.95)]'
@@ -208,11 +224,19 @@ const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projec
           darkMode ? 'bg-[#0f0e0c] ring-[#d8ad73]/10' : 'bg-[#e8dbc9] ring-[#d7c3aa] dark:bg-[#0f0e0c] dark:ring-[#d8ad73]/10'
         }`}>
           <picture className="absolute inset-0 block h-full w-full">
-            <source data-ba-after-source type="image/avif" srcSet={project.apresAvif} />
+            <source
+              data-ba-after-source
+              data-cold-scroll-deferred-source="true"
+              data-cold-scroll-deferred-srcset={project.apresAvif}
+              type="image/avif"
+            />
             <img
-              src={project.apres}
+              data-cold-scroll-deferred-image="true"
+              data-cold-scroll-deferred-src={project.apres}
               sizes="(max-width: 768px) calc(100vw - 3rem), 700px"
               alt="Projet restauration apres"
+              width={1600}
+              height={970}
               loading="lazy"
               decoding="async"
               data-ba-after-img
@@ -228,11 +252,19 @@ const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projec
           </div>
           <div data-ba-clip className="absolute inset-0 z-10 h-full w-full" style={{ clipPath: 'polygon(0 0, 50% 0, 50% 100%, 0 100%)' }}>
             <picture className="absolute inset-0 block h-full w-full">
-              <source data-ba-before-source type="image/avif" srcSet={project.avantAvif} />
+              <source
+                data-ba-before-source
+                data-cold-scroll-deferred-source="true"
+                data-cold-scroll-deferred-srcset={project.avantAvif}
+                type="image/avif"
+              />
               <img
-                src={project.avant}
+                data-cold-scroll-deferred-image="true"
+                data-cold-scroll-deferred-src={project.avant}
                 sizes="(max-width: 768px) calc(100vw - 3rem), 700px"
                 alt="Projet restauration avant"
+                width={1600}
+                height={970}
                 loading="lazy"
                 decoding="async"
                 data-ba-before-img
@@ -318,7 +350,7 @@ const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projec
 
 export const BeforeAfterSectionServer = ({ darkMode = false, projects = restorationProjects } = {}) => {
   return (
-    <section className={`before-after-industrial relative flex w-full items-center overflow-hidden px-3 py-10 sm:px-5 sm:py-12 md:min-h-[690px] md:px-7 md:py-14 lg:min-h-[760px] lg:px-8 lg:py-16 2xl:min-h-[780px] 2xl:px-10 dark:bg-[#0e0d0c] ${darkMode ? 'bg-[#141210]' : 'bg-[#f8f1e6]'}`}>
+    <section className={`gallery-deferred-render before-after-industrial relative flex w-full items-center overflow-hidden px-3 py-10 sm:px-5 sm:py-12 md:min-h-[690px] md:px-7 md:py-14 lg:min-h-[760px] lg:px-8 lg:py-16 2xl:min-h-[780px] 2xl:px-10 dark:bg-[#0e0d0c] ${darkMode ? 'bg-[#141210]' : 'bg-[#f8f1e6]'}`}>
       <div className={`pointer-events-none absolute inset-0 dark:bg-[radial-gradient(circle_at_76%_32%,rgba(184,132,72,0.13),transparent_31%),radial-gradient(circle_at_20%_72%,rgba(130,148,112,0.09),transparent_34%),linear-gradient(180deg,#0b0a09_0%,#14110f_100%)] ${darkMode ? 'bg-[radial-gradient(circle_at_76%_32%,rgba(184,132,72,0.14),transparent_31%),radial-gradient(circle_at_20%_72%,rgba(130,148,112,0.11),transparent_34%)]' : 'bg-[radial-gradient(circle_at_77%_30%,rgba(188,142,84,0.2),transparent_32%),radial-gradient(circle_at_17%_76%,rgba(135,160,139,0.15),transparent_34%)]'}`} />
       <div className={`relative mx-auto grid w-full max-w-[1480px] overflow-hidden rounded-[26px] p-1 shadow-[0_30px_92px_-68px_rgba(42,31,21,0.76),0_10px_30px_-28px_rgba(103,71,40,0.56)] ring-1 md:rounded-[30px] md:p-1.5 lg:grid-cols-[minmax(0,0.95fr)_minmax(410px,1.05fr)] dark:bg-[#15120f]/95 dark:ring-[#392f27]/80 dark:shadow-[0_30px_92px_-70px_rgba(0,0,0,0.95)] ${darkMode ? 'bg-white/[0.035] ring-[#3a332a]/90' : 'bg-[#fff9ef]/78 ring-[#d7c4ad]/80'}`}>
         <div className={`relative flex min-h-[320px] flex-col justify-center rounded-t-[24px] border-b p-5 sm:min-h-[340px] sm:p-7 md:p-8 lg:min-h-[430px] lg:rounded-l-[26px] lg:rounded-tr-none lg:border-b-0 lg:border-r lg:p-8 xl:p-9 2xl:p-10 dark:border-[#302820] dark:bg-[#181511] ${darkMode ? 'border-[#332b23] bg-[#1d1a16]' : 'border-[#ead8c4] bg-[#fffaf3]'}`}>
@@ -428,7 +460,7 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
   <section
     data-instagram-carousel
     data-item-count={posts.length}
-    className="instagram-carousel-section relative isolate overflow-hidden px-0 pb-[64px] pt-[38px] md:px-6 md:py-[72px] lg:min-h-[690px] lg:px-[5vw] lg:py-[78px] xl:py-[86px]"
+    className="gallery-deferred-render instagram-carousel-section relative isolate overflow-hidden px-0 pb-[64px] pt-[38px] md:px-6 md:py-[72px] lg:min-h-[690px] lg:px-[5vw] lg:py-[78px] xl:py-[86px]"
   >
     <div
       className={`instagram-floating-field ${darkMode ? 'instagram-floating-field--dark' : ''}`}
@@ -488,11 +520,22 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
               key={post.title}
               data-insta-card={index}
               data-insta-layout="mobile"
-              className={`absolute left-1/2 top-0 w-[56vw] max-w-[206px] overflow-hidden rounded-[20px] shadow-[0_24px_60px_rgba(32,26,20,0.13)] transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform min-[390px]:max-w-[216px] md:max-w-[250px] md:rounded-[22px] ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}
+              data-insta-transitioning="false"
+              className={`absolute left-1/2 top-0 w-[56vw] max-w-[206px] overflow-hidden rounded-[20px] shadow-[0_24px_60px_rgba(32,26,20,0.13)] transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] min-[390px]:max-w-[216px] md:max-w-[250px] md:rounded-[22px] ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}
               style={getInstaPositionStyle(index, 1, mobileInstaPositions)}
             >
               <div className="aspect-[4/5] overflow-hidden bg-stone-100">
-                <img data-insta-img src={post.img} alt="" loading="lazy" decoding="async" className={`h-full w-full object-cover ${index === 1 ? 'scale-100' : 'scale-[1.03]'}`} />
+                <img
+                  data-insta-img
+                  src={index <= 2 ? post.img : undefined}
+                  data-insta-src={index <= 2 ? undefined : post.img}
+                  alt=""
+                  width={800}
+                  height={1000}
+                  loading="lazy"
+                  decoding="async"
+                  className={`h-full w-full object-cover ${index === 1 ? 'scale-100' : 'scale-[1.03]'}`}
+                />
               </div>
               <div className={`relative min-h-[76px] px-3.5 pb-4 pt-3.5 text-left md:min-h-[88px] md:px-4 md:pb-5 md:pt-4 ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}>
                 <p data-insta-label className="text-[7px] font-black uppercase tracking-[0.16em] text-[#A68A64] min-[390px]:text-[8px] md:text-[9px] md:tracking-[0.2em]">{post.label}</p>
@@ -559,13 +602,24 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
             key={post.title}
             data-insta-card={index}
             data-insta-layout="desktop"
-            className={`instagram-desktop-card absolute left-1/2 top-0 overflow-hidden rounded-[22px] shadow-[0_24px_60px_rgba(32,26,20,0.13)] transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
+            data-insta-transitioning="false"
+            className={`instagram-desktop-card absolute left-1/2 top-0 overflow-hidden rounded-[22px] shadow-[0_24px_60px_rgba(32,26,20,0.13)] transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
               darkMode ? 'bg-zinc-900' : 'bg-white'
             }`}
             style={getInstaPositionStyle(index, 1, desktopInstaPositions)}
           >
             <div className="aspect-[4/5] overflow-hidden bg-stone-100">
-              <img data-insta-img src={post.img} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+              <img
+                data-insta-img
+                src={index <= 2 ? post.img : undefined}
+                data-insta-src={index <= 2 ? undefined : post.img}
+                alt=""
+                width={800}
+                height={1000}
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover"
+              />
             </div>
             <div className={`relative min-h-[92px] px-6 pb-6 pt-5 text-left ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}>
               <p data-insta-label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#A68A64]">{post.label}</p>
@@ -784,7 +838,7 @@ const TestimonialsCarouselPlaceholder = ({ darkMode = false } = {}) => (
     data-testimonials-carousel
     data-item-count={testimonials.length}
     data-testimonials-prepared="false"
-    className={`customer-testimonials-section relative z-20 min-h-[520px] w-full overflow-hidden dark:bg-[#0b0a09] dark:text-[#f8f1e8] lg:min-h-[828px] ${
+    className={`gallery-deferred-render customer-testimonials-section relative z-20 min-h-[520px] w-full overflow-hidden dark:bg-[#0b0a09] dark:text-[#f8f1e8] lg:min-h-[828px] ${
       darkMode ? 'bg-[#0b0a09] text-[#f8f1e8]' : 'bg-white text-[#242221]'
     }`}
   >
@@ -859,7 +913,7 @@ const discountCards = [
 ];
 
 export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
-  <section className={`discount-section relative flex items-center overflow-hidden px-3 py-10 sm:px-5 sm:py-12 md:min-h-[690px] md:px-7 md:py-14 lg:min-h-[760px] lg:px-8 lg:py-16 2xl:min-h-[780px] 2xl:px-10 dark:bg-[#0e0d0c] ${darkMode ? 'bg-[#141210]' : 'bg-[#f7f1ea]'}`}>
+  <section className={`gallery-deferred-render discount-section relative flex items-center overflow-hidden px-3 py-10 sm:px-5 sm:py-12 md:min-h-[690px] md:px-7 md:py-14 lg:min-h-[760px] lg:px-8 lg:py-16 2xl:min-h-[780px] 2xl:px-10 dark:bg-[#0e0d0c] ${darkMode ? 'bg-[#141210]' : 'bg-[#f7f1ea]'}`}>
     <div className={`pointer-events-none absolute inset-0 dark:bg-[radial-gradient(circle_at_76%_32%,rgba(184,132,72,0.13),transparent_31%),radial-gradient(circle_at_20%_72%,rgba(130,148,112,0.09),transparent_34%),linear-gradient(180deg,#0b0a09_0%,#14110f_100%)] ${darkMode ? 'bg-[radial-gradient(circle_at_76%_32%,rgba(184,132,72,0.14),transparent_31%),radial-gradient(circle_at_20%_72%,rgba(130,148,112,0.11),transparent_34%)]' : 'bg-[radial-gradient(circle_at_17%_22%,rgba(184,144,101,0.13),transparent_31%),radial-gradient(circle_at_84%_78%,rgba(157,102,88,0.08),transparent_34%),linear-gradient(180deg,#fbf8f3_0%,#f3ebe2_100%)]'}`} />
     <div className="pointer-events-none absolute inset-0 opacity-[0.16] [background-image:radial-gradient(rgba(121,91,61,0.20)_0.7px,transparent_0.7px)] [background-size:11px_11px] dark:opacity-[0.08] dark:[background-image:radial-gradient(rgba(220,176,116,0.18)_0.7px,transparent_0.7px)]" />
     <div className={`pointer-events-none absolute inset-x-0 top-0 h-36 dark:bg-gradient-to-b dark:from-[#0e0d0c] dark:via-[#0e0d0c] dark:to-transparent dark:opacity-80 ${darkMode ? 'bg-gradient-to-b from-[#141210] via-[#141210] to-transparent opacity-80' : 'bg-gradient-to-b from-[#FAFAF9] via-[#f7f1ea] to-transparent'}`} />

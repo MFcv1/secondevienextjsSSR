@@ -73,7 +73,7 @@ const collectMenuSnapshot = async (page, name) => page.evaluate((snapshotName) =
   const shell = document.querySelector('[aria-label="Menu principal"]');
   const desktopContent = document.querySelector('.global-menu-desktop-content');
   const panel = document.querySelector('.global-menu-scrollbarless');
-  const containers = Array.from(document.querySelectorAll('.global-menu-reveal-container')).map((node) => {
+  const containers = Array.from(document.querySelectorAll('[data-global-menu-panel]')).map((node) => {
     const rect = node.getBoundingClientRect();
     const style = getComputedStyle(node);
     return {
@@ -113,7 +113,7 @@ const collectMenuSnapshot = async (page, name) => page.evaluate((snapshotName) =
 const waitForVisibleContainers = async (page, expectedCount, timeout) => {
   await page.waitForFunction(
     (count) => {
-      const nodes = Array.from(document.querySelectorAll('.global-menu-reveal-container'));
+      const nodes = Array.from(document.querySelectorAll('[data-global-menu-panel]'));
       return nodes.filter((node) => {
         const rect = node.getBoundingClientRect();
         return rect.width > 0 && rect.height > 0 && Number(getComputedStyle(node).opacity) > 0.05;
@@ -159,7 +159,7 @@ try {
   const targetUrl = `${baseUrl}${pathSuffix}`;
   const response = await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 45_000 });
   if (!response?.ok()) throw new Error(`Navigation failed for ${targetUrl}: ${response?.status()}`);
-  await page.waitForSelector('button[aria-label="Ouvrir le menu"]', { timeout: 30_000 });
+  await page.waitForSelector('[data-global-menu-trigger][aria-label="Ouvrir le menu"]', { timeout: 30_000 });
   await page.waitForTimeout(settleMs);
 
   const before = await collectMenuSnapshot(page, 'before-open');
@@ -168,7 +168,7 @@ try {
     window.__svMenuAudit.openClickAt = performance.now();
   });
   const clickStart = Date.now();
-  await page.locator('button[aria-label="Ouvrir le menu"]').click();
+  await page.locator('[data-global-menu-trigger][aria-label="Ouvrir le menu"]').click();
   await page.waitForSelector('[aria-label="Menu principal"][role="dialog"]', { timeout: 8_000 });
   const shellVisibleMs = Date.now() - clickStart;
   await waitForVisibleContainers(page, 1, 8_000);
@@ -181,7 +181,7 @@ try {
   const screenshotPath = path.join(outDir, `${runId}-open.png`);
   await page.screenshot({ path: screenshotPath, type: 'png', fullPage: false });
 
-  await page.locator('button[aria-label="Fermer le menu"]').first().click();
+  await page.locator('[data-global-menu-trigger][aria-label="Fermer le menu"]').click();
   await page.waitForTimeout(1_250);
   const afterClose = await collectMenuSnapshot(page, 'after-close');
 

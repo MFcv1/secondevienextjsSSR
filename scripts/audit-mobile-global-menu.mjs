@@ -71,8 +71,8 @@ const setupInstrumentation = async (page) => {
 
 const collectMenuSnapshot = async (page, name) => page.evaluate((snapshotName) => {
   const shell = document.querySelector('[aria-label="Menu principal"]');
-  const panel = document.querySelector('.thin-scrollbar');
-  const buttons = Array.from(document.querySelectorAll('.thin-scrollbar button')).filter((node) => {
+  const panel = document.querySelector('.global-menu-mobile-panel');
+  const buttons = Array.from(document.querySelectorAll('.global-menu-mobile-panel button')).filter((node) => {
     const rect = node.getBoundingClientRect();
     return rect.width > 0 && rect.height > 0 && Number(getComputedStyle(node).opacity) > 0.05;
   });
@@ -95,7 +95,7 @@ const collectMenuSnapshot = async (page, name) => page.evaluate((snapshotName) =
       };
     })() : null,
     visibleButtonCount: buttons.length,
-    desktopContainerCount: document.querySelectorAll('.global-menu-reveal-container').length,
+    desktopContainerCount: document.querySelectorAll('[data-global-menu-panel]').length,
     authUserKnown: Boolean(window.__svAuthUser),
     authAdminKnown: window.__svAuthIsAdmin === true,
   };
@@ -104,7 +104,7 @@ const collectMenuSnapshot = async (page, name) => page.evaluate((snapshotName) =
 const waitForMobilePanelSettled = async (page, timeout) => {
   await page.waitForFunction(
     () => {
-      const panel = document.querySelector('.thin-scrollbar');
+      const panel = document.querySelector('.global-menu-mobile-panel');
       if (!panel) return false;
       const rect = panel.getBoundingClientRect();
       const style = getComputedStyle(panel);
@@ -155,7 +155,7 @@ try {
   const targetUrl = `${baseUrl}${pathSuffix}`;
   const response = await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 45_000 });
   if (!response?.ok()) throw new Error(`Navigation failed for ${targetUrl}: ${response?.status()}`);
-  await page.waitForSelector('button[aria-label="Ouvrir le menu"]', { timeout: 30_000 });
+  await page.waitForSelector('[data-global-menu-trigger][aria-label="Ouvrir le menu"]', { timeout: 30_000 });
   await page.waitForTimeout(settleMs);
 
   const before = await collectMenuSnapshot(page, 'before-open');
@@ -164,7 +164,7 @@ try {
     window.__svMenuAudit.openClickAt = performance.now();
   });
   const clickStart = Date.now();
-  await page.locator('button[aria-label="Ouvrir le menu"]').click();
+  await page.locator('[data-global-menu-trigger][aria-label="Ouvrir le menu"]').click();
   await page.waitForSelector('[aria-label="Menu principal"][role="dialog"]', { timeout: 8_000 });
   const shellVisibleMs = Date.now() - clickStart;
   await waitForMobilePanelSettled(page, 8_000);
@@ -175,7 +175,7 @@ try {
   const screenshotPath = path.join(outDir, `${runId}-open.png`);
   await page.screenshot({ path: screenshotPath, type: 'png', fullPage: false });
 
-  await page.locator('button[aria-label="Fermer le menu"]').first().click();
+  await page.locator('[data-global-menu-trigger][aria-label="Fermer le menu"]').click();
   await page.waitForTimeout(1_250);
   const afterClose = await collectMenuSnapshot(page, 'after-close');
 

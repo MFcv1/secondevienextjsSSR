@@ -37,7 +37,7 @@ Interdits sur routes publiques:
 - Mega menu desktop/Rainmaker-like et piste mobile: `megamenuupdate.md`.
 - Home galerie canonique: `_DOCS/architecture/GALLERY_HOME_CANONICAL_IMPLEMENTATION_2026-07-01.md`.
 - Galerie mobile/shell/scroll/detail: `alertemobile.md`.
-- Performance/hydratation/cache: `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md`, `_DOCS/perf/PHASE3_PERF_BASELINE_2026-06-24.md`, `_DOCS/perf/PUBLIC_SEO_BUDGET_VISUAL_CLOSEOUT_2026-07-01.md`.
+- Performance/hydratation/cache: `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md`, `_DOCS/perf/PHASE3_PERF_BASELINE_2026-06-24.md`, `_DOCS/perf/PUBLIC_SEO_BUDGET_VISUAL_CLOSEOUT_2026-07-01.md`, `_DOCS/perf/COLD_SCROLL_FIRST_VISIT_DIAGNOSTIC_2026-07-10.md`, `_DOCS/perf/V2_3_2_CHANGESET_AUDIT_2026-07-10.md`.
 - PageSpeed images/accessibilite/cache publics: `_DOCS/perf/PAGESPEED_CARD_THUMBS_STATIC_IMAGES_CLOSEOUT_2026-07-06.md`, `_DOCS/perf/PAGESPEED_NO_REDESIGN_ROADMAP_2026-07-06.md`.
 - Images produit/Storage/detailFast: `_DOCS/images/NEXTJS_IMAGE_PIPELINE_AUDIT.md`, `_DOCS/images/OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md`, `_DOCS/images/DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md`.
 - Infra prod/App Hosting/App Check: `_DOCS/infra/NEXT_FIREBASE_SITUATIONAL_AUDIT_2026-07-10.md`, `_DOCS/infra/P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md`, `_DOCS/infra/INFRA_PROD_PHASE2_REPORT_2026-06-14.md`, `_DOCS/infra/APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`, `_DOCS/infra/RAIL_PROD_AUDIT_REPORT_2026-06-24.md`.
@@ -90,6 +90,8 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |   |   |-- PUBLIC_SEO_BUDGET_VISUAL_CLOSEOUT_2026-07-01.md : closeout budgets publics avec preuves visuelles
 |   |   |-- MENU_COLD_OPEN_AUDIT_2026-07-02.md : audit delai ouverture menu principal/mega menu desktop et mobile
 |   |   |-- PAGESPEED_CARD_THUMBS_STATIC_IMAGES_CLOSEOUT_2026-07-06.md : closeout variantes cartes 320/384 et AVIF Avant/Apres
+|   |   |-- COLD_SCROLL_FIRST_VISIT_DIAGNOSTIC_2026-07-10.md : diagnostic fige, mesures true cold, limites et dette dominante Instagram/avis
+|   |   |-- V2_3_2_CHANGESET_AUDIT_2026-07-10.md : audit differentiel v2.3.1/v2.3.2, regression menu et matrice garder/corriger/retirer
 |   |   `-- PAGESPEED_NO_REDESIGN_ROADMAP_2026-07-06.md : roadmap PageSpeed restante sans redesign
 |   |-- images : pipeline images produit, Storage, detailFast et audits UX image
 |   |-- infra : App Hosting, rail prod, App Check et closeout infra

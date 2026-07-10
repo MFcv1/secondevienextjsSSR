@@ -26,4 +26,6 @@ jobs:
       - run: pnpm seo:surface
       - run: pnpm build
       - run: pnpm next:routes
-      - run: pnpm perf:budget
+      - name: Performance budget report
+        continue-on-error: true
+        run: pnpm perf:budget

@@ -100,6 +100,7 @@ export default function InstagramFloatingTokensReveal() {
       const layout = isMobile.matches ? 'mobile' : 'desktop';
       const images = Array.from(section.querySelectorAll(`[data-insta-layout="${layout}"] img[data-insta-img]`));
       const uniqueImages = Array.from(new Map(images.map((image) => [image.currentSrc || image.src, image])).values())
+        .filter((image) => Boolean(image.currentSrc || image.getAttribute('src')))
         .filter((image) => image.dataset.instaDecoded !== 'true')
         .sort((left, right) => {
           const leftIndex = Number(left.closest('[data-insta-card]')?.dataset.instaCard || 0);

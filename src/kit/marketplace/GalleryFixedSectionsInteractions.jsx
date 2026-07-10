@@ -92,10 +92,26 @@ const setupBeforeAfter = () => {
     const setProject = (nextIndex) => {
       activeIndex = wrapIndex(nextIndex, projects.length);
       const project = projects[activeIndex];
-      if (beforeSource && project.avantAvif) beforeSource.setAttribute('srcset', project.avantAvif);
-      if (afterSource && project.apresAvif) afterSource.setAttribute('srcset', project.apresAvif);
-      if (beforeImg) beforeImg.src = project.avant;
-      if (afterImg) afterImg.src = project.apres;
+      if (beforeSource && project.avantAvif) {
+        beforeSource.removeAttribute('data-cold-scroll-deferred-source');
+        beforeSource.removeAttribute('data-cold-scroll-deferred-srcset');
+        beforeSource.setAttribute('srcset', project.avantAvif);
+      }
+      if (afterSource && project.apresAvif) {
+        afterSource.removeAttribute('data-cold-scroll-deferred-source');
+        afterSource.removeAttribute('data-cold-scroll-deferred-srcset');
+        afterSource.setAttribute('srcset', project.apresAvif);
+      }
+      if (beforeImg) {
+        beforeImg.removeAttribute('data-cold-scroll-deferred-image');
+        beforeImg.removeAttribute('data-cold-scroll-deferred-src');
+        beforeImg.src = project.avant;
+      }
+      if (afterImg) {
+        afterImg.removeAttribute('data-cold-scroll-deferred-image');
+        afterImg.removeAttribute('data-cold-scroll-deferred-src');
+        afterImg.src = project.apres;
+      }
       if (tag) tag.textContent = project.tag;
       if (title) title.textContent = project.title;
       if (desc) desc.textContent = project.desc;
@@ -121,6 +137,7 @@ const setupInstagram = () => {
     const resumeDelayMs = 6500;
     let activeIndex = 1 % items.length;
     let autoplayTimer;
+    let preloadTimer;
     let resumeTimer;
     let sectionVisible = false;
     let manuallyPaused = false;
@@ -140,13 +157,31 @@ const setupInstagram = () => {
       farRight: { transform: 'translateX(148%) scale(0.88)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
     };
 
-    const getPosition = (index) => {
-      const offset = (index - activeIndex + items.length) % items.length;
+    const getPosition = (index, referenceIndex = activeIndex) => {
+      const offset = (index - referenceIndex + items.length) % items.length;
       if (offset === 0) return 'center';
       if (offset === 1) return 'right';
       if (offset === items.length - 1) return 'left';
       if (offset > items.length / 2) return 'farLeft';
       return 'farRight';
+    };
+
+    const ensureCardImage = (card) => {
+      const image = card.querySelector('img[data-insta-img][data-insta-src]');
+      if (!image?.dataset.instaSrc) return;
+      image.fetchPriority = 'low';
+      image.src = image.dataset.instaSrc;
+      delete image.dataset.instaSrc;
+    };
+
+    const ensureVisibleWindow = (referenceIndex = activeIndex) => {
+      root.querySelectorAll('[data-insta-card]').forEach((card) => {
+        const index = Number(card.dataset.instaCard || 0);
+        const position = getPosition(index, referenceIndex);
+        if (position === 'left' || position === 'center' || position === 'right') {
+          ensureCardImage(card);
+        }
+      });
     };
 
     const applyPosition = (card, positions) => {
@@ -160,12 +195,32 @@ const setupInstagram = () => {
 
     const stopAutoplay = () => {
       window.clearTimeout(autoplayTimer);
+      window.clearTimeout(preloadTimer);
       autoplayTimer = undefined;
+      preloadTimer = undefined;
       setProgressDots(root, '[data-insta-dot]', activeIndex);
     };
 
-    const render = ({ animateProgress = sectionVisible && !manuallyPaused } = {}) => {
+    const render = ({
+      animateProgress = sectionVisible && !manuallyPaused,
+      transitioning = false,
+    } = {}) => {
+      const visibleLayout = window.matchMedia('(min-width: 1024px)').matches ? 'desktop' : 'mobile';
       root.querySelectorAll('[data-insta-card]').forEach((card) => {
+        const index = Number(card.dataset.instaCard || 0);
+        const position = getPosition(index);
+        if (
+          transitioning
+          && card.dataset.instaLayout === visibleLayout
+          && (position === 'left' || position === 'center' || position === 'right')
+        ) {
+          card.dataset.instaTransitioning = 'true';
+          const releaseLayer = () => {
+            card.dataset.instaTransitioning = 'false';
+          };
+          card.addEventListener('transitionend', releaseLayer, { once: true });
+          window.setTimeout(releaseLayer, 650);
+        }
         applyPosition(card, card.dataset.instaLayout === 'desktop' ? desktopPositions : mobilePositions);
       });
       setProgressDots(root, '[data-insta-dot]', activeIndex, {
@@ -174,23 +229,29 @@ const setupInstagram = () => {
       });
     };
 
-    const scheduleAutoplay = () => {
+    const scheduleAutoplay = ({ transitioning = false } = {}) => {
       window.clearTimeout(autoplayTimer);
       if (!sectionVisible || manuallyPaused) return;
-      render({ animateProgress: true });
+      render({ animateProgress: true, transitioning });
+      preloadTimer = window.setTimeout(() => {
+        ensureVisibleWindow(wrapIndex(activeIndex + 1, items.length));
+      }, Math.max(800, autoplayDelayMs - 1200));
       autoplayTimer = window.setTimeout(() => {
         activeIndex = wrapIndex(activeIndex + 1, items.length);
-        scheduleAutoplay();
+        scheduleAutoplay({ transitioning: true });
       }, autoplayDelayMs);
     };
 
     const goTo = (nextIndex, { manual = true } = {}) => {
-      activeIndex = wrapIndex(nextIndex, items.length);
+      const resolvedIndex = wrapIndex(nextIndex, items.length);
+      ensureVisibleWindow(resolvedIndex);
+      activeIndex = resolvedIndex;
       if (manual) {
         manuallyPaused = true;
         window.clearTimeout(autoplayTimer);
+        window.clearTimeout(preloadTimer);
         window.clearTimeout(resumeTimer);
-        render({ animateProgress: false });
+        render({ animateProgress: false, transitioning: true });
         resumeTimer = window.setTimeout(() => {
           manuallyPaused = false;
           scheduleAutoplay();
@@ -252,7 +313,12 @@ const setupTestimonials = () => {
       if (root.dataset.testimonialsPrepared === 'true') return;
       root.dataset.testimonialsPrepared = 'true';
 
-      const cards = Array.from(root.querySelectorAll('[data-testimonial-card]'));
+      const visibleLayout = window.matchMedia('(min-width: 1024px)').matches ? 'desktop' : 'mobile';
+      const cards = Array.from(root.querySelectorAll(`[data-testimonial-card][data-testimonial-layout="${visibleLayout}"]`))
+        .filter((card) => {
+          const index = Number(card.dataset.testimonialCard || 0);
+          return index === 0 || index === 1 || index === 2;
+        });
       let cursor = 0;
       const prepareBatch = () => {
         cards.slice(cursor, cursor + 2).forEach((card) => {

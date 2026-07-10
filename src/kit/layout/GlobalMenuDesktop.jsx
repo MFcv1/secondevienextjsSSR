@@ -369,6 +369,7 @@ export default function GlobalMenuDesktop({
 
     const isSignedIn = user && !user.isAnonymous;
     const isGalleryContext = ['gallery', 'wishlist'].includes(currentView);
+    const shouldLoadMenuMedia = isMenuOpen || isMenuClosing || isMenuInteractive;
     const menuAnimationState = isMenuClosing ? 'exit' : (shouldAnimateOpen ? 'visible' : 'hidden');
     const menuContentAnimationState = isMenuClosing ? 'exit' : (shouldAnimateOpen && isMenuInteractive ? 'visible' : 'hidden');
 
@@ -428,7 +429,7 @@ export default function GlobalMenuDesktop({
                     custom={desktopMotionContext}
                 >
                     <motion.div className="grid grid-cols-[250px_minmax(0,1fr)] gap-4 xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-5">
-                        <motion.aside className={`flex h-[540px] flex-col justify-between rounded-[22px] p-3.5 xl:p-4 ${desktopSoftCard}`} variants={menuBlockVariants} custom={withDesktopMotionContext(MENU_SEQUENCE.sidebar)}>
+                        <motion.aside data-global-menu-panel="sidebar" className={`flex h-[540px] flex-col justify-between rounded-[22px] p-3.5 xl:p-4 ${desktopSoftCard}`} variants={menuBlockVariants} custom={withDesktopMotionContext(MENU_SEQUENCE.sidebar)}>
                             <motion.nav className="space-y-2" variants={menuGroupVariants}>
                                 {primaryLinks.map(({ label, desc, Icon, action }) => (
                                     <motion.button
@@ -488,7 +489,7 @@ export default function GlobalMenuDesktop({
 
                         <motion.div className="grid grid-cols-[minmax(660px,2.06fr)_minmax(560px,1.94fr)] gap-3 xl:gap-4">
                             <motion.section className={`grid h-[540px] grid-cols-[minmax(220px,0.72fr)_minmax(0,1.34fr)] overflow-hidden rounded-[22px] ${desktopCard}`} variants={menuBlockVariants} custom={withDesktopMotionContext(MENU_SEQUENCE.categories)}>
-                                <motion.div className="flex min-h-0 flex-col px-4 py-4 xl:px-5 xl:py-5 2xl:px-6" variants={menuColumnVariants} custom={withDesktopMotionContext(MENU_SEQUENCE.categoriesColumn)}>
+                                <motion.div data-global-menu-panel="categories" className="flex min-h-0 flex-col px-4 py-4 xl:px-5 xl:py-5 2xl:px-6" variants={menuColumnVariants} custom={withDesktopMotionContext(MENU_SEQUENCE.categoriesColumn)}>
                                 <motion.h2 className="mb-4 text-[11px] font-black uppercase tracking-[0.17em]" variants={menuRevealVariants}>Meubles par catégorie</motion.h2>
                                 <motion.div className="grid gap-1.5" variants={menuGroupVariants}>
                                     {categories.map(({ id, label, Icon }) => (
@@ -519,7 +520,7 @@ export default function GlobalMenuDesktop({
                                 </motion.button>
                                 </motion.div>
 
-                                <motion.div className={`flex min-h-0 flex-col border-l px-4 py-4 xl:px-5 xl:py-5 2xl:px-6 ${softBorder}`} variants={menuColumnVariants} custom={withDesktopMotionContext(MENU_SEQUENCE.discovery)}>
+                                <motion.div data-global-menu-panel="discovery" className={`flex min-h-0 flex-col border-l px-4 py-4 xl:px-5 xl:py-5 2xl:px-6 ${softBorder}`} variants={menuColumnVariants} custom={withDesktopMotionContext(MENU_SEQUENCE.discovery)}>
                                 <motion.div className="mb-3" variants={menuRevealVariants}>
                                     <h2 className="text-[12px] font-black uppercase tracking-[0.18em]">Explorer la maison</h2>
                                     <p className={`mt-2 max-w-[34ch] text-[12px] leading-[1.45] ${mutedText}`}>
@@ -563,7 +564,7 @@ export default function GlobalMenuDesktop({
                                             variants={selectionTileVariants}
                                         >
                                             <img
-                                                src={tile.image}
+                                                src={shouldLoadMenuMedia ? tile.image : undefined}
                                                 alt={tile.label}
                                                 loading="lazy"
                                                 decoding="async"
@@ -580,7 +581,7 @@ export default function GlobalMenuDesktop({
                                 </motion.div>
                             </motion.section>
 
-                            <motion.section className={`grid h-[540px] grid-cols-[minmax(220px,0.86fr)_minmax(0,1.44fr)] gap-2 rounded-[22px] p-1.5 ${desktopWarmCard}`} variants={menuBlockVariants} custom={withDesktopMotionContext(MENU_SEQUENCE.atelier)}>
+                            <motion.section data-global-menu-panel="atelier" className={`grid h-[540px] grid-cols-[minmax(220px,0.86fr)_minmax(0,1.44fr)] gap-2 rounded-[22px] p-1.5 ${desktopWarmCard}`} variants={menuBlockVariants} custom={withDesktopMotionContext(MENU_SEQUENCE.atelier)}>
                                 <motion.div className={`flex min-h-0 flex-col rounded-[18px] px-4 py-4 xl:px-4 xl:py-5 ${desktopInsetCard}`} variants={menuColumnVariants} custom={withDesktopMotionContext(MENU_SEQUENCE.atelierInner)}>
                                     <motion.h2 className="mb-6 text-[12px] font-black uppercase tracking-[0.18em]" variants={menuRevealVariants}>L’atelier Seconde Vie</motion.h2>
                                     <motion.div className="flex flex-1 flex-col justify-evenly py-2" variants={menuGroupVariants}>
@@ -626,7 +627,7 @@ export default function GlobalMenuDesktop({
                                         variants={menuTileVariants}
                                     >
                                         <img
-                                            src="/images/menu-delivery-marseille-wide.jpg"
+                                            src={shouldLoadMenuMedia ? '/images/menu-delivery-marseille-wide.jpg' : undefined}
                                             alt=""
                                             loading="lazy"
                                             decoding="async"
@@ -664,7 +665,7 @@ export default function GlobalMenuDesktop({
                                         </span>
                                         <span className="relative block h-full w-full overflow-hidden">
                                             <img
-                                                src="/images/before-after/apresu.webp"
+                                                src={shouldLoadMenuMedia ? '/images/before-after/apresu.webp' : undefined}
                                                 alt=""
                                                 loading="lazy"
                                                 decoding="async"
@@ -678,7 +679,7 @@ export default function GlobalMenuDesktop({
                         </motion.div>
                     </motion.div>
 
-                    <motion.div className={`mt-6 grid grid-cols-4 overflow-hidden rounded-[22px] ${desktopSoftCard}`} variants={menuBlockVariants} custom={withDesktopMotionContext(MENU_SEQUENCE.services)}>
+                    <motion.div data-global-menu-panel="services" className={`mt-6 grid grid-cols-4 overflow-hidden rounded-[22px] ${desktopSoftCard}`} variants={menuBlockVariants} custom={withDesktopMotionContext(MENU_SEQUENCE.services)}>
                         {SERVICE_ITEMS.map(({ title, text, Icon }, index) => (
                             <motion.div key={title} className={`group flex items-center gap-5 px-8 py-5 ${index > 0 ? `border-l ${softBorder}` : ''}`} variants={menuItemVariants}>
                                 <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${darkMode ? 'bg-white/5' : 'bg-white/60'} text-[#9A654B]`}>

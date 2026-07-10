@@ -32,6 +32,7 @@ export default function GalleryProductCardServer({
   isBig = false,
   compact = false,
   priority = false,
+  deferImageUntilCalm = false,
 } = {}) {
   const cardImage = getProductCardImage(item);
   const [primaryDetailImage] = getProductImageItems(item);
@@ -64,14 +65,17 @@ export default function GalleryProductCardServer({
       <div
         className={`product-card-media relative overflow-hidden rounded-[12px] bg-[#fbfaf8] ${layoutMode === 'list' ? 'w-1/3 aspect-[4/3]' : 'w-full aspect-[3/4]'} ${isBig ? 'md:aspect-[16/10]' : ''}`}
         data-image-reveal="visible"
-        data-image-loaded={cardImage.src ? 'true' : 'false'}
+        data-image-loaded={cardImage.src && !deferImageUntilCalm ? 'true' : 'false'}
       >
         <a href={productUrl} draggable={false} data-gallery-product-link className="block h-full w-full cursor-pointer text-inherit no-underline" aria-label={`Découvrir ${title}`}>
           {cardImage.src ? (
             <picture className="block h-full w-full">
               <img
-                src={cardImage.src}
-                srcSet={cardImage.srcSet || undefined}
+                src={deferImageUntilCalm ? undefined : cardImage.src}
+                srcSet={deferImageUntilCalm ? undefined : (cardImage.srcSet || undefined)}
+                data-cold-scroll-deferred-image={deferImageUntilCalm ? 'true' : undefined}
+                data-cold-scroll-deferred-src={deferImageUntilCalm ? cardImage.src : undefined}
+                data-cold-scroll-deferred-srcset={deferImageUntilCalm ? (cardImage.srcSet || undefined) : undefined}
                 sizes={PRODUCT_CARD_IMAGE_SIZES}
                 alt={title}
                 draggable={false}
