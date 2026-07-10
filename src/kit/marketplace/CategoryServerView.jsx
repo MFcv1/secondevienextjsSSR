@@ -229,7 +229,7 @@ const FilterForm = ({
             name="maxPrice"
             min={0}
             max={state.roundedMaxPrice}
-            step={10}
+            step={1}
             defaultValue={state.priceRange[1] || filterOptions.maxPrice}
             className="w-full accent-stone-800"
             data-category-range

@@ -285,15 +285,18 @@ const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projec
             data-ba-line
             className={`pointer-events-none absolute bottom-0 top-0 z-[25] w-px ${darkMode ? 'bg-[#f1d6aa]/58 shadow-[0_0_0_1px_rgba(216,173,115,0.1),0_0_16px_rgba(0,0,0,0.2)]' : 'bg-white/[0.95] shadow-[0_0_0_1px_rgba(64,43,24,0.18),0_0_18px_rgba(0,0,0,0.18)] dark:bg-[#f1d6aa]/58 dark:shadow-[0_0_0_1px_rgba(216,173,115,0.1),0_0_16px_rgba(0,0,0,0.2)]'}`}
             style={{ left: '50%', transform: 'translateX(-50%)' }}
-          >
-            <span className={`before-after-slider-handle absolute left-1/2 top-1/2 z-30 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full shadow-[0_18px_38px_rgba(37,27,17,0.2),inset_0_1px_0_rgba(255,255,255,0.88)] ring-1 sm:h-11 sm:w-11 ${
+          />
+          <span
+            data-ba-handle
+            className={`before-after-slider-handle pointer-events-none absolute top-1/2 z-[26] flex h-10 w-10 items-center justify-center rounded-full shadow-[0_18px_38px_rgba(37,27,17,0.2),inset_0_1px_0_rgba(255,255,255,0.88)] ring-1 sm:h-11 sm:w-11 ${
               darkMode ? 'bg-[#17130f] text-[#f5eadb] ring-[#d8ad73]/16 shadow-[0_16px_34px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.06)]' : 'bg-[#fffaf3] text-[#151515] ring-[#d9c3a6] dark:bg-[#17130f] dark:text-[#f5eadb] dark:ring-[#d8ad73]/16 dark:shadow-[0_16px_34px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.06)]'
-            }`}>
-              <ChevronLeft className="before-after-slider-handle__left" size={14} strokeWidth={1.35} />
-              <span className="before-after-slider-handle__divider mx-0.5 h-3.5 w-px bg-[#d4c1aa]" />
-              <ChevronRight className="before-after-slider-handle__right" size={14} strokeWidth={1.35} />
-            </span>
-          </div>
+            }`}
+            style={{ left: '50%' }}
+          >
+            <ChevronLeft className="before-after-slider-handle__left" size={14} strokeWidth={1.35} />
+            <span className="before-after-slider-handle__divider mx-0.5 h-3.5 w-px bg-[#d4c1aa]" />
+            <ChevronRight className="before-after-slider-handle__right" size={14} strokeWidth={1.35} />
+          </span>
           <input
             data-ba-range
             type="range"
@@ -313,11 +316,9 @@ const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projec
         darkMode ? 'bg-[#11100e] ring-[#d8ad73]/10' : 'bg-[#fffaf3] ring-white/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)] dark:bg-[#11100e] dark:ring-[#d8ad73]/10 dark:shadow-none'
       }`}>
         <div className="before-after-project-kicker flex flex-wrap items-center gap-2.5">
-          <span className="before-after-project-kicker__mark" aria-hidden="true" />
           <span data-ba-tag className="font-sans text-[8px] font-extrabold uppercase tracking-[0.2em] text-[#7F946E] sm:text-[10px] sm:tracking-[0.22em]">
             {project.tag}
           </span>
-          <span className={`hidden h-px w-14 sm:block ${darkMode ? 'bg-[#d8ad73]/16' : 'bg-[#dfd1c2] dark:bg-[#d8ad73]/16'}`} />
         </div>
         <h3 data-ba-title className={`mt-2 font-serif text-[1.2rem] font-semibold leading-none tracking-normal sm:mt-2.5 sm:text-[1.5rem] ${
           darkMode ? 'text-[#f8f1e8]' : 'text-[#191713]'
@@ -353,23 +354,21 @@ export const BeforeAfterSectionServer = ({ darkMode = false, projects = restorat
   return (
     <section className={`gallery-deferred-render before-after-industrial before-after-premium ${darkMode ? 'before-after-premium--dark' : ''} relative flex w-full items-center overflow-hidden px-3 py-10 sm:px-5 sm:py-12 md:min-h-[690px] md:px-7 md:py-14 lg:min-h-[760px] lg:px-8 lg:py-16 2xl:min-h-[780px] 2xl:px-10 dark:bg-[#0e0d0c] ${darkMode ? 'bg-[#141210]' : 'bg-[#f8f1e6]'}`}>
       <div className={`pointer-events-none absolute inset-0 dark:bg-[radial-gradient(circle_at_76%_32%,rgba(184,132,72,0.13),transparent_31%),radial-gradient(circle_at_20%_72%,rgba(130,148,112,0.09),transparent_34%),linear-gradient(180deg,#0b0a09_0%,#14110f_100%)] ${darkMode ? 'bg-[radial-gradient(circle_at_76%_32%,rgba(184,132,72,0.14),transparent_31%),radial-gradient(circle_at_20%_72%,rgba(130,148,112,0.11),transparent_34%)]' : 'bg-[radial-gradient(circle_at_77%_30%,rgba(188,142,84,0.2),transparent_32%),radial-gradient(circle_at_17%_76%,rgba(135,160,139,0.15),transparent_34%)]'}`} />
-      <div className={`before-after-premium-shell relative mx-auto grid w-full max-w-[1480px] overflow-hidden rounded-[26px] p-1 shadow-[0_30px_92px_-68px_rgba(42,31,21,0.76),0_10px_30px_-28px_rgba(103,71,40,0.56)] ring-1 md:rounded-[30px] md:p-1.5 lg:grid-cols-[minmax(0,0.95fr)_minmax(410px,1.05fr)] dark:bg-[#15120f]/95 dark:ring-[#392f27]/80 dark:shadow-[0_30px_92px_-70px_rgba(0,0,0,0.95)] ${darkMode ? 'bg-white/[0.035] ring-[#3a332a]/90' : 'bg-[#fff9ef]/78 ring-[#d7c4ad]/80'}`}>
-        <div className={`before-after-premium-copy relative flex min-h-[320px] flex-col justify-center rounded-t-[24px] border-b p-5 sm:min-h-[340px] sm:p-7 md:p-8 lg:min-h-[430px] lg:rounded-l-[26px] lg:rounded-tr-none lg:border-b-0 lg:border-r lg:p-8 xl:p-9 2xl:p-10 dark:border-[#302820] dark:bg-[#181511] ${darkMode ? 'border-[#332b23] bg-[#1d1a16]' : 'border-[#ead8c4] bg-[#fffaf3]'}`}>
-          <span className="before-after-service-mark inline-flex h-9 w-fit items-center font-sans uppercase">
-            <span className="before-after-service-mark__monogram" aria-hidden="true">SV</span>
-            <span className="before-after-service-mark__label">Service maison</span>
-            <span className="before-after-service-mark__rule" aria-hidden="true" />
-          </span>
-          <h2 className={`before-after-premium-title mt-6 max-w-[620px] font-serif text-[clamp(2.85rem,7vw,4.75rem)] font-semibold leading-[0.9] tracking-normal lg:mt-7 lg:text-[clamp(3rem,3.8vw,4.55rem)] dark:text-[#fbf2e7] ${darkMode ? 'text-[#fbf2e7]' : 'text-[#1d1914]'}`}>
+      <div className={`before-after-premium-shell relative mx-auto w-full max-w-[1480px] overflow-hidden rounded-[26px] p-[1px] shadow-[0_30px_86px_-68px_rgba(37,29,22,0.56),0_10px_30px_-28px_rgba(124,88,55,0.38)] ring-1 dark:bg-[#19140f] dark:ring-[#3a3027]/85 dark:shadow-[0_30px_86px_-72px_rgba(0,0,0,0.96)] ${darkMode ? 'bg-[#19140f] ring-[#3a3027]/85' : 'bg-gradient-to-br from-[#e1d1bd] via-[#fffaf3] to-[#d7c5b2] ring-[#d8c9b6]'}`}>
+        <div className={`before-after-premium-shell__inner relative overflow-hidden rounded-[25px] p-1.5 dark:bg-[#181511] dark:shadow-[inset_0_1px_0_rgba(216,173,115,0.035)] ${darkMode ? 'bg-[#1d1a16] shadow-[inset_0_1px_0_rgba(216,173,115,0.035)]' : 'bg-[#fffaf3] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]'}`}>
+          <div className={`before-after-premium-shell__inner-ring pointer-events-none absolute inset-1.5 rounded-[21px] ring-1 dark:ring-[#d8ad73]/6 ${darkMode ? 'ring-[#d8ad73]/6' : 'ring-[#d9c9b5]'}`} />
+          <div className={`before-after-premium-shell__grid relative grid overflow-hidden rounded-[20px] ring-1 lg:grid-cols-[minmax(0,0.95fr)_minmax(410px,1.05fr)] dark:bg-[#181511] dark:ring-[#302820] ${darkMode ? 'bg-[#1d1a16] ring-[#302820]' : 'bg-[#fffdf8] ring-[#e4d7c7]'}`}>
+        <div className={`before-after-premium-copy relative flex min-h-[320px] flex-col justify-center border-b p-5 sm:min-h-[340px] sm:p-7 md:p-8 lg:min-h-[430px] lg:border-b-0 lg:border-r lg:p-8 xl:p-9 2xl:p-10 dark:border-[#302820] dark:bg-[#181511] ${darkMode ? 'border-[#332b23] bg-[#1d1a16]' : 'border-[#ead8c4] bg-[#fffaf3]'}`}>
+          <h2 className={`before-after-premium-title max-w-[650px] font-serif text-[clamp(3.1rem,7.6vw,5.2rem)] font-semibold leading-[0.88] tracking-normal lg:text-[clamp(3.35rem,4.15vw,5rem)] dark:text-[#fbf2e7] ${darkMode ? 'text-[#fbf2e7]' : 'text-[#1d1914]'}`}>
             <span className="before-after-title-line block">Chiner sans</span>
             <span className="before-after-title-line block">courir les</span>
             <span className="before-after-title-line block">brocantes,</span>
             <span className="before-after-title-line block pt-1 font-light italic text-[#b9864f]">c'est possible&nbsp;!</span>
           </h2>
-          <p className={`before-after-premium-description mt-7 max-w-[520px] font-sans text-[13px] leading-[1.6] sm:mt-8 sm:text-[13.5px] md:text-[14px] dark:text-[#d5c8b9]/78 ${darkMode ? 'text-[#d5c8b9]/78' : 'text-[#5f554a]'}`}>
+          <p className={`before-after-premium-description mt-8 max-w-[520px] font-sans text-[13px] leading-[1.6] sm:mt-9 sm:text-[13.5px] md:text-[14px] dark:text-[#d5c8b9]/78 ${darkMode ? 'text-[#d5c8b9]/78' : 'text-[#5f554a]'}`}>
             On s'occupe de tout pour vous. De la selection a la livraison de nos pepites, decouvrez comment chiner autrement avec Seconde Vie.
           </p>
-          <Link href="/a-propos" prefetch={false} className={`before-after-premium-cta group mt-7 inline-flex min-h-[48px] w-full max-w-[270px] items-center justify-between overflow-hidden rounded-full px-2 pl-5 font-sans text-[8.5px] font-extrabold uppercase tracking-[0.16em] ring-1 transition-all duration-700 sm:mt-8 sm:min-h-[56px] sm:max-w-[330px] sm:px-2.5 sm:pl-7 sm:text-[10px] dark:bg-[#f8efe2] dark:text-[#18130f] dark:ring-white/20 ${darkMode ? 'bg-[#f8efe2] text-[#18130f] ring-white/20' : 'bg-[#211911] text-[#fff7ec] ring-[#c59b61]/55'}`}>
+          <Link href="/a-propos" prefetch={false} className={`before-after-premium-cta group mt-8 inline-flex min-h-[48px] w-full max-w-[270px] items-center justify-between overflow-hidden rounded-full px-2 pl-5 font-sans text-[8.5px] font-extrabold uppercase tracking-[0.16em] ring-1 transition-all duration-700 sm:mt-9 sm:min-h-[56px] sm:max-w-[330px] sm:px-2.5 sm:pl-7 sm:text-[10px] dark:bg-[#f8efe2] dark:text-[#18130f] dark:ring-white/20 ${darkMode ? 'bg-[#f8efe2] text-[#18130f] ring-white/20' : 'bg-[#211911] text-[#fff7ec] ring-[#c59b61]/55'}`}>
             <span className="before-after-premium-cta__label" data-text="On vous explique tout"><span>On vous explique tout</span></span>
             <span className="before-after-premium-cta__icon ml-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#302115] text-[#e6bd77] ring-1 ring-[#d7aa63]/45 sm:h-10 sm:w-10">
               <ArrowRight size={14} strokeWidth={1.45} />
@@ -377,9 +376,11 @@ export const BeforeAfterSectionServer = ({ darkMode = false, projects = restorat
           </Link>
         </div>
 
-        <div className={`before-after-premium-visual relative flex min-h-full flex-col justify-center gap-4 rounded-b-[24px] p-2 sm:p-4 md:gap-4 md:p-5 lg:rounded-r-[26px] lg:rounded-bl-none lg:p-6 dark:bg-[#181511] ${darkMode ? 'bg-[#1d1a16]' : 'bg-[#fffaf3]'}`}>
+        <div className={`before-after-premium-visual relative flex min-h-full flex-col justify-center gap-4 p-2 sm:p-4 md:gap-4 md:p-5 lg:p-6 dark:bg-[#181511] ${darkMode ? 'bg-[#1d1a16]' : 'bg-[#fffaf3]'}`}>
           <div>
             <BeforeAfterSliderPlaceholder project={projects[0]} projects={projects} darkMode={darkMode} />
+          </div>
+        </div>
           </div>
         </div>
       </div>

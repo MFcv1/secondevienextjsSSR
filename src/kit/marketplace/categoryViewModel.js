@@ -86,12 +86,15 @@ export const getPublishedCategoryItems = (products = []) => (
 export const getCategoryFilterOptions = (products = [], categoryId) => {
   const categoryItems = getPublishedCategoryItems(products);
   const subCategories = getCategorySubCategories(categoryId);
+  const productPrices = categoryItems
+    .map(getCategoryProductPrice)
+    .filter((price) => Number.isFinite(price) && price > 0);
 
   return {
     subCategories,
     materials: [...new Set(categoryItems.map((item) => item.material).filter(Boolean))].sort(),
     styles: [...new Set(categoryItems.map((item) => item.style).filter(Boolean))].sort(),
-    maxPrice: Math.max(100, ...categoryItems.map(getCategoryProductPrice)),
+    maxPrice: productPrices.length ? Math.max(...productPrices) : 100,
     counts: {
       collections: Object.fromEntries(
         subCategories.map((sub) => [
@@ -119,8 +122,7 @@ export const getCategoryFilterOptions = (products = [], categoryId) => {
 
 export const getCategoryQueryState = (searchParams = {}, filterOptions = {}) => {
   const maxPrice = filterOptions.maxPrice || 100;
-  const roundedMax = Math.ceil(maxPrice / 100) * 100;
-  const priceMax = Number(getSearchParamValue(searchParams, 'maxPrice')) || roundedMax;
+  const priceMax = Number(getSearchParamValue(searchParams, 'maxPrice')) || maxPrice;
   const sortBy = getSearchParamValue(searchParams, 'sort') || 'newest';
 
   return {
@@ -132,8 +134,8 @@ export const getCategoryQueryState = (searchParams = {}, filterOptions = {}) => 
     selectedCollections: getSearchParamArray(searchParams, 'collection'),
     availabilityFilter: clampView(getSearchParamValue(searchParams, 'availability'), ['all', 'in-stock', 'sold'], 'all'),
     searchQuery: String(getSearchParamValue(searchParams, 'q') || '').trim(),
-    priceRange: [0, Math.min(Math.max(0, priceMax), roundedMax)],
-    roundedMaxPrice: roundedMax,
+    priceRange: [0, Math.min(Math.max(0, priceMax), maxPrice)],
+    roundedMaxPrice: maxPrice,
   };
 };
 

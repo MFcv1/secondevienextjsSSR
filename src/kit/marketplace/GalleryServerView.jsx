@@ -81,24 +81,67 @@ const getGalleryHeroTexts = () => {
 
 const GallerySeoQuoteMark = ({ darkMode = false } = {}) => (
   <span
-    className={`pointer-events-none absolute -left-20 -top-10 hidden h-[54px] w-[64px] -rotate-[7deg] select-none md:block lg:-left-28 lg:-top-12 lg:h-[62px] lg:w-[74px] ${
+    className={`pointer-events-none absolute -left-[5.6rem] -top-12 hidden h-[64px] w-[78px] -rotate-[7deg] select-none md:block lg:-left-[7.7rem] lg:-top-14 lg:h-[72px] lg:w-[88px] ${
       darkMode
         ? 'text-[#d8ad73]/58'
         : 'text-[#c9b49e]/82 dark:text-[#b99569]/58'
     }`}
     aria-hidden="true"
   >
-    <svg viewBox="0 0 74 62" className="h-full w-full overflow-visible drop-shadow-[0_8px_14px_rgba(91,64,42,0.08)]" fill="none">
+    <svg viewBox="0 0 86 72" className="h-full w-full overflow-visible" fill="none">
+      <defs>
+        <linearGradient id="gallery-quote-metal" x1="18" y1="9" x2="62" y2="61" gradientUnits="userSpaceOnUse">
+          <stop stopColor={darkMode ? '#FFE5BD' : '#F4E7D5'} />
+          <stop offset="0.36" stopColor={darkMode ? '#D8A66B' : '#C99768'} />
+          <stop offset="0.74" stopColor={darkMode ? '#8E5432' : '#95613E'} />
+          <stop offset="1" stopColor={darkMode ? '#F0C78B' : '#E2BE91'} />
+        </linearGradient>
+        <linearGradient id="gallery-quote-edge" x1="24" y1="13" x2="58" y2="55" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#FFF9ED" stopOpacity="0.9" />
+          <stop offset="1" stopColor="#9C6844" stopOpacity="0" />
+        </linearGradient>
+        <radialGradient id="gallery-quote-inset" cx="34%" cy="28%" r="74%">
+          <stop stopColor={darkMode ? '#FFE7C3' : '#FFF9EE'} />
+          <stop offset="0.34" stopColor={darkMode ? '#D4A16B' : '#D7AA7D'} />
+          <stop offset="0.72" stopColor={darkMode ? '#805035' : '#966546'} />
+          <stop offset="1" stopColor={darkMode ? '#4D2C1D' : '#70432A'} />
+        </radialGradient>
+        <filter id="gallery-quote-shadow" x="-25%" y="-25%" width="160%" height="170%" colorInterpolationFilters="sRGB">
+          <feDropShadow dx="2.5" dy="4" stdDeviation="2.8" floodColor={darkMode ? '#000000' : '#6F472E'} floodOpacity={darkMode ? '0.35' : '0.18'} />
+        </filter>
+      </defs>
+      <g transform="translate(5 5)" opacity="0.2" fill={darkMode ? '#5B321D' : '#8A5A39'}>
+        <path d="M31.8 11.2c-12.2 5.2-18.9 14.1-18.9 25.2 0 8.4 5 14.4 12.7 14.4 6.7 0 11.5-4.6 11.5-10.9 0-5.8-3.8-9.7-9.4-10.3 1.2-4.6 4.6-8.6 10.3-12l-6.2-6.4Z" />
+        <path d="M60.4 11.2c-12.2 5.2-18.9 14.1-18.9 25.2 0 8.4 5 14.4 12.7 14.4 6.7 0 11.5-4.6 11.5-10.9 0-5.8-3.8-9.7-9.4-10.3 1.2-4.6 4.6-8.6 10.3-12l-6.2-6.4Z" />
+      </g>
+      <g filter="url(#gallery-quote-shadow)">
       <path
         d="M31.8 11.2c-12.2 5.2-18.9 14.1-18.9 25.2 0 8.4 5 14.4 12.7 14.4 6.7 0 11.5-4.6 11.5-10.9 0-5.8-3.8-9.7-9.4-10.3 1.2-4.6 4.6-8.6 10.3-12l-6.2-6.4Z"
-        fill="currentColor"
-        fillOpacity="0.72"
+        fill="url(#gallery-quote-metal)"
+        stroke={darkMode ? '#6D3D22' : '#7D4D2D'}
+        strokeWidth="1.35"
+        strokeLinejoin="round"
       />
       <path
         d="M60.4 11.2c-12.2 5.2-18.9 14.1-18.9 25.2 0 8.4 5 14.4 12.7 14.4 6.7 0 11.5-4.6 11.5-10.9 0-5.8-3.8-9.7-9.4-10.3 1.2-4.6 4.6-8.6 10.3-12l-6.2-6.4Z"
-        fill="currentColor"
-        fillOpacity="0.96"
+        fill="url(#gallery-quote-metal)"
+        stroke={darkMode ? '#6D3D22' : '#7D4D2D'}
+        strokeWidth="1.35"
+        strokeLinejoin="round"
       />
+      <path d="M31.8 11.2c-12.2 5.2-18.9 14.1-18.9 25.2 0 8.4 5 14.4 12.7 14.4 6.7 0 11.5-4.6 11.5-10.9 0-5.8-3.8-9.7-9.4-10.3 1.2-4.6 4.6-8.6 10.3-12l-6.2-6.4Z" fill="url(#gallery-quote-edge)" opacity="0.72" />
+      <path d="M60.4 11.2c-12.2 5.2-18.9 14.1-18.9 25.2 0 8.4 5 14.4 12.7 14.4 6.7 0 11.5-4.6 11.5-10.9 0-5.8-3.8-9.7-9.4-10.3 1.2-4.6 4.6-8.6 10.3-12l-6.2-6.4Z" fill="url(#gallery-quote-edge)" opacity="0.72" />
+      <g fill="none" stroke={darkMode ? '#FFE4BC' : '#FFF8EC'} strokeOpacity="0.72" strokeWidth="0.7" strokeLinejoin="round">
+        <path transform="translate(2.25 2.8) scale(0.91)" d="M31.8 11.2c-12.2 5.2-18.9 14.1-18.9 25.2 0 8.4 5 14.4 12.7 14.4 6.7 0 11.5-4.6 11.5-10.9 0-5.8-3.8-9.7-9.4-10.3 1.2-4.6 4.6-8.6 10.3-12l-6.2-6.4Z" />
+        <path transform="translate(5.35 2.8) scale(0.91)" d="M60.4 11.2c-12.2 5.2-18.9 14.1-18.9 25.2 0 8.4 5 14.4 12.7 14.4 6.7 0 11.5-4.6 11.5-10.9 0-5.8-3.8-9.7-9.4-10.3 1.2-4.6 4.6-8.6 10.3-12l-6.2-6.4Z" />
+      </g>
+      <g>
+        <circle cx="24.2" cy="39.2" r="4.15" fill="url(#gallery-quote-inset)" stroke={darkMode ? '#59331F' : '#75482D'} strokeWidth="0.9" />
+        <circle cx="52.8" cy="39.2" r="4.15" fill="url(#gallery-quote-inset)" stroke={darkMode ? '#59331F' : '#75482D'} strokeWidth="0.9" />
+        <circle cx="22.9" cy="37.8" r="0.85" fill="#FFF9ED" fillOpacity="0.7" />
+        <circle cx="51.5" cy="37.8" r="0.85" fill="#FFF9ED" fillOpacity="0.7" />
+      </g>
+      </g>
     </svg>
   </span>
 );

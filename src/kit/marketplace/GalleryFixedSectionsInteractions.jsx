@@ -73,6 +73,7 @@ const setupBeforeAfter = () => {
     let activeIndex = 0;
     const clip = root.querySelector('[data-ba-clip]');
     const line = root.querySelector('[data-ba-line]');
+    const handle = root.querySelector('[data-ba-handle]');
     const range = root.querySelector('[data-ba-range]');
     const beforeImg = root.querySelector('[data-ba-before-img]');
     const afterImg = root.querySelector('[data-ba-after-img]');
@@ -83,7 +84,6 @@ const setupBeforeAfter = () => {
     const desc = root.querySelector('[data-ba-desc]');
     const count = root.querySelector('[data-ba-count]');
     const section = root.closest('.before-after-premium');
-    const mediaStage = root.querySelector('[data-ba-media-stage]');
     const projectCopy = root.querySelector('[data-ba-project-copy]');
     const projectActions = root.querySelector('[data-ba-project-actions]');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -110,13 +110,10 @@ const setupBeforeAfter = () => {
       if (reduceMotion) return;
       projectAnimations.forEach((animation) => animation.cancel());
       projectAnimations = [
-        mediaStage?.animate(
-          [
-            { opacity: 0.78, transform: 'scale(0.992)' },
-            { opacity: 1, transform: 'scale(1)' },
-          ],
-          { duration: 480, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
-        ),
+        ...[beforeImg, afterImg].map((image) => image?.animate(
+          [{ opacity: 0.74 }, { opacity: 1 }],
+          { duration: 420, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+        )),
         projectCopy?.animate(
           [
             { opacity: 0, transform: 'translateY(6px)' },
@@ -138,6 +135,16 @@ const setupBeforeAfter = () => {
       const percentage = `${value}%`;
       if (clip) clip.style.clipPath = `polygon(0 0, ${percentage} 0, ${percentage} 100%, 0 100%)`;
       if (line) line.style.left = percentage;
+      if (handle) handle.style.left = percentage;
+    };
+
+    const setSliderFromPointer = (event) => {
+      if (!range) return;
+      const bounds = range.getBoundingClientRect();
+      if (!bounds.width) return;
+      const value = Math.min(100, Math.max(0, ((event.clientX - bounds.left) / bounds.width) * 100));
+      range.value = String(value);
+      setSlider(value);
     };
 
     const setProject = (nextIndex) => {
@@ -167,12 +174,27 @@ const setupBeforeAfter = () => {
       if (title) title.textContent = project.title;
       if (desc) desc.textContent = project.desc;
       if (count) count.textContent = `0${activeIndex + 1} / 0${projects.length}`;
-      if (range) range.value = '50';
-      setSlider(50);
       animateProjectChange();
     };
 
     range?.addEventListener('input', (event) => setSlider(event.currentTarget.value));
+    range?.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      range.focus({ preventScroll: true });
+      range.setPointerCapture(event.pointerId);
+      setSliderFromPointer(event);
+    });
+    range?.addEventListener('pointermove', (event) => {
+      if (!range.hasPointerCapture(event.pointerId)) return;
+      event.preventDefault();
+      setSliderFromPointer(event);
+    });
+    range?.addEventListener('pointerup', (event) => {
+      if (range.hasPointerCapture(event.pointerId)) range.releasePointerCapture(event.pointerId);
+    });
+    range?.addEventListener('pointercancel', (event) => {
+      if (range.hasPointerCapture(event.pointerId)) range.releasePointerCapture(event.pointerId);
+    });
     root.querySelector('[data-ba-prev]')?.addEventListener('click', () => setProject(activeIndex - 1));
     root.querySelector('[data-ba-next]')?.addEventListener('click', () => setProject(activeIndex + 1));
   });
