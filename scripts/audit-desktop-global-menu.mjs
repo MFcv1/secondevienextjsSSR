@@ -71,6 +71,7 @@ const setupInstrumentation = async (page) => {
 
 const collectMenuSnapshot = async (page, name) => page.evaluate((snapshotName) => {
   const shell = document.querySelector('[aria-label="Menu principal"]');
+  const trigger = document.querySelector('[data-global-menu-trigger]');
   const desktopContent = document.querySelector('.global-menu-desktop-content');
   const panel = document.querySelector('.global-menu-scrollbarless');
   const containers = Array.from(document.querySelectorAll('[data-global-menu-panel]')).map((node) => {
@@ -92,6 +93,7 @@ const collectMenuSnapshot = async (page, name) => page.evaluate((snapshotName) =
     url: window.location.href,
     shellRole: shell?.getAttribute('role') || '',
     shellAriaHidden: shell?.getAttribute('aria-hidden') || '',
+    triggerPreloaded: trigger?.dataset.menuPreloaded || 'false',
     desktopMotionReady: desktopContent?.dataset.motionReady || '',
     desktopMotionState: desktopContent?.dataset.motionState || '',
     panelRect: panel ? (() => {
@@ -193,12 +195,12 @@ try {
   const checks = [
     {
       name: 'menu shell visible after click',
-      passed: shellVisibleMs < 900,
+      passed: shellVisibleMs < 300,
       detail: { shellVisibleMs },
     },
     {
       name: 'first desktop container visible quickly',
-      passed: firstContainerMs < 1250,
+      passed: firstContainerMs < 650,
       detail: { firstContainerMs },
     },
     {

@@ -258,6 +258,37 @@ Fichiers generes:
 - `logs/menu-desktop-audit/2026-07-02T12-42-30-575Z-summary.json`
 - `logs/menu-desktop-audit/2026-07-02T12-42-30-575Z-open.png`
 
+## Closeout cold-open du 2026-07-10
+
+Le chargement du chunk seul ne suffisait pas : avec `data-menu-preloaded=true`, le shell restait a 447 ms et le premier panneau a 710 ms. Le cout dominant etait donc le premier montage de l'arbre React/Framer Motion, pas le reseau ni la choregraphie elle-meme.
+
+Correctif retenu dans `GlobalMenuTriggerIsland.jsx` :
+
+- planifier le chargement du chunk via `requestIdleCallback` seulement en haut de page sur desktop ;
+- annuler ce travail au premier `wheel`, `touchstart` ou `scroll` ;
+- une fois le chunk disponible, premonter le menu ferme pendant cette fenetre inactive ;
+- ne charger aucune image du menu tant qu'il reste ferme ;
+- conserver le preload sur `pointerenter`, focus et `pointerdown` pour le clic immediat ;
+- conserver integralement les variants et le sequencing Framer Motion existants.
+
+Mesures locales sur le build Next sandbox, viewport `1920x1032` :
+
+| Scenario | Shell visible | Premier panneau | Long tasks ouverture |
+| --- | ---: | ---: | ---: |
+| chunk chaud, DOM non monte | 447 ms | 710 ms | 1 / 67 ms |
+| idle preload + DOM premonte | 127 ms | 367 ms | 0 |
+| clic immediat, `settle=0` | 188 ms | 484 ms | 1 / 81 ms |
+
+Soit environ -72 % sur le shell et -48 % sur le premier panneau dans le scenario froid normal. Le gate desktop impose maintenant `< 300 ms` pour le shell et `< 650 ms` pour le premier panneau.
+
+Controles de non-regression :
+
+- JS initial home conserve a environ 142 kB ;
+- mobile : shell 105 ms, panneau stabilise 364 ms, aucun arbre desktop monte ;
+- aucune requete Firebase/Auth/App Check a l'ouverture ;
+- scroll froid CPU x4 : Instagram 183,4 ms, avis 33,4 ms ;
+- capture finale : `logs/menu-desktop-audit/2026-07-10T12-37-28-374Z-open.png`.
+
 Validation mobile ponctuelle Playwright `390x844` apres patch:
 
 - shell menu visible apres tap: 59 ms;

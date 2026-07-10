@@ -82,6 +82,57 @@ const setupBeforeAfter = () => {
     const title = root.querySelector('[data-ba-title]');
     const desc = root.querySelector('[data-ba-desc]');
     const count = root.querySelector('[data-ba-count]');
+    const section = root.closest('.before-after-premium');
+    const mediaStage = root.querySelector('[data-ba-media-stage]');
+    const projectCopy = root.querySelector('[data-ba-project-copy]');
+    const projectActions = root.querySelector('[data-ba-project-actions]');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let projectAnimations = [];
+
+    if (section) {
+      section.dataset.baMotionReady = 'true';
+      if (reduceMotion || !('IntersectionObserver' in window)) {
+        section.dataset.baRevealed = 'true';
+      } else {
+        const revealObserver = new IntersectionObserver(
+          ([entry]) => {
+            if (!entry?.isIntersecting) return;
+            section.dataset.baRevealed = 'true';
+            revealObserver.disconnect();
+          },
+          { threshold: 0.18 },
+        );
+        revealObserver.observe(section);
+      }
+    }
+
+    const animateProjectChange = () => {
+      if (reduceMotion) return;
+      projectAnimations.forEach((animation) => animation.cancel());
+      projectAnimations = [
+        mediaStage?.animate(
+          [
+            { opacity: 0.78, transform: 'scale(0.992)' },
+            { opacity: 1, transform: 'scale(1)' },
+          ],
+          { duration: 480, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+        ),
+        projectCopy?.animate(
+          [
+            { opacity: 0, transform: 'translateY(6px)' },
+            { opacity: 1, transform: 'translateY(0)' },
+          ],
+          { duration: 380, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+        ),
+        projectActions?.animate(
+          [
+            { opacity: 0.72, transform: 'translateX(4px)' },
+            { opacity: 1, transform: 'translateX(0)' },
+          ],
+          { duration: 320, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+        ),
+      ].filter(Boolean);
+    };
 
     const setSlider = (value) => {
       const percentage = `${value}%`;
@@ -118,6 +169,7 @@ const setupBeforeAfter = () => {
       if (count) count.textContent = `0${activeIndex + 1} / 0${projects.length}`;
       if (range) range.value = '50';
       setSlider(50);
+      animateProjectChange();
     };
 
     range?.addEventListener('input', (event) => setSlider(event.currentTarget.value));
