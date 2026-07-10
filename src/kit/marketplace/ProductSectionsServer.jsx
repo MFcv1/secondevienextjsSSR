@@ -209,7 +209,6 @@ const restorationProjects = [
 const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projects = restorationProjects, darkMode = false } = {}) => (
   <div
     data-before-after-section
-    data-cold-scroll-deferred-images="true"
     data-projects={JSON.stringify(projects)}
   >
     <div className={`relative mx-auto w-full max-w-[780px] rounded-[22px] p-1.5 ring-1 md:rounded-[26px] ${
@@ -226,19 +225,18 @@ const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projec
           <picture className="absolute inset-0 block h-full w-full">
             <source
               data-ba-after-source
-              data-cold-scroll-deferred-source="true"
-              data-cold-scroll-deferred-srcset={project.apresAvif}
               type="image/avif"
+              srcSet={project.apresAvif}
             />
             <img
-              data-cold-scroll-deferred-image="true"
-              data-cold-scroll-deferred-src={project.apres}
+              src={project.apres}
               sizes="(max-width: 768px) calc(100vw - 3rem), 700px"
               alt="Projet restauration apres"
               width={1600}
               height={970}
               loading="lazy"
               decoding="async"
+              fetchPriority="low"
               data-ba-after-img
               className="h-full w-full object-cover"
             />
@@ -254,19 +252,18 @@ const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projec
             <picture className="absolute inset-0 block h-full w-full">
               <source
                 data-ba-before-source
-                data-cold-scroll-deferred-source="true"
-                data-cold-scroll-deferred-srcset={project.avantAvif}
                 type="image/avif"
+                srcSet={project.avantAvif}
               />
               <img
-                data-cold-scroll-deferred-image="true"
-                data-cold-scroll-deferred-src={project.avant}
+                src={project.avant}
                 sizes="(max-width: 768px) calc(100vw - 3rem), 700px"
                 alt="Projet restauration avant"
                 width={1600}
                 height={970}
                 loading="lazy"
                 decoding="async"
+                fetchPriority="low"
                 data-ba-before-img
                 className="h-full w-full object-cover"
               />

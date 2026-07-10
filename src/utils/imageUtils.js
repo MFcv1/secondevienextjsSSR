@@ -315,6 +315,11 @@ export const getProductCardImage = (item) => {
         { src: primary?.thumb, width: 480 },
         { src: primary?.card, width: 768 },
     ]);
+    const desktopCardSrcSet = buildSrcSet([
+        { src: primary?.thumb, width: 480 },
+        { src: primary?.card, width: 768 },
+        { src: primary?.medium, width: 1024 },
+    ]);
     const thumbSrcSet = buildSrcSet([
         { src: primary?.thumb320, width: 320 },
         { src: primary?.thumb384, width: 384 },
@@ -324,6 +329,7 @@ export const getProductCardImage = (item) => {
     return {
         src: displaySrc,
         srcSet: cardSrcSet,
+        desktopSrcSet: desktopCardSrcSet || cardSrcSet,
         thumbSrcSet,
         mobileSrc: displaySrc,
         mobileSrcSet: cardSrcSet,

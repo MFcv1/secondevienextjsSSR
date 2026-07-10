@@ -70,6 +70,15 @@ export default function GalleryProductCardServer({
         <a href={productUrl} draggable={false} data-gallery-product-link className="block h-full w-full cursor-pointer text-inherit no-underline" aria-label={`Découvrir ${title}`}>
           {cardImage.src ? (
             <picture className="block h-full w-full">
+              {cardImage.desktopSrcSet ? (
+                <source
+                  media="(min-width: 1024px)"
+                  srcSet={deferImageUntilCalm ? undefined : cardImage.desktopSrcSet}
+                  data-cold-scroll-deferred-source={deferImageUntilCalm ? 'true' : undefined}
+                  data-cold-scroll-deferred-srcset={deferImageUntilCalm ? cardImage.desktopSrcSet : undefined}
+                  sizes={PRODUCT_CARD_IMAGE_SIZES}
+                />
+              ) : null}
               <img
                 src={deferImageUntilCalm ? undefined : cardImage.src}
                 srcSet={deferImageUntilCalm ? undefined : (cardImage.srcSet || undefined)}
