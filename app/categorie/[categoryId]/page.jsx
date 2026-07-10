@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation';
 import {
   getPublicCatalog,
   getPublicCatalogFallback,
-  isSeoIndexableProduct,
 } from '../../../src/lib/server/products';
 import { publicEnv } from '../../../src/lib/server/env';
 import { getCategoryUrl } from '../../../src/utils/slug';
@@ -107,7 +106,6 @@ const getCategoryRouteData = cache(async (categoryId) => {
     products = await getPublicCatalogFallback({ categoryIds: matchingIds, limitCount: 120 });
   }
   products = products
-    .filter(isSeoIndexableProduct)
     .sort((a, b) => getProductQualityRank(b) - getProductQualityRank(a));
 
   return {
