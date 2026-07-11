@@ -4264,6 +4264,8 @@ html.dark .before-after-project-nav,
 }
 .search-suggest-scroll::-webkit-scrollbar-track {
   background: transparent;
+  margin-top: 16px;
+  margin-bottom: 16px;
 }
 .search-suggest-scroll::-webkit-scrollbar-thumb {
   background-color: rgba(168, 162, 158, 0.4);

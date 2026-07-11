@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowRight, Search, X } from 'lucide-react';
+import { ArrowRight, Search, X, LayoutGrid } from 'lucide-react';
 
 const DEFAULT_QUERY = '';
 const SEARCH_MIN_QUERY_LENGTH = 2;
@@ -161,7 +161,7 @@ const SuggestionPanel = ({
                       className={`${rowBase} min-h-11 py-1.5 ${isActive ? rowActiveTone : ''}`}
                     >
                       <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#9A654B]/10 font-serif text-[12px] font-bold text-[#9A654B] shadow-[inset_0_0_0_1px_rgba(154,101,75,0.14)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${isActive ? 'scale-105' : ''}`}>
-                        {String(item.label || '').slice(0, 1)}
+                        <LayoutGrid size={14} strokeWidth={1.75} />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[13px] font-semibold tracking-wide">{item.label}</span>
@@ -200,7 +200,7 @@ const SuggestionPanel = ({
                     >
                       <span className={`h-14 w-14 shrink-0 overflow-hidden rounded-[12px] bg-stone-100 shadow-[inset_0_0_0_1px_rgba(51,42,34,0.06)] dark:bg-white/[0.05] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.07)]`}>
                         {item.image ? (
-                          <img src={item.image} srcSet={item.imageSrcSet || undefined} sizes="56px" alt="" className={`h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isActive ? 'scale-[1.06]' : ''}`} loading="lazy" decoding="async" />
+                          <img src={item.image} srcSet={item.imageSrcSet || undefined} sizes="56px" alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
                         ) : null}
                       </span>
                       <span className="min-w-0 flex-1">
