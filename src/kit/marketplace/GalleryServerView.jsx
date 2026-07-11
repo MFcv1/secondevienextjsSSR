@@ -87,7 +87,7 @@ const GallerySeoQuoteMark = ({ darkMode = false } = {}) => (
     }`}
     aria-hidden="true"
   >
-    <Quote className="h-full w-full" strokeWidth={1.5} />
+    <Quote className="h-full w-full -scale-x-100" strokeWidth={1.5} />
   </span>
 );
 
