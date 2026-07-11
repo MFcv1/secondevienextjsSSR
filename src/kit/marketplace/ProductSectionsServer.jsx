@@ -309,6 +309,7 @@ const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projec
         </div>
       </div>
     </div>
+
     <div className={`before-after-project-rail relative mx-auto mt-4 grid w-full max-w-[780px] gap-2 overflow-hidden rounded-[18px] p-1 ring-1 md:mt-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-3 md:rounded-[22px] md:p-1.5 ${
       darkMode ? 'bg-transparent ring-[#d8ad73]/8 shadow-none' : 'bg-[#f2e5d4] ring-[#d9c4aa] shadow-[0_26px_68px_-56px_rgba(82,54,28,0.82)] dark:bg-transparent dark:ring-[#d8ad73]/8 dark:shadow-none'
     }`}>
@@ -333,10 +334,10 @@ const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projec
       </div>
       <div data-ba-project-actions className="before-after-project-actions relative flex items-center justify-between gap-2 px-1 md:justify-end md:gap-2.5 md:px-2.5 md:pb-1">
         <div className="before-after-project-nav flex gap-2">
-          <button type="button" data-ba-prev className={`before-after-project-nav__button flex h-8 w-8 items-center justify-center rounded-full ring-1 md:h-9 md:w-9 ${darkMode ? 'bg-[#17130f] text-[#f8f1e8] ring-[#d8ad73]/14' : 'bg-[#fffaf3] text-[#151515] ring-[#dfd1c2] shadow-[0_14px_26px_-20px_rgba(43,31,19,0.78)] dark:bg-[#17130f] dark:text-[#f8f1e8] dark:ring-[#d8ad73]/14 dark:shadow-none'}`} aria-label="Projet precedent">
+          <button type="button" data-ba-prev className={`before-after-project-nav__button flex h-8 w-8 items-center justify-center rounded-full ring-1 transition-all duration-300 ease-out hover:scale-105 active:scale-95 md:h-9 md:w-9 ${darkMode ? 'bg-[#17130f] text-[#f8f1e8] ring-[#d8ad73]/14' : 'bg-[#fffaf3] text-[#151515] ring-[#dfd1c2] shadow-[0_14px_26px_-20px_rgba(43,31,19,0.78)] dark:bg-[#17130f] dark:text-[#f8f1e8] dark:ring-[#d8ad73]/14 dark:shadow-none'}`} aria-label="Projet precedent">
             <ChevronLeft size={16} strokeWidth={1.45} />
           </button>
-          <button type="button" data-ba-next className={`before-after-project-nav__button flex h-8 w-8 items-center justify-center rounded-full ring-1 md:h-9 md:w-9 ${darkMode ? 'bg-[#17130f] text-[#f8f1e8] ring-[#d8ad73]/14' : 'bg-[#fffaf3] text-[#151515] ring-[#dfd1c2] shadow-[0_14px_26px_-20px_rgba(43,31,19,0.78)] dark:bg-[#17130f] dark:text-[#f8f1e8] dark:ring-[#d8ad73]/14 dark:shadow-none'}`} aria-label="Projet suivant">
+          <button type="button" data-ba-next className={`before-after-project-nav__button flex h-8 w-8 items-center justify-center rounded-full ring-1 transition-all duration-300 ease-out hover:scale-105 active:scale-95 md:h-9 md:w-9 ${darkMode ? 'bg-[#17130f] text-[#f8f1e8] ring-[#d8ad73]/14' : 'bg-[#fffaf3] text-[#151515] ring-[#dfd1c2] shadow-[0_14px_26px_-20px_rgba(43,31,19,0.78)] dark:bg-[#17130f] dark:text-[#f8f1e8] dark:ring-[#d8ad73]/14 dark:shadow-none'}`} aria-label="Projet suivant">
             <ChevronRight size={16} strokeWidth={1.45} />
           </button>
         </div>
@@ -998,7 +999,7 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
                     '--feature-wash': wash,
                     '--feature-ring': ring,
                   }}
-                  className={`discount-industrial-card group relative min-h-[64px] overflow-hidden rounded-[12px] p-[1px] transition-all duration-500 hover:-translate-y-1 sm:min-h-[206px] sm:rounded-[22px] lg:min-h-[214px] dark:bg-gradient-to-br dark:from-[#3a3026] dark:via-[#211d18] dark:to-[#171411] dark:shadow-[0_18px_46px_-36px_rgba(0,0,0,0.95)] ${darkMode ? 'bg-gradient-to-br from-[#3a3026] via-[#211d18] to-[#171411] shadow-[0_18px_46px_-36px_rgba(0,0,0,0.95)]' : 'bg-gradient-to-br from-[#ddcdbc] via-[#fff8ef] to-[#d9c8b8] shadow-[0_18px_44px_-38px_rgba(62,43,27,0.62)] hover:shadow-[0_28px_58px_-40px_rgba(62,43,27,0.72)]'}`}
+                  className={`discount-industrial-card group relative min-h-[64px] overflow-hidden rounded-[12px] p-[1px] transition-all duration-500 hover:-translate-y-1 sm:min-h-[206px] sm:rounded-[22px] lg:min-h-[214px] dark:bg-gradient-to-br dark:from-[#3a3026] dark:via-[#211d18] dark:to-[#171411] dark:shadow-[0_18px_46px_-36px_rgba(0,0,0,0.95)] ${darkMode ? 'bg-gradient-to-br from-[#3a3026] via-[#211d18] to-[#171411] shadow-[0_18px_46px_-36px_rgba(0,0,0,0.95)]' : 'bg-transparent ring-1 ring-[#ebdccb]/40 shadow-[0_18px_44px_-38px_rgba(62,43,27,0.62)] hover:shadow-[0_28px_58px_-40px_rgba(62,43,27,0.72)]'}`}
                 >
                   <div className={`relative flex h-full flex-col overflow-hidden rounded-[11px] bg-[image:var(--feature-wash)] p-2.5 ring-1 sm:rounded-[21px] sm:p-5 dark:bg-[linear-gradient(135deg,#211d18,#191612)] dark:text-[#f8f1e8] dark:ring-[#3d3228] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.055)] ${darkMode ? 'bg-[linear-gradient(135deg,#211d18,#191612)] text-[#f8f1e8] ring-[#3d3228] shadow-[inset_0_1px_0_rgba(255,255,255,0.055)]' : 'text-[#181716] ring-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.78)]'}`}>
                     <div className={`pointer-events-none absolute inset-[4px] rounded-[8px] ring-1 sm:inset-[6px] sm:rounded-[16px] dark:ring-[#3d3228]/80 ${darkMode ? 'ring-[#3d3228]/80' : 'ring-white/65'}`} />

@@ -111,22 +111,25 @@ const setupBeforeAfter = () => {
       projectAnimations.forEach((animation) => animation.cancel());
       projectAnimations = [
         ...[beforeImg, afterImg].map((image) => image?.animate(
-          [{ opacity: 0.74 }, { opacity: 1 }],
-          { duration: 420, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+          [
+            { opacity: 0.4, transform: 'scale(1.03)' },
+            { opacity: 1, transform: 'scale(1)' }
+          ],
+          { duration: 850, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
         )),
         projectCopy?.animate(
           [
-            { opacity: 0, transform: 'translateY(6px)' },
+            { opacity: 0, transform: 'translateY(12px)' },
             { opacity: 1, transform: 'translateY(0)' },
           ],
-          { duration: 380, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+          { duration: 750, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
         ),
         projectActions?.animate(
           [
-            { opacity: 0.72, transform: 'translateX(4px)' },
+            { opacity: 0, transform: 'translateX(8px)' },
             { opacity: 1, transform: 'translateX(0)' },
           ],
-          { duration: 320, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+          { duration: 700, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
         ),
       ].filter(Boolean);
     };
