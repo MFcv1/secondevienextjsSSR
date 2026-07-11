@@ -365,6 +365,15 @@ export default function SearchSuggestIsland({
     };
   }, [mobileOpen]);
 
+  React.useEffect(() => {
+    if (activeId) {
+      const element = document.getElementById(activeId);
+      if (element) {
+        element.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }
+  }, [activeId]);
+
   const flatItems = React.useMemo(() => {
     const items = [];
     (data?.querySuggestions || []).forEach((item, index) => items.push({ id: `search-query-${index}`, href: item.href }));

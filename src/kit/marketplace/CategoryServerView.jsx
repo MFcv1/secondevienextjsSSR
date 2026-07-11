@@ -236,7 +236,7 @@ const FilterForm = ({
           />
           <div className="flex justify-between font-mono text-[11px]">
             <span className={darkMode ? 'text-stone-400' : 'text-stone-500'}>{state.priceRange[0].toFixed(0)} EUR</span>
-            <span className={darkMode ? 'text-stone-400' : 'text-stone-500'}>{(state.priceRange[1] || filterOptions.maxPrice).toFixed(0)} EUR</span>
+            <span data-category-max-price-label className={darkMode ? 'text-stone-400' : 'text-stone-500'}>{(state.priceRange[1] || filterOptions.maxPrice).toFixed(0)} EUR</span>
           </div>
         </div>
       </FilterSection>

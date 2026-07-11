@@ -175,6 +175,9 @@ export default function CategoryControlsIsland({
     root.querySelectorAll('[data-category-filtered-count]').forEach((node) => {
       node.textContent = String(filteredItems.length);
     });
+    root.querySelectorAll('[data-category-max-price-label]').forEach((node) => {
+      node.textContent = `${(state.priceRange[1] || state.roundedMaxPrice).toFixed(0)} EUR`;
+    });
     root.querySelectorAll('[data-category-sort-label]').forEach((node) => {
       node.textContent = sortLabel;
     });
@@ -269,6 +272,12 @@ export default function CategoryControlsIsland({
   const handleInput = React.useCallback((event) => {
     const form = event.target.closest('form[data-category-filter-form]');
     if (!form || !event.target.matches('[data-category-range]')) return;
+
+    const label = form.querySelector('[data-category-max-price-label]');
+    if (label) {
+      label.textContent = `${Number(event.target.value).toFixed(0)} EUR`;
+    }
+
     window.clearTimeout(form._categorySubmitTimer);
     form._categorySubmitTimer = window.setTimeout(() => {
       applyState(stateFromForm(form, filterOptions), { push: true });
