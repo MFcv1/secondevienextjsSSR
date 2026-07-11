@@ -68,7 +68,7 @@ export default function CategoryRailServer({
                 height="240"
                 loading="lazy"
                 decoding="async"
-                className={`pointer-events-none absolute bottom-[24px] left-[-20px] z-0 h-[58px] w-auto select-none object-contain grayscale transition-opacity duration-700 lg:bottom-[28px] lg:left-[-22px] lg:h-[64px] 2xl:bottom-[34px] 2xl:left-[-25px] 2xl:h-[72px] ${darkMode ? 'opacity-[0.12] invert' : 'opacity-[0.15] mix-blend-multiply dark:opacity-[0.08] dark:invert dark:mix-blend-normal'}`}
+                className={`pointer-events-none absolute bottom-[24px] right-[-10px] z-0 h-[58px] w-auto -scale-x-100 select-none object-contain grayscale transition-opacity duration-700 lg:bottom-[28px] lg:right-[-12px] lg:h-[64px] 2xl:bottom-[34px] 2xl:right-[-14px] 2xl:h-[72px] ${darkMode ? 'opacity-[0.12] invert' : 'opacity-[0.15] mix-blend-multiply dark:opacity-[0.08] dark:invert dark:mix-blend-normal'}`}
               />
               <span className="relative z-[1] w-full">
                 <span className={`block w-full truncate text-left font-sans text-[11px] font-semibold uppercase leading-none tracking-[0.16em] lg:text-[12px] 2xl:text-[13px] ${darkMode ? 'text-white/90' : 'text-[#24201c] dark:text-[#f7efe5]/92'}`}>
