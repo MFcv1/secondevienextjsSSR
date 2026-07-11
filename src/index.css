@@ -3779,13 +3779,13 @@ html.dark .before-after-premium-atmosphere,
   position: absolute;
   z-index: 0 !important;
   top: 34%;
-  right: 2.5%;
+  right: -2%;
   display: none;
-  width: min(43%, 280px);
+  width: min(48%, 320px);
   height: auto;
   pointer-events: none;
   user-select: none;
-  opacity: 0.075;
+  opacity: 0.095;
   filter: grayscale(1);
   transform: translateY(-50%);
 }
