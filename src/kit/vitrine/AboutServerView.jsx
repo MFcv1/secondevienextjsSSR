@@ -277,7 +277,7 @@ function ServicesSection({ steps }) {
           <h2 className="about-services-title mb-8 font-serif text-5xl uppercase leading-[0.9] tracking-tighter text-[#1A1A1A] md:text-7xl lg:text-[6rem]">
             L'ART <span className="font-light lowercase italic text-[#A68A64]">de sauvegarder</span> LA MATIERE.
           </h2>
-          <p className="about-services-copy max-w-2xl text-sm font-light leading-relaxed text-[#5A5550] md:text-lg">
+          <p className="about-services-copy max-w-2xl text-sm font-light leading-relaxed text-[#5A5550] md:text-lg lg:relative lg:top-10">
             De la chine passionnee au geste technique precis, decouvrez les etapes minutieuses qui transforment un objet oublie en une piece d'exception.
           </p>
         </div>
@@ -298,8 +298,9 @@ function ServicesSection({ steps }) {
                   <p className="text-xs font-light leading-relaxed text-[#5A5550] duration-500 group-hover:text-[#1A1A1A] md:text-sm">{step.desc}</p>
                 </div>
                 <div className="relative z-10 mt-10 overflow-hidden">
-                  <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#A68A64] transition-all duration-500 md:translate-y-8 md:opacity-0 group-hover:translate-y-0 group-hover:opacity-100">
-                    Decouvrir l'etape <ArrowRight size={14} />
+                  <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#A68A64]">
+                    <span className="about-service-card__cta-label" data-text="Decouvrir l'etape"><span>Decouvrir l'etape</span></span>
+                    <ArrowRight size={15} className="transition-transform duration-500 ease-out group-hover:translate-x-1" />
                   </div>
                 </div>
                 <div className="pointer-events-none absolute right-[-5%] top-[-5%] z-0 rotate-12 p-4 opacity-5 transition-opacity duration-700 group-hover:opacity-10">

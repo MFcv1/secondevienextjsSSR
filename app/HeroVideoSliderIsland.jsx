@@ -14,6 +14,8 @@ const HERO_VIDEO_READY_EVENT = 'sv:hero-video-ready';
 export default function HeroVideoSliderIsland() {
   const [activeIndex, setActiveIndex] = useState(0);
   const videoRefs = useRef([]);
+  const videoReadyPendingRef = useRef(false);
+  const videoReadyEmittedRef = useRef(false);
 
   // Crossfade logic: switch to next video slightly before current ends
   const handleTimeUpdate = (e, index) => {
@@ -44,9 +46,29 @@ export default function HeroVideoSliderIsland() {
     }
   }, []);
 
-  const emitHeroVideoReady = (index) => {
-    if (index !== 0 || typeof window === 'undefined') return;
-    window.dispatchEvent(new CustomEvent(HERO_VIDEO_READY_EVENT));
+  const emitHeroVideoReady = (index, video) => {
+    if (
+      index !== 0 ||
+      !video ||
+      typeof window === 'undefined' ||
+      videoReadyPendingRef.current ||
+      videoReadyEmittedRef.current
+    ) return;
+
+    videoReadyPendingRef.current = true;
+    const finish = () => {
+      if (videoReadyEmittedRef.current) return;
+      videoReadyEmittedRef.current = true;
+      video.dataset.firstFrameReady = 'true';
+      window.dispatchEvent(new CustomEvent(HERO_VIDEO_READY_EVENT));
+    };
+
+    if (typeof video.requestVideoFrameCallback === 'function') {
+      video.requestVideoFrameCallback(finish);
+      return;
+    }
+
+    window.requestAnimationFrame(() => window.requestAnimationFrame(finish));
   };
 
   return (
@@ -61,8 +83,7 @@ export default function HeroVideoSliderIsland() {
           playsInline
           preload={i === 0 ? 'auto' : 'metadata'}
           className={`sv4-hero__video ${i === activeIndex ? 'is-active' : ''}`}
-          onCanPlay={() => emitHeroVideoReady(i)}
-          onPlaying={() => emitHeroVideoReady(i)}
+          onPlaying={(event) => emitHeroVideoReady(i, event.currentTarget)}
           onTimeUpdate={(e) => handleTimeUpdate(e, i)}
           onEnded={() => {
              // Fallback in case onTimeUpdate didn't catch the window

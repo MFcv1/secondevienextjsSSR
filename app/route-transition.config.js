@@ -1,27 +1,26 @@
 export const ROUTE_TRANSITION_CONFIG = {
   enabled: true,
-  defaultVariant: 'blackDepthCut',
+  defaultVariant: 'atelierCurtain',
   targets: {
     '/a-propos': {
-      variant: 'blackDepthCut',
+    variant: 'atelierCurtain',
       readyEvent: 'sv:hero-video-ready',
-      readySelector: '.sv4-hero__video.is-active',
+      readySelector: '.sv4-hero__video.is-active[data-first-frame-ready="true"]',
       warmupVideo: '/video/hero/1-wood-buffet.mp4',
-      releaseOnRoute: true,
-      readyTimeoutMs: 80,
+      releaseOnRoute: false,
+      readyTimeoutMs: 2200,
     },
   },
   variants: {
-    blackDepthCut: {
-      minVisibleMs: 0,
-      enterDelayMs: 320,
-      exitDelayMs: 0,
-      exitDurationMs: 170,
-      background: '#020202',
-      tint: 'rgba(255, 255, 255, 0.055)',
-      line: 'rgba(250, 246, 239, 0.72)',
-      lineTrack: 'rgba(250, 246, 239, 0.14)',
-      lineGlow: 'rgba(250, 246, 239, 0.28)',
+    atelierCurtain: {
+      minVisibleMs: 3250,
+      enterDelayMs: 900,
+      enterDurationMs: 900,
+      exitDelayMs: 150,
+      exitDurationMs: 1000,
+      panel: '#F9F6F0',
+      ink: '#1A130C',
+      accent: '#A68A64',
     },
   },
 };

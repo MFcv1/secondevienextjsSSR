@@ -46,22 +46,24 @@ export default function AboutBeforeAfterIsland({ projects }) {
           </div>
 
           <div className="mt-4 xl:mt-0">
-            <div className="about-before-project rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl md:p-8">
-              <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: activeProject.accent }}>
-                {activeProject.tag}
-              </span>
-              <h3 className="mb-4 mt-2 font-serif text-2xl text-white md:text-3xl">{activeProject.title}</h3>
-              <p className="mb-8 text-xs leading-relaxed text-white/50 md:text-sm">{activeProject.desc}</p>
-              <div className="flex items-center justify-between">
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => goTo(activeIndex - 1)} aria-label="Projet precedent" className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 text-white/50 transition-all hover:bg-white/10 hover:text-white active:scale-95">
-                    <ChevronLeft size={18} strokeWidth={2.5} />
+            <div className="about-before-project flex min-h-[236px] flex-col rounded-3xl border border-white/10 bg-white/5 px-6 py-5 backdrop-blur-xl md:px-8 md:py-5">
+              <div className="flex flex-col gap-5">
+                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: activeProject.accent }}>
+                  {activeProject.tag}
+                </span>
+                <h3 className="m-0 font-serif text-[1.625rem] text-white md:text-[2rem]">{activeProject.title}</h3>
+                <p className="m-0 text-[13px] leading-relaxed text-white/50 md:text-[15px]">{activeProject.desc}</p>
+              </div>
+              <div className="mt-auto flex items-center justify-between pt-8">
+                <div className="flex gap-2.5">
+                  <button type="button" onClick={() => goTo(activeIndex - 1)} aria-label="Projet precedent" className="flex h-[50px] w-[50px] items-center justify-center rounded-full border border-white/20 text-white/50 transition-all hover:bg-white/10 hover:text-white active:scale-95">
+                    <ChevronLeft size={19} strokeWidth={2.5} />
                   </button>
-                  <button type="button" onClick={() => goTo(activeIndex + 1)} aria-label="Projet suivant" className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 text-white/50 transition-all hover:bg-white/10 hover:text-white active:scale-95">
-                    <ChevronRight size={18} strokeWidth={2.5} />
+                  <button type="button" onClick={() => goTo(activeIndex + 1)} aria-label="Projet suivant" className="flex h-[50px] w-[50px] items-center justify-center rounded-full border border-white/20 text-white/50 transition-all hover:bg-white/10 hover:text-white active:scale-95">
+                    <ChevronRight size={19} strokeWidth={2.5} />
                   </button>
                 </div>
-                <span className="font-mono text-[10px] tracking-widest text-white/30">
+                <span className="font-mono text-[11px] tracking-widest text-white/30">
                   0{activeIndex + 1} / 0{projects.length}
                 </span>
               </div>

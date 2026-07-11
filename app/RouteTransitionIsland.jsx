@@ -5,6 +5,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ROUTE_TRANSITION_CONFIG } from './route-transition.config';
 
 const TRANSITION_EVENT = 'sv:route-transition-start';
+const ROUTE_TRANSITION_TITLE = 'L\u2019ATELIER';
+const ROUTE_TRANSITION_CHARACTERS = Array.from(ROUTE_TRANSITION_TITLE);
+const ROUTE_TRANSITION_CENTER_INDEX = (ROUTE_TRANSITION_CHARACTERS.length - 1) / 2;
 
 const isPlainPrimaryClick = (event) => (
   event.button === 0 &&
@@ -38,15 +41,18 @@ const waitForNextPaint = () => new Promise((resolve) => {
   window.requestAnimationFrame(() => window.requestAnimationFrame(resolve));
 });
 
+const videoWarmups = new Map();
+const prefersReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
 const warmupVideo = (href) => {
-  if (!href || document.querySelector(`link[data-sv-route-warmup="${href}"]`)) return;
-  const link = document.createElement('link');
-  link.rel = 'preload';
-  link.as = 'video';
-  link.href = href;
-  link.type = 'video/mp4';
-  link.dataset.svRouteWarmup = href;
-  document.head.appendChild(link);
+  if (!href || videoWarmups.has(href)) return;
+  const video = document.createElement('video');
+  video.preload = 'auto';
+  video.muted = true;
+  video.playsInline = true;
+  video.src = href;
+  video.load();
+  videoWarmups.set(href, video);
 };
 
 export default function RouteTransitionIsland() {
@@ -75,16 +81,18 @@ export default function RouteTransitionIsland() {
     if (!pending) return;
 
     const variant = ROUTE_TRANSITION_CONFIG.variants[pending.targetConfig.variant] || ROUTE_TRANSITION_CONFIG.variants[ROUTE_TRANSITION_CONFIG.defaultVariant];
+    const reducedMotion = prefersReducedMotion();
     const elapsed = window.performance.now() - transitionStartedAtRef.current;
-    const remaining = Math.max(0, (variant?.minVisibleMs || 0) - elapsed);
+    const remaining = Math.max(0, (reducedMotion ? 0 : (variant?.minVisibleMs || 0)) - elapsed);
     if (remaining > 0) await wait(remaining);
 
     setTransition((current) => current ? { ...current, phase: 'leaving' } : current);
+    const exitDuration = reducedMotion ? 120 : (variant?.exitDurationMs || 320);
     closeTimerRef.current = window.setTimeout(() => {
       pendingRef.current = null;
       closeTimerRef.current = null;
       setTransition(null);
-    }, variant?.exitDurationMs || 320);
+    }, exitDuration);
   }, []);
 
   const waitForTargetReady = useCallback((targetConfig) => new Promise((resolve) => {
@@ -133,7 +141,7 @@ export default function RouteTransitionIsland() {
 
     window.setTimeout(() => {
       router.push(href);
-    }, variant?.enterDelayMs || 180);
+    }, prefersReducedMotion() ? 0 : (variant?.enterDelayMs || 180));
   }, [clearCloseTimer, router]);
 
   useEffect(() => {
@@ -204,21 +212,40 @@ export default function RouteTransitionIsland() {
   if (!transition || !activeTarget || !activeVariant) return null;
 
   const style = {
-    '--rt-bg': activeVariant.background,
-    '--rt-tint': activeVariant.tint,
-    '--rt-line': activeVariant.line,
-    '--rt-line-track': activeVariant.lineTrack,
-    '--rt-line-glow': activeVariant.lineGlow,
+    '--rt-panel': activeVariant.panel,
+    '--rt-ink': activeVariant.ink,
+    '--rt-accent': activeVariant.accent,
+    '--rt-enter-ms': `${activeVariant.enterDurationMs || 680}ms`,
     '--rt-exit-ms': `${activeVariant.exitDurationMs || 320}ms`,
   };
 
   return (
     <div className="sv-route-transition" data-phase={transition.phase} style={style} aria-hidden="true">
-      <div className="sv-route-transition__veil" />
-      <div className="sv-route-transition__grain" />
-      <div className="sv-route-transition__depth" />
-      <div className="sv-route-transition__progress">
-        <span />
+      <div className="sv-route-transition__curtain">
+        <div className="sv-route-transition__panel sv-route-transition__panel--left" />
+        <div className="sv-route-transition__panel sv-route-transition__panel--right" />
+        <img className="sv-route-transition__watermark" src="/images/logoanais-320.webp" alt="" aria-hidden="true" />
+        <div className="sv-route-transition__signature">
+          <span className="sv-route-transition__eyebrow-mask">
+            <span className="sv-route-transition__eyebrow">Seconde Vie</span>
+          </span>
+          <span className="sv-route-transition__title" aria-label={ROUTE_TRANSITION_TITLE}>
+            {ROUTE_TRANSITION_CHARACTERS.map((character, index) => (
+              <span className="sv-route-transition__title-char-mask" aria-hidden="true" key={`${character}-${index}`}>
+                <span
+                  className="sv-route-transition__title-char"
+                  style={{
+                    '--rt-char-delay': `${1350 + Math.abs(index - ROUTE_TRANSITION_CENTER_INDEX) * 110}ms`,
+                    '--rt-char-exit-delay': `${Math.abs(index - ROUTE_TRANSITION_CENTER_INDEX) * 24}ms`,
+                    '--rt-char-sway': `${index % 2 === 0 ? -8 : 8}deg`,
+                  }}
+                >
+                  {character}
+                </span>
+              </span>
+            ))}
+          </span>
+        </div>
       </div>
       <style dangerouslySetInnerHTML={{ __html: routeTransitionCss }} />
     </div>
@@ -234,85 +261,180 @@ const routeTransitionCss = `
   place-items: center;
   overflow: hidden;
   pointer-events: all;
-  background: var(--rt-bg);
-  opacity: 1;
+  background: transparent;
   contain: layout paint style;
   isolation: isolate;
 }
-.sv-route-transition[data-phase="leaving"] {
-  opacity: 0;
-  transition: opacity var(--rt-exit-ms) cubic-bezier(.16,1,.3,1);
-}
-.sv-route-transition__veil {
+.sv-route-transition__curtain {
   position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 50% 46%, var(--rt-tint), transparent 34%),
-    linear-gradient(180deg, rgba(255,255,255,.035), transparent 30%, rgba(255,255,255,.018) 72%, transparent 100%);
-  transform: translate3d(0, 1.8%, 0) scale(1.018);
-  opacity: 1;
-  animation: sv-route-veil 420ms cubic-bezier(.16,1,.3,1) both;
-}
-.sv-route-transition__grain {
-  position: absolute;
-  inset: 0;
-  opacity: .035;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-.sv-route-transition__depth {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 50% 118%, rgba(255,255,255,.08), transparent 42%),
-    radial-gradient(ellipse at 50% -12%, rgba(255,255,255,.045), transparent 36%);
-  opacity: .82;
-  transform: translate3d(0, 0, 0);
-  animation: sv-route-depth 440ms cubic-bezier(.16,1,.3,1) both;
-}
-.sv-route-transition__progress {
-  position: absolute;
-  z-index: 2;
-  right: clamp(22px, 4vw, 72px);
-  bottom: clamp(22px, 4vw, 56px);
-  left: clamp(22px, 4vw, 72px);
-  height: 1px;
-  overflow: hidden;
-  background: var(--rt-line-track);
-  transform: translateZ(0);
-}
-.sv-route-transition__progress span {
-  position: absolute;
-  inset-block: 0;
+  top: -12svh;
+  right: 0;
+  bottom: 0;
   left: 0;
-  width: 100%;
-  background: linear-gradient(90deg, transparent 0%, var(--rt-line) 14%, var(--rt-line) 76%, transparent 100%);
-  box-shadow: 0 0 18px var(--rt-line-glow);
-  transform: scaleX(.02);
-  transform-origin: left center;
-  animation: sv-route-progress 520ms cubic-bezier(.85,0,.15,1) both;
+  overflow: hidden;
+  border-radius: 50% 50% 0 0 / 12svh 12svh 0 0;
+  transform: translate3d(0, 112svh, 0);
+  animation: sv-route-curtain-rise var(--rt-enter-ms) cubic-bezier(.22,1,.36,1) forwards;
+  will-change: transform;
 }
-@keyframes sv-route-veil {
-  from { transform: translate3d(0, 5%, 0) scale(1.04); opacity: .74; }
-  to { transform: translate3d(0, 0, 0) scale(1); opacity: 1; }
+.sv-route-transition__panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50.1%;
+  background: var(--rt-panel);
+  transition: transform var(--rt-exit-ms) cubic-bezier(.76,0,.24,1);
+  will-change: transform;
 }
-@keyframes sv-route-depth {
-  from { transform: scaleY(.94); opacity: .3; }
-  to { transform: scaleY(1); opacity: .82; }
+.sv-route-transition__panel--left {
+  left: 0;
 }
-@keyframes sv-route-progress {
-  0% { transform: scaleX(.02); opacity: .25; }
-  58% { transform: scaleX(.72); opacity: 1; }
-  100% { transform: scaleX(1); opacity: .92; }
+.sv-route-transition__panel--right {
+  right: 0;
+}
+.sv-route-transition__watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: clamp(260px, 30vw, 480px);
+  height: auto;
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  transform: translate3d(-50%, -50%, 0) scale(.92);
+  animation: sv-route-watermark-in 1300ms 350ms cubic-bezier(.16,1,.3,1) forwards;
+}
+.sv-route-transition__signature {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  color: var(--rt-ink);
+  transform: translate3d(-50%, -50%, 0);
+  white-space: nowrap;
+}
+.sv-route-transition__eyebrow-mask {
+  display: block;
+  overflow: hidden;
+  padding: 20px 0 3px;
+  margin-top: -20px;
+}
+.sv-route-transition__eyebrow {
+  display: block;
+  font-family: var(--font-plus-jakarta), system-ui, sans-serif;
+  font-size: clamp(11px, .85vw, 13.5px);
+  font-weight: 800;
+  letter-spacing: .36em;
+  text-transform: uppercase;
+  color: var(--rt-accent);
+  text-shadow: 0 1px 0 rgba(249,246,240,.8);
+  opacity: 0;
+  transform: translate3d(0, -14px, 0);
+  animation: sv-route-eyebrow-in 950ms 1020ms cubic-bezier(.4,0,.2,1) forwards;
+  will-change: opacity;
+}
+.sv-route-transition__title {
+  display: flex;
+  justify-content: center;
+  perspective: 1100px;
+  font-family: var(--font-cormorant), Georgia, serif;
+  font-size: clamp(56px, 8vw, 132px);
+  font-weight: 400;
+  line-height: .82;
+  letter-spacing: -.045em;
+  text-transform: uppercase;
+}
+.sv-route-transition__title-char-mask {
+  display: block;
+  overflow: hidden;
+  padding-block: .1em;
+  margin-block: -.1em;
+}
+.sv-route-transition__title-char {
+  --rt-char-rotate-x: -62deg;
+  --rt-char-effective-sway: var(--rt-char-sway);
+  display: block;
+  opacity: 0;
+  backface-visibility: hidden;
+  transform: translate3d(0, 118%, 0) rotateX(var(--rt-char-rotate-x)) rotateY(var(--rt-char-effective-sway)) scaleY(.84);
+  transform-origin: center bottom;
+  animation: sv-route-title-char-in 1050ms var(--rt-char-delay) cubic-bezier(.16,1,.3,1) forwards;
+  will-change: transform, opacity;
+}
+.sv-route-transition[data-phase="leaving"] .sv-route-transition__panel--left {
+  transform: translate3d(-101%, 0, 0);
+}
+.sv-route-transition[data-phase="leaving"] .sv-route-transition__panel--right {
+  transform: translate3d(101%, 0, 0);
+}
+.sv-route-transition[data-phase="leaving"] .sv-route-transition__watermark {
+  animation: none;
+  opacity: 0;
+  transform: translate3d(-50%, -50%, 0) scale(1.04);
+  transition: opacity 320ms ease-out, transform 520ms cubic-bezier(.4,0,1,1);
+}
+.sv-route-transition[data-phase="leaving"] .sv-route-transition__eyebrow {
+  animation: none;
+  opacity: 0;
+  transform: translate3d(0, -110%, 0);
+  transition: opacity 260ms ease-out, transform 420ms cubic-bezier(.4,0,1,1);
+}
+.sv-route-transition[data-phase="leaving"] .sv-route-transition__title-char {
+  animation: none;
+  opacity: 0;
+  transform: translate3d(0, -110%, 0) rotateX(40deg);
+  transition: opacity 240ms ease-out var(--rt-char-exit-delay), transform 440ms cubic-bezier(.4,0,1,1) var(--rt-char-exit-delay);
+}
+@keyframes sv-route-curtain-rise {
+  from { transform: translate3d(0, 112svh, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+@keyframes sv-route-watermark-in {
+  0% { opacity: 0; transform: translate3d(-50%, -50%, 0) scale(.92); }
+  68% { opacity: .085; transform: translate3d(-50%, -50%, 0) scale(1.015); }
+  100% { opacity: .075; transform: translate3d(-50%, -50%, 0) scale(1); }
+}
+@keyframes sv-route-eyebrow-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes sv-route-title-char-in {
+  0% { opacity: 0; transform: translate3d(0, 118%, 0) rotateX(var(--rt-char-rotate-x)) rotateY(var(--rt-char-effective-sway)) scaleY(.84); }
+  72% { opacity: 1; transform: translate3d(0, -5%, 0) rotateX(3deg) rotateY(0deg) scaleY(1.015); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg) scaleY(1); }
+}
+@media (max-width: 767px) {
+  .sv-route-transition__title-char {
+    --rt-char-rotate-x: -18deg;
+    --rt-char-effective-sway: 0deg;
+    animation-duration: 1000ms;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sv-route-transition,
-  .sv-route-transition * {
+  .sv-route-transition__curtain {
     animation: none !important;
-    transition-duration: 120ms !important;
+    transform: translate3d(0, 0, 0);
   }
-  .sv-route-transition__progress span {
-    opacity: .9;
-    transform: scaleX(1);
+  .sv-route-transition__watermark {
+    display: none;
+  }
+  .sv-route-transition__eyebrow {
+    animation: none !important;
+    opacity: 1;
+    transform: translate3d(0, -14px, 0);
+  }
+  .sv-route-transition__title-char {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+  .sv-route-transition__panel {
+    transition-duration: 120ms !important;
   }
 }
 `;

@@ -3894,7 +3894,8 @@ html.dark .before-after-premium-copy--warm::after,
   background: linear-gradient(90deg, transparent, rgba(238,190,121,0.46), transparent);
 }
 
-.before-after-premium-cta__label {
+.before-after-premium-cta__label,
+.about-service-card__cta-label {
   position: relative;
   display: block;
   overflow: hidden;
@@ -3902,17 +3903,26 @@ html.dark .before-after-premium-copy--warm::after,
 }
 
 .before-after-premium-cta__label > span,
-.before-after-premium-cta__label::after {
+.before-after-premium-cta__label::after,
+.about-service-card__cta-label > span,
+.about-service-card__cta-label::after {
   display: block;
   transition: transform 520ms cubic-bezier(0.85, 0, 0.15, 1);
 }
 
-.before-after-premium-cta__label::after {
+.before-after-premium-cta__label::after,
+.about-service-card__cta-label::after {
   position: absolute;
   top: 100%;
   left: 0;
   content: attr(data-text);
   white-space: nowrap;
+}
+
+.about-service-card__cta-label > span,
+.about-service-card__cta-label::after {
+  transition-duration: 680ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .before-after-premium-cta__icon {
@@ -4181,6 +4191,11 @@ html.dark .before-after-project-nav,
     transform: translateY(-100%);
   }
 
+  .about-service-card:hover .about-service-card__cta-label > span,
+  .about-service-card:hover .about-service-card__cta-label::after {
+    transform: translateY(-100%);
+  }
+
   .before-after-premium-cta:hover .before-after-premium-cta__icon {
     transform: translateX(4px) scale(1.04);
   }
@@ -4249,6 +4264,8 @@ html.dark .before-after-project-nav,
   .before-after-premium-cta,
   .before-after-premium-cta__label > span,
   .before-after-premium-cta__label::after,
+  .about-service-card__cta-label > span,
+  .about-service-card__cta-label::after,
   .before-after-premium-cta__icon,
   .before-after-slider-handle,
   .before-after-slider-handle__left,
