@@ -4280,3 +4280,63 @@ html.dark .search-suggest-scroll::-webkit-scrollbar-thumb {
 html.dark .search-suggest-scroll::-webkit-scrollbar-thumb:hover {
   background-color: rgba(255, 255, 255, 0.25);
 }
+
+/* Custom Checkbox & Radio Filters */
+.custom-checkbox {
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 3px;
+  border: 1px solid var(--border-color, #d6d3d1);
+  background-color: transparent;
+  transition: all 0.2s ease;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.custom-checkbox:hover {
+  border-color: var(--border-hover, #a8a29e);
+}
+.custom-checkbox:checked {
+  background-color: var(--bg-checked, #292524);
+  border-color: var(--bg-checked, #292524);
+}
+.custom-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border-right: 1.5px solid var(--check-color, white);
+  border-bottom: 1.5px solid var(--check-color, white);
+  transform: rotate(45deg);
+}
+
+.custom-radio {
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 1px solid var(--border-color, #d6d3d1);
+  background-color: transparent;
+  transition: all 0.2s ease;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.custom-radio:hover {
+  border-color: var(--border-hover, #a8a29e);
+}
+.custom-radio:checked {
+  border-color: var(--bg-checked, #292524);
+  border-width: 4.5px;
+}
+
+html.dark .custom-checkbox,
+html.dark .custom-radio {
+  --border-color: #57534e;
+  --border-hover: #a8a29e;
+  --bg-checked: #e7e5e4;
+  --check-color: #1c1917;
+}

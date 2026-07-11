@@ -213,7 +213,7 @@ const FilterForm = ({
           <div className="space-y-2">
             {filterOptions.subCategories.map((sub) => (
               <label key={sub.id} className={`group flex cursor-pointer items-center gap-3 ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>
-                <input type="checkbox" name="collection" value={sub.id} defaultChecked={state.selectedCollections.includes(sub.id)} className="h-4 w-4 rounded border-stone-300 text-stone-800 focus:ring-stone-500" />
+                <input type="checkbox" name="collection" value={sub.id} defaultChecked={state.selectedCollections.includes(sub.id)} className="custom-checkbox focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-1 dark:focus:ring-offset-[#12110f]" />
                 <span className="text-[13px] transition-all group-hover:font-medium">{sub.label}</span>
                 <span className={`ml-auto text-[11px] ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>({filterOptions.counts.collections[sub.id] || 0})</span>
               </label>
@@ -246,7 +246,7 @@ const FilterForm = ({
           <div className="space-y-2">
             {filterOptions.materials.map((material) => (
               <label key={material} className={`group flex cursor-pointer items-center gap-3 ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>
-                <input type="checkbox" name="material" value={material} defaultChecked={state.selectedMaterials.includes(material)} className="h-4 w-4 rounded border-stone-300 text-stone-800 focus:ring-stone-500" />
+                <input type="checkbox" name="material" value={material} defaultChecked={state.selectedMaterials.includes(material)} className="custom-checkbox focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-1 dark:focus:ring-offset-[#12110f]" />
                 <span className="text-[13px] transition-all group-hover:font-medium">{material}</span>
                 <span className={`ml-auto text-[11px] ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>({filterOptions.counts.materials[material] || 0})</span>
               </label>
@@ -260,7 +260,7 @@ const FilterForm = ({
           <div className="space-y-2">
             {filterOptions.styles.map((style) => (
               <label key={style} className={`group flex cursor-pointer items-center gap-3 ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>
-                <input type="checkbox" name="style" value={style} defaultChecked={state.selectedStyles.includes(style)} className="h-4 w-4 rounded border-stone-300 text-stone-800 focus:ring-stone-500" />
+                <input type="checkbox" name="style" value={style} defaultChecked={state.selectedStyles.includes(style)} className="custom-checkbox focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-1 dark:focus:ring-offset-[#12110f]" />
                 <span className="text-[13px] transition-all group-hover:font-medium">{style}</span>
                 <span className={`ml-auto text-[11px] ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>({filterOptions.counts.styles[style] || 0})</span>
               </label>
@@ -277,7 +277,7 @@ const FilterForm = ({
             { id: 'sold', label: 'Vendu' },
           ].map((option) => (
             <label key={option.id} className={`group flex cursor-pointer items-center gap-3 ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>
-              <input type="radio" name="availability" value={option.id} defaultChecked={state.availabilityFilter === option.id} className="h-4 w-4 border-stone-300 text-stone-800 focus:ring-stone-500" />
+              <input type="radio" name="availability" value={option.id} defaultChecked={state.availabilityFilter === option.id} className="custom-radio focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-1 dark:focus:ring-offset-[#12110f]" />
               <span className="text-[13px] transition-all group-hover:font-medium">{option.label}</span>
             </label>
           ))}
