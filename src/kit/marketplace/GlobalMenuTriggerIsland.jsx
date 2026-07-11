@@ -1,7 +1,7 @@
 'use client';
 
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 
 let globalMenuPromise = null;
@@ -24,6 +24,7 @@ const MENU_IDLE_PRELOAD_DELAY_MS = 180;
 const MENU_IDLE_PRELOAD_TIMEOUT_MS = 900;
 const DESKTOP_MENU_QUERY = '(min-width: 1024px)';
 const DESKTOP_MENU_OPEN_CLASS = 'global-menu-desktop-open';
+const HOLD_MENU_UNTIL_ROUTE_PATHS = new Set(['/admin', '/mes-commandes', '/devis']);
 const isDesktopMenuViewport = () => (
   typeof window !== 'undefined'
   && window.matchMedia(DESKTOP_MENU_QUERY).matches
@@ -41,6 +42,7 @@ function MenuIcon({ open }) {
 
 export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   const router = useRouter();
+  const pathname = usePathname();
   const [effectiveDarkMode, setEffectiveDarkMode] = useState(darkMode);
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelClosing, setPanelClosing] = useState(false);
@@ -50,6 +52,7 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   const [criticalAuthUser, setCriticalAuthUser] = useState(null);
   const [criticalAuthIsAdmin, setCriticalAuthIsAdmin] = useState(false);
   const [menuPreloaded, setMenuPreloaded] = useState(false);
+  const [heldNavigationPath, setHeldNavigationPath] = useState(null);
   const closeTimerRef = useRef(null);
   const openFrameRef = useRef(null);
   const transitionLockTimerRef = useRef(null);
@@ -57,6 +60,11 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   const pointerOpenedRef = useRef(false);
   const pointerOpenedTimerRef = useRef(null);
   const [transitionLocked, setTransitionLocked] = useState(false);
+
+  const syncCriticalAuthSnapshot = useCallback(() => {
+    setCriticalAuthUser(window.__svAuthUser || null);
+    setCriticalAuthIsAdmin(window.__svAuthIsAdmin === true);
+  }, []);
 
   const preloadMenu = useCallback((mountDesktopPanel = false) => {
     const menuPromise = loadGlobalMenu();
@@ -164,15 +172,14 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
       setCriticalAuthIsAdmin(typeof nextIsAdmin === 'boolean' ? nextIsAdmin : window.__svAuthIsAdmin === true);
     };
 
-    setCriticalAuthUser(window.__svAuthUser || null);
-    setCriticalAuthIsAdmin(window.__svAuthIsAdmin === true);
+    syncCriticalAuthSnapshot();
     window.addEventListener('sv:auth-user-changed', syncAuthUser);
     window.addEventListener('sv:auth-admin-changed', syncAuthAdmin);
     return () => {
       window.removeEventListener('sv:auth-user-changed', syncAuthUser);
       window.removeEventListener('sv:auth-admin-changed', syncAuthAdmin);
     };
-  }, []);
+  }, [syncCriticalAuthSnapshot]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -238,6 +245,7 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   const presentPanel = useCallback(() => {
     clearCloseTimer();
     clearOpenFrame();
+    syncCriticalAuthSnapshot();
     setHasPanelMounted(true);
     const isDesktopOpen = isDesktopMenuViewport();
 
@@ -255,7 +263,7 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
       setPanelOpen(true);
       openFrameRef.current = null;
     });
-  }, [clearCloseTimer, clearOpenFrame, lockTransition, unlockTransition]);
+  }, [clearCloseTimer, clearOpenFrame, lockTransition, syncCriticalAuthSnapshot, unlockTransition]);
 
   const openPanel = useCallback(() => {
     clearCloseTimer();
@@ -297,6 +305,14 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
     setPanelClosing(false);
     document.documentElement.classList.remove(DESKTOP_MENU_OPEN_CLASS);
   }, [clearCloseTimer, clearOpenFrame, unlockTransition]);
+
+  useEffect(() => {
+    if (!heldNavigationPath) return;
+    if (pathname === heldNavigationPath || pathname?.startsWith(`${heldNavigationPath}/`)) {
+      closePanelInstantly();
+      setHeldNavigationPath(null);
+    }
+  }, [closePanelInstantly, heldNavigationPath, pathname]);
 
   const setPanelOpenWithMotion = useCallback((nextValue) => {
     const resolvedValue = typeof nextValue === 'function' ? nextValue(panelOpen) : nextValue;
@@ -348,11 +364,18 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
 
   const navigateCriticalDesktop = useCallback((path) => {
     if (!path) return;
+    const targetPath = path.split(/[?#]/)[0] || '/';
+    const isAlreadyOnTarget = pathname === targetPath || pathname?.startsWith(`${targetPath}/`);
+    if (HOLD_MENU_UNTIL_ROUTE_PATHS.has(targetPath) && !isAlreadyOnTarget) {
+      setHeldNavigationPath(targetPath);
+      router.push(path);
+      return;
+    }
     closePanelInstantly();
     window.requestAnimationFrame(() => {
       router.push(path);
     });
-  }, [closePanelInstantly, router]);
+  }, [closePanelInstantly, pathname, router]);
 
   const openCriticalDesktopLogin = useCallback(() => {
     closePanelInstantly();

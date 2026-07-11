@@ -53,3 +53,28 @@ test('admin route does not expose admin content without auth', async ({ page }) 
   await expect(page.locator('body')).not.toBeEmpty();
   await expect(page.getByText('Gestion Boutique')).toHaveCount(0);
 });
+
+test('passkey auth state keeps Quitter and Mon espace synchronized', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Le libelle Quitter est volontairement masque sous le breakpoint desktop.');
+
+  const response = await page.goto('/');
+  expect(response?.status()).toBe(200);
+
+  await page.evaluate(() => {
+    const passkeyUser = {
+      uid: 'e2e-passkey-user',
+      email: 'passkey@example.com',
+      displayName: null,
+      isAnonymous: false,
+    };
+    window.__svAuthUser = passkeyUser;
+    window.dispatchEvent(new CustomEvent('sv:auth-user-changed', {
+      detail: { user: passkeyUser },
+    }));
+  });
+
+  await expect(page.getByText('Quitter', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Ouvrir le menu' }).click();
+  await expect(page.getByText('Mon espace', { exact: true })).toBeVisible();
+  await expect(page.getByText('Quitter', { exact: true })).toBeVisible();
+});

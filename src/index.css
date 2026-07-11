@@ -188,7 +188,7 @@ html.global-menu-mobile-open header {
     display: contents;
   }
 
-  html.global-menu-desktop-open header {
+  html.global-menu-desktop-open header[data-global-site-header] {
     position: fixed !important;
     top: var(--global-menu-announcement-height, 0px);
     left: 0;
@@ -206,7 +206,7 @@ html.global-menu-mobile-open header {
     z-index: 2102;
   }
 
-  html.global-menu-desktop-open header + div {
+  html.global-menu-desktop-open header[data-global-site-header] + div {
     margin-top: calc(var(--global-menu-announcement-height, 0px) + var(--global-menu-header-height, 76px));
   }
 }

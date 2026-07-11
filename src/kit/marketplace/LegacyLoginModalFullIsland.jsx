@@ -209,13 +209,9 @@ const loginWithPasskey = async (email, preparedAuthentication = null, onStepChan
   logClientPerf('passkey.authentication.verify', verifyStartedAt, { phase: 'success' });
   if (!result.data?.token) throw new Error('Token passkey manquant.');
 
-  const [auth, module] = await Promise.all([getFirebaseAuth(), loadAuthModule()]);
-  const signInStartedAt = startClientPerf();
   return {
     email: normalizedEmail,
-    signInPromise: module.signInWithCustomToken(auth, result.data.token).finally(() => {
-      logClientPerf('passkey.authentication.signInWithCustomToken', signInStartedAt, { phase: 'complete' });
-    }),
+    token: result.data.token,
   };
 };
 
@@ -245,7 +241,11 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
   const otpVerifyInFlightRef = useRef(false);
   const showPasskeyFirst = hasLocalPasskey && !useEmailCodeFallback;
   const passkeyLoginLabel = passkeyStatus === 'pending'
-    ? (passkeyLoginStep === 'verifying' ? 'Verification...' : 'Empreinte...')
+    ? (
+      passkeyLoginStep === 'signing-in'
+        ? 'Connexion...'
+        : passkeyLoginStep === 'verifying' ? 'Verification...' : 'Empreinte...'
+    )
     : 'Connexion rapide sur cet appareil';
   const passkeyRegistrationLabel = passkeyStatus === 'pending'
     ? (
@@ -448,12 +448,13 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     setPasskeyMessage('');
     try {
       const result = await loginWithPasskey(emailValue, preparedPasskeyAuth, setPasskeyLoginStep);
+      setPasskeyLoginStep('signing-in');
+      const signInStartedAt = startClientPerf();
+      await loginWithCustomToken(result.token);
+      logClientPerf('passkey.authentication.signInWithCustomToken', signInStartedAt, { phase: 'success' });
       saveLocalPasskeyState(result?.email || emailValue);
       setLocalPasskeyEmails(readLocalPasskeyState().emails);
       close();
-      result.signInPromise.catch((error) => {
-        console.error('Passkey Firebase sign-in error:', error);
-      });
     } catch (error) {
       if (error?.code === 'functions/not-found') {
         clearLocalPasskeyState(emailValue);

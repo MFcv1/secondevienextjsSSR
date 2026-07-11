@@ -81,7 +81,7 @@ const GlobalMenu = ({
 
         const announcementHeight = desktopAnnouncementHeightRef.current ?? 0;
         document.documentElement.style.setProperty('--global-menu-announcement-height', `${Math.max(0, Math.round(announcementHeight))}px`);
-        const header = document.querySelector('header');
+        const header = document.querySelector('[data-global-site-header]');
         const headerBottom = header?.getBoundingClientRect().bottom || 0;
         const headerHeight = header?.offsetHeight || 110;
         document.documentElement.style.setProperty('--global-menu-header-height', `${Math.max(0, Math.round(headerHeight))}px`);
