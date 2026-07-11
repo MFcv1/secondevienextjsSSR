@@ -34,8 +34,8 @@ export default function AboutBeforeAfterIsland({ projects }) {
               <span className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-white/50 md:text-xs">La Renaissance</span>
             </div>
             <h2 className="font-serif text-4xl leading-[1.1] tracking-tighter text-white md:text-[5.5rem] md:leading-[1]">
-              <span className="about-before-title-line block overflow-hidden py-2 text-5xl font-bold uppercase md:text-[6.5rem]">LE POUVOIR</span>
-              <span className="about-before-title-line block overflow-hidden py-4 font-light lowercase italic text-[#A68A64]">du geste.</span>
+              <span className="about-before-title-line -my-2 block overflow-hidden py-2 text-5xl font-bold uppercase md:text-[6.5rem]">LE POUVOIR</span>
+              <span className="about-before-title-line -my-4 block overflow-hidden py-4 lowercase italic text-[#A68A64]">du geste.</span>
             </h2>
           </div>
 
@@ -82,7 +82,7 @@ export default function AboutBeforeAfterIsland({ projects }) {
               <div className="pointer-events-none absolute left-6 top-6">
                 <div className="flex h-8 items-center justify-center rounded-full border border-white/10 bg-black/50 px-4 shadow-lg backdrop-blur-md">
                   <span className="mt-[1px] flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-white">
-                    <span className="h-2 w-2 rounded-full bg-red-500/80" />
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-red-500/80" />
                     Avant
                   </span>
                 </div>

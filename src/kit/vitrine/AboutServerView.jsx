@@ -239,7 +239,7 @@ function TransitionToServicesSection() {
       </div>
 
       <div className="about-transition-step-1 absolute inset-0 z-10 flex flex-col items-center justify-center">
-        <p className="mb-8 font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-[#A68A64] md:text-xs">
+        <p className="relative -top-12 mb-8 font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-[#A68A64] md:-top-16 md:text-xs">
           - Notre Philosophie -
         </p>
         <h2 className="about-transition-title text-center font-serif text-[18vw] leading-[0.8] tracking-tighter text-[#1A1A1A] md:text-[10rem] lg:text-[14rem]">
