@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const admin = require('firebase-admin');
 const { functions, regionalFunctions, logFunctionPerf } = require('../../helpers/runtime');
 const nodemailer = require('nodemailer');
-const { GMAIL_EMAIL, GMAIL_PASSWORD, SUPER_ADMIN_EMAIL } = require('../../helpers/secrets');
+const { GMAIL_EMAIL, GMAIL_PASSWORD } = require('../../helpers/secrets');
 const { getSiteUrl } = require('../../helpers/config');
 const { timestampFromNow, SYSTEM_DOC_RETENTION_DAYS } = require('../analytics/constants');
 
@@ -143,21 +143,9 @@ function mapMailError(error) {
     );
 }
 
-async function isAdminEmail(email, tx = null) {
-    const superAdminEmail = String(process.env.SUPER_ADMIN_EMAIL || SUPER_ADMIN_EMAIL.value() || '').trim().toLowerCase();
-    if (superAdminEmail && email === superAdminEmail) return true;
-
-    const adminRef = db.doc('sys_metadata/admin_users');
-    const adminDoc = tx ? await tx.get(adminRef) : await adminRef.get();
-    if (!adminDoc.exists) return false;
-
-    return Object.values(adminDoc.data().users || {}).some((entry) => (
-        String(entry?.email || '').trim().toLowerCase() === email
-    ));
-}
-
 async function getOrCreateCustomerUser(email) {
     let userRecord = null;
+    let created = false;
     try {
         userRecord = await admin.auth().getUserByEmail(email);
     } catch (error) {
@@ -175,15 +163,19 @@ async function getOrCreateCustomerUser(email) {
             email,
             emailVerified: true
         });
+        created = true;
     } else if (!userRecord.emailVerified) {
         userRecord = await admin.auth().updateUser(userRecord.uid, { emailVerified: true });
     }
 
-    await db.collection('users').doc(userRecord.uid).set({
+    const userProfile = {
         email,
-        role: 'client',
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    };
+    if (created) userProfile.role = 'client';
+
+    // Never downgrade an existing admin (or any future role) during OTP login.
+    await db.collection('users').doc(userRecord.uid).set(userProfile, { merge: true });
 
     return userRecord;
 }
@@ -277,7 +269,7 @@ exports.sendCustomerLoginOtp = regionalFunctions()
     });
 
 exports.verifyCustomerLoginOtp = regionalFunctions()
-    .runWith({ enforceAppCheck: true, secrets: [GMAIL_PASSWORD, SUPER_ADMIN_EMAIL] })
+    .runWith({ enforceAppCheck: true, secrets: [GMAIL_PASSWORD] })
     .https.onCall(async (data) => {
         const startedAt = Date.now();
         const email = normalizeEmail(data?.email);
@@ -317,13 +309,6 @@ exports.verifyCustomerLoginOtp = regionalFunctions()
                     success: false,
                     error: new functions.https.HttpsError('permission-denied', 'Code invalide.')
                 };
-            }
-
-            if (await isAdminEmail(email, tx)) {
-                throw new functions.https.HttpsError(
-                    'permission-denied',
-                    'Connexion par code reservee aux comptes clients. Utilisez Google, passkey ou l acces admin.'
-                );
             }
 
             tx.update(otpRef, {

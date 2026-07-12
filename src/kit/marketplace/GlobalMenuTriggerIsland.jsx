@@ -3,6 +3,8 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
+import { useAuthState } from '../contexts/AuthContext';
+import { initializeAuthStore } from '../auth/authStore';
 
 let globalMenuPromise = null;
 
@@ -43,14 +45,13 @@ function MenuIcon({ open }) {
 export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   const router = useRouter();
   const pathname = usePathname();
+  const authState = useAuthState();
   const [effectiveDarkMode, setEffectiveDarkMode] = useState(darkMode);
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelClosing, setPanelClosing] = useState(false);
   const [hasClientMounted, setHasClientMounted] = useState(false);
   const [hasPanelMounted, setHasPanelMounted] = useState(false);
   const [desktopMenuViewport, setDesktopMenuViewport] = useState(false);
-  const [criticalAuthUser, setCriticalAuthUser] = useState(null);
-  const [criticalAuthIsAdmin, setCriticalAuthIsAdmin] = useState(false);
   const [menuPreloaded, setMenuPreloaded] = useState(false);
   const [heldNavigationPath, setHeldNavigationPath] = useState(null);
   const closeTimerRef = useRef(null);
@@ -62,8 +63,7 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   const [transitionLocked, setTransitionLocked] = useState(false);
 
   const syncCriticalAuthSnapshot = useCallback(() => {
-    setCriticalAuthUser(window.__svAuthUser || null);
-    setCriticalAuthIsAdmin(window.__svAuthIsAdmin === true);
+    void initializeAuthStore({ forceInitialize: true }).catch(() => {});
   }, []);
 
   const preloadMenu = useCallback((mountDesktopPanel = false) => {
@@ -164,26 +164,6 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
 
-    const syncAuthUser = (event) => {
-      setCriticalAuthUser(event?.detail?.user || window.__svAuthUser || null);
-    };
-    const syncAuthAdmin = (event) => {
-      const nextIsAdmin = event?.detail?.isAdmin;
-      setCriticalAuthIsAdmin(typeof nextIsAdmin === 'boolean' ? nextIsAdmin : window.__svAuthIsAdmin === true);
-    };
-
-    syncCriticalAuthSnapshot();
-    window.addEventListener('sv:auth-user-changed', syncAuthUser);
-    window.addEventListener('sv:auth-admin-changed', syncAuthAdmin);
-    return () => {
-      window.removeEventListener('sv:auth-user-changed', syncAuthUser);
-      window.removeEventListener('sv:auth-admin-changed', syncAuthAdmin);
-    };
-  }, [syncCriticalAuthSnapshot]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-
     const readClientTheme = () => {
       const nextDark = window.localStorage.getItem(THEME_STORAGE_KEY) === 'true'
         || document.documentElement.classList.contains('dark');
@@ -246,6 +226,9 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
     clearCloseTimer();
     clearOpenFrame();
     syncCriticalAuthSnapshot();
+    if (authState.user?.uid && !authState.user?.isAnonymous) {
+      router.prefetch('/mes-commandes');
+    }
     setHasPanelMounted(true);
     const isDesktopOpen = isDesktopMenuViewport();
 
@@ -263,7 +246,7 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
       setPanelOpen(true);
       openFrameRef.current = null;
     });
-  }, [clearCloseTimer, clearOpenFrame, lockTransition, syncCriticalAuthSnapshot, unlockTransition]);
+  }, [authState.user, clearCloseTimer, clearOpenFrame, lockTransition, router, syncCriticalAuthSnapshot, unlockTransition]);
 
   const openPanel = useCallback(() => {
     clearCloseTimer();
@@ -423,8 +406,8 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
             keepMounted
             setIsMenuOpen={setPanelOpenWithMotion}
             currentView="gallery"
-            user={criticalAuthUser}
-            isAdmin={criticalAuthIsAdmin}
+            user={authState.user}
+            isAdmin={authState.claims.admin}
             onNavigate={navigateCriticalDesktop}
             onShowLogin={openCriticalDesktopLogin}
             onOpenWishlist={() => navigateCriticalDesktop('/wishlist')}

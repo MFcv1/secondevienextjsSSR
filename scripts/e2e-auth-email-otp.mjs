@@ -254,6 +254,13 @@ try {
 
   const firstUser = await requestAndVerifyOtp(page, freshAlias, 'fresh_create');
 
+  await expect(page.getByText('Quitter', { exact: true })).toBeVisible({ timeout: 15_000 });
+  await page.getByRole('button', { name: /Ouvrir le menu/i }).click();
+  await expect(page.getByText('Mon espace', { exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText('Quitter', { exact: true })).toBeVisible({ timeout: 15_000 });
+  result.steps.push({ label: 'fresh_create', phase: 'header_menu_consistent' });
+  await page.getByRole('button', { name: /Fermer le menu/i }).click().catch(() => null);
+
   await page.getByRole('button', { name: /Se deconnecter|Se déconnecter|Quitter/i }).first().click({ timeout: 15_000 });
   await page.waitForTimeout(1_500);
   const signedOut = await page.evaluate(() => !window.__svAuthUser);

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { KeyRound, Loader2, Mail, RotateCcw, ShieldCheck, X } from 'lucide-react';
 import { httpsCallable } from 'firebase/functions';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
@@ -109,25 +108,22 @@ const clearLocalPasskeyState = (email = '') => {
   }
 };
 
-const getPasskeySupportMessage = async () => {
+const getPasskeySupportMessage = async ({ registration = false } = {}) => {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') {
     return 'Passkey indisponible hors navigateur.';
   }
   if (!window.isSecureContext) {
     return 'Passkey disponible uniquement en contexte HTTPS ou localhost.';
   }
-  if (!window.PublicKeyCredential || !navigator.credentials?.create) {
+  const credentialMethod = registration ? navigator.credentials?.create : navigator.credentials?.get;
+  if (!window.PublicKeyCredential || typeof credentialMethod !== 'function') {
     return 'Ce navigateur ne propose pas WebAuthn.';
-  }
-  if (typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
-    const available = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-    if (!available) return 'Aucun authentificateur local disponible sur cet appareil.';
   }
   return null;
 };
 
 const preparePasskeyRegistration = async () => {
-  const supportMessage = await getPasskeySupportMessage();
+  const supportMessage = await getPasskeySupportMessage({ registration: true });
   if (supportMessage) throw new Error(supportMessage);
 
   const generateOptions = httpsCallable(functions, 'generatePasskeyRegistrationOptions');
@@ -185,6 +181,7 @@ const preparePasskeyAuthentication = async (email) => {
   ]);
   logClientPerf('passkey.authentication.generateOptions', generateStartedAt, { phase: 'success' });
   return {
+    createdAt: Date.now(),
     email: normalizedEmail,
     options: optionsResult.data.options,
     startAuthentication,
@@ -194,6 +191,7 @@ const preparePasskeyAuthentication = async (email) => {
 const loginWithPasskey = async (email, preparedAuthentication = null, onStepChange = null) => {
   const normalizedEmail = normalizeEmailValue(email);
   const prepared = preparedAuthentication?.email === normalizedEmail
+    && Date.now() - Number(preparedAuthentication.createdAt || 0) < PASSKEY_PREPARED_TTL_MS
     ? preparedAuthentication
     : await preparePasskeyAuthentication(normalizedEmail);
 
@@ -216,14 +214,13 @@ const loginWithPasskey = async (email, preparedAuthentication = null, onStepChan
 };
 
 export function LegacyLoginModalContent({ open, onOpenChange }) {
-  const router = useRouter();
   const { loginWithGoogle, loginWithCustomToken } = useAuth();
   const toast = useToast();
   const [passkeyUser, setPasskeyUser] = useState(null);
   const [passkeyStatus, setPasskeyStatus] = useState('idle');
   const [passkeyMessage, setPasskeyMessage] = useState('');
   const [emailValue, setEmailValue] = useState('');
-  const [hasLocalPasskey, setHasLocalPasskey] = useState(false);
+  const [passkeySupported, setPasskeySupported] = useState(false);
   const [localPasskeyEmails, setLocalPasskeyEmails] = useState([]);
   const [useEmailCodeFallback, setUseEmailCodeFallback] = useState(false);
   const [showPasskeyAccountChoices, setShowPasskeyAccountChoices] = useState(false);
@@ -239,7 +236,10 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
   const [otpMessage, setOtpMessage] = useState('');
   const [resendAfter, setResendAfter] = useState(0);
   const otpVerifyInFlightRef = useRef(false);
-  const showPasskeyFirst = hasLocalPasskey && !useEmailCodeFallback;
+  const normalizedEmailValue = normalizeEmailValue(emailValue);
+  const showPasskeyFirst = passkeySupported
+    && !useEmailCodeFallback
+    && localPasskeyEmails.includes(normalizedEmailValue);
   const passkeyLoginLabel = passkeyStatus === 'pending'
     ? (
       passkeyLoginStep === 'signing-in'
@@ -267,11 +267,12 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     if (!open) return undefined;
 
     const localPasskey = readLocalPasskeyState();
-    setHasLocalPasskey(localPasskey.enabled);
     setLocalPasskeyEmails(localPasskey.emails);
+    setUseEmailCodeFallback(!localPasskey.enabled);
     if (localPasskey.enabled && localPasskey.email) {
       setEmailValue((current) => current || localPasskey.email);
     }
+    getPasskeySupportMessage().then((message) => setPasskeySupported(!message)).catch(() => setPasskeySupported(false));
 
     const scrollY = window.scrollY;
     document.body.classList.add('modal-open');
@@ -316,7 +317,6 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
           clearLocalPasskeyState(normalizedEmail);
           const localPasskey = readLocalPasskeyState();
           setEmailValue(localPasskey.email);
-          setHasLocalPasskey(localPasskey.enabled);
           setLocalPasskeyEmails(localPasskey.emails);
           setUseEmailCodeFallback(!localPasskey.enabled);
         }
@@ -419,12 +419,10 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
       await registerPasskey(preparedRegistration, setPasskeyRegistrationStep);
       saveLocalPasskeyState(passkeyUser.email);
       setLocalPasskeyEmails(readLocalPasskeyState().emails);
-      setHasLocalPasskey(true);
       setPasskeyStatus('success');
       setPasskeyMessage('Connexion rapide activee sur cet appareil.');
       window.setTimeout(() => {
         onOpenChange(false);
-        router.push('/');
       }, 450);
     } catch (error) {
       setPasskeyRegistrationStep('idle');
@@ -450,17 +448,19 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
       const result = await loginWithPasskey(emailValue, preparedPasskeyAuth, setPasskeyLoginStep);
       setPasskeyLoginStep('signing-in');
       const signInStartedAt = startClientPerf();
-      await loginWithCustomToken(result.token);
+      await loginWithCustomToken(result.token, 'passkey');
       logClientPerf('passkey.authentication.signInWithCustomToken', signInStartedAt, { phase: 'success' });
       saveLocalPasskeyState(result?.email || emailValue);
       setLocalPasskeyEmails(readLocalPasskeyState().emails);
       close();
     } catch (error) {
+      if (error?.code === 'functions/deadline-exceeded' || error?.code === 'functions/failed-precondition') {
+        setPreparedPasskeyAuth(null);
+      }
       if (error?.code === 'functions/not-found') {
         clearLocalPasskeyState(emailValue);
         const localPasskey = readLocalPasskeyState();
         setEmailValue(localPasskey.email);
-        setHasLocalPasskey(localPasskey.enabled);
         setLocalPasskeyEmails(localPasskey.emails);
         setUseEmailCodeFallback(!localPasskey.enabled);
       }
@@ -530,7 +530,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
       if (!result.data?.token) throw new Error('Token de connexion manquant.');
       setOtpStatus('signing-in');
       const signInStartedAt = startClientPerf();
-      const userCredential = await loginWithCustomToken(result.data.token);
+      const userCredential = await loginWithCustomToken(result.data.token, 'email_otp');
       logClientPerf('auth.email.signInWithCustomToken', signInStartedAt, { phase: 'success' });
       setOtpStatus('success');
       setOtpMessage('Email verifie. Connexion ouverte.');
@@ -621,9 +621,9 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                     <div className="flex items-start gap-3">
                       <KeyRound size={18} className="mt-0.5 shrink-0 text-amber-400" />
                       <div className="space-y-1">
-                        <p className="text-sm font-bold text-white">Connexion rapide/passkey</p>
+                        <p className="text-sm font-bold text-white">Connexion rapide sur cet appareil</p>
                         <p className="text-xs leading-relaxed text-stone-400">
-                          Activez Face ID, empreinte ou code appareil pour les prochaines connexions.
+                          Activez Windows Hello, Face ID ou le code de votre appareil pour les prochaines connexions.
                         </p>
                       </div>
                     </div>
@@ -684,13 +684,27 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
               <div className="my-6 flex items-center gap-4">
                 <div className="h-px flex-1 bg-[#2A2A2E]" />
                 <span className="text-[10px] font-black uppercase tracking-[0.18em] text-stone-500">
-                  {showPasskeyFirst ? 'Connexion locale' : 'Code par email'}
+                  {showPasskeyFirst ? 'Connexion rapide' : 'Code par email'}
                 </span>
                 <div className="h-px flex-1 bg-[#2A2A2E]" />
               </div>
 
               {showPasskeyFirst ? (
                 <div className="space-y-4">
+                  <input
+                    name="passkey-email"
+                    type="email"
+                    placeholder="Adresse email du compte"
+                    value={emailValue}
+                    onChange={(event) => {
+                      setEmailValue(event.target.value);
+                      setPreparedPasskeyAuth(null);
+                      setPasskeyMessage('');
+                    }}
+                    className="w-full rounded-xl border border-[#2A2A2E] bg-[#141417] p-4 text-sm text-white outline-none transition-all placeholder:text-stone-500 focus:border-emerald-300/70"
+                    required
+                    autoComplete="username webauthn"
+                  />
                   <div className="space-y-2">
                     <button
                       type="button"
@@ -708,7 +722,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                     </button>
                   </div>
                   <div className="text-center text-[11px] font-semibold text-stone-500">
-                    <span>Pour {emailValue}</span>
+                    <span>{emailValue ? `Pour ${emailValue}` : 'Utilisez Windows Hello, votre téléphone ou une clé de sécurité'}</span>
                     {localPasskeyEmails.length > 1 ? (
                       <>
                         <span className="mx-2 text-stone-700">.</span>

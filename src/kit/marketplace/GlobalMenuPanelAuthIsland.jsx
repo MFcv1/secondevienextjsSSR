@@ -10,6 +10,8 @@ import {
   readGuestCart,
 } from '../commerce/guestCart';
 import { subscribeWishlistItems } from './wishlistState';
+import { useAuthState } from '../contexts/AuthContext';
+import { resetAuthStoreAfterSignOut } from '../auth/authStore';
 
 const GlobalMenu = dynamic(() => import('../layout/GlobalMenu'), {
   ssr: false,
@@ -64,12 +66,7 @@ function GlobalMenuPanelAuthContent({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [authUser, setAuthUser] = useState(() => (
-    typeof window === 'undefined' ? null : window.__svAuthUser || null
-  ));
-  const [authIsAdmin, setAuthIsAdmin] = useState(() => (
-    typeof window === 'undefined' ? false : window.__svAuthIsAdmin === true
-  ));
+  const authState = useAuthState();
   const [heldNavigationPath, setHeldNavigationPath] = useState(null);
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
@@ -83,23 +80,11 @@ function GlobalMenuPanelAuthContent({
   }, [closePanelInstantly, setPanelOpen]);
 
   useEffect(() => {
-    const handleAuthChange = (event) => {
-      setAuthUser(event.detail?.user || null);
-    };
-    const handleAdminChange = (event) => {
-      setAuthIsAdmin(event.detail?.isAdmin === true);
-    };
-
-    window.addEventListener('sv:auth-user-changed', handleAuthChange);
-    window.addEventListener('sv:auth-admin-changed', handleAdminChange);
-    return () => {
-      window.removeEventListener('sv:auth-user-changed', handleAuthChange);
-      window.removeEventListener('sv:auth-admin-changed', handleAdminChange);
-    };
-  }, []);
-
-  useEffect(() => {
     if (!panelOpen) return;
+
+    // The account route is the most common authenticated destination. Prefetch
+    // it immediately so a cold click can reveal its loading boundary at once.
+    if (authState.user?.uid && !authState.user?.isAnonymous) router.prefetch('/mes-commandes');
 
     const prefetchMenuPaths = () => {
       MENU_PREFETCH_PATHS.forEach((path) => {
@@ -122,7 +107,7 @@ function GlobalMenuPanelAuthContent({
       if (idleId !== null) window.cancelIdleCallback?.(idleId);
       if (fallbackId !== null) window.clearTimeout(fallbackId);
     };
-  }, [panelOpen, router]);
+  }, [authState.user, panelOpen, router]);
 
   useEffect(() => {
     if (!panelOpen) {
@@ -146,8 +131,8 @@ function GlobalMenuPanelAuthContent({
     };
   }, [panelOpen]);
 
-  const effectiveUser = authUser;
-  const effectiveIsAdmin = authIsAdmin;
+  const effectiveUser = authState.user;
+  const effectiveIsAdmin = authState.claims.admin;
   const signedUser = effectiveUser && !effectiveUser.isAnonymous ? effectiveUser : null;
 
   useEffect(() => {
@@ -247,16 +232,11 @@ function GlobalMenuPanelAuthContent({
   };
 
   const logout = async () => {
-    window.__svAuthUser = null;
-    window.__svAuthIsAdmin = false;
-    setAuthUser(null);
-    setAuthIsAdmin(false);
-    window.dispatchEvent(new CustomEvent('sv:auth-user-changed', { detail: { user: null } }));
-    window.dispatchEvent(new CustomEvent('sv:auth-admin-changed', { detail: { isAdmin: false } }));
     const { getFirebaseAuth, loadAuthModule } = await import('../config/firebaseLazy');
     const auth = await getFirebaseAuth();
     const { signOut } = await loadAuthModule();
     await signOut(auth);
+    resetAuthStoreAfterSignOut();
   };
 
   return (

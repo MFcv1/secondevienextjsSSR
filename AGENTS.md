@@ -41,7 +41,7 @@ Interdits sur routes publiques:
 - PageSpeed images/accessibilite/cache publics: `_DOCS/perf/PAGESPEED_CARD_THUMBS_STATIC_IMAGES_CLOSEOUT_2026-07-06.md`, `_DOCS/perf/PAGESPEED_NO_REDESIGN_ROADMAP_2026-07-06.md`.
 - Images produit/Storage/detailFast: `_DOCS/images/NEXTJS_IMAGE_PIPELINE_AUDIT.md`, `_DOCS/images/OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md`, `_DOCS/images/DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md`.
 - Infra prod/App Hosting/App Check: `_DOCS/infra/NEXT_FIREBASE_SITUATIONAL_AUDIT_2026-07-10.md`, `_DOCS/infra/P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md`, `_DOCS/infra/INFRA_PROD_PHASE2_REPORT_2026-06-14.md`, `_DOCS/infra/APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`, `_DOCS/infra/RAIL_PROD_AUDIT_REPORT_2026-06-24.md`.
-- Securite strategique Next/Firebase: `_DOCS/security/SECURITY_STRATEGIC_AUDIT_2026-07-08.md`.
+- Authentification/passkeys/OTP/admin: `_DOCS/security/AUTHENTICATION_ROBUSTNESS_ROADMAP_2026-07-11.md`, puis `_DOCS/security/SECURITY_STRATEGIC_AUDIT_2026-07-08.md` pour l'audit securite general.
 - Checkout/refund/E2E/Stripe Connect: `_DOCS/commerce/STRIPE_CONNECT_INTEGRATION_PLAN_2026-07-01.md`, `_DOCS/commerce/CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md`, `_DOCS/commerce/E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`, `_DOCS/commerce/E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`, `_DOCS/commerce/REFUND_UI_STRICT_PROOF_2026-06-24.md`.
 
 ## Gates utiles
@@ -87,6 +87,7 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |   |   |-- GALLERY_HOME_CANONICAL_IMPLEMENTATION_2026-07-01.md : decision `/` home galerie et `/galerie` alias
 |   |   `-- ARCHITECTURE_SEO_COLD_SCROLL_IMPLEMENTATION_ROADMAP_2026-07-10.md : plan architecture/SEO puis suppression des freezes de premier scroll sans retirer les animations
 |   |-- perf : roadmaps/gates perf, hydratation, galerie, menus split desktop/mobile et rendu final direct
+|   |   |-- AUTH_PHASE0_UI_BASELINE_2026-07-11.md : baseline 30 cold/warm de la modale Auth, sans envoi OTP
 |   |   |-- PUBLIC_SEO_BUDGET_VISUAL_CLOSEOUT_2026-07-01.md : closeout budgets publics avec preuves visuelles
 |   |   |-- MENU_COLD_OPEN_AUDIT_2026-07-02.md : audit delai ouverture menu principal/mega menu desktop et mobile
 |   |   |-- PAGESPEED_CARD_THUMBS_STATIC_IMAGES_CLOSEOUT_2026-07-06.md : closeout variantes cartes 320/384 et AVIF Avant/Apres
@@ -98,7 +99,12 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |   |   `-- NEXT_FIREBASE_SITUATIONAL_AUDIT_2026-07-10.md : audit objectif du rendu Next, SEO, cache, Firebase, performance et maturite prod
 |   |-- commerce : checkout, refund, E2E backoffice et Stripe/Firebase hardening
 |   |   `-- STRIPE_CONNECT_INTEGRATION_PLAN_2026-07-01.md : roadmap integration Stripe Connect, securite admin et preuves par phase
-|   |-- security : audit strategique manuel Next/Firebase avant presentation cliente
+|   |-- security : audit strategique et roadmap active de robustesse authentification
+|   |   |-- AUTHENTICATION_ROBUSTNESS_ROADMAP_2026-07-11.md : phases AuthStore, passkeys, OTP, OAuth, admin, perf, tests, SLO et glossaire
+|   |   |-- AUTH_PHASE0_CONDITIONAL_CLOSEOUT_2026-07-11.md : preuves Console/CLI et validation conditionnelle sandbox de la phase 0
+|   |   |-- AUTH_PHASE1_AUTHSTORE_CLOSEOUT_2026-07-11.md : source Auth unique, pipeline, synchronisation et preuves de phase 1
+|   |   |-- AUTH_PHASE2_PASSKEY_PORTABILITY_CLOSEOUT_2026-07-11.md : UX passkey portable, detection, challenge client et preuves de phase 2
+|   |   `-- SECURITY_STRATEGIC_AUDIT_2026-07-08.md : audit manuel Next/Firebase et findings securite generaux
 |   |-- ux : navigation, mega menu et micro-frictions
 |   |-- ai : cadrage assistant IA devis
 |   |-- data : migration/base de donnees
@@ -112,10 +118,11 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |   |-- kit/marketplace : galerie SSR, recherche catalogue, categories/produits, sections fixes SSR, iles interactions, header/menu/cart/wishlist/devis
 |   |-- kit/vitrine : page `/a-propos` serveur et iles fines
 |   |-- kit/layout : layout partage, footer et menu global split en shell/desktop/mobile
-|   |-- kit/shared, kit/ui, kit/hooks, kit/contexts, kit/config
+|   |-- kit/auth, kit/shared, kit/ui, kit/hooks, kit/contexts, kit/config
 |   |-- lib : helpers serveur produits/env/theme/about, SEO structure et contrat `seo/indexability.js`
 |   `-- assets, utils : assets source et helpers image/formatting
-|-- scripts : env bridge, gates Next, audits perf/direct/mobile/menus/cold-sections, gates SEO, E2E sandbox, backfills images, infra audits
+|-- scripts : env bridge, gates Next, audits perf/direct/mobile/menus/auth/cold-sections, gates SEO, E2E sandbox, backfills images, infra audits
+|-- tests : contrats Auth/claims, smoke Playwright et tests cibles
 |-- functions-public : Functions publiques isolees pour `publicCatalog`
 |-- functions : Functions privees/admin/commerce/auth/email/seo/triggers
 |-- public : favicons, manifest, images, videos et assets statiques

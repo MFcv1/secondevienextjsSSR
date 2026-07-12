@@ -5,7 +5,9 @@ import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { ShoppingBag } from 'lucide-react';
-import { getDb, getFirebaseAuth, loadAuthModule, loadFirestoreModule } from '../config/firebaseLazy';
+import { getDb, loadFirestoreModule } from '../config/firebaseLazy';
+import { useAuthState } from '../contexts/AuthContext';
+import { getAuthSnapshot, initializeAuthStore } from '../auth/authStore';
 import {
   addGuestCartItem,
   CART_STATE_CHANGED_EVENT,
@@ -58,34 +60,14 @@ const isDesktopViewport = () => (
 
 const resolvePersistedAuthUser = async () => {
   if (typeof window === 'undefined' || !hasPersistedFirebaseUser()) return null;
-  if (window.__svAuthUser) return window.__svAuthUser;
-
-  const [auth, { onAuthStateChanged }] = await Promise.all([getFirebaseAuth(), loadAuthModule()]);
-  if (auth.currentUser) return auth.currentUser;
-
-  return new Promise((resolve) => {
-    let settled = false;
-    let unsubscribe = null;
-    const timeoutId = window.setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      unsubscribe?.();
-      resolve(auth.currentUser || window.__svAuthUser || null);
-    }, 1200);
-
-    unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (settled) return;
-      settled = true;
-      window.clearTimeout(timeoutId);
-      unsubscribe?.();
-      resolve(currentUser || null);
-    });
-  });
+  await initializeAuthStore({ forceInitialize: true });
+  return getAuthSnapshot().user || null;
 };
 
 export default function CartPanelIsland({ className = '', darkMode = false, initialEvent = null, onReady } = {}) {
   const router = useRouter();
-  const [user, setUser] = useState(null);
+  const authState = useAuthState();
+  const user = authState.user;
   const [cartItems, setCartItems] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [interacted, setInteracted] = useState(false);
@@ -102,38 +84,6 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
   const primeCart = useCallback(() => {
     CartSidebar.preload?.();
     setIsCartPrimed(true);
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    let unsubscribeAuth = null;
-
-    const applyUser = (nextUser) => {
-      if (cancelled) return;
-      setUser(nextUser || null);
-    };
-
-    const handleAuthChange = (event) => {
-      applyUser(event.detail?.user || null);
-    };
-
-    window.addEventListener('sv:auth-user-changed', handleAuthChange);
-    applyUser(window.__svAuthUser || null);
-
-    if (hasPersistedFirebaseUser()) {
-      Promise.all([getFirebaseAuth(), loadAuthModule()])
-        .then(([auth, { onAuthStateChanged }]) => {
-          if (cancelled) return;
-          unsubscribeAuth = onAuthStateChanged(auth, applyUser);
-        })
-        .catch(() => {});
-    }
-
-    return () => {
-      cancelled = true;
-      unsubscribeAuth?.();
-      window.removeEventListener('sv:auth-user-changed', handleAuthChange);
-    };
   }, []);
 
   useEffect(() => {
@@ -212,10 +162,9 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
     if (!item?.originalId && !item?.id) return false;
     if (!isPurchasable(item)) return false;
 
-    let cartUser = user || (typeof window !== 'undefined' ? window.__svAuthUser : null);
+    let cartUser = user;
     if (!cartUser) {
       cartUser = await resolvePersistedAuthUser();
-      if (cartUser) setUser(cartUser);
     }
 
     if (!cartUser) {

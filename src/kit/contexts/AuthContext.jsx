@@ -1,6 +1,16 @@
 ﻿import React, { createContext, useContext, useEffect, useState } from 'react';
 import { getCallableFunction, getFirebaseAuth, getGoogleProvider, loadAuthModule } from '../config/firebaseLazy';
 
+import { useSyncExternalStore } from 'react';
+import {
+    getAuthServerSnapshot,
+    getAuthSnapshot,
+    initializeAuthStore,
+    resetAuthStoreAfterSignOut,
+    subscribeAuthStore,
+    syncAuthStoreUser,
+} from '../auth/authStore';
+
 // Detect iOS standalone PWA mode (added to home screen)
 // In this mode, signInWithPopup is blocked by WebKit: must use signInWithRedirect
 const isIOSStandalone = () => {
@@ -16,11 +26,6 @@ const isIOSStandalone = () => {
 const REDIRECT_KEY = 'kit_auth_redirect_pending';
 const LEGACY_GOOGLE_REDIRECT_KEY = 'kit_google_redirect_pending';
 const setRedirectPending = () => sessionStorage.setItem(REDIRECT_KEY, 'true');
-const clearRedirectPending = () => {
-    sessionStorage.removeItem(REDIRECT_KEY);
-    sessionStorage.removeItem(LEGACY_GOOGLE_REDIRECT_KEY);
-};
-
 const hasRedirectPending = () => (
     typeof window !== 'undefined' &&
     (window.sessionStorage.getItem(REDIRECT_KEY) === 'true' || window.sessionStorage.getItem(LEGACY_GOOGLE_REDIRECT_KEY) === 'true')
@@ -48,12 +53,6 @@ const shouldInitializeAuthOnMount = (forceInitialize = false) => (
     forceInitialize || hasRedirectPending() || hasPersistedFirebaseUser() || isAuthRoute()
 );
 
-const emitAuthUserChanged = (user) => {
-    if (typeof window === 'undefined') return;
-    window.__svAuthUser = user || null;
-    window.dispatchEvent(new CustomEvent('sv:auth-user-changed', { detail: { user: user || null } }));
-};
-
 const getEmailVerificationReturnUrl = () => {
     if (typeof window === 'undefined') return undefined;
     return window.location.href || `${window.location.origin}/`;
@@ -67,13 +66,16 @@ export const useAuth = () => {
     return useContext(AuthContext);
 };
 
+export const useAuthState = () => useSyncExternalStore(
+    subscribeAuthStore,
+    getAuthSnapshot,
+    getAuthServerSnapshot
+);
+
 // Provider Component
 export const AuthProvider = ({ children, forceInitialize = false, deferUntilReady = true }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(() => shouldInitializeAuthOnMount(forceInitialize));
-    const [claimsLoading, setClaimsLoading] = useState(false);
-    const [isAdmin, setIsAdmin] = useState(false);
-    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+    const authState = useAuthState();
+    const { user } = authState;
 
     // Authentication relies on Firestore Rules & Custom Claims now.
     // No hardcoded emails in client bundle.
@@ -81,73 +83,18 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
     // Public visitors do not need Firebase Auth on the first paint. Keep Auth off
     // until a persisted/redirected session exists or the user opens an auth route.
     useEffect(() => {
-        if (!shouldInitializeAuthOnMount(forceInitialize)) {
-            setLoading(false);
-            return undefined;
-        }
-
         let cancelled = false;
-        let unsubscribeAuth = null;
-
-        const startAuth = async () => {
-            const auth = await getFirebaseAuth();
-            const { getRedirectResult, onAuthStateChanged } = await loadAuthModule();
-
-            if (hasRedirectPending()) {
-                try {
-                    const result = await getRedirectResult(auth);
-                    if (result && result.user && !cancelled) {
-                        getCallableFunction('updateUserSessions')
-                            .then((updateUserSessions) => updateUserSessions())
-                            .catch(err => console.error('Failed to clean sessions after redirect login:', err));
-                    }
-                } catch (error) {
-                    if (!cancelled) {
-                        console.error('Redirect auth error:', error);
-                    }
-                } finally {
-                    clearRedirectPending();
-                }
-            }
-
-            unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-                if (cancelled) return;
-                setUser(currentUser);
-                emitAuthUserChanged(currentUser);
-                setLoading(false);
-            });
-        };
-
-        startAuth().catch((error) => {
+        initializeAuthStore({ forceInitialize: shouldInitializeAuthOnMount(forceInitialize) }).catch((error) => {
             if (!cancelled) {
                 console.error('Auth initialization error:', error);
-                setLoading(false);
             }
         });
-
-        return () => {
-            cancelled = true;
-            unsubscribeAuth?.();
-        };
+        return () => { cancelled = true; };
     }, [forceInitialize]);
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return undefined;
-
-        const handleExternalAuthChange = (event) => {
-            setUser(event.detail?.user || null);
-            setLoading(false);
-        };
-
-        window.addEventListener('sv:auth-user-changed', handleExternalAuthChange);
-        return () => window.removeEventListener('sv:auth-user-changed', handleExternalAuthChange);
-    }, []);
 
     const syncSignedInUser = async (result) => {
         if (result?.user) {
-            setUser(result.user);
-            emitAuthUserChanged(result.user);
-            setLoading(false);
+            syncAuthStoreUser(result.user);
         }
         return result;
     };
@@ -158,44 +105,6 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         return { auth, authModule };
     };
 
-    // 2. Read user role once from claims. Avoid keeping a Firestore listener for every client.
-    useEffect(() => {
-        if (!user || user.isAnonymous) {
-            setClaimsLoading(false);
-            setIsAdmin(false);
-            setIsSuperAdmin(false);
-            return;
-        }
-
-        let cancelled = false;
-        setClaimsLoading(true);
-
-        const syncAdminClaim = async () => {
-            try {
-                const { getIdTokenResult } = await loadAuthModule();
-                const tokenResult = await getIdTokenResult(user, true);
-                if (!cancelled) {
-                    const hasSuperAdminClaim = tokenResult.claims.superAdmin === true;
-                    setIsSuperAdmin(hasSuperAdminClaim);
-                    setIsAdmin(tokenResult.claims.admin === true || hasSuperAdminClaim);
-                }
-            } catch (err) {
-                console.error("Error reading admin claim:", err);
-                if (!cancelled) {
-                    setIsAdmin(false);
-                    setIsSuperAdmin(false);
-                }
-            } finally {
-                if (!cancelled) setClaimsLoading(false);
-            }
-        };
-
-        syncAdminClaim();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [user]);
 
     const loginWithProvider = async (provider) => {
         const { auth, authModule } = await getAuthRuntime();
@@ -213,7 +122,8 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         getCallableFunction('updateUserSessions')
             .then((updateUserSessions) => updateUserSessions())
             .catch(err => console.error('Failed to clean sessions after login:', err));
-        return syncSignedInUser(result);
+        syncAuthStoreUser(result.user, { lastAuthMethod: 'google' });
+        return result;
     };
 
     const loginWithGoogle = async () => {
@@ -224,7 +134,8 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
     const loginWithEmail = async (email, password) => {
         const { auth, authModule } = await getAuthRuntime();
         const result = await authModule.signInWithEmailAndPassword(auth, email, password);
-        return syncSignedInUser(result);
+        syncAuthStoreUser(result.user, { lastAuthMethod: 'password' });
+        return result;
     };
 
     useEffect(() => {
@@ -253,19 +164,17 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         return syncSignedInUser(result);
     };
 
-    const loginWithCustomToken = async (token) => {
+    const loginWithCustomToken = async (token, method = 'custom_token') => {
         const { auth, authModule } = await getAuthRuntime();
         const result = await authModule.signInWithCustomToken(auth, token);
-        return syncSignedInUser(result);
+        syncAuthStoreUser(result.user, { lastAuthMethod: method });
+        return result;
     };
 
     const logout = async () => {
         const { auth, authModule } = await getAuthRuntime();
-        setUser(null);
-        setIsAdmin(false);
-        setIsSuperAdmin(false);
-        emitAuthUserChanged(null);
-        return authModule.signOut(auth);
+        await authModule.signOut(auth);
+        resetAuthStoreAfterSignOut();
     };
 
     const verifyEmail = async (user) => {
@@ -278,9 +187,12 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
 
     const value = {
         user,
-        isAdmin,
-        isSuperAdmin,
-        loading: loading || claimsLoading,
+        status: authState.status,
+        authReady: authState.authReady,
+        claimsStatus: authState.claimsStatus,
+        isAdmin: authState.claims.admin,
+        isSuperAdmin: authState.claims.superAdmin,
+        loading: !authState.authReady || authState.claimsStatus === 'loading',
         loginWithGoogle,
         loginWithEmail,
         loginWithCustomToken,
@@ -291,7 +203,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
 
     return (
         <AuthContext.Provider value={value}>
-            {(!loading || !deferUntilReady) && children}
+            {(authState.authReady || !deferUntilReady) && children}
         </AuthContext.Provider>
     );
 };
