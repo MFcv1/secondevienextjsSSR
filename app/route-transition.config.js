@@ -13,14 +13,12 @@ export const ROUTE_TRANSITION_CONFIG = {
   },
   variants: {
     atelierCurtain: {
-      minVisibleMs: 3250,
+      minVisibleMs: 5700,
       enterDelayMs: 900,
       enterDurationMs: 900,
       exitDelayMs: 150,
       exitDurationMs: 1000,
-      panel: '#F9F6F0',
-      ink: '#1A130C',
-      accent: '#A68A64',
+      panel: 'linear-gradient(180deg, #fcfaf6 0%, #f7f1ea 100%)',
     },
   },
 };

@@ -5,9 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ROUTE_TRANSITION_CONFIG } from './route-transition.config';
 
 const TRANSITION_EVENT = 'sv:route-transition-start';
-const ROUTE_TRANSITION_TITLE = 'L\u2019ATELIER';
-const ROUTE_TRANSITION_CHARACTERS = Array.from(ROUTE_TRANSITION_TITLE);
-const ROUTE_TRANSITION_CENTER_INDEX = (ROUTE_TRANSITION_CHARACTERS.length - 1) / 2;
 
 const isPlainPrimaryClick = (event) => (
   event.button === 0 &&
@@ -213,8 +210,6 @@ export default function RouteTransitionIsland() {
 
   const style = {
     '--rt-panel': activeVariant.panel,
-    '--rt-ink': activeVariant.ink,
-    '--rt-accent': activeVariant.accent,
     '--rt-enter-ms': `${activeVariant.enterDurationMs || 680}ms`,
     '--rt-exit-ms': `${activeVariant.exitDurationMs || 320}ms`,
   };
@@ -224,28 +219,134 @@ export default function RouteTransitionIsland() {
       <div className="sv-route-transition__curtain">
         <div className="sv-route-transition__panel sv-route-transition__panel--left" />
         <div className="sv-route-transition__panel sv-route-transition__panel--right" />
-        <img className="sv-route-transition__watermark" src="/images/logoanais-320.webp" alt="" aria-hidden="true" />
-        <div className="sv-route-transition__signature">
-          <span className="sv-route-transition__eyebrow-mask">
-            <span className="sv-route-transition__eyebrow">Seconde Vie</span>
-          </span>
-          <span className="sv-route-transition__title" aria-label={ROUTE_TRANSITION_TITLE}>
-            {ROUTE_TRANSITION_CHARACTERS.map((character, index) => (
-              <span className="sv-route-transition__title-char-mask" aria-hidden="true" key={`${character}-${index}`}>
-                <span
-                  className="sv-route-transition__title-char"
-                  style={{
-                    '--rt-char-delay': `${1350 + Math.abs(index - ROUTE_TRANSITION_CENTER_INDEX) * 110}ms`,
-                    '--rt-char-exit-delay': `${Math.abs(index - ROUTE_TRANSITION_CENTER_INDEX) * 24}ms`,
-                    '--rt-char-sway': `${index % 2 === 0 ? -8 : 8}deg`,
-                  }}
-                >
-                  {character}
-                </span>
-              </span>
-            ))}
-          </span>
-        </div>
+        <span className="sv-route-transition__axis sv-route-transition__axis--top" />
+        <span className="sv-route-transition__axis sv-route-transition__axis--bottom" />
+        <svg
+          className="sv-route-transition__logo"
+          viewBox="495 185 952 1055"
+          role="presentation"
+          aria-hidden="true"
+        >
+          <defs>
+            <filter id="sv-route-logo-guide" x="-10%" y="-10%" width="120%" height="120%" colorInterpolationFilters="sRGB">
+              <feMorphology in="SourceAlpha" operator="dilate" radius="4" result="guideOuter" />
+              <feMorphology in="SourceAlpha" operator="erode" radius="2" result="guideInner" />
+              <feComposite in="guideOuter" in2="guideInner" operator="out" result="guideEdge" />
+              <feFlood floodColor="#8b5c42" floodOpacity="0.62" result="guideColor" />
+              <feComposite in="guideColor" in2="guideEdge" operator="in" />
+            </filter>
+            <filter id="sv-route-logo-neon" x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
+              <feMorphology in="SourceAlpha" operator="dilate" radius="5" result="neonOuter" />
+              <feMorphology in="SourceAlpha" operator="erode" radius="2" result="neonInner" />
+              <feComposite in="neonOuter" in2="neonInner" operator="out" result="neonEdge" />
+              <feGaussianBlur in="neonEdge" stdDeviation="15" result="farBlur" />
+              <feFlood floodColor="#a4512f" floodOpacity="0.58" result="farColor" />
+              <feComposite in="farColor" in2="farBlur" operator="in" result="farGlow" />
+              <feGaussianBlur in="neonEdge" stdDeviation="5" result="nearBlur" />
+              <feFlood floodColor="#d99756" floodOpacity="0.92" result="nearColor" />
+              <feComposite in="nearColor" in2="nearBlur" operator="in" result="nearGlow" />
+              <feFlood floodColor="#fff0cf" result="coreColor" />
+              <feComposite in="coreColor" in2="neonEdge" operator="in" result="core" />
+              <feMerge>
+                <feMergeNode in="farGlow" />
+                <feMergeNode in="nearGlow" />
+                <feMergeNode in="core" />
+              </feMerge>
+            </filter>
+            <radialGradient id="sv-route-logo-light-head">
+              <stop offset="0" stopColor="white" />
+              <stop offset="0.32" stopColor="white" />
+              <stop offset="0.68" stopColor="#8a8a8a" />
+              <stop offset="1" stopColor="black" />
+            </radialGradient>
+            <radialGradient id="sv-route-logo-detail-head">
+              <stop offset="0" stopColor="white" />
+              <stop offset="0.2" stopColor="white" />
+              <stop offset="0.54" stopColor="#777" />
+              <stop offset="1" stopColor="black" />
+            </radialGradient>
+            <mask id="sv-route-logo-travel" maskUnits="userSpaceOnUse" x="420" y="100" width="1100" height="1220" style={{ maskType: 'luminance' }}>
+              <rect x="420" y="100" width="1100" height="1220" fill="black" />
+              <circle cx="0" cy="0" r="225" fill="url(#sv-route-logo-light-head)" opacity="0">
+                <animate
+                  attributeName="opacity"
+                  values="0;1;1;.72;.12"
+                  keyTimes="0;.06;.78;.9;1"
+                  dur="3.2s"
+                  begin="2.22s"
+                  fill="freeze"
+                />
+                <animateMotion
+                  path="M 505 205 C 790 135 1230 150 1415 390 C 1515 520 1450 750 1270 850 C 1140 925 1055 1005 1070 1220"
+                  dur="3.2s"
+                  begin="2.22s"
+                  calcMode="spline"
+                  keyTimes="0;1"
+                  keySplines=".45 0 .2 1"
+                  fill="freeze"
+                />
+              </circle>
+              <circle cx="0" cy="0" r="210" fill="url(#sv-route-logo-light-head)" opacity="0">
+                <animate
+                  attributeName="opacity"
+                  values="0;1;1;.72;.12"
+                  keyTimes="0;.06;.78;.9;1"
+                  dur="3.2s"
+                  begin="2.22s"
+                  fill="freeze"
+                />
+                <animateMotion
+                  path="M 505 205 C 472 330 480 470 500 615 C 520 770 475 930 555 1085 C 650 1260 855 1290 990 1165"
+                  dur="3.2s"
+                  begin="2.22s"
+                  calcMode="spline"
+                  keyTimes="0;1"
+                  keySplines=".45 0 .2 1"
+                  fill="freeze"
+                />
+              </circle>
+              <circle cx="0" cy="0" r="132" fill="url(#sv-route-logo-detail-head)" opacity="0">
+                <animate
+                  attributeName="opacity"
+                  values="0;1;1;.78;.1"
+                  keyTimes="0;.08;.8;.92;1"
+                  dur="2.7s"
+                  begin="2.46s"
+                  fill="freeze"
+                />
+                <animateMotion
+                  path="M 720 470 C 840 430 940 520 1055 500 C 1130 487 1180 445 1215 475 C 1185 525 1175 575 1190 620 C 1205 660 1260 695 1250 740 C 1240 790 1200 835 1140 840 C 1080 845 1035 800 1005 745 C 975 700 960 650 990 610"
+                  dur="2.7s"
+                  begin="2.46s"
+                  calcMode="spline"
+                  keyTimes="0;1"
+                  keySplines=".4 0 .2 1"
+                  fill="freeze"
+                />
+              </circle>
+            </mask>
+          </defs>
+          <image
+            className="sv-route-transition__logo-guide"
+            href="/images/logoanais.png"
+            x="0"
+            y="0"
+            width="1890"
+            height="1417"
+            filter="url(#sv-route-logo-guide)"
+          />
+          <g mask="url(#sv-route-logo-travel)">
+            <image
+              className="sv-route-transition__logo-neon"
+              href="/images/logoanais.png"
+              x="0"
+              y="0"
+              width="1890"
+              height="1417"
+              filter="url(#sv-route-logo-neon)"
+            />
+          </g>
+        </svg>
       </div>
       <style dangerouslySetInnerHTML={{ __html: routeTransitionCss }} />
     </div>
@@ -266,6 +367,7 @@ const routeTransitionCss = `
   isolation: isolate;
 }
 .sv-route-transition__curtain {
+  --rt-logo-clearance: clamp(126px, 10vw, 174px);
   position: absolute;
   top: -12svh;
   right: 0;
@@ -273,6 +375,7 @@ const routeTransitionCss = `
   left: 0;
   overflow: hidden;
   border-radius: 50% 50% 0 0 / 12svh 12svh 0 0;
+  box-shadow: 0 -26px 80px rgba(91, 57, 39, .12);
   transform: translate3d(0, 112svh, 0);
   animation: sv-route-curtain-rise var(--rt-enter-ms) cubic-bezier(.22,1,.36,1) forwards;
   will-change: transform;
@@ -282,137 +385,120 @@ const routeTransitionCss = `
   top: 0;
   bottom: 0;
   width: 50.1%;
-  background: var(--rt-panel);
-  transition: transform var(--rt-exit-ms) cubic-bezier(.76,0,.24,1);
+  overflow: hidden;
+  background-color: #f8f3ec;
+  background-image: var(--rt-panel);
+  background-repeat: no-repeat;
+  background-size: 200% 100%;
+  transition: transform calc(var(--rt-exit-ms) - 140ms) cubic-bezier(.76,0,.24,1);
   will-change: transform;
+}
+.sv-route-transition__panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: .028;
+  mix-blend-mode: multiply;
 }
 .sv-route-transition__panel--left {
   left: 0;
+  background-position: left center;
 }
 .sv-route-transition__panel--right {
   right: 0;
+  background-position: right center;
 }
-.sv-route-transition__watermark {
+.sv-route-transition__axis {
+  --rt-axis-delay: 300ms;
   position: absolute;
-  top: 50%;
   left: 50%;
-  z-index: 1;
-  width: clamp(260px, 30vw, 480px);
-  height: auto;
-  opacity: 0;
+  z-index: 2;
+  width: 2px;
+  margin-left: -1px;
   pointer-events: none;
-  mix-blend-mode: multiply;
-  transform: translate3d(-50%, -50%, 0) scale(.92);
-  animation: sv-route-watermark-in 1300ms 350ms cubic-bezier(.16,1,.3,1) forwards;
+  opacity: 0;
+  transform: scaleY(0);
+  box-shadow: 0 0 7px rgba(172, 102, 56, .22);
+  animation: sv-route-axis-in 1080ms var(--rt-axis-delay) cubic-bezier(.16,1,.3,1) forwards;
+  will-change: opacity, transform;
 }
-.sv-route-transition__signature {
+.sv-route-transition__axis--top {
+  top: calc(12svh + clamp(30px, 7svh, 72px));
+  bottom: calc(50% - 6svh + var(--rt-logo-clearance));
+  background: linear-gradient(180deg, transparent 0%, rgba(172, 112, 72, .18) 22%, rgba(139, 82, 48, .68) 100%);
+  transform-origin: top;
+}
+.sv-route-transition__axis--bottom {
+  --rt-axis-delay: 480ms;
+  top: calc(50% + 6svh + var(--rt-logo-clearance));
+  bottom: clamp(30px, 7svh, 72px);
+  background: linear-gradient(180deg, rgba(139, 82, 48, .68) 0%, rgba(172, 112, 72, .18) 78%, transparent 100%);
+  transform-origin: bottom;
+}
+.sv-route-transition__logo {
   position: absolute;
-  top: 50%;
+  top: calc(50% + 6svh);
   left: 50%;
   z-index: 3;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  color: var(--rt-ink);
-  transform: translate3d(-50%, -50%, 0);
-  white-space: nowrap;
-}
-.sv-route-transition__eyebrow-mask {
-  display: block;
-  overflow: hidden;
-  padding: 20px 0 3px;
-  margin-top: -20px;
-}
-.sv-route-transition__eyebrow {
-  display: block;
-  font-family: var(--font-plus-jakarta), system-ui, sans-serif;
-  font-size: clamp(11px, .85vw, 13.5px);
-  font-weight: 800;
-  letter-spacing: .36em;
-  text-transform: uppercase;
-  color: var(--rt-accent);
-  text-shadow: 0 1px 0 rgba(249,246,240,.8);
+  width: clamp(180px, 15vw, 260px);
+  aspect-ratio: 952 / 1055;
+  overflow: visible;
+  pointer-events: none;
   opacity: 0;
-  transform: translate3d(0, -14px, 0);
-  animation: sv-route-eyebrow-in 950ms 1020ms cubic-bezier(.4,0,.2,1) forwards;
-  will-change: opacity;
-}
-.sv-route-transition__title {
-  display: flex;
-  justify-content: center;
-  perspective: 1100px;
-  font-family: var(--font-cormorant), Georgia, serif;
-  font-size: clamp(56px, 8vw, 132px);
-  font-weight: 400;
-  line-height: .82;
-  letter-spacing: -.045em;
-  text-transform: uppercase;
-}
-.sv-route-transition__title-char-mask {
-  display: block;
-  overflow: hidden;
-  padding-block: .1em;
-  margin-block: -.1em;
-}
-.sv-route-transition__title-char {
-  --rt-char-rotate-x: -62deg;
-  --rt-char-effective-sway: var(--rt-char-sway);
-  display: block;
-  opacity: 0;
+  transform: translate3d(-50%, -50%, 0) perspective(760px) rotateY(-86deg) scale(.14);
+  transform-origin: center;
+  transform-style: preserve-3d;
   backface-visibility: hidden;
-  transform: translate3d(0, 118%, 0) rotateX(var(--rt-char-rotate-x)) rotateY(var(--rt-char-effective-sway)) scaleY(.84);
-  transform-origin: center bottom;
-  animation: sv-route-title-char-in 1050ms var(--rt-char-delay) cubic-bezier(.16,1,.3,1) forwards;
-  will-change: transform, opacity;
+  animation: sv-route-logo-turn-in 1420ms 640ms cubic-bezier(.22,.72,.18,1) forwards;
+  will-change: opacity, transform;
+}
+.sv-route-transition__logo-guide {
+  opacity: .68;
+}
+.sv-route-transition__logo-neon {
+  opacity: 1;
 }
 .sv-route-transition[data-phase="leaving"] .sv-route-transition__panel--left {
   transform: translate3d(-101%, 0, 0);
+  transition-delay: 140ms;
 }
 .sv-route-transition[data-phase="leaving"] .sv-route-transition__panel--right {
   transform: translate3d(101%, 0, 0);
+  transition-delay: 140ms;
 }
-.sv-route-transition[data-phase="leaving"] .sv-route-transition__watermark {
+.sv-route-transition[data-phase="leaving"] .sv-route-transition__axis {
   animation: none;
   opacity: 0;
-  transform: translate3d(-50%, -50%, 0) scale(1.04);
-  transition: opacity 320ms ease-out, transform 520ms cubic-bezier(.4,0,1,1);
+  visibility: hidden;
+  transition: opacity 90ms cubic-bezier(.4,0,1,1), visibility 0s 90ms;
 }
-.sv-route-transition[data-phase="leaving"] .sv-route-transition__eyebrow {
+.sv-route-transition[data-phase="leaving"] .sv-route-transition__logo {
   animation: none;
   opacity: 0;
-  transform: translate3d(0, -110%, 0);
-  transition: opacity 260ms ease-out, transform 420ms cubic-bezier(.4,0,1,1);
-}
-.sv-route-transition[data-phase="leaving"] .sv-route-transition__title-char {
-  animation: none;
-  opacity: 0;
-  transform: translate3d(0, -110%, 0) rotateX(40deg);
-  transition: opacity 240ms ease-out var(--rt-char-exit-delay), transform 440ms cubic-bezier(.4,0,1,1) var(--rt-char-exit-delay);
+  visibility: hidden;
+  transform: translate3d(-50%, -50%, 0);
+  transition: opacity 120ms ease-out, visibility 0s 120ms;
 }
 @keyframes sv-route-curtain-rise {
   from { transform: translate3d(0, 112svh, 0); }
   to { transform: translate3d(0, 0, 0); }
 }
-@keyframes sv-route-watermark-in {
-  0% { opacity: 0; transform: translate3d(-50%, -50%, 0) scale(.92); }
-  68% { opacity: .085; transform: translate3d(-50%, -50%, 0) scale(1.015); }
-  100% { opacity: .075; transform: translate3d(-50%, -50%, 0) scale(1); }
+@keyframes sv-route-axis-in {
+  0% { opacity: 0; transform: scaleY(0); }
+  12% { opacity: 1; }
+  76% { opacity: 1; transform: scaleY(1); }
+  100% { opacity: .78; transform: scaleY(1); }
 }
-@keyframes sv-route-eyebrow-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes sv-route-title-char-in {
-  0% { opacity: 0; transform: translate3d(0, 118%, 0) rotateX(var(--rt-char-rotate-x)) rotateY(var(--rt-char-effective-sway)) scaleY(.84); }
-  72% { opacity: 1; transform: translate3d(0, -5%, 0) rotateX(3deg) rotateY(0deg) scaleY(1.015); }
-  100% { opacity: 1; transform: translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg) scaleY(1); }
-}
-@media (max-width: 767px) {
-  .sv-route-transition__title-char {
-    --rt-char-rotate-x: -18deg;
-    --rt-char-effective-sway: 0deg;
-    animation-duration: 1000ms;
+@keyframes sv-route-logo-turn-in {
+  from {
+    opacity: 0;
+    transform: translate3d(-50%, -50%, 0) perspective(760px) rotateY(-86deg) scale(.14);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(-50%, -50%, 0) perspective(760px) rotateY(0deg) scale(1);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -420,21 +506,25 @@ const routeTransitionCss = `
     animation: none !important;
     transform: translate3d(0, 0, 0);
   }
-  .sv-route-transition__watermark {
+  .sv-route-transition__logo {
+    animation: none !important;
+    opacity: 1;
+    transform: translate3d(-50%, -50%, 0);
+  }
+  .sv-route-transition__logo-guide {
+    opacity: .82;
+  }
+  .sv-route-transition__logo-neon {
     display: none;
   }
-  .sv-route-transition__eyebrow {
+  .sv-route-transition__axis {
     animation: none !important;
-    opacity: 1;
-    transform: translate3d(0, -14px, 0);
-  }
-  .sv-route-transition__title-char {
-    animation: none !important;
-    opacity: 1;
+    opacity: .65;
     transform: none;
   }
   .sv-route-transition__panel {
     transition-duration: 120ms !important;
+    transition-delay: 0ms !important;
   }
 }
 `;
