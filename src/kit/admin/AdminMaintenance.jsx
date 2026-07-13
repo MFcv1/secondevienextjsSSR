@@ -85,7 +85,7 @@ const AdminMaintenance = ({ darkMode }) => {
           </p>
         </div>
         <div className={`rounded-full border px-5 py-3 text-[10px] font-black uppercase tracking-widest ${darkMode ? 'border-white/10 text-stone-300' : 'border-stone-200 text-stone-600'}`}>
-          Procedure: _DOCS/maintenance-next.md
+          Procedure: _DOCS/operations/EXPLOITATION.md
         </div>
       </div>
 

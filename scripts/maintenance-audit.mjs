@@ -152,7 +152,7 @@ async function main() {
     },
     audit,
     procedure: {
-      docPath: '_DOCS/maintenance-next.md',
+      docPath: '_DOCS/operations/EXPLOITATION.md',
       updateCommand: 'npm update next react react-dom firebase firebase-admin',
       auditCommand: 'npm run maintenance:audit',
       rollbackRule: 'revenir au dernier commit/deploiement App Hosting stable puis redeployer la sandbox',

@@ -1,6 +1,6 @@
 /**
  * PAGE TAXONOMY — Référentiel officiel des pages pour le tracking analytics.
- * Voir datadiag.md §3 pour la spec complète.
+ * Voir _DOCS/data/DONNEES_ANALYTICS.md pour la specification canonique.
  *
  * Utilitaire PUR : pas d'import React, pas d'état, testable en isolé.
  */

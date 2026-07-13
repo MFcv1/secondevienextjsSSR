@@ -472,7 +472,7 @@ const AdminAnalytics = ({ darkMode = false }) => {
         return 'Session seule';
     };
 
-    // R2 — Validité d'une session pour les stats (voir datadiag.md §2).
+    // Validite d'une session pour les stats: voir _DOCS/data/DONNEES_ANALYTICS.md.
     // ─── Groupement des sessions par jour PUIS par visiteur (R3) ───
     // Structure : [{ key, label, timestamp, visitors: [{ visitorId, representative, sessions, totalDuration }], sessionsCount }]
     const groupedByDay = useMemo(() => {

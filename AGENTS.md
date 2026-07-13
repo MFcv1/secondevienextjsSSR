@@ -1,57 +1,262 @@
-# Instructions agents - Seconde Vie Next
+# AGENTS.md - Bible operationnelle de Seconde Vie Next
 
-Ce fichier est destine aux agents IA qui travaillent dans ce repo. Il doit rester compact et operationnel.
+Derniere consolidation: 2026-07-14
+Statut: `REFERENCE_MAITRE_ACTIVE`
+Projet: `secondevienextjsSSR`
 
-## Priorite - validation des correctifs
+## 1. Mission de ce fichier
 
-Quand l'utilisateur demande un correctif cible, appliquer le changement demande puis s'arreter des que le correctif est en place, sauf demande explicite de validation.
+Ce fichier est le point d'entree obligatoire pour tout agent ou developpeur qui travaille dans le depot. Il fixe:
 
-- Ne pas lancer de verifications longues, build, serveur local, Playwright, navigateur, screenshot ou test manuel si l'utilisateur ne le demande pas clairement.
-- Les validations automatiques doivent rester limitees au strict minimum necessaire pour eviter une erreur evidente de syntaxe ou de lint locale.
-- Si l'utilisateur demande un audit ou des preuves tangibles, lancer les gates adaptes et reporter les resultats.
-- Dans le compte rendu, indiquer clairement les validations lancees ou non lancees.
+- l'etat reel du projet;
+- les decisions qui ne doivent pas etre reouvertes sans raison;
+- la route vers le bon chapitre technique;
+- les regles de changement, validation, documentation et suppression;
+- les conditions de livraison preproduction et production.
 
-## Baseline architecture
+Il n'a pas vocation a recopier tous les details. Le livre complet est compose de:
 
-Lire `NEXT_NATIVE_ARCHITECTURE_BASELINE.md` avant toute passe architecture, documentation, routing, cache, SEO ou performance.
+```text
+AGENTS.md ............... sommaire operationnel, regles et etat
+map.md .................. cartographie routes/code/donnees/Functions
+_DOCS/README.md ......... table des chapitres canoniques
+_DOCS/<domaine>/*.md .... verite technique detaillee par domaine
+Git ..................... archive des anciens audits et roadmaps
+```
 
-Etat courant:
+Avant de modifier le code:
 
-- Routes publiques Next App Router natives.
-- `/`: home galerie canonique, `force-static` + ISR `revalidate = 300`.
-- `/galerie`: alias compatible de la galerie, `force-static` + ISR `revalidate = 300`, canonical vers `/`.
-- `/categorie/[categoryId]` et `/produit/[slugOrId]`: SSG/ISR avec `generateStaticParams`.
-- `/a-propos` et `/devis`: rendu serveur + ISR.
-- `/admin`, `/checkout`, `/wishlist`, `/mes-commandes`: tunnels dynamiques.
-- Les anciens rapports de migration SPA sont archives dans `_DOCS/archive/migration-spa-to-next/` et ne sont plus des consignes actives.
+1. lire ce fichier;
+2. ouvrir `map.md` pour localiser le flux;
+3. lire le chapitre canonique du domaine;
+4. inspecter le code executable, qui reste la preuve finale;
+5. choisir une validation proportionnee.
 
-Interdits sur routes publiques:
+## 2. Hierarchie des sources de verite
 
-- ne pas recreer `ClientApp`, `src/app.jsx`, `src/Router.jsx`, `setView` ou un routing hash;
-- ne pas utiliser `cookies()`, `headers()`, `draftMode()` ou `searchParams` serveur pour les pages publiques;
-- ne pas reintroduire un rendu provisoire visuellement different remplace par une grosse ile client.
+En cas de contradiction, utiliser cet ordre:
 
-## Docs a lire selon la zone
+1. demande actuelle explicite de l'utilisateur;
+2. code, configuration, rules et schemas executables;
+3. ce `AGENTS.md`;
+4. `map.md`;
+5. chapitre canonique de `_DOCS`;
+6. historique Git;
+7. conversations et captures anciennes.
 
-- Architecture Next native: `NEXT_NATIVE_ARCHITECTURE_BASELINE.md`, `context.md`, `mapV2.md`, `_DOCS/architecture/ARCHITECTURE_SEO_COLD_SCROLL_IMPLEMENTATION_ROADMAP_2026-07-10.md`.
-- Mega menu desktop/Rainmaker-like et piste mobile: `megamenuupdate.md`.
-- Home galerie canonique: `_DOCS/architecture/GALLERY_HOME_CANONICAL_IMPLEMENTATION_2026-07-01.md`.
-- Galerie mobile/shell/scroll/detail: `alertemobile.md`.
-- Performance/hydratation/cache: `_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md`, `_DOCS/perf/PHASE3_PERF_BASELINE_2026-06-24.md`, `_DOCS/perf/PUBLIC_SEO_BUDGET_VISUAL_CLOSEOUT_2026-07-01.md`, `_DOCS/perf/COLD_SCROLL_FIRST_VISIT_DIAGNOSTIC_2026-07-10.md`, `_DOCS/perf/V2_3_2_CHANGESET_AUDIT_2026-07-10.md`.
-- PageSpeed images/accessibilite/cache publics: `_DOCS/perf/PAGESPEED_CARD_THUMBS_STATIC_IMAGES_CLOSEOUT_2026-07-06.md`, `_DOCS/perf/PAGESPEED_NO_REDESIGN_ROADMAP_2026-07-06.md`.
-- Images produit/Storage/detailFast: `_DOCS/images/NEXTJS_IMAGE_PIPELINE_AUDIT.md`, `_DOCS/images/OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md`, `_DOCS/images/DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md`.
-- Infra prod/App Hosting/App Check: `_DOCS/infra/NEXT_FIREBASE_SITUATIONAL_AUDIT_2026-07-10.md`, `_DOCS/infra/P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md`, `_DOCS/infra/INFRA_PROD_PHASE2_REPORT_2026-06-14.md`, `_DOCS/infra/APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`, `_DOCS/infra/RAIL_PROD_AUDIT_REPORT_2026-06-24.md`.
-- Authentification/passkeys/OTP/admin: `_DOCS/security/AUTHENTIFICATION.md`, reference canonique unique pour l'etat preproduction, l'architecture, les preuves, la demonstration et la reprise lors de l'arrivee du domaine final; audit general: `_DOCS/security/SECURITY_STRATEGIC_AUDIT_2026-07-08.md`.
-- Checkout/refund/E2E/Stripe Connect: `_DOCS/commerce/STRIPE_CONNECT_INTEGRATION_PLAN_2026-07-01.md`, `_DOCS/commerce/CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md`, `_DOCS/commerce/E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`, `_DOCS/commerce/E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`, `_DOCS/commerce/REFUND_UI_STRICT_PROOF_2026-06-24.md`.
+Une contradiction entre code et documentation doit etre signalee et corrigee dans le meme changement si elle concerne le perimetre traite.
 
-## Gates utiles
+## 3. Etat executif du projet
 
-Choisir selon la demande et le risque:
+| Domaine | Etat actuel |
+| --- | --- |
+| application publique | Next App Router natif, pages publiques serveur/ISR |
+| home | `/` est la galerie canonique; `/galerie` est un alias |
+| catalogue | collection unifiee `furniture`, administration et revalidation ciblee |
+| Auth | passe de demonstration close, `PREPROD_READY`; production differee |
+| espace client | commandes, factures, wishlist, adresse/profil de synthese, support |
+| commerce | carte Stripe sandbox, webhooks, refund et Connect valides en preprod |
+| back-office | 16 onglets lazy, acces admin fort, publication/ventes/data/maintenance |
+| images | variantes Storage WebP, `detailFast`, miniatures 320/384, metadata anti-CLS |
+| securite | rules fortes, AAL2 admin, secrets serveur; App Check prod encore differe |
+| infrastructure | App Hosting sandbox actif; rail production absent |
+| e-mail | Gmail actif pour demo; Resend code et secret prepare, DNS final manquant |
+| performance | architecture SSR acquise; budget CSS/JS et statistiques prod differes |
+| IA devis | conception uniquement, aucune integration active |
+| legal | brouillon CGV/retours non publiable avant validation juridique |
+
+Objectif de livraison courant:
+
+> Maintenir un etat de preproduction stable et presentable a la cliente, avec les fonctionnalites majeures codees. Les travaux qui dependent du domaine, des comptes live, du DNS ou du trafic production restent explicitement differes.
+
+## 4. Environnement de reference
+
+| Element | Valeur |
+| --- | --- |
+| Node | `22.x` |
+| pnpm | `11.7.0` |
+| Firebase projet courant | `secondevienextjsssr` |
+| App Hosting | `secondevie-next-sandbox` |
+| URL | `https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app` |
+| App Hosting region | `europe-west4` |
+| Functions privees source | `europe-west1` |
+| publicCatalog | `us-central1` |
+| email actif | Gmail |
+| email futur | Resend, inactif |
+| production | non cablee dans `.firebaserc` |
+
+Ne pas convertir Node 24 local en nouvelle baseline sans migration dediee. Ne jamais traiter le sandbox comme le domaine final WebAuthn ou e-mail.
+
+## 5. Bibliotheque des modules
+
+| Module | Chapitre obligatoire | Code principal | Statut |
+| --- | --- | --- | --- |
+| architecture Next/SEO | [NEXTJS_SEO.md](_DOCS/architecture/NEXTJS_SEO.md) | `app`, `src/lib/server`, `src/lib/seo` | actif |
+| annonces/catalogue | [ANNONCES_CATALOGUE.md](_DOCS/catalogue/ANNONCES_CATALOGUE.md) | AdminForm, products, marketplace, publicCatalog | actif |
+| interface/navigation | [INTERFACE_NAVIGATION.md](_DOCS/ux/INTERFACE_NAVIGATION.md) | layout, header, mega menu, CSS | actif |
+| images/medias | [IMAGES_MEDIA.md](_DOCS/images/IMAGES_MEDIA.md) | imageUtils, Storage, scripts image | actif |
+| authentification | [AUTHENTIFICATION.md](_DOCS/security/AUTHENTIFICATION.md) | authStore, AuthContext, modal, auth Functions | preprod close |
+| securite globale | [SECURITE_GLOBALE.md](_DOCS/security/SECURITE_GLOBALE.md) | rules, helpers security, secrets, headers | preprod |
+| espace client | [ESPACE_CLIENT.md](_DOCS/client/ESPACE_CLIENT.md) | routes compte, MyOrders, wishlist | preprod |
+| commerce/Stripe | [COMMERCE_STRIPE.md](_DOCS/commerce/COMMERCE_STRIPE.md) | commerce client/Functions/admin | preprod |
+| back-office | [BACKOFFICE.md](_DOCS/admin/BACKOFFICE.md) | AdminAppIsland, `src/kit/admin` | preprod |
+| infrastructure | [INFRASTRUCTURE.md](_DOCS/infra/INFRASTRUCTURE.md) | Firebase/App Hosting/config/env | sandbox actif |
+| performance | [PERFORMANCE.md](_DOCS/perf/PERFORMANCE.md) | scripts perf, iles, cache/images | dette controlee |
+| donnees/analytics | [DONNEES_ANALYTICS.md](_DOCS/data/DONNEES_ANALYTICS.md) | Firestore, rollups, migrations | actif |
+| exploitation | [EXPLOITATION.md](_DOCS/operations/EXPLOITATION.md) | commandes, deploy, rollback, backlog | actif |
+| qualite/tests | [QUALITE_TESTS.md](_DOCS/quality/QUALITE_TESTS.md) | CI, tests, scripts | actif |
+| assistant devis IA | [ASSISTANT_DEVIS.md](_DOCS/ai/ASSISTANT_DEVIS.md) | futur | conception |
+| legal | [CGV_RETOURS_DRAFT.md](_DOCS/legal/CGV_RETOURS_DRAFT.md) | textes futurs | validation requise |
+
+Ne pas creer une nouvelle roadmap pour un de ces domaines. Mettre a jour son chapitre canonique, sauf si l'utilisateur demande explicitement un plan temporaire distinct. Un plan temporaire doit avoir une date de fin et etre fusionne/supprime a la cloture.
+
+## 6. Invariants d'architecture publique
+
+Routes:
+
+- `/`: home galerie canonique, `force-static`, ISR 300;
+- `/galerie`: alias, `force-static`, ISR 300, canonical `/`;
+- `/categorie/[categoryId]`: SSG/ISR avec `generateStaticParams`;
+- `/produit/[slugOrId]`: SSG/ISR avec `generateStaticParams`;
+- `/a-propos`, `/devis`: rendu serveur + ISR;
+- `/recherche`: noindex, contenu serveur + ile de resultats;
+- `/admin`, `/checkout`, `/wishlist`, `/mes-commandes`: tunnels dynamiques noindex.
+
+Interdictions:
+
+- ne pas recreer `ClientApp`, `src/app.jsx`, `src/Router.jsx`, `setView` ou du hash routing;
+- ne pas utiliser `cookies()`, `headers()`, `draftMode()` ou des `searchParams` serveur sur les pages publiques statiques;
+- ne pas remplacer le HTML final par un faux rendu puis une grosse ile client;
+- ne pas dupliquer `/` et `/galerie` avec deux implementations;
+- ne pas rendre l'indexation dependante de Firebase Auth ou du navigateur;
+- ne pas afficher une autre page pendant une transition de route.
+
+## 7. Invariants par domaine
+
+### 7.1 Catalogue
+
+- `furniture` est l'ID de collection actuel; ne pas le renommer sans migration complete;
+- toutes les surfaces utilisent le produit normalise;
+- `isPurchasable` est la regle unique d'achat;
+- l'ecriture admin doit bump `catalogVersion` et revalider;
+- publication, indexabilite, stock et ordre editorial restent des concepts separes;
+- le serveur revalide prix et stock au checkout.
+
+### 7.2 Images
+
+- conserver `imageVariants` et `imageMetadata`;
+- cartes: petites variantes; detail initial: `detailFast`; zoom: grande variante a l'interaction;
+- ne jamais supprimer un fichier Storage sur la seule base de `rg`;
+- dry-run obligatoire avant backfill ou cleanup;
+- ratio/couleur/blur doivent eviter CLS et flash brutal.
+
+### 7.3 Navigation et UX
+
+- ouverture du menu visuellement immediate;
+- Auth/panier/wishlist ne bloquent pas le shell;
+- focus, Escape, restauration du focus et safe areas preserves;
+- navigation Next native;
+- aucune galerie visible entre menu et espace client;
+- respecter `prefers-reduced-motion` pour les animations non essentielles;
+- ne pas redesign une zone lors d'un correctif technique cible.
+
+### 7.4 Authentification
+
+- `authStore`/`AuthContext` restent la source UI partagee;
+- une passkey ne ferme la modale qu'apres `loginWithCustomToken` reussi;
+- verification locale WebAuthn exigee et verifiee serveur;
+- fallback OTP/Google toujours disponible;
+- OTP idempotent et secret HMAC dedie;
+- admin sensible = claim + registre + assurance forte recente;
+- retrait admin = claims + registre + revocation refresh tokens;
+- UI actuelle conservee sauf bug UX confirme;
+- domaine final implique nouveau RP ID et reenrolement des passkeys.
+
+### 7.5 Commerce
+
+- le navigateur n'est jamais autoritaire pour prix, stock ou paiement;
+- commande et webhooks idempotents;
+- succes UI apres statut durable `paid`;
+- une commande payee n'est jamais supprimee/annulee sans refund;
+- refund complet valide avant remise en vente automatique;
+- snapshot de commande conserve l'historique;
+- Stripe sandbox et live strictement separes.
+
+### 7.6 Admin et securite
+
+- les actions sensibles passent par Functions/rules, pas par un simple bouton masque;
+- les grandes vues restent lazy;
+- listes et exports bornes;
+- operations destructives: assurance forte, confirmation, audit et rollback;
+- aucun secret dans `NEXT_PUBLIC_*`;
+- App Check complete Auth/rules mais ne les remplace pas;
+- les webhooks utilisent leur signature fournisseur;
+- le codebase public reste minimal.
+
+### 7.7 Donnees
+
+- dry-run, comptages et sauvegarde avant ecriture massive;
+- ne pas copier claims, secrets ou comptes live comme de simples documents;
+- les commandes suivent la retention comptable;
+- analytics non bloquants, bornes et minimises;
+- toute nouvelle collection obtient rules, indexes et retention explicites.
+
+## 8. Mode de travail selon la demande
+
+### Correctif cible
+
+1. reproduire ou localiser la cause;
+2. appliquer le plus petit changement demande;
+3. lancer seulement une verification rapide necessaire;
+4. s'arreter quand le correctif est en place;
+5. indiquer les validations non lancees.
+
+Ne pas lancer automatiquement build, serveur, Playwright, navigateur, screenshot ou E2E si l'utilisateur ne le demande pas.
+
+### Changement ou construction
+
+1. inspecter les flux amont/aval dans `map.md`;
+2. lire le chapitre;
+3. implementer sans elargir le scope;
+4. mettre a jour documentation/cartographie si structure modifiee;
+5. valider proportionnellement au risque;
+6. livrer un resultat concret et un prochain pas seulement s'il est deja approuve.
+
+### Audit ou diagnostic
+
+1. rester read-only sauf demande de correction;
+2. distinguer faits, hypotheses et dettes;
+3. verifier le code actuel plutot que citer un ancien rapport;
+4. classer impact, preuve et action;
+5. ne pas creer une roadmap infinie;
+6. si un plan est demande, definir une fin fermee et des gates.
+
+Ne pas lancer Codex Security ou un plugin de scan securite sans demande explicite de l'utilisateur.
+
+### Deploiement ou cloud
+
+1. confirmer projet, environnement, branche et cible;
+2. executer les gates requises;
+3. deployer avec `--only` ou le dashboard cible;
+4. verifier le rollout et le parcours touche;
+5. documenter l'URL/version;
+6. garder un rollback.
+
+Un terminal connecte au cloud n'autorise pas une ecriture production implicite.
+
+## 9. Politique de validation
+
+Choisir dans `_DOCS/quality/QUALITE_TESTS.md`.
+
+Gates courantes:
 
 ```bash
+npm run lint
 npm run build
+npm run seo:surface
 npm run next:routes
 npm run mobile:contract
+npm run test:auth
 npm run perf:gallery-direct
 npm run perf:product-direct
 npm run perf:category-direct
@@ -62,68 +267,185 @@ npm run perf:menu-mobile
 npm run perf:budget
 ```
 
-Note: `perf:budget` est le chantier CSS/JS restant. Ne pas le corriger pendant une passe de nettoyage documentaire sauf demande explicite.
+Gates externes, uniquement sur demande/scope explicite:
 
-## Code map
+```bash
+npm run e2e:auth-email
+npm run e2e:hosted-stripe
+npm run e2e:refund-stripe
+npm run e2e:revalidate-catalog
+npm run infra:deploy
+```
 
-Garder cette carte a jour lors de creation, suppression, renommage ou deplacement de fichier. Garder les libelles compacts.
+`perf:budget` reste un rapport non bloquant; ne pas le transformer en chantier pendant une autre passe.
+
+## 10. Securite, secrets et donnees sensibles
+
+Ne jamais:
+
+- afficher ou committer `.env`, cle API secrete, OTP, PIN, mot de passe applicatif, ID token, refresh token ou service account;
+- lire une boite mail utilisateur sans mecanisme explicitement autorise;
+- demander a l'utilisateur de coller un PIN Windows Hello/Face ID dans le chat;
+- stocker un secret dans un rapport Markdown ou un screenshot;
+- reutiliser le mot de passe Gmail comme secret HMAC;
+- desactiver rules/App Check/signatures pour faire passer un test;
+- lancer une purge ou migration en production pour explorer.
+
+Les cles Firebase Web et Stripe publishable sont publiques par conception, mais leur usage et leurs domaines doivent rester bornes.
+
+## 11. Gouvernance documentaire
+
+### 11.1 Une verite par domaine
+
+Chaque domaine a un chapitre canonique. Toute decision durable va dans ce chapitre. Ne pas creer:
+
+- `ROADMAP_FINAL_V2.md`;
+- `AUDIT_NEW.md`;
+- un closeout par micro-phase;
+- une copie du chapitre avec une date;
+- un dossier archive dans `_DOCS`.
+
+Git conserve l'historique. Les preuves volumineuses temporaires vont dans les logs ignores ou dans le compte rendu, puis sont nettoyees selon besoin.
+
+### 11.2 Quand un nouveau document est permis
+
+Seulement si:
+
+- un nouveau domaine majeur apparait;
+- aucun chapitre existant ne peut l'accueillir proprement;
+- son proprietaire, statut et condition de mise a jour sont definis;
+- il est ajoute a `_DOCS/README.md`, `AGENTS.md` et `map.md` si structurel.
+
+Le nom doit etre stable, sans date ni version marketing.
+
+### 11.3 Mise a jour obligatoire
+
+Mettre a jour le chapitre et `map.md` lorsqu'un changement modifie:
+
+- une route ou son rendu;
+- un module/fichier structural;
+- une collection, index ou rule;
+- un export Function;
+- une region, un provider ou un secret attendu;
+- un parcours metier;
+- une gate ou commande;
+- le statut preprod/production d'une fonctionnalite.
+
+### 11.4 Suppression documentaire controlee
+
+Toute suppression future exige:
+
+1. lecture complete du document candidat;
+2. classification `obsolete`, `fusionne`, `incorrect` ou `remplace`;
+3. transfert de chaque decision encore utile;
+4. recherche des references avec `rg`;
+5. verification de l'historique Git;
+6. mise a jour des index;
+7. `git diff --check` et controle des liens;
+8. liste explicite des suppressions dans le compte rendu.
+
+Ne jamais supprimer une reference canonique parce qu'elle semble longue. La reduire ou la scinder de facon gouvernee.
+
+## 12. Gouvernance du code et des fichiers
+
+Utiliser `apply_patch` pour les modifications manuelles. Preserver les changements utilisateur et les fichiers non lies.
+
+Avant suppression/renommage de code ou asset:
+
+1. rechercher imports, require, noms dynamiques et configuration;
+2. verifier routes, lazy imports, Functions exports et scripts;
+3. verifier donnees Firestore/Storage si les references peuvent etre en base;
+4. verifier assets via reseau/visuel si necessaire;
+5. mettre a jour `map.md`;
+6. lancer les gates du perimetre;
+7. garder un diff reversible.
+
+Ne pas utiliser `git reset --hard`, `git clean`, `git checkout --` ou une suppression recursive pour effacer un travail non identifie.
+
+## 13. Git et branches
+
+- prefixe de branche agent: `codex/`;
+- partir d'un worktree propre ou isoler les changements existants;
+- ne pas melanger documentation, feature et correction sans raison;
+- verifier `git status --short` avant/apres;
+- ne pas commit/push/merge/deployer sans demande ou autorisation correspondant au workflow;
+- squash merge uniquement sur demande;
+- l'historique Git est l'archive officielle des anciens documents.
+
+## 14. Backlog ferme
+
+### Autorise avant demo
+
+- correctifs de bugs reproductibles qui bloquent ou degradent clairement la presentation;
+- aucune nouvelle phase Auth cachee;
+- aucun chantier production dependants du domaine.
+
+### Differe jusqu'a la production
+
+- domaine final et DNS;
+- RP ID et reenrolement passkeys;
+- Resend/SPF/DKIM/DMARC;
+- Firebase/App Hosting production;
+- Stripe live et Connect live;
+- App Check enforcement;
+- sauvegardes, alertes et SLO;
+- recette Safari/Face ID et matrice finale appareils;
+- p50/p95 production;
+- validation juridique.
+
+### Dette technique non bloquante
+
+- budget CSS/JS public;
+- convergence regionale;
+- Hosting/SEO legacy;
+- assets candidats apres audit visuel;
+- pagination admin selon volumes;
+- gestion passkeys dans l'espace client si besoin confirme;
+- Next 16/Turbopack;
+- assistant IA devis.
+
+Ces elements ne doivent pas revenir dans un patch en cours sauf demande explicite ou bug directement lie.
+
+## 15. Definition de done
+
+Une tache est terminee quand:
+
+- le besoin demande est satisfait;
+- aucun invariant n'est casse;
+- le scope n'a pas derive;
+- les validations proportionnees sont passees;
+- les validations non lancees sont indiquees;
+- les donnees de test et deploiements sont mentionnes;
+- `map.md` et le chapitre sont a jour si necessaire;
+- les suppressions sont justifiees;
+- le prochain pas n'est pas invente apres la cloture.
+
+Format de compte rendu recommande:
 
 ```text
-.
-|-- AGENTS.md : consignes agents et code map compacte
-|-- NEXT_NATIVE_ARCHITECTURE_BASELINE.md : baseline actuelle routes Next natives, ISR/SSG/SSR, gates et docs actives
-|-- context.md : synthese courte de l'etat projet Next natif
-|-- alertemobile.md : contrat mobile galerie/shell/scroller/detail
-|-- mapV2.md : cartographie routes, infra prod, backoffice, risques et nettoyage
-|-- megamenuupdate.md : architecture menu desktop Rainmaker-like et plan mobile shell critique
-|-- RUNBOOK.md : commandes et exploitation Next/Firebase
-|-- TODO.md : backlog infra/perf/backoffice
-|-- TODO_NEXT16_UPGRADE.md : rappel migration Next 16/Turbopack et plan de test
-|-- DEAD_CODE_AUDIT.md : audit code vivant/mort, assets, scripts et gates
-|-- .github/workflows/quality.yml : CI Node 22/pnpm avec lint, build, routes, SEO et budget public
-|-- docs : brouillons legaux/metier non operationnels, dont CGV/retours
-|-- _DOCS : documentation active organisee par theme et archives
-|   |-- architecture : baseline routes publiques, SEO, cache et decisions Next
-|   |   |-- GALLERY_HOME_CANONICAL_IMPLEMENTATION_2026-07-01.md : decision `/` home galerie et `/galerie` alias
-|   |   `-- ARCHITECTURE_SEO_COLD_SCROLL_IMPLEMENTATION_ROADMAP_2026-07-10.md : plan architecture/SEO puis suppression des freezes de premier scroll sans retirer les animations
-|   |-- perf : roadmaps/gates perf, hydratation, galerie, menus split desktop/mobile et rendu final direct
-|   |   |-- PUBLIC_SEO_BUDGET_VISUAL_CLOSEOUT_2026-07-01.md : closeout budgets publics avec preuves visuelles
-|   |   |-- MENU_COLD_OPEN_AUDIT_2026-07-02.md : audit delai ouverture menu principal/mega menu desktop et mobile
-|   |   |-- PAGESPEED_CARD_THUMBS_STATIC_IMAGES_CLOSEOUT_2026-07-06.md : closeout variantes cartes 320/384 et AVIF Avant/Apres
-|   |   |-- COLD_SCROLL_FIRST_VISIT_DIAGNOSTIC_2026-07-10.md : diagnostic fige, mesures true cold, limites et dette dominante Instagram/avis
-|   |   |-- V2_3_2_CHANGESET_AUDIT_2026-07-10.md : audit differentiel v2.3.1/v2.3.2, regression menu et matrice garder/corriger/retirer
-|   |   `-- PAGESPEED_NO_REDESIGN_ROADMAP_2026-07-06.md : roadmap PageSpeed restante sans redesign
-|   |-- images : pipeline images produit, Storage, detailFast et audits UX image
-|   |-- infra : App Hosting, rail prod, App Check et closeout infra
-|   |   `-- NEXT_FIREBASE_SITUATIONAL_AUDIT_2026-07-10.md : audit objectif du rendu Next, SEO, cache, Firebase, performance et maturite prod
-|   |-- commerce : checkout, refund, E2E backoffice et Stripe/Firebase hardening
-|   |   `-- STRIPE_CONNECT_INTEGRATION_PLAN_2026-07-01.md : roadmap integration Stripe Connect, securite admin et preuves par phase
-|   |-- security : reference Auth canonique et audit securite general
-|   |   |-- AUTHENTIFICATION.md : etat Auth preproduction, architecture, preuves, runbook demo et reprise domaine/production
-|   |   `-- SECURITY_STRATEGIC_AUDIT_2026-07-08.md : audit manuel Next/Firebase et findings securite generaux
-|   |-- ux : navigation, mega menu et micro-frictions
-|   |-- ai : cadrage assistant IA devis
-|   |-- data : migration/base de donnees
-|   `-- archive : rapports historiques non operationnels, dont migration SPA vers Next et notes UI
-|-- .agents/skills : skills locaux UI/design, dont visual-annotation-tuning
-|-- app : routes Next App Router, metadata, loading/not-found/error, sitemap, robots, recherche catalogue, iles de route et transition `/a-propos`
-|-- src
-|   |-- index.css
-|   |-- kit/admin : back-office, analytics, commandes, retours/remboursements Stripe, SEO, users, exports
-|   |-- kit/commerce : panier, checkout, login, commandes client, regle isPurchasable
-|   |-- kit/marketplace : galerie SSR, recherche catalogue, categories/produits, sections fixes SSR, iles interactions, header/menu/cart/wishlist/devis
-|   |-- kit/vitrine : page `/a-propos` serveur et iles fines
-|   |-- kit/layout : layout partage, footer et menu global split en shell/desktop/mobile
-|   |-- kit/auth, kit/shared, kit/ui, kit/hooks, kit/contexts, kit/config
-|   |-- lib : helpers serveur produits/env/theme/about, SEO structure et contrat `seo/indexability.js`
-|   `-- assets, utils : assets source et helpers image/formatting
-|-- scripts : env bridge, gates Next, audits perf/direct/mobile/menus/auth/cold-sections, gates SEO, E2E sandbox, backfills images, infra audits
-|-- tests : contrats Auth/claims, smoke Playwright et tests cibles
-|-- functions-public : Functions publiques isolees pour `publicCatalog`
-|-- functions : Functions privees/admin/commerce/auth/email/seo/triggers, dont adaptateur transactionnel Gmail/Resend
-|-- public : favicons, manifest, images, videos et assets statiques
-|-- deploy : dashboard deploiement sandbox
-|-- package*.json, pnpm-workspace.yaml, next.config.mjs, eslint.config.mjs, jsconfig.json, tailwind.config.js, postcss.config.js
-|-- apphosting.yaml, firebase.json, firestore.rules, firestore.indexes.json, storage.rules
-`-- .next, dist, node_modules, logs, .firebase : generes, hors carte
+Resultat
+Fichiers/architecture touches
+Validations lancees
+Validations non lancees
+Deploiement: oui/non, cible
+Dette concrete restante: seulement si dans le plan
 ```
+
+## 16. Verification rapide de la bible
+
+Apres une passe documentaire ou structurelle:
+
+```powershell
+rg --files -g "*.md"
+rg -n "ancien-document\.md" .
+git diff --check
+git status --short
+```
+
+Verifier ensuite que:
+
+- chaque chapitre de `_DOCS/README.md` existe;
+- chaque lien de la table des modules existe;
+- chaque route et module structural de `map.md` correspond au code;
+- aucun document supprime n'est encore cite;
+- aucun secret n'apparait dans le diff.

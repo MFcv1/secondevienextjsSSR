@@ -6,15 +6,15 @@ const files = {
   galleryServer: path.join(root, 'src', 'kit', 'marketplace', 'GalleryServerView.jsx'),
   galleryMobile: path.join(root, 'app', 'GalleryMobileShellIsland.jsx'),
   css: path.join(root, 'src', 'index.css'),
-  alert: path.join(root, 'alertemobile.md'),
+  contract: path.join(root, '_DOCS', 'ux', 'INTERFACE_NAVIGATION.md'),
 };
 
 const read = (file) => fs.readFileSync(file, 'utf8');
 
 const checks = [
   {
-    label: 'alertemobile.md documents the Next gallery mobile contract',
-    file: files.alert,
+    label: 'INTERFACE_NAVIGATION.md documents the Next gallery mobile contract',
+    file: files.contract,
     pattern: /GalleryMobileShellIsland[\s\S]*GalleryServerView/,
   },
   {

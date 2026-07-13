@@ -42,7 +42,7 @@ const getDeviceInfo = () => {
 /**
  * AnalyticsProvider — Source unique de tracking visiteur.
  *
- * Règles (voir datadiag.md) :
+ * Regles: voir _DOCS/data/DONNEES_ANALYTICS.md.
  *   R1  Session démarre QUAND l'utilisateur entre dans la galerie / catégorie / détail / wishlist.
  *       La vitrine (view='home') est bufferisée localement mais ne crée pas de session.
  *   R2  Validité : imposée côté dashboard (filtre duration>=5 && pageViews>=1). Ici on transmet.

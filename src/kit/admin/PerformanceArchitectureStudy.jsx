@@ -196,7 +196,7 @@ const currentFindings = Object.freeze([
     id: 'SV-PERF-0004',
     status: 'verified',
     title: 'Le mobile doit rester une architecture, pas une suite de patches.',
-    source: 'alertemobile.md + GalleryServerView + GalleryMobileShellIsland + src/index.css',
+    source: '_DOCS/ux/INTERFACE_NAVIGATION.md + GalleryServerView + GalleryMobileShellIsland + src/index.css',
     summary:
       'Le bug historique montre que scroll, viewport et surfaces image-heavy sont couples. Pour les prochains projets, le scroll root mobile doit etre defini par layout des le debut.',
     evidence: [
@@ -307,10 +307,10 @@ const roadmapPhases = Object.freeze([
       'Centraliser les seuils de gestes: distance swipe, vitesse pull-down, tolerance tap, seuil bottom sheet.',
       'Ajouter une mini state machine: idle, detailOpen, pullingToGallery, closingToGallery, sheetOpen, lightboxOpen.',
     ],
-    files: ['src/kit/marketplace/ProductDetailShellIsland.jsx', 'src/kit/marketplace/GalleryServerView.jsx', 'app/GalleryMobileShellIsland.jsx', 'src/index.css', 'alertemobile.md'],
+    files: ['src/kit/marketplace/ProductDetailShellIsland.jsx', 'src/kit/marketplace/GalleryServerView.jsx', 'app/GalleryMobileShellIsland.jsx', 'src/index.css', '_DOCS/ux/INTERFACE_NAVIGATION.md'],
     risk: 'Risque eleve: le moindre changement de scroll root, touch-action, data-detail-open ou staging peut reintroduire le drift mobile.',
     validation: [
-      'Relire alertemobile.md avant toute modification',
+      'Relire _DOCS/ux/INTERFACE_NAVIGATION.md avant toute modification',
       'Test vrai telephone: galerie -> scroll leger -> produit -> Details -> retour -> second produit',
       'Mesures attendues: window.scrollY 0, drift image 0px, drift resume 0px, scrollTop conserve',
       'Lightbox pinch/pan/swipe + sortie pull-down + swipe lateral premiere image',
@@ -331,8 +331,8 @@ const roadmapEvidenceRows = Object.freeze([
   ['P2.2 Card/detail split', 'Remplace par Next SSR', 'La carte pointe vers /produit/... et le document produit est resolu par la route Next native, plus par ensureProductDetail dans la SPA.'],
   ['P2.3 Metadata images', 'Fait nouveau upload + backfill sandbox', 'AdminForm stocke imageMetadata width/height/ratio/dominantColor/blurDataUrl pour les nouvelles images, publicCatalog projette la premiere metadata carte, et npm run backfill:product-metadata:dry audite les anciens produits. Sandbox: 35 produits publies complets, 0 pending, 0 failed.'],
   ['P3.1 Detail mobile', 'Route Next native', 'Le detail mobile actif vit dans ProductDetailShellIsland.jsx; le detail SPA legacy a ete retire.'],
-  ['P3.2 Contrat mobile automatise', 'Fait garde-fou', 'npm run mobile:contract verifie alertemobile.md, invariant Router, #marketplaceGalleryScroll, data-detail-open, data-native-scroll-region, freeze CSS et absence du lazy overlay ProductDetail.'],
-  ['P3.3 Gestures/state machine', 'Bloque', 'Pas de refactor detail gestures sans vrai telephone: alertemobile.md impose le test drift image/resume a 0 px.'],
+  ['P3.2 Contrat mobile automatise', 'Fait garde-fou', 'npm run mobile:contract verifie la reference canonique INTERFACE_NAVIGATION.md, #marketplaceGalleryScroll, data-detail-open, data-native-scroll-region, freeze CSS et absence du lazy overlay ProductDetail.'],
+  ['P3.3 Gestures/state machine', 'Bloque', 'Pas de refactor detail gestures sans vrai telephone: le contrat canonique impose le test drift image/resume a 0 px.'],
   ['P3.4 Validation appareil', 'Bloque environnement', 'adb n est pas disponible dans cet environnement. Le test vrai telephone galerie -> produit -> Details -> retour -> second produit ne peut donc pas etre execute ici.'],
   ['Desktop first-scroll', 'Fait renforce', 'npm run perf:scroll mesure maintenant le chargement initial, le premier scroll molette, les long tasks et les layout shifts. Resultat preview desktop 1440x950 apres stabilisation des slots lazy: scroll max frame gap 16.8 ms, 0 frame >50 ms, load max frame gap 50 ms, 1 long task de 60 ms, CLS 0.0022.'],
   ['Hero mobile', 'Fait', 'Les images hero ont une position mobile dediee via mobileObjectPosition, CSS responsive et image h-full sur mobile. Validation Playwright 390x844: object-position 54% 50%, hero 390x430.'],
@@ -596,7 +596,7 @@ const nextSsrOptimizationRows = Object.freeze([
 ]);
 
 const nextSsrDecisionRows = Object.freeze([
-  ['Ce qui est deja gagne', 'Le benchmark deploye montre moins de KB, moins de requetes et un vrai bloc produit SSR sur la page produit.', 'ARCHITECTURE_BENCHMARK_DECISION.md'],
+  ['Ce qui est deja gagne', 'Le benchmark deploye montre moins de KB, moins de requetes et un vrai bloc produit SSR sur la page produit.', '_DOCS/architecture/NEXTJS_SEO.md'],
   ['Ce qui reste SPA-like', 'La galerie, le detail interactif, le panier, la wishlist, le checkout et l admin restent largement client-side.', 'optimisation Next encore a faire'],
   ['Point dur meuble froid', 'Le premier produit jamais consulte depend encore de caches froids: Storage/CDN, Firestore, App Hosting, decode image et hydration.', 'N1 + N2 + N3 prioritaires'],
   ['Decision prudente', 'Continuer le clone Next comme cible future, mais ne pas basculer prod avant admin/commerce/mobile/couts.', 'validation sandbox uniquement'],
@@ -1175,9 +1175,8 @@ export default function PerformanceArchitectureStudy({ onBack, embedded = false,
               <div>
                 <span>Roadmap documentee</span>
                 <p>
-                  Le fichier <code>_DOCS/perf/NEXTJS_OPTIMIZATION_ROADMAP.md</code> est la reference agent pour cette
-                  passe. Il complete <code>_DOCS/architecture/ARCHITECTURE_BENCHMARK_DECISION.md</code> avec un plan
-                  d execution centre sur le cas produit froid et le scale App Hosting.
+                  Le chapitre <code>_DOCS/perf/PERFORMANCE.md</code> est la reference agent pour cette passe. Il se lit
+                  avec <code>_DOCS/architecture/NEXTJS_SEO.md</code> pour les decisions de rendu, cache et App Hosting.
                 </p>
               </div>
             </div>
@@ -1205,7 +1204,7 @@ export default function PerformanceArchitectureStudy({ onBack, embedded = false,
                 <FileCheck aria-hidden="true" />
                 <div>
                   <strong>Gate mobile</strong>
-                  <p>Toute optimisation touchant galerie, detail, image mobile ou scroll doit relire alertemobile.md et conserver l invariant Router.</p>
+                  <p>Toute optimisation touchant galerie, detail, image mobile ou scroll doit relire <code>_DOCS/ux/INTERFACE_NAVIGATION.md</code> et conserver le shell Next natif.</p>
                 </div>
               </article>
             </div>

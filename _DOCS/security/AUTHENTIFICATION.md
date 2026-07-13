@@ -1,8 +1,8 @@
 # Authentification - reference canonique
 
-Date de consolidation: 2026-07-14  
-Statut: `AUTH_PATCH_CLOSED_FOR_DEMO - PREPROD_READY - PRODUCTION DIFFEREE`  
-Projet Firebase: `secondevienextjsssr`  
+Date de consolidation: 2026-07-14
+Statut: `AUTH_PATCH_CLOSED_FOR_DEMO - PREPROD_READY - PRODUCTION DIFFEREE`
+Projet Firebase: `secondevienextjsssr`
 Commit de reference du chantier: `34302d6 feat(auth): harden authentication for client demo`
 
 ## 1. Role de ce document
