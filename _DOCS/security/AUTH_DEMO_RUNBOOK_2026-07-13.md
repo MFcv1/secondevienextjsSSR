@@ -1,7 +1,7 @@
 # Runbook Auth pour la demonstration cliente
 
 Date: 2026-07-13  
-Statut: `PRET POUR DEMONSTRATION - VALIDATION GIT EN ATTENTE`  
+Statut: `PRET POUR DEMONSTRATION - PASSE AUTH CLOTUREE`
 Environnement: App Hosting sandbox `secondevie-next-sandbox`  
 URL: `https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app`
 

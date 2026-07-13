@@ -1,7 +1,7 @@
 # Journal de progression - hardening Auth production
 
 Date de creation: 2026-07-12  
-Statut global: `AUTH_PATCH_READY_FOR_USER_VALIDATION - PRODUCTION DIFFEREE`  
+Statut global: `AUTH_PATCH_CLOSED_FOR_DEMO - PRODUCTION DIFFEREE`
 Roadmap normative: [`AUTH_PRODUCTION_HARDENING_ROADMAP_2026-07-12.md`](./AUTH_PRODUCTION_HARDENING_ROADMAP_2026-07-12.md)  
 Roadmap historique: [`AUTHENTICATION_ROBUSTNESS_ROADMAP_2026-07-11.md`](./AUTHENTICATION_ROBUSTNESS_ROADMAP_2026-07-11.md)
 Plan ferme avant demonstration: [`AUTH_DEMO_PATCH_CLOSEOUT_PLAN_2026-07-13.md`](./AUTH_DEMO_PATCH_CLOSEOUT_PLAN_2026-07-13.md)
@@ -1023,6 +1023,22 @@ Les cases H5, DNS/delivrabilite H7, suppression regionale definitive, Safari/Fac
 - statut apres: `AUTH_PATCH_READY_FOR_USER_VALIDATION`;
 - gate satisfaite: G2, G3 et G4 oui; G5 technique oui, fusion `main` volontairement en attente;
 - prochaine action exacte: commit squash et push de la branche, validation utilisateur de la sandbox, puis fusion vers `main` et statut `AUTH_PATCH_CLOSED_FOR_DEMO`.
+
+### 2026-07-14 - Validation utilisateur et cloture de la passe Auth
+
+- statut avant: `AUTH_PATCH_READY_FOR_USER_VALIDATION`;
+- validation utilisateur recue: `valide` apres recette de la sandbox publiee;
+- changeset de branche identifie: `5167be7`, pousse sur `origin/codex/auth-production-hardening`;
+- fusion autorisee: squash merge vers `main` apres validation explicite;
+- nouveau deploiement necessaire: non, la sandbox validée expose deja le bundle final;
+- regressions P0/P1 ouvertes: aucune;
+- provider email: Gmail conserve;
+- rollback: revision App Hosting precedente et copies Functions US conservees;
+- secrets exposes: aucun;
+- statut apres: `AUTH_PATCH_CLOSED_FOR_DEMO`;
+- gate satisfaite: G1 a G5 terminees;
+- prochaine action Auth avant demonstration: aucune;
+- seuls motifs de reprise: regression bloquante reproductible, demande cliente ou nouvelle passe production apres acquisition du domaine final.
 
 ## 16. Modele d'entree pour chaque session
 

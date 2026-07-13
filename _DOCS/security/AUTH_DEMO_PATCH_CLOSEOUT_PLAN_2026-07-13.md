@@ -1,7 +1,7 @@
 # Plan ferme de cloture de la passe Auth avant demonstration
 
 Date: 2026-07-13  
-Statut: `ACTIVE - LISTE FERMEE`  
+Statut: `CLOTUREE - AUTH_PATCH_CLOSED_FOR_DEMO`
 Branche: `codex/auth-production-hardening`  
 Roadmap normative: [`AUTH_PRODUCTION_HARDENING_ROADMAP_2026-07-12.md`](./AUTH_PRODUCTION_HARDENING_ROADMAP_2026-07-12.md)  
 Fil d'Ariane: [`AUTH_PRODUCTION_HARDENING_PROGRESS_2026-07-12.md`](./AUTH_PRODUCTION_HARDENING_PROGRESS_2026-07-12.md)  
@@ -147,7 +147,7 @@ Decision G4: gate verte. Le rollback `us-central1` est conserve jusqu'a une futu
 
 ### G5 - Runbook demo, Git et remise finale
 
-Statut: `EN_ATTENTE_VALIDATION_UTILISATEUR - 2026-07-13`
+Statut: `TERMINEE - VALIDATION UTILISATEUR 2026-07-14`
 
 Runbook de demonstration a figer:
 
@@ -180,12 +180,13 @@ Elements termines:
 - smoke heberge post-deploiement: dialogue present, focus initial interne, `Escape` ferme et rend le focus a `Ouvrir la connexion`;
 - Functions, regles, secrets et provider email non modifies par ce dernier deploiement.
 
-Reste volontairement avant fermeture definitive de G5:
+Cloture definitive de G5:
 
-1. produire et pousser le commit squash de la branche;
-2. obtenir la validation utilisateur de la sandbox;
-3. fusionner vers `main` seulement apres cette validation;
-4. inscrire le hash final et passer le statut a `CLOTUREE`.
+- changeset Auth commite sur la branche sous `5167be7` puis pousse sur `origin/codex/auth-production-hardening`;
+- validation explicite de la sandbox recue de l'utilisateur le `2026-07-14`;
+- squash merge vers `main` autorise apres cette validation;
+- aucun redeploiement supplementaire requis: la sandbox validée expose deja le bundle final;
+- statut de la passe: `AUTH_PATCH_CLOSED_FOR_DEMO`.
 
 ## 4. Explicitement non obligatoire avant la demonstration
 
@@ -218,19 +219,21 @@ La partie connexion est cloturee pour la demonstration lorsque:
 - le changeset est identifie dans Git;
 - toutes les dettes non necessaires a la demo restent dans la section 4, sans etre transformees en nouvelles gates.
 
+Etat au `2026-07-14`: toutes ces conditions sont satisfaites. La passe Auth de demonstration est fermee.
+
 Apres cloture, seules trois raisons autorisent la reouverture de cette passe:
 
 1. regression reproductible bloquant la demonstration;
 2. demande explicite de la cliente modifiant le parcours;
 3. acquisition du domaine final, qui ouvre une nouvelle passe de production H5/H7 distincte.
 
-## 6. Ordre d'execution restant
+## 6. Ordre d'execution termine
 
 ```text
-G2 gate code finale
-  -> G3 smoke accessibilite essentiel
-  -> G4 photographie regionale sans suppression
-  -> G5 runbook + Git + validation utilisateur
+G2 gate code finale: TERMINEE
+  -> G3 smoke accessibilite essentiel: TERMINEE
+  -> G4 photographie regionale sans suppression: TERMINEE
+  -> G5 runbook + Git + validation utilisateur: TERMINEE
   -> AUTH_PATCH_CLOSED_FOR_DEMO
 ```
 
