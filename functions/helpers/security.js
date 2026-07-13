@@ -7,6 +7,7 @@ const admin = require('firebase-admin');
 const { PRODUCT_COLLECTIONS } = require('./config');
 
 const SECURITY_AUDIT_COLLECTION = 'sys_audit_security';
+const ADMIN_ACCESS_COLLECTION = 'sys_admin_access';
 
 // ⚠️ CONFIGURER: Email du Super Admin (doit correspondre à VITE_SUPER_ADMIN_EMAIL)
 function normalizeEmail(value) {
@@ -61,28 +62,139 @@ function checkIsSuperAdmin(context) {
     }
 }
 
-function checkRecentSuperAdmin(context, maxAgeSeconds = 900) {
-    checkIsSuperAdmin(context);
-    const authTime = Number(context.auth?.token?.auth_time || 0);
-    const nowSeconds = Math.floor(Date.now() / 1000);
-    if (!authTime || nowSeconds - authTime > maxAgeSeconds) {
-        throw new functions.https.HttpsError(
-            'failed-precondition',
-            'Session admin trop ancienne. Reconnectez-vous avant cette action sensible.'
-        );
+function getAuthAssurance(context) {
+    if (!context.auth) {
+        return { level: 'none', method: null, userVerified: false };
     }
+
+    const token = context.auth.token || {};
+    const firebaseProvider = token.firebase?.sign_in_provider || null;
+    const claimedMethod = token.authMethod || token.signInProvider || null;
+    const isVerifiedPasskey = claimedMethod === 'passkey'
+        && token.authAssurance === 'aal2'
+        && token.userVerified === true;
+    const isGoogle = firebaseProvider === 'google.com';
+
+    if (isVerifiedPasskey) {
+        return { level: 'aal2', method: 'passkey', userVerified: true };
+    }
+    if (isGoogle) {
+        return { level: 'aal2', method: 'google', userVerified: true };
+    }
+
+    return {
+        level: 'aal1',
+        method: claimedMethod || firebaseProvider || 'unknown',
+        userVerified: false
+    };
 }
 
-function checkRecentAdmin(context, maxAgeSeconds = 900) {
-    checkIsAdmin(context);
+function checkStrongAdmin(context) {
+    const adminInfo = checkIsAdmin(context);
+    const assurance = getAuthAssurance(context);
+    if (assurance.level !== 'aal2') {
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'Confirmez votre identite avec une passkey ou Google pour ouvrir l administration.',
+            { reason: 'strong-auth-required', requiredAssurance: 'aal2' }
+        );
+    }
+    return { ...adminInfo, assurance };
+}
+
+function checkStrongSuperAdmin(context) {
+    checkIsSuperAdmin(context);
+    const assurance = getAuthAssurance(context);
+    if (assurance.level !== 'aal2') {
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'Confirmez votre identite avec une passkey ou Google avant cette action sensible.',
+            { reason: 'strong-auth-required', requiredAssurance: 'aal2' }
+        );
+    }
+    return { assurance };
+}
+
+function checkRecentStrongSuperAdmin(context, maxAgeSeconds = 900) {
+    const result = checkStrongSuperAdmin(context);
     const authTime = Number(context.auth?.token?.auth_time || 0);
     const nowSeconds = Math.floor(Date.now() / 1000);
     if (!authTime || nowSeconds - authTime > maxAgeSeconds) {
         throw new functions.https.HttpsError(
             'failed-precondition',
-            'Session admin trop ancienne. Reconnectez-vous avant cette action sensible.'
+            'Session admin trop ancienne. Reconnectez-vous avant cette action sensible.',
+            { reason: 'recent-strong-auth-required', requiredAssurance: 'aal2', maxAgeSeconds }
         );
     }
+    return result;
+}
+
+function checkRecentStrongAdmin(context, maxAgeSeconds = 900) {
+    const result = checkStrongAdmin(context);
+    const authTime = Number(context.auth?.token?.auth_time || 0);
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    if (!authTime || nowSeconds - authTime > maxAgeSeconds) {
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'Session admin trop ancienne. Reconnectez-vous avant cette action sensible.',
+            { reason: 'recent-strong-auth-required', requiredAssurance: 'aal2', maxAgeSeconds }
+        );
+    }
+    return result;
+}
+
+const checkRecentSuperAdmin = checkRecentStrongSuperAdmin;
+const checkRecentAdmin = checkRecentStrongAdmin;
+
+async function getActiveAdminAccess(context, { requireOwner = false } = {}) {
+    if (!context.auth?.uid) {
+        throw new functions.https.HttpsError('unauthenticated', 'Authentification requise.');
+    }
+
+    const accessSnap = await admin.firestore()
+        .collection(ADMIN_ACCESS_COLLECTION)
+        .doc(context.auth.uid)
+        .get();
+    const access = accessSnap.exists ? accessSnap.data() : null;
+    if (!access || access.active !== true) {
+        throw new functions.https.HttpsError(
+            'permission-denied',
+            'Acces administrateur retire ou non active.',
+            { reason: 'admin-access-inactive' }
+        );
+    }
+    if (requireOwner && access.role !== 'owner') {
+        throw new functions.https.HttpsError(
+            'permission-denied',
+            'Acces proprietaire requis.',
+            { reason: 'owner-access-required' }
+        );
+    }
+    return access;
+}
+
+async function checkActiveStrongAdmin(context) {
+    const result = checkStrongAdmin(context);
+    const access = await getActiveAdminAccess(context);
+    return { ...result, access };
+}
+
+async function checkActiveStrongSuperAdmin(context) {
+    const result = checkStrongSuperAdmin(context);
+    const access = await getActiveAdminAccess(context, { requireOwner: true });
+    return { ...result, access };
+}
+
+async function checkRecentActiveStrongAdmin(context, maxAgeSeconds = 900) {
+    const result = checkRecentStrongAdmin(context, maxAgeSeconds);
+    const access = await getActiveAdminAccess(context);
+    return { ...result, access };
+}
+
+async function checkRecentActiveStrongSuperAdmin(context, maxAgeSeconds = 900) {
+    const result = checkRecentStrongSuperAdmin(context, maxAgeSeconds);
+    const access = await getActiveAdminAccess(context, { requireOwner: true });
+    return { ...result, access };
 }
 
 function assertConfirmText(data, expectedText, label = 'confirmation') {
@@ -170,8 +282,18 @@ function sanitizeStorageFileName(fileName) {
 module.exports = {
     checkIsAdmin,
     checkIsSuperAdmin,
+    getAuthAssurance,
+    checkStrongAdmin,
+    checkStrongSuperAdmin,
+    checkRecentStrongSuperAdmin,
+    checkRecentStrongAdmin,
     checkRecentSuperAdmin,
     checkRecentAdmin,
+    getActiveAdminAccess,
+    checkActiveStrongAdmin,
+    checkActiveStrongSuperAdmin,
+    checkRecentActiveStrongAdmin,
+    checkRecentActiveStrongSuperAdmin,
     assertConfirmText,
     writeSecurityAudit,
     normalizeProductCollection,

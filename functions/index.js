@@ -41,7 +41,7 @@ exports.confirmStripeConnectReconnect = confirmStripeConnectReconnect;
 
 // ── AUTH ──────────────────────────────────────────────────
 const { grantAdminOnAuth } = require('./src/auth/grantAdmin');
-const { addAdminUser, removeAdminUser, logUserConnection, getUserStats, syncSuperAdminClaim } = require('./src/auth/adminManagement');
+const { addAdminUser, removeAdminUser, logUserConnection, getUserStats, syncSuperAdminClaim, ensureAdminAccessRegistry } = require('./src/auth/adminManagement');
 const { sendGuestCheckoutOtp, verifyGuestCheckoutOtp } = require('./src/auth/guestCheckoutOtp');
 const { sendCustomerLoginOtp, verifyCustomerLoginOtp } = require('./src/auth/customerLoginOtp');
 const {
@@ -57,6 +57,7 @@ exports.removeAdminUser = removeAdminUser;
 exports.logUserConnection = logUserConnection;
 exports.getUserStats = getUserStats;
 exports.syncSuperAdminClaim = syncSuperAdminClaim;
+exports.ensureAdminAccessRegistry = ensureAdminAccessRegistry;
 exports.sendGuestCheckoutOtp = sendGuestCheckoutOtp;
 exports.verifyGuestCheckoutOtp = verifyGuestCheckoutOtp;
 exports.sendCustomerLoginOtp = sendCustomerLoginOtp;

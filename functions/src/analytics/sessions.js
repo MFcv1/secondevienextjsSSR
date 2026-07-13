@@ -14,6 +14,8 @@ const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 const { isAdminIP } = require('./adminIP');
+const { checkRecentActiveStrongAdmin } = require('../../helpers/security');
+const { regionalFunctions } = require('../../helpers/runtime');
 const {
     ANALYTICS_DETAIL_RETENTION_DAYS,
     ANALYTICS_SESSION_RETENTION_DAYS,
@@ -269,7 +271,7 @@ async function deleteSessionRecursively(sessionId) {
     await db.recursiveDelete(sessionRef);
 }
 
-exports.initLiveSession = functions.runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+exports.initLiveSession = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
     assertAnalyticsPayloadSize(data);
     await assertAnalyticsRateLimit('init', context.rawRequest, 60);
     const ip = getRequestIp(context.rawRequest);
@@ -316,7 +318,7 @@ exports.initLiveSession = functions.runWith({ enforceAppCheck: true }).https.onC
     }
 });
 
-exports.syncSession = functions.runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+exports.syncSession = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
     assertAnalyticsPayloadSize(data);
     await assertAnalyticsRateLimit('sync', context.rawRequest, 180);
     const {
@@ -365,7 +367,7 @@ exports.syncSession = functions.runWith({ enforceAppCheck: true }).https.onCall(
     }
 });
 
-exports.syncSessionBeacon = functions.https.onRequest(async (req, res) => {
+exports.syncSessionBeacon = regionalFunctions().https.onRequest(async (req, res) => {
     const allowedOrigins = [
         ...String(process.env.PUBLIC_ALLOWED_ORIGINS || '')
             .split(',')
@@ -466,20 +468,16 @@ exports.syncSessionBeacon = functions.https.onRequest(async (req, res) => {
     }
 });
 
-exports.deleteSession = functions.https.onCall(async (data, context) => {
-    if (!context.auth || (!context.auth.token.admin && !context.auth.token.superAdmin && context.auth.token.email !== require('../../helpers/security').SUPER_ADMIN_EMAIL)) {
-        throw new functions.https.HttpsError('permission-denied', 'Admin only');
-    }
+exports.deleteSession = regionalFunctions().https.onCall(async (data, context) => {
+    await checkRecentActiveStrongAdmin(context);
     const { sessionId } = data;
     if (!sessionId) throw new functions.https.HttpsError('invalid-argument', 'Missing sessionId');
     await deleteSessionRecursively(sessionId);
     return { success: true };
 });
 
-exports.clearAllSessions = functions.https.onCall(async (data, context) => {
-    if (!context.auth || (!context.auth.token.admin && !context.auth.token.superAdmin && context.auth.token.email !== require('../../helpers/security').SUPER_ADMIN_EMAIL)) {
-        throw new functions.https.HttpsError('permission-denied', 'Admin only');
-    }
+exports.clearAllSessions = regionalFunctions().https.onCall(async (data, context) => {
+    await checkRecentActiveStrongAdmin(context);
 
     try {
         const sessionsRef = db.collection('analytics_sessions');

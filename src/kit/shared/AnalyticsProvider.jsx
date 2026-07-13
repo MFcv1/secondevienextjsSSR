@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '../config/firebase';
+import { functions, functionsRegion } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { ANALYTICS_EVENT_NAME, AnalyticsProvider as AnalyticsContextProvider } from '../contexts/AnalyticsContext';
 import { resolvePageKey, isSessionEntryView, stepSignature } from './pageTaxonomy';
@@ -326,7 +326,7 @@ const AnalyticsProvider = ({
             const totalDuration = sessionStartAtRef.current
                 ? Math.round((Date.now() - sessionStartAtRef.current) / 1000)
                 : 0;
-            const url = `https://us-central1-${functions.app.options.projectId}.cloudfunctions.net/syncSessionBeacon`;
+            const url = `https://${functionsRegion}-${functions.app.options.projectId}.cloudfunctions.net/syncSessionBeacon`;
 
             const chunk = [...journeyToSend.current];
             const eventsChunk = [...eventsToSend.current];

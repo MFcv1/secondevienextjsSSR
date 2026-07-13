@@ -6,11 +6,15 @@
  */
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
-const nodemailer = require('nodemailer');
 const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
-const { GMAIL_EMAIL, GMAIL_PASSWORD } = require('../../helpers/secrets');
 const { getSiteUrl } = require('../../helpers/config');
-const { checkIsAdmin, normalizeFirestoreId } = require('../../helpers/security');
+const { checkActiveStrongAdmin, checkRecentActiveStrongAdmin, normalizeFirestoreId } = require('../../helpers/security');
+const { regionalFunctions } = require('../../helpers/runtime');
+const {
+    TRANSACTIONAL_EMAIL_SECRETS,
+    buildEmailIdempotencyKey,
+    getTransactionalEmailRuntime
+} = require('./transactionalEmailRuntime');
 
 const db = admin.firestore();
 const REFUND_EMAIL_STATUSES = new Set(['refund_pending', 'refunded', 'refund_failed']);
@@ -35,28 +39,18 @@ function formatShippingInfo(shipping = {}) {
     return [address, cityLine].filter(Boolean).map(escapeHtml).join(', ') || 'Non specifie';
 }
 
-function createTransporter() {
-    return nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: GMAIL_EMAIL.value(),
-            pass: GMAIL_PASSWORD.value()
-        }
-    });
-}
-
 /**
  * Envoi des emails de confirmation (Admin + Client)
  * Extrait en helper pour être réutilisé par onOrderCreated et onOrderUpdated
  */
 async function sendNewOrderEmails(orderId, order) {
-    const adminEmail = GMAIL_EMAIL.value();
+    const emailRuntime = getTransactionalEmailRuntime();
+    const adminEmail = emailRuntime.fromAddress;
     if (!adminEmail) {
-        console.error("❌ Email non configuré (GMAIL_EMAIL manquant).");
+        console.error("❌ Email transactionnel non configuré.");
         return;
     }
 
-    const transporter = createTransporter();
     const clientEmail = order.userEmail || order.shipping?.email;
     const SITE_URL = getSiteUrl();
 
@@ -132,12 +126,18 @@ async function sendNewOrderEmails(orderId, order) {
     };
 
     try {
-        await transporter.sendMail(adminMailOptions);
+        await emailRuntime.sender.send(adminMailOptions, {
+            idempotencyKey: buildEmailIdempotencyKey('order-created-admin', orderId)
+        });
         emailProof.admin.sent = true;
+        emailProof.admin.provider = emailRuntime.provider;
         console.log("✅ Email Admin envoyé.");
         if (clientMailOptions) {
-            await transporter.sendMail(clientMailOptions);
+            await emailRuntime.sender.send(clientMailOptions, {
+                idempotencyKey: buildEmailIdempotencyKey('order-created-client', orderId)
+            });
             emailProof.client.sent = true;
+            emailProof.client.provider = emailRuntime.provider;
             console.log("✅ Email Client envoyé à", clientEmail);
         }
     } catch (e) {
@@ -187,20 +187,22 @@ function getRefundEmailCopy(order) {
     };
 }
 
-exports.sendTestEmail = functions.runWith({ secrets: [GMAIL_EMAIL, GMAIL_PASSWORD] }).https.onCall(async (data, context) => {
-    checkIsAdmin(context);
+exports.sendTestEmail = regionalFunctions().runWith({ secrets: TRANSACTIONAL_EMAIL_SECRETS }).https.onCall(async (data, context) => {
+    await checkActiveStrongAdmin(context);
 
-    const adminEmail = GMAIL_EMAIL.value();
-    const gmailPassword = GMAIL_PASSWORD.value();
-    if (!adminEmail || !gmailPassword) {
+    let emailRuntime;
+    try {
+        emailRuntime = getTransactionalEmailRuntime();
+    } catch (error) {
+        console.error('Email diagnostic provider configuration error:', error?.code || error?.message || error);
         throw new functions.https.HttpsError('failed-precondition', 'Configuration email incomplète.');
     }
 
+    const adminEmail = emailRuntime.fromAddress;
     const recipient = context.auth?.token?.email || adminEmail;
     const SITE_URL = getSiteUrl();
-    const transporter = createTransporter();
 
-    await transporter.sendMail({
+    await emailRuntime.sender.send({
         from: `Diagnostic Seconde Vie <${adminEmail}>`,
         to: recipient,
         subject: 'Diagnostic email Seconde Vie',
@@ -212,13 +214,15 @@ exports.sendTestEmail = functions.runWith({ secrets: [GMAIL_EMAIL, GMAIL_PASSWOR
                 <p style="color:#78716c;font-size:12px;">Message généré par sendTestEmail.</p>
             </div>
         `
+    }, {
+        idempotencyKey: buildEmailIdempotencyKey('email-diagnostic', context.auth?.uid, Date.now())
     });
 
-    return { success: true, to: recipient };
+    return { success: true, to: recipient, provider: emailRuntime.provider };
 });
 
-exports.sendRefundStatusEmailAdmin = functions.runWith({ secrets: [GMAIL_EMAIL, GMAIL_PASSWORD] }).https.onCall(async (data, context) => {
-    checkIsAdmin(context);
+exports.sendRefundStatusEmailAdmin = regionalFunctions().runWith({ secrets: TRANSACTIONAL_EMAIL_SECRETS }).https.onCall(async (data, context) => {
+    await checkRecentActiveStrongAdmin(context);
     const orderId = normalizeFirestoreId(data?.orderId, 'ID commande');
     const orderRef = db.collection('orders').doc(orderId);
     const snap = await orderRef.get();
@@ -251,20 +255,22 @@ exports.sendRefundStatusEmailAdmin = functions.runWith({ secrets: [GMAIL_EMAIL, 
         throw new functions.https.HttpsError('failed-precondition', 'Aucun email client disponible pour cette commande.');
     }
 
-    const adminEmail = GMAIL_EMAIL.value();
-    const gmailPassword = GMAIL_PASSWORD.value();
-    if (!adminEmail || !gmailPassword) {
+    let emailRuntime;
+    try {
+        emailRuntime = getTransactionalEmailRuntime();
+    } catch (error) {
+        console.error('Refund email provider configuration error:', error?.code || error?.message || error);
         throw new functions.https.HttpsError('failed-precondition', 'Configuration email incomplete.');
     }
 
+    const adminEmail = emailRuntime.fromAddress;
     const copy = getRefundEmailCopy(order);
-    const transporter = createTransporter();
     const refundId = order.stripeRefundId ? `<p style="color:#78716c;font-size:12px;">Reference Stripe : ${escapeHtml(order.stripeRefundId)}</p>` : '';
     const itemsHtml = (order.items || []).map(item =>
         `<li>${item.quantity || 1}x <b>${escapeHtml(item.name || "Article")}</b></li>`
     ).join('');
 
-    await transporter.sendMail({
+    await emailRuntime.sender.send({
         from: `Seconde Vie <${adminEmail}>`,
         to: clientEmail,
         subject: copy.subject,
@@ -283,6 +289,14 @@ exports.sendRefundStatusEmailAdmin = functions.runWith({ secrets: [GMAIL_EMAIL, 
                 <p style="margin-top:24px;">A tres vite,<br/>L equipe Seconde Vie</p>
             </div>
         `
+    }, {
+        idempotencyKey: buildEmailIdempotencyKey(
+            'refund-status',
+            orderId,
+            order.status,
+            order.stripeRefundId,
+            force ? Date.now() : 'canonical'
+        )
     });
 
     await orderRef.set({
@@ -291,17 +305,18 @@ exports.sendRefundStatusEmailAdmin = functions.runWith({ secrets: [GMAIL_EMAIL, 
             sent: true,
             status: order.status || null,
             stripeRefundId: order.stripeRefundId || null,
+            provider: emailRuntime.provider,
             sentAt: admin.firestore.FieldValue.serverTimestamp()
         },
         refundEmailProofUpdatedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
-    return { success: true, to: clientEmail, status: order.status || null };
+    return { success: true, to: clientEmail, status: order.status || null, provider: emailRuntime.provider };
 });
 
 // --- TRIGGER: Nouvelle Commande ---
 exports.onOrderCreated = onDocumentCreated(
-    { document: 'orders/{orderId}', region: 'europe-west1', secrets: [GMAIL_EMAIL, GMAIL_PASSWORD] },
+    { document: 'orders/{orderId}', region: 'europe-west1', secrets: TRANSACTIONAL_EMAIL_SECRETS },
     async (event) => {
         console.log("⚡ onOrderCreated TRIGGERED! ID:", event.params.orderId);
         const order = event.data?.data();
@@ -322,7 +337,7 @@ exports.onOrderCreated = onDocumentCreated(
 
 // --- TRIGGER: Mise à jour commande (confirmation paiement, expédition, livraison) ---
 exports.onOrderUpdated = onDocumentUpdated(
-    { document: 'orders/{orderId}', region: 'europe-west1', secrets: [GMAIL_EMAIL, GMAIL_PASSWORD] },
+    { document: 'orders/{orderId}', region: 'europe-west1', secrets: TRANSACTIONAL_EMAIL_SECRETS },
     async (event) => {
         const orderBefore = event.data?.before?.data();
         const orderAfter = event.data?.after?.data();
@@ -338,13 +353,13 @@ exports.onOrderUpdated = onDocumentUpdated(
 
         if (!clientEmail) return null;
 
-        const adminEmail = GMAIL_EMAIL.value();
-        const transporter = createTransporter();
+        const emailRuntime = getTransactionalEmailRuntime();
+        const adminEmail = emailRuntime.fromAddress;
 
         // --- 2. SHIPPED ---
         if (orderAfter.status === 'shipped' && orderBefore.status !== 'shipped') {
             try {
-                await transporter.sendMail({
+                await emailRuntime.sender.send({
                     from: `Votre Boutique <${adminEmail}>`,
                     to: clientEmail,
                     subject: `📦 Votre commande a été expédiée !`,
@@ -358,6 +373,8 @@ exports.onOrderUpdated = onDocumentUpdated(
                             <p>À très vite,<br/><i>L'équipe</i></p>
                         </div>
                     `
+                }, {
+                    idempotencyKey: buildEmailIdempotencyKey('order-shipped', orderId)
                 });
                 console.log("✅ Email d'expédition envoyé à", clientEmail);
             } catch (e) {
@@ -368,7 +385,7 @@ exports.onOrderUpdated = onDocumentUpdated(
         // --- COMPLETED (Delivered) ---
         if (orderAfter.status === 'completed' && orderBefore.status !== 'completed') {
             try {
-                await transporter.sendMail({
+                await emailRuntime.sender.send({
                     from: `Votre Boutique <${adminEmail}>`,
                     to: clientEmail,
                     subject: `✨ Votre commande est arrivée !`,
@@ -382,6 +399,8 @@ exports.onOrderUpdated = onDocumentUpdated(
                             <p>À très vite,<br/><i>L'équipe</i></p>
                         </div>
                     `
+                }, {
+                    idempotencyKey: buildEmailIdempotencyKey('order-completed', orderId)
                 });
                 console.log("✅ Email de Livraison envoyé à", clientEmail);
             } catch (e) {

@@ -18,6 +18,7 @@ import {
   RefreshCw,
   RotateCcw,
   Share2,
+  ShieldCheck,
   Users,
   Package,
 } from 'lucide-react';
@@ -46,6 +47,7 @@ const AdminIPTracker = React.lazy(() => import('../../src/kit/admin/AdminIPTrack
 const AdminGlobalInventory = React.lazy(() => import('../../src/kit/admin/GlobalInventoryView'));
 const AdminMaintenance = React.lazy(() => import('../../src/kit/admin/AdminMaintenance'));
 const PerformanceArchitectureStudy = React.lazy(() => import('../../src/kit/admin/PerformanceArchitectureStudy'));
+const LegacyLoginModalIsland = React.lazy(() => import('../../src/kit/marketplace/LegacyLoginModalFullIsland'));
 
 const TAB_ICONS = {
   dashboard: Activity,
@@ -81,11 +83,12 @@ const getAdminFirestoreRuntime = async () => {
 };
 
 function AdminContent({ initialItems = [] }) {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, hasStrongAuth, loading } = useAuth();
   const [adminCollection, setAdminCollection] = useState('dashboard');
   const [editingItem, setEditingItem] = useState(null);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [stepUpOpen, setStepUpOpen] = useState(false);
 
   React.useEffect(() => {
     try {
@@ -160,6 +163,39 @@ function AdminContent({ initialItems = [] }) {
         <Link className="rounded-full bg-stone-950 px-5 py-3 text-sm font-bold text-white" href="/">
           Retour au site
         </Link>
+      </div>
+    );
+  }
+
+  if (!hasStrongAuth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#faf9f5] px-6 text-stone-900">
+        <div className="w-full max-w-lg rounded-[2rem] border border-stone-200 bg-white p-8 text-center shadow-sm md:p-12">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-stone-950 text-white">
+            <ShieldCheck size={24} />
+          </span>
+          <h1 className="mt-6 text-3xl font-black tracking-tight">Confirmez votre identite</h1>
+          <p className="mt-3 text-sm leading-6 text-stone-500">
+            L espace client reste accessible. Pour ouvrir l administration, utilisez votre connexion rapide ou Google.
+          </p>
+          <button
+            type="button"
+            onClick={() => setStepUpOpen(true)}
+            className="mt-7 w-full rounded-full bg-stone-950 px-6 py-3.5 text-xs font-black uppercase tracking-[0.16em] text-white transition hover:bg-stone-800"
+          >
+            Confirmer mon identite
+          </button>
+          <Link className="mt-4 inline-block text-xs font-bold text-stone-500 hover:text-stone-900" href="/">
+            Retour au site
+          </Link>
+        </div>
+        <Suspense fallback={null}>
+          <LegacyLoginModalIsland
+            open={stepUpOpen}
+            onOpenChange={setStepUpOpen}
+            renderTrigger={false}
+          />
+        </Suspense>
       </div>
     );
   }

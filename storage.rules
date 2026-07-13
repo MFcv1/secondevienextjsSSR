@@ -12,8 +12,21 @@ service firebase.storage {
           request.auth.token.admin == true ||
           request.auth.token.superAdmin == true
         )
-        && request.resource.size < 10 * 1024 * 1024
-        && request.resource.contentType.matches('image/(jpeg|png|webp|gif|avif)');
+        && (
+          request.auth.token.firebase.sign_in_provider == 'google.com' ||
+          (
+            request.auth.token.authMethod == 'passkey' &&
+            request.auth.token.authAssurance == 'aal2' &&
+            request.auth.token.userVerified == true
+          )
+        )
+        && (
+          request.resource == null ||
+          (
+            request.resource.size < 10 * 1024 * 1024 &&
+            request.resource.contentType.matches('image/(jpeg|png|webp|gif|avif)')
+          )
+        );
     }
   }
 }

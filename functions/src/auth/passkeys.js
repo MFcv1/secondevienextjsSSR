@@ -14,6 +14,35 @@ const db = admin.firestore();
 const RP_NAME = 'Seconde Vie';
 const CHALLENGE_TTL_MS = 5 * 60 * 1000;
 const MAX_PASSKEYS_PER_USER = 10;
+const USER_VERIFICATION_REQUIRED_MESSAGE = 'Confirmez votre identite avec Windows Hello, Face ID ou le code de votre appareil.';
+
+function mapWebAuthnVerificationError(error, ceremony) {
+    const details = String(error?.message || '');
+    const isUserVerificationFailure = /user verification|user was not verified/i.test(details);
+    console.warn('passkey_verification_rejected', {
+        ceremony,
+        uv: isUserVerificationFailure ? false : null,
+        errorName: error?.name || null,
+    });
+    return new functions.https.HttpsError(
+        'permission-denied',
+        isUserVerificationFailure ? USER_VERIFICATION_REQUIRED_MESSAGE : 'Passkey non valide.'
+    );
+}
+
+function assertUserVerification(verification, ceremony) {
+    const verificationInfo = ceremony === 'registration'
+        ? verification?.registrationInfo
+        : verification?.authenticationInfo;
+    const uv = verificationInfo?.userVerified === true;
+    console.info('passkey_user_verification', { ceremony, uv });
+    if (!uv) {
+        throw new functions.https.HttpsError(
+            'permission-denied',
+            USER_VERIFICATION_REQUIRED_MESSAGE
+        );
+    }
+}
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const MAX_CHALLENGE_ATTEMPTS = 5;
@@ -114,7 +143,12 @@ function hashJson(value) {
 }
 
 async function mintPasskeyCustomToken(uid) {
-    return admin.auth().createCustomToken(uid, { signInProvider: 'passkey' });
+    return admin.auth().createCustomToken(uid, {
+        signInProvider: 'passkey',
+        authMethod: 'passkey',
+        authAssurance: 'aal2',
+        userVerified: true,
+    });
 }
 
 async function resumeFailedTokenMint(operationRef, responseHash) {
@@ -245,7 +279,7 @@ exports.generatePasskeyRegistrationOptions = regionalFunctions().runWith({ enfor
         })),
         authenticatorSelection: {
             residentKey: 'preferred',
-            userVerification: 'preferred',
+            userVerification: 'required',
         },
     });
 
@@ -287,17 +321,23 @@ exports.verifyPasskeyRegistration = regionalFunctions().runWith({ enforceAppChec
     }
 
     const response = assertCredentialResponse(data?.response);
-    const verification = await verifyRegistrationResponse({
-        response,
-        expectedChallenge: challenge.challenge,
-        expectedOrigin: challenge.origin,
-        expectedRPID: challenge.rpID,
-        requireUserVerification: false,
-    });
+    let verification;
+    try {
+        verification = await verifyRegistrationResponse({
+            response,
+            expectedChallenge: challenge.challenge,
+            expectedOrigin: challenge.origin,
+            expectedRPID: challenge.rpID,
+            requireUserVerification: true,
+        });
+    } catch (error) {
+        throw mapWebAuthnVerificationError(error, 'registration');
+    }
 
     if (!verification.verified || !verification.registrationInfo?.credential) {
         throw new functions.https.HttpsError('permission-denied', 'Passkey non valide.');
     }
+    assertUserVerification(verification, 'registration');
 
     const { credential, credentialDeviceType, credentialBackedUp } = verification.registrationInfo;
     const credentialId = credential.id;
@@ -357,7 +397,7 @@ exports.generatePasskeyAuthenticationOptions = regionalFunctions().runWith({ enf
             id: passkey.credentialId,
             transports: passkey.transports || [],
         })),
-        userVerification: 'preferred',
+        userVerification: 'required',
     });
 
     const expiresAtMillis = Date.now() + CHALLENGE_TTL_MS;
@@ -416,18 +456,24 @@ exports.verifyPasskeyAuthentication = regionalFunctions().runWith({ enforceAppCh
     }
 
     const passkey = passkeySnap.data();
-    const verification = await verifyAuthenticationResponse({
-        response,
-        expectedChallenge: challengeData.challenge,
-        expectedOrigin: challengeData.origin,
-        expectedRPID: challengeData.rpID,
-        credential: toWebAuthnCredential(passkey),
-        requireUserVerification: false,
-    });
+    let verification;
+    try {
+        verification = await verifyAuthenticationResponse({
+            response,
+            expectedChallenge: challengeData.challenge,
+            expectedOrigin: challengeData.origin,
+            expectedRPID: challengeData.rpID,
+            credential: toWebAuthnCredential(passkey),
+            requireUserVerification: true,
+        });
+    } catch (error) {
+        throw mapWebAuthnVerificationError(error, 'authentication');
+    }
 
     if (!verification.verified) {
         throw new functions.https.HttpsError('permission-denied', 'Passkey refusee.');
     }
+    assertUserVerification(verification, 'authentication');
 
     await db.runTransaction(async (transaction) => {
         const [freshChallengeSnap, freshPasskeySnap] = await Promise.all([

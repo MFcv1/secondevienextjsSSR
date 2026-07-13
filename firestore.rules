@@ -10,6 +10,12 @@ service cloud.firestore {
       );
     }
 
+    function hasActiveAdminAccess() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/sys_admin_access/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/sys_admin_access/$(request.auth.uid)).data.active == true;
+    }
+
     // Fonction Validation User (Basic)
     function isOwner(userId) {
       return request.auth.uid == userId;
@@ -34,6 +40,23 @@ service cloud.firestore {
       ];
     }
 
+    // AAL2: Google selon la politique operationnelle du projet, ou passkey
+    // dont la verification locale (PIN/biometrie) a ete attestee par le serveur.
+    function hasStrongAuth() {
+      return request.auth != null && (
+        request.auth.token.firebase.sign_in_provider == 'google.com' ||
+        (
+          request.auth.token.authMethod == 'passkey' &&
+          request.auth.token.authAssurance == 'aal2' &&
+          request.auth.token.userVerified == true
+        )
+      );
+    }
+
+    function isStrongArtisan() {
+      return isArtisan() && hasStrongAuth() && hasActiveAdminAccess();
+    }
+
     function isProtectedMetadataDoc(docId) {
       return docId in [
         'stripe_connect'
@@ -49,9 +72,9 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if isOwner(userId) || isArtisan();
+      allow read: if isOwner(userId) || isStrongArtisan();
       allow create: if isOwner(userId) && ownerProfileCreateIsSafe();
-      allow update: if isArtisan() || (isOwner(userId) && ownerProfileWriteIsSafe());
+      allow update: if isStrongArtisan() || (isOwner(userId) && ownerProfileWriteIsSafe());
     }
 
     // Validation Helpers
@@ -68,21 +91,21 @@ service cloud.firestore {
 
     // Collections produits (furniture, cutting_boards, etc.)
     match /artifacts/{appId}/public/data/{collectionName}/{itemId} {
-      allow read: if isArtisan() || resource.data.status == 'published';
-      allow create, update: if isArtisan() && isValidProduct();
-      allow delete: if isArtisan();
+      allow read: if isStrongArtisan() || resource.data.status == 'published';
+      allow create, update: if isStrongArtisan() && isValidProduct();
+      allow delete: if isStrongArtisan();
 
     }
 
     match /artifacts/{appId}/public/meta {
       allow read: if true;
-      allow write: if isArtisan();
+      allow write: if isStrongArtisan();
     }
 
     // Newsletter Subscribers
     match /newsletter_subscribers/{docId} {
       allow create: if false; // Via Cloud Function uniquement
-      allow read, update, delete: if isArtisan();
+      allow read, update, delete: if isStrongArtisan();
     }
 
     // Fonction Validation Cart
@@ -129,7 +152,7 @@ service cloud.firestore {
 
     // Commandes
     match /orders/{orderId} {
-      allow read, write: if isArtisan();
+      allow read, write: if isStrongArtisan();
       allow read: if request.auth != null && (
         (
           hasTrustedCheckoutAuth() &&
@@ -148,12 +171,17 @@ service cloud.firestore {
 
     // System Metadata
     match /sys_metadata/{docId} {
-      allow read: if isArtisan() || isPublicMetadataDoc(docId);
-      allow write: if isArtisan() && !isProtectedMetadataDoc(docId);
+      allow read: if isStrongArtisan() || isPublicMetadataDoc(docId);
+      allow write: if isStrongArtisan() && !isProtectedMetadataDoc(docId);
     }
 
     // Rate Limiting (Backend-Only)
     match /sys_ratelimit/{docId} {
+      allow read, write: if false;
+    }
+
+    // Registry d'autorisation admin, exclusivement gere par Firebase Admin SDK.
+    match /sys_admin_access/{userId} {
       allow read, write: if false;
     }
 
@@ -164,42 +192,42 @@ service cloud.firestore {
 
     // Analytics Sessions
     match /analytics_sessions/{docId} {
-      allow read: if isArtisan();
+      allow read: if isStrongArtisan();
       allow write: if false; // Cloud Functions only
 
       match /{subCollection}/{subDocId} {
-        allow read: if isArtisan();
+        allow read: if isStrongArtisan();
         allow write: if false;
       }
     }
 
     match /analytics_item_daily/{docId} {
-      allow read: if isArtisan();
+      allow read: if isStrongArtisan();
       allow write: if false;
     }
 
     match /analytics_page_daily/{docId} {
-      allow read: if isArtisan();
+      allow read: if isStrongArtisan();
       allow write: if false;
     }
 
     match /analytics_transition_daily/{docId} {
-      allow read: if isArtisan();
+      allow read: if isStrongArtisan();
       allow write: if false;
     }
 
     match /dashboard_stats/{docId} {
-      allow read: if isArtisan();
+      allow read: if isStrongArtisan();
       allow write: if false;
     }
 
     match /sales_stats_daily/{docId} {
-      allow read: if isArtisan();
+      allow read: if isStrongArtisan();
       allow write: if false;
     }
 
     match /inventory_stats/{docId} {
-      allow read: if isArtisan();
+      allow read: if isStrongArtisan();
       allow write: if false;
     }
   }

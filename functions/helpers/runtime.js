@@ -1,8 +1,9 @@
 const functions = require('firebase-functions/v1');
+const logger = require('firebase-functions/logger');
 
 const PRIMARY_FUNCTIONS_REGION = 'europe-west1';
 const LEGACY_FUNCTIONS_REGION = 'us-central1';
-const FUNCTION_REGIONS = [LEGACY_FUNCTIONS_REGION, PRIMARY_FUNCTIONS_REGION];
+const FUNCTION_REGIONS = [PRIMARY_FUNCTIONS_REGION];
 
 function regionalFunctions() {
     return functions.region(...FUNCTION_REGIONS);
@@ -14,11 +15,16 @@ function getRuntimeRegion() {
 
 function logFunctionPerf(functionName, startedAt, extra = {}) {
     const elapsedMs = Math.max(0, Date.now() - startedAt);
-    console.info('function_perf', {
+    const safeExtra = {};
+    for (const key of ['phase', 'emailHash', 'resumed', 'code', 'responseCode']) {
+        if (extra[key] !== undefined && extra[key] !== null) safeExtra[key] = extra[key];
+    }
+    logger.info('function_perf', {
+        event: 'function_perf',
         functionName,
         region: getRuntimeRegion(),
         elapsedMs,
-        ...extra
+        ...safeExtra
     });
     return elapsedMs;
 }

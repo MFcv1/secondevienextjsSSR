@@ -1,10 +1,13 @@
 const crypto = require('crypto');
 const admin = require('firebase-admin');
 const { functions, regionalFunctions, logFunctionPerf } = require('../../helpers/runtime');
-const nodemailer = require('nodemailer');
-const { GMAIL_EMAIL, GMAIL_PASSWORD } = require('../../helpers/secrets');
+const { OTP_HMAC_SECRET } = require('../../helpers/secrets');
 const { getSiteUrl } = require('../../helpers/config');
 const { timestampFromNow, SYSTEM_DOC_RETENTION_DAYS } = require('../analytics/constants');
+const {
+    TRANSACTIONAL_EMAIL_SECRETS,
+    getTransactionalEmailRuntime
+} = require('../email/transactionalEmailRuntime');
 
 const db = admin.firestore();
 
@@ -14,7 +17,6 @@ const MIN_RESEND_MS = 60 * 1000;
 const MAX_EMAIL_SENDS_PER_HOUR = 5;
 const MAX_IP_SENDS_PER_HOUR = 20;
 const MAX_VERIFY_ATTEMPTS = 5;
-let gmailTransporter = null;
 
 function normalizeEmail(email) {
     const normalized = String(email || '').trim().toLowerCase();
@@ -41,7 +43,7 @@ function createCheckoutOtpToken() {
 }
 
 function hashOtp(email, code) {
-    const secret = GMAIL_PASSWORD.value();
+    const secret = OTP_HMAC_SECRET.value();
     if (!secret) {
         throw new functions.https.HttpsError('failed-precondition', 'Configuration email incomplete.');
     }
@@ -58,25 +60,6 @@ function getOtpRef(email) {
 function getIpRef(context) {
     const ip = context.rawRequest?.ip || context.rawRequest?.headers?.['x-forwarded-for'] || 'unknown';
     return db.doc(`sys_ratelimit/guest_checkout_otp_ip_${sha256(ip)}`);
-}
-
-function getTransporter() {
-    if (gmailTransporter) return gmailTransporter;
-
-    gmailTransporter = nodemailer.createTransport({
-        service: 'gmail',
-        pool: true,
-        maxConnections: 2,
-        maxMessages: 100,
-        connectionTimeout: 5000,
-        greetingTimeout: 5000,
-        socketTimeout: 10000,
-        auth: {
-            user: GMAIL_EMAIL.value(),
-            pass: GMAIL_PASSWORD.value()
-        }
-    });
-    return gmailTransporter;
 }
 
 function buildEmailHtml(code) {
@@ -126,14 +109,16 @@ function mapMailError(error) {
 }
 
 exports.sendGuestCheckoutOtp = regionalFunctions()
-    .runWith({ enforceAppCheck: true, secrets: [GMAIL_EMAIL, GMAIL_PASSWORD] })
+    .runWith({ enforceAppCheck: true, secrets: [...TRANSACTIONAL_EMAIL_SECRETS, OTP_HMAC_SECRET] })
     .https.onCall(async (data, context) => {
         const startedAt = Date.now();
         const email = normalizeEmail(data?.email);
         const emailHash = sha256(email);
-        const adminEmail = GMAIL_EMAIL.value();
-        const gmailPassword = GMAIL_PASSWORD.value();
-        if (!adminEmail || !gmailPassword) {
+        let emailRuntime;
+        try {
+            emailRuntime = getTransactionalEmailRuntime();
+        } catch (error) {
+            console.error('Guest checkout email provider configuration error:', error?.code || error?.message || error);
             throw new functions.https.HttpsError('failed-precondition', 'Configuration email incomplete.');
         }
 
@@ -189,13 +174,14 @@ exports.sendGuestCheckoutOtp = regionalFunctions()
             }, { merge: true });
         });
 
-        const transporter = getTransporter();
         try {
-            await transporter.sendMail({
-                from: `Seconde Vie <${adminEmail}>`,
+            await emailRuntime.sender.send({
+                from: `Seconde Vie <${emailRuntime.fromAddress}>`,
                 to: email,
                 subject: 'Votre code de validation Seconde Vie',
                 html: buildEmailHtml(code)
+            }, {
+                idempotencyKey: `guest-checkout-otp/${emailHash}/${expiresAtMillis}`
             });
         } catch (error) {
             await clearOtpAfterMailFailure(emailRef, error).catch((cleanupError) => {
@@ -218,7 +204,7 @@ exports.sendGuestCheckoutOtp = regionalFunctions()
     });
 
 exports.verifyGuestCheckoutOtp = regionalFunctions()
-    .runWith({ enforceAppCheck: true, secrets: [GMAIL_PASSWORD] })
+    .runWith({ enforceAppCheck: true, secrets: [OTP_HMAC_SECRET] })
     .https.onCall(async (data, context) => {
         const startedAt = Date.now();
         const email = normalizeEmail(data?.email);

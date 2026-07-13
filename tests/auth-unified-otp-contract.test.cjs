@@ -20,8 +20,21 @@ test('OTP login only assigns the client role to newly created users', () => {
   assert.doesNotMatch(source, /set\(\{[\s\S]{0,120}role: 'client'/);
 });
 
-test('OTP verification keeps App Check and one-time challenge consumption', () => {
+test('OTP verification keeps App Check and uses a bounded resumable operation', () => {
   assert.match(source, /verifyCustomerLoginOtp[\s\S]*enforceAppCheck: true/);
-  assert.match(source, /usedAtMillis: now/);
+  assert.match(source, /MAX_OPERATION_RETRIES = 1/);
+  assert.match(source, /status: 'issuing'/);
+  assert.match(source, /status: 'failed_retryable'/);
+  assert.match(source, /status: 'token_issued'/);
+  assert.match(source, /responseHash/);
+  assert.match(source, /usedAtMillis: Date\.now\(\)/);
   assert.match(source, /otpHash: admin\.firestore\.FieldValue\.delete\(\)/);
+  assert.doesNotMatch(source, /token\s*:\s*token/);
+});
+
+test('OTP hashing uses its dedicated secret rather than the SMTP password', () => {
+  const hashFunction = source.slice(source.indexOf('function hashOtp'), source.indexOf('function getOtpRef'));
+  assert.match(hashFunction, /OTP_HMAC_SECRET\.value\(\)/);
+  assert.doesNotMatch(hashFunction, /GMAIL_PASSWORD\.value\(\)/);
+  assert.match(source, /verifyCustomerLoginOtp[\s\S]*secrets: \[OTP_HMAC_SECRET\]/);
 });
