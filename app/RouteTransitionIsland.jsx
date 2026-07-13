@@ -239,13 +239,13 @@ export default function RouteTransitionIsland() {
               <feMorphology in="SourceAlpha" operator="dilate" radius="5" result="neonOuter" />
               <feMorphology in="SourceAlpha" operator="erode" radius="2" result="neonInner" />
               <feComposite in="neonOuter" in2="neonInner" operator="out" result="neonEdge" />
-              <feGaussianBlur in="neonEdge" stdDeviation="15" result="farBlur" />
-              <feFlood floodColor="#a4512f" floodOpacity="0.58" result="farColor" />
+              <feGaussianBlur in="neonEdge" stdDeviation="13.5" result="farBlur" />
+              <feFlood floodColor="#a4512f" floodOpacity="0.6" result="farColor" />
               <feComposite in="farColor" in2="farBlur" operator="in" result="farGlow" />
-              <feGaussianBlur in="neonEdge" stdDeviation="5" result="nearBlur" />
-              <feFlood floodColor="#d99756" floodOpacity="0.92" result="nearColor" />
+              <feGaussianBlur in="neonEdge" stdDeviation="4.5" result="nearBlur" />
+              <feFlood floodColor="#d99756" floodOpacity="0.98" result="nearColor" />
               <feComposite in="nearColor" in2="nearBlur" operator="in" result="nearGlow" />
-              <feFlood floodColor="#fff0cf" result="coreColor" />
+              <feFlood floodColor="#fff4dc" result="coreColor" />
               <feComposite in="coreColor" in2="neonEdge" operator="in" result="core" />
               <feMerge>
                 <feMergeNode in="farGlow" />
@@ -255,69 +255,69 @@ export default function RouteTransitionIsland() {
             </filter>
             <radialGradient id="sv-route-logo-light-head">
               <stop offset="0" stopColor="white" />
-              <stop offset="0.32" stopColor="white" />
-              <stop offset="0.68" stopColor="#8a8a8a" />
+              <stop offset="0.3" stopColor="white" />
+              <stop offset="0.66" stopColor="#898989" />
               <stop offset="1" stopColor="black" />
             </radialGradient>
             <radialGradient id="sv-route-logo-detail-head">
               <stop offset="0" stopColor="white" />
               <stop offset="0.2" stopColor="white" />
-              <stop offset="0.54" stopColor="#777" />
+              <stop offset="0.54" stopColor="#7d7d7d" />
               <stop offset="1" stopColor="black" />
             </radialGradient>
             <mask id="sv-route-logo-travel" maskUnits="userSpaceOnUse" x="420" y="100" width="1100" height="1220" style={{ maskType: 'luminance' }}>
               <rect x="420" y="100" width="1100" height="1220" fill="black" />
-              <circle cx="0" cy="0" r="225" fill="url(#sv-route-logo-light-head)" opacity="0">
+              <circle cx="0" cy="0" r="205" fill="url(#sv-route-logo-light-head)" opacity="0">
                 <animate
                   attributeName="opacity"
-                  values="0;1;1;.72;.12"
+                  values="0;1;1;.74;0"
                   keyTimes="0;.06;.78;.9;1"
                   dur="3.2s"
-                  begin="2.22s"
+                  begin="2.62s"
                   fill="freeze"
                 />
                 <animateMotion
                   path="M 505 205 C 790 135 1230 150 1415 390 C 1515 520 1450 750 1270 850 C 1140 925 1055 1005 1070 1220"
                   dur="3.2s"
-                  begin="2.22s"
+                  begin="2.62s"
                   calcMode="spline"
                   keyTimes="0;1"
                   keySplines=".45 0 .2 1"
                   fill="freeze"
                 />
               </circle>
-              <circle cx="0" cy="0" r="210" fill="url(#sv-route-logo-light-head)" opacity="0">
+              <circle cx="0" cy="0" r="195" fill="url(#sv-route-logo-light-head)" opacity="0">
                 <animate
                   attributeName="opacity"
-                  values="0;1;1;.72;.12"
+                  values="0;1;1;.74;0"
                   keyTimes="0;.06;.78;.9;1"
                   dur="3.2s"
-                  begin="2.22s"
+                  begin="2.62s"
                   fill="freeze"
                 />
                 <animateMotion
                   path="M 505 205 C 472 330 480 470 500 615 C 520 770 475 930 555 1085 C 650 1260 855 1290 990 1165"
                   dur="3.2s"
-                  begin="2.22s"
+                  begin="2.62s"
                   calcMode="spline"
                   keyTimes="0;1"
                   keySplines=".45 0 .2 1"
                   fill="freeze"
                 />
               </circle>
-              <circle cx="0" cy="0" r="132" fill="url(#sv-route-logo-detail-head)" opacity="0">
+              <circle cx="0" cy="0" r="120" fill="url(#sv-route-logo-detail-head)" opacity="0">
                 <animate
                   attributeName="opacity"
-                  values="0;1;1;.78;.1"
+                  values="0;1;1;.78;0"
                   keyTimes="0;.08;.8;.92;1"
                   dur="2.7s"
-                  begin="2.46s"
+                  begin="2.82s"
                   fill="freeze"
                 />
                 <animateMotion
                   path="M 720 470 C 840 430 940 520 1055 500 C 1130 487 1180 445 1215 475 C 1185 525 1175 575 1190 620 C 1205 660 1260 695 1250 740 C 1240 790 1200 835 1140 840 C 1080 845 1035 800 1005 745 C 975 700 960 650 990 610"
                   dur="2.7s"
-                  begin="2.46s"
+                  begin="2.82s"
                   calcMode="spline"
                   keyTimes="0;1"
                   keySplines=".4 0 .2 1"
@@ -390,7 +390,7 @@ const routeTransitionCss = `
   background-image: var(--rt-panel);
   background-repeat: no-repeat;
   background-size: 200% 100%;
-  transition: transform calc(var(--rt-exit-ms) - 140ms) cubic-bezier(.76,0,.24,1);
+  transition: transform calc(var(--rt-exit-ms) - 980ms) cubic-bezier(.76,0,.24,1);
   will-change: transform;
 }
 .sv-route-transition__panel::after {
@@ -411,31 +411,49 @@ const routeTransitionCss = `
   background-position: right center;
 }
 .sv-route-transition__axis {
-  --rt-axis-delay: 300ms;
+  --rt-axis-delay: 250ms;
   position: absolute;
   left: 50%;
   z-index: 2;
-  width: 2px;
-  margin-left: -1px;
+  width: 1.5px;
+  margin-left: -.75px;
   pointer-events: none;
   opacity: 0;
   transform: scaleY(0);
-  box-shadow: 0 0 7px rgba(172, 102, 56, .22);
-  animation: sv-route-axis-in 1080ms var(--rt-axis-delay) cubic-bezier(.16,1,.3,1) forwards;
+  box-shadow: 0 0 5px rgba(172, 102, 56, .12);
+  animation: sv-route-axis-in 1450ms var(--rt-axis-delay) cubic-bezier(.45,0,.2,1) forwards;
   will-change: opacity, transform;
 }
 .sv-route-transition__axis--top {
   top: calc(12svh + clamp(30px, 7svh, 72px));
   bottom: calc(50% - 6svh + var(--rt-logo-clearance));
-  background: linear-gradient(180deg, transparent 0%, rgba(172, 112, 72, .18) 22%, rgba(139, 82, 48, .68) 100%);
+  background: linear-gradient(180deg, transparent 0%, rgba(172, 112, 72, .12) 22%, rgba(139, 82, 48, .5) 100%);
   transform-origin: top;
 }
 .sv-route-transition__axis--bottom {
-  --rt-axis-delay: 480ms;
+  --rt-axis-delay: 400ms;
   top: calc(50% + 6svh + var(--rt-logo-clearance));
   bottom: clamp(30px, 7svh, 72px);
-  background: linear-gradient(180deg, rgba(139, 82, 48, .68) 0%, rgba(172, 112, 72, .18) 78%, transparent 100%);
+  background: linear-gradient(180deg, rgba(139, 82, 48, .5) 0%, rgba(172, 112, 72, .12) 78%, transparent 100%);
   transform-origin: bottom;
+}
+.sv-route-transition__axis::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background-image: linear-gradient(180deg, transparent 0%, transparent 42%, rgba(217, 151, 86, .2) 46%, #d99756 48%, #fff9ec 50%, #d99756 52%, rgba(217, 151, 86, .2) 54%, transparent 58%, transparent 100%);
+  background-repeat: no-repeat;
+  background-size: 100% 300%;
+  filter: drop-shadow(0 0 2px rgba(255, 238, 199, .66)) drop-shadow(0 0 4px rgba(217, 151, 86, .28));
+  will-change: background-position, opacity;
+}
+.sv-route-transition__axis--top::after {
+  background-position: 0 25%;
+}
+.sv-route-transition__axis--bottom::after {
+  background-position: 0 75%;
 }
 .sv-route-transition__logo {
   position: absolute;
@@ -447,11 +465,12 @@ const routeTransitionCss = `
   overflow: visible;
   pointer-events: none;
   opacity: 0;
-  transform: translate3d(-50%, -50%, 0) perspective(760px) rotateY(-86deg) scale(.14);
+  transform: translate3d(-50%, -50%, 0) perspective(760px) rotateY(-86deg) scale(.16);
   transform-origin: center;
   transform-style: preserve-3d;
   backface-visibility: hidden;
-  animation: sv-route-logo-turn-in 1420ms 640ms cubic-bezier(.22,.72,.18,1) forwards;
+  image-rendering: auto;
+  animation: sv-route-logo-turn-in 1500ms 1320ms cubic-bezier(.22,.5,.2,1) forwards;
   will-change: opacity, transform;
 }
 .sv-route-transition__logo-guide {
@@ -462,24 +481,27 @@ const routeTransitionCss = `
 }
 .sv-route-transition[data-phase="leaving"] .sv-route-transition__panel--left {
   transform: translate3d(-101%, 0, 0);
-  transition-delay: 140ms;
+  transition-delay: 980ms;
 }
 .sv-route-transition[data-phase="leaving"] .sv-route-transition__panel--right {
   transform: translate3d(101%, 0, 0);
-  transition-delay: 140ms;
+  transition-delay: 980ms;
 }
 .sv-route-transition[data-phase="leaving"] .sv-route-transition__axis {
-  animation: none;
+  animation: sv-route-axis-exit-shell 1000ms linear both;
   opacity: 0;
-  visibility: hidden;
-  transition: opacity 90ms cubic-bezier(.4,0,1,1), visibility 0s 90ms;
+  transform: scaleY(1);
+}
+.sv-route-transition[data-phase="leaving"] .sv-route-transition__axis--top::after {
+  animation: sv-route-axis-exit-charge-top 850ms cubic-bezier(.45,0,.2,1) both;
+}
+.sv-route-transition[data-phase="leaving"] .sv-route-transition__axis--bottom::after {
+  animation: sv-route-axis-exit-charge-bottom 850ms cubic-bezier(.45,0,.2,1) both;
 }
 .sv-route-transition[data-phase="leaving"] .sv-route-transition__logo {
-  animation: none;
+  animation: sv-route-logo-exit-hold 1000ms linear both;
   opacity: 0;
-  visibility: hidden;
   transform: translate3d(-50%, -50%, 0);
-  transition: opacity 120ms ease-out, visibility 0s 120ms;
 }
 @keyframes sv-route-curtain-rise {
   from { transform: translate3d(0, 112svh, 0); }
@@ -487,14 +509,40 @@ const routeTransitionCss = `
 }
 @keyframes sv-route-axis-in {
   0% { opacity: 0; transform: scaleY(0); }
-  12% { opacity: 1; }
-  76% { opacity: 1; transform: scaleY(1); }
-  100% { opacity: .78; transform: scaleY(1); }
+  8% { opacity: 1; }
+  92% { opacity: 1; transform: scaleY(1); }
+  100% { opacity: .66; transform: scaleY(1); }
+}
+@keyframes sv-route-axis-exit-charge-top {
+  0% { opacity: 0; background-position: 0 25%; }
+  8% { opacity: 1; }
+  90% { opacity: 1; background-position: 0 75%; }
+  100% { opacity: 0; background-position: 0 75%; }
+}
+@keyframes sv-route-axis-exit-charge-bottom {
+  0% { opacity: 0; background-position: 0 75%; }
+  8% { opacity: 1; }
+  90% { opacity: 1; background-position: 0 25%; }
+  100% { opacity: 0; background-position: 0 25%; }
+}
+@keyframes sv-route-axis-exit-shell {
+  0%, 85% { opacity: .66; transform: scaleY(1); }
+  95%, 100% { opacity: 0; transform: scaleY(1); }
+}
+@keyframes sv-route-logo-exit-hold {
+  0%, 85% {
+    opacity: 1;
+    transform: translate3d(-50%, -50%, 0) perspective(760px) rotateY(0deg) scale(1);
+  }
+  95%, 100% {
+    opacity: 0;
+    transform: translate3d(-50%, -50%, 0) perspective(760px) rotateY(0deg) scale(1);
+  }
 }
 @keyframes sv-route-logo-turn-in {
   from {
     opacity: 0;
-    transform: translate3d(-50%, -50%, 0) perspective(760px) rotateY(-86deg) scale(.14);
+    transform: translate3d(-50%, -50%, 0) perspective(760px) rotateY(-86deg) scale(.16);
   }
   to {
     opacity: 1;
@@ -521,6 +569,10 @@ const routeTransitionCss = `
     animation: none !important;
     opacity: .65;
     transform: none;
+  }
+  .sv-route-transition__axis::after {
+    animation: none !important;
+    display: none;
   }
   .sv-route-transition__panel {
     transition-duration: 120ms !important;

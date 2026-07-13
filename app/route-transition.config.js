@@ -13,11 +13,11 @@ export const ROUTE_TRANSITION_CONFIG = {
   },
   variants: {
     atelierCurtain: {
-      minVisibleMs: 5700,
+      minVisibleMs: 5800,
       enterDelayMs: 900,
       enterDurationMs: 900,
       exitDelayMs: 150,
-      exitDurationMs: 1000,
+      exitDurationMs: 1950,
       panel: 'linear-gradient(180deg, #fcfaf6 0%, #f7f1ea 100%)',
     },
   },

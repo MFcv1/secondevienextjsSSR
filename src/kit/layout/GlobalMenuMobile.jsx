@@ -146,6 +146,18 @@ const mobilePanelVariants = {
     },
 };
 
+const MobileMenuControl = ({ href, action, children, ...motionProps }) => (
+    href ? (
+        <motion.a href={href} onClick={action} {...motionProps}>
+            {children}
+        </motion.a>
+    ) : (
+        <motion.button type="button" onClick={action} {...motionProps}>
+            {children}
+        </motion.button>
+    )
+);
+
 export default function GlobalMenuMobile({
     isMenuInteractive,
     isMenuClosing,
@@ -159,6 +171,7 @@ export default function GlobalMenuMobile({
     darkMode,
     navigateToPath,
     handleLogin,
+    closeMenu,
 }) {
     const isSignedIn = user && !user.isAnonymous;
     const isGalleryContext = ['gallery', 'wishlist'].includes(currentView);
@@ -167,14 +180,13 @@ export default function GlobalMenuMobile({
     const mutedText = darkMode ? 'text-stone-500' : 'text-stone-500';
     const softBg = darkMode ? 'bg-white/5' : 'bg-[#f6f2ee]';
 
-    const openAbout = () => navigateToPath('/a-propos');
     const goToCategory = (categoryId) => navigateToPath(getCategoryUrl(categoryId));
     const openQuoteRequest = () => navigateToPath('/devis');
     const openAccount = () => navigateToPath('/mes-commandes');
 
     const primaryLinks = [
         { label: 'Accueil', desc: 'Galerie principale', Icon: Home, active: isGalleryContext, action: () => navigateToPath('/') },
-        { label: 'À propos', desc: 'Atelier et histoire', Icon: UserRound, active: false, action: openAbout },
+        { label: 'À propos', desc: 'Atelier et histoire', Icon: UserRound, active: false, href: '/a-propos', action: closeMenu },
         { label: 'Commandes', desc: 'Espace client', Icon: Package, active: currentView === 'my-orders', action: () => (isSignedIn ? navigateToPath('/mes-commandes') : handleLogin()) },
         { label: 'Devis', desc: 'Projet sur mesure', Icon: ClipboardCheck, active: false, action: openQuoteRequest },
     ];
@@ -204,7 +216,7 @@ export default function GlobalMenuMobile({
         { label: 'Éclairage', Icon: Lamp, action: () => goToCategory('eclairage') },
         { label: 'Décorations', Icon: Flower2, action: () => goToCategory('decorations') },
         { label: 'Prix bas', Icon: BadgeEuro, accent: true, action: () => navigateToPath('/#gallery-small-prices') },
-        { label: 'À propos', Icon: UserRound, action: openAbout },
+        { label: 'À propos', Icon: UserRound, href: '/a-propos', action: closeMenu },
     ];
 
     return (
@@ -239,11 +251,11 @@ export default function GlobalMenuMobile({
                         </motion.div>
 
                         <motion.div className="global-menu-mobile-actions grid grid-cols-3 gap-2 sm:grid-cols-4" variants={mobileRevealGroupVariants}>
-                            {primaryLinks.map(({ label, desc, Icon, action }) => (
-                                <motion.button
+                            {primaryLinks.map(({ label, desc, Icon, action, href }) => (
+                                <MobileMenuControl
                                     key={label}
-                                    type="button"
-                                    onClick={action}
+                                    href={href}
+                                    action={action}
                                     className="global-menu-mobile-action flex flex-col items-center justify-center text-center"
                                     variants={mobileRevealItemVariants}
                                     whileTap={textTapMotion}
@@ -251,7 +263,7 @@ export default function GlobalMenuMobile({
                                     <Icon className="global-menu-mobile-action-icon" strokeWidth={1.45} />
                                     <span className="global-menu-mobile-action-label mt-1.5 font-serif font-bold leading-tight">{label}</span>
                                     <span className={`global-menu-mobile-action-desc mt-0.5 leading-tight ${mutedText}`}>{desc}</span>
-                                </motion.button>
+                                </MobileMenuControl>
                             ))}
                             <motion.button
                                 type="button"
@@ -274,11 +286,11 @@ export default function GlobalMenuMobile({
                         <motion.div className={`global-menu-mobile-divider h-px origin-center ${darkMode ? 'bg-stone-800' : 'bg-stone-200'}`} variants={mobileDividerVariants} />
 
                         <motion.nav className={`global-menu-mobile-nav flex min-h-0 flex-1 flex-col divide-y ${darkMode ? 'divide-stone-800' : 'divide-stone-200/80'}`} variants={mobileRevealGroupVariants}>
-                            {mobileRows.map(({ label, Icon, badge, accent, action }) => (
-                                <motion.button
+                            {mobileRows.map(({ label, Icon, badge, accent, action, href }) => (
+                                <MobileMenuControl
                                     key={label}
-                                    type="button"
-                                    onClick={action}
+                                    href={href}
+                                    action={action}
                                     className={`global-menu-mobile-row flex min-h-0 w-full flex-1 items-center gap-3 text-left ${accent ? 'text-[#9A4F31]' : ''}`}
                                     variants={mobileRevealItemVariants}
                                     whileTap={textTapMotion}
@@ -293,7 +305,7 @@ export default function GlobalMenuMobile({
                                         )}
                                     </span>
                                     <ChevronRight className="global-menu-mobile-chevron" strokeWidth={1.4} />
-                                </motion.button>
+                                </MobileMenuControl>
                             ))}
                         </motion.nav>
                     </motion.div>
