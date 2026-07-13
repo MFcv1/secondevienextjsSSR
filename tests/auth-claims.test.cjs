@@ -7,13 +7,16 @@ const grantAdminPath = path.resolve(__dirname, '../functions/src/auth/grantAdmin
 const securityPath = path.resolve(__dirname, '../functions/helpers/security.js');
 
 function createFirebaseFunctionsMock() {
-  return {
+  const functions = {
     auth: {
       user: () => ({
         onCreate: (handler) => handler
       })
     }
   };
+
+  functions.runWith = () => functions;
+  return functions;
 }
 
 function createFirebaseAdminMock({ adminUsersExists, adminUsersData }) {
@@ -21,6 +24,7 @@ function createFirebaseAdminMock({ adminUsersExists, adminUsersData }) {
     setCustomUserClaims: [],
     adminDocSet: [],
     adminDocUpdate: [],
+    registryDocSet: [],
     userDocSet: []
   };
 
@@ -43,9 +47,11 @@ function createFirebaseAdminMock({ adminUsersExists, adminUsersData }) {
       return adminDoc;
     },
     collection: (collectionName) => {
-      assert.equal(collectionName, 'users');
+      assert.ok(collectionName === 'users' || collectionName === 'sys_admin_access');
       return {
-        doc: () => userDoc
+        doc: () => collectionName === 'users'
+          ? userDoc
+          : { set: async (...args) => calls.registryDocSet.push(args) }
       };
     }
   });
@@ -118,6 +124,7 @@ test('unverified configured super-admin email receives no admin claims', async (
   assert.deepEqual(calls.adminDocSet, []);
   assert.deepEqual(calls.adminDocUpdate, []);
   assert.deepEqual(calls.userDocSet, []);
+  assert.deepEqual(calls.registryDocSet, []);
 });
 
 test('unverified pending admin email receives no admin claims', async () => {
@@ -146,4 +153,36 @@ test('unverified pending admin email receives no admin claims', async () => {
   assert.deepEqual(calls.adminDocSet, []);
   assert.deepEqual(calls.adminDocUpdate, []);
   assert.deepEqual(calls.userDocSet, []);
+  assert.deepEqual(calls.registryDocSet, []);
+});
+
+test('verified pending admin gets an active UID registry before claims', async () => {
+  const calls = await runGrantAdminOnAuth({
+    superAdminEmail: 'owner@example.com',
+    adminUsersExists: true,
+    adminUsersData: {
+      users: {
+        pending_123: {
+          email: 'admin@example.com',
+          name: 'Admin',
+          addedBy: 'owner@example.com',
+          status: 'pending'
+        }
+      }
+    },
+    user: {
+      uid: 'uid-admin-verified',
+      email: 'Admin@Example.com',
+      emailVerified: true,
+      customClaims: { existing: true }
+    }
+  });
+
+  assert.equal(calls.registryDocSet.length, 1);
+  assert.equal(calls.registryDocSet[0][0].active, true);
+  assert.equal(calls.registryDocSet[0][0].role, 'admin');
+  assert.deepEqual(calls.setCustomUserClaims, [[
+    'uid-admin-verified',
+    { existing: true, admin: true, superAdmin: false }
+  ]]);
 });

@@ -2,7 +2,12 @@ const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const Stripe = require('stripe');
 const { STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL: SUPER_ADMIN_EMAIL_SECRET } = require('../../helpers/secrets');
-const { checkIsAdmin, normalizeEmail, getSuperAdminEmail } = require('../../helpers/security');
+const {
+    checkActiveStrongAdmin,
+    checkRecentActiveStrongAdmin,
+    checkRecentActiveStrongSuperAdmin
+} = require('../../helpers/security');
+const { regionalFunctions } = require('../../helpers/runtime');
 
 const db = admin.firestore();
 const CONNECT_DOC_REF = db.doc('sys_metadata/stripe_connect');
@@ -20,29 +25,6 @@ function getCaller(context) {
         ip: String(context.rawRequest?.headers?.['x-forwarded-for'] || context.rawRequest?.ip || '').slice(0, 180),
         userAgent: String(context.rawRequest?.headers?.['user-agent'] || '').slice(0, 500)
     };
-}
-
-async function checkRecentStripeConnectAdmin(context, maxAgeSeconds = 900) {
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Authentification requise.');
-    }
-
-    const authTime = Number(context.auth?.token?.auth_time || 0);
-    const nowSeconds = Math.floor(Date.now() / 1000);
-    if (!authTime || nowSeconds - authTime > maxAgeSeconds) {
-        throw new functions.https.HttpsError(
-            'failed-precondition',
-            'Session admin trop ancienne. Reconnectez-vous avant cette action sensible.'
-        );
-    }
-
-    if (context.auth.token.superAdmin === true) return;
-
-    const email = normalizeEmail(context.auth.token.email);
-    const superAdminEmail = getSuperAdminEmail();
-    if (superAdminEmail && context.auth.token.email_verified === true && email === superAdminEmail) return;
-
-    throw new functions.https.HttpsError('permission-denied', 'Acces refuse : Super Admin uniquement.');
 }
 
 function sanitizeOrigin(value) {
@@ -181,10 +163,10 @@ async function getStripeConnectRouting() {
     };
 }
 
-exports.getStripeConnectStatus = functions
+exports.getStripeConnectStatus = regionalFunctions()
     .runWith({ secrets: [STRIPE_SECRET_KEY] })
     .https.onCall(async (_data, context) => {
-        checkIsAdmin(context);
+        await checkActiveStrongAdmin(context);
         const snap = await CONNECT_DOC_REF.get();
         return {
             success: true,
@@ -192,10 +174,10 @@ exports.getStripeConnectStatus = functions
         };
     });
 
-exports.startStripeConnectOnboarding = functions
+exports.startStripeConnectOnboarding = regionalFunctions()
     .runWith({ secrets: [STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL_SECRET] })
     .https.onCall(async (data, context) => {
-        await checkRecentStripeConnectAdmin(context);
+        await checkRecentActiveStrongSuperAdmin(context);
         try {
             const stripe = getStripe();
             const origin = sanitizeOrigin(data?.origin);
@@ -269,10 +251,10 @@ exports.startStripeConnectOnboarding = functions
         }
     });
 
-exports.syncStripeConnectAccount = functions
+exports.syncStripeConnectAccount = regionalFunctions()
     .runWith({ secrets: [STRIPE_SECRET_KEY] })
     .https.onCall(async (_data, context) => {
-        checkIsAdmin(context);
+        await checkRecentActiveStrongAdmin(context);
         const stripe = getStripe();
         const snap = await CONNECT_DOC_REF.get();
         const current = snap.exists ? snap.data() : {};
@@ -291,10 +273,10 @@ exports.syncStripeConnectAccount = functions
         return { success: true, connect: state };
     });
 
-exports.requestStripeConnectReconnect = functions
+exports.requestStripeConnectReconnect = regionalFunctions()
     .runWith({ secrets: [STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL_SECRET] })
     .https.onCall(async (data, context) => {
-        await checkRecentStripeConnectAdmin(context);
+        await checkRecentActiveStrongSuperAdmin(context);
         if (String(data?.confirmText || '').trim() !== 'DEMANDER CHANGEMENT STRIPE') {
             throw new functions.https.HttpsError('invalid-argument', 'Phrase de confirmation invalide.');
         }
@@ -326,10 +308,10 @@ exports.requestStripeConnectReconnect = functions
         return { success: true };
     });
 
-exports.confirmStripeConnectReconnect = functions
+exports.confirmStripeConnectReconnect = regionalFunctions()
     .runWith({ secrets: [STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL_SECRET] })
     .https.onCall(async (data, context) => {
-        await checkRecentStripeConnectAdmin(context);
+        await checkRecentActiveStrongSuperAdmin(context);
         if (String(data?.confirmText || '').trim() !== 'ACTIVER NOUVEAU STRIPE') {
             throw new functions.https.HttpsError('invalid-argument', 'Phrase de confirmation invalide.');
         }

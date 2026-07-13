@@ -5,9 +5,9 @@ const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const {
     assertConfirmText,
-    checkIsAdmin,
-    checkRecentAdmin,
-    checkRecentSuperAdmin,
+    checkActiveStrongAdmin,
+    checkRecentActiveStrongAdmin,
+    checkRecentActiveStrongSuperAdmin,
     getSuperAdminEmail,
     normalizeProductCollection,
     normalizeImageContentType,
@@ -16,11 +16,12 @@ const {
 } = require('../../helpers/security');
 const { APP_ID, PRODUCT_COLLECTIONS } = require('../../helpers/config');
 const { collectStoragePaths } = require('../triggers/mediaCleanup');
+const { regionalFunctions } = require('../../helpers/runtime');
 const db = admin.firestore();
 
 // --- RESET STATS (Compteurs produits) ---
-exports.resetAllStats = functions.runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
-    checkRecentSuperAdmin(context);
+exports.resetAllStats = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+    await checkRecentActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'RESET STATS', 'reset stats');
     let totalOp = 0;
     try {
@@ -53,8 +54,8 @@ exports.resetAllStats = functions.runWith({ enforceAppCheck: true }).https.onCal
 });
 
 // --- GARBAGE COLLECTOR (Storage orphelin) ---
-exports.runGarbageCollector = functions.runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
-    checkRecentAdmin(context);
+exports.runGarbageCollector = regionalFunctions().runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
+    await checkRecentActiveStrongAdmin(context);
     assertConfirmText(data, 'NETTOYER CLOUD', 'nettoyage cloud');
     const bucket = admin.storage().bucket();
     let stats = { scanDate: new Date().toISOString(), ghostDocsDeleted: 0, orphanedImagesDeleted: 0, errors: [] };
@@ -107,8 +108,8 @@ exports.runGarbageCollector = functions.runWith({ enforceAppCheck: true, timeout
 });
 
 // --- PURGE UTILISATEURS (Super Admin) ---
-exports.resetAllUsers = functions.runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
-    checkRecentSuperAdmin(context);
+exports.resetAllUsers = regionalFunctions().runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
+    await checkRecentActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'PURGER CLIENTS', 'purge clients');
     try {
         const superAdminEmail = getSuperAdminEmail();
@@ -144,8 +145,8 @@ exports.resetAllUsers = functions.runWith({ enforceAppCheck: true, timeoutSecond
 });
 
 // --- PURGE ANONYMES ---
-exports.purgeAnonymousUsers = functions.runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
-    checkRecentSuperAdmin(context);
+exports.purgeAnonymousUsers = regionalFunctions().runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
+    await checkRecentActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'PURGER ANONYMES', 'purge anonymes');
     try {
         let nextPageToken;
@@ -172,8 +173,8 @@ exports.purgeAnonymousUsers = functions.runWith({ enforceAppCheck: true, timeout
 });
 
 // --- PURGE MEUBLES (Tous les produits + images + sous-collections) ---
-exports.purgeAllProducts = functions.runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
-    checkRecentSuperAdmin(context);
+exports.purgeAllProducts = regionalFunctions().runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
+    await checkRecentActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'PURGER MEUBLES', 'purge meubles');
     const bucket = admin.storage().bucket();
     let totalDocsDeleted = 0;
@@ -242,8 +243,8 @@ exports.purgeAllProducts = functions.runWith({ enforceAppCheck: true, timeoutSec
 });
 
 // --- PURGE COMMANDES ---
-exports.resetAllOrders = functions.runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
-    checkRecentSuperAdmin(context);
+exports.resetAllOrders = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+    await checkRecentActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'PURGER COMMANDES', 'purge commandes');
     try {
         const ordersSnap = await db.collection('orders').get();
@@ -258,8 +259,8 @@ exports.resetAllOrders = functions.runWith({ enforceAppCheck: true }).https.onCa
 });
 
 // --- UPLOAD SÉCURISÉ (URL Signée) ---
-exports.getUploadUrl = functions.runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
-    checkIsAdmin(context);
+exports.getUploadUrl = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+    await checkActiveStrongAdmin(context);
     const { fileName, contentType, collectionName } = data;
     if (!fileName || !contentType) throw new functions.https.HttpsError('invalid-argument', 'Params manquants.');
 

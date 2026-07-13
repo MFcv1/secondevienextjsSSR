@@ -246,7 +246,12 @@ const AdminDashboard = ({ user, darkMode = false }) => {
         const syncSuperAdminClaim = async () => {
             try {
                 const { getIdTokenResult } = await loadAuthModule();
-                const tokenResult = await getIdTokenResult(user, true);
+                await httpsCallable(functions, 'ensureAdminAccessRegistry')({});
+                let tokenResult = await getIdTokenResult(user, true);
+                if (tokenResult.claims.superAdmin === true) {
+                    await httpsCallable(functions, 'syncSuperAdminClaim')({});
+                    tokenResult = await getIdTokenResult(user, true);
+                }
                 if (!cancelled) {
                     setIsSuperAdmin(tokenResult.claims.superAdmin === true);
                 }

@@ -9,6 +9,19 @@ test('all four passkey callables enforce App Check', () => {
   assert.equal((source.match(/runWith\(\{ enforceAppCheck: true \}\)\.https\.onCall/g) || []).length, 4);
 });
 
+test('registration and authentication require local user verification', () => {
+  const requiredOptions = source.match(/userVerification:\s*'required'/g) || [];
+  const requiredVerifications = source.match(/requireUserVerification:\s*true/g) || [];
+
+  assert.equal(requiredOptions.length, 2);
+  assert.equal(requiredVerifications.length, 2);
+  assert.doesNotMatch(source, /userVerification:\s*'preferred'/);
+  assert.doesNotMatch(source, /requireUserVerification:\s*false/);
+  assert.match(source, /ceremony === 'registration'[\s\S]*verification\?\.registrationInfo[\s\S]*verification\?\.authenticationInfo/);
+  assert.match(source, /verificationInfo\?\.userVerified === true/);
+  assert.match(source, /Confirmez votre identite avec Windows Hello, Face ID ou le code de votre appareil\./);
+});
+
 test('origins are exact and no hosted.app wildcard remains', () => {
   assert.match(source, /allowedOrigins\.has\(url\.origin\)/);
   assert.match(source, /secondevie-next-sandbox--\$\{projectId\}\.europe-west4\.hosted\.app/);

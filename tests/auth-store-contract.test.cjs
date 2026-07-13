@@ -38,3 +38,19 @@ test('passkey and OTP custom-token methods are attributed explicitly', () => {
   assert.match(modal, /loginWithCustomToken\(result\.token, 'passkey'\)/);
   assert.match(modal, /loginWithCustomToken\(result\.data\.token, 'email_otp'\)/);
 });
+
+test('auth modal preserves essential keyboard and OTP accessibility contracts', () => {
+  const modal = read('src/kit/marketplace/LegacyLoginModalFullIsland.jsx');
+
+  assert.match(modal, /role="dialog"/);
+  assert.match(modal, /aria-modal="true"/);
+  assert.match(modal, /closeButtonRef\.current\?\.focus/);
+  assert.match(modal, /event\.key !== 'Tab'/);
+  assert.match(modal, /button\[aria-label="Ouvrir le menu"\]/);
+  assert.match(modal, /aria-label={`Chiffre \$\{index \+ 1\} du code`}/);
+  assert.match(modal, /aria-label="Adresse email du compte"/);
+  assert.match(modal, /role={otpStatus === 'error' \? 'alert' : 'status'}/);
+  assert.match(modal, /aria-busy={isOtpBusy}/);
+  assert.match(modal, /if \(otpSendInFlightRef\.current\) return/);
+  assert.match(modal, /if \(otpVerifyInFlightRef\.current\) return/);
+});

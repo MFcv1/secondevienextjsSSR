@@ -41,7 +41,7 @@ Interdits sur routes publiques:
 - PageSpeed images/accessibilite/cache publics: `_DOCS/perf/PAGESPEED_CARD_THUMBS_STATIC_IMAGES_CLOSEOUT_2026-07-06.md`, `_DOCS/perf/PAGESPEED_NO_REDESIGN_ROADMAP_2026-07-06.md`.
 - Images produit/Storage/detailFast: `_DOCS/images/NEXTJS_IMAGE_PIPELINE_AUDIT.md`, `_DOCS/images/OPTIMISATION_AFFICHAGE_IMAGES_PRODUIT_2026-06-28.md`, `_DOCS/images/DETAIL_FAST_IMAGE_VARIANT_ROADMAP.md`.
 - Infra prod/App Hosting/App Check: `_DOCS/infra/NEXT_FIREBASE_SITUATIONAL_AUDIT_2026-07-10.md`, `_DOCS/infra/P0_INFRA_CLOSEOUT_ROADMAP_2026-06-24.md`, `_DOCS/infra/INFRA_PROD_PHASE2_REPORT_2026-06-14.md`, `_DOCS/infra/APP_CHECK_ENFORCEMENT_READINESS_2026-06-24.md`, `_DOCS/infra/RAIL_PROD_AUDIT_REPORT_2026-06-24.md`.
-- Authentification/passkeys/OTP/admin: `_DOCS/security/AUTHENTICATION_ROBUSTNESS_ROADMAP_2026-07-11.md`, puis `_DOCS/security/SECURITY_STRATEGIC_AUDIT_2026-07-08.md` pour l'audit securite general.
+- Authentification/passkeys/OTP/admin: `_DOCS/security/AUTHENTICATION_ROBUSTNESS_ROADMAP_2026-07-11.md`; hardening production et fil d'Ariane: `_DOCS/security/AUTH_PRODUCTION_HARDENING_ROADMAP_2026-07-12.md` puis `_DOCS/security/AUTH_PRODUCTION_HARDENING_PROGRESS_2026-07-12.md`; audit general: `_DOCS/security/SECURITY_STRATEGIC_AUDIT_2026-07-08.md`.
 - Checkout/refund/E2E/Stripe Connect: `_DOCS/commerce/STRIPE_CONNECT_INTEGRATION_PLAN_2026-07-01.md`, `_DOCS/commerce/CHECKOUT_REDIRECT_SANDBOX_REPORT_2026-06-24.md`, `_DOCS/commerce/E2E_BACKOFFICE_TEST_ROADMAP_2026-06-18.md`, `_DOCS/commerce/E2E_REFUND_EXECUTION_ROADMAP_2026-06-19.md`, `_DOCS/commerce/REFUND_UI_STRICT_PROOF_2026-06-24.md`.
 
 ## Gates utiles
@@ -101,6 +101,18 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |   |   `-- STRIPE_CONNECT_INTEGRATION_PLAN_2026-07-01.md : roadmap integration Stripe Connect, securite admin et preuves par phase
 |   |-- security : audit strategique et roadmap active de robustesse authentification
 |   |   |-- AUTHENTICATION_ROBUSTNESS_ROADMAP_2026-07-11.md : phases AuthStore, passkeys, OTP, OAuth, admin, perf, tests, SLO et glossaire
+|   |   |-- AUTH_PRODUCTION_HARDENING_ROADMAP_2026-07-12.md : specification H0-H8 pour UV, step-up admin, OTP idempotent, revocation, domaine, regions et email
+|   |   |-- AUTH_PRODUCTION_HARDENING_PROGRESS_2026-07-12.md : fil d'Ariane vivant, statuts, preuves, blocages, checklists et prochaine action
+|   |   |-- AUTH_DEMO_PATCH_CLOSEOUT_PLAN_2026-07-13.md : liste fermee des gates restantes avant demonstration et exclusions anti-glissement de perimetre
+|   |   |-- AUTH_DEMO_RUNBOOK_2026-07-13.md : ordre de demonstration Auth, replis, rollback et limites acceptees
+|   |   |-- AUTH_H7_TRANSACTIONAL_EMAIL_PREPROD_CLOSEOUT_2026-07-13.md : closeout code-ready Gmail/Resend, preuves locales et runbook de bascule differee au domaine
+|   |   |-- AUTH_H8_PREPROD_READINESS_2026-07-13.md : readiness presentation, matrice navigateurs, SLO UI et derniere gate de deploiement sandbox
+|   |   |-- AUTH_H8_PREPROD_CLOSEOUT_2026-07-13.md : closeout PREPROD_READY, recettes OTP/passkey post-deploiement, logs structures et dette production differee
+|   |   |-- AUTH_H0_BASELINE_CONTRACTS_CLOSEOUT_2026-07-13.md : closeout H0, runner Auth Node 22, mocks comportementaux et inventaire regions
+|   |   |-- AUTH_H1_PASSKEY_UV_CLOSEOUT_2026-07-13.md : closeout H1, UV WebAuthn obligatoire, deploy et recette Windows Hello sandbox
+|   |   |-- AUTH_H2_ADMIN_STEP_UP_CLOSEOUT_2026-07-13.md : closeout H2, AAL1/AAL2, step-up admin, Rules et recette Windows Hello
+|   |   |-- AUTH_H3_OTP_IDEMPOTENCY_SECRET_CLOSEOUT_2026-07-13.md : closeout H3, reprise OTP bornee, secret HMAC dedie et recette email
+|   |   |-- AUTH_H4_ADMIN_REVOCATION_CLOSEOUT_2026-07-13.md : closeout H4, registre admin UID, revocation sessions, Rules et reprise idempotente
 |   |   |-- AUTH_PHASE0_CONDITIONAL_CLOSEOUT_2026-07-11.md : preuves Console/CLI et validation conditionnelle sandbox de la phase 0
 |   |   |-- AUTH_PHASE1_AUTHSTORE_CLOSEOUT_2026-07-11.md : source Auth unique, pipeline, synchronisation et preuves de phase 1
 |   |   |-- AUTH_PHASE2_PASSKEY_PORTABILITY_CLOSEOUT_2026-07-11.md : UX passkey portable, detection, challenge client et preuves de phase 2
@@ -124,7 +136,7 @@ Garder cette carte a jour lors de creation, suppression, renommage ou deplacemen
 |-- scripts : env bridge, gates Next, audits perf/direct/mobile/menus/auth/cold-sections, gates SEO, E2E sandbox, backfills images, infra audits
 |-- tests : contrats Auth/claims, smoke Playwright et tests cibles
 |-- functions-public : Functions publiques isolees pour `publicCatalog`
-|-- functions : Functions privees/admin/commerce/auth/email/seo/triggers
+|-- functions : Functions privees/admin/commerce/auth/email/seo/triggers, dont adaptateur transactionnel Gmail/Resend
 |-- public : favicons, manifest, images, videos et assets statiques
 |-- deploy : dashboard deploiement sandbox
 |-- package*.json, pnpm-workspace.yaml, next.config.mjs, eslint.config.mjs, jsconfig.json, tailwind.config.js, postcss.config.js

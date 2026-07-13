@@ -5,12 +5,12 @@ const { APP_ID } = require('../../helpers/config');
 const { STRIPE_SECRET_KEY } = require('../../helpers/secrets');
 const {
     assertConfirmText,
-    checkIsAdmin,
-    checkRecentAdmin,
+    checkRecentActiveStrongAdmin,
     normalizeFirestoreId,
     normalizeProductCollection,
     writeSecurityAudit
 } = require('../../helpers/security');
+const { regionalFunctions } = require('../../helpers/runtime');
 
 const db = admin.firestore();
 
@@ -116,11 +116,10 @@ async function restoreOrderStock(transaction, order, orderId) {
     return conflicts;
 }
 
-exports.refundOrderAdmin = functions
+exports.refundOrderAdmin = regionalFunctions()
     .runWith({ enforceAppCheck: true, secrets: [STRIPE_SECRET_KEY] })
     .https.onCall(async (data, context) => {
-        const adminInfo = checkIsAdmin(context);
-        checkRecentAdmin(context);
+        const adminInfo = await checkRecentActiveStrongAdmin(context);
         assertConfirmText(data, 'REMBOURSER COMMANDE', 'remboursement');
         const orderId = normalizeFirestoreId(data?.orderId, 'ID commande');
         const refundReason = typeof data?.reason === 'string' && data.reason.trim()
@@ -255,10 +254,10 @@ exports.refundOrderAdmin = functions
         };
     });
 
-exports.syncRefundStatusAdmin = functions
+exports.syncRefundStatusAdmin = regionalFunctions()
     .runWith({ enforceAppCheck: true, secrets: [STRIPE_SECRET_KEY] })
     .https.onCall(async (data, context) => {
-        checkIsAdmin(context);
+        await checkRecentActiveStrongAdmin(context);
         const orderId = normalizeFirestoreId(data?.orderId, 'ID commande');
         const orderRef = db.collection('orders').doc(orderId);
         const stripe = Stripe(STRIPE_SECRET_KEY.value());

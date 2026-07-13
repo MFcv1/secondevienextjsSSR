@@ -235,7 +235,11 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
   const [otpStatus, setOtpStatus] = useState('idle');
   const [otpMessage, setOtpMessage] = useState('');
   const [resendAfter, setResendAfter] = useState(0);
+  const otpSendInFlightRef = useRef(false);
   const otpVerifyInFlightRef = useRef(false);
+  const dialogRef = useRef(null);
+  const closeButtonRef = useRef(null);
+  const previouslyFocusedRef = useRef(null);
   const normalizedEmailValue = normalizeEmailValue(emailValue);
   const showPasskeyFirst = passkeySupported
     && !useEmailCodeFallback
@@ -266,6 +270,10 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
   useEffect(() => {
     if (!open) return undefined;
 
+    previouslyFocusedRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+
     const localPasskey = readLocalPasskeyState();
     setLocalPasskeyEmails(localPasskey.emails);
     setUseEmailCodeFallback(!localPasskey.enabled);
@@ -278,16 +286,73 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     document.body.classList.add('modal-open');
     document.body.style.top = `-${scrollY}px`;
 
+    const focusFrame = window.requestAnimationFrame(() => {
+      closeButtonRef.current?.focus({ preventScroll: true });
+    });
+
     const onKeyDown = (event) => {
-      if (event.key === 'Escape') onOpenChange(false);
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onOpenChange(false);
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusableElements = Array.from(dialog.querySelectorAll([
+        'a[href]',
+        'button:not([disabled])',
+        'input:not([disabled])',
+        'select:not([disabled])',
+        'textarea:not([disabled])',
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(','))).filter((element) => (
+        element instanceof HTMLElement
+        && element.getClientRects().length > 0
+        && element.getAttribute('aria-hidden') !== 'true'
+      ));
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        dialog.focus({ preventScroll: true });
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (!dialog.contains(activeElement)) {
+        event.preventDefault();
+        firstElement.focus({ preventScroll: true });
+      } else if (event.shiftKey && activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus({ preventScroll: true });
+      } else if (!event.shiftKey && activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus({ preventScroll: true });
+      }
     };
     window.addEventListener('keydown', onKeyDown);
 
     return () => {
+      window.cancelAnimationFrame(focusFrame);
       window.removeEventListener('keydown', onKeyDown);
       document.body.classList.remove('modal-open');
       document.body.style.top = '';
       window.scrollTo(0, scrollY);
+
+      const previousFocus = previouslyFocusedRef.current;
+      window.requestAnimationFrame(() => {
+        const fallbackFocus = document.querySelector('button[aria-label="Ouvrir le menu"]');
+        if (previousFocus?.isConnected) {
+          previousFocus.focus({ preventScroll: true });
+        } else if (fallbackFocus instanceof HTMLElement) {
+          fallbackFocus.focus({ preventScroll: true });
+        }
+      });
     };
   }, [onOpenChange, open]);
 
@@ -381,6 +446,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     setOtpStatus('idle');
     setOtpMessage('');
     setResendAfter(0);
+    otpSendInFlightRef.current = false;
     otpVerifyInFlightRef.current = false;
     onOpenChange(false);
   };
@@ -473,12 +539,15 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
 
   const requestCustomerLoginCode = async (event) => {
     event.preventDefault();
+    if (otpSendInFlightRef.current) return;
+
     const email = normalizeEmailValue(emailValue);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       toast("Saisissez une adresse email valide.", { type: 'error' });
       return;
     }
 
+    otpSendInFlightRef.current = true;
     setOtpStatus('sending');
     setOtpMessage('Envoi du code en cours...');
     setOtpStep('code');
@@ -505,6 +574,8 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
       setOtpStatus('error');
       setOtpMessage(message);
       toast(message, { type: 'error' });
+    } finally {
+      otpSendInFlightRef.current = false;
     }
   };
 
@@ -582,6 +653,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
 
   return (
     <div
+      ref={dialogRef}
       className="fixed inset-0 z-[3000] flex items-center justify-center bg-[#0F0F11] md:bg-stone-900/80 md:p-6 md:backdrop-blur-xl"
       onClick={(event) => {
         if (event.target === event.currentTarget) close();
@@ -589,11 +661,13 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
       role="dialog"
       aria-modal="true"
       aria-label="Connexion Seconde Vie"
+      tabIndex={-1}
     >
       <button
+        ref={closeButtonRef}
         type="button"
         onClick={close}
-        className="absolute right-4 top-4 z-[3010] flex h-10 w-10 items-center justify-center rounded-full bg-black/20 text-stone-500 transition-all hover:bg-black/40 hover:text-white md:right-8 md:top-8"
+        className="absolute right-4 top-4 z-[3010] flex h-10 w-10 items-center justify-center rounded-full bg-black/20 text-stone-500 transition-all hover:bg-black/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 md:right-8 md:top-8"
         aria-label="Fermer la connexion"
       >
         <X size={20} />
@@ -813,13 +887,18 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                       ))}
                     </div>
                     {otpMessage ? (
-                      <p className={`text-center text-xs font-semibold ${otpStatus === 'error' ? 'text-amber-300' : 'text-emerald-300'}`}>
+                      <p
+                        role={otpStatus === 'error' ? 'alert' : 'status'}
+                        aria-live={otpStatus === 'error' ? 'assertive' : 'polite'}
+                        className={`text-center text-xs font-semibold ${otpStatus === 'error' ? 'text-amber-300' : 'text-emerald-300'}`}
+                      >
                         {otpMessage}
                       </p>
                     ) : null}
                     <button
                       type="submit"
                       disabled={isOtpBusy || !otpDigits.every(Boolean)}
+                      aria-busy={isOtpBusy}
                       className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-white p-4 text-sm font-bold text-[#0F0F11] transition-all hover:bg-stone-200 disabled:cursor-not-allowed disabled:opacity-80"
                     >
                       {isOtpBusy ? <Loader2 size={16} className="animate-spin" /> : null}
@@ -860,6 +939,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                       name="email"
                       type="email"
                       placeholder="Adresse email"
+                      aria-label="Adresse email du compte"
                       value={emailValue}
                       onChange={(event) => {
                         setEmailValue(event.target.value);
@@ -870,13 +950,18 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                       autoComplete="email"
                     />
                     {otpMessage ? (
-                      <p className={`text-center text-xs font-semibold ${otpStatus === 'error' ? 'text-amber-300' : 'text-emerald-300'}`}>
+                      <p
+                        role={otpStatus === 'error' ? 'alert' : 'status'}
+                        aria-live={otpStatus === 'error' ? 'assertive' : 'polite'}
+                        className={`text-center text-xs font-semibold ${otpStatus === 'error' ? 'text-amber-300' : 'text-emerald-300'}`}
+                      >
                         {otpMessage}
                       </p>
                     ) : null}
                     <button
                       type="submit"
                       disabled={isOtpSending}
+                      aria-busy={isOtpSending}
                       className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-white p-4 text-sm font-bold text-[#0F0F11] transition-all hover:bg-stone-200 disabled:cursor-not-allowed disabled:opacity-80"
                     >
                       {isOtpSending ? <Loader2 size={16} className="animate-spin" /> : null}

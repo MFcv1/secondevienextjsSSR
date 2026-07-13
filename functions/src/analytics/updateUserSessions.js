@@ -8,10 +8,11 @@ const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const { SUPER_ADMIN_EMAIL: SUPER_ADMIN_EMAIL_SECRET } = require('../../helpers/secrets');
 const { getSuperAdminEmail } = require('../../helpers/security');
+const { regionalFunctions } = require('../../helpers/runtime');
 
 const db = admin.firestore();
 
-exports.updateUserSessions = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
+exports.updateUserSessions = regionalFunctions().runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
     if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Authentification requise.');
 
     const rawIp = context.rawRequest.headers['x-forwarded-for'] || context.rawRequest.connection.remoteAddress;
@@ -35,6 +36,10 @@ exports.updateUserSessions = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SEC
             console.error("Error checking user role:", err);
         }
     }
+
+    // Le registry UID prime sur les claims, l'email et l'ancien profil Firestore.
+    const accessSnap = await db.collection('sys_admin_access').doc(userId).get();
+    isAdmin = accessSnap.exists && accessSnap.data().active === true;
 
     console.log(`updateUserSessions called for ${email}, isAdmin: ${isAdmin}, IP: ${ip}`);
 

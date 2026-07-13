@@ -1,10 +1,18 @@
 # Roadmap de robustesse du systeme d'authentification
 
 Date: 2026-07-11
-Statut: roadmap active, phases 0 a 2 validees, phase 3 autorisee sur sandbox
+Statut: `HISTORIQUE - PREPROD_READY VIA HARDENING, PRODUCTION DIFFEREE`
 Branche de travail: `codex/connexion`
 
-Suivi d'execution:
+Roadmap de fermeture production: [`AUTH_PRODUCTION_HARDENING_ROADMAP_2026-07-12.md`](./AUTH_PRODUCTION_HARDENING_ROADMAP_2026-07-12.md)
+Fil d'Ariane d'execution: [`AUTH_PRODUCTION_HARDENING_PROGRESS_2026-07-12.md`](./AUTH_PRODUCTION_HARDENING_PROGRESS_2026-07-12.md)
+Plan ferme de cloture avant demonstration: [`AUTH_DEMO_PATCH_CLOSEOUT_PLAN_2026-07-13.md`](./AUTH_DEMO_PATCH_CLOSEOUT_PLAN_2026-07-13.md)
+
+Depuis le 2026-07-12, les chantiers UV obligatoire, step-up admin, OTP idempotent, revocation complete, domaine/RP ID, convergence regionale et email transactionnel sont pilotes par ces deux documents. La presente roadmap conserve l'historique et le cadrage general.
+
+Le suivi ci-dessous decrit l'etat historique au 2026-07-11. Il ne doit plus etre utilise pour decider du prochain chantier. Le statut courant, les preuves deployees et la liste fermee avant demonstration vivent dans les trois documents lies ci-dessus.
+
+Suivi d'execution historique:
 
 - phase 0: `VALIDE CONDITIONNELLEMENT SANDBOX` - closeout `_DOCS/security/AUTH_PHASE0_CONDITIONAL_CLOSEOUT_2026-07-11.md`;
 - phase 1: `VALIDEE` - closeout `_DOCS/security/AUTH_PHASE1_AUTHSTORE_CLOSEOUT_2026-07-11.md`;

@@ -9,7 +9,14 @@ const AUTH_SIGNAL_KEY = 'sv:auth-signal';
 const initialSnapshot = Object.freeze({
   status: 'unknown',
   user: null,
-  claims: Object.freeze({ admin: false, superAdmin: false }),
+  claims: Object.freeze({
+    admin: false,
+    superAdmin: false,
+    authAssurance: 'none',
+    authMethod: null,
+    userVerified: false,
+    authTime: 0,
+  }),
   claimsStatus: 'idle',
   lastAuthMethod: null,
   authReady: false,
@@ -112,7 +119,10 @@ const clearRedirectPending = () => {
 const syncClaims = async (user) => {
   const sequence = ++runtime.claimsSequence;
   if (!user || user.isAnonymous) {
-    publish({ claims: { admin: false, superAdmin: false }, claimsStatus: 'ready' });
+    publish({
+      claims: { admin: false, superAdmin: false, authAssurance: 'none', authMethod: null, userVerified: false, authTime: 0 },
+      claimsStatus: 'ready',
+    });
     return;
   }
   publish({ claimsStatus: 'loading' });
@@ -121,13 +131,30 @@ const syncClaims = async (user) => {
     const tokenResult = await getIdTokenResult(user, false);
     if (sequence !== runtime.claimsSequence) return;
     const superAdmin = tokenResult.claims.superAdmin === true;
+    const firebaseProvider = tokenResult.claims.firebase?.sign_in_provider || null;
+    const claimedMethod = tokenResult.claims.authMethod || tokenResult.claims.signInProvider || null;
+    const verifiedPasskey = claimedMethod === 'passkey'
+      && tokenResult.claims.authAssurance === 'aal2'
+      && tokenResult.claims.userVerified === true;
+    const google = firebaseProvider === 'google.com';
     publish({
-      claims: { admin: tokenResult.claims.admin === true || superAdmin, superAdmin },
+      claims: {
+        admin: tokenResult.claims.admin === true || superAdmin,
+        superAdmin,
+        authAssurance: verifiedPasskey || google ? 'aal2' : 'aal1',
+        authMethod: verifiedPasskey ? 'passkey' : google ? 'google' : (claimedMethod || firebaseProvider || 'unknown'),
+        userVerified: verifiedPasskey || google,
+        authTime: Number(tokenResult.claims.auth_time || 0),
+      },
       claimsStatus: 'ready',
     });
   } catch (error) {
     if (sequence !== runtime.claimsSequence) return;
-    publish({ claims: { admin: false, superAdmin: false }, claimsStatus: 'error', error });
+    publish({
+      claims: { admin: false, superAdmin: false, authAssurance: 'none', authMethod: null, userVerified: false, authTime: 0 },
+      claimsStatus: 'error',
+      error,
+    });
   }
 };
 

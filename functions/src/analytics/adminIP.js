@@ -8,13 +8,14 @@ const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const { SUPER_ADMIN_EMAIL: SUPER_ADMIN_EMAIL_SECRET } = require('../../helpers/secrets');
 const { getSuperAdminEmail } = require('../../helpers/security');
+const { regionalFunctions } = require('../../helpers/runtime');
 
 const db = admin.firestore();
 const ADMIN_IP_CACHE_MS = 5 * 60 * 1000;
 let adminIpCache = { expiresAt: 0, ips: null };
 
 // Mettre à jour les IPs des admins lorsqu'ils se connectent
-exports.trackAdminIP = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
+exports.trackAdminIP = regionalFunctions().runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
     if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Auth requise.');
 
     const email = String(context.auth.token.email || '').trim().toLowerCase();
@@ -32,6 +33,11 @@ exports.trackAdminIP = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }
             return { success: false, message: 'Erreur vérification admin' };
         }
     }
+
+    // Le registry UID est autoritatif; le profil et l'email ne peuvent pas reactiver un admin retire.
+    const accessSnap = await db.collection('sys_admin_access').doc(context.auth.uid).get();
+    isAdmin = accessSnap.exists && accessSnap.data().active === true;
+    if (!isAdmin) return { success: false, message: 'Non admin' };
 
     const rawIp = context.rawRequest.headers['x-forwarded-for'] || context.rawRequest.connection.remoteAddress;
     const ip = rawIp ? rawIp.split(',')[0].trim() : 'Unknown';
