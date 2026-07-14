@@ -135,6 +135,15 @@ export const KIT_CONFIG = {
     noItemsAvailable: 'Aucun produit disponible pour le moment.',
   },
 
+  // ── SUPPORT / CHAT ────────────────────────────────────────
+  support: {
+    // Numero WhatsApp au format international sans "+" ni espaces (ex: 33612345678).
+    // Laisser vide pour masquer les CTA WhatsApp du chat.
+    whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '',
+    advisorName:    'Anais',
+    replyHint:      'Reponse rapide en journee',
+  },
+
   // ── SOCIAL LINKS ──────────────────────────────────────────
   socialLinks: {
     instagram: '',

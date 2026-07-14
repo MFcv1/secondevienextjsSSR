@@ -5,6 +5,7 @@ import {
   Plus_Jakarta_Sans,
 } from 'next/font/google';
 import RouteTransitionIsland from './RouteTransitionIsland';
+import SupportChatLauncherIsland from '../src/kit/marketplace/SupportChatLauncherIsland';
 import { publicEnv } from '../src/lib/server/env';
 
 const siteName = publicEnv.siteName;
@@ -105,6 +106,7 @@ export default function RootLayout({ children }) {
       <body>
         {children}
         <RouteTransitionIsland />
+        <SupportChatLauncherIsland />
       </body>
     </html>
   );
