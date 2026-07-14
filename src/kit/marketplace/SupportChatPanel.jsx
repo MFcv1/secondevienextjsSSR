@@ -260,7 +260,9 @@ export default function SupportChatPanel({ open = false, onClose = () => {} }) {
                               key={index}
                               type="button"
                               onClick={() => handleAction(action, action.label)}
-                              className="group flex items-center gap-1.5 rounded-full bg-[#9A654B]/10 px-3.5 py-2 text-[11px] font-bold tracking-wide text-[#8B5C42] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[#9A654B]/[0.16] active:scale-[0.97] dark:bg-[#D9B58D]/10 dark:text-[#D9B58D] dark:hover:bg-[#D9B58D]/[0.16]"
+                              className={`group flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-bold tracking-wide transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] ${action.type === 'whatsapp'
+                                ? 'bg-[#25D366]/[0.12] text-[#128C4B] shadow-[inset_0_0_0_1px_rgba(37,211,102,0.22)] hover:bg-[#25D366]/[0.2] dark:bg-[#25D366]/[0.14] dark:text-[#4fd47f] dark:shadow-[inset_0_0_0_1px_rgba(37,211,102,0.25)] dark:hover:bg-[#25D366]/[0.22]'
+                                : 'bg-[#9A654B]/10 text-[#8B5C42] hover:bg-[#9A654B]/[0.16] dark:bg-[#D9B58D]/10 dark:text-[#D9B58D] dark:hover:bg-[#D9B58D]/[0.16]'}`}
                             >
                               {action.type === 'whatsapp' ? <WhatsAppIcon size={13} /> : null}
                               {action.label}
@@ -310,17 +312,19 @@ export default function SupportChatPanel({ open = false, onClose = () => {} }) {
         <button
           type="button"
           onClick={() => handleAction({ type: 'whatsapp' }, 'j\'ai une question')}
-          className="group mt-1.5 flex items-center gap-3 rounded-[20px] px-3.5 py-2.5 text-left transition-colors duration-200 hover:bg-white/60 dark:hover:bg-white/[0.05]"
+          className="group relative mt-1.5 flex w-full items-center gap-3 overflow-hidden rounded-[20px] bg-gradient-to-b from-[#2BC46A] to-[#1B9E50] px-3.5 py-3 text-left text-white shadow-[0_16px_34px_-14px_rgba(27,158,80,0.6),inset_0_1px_0_rgba(255,255,255,0.28)] ring-1 ring-[#178A45]/40 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:shadow-[0_18px_40px_-14px_rgba(27,158,80,0.75),inset_0_1px_0_rgba(255,255,255,0.32)] hover:brightness-[1.05] active:scale-[0.985] dark:ring-white/[0.12]"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#25D366]/[0.14] text-[#128C4B] dark:bg-[#25D366]/[0.16] dark:text-[#4fd47f]">
-            <WhatsAppIcon size={17} />
+          <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(130%_70%_at_50%_-10%,rgba(255,255,255,0.22),transparent_58%)]" />
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/[0.16] shadow-[inset_0_1px_0_rgba(255,255,255,0.3)] ring-1 ring-white/[0.28] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105">
+            <WhatsAppIcon size={19} />
+            <span className="absolute -bottom-px -right-px h-3 w-3 rounded-full bg-[#B4F4CD] ring-[2.5px] ring-[#1FA958]" aria-hidden="true" />
           </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[12px] font-bold tracking-wide">Discuter sur WhatsApp</span>
-            <span className="block truncate text-[11px] text-stone-500 dark:text-stone-400">Pour une reponse directe et personnalisee</span>
+          <span className="relative min-w-0 flex-1">
+            <span className="block text-[13px] font-bold tracking-wide">Discuter sur WhatsApp</span>
+            <span className="block truncate text-[11px] font-medium text-white/80">Reponse directe et personnalisee</span>
           </span>
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-stone-900/[0.05] text-stone-500 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 dark:bg-white/[0.08] dark:text-stone-300">
-            <ArrowRight size={11} strokeWidth={1.75} />
+          <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/[0.15] ring-1 ring-white/[0.22] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5">
+            <ArrowRight size={12} strokeWidth={2} />
           </span>
         </button>
       </div>
