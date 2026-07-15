@@ -124,3 +124,11 @@ export const getGoogleProvider = async () => {
   }
   return googleProviderInstance;
 };
+
+export const getAppCheckToken = async () => {
+  const instance = await ensureAppCheck();
+  if (!instance) return null;
+  const { getToken } = await import('firebase/app-check');
+  const result = await getToken(instance, false);
+  return result?.token || null;
+};

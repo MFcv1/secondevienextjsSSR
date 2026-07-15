@@ -216,6 +216,52 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Analytics V3: ingestion, sessions, faits et shards exclusivement serveur.
+    match /analytics_sessions_v3/{sessionId} {
+      allow read, write: if false;
+      match /chunks/{chunkId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /analytics_session_facts_v3/{docId} {
+      allow read, write: if false;
+    }
+
+    match /analytics_business_facts_v3/{docId} {
+      allow read, write: if false;
+    }
+
+    match /analytics_rollup_days_v3/{dayId} {
+      allow read, write: if false;
+      match /compact/{docId} {
+        allow read: if isStrongArtisan();
+        allow write: if false;
+      }
+      match /summary_shards/{docId} {
+        allow read, write: if false;
+      }
+      match /product_shards/{docId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /analytics_rollup_months_v3/{monthId} {
+      allow read, write: if false;
+      match /compact/{docId} {
+        allow read: if isStrongArtisan();
+        allow write: if false;
+      }
+    }
+
+    match /analytics_admin_audit_v3/{docId} {
+      allow read, write: if false;
+    }
+
+    match /analytics_privacy_requests_v3/{docId} {
+      allow read, write: if false;
+    }
+
     match /dashboard_stats/{docId} {
       allow read: if isStrongArtisan();
       allow write: if false;

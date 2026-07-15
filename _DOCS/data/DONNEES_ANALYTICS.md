@@ -36,6 +36,17 @@ analytics_item_daily/{id}
 analytics_page_daily/{id}
 analytics_transition_daily/{id}
 analytics_unique_markers/{id}
+analytics_sessions_v3/{sessionId}
+  chunks/{batchId}
+analytics_session_facts_v3/{sessionId}
+analytics_business_facts_v3/{factId}
+analytics_rollup_days_v3/{dayKey}
+  summary_shards/{shardId}
+  compact/{overview|paths}
+analytics_rollup_months_v3/{monthKey}
+  compact/{overview|paths}
+analytics_admin_audit_v3/{auditId}
+analytics_privacy_requests_v3/{requestId}
 dashboard_stats/{id}
 sales_stats_daily/{id}
 inventory_stats/{id}
@@ -90,11 +101,13 @@ Contrat d'architecture approuve: [ARCHITECTURE_ANALYTICS.md](ARCHITECTURE_ANALYT
 
 Etat reel au 15 juillet 2026:
 
-- le pipeline V2 existe dans le code mais son collecteur n'est monte dans aucun layout public;
-- les trois vues Data lisent encore le meme lot borne de racines `analytics_sessions` et n'utilisent pas les rollups `*_daily`;
-- les previews actives tronquent les parcours longs;
-- l'identite, l'IP, le beacon, les rollups et le score de confiance V2 ne satisfont pas le contrat cible;
-- aucune production analytics V3, migration, build ou deploiement n'a encore ete execute.
+- la V3 est codee mais non deployee: collecteur Next global, facade same-origin, lots IndexedDB idempotents, sessions par onglet, finalisation/reconciliation, HLL, compactions et lecteurs admin dedies;
+- le mode `audience_minimized` est le defaut; les sessions detaillees exigent un consentement produit versionne;
+- le retrait produit cree une demande pseudonymisee, supprime sessions/chunks/faits puis reconstruit les jours touches;
+- les conversions durables viennent du trigger serveur `orders` et des etats Stripe durables;
+- aucune IP, adresse e-mail ou valeur User-Agent brute n'est ecrite par V3; GeoIP reste indisponible tant que les gates region/proxy ne sont pas confirmees;
+- V2 reste dans le code comme rollback historique mais n'est plus la source de la vue Data active;
+- le manifeste sandbox porte `ANALYTICS_V3_ENABLED=true` pour le rollout explicitement demande; les secrets HMAC sont provisionnes, mais l'etat deploye doit encore etre confirme avant de produire du trafic; TTL, emulateurs et charge restent a executer.
 
 Pipeline V2 present mais non operationnel de bout en bout:
 
@@ -107,7 +120,7 @@ AnalyticsContext / AnalyticsProvider
   -> AdminAnalytics / AdminDashboard / AdminSiteMap
 ```
 
-La cible approuvee separe audience minimisee et sessions detaillees consenties, collecte les routes Next par lots idempotents, finalise les sessions avec reconciliation et alimente les trois vues depuis des sources dediees. Son schema, ses budgets, sa retention et ses gates vivent uniquement dans `ARCHITECTURE_ANALYTICS.md`.
+La V3 separe audience minimisee et sessions detaillees consenties, collecte les routes Next par lots idempotents, finalise les sessions avec reconciliation et alimente les trois vues depuis des sources dediees. Son schema, ses budgets, sa retention et ses gates vivent uniquement dans `ARCHITECTURE_ANALYTICS.md`.
 
 Principes de fiabilite:
 
@@ -133,7 +146,7 @@ La vue `Data` distingue strictement la demande de devis du tunnel d'achat direct
 
 Les constantes de retention vivent dans `functions/src/analytics/constants.js`. Les taches de cleanup suppriment les donnees expirees et les marqueurs techniques.
 
-Ces constantes decrivent encore la V2. Les valeurs cibles V3 et la separation IP, chunks, faits, rollups et tests synthetiques sont definies dans `ARCHITECTURE_ANALYTICS.md`; elles ne deviennent l'etat reel qu'apres implementation et validation.
+Ces constantes decrivent encore la V2. V3 ecrit actuellement des `expireAt` a 3 jours pour l'audience temporaire, 90 jours pour les sessions/faits consentis et environ 13 mois pour les rollups. Ces champs ne garantissent aucune suppression tant que les politiques TTL Firestore correspondantes ne sont pas configurees et verifiees; les chunks restent couverts par la suppression recursive planifiee.
 
 Avant production, definir explicitement:
 

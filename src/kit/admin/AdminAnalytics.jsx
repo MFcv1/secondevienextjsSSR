@@ -8,7 +8,7 @@ import { db, functions } from '../config/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { getMillis } from '../../utils/time';
 import AdminSiteMap from './AdminSiteMap';
-import AdminAnalyticsOverview from './AdminAnalyticsOverview';
+import AdminAnalyticsV3 from './AdminAnalyticsV3';
 import {
     ANALYTICS_TIME_FILTERS,
     MAX_ANALYTICS_SESSIONS,
@@ -1244,6 +1244,6 @@ const AdminAnalyticsLegacy = ({ darkMode = false }) => {
 
 export { AdminAnalyticsLegacy };
 
-const AdminAnalytics = ({ darkMode = false }) => <AdminAnalyticsOverview darkMode={darkMode} />;
+const AdminAnalytics = ({ darkMode = false }) => <AdminAnalyticsV3 darkMode={darkMode} />;
 
 export default AdminAnalytics;

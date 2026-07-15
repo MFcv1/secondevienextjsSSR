@@ -70,6 +70,34 @@ env:
     secret: SUPER_ADMIN_EMAIL
     availability:
       - RUNTIME
+  - variable: ANALYTICS_SESSION_HMAC_KEY
+    secret: ANALYTICS_SESSION_HMAC_KEY
+    availability:
+      - RUNTIME
+  - variable: ANALYTICS_AUDIENCE_HMAC_KEY
+    secret: ANALYTICS_AUDIENCE_HMAC_KEY
+    availability:
+      - RUNTIME
+  - variable: ANALYTICS_BROWSER_HMAC_KEY
+    secret: ANALYTICS_BROWSER_HMAC_KEY
+    availability:
+      - RUNTIME
+  - variable: ANALYTICS_SESSION_HMAC_KEY_ID
+    value: "session-v1"
+    availability:
+      - RUNTIME
+  - variable: ANALYTICS_AUDIENCE_HMAC_KEY_ID
+    value: "audience-v1"
+    availability:
+      - RUNTIME
+  - variable: ANALYTICS_BROWSER_HMAC_KEY_ID
+    value: "browser-v1"
+    availability:
+      - RUNTIME
+  - variable: ANALYTICS_V3_ENABLED
+    value: "true"
+    availability:
+      - RUNTIME
   - variable: NEXT_PUBLIC_STRIPE_PUBLIC_KEY
     value: "pk_test_51SugHARgzgSZ0erph4oChFln1v7vXEonNgJBpWn2MozkNXc6fTZOVJzJQVldVOFzO2A1fbACKlp35GVi4TMr1Pu600LnFmbYZA"
     availability:

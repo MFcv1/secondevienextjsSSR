@@ -32,6 +32,22 @@
         { "fieldPath": "userEmail", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "analytics_sessions_v3",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "lastReceivedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "analytics_sessions_v3",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "measurementMode", "order": "ASCENDING" },
+        { "fieldPath": "firstReceivedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [
@@ -83,6 +99,31 @@
     {
       "collectionGroup": "analytics_unique_markers",
       "fieldPath": "scope",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analytics_sessions_v3",
+      "fieldPath": "acceptedSeqHashes",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "chunks",
+      "fieldPath": "events",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "summary_shards",
+      "fieldPath": "uniqueHll",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "compact",
+      "fieldPath": "uniqueHll",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analytics_session_facts_v3",
+      "fieldPath": "contribution",
       "indexes": []
     },
     {

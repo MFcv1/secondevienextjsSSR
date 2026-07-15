@@ -18,6 +18,7 @@ import {
   writeCheckoutCartHandoff,
 } from '../commerce/guestCart';
 import { isPurchasable } from '../commerce/purchasability';
+import { emitAnalyticsEvent } from '../contexts/AnalyticsContext';
 
 const CartSidebar = dynamic(() => import('../commerce/CartSidebar'), {
   ssr: false,
@@ -156,6 +157,7 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
     primeCart();
     setInteracted(true);
     setIsOpen(true);
+    emitAnalyticsEvent('cart_open');
   }, [primeCart]);
 
   const addCartItem = useCallback(async (item) => {
@@ -169,6 +171,7 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
 
     if (!cartUser) {
       setCartItems(addGuestCartItem(item));
+      emitAnalyticsEvent('cart_add', item.originalId || item.id, item.name || item.title || null);
       openCart();
       return true;
     }
@@ -190,6 +193,7 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
       quantity: Number(item.quantity || 1),
       addedAt: serverTimestamp(),
     }, { merge: true });
+    emitAnalyticsEvent('cart_add', item.originalId || item.id, item.name || item.title || null);
     openCart();
     return true;
   }, [openCart, user]);
@@ -236,17 +240,21 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
   }, [addCartItem, pendingCartItem, user]);
 
   const removeFromCart = useCallback(async (cartDocId) => {
+    const removedItem = cartItems.find((item) => item.id === cartDocId);
     if (!user) {
       setCartItems(removeGuestCartItem(cartDocId));
+      emitAnalyticsEvent('cart_remove', removedItem?.originalId, removedItem?.name || null);
       return;
     }
     const [db, { deleteDoc, doc }] = await Promise.all([getDb(), loadFirestoreModule()]);
     await deleteDoc(doc(db, 'users', user.uid, 'cart', cartDocId));
-  }, [user]);
+    emitAnalyticsEvent('cart_remove', removedItem?.originalId, removedItem?.name || null);
+  }, [cartItems, user]);
 
   const totalPrice = useMemo(() => getCartTotal(cartItems), [cartItems]);
 
   const goToCheckout = () => {
+    emitAnalyticsEvent('checkout_start');
     writeCheckoutCartHandoff(cartItems);
     setIsOpen(false);
     router.push('/checkout');

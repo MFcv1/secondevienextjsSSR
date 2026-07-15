@@ -5,6 +5,7 @@ const {
     timestampFromNow,
     getDateKeyFromTimestamp
 } = require('../analytics/constants');
+const { recordBusinessFacts } = require('../analytics/v3BusinessFacts');
 
 const db = admin.firestore();
 
@@ -68,6 +69,8 @@ exports.onOrderStatsWrite = onDocumentWritten(
     async (event) => {
         const before = event.data?.before?.exists ? event.data.before.data() : null;
         const after = event.data?.after?.exists ? event.data.after.data() : null;
+
+        await recordBusinessFacts(event.params.orderId, before, after);
 
         const delta = diffMetrics(summarizeOrder(after), summarizeOrder(before));
         if (Object.keys(delta).length === 0) return null;

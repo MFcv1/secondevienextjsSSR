@@ -136,21 +136,27 @@ AdminReturns
 
 ### 4.6 Analytics
 
-Etat executable actuel, non connecte de bout en bout:
+Etat executable V3 code, non deploye:
 
 ```text
-AnalyticsProvider [C, non monte]
-  -> initLiveSession/syncSession/beacon [F]
-  -> analytics_sessions [DB]
-  -> rollup triggers [F]
-  -> collections *_daily [DB, non consommees par les trois vues actives]
+AnalyticsCollectorIsland [C, layout racine, sauf /admin]
+  -> file IndexedDB bornee + lots batchId/tabSessionId/seq
+  -> /api/analytics/v3/{session,batch,close,privacy} [API same-origin]
+  -> analytics_sessions_v3/{sessionId}/chunks/{batchId} [DB]
+  -> finalizeAnalyticsSessionsV3 [F]
+  -> analytics_session_facts_v3 + shards journaliers [DB]
+  -> compactAnalyticsDaysV3 / compactAnalyticsMonthsV3 [F]
 
-AdminAnalyticsOverview [C]
-  -> jusqu'a 5 000 analytics_sessions [DB]
-  -> meme lot pour Vue d'ensemble / Parcours / Sessions
+orders + Stripe durable [DB/F]
+  -> onOrderStatsWrite
+  -> analytics_business_facts_v3 + compact overview [DB]
+
+AdminAnalyticsV3 [C]
+  |-- Vue d'ensemble/Parcours -> getAnalyticsOverviewV3 [F] -> compacts jours/mois
+  `-- Sessions -> list/getAnalyticsSession*V3 [F] -> 25 racines + chunks au clic
 ```
 
-Cible approuvee, non implementee: `_DOCS/data/ARCHITECTURE_ANALYTICS.md`. Elle introduit un collecteur Next global, une facade d'ingestion same-origin gatee, des sessions/chunks idempotents, des faits reconciliables, des rollups compactes et des lecteurs dedies. La carte executable sera remplacee par ce flux au fur et a mesure de son implementation, jamais par anticipation.
+Contrat et gates restants: `_DOCS/data/ARCHITECTURE_ANALYTICS.md`. V2 reste present comme rollback historique mais n'alimente plus la vue Data active. Aucun deploiement V3 n'a encore ete execute.
 
 ## 5. Arborescence racine
 
@@ -187,6 +193,7 @@ Cible approuvee, non implementee: `_DOCS/data/ARCHITECTURE_ANALYTICS.md`. Elle i
 ```text
 app/
 |-- layout.jsx ........................ layout racine, metadata, providers globaux
+|-- AnalyticsCollectorIsland.jsx ...... collecteur V3 global, sessions par onglet et reprise offline
 |-- page.jsx .......................... `/`, galerie canonique
 |-- error.jsx ......................... erreur client racine
 |-- not-found.jsx ..................... 404
@@ -227,6 +234,7 @@ app/
 |   |-- AdminAppIsland.jsx ............ shell, groupes, lazy tabs, gates admin
 |   `-- AdminSidebar.jsx .............. navigation laterale responsive
 `-- api/
+    |-- analytics/v3/* ................. ingestion et retrait analytics same-origin
     |-- search/route.js ............... recherche catalogue
     `-- revalidate-catalog/route.js ... revalidation admin
 ```
@@ -371,7 +379,8 @@ src/kit/vitrine/
 ```text
 src/kit/admin/
 |-- AdminDashboard.jsx ................ stats, exports et maintenance rapide
-|-- AdminAnalytics.jsx ................ point d'entree Data + legacy sessions/parcours preserve
+|-- AdminAnalytics.jsx ................ point d'entree Data V3 + legacy preserve
+|-- AdminAnalyticsV3.jsx .............. compacts, parcours et sessions pagees V3
 |-- AdminAnalyticsOverview.jsx ........ vue d'ensemble devis, checkpoint manuel et agregats client
 |-- AnalyticsWorkspaceViews.jsx ....... vues Parcours et Sessions, agrégats et inspecteur anonymisé
 |-- AdminForm.jsx ..................... creation/edition annonces
@@ -464,7 +473,11 @@ functions/
     |   |-- sessions.js
     |   |-- rollups.js
     |   |-- updateUserSessions.js
-    |   `-- adminIP.js
+    |   |-- adminIP.js
+    |   |-- v3Core.js / v3Jobs.js ...... reconciliation, HLL et compactions
+    |   |-- v3Readers.js ............... lecteurs admin bornes
+    |   |-- v3BusinessFacts.js ......... conversions serveur idempotentes
+    |   `-- v3Privacy.js ............... retrait et reconstruction des jours
     |-- maintenance/
     |   |-- tools.js
     |   `-- inventoryStats.js
@@ -490,7 +503,7 @@ functions-public/
 | Auth/admin | `grantAdminOnAuth`, `addAdminUser`, `removeAdminUser`, `logUserConnection`, `getUserStats`, `syncSuperAdminClaim`, `ensureAdminAccessRegistry` |
 | OTP/passkeys | `sendGuestCheckoutOtp`, `verifyGuestCheckoutOtp`, `sendCustomerLoginOtp`, `verifyCustomerLoginOtp`, quatre endpoints passkey |
 | e-mail | `onOrderCreated`, `onOrderUpdated`, `sendTestEmail`, `sendRefundStatusEmailAdmin` |
-| analytics | `initLiveSession`, `syncSession`, `syncSessionBeacon`, `deleteSession`, `clearAllSessions`, `clearAllAnalytics`, `cleanupExpiredAnalytics`, `trackAdminIP`, `updateUserSessions`, triggers rollup |
+| analytics | V2 preserve; V3 `finalizeAnalyticsSessionsV3`, compactions jours/mois, trois lecteurs admin, retrait privacy; facade d'ingestion dans Next |
 | maintenance | resets/purges, `runGarbageCollector`, `getUploadUrl`, `onInventorySourceWrite` |
 | SEO legacy | `sitemap`, `shareMeta`, `homeMeta`, `aboutMeta`, `productMeta`, `categoryMeta` |
 | triggers catalogue | `onArtifactDeleted`, `onArtifactUpdated` |
@@ -520,6 +533,13 @@ Firestore
 |-- analytics_page_daily/{id}
 |-- analytics_transition_daily/{id}
 |-- analytics_unique_markers/{id}
+|-- analytics_sessions_v3/{sessionId}/chunks/{batchId}
+|-- analytics_session_facts_v3/{sessionId}
+|-- analytics_business_facts_v3/{factId}
+|-- analytics_rollup_days_v3/{dayKey}/{summary_shards|compact}
+|-- analytics_rollup_months_v3/{monthKey}/compact/{view}
+|-- analytics_admin_audit_v3/{auditId}
+|-- analytics_privacy_requests_v3/{requestId}
 |-- dashboard_stats/{id}
 |-- sales_stats_daily/{id}
 `-- inventory_stats/{id}
@@ -586,6 +606,7 @@ purge-expired-firestore.cjs
 ```text
 tests/auth-*.test.cjs
 tests/passkey-*.test.cjs
+tests/analytics-v3-contract.test.cjs
 tests/smoke.spec.mjs
 ```
 

@@ -2,6 +2,7 @@ import 'server-only';
 
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { getAppCheck } from 'firebase-admin/app-check';
 import { getFirestore } from 'firebase-admin/firestore';
 import { publicEnv } from './env';
 
@@ -36,6 +37,11 @@ export const getAdminAuth = () => {
   if (!publicEnv.projectId) return null;
 
   return getAuth(getAdminApp());
+};
+
+export const getAdminAppCheck = () => {
+  if (!publicEnv.projectId) return null;
+  return getAppCheck(getAdminApp());
 };
 
 const getAdminApp = () => {

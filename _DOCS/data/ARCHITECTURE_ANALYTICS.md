@@ -1,7 +1,7 @@
 # Architecture du moteur analytics
 
 Derniere decision: 2026-07-15  
-Statut: `REFERENCE_ARCHITECTURE_APPROUVEE_A_IMPLEMENTER`  
+Statut: `IMPLEMENTATION_V3_CODEE_NON_DEPLOYEE`
 Proprietaire: domaine donnees/analytics  
 Parent canonique: [DONNEES_ANALYTICS.md](DONNEES_ANALYTICS.md)
 
@@ -63,6 +63,23 @@ Au 15 juillet 2026, le moteur actuel ne constitue pas une analytics fiable:
 - le checkpoint admin peut serialiser des documents sensibles dans `localStorage`.
 
 La V3 demarre donc une nouvelle epoque analytique. Les rollups V2 ne doivent pas etre consideres comme une base exacte ni fusionnes silencieusement avec la V3.
+
+### 2.1 Etat de l'implementation V3
+
+Le code V3 est present sur la branche `codex/data-analytics-v3`:
+
+- `AnalyticsCollectorIsland` est monte dans le layout racine et desactive sur `/admin`;
+- les Route Handlers `/api/analytics/v3/{session,batch,close,privacy}` portent la facade same-origin;
+- les lots sont immuables, bornes, persistants dans IndexedDB et acquittes avec un `batchId` derive de leur contenu;
+- les secrets HMAC sont declares comme references Secret Manager dans `apphosting.yaml`, sans valeur dans Git;
+- `analytics_sessions_v3`, les chunks, faits, shards et compacts utilisent un namespace distinct de V2;
+- les finaliseurs, reconciliateurs, compactions et demandes de retrait sont des Functions planifiees;
+- `ANALYTICS_V3_SHARD_COUNT` accepte 4, 8 ou 16 et la valeur retenue est figee dans chaque jour; le defaut code est 8;
+- les commandes, paiements et remboursements durables sont produits par le trigger serveur `orders`;
+- `AdminAnalyticsV3` lit les compacts et les sessions consenties via trois lecteurs dedies;
+- rules, indexes et tests de contrat ont ete ajoutes.
+
+Le manifeste sandbox porte `ANALYTICS_V3_ENABLED=true` pour le rollout V3 demande explicitement le 15 juillet 2026. Les secrets HMAC sont provisionnes dans Secret Manager; leur valeur n'est jamais stockee dans Git. Le code n'est `PREPROD_READY` qu'apres deploiement confirme des indexes/rules/Functions/App Hosting et verification du parcours synthetique. La chaine de proxy App Hosting reste a verifier avant toute utilisation de l'IP; GeoIP reste donc volontairement indisponible. Les TTL, tests emulateur/E2E/charge et l'enforcement App Check restent des gates explicites.
 
 ## 3. Objectifs et non-objectifs
 

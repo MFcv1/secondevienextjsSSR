@@ -64,6 +64,7 @@ Les contrats testent la source de session, les transitions OTP, l'idempotence, l
 | devis | `perf:quote-direct` |
 | menu/header | `perf:menu-desktop`, `perf:menu-mobile`, `mobile:contract` |
 | Auth | `test:auth`, build, smoke reel selon changement |
+| analytics V3 | `test:analytics`, lint, tests emulator rules/idempotence, E2E sandbox et mesure lectures/ecritures avant deploiement |
 | checkout/Stripe | tests locaux + `e2e:hosted-stripe` sur sandbox si demande |
 | remboursement | `e2e:refund-stripe` sur commande test explicite |
 | revalidation | `e2e:revalidate-catalog` |

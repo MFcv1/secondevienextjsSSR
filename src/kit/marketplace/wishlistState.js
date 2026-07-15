@@ -1,6 +1,7 @@
 'use client';
 
 import { getDb, loadFirestoreModule } from '../config/firebaseLazy';
+import { emitAnalyticsEvent } from '../contexts/AnalyticsContext';
 
 export const WISHLIST_STORAGE_KEY = 'sv_public_product_wishlist';
 export const WISHLIST_CHANGED_EVENT = 'sv:wishlist-state-changed';
@@ -94,6 +95,7 @@ export const setWishlistItem = async (item, liked, user = getCurrentWishlistUser
   if (isSignedWishlistUser(user)) {
     await setRemoteWishlistItem(user, item, liked);
   }
+  emitAnalyticsEvent(liked ? 'favorite_add' : 'favorite_remove', getWishlistProductId(item), item?.name || item?.title || null);
   return nextIds;
 };
 
@@ -107,6 +109,7 @@ export const toggleWishlistItem = async (item, user = getCurrentWishlistUser()) 
 export const clearWishlist = async (items = [], user = getCurrentWishlistUser()) => {
   const currentItems = asArray(items);
   writeWishlistIds([]);
+  currentItems.forEach((item) => emitAnalyticsEvent('favorite_remove', getWishlistProductId(item), item?.name || item?.title || null));
   if (!isSignedWishlistUser(user)) return;
 
   const [db, { doc, writeBatch }] = await Promise.all([getDb(), loadFirestoreModule()]);
