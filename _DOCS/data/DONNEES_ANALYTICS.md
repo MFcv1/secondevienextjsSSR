@@ -107,6 +107,16 @@ Principes de fiabilite:
 - les erreurs analytics ne bloquent jamais checkout, Auth ou navigation;
 - ne pas stocker plus de donnees personnelles que necessaire.
 
+### 7.1 Evenements devis
+
+La vue `Data` distingue strictement la demande de devis du tunnel d'achat direct. Les evenements actuellement emis par le formulaire de restauration sont:
+
+- `quote_request` : consultation de la page, portee par une etape de parcours;
+- `quote_start` : premier changement explicite dans le formulaire;
+- `quote_email_opened` : ouverture du brouillon e-mail pre-rempli apres validation locale.
+
+`quote_email_opened` exprime une intention d'envoi, pas une demande effectivement recue ni un devis accepte: le formulaire actuel ouvre `mailto:`. Les etats metier `recu`, `qualifie`, `envoye` et `accepte` devront provenir d'un workflow de demande/CRM distinct avant d'etre affiches comme conversions commerciales.
+
 ## 8. Retention
 
 Les constantes de retention vivent dans `functions/src/analytics/constants.js`. Les taches de cleanup suppriment les donnees expirees et les marqueurs techniques.

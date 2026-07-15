@@ -76,6 +76,10 @@ export function resolvePageKey(nav = {}) {
 
     case 'devis':
       pageKey = 'quote_request';
+      if (urlParams && urlParams.get) {
+        const productId = urlParams.get('produit');
+        if (productId) context.itemId = productId;
+      }
       break;
 
     case 'checkout':

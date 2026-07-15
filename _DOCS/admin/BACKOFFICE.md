@@ -13,6 +13,16 @@ L'interface commune de connexion est conservee. L'acces admin repose sur Firebas
 
 La liste executable est `KIT_CONFIG.adminTabs` dans `src/kit/config/constants.js`.
 
+La navigation visible utilise un panneau lateral persistant sur desktop et un tiroir sur les ecrans plus etroits. Les IDs restent inchanges et sont regroupes en cinq ensembles metier afin de reduire la charge cognitive:
+
+- `Vue d'ensemble`: Stats, Data;
+- `Catalogue`: Publication, Vue Globale, Studio;
+- `Ventes`: Ventes, Retours, Livraison, Paiement;
+- `Communication`: Personnalisation, Infos, SEO;
+- `Administration`: Clients, Securite, Maintenance, Etude Perf.
+
+Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSidebar` ne modifie ni le routing interne ni le lazy loading des vues.
+
 | ID | Label | Module principal | Role |
 | --- | --- | --- | --- |
 | `dashboard` | Stats | `AdminDashboard` | CA, commandes, inventaire, exports |
@@ -81,7 +91,7 @@ Le dashboard lit de preference les agregats:
 
 Des fallbacks historiques bornes existent si les agrégats manquent. Ils ne doivent pas redevenir une lecture illimitee de toutes les commandes ou de tout le catalogue.
 
-`AdminAnalytics` ne charge pas automatiquement toute la telemetrie a l'ouverture; l'utilisateur declenche une actualisation et un checkpoint local peut etre reutilise.
+`AdminAnalytics` ne charge pas automatiquement toute la telemetrie a l'ouverture; l'utilisateur declenche une actualisation et un checkpoint local peut etre reutilise. La vue d'ensemble est orientee demande de devis: elle separe les consultations, demarrages du formulaire et intentions d'envoi e-mail du tunnel d'achat direct. Les onglets `Parcours` et `Sessions` sont des postes d'exploration distincts: flux agrégés et séquences d'un côté, liste courte avec inspecteur latéral de l'autre. Ils ne montrent ni IP brute ni identifiant personnel.
 
 ## 8. Maintenance
 
@@ -109,6 +119,7 @@ Ne pas ajouter de bouton de maintenance qui ecrit directement un grand ensemble 
 ```text
 app/admin/page.jsx
 app/admin/AdminAppIsland.jsx
+app/admin/AdminSidebar.jsx
 src/kit/admin/*.jsx
 src/kit/admin/components/*
 src/kit/admin/hooks/useLiveJourneyMap.js

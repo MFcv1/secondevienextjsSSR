@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { emitAnalyticsEvent } from '../contexts/AnalyticsContext';
 
 const IconBase = ({ size = 24, strokeWidth = 1.5, className = '', children }) => (
     <svg
@@ -214,6 +215,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
     const fileInputRef = useRef(null);
     const photoPreviewsRef = useRef([]);
     const serviceGroupRefs = useRef({});
+    const quoteStartTrackedRef = useRef(false);
 
     useEffect(() => {
         document.getElementById('quote-ssr-form-shell')?.setAttribute('hidden', '');
@@ -242,7 +244,14 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
         );
     }, [selectedServiceList]);
 
+    const trackQuoteStart = () => {
+        if (quoteStartTrackedRef.current) return;
+        quoteStartTrackedRef.current = true;
+        emitAnalyticsEvent('quote_start', null, null, { form: 'restoration' });
+    };
+
     const handleFiles = (files) => {
+        trackQuoteStart();
         const incoming = Array.from(files || []).slice(0, Math.max(0, MAX_PHOTOS - photoPreviews.length));
         if (!incoming.length) return;
 
@@ -263,10 +272,12 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
     };
 
     const toggleService = (id) => {
+        trackQuoteStart();
         setSelectedServices(prev => ({ ...prev, [id]: !prev[id] }));
     };
 
     const handleGroupSelect = (id) => {
+        trackQuoteStart();
         setActiveGroup(id);
         const node = serviceGroupRefs.current[id];
         if (!node || typeof window === 'undefined') return;
@@ -280,6 +291,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
 
     const handleSubmit = (event) => {
         event.preventDefault();
+        trackQuoteStart();
         const form = new FormData(event.currentTarget);
         const type = furnitureTypes.find(item => item.id === selectedType)?.label || selectedType;
         const body = [
@@ -303,12 +315,18 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
             `Localisation : ${form.get('location') || ''}`
         ].join('\n');
 
+        emitAnalyticsEvent('quote_email_opened', null, null, {
+            form: 'restoration',
+            selectedServices: selectedServiceList.length,
+            photoCount: photoPreviews.length,
+            furnitureType: selectedType
+        });
         setSubmitted(true);
         window.location.href = `mailto:contact@seconde-vie-anais.fr?subject=${encodeURIComponent('Demande de devis restauration')}&body=${encodeURIComponent(body)}`;
     };
 
     return (
-        <form onSubmit={handleSubmit} className="mx-auto max-w-[1480px] px-4 py-8 sm:px-6 md:py-12 lg:px-10 xl:px-16">
+        <form onSubmit={handleSubmit} onChange={trackQuoteStart} className="mx-auto max-w-[1480px] px-4 py-8 sm:px-6 md:py-12 lg:px-10 xl:px-16">
                 <section className="space-y-5">
                     <h2 className="font-serif text-2xl leading-tight md:text-[2rem]">1. Quel type de meuble souhaitez-vous faire restaurer ?</h2>
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
@@ -318,7 +336,10 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                                 <button
                                     key={type.id}
                                     type="button"
-                                    onClick={() => setSelectedType(type.id)}
+                                    onClick={() => {
+                                        trackQuoteStart();
+                                        setSelectedType(type.id);
+                                    }}
                                     className={`group min-h-[142px] rounded-[8px] p-2.5 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${isSelected
                                         ? 'bg-white ring-1 ring-[#9A714C] shadow-[0_18px_45px_rgba(86,61,39,0.12)]'
                                         : darkMode ? 'bg-white/[0.045] ring-1 ring-white/8 hover:bg-white/[0.07]' : 'bg-white/58 ring-1 ring-[#eee7df] hover:bg-white'

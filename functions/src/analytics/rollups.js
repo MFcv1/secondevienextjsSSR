@@ -85,6 +85,8 @@ function resolveNodeId(payload = {}) {
 function resolveEventNodeId(event = {}) {
     if (event.action === 'cart_add' || event.action === 'cart_remove' || event.action === 'cart_open') return 'cart_actions';
     if (event.action === 'favorite_add' || event.action === 'favorite_remove') return 'wishlist';
+    if (event.action === 'quote_start') return 'quote_form_start';
+    if (event.action === 'quote_email_opened') return 'quote_email_opened';
     return null;
 }
 

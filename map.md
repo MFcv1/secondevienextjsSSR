@@ -217,7 +217,8 @@ app/
 |-- admin/
 |   |-- layout.jsx .................... layout admin
 |   |-- page.jsx ...................... route dynamique
-|   `-- AdminAppIsland.jsx ............ shell, lazy tabs, gates admin
+|   |-- AdminAppIsland.jsx ............ shell, groupes, lazy tabs, gates admin
+|   `-- AdminSidebar.jsx .............. navigation laterale responsive
 `-- api/
     |-- search/route.js ............... recherche catalogue
     `-- revalidate-catalog/route.js ... revalidation admin
@@ -363,7 +364,9 @@ src/kit/vitrine/
 ```text
 src/kit/admin/
 |-- AdminDashboard.jsx ................ stats, exports et maintenance rapide
-|-- AdminAnalytics.jsx ................ sessions/parcours
+|-- AdminAnalytics.jsx ................ point d'entree Data + legacy sessions/parcours preserve
+|-- AdminAnalyticsOverview.jsx ........ vue d'ensemble devis, checkpoint manuel et agregats client
+|-- AnalyticsWorkspaceViews.jsx ....... vues Parcours et Sessions, agrégats et inspecteur anonymisé
 |-- AdminForm.jsx ..................... creation/edition annonces
 |-- AdminItemList.jsx ................. liste publications
 |-- GlobalInventoryView.jsx ........... vue catalogue/ordres

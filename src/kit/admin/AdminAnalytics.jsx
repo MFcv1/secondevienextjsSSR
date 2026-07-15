@@ -8,6 +8,7 @@ import { db, functions } from '../config/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { getMillis } from '../../utils/time';
 import AdminSiteMap from './AdminSiteMap';
+import AdminAnalyticsOverview from './AdminAnalyticsOverview';
 import {
     ANALYTICS_TIME_FILTERS,
     MAX_ANALYTICS_SESSIONS,
@@ -373,7 +374,7 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite' }) => {
     );
 };
 
-const AdminAnalytics = ({ darkMode = false }) => {
+const AdminAnalyticsLegacy = ({ darkMode = false }) => {
     const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [hasLoadedSessions, setHasLoadedSessions] = useState(false);
@@ -1240,5 +1241,9 @@ const AdminAnalytics = ({ darkMode = false }) => {
         </div>
     );
 };
+
+export { AdminAnalyticsLegacy };
+
+const AdminAnalytics = ({ darkMode = false }) => <AdminAnalyticsOverview darkMode={darkMode} />;
 
 export default AdminAnalytics;
