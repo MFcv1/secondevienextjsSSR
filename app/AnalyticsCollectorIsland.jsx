@@ -19,6 +19,7 @@ const PRODUCT_IUD_KEY = 'sv.analytics.v3.product_iud';
 const MAX_PENDING_BATCHES = 20;
 const FLUSH_MS = 8000;
 let appCheckTokenPromise = null;
+let appCheckTokenValue = null;
 
 const randomId = () => {
   const bytes = crypto.getRandomValues(new Uint8Array(18));
@@ -35,6 +36,10 @@ const getLazyAppCheckToken = () => {
   if (!appCheckTokenPromise) {
     appCheckTokenPromise = import('../src/kit/config/firebaseLazy')
       .then(({ getAppCheckToken }) => getAppCheckToken())
+      .then((token) => {
+        appCheckTokenValue = token;
+        return token;
+      })
       .catch(() => null);
   }
   return appCheckTokenPromise;
@@ -84,7 +89,7 @@ const putBatch = (batch) => withStore('readwrite', (store) => store.put(batch));
 const deleteBatch = (batchId) => withStore('readwrite', (store) => store.delete(batchId));
 
 const postJson = async (path, body, keepalive = false) => {
-  const appCheckToken = appCheckTokenPromise ? await appCheckTokenPromise : null;
+  const appCheckToken = appCheckTokenValue;
   const response = await fetch(path, {
     method: 'POST', credentials: 'same-origin', keepalive,
     headers: { 'content-type': 'application/json', ...(appCheckToken ? { 'x-firebase-appcheck': appCheckToken } : {}) }, body: JSON.stringify(body),
