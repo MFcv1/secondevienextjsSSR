@@ -353,9 +353,49 @@ const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projec
 
 export const BeforeAfterSectionServer = ({ darkMode = false, projects = restorationProjects } = {}) => {
   return (
-    <section className={`gallery-deferred-render before-after-industrial before-after-premium ${darkMode ? 'before-after-premium--dark' : ''} relative flex w-full items-center overflow-hidden px-3 py-10 sm:px-5 sm:py-12 md:min-h-[690px] md:px-7 md:py-14 lg:min-h-[760px] lg:px-8 lg:py-16 2xl:min-h-[780px] 2xl:px-10 dark:bg-[#0e0d0c] ${darkMode ? 'bg-[#141210]' : 'bg-[#f8f1e6]'}`}>
+    <section className={`atelier-showcase gallery-deferred-render before-after-industrial before-after-premium ${darkMode ? 'before-after-premium--dark' : ''} relative flex w-full items-center overflow-hidden px-3 py-10 sm:px-5 sm:py-12 md:min-h-[690px] md:px-7 md:py-14 lg:min-h-[760px] lg:px-8 lg:py-16 2xl:min-h-[780px] 2xl:px-10 dark:bg-[#0e0d0c] ${darkMode ? 'bg-[#141210]' : 'bg-[#f8f1e6]'}`}>
       <div className="before-after-premium-atmosphere pointer-events-none absolute inset-0" aria-hidden="true" />
-      <div className={`before-after-premium-shell relative z-[2] mx-auto w-full max-w-[1480px] overflow-hidden rounded-[26px] p-[1px] shadow-[0_30px_86px_-68px_rgba(37,29,22,0.56),0_10px_30px_-28px_rgba(124,88,55,0.38)] ring-1 dark:bg-[#19140f] dark:ring-[#3a3027]/85 dark:shadow-[0_30px_86px_-72px_rgba(0,0,0,0.96)] ${darkMode ? 'bg-[#19140f] ring-[#3a3027]/85' : 'bg-[#fff9ef]/78 ring-[#d7c4ad]/80'}`}>
+      <div className="atelier-showcase__halo" aria-hidden="true" />
+      <svg
+        className="atelier-showcase__arch"
+        viewBox="0 0 1600 720"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <g className="atelier-showcase__curve atelier-showcase__curve--left">
+          <path className="atelier-showcase__curve-line atelier-showcase__curve-line--warm" d="M 430 -35 C 390 -10 335 18 290 55 C 180 145 70 250 0 420" />
+          <path className="atelier-showcase__curve-line atelier-showcase__curve-line--light" d="M 446 -30 C 406 -3 351 26 306 64 C 196 154 86 258 14 410" />
+        </g>
+        <g className="atelier-showcase__curve atelier-showcase__curve--right" transform="translate(1600 0) scale(-1 1)">
+          <path className="atelier-showcase__curve-line atelier-showcase__curve-line--warm" d="M 430 -35 C 390 -10 335 18 290 55 C 180 145 70 250 0 420" />
+          <path className="atelier-showcase__curve-line atelier-showcase__curve-line--light" d="M 446 -30 C 406 -3 351 26 306 64 C 196 154 86 258 14 410" />
+        </g>
+      </svg>
+      <img
+        src="/decorations/atelier-ornament-left-engraving.webp"
+        alt=""
+        aria-hidden="true"
+        width={800}
+        height={1130}
+        loading="lazy"
+        decoding="async"
+        draggable="false"
+        className="atelier-showcase__ornament atelier-showcase__ornament--left"
+      />
+      <img
+        src="/decorations/atelier-ornament-right-engraving.webp"
+        alt=""
+        aria-hidden="true"
+        width={800}
+        height={1093}
+        loading="lazy"
+        decoding="async"
+        draggable="false"
+        className="atelier-showcase__ornament atelier-showcase__ornament--right"
+      />
+      <div className="atelier-showcase__content relative z-[2] w-full">
+        <div className={`before-after-premium-shell relative mx-auto w-full max-w-[1480px] overflow-hidden rounded-[26px] p-[1px] shadow-[0_30px_86px_-68px_rgba(37,29,22,0.56),0_10px_30px_-28px_rgba(124,88,55,0.38)] ring-1 dark:bg-[#19140f] dark:ring-[#3a3027]/85 dark:shadow-[0_30px_86px_-72px_rgba(0,0,0,0.96)] ${darkMode ? 'bg-[#19140f] ring-[#3a3027]/85' : 'bg-[#fff9ef]/78 ring-[#d7c4ad]/80'}`}>
         <div className={`before-after-premium-shell__inner relative overflow-hidden rounded-[25px] p-1.5 dark:bg-[#181511] dark:shadow-[inset_0_1px_0_rgba(216,173,115,0.035)] ${darkMode ? 'bg-[#1d1a16] shadow-[inset_0_1px_0_rgba(216,173,115,0.035)]' : 'bg-[#fffaf4] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]'}`}>
           <div className={`before-after-premium-shell__inner-ring pointer-events-none absolute inset-1.5 rounded-[21px] ring-1 dark:ring-[#d8ad73]/6 ${darkMode ? 'ring-[#d8ad73]/6' : 'ring-[#e2cfba]'}`} />
           <div className={`before-after-premium-shell__grid relative grid overflow-hidden rounded-[20px] ring-1 lg:grid-cols-[minmax(0,0.95fr)_minmax(410px,1.05fr)] dark:bg-[#181511] dark:ring-[#302820] ${darkMode ? 'bg-[#1d1a16] ring-[#302820]' : 'bg-[#fffaf3] ring-[#ead8c4]'}`}>
@@ -395,6 +435,7 @@ export const BeforeAfterSectionServer = ({ darkMode = false, projects = restorat
         </div>
           </div>
         </div>
+      </div>
       </div>
       <GalleryFixedSectionsInteractions />
     </section>
