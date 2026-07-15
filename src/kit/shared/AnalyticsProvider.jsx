@@ -2,12 +2,12 @@ import { useEffect, useRef } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions, functionsRegion } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { ANALYTICS_EVENT_NAME, AnalyticsProvider as AnalyticsContextProvider } from '../contexts/AnalyticsContext';
-import { resolvePageKey, isSessionEntryView, stepSignature } from './pageTaxonomy';
 
-const REALTIME_FLUSH_MS = 10000;
-const PRESENCE_HEARTBEAT_MS = 60000;
-const PRESENCE_SAMPLE_RATE = 0.02;
+const ANALYTICS_INIT_DELAY_MS = 1500;
+const ANALYTICS_SYNC_INTERVAL_MS = 15000;
+const ROUTE_SYNC_DELAY_MS = 750;
+const MIN_BEACON_GAP_MS = 3000;
+const CLOSED_SESSION_RESUME_GRACE_MS = 15000;
 
 const isLikelyBot = () => {
     if (typeof navigator === 'undefined') return false;
@@ -15,378 +15,367 @@ const isLikelyBot = () => {
     return /bot|crawler|spider|crawling|googlebot|bingbot|slurp|duckduckbot|baiduspider|yandex|facebookexternalhit|whatsapp|telegrambot|linkedinbot|pinterest|preview/i.test(ua);
 };
 
-// ── Device / UA parser (corrigé ordre iOS avant Mac) ────────────
 const getDeviceInfo = () => {
-    const ua = navigator.userAgent || '';
+    const ua = navigator.userAgent;
+
     let device = 'Desktop';
-    if (/iPad|Tablet/i.test(ua)) device = 'Tablet';
-    else if (/Mobi|Android|iPhone/i.test(ua)) device = 'Mobile';
+    if (/Mobi|Android|iPhone/i.test(ua)) device = 'Mobile';
+    if (/Tablet|iPad/i.test(ua)) device = 'Tablet';
 
     let browser = 'Unknown';
-    if (ua.indexOf('Edg') > -1) browser = 'Edge';
-    else if (ua.indexOf('Chrome') > -1) browser = 'Chrome';
-    else if (ua.indexOf('Safari') > -1) browser = 'Safari';
-    else if (ua.indexOf('Firefox') > -1) browser = 'Firefox';
-    else if (ua.indexOf('MSIE') > -1 || ua.indexOf('rv:') > -1) browser = 'IE';
+    if (ua.includes('Chrome')) browser = 'Chrome';
+    else if (ua.includes('Safari')) browser = 'Safari';
+    else if (ua.includes('Firefox')) browser = 'Firefox';
+    else if (ua.includes('MSIE') || ua.includes('rv:')) browser = 'IE/Edge';
 
     let os = 'Unknown';
-    if (/Android/i.test(ua)) os = 'Android';
-    else if (/iPhone|iPad|iPod|like Mac OS X/i.test(ua)) os = 'iOS';
-    else if (/Win/i.test(ua)) os = 'Windows';
-    else if (/Mac/i.test(ua)) os = 'MacOS';
-    else if (/Linux/i.test(ua)) os = 'Linux';
+    if (ua.includes('Android')) os = 'Android';
+    else if (ua.includes('iPhone') || ua.includes('iPad') || ua.includes('iPod') || ua.includes('like Mac')) os = 'iOS';
+    else if (ua.includes('Win')) os = 'Windows';
+    else if (ua.includes('Mac')) os = 'MacOS';
+    else if (ua.includes('Linux')) os = 'Linux';
 
     return { device, browser, os };
 };
 
-/**
- * AnalyticsProvider — Source unique de tracking visiteur.
- *
- * Regles: voir _DOCS/data/DONNEES_ANALYTICS.md.
- *   R1  Session démarre QUAND l'utilisateur entre dans la galerie / catégorie / détail / wishlist.
- *       La vitrine (view='home') est bufferisée localement mais ne crée pas de session.
- *   R2  Validité : imposée côté dashboard (filtre duration>=5 && pageViews>=1). Ici on transmet.
- *   R3  visitorKey : calculé côté Cloud Function à partir de IP + User-Agent.
- *   R4  Clôture via pagehide / visibilitychange / beforeunload + sendBeacon.
- *   R5  Admins exclus côté client.
- */
-const AnalyticsProvider = ({
-    view,
-    activeCategoryId,
-    galleryFilter,
-    urlParams,
-    children,
-}) => {
+const ANALYTICS_SESSION_ID_KEY = 'analytics_session_id';
+const ANALYTICS_SESSION_TOKEN_KEY = 'analytics_session_token';
+const ANALYTICS_SESSION_CLOSED_AT_KEY = 'analytics_session_closed_at';
+
+const readStorageValue = (storage, key) => {
+    try {
+        return storage?.getItem(key) || null;
+    } catch {
+        return null;
+    }
+};
+
+const getStoredAnalyticsSession = () => {
+    const sessionId = readStorageValue(sessionStorage, ANALYTICS_SESSION_ID_KEY);
+    const syncToken = readStorageValue(sessionStorage, ANALYTICS_SESSION_TOKEN_KEY);
+    const closedAt = Number(readStorageValue(sessionStorage, ANALYTICS_SESSION_CLOSED_AT_KEY));
+    if (!sessionId || !syncToken) return null;
+    if (Number.isFinite(closedAt) && closedAt > 0 && Date.now() - closedAt > CLOSED_SESSION_RESUME_GRACE_MS) return null;
+    return { sessionId, syncToken };
+};
+
+const persistStorageValue = (storage, key, value) => {
+    try {
+        if (value) storage?.setItem(key, value);
+        else storage?.removeItem(key);
+    } catch {
+        // Storage can be unavailable in hardened private browsing modes.
+    }
+};
+
+const persistAnalyticsSession = (sessionId, syncToken) => {
+    persistStorageValue(sessionStorage, ANALYTICS_SESSION_ID_KEY, sessionId);
+    persistStorageValue(sessionStorage, ANALYTICS_SESSION_TOKEN_KEY, syncToken);
+    persistStorageValue(sessionStorage, ANALYTICS_SESSION_CLOSED_AT_KEY, null);
+    // Remove stale V1 values: a new tab or a reopened browser is a new session.
+    persistStorageValue(localStorage, ANALYTICS_SESSION_ID_KEY, null);
+    persistStorageValue(localStorage, ANALYTICS_SESSION_TOKEN_KEY, null);
+};
+
+const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedItemPrice, selectedItemContext = null }) => {
     const { user, isAdmin } = useAuth();
-
-    // Identifiants / horloges
     const sessionIdRef = useRef(null);
-    const initCalledRef = useRef(false);        // verrou synchrone anti-doublon init
-    const startTimeRef = useRef(Date.now());    // démarre au 1er mount (pas à l'init session)
-    const sessionStartAtRef = useRef(null);     // horloge spécifique à la session (ms)
-    const lastActionTimeRef = useRef(null);
-    const pageViewsRef = useRef(0);
-
-    // Buffers
-    const pendingJourneyRef = useRef([]);       // étapes vues AVANT qu'une session soit créée
-    const journeyPreviewRef = useRef([]);
-    const eventPreviewRef = useRef([]);
+    const syncTokenRef = useRef(null);
+    const initCalledRef = useRef(false);
     const journeyToSend = useRef([]);
-    const eventsToSend = useRef([]);
-    const realtimeFlushTimerRef = useRef(null);
-    const syncSessionCallableRef = useRef(null);
-    const flushInFlightRef = useRef(false);
-    const lastSignatureRef = useRef(null);      // anti-doublon étapes
-    const lastTrackedStepRef = useRef(null);
-    const sampledPresenceRef = useRef(Math.random() < PRESENCE_SAMPLE_RATE);
-    const visitorKeyRef = useRef(null);
+    const startTimeRef = useRef(Date.now());
+    const activeStartedAtRef = useRef(typeof document !== 'undefined' && document.visibilityState === 'hidden' ? null : Date.now());
+    const accumulatedActiveMsRef = useRef(0);
+    const lastActionTimeRef = useRef(Date.now());
+    const latestViewRef = useRef({ view, selectedItemId, selectedItemName, selectedItemPrice, selectedItemContext });
+    const lastRecordedKeyRef = useRef(null);
+    const lastSyncAtRef = useRef(0);
+    const lastBeaconAtRef = useRef(0);
+    const hasRecordedJourneyRef = useRef(false);
+    const syncInFlightRef = useRef(false);
+    const routeSyncTimerRef = useRef(null);
+    const flushSessionRef = useRef(async () => false);
 
-    // Tracking event externe (favoris, panier)
-    const trackEventRef = useRef(null);
-    trackEventRef.current = (event) => {
-        if (isAdmin) return;
-        if (isLikelyBot()) return;
-        const nextEvent = {
-            ...event,
-            previousStep: lastTrackedStepRef.current || null,
-            time: event?.time || new Date().toLocaleTimeString('fr-FR'),
-            timestamp: Number(event?.timestamp) || Date.now()
-        };
-        eventsToSend.current.push(nextEvent);
-        eventPreviewRef.current = [...eventPreviewRef.current, compactEventForPreview(nextEvent)].slice(-16);
-        scheduleRealtimeFlush(REALTIME_FLUSH_MS);
+    useEffect(() => {
+        latestViewRef.current = { view, selectedItemId, selectedItemName, selectedItemPrice, selectedItemContext };
+    }, [view, selectedItemId, selectedItemName, selectedItemPrice, selectedItemContext]);
+
+    const getTrackedDuration = () => {
+        const activeMs = accumulatedActiveMsRef.current
+            + (activeStartedAtRef.current ? Date.now() - activeStartedAtRef.current : 0);
+        return Math.max(0, Math.round(activeMs / 1000));
     };
 
-    // ── Helpers ──────────────────────────────────────────────────
-    const buildStep = (nav) => {
-        const resolved = resolvePageKey(nav);
-        const now = Date.now();
-        const duration = lastActionTimeRef.current
-            ? Math.round((now - lastActionTimeRef.current) / 1000)
-            : 0;
-        lastActionTimeRef.current = now;
-        pageViewsRef.current += 1;
+    const pauseActiveTimer = () => {
+        if (!activeStartedAtRef.current) return;
+        accumulatedActiveMsRef.current += Date.now() - activeStartedAtRef.current;
+        activeStartedAtRef.current = null;
+    };
 
-        return {
-            pageKey: resolved.pageKey,
-            pageLabel: resolved.pageLabel,
-            pageColor: resolved.pageColor,
-            section: resolved.section,
-            context: resolved.context,
-            // Compat rétro : conserve aussi `page` et `itemId` au format ancien (pour anciens reads).
-            page: resolved.pageKey,
-            itemId: resolved.context.itemId
-                ? `${resolved.context.itemId}${resolved.context.itemName ? ` | ${resolved.context.itemName}` : ''}${resolved.context.itemPrice ? ` (${resolved.context.itemPrice}€)` : ''}`
-                : null,
+    const resumeActiveTimer = () => {
+        if (activeStartedAtRef.current) return;
+        activeStartedAtRef.current = Date.now();
+        lastActionTimeRef.current = Date.now();
+    };
+
+    const recordCurrentView = ({ allowPartialDetail = false } = {}) => {
+        if (!sessionIdRef.current || isAdmin) return false;
+
+        const current = latestViewRef.current;
+        if (current.view === 'detail' && current.selectedItemId && !current.selectedItemName && !allowPartialDetail) return false;
+
+        const actionKey = [
+            current.view || '',
+            current.selectedItemId || '',
+            current.selectedItemName || '',
+            current.selectedItemPrice || '',
+            current.selectedItemContext?.source || '',
+            current.selectedItemContext?.parentFurnitureId || ''
+        ].join('|');
+        if (lastRecordedKeyRef.current === actionKey) return false;
+
+        const actionTime = Date.now();
+        const durationSinceLast = Math.round((actionTime - lastActionTimeRef.current) / 1000);
+
+        let displayId = null;
+        if (current.selectedItemId) {
+            displayId = current.selectedItemName
+                ? `${current.selectedItemId} | ${current.selectedItemName} ${current.selectedItemPrice ? `(${current.selectedItemPrice}EUR)` : ''}`
+                : current.selectedItemId;
+            if (current.selectedItemContext?.parentFurnitureName) {
+                displayId += ` [depuis: ${current.selectedItemContext.parentFurnitureName}]`;
+            } else if (current.selectedItemContext?.source) {
+                displayId += ` [source: ${current.selectedItemContext.source}]`;
+            }
+        }
+
+        journeyToSend.current.push({
+            page: current.view,
+            itemId: displayId,
             time: new Date().toLocaleTimeString('fr-FR'),
-            timestamp: now,
-            duration,
-        };
+            timestampMs: actionTime,
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            duration: durationSinceLast
+        });
+        lastRecordedKeyRef.current = actionKey;
+        lastActionTimeRef.current = actionTime;
+        hasRecordedJourneyRef.current = true;
+        return true;
     };
 
-    const compactStepForPrevious = (step) => ({
-        pageKey: step?.pageKey || step?.page || 'unknown',
-        page: step?.page || step?.pageKey || 'unknown',
-        pageLabel: step?.pageLabel || null,
-        context: step?.context || {},
-        itemId: step?.itemId || null,
-        timestamp: step?.timestamp || Date.now()
-    });
-
-    const attachPreviousStep = (step) => {
-        const previousStep = lastTrackedStepRef.current;
-        lastTrackedStepRef.current = compactStepForPrevious(step);
-        return previousStep ? { ...step, previousStep } : step;
-    };
-
-    const compactEventForPreview = (event) => ({
-        action: event?.action || 'unknown',
-        itemId: event?.itemId || null,
-        itemName: event?.itemName || null,
-        previousStep: event?.previousStep || null,
-        timestamp: event?.timestamp || Date.now()
-    });
-
-    const getSyncSessionCallable = () => {
-        if (!syncSessionCallableRef.current) {
-            syncSessionCallableRef.current = httpsCallable(functions, 'syncSession');
-        }
-        return syncSessionCallableRef.current;
-    };
-
-    const clearRealtimeFlush = () => {
-        if (realtimeFlushTimerRef.current) {
-            window.clearTimeout(realtimeFlushTimerRef.current);
-            realtimeFlushTimerRef.current = null;
-        }
-    };
-
-    const restoreChunks = (journeyChunk, eventChunk) => {
-        journeyToSend.current = [...journeyChunk, ...journeyToSend.current];
-        eventsToSend.current = [...eventChunk, ...eventsToSend.current];
-    };
-
-    const flushLiveSession = async ({ force = false, sessionActive, presenceOnly = false } = {}) => {
-        if (!sessionIdRef.current || isAdmin) return;
-
-        if (flushInFlightRef.current) {
-            scheduleRealtimeFlush(REALTIME_FLUSH_MS);
-            return;
+    flushSessionRef.current = async ({ sessionActive = true, ensureView = false } = {}) => {
+        if (!sessionIdRef.current || isAdmin || syncInFlightRef.current) return false;
+        if (ensureView && !hasRecordedJourneyRef.current) {
+            recordCurrentView({ allowPartialDetail: true });
         }
 
         const chunk = [...journeyToSend.current];
-        const eventsChunk = [...eventsToSend.current];
-        if (!force && chunk.length === 0 && eventsChunk.length === 0) return;
-
         journeyToSend.current = [];
-        eventsToSend.current = [];
-        flushInFlightRef.current = true;
-
-        const totalDuration = sessionStartAtRef.current
-            ? Math.round((Date.now() - sessionStartAtRef.current) / 1000)
-            : 0;
+        syncInFlightRef.current = true;
+        lastSyncAtRef.current = Date.now();
 
         try {
-            await getSyncSessionCallable()({
+            await httpsCallable(functions, 'syncSession')({
                 sessionId: sessionIdRef.current,
-                duration: totalDuration,
-                pageViews: pageViewsRef.current,
+                syncToken: syncTokenRef.current,
+                duration: getTrackedDuration(),
                 journey: chunk,
-                events: eventsChunk,
-                visitorKey: visitorKeyRef.current,
-                lastJourneyPreview: journeyPreviewRef.current,
-                lastEventPreview: eventPreviewRef.current,
-                presenceSampleRate: PRESENCE_SAMPLE_RATE,
-                sessionActive: sessionActive ?? document.visibilityState === 'visible',
-                presenceOnly,
+                sessionActive
             });
-        } catch (err) {
-            restoreChunks(chunk, eventsChunk);
+            return true;
+        } catch {
+            journeyToSend.current = [...chunk, ...journeyToSend.current];
+            return false;
         } finally {
-            flushInFlightRef.current = false;
+            syncInFlightRef.current = false;
         }
     };
 
-    function scheduleRealtimeFlush(delay = REALTIME_FLUSH_MS) {
-        if (typeof window === 'undefined') return;
-        clearRealtimeFlush();
-        realtimeFlushTimerRef.current = window.setTimeout(() => {
-            realtimeFlushTimerRef.current = null;
-            flushLiveSession({ force: false });
-        }, delay);
-    }
-
-    const tryInitSession = async (entryNav) => {
-        if (sessionIdRef.current || initCalledRef.current) return;
-        if (isAdmin) return;
-        if (isLikelyBot()) return;
-        if (!user) return; // auth pas stable
-        initCalledRef.current = true;
-
-        const userInfo = {
-            userId: user?.uid || 'anonymous',
-            email: user?.email || null,
-            type: isAdmin ? 'admin' : (user && !user.isAnonymous ? 'client' : 'anonymous'),
-            entryPageKey: entryNav?.pageKey || 'unknown',
-            ...getDeviceInfo(),
-        };
-
-        try {
-            const initRes = await httpsCallable(functions, 'initLiveSession')(userInfo);
-            if (initRes?.data?.success && initRes.data.sessionId) {
-                sessionIdRef.current = initRes.data.sessionId;
-                visitorKeyRef.current = initRes.data.visitorKey || null;
-                sessionStartAtRef.current = Date.now();
-
-                // Flush le buffer pré-session : inclure la vitrine si elle a été vue.
-                const buffered = [...pendingJourneyRef.current];
-                pendingJourneyRef.current = [];
-                journeyToSend.current.push(...buffered);
-                scheduleRealtimeFlush(REALTIME_FLUSH_MS);
-            } else {
-                initCalledRef.current = false; // réouvrir
-            }
-        } catch (err) {
-            console.error('Analytics init error:', err);
-            initCalledRef.current = false;
-        }
+    const scheduleRouteSync = () => {
+        if (routeSyncTimerRef.current) clearTimeout(routeSyncTimerRef.current);
+        routeSyncTimerRef.current = setTimeout(() => {
+            flushSessionRef.current({ sessionActive: document.visibilityState === 'visible' });
+        }, ROUTE_SYNC_DELAY_MS);
     };
 
-    // ── Record page change (buffer ou push direct) ───────────────
     useEffect(() => {
-        if (isAdmin) return;
-        if (isLikelyBot()) return;
+        let isMounted = true;
 
-        const nav = { view, activeCategoryId, galleryFilter, urlParams };
+        const initSession = async () => {
+            const currentView = latestViewRef.current.view;
+            if (sessionIdRef.current || initCalledRef.current || !isMounted || isAdmin || !currentView || currentView === 'admin') return;
+            if (!user) return;
+            if (isLikelyBot()) return;
 
-        const rawStep = buildStep(nav);
+            initCalledRef.current = true;
 
-        // Anti-doublon : ne pas pousser deux fois la même signature d'affilée
-        const sig = stepSignature(rawStep);
-        if (sig && sig === lastSignatureRef.current) return;
-        lastSignatureRef.current = sig;
-        const step = attachPreviousStep(rawStep);
-        journeyPreviewRef.current = [...journeyPreviewRef.current, step].slice(-16);
-
-        if (sessionIdRef.current) {
-            journeyToSend.current.push(step);
-            scheduleRealtimeFlush(REALTIME_FLUSH_MS);
-        } else {
-            // Session pas encore démarrée : bufferiser.
-            pendingJourneyRef.current.push(step);
-
-            // R1 — si cette view est une entry view, tenter init
-            if (isSessionEntryView(view) && user) {
-                tryInitSession(step);
+            const userInfo = {
+                userId: user.uid || 'anonymous',
+                email: user.email || null,
+                type: isAdmin ? 'admin' : (user && !user.isAnonymous ? 'client' : 'anonymous'),
+                ...getDeviceInfo()
+            };
+            const storedSession = getStoredAnalyticsSession();
+            if (storedSession) {
+                userInfo.resumeSessionId = storedSession.sessionId;
+                userInfo.resumeSyncToken = storedSession.syncToken;
             }
-        }
-    }, [view, activeCategoryId, galleryFilter, user, isAdmin]);
 
-    // ── Retry init si user/auth devient disponible APRÈS l'entrée ─
-    useEffect(() => {
-        if (sessionIdRef.current || isAdmin || !user) return;
-        if (!isSessionEntryView(view)) return;
-        tryInitSession();
-    }, [user, isAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    useEffect(() => {
-        const handleExternalEvent = (event) => {
-            if (event?.detail) trackEventRef.current?.(event.detail);
+            try {
+                const initRes = await httpsCallable(functions, 'initLiveSession')(userInfo);
+                if (initRes.data.success && isMounted) {
+                    sessionIdRef.current = initRes.data.sessionId;
+                    syncTokenRef.current = initRes.data.syncToken || null;
+                    const startedAtMs = Number(initRes.data.startedAtMs);
+                    if (Number.isFinite(startedAtMs) && startedAtMs > 0) {
+                        startTimeRef.current = startedAtMs;
+                    }
+                    accumulatedActiveMsRef.current = 0;
+                    activeStartedAtRef.current = document.visibilityState === 'hidden' ? null : Date.now();
+                    lastActionTimeRef.current = Date.now();
+                    persistAnalyticsSession(initRes.data.sessionId, initRes.data.syncToken);
+                    recordCurrentView({ allowPartialDetail: true });
+                    await flushSessionRef.current({ sessionActive: document.visibilityState === 'visible' });
+                } else {
+                    initCalledRef.current = false;
+                }
+            } catch (error) {
+                console.error('Analytics Init Error:', error);
+                initCalledRef.current = false;
+            }
         };
 
-        window.addEventListener(ANALYTICS_EVENT_NAME, handleExternalEvent);
-        return () => window.removeEventListener(ANALYTICS_EVENT_NAME, handleExternalEvent);
-    }, []);
+        const timeout = setTimeout(() => {
+            if (!sessionIdRef.current && !initCalledRef.current) initSession();
+        }, ANALYTICS_INIT_DELAY_MS);
 
-    // ── Sampled presence heartbeat ───────────────────────────────
+        return () => {
+            isMounted = false;
+            clearTimeout(timeout);
+        };
+    }, [user, isAdmin]);
+
+    useEffect(() => {
+        if (recordCurrentView()) scheduleRouteSync();
+        return () => {
+            if (routeSyncTimerRef.current) clearTimeout(routeSyncTimerRef.current);
+        };
+    }, [view, selectedItemId, selectedItemName, selectedItemPrice, selectedItemContext]);
+
     useEffect(() => {
         const interval = setInterval(() => {
             if (!sessionIdRef.current || isAdmin) return;
-            if (document.visibilityState !== 'visible') return;
 
-            const hasPendingData = journeyToSend.current.length > 0 || eventsToSend.current.length > 0;
-            if (hasPendingData) {
-                flushLiveSession({ force: false, sessionActive: true });
-                return;
-            }
-
-            if (sampledPresenceRef.current) {
-                flushLiveSession({ force: true, sessionActive: true, presenceOnly: true });
-            }
-        }, PRESENCE_HEARTBEAT_MS);
+            flushSessionRef.current({
+                sessionActive: document.visibilityState === 'visible',
+                ensureView: true
+            });
+        }, ANALYTICS_SYNC_INTERVAL_MS);
 
         return () => clearInterval(interval);
     }, [isAdmin]);
 
-    // ── Closure handlers (desktop + mobile) ──────────────────────
+    useEffect(() => {
+        const handleAffiliateClick = (event) => {
+            if (!sessionIdRef.current || isAdmin) return;
+
+            const { productId, productName, productPrice, source, parentFurnitureName } = event.detail;
+            const actionTime = Date.now();
+            const durationSinceLast = Math.round((actionTime - lastActionTimeRef.current) / 1000);
+
+            let displayId = productId || null;
+            if (productId && productName) {
+                displayId = `${productId} | ${productName}${productPrice ? ` (${productPrice}EUR)` : ''}`;
+            }
+            if (parentFurnitureName) {
+                displayId += ` [depuis: ${parentFurnitureName}]`;
+            }
+
+            journeyToSend.current.push({
+                page: `affiliate_${source}`,
+                itemId: displayId,
+                time: new Date().toLocaleTimeString('fr-FR'),
+                timestampMs: actionTime,
+                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                duration: durationSinceLast
+            });
+            hasRecordedJourneyRef.current = true;
+            lastActionTimeRef.current = actionTime;
+            scheduleRouteSync();
+        };
+
+        window.addEventListener('affiliate_product_click', handleAffiliateClick);
+        return () => window.removeEventListener('affiliate_product_click', handleAffiliateClick);
+    }, [isAdmin]);
+
     useEffect(() => {
         const sendSessionUpdate = (isActive = true) => {
             if (!sessionIdRef.current || isAdmin) return;
-            clearRealtimeFlush();
-            const totalDuration = sessionStartAtRef.current
-                ? Math.round((Date.now() - sessionStartAtRef.current) / 1000)
-                : 0;
-            const url = `https://${functionsRegion}-${functions.app.options.projectId}.cloudfunctions.net/syncSessionBeacon`;
+            const now = Date.now();
+            if (!isActive && now - lastBeaconAtRef.current < MIN_BEACON_GAP_MS) return;
+            if (!isActive) persistStorageValue(sessionStorage, ANALYTICS_SESSION_CLOSED_AT_KEY, String(now));
 
-            const chunk = [...journeyToSend.current];
-            const eventsChunk = [...eventsToSend.current];
-            if (!isActive) {
-                journeyToSend.current = [];
-                eventsToSend.current = [];
+            if (!hasRecordedJourneyRef.current) {
+                recordCurrentView({ allowPartialDetail: true });
             }
+
+            const totalDuration = getTrackedDuration();
+            const url = `https://${functionsRegion}-${functions.app.options.projectId}.cloudfunctions.net/syncSessionBeacon`;
+            const chunk = [...journeyToSend.current];
+            if (!isActive) journeyToSend.current = [];
+            lastBeaconAtRef.current = now;
 
             const payload = JSON.stringify({
                 sessionId: sessionIdRef.current,
+                syncToken: syncTokenRef.current,
                 duration: totalDuration,
-                pageViews: pageViewsRef.current,
                 journey: chunk,
-                events: eventsChunk,
-                visitorKey: visitorKeyRef.current,
-                lastJourneyPreview: journeyPreviewRef.current,
-                lastEventPreview: eventPreviewRef.current,
-                presenceSampleRate: PRESENCE_SAMPLE_RATE,
-                sessionActive: isActive,
-                presenceOnly: chunk.length === 0 && eventsChunk.length === 0,
+                sessionActive: isActive
             });
-
-            navigator.sendBeacon(url, payload);
-        };
-
-        const handleVisibilityChange = () => {
-            if (!sessionIdRef.current) return;
-            if (document.visibilityState === 'hidden') {
-                sendSessionUpdate(false);
-            } else if (document.visibilityState === 'visible') {
-                const hasPendingData = journeyToSend.current.length > 0 || eventsToSend.current.length > 0;
-                flushLiveSession({
-                    force: hasPendingData || sampledPresenceRef.current,
-                    sessionActive: true,
-                    presenceOnly: !hasPendingData
+            const queued = navigator.sendBeacon(url, payload);
+            if (!queued) {
+                fetch(url, {
+                    method: 'POST',
+                    body: payload,
+                    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+                    keepalive: true
+                }).catch(() => {
+                    if (!isActive) journeyToSend.current = [...chunk, ...journeyToSend.current];
                 });
             }
         };
 
-        const handlePageHide = () => sendSessionUpdate(false);
-        const handleBeforeUnload = () => sendSessionUpdate(false);
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                pauseActiveTimer();
+                sendSessionUpdate(false);
+                return;
+            }
 
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        window.addEventListener('pagehide', handlePageHide);
+            if (document.visibilityState === 'visible' && sessionIdRef.current && !isAdmin) {
+                resumeActiveTimer();
+                persistStorageValue(sessionStorage, ANALYTICS_SESSION_CLOSED_AT_KEY, null);
+                flushSessionRef.current({ sessionActive: true, ensureView: true });
+            }
+        };
+
+        const handleBeforeUnload = () => {
+            pauseActiveTimer();
+            sendSessionUpdate(false);
+        };
+
+        window.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('beforeunload', handleBeforeUnload);
+        window.addEventListener('pagehide', handleBeforeUnload);
 
         return () => {
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-            window.removeEventListener('pagehide', handlePageHide);
+            window.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('beforeunload', handleBeforeUnload);
+            window.removeEventListener('pagehide', handleBeforeUnload);
         };
     }, [isAdmin]);
 
-    useEffect(() => () => clearRealtimeFlush(), []);
-
-    return (
-        <AnalyticsContextProvider trackEventRef={trackEventRef}>
-            {children}
-        </AnalyticsContextProvider>
-    );
+    return null;
 };
 
 export default AnalyticsProvider;

@@ -1,83 +1,147 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
-    Smartphone, Monitor, Globe, Trash2, AlertCircle, ChevronDown, ChevronRight,
-    Map as MapIcon, RefreshCw
+    Users, Clock, Activity, Smartphone, Monitor, Globe, Trash2, AlertCircle, ChevronDown, ChevronRight,
+    TrendingUp, MousePointerClick, ShoppingBag, RefreshCw
 } from 'lucide-react';
-import { collection, getDocs, limit, orderBy, query, Timestamp, where } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs, onSnapshot, where, Timestamp } from 'firebase/firestore';
 import { db, functions } from '../config/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { getMillis } from '../../utils/time';
-import AdminSiteMap from './AdminSiteMap';
 import {
     ANALYTICS_TIME_FILTERS,
     MAX_ANALYTICS_SESSIONS,
+    buildVisitorDayGroups,
     buildAnalyticsStats,
-    buildVisitorConfidence,
     getAnalyticsWindow,
-    getIpVisitorKey,
-    getReliableVisitorKey,
-    getVisitorIdentity
+    getReliableVisitorKey
 } from './analyticsReliability';
 
-const LIVE_WINDOW_MS = 120000;
-const ANALYTICS_CHECKPOINT_CACHE_KEY = 'secondevie.admin.analytics.checkpoint.v1';
-const ANALYTICS_CHECKPOINT_SESSION_LIMIT = Math.min(MAX_ANALYTICS_SESSIONS, 1500);
+let cachedAnalyticsSessions = null;
+let cachedAnalyticsSessionsLoadedAt = null;
+let cachedAffiliateClicks = null;
+let cachedAffiliateClicksLoadedAt = null;
 
-const formatCheckpointDate = (timestamp) => {
-    if (!timestamp) return 'Jamais';
-    return new Date(timestamp).toLocaleString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+const ADMIN_ANALYTICS_CACHE_DB = 'sv-admin-analytics-cache-v1';
+const ADMIN_ANALYTICS_CACHE_STORE = 'snapshots';
+const ADMIN_ANALYTICS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const ADMIN_SESSIONS_CACHE_KEY = 'traffic-sessions';
+const ADMIN_AFFILIATE_CACHE_KEY = 'affiliate-clicks';
+const OMIT_CACHE_FIELDS = new Set(['email', 'syncTokenHash', 'userAgent']);
+
+const openAdminAnalyticsCache = () => new Promise((resolve, reject) => {
+    if (typeof window === 'undefined' || !window.indexedDB) {
+        reject(new Error('IndexedDB unavailable'));
+        return;
+    }
+
+    const request = window.indexedDB.open(ADMIN_ANALYTICS_CACHE_DB, 1);
+    request.onupgradeneeded = () => {
+        const database = request.result;
+        if (!database.objectStoreNames.contains(ADMIN_ANALYTICS_CACHE_STORE)) {
+            database.createObjectStore(ADMIN_ANALYTICS_CACHE_STORE, { keyPath: 'key' });
+        }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error('IndexedDB open failed'));
+});
+
+const serializeAnalyticsCacheValue = (value) => {
+    if (value === null || value === undefined) return value;
+    if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') return value;
+    if (value instanceof Date) return { __svType: 'timestamp', seconds: Math.floor(value.getTime() / 1000), nanoseconds: (value.getTime() % 1000) * 1000000 };
+    if (typeof value.toMillis === 'function') {
+        const ms = value.toMillis();
+        return { __svType: 'timestamp', seconds: Math.floor(ms / 1000), nanoseconds: (ms % 1000) * 1000000 };
+    }
+    if (Array.isArray(value)) return value.map(serializeAnalyticsCacheValue);
+    if (typeof value === 'object') {
+        return Object.entries(value).reduce((acc, [key, item]) => {
+            if (!OMIT_CACHE_FIELDS.has(key) && typeof item !== 'function') {
+                acc[key] = serializeAnalyticsCacheValue(item);
+            }
+            return acc;
+        }, {});
+    }
+    return null;
 };
 
-const getCheckpointAgeLabel = (timestamp, now = Date.now()) => {
-    if (!timestamp) return 'aucun checkpoint';
-    const diffMs = Math.max(0, now - timestamp);
-    const minute = 60 * 1000;
-    const hour = 60 * minute;
-    const day = 24 * hour;
-
-    if (diffMs < minute) return 'a l\'instant';
-    if (diffMs < hour) return `il y a ${Math.floor(diffMs / minute)} min`;
-    if (diffMs < day) return `il y a ${Math.floor(diffMs / hour)} h`;
-    return `il y a ${Math.floor(diffMs / day)} j`;
+const deserializeAnalyticsCacheValue = (value) => {
+    if (value === null || value === undefined) return value;
+    if (Array.isArray(value)) return value.map(deserializeAnalyticsCacheValue);
+    if (typeof value === 'object') {
+        if (value.__svType === 'timestamp' && typeof value.seconds === 'number') {
+            return Timestamp.fromMillis((value.seconds * 1000) + Math.round((value.nanoseconds || 0) / 1000000));
+        }
+        return Object.entries(value).reduce((acc, [key, item]) => {
+            acc[key] = deserializeAnalyticsCacheValue(item);
+            return acc;
+        }, {});
+    }
+    return value;
 };
 
-const readAnalyticsCheckpoint = () => {
-    if (typeof window === 'undefined') return null;
+const readAdminAnalyticsCache = async (key) => {
     try {
-        const raw = window.localStorage.getItem(ANALYTICS_CHECKPOINT_CACHE_KEY);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        if (!parsed || !Array.isArray(parsed.sessions) || !Number.isFinite(parsed.loadedAt)) return null;
-        return parsed;
+        const database = await openAdminAnalyticsCache();
+        return await new Promise((resolve, reject) => {
+            const tx = database.transaction(ADMIN_ANALYTICS_CACHE_STORE, 'readwrite');
+            const store = tx.objectStore(ADMIN_ANALYTICS_CACHE_STORE);
+            const request = store.get(key);
+            request.onsuccess = () => {
+                const snapshot = request.result;
+                if (!snapshot || snapshot.version !== 1 || snapshot.expiresAt < Date.now()) {
+                    if (snapshot) store.delete(key);
+                    resolve(null);
+                    return;
+                }
+                resolve({
+                    loadedAt: snapshot.loadedAt,
+                    data: deserializeAnalyticsCacheValue(snapshot.data)
+                });
+            };
+            request.onerror = () => reject(request.error || new Error('IndexedDB read failed'));
+        });
     } catch {
         return null;
     }
 };
 
-const writeAnalyticsCheckpoint = (sessions, loadedAt = Date.now()) => {
-    if (typeof window === 'undefined') return { saved: false, count: 0 };
-    const safeSessions = sessions.slice(0, ANALYTICS_CHECKPOINT_SESSION_LIMIT);
+const writeAdminAnalyticsCache = async (key, data, loadedAt) => {
     try {
-        window.localStorage.setItem(ANALYTICS_CHECKPOINT_CACHE_KEY, JSON.stringify({
-            loadedAt,
-            count: sessions.length,
-            cachedCount: safeSessions.length,
-            sessions: safeSessions
-        }));
-        return { saved: true, count: safeSessions.length };
+        const database = await openAdminAnalyticsCache();
+        await new Promise((resolve, reject) => {
+            const tx = database.transaction(ADMIN_ANALYTICS_CACHE_STORE, 'readwrite');
+            tx.objectStore(ADMIN_ANALYTICS_CACHE_STORE).put({
+                key,
+                version: 1,
+                loadedAt,
+                expiresAt: loadedAt + ADMIN_ANALYTICS_CACHE_TTL_MS,
+                data: serializeAnalyticsCacheValue(data)
+            });
+            tx.oncomplete = resolve;
+            tx.onerror = () => reject(tx.error || new Error('IndexedDB write failed'));
+        });
     } catch {
-        return { saved: false, count: 0 };
+        // Le cache local ne doit jamais bloquer l'analytics admin.
+    }
+};
+
+const clearAdminAnalyticsCache = async (key) => {
+    try {
+        const database = await openAdminAnalyticsCache();
+        await new Promise((resolve, reject) => {
+            const tx = database.transaction(ADMIN_ANALYTICS_CACHE_STORE, 'readwrite');
+            tx.objectStore(ADMIN_ANALYTICS_CACHE_STORE).delete(key);
+            tx.oncomplete = resolve;
+            tx.onerror = () => reject(tx.error || new Error('IndexedDB delete failed'));
+        });
+    } catch {
+        // Ignorer si le cache navigateur n'est pas disponible.
     }
 };
 
 // ─── Custom SVG Bar Chart — Premium responsive (remplace Recharts) ──
-const TrafficChart = ({ data, darkMode, valueLabel = 'visite' }) => {
+const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 }) => {
     const containerRef = useRef(null);
     const [dims, setDims] = useState({ w: 600, h: 280 });
     const [activeIdx, setActiveIdx] = useState(null);
@@ -141,8 +205,8 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite' }) => {
         // Minimum absolu de largeur de barre
         barW = Math.max(isMobile ? 3 : 4, barW);
 
-        // Cap la largeur max pour éviter des barres géantes avec peu de données
-        barW = Math.min(barW, isMobile ? 40 : 60);
+        // Cap la largeur max — plafond serré pour une cohérence visuelle quel que soit le nb de barres
+        barW = Math.min(barW, isMobile ? 18 : 28);
 
         return { barW, gap, total: n };
     }, [data.length, chartW, isMobile]);
@@ -258,7 +322,7 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite' }) => {
                         const radius = Math.min(3, bw / 2);
 
                         return (
-                            <g key={i}>
+                            <g key={`${animationKey}-${i}`}>
                                 {/* Barre active : glow + agrandissement */}
                                 {isActive && d.visites > 0 && (
                                     <rect
@@ -279,7 +343,10 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite' }) => {
                                         width={bw} height={h}
                                         rx={radius} ry={radius}
                                         fill="url(#svgBarGrad)"
-                                    />
+                                    >
+                                        <animate attributeName="height" from="0" to={h} dur="520ms" begin={`${Math.min(i * 18, 260)}ms`} fill="freeze" />
+                                        <animate attributeName="y" from={chartH} to={y} dur="520ms" begin={`${Math.min(i * 18, 260)}ms`} fill="freeze" />
+                                    </rect>
                                 )}
 
                                 {/* Indicateur slot vide (dot subtil) */}
@@ -367,189 +434,1352 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite' }) => {
                     }}>
                         {tooltipInfo.d.visites} {valueLabel}{tooltipInfo.d.visites > 1 ? 's' : ''}
                     </div>
+                    {tooltipInfo.d.sessions !== undefined && tooltipInfo.d.sessions !== tooltipInfo.d.visites && (
+                        <div style={{
+                            position: 'relative', zIndex: 1,
+                            fontSize: isMobile ? '9px' : '10px',
+                            fontWeight: 800, color: darkMode ? '#a8a29e' : '#78716c',
+                            textTransform: 'uppercase'
+                        }}>
+                            {tooltipInfo.d.sessions} session{tooltipInfo.d.sessions > 1 ? 's' : ''}
+                        </div>
+                    )}
                 </div>
             )}
         </div>
     );
 };
 
-const AdminAnalytics = ({ darkMode = false }) => {
-    const [sessions, setSessions] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [hasLoadedSessions, setHasLoadedSessions] = useState(false);
-    const [checkpointLoadedAt, setCheckpointLoadedAt] = useState(null);
-    const [checkpointCount, setCheckpointCount] = useState(0);
-    const [checkpointCachedCount, setCheckpointCachedCount] = useState(0);
-    const [checkpointNotice, setCheckpointNotice] = useState('');
-    const [refreshPulseKey, setRefreshPulseKey] = useState(0);
-    const [timeFilter, setTimeFilter] = useState('1j'); // Default to 24h // '1h', '1j', '7j', '1mois', '1ans'
-    const [expandedSessionId, setExpandedSessionId] = useState(null);
-    const [now, setNow] = useState(Date.now());
-    const [currentPage, setCurrentPage] = useState(1);
-    const DAYS_PER_PAGE = 10;
+// ─── Boutique Affiliation Analytics ───────────────────────────────────────────
+const PROG_LABELS_B = { amazon: 'Amazon', manomano: 'ManoMano', leroymerlin: 'Leroy Merlin', rakuten: 'Rakuten', castorama: 'Castorama', direct: 'Direct' };
+const PROG_COLORS_B = { amazon: '#FF9900', manomano: '#2ECC71', leroymerlin: '#006600', rakuten: '#BF0000', castorama: '#FF6600', direct: '#6B7280' };
+const TIER_LABELS_B = { essentiel: 'Essentiel', premium: 'Premium', expert: 'Expert' };
+const TIER_COLORS_B = { essentiel: '#78716c', premium: '#f59e0b', expert: '#e2e8f0' };
+const SOURCE_LABELS_B = { shop_grid: 'Comptoir (Grille)', shop_detail: 'Comptoir (Fiche)', shop_tutorial: 'Comptoir (Tuto)', gallery_detail: 'Galerie (Meuble)', inconnu: 'Inconnu' };
+const SOURCE_COLORS_B = { shop_grid: '#3B82F6', shop_detail: '#14B8A6', shop_tutorial: '#F59E0B', gallery_detail: '#8B5CF6', inconnu: '#6B7280' };
+const BOUTIQUE_TIME_FILTERS = [
+    { id: '1h', label: '1H', duration: 60 * 60 * 1000, step: 5 * 60 * 1000 },
+    { id: '5h', label: '5H', duration: 5 * 60 * 60 * 1000, step: 15 * 60 * 1000 },
+    { id: '1j', label: '1J', duration: 24 * 60 * 60 * 1000, step: 60 * 60 * 1000 },
+    { id: '2sem', label: '2 Sem.', duration: 14 * 24 * 60 * 60 * 1000, step: 24 * 60 * 60 * 1000 },
+    { id: '1mois', label: '1 Mois', duration: 30 * 24 * 60 * 60 * 1000, step: 24 * 60 * 60 * 1000 },
+    { id: '3mois', label: '3 Mois', duration: 90 * 24 * 60 * 60 * 1000, step: 7 * 24 * 60 * 60 * 1000 },
+    { id: '6mois', label: '6 Mois', duration: 180 * 24 * 60 * 60 * 1000, step: 14 * 24 * 60 * 60 * 1000 },
+    { id: '1ans', label: '1 An', duration: 365 * 24 * 60 * 60 * 1000, step: 30 * 24 * 60 * 60 * 1000 },
+];
 
-    // Refresh "now" every 30s to update "Online" vs "Finished" markers
+const PAGE_LABELS = {
+    gallery: 'Galerie',
+    category: 'Categorie',
+    detail: 'Fiche produit',
+    about: 'A propos',
+    quote: 'Devis',
+    search: 'Recherche',
+    wishlist: 'Favoris',
+    checkout: 'Checkout',
+    'my-orders': 'Mes commandes',
+    login: 'Connexion',
+};
+
+const AFFILIATE_JOURNEY_LABELS = {
+    affiliate_shop_grid: 'Clic Comptoir',
+    affiliate_shop_detail: 'Achat depuis fiche Comptoir',
+    affiliate_shop_tutorial: 'Clic Tutoriel Comptoir',
+    affiliate_gallery_detail: 'Clic depuis fiche meuble',
+    comptoir: 'Clic Comptoir',
+};
+
+const getBoutiqueFilterConfig = (filterId) => BOUTIQUE_TIME_FILTERS.find(f => f.id === filterId) || BOUTIQUE_TIME_FILTERS[2];
+
+const formatBoutiqueSlot = (time, step) => {
+    const d = new Date(time);
+    if (step < 60 * 60 * 1000) return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    if (step < 24 * 60 * 60 * 1000) return `${d.getHours()}h`;
+    if (step < 30 * 24 * 60 * 60 * 1000) return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+    return d.toLocaleDateString('fr-FR', { month: '2-digit', year: 'numeric' });
+};
+
+const alignBoutiqueSlotStart = (time, step) => {
+    const d = new Date(time);
+    if (step < 60 * 60 * 1000) {
+        const minutes = Math.floor(d.getMinutes() / Math.max(1, step / 60000)) * Math.max(1, step / 60000);
+        d.setMinutes(minutes, 0, 0);
+        return d.getTime();
+    }
+    if (step < 24 * 60 * 60 * 1000) {
+        const hours = Math.floor(d.getHours() / Math.max(1, step / 3600000)) * Math.max(1, step / 3600000);
+        d.setHours(hours, 0, 0, 0);
+        return d.getTime();
+    }
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+};
+
+const buildBoutiqueTimeline = (now, duration, step, withVisitors = false) => {
+    const cutoff = now - duration;
+    const start = alignBoutiqueSlotStart(cutoff, step);
+    const end = alignBoutiqueSlotStart(now, step);
+    const timeline = [];
+    const slotMap = new Map();
+    for (let t = start; t <= end; t += step) {
+        const slot = { timestamp: t, name: formatBoutiqueSlot(t, step), visites: 0 };
+        if (withVisitors) slot.visitors = new Set();
+        timeline.push(slot);
+        slotMap.set(t, slot);
+    }
+    return { cutoff, timeline, slotMap };
+};
+
+const isComptoirPageView = (page) => page === 'shop' || page === 'shop-detail' || page === 'comptoir';
+const isComptoirJourneyStep = (step) => {
+    const page = step?.page;
+    return isComptoirPageView(page) || String(page || '').startsWith('affiliate_');
+};
+const isAffiliateJourneyStep = (page) => page === 'comptoir' || String(page || '').startsWith('affiliate_');
+
+const parseJourneyClockTime = (sessionStartedAt, timeLabel) => {
+    const started = getMillis(sessionStartedAt);
+    const match = String(timeLabel || '').match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (!started || !match) return 0;
+
+    const date = new Date(started);
+    date.setHours(Number(match[1]), Number(match[2]), Number(match[3] || 0), 0);
+    let candidate = date.getTime();
+    if (candidate < started - 12 * 60 * 60 * 1000) candidate += 24 * 60 * 60 * 1000;
+    if (candidate > started + 12 * 60 * 60 * 1000) candidate -= 24 * 60 * 60 * 1000;
+    return candidate;
+};
+
+const getJourneyStepMillis = (session, step) => {
+    const exact = getMillis(step?.timestampMs || step?.clientAtMs || step?.at);
+    if (exact) return exact;
+    return parseJourneyClockTime(session?.startedAt, step?.time) || getMillis(session?.startedAt);
+};
+
+const getFirstComptoirStepMillis = (session) => {
+    const step = (session?.journey || []).find(isComptoirJourneyStep);
+    return step ? getJourneyStepMillis(session, step) : 0;
+};
+
+const formatJourneyStepTime = (session, step) => {
+    const exact = getMillis(step?.timestampMs || step?.clientAtMs || step?.at);
+    if (exact) return new Date(exact).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return step?.time || '--:--';
+};
+
+const getTrackingItemParts = (rawItemId) => {
+    const raw = String(rawItemId || '').trim();
+    if (!raw) return { id: null, label: null, context: null, source: null };
+
+    const contextMatch = raw.match(/\[(depuis|source):\s*([^\]]+)\]/i);
+    const clean = raw.replace(/\s*\[(depuis|source):\s*[^\]]+\]\s*$/i, '').trim();
+    const [rawId, ...labelParts] = clean.split('|');
+    const label = (labelParts.join('|') || rawId || '').trim();
+    const id = labelParts.length > 0 ? rawId.trim() : null;
+
+    return {
+        id,
+        label: label || null,
+        context: contextMatch ? contextMatch[2].trim() : null,
+        source: contextMatch && contextMatch[1].toLowerCase() === 'source' ? contextMatch[2].trim() : null
+    };
+};
+
+const getComptoirEventMeta = (event) => {
+    if (event.kind === 'click') return { label: 'Clic produit', accent: 'text-amber-400', dot: 'bg-amber-400', chip: 'bg-amber-500/10 border-amber-500/10 text-amber-300' };
+    if (event.page === 'shop-detail') return { label: 'Fiche Comptoir', accent: 'text-teal-400', dot: 'bg-teal-400', chip: 'bg-teal-500/10 border-teal-500/10 text-teal-300' };
+    return { label: 'Vue Comptoir', accent: 'text-blue-400', dot: 'bg-blue-400', chip: 'bg-blue-500/10 border-blue-500/10 text-blue-300' };
+};
+
+const getDayLabelFromMs = (ms, now) => {
+    const dateObj = new Date(ms);
+    const dateKey = dateObj.toLocaleDateString('fr-FR');
+    const today = new Date(now).toLocaleDateString('fr-FR');
+    const yesterday = new Date(now - 86400000).toLocaleDateString('fr-FR');
+    if (dateKey === today) return "Aujourd'hui";
+    if (dateKey === yesterday) return 'Hier';
+    return dateKey;
+};
+
+const getJourneyLabel = (page) => AFFILIATE_JOURNEY_LABELS[page] || PAGE_LABELS[page] || page || 'Inconnu';
+const getJourneyAccent = (page) => {
+    if (page === 'shop') return { dot: 'bg-violet-500 shadow-[0_0_10px_rgba(139,92,246,0.3)]', text: 'text-violet-400/60', label: 'text-violet-400', chip: 'bg-indigo-500/10 text-indigo-400/80 border-indigo-500/10' };
+    if (isAffiliateJourneyStep(page)) return { dot: 'bg-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.4)]', text: 'text-teal-400/60', label: 'text-teal-400', chip: 'bg-teal-500/10 text-teal-400/80 border-teal-500/10' };
+    if (page === 'delivery') return { dot: 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]', text: 'text-emerald-500/60', label: 'text-emerald-500', chip: 'bg-emerald-500/10 text-emerald-400/80 border-emerald-500/10' };
+    return { dot: 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]', text: 'text-blue-500/60', label: 'text-amber-500', chip: 'bg-indigo-500/10 text-indigo-400/80 border-indigo-500/10' };
+};
+
+const formatDurationLabel = (seconds) => {
+    if (!seconds) return '0s';
+    if (seconds < 60) return `${seconds}s`;
+    const min = Math.floor(seconds / 60);
+    const sec = seconds % 60;
+    return `${min}m ${sec}s`;
+};
+
+const getJourneyStepPageDuration = (session, index) => {
+    const journey = Array.isArray(session?.journey) ? session.journey : [];
+    const nextDuration = Number(journey[index + 1]?.duration);
+    if (Number.isFinite(nextDuration) && nextDuration > 0) return nextDuration;
+
+    const elapsedBeforeLastStep = journey.reduce((sum, step, stepIndex) => {
+        if (stepIndex === 0 || stepIndex > index) return sum;
+        const value = Number(step?.duration);
+        return sum + (Number.isFinite(value) && value > 0 ? value : 0);
+    }, 0);
+    const sessionDuration = Number(session?.duration);
+    if (!Number.isFinite(sessionDuration) || sessionDuration <= elapsedBeforeLastStep) return 0;
+    return Math.max(0, Math.round(sessionDuration - elapsedBeforeLastStep));
+};
+
+const SessionJourneyTrace = ({ session, darkMode, formatDuration }) => (
+    <div className={`p-4 border-t ${darkMode ? 'border-white/5 bg-black/20' : 'border-stone-100 bg-white'} animate-in slide-in-from-top-2 duration-300`}>
+        <div className="space-y-5">
+            <div className="flex items-center justify-between px-1">
+                <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-500">Parcours Utilisateur</h4>
+                <span className="text-[8px] font-bold text-stone-600 opacity-60 uppercase tracking-tighter">{session.journey?.length || 0} Etapes</span>
+            </div>
+
+            <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-stone-800">
+                {!session.journey || session.journey.length === 0 ? (
+                    <p className="text-[10px] italic text-stone-500">Aucune activite enregistree</p>
+                ) : (
+                    session.journey.map((step, idx) => {
+                        const accent = getJourneyAccent(step.page);
+                        const stepLabel = getJourneyLabel(step.page);
+                        const isAffiliateStep = isAffiliateJourneyStep(step.page);
+                        const pageDuration = getJourneyStepPageDuration(session, idx);
+                        return (
+                            <div key={idx} className="relative group/step">
+                                <div className={`absolute -left-[18.5px] top-1.5 w-[7px] h-[7px] rounded-full ring-4 ${darkMode ? 'ring-stone-900/50' : 'ring-white'} ${accent.dot} transition-all group-hover/step:scale-125`}></div>
+
+                                <div className="flex flex-col gap-1 -translate-y-0.5">
+                                    <span className={`text-[8px] font-black uppercase tracking-widest leading-none ${step.page === 'comptoir' ? 'text-teal-400/60' : step.page === 'shop' ? 'text-violet-400/60' : 'text-blue-500/60'}`}>{formatJourneyStepTime(session, step)} - {formatDuration(pageDuration)} sur cette page</span>
+                                    <p className={`font-black text-[11px] leading-tight ${darkMode ? 'text-stone-300' : 'text-stone-900'}`}>
+                                        {isAffiliateStep ? 'Clic' : 'Vue'} : <span className={`uppercase ${accent.label}`}>{stepLabel}</span>
+                                    </p>
+                                    {step.itemId && (
+                                        <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                                            <span className={`text-[8px] font-bold px-2 py-0.5 rounded-md truncate max-w-full italic border ${accent.chip}`}>
+                                                {!isAffiliateStep && 'ID: '}{step.itemId}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+        </div>
+    </div>
+);
+
+const VisitorSessionGroup = ({
+    darkMode,
+    visitor,
+    now,
+    isOpen,
+    onToggle,
+    expandedSessionId,
+    setExpandedSessionId,
+    handleDeleteSession,
+    formatDuration
+}) => {
+    const lastTime = visitor.lastActivityAt
+        ? new Date(visitor.lastActivityAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        : '--:--';
+
+    return (
+        <div className={`rounded-xl border overflow-hidden transition-all ${darkMode ? 'bg-stone-900 border-white/5 hover:border-white/10' : 'bg-stone-50 border-stone-100 shadow-sm'}`}>
+            <button
+                onClick={onToggle}
+                className="w-full p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left transition-colors hover:bg-white/[0.03] active:scale-[0.995]"
+            >
+                <div className="flex items-start gap-3 min-w-0">
+                    <div className={`mt-0.5 p-1.5 rounded-lg shrink-0 ${darkMode ? 'bg-white/5' : 'bg-white border border-stone-200'}`}>
+                        {isOpen ? <ChevronDown size={14} className="text-stone-400" /> : <ChevronRight size={14} className="text-stone-400" />}
+                    </div>
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-1 overflow-hidden">
+                            <Globe size={11} className="text-stone-500 shrink-0" />
+                            <span className={`text-[10px] font-black truncate ${darkMode ? 'text-white/80' : 'text-stone-900'}`}>{visitor.locationLabel}</span>
+                            {visitor.isActive ? (
+                                <span className="text-[8px] font-black uppercase text-emerald-500 animate-pulse shrink-0">En ligne</span>
+                            ) : (
+                                <span className="text-[8px] font-black uppercase text-stone-600 shrink-0">Termine</span>
+                            )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] font-bold text-stone-500 uppercase">
+                            <span className="inline-flex items-center gap-1.5 min-w-0">
+                                {visitor.device === 'Mobile' ? <Smartphone size={10} className="shrink-0" /> : <Monitor size={10} className="shrink-0" />}
+                                <span className="truncate">{visitor.deviceLabel}</span>
+                            </span>
+                            <span className="font-mono normal-case">{visitor.ipLabel}</span>
+                            <span>{visitor.identitySource}</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3 sm:min-w-[260px] text-right">
+                    <div>
+                        <p className="text-[8px] font-black uppercase tracking-widest text-stone-500 leading-none">Sessions</p>
+                        <p className={`mt-1 text-xs font-black tabular-nums ${darkMode ? 'text-white' : 'text-stone-900'}`}>{visitor.sessionCount}</p>
+                    </div>
+                    <div>
+                        <p className="text-[8px] font-black uppercase tracking-widest text-stone-500 leading-none">Duree</p>
+                        <p className={`mt-1 text-xs font-black tabular-nums ${darkMode ? 'text-white' : 'text-stone-900'}`}>{formatDuration(visitor.totalDuration)}</p>
+                    </div>
+                    <div>
+                        <p className="text-[8px] font-black uppercase tracking-widest text-stone-500 leading-none">Dernier</p>
+                        <p className={`mt-1 text-xs font-black tabular-nums ${darkMode ? 'text-white' : 'text-stone-900'}`}>{lastTime}</p>
+                    </div>
+                </div>
+            </button>
+
+            {isOpen && (
+                <div className={`border-t ${darkMode ? 'border-white/5 bg-black/10' : 'border-stone-100 bg-white/70'}`}>
+                    {visitor.sessions.map(session => {
+                        const isExpanded = expandedSessionId === session.id;
+                        const lastActiveMs = getMillis(session.lastActivityAt);
+                        const isInactive = (now - lastActiveMs) > 30000;
+                        const isFinished = session.sessionActive === false || isInactive;
+                        const startedTime = session.startedAt ? new Date(getMillis(session.startedAt)).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+
+                        return (
+                            <div key={session.id} className={`border-t first:border-t-0 ${darkMode ? 'border-white/5' : 'border-stone-100'}`}>
+                                <div className="p-3 flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="flex flex-col min-w-[44px] shrink-0">
+                                            <span className="text-[10px] font-black text-stone-500 tabular-nums">{startedTime}</span>
+                                            <span className={`text-[8px] font-black uppercase ${isFinished ? 'text-stone-600' : 'text-emerald-500 animate-pulse'}`}>
+                                                {isFinished ? 'Termine' : 'En ligne'}
+                                            </span>
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className={`text-[10px] font-black truncate ${darkMode ? 'text-stone-300' : 'text-stone-900'}`}>
+                                                Session {session.journey?.length || 0} etape{(session.journey?.length || 0) > 1 ? 's' : ''}
+                                            </p>
+                                            <p className="text-[9px] font-bold text-stone-500 truncate uppercase">
+                                                {session.os || 'Inconnu'} - {session.browser || 'Inconnu'} - {formatDuration(session.duration)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <button
+                                            onClick={() => setExpandedSessionId(isExpanded ? null : session.id)}
+                                            className={`px-3 py-1.5 h-8 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 ${isExpanded ? 'bg-blue-500 text-white' : (darkMode ? 'bg-white/5 text-white/50 hover:bg-white/10' : 'bg-white border border-stone-200 text-stone-600')}`}
+                                        >
+                                            {isExpanded ? 'Masquer' : 'Tracer'}
+                                        </button>
+                                        <button
+                                            onClick={() => handleDeleteSession(session.id)}
+                                            className="p-1.5 text-stone-500 hover:text-red-500 transition-colors active:scale-90"
+                                            aria-label="Supprimer la session"
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {isExpanded && (
+                                    <SessionJourneyTrace
+                                        session={session}
+                                        darkMode={darkMode}
+                                        formatDuration={formatDuration}
+                                    />
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
+
+const estimateComptoirDuration = (session) => {
+    const journey = Array.isArray(session?.journey) ? session.journey : [];
+    if (journey.length === 0) return { total: 0, segments: 0 };
+
+    const durations = journey.map(step => Number(step?.duration) || 0);
+    const trailingDuration = Math.max(0, (Number(session.duration) || 0) - durations.reduce((sum, value) => sum + value, 0));
+    let total = 0;
+    let segments = 0;
+    let hasPageView = false;
+
+    journey.forEach((step, index) => {
+        if (!isComptoirPageView(step?.page)) return;
+        hasPageView = true;
+        const nextDuration = Number(journey[index + 1]?.duration);
+        const segmentDuration = Number.isFinite(nextDuration) && nextDuration > 0 ? nextDuration : (index === journey.length - 1 ? trailingDuration : 0);
+        if (segmentDuration > 0) {
+            total += segmentDuration;
+            segments += 1;
+        }
+    });
+
+    if (!hasPageView) {
+        const clickDurations = journey
+            .filter(step => isComptoirJourneyStep(step))
+            .map(step => Number(step.duration) || 0)
+            .filter(Boolean);
+        if (clickDurations.length > 0) {
+            total += Math.max(...clickDurations);
+            segments += 1;
+        }
+    }
+
+    return { total, segments };
+};
+
+const BoutiqueAnalytics = ({ darkMode, sessions = [], onRefreshSessions, sessionsRefreshKey = 0, loadingSessions = false }) => {
+    const [clicks, setClicks] = useState(() => cachedAffiliateClicks || []);
+    const [loadingClicks, setLoadingClicks] = useState(false);
+    const [restoringClicks, setRestoringClicks] = useState(() => !cachedAffiliateClicks);
+    const [timeFilter, setTimeFilter] = useState('1j');
+    const [openDays, setOpenDays] = useState({});
+    const [openJourneyDays, setOpenJourneyDays] = useState({});
+    const [clicksRefreshKey, setClicksRefreshKey] = useState(() => cachedAffiliateClicksLoadedAt || 0);
+    const animationKey = `${sessionsRefreshKey}-${clicksRefreshKey}`;
+    const refreshing = loadingClicks || loadingSessions || restoringClicks;
+    const boutiqueNow = Math.max(clicksRefreshKey || 0, sessionsRefreshKey || 0) || Date.now();
+
     useEffect(() => {
-        const i = setInterval(() => setNow(Date.now()), 10000);
-        return () => clearInterval(i);
+        let cancelled = false;
+        if (cachedAffiliateClicks) {
+            setRestoringClicks(false);
+            return () => { cancelled = true; };
+        }
+
+        readAdminAnalyticsCache(ADMIN_AFFILIATE_CACHE_KEY).then((snapshot) => {
+            if (cancelled || !snapshot) return;
+            cachedAffiliateClicks = snapshot.data || [];
+            cachedAffiliateClicksLoadedAt = snapshot.loadedAt || 0;
+            setClicks(cachedAffiliateClicks);
+            setClicksRefreshKey(cachedAffiliateClicksLoadedAt);
+        }).finally(() => {
+            if (!cancelled) setRestoringClicks(false);
+        });
+
+        return () => { cancelled = true; };
+    }, []);
+
+    const sessionGeoMap = useMemo(() => {
+        const m = new Map();
+        sessions.forEach(s => { if (s.id && s.geo) m.set(s.id, s.geo); });
+        return m;
+    }, [sessions]);
+
+    const formatSessionLocation = (sessionId) => {
+        const geo = sessionGeoMap.get(sessionId);
+        if (geo?.city && geo.city !== 'Unknown') {
+            const region = geo.region && geo.region !== 'Unknown' ? `, ${geo.region}` : '';
+            return `${geo.city}${region}`;
+        }
+        return null;
+    };
+
+    const loadClicks = useCallback(async () => {
+        setLoadingClicks(true);
+        const q = query(collection(db, 'affiliate_clicks'), orderBy('timestamp', 'desc'), limit(3000));
+        try {
+            const snap = await getDocs(q);
+            const nextClicks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const loadedAt = Date.now();
+            cachedAffiliateClicks = nextClicks;
+            cachedAffiliateClicksLoadedAt = loadedAt;
+            setClicks(nextClicks);
+            setClicksRefreshKey(loadedAt);
+            writeAdminAnalyticsCache(ADMIN_AFFILIATE_CACHE_KEY, nextClicks, loadedAt);
+            setLoadingClicks(false);
+        } catch (error) {
+            console.error('Affiliate clicks load error:', error);
+            setLoadingClicks(false);
+        }
     }, []);
 
     useEffect(() => {
-        const checkpoint = readAnalyticsCheckpoint();
-        if (!checkpoint) return;
+        if (restoringClicks || loadingClicks || clicks.length > 0 || clicksRefreshKey > 0) return;
+        loadClicks();
+    }, [restoringClicks, loadingClicks, clicks.length, clicksRefreshKey, loadClicks]);
 
-        setSessions(checkpoint.sessions);
-        setHasLoadedSessions(true);
-        setCheckpointLoadedAt(checkpoint.loadedAt);
-        setCheckpointCount(checkpoint.count || checkpoint.sessions.length);
-        setCheckpointCachedCount(checkpoint.cachedCount || checkpoint.sessions.length);
-        setCheckpointNotice('Checkpoint local restaure sans requete Firestore.');
-    }, []);
+    const handleRefreshBoutique = useCallback(async () => {
+        await Promise.all([
+            loadClicks(),
+            onRefreshSessions ? onRefreshSessions() : Promise.resolve()
+        ]);
+    }, [loadClicks, onRefreshSessions]);
 
-    // Kpis
-    const [kpis, setKpis] = useState({
-        totalSessions: 0,
-        uniqueVisitors: 0,
-        uniqueIps: 0,
-        visitorIpRatio: 1,
-        visitorIpRatioLabel: '1.00',
-        visitorConfidenceScore: 100,
-        visitorConfidenceLabel: 'forte',
-        avgDuration: 0,
-        bounceRate: 0,
-        mobilePercentage: 0,
-        ipCoverage: 100
-    });
-    const [dataQuality, setDataQuality] = useState({
-        confidence: 'haute',
-        isWindowComplete: true,
-        isFetchCapped: false,
-        fetchedCount: 0,
-        maxFetched: MAX_ANALYTICS_SESSIONS,
-        coverageStartMs: null,
-        missingIpSessions: 0,
-        identitySourceCounts: {},
-        visitorConfidence: {
-            score: 100,
-            label: 'forte',
-            ratio: 1,
-            ratioLabel: '1.00'
-        },
-        method: 'UID Firebase client/anonyme, puis IUD navigateur, puis IP serveur, puis session si IP absente.'
-    });
+    const filteredClicks = useMemo(() => {
+        const { duration } = getBoutiqueFilterConfig(timeFilter);
+        const cutoff = boutiqueNow - duration;
+        return clicks.filter(c => getMillis(c.timestamp) >= cutoff);
+    }, [clicks, timeFilter, boutiqueNow]);
 
-    const [chartData, setChartData] = useState([]);
-    const [sessionDetails, setSessionDetails] = useState({});
-    const [sessionDetailsLoading, setSessionDetailsLoading] = useState({});
-    const [mappedVisitor, setMappedVisitor] = useState(null);
+    const comptoirSessions = useMemo(() => {
+        const { duration } = getBoutiqueFilterConfig(timeFilter);
+        const cutoff = boutiqueNow - duration;
+        return sessions.filter((session) => {
+            const comptoirStarted = getFirstComptoirStepMillis(session);
+            return comptoirStarted && comptoirStarted >= cutoff;
+        });
+    }, [sessions, timeFilter, boutiqueNow]);
 
-    // R3 — Clé de visiteur unique (priorité userId connecté > visitorKey CloudFn > fallback IP)
-    const getVisitorId = (s) => getReliableVisitorKey(s);
+    const clickChartData = useMemo(() => {
+        const { duration, step } = getBoutiqueFilterConfig(timeFilter);
+        const { timeline, slotMap } = buildBoutiqueTimeline(boutiqueNow, duration, step);
+        filteredClicks.forEach(c => {
+            const t = getMillis(c.timestamp);
+            if (!t) return;
+            const slot = slotMap.get(alignBoutiqueSlotStart(t, step));
+            if (slot) slot.visites += 1;
+        });
+        return timeline;
+    }, [filteredClicks, timeFilter, boutiqueNow]);
 
-    const getVisitorConfidence = (visitorSessions = []) => {
-        const visitorKeys = new Set(visitorSessions.map(getReliableVisitorKey));
-        const ipKeys = new Set(visitorSessions.map(getIpVisitorKey).filter(Boolean));
-        const missingIpSessions = visitorSessions.filter(session => !getIpVisitorKey(session)).length;
-        const ipCoverage = visitorSessions.length > 0
-            ? Math.round(((visitorSessions.length - missingIpSessions) / visitorSessions.length) * 100)
-            : 100;
-        const sessionFallbackCount = visitorSessions.filter(session => getVisitorIdentity(session).source === 'session').length;
+    const comptoirVisitChartData = useMemo(() => {
+        const { duration, step } = getBoutiqueFilterConfig(timeFilter);
+        const { timeline, slotMap } = buildBoutiqueTimeline(boutiqueNow, duration, step, true);
 
-        return buildVisitorConfidence({
-            uniqueVisitors: visitorKeys.size,
-            uniqueIps: ipKeys.size,
-            ipCoverage,
-            sessionFallbackCount,
-            isWindowComplete: true
-        }).score;
-    };
+        comptoirSessions.forEach(session => {
+            const t = getFirstComptoirStepMillis(session);
+            if (!t) return;
+            const slot = slotMap.get(alignBoutiqueSlotStart(t, step));
+            if (!slot) return;
+            slot.visitors.add(getReliableVisitorKey(session));
+        });
 
-    const getIdentityLabel = (visitorSessions = []) => {
-        const sources = new Set(visitorSessions.map(session => getVisitorIdentity(session).source));
-        if (sources.has('auth_uid') || sources.has('anonymous_uid')) return 'UID client';
-        if (sources.has('visitor_key')) return 'IUD navigateur';
-        if (sources.has('ip')) return 'IP seule';
-        return 'Session seule';
-    };
+        return timeline.map(slot => ({
+            timestamp: slot.timestamp,
+            name: slot.name,
+            visites: slot.visitors.size
+        }));
+    }, [comptoirSessions, timeFilter, boutiqueNow]);
 
-    // Validite d'une session pour les stats: voir _DOCS/data/DONNEES_ANALYTICS.md.
-    // ─── Groupement des sessions par jour PUIS par visiteur (R3) ───
-    // Structure : [{ key, label, timestamp, visitors: [{ visitorId, representative, sessions, totalDuration }], sessionsCount }]
-    const groupedByDay = useMemo(() => {
-        const days = {};
-        const today = new Date().toLocaleDateString('fr-FR');
-        const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('fr-FR');
+    const clicksBySession = useMemo(() => {
+        const m = new Map();
+        filteredClicks.forEach((click) => {
+            if (!click.sessionId) return;
+            if (!m.has(click.sessionId)) m.set(click.sessionId, []);
+            m.get(click.sessionId).push(click);
+        });
+        return m;
+    }, [filteredClicks]);
 
-        sessions.forEach(s => {
-            const dateObj = new Date(getMillis(s.startedAt));
+    const comptoirJourneyGroups = useMemo(() => {
+        const groups = new Map();
+
+        comptoirSessions.forEach((session) => {
+            const journeyEvents = (session.journey || [])
+                .map((step, index) => {
+                    if (!isComptoirJourneyStep(step)) return null;
+                    const item = getTrackingItemParts(step.itemId);
+                    const at = getJourneyStepMillis(session, step);
+                    return {
+                        id: `${session.id}-journey-${index}`,
+                        at,
+                        page: step.page,
+                        kind: isAffiliateJourneyStep(step.page) ? 'click' : 'visit',
+                        label: getJourneyLabel(step.page),
+                        product: item.label,
+                        productId: item.id,
+                        context: item.context,
+                        source: item.source,
+                        duration: getJourneyStepPageDuration(session, index),
+                        from: 'journey'
+                    };
+                })
+                .filter(Boolean);
+
+            const journeyClickKeys = new Set(
+                journeyEvents
+                    .filter(event => event.kind === 'click')
+                    .map(event => `${event.productId || event.product || ''}-${Math.floor(event.at / 60000)}`)
+            );
+
+            const serverClickEvents = (clicksBySession.get(session.id) || [])
+                .map((click) => {
+                    const at = getMillis(click.timestamp);
+                    const key = `${click.productId || click.productName || ''}-${Math.floor(at / 60000)}`;
+                    if (journeyClickKeys.has(key)) return null;
+                    return {
+                        id: `${session.id}-click-${click.id}`,
+                        at,
+                        page: `affiliate_${click.source || 'inconnu'}`,
+                        kind: 'click',
+                        label: SOURCE_LABELS_B[click.source] || 'Clic affilié',
+                        product: click.productName || click.productId || 'Produit inconnu',
+                        productId: click.productId || null,
+                        context: click.parentFurnitureName || click.referrer || null,
+                        source: click.source || null,
+                        duration: 0,
+                        from: 'affiliate_clicks'
+                    };
+                })
+                .filter(Boolean);
+
+            const events = [...journeyEvents, ...serverClickEvents]
+                .filter(event => event.at)
+                .sort((a, b) => a.at - b.at);
+            if (events.length === 0) return;
+
+            const firstAt = events[0].at;
+            const dayKey = new Date(firstAt).toLocaleDateString('fr-FR');
+            if (!groups.has(dayKey)) {
+                groups.set(dayKey, {
+                    key: dayKey,
+                    label: getDayLabelFromMs(firstAt, boutiqueNow),
+                    timestamp: new Date(firstAt).setHours(0, 0, 0, 0),
+                    sessions: []
+                });
+            }
+
+            const products = [...new Set(events.map(event => event.product).filter(Boolean))];
+            groups.get(dayKey).sessions.push({
+                id: session.id,
+                shortId: session.id.slice(0, 8),
+                location: formatSessionLocation(session.id),
+                visitorKey: getReliableVisitorKey(session),
+                device: [session.os, session.browser].filter(Boolean).join(' - ') || session.device || 'Device inconnu',
+                firstAt,
+                lastAt: events[events.length - 1].at,
+                events,
+                products,
+                visits: events.filter(event => event.kind === 'visit').length,
+                clicks: events.filter(event => event.kind === 'click').length
+            });
+        });
+
+        return Array.from(groups.values())
+            .map(group => ({
+                ...group,
+                sessions: group.sessions.sort((a, b) => b.firstAt - a.firstAt)
+            }))
+            .sort((a, b) => b.timestamp - a.timestamp);
+    }, [comptoirSessions, clicksBySession, boutiqueNow]);
+
+    const topProducts = useMemo(() => {
+        const counts = {};
+        filteredClicks.forEach(c => {
+            if (!c.productId) return;
+            if (!counts[c.productId]) counts[c.productId] = { id: c.productId, name: c.productName || '—', count: 0, program: c.affiliateProgram, tier: c.tier };
+            counts[c.productId].count += 1;
+        });
+        return Object.values(counts).sort((a, b) => b.count - a.count);
+    }, [filteredClicks]);
+
+    const byProgram = useMemo(() => {
+        const counts = {};
+        filteredClicks.forEach(c => { const p = c.affiliateProgram || 'direct'; counts[p] = (counts[p] || 0) + 1; });
+        return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+    }, [filteredClicks]);
+
+    const byTier = useMemo(() => {
+        const counts = {};
+        filteredClicks.forEach(c => { const t = c.tier || 'essentiel'; counts[t] = (counts[t] || 0) + 1; });
+        return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+    }, [filteredClicks]);
+
+    const bySource = useMemo(() => {
+        const counts = {};
+        filteredClicks.forEach(c => { const s = c.source || 'inconnu'; counts[s] = (counts[s] || 0) + 1; });
+        return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+    }, [filteredClicks]);
+
+    const byParent = useMemo(() => {
+        const counts = {};
+        filteredClicks.forEach(c => {
+            if (c.parentFurnitureId) {
+                const n = c.parentFurnitureName || c.parentFurnitureId;
+                counts[n] = (counts[n] || 0) + 1;
+            }
+        });
+        return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+    }, [filteredClicks]);
+
+    const sessionsByDay = useMemo(() => {
+        const groups = {};
+        const today = new Date(boutiqueNow).toLocaleDateString('fr-FR');
+        const yesterday = new Date(boutiqueNow - 86400000).toLocaleDateString('fr-FR');
+
+        filteredClicks.forEach(c => {
+            const t = getMillis(c.timestamp);
+            if (!t) return;
+            const dateObj = new Date(t);
             const dateKey = dateObj.toLocaleDateString('fr-FR');
 
             let label = dateKey;
             if (dateKey === today) label = "Aujourd'hui";
             else if (dateKey === yesterday) label = "Hier";
 
-            if (!days[dateKey]) {
-                days[dateKey] = {
+            if (!groups[dateKey]) {
+                groups[dateKey] = {
                     key: dateKey,
                     label,
                     timestamp: dateObj.getTime(),
-                    visitorsMap: {},
+                    sessions: {}
                 };
             }
-
-            const vid = getVisitorId(s);
-            if (!days[dateKey].visitorsMap[vid]) {
-                days[dateKey].visitorsMap[vid] = {
-                    visitorId: vid,
-                    representative: s,       // session la plus récente = représentative
-                    sessions: [],
-                    totalDuration: 0,
-                    latestStart: 0,
-                };
+            const sid = c.sessionId || 'anonyme';
+            if (!groups[dateKey].sessions[sid]) {
+                groups[dateKey].sessions[sid] = [];
             }
-            const bucket = days[dateKey].visitorsMap[vid];
-            bucket.sessions.push(s);
-            bucket.totalDuration += (s.duration || 0);
-            const startMs = getMillis(s.startedAt);
-            if (startMs > bucket.latestStart) {
-                bucket.latestStart = startMs;
-                bucket.representative = s;
-            }
+            groups[dateKey].sessions[sid].push(c);
         });
 
-        return Object.values(days)
-            .map(d => {
-                const visitors = Object.values(d.visitorsMap)
-                    .map(v => ({ ...v, sessions: v.sessions.sort((a, b) => getMillis(b.startedAt) - getMillis(a.startedAt)) }))
-                    .sort((a, b) => b.latestStart - a.latestStart);
-                const sessionsCount = visitors.reduce((acc, v) => acc + v.sessions.length, 0);
-                return { key: d.key, label: d.label, timestamp: d.timestamp, visitors, sessionsCount };
-            })
-            .sort((a, b) => b.timestamp - a.timestamp);
-    }, [sessions]);
+        return Object.values(groups).map(g => ({
+            ...g,
+            sessionsList: Object.entries(g.sessions).map(([sid, clicksList]) => ({
+                sessionId: sid,
+                clicks: clicksList.sort((a, b) => getMillis(b.timestamp) - getMillis(a.timestamp))
+            })).sort((a, b) => getMillis(b.clicks[0].timestamp) - getMillis(a.clicks[0].timestamp))
+        })).sort((a, b) => b.timestamp - a.timestamp);
+    }, [filteredClicks, boutiqueNow]);
+
+    useEffect(() => {
+        if (sessionsByDay.length > 0) {
+            const firstKey = sessionsByDay[0].key;
+            setOpenDays(prev => {
+                if (Object.keys(prev).length === 0) return { [firstKey]: true };
+                return prev;
+            });
+        }
+    }, [sessionsByDay.length]);
+
+    useEffect(() => {
+        if (comptoirJourneyGroups.length > 0) {
+            const firstKey = comptoirJourneyGroups[0].key;
+            setOpenJourneyDays(prev => {
+                if (Object.keys(prev).length === 0) return { [firstKey]: true };
+                return prev;
+            });
+        }
+    }, [comptoirJourneyGroups.length]);
+
+    const kpis = useMemo(() => {
+        const peak = clickChartData.length > 0 ? clickChartData.reduce((best, d) => d.visites > best.visites ? d : best, clickChartData[0]) : null;
+        const uniqueComptoirVisitors = new Set(comptoirSessions.map(getReliableVisitorKey).filter(Boolean)).size;
+        const durationEstimate = comptoirSessions.reduce((acc, session) => {
+            const estimate = estimateComptoirDuration(session);
+            return {
+                total: acc.total + estimate.total,
+                segments: acc.segments + estimate.segments
+            };
+        }, { total: 0, segments: 0 });
+        const avgComptoirDuration = durationEstimate.segments > 0 ? Math.round(durationEstimate.total / durationEstimate.segments) : 0;
+        const amazonClicks = filteredClicks.filter(c => c.affiliateProgram === 'amazon').length;
+
+        return {
+            total: filteredClicks.length,
+            uniqueProducts: topProducts.length,
+            topProg: byProgram[0] || null,
+            peak,
+            uniqueComptoirVisitors,
+            avgComptoirDuration,
+            amazonClicks
+        };
+    }, [filteredClicks, topProducts, byProgram, clickChartData, comptoirSessions]);
+
+    const handleClearAllAffiliate = async () => {
+        if (!window.confirm("☢️ ACTION CRITIQUE : Supprimer TOUS les clics affiliés (boutique) définitivement ?")) return;
+        try {
+            await httpsCallable(functions, 'clearAllAffiliateClicks')({});
+            cachedAffiliateClicks = [];
+            cachedAffiliateClicksLoadedAt = Date.now();
+            setClicks([]);
+            setClicksRefreshKey(cachedAffiliateClicksLoadedAt);
+            clearAdminAnalyticsCache(ADMIN_AFFILIATE_CACHE_KEY);
+        } catch (e) {
+            console.error("Clear affiliate error:", e);
+            alert("Erreur lors du nettoyage des clics affiliés");
+        }
+    };
+
+    if (refreshing && clicks.length === 0) return <div className="p-12 text-center text-stone-400 font-bold animate-pulse">Chargement Boutique Data...</div>;
+
+    const maxTop = topProducts[0]?.count || 1;
+    const maxProg = byProgram[0]?.count || 1;
+    const maxTier = byTier[0]?.count || 1;
+    const maxSource = bySource[0]?.count || 1;
+    const maxParent = byParent[0]?.count || 1;
+
+    return (
+        <div className="space-y-6">
+            {/* HEADER */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h3 className={`text-2xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-stone-900'}`}>Le Comptoir</h3>
+                    <p className="text-[10px] text-stone-500 font-bold uppercase tracking-widest mt-1">Analytics Affiliation</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                    <button
+                        onClick={handleRefreshBoutique}
+                        disabled={refreshing}
+                        className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border ${darkMode ? 'border-white/10 text-stone-300 hover:bg-white/10' : 'border-stone-200 text-stone-600 hover:bg-stone-100'} disabled:opacity-50`}
+                    >
+                        <RefreshCw size={13} className={refreshing ? 'inline mr-2 animate-spin' : 'inline mr-2'} />
+                        Actualiser
+                    </button>
+                    {clicksRefreshKey > 0 && (
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-stone-500">
+                            Maj {new Date(clicksRefreshKey).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                    )}
+                    <button
+                        onClick={handleClearAllAffiliate}
+                        className="px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-red-500/20 text-red-500/60 hover:bg-red-500 hover:text-white active:scale-95"
+                    >
+                        Purger Data
+                    </button>
+                    <div className={`flex flex-wrap p-1 rounded-xl border ${darkMode ? 'bg-stone-900 border-white/5' : 'bg-stone-100 border-stone-200'}`}>
+                        {BOUTIQUE_TIME_FILTERS.map(tf => (
+                            <button key={tf.id} onClick={() => setTimeFilter(tf.id)}
+                                className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${timeFilter === tf.id ? (darkMode ? 'bg-white/10 text-white shadow-sm border border-white/10' : 'bg-white text-stone-900 shadow-sm border border-stone-200') : 'text-stone-500 hover:text-stone-300'}`}>
+                                {tf.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* KPI GRID */}
+            <div key={`boutique-kpis-${animationKey}`} className="grid grid-cols-2 lg:grid-cols-4 gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                {[
+                    ...[
+                        { label: 'Visiteurs Comptoir', value: kpis.uniqueComptoirVisitors, sub: 'IPs uniques', accent: 'text-blue-400', icon: Users },
+                        { label: 'Temps Moyen', value: formatDurationLabel(kpis.avgComptoirDuration), sub: 'sur Le Comptoir', accent: 'text-emerald-400', icon: Clock },
+                        { label: 'Clics Amazon', value: kpis.amazonClicks, sub: `${kpis.total} clics totaux`, accent: 'text-orange-400', icon: MousePointerClick },
+                        { label: 'Produits Cliques', value: kpis.uniqueProducts, sub: 'produits distincts', accent: 'text-amber-400', icon: ShoppingBag },
+                    ],
+                    { label: 'Clics Totaux', value: kpis.total, sub: 'sur la période', accent: 'text-amber-400', icon: MousePointerClick },
+                    { label: 'Produits Cliqués', value: kpis.uniqueProducts, sub: 'produits distincts', accent: 'text-blue-400', icon: ShoppingBag },
+                    { label: 'Top Programme', value: kpis.topProg ? (PROG_LABELS_B[kpis.topProg.name] || kpis.topProg.name) : '—', sub: kpis.topProg ? `${kpis.topProg.count} clics` : 'aucun', accent: 'text-orange-400', icon: TrendingUp },
+                    { label: 'Pic de Clics', value: kpis.peak?.visites || 0, sub: kpis.peak?.visites > 0 ? kpis.peak.name : '—', accent: 'text-emerald-400', icon: Activity },
+                ].slice(0, 4).map((kpi, i) => (
+                    <div key={i} className={`p-4 sm:p-5 rounded-2xl border ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100 shadow-sm'}`}>
+                        <div className="flex items-center justify-between mb-3">
+                            <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.2em] text-stone-500 truncate">{kpi.label}</p>
+                            <div className={`w-7 h-7 rounded-xl flex items-center justify-center ${darkMode ? 'bg-white/5' : 'bg-stone-50'}`}>
+                                <kpi.icon size={13} className={kpi.accent} />
+                            </div>
+                        </div>
+                        <h4 className={`text-xl sm:text-2xl md:text-3xl font-black tracking-tighter ${darkMode ? 'text-white' : 'text-stone-900'}`}>{kpi.value}</h4>
+                        <p className={`text-[9px] mt-1 font-bold ${kpi.accent}`}>{kpi.sub}</p>
+                    </div>
+                ))}
+            </div>
+
+            {/* TRACKING COMPTOIR DETAILLE */}
+            <div className={`rounded-[2rem] border overflow-hidden ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100 shadow-sm'}`}>
+                <div className={`p-4 sm:p-5 border-b ${darkMode ? 'border-white/5' : 'border-stone-100'}`}>
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
+                        <div>
+                            <h3 className={`text-[10px] font-black uppercase tracking-[0.3em] ${darkMode ? 'text-white/50' : 'text-stone-400'}`}>Tracking Comptoir</h3>
+                            <p className="mt-1 text-[10px] font-bold text-stone-500">Passages reels sur la boutique, fiches vues et clics produits par session.</p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-right">
+                            <div>
+                                <p className="text-[8px] font-black uppercase tracking-widest text-stone-500">Sessions</p>
+                                <p className={`text-sm font-black tabular-nums ${darkMode ? 'text-white' : 'text-stone-900'}`}>{comptoirJourneyGroups.reduce((sum, group) => sum + group.sessions.length, 0)}</p>
+                            </div>
+                            <div>
+                                <p className="text-[8px] font-black uppercase tracking-widest text-stone-500">Etapes</p>
+                                <p className="text-sm font-black tabular-nums text-blue-400">{comptoirJourneyGroups.reduce((sum, group) => sum + group.sessions.reduce((acc, session) => acc + session.events.length, 0), 0)}</p>
+                            </div>
+                            <div>
+                                <p className="text-[8px] font-black uppercase tracking-widest text-stone-500">Clics</p>
+                                <p className="text-sm font-black tabular-nums text-amber-400">{comptoirJourneyGroups.reduce((sum, group) => sum + group.sessions.reduce((acc, session) => acc + session.clicks, 0), 0)}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {comptoirJourneyGroups.length > 0 ? (
+                    <div className="divide-y divide-white/5">
+                        {comptoirJourneyGroups.map((group) => {
+                            const isOpen = openJourneyDays[group.key] ?? false;
+                            return (
+                                <div key={group.key}>
+                                    <button
+                                        onClick={() => setOpenJourneyDays(prev => ({ ...prev, [group.key]: !isOpen }))}
+                                        className={`w-full p-3 sm:p-4 flex items-center justify-between gap-4 text-left transition-colors ${darkMode ? 'hover:bg-white/[0.02]' : 'hover:bg-stone-50'}`}
+                                    >
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className={`p-1.5 rounded-lg ${darkMode ? 'bg-stone-800' : 'bg-stone-50'}`}>
+                                                {isOpen ? <ChevronDown size={14} className="text-stone-400" /> : <ChevronRight size={14} className="text-stone-400" />}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <span className={`text-[11px] font-black uppercase tracking-widest ${darkMode ? 'text-white/80' : 'text-stone-900'}`}>{group.label}</span>
+                                                <span className="ml-3 text-[10px] font-bold text-stone-500">{group.sessions.length} session{group.sessions.length > 1 ? 's' : ''}</span>
+                                            </div>
+                                        </div>
+                                        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-stone-500/10 to-transparent hidden sm:block"></div>
+                                    </button>
+
+                                    {isOpen && (
+                                        <div className="px-2 sm:px-4 pb-4 space-y-3 animate-in slide-in-from-top-1 duration-200">
+                                            {group.sessions.map((session) => (
+                                                <div key={session.id} className={`rounded-2xl border overflow-hidden ${darkMode ? 'bg-stone-900 border-white/5' : 'bg-stone-50 border-stone-100'}`}>
+                                                    <div className={`p-3 sm:p-4 border-b ${darkMode ? 'border-white/5' : 'border-stone-100'}`}>
+                                                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                                                            <div className="min-w-0">
+                                                                <div className="flex flex-wrap items-center gap-2">
+                                                                    <Globe size={12} className="text-stone-500 shrink-0" />
+                                                                    <span className={`text-[10px] font-black uppercase tracking-[0.2em] truncate ${darkMode ? 'text-white/80' : 'text-stone-900'}`}>
+                                                                        {session.location || 'Localisation inconnue'}
+                                                                    </span>
+                                                                    <span className="text-[8px] font-mono text-stone-600">#{session.shortId}</span>
+                                                                </div>
+                                                                <p className="mt-1 text-[9px] font-bold uppercase text-stone-500 truncate">{session.device}</p>
+                                                            </div>
+                                                            <div className="grid grid-cols-3 gap-3 sm:min-w-[300px] text-left lg:text-right">
+                                                                <div>
+                                                                    <p className="text-[8px] font-black uppercase tracking-widest text-stone-500">Premier</p>
+                                                                    <p className={`text-[11px] font-black tabular-nums ${darkMode ? 'text-white' : 'text-stone-900'}`}>{new Date(session.firstAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-[8px] font-black uppercase tracking-widest text-stone-500">Vues</p>
+                                                                    <p className="text-[11px] font-black tabular-nums text-blue-400">{session.visits}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-[8px] font-black uppercase tracking-widest text-stone-500">Clics</p>
+                                                                    <p className="text-[11px] font-black tabular-nums text-amber-400">{session.clicks}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {session.products.length > 0 && (
+                                                            <div className="mt-3 flex flex-wrap gap-1.5">
+                                                                {session.products.slice(0, 5).map((product) => (
+                                                                    <span key={product} className={`max-w-full truncate rounded-lg border px-2 py-1 text-[8px] font-bold ${darkMode ? 'bg-white/5 border-white/5 text-stone-300' : 'bg-white border-stone-200 text-stone-600'}`}>
+                                                                        {product}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="p-3 sm:p-4">
+                                                        <div className="relative pl-6 space-y-4 before:absolute before:left-[10px] before:top-2 before:bottom-2 before:w-px before:bg-stone-700/50">
+                                                            {session.events.map((event) => {
+                                                                const meta = getComptoirEventMeta(event);
+                                                                return (
+                                                                    <div key={event.id} className="relative">
+                                                                        <div className={`absolute -left-[18px] top-1.5 h-2 w-2 rounded-full ring-4 ${darkMode ? 'ring-stone-900' : 'ring-stone-50'} ${meta.dot}`} />
+                                                                        <div className="min-w-0">
+                                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                                <span className={`text-[8px] font-black uppercase tracking-widest ${meta.accent}`}>{new Date(event.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                                                                                <span className={`rounded-md border px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest ${meta.chip}`}>{meta.label}</span>
+                                                                                {event.duration > 0 && <span className="text-[8px] font-bold text-stone-600">{formatDurationLabel(event.duration)}</span>}
+                                                                            </div>
+                                                                            <p className={`mt-1 text-[11px] font-black leading-snug ${darkMode ? 'text-stone-200' : 'text-stone-900'}`}>
+                                                                                {event.label}{event.product ? <span className={meta.accent}> - {event.product}</span> : null}
+                                                                            </p>
+                                                                            {(event.context || event.source || event.productId) && (
+                                                                                <div className="mt-1 flex flex-wrap gap-1.5">
+                                                                                    {event.source && <span className="rounded-md border border-white/5 bg-white/5 px-2 py-0.5 text-[8px] font-bold text-stone-500">Source: {SOURCE_LABELS_B[event.source] || event.source}</span>}
+                                                                                    {event.context && <span className="rounded-md border border-white/5 bg-white/5 px-2 py-0.5 text-[8px] font-bold text-stone-500">Origine: {event.context}</span>}
+                                                                                    {event.productId && <span className="rounded-md border border-white/5 bg-white/5 px-2 py-0.5 text-[8px] font-mono text-stone-600">{event.productId}</span>}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="p-10 text-center text-stone-500 font-bold italic text-xs">Aucun parcours Comptoir detaille sur cette periode.</div>
+                )}
+            </div>
+
+            {/* COMPTOIR VISITS CHART */}
+            <div className={`p-6 md:p-8 rounded-[2rem] border ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100 shadow-sm'}`}>
+                <div className="flex items-center justify-between mb-8">
+                    <h3 className={`text-[10px] font-black uppercase tracking-[0.3em] ${darkMode ? 'text-white/40' : 'text-stone-400'}`}>Visiteurs sur Le Comptoir</h3>
+                </div>
+                <div className="h-[200px] md:h-[260px] w-full">
+                    {comptoirVisitChartData.some(d => d.visites > 0) ? (
+                        <TrafficChart data={comptoirVisitChartData} darkMode={darkMode} valueLabel="visiteur" animationKey={`comptoir-${animationKey}`} />
+                    ) : (
+                        <div className="flex items-center justify-center h-full text-stone-500 font-bold italic text-xs">Aucune visite Comptoir sur cette periode.</div>
+                    )}
+                </div>
+            </div>
+
+            {/* CHART */}
+            <div className={`p-6 md:p-8 rounded-[2rem] border ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100 shadow-sm'}`}>
+                <div className="flex items-center justify-between mb-8">
+                    <h3 className={`text-[10px] font-black uppercase tracking-[0.3em] ${darkMode ? 'text-white/40' : 'text-stone-400'}`}>Évolution des Clics</h3>
+                </div>
+                <div className="h-[200px] md:h-[260px] w-full">
+                    {clickChartData.some(d => d.visites > 0) ? (
+                        <TrafficChart data={clickChartData} darkMode={darkMode} valueLabel="clic" animationKey={`clicks-${animationKey}`} />
+                    ) : (
+                        <div className="flex items-center justify-center h-full text-stone-500 font-bold italic text-xs">Aucun clic sur cette période.</div>
+                    )}
+                </div>
+            </div>
+
+            {/* BOTTOM GRID */}
+            {filteredClicks.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    {/* Classement Produits */}
+                    <div className={`lg:col-span-2 p-5 rounded-2xl border ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100 shadow-sm'}`}>
+                        <p className={`text-[9px] font-black uppercase tracking-widest mb-4 ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Classement Produits</p>
+                        <div className="space-y-3">
+                            {topProducts.slice(0, 8).map((p, i) => {
+                                const rankStyle = i === 0 ? 'text-amber-400' : i === 1 ? 'text-stone-300' : 'text-stone-600';
+                                const pct = Math.round((p.count / maxTop) * 100);
+                                return (
+                                    <div key={p.id} className="flex items-center gap-3">
+                                        <span className={`text-[10px] font-black w-5 text-center shrink-0 ${rankStyle}`}>#{i + 1}</span>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className={`text-[11px] font-bold truncate ${darkMode ? 'text-stone-200' : 'text-stone-800'}`}>{p.name}</span>
+                                                <span className={`text-[11px] font-black ml-2 shrink-0 tabular-nums ${darkMode ? 'text-white' : 'text-stone-900'}`}>{p.count}</span>
+                                            </div>
+                                            <div className={`h-1 rounded-full overflow-hidden ${darkMode ? 'bg-white/5' : 'bg-stone-100'}`}>
+                                                <div className="h-full rounded-full bg-amber-500 transition-all duration-500" style={{ width: `${pct}%` }} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            {topProducts.length > 8 && <p className={`text-[9px] pt-1 ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>+ {topProducts.length - 8} autres produits avec des clics</p>}
+                        </div>
+                    </div>
+
+                    {/* Stats secondaires */}
+                    <div className="space-y-4">
+                        {/* Par Programme */}
+                        <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100 shadow-sm'}`}>
+                            <p className={`text-[9px] font-black uppercase tracking-widest mb-4 ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Par Programme</p>
+                            <div className="space-y-2.5">
+                                {byProgram.map(({ name, count }) => {
+                                    const pct = Math.round((count / maxProg) * 100);
+                                    const color = PROG_COLORS_B[name] || '#6B7280';
+                                    return (
+                                        <div key={name}>
+                                            <div className="flex items-center justify-between mb-1">
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                                    <span className={`text-[10px] font-bold ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>{PROG_LABELS_B[name] || name}</span>
+                                                </div>
+                                                <span className={`text-[10px] font-black tabular-nums ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>{count}</span>
+                                            </div>
+                                            <div className={`h-1 rounded-full overflow-hidden ${darkMode ? 'bg-white/5' : 'bg-stone-100'}`}>
+                                                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Par Gamme */}
+                        <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100 shadow-sm'}`}>
+                            <p className={`text-[9px] font-black uppercase tracking-widest mb-4 ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Par Gamme</p>
+                            <div className="space-y-2.5">
+                                {byTier.map(({ name, count }) => {
+                                    const pct = Math.round((count / maxTier) * 100);
+                                    const color = TIER_COLORS_B[name] || '#6B7280';
+                                    return (
+                                        <div key={name}>
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className={`text-[10px] font-bold ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>{TIER_LABELS_B[name] || name}</span>
+                                                <span className={`text-[10px] font-black tabular-nums ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>{count}</span>
+                                            </div>
+                                            <div className={`h-1 rounded-full overflow-hidden ${darkMode ? 'bg-white/5' : 'bg-stone-100'}`}>
+                                                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Par Source */}
+                        <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100 shadow-sm'}`}>
+                            <p className={`text-[9px] font-black uppercase tracking-widest mb-4 ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Source d'Acquisition</p>
+                            <div className="space-y-2.5">
+                                {bySource.map(({ name, count }) => {
+                                    const pct = Math.round((count / maxSource) * 100);
+                                    const color = SOURCE_COLORS_B[name] || '#6B7280';
+                                    return (
+                                        <div key={name}>
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className={`text-[10px] font-bold ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>{SOURCE_LABELS_B[name] || name}</span>
+                                                <span className={`text-[10px] font-black tabular-nums ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>{count}</span>
+                                            </div>
+                                            <div className={`h-1 rounded-full overflow-hidden ${darkMode ? 'bg-white/5' : 'bg-stone-100'}`}>
+                                                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Meubles Générateurs */}
+                        {byParent.length > 0 && (
+                            <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100 shadow-sm'}`}>
+                                <p className={`text-[9px] font-black uppercase tracking-widest mb-4 ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Meubles Générateurs</p>
+                                <div className="space-y-3">
+                                    {byParent.slice(0, 5).map(({ name, count }, i) => {
+                                        const pct = Math.round((count / maxParent) * 100);
+                                        return (
+                                            <div key={name}>
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className={`text-[10px] font-bold truncate pr-2 ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>{name}</span>
+                                                    <span className={`text-[10px] font-black tabular-nums ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>{count}</span>
+                                                </div>
+                                                <div className={`h-1 rounded-full overflow-hidden ${darkMode ? 'bg-white/5' : 'bg-stone-100'}`}>
+                                                    <div className="h-full rounded-full bg-indigo-500 transition-all duration-500" style={{ width: `${pct}%` }} />
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            ) : null}
+
+            {/* FLUX DE CLICS CHRONOLOGIQUE */}
+            {sessionsByDay.length > 0 ? (
+                <div className="space-y-2 mt-8">
+                    <h3 className={`text-[10px] font-black uppercase tracking-[0.3em] mb-4 ${darkMode ? 'text-white/40' : 'text-stone-400'}`}>Flux des Clics Affiliation</h3>
+                    {sessionsByDay.map((group) => {
+                        const isOpen = openDays[group.key];
+                        return (
+                            <div key={group.key} className={`rounded-2xl border overflow-hidden transition-all duration-300 ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100'}`}>
+                                <button
+                                    onClick={() => setOpenDays(prev => ({ ...prev, [group.key]: !prev[group.key] }))}
+                                    className={`w-full p-3 sm:p-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-1.5 rounded-lg ${darkMode ? 'bg-stone-800' : 'bg-stone-50'}`}>
+                                            {isOpen ? <ChevronDown size={14} className="text-stone-400" /> : <ChevronRight size={14} className="text-stone-400" />}
+                                        </div>
+                                        <div>
+                                            <span className={`text-[11px] font-black uppercase tracking-widest ${darkMode ? 'text-white/70' : 'text-stone-900'}`}>{group.label}</span>
+                                            <span className="ml-3 text-[10px] font-bold text-stone-500">{group.sessionsList.length} session{group.sessionsList.length > 1 ? 's' : ''}</span>
+                                        </div>
+                                    </div>
+                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-stone-500/10 to-transparent mx-6"></div>
+                                </button>
+
+                                {isOpen && (
+                                    <div className="px-2 sm:px-4 pb-3 sm:pb-4 animate-in slide-in-from-top-1 duration-200">
+                                        <div className="space-y-4">
+                                            {group.sessionsList.map(sessionGroup => (
+                                                <div key={sessionGroup.sessionId} className={`p-4 rounded-xl border ${darkMode ? 'bg-stone-900 border-white/5' : 'bg-stone-50 border-stone-100 shadow-sm'}`}>
+                                                    <div className="flex items-center justify-between mb-4 px-1">
+                                                        <div className="flex items-center gap-2 min-w-0">
+                                                            <Globe size={12} className="text-stone-500 shrink-0" />
+                                                            {(() => {
+                                                                const loc = formatSessionLocation(sessionGroup.sessionId);
+                                                                if (loc) {
+                                                                    return (
+                                                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] truncate">
+                                                                            <span className="text-stone-500">Session • </span>
+                                                                            <span className={darkMode ? 'text-white/80' : 'text-stone-900'}>{loc}</span>
+                                                                        </span>
+                                                                    );
+                                                                }
+                                                                return (
+                                                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-500 truncate">
+                                                                        Session • Localisation inconnue
+                                                                    </span>
+                                                                );
+                                                            })()}
+                                                        </div>
+                                                        <span className="text-[8px] font-bold text-stone-600 opacity-60 uppercase tracking-tighter shrink-0 ml-3">{sessionGroup.clicks.length} Clic{sessionGroup.clicks.length > 1 ? 's' : ''}</span>
+                                                    </div>
+
+                                                    <div className="relative pl-6 space-y-4 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-stone-800">
+                                                        {sessionGroup.clicks.map((click, idx) => (
+                                                            <div key={idx} className="relative group/step">
+                                                                <div className={`absolute -left-[18.5px] top-1.5 w-[7px] h-[7px] rounded-full ring-4 ${darkMode ? 'ring-stone-900/50' : 'ring-white'} bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)] transition-all group-hover/step:scale-125`}></div>
+                                                                <div className="flex flex-col gap-1 -translate-y-0.5">
+                                                                    <span className="text-[8px] font-black uppercase tracking-widest leading-none text-amber-500/60">
+                                                                        {new Date(getMillis(click.timestamp)).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                                                    </span>
+                                                                    <p className={`font-black text-[11px] leading-tight ${darkMode ? 'text-stone-300' : 'text-stone-900'}`}>
+                                                                        Clic : <span className="uppercase text-amber-500">{click.productName}</span>
+                                                                    </p>
+                                                                    <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                                                                        <span className={`text-[8px] font-bold px-2 py-0.5 rounded-md truncate max-w-full italic border ${darkMode ? 'bg-white/5 border-white/5 text-stone-400' : 'bg-stone-200/50 border-stone-200 text-stone-600'}`}>
+                                                                            Source : {SOURCE_LABELS_B[click.source] || click.source || 'Inconnue'}
+                                                                        </span>
+                                                                        {click.parentFurnitureName && (
+                                                                            <span className={`text-[8px] font-bold px-2 py-0.5 rounded-md truncate max-w-full italic border ${darkMode ? 'bg-indigo-500/10 border-indigo-500/10 text-indigo-400/80' : 'bg-indigo-50 border-indigo-100 text-indigo-600'}`}>
+                                                                                Meuble : {click.parentFurnitureName}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            ) : (
+                <div className={`p-12 text-center rounded-2xl border ${darkMode ? 'bg-[#161616] border-white/5 text-stone-500' : 'bg-stone-50 border-stone-100 text-stone-400'} font-bold text-sm italic`}>
+                    Aucun clic enregistré sur cette période.
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ─── Analytics Principal ───────────────────────────────────────────────────────
+void BoutiqueAnalytics;
+
+const AdminAnalytics = ({ darkMode = false }) => {
+    const [sessions, setSessions] = useState(() => cachedAnalyticsSessions || []);
+    const [loading, setLoading] = useState(false);
+    const [restoringSessions, setRestoringSessions] = useState(() => !cachedAnalyticsSessions);
+    const [timeFilter, setTimeFilter] = useState('1j'); // Default to 24h // '1h', '1j', '7j', '1mois', '1ans'
+    const [expandedSessionId, setExpandedSessionId] = useState(null);
+    const [now, setNow] = useState(Date.now());
+    const [liveNow, setLiveNow] = useState(Date.now());
+    const [currentPage, setCurrentPage] = useState(1);
+    const DAYS_PER_PAGE = 10;
+    const [openVisitors, setOpenVisitors] = useState({});
+    const [sessionsRefreshKey, setSessionsRefreshKey] = useState(() => cachedAnalyticsSessionsLoadedAt || 0);
+
+    useEffect(() => {
+        let cancelled = false;
+        if (cachedAnalyticsSessions) {
+            setRestoringSessions(false);
+            return () => { cancelled = true; };
+        }
+
+        readAdminAnalyticsCache(ADMIN_SESSIONS_CACHE_KEY).then((snapshot) => {
+            if (cancelled || !snapshot) return;
+            cachedAnalyticsSessions = snapshot.data || [];
+            cachedAnalyticsSessionsLoadedAt = snapshot.loadedAt || 0;
+            setSessions(cachedAnalyticsSessions);
+            setSessionsRefreshKey(cachedAnalyticsSessionsLoadedAt);
+            if (cachedAnalyticsSessionsLoadedAt) setNow(cachedAnalyticsSessionsLoadedAt);
+        }).finally(() => {
+            if (!cancelled) setRestoringSessions(false);
+        });
+
+        return () => { cancelled = true; };
+    }, []);
+
+    // Refresh live status without moving the analytics window away from the last refresh.
+    useEffect(() => {
+        const i = setInterval(() => setLiveNow(Date.now()), 10000);
+        return () => clearInterval(i);
+    }, []);
+
+    // Keep the operational surface reactive without reloading the full one-year history.
+    useEffect(() => {
+        const liveQuery = query(
+            collection(db, 'analytics_sessions'),
+            orderBy('lastActivityAt', 'desc'),
+            limit(100)
+        );
+
+        return onSnapshot(liveQuery, (snapshot) => {
+            const incoming = snapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(session => session.type !== 'admin');
+            const receivedAt = Date.now();
+
+            setSessions(previous => {
+                const merged = new Map(previous.map(session => [session.id, session]));
+                incoming.forEach(session => merged.set(session.id, session));
+                const next = Array.from(merged.values())
+                    .sort((a, b) => getMillis(b.startedAt) - getMillis(a.startedAt))
+                    .slice(0, MAX_ANALYTICS_SESSIONS);
+                cachedAnalyticsSessions = next;
+                return next;
+            });
+            setNow(receivedAt);
+            setLiveNow(receivedAt);
+        }, (error) => {
+            console.error('Analytics realtime listener error:', error);
+        });
+    }, []);
+
+    // Kpis
+    const analyticsStats = useMemo(() => {
+        const oldestStartedAt = sessions
+            .map(session => getMillis(session.startedAt))
+            .filter(Boolean)
+            .reduce((oldest, value) => Math.min(oldest, value), Infinity);
+
+        return buildAnalyticsStats(sessions, timeFilter, {
+            now,
+            coverageStartMs: Number.isFinite(oldestStartedAt) ? oldestStartedAt : null,
+            fetchedCount: sessions.length,
+            maxFetched: MAX_ANALYTICS_SESSIONS
+        });
+    }, [sessions, timeFilter, now]);
+
+    const kpis = analyticsStats.kpis;
+    const dataQuality = analyticsStats.dataQuality;
+    const chartData = analyticsStats.chartData;
+
+    // ─── Groupement des sessions par jour ───
+    const filteredTrafficSessions = analyticsStats.realTraffic;
+
+    const groupedByDay = useMemo(() => (
+        buildVisitorDayGroups(filteredTrafficSessions, { now })
+    ), [filteredTrafficSessions, now]);
 
     const totalPages = Math.ceil(groupedByDay.length / DAYS_PER_PAGE);
     const paginatedGroups = useMemo(() => {
         const start = (currentPage - 1) * DAYS_PER_PAGE;
         return groupedByDay.slice(start, start + DAYS_PER_PAGE);
     }, [groupedByDay, currentPage]);
+    const ratioAccent = kpis.visitorConfidenceScore >= 85
+        ? 'text-emerald-500'
+        : kpis.visitorConfidenceScore >= 70
+            ? 'text-amber-500'
+            : 'text-red-500';
+    const ratioBg = kpis.visitorConfidenceScore >= 85
+        ? 'bg-emerald-500/10'
+        : kpis.visitorConfidenceScore >= 70
+            ? 'bg-amber-500/10'
+            : 'bg-red-500/10';
 
     // Reset pagination when data changes significantly
     useEffect(() => {
         setCurrentPage(1);
+        setExpandedSessionId(null);
     }, [timeFilter]);
 
     // ─── Sessions en ligne (Live) ───
     const liveSessions = useMemo(() => {
         return sessions.filter(s => {
             const lastActiveMs = getMillis(s.lastActivityAt);
-            const isInactive = (now - lastActiveMs) > LIVE_WINDOW_MS;
+            const isInactive = (liveNow - lastActiveMs) > 30000;
             return s.sessionActive !== false && !isInactive;
         });
-    }, [sessions, now]);
+    }, [sessions, liveNow]);
 
     const [openDays, setOpenDays] = useState({});
-    const [openVisitors, setOpenVisitors] = useState({}); // clé = `${dayKey}:${visitorId}`
     
     // Ouvrir par défaut le premier jour (Aujourd'hui)
     useEffect(() => {
@@ -566,107 +1796,44 @@ const AdminAnalytics = ({ darkMode = false }) => {
     }, [groupedByDay.length]);
 
     const loadSessions = useCallback(async () => {
-        if (document.visibilityState === 'hidden') return;
         setLoading(true);
-        try {
-            const historyWindow = getAnalyticsWindow('1ans');
-            const historyCutoff = Timestamp.fromMillis(Date.now() - historyWindow.duration);
-            const sessionsQuery = query(
-                collection(db, 'analytics_sessions'),
-                where('startedAt', '>=', historyCutoff),
-                orderBy('startedAt', 'desc'),
-                limit(MAX_ANALYTICS_SESSIONS)
-            );
+        const refreshStartedAt = Date.now();
+        const historyWindow = getAnalyticsWindow('1ans');
+        const historyCutoff = Timestamp.fromMillis(refreshStartedAt - historyWindow.duration);
+        const q = query(
+            collection(db, 'analytics_sessions'),
+            where('startedAt', '>=', historyCutoff),
+            orderBy('startedAt', 'desc'),
+            limit(MAX_ANALYTICS_SESSIONS)
+        );
 
-            const snap = await getDocs(sessionsQuery);
-            const data = snap.docs.map((docSnap) => ({
-                id: docSnap.id,
-                ...docSnap.data()
+        try {
+            const snap = await getDocs(q);
+            const data = snap.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
             }));
 
-            const cleanData = data.filter((s) => s.type !== 'admin');
+            // On filtre les admins pour ne pas polluer l'affichage et les stats
+            const cleanData = data.filter(s => s.type !== 'admin');
             const loadedAt = Date.now();
-            const checkpoint = writeAnalyticsCheckpoint(cleanData, loadedAt);
-
+            cachedAnalyticsSessions = cleanData;
+            cachedAnalyticsSessionsLoadedAt = loadedAt;
+            setNow(loadedAt);
             setSessions(cleanData);
-            setHasLoadedSessions(true);
-            setCheckpointLoadedAt(loadedAt);
-            setCheckpointCount(cleanData.length);
-            setCheckpointCachedCount(checkpoint.count);
-            setCheckpointNotice(checkpoint.saved
-                ? 'Checkpoint mis a jour dans ce navigateur.'
-                : 'Stats mises a jour, mais le checkpoint local n\'a pas pu etre enregistre.');
-            setRefreshPulseKey(key => key + 1);
+            setSessionsRefreshKey(loadedAt);
+            writeAdminAnalyticsCache(ADMIN_SESSIONS_CACHE_KEY, cleanData, loadedAt);
+            setLoading(false);
         } catch (error) {
-            console.error('Analytics load error:', error);
-            setCheckpointNotice('Actualisation impossible. Le dernier checkpoint local reste affiche.');
-        } finally {
+            console.error("Analytics load error:", error);
             setLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        if (!expandedSessionId || sessionDetails[expandedSessionId]) return;
-
-        let cancelled = false;
-
-        const loadDetails = async () => {
-            setSessionDetailsLoading(prev => ({ ...prev, [expandedSessionId]: true }));
-            try {
-                const detailsQuery = query(
-                    collection(db, 'analytics_sessions', expandedSessionId, 'journey_steps'),
-                    orderBy('timestamp', 'asc'),
-                    limit(250)
-                );
-                const snap = await getDocs(detailsQuery);
-                if (cancelled) return;
-
-                const details = snap.docs.map((docSnap) => docSnap.data());
-                const legacy = sessions.find(s => s.id === expandedSessionId)?.journey || [];
-                setSessionDetails(prev => ({
-                    ...prev,
-                    [expandedSessionId]: details.length > 0 ? details : legacy
-                }));
-            } catch (error) {
-                console.error('Analytics details fetch error:', error);
-                if (cancelled) return;
-                const legacy = sessions.find(s => s.id === expandedSessionId)?.journey || [];
-                setSessionDetails(prev => ({
-                    ...prev,
-                    [expandedSessionId]: legacy
-                }));
-            } finally {
-                if (!cancelled) {
-                    setSessionDetailsLoading(prev => ({ ...prev, [expandedSessionId]: false }));
-                }
-            }
-        };
-
-        loadDetails();
-        return () => { cancelled = true; };
-    }, [expandedSessionId, sessionDetails, sessions]);
-
-    const processData = useCallback((allSessions, filter, nowMs = Date.now()) => {
-        const oldestStartedAt = allSessions
-            .map(session => getMillis(session.startedAt))
-            .filter(Boolean)
-            .reduce((oldest, value) => Math.min(oldest, value), Infinity);
-
-        const result = buildAnalyticsStats(allSessions, filter, {
-            now: nowMs,
-            coverageStartMs: Number.isFinite(oldestStartedAt) ? oldestStartedAt : null,
-            fetchedCount: allSessions.length,
-            maxFetched: MAX_ANALYTICS_SESSIONS
-        });
-
-        setKpis(result.kpis);
-        setDataQuality(result.dataQuality);
-        setChartData(result.chartData);
-    }, []);
-
-    useEffect(() => {
-        processData(sessions, timeFilter, now);
-    }, [sessions, timeFilter, now, processData]);
+        if (restoringSessions || loading || sessionsRefreshKey > 0) return;
+        loadSessions();
+    }, [restoringSessions, loading, sessionsRefreshKey, loadSessions]);
 
     const formatDuration = (seconds) => {
         if (!seconds) return '0s';
@@ -680,25 +1847,20 @@ const AdminAnalytics = ({ darkMode = false }) => {
         if (!window.confirm("Supprimer cette session ? (Action irréversible)")) return;
         try {
             await httpsCallable(functions, 'deleteSession')({ sessionId: id });
-            await loadSessions();
-            // Le snapshot s'occupera de rafraîchir la liste
+            loadSessions();
         } catch (e) {
             console.error("Delete error:", e);
             alert("Erreur lors de la suppression");
         }
     };
 
-    const openVisitorMap = (visitorMap) => {
-        setMappedVisitor(visitorMap);
-    };
-
     const handleClearAll = async () => {
         if (!window.confirm("☢️ ACTION CRITIQUE : Supprimer TOUTES les données d'analytics définitivement ?")) return;
         setLoading(true);
         try {
-            await httpsCallable(functions, 'clearAllAnalytics')({});
+            await httpsCallable(functions, 'clearAllSessions')({});
+            clearAdminAnalyticsCache(ADMIN_SESSIONS_CACHE_KEY);
             await loadSessions();
-            setHasLoadedSessions(true);
             setLoading(false);
         } catch (e) {
             console.error("Clear error:", e);
@@ -707,40 +1869,12 @@ const AdminAnalytics = ({ darkMode = false }) => {
         }
     };
 
-    if (mappedVisitor) {
-        return (
-            <AdminSiteMap
-                sessionsOverride={mappedVisitor.sessions}
-                subjectName={mappedVisitor.label}
-                subjectInitials={mappedVisitor.initials}
-                modeLabel={`${mappedVisitor.sessions.length} session${mappedVisitor.sessions.length > 1 ? 's' : ''} cumulee${mappedVisitor.sessions.length > 1 ? 's' : ''}`}
-                title="Parcours client cumule"
-                subtitle={`Carte reconstruite depuis les routes observees de ce visiteur. Identite ${mappedVisitor.identityLabel}, confiance ${mappedVisitor.confidence}%.`}
-                onExit={() => setMappedVisitor(null)}
-            />
-        );
-    }
-
-    const ratioAccent = dataQuality.confidence === 'haute'
-        ? 'text-emerald-500'
-        : dataQuality.confidence === 'moyenne'
-            ? 'text-amber-500'
-            : 'text-red-500';
-    const ratioBg = dataQuality.confidence === 'haute'
-        ? 'bg-emerald-500/10'
-        : dataQuality.confidence === 'moyenne'
-            ? 'bg-amber-500/10'
-            : 'bg-red-500/10';
-    const checkpointAge = getCheckpointAgeLabel(checkpointLoadedAt, now);
-    const checkpointDate = formatCheckpointDate(checkpointLoadedAt);
-    const refreshAnimationClass = loading
-        ? 'opacity-70 scale-[0.995]'
-        : refreshPulseKey > 0
-            ? 'animate-in fade-in zoom-in-95 duration-500'
-            : '';
-
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+
+            {(loading || restoringSessions) && sessions.length === 0 ? (
+                <div className="p-12 text-center text-stone-400 font-bold animate-pulse">Chargement Data...</div>
+            ) : (<>
 
             {/* HEADER FILTERS */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -758,6 +1892,11 @@ const AdminAnalytics = ({ darkMode = false }) => {
                         <RefreshCw size={13} className={loading ? 'inline mr-2 animate-spin' : 'inline mr-2'} />
                         Actualiser
                     </button>
+                    {sessionsRefreshKey > 0 && (
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-stone-500">
+                            Maj {new Date(sessionsRefreshKey).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                    )}
                     <button
                         onClick={handleClearAll}
                         className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-red-500/20 text-red-500/60 hover:bg-red-500 hover:text-white active:scale-95`}
@@ -778,54 +1917,8 @@ const AdminAnalytics = ({ darkMode = false }) => {
                 </div>
             </div>
 
-            <div className={`rounded-2xl border p-4 transition-all ${loading ? 'animate-pulse' : ''} ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100 shadow-sm'}`}>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                        <p className="text-[9px] font-black uppercase tracking-[0.24em] text-stone-500">Checkpoint analytics</p>
-                        <p className={`mt-1 text-sm font-black ${darkMode ? 'text-white/80' : 'text-stone-900'}`}>
-                            {checkpointLoadedAt ? `${checkpointDate} - ${checkpointAge}` : 'Aucune data chargee dans ce navigateur'}
-                        </p>
-                        <p className="mt-1 text-[10px] font-bold leading-relaxed text-stone-500">
-                            {checkpointNotice || 'La page reutilise le dernier checkpoint local. Firestore ne lit les analytics que via Actualiser.'}
-                        </p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-left sm:text-right">
-                        <div className={`rounded-xl border px-3 py-2 ${darkMode ? 'border-white/5 bg-white/[0.03]' : 'border-stone-100 bg-stone-50'}`}>
-                            <p className="text-[8px] font-black uppercase tracking-widest text-stone-500">Checkpoint</p>
-                            <p className={`mt-1 text-sm font-black tabular-nums ${darkMode ? 'text-white' : 'text-stone-900'}`}>
-                                {checkpointCachedCount}
-                            </p>
-                        </div>
-                        <div className={`rounded-xl border px-3 py-2 ${darkMode ? 'border-white/5 bg-white/[0.03]' : 'border-stone-100 bg-stone-50'}`}>
-                            <p className="text-[8px] font-black uppercase tracking-widest text-stone-500">Derniere lecture</p>
-                            <p className={`mt-1 text-sm font-black tabular-nums ${darkMode ? 'text-white' : 'text-stone-900'}`}>
-                                {checkpointCount}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {!hasLoadedSessions ? (
-                <div className={`p-10 sm:p-12 text-center rounded-2xl border ${darkMode ? 'bg-[#161616] border-white/5 text-stone-400' : 'bg-white border-stone-100 text-stone-500 shadow-sm'}`}>
-                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-stone-500">
-                        {loading ? 'Chargement Data' : 'Aucun checkpoint'}
-                    </p>
-                    <p className={`mt-3 text-sm font-bold ${darkMode ? 'text-white/70' : 'text-stone-700'}`}>
-                        {loading ? 'Lecture analytics bornee en cours.' : 'Cliquez sur Actualiser pour charger les analytics.'}
-                    </p>
-                    <p className="mt-2 text-[10px] font-bold leading-relaxed text-stone-500">
-                        Aucune lecture Firestore analytics n'est lancee automatiquement a l'ouverture de cet onglet.
-                    </p>
-                </div>
-            ) : (
-            <>
-
             {/* KPI PRINCIPAL */}
-            <div
-                key={`kpi-${refreshPulseKey}`}
-                className={`p-5 sm:p-6 rounded-2xl border transition-all duration-500 ${refreshAnimationClass} ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100 shadow-sm'}`}
-            >
+            <div key={`traffic-kpis-${sessionsRefreshKey}`} className={`p-5 sm:p-6 rounded-2xl border transition-all animate-in fade-in slide-in-from-bottom-2 duration-500 ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100 shadow-sm'}`}>
                 <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                     <div>
                         <p className="text-[9px] font-black uppercase tracking-[0.24em] text-stone-500 mb-2">Utilisateurs uniques</p>
@@ -857,13 +1950,13 @@ const AdminAnalytics = ({ darkMode = false }) => {
                     </div>
                 </div>
                 <p className="mt-4 text-[10px] font-bold text-stone-500 leading-relaxed">
-                    Deduplication par UID Firebase, IUD navigateur, puis IP serveur. Le compteur utilisateurs uniques est {kpis.visitorIpRatio
+                    Deduplication par UID Firebase, puis IP serveur. Le compteur utilisateurs uniques est {kpis.visitorIpRatio
                         ? `${Math.round((kpis.visitorIpRatio - 1) * 100)}% au-dessus`
                         : 'non comparable'} du compteur IPs uniques.
                 </p>
             </div>
 
-            <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center gap-3 transition-all duration-500 ${refreshAnimationClass} ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100 shadow-sm'}`}>
+            <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center gap-3 ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100 shadow-sm'}`}>
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${dataQuality.confidence === 'haute' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
                     <AlertCircle size={16} />
                 </div>
@@ -878,16 +1971,16 @@ const AdminAnalytics = ({ darkMode = false }) => {
             </div>
 
             {/* CUSTOM SVG CHART BENTO */}
-            <div
-                key={`chart-${refreshPulseKey}`}
-                className={`p-6 md:p-8 rounded-[2rem] border transition-all duration-500 ${refreshAnimationClass} ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100 shadow-sm'}`}
-            >
+            <div className={`p-6 md:p-8 rounded-[2rem] border transition-all ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100 shadow-sm'}`}>
                 <div className="flex items-center justify-between mb-8">
-                    <h3 className={`text-[10px] font-black uppercase tracking-[0.3em] ${darkMode ? 'text-white/40' : 'text-stone-400'}`}>Évolution du Trafic</h3>
+                    <div>
+                        <h3 className={`text-[10px] font-black uppercase tracking-[0.3em] ${darkMode ? 'text-white/40' : 'text-stone-400'}`}>Evolution des visiteurs</h3>
+                        <p className="mt-1 text-[9px] font-bold text-stone-500">Chaque barre deduplique les visiteurs dans son creneau.</p>
+                    </div>
                 </div>
                 <div className="h-[240px] md:h-[320px] w-full">
                     {chartData.length > 0 ? (
-                        <TrafficChart data={chartData} darkMode={darkMode} valueLabel="visiteur" />
+                        <TrafficChart data={chartData} darkMode={darkMode} valueLabel="visiteur" animationKey={`traffic-${sessionsRefreshKey}`} />
                     ) : (
                         <div className="flex items-center justify-center h-full text-stone-500 font-bold italic text-xs">Pas assez de données.</div>
                     )}
@@ -935,230 +2028,35 @@ const AdminAnalytics = ({ darkMode = false }) => {
                                         </div>
                                         <div>
                                             <span className={`text-[11px] font-black uppercase tracking-widest ${darkMode ? 'text-white/70' : 'text-stone-900'}`}>{group.label}</span>
-                                            <span className="ml-3 text-[10px] font-bold text-stone-500">{group.visitors.length} visiteur{group.visitors.length > 1 ? 's' : ''} • {group.sessionsCount} session{group.sessionsCount > 1 ? 's' : ''}</span>
+                                            <span className="ml-3 text-[10px] font-bold text-stone-500">
+                                                {group.visitors.length} visiteur{group.visitors.length > 1 ? 's' : ''} / {group.sessionCount} session{group.sessionCount > 1 ? 's' : ''}
+                                            </span>
                                         </div>
                                     </div>
                                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-stone-500/10 to-transparent mx-6"></div>
                                 </button>
 
                                 {isOpen && (
-                                    <div className="px-2 sm:px-4 pb-3 sm:pb-4 animate-in slide-in-from-top-1 duration-200 space-y-2">
-                                        {group.visitors.map(visitor => {
-                                            const visitorKey = `${group.key}:${visitor.visitorId}`;
-                                            const isVisitorOpen = openVisitors[visitorKey] !== false; // ouvert par défaut
-                                            const rep = visitor.representative;
-                                            const repCity = rep.geo?.city && rep.geo.city !== 'Unknown' ? rep.geo.city : 'Inconnu';
-                                            const repRegion = rep.geo?.region && rep.geo.region !== 'Unknown' ? `, ${rep.geo.region}` : '';
-                                            const confidence = getVisitorConfidence(visitor.sessions);
-                                            const identityLabel = getIdentityLabel(visitor.sessions);
-                                            const visitorLabel = `${repCity}${repRegion}`;
-                                            const visitorInitials = visitorLabel
-                                                .split(/[\s,]+/)
-                                                .filter(Boolean)
-                                                .slice(0, 2)
-                                                .map(part => part[0]?.toUpperCase())
-                                                .join('') || 'SV';
-                                            return (
-                                              <div key={visitorKey} className={`rounded-2xl border overflow-hidden ${darkMode ? 'bg-stone-900/40 border-white/5' : 'bg-stone-50 border-stone-100'}`}>
-                                                {/* Visitor header (carte regroupement) */}
-                                                <div className={`w-full p-3 flex items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors`}>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setOpenVisitors(prev => ({ ...prev, [visitorKey]: !isVisitorOpen }))}
-                                                        className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden text-left"
-                                                    >
-                                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${darkMode ? 'bg-white/5 text-white/60' : 'bg-white text-stone-700 border border-stone-200'}`}>
-                                                            {rep.device === 'Mobile' ? <Smartphone size={14} /> : <Monitor size={14} />}
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <div className="flex items-center gap-2 overflow-hidden">
-                                                                <Globe size={11} className="text-stone-500 shrink-0" />
-                                                                <span className={`text-[11px] font-black truncate ${darkMode ? 'text-white/80' : 'text-stone-900'}`}>{visitorLabel}</span>
-                                                                <span className="hidden md:inline text-[8px] font-bold text-stone-500 opacity-50 truncate">• {rep.ip}</span>
-                                                            </div>
-                                                            <div className="flex items-center gap-2 mt-0.5 overflow-hidden">
-                                                                <span className="text-[9px] font-bold uppercase text-stone-500 truncate">
-                                                                    {(rep.os || 'Inconnu')} • {(rep.browser || 'Inconnu')}
-                                                                </span>
-                                                                <span className="text-[8px] font-black text-blue-500/80 uppercase tracking-widest">
-                                                                    {visitor.sessions.length} session{visitor.sessions.length > 1 ? 's' : ''}
-                                                                </span>
-                                                                <span className="hidden min-[520px]:inline text-[8px] font-bold text-emerald-500/70">• Total {formatDuration(visitor.totalDuration)}</span>
-                                                                <span className="hidden md:inline text-[8px] font-black uppercase tracking-widest text-emerald-500/70">• {confidence}% {identityLabel}</span>
-                                                            </div>
-                                                        </div>
-                                                    </button>
-                                                    <div className="flex shrink-0 items-center gap-2">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => openVisitorMap({
-                                                                id: visitor.visitorId,
-                                                                label: visitorLabel,
-                                                                initials: visitorInitials,
-                                                                sessions: visitor.sessions,
-                                                                confidence,
-                                                                identityLabel
-                                                            })}
-                                                            className={`hidden lg:inline-flex h-8 items-center gap-2 rounded-lg px-3 text-[9px] font-black uppercase tracking-widest transition-all ${mappedVisitor?.id === visitor.visitorId ? 'bg-cyan-400 text-stone-950' : (darkMode ? 'bg-white/5 text-cyan-300/80 hover:bg-white/10' : 'bg-white border border-stone-200 text-stone-700 hover:border-cyan-300')}`}
-                                                        >
-                                                            <MapIcon size={11} />
-                                                            Map
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setOpenVisitors(prev => ({ ...prev, [visitorKey]: !isVisitorOpen }))}
-                                                            className="grid h-8 w-8 place-items-center rounded-lg text-stone-400 transition-colors hover:bg-white/5 hover:text-white"
-                                                            aria-label={isVisitorOpen ? 'Fermer le visiteur' : 'Ouvrir le visiteur'}
-                                                        >
-                                                            <ChevronDown size={14} className={`transition-transform duration-300 ${isVisitorOpen ? 'rotate-0' : '-rotate-90'}`} />
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                {isVisitorOpen && (
-                                                  <div className="px-2 sm:px-3 pb-2 sm:pb-3 space-y-1 sm:space-y-1.5">
-                                                    {visitor.sessions.map(session => {
-                                                const isExpanded = expandedSessionId === session.id;
-                                                const lastActiveMs = getMillis(session.lastActivityAt);
-                                                const isInactive = (now - lastActiveMs) > LIVE_WINDOW_MS;
-                                                const isFinished = session.sessionActive === false || isInactive;
-                                                const startedTime = session.startedAt ? new Date(getMillis(session.startedAt)).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
-
+                                    <div className="px-2 sm:px-4 pb-3 sm:pb-4 animate-in slide-in-from-top-1 duration-200">
+                                        <div className="space-y-1 sm:space-y-1.5">
+                                            {group.visitors.map(visitor => {
+                                                const visitorOpen = openVisitors[visitor.key] ?? group.visitors.length === 1;
                                                 return (
-                                                    <div key={session.id} className={`group rounded-xl border transition-all ${darkMode ? 'bg-stone-900 border-white/5 hover:border-white/10' : 'bg-stone-50 border-stone-100 shadow-sm'}`}>
-                                                        <div className="p-3 flex items-center justify-between gap-4">
-                                                            <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
-                                                                <div className="flex flex-col min-w-[40px] shrink-0">
-                                                                    <span className="text-[10px] font-black text-white/40">{startedTime}</span>
-                                                                    {isFinished ? (
-                                                                        <span className="text-[8px] font-black uppercase text-stone-600">Terminé</span>
-                                                                    ) : (
-                                                                        <span className="text-[8px] font-black uppercase text-emerald-500 animate-pulse">En ligne</span>
-                                                                    )}
-                                                                </div>
-
-                                                                <div className="min-w-0">
-                                                                    <div className="flex items-center gap-2 mb-0.5 overflow-hidden">
-                                                                        <Globe size={11} className="text-stone-500 shrink-0" />
-                                                                        <span className={`text-[10px] font-bold truncate ${darkMode ? 'text-white/80' : 'text-stone-900'}`}>{session.geo?.city && session.geo.city !== 'Unknown' ? `${session.geo.city}${session.geo.region && session.geo.region !== 'Unknown' ? `, ${session.geo.region}` : ''}` : 'Inconnu'}</span>
-                                                                        <span className="hidden md:inline text-[8px] text-stone-500 opacity-50 truncate">• {session.ip}</span>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-1.5 overflow-hidden">
-                                                                        {session.device === 'Mobile' ? <Smartphone size={10} className="text-stone-500 shrink-0" /> : <Monitor size={10} className="text-stone-500 shrink-0" />}
-                                                                        <span className="text-[9px] font-bold text-stone-500 truncate uppercase">
-                                                                            {session.os || 'Inconnu'} • {session.browser || 'Inconnu'}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="flex items-center gap-2 sm:gap-3 md:gap-6 shrink-0">
-                                                                <div className="hidden min-[450px]:block text-right">
-                                                                    <p className="text-[9px] font-black uppercase tracking-widest text-stone-500 mb-0.5 leading-none">Durée</p>
-                                                                    <p className={`text-[11px] sm:text-xs font-black ${darkMode ? 'text-white' : 'text-stone-900'}`}>{formatDuration(session.duration)}</p>
-                                                                </div>
-
-                                                                <div className="flex items-center gap-2">
-                                                                    <button
-                                                                        onClick={() => setExpandedSessionId(isExpanded ? null : session.id)}
-                                                                        className={`px-3 py-1.5 h-8 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${isExpanded ? 'bg-blue-500 text-white' : (darkMode ? 'bg-white/5 text-white/50 hover:bg-white/10' : 'bg-white border border-stone-200 text-stone-600')}`}
-                                                                    >
-                                                                        {isExpanded ? 'Masquer' : 'Tracer'}
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleDeleteSession(session.id)}
-                                                                        className="p-1.5 text-stone-500 hover:text-red-500 transition-colors"
-                                                                    >
-                                                                        <Trash2 size={12} />
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        {isExpanded && (
-                                                            <div className={`p-4 border-t ${darkMode ? 'border-white/5 bg-black/20' : 'border-stone-100 bg-white'} animate-in slide-in-from-top-2 duration-300`}>
-                                                                <div className="space-y-5">
-                                                                    {(() => {
-                                                                        const detailedJourney = sessionDetails[session.id] || session.journey || [];
-                                                                        const detailsLoading = sessionDetailsLoading[session.id];
-                                                                        return (
-                                                                            <>
-                                                                    <div className="flex items-center justify-between px-1">
-                                                                        <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-500">Parcours Utilisateur</h4>
-                                                                        <span className="text-[8px] font-bold text-stone-600 opacity-60 uppercase tracking-tighter">
-                                                                            {detailsLoading ? 'Chargement...' : `${detailedJourney.length || 0} Étapes`}
-                                                                        </span>
-                                                                    </div>
-                                                                    
-                                                                    <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-stone-800">
-                                                                        {detailsLoading ? (
-                                                                            <p className="text-[10px] italic text-stone-500">Chargement du parcours…</p>
-                                                                        ) : (!detailedJourney || detailedJourney.length === 0 ? (
-                                                                            <p className="text-[10px] italic text-stone-500">Aucune activité enregistrée</p>
-                                                                        ) : (
-                                                                            detailedJourney.map((step, idx) => {
-                                                                                const dotColor = step.pageColor || '#3b82f6';
-                                                                                const label = step.pageLabel || step.page || 'Vue inconnue';
-                                                                                const ctxItemName = step.context?.itemName;
-                                                                                const ctxItemPrice = step.context?.itemPrice;
-                                                                                const ctxCategoryId = step.context?.categoryId;
-                                                                                return (
-                                                                                <div key={idx} className="relative group/step">
-                                                                                    {/* DOT colored per pageKey */}
-                                                                                    <div
-                                                                                        className={`absolute -left-[18.5px] top-1.5 w-[7px] h-[7px] rounded-full ring-4 ${darkMode ? 'ring-stone-900/50' : 'ring-white'} transition-all group-hover/step:scale-125`}
-                                                                                        style={{ backgroundColor: dotColor, boxShadow: darkMode ? `0 0 10px ${dotColor}55` : 'none' }}
-                                                                                    ></div>
-
-                                                                                    <div className="flex flex-col gap-1 -translate-y-0.5">
-                                                                                        <span className="text-[8px] font-black uppercase tracking-widest leading-none" style={{ color: `${dotColor}aa` }}>{step.time} • {formatDuration(step.duration)}</span>
-                                                                                        <p className={`font-black text-[11px] leading-tight ${darkMode ? 'text-stone-200' : 'text-stone-900'}`}>
-                                                                                            <span className="inline-block px-1.5 py-0.5 rounded-md text-[9px] uppercase tracking-widest" style={{ backgroundColor: `${dotColor}1a`, color: dotColor, border: `1px solid ${dotColor}33` }}>
-                                                                                                {label}
-                                                                                            </span>
-                                                                                        </p>
-                                                                                        {(ctxItemName || ctxItemPrice) && (
-                                                                                            <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                                                                                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md truncate max-w-full ${darkMode ? 'bg-white/5 text-white/70 border border-white/5' : 'bg-white text-stone-700 border border-stone-200'}`}>
-                                                                                                    {ctxItemName || 'Produit'}{ctxItemPrice ? ` · ${ctxItemPrice}€` : ''}
-                                                                                                </span>
-                                                                                            </div>
-                                                                                        )}
-                                                                                        {ctxCategoryId && !ctxItemName && (
-                                                                                            <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                                                                                                <span className="text-[9px] font-bold bg-indigo-500/10 text-indigo-400/90 border border-indigo-500/10 px-2 py-0.5 rounded-md truncate max-w-full uppercase tracking-widest">
-                                                                                                    {ctxCategoryId}
-                                                                                                </span>
-                                                                                            </div>
-                                                                                        )}
-                                                                                        {/* Fallback legacy : itemId brut si pas de context */}
-                                                                                        {!ctxItemName && !ctxCategoryId && step.itemId && (
-                                                                                            <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                                                                                                <span className="text-[8px] font-bold bg-indigo-500/10 text-indigo-400/80 border border-indigo-500/10 px-2 py-0.5 rounded-md truncate max-w-full italic">
-                                                                                                    {step.itemId}
-                                                                                                </span>
-                                                                                            </div>
-                                                                                        )}
-                                                                                    </div>
-                                                                                </div>
-                                                                                );
-                                                                            })
-                                                                        ))}
-                                                                    </div>
-                                                                            </>
-                                                                        );
-                                                                    })()}
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
+                                                    <VisitorSessionGroup
+                                                        key={visitor.key}
+                                                        darkMode={darkMode}
+                                                        visitor={visitor}
+                                                        now={liveNow}
+                                                        isOpen={visitorOpen}
+                                                        onToggle={() => setOpenVisitors(prev => ({ ...prev, [visitor.key]: !visitorOpen }))}
+                                                        expandedSessionId={expandedSessionId}
+                                                        setExpandedSessionId={setExpandedSessionId}
+                                                        handleDeleteSession={handleDeleteSession}
+                                                        formatDuration={formatDuration}
+                                                    />
                                                 );
                                             })}
-                                                  </div>
-                                                )}
-                                              </div>
-                                            );
-                                        })}
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -1225,9 +2123,10 @@ const AdminAnalytics = ({ darkMode = false }) => {
             <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 py-4 border-t border-white/5">
                 {[
                     "Sessions admin auto-exclues",
-                    "IPs blacklistées au login",
-                    "Sessions résumées: 1 an",
-                    "Parcours détaillés: 90 jours"
+                    "IPs admin exclues au login",
+                    "Uniques: UID puis IP serveur",
+                    "Sync protegee par jeton",
+                    "Fenetre locale: 1 an"
                 ].map((info, i) => (
                     <div key={i} className="flex items-center gap-1.5">
                         <div className="w-1 h-1 rounded-full bg-stone-700"></div>
@@ -1235,8 +2134,7 @@ const AdminAnalytics = ({ darkMode = false }) => {
                     </div>
                 ))}
             </div>
-            </>
-            )}
+            </>)}
         </div>
     );
 };

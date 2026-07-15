@@ -194,31 +194,6 @@ service cloud.firestore {
     match /analytics_sessions/{docId} {
       allow read: if isStrongArtisan();
       allow write: if false; // Cloud Functions only
-
-      match /{subCollection}/{subDocId} {
-        allow read: if isStrongArtisan();
-        allow write: if false;
-      }
-    }
-
-    match /analytics_item_daily/{docId} {
-      allow read: if isStrongArtisan();
-      allow write: if false;
-    }
-
-    match /analytics_page_daily/{docId} {
-      allow read: if isStrongArtisan();
-      allow write: if false;
-    }
-
-    match /analytics_transition_daily/{docId} {
-      allow read: if isStrongArtisan();
-      allow write: if false;
-    }
-
-    match /dashboard_stats/{docId} {
-      allow read: if isStrongArtisan();
-      allow write: if false;
     }
 
     match /sales_stats_daily/{docId} {

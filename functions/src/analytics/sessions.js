@@ -1,411 +1,266 @@
 /**
  * ANALYTICS: Sessions en direct
  *
- * Structure v2:
- * - analytics_sessions/{sessionId}        => doc résumé léger
- * - analytics_sessions/{sessionId}/journey_steps/{stepId}
- * - analytics_sessions/{sessionId}/custom_events/{eventId}
- *
- * Compatibilité:
- * - les anciens docs avec journey/events en tableau restent lisibles
- * - les nouveaux writes n'alourdissent plus le doc racine
+ * - initLiveSession: Crée une session avec geo-IP + détection admin IP
+ * - syncSession: Met à jour le parcours
+ * - syncSessionBeacon: Endpoint fiable pour fermeture de page
+ * - deleteSession / clearAllSessions: Admin cleanup
  */
-const functions = require('firebase-functions/v1');
+const { functions, regionalFunctions } = require('../../helpers/runtime');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 const { isAdminIP } = require('./adminIP');
+const { getClientIpInfo, isPrivateOrLocalIp } = require('./ip');
 const { checkRecentActiveStrongAdmin } = require('../../helpers/security');
-const { regionalFunctions } = require('../../helpers/runtime');
 const {
-    ANALYTICS_DETAIL_RETENTION_DAYS,
-    ANALYTICS_SESSION_RETENTION_DAYS,
-    timestampFromNow,
-    getDateKeyFromMillis
-} = require('./constants');
+    canResumeSession,
+    hashSyncToken,
+    isValidSyncToken,
+    toMillis
+} = require('./sessionSecurity');
 
 const db = admin.firestore();
-const GEO_CACHE_MS = 24 * 60 * 60 * 1000;
-const GEO_CACHE_MAX = 1000;
-const MAX_JOURNEY_CHUNK = 24;
-const MAX_EVENT_CHUNK = 24;
-const MAX_ANALYTICS_PAYLOAD_BYTES = 24 * 1024;
-const geoCache = new Map();
+const MAX_SESSION_DURATION_SECONDS = 24 * 60 * 60;
+const MAX_JOURNEY_CHUNK = 25;
 
-function byteLength(value) {
-    return Buffer.byteLength(JSON.stringify(value || {}), 'utf8');
-}
+const createSyncToken = () => crypto.randomBytes(32).toString('base64url');
 
-function assertAnalyticsPayloadSize(payload) {
-    if (byteLength(payload) > MAX_ANALYTICS_PAYLOAD_BYTES) {
-        throw new functions.https.HttpsError('invalid-argument', 'Payload analytics trop volumineux.');
-    }
-}
+const clampDuration = (value) => {
+    const duration = Number(value);
+    if (!Number.isFinite(duration)) return 0;
+    return Math.max(0, Math.min(MAX_SESSION_DURATION_SECONDS, Math.round(duration)));
+};
 
-function getRequestIp(requestLike = {}) {
-    const rawIp = requestLike.headers?.['x-forwarded-for'] || requestLike.ip || requestLike.connection?.remoteAddress;
-    return rawIp ? String(rawIp).split(',')[0].trim() : 'Unknown';
-}
+const clampJourneyTimestampMs = (value) => {
+    const ms = Number(value);
+    if (!Number.isFinite(ms) || ms <= 0) return null;
 
-async function assertAnalyticsRateLimit(kind, requestLike, maxPerMinute = 120) {
-    const ip = getRequestIp(requestLike);
-    const key = crypto.createHash('sha1').update(`${kind}:${ip}`).digest('hex').slice(0, 24);
-    const ref = db.doc(`sys_ratelimit/analytics_${key}`);
     const now = Date.now();
+    const min = now - (366 * 24 * 60 * 60 * 1000);
+    const max = now + (5 * 60 * 1000);
+    if (ms < min || ms > max) return null;
 
-    await db.runTransaction(async (tx) => {
-        const snap = await tx.get(ref);
-        const state = snap.exists ? snap.data() : {};
-        const resetAt = Number(state.resetAt || 0);
-        const count = now < resetAt ? Number(state.count || 0) : 0;
-        if (count >= maxPerMinute) {
-            throw new functions.https.HttpsError('resource-exhausted', 'Trop de requetes analytics.');
-        }
-        tx.set(ref, {
-            count: count + 1,
-            resetAt: now < resetAt ? resetAt : now + 60 * 1000,
-            expireAt: timestampFromNow(ANALYTICS_DETAIL_RETENTION_DAYS)
-        }, { merge: true });
+    return Math.round(ms);
+};
+
+const sanitizeString = (value, maxLength = 160) => {
+    if (value === null || value === undefined) return null;
+    return String(value).slice(0, maxLength);
+};
+
+const tryResumeSession = async ({ sessionId, syncToken, authUid, device, browser, os }) => {
+    const cleanSessionId = sanitizeString(sessionId, 160);
+    if (!cleanSessionId || !syncToken) return null;
+
+    const sessionRef = db.collection('analytics_sessions').doc(cleanSessionId);
+    const sessionSnap = await sessionRef.get();
+    if (!sessionSnap.exists) return null;
+
+    const sessionData = sessionSnap.data();
+    const now = Date.now();
+    if (!canResumeSession(sessionData, { authUid, syncToken, now })) return null;
+
+    await sessionRef.update({
+        lastActivityAt: admin.firestore.FieldValue.serverTimestamp(),
+        sessionActive: true,
+        device: device || sessionData.device || 'Unknown',
+        browser: browser || sessionData.browser || 'Unknown',
+        os: os || sessionData.os || 'Unknown',
+        resumedAt: admin.firestore.FieldValue.serverTimestamp(),
+        analyticsVersion: 3
     });
-}
-
-function computeVisitorKey(ip, userAgent) {
-    if (!ip) return null;
-    const raw = `${ip}|${userAgent || ''}`;
-    return crypto.createHash('sha1').update(raw).digest('hex').slice(0, 16);
-}
-
-function computeChunkDocId(kind, payload) {
-    const raw = JSON.stringify([
-        kind,
-        payload.sessionId,
-        payload.timestamp || 0,
-        payload.pageKey || payload.page || '',
-        payload.itemId || payload.context?.itemId || '',
-        payload.action || ''
-    ]);
-
-    return crypto.createHash('sha1').update(raw).digest('hex');
-}
-
-function parseLegacyItemId(value) {
-    if (!value || typeof value !== 'string') return null;
-    return value.split(' | ')[0].trim();
-}
-
-function normalizeJourneyStep(step, sessionMeta) {
-    const timestamp = Number(step?.timestamp) || Date.now();
-    const itemId = step?.context?.itemId || parseLegacyItemId(step?.itemId);
 
     return {
-        ...step,
-        sessionId: sessionMeta.sessionId,
-        userId: sessionMeta.userId,
-        visitorKey: sessionMeta.visitorKey,
-        timestamp,
-        pageKey: step?.pageKey || step?.page || 'unknown',
-        itemId,
-        dateKey: getDateKeyFromMillis(timestamp),
-        expireAt: timestampFromNow(ANALYTICS_DETAIL_RETENTION_DAYS)
+        success: true,
+        resumed: true,
+        sessionId: sessionSnap.id,
+        syncToken,
+        ipDetected: Boolean(sessionData.ipMeta?.detected || sessionData.ip),
+        startedAtMs: toMillis(sessionData.startedAt) || now
     };
-}
+};
 
-function normalizeCustomEvent(event, sessionMeta) {
-    const timestamp = Number(event?.timestamp) || Date.now();
+const sanitizeJourney = (journey) => {
+    if (!Array.isArray(journey)) return [];
 
-    return {
-        ...event,
-        sessionId: sessionMeta.sessionId,
-        userId: sessionMeta.userId,
-        visitorKey: sessionMeta.visitorKey,
-        timestamp,
-        dateKey: getDateKeyFromMillis(timestamp),
-        expireAt: timestampFromNow(ANALYTICS_DETAIL_RETENTION_DAYS)
-    };
-}
+    return journey
+        .slice(0, MAX_JOURNEY_CHUNK)
+        .map((step) => {
+            const timestampMs = clampJourneyTimestampMs(step?.timestampMs);
+            return {
+                page: sanitizeString(step?.page, 80) || 'unknown',
+                itemId: sanitizeString(step?.itemId, 255),
+                time: sanitizeString(step?.time, 40),
+                timeZone: sanitizeString(step?.timeZone, 80),
+                duration: clampDuration(step?.duration),
+                ...(timestampMs ? { timestampMs } : {})
+            };
+        })
+        .filter(step => step.page);
+};
 
-async function getGeoFromIp(ip) {
-    if (!ip || ip === 'Unknown' || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.')) return null;
-    const cached = geoCache.get(ip);
-    if (cached && cached.expiresAt > Date.now()) return cached.value;
-
+// Géolocalisation simple via IP (ip-api.com — gratuit, pas de clé API requise)
+const getGeoFromIp = async (ip) => {
+    if (!ip || isPrivateOrLocalIp(ip)) return null;
     try {
         const response = await fetch(`http://ip-api.com/json/${ip}?fields=country,regionName,city,status`);
         const data = await response.json();
         if (data.status === 'success') {
-            const value = {
+            return {
                 country: data.country || 'Unknown',
                 region: data.regionName || 'Unknown',
                 city: data.city || 'Unknown'
             };
-            geoCache.set(ip, { value, expiresAt: Date.now() + GEO_CACHE_MS });
-            if (geoCache.size > GEO_CACHE_MAX) {
-                geoCache.delete(geoCache.keys().next().value);
-            }
-            return value;
         }
         return null;
     } catch (e) {
-        console.error('GeoLoc Error:', e);
+        console.error("GeoLoc Error:", e);
         return null;
     }
-}
+};
 
-function getChunks(journey = [], events = []) {
-    return {
-        journeyChunk: Array.isArray(journey) ? journey.slice(-MAX_JOURNEY_CHUNK) : [],
-        eventChunk: Array.isArray(events) ? events.slice(-MAX_EVENT_CHUNK) : []
-    };
-}
-
-function fallbackSessionMeta(sessionId, fallbackMeta = {}) {
-    return {
-        sessionId,
-        userId: fallbackMeta.userId || null,
-        visitorKey: fallbackMeta.visitorKey || null,
-        lastJourneyPreview: Array.isArray(fallbackMeta.lastJourneyPreview) ? fallbackMeta.lastJourneyPreview.slice(-16) : [],
-        lastEventPreview: Array.isArray(fallbackMeta.lastEventPreview) ? fallbackMeta.lastEventPreview.slice(-16) : [],
-        clientManagedPreview: Boolean(fallbackMeta.clientManagedPreview)
-    };
-}
-
-async function getSessionMetaForPayload(sessionId, fallbackMeta, journeyChunk, eventChunk) {
-    if (journeyChunk.length === 0 && eventChunk.length === 0) {
-        return fallbackSessionMeta(sessionId, fallbackMeta);
+exports.initLiveSession = regionalFunctions().https.onCall(async (data = {}, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'Auth required');
     }
 
-    const hasClientPreview = Array.isArray(fallbackMeta.lastJourneyPreview) || Array.isArray(fallbackMeta.lastEventPreview);
-    if (fallbackMeta.visitorKey && hasClientPreview) {
-        return fallbackSessionMeta(sessionId, {
-            ...fallbackMeta,
-            clientManagedPreview: true
-        });
-    }
-
-    return getSessionMeta(sessionId, fallbackMeta);
-}
-
-async function persistSessionChunks({ sessionId, sessionMeta, journey = [], events = [], duration, pageViews, sessionActive, presenceOnly = false }) {
-    const sessionRef = db.collection('analytics_sessions').doc(sessionId);
-    const batch = db.batch();
-
-    const { journeyChunk, eventChunk } = getChunks(journey, events);
-
-    for (const step of journeyChunk) {
-        const normalized = normalizeJourneyStep(step, sessionMeta);
-        const docId = computeChunkDocId('journey', normalized);
-        batch.set(sessionRef.collection('journey_steps').doc(docId), normalized, { merge: true });
-    }
-
-    for (const event of eventChunk) {
-        const normalized = normalizeCustomEvent(event, sessionMeta);
-        const docId = computeChunkDocId('event', normalized);
-        batch.set(sessionRef.collection('custom_events').doc(docId), normalized, { merge: true });
-    }
-
-    const rootUpdates = {
-        lastActivityAt: admin.firestore.FieldValue.serverTimestamp(),
-        duration: Number(duration) || 0,
-        sessionActive: sessionActive !== undefined ? sessionActive : true,
-        expireAt: timestampFromNow(ANALYTICS_SESSION_RETENTION_DAYS)
-    };
-
-    if (presenceOnly) {
-        rootUpdates.lastPresenceHeartbeatAt = admin.firestore.FieldValue.serverTimestamp();
-    }
-
-    if (typeof pageViews === 'number') {
-        rootUpdates.pageViews = pageViews;
-    }
-
-    if (journeyChunk.length > 0) {
-        const lastStep = normalizeJourneyStep(journeyChunk[journeyChunk.length - 1], sessionMeta);
-        const previousPreview = Array.isArray(sessionMeta.lastJourneyPreview) ? sessionMeta.lastJourneyPreview : [];
-        const nextPreview = sessionMeta.clientManagedPreview
-            ? previousPreview.slice(-16)
-            : [...previousPreview, ...journeyChunk].slice(-16);
-        rootUpdates.lastStep = {
-            pageKey: lastStep.pageKey,
-            pageLabel: lastStep.pageLabel || lastStep.pageKey || 'unknown',
-            itemId: lastStep.itemId || null,
-            timestamp: lastStep.timestamp,
-            context: lastStep.context || {}
-        };
-        rootUpdates.lastJourneyPreview = nextPreview;
-    }
-
-    if (eventChunk.length > 0) {
-        const previousEventPreview = Array.isArray(sessionMeta.lastEventPreview) ? sessionMeta.lastEventPreview : [];
-        const nextEventPreview = sessionMeta.clientManagedPreview
-            ? previousEventPreview.slice(-16)
-            : [...previousEventPreview, ...eventChunk].slice(-16);
-        const lastEvent = normalizeCustomEvent(eventChunk[eventChunk.length - 1], sessionMeta);
-        rootUpdates.lastEvent = {
-            action: lastEvent.action || 'unknown',
-            itemId: lastEvent.itemId || null,
-            itemName: lastEvent.itemName || null,
-            timestamp: lastEvent.timestamp
-        };
-        rootUpdates.lastEventPreview = nextEventPreview;
-        rootUpdates.lastEventAt = admin.firestore.FieldValue.serverTimestamp();
-    }
-
-    batch.set(sessionRef, rootUpdates, { merge: true });
-    await batch.commit();
-}
-
-async function getSessionMeta(sessionId, fallbackMeta = {}) {
-    const sessionSnap = await db.collection('analytics_sessions').doc(sessionId).get();
-    const sessionData = sessionSnap.exists ? sessionSnap.data() : {};
-
-    return {
-        sessionId,
-        userId: fallbackMeta.userId || sessionData.userId || null,
-        visitorKey: fallbackMeta.visitorKey || sessionData.visitorKey || null,
-        lastJourneyPreview: sessionData.lastJourneyPreview || [],
-        lastEventPreview: sessionData.lastEventPreview || []
-    };
-}
-
-async function deleteSessionRecursively(sessionId) {
-    const sessionRef = db.collection('analytics_sessions').doc(sessionId);
-    await db.recursiveDelete(sessionRef);
-}
-
-exports.initLiveSession = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
-    assertAnalyticsPayloadSize(data);
-    await assertAnalyticsRateLimit('init', context.rawRequest, 60);
-    const ip = getRequestIp(context.rawRequest);
+    const ipInfo = getClientIpInfo(context.rawRequest);
+    const ip = ipInfo.ip;
     const userAgent = context.rawRequest.headers['user-agent'] || 'Unknown';
-    const { userId, email, type, device, browser, os, entryPageKey } = data;
+    const { userId, email, type, device, browser, os, resumeSessionId, resumeSyncToken } = data;
+    const authUid = context.auth.uid || userId || 'unknown';
+    const authEmail = context.auth.token.email || email || null;
+    const authProvider = context.auth.token.firebase?.sign_in_provider || 'unknown';
 
-    const geo = await getGeoFromIp(ip);
+    const resumedSession = await tryResumeSession({
+        sessionId: resumeSessionId,
+        syncToken: resumeSyncToken,
+        authUid,
+        device,
+        browser,
+        os
+    });
+    if (resumedSession) return resumedSession;
+
+    const syncToken = createSyncToken();
+
+    let geo = await getGeoFromIp(ip);
+
+    // Vérifier si l'IP appartient à un admin
     const isFromAdminIP = await isAdminIP(ip);
+
+    // Marquer la session comme admin si type admin ou IP admin
     const sessionType = (type === 'admin' || isFromAdminIP) ? 'admin' : (type || 'anonymous');
-    const visitorKey = computeVisitorKey(ip, userAgent);
 
     const sessionData = {
-        schemaVersion: 2,
-        userId: userId || 'unknown',
-        email: email || null,
+        userId: authUid,
+        email: authEmail,
         type: sessionType,
-        ip,
-        visitorKey,
+        ip: ip,
+        ipMeta: {
+            source: ipInfo.source,
+            version: ipInfo.version,
+            detected: ipInfo.detected,
+            usable: ipInfo.usable,
+            public: ipInfo.public
+        },
+        authProvider,
+        visitorIdentity: {
+            source: authUid && authUid !== 'unknown'
+                ? (authProvider === 'anonymous' ? 'anonymous_uid' : 'auth_uid')
+                : (ipInfo.usable ? 'ip' : 'session'),
+            hasAuthUid: Boolean(authUid && authUid !== 'unknown'),
+            hasServerIp: ipInfo.usable
+        },
         startedAt: admin.firestore.FieldValue.serverTimestamp(),
         lastActivityAt: admin.firestore.FieldValue.serverTimestamp(),
         duration: 0,
-        pageViews: 0,
-        entryPageKey: entryPageKey || 'unknown',
         device: device || 'Unknown',
         browser: browser || 'Unknown',
         os: os || 'Unknown',
-        userAgent,
+        userAgent: userAgent,
         geo: geo || { country: 'Unknown', city: 'Unknown', region: 'Unknown' },
         journey: [],
-        events: [],
-        lastJourneyPreview: [],
-        lastEventPreview: [],
         sessionActive: true,
         adminIPDetected: isFromAdminIP && type !== 'admin',
-        expireAt: timestampFromNow(ANALYTICS_SESSION_RETENTION_DAYS)
+        analyticsVersion: 3,
+        syncTokenHash: hashSyncToken(syncToken)
     };
 
     try {
         const sessionRef = await db.collection('analytics_sessions').add(sessionData);
-        return { success: true, sessionId: sessionRef.id, visitorKey };
+        return {
+            success: true,
+            resumed: false,
+            sessionId: sessionRef.id,
+            syncToken,
+            ipDetected: ipInfo.detected,
+            startedAtMs: Date.now()
+        };
     } catch (error) {
-        console.error('Init Error:', error);
+        console.error("Init Error:", error);
         throw new functions.https.HttpsError('internal', 'Init failed');
     }
 });
 
-exports.syncSession = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
-    assertAnalyticsPayloadSize(data);
-    await assertAnalyticsRateLimit('sync', context.rawRequest, 180);
-    const {
-        sessionId,
-        journey,
-        events,
-        duration,
-        pageViews,
-        sessionActive,
-        userId,
-        visitorKey,
-        presenceOnly,
-        lastJourneyPreview,
-        lastEventPreview
-    } = data;
+exports.syncSession = regionalFunctions().https.onCall(async (data = {}, context) => {
+    if (!context.auth) return { success: false, unauthenticated: true };
+
+    const { sessionId, journey, duration, sessionActive, syncToken } = data;
     if (!sessionId) return { success: false };
 
     try {
-        const { journeyChunk, eventChunk } = getChunks(journey, events);
-        const hasData = journeyChunk.length > 0 || eventChunk.length > 0;
+        const sessionRef = db.collection('analytics_sessions').doc(sessionId);
+        const sessionSnap = await sessionRef.get();
 
-        if (!hasData && sessionActive !== false && !presenceOnly) {
-            return { success: true, skipped: true };
+        if (!sessionSnap.exists) {
+            console.warn("Sync skipped: session not found", { sessionId });
+            return { success: true, missing: true };
         }
 
-        const sessionMeta = await getSessionMetaForPayload(
-            sessionId,
-            { userId, visitorKey, lastJourneyPreview, lastEventPreview },
-            journeyChunk,
-            eventChunk
-        );
-        await persistSessionChunks({
-            sessionId,
-            sessionMeta,
-            journey: journeyChunk,
-            events: eventChunk,
-            duration,
-            pageViews,
-            sessionActive,
-            presenceOnly: Boolean(presenceOnly)
-        });
+        const sessionData = sessionSnap.data();
+        if (!isValidSyncToken(sessionData, syncToken)) {
+            console.warn("Sync rejected: invalid token", { sessionId });
+            return { success: false, invalidToken: true };
+        }
+
+        const updates = {
+            lastActivityAt: admin.firestore.FieldValue.serverTimestamp(),
+            duration: clampDuration(duration),
+            sessionActive: sessionActive !== undefined ? sessionActive : true
+        };
+
+        const cleanJourney = sanitizeJourney(journey);
+        if (cleanJourney.length > 0) {
+            updates.journey = admin.firestore.FieldValue.arrayUnion(...cleanJourney);
+        }
+
+        await sessionRef.update(updates);
         return { success: true };
     } catch (error) {
-        console.error('Sync Error:', error);
+        console.error("Sync Error:", error);
         return { success: false };
     }
 });
 
 exports.syncSessionBeacon = regionalFunctions().https.onRequest(async (req, res) => {
     const allowedOrigins = [
-        ...String(process.env.PUBLIC_ALLOWED_ORIGINS || '')
-            .split(',')
-            .map((origin) => origin.trim())
-            .filter(Boolean),
         'https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app',
-        'https://secondevienextjsssr.web.app',
-        'https://secondevienextjsssr.firebaseapp.com',
-        'http://localhost:5173',
         'http://localhost:3000'
     ];
 
     const origin = req.headers.origin;
     if (allowedOrigins.includes(origin)) {
         res.set('Access-Control-Allow-Origin', origin);
-    } else if (origin) {
-        res.status(403).send('Forbidden origin');
-        return;
     } else {
-        res.status(403).send('Missing origin');
-        return;
+        res.set('Access-Control-Allow-Origin', allowedOrigins[0]);
     }
     res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.set('Access-Control-Allow-Headers', 'Content-Type');
 
-    if (req.method === 'OPTIONS') {
-        res.status(204).send('');
-        return;
-    }
+    if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
     try {
-        const rawSize = req.rawBody ? req.rawBody.length : Buffer.byteLength(JSON.stringify(req.body || {}), 'utf8');
-        if (rawSize > MAX_ANALYTICS_PAYLOAD_BYTES) {
-            res.status(413).send('Payload too large');
-            return;
-        }
-        await assertAnalyticsRateLimit('beacon', req, 180);
-
         let payload;
         if (typeof req.body === 'string') {
             payload = JSON.parse(req.body);
@@ -415,55 +270,45 @@ exports.syncSessionBeacon = regionalFunctions().https.onRequest(async (req, res)
             payload = req.body;
         }
 
-        const ip = getRequestIp(req);
-        const userAgent = req.headers['user-agent'] || 'Unknown';
-
-        const {
-            sessionId,
-            journey,
-            events,
-            duration,
-            pageViews,
-            sessionActive,
-            presenceOnly
-        } = payload;
+        payload = payload || {};
+        const { sessionId, journey, duration, sessionActive, syncToken } = payload;
 
         if (!sessionId) {
             res.status(400).send('Missing session ID');
             return;
         }
 
-        const { journeyChunk, eventChunk } = getChunks(journey, events);
-        const sessionMeta = await getSessionMetaForPayload(
-            sessionId,
-            {
-                userId: payload.userId || null,
-                visitorKey: payload.visitorKey || computeVisitorKey(ip, userAgent),
-                lastJourneyPreview: payload.lastJourneyPreview,
-                lastEventPreview: payload.lastEventPreview
-            },
-            journeyChunk,
-            eventChunk
-        );
+        const sessionRef = db.collection('analytics_sessions').doc(sessionId);
+        const sessionSnap = await sessionRef.get();
 
-        await persistSessionChunks({
-            sessionId,
-            sessionMeta,
-            journey: journeyChunk,
-            events: eventChunk,
-            duration,
-            pageViews,
-            sessionActive,
-            presenceOnly: Boolean(presenceOnly)
-        });
-
-        res.status(200).send('Session synced via beacon');
-    } catch (error) {
-        if (error instanceof functions.https.HttpsError && error.code === 'resource-exhausted') {
-            res.status(429).send('Too many analytics requests');
+        if (!sessionSnap.exists) {
+            console.warn("Beacon sync skipped: session not found", { sessionId });
+            res.status(204).send('');
             return;
         }
-        console.error('Beacon Sync Error:', error);
+
+        const sessionData = sessionSnap.data();
+        if (!isValidSyncToken(sessionData, syncToken)) {
+            console.warn("Beacon sync rejected: invalid token", { sessionId });
+            res.status(403).send('Invalid session token');
+            return;
+        }
+
+        const updates = {
+            lastActivityAt: admin.firestore.FieldValue.serverTimestamp(),
+            duration: clampDuration(duration),
+            sessionActive: sessionActive !== undefined ? sessionActive : false
+        };
+
+        const cleanJourney = sanitizeJourney(journey);
+        if (cleanJourney.length > 0) {
+            updates.journey = admin.firestore.FieldValue.arrayUnion(...cleanJourney);
+        }
+
+        await sessionRef.update(updates);
+        res.status(200).send('Session synced via beacon');
+    } catch (error) {
+        console.error("Beacon Sync Error:", error);
         res.status(500).send('Beacon sync failed');
     }
 });
@@ -472,99 +317,56 @@ exports.deleteSession = regionalFunctions().https.onCall(async (data, context) =
     await checkRecentActiveStrongAdmin(context);
     const { sessionId } = data;
     if (!sessionId) throw new functions.https.HttpsError('invalid-argument', 'Missing sessionId');
-    await deleteSessionRecursively(sessionId);
+    await db.collection('analytics_sessions').doc(sessionId).delete();
     return { success: true };
 });
 
 exports.clearAllSessions = regionalFunctions().https.onCall(async (data, context) => {
     await checkRecentActiveStrongAdmin(context);
-
     try {
         const sessionsRef = db.collection('analytics_sessions');
         let totalDeleted = 0;
 
         while (true) {
-            const snapshot = await sessionsRef.limit(50).get();
+            const snapshot = await sessionsRef.limit(500).get();
             if (snapshot.empty) break;
 
-            for (const sessionDoc of snapshot.docs) {
-                await deleteSessionRecursively(sessionDoc.id);
-                totalDeleted += 1;
-            }
+            const batch = db.batch();
+            snapshot.docs.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            totalDeleted += snapshot.size;
 
-            if (snapshot.size < 50) break;
+            if (snapshot.size < 500) break;
         }
 
         return { success: true, count: totalDeleted };
     } catch (error) {
-        console.error('Clear All Error:', error);
+        console.error("Clear All Error:", error);
         throw new functions.https.HttpsError('internal', 'Clear failed');
     }
 });
 
-exports.clearAllAnalytics = exports.clearAllSessions;
+exports.clearAllAffiliateClicks = regionalFunctions().https.onCall(async (data, context) => {
+    await checkRecentActiveStrongAdmin(context);
+    try {
+        const ref = db.collection('affiliate_clicks');
+        let totalDeleted = 0;
 
-exports.cleanupExpiredAnalytics = functions.pubsub.schedule('every 24 hours').onRun(async () => {
-    const now = admin.firestore.Timestamp.now();
-
-    async function purgeFlatCollection(path, batchSize = 200) {
         while (true) {
-            const snapshot = await db.collection(path)
-                .where('expireAt', '<=', now)
-                .limit(batchSize)
-                .get();
-
+            const snapshot = await ref.limit(500).get();
             if (snapshot.empty) break;
 
             const batch = db.batch();
-            snapshot.docs.forEach((docSnap) => batch.delete(docSnap.ref));
+            snapshot.docs.forEach(doc => batch.delete(doc.ref));
             await batch.commit();
+            totalDeleted += snapshot.size;
 
-            if (snapshot.size < batchSize) break;
-        }
-    }
-
-    async function purgeCollectionGroup(collectionId, batchSize = 200) {
-        while (true) {
-            const snapshot = await db.collectionGroup(collectionId)
-                .where('expireAt', '<=', now)
-                .limit(batchSize)
-                .get();
-
-            if (snapshot.empty) break;
-
-            const batch = db.batch();
-            snapshot.docs.forEach((docSnap) => batch.delete(docSnap.ref));
-            await batch.commit();
-
-            if (snapshot.size < batchSize) break;
-        }
-    }
-
-    while (true) {
-        const expiredSessions = await db.collection('analytics_sessions')
-            .where('expireAt', '<=', now)
-            .limit(25)
-            .get();
-
-        if (expiredSessions.empty) break;
-
-        for (const sessionDoc of expiredSessions.docs) {
-            await deleteSessionRecursively(sessionDoc.id);
+            if (snapshot.size < 500) break;
         }
 
-        if (expiredSessions.size < 25) break;
+        return { success: true, count: totalDeleted };
+    } catch (error) {
+        console.error("Clear All Affiliate Clicks Error:", error);
+        throw new functions.https.HttpsError('internal', 'Clear failed');
     }
-
-    await purgeFlatCollection('analytics_item_daily');
-    await purgeFlatCollection('analytics_page_daily');
-    await purgeFlatCollection('analytics_transition_daily');
-    await purgeFlatCollection('analytics_unique_markers');
-    await purgeFlatCollection('sales_stats_daily');
-    await purgeFlatCollection('sys_ratelimit');
-    await purgeFlatCollection('sys_idempotency');
-    await purgeCollectionGroup('journey_steps');
-    await purgeCollectionGroup('custom_events');
-
-    return null;
 });

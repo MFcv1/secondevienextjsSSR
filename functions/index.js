@@ -76,10 +76,9 @@ exports.sendTestEmail = sendTestEmail;
 exports.sendRefundStatusEmailAdmin = sendRefundStatusEmailAdmin;
 
 // ── ANALYTICS ────────────────────────────────────────────
-const { initLiveSession, syncSession, syncSessionBeacon, deleteSession, clearAllSessions, clearAllAnalytics, cleanupExpiredAnalytics } = require('./src/analytics/sessions');
+const { initLiveSession, syncSession, syncSessionBeacon, deleteSession, clearAllSessions } = require('./src/analytics/sessions');
 const { trackAdminIP } = require('./src/analytics/adminIP');
 const { updateUserSessions } = require('./src/analytics/updateUserSessions');
-const { onJourneyStepCreated, onCustomEventCreated } = require('./src/analytics/rollups');
 const { onOrderStatsWrite } = require('./src/commerce/orderStats');
 
 exports.initLiveSession = initLiveSession;
@@ -87,12 +86,8 @@ exports.syncSession = syncSession;
 exports.syncSessionBeacon = syncSessionBeacon;
 exports.deleteSession = deleteSession;
 exports.clearAllSessions = clearAllSessions;
-exports.clearAllAnalytics = clearAllAnalytics; // alias — matche l'appel client
-exports.cleanupExpiredAnalytics = cleanupExpiredAnalytics;
 exports.trackAdminIP = trackAdminIP;
 exports.updateUserSessions = updateUserSessions;
-exports.onJourneyStepCreated = onJourneyStepCreated;
-exports.onCustomEventCreated = onCustomEventCreated;
 exports.onOrderStatsWrite = onOrderStatsWrite;
 
 // ── MAINTENANCE ──────────────────────────────────────────

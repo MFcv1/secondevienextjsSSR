@@ -24,13 +24,14 @@ export const toAnalyticsMillis = (value) => {
     const parsed = new Date(value).getTime();
     return Number.isFinite(parsed) ? parsed : 0;
 };
-
 export const normalizeAnalyticsValue = (value) => {
     if (value === null || value === undefined) return null;
     const normalized = String(value).trim();
     if (!normalized || normalized.toLowerCase() === 'unknown') return null;
     return normalized;
 };
+
+export const isUsableAnalyticsIp = (ip) => Boolean(normalizeAnalyticsValue(ip));
 
 export const getIpVisitorKey = (session) => {
     const ip = normalizeAnalyticsValue(session?.ip);
@@ -39,7 +40,7 @@ export const getIpVisitorKey = (session) => {
 
 export const getVisitorIdentity = (session) => {
     const userId = normalizeAnalyticsValue(session?.userId);
-    if (userId && userId.toLowerCase() !== 'anonymous') {
+    if (userId && userId.toLowerCase() !== 'unknown') {
         return {
             key: `uid:${userId}`,
             source: session?.authProvider === 'anonymous' || session?.type === 'anonymous'
@@ -47,9 +48,6 @@ export const getVisitorIdentity = (session) => {
                 : 'auth_uid'
         };
     }
-
-    const visitorKey = normalizeAnalyticsValue(session?.visitorKey);
-    if (visitorKey) return { key: `vk:${visitorKey}`, source: 'visitor_key' };
 
     const ipKey = getIpVisitorKey(session);
     if (ipKey) return { key: ipKey, source: 'ip' };
@@ -135,15 +133,121 @@ export const getFilteredTrafficSessions = (sessions = [], filterId = '1j', optio
     });
 };
 
-const getSessionJourneyLength = (session) => {
-    if (typeof session?.pageViews === 'number') return session.pageViews;
-    return Array.isArray(session?.journey) ? session.journey.length : 0;
+export const maskAnalyticsIp = (ip) => {
+    const value = normalizeAnalyticsValue(ip);
+    if (!value) return 'IP inconnue';
+
+    if (value.includes(':')) {
+        return `${value.split(':').slice(0, 4).join(':')}:...`;
+    }
+
+    const parts = value.split('.');
+    if (parts.length === 4) return `${parts[0]}.${parts[1]}.x.x`;
+
+    return 'IP masquee';
 };
 
-const isValidTrafficSession = (session) => {
-    if (!session || session.type === 'admin') return false;
-    const duration = normalizeSessionDuration(session.duration);
-    return duration >= 5 && getSessionJourneyLength(session) >= 1;
+const getSessionLocationLabel = (session) => {
+    const city = normalizeAnalyticsValue(session?.geo?.city);
+    if (!city) return 'Localisation inconnue';
+
+    const region = normalizeAnalyticsValue(session?.geo?.region);
+    return region ? `${city}, ${region}` : city;
+};
+
+const getDayLabel = (dateObj, rawNow = Date.now()) => {
+    const dateKey = dateObj.toLocaleDateString('fr-FR');
+    const today = new Date(rawNow).toLocaleDateString('fr-FR');
+    const yesterday = new Date(rawNow - 86400000).toLocaleDateString('fr-FR');
+
+    if (dateKey === today) return "Aujourd'hui";
+    if (dateKey === yesterday) return 'Hier';
+    return dateKey;
+};
+
+const getSessionLastActivityMillis = (session) => (
+    toAnalyticsMillis(session?.lastActivityAt) || toAnalyticsMillis(session?.startedAt)
+);
+
+export const buildVisitorDayGroups = (sessions = [], options = {}) => {
+    const now = options.now || Date.now();
+    const activeWindowMs = options.activeWindowMs || 30000;
+    const dayMap = new Map();
+
+    sessions.forEach((session) => {
+        const started = toAnalyticsMillis(session.startedAt);
+        if (!started) return;
+
+        const dateObj = new Date(started);
+        const dateKey = dateObj.toLocaleDateString('fr-FR');
+        if (!dayMap.has(dateKey)) {
+            dayMap.set(dateKey, {
+                key: dateKey,
+                label: getDayLabel(dateObj, now),
+                timestamp: new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()).getTime(),
+                visitors: new Map()
+            });
+        }
+
+        const day = dayMap.get(dateKey);
+        const identity = getVisitorIdentity(session);
+        if (!day.visitors.has(identity.key)) {
+            day.visitors.set(identity.key, {
+                key: identity.key,
+                identitySource: identity.source,
+                sessions: []
+            });
+        }
+
+        day.visitors.get(identity.key).sessions.push(session);
+    });
+
+    return Array.from(dayMap.values())
+        .map((day) => ({
+            ...day,
+            visitors: Array.from(day.visitors.values())
+                .map((visitor) => {
+                    const sortedSessions = [...visitor.sessions].sort(
+                        (a, b) => toAnalyticsMillis(b.startedAt) - toAnalyticsMillis(a.startedAt)
+                    );
+                    const primarySession = sortedSessions[0] || {};
+                    const lastActivityAt = Math.max(...sortedSessions.map(getSessionLastActivityMillis));
+                    const firstStartedAt = Math.min(...sortedSessions.map(session => toAnalyticsMillis(session.startedAt)).filter(Boolean));
+                    const totalDuration = sortedSessions.reduce(
+                        (sum, session) => sum + normalizeSessionDuration(session.duration),
+                        0
+                    );
+                    const journeySteps = sortedSessions.reduce(
+                        (sum, session) => sum + (Array.isArray(session.journey) ? session.journey.length : 0),
+                        0
+                    );
+                    const isActive = sortedSessions.some((session) => {
+                        const lastActive = getSessionLastActivityMillis(session);
+                        return session.sessionActive !== false && lastActive && (now - lastActive) <= activeWindowMs;
+                    });
+
+                    return {
+                        ...visitor,
+                        sessions: sortedSessions,
+                        sessionCount: sortedSessions.length,
+                        totalDuration,
+                        journeySteps,
+                        firstStartedAt,
+                        lastActivityAt,
+                        isActive,
+                        locationLabel: getSessionLocationLabel(primarySession),
+                        deviceLabel: [primarySession.os, primarySession.browser].filter(Boolean).join(' - ') || 'Device inconnu',
+                        device: primarySession.device || 'Unknown',
+                        ipLabel: maskAnalyticsIp(primarySession.ip)
+                    };
+                })
+                .sort((a, b) => b.lastActivityAt - a.lastActivityAt),
+            sessionCount: Array.from(day.visitors.values()).reduce(
+                (sum, visitor) => sum + visitor.sessions.length,
+                0
+            )
+        }))
+        .sort((a, b) => b.timestamp - a.timestamp);
 };
 
 const formatSlotLabel = (time, filterId) => {
@@ -156,6 +260,22 @@ const formatSlotLabel = (time, filterId) => {
         return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
     }
     return d.toLocaleDateString('fr-FR', { month: '2-digit', year: 'numeric' });
+};
+
+const alignChartSlotStart = (time, step) => {
+    const d = new Date(time);
+    if (step < 60 * 60 * 1000) {
+        const minutesStep = Math.max(1, Math.round(step / 60000));
+        d.setMinutes(Math.floor(d.getMinutes() / minutesStep) * minutesStep, 0, 0);
+        return d.getTime();
+    }
+    if (step < 24 * 60 * 60 * 1000) {
+        const hoursStep = Math.max(1, Math.round(step / 3600000));
+        d.setHours(Math.floor(d.getHours() / hoursStep) * hoursStep, 0, 0, 0);
+        return d.getTime();
+    }
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
 };
 
 const getOldestStartedAt = (sessions) => {
@@ -171,15 +291,13 @@ export const buildAnalyticsStats = (sessions = [], filterId = '1j', options = {}
     const isFetchCapped = fetchedCount >= maxFetched;
     const isWindowComplete = !isFetchCapped || !coverageStartMs || coverageStartMs <= cutoff;
 
-    const realTraffic = getFilteredTrafficSessions(sessions, filterId, { now })
-        .filter(isValidTrafficSession);
+    const realTraffic = getFilteredTrafficSessions(sessions, filterId, { now });
 
     const visitorKeys = new Set();
     const ipKeys = new Set();
     const identitySourceCounts = {
         auth_uid: 0,
         anonymous_uid: 0,
-        visitor_key: 0,
         ip: 0,
         session: 0
     };
@@ -199,14 +317,18 @@ export const buildAnalyticsStats = (sessions = [], filterId = '1j', options = {}
         else missingIpSessions += 1;
 
         const duration = normalizeSessionDuration(session.duration);
+        const journeyLength = Array.isArray(session.journey) ? session.journey.length : 0;
         totalDuration += duration;
-        if (getSessionJourneyLength(session) <= 1 || duration < 10) bounces += 1;
+        if (journeyLength <= 1 || duration < 10) bounces += 1;
         if (session.device === 'Mobile') mobiles += 1;
     });
 
+    const slotStart = alignChartSlotStart(cutoff, step);
+    const slotEnd = alignChartSlotStart(now - 1, step);
     const timeline = [];
-    for (let t = cutoff; t < now; t += step) {
-        timeline.push({
+    const slotMap = new Map();
+    for (let t = slotStart; t <= slotEnd; t += step) {
+        const slot = {
             timestamp: t,
             name: formatSlotLabel(t, filterId),
             visites: 0,
@@ -214,15 +336,16 @@ export const buildAnalyticsStats = (sessions = [], filterId = '1j', options = {}
             ips: 0,
             visitorKeys: new Set(),
             ipKeys: new Set()
-        });
+        };
+        timeline.push(slot);
+        slotMap.set(t, slot);
     }
 
     realTraffic.forEach((session) => {
         const started = toAnalyticsMillis(session.startedAt);
         if (!started) return;
 
-        const slotIdx = Math.floor((started - cutoff) / step);
-        const slot = timeline[slotIdx];
+        const slot = slotMap.get(alignChartSlotStart(started, step));
         if (!slot) return;
 
         slot.sessions += 1;
@@ -283,7 +406,7 @@ export const buildAnalyticsStats = (sessions = [], filterId = '1j', options = {}
             missingIpSessions,
             identitySourceCounts,
             visitorConfidence,
-            method: 'UID Firebase client/anonyme, puis IUD navigateur, puis IP serveur, puis session si IP absente.'
+            method: 'UID Firebase client/anonyme, puis IP serveur, puis session si IP absente.'
         }
     };
 };

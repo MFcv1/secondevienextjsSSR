@@ -6,6 +6,7 @@ import {
 } from 'next/font/google';
 import RouteTransitionIsland from './RouteTransitionIsland';
 import SupportChatLauncherIsland from '../src/kit/marketplace/SupportChatLauncherIsland';
+import AnalyticsCollectorIsland from './AnalyticsCollectorIsland';
 import { publicEnv } from '../src/lib/server/env';
 
 const siteName = publicEnv.siteName;
@@ -107,6 +108,7 @@ export default function RootLayout({ children }) {
         {children}
         <RouteTransitionIsland />
         <SupportChatLauncherIsland />
+        <AnalyticsCollectorIsland />
       </body>
     </html>
   );

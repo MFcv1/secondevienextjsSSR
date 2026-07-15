@@ -73,7 +73,7 @@ export const useAuthState = () => useSyncExternalStore(
 );
 
 // Provider Component
-export const AuthProvider = ({ children, forceInitialize = false, deferUntilReady = true }) => {
+export const AuthProvider = ({ children, forceInitialize = false, deferUntilReady = true, ensureAnonymous = false }) => {
     const authState = useAuthState();
     const { user } = authState;
 
@@ -84,13 +84,23 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
     // until a persisted/redirected session exists or the user opens an auth route.
     useEffect(() => {
         let cancelled = false;
-        initializeAuthStore({ forceInitialize: shouldInitializeAuthOnMount(forceInitialize) }).catch((error) => {
-            if (!cancelled) {
-                console.error('Auth initialization error:', error);
-            }
-        });
+        initializeAuthStore({ forceInitialize: shouldInitializeAuthOnMount(forceInitialize || ensureAnonymous) })
+            .then(async () => {
+                if (!ensureAnonymous || cancelled) return;
+                const auth = await getFirebaseAuth();
+                if (typeof auth.authStateReady === 'function') await auth.authStateReady();
+                if (auth.currentUser || cancelled) return;
+                const authModule = await loadAuthModule();
+                const result = await authModule.signInAnonymously(auth);
+                if (!cancelled && result?.user) syncAuthStoreUser(result.user);
+            })
+            .catch((error) => {
+                if (!cancelled) {
+                    console.error('Auth initialization error:', error);
+                }
+            });
         return () => { cancelled = true; };
-    }, [forceInitialize]);
+    }, [forceInitialize, ensureAnonymous]);
 
     const syncSignedInUser = async (result) => {
         if (result?.user) {
@@ -134,6 +144,9 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
     const loginWithEmail = async (email, password) => {
         const { auth, authModule } = await getAuthRuntime();
         const result = await authModule.signInWithEmailAndPassword(auth, email, password);
+        getCallableFunction('updateUserSessions')
+            .then((updateUserSessions) => updateUserSessions())
+            .catch(err => console.error('Failed to clean sessions after login:', err));
         syncAuthStoreUser(result.user, { lastAuthMethod: 'password' });
         return result;
     };
@@ -167,6 +180,9 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
     const loginWithCustomToken = async (token, method = 'custom_token') => {
         const { auth, authModule } = await getAuthRuntime();
         const result = await authModule.signInWithCustomToken(auth, token);
+        getCallableFunction('updateUserSessions')
+            .then((updateUserSessions) => updateUserSessions())
+            .catch(err => console.error('Failed to clean sessions after login:', err));
         syncAuthStoreUser(result.user, { lastAuthMethod: method });
         return result;
     };

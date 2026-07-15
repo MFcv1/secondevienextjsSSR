@@ -137,12 +137,12 @@ AdminReturns
 ### 4.6 Analytics
 
 ```text
-AnalyticsProvider [C]
+AnalyticsCollectorIsland + AuthProvider anonyme [C]
+  -> AnalyticsProvider [C]
   -> initLiveSession/syncSession/beacon [F]
-  -> analytics_sessions [DB]
-  -> rollup triggers [F]
-  -> collections *_daily / dashboard_stats [DB]
-  -> AdminAnalytics / AdminDashboard / AdminSiteMap [C]
+  -> analytics_sessions/{sessionId} avec journey embarque [DB]
+  -> AdminAnalytics: historique borne + listener recent temps reel [C]
+  -> UID/IP, courbe, bandeau live cumulatif, visiteurs et parcours [C]
 ```
 
 ## 5. Arborescence racine
@@ -480,7 +480,7 @@ functions-public/
 | Auth/admin | `grantAdminOnAuth`, `addAdminUser`, `removeAdminUser`, `logUserConnection`, `getUserStats`, `syncSuperAdminClaim`, `ensureAdminAccessRegistry` |
 | OTP/passkeys | `sendGuestCheckoutOtp`, `verifyGuestCheckoutOtp`, `sendCustomerLoginOtp`, `verifyCustomerLoginOtp`, quatre endpoints passkey |
 | e-mail | `onOrderCreated`, `onOrderUpdated`, `sendTestEmail`, `sendRefundStatusEmailAdmin` |
-| analytics | `initLiveSession`, `syncSession`, `syncSessionBeacon`, `deleteSession`, `clearAllSessions`, `clearAllAnalytics`, `cleanupExpiredAnalytics`, `trackAdminIP`, `updateUserSessions`, triggers rollup |
+| analytics | `initLiveSession`, `syncSession`, `syncSessionBeacon`, `deleteSession`, `clearAllSessions`, `trackAdminIP`, `updateUserSessions` |
 | maintenance | resets/purges, `runGarbageCollector`, `getUploadUrl`, `onInventorySourceWrite` |
 | SEO legacy | `sitemap`, `shareMeta`, `homeMeta`, `aboutMeta`, `productMeta`, `categoryMeta` |
 | triggers catalogue | `onArtifactDeleted`, `onArtifactUpdated` |
@@ -503,14 +503,7 @@ Firestore
 |-- sys_ratelimit/{id} ................ backend-only
 |-- sys_admin_access/{uid} ............ backend-only
 |-- sys_idempotency/{id} .............. backend-only
-|-- analytics_sessions/{sessionId}
-|   |-- journey_steps/{id}
-|   `-- custom_events/{id}
-|-- analytics_item_daily/{id}
-|-- analytics_page_daily/{id}
-|-- analytics_transition_daily/{id}
-|-- analytics_unique_markers/{id}
-|-- dashboard_stats/{id}
+|-- analytics_sessions/{sessionId} .... session + tableau `journey`
 |-- sales_stats_daily/{id}
 `-- inventory_stats/{id}
 
@@ -531,6 +524,7 @@ check-mobile-marketplace-contract.cjs
 check-seo-indexability.cjs
 check-performance-budget.cjs
 check-product-ssr.mjs
+verify-analytics-reliability.mjs
 ```
 
 ### Audits performance

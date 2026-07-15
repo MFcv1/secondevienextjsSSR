@@ -16,7 +16,7 @@ La liste executable est `KIT_CONFIG.adminTabs` dans `src/kit/config/constants.js
 | ID | Label | Module principal | Role |
 | --- | --- | --- | --- |
 | `dashboard` | Stats | `AdminDashboard` | CA, commandes, inventaire, exports |
-| `analytics` | Data | `AdminAnalytics` | sessions, parcours, rollups, checkpoints |
+| `analytics` | Data | `AdminAnalytics` | visiteurs UID/IP, sessions live, parcours, courbe |
 | `furniture` | Publication | `AdminForm`, `AdminItemList` | CRUD annonces et images |
 | `inventory` | Vue Globale | `GlobalInventoryView` | ordres editoriaux et stock catalogue |
 | `studio` | Studio | `AdminStudio` | outils de contenu/creation |
@@ -81,7 +81,9 @@ Le dashboard lit de preference les agregats:
 
 Des fallbacks historiques bornes existent si les agrégats manquent. Ils ne doivent pas redevenir une lecture illimitee de toutes les commandes ou de tout le catalogue.
 
-`AdminAnalytics` ne charge pas automatiquement toute la telemetrie a l'ouverture; l'utilisateur declenche une actualisation et un checkpoint local peut etre reutilise.
+`AdminAnalytics` reprend le moteur de Tous a Table: lecture bornee a 5 000 sessions sur un an, cache IndexedDB de six heures, actualisation manuelle de l'historique, ecoute Firestore des 100 sessions les plus recentes, visiteurs uniques dedupliques par UID Firebase puis IP serveur, ratio UID/IP, regroupement par jour et visiteur, sessions live et parcours. Une session est consideree en ligne lorsque sa derniere activite remonte a moins de 30 secondes. Le bandeau live apparait sans actualisation manuelle et cumule les sessions actives avec leur ville et leur appareil.
+
+Les sessions admin sont exclues a trois niveaux: le collecteur ne demarre pas quand les claims admin sont actifs, `trackAdminIP` maintient le registre des IP admin, puis `updateUserSessions` supprime les sessions recentes de l'IP lors d'une connexion admin. L'e-mail proprietaire reste un secret serveur et n'est jamais embarque dans le bundle client.
 
 ## 8. Maintenance
 

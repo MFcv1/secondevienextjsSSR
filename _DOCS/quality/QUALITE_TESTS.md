@@ -51,6 +51,12 @@ passkey-server-hardening.test.cjs
 
 Les contrats testent la source de session, les transitions OTP, l'idempotence, la revocation, AAL2, les regions, l'adaptateur e-mail et WebAuthn.
 
+Le contrat analytics importe le verificateur du moteur Tous a Table et controle la deduplication UID/IP, les fenetres temporelles, la coherence KPI/courbe/groupes, le masquage IP et le jeton de reprise:
+
+```bash
+npm run test:analytics
+```
+
 ## 4. Matrice par domaine
 
 | Domaine touche | Gates recommandees |

@@ -1,7 +1,9 @@
 # Donnees, Firestore et analytics
 
-Derniere mise a jour: 2026-07-14
+Derniere mise a jour: 2026-07-15
 Statut: `REFERENCE_ACTIVE`
+
+Deploiement sandbox: moteur actif depuis le 2026-07-15 sur App Hosting et Functions `europe-west1`.
 
 ## 1. Principes
 
@@ -30,13 +32,6 @@ sys_ratelimit/{id}
 sys_admin_access/{uid}
 sys_idempotency/{id}
 analytics_sessions/{sessionId}
-  journey_steps/{id}
-  custom_events/{id}
-analytics_item_daily/{id}
-analytics_page_daily/{id}
-analytics_transition_daily/{id}
-analytics_unique_markers/{id}
-dashboard_stats/{id}
 sales_stats_daily/{id}
 inventory_stats/{id}
 ```
@@ -86,30 +81,69 @@ La retention des commandes doit respecter les obligations comptables. Une demand
 
 ## 7. Analytics
 
+Le moteur est le portage fonctionnel du moteur de Tous a Table. Les adaptations sont limitees a Next App Router, aux routes Seconde Vie, a la region Functions `europe-west1` et au controle admin fort deja present dans le projet.
+
 Pipeline:
 
 ```text
-AnalyticsContext / AnalyticsProvider
+app/AnalyticsCollectorIsland
+  -> AuthProvider avec Firebase Auth anonyme
+  -> mapping des routes Next.js vers une page analytics
+  -> AnalyticsProvider
   -> initLiveSession, syncSession, beacon
-  -> analytics_sessions + sous-collections
-  -> triggers de rollup
-  -> *_daily, dashboard_stats, sales_stats_daily, inventory_stats
-  -> AdminAnalytics / AdminDashboard / AdminSiteMap
+  -> analytics_sessions/{sessionId}, tableau journey embarque
+  -> AdminAnalytics
 ```
 
-Principes de fiabilite:
+Routes suivies:
 
-- session et evenements ont des identifiants stables;
-- les rollups sont idempotents;
-- les listes admin sont bornees;
-- les gros champs non recherches ont leurs indexes desactives;
-- les checkpoints evitent une relecture complete automatique;
+| Route | Cle analytics |
+| --- | --- |
+| `/`, `/galerie` | `gallery` |
+| `/categorie/[categoryId]` | `category` + identifiant |
+| `/produit/[slugOrId]` | `detail` + identifiant |
+| `/a-propos` | `about` |
+| `/devis` | `quote` |
+| `/recherche` | `search` |
+| `/wishlist` | `wishlist` |
+| `/checkout` | `checkout` |
+| `/mes-commandes` | `my-orders` |
+
+Contrat du moteur:
+
+- le collecteur attend 1,5 seconde et ignore les robots courants;
+- chaque visiteur obtient un UID Firebase anonyme persistant si aucun compte n'est connecte;
+- l'IP est determinee cote Function a partir des en-tetes proxy, jamais fournie par le client;
+- l'identite fiable utilise le UID Firebase, puis l'IP serveur, puis l'ID session si l'IP manque;
+- le ratio UID/IP mesure l'ecart entre visiteurs uniques et IP uniques;
+- la premiere page et chaque changement de route sont synchronises en moins d'une seconde apres initialisation;
+- la synchronisation periodique est de 15 secondes, avec duree active suspendue lorsque l'onglet est masque;
+- le beacon de fermeture envoie le dernier parcours et utilise un `fetch keepalive` si le navigateur refuse sa mise en file;
+- un jeton aleatoire n'est conserve qu'en version hachee dans Firestore et protege reprise/synchronisation;
+- une reprise exige le meme UID, le bon jeton, une activite de moins d'une heure et une session non admin;
+- une session explicitement fermee ne peut etre reprise que pendant une grace de 15 secondes, afin de tolerer un rechargement immediat sans fusionner un retour plusieurs minutes plus tard;
+- l'admin lit au maximum 5 000 sessions commencees dans la derniere annee;
+- un cache IndexedDB de six heures evite une nouvelle lecture complete a chaque ouverture;
+- l'etat live est derive d'une activite de moins de 30 secondes et l'admin ecoute en temps reel les 100 sessions les plus recentes;
 - les erreurs analytics ne bloquent jamais checkout, Auth ou navigation;
 - ne pas stocker plus de donnees personnelles que necessaire.
 
+Exclusion admin:
+
+- le collecteur ne cree pas de session lorsque les claims admin sont actifs;
+- `trackAdminIP` enregistre l'IP d'un UID present et actif dans `sys_admin_access`;
+- `initLiveSession` classe une IP admin comme session `admin`;
+- `updateUserSessions` supprime les sessions recentes de l'IP lors de la connexion d'un admin et convertit les sessions anonymes lors de la connexion d'un client;
+- les sessions `type == admin` sont exclues de tous les calculs du panneau Data;
+- l'e-mail proprietaire est lu depuis le secret serveur `SUPER_ADMIN_EMAIL`, jamais code en dur cote client.
+
+Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. L'architecture haut trafic sera traitee dans une phase distincte demandee par l'utilisateur.
+
+Les anciennes collections de rollup peuvent encore exister dans le sandbox apres les versions precedentes, mais aucun code actif ne les lit ou ne les alimente. Aucune purge de donnees historique n'est executee pendant ce portage.
+
 ## 8. Retention
 
-Les constantes de retention vivent dans `functions/src/analytics/constants.js`. Les taches de cleanup suppriment les donnees expirees et les marqueurs techniques.
+Le moteur importe ne comporte pas de tache automatique de retention. La fenetre de lecture admin est d'un an, mais elle ne supprime pas les documents plus anciens.
 
 Avant production, definir explicitement:
 
