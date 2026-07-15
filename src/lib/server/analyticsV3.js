@@ -39,8 +39,11 @@ const expiry = (days) => Timestamp.fromMillis(Date.now() + days * 86400000);
 export function assertSameOrigin(request) {
   const origin = request.headers.get('origin');
   const site = request.headers.get('sec-fetch-site');
-  const expected = new URL(request.url).origin;
-  if (origin && origin !== expected) throw new Error('analytics_origin_rejected');
+  const allowedOrigins = new Set([new URL(request.url).origin]);
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    try { allowedOrigins.add(new URL(process.env.NEXT_PUBLIC_SITE_URL).origin); } catch { /* configuration invalide: ne pas elargir */ }
+  }
+  if (origin && !allowedOrigins.has(new URL(origin).origin)) throw new Error('analytics_origin_rejected');
   if (site && !['same-origin', 'same-site', 'none'].includes(site)) throw new Error('analytics_fetch_site_rejected');
 }
 
