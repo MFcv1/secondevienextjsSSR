@@ -6,6 +6,8 @@ import {
 import { collection, query, orderBy, limit, getDocs, onSnapshot, where, Timestamp } from 'firebase/firestore';
 import { db, functions } from '../config/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { getProductImageItems } from '../../utils/imageUtils';
+import { getProductUrl } from '../../utils/slug';
 import { getMillis } from '../../utils/time';
 import {
     ANALYTICS_TIME_FILTERS,
@@ -585,6 +587,39 @@ const getTrackingItemParts = (rawItemId) => {
     };
 };
 
+const getJourneyProductKey = (step) => {
+    if (step?.page !== 'detail') return null;
+    const raw = String(step?.itemId || '').trim();
+    if (!raw) return null;
+    return raw
+        .replace(/\s*\[(depuis|source):\s*[^\]]+\]\s*$/i, '')
+        .split('|')[0]
+        .trim();
+};
+
+const buildProductThumbnailMap = (items) => {
+    const thumbnails = new Map();
+    (Array.isArray(items) ? items : []).forEach((item) => {
+        const [primary] = getProductImageItems(item);
+        const src = primary?.thumb320
+            || primary?.thumb384
+            || primary?.thumb
+            || primary?.card
+            || item?.thumbnailUrl
+            || item?.imageUrl
+            || '';
+        if (!src) return;
+
+        const productPath = getProductUrl(item);
+        const pathKey = decodeURIComponent(String(productPath).split('/').filter(Boolean).pop() || '');
+        [item?.id, item?.originalId, pathKey]
+            .map(value => String(value || '').trim())
+            .filter(Boolean)
+            .forEach(key => thumbnails.set(key, src));
+    });
+    return thumbnails;
+};
+
 const getComptoirEventMeta = (event) => {
     if (event.kind === 'click') return { label: 'Clic produit', accent: 'text-amber-400', dot: 'bg-amber-400', chip: 'bg-amber-500/10 border-amber-500/10 text-amber-300' };
     if (event.page === 'shop-detail') return { label: 'Fiche Comptoir', accent: 'text-teal-400', dot: 'bg-teal-400', chip: 'bg-teal-500/10 border-teal-500/10 text-teal-300' };
@@ -632,7 +667,7 @@ const getJourneyStepPageDuration = (session, index) => {
     return Math.max(0, Math.round(sessionDuration - elapsedBeforeLastStep));
 };
 
-const SessionJourneyTrace = ({ session, darkMode, formatDuration }) => (
+const SessionJourneyTrace = ({ session, darkMode, formatDuration, productThumbnails }) => (
     <div className={`p-4 border-t ${darkMode ? 'border-white/5 bg-black/20' : 'border-stone-100 bg-white'} animate-in slide-in-from-top-2 duration-300`}>
         <div className="space-y-5">
             <div className="flex items-center justify-between px-1">
@@ -640,7 +675,7 @@ const SessionJourneyTrace = ({ session, darkMode, formatDuration }) => (
                 <span className="text-[8px] font-bold text-stone-600 opacity-60 uppercase tracking-tighter">{session.journey?.length || 0} Etapes</span>
             </div>
 
-            <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-stone-800">
+            <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-stone-800 lg:flex lg:space-y-0 lg:overflow-x-auto lg:pl-0 lg:pb-3 lg:before:bottom-auto lg:before:left-4 lg:before:right-4 lg:before:top-[7px] lg:before:h-px lg:before:w-auto">
                 {!session.journey || session.journey.length === 0 ? (
                     <p className="text-[10px] italic text-stone-500">Aucune activite enregistree</p>
                 ) : (
@@ -649,21 +684,35 @@ const SessionJourneyTrace = ({ session, darkMode, formatDuration }) => (
                         const stepLabel = getJourneyLabel(step.page);
                         const isAffiliateStep = isAffiliateJourneyStep(step.page);
                         const pageDuration = getJourneyStepPageDuration(session, idx);
+                        const productKey = getJourneyProductKey(step);
+                        const productThumbnail = productKey ? productThumbnails?.get(productKey) : null;
                         return (
-                            <div key={idx} className="relative group/step">
-                                <div className={`absolute -left-[18.5px] top-1.5 w-[7px] h-[7px] rounded-full ring-4 ${darkMode ? 'ring-stone-900/50' : 'ring-white'} ${accent.dot} transition-all group-hover/step:scale-125`}></div>
+                            <div key={idx} className="relative group/step lg:min-w-[178px] lg:flex-1 lg:px-4 lg:pt-6">
+                                <div className={`absolute -left-[18.5px] top-1.5 w-[7px] h-[7px] rounded-full ring-4 lg:left-4 lg:top-1 lg:-translate-x-1/2 ${darkMode ? 'ring-stone-900/50' : 'ring-white'} ${accent.dot} transition-all group-hover/step:scale-125`}></div>
 
-                                <div className="flex flex-col gap-1 -translate-y-0.5">
-                                    <span className={`text-[8px] font-black uppercase tracking-widest leading-none ${step.page === 'comptoir' ? 'text-teal-400/60' : step.page === 'shop' ? 'text-violet-400/60' : 'text-blue-500/60'}`}>{formatJourneyStepTime(session, step)} - {formatDuration(pageDuration)} sur cette page</span>
-                                    <p className={`font-black text-[11px] leading-tight ${darkMode ? 'text-stone-300' : 'text-stone-900'}`}>
-                                        {isAffiliateStep ? 'Clic' : 'Vue'} : <span className={`uppercase ${accent.label}`}>{stepLabel}</span>
-                                    </p>
-                                    {step.itemId && (
-                                        <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                                            <span className={`text-[8px] font-bold px-2 py-0.5 rounded-md truncate max-w-full italic border ${accent.chip}`}>
-                                                {!isAffiliateStep && 'ID: '}{step.itemId}
-                                            </span>
-                                        </div>
+                                <div className="flex items-start justify-between gap-3 -translate-y-0.5 lg:translate-y-0">
+                                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                        <span className={`text-[8px] font-black uppercase tracking-widest leading-none ${step.page === 'comptoir' ? 'text-teal-400/60' : step.page === 'shop' ? 'text-violet-400/60' : 'text-blue-500/60'}`}>{formatJourneyStepTime(session, step)} - {formatDuration(pageDuration)} sur cette page</span>
+                                        <p className={`font-black text-[11px] leading-tight ${darkMode ? 'text-stone-300' : 'text-stone-900'}`}>
+                                            {isAffiliateStep ? 'Clic' : 'Vue'} : <span className={`uppercase ${accent.label}`}>{stepLabel}</span>
+                                        </p>
+                                        {step.itemId && (
+                                            <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-2">
+                                                <span className={`max-w-full truncate rounded-md border px-2 py-0.5 text-[8px] font-bold italic ${accent.chip}`}>
+                                                    {!isAffiliateStep && 'ID: '}{step.itemId}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {productThumbnail && (
+                                        <img
+                                            src={productThumbnail}
+                                            alt=""
+                                            aria-hidden="true"
+                                            loading="lazy"
+                                            decoding="async"
+                                            className={`h-14 w-11 shrink-0 rounded-lg border object-cover shadow-sm ${darkMode ? 'border-white/10 bg-white/5' : 'border-stone-200 bg-stone-50'}`}
+                                        />
                                     )}
                                 </div>
                             </div>
@@ -684,7 +733,8 @@ const VisitorSessionGroup = ({
     expandedSessionId,
     setExpandedSessionId,
     handleDeleteSession,
-    formatDuration
+    formatDuration,
+    productThumbnails
 }) => {
     const lastTime = visitor.lastActivityAt
         ? new Date(visitor.lastActivityAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
@@ -786,6 +836,7 @@ const VisitorSessionGroup = ({
                                         session={session}
                                         darkMode={darkMode}
                                         formatDuration={formatDuration}
+                                        productThumbnails={productThumbnails}
                                     />
                                 )}
                             </div>
@@ -1652,7 +1703,7 @@ const BoutiqueAnalytics = ({ darkMode, sessions = [], onRefreshSessions, session
 // ─── Analytics Principal ───────────────────────────────────────────────────────
 void BoutiqueAnalytics;
 
-const AdminAnalytics = ({ darkMode = false }) => {
+const AdminAnalytics = ({ darkMode = false, items = [] }) => {
     const [sessions, setSessions] = useState(() => cachedAnalyticsSessions || []);
     const [loading, setLoading] = useState(false);
     const [restoringSessions, setRestoringSessions] = useState(() => !cachedAnalyticsSessions);
@@ -1664,6 +1715,7 @@ const AdminAnalytics = ({ darkMode = false }) => {
     const DAYS_PER_PAGE = 10;
     const [openVisitors, setOpenVisitors] = useState({});
     const [sessionsRefreshKey, setSessionsRefreshKey] = useState(() => cachedAnalyticsSessionsLoadedAt || 0);
+    const productThumbnails = useMemo(() => buildProductThumbnailMap(items), [items]);
 
     useEffect(() => {
         let cancelled = false;
@@ -2053,6 +2105,7 @@ const AdminAnalytics = ({ darkMode = false }) => {
                                                         setExpandedSessionId={setExpandedSessionId}
                                                         handleDeleteSession={handleDeleteSession}
                                                         formatDuration={formatDuration}
+                                                        productThumbnails={productThumbnails}
                                                     />
                                                 );
                                             })}

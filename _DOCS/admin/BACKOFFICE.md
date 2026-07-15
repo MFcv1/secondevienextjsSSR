@@ -83,6 +83,8 @@ Des fallbacks historiques bornes existent si les agrégats manquent. Ils ne doiv
 
 `AdminAnalytics` reprend le moteur de Tous a Table: lecture bornee a 5 000 sessions sur un an, cache IndexedDB de six heures, actualisation manuelle de l'historique, ecoute Firestore des 100 sessions les plus recentes, visiteurs uniques dedupliques par UID Firebase puis IP serveur, ratio UID/IP, regroupement par jour et visiteur, sessions live et parcours. Une session est consideree en ligne lorsque sa derniere activite remonte a moins de 30 secondes. Le bandeau live apparait sans actualisation manuelle et cumule les sessions actives avec leur ville et leur appareil.
 
+Le parcours reste vertical sous 1024 px et devient une frise horizontale avec debordement borne sur desktop. Les etapes `detail` affichent la premiere variante `thumb320` du produit lorsqu'elle existe; l'image est resolue depuis le catalogue admin deja charge et n'alourdit pas les documents analytics.
+
 Les sessions admin sont exclues a trois niveaux: le collecteur ne demarre pas quand les claims admin sont actifs, `trackAdminIP` maintient le registre des IP admin, puis `updateUserSessions` supprime les sessions recentes de l'IP lors d'une connexion admin. L'e-mail proprietaire reste un secret serveur et n'est jamais embarque dans le bundle client.
 
 ## 8. Maintenance

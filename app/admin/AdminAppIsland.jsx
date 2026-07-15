@@ -327,7 +327,7 @@ function AdminContent({ initialItems = [] }) {
           ) : adminCollection === 'seo' ? (
             <AdminSEO darkMode={darkMode} />
           ) : adminCollection === 'analytics' || adminCollection === 'map' ? (
-            <AdminAnalytics darkMode={darkMode} />
+            <AdminAnalytics darkMode={darkMode} items={initialItems} />
           ) : adminCollection === 'payment_settings' ? (
             <AdminPaymentSettings darkMode={darkMode} />
           ) : adminCollection === 'inventory' ? (
