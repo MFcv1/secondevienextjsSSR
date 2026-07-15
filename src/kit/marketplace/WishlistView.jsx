@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { X, Upload, ShoppingCart, Heart } from 'lucide-react';
 import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage } from '../../utils/imageUtils';
 import { getProductUrl } from '../../utils/slug';
@@ -151,8 +152,9 @@ const WishlistView = ({
                                         </button>
 
                                         {/* Image */}
-                                        <a
+                                        <Link
                                             href={getProductUrl(item)}
+                                            prefetch={false}
                                             className={`relative block overflow-hidden rounded-[12px] aspect-[3/4] cursor-pointer ${darkMode ? 'bg-[#1A1A1A]' : 'bg-white'}`}
                                         >
                                             <img
@@ -170,17 +172,18 @@ const WishlistView = ({
                                                     <span className="text-white text-xs font-black uppercase tracking-widest">{unavailableLabel}</span>
                                                 </div>
                                             )}
-                                        </a>
+                                        </Link>
                                     </div>
 
                                     {/* INFO */}
                                     <div className="pt-3 flex flex-col gap-1 text-left">
-                                        <a
+                                        <Link
                                             href={getProductUrl(item)}
+                                            prefetch={false}
                                             className="truncate font-serif text-sm md:text-base leading-tight cursor-pointer hover:opacity-70 transition-opacity text-inherit no-underline"
                                         >
                                             {item.name}
-                                        </a>
+                                        </Link>
                                         <p className={`text-sm font-bold ${!purchasable ? 'text-red-500' : ''}`}>
                                             {purchasable ? `${price} €` : shouldRequestQuote(item) ? 'Sur demande' : unavailableLabel}
                                         </p>

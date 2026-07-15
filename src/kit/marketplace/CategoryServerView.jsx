@@ -1,4 +1,5 @@
 import { ChevronDown, Grid3X3, LayoutGrid, List, SlidersHorizontal, X } from 'lucide-react';
+import Link from 'next/link';
 import { getCategoryUrl, getProductUrl } from '../../utils/slug';
 import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, getProductDisplayImageSrc, getProductImageItems } from '../../utils/imageUtils';
 import { getProductStockAmount, getPurchaseUnavailableLabel, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
@@ -50,8 +51,9 @@ const CategoryProductCard = ({ item, layoutMode = 'grid', compact = true, priori
   const purchasable = isPurchasable(item);
 
   return (
-    <a
+    <Link
       href={getProductUrl(item)}
+      prefetch={false}
       draggable={false}
       data-gallery-product-card
       data-gallery-product-link
@@ -115,7 +117,7 @@ const CategoryProductCard = ({ item, layoutMode = 'grid', compact = true, priori
           </p>
         </div>
       </div>
-    </a>
+    </Link>
   );
 };
 
@@ -127,8 +129,9 @@ const MobileProductRow = ({ item, darkMode, priority = false }) => {
   const purchasable = isPurchasable(item);
 
   return (
-    <a
+    <Link
       href={getProductUrl(item)}
+      prefetch={false}
       data-gallery-product-card
       data-gallery-product-link
       data-product-url={warmup.productUrl}
@@ -157,7 +160,7 @@ const MobileProductRow = ({ item, darkMode, priority = false }) => {
           {purchasable ? `${price} EUR` : shouldRequestQuote(item) ? 'Sur demande' : getPurchaseUnavailableLabel(item)}
         </p>
       </div>
-    </a>
+    </Link>
   );
 };
 

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { getProductUrl } from '../../utils/slug';
 import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, getProductDisplayImageSrc, getProductImageItems } from '../../utils/imageUtils';
 import { getProductPriceAmount, getProductStockAmount, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
@@ -67,7 +68,7 @@ export default function GalleryProductCardServer({
         data-image-reveal="visible"
         data-image-loaded={cardImage.src && !deferImageUntilCalm ? 'true' : 'false'}
       >
-        <a href={productUrl} draggable={false} data-gallery-product-link className="block h-full w-full cursor-pointer text-inherit no-underline" aria-label={`Découvrir ${title}`}>
+        <Link href={productUrl} prefetch={false} draggable={false} data-gallery-product-link className="block h-full w-full cursor-pointer text-inherit no-underline" aria-label={`Découvrir ${title}`}>
           {cardImage.src ? (
             <picture className="block h-full w-full">
               {cardImage.desktopSrcSet ? (
@@ -109,7 +110,7 @@ export default function GalleryProductCardServer({
               <div className="h-[1.5px] w-8 origin-center scale-x-0 bg-white/30 transition-transform duration-[800ms] group-hover:scale-x-100" />
             </div>
           </div>
-        </a>
+        </Link>
 
         {productId ? (
           <div className="absolute right-2 top-2 z-20 flex flex-col gap-1.5 opacity-100 transition-opacity duration-300 md:right-3 md:top-3 md:gap-2 lg:opacity-0 lg:group-hover:opacity-100">
@@ -142,7 +143,7 @@ export default function GalleryProductCardServer({
         ) : null}
       </div>
 
-      <a href={productUrl} draggable={false} data-gallery-product-link className={`flex cursor-pointer text-inherit no-underline ${compact ? 'flex-col gap-1 md:flex-row md:items-start md:justify-between md:gap-4' : 'items-start justify-between gap-2 md:gap-4'} ${layoutMode === 'list' ? 'flex-1 pt-6' : compact ? 'pt-1 md:pt-4' : 'pt-4'}`}>
+      <Link href={productUrl} prefetch={false} draggable={false} data-gallery-product-link className={`flex cursor-pointer text-inherit no-underline ${compact ? 'flex-col gap-1 md:flex-row md:items-start md:justify-between md:gap-4' : 'items-start justify-between gap-2 md:gap-4'} ${layoutMode === 'list' ? 'flex-1 pt-6' : compact ? 'pt-1 md:pt-4' : 'pt-4'}`}>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5 md:gap-1">
           <div className={`truncate font-black uppercase tracking-widest opacity-50 ${compact ? 'text-[8px] md:text-[9px]' : 'text-[9px]'}`}>
             {item?.material || 'Matiere inconnue'}
@@ -160,7 +161,7 @@ export default function GalleryProductCardServer({
             {formatPrice(item)}
           </p>
         </div>
-      </a>
+      </Link>
     </div>
   );
 }
