@@ -148,8 +148,8 @@ async function compactDay(date) {
         mergeNumberMaps(paths.transitions, shard.transitions);
         if (shard.uniqueHll) sketches.push(shard.uniqueHll);
     }
-    const uniqueHll = mergeHll(sketches);
-    overview.uniqueVisitorsApprox = sketches.length ? estimateHll(uniqueHll) : null;
+    const uniqueHll = sketches.length ? mergeHll(sketches) : null;
+    overview.uniqueVisitorsApprox = uniqueHll ? estimateHll(uniqueHll) : null;
     overview.uniqueVisitorsEstimated = true;
     overview.measurementQuality = {
         identity_resolution: overview.uniqueVisitorsApprox === null ? 'partielle' : 'bonne',
@@ -200,14 +200,14 @@ async function compactMonth(month) {
         if (day.uniqueHll) sketches.push(day.uniqueHll);
     }
     for (const snap of pathDocs) if (snap.exists) mergeNumberMaps(paths.transitions, snap.data().transitions);
-    const uniqueHll = mergeHll(sketches);
+    const uniqueHll = sketches.length ? mergeHll(sketches) : null;
     const batch = db.batch();
     batch.set(db.doc(`analytics_rollup_months_v3/${month}/compact/overview`), {
         ...overview,
         monthKey: month,
         schemaVersion: 3,
         uniqueHll,
-        uniqueVisitorsApprox: sketches.length ? estimateHll(uniqueHll) : null,
+        uniqueVisitorsApprox: uniqueHll ? estimateHll(uniqueHll) : null,
         uniqueVisitorsEstimated: true,
         provisional: month === dayKey(Date.now()).slice(0, 7),
         compactedAt: admin.firestore.FieldValue.serverTimestamp(),
