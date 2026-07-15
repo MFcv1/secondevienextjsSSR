@@ -20,9 +20,11 @@ const dayKey = (value) => new Date(value).toISOString().slice(0, 10);
 const increment = (value) => admin.firestore.FieldValue.increment(value);
 
 function applyDelta(payload, prefix, values = {}) {
+    const nested = {};
     for (const [key, value] of Object.entries(values)) {
-        if (value) payload[`${prefix}.${key}`] = increment(value);
+        if (value) nested[key] = increment(value);
     }
+    if (Object.keys(nested).length) payload[prefix] = nested;
 }
 
 async function reconcileSession(sessionSnap) {
@@ -77,7 +79,7 @@ async function reconcileSession(sessionSnap) {
         applyDelta(shardPayload, 'identity', delta.identity);
         applyDelta(shardPayload, 'completeness', delta.completeness);
         applyDelta(shardPayload, 'integrity', delta.integrity);
-        shardPayload[`modes.${contribution.mode}`] = increment(delta.sessions);
+        if (delta.sessions) shardPayload.modes = { [contribution.mode]: increment(delta.sessions) };
 
         tx.set(dayRef, {
             config: { shardCount, shardSchemaVersion: 1, timezone: 'Europe/Paris', provisional: true },
