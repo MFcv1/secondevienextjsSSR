@@ -52,6 +52,7 @@ test('overview states distinguish connection, an accessible empty engine, measur
 test('callable errors keep their real operational meaning', () => {
     assert.equal(classifyAnalyticsCallableError({ code: 'functions/permission-denied' }).kind, 'permission-denied');
     assert.equal(classifyAnalyticsCallableError({ code: 'functions/unauthenticated' }).kind, 'unauthenticated');
+    assert.equal(classifyAnalyticsCallableError({ code: 'functions/failed-precondition', message: 'Session admin trop ancienne. Reconnectez-vous.' }).kind, 'reauthentication-required');
     assert.equal(classifyAnalyticsCallableError({ code: 'functions/failed-precondition', message: 'App Check token rejected' }).kind, 'app-check');
     assert.equal(classifyAnalyticsCallableError({ code: 'functions/unavailable' }).kind, 'unavailable');
 });

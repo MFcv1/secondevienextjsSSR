@@ -17,7 +17,7 @@ export default function DataLiveActivity({ data, loading, error, onRefresh }) {
             <div><span className={styles.kicker}>Activité en direct</span><h2 id="live-activity-title">Ce qui est reçu maintenant</h2></div>
             <div className={styles.liveHeaderActions}><span data-active={count > 0}><CircleDot size={13} strokeWidth={1.8} /> {count ? `${formatNumber(count)} active${count > 1 ? 's' : ''}` : 'Aucune active'}</span><button type="button" onClick={onRefresh} disabled={loading} aria-label="Actualiser l'activité en direct"><RefreshCw size={14} className={loading ? styles.spin : ''} /></button></div>
         </header>
-        {error ? <p className={styles.liveError}>La lecture provisoire est indisponible. Les compacts finalisés ne sont pas affectés.</p> : <>
+        {error ? <p className={styles.liveError}><strong>{error.title || 'Lecture provisoire indisponible'}</strong><span>{error.detail || 'Les compacts finalisés ne sont pas affectés.'}</span></p> : <>
             <div className={styles.liveMetrics}>
                 <article><span>Sessions actives</span><strong>{formatNumber(count)}</strong><small>reçues depuis moins de 90 s</small></article>
                 <article><span>Pages en cours</span><strong>{formatNumber(data?.provisionalPageViews)}</strong><small>dans ces sessions, non consolidées</small></article>
