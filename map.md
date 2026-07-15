@@ -1,6 +1,6 @@
 # Cartographie du projet Seconde Vie Next
 
-Derniere verification: 2026-07-14
+Derniere verification: 2026-07-15
 Statut: `CARTE_CANONIQUE_ACTIVE`
 
 ## 1. Role et maintenance
@@ -136,14 +136,21 @@ AdminReturns
 
 ### 4.6 Analytics
 
+Etat executable actuel, non connecte de bout en bout:
+
 ```text
-AnalyticsProvider [C]
+AnalyticsProvider [C, non monte]
   -> initLiveSession/syncSession/beacon [F]
   -> analytics_sessions [DB]
   -> rollup triggers [F]
-  -> collections *_daily / dashboard_stats [DB]
-  -> AdminAnalytics / AdminDashboard / AdminSiteMap [C]
+  -> collections *_daily [DB, non consommees par les trois vues actives]
+
+AdminAnalyticsOverview [C]
+  -> jusqu'a 5 000 analytics_sessions [DB]
+  -> meme lot pour Vue d'ensemble / Parcours / Sessions
 ```
+
+Cible approuvee, non implementee: `_DOCS/data/ARCHITECTURE_ANALYTICS.md`. Elle introduit un collecteur Next global, une facade d'ingestion same-origin gatee, des sessions/chunks idempotents, des faits reconciliables, des rollups compactes et des lecteurs dedies. La carte executable sera remplacee par ce flux au fur et a mesure de son implementation, jamais par anticipation.
 
 ## 5. Arborescence racine
 
@@ -597,7 +604,7 @@ tests/smoke.spec.mjs
 | admin | `BACKOFFICE.md` | AdminAppIsland, tabs, Functions | smoke tabs + action cible |
 | infra | `INFRASTRUCTURE.md` | yaml/json/env/runtime | audits read-only + build |
 | performance | `PERFORMANCE.md` | route et bundle responsables | gate identique avant/apres |
-| donnees | `DONNEES_ANALYTICS.md` | rules/indexes/scripts/Functions | dry-run/comptage/rollback |
+| donnees | `DONNEES_ANALYTICS.md` + `ARCHITECTURE_ANALYTICS.md` | rules/indexes/scripts/Functions/collecteur Next | dry-run/comptage/rollback + gates analytics |
 
 ## 13. Dossiers generes ou non canoniques
 

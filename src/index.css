@@ -5297,8 +5297,8 @@ html.dark .custom-radio {
   overflow: visible;
   pointer-events: none;
   opacity: var(--atelier-arch-opacity);
-  -webkit-mask-image: linear-gradient(to bottom, #000 0 20%, rgba(0, 0, 0, 0.5) 27%, transparent 36%);
-  mask-image: linear-gradient(to bottom, #000 0 20%, rgba(0, 0, 0, 0.5) 27%, transparent 36%);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.12) 0%, rgba(0, 0, 0, 0.42) 2%, rgba(0, 0, 0, 0.78) 5%, #000 9% 26%, rgba(0, 0, 0, 0.72) 35%, rgba(0, 0, 0, 0.32) 43%, transparent 50%);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.12) 0%, rgba(0, 0, 0, 0.42) 2%, rgba(0, 0, 0, 0.78) 5%, #000 9% 26%, rgba(0, 0, 0, 0.72) 35%, rgba(0, 0, 0, 0.32) 43%, transparent 50%);
 }
 
 .atelier-showcase__curve-line {
@@ -5314,9 +5314,9 @@ html.dark .custom-radio {
 }
 
 .atelier-showcase__curve-line--light {
-  stroke: var(--atelier-white-line);
-  stroke-width: 0.8;
-  opacity: 0.72;
+  stroke: rgba(255, 255, 255, 0.92);
+  stroke-width: 1px;
+  opacity: 0.7;
 }
 
 .atelier-showcase__ornament {

@@ -1,6 +1,6 @@
 # Bibliotheque canonique - Seconde Vie Next
 
-Derniere consolidation: 2026-07-14
+Derniere consolidation: 2026-07-15
 Statut: `REFERENCE_ACTIVE`
 
 ## Role
@@ -29,6 +29,8 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 | Qualite et tests | [QUALITE_TESTS.md](quality/QUALITE_TESTS.md) | CI, gates, tests cibles, matrice de validation |
 | Assistant devis IA | [ASSISTANT_DEVIS.md](ai/ASSISTANT_DEVIS.md) | cadrage MVP non implemente, garde-fous et conditions de reprise |
 | Legal | [CGV_RETOURS_DRAFT.md](legal/CGV_RETOURS_DRAFT.md) | brouillon metier a faire valider par un professionnel du droit |
+
+Specification rattachee demandee explicitement pour le domaine donnees: [ARCHITECTURE_ANALYTICS.md](data/ARCHITECTURE_ANALYTICS.md). `DONNEES_ANALYTICS.md` reste le chapitre canonique de l'etat reel; cette specification fixe le contrat cible, les budgets et les gates du moteur analytics.
 
 ## Niveaux de statut
 

@@ -1,6 +1,6 @@
 # AGENTS.md - Bible operationnelle de Seconde Vie Next
 
-Derniere consolidation: 2026-07-14
+Derniere consolidation: 2026-07-15
 Statut: `REFERENCE_MAITRE_ACTIVE`
 Projet: `secondevienextjsSSR`
 
@@ -102,13 +102,15 @@ Ne pas convertir Node 24 local en nouvelle baseline sans migration dediee. Ne ja
 | back-office | [BACKOFFICE.md](_DOCS/admin/BACKOFFICE.md) | AdminAppIsland, `src/kit/admin` | preprod |
 | infrastructure | [INFRASTRUCTURE.md](_DOCS/infra/INFRASTRUCTURE.md) | Firebase/App Hosting/config/env | sandbox actif |
 | performance | [PERFORMANCE.md](_DOCS/perf/PERFORMANCE.md) | scripts perf, iles, cache/images | dette controlee |
-| donnees/analytics | [DONNEES_ANALYTICS.md](_DOCS/data/DONNEES_ANALYTICS.md) | Firestore, rollups, migrations | actif |
+| donnees/analytics | [DONNEES_ANALYTICS.md](_DOCS/data/DONNEES_ANALYTICS.md) + [ARCHITECTURE_ANALYTICS.md](_DOCS/data/ARCHITECTURE_ANALYTICS.md) | Firestore, collecte, sessions, rollups, migrations | architecture approuvee, implementation a faire |
 | exploitation | [EXPLOITATION.md](_DOCS/operations/EXPLOITATION.md) | commandes, deploy, rollback, backlog | actif |
 | qualite/tests | [QUALITE_TESTS.md](_DOCS/quality/QUALITE_TESTS.md) | CI, tests, scripts | actif |
 | assistant devis IA | [ASSISTANT_DEVIS.md](_DOCS/ai/ASSISTANT_DEVIS.md) | futur | conception |
 | legal | [CGV_RETOURS_DRAFT.md](_DOCS/legal/CGV_RETOURS_DRAFT.md) | textes futurs | validation requise |
 
 Ne pas creer une nouvelle roadmap pour un de ces domaines. Mettre a jour son chapitre canonique, sauf si l'utilisateur demande explicitement un plan temporaire distinct. Un plan temporaire doit avoir une date de fin et etre fusionne/supprime a la cloture.
+
+Pour toute modification du moteur analytics, lire dans cet ordre `DONNEES_ANALYTICS.md`, puis le contrat detaille `ARCHITECTURE_ANALYTICS.md`. Le premier porte l'etat reel; le second fixe l'architecture approuvee et les gates avant implementation.
 
 ## 6. Invariants d'architecture publique
 

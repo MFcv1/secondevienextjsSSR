@@ -1,6 +1,6 @@
 # Donnees, Firestore et analytics
 
-Derniere mise a jour: 2026-07-14
+Derniere mise a jour: 2026-07-15
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Principes
@@ -86,7 +86,17 @@ La retention des commandes doit respecter les obligations comptables. Une demand
 
 ## 7. Analytics
 
-Pipeline:
+Contrat d'architecture approuve: [ARCHITECTURE_ANALYTICS.md](ARCHITECTURE_ANALYTICS.md).
+
+Etat reel au 15 juillet 2026:
+
+- le pipeline V2 existe dans le code mais son collecteur n'est monte dans aucun layout public;
+- les trois vues Data lisent encore le meme lot borne de racines `analytics_sessions` et n'utilisent pas les rollups `*_daily`;
+- les previews actives tronquent les parcours longs;
+- l'identite, l'IP, le beacon, les rollups et le score de confiance V2 ne satisfont pas le contrat cible;
+- aucune production analytics V3, migration, build ou deploiement n'a encore ete execute.
+
+Pipeline V2 present mais non operationnel de bout en bout:
 
 ```text
 AnalyticsContext / AnalyticsProvider
@@ -96,6 +106,8 @@ AnalyticsContext / AnalyticsProvider
   -> *_daily, dashboard_stats, sales_stats_daily, inventory_stats
   -> AdminAnalytics / AdminDashboard / AdminSiteMap
 ```
+
+La cible approuvee separe audience minimisee et sessions detaillees consenties, collecte les routes Next par lots idempotents, finalise les sessions avec reconciliation et alimente les trois vues depuis des sources dediees. Son schema, ses budgets, sa retention et ses gates vivent uniquement dans `ARCHITECTURE_ANALYTICS.md`.
 
 Principes de fiabilite:
 
@@ -120,6 +132,8 @@ La vue `Data` distingue strictement la demande de devis du tunnel d'achat direct
 ## 8. Retention
 
 Les constantes de retention vivent dans `functions/src/analytics/constants.js`. Les taches de cleanup suppriment les donnees expirees et les marqueurs techniques.
+
+Ces constantes decrivent encore la V2. Les valeurs cibles V3 et la separation IP, chunks, faits, rollups et tests synthetiques sont definies dans `ARCHITECTURE_ANALYTICS.md`; elles ne deviennent l'etat reel qu'apres implementation et validation.
 
 Avant production, definir explicitement:
 
