@@ -151,12 +151,13 @@ orders + Stripe durable [DB/F]
   -> onOrderStatsWrite
   -> analytics_business_facts_v3 + compact overview [DB]
 
-AdminAnalyticsV3 [C]
-  |-- Vue d'ensemble/Parcours -> getAnalyticsOverviewV3 [F] -> compacts jours/mois
-  `-- Sessions -> list/getAnalyticsSession*V3 [F] -> 25 racines + chunks au clic
+AdminAppIsland -> AdminAnalyticsV3 [C] (lazy direct, sans charger le dashboard V2)
+  |-- Vue d'ensemble -> OverviewView + model [C] -> getAnalyticsOverviewV3 [F] -> compacts jours/mois
+  |-- Parcours -> JourneysView + matrice bornee [C] -> transitions compactees
+  `-- Sessions -> SessionsView [C] -> list/getAnalyticsSession*V3 [F] -> pagination 25 racines + chunks au clic
 ```
 
-Contrat et gates restants: `_DOCS/data/ARCHITECTURE_ANALYTICS.md`. V2 reste present comme rollback historique mais n'alimente plus la vue Data active. Aucun deploiement V3 n'a encore ete execute.
+Contrat et gates restants: `_DOCS/data/ARCHITECTURE_ANALYTICS.md`. L'ancienne interface Data V2 a ete retiree; son historique reste disponible dans Git. Aucun deploiement V3 n'a encore ete execute.
 
 ## 5. Arborescence racine
 
@@ -379,10 +380,13 @@ src/kit/vitrine/
 ```text
 src/kit/admin/
 |-- AdminDashboard.jsx ................ stats, exports et maintenance rapide
-|-- AdminAnalytics.jsx ................ point d'entree Data V3 + legacy preserve
-|-- AdminAnalyticsV3.jsx .............. compacts, parcours et sessions pagees V3
-|-- AdminAnalyticsOverview.jsx ........ vue d'ensemble devis, checkpoint manuel et agregats client
-|-- AnalyticsWorkspaceViews.jsx ....... vues Parcours et Sessions, agrégats et inspecteur anonymisé
+|-- AdminAnalyticsV3.jsx .............. orchestrateur Data V3 charge directement par AdminAppIsland
+|-- analytics-v3/
+|   |-- model.js ...................... modele de presentation sans donnees inventees
+|   |-- OverviewView.jsx .............. KPI, timeline, devis, commerce, contenus et qualite
+|   |-- JourneysView.jsx .............. matrice bornee et classement des transitions
+|   |-- SessionsView.jsx .............. pagination, registre et inspecteur consenti
+|   `-- AnalyticsDataStudio.module.css  systeme visuel isole, responsive et reduced-motion
 |-- AdminForm.jsx ..................... creation/edition annonces
 |-- AdminItemList.jsx ................. liste publications
 |-- GlobalInventoryView.jsx ........... vue catalogue/ordres
@@ -607,6 +611,7 @@ purge-expired-firestore.cjs
 tests/auth-*.test.cjs
 tests/passkey-*.test.cjs
 tests/analytics-v3-contract.test.cjs
+tests/analytics-v3-ui-model.test.mjs
 tests/smoke.spec.mjs
 ```
 

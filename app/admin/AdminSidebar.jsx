@@ -5,6 +5,7 @@ import { ChevronLeft, X } from 'lucide-react';
 
 export default function AdminSidebar({
   activeTabId,
+  dataMode = false,
   darkMode,
   groups,
   isOpen,
@@ -25,12 +26,12 @@ export default function AdminSidebar({
 
       <aside
         aria-label="Navigation de l'administration"
-        className={`fixed inset-y-0 left-0 z-50 flex w-[17.5rem] flex-col border-r transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'} ${darkMode ? 'border-white/10 bg-[#111111]' : 'border-stone-200 bg-[#F7F5F1]'}`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-[17.5rem] flex-col border-r transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'} ${dataMode ? 'border-white/[0.07] bg-[#0b0b09]' : darkMode ? 'border-white/10 bg-[#111111]' : 'border-stone-200 bg-[#F7F5F1]'}`}
       >
         <div className={`flex h-20 items-center justify-between border-b px-6 ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
           <div>
             <p className={`text-[9px] font-black uppercase tracking-[0.28em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Seconde Vie</p>
-            <p className="mt-1 text-lg font-black tracking-[-0.04em]">Gestion boutique</p>
+            <p className="mt-1 text-lg font-black tracking-[-0.04em]">{dataMode ? 'Data Studio' : 'Gestion boutique'}</p>
           </div>
           <button
             type="button"
@@ -64,9 +65,9 @@ export default function AdminSidebar({
                       type="button"
                       onClick={() => onSelect(tab.id)}
                       aria-current={isActive ? 'page' : undefined}
-                      className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[11px] font-bold tracking-wide transition duration-200 active:translate-y-px ${isActive ? (darkMode ? 'bg-white text-stone-950' : 'bg-stone-950 text-white') : (darkMode ? 'text-stone-400 hover:bg-white/5 hover:text-white' : 'text-stone-600 hover:bg-white hover:text-stone-950')}`}
+                      className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[11px] font-bold tracking-wide transition duration-200 active:translate-y-px ${isActive ? (dataMode ? 'bg-[#201710] text-[#f2efe9] shadow-[inset_2px_0_#ec8546,inset_0_0_0_1px_rgba(236,133,70,.15)]' : darkMode ? 'bg-white text-stone-950' : 'bg-stone-950 text-white') : (darkMode ? 'text-stone-400 hover:bg-white/5 hover:text-white' : 'text-stone-600 hover:bg-white hover:text-stone-950')}`}
                     >
-                      <Icon size={16} strokeWidth={1.8} className={`shrink-0 transition-transform duration-200 ${isActive ? '' : 'group-hover:translate-x-0.5'}`} />
+                      <Icon size={16} strokeWidth={dataMode ? 1.4 : 1.8} className={`shrink-0 transition-transform duration-200 ${isActive ? '' : 'group-hover:translate-x-0.5'}`} />
                       <span>{tab.label}</span>
                     </button>
                   );

@@ -106,7 +106,9 @@ Etat reel au 15 juillet 2026:
 - le retrait produit cree une demande pseudonymisee, supprime sessions/chunks/faits puis reconstruit les jours touches;
 - les conversions durables viennent du trigger serveur `orders` et des etats Stripe durables;
 - aucune IP, adresse e-mail ou valeur User-Agent brute n'est ecrite par V3; GeoIP reste indisponible tant que les gates region/proxy ne sont pas confirmees;
-- V2 reste dans le code comme rollback historique mais n'est plus la source de la vue Data active;
+- l'ancienne interface Data V2 a ete retiree; son historique Git reste le rollback, tandis que les collections et migrations V2 encore necessaires ne sont pas supprimees par cette refonte visuelle;
+- `AdminAppIsland` charge directement l'interface Data V3: modele de presentation separe, timeline factuelle, signaux devis distincts des faits commerce serveur, matrice de parcours bornee, sessions consenties pagees par 25 et inspecteur de chunks a la demande;
+- l'interface n'affiche ni comparaison, ni revenu, ni classement produit tant que les compacts correspondants ne les fournissent pas; ces absences ont des etats explicites plutot que des valeurs simulees;
 - le manifeste sandbox porte `ANALYTICS_V3_ENABLED=true` pour le rollout explicitement demande; les secrets HMAC sont provisionnes, mais l'etat deploye doit encore etre confirme avant de produire du trafic; TTL, emulateurs et charge restent a executer.
 
 Pipeline V2 present mais non operationnel de bout en bout:

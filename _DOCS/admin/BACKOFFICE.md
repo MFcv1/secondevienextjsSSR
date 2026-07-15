@@ -26,7 +26,7 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 | ID | Label | Module principal | Role |
 | --- | --- | --- | --- |
 | `dashboard` | Stats | `AdminDashboard` | CA, commandes, inventaire, exports |
-| `analytics` | Data | `AdminAnalytics` | sessions, parcours, rollups, checkpoints |
+| `analytics` | Data | `AdminAnalyticsV3` | compacts V3, parcours agrégés, sessions consenties |
 | `furniture` | Publication | `AdminForm`, `AdminItemList` | CRUD annonces et images |
 | `inventory` | Vue Globale | `GlobalInventoryView` | ordres editoriaux et stock catalogue |
 | `studio` | Studio | `AdminStudio` | outils de contenu/creation |
@@ -91,7 +91,7 @@ Le dashboard lit de preference les agregats:
 
 Des fallbacks historiques bornes existent si les agrégats manquent. Ils ne doivent pas redevenir une lecture illimitee de toutes les commandes ou de tout le catalogue.
 
-`AdminAnalytics` ne charge pas automatiquement toute la telemetrie a l'ouverture; l'utilisateur declenche une actualisation et un checkpoint local peut etre reutilise. La vue d'ensemble est orientee demande de devis: elle separe les consultations, demarrages du formulaire et intentions d'envoi e-mail du tunnel d'achat direct. Les onglets `Parcours` et `Sessions` sont des postes d'exploration distincts: flux agrégés et séquences d'un côté, liste courte avec inspecteur latéral de l'autre. Ils ne montrent ni IP brute ni identifiant personnel.
+`AdminAnalyticsV3` charge uniquement les compacts bornes de la periode active et conserve un cache de session. La vue d'ensemble separe audience estimee, activite observee, intentions de devis et faits commerce serveur. `Parcours` utilise une matrice de transitions agrégées; `Sessions` page les racines consenties par 25 et ne charge les chunks qu'au clic. En developpement seulement, un jeu de demonstration explicitement etiquete permet la recette visuelle lorsque App Check bloque les callables locaux; il n'est jamais utilise dans le build heberge.
 
 ## 8. Maintenance
 

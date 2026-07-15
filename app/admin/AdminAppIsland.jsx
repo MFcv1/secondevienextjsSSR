@@ -40,7 +40,7 @@ const AdminForm = React.lazy(() => import('../../src/kit/admin/AdminForm'));
 const AdminItemList = React.lazy(() => import('../../src/kit/admin/AdminItemList'));
 const AdminUsers = React.lazy(() => import('../../src/kit/admin/AdminUsers'));
 const AdminNewsletter = React.lazy(() => import('../../src/kit/admin/AdminNewsletter'));
-const AdminAnalytics = React.lazy(() => import('../../src/kit/admin/AdminAnalytics'));
+const AdminAnalytics = React.lazy(() => import('../../src/kit/admin/AdminDataStudio'));
 const AdminSEO = React.lazy(() => import('../../src/kit/admin/AdminSEO'));
 const AdminIPManager = React.lazy(() => import('../../src/kit/admin/AdminIPManager'));
 const AdminPaymentSettings = React.lazy(() => import('../../src/kit/admin/AdminPaymentSettings'));
@@ -230,11 +230,14 @@ function AdminContent({ initialItems = [] }) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const isDataWorkspace = adminCollection === 'analytics' || adminCollection === 'map';
+
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-[#0A0A0A] text-white' : 'bg-[#FAFAF9] text-stone-900'}`}>
+    <div className={`min-h-screen ${darkMode || isDataWorkspace ? 'bg-[#080807] text-white' : 'bg-[#FAFAF9] text-stone-900'}`}>
       <AdminSidebar
         activeTabId={adminCollection}
-        darkMode={darkMode}
+        dataMode={isDataWorkspace}
+        darkMode={darkMode || isDataWorkspace}
         groups={ADMIN_NAV_GROUPS}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
@@ -243,12 +246,12 @@ function AdminContent({ initialItems = [] }) {
       />
 
       <div className="min-h-screen lg:pl-[17.5rem]">
-        <main className="mx-auto max-w-[100rem] space-y-8 px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
+        <main className={isDataWorkspace ? 'min-h-screen' : 'mx-auto max-w-[100rem] space-y-8 px-4 py-8 sm:px-6 lg:px-10 lg:py-10'}>
         <Suspense fallback={null}>
           <AdminIPTracker />
         </Suspense>
 
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        {!isDataWorkspace ? <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -270,9 +273,9 @@ function AdminContent({ initialItems = [] }) {
             <ChevronLeft size={14} className="transition-transform group-hover:-translate-x-1" />
             Retour au site
           </Link>
-        </div>
+        </div> : null}
 
-        <Suspense fallback={<div className="flex items-center justify-center p-20"><div className="h-10 w-10 animate-spin rounded-full border-4 border-stone-200 border-t-stone-800" /></div>}>
+        <Suspense fallback={<div className={`flex min-h-[50vh] items-center justify-center ${isDataWorkspace ? 'bg-[#080807]' : ''}`}><div className={`h-10 w-10 animate-spin rounded-full border-4 ${isDataWorkspace ? 'border-white/10 border-t-[#ec8546]' : 'border-stone-200 border-t-stone-800'}`} /></div>}>
           {adminCollection === 'dashboard' ? (
             <AdminDashboard user={user} darkMode={darkMode} />
           ) : adminCollection === 'homepage' ? (
@@ -294,7 +297,10 @@ function AdminContent({ initialItems = [] }) {
           ) : adminCollection === 'seo' ? (
             <AdminSEO darkMode={darkMode} />
           ) : adminCollection === 'analytics' || adminCollection === 'map' ? (
-            <AdminAnalytics darkMode={darkMode} />
+            <AdminAnalytics
+              catalogItems={initialItems}
+              onOpenNavigation={() => setIsSidebarOpen(true)}
+            />
           ) : adminCollection === 'payment_settings' ? (
             <AdminPaymentSettings darkMode={darkMode} />
           ) : adminCollection === 'inventory' ? (

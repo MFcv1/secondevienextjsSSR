@@ -1,0 +1,4 @@
+interface:
+  display_name: "Precision Premium Dashboard"
+  short_description: "Craft calm, premium, data-rich dashboards"
+  default_prompt: "Use $precision-premium-dashboard to design a calm, premium, decision-focused dashboard while preserving product behavior and data truth."
