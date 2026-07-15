@@ -256,7 +256,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
     }, [user, isAdmin]);
 
     useEffect(() => {
-        if (recordCurrentView()) scheduleRouteSync();
+        if (recordCurrentView({ allowPartialDetail: true })) scheduleRouteSync();
         return () => {
             if (routeSyncTimerRef.current) clearTimeout(routeSyncTimerRef.current);
         };
