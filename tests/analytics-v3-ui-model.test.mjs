@@ -56,6 +56,14 @@ test('callable errors keep their real operational meaning', () => {
     assert.equal(classifyAnalyticsCallableError({ code: 'functions/unavailable' }).kind, 'unavailable');
 });
 
+test('the live activity contract stays visibly provisional and contains no visitor identifier', () => {
+    const live = { schemaVersion: 3, activeSessions: 1, provisionalPageViews: 2, provisionalEvents: 3, sessions: [{ routeKey: 'product', eventName: 'product_view', lastReceivedAt: Date.now() }] };
+    assert.equal(live.activeSessions, 1);
+    assert.equal(live.sessions[0].routeKey, 'product');
+    assert.equal('id' in live.sessions[0], false);
+    assert.equal('visitorLabel' in live.sessions[0], false);
+});
+
 test('journey model builds a bounded exact route atlas', () => {
     const model = buildJourney({ transitions: { home__product: 3, product__quote: 2, home__quote: 1 } });
     assert.equal(model.total, 6);

@@ -48,6 +48,15 @@
         { "fieldPath": "measurementMode", "order": "ASCENDING" },
         { "fieldPath": "firstReceivedAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "analytics_sessions_v3",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "measurementMode", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "lastReceivedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [

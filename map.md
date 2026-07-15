@@ -154,6 +154,7 @@ orders + Stripe durable [DB/F]
 
 AdminAppIsland -> AdminDataStudio [C] (lazy direct, sans charger le dashboard V2)
   |-- etat moteur/qualite -> getAnalyticsOverviewV3 [F] -> compacts jours/mois + metadonnees non sensibles
+  |-- activite directe provisoire -> getAnalyticsLiveV3 [F] -> 12 sessions consenties actives, refresh borne 10 s
   |-- Vue d'ensemble -> DataOverview + model [C] -> timeline, intentions, commerce et catalogue borne
   |-- Parcours -> DataJourneys + atlas borne [C] -> transitions compactees
   `-- Sessions -> DataSessions [C] -> list/getAnalyticsSession*V3 [F] -> pagination 25 racines + chunks au clic
@@ -387,6 +388,7 @@ src/kit/admin/
 |-- data-studio/
 |   |-- model.js ...................... modele de presentation, etats moteur et erreurs classees
 |   |-- DataEngineState.jsx ........... connexion, vide honnete, zero mesure et erreur actionnable
+|   |-- DataLiveActivity.jsx .......... lecture provisoire bornee des sessions actives, sans identifiant visiteur
 |   |-- DataReliability.jsx ........... facts techniques de mesure, jamais score visiteur
 |   |-- DataOverview.jsx .............. KPI, timeline, devis, commerce et catalogue borne
 |   |-- DataJourneys.jsx .............. atlas de transitions bornees
@@ -512,7 +514,7 @@ functions-public/
 | Auth/admin | `grantAdminOnAuth`, `addAdminUser`, `removeAdminUser`, `logUserConnection`, `getUserStats`, `syncSuperAdminClaim`, `ensureAdminAccessRegistry` |
 | OTP/passkeys | `sendGuestCheckoutOtp`, `verifyGuestCheckoutOtp`, `sendCustomerLoginOtp`, `verifyCustomerLoginOtp`, quatre endpoints passkey |
 | e-mail | `onOrderCreated`, `onOrderUpdated`, `sendTestEmail`, `sendRefundStatusEmailAdmin` |
-| analytics | V2 preserve; V3 `finalizeAnalyticsSessionsV3`, compactions jours/mois, trois lecteurs admin, retrait privacy; facade d'ingestion dans Next |
+| analytics | V2 preserve; V3 `finalizeAnalyticsSessionsV3`, compactions jours/mois, quatre lecteurs admin dont l'activite directe provisoire, retrait privacy; facade d'ingestion dans Next |
 | maintenance | resets/purges, `runGarbageCollector`, `getUploadUrl`, `onInventorySourceWrite` |
 | SEO legacy | `sitemap`, `shareMeta`, `homeMeta`, `aboutMeta`, `productMeta`, `categoryMeta` |
 | triggers catalogue | `onArtifactDeleted`, `onArtifactUpdated` |

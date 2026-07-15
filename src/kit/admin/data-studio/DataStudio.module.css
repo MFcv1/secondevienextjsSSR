@@ -195,6 +195,33 @@
 
 .workspace { padding: 26px clamp(18px, 2.6vw, 42px) 60px; }
 .viewStack { display: grid; gap: 14px; }
+.liveActivity { overflow: hidden; border: 1px solid var(--ds-line); border-radius: 18px; background: linear-gradient(110deg, rgba(236,133,70,.07), transparent 44%), var(--ds-panel); }
+.liveActivity > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 18px 20px 15px; border-bottom: 1px solid var(--ds-line); }
+.liveActivity h2 { margin: 7px 0 0; font-size: 16px; font-weight: 590; letter-spacing: -.035em; }
+.liveHeaderActions { display: flex; align-items: center; gap: 9px; }
+.liveHeaderActions > span { display: inline-flex; align-items: center; gap: 6px; color: var(--ds-muted); font-size: 9px; font-weight: 620; }
+.liveHeaderActions > span[data-active="true"] { color: #9dbb9e; }
+.liveHeaderActions > span[data-active="true"] svg { color: #89a98d; }
+.liveHeaderActions button { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--ds-line); border-radius: 10px; color: var(--ds-ink); background: var(--ds-panel-raised); }
+.liveHeaderActions button:disabled { cursor: wait; opacity: .58; }
+.liveMetrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.liveMetrics article { display: grid; gap: 6px; min-height: 99px; padding: 15px 18px; border-right: 1px solid var(--ds-line-soft); }
+.liveMetrics article:last-child { border-right: 0; }
+.liveMetrics span { color: var(--ds-muted); font-size: 8px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.liveMetrics strong { font-size: 21px; font-weight: 620; font-variant-numeric: tabular-nums; letter-spacing: -.045em; }
+.liveMetrics small { color: var(--ds-faint); font-size: 8px; line-height: 1.45; }
+.liveRouteList { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1px; margin: 0; padding: 1px 0 0; list-style: none; border-top: 1px solid var(--ds-line-soft); background: var(--ds-line-soft); }
+.liveRouteList li { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 8px; min-height: 57px; padding: 10px 16px; background: var(--ds-panel); }
+.liveRouteList li > svg { color: var(--ds-accent); }
+.liveRouteList li > span { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.liveRouteList strong { overflow: hidden; font-size: 9px; font-weight: 620; text-overflow: ellipsis; white-space: nowrap; }
+.liveRouteList small, .liveRouteList time { color: var(--ds-muted); font-size: 7.5px; }
+.liveRouteList time { font-variant-numeric: tabular-nums; }
+.liveEmpty { display: flex; min-height: 84px; flex-direction: column; align-items: center; justify-content: center; padding: 12px 18px; color: var(--ds-muted); text-align: center; }
+.liveEmpty strong { font-size: 10px; font-weight: 590; }
+.liveEmpty span { margin-top: 5px; color: var(--ds-faint); font-size: 8px; }
+.liveError { margin: 0; padding: 18px 20px; color: #e2b091; font-size: 9px; line-height: 1.5; }
+.liveActivity > footer { padding: 11px 20px; border-top: 1px solid var(--ds-line); color: var(--ds-muted); font-size: 8px; line-height: 1.5; }
 .engineStack { display: grid; gap: 14px; max-width: 980px; margin: 8vh auto 0; }
 .engineState { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 18px; padding: 26px; border: 1px solid var(--ds-line); border-radius: 18px; background: var(--ds-panel); }
 .engineState > svg { color: var(--ds-accent); }
@@ -552,6 +579,9 @@
 .appSkeleton > i:last-child { height: 400px; }
 
 @media (max-width: 1180px) {
+    .liveMetrics { grid-template-columns: 1fr 1fr; }
+    .liveMetrics article:nth-child(2) { border-right: 0; }
+    .liveMetrics article:last-child { grid-column: 1 / -1; border-top: 1px solid var(--ds-line-soft); }
     .reliability > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .reliability article:nth-child(3n) { border-right: 1px solid var(--ds-line-soft); }
     .reliability article:nth-child(2n) { border-right: 0; }
@@ -572,6 +602,12 @@
 }
 
 @media (max-width: 760px) {
+    .liveActivity > header { padding: 16px; }
+    .liveMetrics { grid-template-columns: 1fr; }
+    .liveMetrics article, .liveMetrics article:nth-child(2), .liveMetrics article:last-child { min-height: 79px; border-right: 0; border-top: 1px solid var(--ds-line-soft); }
+    .liveMetrics article:first-child { border-top: 0; }
+    .liveRouteList { grid-template-columns: 1fr; }
+    .liveActivity > footer { padding: 11px 16px; }
     .engineStack { margin-top: 30px; }
     .engineState { grid-template-columns: auto 1fr; gap: 14px; padding: 20px; }
     .engineState button { grid-column: 1 / -1; justify-content: center; width: 100%; }

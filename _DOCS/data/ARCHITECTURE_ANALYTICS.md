@@ -77,7 +77,7 @@ Le code V3 est present sur la branche `codex/data-analytics-v3`:
 - les finaliseurs, reconciliateurs, compactions et demandes de retrait sont des Functions planifiees;
 - `ANALYTICS_V3_SHARD_COUNT` accepte 4, 8 ou 16 et la valeur retenue est figee dans chaque jour; le defaut code est 8;
 - les commandes, paiements et remboursements durables sont produits par le trigger serveur `orders`;
-- `AdminDataStudio` lit les compacts et les sessions consenties via trois lecteurs dedies;
+- `AdminDataStudio` lit les compacts, les sessions consenties et une activite directe provisoire via quatre lecteurs dedies;
 - rules, indexes et tests de contrat ont ete ajoutes.
 
 Le manifeste sandbox porte `ANALYTICS_V3_ENABLED=true` pour le rollout V3 demande explicitement le 15 juillet 2026. Les secrets HMAC sont provisionnes dans Secret Manager; leur valeur n'est jamais stockee dans Git. Le code n'est `PREPROD_READY` qu'apres deploiement confirme des indexes/rules/Functions/App Hosting et verification du parcours synthetique. La chaine de proxy App Hosting reste a verifier avant toute utilisation de l'IP; GeoIP reste donc volontairement indisponible. Les TTL, tests emulateur/E2E/charge et l'enforcement App Check restent des gates explicites.
@@ -483,11 +483,14 @@ Sont separes:
 
 | Vue | Source | Lecture cible | Exactitude visible |
 | --- | --- | --- | --- |
+| Activite directe | racines/chunks consentis `open`, `dirty`, `provisional` recus dans les 90 s | callable admin borne, polling 10 s uniquement quand la vue est ouverte | provisoire, maximum 12 sessions, jamais confondu avec les KPI |
 | Vue d'ensemble | compacts quotidiens/mensuels + shards du jour | chargement initial puis refresh maitrise | exacts + uniques `≈`, fraicheur, mode |
 | Parcours | compact `paths`, transitions/funnel bornes | meme cache que la vue d'ensemble | couverture, jour provisoire, `autres` |
 | Sessions | endpoint admin pagine sur racines consenties | 25 racines, curseur; chunks au clic | couverture detaillee et chunks manquants |
 
 Contrat additionnel de `getAnalyticsOverviewV3` (sans nouveau lecteur): la reponse expose `schemaVersion`, `expectedDocuments`, `sourceDocuments`, `missingDocuments`, `expectedPathDocuments`, `sourcePathDocuments`, `provisionalDocuments`, `newestDataKey`, `latestCompactedAt`, `sequenceGapCount`, `appCheckObservedRatio` et `paymentsSource`. Ces champs de diagnostic restent agreges ou temporels; ils ne contiennent ni secret, token, IP, e-mail, User-Agent brut ni identifiant interne inutile.
+
+Contrat de `getAnalyticsLiveV3`: la reponse expose `schemaVersion`, `observedAt`, `refreshAfterMs`, les comptes provisoires `activeSessions`, `provisionalPageViews`, `provisionalEvents`, puis au plus 12 apercus avec `lastReceivedAt`, `status`, `pageViewCount`, `eventCount`, `routeKey` et `eventName`. Le callable exige le meme admin fort recent et la capacite `analytics_session_viewer` que le registre. Il ne retourne ni ID de session, ni pseudonyme visiteur, ni IP, e-mail, User-Agent, token ou secret. Chaque lecture est auditee; elle n'ecrit ni fait, ni shard, ni compact.
 
 Regles d'interface:
 
@@ -536,6 +539,7 @@ Un futur score fraude ou risque serait un traitement separe avec finalite, base 
 - les rollups rediges peuvent etre lus par un admin fort autorise;
 - les sessions et chunks ne sont pas exposes en lecture Firestore directe generale;
 - l'endpoint sessions exige Auth, registre admin actif, AAL2 recent et capacite `analytics_session_viewer`;
+- l'endpoint d'activite directe applique les memes controles, App Check et audit; le polling admin est borne a 10 secondes et s'arrete hors de la vue ou quand le document est masque;
 - detail, recherche, export, suppression et consultation de petits segments geographiques sont audites;
 - les exports appliquent les memes redactions et limites que l'UI;
 - les robots, admins, tests synthetiques et environnements sont classes avant rollup;

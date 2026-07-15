@@ -32,6 +32,28 @@ function assertSessionViewer(access) {
     if (!allowed) throw new (require('firebase-functions/v1')).https.HttpsError('permission-denied', 'Capacite analytics_session_viewer requise.');
 }
 
+const LIVE_SESSION_WINDOW_MS = 90 * 1000;
+const LIVE_SESSION_LIMIT = 12;
+
+function latestEventFromChunk(chunk) {
+    const events = Array.isArray(chunk?.events) ? chunk.events : [];
+    return events.reduce((latest, event) => (!latest || Number(event?.seq) > Number(latest?.seq) ? event : latest), null);
+}
+
+async function readLiveSessionPreview(rootSnap) {
+    const value = rootSnap.data() || {};
+    const chunks = await rootSnap.ref.collection('chunks').orderBy('lastSeq', 'desc').limit(1).get();
+    const event = latestEventFromChunk(chunks.docs[0]?.data());
+    return {
+        lastReceivedAt: value.lastReceivedAt?.toMillis?.() || null,
+        status: value.status || 'open',
+        pageViewCount: Number(value.pageViewCount) || 0,
+        eventCount: Number(value.eventCount) || 0,
+        routeKey: event?.routeKey || null,
+        eventName: event?.eventName || null
+    };
+}
+
 exports.getAnalyticsOverviewV3 = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
     await checkActiveStrongAdmin(context);
     const period = ['7d', '30d', '12m'].includes(data?.period) ? data.period : '30d';
@@ -125,6 +147,37 @@ exports.listAnalyticsSessionsV3 = regionalFunctions().runWith({ enforceAppCheck:
     const last = snap.docs.at(-1)?.data()?.firstReceivedAt?.toMillis?.() || null;
     await db.collection('analytics_admin_audit_v3').add({ action: 'list_sessions', adminUid: context.auth.uid, count: sessions.length, createdAt: admin.firestore.FieldValue.serverTimestamp() });
     return { sessions, nextCursorMillis: snap.size === pageSize ? last : null };
+});
+
+// Cette lecture reste volontairement bornee et provisoire. Elle ne modifie ni les
+// rollups ni les KPI finalises, et ne retourne aucun identifiant de visiteur.
+exports.getAnalyticsLiveV3 = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+    const { access } = await checkRecentActiveStrongAdmin(context);
+    assertSessionViewer(access);
+    const observedAfter = admin.firestore.Timestamp.fromMillis(Date.now() - LIVE_SESSION_WINDOW_MS);
+    const snap = await db.collection('analytics_sessions_v3')
+        .where('measurementMode', '==', 'product_analytics_consented')
+        .where('status', 'in', ['open', 'dirty', 'provisional'])
+        .where('lastReceivedAt', '>=', observedAfter)
+        .orderBy('lastReceivedAt', 'desc')
+        .limit(LIVE_SESSION_LIMIT)
+        .get();
+    const sessions = await Promise.all(snap.docs.map(readLiveSessionPreview));
+    const pageViews = sessions.reduce((total, session) => total + session.pageViewCount, 0);
+    const events = sessions.reduce((total, session) => total + session.eventCount, 0);
+    await db.collection('analytics_admin_audit_v3').add({
+        action: 'read_live_sessions', adminUid: context.auth.uid, count: sessions.length,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    return {
+        schemaVersion: 3,
+        observedAt: Date.now(),
+        refreshAfterMs: 10_000,
+        activeSessions: sessions.length,
+        provisionalPageViews: pageViews,
+        provisionalEvents: events,
+        sessions
+    };
 });
 
 exports.getAnalyticsSessionDetailV3 = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {

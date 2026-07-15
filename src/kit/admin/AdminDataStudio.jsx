@@ -10,6 +10,7 @@ import DataOverview from './data-studio/DataOverview';
 import DataJourneys from './data-studio/DataJourneys';
 import DataSessions from './data-studio/DataSessions';
 import DataEngineState from './data-studio/DataEngineState';
+import DataLiveActivity from './data-studio/DataLiveActivity';
 import DataReliability from './data-studio/DataReliability';
 import { classifyAnalyticsCallableError, getOverviewState } from './data-studio/model';
 import styles from './data-studio/DataStudio.module.css';
@@ -47,6 +48,9 @@ export default function AdminDataStudio({ catalogItems = [], onOpenNavigation })
     const [data, setData] = useState(() => typeof window === 'undefined' ? null : readCache('30d'));
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [liveData, setLiveData] = useState(null);
+    const [liveLoading, setLiveLoading] = useState(false);
+    const [liveError, setLiveError] = useState(null);
     const [sessions, setSessions] = useState([]);
     const [nextCursorMillis, setNextCursorMillis] = useState(null);
     const [sessionsLoading, setSessionsLoading] = useState(false);
@@ -70,11 +74,31 @@ export default function AdminDataStudio({ catalogItems = [], onOpenNavigation })
         } finally { setLoading(false); }
     }, [period]);
 
+    const refreshLive = useCallback(async () => {
+        setLiveLoading(true); setLiveError(null);
+        try {
+            const callable = await getCallableFunction('getAnalyticsLiveV3');
+            const response = await callable({});
+            setLiveData(response.data);
+        } catch (caughtError) {
+            setLiveError(classifyAnalyticsCallableError(caughtError));
+        } finally { setLiveLoading(false); }
+    }, []);
+
     useEffect(() => {
         const cached = readCache(period);
         setData(cached); setError(null);
         if (!cached) refresh(period);
     }, [period, refresh]);
+
+    useEffect(() => {
+        if (view !== 'overview' || error || !data) return undefined;
+        refreshLive();
+        const interval = window.setInterval(() => {
+            if (document.visibilityState === 'visible') refreshLive();
+        }, 10_000);
+        return () => window.clearInterval(interval);
+    }, [view, data, error, refreshLive]);
 
     const loadSessions = useCallback(async ({ append = false } = {}) => {
         append ? setSessionsLoadingMore(true) : setSessionsLoading(true);
@@ -143,12 +167,13 @@ export default function AdminDataStudio({ catalogItems = [], onOpenNavigation })
             <nav aria-label="Vues Data Studio">{VIEWS.map(({ id, label, icon: Icon }) => <button key={id} type="button" aria-current={view === id ? 'page' : undefined} onClick={() => setView(id)}><Icon size={14} strokeWidth={1.4} /><span>{label}</span></button>)}</nav>
             <div className={styles.deckActions}>
                 <div className={styles.periodControl} aria-label="Période">{PERIODS.map((item) => <button key={item.id} type="button" aria-pressed={period === item.id} onClick={() => setPeriod(item.id)}>{item.label}</button>)}</div>
-                <button type="button" className={styles.refresh} onClick={() => refresh()} disabled={loading}><RefreshCw size={14} className={loading ? styles.spin : ''} /><span>Actualiser</span></button>
+                <button type="button" className={styles.refresh} onClick={() => { refresh(); refreshLive(); }} disabled={loading || liveLoading}><RefreshCw size={14} className={loading || liveLoading ? styles.spin : ''} /><span>Actualiser</span></button>
             </div>
         </div>
 
         <main className={styles.workspace}>
-            {showEngineState ? <DataEngineState state={overviewState} error={error} data={data} onRetry={() => refresh()} /> : null}
+            {data && !error && view === 'overview' ? <DataLiveActivity data={liveData} loading={liveLoading} error={liveError} onRefresh={refreshLive} /> : null}
+            {showEngineState ? <DataEngineState state={overviewState} error={error} data={data} onRetry={() => { refresh(); refreshLive(); }} /> : null}
             {!showEngineState && data && view === 'overview' ? <><DataOverview data={data} period={period} catalogItems={catalogItems} /><DataReliability data={data} /></> : null}
             {!showEngineState && data && view === 'journeys' ? <DataJourneys data={data} /> : null}
             {!showEngineState && view === 'sessions' ? <DataSessions sessions={sessions} loading={sessionsLoading} loadingMore={sessionsLoadingMore} error={sessionsError} selected={selected} detail={detail} detailLoading={detailLoading} detailError={detailError} hasMore={nextCursorMillis != null} onReload={() => loadSessions({ append: false })} onLoadMore={() => loadSessions({ append: true })} onSelect={selectSession} catalogItems={catalogItems} /> : null}

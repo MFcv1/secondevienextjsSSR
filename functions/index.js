@@ -82,7 +82,7 @@ const { updateUserSessions } = require('./src/analytics/updateUserSessions');
 const { onJourneyStepCreated, onCustomEventCreated } = require('./src/analytics/rollups');
 const { onOrderStatsWrite } = require('./src/commerce/orderStats');
 const { finalizeAnalyticsSessionsV3, compactAnalyticsDaysV3, compactAnalyticsMonthsV3 } = require('./src/analytics/v3Jobs');
-const { getAnalyticsOverviewV3, listAnalyticsSessionsV3, getAnalyticsSessionDetailV3 } = require('./src/analytics/v3Readers');
+const { getAnalyticsOverviewV3, getAnalyticsLiveV3, listAnalyticsSessionsV3, getAnalyticsSessionDetailV3 } = require('./src/analytics/v3Readers');
 const { processAnalyticsPrivacyRequestsV3 } = require('./src/analytics/v3Privacy');
 
 exports.initLiveSession = initLiveSession;
@@ -101,6 +101,7 @@ exports.finalizeAnalyticsSessionsV3 = finalizeAnalyticsSessionsV3;
 exports.compactAnalyticsDaysV3 = compactAnalyticsDaysV3;
 exports.compactAnalyticsMonthsV3 = compactAnalyticsMonthsV3;
 exports.getAnalyticsOverviewV3 = getAnalyticsOverviewV3;
+exports.getAnalyticsLiveV3 = getAnalyticsLiveV3;
 exports.listAnalyticsSessionsV3 = listAnalyticsSessionsV3;
 exports.getAnalyticsSessionDetailV3 = getAnalyticsSessionDetailV3;
 exports.processAnalyticsPrivacyRequestsV3 = processAnalyticsPrivacyRequestsV3;
