@@ -101,8 +101,8 @@ Contrat d'architecture approuve: [ARCHITECTURE_ANALYTICS.md](ARCHITECTURE_ANALYT
 
 Etat reel au 15 juillet 2026:
 
-- la V3 est codee mais non deployee: collecteur Next global, facade same-origin, lots IndexedDB idempotents, sessions par onglet, finalisation/reconciliation, HLL, compactions et lecteurs admin dedies;
-- le mode `audience_minimized` est le defaut; les sessions detaillees exigent un consentement produit versionne;
+- la V3 est en validation sur le sandbox: collecteur Next global, facade same-origin, lots IndexedDB idempotents, sessions par onglet, finalisation/reconciliation, HLL, compactions et lecteurs admin dedies;
+- le mode `audience_minimized` est le defaut; les sessions detaillees exigent un consentement produit versionne, expose par `AnalyticsConsentIsland` comme une preference explicite et retirable;
 - le retrait produit cree une demande pseudonymisee, supprime sessions/chunks/faits puis reconstruit les jours touches;
 - les conversions durables viennent du trigger serveur `orders` et des etats Stripe durables;
 - aucune IP, adresse e-mail ou valeur User-Agent brute n'est ecrite par V3; GeoIP reste indisponible tant que les gates region/proxy ne sont pas confirmees;
@@ -111,7 +111,7 @@ Etat reel au 15 juillet 2026:
 - le lecteur V3 retourne aussi des metadonnees de lecture non sensibles (`expectedDocuments`, `sourceDocuments`, documents manquants/provisoires, cle et instant du compact le plus recent, ratio App Check observe et ruptures de sequence) afin de rendre le moteur lisible sans expose d'identifiant ou de secret;
 - le Data Studio distingue connexion, moteur accessible sans compact, periode mesuree a zero, donnees partielles/provisoires, indisponibilite reseau/Function, refus App Check, droits insuffisants et donnees disponibles; aucune erreur ne declenche automatiquement les fixtures de demonstration;
 - l'interface n'affiche ni comparaison, ni revenu, ni classement produit tant que les compacts correspondants ne les fournissent pas; ces absences ont des etats explicites plutot que des valeurs simulees, et une metrique produit ne rejoint une image catalogue que par identifiant correspondant;
-- le manifeste sandbox porte `ANALYTICS_V3_ENABLED=true` pour le rollout explicitement demande; les secrets HMAC sont provisionnes, mais l'etat deploye doit encore etre confirme avant de produire du trafic; TTL, emulateurs et charge restent a executer.
+- le manifeste sandbox porte `ANALYTICS_V3_ENABLED=true` pour le rollout explicitement demande; les secrets HMAC sont provisionnes. La preuve de bout en bout reste une session reelle consentie, finalisee et lisible dans le Data Studio; TTL, emulateurs et charge restent a executer.
 
 Pipeline V2 present mais non operationnel de bout en bout:
 

@@ -136,10 +136,11 @@ AdminReturns
 
 ### 4.6 Analytics
 
-Etat executable V3 code, non deploye:
+Etat executable V3 en validation de rollout sandbox:
 
 ```text
 AnalyticsCollectorIsland [C, layout racine, sauf /admin]
+  <- AnalyticsConsentIsland [C, preference explicite, retirable]
   -> file IndexedDB bornee + lots batchId/tabSessionId/seq
   -> /api/analytics/v3/{session,batch,close,privacy} [API same-origin]
   -> analytics_sessions_v3/{sessionId}/chunks/{batchId} [DB]
@@ -158,7 +159,7 @@ AdminAppIsland -> AdminDataStudio [C] (lazy direct, sans charger le dashboard V2
   `-- Sessions -> DataSessions [C] -> list/getAnalyticsSession*V3 [F] -> pagination 25 racines + chunks au clic
 ```
 
-Contrat et gates restants: `_DOCS/data/ARCHITECTURE_ANALYTICS.md`. L'ancienne interface Data V2 a ete retiree; son historique reste disponible dans Git. Aucun deploiement V3 n'a encore ete execute.
+Contrat et gates restants: `_DOCS/data/ARCHITECTURE_ANALYTICS.md`. L'ancienne interface Data V2 a ete retiree; son historique reste disponible dans Git. Le rollout est limite au sandbox; une session reelle consentie et sa finalisation restent la preuve de bout en bout attendue.
 
 ## 5. Arborescence racine
 
@@ -196,6 +197,7 @@ Contrat et gates restants: `_DOCS/data/ARCHITECTURE_ANALYTICS.md`. L'ancienne in
 app/
 |-- layout.jsx ........................ layout racine, metadata, providers globaux
 |-- AnalyticsCollectorIsland.jsx ...... collecteur V3 global, sessions par onglet et reprise offline
+|-- AnalyticsConsentIsland.jsx ........ preference explicite et retirable pour sessions detaillees V3
 |-- page.jsx .......................... `/`, galerie canonique
 |-- error.jsx ......................... erreur client racine
 |-- not-found.jsx ..................... 404

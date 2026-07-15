@@ -69,6 +69,7 @@ La V3 demarre donc une nouvelle epoque analytique. Les rollups V2 ne doivent pas
 Le code V3 est present sur la branche `codex/data-analytics-v3`:
 
 - `AnalyticsCollectorIsland` est monte dans le layout racine et desactive sur `/admin`;
+- `AnalyticsConsentIsland` donne au visiteur une preference explicite, visible et retirable avant qu'une session detaillee soit ouverte;
 - les Route Handlers `/api/analytics/v3/{session,batch,close,privacy}` portent la facade same-origin;
 - les lots sont immuables, bornes, persistants dans IndexedDB et acquittes avec un `batchId` derive de leur contenu;
 - les secrets HMAC sont declares comme references Secret Manager dans `apphosting.yaml`, sans valeur dans Git;
