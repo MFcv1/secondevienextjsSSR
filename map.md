@@ -151,10 +151,11 @@ orders + Stripe durable [DB/F]
   -> onOrderStatsWrite
   -> analytics_business_facts_v3 + compact overview [DB]
 
-AdminAppIsland -> AdminAnalyticsV3 [C] (lazy direct, sans charger le dashboard V2)
-  |-- Vue d'ensemble -> OverviewView + model [C] -> getAnalyticsOverviewV3 [F] -> compacts jours/mois
-  |-- Parcours -> JourneysView + matrice bornee [C] -> transitions compactees
-  `-- Sessions -> SessionsView [C] -> list/getAnalyticsSession*V3 [F] -> pagination 25 racines + chunks au clic
+AdminAppIsland -> AdminDataStudio [C] (lazy direct, sans charger le dashboard V2)
+  |-- etat moteur/qualite -> getAnalyticsOverviewV3 [F] -> compacts jours/mois + metadonnees non sensibles
+  |-- Vue d'ensemble -> DataOverview + model [C] -> timeline, intentions, commerce et catalogue borne
+  |-- Parcours -> DataJourneys + atlas borne [C] -> transitions compactees
+  `-- Sessions -> DataSessions [C] -> list/getAnalyticsSession*V3 [F] -> pagination 25 racines + chunks au clic
 ```
 
 Contrat et gates restants: `_DOCS/data/ARCHITECTURE_ANALYTICS.md`. L'ancienne interface Data V2 a ete retiree; son historique reste disponible dans Git. Aucun deploiement V3 n'a encore ete execute.
@@ -380,13 +381,15 @@ src/kit/vitrine/
 ```text
 src/kit/admin/
 |-- AdminDashboard.jsx ................ stats, exports et maintenance rapide
-|-- AdminAnalyticsV3.jsx .............. orchestrateur Data V3 charge directement par AdminAppIsland
-|-- analytics-v3/
-|   |-- model.js ...................... modele de presentation sans donnees inventees
-|   |-- OverviewView.jsx .............. KPI, timeline, devis, commerce, contenus et qualite
-|   |-- JourneysView.jsx .............. matrice bornee et classement des transitions
-|   |-- SessionsView.jsx .............. pagination, registre et inspecteur consenti
-|   `-- AnalyticsDataStudio.module.css  systeme visuel isole, responsive et reduced-motion
+|-- AdminDataStudio.jsx ............... orchestrateur Data V3 charge directement par AdminAppIsland
+|-- data-studio/
+|   |-- model.js ...................... modele de presentation, etats moteur et erreurs classees
+|   |-- DataEngineState.jsx ........... connexion, vide honnete, zero mesure et erreur actionnable
+|   |-- DataReliability.jsx ........... facts techniques de mesure, jamais score visiteur
+|   |-- DataOverview.jsx .............. KPI, timeline, devis, commerce et catalogue borne
+|   |-- DataJourneys.jsx .............. atlas de transitions bornees
+|   |-- DataSessions.jsx .............. pagination, registre et inspecteur consenti
+|   `-- DataStudio.module.css ......... systeme visuel isole, responsive et reduced-motion
 |-- AdminForm.jsx ..................... creation/edition annonces
 |-- AdminItemList.jsx ................. liste publications
 |-- GlobalInventoryView.jsx ........... vue catalogue/ordres

@@ -4,12 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
-import { ArrowLeft, BarChart3, Menu, Network, RefreshCw, Rows3, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, BarChart3, Menu, Network, RefreshCw, Rows3 } from 'lucide-react';
 import { getCallableFunction } from '../config/firebaseLazy';
 import DataOverview from './data-studio/DataOverview';
 import DataJourneys from './data-studio/DataJourneys';
 import DataSessions from './data-studio/DataSessions';
-import { getDataStudioPreview, PREVIEW_EVENTS, PREVIEW_SESSIONS } from './data-studio/previewData';
+import DataEngineState from './data-studio/DataEngineState';
+import DataReliability from './data-studio/DataReliability';
+import { classifyAnalyticsCallableError, getOverviewState } from './data-studio/model';
 import styles from './data-studio/DataStudio.module.css';
 
 gsap.registerPlugin(useGSAP);
@@ -44,8 +46,7 @@ export default function AdminDataStudio({ catalogItems = [], onOpenNavigation })
     const [view, setView] = useState('overview');
     const [data, setData] = useState(() => typeof window === 'undefined' ? null : readCache('30d'));
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [previewMode, setPreviewMode] = useState(false);
+    const [error, setError] = useState(null);
     const [sessions, setSessions] = useState([]);
     const [nextCursorMillis, setNextCursorMillis] = useState(null);
     const [sessionsLoading, setSessionsLoading] = useState(false);
@@ -59,21 +60,19 @@ export default function AdminDataStudio({ catalogItems = [], onOpenNavigation })
     const stageRef = useRef(null);
 
     const refresh = useCallback(async (targetPeriod = period) => {
-        setLoading(true); setError('');
+        setLoading(true); setError(null);
         try {
             const callable = await getCallableFunction('getAnalyticsOverviewV3');
             const response = await callable({ period: targetPeriod });
-            setPreviewMode(false); setData(response.data); writeCache(targetPeriod, response.data);
-        } catch {
-            if (process.env.NODE_ENV === 'development') {
-                setData(getDataStudioPreview(targetPeriod)); setPreviewMode(true); setError('');
-            } else setError('Les compacts V3 ne sont pas accessibles. L’administration forte et App Check sont requis.');
+            setData(response.data); writeCache(targetPeriod, response.data);
+        } catch (caughtError) {
+            setData(null); setError(classifyAnalyticsCallableError(caughtError));
         } finally { setLoading(false); }
     }, [period]);
 
     useEffect(() => {
         const cached = readCache(period);
-        setData(cached);
+        setData(cached); setError(null);
         if (!cached) refresh(period);
     }, [period, refresh]);
 
@@ -87,10 +86,8 @@ export default function AdminDataStudio({ catalogItems = [], onOpenNavigation })
             setSessions((current) => append ? [...new Map([...current, ...incoming].map((session) => [session.id, session])).values()] : incoming);
             setNextCursorMillis(response.data.nextCursorMillis ?? null); setSessionsLoaded(true);
             if (!append) { setSelected(null); setDetail([]); }
-        } catch {
-            if (process.env.NODE_ENV === 'development') {
-                setSessions(PREVIEW_SESSIONS); setNextCursorMillis(null); setSessionsLoaded(true); setPreviewMode(true);
-            } else setSessionsError('Accès refusé ou indisponible : AAL2 récent et capacité analytics_session_viewer requis.');
+        } catch (caughtError) {
+            setSessionsError(classifyAnalyticsCallableError(caughtError).detail);
         } finally { setSessionsLoading(false); setSessionsLoadingMore(false); }
     }, [nextCursorMillis]);
 
@@ -100,7 +97,6 @@ export default function AdminDataStudio({ catalogItems = [], onOpenNavigation })
 
     const selectSession = useCallback(async (session) => {
         setSelected(session); setDetail([]); setDetailError(''); setDetailLoading(true);
-        if (session.id.startsWith('preview-')) { setDetail(PREVIEW_EVENTS); setDetailLoading(false); return; }
         try {
             const callable = await getCallableFunction('getAnalyticsSessionDetailV3');
             const events = [];
@@ -120,12 +116,15 @@ export default function AdminDataStudio({ catalogItems = [], onOpenNavigation })
         gsap.fromTo('.ds-reveal', { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: .7, stagger: .055, ease: 'power3.out', clearProps: 'transform,opacity' });
     }, { scope: stageRef, dependencies: [view, period, Boolean(data)] });
 
+    const overviewState = useMemo(() => getOverviewState(data, { loading, error }), [data, error, loading]);
     const status = useMemo(() => {
-        if (previewMode) return { tone: 'preview', title: 'Aperçu local', detail: `Données de démonstration · ${environmentLabel()}` };
-        if (error) return { tone: 'warning', title: 'Lecture interrompue', detail: error };
-        if (!data) return { tone: 'reading', title: 'Connexion aux compacts', detail: 'Lecture du schéma V3…' };
-        return { tone: data.provisional ? 'provisional' : 'ready', title: data.provisional ? 'Période provisoire' : 'Données finalisées', detail: `${data.sourceDocuments || 0} compacts · schéma V3` };
-    }, [data, error, previewMode]);
+        if (overviewState === 'connecting') return { tone: 'reading', title: 'Connexion aux compacts', detail: 'Lecture du schéma V3…' };
+        if (overviewState === 'error') return { tone: 'warning', title: error?.title || 'Lecture interrompue', detail: error?.detail || 'Le moteur ne répond pas.' };
+        if (overviewState === 'empty-engine') return { tone: 'ready', title: 'Moteur connecté', detail: `Aucun compact · ${environmentLabel()}` };
+        if (overviewState === 'measured-zero') return { tone: 'ready', title: 'Période sans activité', detail: `${data.sourceDocuments || 0} compacts finalisés` };
+        return { tone: overviewState === 'partial' ? 'provisional' : 'ready', title: overviewState === 'partial' ? 'Données partielles' : 'Données finalisées', detail: `${data.sourceDocuments || 0} / ${data.expectedDocuments || 0} compacts · schéma V3` };
+    }, [data, error, overviewState]);
+    const showEngineState = ['connecting', 'error', 'empty-engine', 'measured-zero'].includes(overviewState);
 
     return <section className={styles.studio} ref={stageRef}>
         <header className={styles.appBar}>
@@ -149,11 +148,10 @@ export default function AdminDataStudio({ catalogItems = [], onOpenNavigation })
         </div>
 
         <main className={styles.workspace}>
-            {data && view === 'overview' ? <DataOverview data={data} period={period} catalogItems={catalogItems} /> : null}
-            {data && view === 'journeys' ? <DataJourneys data={data} /> : null}
-            {view === 'sessions' ? <DataSessions sessions={sessions} loading={sessionsLoading} loadingMore={sessionsLoadingMore} error={sessionsError} selected={selected} detail={detail} detailLoading={detailLoading} detailError={detailError} hasMore={nextCursorMillis != null} onReload={() => loadSessions({ append: false })} onLoadMore={() => loadSessions({ append: true })} onSelect={selectSession} catalogItems={catalogItems} /> : null}
-            {!data && !error && view !== 'sessions' ? <div className={styles.appSkeleton}><i /><div><i /><i /><i /><i /></div><i /></div> : null}
-            {!data && error && view !== 'sessions' ? <section className={styles.dataError}><ShieldAlert size={22} strokeWidth={1.4} /><div><strong>Les données ne sont pas accessibles.</strong><p>{error}</p></div><button type="button" onClick={() => refresh()}>Réessayer</button></section> : null}
+            {showEngineState ? <DataEngineState state={overviewState} error={error} data={data} onRetry={() => refresh()} /> : null}
+            {!showEngineState && data && view === 'overview' ? <><DataOverview data={data} period={period} catalogItems={catalogItems} /><DataReliability data={data} /></> : null}
+            {!showEngineState && data && view === 'journeys' ? <DataJourneys data={data} /> : null}
+            {!showEngineState && view === 'sessions' ? <DataSessions sessions={sessions} loading={sessionsLoading} loadingMore={sessionsLoadingMore} error={sessionsError} selected={selected} detail={detail} detailLoading={detailLoading} detailError={detailError} hasMore={nextCursorMillis != null} onReload={() => loadSessions({ append: false })} onLoadMore={() => loadSessions({ append: true })} onSelect={selectSession} catalogItems={catalogItems} /> : null}
         </main>
     </section>;
 }

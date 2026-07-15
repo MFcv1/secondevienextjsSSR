@@ -107,8 +107,10 @@ Etat reel au 15 juillet 2026:
 - les conversions durables viennent du trigger serveur `orders` et des etats Stripe durables;
 - aucune IP, adresse e-mail ou valeur User-Agent brute n'est ecrite par V3; GeoIP reste indisponible tant que les gates region/proxy ne sont pas confirmees;
 - l'ancienne interface Data V2 a ete retiree; son historique Git reste le rollback, tandis que les collections et migrations V2 encore necessaires ne sont pas supprimees par cette refonte visuelle;
-- `AdminAppIsland` charge directement l'interface Data V3: modele de presentation separe, timeline factuelle, signaux devis distincts des faits commerce serveur, matrice de parcours bornee, sessions consenties pagees par 25 et inspecteur de chunks a la demande;
-- l'interface n'affiche ni comparaison, ni revenu, ni classement produit tant que les compacts correspondants ne les fournissent pas; ces absences ont des etats explicites plutot que des valeurs simulees;
+- `AdminAppIsland` charge directement `AdminDataStudio`: modele de presentation separe, timeline factuelle, signaux devis distincts des faits commerce serveur, atlas de parcours borne, sessions consenties pagees par 25 et inspecteur de chunks a la demande;
+- le lecteur V3 retourne aussi des metadonnees de lecture non sensibles (`expectedDocuments`, `sourceDocuments`, documents manquants/provisoires, cle et instant du compact le plus recent, ratio App Check observe et ruptures de sequence) afin de rendre le moteur lisible sans expose d'identifiant ou de secret;
+- le Data Studio distingue connexion, moteur accessible sans compact, periode mesuree a zero, donnees partielles/provisoires, indisponibilite reseau/Function, refus App Check, droits insuffisants et donnees disponibles; aucune erreur ne declenche automatiquement les fixtures de demonstration;
+- l'interface n'affiche ni comparaison, ni revenu, ni classement produit tant que les compacts correspondants ne les fournissent pas; ces absences ont des etats explicites plutot que des valeurs simulees, et une metrique produit ne rejoint une image catalogue que par identifiant correspondant;
 - le manifeste sandbox porte `ANALYTICS_V3_ENABLED=true` pour le rollout explicitement demande; les secrets HMAC sont provisionnes, mais l'etat deploye doit encore etre confirme avant de produire du trafic; TTL, emulateurs et charge restent a executer.
 
 Pipeline V2 present mais non operationnel de bout en bout:

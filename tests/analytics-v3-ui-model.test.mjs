@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildJourney, buildOverview, formatDuration } from '../src/kit/admin/data-studio/model.js';
+import { buildJourney, buildOverview, classifyAnalyticsCallableError, formatDuration, getOverviewState } from '../src/kit/admin/data-studio/model.js';
 import { PREVIEW_SESSIONS, getDataStudioPreview } from '../src/kit/admin/data-studio/previewData.js';
 
 test('overview keeps estimated, observed and server facts distinct', () => {
@@ -31,6 +31,29 @@ test('catalog images remain visible without invented product ranking', () => {
     assert.equal(model.products[0].name, 'Commode');
     assert.equal(model.products[0].image, '/commode.webp');
     assert.equal(model.products[0].metricsAvailable, false);
+});
+
+test('a product metric never inherits an unrelated catalogue image by position', () => {
+    const model = buildOverview({ sessions: 2, products: [{ id: 'missing-product', views: 4 }] }, '7d', [{ id: 'p1', name: 'Commode', images: ['/commode.webp'] }]);
+    assert.equal(model.products[0].name, 'Pièce suivie');
+    assert.equal(model.products[0].image, '');
+    assert.equal(model.products[0].views, 4);
+});
+
+test('overview states distinguish connection, an accessible empty engine, measured zero and partial data', () => {
+    assert.equal(getOverviewState(null, { loading: true }), 'connecting');
+    assert.equal(getOverviewState(null, { error: { kind: 'unavailable' } }), 'error');
+    assert.equal(getOverviewState({ sourceDocuments: 0, sessions: 0 }), 'empty-engine');
+    assert.equal(getOverviewState({ sourceDocuments: 2, sessions: 0, pageViews: 0, events: 0, business: {} }), 'measured-zero');
+    assert.equal(getOverviewState({ sourceDocuments: 2, sessions: 1, provisional: true }), 'partial');
+    assert.equal(getOverviewState({ sourceDocuments: 2, sessions: 1, expectedDocuments: 2 }), 'available');
+});
+
+test('callable errors keep their real operational meaning', () => {
+    assert.equal(classifyAnalyticsCallableError({ code: 'functions/permission-denied' }).kind, 'permission-denied');
+    assert.equal(classifyAnalyticsCallableError({ code: 'functions/unauthenticated' }).kind, 'unauthenticated');
+    assert.equal(classifyAnalyticsCallableError({ code: 'functions/failed-precondition', message: 'App Check token rejected' }).kind, 'app-check');
+    assert.equal(classifyAnalyticsCallableError({ code: 'functions/unavailable' }).kind, 'unavailable');
 });
 
 test('journey model builds a bounded exact route atlas', () => {

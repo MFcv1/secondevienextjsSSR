@@ -41,21 +41,35 @@ exports.getAnalyticsOverviewV3 = regionalFunctions().runWith({ enforceAppCheck: 
         refs.length ? db.getAll(...refs) : [],
         pathRefs.length ? db.getAll(...pathRefs) : []
     ]);
-    const result = { sessions: 0, pageViews: 0, events: 0, activeDurationMs: 0, pages: {}, actions: {}, outcomes: {}, modes: {}, business: {}, identity: {}, completeness: {}, integrity: {}, transitions: {}, provisional: false, sourceDocuments: 0 };
+    const result = {
+        schemaVersion: 3,
+        sessions: 0, pageViews: 0, events: 0, activeDurationMs: 0,
+        pages: {}, actions: {}, outcomes: {}, modes: {}, business: {}, identity: {},
+        completeness: {}, integrity: {}, transitions: {}, provisional: false,
+        expectedDocuments: refs.length, sourceDocuments: 0, missingDocuments: refs.length,
+        expectedPathDocuments: pathRefs.length, sourcePathDocuments: 0,
+        provisionalDocuments: 0, newestDataKey: null, latestCompactedAt: null
+    };
     const sketches = [];
     const timeline = [];
     for (const snap of docs) {
         if (!snap.exists) continue;
         const value = snap.data();
         result.sourceDocuments += 1;
+        if (value.provisional === true) result.provisionalDocuments += 1;
         result.provisional ||= value.provisional === true;
         for (const key of ['sessions', 'pageViews', 'events', 'activeDurationMs']) result[key] += Number(value[key]) || 0;
         for (const key of ['pages', 'actions', 'outcomes', 'modes', 'business', 'identity', 'completeness', 'integrity']) mergeMap(result[key], value[key]);
         if (value.uniqueHll) sketches.push(value.uniqueHll);
-        timeline.push({ key: value.dateKey || value.monthKey || snap.ref.parent.parent?.id, sessions: Number(value.sessions) || 0, quoteViews: Number(value.pages?.quote) || 0 });
+        const key = value.dateKey || value.monthKey || snap.ref.parent.parent?.id;
+        const compactedAt = value.compactedAt?.toMillis?.() || null;
+        if (key && (!result.newestDataKey || String(key) > String(result.newestDataKey))) result.newestDataKey = key;
+        if (compactedAt && (!result.latestCompactedAt || compactedAt > result.latestCompactedAt)) result.latestCompactedAt = compactedAt;
+        timeline.push({ key, sessions: Number(value.sessions) || 0, quoteViews: Number(value.pages?.quote) || 0 });
     }
     for (const snap of pathDocs) {
         if (!snap.exists) continue;
+        result.sourcePathDocuments += 1;
         mergeMap(result.transitions, snap.data().transitions);
         result.provisional ||= snap.data().provisional === true;
     }
@@ -63,10 +77,16 @@ exports.getAnalyticsOverviewV3 = regionalFunctions().runWith({ enforceAppCheck: 
     result.uniqueVisitorsApprox = sketches.length ? estimateHll(hll) : null;
     result.uniqueVisitorsEstimated = true;
     result.detailedCoverage = result.sessions ? Number(result.modes.product_analytics_consented || 0) / result.sessions : 0;
+    result.missingDocuments = Math.max(0, result.expectedDocuments - result.sourceDocuments);
+    result.sequenceGapCount = Number(result.completeness.sequence_gap || 0);
+    result.appCheckObservedRatio = result.sessions
+        ? Number(result.integrity.app_check_observed || 0) / result.sessions
+        : null;
+    result.paymentsSource = 'stripe_order_state';
     result.timeline = timeline.sort((a, b) => String(a.key).localeCompare(String(b.key)));
     result.quality = {
         identity_resolution: result.uniqueVisitorsApprox === null ? 'partielle' : 'bonne',
-        data_completeness: result.sourceDocuments === refs.length && Number(result.completeness.sequence_gap || 0) === 0 ? 'bonne' : 'partielle',
+        data_completeness: result.sourceDocuments === refs.length && result.sequenceGapCount === 0 ? 'bonne' : 'partielle',
         ingestion_integrity: Number(result.integrity.app_check_observed || 0) >= Number(result.sessions || 0) * 0.95 ? 'forte' : 'partielle',
         formulaVersion: 1
     };

@@ -31,6 +31,31 @@ export const safeNumber = (value) => Number.isFinite(Number(value)) ? Math.max(0
 export const formatNumber = (value) => NUMBER.format(safeNumber(value));
 export const formatPercent = (value) => `${Math.round(safeNumber(value) * 100)} %`;
 
+export function classifyAnalyticsCallableError(error) {
+    const code = String(error?.code || '').toLowerCase();
+    const message = String(error?.message || '').toLowerCase();
+    if (code.includes('permission-denied')) return { kind: 'permission-denied', title: 'Droits administrateur insuffisants', detail: 'Cette lecture exige les droits Data Studio et une assurance forte récente.' };
+    if (code.includes('unauthenticated')) return { kind: 'unauthenticated', title: 'Connexion administrateur requise', detail: 'Reconnectez-vous puis confirmez votre identité avant de relancer la lecture.' };
+    if (message.includes('app check') || code.includes('app-check')) return { kind: 'app-check', title: 'App Check refusé', detail: 'Le moteur a refusé cette requête avant toute lecture de données.' };
+    if (message.includes('analytics_v3_enabled') || message.includes('moteur est désactivé') || code.includes('analytics-v3-disabled')) return { kind: 'engine-disabled', title: 'Moteur V3 désactivé', detail: 'Le rollout Analytics V3 n’est pas actif dans cet environnement.' };
+    if (code.includes('failed-precondition')) return { kind: 'app-check', title: 'Précondition de sécurité non satisfaite', detail: 'App Check ou une précondition du moteur a refusé cette requête.' };
+    return { kind: 'unavailable', title: 'Moteur temporairement indisponible', detail: 'La Function ou le réseau ne répond pas. Aucune donnée de démonstration n’est affichée.' };
+}
+
+export function getOverviewState(data, { loading = false, error = null } = {}) {
+    if (loading && !data) return 'connecting';
+    if (error) return 'error';
+    if (!data) return 'connecting';
+    const sessions = safeNumber(data.sessions);
+    const sourceDocuments = safeNumber(data.sourceDocuments);
+    if (sourceDocuments === 0 && sessions === 0) return 'empty-engine';
+    const observedActivity = sessions + safeNumber(data.pageViews) + safeNumber(data.events)
+        + Object.values(data.business || {}).reduce((total, value) => total + safeNumber(value), 0);
+    if (observedActivity === 0) return 'measured-zero';
+    if (data.provisional || safeNumber(data.missingDocuments) > 0) return 'partial';
+    return 'available';
+}
+
 export function formatDuration(milliseconds) {
     const seconds = Math.max(0, Math.round(safeNumber(milliseconds) / 1000));
     if (seconds < 60) return `${seconds} s`;
@@ -77,9 +102,10 @@ export function buildProducts(data, catalogItems = []) {
     const source = normalizeProductMetrics(data?.products).slice(0, 8);
 
     if (source.length) return source.map((metric, index) => {
-        const item = byKey.get(String(metric.id || metric.productId || '').toLowerCase()) || catalog[index] || {};
+        const metricId = String(metric.id || metric.productId || '').toLowerCase();
+        const item = metricId ? (byKey.get(metricId) || {}) : {};
         return {
-            id: String(metric.id || metric.productId || item.id || `product-${index}`),
+            id: String(metric.id || metric.productId || item?.id || `product-${index}`),
             name: item.name || item.title || metric.name || 'Pièce suivie',
             image: imageFor(item),
             category: item.category || item.categoryName || metric.category || 'Pièce unique',

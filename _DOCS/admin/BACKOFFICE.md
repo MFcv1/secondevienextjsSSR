@@ -1,6 +1,6 @@
 # Back-office
 
-Derniere mise a jour: 2026-07-14
+Derniere mise a jour: 2026-07-15
 Statut: `PREPROD_READY`
 
 ## 1. Architecture
@@ -26,7 +26,7 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 | ID | Label | Module principal | Role |
 | --- | --- | --- | --- |
 | `dashboard` | Stats | `AdminDashboard` | CA, commandes, inventaire, exports |
-| `analytics` | Data | `AdminAnalyticsV3` | compacts V3, parcours agrégés, sessions consenties |
+| `analytics` | Data | `AdminDataStudio` | compacts V3, atlas agrégé, sessions consenties |
 | `furniture` | Publication | `AdminForm`, `AdminItemList` | CRUD annonces et images |
 | `inventory` | Vue Globale | `GlobalInventoryView` | ordres editoriaux et stock catalogue |
 | `studio` | Studio | `AdminStudio` | outils de contenu/creation |
@@ -91,7 +91,7 @@ Le dashboard lit de preference les agregats:
 
 Des fallbacks historiques bornes existent si les agrégats manquent. Ils ne doivent pas redevenir une lecture illimitee de toutes les commandes ou de tout le catalogue.
 
-`AdminAnalyticsV3` charge uniquement les compacts bornes de la periode active et conserve un cache de session. La vue d'ensemble separe audience estimee, activite observee, intentions de devis et faits commerce serveur. `Parcours` utilise une matrice de transitions agrégées; `Sessions` page les racines consenties par 25 et ne charge les chunks qu'au clic. En developpement seulement, un jeu de demonstration explicitement etiquete permet la recette visuelle lorsque App Check bloque les callables locaux; il n'est jamais utilise dans le build heberge.
+`AdminDataStudio` charge uniquement les compacts bornes de la periode active et conserve un cache de session. Il rend explicitement la connexion en cours, le moteur accessible sans compact, une periode sans activite, les donnees partielles/provisoires, App Check refuse, les droits insuffisants et l'indisponibilite du callable; aucune erreur ne declenche de jeu de demonstration. La surface compacte « Connexion et qualité de mesure » expose la disponibilite du callable, le schema V3, la couverture des compacts, la fraicheur, les periodes provisoires, les ruptures de sequence, l'observation App Check, la couverture des sessions consenties et la source serveur des paiements. Elle ne qualifie jamais un visiteur. La vue d'ensemble separe audience estimee, activite observee, intentions de devis et faits commerce serveur. `Parcours` utilise un atlas de transitions agregees; `Sessions` page les racines consenties par 25 et ne charge les chunks qu'au clic. Les fixtures de demonstration restent isolees aux tests automatises ou a un mode explicitement active, jamais a un fallback d'erreur.
 
 ## 8. Maintenance
 

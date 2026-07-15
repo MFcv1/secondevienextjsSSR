@@ -195,6 +195,29 @@
 
 .workspace { padding: 26px clamp(18px, 2.6vw, 42px) 60px; }
 .viewStack { display: grid; gap: 14px; }
+.engineStack { display: grid; gap: 14px; max-width: 980px; margin: 8vh auto 0; }
+.engineState { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 18px; padding: 26px; border: 1px solid var(--ds-line); border-radius: 18px; background: var(--ds-panel); }
+.engineState > svg { color: var(--ds-accent); }
+.engineState > div { min-width: 0; }
+.engineState h2 { margin: 7px 0 0; font-size: 20px; font-weight: 590; letter-spacing: -.04em; }
+.engineState p { max-width: 54ch; margin: 8px 0 0; color: var(--ds-muted); font-size: 11px; line-height: 1.55; }
+.engineState button { display: inline-flex; min-height: 38px; align-items: center; gap: 7px; padding: 0 12px; border: 1px solid var(--ds-line); border-radius: 11px; color: var(--ds-ink); background: var(--ds-panel-raised); font-size: 10px; font-weight: 650; }
+.engineStateError { border-color: rgba(236,133,70,.34); background: linear-gradient(135deg, var(--ds-accent-soft), transparent 55%), var(--ds-panel); }
+.reliability { overflow: hidden; border: 1px solid var(--ds-line); border-radius: 18px; background: var(--ds-panel); }
+.reliability > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 19px 20px 16px; border-bottom: 1px solid var(--ds-line); }
+.reliability h2 { margin: 7px 0 0; font-size: 16px; font-weight: 590; letter-spacing: -.035em; }
+.reliability > header > svg { color: var(--ds-muted); }
+.reliability > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.reliability article { position: relative; display: grid; gap: 5px; min-height: 96px; padding: 15px 18px; border-right: 1px solid var(--ds-line-soft); border-bottom: 1px solid var(--ds-line-soft); }
+.reliability article:nth-child(3n) { border-right: 0; }
+.reliability article:last-child { border-right: 0; border-bottom: 0; }
+.reliability article::before { position: absolute; top: 19px; right: 18px; width: 6px; height: 6px; border-radius: 50%; background: var(--ds-faint); content: ''; }
+.reliability article[data-state='good']::before { background: #89a98d; }
+.reliability article[data-state='attention']::before { background: var(--ds-accent); }
+.reliability article span { color: var(--ds-muted); font-size: 8px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.reliability article strong { overflow: hidden; padding-right: 12px; font-size: 12px; font-weight: 630; text-overflow: ellipsis; white-space: nowrap; }
+.reliability article small { color: var(--ds-faint); font-size: 8px; line-height: 1.45; }
+.reliability > footer { padding: 12px 20px; border-top: 1px solid var(--ds-line); color: var(--ds-muted); font-size: 8.5px; line-height: 1.5; }
 .kicker {
     color: var(--ds-muted);
     font-size: 8.5px;
@@ -529,6 +552,9 @@
 .appSkeleton > i:last-child { height: 400px; }
 
 @media (max-width: 1180px) {
+    .reliability > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .reliability article:nth-child(3n) { border-right: 1px solid var(--ds-line-soft); }
+    .reliability article:nth-child(2n) { border-right: 0; }
     .metricRail { grid-template-columns: repeat(2, 1fr); }
     .metricRail article:nth-child(2) { border-right: 0; }
     .metricRail article:nth-child(-n+2) { border-bottom: 1px solid var(--ds-line); }
@@ -546,6 +572,15 @@
 }
 
 @media (max-width: 760px) {
+    .engineStack { margin-top: 30px; }
+    .engineState { grid-template-columns: auto 1fr; gap: 14px; padding: 20px; }
+    .engineState button { grid-column: 1 / -1; justify-content: center; width: 100%; }
+    .engineState h2 { font-size: 18px; }
+    .reliability > div { grid-template-columns: 1fr; }
+    .reliability article,
+    .reliability article:nth-child(3n),
+    .reliability article:nth-child(2n) { min-height: 84px; border-right: 0; border-bottom: 1px solid var(--ds-line-soft); }
+    .reliability article:last-child { border-bottom: 0; }
     .appBar { min-height: 68px; padding: 10px 14px; }
     .mobileMenu { display: grid; }
     .brandMark { display: none; }
