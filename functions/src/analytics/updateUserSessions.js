@@ -7,7 +7,6 @@
 const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const { SUPER_ADMIN_EMAIL: SUPER_ADMIN_EMAIL_SECRET } = require('../../helpers/secrets');
-const { getSuperAdminEmail } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
 
 const db = admin.firestore();
@@ -20,26 +19,10 @@ exports.updateUserSessions = regionalFunctions().runWith({ secrets: [SUPER_ADMIN
     const userId = context.auth.uid;
     const email = String(context.auth.token.email || '').trim().toLowerCase();
 
-    // Vérifier si c'est un admin (custom claim OU super admin OU dans la whitelist)
-    const superAdminEmail = getSuperAdminEmail();
-    let isAdmin = context.auth.token.admin === true || context.auth.token.superAdmin === true || email === superAdminEmail;
-
-    // Si pas encore détecté comme admin, vérifier dans Firestore
-    if (!isAdmin) {
-        try {
-            const userDoc = await db.doc(`users/${userId}`).get();
-            if (userDoc.exists) {
-                const userData = userDoc.data();
-                isAdmin = userData.role === 'admin' || userData.role === 'super_admin';
-            }
-        } catch (err) {
-            console.error("Error checking user role:", err);
-        }
-    }
-
-    // Le registry UID prime sur les claims, l'email et l'ancien profil Firestore.
+    // Le registre UID est l'autorité finale. Les anciennes vérifications du profil
+    // étaient toujours écrasées ici et consommaient une lecture sans changer le résultat.
     const accessSnap = await db.collection('sys_admin_access').doc(userId).get();
-    isAdmin = accessSnap.exists && accessSnap.data().active === true;
+    const isAdmin = accessSnap.exists && accessSnap.data().active === true;
 
     console.log(`updateUserSessions called for ${email}, isAdmin: ${isAdmin}, IP: ${ip}`);
 

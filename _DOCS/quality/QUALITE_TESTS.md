@@ -1,6 +1,6 @@
 # Qualite, tests et gates
 
-Derniere mise a jour: 2026-07-14
+Derniere mise a jour: 2026-07-16
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Principe de proportion
@@ -57,6 +57,12 @@ Le contrat analytics importe le verificateur du moteur Tous a Table et controle 
 npm run test:analytics
 ```
 
+Le contrat de cout Firestore verrouille le rejet des paginations catalogue invalides avant toute lecture, le heartbeat visible uniquement, la suppression d'une lecture profil redondante et les prechargements categorie/mega-menu fondes sur l'intention:
+
+```bash
+npm run test:firestore-cost
+```
+
 ## 4. Matrice par domaine
 
 | Domaine touche | Gates recommandees |
@@ -74,6 +80,7 @@ npm run test:analytics
 | remboursement | `e2e:refund-stripe` sur commande test explicite |
 | revalidation | `e2e:revalidate-catalog` |
 | Functions/rules | tests cibles, audit exports/rules, deploiement sandbox cible |
+| couts Firestore | `test:firestore-cost`, `test:analytics`, mesure Usage Insights avant/apres |
 | infra | `infra:env`, `infra:deploy`, `appcheck:audit` en lecture |
 
 ## 5. Gates publiques

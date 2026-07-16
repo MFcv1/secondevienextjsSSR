@@ -27,6 +27,7 @@
     "maintenance:audit": "node scripts/maintenance-audit.mjs",
     "lint": "eslint .",
     "test:analytics": "node scripts/verify-analytics-reliability.mjs",
+    "test:firestore-cost": "node --test tests/firestore-read-cost-contract.test.cjs",
     "test:functions:auth": "node tests/auth-claims.test.cjs",
     "test:auth-store": "node --test tests/auth-store-contract.test.cjs",
     "test:passkey-portability": "node --test tests/passkey-portability-contract.test.cjs",

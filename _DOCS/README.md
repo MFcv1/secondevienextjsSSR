@@ -25,6 +25,7 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 | Infrastructure | [INFRASTRUCTURE.md](infra/INFRASTRUCTURE.md) | Firebase, App Hosting, regions, environnements, production |
 | Performance | [PERFORMANCE.md](perf/PERFORMANCE.md) | budgets, invariants, mesures et dettes restantes |
 | Donnees et analytics | [DONNEES_ANALYTICS.md](data/DONNEES_ANALYTICS.md) | collections, rollups, retention, migration et fiabilite |
+| Audit couts Firestore | [AUDIT_COUTS_FIRESTORE.md](data/AUDIT_COUTS_FIRESTORE.md) | mesures Usage/Query Insights, attribution des lectures et protocole avant/apres |
 | Exploitation | [EXPLOITATION.md](operations/EXPLOITATION.md) | commandes, deploiement, rollback, incidents et backlog controle |
 | Qualite et tests | [QUALITE_TESTS.md](quality/QUALITE_TESTS.md) | CI, gates, tests cibles, matrice de validation |
 | Assistant devis IA | [ASSISTANT_DEVIS.md](ai/ASSISTANT_DEVIS.md) | cadrage MVP non implemente, garde-fous et conditions de reprise |

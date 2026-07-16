@@ -1,6 +1,6 @@
 # Annonces, catalogue et recherche
 
-Derniere mise a jour: 2026-07-14
+Derniere mise a jour: 2026-07-16
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Perimetre
@@ -104,6 +104,8 @@ La recherche combine:
 - endpoint serveur `/api/search`.
 
 Le moteur doit normaliser accents, casse et termes de categorie sans exposer les brouillons. `/recherche` reste `noindex,follow` pour eviter les pages de resultats infinies dans l'index.
+
+L'appel normal du catalogue de recherche demande 120 cartes, qui est aussi la borne appliquee par `publicCatalog`. Le fallback Firestore direct conserve sa limite historique de 160 afin de ne pas reduire la couverture de recherche en cas d'indisponibilite du service public. L'API publique refuse avant toute lecture Firestore un `limit` fourni mais invalide, ainsi qu'un curseur invalide ou utilise sans limite; les curseurs valides sont canonicalises pour ne pas multiplier les cles de cache equivalentes.
 
 ## 8. Personnalisation editoriale
 

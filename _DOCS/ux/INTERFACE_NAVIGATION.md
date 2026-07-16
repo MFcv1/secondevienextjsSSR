@@ -1,6 +1,6 @@
 # Interface, navigation et contrats UX
 
-Derniere mise a jour: 2026-07-14
+Derniere mise a jour: 2026-07-16
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Intention
@@ -85,6 +85,8 @@ L'interface de connexion reste commune. Les droits et l'assurance forte sont imp
 
 - utiliser `Link` et le routeur Next pour les destinations internes;
 - prefetcher les routes probables sans saturer le reseau;
+- dans le mega-menu, prefetcher la destination reellement survolee, focalisee ou pressee, jamais toutes les routes d'une famille a l'ouverture;
+- dans une grille categorie, la simple proximite du viewport chauffe les images; la route produit attend une intention hover, focus ou press;
 - fermer un overlay immediatement au clic valide;
 - ne pas afficher la galerie entre le mega menu et `/mes-commandes`;
 - garder un loading coherent sur les tunnels dynamiques;

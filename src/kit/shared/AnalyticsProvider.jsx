@@ -264,10 +264,10 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
 
     useEffect(() => {
         const interval = setInterval(() => {
-            if (!sessionIdRef.current || isAdmin) return;
+            if (!sessionIdRef.current || isAdmin || document.visibilityState !== 'visible') return;
 
             flushSessionRef.current({
-                sessionActive: document.visibilityState === 'visible',
+                sessionActive: true,
                 ensureView: true
             });
         }, ANALYTICS_SYNC_INTERVAL_MS);

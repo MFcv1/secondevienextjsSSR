@@ -191,6 +191,7 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
   const exitTimeoutRef = useRef(null);
   const frameRef = useRef(null);
   const navRef = useRef(null);
+  const prefetchedHrefsRef = useRef(new Set());
 
   const clearMenuTimers = useCallback(() => {
     if (timeoutRef.current) {
@@ -208,14 +209,17 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
   }, []);
 
   const prefetchMenuHref = useCallback((href) => {
-    if (!href || !href.startsWith('/')) return;
-    router.prefetch(href);
+    if (!href || !href.startsWith('/') || prefetchedHrefsRef.current.has(href)) return;
+    prefetchedHrefsRef.current.add(href);
+    try {
+      router.prefetch(href);
+    } catch {
+      prefetchedHrefsRef.current.delete(href);
+    }
   }, [router]);
 
   const prefetchMenuItem = useCallback((item) => {
     prefetchMenuHref(item?.href);
-    item?.links?.forEach((link) => prefetchMenuHref(link.href));
-    if (item?.resources?.length) prefetchMenuHref('/devis');
   }, [prefetchMenuHref]);
 
   const openPanel = useCallback((itemId) => {
@@ -352,7 +356,15 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
                       </h3>
                       <div className={`grid ${activeItem.singleColumn ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-3'}`}>
                         {activeItem.links?.map(({ Icon, title, desc, href }) => (
-                          <Link key={title} href={href} prefetch={false} className={`group/link flex min-h-[76px] w-full gap-4 rounded-xl p-3 transition-colors ${darkMode ? 'hover:bg-white/5' : 'hover:bg-stone-100/80 dark:hover:bg-white/5'}`}>
+                          <Link
+                            key={title}
+                            href={href}
+                            prefetch={false}
+                            onPointerEnter={() => prefetchMenuHref(href)}
+                            onPointerDown={() => prefetchMenuHref(href)}
+                            onFocus={() => prefetchMenuHref(href)}
+                            className={`group/link flex min-h-[76px] w-full gap-4 rounded-xl p-3 transition-colors ${darkMode ? 'hover:bg-white/5' : 'hover:bg-stone-100/80 dark:hover:bg-white/5'}`}
+                          >
                             <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border transition-all duration-300 ${darkMode ? 'border-white/5 bg-white/5 group-hover/link:bg-white/10' : 'border-stone-100 bg-stone-50 group-hover/link:border-stone-200 group-hover/link:bg-stone-100 dark:border-white/5 dark:bg-white/5 dark:group-hover/link:bg-white/10'}`}>
                               <Icon size={20} strokeWidth={1.5} className={`transition-all duration-300 group-hover/link:scale-110 group-hover/link:rotate-6 ${darkMode ? 'text-stone-400 group-hover/link:text-white' : 'text-stone-400 group-hover/link:text-stone-800 dark:text-stone-400 dark:group-hover/link:text-white'}`} />
                             </span>
@@ -370,7 +382,15 @@ export default function PremiumMegaMenuIsland({ darkMode = false } = {}) {
                       </h3>
                       <div className="flex flex-1 flex-col justify-center gap-2">
                         {(activeItem.resources || []).map((title) => (
-                          <Link key={title} href="/devis" prefetch={false} className={`group -mx-3 flex w-[calc(100%+24px)] items-center justify-between rounded-lg px-3 py-3 text-[13px] font-medium transition-colors ${darkMode ? 'text-stone-400 hover:bg-white/5 hover:text-white' : 'text-stone-600 hover:bg-stone-200/40 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-white'}`}>
+                          <Link
+                            key={title}
+                            href="/devis"
+                            prefetch={false}
+                            onPointerEnter={() => prefetchMenuHref('/devis')}
+                            onPointerDown={() => prefetchMenuHref('/devis')}
+                            onFocus={() => prefetchMenuHref('/devis')}
+                            className={`group -mx-3 flex w-[calc(100%+24px)] items-center justify-between rounded-lg px-3 py-3 text-[13px] font-medium transition-colors ${darkMode ? 'text-stone-400 hover:bg-white/5 hover:text-white' : 'text-stone-600 hover:bg-stone-200/40 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-white'}`}
+                          >
                             <span>{title}</span>
                             <ArrowUpRight size={15} strokeWidth={1.5} className={`shrink-0 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 ${darkMode ? 'text-stone-600 group-hover:text-white' : 'text-stone-400 group-hover:text-stone-900 dark:text-stone-600 dark:group-hover:text-white'}`} />
                           </Link>

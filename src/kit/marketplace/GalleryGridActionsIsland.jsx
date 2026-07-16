@@ -98,12 +98,13 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
   const warmupProduct = useCallback((card, intent = 'hover') => {
     if (!card || (intent !== 'press' && shouldSkipSoftWarmup())) return;
     const productUrl = card.dataset.productUrl || '';
+    const shouldPrefetchRoute = intent === 'hover' || intent === 'press';
     const sources = getUniqueSources([
       card.dataset.warmupSrc || '',
       card.dataset.warmupBackdropSrc || '',
     ]);
 
-    if (productUrl && !prefetchedRoutes.has(productUrl)) {
+    if (shouldPrefetchRoute && productUrl && !prefetchedRoutes.has(productUrl)) {
       prefetchedRoutes.add(productUrl);
       try {
         router.prefetch(productUrl);

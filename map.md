@@ -145,6 +145,8 @@ AnalyticsCollectorIsland + AuthProvider anonyme [C]
   -> UID/IP, courbe, bandeau live cumulatif, visiteurs et parcours [C]
 ```
 
+Mesure des lectures et couts: `_DOCS/data/AUDIT_COUTS_FIRESTORE.md` (Usage Insights, Query Insights, Monitoring, Data Access et attribution au code).
+
 ## 5. Arborescence racine
 
 ```text
@@ -588,7 +590,7 @@ tests/smoke.spec.mjs
 | admin | `BACKOFFICE.md` | AdminAppIsland, tabs, Functions | smoke tabs + action cible |
 | infra | `INFRASTRUCTURE.md` | yaml/json/env/runtime | audits read-only + build |
 | performance | `PERFORMANCE.md` | route et bundle responsables | gate identique avant/apres |
-| donnees | `DONNEES_ANALYTICS.md` | rules/indexes/scripts/Functions | dry-run/comptage/rollback |
+| donnees | `DONNEES_ANALYTICS.md` + `AUDIT_COUTS_FIRESTORE.md` | rules/indexes/scripts/Functions | dry-run/comptage/rollback + mesure avant/apres |
 
 ## 13. Dossiers generes ou non canoniques
 

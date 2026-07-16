@@ -1,9 +1,11 @@
 # Donnees, Firestore et analytics
 
-Derniere mise a jour: 2026-07-15
+Derniere mise a jour: 2026-07-16
 Statut: `REFERENCE_ACTIVE`
 
 Deploiement sandbox: moteur actif depuis le 2026-07-15 sur App Hosting et Functions `europe-west1`.
+
+Mesures et attribution des couts: [AUDIT_COUTS_FIRESTORE.md](AUDIT_COUTS_FIRESTORE.md). Ce rapport separe les lectures catalogue, admin, analytics non-streaming et listeners, puis fixe le protocole avant/apres des optimisations.
 
 ## 1. Principes
 
@@ -117,7 +119,7 @@ Contrat du moteur:
 - l'identite fiable utilise le UID Firebase, puis l'IP serveur, puis l'ID session si l'IP manque;
 - le ratio UID/IP mesure l'ecart entre visiteurs uniques et IP uniques;
 - la premiere page et chaque changement de route sont synchronises en moins d'une seconde apres initialisation;
-- la synchronisation periodique est de 15 secondes, avec duree active suspendue lorsque l'onglet est masque;
+- la synchronisation periodique est de 15 secondes uniquement lorsque l'onglet est visible; le beacon marque la session inactive au masquage et le retour visible synchronise immediatement;
 - le beacon de fermeture envoie le dernier parcours et utilise un `fetch keepalive` si le navigateur refuse sa mise en file;
 - un jeton aleatoire n'est conserve qu'en version hachee dans Firestore et protege reprise/synchronisation;
 - une reprise exige le meme UID, le bon jeton, une activite de moins d'une heure et une session non admin;
@@ -134,6 +136,7 @@ Exclusion admin:
 - `trackAdminIP` enregistre l'IP d'un UID present et actif dans `sys_admin_access`;
 - `initLiveSession` classe une IP admin comme session `admin`;
 - `updateUserSessions` supprime les sessions recentes de l'IP lors de la connexion d'un admin et convertit les sessions anonymes lors de la connexion d'un client;
+- `updateUserSessions` determine ce statut depuis `sys_admin_access` sans relire le profil `users/{uid}`, dont le resultat etait auparavant toujours ecrase par le registre;
 - les sessions `type == admin` sont exclues de tous les calculs du panneau Data;
 - l'e-mail proprietaire est lu depuis le secret serveur `SUPER_ADMIN_EMAIL`, jamais code en dur cote client.
 

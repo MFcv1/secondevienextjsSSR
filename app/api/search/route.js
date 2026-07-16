@@ -8,7 +8,7 @@ import { buildSearchResponse } from '../../../src/kit/marketplace/searchModel';
 export const dynamic = 'force-dynamic';
 
 const getCatalog = async () => {
-  let products = await getPublicCatalog('scope=cards&limit=160');
+  let products = await getPublicCatalog('scope=cards&limit=120');
   if (!products.length) {
     products = await getPublicCatalogFallback({ limitCount: 160 });
   }

@@ -90,6 +90,17 @@ const decodeCursor = (rawCursor) => {
   }
 };
 
+const canonicalizeCursor = (rawCursor) => {
+  const timestamp = decodeCursor(rawCursor);
+  if (!timestamp) return null;
+  return Buffer.from(JSON.stringify({
+    createdAt: {
+      seconds: timestamp.seconds,
+      nanoseconds: timestamp.nanoseconds || 0
+    }
+  })).toString('base64url');
+};
+
 const readPublicCollection = async (collectionName, options = {}) => {
   const { limitCount = null, categories = [], cursor = null } = options;
   const categoryFilters = normalizeCategoryList(categories);
@@ -327,8 +338,8 @@ const readPublicCatalog = async (limitCount = null, scope = 'full', options = {}
 };
 
 const parsePositiveLimit = (rawLimit) => {
-  const value = Number.parseInt(rawLimit, 10);
-  if (!Number.isFinite(value) || value <= 0) return null;
+  const value = Number(rawLimit);
+  if (!Number.isInteger(value) || value <= 0) return null;
   return Math.min(value, 120);
 };
 
@@ -375,10 +386,26 @@ exports.publicCatalog = functions.https.onRequest(async (req, res) => {
   }
 
   try {
+    const hasLimit = req.query.limit !== undefined;
     const limit = parsePositiveLimit(req.query.limit);
+    if (hasLimit && !limit) {
+      res.status(400).json({ error: 'invalid_limit' });
+      return;
+    }
+
+    const rawCursor = req.query.cursor ? String(req.query.cursor).trim() : '';
+    if (rawCursor && !limit) {
+      res.status(400).json({ error: 'invalid_cursor' });
+      return;
+    }
+    const cursor = rawCursor ? canonicalizeCursor(rawCursor) : '';
+    if (rawCursor && !cursor) {
+      res.status(400).json({ error: 'invalid_cursor' });
+      return;
+    }
+
     const scope = parseScope(req.query.scope);
     const categories = parseCategories(req.query);
-    const cursor = req.query.cursor ? String(req.query.cursor) : '';
     const catalogVersion = await readCatalogVersion();
     const id = req.query.id ? String(req.query.id) : '';
     if (id) {
