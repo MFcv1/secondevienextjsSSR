@@ -1,5 +1,5 @@
 import { Quote } from 'lucide-react';
-import KIT_CONFIG, { GALLERY_HERO_PRESETS } from '../config/constants';
+import KIT_CONFIG, { CATEGORY_RAIL_IMAGE_SOURCES, GALLERY_HERO_PRESETS } from '../config/constants';
 import { GALLERY_SEO_COPY } from './seoCopy';
 import ArchitecturalHeaderServer from './ArchitecturalHeaderServer';
 import MarketplaceHeroServer from './MarketplaceHeroServer';
@@ -23,13 +23,6 @@ const staticCategories = [
   { id: 'commodes', label: 'COMMODES' },
 ];
 
-const categoryImages = {
-  buffets: '/images/categories/buffets-config-rail.webp',
-  armoires: '/images/categories/armoires-config-rail.webp',
-  miroirs: '/images/categories/miroirs-config-rail.webp',
-  commodes: '/images/categories/commodes-config-rail.webp',
-};
-
 const categoryDescriptions = {
   buffets: 'Buffets anciens restaures pour salon et salle a manger.',
   armoires: 'Armoires anciennes avec rangement, bois et presence.',
@@ -38,7 +31,7 @@ const categoryDescriptions = {
 };
 
 const getCategoryRailImageSrc = (id) => (
-  categoryImages[id] || '/images/categories/fallback.webp'
+  CATEGORY_RAIL_IMAGE_SOURCES[id] || '/images/categories/fallback.webp'
 );
 
 const normalizeFrenchCopy = (value) => String(value || '')

@@ -9,6 +9,8 @@ Les images produit sont preparees au moment de l'upload admin, stockees dans Fir
 
 Les assets de marque, hero, categories, avant/apres et vitrine vivent dans `public/images`, `public/video` ou `src/assets` selon leur mode d'import.
 
+Les illustrations de parcours analytics vivent dans `public/images/analytics`. Elles sont des WebP 320x400 dedies aux miniatures du panneau Data: les categories parentes `meubles`, `assises`, `eclairage`, `decorations` et les visuels editoriaux differencies de Galerie, A propos et Devis. Elles ne remplacent ni les images produit, ni les images des categories publiques.
+
 ## 2. Modele image produit
 
 Chaque produit peut contenir:

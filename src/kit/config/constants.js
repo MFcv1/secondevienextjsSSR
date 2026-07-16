@@ -16,6 +16,17 @@ export const GALLERY_HERO_PRESETS = [
   { preset: 'imagehero/4.webp', src: '/images/imagehero/4.webp', mobileSrc: '/images/imagehero/4-mobile.webp', objectPosition: 'center center', mobileObjectPosition: '51% center' },
 ];
 
+export const CATEGORY_RAIL_IMAGE_SOURCES = Object.freeze({
+  buffets: '/images/categories/buffets-config-rail.webp',
+  armoires: '/images/categories/armoires-config-rail.webp',
+  miroirs: '/images/categories/miroirs-config-rail.webp',
+  commodes: '/images/categories/commodes-config-rail.webp',
+  meubles: '/images/analytics/journey-meubles-illustration-v1.webp',
+  assises: '/images/analytics/journey-assises-illustration-v1.webp',
+  eclairage: '/images/analytics/journey-eclairage-illustration-v1.webp',
+  decorations: '/images/analytics/journey-decorations-illustration-v1.webp',
+});
+
 export const GALLERY_HERO_PRESET_ENTRIES = GALLERY_HERO_PRESETS.map(({ preset, objectPosition, mobileObjectPosition }) => ({
   preset,
   objectPosition,

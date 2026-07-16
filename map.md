@@ -141,7 +141,7 @@ AnalyticsCollectorIsland + AuthProvider anonyme [C]
   -> AnalyticsProvider [C]
   -> initLiveSession/syncSession/beacon [F]
   -> analytics_sessions/{sessionId} avec journey embarque [DB]
-  -> AdminAnalytics: historique borne + listener recent temps reel [C]
+  -> AdminAnalytics: historique borne + listener recent temps reel, medias de parcours [C]
   -> UID/IP, courbe, bandeau live cumulatif, visiteurs et parcours [C]
 ```
 
@@ -217,7 +217,7 @@ app/
 |-- admin/
 |   |-- layout.jsx .................... layout admin
 |   |-- page.jsx ...................... route dynamique
-|   `-- AdminAppIsland.jsx ............ shell, lazy tabs, gates admin
+|   `-- AdminAppIsland.jsx ............ shell, lazy tabs, gates admin, rail laterale desktop groupee
 `-- api/
     |-- search/route.js ............... recherche catalogue
     `-- revalidate-catalog/route.js ... revalidation admin

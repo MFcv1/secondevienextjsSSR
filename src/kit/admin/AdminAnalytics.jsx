@@ -6,6 +6,7 @@ import {
 import { collection, query, orderBy, limit, getDocs, onSnapshot, where, Timestamp } from 'firebase/firestore';
 import { db, functions } from '../config/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { CATEGORY_RAIL_IMAGE_SOURCES } from '../config/constants';
 import { getProductImageItems } from '../../utils/imageUtils';
 import { getProductUrl } from '../../utils/slug';
 import { getMillis } from '../../utils/time';
@@ -29,6 +30,12 @@ const ADMIN_ANALYTICS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const ADMIN_SESSIONS_CACHE_KEY = 'traffic-sessions';
 const ADMIN_AFFILIATE_CACHE_KEY = 'affiliate-clicks';
 const OMIT_CACHE_FIELDS = new Set(['email', 'syncTokenHash', 'userAgent']);
+
+const JOURNEY_PAGE_ILLUSTRATIONS = Object.freeze({
+    gallery: '/images/analytics/journey-gallery-boutique-v3.webp',
+    about: '/images/analytics/journey-about-emblem-v2.webp',
+    quote: '/images/analytics/journey-quote-atelier-v3.webp',
+});
 
 const openAdminAnalyticsCache = () => new Promise((resolve, reject) => {
     if (typeof window === 'undefined' || !window.indexedDB) {
@@ -597,6 +604,24 @@ const getJourneyProductKey = (step) => {
         .trim();
 };
 
+const getJourneyItemIdentity = (step) => {
+    const id = String(step?.itemId || '').trim();
+    if (!id || isAffiliateJourneyStep(step?.page)) return null;
+
+    if (step.page === 'detail') return { label: 'ID', tone: 'product', id };
+    if (step.page === 'category') return { label: 'ID', tone: 'category', id };
+    return { label: 'ID', tone: 'content', id };
+};
+
+const getJourneyIllustration = (step) => {
+    if (step?.page === 'category') {
+        const categoryId = String(step?.itemId || '').trim().toLocaleLowerCase('fr-FR');
+        return CATEGORY_RAIL_IMAGE_SOURCES[categoryId] || '/images/categories/fallback.webp';
+    }
+
+    return JOURNEY_PAGE_ILLUSTRATIONS[step?.page] || null;
+};
+
 const buildProductThumbnailMap = (items) => {
     const thumbnails = new Map();
     (Array.isArray(items) ? items : []).forEach((item) => {
@@ -675,7 +700,7 @@ const SessionJourneyTrace = ({ session, darkMode, formatDuration, productThumbna
                 <span className="text-[8px] font-bold text-stone-600 opacity-60 uppercase tracking-tighter">{session.journey?.length || 0} Etapes</span>
             </div>
 
-            <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-stone-800 lg:flex lg:space-y-0 lg:overflow-x-auto lg:pl-0 lg:pb-3 lg:before:bottom-auto lg:before:left-4 lg:before:right-4 lg:before:top-[7px] lg:before:h-px lg:before:w-auto">
+            <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-stone-800 lg:grid lg:[grid-template-columns:repeat(auto-fit,minmax(210px,1fr))] lg:gap-x-3 lg:gap-y-7 lg:space-y-0 lg:pl-0 lg:before:hidden">
                 {!session.journey || session.journey.length === 0 ? (
                     <p className="text-[10px] italic text-stone-500">Aucune activite enregistree</p>
                 ) : (
@@ -686,33 +711,73 @@ const SessionJourneyTrace = ({ session, darkMode, formatDuration, productThumbna
                         const pageDuration = getJourneyStepPageDuration(session, idx);
                         const productKey = getJourneyProductKey(step);
                         const productThumbnail = productKey ? productThumbnails?.get(productKey) : null;
+                        const journeyIllustration = productThumbnail || getJourneyIllustration(step);
+                        const itemIdentity = getJourneyItemIdentity(step);
+                        const itemIdentityTone = itemIdentity?.tone === 'category'
+                            ? (darkMode
+                                ? 'border-emerald-300/20 bg-emerald-400/10 text-emerald-100'
+                                : 'border-emerald-200 bg-emerald-50 text-emerald-950')
+                            : itemIdentity?.tone === 'product'
+                                ? (darkMode
+                                    ? 'border-sky-300/20 bg-sky-400/10 text-sky-100'
+                                    : 'border-sky-200 bg-sky-50 text-sky-950')
+                                : (darkMode
+                                    ? 'border-white/10 bg-white/5 text-stone-200'
+                                    : 'border-stone-200 bg-stone-100 text-stone-800');
+                        const itemIdentityLabelTone = itemIdentity?.tone === 'category'
+                            ? (darkMode ? 'border-emerald-300/15 bg-emerald-300/10 text-emerald-200' : 'border-emerald-200 bg-emerald-100/80 text-emerald-800')
+                            : itemIdentity?.tone === 'product'
+                                ? (darkMode ? 'border-sky-300/15 bg-sky-300/10 text-sky-200' : 'border-sky-200 bg-sky-100/80 text-sky-800')
+                                : (darkMode ? 'border-white/10 bg-white/5 text-stone-300' : 'border-stone-200 bg-stone-200/70 text-stone-700');
                         return (
-                            <div key={idx} className="relative group/step lg:min-w-[178px] lg:flex-1 lg:px-4 lg:pt-6">
-                                <div className={`absolute -left-[18.5px] top-1.5 w-[7px] h-[7px] rounded-full ring-4 lg:left-4 lg:top-1 lg:-translate-x-1/2 ${darkMode ? 'ring-stone-900/50' : 'ring-white'} ${accent.dot} transition-all group-hover/step:scale-125`}></div>
+                            <div key={idx} className="relative lg:min-w-0 lg:px-2 lg:pt-6 lg:before:absolute lg:before:inset-x-0 lg:before:top-0 lg:before:h-px lg:before:bg-stone-950/75">
+                                <div className={`absolute -left-[18.5px] top-1.5 w-[7px] h-[7px] rounded-full ring-4 lg:left-0 lg:top-0 lg:-translate-x-1/2 lg:-translate-y-1/2 ${darkMode ? 'ring-stone-900/50' : 'ring-white'} ${accent.dot}`}></div>
 
-                                <div className="flex items-start justify-between gap-3 -translate-y-0.5 lg:translate-y-0">
-                                    <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                        <span className={`text-[8px] font-black uppercase tracking-widest leading-none ${step.page === 'comptoir' ? 'text-teal-400/60' : step.page === 'shop' ? 'text-violet-400/60' : 'text-blue-500/60'}`}>{formatJourneyStepTime(session, step)} - {formatDuration(pageDuration)} sur cette page</span>
-                                        <p className={`font-black text-[11px] leading-tight ${darkMode ? 'text-stone-300' : 'text-stone-900'}`}>
-                                            {isAffiliateStep ? 'Clic' : 'Vue'} : <span className={`uppercase ${accent.label}`}>{stepLabel}</span>
+                                <div className={`flex items-start justify-between gap-3 -translate-y-0.5 lg:min-h-[104px] lg:rounded-[18px] lg:px-3.5 lg:py-2.5 lg:translate-y-0 lg:ring-1 ${darkMode ? 'lg:bg-white/[0.035] lg:ring-white/10 lg:shadow-[0_18px_28px_-26px_rgba(0,0,0,0.85)]' : 'lg:bg-stone-50/90 lg:ring-stone-950/[0.045] lg:shadow-[0_18px_28px_-26px_rgba(28,25,23,0.48)]'}`}>
+                                    <div className="flex min-w-0 flex-1 flex-col gap-1 lg:min-h-[84px] lg:justify-between lg:py-0.5">
+                                        <div className="inline-flex items-center gap-1 whitespace-nowrap leading-none">
+                                            <time className={`font-mono text-[9px] font-bold tracking-[0.02em] ${darkMode ? 'text-blue-100' : 'text-blue-700'}`}>
+                                                {formatJourneyStepTime(session, step)}
+                                            </time>
+                                            <span aria-hidden="true" className="text-[9px] font-semibold text-stone-400">/</span>
+                                            <span className={darkMode ? 'text-[9px] font-bold text-stone-200' : 'text-[9px] font-bold text-stone-700'}>
+                                                {formatDuration(pageDuration)}
+                                            </span>
+                                        </div>
+                                        <p className="flex flex-wrap items-baseline gap-x-1 text-[10px] leading-[1.3]">
+                                            <span className={darkMode ? 'font-semibold text-stone-300' : 'font-semibold text-stone-600'}>{isAffiliateStep ? 'Clic' : 'Vue'}</span>
+                                            <span aria-hidden="true" className="font-medium text-stone-300">·</span>
+                                            <span className={darkMode ? 'font-bold tracking-[0.01em] text-stone-50' : 'font-bold tracking-[0.01em] text-stone-950'}>{stepLabel}</span>
                                         </p>
-                                        {step.itemId && (
+                                        {itemIdentity && (
                                             <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-2">
-                                                <span className={`max-w-full truncate rounded-md border px-2 py-0.5 text-[8px] font-bold italic ${accent.chip}`}>
-                                                    {!isAffiliateStep && 'ID: '}{step.itemId}
+                                                <span className={`inline-flex max-w-full overflow-hidden rounded-md border text-[9px] font-semibold leading-none ${itemIdentityTone}`}>
+                                                    <span className={`shrink-0 border-r px-1.5 py-1 text-[8px] font-black uppercase tracking-[0.08em] ${itemIdentityLabelTone}`}>
+                                                        {itemIdentity.label}
+                                                    </span>
+                                                    <span className="min-w-0 truncate px-1.5 py-1 font-mono text-[9px]" title={itemIdentity.id}>
+                                                        {itemIdentity.id}
+                                                    </span>
                                                 </span>
                                             </div>
                                         )}
+                                        {!itemIdentity && <div aria-hidden="true" className="hidden lg:block lg:h-[18px]"></div>}
                                     </div>
-                                    {productThumbnail && (
+                                    {journeyIllustration && (
                                         <img
-                                            src={productThumbnail}
+                                            src={journeyIllustration}
                                             alt=""
                                             aria-hidden="true"
                                             loading="lazy"
                                             decoding="async"
-                                            className={`h-14 w-11 shrink-0 rounded-lg border object-cover shadow-sm ${darkMode ? 'border-white/10 bg-white/5' : 'border-stone-200 bg-stone-50'}`}
+                                            className={`h-14 w-11 shrink-0 rounded-lg border object-cover shadow-sm lg:h-[84px] lg:w-[66px] ${darkMode ? 'border-white/10 bg-white/5' : 'border-stone-200 bg-stone-50'}`}
                                         />
+                                    )}
+                                    {!journeyIllustration && (
+                                        <div
+                                            aria-hidden="true"
+                                            className={`hidden shrink-0 rounded-lg lg:block lg:h-[84px] lg:w-[66px] lg:ring-1 ${darkMode ? 'lg:bg-white/[0.025] lg:ring-white/[0.06]' : 'lg:bg-stone-950/[0.025] lg:ring-stone-950/[0.035]'}`}
+                                        ></div>
                                     )}
                                 </div>
                             </div>

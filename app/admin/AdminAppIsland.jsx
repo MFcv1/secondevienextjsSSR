@@ -73,6 +73,71 @@ const adminTabs = KIT_CONFIG.adminTabs.map((tab, index) => ({
   icon: TAB_ICONS[tab.id] ?? COLLECTION_ICONS[index % COLLECTION_ICONS.length],
 }));
 
+const ADMIN_TAB_GROUPS = [
+  { label: 'Pilotage', tabIds: ['dashboard', 'analytics'] },
+  { label: 'Catalogue', tabIds: ['furniture', 'inventory', 'studio'] },
+  { label: 'Experience boutique', tabIds: ['homepage', 'seo'] },
+  { label: 'Commerce', tabIds: ['orders', 'returns', 'livraison', 'payment_settings'] },
+  { label: 'Relation client', tabIds: ['users', 'newsletter'] },
+  { label: 'Systeme', tabIds: ['ip_manager', 'maintenance', 'performance_study'] },
+];
+
+const adminTabsById = new Map(adminTabs.map((tab) => [tab.id, tab]));
+const adminTabGroups = ADMIN_TAB_GROUPS.map((group) => ({
+  ...group,
+  tabs: group.tabIds.map((tabId) => adminTabsById.get(tabId)).filter(Boolean),
+}));
+
+function AdminDesktopSidebar({ adminCollection, darkMode, onSelect }) {
+  return (
+    <aside className={`hidden lg:fixed lg:inset-y-0 lg:left-0 lg:block lg:w-[304px] lg:overflow-hidden lg:border-r ${darkMode ? 'border-white/10 bg-[#101010]' : 'border-stone-200 bg-[#fffefd]'}`}>
+      <div className="flex h-full flex-col px-7 py-5">
+          <div className={`mb-3 border-b px-2 pb-3 ${darkMode ? 'border-white/10' : 'border-stone-200/80'}`}>
+            <Link
+              href="/"
+              className={`group flex items-center gap-2 rounded-xl py-1.5 text-[9px] font-black uppercase tracking-[0.14em] transition-[transform,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-x-0.5 ${darkMode ? 'text-stone-400 hover:text-white' : 'text-stone-500 hover:text-stone-950'}`}
+            >
+              <ChevronLeft size={13} strokeWidth={1.5} className="transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:-translate-x-0.5" />
+              Retour au site
+            </Link>
+          </div>
+
+          <nav aria-label="Navigation administration" className="flex flex-1 flex-col justify-between pb-5 pt-5">
+            {adminTabGroups.map((group) => (
+              <section key={group.label} aria-label={group.label}>
+                <p className={`mb-1 px-2 text-[8px] font-black uppercase tracking-[0.18em] ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>
+                  {group.label}
+                </p>
+                <div className="space-y-0.5">
+                  {group.tabs.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = adminCollection === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => onSelect(tab.id)}
+                        aria-current={isActive ? 'page' : undefined}
+                        className={`group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-left text-[10px] font-bold tracking-[0.015em] transition-[transform,background-color,color,box-shadow] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.985] ${isActive ? (darkMode ? 'bg-white text-stone-950 shadow-[0_10px_20px_-16px_rgba(255,255,255,0.95)]' : 'bg-stone-950 text-white shadow-[0_12px_22px_-18px_rgba(28,25,23,0.9)]') : (darkMode ? 'text-stone-400 hover:bg-white/[0.06] hover:text-white' : 'text-stone-600 hover:bg-stone-100/80 hover:text-stone-950')}`}
+                      >
+                        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg ${isActive ? (darkMode ? 'bg-stone-900 text-white' : 'bg-white/15 text-white') : (darkMode ? 'bg-white/[0.055] text-stone-400' : 'bg-stone-100 text-stone-500')}`}>
+                          <Icon size={13} strokeWidth={1.5} />
+                        </span>
+                        <span className="min-w-0 truncate">{tab.label}</span>
+                        {isActive && <span className={`ml-auto h-1.5 w-1.5 rounded-full ${darkMode ? 'bg-stone-950' : 'bg-white'}`} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+          </nav>
+
+      </div>
+    </aside>
+  );
+}
+
 const getAdminFirestoreRuntime = async () => {
   const [{ bumpPublicCatalogVersion }, db, firestore] = await Promise.all([
     import('../../src/kit/admin/publicCatalogInvalidation'),
@@ -99,6 +164,12 @@ function AdminContent({ initialItems = [] }) {
       setDarkMode(false);
     }
   }, []);
+
+  const handleSelectAdminTab = (tabId) => {
+    setAdminCollection(tabId);
+    setEditingItem(null);
+    setIsMoreMenuOpen(false);
+  };
 
   const handleToggleStatus = async (item, collectionName) => {
     const { db, firestore, bumpPublicCatalogVersion } = await getAdminFirestoreRuntime();
@@ -216,11 +287,19 @@ function AdminContent({ initialItems = [] }) {
 
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-[#0A0A0A] text-white' : 'bg-[#FAFAF9] text-stone-900'}`}>
-      <main className="mx-auto max-w-6xl space-y-12 px-4 py-24 md:space-y-16 md:py-32">
+      <AdminDesktopSidebar
+        adminCollection={adminCollection}
+        darkMode={darkMode}
+        onSelect={handleSelectAdminTab}
+      />
+
+      <main className="mx-auto max-w-[1440px] space-y-12 px-4 py-16 md:px-6 md:py-20 lg:ml-[304px] lg:max-w-none lg:px-12">
+        <div className="lg:mx-auto lg:max-w-[1180px]">
         <Suspense fallback={null}>
           <AdminIPTracker />
         </Suspense>
 
+        <section className="min-w-0 space-y-12 lg:space-y-10">
         <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="space-y-2">
             <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Systeme de Controle</p>
@@ -228,14 +307,14 @@ function AdminContent({ initialItems = [] }) {
           </div>
           <Link
             href="/"
-            className={`group flex items-center gap-2 rounded-2xl border-2 px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all ${darkMode ? 'border-white/10 hover:border-white hover:bg-white hover:text-stone-900' : 'border-stone-900 hover:bg-stone-900 hover:text-white'}`}
+            className={`group flex items-center gap-2 rounded-2xl border-2 px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all lg:hidden ${darkMode ? 'border-white/10 hover:border-white hover:bg-white hover:text-stone-900' : 'border-stone-900 hover:bg-stone-900 hover:text-white'}`}
           >
             <ChevronLeft size={14} className="transition-transform group-hover:-translate-x-1" />
             Retour au site
           </Link>
         </div>
 
-        <div className="relative flex flex-col items-center">
+        <div className="relative flex flex-col items-center lg:hidden">
           <div className={`w-full rounded-[2.5rem] border p-2 ${darkMode ? 'border-white/5 bg-[#111111]/80 backdrop-blur-xl' : 'border-stone-200/60 bg-white/80 shadow-lg shadow-stone-200/20 backdrop-blur-xl'}`}>
             <div className="flex flex-wrap items-center justify-center gap-1.5 md:gap-2">
               {adminTabs.map((tab, idx) => {
@@ -368,6 +447,8 @@ function AdminContent({ initialItems = [] }) {
             </>
           )}
         </Suspense>
+        </section>
+        </div>
       </main>
     </div>
   );
