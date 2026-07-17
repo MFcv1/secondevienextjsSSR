@@ -23,16 +23,8 @@ export default function GalleryMobileShellIsland() {
     const mediaQuery = window.matchMedia(MOBILE_MARKETPLACE_QUERY);
     const announcementMediaQuery = window.matchMedia('(max-width: 767px)');
 
-    const setViewportHeight = () => {
-      const height = Math.round(window.visualViewport?.height || window.innerHeight || 0);
-      if (height > 0) {
-        root.style.setProperty('--marketplace-viewport-height', `${height}px`);
-      }
-    };
-
     const syncMobileShell = () => {
       const shouldLock = mediaQuery.matches;
-      setViewportHeight();
       root.classList.toggle('marketplace-mobile-scroll-lock', shouldLock);
       body.classList.toggle('marketplace-mobile-scroll-lock', shouldLock);
       if (galleryScroll) {
@@ -120,7 +112,6 @@ export default function GalleryMobileShellIsland() {
     mediaQuery.addEventListener?.('change', syncMobileShell);
     announcementMediaQuery.addEventListener?.('change', syncAnnouncementBanner);
     window.addEventListener('resize', syncMobileShell);
-    window.visualViewport?.addEventListener('resize', syncMobileShell);
     galleryScroll?.addEventListener('scroll', syncAnnouncementBanner, { passive: true });
     galleryScroll?.addEventListener('touchstart', onTouchStart, { passive: true });
     galleryScroll?.addEventListener('touchmove', onTouchMove, { passive: false });
@@ -131,7 +122,6 @@ export default function GalleryMobileShellIsland() {
       mediaQuery.removeEventListener?.('change', syncMobileShell);
       announcementMediaQuery.removeEventListener?.('change', syncAnnouncementBanner);
       window.removeEventListener('resize', syncMobileShell);
-      window.visualViewport?.removeEventListener('resize', syncMobileShell);
       galleryScroll?.removeEventListener('scroll', syncAnnouncementBanner);
       galleryScroll?.removeEventListener('touchstart', onTouchStart);
       galleryScroll?.removeEventListener('touchmove', onTouchMove);

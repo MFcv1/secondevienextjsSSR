@@ -5,6 +5,9 @@ const root = process.cwd();
 const files = {
   galleryServer: path.join(root, 'src', 'kit', 'marketplace', 'GalleryServerView.jsx'),
   galleryMobile: path.join(root, 'app', 'GalleryMobileShellIsland.jsx'),
+  viewportSync: path.join(root, 'app', 'ViewportHeightSyncIsland.jsx'),
+  rootLayout: path.join(root, 'app', 'layout.jsx'),
+  productDetail: path.join(root, 'src', 'kit', 'marketplace', 'ProductDetailShellIsland.jsx'),
   css: path.join(root, 'src', 'index.css'),
   contract: path.join(root, '_DOCS', 'ux', 'INTERFACE_NAVIGATION.md'),
 };
@@ -21,6 +24,32 @@ const checks = [
     label: 'Next gallery mobile island keeps the mobile fixed shell contract',
     file: files.galleryMobile,
     pattern: /marketplace-mobile-scroll-lock/,
+  },
+  {
+    label: 'Root layout keeps the visual viewport synchronizer mounted across routes',
+    file: files.rootLayout,
+    pattern: /<ViewportHeightSyncIsland\s*\/>/,
+  },
+  {
+    label: 'Global viewport synchronizer owns the marketplace viewport height',
+    file: files.viewportSync,
+    pattern: /visualViewport[\s\S]*VIEWPORT_HEIGHT_PROPERTY[\s\S]*setProperty/,
+  },
+  {
+    label: 'Global viewport synchronizer follows browser chrome and app resume changes',
+    file: files.viewportSync,
+    pattern: /addEventListener\('resize'[\s\S]*addEventListener\('scroll'[\s\S]*addEventListener\('pageshow'[\s\S]*addEventListener\('visibilitychange'/,
+  },
+  {
+    label: 'Gallery mobile island no longer owns the global viewport height',
+    file: files.galleryMobile,
+    pattern: /--marketplace-viewport-height/,
+    forbidden: true,
+  },
+  {
+    label: 'Product detail consumes the shared dynamic viewport height',
+    file: files.productDetail,
+    pattern: /var\(--marketplace-viewport-height,\s*100dvh\)/,
   },
   {
     label: 'Next gallery server view renders the fixed gallery shell',

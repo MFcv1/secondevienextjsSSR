@@ -65,7 +65,7 @@ body.modal-open .gallery-announcement-banner {
 }
 
 :root {
-  --marketplace-viewport-height: 100svh;
+  --marketplace-viewport-height: 100dvh;
   --product-detail-sidebar-width: 450px;
 }
 
@@ -134,8 +134,8 @@ html.gallery-entry-scroll-lock {
     bottom: 0;
     z-index: 20;
     width: 100%;
-    height: calc(var(--marketplace-viewport-height, 100svh) - var(--gallery-mobile-shell-offset));
-    max-height: calc(var(--marketplace-viewport-height, 100svh) - var(--gallery-mobile-shell-offset));
+    height: calc(var(--marketplace-viewport-height, 100dvh) - var(--gallery-mobile-shell-offset));
+    max-height: calc(var(--marketplace-viewport-height, 100dvh) - var(--gallery-mobile-shell-offset));
     overflow: hidden;
     background: transparent;
   }
@@ -169,7 +169,7 @@ html.gallery-entry-scroll-lock {
     height: max(
       492px,
       calc(
-        var(--marketplace-viewport-height, 100svh)
+        var(--marketplace-viewport-height, 100dvh)
         - var(--gallery-mobile-initial-shell-offset, 92px)
         - var(--gallery-mobile-first-screen-reserve, 104px)
       )
@@ -433,7 +433,7 @@ html.dark .gallery-announcement-language {
   width: min(94vw, 430px);
   height: auto;
   max-width: min(94vw, 430px);
-  max-height: min(calc(var(--marketplace-viewport-height, 100svh) * 0.62), calc(var(--marketplace-viewport-height, 100svh) - 15.5rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)), 620px);
+  max-height: min(calc(var(--marketplace-viewport-height, 100dvh) * 0.62), calc(var(--marketplace-viewport-height, 100dvh) - 15.5rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)), 620px);
   border-radius: 0.75rem;
   overflow: hidden;
   clip-path: inset(0 round 0.75rem);
@@ -452,7 +452,7 @@ html.dark .gallery-announcement-language {
 
 .product-detail-mobile-image-frame[data-fit-mode="tall"] {
   width: auto;
-  height: min(calc(var(--marketplace-viewport-height, 100svh) * 0.62), calc(var(--marketplace-viewport-height, 100svh) - 15.5rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)), 620px);
+  height: min(calc(var(--marketplace-viewport-height, 100dvh) * 0.62), calc(var(--marketplace-viewport-height, 100dvh) - 15.5rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)), 620px);
 }
 
 .product-detail-mobile-image-clip {

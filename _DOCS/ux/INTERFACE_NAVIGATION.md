@@ -1,6 +1,6 @@
 # Interface, navigation et contrats UX
 
-Derniere mise a jour: 2026-07-16
+Derniere mise a jour: 2026-07-17
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Intention
@@ -12,6 +12,7 @@ L'interface Seconde Vie est editoriale, claire et premium. Les optimisations doi
 Le shell est compose de:
 
 - `app/layout.jsx` pour la structure globale;
+- `ViewportHeightSyncIsland` pour synchroniser le viewport visuel dynamique pendant toute la navigation;
 - `ArchitecturalHeaderServer` pour le header serveur;
 - `HeaderAccountIsland`, `SearchSuggestIsland`, `DarkModeToggleIsland` et les controles interactifs;
 - `GlobalMenuTriggerIsland` et `PremiumMegaMenuIsland` pour le menu principal;
@@ -39,6 +40,8 @@ Ne jamais bloquer l'ouverture sur Firebase, App Check, une requete catalogue ou 
 Le mobile utilise un shell instantane puis un enrichissement differe. Ce contrat remplace les anciennes notes liees au routeur SPA, qui ne sont plus applicables.
 
 `app/GalleryMobileShellIsland.jsx` controle le shell mobile final rendu par `src/kit/marketplace/GalleryServerView.jsx`. Leur contrat commun est verifie automatiquement et ne doit pas etre remplace par un overlay produit SPA.
+
+`app/ViewportHeightSyncIsland.jsx`, monte dans le layout racine, est l'unique proprietaire de `--marketplace-viewport-height`. Il synchronise la hauteur reelle de `visualViewport` pendant le repli des barres Chrome/Safari, les changements d'orientation et le retour au premier plan. La galerie et le detail produit consomment cette variable sans la reecrire localement.
 
 Invariants:
 
@@ -132,6 +135,7 @@ src/kit/marketplace/HeaderAccountIsland.jsx
 src/kit/marketplace/CartPanelIsland.jsx
 src/kit/marketplace/ProductDetailShellIsland.jsx
 app/GalleryMobileShellIsland.jsx
+app/ViewportHeightSyncIsland.jsx
 src/kit/marketplace/GalleryServerView.jsx
 app/RouteTransitionIsland.jsx
 src/index.css

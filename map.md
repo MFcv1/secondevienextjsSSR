@@ -190,6 +190,7 @@ app/
 |-- RouteClientProviders.jsx .......... providers des tunnels client
 |-- RouteTransitionIsland.jsx ......... transitions globales
 |-- route-transition.config.js ........ contrat des transitions
+|-- ViewportHeightSyncIsland.jsx ...... hauteur visualViewport globale et persistante
 |-- GalleryMobileShellIsland.jsx ...... shell mobile galerie
 |-- HeroVideoSliderIsland.jsx ......... hero video interactif
 |-- HomeMotionIslandV4.jsx ............ motion home
