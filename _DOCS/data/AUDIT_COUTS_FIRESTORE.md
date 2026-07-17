@@ -1,7 +1,7 @@
 # Audit des lectures et couts Firestore
 
-Derniere mise a jour: 2026-07-16
-Statut: `P0_LOCAL_VALIDE_MESURE_SANDBOX_REQUISE`
+Derniere mise a jour: 2026-07-17
+Statut: `P1_ADMIN_CATALOGUE_LAZY_VALIDE_LOCAL`
 Projet mesure: `secondevienextjsssr`
 
 ## 1. Objet et fin de l'audit
@@ -126,6 +126,39 @@ protoPayload.serviceName="firestore.googleapis.com"
 
 Conclusion: les journaux Data Access `DATA_READ` ne sont actuellement pas actives pour le projet. Les activer est une mutation IAM/audit et peut produire un volume de logs facture. Cette activation doit etre courte, explicite et retiree apres le test.
 
+### 4.6 Fenetre Data Access controlee du 2026-07-17
+
+Une fenetre courte a ete executee sur le sandbox apres autorisation explicite. Seul `DATA_READ` a ete active pour `datastore.googleapis.com`; `DATA_WRITE` n'a pas ete active. Les journaux ont ete desactives a la fin et l'absence de configuration Datastore/Firestore a ete reverifiee dans la politique IAM.
+
+Scenarios horodates en UTC:
+
+- public, `23:24:58` a `23:25:10`: galerie, fiche produit, retour galerie, categorie;
+- Admin Stats, `23:26:04` a `23:26:23`;
+- ouverture Admin Data, `23:26:33` a `23:26:41`;
+- actualisation manuelle Data, `23:32:32` a `23:32:40`;
+- calibration volontaire, `23:30:58` a `23:30:59`: lecture bornee a un document de `analytics_admin_audit_v3`.
+
+Attribution Data Access expurgee:
+
+| Scenario | Methodes et collections observees | Conclusion |
+| --- | --- | --- |
+| public | `RunQuery` sur `furniture`; `BatchGetDocuments` sur `artifacts` et `sys_metadata` | aucun acces V3 |
+| Admin Stats | `RunQuery` sur `furniture`; `BatchGetDocuments` sur `artifacts`, `sys_admin_access` et `sys_metadata`; listeners `orders` et `sales_stats_daily` | aucun acces V3 |
+| ouverture Data | listeners `analytics_sessions` | aucun acces V3 |
+| bouton Actualiser | listeners `analytics_sessions` uniquement dans la fenetre | aucun acces V3; l'historique etait reutilise depuis le cache local |
+| calibration | un `ListDocuments` sur `analytics_admin_audit_v3`, `pageSize=1` | Data Access identifie bien la collection lorsqu'elle est reellement lue |
+
+Un listener `analytics_sessions` etait deja actif avant le premier scenario, a `23:23:40`; ses evenements de flux ont ete classes comme bruit identifie et non comme lectures du parcours public. Aucun `ListDocuments` autre que la calibration volontaire n'a ete observe pendant toute la fenetre.
+
+Correlation Cloud Monitoring disponible au moment du test:
+
+- point termine a `23:26`: 61 lectures, compatible avec le parcours public et ses retours catalogue;
+- point termine a `23:27`: 94 lectures et 2 ecritures pendant le chargement Admin;
+- point termine a `23:28`: 51 lectures, compatible avec l'initialisation et les listeners Admin;
+- aucun lot d'environ 300 lectures n'a ete reproduit par le code courant dans ces scenarios.
+
+Conclusion fermee: `analytics_admin_audit_v3` n'est lue ni par le parcours public teste, ni par Stats, ni par Data, ni par son actualisation manuelle. La calibration prouve que Data Access aurait nomme cette collection sans ambiguite si elle avait ete touchee. Les anciens lots `ListDocuments` d'environ 300 restent donc attribues avec une forte probabilite a une surface externe au code courant, notamment un explorateur Firestore ou un ancien bundle V3 reste ouvert. L'attribution historique exacte ne peut pas etre declaree absolue tant que cette surface externe n'est pas reproduite avec le compte qui dispose de la lecture des documents.
+
 ## 5. Attribution au code
 
 ### 5.1 Catalogue public: source dominante
@@ -200,9 +233,9 @@ Les gains ne sont pas convertis en promesse exacte avant une fenetre Usage Insig
 - le fallback de claims de `trackAdminIP` reste en place tant qu'un test de propagation/revocation ne prouve pas qu'il peut etre retire sans refuser un admin legitime;
 - la recherche vide continue d'afficher ses suggestions premium; la supprimer serait une regression UX, pas une optimisation neutre.
 
-### P1 - mesure avant implementation
+### P1 - progression mesuree
 
-1. Ne charger le catalogue admin que pour les onglets qui en ont besoin, apres le controle admin fort, avec cache de session partage.
+1. **Implemente localement le 2026-07-17, mesure sandbox a faire**: `/admin` ne charge plus le catalogue sur Stats. Le catalogue court est demande uniquement par Data et Vue Globale, les deux consommateurs reels de `initialItems`; la requete est prechargee sur hover/focus, dedupliquee en vol, partagee en memoire et `sessionStorage`, puis purgee par l'invalidation catalogue existante. Publication et Studio conservent leurs lectures Firestore autoritaires sans ajouter une deuxieme lecture publique inutile. Le second chemin trouve dans `AdminDashboard` est egalement ferme: si `inventory_stats/overview` manque, Stats affiche une valeur catalogue indisponible au lieu de scanner jusqu'a 300 documents `furniture`.
 2. Borner et purger `limitedCatalogCache`, qui conserve actuellement les anciennes versions et combinaisons categorie/cursor jusqu'a la destruction de l'instance.
 3. Distinguer le `404` produit autoritatif d'une indisponibilite technique avant de supprimer les fallbacks Admin/REST.
 4. Ajouter dans Cloud Logging des logs structures sans donnee personnelle: `operation`, `cacheHit`, `scope`, `limit`, `returnedDocs`, `category`, `reason` (`heartbeat`, `route`, `beacon`). Ne pas ecrire ces compteurs dans Firestore.

@@ -27,6 +27,10 @@ import { useAuth } from '../../src/kit/contexts/AuthContext';
 import KIT_CONFIG from '../../src/kit/config/constants';
 import { appId } from '../../src/kit/config/firebaseEnv';
 import { getDb, loadFirestoreModule } from '../../src/kit/config/firebaseLazy';
+import {
+  ADMIN_PUBLIC_CATALOG_INVALIDATED_EVENT,
+  loadAdminPublicCatalog,
+} from '../../src/kit/admin/adminPublicCatalog';
 import { getProductUrl } from '../../src/utils/slug';
 
 const AdminDashboard = React.lazy(() => import('../../src/kit/admin/AdminDashboard'));
@@ -88,7 +92,9 @@ const adminTabGroups = ADMIN_TAB_GROUPS.map((group) => ({
   tabs: group.tabIds.map((tabId) => adminTabsById.get(tabId)).filter(Boolean),
 }));
 
-function AdminDesktopSidebar({ adminCollection, darkMode, onSelect }) {
+const ADMIN_PUBLIC_CATALOG_TABS = new Set(['analytics', 'map', 'inventory']);
+
+function AdminDesktopSidebar({ adminCollection, darkMode, onIntent, onSelect }) {
   return (
     <aside className={`hidden lg:fixed lg:inset-y-0 lg:left-0 lg:block lg:w-[304px] lg:overflow-hidden lg:border-r ${darkMode ? 'border-white/10 bg-[#101010]' : 'border-stone-200 bg-[#fffefd]'}`}>
       <div className="flex h-full flex-col px-7 py-5">
@@ -116,6 +122,8 @@ function AdminDesktopSidebar({ adminCollection, darkMode, onSelect }) {
                       <button
                         key={tab.id}
                         type="button"
+                        onFocus={() => onIntent(tab.id)}
+                        onMouseEnter={() => onIntent(tab.id)}
                         onClick={() => onSelect(tab.id)}
                         aria-current={isActive ? 'page' : undefined}
                         className={`group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-left text-[10px] font-bold tracking-[0.015em] transition-[transform,background-color,color,box-shadow] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.985] ${isActive ? (darkMode ? 'bg-white text-stone-950 shadow-[0_10px_20px_-16px_rgba(255,255,255,0.95)]' : 'bg-stone-950 text-white shadow-[0_12px_22px_-18px_rgba(28,25,23,0.9)]') : (darkMode ? 'text-stone-400 hover:bg-white/[0.06] hover:text-white' : 'text-stone-600 hover:bg-stone-100/80 hover:text-stone-950')}`}
@@ -138,6 +146,31 @@ function AdminDesktopSidebar({ adminCollection, darkMode, onSelect }) {
   );
 }
 
+function AdminCatalogStatus({ darkMode, error, loading, onRetry }) {
+  if (!loading && !error) return null;
+
+  return (
+    <div
+      aria-live="polite"
+      className={`mb-4 flex min-h-11 items-center justify-between gap-4 rounded-2xl border px-4 py-2.5 text-[10px] font-bold ${darkMode ? 'border-white/10 bg-white/[0.035] text-stone-400' : 'border-stone-200 bg-white text-stone-500'}`}
+    >
+      <span className="flex items-center gap-2.5">
+        <RefreshCw size={13} strokeWidth={1.6} className={loading ? 'animate-spin' : ''} />
+        {loading ? 'Preparation des visuels du catalogue...' : 'Les visuels du catalogue ne sont pas disponibles.'}
+      </span>
+      {error && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className={`rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.12em] ${darkMode ? 'border-white/15 text-white' : 'border-stone-300 text-stone-800'}`}
+        >
+          Reessayer
+        </button>
+      )}
+    </div>
+  );
+}
+
 const getAdminFirestoreRuntime = async () => {
   const [{ bumpPublicCatalogVersion }, db, firestore] = await Promise.all([
     import('../../src/kit/admin/publicCatalogInvalidation'),
@@ -147,13 +180,58 @@ const getAdminFirestoreRuntime = async () => {
   return { db, firestore, bumpPublicCatalogVersion };
 };
 
-function AdminContent({ initialItems = [] }) {
+function AdminContent() {
   const { user, isAdmin, hasStrongAuth, loading } = useAuth();
   const [adminCollection, setAdminCollection] = useState('dashboard');
   const [editingItem, setEditingItem] = useState(null);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [stepUpOpen, setStepUpOpen] = useState(false);
+  const [catalogState, setCatalogState] = useState({ items: [], status: 'idle', error: null });
+  const catalogStatusRef = React.useRef('idle');
+  const catalogRequestRef = React.useRef(null);
+
+  const ensureAdminCatalog = React.useCallback(async () => {
+    if (catalogStatusRef.current === 'loaded') return;
+    if (catalogRequestRef.current) return catalogRequestRef.current;
+
+    catalogStatusRef.current = 'loading';
+    setCatalogState((current) => ({ ...current, status: 'loading', error: null }));
+
+    const request = loadAdminPublicCatalog()
+      .then((items) => {
+        catalogStatusRef.current = 'loaded';
+        setCatalogState({ items, status: 'loaded', error: null });
+        return items;
+      })
+      .catch((error) => {
+        catalogStatusRef.current = 'error';
+        setCatalogState((current) => ({ ...current, status: 'error', error }));
+        return [];
+      })
+      .finally(() => {
+        if (catalogRequestRef.current === request) catalogRequestRef.current = null;
+      });
+
+    catalogRequestRef.current = request;
+    return request;
+  }, []);
+
+  React.useEffect(() => {
+    if (ADMIN_PUBLIC_CATALOG_TABS.has(adminCollection)) {
+      void ensureAdminCatalog();
+    }
+  }, [adminCollection, ensureAdminCatalog]);
+
+  React.useEffect(() => {
+    const handleInvalidation = () => {
+      catalogStatusRef.current = 'idle';
+      catalogRequestRef.current = null;
+      setCatalogState({ items: [], status: 'idle', error: null });
+    };
+    window.addEventListener(ADMIN_PUBLIC_CATALOG_INVALIDATED_EVENT, handleInvalidation);
+    return () => window.removeEventListener(ADMIN_PUBLIC_CATALOG_INVALIDATED_EVENT, handleInvalidation);
+  }, []);
 
   React.useEffect(() => {
     try {
@@ -166,9 +244,14 @@ function AdminContent({ initialItems = [] }) {
   }, []);
 
   const handleSelectAdminTab = (tabId) => {
+    if (ADMIN_PUBLIC_CATALOG_TABS.has(tabId)) void ensureAdminCatalog();
     setAdminCollection(tabId);
     setEditingItem(null);
     setIsMoreMenuOpen(false);
+  };
+
+  const handleAdminTabIntent = (tabId) => {
+    if (ADMIN_PUBLIC_CATALOG_TABS.has(tabId)) void ensureAdminCatalog();
   };
 
   const handleToggleStatus = async (item, collectionName) => {
@@ -230,7 +313,7 @@ function AdminContent({ initialItems = [] }) {
     return (
       <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-5 px-6 text-center text-stone-900">
         <h1 className="text-3xl font-black tracking-tight">Acces admin refuse</h1>
-        <p className="text-sm text-stone-500">Ce compte n'a pas les droits administrateur.</p>
+        <p className="text-sm text-stone-500">Ce compte n&apos;a pas les droits administrateur.</p>
         <Link className="rounded-full bg-stone-950 px-5 py-3 text-sm font-bold text-white" href="/">
           Retour au site
         </Link>
@@ -290,6 +373,7 @@ function AdminContent({ initialItems = [] }) {
       <AdminDesktopSidebar
         adminCollection={adminCollection}
         darkMode={darkMode}
+        onIntent={handleAdminTabIntent}
         onSelect={handleSelectAdminTab}
       />
 
@@ -326,11 +410,9 @@ function AdminContent({ initialItems = [] }) {
                   <button
                     key={tab.id}
                     type="button"
-                    onClick={() => {
-                      setAdminCollection(tab.id);
-                      setEditingItem(null);
-                      setIsMoreMenuOpen(false);
-                    }}
+                    onFocus={() => handleAdminTabIntent(tab.id)}
+                    onMouseEnter={() => handleAdminTabIntent(tab.id)}
+                    onClick={() => handleSelectAdminTab(tab.id)}
                     className={`group relative flex-none items-center gap-2 rounded-full px-3 py-3 text-[10px] font-black uppercase tracking-widest transition-all duration-300 md:px-5 ${isAlwaysVisible ? 'flex' : isDesktopVisible ? 'hidden md:flex' : 'hidden'} ${isActive ? (darkMode ? 'bg-white text-stone-900 shadow-[0_0_20px_rgba(255,255,255,0.15)]' : 'bg-stone-900 text-white shadow-xl') : (darkMode ? 'text-stone-500 hover:bg-white/5 hover:text-white' : 'text-stone-500 hover:bg-stone-50 hover:text-stone-900')}`}
                   >
                     <Icon size={14} className={`transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110 group-hover:rotate-6'}`} />
@@ -365,11 +447,9 @@ function AdminContent({ initialItems = [] }) {
                     <button
                       key={tab.id}
                       type="button"
-                      onClick={() => {
-                        setAdminCollection(tab.id);
-                        setEditingItem(null);
-                        setIsMoreMenuOpen(false);
-                      }}
+                      onFocus={() => handleAdminTabIntent(tab.id)}
+                      onMouseEnter={() => handleAdminTabIntent(tab.id)}
+                      onClick={() => handleSelectAdminTab(tab.id)}
                       className={`items-center gap-3 rounded-2xl p-4 text-[10px] font-black uppercase tracking-widest transition-all ${isDesktopShown ? 'flex md:hidden' : 'flex'} ${isActive ? (darkMode ? 'bg-white text-stone-900' : 'bg-stone-900 text-white') : (darkMode ? 'bg-white/5 text-stone-400 hover:text-white' : 'bg-stone-50 text-stone-500 hover:text-stone-900')}`}
                     >
                       <Icon size={14} />
@@ -406,19 +486,37 @@ function AdminContent({ initialItems = [] }) {
           ) : adminCollection === 'seo' ? (
             <AdminSEO darkMode={darkMode} />
           ) : adminCollection === 'analytics' || adminCollection === 'map' ? (
-            <AdminAnalytics darkMode={darkMode} items={initialItems} />
+            <div>
+              <AdminCatalogStatus
+                darkMode={darkMode}
+                error={catalogState.error}
+                loading={catalogState.status === 'loading'}
+                onRetry={ensureAdminCatalog}
+              />
+              <AdminAnalytics darkMode={darkMode} items={catalogState.items} />
+            </div>
           ) : adminCollection === 'payment_settings' ? (
             <AdminPaymentSettings darkMode={darkMode} />
           ) : adminCollection === 'inventory' ? (
-            <AdminGlobalInventory
-              items={initialItems}
-              darkMode={darkMode}
-              onEdit={(item) => {
-                setAdminCollection('furniture');
-                setEditingItem(item);
-                window.scrollTo(0, 0);
-              }}
-            />
+            <div>
+              <AdminCatalogStatus
+                darkMode={darkMode}
+                error={catalogState.error}
+                loading={catalogState.status === 'loading'}
+                onRetry={ensureAdminCatalog}
+              />
+              {catalogState.status === 'loaded' && (
+                <AdminGlobalInventory
+                  items={catalogState.items}
+                  darkMode={darkMode}
+                  onEdit={(item) => {
+                    setAdminCollection('furniture');
+                    setEditingItem(item);
+                    window.scrollTo(0, 0);
+                  }}
+                />
+              )}
+            </div>
           ) : adminCollection === 'maintenance' ? (
             <AdminMaintenance darkMode={darkMode} />
           ) : (

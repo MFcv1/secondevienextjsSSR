@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { collection, doc, getDoc, getDocs, limit, orderBy, query } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { db, appId, functions, loadAuthModule } from '../config/firebase';
+import { db, functions, loadAuthModule } from '../config/firebase';
 import { getMillis } from '../../utils/time';
 import KIT_CONFIG from '../config/constants';
 import { downloadCsv } from './exportCsv';
@@ -216,6 +216,7 @@ const AdminDashboard = ({ user, darkMode = false }) => {
     const [recentOrders, setRecentOrders] = useState([]);
     const [statusCounts, setStatusCounts] = useState({ paid: 0, pending: 0, shipped: 0 });
     const [loading, setLoading] = useState(true);
+    const [inventoryStatsAvailable, setInventoryStatsAvailable] = useState(true);
 
     // Modals
     const [isOrderResetModalOpen, setIsOrderResetModalOpen] = useState(false);
@@ -427,6 +428,9 @@ const AdminDashboard = ({ user, darkMode = false }) => {
                     const data = inventorySnap.data();
                     stockValue = Number(data.totalStockValue || 0);
                     itemsForSale = Number(data.totalItemsForSale || 0);
+                    setInventoryStatsAvailable(true);
+                } else {
+                    setInventoryStatsAvailable(false);
                 }
 
                 if (!dashboardSnap.exists() || !inventorySnap.exists() || dailyStats.length === 0) {
@@ -464,20 +468,6 @@ const AdminDashboard = ({ user, darkMode = false }) => {
                     if (dailyStats.length === 0) {
                         setDailySales(buildDailySalesFromOrders(legacyOrders));
                     }
-                }
-
-                if (!inventorySnap.exists()) {
-                    console.warn('Inventory stats doc missing; using capped legacy furniture fallback.');
-                    const furnitureSnap = await getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'furniture'), orderBy('createdAt', 'desc'), limit(300)));
-                    furnitureSnap.forEach((docSnap) => {
-                        const data = docSnap.data();
-                        const price = data.currentPrice || data.startingPrice || 0;
-                        const stock = data.stock !== undefined ? Number(data.stock) : 1;
-                        if (!data.sold && stock > 0) {
-                            stockValue += (price * stock);
-                            itemsForSale += 1;
-                        }
-                    });
                 }
 
                 setStatusCounts({ paid: p, pending: w, shipped: s });
@@ -691,7 +681,9 @@ const AdminDashboard = ({ user, darkMode = false }) => {
                     {/* Catalog value strictly positioned on top right of clients card as a tiny metric */}
                     <div className="absolute top-8 right-8 text-right">
                         <p className={`text-[8px] uppercase font-black tracking-widest ${textMuted}`}>Valeur Catalogue</p>
-                        <p className={`text-xs font-black ${darkMode ? 'text-stone-300' : 'text-stone-600'}`}>{stats.totalStockValue} €</p>
+                        <p className={`text-xs font-black ${darkMode ? 'text-stone-300' : 'text-stone-600'}`}>
+                            {inventoryStatsAvailable ? `${stats.totalStockValue} €` : '—'}
+                        </p>
                     </div>
                 </div>
             </div>

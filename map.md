@@ -219,7 +219,7 @@ app/
 |-- admin/
 |   |-- layout.jsx .................... layout admin
 |   |-- page.jsx ...................... route dynamique
-|   `-- AdminAppIsland.jsx ............ shell, lazy tabs, gates admin, rail laterale desktop groupee
+|   `-- AdminAppIsland.jsx ............ shell, lazy tabs, gates admin, rail laterale desktop groupee, catalogue public a la demande
 `-- api/
     |-- search/route.js ............... recherche catalogue
     `-- revalidate-catalog/route.js ... revalidation admin
@@ -387,6 +387,7 @@ src/kit/admin/
 |-- PerformanceArchitectureStudy.css
 |-- analyticsReliability.js ........... fiabilite/checkpoints
 |-- exportCsv.js ...................... exports
+|-- adminPublicCatalog.js ............. catalogue public admin lazy, cache session et deduplication
 |-- publicCatalogInvalidation.js ...... version + revalidation
 |-- hooks/useLiveJourneyMap.js ........ carte live
 `-- components/

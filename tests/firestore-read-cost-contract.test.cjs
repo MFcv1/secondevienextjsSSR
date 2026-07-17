@@ -108,6 +108,10 @@ test('read-cost safeguards keep realtime quality and intent-based prefetch', () 
   const updateUserSessions = read('functions/src/analytics/updateUserSessions.js');
   const galleryActions = read('src/kit/marketplace/GalleryGridActionsIsland.jsx');
   const premiumMenu = read('src/kit/marketplace/PremiumMegaMenuIsland.jsx');
+  const adminPage = read('app/admin/page.jsx');
+  const adminIsland = read('app/admin/AdminAppIsland.jsx');
+  const adminCatalog = read('src/kit/admin/adminPublicCatalog.js');
+  const adminDashboard = read('src/kit/admin/AdminDashboard.jsx');
 
   assert.ok(
     catalog.indexOf("if (hasLimit && !limit)") < catalog.indexOf('const catalogVersion = await readCatalogVersion()'),
@@ -126,4 +130,12 @@ test('read-cost safeguards keep realtime quality and intent-based prefetch', () 
   assert.match(galleryActions, /const shouldPrefetchRoute = intent === 'hover' \|\| intent === 'press';/);
   assert.match(galleryActions, /if \(shouldPrefetchRoute && productUrl/);
   assert.match(premiumMenu, /onPointerEnter=\{\(\) => prefetchMenuHref\(href\)\}/);
+
+  assert.doesNotMatch(adminPage, /getPublicCatalog|getPublicCatalogFallback|initialItems/);
+  assert.match(adminIsland, /ADMIN_PUBLIC_CATALOG_TABS = new Set\(\['analytics', 'map', 'inventory'\]\)/);
+  assert.match(adminIsland, /onMouseEnter=\{\(\) => handleAdminTabIntent\(tab\.id\)\}/);
+  assert.match(adminIsland, /onFocus=\{\(\) => handleAdminTabIntent\(tab\.id\)\}/);
+  assert.match(adminCatalog, /if \(inflightRequest\) return inflightRequest;/);
+  assert.match(adminCatalog, /PUBLIC_ITEMS_FULL_CACHE_KEY/);
+  assert.doesNotMatch(adminDashboard, /legacy furniture fallback|collection\(db, 'artifacts', appId, 'public', 'data', 'furniture'\)/);
 });

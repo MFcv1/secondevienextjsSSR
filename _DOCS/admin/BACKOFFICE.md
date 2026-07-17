@@ -5,7 +5,7 @@ Statut: `PREPROD_READY`
 
 ## 1. Architecture
 
-`/admin` est une route dynamique, `noindex`, montee par `AdminAppIsland`. Les grandes vues sont chargees avec `React.lazy` pour ne pas placer tout le back-office dans le bundle initial.
+`/admin` est une route dynamique, `noindex`, montee par `AdminAppIsland`. Les grandes vues sont chargees avec `React.lazy` pour ne pas placer tout le back-office dans le bundle initial. La route ne lit plus le catalogue public avant l'authentification: le premier rendu de Stats reste independant des produits.
 
 L'interface commune de connexion est conservee. L'acces admin repose sur Firebase Auth, claims, registre `sys_admin_access` et assurance forte recente pour les operations sensibles.
 
@@ -35,6 +35,8 @@ La liste executable est `KIT_CONFIG.adminTabs` dans `src/kit/config/constants.js
 Les labels peuvent evoluer; les ID sont des contrats de navigation et ne doivent pas etre renommes sans migration.
 
 Sur desktop (`>= 1024 px`), `AdminAppIsland` affiche une navigation laterale fixe groupee par usage: Pilotage, Catalogue, Experience boutique, Commerce, Relation client et Systeme. Elle reference les 16 memes IDs que `KIT_CONFIG.adminTabs`, sans precharger leurs vues. Sous ce seuil, la navigation horizontale compacte et son menu "Plus d'options" restent le parcours de reference.
+
+Le catalogue public court (`scope=cards&limit=120`) est charge paresseusement uniquement par les vues qui le consomment reellement: `analytics` pour les miniatures du parcours et `inventory` pour la vue globale. Un survol ou un focus de ces entrees lance le prechargement; un clic le garantit. La promesse en vol, la valeur memoire et `sessionStorage` sont partages pendant toute la session admin, donc Data puis Vue Globale ne provoquent qu'un seul chargement. Une mutation catalogue purge ce cache et conserve l'invalidation publique. Publication et Studio gardent leurs flux Firestore propres et ne declenchent pas cette lecture publique redondante.
 
 ## 3. Publication catalogue
 
@@ -81,7 +83,7 @@ Le dashboard lit de preference les agregats:
 - `sales_stats_daily`;
 - commandes recentes bornees.
 
-Des fallbacks historiques bornes existent si les agrégats manquent. Ils ne doivent pas redevenir une lecture illimitee de toutes les commandes ou de tout le catalogue.
+Un fallback historique borne existe encore pour les commandes si leurs agregats manquent. Stats ne scanne plus `furniture` lorsque `inventory_stats/overview` est absent: la valeur catalogue affiche alors un tiret jusqu'a la prochaine regeneration de l'agregat par `onInventorySourceWrite`. Ce garde-fou evite jusqu'a 300 lectures produit a chaque ouverture de Stats sans afficher un faux zero comme une valeur autoritaire.
 
 `AdminAnalytics` reprend le moteur de Tous a Table: lecture bornee a 5 000 sessions sur un an, cache IndexedDB de six heures, actualisation manuelle de l'historique, ecoute Firestore des 100 sessions les plus recentes, visiteurs uniques dedupliques par UID Firebase puis IP serveur, ratio UID/IP, regroupement par jour et visiteur, sessions live et parcours. Une session est consideree en ligne lorsque sa derniere activite remonte a moins de 30 secondes. Le bandeau live apparait sans actualisation manuelle et cumule les sessions actives avec leur ville et leur appareil.
 
@@ -121,6 +123,7 @@ src/kit/admin/*.jsx
 src/kit/admin/components/*
 src/kit/admin/hooks/useLiveJourneyMap.js
 src/kit/admin/analyticsReliability.js
+src/kit/admin/adminPublicCatalog.js
 src/kit/admin/publicCatalogInvalidation.js
 src/kit/config/constants.js
 functions/src/auth/adminManagement.js

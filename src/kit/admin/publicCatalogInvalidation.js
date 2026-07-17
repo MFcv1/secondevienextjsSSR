@@ -1,6 +1,7 @@
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { appId, db, getFirebaseAuth } from '../config/firebase';
 import { clearPublicCatalogSessionCache } from '../shared/publicCatalogCache';
+import { clearAdminPublicCatalogCache } from './adminPublicCatalog';
 
 export const revalidateNextCatalog = async ({
   reason = 'admin_update',
@@ -32,6 +33,7 @@ export const revalidateNextCatalog = async ({
 
 export const bumpPublicCatalogVersion = async (reason = 'admin_update', options = {}) => {
   clearPublicCatalogSessionCache();
+  clearAdminPublicCatalogCache();
 
   await setDoc(
     doc(db, 'artifacts', appId, 'public', 'meta'),
