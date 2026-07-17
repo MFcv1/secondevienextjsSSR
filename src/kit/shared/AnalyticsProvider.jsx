@@ -93,7 +93,10 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
     const lastBeaconAtRef = useRef(0);
     const hasRecordedJourneyRef = useRef(false);
     const syncInFlightRef = useRef(false);
+    const pendingSyncRef = useRef(null);
     const routeSyncTimerRef = useRef(null);
+    const heartbeatTimerRef = useRef(null);
+    const armHeartbeatRef = useRef(() => {});
     const flushSessionRef = useRef(async () => false);
 
     useEffect(() => {
@@ -163,8 +166,43 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
         return true;
     };
 
-    flushSessionRef.current = async ({ sessionActive = true, ensureView = false } = {}) => {
-        if (!sessionIdRef.current || isAdmin || syncInFlightRef.current) return false;
+    const clearHeartbeatTimer = () => {
+        if (!heartbeatTimerRef.current) return;
+        clearTimeout(heartbeatTimerRef.current);
+        heartbeatTimerRef.current = null;
+    };
+
+    armHeartbeatRef.current = () => {
+        clearHeartbeatTimer();
+        if (!sessionIdRef.current || isAdmin || document.visibilityState !== 'visible') return;
+
+        const elapsedSinceLastSync = Math.max(0, Date.now() - lastSyncAtRef.current);
+        const delay = Math.max(250, ANALYTICS_SYNC_INTERVAL_MS - elapsedSinceLastSync);
+        heartbeatTimerRef.current = setTimeout(() => {
+            heartbeatTimerRef.current = null;
+            flushSessionRef.current({
+                sessionActive: true,
+                ensureView: true,
+                reason: 'heartbeat'
+            });
+        }, delay);
+    };
+
+    flushSessionRef.current = async ({ sessionActive = true, ensureView = false, reason = 'manual' } = {}) => {
+        if (!sessionIdRef.current || isAdmin) return false;
+        if (syncInFlightRef.current) {
+            // A heartbeat never needs a second write immediately after an
+            // already-running route/visibility synchronization.
+            if (reason !== 'heartbeat') {
+                const pending = pendingSyncRef.current;
+                pendingSyncRef.current = {
+                    sessionActive: pending?.sessionActive === false || sessionActive === false ? false : sessionActive,
+                    ensureView: Boolean(pending?.ensureView || ensureView),
+                    reason
+                };
+            }
+            return false;
+        }
         if (ensureView && !hasRecordedJourneyRef.current) {
             recordCurrentView({ allowPartialDetail: true });
         }
@@ -180,7 +218,8 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
                 syncToken: syncTokenRef.current,
                 duration: getTrackedDuration(),
                 journey: chunk,
-                sessionActive
+                sessionActive,
+                reason
             });
             return true;
         } catch {
@@ -188,13 +227,23 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
             return false;
         } finally {
             syncInFlightRef.current = false;
+            const pending = pendingSyncRef.current;
+            pendingSyncRef.current = null;
+            if (pending) {
+                queueMicrotask(() => flushSessionRef.current(pending));
+            } else {
+                armHeartbeatRef.current();
+            }
         }
     };
 
-    const scheduleRouteSync = () => {
+    const scheduleRouteSync = (reason = 'route') => {
         if (routeSyncTimerRef.current) clearTimeout(routeSyncTimerRef.current);
         routeSyncTimerRef.current = setTimeout(() => {
-            flushSessionRef.current({ sessionActive: document.visibilityState === 'visible' });
+            flushSessionRef.current({
+                sessionActive: document.visibilityState === 'visible',
+                reason
+            });
         }, ROUTE_SYNC_DELAY_MS);
     };
 
@@ -235,7 +284,10 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
                     lastActionTimeRef.current = Date.now();
                     persistAnalyticsSession(initRes.data.sessionId, initRes.data.syncToken);
                     recordCurrentView({ allowPartialDetail: true });
-                    await flushSessionRef.current({ sessionActive: document.visibilityState === 'visible' });
+                    await flushSessionRef.current({
+                        sessionActive: document.visibilityState === 'visible',
+                        reason: 'init'
+                    });
                 } else {
                     initCalledRef.current = false;
                 }
@@ -263,16 +315,8 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
     }, [view, selectedItemId, selectedItemName, selectedItemPrice, selectedItemContext]);
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            if (!sessionIdRef.current || isAdmin || document.visibilityState !== 'visible') return;
-
-            flushSessionRef.current({
-                sessionActive: true,
-                ensureView: true
-            });
-        }, ANALYTICS_SYNC_INTERVAL_MS);
-
-        return () => clearInterval(interval);
+        armHeartbeatRef.current();
+        return () => clearHeartbeatTimer();
     }, [isAdmin]);
 
     useEffect(() => {
@@ -301,7 +345,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
             });
             hasRecordedJourneyRef.current = true;
             lastActionTimeRef.current = actionTime;
-            scheduleRouteSync();
+            scheduleRouteSync('affiliate');
         };
 
         window.addEventListener('affiliate_product_click', handleAffiliateClick);
@@ -309,7 +353,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
     }, [isAdmin]);
 
     useEffect(() => {
-        const sendSessionUpdate = (isActive = true) => {
+        const sendSessionUpdate = (isActive = true, reason = 'manual') => {
             if (!sessionIdRef.current || isAdmin) return;
             const now = Date.now();
             if (!isActive && now - lastBeaconAtRef.current < MIN_BEACON_GAP_MS) return;
@@ -330,7 +374,8 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
                 syncToken: syncTokenRef.current,
                 duration: totalDuration,
                 journey: chunk,
-                sessionActive: isActive
+                sessionActive: isActive,
+                reason
             });
             const queued = navigator.sendBeacon(url, payload);
             if (!queued) {
@@ -348,30 +393,38 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'hidden') {
                 pauseActiveTimer();
-                sendSessionUpdate(false);
+                clearHeartbeatTimer();
+                sendSessionUpdate(false, 'visibility_hidden');
                 return;
             }
 
             if (document.visibilityState === 'visible' && sessionIdRef.current && !isAdmin) {
                 resumeActiveTimer();
                 persistStorageValue(sessionStorage, ANALYTICS_SESSION_CLOSED_AT_KEY, null);
-                flushSessionRef.current({ sessionActive: true, ensureView: true });
+                flushSessionRef.current({
+                    sessionActive: true,
+                    ensureView: true,
+                    reason: 'visible'
+                });
             }
         };
 
-        const handleBeforeUnload = () => {
+        const handleBeforeUnload = (reason) => {
             pauseActiveTimer();
-            sendSessionUpdate(false);
+            sendSessionUpdate(false, reason);
         };
 
+        const handleBeforeUnloadEvent = () => handleBeforeUnload('beforeunload');
+        const handlePageHide = () => handleBeforeUnload('pagehide');
+
         window.addEventListener('visibilitychange', handleVisibilityChange);
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        window.addEventListener('pagehide', handleBeforeUnload);
+        window.addEventListener('beforeunload', handleBeforeUnloadEvent);
+        window.addEventListener('pagehide', handlePageHide);
 
         return () => {
             window.removeEventListener('visibilitychange', handleVisibilityChange);
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-            window.removeEventListener('pagehide', handleBeforeUnload);
+            window.removeEventListener('beforeunload', handleBeforeUnloadEvent);
+            window.removeEventListener('pagehide', handlePageHide);
         };
     }, [isAdmin]);
 

@@ -1,6 +1,6 @@
 # Performance et budgets
 
-Derniere mise a jour: 2026-07-14
+Derniere mise a jour: 2026-07-17
 Statut: `REFERENCE_ACTIVE - DETTES MESUREES`
 
 ## 1. Objectif
@@ -19,6 +19,8 @@ La performance doit ameliorer le temps reel et la perception sans supprimer l'id
 - `detailFast` pour le detail produit;
 - miniatures 320/384 pour les cartes;
 - catalogue public cache et revalidation ciblee;
+- micro-cache de cinq secondes et deduplication en vol pour la version du catalogue public;
+- heartbeat analytics adaptatif et cache serveur borne du hash de session, sans ralentir le live visible;
 - CI avec build et classification de routes.
 
 Ne pas rouvrir une migration SPA ou supprimer les animations comme raccourci de performance.
@@ -139,6 +141,7 @@ Conserver les hauteurs reservees et ne pas remplacer une section par un squelett
 | p50/p95 production absents | `PRODUCTION_DEFERRED` | trafic representatif et dashboard |
 | sections riches bas de galerie | `SURVEILLANCE` | regression mesuree sur appareil cible |
 | matrice exhaustive appareils | `PRODUCTION_DEFERRED` | domaine final et recette de lancement |
+| gain exact des caches Firestore P1 | `A_MESURER_SANDBOX` | meme parcours Data Access avant/apres de huit minutes |
 
 ## 11. Regle de cloture
 

@@ -1,6 +1,6 @@
 # Cartographie du projet Seconde Vie Next
 
-Derniere verification: 2026-07-14
+Derniere verification: 2026-07-17
 Statut: `CARTE_CANONIQUE_ACTIVE`
 
 ## 1. Role et maintenance
@@ -139,8 +139,9 @@ AdminReturns
 ```text
 AnalyticsCollectorIsland + AuthProvider anonyme [C]
   -> AnalyticsProvider [C]
-  -> initLiveSession/syncSession/beacon [F]
-  -> analytics_sessions/{sessionId} avec journey embarque [DB]
+  -> heartbeat adaptatif + raisons init/route/visible/beacon [C]
+  -> initLiveSession/syncSession/beacon + cache borne du hash de jeton [F]
+  -> analytics_sessions/{sessionId} avec journey et compteurs de raisons embarques [DB]
   -> AdminAnalytics: historique borne + listener recent temps reel, medias de parcours [C]
   -> UID/IP, courbe, bandeau live cumulatif, visiteurs et parcours [C]
 ```
@@ -455,6 +456,7 @@ functions/
     |   `-- orderEmails.js
     |-- analytics/
     |   |-- constants.js
+    |   |-- sessionAuthorizationCache.js ... cache borne/TTL du hash de jeton
     |   |-- sessions.js
     |   |-- rollups.js
     |   |-- updateUserSessions.js

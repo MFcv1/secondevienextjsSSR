@@ -6,6 +6,7 @@ const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'utf8');
+const { createSessionAuthorizationCache } = require('../functions/src/analytics/sessionAuthorizationCache');
 
 const loadPublicCatalogHandler = () => {
   let firestoreReadAttempts = 0;
@@ -101,10 +102,34 @@ test('publicCatalog rejects malformed pagination before Firestore', async () => 
   assert.equal(getFirestoreReadAttempts(), 0);
 });
 
+test('session authorization cache expires and remains size bounded', () => {
+  let now = 1_000;
+  const cache = createSessionAuthorizationCache({
+    ttlMs: 60_000,
+    maxEntries: 2,
+    now: () => now,
+  });
+
+  cache.set('session-a', 'hash-a');
+  cache.set('session-b', 'hash-b');
+  assert.equal(cache.get('session-a'), 'hash-a');
+
+  cache.set('session-c', 'hash-c');
+  assert.equal(cache.get('session-b'), null, 'least recently used entry is evicted');
+  assert.equal(cache.get('session-a'), 'hash-a');
+  assert.equal(cache.get('session-c'), 'hash-c');
+  assert.equal(cache.size(), 2);
+
+  now += 60_001;
+  assert.equal(cache.get('session-a'), null, 'authorization hashes expire');
+  assert.equal(cache.get('session-c'), null, 'all stale entries are rejected');
+});
+
 test('read-cost safeguards keep realtime quality and intent-based prefetch', () => {
   const catalog = read('functions-public/src/public/catalog.js');
   const search = read('app/api/search/route.js');
   const analyticsProvider = read('src/kit/shared/AnalyticsProvider.jsx');
+  const analyticsSessions = read('functions/src/analytics/sessions.js');
   const updateUserSessions = read('functions/src/analytics/updateUserSessions.js');
   const galleryActions = read('src/kit/marketplace/GalleryGridActionsIsland.jsx');
   const premiumMenu = read('src/kit/marketplace/PremiumMegaMenuIsland.jsx');
@@ -118,12 +143,21 @@ test('read-cost safeguards keep realtime quality and intent-based prefetch', () 
     'invalid limits are rejected before the catalog version read',
   );
   assert.match(catalog, /const cursor = rawCursor \? canonicalizeCursor\(rawCursor\) : '';/);
+  assert.match(catalog, /const CATALOG_VERSION_CACHE_TTL_MS = 5 \* 1000;/);
+  assert.match(catalog, /if \(cachedCatalogVersion && cachedCatalogVersionExpiresAt > now\)/);
+  assert.match(catalog, /if \(!inflightCatalogVersionRead\)/);
   assert.match(search, /scope=cards&limit=120/);
   assert.doesNotMatch(search, /getPublicCatalog\('scope=cards&limit=160'\)/);
   assert.match(search, /getPublicCatalogFallback\(\{ limitCount: 160 \}\)/);
 
   assert.match(analyticsProvider, /document\.visibilityState !== 'visible'/);
   assert.match(analyticsProvider, /sessionActive: true,\s*ensureView: true/);
+  assert.match(analyticsProvider, /reason: 'heartbeat'/);
+  assert.match(analyticsProvider, /reason: 'visible'/);
+  assert.doesNotMatch(analyticsProvider, /setInterval\(\(\) => \{[\s\S]*flushSessionRef\.current/);
+  assert.match(analyticsSessions, /createSessionAuthorizationCache\(\)/);
+  assert.match(analyticsSessions, /syncReasonCounts\.\$\{syncReason\}/);
+  assert.match(analyticsSessions, /verifySessionSyncToken\(sessionRef, syncToken\)/);
   assert.doesNotMatch(updateUserSessions, /db\.doc\(`users\/\$\{userId\}`\)/);
   assert.match(updateUserSessions, /const isAdmin = accessSnap\.exists/);
 

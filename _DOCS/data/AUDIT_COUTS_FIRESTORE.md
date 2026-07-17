@@ -1,7 +1,7 @@
 # Audit des lectures et couts Firestore
 
 Derniere mise a jour: 2026-07-17
-Statut: `P1_ADMIN_CATALOGUE_LAZY_VALIDE_LOCAL`
+Statut: `P1_PUBLIC_META_ET_ANALYTICS_IMPLEMENTES_LOCAL_A_MESURER`
 Projet mesure: `secondevienextjsssr`
 
 ## 1. Objet et fin de l'audit
@@ -159,6 +159,59 @@ Correlation Cloud Monitoring disponible au moment du test:
 
 Conclusion fermee: `analytics_admin_audit_v3` n'est lue ni par le parcours public teste, ni par Stats, ni par Data, ni par son actualisation manuelle. La calibration prouve que Data Access aurait nomme cette collection sans ambiguite si elle avait ete touchee. Les anciens lots `ListDocuments` d'environ 300 restent donc attribues avec une forte probabilite a une surface externe au code courant, notamment un explorateur Firestore ou un ancien bundle V3 reste ouvert. L'attribution historique exacte ne peut pas etre declaree absolue tant que cette surface externe n'est pas reproduite avec le compte qui dispose de la lecture des documents.
 
+### 4.7 Parcours telephone seul apres deploiement du catalogue Admin lazy
+
+Le commit `9efe612` a ete deploye sur App Hosting avant cette mesure. La fenetre a ete scellee du `2026-07-17T00:22:30.486Z` au `2026-07-17T00:30:31.416Z`, soit 8 minutes et 1 seconde. Le scenario a ete realise uniquement depuis le telephone sur les pages publiques; aucun onglet Admin n'etait necessaire pour produire la charge.
+
+Seul `DATA_READ` Firestore/Datastore a ete active. Il a ete desactive immediatement apres le test, puis l'etat desactive de `DATA_READ`, `DATA_WRITE` et des journaux d'activite Admin a ete reverifie dans la console IAM.
+
+Le compteur Firebase agrege est passe d'environ 3,8 k a 4,2 k lectures et de 63 a 96 ecritures. La variation de lectures n'est pas un delta exact: les valeurs en milliers sont arrondies et les tableaux peuvent avoir du retard. Data Access donne l'attribution evenementielle plus fiable de la fenetre:
+
+| Appel ou chemin | Appels Data Access | Documents retournes/lus | Interpretation |
+| --- | ---: | ---: | --- |
+| `RunQuery` sur `furniture` | 5 | 74 (`38 + 4 + 10 + 18 + 4`) | chargements de listes galerie/categorie |
+| `BatchGetDocuments` sur `furniture/{id}` | 24 | 24 | fiches produit ouvertes ou resolues individuellement |
+| `BatchGetDocuments` sur `artifacts/secondevie/public/meta` | 28 | 28 | version catalogue relue avant les acces publics |
+| `BatchGetDocuments` sur `analytics_sessions/{id}` | 71 | 71 | validation du jeton avant chaque synchronisation de session |
+| `BatchGetDocuments` sur `sys_metadata/admin_ips` | 2 | 2 | exclusion IP admin lors de l'initialisation/cold start |
+| `BatchGetDocuments` sur `sys_metadata/gallery_app` | 1 | 1 | personnalisation de la galerie |
+| **Total** | **131 RPC** | **200 lectures documentaires observees** | 126 appels directs + 5 requetes |
+
+Repartition des identites techniques: 129 RPC ont ete emis par le service account Functions `secondevienextjsssr@appspot.gserviceaccount.com` et 2 par le service account App Hosting. Aucun appel `datastore.googleapis.com` separe n'a ete observe.
+
+Conclusions de cette reproduction:
+
+- le telephone seul suffit a produire un volume significatif; le panneau Admin Data n'est pas la cause de ce scenario;
+- les acces catalogue representent 127 lectures sur 200, soit 63,5 %, en comptant listes, fiches, version et personnalisation; les 2 lectures restantes hors sessions concernent le controle d'IP admin;
+- les synchronisations de session representent 71 lectures sur 200, soit 35,5 %; chaque heartbeat, changement de route ou beacon valide actuellement le jeton par une lecture avant l'ecriture;
+- les images elles-memes sont servies par Storage/CDN et leur redecodage visuel ne consomme pas une lecture Firestore; ce sont les nouvelles resolutions de donnees catalogue lors des navigations qui sont mesurees ici;
+- le delta Firebase arrondi proche de 400 ne doit pas etre presente comme 400 lectures exactes du telephone. La fenetre Data Access prouve 200 lectures documentaires attribuees; le reste apparent est compatible avec l'arrondi, le retard des compteurs et des operations hors bornes temporelles exactes.
+
+Priorites prudentes issues de la preuve: reduire d'abord les 28 relectures de `public/meta` et la repetition des resolutions catalogue sans toucher au rendu ni aux images; instrumenter ensuite la raison de chaque synchronisation (`heartbeat`, `route`, `visible`, `beacon`) avant de modifier la cadence ou la validation de securite des 71 lectures de session.
+
+### 4.8 Optimisations locales issues de la fenetre telephone
+
+Le lot local du 2026-07-17 cible uniquement les deux couts redondants prouves en 4.7:
+
+1. `public/meta` dispose maintenant d'un micro-cache en memoire de cinq secondes par instance `publicCatalog`, avec deduplication d'une lecture deja en vol. Cette fenetre courte absorbe les rafales metadata/page/prefetch sans remplacer les mecanismes de version, de revalidation et de cache catalogue existants.
+2. La validation du jeton analytics conserve en memoire, pendant 60 secondes et au plus pour 1 000 sessions par instance Function, le hash autoritaire deja lu ou cree. Un cache miss ou une reprise de session reste autoritaire via Firestore. Une suppression de session n'est jamais recreee par le cache: l'update Firestore echoue toujours si le document a disparu.
+3. Le heartbeat navigateur reste a 15 secondes en onglet visible, mais il est maintenant planifie 15 secondes apres la synchronisation la plus recente. Une route ou un retour visible repousse donc le prochain heartbeat au lieu de produire deux appels rapproches.
+4. Une synchronisation non-heartbeat demandee pendant un appel en vol est mise en attente puis envoyee; un heartbeat devenu redondant pendant cet appel est abandonne. Le parcours route reste prioritaire.
+5. Chaque ecriture de session transporte `lastSyncReason` et incremente `syncReasonCounts.<reason>` dans la meme operation Firestore. Cette instrumentation ne cree ni document de log, ni lecture, ni ecriture supplementaire.
+
+Les raisons autorisees sont `init`, `route`, `affiliate`, `heartbeat`, `visible`, `visibility_hidden`, `beforeunload`, `pagehide` et `manual`. Aucune journalisation Cloud Logging par heartbeat n'est activee: l'attribution est disponible dans le document de session existant, avec un cout operationnel nul par rapport a l'ecriture deja necessaire.
+
+Garde-fous conserves:
+
+- cadence live visible de 15 secondes et seuil admin de 30 secondes;
+- synchronisation immediate au retour visible;
+- beacon de sortie et parcours complet;
+- hash seul dans Firestore et comparaison timing-safe;
+- reprise bornee par UID, jeton, age et statut admin;
+- aucune modification du catalogue retourne, des images ou du rendu public.
+
+Le gain exact n'est pas encore revendique. Le cache est local a une instance Function: un cold start ou un routage vers une autre instance provoque encore une lecture autoritaire. Une nouvelle fenetre Data Access apres deploiement doit comparer le meme parcours de huit minutes avant de fermer cette mesure.
+
 ## 5. Attribution au code
 
 ### 5.1 Catalogue public: source dominante
@@ -191,12 +244,16 @@ Les 972 lectures proviennent de deux familles:
 
 Pour une session publique visible pendant une heure:
 
-- heartbeat toutes les 15 secondes;
-- environ 240 appels `syncSession`;
-- chaque appel effectue actuellement une lecture du document session puis une ecriture;
+- heartbeat adaptatif au plus toutes les 15 secondes lorsque l'onglet est visible;
+- un changement de route ou un retour visible repousse le prochain heartbeat de 15 secondes;
+- un cache borne de 60 secondes reutilise le hash autoritaire du jeton dans une instance Function;
+- un cache miss relit le document session, puis les synchronisations suivantes valident le jeton sans nouvelle lecture pendant la fenetre;
+- chaque synchronisation utile conserve une ecriture de session afin de maintenir le live et le parcours;
 - si Data est ouvert, chaque mise a jour du document peut provoquer environ une lecture supplementaire par panneau admin qui l'ecoute.
 
-Le timer periodique continue actuellement quand l'onglet public est masque. Le beacon marque deja la session inactive au masquage et une synchronisation immediate existe au retour visible. Suspendre le heartbeat masque economiserait donc les appels inutiles sans ralentir le live visible.
+Le heartbeat est suspendu lorsque l'onglet public est masque. Le beacon marque la session inactive au masquage et une synchronisation immediate existe au retour visible. Les synchronisations rapprochees sont arbitrees cote navigateur: la route est conservee, le heartbeat redondant est abandonne.
+
+La reprise reste une lecture autoritaire car elle doit verifier le UID, l'age, le statut et le jeton du document. Le cache ne remplace donc pas les controles qui dependent de l'etat complet de la session.
 
 Pour l'admin Data:
 
@@ -212,7 +269,7 @@ Le localhost utilise actuellement le vrai projet Firebase. React Strict Mode peu
 
 ## 6. Optimisations classees par risque
 
-### P0 - implemente localement, validation requise avant deploiement
+### P0 - deploye et mesure
 
 Le lot du 2026-07-16 applique uniquement les changements dont le resultat fonctionnel reste identique:
 
@@ -225,9 +282,9 @@ Le lot du 2026-07-16 applique uniquement les changements dont le resultat foncti
 
 Les gains ne sont pas convertis en promesse exacte avant une fenetre Usage Insights comparable. Ils ciblent les causes inutiles sans diminuer la cadence visible, la richesse des images, la navigation Next, l'exclusion admin ou la fraicheur catalogue.
 
-### Decisions volontairement non appliquees
+### Decisions volontairement non appliquees dans le lot P0
 
-- aucun cache TTL n'est ajoute autour de `public/meta`: apres un bump et une revalidation Next, une instance Function pourrait fournir l'ancienne version a la premiere reconstruction, puis la remettre en cache ISR jusqu'a 300 secondes;
+- aucun cache long n'est ajoute autour de `public/meta`: le lot P1 limite volontairement sa fenetre a cinq secondes, tres inferieure aux caches HTTP/ISR deja actifs;
 - aucun changement n'est revendique sur le menu global: l'ancien eventail de 20 routes audite appartenait a un composant non monte; le chemin actif conservait deja uniquement le prechargement du compte authentifie;
 - le heartbeat visible et le listener temps reel ne sont ni ralentis ni supprimes;
 - le fallback de claims de `trackAdminIP` reste en place tant qu'un test de propagation/revocation ne prouve pas qu'il peut etre retire sans refuser un admin legitime;
@@ -235,12 +292,14 @@ Les gains ne sont pas convertis en promesse exacte avant une fenetre Usage Insig
 
 ### P1 - progression mesuree
 
-1. **Implemente localement le 2026-07-17, mesure sandbox a faire**: `/admin` ne charge plus le catalogue sur Stats. Le catalogue court est demande uniquement par Data et Vue Globale, les deux consommateurs reels de `initialItems`; la requete est prechargee sur hover/focus, dedupliquee en vol, partagee en memoire et `sessionStorage`, puis purgee par l'invalidation catalogue existante. Publication et Studio conservent leurs lectures Firestore autoritaires sans ajouter une deuxieme lecture publique inutile. Le second chemin trouve dans `AdminDashboard` est egalement ferme: si `inventory_stats/overview` manque, Stats affiche une valeur catalogue indisponible au lieu de scanner jusqu'a 300 documents `furniture`.
-2. Borner et purger `limitedCatalogCache`, qui conserve actuellement les anciennes versions et combinaisons categorie/cursor jusqu'a la destruction de l'instance.
-3. Distinguer le `404` produit autoritatif d'une indisponibilite technique avant de supprimer les fallbacks Admin/REST.
-4. Ajouter dans Cloud Logging des logs structures sans donnee personnelle: `operation`, `cacheHit`, `scope`, `limit`, `returnedDocs`, `category`, `reason` (`heartbeat`, `route`, `beacon`). Ne pas ecrire ces compteurs dans Firestore.
-5. Borner le listener Data aux sessions recemment actives tout en conservant l'historique separe; verifier l'index et le comportement de reconnexion.
-6. Transformer Actualiser en synchronisation incrementale, avec recalcul complet explicite seulement lorsque necessaire.
+1. **Deploye et mesure le 2026-07-17**: `/admin` ne charge plus le catalogue sur Stats. Le catalogue court est demande uniquement par Data et Vue Globale, les deux consommateurs reels de `initialItems`; la requete est prechargee sur hover/focus, dedupliquee en vol, partagee en memoire et `sessionStorage`, puis purgee par l'invalidation catalogue existante. Publication et Studio conservent leurs lectures Firestore autoritaires sans ajouter une deuxieme lecture publique inutile. Le second chemin trouve dans `AdminDashboard` est egalement ferme: si `inventory_stats/overview` manque, Stats affiche une valeur catalogue indisponible au lieu de scanner jusqu'a 300 documents `furniture`. La reproduction telephone seul de la section 4.7 confirme qu'aucun onglet Admin n'est necessaire pour expliquer la charge publique restante; elle ne remet donc pas en cause la fermeture de cette lecture Admin inutile.
+2. **Implemente localement le 2026-07-17**: micro-cache `public/meta` de cinq secondes avec deduplication en vol.
+3. **Implemente localement le 2026-07-17**: cache borne du hash de jeton analytics, heartbeat adaptatif et arbitrage des appels concurrents, sans ralentir le live visible.
+4. **Implemente localement le 2026-07-17**: raisons de synchronisation comptees dans l'ecriture de session existante. Cloud Logging par heartbeat est volontairement evite pour ne pas deplacer le cout vers les journaux.
+5. Borner et purger `limitedCatalogCache`, qui conserve actuellement les anciennes versions et combinaisons categorie/cursor jusqu'a la destruction de l'instance.
+6. Distinguer le `404` produit autoritatif d'une indisponibilite technique avant de supprimer les fallbacks Admin/REST.
+7. Borner le listener Data aux sessions recemment actives tout en conservant l'historique separe; verifier l'index et le comportement de reconnexion.
+8. Transformer Actualiser en synchronisation incrementale, avec recalcul complet explicite seulement lorsque necessaire.
 
 ### P2 - ne pas engager pendant ce correctif
 
@@ -318,20 +377,17 @@ Apres chaque changement P0:
 - refuser le changement si une session visible met plus de 30 secondes a disparaitre ou si un parcours se perd;
 - ne deployer qu'apres validation du build et du smoke cible sur sandbox.
 
-## 9. Etat du lot P0 au 2026-07-16
+## 9. Etat des lots conservateurs au 2026-07-17
 
-Le lot conservateur est implemente et valide localement. Aucun commit, push ou deploiement cloud n'a ete effectue dans cette passe.
+Le lot P0 catalogue/admin a ete deploye et mesure. Le lot P1 `public/meta` et analytics est implemente localement mais n'est ni commite, ni pousse, ni deploye dans cette passe.
 
 Validations passees:
 
-- `test:firestore-cost`: 2 tests, 2 reussis;
+- `test:firestore-cost`: 3 tests, 3 reussis, dont expiration/borne du cache de jeton, micro-cache metadata et cadence adaptative;
 - contrat de fiabilite analytics: reussi;
-- suite Auth/passkeys: 54 tests, 54 reussis;
-- ESLint: 0 erreur, 298 avertissements preexistants;
-- build Next 15.5.20: reussi, routes statiques generees;
-- `mobile:contract`: reussi;
-- `next:routes`: reussi apres le build;
-- verification syntaxique des deux Functions modifiees: reussie;
+- verification syntaxique des Functions modifiees: reussie;
+- ESLint cible: 0 erreur; trois avertissements de dependances hooks preexistants dans `AnalyticsProvider`;
+- build Next 15.5.20: reussi, 53 pages statiques generees;
 - `git diff --check`: reussi, hors avertissements CRLF du poste Windows.
 
-La validation de cout reste volontairement ouverte: les gains exacts ne seront chiffres qu'apres un deploiement sandbox autorise et une fenetre Usage Insights comparable. La gate de deploiement doit aussi verifier manuellement le live, le tracer, la reprise apres masquage, la navigation catalogue et l'exclusion admin.
+La validation de cout P1 reste volontairement ouverte: les gains exacts ne seront chiffres qu'apres un deploiement sandbox autorise et une nouvelle fenetre Data Access comparable. La gate de deploiement doit aussi verifier manuellement le live, le tracer, la reprise apres masquage, la navigation catalogue et l'exclusion admin.

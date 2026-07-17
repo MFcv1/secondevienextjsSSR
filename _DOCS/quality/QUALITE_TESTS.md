@@ -1,6 +1,6 @@
 # Qualite, tests et gates
 
-Derniere mise a jour: 2026-07-16
+Derniere mise a jour: 2026-07-17
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Principe de proportion
@@ -57,7 +57,7 @@ Le contrat analytics importe le verificateur du moteur Tous a Table et controle 
 npm run test:analytics
 ```
 
-Le contrat de cout Firestore verrouille le rejet des paginations catalogue invalides avant toute lecture, le heartbeat visible uniquement, la suppression d'une lecture profil redondante et les prechargements categorie/mega-menu fondes sur l'intention:
+Le contrat de cout Firestore verrouille le rejet des paginations catalogue invalides avant toute lecture, les prechargements categorie/mega-menu fondes sur l'intention, le micro-cache de version catalogue, la cadence analytics adaptative, les raisons de synchronisation et l'expiration/borne du cache serveur de jeton:
 
 ```bash
 npm run test:firestore-cost

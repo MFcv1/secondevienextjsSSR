@@ -18,10 +18,23 @@ const {
     isValidSyncToken,
     toMillis
 } = require('./sessionSecurity');
+const { createSessionAuthorizationCache } = require('./sessionAuthorizationCache');
 
 const db = admin.firestore();
 const MAX_SESSION_DURATION_SECONDS = 24 * 60 * 60;
 const MAX_JOURNEY_CHUNK = 25;
+const SYNC_REASONS = new Set([
+    'init',
+    'route',
+    'affiliate',
+    'heartbeat',
+    'visible',
+    'visibility_hidden',
+    'beforeunload',
+    'pagehide',
+    'manual'
+]);
+const sessionAuthorizationCache = createSessionAuthorizationCache();
 
 const createSyncToken = () => crypto.randomBytes(32).toString('base64url');
 
@@ -48,6 +61,38 @@ const sanitizeString = (value, maxLength = 160) => {
     return String(value).slice(0, maxLength);
 };
 
+const sanitizeSyncReason = (value) => {
+    const reason = sanitizeString(value, 40) || 'manual';
+    return SYNC_REASONS.has(reason) ? reason : 'manual';
+};
+
+const verifySessionSyncToken = async (sessionRef, syncToken) => {
+    const cachedHash = sessionAuthorizationCache.get(sessionRef.id);
+    if (cachedHash) {
+        return {
+            exists: true,
+            valid: isValidSyncToken({ syncTokenHash: cachedHash }, syncToken),
+            cacheHit: true
+        };
+    }
+
+    const sessionSnap = await sessionRef.get();
+    if (!sessionSnap.exists) return { exists: false, valid: false, cacheHit: false };
+
+    const sessionData = sessionSnap.data();
+    if (sessionData?.syncTokenHash) {
+        // Cache the authoritative hash even for a rejected token so repeated
+        // invalid attempts cannot force one Firestore read per request.
+        sessionAuthorizationCache.set(sessionRef.id, sessionData.syncTokenHash);
+    }
+
+    return {
+        exists: true,
+        valid: isValidSyncToken(sessionData, syncToken),
+        cacheHit: false
+    };
+};
+
 const tryResumeSession = async ({ sessionId, syncToken, authUid, device, browser, os }) => {
     const cleanSessionId = sanitizeString(sessionId, 160);
     if (!cleanSessionId || !syncToken) return null;
@@ -69,6 +114,9 @@ const tryResumeSession = async ({ sessionId, syncToken, authUid, device, browser
         resumedAt: admin.firestore.FieldValue.serverTimestamp(),
         analyticsVersion: 3
     });
+    if (sessionData.syncTokenHash) {
+        sessionAuthorizationCache.set(sessionSnap.id, sessionData.syncTokenHash);
+    }
 
     return {
         success: true,
@@ -184,11 +232,13 @@ exports.initLiveSession = regionalFunctions().https.onCall(async (data = {}, con
         sessionActive: true,
         adminIPDetected: isFromAdminIP && type !== 'admin',
         analyticsVersion: 3,
-        syncTokenHash: hashSyncToken(syncToken)
+        syncTokenHash: hashSyncToken(syncToken),
+        syncReasonCounts: {}
     };
 
     try {
         const sessionRef = await db.collection('analytics_sessions').add(sessionData);
+        sessionAuthorizationCache.set(sessionRef.id, sessionData.syncTokenHash);
         return {
             success: true,
             resumed: false,
@@ -206,28 +256,30 @@ exports.initLiveSession = regionalFunctions().https.onCall(async (data = {}, con
 exports.syncSession = regionalFunctions().https.onCall(async (data = {}, context) => {
     if (!context.auth) return { success: false, unauthenticated: true };
 
-    const { sessionId, journey, duration, sessionActive, syncToken } = data;
+    const { sessionId, journey, duration, sessionActive, syncToken, reason } = data;
     if (!sessionId) return { success: false };
 
     try {
         const sessionRef = db.collection('analytics_sessions').doc(sessionId);
-        const sessionSnap = await sessionRef.get();
+        const authorization = await verifySessionSyncToken(sessionRef, syncToken);
 
-        if (!sessionSnap.exists) {
+        if (!authorization.exists) {
             console.warn("Sync skipped: session not found", { sessionId });
             return { success: true, missing: true };
         }
 
-        const sessionData = sessionSnap.data();
-        if (!isValidSyncToken(sessionData, syncToken)) {
+        if (!authorization.valid) {
             console.warn("Sync rejected: invalid token", { sessionId });
             return { success: false, invalidToken: true };
         }
 
+        const syncReason = sanitizeSyncReason(reason);
         const updates = {
             lastActivityAt: admin.firestore.FieldValue.serverTimestamp(),
             duration: clampDuration(duration),
-            sessionActive: sessionActive !== undefined ? sessionActive : true
+            sessionActive: sessionActive !== undefined ? sessionActive : true,
+            lastSyncReason: syncReason,
+            [`syncReasonCounts.${syncReason}`]: admin.firestore.FieldValue.increment(1)
         };
 
         const cleanJourney = sanitizeJourney(journey);
@@ -271,7 +323,7 @@ exports.syncSessionBeacon = regionalFunctions().https.onRequest(async (req, res)
         }
 
         payload = payload || {};
-        const { sessionId, journey, duration, sessionActive, syncToken } = payload;
+        const { sessionId, journey, duration, sessionActive, syncToken, reason } = payload;
 
         if (!sessionId) {
             res.status(400).send('Missing session ID');
@@ -279,25 +331,27 @@ exports.syncSessionBeacon = regionalFunctions().https.onRequest(async (req, res)
         }
 
         const sessionRef = db.collection('analytics_sessions').doc(sessionId);
-        const sessionSnap = await sessionRef.get();
+        const authorization = await verifySessionSyncToken(sessionRef, syncToken);
 
-        if (!sessionSnap.exists) {
+        if (!authorization.exists) {
             console.warn("Beacon sync skipped: session not found", { sessionId });
             res.status(204).send('');
             return;
         }
 
-        const sessionData = sessionSnap.data();
-        if (!isValidSyncToken(sessionData, syncToken)) {
+        if (!authorization.valid) {
             console.warn("Beacon sync rejected: invalid token", { sessionId });
             res.status(403).send('Invalid session token');
             return;
         }
 
+        const syncReason = sanitizeSyncReason(reason);
         const updates = {
             lastActivityAt: admin.firestore.FieldValue.serverTimestamp(),
             duration: clampDuration(duration),
-            sessionActive: sessionActive !== undefined ? sessionActive : false
+            sessionActive: sessionActive !== undefined ? sessionActive : false,
+            lastSyncReason: syncReason,
+            [`syncReasonCounts.${syncReason}`]: admin.firestore.FieldValue.increment(1)
         };
 
         const cleanJourney = sanitizeJourney(journey);
@@ -318,6 +372,7 @@ exports.deleteSession = regionalFunctions().https.onCall(async (data, context) =
     const { sessionId } = data;
     if (!sessionId) throw new functions.https.HttpsError('invalid-argument', 'Missing sessionId');
     await db.collection('analytics_sessions').doc(sessionId).delete();
+    sessionAuthorizationCache.remove(sessionId);
     return { success: true };
 });
 
@@ -338,6 +393,8 @@ exports.clearAllSessions = regionalFunctions().https.onCall(async (data, context
 
             if (snapshot.size < 500) break;
         }
+
+        sessionAuthorizationCache.clear();
 
         return { success: true, count: totalDeleted };
     } catch (error) {

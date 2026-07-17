@@ -1,6 +1,6 @@
 # AGENTS.md - Bible operationnelle de Seconde Vie Next
 
-Derniere consolidation: 2026-07-14
+Derniere consolidation: 2026-07-17
 Statut: `REFERENCE_MAITRE_ACTIVE`
 Projet: `secondevienextjsSSR`
 
@@ -102,7 +102,7 @@ Ne pas convertir Node 24 local en nouvelle baseline sans migration dediee. Ne ja
 | back-office | [BACKOFFICE.md](_DOCS/admin/BACKOFFICE.md) | AdminAppIsland, `src/kit/admin` | preprod |
 | infrastructure | [INFRASTRUCTURE.md](_DOCS/infra/INFRASTRUCTURE.md) | Firebase/App Hosting/config/env | sandbox actif |
 | performance | [PERFORMANCE.md](_DOCS/perf/PERFORMANCE.md) | scripts perf, iles, cache/images | dette controlee |
-| donnees/analytics | [DONNEES_ANALYTICS.md](_DOCS/data/DONNEES_ANALYTICS.md) + [AUDIT_COUTS_FIRESTORE.md](_DOCS/data/AUDIT_COUTS_FIRESTORE.md) | Firestore, UID/IP, sessions live, couts et migrations | moteur Tous a Table adapte, P0 couts valide localement |
+| donnees/analytics | [DONNEES_ANALYTICS.md](_DOCS/data/DONNEES_ANALYTICS.md) + [AUDIT_COUTS_FIRESTORE.md](_DOCS/data/AUDIT_COUTS_FIRESTORE.md) | Firestore, UID/IP, sessions live, couts et migrations | moteur Tous a Table adapte, P1 couts public/analytics implemente localement, mesure sandbox requise |
 | exploitation | [EXPLOITATION.md](_DOCS/operations/EXPLOITATION.md) | commandes, deploy, rollback, backlog | actif |
 | qualite/tests | [QUALITE_TESTS.md](_DOCS/quality/QUALITE_TESTS.md) | CI, tests, scripts | actif |
 | assistant devis IA | [ASSISTANT_DEVIS.md](_DOCS/ai/ASSISTANT_DEVIS.md) | futur | conception |
@@ -157,6 +157,8 @@ Interdictions:
 - focus, Escape, restauration du focus et safe areas preserves;
 - navigation Next native;
 - aucune galerie visible entre menu et espace client;
+- sur mobile, la galerie conserve volontairement son conteneur de scroll interne fixe et peut donc laisser la barre d'URL Chrome visible; les pages categorie utilisent le scroll document natif, qui masque la barre en descendant et la restaure en remontant;
+- `app/ViewportHeightSyncIsland.jsx` reste l'unique proprietaire global de `--marketplace-viewport-height` et doit suivre `visualViewport` pendant le repli des barres navigateur, l'orientation et le retour au premier plan; ne pas remettre cette mesure dans une route ou une ile qui se demonte a la navigation;
 - respecter `prefers-reduced-motion` pour les animations non essentielles;
 - ne pas redesign une zone lors d'un correctif technique cible.
 

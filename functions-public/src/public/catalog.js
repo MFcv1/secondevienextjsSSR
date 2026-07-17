@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const db = admin.firestore();
 const APP_ID = process.env.PUBLIC_APP_ID || process.env.APP_ID || 'secondevie';
 const CACHE_TTL_MS = 5 * 60 * 1000;
+const CATALOG_VERSION_CACHE_TTL_MS = 5 * 1000;
 const PUBLIC_COLLECTIONS = ['furniture'];
 const DEFAULT_CATALOG_VERSION = 'unversioned';
 const ALLOWED_ORIGINS = new Set([
@@ -28,6 +29,9 @@ let inflightCatalogReadVersion = null;
 const limitedCatalogCache = new Map();
 const limitedInflightReads = new Map();
 const CARD_SCOPE = 'cards';
+let cachedCatalogVersion = null;
+let cachedCatalogVersionExpiresAt = 0;
+let inflightCatalogVersionRead = null;
 
 const getCatalogVersionValue = (data = {}) => {
   const value = data.catalogVersion || data.updatedAt;
@@ -40,8 +44,31 @@ const getCatalogVersionValue = (data = {}) => {
 };
 
 const readCatalogVersion = async () => {
-  const snap = await db.collection('artifacts').doc(APP_ID).collection('public').doc('meta').get();
-  return snap.exists ? getCatalogVersionValue(snap.data()) : DEFAULT_CATALOG_VERSION;
+  const now = Date.now();
+  if (cachedCatalogVersion && cachedCatalogVersionExpiresAt > now) {
+    return cachedCatalogVersion;
+  }
+
+  if (!inflightCatalogVersionRead) {
+    inflightCatalogVersionRead = db
+      .collection('artifacts')
+      .doc(APP_ID)
+      .collection('public')
+      .doc('meta')
+      .get()
+      .then((snap) => {
+        cachedCatalogVersion = snap.exists
+          ? getCatalogVersionValue(snap.data())
+          : DEFAULT_CATALOG_VERSION;
+        cachedCatalogVersionExpiresAt = Date.now() + CATALOG_VERSION_CACHE_TTL_MS;
+        return cachedCatalogVersion;
+      })
+      .finally(() => {
+        inflightCatalogVersionRead = null;
+      });
+  }
+
+  return inflightCatalogVersionRead;
 };
 
 const serializeValue = (value) => {

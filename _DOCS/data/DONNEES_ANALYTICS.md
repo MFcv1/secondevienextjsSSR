@@ -1,6 +1,6 @@
 # Donnees, Firestore et analytics
 
-Derniere mise a jour: 2026-07-16
+Derniere mise a jour: 2026-07-17
 Statut: `REFERENCE_ACTIVE`
 
 Deploiement sandbox: moteur actif depuis le 2026-07-15 sur App Hosting et Functions `europe-west1`.
@@ -119,9 +119,13 @@ Contrat du moteur:
 - l'identite fiable utilise le UID Firebase, puis l'IP serveur, puis l'ID session si l'IP manque;
 - le ratio UID/IP mesure l'ecart entre visiteurs uniques et IP uniques;
 - la premiere page et chaque changement de route sont synchronises en moins d'une seconde apres initialisation;
-- la synchronisation periodique est de 15 secondes uniquement lorsque l'onglet est visible; le beacon marque la session inactive au masquage et le retour visible synchronise immediatement;
+- la synchronisation periodique est adaptative: le prochain heartbeat est planifie 15 secondes apres la synchronisation la plus recente et uniquement lorsque l'onglet est visible; une route ou un retour visible evite ainsi un heartbeat immediatement redondant;
+- une route demandee pendant un appel en vol est mise en attente et conservee; un heartbeat devenu redondant pendant cet appel est abandonne;
 - le beacon de fermeture envoie le dernier parcours et utilise un `fetch keepalive` si le navigateur refuse sa mise en file;
 - un jeton aleatoire n'est conserve qu'en version hachee dans Firestore et protege reprise/synchronisation;
+- le hash autoritaire du jeton est reutilise au plus 60 secondes dans un cache memoire borne a 1 000 sessions par instance Function; un cache miss et toute reprise relisent Firestore;
+- une session supprimee n'est jamais recreee depuis ce cache: l'update autoritaire Firestore doit toujours reussir;
+- `lastSyncReason` et `syncReasonCounts` instrumentent `init`, route, heartbeat, visibilite et beacons dans la meme ecriture de session, sans operation Firestore supplementaire;
 - une reprise exige le meme UID, le bon jeton, une activite de moins d'une heure et une session non admin;
 - une session explicitement fermee ne peut etre reprise que pendant une grace de 15 secondes, afin de tolerer un rechargement immediat sans fusionner un retour plusieurs minutes plus tard;
 - l'admin lit au maximum 5 000 sessions commencees dans la derniere annee;
@@ -141,6 +145,8 @@ Exclusion admin:
 - l'e-mail proprietaire est lu depuis le secret serveur `SUPER_ADMIN_EMAIL`, jamais code en dur cote client.
 
 Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. L'architecture haut trafic sera traitee dans une phase distincte demandee par l'utilisateur.
+
+Optimisation de cout locale au 2026-07-17: la cadence visible, le seuil live, le parcours et la securite de reprise restent inchanges. Le cache de hash et l'arbitrage des synchronisations visent uniquement les relectures et appels rapproches observes dans la fenetre Data Access. Leur gain exact doit etre mesure apres deploiement sandbox avec le protocole de [AUDIT_COUTS_FIRESTORE.md](AUDIT_COUTS_FIRESTORE.md).
 
 Les anciennes collections de rollup peuvent encore exister dans le sandbox apres les versions precedentes, mais aucun code actif ne les lit ou ne les alimente. Aucune purge de donnees historique n'est executee pendant ce portage.
 
