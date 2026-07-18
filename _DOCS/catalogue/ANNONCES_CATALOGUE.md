@@ -60,7 +60,7 @@ brouillon admin
   -> vendu ou remis en vente selon cycle de commande/refund
 ```
 
-La suppression ou modification d'un produit met ses medias retires en quarantaine. Le GC catalogue est en dry-run par defaut et n'est autorise a supprimer qu'apres 90 jours, en verifiant les releases retenues. Ne pas contourner ces triggers avec une migration non auditee.
+La suppression ou modification d'un produit met ses medias retires en quarantaine. Dans le sandbox, le GC media est actif mais ne peut supprimer qu'apres 90 jours, apres verification de la source Firestore, des generations Storage et des releases retenues. Le GC des releases protege toujours `current`, `previous`, LKG, les 10 releases les plus recentes et toute release de moins de 48 heures. Il s'execute apres une publication et chaque jour. Ne pas contourner ces garde-fous avec une migration non auditee.
 
 ### 4.1 Catalogue public materialise
 
@@ -187,7 +187,7 @@ Les scripts E2E ou les backfills qui touchent Firebase ne sont lances que sur l'
 
 ## 12. Roadmap temporaire de fermeture du catalogue legacy
 
-Statut: `IMPLEMENTATION_LOCALE_EN_VALIDATION`
+Statut: `DEPLOYE_RECETTE_NAVIGATEUR_EN_COURS`
 
 - debut documentaire: 2026-07-18;
 - cible de cloture documentaire: 2026-07-25;

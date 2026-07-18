@@ -4,6 +4,7 @@ const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { APP_ID } = require('../../helpers/config');
 const { collectStoragePaths } = require('../triggers/mediaCleanup');
 const { SNAPSHOT_ROOT, readCurrentPointer, readJsonObject } = require('./snapshotStorage');
+const { runReleaseGarbageCollection } = require('./releaseGarbageCollection');
 const { catalogLog } = require('./structuredLog');
 const { CATALOG_BUILDER_SERVICE_ACCOUNT, CATALOG_MEDIA_GC_COMMIT, CATALOG_SNAPSHOT_BUCKET } = require('./catalogConfig');
 
@@ -154,11 +155,24 @@ const catalogMediaGarbageCollector = onSchedule(
         timeoutSeconds: 540,
         memory: '512MiB'
     },
-    async () => runMediaGarbageCollection({
-        db: admin.firestore(),
-        mediaBucket: admin.storage().bucket(),
-        snapshotBucket: admin.storage().bucket(CATALOG_SNAPSHOT_BUCKET)
-    }, { commit: false })
+    async () => {
+        const snapshotBucket = admin.storage().bucket(CATALOG_SNAPSHOT_BUCKET);
+        const media = await runMediaGarbageCollection({
+            db: admin.firestore(),
+            mediaBucket: admin.storage().bucket(),
+            snapshotBucket
+        }, { commit: true });
+        const releases = await runReleaseGarbageCollection(snapshotBucket, { commit: true });
+        catalogLog('info', {
+            phase: 'scheduled_gc',
+            result: 'completed',
+            mediaResult: media.result,
+            releaseResult: releases.result,
+            deletedReleases: releases.deletedReleases,
+            deletedObjects: releases.deletedObjects
+        });
+        return { media, releases };
+    }
 );
 
 module.exports = {

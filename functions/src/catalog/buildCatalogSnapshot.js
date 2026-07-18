@@ -21,6 +21,7 @@ const {
     readPreviousPointer,
     writeImmutableRelease
 } = require('./snapshotStorage');
+const { runReleaseGarbageCollection } = require('./releaseGarbageCollection');
 const { catalogLog } = require('./structuredLog');
 const { CATALOG_BUILDER_SERVICE_ACCOUNT, CATALOG_SNAPSHOT_BUCKET } = require('./catalogConfig');
 
@@ -282,6 +283,28 @@ async function buildCatalog(dependencies, input = {}) {
                 result: 'enqueue_failed', code: String(error.code || error.name || 'UNKNOWN')
             });
             return { result: 'published_revalidation_pending', buildId, release, revision: requestedRevision };
+        }
+
+        try {
+            const garbageCollection = await runReleaseGarbageCollection(bucket, { commit: true, now: now() });
+            logger('info', {
+                phase: 'release_gc',
+                buildId,
+                targetRevision: requestedRevision,
+                result: garbageCollection.result,
+                totalReleases: garbageCollection.totalReleases,
+                retainedReleases: garbageCollection.retainedReleases,
+                deletedReleases: garbageCollection.deletedReleases,
+                deletedObjects: garbageCollection.deletedObjects
+            });
+        } catch (garbageCollectionError) {
+            logger('error', {
+                phase: 'release_gc',
+                buildId,
+                targetRevision: requestedRevision,
+                result: 'failed',
+                code: String(garbageCollectionError.code || garbageCollectionError.name || 'UNKNOWN')
+            });
         }
 
         logger('info', {

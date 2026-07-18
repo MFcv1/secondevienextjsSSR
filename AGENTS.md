@@ -142,6 +142,7 @@ Interdictions:
 - le parcours public lit le snapshot Storage via le helper/endpoint same-origin, jamais `furniture` ni `public/meta`;
 - il n'existe qu'une source publique snapshot; canary, legacy et fallback Firestore sont interdits;
 - le builder publie des objets immuables puis un pointeur CAS; `current`, `previous` et `last-known-good` sont les seuls fallbacks lecteurs;
+- le GC Storage protege les trois pointeurs, les 10 releases recentes et une grace de 48 heures; les medias gardent 90 jours de quarantaine;
 - le checkout reste autoritaire sur Firestore, independamment du snapshot;
 - le rollback passe uniquement par Maintenance admin vers un pointeur valide, puis par une reconstruction;
 - publication, indexabilite, stock et ordre editorial restent des concepts separes;
@@ -406,13 +407,11 @@ Ne pas utiliser `git reset --hard`, `git clean`, `git checkout --` ou une suppre
 
 - budget CSS/JS public;
 - convergence regionale;
-- Hosting/SEO legacy;
 - assets candidats apres audit visuel;
 - pagination admin selon volumes;
 - gestion passkeys dans l'espace client si besoin confirme;
 - Next 16/Turbopack;
 - assistant IA devis.
-- retrait final des rails catalogue legacy apres preuve Data Access post-cutover et fenetre d'observation;
 
 Ces elements ne doivent pas revenir dans un patch en cours sauf demande explicite ou bug directement lie.
 

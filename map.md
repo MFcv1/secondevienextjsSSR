@@ -474,10 +474,11 @@ functions/
         |-- onCatalogSourceWrite.js ... trigger leger, dedup et enqueue
         |-- buildCatalogSnapshot.js ... lease, projection, manifestes et CAS
         |-- snapshotStorage.js ......... objets immuables et pointeurs
+        |-- releaseGarbageCollection.js  retention bornee des releases Storage
         |-- catalogRevalidation.js ..... task HMAC vers App Hosting
         |-- catalogReconciler.js ....... reprise des publications bloquees
         |-- catalogMaintenance.js ...... statut, rollback valide et reconstruction admin
-        |-- mediaGarbageCollection.js .. quarantaine 90 jours, dry-run par defaut
+        |-- mediaGarbageCollection.js .. quarantaine media 90 jours + GC quotidien
         `-- publicProjection.js ........ projection publique canonique
 ```
 
