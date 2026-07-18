@@ -1,7 +1,7 @@
 # Audit des lectures et couts Firestore
 
-Derniere mise a jour: 2026-07-17
-Statut: `P1_PUBLIC_META_ET_ANALYTICS_IMPLEMENTES_LOCAL_A_MESURER`
+Derniere mise a jour: 2026-07-18
+Statut: `P1_PUBLIC_META_ET_ANALYTICS_IMPLEMENTES_CATALOGUE_POST_CUTOVER_MESURE`
 Projet mesure: `secondevienextjsssr`
 
 ## 1. Objet et fin de l'audit
@@ -406,4 +406,25 @@ Preuves deja acquises:
 - checkout loa.gto sans paiement arrive jusqu'a Stripe, en conservant la verification Firestore autoritaire;
 - contrat local `measure:catalog:cost` et suites de securite/emulators disponibles.
 
-La preuve Data Access post-cutover reste volontairement une operation separee, demandee pour la prochaine passe. Etat requis avant cette fenetre: `DATA_READ` et `DATA_WRITE` desactives. Le critere de fermeture est zero lecture visiteur de `artifacts/secondevie/public/meta` et `artifacts/secondevie/public/data/furniture`; les lectures du builder provoquees par les mutations doivent etre attribuees separement.
+### 10.1 Preuve Data Access post-cutover du 2026-07-18
+
+La fenetre a ete executee sur le sandbox deploye, de `12:34:59Z` a `12:37:03Z`. `DATA_READ` et `DATA_WRITE` ont ete actives temporairement pour `Firestore/Datastore API` depuis la console Google Cloud. Une lecture bornee de `sys_catalog_publication/secondevie` a ete observee avant le parcours, puis une seconde lecture a servi de marqueur de fermeture. Ces deux calibrations prouvent que Cloud Logging recevait effectivement les appels Firestore de la fenetre.
+
+Le parcours a produit 28 requetes publiques:
+
+- accueil, galerie, categorie, recherche, wishlist et fiche produit dans le navigateur;
+- 21 appels same-origin a `/api/catalog?limit=120` et un appel a `/sitemap.xml`;
+- les 22 appels HTTP instrumentes ont tous retourne `200`;
+- les appels catalogue ont conserve un ETag unique et stable: la valeur brute n'est pas conservee dans Git.
+
+Les sept entrees Firestore visibles entre les marqueurs comprennent les deux calibrations et du bruit applicatif borne (`Listen`, `RunQuery`, `BatchGetDocuments`). L'analyse expurgee du chemin et des requetes donne:
+
+| Cible catalogue interdite au visiteur | References observees |
+| --- | ---: |
+| `artifacts/secondevie/public/meta` | **0** |
+| `artifacts/secondevie/public/data/furniture` | **0** |
+| requete sur la collection racine `furniture` | **0** |
+
+Conclusion fermee: le parcours public mesure ne lit plus le catalogue dans Firestore. Il sert le snapshot Storage via `/api/catalog`; le checkout reste volontairement autoritaire sur Firestore et n'appartient pas a cette fenetre de navigation. `DATA_READ` et `DATA_WRITE` ont ete desactives immediatement apres le marqueur final. La console affichait les deux colonnes desactivees et la politique IAM a ensuite retourne `auditConfigs: null`.
+
+Cette preuve ferme la gate Data Access du cutover. Elle n'autorise pas encore le retrait de `publicCatalog` et `onInventorySourceWrite`: ces rails restent disponibles pendant la fenetre d'observation et seront retires seulement par un changement dedie avec rollback explicite.
