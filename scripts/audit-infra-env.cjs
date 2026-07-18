@@ -139,7 +139,7 @@ const sandboxEnv = parseDotEnvValues('.env.sandbox');
 const productionEnv = parseDotEnvValues('.env.production');
 const firebaseRc = readJson('.firebaserc') || {};
 const firebaseJson = readJson('firebase.json') || {};
-const envUsage = scanEnvUsage(['app', 'src', 'functions', 'functions-public']);
+const envUsage = scanEnvUsage(['app', 'src', 'functions']);
 const firebaseIgnore = readText('.firebaseignore');
 
 const findings = [];

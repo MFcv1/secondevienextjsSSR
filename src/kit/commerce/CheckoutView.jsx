@@ -2,9 +2,9 @@ import React, { lazy, Suspense, useState, useEffect, useMemo, useRef } from 'rea
 import { createPortal } from 'react-dom';
 import { ArrowLeft, CreditCard, Truck, AlertCircle, Landmark, Wallet, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { functions, db, appId } from '../config/firebase';
+import { functions, db } from '../config/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from '../ui/Toast';
 import { getPurchaseUnavailableLabel, isPurchasable } from './purchasability';
 import { logClientPerf, startClientPerf } from '../shared/clientPerf';
@@ -73,7 +73,7 @@ const PremiumActionBtn = ({ children, isLoading, disabled, onClick, darkMode }) 
  * CheckoutView — Flow Single Page Premium (Mars 2026)
  * Tout sur la même page : formulaire au-dessus, choix du paiement, et Stripe injecté en dessous.
  */
-const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlaceOrder }) => {
+const CheckoutView = ({ cartItems, user, darkMode = false, onBack, onPlaceOrder }) => {
     const toast = useToast();
     // --- STATE ---
     const [formData, setFormData] = useState({
@@ -154,6 +154,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
     const [createdOrderOtpToken, setCreatedOrderOtpToken] = useState('');
     const [createdStripeConnectedAccountId, setCreatedStripeConnectedAccountId] = useState('');
     const [lockedOrderDraft, setLockedOrderDraft] = useState(null);
+    const [priceOverrides, setPriceOverrides] = useState({});
     const [unavailableItems, setUnavailableItems] = useState([]);
     const [isCleaningUp, setIsCleaningUp] = useState(false);
     const checkoutClientOrderIdRef = useRef(null);
@@ -175,8 +176,15 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
     );
     const hasVerifiedCheckoutEmail = hasVerifiedGuestCheckoutOtp;
     const isCheckoutLocked = ['fetching_stripe', 'ready_to_pay', 'processing_deferred', 'order_success'].includes(checkoutState);
-    const checkoutItems = isCheckoutLocked && lockedOrderDraft?.items?.length ? lockedOrderDraft.items : cartItems;
-    const checkoutSubtotal = isCheckoutLocked && lockedOrderDraft ? lockedOrderDraft.subtotal : total;
+    const currentCartItems = useMemo(() => cartItems.map((item) => {
+        const id = String(item.originalId || item.id || '');
+        return Object.prototype.hasOwnProperty.call(priceOverrides, id)
+            ? { ...item, price: priceOverrides[id] }
+            : item;
+    }), [cartItems, priceOverrides]);
+    const currentSubtotal = useMemo(() => getCheckoutItemsTotal(currentCartItems), [currentCartItems]);
+    const checkoutItems = isCheckoutLocked && lockedOrderDraft?.items?.length ? lockedOrderDraft.items : currentCartItems;
+    const checkoutSubtotal = isCheckoutLocked && lockedOrderDraft ? lockedOrderDraft.subtotal : currentSubtotal;
     const selectedDelivery = formData.deliveryMode ? deliverySettings[formData.deliveryMode] : null;
     const shippingCost = selectedDelivery ? selectedDelivery.price : 0;
     const finalTotal = checkoutSubtotal + shippingCost;
@@ -340,24 +348,32 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
     useEffect(() => {
         if (cartItems.length === 0) return;
 
-        const unsubscribes = cartItems.map(item => {
-            const collectionName = item.collectionName || 'furniture';
-            return onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', collectionName, item.originalId || item.id), (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (!isPurchasable(data)) {
-                        setUnavailableItems(prev => {
-                            if (prev.find(i => i.id === item.id)) return prev;
-                            return [...prev, { id: item.id, name: item.name, reason: getPurchaseUnavailableLabel(data) }];
-                        });
-                    }
-                } else {
-                    setUnavailableItems(prev => [...prev, { id: item.id, name: item.name, reason: 'deleted' }]);
-                }
+        let cancelled = false;
+        Promise.all(cartItems.map(async (item) => {
+            const id = item.originalId || item.id;
+            const response = await fetch(`/api/catalog?id=${encodeURIComponent(id)}`, {
+                cache: 'no-store',
+                headers: { accept: 'application/json' }
             });
+            if (response.status === 404) return { item, product: null, deleted: true };
+            if (!response.ok) return { item, skipped: true };
+            const payload = await response.json();
+            return { item, product: payload?.product || null };
+        })).then((results) => {
+            if (cancelled) return;
+            setUnavailableItems(results.flatMap(({ item, product, deleted, skipped }) => {
+                if (skipped || (product && isPurchasable(product))) return [];
+                return [{
+                    id: item.id,
+                    name: item.name,
+                    reason: deleted ? 'deleted' : getPurchaseUnavailableLabel(product)
+                }];
+            }));
+        }).catch((error) => {
+            console.error('Checkout catalog verification error:', error);
         });
 
-        return () => unsubscribes.forEach(unsub => unsub());
+        return () => { cancelled = true; };
     }, [cartItems]);
 
     // --- ON CHANGE FORM ---
@@ -507,7 +523,7 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
             return;
         }
 
-        const itemsWithCol = cartItems.map(i => ({
+        const itemsWithCol = currentCartItems.map(i => ({
             ...i,
             collectionName: i.collectionName || 'furniture'
         }));
@@ -575,6 +591,15 @@ const CheckoutView = ({ cartItems, total, user, darkMode = false, onBack, onPlac
             console.error("Order error:", error);
             setCheckoutState('editing');
             setLockedOrderDraft(null);
+            if (error?.details?.reason === 'price_changed' && Array.isArray(error.details.items)) {
+                setPriceOverrides((current) => ({
+                    ...current,
+                    ...Object.fromEntries(error.details.items.map((item) => [String(item.id), Number(item.newPrice)]))
+                }));
+                resetCheckoutClientOrderId();
+                toast('Le prix du panier a change. Le total a ete actualise; confirmez-le avant de continuer.', { type: 'warning' });
+                return;
+            }
             let msg = "Une erreur est survenue lors de la commande.";
             if (error.message.includes('vendu')) {
                 msg = "Désolé, cet article vient d'être vendu à l'instant.";

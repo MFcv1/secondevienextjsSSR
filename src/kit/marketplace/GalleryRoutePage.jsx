@@ -1,6 +1,6 @@
 import GalleryMobileShellIsland from '../../../app/GalleryMobileShellIsland';
 import { getGalleryPersonalization } from '../../lib/server/galleryPersonalization';
-import { getPublicCatalog, getPublicCatalogFallback } from '../../lib/server/products';
+import { getPublicCatalog } from '../../lib/server/products';
 import { publicEnv } from '../../lib/server/env';
 import { getProductUrl } from '../../utils/slug';
 import GalleryServerView from './GalleryServerView';
@@ -136,8 +136,7 @@ const galleryReturnRestoreScript = `(() => {
 const safeJsonLd = (data) => JSON.stringify(data).replace(/</g, '\\u003c');
 
 const getGalleryProducts = async () => {
-  let products = await getPublicCatalog('scope=cards&limit=48');
-  if (!products.length) products = await getPublicCatalogFallback({ limitCount: 48 });
+  const products = await getPublicCatalog('scope=cards&limit=48');
   return products.slice(0, 48);
 };
 

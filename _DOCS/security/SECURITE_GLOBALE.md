@@ -86,7 +86,7 @@ Controles attendus selon le type:
 - tache planifiee: limite, retention, journalisation et absence de confiance dans les donnees historiques;
 - endpoint E2E: fail-closed hors configuration de test explicite.
 
-`functions-public` doit rester un codebase separe et minimal. Son export courant est `publicCatalog`.
+Le catalogue public ne possede plus de Function HTTP ni de codebase separe. App Hosting lit le bucket snapshot prive avec son compte de service; les clients Firestore anonymes ne peuvent pas lire `furniture`.
 
 ## 6. App Check
 

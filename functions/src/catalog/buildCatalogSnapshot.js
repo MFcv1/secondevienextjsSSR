@@ -17,6 +17,8 @@ const {
     isPreconditionError,
     publishCurrentPointer,
     readCurrentPointer,
+    readLastKnownGoodPointer,
+    readPreviousPointer,
     writeImmutableRelease
 } = require('./snapshotStorage');
 const { catalogLog } = require('./structuredLog');
@@ -24,7 +26,6 @@ const { CATALOG_BUILDER_SERVICE_ACCOUNT, CATALOG_SNAPSHOT_BUCKET } = require('./
 
 const BUILD_REGION = 'europe-west1';
 const SOURCE_PATH = `artifacts/${APP_ID}/public/data/furniture`;
-const PUBLISHING_MODES = new Set(['snapshot_canary', 'snapshot', 'rollback']);
 const BUILD_TASK = `locations/${BUILD_REGION}/functions/dispatchCatalogBuild`;
 const REVALIDATION_TASK = `locations/${BUILD_REGION}/functions/dispatchCatalogRevalidation`;
 
@@ -37,7 +38,7 @@ async function acquireBuildLease(db, { targetRevision, owner, token, now = new D
     return db.runTransaction(async (transaction) => {
         const snap = await transaction.get(controlRef);
         const state = snap.exists ? snap.data() : initialPublicationState(now);
-        if (['paused'].includes(state.mode)) return null;
+        if (state.mode === 'paused') return null;
         if (Number(state.publishedRevision || 0) >= Number(targetRevision) && !state.dirty) return null;
         const lease = acquireLease(state, { owner, targetRevision, token, now });
         if (!lease) return null;
@@ -175,9 +176,6 @@ async function buildCatalog(dependencies, input = {}) {
         const sourceSnapshot = await db.collection(SOURCE_PATH).get();
         sourceDocuments = sourceSnapshot.docs.map((docSnap) => ({ id: docSnap.id, data: docSnap.data() }));
         const projection = buildPublicProjection(sourceDocuments);
-        if (projection.full.length === 0 && input.allowEmptyCatalog !== true) {
-            throw Object.assign(new Error('EMPTY_PUBLIC_CATALOG_REQUIRES_OPERATOR_FLAG'), { code: 'EMPTY_CATALOG' });
-        }
         const inventory = buildInventoryOverview(sourceDocuments);
         const mutationTime = acquired.state.lastMutationAt?.toDate?.()
             || (acquired.state.lastMutationAt instanceof Date ? acquired.state.lastMutationAt : null);
@@ -187,7 +185,7 @@ async function buildCatalog(dependencies, input = {}) {
         await assertBuildStillCurrent(db, token, requestedRevision);
         await db.doc(CONTROL_DOCUMENT).set({ buildState: 'validating', updatedAt: serverTimestamp() }, { merge: true });
         release = await writeImmutableRelease(bucket, snapshot, requestedRevision);
-        const currentState = await assertBuildStillCurrent(db, token, requestedRevision);
+        await assertBuildStillCurrent(db, token, requestedRevision);
 
         await buildRef.set({
             state: 'prepared',
@@ -201,32 +199,6 @@ async function buildCatalog(dependencies, input = {}) {
             preparedAt: serverTimestamp()
         }, { merge: true });
 
-        if (!PUBLISHING_MODES.has(currentState.mode)) {
-            await finalizeControlState(db, {
-                leaseToken: token,
-                targetRevision: requestedRevision,
-                now: now(),
-                updates: {
-                dirty: false,
-                publishedRevision: Number(currentState.publishedRevision || 0),
-                preparedRevision: requestedRevision,
-                preparedManifestPath: release.manifestPath,
-                preparedManifestSha256: release.manifestSha256,
-                buildState: 'prepared',
-                lastBuildCompletedAt: serverTimestamp(),
-                consecutiveFailures: 0,
-                lastError: null
-                }
-            });
-            logger('info', {
-                phase: 'build', buildId, targetRevision: requestedRevision,
-                sourceDocuments: sourceDocuments.length, publicProducts: projection.full.length,
-                filesWritten: Object.keys(release.generations).length,
-                durationMs: Date.now() - startedAt, result: 'shadow_prepared', mode: currentState.mode
-            });
-            return { result: 'shadow_prepared', buildId, release, projection, inventory };
-        }
-
         const currentPointer = await readCurrentPointer(bucket);
         if (currentPointer?.value?.revision > requestedRevision) {
             throw Object.assign(new Error('POINTER_REVISION_AHEAD'), { code: 'POINTER_REVISION_AHEAD' });
@@ -237,15 +209,27 @@ async function buildCatalog(dependencies, input = {}) {
         }
         const alreadyPublished = Number(currentPointer?.value?.revision || 0) === requestedRevision
             && currentPointer.value.manifestSha256 === release.manifestSha256;
+        const [storedPrevious, storedLastKnownGood] = alreadyPublished
+            ? await Promise.all([
+                readPreviousPointer(bucket).catch(() => null),
+                readLastKnownGoodPointer(bucket).catch(() => null)
+            ])
+            : [null, null];
         const published = alreadyPublished
-            ? { pointer: currentPointer.value, generation: currentPointer.generation }
+            ? {
+                pointer: currentPointer.value,
+                generation: currentPointer.generation,
+                previousPointer: storedPrevious?.value || null,
+                lastKnownGoodPointer: storedLastKnownGood?.value || null
+            }
             : await publishCurrentPointer(bucket, {
                 revision: requestedRevision,
                 release,
                 previous: currentPointer?.value || null,
                 expectedGeneration: currentPointer?.generation || 0
             });
-        const previousPointer = alreadyPublished ? currentPointer.value.previous : currentPointer?.value;
+        const previousPointer = published.previousPointer;
+        const lastKnownGoodPointer = published.lastKnownGoodPointer;
 
         await db.doc('inventory_stats/overview').set({
             ...inventory,
@@ -272,6 +256,9 @@ async function buildCatalog(dependencies, input = {}) {
             previousRevision: previousPointer?.revision || null,
             previousManifestPath: previousPointer?.manifestPath || null,
             previousManifestSha256: previousPointer?.manifestSha256 || null,
+            lastKnownGoodRevision: lastKnownGoodPointer?.revision || null,
+            lastKnownGoodManifestPath: lastKnownGoodPointer?.manifestPath || null,
+            lastKnownGoodManifestSha256: lastKnownGoodPointer?.manifestSha256 || null,
             buildState: 'revalidating',
             lastBuildCompletedAt: serverTimestamp(),
             lastPublishedAt: serverTimestamp(),
@@ -301,7 +288,7 @@ async function buildCatalog(dependencies, input = {}) {
             phase: 'publish', buildId, targetRevision: requestedRevision,
             sourceDocuments: sourceDocuments.length, publicProducts: projection.full.length,
             filesWritten: Object.keys(release.generations).length,
-            durationMs: Date.now() - startedAt, result: 'success', mode: currentState.mode
+            durationMs: Date.now() - startedAt, result: 'success', mode: 'active'
         });
         return { result: 'published', buildId, release, revision: requestedRevision };
     } catch (error) {
@@ -346,7 +333,6 @@ const dispatchCatalogBuild = onTaskDispatched(
 
 module.exports = {
     BUILD_REGION,
-    PUBLISHING_MODES,
     SOURCE_PATH,
     acquireBuildLease,
     assertBuildStillCurrent,

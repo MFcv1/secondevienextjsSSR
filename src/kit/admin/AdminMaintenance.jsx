@@ -1,5 +1,7 @@
 import React from 'react';
 import { AlertTriangle, CheckCircle2, RefreshCw, ShieldAlert, Wrench } from 'lucide-react';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../config/firebase';
 
 const STATUS_STYLES = {
   OK: {
@@ -48,6 +50,58 @@ function VersionRow({ label, value }) {
 const AdminMaintenance = ({ darkMode }) => {
   const [report, setReport] = React.useState(null);
   const [error, setError] = React.useState(null);
+  const [catalogStatus, setCatalogStatus] = React.useState(null);
+  const [catalogAction, setCatalogAction] = React.useState('');
+  const [catalogMessage, setCatalogMessage] = React.useState('');
+
+  const refreshCatalogStatus = React.useCallback(async () => {
+    const result = await httpsCallable(functions, 'getCatalogPublicationStatus')({});
+    setCatalogStatus(result.data);
+  }, []);
+
+  React.useEffect(() => {
+    refreshCatalogStatus().catch((statusError) => {
+      setCatalogMessage(statusError.message || 'Etat du catalogue indisponible.');
+    });
+  }, [refreshCatalogStatus]);
+
+  const rollbackCatalog = async (target) => {
+    const targetRevision = target === 'last-known-good'
+      ? catalogStatus?.lastKnownGood?.revision
+      : catalogStatus?.previous?.revision;
+    const confirmationText = `ROLLBACK CATALOGUE ${catalogStatus?.current?.revision} VERS ${targetRevision}`;
+    const confirmation = window.prompt(`Tapez exactement ${confirmationText} pour confirmer.`);
+    if (confirmation !== confirmationText) return;
+    setCatalogAction(`rollback:${target}`);
+    setCatalogMessage('Validation et bascule du snapshot en cours...');
+    try {
+      const result = await httpsCallable(functions, 'rollbackCatalogSnapshot')({ target, confirmText: confirmation });
+      setCatalogMessage(result.data?.revalidationQueued === false
+        ? 'Rollback applique et mis en pause, mais la revalidation doit etre relancee par une reconstruction.'
+        : 'Rollback applique. La publication est en pause jusqu a la reconstruction.');
+      await refreshCatalogStatus();
+    } catch (actionError) {
+      setCatalogMessage(actionError.message || 'Rollback impossible.');
+    } finally {
+      setCatalogAction('');
+    }
+  };
+
+  const rebuildCatalog = async () => {
+    const confirmation = window.prompt('Tapez exactement RECONSTRUIRE CATALOGUE pour confirmer.');
+    if (confirmation !== 'RECONSTRUIRE CATALOGUE') return;
+    setCatalogAction('rebuild');
+    setCatalogMessage('Reconstruction demandee...');
+    try {
+      await httpsCallable(functions, 'rebuildCatalogSnapshot')({ confirmText: confirmation });
+      setCatalogMessage('Reconstruction planifiee. Le catalogue repasse en mode actif.');
+      await refreshCatalogStatus();
+    } catch (actionError) {
+      setCatalogMessage(actionError.message || 'Reconstruction impossible.');
+    } finally {
+      setCatalogAction('');
+    }
+  };
 
   React.useEffect(() => {
     let cancelled = false;
@@ -159,6 +213,54 @@ const AdminMaintenance = ({ darkMode }) => {
             )}
           </div>
         </div>
+      </div>
+
+      <div className={`rounded-[2rem] border p-6 ${darkMode ? 'border-white/10 bg-white/[0.03]' : 'border-stone-200 bg-white'}`}>
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h4 className="text-sm font-black uppercase tracking-[0.2em]">Catalogue materialise</h4>
+            <p className={`mt-2 text-sm ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
+              Revision active: {catalogStatus?.current?.revision ?? 'n/a'} · mode: {catalogStatus?.mode || 'chargement'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => refreshCatalogStatus().catch((statusError) => setCatalogMessage(statusError.message))}
+            className={`rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-widest ${darkMode ? 'border-white/15' : 'border-stone-300'}`}
+          >
+            Actualiser
+          </button>
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          <button
+            type="button"
+            disabled={!catalogStatus?.previous || Boolean(catalogAction)}
+            onClick={() => rollbackCatalog('previous')}
+            className="rounded-2xl border border-amber-300 px-4 py-4 text-left text-sm font-black text-amber-800 disabled:cursor-not-allowed disabled:opacity-40 dark:border-amber-500/30 dark:text-amber-200"
+          >
+            Rollback previous
+            <span className="mt-1 block text-xs font-medium">Revision {catalogStatus?.previous?.revision ?? 'n/a'}</span>
+          </button>
+          <button
+            type="button"
+            disabled={!catalogStatus?.lastKnownGood || Boolean(catalogAction)}
+            onClick={() => rollbackCatalog('last-known-good')}
+            className="rounded-2xl border border-amber-300 px-4 py-4 text-left text-sm font-black text-amber-800 disabled:cursor-not-allowed disabled:opacity-40 dark:border-amber-500/30 dark:text-amber-200"
+          >
+            Rollback dernier sain
+            <span className="mt-1 block text-xs font-medium">Revision {catalogStatus?.lastKnownGood?.revision ?? 'n/a'}</span>
+          </button>
+          <button
+            type="button"
+            disabled={Boolean(catalogAction)}
+            onClick={rebuildCatalog}
+            className="rounded-2xl bg-stone-950 px-4 py-4 text-left text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-stone-950"
+          >
+            Reconstruire maintenant
+            <span className="mt-1 block text-xs font-medium opacity-70">Publie l etat Firestore courant</span>
+          </button>
+        </div>
+        {catalogMessage ? <p className="mt-4 text-sm font-bold">{catalogMessage}</p> : null}
       </div>
 
       <div className={`rounded-[2rem] border p-6 ${darkMode ? 'border-white/10 bg-white/[0.03]' : 'border-stone-200 bg-white'}`}>

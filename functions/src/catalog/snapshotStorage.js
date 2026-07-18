@@ -3,6 +3,11 @@ const { sha256, stableStringify } = require('./publicProjection');
 const SNAPSHOT_ROOT = 'catalog-projection/v1';
 const RELEASE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 const POINTER_CACHE_CONTROL = 'public, max-age=5, s-maxage=15, stale-while-revalidate=30';
+const POINTER_PATHS = Object.freeze({
+    current: `${SNAPSHOT_ROOT}/pointers/current.json`,
+    previous: `${SNAPSHOT_ROOT}/pointers/previous.json`,
+    lastKnownGood: `${SNAPSHOT_ROOT}/pointers/last-known-good.json`
+});
 
 function jsonBuffer(value) {
     return Buffer.from(`${stableStringify(value)}\n`, 'utf8');
@@ -166,65 +171,144 @@ async function readJsonObject(bucket, path) {
 }
 
 async function readCurrentPointer(bucket) {
-    return readJsonObject(bucket, `${SNAPSHOT_ROOT}/pointers/current.json`);
+    return readJsonObject(bucket, POINTER_PATHS.current);
 }
 
-async function publishCurrentPointer(bucket, { revision, release, previous, expectedGeneration }) {
-    const path = `${SNAPSHOT_ROOT}/pointers/current.json`;
-    const pointer = {
+async function readPreviousPointer(bucket) {
+    return readJsonObject(bucket, POINTER_PATHS.previous);
+}
+
+async function readLastKnownGoodPointer(bucket) {
+    return readJsonObject(bucket, POINTER_PATHS.lastKnownGood);
+}
+
+async function verifyStoredRelease(bucket, pointer) {
+    const normalizedPointer = createPointer(pointer);
+    if (Number(pointer.schemaVersion) !== 1 || Number(pointer.projectionContractVersion) !== 1) {
+        throw new Error('CATALOG_POINTER_SCHEMA_UNSUPPORTED');
+    }
+    const manifestObject = await readJsonObject(bucket, normalizedPointer.manifestPath);
+    if (!manifestObject) throw new Error('CATALOG_MANIFEST_MISSING');
+    if (sha256(manifestObject.buffer.toString('utf8')) !== normalizedPointer.manifestSha256) {
+        throw new Error('CATALOG_MANIFEST_HASH_MISMATCH');
+    }
+    const manifest = manifestObject.value;
+    if (Number(manifest.schemaVersion) !== 1 || Number(manifest.projectionContractVersion) !== 1) {
+        throw new Error('CATALOG_MANIFEST_SCHEMA_UNSUPPORTED');
+    }
+    if (Number(manifest.revision) !== normalizedPointer.revision) throw new Error('CATALOG_REVISION_MISMATCH');
+    const prefix = normalizedPointer.manifestPath.replace(/\/manifest\.json$/, '');
+    const bundles = {};
+    for (const name of ['catalog-full.json', 'catalog-cards.json']) {
+        const object = await readJsonObject(bucket, `${prefix}/${name}`);
+        if (!object) throw new Error(`CATALOG_BUNDLE_MISSING:${name}`);
+        if (sha256(object.buffer.toString('utf8')) !== manifest.files?.[name]?.sha256) {
+            throw new Error(`CATALOG_BUNDLE_HASH_MISMATCH:${name}`);
+        }
+        if (Number(object.value?.revision) !== normalizedPointer.revision) {
+            throw new Error(`CATALOG_BUNDLE_REVISION_MISMATCH:${name}`);
+        }
+        bundles[name] = object.value;
+    }
+    const full = bundles['catalog-full.json']?.products;
+    const cards = bundles['catalog-cards.json']?.products;
+    if (!Array.isArray(full) || !Array.isArray(cards) || full.length !== cards.length) {
+        throw new Error('CATALOG_PRODUCTS_INVALID');
+    }
+    if (full.length !== Number(manifest.productCount)) throw new Error('CATALOG_PRODUCT_COUNT_MISMATCH');
+    if (full.some((product, index) => product.id !== cards[index]?.id)) throw new Error('CATALOG_CARD_ORDER_MISMATCH');
+    return { pointer: normalizedPointer, manifest, productCount: full.length };
+}
+
+function createPointer({ revision, manifestPath, manifestSha256, publishedAt = new Date().toISOString() }) {
+    const normalizedRevision = Number(revision);
+    if (!Number.isInteger(normalizedRevision) || normalizedRevision < 1) throw new Error('CATALOG_POINTER_REVISION_INVALID');
+    if (!manifestPath || !manifestSha256) throw new Error('CATALOG_POINTER_RELEASE_INVALID');
+    return {
         schemaVersion: 1,
         projectionContractVersion: 1,
-        revision,
-        manifestPath: release.manifestPath,
-        manifestSha256: release.manifestSha256,
-        publishedAt: new Date().toISOString(),
-        previous: previous ? {
-            revision: previous.revision,
-            manifestPath: previous.manifestPath,
-            manifestSha256: previous.manifestSha256
-        } : null
+        revision: normalizedRevision,
+        manifestPath: String(manifestPath),
+        manifestSha256: String(manifestSha256),
+        publishedAt: publishedAt || null
     };
-    const buffer = jsonBuffer(pointer);
-    if (previous?.manifestPath && previous?.manifestSha256) {
-        const previousPointer = {
-            schemaVersion: 1,
-            projectionContractVersion: Number(previous.projectionContractVersion || 1),
-            revision: Number(previous.revision),
-            manifestPath: previous.manifestPath,
-            manifestSha256: previous.manifestSha256,
-            publishedAt: previous.publishedAt || null
-        };
-        await bucket.file(`${SNAPSHOT_ROOT}/pointers/previous.json`).save(jsonBuffer(previousPointer), {
-            resumable: false,
-            validation: 'crc32c',
-            contentType: 'application/json; charset=utf-8',
-            metadata: { cacheControl: POINTER_CACHE_CONTROL }
-        });
-    }
+}
+
+async function writePointer(bucket, path, pointer, expectedGeneration = null) {
+    const normalizedPointer = createPointer(pointer);
+    const buffer = jsonBuffer(normalizedPointer);
     const file = bucket.file(path);
-    await file.save(buffer, {
+    const options = {
         resumable: false,
         validation: 'crc32c',
         contentType: 'application/json; charset=utf-8',
-        metadata: { cacheControl: POINTER_CACHE_CONTROL },
-        preconditionOpts: { ifGenerationMatch: expectedGeneration || 0 }
+        metadata: { cacheControl: POINTER_CACHE_CONTROL }
+    };
+    if (expectedGeneration !== null) {
+        options.preconditionOpts = { ifGenerationMatch: expectedGeneration || 0 };
+    }
+    await file.save(buffer, {
+        ...options
     });
     const [metadata] = await file.getMetadata();
-    return { pointer, generation: String(metadata.generation), sha256: sha256(buffer.toString('utf8')) };
+    return {
+        pointer: normalizedPointer,
+        generation: String(metadata.generation),
+        sha256: sha256(buffer.toString('utf8'))
+    };
+}
+
+async function publishCurrentPointer(bucket, { revision, release, previous, expectedGeneration }) {
+    const nextPointer = createPointer({
+        revision,
+        manifestPath: release.manifestPath,
+        manifestSha256: release.manifestSha256,
+        publishedAt: new Date().toISOString()
+    });
+    const previousPointer = previous?.manifestPath ? createPointer(previous) : null;
+    const [priorPreviousObject, storedLastKnownGoodObject] = previousPointer
+        ? await Promise.all([readPreviousPointer(bucket), readLastKnownGoodPointer(bucket)])
+        : [null, await readLastKnownGoodPointer(bucket)];
+    const priorPreviousPointer = priorPreviousObject?.value?.manifestPath
+        ? createPointer(priorPreviousObject.value)
+        : null;
+    let lastKnownGoodPointer = storedLastKnownGoodObject?.value?.manifestPath
+        ? createPointer(storedLastKnownGoodObject.value)
+        : null;
+
+    if (priorPreviousPointer && Number(priorPreviousPointer.revision) !== Number(previousPointer.revision)) {
+        await writePointer(bucket, POINTER_PATHS.lastKnownGood, priorPreviousPointer);
+        lastKnownGoodPointer = priorPreviousPointer;
+    }
+    if (previousPointer) {
+        await writePointer(bucket, POINTER_PATHS.previous, previousPointer);
+    }
+    const published = await writePointer(bucket, POINTER_PATHS.current, nextPointer, expectedGeneration || 0);
+    return {
+        ...published,
+        previousPointer,
+        lastKnownGoodPointer
+    };
 }
 
 module.exports = {
     POINTER_CACHE_CONTROL,
+    POINTER_PATHS,
     RELEASE_CACHE_CONTROL,
     SNAPSHOT_ROOT,
     buildSnapshotFiles,
     collectMediaUrls,
+    createPointer,
     isPreconditionError,
     jsonBuffer,
     publishCurrentPointer,
     readCurrentPointer,
+    readLastKnownGoodPointer,
+    readPreviousPointer,
     readJsonObject,
     saveImmutable,
     verifyImmutableFile,
-    writeImmutableRelease
+    verifyStoredRelease,
+    writeImmutableRelease,
+    writePointer
 };

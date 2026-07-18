@@ -163,7 +163,6 @@ Mesure des lectures et couts: `_DOCS/data/AUDIT_COUTS_FIRESTORE.md` (Usage Insig
 |-- app/ ............................. Next App Router
 |-- src/ ............................. Modules UI/metier et helpers
 |-- functions/ ....................... Cloud Functions privees, codebase main
-|-- functions-public/ ................ Endpoint catalogue public isole
 |-- scripts/ ......................... Gates, E2E, audits, migrations
 |-- tests/ ........................... Contrats Node et smoke Playwright
 |-- deploy/ .......................... Dashboard sandbox
@@ -269,7 +268,6 @@ src/kit/
 |-- shared/
 |   |-- AnalyticsProvider.jsx ......... pipeline analytics navigateur
 |   |-- clientPerf.js ................. mesures client
-|   |-- publicCatalogCache.js ......... cache catalogue navigateur
 |   |-- pageTaxonomy.js ............... taxonomie analytics/routes
 |   |-- SEO.jsx ....................... helper SEO client historique
 |   |-- ErrorBoundary.jsx ............. frontiere erreur
@@ -391,12 +389,9 @@ src/kit/admin/
 |-- AdminMaintenance.jsx .............. maintenance
 |-- AdminSiteMap.jsx .................. carte parcours/analytics
 |-- siteMapModel.js ................... modele de carte
-|-- PerformanceArchitectureStudy.jsx .. etude performance embarquee
-|-- PerformanceArchitectureStudy.css
 |-- analyticsReliability.js ........... fiabilite/checkpoints
 |-- exportCsv.js ...................... exports
-|-- adminPublicCatalog.js ............. catalogue public admin lazy, cache session et deduplication
-|-- publicCatalogInvalidation.js ...... version + revalidation
+|-- adminPublicCatalog.js ............. lecture snapshot admin sans cache persistant
 |-- hooks/useLiveJourneyMap.js ........ carte live
 `-- components/
     |-- AdminImageCard.jsx
@@ -470,8 +465,7 @@ functions/
     |   |-- updateUserSessions.js
     |   `-- adminIP.js
     |-- maintenance/
-    |   |-- tools.js
-    |   `-- inventoryStats.js
+    |   `-- tools.js
     |-- triggers/
     |   |-- onArtifactDeleted.js
     |   |-- onArtifactUpdated.js
@@ -482,14 +476,9 @@ functions/
         |-- snapshotStorage.js ......... objets immuables et pointeurs
         |-- catalogRevalidation.js ..... task HMAC vers App Hosting
         |-- catalogReconciler.js ....... reprise des publications bloquees
+        |-- catalogMaintenance.js ...... statut, rollback valide et reconstruction admin
         |-- mediaGarbageCollection.js .. quarantaine 90 jours, dry-run par defaut
         `-- publicProjection.js ........ projection publique canonique
-    `-- seo/
-        `-- seoTools.js ............... Firebase Hosting legacy
-
-functions-public/
-|-- index.js .......................... export publicCatalog
-`-- src/public/catalog.js ............. catalogue public cache/version/CORS
 ```
 
 ## 9. Exports Cloud Functions
@@ -503,18 +492,15 @@ functions-public/
 | OTP/passkeys | `sendGuestCheckoutOtp`, `verifyGuestCheckoutOtp`, `sendCustomerLoginOtp`, `verifyCustomerLoginOtp`, quatre endpoints passkey |
 | e-mail | `onOrderCreated`, `onOrderUpdated`, `sendTestEmail`, `sendRefundStatusEmailAdmin` |
 | analytics | `initLiveSession`, `syncSession`, `syncSessionBeacon`, `deleteSession`, `clearAllSessions`, `trackAdminIP`, `updateUserSessions` |
-| maintenance | resets/purges, `runGarbageCollector`, `getUploadUrl`, `onInventorySourceWrite` |
-| SEO legacy | `sitemap`, `shareMeta`, `homeMeta`, `aboutMeta`, `productMeta`, `categoryMeta` |
+| maintenance | resets/purges, `runGarbageCollector`, `getUploadUrl` |
 | triggers catalogue | `onArtifactDeleted`, `onArtifactUpdated` |
-| catalogue materialise | `onCatalogSourceWrite`, `dispatchCatalogBuild`, `dispatchCatalogRevalidation`, `catalogReconciler`, `catalogMediaGarbageCollector` |
-| public | `publicCatalog` dans le codebase `public` |
+| catalogue materialise | `onCatalogSourceWrite`, `dispatchCatalogBuild`, `dispatchCatalogRevalidation`, `catalogReconciler`, `catalogMediaGarbageCollector`, `getCatalogPublicationStatus`, `rollbackCatalogSnapshot`, `rebuildCatalogSnapshot` |
 
 ## 10. Donnees
 
 ```text
 Firestore
 |-- artifacts/{appId}/public/data/furniture/{productId}
-|-- artifacts/{appId}/public/meta
 |-- users/{uid}
 |   |-- cart/{itemId}
 |   |-- wishlist/{itemId}
@@ -614,7 +600,7 @@ tests/catalog/emulator/*.test.cjs
 | Changement | Lire | Zones a inspecter | Gates typiques |
 | --- | --- | --- | --- |
 | route/rendu/SEO | `NEXTJS_SEO.md` | `app`, `src/lib/seo`, ServerViews | SEO, routes, build, direct route |
-| annonce/categorie | `ANNONCES_CATALOGUE.md` | AdminForm, products, constants, publicCatalog | galerie/categorie/produit/revalidation |
+| annonce/categorie | `ANNONCES_CATALOGUE.md` | AdminForm, products, snapshot Storage, catalogue Functions | galerie/categorie/produit/revalidation |
 | menu/mobile | `INTERFACE_NAVIGATION.md` | layout, marketplace menu/header, CSS | menus + mobile contract |
 | image | `IMAGES_MEDIA.md` | imageUtils, AdminForm, Storage/scripts | images dry-run + routes |
 | Auth | `AUTHENTIFICATION.md` | authStore, AuthContext, modal, auth Functions | `test:auth` + smoke |

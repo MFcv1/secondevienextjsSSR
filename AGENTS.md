@@ -56,7 +56,7 @@ Une contradiction entre code et documentation doit etre signalee et corrigee dan
 | Auth | passe de demonstration close, `PREPROD_READY`; production differee |
 | espace client | commandes, factures, wishlist, adresse/profil de synthese, support |
 | commerce | carte Stripe sandbox, webhooks, refund et Connect valides en preprod |
-| back-office | 16 onglets lazy, acces admin fort, publication/ventes/data/maintenance |
+| back-office | 15 onglets lazy, acces admin fort, publication/ventes/data/maintenance |
 | images | variantes Storage WebP, `detailFast`, miniatures 320/384, metadata anti-CLS |
 | securite | rules fortes, AAL2 admin, secrets serveur; App Check prod encore differe |
 | infrastructure | App Hosting sandbox actif; rail production absent |
@@ -80,7 +80,6 @@ Objectif de livraison courant:
 | URL | `https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app` |
 | App Hosting region | `europe-west4` |
 | Functions privees source | `europe-west1` |
-| publicCatalog | `us-central1` |
 | catalogue public actif | bucket prive `secondevienextjsssr-catalog-europe-west4`, API `/api/catalog` |
 | email actif | Gmail |
 | email futur | Resend, inactif |
@@ -93,7 +92,7 @@ Ne pas convertir Node 24 local en nouvelle baseline sans migration dediee. Ne ja
 | Module | Chapitre obligatoire | Code principal | Statut |
 | --- | --- | --- | --- |
 | architecture Next/SEO | [NEXTJS_SEO.md](_DOCS/architecture/NEXTJS_SEO.md) | `app`, `src/lib/server`, `src/lib/seo` | actif |
-| annonces/catalogue | [ANNONCES_CATALOGUE.md](_DOCS/catalogue/ANNONCES_CATALOGUE.md) | AdminForm, products, marketplace, publicCatalog | actif |
+| annonces/catalogue | [ANNONCES_CATALOGUE.md](_DOCS/catalogue/ANNONCES_CATALOGUE.md) | AdminForm, products, marketplace, snapshot Storage | actif |
 | interface/navigation | [INTERFACE_NAVIGATION.md](_DOCS/ux/INTERFACE_NAVIGATION.md) | layout, header, mega menu, CSS | actif |
 | images/medias | [IMAGES_MEDIA.md](_DOCS/images/IMAGES_MEDIA.md) | imageUtils, Storage, scripts image | actif |
 | authentification | [AUTHENTIFICATION.md](_DOCS/security/AUTHENTIFICATION.md) | authStore, AuthContext, modal, auth Functions | preprod close |
@@ -139,12 +138,12 @@ Interdictions:
 - `furniture` est l'ID de collection actuel; ne pas le renommer sans migration complete;
 - toutes les surfaces utilisent le produit normalise;
 - `isPurchasable` est la regle unique d'achat;
-- l'ecriture admin doit bump `catalogVersion` et revalider;
+- l'ecriture admin declenche `onCatalogSourceWrite`, la publication snapshot et la revalidation HMAC;
 - le parcours public lit le snapshot Storage via le helper/endpoint same-origin, jamais `furniture` ni `public/meta`;
-- `PUBLIC_CATALOG_SOURCE=snapshot`; canary et fallback Firestore automatique restent desactives hors exercice explicite;
+- il n'existe qu'une source publique snapshot; canary, legacy et fallback Firestore sont interdits;
 - le builder publie des objets immuables puis un pointeur CAS; `current`, `previous` et `last-known-good` sont les seuls fallbacks lecteurs;
 - le checkout reste autoritaire sur Firestore, independamment du snapshot;
-- `publicCatalog` et `onInventorySourceWrite` sont des rails de rollback temporaires jusqu'a la preuve Data Access et l'observation finale;
+- le rollback passe uniquement par Maintenance admin vers un pointeur valide, puis par une reconstruction;
 - publication, indexabilite, stock et ordre editorial restent des concepts separes;
 - le serveur revalide prix et stock au checkout.
 
@@ -281,17 +280,9 @@ Gates externes, uniquement sur demande/scope explicite:
 npm run e2e:auth-email
 npm run e2e:hosted-stripe
 npm run e2e:refund-stripe
-npm run e2e:revalidate-catalog
-npm run test:catalog:unit
-npm run test:catalog:publisher
-npm run test:catalog:chaos
+npm run test:catalog:core
+npm run test:catalog:resilience
 npm run test:catalog:security
-npm run test:catalog:emulator
-npm run e2e:catalog:shadow
-npm run e2e:catalog:publication -- --commit
-npm run e2e:catalog:cdn
-npm run e2e:catalog:rollback
-npm run measure:catalog:cost
 npm run infra:deploy
 ```
 

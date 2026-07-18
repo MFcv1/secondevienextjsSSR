@@ -68,10 +68,11 @@ test('H6 routes Auth and protected admin callables through regionalFunctions', (
   }
 });
 
-test('H6 does not move the isolated public catalog from us-central1', () => {
+test('catalog configuration no longer exposes a legacy public Function region', () => {
   const appHosting = read('apphosting.yaml');
   const serverEnv = read('src/lib/server/env.js');
 
-  assert.match(appHosting, /PUBLIC_CATALOG_REGION[\s\S]*?value:\s*"us-central1"/);
-  assert.match(serverEnv, /publicCatalogRegion:[^\n]*'us-central1'/);
+  assert.doesNotMatch(appHosting, /PUBLIC_CATALOG_REGION|PUBLIC_CATALOG_SOURCE/);
+  assert.doesNotMatch(serverEnv, /publicCatalogRegion|publicCatalogUrl/);
+  assert.match(appHosting, /CATALOG_SNAPSHOT_BUCKET/);
 });

@@ -2,13 +2,17 @@ const crypto = require('crypto');
 
 const CONTROL_SCHEMA_VERSION = 1;
 const CONTROL_DOCUMENT = 'sys_catalog_publication/secondevie';
-const MODE_VALUES = new Set(['legacy', 'shadow', 'snapshot_canary', 'snapshot', 'paused', 'rollback']);
+const MODE_VALUES = new Set(['active', 'paused']);
+
+function normalizePublicationMode(value) {
+    return value === 'paused' ? 'paused' : 'active';
+}
 
 function initialPublicationState(now = new Date()) {
     return {
         schemaVersion: CONTROL_SCHEMA_VERSION,
         projectionContractVersion: 1,
-        mode: 'legacy',
+        mode: 'active',
         dirty: false,
         desiredRevision: 0,
         publishedRevision: 0,
@@ -30,6 +34,9 @@ function initialPublicationState(now = new Date()) {
         previousRevision: null,
         previousManifestPath: null,
         previousManifestSha256: null,
+        lastKnownGoodRevision: null,
+        lastKnownGoodManifestPath: null,
+        lastKnownGoodManifestSha256: null,
         lastMutationAt: null,
         lastBuildStartedAt: null,
         lastBuildCompletedAt: null,
@@ -64,7 +71,7 @@ function computeQuietUntil({ dirtySince, nowMs, publicFields = [] }) {
 }
 
 function acquireLease(state, { owner, targetRevision, now = new Date(), durationMs = 120000, token } = {}) {
-    if (!MODE_VALUES.has(state.mode || 'legacy')) throw new Error('INVALID_PUBLICATION_MODE');
+    if (normalizePublicationMode(state.mode) === 'paused') return null;
     if (isLeaseActive(state, now.getTime())) return null;
     if (targetRevision > Number(state.desiredRevision || 0)) throw new Error('TARGET_REVISION_AHEAD');
     const leaseToken = token || crypto.randomUUID();
@@ -117,5 +124,6 @@ module.exports = {
     computeQuietUntil,
     initialPublicationState,
     isLeaseActive,
+    normalizePublicationMode,
     toMillis
 };

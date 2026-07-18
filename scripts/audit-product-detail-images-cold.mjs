@@ -28,9 +28,9 @@ const outDir = path.resolve(String(argv.get('out') || 'logs/product-detail-image
 
 const nowStamp = () => new Date().toISOString().replace(/[:.]/g, '-');
 
-const publicCatalogUrl = () => {
+const catalogApiUrl = () => {
   const params = new URLSearchParams({ scope: 'cards', limit: String(category ? Math.max(limit, 120) : limit) });
-  return `https://us-central1-${projectId}.cloudfunctions.net/publicCatalog?${params.toString()}`;
+  return `${siteUrl}/api/catalog?${params.toString()}`;
 };
 
 const shortUrl = (url) => {
@@ -74,9 +74,9 @@ const getPrimaryDetailImage = (product) => {
 };
 
 const fetchCatalog = async () => {
-  const response = await fetch(publicCatalogUrl(), { cache: 'no-store' });
+  const response = await fetch(catalogApiUrl(), { cache: 'no-store' });
   if (!response.ok) {
-    throw new Error(`publicCatalog failed: ${response.status} ${response.statusText}`);
+    throw new Error(`catalog API failed: ${response.status} ${response.statusText}`);
   }
   return getProductsFromPayload(await response.json());
 };

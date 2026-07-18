@@ -40,69 +40,11 @@ const slugify = (value) => String(value || 'produit')
   .replace(/-{2,}/g, '-') || 'produit';
 
 const getFirstPublishedProduct = async () => {
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-  const appId = process.env.NEXT_PUBLIC_APP_LOGICAL_NAME || 'secondevie';
-  if (!projectId) throw new Error('NEXT_PUBLIC_FIREBASE_PROJECT_ID is missing.');
-
-  let product = null;
-
-  const catalogResponse = await fetch(`https://us-central1-${projectId}.cloudfunctions.net/publicCatalog?scope=cards&limit=1`);
-  if (catalogResponse.ok) {
-    const payload = await catalogResponse.json();
-    product = payload?.collections?.furniture?.[0] || null;
-  }
-
-  if (!product && apiKey) {
-    const restResponse = await fetch(`https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery?key=${encodeURIComponent(apiKey)}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        structuredQuery: {
-          from: [{ collectionId: 'furniture' }],
-          where: {
-            fieldFilter: {
-              field: { fieldPath: 'status' },
-              op: 'EQUAL',
-              value: { stringValue: 'published' }
-            }
-          },
-          orderBy: [{ field: { fieldPath: 'createdAt' }, direction: 'DESCENDING' }],
-          limit: 1
-        },
-        parent: `projects/${projectId}/databases/(default)/documents/artifacts/${appId}/public/data`
-      })
-    });
-    if (restResponse.ok) {
-      const rows = await restResponse.json();
-      const document = rows.find((row) => row.document)?.document;
-      if (document?.fields) {
-        product = {
-          id: String(document.name || '').split('/').pop(),
-          name: document.fields.name?.stringValue,
-          title: document.fields.title?.stringValue
-        };
-      }
-    }
-  }
-
-  if (!product?.id) {
-    for (const id of ['KrTETXPknYNwgak66T8p', 'neZsnYoiX5NswNyLazMD']) {
-      const directResponse = await fetch(`https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/artifacts/${appId}/public/data/furniture/${id}?key=${encodeURIComponent(apiKey)}`);
-      if (!directResponse.ok) continue;
-      const document = await directResponse.json();
-      if (document.fields?.status?.stringValue === 'published' || id === 'KrTETXPknYNwgak66T8p') {
-        product = {
-          id,
-          name: document.fields?.name?.stringValue,
-          title: document.fields?.title?.stringValue
-        };
-        break;
-      }
-    }
-  }
-
-  if (!product?.id) throw new Error('No published product returned by public catalog or direct Firestore fallback.');
+  const catalogResponse = await fetch(`${baseUrl}/api/catalog?scope=cards&limit=1`, { cache: 'no-store' });
+  if (!catalogResponse.ok) throw new Error(`Catalog API unavailable (${catalogResponse.status}).`);
+  const payload = await catalogResponse.json();
+  const product = payload?.collections?.furniture?.[0] || null;
+  if (!product?.id) throw new Error('No published product returned by the snapshot catalog API.');
   return product;
 };
 

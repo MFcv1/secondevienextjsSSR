@@ -14,8 +14,6 @@ import {
   subscribeWishlistItems,
 } from '../../src/kit/marketplace/wishlistState';
 
-const publicCatalogProductCache = new Map();
-
 const getPublicCatalogProductUrl = (id) => (
   `/api/catalog?id=${encodeURIComponent(id)}`
 );
@@ -35,9 +33,8 @@ const normalizePublicCatalogProduct = (product, fallbackId) => {
 const fetchPublicCatalogProduct = async (id) => {
   const productId = String(id || '').trim();
   if (!productId) return null;
-  if (publicCatalogProductCache.has(productId)) return publicCatalogProductCache.get(productId);
-
-  const productPromise = fetch(getPublicCatalogProductUrl(productId), {
+  return fetch(getPublicCatalogProductUrl(productId), {
+    cache: 'no-store',
     headers: { accept: 'application/json' },
   })
     .then((response) => (response.ok ? response.json() : null))
@@ -48,8 +45,6 @@ const fetchPublicCatalogProduct = async (id) => {
     })
     .catch(() => null);
 
-  publicCatalogProductCache.set(productId, productPromise);
-  return productPromise;
 };
 
 function WishlistPageContent({ initialItems = [] }) {

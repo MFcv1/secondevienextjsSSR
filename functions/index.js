@@ -92,7 +92,6 @@ exports.onOrderStatsWrite = onOrderStatsWrite;
 
 // ── MAINTENANCE ──────────────────────────────────────────
 const { resetAllStats, runGarbageCollector, resetAllUsers, purgeAnonymousUsers, resetAllOrders, purgeAllProducts, getUploadUrl } = require('./src/maintenance/tools');
-const { onInventorySourceWrite } = require('./src/maintenance/inventoryStats');
 
 exports.resetAllStats = resetAllStats;
 exports.runGarbageCollector = runGarbageCollector;
@@ -101,17 +100,9 @@ exports.purgeAnonymousUsers = purgeAnonymousUsers;
 exports.resetAllOrders = resetAllOrders;
 exports.purgeAllProducts = purgeAllProducts;
 exports.getUploadUrl = getUploadUrl;
-exports.onInventorySourceWrite = onInventorySourceWrite;
 
 // ── SEO ──────────────────────────────────────────────────
-const { sitemap, shareMeta, homeMeta, aboutMeta, productMeta, categoryMeta } = require('./src/seo/seoTools');
 
-exports.sitemap = sitemap;
-exports.shareMeta = shareMeta;
-exports.homeMeta = homeMeta;
-exports.aboutMeta = aboutMeta;
-exports.productMeta = productMeta;
-exports.categoryMeta = categoryMeta;
 
 // ── TRIGGERS ─────────────────────────────────────────────
 const { onArtifactDeleted } = require('./src/triggers/onArtifactDeleted');
@@ -126,9 +117,17 @@ const { dispatchCatalogBuild } = require('./src/catalog/buildCatalogSnapshot');
 const { dispatchCatalogRevalidation } = require('./src/catalog/catalogRevalidation');
 const { catalogReconciler } = require('./src/catalog/catalogReconciler');
 const { catalogMediaGarbageCollector } = require('./src/catalog/mediaGarbageCollection');
+const {
+    getCatalogPublicationStatus,
+    rebuildCatalogSnapshot,
+    rollbackCatalogSnapshot
+} = require('./src/catalog/catalogMaintenance');
 
 exports.onCatalogSourceWrite = onCatalogSourceWrite;
 exports.dispatchCatalogBuild = dispatchCatalogBuild;
 exports.dispatchCatalogRevalidation = dispatchCatalogRevalidation;
 exports.catalogReconciler = catalogReconciler;
 exports.catalogMediaGarbageCollector = catalogMediaGarbageCollector;
+exports.getCatalogPublicationStatus = getCatalogPublicationStatus;
+exports.rebuildCatalogSnapshot = rebuildCatalogSnapshot;
+exports.rollbackCatalogSnapshot = rollbackCatalogSnapshot;

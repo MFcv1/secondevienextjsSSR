@@ -19,7 +19,7 @@ before(async () => {
 beforeEach(async () => environment.clearFirestore());
 after(async () => environment?.cleanup());
 
-test('visitor sees published products but not drafts', async () => {
+test('visitor cannot read products or public/meta while a strong active admin can', async () => {
   await environment.withSecurityRulesDisabled(async (context) => {
     await setDoc(doc(context.firestore(), 'artifacts/secondevie/public/data/furniture/published'), {
       status: 'published', name: 'Published', description: '', images: [], stock: 1,
@@ -27,16 +27,25 @@ test('visitor sees published products but not drafts', async () => {
     await setDoc(doc(context.firestore(), 'artifacts/secondevie/public/data/furniture/draft'), {
       status: 'draft', name: 'Draft', description: '', images: [], stock: 1,
     });
+    await setDoc(doc(context.firestore(), 'artifacts/secondevie/public/meta'), { catalogVersion: 1 });
+    await setDoc(doc(context.firestore(), 'sys_admin_access/admin-1'), { active: true });
   });
   const visitor = environment.unauthenticatedContext().firestore();
-  await assertSucceeds(getDoc(doc(visitor, 'artifacts/secondevie/public/data/furniture/published')));
+  await assertFails(getDoc(doc(visitor, 'artifacts/secondevie/public/data/furniture/published')));
   await assertFails(getDoc(doc(visitor, 'artifacts/secondevie/public/data/furniture/draft')));
+  await assertFails(getDoc(doc(visitor, 'artifacts/secondevie/public/meta')));
+  const admin = environment.authenticatedContext('admin-1', {
+    admin: true,
+    firebase: { sign_in_provider: 'google.com' },
+  }).firestore();
+  await assertSucceeds(getDoc(doc(admin, 'artifacts/secondevie/public/data/furniture/published')));
+  await assertFails(getDoc(doc(admin, 'artifacts/secondevie/public/meta')));
 });
 
 test('catalog publication state is backend-only for every client role', async () => {
   await environment.withSecurityRulesDisabled(async (context) => {
     await setDoc(doc(context.firestore(), 'sys_admin_access/admin-1'), { active: true });
-    await setDoc(doc(context.firestore(), 'sys_catalog_publication/secondevie'), { mode: 'shadow', desiredRevision: 1 });
+    await setDoc(doc(context.firestore(), 'sys_catalog_publication/secondevie'), { mode: 'active', desiredRevision: 1 });
   });
   const contexts = [
     environment.unauthenticatedContext(),

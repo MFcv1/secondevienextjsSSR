@@ -2,17 +2,17 @@ import 'server-only';
 
 import { unstable_cache } from 'next/cache';
 import { getAdminStorage } from './firebaseAdmin';
+import { publicEnv } from './env';
 import catalogValidation from './materializedCatalogValidation.cjs';
 
 const SNAPSHOT_ROOT = 'catalog-projection/v1';
-const POINTER_REVALIDATE_SECONDS = 15;
+const POINTER_REVALIDATE_SECONDS = 300;
 const RELEASE_REVALIDATE_SECONDS = 31536000;
-let lastKnownGood = null;
 
 const getSnapshotBucket = () => {
   const storage = getAdminStorage();
   if (!storage) throw new Error('CATALOG_STORAGE_UNAVAILABLE');
-  return storage.bucket(process.env.CATALOG_SNAPSHOT_BUCKET || undefined);
+  return storage.bucket(publicEnv.catalogSnapshotBucket);
 };
 
 const readObject = async (path) => {
@@ -31,6 +31,12 @@ const readCurrentPointerCached = unstable_cache(
 const readPreviousPointerCached = unstable_cache(
   async () => (await readObject(`${SNAPSHOT_ROOT}/pointers/previous.json`)).value,
   ['catalog-materialized-previous-pointer'],
+  { revalidate: POINTER_REVALIDATE_SECONDS, tags: ['catalog:pointer'] }
+);
+
+const readLastKnownGoodPointerCached = unstable_cache(
+  async () => (await readObject(`${SNAPSHOT_ROOT}/pointers/last-known-good.json`)).value,
+  ['catalog-materialized-last-known-good-pointer'],
   { revalidate: POINTER_REVALIDATE_SECONDS, tags: ['catalog:pointer'] }
 );
 
@@ -59,28 +65,27 @@ const loadRelease = async (pointer) => {
     cardsBody: cardsObject.body,
     cardsBundle: cardsObject.value,
   });
-  lastKnownGood = snapshot;
   return snapshot;
 };
 
 export const getMaterializedCatalogSnapshot = async () => {
-  let current = null;
-  try {
-    current = await readCurrentPointerCached();
-    return await loadRelease(current);
-  } catch (currentError) {
+  const candidates = [
+    ['current', readCurrentPointerCached],
+    ['previous', readPreviousPointerCached],
+    ['last-known-good', readLastKnownGoodPointerCached],
+  ];
+  const failures = [];
+  for (const [name, readPointer] of candidates) {
     try {
-      const previous = current?.previous?.manifestPath
-        ? { ...current.previous, projectionContractVersion: current.projectionContractVersion }
-        : await readPreviousPointerCached();
-      return await loadRelease(previous);
-    } catch (previousError) {
-      if (lastKnownGood) return lastKnownGood;
-      const error = new Error('CATALOG_NO_HEALTHY_SNAPSHOT');
-      error.cause = { currentError, previousError };
-      throw error;
+      return await loadRelease(await readPointer());
+    } catch (error) {
+      failures.push({ name, code: error?.message || 'UNKNOWN' });
     }
   }
+  const failureSummary = failures.map(({ name, code }) => `${name}:${code}`).join(',');
+  const error = new Error(`CATALOG_NO_HEALTHY_SNAPSHOT:${failureSummary}`);
+  error.failures = failures;
+  throw error;
 };
 
 const timestampTuple = (value) => {
@@ -143,11 +148,12 @@ export const queryMaterializedCatalog = async ({ scope = 'full', limit = null, c
   };
 };
 
-export const getMaterializedProduct = async (id) => {
+export const getMaterializedProductResult = async (id) => {
   const snapshot = await getMaterializedCatalogSnapshot();
-  return snapshot.full.find((product) => product.id === id) || null;
+  return {
+    snapshot,
+    product: snapshot.full.find((product) => product.id === id) || null,
+  };
 };
 
-export const __resetMaterializedCatalogForTests = () => {
-  lastKnownGood = null;
-};
+export const getMaterializedProduct = async (id) => (await getMaterializedProductResult(id)).product;

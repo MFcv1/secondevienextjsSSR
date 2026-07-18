@@ -91,15 +91,10 @@ service cloud.firestore {
 
     // Collections produits (furniture, cutting_boards, etc.)
     match /artifacts/{appId}/public/data/{collectionName}/{itemId} {
-      allow read: if isStrongArtisan() || resource.data.status == 'published';
+      allow read: if isStrongArtisan();
       allow create, update: if isStrongArtisan() && isValidProduct();
       allow delete: if isStrongArtisan();
 
-    }
-
-    match /artifacts/{appId}/public/meta {
-      allow read: if true;
-      allow write: if isStrongArtisan();
     }
 
     // Newsletter Subscribers

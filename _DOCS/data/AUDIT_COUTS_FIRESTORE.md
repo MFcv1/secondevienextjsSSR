@@ -394,7 +394,7 @@ La validation de cout P1 reste volontairement ouverte: les gains exacts ne seron
 
 ## 10. Catalogue materialise deploye le 2026-07-18
 
-Le sandbox sert maintenant les lectures publiques catalogue depuis un snapshot immuable Storage via `/api/catalog`. `PUBLIC_CATALOG_SOURCE=snapshot`, le canary et le fallback Firestore automatique sont desactives. Les mutations `furniture` sont regroupees par trigger/outbox/Cloud Tasks; le builder effectue un scan de l'etat final par lot publie, et non un scan par visiteur ou par ecriture.
+Le sandbox sert les lectures publiques catalogue depuis un snapshot immuable Storage via `/api/catalog`. Cette source est unique: les selecteurs legacy/canary et le fallback Firestore ont ete retires du code local le 2026-07-18. Les mutations `furniture` sont regroupees par trigger/outbox/Cloud Tasks; le builder effectue un scan de l'etat final par lot publie, et non un scan par visiteur ou par ecriture.
 
 Preuves deja acquises:
 
@@ -404,7 +404,7 @@ Preuves deja acquises:
 - CDN same-origin: 40 requetes, ETag stable et 100 % de hits apres echauffement;
 - API et routes publiques servies sur une revision saine (31 au controle final, valeur monotone);
 - checkout loa.gto sans paiement arrive jusqu'a Stripe, en conservant la verification Firestore autoritaire;
-- contrat local `measure:catalog:cost` et suites de securite/emulators disponibles.
+- trois suites locales coeur/resilience/securite et recette navigateur/Data Access separee.
 
 ### 10.1 Preuve Data Access post-cutover du 2026-07-18
 
@@ -427,4 +427,4 @@ Les sept entrees Firestore visibles entre les marqueurs comprennent les deux cal
 
 Conclusion fermee: le parcours public mesure ne lit plus le catalogue dans Firestore. Il sert le snapshot Storage via `/api/catalog`; le checkout reste volontairement autoritaire sur Firestore et n'appartient pas a cette fenetre de navigation. `DATA_READ` et `DATA_WRITE` ont ete desactives immediatement apres le marqueur final. La console affichait les deux colonnes desactivees et la politique IAM a ensuite retourne `auditConfigs: null`.
 
-Cette preuve ferme la gate Data Access du cutover. Elle n'autorise pas encore le retrait de `publicCatalog` et `onInventorySourceWrite`: ces rails restent disponibles pendant la fenetre d'observation et seront retires seulement par un changement dedie avec rollback explicite.
+Cette preuve a ferme la gate du cutover initial. Le retrait local de `publicCatalog` et `onInventorySourceWrite` est implemente le 2026-07-18; la nouvelle preuve Data Access lecture/ecriture reste requise apres deploiement avant cloture de la roadmap.

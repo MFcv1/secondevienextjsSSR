@@ -1,17 +1,13 @@
 import { NextResponse } from 'next/server';
 import {
   getPublicCatalog,
-  getPublicCatalogFallback,
 } from '../../../src/lib/server/products';
 import { buildSearchResponse } from '../../../src/kit/marketplace/searchModel';
 
 export const dynamic = 'force-dynamic';
 
 const getCatalog = async () => {
-  let products = await getPublicCatalog('scope=cards&limit=120');
-  if (!products.length) {
-    products = await getPublicCatalogFallback({ limitCount: 160 });
-  }
+  const products = await getPublicCatalog('scope=cards&limit=120');
   return products;
 };
 

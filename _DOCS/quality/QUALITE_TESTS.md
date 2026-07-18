@@ -78,7 +78,9 @@ npm run test:firestore-cost
 | Auth | `test:auth`, build, smoke reel selon changement |
 | checkout/Stripe | tests locaux + `e2e:hosted-stripe` sur sandbox si demande |
 | remboursement | `e2e:refund-stripe` sur commande test explicite |
-| revalidation | `e2e:revalidate-catalog` |
+| catalogue coeur | `test:catalog:core` |
+| catalogue resilience | `test:catalog:resilience` |
+| catalogue securite/Rules | `test:catalog:security` |
 | catalogue materialise | suites `test:catalog:*`, shadow/parite, publication, CDN, rollback et cout |
 | Functions/rules | tests cibles, audit exports/rules, deploiement sandbox cible |
 | couts Firestore | `test:firestore-cost`, `test:analytics`, mesure Usage Insights avant/apres |
@@ -168,20 +170,12 @@ Verifier egalement que chaque chemin entre backticks dans `AGENTS.md`, `map.md` 
 ## 11. Gates du catalogue materialise
 
 ```bash
-npm run test:catalog:unit
-npm run test:catalog:publisher
-npm run test:catalog:chaos
+npm run test:catalog:core
+npm run test:catalog:resilience
 npm run test:catalog:security
-npm run test:catalog:emulator
-npm run test:catalog:parity
-npm run e2e:catalog:shadow
-npm run e2e:catalog:publication -- --commit
-npm run e2e:catalog:cdn
-npm run e2e:catalog:rollback
-npm run measure:catalog:cost
 ```
 
-Les E2E qui ecrivent refusent un autre projet que `secondevienextjsssr` et exigent `--commit`. Le rollback standard est une verification de `current`/`previous` et de leurs hashes; un changement reel de pointeur n'est execute que pour un incident ou un exercice explicitement autorise.
+La recette catalogue complete se fait dans le navigateur sandbox. Le rollback reel est exclusivement expose par Maintenance admin et exige App Check, registre actif, authentification forte recente et revisions explicites.
 
 Matrice minimale cloud: 20 builds shadow concordants, creation, prix, stock nul, suppression, rafale/deduplication, publication/revalidation, API same-origin froide/chaude, ETag stable, cache CDN >95 % apres echauffement et checkout sans paiement. Le checkout doit rester autoritaire sur Firestore, meme si le snapshot est en retard.
 

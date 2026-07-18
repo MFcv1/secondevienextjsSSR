@@ -5,10 +5,9 @@ import { getStorageInstance } from '../config/firebaseStorage';
 import { doc, addDoc, updateDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { PRODUCT_IMAGE_VARIANT_SPECS, compressImage, createProductImageVariantFiles, getImageFileMetadata } from '../../utils/imageUtils'; // [NEW] Import compression utility
-import { getProductUrl } from '../../utils/slug';
 import ImageCropperModal from './components/ImageCropperModal';
 import KIT_CONFIG from '../config/constants';
-import { bumpPublicCatalogVersion } from './publicCatalogInvalidation';
+import { clearAdminPublicCatalogCache } from './adminPublicCatalog';
 
 const WOOD_TYPES = [
   "Acacia", "Acajou", "Bambou", "Bouleau", "Châtaignier",
@@ -403,6 +402,10 @@ const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkM
       }
 
       setMsg("⏳ Finalisation...");
+      const parsedStock = Number(formData.stock);
+      if (!Number.isInteger(parsedStock) || parsedStock < 0) {
+        throw new Error('Le stock doit etre un nombre entier positif ou nul.');
+      }
       const data = {
         ...formData,
         images: finalImageUrls,
@@ -413,30 +416,24 @@ const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkM
         thumbnailUrl: finalThumbnails[0] || finalImageUrls[0] || "",
         currentPrice: Number(formData.startingPrice),
         startingPrice: Number(formData.startingPrice),
-        stock: parseInt(formData.stock) || 1,
-        sold: (parseInt(formData.stock) || 1) <= 0,
-        soldAt: (parseInt(formData.stock) || 1) <= 0 ? (editData?.soldAt || Timestamp.now()) : null,
+        stock: parsedStock,
+        sold: parsedStock === 0,
+        soldAt: parsedStock === 0 ? (editData?.soldAt || Timestamp.now()) : null,
         priceOnRequest: formData.priceOnRequest || false,
       };
 
-      let savedProductId = editData?.id || '';
       if (editData) {
         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', collectionName, editData.id), data);
       } else {
-        const createdRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', collectionName), {
+        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', collectionName), {
           ...data,
           status: 'published',
           createdAt: serverTimestamp()
         });
-        savedProductId = createdRef.id;
       }
-      await bumpPublicCatalogVersion(editData ? 'product_updated' : 'product_created', {
-        productId: savedProductId,
-        categoryIds: data.category ? [data.category] : [],
-        paths: [getProductUrl({ ...data, id: savedProductId })]
-      });
+      clearAdminPublicCatalogCache();
 
-      setMsg("✅ Publication réussie !");
+      setMsg("✅ Enregistre. Publication du catalogue en cours...");
       resetForm();
       if (onCancelEdit) onCancelEdit();
     } catch (err) {

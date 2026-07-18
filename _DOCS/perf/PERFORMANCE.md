@@ -136,7 +136,7 @@ Conserver les hauteurs reservees et ne pas remplacer une section par un squelett
 | Dette | Statut | Condition de reprise |
 | --- | --- | --- |
 | budget CSS/JS global | `DEBT` | passe perf dediee apres fonctionnalites prioritaires |
-| regions App Hosting/publicCatalog/Functions dispersees | `DEBT` | decision infra avant prod |
+| regions App Hosting/Functions dispersees | `DEBT` | decision infra avant prod |
 | cold starts scale-to-zero | `ACCEPTE_PREPROD` | mesures reelles et budget production |
 | p50/p95 production absents | `PRODUCTION_DEFERRED` | trafic representatif et dashboard |
 | sections riches bas de galerie | `SURVEILLANCE` | regression mesuree sur appareil cible |

@@ -91,15 +91,11 @@ async function main() {
     rootLock,
     functionsPackage,
     functionsLock,
-    publicFunctionsPackage,
-    publicFunctionsLock,
   ] = await Promise.all([
     readJson(path.join(rootDir, 'package.json')),
     readJson(path.join(rootDir, 'package-lock.json')),
     readJson(path.join(rootDir, 'functions', 'package.json')),
     readJson(path.join(rootDir, 'functions', 'package-lock.json')),
-    readJson(path.join(rootDir, 'functions-public', 'package.json')),
-    readJson(path.join(rootDir, 'functions-public', 'package-lock.json')),
   ]);
 
   const audit = summarizeAudit(runAudit());
@@ -137,17 +133,9 @@ async function main() {
         declared: declaredVersion(functionsPackage, 'firebase-admin'),
         installed: installedVersion(functionsLock, 'firebase-admin'),
       },
-      firebaseAdminPublicFunctions: {
-        declared: declaredVersion(publicFunctionsPackage, 'firebase-admin'),
-        installed: installedVersion(publicFunctionsLock, 'firebase-admin'),
-      },
       firebaseFunctions: {
         declared: declaredVersion(functionsPackage, 'firebase-functions'),
         installed: installedVersion(functionsLock, 'firebase-functions'),
-      },
-      firebaseFunctionsPublic: {
-        declared: declaredVersion(publicFunctionsPackage, 'firebase-functions'),
-        installed: installedVersion(publicFunctionsLock, 'firebase-functions'),
       },
     },
     audit,

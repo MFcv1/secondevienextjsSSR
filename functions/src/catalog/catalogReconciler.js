@@ -1,8 +1,14 @@
 const admin = require('firebase-admin');
 const { getFunctions } = require('firebase-admin/functions');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
-const { CONTROL_DOCUMENT, clearLease, initialPublicationState, isLeaseActive } = require('./publicationState');
-const { readCurrentPointer } = require('./snapshotStorage');
+const {
+    CONTROL_DOCUMENT,
+    clearLease,
+    initialPublicationState,
+    isLeaseActive,
+    normalizePublicationMode
+} = require('./publicationState');
+const { readCurrentPointer, readLastKnownGoodPointer, readPreviousPointer } = require('./snapshotStorage');
 const { catalogLog } = require('./structuredLog');
 const { CATALOG_ENQUEUER_SERVICE_ACCOUNT, CATALOG_SNAPSHOT_BUCKET } = require('./catalogConfig');
 
@@ -35,32 +41,42 @@ async function reconcileCatalog(dependencies) {
         return { result: 'initialized' };
     }
     const state = controlSnap.data();
-    if (state.mode === 'paused') return { result: 'paused' };
     const repairs = [];
+    const mode = normalizePublicationMode(state.mode);
+    if (state.mode !== mode) {
+        await controlRef.set({ mode, updatedAt: serverTimestamp() }, { merge: true });
+        repairs.push('mode_normalized');
+    }
+    if (mode === 'paused') return { result: 'paused', repairs };
     if (state.leaseToken && !isLeaseActive(state, now().getTime())) {
         await controlRef.set({ ...clearLease(now()), dirty: true, buildState: 'queued' }, { merge: true });
         repairs.push('expired_lease');
     }
 
-    const pointer = await readCurrentPointer(bucket).catch(() => null);
+    const [pointer, previousPointer, lastKnownGoodPointer] = await Promise.all([
+        readCurrentPointer(bucket).catch(() => null),
+        readPreviousPointer(bucket).catch(() => null),
+        readLastKnownGoodPointer(bucket).catch(() => null)
+    ]);
     if (pointer?.value?.revision > Number(state.publishedRevision || 0)) {
         await controlRef.set({
             publishedRevision: Number(pointer.value.revision),
             currentManifestPath: pointer.value.manifestPath,
             currentManifestSha256: pointer.value.manifestSha256,
             currentPointerGeneration: pointer.generation,
-            previousRevision: pointer.value.previous?.revision || null,
-            previousManifestPath: pointer.value.previous?.manifestPath || null,
-            previousManifestSha256: pointer.value.previous?.manifestSha256 || null,
+            previousRevision: previousPointer?.value?.revision || null,
+            previousManifestPath: previousPointer?.value?.manifestPath || null,
+            previousManifestSha256: previousPointer?.value?.manifestSha256 || null,
+            lastKnownGoodRevision: lastKnownGoodPointer?.value?.revision || null,
+            lastKnownGoodManifestPath: lastKnownGoodPointer?.value?.manifestPath || null,
+            lastKnownGoodManifestSha256: lastKnownGoodPointer?.value?.manifestSha256 || null,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
         repairs.push('firestore_from_pointer');
     }
 
     const desired = Number(state.desiredRevision || 0);
-    const satisfied = ['legacy', 'shadow'].includes(state.mode)
-        ? Number(state.preparedRevision || 0) >= desired
-        : Number(pointer?.value?.revision || state.publishedRevision || 0) >= desired;
+    const satisfied = Number(pointer?.value?.revision || state.publishedRevision || 0) >= desired;
     if ((state.dirty || !satisfied) && !isLeaseActive(state, now().getTime())) {
         const taskId = `catalog-reconcile-build-r${desired}`;
         await enqueue('dispatchCatalogBuild', { schemaVersion: 1, targetRevision: desired }, taskId);

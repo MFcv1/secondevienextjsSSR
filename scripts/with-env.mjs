@@ -55,6 +55,7 @@ const FORBIDDEN_PUBLIC_OWNER_KEYS = [
   'VITE_SUPER_ADMIN_EMAIL',
   'NEXT_PUBLIC_SUPER_ADMIN_EMAIL',
 ];
+const PRESERVED_PARENT_KEYS = new Set(['GOOGLE_APPLICATION_CREDENTIALS']);
 
 for (const [key, value] of Object.entries(loaded)) {
   if (key.startsWith('VITE_') && !PUBLIC_ENV_BRIDGE_DENYLIST.has(key)) {
@@ -69,6 +70,7 @@ const hasSelectedEquivalent = (key) => (
 );
 
 for (const key of Object.keys(sibling)) {
+  if (PRESERVED_PARENT_KEYS.has(key) && process.env[key]) continue;
   if (!hasSelectedEquivalent(key)) {
     env[key] = '';
   }

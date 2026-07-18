@@ -2,7 +2,6 @@ import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import {
   getPublicCatalog,
-  getPublicCatalogFallback,
 } from '../../../src/lib/server/products';
 import { publicEnv } from '../../../src/lib/server/env';
 import { getCategoryUrl } from '../../../src/utils/slug';
@@ -101,11 +100,7 @@ const getCategoryRouteData = cache(async (categoryId) => {
   if (!categoryMeta) return null;
 
   const matchingIds = getMatchingCategoryIds(decodedCategoryId);
-  let products = await getPublicCatalog(`categories=${encodeURIComponent(matchingIds.join(','))}&scope=cards&limit=120`);
-  if (!products.length) {
-    products = await getPublicCatalogFallback({ categoryIds: matchingIds, limitCount: 120 });
-  }
-  products = products
+  const products = (await getPublicCatalog(`categories=${encodeURIComponent(matchingIds.join(','))}&scope=cards&limit=120`))
     .sort((a, b) => getProductQualityRank(b) - getProductQualityRank(a));
 
   return {

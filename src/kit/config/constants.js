@@ -127,7 +127,6 @@ export const KIT_CONFIG = {
     { id: 'newsletter',       label: 'Infos'       },
     { id: 'payment_settings', label: 'Paiement'    },
     { id: 'maintenance',      label: 'Maintenance' },
-    { id: 'performance_study', label: 'Etude Perf' },
   ],
 
   // ── FEATURE FLAGS ─────────────────────────────────────────

@@ -64,12 +64,11 @@ App Hosting (`apphosting.yaml`):
 
 | Codebase | Dossier | Role |
 | --- | --- | --- |
-| `main` | `functions/` | Auth, admin, commerce, email, analytics, maintenance, triggers, SEO legacy |
-| `public` | `functions-public/` | endpoint public `publicCatalog` uniquement |
+| `main` | `functions/` | Auth, admin, commerce, email, analytics, maintenance et catalogue materialise |
 
 Le runtime source de `main` converge vers `europe-west1` via `functions/helpers/runtime.js`. Des copies historiques `us-central1` peuvent encore exister dans le cloud comme rollback; leur suppression exige inventaire CLI, observation et rollback documente.
 
-`publicCatalog` en `us-central1` reste provisoirement deploye comme rollback operateur. Le trafic normal App Hosting utilise le snapshot prive en `europe-west4`; aucune page publique ne doit s'y rabattre automatiquement.
+Le codebase public historique et Firebase Hosting ne font plus partie de la configuration. Leur suppression cloud sandbox est une operation de deploiement controlee apres les gates locales.
 
 Catalogue materialise:
 
@@ -78,8 +77,7 @@ Catalogue materialise:
 - comptes de service: `catalog-enqueuer` et `catalog-builder`;
 - runtime App Hosting: lecture d'objets uniquement sur le bucket catalogue;
 - secret runtime: `CATALOG_REVALIDATION_HMAC_SECRET`;
-- source active: `PUBLIC_CATALOG_SOURCE=snapshot`;
-- `CATALOG_CANARY_ENABLED=false` et `CATALOG_EMERGENCY_FIRESTORE_FALLBACK=false`.
+- source publique unique: snapshot Storage, sans variable de selection ni fallback Firestore.
 
 IAM reste ressource/cible autant que possible: l'enqueuer peut publier les tasks et invoquer les workers autorises; le builder peut lire Firestore, ecrire les releases/pointeurs, invoquer la revalidation et lire le secret HMAC. `firebase-app-hosting-compute` a `secretAccessor` et `secretmanager.viewer` uniquement sur le secret HMAC, ainsi que `objectViewer` sur le bucket catalogue. Ne pas elargir ces bindings au projet sans nouvelle justification.
 
@@ -87,7 +85,7 @@ IAM reste ressource/cible autant que possible: l'enqueuer peut publier les tasks
 
 ```text
 .firebaserc                 alias Firebase, sandbox seulement
-firebase.json              rules, indexes, codebases, App Hosting et Hosting legacy
+firebase.json              rules, indexes, codebase main et App Hosting
 apphosting.yaml            runtime et variables App Hosting sandbox
 next.config.mjs            Next, images, headers, redirects
 firestore.rules            autorisations Firestore

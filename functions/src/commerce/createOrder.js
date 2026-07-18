@@ -227,6 +227,7 @@ async function createOrderHandler(data, context) {
                 const stockTrackerManual = {};
                 const writeOps = [];
                 const serverItems = [];
+                const priceChanges = [];
                 let txTotalManual = 0;
                 for (const { item, itemRef, itemDoc, realItemId } of itemReads) {
                     if (!itemDoc.exists) throw new Error("Item not found");
@@ -241,6 +242,16 @@ async function createOrderHandler(data, context) {
                     }
                     if (currentStock - alreadyTaken < quantity || itemDb.sold) {
                         throw new functions.https.HttpsError('failed-precondition', `Article indisponible: ${itemDb.name}`);
+                    }
+                    const clientPrice = Number(item.price);
+                    if (!Number.isFinite(clientPrice) || Math.abs(clientPrice - realPrice) > 0.001) {
+                        priceChanges.push({
+                            id: realItemId,
+                            name: itemDb.name || item.name || realItemId,
+                            oldPrice: Number.isFinite(clientPrice) ? clientPrice : null,
+                            newPrice: realPrice,
+                            quantity
+                        });
                     }
 
                     const newStock = Math.max(0, currentStock - quantity - alreadyTaken);
@@ -263,6 +274,14 @@ async function createOrderHandler(data, context) {
                         stockBefore: currentStock - alreadyTaken,
                         image: item.image || (itemDb.images && itemDb.images.length > 0 ? itemDb.images[0] : (itemDb.imageUrl || null))
                     });
+                }
+
+                if (priceChanges.length) {
+                    throw new functions.https.HttpsError(
+                        'failed-precondition',
+                        'Le prix de votre panier a change. Verifiez le nouveau total avant de confirmer.',
+                        { reason: 'price_changed', items: priceChanges, subtotal: txTotalManual }
+                    );
                 }
 
                 // PHASE 3 — WRITES
@@ -357,6 +376,7 @@ async function createOrderHandler(data, context) {
                 let txTotal = 0;
                 const serverItems = [];
                 const writeOps = []; // Accumuler les writes pour la phase 3
+                const priceChanges = [];
 
                 for (const { item, itemRef, itemDoc, colName, realItemId } of itemReads) {
                     if (!itemDoc.exists) throw new functions.https.HttpsError('not-found', `Produit "${realItemId}" introuvable.`);
@@ -370,6 +390,16 @@ async function createOrderHandler(data, context) {
 
                     if (itemDb.priceOnRequest || realPrice <= 0) {
                         throw new functions.https.HttpsError('failed-precondition', `Article non achetable en ligne: ${itemDb.name}`);
+                    }
+                    const clientPrice = Number(item.price);
+                    if (!Number.isFinite(clientPrice) || Math.abs(clientPrice - realPrice) > 0.001) {
+                        priceChanges.push({
+                            id: realItemId,
+                            name: itemDb.name || item.name || realItemId,
+                            oldPrice: Number.isFinite(clientPrice) ? clientPrice : null,
+                            newPrice: realPrice,
+                            quantity
+                        });
                     }
 
                     if (currentStock - alreadyTaken < quantity || itemDb.sold) {
@@ -399,6 +429,14 @@ async function createOrderHandler(data, context) {
 
                     writeOps.push({ ref: itemRef, updates });
                     stockTracker[realItemId] = alreadyTaken + quantity;
+                }
+
+                if (priceChanges.length) {
+                    throw new functions.https.HttpsError(
+                        'failed-precondition',
+                        'Le prix de votre panier a change. Verifiez le nouveau total avant de confirmer.',
+                        { reason: 'price_changed', items: priceChanges, subtotal: txTotal }
+                    );
                 }
 
                 // --- CALCUL DES FRAIS DE PORT ---

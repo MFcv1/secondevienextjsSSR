@@ -1,71 +1,14 @@
 import 'server-only';
 
 import { cache } from 'react';
-import { getAdminDb } from './firebaseAdmin';
-import { publicCatalogUrl, publicEnv } from './env';
 import { getMaterializedProduct, queryMaterializedCatalog } from './materializedCatalog';
 import { getProductSeoDecision, isProductPublicVisible, isProductSeoIndexable } from '../seo/indexability';
 
-export const PUBLIC_DATA_REVALIDATE_SECONDS = 300;
-const ADMIN_FALLBACK_TIMEOUT_MS = 1800;
-
-const PUBLIC_PRODUCT_FIELDS = [
-  'id',
-  'collectionName',
-  'status',
-  'name',
-  'title',
-  'description',
-  'seoTitle',
-  'seoDescription',
-  'seoIndexable',
-  'category',
-  'material',
-  'style',
-  'origin',
-  'dimensions',
-  'width',
-  'depth',
-  'height',
-  'weight',
-  'sold',
-  'stock',
-  'currentPrice',
-  'startingPrice',
-  'price',
-  'priceOnRequest',
-  'imageUrl',
-  'thumbnailUrl',
-  'images',
-  'thumbnails',
-  'imageVariants',
-  'imageMetadata',
-  'createdAt',
-  'updatedAt'
-];
-
 const isPublicProductData = isProductPublicVisible;
 
-const withTimeout = (promise, timeoutMs, label) => new Promise((resolve, reject) => {
-  const timer = setTimeout(() => {
-    reject(new Error(`${label} timed out after ${timeoutMs}ms`));
-  }, timeoutMs);
-
-  Promise.resolve(promise)
-    .then((value) => {
-      clearTimeout(timer);
-      resolve(value);
-    })
-    .catch((error) => {
-      clearTimeout(timer);
-      reject(error);
-    });
-});
-
-export const isSeoIndexableProduct = (product) => {
-  if (!isPublicProductData(product)) return false;
-  return isProductSeoIndexable(product);
-};
+export const isSeoIndexableProduct = (product) => (
+  isPublicProductData(product) && isProductSeoIndexable(product)
+);
 
 export const extractProductId = (slugOrId = '') => {
   const decoded = decodeURIComponent(String(slugOrId));
@@ -73,308 +16,34 @@ export const extractProductId = (slugOrId = '') => {
   return separatorIndex >= 0 ? decoded.slice(separatorIndex + 1) : decoded;
 };
 
-const serializeValue = (value) => {
-  if (!value) return value;
-  if (typeof value.toDate === 'function') return value.toDate().toISOString();
-  if (Array.isArray(value)) return value.map(serializeValue);
-  if (typeof value === 'object') {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, nested]) => [key, serializeValue(nested)])
-    );
-  }
-  return value;
-};
-
-const projectPublicProduct = (id, data = {}) => {
-  const product = {};
-  PUBLIC_PRODUCT_FIELDS.forEach((field) => {
-    if (field === 'id') product.id = id || data.id;
-    else if (data[field] !== undefined) product[field] = serializeValue(data[field]);
-  });
-  product.collectionName = product.collectionName || 'furniture';
-  return product;
-};
-
-const getProductViaAdmin = async (id) => {
-  const db = getAdminDb();
-  if (!db || !id) return null;
-
-  const snap = await db
-    .collection('artifacts')
-    .doc(publicEnv.appId)
-    .collection('public')
-    .doc('data')
-    .collection('furniture')
-    .doc(id)
-    .get();
-
-  if (!snap.exists) return null;
-  const data = snap.data();
-  if (!isPublicProductData(data)) return null;
-  return projectPublicProduct(snap.id, data);
-};
-
-const queryProductsViaAdmin = async ({ categoryIds = [], limitCount = 120 } = {}) => {
-  const db = getAdminDb();
-  if (!db) return [];
-
-  let ref = db
-    .collection('artifacts')
-    .doc(publicEnv.appId)
-    .collection('public')
-    .doc('data')
-    .collection('furniture')
-    .where('status', '==', 'published');
-
-  if (categoryIds.length === 1) {
-    ref = ref.where('category', '==', categoryIds[0]);
-  } else if (categoryIds.length > 1) {
-    ref = ref.where('category', 'in', categoryIds.slice(0, 10));
-  }
-
-  const snap = await ref.limit(Math.max(1, Math.min(limitCount, 500))).get();
-  return snap.docs
-    .map((docSnap) => ({ id: docSnap.id, data: docSnap.data() }))
-    .filter(({ data }) => isPublicProductData(data))
-    .map(({ id, data }) => projectPublicProduct(id, data));
-};
-
-const getProductViaPublicCatalog = async (id) => {
-  const url = publicCatalogUrl(`id=${encodeURIComponent(id)}`);
-  if (!url || !id) return null;
-
-  const response = await fetch(url, {
-    next: {
-      revalidate: PUBLIC_DATA_REVALIDATE_SECONDS,
-      tags: ['catalog', 'products', `product:${id}`]
-    },
-    headers: { accept: 'application/json' }
-  });
-  if (!response.ok) return null;
-
-  const payload = await response.json();
-  const product = payload?.product || (payload?.collections?.furniture || []).find((item) => item.id === id);
-  if (!isPublicProductData(product)) return null;
-  return projectPublicProduct(product.id, product);
-};
-
-const fromFirestoreRestValue = (value) => {
-  if (!value || typeof value !== 'object') return undefined;
-  if ('stringValue' in value) return value.stringValue;
-  if ('integerValue' in value) return Number(value.integerValue);
-  if ('doubleValue' in value) return Number(value.doubleValue);
-  if ('booleanValue' in value) return Boolean(value.booleanValue);
-  if ('timestampValue' in value) return value.timestampValue;
-  if ('nullValue' in value) return null;
-  if ('arrayValue' in value) return (value.arrayValue.values || []).map(fromFirestoreRestValue);
-  if ('mapValue' in value) {
-    return Object.fromEntries(
-      Object.entries(value.mapValue.fields || {}).map(([key, nested]) => [key, fromFirestoreRestValue(nested)])
-    );
-  }
-  return undefined;
-};
-
-const fromFirestoreRestDocument = (document) => {
-  if (!document?.fields) return null;
-  const id = String(document.name || '').split('/').pop();
-  const data = Object.fromEntries(
-    Object.entries(document.fields).map(([key, value]) => [key, fromFirestoreRestValue(value)])
-  );
-  if (!isPublicProductData(data)) return null;
-  return projectPublicProduct(id, data);
-};
-
-const firestoreRestBaseUrl = () => {
-  if (!publicEnv.projectId || !publicEnv.apiKey) return '';
-  return `https://firestore.googleapis.com/v1/projects/${publicEnv.projectId}/databases/(default)/documents`;
-};
-
-const getProductViaFirestoreRest = async (id) => {
-  const baseUrl = firestoreRestBaseUrl();
-  if (!baseUrl || !id) return null;
-
-  const url = `${baseUrl}/artifacts/${publicEnv.appId}/public/data/furniture/${encodeURIComponent(id)}?key=${encodeURIComponent(publicEnv.apiKey)}`;
-  const response = await fetch(url, {
-    next: {
-      revalidate: PUBLIC_DATA_REVALIDATE_SECONDS,
-      tags: ['products', `product:${id}`]
-    }
-  });
-  if (!response.ok) return null;
-  const product = fromFirestoreRestDocument(await response.json());
-  if (!product) return null;
-  return product;
-};
-
-const queryProductsViaFirestoreRest = async ({ categoryIds = [], limitCount = 24 } = {}) => {
-  const baseUrl = firestoreRestBaseUrl();
-  if (!baseUrl) return [];
-
-  const filters = [
-    {
-      fieldFilter: {
-        field: { fieldPath: 'status' },
-        op: 'EQUAL',
-        value: { stringValue: 'published' }
-      }
-    }
-  ];
-
-  if (categoryIds.length === 1) {
-    filters.push({
-      fieldFilter: {
-        field: { fieldPath: 'category' },
-        op: 'EQUAL',
-        value: { stringValue: categoryIds[0] }
-      }
-    });
-  } else if (categoryIds.length > 1) {
-    filters.push({
-      fieldFilter: {
-        field: { fieldPath: 'category' },
-        op: 'IN',
-        value: {
-          arrayValue: {
-            values: categoryIds.slice(0, 10).map((categoryId) => ({ stringValue: categoryId }))
-          }
-        }
-      }
-    });
-  }
-
-  const response = await fetch(`${baseUrl}:runQuery?key=${encodeURIComponent(publicEnv.apiKey)}`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    next: {
-      revalidate: PUBLIC_DATA_REVALIDATE_SECONDS,
-      tags: ['catalog', 'products', 'categories', ...categoryIds.map((categoryId) => `category:${categoryId}`)]
-    },
-    body: JSON.stringify({
-      structuredQuery: {
-        from: [{ collectionId: 'furniture' }],
-        where: filters.length === 1 ? filters[0] : { compositeFilter: { op: 'AND', filters } },
-        orderBy: [{ field: { fieldPath: 'createdAt' }, direction: 'DESCENDING' }],
-        limit: Math.max(1, Math.min(limitCount, 120))
-      },
-      parent: `projects/${publicEnv.projectId}/databases/(default)/documents/artifacts/${publicEnv.appId}/public/data`
-    })
-  });
-
-  if (!response.ok) return [];
-  const rows = await response.json();
-  return rows
-    .map((row) => fromFirestoreRestDocument(row.document))
-    .filter(Boolean);
-};
-
-export const getPublicProduct = cache(async (slugOrId) => {
-  const id = extractProductId(slugOrId);
-  if (['snapshot', 'snapshot_canary'].includes(publicEnv.publicCatalogSource)) {
-    try {
-      const product = await getMaterializedProduct(id);
-      return product && isPublicProductData(product) ? projectPublicProduct(product.id, product) : null;
-    } catch (error) {
-      console.error('[SSR] materialized product unavailable', { code: error?.message || 'unknown' });
-      if (!publicEnv.catalogEmergencyFirestoreFallback) return null;
-      console.warn('[SSR] manual emergency Firestore fallback enabled for product');
-    }
-  }
-  try {
-    const product = await getProductViaPublicCatalog(id);
-    if (product) return product;
-  } catch (error) {
-    console.warn('[SSR] publicCatalog product read unavailable, falling back to Admin:', error?.message || error);
-  }
-
-  try {
-    const product = await withTimeout(
-      getProductViaAdmin(id),
-      ADMIN_FALLBACK_TIMEOUT_MS,
-      'Admin product read'
-    );
-    if (product) return product;
-  } catch (error) {
-    console.warn('[SSR] Admin product fallback unavailable:', error?.message || error);
-  }
-
-  try {
-    return await getProductViaFirestoreRest(id);
-  } catch (error) {
-    console.warn('[SSR] Firestore REST product fallback unavailable:', error?.message || error);
-    return null;
-  }
-});
-
-export const getPublicCatalog = cache(async (params = '') => {
-  if (['snapshot', 'snapshot_canary'].includes(publicEnv.publicCatalogSource)) {
-    try {
-      const searchParams = new URLSearchParams(params);
-      const categories = [...searchParams.getAll('category'), ...searchParams.getAll('categories')]
-        .flatMap((value) => String(value || '').split(','));
-      const result = await queryMaterializedCatalog({
-        scope: searchParams.get('scope') === 'cards' ? 'cards' : 'full',
-        limit: searchParams.has('limit') ? Number(searchParams.get('limit')) : null,
-        categories,
-        cursor: searchParams.get('cursor') || ''
-      });
-      return result.products.filter(isPublicProductData);
-    } catch (error) {
-      console.error('[SSR] materialized catalog unavailable', { code: error?.message || 'unknown' });
-      if (!publicEnv.catalogEmergencyFirestoreFallback) return [];
-      console.warn('[SSR] manual emergency Firestore fallback enabled for catalog');
-    }
-  }
-  const url = publicCatalogUrl(params);
-  if (!url) return [];
-
+const parseCatalogParams = (params = '') => {
   const searchParams = new URLSearchParams(params);
-  const categoryIds = [...searchParams.getAll('category'), ...searchParams.getAll('categories')]
+  const categories = [...searchParams.getAll('category'), ...searchParams.getAll('categories')]
     .flatMap((value) => String(value || '').split(','))
     .map((value) => value.trim())
     .filter(Boolean);
-  const response = await fetch(url, {
-    next: {
-      revalidate: PUBLIC_DATA_REVALIDATE_SECONDS,
-      tags: ['catalog', 'products', ...(categoryIds.length ? ['categories', ...categoryIds.map((id) => `category:${id}`)] : [])]
-    },
-    headers: { accept: 'application/json' }
-  });
-  if (!response.ok) return [];
-  const payload = await response.json();
-  return (payload?.collections?.furniture || []).filter(isPublicProductData);
+  const requestedLimit = searchParams.has('limit') ? Number(searchParams.get('limit')) : null;
+  return {
+    scope: searchParams.get('scope') === 'cards' ? 'cards' : 'full',
+    limit: Number.isInteger(requestedLimit) && requestedLimit > 0 ? requestedLimit : null,
+    categories,
+    cursor: searchParams.get('cursor') || '',
+  };
+};
+
+export const getPublicProduct = cache(async (slugOrId) => {
+  const product = await getMaterializedProduct(extractProductId(slugOrId));
+  return product && isPublicProductData(product) ? product : null;
 });
 
-export const getPublicCatalogFallback = cache(async ({ categoryIds = [], limitCount = 24 } = {}) => {
-  if (['snapshot', 'snapshot_canary'].includes(publicEnv.publicCatalogSource)
-      && !publicEnv.catalogEmergencyFirestoreFallback) {
-    return [];
-  }
-  try {
-    const products = await withTimeout(
-      queryProductsViaAdmin({ categoryIds, limitCount }),
-      ADMIN_FALLBACK_TIMEOUT_MS,
-      'Admin catalog fallback'
-    );
-    if (products.length) return products;
-  } catch (error) {
-    console.warn('[SSR] Admin catalog fallback unavailable:', error?.message || error);
-  }
-
-  try {
-    return await queryProductsViaFirestoreRest({ categoryIds, limitCount });
-  } catch (error) {
-    console.warn('[SSR] Firestore REST catalog fallback unavailable:', error?.message || error);
-    return [];
-  }
+export const getPublicCatalog = cache(async (params = '') => {
+  const result = await queryMaterializedCatalog(parseCatalogParams(params));
+  return result.products.filter(isPublicProductData);
 });
 
 export const getPublishedProductStaticParams = cache(async (limitCount = 120) => {
   const limit = Math.max(1, Math.min(limitCount, 500));
-  let products = await getPublicCatalog(`scope=cards&limit=${limit}`);
-  if (!products.length) {
-    products = await getPublicCatalogFallback({ limitCount: limit });
-  }
+  const products = await getPublicCatalog(`scope=cards&limit=${limit}`);
   return products
     .filter(isSeoIndexableProduct)
     .map((product) => ({ slugOrId: getProductSeoDecision(product).canonicalSlug }));

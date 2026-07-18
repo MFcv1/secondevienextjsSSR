@@ -8,7 +8,6 @@ import {
   ChevronDown,
   ChevronLeft,
   CreditCard,
-  Gauge,
   Globe,
   Grid,
   Layout,
@@ -29,9 +28,9 @@ import { appId } from '../../src/kit/config/firebaseEnv';
 import { getDb, loadFirestoreModule } from '../../src/kit/config/firebaseLazy';
 import {
   ADMIN_PUBLIC_CATALOG_INVALIDATED_EVENT,
+  clearAdminPublicCatalogCache,
   loadAdminPublicCatalog,
 } from '../../src/kit/admin/adminPublicCatalog';
-import { getProductUrl } from '../../src/utils/slug';
 
 const AdminDashboard = React.lazy(() => import('../../src/kit/admin/AdminDashboard'));
 const AdminHomepage = React.lazy(() => import('../../src/kit/admin/AdminHomepage'));
@@ -50,7 +49,6 @@ const AdminPaymentSettings = React.lazy(() => import('../../src/kit/admin/AdminP
 const AdminIPTracker = React.lazy(() => import('../../src/kit/admin/AdminIPTracker'));
 const AdminGlobalInventory = React.lazy(() => import('../../src/kit/admin/GlobalInventoryView'));
 const AdminMaintenance = React.lazy(() => import('../../src/kit/admin/AdminMaintenance'));
-const PerformanceArchitectureStudy = React.lazy(() => import('../../src/kit/admin/PerformanceArchitectureStudy'));
 const LegacyLoginModalIsland = React.lazy(() => import('../../src/kit/marketplace/LegacyLoginModalFullIsland'));
 
 const TAB_ICONS = {
@@ -67,7 +65,6 @@ const TAB_ICONS = {
   payment_settings: CreditCard,
   inventory: Grid,
   maintenance: RefreshCw,
-  performance_study: Gauge,
 };
 
 const COLLECTION_ICONS = [Layout, LayoutPanelTop];
@@ -83,7 +80,7 @@ const ADMIN_TAB_GROUPS = [
   { label: 'Experience boutique', tabIds: ['homepage', 'seo'] },
   { label: 'Commerce', tabIds: ['orders', 'returns', 'livraison', 'payment_settings'] },
   { label: 'Relation client', tabIds: ['users', 'newsletter'] },
-  { label: 'Systeme', tabIds: ['ip_manager', 'maintenance', 'performance_study'] },
+  { label: 'Systeme', tabIds: ['ip_manager', 'maintenance'] },
 ];
 
 const adminTabsById = new Map(adminTabs.map((tab) => [tab.id, tab]));
@@ -172,12 +169,8 @@ function AdminCatalogStatus({ darkMode, error, loading, onRetry }) {
 }
 
 const getAdminFirestoreRuntime = async () => {
-  const [{ bumpPublicCatalogVersion }, db, firestore] = await Promise.all([
-    import('../../src/kit/admin/publicCatalogInvalidation'),
-    getDb(),
-    loadFirestoreModule(),
-  ]);
-  return { db, firestore, bumpPublicCatalogVersion };
+  const [db, firestore] = await Promise.all([getDb(), loadFirestoreModule()]);
+  return { db, firestore };
 };
 
 function AdminContent() {
@@ -255,56 +248,44 @@ function AdminContent() {
   };
 
   const handleToggleStatus = async (item, collectionName) => {
-    const { db, firestore, bumpPublicCatalogVersion } = await getAdminFirestoreRuntime();
+    const { db, firestore } = await getAdminFirestoreRuntime();
     const { doc, updateDoc } = firestore;
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', collectionName, item.id), {
       status: item.status === 'published' ? 'draft' : 'published',
     });
-    await bumpPublicCatalogVersion('product_status_changed', {
-      productId: item.id,
-      categoryIds: item.category ? [item.category] : [],
-      paths: [getProductUrl(item)],
-    });
+    clearAdminPublicCatalogCache();
   };
 
   const handleDeleteItem = async (_year, id, collectionName) => {
     if (!window.confirm('Supprimer ?')) return;
-    const { db, firestore, bumpPublicCatalogVersion } = await getAdminFirestoreRuntime();
+    const { db, firestore } = await getAdminFirestoreRuntime();
     const { deleteDoc, doc } = firestore;
     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', collectionName, id));
-    await bumpPublicCatalogVersion('product_deleted', { productId: id });
+    clearAdminPublicCatalogCache();
   };
 
   const handleMarkAsSold = async (item, collectionName) => {
     if (!window.confirm(`Marquer "${item.name}" comme VENDU ? (Stock a 0)`)) return;
-    const { db, firestore, bumpPublicCatalogVersion } = await getAdminFirestoreRuntime();
+    const { db, firestore } = await getAdminFirestoreRuntime();
     const { doc, serverTimestamp, updateDoc } = firestore;
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', collectionName, item.id), {
       sold: true,
       stock: 0,
       soldAt: serverTimestamp(),
     });
-    await bumpPublicCatalogVersion('product_sold', {
-      productId: item.id,
-      categoryIds: item.category ? [item.category] : [],
-      paths: [getProductUrl(item)],
-    });
+    clearAdminPublicCatalogCache();
   };
 
   const handleMarkAsAvailable = async (item, collectionName) => {
     if (!window.confirm(`Remettre "${item.name}" en vente ? (Stock a 1)`)) return;
-    const { db, firestore, bumpPublicCatalogVersion } = await getAdminFirestoreRuntime();
+    const { db, firestore } = await getAdminFirestoreRuntime();
     const { doc, updateDoc } = firestore;
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', collectionName, item.id), {
       sold: false,
       stock: 1,
       soldAt: null,
     });
-    await bumpPublicCatalogVersion('product_available', {
-      productId: item.id,
-      categoryIds: item.category ? [item.category] : [],
-      paths: [getProductUrl(item)],
-    });
+    clearAdminPublicCatalogCache();
   };
 
   if (loading) return <div className="min-h-screen bg-[#faf9f5]" />;
@@ -351,20 +332,6 @@ function AdminContent() {
           />
         </Suspense>
       </div>
-    );
-  }
-
-  if (adminCollection === 'performance_study') {
-    return (
-      <Suspense fallback={<div className="min-h-screen bg-[#faf9f5]" />}>
-        <PerformanceArchitectureStudy
-          seo={false}
-          onBack={() => {
-            setAdminCollection('dashboard');
-            window.scrollTo(0, 0);
-          }}
-        />
-      </Suspense>
     );
   }
 

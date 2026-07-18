@@ -68,7 +68,7 @@ Backfill product imageMetadata documents.
 
 Dry-run is the default and only reports missing metadata. Commit mode downloads
 the source images, computes width/height/ratio/dominantColor/blurDataUrl, updates
-the product document and bumps public/meta.catalogVersion.
+the product document. The catalog source trigger publishes the resulting snapshot.
 
 Usage:
   node scripts/backfill-product-image-metadata.cjs --dry-run
@@ -290,19 +290,6 @@ async function readProducts(db, runtime, collectionName, options) {
     return snapshot.docs;
 }
 
-async function bumpCatalogVersion(db, runtime, reason) {
-    await db
-        .collection('artifacts')
-        .doc(runtime.appId)
-        .collection('public')
-        .doc('meta')
-        .set({
-            catalogVersion: admin.firestore.FieldValue.serverTimestamp(),
-            catalogVersionReason: reason,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        }, { merge: true });
-}
-
 async function processDoc(doc, options) {
     const data = doc.data();
     const slotCount = getImageSlotCount(data);
@@ -378,7 +365,6 @@ async function main() {
         collections: {},
     };
 
-    let updatedCount = 0;
 
     for (const collectionName of runtime.collections) {
         const docs = await readProducts(db, runtime, collectionName, options);
@@ -395,7 +381,6 @@ async function main() {
             try {
                 const result = await processDoc(doc, options);
                 collectionSummary[`${result.status === 'skip' ? 'skipped' : result.status}`] += 1;
-                if (result.status === 'updated') updatedCount += 1;
                 if (result.status !== 'skip' && collectionSummary.preview.length < 20) {
                     collectionSummary.preview.push({
                         id: doc.id,
@@ -411,11 +396,6 @@ async function main() {
         }
 
         summary.collections[collectionName] = collectionSummary;
-    }
-
-    if (options.commit && updatedCount > 0) {
-        await bumpCatalogVersion(db, runtime, 'image_metadata_backfill');
-        summary.catalogVersionBumped = true;
     }
 
     console.log(JSON.stringify(summary, null, 2));

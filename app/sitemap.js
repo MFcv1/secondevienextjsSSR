@@ -1,5 +1,5 @@
-import { getPublicCatalog, getPublicCatalogFallback, isSeoIndexableProduct } from '../src/lib/server/products';
-import { publicCatalogUrl, publicEnv } from '../src/lib/server/env';
+import { isSeoIndexableProduct } from '../src/lib/server/products';
+import { publicEnv } from '../src/lib/server/env';
 import { queryMaterializedCatalog } from '../src/lib/server/materializedCatalog';
 import { categoryEntries, getMatchingCategoryIds, isSeoIndexableCategory } from '../src/lib/seo/categories';
 import { getCategoryUrl, getProductUrl } from '../src/utils/slug';
@@ -41,39 +41,14 @@ const getCategoryLastModified = (products, categoryId) => {
 };
 
 const getPublicCatalogPage = async (cursor = '') => {
-  if (['snapshot', 'snapshot_canary'].includes(publicEnv.publicCatalogSource)) {
-    const result = await queryMaterializedCatalog({
-      scope: 'cards',
-      limit: SITEMAP_PAGE_LIMIT,
-      cursor
-    });
-    return {
-      products: result.products.filter(isSeoIndexableProduct),
-      nextCursor: result.nextCursor
-    };
-  }
-  const params = new URLSearchParams({
+  const result = await queryMaterializedCatalog({
     scope: 'cards',
-    limit: String(SITEMAP_PAGE_LIMIT)
+    limit: SITEMAP_PAGE_LIMIT,
+    cursor
   });
-  if (cursor) params.set('cursor', cursor);
-
-  const url = publicCatalogUrl(params.toString());
-  if (!url) return { products: [], nextCursor: null };
-
-  const response = await fetch(url, {
-    headers: { accept: 'application/json' },
-    next: {
-      revalidate: 300,
-      tags: ['catalog', 'products', 'sitemap']
-    }
-  });
-  if (!response.ok) return { products: [], nextCursor: null };
-
-  const payload = await response.json();
   return {
-    products: (payload?.collections?.furniture || []).filter(isSeoIndexableProduct),
-    nextCursor: payload?.nextCursor || null
+    products: result.products.filter(isSeoIndexableProduct),
+    nextCursor: result.nextCursor
   };
 };
 
@@ -88,13 +63,7 @@ const getSitemapProducts = async () => {
     cursor = result.nextCursor;
   }
 
-  if (products.length) return products.slice(0, SITEMAP_MAX_PRODUCTS);
-
-  let fallbackProducts = await getPublicCatalog(`scope=cards&limit=${SITEMAP_PAGE_LIMIT}`);
-  if (!fallbackProducts.length) {
-    fallbackProducts = await getPublicCatalogFallback({ limitCount: 500 });
-  }
-  return fallbackProducts.filter(isSeoIndexableProduct).slice(0, SITEMAP_MAX_PRODUCTS);
+  return products.slice(0, SITEMAP_MAX_PRODUCTS);
 };
 
 export default async function sitemap() {

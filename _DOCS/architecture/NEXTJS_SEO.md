@@ -49,23 +49,22 @@ La galerie doit:
 
 ## 4. Catalogue serveur et cache
 
-Le catalogue public est lu par `src/lib/server/products.js`. Les sources sont, selon le contexte, l'endpoint `publicCatalog`, Firestore Admin ou les API Firebase de repli. Les produits sont normalises avant d'etre exposes aux pages.
+Le catalogue public est lu par `src/lib/server/products.js` depuis le snapshot Storage valide par `materializedCatalog.js`. Aucun lecteur public Firestore ou Function catalogue parallele ne subsiste.
 
 Le cache repose sur:
 
 - ISR Next a 300 secondes pour les routes publiques;
-- une version de catalogue dans `artifacts/{appId}/public/meta`;
-- `src/kit/shared/publicCatalogCache.js` cote client;
+- les pointeurs Storage `current`, `previous` et `last-known-good`;
 - `/api/revalidate-catalog` pour revalider tags et chemins apres mutation admin;
-- `src/kit/admin/publicCatalogInvalidation.js` comme pont apres publication.
+- le trigger `onCatalogSourceWrite` et la task de revalidation signee.
 
 Flux attendu:
 
 ```text
 mutation admin
   -> ecriture Firestore
-  -> bump catalogVersion
-  -> appel /api/revalidate-catalog avec ID token admin
+  -> build et publication du snapshot
+  -> appel signe HMAC /api/revalidate-catalog
   -> revalidateTag/revalidatePath
   -> nouvelles pages ISR + nouveau sitemap
 ```

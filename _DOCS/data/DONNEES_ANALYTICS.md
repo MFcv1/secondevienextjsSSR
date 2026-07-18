@@ -21,7 +21,6 @@ Mesures et attribution des couts: [AUDIT_COUTS_FIRESTORE.md](AUDIT_COUTS_FIRESTO
 
 ```text
 artifacts/{appId}/public/data/furniture/{productId}
-artifacts/{appId}/public/meta
 users/{uid}
   cart/{itemId}
   wishlist/{itemId}
@@ -42,7 +41,7 @@ Cette carte decrit les collections connues du code. `firestore.rules`, Functions
 
 ## 3. Catalogue
 
-La collection `furniture` contient annonces, stock, publication, SEO et references image. Le document `public/meta` porte notamment `catalogVersion` pour le cache et la revalidation.
+La collection `furniture` contient annonces, stock, publication, SEO et references image. Les visiteurs ne la lisent pas: la version publique et la revalidation sont portees par les pointeurs/revisions du snapshot Storage.
 
 Les mutations massives doivent conserver:
 
@@ -52,7 +51,7 @@ Les mutations massives doivent conserver:
 - statuts et stock;
 - categorie et ordre editorial;
 - champs SEO;
-- compatibilite avec `publicCatalog`.
+- compatibilite avec le contrat same-origin `/api/catalog`.
 
 ## 4. Utilisateurs
 

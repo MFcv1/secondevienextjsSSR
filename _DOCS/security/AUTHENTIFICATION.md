@@ -81,7 +81,7 @@ Le gain principal concerne la coherence, la securite et la recuperation apres pa
 | passkey validee | Windows Hello sur sandbox Chromium |
 | etat demo | `AUTH_PATCH_CLOSED_FOR_DEMO` |
 
-Le catalogue public peut conserver une region distincte. La convergence decrite ici concerne les Functions privees/Auth, pas `publicCatalog`.
+Le bucket catalogue peut conserver une region distincte. La convergence decrite ici concerne les Functions privees/Auth; il n'existe plus de Function HTTP catalogue separee.
 
 ## 5. Architecture d'authentification
 

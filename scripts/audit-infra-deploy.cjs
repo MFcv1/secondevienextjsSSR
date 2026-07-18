@@ -21,7 +21,6 @@ const firebaseJson = readJson('firebase.json') || {};
 const apphosting = readText('apphosting.yaml');
 const firebaseIgnore = readText('.firebaseignore');
 const functionsIndex = readText('functions/index.js');
-const functionsPublicIndex = readText('functions-public/index.js');
 const firestoreRules = readText('firestore.rules');
 const storageRules = readText('storage.rules');
 
@@ -41,7 +40,7 @@ if (!appHostingBackend) {
     addFinding('error', 'app-hosting', `App Hosting backend should stay sandbox-only, got "${appHostingBackend.backendId}"`);
   }
   const ignored = new Set(appHostingBackend.ignore || []);
-  for (const pattern of ['functions', 'functions-public', '.next', 'logs', 'test-results', 'playwright-report']) {
+  for (const pattern of ['functions', '.next', 'logs', 'test-results', 'playwright-report']) {
     if (!ignored.has(pattern)) addFinding('error', 'app-hosting', `App Hosting ignore missing "${pattern}"`);
   }
 }
@@ -60,15 +59,7 @@ const functionsCodebases = new Map((firebaseJson.functions || []).map((entry) =>
 if (functionsCodebases.get('main') !== 'functions') {
   addFinding('error', 'functions', 'firebase.json must keep main codebase at functions');
 }
-if (functionsCodebases.get('public') !== 'functions-public') {
-  addFinding('error', 'functions', 'firebase.json must keep public codebase at functions-public');
-}
-if (!functionsPublicIndex.includes('exports.publicCatalog')) {
-  addFinding('error', 'functions-public', 'functions-public/index.js must export publicCatalog');
-}
-if (functionsPublicIndex.includes('STRIPE') || functionsPublicIndex.includes('GMAIL')) {
-  addFinding('error', 'functions-public', 'functions-public must not reference Stripe or Gmail secrets');
-}
+if (functionsCodebases.has('public')) addFinding('error', 'functions', 'legacy public Functions codebase must be removed');
 if (!functionsIndex.includes('exports.stripeWebhook') || !functionsIndex.includes('exports.createOrder')) {
   addFinding('error', 'functions-main', 'functions/index.js missing commerce exports');
 }
@@ -97,9 +88,7 @@ for (const pattern of ['.env*', 'service-account.json', '*.pem', '*.key']) {
   if (!firebaseIgnoreLines.has(pattern)) addFinding('error', 'secret-hygiene', `.firebaseignore missing "${pattern}"`);
 }
 
-if (firebaseJson.hosting?.rewrites?.some((rewrite) => rewrite.function)) {
-  addFinding('warn', 'legacy-hosting', 'Firebase Hosting rewrites still point to legacy SEO Functions; keep documented until removed deliberately');
-}
+if (firebaseJson.hosting) addFinding('error', 'hosting', 'legacy Firebase Hosting config must be removed');
 
 const output = {
   ok: !findings.some((finding) => finding.level === 'error'),
@@ -107,10 +96,7 @@ const output = {
   summary: {
     firebaseDefaultProject: defaultProject || null,
     appHostingBackendId: appHostingBackend?.backendId || null,
-    functionsCodebases: Object.fromEntries(functionsCodebases),
-    legacyHostingRewriteFunctions: (firebaseJson.hosting?.rewrites || [])
-      .filter((rewrite) => rewrite.function)
-      .map((rewrite) => `${rewrite.source} -> ${rewrite.function}`)
+    functionsCodebases: Object.fromEntries(functionsCodebases)
   }
 };
 
