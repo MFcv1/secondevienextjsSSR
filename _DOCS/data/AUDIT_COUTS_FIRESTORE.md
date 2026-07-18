@@ -377,9 +377,9 @@ Apres chaque changement P0:
 - refuser le changement si une session visible met plus de 30 secondes a disparaitre ou si un parcours se perd;
 - ne deployer qu'apres validation du build et du smoke cible sur sandbox.
 
-## 9. Etat des lots conservateurs au 2026-07-17
+## 9. Etat historique des lots conservateurs au 2026-07-17
 
-Le lot P0 catalogue/admin a ete deploye et mesure. Le lot P1 `public/meta` et analytics est implemente localement mais n'est ni commite, ni pousse, ni deploye dans cette passe.
+Le lot P0 catalogue/admin avait ete deploye et mesure. A cette date, le lot P1 `public/meta` et analytics etait encore uniquement local; cet etat historique est remplace par le cutover deploye et la preuve finale des sections 10.1 et 10.2.
 
 Validations passees:
 
@@ -390,7 +390,7 @@ Validations passees:
 - build Next 15.5.20: reussi, 53 pages statiques generees;
 - `git diff --check`: reussi, hors avertissements CRLF du poste Windows.
 
-La validation de cout P1 reste volontairement ouverte: les gains exacts ne seront chiffres qu'apres un deploiement sandbox autorise et une nouvelle fenetre Data Access comparable. La gate de deploiement doit aussi verifier manuellement le live, le tracer, la reprise apres masquage, la navigation catalogue et l'exclusion admin.
+Cette validation a ete fermee le 2026-07-18 par la fenetre Data Access post-retrait legacy de la section 10.2.
 
 ## 10. Catalogue materialise deploye le 2026-07-18
 
@@ -402,8 +402,8 @@ Preuves deja acquises:
 - creation, changement de prix, stock a zero et suppression reproduits;
 - publication/revalidation et manifests/hashes valides;
 - CDN same-origin: 40 requetes, ETag stable et 100 % de hits apres echauffement;
-- API et routes publiques servies sur une revision saine (31 au controle final, valeur monotone);
-- checkout loa.gto sans paiement arrive jusqu'a Stripe, en conservant la verification Firestore autoritaire;
+- API et routes publiques servies sur une revision saine (41 au controle final, valeur monotone);
+- checkout loa.gto sans paiement bloque et actualise le total lorsqu'un prix Firestore change, avant toute reservation ou PaymentIntent;
 - trois suites locales coeur/resilience/securite et recette navigateur/Data Access separee.
 
 ### 10.1 Preuve Data Access post-cutover du 2026-07-18
@@ -427,4 +427,29 @@ Les sept entrees Firestore visibles entre les marqueurs comprennent les deux cal
 
 Conclusion fermee: le parcours public mesure ne lit plus le catalogue dans Firestore. Il sert le snapshot Storage via `/api/catalog`; le checkout reste volontairement autoritaire sur Firestore et n'appartient pas a cette fenetre de navigation. `DATA_READ` et `DATA_WRITE` ont ete desactives immediatement apres le marqueur final. La console affichait les deux colonnes desactivees et la politique IAM a ensuite retourne `auditConfigs: null`.
 
-Cette preuve a ferme la gate du cutover initial. Le retrait local de `publicCatalog` et `onInventorySourceWrite` est implemente le 2026-07-18; la nouvelle preuve Data Access lecture/ecriture reste requise apres deploiement avant cloture de la roadmap.
+Cette preuve a ferme la gate du cutover initial. La preuve finale apres retrait cloud est documentee ci-dessous.
+
+### 10.2 Preuve Data Access finale apres retrait legacy du 2026-07-18
+
+La fenetre probante a ete calibree par un marqueur effectivement visible dans Cloud Logging a `16:51:21Z`, puis fermee a `16:53:10Z`. Une premiere tentative plus tot dans l'apres-midi n'est pas utilisee comme preuve, car la propagation de la configuration IAM avait commence apres son parcours public.
+
+Scenario calibre:
+
+- accueil, categorie meubles, fiche produit, recherche et wishlist dans le navigateur;
+- huit appels `/api/catalog?limit=120` et un sitemap, tous `200`;
+- reconstruction admin bornee, publiee en revision `41` avec etat `healthy`;
+- marqueur final en lecture de `sys_catalog_publication/secondevie`;
+- desactivation immediate de `DATA_READ` et `DATA_WRITE`, puis verification `auditConfigs: null`.
+
+Les 58 entrees Data Access expurgees de la fenetre se repartissent en 24 `BatchGetDocuments`, 21 `Listen`, un `RunQuery` et 12 `Commit`.
+
+| Verification | Resultat |
+| --- | --- |
+| reference `artifacts/secondevie/public/meta` | **0** |
+| lecture `furniture` | **1**, exclusivement `catalog-builder` pendant son scan autoritaire |
+| lecture `furniture` attribuee a la navigation publique | **0** |
+| ecritures `catalog-builder` | controle de publication, builds, inventaire et audit securite |
+| ecritures applicatives annexes | deux mises a jour `sys_metadata/admin_ips` attendues |
+| pointeurs finaux verifies | `current=41`, `previous=40`, LKG `39`, 38 produits chacun |
+
+Conclusion fermee: apres suppression de `publicCatalog`, `onInventorySourceWrite`, `public/meta` et des Functions SEO, la navigation publique ne lit ni n'ecrit le catalogue Firestore. Seul le builder prive scanne `furniture` pendant une publication explicite. Aucun payload Data Access brut ni ETag n'est conserve dans Git.

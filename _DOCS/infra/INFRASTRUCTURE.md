@@ -74,7 +74,7 @@ Catalogue materialise:
 
 - bucket prive: `secondevienextjsssr-catalog-europe-west4`;
 - queues Cloud Tasks: build et revalidation en `europe-west1`;
-- comptes de service: `catalog-enqueuer` et `catalog-builder`;
+- comptes de service: `catalog-enqueuer` et `catalog-builder`; tous deux ont `run.invoker` uniquement sur `dispatchcatalogbuild`, car les triggers et les reconstructions peuvent signer les Cloud Tasks;
 - runtime App Hosting: lecture d'objets uniquement sur le bucket catalogue;
 - secret runtime: `CATALOG_REVALIDATION_HMAC_SECRET`;
 - source publique unique: snapshot Storage, sans variable de selection ni fallback Firestore.
