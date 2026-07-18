@@ -125,7 +125,6 @@ src/kit/marketplace/*Server*.jsx
 
 | Dette | Statut | Condition de reprise |
 | --- | --- | --- |
-| bloc `hosting` et Functions SEO legacy dans `firebase.json` | `DEBT` | decision de retrait du Firebase Hosting historique avant prod |
 | image OG finale | `SURVEILLANCE` | `public/og-image.jpg` existe; verifier son rendu et la remplacer par l'asset de marque final au cutover |
 | migration Next 16/Turbopack | `PRODUCTION_DEFERRED` | branche dediee apres stabilisation fonctionnelle, jamais pendant un patch metier |
 | budget JS/CSS public | `DEBT` | traiter dans une passe performance avec mesures avant/apres |

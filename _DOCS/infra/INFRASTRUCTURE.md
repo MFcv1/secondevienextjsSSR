@@ -68,7 +68,7 @@ App Hosting (`apphosting.yaml`):
 
 Le runtime source de `main` converge vers `europe-west1` via `functions/helpers/runtime.js`. Des copies historiques `us-central1` peuvent encore exister dans le cloud comme rollback; leur suppression exige inventaire CLI, observation et rollback documente.
 
-Le codebase public historique et Firebase Hosting ne font plus partie de la configuration. Leur suppression cloud sandbox est une operation de deploiement controlee apres les gates locales.
+Le codebase public historique et Firebase Hosting ne font plus partie de la configuration. Les Functions SEO/`publicCatalog` historiques ont ete supprimees du sandbox le 2026-07-18 et le site Hosting `secondevienextjsssr` a ete desactive apres verification de l'URL App Hosting.
 
 Catalogue materialise:
 
@@ -161,14 +161,7 @@ Pour un E2E ponctuel, un jeton debug peut etre enregistre uniquement avec autori
 
 ## 9. Firebase Hosting legacy
 
-`firebase.json` contient encore un bloc `hosting` avec `dist`, rewrites SEO Functions et fallback SPA. La cible actuelle est App Hosting, pas ce rail historique.
-
-Tant que le bloc existe:
-
-- ne pas executer un deploiement Hosting global par habitude;
-- toujours utiliser `--only` et verifier le projet;
-- considerer les Functions SEO historiques comme deployables;
-- supprimer l'ensemble uniquement dans une passe infra dediee, avec preuve qu'aucun domaine ou trafic ne le consomme.
+Le bloc `hosting`, ses rewrites et les Functions SEO historiques ont ete retires. Le site Firebase Hosting sandbox `secondevienextjsssr` est desactive depuis le 2026-07-18; un nouveau deploiement Hosting explicite serait necessaire pour le reactiver. Le site public de reference reste exclusivement l'App Hosting `secondevie-next-sandbox`.
 
 ## 10. Deploiement sandbox
 

@@ -434,6 +434,27 @@ Etat final attendu:
 - logs locaux et rapports E2E generes: non suivis et nettoyes apres synthese;
 - secrets: conserver uniquement `CATALOG_REVALIDATION_HMAC_SECRET`, encore necessaire a la revalidation machine.
 
+### 12.9.1 Etat d'implementation au 2026-07-18
+
+Acquis et deploye sur le sandbox:
+
+- lecteur snapshot unique, trois pointeurs complets et releases verifiees;
+- Rules sans lecture publique `furniture`/`public/meta`, document `public/meta` supprime;
+- `publicCatalog`, `onInventorySourceWrite`, Functions SEO et codebase public supprimes du cloud et du depot;
+- Firebase Hosting historique desactive, App Hosting toujours disponible;
+- prix change bloque avant paiement, stock `0`, remise en vente et suppression valides avec un produit de recette ensuite efface;
+- media de recette place en quarantaine 90 jours avec generation protegee;
+- GC releases borne: trois pointeurs, 10 releases recentes et grace 48 heures; dry-run initial `34 retenues / 0 candidate`;
+- TTL `expireAt` demandes pour le ledger 7 jours et les builds 90 jours;
+- tableau de bord admin repare avec lecture `dashboard_stats` reservee aux admins forts;
+- confirmation de rollback integree dans Maintenance; rollout App Hosting `build-2026-07-18-003` reussi.
+
+Gates encore ouvertes avant suppression de cette roadmap:
+
+- renouveler la session `loa.gto15@gmail.com`, exercer le rollback puis reconstruire l'etat Firestore;
+- terminer la fenetre Data Access finale `DATA_READ` + `DATA_WRITE`, puis verifier sa desactivation;
+- confirmer l'etat final des TTL apres leur activation asynchrone.
+
 ### 12.10 Definition de done du lot
 
 Le lot est ferme uniquement si:

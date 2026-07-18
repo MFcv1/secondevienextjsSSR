@@ -157,7 +157,6 @@ Ne jamais lancer un script de migration, de purge ou de backfill en mode commit 
 | App Check enforcement non prouve | `PRODUCTION_DEFERRED` | telemetrie representative et rollout progressif |
 | domaine, CSP et origines finales | `PRODUCTION_DEFERRED` | domaine achete et configure |
 | sauvegardes, alertes et observabilite prod | `PRODUCTION_DEFERRED` | politique d'exploitation approuvee |
-| Firebase Hosting legacy encore deployable | `DEBT` | decision infra et suppression apres preuve qu'App Hosting est unique |
 | endpoints E2E exportes | `DEBT` | garder fail-closed ou retirer dans une passe Functions dediee |
 
 ## 11. Checklist avant livraison production
