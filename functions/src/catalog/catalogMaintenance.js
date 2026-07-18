@@ -17,7 +17,10 @@ const {
     verifyStoredRelease,
     writePointer
 } = require('./snapshotStorage');
-const { CATALOG_SNAPSHOT_BUCKET } = require('./catalogConfig');
+const {
+    CATALOG_BUILDER_SERVICE_ACCOUNT,
+    CATALOG_SNAPSHOT_BUCKET
+} = require('./catalogConfig');
 
 const REGION = 'europe-west1';
 const BUILD_TASK = `locations/${REGION}/functions/dispatchCatalogBuild`;
@@ -43,7 +46,10 @@ async function readCatalogPointers() {
 }
 
 const getCatalogPublicationStatus = regionalFunctions()
-    .runWith({ enforceAppCheck: true })
+    .runWith({
+        enforceAppCheck: true,
+        serviceAccount: CATALOG_BUILDER_SERVICE_ACCOUNT
+    })
     .https.onCall(async (_data, context) => {
         await checkActiveStrongAdmin(context);
         const { current, previous, lastKnownGood } = await readCatalogPointers();
@@ -57,7 +63,12 @@ const getCatalogPublicationStatus = regionalFunctions()
     });
 
 const rollbackCatalogSnapshot = regionalFunctions()
-    .runWith({ enforceAppCheck: true, timeoutSeconds: 120, memory: '512MB' })
+    .runWith({
+        enforceAppCheck: true,
+        timeoutSeconds: 120,
+        memory: '512MB',
+        serviceAccount: CATALOG_BUILDER_SERVICE_ACCOUNT
+    })
     .https.onCall(async (data, context) => {
         await checkRecentActiveStrongAdmin(context);
         const targetName = String(data?.target || '').trim();
@@ -146,7 +157,10 @@ const rollbackCatalogSnapshot = regionalFunctions()
     });
 
 const rebuildCatalogSnapshot = regionalFunctions()
-    .runWith({ enforceAppCheck: true })
+    .runWith({
+        enforceAppCheck: true,
+        serviceAccount: CATALOG_BUILDER_SERVICE_ACCOUNT
+    })
     .https.onCall(async (data, context) => {
         await checkRecentActiveStrongAdmin(context);
         assertConfirmText(data, 'RECONSTRUIRE CATALOGUE', 'reconstruction catalogue');
