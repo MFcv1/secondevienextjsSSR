@@ -1,6 +1,6 @@
 # Annonces, catalogue et recherche
 
-Derniere mise a jour: 2026-07-16
+Derniere mise a jour: 2026-07-18
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Perimetre
@@ -50,15 +50,36 @@ Les anciennes formes de donnees restent normalisees par `src/lib/server/products
 brouillon admin
   -> validation champs et images
   -> ecriture Firestore
-  -> publicCatalogInvalidation
-  -> catalogVersion augmente
+  -> onCatalogSourceWrite (deduplication + desiredRevision)
+  -> Cloud Tasks dispatchCatalogBuild
+  -> snapshot Storage immuable + manifeste + pointeur current
+  -> dispatchCatalogRevalidation signe HMAC
   -> revalidation Next
   -> produit visible dans galerie/categorie/recherche/sitemap selon ses flags
   -> panier/checkout si isPurchasable=true
   -> vendu ou remis en vente selon cycle de commande/refund
 ```
 
-La suppression d'un produit declenche le nettoyage media via `onArtifactDeleted`. Une mise a jour peut declencher `onArtifactUpdated`; ne pas contourner ces triggers avec une migration non auditee.
+La suppression ou modification d'un produit met ses medias retires en quarantaine. Le GC catalogue est en dry-run par defaut et n'est autorise a supprimer qu'apres 90 jours, en verifiant les releases retenues. Ne pas contourner ces triggers avec une migration non auditee.
+
+### 4.1 Catalogue public materialise
+
+Le sandbox sert le catalogue depuis le bucket prive `secondevienextjsssr-catalog-europe-west4`. `PUBLIC_CATALOG_SOURCE=snapshot`, le canary est desactive et le fallback Firestore automatique est interdit.
+
+```text
+furniture [DB, autoritaire]
+  -> trigger leger onCatalogSourceWrite
+  -> ledger/outbox + file Cloud Tasks
+  -> builder: un scan borne de l'etat final
+  -> releases/{revision}/... + manifest.json [ST]
+  -> current.json / previous.json / last-known-good.json
+  -> app/api/catalog/route.js [same-origin]
+  -> SSR, recherche, wishlist, sitemap et admin lazy
+```
+
+Le lecteur valide schema, manifestes et checksums. Il tente `current`, puis `previous`, puis `last-known-good`; il ne scanne jamais Firestore en cas de panne Storage. L'ancien `publicCatalog` reste deploye uniquement comme rail de rollback operateur pendant la periode d'observation.
+
+Les transitions de publication passent par `npm run catalog:mode -- --from=<mode> --to=<mode> --commit`. Les modes acceptes sont `shadow`, `snapshot_canary`, `snapshot`, `rollback` et `paused`; un retour `legacy` exige un redeploiement explicite d'App Hosting.
 
 ## 5. Publication et indexabilite
 
@@ -105,7 +126,7 @@ La recherche combine:
 
 Le moteur doit normaliser accents, casse et termes de categorie sans exposer les brouillons. `/recherche` reste `noindex,follow` pour eviter les pages de resultats infinies dans l'index.
 
-L'appel normal du catalogue de recherche demande 120 cartes, qui est aussi la borne appliquee par `publicCatalog`. Le fallback Firestore direct conserve sa limite historique de 160 afin de ne pas reduire la couverture de recherche en cas d'indisponibilite du service public. L'API publique refuse avant toute lecture Firestore un `limit` fourni mais invalide, ainsi qu'un curseur invalide ou utilise sans limite; les curseurs valides sont canonicalises pour ne pas multiplier les cles de cache equivalentes.
+L'appel normal du catalogue de recherche demande 120 cartes. Le helper snapshot applique les memes bornes et la meme normalisation que le contrat historique, sans fallback Firestore visiteur. Les parametres `limit` et `cursor` invalides sont rejetes avant toute lecture de snapshot.
 
 ## 8. Personnalisation editoriale
 
@@ -135,6 +156,10 @@ src/kit/marketplace/ProductDetailServerView.jsx
 src/kit/marketplace/SearchResultsIsland.jsx
 src/kit/marketplace/searchModel.js
 functions-public/src/public/catalog.js
+app/api/catalog/route.js
+src/lib/server/materializedCatalog.js
+src/lib/server/materializedCatalogValidation.cjs
+functions/src/catalog/
 functions/src/triggers/onArtifactDeleted.js
 functions/src/triggers/onArtifactUpdated.js
 ```
@@ -156,6 +181,16 @@ npm run perf:gallery-direct
 npm run perf:category-direct
 npm run perf:product-direct
 npm run e2e:revalidate-catalog
+npm run test:catalog:unit
+npm run test:catalog:publisher
+npm run test:catalog:chaos
+npm run test:catalog:security
+npm run test:catalog:emulator
+npm run e2e:catalog:shadow
+npm run e2e:catalog:publication -- --commit
+npm run e2e:catalog:cdn
+npm run e2e:catalog:rollback
+npm run measure:catalog:cost
 ```
 
 Les scripts E2E ou les backfills qui touchent Firebase ne sont lances que sur l'environnement explicitement choisi et avec leurs confirmations protegees.

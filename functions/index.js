@@ -119,3 +119,16 @@ const { onArtifactUpdated } = require('./src/triggers/onArtifactUpdated');
 
 exports.onArtifactDeleted = onArtifactDeleted;
 exports.onArtifactUpdated = onArtifactUpdated;
+
+// ── CATALOGUE PUBLIC MATERIALISE ───────────────────────────
+const { onCatalogSourceWrite } = require('./src/catalog/onCatalogSourceWrite');
+const { dispatchCatalogBuild } = require('./src/catalog/buildCatalogSnapshot');
+const { dispatchCatalogRevalidation } = require('./src/catalog/catalogRevalidation');
+const { catalogReconciler } = require('./src/catalog/catalogReconciler');
+const { catalogMediaGarbageCollector } = require('./src/catalog/mediaGarbageCollection');
+
+exports.onCatalogSourceWrite = onCatalogSourceWrite;
+exports.dispatchCatalogBuild = dispatchCatalogBuild;
+exports.dispatchCatalogRevalidation = dispatchCatalogRevalidation;
+exports.catalogReconciler = catalogReconciler;
+exports.catalogMediaGarbageCollector = catalogMediaGarbageCollector;

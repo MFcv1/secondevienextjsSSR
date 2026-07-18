@@ -1,12 +1,13 @@
 /**
  * Nettoyage automatique a la suppression d'un produit.
  *
- * Supprime les images Storage + sous-collections sociales.
- * quand un produit est efface de Firestore.
+ * Met les images Storage en quarantaine et supprime les sous-collections
+ * sociales quand un produit est efface de Firestore.
  */
 const admin = require('firebase-admin');
 const { onDocumentDeleted } = require('firebase-functions/v2/firestore');
-const { collectStoragePaths, deleteStoragePaths } = require('./mediaCleanup');
+const { collectStoragePaths } = require('./mediaCleanup');
+const { enqueueMediaCandidates } = require('../catalog/mediaGarbageCollection');
 
 const db = admin.firestore();
 const SUBCOLLECTION_BATCH_LIMIT = 450;
@@ -39,7 +40,11 @@ async function cleanupDocumentAssets(snap) {
     console.log(`Artifact delete cleanup triggered for: ${docPath}`);
 
     const bucket = admin.storage().bucket();
-    await deleteStoragePaths(bucket, collectStoragePaths(data), 'artifact-delete');
+    await enqueueMediaCandidates({ db, bucket }, {
+        paths: [...collectStoragePaths(data)],
+        reason: 'product_delete',
+        productId: snap.id
+    });
 
     const subCollections = ['likes', 'comments'];
     for (const subCol of subCollections) {
@@ -60,7 +65,7 @@ exports.onArtifactDeleted = onDocumentDeleted(
         timeoutSeconds: 300
     },
     async (event) => {
-        if (!event.data) return null;
+        if (!event.data || event.params.collection !== 'furniture' || event.params.appId !== 'secondevie') return null;
         await cleanupDocumentAssets(event.data);
         return null;
     }

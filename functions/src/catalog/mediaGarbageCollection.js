@@ -1,0 +1,174 @@
+const crypto = require('crypto');
+const admin = require('firebase-admin');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { APP_ID } = require('../../helpers/config');
+const { collectStoragePaths } = require('../triggers/mediaCleanup');
+const { SNAPSHOT_ROOT, readCurrentPointer, readJsonObject } = require('./snapshotStorage');
+const { catalogLog } = require('./structuredLog');
+const { CATALOG_BUILDER_SERVICE_ACCOUNT, CATALOG_MEDIA_GC_COMMIT, CATALOG_SNAPSHOT_BUCKET } = require('./catalogConfig');
+
+const MEDIA_GRACE_MS = 90 * 24 * 60 * 60 * 1000;
+const MEDIA_GC_REGION = 'europe-west1';
+const MEDIA_GC_BATCH_SIZE = 25;
+
+function mediaCandidateId(path) {
+    return crypto.createHash('sha256').update(path).digest('hex');
+}
+
+async function enqueueMediaCandidates(dependencies, input) {
+    const { db, bucket, now = () => new Date() } = dependencies;
+    const paths = [...new Set(input.paths || [])].filter((path) => typeof path === 'string' && path.startsWith('furniture/'));
+    if (!paths.length) return { queued: 0 };
+    const batch = db.batch();
+    let queued = 0;
+    for (const path of paths) {
+        const file = bucket.file(path);
+        let generation = null;
+        try {
+            const [metadata] = await file.getMetadata();
+            generation = String(metadata.generation);
+        } catch (error) {
+            if (Number(error?.code) !== 404) throw error;
+        }
+        const createdAt = now();
+        batch.set(db.doc(`sys_catalog_media_gc/${mediaCandidateId(path)}`), {
+            schemaVersion: 1,
+            path,
+            generation,
+            reason: input.reason || 'product_update',
+            productId: input.productId || null,
+            createdAt,
+            notBefore: new Date(createdAt.getTime() + MEDIA_GRACE_MS),
+            attempts: 0,
+            lastError: null,
+            state: 'pending'
+        }, { merge: true });
+        queued += 1;
+    }
+    await batch.commit();
+    return { queued };
+}
+
+function storagePathFromMediaUrl(url) {
+    const paths = collectStoragePaths({ images: [url] });
+    return [...paths][0] || null;
+}
+
+async function collectRetainedSnapshotPaths(bucket, now = new Date()) {
+    const retained = new Set();
+    const current = await readCurrentPointer(bucket).catch(() => null);
+    const retainedPrefixes = new Set();
+    if (current?.value?.manifestPath) retainedPrefixes.add(current.value.manifestPath.replace(/\/manifest\.json$/, ''));
+    if (current?.value?.previous?.manifestPath) retainedPrefixes.add(current.value.previous.manifestPath.replace(/\/manifest\.json$/, ''));
+
+    const [files] = await bucket.getFiles({ prefix: `${SNAPSHOT_ROOT}/releases/` });
+    const mediaFiles = files.filter((file) => file.name.endsWith('/media-index.json'));
+    const recent = [];
+    for (const file of mediaFiles) {
+        const [metadata] = await file.getMetadata();
+        recent.push({ file, updated: Date.parse(metadata.timeCreated || metadata.updated || 0) });
+    }
+    recent.sort((left, right) => right.updated - left.updated);
+    recent.forEach(({ file, updated }, index) => {
+        if (index < 10 || updated >= now.getTime() - (30 * 24 * 60 * 60 * 1000)) {
+            retainedPrefixes.add(file.name.replace(/\/media-index\.json$/, ''));
+        }
+    });
+
+    for (const prefix of retainedPrefixes) {
+        const media = await readJsonObject(bucket, `${prefix}/media-index.json`).catch(() => null);
+        (media?.value?.products || []).forEach((product) => {
+            (product.urls || []).forEach((url) => {
+                const path = storagePathFromMediaUrl(url);
+                if (path) retained.add(path);
+            });
+        });
+    }
+    return retained;
+}
+
+async function runMediaGarbageCollection(dependencies, input = {}) {
+    const {
+        db,
+        mediaBucket,
+        snapshotBucket = mediaBucket,
+        now = () => new Date(),
+        logger = catalogLog
+    } = dependencies;
+    const dryRun = input.commit !== true || CATALOG_MEDIA_GC_COMMIT !== 'true';
+    const candidates = await db.collection('sys_catalog_media_gc')
+        .where('state', '==', 'pending')
+        .where('notBefore', '<=', now())
+        .limit(MEDIA_GC_BATCH_SIZE)
+        .get();
+    if (candidates.empty) return { result: 'noop', dryRun, inspected: 0 };
+
+    const source = await db.collection(`artifacts/${APP_ID}/public/data/furniture`).get();
+    const sourcePaths = new Set();
+    source.forEach((docSnap) => collectStoragePaths(docSnap.data()).forEach((path) => sourcePaths.add(path)));
+    const retainedPaths = await collectRetainedSnapshotPaths(snapshotBucket, now());
+    const summary = { inspected: 0, retained: 0, deleted: 0, missing: 0, generationChanged: 0, dryRun };
+
+    for (const candidateSnap of candidates.docs) {
+        summary.inspected += 1;
+        const candidate = candidateSnap.data();
+        if (sourcePaths.has(candidate.path) || retainedPaths.has(candidate.path)) {
+            summary.retained += 1;
+            continue;
+        }
+        const file = mediaBucket.file(candidate.path);
+        let metadata;
+        try {
+            [metadata] = await file.getMetadata();
+        } catch (error) {
+            if (Number(error?.code) === 404) {
+                summary.missing += 1;
+                await candidateSnap.ref.set({ state: 'missing', processedAt: serverTimestamp() }, { merge: true });
+                continue;
+            }
+            throw error;
+        }
+        if (candidate.generation && String(metadata.generation) !== String(candidate.generation)) {
+            summary.generationChanged += 1;
+            await candidateSnap.ref.set({ state: 'generation_changed', processedAt: serverTimestamp() }, { merge: true });
+            continue;
+        }
+        if (dryRun) continue;
+        await file.delete({ ifGenerationMatch: String(metadata.generation) });
+        await candidateSnap.ref.set({ state: 'deleted', processedAt: serverTimestamp() }, { merge: true });
+        summary.deleted += 1;
+    }
+    logger('info', { phase: 'media_gc', result: dryRun ? 'dry_run' : 'commit', sourceDocuments: source.size });
+    return { result: dryRun ? 'dry_run' : 'completed', ...summary };
+}
+
+function serverTimestamp() {
+    return admin.firestore.FieldValue.serverTimestamp();
+}
+
+const catalogMediaGarbageCollector = onSchedule(
+    {
+        schedule: 'every 24 hours',
+        region: MEDIA_GC_REGION,
+        serviceAccount: CATALOG_BUILDER_SERVICE_ACCOUNT,
+        timeoutSeconds: 540,
+        memory: '512MiB'
+    },
+    async () => runMediaGarbageCollection({
+        db: admin.firestore(),
+        mediaBucket: admin.storage().bucket(),
+        snapshotBucket: admin.storage().bucket(CATALOG_SNAPSHOT_BUCKET)
+    }, { commit: false })
+);
+
+module.exports = {
+    MEDIA_GC_BATCH_SIZE,
+    MEDIA_GC_REGION,
+    MEDIA_GRACE_MS,
+    catalogMediaGarbageCollector,
+    collectRetainedSnapshotPaths,
+    enqueueMediaCandidates,
+    mediaCandidateId,
+    runMediaGarbageCollection,
+    storagePathFromMediaUrl
+};

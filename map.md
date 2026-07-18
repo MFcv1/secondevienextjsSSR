@@ -1,6 +1,6 @@
 # Cartographie du projet Seconde Vie Next
 
-Derniere verification: 2026-07-17
+Derniere verification: 2026-07-18
 Statut: `CARTE_CANONIQUE_ACTIVE`
 
 ## 1. Role et maintenance
@@ -44,6 +44,7 @@ Seconde Vie
 |-- /mes-commandes ................... Espace client dynamique
 |-- /admin ........................... Back-office dynamique
 |-- /api/search ...................... Recherche catalogue serveur
+|-- /api/catalog ..................... Snapshot public same-origin/CDN
 |-- /api/revalidate-catalog .......... Invalidation ISR admin
 |-- /sitemap.xml ..................... Sitemap Next dynamique/cache
 `-- /robots.txt ...................... Politique robots Next
@@ -65,6 +66,7 @@ Seconde Vie
 | `/mes-commandes` | `[C]` tunnel | DYN | noindex/nofollow | `app/mes-commandes/page.jsx` | `OrdersPageIsland` |
 | `/admin` | `[C]` tunnel | DYN | noindex/nofollow | `app/admin/page.jsx` | `AdminAppIsland` |
 | `/api/search` | `[API]` | borne | non indexable | `route.js` | recherche serveur |
+| `/api/catalog` | `[API]` | CDN/ETag | non indexable | `route.js` | catalogue materialise |
 | `/api/revalidate-catalog` | `[API]` | aucun | non indexable | `route.js` | token admin + revalidation |
 
 ## 4. Parcours et dependances
@@ -74,8 +76,9 @@ Seconde Vie
 ```text
 route publique [S]
   -> src/lib/server/products.js
-  -> publicCatalog [F] ou Firestore Admin/API de repli
-  -> furniture [DB]
+  -> src/lib/server/materializedCatalog.js
+  -> current/previous/last-known-good [ST]
+  -> snapshot catalogue immuable [ST]
   -> normalisation + indexabilite
   -> ServerView
   -> petites iles interactions [C]
@@ -88,9 +91,11 @@ route publique [S]
   -> AdminForm / AdminItemList
   -> upload variantes [ST]
   -> furniture/{id} [DB]
-  -> publicCatalogInvalidation
-  -> public/meta.catalogVersion [DB]
-  -> /api/revalidate-catalog [API]
+  -> onCatalogSourceWrite [F]
+  -> Cloud Tasks build [EXT]
+  -> snapshot/manifeste/pointeur [ST]
+  -> dispatchCatalogRevalidation [F]
+  -> /api/revalidate-catalog HMAC [API]
   -> ISR routes + sitemap
 ```
 
@@ -223,6 +228,7 @@ app/
 |   |-- page.jsx ...................... route dynamique
 |   `-- AdminAppIsland.jsx ............ shell, lazy tabs, gates admin, rail laterale desktop groupee, catalogue public a la demande
 `-- api/
+    |-- catalog/route.js .............. catalogue snapshot same-origin
     |-- search/route.js ............... recherche catalogue
     `-- revalidate-catalog/route.js ... revalidation admin
 ```
@@ -405,6 +411,8 @@ src/lib/server/
 |-- env.js ............................ env publique/serveur
 |-- firebaseAdmin.js .................. Firebase Admin Next
 |-- products.js ....................... acces/normalisation catalogue
+|-- materializedCatalog.js ............ lecteur Storage current/previous/LKG
+|-- materializedCatalogValidation.cjs . schema, hashes et contrat snapshot
 |-- galleryPersonalization.js ......... metadata galerie
 |-- about.js .......................... donnees A propos
 `-- theme.js .......................... theme serveur
@@ -468,6 +476,14 @@ functions/
     |   |-- onArtifactDeleted.js
     |   |-- onArtifactUpdated.js
     |   `-- mediaCleanup.js
+    `-- catalog/
+        |-- onCatalogSourceWrite.js ... trigger leger, dedup et enqueue
+        |-- buildCatalogSnapshot.js ... lease, projection, manifestes et CAS
+        |-- snapshotStorage.js ......... objets immuables et pointeurs
+        |-- catalogRevalidation.js ..... task HMAC vers App Hosting
+        |-- catalogReconciler.js ....... reprise des publications bloquees
+        |-- mediaGarbageCollection.js .. quarantaine 90 jours, dry-run par defaut
+        `-- publicProjection.js ........ projection publique canonique
     `-- seo/
         `-- seoTools.js ............... Firebase Hosting legacy
 
@@ -490,6 +506,7 @@ functions-public/
 | maintenance | resets/purges, `runGarbageCollector`, `getUploadUrl`, `onInventorySourceWrite` |
 | SEO legacy | `sitemap`, `shareMeta`, `homeMeta`, `aboutMeta`, `productMeta`, `categoryMeta` |
 | triggers catalogue | `onArtifactDeleted`, `onArtifactUpdated` |
+| catalogue materialise | `onCatalogSourceWrite`, `dispatchCatalogBuild`, `dispatchCatalogRevalidation`, `catalogReconciler`, `catalogMediaGarbageCollector` |
 | public | `publicCatalog` dans le codebase `public` |
 
 ## 10. Donnees
@@ -509,6 +526,9 @@ Firestore
 |-- sys_ratelimit/{id} ................ backend-only
 |-- sys_admin_access/{uid} ............ backend-only
 |-- sys_idempotency/{id} .............. backend-only
+|-- sys_catalog_publication/control ... mode, lease et revisions
+|-- sys_catalog_events/{eventId} ...... deduplication/outbox catalogue
+|-- sys_catalog_media_gc/{id} ......... quarantaine media
 |-- analytics_sessions/{sessionId} .... session + tableau `journey`
 |-- sales_stats_daily/{id}
 `-- inventory_stats/{id}
@@ -517,6 +537,8 @@ Storage
 |-- furniture/... ..................... sources et medias produit
 |-- furniture/thumbnails/... .......... thumb320/thumb384/thumb
 |-- furniture/responsive/... .......... card/detailFast/medium/large/full
+|-- bucket catalogue/releases/{rev}/ .. objets versionnes + manifest
+|-- bucket catalogue/pointers/ ........ current/previous/last-known-good
 `-- autres chemins admin .............. contenus hero/about selon configuration
 ```
 
@@ -555,6 +577,12 @@ e2e-auth-email-otp.mjs
 e2e-hosted-stripe-checkout.mjs
 e2e-refund-latest-stripe-order.mjs
 e2e-revalidate-catalog.mjs
+e2e-catalog-shadow-compare.mjs
+e2e-catalog-publication.mjs
+e2e-catalog-cdn.mjs
+e2e-catalog-rollback.mjs
+measure-catalog-firestore-cost.mjs
+set-catalog-publication-mode.mjs
 read-latest-auth-otp.mjs .............. outil local sensible
 ```
 
@@ -577,6 +605,8 @@ purge-expired-firestore.cjs
 tests/auth-*.test.cjs
 tests/passkey-*.test.cjs
 tests/smoke.spec.mjs
+tests/catalog/*.test.cjs
+tests/catalog/emulator/*.test.cjs
 ```
 
 ## 12. Matrice d'impact rapide

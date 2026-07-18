@@ -3,6 +3,7 @@ import 'server-only';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
 import { publicEnv } from './env';
 
 const parseServiceAccount = () => {
@@ -36,6 +37,11 @@ export const getAdminAuth = () => {
   if (!publicEnv.projectId) return null;
 
   return getAuth(getAdminApp());
+};
+
+export const getAdminStorage = () => {
+  if (!publicEnv.projectId) return null;
+  return getStorage(getAdminApp());
 };
 
 const getAdminApp = () => {

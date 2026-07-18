@@ -1,6 +1,6 @@
 # Images produit et medias
 
-Derniere mise a jour: 2026-07-14
+Derniere mise a jour: 2026-07-18
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Architecture
@@ -105,6 +105,8 @@ Avant toute suppression:
 
 Une absence de reference textuelle dans le code ne prouve pas qu'un fichier Storage est inutilise: son URL peut etre stockee en base.
 
+Le catalogue materialise ajoute une contrainte: une URL reste protegee tant qu'elle apparait dans `current`, `previous`, `last-known-good` ou une release retenue. `onArtifactUpdated` et `onArtifactDeleted` placent les candidats en quarantaine; `catalogMediaGarbageCollector` fonctionne en dry-run par defaut et impose un age minimal de 90 jours avant toute suppression. `CATALOG_MEDIA_GC_COMMIT=true` n'est autorise qu'apres inventaire, dry-run et validation des preconditions.
+
 ## 7. Medias statiques sensibles
 
 Sont consideres a risque et ne doivent pas etre supprimes sans inspection visuelle et reseau:
@@ -133,6 +135,7 @@ scripts/backfill-product-image-*.cjs
 scripts/audit-product-detail-images*.mjs
 scripts/audit-storage-orphans.cjs
 functions/src/triggers/mediaCleanup.js
+functions/src/catalog/mediaGarbageCollection.js
 ```
 
 ## 9. Gates

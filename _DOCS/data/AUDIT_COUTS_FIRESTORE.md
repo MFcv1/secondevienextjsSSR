@@ -391,3 +391,19 @@ Validations passees:
 - `git diff --check`: reussi, hors avertissements CRLF du poste Windows.
 
 La validation de cout P1 reste volontairement ouverte: les gains exacts ne seront chiffres qu'apres un deploiement sandbox autorise et une nouvelle fenetre Data Access comparable. La gate de deploiement doit aussi verifier manuellement le live, le tracer, la reprise apres masquage, la navigation catalogue et l'exclusion admin.
+
+## 10. Catalogue materialise deploye le 2026-07-18
+
+Le sandbox sert maintenant les lectures publiques catalogue depuis un snapshot immuable Storage via `/api/catalog`. `PUBLIC_CATALOG_SOURCE=snapshot`, le canary et le fallback Firestore automatique sont desactives. Les mutations `furniture` sont regroupees par trigger/outbox/Cloud Tasks; le builder effectue un scan de l'etat final par lot publie, et non un scan par visiteur ou par ecriture.
+
+Preuves deja acquises:
+
+- plus de 20 builds shadow sans divergence contractuelle;
+- creation, changement de prix, stock a zero et suppression reproduits;
+- publication/revalidation et manifests/hashes valides;
+- CDN same-origin: 40 requetes, ETag stable et 100 % de hits apres echauffement;
+- API et routes publiques servies sur une revision saine (31 au controle final, valeur monotone);
+- checkout loa.gto sans paiement arrive jusqu'a Stripe, en conservant la verification Firestore autoritaire;
+- contrat local `measure:catalog:cost` et suites de securite/emulators disponibles.
+
+La preuve Data Access post-cutover reste volontairement une operation separee, demandee pour la prochaine passe. Etat requis avant cette fenetre: `DATA_READ` et `DATA_WRITE` desactives. Le critere de fermeture est zero lecture visiteur de `artifacts/secondevie/public/meta` et `artifacts/secondevie/public/data/furniture`; les lectures du builder provoquees par les mutations doivent etre attribuees separement.

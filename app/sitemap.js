@@ -1,5 +1,6 @@
 import { getPublicCatalog, getPublicCatalogFallback, isSeoIndexableProduct } from '../src/lib/server/products';
 import { publicCatalogUrl, publicEnv } from '../src/lib/server/env';
+import { queryMaterializedCatalog } from '../src/lib/server/materializedCatalog';
 import { categoryEntries, getMatchingCategoryIds, isSeoIndexableCategory } from '../src/lib/seo/categories';
 import { getCategoryUrl, getProductUrl } from '../src/utils/slug';
 
@@ -40,6 +41,17 @@ const getCategoryLastModified = (products, categoryId) => {
 };
 
 const getPublicCatalogPage = async (cursor = '') => {
+  if (['snapshot', 'snapshot_canary'].includes(publicEnv.publicCatalogSource)) {
+    const result = await queryMaterializedCatalog({
+      scope: 'cards',
+      limit: SITEMAP_PAGE_LIMIT,
+      cursor
+    });
+    return {
+      products: result.products.filter(isSeoIndexableProduct),
+      nextCursor: result.nextCursor
+    };
+  }
   const params = new URLSearchParams({
     scope: 'cards',
     limit: String(SITEMAP_PAGE_LIMIT)

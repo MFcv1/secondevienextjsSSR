@@ -23,7 +23,7 @@ loadLocalEnvFile(path.join(process.cwd(), 'logs', 'e2e-admin.env'));
 
 const baseUrl = (process.env.NEXT_BASE_URL || HOSTED_URL).replace(/\/$/, '');
 const adminEmail = process.env.E2E_REVALIDATE_EMAIL || process.env.E2E_ADMIN_EMAIL || 'loa.gto15@gmail.com';
-const adminUid = process.env.E2E_REVALIDATE_ADMIN_UID || process.env.E2E_ADMIN_UID || '';
+let adminUid = process.env.E2E_REVALIDATE_ADMIN_UID || process.env.E2E_ADMIN_UID || '';
 const adminPassword = process.env.E2E_REVALIDATE_PASSWORD || process.env.E2E_ADMIN_PASSWORD || '';
 const mailboxUser = process.env.E2E_MAILBOX_USER || process.env.E2E_EMAIL || 'loa.gto15@gmail.com';
 const gmailAppPassword = String(process.env.E2E_GMAIL_APP_PASSWORD || '').replace(/\s/g, '');
@@ -430,6 +430,25 @@ let browser = null;
 let context = null;
 let page = null;
 try {
+  if (!adminUid && !adminPassword) {
+    const lookupApp = initializeApp({
+      ...(firebaseProjectId ? { projectId: firebaseProjectId } : {}),
+      credential: parseServiceAccountCredential(),
+    }, `e2e-revalidate-lookup-${runId}`);
+    const user = await getAuth(lookupApp).getUserByEmail(adminEmail);
+    const claims = user.customClaims || {};
+    if (claims.admin !== true && claims.superAdmin !== true) {
+      throw new Error(`Resolved sandbox user ${adminEmail} does not have admin/superAdmin claims`);
+    }
+    adminUid = user.uid;
+    result.steps.push({
+      phase: 'admin_uid_resolved',
+      email: user.email || adminEmail,
+      emailVerified: user.emailVerified,
+      claims: { admin: claims.admin === true, superAdmin: claims.superAdmin === true },
+    });
+  }
+
   const { categoryPath, productPath } = await readSitemapTargets();
   if (!productPath) throw new Error('No product URL found in sitemap for revalidation proof');
   result.steps.push({ phase: 'sitemap_targets', categoryPath, productPath });

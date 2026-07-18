@@ -190,6 +190,23 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Etat interne du catalogue public materialise. Admin SDK/IAM uniquement.
+    match /sys_catalog_publication/{docId} {
+      allow read, write: if false;
+    }
+
+    match /sys_catalog_publication_events/{docId} {
+      allow read, write: if false;
+    }
+
+    match /sys_catalog_publication_builds/{docId} {
+      allow read, write: if false;
+    }
+
+    match /sys_catalog_media_gc/{docId} {
+      allow read, write: if false;
+    }
+
     // Analytics Sessions
     match /analytics_sessions/{docId} {
       allow read: if isStrongArtisan();

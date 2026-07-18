@@ -1,6 +1,6 @@
 # Infrastructure Firebase, Next.js et environnements
 
-Derniere mise a jour: 2026-07-14
+Derniere mise a jour: 2026-07-18
 Statut: `PREPROD_READY - PRODUCTION_DEFERRED`
 
 ## 1. Runtime et gestionnaire de paquets
@@ -39,9 +39,11 @@ Le sandbox est l'environnement de demonstration cliente. Il n'est pas le domaine
 navigateur
   -> Firebase App Hosting, europe-west4
        -> Next App Router / API routes
-       -> publicCatalog, us-central1
-       -> Firestore / Storage / Firebase Auth
+       -> /api/catalog same-origin
+       -> bucket catalogue prive, europe-west4
+       -> Firebase Auth
   -> Cloud Functions privees, europe-west1
+       -> trigger catalogue + Cloud Tasks + builder/revalidation
        -> Stripe
        -> Gmail actif / Resend prepare
 ```
@@ -67,7 +69,19 @@ App Hosting (`apphosting.yaml`):
 
 Le runtime source de `main` converge vers `europe-west1` via `functions/helpers/runtime.js`. Des copies historiques `us-central1` peuvent encore exister dans le cloud comme rollback; leur suppression exige inventaire CLI, observation et rollback documente.
 
-`PUBLIC_CATALOG_REGION` reste `us-central1` dans le sandbox. Cette distance est une dette d'architecture a trancher avant production, pas une raison de dupliquer les endpoints a l'aveugle.
+`publicCatalog` en `us-central1` reste provisoirement deploye comme rollback operateur. Le trafic normal App Hosting utilise le snapshot prive en `europe-west4`; aucune page publique ne doit s'y rabattre automatiquement.
+
+Catalogue materialise:
+
+- bucket prive: `secondevienextjsssr-catalog-europe-west4`;
+- queues Cloud Tasks: build et revalidation en `europe-west1`;
+- comptes de service: `catalog-enqueuer` et `catalog-builder`;
+- runtime App Hosting: lecture d'objets uniquement sur le bucket catalogue;
+- secret runtime: `CATALOG_REVALIDATION_HMAC_SECRET`;
+- source active: `PUBLIC_CATALOG_SOURCE=snapshot`;
+- `CATALOG_CANARY_ENABLED=false` et `CATALOG_EMERGENCY_FIRESTORE_FALLBACK=false`.
+
+IAM reste ressource/cible autant que possible: l'enqueuer peut publier les tasks et invoquer les workers autorises; le builder peut lire Firestore, ecrire les releases/pointeurs, invoquer la revalidation et lire le secret HMAC. `firebase-app-hosting-compute` a `secretAccessor` et `secretmanager.viewer` uniquement sur le secret HMAC, ainsi que `objectViewer` sur le bucket catalogue. Ne pas elargir ces bindings au projet sans nouvelle justification.
 
 ## 5. Fichiers de configuration
 
@@ -105,6 +119,7 @@ Secrets serveur centralises dans `functions/helpers/secrets.js`:
 - `STRIPE_SECRET_KEY`, `STRIPE_WH_SECRET`, `STRIPE_CONNECT_WH_SECRET`;
 - `E2E_PROOF_TOKEN`;
 - `SUPER_ADMIN_EMAIL`.
+- `CATALOG_REVALIDATION_HMAC_SECRET` pour l'appel machine Function -> App Hosting.
 
 Parametres non secrets:
 
@@ -143,6 +158,8 @@ node scripts/audit-app-check-service-state.mjs
 ```
 
 Toute activation doit etre progressive et accompagnee d'un retour `UNENFORCED` prepare.
+
+Pour un E2E ponctuel, un jeton debug peut etre enregistre uniquement avec autorisation explicite. Le role `roles/firebaseappcheck.admin` doit etre temporaire, le jeton revoque dans un `finally`, puis le role retire. Les appels REST avec identifiants utilisateur doivent porter `x-goog-user-project: secondevienextjsssr`; ne jamais journaliser le jeton.
 
 ## 9. Firebase Hosting legacy
 

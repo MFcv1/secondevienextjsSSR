@@ -11,7 +11,7 @@ permissions:
 jobs:
   public-surface:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -21,8 +21,19 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
       - run: pnpm install --frozen-lockfile
+      - run: npm ci --prefix functions
+      - run: npm ci --prefix functions-public
       - run: pnpm lint
+      - run: pnpm test:catalog:unit
+      - run: pnpm test:catalog:publisher
+      - run: pnpm test:catalog:security
+      - run: pnpm test:catalog:emulator
+      - run: pnpm test:firestore-cost
       - run: pnpm seo:surface
       - run: pnpm build
       - run: pnpm next:routes

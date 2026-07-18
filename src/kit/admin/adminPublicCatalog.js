@@ -1,10 +1,8 @@
-import { firebaseProjectId } from '../config/firebaseEnv';
 import { PUBLIC_ITEMS_FULL_CACHE_KEY } from '../shared/publicCatalogCache';
 
 export const ADMIN_PUBLIC_CATALOG_INVALIDATED_EVENT = 'secondevie:admin-public-catalog-invalidated';
 
-const PUBLIC_CATALOG_PROJECT_ID = firebaseProjectId || 'secondevienextjsssr';
-const PUBLIC_CATALOG_URL = `https://us-central1-${PUBLIC_CATALOG_PROJECT_ID}.cloudfunctions.net/publicCatalog?scope=cards&limit=120`;
+const PUBLIC_CATALOG_URL = '/api/catalog?scope=cards&limit=120';
 const CACHE_SCHEMA_VERSION = 1;
 
 let memoryItems = null;

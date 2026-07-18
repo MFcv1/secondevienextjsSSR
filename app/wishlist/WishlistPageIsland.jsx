@@ -15,10 +15,9 @@ import {
 } from '../../src/kit/marketplace/wishlistState';
 
 const publicCatalogProductCache = new Map();
-const PUBLIC_CATALOG_PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'secondevienextjsssr';
 
 const getPublicCatalogProductUrl = (id) => (
-  `https://us-central1-${PUBLIC_CATALOG_PROJECT_ID}.cloudfunctions.net/publicCatalog?id=${encodeURIComponent(id)}`
+  `/api/catalog?id=${encodeURIComponent(id)}`
 );
 
 const normalizePublicCatalogProduct = (product, fallbackId) => {

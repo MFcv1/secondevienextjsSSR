@@ -3,6 +3,7 @@ import 'server-only';
 import { cache } from 'react';
 import { getAdminDb } from './firebaseAdmin';
 import { publicCatalogUrl, publicEnv } from './env';
+import { getMaterializedProduct, queryMaterializedCatalog } from './materializedCatalog';
 import { getProductSeoDecision, isProductPublicVisible, isProductSeoIndexable } from '../seo/indexability';
 
 export const PUBLIC_DATA_REVALIDATE_SECONDS = 300;
@@ -269,6 +270,16 @@ const queryProductsViaFirestoreRest = async ({ categoryIds = [], limitCount = 24
 
 export const getPublicProduct = cache(async (slugOrId) => {
   const id = extractProductId(slugOrId);
+  if (['snapshot', 'snapshot_canary'].includes(publicEnv.publicCatalogSource)) {
+    try {
+      const product = await getMaterializedProduct(id);
+      return product && isPublicProductData(product) ? projectPublicProduct(product.id, product) : null;
+    } catch (error) {
+      console.error('[SSR] materialized product unavailable', { code: error?.message || 'unknown' });
+      if (!publicEnv.catalogEmergencyFirestoreFallback) return null;
+      console.warn('[SSR] manual emergency Firestore fallback enabled for product');
+    }
+  }
   try {
     const product = await getProductViaPublicCatalog(id);
     if (product) return product;
@@ -296,13 +307,36 @@ export const getPublicProduct = cache(async (slugOrId) => {
 });
 
 export const getPublicCatalog = cache(async (params = '') => {
+  if (['snapshot', 'snapshot_canary'].includes(publicEnv.publicCatalogSource)) {
+    try {
+      const searchParams = new URLSearchParams(params);
+      const categories = [...searchParams.getAll('category'), ...searchParams.getAll('categories')]
+        .flatMap((value) => String(value || '').split(','));
+      const result = await queryMaterializedCatalog({
+        scope: searchParams.get('scope') === 'cards' ? 'cards' : 'full',
+        limit: searchParams.has('limit') ? Number(searchParams.get('limit')) : null,
+        categories,
+        cursor: searchParams.get('cursor') || ''
+      });
+      return result.products.filter(isPublicProductData);
+    } catch (error) {
+      console.error('[SSR] materialized catalog unavailable', { code: error?.message || 'unknown' });
+      if (!publicEnv.catalogEmergencyFirestoreFallback) return [];
+      console.warn('[SSR] manual emergency Firestore fallback enabled for catalog');
+    }
+  }
   const url = publicCatalogUrl(params);
   if (!url) return [];
 
+  const searchParams = new URLSearchParams(params);
+  const categoryIds = [...searchParams.getAll('category'), ...searchParams.getAll('categories')]
+    .flatMap((value) => String(value || '').split(','))
+    .map((value) => value.trim())
+    .filter(Boolean);
   const response = await fetch(url, {
     next: {
       revalidate: PUBLIC_DATA_REVALIDATE_SECONDS,
-      tags: ['catalog', 'products']
+      tags: ['catalog', 'products', ...(categoryIds.length ? ['categories', ...categoryIds.map((id) => `category:${id}`)] : [])]
     },
     headers: { accept: 'application/json' }
   });
@@ -312,6 +346,10 @@ export const getPublicCatalog = cache(async (params = '') => {
 });
 
 export const getPublicCatalogFallback = cache(async ({ categoryIds = [], limitCount = 24 } = {}) => {
+  if (['snapshot', 'snapshot_canary'].includes(publicEnv.publicCatalogSource)
+      && !publicEnv.catalogEmergencyFirestoreFallback) {
+    return [];
+  }
   try {
     const products = await withTimeout(
       queryProductsViaAdmin({ categoryIds, limitCount }),

@@ -98,7 +98,7 @@ const classifyKnownFailure = (error) => {
     {
       code: 'app-check-debug-token-blocked',
       status: 'known-blocked-app-check',
-      pattern: /AppCheck.*(403|blocked|failed|error)|App Check.*(403|blocked|failed|error)|exchangeDebugToken.*(403|blocked|failed|error)|debug token.*(blocked|rejected|invalid)|throttle/i,
+      pattern: /AppCheck initialization failed|App Check token exchange failed|exchangeDebugToken[^\n]*(403|blocked|failed|error)|debug token[^\n]*(blocked|rejected|invalid)|app-check-token-is-invalid/i,
       guidance: 'Register E2E_APPCHECK_DEBUG_TOKEN in Firebase Console App Check sandbox, then rerun the smoke/E2E.',
     },
     {
@@ -410,11 +410,17 @@ const pickCartButton = async (page) => {
         const card = node.closest('[data-gallery-product-card]') || node.closest('article') || node.parentElement;
         return card?.innerText || '';
       });
-      const stock = extractStockFromText(cardText);
+      const payloadStock = item.stock === null || item.stock === undefined ? Number.NaN : Number(item.stock);
+      const stock = Number.isFinite(payloadStock) ? payloadStock : extractStockFromText(cardText);
       const isKnownUnavailable = skipProductsRegex ? skipProductsRegex.test(name.trim()) : false;
       const id = String(item.id || item.originalId || '').trim();
 
-      if (price <= 0 || isKnownUnavailable || stock === 0) continue;
+      if (price <= 0
+        || isKnownUnavailable
+        || !Number.isFinite(stock)
+        || stock <= 0
+        || item.sold === true
+        || item.priceOnRequest === true) continue;
 
       const candidate = {
         button,
@@ -453,13 +459,36 @@ const pickCartButton = async (page) => {
   return selected.button;
 };
 
-const clickCartButton = async (button) => {
-  await button.evaluate((node) => {
+const clickCartButton = async (page, button) => {
+  const raw = await button.getAttribute('data-cart-item');
+  const productId = raw ? String(JSON.parse(raw)?.id || JSON.parse(raw)?.originalId || '') : '';
+  if (!productId) throw new Error('Selected cart button has no product id');
+  await page.waitForFunction((expectedId) => Array.from(document.querySelectorAll('[data-gallery-cart-button]')).some((node) => {
+    try {
+      const item = JSON.parse(node.getAttribute('data-cart-item') || 'null');
+      const id = String(item?.id || item?.originalId || '');
+      const hydrated = Object.keys(node).some((key) => key.startsWith('__reactProps$') || key.startsWith('__reactFiber$'));
+      return id === expectedId && hydrated;
+    } catch {
+      return false;
+    }
+  }), productId, { timeout: 30_000 });
+  await page.waitForTimeout(3000);
+  const clicked = await page.evaluate((expectedId) => {
+    const node = Array.from(document.querySelectorAll('[data-gallery-cart-button]')).find((candidate) => {
+      try {
+        const item = JSON.parse(candidate.getAttribute('data-cart-item') || 'null');
+        return String(item?.id || item?.originalId || '') === expectedId;
+      } catch {
+        return false;
+      }
+    });
+    if (!node) return false;
     node.scrollIntoView({ block: 'center', inline: 'center' });
-  });
-  await button.click({ force: true }).catch(async () => {
-    await button.evaluate((node) => node.click());
-  });
+    node.click();
+    return true;
+  }, productId);
+  if (!clicked) throw new Error(`Unable to click hydrated cart product ${productId}`);
 };
 
 const clearCartViaFirestoreRest = async (page) => page.evaluate(async () => {
@@ -1218,13 +1247,17 @@ const handleGuestOtpIfNeeded = async (page) => {
     await otpInput.type(otpCode, { delay: 25 });
   }
 
-  await expect(page.getByRole('button', { name: /Valider/i }).first()).toBeEnabled({ timeout: 10_000 });
-  await clickFirstVisible([
-    page.getByRole('button', { name: /Valider/i }),
-    page.locator('button').filter({ hasText: /Valider/i }),
-  ], 'verify guest checkout OTP');
+  const verifiedCopy = page.getByText(/Email verifie|Email vérifié/i).first();
+  const autoVerified = await verifiedCopy.isVisible({ timeout: 30_000 }).catch(() => false);
+  if (!autoVerified) {
+    const validateButton = page.getByRole('button', { name: /Valider/i }).first();
+    if (await validateButton.isVisible({ timeout: 2_000 }).catch(() => false)) {
+      await expect(validateButton).toBeEnabled({ timeout: 10_000 });
+      await validateButton.click();
+    }
+  }
 
-  await expect(page.getByText(/Email verifie|Email vérifié/i).first()).toBeVisible({ timeout: 30_000 });
+  await expect(verifiedCopy).toBeVisible({ timeout: 30_000 });
   result.guestOtp.verified = true;
   return true;
 };
@@ -1602,22 +1635,22 @@ try {
     }
   } else {
 
-  await clickCartButton(cartButton);
+  await clickCartButton(page, cartButton);
   if (checkoutMode !== 'guest-otp' && !loggedInBeforeCart) {
     await createAccountIfNeeded(page);
   }
 
-  if (!(await page.getByText(/Votre panier/i).isVisible({ timeout: 5_000 }).catch(() => false))) {
+  const cartSidebar = page.locator('[data-cart-sidebar="true"]');
+  const cartAlreadyOpen = await cartSidebar.isVisible({ timeout: 5_000 }).catch(() => false);
+  if (!cartAlreadyOpen && !(await page.getByText(/Votre panier/i).isVisible({ timeout: 5_000 }).catch(() => false))) {
     await clickFirstVisible([
       page.getByRole('button', { name: /^Panier$/i }),
     ], 'open cart after product add');
   }
 
-  await expect(page.getByText(/Votre panier/i)).toBeVisible({ timeout: 30_000 });
-  await clickFirstVisible([
-    page.getByRole('button', { name: /Commander/i }),
-    page.getByRole('button', { name: /Voir le panier/i }),
-  ], 'cart checkout button');
+  await expect(cartSidebar).toBeVisible({ timeout: 30_000 });
+  await page.waitForTimeout(800);
+  await clickEnabledButtonContaining(page, 'Commander', 'cart checkout button');
 
   await waitForSettled(page);
   const checkoutReady = await fillCheckout(page);

@@ -5,9 +5,13 @@ const crypto = require('crypto');
 const db = admin.firestore();
 const APP_ID = process.env.PUBLIC_APP_ID || process.env.APP_ID || 'secondevie';
 const CACHE_TTL_MS = 5 * 60 * 1000;
-const CATALOG_VERSION_CACHE_TTL_MS = 5 * 1000;
+const CATALOG_VERSION_CACHE_TTL_MS = 120 * 1000;
+const LIMITED_CATALOG_CACHE_MAX_ENTRIES = 500;
 const PUBLIC_COLLECTIONS = ['furniture'];
 const DEFAULT_CATALOG_VERSION = 'unversioned';
+const PUBLIC_CATALOG_SOURCE = process.env.PUBLIC_CATALOG_SOURCE || 'legacy';
+const SNAPSHOT_CATALOG_URL = process.env.SNAPSHOT_CATALOG_URL
+  || 'https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app/api/catalog';
 const ALLOWED_ORIGINS = new Set([
   ...String(process.env.PUBLIC_ALLOWED_ORIGINS || '')
     .split(',')
@@ -32,6 +36,14 @@ const CARD_SCOPE = 'cards';
 let cachedCatalogVersion = null;
 let cachedCatalogVersionExpiresAt = 0;
 let inflightCatalogVersionRead = null;
+
+const setLimitedCatalogCache = (key, value) => {
+  limitedCatalogCache.delete(key);
+  limitedCatalogCache.set(key, value);
+  while (limitedCatalogCache.size > LIMITED_CATALOG_CACHE_MAX_ENTRIES) {
+    limitedCatalogCache.delete(limitedCatalogCache.keys().next().value);
+  }
+};
 
 const getCatalogVersionValue = (data = {}) => {
   const value = data.catalogVersion || data.updatedAt;
@@ -201,7 +213,7 @@ const readPublicProduct = async (id, catalogVersion) => {
         ...data
       }
     };
-    limitedCatalogCache.set(cacheKey, { cachedAt: Date.now(), catalog: result });
+    setLimitedCatalogCache(cacheKey, { cachedAt: Date.now(), catalog: result });
     return result;
   }
 
@@ -310,7 +322,7 @@ const readSegmentedPublicCatalog = async (limitCount, scope = 'full', options = 
           cursors,
           collections
         };
-        limitedCatalogCache.set(cacheKey, { cachedAt: Date.now(), catalog });
+        setLimitedCatalogCache(cacheKey, { cachedAt: Date.now(), catalog });
         return catalog;
       })
       .finally(() => {
@@ -392,6 +404,26 @@ const sendCatalogResponse = (req, res, catalog) => {
   res.status(200).type('application/json').send(body);
 };
 
+const proxySnapshotCatalog = async (req, res) => {
+  const target = new URL(SNAPSHOT_CATALOG_URL);
+  Object.entries(req.query || {}).forEach(([key, value]) => {
+    [].concat(value || []).forEach((item) => target.searchParams.append(key, String(item)));
+  });
+  const response = await fetch(target, {
+    headers: {
+      accept: 'application/json',
+      ...(req.get('if-none-match') ? { 'if-none-match': req.get('if-none-match') } : {})
+    },
+    signal: AbortSignal.timeout(10000)
+  });
+  const etag = response.headers.get('etag');
+  if (etag) res.set('ETag', etag);
+  const body = response.status === 304 ? '' : await response.text();
+  res.status(response.status);
+  if (response.status !== 304) res.type('application/json');
+  res.send(body);
+};
+
 exports.publicCatalog = functions.https.onRequest(async (req, res) => {
   const origin = req.get('origin');
   if (ALLOWED_ORIGINS.has(origin)) {
@@ -433,6 +465,14 @@ exports.publicCatalog = functions.https.onRequest(async (req, res) => {
 
     const scope = parseScope(req.query.scope);
     const categories = parseCategories(req.query);
+    if (PUBLIC_CATALOG_SOURCE === 'snapshot' || PUBLIC_CATALOG_SOURCE === 'snapshot_canary') {
+      if (req.get('x-catalog-proxy-hop')) {
+        res.status(503).json({ error: 'catalog_proxy_loop_prevented' });
+        return;
+      }
+      await proxySnapshotCatalog(req, res);
+      return;
+    }
     const catalogVersion = await readCatalogVersion();
     const id = req.query.id ? String(req.query.id) : '';
     if (id) {
@@ -450,3 +490,12 @@ exports.publicCatalog = functions.https.onRequest(async (req, res) => {
     res.status(500).json({ error: 'catalog_unavailable' });
   }
 });
+
+exports.__catalogInternals = {
+  canonicalizeCursor,
+  parseCategories,
+  parsePositiveLimit,
+  parseScope,
+  projectCardItem,
+  proxySnapshotCatalog
+};

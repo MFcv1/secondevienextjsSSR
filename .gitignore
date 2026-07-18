@@ -28,6 +28,7 @@ ui-debug.log*
 # local credentials and secrets
 service-account.json
 **/service-account.json
+**/.secret.local
 apphosting.local.yaml
 *.pem
 *.key

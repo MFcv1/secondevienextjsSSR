@@ -1,6 +1,6 @@
 # AGENTS.md - Bible operationnelle de Seconde Vie Next
 
-Derniere consolidation: 2026-07-17
+Derniere consolidation: 2026-07-18
 Statut: `REFERENCE_MAITRE_ACTIVE`
 Projet: `secondevienextjsSSR`
 
@@ -52,7 +52,7 @@ Une contradiction entre code et documentation doit etre signalee et corrigee dan
 | --- | --- |
 | application publique | Next App Router natif, pages publiques serveur/ISR |
 | home | `/` est la galerie canonique; `/galerie` est un alias |
-| catalogue | collection unifiee `furniture`, administration et revalidation ciblee |
+| catalogue | `furniture` autoritaire, snapshot Storage materialise actif, API same-origin/CDN |
 | Auth | passe de demonstration close, `PREPROD_READY`; production differee |
 | espace client | commandes, factures, wishlist, adresse/profil de synthese, support |
 | commerce | carte Stripe sandbox, webhooks, refund et Connect valides en preprod |
@@ -81,6 +81,7 @@ Objectif de livraison courant:
 | App Hosting region | `europe-west4` |
 | Functions privees source | `europe-west1` |
 | publicCatalog | `us-central1` |
+| catalogue public actif | bucket prive `secondevienextjsssr-catalog-europe-west4`, API `/api/catalog` |
 | email actif | Gmail |
 | email futur | Resend, inactif |
 | production | non cablee dans `.firebaserc` |
@@ -139,6 +140,11 @@ Interdictions:
 - toutes les surfaces utilisent le produit normalise;
 - `isPurchasable` est la regle unique d'achat;
 - l'ecriture admin doit bump `catalogVersion` et revalider;
+- le parcours public lit le snapshot Storage via le helper/endpoint same-origin, jamais `furniture` ni `public/meta`;
+- `PUBLIC_CATALOG_SOURCE=snapshot`; canary et fallback Firestore automatique restent desactives hors exercice explicite;
+- le builder publie des objets immuables puis un pointeur CAS; `current`, `previous` et `last-known-good` sont les seuls fallbacks lecteurs;
+- le checkout reste autoritaire sur Firestore, independamment du snapshot;
+- `publicCatalog` et `onInventorySourceWrite` sont des rails de rollback temporaires jusqu'a la preuve Data Access et l'observation finale;
 - publication, indexabilite, stock et ordre editorial restent des concepts separes;
 - le serveur revalide prix et stock au checkout.
 
@@ -276,6 +282,16 @@ npm run e2e:auth-email
 npm run e2e:hosted-stripe
 npm run e2e:refund-stripe
 npm run e2e:revalidate-catalog
+npm run test:catalog:unit
+npm run test:catalog:publisher
+npm run test:catalog:chaos
+npm run test:catalog:security
+npm run test:catalog:emulator
+npm run e2e:catalog:shadow
+npm run e2e:catalog:publication -- --commit
+npm run e2e:catalog:cdn
+npm run e2e:catalog:rollback
+npm run measure:catalog:cost
 npm run infra:deploy
 ```
 
@@ -405,6 +421,7 @@ Ne pas utiliser `git reset --hard`, `git clean`, `git checkout --` ou une suppre
 - gestion passkeys dans l'espace client si besoin confirme;
 - Next 16/Turbopack;
 - assistant IA devis.
+- retrait final des rails catalogue legacy apres preuve Data Access post-cutover et fenetre d'observation;
 
 Ces elements ne doivent pas revenir dans un patch en cours sauf demande explicite ou bug directement lie.
 

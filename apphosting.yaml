@@ -95,6 +95,28 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: PUBLIC_CATALOG_SOURCE
+    value: "snapshot"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: CATALOG_CANARY_ENABLED
+    value: "false"
+    availability:
+      - RUNTIME
+  - variable: CATALOG_EMERGENCY_FIRESTORE_FALLBACK
+    value: "false"
+    availability:
+      - RUNTIME
+  - variable: CATALOG_SNAPSHOT_BUCKET
+    value: "secondevienextjsssr-catalog-europe-west4"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: CATALOG_REVALIDATION_HMAC_SECRET
+    secret: CATALOG_REVALIDATION_HMAC_SECRET
+    availability:
+      - RUNTIME
   - variable: NEXT_PUBLIC_OG_IMAGE
     value: "/images/gallery-hero-1.webp"
     availability:

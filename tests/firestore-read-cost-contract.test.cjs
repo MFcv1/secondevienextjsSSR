@@ -143,7 +143,9 @@ test('read-cost safeguards keep realtime quality and intent-based prefetch', () 
     'invalid limits are rejected before the catalog version read',
   );
   assert.match(catalog, /const cursor = rawCursor \? canonicalizeCursor\(rawCursor\) : '';/);
-  assert.match(catalog, /const CATALOG_VERSION_CACHE_TTL_MS = 5 \* 1000;/);
+  assert.match(catalog, /const CATALOG_VERSION_CACHE_TTL_MS = 120 \* 1000;/);
+  assert.match(catalog, /const LIMITED_CATALOG_CACHE_MAX_ENTRIES = 500;/);
+  assert.match(catalog, /while \(limitedCatalogCache\.size > LIMITED_CATALOG_CACHE_MAX_ENTRIES\)/);
   assert.match(catalog, /if \(cachedCatalogVersion && cachedCatalogVersionExpiresAt > now\)/);
   assert.match(catalog, /if \(!inflightCatalogVersionRead\)/);
   assert.match(search, /scope=cards&limit=120/);

@@ -79,6 +79,7 @@ npm run test:firestore-cost
 | checkout/Stripe | tests locaux + `e2e:hosted-stripe` sur sandbox si demande |
 | remboursement | `e2e:refund-stripe` sur commande test explicite |
 | revalidation | `e2e:revalidate-catalog` |
+| catalogue materialise | suites `test:catalog:*`, shadow/parite, publication, CDN, rollback et cout |
 | Functions/rules | tests cibles, audit exports/rules, deploiement sandbox cible |
 | couts Firestore | `test:firestore-cost`, `test:analytics`, mesure Usage Insights avant/apres |
 | infra | `infra:env`, `infra:deploy`, `appcheck:audit` en lecture |
@@ -163,3 +164,25 @@ git status --short
 ```
 
 Verifier egalement que chaque chemin entre backticks dans `AGENTS.md`, `map.md` et `_DOCS/README.md` existe ou est clairement presente comme un futur chemin.
+
+## 11. Gates du catalogue materialise
+
+```bash
+npm run test:catalog:unit
+npm run test:catalog:publisher
+npm run test:catalog:chaos
+npm run test:catalog:security
+npm run test:catalog:emulator
+npm run test:catalog:parity
+npm run e2e:catalog:shadow
+npm run e2e:catalog:publication -- --commit
+npm run e2e:catalog:cdn
+npm run e2e:catalog:rollback
+npm run measure:catalog:cost
+```
+
+Les E2E qui ecrivent refusent un autre projet que `secondevienextjsssr` et exigent `--commit`. Le rollback standard est une verification de `current`/`previous` et de leurs hashes; un changement reel de pointeur n'est execute que pour un incident ou un exercice explicitement autorise.
+
+Matrice minimale cloud: 20 builds shadow concordants, creation, prix, stock nul, suppression, rafale/deduplication, publication/revalidation, API same-origin froide/chaude, ETag stable, cache CDN >95 % apres echauffement et checkout sans paiement. Le checkout doit rester autoritaire sur Firestore, meme si le snapshot est en retard.
+
+Data Access est une preuve separee: fenetre courte, onglets parasites fermes, configuration avant/apres capturee et desactivation immediate. Ne jamais l'activer implicitement pour lancer les suites locales.

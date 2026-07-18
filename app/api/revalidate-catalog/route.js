@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextResponse } from 'next/server';
 import { getAdminAuth } from '../../../src/lib/server/firebaseAdmin';
@@ -19,6 +20,26 @@ const normalizePath = (path) => {
 };
 
 const pathKey = ({ path, type }) => `${path}:${type || ''}`;
+const MACHINE_AUTH_WINDOW_SECONDS = 5 * 60;
+
+const timingSafeEqualHex = (left, right) => {
+  if (!/^[a-f0-9]{64}$/i.test(left) || !/^[a-f0-9]{64}$/i.test(right)) return false;
+  return crypto.timingSafeEqual(Buffer.from(left, 'hex'), Buffer.from(right, 'hex'));
+};
+
+const verifyMachineSignature = (request, rawBody) => {
+  const secret = process.env.CATALOG_REVALIDATION_HMAC_SECRET || '';
+  if (!secret) return false;
+  const timestamp = request.headers.get('x-catalog-timestamp') || '';
+  const signature = request.headers.get('x-catalog-signature') || '';
+  const timestampSeconds = Number(timestamp);
+  if (!Number.isInteger(timestampSeconds)) return false;
+  const ageSeconds = Math.abs(Math.floor(Date.now() / 1000) - timestampSeconds);
+  if (ageSeconds > MACHINE_AUTH_WINDOW_SECONDS) return false;
+  const bodyHash = crypto.createHash('sha256').update(rawBody).digest('hex');
+  const expected = crypto.createHmac('sha256', secret).update(`${timestamp}.${bodyHash}`).digest('hex');
+  return timingSafeEqualHex(signature, expected);
+};
 
 const addRevalidationPath = (pathEntries, path, type) => {
   const normalizedPath = normalizePath(path);
@@ -58,16 +79,28 @@ const assertAdmin = async (request) => {
 };
 
 export async function POST(request) {
-  const adminCheck = await assertAdmin(request);
-  if (!adminCheck.ok) return adminCheck.response;
+  const rawBody = await request.text();
+  const machineAuthenticated = verifyMachineSignature(request, rawBody);
+  if (!machineAuthenticated) {
+    const adminCheck = await assertAdmin(request);
+    if (!adminCheck.ok) return adminCheck.response;
+  }
 
-  const body = await request.json().catch(() => ({}));
-  const productId = typeof body.productId === 'string' ? body.productId : '';
-  const categoryIds = Array.isArray(body.categoryIds) ? body.categoryIds.filter((item) => typeof item === 'string') : [];
+  const body = (() => {
+    try { return JSON.parse(rawBody || '{}'); } catch { return {}; }
+  })();
+  const productIds = Array.isArray(body.productIds)
+    ? body.productIds.filter((item) => typeof item === 'string').slice(0, 120)
+    : (typeof body.productId === 'string' && body.productId ? [body.productId] : []);
+  const categoryIds = [
+    ...(Array.isArray(body.categoryIds) ? body.categoryIds : []),
+    ...(Array.isArray(body.previousCategories) ? body.previousCategories : []),
+    ...(Array.isArray(body.nextCategories) ? body.nextCategories : []),
+  ].filter((item) => typeof item === 'string').slice(0, 30);
   const paths = Array.isArray(body.paths) ? body.paths.map(normalizePath).filter(Boolean) : [];
 
-  const tags = new Set(['catalog', 'products', 'categories']);
-  if (productId) tags.add(`product:${productId}`);
+  const tags = new Set(['catalog:pointer', 'catalog', 'products', 'categories', 'sitemap']);
+  productIds.forEach((productId) => tags.add(`product:${productId}`));
   categoryIds.forEach((categoryId) => tags.add(`category:${categoryId}`));
 
   tags.forEach((tag) => revalidateTag(tag));
@@ -79,7 +112,7 @@ export async function POST(request) {
   addRevalidationPath(pathEntries, '/categorie/[categoryId]', 'page');
   addRevalidationPath(pathEntries, '/produit/[slugOrId]', 'page');
   categoryIds.forEach((categoryId) => addRevalidationPath(pathEntries, `/categorie/${encodeURIComponent(categoryId)}`));
-  if (productId) addRevalidationPath(pathEntries, `/produit/${encodeURIComponent(productId)}`);
+  productIds.forEach((productId) => addRevalidationPath(pathEntries, `/produit/${encodeURIComponent(productId)}`));
   paths.forEach((path) => addRevalidationPath(pathEntries, path));
 
   Array.from(pathEntries.values()).forEach(({ path, type }) => {
@@ -93,6 +126,8 @@ export async function POST(request) {
     tags: Array.from(tags),
     paths: Array.from(pathEntries.values()).map(({ path }) => path),
     pathEntries: Array.from(pathEntries.values()),
-    reason: body.reason || 'admin_update'
+    reason: body.reason || (machineAuthenticated ? 'catalog_publication' : 'admin_update'),
+    revision: Number(body.revision || 0) || null,
+    machineAuthenticated
   });
 }
