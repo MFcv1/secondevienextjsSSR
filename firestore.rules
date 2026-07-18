@@ -213,6 +213,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /dashboard_stats/{docId} {
+      allow read: if isStrongArtisan();
+      allow write: if false;
+    }
+
     match /inventory_stats/{docId} {
       allow read: if isStrongArtisan();
       allow write: if false;

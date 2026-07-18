@@ -53,6 +53,8 @@ const AdminMaintenance = ({ darkMode }) => {
   const [catalogStatus, setCatalogStatus] = React.useState(null);
   const [catalogAction, setCatalogAction] = React.useState('');
   const [catalogMessage, setCatalogMessage] = React.useState('');
+  const [catalogConfirmation, setCatalogConfirmation] = React.useState(null);
+  const [catalogConfirmationValue, setCatalogConfirmationValue] = React.useState('');
 
   const refreshCatalogStatus = React.useCallback(async () => {
     const result = await httpsCallable(functions, 'getCatalogPublicationStatus')({});
@@ -65,13 +67,20 @@ const AdminMaintenance = ({ darkMode }) => {
     });
   }, [refreshCatalogStatus]);
 
-  const rollbackCatalog = async (target) => {
+  const requestRollback = (target) => {
     const targetRevision = target === 'last-known-good'
       ? catalogStatus?.lastKnownGood?.revision
       : catalogStatus?.previous?.revision;
-    const confirmationText = `ROLLBACK CATALOGUE ${catalogStatus?.current?.revision} VERS ${targetRevision}`;
-    const confirmation = window.prompt(`Tapez exactement ${confirmationText} pour confirmer.`);
-    if (confirmation !== confirmationText) return;
+    if (!catalogStatus?.current?.revision || !targetRevision) return;
+    setCatalogConfirmationValue('');
+    setCatalogConfirmation({
+      action: 'rollback',
+      target,
+      expected: `ROLLBACK CATALOGUE ${catalogStatus.current.revision} VERS ${targetRevision}`,
+    });
+  };
+
+  const rollbackCatalog = async (target, confirmation) => {
     setCatalogAction(`rollback:${target}`);
     setCatalogMessage('Validation et bascule du snapshot en cours...');
     try {
@@ -87,9 +96,15 @@ const AdminMaintenance = ({ darkMode }) => {
     }
   };
 
-  const rebuildCatalog = async () => {
-    const confirmation = window.prompt('Tapez exactement RECONSTRUIRE CATALOGUE pour confirmer.');
-    if (confirmation !== 'RECONSTRUIRE CATALOGUE') return;
+  const requestRebuild = () => {
+    setCatalogConfirmationValue('');
+    setCatalogConfirmation({
+      action: 'rebuild',
+      expected: 'RECONSTRUIRE CATALOGUE',
+    });
+  };
+
+  const rebuildCatalog = async (confirmation) => {
     setCatalogAction('rebuild');
     setCatalogMessage('Reconstruction demandee...');
     try {
@@ -101,6 +116,18 @@ const AdminMaintenance = ({ darkMode }) => {
     } finally {
       setCatalogAction('');
     }
+  };
+
+  const confirmCatalogAction = async () => {
+    const pending = catalogConfirmation;
+    if (!pending || catalogConfirmationValue !== pending.expected) return;
+    setCatalogConfirmation(null);
+    setCatalogConfirmationValue('');
+    if (pending.action === 'rollback') {
+      await rollbackCatalog(pending.target, pending.expected);
+      return;
+    }
+    await rebuildCatalog(pending.expected);
   };
 
   React.useEffect(() => {
@@ -235,7 +262,7 @@ const AdminMaintenance = ({ darkMode }) => {
           <button
             type="button"
             disabled={!catalogStatus?.previous || Boolean(catalogAction)}
-            onClick={() => rollbackCatalog('previous')}
+            onClick={() => requestRollback('previous')}
             className="rounded-2xl border border-amber-300 px-4 py-4 text-left text-sm font-black text-amber-800 disabled:cursor-not-allowed disabled:opacity-40 dark:border-amber-500/30 dark:text-amber-200"
           >
             Rollback previous
@@ -244,7 +271,7 @@ const AdminMaintenance = ({ darkMode }) => {
           <button
             type="button"
             disabled={!catalogStatus?.lastKnownGood || Boolean(catalogAction)}
-            onClick={() => rollbackCatalog('last-known-good')}
+            onClick={() => requestRollback('last-known-good')}
             className="rounded-2xl border border-amber-300 px-4 py-4 text-left text-sm font-black text-amber-800 disabled:cursor-not-allowed disabled:opacity-40 dark:border-amber-500/30 dark:text-amber-200"
           >
             Rollback dernier sain
@@ -253,7 +280,7 @@ const AdminMaintenance = ({ darkMode }) => {
           <button
             type="button"
             disabled={Boolean(catalogAction)}
-            onClick={rebuildCatalog}
+            onClick={requestRebuild}
             className="rounded-2xl bg-stone-950 px-4 py-4 text-left text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-stone-950"
           >
             Reconstruire maintenant
@@ -262,6 +289,58 @@ const AdminMaintenance = ({ darkMode }) => {
         </div>
         {catalogMessage ? <p className="mt-4 text-sm font-bold">{catalogMessage}</p> : null}
       </div>
+
+      {catalogConfirmation ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-950/70 p-4 backdrop-blur-sm" role="presentation">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="catalog-confirmation-title"
+            className={`w-full max-w-xl rounded-[2rem] border p-6 shadow-2xl ${darkMode ? 'border-white/15 bg-stone-950 text-white' : 'border-stone-200 bg-white text-stone-950'}`}
+          >
+            <h4 id="catalog-confirmation-title" className="text-xl font-black tracking-tight">
+              Confirmer l operation catalogue
+            </h4>
+            <p className={`mt-3 text-sm leading-relaxed ${darkMode ? 'text-stone-300' : 'text-stone-600'}`}>
+              Tapez exactement la phrase ci-dessous. Cette protection est verifiee une seconde fois par le serveur.
+            </p>
+            <code className={`mt-4 block rounded-2xl p-4 text-xs font-black ${darkMode ? 'bg-white/10' : 'bg-stone-100'}`}>
+              {catalogConfirmation.expected}
+            </code>
+            <label className="mt-5 block text-xs font-black uppercase tracking-widest" htmlFor="catalog-confirmation-input">
+              Phrase de confirmation
+            </label>
+            <input
+              id="catalog-confirmation-input"
+              autoFocus
+              autoComplete="off"
+              value={catalogConfirmationValue}
+              onChange={(event) => setCatalogConfirmationValue(event.target.value)}
+              className={`mt-2 w-full rounded-2xl border px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-amber-500 ${darkMode ? 'border-white/15 bg-white/5' : 'border-stone-300 bg-white'}`}
+            />
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setCatalogConfirmation(null);
+                  setCatalogConfirmationValue('');
+                }}
+                className={`rounded-full px-5 py-3 text-xs font-black uppercase tracking-widest ${darkMode ? 'bg-white/10' : 'bg-stone-100'}`}
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                disabled={catalogConfirmationValue !== catalogConfirmation.expected || Boolean(catalogAction)}
+                onClick={confirmCatalogAction}
+                className="rounded-full bg-amber-600 px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Confirmer
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className={`rounded-[2rem] border p-6 ${darkMode ? 'border-white/10 bg-white/[0.03]' : 'border-stone-200 bg-white'}`}>
         <h4 className="mb-4 flex items-center gap-2 text-sm font-black uppercase tracking-[0.2em]">
