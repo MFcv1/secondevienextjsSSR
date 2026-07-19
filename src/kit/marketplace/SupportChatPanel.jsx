@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import {
   ArrowRight,
   CreditCard,
@@ -107,6 +108,7 @@ const TypingIndicator = () => (
 );
 
 export default function SupportChatPanel({ open = false, onClose = () => {} }) {
+  const router = useRouter();
   const [messages, setMessages] = React.useState(() => [
     {
       id: 'welcome',
@@ -199,8 +201,8 @@ export default function SupportChatPanel({ open = false, onClose = () => {} }) {
       });
       return;
     }
-    if (action.href) window.location.assign(action.href);
-  }, []);
+    if (action.href) router.push(action.href);
+  }, [router]);
 
   return (
     <div

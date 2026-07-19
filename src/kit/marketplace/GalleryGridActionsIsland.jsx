@@ -2,68 +2,20 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { clearProductImageWarmups, scheduleProductImageWarmup } from '../../utils/imageUtils';
 import {
   getCurrentWishlistUser,
   readWishlistIds,
   setWishlistItem,
 } from './wishlistState';
 
-const PRODUCT_DETAIL_IMAGE_SIZES = '(max-width: 1023px) min(94vw, 430px), calc(100vw - 610px)';
-const VISIBLE_WARMUP_ROOT_MARGIN = '650px 0px';
-const warmedImages = new Set();
 const prefetchedRoutes = new Set();
-const warmupQueue = [];
-let activeWarmups = 0;
-const MAX_ACTIVE_WARMUPS = 2;
 const SCROLL_HOVER_WARMUP_COOLDOWN_MS = 420;
-const DEFERRED_IMAGE_INPUT_SETTLE_MS = 240;
-const DEFERRED_IMAGE_BATCH_GAP_MS = 92;
-
-const getUniqueSources = (sources) => {
-  const unique = [];
-  sources.forEach((src) => {
-    if (src && !unique.includes(src)) unique.push(src);
-  });
-  return unique;
-};
 
 const shouldSkipSoftWarmup = () => {
   if (typeof navigator === 'undefined') return false;
   const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   return Boolean(connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || ''));
-};
-
-const preloadWarmupImage = (src, options = {}) => {
-  if (!src || typeof window === 'undefined') return Promise.resolve(null);
-
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    if (options.priority && 'fetchPriority' in image) image.fetchPriority = options.priority;
-    image.decoding = 'async';
-    image.sizes = PRODUCT_DETAIL_IMAGE_SIZES;
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = src;
-  });
-};
-
-const runQueuedWarmups = () => {
-  if (activeWarmups >= MAX_ACTIVE_WARMUPS) return;
-  const next = warmupQueue.shift();
-  if (!next) return;
-
-  activeWarmups += 1;
-  next()
-    .catch(() => null)
-    .finally(() => {
-      activeWarmups = Math.max(0, activeWarmups - 1);
-      runQueuedWarmups();
-    });
-};
-
-const enqueueWarmup = (callback) => {
-  warmupQueue.push(callback);
-  runQueuedWarmups();
 };
 
 const parseJsonAttribute = (element, name) => {
@@ -83,7 +35,7 @@ const setWishlistButtonState = (button, liked) => {
   if (icon) icon.setAttribute('fill', liked ? 'currentColor' : 'none');
 };
 
-export default function GalleryGridActionsIsland({ observeVisibleWarmup = false, observeSeoIntro = false } = {}) {
+export default function GalleryGridActionsIsland({ observeVisibleWarmup = false, surface = 'gallery' } = {}) {
   const router = useRouter();
   const lastScrollIntentAtRef = useRef(0);
   const authUserRef = useRef(null);
@@ -99,10 +51,7 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     if (!card || (intent !== 'press' && shouldSkipSoftWarmup())) return;
     const productUrl = card.dataset.productUrl || '';
     const shouldPrefetchRoute = intent === 'hover' || intent === 'press';
-    const sources = getUniqueSources([
-      card.dataset.warmupSrc || '',
-      card.dataset.warmupBackdropSrc || '',
-    ]);
+    const warmupSrc = card.querySelector('[data-product-media-warmup]')?.dataset.productMediaWarmup || '';
 
     if (shouldPrefetchRoute && productUrl && !prefetchedRoutes.has(productUrl)) {
       prefetchedRoutes.add(productUrl);
@@ -113,13 +62,7 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
       }
     }
 
-    sources.forEach((src) => {
-      if (warmedImages.has(src)) return;
-      warmedImages.add(src);
-      enqueueWarmup(() => preloadWarmupImage(src, {
-        priority: intent === 'press' ? 'high' : 'auto',
-      }));
-    });
+    scheduleProductImageWarmup(warmupSrc, { intent }).catch(() => null);
   }, [router]);
 
   useEffect(() => {
@@ -175,6 +118,10 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     };
 
     const onWishlistStateChanged = () => syncWishlistButtons();
+    const onCatalogVersionChanged = () => {
+      prefetchedRoutes.clear();
+      clearProductImageWarmups();
+    };
     const onStorage = () => syncWishlistButtons();
     const onAuthUserChanged = (event) => {
       authUserRef.current = event.detail?.user || null;
@@ -193,6 +140,7 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     window.addEventListener('touchmove', markScrollIntent, { passive: true });
     window.addEventListener('storage', onStorage);
     window.addEventListener('sv:wishlist-state-changed', onWishlistStateChanged);
+    window.addEventListener('sv:catalog-version-changed', onCatalogVersionChanged);
     window.addEventListener('sv:auth-user-changed', onAuthUserChanged);
 
     return () => {
@@ -206,97 +154,10 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
       window.removeEventListener('touchmove', markScrollIntent);
       window.removeEventListener('storage', onStorage);
       window.removeEventListener('sv:wishlist-state-changed', onWishlistStateChanged);
+      window.removeEventListener('sv:catalog-version-changed', onCatalogVersionChanged);
       window.removeEventListener('sv:auth-user-changed', onAuthUserChanged);
     };
   }, [syncWishlistButtons, warmupProduct]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-
-    const roots = Array.from(document.querySelectorAll('[data-cold-scroll-deferred-images="true"]'));
-    if (!roots.length) return undefined;
-
-    let cancelled = false;
-    let timer = 0;
-    let observer = null;
-    const queue = [];
-    const queued = new Set();
-
-    const activateImage = (image) => {
-      if (!image?.isConnected || image.dataset.coldScrollDeferredImage !== 'true') return;
-
-      const source = image.parentElement?.querySelector('source[data-cold-scroll-deferred-source="true"]');
-      if (source?.dataset.coldScrollDeferredSrcset) {
-        source.srcset = source.dataset.coldScrollDeferredSrcset;
-        source.removeAttribute('data-cold-scroll-deferred-source');
-        source.removeAttribute('data-cold-scroll-deferred-srcset');
-      }
-
-      const media = image.closest('[data-image-loaded]');
-      if (media) {
-        image.addEventListener('load', () => {
-          media.dataset.imageLoaded = 'true';
-        }, { once: true });
-      }
-
-      if (image.dataset.coldScrollDeferredSrcset) {
-        image.srcset = image.dataset.coldScrollDeferredSrcset;
-      }
-      if (image.dataset.coldScrollDeferredSrc) {
-        image.src = image.dataset.coldScrollDeferredSrc;
-      }
-      image.removeAttribute('data-cold-scroll-deferred-image');
-      image.removeAttribute('data-cold-scroll-deferred-src');
-      image.removeAttribute('data-cold-scroll-deferred-srcset');
-    };
-
-    const pump = () => {
-      timer = 0;
-      if (cancelled || !queue.length) return;
-
-      const calmFor = Date.now() - lastScrollIntentAtRef.current;
-      if (calmFor < DEFERRED_IMAGE_INPUT_SETTLE_MS) {
-        timer = window.setTimeout(
-          pump,
-          DEFERRED_IMAGE_INPUT_SETTLE_MS - calmFor + 40,
-        );
-        return;
-      }
-
-      const image = queue.shift();
-      activateImage(image);
-      if (queue.length) timer = window.setTimeout(pump, DEFERRED_IMAGE_BATCH_GAP_MS);
-    };
-
-    const enqueueRoot = (root) => {
-      root.querySelectorAll('img[data-cold-scroll-deferred-image="true"]').forEach((image) => {
-        if (queued.has(image)) return;
-        if (image.offsetParent === null && root.matches('footer')) return;
-        queued.add(image);
-        queue.push(image);
-      });
-      if (!timer && queue.length) timer = window.setTimeout(pump, DEFERRED_IMAGE_INPUT_SETTLE_MS);
-    };
-
-    if ('IntersectionObserver' in window) {
-      observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          observer?.unobserve(entry.target);
-          enqueueRoot(entry.target);
-        });
-      }, { rootMargin: '0px', threshold: 0.01 });
-      roots.forEach((root) => observer.observe(root));
-    } else {
-      roots.forEach(enqueueRoot);
-    }
-
-    return () => {
-      cancelled = true;
-      if (timer) window.clearTimeout(timer);
-      observer?.disconnect();
-    };
-  }, []);
 
   useEffect(() => {
     if (!observeVisibleWarmup || typeof window === 'undefined') return undefined;
@@ -310,8 +171,11 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
 
     const setupObserver = () => {
       if (cancelled) return;
-      const cards = Array.from(document.querySelectorAll('[data-category-native-view] [data-gallery-product-card]'))
-        .filter((card) => card.dataset.warmupSrc || card.dataset.warmupBackdropSrc);
+      const selector = surface === 'category'
+        ? '[data-category-native-view] [data-gallery-product-card]'
+        : '[data-ssr-gallery] [data-gallery-product-card]';
+      const cards = Array.from(document.querySelectorAll(selector))
+        .filter((card) => card.querySelector('[data-product-media-warmup]')?.dataset.productMediaWarmup);
 
       if (!cards.length) return;
 
@@ -323,8 +187,8 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
           warmupProduct(card, 'visible');
         });
       }, {
-        root: null,
-        rootMargin: VISIBLE_WARMUP_ROOT_MARGIN,
+        root: surface === 'gallery' ? document.getElementById('marketplaceGalleryScroll') : null,
+        rootMargin: '100% 0px',
         threshold: 0.01,
       });
 
@@ -334,7 +198,7 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     if (typeof window.requestIdleCallback === 'function') {
       idleId = window.requestIdleCallback(setupObserver, { timeout: 1200 });
     } else {
-      timeoutId = window.setTimeout(setupObserver, 240);
+      timeoutId = window.setTimeout(setupObserver, 120);
     }
 
     return () => {
@@ -343,38 +207,7 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
       if (timeoutId) window.clearTimeout(timeoutId);
       observer?.disconnect();
     };
-  }, [observeVisibleWarmup, warmupProduct]);
-
-  useEffect(() => {
-    if (!observeSeoIntro || typeof window === 'undefined') return undefined;
-
-    const section = document.querySelector('[data-gallery-seo-intro]');
-    if (!section) return undefined;
-
-    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-    if (prefersReducedMotion || !('IntersectionObserver' in window)) {
-      section.dataset.gallerySeoMotion = 'visible';
-      return undefined;
-    }
-
-    section.dataset.gallerySeoMotion = 'pending';
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        section.dataset.gallerySeoMotion = 'visible';
-        observer.disconnect();
-      });
-    }, {
-      root: document.getElementById('marketplaceGalleryScroll') || null,
-      rootMargin: '0px 0px -12% 0px',
-      threshold: 0.16,
-    });
-
-    observer.observe(section);
-
-    return () => observer.disconnect();
-  }, [observeSeoIntro]);
+  }, [observeVisibleWarmup, surface, warmupProduct]);
 
   return null;
 }

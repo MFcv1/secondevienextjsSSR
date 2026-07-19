@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { getProductUrl } from '../../utils/slug';
-import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, getProductDisplayImageSrc, getProductImageItems } from '../../utils/imageUtils';
+import { getProductCardImage, getProductDisplayImageSrc, getProductImageItems } from '../../utils/imageUtils';
 import { getProductPriceAmount, getProductStockAmount, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
 import { Heart, Plus } from 'lucide-react';
+import ProductCardMediaServer from './ProductCardMediaServer';
 
 const formatPrice = (item) => {
   if (item?.sold) return 'VENDU';
@@ -33,7 +34,6 @@ export default function GalleryProductCardServer({
   isBig = false,
   compact = false,
   priority = false,
-  deferImageUntilCalm = false,
 } = {}) {
   const cardImage = getProductCardImage(item);
   const [primaryDetailImage] = getProductImageItems(item);
@@ -50,7 +50,6 @@ export default function GalleryProductCardServer({
 
   const productUrl = getProductUrl(item);
   const warmupSrc = getProductDisplayImageSrc(primaryDetailImage, { viewport: 'desktop' }) || warmupImage?.medium || warmupImage?.src || warmupImage?.card || warmupImage?.thumb || '';
-  const warmupBackdropSrc = warmupImage?.thumb || warmupImage?.card || warmupImage?.medium || warmupImage?.src || '';
   const cartPayload = JSON.stringify(cartItem);
   const wishlistPayload = JSON.stringify(cartItem);
   const productId = item?.id || '';
@@ -60,43 +59,18 @@ export default function GalleryProductCardServer({
       className={`group relative flex touch-manipulation flex-col ${compact ? 'gap-3 md:gap-6' : 'gap-6'} w-full text-inherit ${layoutMode === 'list' ? 'flex-row items-center gap-12 border-b border-stone-200 pb-12' : ''}`}
       data-gallery-product-card
       data-product-url={productUrl}
-      data-warmup-src={warmupSrc}
-      data-warmup-backdrop-src={warmupBackdropSrc}
     >
       <div
-        className={`product-card-media relative overflow-hidden rounded-[12px] bg-[#fbfaf8] ${layoutMode === 'list' ? 'w-1/3 aspect-[4/3]' : 'w-full aspect-[3/4]'} ${isBig ? 'md:aspect-[16/10]' : ''}`}
-        data-image-reveal="visible"
-        data-image-loaded={cardImage.src && !deferImageUntilCalm ? 'true' : 'false'}
+        className={`product-card-media relative overflow-hidden rounded-[12px] ${layoutMode === 'list' ? 'w-1/3 aspect-[4/3]' : 'w-full aspect-[3/4]'} ${isBig ? 'md:aspect-[16/10]' : ''}`}
       >
         <Link href={productUrl} prefetch={false} draggable={false} data-gallery-product-link className="block h-full w-full cursor-pointer text-inherit no-underline" aria-label={`Découvrir ${title}`}>
-          {cardImage.src ? (
-            <picture className="block h-full w-full">
-              {cardImage.desktopSrcSet ? (
-                <source
-                  media="(min-width: 1024px)"
-                  srcSet={deferImageUntilCalm ? undefined : cardImage.desktopSrcSet}
-                  data-cold-scroll-deferred-source={deferImageUntilCalm ? 'true' : undefined}
-                  data-cold-scroll-deferred-srcset={deferImageUntilCalm ? cardImage.desktopSrcSet : undefined}
-                  sizes={PRODUCT_CARD_IMAGE_SIZES}
-                />
-              ) : null}
-              <img
-                src={deferImageUntilCalm ? undefined : cardImage.src}
-                srcSet={deferImageUntilCalm ? undefined : (cardImage.srcSet || undefined)}
-                data-cold-scroll-deferred-image={deferImageUntilCalm ? 'true' : undefined}
-                data-cold-scroll-deferred-src={deferImageUntilCalm ? cardImage.src : undefined}
-                data-cold-scroll-deferred-srcset={deferImageUntilCalm ? (cardImage.srcSet || undefined) : undefined}
-                sizes={PRODUCT_CARD_IMAGE_SIZES}
-                alt={title}
-                draggable={false}
-                data-real-image="true"
-                className="product-card-image h-full w-full object-cover transition-transform duration-[800ms] ease-[cubic-bezier(0.23,1,0.32,1)] lg:group-hover:scale-[1.03]"
-                loading={priority ? 'eager' : 'lazy'}
-                decoding="async"
-                fetchPriority={priority ? 'high' : 'auto'}
-              />
-            </picture>
-          ) : null}
+          <ProductCardMediaServer
+            cardImage={cardImage}
+            alt={title}
+            priority={priority}
+            warmupSrc={warmupSrc}
+            imageClassName="product-card-image h-full w-full object-cover transition-transform duration-[800ms] ease-[cubic-bezier(0.23,1,0.32,1)] lg:group-hover:scale-[1.03]"
+          />
 
           <div className="absolute inset-0 hidden items-center justify-center bg-black/0 transition-colors duration-[600ms] ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:bg-black/50 lg:flex">
             <div className="relative flex flex-col items-center gap-3 px-10 py-7 opacity-0 transition-opacity duration-[600ms] ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:opacity-100">

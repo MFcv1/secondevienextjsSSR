@@ -1,11 +1,13 @@
 import { ChevronDown, Grid3X3, LayoutGrid, List, SlidersHorizontal, X } from 'lucide-react';
 import Link from 'next/link';
 import { getCategoryUrl, getProductUrl } from '../../utils/slug';
-import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage, getProductDisplayImageSrc, getProductImageItems } from '../../utils/imageUtils';
+import { getProductCardImage, getProductDisplayImageSrc, getProductImageItems } from '../../utils/imageUtils';
 import { getProductStockAmount, getPurchaseUnavailableLabel, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
 import CategoryControlsIsland from './CategoryControlsIsland';
 import GalleryGridActionsIsland from './GalleryGridActionsIsland';
 import PageBreadcrumb from './PageBreadcrumb';
+import CatalogVersionSyncIsland from './CatalogVersionSyncIsland';
+import ProductCardMediaServer from './ProductCardMediaServer';
 import {
   CATEGORY_SORT_OPTIONS,
   buildCategoryHref,
@@ -43,7 +45,7 @@ const FilterSection = ({ title, children, darkMode }) => (
   </div>
 );
 
-const CategoryProductCard = ({ item, layoutMode = 'grid', compact = true, priority = false }) => {
+const CategoryProductCard = ({ item, priority = false }) => {
   const cardImage = getProductCardImage(item);
   const warmup = getCategoryProductWarmup(item);
   const title = item?.name || item?.title || 'Pi\u00e8ce restaur\u00e9e';
@@ -58,31 +60,18 @@ const CategoryProductCard = ({ item, layoutMode = 'grid', compact = true, priori
       data-gallery-product-card
       data-gallery-product-link
       data-product-url={warmup.productUrl}
-      data-warmup-src={warmup.src}
-      data-warmup-backdrop-src={warmup.backdropSrc}
-      className={`group relative flex touch-manipulation flex-col ${compact ? 'gap-3 md:gap-6' : 'gap-6'} w-full cursor-pointer text-inherit no-underline ${layoutMode === 'list' ? 'flex-row items-center gap-12 border-b border-stone-200 pb-12' : ''}`}
+      className="category-product-card-link group relative flex w-full touch-manipulation flex-col gap-3 text-inherit no-underline md:gap-6"
     >
       <div
-        className={`product-card-media relative overflow-hidden rounded-[12px] bg-[#fbfaf8] ${layoutMode === 'list' ? 'aspect-[4/3] w-1/3' : 'aspect-[3/4] w-full'}`}
-        data-image-reveal="visible"
-        data-image-loaded={cardImage.src ? 'true' : 'false'}
+        className="category-product-card-media product-card-media relative aspect-[3/4] w-full overflow-hidden rounded-[12px]"
       >
-        {cardImage.src ? (
-          <picture className="block h-full w-full">
-            <img
-              src={cardImage.src}
-              srcSet={cardImage.srcSet || undefined}
-              sizes={PRODUCT_CARD_IMAGE_SIZES}
-              alt={title}
-              draggable={false}
-              data-real-image="true"
-              className="product-card-image h-full w-full object-cover transition-transform duration-[800ms] ease-[cubic-bezier(0.23,1,0.32,1)] lg:group-hover:scale-[1.03]"
-              loading={priority ? 'eager' : 'lazy'}
-              decoding="async"
-              fetchPriority={priority ? 'high' : 'auto'}
-            />
-          </picture>
-        ) : null}
+        <ProductCardMediaServer
+          cardImage={cardImage}
+          alt={title}
+          priority={priority}
+          warmupSrc={warmup.src}
+          imageClassName="product-card-image h-full w-full object-cover transition-transform duration-[800ms] ease-[cubic-bezier(0.23,1,0.32,1)] lg:group-hover:scale-[1.03]"
+        />
 
         <div className="absolute inset-0 hidden items-center justify-center bg-black/0 transition-colors duration-[600ms] ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:bg-black/50 lg:flex">
           <div className="relative flex flex-col items-center gap-3 px-10 py-7 opacity-0 transition-opacity duration-[600ms] ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:opacity-100">
@@ -98,67 +87,24 @@ const CategoryProductCard = ({ item, layoutMode = 'grid', compact = true, priori
         </div>
       </div>
 
-      <div className={`flex ${compact ? 'flex-col gap-1 md:flex-row md:items-start md:justify-between md:gap-4' : 'items-start justify-between gap-2 md:gap-4'} ${layoutMode === 'list' ? 'flex-1 pt-6' : compact ? 'pt-1 md:pt-4' : 'pt-4'}`}>
+      <div className="category-product-card-info flex flex-col gap-1 pt-1 md:flex-row md:items-start md:justify-between md:gap-4 md:pt-4">
         <div className="flex min-w-0 flex-1 flex-col gap-0.5 md:gap-1">
-          <div className={`truncate font-black uppercase tracking-widest opacity-50 ${compact ? 'text-[8px] md:text-[9px]' : 'text-[9px]'}`}>
+          <div className="truncate text-[8px] font-black uppercase tracking-widest opacity-50 md:text-[9px]">
             {item?.material || 'Mati\u00e8re inconnue'}
           </div>
-          <h3 className={`font-serif leading-tight ${compact ? 'text-[13px] md:text-lg lg:text-xl' : 'text-[15px] md:text-lg lg:text-xl'} ${layoutMode === 'list' ? 'text-4xl' : ''}`}>
+          <h3 className="font-serif text-[13px] leading-tight md:text-lg lg:text-xl">
             {title}
           </h3>
         </div>
 
-        <div className={`flex shrink-0 ${compact ? 'flex-row items-center justify-between md:flex-col md:items-end' : 'flex-col items-end'} gap-0.5 text-right md:gap-1`}>
-          <div className={`whitespace-nowrap font-black uppercase tracking-widest opacity-50 ${compact ? 'text-[8px] md:text-[9px]' : 'text-[9px]'}`}>
+        <div className="flex shrink-0 flex-row items-center justify-between gap-0.5 text-right md:flex-col md:items-end md:gap-1">
+          <div className="whitespace-nowrap text-[8px] font-black uppercase tracking-widest opacity-50 md:text-[9px]">
             {item?.sold ? 'Stock: 0' : `Stock: ${getProductStockAmount(item)}`}
           </div>
-          <p className={`whitespace-nowrap font-bold tabular-nums ${compact ? 'text-[10px] md:text-xs lg:text-sm' : 'text-[11px] md:text-xs lg:text-sm'} ${!purchasable ? 'text-red-500' : ''}`}>
+          <p className={`whitespace-nowrap text-[10px] font-bold tabular-nums md:text-xs lg:text-sm ${!purchasable ? 'text-red-500' : ''}`}>
             {purchasable ? `${price} EUR` : shouldRequestQuote(item) ? 'Sur demande' : getPurchaseUnavailableLabel(item)}
           </p>
         </div>
-      </div>
-    </Link>
-  );
-};
-
-const MobileProductRow = ({ item, darkMode, priority = false }) => {
-  const cardImage = getProductCardImage(item);
-  const warmup = getCategoryProductWarmup(item);
-  const title = item?.name || item?.title || 'Pi\u00e8ce restaur\u00e9e';
-  const price = getCategoryProductPrice(item);
-  const purchasable = isPurchasable(item);
-
-  return (
-    <Link
-      href={getProductUrl(item)}
-      prefetch={false}
-      data-gallery-product-card
-      data-gallery-product-link
-      data-product-url={warmup.productUrl}
-      data-warmup-src={warmup.src}
-      data-warmup-backdrop-src={warmup.backdropSrc}
-      className={`flex min-h-[96px] gap-3 rounded-xl border p-2 transition-colors ${darkMode ? 'border-stone-800 bg-[#181818]' : 'border-stone-200 bg-[#fffdfb]'}`}
-    >
-      <div className="product-card-media relative h-20 w-[108px] shrink-0 rounded-lg bg-stone-100" data-image-reveal="visible" data-image-loaded={cardImage.src ? 'true' : 'false'}>
-        {cardImage.src ? (
-          <img
-            src={cardImage.src}
-            srcSet={cardImage.srcSet || undefined}
-            sizes="108px"
-            alt={title}
-            loading={priority ? 'eager' : 'lazy'}
-            decoding="async"
-            fetchPriority={priority ? 'high' : 'auto'}
-            className="product-card-image h-full w-full object-cover"
-          />
-        ) : null}
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col justify-center pr-1">
-        <h3 className={`font-serif text-[15px] leading-tight ${darkMode ? 'text-stone-100' : 'text-stone-900'}`}>{title}</h3>
-        <p className={`mt-1 text-[12px] ${darkMode ? 'text-stone-500' : 'text-stone-500'}`}>{item?.material || 'Ch\u00eane'}</p>
-        <p className={`mt-1.5 text-[14px] font-bold tabular-nums ${darkMode ? 'text-stone-100' : 'text-stone-950'}`}>
-          {purchasable ? `${price} EUR` : shouldRequestQuote(item) ? 'Sur demande' : getPurchaseUnavailableLabel(item)}
-        </p>
       </div>
     </Link>
   );
@@ -185,7 +131,6 @@ const getCategoryProductWarmup = (item) => {
   return {
     productUrl: getProductUrl(item),
     src: getProductDisplayImageSrc(primary, { viewport: 'desktop' }) || primary?.medium || primary?.src || primary?.card || primary?.thumb || '',
-    backdropSrc: primary?.thumb || primary?.card || primary?.medium || primary?.src || '',
   };
 };
 
@@ -290,13 +235,13 @@ const FilterForm = ({
       <button type="submit" className="sr-only">Appliquer</button>
 
       {variant === 'mobile' ? (
-        <a href={resetHref} data-category-reset-link hidden={!hasActiveFilters} className={`mt-4 inline-block text-[12px] underline underline-offset-4 ${darkMode ? 'text-stone-400' : 'text-[#9C8268]'}`}>
+        <Link href={resetHref} prefetch={false} data-category-reset-link hidden={!hasActiveFilters} className={`mt-4 inline-block text-[12px] underline underline-offset-4 ${darkMode ? 'text-stone-400' : 'text-[#9C8268]'}`}>
           R\u00e9initialiser
-        </a>
+        </Link>
       ) : (
-        <a href={resetHref} data-category-reset-link hidden={!hasActiveFilters} className={`mt-4 block w-full rounded-lg py-2.5 text-center text-[11px] font-bold uppercase tracking-widest transition-colors ${darkMode ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'}`}>
+        <Link href={resetHref} prefetch={false} data-category-reset-link hidden={!hasActiveFilters} className={`mt-4 block w-full rounded-lg py-2.5 text-center text-[11px] font-bold uppercase tracking-widest transition-colors ${darkMode ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'}`}>
           R\u00e9initialiser les filtres
-        </a>
+        </Link>
       )}
 
       {variant === 'mobile' ? (
@@ -314,6 +259,8 @@ export default function CategoryServerView({
   products = [],
   copy,
   darkMode = false,
+  catalogRevision = 0,
+  catalogVersion = '',
 }) {
   const categoryTitle = getCategoryTitle(categoryLabel, categoryId);
   const filterOptions = getCategoryFilterOptions(products, categoryId);
@@ -341,8 +288,19 @@ export default function CategoryServerView({
   }));
 
   return (
-    <div className={`min-h-screen w-full transition-colors duration-500 ${darkMode ? 'bg-[#121212] text-[#f5f5f5]' : 'bg-[#FAFAF9] text-stone-900'}`} data-category-native-view>
-      <GalleryGridActionsIsland observeVisibleWarmup />
+    <div
+      className={`min-h-screen w-full transition-colors duration-500 ${darkMode ? 'bg-[#121212] text-[#f5f5f5]' : 'bg-[#FAFAF9] text-stone-900'}`}
+      data-category-native-view
+      data-category-mobile-mode={state.mobileViewMode}
+      data-category-desktop-mode={state.viewMode}
+    >
+      <CatalogVersionSyncIsland
+        revision={catalogRevision}
+        aggregateSha256={catalogVersion}
+        routeKind="category"
+        routeId={categoryId}
+      />
+      <GalleryGridActionsIsland observeVisibleWarmup surface="category" />
       <div className={`border-b ${darkMode ? 'border-stone-800' : 'border-stone-200'}`}>
         <div className="mx-auto max-w-7xl px-4 pb-4 pt-5 md:px-8 md:py-8 lg:px-12">
           <PageBreadcrumb current={categoryLabel} darkMode={darkMode} className="mb-4" />
@@ -361,12 +319,12 @@ export default function CategoryServerView({
               </p>
             </div>
             <div className="flex flex-wrap gap-2 md:justify-end">
-              <a href="/" className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${darkMode ? 'border-white/12 text-stone-300 hover:border-white/28 hover:text-white' : 'border-stone-200 text-stone-600 hover:border-stone-400 hover:text-stone-900'}`}>
+              <Link href="/" prefetch={false} className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${darkMode ? 'border-white/12 text-stone-300 hover:border-white/28 hover:text-white' : 'border-stone-200 text-stone-600 hover:border-stone-400 hover:text-stone-900'}`}>
                 Galerie
-              </a>
-              <a href="/a-propos" className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${darkMode ? 'border-white/12 text-stone-300 hover:border-white/28 hover:text-white' : 'border-stone-200 text-stone-600 hover:border-stone-400 hover:text-stone-900'}`}>
+              </Link>
+              <Link href="/a-propos" prefetch={false} className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${darkMode ? 'border-white/12 text-stone-300 hover:border-white/28 hover:text-white' : 'border-stone-200 text-stone-600 hover:border-stone-400 hover:text-stone-900'}`}>
                 A propos
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -393,12 +351,12 @@ export default function CategoryServerView({
 
               <div className="flex items-center gap-3">
                 <div className={`hidden items-center overflow-hidden rounded-lg border md:flex ${darkMode ? 'border-stone-700' : 'border-stone-200'}`} data-category-view-switcher>
-                  <a href={buildCategoryHref(categoryId, state, { viewMode: 'grid' })} data-category-view-link="desktop" data-category-view-value="grid" className={`p-2 transition-colors ${state.viewMode === 'grid' ? (darkMode ? 'bg-white/10 text-white' : 'bg-stone-100 text-stone-900') : (darkMode ? 'text-stone-500 hover:text-stone-300' : 'text-stone-400 hover:text-stone-600')}`} aria-label="Vue grille">
+                  <Link href={buildCategoryHref(categoryId, state, { viewMode: 'grid' })} prefetch={false} data-category-view-link="desktop" data-category-view-value="grid" className={`p-2 transition-colors ${state.viewMode === 'grid' ? (darkMode ? 'bg-white/10 text-white' : 'bg-stone-100 text-stone-900') : (darkMode ? 'text-stone-500 hover:text-stone-300' : 'text-stone-400 hover:text-stone-600')}`} aria-label="Vue grille">
                     <Grid3X3 size={16} />
-                  </a>
-                  <a href={buildCategoryHref(categoryId, state, { viewMode: 'list' })} data-category-view-link="desktop" data-category-view-value="list" className={`p-2 transition-colors ${state.viewMode === 'list' ? (darkMode ? 'bg-white/10 text-white' : 'bg-stone-100 text-stone-900') : (darkMode ? 'text-stone-500 hover:text-stone-300' : 'text-stone-400 hover:text-stone-600')}`} aria-label="Vue liste">
+                  </Link>
+                  <Link href={buildCategoryHref(categoryId, state, { viewMode: 'list' })} prefetch={false} data-category-view-link="desktop" data-category-view-value="list" className={`p-2 transition-colors ${state.viewMode === 'list' ? (darkMode ? 'bg-white/10 text-white' : 'bg-stone-100 text-stone-900') : (darkMode ? 'text-stone-500 hover:text-stone-300' : 'text-stone-400 hover:text-stone-600')}`} aria-label="Vue liste">
                     <List size={16} />
-                  </a>
+                  </Link>
                 </div>
 
                 <div className="relative">
@@ -410,20 +368,20 @@ export default function CategoryServerView({
                   <button type="button" aria-label="Fermer le tri" className="fixed inset-0 z-40 cursor-default" data-category-close-sort data-category-sort-blocker hidden />
                   <div className={`absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-xl border shadow-xl ${darkMode ? 'border-stone-700 bg-[#1A1A1A]' : 'border-stone-200 bg-white'}`} data-category-sort-menu hidden>
                     {CATEGORY_SORT_OPTIONS.map((option) => (
-                      <a key={option.id} href={buildCategoryHref(categoryId, state, { sortBy: option.id })} data-category-sort-option={option.id} className={`block w-full px-4 py-3 text-left text-[12px] font-medium transition-colors ${state.sortBy === option.id ? (darkMode ? 'bg-white/10 text-white' : 'bg-stone-100 text-stone-900') : (darkMode ? 'text-stone-400 hover:bg-white/5 hover:text-white' : 'text-stone-500 hover:bg-stone-50 hover:text-stone-900')}`}>
+                      <Link key={option.id} href={buildCategoryHref(categoryId, state, { sortBy: option.id })} prefetch={false} data-category-sort-option={option.id} className={`block w-full px-4 py-3 text-left text-[12px] font-medium transition-colors ${state.sortBy === option.id ? (darkMode ? 'bg-white/10 text-white' : 'bg-stone-100 text-stone-900') : (darkMode ? 'text-stone-400 hover:bg-white/5 hover:text-white' : 'text-stone-500 hover:bg-stone-50 hover:text-stone-900')}`}>
                         {option.label}
-                      </a>
+                      </Link>
                     ))}
                   </div>
                 </div>
 
                 <div className={`flex items-center gap-1 md:hidden ${darkMode ? 'text-stone-300' : 'text-stone-800'}`}>
-                  <a href={buildCategoryHref(categoryId, state, { mobileViewMode: 'grid' })} data-category-view-link="mobile" data-category-view-value="grid" className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${state.mobileViewMode === 'grid' ? (darkMode ? 'bg-stone-100 text-stone-950' : 'bg-stone-950 text-white') : (darkMode ? 'bg-white/10' : 'bg-stone-100')}`} aria-label="Vue grille">
+                  <Link href={buildCategoryHref(categoryId, state, { mobileViewMode: 'grid' })} prefetch={false} data-category-view-link="mobile" data-category-view-value="grid" className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${state.mobileViewMode === 'grid' ? (darkMode ? 'bg-stone-100 text-stone-950' : 'bg-stone-950 text-white') : (darkMode ? 'bg-white/10' : 'bg-stone-100')}`} aria-label="Vue grille">
                     <LayoutGrid size={16} strokeWidth={1.6} />
-                  </a>
-                  <a href={buildCategoryHref(categoryId, state, { mobileViewMode: 'list' })} data-category-view-link="mobile" data-category-view-value="list" className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${state.mobileViewMode === 'list' ? (darkMode ? 'bg-stone-100 text-stone-950' : 'bg-stone-950 text-white') : (darkMode ? 'bg-white/10' : 'bg-stone-100')}`} aria-label="Vue liste">
+                  </Link>
+                  <Link href={buildCategoryHref(categoryId, state, { mobileViewMode: 'list' })} prefetch={false} data-category-view-link="mobile" data-category-view-value="list" className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${state.mobileViewMode === 'list' ? (darkMode ? 'bg-stone-100 text-stone-950' : 'bg-stone-950 text-white') : (darkMode ? 'bg-white/10' : 'bg-stone-100')}`} aria-label="Vue liste">
                     <List size={16} strokeWidth={1.6} />
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -450,55 +408,21 @@ export default function CategoryServerView({
               <div className="flex flex-col items-center justify-center py-20 text-center" data-category-empty-state hidden={filteredItems.length !== 0}>
                 <p className={`mb-2 font-serif text-lg ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>Aucun produit trouv\u00e9</p>
                 <p className={`mb-6 text-[13px] ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>Essayez de modifier vos filtres</p>
-                <a href={categoryHref} data-category-reset-link hidden={!hasActiveFilters} className={`rounded-full border px-6 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${darkMode ? 'border-stone-700 text-stone-300 hover:border-stone-400' : 'border-stone-300 text-stone-600 hover:border-stone-500'}`}>
+                <Link href={categoryHref} prefetch={false} data-category-reset-link hidden={!hasActiveFilters} className={`rounded-full border px-6 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${darkMode ? 'border-stone-700 text-stone-300 hover:border-stone-400' : 'border-stone-300 text-stone-600 hover:border-stone-500'}`}>
                   R\u00e9initialiser
-                </a>
+                </Link>
               </div>
 
               <div data-category-product-views hidden={filteredItems.length === 0}>
-                <div className="grid grid-cols-2 gap-4 md:hidden" data-category-mobile-view="grid" hidden={state.mobileViewMode !== 'grid'}>
+                <div className="category-product-list grid grid-cols-2 gap-4 md:grid-cols-2 md:gap-[24px] lg:grid-cols-3">
                   {filteredItems.map((item, index) => (
                     <div key={item.id} className="product-card-wrap relative" {...getCategoryProductDataset(item)}>
                       {isNewProduct(item) ? (
-                        <div className="absolute left-2 top-2 z-10 rounded-sm bg-[#d4e1d9] px-2 py-1 text-[8px] font-bold uppercase tracking-widest text-[#2d4033]">
+                        <div className="absolute left-2 top-2 z-10 rounded-sm bg-[#d4e1d9] px-2 py-1 text-[8px] font-bold uppercase tracking-widest text-[#2d4033] md:text-[9px]">
                           Nouveau
                         </div>
                       ) : null}
-                      <CategoryProductCard item={item} layoutMode="grid" compact priority={state.mobileViewMode === 'grid' && index < 2} />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="space-y-2.5 md:hidden" data-category-mobile-view="list" hidden={state.mobileViewMode !== 'list'}>
-                  {filteredItems.map((item, index) => (
-                    <div key={item.id} {...getCategoryProductDataset(item)}>
-                      <MobileProductRow item={item} darkMode={darkMode} priority={state.mobileViewMode === 'list' && index < 2} />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="hidden gap-[24px] md:grid md:grid-cols-2 lg:grid-cols-3" data-category-desktop-view="grid" hidden={state.viewMode !== 'grid'}>
-                  {filteredItems.map((item, index) => (
-                    <div key={item.id} className="product-card-wrap relative" {...getCategoryProductDataset(item)}>
-                      {isNewProduct(item) ? (
-                        <div className="absolute left-2 top-2 z-10 rounded-sm bg-[#d4e1d9] px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-[#2d4033]">
-                          Nouveau
-                        </div>
-                      ) : null}
-                      <CategoryProductCard item={item} layoutMode="grid" compact priority={state.viewMode === 'grid' && index < 2} />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="hidden grid-cols-1 gap-[24px] md:grid" data-category-desktop-view="list" hidden={state.viewMode !== 'list'}>
-                  {filteredItems.map((item) => (
-                    <div key={item.id} className="product-card-wrap relative" {...getCategoryProductDataset(item)}>
-                      {isNewProduct(item) ? (
-                        <div className="absolute left-2 top-2 z-10 rounded-sm bg-[#d4e1d9] px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-[#2d4033]">
-                          Nouveau
-                        </div>
-                      ) : null}
-                      <CategoryProductCard item={item} layoutMode="list" compact priority={false} />
+                      <CategoryProductCard item={item} priority={index < 3} />
                     </div>
                   ))}
                 </div>
@@ -519,16 +443,16 @@ export default function CategoryServerView({
                   <h3 className="font-serif text-2xl">Filtrer</h3>
                   <p className={`mt-1 text-[12px] ${darkMode ? 'text-stone-500' : 'text-stone-500'}`}><span data-category-filtered-count>{filteredItems.length}</span> r\u00e9sultat{filteredItems.length !== 1 ? 's' : ''}</p>
                 </div>
-                <a href={buildCategoryHref(categoryId, state, {
+                <Link href={buildCategoryHref(categoryId, state, {
                   selectedMaterials: [],
                   selectedStyles: [],
                   selectedCollections: [],
                   availabilityFilter: 'all',
                   priceRange: [0, state.roundedMaxPrice],
                   searchQuery: '',
-                })} data-category-reset-link hidden={!hasActiveFilters} className={`text-[12px] underline underline-offset-4 ${darkMode ? 'text-stone-400' : 'text-[#9C8268]'}`}>
+                })} prefetch={false} data-category-reset-link hidden={!hasActiveFilters} className={`text-[12px] underline underline-offset-4 ${darkMode ? 'text-stone-400' : 'text-[#9C8268]'}`}>
                   R\u00e9initialiser
-                </a>
+                </Link>
                 <button type="button" data-category-close-filters className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${darkMode ? 'hover:bg-white/10' : 'hover:bg-stone-100'}`} aria-label="Fermer les filtres">
                   <X size={16} />
                 </button>
@@ -561,9 +485,9 @@ export default function CategoryServerView({
               {relatedCategories.length > 0 ? (
                 <div className="mt-5 flex flex-wrap gap-2">
                   {relatedCategories.map((category) => (
-                    <a key={category.id} href={getCategoryUrl(category.id)} className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${darkMode ? 'border-white/12 text-stone-300 hover:border-white/28 hover:text-white' : 'border-stone-200 text-stone-600 hover:border-stone-400 hover:text-stone-900'}`}>
+                    <Link key={category.id} href={getCategoryUrl(category.id)} prefetch={false} className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${darkMode ? 'border-white/12 text-stone-300 hover:border-white/28 hover:text-white' : 'border-stone-200 text-stone-600 hover:border-stone-400 hover:text-stone-900'}`}>
                       {category.label}
-                    </a>
+                    </Link>
                   ))}
                 </div>
               ) : null}

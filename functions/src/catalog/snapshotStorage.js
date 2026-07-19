@@ -1,4 +1,5 @@
 const { sha256, stableStringify } = require('./publicProjection');
+const { createFullImpactPlan, validateImpactPlan } = require('./impactPlan');
 
 const SNAPSHOT_ROOT = 'catalog-projection/v1';
 const RELEASE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
@@ -47,7 +48,7 @@ function collectMediaUrls(product) {
     return [...urls].sort();
 }
 
-function buildSnapshotFiles({ projection, inventory, revision, generatedAt = new Date().toISOString() }) {
+function buildSnapshotFiles({ projection, inventory, revision, generatedAt = new Date().toISOString(), impactPlan = null }) {
     const baseMetadata = {
         schemaVersion: 1,
         projectionContractVersion: projection.projectionContractVersion,
@@ -55,9 +56,17 @@ function buildSnapshotFiles({ projection, inventory, revision, generatedAt = new
         generatedAt,
         aggregateSha256: projection.aggregateSha256
     };
+    const resolvedImpactPlan = impactPlan || createFullImpactPlan({
+        revision,
+        aggregateSha256: projection.aggregateSha256,
+        reason: 'source_release_unavailable',
+        generatedAt
+    });
+    validateImpactPlan(resolvedImpactPlan, { revision, aggregateSha256: projection.aggregateSha256 });
     const payloads = {
         'catalog-full.json': { ...baseMetadata, products: projection.full },
         'catalog-cards.json': { ...baseMetadata, products: projection.cards },
+        'impact-plan.json': resolvedImpactPlan,
         'search-index.json': { ...baseMetadata, products: buildSearchIndex(projection.full) },
         'media-index.json': {
             ...baseMetadata,
@@ -73,6 +82,7 @@ function buildSnapshotFiles({ projection, inventory, revision, generatedAt = new
     buffers['checksums.json'] = jsonBuffer({ ...baseMetadata, files: checksums });
     const manifest = {
         ...baseMetadata,
+        impactPlanSha256: checksums['impact-plan.json'].sha256,
         productCount: projection.full.length,
         files: {
             ...checksums,
@@ -152,40 +162,64 @@ async function writeImmutableRelease(bucket, { buffers, manifest }, revision) {
         releasePrefix,
         manifestPath: `${releasePrefix}/manifest.json`,
         manifestSha256: sha256(buffers['manifest.json'].toString('utf8')),
+        aggregateSha256: manifest.aggregateSha256,
+        impactPlanPath: `${releasePrefix}/impact-plan.json`,
+        impactPlanSha256: manifest.impactPlanSha256,
         generations
     };
 }
 
-async function readJsonObjectState(bucket, path) {
+async function readJsonObjectState(bucket, path, { maxAttempts = 3 } = {}) {
     const file = bucket.file(path);
     const [exists] = await file.exists();
     if (!exists) return { path, value: null, generation: null, metadata: null, missing: true, error: null };
-    const [metadata] = await file.getMetadata();
-    const [buffer] = await file.download();
-    try {
-        return {
-            path,
-            value: JSON.parse(buffer.toString('utf8')),
-            buffer,
-            generation: String(metadata.generation),
-            metadata,
-            missing: false,
-            error: null
-        };
-    } catch (cause) {
-        const error = new Error(`CATALOG_JSON_INVALID:${path}`);
-        error.code = 'CATALOG_JSON_INVALID';
-        error.cause = cause;
-        return {
-            path,
-            value: null,
-            buffer,
-            generation: String(metadata.generation),
-            metadata,
-            missing: false,
-            error
-        };
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        const [metadataBefore] = await file.getMetadata();
+        const generation = String(metadataBefore.generation);
+        const generationFile = bucket.file(path, { generation });
+        let buffer;
+        let metadataAfter;
+        try {
+            [buffer] = await generationFile.download();
+            [metadataAfter] = await generationFile.getMetadata();
+        } catch (error) {
+            if (attempt < maxAttempts && [404, 412].includes(Number(error?.code))) continue;
+            throw error;
+        }
+        if (String(metadataAfter.generation) !== generation) {
+            if (attempt < maxAttempts) continue;
+            const changed = new Error(`CATALOG_OBJECT_GENERATION_CHANGED:${path}`);
+            changed.code = 'CATALOG_OBJECT_GENERATION_CHANGED';
+            throw changed;
+        }
+        try {
+            return {
+                path,
+                value: JSON.parse(buffer.toString('utf8')),
+                buffer,
+                generation,
+                etag: metadataAfter.etag || metadataBefore.etag || null,
+                metadata: metadataAfter,
+                missing: false,
+                error: null
+            };
+        } catch (cause) {
+            const error = new Error(`CATALOG_JSON_INVALID:${path}`);
+            error.code = 'CATALOG_JSON_INVALID';
+            error.cause = cause;
+            return {
+                path,
+                value: null,
+                buffer,
+                generation,
+                etag: metadataAfter.etag || metadataBefore.etag || null,
+                metadata: metadataAfter,
+                missing: false,
+                error
+            };
+        }
     }
+    throw new Error(`CATALOG_OBJECT_READ_RETRY_EXHAUSTED:${path}`);
 }
 
 async function readJsonObject(bucket, path) {
@@ -196,6 +230,7 @@ async function readJsonObject(bucket, path) {
         value: state.value,
         buffer: state.buffer,
         generation: state.generation,
+        etag: state.etag,
         metadata: state.metadata
     };
 }
@@ -232,6 +267,18 @@ async function verifyStoredRelease(bucket, pointer) {
         throw new Error('CATALOG_MANIFEST_SCHEMA_UNSUPPORTED');
     }
     if (Number(manifest.revision) !== normalizedPointer.revision) throw new Error('CATALOG_REVISION_MISMATCH');
+    if (normalizedPointer.aggregateSha256
+        && normalizedPointer.aggregateSha256 !== manifest.aggregateSha256) {
+        throw new Error('CATALOG_AGGREGATE_IDENTITY_MISMATCH');
+    }
+    if (manifest.impactPlanSha256
+        && manifest.impactPlanSha256 !== manifest.files?.['impact-plan.json']?.sha256) {
+        throw new Error('CATALOG_IMPACT_MANIFEST_IDENTITY_MISMATCH');
+    }
+    if (normalizedPointer.impactPlanSha256
+        && normalizedPointer.impactPlanSha256 !== manifest.files?.['impact-plan.json']?.sha256) {
+        throw new Error('CATALOG_IMPACT_POINTER_IDENTITY_MISMATCH');
+    }
     const prefix = normalizedPointer.manifestPath.replace(/\/manifest\.json$/, '');
     const bundles = {};
     for (const name of ['catalog-full.json', 'catalog-cards.json']) {
@@ -252,21 +299,61 @@ async function verifyStoredRelease(bucket, pointer) {
     }
     if (full.length !== Number(manifest.productCount)) throw new Error('CATALOG_PRODUCT_COUNT_MISMATCH');
     if (full.some((product, index) => product.id !== cards[index]?.id)) throw new Error('CATALOG_CARD_ORDER_MISMATCH');
-    return { pointer: normalizedPointer, manifest, productCount: full.length };
+    let impactPlan = null;
+    const impactPlanPath = normalizedPointer.impactPlanPath || `${prefix}/impact-plan.json`;
+    if (manifest.files?.['impact-plan.json']) {
+        const impactObject = await readJsonObject(bucket, impactPlanPath);
+        if (!impactObject) throw new Error('CATALOG_IMPACT_PLAN_MISSING');
+        if (sha256(impactObject.buffer.toString('utf8')) !== manifest.files['impact-plan.json'].sha256) {
+            throw new Error('CATALOG_IMPACT_PLAN_HASH_MISMATCH');
+        }
+        impactPlan = validateImpactPlan(impactObject.value, {
+            revision: normalizedPointer.revision,
+            aggregateSha256: manifest.aggregateSha256
+        });
+    }
+    return { pointer: normalizedPointer, manifest, productCount: full.length, impactPlan };
 }
 
-function createPointer({ revision, manifestPath, manifestSha256, publishedAt = new Date().toISOString() }) {
+function createPointer({
+    revision,
+    manifestPath,
+    manifestSha256,
+    aggregateSha256 = null,
+    impactPlanPath = null,
+    impactPlanSha256 = null,
+    publishedAt = new Date().toISOString()
+}) {
     const normalizedRevision = Number(revision);
     if (!Number.isInteger(normalizedRevision) || normalizedRevision < 1) throw new Error('CATALOG_POINTER_REVISION_INVALID');
     if (!manifestPath || !manifestSha256) throw new Error('CATALOG_POINTER_RELEASE_INVALID');
+    if (!/^[a-f0-9]{64}$/i.test(String(manifestSha256))) throw new Error('CATALOG_POINTER_MANIFEST_HASH_INVALID');
+    if (aggregateSha256 && !/^[a-f0-9]{64}$/i.test(String(aggregateSha256))) throw new Error('CATALOG_POINTER_AGGREGATE_HASH_INVALID');
+    if (impactPlanSha256 && !/^[a-f0-9]{64}$/i.test(String(impactPlanSha256))) throw new Error('CATALOG_POINTER_IMPACT_HASH_INVALID');
     return {
         schemaVersion: 1,
         projectionContractVersion: 1,
         revision: normalizedRevision,
         manifestPath: String(manifestPath),
         manifestSha256: String(manifestSha256),
+        ...(aggregateSha256 ? { aggregateSha256: String(aggregateSha256) } : {}),
+        ...(impactPlanPath ? { impactPlanPath: String(impactPlanPath) } : {}),
+        ...(impactPlanSha256 ? { impactPlanSha256: String(impactPlanSha256) } : {}),
         publishedAt: publishedAt || null
     };
+}
+
+async function readReleaseProducts(bucket, pointer) {
+    const verified = await verifyStoredRelease(bucket, pointer);
+    const prefix = verified.pointer.manifestPath.replace(/\/manifest\.json$/, '');
+    const fullObject = await readJsonObject(bucket, `${prefix}/catalog-full.json`);
+    return { pointer: verified.pointer, manifest: verified.manifest, products: fullObject.value.products };
+}
+
+async function readImpactPlan(bucket, pointer) {
+    const verified = await verifyStoredRelease(bucket, pointer);
+    if (!verified.impactPlan) throw new Error('CATALOG_IMPACT_PLAN_MISSING');
+    return verified.impactPlan;
 }
 
 async function writePointer(bucket, path, pointer, expectedGeneration = null) {
@@ -345,12 +432,16 @@ async function publishCurrentPointer(bucket, {
     previous,
     lastKnownGood,
     excludedManifestSha256 = null,
-    expectedGeneration
+    expectedGeneration,
+    onCurrentCommitted = null
 }) {
     const nextPointer = createPointer({
         revision,
         manifestPath: release.manifestPath,
         manifestSha256: release.manifestSha256,
+        aggregateSha256: release.aggregateSha256,
+        impactPlanPath: release.impactPlanPath,
+        impactPlanSha256: release.impactPlanSha256,
         publishedAt: new Date().toISOString()
     });
     const previousPointer = await verifiedPointerOrNull(bucket, previous);
@@ -366,6 +457,9 @@ async function publishCurrentPointer(bucket, {
         .find(isAllowedFallback) || null;
 
     const published = await writePointer(bucket, POINTER_PATHS.current, nextPointer, expectedGeneration || 0);
+    if (typeof onCurrentCommitted === 'function') {
+        await onCurrentCommitted({ ...published, previousPointer, lastKnownGoodPointer });
+    }
     const fallbacks = await writeFallbackPointers(bucket, { previous: previousPointer, lastKnownGood: lastKnownGoodPointer });
     return {
         ...published,
@@ -386,6 +480,8 @@ module.exports = {
     jsonBuffer,
     publishCurrentPointer,
     readJsonObjectState,
+    readImpactPlan,
+    readReleaseProducts,
     readPointerState,
     readCurrentPointer,
     readLastKnownGoodPointer,

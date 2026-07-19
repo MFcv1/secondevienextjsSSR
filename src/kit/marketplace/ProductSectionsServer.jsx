@@ -72,7 +72,6 @@ const ProductGridSectionServer = ({
   badgeLabel,
   darkMode = false,
   hideWhenEmpty = false,
-  deferImagesUntilCalm = false,
 } = {}) => {
   if (hideWhenEmpty && !items.length) return null;
 
@@ -80,13 +79,12 @@ const ProductGridSectionServer = ({
     <section
       id={id}
       className={`gallery-deferred-render ${className}`}
-      data-cold-scroll-deferred-images={deferImagesUntilCalm ? 'true' : undefined}
     >
       <div className="mb-10 flex items-center justify-between">
         {heading}
-        <a href="/#gallery-pieces" className="hidden items-center gap-2 border-b border-transparent font-sans text-[10px] uppercase tracking-widest transition-colors hover:border-current md:flex">
+        <Link href="/#gallery-pieces" prefetch={false} className="hidden items-center gap-2 border-b border-transparent font-sans text-[10px] uppercase tracking-widest transition-colors hover:border-current md:flex">
           Voir plus <ArrowRight size={12} />
-        </a>
+        </Link>
       </div>
 
       <div className="anim-grid grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-4 xl:grid-cols-5 xl:gap-6">
@@ -102,19 +100,19 @@ const ProductGridSectionServer = ({
               layoutMode="grid"
               compact
               priority={false}
-              deferImageUntilCalm={deferImagesUntilCalm}
             />
           </div>
         ))}
       </div>
 
       <div className="mt-10 flex justify-center md:hidden">
-        <a
+        <Link
           href="/#gallery-pieces"
+          prefetch={false}
           className={`flex items-center gap-2 rounded-full px-8 py-3 font-sans text-[10px] font-bold uppercase tracking-widest transition-colors ${darkMode ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-stone-100 text-stone-800 hover:bg-stone-200'}`}
         >
           Voir plus <ArrowRight size={12} />
-        </a>
+        </Link>
       </div>
     </section>
   );
@@ -162,7 +160,6 @@ export const ProductSmallPricesSectionServer = ({ items, darkMode = false } = {}
     items={getSmallPriceItems(items)}
     darkMode={darkMode}
     hideWhenEmpty
-    deferImagesUntilCalm
   />
 );
 

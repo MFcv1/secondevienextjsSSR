@@ -44,7 +44,8 @@ Seconde Vie
 |-- /mes-commandes ................... Espace client dynamique
 |-- /admin ........................... Back-office dynamique
 |-- /api/search ...................... Recherche catalogue serveur
-|-- /api/catalog ..................... Snapshot public same-origin/CDN
+|-- /api/catalog ..................... Snapshot public same-origin non persistant
+|-- /api/catalog/version ............. Identite publique minimale ETag/304
 |-- /api/revalidate-catalog .......... Invalidation ISR signee du catalogue
 |-- /sitemap.xml ..................... Sitemap Next dynamique/cache
 `-- /robots.txt ...................... Politique robots Next
@@ -65,8 +66,9 @@ Seconde Vie
 | `/checkout` | `[C]` tunnel | DYN | noindex/nofollow | `app/checkout/page.jsx` | `CheckoutPageIsland` |
 | `/mes-commandes` | `[C]` tunnel | DYN | noindex/nofollow | `app/mes-commandes/page.jsx` | `OrdersPageIsland` |
 | `/admin` | `[C]` tunnel | DYN | noindex/nofollow | `app/admin/page.jsx` | `AdminAppIsland` |
-| `/api/search` | `[API]` | borne | non indexable | `route.js` | recherche serveur |
-| `/api/catalog` | `[API]` | CDN/ETag | non indexable | `route.js` | catalogue materialise |
+| `/api/search` | `[API]` | reponse non persistante | non indexable | `route.js` | recherche serveur |
+| `/api/catalog` | `[API]` | reponse non persistante | non indexable | `route.js` | catalogue materialise |
+| `/api/catalog/version` | `[API]` | ETag/304 revalide | non indexable | `route.js` | revision + aggregateSha256 |
 | `/api/revalidate-catalog` | `[API]` | aucun | non indexable | `route.js` | HMAC builder + revalidation catalogue |
 
 ## 4. Parcours et dependances
@@ -93,10 +95,13 @@ route publique [S]
   -> furniture/{id} [DB]
   -> onCatalogSourceWrite [F]
   -> Cloud Tasks build [EXT]
-  -> snapshot/manifeste/pointeur [ST]
+  -> snapshot/manifeste/impact-plan [ST]
+  -> CAS current puis previous/LKG [ST]
   -> dispatchCatalogRevalidation [F]
   -> /api/revalidate-catalog HMAC [API]
-  -> ISR routes + sitemap
+  -> tag pointeur API + chemins impactes
+  -> preuve /api/catalog/version + HTML versionne
+  -> sys_catalog_live/current [DB] -> onglets visibles -> router.refresh
 ```
 
 ### 4.3 Authentification
@@ -170,7 +175,7 @@ Mesure des lectures et couts: `_DOCS/data/AUDIT_COUTS_FIRESTORE.md` (Usage Insig
 |-- .agents/skills/ .................. Skills locaux UI/design
 |-- .github/workflows/quality.yml .... CI Node 22/pnpm
 |-- package.json / pnpm-lock.yaml .... Dependances et commandes racine
-|-- next.config.mjs .................. Next, CSP, headers, images, redirects
+|-- next.config.mjs .................. Next, CSP, headers et redirects
 |-- apphosting.yaml .................. App Hosting sandbox
 |-- firebase.json .................... Firebase resources et codebases
 |-- .firebaserc ...................... Alias projet sandbox
@@ -229,6 +234,7 @@ app/
 |   `-- AdminSidebar.jsx .............. navigation laterale responsive
 `-- api/
     |-- catalog/route.js .............. catalogue snapshot same-origin
+    |   `-- version/route.js .......... version minimale ETag/304
     |-- search/route.js ............... recherche catalogue
     `-- revalidate-catalog/route.js ... revalidation admin
 ```
@@ -286,6 +292,8 @@ src/kit/marketplace/
 |-- ArchitecturalHeaderServer.jsx ..... header serveur
 |-- CategoryRailServer.jsx ............ rail categories
 |-- GalleryProductCardServer.jsx ...... carte produit serveur
+|-- ProductCardMediaServer.jsx ........ media carte canonique galerie/categorie
+|-- CatalogVersionSyncIsland.jsx ...... signal visible + garde version/prefetch
 |-- ProductSectionsServer.jsx ......... sections fixes galerie
 |-- FooterServer.jsx .................. footer serveur
 |-- GalleryGridActionsIsland.jsx ...... actions des cartes
@@ -401,8 +409,11 @@ src/lib/server/
 |-- env.js ............................ env publique/serveur
 |-- firebaseAdmin.js .................. Firebase Admin Next
 |-- products.js ....................... acces/normalisation catalogue
+|-- productRoute.js ................... resolution pure ID ou slug canonique, y compris IDs avec tirets
 |-- materializedCatalog.js ............ lecteur Storage current/previous/LKG
 |-- materializedCatalogValidation.cjs . schema, hashes et contrat snapshot
+|-- catalogRevalidationContract.js .... validation plan/projet/audience
+|-- catalogVersionContract.js ......... payload version et contrat 200/304
 |-- galleryPersonalization.js ......... metadata galerie
 |-- about.js .......................... donnees A propos
 `-- theme.js .......................... theme serveur
@@ -468,6 +479,8 @@ functions/
         |-- onCatalogSourceWrite.js ... trigger leger, dedup et enqueue
         |-- buildCatalogSnapshot.js ... lease, projection, manifestes et CAS
         |-- snapshotStorage.js ......... objets immuables et pointeurs
+        |-- impactPlan.js .............. diff immutable cible/full
+        |-- catalogRoutes.js ........... chemins produit/categorie purs
         |-- releaseGarbageCollection.js  retention bornee des releases Storage
         |-- catalogRevalidation.js ..... task HMAC vers App Hosting
         |-- catalogReconciler.js ....... reprise des publications bloquees
@@ -521,8 +534,8 @@ Storage
 |-- furniture/... ..................... sources et medias produit
 |-- furniture/thumbnails/... .......... thumb320/thumb384/thumb
 |-- furniture/responsive/... .......... card/detailFast/medium/large/full
-|-- bucket catalogue/releases/{rev}/ .. objets versionnes + manifest
-|-- bucket catalogue/pointers/ ........ current/previous/last-known-good
+|-- catalog-projection/v1/releases/{rev}/  objets immuables, manifeste et plan d'impact
+|-- catalog-projection/v1/pointers/ .... current/previous/last-known-good
 `-- autres chemins admin .............. contenus hero/about selon configuration
 ```
 

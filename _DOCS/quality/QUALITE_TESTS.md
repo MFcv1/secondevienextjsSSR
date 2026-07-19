@@ -1,6 +1,6 @@
 # Qualite, tests et gates
 
-Derniere mise a jour: 2026-07-18
+Derniere mise a jour: 2026-07-19
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Principe de proportion
@@ -172,9 +172,18 @@ npm run test:catalog:resilience
 npm run test:catalog:security
 ```
 
+Couverture locale actuelle:
+
+- `core`: diff prix/stock/vente/remise en vente/titre/categorie/publication/suppression/image/ordre, ancien et nouveau slug, parents, determinisme, bornes `full`, parite des routes et hash du plan dans le manifeste;
+- `resilience`: CAS et fallbacks, publication partielle et reprise `pointer_committed_control_pending`, reconciliations concurrentes, rollback vivant/expire/high-water, `stateVersion`/lease/fence, lecture Storage epinglee et retry de generation, GC releases/medias;
+- `security` partie Node: HMAC corps exact/timestamp, projet/audience, plan strict, redirection/JSON incoherent, version N contre N+1, preuve HTML servie, endpoint version 200/304, contrats images/navigation/signal;
+- `security` partie emulateurs: interdiction de lire `furniture`/`public/meta`, controle backend des etats et ecriture client refusee sur `sys_catalog_live/current`. Java reste requis pour executer cette partie.
+
+Les gates `next:routes` et `mobile:contract` protegent en plus ISR/SSG et le shell mobile. La recette cold/warm, la mesure des telechargements et le comportement `router.refresh()` restent des preuves navigateur sandbox et ne doivent pas etre declares par les tests statiques.
+
 La recette catalogue complete se fait dans le navigateur sandbox. Le rollback reel est exclusivement expose par Maintenance admin et exige App Check, registre actif, authentification forte recente et revisions explicites.
 
-La recette de cutover du 2026-07-18 a inclus plus de 20 builds shadow concordants, creation, prix, stock nul, suppression, publication/revalidation, API same-origin froide/chaude, ETag stable, cache CDN apres echauffement et checkout sans paiement. Shadow/canary et leurs scripts ne sont plus des gates actives: le moteur public unique est le snapshot Storage. Le checkout reste autoritaire sur Firestore, meme si le snapshot est en retard.
+La recette de cutover du 2026-07-18 a inclus plus de 20 builds de comparaison alors necessaires, creation, prix, stock nul, suppression, publication/revalidation, API same-origin froide/chaude et checkout sans paiement. Ces anciens modes ne sont plus des gates actives: le moteur public unique est le snapshot Storage. Le checkout reste autoritaire sur Firestore, meme si le snapshot est en retard. Le contrat actuel `/api/catalog` est non persistant; seul `/api/catalog/version` utilise un ETag public.
 
 Data Access est une preuve separee: fenetre courte, onglets parasites fermes, configuration avant/apres capturee et desactivation immediate. Ne jamais l'activer implicitement pour lancer les suites locales.
 Le build CI utilise `CATALOG_BUILD_FIXTURE=true` avec une fixture publique minimale versionnee. Cette option est limitee au workflow de qualite: elle permet de compiler sans identifiants Google et ne doit jamais etre configuree dans App Hosting ou dans un environnement deploye.

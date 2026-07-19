@@ -6,7 +6,9 @@ const {
     clearLease,
     initialPublicationState,
     isLeaseActive,
+    isRollbackActive,
     needsCatalogRevalidation,
+    nextStateVersion,
     normalizePublicationMode
 } = require('./publicationState');
 const {
@@ -14,8 +16,11 @@ const {
     createPointer,
     isCatalogIntegrityError,
     readPointerState,
-    verifyStoredRelease
+    readImpactPlan,
+    verifyStoredRelease,
+    writePointer
 } = require('./snapshotStorage');
+const { createFullImpactPlan, validateImpactPlan } = require('./impactPlan');
 const { catalogLog } = require('./structuredLog');
 const { CATALOG_ENQUEUER_SERVICE_ACCOUNT, CATALOG_SNAPSHOT_BUCKET } = require('./catalogConfig');
 
@@ -39,7 +44,15 @@ async function inspectCatalogPointer(bucket, path) {
     if (state.error) return { ...state, healthy: false, failureKind: 'pointer', errorCode: String(state.error.code || 'CATALOG_POINTER_INVALID') };
     try {
         const verified = await verifyStoredRelease(bucket, state.value);
-        return { ...state, value: verified.pointer, healthy: true, failureKind: null, errorCode: null };
+        return {
+            ...state,
+            value: verified.pointer,
+            manifest: verified.manifest,
+            impactPlan: verified.impactPlan,
+            healthy: true,
+            failureKind: null,
+            errorCode: null
+        };
     } catch (error) {
         if (!isCatalogIntegrityError(error)) throw error;
         return {
@@ -112,26 +125,48 @@ async function reconcileCatalog(dependencies) {
     const repairs = [];
     let mode = normalizePublicationMode(state.mode);
     let workingState = { ...state, mode };
+    const applyRepair = async (patch, guard = () => true) => {
+        const result = await db.runTransaction(async (transaction) => {
+            const snap = await transaction.get(controlRef);
+            const fresh = snap.exists ? snap.data() : {};
+            if (Number(fresh.stateVersion || 0) !== Number(workingState.stateVersion || 0)) return null;
+            if (!guard(fresh)) return null;
+            const update = {
+                ...patch,
+                stateVersion: nextStateVersion(fresh),
+                updatedAt: serverTimestamp()
+            };
+            transaction.set(controlRef, update, { merge: true });
+            return { ...fresh, ...update };
+        });
+        if (!result) {
+            const stale = new Error('RECONCILE_STATE_ADVANCED');
+            stale.code = 'RECONCILE_STATE_ADVANCED';
+            throw stale;
+        }
+        workingState = result;
+        return result;
+    };
     if (state.mode !== mode) {
-        await controlRef.set({ mode, updatedAt: serverTimestamp() }, { merge: true });
+        await applyRepair({ mode });
         repairs.push('mode_normalized');
     }
     if (state.leaseToken && !isLeaseActive(state, now().getTime())) {
         const leaseRepair = { ...clearLease(now()), dirty: true, buildState: 'queued' };
-        await controlRef.set(leaseRepair, { merge: true });
-        workingState = { ...workingState, ...leaseRepair };
+        await applyRepair(leaseRepair, (fresh) => fresh.leaseToken === state.leaseToken && !isLeaseActive(fresh, now().getTime()));
         repairs.push('expired_lease');
     }
 
-    const [currentInspection, previousInspection, lastKnownGoodInspection] = await Promise.all([
+    const [currentInspection, initialPreviousInspection, lastKnownGoodInspection] = await Promise.all([
         inspectCatalogPointer(bucket, POINTER_PATHS.current),
         inspectCatalogPointer(bucket, POINTER_PATHS.previous),
         inspectCatalogPointer(bucket, POINTER_PATHS.lastKnownGood)
     ]);
+    let previousInspection = initialPreviousInspection;
     const pointer = currentInspection.healthy
         ? { value: currentInspection.value, generation: currentInspection.generation }
         : null;
-    const previousPointer = previousInspection.healthy
+    let previousPointer = previousInspection.healthy
         ? { value: previousInspection.value, generation: previousInspection.generation }
         : null;
     const lastKnownGoodPointer = lastKnownGoodInspection.healthy
@@ -139,6 +174,24 @@ async function reconcileCatalog(dependencies) {
         : null;
 
     if (['preparing', 'incomplete'].includes(workingState.rollbackState)) {
+        if (isRollbackActive(workingState, now().getTime()) && workingState.rollbackOwner !== 'catalog-reconciler') {
+            logger('info', {
+                phase: 'reconcile',
+                targetRevision: Number(workingState.rollbackTargetRevision || 0),
+                result: 'rollback_operation_active'
+            });
+            return { result: 'rollback_operation_active', repairs };
+        }
+        if (!isRollbackActive(workingState, now().getTime())) {
+            const recoveryNow = now();
+            await applyRepair({
+                rollbackOwner: 'catalog-reconciler',
+                rollbackHeartbeatAt: recoveryNow,
+                rollbackExpiresAt: new Date(recoveryNow.getTime() + 120000)
+            }, (fresh) => fresh.rollbackOperationId === workingState.rollbackOperationId
+                && !isRollbackActive(fresh, recoveryNow.getTime()));
+            repairs.push('rollback_recovery_claimed');
+        }
         if (workingState.leaseToken) {
             logger('info', {
                 phase: 'reconcile',
@@ -151,6 +204,11 @@ async function reconcileCatalog(dependencies) {
             && Number(pointer.value.revision) === Number(workingState.rollbackTargetRevision || 0)
             && String(pointer.value.manifestSha256 || '') === String(workingState.rollbackTargetManifestSha256 || '');
         if (targetMatchesCurrent) {
+            const rollbackImpactPlan = createFullImpactPlan({
+                revision: Number(pointer.value.revision),
+                aggregateSha256: currentInspection.manifest.aggregateSha256,
+                reason: 'rollback'
+            });
             const rollbackSource = workingState.rollbackSourceRevision
                 && workingState.rollbackSourceManifestPath
                 && workingState.rollbackSourceManifestSha256
@@ -161,14 +219,37 @@ async function reconcileCatalog(dependencies) {
                     publishedAt: null
                 })
                 : null;
-            const previousMatchesSource = !rollbackSource
+            let previousMatchesSource = !rollbackSource
                 || samePointerIdentity(previousPointer?.value, rollbackSource);
+            if (rollbackSource && !previousMatchesSource) {
+                try {
+                    const verifiedSource = await verifyStoredRelease(bucket, rollbackSource);
+                    const repaired = await writePointer(bucket, POINTER_PATHS.previous, verifiedSource.pointer);
+                    previousPointer = { value: repaired.pointer, generation: repaired.generation };
+                    previousInspection = {
+                        healthy: true,
+                        value: repaired.pointer,
+                        generation: repaired.generation
+                    };
+                    previousMatchesSource = true;
+                    repairs.push('rollback_previous_pointer_repaired');
+                } catch (error) {
+                    if (!isCatalogIntegrityError(error)) throw error;
+                }
+            }
             const rollbackRecovery = {
                 ...clearLease(now()),
                 mode: 'paused',
                 publishedRevision: Number(pointer.value.revision),
                 currentManifestPath: pointer.value.manifestPath,
                 currentManifestSha256: pointer.value.manifestSha256,
+                currentAggregateSha256: currentInspection.manifest.aggregateSha256,
+                currentImpactPlanPath: pointer.value.impactPlanPath || null,
+                currentImpactPlanSha256: currentInspection.manifest.impactPlanSha256 || null,
+                pendingRevalidationPlan: rollbackImpactPlan,
+                pendingRevalidationPlanHash: rollbackImpactPlan.planHash,
+                pendingRevalidationRevision: Number(pointer.value.revision),
+                pendingRevalidationManifestSha256: pointer.value.manifestSha256,
                 currentPointerGeneration: pointer.generation,
                 revalidatedRevision: null,
                 revalidatedManifestSha256: null,
@@ -182,6 +263,11 @@ async function reconcileCatalog(dependencies) {
                 } : {}),
                 ...(previousMatchesSource ? {
                     rollbackState: null,
+                    rollbackOperationId: null,
+                    rollbackOwner: null,
+                    rollbackStartedAt: null,
+                    rollbackHeartbeatAt: null,
+                    rollbackExpiresAt: null,
                     rollbackToken: null,
                     rollbackTarget: null,
                     rollbackTargetRevision: null,
@@ -201,8 +287,7 @@ async function reconcileCatalog(dependencies) {
                 }),
                 updatedAt: serverTimestamp()
             };
-            await controlRef.set(rollbackRecovery, { merge: true });
-            workingState = { ...workingState, ...rollbackRecovery };
+            await applyRepair(rollbackRecovery, (fresh) => fresh.rollbackOperationId === workingState.rollbackOperationId);
             repairs.push(previousMatchesSource ? 'rollback_finalized' : 'rollback_previous_repair_required');
         } else if (workingState.rollbackState === 'preparing' && currentInspection.healthy) {
             const dirty = Boolean(workingState.dirty || workingState.rollbackPreviousDirty);
@@ -212,6 +297,11 @@ async function reconcileCatalog(dependencies) {
                 mode,
                 dirty,
                 rollbackState: null,
+                rollbackOperationId: null,
+                rollbackOwner: null,
+                rollbackStartedAt: null,
+                rollbackHeartbeatAt: null,
+                rollbackExpiresAt: null,
                 rollbackToken: null,
                 rollbackTarget: null,
                 rollbackTargetRevision: null,
@@ -226,8 +316,7 @@ async function reconcileCatalog(dependencies) {
                 lastError: { code: 'ROLLBACK_ABORTED_BEFORE_CAS' },
                 updatedAt: serverTimestamp()
             };
-            await controlRef.set(rollbackAbort, { merge: true });
-            workingState = { ...workingState, ...rollbackAbort };
+            await applyRepair(rollbackAbort, (fresh) => fresh.rollbackOperationId === workingState.rollbackOperationId);
             repairs.push('rollback_aborted');
         } else {
             const rollbackDegraded = {
@@ -236,11 +325,38 @@ async function reconcileCatalog(dependencies) {
                 lastError: { code: 'ROLLBACK_RECOVERY_POINTER_UNAVAILABLE' },
                 updatedAt: serverTimestamp()
             };
-            await controlRef.set(rollbackDegraded, { merge: true });
-            workingState = { ...workingState, ...rollbackDegraded };
+            await applyRepair(rollbackDegraded, (fresh) => fresh.rollbackOperationId === workingState.rollbackOperationId);
             repairs.push('rollback_recovery_degraded');
         }
     }
+    if (workingState.buildState === 'pointer_committed_control_pending' && pointer?.value) {
+        const preparedMatches = Number(pointer.value.revision) === Number(workingState.preparedRevision || workingState.publishedRevision || 0)
+            && String(pointer.value.manifestSha256 || '') === String(workingState.preparedManifestSha256 || workingState.currentManifestSha256 || '');
+        if (preparedMatches) {
+            await applyRepair({
+                ...clearLease(now()),
+                publishedRevision: Number(pointer.value.revision),
+                currentManifestPath: pointer.value.manifestPath,
+                currentManifestSha256: pointer.value.manifestSha256,
+                currentAggregateSha256: currentInspection.manifest?.aggregateSha256 || workingState.preparedAggregateSha256 || null,
+                currentImpactPlanPath: pointer.value.impactPlanPath || workingState.preparedImpactPlanPath || null,
+                currentImpactPlanSha256: currentInspection.manifest?.impactPlanSha256 || workingState.preparedImpactPlanSha256 || null,
+                pendingRevalidationPlan: null,
+                pendingRevalidationPlanHash: null,
+                pendingRevalidationRevision: null,
+                pendingRevalidationManifestSha256: null,
+                currentPointerGeneration: pointer.generation,
+                buildState: 'revalidating',
+                integrityState: 'valid',
+                sourceLagState: Number(workingState.desiredRevision || 0) > Number(pointer.value.revision) ? 'behind' : 'current',
+                invalidationState: 'pending',
+                servedState: 'pending',
+                lastError: null
+            }, (fresh) => fresh.buildState === 'pointer_committed_control_pending');
+            repairs.push('pointer_commit_finalized');
+        }
+    }
+
     const pointerDiffersFromControl = pointer?.value && (
         Number(pointer.value.revision) !== Number(workingState.publishedRevision || 0)
         || String(pointer.value.manifestPath || '') !== String(workingState.currentManifestPath || '')
@@ -259,6 +375,16 @@ async function reconcileCatalog(dependencies) {
             currentManifestSha256: pointer.value.manifestSha256,
             currentPointerGeneration: pointer.generation
         });
+        const pendingMatchesPointer = Number(workingState.pendingRevalidationRevision || 0) === Number(pointer.value.revision)
+            && String(workingState.pendingRevalidationManifestSha256 || '') === String(pointer.value.manifestSha256 || '');
+        if (!pendingMatchesPointer) {
+            Object.assign(pointerControlUpdate, {
+                pendingRevalidationPlan: null,
+                pendingRevalidationPlanHash: null,
+                pendingRevalidationRevision: null,
+                pendingRevalidationManifestSha256: null
+            });
+        }
     }
     if (mode === 'active' && previousPointer?.value && previousDiffersFromControl) {
         Object.assign(pointerControlUpdate, {
@@ -275,9 +401,13 @@ async function reconcileCatalog(dependencies) {
         });
     }
     if (Object.keys(pointerControlUpdate).length) {
-        pointerControlUpdate.updatedAt = admin.firestore.FieldValue.serverTimestamp();
-        await controlRef.set(pointerControlUpdate, { merge: true });
-        workingState = { ...workingState, ...pointerControlUpdate };
+        Object.assign(pointerControlUpdate, {
+            currentAggregateSha256: currentInspection.manifest?.aggregateSha256 || workingState.currentAggregateSha256 || null,
+            currentImpactPlanPath: pointer?.value?.impactPlanPath || workingState.currentImpactPlanPath || null,
+            currentImpactPlanSha256: currentInspection.manifest?.impactPlanSha256 || workingState.currentImpactPlanSha256 || null,
+            integrityState: 'valid'
+        });
+        await applyRepair(pointerControlUpdate);
         repairs.push('firestore_from_pointer');
     }
 
@@ -322,22 +452,60 @@ async function reconcileCatalog(dependencies) {
             lastError: { code: brokenInspection.errorCode },
             updatedAt: serverTimestamp()
         };
-        await controlRef.set(repairUpdate, { merge: true });
-        workingState = { ...workingState, ...repairUpdate };
+        repairUpdate.integrityState = 'invalid';
+        repairUpdate.sourceLagState = 'unknown';
+        await applyRepair(repairUpdate);
         repairs.push('snapshot_repair_requested');
     }
 
     const effectiveState = workingState;
     const published = Number(pointer?.value?.revision || effectiveState.publishedRevision || 0);
     if (pointer?.value && needsCatalogRevalidation(effectiveState, pointer.value)) {
+        let impactPlan = null;
+        const pendingPlanDeclared = Number(effectiveState.pendingRevalidationRevision || 0) === published
+            && String(effectiveState.pendingRevalidationManifestSha256 || '') === String(pointer.value.manifestSha256 || '');
+        if (pendingPlanDeclared && effectiveState.pendingRevalidationPlan) {
+            try {
+                impactPlan = validateImpactPlan(effectiveState.pendingRevalidationPlan, {
+                    revision: published,
+                    aggregateSha256: currentInspection.manifest?.aggregateSha256
+                });
+                if (impactPlan.planHash !== effectiveState.pendingRevalidationPlanHash) impactPlan = null;
+            } catch {
+                impactPlan = null;
+            }
+        }
+        if (!pendingPlanDeclared) impactPlan = currentInspection.impactPlan;
+        if (!impactPlan && !pendingPlanDeclared) {
+            try { impactPlan = await readImpactPlan(bucket, pointer.value); } catch { impactPlan = null; }
+        }
+        if (!impactPlan) {
+            const missingPlan = {
+                buildState: 'degraded',
+                invalidationState: 'failed',
+                lastError: { code: 'CATALOG_IMPACT_PLAN_MISSING' }
+            };
+            await applyRepair(missingPlan);
+            repairs.push('impact_plan_missing');
+        } else {
         const identity = String(pointer.value.manifestSha256).slice(0, 12);
         const timeBucket = Math.floor(now().getTime() / (5 * 60 * 1000));
         await enqueue('dispatchCatalogRevalidation', {
             schemaVersion: 1,
             revision: published,
-            manifestSha256: pointer.value.manifestSha256
+            manifestSha256: pointer.value.manifestSha256,
+            aggregateSha256: currentInspection.manifest?.aggregateSha256 || impactPlan.aggregateSha256,
+            impactPlanPath: pendingPlanDeclared
+                ? null
+                : pointer.value.impactPlanPath || `${pointer.value.manifestPath.replace(/\/manifest\.json$/, '')}/impact-plan.json`,
+            impactPlanSha256: pendingPlanDeclared
+                ? null
+                : currentInspection.manifest?.impactPlanSha256 || pointer.value.impactPlanSha256,
+            planHash: impactPlan.planHash,
+            impactPlan
         }, `catalog-reconcile-revalidate-r${published}-${identity}-g${pointer.generation}-t${timeBucket}`);
         repairs.push('revalidation_enqueued');
+        }
     }
 
     if (mode === 'paused') {
@@ -351,7 +519,9 @@ async function reconcileCatalog(dependencies) {
         const timeBucket = Math.floor(now().getTime() / (5 * 60 * 1000));
         const taskId = `catalog-reconcile-build-r${desired}-t${timeBucket}`;
         await enqueue('dispatchCatalogBuild', { schemaVersion: 1, targetRevision: desired }, taskId);
-        await controlRef.set({ queuedTaskName: taskId, buildState: 'queued', updatedAt: serverTimestamp() }, { merge: true });
+        await applyRepair({ queuedTaskName: taskId, buildState: 'queued' }, (fresh) => (
+            Number(fresh.desiredRevision || 0) >= desired && !isLeaseActive(fresh, now().getTime())
+        ));
         repairs.push('build_enqueued');
     }
 

@@ -4,13 +4,16 @@ const { getFunctions } = require('firebase-admin/functions');
 const { APP_ID } = require('../../helpers/config');
 const { buildPublicProjection } = require('./publicProjection');
 const { buildInventoryOverview } = require('./inventoryProjection');
+const { buildImpactPlan, createFullImpactPlan } = require('./impactPlan');
 const {
     CONTROL_DOCUMENT,
     acquireLease,
     assertLease,
     cleanError,
     clearLease,
-    initialPublicationState
+    initialPublicationState,
+    isRollbackActive,
+    nextStateVersion
 } = require('./publicationState');
 const {
     POINTER_PATHS,
@@ -19,7 +22,10 @@ const {
     isPreconditionError,
     publishCurrentPointer,
     readCurrentPointer,
+    readLastKnownGoodPointer,
     readPointerState,
+    readPreviousPointer,
+    readReleaseProducts,
     writeImmutableRelease
 } = require('./snapshotStorage');
 const { runReleaseGarbageCollection } = require('./releaseGarbageCollection');
@@ -56,6 +62,49 @@ async function assertBuildStillCurrent(db, leaseToken, targetRevision) {
     return snap.data();
 }
 
+async function renewBuildLease(db, { leaseToken, targetRevision, now = new Date(), durationMs = 120000, minimumRemainingMs = 30000 }) {
+    const controlRef = db.doc(CONTROL_DOCUMENT);
+    return db.runTransaction(async (transaction) => {
+        const snap = await transaction.get(controlRef);
+        if (!snap.exists) throw new Error('CONTROL_STATE_MISSING');
+        const state = snap.data();
+        assertLease(state, leaseToken, targetRevision, now.getTime());
+        if (isRollbackActive(state, now.getTime())) throw new Error('ROLLBACK_ACTIVE');
+        const currentExpiry = state.leaseExpiresAt?.toMillis?.()
+            || state.leaseExpiresAt?.getTime?.()
+            || Date.parse(state.leaseExpiresAt || 0);
+        const nextExpiry = new Date(now.getTime() + durationMs);
+        if (currentExpiry - now.getTime() >= minimumRemainingMs && currentExpiry >= nextExpiry.getTime()) {
+            return { state, renewed: false };
+        }
+        const updates = {
+            leaseExpiresAt: nextExpiry,
+            stateVersion: nextStateVersion(state),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        };
+        transaction.set(controlRef, updates, { merge: true });
+        return { state: { ...state, ...updates }, renewed: true };
+    });
+}
+
+async function updateOwnedBuildState(db, { leaseToken, targetRevision, updates, now = new Date() }) {
+    const controlRef = db.doc(CONTROL_DOCUMENT);
+    return db.runTransaction(async (transaction) => {
+        const snap = await transaction.get(controlRef);
+        if (!snap.exists) throw new Error('CONTROL_STATE_MISSING');
+        const state = snap.data();
+        assertLease(state, leaseToken, targetRevision, now.getTime());
+        if (isRollbackActive(state, now.getTime())) throw new Error('ROLLBACK_ACTIVE');
+        const stateVersion = nextStateVersion(state);
+        transaction.set(controlRef, {
+            ...updates,
+            stateVersion,
+            updatedAt: serverTimestamp()
+        }, { merge: true });
+        return { ...state, ...updates, stateVersion };
+    });
+}
+
 async function finalizeControlState(db, { leaseToken, targetRevision, updates, now = new Date(), allowNewerRevision = false }) {
     const controlRef = db.doc(CONTROL_DOCUMENT);
     return db.runTransaction(async (transaction) => {
@@ -67,6 +116,7 @@ async function finalizeControlState(db, { leaseToken, targetRevision, updates, n
         if (hasNewerRevision && !allowNewerRevision) throw new Error('BUILD_OBSOLETE');
         transaction.set(controlRef, {
             ...clearLease(now),
+            stateVersion: nextStateVersion(state),
             ...(!hasNewerRevision ? {
                 dirtySince: null,
                 quietUntil: null,
@@ -76,6 +126,7 @@ async function finalizeControlState(db, { leaseToken, targetRevision, updates, n
             ...updates,
             dirty: hasNewerRevision ? true : Boolean(updates.dirty),
             buildState: hasNewerRevision ? 'queued' : updates.buildState,
+            sourceLagState: hasNewerRevision ? 'behind' : updates.sourceLagState,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
         return { hasNewerRevision, state };
@@ -91,6 +142,7 @@ async function releaseBuildLease(db, { leaseToken, updates = {}, now = new Date(
         if (!leaseToken || state.leaseToken !== leaseToken) return false;
         transaction.set(controlRef, {
             ...clearLease(now),
+            stateVersion: nextStateVersion(state),
             ...(state.mode === 'paused' ? {} : updates),
             updatedAt: serverTimestamp()
         }, { merge: true });
@@ -115,6 +167,9 @@ function pointerFromControlState(state, slot) {
             revision: state[revisionField],
             manifestPath: state[pathField],
             manifestSha256: state[hashField],
+            aggregateSha256: slot === 'current' ? state.currentAggregateSha256 : null,
+            impactPlanPath: slot === 'current' ? state.currentImpactPlanPath : null,
+            impactPlanSha256: slot === 'current' ? state.currentImpactPlanSha256 : null,
             publishedAt: null
         });
     } catch {
@@ -122,10 +177,10 @@ function pointerFromControlState(state, slot) {
     }
 }
 
-async function enqueueRevalidation(revision, manifestSha256) {
+async function enqueueRevalidation(identity) {
     const queue = getFunctions().taskQueue(REVALIDATION_TASK);
     await queue.enqueue(
-        { schemaVersion: 1, revision, manifestSha256 },
+        { schemaVersion: 1, ...identity },
         { scheduleDelaySeconds: 0, dispatchDeadlineSeconds: 300 }
     );
 }
@@ -160,12 +215,21 @@ async function dispatchBuildRequest(dependencies, input = {}) {
     const quietUntil = state.quietUntil?.toDate?.() || (state.quietUntil instanceof Date ? state.quietUntil : null);
     if (quietUntil && quietUntil.getTime() > now().getTime()) {
         const taskId = await enqueueSuccessor(desiredRevision, quietUntil);
-        await controlRef.set({
-            queuedTaskName: taskId,
-            queuedFor: quietUntil,
-            buildState: 'queued',
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
+        await db.runTransaction(async (transaction) => {
+            const freshSnap = await transaction.get(controlRef);
+            if (!freshSnap.exists) return;
+            const fresh = freshSnap.data();
+            if (fresh.mode === 'paused'
+                || Number(fresh.desiredRevision || 0) !== desiredRevision
+                || !fresh.dirty) return;
+            transaction.set(controlRef, {
+                queuedTaskName: taskId,
+                queuedFor: quietUntil,
+                buildState: 'queued',
+                stateVersion: nextStateVersion(fresh),
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+        });
         return { result: 'rescheduled_for_debounce', revision: desiredRevision, taskId };
     }
 
@@ -200,6 +264,7 @@ async function buildCatalog(dependencies, input = {}) {
     const buildRef = db.doc(`sys_catalog_publication_builds/${buildId}`);
     let sourceDocuments = [];
     let release = null;
+    let pointerCommitted = false;
     try {
         await buildRef.set({
             schemaVersion: 1,
@@ -218,24 +283,84 @@ async function buildCatalog(dependencies, input = {}) {
         const mutationTime = acquired.state.lastMutationAt?.toDate?.()
             || (acquired.state.lastMutationAt instanceof Date ? acquired.state.lastMutationAt : null);
         const generatedAt = (mutationTime || now()).toISOString();
-        const snapshot = buildSnapshotFiles({ projection, inventory, revision: requestedRevision, generatedAt });
+        let beforeProducts = [];
+        let impactFallbackReason = null;
+        const baselineCandidates = [readCurrentPointer, readPreviousPointer, readLastKnownGoodPointer];
+        for (const readPointer of baselineCandidates) {
+            try {
+                const pointerObject = await readPointer(bucket);
+                if (!pointerObject?.value) continue;
+                beforeProducts = (await readReleaseProducts(bucket, pointerObject.value)).products;
+                impactFallbackReason = null;
+                break;
+            } catch {
+                impactFallbackReason = 'source_release_unavailable';
+            }
+        }
+        const impactPlan = impactFallbackReason
+            ? createFullImpactPlan({
+                revision: requestedRevision,
+                aggregateSha256: projection.aggregateSha256,
+                reason: impactFallbackReason,
+                generatedAt
+            })
+            : buildImpactPlan({
+                beforeProducts,
+                afterProducts: projection.full,
+                revision: requestedRevision,
+                aggregateSha256: projection.aggregateSha256,
+                generatedAt
+            });
+        const snapshot = buildSnapshotFiles({
+            projection,
+            inventory,
+            revision: requestedRevision,
+            generatedAt,
+            impactPlan
+        });
 
         await assertBuildStillCurrent(db, token, requestedRevision);
-        await db.doc(CONTROL_DOCUMENT).set({ buildState: 'validating', updatedAt: serverTimestamp() }, { merge: true });
+        await updateOwnedBuildState(db, {
+            leaseToken: token,
+            targetRevision: requestedRevision,
+            now: now(),
+            updates: { buildState: 'validating' }
+        });
         release = await writeImmutableRelease(bucket, snapshot, requestedRevision);
-        await assertBuildStillCurrent(db, token, requestedRevision);
+        await renewBuildLease(db, {
+            leaseToken: token,
+            targetRevision: requestedRevision,
+            now: now()
+        });
 
         await buildRef.set({
             state: 'prepared',
             sourceDocuments: sourceDocuments.length,
             publicProducts: projection.full.length,
             aggregateSha256: projection.aggregateSha256,
+            impactPlanPath: release.impactPlanPath,
+            impactPlanSha256: release.impactPlanSha256,
+            impactMode: impactPlan.mode,
             manifestPath: release.manifestPath,
             manifestSha256: release.manifestSha256,
             storageGenerations: release.generations,
             inventoryOverview: inventory,
             preparedAt: serverTimestamp()
         }, { merge: true });
+
+        await updateOwnedBuildState(db, {
+            leaseToken: token,
+            targetRevision: requestedRevision,
+            now: now(),
+            updates: {
+                preparedRevision: requestedRevision,
+                preparedManifestPath: release.manifestPath,
+                preparedManifestSha256: release.manifestSha256,
+                preparedAggregateSha256: release.aggregateSha256,
+                preparedImpactPlanPath: release.impactPlanPath,
+                preparedImpactPlanSha256: release.impactPlanSha256
+            }
+        });
 
         const currentState = await readPointerState(bucket, POINTER_PATHS.current);
         const currentPointer = currentState.error || currentState.missing
@@ -266,13 +391,48 @@ async function buildCatalog(dependencies, input = {}) {
         const lastKnownGoodCandidate = previousCandidate === controlPrevious
             ? controlLastKnownGood
             : controlPrevious || controlLastKnownGood;
+        await renewBuildLease(db, {
+            leaseToken: token,
+            targetRevision: requestedRevision,
+            now: now(),
+            minimumRemainingMs: 120000
+        });
         const published = await publishCurrentPointer(bucket, {
             revision: requestedRevision,
             release,
             previous: previousCandidate,
             lastKnownGood: lastKnownGoodCandidate,
             excludedManifestSha256: acquired.state.rejectedManifestSha256 || null,
-            expectedGeneration: currentState.generation || 0
+            expectedGeneration: currentState.generation || 0,
+            onCurrentCommitted: async ({ generation }) => {
+                pointerCommitted = true;
+                await db.runTransaction(async (transaction) => {
+                    const controlRef = db.doc(CONTROL_DOCUMENT);
+                    const snap = await transaction.get(controlRef);
+                    const state = snap.data() || {};
+                    assertLease(state, token, requestedRevision);
+                    transaction.set(controlRef, {
+                        stateVersion: nextStateVersion(state),
+                        buildState: 'pointer_committed_control_pending',
+                        publishedRevision: requestedRevision,
+                        currentManifestPath: release.manifestPath,
+                        currentManifestSha256: release.manifestSha256,
+                        currentAggregateSha256: release.aggregateSha256,
+                        currentImpactPlanPath: release.impactPlanPath,
+                        currentImpactPlanSha256: release.impactPlanSha256,
+                        pendingRevalidationPlan: null,
+                        pendingRevalidationPlanHash: null,
+                        pendingRevalidationRevision: null,
+                        pendingRevalidationManifestSha256: null,
+                        currentPointerGeneration: generation,
+                        integrityState: 'valid',
+                        sourceLagState: Number(state.desiredRevision || 0) > requestedRevision ? 'behind' : 'current',
+                        invalidationState: 'pending',
+                        servedState: 'pending',
+                        updatedAt: serverTimestamp()
+                    }, { merge: true });
+                });
+            }
         });
         const previousPointer = published.previousPointer;
         const lastKnownGoodPointer = published.lastKnownGoodPointer;
@@ -298,6 +458,13 @@ async function buildCatalog(dependencies, input = {}) {
             preparedManifestSha256: release.manifestSha256,
             currentManifestPath: release.manifestPath,
             currentManifestSha256: release.manifestSha256,
+            currentAggregateSha256: release.aggregateSha256,
+            currentImpactPlanPath: release.impactPlanPath,
+            currentImpactPlanSha256: release.impactPlanSha256,
+            pendingRevalidationPlan: null,
+            pendingRevalidationPlanHash: null,
+            pendingRevalidationRevision: null,
+            pendingRevalidationManifestSha256: null,
             currentPointerGeneration: published.generation,
             previousRevision: previousPointer?.revision || null,
             previousManifestPath: previousPointer?.manifestPath || null,
@@ -306,6 +473,10 @@ async function buildCatalog(dependencies, input = {}) {
             lastKnownGoodManifestPath: lastKnownGoodPointer?.manifestPath || null,
             lastKnownGoodManifestSha256: lastKnownGoodPointer?.manifestSha256 || null,
             buildState: 'revalidating',
+            integrityState: 'valid',
+            sourceLagState: 'current',
+            invalidationState: 'pending',
+            servedState: 'pending',
             lastBuildCompletedAt: serverTimestamp(),
             lastPublishedAt: serverTimestamp(),
             consecutiveFailures: 0,
@@ -318,13 +489,30 @@ async function buildCatalog(dependencies, input = {}) {
         await buildRef.set({ state: 'published', pointerGeneration: published.generation, publishedAt: serverTimestamp() }, { merge: true });
 
         try {
-            await enqueueRevalidationTask(requestedRevision, release.manifestSha256);
+            await enqueueRevalidationTask({
+                revision: requestedRevision,
+                manifestSha256: release.manifestSha256,
+                aggregateSha256: release.aggregateSha256,
+                impactPlanPath: release.impactPlanPath,
+                impactPlanSha256: release.impactPlanSha256,
+                planHash: impactPlan.planHash,
+                impactPlan
+            });
         } catch (error) {
-            await db.doc(CONTROL_DOCUMENT).set({
-                buildState: 'degraded',
-                lastError: cleanError(error),
-                updatedAt: serverTimestamp()
-            }, { merge: true });
+            await db.runTransaction(async (transaction) => {
+                const controlRef = db.doc(CONTROL_DOCUMENT);
+                const snap = await transaction.get(controlRef);
+                const state = snap.data() || {};
+                if (Number(state.publishedRevision || 0) !== requestedRevision
+                    || String(state.currentManifestSha256 || '') !== release.manifestSha256) return;
+                transaction.set(controlRef, {
+                    buildState: 'degraded',
+                    invalidationState: 'failed',
+                    stateVersion: nextStateVersion(state),
+                    lastError: cleanError(error),
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+            });
             await buildRef.set({ state: 'revalidate_pending', revalidationError: cleanError(error) }, { merge: true });
             logger('error', {
                 phase: 'revalidate', buildId, targetRevision: requestedRevision,
@@ -369,14 +557,31 @@ async function buildCatalog(dependencies, input = {}) {
                 await releaseBuildLease(db, {
                     leaseToken: token,
                     now: now(),
-                    updates: { buildState: 'healthy' }
+                    updates: { buildState: 'revalidating', invalidationState: 'pending' }
                 });
                 return { result: 'cas_noop', revision: latest.value.revision };
             }
         }
         await Promise.all([
             buildRef.set({ state: 'failed', error: cleanError(error), failedAt: serverTimestamp() }, { merge: true }),
-            releaseBuildLease(db, {
+            pointerCommitted
+                ? db.runTransaction(async (transaction) => {
+                    const controlRef = db.doc(CONTROL_DOCUMENT);
+                    const snap = await transaction.get(controlRef);
+                    const state = snap.data() || {};
+                    if (isRollbackActive(state, now().getTime())) return;
+                    const ownsLease = state.leaseToken === token;
+                    const ownsIdentity = Number(state.publishedRevision || 0) === requestedRevision
+                        && String(state.currentManifestSha256 || '') === String(release?.manifestSha256 || '');
+                    if (!ownsLease && !ownsIdentity) return;
+                    transaction.set(controlRef, {
+                        buildState: 'pointer_committed_control_pending',
+                        lastError: cleanError(error),
+                        stateVersion: nextStateVersion(state),
+                        updatedAt: serverTimestamp()
+                    }, { merge: true });
+                })
+                : releaseBuildLease(db, {
                 leaseToken: token,
                 now: now(),
                 updates: {
@@ -419,5 +624,7 @@ module.exports = {
     dispatchBuildRequest,
     dispatchCatalogBuild,
     finalizeControlState,
-    releaseBuildLease
+    renewBuildLease,
+    releaseBuildLease,
+    updateOwnedBuildState
 };

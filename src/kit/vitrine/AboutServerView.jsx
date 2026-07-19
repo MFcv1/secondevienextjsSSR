@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { ArrowRight, CheckCircle2, Instagram, Mail, Palette, Search, Shield } from 'lucide-react';
 import AboutBeforeAfterIsland from './AboutBeforeAfterIsland';
 import AboutCriticalStyles from './AboutCriticalStyles';
@@ -449,12 +450,12 @@ function ContactSection() {
             <span className="block font-light lowercase italic text-[#A68A64]">suite de l'histoire ?</span>
           </h2>
           <div className="relative top-5 flex flex-col items-center gap-6 md:top-6 sm:flex-row">
-            <a href="/devis" className="group relative flex items-center justify-center gap-3 overflow-hidden rounded-full bg-[#F9F6F0] px-8 py-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#1A1A1A] transition-transform duration-500 hover:scale-105 md:px-10 md:py-5 md:text-xs">
+            <Link href="/devis" className="group relative flex items-center justify-center gap-3 overflow-hidden rounded-full bg-[#F9F6F0] px-8 py-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#1A1A1A] transition-transform duration-500 hover:scale-105 md:px-10 md:py-5 md:text-xs">
               <Mail size={16} className="relative z-10 text-[#A68A64]" />
               <span className="relative z-10 text-[#1A1A1A] transition-colors duration-500 group-hover:text-white">Demander un devis</span>
               <span className="absolute inset-0 translate-y-full bg-[#A68A64] transition-transform duration-500 group-hover:translate-y-0" />
-            </a>
-            <a href="/" className="group relative flex cursor-pointer items-center gap-3 px-6 py-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 transition-colors duration-300 hover:text-white md:text-xs">
+            </Link>
+            <Link href="/" className="group relative flex cursor-pointer items-center gap-3 px-6 py-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 transition-colors duration-300 hover:text-white md:text-xs">
               <span className="relative">
                 Explorer le catalogue
                 <span className="absolute left-0 bottom-[-4px] h-px w-full origin-left scale-x-0 bg-[#A68A64] transition-transform duration-500 group-hover:scale-x-100" />
@@ -462,7 +463,7 @@ function ContactSection() {
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/20 transition-all duration-500 group-hover:border-[#A68A64] group-hover:bg-[#A68A64]">
                 <ArrowRight size={14} className="transition-colors group-hover:text-[#1A1A1A]" />
               </span>
-            </a>
+            </Link>
           </div>
         </div>
       </div>

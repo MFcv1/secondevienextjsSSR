@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ArrowRight, Search, X, LayoutGrid } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const DEFAULT_QUERY = '';
 const SEARCH_MIN_QUERY_LENGTH = 2;
@@ -19,11 +20,6 @@ const highlightPrediction = (label, query) => {
       <strong className="font-black">{cleanLabel.slice(cleanQuery.length)}</strong>
     </span>
   );
-};
-
-const navigateTo = (href) => {
-  if (!href || typeof window === 'undefined') return;
-  window.location.assign(href);
 };
 
 const buildSearchHref = (query) => {
@@ -285,6 +281,7 @@ export default function SearchSuggestIsland({
   inputClassName = '',
   buttonClassName = '',
 }) {
+  const router = useRouter();
   const [query, setQuery] = React.useState(DEFAULT_QUERY);
   const [data, setData] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
@@ -375,8 +372,8 @@ export default function SearchSuggestIsland({
   const chooseHref = React.useCallback((href) => {
     setOpen(false);
     setMobileOpen(false);
-    navigateTo(href);
-  }, []);
+    if (href) router.push(href);
+  }, [router]);
 
   const submitSearch = React.useCallback((event) => {
     event?.preventDefault();

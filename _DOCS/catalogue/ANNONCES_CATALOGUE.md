@@ -1,7 +1,9 @@
 # Annonces, catalogue et recherche
 
-Derniere mise a jour: 2026-07-18
+Derniere mise a jour: 2026-07-19
 Statut: `REFERENCE_ACTIVE`
+
+> Passation temporaire active: le chantier de consolidation publication, caches, navigation et images est decrit dans [CATALOGUE_SYNCHRONISATION_SITUATION.md](CATALOGUE_SYNCHRONISATION_SITUATION.md), puis traduit en phases executables dans [CATALOGUE_SYNCHRONISATION_ROADMAP.md](CATALOGUE_SYNCHRONISATION_ROADMAP.md). Ces deux fichiers doivent etre fusionnes dans les chapitres canoniques puis supprimes a la cloture, prevue au plus tard le 2026-07-26.
 
 ## 1. Perimetre
 
@@ -52,9 +54,11 @@ brouillon admin
   -> ecriture Firestore
   -> onCatalogSourceWrite (deduplication + desiredRevision)
   -> Cloud Tasks dispatchCatalogBuild
-  -> snapshot Storage immuable + manifeste + pointeur current
+  -> snapshot Storage immuable + manifeste + impact-plan.json
+  -> CAS du pointeur current, puis rotation previous/LKG
   -> dispatchCatalogRevalidation signe HMAC
-  -> revalidation Next
+  -> revalidation Next ciblee + preuve de version servie
+  -> signal public borne sys_catalog_live/current
   -> produit visible dans galerie/categorie/recherche/sitemap selon ses flags
   -> panier/checkout si isPurchasable=true
   -> vendu ou remis en vente selon cycle de commande/refund
@@ -77,11 +81,11 @@ furniture [DB, autoritaire]
   -> SSR, recherche, wishlist, sitemap et admin lazy
 ```
 
-Le lecteur valide schema, manifestes et checksums. Il tente `current`, puis `previous`, puis `last-known-good`; il ne scanne jamais Firestore en cas de panne Storage. Les seuls modes durables sont `active` et `paused`. Maintenance admin valide les releases et effectue le CAS de rollback, puis la reconstruction republie l'etat Firestore courant.
+Le lecteur valide schema, manifestes et checksums. Il tente `current`, puis `previous`, puis `last-known-good`; il ne scanne jamais Firestore en cas de panne Storage. Chaque lecture de pointeur epingle une generation Storage unique pour que metadata et corps ne puissent pas provenir de deux ecritures differentes. Les seuls modes durables sont `active` et `paused`. Maintenance admin valide les releases et effectue le CAS de rollback, puis la reconstruction republie l'etat Firestore courant.
 
-La recette de cloture du 2026-07-18 a exerce un rollback reel, sa pause, puis la reconstruction. Une recette complementaire du 2026-07-19 a modifie puis restaure le prix et le stock d'un meuble sandbox existant, verifie le snapshot public et ouvert le checkout sans paiement ni creation de commande. Deux reconstructions finales ont elimine l'etat transitoire des trois pointeurs: l'etat sandbox est `current=45`, `previous=44`, `last-known-good=43`, tous sains et fondes sur le meuble restaure. Data Access n'a releve aucune lecture publique de `furniture` ni aucun acces a `public/meta`; seules les lectures attendues du builder et les deux ecritures admin de modification/restauration ont ete observees. La preuve Data Access finale est conservee dans `_DOCS/data/AUDIT_COUTS_FIRESTORE.md`; la roadmap temporaire a ete supprimee apres fermeture de toutes ses gates.
+La recette de cloture du 2026-07-18 a exerce un rollback reel, sa pause, puis la reconstruction. Une recette complementaire du 2026-07-19 a modifie puis restaure le prix et le stock d'un meuble sandbox existant, verifie le snapshot public et ouvert le checkout sans paiement ni creation de commande. Deux reconstructions finales ont elimine l'etat transitoire des trois pointeurs: l'etat sandbox observe avant le present chantier etait `current=45`, `previous=44`, `last-known-good=43`. Data Access n'avait releve aucune lecture publique de `furniture` ni aucun acces a `public/meta`. Le nouveau contrat de synchronisation decrit ci-dessous est implemente localement mais n'est pas encore deploye ni recette dans le navigateur; les deux documents temporaires restent donc actifs.
 
-La passe de robustesse locale finale du 2026-07-18 a ferme les derniers ecarts trouves dans le code:
+La passe de synchronisation locale du 2026-07-19 a ferme les ecarts suivants dans le code:
 
 - le CAS de `current` precede maintenant toute rotation de `previous`/LKG: un CAS refuse ne modifie aucun pointeur de secours;
 - un retry de publication repare une rotation interrompue de `previous`/LKG et exclut explicitement une release rejetee des candidats LKG;
@@ -92,11 +96,17 @@ La passe de robustesse locale finale du 2026-07-18 a ferme les derniers ecarts t
 - le GC media protege explicitement les releases `current`, `previous` et LKG, quel que soit leur age, et s'arrete si un pointeur ou un index retenu est illisible;
 - Maintenance verifie l'integrite de chaque release avant d'afficher son etat ou d'autoriser sa selection;
 - le lecteur journalise un basculement sur un fallback sans reintroduire de lecture Firestore;
-- la revalidation HMAC inclut `/api/catalog` et `/api/search`; ces API ne conservent plus de reponse catalogue persistante hors de l'identite ETag, tandis que le TTL pointeur de 300 secondes preserve le contrat ISR public en cas d'echec de l'invalidation;
+- chaque mutation publie un `impact-plan.json` immutable, calcule par diff entre releases, qui contient ancienne/nouvelle URL produit, categories feuille/parentes et drapeaux galerie/recherche/sitemap; les depassements de bornes et rollbacks passent par un mode `full` explicitement motive;
+- la resolution d'une fiche compare l'ID direct puis le suffixe canonique contre les IDs reels du snapshot; un ID Firestore contenant des tirets n'est jamais tronque au dernier tiret;
+- `stateVersion`, le token/TTL du lease et l'operation de rollback proprietaire ferment les ecritures tardives; un CAS `current` reussi mais une finalisation Firestore interrompue reste dans un etat reparable par le reconciler;
+- la revalidation HMAC couvre le corps exact, le projet, l'audience et les quatre identites revision/manifeste/agregat/plan; elle invalide les chemins du plan et le seul tag mutable `catalog:api-pointer`, jamais le cache des releases immuables;
+- `integrityState`, `sourceLagState`, `invalidationState` et `servedState` remplacent tout booleen sain ambigu; une version n'est marquee servie qu'apres lecture concordante de `/api/catalog/version` et d'un echantillon HTML;
+- les pages ISR lisent le pointeur Storage frais a chaque regeneration; les API utilisent un cache pointeur de 15 secondes explicitement invalide et des releases immuables; ISR 300 reste l'unique filet temporel de page;
+- apres preuve de version servie, le backend remplace le document minimal `sys_catalog_live/current`; il ne contient ni prix, ni stock, ni image et n'est jamais autoritaire pour le commerce;
 - le checkout exige encore le statut `published`, preserve la semantique d'un prix courant egal a zero et relit prix/stock dans Firestore;
 - les backfills image s'appuient uniquement sur `onCatalogSourceWrite` et ne peuvent plus recreer `public/meta`.
 
-Ces corrections sont deployees dans le sandbox. La recette cloud complementaire du 2026-07-19 etend la preuve jusqu'a la revision saine `45`, avec `previous=44` et LKG `43` egalement saines.
+Le code de ce chantier est local uniquement jusqu'a la phase de deploiement explicitement autorisee.
 
 ## 5. Publication et indexabilite
 
@@ -165,6 +175,7 @@ src/kit/admin/GlobalInventoryView.jsx
 src/kit/admin/adminPublicCatalog.js
 src/kit/config/constants.js
 src/lib/server/products.js
+src/lib/server/productRoute.js
 src/lib/seo/categories.js
 src/lib/seo/indexability.js
 src/kit/marketplace/GalleryServerView.jsx

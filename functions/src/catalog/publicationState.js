@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 
-const CONTROL_SCHEMA_VERSION = 1;
+const CONTROL_SCHEMA_VERSION = 2;
 const CONTROL_DOCUMENT = 'sys_catalog_publication/secondevie';
 
 function normalizePublicationMode(value) {
@@ -10,6 +10,7 @@ function normalizePublicationMode(value) {
 function initialPublicationState(now = new Date()) {
     return {
         schemaVersion: CONTROL_SCHEMA_VERSION,
+        stateVersion: 1,
         projectionContractVersion: 1,
         mode: 'active',
         dirty: false,
@@ -30,6 +31,13 @@ function initialPublicationState(now = new Date()) {
         preparedRevision: null,
         currentManifestPath: null,
         currentManifestSha256: null,
+        currentAggregateSha256: null,
+        currentImpactPlanPath: null,
+        currentImpactPlanSha256: null,
+        pendingRevalidationPlan: null,
+        pendingRevalidationPlanHash: null,
+        pendingRevalidationRevision: null,
+        pendingRevalidationManifestSha256: null,
         currentPointerGeneration: null,
         previousRevision: null,
         previousManifestPath: null,
@@ -42,6 +50,13 @@ function initialPublicationState(now = new Date()) {
         lastBuildCompletedAt: null,
         lastPublishedAt: null,
         lastRevalidatedAt: null,
+        integrityState: 'unknown',
+        sourceLagState: 'unknown',
+        invalidationState: 'pending',
+        servedState: 'pending',
+        servedRevision: null,
+        servedAggregateSha256: null,
+        lastVerifiedAt: null,
         consecutiveFailures: 0,
         lastError: null,
         updatedAt: now
@@ -61,6 +76,15 @@ function isLeaseActive(state, nowMs = Date.now()) {
     return Boolean(state?.leaseToken && toMillis(state.leaseExpiresAt) > nowMs);
 }
 
+function nextStateVersion(state) {
+    return Math.max(0, Number(state?.stateVersion || 0)) + 1;
+}
+
+function isRollbackActive(state, nowMs = Date.now()) {
+    if (!state?.rollbackOperationId || !state?.rollbackState) return false;
+    return toMillis(state.rollbackExpiresAt) > nowMs;
+}
+
 function computeQuietUntil({ dirtySince, nowMs, publicFields = [] }) {
     const stockOnly = publicFields.length > 0
         && publicFields.every((field) => ['stock', 'sold', 'currentPrice', 'startingPrice', 'price'].includes(field));
@@ -72,6 +96,7 @@ function computeQuietUntil({ dirtySince, nowMs, publicFields = [] }) {
 
 function acquireLease(state, { owner, targetRevision, now = new Date(), durationMs = 120000, token } = {}) {
     if (normalizePublicationMode(state.mode) === 'paused') return null;
+    if (isRollbackActive(state, now.getTime())) return null;
     if (isLeaseActive(state, now.getTime())) return null;
     if (targetRevision > Number(state.desiredRevision || 0)) throw new Error('TARGET_REVISION_AHEAD');
     const leaseToken = token || crypto.randomUUID();
@@ -81,6 +106,7 @@ function acquireLease(state, { owner, targetRevision, now = new Date(), duration
         leaseTargetRevision: targetRevision,
         leaseAcquiredAt: now,
         leaseExpiresAt: new Date(now.getTime() + durationMs),
+        stateVersion: nextStateVersion(state),
         buildState: 'building',
         lastBuildStartedAt: now,
         updatedAt: now
@@ -107,7 +133,7 @@ function clearLease(now = new Date()) {
     };
 }
 
-function buildRollbackPreparationUpdate(state, { token, targetName, target, updatedAt = new Date() }) {
+function buildRollbackPreparationUpdate(state, { token, owner = 'catalog-maintenance', targetName, target, updatedAt = new Date(), durationMs = 120000 }) {
     const desiredRevision = Math.max(
         Number(state?.desiredRevision || 0),
         Number(state?.publishedRevision || 0),
@@ -115,8 +141,14 @@ function buildRollbackPreparationUpdate(state, { token, targetName, target, upda
     );
     return {
         mode: 'paused',
+        stateVersion: nextStateVersion(state),
         desiredRevision,
         rollbackState: 'preparing',
+        rollbackOperationId: token,
+        rollbackOwner: owner,
+        rollbackStartedAt: updatedAt,
+        rollbackHeartbeatAt: updatedAt,
+        rollbackExpiresAt: updatedAt instanceof Date ? new Date(updatedAt.getTime() + durationMs) : updatedAt,
         rollbackToken: token,
         rollbackTarget: targetName,
         rollbackTargetRevision: Number(target.revision),
@@ -133,7 +165,7 @@ function buildRollbackPreparationUpdate(state, { token, targetName, target, upda
     };
 }
 
-function buildRollbackControlUpdate(state, { current, target, currentPointerGeneration, updatedAt = new Date() }) {
+function buildRollbackControlUpdate(state, { current, target, currentPointerGeneration, revalidationPlan, updatedAt = new Date() }) {
     const desiredRevision = Math.max(
         Number(state?.desiredRevision || 0),
         Number(state?.publishedRevision || 0),
@@ -142,14 +174,28 @@ function buildRollbackControlUpdate(state, { current, target, currentPointerGene
     );
     return {
         ...clearLease(updatedAt),
+        stateVersion: nextStateVersion(state),
         mode: 'paused',
         dirty: Boolean(state?.dirty),
         desiredRevision,
         publishedRevision: Number(target.revision),
         revalidatedRevision: null,
         revalidatedManifestSha256: null,
+        integrityState: 'valid',
+        sourceLagState: 'behind',
+        invalidationState: 'pending',
+        servedState: 'pending',
+        servedRevision: null,
+        servedAggregateSha256: null,
         currentManifestPath: target.manifestPath,
         currentManifestSha256: target.manifestSha256,
+        currentAggregateSha256: target.aggregateSha256 || null,
+        currentImpactPlanPath: target.impactPlanPath || null,
+        currentImpactPlanSha256: target.impactPlanSha256 || null,
+        pendingRevalidationPlan: revalidationPlan || null,
+        pendingRevalidationPlanHash: revalidationPlan?.planHash || null,
+        pendingRevalidationRevision: revalidationPlan ? Number(target.revision) : null,
+        pendingRevalidationManifestSha256: revalidationPlan ? target.manifestSha256 : null,
         currentPointerGeneration,
         previousRevision: current?.revision ? Number(current.revision) : Number(state?.previousRevision || 0) || null,
         previousManifestPath: current?.manifestPath || state?.previousManifestPath || null,
@@ -158,6 +204,11 @@ function buildRollbackControlUpdate(state, { current, target, currentPointerGene
         rejectedManifestPath: current?.manifestPath || state?.currentManifestPath || null,
         rejectedManifestSha256: current?.manifestSha256 || state?.currentManifestSha256 || null,
         rollbackState: null,
+        rollbackOperationId: null,
+        rollbackOwner: null,
+        rollbackStartedAt: null,
+        rollbackHeartbeatAt: null,
+        rollbackExpiresAt: null,
         rollbackToken: null,
         rollbackTarget: null,
         rollbackTargetRevision: null,
@@ -177,6 +228,12 @@ function buildRollbackControlUpdate(state, { current, target, currentPointerGene
 function catalogIdentityMatches(state, revision, manifestSha256) {
     return Number(state?.publishedRevision || 0) === Number(revision || 0)
         && String(state?.currentManifestSha256 || '') === String(manifestSha256 || '');
+}
+
+function catalogReleaseIdentityMatches(state, identity = {}) {
+    return catalogIdentityMatches(state, identity.revision, identity.manifestSha256)
+        && (!identity.aggregateSha256 || String(state?.currentAggregateSha256 || '') === String(identity.aggregateSha256))
+        && (!identity.impactPlanSha256 || String(state?.currentImpactPlanSha256 || '') === String(identity.impactPlanSha256));
 }
 
 function needsCatalogRevalidation(state, pointer) {
@@ -200,12 +257,15 @@ module.exports = {
     buildRollbackControlUpdate,
     buildRollbackPreparationUpdate,
     catalogIdentityMatches,
+    catalogReleaseIdentityMatches,
     cleanError,
     clearLease,
     computeQuietUntil,
     initialPublicationState,
     isLeaseActive,
+    isRollbackActive,
     needsCatalogRevalidation,
+    nextStateVersion,
     normalizePublicationMode,
     toMillis
 };

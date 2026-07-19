@@ -6,9 +6,10 @@ import { buildSearchResponse } from '../../../src/kit/marketplace/searchModel';
 export const dynamic = 'force-dynamic';
 
 const getCatalog = async () => {
-  const result = await queryMaterializedCatalog({ scope: 'cards', limit: 120 });
+  const result = await queryMaterializedCatalog({ scope: 'cards', limit: 120, pointerCache: 'api' });
   return {
     catalogVersion: result.snapshot.catalogVersion,
+    aggregateSha256: result.snapshot.aggregateSha256,
     products: result.products.filter(isProductPublicVisible),
   };
 };
@@ -22,6 +23,7 @@ export async function GET(request) {
   const payload = {
     ...buildSearchResponse(catalog.products, query, { mode, limit }),
     catalogVersion: catalog.catalogVersion,
+    aggregateSha256: catalog.aggregateSha256,
   };
 
   return NextResponse.json(payload, {

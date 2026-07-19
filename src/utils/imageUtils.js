@@ -318,7 +318,6 @@ export const getProductCardImage = (item) => {
     const desktopCardSrcSet = buildSrcSet([
         { src: primary?.thumb, width: 480 },
         { src: primary?.card, width: 768 },
-        { src: primary?.medium, width: 1024 },
     ]);
     const thumbSrcSet = buildSrcSet([
         { src: primary?.thumb320, width: 320 },
@@ -388,160 +387,57 @@ export const preloadImage = (src, options = {}) => {
     return decodePromise;
 };
 
-export const preloadProductCardImages = (item, options = {}) => {
-    const cardImage = getProductCardImage(item);
-    const fullSrc = cardImage.src;
-    const priority = options.priority || 'auto';
-    const promises = [];
+const imageWarmupQueue = [];
+const imageWarmupPromises = new Map();
+let activeImageWarmups = 0;
+export const MAX_CONCURRENT_IMAGE_WARMUPS = 2;
 
-    if (fullSrc) {
-        promises.push(preloadImage(fullSrc, {
-            priority,
-            srcSet: cardImage.srcSet,
-            sizes: PRODUCT_CARD_IMAGE_SIZES,
-            decode: options.decodeFull ?? false,
-        }).catch(() => null));
-    }
-
-    return promises;
+const shouldSkipSpeculativeImageWarmup = () => {
+    if (typeof navigator === 'undefined') return false;
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    return Boolean(connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || ''));
 };
 
-export const preloadProductImages = (item, options = {}) => {
-    const imageItems = getProductImageItems(item);
-    if (!imageItems.length) return [];
-
-    const activeIndex = Math.max(0, Math.min(options.activeIndex || 0, imageItems.length - 1));
-    const radius = options.radius ?? 1;
-    const indexes = new Set([activeIndex]);
-
-    for (let offset = 1; offset <= radius; offset += 1) {
-        if (activeIndex + offset < imageItems.length) indexes.add(activeIndex + offset);
-        if (activeIndex - offset >= 0) indexes.add(activeIndex - offset);
-    }
-
-    return Array.from(indexes).flatMap((index) => {
-        const image = imageItems[index];
-        const priority = index === activeIndex ? (options.priority || 'high') : (options.neighborPriority || 'auto');
-        const displaySrc = getProductDisplayImageSrc(image, {
-            variant: options.variant,
-            viewport: options.viewport,
-        });
-        return preloadImage(displaySrc, {
-            priority,
-            srcSet: options.srcSet === true ? image.srcSet : undefined,
-            sizes: options.sizes || PRODUCT_DETAIL_IMAGE_SIZES,
-            decode: options.decode,
-            decoding: 'async',
-        }).catch(() => null);
-    });
-};
-
-export const preloadPrimaryProductDetailImage = (item, options = {}) => {
-    const imageItems = getProductImageItems(item);
-    if (!imageItems.length) return Promise.resolve(null);
-
-    const activeIndex = Math.max(0, Math.min(options.activeIndex || 0, imageItems.length - 1));
-    const image = imageItems[activeIndex];
-    const src = getProductDisplayImageSrc(image, {
-        variant: options.variant,
-        viewport: options.viewport,
-    });
-    if (!src) return Promise.resolve(null);
-
-    return preloadImage(src, {
-        priority: options.priority || 'high',
-        srcSet: options.srcSet === true ? image.srcSet : undefined,
-        sizes: options.sizes || PRODUCT_DETAIL_IMAGE_SIZES,
-        decode: options.decode !== false,
-        decoding: options.decoding || 'async',
-    }).catch(() => null);
-};
-
-export const prewarmProductListImages = (items, options = {}) => {
-    if (!Array.isArray(items) || !items.length || typeof window === 'undefined') return () => {};
-
-    const connection = navigator?.connection || navigator?.mozConnection || navigator?.webkitConnection;
-    if (connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || '')) return () => {};
-
-    const maxItems = Math.max(1, options.maxItems ?? 36);
-    const delay = Math.max(80, options.delay ?? 220);
-    const initialDelay = Math.max(0, options.initialDelay ?? 700);
-    const includeDetailPrimary = options.includeDetailPrimary !== false;
-    const useIdle = options.idle !== false;
-    const seen = new Set();
-    const queue = [];
-    const srcSetBySrc = new Map();
-
-    const push = (src, metadata = {}) => {
-        if (!src || seen.has(src)) return;
-        seen.add(src);
-        queue.push(src);
-        if (metadata.srcSet) srcSetBySrc.set(src, metadata.srcSet);
-    };
-
-    items.slice(0, maxItems).forEach((item) => {
-        const cardImage = getProductCardImage(item);
-        push(cardImage.src, { srcSet: cardImage.srcSet });
-
-        if (includeDetailPrimary) {
-            const primary = getProductImageItems(item)[0];
-            const detailSrc = getProductDisplayImageSrc(primary, {
-                variant: options.detailVariant,
-                viewport: options.detailViewport,
+const pumpImageWarmups = () => {
+    while (activeImageWarmups < MAX_CONCURRENT_IMAGE_WARMUPS && imageWarmupQueue.length) {
+        const task = imageWarmupQueue.shift();
+        activeImageWarmups += 1;
+        preloadImage(task.src, {
+            priority: task.intent === 'press' ? 'high' : 'auto',
+            sizes: PRODUCT_DETAIL_IMAGE_SIZES,
+            decode: true,
+        })
+            .then(task.resolve, task.reject)
+            .finally(() => {
+                activeImageWarmups = Math.max(0, activeImageWarmups - 1);
+                pumpImageWarmups();
             });
-            push(detailSrc, {
-                srcSet: options.detailSrcSet === true ? primary?.srcSet : undefined,
-            });
-        }
+    }
+};
+
+export const scheduleProductImageWarmup = (src, { intent = 'visible' } = {}) => {
+    if (!src || typeof window === 'undefined') return Promise.resolve(null);
+    if (intent !== 'press' && shouldSkipSpeculativeImageWarmup()) return Promise.resolve(null);
+    const existing = imageWarmupPromises.get(src);
+    if (existing) return existing;
+    const promise = new Promise((resolve, reject) => {
+        const task = { src, intent, resolve, reject };
+        if (intent === 'press') imageWarmupQueue.unshift(task);
+        else imageWarmupQueue.push(task);
+        pumpImageWarmups();
+    }).catch((error) => {
+        imageWarmupPromises.delete(src);
+        throw error;
     });
+    imageWarmupPromises.set(src, promise);
+    return promise;
+};
 
-    let cancelled = false;
-    let timeoutId = 0;
-    let idleId = 0;
-
-    const clearScheduled = () => {
-        if (timeoutId) window.clearTimeout(timeoutId);
-        if (idleId && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
-        timeoutId = 0;
-        idleId = 0;
-    };
-
-    const schedule = (callback, wait) => {
-        timeoutId = window.setTimeout(() => {
-            timeoutId = 0;
-            if (useIdle && typeof window.requestIdleCallback === 'function') {
-                idleId = window.requestIdleCallback(() => {
-                    idleId = 0;
-                    callback();
-                }, { timeout: 1500 });
-                return;
-            }
-            callback();
-        }, wait);
-    };
-
-    const runNext = () => {
-        if (cancelled) return;
-        const src = queue.shift();
-        if (!src) return;
-
-        preloadImage(src, {
-            priority: options.priority || 'low',
-            srcSet: srcSetBySrc.get(src),
-            sizes: options.sizes || PRODUCT_CARD_IMAGE_SIZES,
-            decode: options.decode === true,
-            decoding: 'async',
-        }).catch(() => null);
-
-        if (queue.length) schedule(runNext, delay);
-    };
-
-    schedule(runNext, initialDelay);
-
-    return () => {
-        cancelled = true;
-        clearScheduled();
-    };
+export const clearProductImageWarmups = () => {
+    while (imageWarmupQueue.length) {
+        imageWarmupQueue.shift()?.resolve?.(null);
+    }
+    imageWarmupPromises.clear();
 };
 
 const createImage = (url) =>

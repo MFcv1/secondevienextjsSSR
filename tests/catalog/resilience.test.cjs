@@ -8,6 +8,7 @@ const {
   SNAPSHOT_ROOT,
   buildSnapshotFiles,
   publishCurrentPointer,
+  readJsonObjectState,
   readCurrentPointer,
   readLastKnownGoodPointer,
   readPointerState,
@@ -20,37 +21,100 @@ const {
   acquireLease,
   assertLease,
   buildRollbackControlUpdate,
+  buildRollbackPreparationUpdate,
   initialPublicationState,
+  isRollbackActive,
   needsCatalogRevalidation,
+  nextStateVersion,
 } = require('../../functions/src/catalog/publicationState');
 const { collectRetainedSnapshotPaths } = require('../../functions/src/catalog/mediaGarbageCollection');
 const { planReleaseGarbageCollection } = require('../../functions/src/catalog/releaseGarbageCollection');
+const { reconcileCatalog } = require('../../functions/src/catalog/catalogReconciler');
+const { renewBuildLease } = require('../../functions/src/catalog/buildCatalogSnapshot');
 
 class FakeFile {
-  constructor(name, store) { this.name = name; this.store = store; }
+  constructor(name, bucket, options = {}) {
+    this.name = name;
+    this.bucket = bucket;
+    this.store = bucket.store;
+    this.requestedGeneration = options.generation ? Number(options.generation) : null;
+  }
+  value() {
+    if (this.requestedGeneration === null) return this.store.get(this.name);
+    return this.bucket.versions.get(`${this.name}:${this.requestedGeneration}`);
+  }
   async save(buffer, options = {}) {
     const current = this.store.get(this.name);
     const expected = options.preconditionOpts?.ifGenerationMatch;
     const generation = current ? current.generation : 0;
     if (expected !== undefined && Number(expected) !== generation) throw Object.assign(new Error('precondition'), { code: 412 });
-    this.store.set(this.name, {
+    const value = {
       buffer: Buffer.from(buffer),
       generation: generation + 1,
       timeCreated: current?.timeCreated || new Date().toISOString(),
-    });
+    };
+    this.store.set(this.name, value);
+    this.bucket.versions.set(`${this.name}:${value.generation}`, { ...value, buffer: Buffer.from(value.buffer) });
   }
-  async download() { return [Buffer.from(this.store.get(this.name).buffer)]; }
+  async download() {
+    if (this.requestedGeneration !== null && this.bucket.onPinnedDownload) {
+      await this.bucket.onPinnedDownload(this.name, this.requestedGeneration);
+    }
+    const value = this.value();
+    if (!value) throw Object.assign(new Error('generation missing'), { code: 404 });
+    return [Buffer.from(value.buffer)];
+  }
   async exists() { return [this.store.has(this.name)]; }
   async getMetadata() {
-    const value = this.store.get(this.name);
+    const value = this.value();
+    if (!value) throw Object.assign(new Error('generation missing'), { code: 404 });
     return [{ generation: String(value.generation), size: String(value.buffer.length), timeCreated: value.timeCreated }];
   }
 }
 class FakeBucket {
-  constructor() { this.store = new Map(); }
-  file(name) { return new FakeFile(name, this.store); }
+  constructor() { this.store = new Map(); this.versions = new Map(); this.onPinnedDownload = null; }
+  file(name, options) { return new FakeFile(name, this, options); }
   async getFiles({ prefix }) {
     return [[...this.store.keys()].filter((name) => name.startsWith(prefix)).map((name) => this.file(name))];
+  }
+}
+
+class FakeDb {
+  constructor(values = {}) { this.values = new Map(Object.entries(values)); }
+  doc(target) {
+    return {
+      path: target,
+      get: async () => {
+        const value = this.values.get(target);
+        return { exists: Boolean(value), data: () => value ? { ...value } : undefined };
+      },
+      set: async (patch, options = {}) => {
+        this.values.set(target, options.merge ? { ...(this.values.get(target) || {}), ...patch } : { ...patch });
+      },
+    };
+  }
+  async runTransaction(callback) {
+    return callback({
+      get: async (ref) => {
+        const value = this.values.get(ref.path);
+        return { exists: Boolean(value), data: () => value ? { ...value } : undefined };
+      },
+      set: (ref, patch, options = {}) => {
+        this.values.set(ref.path, options.merge ? { ...(this.values.get(ref.path) || {}), ...patch } : { ...patch });
+      },
+    });
+  }
+}
+
+class SerializedFakeDb extends FakeDb {
+  constructor(values = {}) {
+    super(values);
+    this.transactionTail = Promise.resolve();
+  }
+  runTransaction(callback) {
+    const run = this.transactionTail.then(() => super.runTransaction(callback));
+    this.transactionTail = run.catch(() => null);
+    return run;
   }
 }
 
@@ -275,4 +339,288 @@ test('le GC media refuse de supprimer si un pointeur est corrompu', async () => 
     collectRetainedSnapshotPaths(bucket),
     /CATALOG_JSON_INVALID/
   );
+});
+
+test('lecture pointeur epingle metadata et corps a une seule generation', async () => {
+  const bucket = new FakeBucket();
+  await bucket.file(POINTER_PATHS.current).save(Buffer.from(JSON.stringify({ revision: 1, marker: 'old' })));
+  let replaced = false;
+  bucket.onPinnedDownload = async (name, generation) => {
+    if (replaced || name !== POINTER_PATHS.current || generation !== 1) return;
+    replaced = true;
+    await bucket.file(name).save(Buffer.from(JSON.stringify({ revision: 2, marker: 'new' })));
+  };
+  const state = await readJsonObjectState(bucket, POINTER_PATHS.current);
+  assert.equal(state.generation, '1');
+  assert.deepEqual(state.value, { revision: 1, marker: 'old' });
+  assert.equal((await readJsonObjectState(bucket, POINTER_PATHS.current)).value.revision, 2);
+});
+
+test('lecture pointeur recommence si la generation epinglee disparait pendant le telechargement', async () => {
+  const bucket = new FakeBucket();
+  await bucket.file(POINTER_PATHS.current).save(Buffer.from(JSON.stringify({ revision: 1 })));
+  let replaced = false;
+  bucket.onPinnedDownload = async (name, generation) => {
+    if (replaced || name !== POINTER_PATHS.current || generation !== 1) return;
+    replaced = true;
+    bucket.versions.delete(`${name}:${generation}`);
+    await bucket.file(name).save(Buffer.from(JSON.stringify({ revision: 2 })));
+  };
+  const state = await readJsonObjectState(bucket, POINTER_PATHS.current);
+  assert.equal(state.generation, '2');
+  assert.equal(state.value.revision, 2);
+});
+
+test('un CAS current reussi puis une panne callback reste identifiable et reparable sans rotation prematuree', async () => {
+  const bucket = new FakeBucket();
+  const release1 = await release(bucket, 1);
+  await publishCurrentPointer(bucket, { revision: 1, release: release1, expectedGeneration: 0 });
+  const current1 = await readCurrentPointer(bucket);
+  const release2 = await release(bucket, 2);
+  await assert.rejects(publishCurrentPointer(bucket, {
+    revision: 2,
+    release: release2,
+    previous: current1.value,
+    expectedGeneration: current1.generation,
+    onCurrentCommitted: async () => { throw new Error('FIRESTORE_AFTER_CAS'); },
+  }), /FIRESTORE_AFTER_CAS/);
+  assert.equal((await readCurrentPointer(bucket)).value.revision, 2);
+  assert.equal(await readPreviousPointer(bucket), null);
+
+  const partial = await readCurrentPointer(bucket);
+  await publishCurrentPointer(bucket, {
+    revision: 2,
+    release: release2,
+    previous: current1.value,
+    expectedGeneration: partial.generation,
+  });
+  assert.equal((await readPreviousPointer(bucket)).value.revision, 1);
+});
+
+test('le reconciler finalise pointer_committed_control_pending sans creer une autre release', async () => {
+  const bucket = new FakeBucket();
+  const prepared = await release(bucket, 2);
+  const published = await writePointer(bucket, POINTER_PATHS.current, {
+    revision: 2,
+    manifestPath: prepared.manifestPath,
+    manifestSha256: prepared.manifestSha256,
+    aggregateSha256: prepared.aggregateSha256,
+    impactPlanPath: prepared.impactPlanPath,
+    impactPlanSha256: prepared.impactPlanSha256,
+  });
+  const db = new FakeDb({
+    'sys_catalog_publication/secondevie': {
+      ...initialPublicationState(new Date('2026-07-19T00:00:00.000Z')),
+      stateVersion: 8,
+      dirty: false,
+      desiredRevision: 2,
+      preparedRevision: 2,
+      preparedManifestPath: prepared.manifestPath,
+      preparedManifestSha256: prepared.manifestSha256,
+      preparedAggregateSha256: prepared.aggregateSha256,
+      preparedImpactPlanPath: prepared.impactPlanPath,
+      preparedImpactPlanSha256: prepared.impactPlanSha256,
+      publishedRevision: 2,
+      currentManifestPath: prepared.manifestPath,
+      currentManifestSha256: prepared.manifestSha256,
+      currentPointerGeneration: published.generation,
+      buildState: 'pointer_committed_control_pending',
+    },
+  });
+  const enqueued = [];
+  const beforeObjects = bucket.store.size;
+  const result = await reconcileCatalog({
+    db,
+    bucket,
+    now: () => new Date('2026-07-19T00:00:30.000Z'),
+    enqueue: async (...args) => { enqueued.push(args); return true; },
+    logger: () => {},
+  });
+  const control = db.values.get('sys_catalog_publication/secondevie');
+  assert.equal(control.buildState, 'revalidating');
+  assert.equal(control.publishedRevision, 2);
+  assert.equal(control.leaseToken, null);
+  assert.equal(bucket.store.size, beforeObjects);
+  assert.equal(enqueued[0][0], 'dispatchCatalogRevalidation');
+  assert.ok(result.repairs.includes('pointer_commit_finalized'));
+});
+
+test('un rollback vivant reste possede par son operation et un rollback expire est repris une seule fois', async () => {
+  const bucket = new FakeBucket();
+  const target = await release(bucket, 1);
+  await writePointer(bucket, POINTER_PATHS.current, {
+    revision: 1,
+    manifestPath: target.manifestPath,
+    manifestSha256: target.manifestSha256,
+    aggregateSha256: target.aggregateSha256,
+    impactPlanPath: target.impactPlanPath,
+    impactPlanSha256: target.impactPlanSha256,
+  });
+  const base = {
+    ...initialPublicationState(new Date('2026-07-19T00:00:00.000Z')),
+    stateVersion: 3,
+    mode: 'paused',
+    rollbackState: 'preparing',
+    rollbackOperationId: 'rollback-1',
+    rollbackOwner: 'admin-1',
+    rollbackTargetRevision: 1,
+    rollbackTargetManifestSha256: target.manifestSha256,
+  };
+  const liveDb = new FakeDb({
+    'sys_catalog_publication/secondevie': {
+      ...base,
+      rollbackExpiresAt: new Date('2026-07-19T00:02:00.000Z'),
+    },
+  });
+  const live = await reconcileCatalog({
+    db: liveDb, bucket, now: () => new Date('2026-07-19T00:01:00.000Z'), logger: () => {}, enqueue: async () => true,
+  });
+  assert.equal(live.result, 'rollback_operation_active');
+  assert.equal(liveDb.values.get('sys_catalog_publication/secondevie').rollbackOwner, 'admin-1');
+
+  const expiredDb = new FakeDb({
+    'sys_catalog_publication/secondevie': {
+      ...base,
+      rollbackExpiresAt: new Date('2026-07-18T23:59:00.000Z'),
+    },
+  });
+  const first = await reconcileCatalog({
+    db: expiredDb, bucket, now: () => new Date('2026-07-19T00:01:00.000Z'), logger: () => {}, enqueue: async () => true,
+  });
+  const second = await reconcileCatalog({
+    db: expiredDb, bucket, now: () => new Date('2026-07-19T00:01:01.000Z'), logger: () => {}, enqueue: async () => true,
+  });
+  assert.ok(first.repairs.includes('rollback_recovery_claimed'));
+  assert.ok(first.repairs.includes('rollback_finalized'));
+  assert.equal(second.repairs.includes('rollback_recovery_claimed'), false);
+  assert.equal(expiredDb.values.get('sys_catalog_publication/secondevie').rollbackOperationId, null);
+});
+
+test('une reparation stale ne peut ni voler une nouvelle operation ni rabaisser desiredRevision', async () => {
+  const bucket = new FakeBucket();
+  const target = await release(bucket, 1);
+  await writePointer(bucket, POINTER_PATHS.current, {
+    revision: 1,
+    manifestPath: target.manifestPath,
+    manifestSha256: target.manifestSha256,
+    aggregateSha256: target.aggregateSha256,
+    impactPlanPath: target.impactPlanPath,
+    impactPlanSha256: target.impactPlanSha256,
+  });
+  const db = new FakeDb({
+    'sys_catalog_publication/secondevie': {
+      ...initialPublicationState(new Date('2026-07-19T00:00:00.000Z')),
+      stateVersion: 4,
+      desiredRevision: 1,
+      mode: 'paused',
+      rollbackState: 'preparing',
+      rollbackOperationId: 'rollback-old',
+      rollbackOwner: 'admin-old',
+      rollbackExpiresAt: new Date('2026-07-18T23:59:00.000Z'),
+      rollbackTargetRevision: 1,
+      rollbackTargetManifestSha256: target.manifestSha256,
+    },
+  });
+  let advanced = false;
+  bucket.onPinnedDownload = async (name) => {
+    if (advanced || name !== POINTER_PATHS.current) return;
+    advanced = true;
+    db.values.set('sys_catalog_publication/secondevie', {
+      ...db.values.get('sys_catalog_publication/secondevie'),
+      stateVersion: 5,
+      desiredRevision: 2,
+      rollbackOperationId: 'rollback-new',
+      rollbackOwner: 'admin-new',
+      rollbackExpiresAt: new Date('2026-07-19T00:03:00.000Z'),
+    });
+  };
+  await assert.rejects(reconcileCatalog({
+    db, bucket, now: () => new Date('2026-07-19T00:01:00.000Z'), logger: () => {}, enqueue: async () => true,
+  }), /RECONCILE_STATE_ADVANCED/);
+  const state = db.values.get('sys_catalog_publication/secondevie');
+  assert.equal(state.desiredRevision, 2);
+  assert.equal(state.rollbackOperationId, 'rollback-new');
+  assert.equal(state.rollbackOwner, 'admin-new');
+});
+
+test('deux reconciliations concurrentes convergent sans ecraser une identite plus recente', async () => {
+  const bucket = new FakeBucket();
+  const target = await release(bucket, 1);
+  const published = await writePointer(bucket, POINTER_PATHS.current, {
+    revision: 1,
+    manifestPath: target.manifestPath,
+    manifestSha256: target.manifestSha256,
+    aggregateSha256: target.aggregateSha256,
+    impactPlanPath: target.impactPlanPath,
+    impactPlanSha256: target.impactPlanSha256,
+  });
+  const db = new SerializedFakeDb({
+    'sys_catalog_publication/secondevie': {
+      ...initialPublicationState(new Date('2026-07-19T00:00:00.000Z')),
+      stateVersion: 2,
+      desiredRevision: 1,
+      publishedRevision: 0,
+    },
+  });
+  const dependencies = {
+    db, bucket, now: () => new Date('2026-07-19T00:01:00.000Z'), logger: () => {}, enqueue: async () => true,
+  };
+  const results = await Promise.allSettled([
+    reconcileCatalog(dependencies),
+    reconcileCatalog(dependencies),
+  ]);
+  assert.equal(results.filter(({ status }) => status === 'fulfilled').length, 1);
+  assert.match(results.find(({ status }) => status === 'rejected').reason.message, /RECONCILE_STATE_ADVANCED/);
+  const state = db.values.get('sys_catalog_publication/secondevie');
+  assert.equal(state.publishedRevision, 1);
+  assert.equal(state.currentManifestSha256, target.manifestSha256);
+  assert.equal(String(state.currentPointerGeneration), String(published.generation));
+});
+
+test('le lease proche du CAS est renouvele et un token perdu interdit la publication', async () => {
+  const now = new Date('2026-07-19T00:00:00.000Z');
+  const db = new FakeDb({
+    'sys_catalog_publication/secondevie': {
+      ...initialPublicationState(now),
+      stateVersion: 2,
+      dirty: true,
+      desiredRevision: 7,
+      leaseToken: 'lease-7',
+      leaseOwner: 'worker',
+      leaseTargetRevision: 7,
+      leaseExpiresAt: new Date(now.getTime() + 5000),
+    },
+  });
+  const renewed = await renewBuildLease(db, {
+    leaseToken: 'lease-7', targetRevision: 7, now, minimumRemainingMs: 120000,
+  });
+  assert.equal(renewed.renewed, true);
+  assert.ok(renewed.state.leaseExpiresAt.getTime() >= now.getTime() + 120000);
+  db.values.set('sys_catalog_publication/secondevie', {
+    ...db.values.get('sys_catalog_publication/secondevie'), leaseToken: 'lease-new',
+  });
+  await assert.rejects(renewBuildLease(db, {
+    leaseToken: 'lease-7', targetRevision: 7, now,
+  }), /LEASE_LOST/);
+});
+
+test('stateVersion, lease et rollback forment une barriere monotone compatible avec les anciens documents', () => {
+  const now = new Date('2026-07-19T00:00:00.000Z');
+  const legacy = { mode: 'active', desiredRevision: 7, publishedRevision: 6, dirty: true };
+  assert.equal(nextStateVersion(legacy), 1);
+  const lease = acquireLease(legacy, { targetRevision: 7, token: 'build-7', owner: 'worker', now });
+  assert.equal(lease.stateVersion, 1);
+  const leased = { ...legacy, ...lease };
+  assert.equal(assertLease(leased, 'build-7', 7, now.getTime()), true);
+  assert.throws(() => assertLease({ ...leased, desiredRevision: 8 }, 'build-7', 7, now.getTime()), /BUILD_OBSOLETE/);
+
+  const rollback = buildRollbackPreparationUpdate(leased, {
+    token: 'rollback-1', owner: 'admin', targetName: 'previous',
+    target: { revision: 6, manifestSha256: 'b'.repeat(64) }, updatedAt: now,
+  });
+  const fenced = { ...leased, ...rollback };
+  assert.equal(rollback.stateVersion, 2);
+  assert.equal(isRollbackActive(fenced, now.getTime()), true);
+  assert.equal(acquireLease(fenced, { targetRevision: 7, token: 'other', now }), null);
+  assert.throws(() => assertLease(fenced, 'build-7', 7, now.getTime()), /BUILD_PAUSED/);
 });

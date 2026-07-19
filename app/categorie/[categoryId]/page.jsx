@@ -1,7 +1,7 @@
 import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import {
-  getPublicCatalog,
+  getPublicCatalogResult,
 } from '../../../src/lib/server/products';
 import { publicEnv } from '../../../src/lib/server/env';
 import { getCategoryUrl } from '../../../src/utils/slug';
@@ -100,13 +100,15 @@ const getCategoryRouteData = cache(async (categoryId) => {
   if (!categoryMeta) return null;
 
   const matchingIds = getMatchingCategoryIds(decodedCategoryId);
-  const products = (await getPublicCatalog(`categories=${encodeURIComponent(matchingIds.join(','))}&scope=cards&limit=120`))
+  const catalog = await getPublicCatalogResult(`categories=${encodeURIComponent(matchingIds.join(','))}&scope=cards&limit=120`);
+  const products = catalog.products
     .sort((a, b) => getProductQualityRank(b) - getProductQualityRank(a));
 
   return {
     categoryId: decodedCategoryId,
     categoryLabel: cleanCategoryLabel(categoryMeta.label || decodedCategoryId),
     products,
+    snapshot: catalog.snapshot,
   };
 });
 
@@ -161,7 +163,7 @@ export default async function CategoryRoutePage({ params }) {
   if (!data) notFound();
   const darkMode = false;
 
-  const { categoryId, categoryLabel, products } = data;
+  const { categoryId, categoryLabel, products, snapshot } = data;
   const copy = getCategorySeoCopy(categoryId, categoryLabel);
   const itemListJsonLd = buildCategoryCollectionJsonLd({
     categoryId,
@@ -178,7 +180,12 @@ export default async function CategoryRoutePage({ params }) {
 
   return (
     <>
-      <main className={`min-h-screen ${darkMode ? 'bg-[#0A0A0A] text-stone-200' : 'bg-[#FAFAF9] text-stone-950'}`} data-ssr-category>
+      <main
+        className={`min-h-screen ${darkMode ? 'bg-[#0A0A0A] text-stone-200' : 'bg-[#FAFAF9] text-stone-950'}`}
+        data-ssr-category
+        data-catalog-revision={snapshot.revision}
+        data-catalog-version={snapshot.aggregateSha256}
+      >
         <ArchitecturalHeaderServer darkMode={darkMode} />
         <CategoryServerView
           categoryId={categoryId}
@@ -186,6 +193,8 @@ export default async function CategoryRoutePage({ params }) {
           products={products}
           copy={copy}
           darkMode={darkMode}
+          catalogRevision={snapshot.revision}
+          catalogVersion={snapshot.aggregateSha256}
         />
         <FooterServer darkMode={darkMode} />
       </main>

@@ -1,6 +1,6 @@
 # Performance et budgets
 
-Derniere mise a jour: 2026-07-18
+Derniere mise a jour: 2026-07-19
 Statut: `REFERENCE_ACTIVE - DETTES MESUREES`
 
 ## 1. Objectif
@@ -18,8 +18,13 @@ La performance doit ameliorer le temps reel et la perception sans supprimer l'id
 - variantes images dimensionnees et metadata anti-CLS;
 - `detailFast` pour le detail produit;
 - miniatures 320/384 pour les cartes;
-- catalogue public materialise dans Storage, objets de release immuables et pointeurs courts caches;
-- revalidation ciblee des routes apres publication, sans micro-cache `public/meta` ni lecture catalogue Firestore visiteur;
+- catalogue public materialise dans Storage, objets de release immuables caches longuement et pointeur frais pour les regenerations ISR;
+- cache pointeur API 15 secondes explicitement invalide; aucune seconde fenetre de cache de 300 secondes sous ISR;
+- plan d'impact immutable et revalidation des seuls chemins touches, avec mode `full` borne pour rollback/migration/depassement;
+- endpoint minimal `/api/catalog/version` ETag/304 et signal Firestore d'un document uniquement dans les onglets visibles, sans polling;
+- cartes galerie/categorie unifiees, une seule representation DOM par produit categorie et un seul moteur warmup concurrence 2;
+- `Petits Prix` conserve toujours `src/srcSet`; aucun faux fade blanc ni activation image 240/92 ms;
+- aucune lecture catalogue Firestore visiteur ni micro-cache `public/meta`;
 - heartbeat analytics adaptatif et cache serveur borne du hash de session, sans ralentir le live visible;
 - CI avec build et classification de routes.
 
@@ -90,6 +95,7 @@ Les seuils executables restent dans les scripts, pas dans ce texte. Invariants:
 - pas de SDK admin/commerce dans le chemin critique d'une page publique;
 - pas d'image `full` dans une carte;
 - pas de listener Firebase inutile avant interaction;
+- le listener catalogue public porte seulement sur `sys_catalog_live/current`, se coupe quand l'onglet est cache et ne contient aucune donnee produit;
 - imports lourds (`jspdf`, graphiques, Stripe, Three/GSAP specialises) dynamiques quand leur usage est differe;
 - pas de lecture Firestore illimitee;
 - layout reserve pour les contenus differes;

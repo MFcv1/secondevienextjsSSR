@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import GlobalMenuDesktop from './GlobalMenuDesktop';
 import GlobalMenuMobile from './GlobalMenuMobile';
 
@@ -58,6 +59,7 @@ const GlobalMenu = ({
     onOpenWishlist,
     onLogout,
 }) => {
+    const router = useRouter();
     const isDesktopMenuViewport = useDesktopMenuViewport();
     const [menuTop, setMenuTop] = useState(110);
     const [desktopPanelMaxHeight, setDesktopPanelMaxHeight] = useState(() => (
@@ -325,7 +327,7 @@ const GlobalMenu = ({
             return;
         }
         closeMenu();
-        window.location.assign(path);
+        router.push(path);
     };
 
     const openWishlist = () => {
@@ -334,7 +336,7 @@ const GlobalMenu = ({
             return;
         }
         closeMenu();
-        window.location.assign('/wishlist');
+        router.push('/wishlist');
         scrollTop();
     };
 

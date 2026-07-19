@@ -1,6 +1,6 @@
 # AGENTS.md - Bible operationnelle de Seconde Vie Next
 
-Derniere consolidation: 2026-07-18
+Derniere consolidation: 2026-07-19
 Statut: `REFERENCE_MAITRE_ACTIVE`
 Projet: `secondevienextjsSSR`
 
@@ -52,7 +52,7 @@ Une contradiction entre code et documentation doit etre signalee et corrigee dan
 | --- | --- |
 | application publique | Next App Router natif, pages publiques serveur/ISR |
 | home | `/` est la galerie canonique; `/galerie` est un alias |
-| catalogue | `furniture` autoritaire, snapshot Storage materialise actif, API same-origin/CDN |
+| catalogue | `furniture` autoritaire, snapshot Storage materialise actif, API same-origin non persistante, revalidation evenementielle |
 | Auth | passe de demonstration close, `PREPROD_READY`; production differee |
 | espace client | commandes, factures, wishlist, adresse/profil de synthese, support |
 | commerce | carte Stripe sandbox, webhooks, refund et Connect valides en preprod |
@@ -142,6 +142,9 @@ Interdictions:
 - le parcours public lit le snapshot Storage via le helper/endpoint same-origin, jamais `furniture` ni `public/meta`;
 - il n'existe qu'une source publique snapshot; canary, legacy et fallback Firestore sont interdits;
 - le builder publie des objets immuables puis un pointeur CAS; `current`, `previous` et `last-known-good` sont les seuls fallbacks lecteurs;
+- chaque release porte un plan d'impact immutable; la revalidation signee rejoue exactement ce plan et verifie la version API/HTML servie;
+- les pages ISR lisent le pointeur frais, les API ont un cache pointeur 15 s explicitement invalide, et ISR 300 reste le seul filet temporel de page;
+- le signal public `sys_catalog_live/current` ne contient que la version et un impact borne; l'ile visible controle `/api/catalog/version` sans polling;
 - le GC Storage protege les trois pointeurs, les 10 releases recentes et une grace de 48 heures; les medias gardent 90 jours de quarantaine;
 - le checkout reste autoritaire sur Firestore, independamment du snapshot;
 - le rollback passe uniquement par Maintenance admin vers un pointeur valide, puis par une reconstruction;

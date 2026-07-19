@@ -154,23 +154,15 @@ const setupBeforeAfter = () => {
       activeIndex = wrapIndex(nextIndex, projects.length);
       const project = projects[activeIndex];
       if (beforeSource && project.avantAvif) {
-        beforeSource.removeAttribute('data-cold-scroll-deferred-source');
-        beforeSource.removeAttribute('data-cold-scroll-deferred-srcset');
         beforeSource.setAttribute('srcset', project.avantAvif);
       }
       if (afterSource && project.apresAvif) {
-        afterSource.removeAttribute('data-cold-scroll-deferred-source');
-        afterSource.removeAttribute('data-cold-scroll-deferred-srcset');
         afterSource.setAttribute('srcset', project.apresAvif);
       }
       if (beforeImg) {
-        beforeImg.removeAttribute('data-cold-scroll-deferred-image');
-        beforeImg.removeAttribute('data-cold-scroll-deferred-src');
         beforeImg.src = project.avant;
       }
       if (afterImg) {
-        afterImg.removeAttribute('data-cold-scroll-deferred-image');
-        afterImg.removeAttribute('data-cold-scroll-deferred-src');
         afterImg.src = project.apres;
       }
       if (tag) tag.textContent = project.tag;

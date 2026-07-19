@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import AboutServerView from '../../src/kit/vitrine/AboutServerView';
 import { getFaqItems } from '../../src/kit/vitrine/aboutContent';
 import { getAboutPersonalization } from '../../src/lib/server/about';
@@ -86,8 +87,8 @@ export default async function AboutPage() {
       />
       <main data-public-ssr-fallback data-ssr-about>
         <nav className="sr-only" aria-label="Liens directs A propos">
-          <a href="/">Galerie</a>
-          <a href="/devis">Devis</a>
+          <Link href="/">Galerie</Link>
+          <Link href="/devis">Devis</Link>
         </nav>
         <AboutServerView personalization={personalization} />
       </main>

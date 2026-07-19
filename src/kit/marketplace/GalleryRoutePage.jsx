@@ -1,6 +1,6 @@
 import GalleryMobileShellIsland from '../../../app/GalleryMobileShellIsland';
 import { getGalleryPersonalization } from '../../lib/server/galleryPersonalization';
-import { getPublicCatalog } from '../../lib/server/products';
+import { getPublicCatalogResult } from '../../lib/server/products';
 import { publicEnv } from '../../lib/server/env';
 import { getProductUrl } from '../../utils/slug';
 import GalleryServerView from './GalleryServerView';
@@ -136,8 +136,8 @@ const galleryReturnRestoreScript = `(() => {
 const safeJsonLd = (data) => JSON.stringify(data).replace(/</g, '\\u003c');
 
 const getGalleryProducts = async () => {
-  const products = await getPublicCatalog('scope=cards&limit=48');
-  return products.slice(0, 48);
+  const result = await getPublicCatalogResult('scope=cards&limit=48');
+  return { ...result, products: result.products.slice(0, 48) };
 };
 
 const getProductTitle = (product, index) => {
@@ -195,7 +195,7 @@ const buildGalleryJsonLd = (products, canonicalPath = galleryCanonicalPath) => {
 };
 
 export default async function GalleryRoutePage({ canonicalPath = galleryCanonicalPath } = {}) {
-  const [products, personalization] = await Promise.all([
+  const [catalog, personalization] = await Promise.all([
     getGalleryProducts(),
     getGalleryPersonalization(),
   ]);
@@ -203,15 +203,17 @@ export default async function GalleryRoutePage({ canonicalPath = galleryCanonica
   return (
     <>
       <GalleryServerView
-        items={products}
+        items={catalog.products}
         darkMode={false}
         announcementMessages={personalization.announcementMessages}
+        catalogRevision={catalog.snapshot.revision}
+        catalogVersion={catalog.snapshot.aggregateSha256}
       />
       <GalleryMobileShellIsland />
       <script dangerouslySetInnerHTML={{ __html: galleryReturnRestoreScript }} />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(buildGalleryJsonLd(products, canonicalPath)) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(buildGalleryJsonLd(catalog.products, canonicalPath)) }}
       />
     </>
   );

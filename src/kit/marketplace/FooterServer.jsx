@@ -140,11 +140,11 @@ const SectionTitle = ({ children, darkMode }) => (
 );
 
 const FooterLink = ({ children, href, highlight = false, showArrow = false, darkMode }) => (
-  <a className={`group flex w-fit max-w-full items-center justify-between gap-5 text-sm leading-none transition-colors ${darkMode ? 'text-stone-300 hover:text-white' : 'text-stone-700 hover:text-stone-950'}`} href={href}>
+  <Link prefetch={false} className={`group flex w-fit max-w-full items-center justify-between gap-5 text-sm leading-none transition-colors ${darkMode ? 'text-stone-300 hover:text-white' : 'text-stone-700 hover:text-stone-950'}`} href={href}>
     <span>{children}</span>
     {highlight ? <span className="text-base leading-none text-orange-500">v</span> : null}
     {showArrow ? <ArrowRight size={13} className="opacity-70 transition-transform group-hover:translate-x-1" /> : null}
-  </a>
+  </Link>
 );
 
 export default function FooterServer({ darkMode = false, contactInfo: contactInfoOverride } = {}) {
@@ -161,7 +161,6 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
     <footer
       className={`gallery-deferred-render relative z-10 w-full px-3 pb-6 pt-10 transition-colors duration-500 md:px-6 md:pb-8 ${darkMode ? 'bg-[#111] text-[#f4eee6]' : 'bg-[#fbfaf8] text-stone-950 dark:bg-[#0f0f0e] dark:text-[#f4eee6]'}`}
       data-footer-mounted="true"
-      data-cold-scroll-deferred-images="true"
     >
       <div className="mx-auto grid w-full max-w-[430px] gap-4 md:hidden">
         <div className={`rounded-[24px] border p-6 ${darkMode ? 'border-[#2e2a25] bg-[#111110]' : 'border-[#eee6dd] bg-[#fdfbf8]'}`}>
@@ -213,15 +212,13 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
             </div>
           </div>
           <img
-            data-cold-scroll-deferred-image="true"
-            data-cold-scroll-deferred-src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'}
+            src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'}
             alt="Livraison partout a Marseille"
             width={1536}
             height={1024}
             loading="lazy"
             decoding="async"
             fetchPriority="low"
-            data-footer-delivery-image="loaded"
             className="mt-6 w-full rounded-md object-contain"
           />
           <div className={`mt-5 grid grid-cols-3 gap-3 text-[10px] ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
@@ -265,7 +262,7 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
               <div className="flex items-center gap-4">
                 <a href={contactInfo.instagram || '#'} aria-label="Instagram" className={`flex h-11 w-11 items-center justify-center rounded-full transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}><Instagram size={19} /></a>
                 <a href={contactInfo.facebook || '#'} aria-label="Facebook" className={`flex h-11 w-11 items-center justify-center rounded-full transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}><Facebook size={19} /></a>
-                <a href="/#gallery-pieces" aria-label="Pinterest" className={`flex h-11 w-11 items-center justify-center rounded-full text-lg font-semibold transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}>p</a>
+                <Link href="/#gallery-pieces" prefetch={false} aria-label="Pinterest" className={`flex h-11 w-11 items-center justify-center rounded-full text-lg font-semibold transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}>p</Link>
               </div>
             </div>
 
@@ -311,8 +308,7 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
             </div>
             <div className="flex min-w-0 items-center justify-center pt-8 lg:px-6 lg:pt-0 xl:px-8">
               <img
-                data-cold-scroll-deferred-image="true"
-                data-cold-scroll-deferred-src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'}
+                src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'}
                 alt="Livraison partout a Marseille"
                 width={1536}
                 height={1024}
@@ -336,10 +332,10 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
           <div className="flex flex-col gap-6 text-sm lg:flex-row lg:items-center lg:justify-between">
             <p className={darkMode ? 'text-stone-500' : 'text-stone-600'}>© {copyright}</p>
             <div className={`flex flex-wrap gap-x-7 gap-y-3 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
-              <a href="/devis" className="hover:text-orange-500">Mentions legales</a>
-              <a href="/devis" className="hover:text-orange-500">CGV</a>
-              <a href="/devis" className="hover:text-orange-500">Politique de confidentialite</a>
-              <a href="/devis" className="hover:text-orange-500">Cookies</a>
+              <Link href="/devis" prefetch={false} className="hover:text-orange-500">Mentions legales</Link>
+              <Link href="/devis" prefetch={false} className="hover:text-orange-500">CGV</Link>
+              <Link href="/devis" prefetch={false} className="hover:text-orange-500">Politique de confidentialite</Link>
+              <Link href="/devis" prefetch={false} className="hover:text-orange-500">Cookies</Link>
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 # Architecture Next.js et SEO
 
-Derniere mise a jour: 2026-07-14
+Derniere mise a jour: 2026-07-19
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Decision d'architecture
@@ -30,8 +30,10 @@ Interdictions structurelles:
 | `/checkout` | dynamique | sans cache public | `noindex,nofollow` | `CheckoutPageIsland` |
 | `/mes-commandes` | dynamique | sans cache public | `noindex,nofollow` | `OrdersPageIsland` |
 | `/admin` | dynamique | sans cache public | `noindex,nofollow` | `AdminAppIsland` |
-| `/api/search` | dynamique | cache HTTP borne | non indexable | recherche catalogue serveur |
-| `/api/revalidate-catalog` | dynamique | aucun | non indexable | revalidation admin authentifiee |
+| `/api/catalog` | dynamique | reponse non persistante | non indexable | catalogue same-origin |
+| `/api/catalog/version` | dynamique | ETag/304, revalidation obligatoire | non indexable | identite publique minimale |
+| `/api/search` | dynamique | reponse non persistante | non indexable | recherche catalogue serveur |
+| `/api/revalidate-catalog` | dynamique | aucun | non indexable | HMAC machine ou admin, plan strict |
 
 La source executable de cette classification est verifiee par `npm run next:routes`.
 
@@ -51,11 +53,13 @@ La galerie doit:
 
 Le catalogue public est lu par `src/lib/server/products.js` depuis le snapshot Storage valide par `materializedCatalog.js`. Aucun lecteur public Firestore ou Function catalogue parallele ne subsiste.
 
-Le cache repose sur:
+Le cache repose sur trois niveaux sans double fenetre temporelle:
 
-- ISR Next a 300 secondes pour les routes publiques;
-- les pointeurs Storage `current`, `previous` et `last-known-good`;
-- `/api/revalidate-catalog` pour revalider tags et chemins apres mutation admin;
+- ISR Next a 300 secondes comme unique filet temporel des routes publiques;
+- une lecture fraiche du pointeur Storage `current`, puis `previous`/`last-known-good`, pendant chaque regeneration de page;
+- un cache interne de pointeur API de 15 secondes, invalide par le tag `catalog:api-pointer`;
+- un cache long non tague des objets de release immuables;
+- `/api/revalidate-catalog` pour revalider uniquement les chemins du plan d'impact;
 - le trigger `onCatalogSourceWrite` et la task de revalidation signee.
 
 Flux attendu:
@@ -64,10 +68,14 @@ Flux attendu:
 mutation admin
   -> ecriture Firestore
   -> build et publication du snapshot
+  -> impact-plan.json immutable
   -> appel signe HMAC /api/revalidate-catalog
-  -> revalidateTag/revalidatePath
-  -> nouvelles pages ISR + nouveau sitemap
+  -> revalidateTag du pointeur API + revalidatePath cibles
+  -> preuve /api/catalog/version + HTML marque data-catalog-version
+  -> signal sys_catalog_live/current aux onglets visibles
 ```
+
+Chaque surface catalogue rend `data-catalog-revision` et `data-catalog-version`. La petite ile `CatalogVersionSyncIsland` ecoute uniquement `sys_catalog_live/current` dans un onglet visible, controle `/api/catalog/version` au `pageshow`, au retour visible et apres navigation prefetchee, puis appelle au plus un `router.refresh()` par hash. Elle n'effectue aucun polling et la perte du signal laisse ISR et la navigation fonctionnels.
 
 Ne pas introduire une purge globale anonyme ou un secret de revalidation dans une variable `NEXT_PUBLIC_*`.
 

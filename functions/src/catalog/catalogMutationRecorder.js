@@ -4,7 +4,8 @@ const { classifyCatalogMutation } = require('./mutationClassifier');
 const {
     CONTROL_DOCUMENT,
     computeQuietUntil,
-    initialPublicationState
+    initialPublicationState,
+    nextStateVersion
 } = require('./publicationState');
 const { catalogLog } = require('./structuredLog');
 
@@ -71,6 +72,7 @@ async function recordCatalogMutation(dependencies, input) {
         transaction.set(ledgerRef, ledger);
         transaction.set(controlRef, {
             ...(!controlSnap.exists ? initialPublicationState(timestamp) : {}),
+            stateVersion: nextStateVersion(state),
             dirty: true,
             desiredRevision: revision,
             dirtySince,

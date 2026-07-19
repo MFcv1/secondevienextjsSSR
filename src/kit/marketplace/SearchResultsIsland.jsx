@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
+import Link from 'next/link';
 
 const getQueryFromUrl = () => {
   if (typeof window === 'undefined') return '';
@@ -16,7 +17,7 @@ const fetchSearchResults = async (query, signal) => {
 };
 
 const ProductResult = ({ item }) => (
-  <a href={item.url} className="group grid grid-cols-[92px_1fr] gap-3 rounded-xl border border-stone-200 bg-[#fffdfb] p-2 text-inherit no-underline transition-colors hover:border-stone-300 md:grid-cols-1 md:gap-4 md:border-0 md:bg-transparent md:p-0">
+  <Link href={item.url} prefetch={false} className="group grid grid-cols-[92px_1fr] gap-3 rounded-xl border border-stone-200 bg-[#fffdfb] p-2 text-inherit no-underline transition-colors hover:border-stone-300 md:grid-cols-1 md:gap-4 md:border-0 md:bg-transparent md:p-0">
     <span className="block aspect-[4/3] overflow-hidden rounded-lg bg-stone-100 md:aspect-[3/4] md:rounded-xl">
       {item.image ? (
         <img
@@ -40,7 +41,7 @@ const ProductResult = ({ item }) => (
         </span>
       </span>
     </span>
-  </a>
+  </Link>
 );
 
 export default function SearchResultsIsland() {
@@ -149,9 +150,9 @@ export default function SearchResultsIsland() {
           <div className="rounded-xl border border-stone-200 bg-white px-5 py-8">
             <p className="font-serif text-2xl">Recherche indisponible</p>
             <p className="mt-2 text-[14px] text-stone-500">Rechargez la page ou parcourez la galerie principale.</p>
-            <a href="/#gallery-pieces" className="mt-5 inline-flex rounded-full border border-stone-300 px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em]">
+            <Link href="/#gallery-pieces" prefetch={false} className="mt-5 inline-flex rounded-full border border-stone-300 px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em]">
               Voir les pieces
-            </a>
+            </Link>
           </div>
         ) : null}
 
@@ -171,9 +172,9 @@ export default function SearchResultsIsland() {
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               {(data?.emptyActions || []).map((item) => (
-                <a key={item.href} href={item.href} className="rounded-full border border-stone-300 px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] transition-colors hover:bg-stone-50">
+                <Link key={item.href} href={item.href} prefetch={false} className="rounded-full border border-stone-300 px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] transition-colors hover:bg-stone-50">
                   {item.label}
-                </a>
+                </Link>
               ))}
             </div>
           </div>

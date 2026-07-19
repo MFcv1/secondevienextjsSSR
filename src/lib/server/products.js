@@ -1,20 +1,17 @@
 import 'server-only';
 
 import { cache } from 'react';
-import { getMaterializedProduct, queryMaterializedCatalog } from './materializedCatalog';
+import { getMaterializedCatalogSnapshot, queryMaterializedCatalog } from './materializedCatalog';
+import { extractProductId } from './productRoute';
 import { getProductSeoDecision, isProductPublicVisible, isProductSeoIndexable } from '../seo/indexability';
+
+export { extractProductId } from './productRoute';
 
 const isPublicProductData = isProductPublicVisible;
 
 export const isSeoIndexableProduct = (product) => (
   isPublicProductData(product) && isProductSeoIndexable(product)
 );
-
-export const extractProductId = (slugOrId = '') => {
-  const decoded = decodeURIComponent(String(slugOrId));
-  const separatorIndex = decoded.lastIndexOf('-');
-  return separatorIndex >= 0 ? decoded.slice(separatorIndex + 1) : decoded;
-};
 
 const parseCatalogParams = (params = '') => {
   const searchParams = new URLSearchParams(params);
@@ -32,13 +29,27 @@ const parseCatalogParams = (params = '') => {
 };
 
 export const getPublicProduct = cache(async (slugOrId) => {
-  const product = await getMaterializedProduct(extractProductId(slugOrId));
-  return product && isPublicProductData(product) ? product : null;
+  const { product } = await getPublicProductResult(slugOrId);
+  return product;
+});
+
+export const getPublicProductResult = cache(async (slugOrId) => {
+  const snapshot = await getMaterializedCatalogSnapshot();
+  const productId = extractProductId(slugOrId, snapshot.full);
+  const product = snapshot.full.find((candidate) => String(candidate.id) === productId) || null;
+  return {
+    snapshot,
+    product: product && isPublicProductData(product) ? product : null,
+  };
 });
 
 export const getPublicCatalog = cache(async (params = '') => {
+  return (await getPublicCatalogResult(params)).products;
+});
+
+export const getPublicCatalogResult = cache(async (params = '') => {
   const result = await queryMaterializedCatalog(parseCatalogParams(params));
-  return result.products.filter(isPublicProductData);
+  return { ...result, products: result.products.filter(isPublicProductData) };
 });
 
 export const getPublishedProductStaticParams = cache(async (limitCount = 120) => {

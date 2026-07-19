@@ -202,6 +202,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Signal public minimal de version catalogue. Aucune donnee produit; ecriture backend uniquement.
+    match /sys_catalog_live/{docId} {
+      allow read: if docId == 'current';
+      allow write: if false;
+    }
+
     // Analytics Sessions
     match /analytics_sessions/{docId} {
       allow read: if isStrongArtisan();

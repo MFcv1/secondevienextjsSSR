@@ -142,6 +142,9 @@ const dynamicRouteAllowlist = [
   { route: '/checkout', file: 'app/checkout/page.jsx' },
   { route: '/wishlist', file: 'app/wishlist/page.jsx' },
   { route: '/mes-commandes', file: 'app/mes-commandes/page.jsx' },
+  { route: '/api/catalog', file: 'app/api/catalog/route.js' },
+  { route: '/api/catalog/version', file: 'app/api/catalog/version/route.js' },
+  { route: '/api/search', file: 'app/api/search/route.js' },
   { route: '/api/revalidate-catalog', file: 'app/api/revalidate-catalog/route.js' },
 ];
 

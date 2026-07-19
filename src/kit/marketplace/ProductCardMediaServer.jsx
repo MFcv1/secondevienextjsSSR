@@ -1,0 +1,62 @@
+import { PRODUCT_CARD_IMAGE_SIZES } from '../../utils/imageUtils';
+
+const getDimensions = (metadata) => {
+  const width = Math.max(1, Number(metadata?.width) || 768);
+  const ratio = Number(metadata?.ratio) || (
+    Number(metadata?.width) && Number(metadata?.height)
+      ? Number(metadata.width) / Number(metadata.height)
+      : 0.75
+  );
+  return { width, height: Math.max(1, Math.round(width / ratio)) };
+};
+
+export default function ProductCardMediaServer({
+  cardImage,
+  alt,
+  priority = false,
+  sizes = PRODUCT_CARD_IMAGE_SIZES,
+  imageClassName = 'product-card-image h-full w-full object-cover',
+  pictureClassName = 'block h-full w-full',
+  warmupSrc = '',
+  draggable = false,
+} = {}) {
+  if (!cardImage?.src) return null;
+  const metadata = cardImage.metadata || null;
+  const dimensions = getDimensions(metadata);
+  const placeholderStyle = {
+    backgroundColor: metadata?.dominantColor || '#eee9e2',
+    ...(metadata?.blurDataUrl ? {
+      backgroundImage: `url("${metadata.blurDataUrl}")`,
+      backgroundPosition: 'center',
+      backgroundSize: 'cover',
+    } : {}),
+  };
+
+  return (
+    <span
+      className="product-card-media-surface block h-full w-full"
+      style={placeholderStyle}
+      data-product-media-warmup={warmupSrc || undefined}
+    >
+      <picture className={pictureClassName}>
+        {cardImage.desktopSrcSet ? (
+          <source media="(min-width: 1024px)" srcSet={cardImage.desktopSrcSet} sizes={sizes} />
+        ) : null}
+        <img
+          src={cardImage.src}
+          srcSet={cardImage.srcSet || undefined}
+          sizes={sizes}
+          alt={alt}
+          width={dimensions.width}
+          height={dimensions.height}
+          draggable={draggable}
+          data-real-image="true"
+          className={imageClassName}
+          loading={priority ? 'eager' : 'lazy'}
+          decoding="async"
+          fetchPriority={priority ? 'high' : 'auto'}
+        />
+      </picture>
+    </span>
+  );
+}

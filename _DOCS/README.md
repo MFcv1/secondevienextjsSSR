@@ -1,6 +1,6 @@
 # Bibliotheque canonique - Seconde Vie Next
 
-Derniere consolidation: 2026-07-14
+Derniere consolidation: 2026-07-19
 Statut: `REFERENCE_ACTIVE`
 
 ## Role
@@ -30,6 +30,15 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 | Qualite et tests | [QUALITE_TESTS.md](quality/QUALITE_TESTS.md) | CI, gates, tests cibles, matrice de validation |
 | Assistant devis IA | [ASSISTANT_DEVIS.md](ai/ASSISTANT_DEVIS.md) | cadrage MVP non implemente, garde-fous et conditions de reprise |
 | Legal | [CGV_RETOURS_DRAFT.md](legal/CGV_RETOURS_DRAFT.md) | brouillon metier a faire valider par un professionnel du droit |
+
+## Dossier temporaire actif
+
+Le chantier de consolidation `catalogue -> caches -> navigation -> images` dispose temporairement de deux documents de passation demandes explicitement pour une reprise dans une nouvelle tache:
+
+- [CATALOGUE_SYNCHRONISATION_SITUATION.md](catalogue/CATALOGUE_SYNCHRONISATION_SITUATION.md): faits observes, architecture conservee, ecarts et cible;
+- [CATALOGUE_SYNCHRONISATION_ROADMAP.md](catalogue/CATALOGUE_SYNCHRONISATION_ROADMAP.md): phases de code, gates et checklist finale detaillee.
+
+Statut: `TEMPORARY_HANDOFF_ACTIVE`. Cloture prevue le 2026-07-26 au plus tard. A la fermeture des gates, les conclusions verifiees doivent etre fusionnees dans les chapitres canoniques, puis ces deux fichiers et cette section doivent etre supprimes. Git restera l'archive.
 
 ## Niveaux de statut
 

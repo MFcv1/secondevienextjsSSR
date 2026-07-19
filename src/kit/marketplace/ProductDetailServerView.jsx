@@ -3,6 +3,7 @@ import { getProductCardImage, getProductImageItems } from '../../utils/imageUtil
 import { getProductPriceAmount, getProductStockAmount, getPurchaseUnavailableLabel, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
 import ProductDetailActionsIsland from './ProductDetailActionsIsland';
 import ProductDetailShellIsland from './ProductDetailShellIsland';
+import CatalogVersionSyncIsland from './CatalogVersionSyncIsland';
 
 const normalizeText = (value, fallback = '') => String(value || fallback).replace(/\s+/g, ' ').trim();
 
@@ -111,7 +112,12 @@ function ProductDetailDesktopInfo({ product, title, description, priceLabel, fac
   );
 }
 
-export default function ProductDetailServerView({ product, darkMode = false }) {
+export default function ProductDetailServerView({
+  product,
+  darkMode = false,
+  catalogRevision = 0,
+  catalogVersion = '',
+}) {
   const images = getProductImageItems(product);
   const title = normalizeText(product?.name || product?.title, 'Produit Seconde Vie');
   const description = normalizeText(product?.description, 'Pièce restaurée par Seconde Vie.');
@@ -123,6 +129,11 @@ export default function ProductDetailServerView({ product, darkMode = false }) {
   const quoteHref = shouldRequestQuote(product) ? `/devis?produit=${encodeURIComponent(product?.id || '')}` : '';
 
   return (
+    <div
+      className="contents"
+      data-catalog-revision={catalogRevision}
+      data-catalog-version={catalogVersion}
+    >
     <ProductDetailShellIsland
       product={product}
       images={images}
@@ -145,5 +156,12 @@ export default function ProductDetailServerView({ product, darkMode = false }) {
         />
       )}
     />
+    <CatalogVersionSyncIsland
+      revision={catalogRevision}
+      aggregateSha256={catalogVersion}
+      routeKind="product"
+      routeId={product?.id || ''}
+    />
+    </div>
   );
 }

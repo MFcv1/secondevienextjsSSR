@@ -6,8 +6,7 @@ import { publicEnv } from './env';
 import catalogValidation from './materializedCatalogValidation.cjs';
 
 const SNAPSHOT_ROOT = 'catalog-projection/v1';
-// HMAC revalidation is the fast path; this TTL also preserves the public ISR contract.
-const POINTER_REVALIDATE_SECONDS = 300;
+const API_POINTER_REVALIDATE_SECONDS = 15;
 const RELEASE_REVALIDATE_SECONDS = 31536000;
 let lastFallbackLog = { key: '', at: 0 };
 let buildFixturePromise = null;
@@ -32,29 +31,47 @@ const readObject = async (path) => {
   return { body, value: JSON.parse(body), path };
 };
 
-const readCurrentPointerCached = unstable_cache(
+const readCurrentApiPointerCached = unstable_cache(
   async () => (await readObject(`${SNAPSHOT_ROOT}/pointers/current.json`)).value,
   ['catalog-materialized-pointer'],
-  { revalidate: POINTER_REVALIDATE_SECONDS, tags: ['catalog:pointer'] }
+  { revalidate: API_POINTER_REVALIDATE_SECONDS, tags: ['catalog:api-pointer'] }
 );
 
-const readPreviousPointerCached = unstable_cache(
+const readPreviousApiPointerCached = unstable_cache(
   async () => (await readObject(`${SNAPSHOT_ROOT}/pointers/previous.json`)).value,
   ['catalog-materialized-previous-pointer'],
-  { revalidate: POINTER_REVALIDATE_SECONDS, tags: ['catalog:pointer'] }
+  { revalidate: API_POINTER_REVALIDATE_SECONDS, tags: ['catalog:api-pointer'] }
 );
 
-const readLastKnownGoodPointerCached = unstable_cache(
+const readLastKnownGoodApiPointerCached = unstable_cache(
   async () => (await readObject(`${SNAPSHOT_ROOT}/pointers/last-known-good.json`)).value,
   ['catalog-materialized-last-known-good-pointer'],
-  { revalidate: POINTER_REVALIDATE_SECONDS, tags: ['catalog:pointer'] }
+  { revalidate: API_POINTER_REVALIDATE_SECONDS, tags: ['catalog:api-pointer'] }
 );
 
 const readReleaseObjectCached = unstable_cache(
   async (path) => readObject(path),
   ['catalog-materialized-release'],
-  { revalidate: RELEASE_REVALIDATE_SECONDS, tags: ['catalog'] }
+  { revalidate: RELEASE_REVALIDATE_SECONDS }
 );
+
+export const readFreshCurrentPointer = async () => (await readObject(`${SNAPSHOT_ROOT}/pointers/current.json`)).value;
+export const readFreshFallbackPointer = async (name) => {
+  if (!['previous', 'last-known-good'].includes(name)) throw new Error('CATALOG_FALLBACK_POINTER_INVALID');
+  return (await readObject(`${SNAPSHOT_ROOT}/pointers/${name}.json`)).value;
+};
+
+const pointerReaders = (pointerCache) => pointerCache === 'api'
+  ? [
+    ['current', readCurrentApiPointerCached],
+    ['previous', readPreviousApiPointerCached],
+    ['last-known-good', readLastKnownGoodApiPointerCached],
+  ]
+  : [
+    ['current', readFreshCurrentPointer],
+    ['previous', () => readFreshFallbackPointer('previous')],
+    ['last-known-good', () => readFreshFallbackPointer('last-known-good')],
+  ];
 
 const loadRelease = async (pointer) => {
   if (!pointer?.manifestPath) throw new Error('CATALOG_POINTER_INVALID');
@@ -78,15 +95,11 @@ const loadRelease = async (pointer) => {
   return snapshot;
 };
 
-export const getMaterializedCatalogSnapshot = async () => {
+export const getMaterializedCatalogSnapshot = async ({ pointerCache = 'fresh' } = {}) => {
   const buildFixture = await getBuildFixture();
   if (buildFixture) return buildFixture;
 
-  const candidates = [
-    ['current', readCurrentPointerCached],
-    ['previous', readPreviousPointerCached],
-    ['last-known-good', readLastKnownGoodPointerCached],
-  ];
+  const candidates = pointerReaders(pointerCache);
   const failures = [];
   for (const [name, readPointer] of candidates) {
     try {
@@ -94,7 +107,7 @@ export const getMaterializedCatalogSnapshot = async () => {
       if (name !== 'current') {
         const key = `${name}:${failures.map(({ name: failedName, code }) => `${failedName}:${code}`).join(',')}`;
         const now = Date.now();
-        if (lastFallbackLog.key !== key || now - lastFallbackLog.at >= POINTER_REVALIDATE_SECONDS * 1000) {
+        if (lastFallbackLog.key !== key || now - lastFallbackLog.at >= 300000) {
           console.error('[catalog] fallback snapshot served', { source: name, failures });
           lastFallbackLog = { key, at: now };
         }
@@ -145,11 +158,11 @@ const isAfterCursor = (product, cursor) => {
   return cursor.id ? String(product.id).localeCompare(cursor.id) > 0 : false;
 };
 
-export const queryMaterializedCatalog = async ({ scope = 'full', limit = null, categories = [], cursor = '' } = {}) => {
+export const queryMaterializedCatalog = async ({ scope = 'full', limit = null, categories = [], cursor = '', pointerCache = 'fresh' } = {}) => {
   const normalizedCategories = [...new Set(categories.map((value) => String(value || '').trim()).filter(Boolean))].slice(0, 10);
   const parsedCursor = decodeCursor(cursor);
   if (cursor && !parsedCursor) throw new Error('INVALID_CATALOG_CURSOR');
-  const snapshot = await getMaterializedCatalogSnapshot();
+  const snapshot = await getMaterializedCatalogSnapshot({ pointerCache });
   let products = scope === 'cards' ? snapshot.cards : snapshot.full;
   if (normalizedCategories.length) {
     const allowed = new Set(normalizedCategories);
@@ -170,12 +183,12 @@ export const queryMaterializedCatalog = async ({ scope = 'full', limit = null, c
   };
 };
 
-export const getMaterializedProductResult = async (id) => {
-  const snapshot = await getMaterializedCatalogSnapshot();
+export const getMaterializedProductResult = async (id, { pointerCache = 'fresh' } = {}) => {
+  const snapshot = await getMaterializedCatalogSnapshot({ pointerCache });
   return {
     snapshot,
     product: snapshot.full.find((product) => product.id === id) || null,
   };
 };
 
-export const getMaterializedProduct = async (id) => (await getMaterializedProductResult(id)).product;
+export const getMaterializedProduct = async (id, options) => (await getMaterializedProductResult(id, options)).product;

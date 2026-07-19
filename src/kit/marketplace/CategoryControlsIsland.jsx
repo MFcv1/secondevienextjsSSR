@@ -148,20 +148,14 @@ export default function CategoryControlsIsland({
     const categoryHref = buildCategoryHref(categoryId, state);
     const resetHref = buildCategoryHref(categoryId, state, resetFilterPatch(state));
     const sortLabel = CATEGORY_SORT_OPTIONS.find((option) => option.id === state.sortBy)?.label || CATEGORY_SORT_OPTIONS[0].label;
+    root.dataset.categoryMobileMode = state.mobileViewMode;
+    root.dataset.categoryDesktopMode = state.viewMode;
 
     root.querySelectorAll('[data-category-product]').forEach((node) => {
       const order = visibleOrder.get(String(node.getAttribute('data-category-product')));
       const visible = order !== undefined;
       node.hidden = !visible;
       node.style.order = visible ? String(order) : '';
-    });
-
-    root.querySelectorAll('[data-category-mobile-view]').forEach((node) => {
-      node.hidden = node.getAttribute('data-category-mobile-view') !== state.mobileViewMode;
-    });
-
-    root.querySelectorAll('[data-category-desktop-view]').forEach((node) => {
-      node.hidden = node.getAttribute('data-category-desktop-view') !== state.viewMode;
     });
 
     const emptyState = root.querySelector('[data-category-empty-state]');

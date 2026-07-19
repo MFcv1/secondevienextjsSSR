@@ -70,3 +70,35 @@ test('catalog publication state is backend-only for every client role', async ()
   }
   assert.equal(contexts.length, 3);
 });
+
+test('catalog live expose uniquement le signal courant minimal et refuse toute ecriture client', async () => {
+  await environment.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'sys_catalog_live/current'), {
+      schemaVersion: 1,
+      revision: 7,
+      aggregateSha256: 'a'.repeat(64),
+      changedProductIds: ['mirror-a'],
+      affectedCategoryIds: ['miroirs', 'decorations'],
+      affectsGallery: true,
+      affectsSearch: true,
+      full: false,
+    });
+    await setDoc(doc(context.firestore(), 'sys_catalog_live/history'), { revision: 6 });
+  });
+  const visitor = environment.unauthenticatedContext().firestore();
+  await assertSucceeds(getDoc(doc(visitor, 'sys_catalog_live/current')));
+  await assertFails(getDoc(doc(visitor, 'sys_catalog_live/history')));
+  await assertFails(setDoc(doc(visitor, 'sys_catalog_live/current'), {
+    schemaVersion: 1,
+    revision: 8,
+    aggregateSha256: 'b'.repeat(64),
+    changedProductIds: Array.from({ length: 1000 }, (_, index) => `product-${index}`),
+  }));
+
+  const admin = environment.authenticatedContext('admin-1', {
+    admin: true,
+    firebase: { sign_in_provider: 'google.com' },
+  }).firestore();
+  await assertSucceeds(getDoc(doc(admin, 'sys_catalog_live/current')));
+  await assertFails(setDoc(doc(admin, 'sys_catalog_live/current'), { revision: 9 }));
+});

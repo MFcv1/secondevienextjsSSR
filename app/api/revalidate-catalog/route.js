@@ -1,8 +1,12 @@
-import crypto from 'node:crypto';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextResponse } from 'next/server';
 import { getAdminAuth } from '../../../src/lib/server/firebaseAdmin';
 import { publicEnv } from '../../../src/lib/server/env';
+import {
+  getCatalogRevalidationTargets,
+  validateCatalogRevalidationBody,
+  verifyCatalogMachineSignature,
+} from '../../../src/lib/server/catalogRevalidationContract';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,39 +16,14 @@ const getBearerToken = (request) => {
   return match?.[1] || '';
 };
 
-const normalizePath = (path) => {
-  if (!path || typeof path !== 'string') return null;
-  if (!path.startsWith('/')) return null;
-  if (path.startsWith('/api/') && !['/api/catalog', '/api/search'].includes(path)) return null;
-  return path;
-};
-
-const pathKey = ({ path, type }) => `${path}:${type || ''}`;
-const MACHINE_AUTH_WINDOW_SECONDS = 5 * 60;
-
-const timingSafeEqualHex = (left, right) => {
-  if (!/^[a-f0-9]{64}$/i.test(left) || !/^[a-f0-9]{64}$/i.test(right)) return false;
-  return crypto.timingSafeEqual(Buffer.from(left, 'hex'), Buffer.from(right, 'hex'));
-};
-
 const verifyMachineSignature = (request, rawBody) => {
   const secret = process.env.CATALOG_REVALIDATION_HMAC_SECRET || '';
-  if (!secret) return false;
-  const timestamp = request.headers.get('x-catalog-timestamp') || '';
-  const signature = request.headers.get('x-catalog-signature') || '';
-  const timestampSeconds = Number(timestamp);
-  if (!Number.isInteger(timestampSeconds)) return false;
-  const ageSeconds = Math.abs(Math.floor(Date.now() / 1000) - timestampSeconds);
-  if (ageSeconds > MACHINE_AUTH_WINDOW_SECONDS) return false;
-  const bodyHash = crypto.createHash('sha256').update(rawBody).digest('hex');
-  const expected = crypto.createHmac('sha256', secret).update(`${timestamp}.${bodyHash}`).digest('hex');
-  return timingSafeEqualHex(signature, expected);
-};
-
-const addRevalidationPath = (pathEntries, path, type) => {
-  const normalizedPath = normalizePath(path);
-  if (!normalizedPath) return;
-  pathEntries.set(pathKey({ path: normalizedPath, type }), { path: normalizedPath, type });
+  return verifyCatalogMachineSignature({
+    secret,
+    timestamp: request.headers.get('x-catalog-timestamp') || '',
+    signature: request.headers.get('x-catalog-signature') || '',
+    rawBody,
+  });
 };
 
 const assertAdmin = async (request) => {
@@ -89,35 +68,18 @@ export async function POST(request) {
   const body = (() => {
     try { return JSON.parse(rawBody || '{}'); } catch { return {}; }
   })();
-  const productIds = Array.isArray(body.productIds)
-    ? body.productIds.filter((item) => typeof item === 'string').slice(0, 120)
-    : (typeof body.productId === 'string' && body.productId ? [body.productId] : []);
-  const categoryIds = [
-    ...(Array.isArray(body.categoryIds) ? body.categoryIds : []),
-    ...(Array.isArray(body.previousCategories) ? body.previousCategories : []),
-    ...(Array.isArray(body.nextCategories) ? body.nextCategories : []),
-  ].filter((item) => typeof item === 'string').slice(0, 30);
-  const paths = Array.isArray(body.paths) ? body.paths.map(normalizePath).filter(Boolean) : [];
-
-  const tags = new Set(['catalog:pointer', 'catalog', 'products', 'categories', 'sitemap']);
-  productIds.forEach((productId) => tags.add(`product:${productId}`));
-  categoryIds.forEach((categoryId) => tags.add(`category:${categoryId}`));
-
+  let contract;
+  try {
+    contract = validateCatalogRevalidationBody(body, {
+      projectId: publicEnv.projectId,
+      audience: new URL(request.url).origin,
+    });
+  } catch (error) {
+    return NextResponse.json({ error: error?.message || 'invalid_contract' }, { status: 400 });
+  }
+  const { tags, pathEntries } = getCatalogRevalidationTargets(contract);
   tags.forEach((tag) => revalidateTag(tag));
-
-  const pathEntries = new Map();
-  addRevalidationPath(pathEntries, '/');
-  addRevalidationPath(pathEntries, '/galerie');
-  addRevalidationPath(pathEntries, '/api/catalog');
-  addRevalidationPath(pathEntries, '/api/search');
-  addRevalidationPath(pathEntries, '/sitemap.xml');
-  addRevalidationPath(pathEntries, '/categorie/[categoryId]', 'page');
-  addRevalidationPath(pathEntries, '/produit/[slugOrId]', 'page');
-  categoryIds.forEach((categoryId) => addRevalidationPath(pathEntries, `/categorie/${encodeURIComponent(categoryId)}`));
-  productIds.forEach((productId) => addRevalidationPath(pathEntries, `/produit/${encodeURIComponent(productId)}`));
-  paths.forEach((path) => addRevalidationPath(pathEntries, path));
-
-  Array.from(pathEntries.values()).forEach(({ path, type }) => {
+  pathEntries.forEach(({ path, type }) => {
     if (type) revalidatePath(path, type);
     else revalidatePath(path);
   });
@@ -125,11 +87,15 @@ export async function POST(request) {
   return NextResponse.json({
     ok: true,
     projectId: publicEnv.projectId,
-    tags: Array.from(tags),
-    paths: Array.from(pathEntries.values()).map(({ path }) => path),
-    pathEntries: Array.from(pathEntries.values()),
-    reason: body.reason || (machineAuthenticated ? 'catalog_publication' : 'admin_update'),
-    revision: Number(body.revision || 0) || null,
+    acceptedRevision: contract.revision,
+    manifestSha256: contract.manifestSha256,
+    aggregateSha256: contract.aggregateSha256,
+    planHash: contract.planHash,
+    mode: contract.mode,
+    tags,
+    paths: pathEntries.map(({ path }) => path),
+    pathEntries,
+    reason: machineAuthenticated ? 'catalog_publication' : 'admin_update',
     machineAuthenticated
   });
 }

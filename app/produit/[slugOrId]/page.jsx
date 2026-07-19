@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import {
-  getPublicProduct,
+  getPublicProductResult,
   getPublishedProductStaticParams,
   isSeoIndexableProduct
 } from '../../../src/lib/server/products';
@@ -48,7 +48,7 @@ const getInitialDetailImagePreloads = (product) => {
 
 const getProductPageData = async (params) => {
   const resolvedParams = await params;
-  return getPublicProduct(resolvedParams.slugOrId);
+  return getPublicProductResult(resolvedParams.slugOrId);
 };
 
 export async function generateStaticParams() {
@@ -67,7 +67,7 @@ const getPrimaryImage = (product) => {
 };
 
 export async function generateMetadata({ params }) {
-  const product = await getProductPageData(params);
+  const { product } = await getProductPageData(params);
   if (!product) {
     notFound();
   }
@@ -104,7 +104,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ProductPage({ params }) {
-  const product = await getProductPageData(params);
+  const { product, snapshot } = await getProductPageData(params);
   if (!product) notFound();
   const darkMode = false;
 
@@ -139,7 +139,12 @@ export default async function ProductPage({ params }) {
           />
         ) : null}
       </article>
-      <ProductDetailServerView product={product} darkMode={darkMode} />
+      <ProductDetailServerView
+        product={product}
+        darkMode={darkMode}
+        catalogRevision={snapshot.revision}
+        catalogVersion={snapshot.aggregateSha256}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}

@@ -1,4 +1,5 @@
 import { ChevronLeft } from 'lucide-react';
+import Link from 'next/link';
 
 export default function PageBreadcrumb({
     current,
@@ -21,10 +22,10 @@ export default function PageBreadcrumb({
                     {linkLabel}
                 </button>
             ) : (
-                <a href={linkHref} className={linkClassName}>
+                <Link href={linkHref} prefetch={false} className={linkClassName}>
                     <ChevronLeft size={14} />
                     {linkLabel}
-                </a>
+                </Link>
             )}
             <span className={`text-[10px] ${separatorTone}`}>/</span>
             <span className={`text-[10px] font-bold uppercase tracking-widest ${currentTone}`}>

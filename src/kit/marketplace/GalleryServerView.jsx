@@ -6,6 +6,7 @@ import MarketplaceHeroServer from './MarketplaceHeroServer';
 import CategoryRailServer from './CategoryRailServer';
 import FooterServer from './FooterServer';
 import GalleryGridActionsIsland from './GalleryGridActionsIsland';
+import CatalogVersionSyncIsland from './CatalogVersionSyncIsland';
 import {
   BeforeAfterSectionServer,
   InstagramSectionServer,
@@ -114,7 +115,13 @@ const GallerySeoIntro = ({ darkMode = false } = {}) => (
   </section>
 );
 
-export default function GalleryServerView({ items = [], darkMode = false, announcementMessages = [] } = {}) {
+export default function GalleryServerView({
+  items = [],
+  darkMode = false,
+  announcementMessages = [],
+  catalogRevision = 0,
+  catalogVersion = '',
+} = {}) {
   const heroTexts = getGalleryHeroTexts();
   const visibleCategories = staticCategories.filter((category) => (
     [...(KIT_CONFIG.categoryGroups || []), ...(KIT_CONFIG.productCategories || [])]
@@ -127,6 +134,8 @@ export default function GalleryServerView({ items = [], darkMode = false, announ
       data-ssr-gallery
       data-next-gallery-experience="server"
       data-public-ssr-fallback
+      data-catalog-revision={catalogRevision}
+      data-catalog-version={catalogVersion}
     >
       <ArchitecturalHeaderServer darkMode={darkMode} announcementMessages={announcementMessages} />
 
@@ -163,7 +172,12 @@ export default function GalleryServerView({ items = [], darkMode = false, announ
           <FooterServer darkMode={darkMode} />
         </div>
       </div>
-      <GalleryGridActionsIsland />
+      <GalleryGridActionsIsland observeVisibleWarmup surface="gallery" />
+      <CatalogVersionSyncIsland
+        revision={catalogRevision}
+        aggregateSha256={catalogVersion}
+        routeKind="gallery"
+      />
     </main>
   );
 }

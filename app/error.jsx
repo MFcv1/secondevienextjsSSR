@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 
 export default function Error({ error, reset }) {
   useEffect(() => {
@@ -23,9 +24,9 @@ export default function Error({ error, reset }) {
           >
             Reessayer
           </button>
-          <a className="rounded-full border border-stone-300 px-5 py-3 text-sm font-bold text-stone-800" href="/">
+          <Link className="rounded-full border border-stone-300 px-5 py-3 text-sm font-bold text-stone-800" href="/">
             Retour a la galerie
-          </a>
+          </Link>
         </div>
       </div>
     </main>

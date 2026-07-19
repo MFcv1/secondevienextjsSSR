@@ -1,6 +1,6 @@
 # Interface, navigation et contrats UX
 
-Derniere mise a jour: 2026-07-17
+Derniere mise a jour: 2026-07-19
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Intention
@@ -86,7 +86,9 @@ L'interface de connexion reste commune. Les droits et l'assurance forte sont imp
 
 ## 6. Navigation et performance percue
 
-- utiliser `Link` et le routeur Next pour les destinations internes;
+- utiliser `Link` et le routeur Next pour toutes les destinations internes inter-routes, y compris footer, recherche, categories, produits, devis, espace client et fallbacks;
+- conserver `<a>` uniquement pour URL externe, `mailto:`, `tel:`, ancre dans le meme document ou rechargement explicitement voulu;
+- les formulaires de filtres categorie gardent une action GET partageable sans JavaScript; l'ile intercepte seulement le parcours enrichi et pousse la meme URL avec le routeur;
 - prefetcher les routes probables sans saturer le reseau;
 - dans le mega-menu, prefetcher la destination reellement survolee, focalisee ou pressee, jamais toutes les routes d'une famille a l'ouverture;
 - dans une grille categorie, la simple proximite du viewport chauffe les images; la route produit attend une intention hover, focus ou press;
@@ -95,6 +97,8 @@ L'interface de connexion reste commune. Les droits et l'assurance forte sont imp
 - garder un loading coherent sur les tunnels dynamiques;
 - un bouton en traitement doit avoir un etat explicite et empecher les doubles soumissions;
 - une erreur recuperable doit proposer le fallback utile, pas seulement un message technique.
+
+Les surfaces galerie, categorie, produit et recherche exposent leur `aggregateSha256`. `CatalogVersionSyncIsland` ecoute le seul document `sys_catalog_live/current` quand l'onglet est visible, controle la version au retour visible, au `pageshow` et apres un changement de pathname, puis effectue au plus un `router.refresh()` par version pertinente. Le refresh Next preserve la navigation document, tandis que les caches de warmup/prefetch produit sont reinitialises sur changement de version. L'absence du signal ne doit jamais bloquer ISR, le retour arriere ou une destination prefetchee.
 
 ## 7. Accessibilite essentielle
 

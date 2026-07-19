@@ -1,11 +1,11 @@
 # Images produit et medias
 
-Derniere mise a jour: 2026-07-18
+Derniere mise a jour: 2026-07-19
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Architecture
 
-Les images produit sont preparees au moment de l'upload admin, stockees dans Firebase Storage et referencees dans le document produit Firestore. Next.js affiche directement les variantes WebP; `next/image` est configure avec `unoptimized: true` pour ne pas ajouter une seconde chaine d'optimisation distante.
+Les images produit sont preparees au moment de l'upload admin, stockees dans Firebase Storage et referencees dans le document produit Firestore. Les cartes publiques affichent directement les variantes WebP avec un `<picture>/<img>` natif; aucune configuration `next/image` inactive ne subsiste.
 
 Les assets de marque, hero, categories, avant/apres et vitrine vivent dans `public/images`, `public/video` ou `src/assets` selon leur mode d'import.
 
@@ -47,7 +47,7 @@ Metadata:
 
 ## 3. Selection des variantes
 
-`src/utils/imageUtils.js` est la source unique de normalisation et de selection. Les composants ne doivent pas inventer un ordre de fallback divergent.
+`src/utils/imageUtils.js` est la source unique de normalisation, selection et warmup. `ProductCardMediaServer.jsx` est le composant canonique commun a la galerie et aux categories pour `picture`, `src/srcSet/sizes`, dimensions, priorite, couleur dominante, blur et source de warmup. Les composants ne doivent pas inventer un ordre de fallback divergent.
 
 Principes:
 
@@ -55,8 +55,19 @@ Principes:
 - detail initial: `detailFast` avant les variantes lourdes;
 - zoom/lightbox: variante plus grande seulement a l'interaction;
 - metadata et ratio connus avant chargement pour eviter le CLS;
-- couleur dominante ou blur comme ambiance, sans masquer durablement l'image nette;
+- toutes les images differees conservent un `src` reel et le lazy loading natif; l'ancien activateur `data-cold-scroll-deferred-*` n'existe plus, y compris dans le footer;
+- couleur dominante ou blur comme ambiance derriere l'image nette, sans fade obligatoire ni fond blanc artificiel;
 - precharger uniquement l'image principale reellement probable.
+
+Politique courante:
+
+- galerie en haut: hero prioritaire, cartes produit lazy;
+- categorie directe: premiere rangee bornee en `eager/high`, suivantes lazy;
+- `Petits Prix`: `src/srcSet` toujours presents dans le HTML, lazy natif, aucun injecteur sequentiel;
+- warmup partage: concurrence maximale 2, `detailFast` avant clic, route prefetchee seulement sur hover/focus/press;
+- Save-Data et reseaux 2G: aucune anticipation speculative;
+- nouvelle version catalogue: cache logique de warmup et routes prefetchees vide avant `router.refresh()`;
+- medias historiques sans variante recente: ordre de fallback conserve, sans suppression implicite.
 
 ## 4. Upload admin
 

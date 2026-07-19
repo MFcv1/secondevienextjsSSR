@@ -15,8 +15,11 @@ const {
     cleanError,
     clearLease,
     CONTROL_DOCUMENT,
-    isLeaseActive
+    isLeaseActive,
+    isRollbackActive,
+    nextStateVersion
 } = require('./publicationState');
+const { createFullImpactPlan } = require('./impactPlan');
 const {
     POINTER_PATHS,
     isCatalogIntegrityError,
@@ -53,11 +56,29 @@ const samePointerIdentity = (left, right) => Boolean(left && right
 
 async function waitForBuildFence(controlRef, rollbackToken, timeoutMs = 45000) {
     const deadline = Date.now() + timeoutMs;
+    let lastHeartbeatAt = 0;
     while (Date.now() < deadline) {
         const snap = await controlRef.get();
         const state = snap.exists ? snap.data() : {};
         if (state.rollbackToken !== rollbackToken || state.mode !== 'paused') {
             throw new Error('ROLLBACK_INTENT_LOST');
+        }
+        if (Date.now() - lastHeartbeatAt >= 10000) {
+            await controlRef.firestore.runTransaction(async (transaction) => {
+                const freshSnap = await transaction.get(controlRef);
+                const freshState = freshSnap.exists ? freshSnap.data() : {};
+                if (freshState.rollbackOperationId !== rollbackToken || freshState.rollbackState !== 'preparing') {
+                    throw new Error('ROLLBACK_INTENT_LOST');
+                }
+                const heartbeatAt = new Date();
+                transaction.set(controlRef, {
+                    stateVersion: nextStateVersion(freshState),
+                    rollbackHeartbeatAt: heartbeatAt,
+                    rollbackExpiresAt: new Date(heartbeatAt.getTime() + 120000),
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            });
+            lastHeartbeatAt = Date.now();
         }
         if (!state.leaseToken) return state;
         if (!isLeaseActive(state, Date.now())) {
@@ -70,6 +91,7 @@ async function waitForBuildFence(controlRef, rollbackToken, timeoutMs = 45000) {
                 if (!freshState.leaseToken || isLeaseActive(freshState, Date.now())) return !freshState.leaseToken;
                 transaction.set(controlRef, {
                     ...clearLease(new Date()),
+                    stateVersion: nextStateVersion(freshState),
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
                 return true;
@@ -136,10 +158,16 @@ const getCatalogPublicationStatus = regionalFunctions()
         return {
             mode: state.mode || 'active',
             buildState: state.buildState || 'unknown',
+            stateVersion: Number(state.stateVersion || 0),
             desiredRevision: Number(state.desiredRevision || 0),
             revalidatedRevision: Number(state.revalidatedRevision || 0),
             lastError: state.lastError?.code || null,
             rollbackState: state.rollbackState || null,
+            integrityState: state.integrityState || 'unknown',
+            sourceLagState: state.sourceLagState || 'unknown',
+            invalidationState: state.invalidationState || 'pending',
+            servedState: state.servedState || 'pending',
+            servedRevision: Number(state.servedRevision || 0) || null,
             current: checkedCurrent,
             previous: checkedPrevious,
             lastKnownGood: checkedLastKnownGood
@@ -184,12 +212,13 @@ const rollbackCatalogSnapshot = regionalFunctions()
             await admin.firestore().runTransaction(async (transaction) => {
                 const controlSnap = await transaction.get(controlRef);
                 const state = controlSnap.exists ? controlSnap.data() : {};
-                if (state.rollbackState === 'preparing') throw new Error('ROLLBACK_ALREADY_RUNNING');
+                if (isRollbackActive(state, Date.now())) throw new Error('ROLLBACK_ALREADY_RUNNING');
                 transaction.set(controlRef, buildRollbackPreparationUpdate(state, {
                     token: rollbackToken,
+                    owner: context.auth?.uid || 'catalog-maintenance',
                     targetName,
                     target: targetObject.value,
-                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                    updatedAt: new Date()
                 }), { merge: true });
             });
             await waitForBuildFence(controlRef, rollbackToken);
@@ -199,7 +228,19 @@ const rollbackCatalogSnapshot = regionalFunctions()
             if (!freshTarget?.value || !samePointerIdentity(freshTarget.value, targetObject.value)) {
                 throw new Error('ROLLBACK_TARGET_CHANGED');
             }
-            await verifyStoredRelease(freshPointers.storageBucket, freshTarget.value);
+            const verifiedTarget = await verifyStoredRelease(freshPointers.storageBucket, freshTarget.value);
+            const targetWithIdentity = {
+                ...freshTarget.value,
+                aggregateSha256: verifiedTarget.manifest.aggregateSha256,
+                impactPlanPath: freshTarget.value.impactPlanPath
+                    || `${freshTarget.value.manifestPath.replace(/\/manifest\.json$/, '')}/impact-plan.json`,
+                impactPlanSha256: verifiedTarget.manifest.impactPlanSha256 || freshTarget.value.impactPlanSha256 || null
+            };
+            const rollbackImpactPlan = createFullImpactPlan({
+                revision: Number(freshTarget.value.revision),
+                aggregateSha256: verifiedTarget.manifest.aggregateSha256,
+                reason: 'rollback'
+            });
             if (freshPointers.current?.error && !freshPointers.current.generation) {
                 throw freshPointers.current.error;
             }
@@ -221,7 +262,7 @@ const rollbackCatalogSnapshot = regionalFunctions()
             const published = await writePointer(
                 freshPointers.storageBucket,
                 POINTER_PATHS.current,
-                { ...freshTarget.value, publishedAt: new Date().toISOString() },
+                { ...targetWithIdentity, publishedAt: new Date().toISOString() },
                 freshPointers.current?.generation || 0
             );
             pointerPublished = true;
@@ -238,8 +279,9 @@ const rollbackCatalogSnapshot = regionalFunctions()
                     state,
                     {
                         current: healthyCurrent,
-                        target: freshTarget.value,
+                        target: targetWithIdentity,
                         currentPointerGeneration: published.generation,
+                        revalidationPlan: rollbackImpactPlan,
                         updatedAt: admin.firestore.FieldValue.serverTimestamp()
                     }
                 ), { merge: true });
@@ -250,19 +292,28 @@ const rollbackCatalogSnapshot = regionalFunctions()
                     schemaVersion: 1,
                     revision: Number(freshTarget.value.revision),
                     manifestSha256: freshTarget.value.manifestSha256,
-                    productIds: [],
-                    previousCategories: [],
-                    nextCategories: [],
-                    sitemapChanged: true
+                    aggregateSha256: verifiedTarget.manifest.aggregateSha256,
+                    impactPlanPath: null,
+                    impactPlanSha256: null,
+                    planHash: rollbackImpactPlan.planHash,
+                    impactPlan: rollbackImpactPlan
                 }, { id: `catalog-rollback-revalidate-r${freshTarget.value.revision}-${Date.now()}` });
             } catch (enqueueError) {
                 revalidationQueued = false;
                 console.error('Catalog rollback revalidation enqueue failed:', enqueueError);
-                await admin.firestore().doc(CONTROL_DOCUMENT).set({
-                    buildState: 'degraded',
-                    lastError: { code: 'ROLLBACK_REVALIDATION_QUEUE_FAILED' },
-                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
+                await admin.firestore().runTransaction(async (transaction) => {
+                    const snap = await transaction.get(controlRef);
+                    const state = snap.data() || {};
+                    if (Number(state.publishedRevision || 0) !== Number(freshTarget.value.revision)
+                        || String(state.currentManifestSha256 || '') !== String(freshTarget.value.manifestSha256 || '')) return;
+                    transaction.set(controlRef, {
+                        buildState: 'degraded',
+                        invalidationState: 'failed',
+                        stateVersion: nextStateVersion(state),
+                        lastError: { code: 'ROLLBACK_REVALIDATION_QUEUE_FAILED' },
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                });
             }
             await writeSecurityAudit('catalog.rollback', context, {
                 target: targetName,
@@ -286,6 +337,7 @@ const rollbackCatalogSnapshot = regionalFunctions()
                         transaction.set(controlRef, {
                             ...clearLease(admin.firestore.FieldValue.serverTimestamp()),
                             mode: 'paused',
+                            stateVersion: nextStateVersion(state),
                             rollbackState: 'incomplete',
                             buildState: 'degraded',
                             lastError: cleanError(error),
@@ -301,9 +353,15 @@ const rollbackCatalogSnapshot = regionalFunctions()
                         transaction.set(controlRef, {
                             ...(!isLeaseActive(state, Date.now()) ? clearLease(admin.firestore.FieldValue.serverTimestamp()) : {}),
                             mode: state.rollbackPreviousMode || 'active',
+                            stateVersion: nextStateVersion(state),
                             dirty,
                             buildState: dirty ? 'queued' : (state.rollbackPreviousBuildState || 'healthy'),
                             rollbackState: null,
+                            rollbackOperationId: null,
+                            rollbackOwner: null,
+                            rollbackStartedAt: null,
+                            rollbackHeartbeatAt: null,
+                            rollbackExpiresAt: null,
                             rollbackToken: null,
                             rollbackTarget: null,
                             rollbackTargetRevision: null,
@@ -346,6 +404,7 @@ const rebuildCatalogSnapshot = regionalFunctions()
             ) + 1;
             transaction.set(controlRef, {
                 mode: 'active',
+                stateVersion: nextStateVersion(state),
                 dirty: true,
                 desiredRevision: nextRevision,
                 buildState: 'queued',
@@ -353,6 +412,11 @@ const rebuildCatalogSnapshot = regionalFunctions()
                 rejectedManifestPath: state.rollbackSourceManifestPath || state.rejectedManifestPath || null,
                 rejectedManifestSha256: state.rollbackSourceManifestSha256 || state.rejectedManifestSha256 || null,
                 rollbackState: null,
+                rollbackOperationId: null,
+                rollbackOwner: null,
+                rollbackStartedAt: null,
+                rollbackHeartbeatAt: null,
+                rollbackExpiresAt: null,
                 rollbackToken: null,
                 rollbackTarget: null,
                 rollbackTargetRevision: null,
