@@ -457,3 +457,19 @@ Les 58 entrees Data Access expurgees de la fenetre se repartissent en 24 `BatchG
 | pointeurs finaux verifies | `current=41`, `previous=40`, LKG `39`, 38 produits chacun |
 
 Conclusion fermee: apres suppression de `publicCatalog`, `onInventorySourceWrite`, `public/meta` et des Functions SEO, la navigation publique ne lit ni n'ecrit le catalogue Firestore. Seul le builder prive scanne `furniture` pendant une publication explicite. Aucun payload Data Access brut ni ETag n'est conserve dans Git.
+
+### 10.3 Verification complementaire prix, stock et cache du 2026-07-19
+
+Une seconde fenetre Data Access a accompagne la recette navigateur sur le sandbox deploye. Un meuble existant a ete modifie de `650 EUR / stock 1` vers `651 EUR / stock 0`, puis restaure a sa valeur initiale. Les snapshots `42` et `43` ont respectivement expose l'etat vendu puis l'etat restaure. Le checkout a ete ouvert sur le montant restaure sans soumettre de paiement et sans creer de commande.
+
+| Verification | Resultat |
+| --- | --- |
+| ecritures sur le meuble choisi | **2**, modification puis restauration |
+| lecture `furniture` | exclusivement `catalog-builder` pour construire les snapshots |
+| lecture `furniture` attribuee a App Hosting ou a la navigation publique | **0** |
+| acces `public/meta` | **0** |
+| lecture App Hosting observee hors catalogue | `sys_metadata/gallery_app` uniquement |
+| commande creee pendant le checkout sans paiement | **0** |
+| pointeurs apres nettoyage | `current=45`, `previous=44`, LKG `43`, tous sains et fondes sur l'etat restaure |
+
+`DATA_READ` et `DATA_WRITE` ont ete retires apres la mesure; la politique finale ne contient aucun `auditConfigs`. Aucun OTP, secret, payload Data Access brut ou ETag n'est conserve dans Git.

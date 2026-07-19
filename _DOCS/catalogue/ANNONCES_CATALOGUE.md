@@ -79,7 +79,7 @@ furniture [DB, autoritaire]
 
 Le lecteur valide schema, manifestes et checksums. Il tente `current`, puis `previous`, puis `last-known-good`; il ne scanne jamais Firestore en cas de panne Storage. Les seuls modes durables sont `active` et `paused`. Maintenance admin valide les releases et effectue le CAS de rollback, puis la reconstruction republie l'etat Firestore courant.
 
-La recette de cloture du 2026-07-18 a exerce un rollback reel, sa pause, puis la reconstruction. L'etat final sandbox est `current=41`, `previous=40`, `last-known-good=39`, avec 38 produits verifies dans chacune des trois releases. La creation, le changement de prix avant checkout, le stock `0`, la remise en vente et la suppression du produit de recette ont converge sans paiement. La preuve Data Access finale est conservee dans `_DOCS/data/AUDIT_COUTS_FIRESTORE.md`; la roadmap temporaire a ete supprimee apres fermeture de toutes ses gates.
+La recette de cloture du 2026-07-18 a exerce un rollback reel, sa pause, puis la reconstruction. Une recette complementaire du 2026-07-19 a modifie puis restaure le prix et le stock d'un meuble sandbox existant, verifie le snapshot public et ouvert le checkout sans paiement ni creation de commande. Deux reconstructions finales ont elimine l'etat transitoire des trois pointeurs: l'etat sandbox est `current=45`, `previous=44`, `last-known-good=43`, tous sains et fondes sur le meuble restaure. Data Access n'a releve aucune lecture publique de `furniture` ni aucun acces a `public/meta`; seules les lectures attendues du builder et les deux ecritures admin de modification/restauration ont ete observees. La preuve Data Access finale est conservee dans `_DOCS/data/AUDIT_COUTS_FIRESTORE.md`; la roadmap temporaire a ete supprimee apres fermeture de toutes ses gates.
 
 La passe de robustesse locale finale du 2026-07-18 a ferme les derniers ecarts trouves dans le code:
 
@@ -96,7 +96,7 @@ La passe de robustesse locale finale du 2026-07-18 a ferme les derniers ecarts t
 - le checkout exige encore le statut `published`, preserve la semantique d'un prix courant egal a zero et relit prix/stock dans Firestore;
 - les backfills image s'appuient uniquement sur `onCatalogSourceWrite` et ne peuvent plus recreer `public/meta`.
 
-Ces corrections locales exigent les suites catalogue, Auth, lint et build avant un prochain deploiement. Elles ne changent pas la preuve cloud deja acquise pour la revision 41.
+Ces corrections sont deployees dans le sandbox. La recette cloud complementaire du 2026-07-19 etend la preuve jusqu'a la revision saine `45`, avec `previous=44` et LKG `43` egalement saines.
 
 ## 5. Publication et indexabilite
 
