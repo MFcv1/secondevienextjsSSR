@@ -32,6 +32,8 @@ jobs:
       - run: pnpm test:auth
       - run: pnpm seo:surface
       - run: pnpm build
+        env:
+          CATALOG_BUILD_FIXTURE: "true"
       - run: pnpm next:routes
       - name: Performance budget report
         continue-on-error: true

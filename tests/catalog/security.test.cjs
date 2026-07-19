@@ -44,3 +44,9 @@ test('aucun moteur catalogue legacy ne subsiste dans le code executable', () => 
   assert.match(revalidationRoute, /addRevalidationPath\(pathEntries, '\/api\/search'\)/);
   assert.doesNotMatch(revalidationRoute, /revalidatePath\([^\n]+,\s*'route'\)/);
 });
+
+test('la fixture de build catalogue reste strictement bornee a la CI', () => {
+  assert.match(read('.github/workflows/quality.yml'), /CATALOG_BUILD_FIXTURE:\s*["']true["']/);
+  assert.doesNotMatch(read('apphosting.yaml'), /CATALOG_BUILD_FIXTURE/);
+  assert.match(read('src/lib/server/materializedCatalog.js'), /process\.env\.CATALOG_BUILD_FIXTURE !== 'true'/);
+});

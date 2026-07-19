@@ -10,6 +10,14 @@ const SNAPSHOT_ROOT = 'catalog-projection/v1';
 const POINTER_REVALIDATE_SECONDS = 300;
 const RELEASE_REVALIDATE_SECONDS = 31536000;
 let lastFallbackLog = { key: '', at: 0 };
+let buildFixturePromise = null;
+
+const getBuildFixture = async () => {
+  if (process.env.CATALOG_BUILD_FIXTURE !== 'true') return null;
+  buildFixturePromise ||= import('../../../tests/catalog/fixtures/build-snapshot.cjs')
+    .then((module) => module.default || module);
+  return buildFixturePromise;
+};
 
 const getSnapshotBucket = () => {
   const storage = getAdminStorage();
@@ -71,6 +79,9 @@ const loadRelease = async (pointer) => {
 };
 
 export const getMaterializedCatalogSnapshot = async () => {
+  const buildFixture = await getBuildFixture();
+  if (buildFixture) return buildFixture;
+
   const candidates = [
     ['current', readCurrentPointerCached],
     ['previous', readPreviousPointerCached],
