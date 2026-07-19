@@ -13,6 +13,16 @@ L'interface commune de connexion est conservee. L'acces admin repose sur Firebas
 
 La liste executable est `KIT_CONFIG.adminTabs` dans `src/kit/config/constants.js`.
 
+La navigation visible utilise un panneau lateral persistant sur desktop et un tiroir sur les ecrans plus etroits. Les IDs restent inchanges et sont regroupes en cinq ensembles metier afin de reduire la charge cognitive:
+
+- `Vue d'ensemble`: Stats, Data;
+- `Catalogue`: Publication, Vue Globale, Studio;
+- `Ventes`: Ventes, Retours, Livraison, Paiement;
+- `Communication`: Personnalisation, Infos, SEO;
+- `Administration`: Clients, Securite, Maintenance, Etude Perf.
+
+Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSidebar` ne modifie ni le routing interne ni le lazy loading des vues.
+
 | ID | Label | Module principal | Role |
 | --- | --- | --- | --- |
 | `dashboard` | Stats | `AdminDashboard` | CA, commandes, inventaire, exports |
@@ -84,11 +94,7 @@ Le dashboard lit de preference les agregats:
 
 Un fallback historique borne existe encore pour les commandes si leurs agregats manquent. Stats ne scanne plus `furniture` lorsque `inventory_stats/overview` est absent: la valeur catalogue affiche alors un tiret jusqu'a la prochaine publication snapshot, dont le builder regenere l'agregat. Ce garde-fou evite jusqu'a 300 lectures produit a chaque ouverture de Stats sans afficher un faux zero comme une valeur autoritaire.
 
-`AdminAnalytics` reprend le moteur de Tous a Table: lecture bornee a 5 000 sessions sur un an, cache IndexedDB de six heures, actualisation manuelle de l'historique, ecoute Firestore des 100 sessions les plus recentes, visiteurs uniques dedupliques par UID Firebase puis IP serveur, ratio UID/IP, regroupement par jour et visiteur, sessions live et parcours. Une session est consideree en ligne lorsque sa derniere activite remonte a moins de 30 secondes. Le bandeau live apparait sans actualisation manuelle et cumule les sessions actives avec leur ville et leur appareil.
-
-Le parcours reste vertical sous 1024 px et devient une frise en grille sur desktop: les etapes occupent une ligne tant que la largeur le permet, puis reprennent naturellement a la ligne suivante, sans barre de defilement horizontale. Chaque etape desktop reserve un media 66x84 px: les etapes `detail` affichent la premiere variante `thumb320` du produit lorsqu'elle existe; les sous-categories `buffets`, `armoires`, `miroirs` et `commodes` reprennent les memes images `*-config-rail.webp` que les quatre cartes sous le hero de la galerie; les categories parentes `meubles`, `assises`, `eclairage` et `decorations` utilisent les illustrations WebP dediees de `public/images/analytics`; Galerie, A propos et Devis utilisent des visuels editoriaux differencies. Les images sont resolues depuis les assets ou le catalogue deja charges et n'alourdissent pas les documents analytics.
-
-Lorsqu'une etape porte un identifiant, le parcours affiche le prefixe compact `ID`: le bleu ardoise des fiches produit et le vert sauge des categories permettent de distinguer une reference produit d'un slug de categorie; les identifiants de contenu residuels restent neutres.
+`AdminAnalytics` ne charge pas automatiquement toute la telemetrie a l'ouverture; l'utilisateur declenche une actualisation et un checkpoint local peut etre reutilise. La vue d'ensemble est orientee demande de devis: elle separe les consultations, demarrages du formulaire et intentions d'envoi e-mail du tunnel d'achat direct. Les onglets `Parcours` et `Sessions` sont des postes d'exploration distincts: flux agrégés et séquences d'un côté, liste courte avec inspecteur latéral de l'autre. Ils ne montrent ni IP brute ni identifiant personnel.
 
 Les sessions admin sont exclues a trois niveaux: le collecteur ne demarre pas quand les claims admin sont actifs, `trackAdminIP` maintient le registre des IP admin, puis `updateUserSessions` supprime les sessions recentes de l'IP lors d'une connexion admin. L'e-mail proprietaire reste un secret serveur et n'est jamais embarque dans le bundle client.
 
@@ -118,6 +124,7 @@ Ne pas ajouter de bouton de maintenance qui ecrit directement un grand ensemble 
 ```text
 app/admin/page.jsx
 app/admin/AdminAppIsland.jsx
+app/admin/AdminSidebar.jsx
 src/kit/admin/*.jsx
 src/kit/admin/components/*
 src/kit/admin/analyticsReliability.js

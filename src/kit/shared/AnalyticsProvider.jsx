@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions, functionsRegion } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { ANALYTICS_EVENT_NAME } from './analyticsEvents';
 
 const ANALYTICS_INIT_DELAY_MS = 1500;
 const ANALYTICS_SYNC_INTERVAL_MS = 15000;
@@ -83,6 +84,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
     const syncTokenRef = useRef(null);
     const initCalledRef = useRef(false);
     const journeyToSend = useRef([]);
+    const eventPreviewRef = useRef([]);
     const startTimeRef = useRef(Date.now());
     const activeStartedAtRef = useRef(typeof document !== 'undefined' && document.visibilityState === 'hidden' ? null : Date.now());
     const accumulatedActiveMsRef = useRef(0);
@@ -102,6 +104,16 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
     useEffect(() => {
         latestViewRef.current = { view, selectedItemId, selectedItemName, selectedItemPrice, selectedItemContext };
     }, [view, selectedItemId, selectedItemName, selectedItemPrice, selectedItemContext]);
+
+    useEffect(() => {
+        const handleAnalyticsEvent = (event) => {
+            if (isAdmin || !event?.detail?.action) return;
+            eventPreviewRef.current = [...eventPreviewRef.current, event.detail].slice(-16);
+            scheduleRouteSync('manual');
+        };
+        window.addEventListener(ANALYTICS_EVENT_NAME, handleAnalyticsEvent);
+        return () => window.removeEventListener(ANALYTICS_EVENT_NAME, handleAnalyticsEvent);
+    }, [isAdmin]);
 
     const getTrackedDuration = () => {
         const activeMs = accumulatedActiveMsRef.current
@@ -218,6 +230,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
                 syncToken: syncTokenRef.current,
                 duration: getTrackedDuration(),
                 journey: chunk,
+                lastEventPreview: eventPreviewRef.current,
                 sessionActive,
                 reason
             });
@@ -374,6 +387,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
                 syncToken: syncTokenRef.current,
                 duration: totalDuration,
                 journey: chunk,
+                lastEventPreview: eventPreviewRef.current,
                 sessionActive: isActive,
                 reason
             });

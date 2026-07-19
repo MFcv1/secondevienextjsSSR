@@ -23,6 +23,7 @@ const { createSessionAuthorizationCache } = require('./sessionAuthorizationCache
 const db = admin.firestore();
 const MAX_SESSION_DURATION_SECONDS = 24 * 60 * 60;
 const MAX_JOURNEY_CHUNK = 25;
+const MAX_EVENT_PREVIEW = 16;
 const SYNC_REASONS = new Set([
     'init',
     'route',
@@ -147,6 +148,18 @@ const sanitizeJourney = (journey) => {
         .filter(step => step.page);
 };
 
+const sanitizeEventPreview = (events) => {
+    if (!Array.isArray(events)) return [];
+    return events.slice(-MAX_EVENT_PREVIEW).map((event) => ({
+        action: sanitizeString(event?.action, 80) || 'unknown',
+        itemId: sanitizeString(event?.itemId, 160),
+        itemName: sanitizeString(event?.itemName, 160),
+        time: sanitizeString(event?.time, 40),
+        timestamp: clampJourneyTimestampMs(event?.timestamp),
+        form: sanitizeString(event?.form, 80)
+    }));
+};
+
 // Géolocalisation simple via IP (ip-api.com — gratuit, pas de clé API requise)
 const getGeoFromIp = async (ip) => {
     if (!ip || isPrivateOrLocalIp(ip)) return null;
@@ -229,6 +242,7 @@ exports.initLiveSession = regionalFunctions().https.onCall(async (data = {}, con
         userAgent: userAgent,
         geo: geo || { country: 'Unknown', city: 'Unknown', region: 'Unknown' },
         journey: [],
+        lastEventPreview: [],
         sessionActive: true,
         adminIPDetected: isFromAdminIP && type !== 'admin',
         analyticsVersion: 3,
@@ -256,7 +270,7 @@ exports.initLiveSession = regionalFunctions().https.onCall(async (data = {}, con
 exports.syncSession = regionalFunctions().https.onCall(async (data = {}, context) => {
     if (!context.auth) return { success: false, unauthenticated: true };
 
-    const { sessionId, journey, duration, sessionActive, syncToken, reason } = data;
+    const { sessionId, journey, lastEventPreview, duration, sessionActive, syncToken, reason } = data;
     if (!sessionId) return { success: false };
 
     try {
@@ -285,6 +299,9 @@ exports.syncSession = regionalFunctions().https.onCall(async (data = {}, context
         const cleanJourney = sanitizeJourney(journey);
         if (cleanJourney.length > 0) {
             updates.journey = admin.firestore.FieldValue.arrayUnion(...cleanJourney);
+        }
+        if (Array.isArray(lastEventPreview)) {
+            updates.lastEventPreview = sanitizeEventPreview(lastEventPreview);
         }
 
         await sessionRef.update(updates);
@@ -323,7 +340,7 @@ exports.syncSessionBeacon = regionalFunctions().https.onRequest(async (req, res)
         }
 
         payload = payload || {};
-        const { sessionId, journey, duration, sessionActive, syncToken, reason } = payload;
+        const { sessionId, journey, lastEventPreview, duration, sessionActive, syncToken, reason } = payload;
 
         if (!sessionId) {
             res.status(400).send('Missing session ID');
@@ -357,6 +374,9 @@ exports.syncSessionBeacon = regionalFunctions().https.onRequest(async (req, res)
         const cleanJourney = sanitizeJourney(journey);
         if (cleanJourney.length > 0) {
             updates.journey = admin.firestore.FieldValue.arrayUnion(...cleanJourney);
+        }
+        if (Array.isArray(lastEventPreview)) {
+            updates.lastEventPreview = sanitizeEventPreview(lastEventPreview);
         }
 
         await sessionRef.update(updates);

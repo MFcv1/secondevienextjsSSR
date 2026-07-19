@@ -128,8 +128,8 @@ Contrat du moteur:
 - une reprise exige le meme UID, le bon jeton, une activite de moins d'une heure et une session non admin;
 - une session explicitement fermee ne peut etre reprise que pendant une grace de 15 secondes, afin de tolerer un rechargement immediat sans fusionner un retour plusieurs minutes plus tard;
 - l'admin lit au maximum 5 000 sessions commencees dans la derniere annee;
-- un cache IndexedDB de six heures evite une nouvelle lecture complete a chaque ouverture;
-- l'etat live est derive d'une activite de moins de 30 secondes et l'admin ecoute en temps reel les 100 sessions les plus recentes;
+- un checkpoint local borne a 1 500 sessions permet de rouvrir la vue sans lecture automatique;
+- les lectures admin sont declenchees explicitement par le bouton d'actualisation; aucune ecoute temps reel n'est ouverte par le panneau Data;
 - les erreurs analytics ne bloquent jamais checkout, Auth ou navigation;
 - ne pas stocker plus de donnees personnelles que necessaire.
 
@@ -143,11 +143,21 @@ Exclusion admin:
 - les sessions `type == admin` sont exclues de tous les calculs du panneau Data;
 - l'e-mail proprietaire est lu depuis le secret serveur `SUPER_ADMIN_EMAIL`, jamais code en dur cote client.
 
-Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. L'architecture haut trafic sera traitee dans une phase distincte demandee par l'utilisateur.
+Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. Le checkpoint conserve au plus 1 500 sessions afin de borner le stockage navigateur.
 
 Optimisation de cout locale au 2026-07-17: la cadence visible, le seuil live, le parcours et la securite de reprise restent inchanges. Le cache de hash et l'arbitrage des synchronisations visent uniquement les relectures et appels rapproches observes dans la fenetre Data Access. Leur gain exact doit etre mesure apres deploiement sandbox avec le protocole de [AUDIT_COUTS_FIRESTORE.md](AUDIT_COUTS_FIRESTORE.md).
 
 Les anciennes collections de rollup peuvent encore exister dans le sandbox apres les versions precedentes, mais aucun code actif ne les lit ou ne les alimente. Aucune purge de donnees historique n'est executee pendant ce portage.
+
+### 7.1 Evenements devis
+
+La vue `Data` distingue strictement la demande de devis du tunnel d'achat direct. Les evenements actuellement emis par le formulaire de restauration sont:
+
+- `quote_request` : consultation de la page, portee par une etape de parcours;
+- `quote_start` : premier changement explicite dans le formulaire;
+- `quote_email_opened` : ouverture du brouillon e-mail pre-rempli apres validation locale.
+
+`quote_email_opened` exprime une intention d'envoi, pas une demande effectivement recue ni un devis accepte: le formulaire actuel ouvre `mailto:`. Les etats metier `recu`, `qualifie`, `envoye` et `accepte` devront provenir d'un workflow de demande/CRM distinct avant d'etre affiches comme conversions commerciales.
 
 ## 8. Retention
 

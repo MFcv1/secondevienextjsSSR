@@ -5,7 +5,6 @@ import Link from 'next/link';
 import {
   Activity,
   BarChart3,
-  ChevronDown,
   ChevronLeft,
   CreditCard,
   Globe,
@@ -13,6 +12,7 @@ import {
   Layout,
   LayoutPanelTop,
   Mail,
+  Menu,
   Palette,
   RefreshCw,
   RotateCcw,
@@ -31,6 +31,7 @@ import {
   clearAdminPublicCatalogCache,
   loadAdminPublicCatalog,
 } from '../../src/kit/admin/adminPublicCatalog';
+import AdminSidebar from './AdminSidebar';
 
 const AdminDashboard = React.lazy(() => import('../../src/kit/admin/AdminDashboard'));
 const AdminHomepage = React.lazy(() => import('../../src/kit/admin/AdminHomepage'));
@@ -74,74 +75,7 @@ const adminTabs = KIT_CONFIG.adminTabs.map((tab, index) => ({
   icon: TAB_ICONS[tab.id] ?? COLLECTION_ICONS[index % COLLECTION_ICONS.length],
 }));
 
-const ADMIN_TAB_GROUPS = [
-  { label: 'Pilotage', tabIds: ['dashboard', 'analytics'] },
-  { label: 'Catalogue', tabIds: ['furniture', 'inventory', 'studio'] },
-  { label: 'Experience boutique', tabIds: ['homepage', 'seo'] },
-  { label: 'Commerce', tabIds: ['orders', 'returns', 'livraison', 'payment_settings'] },
-  { label: 'Relation client', tabIds: ['users', 'newsletter'] },
-  { label: 'Systeme', tabIds: ['ip_manager', 'maintenance'] },
-];
-
-const adminTabsById = new Map(adminTabs.map((tab) => [tab.id, tab]));
-const adminTabGroups = ADMIN_TAB_GROUPS.map((group) => ({
-  ...group,
-  tabs: group.tabIds.map((tabId) => adminTabsById.get(tabId)).filter(Boolean),
-}));
-
 const ADMIN_PUBLIC_CATALOG_TABS = new Set(['analytics', 'inventory']);
-
-function AdminDesktopSidebar({ adminCollection, darkMode, onIntent, onSelect }) {
-  return (
-    <aside className={`hidden lg:fixed lg:inset-y-0 lg:left-0 lg:block lg:w-[304px] lg:overflow-hidden lg:border-r ${darkMode ? 'border-white/10 bg-[#101010]' : 'border-stone-200 bg-[#fffefd]'}`}>
-      <div className="flex h-full flex-col px-7 py-5">
-          <div className={`mb-3 border-b px-2 pb-3 ${darkMode ? 'border-white/10' : 'border-stone-200/80'}`}>
-            <Link
-              href="/"
-              className={`group flex items-center gap-2 rounded-xl py-1.5 text-[9px] font-black uppercase tracking-[0.14em] transition-[transform,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-x-0.5 ${darkMode ? 'text-stone-400 hover:text-white' : 'text-stone-500 hover:text-stone-950'}`}
-            >
-              <ChevronLeft size={13} strokeWidth={1.5} className="transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:-translate-x-0.5" />
-              Retour au site
-            </Link>
-          </div>
-
-          <nav aria-label="Navigation administration" className="flex flex-1 flex-col justify-between pb-5 pt-5">
-            {adminTabGroups.map((group) => (
-              <section key={group.label} aria-label={group.label}>
-                <p className={`mb-1 px-2 text-[8px] font-black uppercase tracking-[0.18em] ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>
-                  {group.label}
-                </p>
-                <div className="space-y-0.5">
-                  {group.tabs.map((tab) => {
-                    const Icon = tab.icon;
-                    const isActive = adminCollection === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onFocus={() => onIntent(tab.id)}
-                        onMouseEnter={() => onIntent(tab.id)}
-                        onClick={() => onSelect(tab.id)}
-                        aria-current={isActive ? 'page' : undefined}
-                        className={`group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-left text-[10px] font-bold tracking-[0.015em] transition-[transform,background-color,color,box-shadow] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.985] ${isActive ? (darkMode ? 'bg-white text-stone-950 shadow-[0_10px_20px_-16px_rgba(255,255,255,0.95)]' : 'bg-stone-950 text-white shadow-[0_12px_22px_-18px_rgba(28,25,23,0.9)]') : (darkMode ? 'text-stone-400 hover:bg-white/[0.06] hover:text-white' : 'text-stone-600 hover:bg-stone-100/80 hover:text-stone-950')}`}
-                      >
-                        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg ${isActive ? (darkMode ? 'bg-stone-900 text-white' : 'bg-white/15 text-white') : (darkMode ? 'bg-white/[0.055] text-stone-400' : 'bg-stone-100 text-stone-500')}`}>
-                          <Icon size={13} strokeWidth={1.5} />
-                        </span>
-                        <span className="min-w-0 truncate">{tab.label}</span>
-                        {isActive && <span className={`ml-auto h-1.5 w-1.5 rounded-full ${darkMode ? 'bg-stone-950' : 'bg-white'}`} />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
-          </nav>
-
-      </div>
-    </aside>
-  );
-}
 
 function AdminCatalogStatus({ darkMode, error, loading, onRetry }) {
   if (!loading && !error) return null;
@@ -168,6 +102,13 @@ function AdminCatalogStatus({ darkMode, error, loading, onRetry }) {
   );
 }
 
+const ADMIN_NAV_GROUPS = [
+  { label: "Vue d'ensemble", tabs: ['dashboard', 'analytics'] },
+  { label: 'Catalogue', tabs: ['furniture', 'inventory', 'studio'] },
+  { label: 'Ventes', tabs: ['orders', 'returns', 'livraison', 'payment_settings'] },
+  { label: 'Communication', tabs: ['homepage', 'newsletter', 'seo'] },
+  { label: 'Administration', tabs: ['users', 'ip_manager', 'maintenance'] },
+];
 const getAdminFirestoreRuntime = async () => {
   const [db, firestore] = await Promise.all([getDb(), loadFirestoreModule()]);
   return { db, firestore };
@@ -177,7 +118,7 @@ function AdminContent() {
   const { user, isAdmin, hasStrongAuth, loading } = useAuth();
   const [adminCollection, setAdminCollection] = useState('dashboard');
   const [editingItem, setEditingItem] = useState(null);
-  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [stepUpOpen, setStepUpOpen] = useState(false);
   const [catalogState, setCatalogState] = useState({ items: [], status: 'idle', error: null });
@@ -236,15 +177,12 @@ function AdminContent() {
     }
   }, []);
 
-  const handleSelectAdminTab = (tabId) => {
+  const selectAdminTab = (tabId) => {
     if (ADMIN_PUBLIC_CATALOG_TABS.has(tabId)) void ensureAdminCatalog();
     setAdminCollection(tabId);
     setEditingItem(null);
-    setIsMoreMenuOpen(false);
-  };
-
-  const handleAdminTabIntent = (tabId) => {
-    if (ADMIN_PUBLIC_CATALOG_TABS.has(tabId)) void ensureAdminCatalog();
+    setIsSidebarOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleToggleStatus = async (item, collectionName) => {
@@ -337,24 +275,36 @@ function AdminContent() {
 
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-[#0A0A0A] text-white' : 'bg-[#FAFAF9] text-stone-900'}`}>
-      <AdminDesktopSidebar
-        adminCollection={adminCollection}
+      <AdminSidebar
+        activeTabId={adminCollection}
         darkMode={darkMode}
-        onIntent={handleAdminTabIntent}
-        onSelect={handleSelectAdminTab}
+        groups={ADMIN_NAV_GROUPS}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        onSelect={selectAdminTab}
+        tabs={adminTabs}
       />
 
-      <main className="mx-auto max-w-[1440px] space-y-12 px-4 py-16 md:px-6 md:py-20 lg:ml-[304px] lg:max-w-none lg:px-12">
-        <div className="lg:mx-auto lg:max-w-[1180px]">
+      <div className="min-h-screen lg:pl-[17.5rem]">
+        <main className="mx-auto max-w-[100rem] space-y-8 px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
         <Suspense fallback={null}>
           <AdminIPTracker />
         </Suspense>
 
-        <section className="min-w-0 space-y-12 lg:space-y-10">
-        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-2">
-            <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Systeme de Controle</p>
-            <h2 className="text-4xl font-black tracking-tighter md:text-5xl">Gestion Boutique</h2>
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(true)}
+              className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl border transition lg:hidden ${darkMode ? 'border-white/10 text-stone-300 hover:bg-white/10' : 'border-stone-200 bg-white text-stone-700 hover:border-stone-400'}`}
+              aria-label="Ouvrir la navigation"
+            >
+              <Menu size={19} />
+            </button>
+            <div className="space-y-1.5">
+              <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Systeme de Controle</p>
+              <h2 className="text-3xl font-black tracking-tighter md:text-4xl">Gestion Boutique</h2>
+            </div>
           </div>
           <Link
             href="/"
@@ -364,72 +314,6 @@ function AdminContent() {
             Retour au site
           </Link>
         </div>
-
-        <div className="relative flex flex-col items-center lg:hidden">
-          <div className={`w-full rounded-[2.5rem] border p-2 ${darkMode ? 'border-white/5 bg-[#111111]/80 backdrop-blur-xl' : 'border-stone-200/60 bg-white/80 shadow-lg shadow-stone-200/20 backdrop-blur-xl'}`}>
-            <div className="flex flex-wrap items-center justify-center gap-1.5 md:gap-2">
-              {adminTabs.map((tab, idx) => {
-                const Icon = tab.icon;
-                const isActive = adminCollection === tab.id;
-                const isAlwaysVisible = idx < 4;
-                const isDesktopVisible = idx < 8;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onFocus={() => handleAdminTabIntent(tab.id)}
-                    onMouseEnter={() => handleAdminTabIntent(tab.id)}
-                    onClick={() => handleSelectAdminTab(tab.id)}
-                    className={`group relative flex-none items-center gap-2 rounded-full px-3 py-3 text-[10px] font-black uppercase tracking-widest transition-all duration-300 md:px-5 ${isAlwaysVisible ? 'flex' : isDesktopVisible ? 'hidden md:flex' : 'hidden'} ${isActive ? (darkMode ? 'bg-white text-stone-900 shadow-[0_0_20px_rgba(255,255,255,0.15)]' : 'bg-stone-900 text-white shadow-xl') : (darkMode ? 'text-stone-500 hover:bg-white/5 hover:text-white' : 'text-stone-500 hover:bg-stone-50 hover:text-stone-900')}`}
-                  >
-                    <Icon size={14} className={`transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110 group-hover:rotate-6'}`} />
-                    <span className={isActive ? 'opacity-100' : 'opacity-80'}>{tab.label}</span>
-                    {isActive && <span className="absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-current opacity-40" />}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setIsMoreMenuOpen((value) => !value)}
-            className={`mt-6 flex items-center gap-2 rounded-full px-6 py-2 text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-300 hover:scale-105 active:scale-95 ${isMoreMenuOpen || adminTabs.slice(8).some((tab) => tab.id === adminCollection) ? (darkMode ? 'bg-white/10 text-white' : 'bg-stone-100 text-stone-900') : (darkMode ? 'text-stone-600 hover:text-stone-400' : 'text-stone-400 hover:text-stone-600')}`}
-          >
-            <span className="opacity-50 tracking-tighter">•••</span>
-            <span>{isMoreMenuOpen ? 'Fermer' : "Plus d'options"}</span>
-            <ChevronDown size={12} className={`transition-transform duration-500 ${isMoreMenuOpen ? 'rotate-180' : 'opacity-40'}`} />
-          </button>
-
-          {isMoreMenuOpen && (
-            <>
-              <button type="button" aria-label="Fermer le menu admin" onClick={() => setIsMoreMenuOpen(false)} className="fixed inset-0 z-40 cursor-default" />
-              <div className={`admin-more-menu absolute left-0 right-0 top-full z-50 mx-auto mt-2 grid max-w-4xl grid-cols-2 gap-2 rounded-[2.5rem] border p-3 md:grid-cols-4 ${darkMode ? 'border-white/10 bg-[#161616] shadow-[0_20px_50px_rgba(0,0,0,0.5)]' : 'border-stone-200 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)]'}`}>
-                {adminTabs.slice(4).map((tab, idx) => {
-                  const realIdx = idx + 4;
-                  const isDesktopShown = realIdx < 8;
-                  const Icon = tab.icon;
-                  const isActive = adminCollection === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onFocus={() => handleAdminTabIntent(tab.id)}
-                      onMouseEnter={() => handleAdminTabIntent(tab.id)}
-                      onClick={() => handleSelectAdminTab(tab.id)}
-                      className={`items-center gap-3 rounded-2xl p-4 text-[10px] font-black uppercase tracking-widest transition-all ${isDesktopShown ? 'flex md:hidden' : 'flex'} ${isActive ? (darkMode ? 'bg-white text-stone-900' : 'bg-stone-900 text-white') : (darkMode ? 'bg-white/5 text-stone-400 hover:text-white' : 'bg-stone-50 text-stone-500 hover:text-stone-900')}`}
-                    >
-                      <Icon size={14} />
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className={`h-px w-full ${darkMode ? 'bg-white/10' : 'bg-stone-200'}`} />
 
         <Suspense fallback={<div className="flex items-center justify-center p-20"><div className="h-10 w-10 animate-spin rounded-full border-4 border-stone-200 border-t-stone-800" /></div>}>
           {adminCollection === 'dashboard' ? (
@@ -512,9 +396,8 @@ function AdminContent() {
             </>
           )}
         </Suspense>
-        </section>
-        </div>
       </main>
+      </div>
     </div>
   );
 }

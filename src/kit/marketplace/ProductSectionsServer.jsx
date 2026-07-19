@@ -364,12 +364,12 @@ export const BeforeAfterSectionServer = ({ darkMode = false, projects = restorat
         focusable="false"
       >
         <g className="atelier-showcase__curve atelier-showcase__curve--left">
-          <path className="atelier-showcase__curve-line atelier-showcase__curve-line--warm" d="M 430 -35 C 390 -10 335 18 290 55 C 180 145 70 250 0 420" />
-          <path className="atelier-showcase__curve-line atelier-showcase__curve-line--light" d="M 446 -30 C 406 -3 351 26 306 64 C 196 154 86 258 14 410" />
+          <path className="atelier-showcase__curve-line atelier-showcase__curve-line--warm" d="M 360 -110 C 310 -55 255 -12 195 40 C 105 120 35 205 0 320" />
+          <path className="atelier-showcase__curve-line atelier-showcase__curve-line--light" d="M 376 -106 C 326 -48 271 -4 211 49 C 121 129 50 211 14 312" />
         </g>
         <g className="atelier-showcase__curve atelier-showcase__curve--right" transform="translate(1600 0) scale(-1 1)">
-          <path className="atelier-showcase__curve-line atelier-showcase__curve-line--warm" d="M 430 -35 C 390 -10 335 18 290 55 C 180 145 70 250 0 420" />
-          <path className="atelier-showcase__curve-line atelier-showcase__curve-line--light" d="M 446 -30 C 406 -3 351 26 306 64 C 196 154 86 258 14 410" />
+          <path className="atelier-showcase__curve-line atelier-showcase__curve-line--warm" d="M 360 -110 C 310 -55 255 -12 195 40 C 105 120 35 205 0 320" />
+          <path className="atelier-showcase__curve-line atelier-showcase__curve-line--light" d="M 376 -106 C 326 -48 271 -4 211 49 C 121 129 50 211 14 312" />
         </g>
       </svg>
       <img

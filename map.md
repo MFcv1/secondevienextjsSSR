@@ -147,7 +147,7 @@ AnalyticsCollectorIsland + AuthProvider anonyme [C]
   -> heartbeat adaptatif + raisons init/route/visible/beacon [C]
   -> initLiveSession/syncSession/beacon + cache borne du hash de jeton [F]
   -> analytics_sessions/{sessionId} avec journey et compteurs de raisons embarques [DB]
-  -> AdminAnalytics: historique borne + listener recent temps reel, medias de parcours [C]
+  -> AdminAnalytics: lecture manuelle bornee, checkpoint local, vues parcours/sessions [C]
   -> UID/IP, courbe, bandeau live cumulatif, visiteurs et parcours [C]
 ```
 
@@ -225,7 +225,8 @@ app/
 |-- admin/
 |   |-- layout.jsx .................... layout admin
 |   |-- page.jsx ...................... route dynamique
-|   `-- AdminAppIsland.jsx ............ shell, lazy tabs, gates admin, rail laterale desktop groupee, catalogue public a la demande
+|   |-- AdminAppIsland.jsx ............ shell, groupes, lazy tabs, gates admin, catalogue snapshot a la demande
+|   `-- AdminSidebar.jsx .............. navigation laterale responsive
 `-- api/
     |-- catalog/route.js .............. catalogue snapshot same-origin
     |-- search/route.js ............... recherche catalogue
@@ -266,6 +267,7 @@ src/kit/
 |   `-- theme.js ...................... theme partage
 |-- shared/
 |   |-- AnalyticsProvider.jsx ......... pipeline analytics navigateur
+|   |-- analyticsEvents.js ............ bus borne des actions metier vers la session
 |   |-- clientPerf.js ................. mesures client
 |   |-- ErrorBoundary.jsx ............. frontiere erreur
 |   `-- CustomerTestimonialsCarousel.jsx
@@ -365,7 +367,9 @@ src/kit/vitrine/
 ```text
 src/kit/admin/
 |-- AdminDashboard.jsx ................ stats, exports et maintenance rapide
-|-- AdminAnalytics.jsx ................ sessions/parcours
+|-- AdminAnalytics.jsx ................ point d'entree minimal vers la vue Data canonique
+|-- AdminAnalyticsOverview.jsx ........ vue d'ensemble devis, checkpoint manuel et agregats client
+|-- AnalyticsWorkspaceViews.jsx ....... vues Parcours et Sessions, agrégats et inspecteur anonymisé
 |-- AdminForm.jsx ..................... creation/edition annonces
 |-- AdminItemList.jsx ................. liste publications
 |-- GlobalInventoryView.jsx ........... vue catalogue/ordres
@@ -452,7 +456,6 @@ functions/
     |   |-- constants.js
     |   |-- sessionAuthorizationCache.js ... cache borne/TTL du hash de jeton
     |   |-- sessions.js
-    |   |-- rollups.js
     |   |-- updateUserSessions.js
     |   `-- adminIP.js
     |-- maintenance/
