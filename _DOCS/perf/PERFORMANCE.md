@@ -139,6 +139,8 @@ Conserver les hauteurs reservees et ne pas remplacer une section par un squelett
 
 ## 10. Dettes controlees
 
+La validation sandbox du 2026-07-19 a fait passer `perf:gallery-direct`, `perf:category-direct`, `perf:product-direct` et l'audit produit cold/warm sur le catalogue Storage reel. La categorie Buffets rend 18 liens produit pour 18 identifiants uniques, sans duplication DOM. La fiche charge sa variante initiale `medium/detailFast`; les variantes lourdes attendent l'interaction. Le rapport `perf:budget` reste non bloquant et continue de signaler la dette CSS/JS globale ci-dessous.
+
 | Dette | Statut | Condition de reprise |
 | --- | --- | --- |
 | budget CSS/JS global | `DEBT` | passe perf dediee apres fonctionnalites prioritaires |

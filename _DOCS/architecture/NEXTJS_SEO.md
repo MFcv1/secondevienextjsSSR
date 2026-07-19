@@ -77,6 +77,8 @@ mutation admin
 
 Chaque surface catalogue rend `data-catalog-revision` et `data-catalog-version`. La petite ile `CatalogVersionSyncIsland` ecoute uniquement `sys_catalog_live/current` dans un onglet visible, controle `/api/catalog/version` au `pageshow`, au retour visible et apres navigation prefetchee, puis appelle au plus un `router.refresh()` par hash. Elle n'effectue aucun polling et la perte du signal laisse ISR et la navigation fonctionnels.
 
+Le rollout sandbox du 2026-07-19 a confirme les routes publiques en `200` avec `s-maxage=300`, `/api/catalog/version` en revalidation obligatoire et son contrat conditionnel `ETag -> 304`. La navigation interactive galerie -> produit -> retour -> categorie est restee une navigation Next, sans document public Firestore ni reapparition de la galerie sur la fiche.
+
 Ne pas introduire une purge globale anonyme ou un secret de revalidation dans une variable `NEXT_PUBLIC_*`.
 
 ## 5. SEO

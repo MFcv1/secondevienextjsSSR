@@ -65,6 +65,7 @@ Politique courante:
 - categorie directe: premiere rangee bornee en `eager/high`, suivantes lazy;
 - `Petits Prix`: `src/srcSet` toujours presents dans le HTML, lazy natif, aucun injecteur sequentiel;
 - warmup partage: concurrence maximale 2, `detailFast` avant clic, route prefetchee seulement sur hover/focus/press;
+- une pression vers un produit annule les warmups speculatifs encore en file pour que les cartes survolees precedemment ne concurrencent pas la navigation choisie;
 - Save-Data et reseaux 2G: aucune anticipation speculative;
 - nouvelle version catalogue: cache logique de warmup et routes prefetchees vide avant `router.refresh()`;
 - medias historiques sans variante recente: ordre de fallback conserve, sans suppression implicite.
@@ -160,3 +161,5 @@ npm run perf:product-direct
 ```
 
 Les audits froids et navigateur sont des validations longues: les lancer seulement pour une passe images/performance ou sur demande explicite.
+
+La recette sandbox du 2026-07-19 a confirme l'absence de variante `full` avant zoom, l'absence de nouvelle requete de la variante `medium` deja active, le chargement de la carte visible puis de `detailFast`, et zero octet retransfere pour les variantes chaudes observees apres navigation. L'audit produit a aussi verifie qu'aucun warmup restant de cartes non choisies ne demarre apres la pression utilisateur.

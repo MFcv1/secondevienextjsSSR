@@ -187,3 +187,12 @@ La recette de cutover du 2026-07-18 a inclus plus de 20 builds de comparaison al
 
 Data Access est une preuve separee: fenetre courte, onglets parasites fermes, configuration avant/apres capturee et desactivation immediate. Ne jamais l'activer implicitement pour lancer les suites locales.
 Le build CI utilise `CATALOG_BUILD_FIXTURE=true` avec une fixture publique minimale versionnee. Cette option est limitee au workflow de qualite: elle permet de compiler sans identifiants Google et ne doit jamais etre configuree dans App Hosting ou dans un environnement deploye.
+
+Cloture du chantier catalogue le 2026-07-19:
+
+- Node `22.23.1`, pnpm `11.7.0` et Temurin Java 21: `core` 7/7, `resilience` 17/17, `security` Node 10/10 et Rules Emulator 5/5;
+- lint: 0 erreur et 259 avertissements historiques; build fixture, `seo:surface`, `next:routes`, `mobile:contract` et `git diff --check` reussis;
+- CI `Next quality gates` verte sur `6134386`;
+- sandbox: probes routes/API, ETag 304, performances galerie/categorie/produit et audit images cold/warm reussis;
+- recette navigateur: galerie 20 produits uniques, fiche sans galerie parasite avec image initiale adaptee, retour Next, categorie Buffets 18 cartes uniques sans image cassee;
+- Data Access: preuve catalogue du 2026-07-19 conforme, meuble existant et pointeurs restaures, aucune commande ni paiement, audit desactive avec `auditConfigs: null`.

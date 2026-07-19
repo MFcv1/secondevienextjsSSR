@@ -3,8 +3,6 @@
 Derniere mise a jour: 2026-07-19
 Statut: `REFERENCE_ACTIVE`
 
-> Passation temporaire active: le chantier de consolidation publication, caches, navigation et images est decrit dans [CATALOGUE_SYNCHRONISATION_SITUATION.md](CATALOGUE_SYNCHRONISATION_SITUATION.md), puis traduit en phases executables dans [CATALOGUE_SYNCHRONISATION_ROADMAP.md](CATALOGUE_SYNCHRONISATION_ROADMAP.md). Ces deux fichiers doivent etre fusionnes dans les chapitres canoniques puis supprimes a la cloture, prevue au plus tard le 2026-07-26.
-
 ## 1. Perimetre
 
 Ce chapitre couvre la creation d'une annonce meuble, son stockage, sa publication, son indexabilite, son affichage dans la galerie, sa recherche et son passage dans le panier.
@@ -83,7 +81,7 @@ furniture [DB, autoritaire]
 
 Le lecteur valide schema, manifestes et checksums. Il tente `current`, puis `previous`, puis `last-known-good`; il ne scanne jamais Firestore en cas de panne Storage. Chaque lecture de pointeur epingle une generation Storage unique pour que metadata et corps ne puissent pas provenir de deux ecritures differentes. Les seuls modes durables sont `active` et `paused`. Maintenance admin valide les releases et effectue le CAS de rollback, puis la reconstruction republie l'etat Firestore courant.
 
-La recette de cloture du 2026-07-18 a exerce un rollback reel, sa pause, puis la reconstruction. Une recette complementaire du 2026-07-19 a modifie puis restaure le prix et le stock d'un meuble sandbox existant, verifie le snapshot public et ouvert le checkout sans paiement ni creation de commande. Deux reconstructions finales ont elimine l'etat transitoire des trois pointeurs: l'etat sandbox observe avant le present chantier etait `current=45`, `previous=44`, `last-known-good=43`. Data Access n'avait releve aucune lecture publique de `furniture` ni aucun acces a `public/meta`. Le nouveau contrat de synchronisation decrit ci-dessous est implemente localement mais n'est pas encore deploye ni recette dans le navigateur; les deux documents temporaires restent donc actifs.
+La recette de cloture du 2026-07-18 a exerce un rollback reel, sa pause, puis la reconstruction. Une recette complementaire du 2026-07-19 a modifie puis restaure le prix et le stock d'un meuble sandbox existant, verifie le snapshot public et ouvert le checkout sans paiement ni creation de commande. Deux reconstructions finales ont elimine l'etat transitoire des trois pointeurs: `current=45`, `previous=44`, `last-known-good=43`, tous fondes sur l'etat Firestore restaure. Data Access n'a releve aucune lecture publique de `furniture` ni aucun acces a `public/meta`, puis `DATA_READ` et `DATA_WRITE` ont ete retires et `auditConfigs: null` reverifie. Le contrat de synchronisation decrit ci-dessous a ensuite ete deploye sur `secondevie-next-sandbox` et valide par les suites locales Node 22/Java 21, la CI, les probes HTTP, les audits cold/warm d'images et une recette navigateur de la galerie, d'une categorie et d'une fiche produit. Aucun paiement ni environnement de production n'a ete touche.
 
 La passe de synchronisation locale du 2026-07-19 a ferme les ecarts suivants dans le code:
 
