@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { clearProductImageWarmups, scheduleProductImageWarmup } from '../../utils/imageUtils';
+import {
+  clearProductImageWarmups,
+  clearQueuedProductImageWarmups,
+  scheduleProductImageWarmup,
+} from '../../utils/imageUtils';
 import {
   getCurrentWishlistUser,
   readWishlistIds,
@@ -109,7 +113,10 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
 
     const onPointerDown = (event) => {
       const link = event.target.closest?.('[data-gallery-product-link]');
-      if (link) warmupProduct(link.closest('[data-gallery-product-card]'), 'press');
+      if (link) {
+        clearQueuedProductImageWarmups();
+        warmupProduct(link.closest('[data-gallery-product-card]'), 'press');
+      }
     };
 
     const onFocusIn = (event) => {
@@ -206,6 +213,7 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
       if (idleId && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
       if (timeoutId) window.clearTimeout(timeoutId);
       observer?.disconnect();
+      clearQueuedProductImageWarmups();
     };
   }, [observeVisibleWarmup, surface, warmupProduct]);
 

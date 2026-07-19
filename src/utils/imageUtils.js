@@ -433,10 +433,16 @@ export const scheduleProductImageWarmup = (src, { intent = 'visible' } = {}) => 
     return promise;
 };
 
-export const clearProductImageWarmups = () => {
+export const clearQueuedProductImageWarmups = () => {
     while (imageWarmupQueue.length) {
-        imageWarmupQueue.shift()?.resolve?.(null);
+        const task = imageWarmupQueue.shift();
+        imageWarmupPromises.delete(task?.src);
+        task?.resolve?.(null);
     }
+};
+
+export const clearProductImageWarmups = () => {
+    clearQueuedProductImageWarmups();
     imageWarmupPromises.clear();
 };
 

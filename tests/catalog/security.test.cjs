@@ -242,6 +242,9 @@ test('images, categorie, warmup et navigation respectent le contrat unifie', () 
   assert.doesNotMatch(marketplace, /data-cold-scroll-deferred|deferred-section-(?:placeholder|reveal)|footer-delivery-image-in/);
   assert.equal((gridActions.match(/new Image\(/g) || []).length, 0);
   assert.match(imageUtils, /MAX_CONCURRENT_IMAGE_WARMUPS = 2/);
+  assert.match(imageUtils, /export const clearQueuedProductImageWarmups/);
+  assert.match(gridActions, /clearQueuedProductImageWarmups\(\);\s*warmupProduct/);
+  assert.ok((gridActions.match(/clearQueuedProductImageWarmups\(\)/g) || []).length >= 2);
   const cardSrcSetHelper = imageUtils.slice(
     imageUtils.indexOf('const cardSrcSet'),
     imageUtils.indexOf('const thumbSrcSet'),

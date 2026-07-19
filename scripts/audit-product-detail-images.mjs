@@ -249,7 +249,11 @@ const buildAssertions = (results) => {
 
   if (mobile) {
     const fullMobileDetail = mobile.productImagesAfterClick.filter((image) => image.detailVariant && image.variant === 'full');
-    const activeMediumDetail = mobile.productImagesAfterClick.filter((image) => image.detailVariant && image.variant === 'medium' && image.slot === 0);
+    const activeMediumDetail = mobile.productImagesAfterClick.filter((image) => (
+      image.detailVariant
+      && image.variant === 'medium'
+      && image.url === mobile.state.currentSrc
+    ));
     add('mobile detail does not request full variants before zoom', fullMobileDetail.length === 0, { fullMobileDetail });
     add('mobile does not re-request the active medium detail variant', activeMediumDetail.length <= 1, { activeMediumDetail });
     add('mobile renders the visible mobile detail shell', mobile.state.mobileShellVisible && !mobile.state.desktopMainVisible, mobile.state);
