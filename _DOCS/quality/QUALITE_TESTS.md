@@ -1,6 +1,6 @@
 # Qualite, tests et gates
 
-Derniere mise a jour: 2026-07-17
+Derniere mise a jour: 2026-07-18
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Principe de proportion
@@ -21,10 +21,11 @@ Toujours annoncer ce qui a ete lance et ce qui ne l'a pas ete.
 
 1. installation frozen lockfile;
 2. lint;
-3. contrat SEO public;
-4. build Next;
-5. classification des routes;
-6. budget performance en rapport non bloquant.
+3. suites catalogue coeur, resilience et Rules Emulator;
+4. contrat SEO public;
+5. build Next;
+6. classification des routes;
+7. budget performance en rapport non bloquant.
 
 Une CI verte ne remplace pas les E2E Firebase/Stripe ni une recette visuelle.
 
@@ -57,11 +58,7 @@ Le contrat analytics importe le verificateur du moteur Tous a Table et controle 
 npm run test:analytics
 ```
 
-Le contrat de cout Firestore verrouille le rejet des paginations catalogue invalides avant toute lecture, les prechargements categorie/mega-menu fondes sur l'intention, le micro-cache de version catalogue, la cadence analytics adaptative, les raisons de synchronisation et l'expiration/borne du cache serveur de jeton:
-
-```bash
-npm run test:firestore-cost
-```
+Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCatalog`. Les couts catalogue se prouvent par la suite securite, une recette navigateur bornee et, uniquement sur demande explicite, une fenetre Data Access temporaire.
 
 ## 4. Matrice par domaine
 
@@ -81,9 +78,9 @@ npm run test:firestore-cost
 | catalogue coeur | `test:catalog:core` |
 | catalogue resilience | `test:catalog:resilience` |
 | catalogue securite/Rules | `test:catalog:security` |
-| catalogue materialise | suites `test:catalog:*`, shadow/parite, publication, CDN, rollback et cout |
+| catalogue materialise | `test:catalog`, recette navigateur sandbox et Data Access seulement si explicitement demande |
 | Functions/rules | tests cibles, audit exports/rules, deploiement sandbox cible |
-| couts Firestore | `test:firestore-cost`, `test:analytics`, mesure Usage Insights avant/apres |
+| couts Firestore | `test:analytics`, mesure Usage Insights/Data Access avant-apres si necessaire |
 | infra | `infra:env`, `infra:deploy`, `appcheck:audit` en lecture |
 
 ## 5. Gates publiques
@@ -177,6 +174,6 @@ npm run test:catalog:security
 
 La recette catalogue complete se fait dans le navigateur sandbox. Le rollback reel est exclusivement expose par Maintenance admin et exige App Check, registre actif, authentification forte recente et revisions explicites.
 
-Matrice minimale cloud: 20 builds shadow concordants, creation, prix, stock nul, suppression, rafale/deduplication, publication/revalidation, API same-origin froide/chaude, ETag stable, cache CDN >95 % apres echauffement et checkout sans paiement. Le checkout doit rester autoritaire sur Firestore, meme si le snapshot est en retard.
+La recette de cutover du 2026-07-18 a inclus plus de 20 builds shadow concordants, creation, prix, stock nul, suppression, publication/revalidation, API same-origin froide/chaude, ETag stable, cache CDN apres echauffement et checkout sans paiement. Shadow/canary et leurs scripts ne sont plus des gates actives: le moteur public unique est le snapshot Storage. Le checkout reste autoritaire sur Firestore, meme si le snapshot est en retard.
 
 Data Access est une preuve separee: fenetre courte, onglets parasites fermes, configuration avant/apres capturee et desactivation immediate. Ne jamais l'activer implicitement pour lancer les suites locales.

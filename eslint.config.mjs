@@ -63,7 +63,6 @@ export default defineConfig([
     'docs/**',
     'dist/**',
     'functions/**',
-    'functions-public/**',
     'node_modules/**',
     'out/**',
     'scripts/**',

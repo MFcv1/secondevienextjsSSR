@@ -36,3 +36,25 @@ test('manifeste et inventaire sont deterministes et integralement hashes', () =>
   });
   assert.equal(inventory.totalStockValue, 390);
 });
+
+test('prix, stock zero et suppression changent exactement la projection publiee', () => {
+  const initial = buildPublicProjection(products);
+  const priceChanged = buildPublicProjection(products.map((product) => (
+    product.id === 'mirror-a'
+      ? { ...product, data: { ...product.data, currentPrice: 145 } }
+      : product
+  )));
+  const zeroStock = buildPublicProjection(products.map((product) => (
+    product.id === 'mirror-a'
+      ? { ...product, data: { ...product.data, stock: 0 } }
+      : product
+  )));
+  const deleted = buildPublicProjection(products.filter((product) => product.id !== 'mirror-a'));
+
+  assert.notEqual(priceChanged.aggregateSha256, initial.aggregateSha256);
+  assert.equal(priceChanged.full.find((product) => product.id === 'mirror-a').currentPrice, 145);
+  assert.notEqual(zeroStock.aggregateSha256, initial.aggregateSha256);
+  assert.equal(zeroStock.full.find((product) => product.id === 'mirror-a').stock, 0);
+  assert.notEqual(deleted.aggregateSha256, initial.aggregateSha256);
+  assert.equal(deleted.full.some((product) => product.id === 'mirror-a'), false);
+});

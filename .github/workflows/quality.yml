@@ -27,13 +27,9 @@ jobs:
           java-version: 21
       - run: pnpm install --frozen-lockfile
       - run: npm ci --prefix functions
-      - run: npm ci --prefix functions-public
       - run: pnpm lint
-      - run: pnpm test:catalog:unit
-      - run: pnpm test:catalog:publisher
-      - run: pnpm test:catalog:security
-      - run: pnpm test:catalog:emulator
-      - run: pnpm test:firestore-cost
+      - run: pnpm test:catalog
+      - run: pnpm test:auth
       - run: pnpm seo:surface
       - run: pnpm build
       - run: pnpm next:routes

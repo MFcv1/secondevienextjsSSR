@@ -29,5 +29,18 @@ test('aucun moteur catalogue legacy ne subsiste dans le code executable', () => 
     read('firebase.json'),
   ].join('\n');
   assert.doesNotMatch(executable, /publicCatalog|PUBLIC_CATALOG_SOURCE|snapshot_canary|x-catalog-canary|functions-public/);
-  assert.match(read('functions/src/commerce/createOrder.js'), /reason: 'price_changed'/);
+  assert.doesNotMatch(
+    read('scripts/e2e-hosted-stripe-checkout.mjs'),
+    /firestore\.googleapis\.com\/v1\/projects\/[^/]+\/databases\/\(default\)\/documents\/artifacts\/[^/]+\/public\/data\/furniture/,
+  );
+  const createOrder = read('functions/src/commerce/createOrder.js');
+  assert.match(createOrder, /reason: 'price_changed'/);
+  assert.equal((createOrder.match(/itemDb\.status !== 'published'/g) || []).length, 2);
+  assert.equal((createOrder.match(/itemDb\.currentPrice \?\? itemDb\.startingPrice \?\? itemDb\.price/g) || []).length, 2);
+  assert.doesNotMatch(createOrder, /itemDb\.currentPrice \|\| itemDb\.startingPrice/);
+
+  const revalidationRoute = read('app/api/revalidate-catalog/route.js');
+  assert.match(revalidationRoute, /addRevalidationPath\(pathEntries, '\/api\/catalog'\)/);
+  assert.match(revalidationRoute, /addRevalidationPath\(pathEntries, '\/api\/search'\)/);
+  assert.doesNotMatch(revalidationRoute, /revalidatePath\([^\n]+,\s*'route'\)/);
 });

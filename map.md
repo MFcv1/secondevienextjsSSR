@@ -45,7 +45,7 @@ Seconde Vie
 |-- /admin ........................... Back-office dynamique
 |-- /api/search ...................... Recherche catalogue serveur
 |-- /api/catalog ..................... Snapshot public same-origin/CDN
-|-- /api/revalidate-catalog .......... Invalidation ISR admin
+|-- /api/revalidate-catalog .......... Invalidation ISR signee du catalogue
 |-- /sitemap.xml ..................... Sitemap Next dynamique/cache
 `-- /robots.txt ...................... Politique robots Next
 ```
@@ -67,7 +67,7 @@ Seconde Vie
 | `/admin` | `[C]` tunnel | DYN | noindex/nofollow | `app/admin/page.jsx` | `AdminAppIsland` |
 | `/api/search` | `[API]` | borne | non indexable | `route.js` | recherche serveur |
 | `/api/catalog` | `[API]` | CDN/ETag | non indexable | `route.js` | catalogue materialise |
-| `/api/revalidate-catalog` | `[API]` | aucun | non indexable | `route.js` | token admin + revalidation |
+| `/api/revalidate-catalog` | `[API]` | aucun | non indexable | `route.js` | HMAC builder + revalidation catalogue |
 
 ## 4. Parcours et dependances
 
@@ -254,8 +254,7 @@ src/kit/
 |-- auth/
 |   `-- authStore.js .................. source et abonnement session UI
 |-- contexts/
-|   |-- AuthContext.jsx ............... login Google/OTP/passkey et session
-|   `-- AnalyticsContext.jsx .......... contexte analytics
+|   `-- AuthContext.jsx ............... login Google/OTP/passkey et session
 |-- config/
 |   |-- constants.js .................. taxonomie, collections, tabs admin
 |   |-- firebaseCore.js ............... app Firebase minimale
@@ -268,8 +267,6 @@ src/kit/
 |-- shared/
 |   |-- AnalyticsProvider.jsx ......... pipeline analytics navigateur
 |   |-- clientPerf.js ................. mesures client
-|   |-- pageTaxonomy.js ............... taxonomie analytics/routes
-|   |-- SEO.jsx ....................... helper SEO client historique
 |   |-- ErrorBoundary.jsx ............. frontiere erreur
 |   `-- CustomerTestimonialsCarousel.jsx
 `-- ui/
@@ -315,7 +312,6 @@ src/kit/marketplace/
 |-- GlobalMenuTriggerIsland.jsx ....... bouton menu
 |-- PremiumMegaMenuIsland.jsx ......... panneau principal
 |-- PremiumMegaMenuLazyIsland.jsx ..... facade lazy
-|-- GlobalMenuPanelAuthIsland.jsx ..... compte/auth differe dans menu
 |-- LegacyLoginModalFullIsland.jsx .... modale Auth actuelle (nom historique)
 |-- QuoteRequestServerView.jsx ........ page devis serveur
 |-- QuoteFormSsrShell.jsx ............. shell formulaire
@@ -346,8 +342,7 @@ src/kit/commerce/
 src/kit/layout/
 |-- GlobalMenu.jsx .................... facade menu
 |-- GlobalMenuDesktop.jsx ............. composition desktop
-|-- GlobalMenuMobile.jsx .............. composition mobile
-`-- Footer.jsx ........................ facade footer historique/partagee
+`-- GlobalMenuMobile.jsx .............. composition mobile
 
 src/kit/vitrine/
 |-- AboutServerView.jsx ............... rendu A propos
@@ -362,8 +357,7 @@ src/kit/vitrine/
 |-- AboutBeforeAfterIsland.jsx ........ avant/apres
 |-- AboutFaqIsland.jsx ................ FAQ
 |-- AboutInstagramCounterIsland.jsx ... compteur social
-|-- AboutTestimonialsIsland.jsx ....... temoignages
-`-- AboutVitrineNavIsland.jsx ......... navigation vitrine
+`-- AboutTestimonialsIsland.jsx ....... temoignages
 ```
 
 ### 7.6 Back-office
@@ -387,12 +381,9 @@ src/kit/admin/
 |-- AdminNewsletter.jsx ............... abonnes/informations
 |-- AdminPaymentSettings.jsx .......... Stripe Connect/carte
 |-- AdminMaintenance.jsx .............. maintenance
-|-- AdminSiteMap.jsx .................. carte parcours/analytics
-|-- siteMapModel.js ................... modele de carte
 |-- analyticsReliability.js ........... fiabilite/checkpoints
 |-- exportCsv.js ...................... exports
 |-- adminPublicCatalog.js ............. lecture snapshot admin sans cache persistant
-|-- hooks/useLiveJourneyMap.js ........ carte live
 `-- components/
     |-- AdminImageCard.jsx
     |-- ImageCropperModal.jsx
@@ -513,8 +504,11 @@ Firestore
 |-- sys_ratelimit/{id} ................ backend-only
 |-- sys_admin_access/{uid} ............ backend-only
 |-- sys_idempotency/{id} .............. backend-only
-|-- sys_catalog_publication/control ... mode, lease et revisions
-|-- sys_catalog_events/{eventId} ...... deduplication/outbox catalogue
+|-- sys_catalog_publication/secondevie  mode, lease et revisions
+|-- sys_catalog_publication_events/{eventHash}
+|   `-- deduplication/outbox catalogue
+|-- sys_catalog_publication_builds/{buildId}
+|   `-- journal borne des builds catalogue
 |-- sys_catalog_media_gc/{id} ......... quarantaine media
 |-- analytics_sessions/{sessionId} .... session + tableau `journey`
 |-- sales_stats_daily/{id}
@@ -563,13 +557,6 @@ benchmark-auth-ui.mjs
 e2e-auth-email-otp.mjs
 e2e-hosted-stripe-checkout.mjs
 e2e-refund-latest-stripe-order.mjs
-e2e-revalidate-catalog.mjs
-e2e-catalog-shadow-compare.mjs
-e2e-catalog-publication.mjs
-e2e-catalog-cdn.mjs
-e2e-catalog-rollback.mjs
-measure-catalog-firestore-cost.mjs
-set-catalog-publication-mode.mjs
 read-latest-auth-otp.mjs .............. outil local sensible
 ```
 
@@ -582,7 +569,6 @@ audit-storage-orphans.cjs
 cleanup-product-image-variants.cjs .... destructif, confirmation forte
 copy-firestore-project.mjs
 replace-firestore-string.mjs
-seed-catalogue.mjs
 purge-expired-firestore.cjs
 ```
 

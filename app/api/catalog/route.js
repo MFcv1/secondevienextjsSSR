@@ -8,7 +8,7 @@ import { publicEnv } from '../../../src/lib/server/env';
 
 export const dynamic = 'force-dynamic';
 
-const CACHE_CONTROL = 'public, max-age=60, s-maxage=120, stale-while-revalidate=300';
+const CACHE_CONTROL = 'public, max-age=0, s-maxage=0, must-revalidate';
 const ERROR_CACHE_CONTROL = 'no-store, max-age=0';
 
 const parseLimit = (searchParams) => {

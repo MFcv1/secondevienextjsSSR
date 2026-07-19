@@ -2,7 +2,6 @@ const crypto = require('crypto');
 
 const CONTROL_SCHEMA_VERSION = 1;
 const CONTROL_DOCUMENT = 'sys_catalog_publication/secondevie';
-const MODE_VALUES = new Set(['active', 'paused']);
 
 function normalizePublicationMode(value) {
     return value === 'paused' ? 'paused' : 'active';
@@ -17,6 +16,7 @@ function initialPublicationState(now = new Date()) {
         desiredRevision: 0,
         publishedRevision: 0,
         revalidatedRevision: 0,
+        revalidatedManifestSha256: null,
         dirtySince: null,
         quietUntil: null,
         queuedTaskName: null,
@@ -88,6 +88,7 @@ function acquireLease(state, { owner, targetRevision, now = new Date(), duration
 }
 
 function assertLease(state, token, targetRevision, nowMs = Date.now()) {
+    if (normalizePublicationMode(state?.mode) === 'paused') throw new Error('BUILD_PAUSED');
     if (!token || state?.leaseToken !== token) throw new Error('LEASE_LOST');
     if (!isLeaseActive(state, nowMs)) throw new Error('LEASE_EXPIRED');
     if (Number(state.leaseTargetRevision) !== Number(targetRevision)) throw new Error('LEASE_REVISION_MISMATCH');
@@ -106,6 +107,84 @@ function clearLease(now = new Date()) {
     };
 }
 
+function buildRollbackPreparationUpdate(state, { token, targetName, target, updatedAt = new Date() }) {
+    const desiredRevision = Math.max(
+        Number(state?.desiredRevision || 0),
+        Number(state?.publishedRevision || 0),
+        Number(target?.revision || 0)
+    );
+    return {
+        mode: 'paused',
+        desiredRevision,
+        rollbackState: 'preparing',
+        rollbackToken: token,
+        rollbackTarget: targetName,
+        rollbackTargetRevision: Number(target.revision),
+        rollbackTargetManifestSha256: target.manifestSha256,
+        rollbackSourceRevision: Number(state?.publishedRevision || 0) || null,
+        rollbackSourceManifestPath: state?.currentManifestPath || null,
+        rollbackSourceManifestSha256: state?.currentManifestSha256 || null,
+        rollbackPreviousMode: normalizePublicationMode(state?.mode),
+        rollbackPreviousDirty: Boolean(state?.dirty),
+        rollbackPreviousBuildState: state?.buildState || 'healthy',
+        buildState: 'rollback_preparing',
+        lastError: null,
+        updatedAt
+    };
+}
+
+function buildRollbackControlUpdate(state, { current, target, currentPointerGeneration, updatedAt = new Date() }) {
+    const desiredRevision = Math.max(
+        Number(state?.desiredRevision || 0),
+        Number(state?.publishedRevision || 0),
+        Number(current?.revision || 0),
+        Number(target?.revision || 0)
+    );
+    return {
+        ...clearLease(updatedAt),
+        mode: 'paused',
+        dirty: Boolean(state?.dirty),
+        desiredRevision,
+        publishedRevision: Number(target.revision),
+        revalidatedRevision: null,
+        revalidatedManifestSha256: null,
+        currentManifestPath: target.manifestPath,
+        currentManifestSha256: target.manifestSha256,
+        currentPointerGeneration,
+        previousRevision: current?.revision ? Number(current.revision) : Number(state?.previousRevision || 0) || null,
+        previousManifestPath: current?.manifestPath || state?.previousManifestPath || null,
+        previousManifestSha256: current?.manifestSha256 || state?.previousManifestSha256 || null,
+        rejectedRevision: current?.revision ? Number(current.revision) : Number(state?.publishedRevision || 0) || null,
+        rejectedManifestPath: current?.manifestPath || state?.currentManifestPath || null,
+        rejectedManifestSha256: current?.manifestSha256 || state?.currentManifestSha256 || null,
+        rollbackState: null,
+        rollbackToken: null,
+        rollbackTarget: null,
+        rollbackTargetRevision: null,
+        rollbackPreviousMode: null,
+        rollbackPreviousDirty: null,
+        rollbackPreviousBuildState: null,
+        rollbackTargetManifestSha256: null,
+        rollbackSourceRevision: null,
+        rollbackSourceManifestPath: null,
+        rollbackSourceManifestSha256: null,
+        buildState: 'revalidating',
+        lastError: null,
+        updatedAt
+    };
+}
+
+function catalogIdentityMatches(state, revision, manifestSha256) {
+    return Number(state?.publishedRevision || 0) === Number(revision || 0)
+        && String(state?.currentManifestSha256 || '') === String(manifestSha256 || '');
+}
+
+function needsCatalogRevalidation(state, pointer) {
+    if (!pointer?.manifestSha256 || !Number(pointer.revision)) return false;
+    return Number(state?.revalidatedRevision || 0) !== Number(pointer.revision)
+        || String(state?.revalidatedManifestSha256 || '') !== String(pointer.manifestSha256);
+}
+
 function cleanError(error) {
     if (!error) return null;
     const code = String(error.code || error.name || 'UNKNOWN').slice(0, 80);
@@ -116,14 +195,17 @@ function cleanError(error) {
 module.exports = {
     CONTROL_DOCUMENT,
     CONTROL_SCHEMA_VERSION,
-    MODE_VALUES,
     acquireLease,
     assertLease,
+    buildRollbackControlUpdate,
+    buildRollbackPreparationUpdate,
+    catalogIdentityMatches,
     cleanError,
     clearLease,
     computeQuietUntil,
     initialPublicationState,
     isLeaseActive,
+    needsCatalogRevalidation,
     normalizePublicationMode,
     toMillis
 };

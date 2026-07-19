@@ -129,7 +129,6 @@ src/kit/layout/GlobalMenuDesktop.jsx
 src/kit/layout/GlobalMenuMobile.jsx
 src/kit/marketplace/ArchitecturalHeaderServer.jsx
 src/kit/marketplace/GlobalMenuTriggerIsland.jsx
-src/kit/marketplace/GlobalMenuPanelAuthIsland.jsx
 src/kit/marketplace/PremiumMegaMenuIsland.jsx
 src/kit/marketplace/HeaderAccountIsland.jsx
 src/kit/marketplace/CartPanelIsland.jsx

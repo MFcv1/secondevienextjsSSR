@@ -159,7 +159,7 @@ src/kit/admin/AdminPaymentSettings.jsx
 ```bash
 npm run e2e:hosted-stripe
 npm run e2e:refund-stripe
-npm run maintenance:audit
+pnpm maintenance:audit
 ```
 
 Ces gates touchent des services externes et creent des donnees sandbox. Ne pas les lancer pour un correctif visuel ou documentaire.

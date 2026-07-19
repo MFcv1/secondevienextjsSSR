@@ -19,7 +19,7 @@ before(async () => {
 beforeEach(async () => environment.clearFirestore());
 after(async () => environment?.cleanup());
 
-test('visitor cannot read products or public/meta while a strong active admin can', async () => {
+test('visitors cannot read products or public/meta and admin access remains rule-scoped', async () => {
   await environment.withSecurityRulesDisabled(async (context) => {
     await setDoc(doc(context.firestore(), 'artifacts/secondevie/public/data/furniture/published'), {
       status: 'published', name: 'Published', description: '', images: [], stock: 1,

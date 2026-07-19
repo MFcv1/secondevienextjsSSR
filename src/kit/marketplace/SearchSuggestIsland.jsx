@@ -5,7 +5,6 @@ import { ArrowRight, Search, X, LayoutGrid } from 'lucide-react';
 
 const DEFAULT_QUERY = '';
 const SEARCH_MIN_QUERY_LENGTH = 2;
-const suggestionCache = new Map();
 
 const highlightPrediction = (label, query) => {
   const cleanLabel = String(label || '');
@@ -299,14 +298,6 @@ export default function SearchSuggestIsland({
   const isMobile = variant === 'mobile';
 
   const fetchSuggestions = React.useCallback((nextQuery) => {
-    const cacheKey = String(nextQuery || '').trim().toLocaleLowerCase('fr-FR');
-    const cached = suggestionCache.get(cacheKey);
-    if (cached) {
-      setData(cached);
-      setLoading(false);
-      return () => {};
-    }
-
     const controller = new AbortController();
     const params = new URLSearchParams({
       q: nextQuery,
@@ -315,11 +306,10 @@ export default function SearchSuggestIsland({
     });
 
     setLoading(true);
-    fetch(`/api/search?${params.toString()}`, { signal: controller.signal })
+    fetch(`/api/search?${params.toString()}`, { cache: 'no-store', signal: controller.signal })
       .then((response) => (response.ok ? response.json() : null))
       .then((payload) => {
         if (payload) {
-          suggestionCache.set(cacheKey, payload);
           setData(payload);
         }
         setLoading(false);

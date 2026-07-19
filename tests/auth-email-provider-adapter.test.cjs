@@ -38,13 +38,17 @@ test('Gmail reste un adaptateur injectable et actif par defaut', async () => {
         from: 'Seconde Vie <sender@example.test>',
         to: 'customer@example.test',
         subject: 'Test transactionnel',
-        text: 'Contenu'
+        text: 'Contenu',
+        raw: { path: 'ne-doit-jamais-etre-transmis' }
     });
 
     assert.equal(sender.provider, 'gmail');
     assert.equal(transportConfig.service, 'gmail');
     assert.equal(transportConfig.pool, true);
+    assert.equal(transportConfig.disableFileAccess, true);
+    assert.equal(transportConfig.disableUrlAccess, true);
     assert.equal(sentMessage.to, 'customer@example.test');
+    assert.equal(sentMessage.raw, undefined);
     assert.deepEqual(result, { provider: 'gmail', id: 'gmail-message-id' });
 });
 

@@ -236,7 +236,10 @@ async function createOrderHandler(data, context) {
                     const quantity = item.quantity;
                     const currentStock = Number(itemDb.stock || 0);
                     const alreadyTaken = stockTrackerManual[realItemId] || 0;
-                    const realPrice = Number(itemDb.currentPrice || itemDb.startingPrice || itemDb.price || 0);
+                    const realPrice = Number(itemDb.currentPrice ?? itemDb.startingPrice ?? itemDb.price ?? 0);
+                    if (itemDb.status !== 'published') {
+                        throw new functions.https.HttpsError('failed-precondition', `Article retire de la vente: ${itemDb.name}`);
+                    }
                     if (itemDb.priceOnRequest || realPrice <= 0) {
                         throw new functions.https.HttpsError('failed-precondition', `Article non achetable en ligne: ${itemDb.name}`);
                     }
@@ -384,10 +387,13 @@ async function createOrderHandler(data, context) {
                     const itemDb = itemDoc.data();
                     const alreadyTaken = stockTracker[realItemId] || 0;
                     const currentStock = Number(itemDb.stock || 0);
-                    const realPrice = Number(itemDb.currentPrice || itemDb.startingPrice || itemDb.price || 0);
+                    const realPrice = Number(itemDb.currentPrice ?? itemDb.startingPrice ?? itemDb.price ?? 0);
 
                     const quantity = item.quantity;
 
+                    if (itemDb.status !== 'published') {
+                        throw new functions.https.HttpsError('failed-precondition', `Article retire de la vente: ${itemDb.name}`);
+                    }
                     if (itemDb.priceOnRequest || realPrice <= 0) {
                         throw new functions.https.HttpsError('failed-precondition', `Article non achetable en ligne: ${itemDb.name}`);
                     }

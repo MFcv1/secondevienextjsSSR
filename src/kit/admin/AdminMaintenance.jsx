@@ -19,6 +19,11 @@ const STATUS_STYLES = {
     icon: ShieldAlert,
     className: 'border-red-200 bg-red-50 text-red-800 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200',
   },
+  audit_failed: {
+    label: 'Audit incomplet',
+    icon: AlertTriangle,
+    className: 'border-red-200 bg-red-50 text-red-800 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200',
+  },
 };
 
 function formatDate(value) {
@@ -162,7 +167,7 @@ const AdminMaintenance = ({ darkMode }) => {
           <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Maintenance</p>
           <h3 className="text-3xl font-black tracking-tighter md:text-4xl">Dependances & securite</h3>
           <p className={`max-w-2xl text-sm leading-relaxed ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
-            Etat genere localement par <code className="font-mono text-xs">npm run maintenance:audit</code>. Le navigateur lit uniquement le rapport JSON publie.
+            Etat genere localement par <code className="font-mono text-xs">pnpm maintenance:audit</code>. Le navigateur lit uniquement le rapport JSON publie.
           </p>
         </div>
         <div className={`rounded-full border px-5 py-3 text-[10px] font-black uppercase tracking-widest ${darkMode ? 'border-white/10 text-stone-300' : 'border-stone-200 text-stone-600'}`}>
@@ -207,9 +212,9 @@ const AdminMaintenance = ({ darkMode }) => {
 
         <div className={`rounded-[2rem] border p-6 ${darkMode ? 'border-white/10 bg-white/[0.03]' : 'border-stone-200 bg-white'}`}>
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h4 className="text-sm font-black uppercase tracking-[0.2em]">npm audit</h4>
+            <h4 className="text-sm font-black uppercase tracking-[0.2em]">Audit dependances</h4>
             <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${darkMode ? 'bg-white/10 text-stone-300' : 'bg-stone-100 text-stone-600'}`}>
-              {report?.audit?.command || 'npm audit --omit=dev'}
+              application + functions
             </span>
           </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
@@ -223,19 +228,24 @@ const AdminMaintenance = ({ darkMode }) => {
 
           <div className="mt-6 space-y-3">
             {vulnerabilities.length > 0 ? vulnerabilities.map((item) => (
-              <div key={item.name} className={`rounded-2xl border p-4 text-sm ${darkMode ? 'border-white/10 bg-black/20' : 'border-stone-200 bg-stone-50'}`}>
+              <div key={`${item.source}:${item.name}`} className={`rounded-2xl border p-4 text-sm ${darkMode ? 'border-white/10 bg-black/20' : 'border-stone-200 bg-stone-50'}`}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-black">{item.name}</span>
+                  <span className="font-black">{item.name} <span className="text-xs font-medium text-stone-500">({item.source})</span></span>
                   <span className="rounded-full bg-red-100 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-red-700 dark:bg-red-500/10 dark:text-red-200">{item.severity}</span>
                 </div>
                 {item.via?.length ? (
                   <p className={`mt-2 text-xs leading-relaxed ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>{item.via.join(' / ')}</p>
                 ) : null}
               </div>
-            )) : (
+            )) : report?.audit?.completed ? (
               <div className={`flex items-center gap-3 rounded-2xl p-4 text-sm font-bold ${darkMode ? 'bg-black/20 text-stone-300' : 'bg-stone-50 text-stone-600'}`}>
                 <CheckCircle2 size={18} />
                 Aucune vulnerabilite de production detectee dans le dernier rapport.
+              </div>
+            ) : (
+              <div className={`flex items-center gap-3 rounded-2xl p-4 text-sm font-bold ${darkMode ? 'bg-red-500/10 text-red-200' : 'bg-red-50 text-red-800'}`}>
+                <AlertTriangle size={18} />
+                Audit incomplet: aucun statut vert ne peut etre conclu.
               </div>
             )}
           </div>
@@ -247,7 +257,7 @@ const AdminMaintenance = ({ darkMode }) => {
           <div>
             <h4 className="text-sm font-black uppercase tracking-[0.2em]">Catalogue materialise</h4>
             <p className={`mt-2 text-sm ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
-              Revision active: {catalogStatus?.current?.revision ?? 'n/a'} · mode: {catalogStatus?.mode || 'chargement'}
+              Revision active: {catalogStatus?.current?.revision ?? 'n/a'} · mode: {catalogStatus?.mode || 'chargement'} · etat: {catalogStatus?.buildState || 'chargement'} · snapshot: {catalogStatus?.current?.healthy === true ? 'sain' : (catalogStatus?.current?.healthy === false ? 'invalide' : 'inconnu')}
             </p>
           </div>
           <button
@@ -261,21 +271,21 @@ const AdminMaintenance = ({ darkMode }) => {
         <div className="grid gap-3 md:grid-cols-3">
           <button
             type="button"
-            disabled={!catalogStatus?.previous || Boolean(catalogAction)}
+            disabled={!catalogStatus?.previous || catalogStatus?.previous?.healthy === false || Boolean(catalogAction)}
             onClick={() => requestRollback('previous')}
             className="rounded-2xl border border-amber-300 px-4 py-4 text-left text-sm font-black text-amber-800 disabled:cursor-not-allowed disabled:opacity-40 dark:border-amber-500/30 dark:text-amber-200"
           >
             Rollback previous
-            <span className="mt-1 block text-xs font-medium">Revision {catalogStatus?.previous?.revision ?? 'n/a'}</span>
+            <span className="mt-1 block text-xs font-medium">Revision {catalogStatus?.previous?.revision ?? 'n/a'} · {catalogStatus?.previous?.healthy ? 'saine' : 'invalide'}</span>
           </button>
           <button
             type="button"
-            disabled={!catalogStatus?.lastKnownGood || Boolean(catalogAction)}
+            disabled={!catalogStatus?.lastKnownGood || catalogStatus?.lastKnownGood?.healthy === false || Boolean(catalogAction)}
             onClick={() => requestRollback('last-known-good')}
             className="rounded-2xl border border-amber-300 px-4 py-4 text-left text-sm font-black text-amber-800 disabled:cursor-not-allowed disabled:opacity-40 dark:border-amber-500/30 dark:text-amber-200"
           >
             Rollback dernier sain
-            <span className="mt-1 block text-xs font-medium">Revision {catalogStatus?.lastKnownGood?.revision ?? 'n/a'}</span>
+            <span className="mt-1 block text-xs font-medium">Revision {catalogStatus?.lastKnownGood?.revision ?? 'n/a'} · {catalogStatus?.lastKnownGood?.healthy ? 'saine' : 'invalide'}</span>
           </button>
           <button
             type="button"

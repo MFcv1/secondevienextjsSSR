@@ -15,7 +15,7 @@ const getBearerToken = (request) => {
 const normalizePath = (path) => {
   if (!path || typeof path !== 'string') return null;
   if (!path.startsWith('/')) return null;
-  if (path.startsWith('/api/')) return null;
+  if (path.startsWith('/api/') && !['/api/catalog', '/api/search'].includes(path)) return null;
   return path;
 };
 
@@ -108,6 +108,8 @@ export async function POST(request) {
   const pathEntries = new Map();
   addRevalidationPath(pathEntries, '/');
   addRevalidationPath(pathEntries, '/galerie');
+  addRevalidationPath(pathEntries, '/api/catalog');
+  addRevalidationPath(pathEntries, '/api/search');
   addRevalidationPath(pathEntries, '/sitemap.xml');
   addRevalidationPath(pathEntries, '/categorie/[categoryId]', 'page');
   addRevalidationPath(pathEntries, '/produit/[slugOrId]', 'page');

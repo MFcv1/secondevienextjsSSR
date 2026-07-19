@@ -668,71 +668,25 @@ const addCartItemViaFirestoreRest = async (page, cartSource) => {
   }, item);
 };
 
-const loadTargetCartItemViaFirestoreRest = async (page) => page.evaluate(async (productId) => {
-  const readStoredUser = () => new Promise((resolve) => {
-    const readFromValue = (value) => {
-      if (!value?.uid || !value?.stsTokenManager?.accessToken) return null;
-      return { token: value.stsTokenManager.accessToken };
-    };
-    const localKey = Object.keys(window.localStorage).find((key) => key.startsWith('firebase:authUser:'));
-    if (localKey) {
-      const user = readFromValue(JSON.parse(window.localStorage.getItem(localKey) || '{}'));
-      if (user) {
-        resolve(user);
-        return;
-      }
-    }
-    if (!window.indexedDB) {
-      resolve(null);
-      return;
-    }
-    const request = window.indexedDB.open('firebaseLocalStorageDb');
-    request.onerror = () => resolve(null);
-    request.onsuccess = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains('firebaseLocalStorage')) {
-        db.close();
-        resolve(null);
-        return;
-      }
-      const transaction = db.transaction('firebaseLocalStorage', 'readonly');
-      const store = transaction.objectStore('firebaseLocalStorage');
-      const getAll = store.getAll();
-      getAll.onerror = () => {
-        db.close();
-        resolve(null);
-      };
-      getAll.onsuccess = () => {
-        db.close();
-        const row = (getAll.result || []).find((entry) => (
-          String(entry?.fbase_key || entry?.key || '').startsWith('firebase:authUser:')
-        ));
-        resolve(readFromValue(row?.value) || null);
-      };
-    };
-  });
-
-  const storedUser = await readStoredUser();
-  if (!storedUser) return null;
-  const url = `https://firestore.googleapis.com/v1/projects/secondevienextjsssr/databases/(default)/documents/artifacts/secondevie/public/data/furniture/${encodeURIComponent(productId)}`;
-  const response = await fetch(url, { headers: { Authorization: `Bearer ${storedUser.token}` } });
+const loadTargetCartItemViaCatalogApi = async (page) => page.evaluate(async (productId) => {
+  if (!productId) return null;
+  const response = await fetch(`/api/catalog?id=${encodeURIComponent(productId)}`, { cache: 'no-store' });
   if (!response.ok) return null;
-  const document = await response.json();
-  const fields = document.fields || {};
-  const readString = (name) => fields[name]?.stringValue || '';
-  const readNumber = (name) => Number(fields[name]?.integerValue || fields[name]?.doubleValue || 0);
-  const readBool = (name) => Boolean(fields[name]?.booleanValue);
+  const payload = await response.json();
+  const product = payload?.product;
+  if (!product?.id) return null;
   return {
-    id: productId,
-    originalId: productId,
-    collectionName: 'furniture',
-    name: readString('name') || readString('title') || 'Piece Seconde Vie',
-    price: readNumber('currentPrice') || readNumber('startingPrice'),
-    stock: readNumber('stock'),
-    sold: readBool('sold'),
-    priceOnRequest: readBool('priceOnRequest'),
-    image: '',
-    material: readString('material') || 'Bois',
+    ...product,
+    id: product.id,
+    originalId: product.originalId || product.id,
+    collectionName: product.collectionName || 'furniture',
+    name: product.name || product.title || 'Piece Seconde Vie',
+    price: Number(product.price || product.currentPrice || product.startingPrice || 0),
+    stock: Number(product.stock || 0),
+    sold: Boolean(product.sold),
+    priceOnRequest: Boolean(product.priceOnRequest),
+    image: product.image || product.imageUrl || '',
+    material: product.material || 'Bois',
     quantity: 1,
   };
 }, targetProductId);
@@ -1578,7 +1532,7 @@ try {
     if (!(loggedInCheckoutModes.has(checkoutMode) && loggedInBeforeCart && targetProductId)) {
       throw error;
     }
-    const fallbackCartItem = await loadTargetCartItemViaFirestoreRest(page);
+    const fallbackCartItem = await loadTargetCartItemViaCatalogApi(page);
     if (!fallbackCartItem || Number(fallbackCartItem.price || 0) <= 0 || Number(fallbackCartItem.stock || 0) <= 0) {
       throw error;
     }
@@ -1588,13 +1542,13 @@ try {
       stock: fallbackCartItem.stock,
       stockBefore: fallbackCartItem.stock,
       score: 1000,
-      source: 'firestore-rest-fallback',
+      source: 'catalog-api-fallback',
     };
     cartButton = fallbackCartItem;
   }
   if (loggedInCheckoutModes.has(checkoutMode) && loggedInBeforeCart) {
     if (targetProductId) {
-      const freshCartItem = await loadTargetCartItemViaFirestoreRest(page);
+      const freshCartItem = await loadTargetCartItemViaCatalogApi(page);
       if (freshCartItem && Number(freshCartItem.price || 0) > 0 && Number(freshCartItem.stock || 0) > 0) {
         result.selectedProduct = {
           id: freshCartItem.id,
@@ -1602,7 +1556,7 @@ try {
           stock: freshCartItem.stock,
           stockBefore: freshCartItem.stock,
           score: 1100,
-          source: 'firestore-rest-target-refresh',
+          source: 'catalog-api-target-refresh',
         };
         cartButton = freshCartItem;
       }

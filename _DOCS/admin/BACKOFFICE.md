@@ -120,9 +120,7 @@ app/admin/page.jsx
 app/admin/AdminAppIsland.jsx
 src/kit/admin/*.jsx
 src/kit/admin/components/*
-src/kit/admin/hooks/useLiveJourneyMap.js
 src/kit/admin/analyticsReliability.js
-src/kit/admin/adminPublicCatalog.js
 src/kit/admin/adminPublicCatalog.js
 src/kit/config/constants.js
 functions/src/auth/adminManagement.js

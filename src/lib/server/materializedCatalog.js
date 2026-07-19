@@ -6,8 +6,10 @@ import { publicEnv } from './env';
 import catalogValidation from './materializedCatalogValidation.cjs';
 
 const SNAPSHOT_ROOT = 'catalog-projection/v1';
+// HMAC revalidation is the fast path; this TTL also preserves the public ISR contract.
 const POINTER_REVALIDATE_SECONDS = 300;
 const RELEASE_REVALIDATE_SECONDS = 31536000;
+let lastFallbackLog = { key: '', at: 0 };
 
 const getSnapshotBucket = () => {
   const storage = getAdminStorage();
@@ -77,7 +79,16 @@ export const getMaterializedCatalogSnapshot = async () => {
   const failures = [];
   for (const [name, readPointer] of candidates) {
     try {
-      return await loadRelease(await readPointer());
+      const snapshot = await loadRelease(await readPointer());
+      if (name !== 'current') {
+        const key = `${name}:${failures.map(({ name: failedName, code }) => `${failedName}:${code}`).join(',')}`;
+        const now = Date.now();
+        if (lastFallbackLog.key !== key || now - lastFallbackLog.at >= POINTER_REVALIDATE_SECONDS * 1000) {
+          console.error('[catalog] fallback snapshot served', { source: name, failures });
+          lastFallbackLog = { key, at: now };
+        }
+      }
+      return snapshot;
     } catch (error) {
       failures.push({ name, code: error?.message || 'UNKNOWN' });
     }
@@ -124,10 +135,10 @@ const isAfterCursor = (product, cursor) => {
 };
 
 export const queryMaterializedCatalog = async ({ scope = 'full', limit = null, categories = [], cursor = '' } = {}) => {
-  const snapshot = await getMaterializedCatalogSnapshot();
   const normalizedCategories = [...new Set(categories.map((value) => String(value || '').trim()).filter(Boolean))].slice(0, 10);
   const parsedCursor = decodeCursor(cursor);
   if (cursor && !parsedCursor) throw new Error('INVALID_CATALOG_CURSOR');
+  const snapshot = await getMaterializedCatalogSnapshot();
   let products = scope === 'cards' ? snapshot.cards : snapshot.full;
   if (normalizedCategories.length) {
     const allowed = new Set(normalizedCategories);

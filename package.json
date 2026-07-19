@@ -50,9 +50,6 @@
     "perf:budget": "node scripts/check-performance-budget.cjs",
     "perf:auth:ui": "node scripts/benchmark-auth-ui.mjs --iterations=30",
     "auth:preprod:browsers": "node scripts/audit-auth-preprod-browsers.mjs",
-    "perf:compare": "node scripts/compare-spa-next.mjs",
-    "perf:runtime": "node scripts/compare-runtime.mjs",
-    "perf:architecture": "node scripts/benchmark-architecture.mjs",
     "perf:scroll": "node scripts/audit-gallery-scroll-lag.mjs --mode=immediate --assert --trace=false",
     "perf:scroll:newsletter": "node scripts/audit-gallery-scroll-lag.mjs --mode=newsletter --assert --trace=false",
     "perf:scroll:cold-sections": "node scripts/audit-gallery-scroll-lag.mjs --mode=cold-sections --assert --trace=false",
@@ -72,7 +69,6 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
-    "@gsap/react": "^2.1.2",
     "@simplewebauthn/browser": "^13.3.0",
     "@stripe/react-stripe-js": "^5.6.1",
     "@stripe/stripe-js": "^8.9.0",
@@ -89,9 +85,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-easy-crop": "^5.5.6",
-    "recharts": "^3.7.0",
-    "split-type": "^0.3.4",
-    "three": "^0.160.0"
+    "split-type": "^0.3.4"
   },
   "overrides": {
     "postcss": "$postcss"
@@ -101,7 +95,6 @@
     "@firebase/rules-unit-testing": "4.0.1",
     "@next/eslint-plugin-next": "^15.5.20",
     "@playwright/test": "^1.60.0",
-    "autoprefixer": "^10.4.23",
     "chalk": "^5.3.0",
     "eslint": "^9.39.1",
     "eslint-plugin-jsx-a11y": "^6.10.2",

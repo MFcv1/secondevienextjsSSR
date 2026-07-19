@@ -9,7 +9,6 @@ const sourceFiles = [
   'src/kit/auth/authStore.js',
   'src/kit/contexts/AuthContext.jsx',
   'src/kit/marketplace/HeaderAccountIsland.jsx',
-  'src/kit/marketplace/GlobalMenuPanelAuthIsland.jsx',
   'src/kit/marketplace/GlobalMenuTriggerIsland.jsx',
   'src/kit/marketplace/CartPanelIsland.jsx',
 ];

@@ -1,6 +1,6 @@
 /**
  * ============================================================
- * TOUS À TABLE — Cloud Functions Entry Point
+ * SECONDE VIE — Cloud Functions Entry Point
  * ============================================================
  */
 const admin = require('firebase-admin');
@@ -76,7 +76,14 @@ exports.sendTestEmail = sendTestEmail;
 exports.sendRefundStatusEmailAdmin = sendRefundStatusEmailAdmin;
 
 // ── ANALYTICS ────────────────────────────────────────────
-const { initLiveSession, syncSession, syncSessionBeacon, deleteSession, clearAllSessions } = require('./src/analytics/sessions');
+const {
+    initLiveSession,
+    syncSession,
+    syncSessionBeacon,
+    deleteSession,
+    clearAllSessions,
+    clearAllAffiliateClicks
+} = require('./src/analytics/sessions');
 const { trackAdminIP } = require('./src/analytics/adminIP');
 const { updateUserSessions } = require('./src/analytics/updateUserSessions');
 const { onOrderStatsWrite } = require('./src/commerce/orderStats');
@@ -86,6 +93,7 @@ exports.syncSession = syncSession;
 exports.syncSessionBeacon = syncSessionBeacon;
 exports.deleteSession = deleteSession;
 exports.clearAllSessions = clearAllSessions;
+exports.clearAllAffiliateClicks = clearAllAffiliateClicks;
 exports.trackAdminIP = trackAdminIP;
 exports.updateUserSessions = updateUserSessions;
 exports.onOrderStatsWrite = onOrderStatsWrite;
@@ -100,9 +108,6 @@ exports.purgeAnonymousUsers = purgeAnonymousUsers;
 exports.resetAllOrders = resetAllOrders;
 exports.purgeAllProducts = purgeAllProducts;
 exports.getUploadUrl = getUploadUrl;
-
-// ── SEO ──────────────────────────────────────────────────
-
 
 // ── TRIGGERS ─────────────────────────────────────────────
 const { onArtifactDeleted } = require('./src/triggers/onArtifactDeleted');

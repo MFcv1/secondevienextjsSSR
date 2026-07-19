@@ -11,7 +11,7 @@ Statut: `PREPROD_READY - PRODUCTION_DEFERRED`
 | gestionnaire | `pnpm 11.7.0` |
 | Next.js | branche 15 actuelle du `package.json` |
 | React | 19 |
-| Functions | Node 22 dans les deux packages |
+| Functions | Node 22 dans le package prive `functions/` |
 
 Node 24 local ne doit pas devenir la reference tant que `engines`, CI, App Hosting et Functions imposent Node 22. Une migration majeure se fait dans une branche dediee avec build et E2E.
 

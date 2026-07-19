@@ -10,7 +10,7 @@ const getQueryFromUrl = () => {
 
 const fetchSearchResults = async (query, signal) => {
   const params = new URLSearchParams({ q: query, mode: 'results', limit: '48' });
-  const response = await fetch(`/api/search?${params.toString()}`, { signal });
+  const response = await fetch(`/api/search?${params.toString()}`, { cache: 'no-store', signal });
   if (!response.ok) throw new Error('search_failed');
   return response.json();
 };

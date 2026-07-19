@@ -3,7 +3,13 @@ const admin = require('firebase-admin');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { APP_ID } = require('../../helpers/config');
 const { collectStoragePaths } = require('../triggers/mediaCleanup');
-const { SNAPSHOT_ROOT, readCurrentPointer, readJsonObject } = require('./snapshotStorage');
+const {
+    SNAPSHOT_ROOT,
+    readCurrentPointer,
+    readLastKnownGoodPointer,
+    readPreviousPointer,
+    readJsonObject
+} = require('./snapshotStorage');
 const { runReleaseGarbageCollection } = require('./releaseGarbageCollection');
 const { catalogLog } = require('./structuredLog');
 const { CATALOG_BUILDER_SERVICE_ACCOUNT, CATALOG_MEDIA_GC_COMMIT, CATALOG_SNAPSHOT_BUCKET } = require('./catalogConfig');
@@ -57,10 +63,18 @@ function storagePathFromMediaUrl(url) {
 
 async function collectRetainedSnapshotPaths(bucket, now = new Date()) {
     const retained = new Set();
-    const current = await readCurrentPointer(bucket).catch(() => null);
+    const pointers = await Promise.all([
+        readCurrentPointer(bucket),
+        readPreviousPointer(bucket),
+        readLastKnownGoodPointer(bucket)
+    ]);
+    if (!pointers[0]?.value?.manifestPath) throw new Error('CATALOG_MEDIA_GC_CURRENT_POINTER_MISSING');
     const retainedPrefixes = new Set();
-    if (current?.value?.manifestPath) retainedPrefixes.add(current.value.manifestPath.replace(/\/manifest\.json$/, ''));
-    if (current?.value?.previous?.manifestPath) retainedPrefixes.add(current.value.previous.manifestPath.replace(/\/manifest\.json$/, ''));
+    pointers.forEach((pointer) => {
+        if (pointer?.value?.manifestPath) {
+            retainedPrefixes.add(pointer.value.manifestPath.replace(/\/manifest\.json$/, ''));
+        }
+    });
 
     const [files] = await bucket.getFiles({ prefix: `${SNAPSHOT_ROOT}/releases/` });
     const mediaFiles = files.filter((file) => file.name.endsWith('/media-index.json'));
@@ -77,8 +91,11 @@ async function collectRetainedSnapshotPaths(bucket, now = new Date()) {
     });
 
     for (const prefix of retainedPrefixes) {
-        const media = await readJsonObject(bucket, `${prefix}/media-index.json`).catch(() => null);
-        (media?.value?.products || []).forEach((product) => {
+        const media = await readJsonObject(bucket, `${prefix}/media-index.json`);
+        if (!Array.isArray(media?.value?.products)) {
+            throw new Error(`CATALOG_MEDIA_GC_INDEX_INVALID:${prefix}`);
+        }
+        media.value.products.forEach((product) => {
             (product.urls || []).forEach((url) => {
                 const path = storagePathFromMediaUrl(url);
                 if (path) retained.add(path);

@@ -11,14 +11,20 @@ const args = new Map(
 const projectId = args.get('project');
 const from = args.get('from');
 const to = args.get('to');
-const dryRun = args.get('dry-run') === 'true';
+const commit = args.get('commit') === 'true';
+const confirmation = args.get('confirm');
+const dryRun = !commit;
 const rootCollections = (args.get('collections') || '')
   .split(',')
   .map((value) => value.trim())
   .filter(Boolean);
 
 if (!projectId || !from || !to) {
-  throw new Error('Usage: node scripts/replace-firestore-string.mjs --project=<project> --from=<text> --to=<text> [--dry-run=true] [--collections=a,b]');
+  throw new Error('Usage: node scripts/replace-firestore-string.mjs --project=<project> --from=<text> --to=<text> [--collections=a,b] [--commit --confirm=REPLACE_IN_<project>]');
+}
+
+if (commit && confirmation !== `REPLACE_IN_${projectId}`) {
+  throw new Error(`Commit requires --confirm=REPLACE_IN_${projectId}`);
 }
 
 initializeApp({ credential: applicationDefault(), projectId });

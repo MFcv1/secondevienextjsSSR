@@ -134,7 +134,6 @@ export const KIT_CONFIG = {
     newsletter:      true,
     analytics:       true,
     darkMode:        true,
-    threeBackground: false,
     pwa:             true,
     invoicePdf:      true,
     excelExport:     true,

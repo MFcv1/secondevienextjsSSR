@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const admin = require('firebase-admin');
 const { defineSecret } = require('firebase-functions/params');
 const { onTaskDispatched } = require('firebase-functions/v2/tasks');
-const { CONTROL_DOCUMENT, cleanError } = require('./publicationState');
+const { CONTROL_DOCUMENT, catalogIdentityMatches, cleanError } = require('./publicationState');
 const { catalogLog } = require('./structuredLog');
 const { CATALOG_BUILDER_SERVICE_ACCOUNT, CATALOG_REVALIDATION_URL } = require('./catalogConfig');
 
@@ -12,6 +12,23 @@ const REVALIDATION_REGION = 'europe-west1';
 function signRevalidationBody(secret, timestamp, body) {
     const bodyHash = crypto.createHash('sha256').update(body).digest('hex');
     return crypto.createHmac('sha256', secret).update(`${timestamp}.${bodyHash}`).digest('hex');
+}
+
+async function markCatalogRevalidationFailure(db, input, error) {
+    const revision = Number(input?.revision || 0);
+    const manifestSha256 = String(input?.manifestSha256 || '');
+    return db.runTransaction(async (transaction) => {
+        const controlRef = db.doc(CONTROL_DOCUMENT);
+        const snap = await transaction.get(controlRef);
+        const state = snap.data() || {};
+        if (!catalogIdentityMatches(state, revision, manifestSha256)) return false;
+        transaction.set(controlRef, {
+            buildState: 'degraded',
+            lastError: cleanError(error),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        return true;
+    });
 }
 
 async function revalidateCatalog(dependencies, input) {
@@ -27,10 +44,12 @@ async function revalidateCatalog(dependencies, input) {
     if (!secret) throw new Error('CATALOG_REVALIDATION_HMAC_SECRET_REQUIRED');
     const revision = Number(input.revision || 0);
     if (!revision) throw new Error('REVALIDATION_REVISION_REQUIRED');
+    const manifestSha256 = String(input.manifestSha256 || '');
+    if (!/^[a-f0-9]{64}$/i.test(manifestSha256)) throw new Error('REVALIDATION_MANIFEST_SHA256_REQUIRED');
     const body = JSON.stringify({
         schemaVersion: 1,
         revision,
-        manifestSha256: String(input.manifestSha256 || ''),
+        manifestSha256,
         productIds: Array.isArray(input.productIds) ? input.productIds.slice(0, 120) : [],
         previousCategories: Array.isArray(input.previousCategories) ? input.previousCategories.slice(0, 10) : [],
         nextCategories: Array.isArray(input.nextCategories) ? input.nextCategories.slice(0, 10) : [],
@@ -50,20 +69,26 @@ async function revalidateCatalog(dependencies, input) {
     });
     if (!response.ok) throw new Error(`CATALOG_REVALIDATION_HTTP_${response.status}`);
 
-    await db.runTransaction(async (transaction) => {
+    const currentIdentityRevalidated = await db.runTransaction(async (transaction) => {
         const controlRef = db.doc(CONTROL_DOCUMENT);
         const snap = await transaction.get(controlRef);
         const state = snap.data() || {};
+        const matchesCurrent = catalogIdentityMatches(state, revision, manifestSha256);
         transaction.set(controlRef, {
-            revalidatedRevision: Math.max(Number(state.revalidatedRevision || 0), revision),
+            ...(matchesCurrent ? {
+                revalidatedRevision: revision,
+                revalidatedManifestSha256: manifestSha256,
+                buildState: 'healthy',
+                lastError: null
+            } : {}),
             lastRevalidatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            buildState: Number(state.publishedRevision || 0) <= revision ? 'healthy' : state.buildState,
-            lastError: null,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
+        return matchesCurrent;
     });
-    logger('info', { phase: 'revalidate', targetRevision: revision, result: 'success' });
-    return { result: 'revalidated', revision };
+    const result = currentIdentityRevalidated ? 'revalidated' : 'stale';
+    logger('info', { phase: 'revalidate', targetRevision: revision, result });
+    return { result, revision };
 }
 
 const dispatchCatalogRevalidation = onTaskDispatched(
@@ -82,11 +107,7 @@ const dispatchCatalogRevalidation = onTaskDispatched(
                 endpoint: CATALOG_REVALIDATION_URL
             }, request.data || {});
         } catch (error) {
-            await admin.firestore().doc(CONTROL_DOCUMENT).set({
-                buildState: 'degraded',
-                lastError: cleanError(error),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp()
-            }, { merge: true }).catch(() => null);
+            await markCatalogRevalidationFailure(admin.firestore(), request.data || {}, error).catch(() => null);
             throw error;
         }
     }
@@ -96,6 +117,7 @@ module.exports = {
     CATALOG_REVALIDATION_HMAC_SECRET,
     REVALIDATION_REGION,
     dispatchCatalogRevalidation,
+    markCatalogRevalidationFailure,
     revalidateCatalog,
     signRevalidationBody
 };

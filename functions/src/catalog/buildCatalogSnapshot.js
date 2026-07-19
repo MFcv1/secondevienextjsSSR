@@ -13,12 +13,13 @@ const {
     initialPublicationState
 } = require('./publicationState');
 const {
+    POINTER_PATHS,
     buildSnapshotFiles,
+    createPointer,
     isPreconditionError,
     publishCurrentPointer,
     readCurrentPointer,
-    readLastKnownGoodPointer,
-    readPreviousPointer,
+    readPointerState,
     writeImmutableRelease
 } = require('./snapshotStorage');
 const { runReleaseGarbageCollection } = require('./releaseGarbageCollection');
@@ -81,8 +82,44 @@ async function finalizeControlState(db, { leaseToken, targetRevision, updates, n
     });
 }
 
+async function releaseBuildLease(db, { leaseToken, updates = {}, now = new Date() }) {
+    const controlRef = db.doc(CONTROL_DOCUMENT);
+    return db.runTransaction(async (transaction) => {
+        const snap = await transaction.get(controlRef);
+        if (!snap.exists) return false;
+        const state = snap.data();
+        if (!leaseToken || state.leaseToken !== leaseToken) return false;
+        transaction.set(controlRef, {
+            ...clearLease(now),
+            ...(state.mode === 'paused' ? {} : updates),
+            updatedAt: serverTimestamp()
+        }, { merge: true });
+        return true;
+    });
+}
+
 function buildRecordId(revision, leaseToken) {
     return `r${revision}-${String(leaseToken).replace(/[^a-zA-Z0-9]/g, '').slice(0, 16)}`;
+}
+
+function pointerFromControlState(state, slot) {
+    const fields = slot === 'current'
+        ? ['publishedRevision', 'currentManifestPath', 'currentManifestSha256']
+        : slot === 'previous'
+            ? ['previousRevision', 'previousManifestPath', 'previousManifestSha256']
+            : ['lastKnownGoodRevision', 'lastKnownGoodManifestPath', 'lastKnownGoodManifestSha256'];
+    const [revisionField, pathField, hashField] = fields;
+    if (!state?.[revisionField] || !state?.[pathField] || !state?.[hashField]) return null;
+    try {
+        return createPointer({
+            revision: state[revisionField],
+            manifestPath: state[pathField],
+            manifestSha256: state[hashField],
+            publishedAt: null
+        });
+    } catch {
+        return null;
+    }
 }
 
 async function enqueueRevalidation(revision, manifestSha256) {
@@ -200,7 +237,10 @@ async function buildCatalog(dependencies, input = {}) {
             preparedAt: serverTimestamp()
         }, { merge: true });
 
-        const currentPointer = await readCurrentPointer(bucket);
+        const currentState = await readPointerState(bucket, POINTER_PATHS.current);
+        const currentPointer = currentState.error || currentState.missing
+            ? null
+            : { value: currentState.value, generation: currentState.generation };
         if (currentPointer?.value?.revision > requestedRevision) {
             throw Object.assign(new Error('POINTER_REVISION_AHEAD'), { code: 'POINTER_REVISION_AHEAD' });
         }
@@ -208,27 +248,32 @@ async function buildCatalog(dependencies, input = {}) {
             && currentPointer.value.manifestSha256 !== release.manifestSha256) {
             throw Object.assign(new Error('REVISION_COLLISION'), { code: 'REVISION_COLLISION' });
         }
-        const alreadyPublished = Number(currentPointer?.value?.revision || 0) === requestedRevision
-            && currentPointer.value.manifestSha256 === release.manifestSha256;
-        const [storedPrevious, storedLastKnownGood] = alreadyPublished
-            ? await Promise.all([
-                readPreviousPointer(bucket).catch(() => null),
-                readLastKnownGoodPointer(bucket).catch(() => null)
-            ])
-            : [null, null];
-        const published = alreadyPublished
-            ? {
-                pointer: currentPointer.value,
-                generation: currentPointer.generation,
-                previousPointer: storedPrevious?.value || null,
-                lastKnownGoodPointer: storedLastKnownGood?.value || null
-            }
-            : await publishCurrentPointer(bucket, {
-                revision: requestedRevision,
-                release,
-                previous: currentPointer?.value || null,
-                expectedGeneration: currentPointer?.generation || 0
-            });
+        if ((currentState.error || currentState.missing)
+            && Number(acquired.state.publishedRevision || 0) === requestedRevision
+            && String(acquired.state.currentManifestSha256 || '') !== release.manifestSha256) {
+            throw Object.assign(new Error('REVISION_COLLISION'), { code: 'REVISION_COLLISION' });
+        }
+        const controlCurrent = pointerFromControlState(acquired.state, 'current');
+        const controlPrevious = pointerFromControlState(acquired.state, 'previous');
+        const controlLastKnownGood = pointerFromControlState(acquired.state, 'last-known-good');
+        const currentRevision = Number(currentPointer?.value?.revision || 0);
+        const controlPublishedRevision = Number(acquired.state.publishedRevision || 0);
+        const previousCandidate = controlPublishedRevision >= requestedRevision
+            ? controlPrevious
+            : currentRevision > 0 && currentRevision < requestedRevision
+                ? currentPointer.value
+                : controlCurrent;
+        const lastKnownGoodCandidate = previousCandidate === controlPrevious
+            ? controlLastKnownGood
+            : controlPrevious || controlLastKnownGood;
+        const published = await publishCurrentPointer(bucket, {
+            revision: requestedRevision,
+            release,
+            previous: previousCandidate,
+            lastKnownGood: lastKnownGoodCandidate,
+            excludedManifestSha256: acquired.state.rejectedManifestSha256 || null,
+            expectedGeneration: currentState.generation || 0
+        });
         const previousPointer = published.previousPointer;
         const lastKnownGoodPointer = published.lastKnownGoodPointer;
 
@@ -264,6 +309,9 @@ async function buildCatalog(dependencies, input = {}) {
             lastBuildCompletedAt: serverTimestamp(),
             lastPublishedAt: serverTimestamp(),
             consecutiveFailures: 0,
+            rejectedRevision: null,
+            rejectedManifestPath: null,
+            rejectedManifestSha256: null,
             lastError: null
             }
         });
@@ -318,19 +366,26 @@ async function buildCatalog(dependencies, input = {}) {
         if (isPreconditionError(error)) {
             const latest = await readCurrentPointer(bucket).catch(() => null);
             if (Number(latest?.value?.revision || 0) >= requestedRevision) {
-                await db.doc(CONTROL_DOCUMENT).set({ ...clearLease(now()), buildState: 'healthy' }, { merge: true });
+                await releaseBuildLease(db, {
+                    leaseToken: token,
+                    now: now(),
+                    updates: { buildState: 'healthy' }
+                });
                 return { result: 'cas_noop', revision: latest.value.revision };
             }
         }
         await Promise.all([
             buildRef.set({ state: 'failed', error: cleanError(error), failedAt: serverTimestamp() }, { merge: true }),
-            db.doc(CONTROL_DOCUMENT).set({
-                ...clearLease(now()),
-                dirty: true,
-                buildState: 'degraded',
-                lastError: cleanError(error),
-                consecutiveFailures: admin.firestore.FieldValue.increment(1)
-            }, { merge: true })
+            releaseBuildLease(db, {
+                leaseToken: token,
+                now: now(),
+                updates: {
+                    dirty: true,
+                    buildState: 'degraded',
+                    lastError: cleanError(error),
+                    consecutiveFailures: admin.firestore.FieldValue.increment(1)
+                }
+            })
         ]).catch(() => null);
         logger('error', {
             phase: 'build', buildId, targetRevision: requestedRevision,
@@ -363,5 +418,6 @@ module.exports = {
     buildRecordId,
     dispatchBuildRequest,
     dispatchCatalogBuild,
-    finalizeControlState
+    finalizeControlState,
+    releaseBuildLease
 };

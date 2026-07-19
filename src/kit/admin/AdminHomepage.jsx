@@ -1,19 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { deleteField, doc, getDoc, setDoc } from 'firebase/firestore';
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import {
-    AlertTriangle,
-    CheckCircle2,
     ChevronRight,
     Database,
-    Download,
-    Eye,
-    FileText,
     Gauge,
     GripHorizontal,
     Home,
     Image as ImageIcon,
-    Layers,
     LayoutGrid,
     Link,
     Monitor,
@@ -22,11 +16,9 @@ import {
     RotateCcw,
     Search,
     ShieldCheck,
-    Smartphone,
     Store,
     Tags,
     Trash2,
-    Type,
     Upload,
     X,
 } from 'lucide-react';
@@ -61,7 +53,7 @@ const PAGE_MAP = [
         tone: 'emerald',
         icon: Store,
         description: 'Home commerce-first, catégories, avant/après, hero et bandeau.',
-        seo: 'homeMeta + sitemap + contenu visible',
+        seo: 'generateMetadata Next + sitemap + contenu visible',
         status: 'connecté',
     },
     {
@@ -71,8 +63,8 @@ const PAGE_MAP = [
         docId: DOC_IDS.about,
         tone: 'amber',
         icon: Home,
-        description: 'Ancienne vitrine : hero, pièces manifesto, process et FAQ.',
-        seo: 'aboutMeta + page E-E-A-T',
+        description: 'Vitrine éditoriale : hero, pièces manifesto, process et FAQ.',
+        seo: 'generateMetadata Next + page E-E-A-T',
         status: 'connecté',
     },
     {
@@ -82,8 +74,8 @@ const PAGE_MAP = [
         docId: null,
         tone: 'blue',
         icon: Tags,
-        description: 'Textes SEO et FAQ catégories protégés par le code et les Functions.',
-        seo: 'categoryMeta + CollectionPage + ItemList',
+        description: 'Textes SEO et FAQ catégories protégés par le code et les métadonnées serveur.',
+        seo: 'generateMetadata Next + CollectionPage + ItemList',
         status: 'verrouillé',
     },
     {
@@ -94,7 +86,7 @@ const PAGE_MAP = [
         tone: 'rose',
         icon: Package,
         description: 'SEO produit pilote par les fiches Publication et les WebP principaux.',
-        seo: 'productMeta + Product JSON-LD',
+        seo: 'generateMetadata Next + Product JSON-LD',
         status: 'via publication',
     },
 ];
@@ -108,7 +100,7 @@ const GOVERNANCE_ITEMS = [
     },
     {
         title: 'Metas serveur',
-        body: 'Les Functions homeMeta, aboutMeta, categoryMeta et productMeta injectent title, canonical, OG et JSON-LD.',
+        body: 'Les routes Next génèrent côté serveur title, canonical, Open Graph et JSON-LD.',
         icon: Search,
         state: 'Protégé',
     },

@@ -1,7 +1,6 @@
 @import "tailwindcss" source(none);
 @source "./";
 @source "../app";
-@source "../index.html";
 
 @theme {
   --breakpoint-monitor: 1920px;

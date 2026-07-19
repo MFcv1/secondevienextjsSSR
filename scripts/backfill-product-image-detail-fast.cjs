@@ -457,19 +457,6 @@ async function uploadDetailFast(bucket, targetPath, variant, source) {
     return { url: firebaseDownloadUrl(bucket.name, targetPath, token), uploaded: false };
 }
 
-async function bumpCatalogVersion(db, runtime, reason) {
-    await db
-        .collection('artifacts')
-        .doc(runtime.appId)
-        .collection('public')
-        .doc('meta')
-        .set({
-            catalogVersion: admin.firestore.FieldValue.serverTimestamp(),
-            catalogVersionReason: reason,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        }, { merge: true });
-}
-
 async function describeDocNeed(docSnap, collectionName, runtime, bucket, options) {
     const data = docSnap.data();
     const images = getProductImages(data);
@@ -645,11 +632,6 @@ async function scan(runtime, firebase, options) {
         }
     }
 
-    if (options.commit && stats.docsUpdated > 0) {
-        await bumpCatalogVersion(firebase.db, runtime, 'detail_fast_image_backfill');
-        stats.catalogVersionBumped = true;
-    }
-
     return { stats, previews, changes, errors };
 }
 
@@ -700,7 +682,6 @@ function printSummary(runtime, firebase, options, result, logPath) {
     if (!options.dryRun) {
         console.log(`Reused existing generated files: ${stats.reusedExistingFiles}`);
         console.log(`Docs updated: ${stats.docsUpdated}`);
-        console.log(`Catalog version bumped: ${stats.catalogVersionBumped ? 'yes' : 'no'}`);
     }
     console.log(`Errors: ${stats.errors}`);
 

@@ -156,18 +156,53 @@ async function writeImmutableRelease(bucket, { buffers, manifest }, revision) {
     };
 }
 
-async function readJsonObject(bucket, path) {
+async function readJsonObjectState(bucket, path) {
     const file = bucket.file(path);
     const [exists] = await file.exists();
-    if (!exists) return null;
+    if (!exists) return { path, value: null, generation: null, metadata: null, missing: true, error: null };
     const [metadata] = await file.getMetadata();
     const [buffer] = await file.download();
+    try {
+        return {
+            path,
+            value: JSON.parse(buffer.toString('utf8')),
+            buffer,
+            generation: String(metadata.generation),
+            metadata,
+            missing: false,
+            error: null
+        };
+    } catch (cause) {
+        const error = new Error(`CATALOG_JSON_INVALID:${path}`);
+        error.code = 'CATALOG_JSON_INVALID';
+        error.cause = cause;
+        return {
+            path,
+            value: null,
+            buffer,
+            generation: String(metadata.generation),
+            metadata,
+            missing: false,
+            error
+        };
+    }
+}
+
+async function readJsonObject(bucket, path) {
+    const state = await readJsonObjectState(bucket, path);
+    if (state.missing) return null;
+    if (state.error) throw state.error;
     return {
-        value: JSON.parse(buffer.toString('utf8')),
-        buffer,
-        generation: String(metadata.generation),
-        metadata
+        value: state.value,
+        buffer: state.buffer,
+        generation: state.generation,
+        metadata: state.metadata
     };
+}
+
+async function readPointerState(bucket, path) {
+    if (!Object.values(POINTER_PATHS).includes(path)) throw new Error('CATALOG_POINTER_PATH_INVALID');
+    return readJsonObjectState(bucket, path);
 }
 
 async function readCurrentPointer(bucket) {
@@ -258,36 +293,83 @@ async function writePointer(bucket, path, pointer, expectedGeneration = null) {
     };
 }
 
-async function publishCurrentPointer(bucket, { revision, release, previous, expectedGeneration }) {
+function sameRelease(left, right) {
+    return Boolean(left && right
+        && Number(left.revision) === Number(right.revision)
+        && String(left.manifestPath || '') === String(right.manifestPath || '')
+        && String(left.manifestSha256 || '') === String(right.manifestSha256 || ''));
+}
+
+function isCatalogIntegrityError(error) {
+    return String(error?.code || '').startsWith('CATALOG_')
+        || String(error?.message || '').startsWith('CATALOG_')
+        || String(error?.code || '') === 'REVISION_COLLISION';
+}
+
+async function verifiedPointerOrNull(bucket, pointer) {
+    if (!pointer?.manifestPath) return null;
+    try {
+        const verified = await verifyStoredRelease(bucket, pointer);
+        return verified.pointer;
+    } catch (error) {
+        if (isCatalogIntegrityError(error)) return null;
+        throw error;
+    }
+}
+
+async function readVerifiedPointerOrNull(bucket, path) {
+    try {
+        const object = await readJsonObject(bucket, path);
+        return verifiedPointerOrNull(bucket, object?.value);
+    } catch (error) {
+        if (isCatalogIntegrityError(error)) return null;
+        throw error;
+    }
+}
+
+async function writeFallbackPointers(bucket, { previous, lastKnownGood }) {
+    const previousPointer = await verifiedPointerOrNull(bucket, previous);
+    const lastKnownGoodPointer = await verifiedPointerOrNull(bucket, lastKnownGood);
+    if (lastKnownGoodPointer && !sameRelease(lastKnownGoodPointer, previousPointer)) {
+        await writePointer(bucket, POINTER_PATHS.lastKnownGood, lastKnownGoodPointer);
+    }
+    if (previousPointer) {
+        await writePointer(bucket, POINTER_PATHS.previous, previousPointer);
+    }
+    return { previousPointer, lastKnownGoodPointer };
+}
+
+async function publishCurrentPointer(bucket, {
+    revision,
+    release,
+    previous,
+    lastKnownGood,
+    excludedManifestSha256 = null,
+    expectedGeneration
+}) {
     const nextPointer = createPointer({
         revision,
         manifestPath: release.manifestPath,
         manifestSha256: release.manifestSha256,
         publishedAt: new Date().toISOString()
     });
-    const previousPointer = previous?.manifestPath ? createPointer(previous) : null;
-    const [priorPreviousObject, storedLastKnownGoodObject] = previousPointer
-        ? await Promise.all([readPreviousPointer(bucket), readLastKnownGoodPointer(bucket)])
-        : [null, await readLastKnownGoodPointer(bucket)];
-    const priorPreviousPointer = priorPreviousObject?.value?.manifestPath
-        ? createPointer(priorPreviousObject.value)
-        : null;
-    let lastKnownGoodPointer = storedLastKnownGoodObject?.value?.manifestPath
-        ? createPointer(storedLastKnownGoodObject.value)
-        : null;
+    const previousPointer = await verifiedPointerOrNull(bucket, previous);
+    const [storedPreviousPointer, suppliedLastKnownGoodPointer, storedLastKnownGoodPointer] = await Promise.all([
+        readVerifiedPointerOrNull(bucket, POINTER_PATHS.previous),
+        verifiedPointerOrNull(bucket, lastKnownGood),
+        readVerifiedPointerOrNull(bucket, POINTER_PATHS.lastKnownGood)
+    ]);
+    const isAllowedFallback = (candidate) => candidate
+        && !sameRelease(candidate, previousPointer)
+        && (!excludedManifestSha256 || candidate.manifestSha256 !== excludedManifestSha256);
+    const lastKnownGoodPointer = [storedPreviousPointer, suppliedLastKnownGoodPointer, storedLastKnownGoodPointer]
+        .find(isAllowedFallback) || null;
 
-    if (priorPreviousPointer && Number(priorPreviousPointer.revision) !== Number(previousPointer.revision)) {
-        await writePointer(bucket, POINTER_PATHS.lastKnownGood, priorPreviousPointer);
-        lastKnownGoodPointer = priorPreviousPointer;
-    }
-    if (previousPointer) {
-        await writePointer(bucket, POINTER_PATHS.previous, previousPointer);
-    }
     const published = await writePointer(bucket, POINTER_PATHS.current, nextPointer, expectedGeneration || 0);
+    const fallbacks = await writeFallbackPointers(bucket, { previous: previousPointer, lastKnownGood: lastKnownGoodPointer });
     return {
         ...published,
-        previousPointer,
-        lastKnownGoodPointer
+        ...fallbacks
     };
 }
 
@@ -300,8 +382,11 @@ module.exports = {
     collectMediaUrls,
     createPointer,
     isPreconditionError,
+    isCatalogIntegrityError,
     jsonBuffer,
     publishCurrentPointer,
+    readJsonObjectState,
+    readPointerState,
     readCurrentPointer,
     readLastKnownGoodPointer,
     readPreviousPointer,
@@ -310,5 +395,6 @@ module.exports = {
     verifyImmutableFile,
     verifyStoredRelease,
     writeImmutableRelease,
+    writeFallbackPointers,
     writePointer
 };

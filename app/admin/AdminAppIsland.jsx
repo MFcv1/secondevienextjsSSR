@@ -89,7 +89,7 @@ const adminTabGroups = ADMIN_TAB_GROUPS.map((group) => ({
   tabs: group.tabIds.map((tabId) => adminTabsById.get(tabId)).filter(Boolean),
 }));
 
-const ADMIN_PUBLIC_CATALOG_TABS = new Set(['analytics', 'map', 'inventory']);
+const ADMIN_PUBLIC_CATALOG_TABS = new Set(['analytics', 'inventory']);
 
 function AdminDesktopSidebar({ adminCollection, darkMode, onIntent, onSelect }) {
   return (
@@ -452,7 +452,7 @@ function AdminContent() {
             <AdminNewsletter darkMode={darkMode} />
           ) : adminCollection === 'seo' ? (
             <AdminSEO darkMode={darkMode} />
-          ) : adminCollection === 'analytics' || adminCollection === 'map' ? (
+          ) : adminCollection === 'analytics' ? (
             <div>
               <AdminCatalogStatus
                 darkMode={darkMode}

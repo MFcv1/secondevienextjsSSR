@@ -57,6 +57,8 @@ function createGmailEmailSender({ user, password, nodemailerImpl = nodemailer } 
     const gmailPassword = requireString(password, 'Mot de passe Gmail');
     const transporter = nodemailerImpl.createTransport({
         service: 'gmail',
+        disableFileAccess: true,
+        disableUrlAccess: true,
         pool: true,
         maxConnections: 2,
         maxMessages: 100,

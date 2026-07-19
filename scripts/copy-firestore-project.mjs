@@ -10,18 +10,24 @@ const args = new Map(
 
 const sourceProject = args.get('source');
 const targetProject = args.get('target');
-const dryRun = args.get('dry-run') === 'true';
+const commit = args.get('commit') === 'true';
+const confirmation = args.get('confirm');
+const dryRun = !commit;
 const rootCollections = (args.get('collections') || '')
   .split(',')
   .map((value) => value.trim())
   .filter(Boolean);
 
 if (!sourceProject || !targetProject) {
-  throw new Error('Usage: node scripts/copy-firestore-project.mjs --source=<project> --target=<project> [--dry-run=true] [--collections=a,b]');
+  throw new Error('Usage: node scripts/copy-firestore-project.mjs --source=<project> --target=<project> [--collections=a,b] [--commit --confirm=COPY_TO_<target>]');
 }
 
 if (sourceProject === targetProject) {
   throw new Error('Source and target projects must be different.');
+}
+
+if (commit && confirmation !== `COPY_TO_${targetProject}`) {
+  throw new Error(`Commit requires --confirm=COPY_TO_${targetProject}`);
 }
 
 function appFor(projectId, name) {

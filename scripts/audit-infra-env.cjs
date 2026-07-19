@@ -322,7 +322,7 @@ const railProd = {
     'Set NEXT_PUBLIC_SITE_URL/VITE_SITE_URL to the final HTTPS production domain.',
     'Register the final production domain in Firebase Auth authorized domains.',
     'Create a production App Check Web reCAPTCHA v3 key for the production web app and keep debug tokens out of prod.',
-    'Set PUBLIC_ALLOWED_ORIGINS and any Functions CORS/origin allowlists to the production domain.',
+    'Configure each concrete Functions CORS/origin allowlist for the production domain when that Function exposes a browser endpoint.',
     'Create separate Stripe live secrets: NEXT_PUBLIC_STRIPE_PUBLIC_KEY=pk_live_*, STRIPE_SECRET_KEY=sk_live_*, STRIPE_WH_SECRET=whsec_* for the live endpoint.',
     'Create/separate Gmail or email provider secrets for production if email sending is enabled.',
     'Verify Storage bucket, Firestore rules/indexes, Functions codebases and App Hosting runtime env in the Firebase Console before deploy.',
@@ -347,13 +347,12 @@ const map = {
     source: entry.secret ? 'secret' : 'value'
   })),
   functionsMain: Object.keys(envUsage).filter((key) => (
-    ['SUPER_ADMIN_EMAIL', 'SITE_URL', 'NEXT_PUBLIC_SITE_URL', 'GCLOUD_PROJECT', 'GOOGLE_CLOUD_PROJECT'].includes(key) ||
+    ['SUPER_ADMIN_EMAIL', 'SITE_URL', 'NEXT_PUBLIC_SITE_URL', 'FIREBASE_APP_HOSTING_URL', 'GCLOUD_PROJECT', 'GOOGLE_CLOUD_PROJECT', 'CATALOG_REVALIDATION_URL', 'CATALOG_SNAPSHOT_BUCKET'].includes(key) ||
     ['GMAIL_EMAIL', 'GMAIL_PASSWORD', 'STRIPE_SECRET_KEY', 'STRIPE_WH_SECRET'].includes(key)
   )),
-  functionsPublic: Object.keys(envUsage).filter((key) => key.startsWith('PUBLIC_') || key === 'APP_ID'),
   stripe: ['NEXT_PUBLIC_STRIPE_PUBLIC_KEY', 'STRIPE_SECRET_KEY', 'STRIPE_WH_SECRET'].filter((key) => envUsage[key]),
   email: ['GMAIL_EMAIL', 'GMAIL_PASSWORD'].filter((key) => envUsage[key]),
-  revalidation: ['SUPER_ADMIN_EMAIL', 'FIREBASE_SERVICE_ACCOUNT_JSON', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY', 'FIREBASE_PROJECT_ID'].filter((key) => envUsage[key]),
+  revalidation: ['SUPER_ADMIN_EMAIL', 'CATALOG_REVALIDATION_HMAC_SECRET', 'CATALOG_REVALIDATION_URL', 'CATALOG_SNAPSHOT_BUCKET'].filter((key) => envUsage[key]),
   adminSecurity: ['SUPER_ADMIN_EMAIL'].filter((key) => envUsage[key])
 };
 

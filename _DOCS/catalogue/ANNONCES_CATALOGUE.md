@@ -81,6 +81,23 @@ Le lecteur valide schema, manifestes et checksums. Il tente `current`, puis `pre
 
 La recette de cloture du 2026-07-18 a exerce un rollback reel, sa pause, puis la reconstruction. L'etat final sandbox est `current=41`, `previous=40`, `last-known-good=39`, avec 38 produits verifies dans chacune des trois releases. La creation, le changement de prix avant checkout, le stock `0`, la remise en vente et la suppression du produit de recette ont converge sans paiement. La preuve Data Access finale est conservee dans `_DOCS/data/AUDIT_COUTS_FIRESTORE.md`; la roadmap temporaire a ete supprimee apres fermeture de toutes ses gates.
 
+La passe de robustesse locale finale du 2026-07-18 a ferme les derniers ecarts trouves dans le code:
+
+- le CAS de `current` precede maintenant toute rotation de `previous`/LKG: un CAS refuse ne modifie aucun pointeur de secours;
+- un retry de publication repare une rotation interrompue de `previous`/LKG et exclut explicitement une release rejetee des candidats LKG;
+- un rollback conserve le high-water mark `desiredRevision`, attend la fin du worker fence, remet a zero l'identite revalidee et suit la revalidation par le couple revision/hash;
+- le reconciler reprend un rollback interrompu sans declarer l'etat sain tant que `previous` ne correspond pas a la source rejetee;
+- la liberation d'un lease est liee a son token: un ancien worker ne peut pas effacer le lease d'un build plus recent;
+- le reconciler peut reprogrammer la revalidation meme en mode `paused`, notamment apres un rollback;
+- le GC media protege explicitement les releases `current`, `previous` et LKG, quel que soit leur age, et s'arrete si un pointeur ou un index retenu est illisible;
+- Maintenance verifie l'integrite de chaque release avant d'afficher son etat ou d'autoriser sa selection;
+- le lecteur journalise un basculement sur un fallback sans reintroduire de lecture Firestore;
+- la revalidation HMAC inclut `/api/catalog` et `/api/search`; ces API ne conservent plus de reponse catalogue persistante hors de l'identite ETag, tandis que le TTL pointeur de 300 secondes preserve le contrat ISR public en cas d'echec de l'invalidation;
+- le checkout exige encore le statut `published`, preserve la semantique d'un prix courant egal a zero et relit prix/stock dans Firestore;
+- les backfills image s'appuient uniquement sur `onCatalogSourceWrite` et ne peuvent plus recreer `public/meta`.
+
+Ces corrections locales exigent les suites catalogue, Auth, lint et build avant un prochain deploiement. Elles ne changent pas la preuve cloud deja acquise pour la revision 41.
+
 ## 5. Publication et indexabilite
 
 Une annonce visible n'est pas automatiquement indexable. `src/lib/seo/indexability.js` exige un ensemble coherent de titre, description, categorie, image et intention `seoIndexable`.

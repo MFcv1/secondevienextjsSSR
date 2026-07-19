@@ -1,20 +1,20 @@
 {
-  "schemaVersion": 1,
-  "generatedAt": "2026-05-15T14:51:36.259Z",
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-18T17:35:20.368Z",
   "status": "vulnerability_detected",
   "statusLabel": "vulnerabilite detectee",
   "versions": {
     "next": {
       "declared": "^15.3.0",
-      "installed": "15.5.18"
+      "installed": "15.5.20"
     },
     "react": {
       "declared": "^19.1.0",
-      "installed": "19.2.6"
+      "installed": "19.2.7"
     },
     "reactDom": {
       "declared": "^19.1.0",
-      "installed": "19.2.6"
+      "installed": "19.2.7"
     },
     "firebaseClient": {
       "declared": "^11.1.0",
@@ -28,36 +28,82 @@
       "declared": "^13.10.0",
       "installed": "13.10.0"
     },
-    "firebaseAdminPublicFunctions": {
-      "declared": "^13.10.0",
-      "installed": "13.10.0"
-    },
     "firebaseFunctions": {
-      "declared": "^7.2.5",
-      "installed": "7.2.5"
-    },
-    "firebaseFunctionsPublic": {
       "declared": "^7.2.5",
       "installed": "7.2.5"
     }
   },
   "audit": {
-    "command": "npm audit --omit=dev",
-    "exitCode": 1,
-    "ok": false,
+    "commands": [
+      {
+        "label": "application",
+        "command": "pnpm audit --prod --json",
+        "exitCode": 1,
+        "completed": true,
+        "parseError": null
+      },
+      {
+        "label": "functions",
+        "command": "npm audit --omit=dev --json (functions/)",
+        "exitCode": 1,
+        "completed": true,
+        "parseError": null
+      }
+    ],
+    "completed": true,
     "counts": {
       "info": 0,
-      "low": 8,
-      "moderate": 0,
-      "high": 0,
+      "low": 0,
+      "moderate": 11,
+      "high": 1,
       "critical": 0,
-      "total": 8
+      "total": 12
     },
-    "total": 8,
+    "total": 12,
     "vulnerabilities": [
       {
+        "source": "functions",
+        "name": "nodemailer",
+        "severity": "high",
+        "range": "<=9.0.0",
+        "fixAvailable": {
+          "name": "nodemailer",
+          "version": "9.0.3",
+          "isSemVerMajor": true
+        },
+        "via": [
+          "nodemailer: Nodemailer: Message-level raw option bypasses disableFileAccess/disableUrlAccess, enabling arbitrary file read and full-response SSRF in the delivered message"
+        ],
+        "effects": []
+      },
+      {
+        "source": "application",
+        "name": "postcss",
+        "severity": "moderate",
+        "range": "<8.5.10",
+        "fixAvailable": ">=8.5.10",
+        "via": [
+          "PostCSS has XSS via Unescaped </style> in its CSS Stringify Output",
+          "GHSA-qx2v-qp2m-jg93"
+        ],
+        "effects": []
+      },
+      {
+        "source": "application",
+        "name": "uuid",
+        "severity": "moderate",
+        "range": "<11.1.1",
+        "fixAvailable": ">=11.1.1",
+        "via": [
+          "uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided",
+          "GHSA-w5hq-g745-h8pq"
+        ],
+        "effects": []
+      },
+      {
+        "source": "functions",
         "name": "@google-cloud/firestore",
-        "severity": "low",
+        "severity": "moderate",
         "range": "7.5.0-pre.0 || 7.6.0 - 7.11.6",
         "fixAvailable": {
           "name": "firebase-admin",
@@ -72,9 +118,10 @@
         ]
       },
       {
+        "source": "functions",
         "name": "@google-cloud/storage",
-        "severity": "low",
-        "range": ">=5.19.0",
+        "severity": "moderate",
+        "range": "2.2.0 - 2.5.0 || >=5.19.0",
         "fixAvailable": {
           "name": "firebase-admin",
           "version": "10.3.0",
@@ -89,25 +136,10 @@
         ]
       },
       {
-        "name": "@tootallnate/once",
-        "severity": "low",
-        "range": "<3.0.1",
-        "fixAvailable": {
-          "name": "firebase-admin",
-          "version": "10.3.0",
-          "isSemVerMajor": true
-        },
-        "via": [
-          "@tootallnate/once: @tootallnate/once vulnerable to Incorrect Control Flow Scoping"
-        ],
-        "effects": [
-          "http-proxy-agent"
-        ]
-      },
-      {
+        "source": "functions",
         "name": "firebase-admin",
-        "severity": "low",
-        "range": ">=11.0.0",
+        "severity": "moderate",
+        "range": "7.0.0 - 8.2.0 || >=11.0.0",
         "fixAvailable": {
           "name": "firebase-admin",
           "version": "10.3.0",
@@ -117,11 +149,40 @@
           "@google-cloud/firestore",
           "@google-cloud/storage"
         ],
+        "effects": [
+          "firebase-functions"
+        ]
+      },
+      {
+        "source": "functions",
+        "name": "firebase-functions",
+        "severity": "moderate",
+        "range": "2.2.0 - 2.3.1 || >=5.0.0",
+        "fixAvailable": {
+          "name": "firebase-functions",
+          "version": "4.9.0",
+          "isSemVerMajor": true
+        },
+        "via": [
+          "firebase-admin"
+        ],
         "effects": []
       },
       {
+        "source": "functions",
+        "name": "gaxios",
+        "severity": "moderate",
+        "range": "6.4.0 - 6.7.1",
+        "fixAvailable": true,
+        "via": [
+          "uuid"
+        ],
+        "effects": []
+      },
+      {
+        "source": "functions",
         "name": "google-gax",
-        "severity": "low",
+        "severity": "moderate",
         "range": "4.0.5-experimental - 4.6.1",
         "fixAvailable": {
           "name": "firebase-admin",
@@ -129,31 +190,17 @@
           "isSemVerMajor": true
         },
         "via": [
-          "retry-request"
+          "retry-request",
+          "uuid"
         ],
         "effects": [
           "@google-cloud/firestore"
         ]
       },
       {
-        "name": "http-proxy-agent",
-        "severity": "low",
-        "range": "4.0.1 - 5.0.0",
-        "fixAvailable": {
-          "name": "firebase-admin",
-          "version": "10.3.0",
-          "isSemVerMajor": true
-        },
-        "via": [
-          "@tootallnate/once"
-        ],
-        "effects": [
-          "teeny-request"
-        ]
-      },
-      {
+        "source": "functions",
         "name": "retry-request",
-        "severity": "low",
+        "severity": "moderate",
         "range": "7.0.0 - 7.0.2",
         "fixAvailable": {
           "name": "firebase-admin",
@@ -169,29 +216,48 @@
         ]
       },
       {
+        "source": "functions",
         "name": "teeny-request",
-        "severity": "low",
-        "range": "7.1.3 - 10.1.0",
+        "severity": "moderate",
+        "range": "3.9.1 - 9.0.0",
         "fixAvailable": {
           "name": "firebase-admin",
           "version": "10.3.0",
           "isSemVerMajor": true
         },
         "via": [
-          "http-proxy-agent"
+          "uuid"
         ],
         "effects": [
           "@google-cloud/storage",
           "retry-request"
         ]
+      },
+      {
+        "source": "functions",
+        "name": "uuid",
+        "severity": "moderate",
+        "range": "<11.1.1",
+        "fixAvailable": {
+          "name": "firebase-admin",
+          "version": "10.3.0",
+          "isSemVerMajor": true
+        },
+        "via": [
+          "uuid: uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided"
+        ],
+        "effects": [
+          "gaxios",
+          "google-gax",
+          "teeny-request"
+        ]
       }
-    ],
-    "parseError": null
+    ]
   },
   "procedure": {
     "docPath": "_DOCS/operations/EXPLOITATION.md",
-    "updateCommand": "npm update next react react-dom firebase firebase-admin",
-    "auditCommand": "npm run maintenance:audit",
+    "updateCommand": "pnpm update next react react-dom firebase firebase-admin",
+    "auditCommand": "pnpm maintenance:audit",
     "rollbackRule": "revenir au dernier commit/deploiement App Hosting stable puis redeployer la sandbox",
     "securityRule": "patcher Next rapidement en cas d advisory securite"
   }

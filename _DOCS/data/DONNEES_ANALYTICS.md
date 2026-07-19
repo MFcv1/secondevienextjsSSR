@@ -181,7 +181,6 @@ Outils manuels sensibles:
 scripts/copy-firestore-project.mjs
 scripts/replace-firestore-string.mjs
 scripts/purge-expired-firestore.cjs
-scripts/seed-catalogue.mjs
 scripts/backfill-product-*.cjs
 scripts/cleanup-product-image-variants.cjs
 ```

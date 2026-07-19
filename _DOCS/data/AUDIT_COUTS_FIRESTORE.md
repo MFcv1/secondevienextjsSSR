@@ -1,7 +1,7 @@
 # Audit des lectures et couts Firestore
 
 Derniere mise a jour: 2026-07-18
-Statut: `P1_PUBLIC_META_ET_ANALYTICS_IMPLEMENTES_CATALOGUE_POST_CUTOVER_MESURE`
+Statut: `PREUVE_FINALE_ACTIVE - BASELINE_PRE_CUTOVER_HISTORIQUE`
 Projet mesure: `secondevienextjsssr`
 
 ## 1. Objet et fin de l'audit
@@ -9,6 +9,8 @@ Projet mesure: `secondevienextjsssr`
 Ce document conserve la preuve de mesure demandee pour expliquer les lectures Firestore, puis choisir des optimisations qui ne degradent ni le temps reel ni la fiabilite du parcours analytics.
 
 Il complete [DONNEES_ANALYTICS.md](DONNEES_ANALYTICS.md). Le code et les consoles Google Cloud restent les preuves finales. Une fois les optimisations mesurees avant/apres, les decisions durables doivent etre fusionnees dans le chapitre canonique et ce rapport peut etre classe comme historique dans Git.
+
+**Conclusion actuelle:** la preuve finale de la section 10.2 remplace l'architecture catalogue decrite dans les sections 2 a 7. Depuis le cutover du 2026-07-18, `publicCatalog`, `functions-public`, `public/meta`, les modes legacy/shadow/canary et le fallback Firestore public n'existent plus. La navigation publique a mesure zero lecture et zero ecriture catalogue Firestore; seul le builder prive lit `furniture` lors d'une publication.
 
 L'audit ne doit jamais comparer directement:
 
@@ -18,9 +20,9 @@ L'audit ne doit jamais comparer directement:
 
 Ces compteurs ne portent ni sur la meme unite ni sur la meme periode.
 
-## 2. Reponse executive
+## 2. Baseline executive historique avant cutover
 
-La hausse observee ne vient pas principalement des sessions analytics.
+Dans la baseline du 2026-07-16, la hausse observee ne venait pas principalement des sessions analytics. Cette attribution est conservee pour expliquer le point de depart; elle ne decrit plus le moteur catalogue actif.
 
 Sur la fenetre de 24 heures inspectee dans Firestore Usage Insights, 10 871 lectures non-streaming ont ete ventilees. Les principaux postes sont:
 
@@ -214,9 +216,9 @@ Le gain exact n'est pas encore revendique. Le cache est local a une instance Fun
 
 ## 5. Attribution au code
 
-### 5.1 Catalogue public: source dominante
+### 5.1 Catalogue public pre-cutover: source dominante historique
 
-`functions-public/src/public/catalog.js` lit `artifacts/{appId}/public/meta` a chaque requete HTTP avant de consulter ses caches catalogue. La collection `public` n'a pas d'autre lecteur significatif trouve dans le depot. Les 705 lectures observees correspondent donc tres fortement au nombre d'invocations `publicCatalog` sur la fenetre.
+Le code historique `functions-public/src/public/catalog.js` lisait `artifacts/{appId}/public/meta` a chaque requete HTTP avant de consulter ses caches catalogue. La collection `public` n'avait pas d'autre lecteur significatif trouve dans le depot. Les 705 lectures observees correspondaient donc tres fortement au nombre d'invocations `publicCatalog` sur la fenetre. Ce code a ete supprime; la section 10.2 porte la preuve actuelle.
 
 Lors d'un cache catalogue froid, la Function lit ensuite les documents `furniture` retournes. Les principaux amplificateurs sont:
 
@@ -267,14 +269,16 @@ Pour l'admin Data:
 
 Le localhost utilise actuellement le vrai projet Firebase. React Strict Mode peut remonter certains effets en developpement. Les onglets ouverts, HMR, prechargements et rechargements locaux peuvent donc consommer le quota sandbox. Pour les tests repetitifs, l'Emulator Suite doit devenir la cible par defaut.
 
-## 6. Optimisations classees par risque
+## 6. Optimisations historiques classees par risque
+
+Les lots P0/P1 ci-dessous retracent la transition et ne constituent plus des recommandations d'architecture catalogue. Les mesures analytics encore utiles restent canoniques; les mecanismes `public/meta`, `publicCatalog`, fallback et `limitedCatalogCache` ont ete retires.
 
 ### P0 - deploye et mesure
 
 Le lot du 2026-07-16 applique uniquement les changements dont le resultat fonctionnel reste identique:
 
 1. `publicCatalog` rejette `limit`/`cursor` malformes avant la lecture de `public/meta`; un curseur valide est canonicalise avant de former la cle de cache.
-2. L'appel normal de recherche demande 120 cartes, qui est deja la borne reelle de la Function, au lieu de creer une URL Next distincte avec `limit=160` silencieusement plafonnee. Le fallback Firestore direct reste a 160 pour conserver sa couverture en mode degrade.
+2. L'appel normal de recherche demandait 120 cartes, borne reelle de l'ancienne Function, au lieu de creer une URL Next distincte avec `limit=160` silencieusement plafonnee. Le fallback Firestore direct de cette phase conservait une borne de 160; il a ensuite ete entierement supprime lors du cutover snapshot.
 3. Une carte categorie proche du viewport continue de chauffer ses images, mais sa route produit n'est prechargee qu'au hover, focus ou press.
 4. Le mega-menu precharge seulement le groupe vise, puis chaque enfant au moment de son intention propre.
 5. Le heartbeat analytics de 15 secondes est suspendu lorsque l'onglet est masque. Le beacon de masquage, le retour visible immediat, le seuil live de 30 secondes et le listener admin sont conserves.
