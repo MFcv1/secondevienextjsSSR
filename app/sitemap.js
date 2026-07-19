@@ -4,6 +4,8 @@ import { queryMaterializedCatalog } from '../src/lib/server/materializedCatalog'
 import { categoryEntries, getMatchingCategoryIds, isSeoIndexableCategory } from '../src/lib/seo/categories';
 import { getCategoryUrl, getProductUrl } from '../src/utils/slug';
 
+export const revalidate = 300;
+
 const SITEMAP_PAGE_LIMIT = 120;
 const SITEMAP_MAX_PRODUCTS = 1000;
 
