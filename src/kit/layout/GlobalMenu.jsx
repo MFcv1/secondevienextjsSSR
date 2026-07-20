@@ -425,7 +425,7 @@ const GlobalMenu = ({
         >
             <button
                 type="button"
-                className={`${isMenuInteractive ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'} absolute inset-0 h-full w-full bg-stone-950/20 transition-opacity duration-300 lg:bg-stone-950/45 lg:backdrop-blur-sm`}
+                className={`${isMenuInteractive ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'} absolute inset-0 h-full w-full bg-transparent transition-opacity duration-300 lg:bg-stone-950/45 lg:backdrop-blur-sm`}
                 onClick={closeMenu}
                 onWheel={(event) => event.preventDefault()}
                 aria-label="Fermer le menu"
