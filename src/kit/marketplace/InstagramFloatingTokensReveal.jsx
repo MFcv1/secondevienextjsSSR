@@ -209,7 +209,7 @@ export default function InstagramFloatingTokensReveal() {
         window.cancelAnimationFrame(pendingRevealFrame);
         pendingRevealFrame = null;
       }
-      if (pendingRevealToken?.dataset.floatingRevealed !== 'true') {
+      if (pendingRevealToken && pendingRevealToken.dataset.floatingRevealed !== 'true') {
         pendingRevealToken.dataset.floatingPrepared = 'false';
       }
       pendingRevealToken = null;
