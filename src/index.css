@@ -1451,7 +1451,7 @@ html.dark .gallery-seo-proof-item {
 }
 
 .instagram-carousel-section.gallery-deferred-render {
-  --gallery-intrinsic-block-size: 720px;
+  --gallery-intrinsic-block-size: 900px;
 }
 
 .customer-testimonials-section.gallery-deferred-render {
@@ -1497,7 +1497,6 @@ footer.gallery-deferred-render {
   --float-x: 50%;
   --float-y: 50%;
   --float-size: 82px;
-  --float-delay: 0ms;
   --float-drift-x: 10px;
   --float-drift-y: -14px;
   --float-arrive-x: 0px;
@@ -1513,9 +1512,7 @@ footer.gallery-deferred-render {
   width: var(--float-size);
   height: var(--float-size);
   opacity: 0;
-  filter:
-    blur(var(--float-blur, 0))
-    saturate(var(--float-saturate, 1.05));
+  filter: none;
   transform:
     translate3d(calc(-50% + var(--float-arrive-x)), calc(-50% + var(--float-arrive-y)), 0)
     scale(0.72);
@@ -1525,7 +1522,8 @@ footer.gallery-deferred-render {
   transition:
     opacity calc(var(--float-enter-duration) * 1.08) ease-out,
     transform calc(var(--float-enter-duration) * 1.16) cubic-bezier(0.2, 0.82, 0.24, 1);
-  transition-delay: var(--float-delay);
+  /* The island owns the reveal cadence so compositing is never batch-scheduled. */
+  transition-delay: 0ms;
 }
 
 .instagram-floating-token[data-floating-revealed="true"] {
@@ -1564,9 +1562,25 @@ footer.gallery-deferred-render {
   transform-style: flat;
 }
 
-.instagram-floating-token[data-floating-settled="true"] .instagram-floating-token__shell {
+.instagram-floating-token:is(
+  .instagram-floating-token--gram,
+  .instagram-floating-token--heart,
+  .instagram-floating-token--message,
+  .instagram-floating-token--save
+)[data-floating-settled="true"] .instagram-floating-token__shell {
   animation: instagram-token-float var(--float-duration) ease-in-out infinite alternate;
   animation-delay: 0ms;
+  animation-play-state: paused;
+}
+
+.instagram-floating-field[data-floating-visible="true"][data-floating-scroll-active="false"]
+  .instagram-floating-token:is(
+    .instagram-floating-token--gram,
+    .instagram-floating-token--heart,
+    .instagram-floating-token--message,
+    .instagram-floating-token--save
+  )[data-floating-settled="true"] .instagram-floating-token__shell {
+  animation-play-state: running;
 }
 
 .instagram-floating-token__shell::before,
@@ -1582,7 +1596,6 @@ footer.gallery-deferred-render {
   background-image:
     linear-gradient(120deg, transparent 0 34%, rgba(255, 255, 255, 0.7) 42%, transparent 50%),
     repeating-linear-gradient(135deg, rgba(78, 55, 34, 0.08) 0 1px, transparent 1px 7px);
-  mix-blend-mode: soft-light;
 }
 
 .instagram-floating-token__shell::after {
@@ -2115,6 +2128,13 @@ footer.gallery-deferred-render {
 }
 
 @media (max-width: 1023px) {
+  .instagram-floating-token:is(
+    .instagram-floating-token--heart,
+    .instagram-floating-token--save
+  )[data-floating-settled="true"] .instagram-floating-token__shell {
+    animation: none;
+  }
+
   .instagram-floating-token--gram {
     --float-rest-opacity: 0.74;
     left: 11%;
@@ -3311,11 +3331,10 @@ html.dark .customer-testimonial-card {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  [data-testimonials-prepared='true'] .testimonial-star {
-    animation: testimonial-star-wave 2.35s cubic-bezier(0.34, 1.18, 0.64, 1) infinite;
+  [data-testimonials-stars-active='true'] .testimonial-star {
+    animation: testimonial-star-wave 2.35s cubic-bezier(0.34, 1.18, 0.64, 1) 1 both;
     animation-delay: var(--testimonial-star-delay, 0ms);
     transform-origin: center;
-    will-change: transform;
   }
 }
 
@@ -4010,6 +4029,16 @@ html.dark .before-after-premium-copy--warm::after,
   appearance: none;
   -webkit-appearance: none;
   background: transparent;
+}
+
+@media (pointer: coarse) {
+  .before-after-media-stage {
+    touch-action: pan-y;
+  }
+
+  .before-after-media-stage [data-ba-range] {
+    pointer-events: none;
+  }
 }
 
 .before-after-media-stage [data-ba-range]::-webkit-slider-runnable-track {
@@ -5334,13 +5363,15 @@ html.dark .custom-radio {
   position: absolute;
   z-index: 1;
   bottom: -1.4rem;
-  display: block;
+  display: none;
   width: var(--atelier-ornament-size);
   max-width: none;
-  height: auto;
   pointer-events: none;
   user-select: none;
   opacity: var(--atelier-ornament-opacity);
+  background-repeat: no-repeat;
+  background-position: center bottom;
+  background-size: contain;
   filter: sepia(0.24) saturate(0.82) contrast(0.94);
   mix-blend-mode: multiply;
 }
@@ -5357,6 +5388,22 @@ html.dark .custom-radio {
   mask-image: linear-gradient(to right, #000 0 68%, rgba(0, 0, 0, 0.5) 82%, transparent 100%);
   transform: scaleX(-1);
   transform-origin: center bottom;
+}
+
+@media (min-width: 768px) {
+  .atelier-showcase__ornament {
+    display: block;
+  }
+
+  .atelier-showcase__ornament--left {
+    aspect-ratio: 800 / 1130;
+    background-image: url('/decorations/atelier-ornament-left-engraving.webp');
+  }
+
+  .atelier-showcase__ornament--right {
+    aspect-ratio: 800 / 1093;
+    background-image: url('/decorations/atelier-ornament-right-engraving.webp');
+  }
 }
 
 .atelier-showcase .before-after-premium-shell {

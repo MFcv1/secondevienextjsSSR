@@ -75,6 +75,7 @@ const setupBeforeAfter = () => {
     const line = root.querySelector('[data-ba-line]');
     const handle = root.querySelector('[data-ba-handle]');
     const range = root.querySelector('[data-ba-range]');
+    const pointerSurface = root.querySelector('[data-ba-media-stage]') || range;
     const beforeImg = root.querySelector('[data-ba-before-img]');
     const afterImg = root.querySelector('[data-ba-after-img]');
     const beforeSource = root.querySelector('[data-ba-before-source]');
@@ -88,6 +89,7 @@ const setupBeforeAfter = () => {
     const projectActions = root.querySelector('[data-ba-project-actions]');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let projectAnimations = [];
+    let touchGesture = null;
 
     if (section) {
       section.dataset.baMotionReady = 'true';
@@ -172,24 +174,67 @@ const setupBeforeAfter = () => {
       animateProjectChange();
     };
 
+    const startSliderDrag = (event) => {
+      event.preventDefault();
+      range?.focus({ preventScroll: true });
+      pointerSurface?.setPointerCapture(event.pointerId);
+      setSliderFromPointer(event);
+    };
+
+    const endSliderDrag = (event) => {
+      if (pointerSurface?.hasPointerCapture(event.pointerId)) {
+        pointerSurface.releasePointerCapture(event.pointerId);
+      }
+      if (touchGesture?.pointerId === event.pointerId) touchGesture = null;
+    };
+
     range?.addEventListener('input', (event) => setSlider(event.currentTarget.value));
-    range?.addEventListener('pointerdown', (event) => {
+    pointerSurface?.addEventListener('pointerdown', (event) => {
+      if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
+
+      if (event.pointerType === 'touch') {
+        touchGesture = {
+          pointerId: event.pointerId,
+          startX: event.clientX,
+          startY: event.clientY,
+          dragging: false,
+        };
+        return;
+      }
+
+      startSliderDrag(event);
+    });
+    pointerSurface?.addEventListener('pointermove', (event) => {
+      if (event.pointerType === 'touch') {
+        if (!touchGesture || touchGesture.pointerId !== event.pointerId) return;
+
+        if (!touchGesture.dragging) {
+          const deltaX = Math.abs(event.clientX - touchGesture.startX);
+          const deltaY = Math.abs(event.clientY - touchGesture.startY);
+          const intentThreshold = 10;
+
+          if (deltaY >= intentThreshold && deltaY > deltaX) {
+            touchGesture = null;
+            return;
+          }
+          if (deltaX < intentThreshold || deltaX <= deltaY) return;
+
+          touchGesture.dragging = true;
+          startSliderDrag(event);
+          return;
+        }
+
+        event.preventDefault();
+        setSliderFromPointer(event);
+        return;
+      }
+
+      if (!pointerSurface.hasPointerCapture(event.pointerId)) return;
       event.preventDefault();
-      range.focus({ preventScroll: true });
-      range.setPointerCapture(event.pointerId);
       setSliderFromPointer(event);
     });
-    range?.addEventListener('pointermove', (event) => {
-      if (!range.hasPointerCapture(event.pointerId)) return;
-      event.preventDefault();
-      setSliderFromPointer(event);
-    });
-    range?.addEventListener('pointerup', (event) => {
-      if (range.hasPointerCapture(event.pointerId)) range.releasePointerCapture(event.pointerId);
-    });
-    range?.addEventListener('pointercancel', (event) => {
-      if (range.hasPointerCapture(event.pointerId)) range.releasePointerCapture(event.pointerId);
-    });
+    pointerSurface?.addEventListener('pointerup', endSliderDrag);
+    pointerSurface?.addEventListener('pointercancel', endSliderDrag);
     root.querySelector('[data-ba-prev]')?.addEventListener('click', () => setProject(activeIndex - 1));
     root.querySelector('[data-ba-next]')?.addEventListener('click', () => setProject(activeIndex + 1));
   });
@@ -210,6 +255,9 @@ const setupInstagram = () => {
     let resumeTimer;
     let sectionVisible = false;
     let manuallyPaused = false;
+    const desktopLayout = window.matchMedia('(min-width: 1024px)');
+    const getVisibleLayout = () => (desktopLayout.matches ? 'desktop' : 'mobile');
+    const isInputActive = () => root.dataset.instagramInputActive === 'true';
 
     const mobilePositions = {
       farLeft: { transform: 'translateX(-206%) scale(0.86)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
@@ -244,7 +292,8 @@ const setupInstagram = () => {
     };
 
     const ensureVisibleWindow = (referenceIndex = activeIndex) => {
-      root.querySelectorAll('[data-insta-card]').forEach((card) => {
+      const visibleLayout = getVisibleLayout();
+      root.querySelectorAll(`[data-insta-card][data-insta-layout="${visibleLayout}"]`).forEach((card) => {
         const index = Number(card.dataset.instaCard || 0);
         const position = getPosition(index, referenceIndex);
         if (position === 'left' || position === 'center' || position === 'right') {
@@ -265,8 +314,10 @@ const setupInstagram = () => {
     const stopAutoplay = () => {
       window.clearTimeout(autoplayTimer);
       window.clearTimeout(preloadTimer);
+      window.clearTimeout(resumeTimer);
       autoplayTimer = undefined;
       preloadTimer = undefined;
+      resumeTimer = undefined;
       setProgressDots(root, '[data-insta-dot]', activeIndex);
     };
 
@@ -274,7 +325,7 @@ const setupInstagram = () => {
       animateProgress = sectionVisible && !manuallyPaused,
       transitioning = false,
     } = {}) => {
-      const visibleLayout = window.matchMedia('(min-width: 1024px)').matches ? 'desktop' : 'mobile';
+      const visibleLayout = getVisibleLayout();
       root.querySelectorAll('[data-insta-card]').forEach((card) => {
         const index = Number(card.dataset.instaCard || 0);
         const position = getPosition(index);
@@ -298,18 +349,39 @@ const setupInstagram = () => {
       });
     };
 
-    const scheduleAutoplay = ({ transitioning = false } = {}) => {
+    function scheduleAutoplay({ transitioning = false } = {}) {
       window.clearTimeout(autoplayTimer);
       if (!sectionVisible || manuallyPaused) return;
+      if (isInputActive()) {
+        scheduleAutoplayWhenCalm();
+        return;
+      }
       render({ animateProgress: true, transitioning });
       preloadTimer = window.setTimeout(() => {
         ensureVisibleWindow(wrapIndex(activeIndex + 1, items.length));
       }, Math.max(800, autoplayDelayMs - 1200));
       autoplayTimer = window.setTimeout(() => {
+        if (isInputActive()) {
+          scheduleAutoplayWhenCalm();
+          return;
+        }
         activeIndex = wrapIndex(activeIndex + 1, items.length);
         scheduleAutoplay({ transitioning: true });
       }, autoplayDelayMs);
-    };
+    }
+
+    function scheduleAutoplayWhenCalm() {
+      window.clearTimeout(resumeTimer);
+      if (!sectionVisible || manuallyPaused) return;
+      resumeTimer = window.setTimeout(() => {
+        resumeTimer = undefined;
+        if (isInputActive()) {
+          scheduleAutoplayWhenCalm();
+          return;
+        }
+        scheduleAutoplay();
+      }, 280);
+    }
 
     const goTo = (nextIndex, { manual = true } = {}) => {
       const resolvedIndex = wrapIndex(nextIndex, items.length);
@@ -323,7 +395,7 @@ const setupInstagram = () => {
         render({ animateProgress: false, transitioning: true });
         resumeTimer = window.setTimeout(() => {
           manuallyPaused = false;
-          scheduleAutoplay();
+          scheduleAutoplayWhenCalm();
         }, resumeDelayMs);
         return;
       }
@@ -352,7 +424,7 @@ const setupInstagram = () => {
           const entry = entries.find((item) => item.target === root);
           sectionVisible = Boolean(entry?.isIntersecting);
           if (sectionVisible) {
-            scheduleAutoplay();
+            scheduleAutoplayWhenCalm();
             return;
           }
           stopAutoplay();
@@ -403,7 +475,8 @@ const setupTestimonials = () => {
       const mobileScrollRoot = window.matchMedia('(max-width: 1023px)').matches
         ? document.getElementById('marketplaceGalleryScroll')
         : null;
-      const verticalMargin = Math.max(640, mobileScrollRoot?.clientHeight || window.innerHeight || 0);
+      const viewportHeight = mobileScrollRoot?.clientHeight || window.innerHeight || 0;
+      const verticalMargin = Math.min(240, Math.max(120, Math.round(viewportHeight * 0.3)));
       const observer = new IntersectionObserver((entries) => {
         if (!entries.some((entry) => entry.isIntersecting)) return;
         observer.disconnect();
@@ -412,6 +485,10 @@ const setupTestimonials = () => {
         const releaseObserver = new IntersectionObserver((visibleEntries) => {
           if (!visibleEntries.some((entry) => entry.isIntersecting)) return;
           releaseObserver.disconnect();
+          root.dataset.testimonialsStarsActive = 'true';
+          window.setTimeout(() => {
+            root.dataset.testimonialsStarsActive = 'false';
+          }, 3200);
           window.setTimeout(() => {
             root.querySelectorAll('[data-testimonial-card]').forEach((card) => {
               card.dataset.testimonialPrepared = 'false';

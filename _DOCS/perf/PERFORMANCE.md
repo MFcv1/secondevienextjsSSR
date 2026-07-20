@@ -128,6 +128,8 @@ Les anciens freezes de premier scroll ont motive le rendu serveur des sections e
 
 Conserver les hauteurs reservees et ne pas remplacer une section par un squelette visuellement different apres hydratation.
 
+Pour la section Instagram, le reveal decoratif reste pilote un element a la fois apres accalmie du scroll (180 ms desktop, 220 ms mobile). Les animations ambiantes sont limitees a quatre bulles sur desktop et deux sur mobile, puis mises en pause hors viewport et pendant le scroll. Le carrousel ne rechauffe que sa branche responsive visible; les etoiles des temoignages ne demarrent qu'a leur entree reelle et ne jouent qu'une fois.
+
 ## 9. Navigation percue
 
 - prefetch Next sur les liens probables;

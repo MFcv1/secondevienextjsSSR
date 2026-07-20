@@ -369,26 +369,12 @@ export const BeforeAfterSectionServer = ({ darkMode = false, projects = restorat
           <path className="atelier-showcase__curve-line atelier-showcase__curve-line--light" d="M 376 -106 C 326 -48 271 -4 211 49 C 121 129 50 211 14 312" />
         </g>
       </svg>
-      <img
-        src="/decorations/atelier-ornament-left-engraving.webp"
-        alt=""
+      <span
         aria-hidden="true"
-        width={800}
-        height={1130}
-        loading="lazy"
-        decoding="async"
-        draggable="false"
         className="atelier-showcase__ornament atelier-showcase__ornament--left"
       />
-      <img
-        src="/decorations/atelier-ornament-right-engraving.webp"
-        alt=""
+      <span
         aria-hidden="true"
-        width={800}
-        height={1093}
-        loading="lazy"
-        decoding="async"
-        draggable="false"
         className="atelier-showcase__ornament atelier-showcase__ornament--right"
       />
       <div className="atelier-showcase__content relative z-[2] w-full">
@@ -450,17 +436,17 @@ const instaPosts = [
 const INSTAGRAM_URL = 'https://www.instagram.com/secondevie_anais';
 
 const instagramFloatingTokens = [
-  { id: 'gram', Icon: Instagram, className: 'instagram-floating-token--gram', style: { '--float-x': '6%', '--float-y': '19%', '--float-size': '140px', '--float-delay': '80ms', '--float-enter-duration': '680ms', '--float-arrive-x': '-10px', '--float-arrive-y': '54px', '--float-drift-x': '13px', '--float-drift-y': '-18px', '--float-rotate-start': '-12deg', '--float-rotate-end': '9deg', '--float-duration': '7.4s' } },
-  { id: 'heart', Icon: Heart, className: 'instagram-floating-token--heart', style: { '--float-x': '16%', '--float-y': '63%', '--float-size': '108px', '--float-delay': '760ms', '--float-enter-duration': '600ms', '--float-arrive-x': '-12px', '--float-arrive-y': '48px', '--float-drift-x': '-10px', '--float-drift-y': '-15px', '--float-rotate-start': '10deg', '--float-rotate-end': '-8deg', '--float-duration': '8.2s' } },
-  { id: 'left-star', Icon: Star, className: 'instagram-floating-token--left-star', style: { '--float-x': '11.5%', '--float-y': '47%', '--float-size': '68px', '--float-delay': '520ms', '--float-enter-duration': '570ms', '--float-arrive-x': '-8px', '--float-arrive-y': '42px', '--float-drift-x': '8px', '--float-drift-y': '-12px', '--float-rotate-start': '-11deg', '--float-rotate-end': '8deg', '--float-duration': '7.2s' } },
-  { id: 'mail', Icon: Mail, className: 'instagram-floating-token--mail', style: { '--float-x': '20%', '--float-y': '31%', '--float-size': '54px', '--float-delay': '640ms', '--float-enter-duration': '560ms', '--float-arrive-x': '-8px', '--float-arrive-y': '38px', '--float-drift-x': '9px', '--float-drift-y': '-12px', '--float-rotate-start': '-9deg', '--float-rotate-end': '8deg', '--float-duration': '7.6s' } },
-  { id: 'spark', Icon: Sparkles, className: 'instagram-floating-token--spark', style: { '--float-x': '27%', '--float-y': '24%', '--float-size': '64px', '--float-delay': '190ms', '--float-enter-duration': '540ms', '--float-arrive-x': '8px', '--float-arrive-y': '42px', '--float-drift-x': '8px', '--float-drift-y': '-13px', '--float-rotate-start': '-20deg', '--float-rotate-end': '14deg', '--float-duration': '6.9s' } },
-  { id: 'message', Icon: MessageCircle, className: 'instagram-floating-token--message', style: { '--float-x': '75%', '--float-y': '28%', '--float-size': '132px', '--float-delay': '460ms', '--float-enter-duration': '660ms', '--float-arrive-x': '12px', '--float-arrive-y': '50px', '--float-drift-x': '-12px', '--float-drift-y': '-17px', '--float-rotate-start': '14deg', '--float-rotate-end': '-10deg', '--float-duration': '7.8s' } },
-  { id: 'send', Icon: Send, className: 'instagram-floating-token--send', style: { '--float-x': '90%', '--float-y': '18%', '--float-size': '52px', '--float-delay': '310ms', '--float-enter-duration': '500ms', '--float-arrive-x': '8px', '--float-arrive-y': '34px', '--float-drift-x': '-7px', '--float-drift-y': '-11px', '--float-rotate-start': '-18deg', '--float-rotate-end': '11deg', '--float-duration': '6.4s' } },
-  { id: 'right-tag', Icon: Tag, className: 'instagram-floating-token--right-tag', style: { '--float-x': '86.4%', '--float-y': '39%', '--float-size': '62px', '--float-delay': '830ms', '--float-enter-duration': '580ms', '--float-arrive-x': '10px', '--float-arrive-y': '44px', '--float-drift-x': '-8px', '--float-drift-y': '-13px', '--float-rotate-start': '12deg', '--float-rotate-end': '-8deg', '--float-duration': '7.9s' } },
-  { id: 'save', Icon: Bookmark, className: 'instagram-floating-token--save', style: { '--float-x': '88%', '--float-y': '61%', '--float-size': '98px', '--float-delay': '940ms', '--float-enter-duration': '620ms', '--float-arrive-x': '14px', '--float-arrive-y': '52px', '--float-drift-x': '11px', '--float-drift-y': '-16px', '--float-rotate-start': '18deg', '--float-rotate-end': '-9deg', '--float-duration': '8.6s' } },
-  { id: 'at', Icon: AtSign, className: 'instagram-floating-token--at', style: { '--float-x': '82%', '--float-y': '73%', '--float-size': '50px', '--float-delay': '1120ms', '--float-enter-duration': '520ms', '--float-arrive-x': '6px', '--float-arrive-y': '40px', '--float-drift-x': '-8px', '--float-drift-y': '-10px', '--float-rotate-start': '-8deg', '--float-rotate-end': '13deg', '--float-duration': '7.1s' } },
-  { id: 'left-mini', Icon: HeartHandshake, className: 'instagram-floating-token--left-mini', style: { '--float-x': '7.6%', '--float-y': '78.5%', '--float-size': '42px', '--float-delay': '1180ms', '--float-enter-duration': '520ms', '--float-arrive-x': '-6px', '--float-arrive-y': '36px', '--float-drift-x': '6px', '--float-drift-y': '-9px', '--float-rotate-start': '9deg', '--float-rotate-end': '-6deg', '--float-duration': '6.8s' } },
+  { id: 'gram', Icon: Instagram, className: 'instagram-floating-token--gram', style: { '--float-x': '6%', '--float-y': '19%', '--float-size': '140px', '--float-enter-duration': '680ms', '--float-arrive-x': '-10px', '--float-arrive-y': '54px', '--float-drift-x': '13px', '--float-drift-y': '-18px', '--float-rotate-start': '-12deg', '--float-rotate-end': '9deg', '--float-duration': '7.4s' } },
+  { id: 'heart', Icon: Heart, className: 'instagram-floating-token--heart', style: { '--float-x': '16%', '--float-y': '63%', '--float-size': '108px', '--float-enter-duration': '600ms', '--float-arrive-x': '-12px', '--float-arrive-y': '48px', '--float-drift-x': '-10px', '--float-drift-y': '-15px', '--float-rotate-start': '10deg', '--float-rotate-end': '-8deg', '--float-duration': '8.2s' } },
+  { id: 'left-star', Icon: Star, className: 'instagram-floating-token--left-star', style: { '--float-x': '11.5%', '--float-y': '47%', '--float-size': '68px', '--float-enter-duration': '570ms', '--float-arrive-x': '-8px', '--float-arrive-y': '42px', '--float-drift-x': '8px', '--float-drift-y': '-12px', '--float-rotate-start': '-11deg', '--float-rotate-end': '8deg', '--float-duration': '7.2s' } },
+  { id: 'mail', Icon: Mail, className: 'instagram-floating-token--mail', style: { '--float-x': '20%', '--float-y': '31%', '--float-size': '54px', '--float-enter-duration': '560ms', '--float-arrive-x': '-8px', '--float-arrive-y': '38px', '--float-drift-x': '9px', '--float-drift-y': '-12px', '--float-rotate-start': '-9deg', '--float-rotate-end': '8deg', '--float-duration': '7.6s' } },
+  { id: 'spark', Icon: Sparkles, className: 'instagram-floating-token--spark', style: { '--float-x': '27%', '--float-y': '24%', '--float-size': '64px', '--float-enter-duration': '540ms', '--float-arrive-x': '8px', '--float-arrive-y': '42px', '--float-drift-x': '8px', '--float-drift-y': '-13px', '--float-rotate-start': '-20deg', '--float-rotate-end': '14deg', '--float-duration': '6.9s' } },
+  { id: 'message', Icon: MessageCircle, className: 'instagram-floating-token--message', style: { '--float-x': '75%', '--float-y': '28%', '--float-size': '132px', '--float-enter-duration': '660ms', '--float-arrive-x': '12px', '--float-arrive-y': '50px', '--float-drift-x': '-12px', '--float-drift-y': '-17px', '--float-rotate-start': '14deg', '--float-rotate-end': '-10deg', '--float-duration': '7.8s' } },
+  { id: 'send', Icon: Send, className: 'instagram-floating-token--send', style: { '--float-x': '90%', '--float-y': '18%', '--float-size': '52px', '--float-enter-duration': '500ms', '--float-arrive-x': '8px', '--float-arrive-y': '34px', '--float-drift-x': '-7px', '--float-drift-y': '-11px', '--float-rotate-start': '-18deg', '--float-rotate-end': '11deg', '--float-duration': '6.4s' } },
+  { id: 'right-tag', Icon: Tag, className: 'instagram-floating-token--right-tag', style: { '--float-x': '86.4%', '--float-y': '39%', '--float-size': '62px', '--float-enter-duration': '580ms', '--float-arrive-x': '10px', '--float-arrive-y': '44px', '--float-drift-x': '-8px', '--float-drift-y': '-13px', '--float-rotate-start': '12deg', '--float-rotate-end': '-8deg', '--float-duration': '7.9s' } },
+  { id: 'save', Icon: Bookmark, className: 'instagram-floating-token--save', style: { '--float-x': '88%', '--float-y': '61%', '--float-size': '98px', '--float-enter-duration': '620ms', '--float-arrive-x': '14px', '--float-arrive-y': '52px', '--float-drift-x': '11px', '--float-drift-y': '-16px', '--float-rotate-start': '18deg', '--float-rotate-end': '-9deg', '--float-duration': '8.6s' } },
+  { id: 'at', Icon: AtSign, className: 'instagram-floating-token--at', style: { '--float-x': '82%', '--float-y': '73%', '--float-size': '50px', '--float-enter-duration': '520ms', '--float-arrive-x': '6px', '--float-arrive-y': '40px', '--float-drift-x': '-8px', '--float-drift-y': '-10px', '--float-rotate-start': '-8deg', '--float-rotate-end': '13deg', '--float-duration': '7.1s' } },
+  { id: 'left-mini', Icon: HeartHandshake, className: 'instagram-floating-token--left-mini', style: { '--float-x': '7.6%', '--float-y': '78.5%', '--float-size': '42px', '--float-enter-duration': '520ms', '--float-arrive-x': '-6px', '--float-arrive-y': '36px', '--float-drift-x': '6px', '--float-drift-y': '-9px', '--float-rotate-start': '9deg', '--float-rotate-end': '-6deg', '--float-duration': '6.8s' } },
 ];
 
 const instagramFloatingRevealRanks = {
@@ -513,12 +499,15 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
   <section
     data-instagram-carousel
     data-item-count={posts.length}
+    data-instagram-input-active="false"
     className="gallery-deferred-render instagram-carousel-section relative isolate overflow-hidden px-0 pb-[64px] pt-[38px] md:px-6 md:py-[72px] lg:min-h-[690px] lg:px-[5vw] lg:py-[78px] xl:py-[86px]"
   >
     <div
       className={`instagram-floating-field ${darkMode ? 'instagram-floating-field--dark' : ''}`}
       data-instagram-floating-field="true"
       data-floating-prepared="false"
+      data-floating-scroll-active="false"
+      data-floating-visible="false"
       aria-hidden="true"
     >
       {instagramFloatingTokens.map(({ id, Icon, className, style }) => (
@@ -526,6 +515,7 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
           key={id}
           className={`instagram-floating-token ${className}`}
           style={style}
+          data-floating-id={id}
           data-floating-rank-desktop={instagramFloatingRevealRanks[id]?.desktop || 5}
           data-floating-rank-mobile={instagramFloatingRevealRanks[id]?.mobile || 5}
           data-floating-prepared="false"
@@ -891,6 +881,7 @@ const TestimonialsCarouselPlaceholder = ({ darkMode = false } = {}) => (
     data-testimonials-carousel
     data-item-count={testimonials.length}
     data-testimonials-prepared="false"
+    data-testimonials-stars-active="false"
     className={`gallery-deferred-render customer-testimonials-section relative z-20 min-h-[520px] w-full overflow-hidden dark:bg-[#0b0a09] dark:text-[#f8f1e8] lg:min-h-[828px] ${
       darkMode ? 'bg-[#0b0a09] text-[#f8f1e8]' : 'bg-white text-[#242221]'
     }`}
@@ -1026,7 +1017,7 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
             </div>
           </div>
 
-          <div className={`relative flex min-h-full p-2 sm:p-4 md:p-5 lg:p-6 dark:bg-[#181511] ${darkMode ? 'bg-[#1d1a16]' : 'bg-[#fffbf5]'}`}>
+          <div className={`relative hidden min-h-full sm:flex sm:p-4 md:p-5 lg:p-6 dark:bg-[#181511] ${darkMode ? 'bg-[#1d1a16]' : 'bg-[#fffbf5]'}`}>
             <div className="mx-auto grid w-full max-w-[355px] grid-cols-2 gap-2 sm:max-w-none sm:gap-3 lg:grid-cols-2">
               {discountCards.map(({ Icon, toneLabel, title, text, accent, soft, wash, ring }) => (
                 <article

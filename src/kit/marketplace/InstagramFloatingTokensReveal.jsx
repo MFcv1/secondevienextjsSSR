@@ -3,8 +3,34 @@
 import { useEffect } from 'react';
 
 const REVEAL_THRESHOLDS = [0, 0.02, 0.1, 0.2, 0.32, 0.44, 0.56];
-const REVEAL_STEP_MS = 105;
+const REVEAL_GAP_DESKTOP_MS = 180;
+const REVEAL_GAP_MOBILE_MS = 220;
+const INPUT_SETTLE_MS = 150;
 const IMAGE_INPUT_SETTLE_MS = 240;
+
+const DESKTOP_TOKEN_ORDER = [
+  'gram',
+  'send',
+  'spark',
+  'message',
+  'left-star',
+  'right-tag',
+  'heart',
+  'save',
+  'left-mini',
+  'at',
+];
+
+const MOBILE_TOKEN_ORDER = [
+  'gram',
+  'message',
+  'mail',
+  'spark',
+  'send',
+  'save',
+  'heart',
+  'at',
+];
 
 const getRankForRatio = (ratio) => {
   if (ratio >= 0.46) return 5;
@@ -32,27 +58,33 @@ export default function InstagramFloatingTokensReveal() {
     const section = field.closest('[data-instagram-carousel]');
     if (!section) return undefined;
 
-    const tokens = Array.from(field.querySelectorAll('.instagram-floating-token'));
+    const allTokens = Array.from(field.querySelectorAll('.instagram-floating-token'));
     const isMobile = window.matchMedia('(max-width: 1023px)');
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const observerRoot = isMobile.matches
       ? document.getElementById('marketplaceGalleryScroll')
       : null;
+    const scrollTarget = observerRoot || window;
+    const tokenById = new Map(allTokens.map((token) => [token.dataset.floatingId, token]));
+    const tokenOrder = isMobile.matches ? MOBILE_TOKEN_ORDER : DESKTOP_TOKEN_ORDER;
+    const tokens = tokenOrder.map((id) => tokenById.get(id)).filter(Boolean);
+    const revealGapMs = isMobile.matches ? REVEAL_GAP_MOBILE_MS : REVEAL_GAP_DESKTOP_MS;
 
     let cancelled = false;
-    let prepareScheduled = false;
-    let cancelIdle = null;
     let prepareObserver = null;
     let revealObserver = null;
     let revealTimer = null;
-    let revealedRank = 0;
+    let pendingRevealFrame = null;
+    let pendingRevealToken = null;
     let queuedRank = 0;
     let imageWarmTimer = null;
     let cancelImageIdle = null;
     let imageWarmRunning = false;
     let sectionNearby = false;
+    let sectionVisible = false;
+    let inputActive = false;
+    let inputSettleTimer = null;
     let lastInputAt = window.performance?.now?.() || Date.now();
-    const prepareTimers = new Set();
     const settleFallbacks = new Set();
     const transitionCleanups = new Set();
 
@@ -116,7 +148,6 @@ export default function InstagramFloatingTokensReveal() {
             scheduleImageWarm();
             return;
           }
-          image.loading = 'eager';
           image.fetchPriority = 'low';
           try {
             await image.decode();
@@ -135,33 +166,6 @@ export default function InstagramFloatingTokensReveal() {
     const prepare = () => {
       if (cancelled || field.dataset.floatingPrepared === 'true') return;
       field.dataset.floatingPrepared = 'true';
-      for (let rank = 1; rank <= 5; rank += 1) {
-        const timer = window.setTimeout(() => {
-          prepareTimers.delete(timer);
-          tokens
-            .filter((token) => getTokenRank(token) === rank)
-            .forEach((token) => {
-              token.dataset.floatingPrepared = 'true';
-            });
-        }, (rank - 1) * 58);
-        prepareTimers.add(timer);
-      }
-    };
-
-    const schedulePrepare = () => {
-      if (prepareScheduled || field.dataset.floatingPrepared === 'true') return;
-      prepareScheduled = true;
-      cancelIdle = scheduleIdle(() => {
-        cancelIdle = null;
-        prepare();
-      });
-    };
-
-    const forcePrepare = () => {
-      cancelIdle?.();
-      cancelIdle = null;
-      prepareScheduled = false;
-      prepare();
     };
 
     const markSettled = (token) => {
@@ -194,38 +198,102 @@ export default function InstagramFloatingTokensReveal() {
         cleanupTransition();
         transitionCleanups.delete(cleanupTransition);
         markSettled(token);
-      }, 2400);
+      }, 1200);
       settleFallbacks.add(fallback);
 
       token.dataset.floatingRevealed = 'true';
     };
 
-    const revealNextRank = () => {
-      revealTimer = null;
-      if (cancelled || revealedRank >= queuedRank) return;
-
-      revealedRank += 1;
-      tokens.filter((token) => getTokenRank(token) === revealedRank).forEach(revealToken);
-
-      if (revealedRank < queuedRank) {
-        revealTimer = window.setTimeout(revealNextRank, REVEAL_STEP_MS);
+    const cancelPendingReveal = () => {
+      if (pendingRevealFrame !== null) {
+        window.cancelAnimationFrame(pendingRevealFrame);
+        pendingRevealFrame = null;
       }
+      if (pendingRevealToken?.dataset.floatingRevealed !== 'true') {
+        pendingRevealToken.dataset.floatingPrepared = 'false';
+      }
+      pendingRevealToken = null;
+    };
+
+    const pauseRevealQueue = () => {
+      if (revealTimer !== null) {
+        window.clearTimeout(revealTimer);
+        revealTimer = null;
+      }
+      cancelPendingReveal();
+    };
+
+    const revealNextToken = () => {
+      revealTimer = null;
+      if (cancelled || inputActive || !sectionVisible) return;
+
+      const token = tokens.find((candidate) => (
+        candidate.dataset.floatingRevealed !== 'true'
+        && getTokenRank(candidate) <= queuedRank
+      ));
+      if (!token) return;
+
+      pendingRevealToken = token;
+      token.dataset.floatingPrepared = 'true';
+      pendingRevealFrame = window.requestAnimationFrame(() => {
+        pendingRevealFrame = null;
+        if (cancelled || inputActive || !sectionVisible) {
+          cancelPendingReveal();
+          return;
+        }
+        pendingRevealToken = null;
+        revealToken(token);
+        revealTimer = window.setTimeout(revealNextToken, revealGapMs);
+      });
+    };
+
+    const scheduleReveal = (delay = 0) => {
+      if (
+        cancelled
+        || inputActive
+        || !sectionVisible
+        || revealTimer !== null
+        || pendingRevealFrame !== null
+      ) return;
+      revealTimer = window.setTimeout(revealNextToken, delay);
     };
 
     const queueRevealThrough = (nextRank) => {
-      if (nextRank <= queuedRank) return;
       prepare();
       sectionNearby = true;
       scheduleImageWarm();
-      queuedRank = Math.min(5, nextRank);
-      if (revealTimer === null && revealedRank < queuedRank) {
-        revealTimer = window.setTimeout(revealNextRank, revealedRank === 0 ? 0 : REVEAL_STEP_MS);
+      queuedRank = Math.max(queuedRank, Math.min(5, nextRank));
+      scheduleReveal();
+    };
+
+    const setInputActive = (active) => {
+      if (inputActive === active) return;
+      inputActive = active;
+      field.dataset.floatingScrollActive = String(active);
+      section.dataset.instagramInputActive = String(active);
+      if (active) {
+        pauseRevealQueue();
+        return;
       }
+      scheduleReveal();
+      if (sectionNearby) scheduleImageWarm(80);
+    };
+
+    const armInputSettle = () => {
+      if (inputSettleTimer !== null) {
+        window.clearTimeout(inputSettleTimer);
+      }
+      inputSettleTimer = window.setTimeout(() => {
+        inputSettleTimer = null;
+        if (cancelled) return;
+        setInputActive(false);
+      }, INPUT_SETTLE_MS);
     };
 
     if (reducedMotion) {
-      forcePrepare();
+      prepare();
       tokens.forEach((token) => {
+        token.dataset.floatingPrepared = 'true';
         token.dataset.floatingRevealed = 'true';
         token.dataset.floatingSettled = 'true';
       });
@@ -234,7 +302,12 @@ export default function InstagramFloatingTokensReveal() {
         (entries) => {
           if (!entries.some((entry) => entry.isIntersecting)) return;
           sectionNearby = true;
-          forcePrepare();
+          prepare();
+          const now = window.performance?.now?.() || Date.now();
+          if (now - lastInputAt < INPUT_SETTLE_MS) {
+            setInputActive(true);
+            armInputSettle();
+          }
           scheduleImageWarm();
           prepareObserver?.disconnect();
           prepareObserver = null;
@@ -245,7 +318,13 @@ export default function InstagramFloatingTokensReveal() {
       revealObserver = new IntersectionObserver(
         (entries) => {
           const entry = entries.find((item) => item.target === section);
-          if (!entry?.isIntersecting) return;
+          if (!entry) return;
+          sectionVisible = entry.isIntersecting;
+          field.dataset.floatingVisible = String(sectionVisible);
+          if (!sectionVisible) {
+            pauseRevealQueue();
+            return;
+          }
           queueRevealThrough(getRankForRatio(entry.intersectionRatio));
         },
         { root: observerRoot, rootMargin: '0px', threshold: REVEAL_THRESHOLDS },
@@ -255,31 +334,39 @@ export default function InstagramFloatingTokensReveal() {
       revealObserver.observe(section);
     } else {
       sectionNearby = true;
-      schedulePrepare();
+      sectionVisible = true;
+      field.dataset.floatingVisible = 'true';
+      prepare();
       queueRevealThrough(5);
     }
 
     const markInput = () => {
       lastInputAt = window.performance?.now?.() || Date.now();
-      if (sectionNearby) scheduleImageWarm();
+      if (!sectionNearby && !sectionVisible) return;
+      setInputActive(true);
+      armInputSettle();
     };
-    window.addEventListener('wheel', markInput, { passive: true });
-    window.addEventListener('touchmove', markInput, { passive: true });
-    window.addEventListener('scroll', markInput, { passive: true });
-    observerRoot?.addEventListener('scroll', markInput, { passive: true });
+    const markInputEnd = () => {
+      if (inputSettleTimer !== null) {
+        window.clearTimeout(inputSettleTimer);
+      }
+      inputSettleTimer = window.setTimeout(() => {
+        inputSettleTimer = null;
+        if (!cancelled) setInputActive(false);
+      }, 48);
+    };
+    scrollTarget.addEventListener('scroll', markInput, { passive: true });
+    scrollTarget.addEventListener('scrollend', markInputEnd, { passive: true });
 
     return () => {
       cancelled = true;
-      cancelIdle?.();
       clearImageWarmSchedule();
       prepareObserver?.disconnect();
       revealObserver?.disconnect();
-      window.removeEventListener('wheel', markInput);
-      window.removeEventListener('touchmove', markInput);
-      window.removeEventListener('scroll', markInput);
-      observerRoot?.removeEventListener('scroll', markInput);
-      if (revealTimer !== null) window.clearTimeout(revealTimer);
-      prepareTimers.forEach((timer) => window.clearTimeout(timer));
+      scrollTarget.removeEventListener('scroll', markInput);
+      scrollTarget.removeEventListener('scrollend', markInputEnd);
+      pauseRevealQueue();
+      if (inputSettleTimer !== null) window.clearTimeout(inputSettleTimer);
       settleFallbacks.forEach((timer) => window.clearTimeout(timer));
       transitionCleanups.forEach((cleanup) => cleanup());
     };
