@@ -118,32 +118,24 @@ const textTapMotion = {
 };
 
 const mobilePanelVariants = {
-    hidden: {
-        x: '100%',
-        opacity: 0.96,
+  hidden: {
+    x: 0,
+    opacity: 1,
+  },
+  visible: {
+    x: 0,
+    opacity: 1,
+    transition: {
+      duration: 0,
     },
-    visible: {
-        x: 0,
-        opacity: 1,
-        transition: {
-            type: 'spring',
-            stiffness: 520,
-            damping: 44,
-            mass: 0.78,
-            opacity: { duration: 0.16, ease: MENU_FADE_EASE },
-        },
+  },
+  exit: {
+    x: 0,
+    opacity: 1,
+    transition: {
+      duration: 0,
     },
-    exit: {
-        x: '100%',
-        opacity: 0.98,
-        transition: {
-            type: 'spring',
-            stiffness: 560,
-            damping: 48,
-            mass: 0.72,
-            opacity: { duration: 0.12, ease: MENU_CLOSE_EASE },
-        },
-    },
+  },
 };
 
 export default function GlobalMenuMobile({
