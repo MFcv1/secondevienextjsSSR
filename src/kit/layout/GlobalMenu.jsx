@@ -8,6 +8,7 @@ import GlobalMenuMobile from './GlobalMenuMobile';
 const DESKTOP_MENU_QUERY = '(min-width: 1024px)';
 const DESKTOP_MENU_OPEN_CLASS = 'global-menu-desktop-open';
 const DESKTOP_ANNOUNCEMENT_VISIBLE_CLASS = 'global-menu-announcement-visible';
+const MOBILE_MENU_JOIN_OVERLAP_PX = 1;
 
 const getIsDesktopMenuViewport = () => (
     typeof window !== 'undefined'
@@ -87,7 +88,13 @@ const GlobalMenu = ({
         const headerBottom = header?.getBoundingClientRect().bottom || 0;
         const headerHeight = header?.offsetHeight || 110;
         document.documentElement.style.setProperty('--global-menu-header-height', `${Math.max(0, Math.round(headerHeight))}px`);
-        const nextMenuTop = Math.max(0, Math.round(headerBottom > 0 ? headerBottom : headerHeight));
+        const measuredMenuTop = headerBottom > 0 ? headerBottom : headerHeight;
+        // High-DPR Android devices can expose a compositor seam when a
+        // fractional sticky-header edge is rounded away from the fixed menu.
+        // A one CSS-pixel overlap keeps both white surfaces visually fused.
+        const nextMenuTop = Math.max(0, isDesktopMenuViewport
+            ? Math.round(measuredMenuTop)
+            : Math.floor(measuredMenuTop) - MOBILE_MENU_JOIN_OVERLAP_PX);
         const availableHeight = Math.max(0, Math.round(window.innerHeight - nextMenuTop));
         const measuredContentHeight = isDesktopMenuViewport
             ? (desktopContentRef.current?.scrollHeight || availableHeight)

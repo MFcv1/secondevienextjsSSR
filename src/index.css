@@ -1025,7 +1025,7 @@ html.dark .gallery-announcement-language {
 }
 
 .global-menu-mobile-search:focus-within {
-  box-shadow: 0 0 0 1px rgba(154, 101, 75, 0.42), 0 7px 20px -18px rgba(74, 47, 34, 0.55);
+  box-shadow: 0 0 0 1px rgba(168, 162, 158, 0.32);
 }
 
 html.dark .global-menu-mobile-search:focus-within {
