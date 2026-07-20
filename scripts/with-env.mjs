@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { existsSync, readFileSync } from 'node:fs';
+import { networkInterfaces } from 'node:os';
 import { basename, resolve } from 'node:path';
 
 const require = createRequire(import.meta.url);
@@ -91,6 +92,55 @@ env.NEXT_TELEMETRY_DISABLED = env.NEXT_TELEMETRY_DISABLED || '1';
 const isNextCommand = command === 'next';
 const commandPath = isNextCommand ? process.execPath : command;
 const commandArgs = isNextCommand ? [require.resolve('next/dist/bin/next'), ...args] : args;
+
+const readOption = (optionNames, fallback) => {
+  const optionIndex = args.findIndex((arg) => optionNames.includes(arg));
+  return optionIndex >= 0 && args[optionIndex + 1] ? args[optionIndex + 1] : fallback;
+};
+
+const isPrivateIpv4 = (address) => (
+  /^10\./.test(address)
+  || /^192\.168\./.test(address)
+  || /^172\.(1[6-9]|2\d|3[01])\./.test(address)
+);
+
+const getPreferredLanAddress = () => {
+  const virtualInterfacePattern = /docker|vethernet|virtual|vmware|wsl|tailscale|loopback/i;
+  const candidates = Object.entries(networkInterfaces())
+    .flatMap(([interfaceName, addresses]) => (addresses || []).map((address) => ({
+      ...address,
+      interfaceName,
+    })))
+    .filter((address) => (
+      !address.internal
+      && (address.family === 'IPv4' || address.family === 4)
+      && !address.address.startsWith('169.254.')
+    ))
+    .sort((left, right) => {
+      const score = (candidate) => (
+        (/wi-?fi|wireless|wlan/i.test(candidate.interfaceName) ? 100 : 0)
+        + (isPrivateIpv4(candidate.address) ? 50 : 0)
+        - (virtualInterfacePattern.test(candidate.interfaceName) ? 200 : 0)
+      );
+      return score(right) - score(left);
+    });
+
+  return candidates[0]?.address || null;
+};
+
+const isNetworkDevServer = isNextCommand
+  && args[0] === 'dev'
+  && ['0.0.0.0', '::'].includes(readOption(['-H', '--hostname'], ''));
+
+if (isNetworkDevServer) {
+  const lanAddress = getPreferredLanAddress();
+  const port = readOption(['-p', '--port'], '3000');
+  if (lanAddress) {
+    console.log(`\n  Telephone (meme Wi-Fi) : http://${lanAddress}:${port}\n`);
+  } else {
+    console.log('\n  Telephone : IPv4 locale non detectee. Verifie avec ipconfig.\n');
+  }
+}
 
 const child = spawn(commandPath, commandArgs, {
   stdio: 'inherit',
