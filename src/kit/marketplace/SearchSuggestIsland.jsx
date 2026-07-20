@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowRight, Search, X, LayoutGrid } from 'lucide-react';
+import { ArrowRight, Search, LayoutGrid } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const DEFAULT_QUERY = '';
@@ -95,9 +95,12 @@ const SuggestionPanel = ({
       id={panelId}
       role="listbox"
       aria-label="Suggestions de recherche"
-      className={`${mobile ? 'w-full' : 'search-suggest-pop absolute left-2 right-2 top-[calc(100%+10px)]'} rounded-[22px] p-1.5 ${shellTone}`}
+      className={`${mobile ? 'search-suggest-mobile-pop absolute z-30' : 'search-suggest-pop absolute left-2 right-2 top-[calc(100%+10px)]'} rounded-[22px] p-1.5 ${shellTone}`}
     >
-      <div className={`search-suggest-scroll overflow-y-auto overscroll-contain rounded-[16px] ${coreTone} ${mobile ? '' : 'max-h-[min(33.5rem,calc(100vh-165px))]'}`}>
+      <div
+        className={`search-suggest-scroll overflow-y-auto overscroll-contain rounded-[16px] ${coreTone} ${mobile ? 'h-full' : 'max-h-[min(33.5rem,calc(100vh-165px))]'}`}
+        data-global-menu-scrollable={mobile ? 'true' : undefined}
+      >
         {showSkeleton ? (
           <PanelSkeleton darkMode={darkMode} />
         ) : (
@@ -289,7 +292,6 @@ export default function SearchSuggestIsland({
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [activeId, setActiveId] = React.useState('');
   const inputRef = React.useRef(null);
-  const mobileInputRef = React.useRef(null);
   const containerRef = React.useRef(null);
   const panelId = React.useId();
   const isMobile = variant === 'mobile';
@@ -331,26 +333,17 @@ export default function SearchSuggestIsland({
   }, [fetchSuggestions, mobileOpen, open, query]);
 
   React.useEffect(() => {
-    if (!open) return undefined;
+    if (!open && !mobileOpen) return undefined;
     const handlePointerDown = (event) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
         setOpen(false);
+        setMobileOpen(false);
         setActiveId('');
       }
     };
     document.addEventListener('pointerdown', handlePointerDown);
     return () => document.removeEventListener('pointerdown', handlePointerDown);
-  }, [open]);
-
-  React.useEffect(() => {
-    if (!mobileOpen) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    window.setTimeout(() => mobileInputRef.current?.focus(), 30);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [mobileOpen]);
+  }, [mobileOpen, open]);
 
   React.useEffect(() => {
     if (activeId) {
@@ -435,7 +428,13 @@ export default function SearchSuggestIsland({
 
   if (isMobile) {
     return (
-      <>
+      <form
+        ref={containerRef}
+        action="/recherche"
+        method="get"
+        className="contents"
+        onSubmit={submitSearch}
+      >
         <label className={wrapperClassName}>
           <span className="sr-only">Rechercher</span>
           <input
@@ -448,45 +447,19 @@ export default function SearchSuggestIsland({
         </label>
 
         {mobileOpen ? (
-          <div className={`fixed inset-0 z-[240] flex min-h-[100dvh] flex-col ${darkMode ? 'bg-[#12110f] text-stone-100' : 'bg-[#fffdfb] text-stone-900'}`}>
-            <form onSubmit={submitSearch} className="safe-pt-header border-b border-stone-200/80 px-4 pb-3 pt-4 dark:border-white/10">
-              <div className="flex items-center gap-2">
-                <label className={`relative flex h-12 min-w-0 flex-1 items-center rounded-lg ${darkMode ? 'bg-white/[0.06]' : 'bg-[#f6f2ee]'}`}>
-                  <span className="sr-only">Rechercher</span>
-                  <input
-                    {...sharedInputProps}
-                    ref={mobileInputRef}
-                    className={`h-full w-full rounded-lg bg-transparent pl-4 pr-11 text-[16px] outline-none placeholder:text-stone-400 ${darkMode ? 'text-stone-100' : 'text-stone-800'}`}
-                    onFocus={() => setMobileOpen(true)}
-                  />
-                  <Search className="absolute right-3.5 text-stone-500" size={20} strokeWidth={1.5} />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${darkMode ? 'bg-white/[0.08]' : 'bg-stone-100'}`}
-                  aria-label="Fermer la recherche"
-                >
-                  <X size={18} strokeWidth={1.7} />
-                </button>
-              </div>
-            </form>
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-              <SuggestionPanel
-                data={data}
-                loading={loading}
-                query={query}
-                activeId={activeId}
-                setActiveId={setActiveId}
-                onChoose={chooseHref}
-                darkMode={darkMode}
-                panelId={panelId}
-                mobile
-              />
-            </div>
-          </div>
+          <SuggestionPanel
+            data={data}
+            loading={loading}
+            query={query}
+            activeId={activeId}
+            setActiveId={setActiveId}
+            onChoose={chooseHref}
+            darkMode={darkMode}
+            panelId={panelId}
+            mobile
+          />
         ) : null}
-      </>
+      </form>
     );
   }
 

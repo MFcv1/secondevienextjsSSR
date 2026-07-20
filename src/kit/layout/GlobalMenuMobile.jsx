@@ -229,7 +229,7 @@ export default function GlobalMenuMobile({
             >
                 <motion.div className="global-menu-mobile-content flex h-full min-h-0 flex-col safe-pb-menu" variants={menuContentVariants}>
                     <motion.div className="global-menu-mobile-inner flex min-h-0 flex-1 flex-col px-4 pb-3 pt-3 sm:px-5" variants={mobileRevealGroupVariants}>
-                        <motion.div variants={mobileRevealItemVariants}>
+                        <motion.div className="global-menu-mobile-search-stage relative z-20" variants={mobileRevealItemVariants}>
                             <SearchSuggestIsland
                                 darkMode={darkMode}
                                 variant="mobile"

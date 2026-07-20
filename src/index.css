@@ -1021,6 +1021,40 @@ html.dark .gallery-announcement-language {
 .global-menu-mobile-search {
   flex: 0 0 auto;
   height: clamp(38px, 6.2dvh, 48px);
+  transition: box-shadow 160ms ease;
+}
+
+.global-menu-mobile-search:focus-within {
+  box-shadow: 0 0 0 1px rgba(154, 101, 75, 0.42), 0 7px 20px -18px rgba(74, 47, 34, 0.55);
+}
+
+html.dark .global-menu-mobile-search:focus-within {
+  box-shadow: 0 0 0 1px rgba(217, 181, 141, 0.34), 0 7px 20px -18px rgba(0, 0, 0, 0.8);
+}
+
+.search-suggest-mobile-pop {
+  inset-inline: 0;
+  top: calc(100% + 0.5rem);
+  height: min(20rem, calc(var(--global-menu-mobile-available-height, 100dvh) - clamp(38px, 6.2dvh, 48px) - 2rem - env(safe-area-inset-bottom, 0px)));
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .search-suggest-mobile-pop {
+    animation: search-suggest-mobile-in 150ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    transform-origin: top center;
+  }
+
+  @keyframes search-suggest-mobile-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.99);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
 }
 
 .global-menu-mobile-actions {
@@ -1606,9 +1640,24 @@ html.dark .gallery-seo-proof-item {
   contain-intrinsic-size: auto var(--gallery-intrinsic-block-size);
 }
 
+/*
+ * Chrome can keep the newsletter's intrinsic placeholder height while its
+ * email field has focus and the virtual keyboard resizes the gallery's
+ * internal scroll viewport. Render this single section normally for the
+ * focused state so no blank block remains above the keyboard.
+ */
+.discount-section.gallery-deferred-render:focus-within {
+  content-visibility: visible;
+  contain-intrinsic-size: none;
+}
+
 .product-card-wrap {
   content-visibility: auto;
   contain-intrinsic-size: auto 420px;
+}
+
+.product-grid-more-wrap {
+  overflow-anchor: none;
 }
 
 #gallery-pieces.gallery-deferred-render,
@@ -3497,10 +3546,11 @@ html.dark .customer-testimonial-card {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  [data-testimonials-stars-active='true'] .testimonial-star {
-    animation: testimonial-star-wave 2.35s cubic-bezier(0.34, 1.18, 0.64, 1) 1 both;
+  [data-testimonials-prepared='true'] .testimonial-star {
+    animation: testimonial-star-wave 2.35s cubic-bezier(0.34, 1.18, 0.64, 1) infinite;
     animation-delay: var(--testimonial-star-delay, 0ms);
     transform-origin: center;
+    will-change: transform;
   }
 }
 
@@ -5445,7 +5495,7 @@ html.dark .custom-radio {
   --atelier-line-soft: rgba(189, 130, 72, 0.22);
   --atelier-line-faint: rgba(189, 130, 72, 0.12);
   --atelier-white-line: rgba(255, 255, 255, 0.65);
-  --atelier-ornament-opacity: 0.19;
+  --atelier-ornament-opacity: 0.27;
   --atelier-ornament-size: clamp(18rem, 23vw, 25rem);
   --atelier-halo-opacity: 0.86;
   --atelier-arch-opacity: 0.9;
@@ -5476,6 +5526,51 @@ html.dark .custom-radio {
 .atelier-showcase__content {
   position: relative;
   z-index: 2;
+}
+
+.discount-section__ornament {
+  position: absolute;
+  z-index: 1;
+  bottom: -2.5rem;
+  display: none;
+  width: clamp(19rem, 23vw, 28rem);
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.27;
+  background-repeat: no-repeat;
+  background-position: center bottom;
+  background-size: contain;
+  filter: sepia(0.2) saturate(0.78) contrast(0.92);
+  mix-blend-mode: multiply;
+}
+
+.discount-section__ornament--notre-dame {
+  left: clamp(-8.5rem, -4.5vw, -3.5rem);
+  aspect-ratio: 978 / 1608;
+  background-image: url('/decorations/newsletter-notre-dame-engraving-v1.webp');
+  -webkit-mask-image: linear-gradient(to right, #000 0 68%, rgba(0, 0, 0, 0.54) 83%, transparent 100%);
+  mask-image: linear-gradient(to right, #000 0 68%, rgba(0, 0, 0, 0.54) 83%, transparent 100%);
+}
+
+.discount-section__ornament--vieux-port {
+  right: clamp(-9rem, -4.8vw, -3.75rem);
+  bottom: -1.75rem;
+  aspect-ratio: 1023 / 1537;
+  background-image: url('/decorations/newsletter-vieux-port-engraving-v1.webp');
+  -webkit-mask-image: linear-gradient(to left, #000 0 70%, rgba(0, 0, 0, 0.54) 84%, transparent 100%);
+  mask-image: linear-gradient(to left, #000 0 70%, rgba(0, 0, 0, 0.54) 84%, transparent 100%);
+}
+
+@media (min-width: 768px) {
+  .discount-section__ornament {
+    display: block;
+  }
+}
+
+html.dark .discount-section__ornament,
+.discount-section--dark .discount-section__ornament {
+  display: none;
 }
 
 .atelier-showcase__halo {

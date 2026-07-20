@@ -51,6 +51,7 @@ Invariants:
 - safe areas iOS respectees;
 - aucun double drawer shell/enrichi visible;
 - aucun saut de galerie lors de l'ouverture d'un produit;
+- la recherche mobile conserve le header, le champ et le menu en place; le focus ouvre le clavier et superpose les suggestions sous le champ sans monter un second ecran;
 - navigation Next native, jamais `setView` ou hash routing;
 - test sur largeur mobile reelle apres changement du shell, du header ou du detail produit.
 

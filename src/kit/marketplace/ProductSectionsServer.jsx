@@ -4,6 +4,9 @@ import GalleryProductCardServer from './GalleryProductCardServer';
 import GalleryFixedSectionsInteractions from './GalleryFixedSectionsInteractions';
 import InstagramFloatingTokensReveal from './InstagramFloatingTokensReveal';
 
+const PRODUCT_GRID_INITIAL_COUNT = 10;
+const PRODUCT_GRID_BATCH_SIZE = 10;
+
 const getPublishedItems = (items) => (
   Array.isArray(items) ? items.filter((item) => item?.status === 'published') : []
 );
@@ -79,17 +82,20 @@ const ProductGridSectionServer = ({
     <section
       id={id}
       className={`gallery-deferred-render ${className}`}
+      data-expandable-product-grid
     >
-      <div className="mb-10 flex items-center justify-between">
+      <div className="mb-10 flex items-center">
         {heading}
-        <Link href="/#gallery-pieces" prefetch={false} className="hidden items-center gap-2 border-b border-transparent font-sans text-[10px] uppercase tracking-widest transition-colors hover:border-current md:flex">
-          Voir plus <ArrowRight size={12} />
-        </Link>
       </div>
 
-      <div className="anim-grid grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-4 xl:grid-cols-5 xl:gap-6">
+      <div id={`${id}-grid`} className="anim-grid grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-4 xl:grid-cols-5 xl:gap-6">
         {items.map((item, index) => (
-          <div key={item.id || index} className="product-card-wrap relative">
+          <div
+            key={item.id || index}
+            className="product-card-wrap relative"
+            data-product-grid-item
+            hidden={index >= PRODUCT_GRID_INITIAL_COUNT}
+          >
             {badgeLabel ? (
               <div className="absolute left-2 top-2 z-10 rounded-sm bg-[#d4e1d9] px-2 py-1 text-[8px] font-bold uppercase tracking-widest text-[#2d4033] dark:bg-[#203126]/92 dark:text-[#c8ddca] md:text-[9px]">
                 {badgeLabel}
@@ -105,20 +111,25 @@ const ProductGridSectionServer = ({
         ))}
       </div>
 
-      <div className="mt-10 flex justify-center md:hidden">
-        <Link
-          href="/#gallery-pieces"
-          prefetch={false}
-          className={`flex items-center gap-2 rounded-full px-8 py-3 font-sans text-[10px] font-bold uppercase tracking-widest transition-colors ${darkMode ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-stone-100 text-stone-800 hover:bg-stone-200'}`}
-        >
-          Voir plus <ArrowRight size={12} />
-        </Link>
-      </div>
+      {items.length > PRODUCT_GRID_INITIAL_COUNT ? (
+        <div className="product-grid-more-wrap mt-10 flex justify-center">
+          <button
+            type="button"
+            aria-controls={`${id}-grid`}
+            aria-expanded="false"
+            data-product-grid-more
+            data-batch-size={PRODUCT_GRID_BATCH_SIZE}
+            className={`flex min-h-11 items-center gap-2 rounded-full px-8 py-3 font-sans text-[10px] font-bold uppercase tracking-widest transition-colors ${darkMode ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-stone-100 text-stone-800 hover:bg-stone-200'}`}
+          >
+            Voir plus <ArrowRight size={12} />
+          </button>
+        </div>
+      ) : null}
     </section>
   );
 };
 
-export const getNewestItems = (items, limit = 10) => (
+export const getNewestItems = (items, limit = Number.POSITIVE_INFINITY) => (
   [...getPublishedItems(items)]
     .sort((a, b) => {
       const orderA = a?.nouveautesOrder !== undefined ? a.nouveautesOrder : 999999;
@@ -957,10 +968,12 @@ const discountCards = [
 ];
 
 export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
-  <section className={`gallery-deferred-render discount-section relative flex items-center overflow-hidden px-3 py-10 sm:px-5 sm:py-12 md:min-h-[690px] md:px-7 md:py-14 lg:min-h-[760px] lg:px-8 lg:py-16 2xl:min-h-[780px] 2xl:px-10 dark:bg-[#0e0d0c] ${darkMode ? 'bg-[#141210]' : 'bg-[#f8f1e6]'}`}>
+  <section className={`gallery-deferred-render discount-section ${darkMode ? 'discount-section--dark' : ''} relative flex items-center overflow-hidden px-3 py-10 sm:px-5 sm:py-12 md:min-h-[690px] md:px-7 md:py-14 lg:min-h-[760px] lg:px-8 lg:py-16 2xl:min-h-[780px] 2xl:px-10 dark:bg-[#0e0d0c] ${darkMode ? 'bg-[#141210]' : 'bg-[#f8f1e6]'}`}>
     <div className={`pointer-events-none absolute inset-0 dark:bg-[radial-gradient(circle_at_76%_32%,rgba(184,132,72,0.13),transparent_31%),radial-gradient(circle_at_20%_72%,rgba(130,148,112,0.09),transparent_34%),linear-gradient(180deg,#0b0a09_0%,#14110f_100%)] ${darkMode ? 'bg-[radial-gradient(circle_at_76%_32%,rgba(184,132,72,0.14),transparent_31%),radial-gradient(circle_at_20%_72%,rgba(130,148,112,0.11),transparent_34%)]' : 'bg-[linear-gradient(112deg,#f3e7d7_0%,#f8f1e6_48%,#efe0cd_100%)]'}`} />
+    <span aria-hidden="true" className="discount-section__ornament discount-section__ornament--notre-dame" />
+    <span aria-hidden="true" className="discount-section__ornament discount-section__ornament--vieux-port" />
 
-    <div className={`discount-shell relative mx-auto w-full max-w-[1480px] overflow-hidden rounded-[26px] p-[1px] shadow-[0_30px_86px_-68px_rgba(37,29,22,0.56),0_10px_30px_-28px_rgba(124,88,55,0.38)] ring-1 dark:bg-[#19140f] dark:ring-[#3a3027]/85 dark:shadow-[0_30px_86px_-72px_rgba(0,0,0,0.96)] ${darkMode ? 'bg-[#19140f] ring-[#3a3027]/85' : 'bg-gradient-to-br from-[#e1d1bd] via-[#fffaf3] to-[#d7c5b2] ring-[#d8c9b6]'}`}>
+    <div className={`discount-shell relative z-[2] mx-auto w-full max-w-[1480px] overflow-hidden rounded-[26px] p-[1px] shadow-[0_30px_86px_-68px_rgba(37,29,22,0.56),0_10px_30px_-28px_rgba(124,88,55,0.38)] ring-1 dark:bg-[#19140f] dark:ring-[#3a3027]/85 dark:shadow-[0_30px_86px_-72px_rgba(0,0,0,0.96)] ${darkMode ? 'bg-[#19140f] ring-[#3a3027]/85' : 'bg-gradient-to-br from-[#e1d1bd] via-[#fffaf3] to-[#d7c5b2] ring-[#d8c9b6]'}`}>
       <div className={`relative overflow-hidden rounded-[25px] p-1.5 dark:bg-[#181511] dark:shadow-[inset_0_1px_0_rgba(216,173,115,0.035)] ${darkMode ? 'bg-[#1d1a16] shadow-[inset_0_1px_0_rgba(216,173,115,0.035)]' : 'bg-[#fffaf3] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]'}`}>
         <div className={`pointer-events-none absolute inset-1.5 rounded-[21px] ring-1 dark:ring-[#d8ad73]/6 ${darkMode ? 'ring-[#d8ad73]/6' : 'ring-[#d9c9b5]'}`} />
         <div className={`relative grid overflow-hidden rounded-[20px] ring-1 lg:grid-cols-[minmax(0,1.02fr)_minmax(370px,0.98fr)] dark:bg-[#181511] dark:ring-[#302820] ${darkMode ? 'bg-[#1d1a16] ring-[#302820]' : 'bg-[#fffdf8] ring-[#e4d7c7]'}`}>

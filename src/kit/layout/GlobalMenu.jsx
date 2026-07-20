@@ -224,13 +224,24 @@ const GlobalMenu = ({
             body.style.touchAction = 'none';
         }
 
-        const getScrollablePanel = (target) => (
-            [(isDesktopMenuViewport ? panelRef.current : mobilePanelRef.current)].find((panel) => (
+        const getScrollablePanel = (target) => {
+            const menuPanel = isDesktopMenuViewport ? panelRef.current : mobilePanelRef.current;
+            const nestedScrollable = target instanceof Element
+                ? target.closest('[data-global-menu-scrollable="true"]')
+                : null;
+
+            if (nestedScrollable && menuPanel?.contains(nestedScrollable)) {
+                return nestedScrollable.scrollHeight > nestedScrollable.clientHeight
+                    ? nestedScrollable
+                    : null;
+            }
+
+            return [menuPanel].find((panel) => (
                 panel
                 && panel.contains(target)
                 && panel.scrollHeight > panel.clientHeight
-            ))
-        );
+            ));
+        };
 
         const canScrollPanel = (target, deltaY) => {
             const panel = getScrollablePanel(target);
@@ -389,13 +400,16 @@ const GlobalMenu = ({
     const isMenuDormant = !isMenuOpen && !isMenuClosing;
     const panelTone = darkMode
         ? 'bg-[#111111] text-stone-100 border-stone-800'
-        : 'bg-[#fffdfb] text-stone-900 border-stone-200';
+        : `${isDesktopMenuViewport ? 'bg-[#fffdfb]' : 'bg-white'} text-stone-900 border-stone-200`;
 
     return (
         <div
             key="global-menu-shell"
             className={`${isMenuInteractive ? 'pointer-events-auto' : 'pointer-events-none'} ${isMenuDormant ? 'opacity-0' : ''} fixed inset-x-0 bottom-0 z-[2000] overflow-hidden`}
-            style={{ top: menuTop }}
+            style={{
+                top: menuTop,
+                '--global-menu-mobile-available-height': `calc(100dvh - ${menuTop}px)`,
+            }}
             role={isMenuInteractive ? 'dialog' : undefined}
             aria-modal={isMenuInteractive ? 'true' : undefined}
             aria-hidden={!isMenuInteractive}

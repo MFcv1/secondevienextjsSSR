@@ -62,6 +62,34 @@ const getInteractionItems = (node) => {
     : parseItems(node);
 };
 
+const setupProductGridExpansion = () => {
+  const onClick = (event) => {
+    const button = event.target.closest('[data-product-grid-more]');
+    if (!button) return;
+
+    const section = button.closest('[data-expandable-product-grid]');
+    if (!section) return;
+
+    const hiddenItems = [...section.querySelectorAll('[data-product-grid-item][hidden]')];
+    const parsedBatchSize = Number.parseInt(button.dataset.batchSize || '', 10);
+    const batchSize = Number.isFinite(parsedBatchSize) && parsedBatchSize > 0
+      ? parsedBatchSize
+      : hiddenItems.length;
+
+    hiddenItems.slice(0, batchSize).forEach((item) => {
+      item.hidden = false;
+    });
+
+    button.setAttribute('aria-expanded', 'true');
+    if (!section.querySelector('[data-product-grid-item][hidden]')) {
+      button.closest('.product-grid-more-wrap')?.setAttribute('hidden', '');
+    }
+  };
+
+  document.addEventListener('click', onClick);
+  return () => document.removeEventListener('click', onClick);
+};
+
 const setupBeforeAfter = () => {
   document.querySelectorAll('[data-before-after-section]').forEach((root) => {
     if (root.dataset.interactionsReady === 'true') return;
@@ -594,6 +622,7 @@ export default function GalleryFixedSectionsInteractions() {
     setupBeforeAfter();
     setupInstagram();
     setupTestimonials();
+    return setupProductGridExpansion();
   }, []);
 
   return null;
