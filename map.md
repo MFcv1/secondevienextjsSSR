@@ -152,7 +152,7 @@ AnalyticsCollectorIsland + AuthProvider anonyme [C]
   -> heartbeat adaptatif + raisons init/route/visible/beacon [C]
   -> initLiveSession/syncSession/beacon + cache borne du hash de jeton [F]
   -> analytics_sessions/{sessionId} avec journey et compteurs de raisons embarques [DB]
-  -> AdminAnalytics: lecture manuelle bornee, checkpoint local, vues parcours/sessions [C]
+  -> AdminAnalytics: historique borne, cache IndexedDB, listener live et frise illustree [C]
   -> UID/IP, courbe, bandeau live cumulatif, visiteurs et parcours [C]
 ```
 
@@ -375,9 +375,7 @@ src/kit/vitrine/
 ```text
 src/kit/admin/
 |-- AdminDashboard.jsx ................ stats, exports et maintenance rapide
-|-- AdminAnalytics.jsx ................ point d'entree minimal vers la vue Data canonique
-|-- AdminAnalyticsOverview.jsx ........ vue d'ensemble devis, checkpoint manuel et agregats client
-|-- AnalyticsWorkspaceViews.jsx ....... vues Parcours et Sessions, agrégats et inspecteur anonymisé
+|-- AdminAnalytics.jsx ................ moteur Data canonique: UID/IP, live, parcours illustres, courbes
 |-- AdminForm.jsx ..................... creation/edition annonces
 |-- AdminItemList.jsx ................. liste publications
 |-- GlobalInventoryView.jsx ........... vue catalogue/ordres

@@ -128,8 +128,8 @@ Contrat du moteur:
 - une reprise exige le meme UID, le bon jeton, une activite de moins d'une heure et une session non admin;
 - une session explicitement fermee ne peut etre reprise que pendant une grace de 15 secondes, afin de tolerer un rechargement immediat sans fusionner un retour plusieurs minutes plus tard;
 - l'admin lit au maximum 5 000 sessions commencees dans la derniere annee;
-- un checkpoint local borne a 1 500 sessions permet de rouvrir la vue sans lecture automatique;
-- les lectures admin sont declenchees explicitement par le bouton d'actualisation; aucune ecoute temps reel n'est ouverte par le panneau Data;
+- un cache IndexedDB de six heures evite une nouvelle lecture complete a chaque ouverture;
+- l'etat live est derive d'une activite de moins de 30 secondes et l'admin ecoute en temps reel les 100 sessions les plus recentes;
 - les erreurs analytics ne bloquent jamais checkout, Auth ou navigation;
 - ne pas stocker plus de donnees personnelles que necessaire.
 
@@ -143,7 +143,7 @@ Exclusion admin:
 - les sessions `type == admin` sont exclues de tous les calculs du panneau Data;
 - l'e-mail proprietaire est lu depuis le secret serveur `SUPER_ADMIN_EMAIL`, jamais code en dur cote client.
 
-Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. Le checkpoint conserve au plus 1 500 sessions afin de borner le stockage navigateur.
+Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. L'architecture haut trafic sera traitee dans une phase distincte demandee par l'utilisateur.
 
 Optimisation de cout locale au 2026-07-17: la cadence visible, le seuil live, le parcours et la securite de reprise restent inchanges. Le cache de hash et l'arbitrage des synchronisations visent uniquement les relectures et appels rapproches observes dans la fenetre Data Access. Leur gain exact doit etre mesure apres deploiement sandbox avec le protocole de [AUDIT_COUTS_FIRESTORE.md](AUDIT_COUTS_FIRESTORE.md).
 
