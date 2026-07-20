@@ -7,7 +7,7 @@ import CategoryControlsIsland from './CategoryControlsIsland';
 import GalleryGridActionsIsland from './GalleryGridActionsIsland';
 import PageBreadcrumb from './PageBreadcrumb';
 import CatalogVersionSyncIsland from './CatalogVersionSyncIsland';
-import ProductCardMediaServer from './ProductCardMediaServer';
+import ProductCardMediaServer, { ProductCardHoverOverlay } from './ProductCardMediaServer';
 import {
   CATEGORY_SORT_OPTIONS,
   buildCategoryHref,
@@ -73,18 +73,7 @@ const CategoryProductCard = ({ item, priority = false }) => {
           imageClassName="product-card-image h-full w-full object-cover transition-transform duration-[800ms] ease-[cubic-bezier(0.23,1,0.32,1)] lg:group-hover:scale-[1.03]"
         />
 
-        <div className="absolute inset-0 hidden items-center justify-center bg-black/0 transition-colors duration-[600ms] ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:bg-black/50 lg:flex">
-          <div className="relative flex flex-col items-center gap-3 px-10 py-7 opacity-0 transition-opacity duration-[600ms] ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:opacity-100">
-            <div className="absolute left-0 top-0 h-3 w-3 translate-x-2 translate-y-2 border-l border-t border-white/40 transition-all duration-[600ms] group-hover:translate-x-0 group-hover:translate-y-0" />
-            <div className="absolute right-0 top-0 h-3 w-3 -translate-x-2 translate-y-2 border-r border-t border-white/40 transition-all duration-[600ms] group-hover:translate-x-0 group-hover:translate-y-0" />
-            <div className="absolute bottom-0 left-0 h-3 w-3 translate-x-2 -translate-y-2 border-b border-l border-white/40 transition-all duration-[600ms] group-hover:translate-x-0 group-hover:translate-y-0" />
-            <div className="absolute bottom-0 right-0 h-3 w-3 -translate-x-2 -translate-y-2 border-b border-r border-white/40 transition-all duration-[600ms] group-hover:translate-x-0 group-hover:translate-y-0" />
-            <span className="translate-y-2 text-[9px] font-black uppercase tracking-[0.4em] text-white transition-transform duration-[600ms] group-hover:translate-y-0">
-              D&eacute;couvrir
-            </span>
-            <div className="h-[1.5px] w-8 origin-center scale-x-0 bg-white/30 transition-transform duration-[800ms] group-hover:scale-x-100" />
-          </div>
-        </div>
+        <ProductCardHoverOverlay />
       </div>
 
       <div className="category-product-card-info flex flex-col gap-1 pt-1 md:flex-row md:items-start md:justify-between md:gap-4 md:pt-4">

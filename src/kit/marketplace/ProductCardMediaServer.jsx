@@ -10,6 +10,21 @@ const getDimensions = (metadata) => {
   return { width, height: Math.max(1, Math.round(width / ratio)) };
 };
 
+export function ProductCardHoverOverlay() {
+  return (
+    <span className="product-card-hover-overlay" aria-hidden="true">
+      <span className="product-card-hover-frame">
+        <span className="product-card-hover-corner product-card-hover-corner--top-left" />
+        <span className="product-card-hover-corner product-card-hover-corner--top-right" />
+        <span className="product-card-hover-corner product-card-hover-corner--bottom-left" />
+        <span className="product-card-hover-corner product-card-hover-corner--bottom-right" />
+        <span className="product-card-hover-label">Découvrir</span>
+        <span className="product-card-hover-rule" />
+      </span>
+    </span>
+  );
+}
+
 export default function ProductCardMediaServer({
   cardImage,
   alt,
