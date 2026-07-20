@@ -1230,21 +1230,51 @@ img {
   border-radius: 12px;
   overflow: hidden;
   contain: paint;
-  background-color: #eee9e2;
+  background: transparent;
 }
 
 .product-card-media-surface {
-  background-color: #eee9e2;
+  position: relative;
+  overflow: hidden;
+  background: transparent;
 }
 
 .product-card-image {
   display: block;
+  position: relative;
+  z-index: 1;
   border-radius: inherit;
   clip-path: none;
-  opacity: 1;
   transform: none;
   backface-visibility: visible;
   -webkit-backface-visibility: visible;
+}
+
+.product-card-image[data-product-image-state="loading"],
+.product-card-image[data-product-image-state="decoding"],
+.product-card-image[data-product-image-state="error"] {
+  opacity: 0;
+}
+
+.product-card-image[data-product-image-state="ready"] {
+  opacity: 1;
+  transition: transform 800ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .product-card-image[data-product-image-state="ready"] {
+    animation: product-card-image-fade-in 360ms cubic-bezier(0.29, 0.65, 0.58, 1) both;
+  }
+}
+
+@keyframes product-card-image-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .category-product-list {
@@ -3331,10 +3361,6 @@ html.dark .discount-section .discount-shell {
 html.dark .discount-industrial-card {
   background:
     linear-gradient(135deg, rgba(123, 84, 43, 0.38), rgba(255,255,255,0.055), rgba(17,15,13,0.96)) !important;
-}
-
-html.dark .product-card-media {
-  background-color: rgba(255,255,255,0.055) !important;
 }
 
 html.dark [data-gallery-wishlist-button] {

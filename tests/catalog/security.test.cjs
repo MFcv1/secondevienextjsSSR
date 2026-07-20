@@ -235,8 +235,13 @@ test('images, categorie, warmup et navigation respectent le contrat unifie', () 
   assert.match(category, /priority=\{index < 3\}/);
   assert.match(gallery, /priority=\{false\}/);
   assert.match(media, /srcSet=\{cardImage\.srcSet/);
-  assert.match(media, /dominantColor/);
-  assert.match(media, /blurDataUrl/);
+  assert.doesNotMatch(media, /dominantColor/);
+  assert.doesNotMatch(media, /blurDataUrl/);
+  assert.match(media, /data-product-media-state="loading"/);
+  assert.match(media, /data-product-image-state="loading"/);
+  assert.match(gridActions, /image\.decode\(\)/);
+  assert.match(gridActions, /setProductImageState\(image, 'ready'\)/);
+  assert.match(gridActions, /document\.addEventListener\('load', onProductImageLoad, true\)/);
   assert.doesNotMatch(media, /\.full\b/);
   assert.doesNotMatch(`${productMediaFlow}\n${imageUtils}`, /deferImagesUntilCalm|data-image-loaded|data-image-cold|data-cold-scroll-deferred/);
   assert.doesNotMatch(marketplace, /data-cold-scroll-deferred|deferred-section-(?:placeholder|reveal)|footer-delivery-image-in/);

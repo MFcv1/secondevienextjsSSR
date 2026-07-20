@@ -23,20 +23,12 @@ export default function ProductCardMediaServer({
   if (!cardImage?.src) return null;
   const metadata = cardImage.metadata || null;
   const dimensions = getDimensions(metadata);
-  const placeholderStyle = {
-    backgroundColor: metadata?.dominantColor || '#eee9e2',
-    ...(metadata?.blurDataUrl ? {
-      backgroundImage: `url("${metadata.blurDataUrl}")`,
-      backgroundPosition: 'center',
-      backgroundSize: 'cover',
-    } : {}),
-  };
 
   return (
     <span
       className="product-card-media-surface block h-full w-full"
-      style={placeholderStyle}
       data-product-media-warmup={warmupSrc || undefined}
+      data-product-media-state="loading"
     >
       <picture className={pictureClassName}>
         {cardImage.desktopSrcSet ? (
@@ -51,6 +43,7 @@ export default function ProductCardMediaServer({
           height={dimensions.height}
           draggable={draggable}
           data-real-image="true"
+          data-product-image-state="loading"
           className={imageClassName}
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"

@@ -15,6 +15,30 @@ import {
 
 const prefetchedRoutes = new Set();
 const SCROLL_HOVER_WARMUP_COOLDOWN_MS = 420;
+const PRODUCT_CARD_IMAGE_SELECTOR = 'img[data-product-image-state]';
+
+const getProductMediaSurface = (image) => image.closest?.('[data-product-media-state]');
+
+const setProductImageState = (image, state) => {
+  if (!image?.isConnected) return;
+  image.dataset.productImageState = state;
+  const surface = getProductMediaSurface(image);
+  if (surface) surface.dataset.productMediaState = state;
+};
+
+const revealDecodedProductImage = (image) => {
+  if (!image || image.dataset.productImageState === 'ready' || image.dataset.productImageState === 'decoding') return;
+  if (!image.complete || image.naturalWidth <= 0) return;
+
+  image.dataset.productImageState = 'decoding';
+  const decode = typeof image.decode === 'function' ? image.decode() : Promise.resolve();
+  Promise.resolve(decode)
+    .catch(() => undefined)
+    .then(() => {
+      if (image.complete && image.naturalWidth > 0) setProductImageState(image, 'ready');
+      else setProductImageState(image, 'loading');
+    });
+};
 
 const shouldSkipSoftWarmup = () => {
   if (typeof navigator === 'undefined') return false;
@@ -71,6 +95,15 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
 
   useEffect(() => {
     syncWishlistButtons();
+
+    const onProductImageLoad = (event) => {
+      if (event.target?.matches?.(PRODUCT_CARD_IMAGE_SELECTOR)) revealDecodedProductImage(event.target);
+    };
+    const onProductImageError = (event) => {
+      if (event.target?.matches?.(PRODUCT_CARD_IMAGE_SELECTOR)) setProductImageState(event.target, 'error');
+    };
+
+    document.querySelectorAll(PRODUCT_CARD_IMAGE_SELECTOR).forEach(revealDecodedProductImage);
 
     const markScrollIntent = () => {
       lastScrollIntentAtRef.current = Date.now();
@@ -138,6 +171,8 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     authUserRef.current = getCurrentWishlistUser();
 
     document.addEventListener('click', onClick);
+    document.addEventListener('load', onProductImageLoad, true);
+    document.addEventListener('error', onProductImageError, true);
     document.addEventListener('pointerover', onPointerOver, { passive: true });
     document.addEventListener('pointerdown', onPointerDown, { passive: true });
     document.addEventListener('touchstart', onPointerDown, { passive: true });
@@ -152,6 +187,8 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
 
     return () => {
       document.removeEventListener('click', onClick);
+      document.removeEventListener('load', onProductImageLoad, true);
+      document.removeEventListener('error', onProductImageError, true);
       document.removeEventListener('pointerover', onPointerOver);
       document.removeEventListener('pointerdown', onPointerDown);
       document.removeEventListener('touchstart', onPointerDown);

@@ -1,6 +1,6 @@
 # Performance et budgets
 
-Derniere mise a jour: 2026-07-19
+Derniere mise a jour: 2026-07-20
 Statut: `REFERENCE_ACTIVE - DETTES MESUREES`
 
 ## 1. Objectif
@@ -23,6 +23,7 @@ La performance doit ameliorer le temps reel et la perception sans supprimer l'id
 - plan d'impact immutable et revalidation des seuls chemins touches, avec mode `full` borne pour rollback/migration/depassement;
 - endpoint minimal `/api/catalog/version` ETag/304 et signal Firestore d'un document uniquement dans les onglets visibles, sans polling;
 - cartes galerie/categorie unifiees, une seule representation DOM par produit categorie et un seul moteur warmup concurrence 2;
+- reveal des cartes pilote par delegation dans l'ile existante: zone transparente et image invisible jusqu'au decodage natif, puis fade-in court, sans blur, placeholder, shimmer continu ni composant client par carte;
 - `Petits Prix` conserve toujours `src/srcSet`; aucun faux fade blanc ni activation image 240/92 ms;
 - aucune lecture catalogue Firestore visiteur ni micro-cache `public/meta`;
 - heartbeat analytics adaptatif et cache serveur borne du hash de session, sans ralentir le live visible;

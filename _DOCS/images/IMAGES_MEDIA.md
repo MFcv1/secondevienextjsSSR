@@ -1,6 +1,6 @@
 # Images produit et medias
 
-Derniere mise a jour: 2026-07-19
+Derniere mise a jour: 2026-07-20
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Architecture
@@ -56,7 +56,7 @@ Principes:
 - zoom/lightbox: variante plus grande seulement a l'interaction;
 - metadata et ratio connus avant chargement pour eviter le CLS;
 - toutes les images differees conservent un `src` reel et le lazy loading natif; l'ancien activateur `data-cold-scroll-deferred-*` n'existe plus, y compris dans le footer;
-- couleur dominante ou blur comme ambiance derriere l'image nette, sans fade obligatoire ni fond blanc artificiel;
+- cartes galerie/categorie: aucun blur ni placeholder visible; la zone reste transparente et laisse voir le fond normal du site, l'image est masquee jusqu'a `img.decode()`, puis apparait nette avec un fade-in de 360 ms;
 - precharger uniquement l'image principale reellement probable.
 
 Politique courante:
@@ -162,4 +162,4 @@ npm run perf:product-direct
 
 Les audits froids et navigateur sont des validations longues: les lancer seulement pour une passe images/performance ou sur demande explicite.
 
-La recette sandbox du 2026-07-19 a confirme l'absence de variante `full` avant zoom, l'absence de nouvelle requete de la variante `medium` deja active, le chargement de la carte visible puis de `detailFast`, et zero octet retransfere pour les variantes chaudes observees apres navigation. L'audit produit a aussi verifie qu'aucun warmup restant de cartes non choisies ne demarre apres la pression utilisateur.
+La recette sandbox du 2026-07-19 a confirme l'absence de variante `full` avant zoom, l'absence de nouvelle requete de la variante `medium` deja active, le chargement de la carte visible puis de `detailFast`, et zero octet retransfere pour les variantes chaudes observees apres navigation. L'audit produit a aussi verifie qu'aucun warmup restant de cartes non choisies ne demarre apres la pression utilisateur. Le reveal net ajoute le 2026-07-20 reprend le fade-in historique de `Petits Prix`, mais il est pilote par l'ile d'actions deja partagee par la galerie et les categories: aucun placeholder, composant client ou listener individuel n'est ajoute par carte.
