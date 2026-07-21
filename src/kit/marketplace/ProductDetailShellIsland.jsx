@@ -75,6 +75,8 @@ const IMAGE_SWITCH_DECODE_BUDGET_MS = 500;
 const IMAGE_PREWARM_STEP_MS = 140;
 const IMAGE_PREWARM_MAX = 11;
 const PRODUCT_SWIPE_EXIT_HINT_STORAGE_KEY = 'secondevie:product-swipe-exit-hint:v2';
+const PRODUCT_RETURN_STORAGE_KEY = 'secondevie:product-return:v1';
+const PRODUCT_RETURN_PENDING_STORAGE_KEY = 'secondevie:product-return-pending:v1';
 
 const isConstrainedConnection = () => {
   if (typeof navigator === 'undefined') return false;
@@ -606,37 +608,72 @@ export default function ProductDetailShellIsland({
     }
   }, []);
 
-  const restoreUrlFromSession = useCallback(() => {
+  const getReturnTargetFromSession = useCallback(() => {
     try {
-      const raw = window.sessionStorage.getItem('secondevie:product-return:v1');
-      if (!raw) return '';
+      const raw = window.sessionStorage.getItem(PRODUCT_RETURN_STORAGE_KEY);
+      if (!raw) return null;
       const saved = JSON.parse(raw);
-      if (!saved?.href || Date.now() - Number(saved.savedAt || 0) > 30 * 60 * 1000) return '';
+      if (!saved?.href || Date.now() - Number(saved.savedAt || 0) > 30 * 60 * 1000) return null;
       const target = new URL(saved.href, window.location.origin);
-      if (target.origin !== window.location.origin) return '';
-      if (target.pathname !== '/' && target.pathname !== '/galerie' && !target.pathname.startsWith('/categorie/')) return '';
-      return `${target.pathname}${target.search}${target.hash}`;
+      if (target.origin !== window.location.origin) return null;
+      if (target.pathname !== '/' && target.pathname !== '/galerie' && !target.pathname.startsWith('/categorie/')) return null;
+
+      const sourceHref = `${target.pathname}${target.search}${target.hash}`;
+      const savedProduct = saved.productHref
+        ? new URL(saved.productHref, window.location.origin)
+        : null;
+      const currentProductHref = `${window.location.pathname}${window.location.search}`;
+      const matchesCurrentProduct = Boolean(
+        savedProduct
+        && savedProduct.origin === window.location.origin
+        && `${savedProduct.pathname}${savedProduct.search}` === currentProductHref
+      );
+
+      return {
+        href: sourceHref,
+        canUseHistory: matchesCurrentProduct && window.history.length > 1,
+      };
     } catch {
-      return '';
+      return null;
     }
   }, []);
+
+  useEffect(() => {
+    const returnTarget = getReturnTargetFromSession();
+    if (!returnTarget?.canUseHistory) return undefined;
+
+    const markNativeHistoryReturn = () => {
+      try {
+        window.sessionStorage.setItem(PRODUCT_RETURN_PENDING_STORAGE_KEY, returnTarget.href);
+      } catch {
+        // Native history remains the primary return path without storage.
+      }
+    };
+
+    window.addEventListener('popstate', markNativeHistoryReturn);
+    return () => window.removeEventListener('popstate', markNativeHistoryReturn);
+  }, [getReturnTargetFromSession]);
 
   const navigateToGalleryTarget = useCallback(() => {
     if (typeof window === 'undefined') return;
     if (hasNavigatedToGalleryRef.current) return;
 
     hasNavigatedToGalleryRef.current = true;
-    const targetHref = restoreUrlFromSession() || '/';
+    const returnTarget = getReturnTargetFromSession();
+    const targetHref = returnTarget?.href || '/';
     try {
-      const target = new URL(targetHref, window.location.origin);
-      if (target.pathname === '/' || target.pathname === '/galerie') {
-        window.sessionStorage.setItem('secondevie:open-gallery-on-arrival', 'true');
-      } else {
-        window.sessionStorage.removeItem('secondevie:open-gallery-on-arrival');
-      }
-    } catch {}
+      window.sessionStorage.setItem(PRODUCT_RETURN_PENDING_STORAGE_KEY, targetHref);
+    } catch {
+      // Navigation still proceeds when session storage is unavailable.
+    }
+
+    if (returnTarget?.canUseHistory) {
+      router.back();
+      return;
+    }
+
     router.replace(targetHref);
-  }, [restoreUrlFromSession, router]);
+  }, [getReturnTargetFromSession, router]);
 
   const applyLayeredGalleryExit = useCallback((progress) => {
     const p = Math.max(0, Math.min(1, progress));

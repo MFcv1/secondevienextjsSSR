@@ -101,6 +101,8 @@ L'interface de connexion reste commune. Les droits et l'assurance forte sont imp
 
 Les surfaces galerie, categorie, produit et recherche exposent leur `aggregateSha256`. `CatalogVersionSyncIsland` ecoute le seul document `sys_catalog_live/current` quand l'onglet est visible, controle la version au retour visible, au `pageshow` et apres un changement de pathname, puis effectue au plus un `router.refresh()` par version pertinente. Le refresh Next preserve la navigation document, tandis que les caches de warmup/prefetch produit sont reinitialises sur changement de version. L'absence du signal ne doit jamais bloquer ISR, le retour arriere ou une destination prefetchee.
 
+Depuis une fiche produit, la croix, le geste de fermeture mobile et le retour natif du navigateur reprennent l'entree d'historique source lorsqu'elle correspond au produit ouvert. `ProductReturnRestoreIsland` memorise puis restaure une seule fois la position du conteneur mobile de la galerie ou le scroll document d'une categorie, y compris avec ses parametres de filtre et de tri. Une fiche ouverte directement conserve un fallback vers la source valide memorisee, puis vers `/`.
+
 ## 7. Accessibilite essentielle
 
 Chaque overlay ou modale doit fournir:

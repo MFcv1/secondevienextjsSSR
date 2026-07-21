@@ -4878,24 +4878,14 @@ html.dark .discount-section__ornament,
 }
 
 @media (max-width: 767px) {
-  .atelier-showcase {
-    --atelier-ornament-size: 15rem;
-    --atelier-ornament-opacity: 0.08;
-    --atelier-halo-opacity: 0.64;
+  .atelier-showcase.before-after-premium .before-after-premium-atmosphere {
+    background: none;
   }
 
-  .atelier-showcase__halo {
-    top: 13%;
-    bottom: 13%;
-    width: 110%;
-    filter: blur(7px);
-  }
-
-  .atelier-showcase__ornament { bottom: -1.8rem; }
-  .atelier-showcase__ornament--left { left: -6.5rem; }
-  .atelier-showcase__ornament--right { right: -6.5rem; }
-
-  .atelier-showcase__arch {
-    opacity: 0.38;
+  .atelier-showcase::before,
+  .atelier-showcase__halo,
+  .atelier-showcase__arch,
+  .atelier-showcase__ornament {
+    display: none;
   }
 }

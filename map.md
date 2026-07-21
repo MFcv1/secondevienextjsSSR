@@ -307,6 +307,7 @@ src/kit/marketplace/
 |-- ProductDetailShellIsland.jsx ...... galerie/detail interactif
 |-- ProductDetailActionsIsland.jsx .... panier/wishlist/devis
 |-- ProductDetailLightboxIsland.jsx ... zoom medias
+|-- ProductReturnRestoreIsland.jsx .... retour produit vers position galerie/categorie
 |-- PageBreadcrumb.jsx ................ fil d'Ariane
 |-- SearchSuggestIsland.jsx ........... suggestions header
 |-- SearchResultsIsland.jsx ........... resultats page
