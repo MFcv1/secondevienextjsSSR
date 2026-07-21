@@ -4,6 +4,165 @@ import { useEffect } from 'react';
 
 const wrapIndex = (index, count) => (index + count) % count;
 
+const setupRichSectionsPrewarm = () => {
+  const mobileScrollRoot = window.matchMedia('(max-width: 1023px)').matches
+    ? document.getElementById('marketplaceGalleryScroll')
+    : null;
+  const scrollTarget = mobileScrollRoot || window;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const beforeAfterSection = document.querySelector('.before-after-premium');
+  const instagramSection = document.querySelector('[data-instagram-carousel]');
+  const testimonialsSection = document.querySelector('[data-testimonials-carousel]');
+  const visibleLayout = window.matchMedia('(min-width: 1024px)').matches ? 'desktop' : 'mobile';
+  const tasks = [];
+
+  document.querySelectorAll('.gallery-deferred-render').forEach((section) => {
+    tasks.push(() => {
+      section.dataset.cvPrerendered = 'true';
+    });
+  });
+
+  const warmDecorativeBackground = (element) => {
+    const style = window.getComputedStyle(element);
+    if (style.display === 'none') return;
+    const match = /url\("?([^")]+)"?\)/.exec(style.backgroundImage || '');
+    if (!match?.[1]) return;
+    const image = new Image();
+    image.decoding = 'async';
+    image.fetchPriority = 'low';
+    image.src = match[1];
+    if (typeof image.decode === 'function') void image.decode().catch(() => {});
+  };
+
+  document.querySelectorAll('.atelier-showcase__ornament, .discount-section__ornament').forEach((element) => {
+    tasks.push(() => warmDecorativeBackground(element));
+  });
+
+  const warmImage = (image) => {
+    if (!image || !(image.currentSrc || image.getAttribute('src'))) return;
+    image.fetchPriority = 'low';
+    image.loading = 'eager';
+    image.dataset.galleryPrewarmRequested = 'true';
+    if (typeof image.decode !== 'function') return;
+    void image.decode().then(() => {
+      image.dataset.galleryPrewarmed = 'true';
+      if (image.hasAttribute('data-insta-img')) image.dataset.instaDecoded = 'true';
+    }).catch(() => {
+      // The normal image request remains the fallback if decoding is interrupted.
+    });
+  };
+
+  if (beforeAfterSection) {
+    if (!reduceMotion) {
+      tasks.push(() => {
+        if (beforeAfterSection.dataset.baRevealed !== 'true') {
+          beforeAfterSection.dataset.baLayerPrepared = 'true';
+        }
+      });
+    }
+    beforeAfterSection.querySelectorAll('[data-ba-after-img], [data-ba-before-img]').forEach((image) => {
+      tasks.push(() => warmImage(image));
+    });
+  }
+
+  if (instagramSection) {
+    instagramSection
+      .querySelectorAll('[data-insta-card]')
+      .forEach((card) => {
+        const index = Number(card.dataset.instaCard || 0);
+        if (index > 2) return;
+        tasks.push(() => {
+          if (instagramSection.dataset.instaHasTransitioned !== 'true') {
+            card.dataset.instaPrepared = 'true';
+          }
+          if (card.dataset.instaLayout === visibleLayout) {
+            warmImage(card.querySelector('img[data-insta-img]'));
+          }
+        });
+      });
+  }
+
+  if (testimonialsSection) {
+    const cards = Array.from(testimonialsSection.querySelectorAll('[data-testimonial-card]'))
+      .filter((card) => Number(card.dataset.testimonialCard || 0) <= 2);
+    cards.forEach((card) => {
+      tasks.push(() => {
+        if (testimonialsSection.dataset.testimonialsPrepared === 'true') return;
+        card.dataset.testimonialPrepared = 'true';
+      });
+    });
+    tasks.push(() => {
+      testimonialsSection.dataset.testimonialsLayersPrepared = 'true';
+    });
+  }
+
+  if (!tasks.length) return () => {};
+
+  let disposed = false;
+  let scrolling = false;
+  let idleHandle = null;
+  let fallbackHandle = null;
+  let settleHandle = null;
+
+  const cancelScheduledTask = () => {
+    if (idleHandle !== null && 'cancelIdleCallback' in window) {
+      window.cancelIdleCallback(idleHandle);
+    }
+    if (fallbackHandle !== null) window.clearTimeout(fallbackHandle);
+    idleHandle = null;
+    fallbackHandle = null;
+  };
+
+  const scheduleNextTask = () => {
+    if (disposed || scrolling || !tasks.length || idleHandle !== null || fallbackHandle !== null) return;
+    const runNextTask = (deadline) => {
+      idleHandle = null;
+      fallbackHandle = null;
+      if (disposed || scrolling || !tasks.length) return;
+      if (deadline && !deadline.didTimeout && deadline.timeRemaining() < 4) {
+        scheduleNextTask();
+        return;
+      }
+      tasks.shift()?.();
+      scheduleNextTask();
+    };
+
+    if ('requestIdleCallback' in window) {
+      idleHandle = window.requestIdleCallback(runNextTask, { timeout: 1500 });
+      return;
+    }
+    fallbackHandle = window.setTimeout(runNextTask, 96);
+  };
+
+  const resumeAfterScroll = (delay) => {
+    if (settleHandle !== null) window.clearTimeout(settleHandle);
+    settleHandle = window.setTimeout(() => {
+      settleHandle = null;
+      scrolling = false;
+      scheduleNextTask();
+    }, delay);
+  };
+
+  const onScroll = () => {
+    scrolling = true;
+    cancelScheduledTask();
+    resumeAfterScroll(180);
+  };
+  const onScrollEnd = () => resumeAfterScroll(48);
+
+  scrollTarget.addEventListener('scroll', onScroll, { passive: true });
+  scrollTarget.addEventListener('scrollend', onScrollEnd, { passive: true });
+  scheduleNextTask();
+
+  return () => {
+    disposed = true;
+    cancelScheduledTask();
+    if (settleHandle !== null) window.clearTimeout(settleHandle);
+    scrollTarget.removeEventListener('scroll', onScroll);
+    scrollTarget.removeEventListener('scrollend', onScrollEnd);
+  };
+};
+
 const parseItems = (node) => {
   try {
     const parsed = JSON.parse(node.dataset.items || node.dataset.projects || '[]');
@@ -115,6 +274,7 @@ const setupBeforeAfter = () => {
     const section = root.closest('.before-after-premium');
     const projectCopy = root.querySelector('[data-ba-project-copy]');
     const projectActions = root.querySelector('[data-ba-project-actions]');
+    const premiumVisual = section?.querySelector('.before-after-premium-visual');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let projectAnimations = [];
     let touchGesture = null;
@@ -123,7 +283,14 @@ const setupBeforeAfter = () => {
       section.dataset.baMotionReady = 'true';
       if (reduceMotion || !('IntersectionObserver' in window)) {
         section.dataset.baRevealed = 'true';
+        section.dataset.baLayerPrepared = 'false';
       } else {
+        const releasePreparedVisualLayer = (event) => {
+          if (event.target !== premiumVisual) return;
+          section.dataset.baLayerPrepared = 'false';
+          premiumVisual.removeEventListener('transitionend', releasePreparedVisualLayer);
+        };
+        premiumVisual?.addEventListener('transitionend', releasePreparedVisualLayer);
         const revealObserver = new IntersectionObserver(
           ([entry]) => {
             if (!entry?.isIntersecting) return;
@@ -353,6 +520,7 @@ const setupInstagram = () => {
       animateProgress = sectionVisible && !manuallyPaused,
       transitioning = false,
     } = {}) => {
+      if (transitioning) root.dataset.instaHasTransitioned = 'true';
       const visibleLayout = getVisibleLayout();
       root.querySelectorAll('[data-insta-card]').forEach((card) => {
         const index = Number(card.dataset.instaCard || 0);
@@ -365,6 +533,7 @@ const setupInstagram = () => {
           card.dataset.instaTransitioning = 'true';
           const releaseLayer = () => {
             card.dataset.instaTransitioning = 'false';
+            card.dataset.instaPrepared = 'false';
           };
           card.addEventListener('transitionend', releaseLayer, { once: true });
           window.setTimeout(releaseLayer, 650);
@@ -479,8 +648,9 @@ const setupTestimonials = () => {
     let activeIndex = 1 % items.length;
 
     const prepareRenderingLayers = () => {
-      if (root.dataset.testimonialsPrepared === 'true') return;
       root.dataset.testimonialsPrepared = 'true';
+      if (root.dataset.testimonialsLayersPrepared === 'true') return;
+      root.dataset.testimonialsLayersPrepared = 'true';
 
       const visibleLayout = window.matchMedia('(min-width: 1024px)').matches ? 'desktop' : 'mobile';
       const cards = Array.from(root.querySelectorAll(`[data-testimonial-card][data-testimonial-layout="${visibleLayout}"]`))
@@ -622,7 +792,12 @@ export default function GalleryFixedSectionsInteractions() {
     setupBeforeAfter();
     setupInstagram();
     setupTestimonials();
-    return setupProductGridExpansion();
+    const cleanupPrewarm = setupRichSectionsPrewarm();
+    const cleanupProductGrid = setupProductGridExpansion();
+    return () => {
+      cleanupPrewarm();
+      cleanupProductGrid();
+    };
   }, []);
 
   return null;

@@ -156,10 +156,7 @@ functions/src/catalog/mediaGarbageCollection.js
 npm run images:audit
 npm run perf:product-images
 npm run perf:product-images:cold
-npm run perf:gallery-direct
 npm run perf:product-direct
 ```
 
 Les audits froids et navigateur sont des validations longues: les lancer seulement pour une passe images/performance ou sur demande explicite.
-
-La recette sandbox du 2026-07-19 a confirme l'absence de variante `full` avant zoom, l'absence de nouvelle requete de la variante `medium` deja active, le chargement de la carte visible puis de `detailFast`, et zero octet retransfere pour les variantes chaudes observees apres navigation. L'audit produit a aussi verifie qu'aucun warmup restant de cartes non choisies ne demarre apres la pression utilisateur. Le reveal net ajoute le 2026-07-20 reprend le fade-in historique de `Petits Prix`, mais il est pilote par l'ile d'actions deja partagee par la galerie et les categories: aucun placeholder, composant client ou listener individuel n'est ajoute par carte.

@@ -61,7 +61,6 @@ Une contradiction entre code et documentation doit etre signalee et corrigee dan
 | securite | rules fortes, AAL2 admin, secrets serveur; App Check prod encore differe |
 | infrastructure | App Hosting sandbox actif; rail production absent |
 | e-mail | Gmail actif pour demo; Resend code et secret prepare, DNS final manquant |
-| performance | architecture SSR acquise; budget CSS/JS et statistiques prod differes |
 | IA devis | conception uniquement, aucune integration active |
 | legal | brouillon CGV/retours non publiable avant validation juridique |
 
@@ -101,7 +100,6 @@ Ne pas convertir Node 24 local en nouvelle baseline sans migration dediee. Ne ja
 | commerce/Stripe | [COMMERCE_STRIPE.md](_DOCS/commerce/COMMERCE_STRIPE.md) | commerce client/Functions/admin | preprod |
 | back-office | [BACKOFFICE.md](_DOCS/admin/BACKOFFICE.md) | AdminAppIsland, `src/kit/admin` | preprod |
 | infrastructure | [INFRASTRUCTURE.md](_DOCS/infra/INFRASTRUCTURE.md) | Firebase/App Hosting/config/env | sandbox actif |
-| performance | [PERFORMANCE.md](_DOCS/perf/PERFORMANCE.md) | scripts perf, iles, cache/images | dette controlee |
 | donnees/analytics | [DONNEES_ANALYTICS.md](_DOCS/data/DONNEES_ANALYTICS.md) + [AUDIT_COUTS_FIRESTORE.md](_DOCS/data/AUDIT_COUTS_FIRESTORE.md) | Firestore, UID/IP, sessions live, couts et migrations | moteur Tous a Table adapte, P1 couts public/analytics implemente, catalogue post-cutover mesure a zero lecture Firestore publique |
 | exploitation | [EXPLOITATION.md](_DOCS/operations/EXPLOITATION.md) | commandes, deploy, rollback, backlog | actif |
 | qualite/tests | [QUALITE_TESTS.md](_DOCS/quality/QUALITE_TESTS.md) | CI, tests, scripts | actif |
@@ -268,7 +266,6 @@ npm run seo:surface
 npm run next:routes
 npm run mobile:contract
 npm run test:auth
-npm run perf:gallery-direct
 npm run perf:product-direct
 npm run perf:category-direct
 npm run perf:about-direct

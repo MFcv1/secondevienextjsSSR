@@ -361,7 +361,7 @@ const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projec
 
 export const BeforeAfterSectionServer = ({ darkMode = false, projects = restorationProjects } = {}) => {
   return (
-    <section className={`atelier-showcase gallery-deferred-render before-after-industrial before-after-premium ${darkMode ? 'before-after-premium--dark' : ''} relative flex w-full items-center overflow-hidden px-3 py-10 sm:px-5 sm:py-12 md:min-h-[690px] md:px-7 md:py-14 lg:min-h-[760px] lg:px-8 lg:py-16 2xl:min-h-[780px] 2xl:px-10 dark:bg-[#0e0d0c] ${darkMode ? 'bg-[#141210]' : 'bg-[#f8f1e6]'}`}>
+    <section className={`atelier-showcase before-after-industrial before-after-premium ${darkMode ? 'before-after-premium--dark' : ''} relative flex w-full items-center overflow-hidden px-3 py-10 sm:px-5 sm:py-12 md:min-h-[690px] md:px-7 md:py-14 lg:min-h-[760px] lg:px-8 lg:py-16 2xl:min-h-[780px] 2xl:px-10 dark:bg-[#0e0d0c] ${darkMode ? 'bg-[#141210]' : 'bg-[#f8f1e6]'}`}>
       <div className="before-after-premium-atmosphere pointer-events-none absolute inset-0" aria-hidden="true" />
       <div className="atelier-showcase__halo" aria-hidden="true" />
       <svg
@@ -511,7 +511,7 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
     data-instagram-carousel
     data-item-count={posts.length}
     data-instagram-input-active="false"
-    className="gallery-deferred-render instagram-carousel-section relative isolate overflow-hidden px-0 pb-[64px] pt-[38px] md:px-6 md:py-[72px] lg:min-h-[690px] lg:px-[5vw] lg:py-[78px] xl:py-[86px]"
+    className="instagram-carousel-section relative isolate overflow-hidden px-0 pb-[64px] pt-[38px] md:px-6 md:py-[72px] lg:min-h-[690px] lg:px-[5vw] lg:py-[78px] xl:py-[86px]"
   >
     <div
       className={`instagram-floating-field ${darkMode ? 'instagram-floating-field--dark' : ''}`}
@@ -893,7 +893,7 @@ const TestimonialsCarouselPlaceholder = ({ darkMode = false } = {}) => (
     data-item-count={testimonials.length}
     data-testimonials-prepared="false"
     data-testimonials-stars-active="false"
-    className={`gallery-deferred-render customer-testimonials-section relative z-20 min-h-[520px] w-full overflow-hidden dark:bg-[#0b0a09] dark:text-[#f8f1e8] lg:min-h-[828px] ${
+    className={`customer-testimonials-section relative z-20 min-h-[520px] w-full overflow-hidden dark:bg-[#0b0a09] dark:text-[#f8f1e8] lg:min-h-[828px] ${
       darkMode ? 'bg-[#0b0a09] text-[#f8f1e8]' : 'bg-white text-[#242221]'
     }`}
   >

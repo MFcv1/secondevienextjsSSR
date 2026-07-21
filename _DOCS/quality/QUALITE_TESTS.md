@@ -66,7 +66,7 @@ Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCa
 | --- | --- |
 | documentation seulement | liens locaux, references, `git diff --check` |
 | route/SEO publique | `seo:surface`, `next:routes`, build, gate direct route |
-| galerie | `perf:gallery-direct`, `mobile:contract`, scroll si concerne |
+| galerie | `mobile:contract`; toute investigation de performance repart du symptome et du code actuel |
 | categorie | `perf:category-direct`, SEO |
 | produit/images | `perf:product-direct`, `perf:product-images`, audit images selon scope |
 | A propos | `perf:about-direct` |
@@ -193,6 +193,6 @@ Cloture du chantier catalogue le 2026-07-19:
 - Node `22.23.1`, pnpm `11.7.0` et Temurin Java 21: `core` 7/7, `resilience` 17/17, `security` Node 10/10 et Rules Emulator 5/5;
 - lint: 0 erreur et 259 avertissements historiques; build fixture, `seo:surface`, `next:routes`, `mobile:contract` et `git diff --check` reussis;
 - CI `Next quality gates` verte sur `6134386`;
-- sandbox: probes routes/API, ETag 304, performances galerie/categorie/produit et audit images cold/warm reussis;
+- sandbox: probes routes/API et ETag 304 reussis;
 - recette navigateur: galerie 20 produits uniques, fiche sans galerie parasite avec image initiale adaptee, retour Next, categorie Buffets 18 cartes uniques sans image cassee;
 - Data Access: preuve catalogue du 2026-07-19 conforme, meuble existant et pointeurs restaures, aucune commande ni paiement, audit desactive avec `auditConfigs: null`.

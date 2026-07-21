@@ -550,17 +550,15 @@ check-product-ssr.mjs
 verify-analytics-reliability.mjs
 ```
 
-### Audits performance
+### Audits techniques hors galerie
 
 ```text
-audit-gallery-direct.mjs
 audit-category-direct.mjs
 audit-product-page-direct.mjs
 audit-about-direct.mjs
 audit-quote-direct.mjs
 audit-desktop-global-menu.mjs
 audit-mobile-global-menu.mjs
-audit-gallery-scroll-lag.mjs
 audit-product-detail-images*.mjs
 benchmark-auth-ui.mjs
 ```
@@ -610,7 +608,6 @@ tests/catalog/emulator/*.test.cjs
 | paiement/refund | `COMMERCE_STRIPE.md` | commerce client/Functions/admin | E2E sandbox explicite |
 | admin | `BACKOFFICE.md` | AdminAppIsland, tabs, Functions | smoke tabs + action cible |
 | infra | `INFRASTRUCTURE.md` | yaml/json/env/runtime | audits read-only + build |
-| performance | `PERFORMANCE.md` | route et bundle responsables | gate identique avant/apres |
 | donnees | `DONNEES_ANALYTICS.md` + `AUDIT_COUTS_FIRESTORE.md` | rules/indexes/scripts/Functions | dry-run/comptage/rollback + mesure avant/apres |
 
 ## 13. Dossiers generes ou non canoniques

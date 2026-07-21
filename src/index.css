@@ -1641,6 +1641,15 @@ html.dark .gallery-seo-proof-item {
 }
 
 /*
+ * The prewarm queue releases each deferred chapter during idle time so its
+ * one-shot layout/paint cost never lands inside a scroll frame.
+ */
+.gallery-deferred-render[data-cv-prerendered='true'] {
+  content-visibility: visible;
+  contain-intrinsic-size: none;
+}
+
+/*
  * Chrome can keep the newsletter's intrinsic placeholder height while its
  * email field has focus and the virtual keyboard resizes the gallery's
  * internal scroll viewport. Render this single section normally for the
@@ -3554,6 +3563,10 @@ html.dark .customer-testimonial-card {
   }
 }
 
+[data-insta-prepared='true'] {
+  will-change: transform, opacity;
+}
+
 [data-insta-transitioning='true'],
 [data-testimonial-prepared='true'],
 [data-testimonial-transitioning='true'] {
@@ -4478,6 +4491,11 @@ html.dark .before-after-project-nav,
 
 .before-after-premium[data-ba-motion-ready='true'] .before-after-premium-visual {
   transform: translate3d(14px, 0, 0) scale(0.992);
+}
+
+.before-after-premium[data-ba-layer-prepared='true'] .before-after-premium-visual {
+  backface-visibility: hidden;
+  will-change: opacity, transform;
 }
 
 .before-after-premium[data-ba-revealed='true'] .before-after-title-line,

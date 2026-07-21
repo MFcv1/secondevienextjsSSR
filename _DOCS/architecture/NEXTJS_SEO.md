@@ -152,7 +152,6 @@ npm run build
 Ajouter selon les routes touchees:
 
 ```bash
-npm run perf:gallery-direct
 npm run perf:category-direct
 npm run perf:product-direct
 npm run perf:about-direct
