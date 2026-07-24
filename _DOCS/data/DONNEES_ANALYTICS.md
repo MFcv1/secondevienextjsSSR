@@ -1,6 +1,6 @@
 # Donnees, Firestore et analytics
 
-Derniere mise a jour: 2026-07-17
+Derniere mise a jour: 2026-07-24
 Statut: `REFERENCE_ACTIVE`
 
 Deploiement sandbox: moteur actif depuis le 2026-07-15 sur App Hosting et Functions `europe-west1`.
@@ -128,6 +128,7 @@ Contrat du moteur:
 - une reprise exige le meme UID, le bon jeton, une activite de moins d'une heure et une session non admin;
 - une session explicitement fermee ne peut etre reprise que pendant une grace de 15 secondes, afin de tolerer un rechargement immediat sans fusionner un retour plusieurs minutes plus tard;
 - l'admin lit au maximum 5 000 sessions commencees dans la derniere annee;
+- l'onglet Stats effectue une lecture distincte, sans listener, bornee a 500 sessions commencees dans les 30 derniers jours pour les intentions devis et tendances produits; une erreur de cette lecture ne bloque pas les agregats commerce;
 - un cache IndexedDB de six heures evite une nouvelle lecture complete a chaque ouverture;
 - l'etat live est derive d'une activite de moins de 30 secondes et l'admin ecoute en temps reel les 100 sessions les plus recentes;
 - les erreurs analytics ne bloquent jamais checkout, Auth ou navigation;
@@ -158,6 +159,8 @@ La vue `Data` distingue strictement la demande de devis du tunnel d'achat direct
 - `quote_email_opened` : ouverture du brouillon e-mail pre-rempli apres validation locale.
 
 `quote_email_opened` exprime une intention d'envoi, pas une demande effectivement recue ni un devis accepte: le formulaire actuel ouvre `mailto:`. Les etats metier `recu`, `qualifie`, `envoye` et `accepte` devront provenir d'un workflow de demande/CRM distinct avant d'etre affiches comme conversions commerciales.
+
+Dans Stats, ce signal est donc affiche comme `Brouillons e-mail ouverts`. Le tunnel compte une fois chaque session par etape et affiche la conversion entre visites, demarrages et ouvertures. Les evenements reposent sur `lastEventPreview`, borne aux 16 derniers evenements de la session: il s'agit d'un indicateur d'intention, pas d'un registre commercial exhaustif.
 
 ## 8. Retention
 

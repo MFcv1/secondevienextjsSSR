@@ -1,6 +1,6 @@
 # Back-office
 
-Derniere mise a jour: 2026-07-14
+Derniere mise a jour: 2026-07-24
 Statut: `PREPROD_READY`
 
 ## 1. Architecture
@@ -25,7 +25,7 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 
 | ID | Label | Module principal | Role |
 | --- | --- | --- | --- |
-| `dashboard` | Stats | `AdminDashboard` | CA, commandes, inventaire, exports |
+| `dashboard` | Stats | `AdminDashboard` | CA, commandes, inventaire, intentions devis, tendances produits, exports |
 | `analytics` | Data | `AdminAnalytics` | visiteurs UID/IP, sessions live, parcours, courbe |
 | `furniture` | Publication | `AdminForm`, `AdminItemList` | CRUD annonces et images |
 | `inventory` | Vue Globale | `GlobalInventoryView` | ordres editoriaux et stock catalogue |
@@ -93,6 +93,10 @@ Le dashboard lit de preference les agregats:
 - commandes recentes bornees.
 
 Un fallback historique borne existe encore pour les commandes si leurs agregats manquent. Stats ne scanne plus `furniture` lorsque `inventory_stats/overview` est absent: la valeur catalogue affiche alors un tiret jusqu'a la prochaine publication snapshot, dont le builder regenere l'agregat. Ce garde-fou evite jusqu'a 300 lectures produit a chaque ouverture de Stats sans afficher un faux zero comme une valeur autoritaire.
+
+Les modules `Intentions de devis` et `Meubles en tendance` lisent separement au maximum 500 documents `analytics_sessions` commences dans les 30 derniers jours, sans listener temps reel et sans charger le catalogue. Les sessions admin sont exclues cote client. Les tendances comptent les etapes `detail`, dedupliquent les visiteurs par UID puis IP puis session et reprennent le nom/prix deja embarque dans `journey.itemId`. Le tunnel devis compte les sessions ayant visite `quote`, emis `quote_start` ou emis `quote_email_opened`.
+
+Cette lecture analytics est non bloquante: son echec laisse les agregats commerce, l'inventaire et les commandes recentes disponibles. Une couverture de 500 documents est signalee comme plafonnee. `quote_email_opened` reste libelle comme ouverture d'un brouillon e-mail; Stats ne presente jamais ce signal comme un devis recu, envoye ou accepte.
 
 `AdminAnalytics` reprend le moteur de Tous a Table: lecture bornee a 5 000 sessions sur un an, cache IndexedDB de six heures, actualisation manuelle de l'historique, ecoute Firestore des 100 sessions les plus recentes, visiteurs uniques dedupliques par UID Firebase puis IP serveur, ratio UID/IP, regroupement par jour et visiteur, sessions live et parcours. Une session est consideree en ligne lorsque sa derniere activite remonte a moins de 30 secondes. Le bandeau live apparait sans actualisation manuelle et cumule les sessions actives avec leur ville et leur appareil.
 

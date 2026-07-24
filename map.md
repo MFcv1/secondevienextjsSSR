@@ -375,7 +375,7 @@ src/kit/vitrine/
 
 ```text
 src/kit/admin/
-|-- AdminDashboard.jsx ................ stats, exports et maintenance rapide
+|-- AdminDashboard.jsx ................ pilotage commerce, devis/tendances analytics bornes, exports et maintenance rapide
 |-- AdminAnalytics.jsx ................ moteur Data canonique: UID/IP, live, parcours illustres, courbes
 |-- AdminForm.jsx ..................... creation/edition annonces
 |-- AdminItemList.jsx ................. liste publications

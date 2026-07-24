@@ -77,6 +77,7 @@ const IMAGE_PREWARM_MAX = 11;
 const PRODUCT_SWIPE_EXIT_HINT_STORAGE_KEY = 'secondevie:product-swipe-exit-hint:v2';
 const PRODUCT_RETURN_STORAGE_KEY = 'secondevie:product-return:v1';
 const PRODUCT_RETURN_PENDING_STORAGE_KEY = 'secondevie:product-return-pending:v1';
+const PRODUCT_RETURN_PENDING_ATTRIBUTE = 'data-product-return-pending';
 
 const isConstrainedConnection = () => {
   if (typeof navigator === 'undefined') return false;
@@ -643,6 +644,7 @@ export default function ProductDetailShellIsland({
     if (!returnTarget?.canUseHistory) return undefined;
 
     const markNativeHistoryReturn = () => {
+      document.documentElement.setAttribute(PRODUCT_RETURN_PENDING_ATTRIBUTE, 'true');
       try {
         window.sessionStorage.setItem(PRODUCT_RETURN_PENDING_STORAGE_KEY, returnTarget.href);
       } catch {
@@ -661,6 +663,7 @@ export default function ProductDetailShellIsland({
     hasNavigatedToGalleryRef.current = true;
     const returnTarget = getReturnTargetFromSession();
     const targetHref = returnTarget?.href || '/';
+    document.documentElement.setAttribute(PRODUCT_RETURN_PENDING_ATTRIBUTE, 'true');
     try {
       window.sessionStorage.setItem(PRODUCT_RETURN_PENDING_STORAGE_KEY, targetHref);
     } catch {

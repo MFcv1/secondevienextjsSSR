@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 
 const RETURN_KEY = 'secondevie:product-return:v1';
 const PENDING_KEY = 'secondevie:product-return-pending:v1';
+const PENDING_ATTRIBUTE = 'data-product-return-pending';
 const MAX_AGE_MS = 30 * 60 * 1000;
 
 const currentHref = () => (
@@ -11,7 +12,7 @@ const currentHref = () => (
 );
 
 export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = {}) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const rememberProductReturnTarget = (event) => {
       const link = event.target?.closest?.('a[href^="/produit/"]');
       if (!link) return;
@@ -46,7 +47,11 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
       ? window.history.scrollRestoration
       : null;
 
-    const cancelRestore = () => {
+    const releaseReturnMask = () => {
+      root.removeAttribute(PENDING_ATTRIBUTE);
+    };
+
+    function cancelRestore() {
       cancelledByUser = true;
       try {
         window.sessionStorage.removeItem(RETURN_KEY);
@@ -54,9 +59,9 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
         // The user interaction still wins when storage is unavailable.
       }
       finishRestore();
-    };
+    }
 
-    const finishRestore = () => {
+    function finishRestore() {
       window.removeEventListener('wheel', cancelRestore);
       window.removeEventListener('touchstart', cancelRestore);
       window.removeEventListener('keydown', cancelRestore);
@@ -64,7 +69,8 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
       if (previousScrollRestoration !== null) {
         window.history.scrollRestoration = previousScrollRestoration;
       }
-    };
+      releaseReturnMask();
+    }
 
     try {
       const sourceHref = currentHref();
@@ -100,16 +106,26 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
           const applyRestore = () => {
             if (cancelledByUser) return;
 
+            let sourceLayoutReady = true;
+
             if (scrollContainerId) {
               const scroller = document.getElementById(scrollContainerId);
               if (scroller) {
                 const maxTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
                 scroller.scrollTop = maxTop > 0 ? Math.min(containerTop, maxTop) : containerTop;
+                sourceLayoutReady = containerTop <= 0 || maxTop > 0;
+              } else {
+                sourceLayoutReady = false;
               }
             }
 
             window.scrollTo(0, windowTop);
             restoreFrame += 1;
+
+            if (sourceLayoutReady || restoreFrame >= 8) {
+              releaseReturnMask();
+            }
+
             if (restoreFrame < 8) {
               window.requestAnimationFrame(applyRestore);
               return;
@@ -121,10 +137,15 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
             }, 40);
           };
 
-          window.requestAnimationFrame(applyRestore);
+          applyRestore();
+        } else {
+          releaseReturnMask();
         }
+      } else {
+        releaseReturnMask();
       }
     } catch {
+      releaseReturnMask();
       // Best effort return restoration only.
     }
 

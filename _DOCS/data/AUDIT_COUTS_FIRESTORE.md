@@ -1,6 +1,6 @@
 # Audit des lectures et couts Firestore
 
-Derniere mise a jour: 2026-07-18
+Derniere mise a jour: 2026-07-24
 Statut: `PREUVE_FINALE_ACTIVE - BASELINE_PRE_CUTOVER_HISTORIQUE`
 Projet mesure: `secondevienextjsssr`
 
@@ -264,6 +264,14 @@ Pour l'admin Data:
 - clic Actualiser: nouvelle lecture historique `H`;
 - remount/reconnexion du listener: jusqu'a `L`;
 - chaque document modifie dans le jeu ecoute: environ une lecture, et non 100.
+
+Pour l'admin Stats depuis le 2026-07-24:
+
+- une requete non-streaming lit les sessions commencees dans les 30 derniers jours, triees par `startedAt` descendant et limitees a 500 documents;
+- aucun listener analytics n'est ouvert par Stats;
+- cette lecture alimente uniquement les intentions devis et tendances de fiches produit; elle ne recharge pas `furniture` ni le snapshot catalogue;
+- l'echec analytics est isole des agregats commerce, inventaire et commandes;
+- a 500 documents retournes, l'interface signale une couverture plafonnee. Un rollup serveur devra remplacer cette lecture seulement si le volume reel ou une mesure de cout le justifie.
 
 ### 5.4 Effets des tests locaux
 

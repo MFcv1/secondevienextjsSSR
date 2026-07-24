@@ -103,6 +103,11 @@ html.gallery-entry-scroll-lock {
 }
 
 @media (max-width: 1023px) {
+  html[data-product-return-pending='true'] .marketplace-gallery-scroll,
+  html[data-product-return-pending='true'] [data-ssr-category] {
+    visibility: hidden !important;
+  }
+
   html {
     --gallery-mobile-header-height: calc(64px + env(safe-area-inset-top, 0px));
     --gallery-mobile-initial-shell-offset: calc(28px + var(--gallery-mobile-header-height));
