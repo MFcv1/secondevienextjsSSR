@@ -1,6 +1,6 @@
 # Cartographie du projet Seconde Vie Next
 
-Derniere verification: 2026-07-24
+Derniere verification: 2026-07-25
 Statut: `CARTE_CANONIQUE_ACTIVE`
 
 ## 1. Role et maintenance
@@ -231,7 +231,7 @@ app/
 |-- admin/
 |   |-- layout.jsx .................... layout admin
 |   |-- page.jsx ...................... route dynamique
-|   |-- AdminAppIsland.jsx ............ shell, groupes, lazy tabs, gates admin, catalogue snapshot a la demande
+|   |-- AdminAppIsland.jsx ............ shell, groupes, lazy tabs, gate facturation, catalogue snapshot a la demande
 |   `-- AdminSidebar.jsx .............. navigation laterale responsive
 `-- api/
     |-- catalog/route.js .............. catalogue snapshot same-origin
@@ -393,6 +393,9 @@ src/kit/admin/
 |-- AdminNewsletter.jsx ............... abonnes/informations
 |-- AdminPaymentSettings.jsx .......... Stripe Connect/carte
 |-- AdminMaintenance.jsx .............. maintenance
+|-- AdminAccount.jsx .................. profil admin et conteneur onboarding dedie
+|-- BillingOnboardingGuide.jsx ........ guide Google Billing manuel, progression et placeholders captures
+|-- BillingOnboardingOperator.jsx ..... validation/reinitialisation super-admin
 |-- analyticsReliability.js ........... fiabilite/checkpoints
 |-- exportCsv.js ...................... exports
 |-- adminPublicCatalog.js ............. lecture snapshot admin sans cache persistant
@@ -471,6 +474,9 @@ functions/
     |   `-- adminIP.js
     |-- maintenance/
     |   `-- tools.js
+    |-- onboarding/
+    |   |-- billingGuide.js ........... callables, modes, etat backend-only
+    |   `-- billingGuideContract.js ... modes, etapes, UID cible et format Billing
     |-- triggers/
     |   |-- onArtifactDeleted.js
     |   |-- onArtifactUpdated.js
@@ -498,6 +504,7 @@ functions/
 | preuves E2E | `e2eCheckoutProof`, `e2eStripeHardeningProof` |
 | Auth/admin | `grantAdminOnAuth`, `addAdminUser`, `removeAdminUser`, `logUserConnection`, `getUserStats`, `syncSuperAdminClaim`, `ensureAdminAccessRegistry` |
 | OTP/passkeys | `sendGuestCheckoutOtp`, `verifyGuestCheckoutOtp`, `sendCustomerLoginOtp`, `verifyCustomerLoginOtp`, quatre endpoints passkey |
+| onboarding facturation | `getBillingGuideStatus`, `saveBillingGuideProgress`, `getBillingGuideOperatorStatus`, `completeBillingGuideAdmin`, `resetBillingGuideTest` |
 | e-mail | `onOrderCreated`, `onOrderUpdated`, `sendTestEmail`, `sendRefundStatusEmailAdmin` |
 | analytics | `initLiveSession`, `syncSession`, `syncSessionBeacon`, `deleteSession`, `clearAllSessions`, `trackAdminIP`, `updateUserSessions` |
 | maintenance | resets/purges, `runGarbageCollector`, `getUploadUrl` |
@@ -520,6 +527,7 @@ Firestore
 |-- sys_ratelimit/{id} ................ backend-only
 |-- sys_admin_access/{uid} ............ backend-only
 |-- sys_idempotency/{id} .............. backend-only
+|-- sys_billing_onboarding/{uid} ...... progression guide, backend-only
 |-- sys_catalog_publication/secondevie  mode, lease et revisions
 |-- sys_catalog_publication_events/{eventHash}
 |   `-- deduplication/outbox catalogue
@@ -597,6 +605,7 @@ purge-expired-firestore.cjs
 ```text
 tests/auth-*.test.cjs
 tests/passkey-*.test.cjs
+tests/billing-onboarding-contract.test.cjs
 tests/smoke.spec.mjs
 tests/catalog/*.test.cjs
 tests/catalog/emulator/*.test.cjs

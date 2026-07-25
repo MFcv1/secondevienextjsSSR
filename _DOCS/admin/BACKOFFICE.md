@@ -1,6 +1,6 @@
 # Back-office
 
-Derniere mise a jour: 2026-07-24
+Derniere mise a jour: 2026-07-25
 Statut: `PREPROD_READY`
 
 ## 1. Architecture
@@ -19,7 +19,7 @@ La navigation visible utilise un panneau lateral persistant sur desktop et un ti
 - `Catalogue`: Publication, Vue Globale, Studio;
 - `Ventes`: Ventes, Retours, Livraison, Paiement;
 - `Communication`: Personnalisation, Infos, SEO;
-- `Administration`: Clients, Securite, Maintenance, Etude Perf.
+- `Administration`: Mon compte, Clients, Securite, Maintenance, Etude Perf.
 
 Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSidebar` ne modifie ni le routing interne ni le lazy loading des vues.
 
@@ -39,11 +39,12 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 | `seo` | SEO | `AdminSEO` | controle contenu/indexation |
 | `newsletter` | Infos | `AdminNewsletter` | abonnes/informations |
 | `payment_settings` | Paiement | `AdminPaymentSettings` | Stripe Connect et activation carte |
+| `account` | Mon compte | `AdminAccount`, `BillingOnboardingOperator` | identite admin et pilotage de l'onboarding facturation |
 | `maintenance` | Maintenance | `AdminMaintenance` | outils destructifs controles |
 
 Les labels peuvent evoluer; les ID sont des contrats de navigation et ne doivent pas etre renommes sans migration.
 
-Sur desktop (`>= 1024 px`), `AdminAppIsland` affiche une navigation laterale fixe groupee par usage: Pilotage, Catalogue, Experience boutique, Commerce, Relation client et Systeme. Elle reference les 15 memes IDs que `KIT_CONFIG.adminTabs`, sans precharger leurs vues. Sous ce seuil, la navigation horizontale compacte et son menu "Plus d'options" restent le parcours de reference.
+Sur desktop (`>= 1024 px`), `AdminAppIsland` affiche une navigation laterale fixe groupee par usage: Pilotage, Catalogue, Experience boutique, Commerce, Relation client et Systeme. Elle reference les 16 memes IDs que `KIT_CONFIG.adminTabs`, sans precharger leurs vues. Sous ce seuil, la navigation horizontale compacte et son menu "Plus d'options" restent le parcours de reference.
 
 Le catalogue public court (`scope=cards&limit=120`) est charge paresseusement uniquement par Stats, Data et Vue Globale, qui consomment ses miniatures ou ses donnees. Seule une requete en vol est dedupliquee; aucun catalogue n'est conserve dans `sessionStorage` ou dans un cache module persistant.
 
@@ -82,6 +83,55 @@ Une action UI ne doit jamais modifier directement un paiement Stripe comme si Fi
 `AdminUsers` appelle les Functions de gestion d'acces. Les promotions/retraits doivent etre traces et exiger le niveau d'assurance defini dans le chapitre Auth.
 
 La gestion IP est un signal complementaire; elle ne remplace pas Auth, AAL2, rules ou registre admin sauf si un controle serveur explicite l'impose.
+
+### 6.1 Guide manuel de facturation Google
+
+Le guide `BillingOnboardingGuide` est un parcours pedagogique, pas une integration Cloud Billing. Il ne cree pas de compte, ne rattache aucun projet et ne configure aucun budget. Toutes les actions financieres restent effectuees par la cliente dans la console officielle Google; le site ne recoit jamais sa carte, ses coordonnees bancaires ou un jeton Google.
+
+Le parcours remplace temporairement les onglets pour l'unique UID cible et comprend:
+
+1. une explication courte du partage des responsabilites;
+2. un lien officiel vers la creation du compte Google Billing;
+3. la saisie de l'identifiant Billing au format `AAAAAA-BBBBBB-CCCCCC`;
+4. l'ajout de l'adresse technique avec `Billing Account User` et `Billing Account Costs Manager`;
+5. un ecran d'attente pendant la mise en place manuelle par le super-admin.
+
+Les emplacements de captures sont volontairement des placeholders tant que le parcours reel avec le compte test n'a pas ete photographie. Les captures devront etre recadrees pour masquer adresse personnelle, carte, raison sociale sensible, identifiant Payments et toute donnee inutile avant integration.
+
+Le compte super-admin conserve un bypass permanent. L'onglet dedie `Mon compte` charge paresseusement `BillingOnboardingOperator`: en mode actif, ce panneau montre uniquement le compte cible, son etat, son e-mail admin et son identifiant Billing. Aucun statut d'onboarding n'est affiche dans Stats. La validation exige la phrase `VALIDER LA FACTURATION`; la reinitialisation exige `REINITIALISER LE TEST` et n'existe qu'en mode `test`. Ces actions passent par Functions, exigent une authentification super-admin forte recente et sont auditees sans donnee bancaire.
+
+Quand les callables ne sont pas encore deployees ou accessibles depuis le runtime local, `Mon compte` affiche un etat neutre `Non raccorde`; il ne doit jamais exposer au super-admin le message brut Firebase `internal`. Cette indisponibilite n'active aucun parcours et ne bloque pas Stats.
+
+Modes serveur:
+
+| Mode | Effet |
+| --- | --- |
+| `disabled` | guide inactif pour tous; valeur par defaut et rollback immediat |
+| `test` | guide visible uniquement pour `BILLING_GUIDE_TEST_UID` |
+| `live` | guide visible uniquement pour `BILLING_GUIDE_LIVE_UID` |
+| `completed` | guide globalement clos; les onglets normaux sont affiches |
+
+Une completion individuelle ouvre aussi le back-office normal pour l'UID concerne. La progression reside dans `sys_billing_onboarding/{uid}`, inaccessible aux SDK clients et ecrite uniquement par les callables:
+
+- `getBillingGuideStatus`;
+- `saveBillingGuideProgress`;
+- `getBillingGuideOperatorStatus`;
+- `completeBillingGuideAdmin`;
+- `resetBillingGuideTest`.
+
+Les deux roles Google indiques ne sont pas presentes comme temporaires dans le guide. Ils servent durablement a rattacher les projets autorises et a suivre/configurer leurs couts, sans donner acces au moyen de paiement. Une revocation future reste une decision explicite de la cliente ou un changement de responsabilite, pas une etape d'onboarding.
+
+Recette manuelle fermee, seulement apres validation d'un deploiement sandbox:
+
+1. creer l'identite Google de test et l'ajouter comme admin non proprietaire via `AdminUsers`;
+2. relever son UID Firebase puis configurer `BILLING_GUIDE_TEST_UID`, `BILLING_GUIDE_TECHNICAL_EMAIL` et enfin `BILLING_GUIDE_MODE=test`;
+3. parcourir les cinq ecrans avec ce compte, fermer/reouvrir `/admin` entre deux etapes et realiser les captures;
+4. revenir avec le super-admin, copier l'identifiant Billing, effectuer ou simuler la mise en place technique convenue, puis valider;
+5. verifier que le compte test retrouve les onglets admin;
+6. utiliser `Recommencer` si une seconde passe de captures est necessaire;
+7. a la fin, remettre d'abord `BILLING_GUIDE_MODE=disabled`, retirer l'acces admin du compte test et conserver le code dormant.
+
+Cette recette n'autorise aucun rattachement du vrai sandbox ou d'une future production sans action cloud separee et explicitement approuvee.
 
 ## 7. Analytics et statistiques
 
@@ -134,11 +184,16 @@ app/admin/page.jsx
 app/admin/AdminAppIsland.jsx
 app/admin/AdminSidebar.jsx
 src/kit/admin/*.jsx
+src/kit/admin/AdminAccount.jsx
+src/kit/admin/BillingOnboardingGuide.jsx
+src/kit/admin/BillingOnboardingOperator.jsx
 src/kit/admin/components/*
 src/kit/admin/analyticsReliability.js
 src/kit/admin/adminPublicCatalog.js
 src/kit/config/constants.js
 functions/src/auth/adminManagement.js
+functions/src/onboarding/billingGuide.js
+functions/src/onboarding/billingGuideContract.js
 functions/src/maintenance/*
 functions/src/analytics/*
 firestore.rules

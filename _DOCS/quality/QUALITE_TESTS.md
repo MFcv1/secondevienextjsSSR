@@ -1,6 +1,6 @@
 # Qualite, tests et gates
 
-Derniere mise a jour: 2026-07-19
+Derniere mise a jour: 2026-07-25
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Principe de proportion
@@ -58,6 +58,14 @@ Le contrat analytics importe le verificateur du moteur Tous a Table et controle 
 npm run test:analytics
 ```
 
+Le contrat du guide de facturation controle les modes fermes, les UID cibles, le bypass super-admin, le format Billing et l'ordre des etapes:
+
+```bash
+npm run test:billing-onboarding
+```
+
+Ce test ne simule aucune API Cloud Billing car le guide n'en appelle aucune. La recette reelle porte sur l'ergonomie de la console Google et utilise uniquement l'identite/compte Billing de test approuves; elle ne doit jamais rattacher implicitement le vrai sandbox ou une future production.
+
 Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCatalog`. Les couts catalogue se prouvent par la suite securite, une recette navigateur bornee et, uniquement sur demande explicite, une fenetre Data Access temporaire.
 
 ## 4. Matrice par domaine
@@ -80,6 +88,7 @@ Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCa
 | catalogue securite/Rules | `test:catalog:security` |
 | catalogue materialise | `test:catalog`, recette navigateur sandbox et Data Access seulement si explicitement demande |
 | Functions/rules | tests cibles, audit exports/rules, deploiement sandbox cible |
+| guide facturation | `test:billing-onboarding`, lint cible, reprise de progression, smoke compte test/super-admin uniquement sur demande |
 | couts Firestore | `test:analytics`, mesure Usage Insights/Data Access avant-apres si necessaire |
 | infra | `infra:env`, `infra:deploy`, `appcheck:audit` en lecture |
 

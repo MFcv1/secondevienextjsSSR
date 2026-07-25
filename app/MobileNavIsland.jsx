@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 
@@ -17,6 +17,8 @@ const LINKS = [
  */
 export default function MobileNavIsland() {
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef(null);
+  const menuRef = useRef(null);
   // Portal target: the .sv4 root (holds the design tokens, has no transform so
   // a fixed overlay resolves against the viewport — unlike the nav pill).
   const [portalTarget, setPortalTarget] = useState(null);
@@ -25,24 +27,74 @@ export default function MobileNavIsland() {
     setPortalTarget(document.querySelector('[data-sv4-shell]') || document.querySelector('.sv4') || document.body);
   }, []);
 
-  // Lock body scroll + close on Escape while the menu is open
+  // Lock the document viewport, trap focus and restore both on close.
   useEffect(() => {
     if (!open) return undefined;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const body = document.body;
+    const root = document.documentElement;
+    const trigger = triggerRef.current;
+    const scrollY = window.scrollY;
+    const previous = {
+      bodyOverflow: body.style.overflow,
+      bodyOverscrollBehavior: body.style.overscrollBehavior,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyWidth: body.style.width,
+      rootOverflow: root.style.overflow,
+      rootOverscrollBehavior: root.style.overscrollBehavior,
+    };
+
+    root.style.overflow = 'hidden';
+    root.style.overscrollBehavior = 'none';
+    body.style.overflow = 'hidden';
+    body.style.overscrollBehavior = 'none';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+
+    const focusable = Array.from(
+      menuRef.current?.querySelectorAll('a[href], button:not([disabled]):not([tabindex="-1"])') || [],
+    );
+    const focusFrame = window.requestAnimationFrame(() => focusable[0]?.focus({ preventScroll: true }));
+
     const onKey = (e) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') {
+        setOpen(false);
+        return;
+      }
+      if (e.key !== 'Tab' || focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener('keydown', onKey);
+
     return () => {
-      document.body.style.overflow = prevOverflow;
+      root.style.overflow = previous.rootOverflow;
+      root.style.overscrollBehavior = previous.rootOverscrollBehavior;
+      body.style.overflow = previous.bodyOverflow;
+      body.style.overscrollBehavior = previous.bodyOverscrollBehavior;
+      body.style.position = previous.bodyPosition;
+      body.style.top = previous.bodyTop;
+      body.style.width = previous.bodyWidth;
+      window.cancelAnimationFrame(focusFrame);
       window.removeEventListener('keydown', onKey);
+      window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' });
+      trigger?.focus({ preventScroll: true });
     };
   }, [open]);
 
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         className="sv4-nav__burger"
         aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
@@ -59,12 +111,27 @@ export default function MobileNavIsland() {
       {portalTarget
         ? createPortal(
             <div
+              ref={menuRef}
               className="sv4-mobile-menu"
               data-open={open ? 'true' : 'false'}
               aria-hidden={open ? 'false' : 'true'}
-              onClick={() => setOpen(false)}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Navigation principale"
             >
-              <nav className="sv4-mobile-menu__inner" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                className="sv4-mobile-menu__backdrop"
+                aria-label="Fermer le menu"
+                tabIndex={-1}
+                onClick={() => setOpen(false)}
+              />
+              <nav className="sv4-mobile-menu__inner">
+                <div className="sv4-mobile-menu__intro">
+                  <span>L&apos;atelier Seconde Vie</span>
+                  <p>Chiner. Restaurer.<br />Sublimer.</p>
+                </div>
+
                 <ul className="sv4-mobile-menu__list">
                   {LINKS.map((link, i) => (
                     <li key={link.href} style={{ '--mm-i': i }}>

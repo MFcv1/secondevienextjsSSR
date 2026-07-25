@@ -67,6 +67,21 @@ exports.verifyPasskeyRegistration = verifyPasskeyRegistration;
 exports.generatePasskeyAuthenticationOptions = generatePasskeyAuthenticationOptions;
 exports.verifyPasskeyAuthentication = verifyPasskeyAuthentication;
 
+// â”€â”€ ONBOARDING FACTURATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const {
+    getBillingGuideStatus,
+    saveBillingGuideProgress,
+    getBillingGuideOperatorStatus,
+    completeBillingGuideAdmin,
+    resetBillingGuideTest
+} = require('./src/onboarding/billingGuide');
+
+exports.getBillingGuideStatus = getBillingGuideStatus;
+exports.saveBillingGuideProgress = saveBillingGuideProgress;
+exports.getBillingGuideOperatorStatus = getBillingGuideOperatorStatus;
+exports.completeBillingGuideAdmin = completeBillingGuideAdmin;
+exports.resetBillingGuideTest = resetBillingGuideTest;
+
 // ── EMAIL (Triggers) ─────────────────────────────────────
 const { onOrderCreated, onOrderUpdated, sendTestEmail, sendRefundStatusEmailAdmin } = require('./src/email/orderEmails');
 

@@ -185,6 +185,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Progression du guide de facturation, exclusivement geree par les Functions.
+    match /sys_billing_onboarding/{userId} {
+      allow read, write: if false;
+    }
+
     // Etat interne du catalogue public materialise. Admin SDK/IAM uniquement.
     match /sys_catalog_publication/{docId} {
       allow read, write: if false;

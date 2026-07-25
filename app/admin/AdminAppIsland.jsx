@@ -18,6 +18,7 @@ import {
   RotateCcw,
   Share2,
   ShieldCheck,
+  CircleUserRound,
   Users,
   Package,
 } from 'lucide-react';
@@ -25,7 +26,7 @@ import LoginView from '../../src/kit/commerce/LoginView';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
 import KIT_CONFIG from '../../src/kit/config/constants';
 import { appId } from '../../src/kit/config/firebaseEnv';
-import { getDb, loadFirestoreModule } from '../../src/kit/config/firebaseLazy';
+import { getCallableFunction, getDb, loadFirestoreModule } from '../../src/kit/config/firebaseLazy';
 import {
   ADMIN_PUBLIC_CATALOG_INVALIDATED_EVENT,
   clearAdminPublicCatalogCache,
@@ -50,6 +51,8 @@ const AdminPaymentSettings = React.lazy(() => import('../../src/kit/admin/AdminP
 const AdminIPTracker = React.lazy(() => import('../../src/kit/admin/AdminIPTracker'));
 const AdminGlobalInventory = React.lazy(() => import('../../src/kit/admin/GlobalInventoryView'));
 const AdminMaintenance = React.lazy(() => import('../../src/kit/admin/AdminMaintenance'));
+const AdminAccount = React.lazy(() => import('../../src/kit/admin/AdminAccount'));
+const BillingOnboardingGuide = React.lazy(() => import('../../src/kit/admin/BillingOnboardingGuide'));
 const LegacyLoginModalIsland = React.lazy(() => import('../../src/kit/marketplace/LegacyLoginModalFullIsland'));
 
 const TAB_ICONS = {
@@ -64,6 +67,7 @@ const TAB_ICONS = {
   seo: Share2,
   newsletter: Mail,
   payment_settings: CreditCard,
+  account: CircleUserRound,
   inventory: Grid,
   maintenance: RefreshCw,
 };
@@ -107,7 +111,7 @@ const ADMIN_NAV_GROUPS = [
   { label: 'Catalogue', tabs: ['furniture', 'inventory', 'studio'] },
   { label: 'Ventes', tabs: ['orders', 'returns', 'livraison', 'payment_settings'] },
   { label: 'Communication', tabs: ['homepage', 'newsletter', 'seo'] },
-  { label: 'Administration', tabs: ['users', 'ip_manager', 'maintenance'] },
+  { label: 'Administration', tabs: ['account', 'users', 'ip_manager', 'maintenance'] },
 ];
 const getAdminFirestoreRuntime = async () => {
   const [db, firestore] = await Promise.all([getDb(), loadFirestoreModule()]);
@@ -115,15 +119,42 @@ const getAdminFirestoreRuntime = async () => {
 };
 
 function AdminContent() {
-  const { user, isAdmin, hasStrongAuth, loading } = useAuth();
+  const { user, isAdmin, isSuperAdmin, hasStrongAuth, loading } = useAuth();
   const [adminCollection, setAdminCollection] = useState('dashboard');
   const [editingItem, setEditingItem] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [stepUpOpen, setStepUpOpen] = useState(false);
   const [catalogState, setCatalogState] = useState({ items: [], status: 'idle', error: null });
+  const [billingGate, setBillingGate] = useState({ status: 'idle', data: null, error: null });
   const catalogStatusRef = React.useRef('idle');
   const catalogRequestRef = React.useRef(null);
+
+  const refreshBillingGate = React.useCallback(async () => {
+    if (!user || !isAdmin || !hasStrongAuth || isSuperAdmin) return null;
+    setBillingGate((current) => ({ ...current, status: 'loading', error: null }));
+    try {
+      const getBillingStatus = await getCallableFunction('getBillingGuideStatus');
+      const result = await getBillingStatus({});
+      setBillingGate({ status: 'ready', data: result.data, error: null });
+      return result.data;
+    } catch (error) {
+      setBillingGate({ status: 'error', data: null, error });
+      throw error;
+    }
+  }, [hasStrongAuth, isAdmin, isSuperAdmin, user]);
+
+  React.useEffect(() => {
+    if (isSuperAdmin) {
+      setBillingGate({ status: 'ready', data: { required: false, bypass: true }, error: null });
+      return;
+    }
+    if (user && isAdmin && hasStrongAuth) {
+      void refreshBillingGate().catch(() => {});
+    }
+  }, [hasStrongAuth, isAdmin, isSuperAdmin, refreshBillingGate, user]);
+
+  const backOfficeReady = isSuperAdmin || (billingGate.status === 'ready' && billingGate.data?.required !== true);
 
   const ensureAdminCatalog = React.useCallback(async () => {
     if (catalogStatusRef.current === 'loaded') return;
@@ -152,10 +183,10 @@ function AdminContent() {
   }, []);
 
   React.useEffect(() => {
-    if (user && isAdmin && hasStrongAuth && ADMIN_PUBLIC_CATALOG_TABS.has(adminCollection)) {
+    if (user && isAdmin && hasStrongAuth && backOfficeReady && ADMIN_PUBLIC_CATALOG_TABS.has(adminCollection)) {
       void ensureAdminCatalog();
     }
-  }, [adminCollection, ensureAdminCatalog, hasStrongAuth, isAdmin, user]);
+  }, [adminCollection, backOfficeReady, ensureAdminCatalog, hasStrongAuth, isAdmin, user]);
 
   React.useEffect(() => {
     const handleInvalidation = () => {
@@ -273,6 +304,50 @@ function AdminContent() {
     );
   }
 
+  if (!isSuperAdmin && ['idle', 'loading'].includes(billingGate.status)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f5f3ef] px-6 text-stone-900">
+        <div className="flex items-center gap-3 text-sm font-bold text-stone-600">
+          <RefreshCw className="animate-spin" size={18} />
+          Préparation de votre espace…
+        </div>
+      </div>
+    );
+  }
+
+  if (!isSuperAdmin && billingGate.status === 'error') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f5f3ef] px-6 text-stone-900">
+        <div className="w-full max-w-lg rounded-2xl border border-stone-200 bg-white p-8 text-center">
+          <h1 className="text-2xl font-black tracking-tight">L’espace ne peut pas être vérifié</h1>
+          <p className="mt-3 text-sm leading-6 text-stone-500">
+            Aucune donnée n’a été perdue. Réessayez dans quelques instants.
+          </p>
+          <button
+            className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-stone-950 px-5 text-xs font-black uppercase tracking-[0.12em] text-white"
+            onClick={() => void refreshBillingGate().catch(() => {})}
+            type="button"
+          >
+            <RefreshCw size={14} />
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isSuperAdmin && billingGate.data?.required === true) {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-[#f5f3ef]" />}>
+        <BillingOnboardingGuide
+          initialStatus={billingGate.data}
+          onRefresh={refreshBillingGate}
+          onStatusChange={(data) => setBillingGate({ status: 'ready', data, error: null })}
+        />
+      </Suspense>
+    );
+  }
+
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-[#0A0A0A] text-white' : 'bg-[#FAFAF9] text-stone-900'}`}>
       <AdminSidebar
@@ -290,7 +365,6 @@ function AdminContent() {
         <Suspense fallback={null}>
           <AdminIPTracker />
         </Suspense>
-
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex items-center gap-4">
             <button
@@ -302,8 +376,12 @@ function AdminContent() {
               <Menu size={19} />
             </button>
             <div className="space-y-1.5">
-              <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Systeme de Controle</p>
-              <h2 className="text-3xl font-black tracking-tighter md:text-4xl">Gestion Boutique</h2>
+              <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
+                {adminCollection === 'account' ? 'Espace personnel' : 'Systeme de Controle'}
+              </p>
+              <h2 className="text-3xl font-black tracking-tighter md:text-4xl">
+                {adminCollection === 'account' ? 'Mon compte' : 'Gestion Boutique'}
+              </h2>
             </div>
           </div>
           <Link
@@ -318,6 +396,8 @@ function AdminContent() {
         <Suspense fallback={<div className="flex items-center justify-center p-20"><div className="h-10 w-10 animate-spin rounded-full border-4 border-stone-200 border-t-stone-800" /></div>}>
           {adminCollection === 'dashboard' ? (
             <AdminDashboard user={user} darkMode={darkMode} items={catalogState.items} />
+          ) : adminCollection === 'account' ? (
+            <AdminAccount darkMode={darkMode} isSuperAdmin={isSuperAdmin} user={user} />
           ) : adminCollection === 'homepage' ? (
             <AdminHomepage darkMode={darkMode} />
           ) : adminCollection === 'orders' ? (

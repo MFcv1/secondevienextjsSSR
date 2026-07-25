@@ -1,6 +1,6 @@
 # Infrastructure Firebase, Next.js et environnements
 
-Derniere mise a jour: 2026-07-18
+Derniere mise a jour: 2026-07-25
 Statut: `PREPROD_READY - PRODUCTION_DEFERRED`
 
 ## 1. Runtime et gestionnaire de paquets
@@ -132,6 +132,14 @@ Parametres non secrets:
 
 - `TRANSACTIONAL_EMAIL_PROVIDER`, valeur par defaut `gmail`;
 - `RESEND_FROM_EMAIL`, vide tant que le domaine n'est pas valide.
+- `BILLING_GUIDE_MODE`, valeur par defaut et rollback `disabled`;
+- `BILLING_GUIDE_TEST_UID`, UID unique autorise en mode `test`;
+- `BILLING_GUIDE_LIVE_UID`, UID unique de la cliente en mode `live`;
+- `BILLING_GUIDE_TECHNICAL_EMAIL`, adresse Google technique que la cliente ajoute au compte Billing.
+
+Les parametres du guide sont lus exclusivement par les Functions. Aucun mode, UID cible ou e-mail technique n'est fixe dans le bundle navigateur. Un mode inconnu, un UID cible absent ou une erreur de configuration echoue ferme: le guide n'est impose a personne. La collection `sys_billing_onboarding` est backend-only dans `firestore.rules`.
+
+Le guide ne depend d'aucun service account Cloud Billing, d'aucune cle JSON et d'aucun OAuth Google. Le rattachement de projets et les budgets restent des operations manuelles hors du site. Il ne faut donc pas activer l'API Cloud Billing ni ajouter de permissions projet pour tester seulement l'interface.
 
 ## 7. E-mail transactionnel
 
@@ -201,6 +209,14 @@ Functions/rules:
 - deployer un codebase ou une Function cible;
 - restaurer le commit stable et redeployer la meme cible en cas de regression;
 - ne pas restaurer des rules permissives pour contourner un incident.
+
+Rollback specifique au guide:
+
+1. remettre le parametre `BILLING_GUIDE_MODE=disabled`;
+2. verifier avec le compte cible que les onglets admin s'ouvrent normalement;
+3. si le code lui-meme regresse, restaurer la version stable de l'App Hosting et des cinq callables;
+4. laisser les documents `sys_billing_onboarding` en place pendant le diagnostic: ils sont inaccessibles au client et ne bloquent rien en mode `disabled`;
+5. ne jamais desactiver la facturation d'un projet Google pour rollbacker une interface.
 
 ## 12. Conditions de creation du rail production
 
