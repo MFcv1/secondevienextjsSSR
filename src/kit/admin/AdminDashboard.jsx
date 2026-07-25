@@ -2,11 +2,13 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, animate, useReducedMotion } from 'framer-motion';
 import {
     TrendingUp, TrendingDown, ShoppingBag, AlertTriangle, RefreshCw, Mail,
-    Archive, Users, Eye, FileText, Send, Flame, CircleDollarSign, PackageCheck
+    Archive, Users, Eye, FileText, Send, CircleDollarSign, PackageCheck
 } from 'lucide-react';
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, where, Timestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions, loadAuthModule } from '../config/firebase';
+import { getProductImageItems } from '../../utils/imageUtils';
+import { getProductUrl } from '../../utils/slug';
 import { getMillis } from '../../utils/time';
 import { downloadCsv } from './exportCsv';
 
@@ -69,23 +71,74 @@ const TrendPill = ({ delta }) => {
 
 // ─── CUSTOM SVG CHARTS ───
 
-const buildSmoothPath = (pts) => {
-    if (pts.length === 0) return '';
-    if (pts.length === 1) return `M ${pts[0].x},${pts[0].y}`;
-    let d = `M ${pts[0].x.toFixed(2)},${pts[0].y.toFixed(2)}`;
-    for (let i = 0; i < pts.length - 1; i++) {
-        const p0 = pts[Math.max(0, i - 1)];
-        const p1 = pts[i];
-        const p2 = pts[i + 1];
-        const p3 = pts[Math.min(pts.length - 1, i + 2)];
-        const cp1x = p1.x + (p2.x - p0.x) / 6;
-        const cp1y = p1.y + (p2.y - p0.y) / 6;
-        const cp2x = p2.x - (p3.x - p1.x) / 6;
-        const cp2y = p2.y - (p3.y - p1.y) / 6;
-        d += ` C ${cp1x.toFixed(2)},${cp1y.toFixed(2)} ${cp2x.toFixed(2)},${cp2y.toFixed(2)} ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`;
+const clampToRange = (value, min, max) => Math.max(min, Math.min(max, value));
+
+// The Bézier control points are clamped to their adjacent values. This keeps
+// the line smooth without inventing a dip below the zero baseline.
+const buildBoundedMonotonePath = (points) => {
+    if (points.length === 0) return '';
+    if (points.length === 1) return `M ${points[0].x},${points[0].y}`;
+
+    const widths = [];
+    const slopes = [];
+    for (let index = 0; index < points.length - 1; index += 1) {
+        const width = points[index + 1].x - points[index].x;
+        widths.push(width);
+        slopes.push(width > 0 ? (points[index + 1].y - points[index].y) / width : 0);
     }
-    return d;
+
+    const tangents = Array(points.length).fill(0);
+    if (points.length === 2) {
+        tangents[0] = slopes[0];
+        tangents[1] = slopes[0];
+    } else {
+        const endpointTangent = (firstWidth, secondWidth, firstSlope, secondSlope) => {
+            let tangent = ((2 * firstWidth + secondWidth) * firstSlope - firstWidth * secondSlope) / (firstWidth + secondWidth);
+            if (Math.sign(tangent) !== Math.sign(firstSlope)) return 0;
+            if (Math.sign(firstSlope) !== Math.sign(secondSlope) && Math.abs(tangent) > Math.abs(3 * firstSlope)) {
+                tangent = 3 * firstSlope;
+            }
+            return tangent;
+        };
+
+        tangents[0] = endpointTangent(widths[0], widths[1], slopes[0], slopes[1]);
+        tangents[points.length - 1] = endpointTangent(
+            widths[widths.length - 1],
+            widths[widths.length - 2],
+            slopes[slopes.length - 1],
+            slopes[slopes.length - 2]
+        );
+
+        for (let index = 1; index < points.length - 1; index += 1) {
+            const previousSlope = slopes[index - 1];
+            const nextSlope = slopes[index];
+            if (previousSlope === 0 || nextSlope === 0 || Math.sign(previousSlope) !== Math.sign(nextSlope)) continue;
+
+            const previousWeight = 2 * widths[index] + widths[index - 1];
+            const nextWeight = widths[index] + 2 * widths[index - 1];
+            tangents[index] = (previousWeight + nextWeight) / ((previousWeight / previousSlope) + (nextWeight / nextSlope));
+        }
+    }
+
+    let path = `M ${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`;
+    for (let index = 0; index < points.length - 1; index += 1) {
+        const from = points[index];
+        const to = points[index + 1];
+        const width = widths[index];
+        const minY = Math.min(from.y, to.y);
+        const maxY = Math.max(from.y, to.y);
+        const controlOneY = clampToRange(from.y + (tangents[index] * width) / 3, minY, maxY);
+        const controlTwoY = clampToRange(to.y - (tangents[index + 1] * width) / 3, minY, maxY);
+
+        path += ` C ${(from.x + width / 3).toFixed(2)},${controlOneY.toFixed(2)} ${(to.x - width / 3).toFixed(2)},${controlTwoY.toFixed(2)} ${to.x.toFixed(2)},${to.y.toFixed(2)}`;
+    }
+    return path;
 };
+
+const buildLinearPath = (points) => points.reduce(
+    (path, point, index) => `${path}${index === 0 ? 'M' : ' L'} ${point.x.toFixed(2)},${point.y.toFixed(2)}`,
+    ''
+);
 
 const RevenueChart = ({ data, darkMode }) => {
     const containerRef = useRef(null);
@@ -105,53 +158,98 @@ const RevenueChart = ({ data, darkMode }) => {
         return () => ro.disconnect();
     }, []);
 
-    const maxVal = useMemo(() => Math.max(...data.map(d => d.value), 100), [data]);
+    const maxVal = useMemo(() => Math.max(...data.map((point) => Math.max(0, Number(point.value) || 0)), 100), [data]);
     const margin = { top: 18, right: 12, bottom: 26, left: 46 };
     const chartW = Math.max(10, dims.w - margin.left - margin.right);
     const chartH = dims.h - margin.top - margin.bottom;
+    const baseY = margin.top + chartH;
     const step = chartW / Math.max(1, data.length - 1);
+    const denseSeries = data.length > 90;
 
-    const points = useMemo(() => data.map((d, i) => ({
-        x: margin.left + i * step,
-        y: margin.top + chartH - ((d.value / maxVal) * chartH)
-    })), [data, step, chartH, maxVal, margin.left, margin.top]);
+    const points = useMemo(() => data.map((point, index) => {
+        const value = Math.max(0, Number(point.value) || 0);
+        return {
+            x: margin.left + index * step,
+            y: baseY - ((value / maxVal) * chartH)
+        };
+    }), [data, step, baseY, maxVal, chartH, margin.left]);
 
-    const linePath = useMemo(() => buildSmoothPath(points), [points]);
+    const linePath = useMemo(
+        () => (denseSeries ? buildLinearPath(points) : buildBoundedMonotonePath(points)),
+        [denseSeries, points]
+    );
     const areaPath = useMemo(() => {
         if (!linePath || points.length < 2) return '';
-        const baseY = margin.top + chartH;
-        return `${linePath} L ${(margin.left + chartW).toFixed(2)},${baseY} L ${margin.left},${baseY} Z`;
-    }, [linePath, points.length, chartW, chartH, margin.left, margin.top]);
+        const firstPoint = points[0];
+        const lastPoint = points[points.length - 1];
+        return `${linePath} L ${lastPoint.x.toFixed(2)},${baseY} L ${firstPoint.x.toFixed(2)},${baseY} Z`;
+    }, [baseY, linePath, points]);
 
     const peakIdx = useMemo(() => {
-        let idx = -1;
-        let best = 0;
-        data.forEach((d, i) => { if (d.value > best) { best = d.value; idx = i; } });
-        return idx;
+        let indexOfPeak = -1;
+        let peak = 0;
+        data.forEach((point, index) => {
+            const value = Math.max(0, Number(point.value) || 0);
+            if (value > peak) {
+                peak = value;
+                indexOfPeak = index;
+            }
+        });
+        return indexOfPeak;
     }, [data]);
 
+    const xTickIndexes = useMemo(() => {
+        if (data.length <= 7) return data.map((_, index) => index);
+        if (data.length <= 31) {
+            const every = Math.max(4, Math.ceil(data.length / 7));
+            return data.reduce((indexes, point, index) => {
+                const monthChanged = index > 0 && point.dateKey?.slice(0, 7) !== data[index - 1].dateKey?.slice(0, 7);
+                if (index === 0 || index === data.length - 1 || index % every === 0 || monthChanged) indexes.push(index);
+                return indexes;
+            }, []);
+        }
+
+        const candidates = Array.from(new Set([
+            0,
+            ...data.reduce((indexes, point, index) => {
+                if (point.dateKey?.slice(8, 10) === '01') indexes.push(index);
+                return indexes;
+            }, []),
+            data.length - 1
+        ])).sort((first, second) => first - second);
+        const maximumTicks = Math.max(5, Math.floor(chartW / 60));
+        if (candidates.length <= maximumTicks) return candidates;
+
+        const every = Math.ceil((candidates.length - 2) / Math.max(1, maximumTicks - 2));
+        return candidates.filter((_, index) => index === 0 || index === candidates.length - 1 || index % every === 0);
+    }, [chartW, data]);
+
     const ticks = [1, 0.5, 0];
-    const xLabelEvery = Math.max(1, Math.ceil(data.length / 8));
     const gridColor = darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
     const labelColor = darkMode ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)';
 
-    const handlePointerMove = (e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const x = e.clientX - rect.left - margin.left;
-        let idx = Math.round(x / step);
-        idx = Math.max(0, Math.min(data.length - 1, idx));
-        setActiveIdx(idx);
+    const handlePointerMove = (event) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const x = event.clientX - rect.left - margin.left;
+        let index = Math.round(x / step);
+        index = Math.max(0, Math.min(data.length - 1, index));
+        setActiveIdx(index);
     };
 
     return (
-        <div ref={containerRef} className="w-full h-[240px] relative select-none"
-             onPointerMove={handlePointerMove}
-             onPointerLeave={() => setActiveIdx(null)}>
+        <div
+            ref={containerRef}
+            className="relative h-[240px] w-full select-none"
+            role="img"
+            aria-label="Chiffre d’affaires quotidien"
+            onPointerMove={handlePointerMove}
+            onPointerLeave={() => setActiveIdx(null)}
+        >
             <svg width={dims.w} height={dims.h} className="block overflow-visible">
                 <defs>
                     <linearGradient id="dashAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.22" />
-                        <stop offset="60%" stopColor="#3B82F6" stopOpacity="0.05" />
+                        <stop offset="0%" stopColor="#3B82F6" stopOpacity={denseSeries ? 0.14 : 0.22} />
+                        <stop offset="60%" stopColor="#3B82F6" stopOpacity={denseSeries ? 0.025 : 0.05} />
                         <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
                     </linearGradient>
                     <linearGradient id="dashLineGradient" x1="0" y1="0" x2="1" y2="0">
@@ -160,27 +258,25 @@ const RevenueChart = ({ data, darkMode }) => {
                     </linearGradient>
                 </defs>
 
-                {ticks.map((t) => {
-                    const y = margin.top + chartH - (t * chartH);
+                {ticks.map((tick) => {
+                    const y = margin.top + chartH - (tick * chartH);
                     return (
-                        <g key={t}>
+                        <g key={tick}>
                             <line x1={margin.left} y1={y} x2={margin.left + chartW} y2={y}
-                                  stroke={gridColor} strokeWidth="1" strokeDasharray={t === 0 ? undefined : '3 5'} />
+                                  stroke={gridColor} strokeWidth="1" strokeDasharray={tick === 0 ? undefined : '3 5'} />
                             <text x={margin.left - 10} y={y + 3} textAnchor="end"
                                   style={{ fontSize: 9, fontWeight: 700, fill: labelColor, letterSpacing: '0.05em' }}>
-                                {formatEuroShort(maxVal * t)}
+                                {formatEuroShort(maxVal * tick)}
                             </text>
                         </g>
                     );
                 })}
 
-                {data.map((d, i) => (
-                    i % xLabelEvery === 0 ? (
-                        <text key={`x-${i}`} x={margin.left + i * step} y={margin.top + chartH + 16} textAnchor="middle"
-                              style={{ fontSize: 8, fontWeight: 700, fill: labelColor, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                            {d.label}
-                        </text>
-                    ) : null
+                {xTickIndexes.map((index) => (
+                    <text key={`x-${index}`} x={points[index]?.x} y={baseY + 16} textAnchor="middle"
+                          style={{ fontSize: 8, fontWeight: 700, fill: labelColor, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                        {data[index]?.axisLabel}
+                    </text>
                 ))}
 
                 {data.length > 1 && (
@@ -198,7 +294,7 @@ const RevenueChart = ({ data, darkMode }) => {
                             d={linePath}
                             fill="none"
                             stroke="url(#dashLineGradient)"
-                            strokeWidth="2.5"
+                            strokeWidth={denseSeries ? 1.65 : 2.5}
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             initial={reducedMotion ? false : { pathLength: 0 }}
@@ -207,14 +303,14 @@ const RevenueChart = ({ data, darkMode }) => {
                         />
                         {peakIdx >= 0 && activeIdx === null && points[peakIdx] && (
                             <g>
-                                <circle cx={points[peakIdx].x} cy={points[peakIdx].y} r="9" fill="#3B82F6" opacity="0.12" />
-                                <circle cx={points[peakIdx].x} cy={points[peakIdx].y} r="3.5"
+                                <circle cx={points[peakIdx].x} cy={points[peakIdx].y} r={denseSeries ? 6 : 9} fill="#3B82F6" opacity="0.12" />
+                                <circle cx={points[peakIdx].x} cy={points[peakIdx].y} r={denseSeries ? 2.75 : 3.5}
                                         fill={darkMode ? '#0a0a0a' : '#ffffff'} stroke="#3B82F6" strokeWidth="2" />
                             </g>
                         )}
                         {activeIdx !== null && points[activeIdx] && (
                             <g>
-                                <line x1={points[activeIdx].x} y1={margin.top} x2={points[activeIdx].x} y2={margin.top + chartH}
+                                <line x1={points[activeIdx].x} y1={margin.top} x2={points[activeIdx].x} y2={baseY}
                                       stroke={darkMode ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)'} strokeDasharray="4 4" />
                                 <circle cx={points[activeIdx].x} cy={points[activeIdx].y} r="9" fill="#3B82F6" opacity="0.15" />
                                 <circle cx={points[activeIdx].x} cy={points[activeIdx].y} r="4"
@@ -230,8 +326,8 @@ const RevenueChart = ({ data, darkMode }) => {
                     className={`absolute top-0 -translate-x-1/2 -translate-y-[65%] pointer-events-none rounded-xl px-3.5 py-2 ring-1 shadow-[0_18px_48px_-24px_rgba(25,32,28,0.55)] ${darkMode ? 'bg-[#1a1a19] ring-white/10 text-white' : 'bg-[#fffdfa] ring-stone-900/8 text-stone-900'}`}
                     style={{ left: points[activeIdx].x }}
                 >
-                    <p className="text-[9px] uppercase tracking-wider opacity-50 mb-0.5 whitespace-nowrap">{data[activeIdx].label}</p>
-                    <p className="text-sm font-black tabular-nums whitespace-nowrap">{Math.round(data[activeIdx].value).toLocaleString('fr-FR')} €</p>
+                    <p className="mb-0.5 whitespace-nowrap text-[9px] uppercase tracking-wider opacity-50">{data[activeIdx].tooltipLabel || data[activeIdx].label}</p>
+                    <p className="whitespace-nowrap text-sm font-black tabular-nums">{Math.round(data[activeIdx].value).toLocaleString('fr-FR')} €</p>
                 </div>
             )}
         </div>
@@ -426,24 +522,47 @@ const QuoteFunnel = ({ quote, loading, error, darkMode }) => {
 };
 
 const MiniSparkline = ({ values, darkMode }) => {
-    const width = 84;
-    const height = 26;
+    const width = 62;
+    const height = 24;
     const max = Math.max(...values, 1);
-    const points = values.length > 1
-        ? values.map((value, index) => `${(index / (values.length - 1)) * width},${height - ((value / max) * (height - 4)) - 2}`).join(' ')
-        : '';
+    const points = values.map((value, index) => ({
+        x: values.length > 1 ? (index / (values.length - 1)) * width : width,
+        y: height - ((value / max) * (height - 8)) - 4
+    }));
+    const linePath = values.length > 1 ? buildBoundedMonotonePath(points) : '';
+    const areaPath = linePath ? `${linePath} L ${width},${height} L 0,${height} Z` : '';
+    const lastPoint = points[points.length - 1];
 
     return (
         <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
-            {points && (
-                <polyline
-                    points={points}
-                    fill="none"
-                    stroke={darkMode ? '#a5c6af' : '#557a61'}
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                />
+            <line
+                x1="0"
+                y1={height - 1}
+                x2={width}
+                y2={height - 1}
+                stroke={darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(73,69,63,0.09)'}
+            />
+            {linePath && (
+                <>
+                    <path
+                        d={areaPath}
+                        fill={darkMode ? 'rgba(216,211,202,0.08)' : 'rgba(98,94,87,0.08)'}
+                    />
+                    <path
+                        d={linePath}
+                        fill="none"
+                        stroke={darkMode ? '#d8d3ca' : '#625e57'}
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                    <circle
+                        cx={lastPoint.x}
+                        cy={lastPoint.y}
+                        r="2.5"
+                        fill={darkMode ? '#e4dfd6' : '#4f4b45'}
+                    />
+                </>
             )}
         </svg>
     );
@@ -451,7 +570,22 @@ const MiniSparkline = ({ values, darkMode }) => {
 
 const TrendingProducts = ({ products, loading, error, darkMode }) => {
     if (loading) {
-        return <div className={`h-72 rounded-2xl ${darkMode ? 'bg-white/[0.035]' : 'bg-stone-900/[0.035]'}`} aria-label="Chargement des tendances produits" />;
+        return (
+            <div className="grid grid-flow-col auto-cols-[minmax(148px,1fr)] gap-2.5 overflow-hidden" aria-label="Chargement des tendances produits">
+                {Array.from({ length: 5 }, (_, index) => (
+                    <div
+                        key={index}
+                        className={`h-[266px] overflow-hidden rounded-[18px] ring-1 ${darkMode ? 'bg-white/[0.025] ring-white/[0.05]' : 'bg-stone-900/[0.025] ring-stone-900/[0.035]'}`}
+                    >
+                        <div className={`h-[130px] ${darkMode ? 'bg-white/[0.055]' : 'bg-white/75'}`} />
+                        <div className="space-y-3 p-3">
+                            <span className={`block h-3 w-3/4 rounded-full ${darkMode ? 'bg-white/[0.055]' : 'bg-stone-900/[0.055]'}`} />
+                            <span className={`block h-2 w-1/2 rounded-full ${darkMode ? 'bg-white/[0.035]' : 'bg-stone-900/[0.035]'}`} />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
     }
 
     if (error) {
@@ -471,44 +605,67 @@ const TrendingProducts = ({ products, loading, error, darkMode }) => {
         );
     }
 
-    const maxViews = Math.max(...products.map(product => product.views), 1);
-
     return (
-        <ol className="space-y-2.5">
-            {products.map((product, index) => (
-                <motion.li
-                    key={product.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.48, delay: index * 0.055, ease: EASE_OUT }}
-                    className={`group relative overflow-hidden rounded-2xl px-4 py-3.5 ring-1 transition-[transform,background-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 ${darkMode ? 'bg-white/[0.03] ring-white/[0.055] hover:bg-white/[0.05]' : 'bg-[#f5f2ed] ring-stone-900/[0.04] hover:bg-[#efebe4]'}`}
-                >
-                    <div
-                        aria-hidden="true"
-                        className={`absolute inset-y-0 left-0 ${darkMode ? 'bg-[#789782]/[0.055]' : 'bg-[#c9d9cd]/35'}`}
-                        style={{ width: `${(product.views / maxViews) * 100}%` }}
-                    />
-                    <div className="relative grid grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-3">
-                        <span className={`flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-bold tabular-nums ${index === 0 ? (darkMode ? 'bg-[#789782]/18 text-[#b8d2c0]' : 'bg-[#dce8df] text-[#315843]') : (darkMode ? 'bg-white/[0.045] text-white/42' : 'bg-white/65 text-stone-500')}`}>
-                            {index === 0 ? <Flame size={13} strokeWidth={1.45} /> : String(index + 1).padStart(2, '0')}
-                        </span>
-                        <div className="min-w-0">
-                            <div className="flex items-baseline gap-2">
-                                <p className={`truncate text-[12px] font-semibold ${darkMode ? 'text-white/82' : 'text-stone-800'}`} title={product.name}>{product.name}</p>
-                                {product.price !== null && <span className={`shrink-0 text-[9px] tabular-nums ${darkMode ? 'text-white/30' : 'text-stone-400'}`}>{product.price.toLocaleString('fr-FR')} €</span>}
-                            </div>
-                            <p className={`mt-1 truncate text-[9px] font-medium ${darkMode ? 'text-white/30' : 'text-stone-400'}`}>{product.viewers} visiteur{product.viewers > 1 ? 's' : ''} unique{product.viewers > 1 ? 's' : ''}</p>
+        <ol className="grid grid-flow-col auto-cols-[minmax(148px,1fr)] gap-2.5 overflow-x-auto overscroll-x-contain pb-1">
+            {products.map((product, index) => {
+                return (
+                    <motion.li
+                        key={product.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.42, delay: index * 0.045, ease: EASE_OUT }}
+                        className={`group relative isolate h-[266px] overflow-hidden rounded-[18px] ring-1 transition-[background-color,box-shadow] duration-300 ease-out hover:shadow-[0_18px_38px_-30px_rgba(45,42,38,0.42)] ${darkMode ? 'bg-white/[0.028] ring-white/[0.06] hover:bg-white/[0.038]' : 'bg-[#f6f3ee] ring-stone-900/[0.045] hover:bg-[#f1ede7]'}`}
+                    >
+                        <div className={`relative h-[130px] w-full overflow-hidden border-b ${darkMode ? 'bg-[#20231f] border-white/[0.06]' : 'bg-[#e9e5df] border-white/70'}`}>
+                            {product.imageUrl ? (
+                                // Le snapshot fournit deja une miniature WebP 320/384; pas de proxy Next pour l'admin.
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                    src={product.imageUrl}
+                                    alt={product.imageAlt}
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="h-full w-full object-cover transition-[filter] duration-300 group-hover:saturate-[1.06]"
+                                />
+                            ) : (
+                                <span className={`flex h-full w-full items-center justify-center ${darkMode ? 'text-white/25' : 'text-stone-400'}`} aria-hidden="true">
+                                    <PackageCheck size={23} strokeWidth={1.25} />
+                                </span>
+                            )}
+                            <span className={`absolute left-2 top-2 rounded-md px-1.5 py-1 text-[8px] font-bold tracking-[0.08em] tabular-nums backdrop-blur-md ${index === 0 ? (darkMode ? 'bg-white/90 text-stone-900' : 'bg-stone-900/90 text-white') : (darkMode ? 'bg-black/60 text-white/75' : 'bg-white/85 text-stone-700')}`}>
+                                #{String(index + 1).padStart(2, '0')}
+                            </span>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <MiniSparkline values={product.dailyViews} darkMode={darkMode} />
-                            <div className="min-w-10 text-right">
-                                <p className={`text-base font-semibold leading-none tabular-nums ${darkMode ? 'text-white' : 'text-stone-900'}`}>{product.views}</p>
-                                <p className={`mt-1 text-[8px] font-bold uppercase tracking-[0.12em] ${darkMode ? 'text-white/28' : 'text-stone-400'}`}>vues</p>
+
+                        <div className="relative flex h-[136px] flex-col p-3.5">
+                            <p className={`truncate text-[13px] font-semibold tracking-[-0.01em] ${darkMode ? 'text-white/88' : 'text-stone-800'}`} title={product.name}>
+                                {product.name}
+                            </p>
+                            <div className="mt-1 flex min-w-0 items-center gap-1.5">
+                                <span className={`truncate text-[9px] font-medium ${darkMode ? 'text-white/38' : 'text-stone-500'}`}>
+                                    {product.viewers} visiteur{product.viewers > 1 ? 's' : ''}
+                                </span>
+                                {product.price !== null && (
+                                    <>
+                                        <span className={darkMode ? 'text-white/16' : 'text-stone-300'} aria-hidden="true">•</span>
+                                        <span className={`shrink-0 text-[8px] font-semibold tabular-nums ${darkMode ? 'text-white/42' : 'text-stone-500'}`}>
+                                            {product.price.toLocaleString('fr-FR')} €
+                                        </span>
+                                    </>
+                                )}
+                            </div>
+
+                            <div className="mt-auto flex items-end justify-between gap-2">
+                                <MiniSparkline values={product.dailyViews} darkMode={darkMode} />
+                                <div className="shrink-0 text-right">
+                                    <p className={`text-lg font-semibold leading-none tracking-[-0.04em] tabular-nums ${darkMode ? 'text-white' : 'text-stone-900'}`}>{product.views}</p>
+                                    <p className={`mt-1 text-[7px] font-bold uppercase tracking-[0.12em] ${darkMode ? 'text-white/32' : 'text-stone-500'}`}>vues</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </motion.li>
-            ))}
+                    </motion.li>
+                );
+            })}
         </ol>
     );
 };
@@ -548,6 +705,36 @@ const getTrackedProduct = (rawValue) => {
         name,
         price: Number.isFinite(parsedPrice) ? parsedPrice : null
     };
+};
+
+const buildDashboardProductVisualMap = (items) => {
+    const products = new Map();
+    (Array.isArray(items) ? items : []).forEach((item) => {
+        const [primaryImage] = getProductImageItems(item);
+        const imageUrl = primaryImage?.thumb320
+            || primaryImage?.thumb384
+            || primaryImage?.thumb
+            || primaryImage?.card
+            || item?.thumbnailUrl
+            || item?.imageUrl
+            || null;
+        if (!imageUrl) return;
+
+        const productName = String(item?.name || item?.title || 'Meuble').trim();
+        const pathKey = decodeURIComponent(String(getProductUrl(item)).split('/').filter(Boolean).pop() || '');
+        const visual = {
+            imageUrl,
+            imageAlt: productName ? `${productName}, meuble du catalogue` : 'Meuble du catalogue',
+            catalogName: productName,
+            catalogPrice: Number.isFinite(Number(item?.price)) ? Number(item.price) : null
+        };
+
+        [item?.id, item?.originalId, pathKey]
+            .map((value) => String(value || '').trim())
+            .filter(Boolean)
+            .forEach((key) => products.set(key, visual));
+    });
+    return products;
 };
 
 const getSessionVisitorKey = (session) => {
@@ -593,7 +780,7 @@ const LoadingProgress = ({ progress, text, darkMode }) => (
 );
 
 
-const AdminDashboard = ({ user, darkMode = false }) => {
+const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [stats, setStats] = useState({
         totalRevenue: 0,
@@ -619,6 +806,21 @@ const AdminDashboard = ({ user, darkMode = false }) => {
         totalProductViews: 0,
         uniqueProductViewers: 0
     });
+    const trendingProducts = useMemo(() => {
+        const visuals = buildDashboardProductVisualMap(items);
+        return insights.products.map((product) => {
+            const visual = visuals.get(product.id);
+            return {
+                ...product,
+                name: product.name === product.id && visual?.catalogName ? visual.catalogName : product.name,
+                price: product.price ?? visual?.catalogPrice ?? null,
+                ...(visual || {
+                    imageUrl: null,
+                    imageAlt: `${product.name}, visuel indisponible`
+                })
+            };
+        });
+    }, [insights.products, items]);
     const reducedMotion = useReducedMotion();
 
     // Modals
@@ -718,77 +920,39 @@ const AdminDashboard = ({ user, darkMode = false }) => {
 
     const chartData = useMemo(() => {
         if (!dailySales.length) return [];
-         
-        if (timeFilter === '7days' || timeFilter === '1month') {
-            const count = timeFilter === '7days' ? 7 : 30;
-            const dates = Array.from({length: count}, (_, i) => {
-                const d = new Date();
-                d.setDate(d.getDate() - (count - 1 - i));
-                return { 
-                    raw: d.toISOString().split('T')[0], 
-                    label: timeFilter === '7days' 
-                        ? d.toLocaleDateString('fr-FR', { weekday: 'short' }) 
-                        : d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'narrow' }) 
-                };
+        const periodDays = timeFilter === '7days' ? 7 : timeFilter === '1month' ? 30 : 365;
+        const now = new Date();
+        const endOfTodayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+        const revenueByDate = new Map();
+
+        dailySales.forEach(({ dateKey, totalRevenue }) => {
+            if (!dateKey) return;
+            revenueByDate.set(dateKey, (revenueByDate.get(dateKey) || 0) + Number(totalRevenue || 0));
+        });
+
+        return Array.from({ length: periodDays }, (_, index) => {
+            const date = new Date(endOfTodayUtc - ((periodDays - 1 - index) * 24 * 60 * 60 * 1000));
+            const dateKey = date.toISOString().slice(0, 10);
+            const axisLabel = date.toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: 'short',
+                timeZone: 'UTC'
             });
 
-            const revMap = {};
-            dates.forEach(d => revMap[d.raw] = 0);
-
-            dailySales.forEach((data) => {
-                const dateStr = data.dateKey;
-                if (revMap[dateStr] !== undefined) {
-                    revMap[dateStr] += Number(data.totalRevenue || 0);
-                }
-            });
-
-            return dates.map(d => ({ label: d.label, value: revMap[d.raw] }));
-        } else {
-            // 1 Year or All Time: Group by Month
-            const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc'];
-            let monthsArray = [];
-            
-            if (timeFilter === '1year') {
-                monthsArray = Array.from({length: 12}, (_, i) => {
-                    const d = new Date();
-                    d.setMonth(d.getMonth() - (11 - i));
-                    return { 
-                        raw: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, 
-                        label: monthNames[d.getMonth()] 
-                    };
-                });
-            } else {
-                // All Time: find oldest aggregated day
-                const oldestDate = dailySales[0]?.dateKey;
-                const start = oldestDate ? new Date(`${oldestDate}T00:00:00Z`) : new Date();
-                const end = new Date();
-                let current = new Date(start.getFullYear(), start.getMonth(), 1);
-                
-                while (current <= end) {
-                    monthsArray.push({
-                        raw: `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`,
-                        label: `${monthNames[current.getMonth()]} ${String(current.getFullYear()).slice(-2)}`
-                    });
-                    current.setMonth(current.setMonth() + 1);
-                }
-                // Cap to reasonable amount for display if too long
-                if (monthsArray.length > 24) monthsArray = monthsArray.slice(-24);
-            }
-
-            const revMap = {};
-            monthsArray.forEach(m => revMap[m.raw] = 0);
-
-            dailySales.forEach((data) => {
-                if (!data.dateKey) return;
-                const d = new Date(`${data.dateKey}T00:00:00Z`);
-                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                if (revMap[key] !== undefined) {
-                    revMap[key] += Number(data.totalRevenue || 0);
-                }
-            });
-
-            return monthsArray.map(m => ({ label: m.label, value: revMap[m.raw] }));
-        }
+            return {
+                dateKey,
+                axisLabel,
+                label: axisLabel,
+                tooltipLabel: date.toLocaleDateString('fr-FR', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    timeZone: 'UTC'
+                }),
+                value: Math.max(0, Number(revenueByDate.get(dateKey)) || 0)
+            };
+        });
     }, [dailySales, timeFilter]);
 
     const revenueSummary = useMemo(() => {
@@ -825,6 +989,9 @@ const AdminDashboard = ({ user, darkMode = false }) => {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                const today = new Date();
+                const rollupCutoffUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - 364);
+                const rollupCutoffKey = new Date(rollupCutoffUtc).toISOString().slice(0, 10);
                 const [
                     dashboardSnap,
                     inventorySnap,
@@ -833,7 +1000,12 @@ const AdminDashboard = ({ user, darkMode = false }) => {
                 ] = await Promise.all([
                     getDoc(doc(db, 'dashboard_stats', 'commerce')),
                     getDoc(doc(db, 'inventory_stats', 'overview')),
-                    getDocs(query(collection(db, 'sales_stats_daily'), orderBy('dateKey', 'asc'), limit(400))),
+                    getDocs(query(
+                        collection(db, 'sales_stats_daily'),
+                        where('dateKey', '>=', rollupCutoffKey),
+                        orderBy('dateKey', 'asc'),
+                        limit(366)
+                    )),
                     getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(5)))
                 ]);
 
@@ -1167,9 +1339,11 @@ const AdminDashboard = ({ user, darkMode = false }) => {
     const getFilterLabel = () => {
         if (timeFilter === '7days') return "les 7 derniers jours";
         if (timeFilter === '1month') return "les 30 derniers jours";
-        if (timeFilter === '1year') return "les 12 derniers mois";
-        return "les 24 derniers mois disponibles";
+        return "les 365 derniers jours";
     };
+
+    const chartGranularityLabel = 'Vue quotidienne';
+    const bestPointLabel = 'Meilleur jour';
 
     return (
         <motion.div
@@ -1234,7 +1408,7 @@ const AdminDashboard = ({ user, darkMode = false }) => {
                             <div>
                                 <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Performance</p>
                                 <h2 className={`mt-2 text-xl font-semibold tracking-[-0.03em] ${textBase}`}>Évolution du chiffre d’affaires</h2>
-                                <p className={`mt-1 text-[11px] ${textMuted}`}>Sur {getFilterLabel()}</p>
+                                <p className={`mt-1 text-[11px] ${textMuted}`}>{chartGranularityLabel} · {getFilterLabel()}</p>
                             </div>
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                                 <div className="flex gap-5">
@@ -1243,7 +1417,7 @@ const AdminDashboard = ({ user, darkMode = false }) => {
                                         <p className={`mt-1 text-sm font-semibold tabular-nums ${textBase}`}>{Math.round(revenueSummary.periodTotal).toLocaleString('fr-FR')} €</p>
                                     </div>
                                     <div>
-                                        <p className={`text-[8px] font-bold uppercase tracking-[0.13em] ${textMuted}`}>Meilleur point</p>
+                                        <p className={`text-[8px] font-bold uppercase tracking-[0.13em] ${textMuted}`}>{bestPointLabel}</p>
                                         <p className={`mt-1 text-sm font-semibold tabular-nums ${textBase}`}>{revenueSummary.bestPoint?.label || '—'}</p>
                                     </div>
                                 </div>
@@ -1251,8 +1425,7 @@ const AdminDashboard = ({ user, darkMode = false }) => {
                                     {[
                                         { id: '7days', label: '7j' },
                                         { id: '1month', label: '1m' },
-                                        { id: '1year', label: '1a' },
-                                        { id: 'alltime', label: 'Max' }
+                                        { id: '1year', label: '1a' }
                                     ].map((filter) => (
                                         <button
                                             type="button"
@@ -1326,7 +1499,7 @@ const AdminDashboard = ({ user, darkMode = false }) => {
                             </span>
                         </div>
                     </div>
-                    <TrendingProducts products={insights.products} loading={insights.loading} error={insights.error} darkMode={darkMode} />
+                    <TrendingProducts products={trendingProducts} loading={insights.loading} error={insights.error} darkMode={darkMode} />
                 </PanelFrame>
             </motion.div>
 

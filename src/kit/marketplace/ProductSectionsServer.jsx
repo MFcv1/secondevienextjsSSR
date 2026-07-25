@@ -510,6 +510,7 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
   <section
     data-instagram-carousel
     data-item-count={posts.length}
+    data-instagram-counter-state="idle"
     data-instagram-input-active="false"
     className="instagram-carousel-section relative isolate overflow-hidden px-0 pb-[64px] pt-[38px] md:px-6 md:py-[72px] lg:min-h-[690px] lg:px-[5vw] lg:py-[78px] xl:py-[86px]"
   >
@@ -554,8 +555,12 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
         </h2>
         <div className="mt-4 flex flex-col items-center gap-4">
           <div className="text-center">
-            <p className={`font-serif text-[33px] leading-none tracking-normal ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}>
-              38.9<span className="text-[0.52em] italic text-[#A68A64]">k</span>
+            <p
+              className={`font-serif text-[33px] leading-none tracking-normal ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}
+              aria-label="38,9 milliers d'abonnes Instagram"
+            >
+              <span className="instagram-counter-value tabular-nums" data-instagram-counter-value aria-hidden="true">38.9</span>
+              <span className="instagram-counter-suffix text-[0.52em] italic text-[#A68A64]" aria-hidden="true">k</span>
             </p>
             <p className="mt-2 text-[8px] font-black uppercase tracking-[0.22em] text-[#A68A64]">Abonnes Instagram</p>
           </div>
@@ -568,7 +573,10 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
           </a>
         </div>
       </div>
-      <div className="relative mx-auto mt-10 h-[366px] max-w-[430px] overflow-hidden min-[390px]:h-[386px] md:h-[462px] md:max-w-[560px]">
+      <div
+        data-insta-swipe-surface
+        className="relative mx-auto mt-10 h-[366px] max-w-[430px] touch-pan-y overflow-hidden min-[390px]:h-[386px] md:h-[462px] md:max-w-[560px]"
+      >
         {posts.map((post, index) => (
             <article
               key={post.title}
@@ -632,9 +640,12 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
       </div>
       <div className="mb-11 grid w-full max-w-[560px] grid-cols-[auto_auto] items-center justify-center gap-x-7">
         <div className="flex flex-col items-center md:items-end">
-          <div className={`flex origin-bottom translate-y-[-5px] scale-[1.045] items-end font-serif text-[58px] leading-none tracking-normal md:text-[68px] ${darkMode ? 'text-[#F9F6F0]' : 'text-[#1A1A1A]'}`}>
-            <span>38.9</span>
-            <span className="mb-1.5 ml-1 text-[30px] italic lowercase tracking-normal text-[#A68A64] md:text-[38px]">k</span>
+          <div
+            className={`flex origin-bottom translate-y-[-5px] scale-[1.045] items-end font-serif text-[58px] leading-none tracking-normal md:text-[68px] ${darkMode ? 'text-[#F9F6F0]' : 'text-[#1A1A1A]'}`}
+            aria-label="38,9 milliers d'abonnes Instagram"
+          >
+            <span className="instagram-counter-value tabular-nums" data-instagram-counter-value aria-hidden="true">38.9</span>
+            <span className="instagram-counter-suffix mb-1.5 ml-1 text-[30px] italic lowercase tracking-normal text-[#A68A64] md:text-[38px]" aria-hidden="true">k</span>
           </div>
           <p className={`mt-[13px] font-sans text-[8px] font-black uppercase tracking-[0.22em] min-[390px]:text-[9px] ${darkMode ? 'text-white/55' : 'text-[#8f8579]'}`}>
             abonnes Instagram
@@ -910,7 +921,10 @@ const TestimonialsCarouselPlaceholder = ({ darkMode = false } = {}) => (
     </div>
     <div className="mx-auto flex w-full max-w-[430px] flex-col items-center px-0 pb-16 pt-14 lg:hidden">
       <TestimonialsHeader darkMode={darkMode} compact />
-      <div className="relative mt-11 h-[318px] w-full overflow-hidden">
+      <div
+        data-testimonial-swipe-surface
+        className="relative mt-11 h-[318px] w-full touch-pan-y overflow-hidden"
+      >
         {testimonials.map((note) => (
           <TestimonialCardServer key={note.id} note={note} darkMode={darkMode} size="mobile" />
         ))}

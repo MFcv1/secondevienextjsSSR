@@ -129,6 +129,7 @@ Contrat du moteur:
 - une session explicitement fermee ne peut etre reprise que pendant une grace de 15 secondes, afin de tolerer un rechargement immediat sans fusionner un retour plusieurs minutes plus tard;
 - l'admin lit au maximum 5 000 sessions commencees dans la derniere annee;
 - l'onglet Stats effectue une lecture distincte, sans listener, bornee a 500 sessions commencees dans les 30 derniers jours pour les intentions devis et tendances produits; une erreur de cette lecture ne bloque pas les agregats commerce;
+- les vues et visiteurs du classement restent calcules exclusivement depuis `analytics_sessions`; le catalogue public court ne sert qu'a resoudre les miniatures par identifiant ou slug, sans lecture de `furniture`;
 - un cache IndexedDB de six heures evite une nouvelle lecture complete a chaque ouverture;
 - l'etat live est derive d'une activite de moins de 30 secondes et l'admin ecoute en temps reel les 100 sessions les plus recentes;
 - les erreurs analytics ne bloquent jamais checkout, Auth ou navigation;

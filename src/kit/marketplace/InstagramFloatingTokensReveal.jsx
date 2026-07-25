@@ -5,6 +5,9 @@ import { useEffect } from 'react';
 const REVEAL_THRESHOLDS = [0, 0.02, 0.1, 0.2, 0.32, 0.44, 0.56];
 const REVEAL_GAP_DESKTOP_MS = 180;
 const REVEAL_GAP_MOBILE_MS = 220;
+const COUNTER_TARGET = 38.9;
+const COUNTER_DURATION_MS = 1200;
+const COUNTER_TO_BUBBLES_LEAD_MS = 450;
 const INPUT_SETTLE_MS = 150;
 const IMAGE_INPUT_SETTLE_MS = 240;
 
@@ -68,11 +71,15 @@ export default function InstagramFloatingTokensReveal() {
     const tokenById = new Map(allTokens.map((token) => [token.dataset.floatingId, token]));
     const tokenOrder = isMobile.matches ? MOBILE_TOKEN_ORDER : DESKTOP_TOKEN_ORDER;
     const tokens = tokenOrder.map((id) => tokenById.get(id)).filter(Boolean);
+    const counterValues = Array.from(section.querySelectorAll('[data-instagram-counter-value]'));
+    const counterTarget = counterValues.find((counterValue) => counterValue.offsetParent !== null)
+      || counterValues[0];
     const revealGapMs = isMobile.matches ? REVEAL_GAP_MOBILE_MS : REVEAL_GAP_DESKTOP_MS;
 
     let cancelled = false;
     let prepareObserver = null;
     let revealObserver = null;
+    let counterObserver = null;
     let revealTimer = null;
     let pendingRevealFrame = null;
     let pendingRevealToken = null;
@@ -85,6 +92,9 @@ export default function InstagramFloatingTokensReveal() {
     let inputActive = false;
     let inputSettleTimer = null;
     let lastInputAt = window.performance?.now?.() || Date.now();
+    let counterAnimationFrame = null;
+    let counterStarted = counterValues.length === 0;
+    let tokenRevealNotBefore = 0;
     const settleFallbacks = new Set();
     const transitionCleanups = new Set();
 
@@ -173,6 +183,43 @@ export default function InstagramFloatingTokensReveal() {
       token.dataset.floatingSettled = 'true';
     };
 
+    const setCounterValue = (value) => {
+      const formattedValue = value.toFixed(1);
+      counterValues.forEach((counterValue) => {
+        counterValue.textContent = formattedValue;
+      });
+    };
+
+    const startCounterAnimation = () => {
+      if (counterStarted || counterValues.length === 0) return;
+      counterStarted = true;
+      const startedAt = window.performance.now();
+      tokenRevealNotBefore = startedAt + COUNTER_TO_BUBBLES_LEAD_MS;
+      section.dataset.instagramCounterState = 'running';
+      setCounterValue(0);
+
+      const animateCounter = (now) => {
+        if (cancelled) return;
+        const progress = Math.min(1, (now - startedAt) / COUNTER_DURATION_MS);
+        const easedProgress = 1 - (1 - progress) ** 4;
+        const displayedValue = progress >= 0.96
+          ? COUNTER_TARGET
+          : COUNTER_TARGET * easedProgress;
+        setCounterValue(displayedValue);
+
+        if (progress < 1) {
+          counterAnimationFrame = window.requestAnimationFrame(animateCounter);
+          return;
+        }
+
+        counterAnimationFrame = null;
+        setCounterValue(COUNTER_TARGET);
+        section.dataset.instagramCounterState = 'complete';
+      };
+
+      counterAnimationFrame = window.requestAnimationFrame(animateCounter);
+    };
+
     const revealToken = (token) => {
       if (token.dataset.floatingRevealed === 'true') return;
       token.dataset.floatingPrepared = 'true';
@@ -252,10 +299,13 @@ export default function InstagramFloatingTokensReveal() {
         cancelled
         || inputActive
         || !sectionVisible
+        || !counterStarted
         || revealTimer !== null
         || pendingRevealFrame !== null
       ) return;
-      revealTimer = window.setTimeout(revealNextToken, delay);
+      const now = window.performance?.now?.() || Date.now();
+      const counterLeadDelay = Math.max(0, tokenRevealNotBefore - now);
+      revealTimer = window.setTimeout(revealNextToken, Math.max(delay, counterLeadDelay));
     };
 
     const queueRevealThrough = (nextRank) => {
@@ -292,6 +342,8 @@ export default function InstagramFloatingTokensReveal() {
 
     if (reducedMotion) {
       prepare();
+      section.dataset.instagramCounterState = 'complete';
+      setCounterValue(COUNTER_TARGET);
       tokens.forEach((token) => {
         token.dataset.floatingPrepared = 'true';
         token.dataset.floatingRevealed = 'true';
@@ -330,6 +382,20 @@ export default function InstagramFloatingTokensReveal() {
         { root: observerRoot, rootMargin: '0px', threshold: REVEAL_THRESHOLDS },
       );
 
+      if (counterTarget) {
+        counterObserver = new IntersectionObserver(
+          (entries) => {
+            if (!entries.some((entry) => entry.isIntersecting)) return;
+            startCounterAnimation();
+            scheduleReveal();
+            counterObserver?.disconnect();
+            counterObserver = null;
+          },
+          { root: observerRoot, rootMargin: '0px 0px -10% 0px', threshold: 0.35 },
+        );
+        counterObserver.observe(counterTarget);
+      }
+
       prepareObserver.observe(section);
       revealObserver.observe(section);
     } else {
@@ -337,6 +403,7 @@ export default function InstagramFloatingTokensReveal() {
       sectionVisible = true;
       field.dataset.floatingVisible = 'true';
       prepare();
+      startCounterAnimation();
       queueRevealThrough(5);
     }
 
@@ -363,9 +430,13 @@ export default function InstagramFloatingTokensReveal() {
       clearImageWarmSchedule();
       prepareObserver?.disconnect();
       revealObserver?.disconnect();
+      counterObserver?.disconnect();
       scrollTarget.removeEventListener('scroll', markInput);
       scrollTarget.removeEventListener('scrollend', markInputEnd);
       pauseRevealQueue();
+      if (counterAnimationFrame !== null) {
+        window.cancelAnimationFrame(counterAnimationFrame);
+      }
       if (inputSettleTimer !== null) window.clearTimeout(inputSettleTimer);
       settleFallbacks.forEach((timer) => window.clearTimeout(timer));
       transitionCleanups.forEach((cleanup) => cleanup());

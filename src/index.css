@@ -2105,6 +2105,60 @@ footer.gallery-deferred-render {
     0 22px 48px rgba(0, 0, 0, 0.24);
 }
 
+.instagram-counter-value,
+.instagram-counter-suffix {
+  display: inline-block;
+  transform-origin: 50% 80%;
+}
+
+.instagram-counter-value {
+  width: 3.35ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.instagram-carousel-section[data-instagram-counter-state="running"] .instagram-counter-value {
+  animation: instagram-counter-arrive 1200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.instagram-carousel-section[data-instagram-counter-state="running"] .instagram-counter-suffix {
+  animation: instagram-counter-suffix-arrive 720ms 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes instagram-counter-arrive {
+  0% {
+    opacity: 0.36;
+    transform: translate3d(0, 0.16em, 0) scale(0.92);
+  }
+
+  62% {
+    opacity: 1;
+    transform: translate3d(0, -0.025em, 0) scale(1.035);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes instagram-counter-suffix-arrive {
+  0% {
+    opacity: 0.42;
+    transform: translate3d(0, 0.18em, 0) rotate(-8deg) scale(0.78);
+  }
+
+  70% {
+    opacity: 1;
+    transform: translate3d(0, -0.04em, 0) rotate(2deg) scale(1.08);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+}
+
 @keyframes instagram-token-float {
   0% {
     transform:
@@ -2365,7 +2419,6 @@ footer.gallery-deferred-render {
   }
 
   .instagram-floating-token--gram {
-    --float-rest-opacity: 0.74;
     left: 11%;
     top: 54px;
     width: 48px;
@@ -2373,7 +2426,6 @@ footer.gallery-deferred-render {
   }
 
   .instagram-floating-token--heart {
-    --float-rest-opacity: 0.62;
     left: 19%;
     top: 652px;
     width: 50px;
@@ -2381,7 +2433,6 @@ footer.gallery-deferred-render {
   }
 
   .instagram-floating-token--spark {
-    --float-rest-opacity: 0.54;
     left: 82%;
     top: 174px;
     width: 28px;
@@ -2389,7 +2440,6 @@ footer.gallery-deferred-render {
   }
 
   .instagram-floating-token--message {
-    --float-rest-opacity: 0.48;
     left: 92%;
     top: 128px;
     width: 40px;
@@ -2397,7 +2447,6 @@ footer.gallery-deferred-render {
   }
 
   .instagram-floating-token--send {
-    --float-rest-opacity: 0.44;
     left: 9%;
     top: 236px;
     width: 42px;
@@ -2406,7 +2455,6 @@ footer.gallery-deferred-render {
 
   .instagram-floating-token--mail {
     display: block;
-    --float-rest-opacity: 0.5;
     left: 19%;
     top: 154px;
     width: 34px;
@@ -2414,7 +2462,6 @@ footer.gallery-deferred-render {
   }
 
   .instagram-floating-token--save {
-    --float-rest-opacity: 0.54;
     left: 88%;
     top: 260px;
     width: 40px;
@@ -2422,7 +2469,6 @@ footer.gallery-deferred-render {
   }
 
   .instagram-floating-token--at {
-    --float-rest-opacity: 0.42;
     left: 86%;
     top: 678px;
     width: 44px;
@@ -2437,6 +2483,13 @@ footer.gallery-deferred-render {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .instagram-counter-value,
+  .instagram-counter-suffix {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+
   .instagram-floating-field .instagram-floating-token,
   .instagram-floating-field .instagram-floating-token[data-floating-revealed="true"] {
     opacity: var(--float-rest-opacity, 0.68);

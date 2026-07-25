@@ -2,6 +2,8 @@ import React from 'react';
 import Link from 'next/link';
 import HeroVideoSliderIsland from '../../../app/HeroVideoSliderIsland';
 
+const HERO_DESCRIPTION = "Nous chinons, restaurons et sublimons des pièces de caractère. Un artisanat d'art en Provence, pour un intérieur qui a du sens.";
+
 function SplitText({ text, startIndex = 0 }) {
   const words = text.split(' ');
   return (
@@ -11,6 +13,51 @@ function SplitText({ text, startIndex = 0 }) {
           <span style={{ '--i': startIndex + i }}>{word}</span>
         </span>
       ))}
+    </>
+  );
+}
+
+function InkRevealText({ text }) {
+  let letterIndex = 0;
+  const words = text.trim().split(/\s+/);
+
+  return (
+    <>
+      <span className="sr-only">{text}</span>
+      <span className="sv4-ink-copy" aria-hidden="true">
+        {words.map((word, wordIndex) => {
+          const letters = Array.from(word).map((letter) => {
+            const index = letterIndex;
+            const tilt = ((index % 5) - 2) * 0.35;
+            const rise = 0.08 + (index % 3) * 0.025;
+            letterIndex += 1;
+
+            return (
+              <span
+                className="sv4-ink-char"
+                data-char={letter}
+                key={`${wordIndex}-${index}`}
+                style={{
+                  '--ink-i': index,
+                  '--ink-rise': `${rise}em`,
+                  '--ink-tilt': `${tilt}deg`,
+                }}
+              >
+                {letter}
+              </span>
+            );
+          });
+
+          letterIndex += 1;
+
+          return (
+            <React.Fragment key={`${word}-${wordIndex}`}>
+              <span className="sv4-ink-word">{letters}</span>
+              {wordIndex < words.length - 1 ? ' ' : null}
+            </React.Fragment>
+          );
+        })}
+      </span>
     </>
   );
 }
@@ -32,8 +79,8 @@ export default function Sv4HomeHero({ withAboutShell = false }) {
             <SplitText text="au mobilier d'hier" startIndex={4} />
           </span>
         </h1>
-        <p className="sv4-hero__sub sv4-reveal">
-          Nous chinons, restaurons et sublimons des pièces de caractère. Un artisanat d'art en Provence, pour un intérieur qui a du sens.
+        <p className="sv4-hero__sub sv4-hero__sub--ink">
+          <InkRevealText text={HERO_DESCRIPTION} />
         </p>
         <div className="sv4-hero__actions sv4-reveal">
           <Link href="/" className="sv4-hero__btn-primary sv4-btn-reveal">

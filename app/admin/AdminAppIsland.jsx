@@ -75,7 +75,7 @@ const adminTabs = KIT_CONFIG.adminTabs.map((tab, index) => ({
   icon: TAB_ICONS[tab.id] ?? COLLECTION_ICONS[index % COLLECTION_ICONS.length],
 }));
 
-const ADMIN_PUBLIC_CATALOG_TABS = new Set(['analytics', 'inventory']);
+const ADMIN_PUBLIC_CATALOG_TABS = new Set(['dashboard', 'analytics', 'inventory']);
 
 function AdminCatalogStatus({ darkMode, error, loading, onRetry }) {
   if (!loading && !error) return null;
@@ -152,10 +152,10 @@ function AdminContent() {
   }, []);
 
   React.useEffect(() => {
-    if (ADMIN_PUBLIC_CATALOG_TABS.has(adminCollection)) {
+    if (user && isAdmin && hasStrongAuth && ADMIN_PUBLIC_CATALOG_TABS.has(adminCollection)) {
       void ensureAdminCatalog();
     }
-  }, [adminCollection, ensureAdminCatalog]);
+  }, [adminCollection, ensureAdminCatalog, hasStrongAuth, isAdmin, user]);
 
   React.useEffect(() => {
     const handleInvalidation = () => {
@@ -317,7 +317,7 @@ function AdminContent() {
 
         <Suspense fallback={<div className="flex items-center justify-center p-20"><div className="h-10 w-10 animate-spin rounded-full border-4 border-stone-200 border-t-stone-800" /></div>}>
           {adminCollection === 'dashboard' ? (
-            <AdminDashboard user={user} darkMode={darkMode} />
+            <AdminDashboard user={user} darkMode={darkMode} items={catalogState.items} />
           ) : adminCollection === 'homepage' ? (
             <AdminHomepage darkMode={darkMode} />
           ) : adminCollection === 'orders' ? (

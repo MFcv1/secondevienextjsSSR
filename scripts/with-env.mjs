@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { existsSync, readFileSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { networkInterfaces } from 'node:os';
 import { basename, resolve } from 'node:path';
 
@@ -90,12 +91,9 @@ for (const key of FORBIDDEN_PUBLIC_OWNER_KEYS) {
 env.NEXT_TELEMETRY_DISABLED = env.NEXT_TELEMETRY_DISABLED || '1';
 
 const isNextCommand = command === 'next';
-const commandPath = isNextCommand ? process.execPath : command;
-const commandArgs = isNextCommand ? [require.resolve('next/dist/bin/next'), ...args] : args;
-
-const readOption = (optionNames, fallback) => {
-  const optionIndex = args.findIndex((arg) => optionNames.includes(arg));
-  return optionIndex >= 0 && args[optionIndex + 1] ? args[optionIndex + 1] : fallback;
+const readOption = (sourceArgs, optionNames, fallback) => {
+  const optionIndex = sourceArgs.findIndex((arg) => optionNames.includes(arg));
+  return optionIndex >= 0 && sourceArgs[optionIndex + 1] ? sourceArgs[optionIndex + 1] : fallback;
 };
 
 const isPrivateIpv4 = (address) => (
@@ -130,15 +128,62 @@ const getPreferredLanAddress = () => {
 
 const isNetworkDevServer = isNextCommand
   && args[0] === 'dev'
-  && ['0.0.0.0', '::'].includes(readOption(['-H', '--hostname'], ''));
+  && ['0.0.0.0', '::'].includes(readOption(args, ['-H', '--hostname'], ''));
+
+const canListenOnPort = (port, host) => new Promise((resolvePort, rejectPort) => {
+  const server = createServer();
+  server.unref();
+  server.once('error', (error) => {
+    if (error?.code === 'EADDRINUSE' || error?.code === 'EACCES') {
+      resolvePort(false);
+      return;
+    }
+    rejectPort(error);
+  });
+  server.listen({ port, host, exclusive: true }, () => {
+    server.close(() => resolvePort(true));
+  });
+});
+
+const findAvailablePort = async ({
+  host,
+  startPort = 3000,
+  attempts = 100,
+}) => {
+  for (let offset = 0; offset < attempts; offset += 1) {
+    const candidate = startPort + offset;
+    if (await canListenOnPort(candidate, host)) return candidate;
+  }
+  throw new Error(`Aucun port libre trouve entre ${startPort} et ${startPort + attempts - 1}.`);
+};
+
+const resolvedArgs = [...args];
+const requestedPort = readOption(resolvedArgs, ['-p', '--port'], '3000');
+
+if (isNetworkDevServer && requestedPort === 'auto') {
+  const hostname = readOption(resolvedArgs, ['-H', '--hostname'], '0.0.0.0');
+  const portOptionIndex = resolvedArgs.findIndex((arg) => ['-p', '--port'].includes(arg));
+  const availablePort = await findAvailablePort({
+    host: hostname === '::' ? '::' : '0.0.0.0',
+  });
+  resolvedArgs[portOptionIndex + 1] = String(availablePort);
+}
+
+const commandPath = isNextCommand ? process.execPath : command;
+const commandArgs = isNextCommand
+  ? [require.resolve('next/dist/bin/next'), ...resolvedArgs]
+  : resolvedArgs;
 
 if (isNetworkDevServer) {
   const lanAddress = getPreferredLanAddress();
-  const port = readOption(['-p', '--port'], '3000');
+  const port = readOption(resolvedArgs, ['-p', '--port'], '3000');
+  const desktopUrl = `http://localhost:${port}`;
+  console.log('\n  Liens du serveur local (Ctrl + clic pour ouvrir)');
+  console.log(`  Bureau                 : ${desktopUrl}`);
   if (lanAddress) {
-    console.log(`\n  Telephone (meme Wi-Fi) : http://${lanAddress}:${port}\n`);
+    console.log(`  Telephone (meme Wi-Fi) : http://${lanAddress}:${port}\n`);
   } else {
-    console.log('\n  Telephone : IPv4 locale non detectee. Verifie avec ipconfig.\n');
+    console.log('  Telephone               : IPv4 locale non detectee. Verifie avec ipconfig.\n');
   }
 }
 

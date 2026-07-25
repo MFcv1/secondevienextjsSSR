@@ -221,6 +221,115 @@ const getInteractionItems = (node) => {
     : parseItems(node);
 };
 
+const setupMobileCarouselSwipe = (surface, {
+  isEnabled,
+  onPrevious,
+  onNext,
+  onGestureStart,
+  onGestureEnd,
+}) => {
+  if (!surface || surface.dataset.swipeReady === 'true') return;
+  surface.dataset.swipeReady = 'true';
+
+  const intentThreshold = 10;
+  const swipeThreshold = 42;
+  const flingThreshold = 24;
+  const flingVelocity = 0.45;
+  let gesture = null;
+  let resetTimer;
+
+  const releasePointer = (pointerId) => {
+    if (!surface.hasPointerCapture?.(pointerId)) return;
+    surface.releasePointerCapture(pointerId);
+  };
+
+  const resetSurfacePosition = () => {
+    window.clearTimeout(resetTimer);
+    surface.style.transition = 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)';
+    surface.style.transform = '';
+    resetTimer = window.setTimeout(() => {
+      surface.style.transition = '';
+    }, 240);
+  };
+
+  surface.addEventListener('pointerdown', (event) => {
+    if (
+      !isEnabled()
+      || !event.isPrimary
+      || !['touch', 'pen'].includes(event.pointerType)
+    ) {
+      return;
+    }
+
+    window.clearTimeout(resetTimer);
+    surface.style.transition = 'none';
+    gesture = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startedAt: event.timeStamp,
+      horizontal: false,
+    };
+    surface.setPointerCapture?.(event.pointerId);
+    onGestureStart?.();
+  });
+
+  surface.addEventListener('pointermove', (event) => {
+    if (!gesture || gesture.pointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - gesture.startX;
+    const deltaY = event.clientY - gesture.startY;
+    const distanceX = Math.abs(deltaX);
+    const distanceY = Math.abs(deltaY);
+
+    if (!gesture.horizontal) {
+      if (distanceY >= intentThreshold && distanceY > distanceX) {
+        const pointerId = gesture.pointerId;
+        gesture = null;
+        releasePointer(pointerId);
+        resetSurfacePosition();
+        onGestureEnd?.({ swiped: false });
+        return;
+      }
+      if (distanceX < intentThreshold || distanceX <= distanceY) return;
+      gesture.horizontal = true;
+    }
+
+    event.preventDefault();
+    const visualOffset = Math.max(-72, Math.min(72, deltaX * 0.42));
+    surface.style.transform = `translate3d(${visualOffset}px, 0, 0)`;
+  });
+
+  const finishGesture = (event, cancelled = false) => {
+    if (!gesture || gesture.pointerId !== event.pointerId) return;
+
+    const currentGesture = gesture;
+    gesture = null;
+    releasePointer(event.pointerId);
+
+    const deltaX = event.clientX - currentGesture.startX;
+    const deltaY = event.clientY - currentGesture.startY;
+    const distanceX = Math.abs(deltaX);
+    const duration = Math.max(1, event.timeStamp - currentGesture.startedAt);
+    const velocity = distanceX / duration;
+    const horizontalIntent = currentGesture.horizontal
+      || distanceX > Math.abs(deltaY) * 1.15;
+    const swiped = !cancelled
+      && horizontalIntent
+      && (distanceX >= swipeThreshold || (distanceX >= flingThreshold && velocity >= flingVelocity));
+
+    resetSurfacePosition();
+    if (swiped) {
+      if (deltaX < 0) onNext();
+      else onPrevious();
+    }
+    onGestureEnd?.({ swiped });
+  };
+
+  surface.addEventListener('pointerup', (event) => finishGesture(event));
+  surface.addEventListener('pointercancel', (event) => finishGesture(event, true));
+};
+
 const setupProductGridExpansion = () => {
   const onClick = (event) => {
     const button = event.target.closest('[data-product-grid-more]');
@@ -450,9 +559,10 @@ const setupInstagram = () => {
     let resumeTimer;
     let sectionVisible = false;
     let manuallyPaused = false;
+    let swipeActive = false;
     const desktopLayout = window.matchMedia('(min-width: 1024px)');
     const getVisibleLayout = () => (desktopLayout.matches ? 'desktop' : 'mobile');
-    const isInputActive = () => root.dataset.instagramInputActive === 'true';
+    const isInputActive = () => swipeActive || root.dataset.instagramInputActive === 'true';
 
     const mobilePositions = {
       farLeft: { transform: 'translateX(-206%) scale(0.86)', opacity: 0, zIndex: 0, pointerEvents: 'none' },
@@ -613,6 +723,20 @@ const setupInstagram = () => {
       dot.addEventListener('click', () => {
         goTo(index);
       });
+    });
+    setupMobileCarouselSwipe(root.querySelector('[data-insta-swipe-surface]'), {
+      isEnabled: () => !desktopLayout.matches,
+      onPrevious: () => goTo(activeIndex - 1),
+      onNext: () => goTo(activeIndex + 1),
+      onGestureStart: () => {
+        swipeActive = true;
+        window.clearTimeout(autoplayTimer);
+        window.clearTimeout(preloadTimer);
+      },
+      onGestureEnd: ({ swiped }) => {
+        swipeActive = false;
+        if (!swiped) scheduleAutoplayWhenCalm();
+      },
     });
 
     if ('IntersectionObserver' in window) {
@@ -782,6 +906,17 @@ const setupTestimonials = () => {
         activeIndex = index % items.length;
         render({ interactive: true });
       });
+    });
+    setupMobileCarouselSwipe(root.querySelector('[data-testimonial-swipe-surface]'), {
+      isEnabled: () => window.matchMedia('(max-width: 1023px)').matches,
+      onPrevious: () => {
+        activeIndex = wrapIndex(activeIndex - 1, items.length);
+        render({ interactive: true });
+      },
+      onNext: () => {
+        activeIndex = wrapIndex(activeIndex + 1, items.length);
+        render({ interactive: true });
+      },
     });
     render();
   });

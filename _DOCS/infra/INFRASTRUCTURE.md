@@ -33,6 +33,15 @@ https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app
 
 Le sandbox est l'environnement de demonstration cliente. Il n'est pas le domaine final et ses passkeys seront a reenroler.
 
+Serveur local accessible sur le reseau:
+
+```bash
+npm run dev:host
+npm run dev:host:auto
+```
+
+`dev:host` conserve le port previsible `3000`. `dev:host:auto` teste les ports a partir de `3000`, transmet le premier port libre a Next et affiche les URL cliquables bureau et telephone sur le meme Wi-Fi.
+
 ## 3. Topologie actuelle
 
 ```text

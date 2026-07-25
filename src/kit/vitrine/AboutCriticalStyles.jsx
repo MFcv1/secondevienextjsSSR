@@ -7,6 +7,10 @@ const ABOUT_CRITICAL_CSS = `
   --f-body: var(--font-plus-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-reveal: 900ms;
+  --ink-reveal-duration: 920ms;
+  --ink-sequence-delay: 1120ms;
+  --ink-character-step: 22ms;
+  --ink-glow: rgba(232, 198, 142, 0.72);
   --content-px: clamp(20px, 4vw, 64px);
   background: #f9f6f0;
   color: #1a1a1a;
@@ -176,6 +180,7 @@ const ABOUT_CRITICAL_CSS = `
 }
 .sv4-about-shell .sv4-split-word {
   display: inline-block;
+  flex-shrink: 0;
   overflow: hidden;
   padding-bottom: 0.16em;
   margin-bottom: 0.02em;
@@ -202,6 +207,75 @@ const ABOUT_CRITICAL_CSS = `
   letter-spacing: 0.02em;
   text-align: center;
   text-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+.sv4-about-shell .sv4-hero__sub--ink {
+  opacity: 1;
+  transform: none;
+}
+.sv4-about-shell .sv4-ink-copy {
+  display: inline;
+}
+.sv4-about-shell .sv4-ink-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+.sv4-about-shell .sv4-ink-char {
+  position: relative;
+  display: inline-block;
+  opacity: 0;
+  clip-path: inset(-0.2em 108% -0.28em -0.14em);
+  transform: translate3d(-0.08em, var(--ink-rise, 0.1em), 0) rotate(var(--ink-tilt, 0deg));
+  transform-origin: left 72%;
+  animation: sv4-ink-inscribe var(--ink-reveal-duration) var(--ease) both;
+  animation-delay: calc(var(--ink-sequence-delay) + var(--ink-i, 0) * var(--ink-character-step));
+  backface-visibility: hidden;
+}
+.sv4-about-shell .sv4-ink-char::after {
+  content: attr(data-char);
+  position: absolute;
+  inset: 0;
+  color: var(--ink-glow);
+  opacity: 0;
+  clip-path: inset(-0.24em 105% -0.32em -0.18em);
+  text-shadow: 0 0 0.14em rgba(250,246,239,0.9), 0 0 0.5em var(--ink-glow);
+  pointer-events: none;
+  animation: sv4-ink-glimmer 680ms var(--ease) both;
+  animation-delay: calc(var(--ink-sequence-delay) + 90ms + var(--ink-i, 0) * var(--ink-character-step));
+}
+@keyframes sv4-ink-inscribe {
+  0% {
+    opacity: 0;
+    clip-path: inset(-0.2em 108% -0.28em -0.14em);
+    transform: translate3d(-0.08em, var(--ink-rise, 0.1em), 0) rotate(var(--ink-tilt, 0deg));
+  }
+  24% { opacity: 0.48; }
+  62% {
+    opacity: 1;
+    clip-path: inset(-0.2em -0.12em -0.28em -0.14em);
+    transform: translate3d(0, 0.015em, 0) rotate(0deg);
+  }
+  100% {
+    opacity: 1;
+    clip-path: inset(-0.2em -0.12em -0.28em -0.14em);
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+@keyframes sv4-ink-glimmer {
+  0% {
+    opacity: 0;
+    clip-path: inset(-0.24em 105% -0.32em -0.18em);
+    transform: translate3d(-0.08em, 0.05em, 0);
+  }
+  38% { opacity: 0.9; }
+  68% {
+    opacity: 0.48;
+    clip-path: inset(-0.24em -0.18em -0.32em -0.18em);
+  }
+  100% {
+    opacity: 0;
+    clip-path: inset(-0.24em -0.18em -0.32em 108%);
+    transform: translate3d(0.08em, -0.035em, 0);
+  }
 }
 .sv4-about-shell .sv4-hero__actions {
   display: flex;
@@ -301,7 +375,7 @@ const ABOUT_CRITICAL_CSS = `
   .sv4-about-shell .sv4-hero__title {
     width: 100%;
     max-width: none;
-    font-size: clamp(2.85rem, 10.5vw, 3.8rem);
+    font-size: clamp(1.8rem, 9.5vw, 3.8rem);
     line-height: 1.14;
     gap: 0.12em;
   }
@@ -322,6 +396,17 @@ const ABOUT_CRITICAL_CSS = `
     gap: 6px;
   }
   .sv4-about-shell .sv4-hero__scroll-line { height: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sv4-about-shell .sv4-ink-char {
+    animation: none !important;
+    opacity: 1 !important;
+    clip-path: none !important;
+    transform: none !important;
+  }
+  .sv4-about-shell .sv4-ink-char::after {
+    display: none !important;
+  }
 }
 `;
 

@@ -1,6 +1,6 @@
 # Cartographie du projet Seconde Vie Next
 
-Derniere verification: 2026-07-18
+Derniere verification: 2026-07-24
 Statut: `CARTE_CANONIQUE_ACTIVE`
 
 ## 1. Role et maintenance
@@ -152,6 +152,7 @@ AnalyticsCollectorIsland + AuthProvider anonyme [C]
   -> heartbeat adaptatif + raisons init/route/visible/beacon [C]
   -> initLiveSession/syncSession/beacon + cache borne du hash de jeton [F]
   -> analytics_sessions/{sessionId} avec journey et compteurs de raisons embarques [DB]
+  -> AdminDashboard: intentions/tendances 30 jours + miniatures du snapshot public court [C]
   -> AdminAnalytics: historique borne, cache IndexedDB, listener live et frise illustree [C]
   -> UID/IP, courbe, bandeau live cumulatif, visiteurs et parcours [C]
 ```
@@ -375,7 +376,7 @@ src/kit/vitrine/
 
 ```text
 src/kit/admin/
-|-- AdminDashboard.jsx ................ pilotage commerce, devis/tendances analytics bornes, exports et maintenance rapide
+|-- AdminDashboard.jsx ................ pilotage commerce, devis/tendances analytics bornes, miniatures du snapshot public, exports et maintenance rapide
 |-- AdminAnalytics.jsx ................ moteur Data canonique: UID/IP, live, parcours illustres, courbes
 |-- AdminForm.jsx ..................... creation/edition annonces
 |-- AdminItemList.jsx ................. liste publications
@@ -539,6 +540,12 @@ Storage
 ```
 
 ## 11. Scripts et tests
+
+### Outils de developpement local
+
+```text
+with-env.mjs ......................... charge l'environnement et lance Next; `dev:host:auto` choisit un port libre et affiche les URL bureau/mobile
+```
 
 ### Gates de contrat
 
