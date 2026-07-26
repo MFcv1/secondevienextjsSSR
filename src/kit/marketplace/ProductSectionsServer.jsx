@@ -5,7 +5,6 @@ import GalleryFixedSectionsInteractions from './GalleryFixedSectionsInteractions
 import InstagramFloatingTokensReveal from './InstagramFloatingTokensReveal';
 
 const PRODUCT_GRID_INITIAL_COUNT = 10;
-const PRODUCT_GRID_BATCH_SIZE = 10;
 
 const getPublishedItems = (items) => (
   Array.isArray(items) ? items.filter((item) => item?.status === 'published') : []
@@ -118,7 +117,6 @@ const ProductGridSectionServer = ({
             aria-controls={`${id}-grid`}
             aria-expanded="false"
             data-product-grid-more
-            data-batch-size={PRODUCT_GRID_BATCH_SIZE}
             className={`flex min-h-11 items-center gap-2 rounded-full px-8 py-3 font-sans text-[10px] font-bold uppercase tracking-widest transition-colors ${darkMode ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-stone-100 text-stone-800 hover:bg-stone-200'}`}
           >
             Voir plus <ArrowRight size={12} />
@@ -140,7 +138,7 @@ export const getNewestItems = (items, limit = Number.POSITIVE_INFINITY) => (
     .slice(0, limit)
 );
 
-export const getSmallPriceItems = (items, limit = 10) => (
+export const getSmallPriceItems = (items, limit = Number.POSITIVE_INFINITY) => (
   [...getPublishedItems(items)]
     .filter((item) => getItemPrice(item) > 0 && getItemPrice(item) <= 250)
     .sort((a, b) => {

@@ -747,7 +747,7 @@ export default function ProductDetailShellIsland({
   }, [applyLayeredGalleryExit, navigateToGalleryTarget]);
 
   const openProductLightbox = useCallback(() => {
-    if (suppressImageClickRef.current) return;
+    if (suppressImageClickRef.current || isClosingToGalleryRef.current) return;
     const imageNode = mainImageRef.current;
     const visibleSrc = imageNode?.currentSrc || imageNode?.src || activeImageSrc;
     const rect = imageNode?.getBoundingClientRect?.();
@@ -868,6 +868,9 @@ export default function ProductDetailShellIsland({
       return;
     }
     if (Math.abs(dy) > 58 && Math.abs(dy) > Math.abs(dx) * 1.2 && dy > 0 && !isMobilePanelOpen) {
+      event.preventDefault();
+      event.stopPropagation();
+      suppressImageClickRef.current = true;
       dismissSwipeExitHint();
       closeToGallery();
     }

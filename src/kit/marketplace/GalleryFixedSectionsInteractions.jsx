@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 
 const wrapIndex = (index, count) => (index + count) % count;
+const EXPANDED_PRODUCT_GRIDS_KEY = 'secondevie:gallery-expanded-product-grids:v1';
 
 const setupRichSectionsPrewarm = () => {
   const mobileScrollRoot = window.matchMedia('(max-width: 1023px)').matches
@@ -331,6 +332,34 @@ const setupMobileCarouselSwipe = (surface, {
 };
 
 const setupProductGridExpansion = () => {
+  const getExpandedGridIds = () => {
+    try {
+      const stored = JSON.parse(window.sessionStorage.getItem(EXPANDED_PRODUCT_GRIDS_KEY) || '[]');
+      return new Set(Array.isArray(stored) ? stored.filter((id) => typeof id === 'string') : []);
+    } catch {
+      return new Set();
+    }
+  };
+
+  const revealAllItems = (section) => {
+    section.querySelectorAll('[data-product-grid-item][hidden]').forEach((item) => {
+      item.hidden = false;
+    });
+
+    const button = section.querySelector('[data-product-grid-more]');
+    button?.setAttribute('aria-expanded', 'true');
+    button?.closest('.product-grid-more-wrap')?.setAttribute('hidden', '');
+  };
+
+  const restoreExpandedGrids = () => {
+    const expandedGridIds = getExpandedGridIds();
+    if (!expandedGridIds.size) return;
+
+    document.querySelectorAll('[data-expandable-product-grid][id]').forEach((section) => {
+      if (expandedGridIds.has(section.id)) revealAllItems(section);
+    });
+  };
+
   const onClick = (event) => {
     const button = event.target.closest('[data-product-grid-more]');
     if (!button) return;
@@ -338,24 +367,29 @@ const setupProductGridExpansion = () => {
     const section = button.closest('[data-expandable-product-grid]');
     if (!section) return;
 
-    const hiddenItems = [...section.querySelectorAll('[data-product-grid-item][hidden]')];
-    const parsedBatchSize = Number.parseInt(button.dataset.batchSize || '', 10);
-    const batchSize = Number.isFinite(parsedBatchSize) && parsedBatchSize > 0
-      ? parsedBatchSize
-      : hiddenItems.length;
+    revealAllItems(section);
 
-    hiddenItems.slice(0, batchSize).forEach((item) => {
-      item.hidden = false;
-    });
-
-    button.setAttribute('aria-expanded', 'true');
-    if (!section.querySelector('[data-product-grid-item][hidden]')) {
-      button.closest('.product-grid-more-wrap')?.setAttribute('hidden', '');
+    if (section.id) {
+      try {
+        const expandedGridIds = getExpandedGridIds();
+        expandedGridIds.add(section.id);
+        window.sessionStorage.setItem(
+          EXPANDED_PRODUCT_GRIDS_KEY,
+          JSON.stringify([...expandedGridIds]),
+        );
+      } catch {
+        // The current grid still expands when session storage is unavailable.
+      }
     }
   };
 
+  restoreExpandedGrids();
   document.addEventListener('click', onClick);
-  return () => document.removeEventListener('click', onClick);
+  window.addEventListener('pageshow', restoreExpandedGrids);
+  return () => {
+    document.removeEventListener('click', onClick);
+    window.removeEventListener('pageshow', restoreExpandedGrids);
+  };
 };
 
 const setupBeforeAfter = () => {
@@ -923,15 +957,15 @@ const setupTestimonials = () => {
 };
 
 export default function GalleryFixedSectionsInteractions() {
+  useLayoutEffect(() => setupProductGridExpansion(), []);
+
   useEffect(() => {
     setupBeforeAfter();
     setupInstagram();
     setupTestimonials();
     const cleanupPrewarm = setupRichSectionsPrewarm();
-    const cleanupProductGrid = setupProductGridExpansion();
     return () => {
       cleanupPrewarm();
-      cleanupProductGrid();
     };
   }, []);
 

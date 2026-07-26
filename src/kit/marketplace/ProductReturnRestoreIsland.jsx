@@ -11,6 +11,29 @@ const currentHref = () => (
   window.location.pathname + (window.location.search || '') + (window.location.hash || '')
 );
 
+const getExpandedProductGridIds = () => (
+  Array.from(document.querySelectorAll('[data-expandable-product-grid][id]'))
+    .filter((section) => section.querySelector('[data-product-grid-more][aria-expanded="true"]'))
+    .map((section) => section.id)
+);
+
+const restoreExpandedProductGrids = (gridIds) => {
+  if (!Array.isArray(gridIds)) return;
+
+  gridIds.forEach((gridId) => {
+    if (typeof gridId !== 'string' || !gridId) return;
+    const section = document.getElementById(gridId);
+    if (!section?.matches('[data-expandable-product-grid]')) return;
+
+    section.querySelectorAll('[data-product-grid-item][hidden]').forEach((item) => {
+      item.hidden = false;
+    });
+    const button = section.querySelector('[data-product-grid-more]');
+    button?.setAttribute('aria-expanded', 'true');
+    button?.closest('.product-grid-more-wrap')?.setAttribute('hidden', '');
+  });
+};
+
 export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = {}) {
   useLayoutEffect(() => {
     const rememberProductReturnTarget = (event) => {
@@ -28,6 +51,7 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
           productHref: productUrl.pathname + productUrl.search,
           scrollY: window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0,
           galleryScrollTop: scroller?.scrollTop || 0,
+          expandedProductGridIds: getExpandedProductGridIds(),
           savedAt: Date.now(),
         }));
       } catch {
@@ -91,6 +115,7 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
           && target?.origin === window.location.origin
           && targetHref === sourceHref
         ) {
+          restoreExpandedProductGrids(saved.expandedProductGridIds);
           const containerTop = Math.max(0, Number(saved.galleryScrollTop || 0));
           const windowTop = Math.max(0, Number(saved.scrollY || 0));
 
