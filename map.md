@@ -1,6 +1,6 @@
 # Cartographie du projet Seconde Vie Next
 
-Derniere verification: 2026-07-25
+Derniere verification: 2026-07-26
 Statut: `CARTE_CANONIQUE_ACTIVE`
 
 ## 1. Role et maintenance
@@ -130,7 +130,32 @@ carte produit
   -> stripeWebhook [F]
   -> order paid + email triggers
   -> /mes-commandes + /admin
+
+voies actuelles a stabiliser
+  |-- fermeture/client/admin -> cancel/restock sans neutralisation Stripe garantie
+  |-- AdminOrders -> ecriture directe orders + produits [DB]
+  |-- AdminForm/AdminAppIsland -> champs stock/sold directs [DB]
+  `-- cleanup -> second chemin de paiement/compensation
 ```
+
+Audit contre-valide, cible additive et ordre d'execution 0A a 8:
+`_DOCS/commerce/NOYAU_COMMERCE_STABILISATION.md`.
+
+Flux cible approuve mais non encore executable:
+
+```text
+politique/control backend fail-closed
+  -> createCheckout + clientOrderId/requestHash
+  -> reservation quantitative par commande/cle inventaire
+  -> saga PaymentIntent idempotente
+  -> inbox webhook a lease + reducer/reconciler commun
+  -> axes payment/fulfillment/custody + refunds/returns separes
+  -> projections legacy, outbox, stats et documents reconstruisibles
+  -> UI client/admin via commandes serveur
+```
+
+La prochaine etape n'est pas l'activation de ce flux: Gate 0A construit le
+harnais sentinelle, puis Gate 0B confine le moteur actuel.
 
 ### 4.5 Remboursement
 
@@ -140,9 +165,11 @@ AdminReturns
   -> Stripe Refund [EXT]
   -> stripeWebhook/syncRefundStatusAdmin [F]
   -> order refunded [DB]
-  -> stock restaure [DB]
+  -> stock actuellement restaure automatiquement [DB]
   -> email client
 ```
+
+La cible separe refund financier, retour physique, inspection et remise en stock.
 
 ### 4.6 Analytics
 
@@ -583,8 +610,8 @@ benchmark-auth-ui.mjs
 
 ```text
 e2e-auth-email-otp.mjs
-e2e-hosted-stripe-checkout.mjs
-e2e-refund-latest-stripe-order.mjs
+e2e-hosted-stripe-checkout.mjs ........ en quarantaine commerce
+e2e-refund-latest-stripe-order.mjs .... en quarantaine commerce
 read-latest-auth-otp.mjs .............. outil local sensible
 ```
 
@@ -611,6 +638,10 @@ tests/catalog/*.test.cjs
 tests/catalog/emulator/*.test.cjs
 ```
 
+Il n'existe pas encore de suite locale `test:commerce:*`. Gate 0A cree le runner
+anti-faux-vert, `test:commerce:containment`, l'agregat et `lint:functions`;
+Gate 1 ajoute les suites domaine, property, Firestore, Rules et failpoints.
+
 ## 12. Matrice d'impact rapide
 
 | Changement | Lire | Zones a inspecter | Gates typiques |
@@ -622,7 +653,7 @@ tests/catalog/emulator/*.test.cjs
 | Auth | `AUTHENTIFICATION.md` | authStore, AuthContext, modal, auth Functions | `test:auth` + smoke |
 | securite/rules | `SECURITE_GLOBALE.md` | rules, helpers security, Functions | tests negatifs + sandbox cible |
 | espace client | `ESPACE_CLIENT.md` | routes compte, MyOrders, wishlist | smoke compte |
-| paiement/refund | `COMMERCE_STRIPE.md` | commerce client/Functions/admin | E2E sandbox explicite |
+| paiement/refund | `COMMERCE_STRIPE.md` + `NOYAU_COMMERCE_STABILISATION.md` temporaire | commerce client/Functions/admin | 0A harnais, 0B confinement, puis gates ordonnees; E2E final 7B seulement sur autorisation |
 | admin | `BACKOFFICE.md` | AdminAppIsland, tabs, Functions | smoke tabs + action cible |
 | infra | `INFRASTRUCTURE.md` | yaml/json/env/runtime | audits read-only + build |
 | donnees | `DONNEES_ANALYTICS.md` + `AUDIT_COUTS_FIRESTORE.md` | rules/indexes/scripts/Functions | dry-run/comptage/rollback + mesure avant/apres |

@@ -1,6 +1,6 @@
 # Bibliotheque canonique - Seconde Vie Next
 
-Derniere consolidation: 2026-07-19
+Derniere consolidation: 2026-07-26
 Statut: `REFERENCE_ACTIVE`
 
 ## Role
@@ -19,7 +19,7 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 | Images et medias | [IMAGES_MEDIA.md](images/IMAGES_MEDIA.md) | Storage, variantes, metadata, affichage, backfills |
 | Authentification | [AUTHENTIFICATION.md](security/AUTHENTIFICATION.md) | OTP, Google, passkeys, session, step-up admin, reprise production |
 | Securite globale | [SECURITE_GLOBALE.md](security/SECURITE_GLOBALE.md) | frontieres de confiance, rules, App Check, secrets, risques |
-| Espace client | [ESPACE_CLIENT.md](client/ESPACE_CLIENT.md) | compte, commandes, factures, wishlist, adresse, support |
+| Espace client | [ESPACE_CLIENT.md](client/ESPACE_CLIENT.md) | compte, commandes, documents provisoires, wishlist, adresse, support |
 | Commerce et Stripe | [COMMERCE_STRIPE.md](commerce/COMMERCE_STRIPE.md) | panier, checkout, paiements, webhooks, remboursements, Connect |
 | Back-office | [BACKOFFICE.md](admin/BACKOFFICE.md) | onglets, droits, publication, ventes, maintenance, analytics |
 | Infrastructure | [INFRASTRUCTURE.md](infra/INFRASTRUCTURE.md) | Firebase, App Hosting, regions, environnements, production |
@@ -30,6 +30,12 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 | Assistant devis IA | [ASSISTANT_DEVIS.md](ai/ASSISTANT_DEVIS.md) | cadrage MVP non implemente, garde-fous et conditions de reprise |
 | Legal | [CGV_RETOURS_DRAFT.md](legal/CGV_RETOURS_DRAFT.md) | brouillon metier a faire valider par un professionnel du droit |
 
+## Plan temporaire actif
+
+| Perimetre | Document | Statut | Echeance et cloture |
+| --- | --- | --- | --- |
+| noyau commerce | [NOYAU_COMMERCE_STABILISATION.md](commerce/NOYAU_COMMERCE_STABILISATION.md) | `PLAN_TEMPORAIRE_EXECUTION`, specification contre-validee, `NO_GO_TRANSACTIONNEL` | prochaine etape Gate 0A; gates 0A a 7B puis recette Gate 8; revue au plus tard le 2026-09-30, fusion canonique et suppression |
+
 ## Niveaux de statut
 
 - `REFERENCE_ACTIVE`: verite actuelle, a maintenir avec le code.
@@ -37,6 +43,8 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 - `PRODUCTION_DEFERRED`: volontairement reporte jusqu'au domaine, aux comptes live ou a une decision metier.
 - `CONCEPTION`: specification conservee mais fonctionnalite non implementee.
 - `DEBT`: dette connue, non bloquante tant que sa condition de reprise n'est pas atteinte.
+- `STABILISATION_ACTIVE`: fonctionnalite codee mais non qualifiee sur son perimetre critique.
+- `PLAN_TEMPORAIRE_EXECUTION`: audit/plan explicitement demande, avec echeance et suppression obligatoire a la cloture.
 
 ## Regle d'archivage
 

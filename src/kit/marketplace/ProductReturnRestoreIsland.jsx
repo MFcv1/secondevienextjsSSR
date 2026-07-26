@@ -6,7 +6,6 @@ const RETURN_KEY = 'secondevie:product-return:v1';
 const PENDING_KEY = 'secondevie:product-return-pending:v1';
 const PENDING_ATTRIBUTE = 'data-product-return-pending';
 const MAX_AGE_MS = 30 * 60 * 1000;
-const RESTORE_FRAME_LIMIT = 30;
 
 const currentHref = () => (
   window.location.pathname + (window.location.search || '') + (window.location.hash || '')
@@ -33,6 +32,28 @@ const restoreExpandedProductGrids = (gridIds) => {
     button?.setAttribute('aria-expanded', 'true');
     button?.closest('.product-grid-more-wrap')?.setAttribute('hidden', '');
   });
+};
+
+const prepareDeferredReturnLayout = (saved) => {
+  const sections = Array.from(document.querySelectorAll('.gallery-deferred-render'));
+  if (!sections.length) return;
+
+  const targetSectionId = typeof saved?.productSectionId === 'string'
+    ? saved.productSectionId
+    : '';
+  let targetFound = !targetSectionId;
+
+  sections.forEach((section) => {
+    if (targetFound) return;
+    section.dataset.cvPrerendered = 'true';
+    if (section.id === targetSectionId) targetFound = true;
+  });
+
+  if (!targetFound) {
+    sections.forEach((section) => {
+      section.dataset.cvPrerendered = 'true';
+    });
+  }
 };
 
 const findProductReturnAnchor = (saved) => {
@@ -91,9 +112,11 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
 
     let restoreFrame = 0;
     let cleanupTimer = 0;
-    let popstateTimer = 0;
+    let popstateFrame = 0;
+    let popstateCommitFrame = 0;
     let cancelledByUser = false;
     let restoreInProgress = false;
+    let consumedReturnSavedAt = null;
     const root = document.documentElement;
     const previousScrollBehavior = root.style.scrollBehavior;
     const previousScrollRestoration = 'scrollRestoration' in window.history
@@ -104,10 +127,39 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
       root.removeAttribute(PENDING_ATTRIBUTE);
     };
 
+    const clearScheduledRestore = () => {
+      if (restoreFrame) window.cancelAnimationFrame(restoreFrame);
+      if (popstateFrame) window.cancelAnimationFrame(popstateFrame);
+      if (popstateCommitFrame) window.cancelAnimationFrame(popstateCommitFrame);
+      if (cleanupTimer) window.clearTimeout(cleanupTimer);
+      restoreFrame = 0;
+      popstateFrame = 0;
+      popstateCommitFrame = 0;
+      cleanupTimer = 0;
+    };
+
+    const removeConsumedReturnRecord = () => {
+      const consumedSavedAt = consumedReturnSavedAt;
+      consumedReturnSavedAt = null;
+      if (!Number.isFinite(consumedSavedAt)) return;
+
+      try {
+        const raw = window.sessionStorage.getItem(RETURN_KEY);
+        const current = raw ? JSON.parse(raw) : null;
+        if (Number(current?.savedAt) === consumedSavedAt) {
+          window.sessionStorage.removeItem(RETURN_KEY);
+        }
+      } catch {
+        // A newer return target must survive even if the consumed record is unreadable.
+      }
+    };
+
     function cancelRestore() {
       cancelledByUser = true;
+      clearScheduledRestore();
+      removeConsumedReturnRecord();
       try {
-        window.sessionStorage.removeItem(RETURN_KEY);
+        window.sessionStorage.removeItem(PENDING_KEY);
       } catch {
         // The user interaction still wins when storage is unavailable.
       }
@@ -159,8 +211,8 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
         const containerTop = Math.max(0, Number(saved.galleryScrollTop || 0));
         const windowTop = Math.max(0, Number(saved.scrollY || 0));
         restoreInProgress = true;
+        consumedReturnSavedAt = Number(saved.savedAt);
         cancelledByUser = false;
-        restoreFrame = 0;
 
         root.style.scrollBehavior = 'auto';
         if (previousScrollRestoration !== null) {
@@ -171,20 +223,15 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
         window.addEventListener('touchstart', cancelRestore, { passive: true, once: true });
         window.addEventListener('keydown', cancelRestore, { passive: true, once: true });
 
-        const applyRestore = () => {
-          if (cancelledByUser) return;
-
+        const applyAtomicRestore = () => {
           restoreExpandedProductGrids(saved.expandedProductGridIds);
-          let sourceLayoutReady = true;
+          prepareDeferredReturnLayout(saved);
 
           if (scrollContainerId) {
             const scroller = document.getElementById(scrollContainerId);
             if (scroller) {
               const maxTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
               scroller.scrollTop = maxTop > 0 ? Math.min(containerTop, maxTop) : containerTop;
-              sourceLayoutReady = containerTop <= 0 || maxTop > 0;
-            } else {
-              sourceLayoutReady = false;
             }
           }
 
@@ -208,24 +255,29 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
             }
           }
 
-          restoreFrame += 1;
-
-          if (sourceLayoutReady || restoreFrame >= RESTORE_FRAME_LIMIT) {
-            releaseReturnMask();
+          const announcement = document.querySelector('[data-gallery-announcement]');
+          if (announcement && scrollContainerId && window.matchMedia('(max-width: 767px)').matches) {
+            announcement.setAttribute('data-announcement-collapsed', containerTop > 8 ? 'true' : 'false');
           }
-
-          if (restoreFrame < RESTORE_FRAME_LIMIT) {
-            window.requestAnimationFrame(applyRestore);
-            return;
-          }
-
-          cleanupTimer = window.setTimeout(() => {
-            window.sessionStorage.removeItem(RETURN_KEY);
-            finishRestore();
-          }, 40);
         };
 
-        applyRestore();
+        applyAtomicRestore();
+
+        restoreFrame = window.requestAnimationFrame(() => {
+          restoreFrame = 0;
+          if (cancelledByUser) return;
+          applyAtomicRestore();
+          restoreFrame = window.requestAnimationFrame(() => {
+            restoreFrame = 0;
+            if (cancelledByUser) return;
+            cleanupTimer = window.setTimeout(() => {
+              cleanupTimer = 0;
+              removeConsumedReturnRecord();
+              finishRestore();
+            }, 0);
+          });
+        });
+
         return true;
       } catch {
         releaseReturnMask();
@@ -235,17 +287,15 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
     };
 
     const scheduleProductReturnRestore = () => {
-      if (popstateTimer) window.clearTimeout(popstateTimer);
-      popstateTimer = window.setTimeout(() => {
-        popstateTimer = 0;
-        let retryFrame = 0;
-        const retryRestore = () => {
-          if (restoreProductReturn() || retryFrame >= RESTORE_FRAME_LIMIT) return;
-          retryFrame += 1;
-          window.requestAnimationFrame(retryRestore);
-        };
-        retryRestore();
-      }, 0);
+      if (popstateFrame) window.cancelAnimationFrame(popstateFrame);
+      if (popstateCommitFrame) window.cancelAnimationFrame(popstateCommitFrame);
+      popstateFrame = window.requestAnimationFrame(() => {
+        popstateFrame = 0;
+        popstateCommitFrame = window.requestAnimationFrame(() => {
+          popstateCommitFrame = 0;
+          restoreProductReturn();
+        });
+      });
     };
 
     window.addEventListener('popstate', scheduleProductReturnRestore);
@@ -256,8 +306,8 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
       document.removeEventListener('pointerdown', rememberProductReturnTarget, true);
       document.removeEventListener('click', rememberProductReturnTarget, true);
       window.removeEventListener('popstate', scheduleProductReturnRestore);
-      if (cleanupTimer) window.clearTimeout(cleanupTimer);
-      if (popstateTimer) window.clearTimeout(popstateTimer);
+      clearScheduledRestore();
+      removeConsumedReturnRecord();
       finishRestore();
     };
   }, [scrollContainerId]);

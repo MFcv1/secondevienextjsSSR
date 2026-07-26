@@ -672,6 +672,12 @@ export default function ProductDetailShellIsland({
 
     if (returnTarget?.canUseHistory) {
       router.back();
+      galleryExitFallbackTimerRef.current = window.setTimeout(() => {
+        galleryExitFallbackTimerRef.current = 0;
+        if (window.location.pathname.startsWith('/produit/')) {
+          router.replace(targetHref);
+        }
+      }, 650);
       return;
     }
 
@@ -742,8 +748,10 @@ export default function ProductDetailShellIsland({
     applyLayeredGalleryExit(1);
     if (containerRef.current) containerRef.current.style.pointerEvents = 'none';
 
-    galleryExitTimerRef.current = window.setTimeout(navigateToGalleryTarget, 150);
-    galleryExitFallbackTimerRef.current = window.setTimeout(navigateToGalleryTarget, 380);
+    galleryExitTimerRef.current = window.setTimeout(() => {
+      galleryExitTimerRef.current = 0;
+      navigateToGalleryTarget();
+    }, 150);
   }, [applyLayeredGalleryExit, navigateToGalleryTarget]);
 
   const openProductLightbox = useCallback(() => {

@@ -1,13 +1,28 @@
 # Commerce, checkout et Stripe
 
-Derniere mise a jour: 2026-07-14
-Statut: `PREPROD_READY`
+Derniere mise a jour: 2026-07-26
+Statut: `STABILISATION_ACTIVE`
+
+Restriction active:
+
+> Decision `NO_GO_TRANSACTIONNEL`. Le parcours nominal carte est implemente,
+> mais le noyau n'est pas qualifie pour une recette transactionnelle. L'audit
+> executable a invalide le precedent statut `PREPROD_READY` sur les courses
+> paiement/annulation, les compensations stock, les mutations admin et les
+> preuves automatisees. Le plan ferme est
+> [NOYAU_COMMERCE_STABILISATION.md](NOYAU_COMMERCE_STABILISATION.md).
 
 ## 1. Perimetre
 
-Le tunnel couvre panier, verification e-mail, reservation stock, paiement Stripe, confirmation par webhook, espace client, annulation admissible, remboursement admin et remise en vente.
+Le tunnel couvre panier, verification e-mail, reservation stock, paiement
+Stripe, confirmation par webhook, espace client, annulation admissible,
+remboursement admin, retour/inspection et disposition eventuelle du stock.
 
-Le navigateur orchestre l'UX; Cloud Functions et Stripe sont autoritaires pour prix, stock et paiement.
+Invariant cible: le navigateur orchestre seulement l'UX; Cloud Functions et
+Stripe sont autoritaires pour prix, stock et paiement. Le checkout nominal
+revalide deja prix et reservation initiale au serveur, mais les mutations admin
+et compensations legacy contournent encore partiellement cet invariant jusqu'a
+Gate 0B.
 
 ## 2. Flux d'achat
 
@@ -43,33 +58,43 @@ Pendant le paiement, le recap utilise un snapshot du panier. Une reservation sto
 
 ## 4. Stock et idempotence
 
-La creation de commande reserve le stock dans une transaction. Le webhook ou le cleanup restaure le stock seulement dans les etats admissibles.
+La creation de commande reserve actuellement le stock dans une transaction. Cette reservation initiale protege le chemin nominal contre une survente simple.
 
-Invariants:
+Les compensations ne sont pas encore fiables pour plusieurs allocations: elles melangent `stockBefore`, `buyerId`, increments et restaurations directes admin. La creation du PaymentIntent ne fournit pas non plus de cle d'idempotence Stripe. Ces points sont bloquants dans le plan de stabilisation.
+
+Invariants cibles:
 
 - pas de stock negatif;
-- pas de double ligne pour le meme produit;
+- lignes d'une meme cle d'inventaire agregees avant reservation, avec snapshots
+  de lignes conserves;
 - pas de double commande sur une meme operation logique;
-- `sys_idempotency` protege les evenements Stripe;
+- commande, mouvement, webhook et effet secondaire possedent chacun leur cle
+  d'idempotence adaptee;
 - une commande `paid` ne doit jamais etre restauree comme abandonnee;
-- un remboursement restaure une seule fois, apres validation Stripe;
+- un remboursement ne restaure qu'une quantite admissible, apres validation
+  Stripe et disposition physique;
 - les conflits de restauration passent en etat a verifier, pas en succes silencieux.
 
-`cleanupPendingPayments` traite les `pending_payment` expires apres verification de l'etat Stripe.
+Le `cleanupPendingPayments` actuel ne constitue pas encore une preuve de ces invariants: il peut liberer un PI `requires_payment_method` sans l'annuler, possede un second chemin moins strict pour marquer `paid` et peut etre affame par son lot de 50 commandes.
 
-## 5. Statuts
+## 5. Statuts actuels et cible
 
 | Statut | Sens |
 | --- | --- |
 | `pending_payment` | commande et stock reserves, paiement non confirme |
 | `paid` | paiement confirme durablement |
-| `payment_failed` | echec Stripe, stock restaurable/restaure |
-| `canceled` | paiement/commande annule selon regles |
+| `payment_failed` | etat legacy actuellement traite a tort comme terminal pour un PI reessayable |
+| `canceled` | commande annulee localement; le PI n'est pas encore neutralise sur tous les chemins |
 | `refund_pending` | remboursement cree, attente Stripe |
-| `refunded` | remboursement confirme et stock restaure si coherent |
+| `refunded` | remboursement confirme; le code legacy peut alors restaurer automatiquement le stock, comportement a neutraliser |
 | `refund_failed` | intervention ou nouvelle synchronisation requise |
 
-Les statuts logistiques se superposent au cycle metier selon l'interface admin; ne pas reutiliser un statut paiement pour representer une expedition.
+Le code actuel reutilise le meme champ `status` pour paiement, annulation,
+logistique et remboursement. La cible additive separe `checkout`, `payment`,
+`fulfillment/custody`, une projection `inventorySummary`, les demandes de
+refund et les dossiers de retour. Refund et retour ne deviennent pas des
+statuts de paiement/fulfillment. Le champ legacy reste temporairement une
+projection ecrite atomiquement, jamais une source de verite v2.
 
 ## 6. Webhooks
 
@@ -83,24 +108,37 @@ Les statuts logistiques se superposent au cycle metier selon l'interface admin; 
 
 Evenements principaux: succes/echec/annulation PaymentIntent et creation/mise a jour/echec de refund, avec `charge.refunded` comme signal complementaire.
 
+Limites actuelles:
+
+- un marqueur webhook reste bloque en `processing` sans lease recuperable si l'instance meurt;
+- un paiement reussi sans commande est acquitte comme ignore;
+- l'ordre des evenements n'est pas gere par un reducer monotone commun;
+- le handler Checkout Session annonce comme retire reste executable;
+- le cleanup ne reutilise pas toutes les validations du webhook.
+
 ## 7. Remboursements
 
-`refundOrderAdmin` est l'action metier forte. Elle cree un Refund Stripe idempotent, conserve la commande, met a jour son statut et restaure le stock apres succes. `syncRefundStatusAdmin` relit Stripe pour recuperer un etat incomplet.
+`refundOrderAdmin` est une bonne base d'action metier forte. Elle cree un Refund Stripe idempotent, conserve la commande et valide PaymentIntent, devise et montant. `syncRefundStatusAdmin` relit Stripe pour recuperer un etat incomplet.
+
+La remise en stock actuelle reste a corriger: elle utilise la photographie `stockBefore` et remet automatiquement en vente apres refund, y compris pour un bien expedie ou livre. Le moteur cible separe refund financier, retour physique, inspection et disposition de stock.
 
 Le back-office `AdminReturns` fournit:
 
 - liste des commandes remboursables;
 - confirmation explicite;
-- remboursement et remise en vente;
+- remboursement et remise en vente automatique actuelle, a neutraliser;
 - synchronisation Stripe;
 - e-mail client;
 - preuve du refund et de la restauration.
 
-Une suppression manuelle de commande payee est interdite.
+L'interdiction de supprimer manuellement une commande payee est un invariant
+cible. Les Rules actuelles autorisent encore a un admin fort l'ecriture et la
+suppression directes de `orders`; Gate 0B les rend read-only apres neutralisation
+des UI, puis les commandes serveur restaurent les actions admissibles.
 
 ## 8. Stripe Connect
 
-Le sandbox a valide le flux Connect: onboarding, statut, paiement rattache au compte, webhook Connect et remboursement. `AdminPaymentSettings` pilote l'etat metier carte/wallets.
+Des parcours sandbox historiques ont valide Connect sur le chemin nominal. Ils ne qualifient pas l'etat actuel comme stable: `account.updated` ecrit des champs differents de ceux lus par le routage, et une reconnexion peut melanger l'etat pending et actif. `AdminPaymentSettings` reste une surface de pilotage, pas la source financiere.
 
 Avant production:
 
@@ -115,24 +153,29 @@ Avant production:
 
 Les evenements commande et remboursement passent par `functions/src/email/transactionalEmail.js`. Gmail reste actif pour la demonstration; Resend est code mais inactif jusqu'au domaine expediteur valide. Voir `../security/AUTHENTIFICATION.md` et `../infra/INFRASTRUCTURE.md`.
 
-Un echec e-mail ne doit pas inverser un paiement confirme. Il doit etre journalise et pouvoir etre renvoye de facon idempotente.
+Un echec e-mail ne doit pas inverser un paiement confirme. Le code actuel
+absorbe plusieurs erreurs et Gmail n'applique pas la cle d'idempotence transmise.
+L'outbox rend l'effet metier rejouable, mais Gmail SMTP ne peut pas garantir
+exactement-un envoi si l'accuse est perdu apres acceptation: cet etat devient
+`delivery_unknown` sans retry automatique. Une garantie fournisseur plus forte
+attend Resend ou un provider avec idempotence effective.
 
-## 10. Preuves sandbox acquises
+## 10. Preuves sandbox historiques et qualification
 
-- paiement carte heberge avec commande `paid` et stock coherent;
-- webhook signe et idempotent;
-- confirmation UI seulement apres etat durable;
-- annulation/cleanup d'une commande non payee;
-- remboursement depuis le back-office;
-- refund visible dans Stripe;
-- stock restaure et espace client coherent;
-- Stripe Connect sandbox complet.
+Des executions historiques ont observe:
 
-La preuve d'un moyen de paiement a redirection externe comme iDEAL/Wero n'a pas ete obtenue, car il n'etait pas selectable dans la configuration sandbox utilisee. Ce point ne bloque pas la carte pour la demonstration.
+- paiement carte nominal jusqu'a `paid`;
+- signature webhook;
+- remboursement et visibilite Stripe;
+- parcours Connect sandbox.
 
-L'interface ne promet pas statiquement Apple Pay, Google Pay ou un autre wallet: le Payment Element affiche seulement les moyens actifs et eligibles. Avant live, verifier les moyens actives, la verification de domaine requise pour les wallets et l'absence de warning Stripe.
+Ces executions ne sont pas des gates de release actuelles. Les scripts peuvent utiliser un produit reel, correler la derniere commande par e-mail ou terminer sans rendre toute assertion bloquante. Ils ne couvrent pas refus puis retry, fermeture concurrente, PI orphelin, webhook bloque, stock partage, livraison injectee ou mutation admin.
 
-L'architecture PaymentIntent actuelle est stable. Une migration vers Checkout Sessions ou une autre integration ne doit etre envisagee que si elle simplifie concretement les redirects, webhooks et la maintenance sans casser la reservation atomique du stock.
+L'architecture PaymentIntent reste le choix cible; aucune migration vers Checkout Sessions n'est recommandee. Le travail consiste a rendre l'orchestration PaymentIntent actuelle idempotente, reprenable et testee.
+
+Gate 7A ferme les projections/exploitation. La preuve qualifiante du coeur sera
+ensuite le nouvel E2E sandbox isole de la Gate 7B, vert deux fois sur le release
+final avec fixtures et IDs correles, avant la recette humaine Gate 8.
 
 ## 11. Fichiers structurants
 
@@ -162,7 +205,16 @@ npm run e2e:refund-stripe
 pnpm maintenance:audit
 ```
 
-Ces gates touchent des services externes et creent des donnees sandbox. Ne pas les lancer pour un correctif visuel ou documentaire.
+Ces commandes touchent des services externes et creent des donnees sandbox.
+`e2e:hosted-stripe` et `e2e:refund-stripe` actuels sont en quarantaine
+`DO_NOT_RUN` jusqu'a leur remplacement fail-closed: ils ne constituent ni gate,
+ni outil diagnostique sur une donnee reelle. Le futur runner Gate 7B exige
+fixture, `runId/orderId`, cible, AAL2/App Check et zero fallback.
+
+Les futures gates locales et CI (`test:commerce:*`, `lint:functions`) sont
+definies dans le plan de stabilisation. Le prochain lot est Gate 0A
+(harnais sentinelle), puis Gate 0B (confinement); aucune implementation ne doit
+commencer directement par un checkout v2 actif.
 
 ## 13. Conditions production
 

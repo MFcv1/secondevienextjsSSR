@@ -1,6 +1,6 @@
 # Qualite, tests et gates
 
-Derniere mise a jour: 2026-07-25
+Derniere mise a jour: 2026-07-26
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Principe de proportion
@@ -28,6 +28,30 @@ Toujours annoncer ce qui a ete lance et ce qui ne l'a pas ete.
 7. budget performance en rapport non bloquant.
 
 Une CI verte ne remplace pas les E2E Firebase/Stripe ni une recette visuelle.
+
+### 2.1 Restriction noyau commerce
+
+Il n'existe actuellement:
+
+- aucun script `test:commerce:*`;
+- aucune suite comportementale locale pour create/order/webhook/cancel/cleanup/refund;
+- aucune suite Rules Emulator sur les commandes et champs de vente admin;
+- aucune gate commerce dans la CI;
+- aucun lint de `functions/**` ou `scripts/**`, ces chemins etant ignores.
+
+Les scripts actuels `e2e:hosted-stripe` et `e2e:refund-stripe` sont en
+quarantaine `DO_NOT_RUN`: le premier peut sortir vert sur preuve incomplete et
+le second peut cibler la derniere commande. Ils ne redeviennent executables
+qu'apres remplacement fail-closed, `runId/orderId` explicites, fixture dediee,
+region correcte, AAL2/App Check et zero fallback.
+
+Gate 0A de [NOYAU_COMMERCE_STABILISATION.md](../commerce/NOYAU_COMMERCE_STABILISATION.md)
+cree d'abord `test:commerce:runner`, `test:commerce:containment`,
+`test:commerce:rules:containment`,
+`test:commerce` et `lint:functions`, avec un self-test qui prouve l'exit non nul.
+Gate 1 ajoute ensuite `test:commerce:unit`, `test:commerce:property`,
+`test:commerce:firebase`, `test:commerce:rules` et
+`test:commerce:faults`. Toutes deviennent bloquantes avant une activation.
 
 ## 3. Tests automatises Auth
 
@@ -81,8 +105,8 @@ Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCa
 | devis | `perf:quote-direct` |
 | menu/header | `perf:menu-desktop`, `perf:menu-mobile`, `mobile:contract` |
 | Auth | `test:auth`, build, smoke reel selon changement |
-| checkout/Stripe | tests locaux + `e2e:hosted-stripe` sur sandbox si demande |
-| remboursement | `e2e:refund-stripe` sur commande test explicite |
+| checkout/Stripe | toutes les gates transitives 0A a 7B; hosted final seulement en 7B apres projections 7A |
+| remboursement | toutes les gates transitives; domaine en 4, projections 7A, hosted final 7B |
 | catalogue coeur | `test:catalog:core` |
 | catalogue resilience | `test:catalog:resilience` |
 | catalogue securite/Rules | `test:catalog:security` |
@@ -145,7 +169,28 @@ Une modification `firestore.rules` ou `storage.rules` doit avoir au moins des ca
 - token revoque/expiré si le scenario le permet;
 - schema valide et schema malforme.
 
-L'Emulator Suite complete reste une amelioration possible, mais n'est pas requise pour rouvrir la passe Auth de demonstration deja close.
+La passe Auth de demonstration deja close n'impose pas de rouvrir toutes ses
+preuves historiques. En revanche, toute nouvelle Rule commerce, reservation,
+sous-collection commande ou champ inventaire doit etre couverte par
+`test:commerce:rules` sous Emulator Suite.
+
+Le wrapper commerce unique utilise
+`firebase emulators:exec --project demo-secondevie-commerce --only firestore`
+(ajouter Auth seulement si le scenario l'exige), fixe les ports, refuse tout
+credential/projet reel et lance integration, faults et Rules dans la meme
+session.
+
+L'emulateur ne prouve pas a lui seul:
+
+- la contention et les limites Firestore hebergees;
+- que les indexes sont deployes;
+- IAM, App Check reel, regions ou secrets;
+- Stripe/Connect, la livraison de webhooks ou le provider e-mail reel.
+
+Ces limites sont couvertes separement: regions/config Stripe par Gate 7B,
+outbox/provider e-mail par Gate 7A puis recette Gate 8, et reconciliation sur
+le release final. Gmail post-acceptation reste `delivery_unknown`, jamais une
+preuve exactly-once. Elles ne doivent pas etre masquees par un test local vert.
 
 ## 9. Definition de done
 

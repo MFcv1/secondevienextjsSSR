@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 const MOBILE_MARKETPLACE_QUERY = '(max-width: 1023px)';
 const PULL_REFRESH_THRESHOLD = 74;
 const PULL_REFRESH_MAX_DISTANCE = 96;
+const PRODUCT_RETURN_PENDING_ATTRIBUTE = 'data-product-return-pending';
 
 export default function GalleryMobileShellIsland() {
   const pullRefreshRef = useRef({
@@ -22,6 +23,7 @@ export default function GalleryMobileShellIsland() {
     const announcementBanner = document.querySelector('[data-gallery-announcement]');
     const mediaQuery = window.matchMedia(MOBILE_MARKETPLACE_QUERY);
     const announcementMediaQuery = window.matchMedia('(max-width: 767px)');
+    let reloadTimer = 0;
 
     const syncMobileShell = () => {
       const shouldLock = mediaQuery.matches;
@@ -62,7 +64,13 @@ export default function GalleryMobileShellIsland() {
     };
 
     const onTouchStart = (event) => {
-      if (!mediaQuery.matches || event.touches.length !== 1 || !galleryScroll || galleryScroll.scrollTop > 0) {
+      if (
+        root.hasAttribute(PRODUCT_RETURN_PENDING_ATTRIBUTE)
+        || !mediaQuery.matches
+        || event.touches.length !== 1
+        || !galleryScroll
+        || galleryScroll.scrollTop > 0
+      ) {
         resetPullRefresh();
         return;
       }
@@ -77,6 +85,10 @@ export default function GalleryMobileShellIsland() {
 
     const onTouchMove = (event) => {
       const state = pullRefreshRef.current;
+      if (root.hasAttribute(PRODUCT_RETURN_PENDING_ATTRIBUTE)) {
+        resetPullRefresh();
+        return;
+      }
       if (!state.isTracking || state.isRefreshing || event.touches.length !== 1 || !galleryScroll) return;
       if (galleryScroll.scrollTop > 0) {
         resetPullRefresh();
@@ -96,12 +108,20 @@ export default function GalleryMobileShellIsland() {
 
     const onTouchEnd = () => {
       const state = pullRefreshRef.current;
+      if (root.hasAttribute(PRODUCT_RETURN_PENDING_ATTRIBUTE)) {
+        resetPullRefresh();
+        return;
+      }
       if (!state.isTracking || state.isRefreshing) return;
       const ready = indicatorRef.current?.dataset.ready === 'true';
       if (ready) {
         pullRefreshRef.current = { ...state, isRefreshing: true };
         setIndicator(PULL_REFRESH_THRESHOLD, true);
-        window.setTimeout(() => window.location.reload(), 90);
+        if (reloadTimer) window.clearTimeout(reloadTimer);
+        reloadTimer = window.setTimeout(() => {
+          reloadTimer = 0;
+          window.location.reload();
+        }, 90);
         return;
       }
       resetPullRefresh();
@@ -127,6 +147,7 @@ export default function GalleryMobileShellIsland() {
       galleryScroll?.removeEventListener('touchmove', onTouchMove);
       galleryScroll?.removeEventListener('touchend', onTouchEnd);
       galleryScroll?.removeEventListener('touchcancel', resetPullRefresh);
+      if (reloadTimer) window.clearTimeout(reloadTimer);
       root.classList.remove('marketplace-mobile-scroll-lock');
       body.classList.remove('marketplace-mobile-scroll-lock');
       announcementBanner?.setAttribute('data-announcement-collapsed', 'false');

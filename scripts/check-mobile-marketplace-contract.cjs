@@ -8,6 +8,8 @@ const files = {
   viewportSync: path.join(root, 'app', 'ViewportHeightSyncIsland.jsx'),
   rootLayout: path.join(root, 'app', 'layout.jsx'),
   productDetail: path.join(root, 'src', 'kit', 'marketplace', 'ProductDetailShellIsland.jsx'),
+  productReturn: path.join(root, 'src', 'kit', 'marketplace', 'ProductReturnRestoreIsland.jsx'),
+  catalogVersionSync: path.join(root, 'src', 'kit', 'marketplace', 'CatalogVersionSyncIsland.jsx'),
   css: path.join(root, 'src', 'index.css'),
   contract: path.join(root, '_DOCS', 'ux', 'INTERFACE_NAVIGATION.md'),
 };
@@ -50,6 +52,37 @@ const checks = [
     label: 'Product detail consumes the shared dynamic viewport height',
     file: files.productDetail,
     pattern: /var\(--marketplace-viewport-height,\s*100dvh\)/,
+  },
+  {
+    label: 'Product detail history fallback only replaces a still-open product route',
+    file: files.productDetail,
+    pattern: /router\.back\(\)[\s\S]*window\.location\.pathname\.startsWith\('\/produit\/'\)[\s\S]*router\.replace\(targetHref\)/,
+  },
+  {
+    label: 'Product return restoration is atomic and no longer polls visible frames',
+    file: files.productReturn,
+    pattern: /applyAtomicRestore\(\);[\s\S]*requestAnimationFrame[\s\S]*applyAtomicRestore\(\);[\s\S]*requestAnimationFrame[\s\S]*finishRestore\(\)/,
+  },
+  {
+    label: 'Product return restoration has no fixed multi-frame retry loop',
+    file: files.productReturn,
+    pattern: /RESTORE_FRAME_LIMIT|retryFrame/,
+    forbidden: true,
+  },
+  {
+    label: 'Product return cleanup only removes the record it actually consumed',
+    file: files.productReturn,
+    pattern: /consumedReturnSavedAt[\s\S]*const consumedSavedAt = consumedReturnSavedAt[\s\S]*Number\(current\?\.savedAt\) === consumedSavedAt[\s\S]*removeItem\(RETURN_KEY\)/,
+  },
+  {
+    label: 'Catalog version checks abort stale route work',
+    file: files.catalogVersionSync,
+    pattern: /new AbortController\(\)[\s\S]*activeRef\.current[\s\S]*checkAbortRef\.current\?\.abort\(\)/,
+  },
+  {
+    label: 'Gallery pull refresh ignores an in-progress product return',
+    file: files.galleryMobile,
+    pattern: /PRODUCT_RETURN_PENDING_ATTRIBUTE[\s\S]*root\.hasAttribute\(PRODUCT_RETURN_PENDING_ATTRIBUTE\)/,
   },
   {
     label: 'Next gallery server view renders the fixed gallery shell',

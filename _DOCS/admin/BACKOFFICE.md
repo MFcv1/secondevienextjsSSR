@@ -1,7 +1,11 @@
 # Back-office
 
-Derniere mise a jour: 2026-07-25
+Derniere mise a jour: 2026-07-26
 Statut: `PREPROD_READY`
+
+Restriction active:
+
+> Ce statut ne couvre pas encore le control plane commerce. Les onglets Ventes, Retours, Livraison, Paiement et les outils destructifs suivent le plan [NOYAU_COMMERCE_STABILISATION.md](../commerce/NOYAU_COMMERCE_STABILISATION.md): gates 0A a 7B avant la recette humaine Gate 8.
 
 ## 1. Architecture
 
@@ -19,13 +23,13 @@ La navigation visible utilise un panneau lateral persistant sur desktop et un ti
 - `Catalogue`: Publication, Vue Globale, Studio;
 - `Ventes`: Ventes, Retours, Livraison, Paiement;
 - `Communication`: Personnalisation, Infos, SEO;
-- `Administration`: Mon compte, Clients, Securite, Maintenance, Etude Perf.
+- `Administration`: Mon compte, Clients, Securite, Maintenance.
 
 Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSidebar` ne modifie ni le routing interne ni le lazy loading des vues.
 
 | ID | Label | Module principal | Role |
 | --- | --- | --- | --- |
-| `dashboard` | Stats | `AdminDashboard` | CA, commandes, inventaire, intentions devis, tendances produits, exports |
+| `dashboard` | Stats | `AdminDashboard` | indicateurs commerce legacy non financiers avant Gate 7A, commandes, inventaire, devis, tendances, exports |
 | `analytics` | Data | `AdminAnalytics` | visiteurs UID/IP, sessions live, parcours, courbe |
 | `furniture` | Publication | `AdminForm`, `AdminItemList` | CRUD annonces et images |
 | `inventory` | Vue Globale | `GlobalInventoryView` | ordres editoriaux et stock catalogue |
@@ -44,7 +48,7 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 
 Les labels peuvent evoluer; les ID sont des contrats de navigation et ne doivent pas etre renommes sans migration.
 
-Sur desktop (`>= 1024 px`), `AdminAppIsland` affiche une navigation laterale fixe groupee par usage: Pilotage, Catalogue, Experience boutique, Commerce, Relation client et Systeme. Elle reference les 16 memes IDs que `KIT_CONFIG.adminTabs`, sans precharger leurs vues. Sous ce seuil, la navigation horizontale compacte et son menu "Plus d'options" restent le parcours de reference.
+Sur desktop (`>= 1024 px`), `AdminAppIsland` affiche une navigation laterale fixe en cinq groupes. Elle reference les 16 memes IDs que `KIT_CONFIG.adminTabs`, sans precharger leurs vues. Sous ce seuil, `AdminSidebar` devient un tiroir lateral; les IDs et le lazy loading restent identiques.
 
 Le catalogue public court (`scope=cards&limit=120`) est charge paresseusement uniquement par Stats, Data et Vue Globale, qui consomment ses miniatures ou ses donnees. Seule une requete en vol est dedupliquee; aucun catalogue n'est conserve dans `sessionStorage` ou dans un cache module persistant.
 
@@ -76,7 +80,20 @@ Apres mutation:
 - `AdminPaymentSettings`: Connect, carte/wallets et etat de disponibilite;
 - `AdminLivraison`: configuration des frais.
 
-Une action UI ne doit jamais modifier directement un paiement Stripe comme si Firestore etait la source financiere. Les actions financieres passent par les Functions.
+Etat actuel:
+
+- le remboursement et plusieurs actions Connect passent bien par des Functions fortes;
+- `AdminOrders` ecrit encore directement le statut et restaure le stock depuis le navigateur;
+- `AdminForm` et `AdminAppIsland` peuvent modifier les champs de vente produit sans verifier une commande payee;
+- `AdminLivraison` et `AdminPaymentSettings` ecrivent directement les politiques;
+- les Rules autorisent encore les ecritures admin sur `orders`.
+
+Cible: toute transition commande, fulfillment, inventaire, refund/retour et politique commerce passe par une commande serveur idempotente. Firestore reste une projection et non une API metier admin.
+
+De Gate 0B jusqu'a l'activation fixture, Publication, Ventes, Retours,
+Livraison et Paiement restent read-only pour prix, stock, vente, commande,
+policy et medias destructifs. Les actions reviennent uniquement via les
+commandes serveur et `allowedActions`.
 
 ## 6. Utilisateurs et securite
 
@@ -142,6 +159,8 @@ Le dashboard lit de preference les agregats:
 - `sales_stats_daily`;
 - commandes recentes bornees.
 
+Restriction commerce: le rollup actuel ne mesure pas un chiffre d'affaires encaisse. Il inclut notamment plusieurs commandes pending, echouees ou remboursees et n'est pas idempotent face a une rediffusion de trigger. Ne pas utiliser ce KPI comme preuve financiere avant sa reconstruction depuis les etats de paiement.
+
 Un fallback historique borne existe encore pour les commandes si leurs agregats manquent. Stats ne scanne plus `furniture` lorsque `inventory_stats/overview` est absent: la valeur catalogue affiche alors un tiret jusqu'a la prochaine publication snapshot, dont le builder regenere l'agregat. Ce garde-fou evite jusqu'a 300 lectures produit a chaque ouverture de Stats sans afficher un faux zero comme une valeur autoritaire.
 
 Les modules `Intentions de devis` et `Meubles en tendance` lisent separement au maximum 500 documents `analytics_sessions` commences dans les 30 derniers jours, sans listener temps reel. Les sessions admin sont exclues cote client. Les tendances comptent les etapes `detail`, dedupliquent les visiteurs par UID puis IP puis session et reprennent le nom/prix deja embarque dans `journey.itemId`. Le tunnel devis compte les sessions ayant visite `quote`, emis `quote_start` ou emis `quote_email_opened`. Les images du classement sont resolues par identifiant ou slug depuis le snapshot catalogue public court deja utilise par l'admin; elles n'ajoutent aucune lecture Firestore produit et restent purement representatives.
@@ -167,6 +186,22 @@ Les operations de `AdminMaintenance` et `AdminDashboard` peuvent purger utilisat
 - absence de suppression silencieuse en cas d'echec partiel.
 
 Ne pas ajouter de bouton de maintenance qui ecrit directement un grand ensemble Firestore depuis le navigateur.
+
+Etat actuel a ne pas utiliser pendant la recette:
+
+- `resetAllStats`, `runGarbageCollector`, `resetAllUsers`, `purgeAnonymousUsers`,
+  `purgeAllProducts` et `resetAllOrders` restent actuellement des callables
+  executables cote serveur;
+- `resetAllOrders` supprime toutes les commandes dans un batch unique, sans archive durable ni retention comptable;
+- le CSV prealable n'est pas un backup restaurable;
+- le GC manuel ne possede ni dry-run, ni grace, ni quarantaine et peut courir pendant une publication media.
+
+Ces six actions doivent etre neutralisees dans la Gate 0B du plan commerce.
+Elles ne sont pas encore neutralisees par la seule mise a jour documentaire.
+Gate 7A exige seulement un cleanup fixture run-scoped, borne et audite. Les
+purges globales restent desactivees; leur eventuelle reconstruction avec
+comptage, sauvegarde, pagination, reprise et quarantaine attend un besoin
+metier/pre-live distinct.
 
 ## 9. Performance du back-office
 
@@ -207,7 +242,8 @@ storage.rules
 | pagination complete de certaines listes | `DEBT` | croissance reelle des volumes ou mesure de cout |
 | politique de roles plus fine qu'admin/super-admin | `CONCEPTION` | plusieurs operateurs metier confirmes |
 | suppression des outils E2E/etude embarquee | `DEBT` | decision produit apres stabilisation preprod |
-| observabilite/alertes admin avancees | `PRODUCTION_DEFERRED` | rail production et SLO approuves |
+| incidents/reconciliation sandbox | `STABILISATION_ACTIVE` | Gate 7A, seuil machine bloquant avant recette |
+| alert policies, SLO, astreinte et runbooks live | `PRODUCTION_DEFERRED` | rail production et SLO approuves |
 
 ## 12. Validation
 

@@ -1,7 +1,11 @@
 # Espace client
 
-Derniere mise a jour: 2026-07-14
+Derniere mise a jour: 2026-07-26
 Statut: `PREPROD_READY`
+
+Restriction active:
+
+> Le statut ne qualifie pas encore le suivi transactionnel, la reprise guest/3DS ni les factures. Ces surfaces suivent [NOYAU_COMMERCE_STABILISATION.md](../commerce/NOYAU_COMMERCE_STABILISATION.md).
 
 ## 1. Routes et acces
 
@@ -18,8 +22,8 @@ Les deux routes personnelles sont dynamiques et non indexables:
 
 | Section | Source | Capacite actuelle |
 | --- | --- | --- |
-| Commandes | `orders` filtre par UID | historique, statuts, detail, annulation admissible |
-| Factures et avoirs | snapshots de commande | generation PDF au clic, suivi remboursement |
+| Commandes | `orders` actuellement filtre par e-mail verifie | historique borne, statuts, detail, annulation admissible |
+| Factures et avoirs | snapshots de commande | PDF client actuel a reclasser comme recu provisoire |
 | Liste de souhaits | `users/{uid}/wishlist` | apercu et lien vers `/wishlist` |
 | Adresse | derniere commande | affichage livraison/facturation |
 | Profil | Firebase Auth + derniere commande | affichage nom, email, telephone |
@@ -29,7 +33,9 @@ Adresse et profil sont aujourd'hui principalement des vues de synthese derivees 
 
 ## 3. Commandes
 
-Le client ne lit que ses commandes selon les rules et le filtre de requete. Les statuts importants sont presentes avec un libelle metier, notamment:
+Le client ne lit que les commandes admises par les Rules et sa requete. Le code actuel interroge `userEmail`; les Rules autorisent le proprietaire UID ou le meme e-mail verifie. La cible est un repository UID autoritaire avec un rattachement invite borne, afin qu'un changement d'e-mail ne fasse pas disparaitre l'historique.
+
+Les statuts importants sont actuellement reconstruits depuis le champ composite `status`, notamment:
 
 - `pending_payment`;
 - `paid`;
@@ -40,13 +46,21 @@ Le client ne lit que ses commandes selon les rules et le filtre de requete. Les 
 - `refund_failed`;
 - statuts logistiques comme expedition ou completion.
 
-Une commande carte payee ne peut pas etre annulee librement. Elle passe par le flux de remboursement admin/Stripe. Une commande non payee peut etre annulee selon `cancelOrderClient`.
+Une commande carte payee ne peut pas etre annulee librement. Elle passe par le flux de remboursement admin/Stripe. L'annulation non payee actuelle ne neutralise toutefois pas d'abord le PaymentIntent et son chemin multi-SKU doit etre corrige avant recette.
 
 ## 4. Factures et avoirs
 
-La facture est generee cote client via un import dynamique de `src/utils/generateInvoice.js`, a partir du snapshot durable de commande. Le document ne doit pas relire le produit courant pour reconstruire un prix ou une description historique.
+Le PDF actuel est genere cote client via un import dynamique de `src/utils/generateInvoice.js`, a partir du snapshot de commande. Il peut etre produit pour un ordre non paye, derive son numero de l'ID et ne constitue pas encore une facture autoritaire archivee.
 
-Les remboursements affichent un avoir/suivi et un delai bancaire prudent. Ne pas promettre une date de credit exacte que Stripe ou la banque ne garantissent pas.
+Jusqu'a la gate documentaire/comptable du noyau:
+
+- parler de recu provisoire;
+- ne proposer aucun document comme facture avant paiement confirme;
+- produire cote serveur un recu sandbox immutable apres paiement;
+- reserver les termes facture/avoir a des documents juridiquement et
+  comptablement valides avant live;
+- produire un document de remboursement distinct sans effacer le fulfillment;
+- ne pas promettre une date de credit exacte que Stripe ou la banque ne garantissent pas.
 
 ## 5. Wishlist
 
@@ -109,12 +123,18 @@ src/utils/shippingAddress.js
 
 ## 11. Validation
 
-Smoke recommande pour une passe compte:
+Smoke recommande pour une passe compte non transactionnelle:
 
 1. connexion reelle;
 2. `Quitter` dans le header et `Mon espace` dans le menu;
 3. ouverture directe et via menu de `/mes-commandes` sans flash galerie;
 4. commandes limitees au compte;
-5. facture au clic;
+5. avant Gate 7A: PDF legacy non presente comme facture/avoir ou section
+   masquee; apres Gate 7A: seul recu sandbox serveur admissible;
 6. wishlist puis ajout panier d'un produit disponible;
 7. deconnexion et protection des routes.
+
+Ce smoke reste une verification UI. Il ne qualifie pas la coherence Stripe/commande/stock et ne remplace pas les gates commerce.
+
+La recette transactionnelle client/guest ne commence qu'en Gate 8, apres
+fermeture de Gate 7A et deux runs Gate 7B sur le release final.

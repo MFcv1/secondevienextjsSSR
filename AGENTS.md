@@ -1,6 +1,6 @@
 # AGENTS.md - Bible operationnelle de Seconde Vie Next
 
-Derniere consolidation: 2026-07-19
+Derniere consolidation: 2026-07-26
 Statut: `REFERENCE_MAITRE_ACTIVE`
 Projet: `secondevienextjsSSR`
 
@@ -54,9 +54,9 @@ Une contradiction entre code et documentation doit etre signalee et corrigee dan
 | home | `/` est la galerie canonique; `/galerie` est un alias |
 | catalogue | `furniture` autoritaire, snapshot Storage materialise actif, API same-origin non persistante, revalidation evenementielle |
 | Auth | passe de demonstration close, `PREPROD_READY`; production differee |
-| espace client | commandes, factures, wishlist, adresse/profil de synthese, support |
-| commerce | carte Stripe sandbox, webhooks, refund et Connect valides en preprod |
-| back-office | 15 onglets lazy, acces admin fort, publication/ventes/data/maintenance |
+| espace client | commandes, documents PDF provisoires, wishlist, adresse/profil de synthese, support |
+| commerce | `STABILISATION_ACTIVE`; recette transactionnelle bloquee jusqu'aux gates du plan noyau |
+| back-office | 16 onglets lazy et acces admin fort; control plane commerce en stabilisation |
 | images | variantes Storage WebP, `detailFast`, miniatures 320/384, metadata anti-CLS |
 | securite | rules fortes, AAL2 admin, secrets serveur; App Check prod encore differe |
 | infrastructure | App Hosting sandbox actif; rail production absent |
@@ -67,6 +67,11 @@ Une contradiction entre code et documentation doit etre signalee et corrigee dan
 Objectif de livraison courant:
 
 > Maintenir un etat de preproduction stable et presentable a la cliente, avec les fonctionnalites majeures codees. Les travaux qui dependent du domaine, des comptes live, du DNS ou du trafic production restent explicitement differes.
+
+Exception active: decision `NO_GO_TRANSACTIONNEL`. Le noyau commerce reste
+presentable visuellement mais n'est pas qualifie pour une recette
+transactionnelle. L'implementation suit strictement les gates 0A a 7B du plan
+de stabilisation; la recette humaine commence en gate 8 seulement.
 
 ## 4. Environnement de reference
 
@@ -97,7 +102,7 @@ Ne pas convertir Node 24 local en nouvelle baseline sans migration dediee. Ne ja
 | authentification | [AUTHENTIFICATION.md](_DOCS/security/AUTHENTIFICATION.md) | authStore, AuthContext, modal, auth Functions | preprod close |
 | securite globale | [SECURITE_GLOBALE.md](_DOCS/security/SECURITE_GLOBALE.md) | rules, helpers security, secrets, headers | preprod |
 | espace client | [ESPACE_CLIENT.md](_DOCS/client/ESPACE_CLIENT.md) | routes compte, MyOrders, wishlist | preprod |
-| commerce/Stripe | [COMMERCE_STRIPE.md](_DOCS/commerce/COMMERCE_STRIPE.md) | commerce client/Functions/admin | preprod |
+| commerce/Stripe | [COMMERCE_STRIPE.md](_DOCS/commerce/COMMERCE_STRIPE.md) | commerce client/Functions/admin | stabilisation active |
 | back-office | [BACKOFFICE.md](_DOCS/admin/BACKOFFICE.md) | AdminAppIsland, `src/kit/admin` | preprod |
 | infrastructure | [INFRASTRUCTURE.md](_DOCS/infra/INFRASTRUCTURE.md) | Firebase/App Hosting/config/env | sandbox actif |
 | donnees/analytics | [DONNEES_ANALYTICS.md](_DOCS/data/DONNEES_ANALYTICS.md) + [AUDIT_COUTS_FIRESTORE.md](_DOCS/data/AUDIT_COUTS_FIRESTORE.md) | Firestore, UID/IP, sessions live, couts et migrations | moteur Tous a Table adapte, P1 couts public/analytics implemente, catalogue post-cutover mesure a zero lecture Firestore publique |
@@ -107,6 +112,10 @@ Ne pas convertir Node 24 local en nouvelle baseline sans migration dediee. Ne ja
 | legal | [CGV_RETOURS_DRAFT.md](_DOCS/legal/CGV_RETOURS_DRAFT.md) | textes futurs | validation requise |
 
 Ne pas creer une nouvelle roadmap pour un de ces domaines. Mettre a jour son chapitre canonique, sauf si l'utilisateur demande explicitement un plan temporaire distinct. Un plan temporaire doit avoir une date de fin et etre fusionne/supprime a la cloture.
+
+Plan temporaire explicitement demande et actuellement actif:
+
+- [NOYAU_COMMERCE_STABILISATION.md](_DOCS/commerce/NOYAU_COMMERCE_STABILISATION.md): audit contre-valide, specification d'implementation additive et gates 0A a 8; prochaine etape Gate 0A, echeance de gouvernance 2026-09-30, puis fusion dans les chapitres canoniques et suppression.
 
 ## 6. Invariants d'architecture publique
 
@@ -187,9 +196,12 @@ Interdictions:
 - commande et webhooks idempotents;
 - succes UI apres statut durable `paid`;
 - une commande payee n'est jamais supprimee/annulee sans refund;
-- refund complet valide avant remise en vente automatique;
+- aucun refund, meme complet, ne declenche seul un restock; remise en vente
+  seulement apres disposition physique admissible et mouvement idempotent;
 - snapshot de commande conserve l'historique;
 - Stripe sandbox et live strictement separes.
+
+Etat transitoire: plusieurs de ces invariants ne sont pas encore garantis par tous les chemins executables. Jusqu'a la cloture de `NOYAU_COMMERCE_STABILISATION.md`, aucune preuve sandbox ponctuelle ne suffit a reclasser le noyau en preproduction transactionnelle.
 
 ### 7.6 Admin et securite
 
