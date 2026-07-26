@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const wrapIndex = (index, length) => (index + length) % length;
@@ -8,6 +8,9 @@ const wrapIndex = (index, length) => (index + length) % length;
 export default function AboutBeforeAfterIsland({ projects }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [sliderPos, setSliderPos] = useState(50);
+  const sliderSurfaceRef = useRef(null);
+  const rangeRef = useRef(null);
+  const touchGestureRef = useRef(null);
   const activeProject = projects[activeIndex] || projects[0];
 
   if (!activeProject) return null;
@@ -17,11 +20,77 @@ export default function AboutBeforeAfterIsland({ projects }) {
     setSliderPos(50);
   };
 
-  const handleTouchMove = (event) => {
-    const touch = event.touches[0];
-    const rect = event.currentTarget.getBoundingClientRect();
-    const pos = ((touch.clientX - rect.left) / rect.width) * 100;
+  const setSliderFromPointer = (event) => {
+    const rect = rangeRef.current?.getBoundingClientRect();
+    if (!rect?.width) return;
+
+    const pos = ((event.clientX - rect.left) / rect.width) * 100;
     setSliderPos(Math.max(0, Math.min(100, pos)));
+  };
+
+  const startSliderDrag = (event) => {
+    event.preventDefault();
+    rangeRef.current?.focus({ preventScroll: true });
+    sliderSurfaceRef.current?.setPointerCapture?.(event.pointerId);
+    setSliderFromPointer(event);
+  };
+
+  const handlePointerDown = (event) => {
+    if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
+
+    if (event.pointerType === 'touch') {
+      touchGestureRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        dragging: false,
+      };
+      return;
+    }
+
+    startSliderDrag(event);
+  };
+
+  const handlePointerMove = (event) => {
+    if (event.pointerType === 'touch') {
+      const gesture = touchGestureRef.current;
+      if (!gesture || gesture.pointerId !== event.pointerId) return;
+
+      if (!gesture.dragging) {
+        const deltaX = Math.abs(event.clientX - gesture.startX);
+        const deltaY = Math.abs(event.clientY - gesture.startY);
+        const intentThreshold = 10;
+
+        if (deltaY >= intentThreshold && deltaY > deltaX) {
+          touchGestureRef.current = null;
+          return;
+        }
+        if (deltaX < intentThreshold || deltaX <= deltaY) return;
+
+        gesture.dragging = true;
+        startSliderDrag(event);
+        return;
+      }
+
+      event.preventDefault();
+      setSliderFromPointer(event);
+      return;
+    }
+
+    const surface = sliderSurfaceRef.current;
+    if (!surface?.hasPointerCapture?.(event.pointerId)) return;
+    event.preventDefault();
+    setSliderFromPointer(event);
+  };
+
+  const endSliderDrag = (event) => {
+    const surface = sliderSurfaceRef.current;
+    if (surface?.hasPointerCapture?.(event.pointerId)) {
+      surface.releasePointerCapture(event.pointerId);
+    }
+    if (touchGestureRef.current?.pointerId === event.pointerId) {
+      touchGestureRef.current = null;
+    }
   };
 
   return (
@@ -72,7 +141,14 @@ export default function AboutBeforeAfterIsland({ projects }) {
         </div>
 
         <div className="about-before-visual relative h-[50vh] min-h-[350px] w-full md:h-[60vh] md:min-h-[500px] xl:h-auto xl:w-[60%]">
-          <div className="absolute inset-0 h-full w-full bg-[#111]" onTouchMove={handleTouchMove}>
+          <div
+            ref={sliderSurfaceRef}
+            className="absolute inset-0 h-full w-full bg-[#111]"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={endSliderDrag}
+            onPointerCancel={endSliderDrag}
+          >
             <img src={activeProject.apres} alt="Apres la restauration" className="absolute inset-0 h-full w-full object-cover" />
             <div className="pointer-events-none absolute right-6 top-6 z-0">
               <div className="flex h-8 items-center justify-center rounded-full border border-white/20 bg-white/10 px-4 shadow-lg backdrop-blur-md">
@@ -99,7 +175,7 @@ export default function AboutBeforeAfterIsland({ projects }) {
                 </div>
               </div>
             </div>
-            <input type="range" min="0" max="100" value={sliderPos} onChange={(event) => setSliderPos(Number(event.target.value))} className="absolute inset-0 z-30 h-full w-full cursor-ew-resize touch-pan-y opacity-0" aria-label="Curseur Avant Apres" />
+            <input ref={rangeRef} type="range" min="0" max="100" value={sliderPos} onChange={(event) => setSliderPos(Number(event.target.value))} className="absolute inset-0 z-30 h-full w-full cursor-ew-resize touch-pan-y opacity-0" aria-label="Curseur Avant Apres" />
           </div>
         </div>
       </div>

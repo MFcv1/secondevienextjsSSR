@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, AtSign, Bookmark, ChevronLeft, ChevronRight, CreditCard, Heart, HeartHandshake, Instagram, LockKeyhole, Mail, MessageCircle, Quote, Send, ShieldCheck, Sparkles, Star, Tag, Truck } from 'lucide-react';
 import GalleryProductCardServer from './GalleryProductCardServer';
+import { ProductGridMoreButtonIsland } from './GalleryFixedSectionsInteractions';
 import InstagramFloatingTokensReveal from './InstagramFloatingTokensReveal';
 
 const PRODUCT_GRID_INITIAL_COUNT = 10;
@@ -111,15 +112,7 @@ const ProductGridSectionServer = ({
 
       {items.length > PRODUCT_GRID_INITIAL_COUNT ? (
         <div className="product-grid-more-wrap mt-10 flex justify-center">
-          <button
-            type="button"
-            aria-controls={`${id}-grid`}
-            aria-expanded="false"
-            data-product-grid-more
-            className={`flex min-h-11 items-center gap-2 rounded-full px-8 py-3 font-sans text-[10px] font-bold uppercase tracking-widest transition-colors ${darkMode ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-stone-100 text-stone-800 hover:bg-stone-200'}`}
-          >
-            Voir plus <ArrowRight size={12} />
-          </button>
+          <ProductGridMoreButtonIsland sectionId={id} darkMode={darkMode} />
         </div>
       ) : null}
     </section>

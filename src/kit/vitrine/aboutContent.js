@@ -105,7 +105,7 @@ export const instagramPosts = [
     id: 4,
     img: '/images/before-after/apresx.png',
     alt: 'Interieur provencal',
-    className: 'col-span-2 row-span-1 aspect-[2/1] md:aspect-auto',
+    className: 'col-span-2 row-span-1 aspect-[5/3] md:aspect-auto',
   },
 ];
 

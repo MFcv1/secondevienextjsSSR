@@ -5,8 +5,8 @@ import { usePathname } from 'next/navigation';
 import { X } from 'lucide-react';
 
 const SEEN_STORAGE_KEY = 'sv:support-chat-seen:v1';
+const HIDDEN_PATHS = ['/a-propos'];
 const HIDDEN_PATH_PREFIXES = ['/admin', '/checkout'];
-const MOBILE_HIDDEN_PATHS = ['/a-propos'];
 const MOBILE_HIDDEN_PATH_PREFIXES = ['/produit/'];
 
 const LauncherWhatsAppIcon = ({ size = 24, className = '' }) => (
@@ -38,8 +38,7 @@ const loadPanel = () => {
 
 export default function SupportChatLauncherIsland() {
   const pathname = usePathname() || '';
-  const hiddenOnMobile = MOBILE_HIDDEN_PATHS.includes(pathname)
-    || MOBILE_HIDDEN_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  const hiddenOnMobile = MOBILE_HIDDEN_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
   const [Panel, setPanel] = React.useState(null);
   const [open, setOpen] = React.useState(false);
   const [seen, setSeen] = React.useState(true);
@@ -77,7 +76,10 @@ export default function SupportChatLauncherIsland() {
 
   const closeChat = React.useCallback(() => setOpen(false), []);
 
-  if (HIDDEN_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return null;
+  if (
+    HIDDEN_PATHS.includes(pathname)
+    || HIDDEN_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  ) return null;
 
   return (
     <div className={hiddenOnMobile ? 'hidden lg:contents' : 'contents'}>

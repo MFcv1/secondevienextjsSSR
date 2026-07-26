@@ -229,9 +229,9 @@ function TransitionToServicesSection() {
       <div className="pointer-events-none absolute inset-0 z-0 opacity-[0.03] mix-blend-overlay" style={textureStyle} />
 
       <div className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 text-[#1A1A1A] opacity-[0.065] md:opacity-[0.04]">
-        <svg viewBox="0 0 200 200" className="about-service-seal h-auto w-[100vw] md:w-[70vw] lg:w-[50vw]">
+        <svg viewBox="0 0 200 200" className="about-service-seal h-auto w-[108vw] md:w-[70vw] lg:w-[50vw]">
           <path id="aboutTextPathScroll" d="M 100, 100 m -70, 0 a 70,70 0 1,1 140,0 a 70,70 0 1,1 -140,0" fill="none" />
-          <text className="fill-current font-serif text-[14px] uppercase tracking-[0.3em]">
+          <text className="fill-current font-serif text-[13.5px] uppercase tracking-[0.3em] md:text-[14px]">
             <textPath href="#aboutTextPathScroll" startOffset="0%">
               - LE TEMPS SUBLIME - SAVOIR-FAIRE ARTISANAL -
             </textPath>
@@ -243,8 +243,8 @@ function TransitionToServicesSection() {
         <p className="relative -top-8 mb-8 font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-[#A68A64] md:-top-16 md:text-xs">
           - Notre Philosophie -
         </p>
-        <h2 className="about-transition-title text-center font-serif text-[18vw] leading-[0.8] tracking-tighter text-[#1A1A1A] md:text-[10rem] lg:text-[14rem]">
-          L'Heritage.
+        <h2 className="about-transition-title whitespace-nowrap text-center font-serif text-[18vw] leading-[0.8] tracking-tighter text-[#1A1A1A] md:text-[10rem] lg:text-[14rem]">
+          L&rsquo;H&eacute;ritage.
         </h2>
       </div>
 
@@ -275,8 +275,9 @@ function ServicesSection({ steps }) {
             <div className="h-px w-8 bg-[#A68A64]" />
             <span className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-[#A68A64] md:text-xs">Le Savoir-Faire</span>
           </div>
-          <h2 className="about-services-title mb-10 font-serif text-5xl uppercase leading-[0.9] tracking-tighter text-[#1A1A1A] md:mb-8 md:text-7xl lg:text-[6rem]">
-            L'ART <span className="font-light lowercase italic text-[#A68A64]">de sauvegarder</span> LA MATIERE.
+          <h2 className="about-services-title mb-10 pb-8 font-serif text-5xl uppercase leading-[0.9] tracking-tighter text-[#1A1A1A] md:mb-8 md:pb-0 md:text-7xl lg:text-[6rem]">
+            L’ART <br className="md:hidden" />
+            <span className="whitespace-nowrap"><span className="font-light lowercase italic text-[#A68A64]">de la</span> MATIÈRE.</span>
           </h2>
           <p className="about-services-copy max-w-2xl text-sm font-light leading-relaxed text-[#5A5550] md:text-lg lg:relative lg:top-10">
             De la chine passionnee au geste technique precis, decouvrez les etapes minutieuses qui transforment un objet oublie en une piece d'exception.
@@ -349,14 +350,14 @@ function InterludeSection() {
 
 function InstagramSection() {
   return (
-    <section className="about-instagram relative z-30 -mt-[5vh] flex w-full flex-col overflow-hidden bg-[#111111] pb-[20vh] md:mt-0">
+    <section className="about-instagram relative z-30 -mt-[5vh] flex w-full flex-col overflow-hidden bg-[#111111] pb-[12vh] md:mt-0 md:pb-[20vh]">
       <div className="pointer-events-none absolute inset-0 z-0 opacity-80" style={instagramTextureStyle} />
       <div className="about-instagram-spotlight pointer-events-none absolute inset-0 z-[1]" aria-hidden="true" />
-      <div className="about-instagram-content relative z-10 mx-auto flex w-full flex-grow flex-col px-6 pb-32 pt-[15vh] md:px-12 md:pt-[20vh] lg:px-20">
+      <div className="about-instagram-content relative z-10 mx-auto flex w-full flex-grow flex-col px-6 pb-28 pt-[15vh] md:px-12 md:pb-32 md:pt-[20vh] lg:px-20">
         <div className="relative z-10 mx-auto flex w-full max-w-[1600px] flex-col">
           <div className="about-instagram-head mb-16 flex flex-col justify-between gap-12 md:mb-24 xl:flex-row xl:items-end">
             <div className="flex max-w-2xl flex-col">
-              <div className="relative -top-8 mb-8 flex items-center gap-3">
+              <div className="relative -top-5 mb-5 flex items-center gap-3">
                 <Instagram className="text-[#A68A64]" size={20} />
                 <span className="font-mono text-xs font-bold uppercase tracking-[0.3em] text-[#A68A64]">Dans l'Atelier</span>
               </div>
@@ -365,7 +366,7 @@ function InstagramSection() {
                 <span className="font-light lowercase italic text-[#A68A64]">au quotidien.</span>
               </h2>
             </div>
-            <div className="-mt-12 flex flex-col items-start gap-10 text-left xl:items-end xl:text-right">
+            <div className="flex flex-col items-start gap-10 text-left xl:-mt-12 xl:items-end xl:text-right">
               <AboutInstagramCounterIsland />
               <a href="https://www.instagram.com/seconde_vie_pour_nos_objets/" target="_blank" rel="noreferrer" className="group relative flex items-center gap-4 overflow-hidden rounded-full border border-white/20 bg-white/5 py-2 pl-6 pr-2 backdrop-blur-md transition-all duration-500 hover:border-white">
                 <span className="relative z-10 ml-2 font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-white/90 transition-colors duration-500 group-hover:text-[#111] md:text-xs">Rejoindre la communaute</span>
@@ -399,20 +400,20 @@ function InstagramSection() {
 function FaqSection({ items }) {
   return (
     <section className="about-faq relative z-40 -mt-[15vh] flex w-full flex-col overflow-hidden bg-white pb-[7vh] shadow-[0_-30px_60px_rgba(0,0,0,0.2)] md:pb-[9vh]">
-      <div className="relative mx-auto flex min-h-screen w-full flex-col justify-center bg-white px-6 pb-[20vh] pt-[20vh] md:px-12 md:pb-[25vh] md:pt-[25vh] lg:px-20">
+      <div className="relative mx-auto flex min-h-screen w-full flex-col justify-center bg-white px-6 pb-[20vh] pt-[12vh] md:px-12 md:pb-[25vh] md:pt-[25vh] lg:px-20">
         <div className="absolute bottom-0 top-0 left-[33%] hidden w-px bg-black/5 lg:block" />
         <div className="relative z-10 mx-auto my-auto flex w-full max-w-[1200px] flex-col items-center gap-16 lg:flex-row lg:gap-24">
           <div className="w-full lg:w-1/3">
-            <div className="sticky top-32">
+            <div className="sticky top-32 flex flex-col items-start">
               <div className="mb-6 flex items-center gap-3">
                 <div className="h-px w-6 bg-[#A68A64]" />
                 <span className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-[#A68A64] md:text-xs">F.A.Q</span>
               </div>
-              <h2 className="mb-8 font-serif text-5xl uppercase leading-[0.9] tracking-tighter text-[#1A1A1A] md:text-7xl lg:text-[5.5rem]">
+              <h2 className="font-serif text-5xl uppercase leading-[0.9] tracking-tighter text-[#1A1A1A] md:text-7xl lg:text-[5.5rem]">
                 VOS <br />
                 <span className="font-light lowercase italic tracking-normal text-[#A68A64]">questions.</span>
               </h2>
-              <p className="mt-6 border-l border-[#1A1A1A]/10 pl-6 text-base font-light leading-relaxed text-[#5A5550] md:mt-12 md:text-lg">
+              <p className="mt-9 border-l border-[#1A1A1A]/10 pl-6 text-base font-light leading-relaxed text-[#5A5550] md:mt-12 md:text-lg">
                 Tout ce que vous devez savoir sur notre processus de restauration, l'expedition et l'entretien de vos futures pieces.
               </p>
             </div>
