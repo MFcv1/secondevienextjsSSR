@@ -187,7 +187,7 @@ function ShowcaseSection({ items }) {
           backgroundSize: '4rem 4rem',
         }}
       />
-      <div className="relative z-20 mx-auto -mt-[8vh] max-w-[1600px] rounded-t-[3rem] bg-[#F9F6F0] px-6 pb-[25vh] pt-[15vh] shadow-[0_-20px_60px_rgba(0,0,0,0.1)] md:rounded-t-[4rem] md:px-12 lg:px-20">
+      <div className="relative z-20 mx-auto -mt-[8vh] max-w-[1600px] rounded-t-[3rem] bg-[#F9F6F0] px-6 pb-12 pt-[15vh] shadow-[0_-20px_60px_rgba(0,0,0,0.1)] md:rounded-t-[4rem] md:px-12 md:pb-[25vh] lg:px-20">
         <div className="relative z-10 flex flex-col gap-[10vh] md:gap-[25vh]">
           {items.map((item, index) => (
             <div key={item.title} className={`showcase-row flex w-full flex-col items-center gap-12 md:gap-20 lg:gap-32 ${item.reverse ? 'md:flex-row-reverse' : 'md:flex-row'}`}>
@@ -228,8 +228,8 @@ function TransitionToServicesSection() {
     <section className="about-transition-services relative z-[25] flex h-[100svh] w-full items-center justify-center overflow-hidden bg-[#F9F6F0] will-change-transform">
       <div className="pointer-events-none absolute inset-0 z-0 opacity-[0.03] mix-blend-overlay" style={textureStyle} />
 
-      <div className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 text-[#1A1A1A] opacity-[0.04]">
-        <svg viewBox="0 0 200 200" className="about-service-seal h-auto w-[90vw] md:w-[70vw] lg:w-[50vw]">
+      <div className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 text-[#1A1A1A] opacity-[0.065] md:opacity-[0.04]">
+        <svg viewBox="0 0 200 200" className="about-service-seal h-auto w-[100vw] md:w-[70vw] lg:w-[50vw]">
           <path id="aboutTextPathScroll" d="M 100, 100 m -70, 0 a 70,70 0 1,1 140,0 a 70,70 0 1,1 -140,0" fill="none" />
           <text className="fill-current font-serif text-[14px] uppercase tracking-[0.3em]">
             <textPath href="#aboutTextPathScroll" startOffset="0%">
@@ -240,7 +240,7 @@ function TransitionToServicesSection() {
       </div>
 
       <div className="about-transition-step-1 absolute inset-0 z-10 flex flex-col items-center justify-center">
-        <p className="relative -top-12 mb-8 font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-[#A68A64] md:-top-16 md:text-xs">
+        <p className="relative -top-8 mb-8 font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-[#A68A64] md:-top-16 md:text-xs">
           - Notre Philosophie -
         </p>
         <h2 className="about-transition-title text-center font-serif text-[18vw] leading-[0.8] tracking-tighter text-[#1A1A1A] md:text-[10rem] lg:text-[14rem]">
@@ -270,12 +270,12 @@ function ServicesSection({ steps }) {
     <section id="atelier" className="relative z-[30] flex min-h-[100svh] w-full flex-col bg-transparent p-3 md:p-5 lg:p-6">
       <div className="relative flex w-full flex-grow flex-col overflow-hidden rounded-b-2xl rounded-t-3xl border-t border-black/5 bg-[#F9F6F0] px-8 py-16 shadow-[0_-30px_60px_rgba(0,0,0,0.15)] md:rounded-b-[2.5rem] md:rounded-t-[3rem] md:px-16 md:py-24 lg:px-24">
         <div className="pointer-events-none absolute inset-0 opacity-[0.04] mix-blend-overlay" style={textureStyle} />
-        <div className="relative z-10 mb-16 max-w-4xl md:mb-24">
+        <div className="relative z-10 mb-12 max-w-4xl md:mb-24">
           <div className="sur-titre-service mb-6 flex items-center gap-3">
             <div className="h-px w-8 bg-[#A68A64]" />
             <span className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-[#A68A64] md:text-xs">Le Savoir-Faire</span>
           </div>
-          <h2 className="about-services-title mb-8 font-serif text-5xl uppercase leading-[0.9] tracking-tighter text-[#1A1A1A] md:text-7xl lg:text-[6rem]">
+          <h2 className="about-services-title mb-10 font-serif text-5xl uppercase leading-[0.9] tracking-tighter text-[#1A1A1A] md:mb-8 md:text-7xl lg:text-[6rem]">
             L'ART <span className="font-light lowercase italic text-[#A68A64]">de sauvegarder</span> LA MATIERE.
           </h2>
           <p className="about-services-copy max-w-2xl text-sm font-light leading-relaxed text-[#5A5550] md:text-lg lg:relative lg:top-10">

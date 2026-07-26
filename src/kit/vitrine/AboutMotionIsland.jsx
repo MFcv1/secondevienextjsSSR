@@ -244,6 +244,13 @@ function animateBeforeAfter(gsap, root) {
   const section = select(root, '.about-before-after');
   if (!section) return;
 
+  const isMobile = window.matchMedia('(max-width: 767px)').matches;
+  const transformHint = isMobile ? { force3D: true } : {};
+  const cardStartFilter = isMobile ? {} : { filter: 'blur(10px)' };
+  const cardEndFilter = isMobile ? {} : { filter: 'blur(0px)' };
+  const textStartFilter = isMobile ? {} : { filter: 'blur(8px)' };
+  const textEndFilter = isMobile ? {} : { filter: 'blur(0px)' };
+
   const card = select(section, '.about-before-card');
   const titleLines = selectAll(section, '.about-before-title-line');
   const textItems = selectAll(section, '.about-before-kicker, .about-before-copy, .about-before-project');
@@ -253,13 +260,15 @@ function animateBeforeAfter(gsap, root) {
     {
       clipPath: 'inset(12% 12% 12% 12% round 3rem)',
       scale: 0.95,
-      filter: 'blur(10px)',
       transformOrigin: 'center center',
+      ...cardStartFilter,
+      ...transformHint,
     },
     {
       clipPath: 'inset(0% 0% 0% 0% round 2.5rem)',
       scale: 1,
-      filter: 'blur(0px)',
+      ...cardEndFilter,
+      ...transformHint,
       duration: 1.65,
       ease: 'power3.inOut',
       scrollTrigger: {
@@ -270,11 +279,17 @@ function animateBeforeAfter(gsap, root) {
   );
 
   gsap.fromTo(titleLines,
-    { yPercent: 120, opacity: 0, filter: 'blur(10px)' },
+    {
+      yPercent: 120,
+      opacity: 0,
+      ...(isMobile ? {} : { filter: 'blur(10px)' }),
+      ...transformHint,
+    },
     {
       yPercent: 0,
       opacity: 1,
-      filter: 'blur(0px)',
+      ...cardEndFilter,
+      ...transformHint,
       duration: 1.05,
       stagger: 0.12,
       ease: 'power4.out',
@@ -286,11 +301,17 @@ function animateBeforeAfter(gsap, root) {
   );
 
   gsap.fromTo(textItems,
-    { y: 26, opacity: 0, filter: 'blur(8px)' },
+    {
+      y: 26,
+      opacity: 0,
+      ...textStartFilter,
+      ...transformHint,
+    },
     {
       y: 0,
       opacity: 1,
-      filter: 'blur(0px)',
+      ...textEndFilter,
+      ...transformHint,
       duration: 0.9,
       stagger: 0.08,
       ease: 'power3.out',
@@ -302,10 +323,16 @@ function animateBeforeAfter(gsap, root) {
   );
 
   gsap.fromTo(visual,
-    { scale: 1.035, filter: 'blur(8px)', transformOrigin: 'center center' },
+    {
+      scale: 1.035,
+      transformOrigin: 'center center',
+      ...textStartFilter,
+      ...transformHint,
+    },
     {
       scale: 1,
-      filter: 'blur(0px)',
+      ...textEndFilter,
+      ...transformHint,
       duration: 1.55,
       ease: 'power3.inOut',
       scrollTrigger: {

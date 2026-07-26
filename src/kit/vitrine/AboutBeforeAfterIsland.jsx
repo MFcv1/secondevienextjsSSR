@@ -26,7 +26,7 @@ export default function AboutBeforeAfterIsland({ projects }) {
 
   return (
     <section className="about-before-after relative z-[20] flex min-h-[100svh] w-full flex-col bg-[#F9F6F0] p-3 md:p-5 lg:p-6">
-      <div className="about-before-card relative mt-8 flex w-full flex-grow flex-col overflow-hidden rounded-2xl bg-[#1A1A1A] shadow-[0_30px_60px_rgba(0,0,0,0.18)] md:mt-16 md:rounded-[2.5rem] xl:flex-row">
+      <div className="about-before-card relative mt-4 flex w-full flex-grow flex-col overflow-hidden rounded-2xl bg-[#1A1A1A] shadow-[0_30px_60px_rgba(0,0,0,0.18)] md:mt-16 md:rounded-[2.5rem] xl:flex-row">
         <div className="absolute left-0 top-0 z-10 h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         <div className="relative z-10 flex w-full flex-col justify-between p-8 md:p-12 lg:p-16 xl:w-[40%]">
           <div>

@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, AtSign, Bookmark, ChevronLeft, ChevronRight, CreditCard, Heart, HeartHandshake, Instagram, LockKeyhole, Mail, MessageCircle, Quote, Send, ShieldCheck, Sparkles, Star, Tag, Truck } from 'lucide-react';
 import GalleryProductCardServer from './GalleryProductCardServer';
-import GalleryFixedSectionsInteractions from './GalleryFixedSectionsInteractions';
 import InstagramFloatingTokensReveal from './InstagramFloatingTokensReveal';
 
 const PRODUCT_GRID_INITIAL_COUNT = 10;
@@ -429,7 +428,6 @@ export const BeforeAfterSectionServer = ({ darkMode = false, projects = restorat
         </div>
       </div>
       </div>
-      <GalleryFixedSectionsInteractions />
     </section>
   );
 };

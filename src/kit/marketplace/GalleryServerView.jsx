@@ -6,6 +6,7 @@ import MarketplaceHeroServer from './MarketplaceHeroServer';
 import CategoryRailServer from './CategoryRailServer';
 import FooterServer from './FooterServer';
 import GalleryGridActionsIsland from './GalleryGridActionsIsland';
+import GalleryFixedSectionsInteractions from './GalleryFixedSectionsInteractions';
 import CatalogVersionSyncIsland from './CatalogVersionSyncIsland';
 import {
   BeforeAfterSectionServer,
@@ -145,6 +146,7 @@ export default function GalleryServerView({
           className="marketplace-gallery-scroll"
           data-detail-open="false"
         >
+          <GalleryFixedSectionsInteractions />
           <MarketplaceHeroServer
             darkMode={darkMode}
             heroImages={GALLERY_HERO_PRESETS}
