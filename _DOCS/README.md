@@ -35,7 +35,7 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 
 | Perimetre | Document | Statut | Echeance et cloture |
 | --- | --- | --- | --- |
-| noyau commerce | [NOYAU_COMMERCE_STABILISATION.md](commerce/NOYAU_COMMERCE_STABILISATION.md) | `PLAN_TEMPORAIRE_EXECUTION`, specification contre-validee, `NO_GO_TRANSACTIONNEL` | prochaine etape Gate 0A; gates 0A a 7B puis recette Gate 8; revue au plus tard le 2026-09-30, fusion canonique et suppression |
+| noyau commerce | [NOYAU_COMMERCE_STABILISATION.md](commerce/NOYAU_COMMERCE_STABILISATION.md) | `PLAN_TEMPORAIRE_EXECUTION`, specification contre-validee, `NO_GO_TRANSACTIONNEL` | Gates 0A a 3 `CODE_READY_LOCAL`, Gate 4 `IN_PROGRESS_LOCAL`; prochaine tranche: transports callable et UI fulfillment/annulation/refund/retour en mode dormant; revue au plus tard le 2026-09-30, fusion canonique et suppression |
 
 ## Niveaux de statut
 
