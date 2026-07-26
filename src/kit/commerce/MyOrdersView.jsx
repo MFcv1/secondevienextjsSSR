@@ -28,6 +28,7 @@ const BUSINESS_PHONE = process.env.NEXT_PUBLIC_BUSINESS_PHONE || '';
 const BUSINESS_PHONE_TEL = BUSINESS_PHONE.replace(/\s/g, '');
 const CONTACT_NAME = process.env.NEXT_PUBLIC_CONTACT_NAME || KIT_CONFIG.brandName;
 const REVIEW_URL = process.env.NEXT_PUBLIC_REVIEW_URL || '';
+const COMMERCE_READ_ONLY = true;
 
 const FALLBACK_ITEM_IMAGES = [
     '/images/before-after/apresu.webp',
@@ -195,7 +196,6 @@ const MyOrdersView = ({
 }) => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [downloadingInvoice, setDownloadingInvoice] = useState(null);
     const [showCancelSuccess, setShowCancelSuccess] = useState(false);
     const [showContactPopup, setShowContactPopup] = useState(false);
     const [orderToCancelId, setOrderToCancelId] = useState(null);
@@ -240,25 +240,11 @@ const MyOrdersView = ({
         ].filter(Boolean)
         : [];
 
-    const invoiceRows = orders.slice(0, 4);
     const recentOrders = orders.slice(0, 6);
     const addressCount = addressLines.length > 1 ? 1 : 0;
     const refundedTotal = orders.reduce((sum, order) => (
         getRefundHelpText(order.status) ? sum + getRefundAmount(order) : sum
     ), 0);
-
-    const handleDownloadInvoice = async (order) => {
-        setDownloadingInvoice(order.id);
-        try {
-            const { generateInvoice } = await import('../../utils/generateInvoice');
-            await generateInvoice(order);
-        } catch (error) {
-            console.error('Erreur generation facture:', error);
-            alert('Une erreur est survenue lors de la generation de la facture.');
-        } finally {
-            setDownloadingInvoice(null);
-        }
-    };
 
     useEffect(() => {
         if (!user) return;
@@ -320,7 +306,7 @@ const MyOrdersView = ({
 
     const navItems = [
         { label: 'Commandes', Icon: ShoppingBag, active: true, action: () => scrollToSection(ordersRef) },
-        { label: 'Factures', Icon: FileText, action: () => scrollToSection(invoicesRef) },
+        { label: 'Documents', Icon: FileText, action: () => scrollToSection(invoicesRef) },
         { label: 'Liste de souhaits', Icon: Heart, action: openWishlist },
         { label: 'Adresse', Icon: MapPin, action: () => scrollToSection(addressesRef) },
         { label: 'Profil', Icon: UserRound, action: () => scrollToSection(infoRef) },
@@ -381,7 +367,7 @@ const MyOrdersView = ({
                         <MetricButton icon={ShoppingBag} value={orders.length} label="Commandes" action="Historique complet" onClick={() => scrollToSection(ordersRef)} />
                         <MetricButton icon={Heart} value={wishlistItems.length} label="Pieces suivies" action="Liste de souhaits" onClick={openWishlist} />
                         <MetricButton icon={MapPin} value={addressCount} label="Adresse" action="Livraison et facturation" onClick={() => scrollToSection(addressesRef)} />
-                        <MetricButton icon={WalletCards} value={formatPrice(refundedTotal)} label="Avoir / remboursements" action="Suivi Stripe" onClick={() => scrollToSection(invoicesRef)} />
+                        <MetricButton icon={WalletCards} value={formatPrice(refundedTotal)} label="Remboursements" action="Suivi Stripe" onClick={() => scrollToSection(invoicesRef)} />
                     </div>
 
                     <AccountPanel sectionRef={ordersRef} className="scroll-mt-28 p-4 md:p-6">
@@ -390,12 +376,12 @@ const MyOrdersView = ({
                             title="Commandes"
                             action={(
                                 <button type="button" onClick={() => scrollToSection(invoicesRef)} className="inline-flex items-center gap-2 text-[13px] font-medium text-[#0066cc]">
-                                    Factures
+                                    Documents
                                     <ArrowRight size={15} />
                                 </button>
                             )}
                         >
-                            Paiement, livraison, remboursement et facture restent lisibles dans le meme dossier.
+                            Paiement, livraison et remboursement restent lisibles dans le meme dossier.
                         </SectionHeader>
 
                         {loading ? (
@@ -449,13 +435,13 @@ const MyOrdersView = ({
                                                 {refundHelpText ? (
                                                     <div className="mt-3 rounded-[8px] border border-[#d8e6f5] bg-[#f5faff] px-4 py-3">
                                                         <div className="flex flex-wrap items-center justify-between gap-2">
-                                                            <p className="text-[13px] font-semibold text-[#175c9c]">Avoir / remboursement: {formatPrice(getRefundAmount(order))}</p>
+                                                            <p className="text-[13px] font-semibold text-[#175c9c]">Remboursement: {formatPrice(getRefundAmount(order))}</p>
                                                             <span className="text-[12px] text-[#4d6d8f]">Stripe</span>
                                                         </div>
                                                         <p className="mt-2 text-[13px] leading-5 text-[#3b5d78]">{refundHelpText}</p>
                                                     </div>
                                                 ) : null}
-                                                {canCancel(order) && (
+                                                {!COMMERCE_READ_ONLY && canCancel(order) && (
                                                     <button
                                                         type="button"
                                                         onClick={() => setOrderToCancelId(order.id)}
@@ -472,15 +458,10 @@ const MyOrdersView = ({
 
                                             <p className="text-[16px] font-semibold text-[#1d1d1f] md:text-right">{formatPrice(getOrderTotal(order))}</p>
 
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDownloadInvoice(order)}
-                                                disabled={downloadingInvoice === order.id}
-                                                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[#d2d2d7] px-4 text-[13px] font-medium text-[#1d1d1f] transition-colors hover:border-[#a1a1a6] disabled:opacity-50 md:justify-self-end"
-                                            >
-                                                {downloadingInvoice === order.id ? <Loader2 size={15} className="animate-spin" /> : <FileText size={15} />}
-                                                PDF
-                                            </button>
+                                            <span className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[#d2d2d7] px-4 text-[13px] font-medium text-[#86868b] md:justify-self-end">
+                                                <FileText size={15} />
+                                                Document indisponible
+                                            </span>
                                         </article>
                                     );
                                 })}
@@ -490,47 +471,13 @@ const MyOrdersView = ({
 
                     <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
                         <AccountPanel sectionRef={invoicesRef} className="scroll-mt-28 p-4 md:p-6">
-                            <SectionHeader eyebrow="Documents" title="Factures et avoirs">
-                                Telechargements PDF, montants payes et lignes de remboursement.
+                            <SectionHeader eyebrow="Documents" title="Documents de commande">
+                                Les anciens PDF sont suspendus : ils ne constituent ni une facture ni un avoir definitif.
                             </SectionHeader>
 
-                            {invoiceRows.length === 0 ? (
-                                <div className="rounded-[8px] border border-dashed border-[#d2d2d7] px-5 py-12 text-center text-[#6e6e73]">
-                                    Aucune facture disponible.
-                                </div>
-                            ) : (
-                                <div className="divide-y divide-[#e8e8ed]">
-                                    {invoiceRows.map((order) => {
-                                        const status = getStatusInfo(order.status || 'pending');
-                                        const hasRefund = Boolean(getRefundHelpText(order.status));
-                                        return (
-                                            <button
-                                                key={`invoice-${order.id}`}
-                                                type="button"
-                                                onClick={() => handleDownloadInvoice(order)}
-                                                className="grid w-full gap-3 py-4 text-left transition-colors hover:bg-[#fbfbfd] sm:grid-cols-[38px_1fr_auto]"
-                                            >
-                                                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f5f7] text-[#1d1d1f]">
-                                                    <FileText size={18} strokeWidth={1.5} />
-                                                </span>
-                                                <span>
-                                                    <span className="block text-[15px] font-semibold text-[#1d1d1f]">FAC-{String(order.id).slice(0, 10).toUpperCase()}</span>
-                                                    <span className="mt-1 block text-[13px] text-[#6e6e73]">{formatDate(order.createdAt?.seconds)} - {formatPrice(getOrderTotal(order))}</span>
-                                                    {hasRefund ? (
-                                                        <span className="mt-2 block text-[13px] font-medium text-[#175c9c]">
-                                                            Avoir / remboursement: {formatPrice(getRefundAmount(order))}
-                                                        </span>
-                                                    ) : null}
-                                                </span>
-                                                <span className="flex items-center gap-3 sm:justify-end">
-                                                    <StatusBadge status={status} />
-                                                    {downloadingInvoice === order.id ? <Loader2 size={15} className="animate-spin" /> : <ArrowRight size={16} />}
-                                                </span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            )}
+                            <div className="rounded-[8px] border border-dashed border-[#d2d2d7] px-5 py-12 text-center text-[#6e6e73]">
+                                Aucun document fiscal definitif n&apos;est emis pendant la stabilisation du noyau commerce.
+                            </div>
                         </AccountPanel>
 
                         <AccountPanel sectionRef={wishlistRef} className="scroll-mt-28 p-4 md:p-6">

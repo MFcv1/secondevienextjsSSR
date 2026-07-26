@@ -1,6 +1,6 @@
 # Commerce, checkout et Stripe
 
-Derniere mise a jour: 2026-07-26
+Derniere mise a jour: 2026-07-27
 Statut: `STABILISATION_ACTIVE`
 
 Restriction active:
@@ -11,6 +11,10 @@ Restriction active:
 > paiement/annulation, les compensations stock, les mutations admin et les
 > preuves automatisees. Le plan ferme est
 > [NOYAU_COMMERCE_STABILISATION.md](NOYAU_COMMERCE_STABILISATION.md).
+> Les Gates 0A a 3 sont `CODE_READY_LOCAL` mais pas `SANDBOX_ACTIVE`:
+> aucune nouvelle transaction legacy n'est admise par le code courant et aucun
+> deploiement n'a ete effectue. Le runtime v2 Gate 3 est additif, dormant,
+> non exporte et ses flags frontend restent `off`.
 
 ## 1. Perimetre
 
@@ -19,10 +23,9 @@ Stripe, confirmation par webhook, espace client, annulation admissible,
 remboursement admin, retour/inspection et disposition eventuelle du stock.
 
 Invariant cible: le navigateur orchestre seulement l'UX; Cloud Functions et
-Stripe sont autoritaires pour prix, stock et paiement. Le checkout nominal
-revalide deja prix et reservation initiale au serveur, mais les mutations admin
-et compensations legacy contournent encore partiellement cet invariant jusqu'a
-Gate 0B.
+Stripe sont autoritaires pour prix, stock et paiement. Le code Gate 0B coupe le
+checkout et les mutations legacy avant effet; les anciens readers et webhooks
+restent disponibles uniquement pour le drainage.
 
 ## 2. Flux d'achat
 
@@ -42,7 +45,9 @@ produit achetable
   -> e-mails + espace client + admin
 ```
 
-`createOrder` revalide chaque article, le prix, le stock, l'identite et l'e-mail verifie. La disponibilite affichee par le client ne suffit pas.
+Le flux ci-dessus decrit le legacy conserve en source pour drainage et reprise.
+Dans le worktree Gate 0B, `createOrder` refuse avant Stripe, rate limit,
+idempotence, commande ou reservation, et `CheckoutView` affiche la maintenance.
 
 ## 3. Panier et checkout
 
@@ -75,7 +80,9 @@ Invariants cibles:
   Stripe et disposition physique;
 - les conflits de restauration passent en etat a verifier, pas en succes silencieux.
 
-Le `cleanupPendingPayments` actuel ne constitue pas encore une preuve de ces invariants: il peut liberer un PI `requires_payment_method` sans l'annuler, possede un second chemin moins strict pour marquer `paid` et peut etre affame par son lot de 50 commandes.
+`cleanupPendingPayments` est neutralise avant toute lecture/ecriture. La
+convergence des PI existants passe par les webhooks signes; un echec reessayable
+conserve la commande et le hold.
 
 ## 5. Statuts actuels et cible
 
@@ -83,10 +90,10 @@ Le `cleanupPendingPayments` actuel ne constitue pas encore une preuve de ces inv
 | --- | --- |
 | `pending_payment` | commande et stock reserves, paiement non confirme |
 | `paid` | paiement confirme durablement |
-| `payment_failed` | etat legacy actuellement traite a tort comme terminal pour un PI reessayable |
-| `canceled` | commande annulee localement; le PI n'est pas encore neutralise sur tous les chemins |
+| `payment_failed` | etat historique; le webhook Gate 0B reprojette un refus reessayable en `pending_payment` et conserve le hold |
+| `canceled` | signal terminal autoritaire permettant une liberation bornee |
 | `refund_pending` | remboursement cree, attente Stripe |
-| `refunded` | remboursement confirme; le code legacy peut alors restaurer automatiquement le stock, comportement a neutraliser |
+| `refunded` | remboursement confirme; aucune remise en vente automatique, disposition physique requise |
 | `refund_failed` | intervention ou nouvelle synchronisation requise |
 
 Le code actuel reutilise le meme champ `status` pour paiement, annulation,
@@ -108,33 +115,36 @@ projection ecrite atomiquement, jamais une source de verite v2.
 
 Evenements principaux: succes/echec/annulation PaymentIntent et creation/mise a jour/echec de refund, avec `charge.refunded` comme signal complementaire.
 
-Limites actuelles:
+Etat Gate 0B:
 
-- un marqueur webhook reste bloque en `processing` sans lease recuperable si l'instance meurt;
-- un paiement reussi sans commande est acquitte comme ignore;
-- l'ordre des evenements n'est pas gere par un reducer monotone commun;
-- le handler Checkout Session annonce comme retire reste executable;
-- le cleanup ne reutilise pas toutes les validations du webhook.
+- un marqueur `processing` possede une lease expiree recuperable et un token de
+  fencing pour succes comme echec;
+- un paiement reussi sans commande conserve un incident `requiresReview` dans
+  le marqueur;
+- le succes PaymentIntent reste drainable et un refus reessayable ne libere
+  rien;
+- la creation de commande depuis `checkout.session.completed` est retiree;
+- le reducer monotone commun et l'inbox durable arrivent en Gates 1 et 3.
 
 ## 7. Remboursements
 
-`refundOrderAdmin` est une bonne base d'action metier forte. Elle cree un Refund Stripe idempotent, conserve la commande et valide PaymentIntent, devise et montant. `syncRefundStatusAdmin` relit Stripe pour recuperer un etat incomplet.
-
-La remise en stock actuelle reste a corriger: elle utilise la photographie `stockBefore` et remet automatiquement en vente apres refund, y compris pour un bien expedie ou livre. Le moteur cible separe refund financier, retour physique, inspection et disposition de stock.
+`refundOrderAdmin` legacy est neutralise avant authentification, lecture ou appel
+Stripe. `syncRefundStatusAdmin` et les webhooks peuvent encore rapprocher un
+refund deja ouvert, sans modifier le stock. Le moteur cible separe refund
+financier, retour physique, inspection et disposition de stock.
 
 Le back-office `AdminReturns` fournit:
 
 - liste des commandes remboursables;
 - confirmation explicite;
-- remboursement et remise en vente automatique actuelle, a neutraliser;
+- remboursement legacy desactive;
 - synchronisation Stripe;
 - e-mail client;
 - preuve du refund et de la restauration.
 
-L'interdiction de supprimer manuellement une commande payee est un invariant
-cible. Les Rules actuelles autorisent encore a un admin fort l'ecriture et la
-suppression directes de `orders`; Gate 0B les rend read-only apres neutralisation
-des UI, puis les commandes serveur restaurent les actions admissibles.
+Les Rules Gate 0B interdisent creation, mise a jour et suppression SDK de
+`orders`, y compris a un admin fort, tout en conservant les lectures legitimes.
+Les futures commandes serveur restaureront uniquement les actions admissibles.
 
 ## 8. Stripe Connect
 
@@ -186,6 +196,7 @@ src/kit/commerce/CheckoutStripeModal.jsx
 src/kit/commerce/CheckoutPaymentStep.jsx
 src/kit/commerce/purchasability.js
 functions/src/commerce/createOrder.js
+functions/src/commerce/legacyContainment.js
 functions/src/commerce/stripeWebhook.js
 functions/src/commerce/stripeConnect.js
 functions/src/commerce/cancelOrder.js
@@ -211,10 +222,35 @@ Ces commandes touchent des services externes et creent des donnees sandbox.
 ni outil diagnostique sur une donnee reelle. Le futur runner Gate 7B exige
 fixture, `runId/orderId`, cible, AAL2/App Check et zero fallback.
 
-Les futures gates locales et CI (`test:commerce:*`, `lint:functions`) sont
-definies dans le plan de stabilisation. Le prochain lot est Gate 0A
-(harnais sentinelle), puis Gate 0B (confinement); aucune implementation ne doit
-commencer directement par un checkout v2 actif.
+Les gates locales et CI actives sont `lint:functions`,
+`test:commerce:runner`, `test:commerce:containment`,
+`test:commerce:rules:containment`, `test:commerce:unit`,
+`test:commerce:property`, `test:commerce:firebase`,
+`test:commerce:rules`, `test:commerce:faults` et leur agregat
+`test:commerce`. Gates 0A a 3 sont `CODE_READY_LOCAL`; les E2E heberges
+restent en quarantaine.
+
+Gate 1 ajoute `functions/src/commerce/domain`: schema v2, reducer pur,
+invariants monétaires/quantitatifs, projection legacy, controle fail-closed,
+idempotence, dependances injectables et failpoints. `orderStatus` adapte v1/v2;
+les handlers et triggers legacy sont fences contre v2. Aucun de ces modules ne
+cree une commande v2 ni n'appelle Stripe.
+
+Gate 2 ajoute les contrats purs `checkoutInput`, `inventoryKey`,
+`connectPolicy` et `reservationRepository`. La policy calcule les frais de
+livraison en centimes et epingle sa version et le compte Connect. Le repository
+transactionnel applique des deltas quantitatifs idempotents et conserve un
+mouvement par effet. Il n'est importe par aucune Function et le controle reste
+`off`.
+
+Gate 3 est `CODE_READY_LOCAL`. Le runtime v2 dormant couvre le repository
+commande/hold/tentative, `createCheckout`/`resumeCheckout`, la meme cle Stripe
+sous retry, l'annulation provider-first, le reconciler de tous les statuts PI,
+l'ingress signee plateforme/Connect, l'inbox a lease/fencing, les workers et
+sweepers bornes, l'expiration, le fait financier et l'outbox atomiques, ainsi
+que le token guest backend opaque, mono-usage et rotatif. Ce runtime n'est
+importe par aucune Function et aucun endpoint/scheduler v2 n'est exporte:
+`CODE_READY_LOCAL` ne signifie ni `SANDBOX_ACTIVE` ni recette transactionnelle.
 
 ## 13. Conditions production
 

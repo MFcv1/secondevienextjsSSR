@@ -13,6 +13,7 @@ const DELIVERY_SETTINGS_CACHE_KEY = 'secondevie:delivery-settings:v1';
 const PAYMENT_SETTINGS_CACHE_KEY = 'paymentSettings';
 const CheckoutStripeModal = lazy(() => import('./CheckoutStripeModal'));
 const RELIABLE_EMAIL_PROVIDER_IDS = new Set(['google.com']);
+const COMMERCE_READ_ONLY = true;
 
 const normalizeCheckoutEmail = (email) => String(email || '').trim().toLowerCase();
 const getCheckoutItemsTotal = (items = []) => (
@@ -156,7 +157,7 @@ const CheckoutView = ({ cartItems, user, darkMode = false, onBack, onPlaceOrder 
     const [lockedOrderDraft, setLockedOrderDraft] = useState(null);
     const [priceOverrides, setPriceOverrides] = useState({});
     const [unavailableItems, setUnavailableItems] = useState([]);
-    const [isCleaningUp, setIsCleaningUp] = useState(false);
+    const [isCleaningUp] = useState(false);
     const checkoutClientOrderIdRef = useRef(null);
     const [guestOtp, setGuestOtp] = useState({
         status: 'idle',
@@ -199,39 +200,10 @@ const CheckoutView = ({ cartItems, user, darkMode = false, onBack, onPlaceOrder 
         checkoutClientOrderIdRef.current = null;
     };
 
-    // Annule la commande pending_payment et restaure le stock quand l'utilisateur
-    // ferme le modal Stripe sans payer — évite les commandes orphelines et le stock bloqué
-    const handleClosePaymentModal = async () => {
-        if (createdOrderId && !isCleaningUp) {
-            setIsCleaningUp(true);
-            try {
-                const cancelOrder = httpsCallable(functions, 'cancelOrderClient');
-                await cancelOrder({
-                    orderId: createdOrderId,
-                    email: normalizedCheckoutEmail,
-                    checkoutOtpToken: createdOrderOtpToken || ''
-                });
-                
-                // FORCE le nettoyage côté Frontend pour ignorer la latence de Firestore.
-                // Sinon, le onSnapshot n'aura pas encore reçu "sold: false" et affichera "Victime de son succès".
-                setUnavailableItems([]);
-                
-            } catch (e) {
-                // Non-bloquant : si l'annulation échoue, l'admin peut gérer manuellement
-                console.error("Cleanup pending order failed:", e);
-            } finally {
-                // Un court délai de sécurité avant de débloquer l'état "isCleaningUp"
-                setTimeout(() => {
-                    setIsCleaningUp(false);
-                }, 500);
-            }
-            setCreatedOrderId(null);
-            setCreatedOrderOtpToken('');
-            setCreatedStripeConnectedAccountId('');
-            setClientSecret(null);
-            setLockedOrderDraft(null);
-            resetCheckoutClientOrderId();
-        }
+    // Fermer la modale ne compense jamais une operation Stripe ambigue.
+    // La commande et son hold restent drainables par les webhooks autoritaires.
+    const handleClosePaymentModal = () => {
+        setClientSecret(null);
         setCheckoutState('editing');
     };
     
@@ -646,6 +618,23 @@ const CheckoutView = ({ cartItems, user, darkMode = false, onBack, onPlaceOrder 
             locale: 'fr',
         };
     }, [clientSecret, darkMode]);
+
+    if (COMMERCE_READ_ONLY) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-transparent px-6 py-16">
+                <div className={`max-w-xl rounded-3xl border p-8 text-center shadow-xl ${darkMode ? 'border-stone-800 bg-stone-900 text-white' : 'border-stone-200 bg-white text-stone-900'}`}>
+                    <AlertCircle size={34} className="mx-auto text-amber-500" />
+                    <h2 className="mt-5 text-2xl font-black">Paiement temporairement indisponible</h2>
+                    <p className={`mt-3 text-sm leading-6 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
+                        Le noyau commerce est en maintenance. Aucune nouvelle commande ni aucun paiement differe ne peut etre cree.
+                    </p>
+                    <button type="button" onClick={onBack} className="mt-6 rounded-xl bg-stone-900 px-5 py-3 text-xs font-bold uppercase tracking-widest text-white">
+                        Retourner a la galerie
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
 
     // --- RENDU OUT OF STOCK ---

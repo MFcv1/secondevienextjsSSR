@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "capturedBeforeCorrection": true,
+  "cases": [
+    {
+      "finding": "NC-001",
+      "beforeFailure": "payment_failed etait terminal et liberait une commande reessayable",
+      "regressionProof": "retryable-payment-remains-held"
+    },
+    {
+      "finding": "NC-002",
+      "beforeFailure": "le stock pouvait etre libere avant payment_intent.canceled",
+      "regressionProof": "provider-cancel-precedes-release"
+    },
+    {
+      "finding": "NC-003",
+      "beforeFailure": "stockBefore et buyerId restauraient une photographie globale",
+      "regressionProof": "inventory-is-quantity-accounted"
+    },
+    {
+      "finding": "NC-004",
+      "beforeFailure": "une edition admin pouvait contourner la machine metier",
+      "regressionProof": "rules-deny-commerce-subcollections"
+    },
+    {
+      "finding": "NC-005",
+      "beforeFailure": "paiement, livraison et fulfillment partageaient un statut ambigu",
+      "regressionProof": "orthogonal-order-axes"
+    },
+    {
+      "finding": "NC-006",
+      "beforeFailure": "une reponse perdue apres effet fournisseur n'avait pas de reprise deterministe",
+      "regressionProof": "idempotent-retry-after-persist-failpoint"
+    },
+    {
+      "finding": "NC-007",
+      "beforeFailure": "un traitement webhook interrompu pouvait rester non recuperable",
+      "regressionProof": "named-failpoint-retry-converges"
+    }
+  ]
+}

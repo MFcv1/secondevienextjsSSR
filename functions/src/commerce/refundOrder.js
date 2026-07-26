@@ -1,16 +1,15 @@
 const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const Stripe = require('stripe');
-const { APP_ID } = require('../../helpers/config');
 const { STRIPE_SECRET_KEY } = require('../../helpers/secrets');
 const {
     assertConfirmText,
     checkRecentActiveStrongAdmin,
     normalizeFirestoreId,
-    normalizeProductCollection,
     writeSecurityAudit
 } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
+const { assertLegacyMutationBlocked, assertLegacyOrderDocument } = require('./legacyContainment');
 
 const db = admin.firestore();
 
@@ -59,72 +58,16 @@ function validateRefundForOrder(refund, order, orderId) {
     return errors;
 }
 
-async function restoreOrderStock(transaction, order, orderId) {
-    const items = Array.isArray(order.items) ? order.items : [];
-    const reads = [];
-    const conflicts = [];
-
-    for (const item of items) {
-        const itemId = normalizeFirestoreId(item.originalId || item.id, 'ID produit');
-        const collectionName = normalizeProductCollection(item.collectionName || item.collection || 'furniture');
-        const itemRef = db.doc(`artifacts/${APP_ID}/public/data/${collectionName}/${itemId}`);
-        reads.push({
-            item,
-            itemRef,
-            itemSnap: await transaction.get(itemRef)
-        });
-    }
-
-    for (const { item, itemRef, itemSnap } of reads) {
-        const itemId = item.originalId || item.id || null;
-        if (!itemSnap.exists) {
-            conflicts.push({ itemId, reason: 'missing_product' });
-            continue;
-        }
-        const currentBuyerId = itemSnap.data()?.buyerId || null;
-        if (currentBuyerId && currentBuyerId !== order.userId) {
-            conflicts.push({ itemId, reason: 'reserved_by_other_buyer' });
-            continue;
-        }
-        const quantity = Number(item.quantity || 1);
-        const currentStock = Number(itemSnap.data()?.stock ?? 0);
-        const stockBefore = Number(item.stockBefore);
-        const targetStock = Number.isFinite(stockBefore) && stockBefore >= quantity
-            ? Math.max(currentStock, stockBefore)
-            : currentStock + quantity;
-        const alreadyAvailable = !currentBuyerId && itemSnap.data()?.sold !== true && currentStock >= quantity;
-        if (!Number.isFinite(stockBefore) && alreadyAvailable) {
-            transaction.update(itemRef, {
-                sold: false,
-                refundedFromOrderId: orderId,
-                refundedAt: admin.firestore.FieldValue.serverTimestamp(),
-                soldAt: admin.firestore.FieldValue.delete(),
-                buyerId: admin.firestore.FieldValue.delete()
-            });
-            continue;
-        }
-        transaction.update(itemRef, {
-            stock: targetStock,
-            sold: false,
-            refundedFromOrderId: orderId,
-            refundedAt: admin.firestore.FieldValue.serverTimestamp(),
-            soldAt: admin.firestore.FieldValue.delete(),
-            buyerId: admin.firestore.FieldValue.delete()
-        });
-    }
-
-    return conflicts;
-}
-
 exports.refundOrderAdmin = regionalFunctions()
     .runWith({ enforceAppCheck: true, secrets: [STRIPE_SECRET_KEY] })
     .https.onCall(async (data, context) => {
+        assertLegacyMutationBlocked(functions, 'legacy-refund');
         const adminInfo = await checkRecentActiveStrongAdmin(context);
         assertConfirmText(data, 'REMBOURSER COMMANDE', 'remboursement');
         const orderId = normalizeFirestoreId(data?.orderId, 'ID commande');
         const refundReason = typeof data?.reason === 'string' && data.reason.trim()
             ? data.reason.trim().slice(0, 500)
-            : 'Remboursement admin avec remise en vente';
+            : 'Remboursement admin sans remise en vente automatique';
         const orderRef = db.collection('orders').doc(orderId);
         const stripe = Stripe(STRIPE_SECRET_KEY.value());
 
@@ -138,6 +81,7 @@ exports.refundOrderAdmin = regionalFunctions()
             }
 
             const order = snap.data();
+            assertLegacyOrderDocument(functions, order, 'legacy-refund');
             if (REFUND_TERMINAL_STATUSES.has(order.status) || order.stripeRefundId) {
                 orderForRefund = order;
                 return;
@@ -185,7 +129,7 @@ exports.refundOrderAdmin = regionalFunctions()
                     orderId,
                     adminUid: context.auth.uid,
                     stripeConnectedAccountId: orderForRefund.stripeConnectedAccountId || '',
-                    restoreStock: 'true',
+                    restoreStock: 'false',
                     note: refundReason
                 }
             }, { idempotencyKey, ...(stripeOptions || {}) });
@@ -209,12 +153,7 @@ exports.refundOrderAdmin = regionalFunctions()
             }
 
             const freshOrder = snap.data();
-            let stockRestoreConflicts = [];
-            if (finalStatus === 'refunded' && freshOrder.stockRestoredAfterRefund !== true) {
-                stockRestoreConflicts = await restoreOrderStock(transaction, freshOrder, orderId);
-            }
-            const stockRestored = finalStatus === 'refunded' && stockRestoreConflicts.length === 0;
-
+            assertLegacyOrderDocument(functions, freshOrder, 'legacy-refund');
             transaction.update(orderRef, {
                 status: finalStatus,
                 refundStatus: refund.status || null,
@@ -222,9 +161,10 @@ exports.refundOrderAdmin = regionalFunctions()
                 refundedAt: finalStatus === 'refunded'
                     ? admin.firestore.FieldValue.serverTimestamp()
                     : admin.firestore.FieldValue.delete(),
-                stockRestoredAfterRefund: stockRestored,
-                stockRestoreConflict: stockRestoreConflicts.length > 0,
-                stockRestoreConflictDetails: stockRestoreConflicts.length > 0 ? stockRestoreConflicts : admin.firestore.FieldValue.delete(),
+                stockRestoredAfterRefund: freshOrder.stockRestoredAfterRefund === true,
+                stockRestoreConflict: false,
+                stockRestoreConflictDetails: admin.firestore.FieldValue.delete(),
+                physicalDispositionRequired: finalStatus === 'refunded',
                 refundValidationError: refundValidationErrors.length > 0 ? refundValidationErrors.join(',') : admin.firestore.FieldValue.delete(),
                 refundAmount: refund.amount || null,
                 refundCurrency: refund.currency || null,
@@ -241,7 +181,7 @@ exports.refundOrderAdmin = regionalFunctions()
             currency: refund.currency || null,
             paymentIntentId: orderForRefund.stripePaymentIntentId || null,
             stripeConnectedAccountId: orderForRefund.stripeConnectedAccountId || null,
-            stockRestored: finalStatus === 'refunded' && refundValidationErrors.length === 0,
+            stockRestored: false,
             refundValidationErrors
         });
 
@@ -250,7 +190,7 @@ exports.refundOrderAdmin = regionalFunctions()
             refundId: refund.id,
             status: refund.status,
             orderStatus: finalStatus,
-            stockRestored: finalStatus === 'refunded' && refundValidationErrors.length === 0
+            stockRestored: false
         };
     });
 
@@ -268,6 +208,7 @@ exports.syncRefundStatusAdmin = regionalFunctions()
         }
 
         const order = snap.data();
+        assertLegacyOrderDocument(functions, order, 'legacy-refund-sync');
         const refundId = order.stripeRefundId;
         if (!refundId || typeof refundId !== 'string') {
             throw new functions.https.HttpsError('failed-precondition', 'Aucun remboursement Stripe lie a cette commande.');
@@ -295,12 +236,7 @@ exports.syncRefundStatusAdmin = regionalFunctions()
             }
 
             const freshOrder = freshSnap.data();
-            let stockRestoreConflicts = [];
-            if (safeFinalStatus === 'refunded' && freshOrder.stockRestoredAfterRefund !== true) {
-                stockRestoreConflicts = await restoreOrderStock(transaction, freshOrder, orderId);
-                stockRestored = stockRestoreConflicts.length === 0;
-            }
-
+            assertLegacyOrderDocument(functions, freshOrder, 'legacy-refund-sync');
             transaction.update(orderRef, {
                 status: safeFinalStatus,
                 refundStatus: refund.status || null,
@@ -313,9 +249,10 @@ exports.syncRefundStatusAdmin = regionalFunctions()
                 refundedAt: safeFinalStatus === 'refunded'
                     ? (freshOrder.refundedAt || admin.firestore.FieldValue.serverTimestamp())
                     : admin.firestore.FieldValue.delete(),
-                stockRestoredAfterRefund: stockRestored || freshOrder.stockRestoredAfterRefund === true,
-                stockRestoreConflict: stockRestoreConflicts.length > 0,
-                stockRestoreConflictDetails: stockRestoreConflicts.length > 0 ? stockRestoreConflicts : admin.firestore.FieldValue.delete()
+                stockRestoredAfterRefund: freshOrder.stockRestoredAfterRefund === true,
+                stockRestoreConflict: false,
+                stockRestoreConflictDetails: admin.firestore.FieldValue.delete(),
+                physicalDispositionRequired: safeFinalStatus === 'refunded'
             });
         });
 

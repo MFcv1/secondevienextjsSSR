@@ -140,7 +140,9 @@ const buildLinearPath = (points) => points.reduce(
     ''
 );
 
-const RevenueChart = ({ data, darkMode }) => {
+// Conservé pour la réactivation contrôlée des projections Gate 7A.
+// eslint-disable-next-line no-unused-vars
+const RevenueChartLegacy = ({ data, darkMode }) => {
     const containerRef = useRef(null);
     const [dims, setDims] = useState({ w: 600, h: 240 });
     const [activeIdx, setActiveIdx] = useState(null);
@@ -790,7 +792,7 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
         registeredUsers: 0
     });
 
-    const [timeFilter, setTimeFilter] = useState('1month');
+    const [timeFilter, _setTimeFilter] = useState('1month');
     const [allOrders, setAllOrders] = useState([]);
     const [dailySales, setDailySales] = useState([]);
     const [recentOrders, setRecentOrders] = useState([]);
@@ -955,7 +957,7 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
         });
     }, [dailySales, timeFilter]);
 
-    const revenueSummary = useMemo(() => {
+    const _revenueSummary = useMemo(() => {
         const dayMs = 24 * 60 * 60 * 1000;
         const today = new Date();
         const currentStart = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()) - (29 * dayMs);
@@ -1213,7 +1215,7 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
     }, []);
 
     // ─── ACTIONS ───
-    const handleResetOrdersClick = () => setIsOrderResetModalOpen(true);
+    const _handleResetOrdersClick = () => setIsOrderResetModalOpen(true);
     const requireConfirmText = (expectedText) => {
         const value = window.prompt(`Tapez ${expectedText} pour confirmer cette action.`);
         return value === expectedText ? value : null;
@@ -1336,14 +1338,14 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
     const textBase = darkMode ? 'text-white' : 'text-stone-900';
     const textMuted = darkMode ? 'text-white/40' : 'text-stone-400';
 
-    const getFilterLabel = () => {
+    const _getFilterLabel = () => {
         if (timeFilter === '7days') return "les 7 derniers jours";
         if (timeFilter === '1month') return "les 30 derniers jours";
         return "les 365 derniers jours";
     };
 
-    const chartGranularityLabel = 'Vue quotidienne';
-    const bestPointLabel = 'Meilleur jour';
+    const _chartGranularityLabel = 'Vue quotidienne';
+    const _bestPointLabel = 'Meilleur jour';
 
     return (
         <motion.div
@@ -1353,12 +1355,12 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
         >
             <motion.div custom={0} variants={sectionVariants} className="grid gap-5 lg:grid-cols-12">
                 <KpiCard
-                    label="Chiffre d’affaires"
-                    value={stats.totalRevenue}
-                    format={(value) => `${Math.round(value).toLocaleString('fr-FR')} €`}
+                    label="Indicateur commerce legacy"
+                    value={0}
+                    format={() => 'Indisponible'}
                     icon={CircleDollarSign}
-                    meta={`${Math.round(revenueSummary.current30).toLocaleString('fr-FR')} € sur 30 jours`}
-                    delta={revenueSummary.delta}
+                    meta="Non comptable avant la Gate 7A"
+                    delta={null}
                     darkMode={darkMode}
                     accent
                     className="lg:col-span-5"
@@ -1372,11 +1374,11 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
                     className="lg:col-span-2"
                 />
                 <KpiCard
-                    label="Panier moyen"
-                    value={stats.averageOrderValue}
-                    format={(value) => `${Math.round(value).toLocaleString('fr-FR')} €`}
+                    label="Panier moyen legacy"
+                    value={0}
+                    format={() => 'Indisponible'}
                     icon={PackageCheck}
-                    meta="Cumul historique"
+                    meta="Non comptable avant la Gate 7A"
                     darkMode={darkMode}
                     className="lg:col-span-2"
                 />
@@ -1406,51 +1408,17 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
                     <div className="flex flex-col gap-6">
                         <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-start">
                             <div>
-                                <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Performance</p>
-                                <h2 className={`mt-2 text-xl font-semibold tracking-[-0.03em] ${textBase}`}>Évolution du chiffre d’affaires</h2>
-                                <p className={`mt-1 text-[11px] ${textMuted}`}>{chartGranularityLabel} · {getFilterLabel()}</p>
+                                <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Commerce en lecture seule</p>
+                                <h2 className={`mt-2 text-xl font-semibold tracking-[-0.03em] ${textBase}`}>Indicateurs comptables suspendus</h2>
+                                <p className={`mt-1 text-[11px] ${textMuted}`}>Les montants legacy ne sont pas qualifiés comme chiffre d’affaires.</p>
                             </div>
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                                <div className="flex gap-5">
-                                    <div>
-                                        <p className={`text-[8px] font-bold uppercase tracking-[0.13em] ${textMuted}`}>Total période</p>
-                                        <p className={`mt-1 text-sm font-semibold tabular-nums ${textBase}`}>{Math.round(revenueSummary.periodTotal).toLocaleString('fr-FR')} €</p>
-                                    </div>
-                                    <div>
-                                        <p className={`text-[8px] font-bold uppercase tracking-[0.13em] ${textMuted}`}>{bestPointLabel}</p>
-                                        <p className={`mt-1 text-sm font-semibold tabular-nums ${textBase}`}>{revenueSummary.bestPoint?.label || '—'}</p>
-                                    </div>
-                                </div>
-                                <div className={`flex shrink-0 gap-1 rounded-xl p-1 ring-1 ${darkMode ? 'bg-white/[0.035] ring-white/[0.055]' : 'bg-[#f1ede7] ring-stone-900/[0.045]'}`}>
-                                    {[
-                                        { id: '7days', label: '7j' },
-                                        { id: '1month', label: '1m' },
-                                        { id: '1year', label: '1a' }
-                                    ].map((filter) => (
-                                        <button
-                                            type="button"
-                                            key={filter.id}
-                                            onClick={() => setTimeFilter(filter.id)}
-                                            aria-pressed={timeFilter === filter.id}
-                                            className={`rounded-lg px-3 py-2 text-[9px] font-bold uppercase tracking-[0.08em] transition-[transform,background-color,color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#62816c] ${
-                                                timeFilter === filter.id
-                                                    ? (darkMode ? 'bg-[#f4f2ed] text-[#1e211f]' : 'bg-white text-stone-900 shadow-[0_10px_28px_-22px_rgba(38,35,31,0.65)]')
-                                                    : (darkMode ? 'text-white/38 hover:text-white/75' : 'text-stone-400 hover:text-stone-700')
-                                            }`}
-                                        >
-                                            {filter.label}
-                                        </button>
-                                    ))}
-                                </div>
+                            <div className={`rounded-xl px-4 py-3 text-[10px] font-bold uppercase tracking-[0.1em] ring-1 ${darkMode ? 'bg-amber-400/[0.05] text-amber-200/65 ring-amber-300/10' : 'bg-amber-50 text-amber-700 ring-amber-900/10'}`}>
+                                Lecture et rapprochement uniquement
                             </div>
                         </div>
-                        {chartData.length > 0 ? (
-                            <RevenueChart data={chartData} darkMode={darkMode} />
-                        ) : (
-                            <div className={`flex h-[240px] items-center justify-center rounded-2xl text-sm ${darkMode ? 'bg-white/[0.03] text-white/38' : 'bg-stone-900/[0.03] text-stone-400'}`}>
-                                Le chiffre d’affaires apparaîtra après la première vente.
-                            </div>
-                        )}
+                        <div className={`flex h-[240px] items-center justify-center rounded-2xl px-6 text-center text-sm ${darkMode ? 'bg-white/[0.03] text-white/38' : 'bg-stone-900/[0.03] text-stone-400'}`}>
+                            Données conservées pour lecture et rapprochement uniquement. Aucun indicateur comptable n&apos;est affiché avant la Gate 7A.
+                        </div>
                     </div>
                 </PanelFrame>
 
@@ -1507,10 +1475,10 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
                 <PanelFrame darkMode={darkMode} innerClassName="p-5 sm:p-7">
                     <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                         <div>
-                            <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Derniers encaissements</p>
-                            <h2 className={`mt-2 text-xl font-semibold tracking-[-0.03em] ${textBase}`}>Ventes récentes</h2>
+                            <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Rapprochement opérationnel</p>
+                            <h2 className={`mt-2 text-xl font-semibold tracking-[-0.03em] ${textBase}`}>Commandes legacy récentes</h2>
                         </div>
-                        <p className={`text-[10px] ${textMuted}`}>5 dernières commandes hors annulations</p>
+                        <p className={`text-[10px] ${textMuted}`}>Montants de dossier non qualifiés comme comptabilité</p>
                     </div>
                     <div className="w-full overflow-x-auto">
                         <table className="w-full min-w-[640px] border-collapse text-left">
@@ -1601,12 +1569,8 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
                                 <AlertTriangle size={14} strokeWidth={1.45} />
                                 <h2 className="text-[9px] font-bold uppercase tracking-[0.16em]">Actions critiques</h2>
                             </div>
-                            <div className="relative mt-5 grid grid-cols-2 gap-3 xl:grid-cols-5">
-                                <DangerButton onClick={handleResetOrdersClick} text="Reset Ventes" darkMode={darkMode} />
-                                <DangerButton onClick={() => setIsCleaningModalOpen(true)} text="Clean Cloud" darkMode={darkMode} />
-                                <DangerButton onClick={() => setIsPurgeAnonymousModalOpen(true)} text="Purge Anonymes" darkMode={darkMode} />
-                                <DangerButton onClick={() => setIsResetUsersModalOpen(true)} text="Purge Clients" darkMode={darkMode} />
-                                <DangerButton onClick={() => setIsPurgeProductsModalOpen(true)} text="Purge Meubles" darkMode={darkMode} />
+                            <div className={`relative mt-5 rounded-2xl px-4 py-5 text-sm ring-1 ${darkMode ? 'bg-white/[0.025] text-white/45 ring-white/[0.06]' : 'bg-white/70 text-stone-500 ring-red-900/10'}`}>
+                                Les six actions destructives legacy sont neutralisées pendant la stabilisation commerce.
                             </div>
                         </div>
                     </div>
@@ -1704,7 +1668,7 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
     );
 };
 
-const DangerButton = ({ onClick, text, darkMode }) => (
+const _DangerButton = ({ onClick, text, darkMode }) => (
     <button
         type="button"
         onClick={onClick}

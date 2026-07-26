@@ -5,6 +5,7 @@ const Stripe = require('stripe');
 const { APP_ID } = require('../../helpers/config');
 const { STRIPE_SECRET_KEY, E2E_PROOF_TOKEN } = require('../../helpers/secrets');
 const { createOrderHandler } = require('./createOrder');
+const { assertLegacyMutationBlocked } = require('./legacyContainment');
 
 const db = admin.firestore();
 
@@ -243,6 +244,7 @@ async function waitForCancellationProof(stripe, orderId, paymentIntentId, produc
 exports.e2eStripeHardeningProof = functions
     .runWith({ secrets: [STRIPE_SECRET_KEY, E2E_PROOF_TOKEN], timeoutSeconds: 180, memory: '512MB' })
     .https.onRequest(async (req, res) => {
+        assertLegacyMutationBlocked(functions, 'legacy-e2e-stripe-hardening');
         if (!isE2eProofAllowed()) {
             return res.status(403).json({ error: 'e2e_proof_disabled' });
         }

@@ -9,9 +9,11 @@
  */
 const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
+const crypto = require('node:crypto');
 const { STRIPE_SECRET_KEY, STRIPE_WH_SECRET, STRIPE_CONNECT_WH_SECRET } = require('../../helpers/secrets');
 const { APP_ID } = require('../../helpers/config');
 const { timestampFromNow, SYSTEM_DOC_RETENTION_DAYS } = require('../analytics/constants');
+const { assertLegacyOrderDocument } = require('./legacyContainment');
 
 const db = admin.firestore();
 const Stripe = require('stripe');
@@ -19,6 +21,7 @@ const Stripe = require('stripe');
 const EXPECTED_PAYMENT_INTENT_CURRENCY = 'eur';
 const EXPECTED_PAYMENT_INTENT_ORDER_STATUS = 'pending_payment';
 const REFUND_FAILURE_STATUSES = new Set(['failed', 'canceled']);
+const WEBHOOK_LEASE_MS = 5 * 60 * 1000;
 
 function toCents(value) {
     const numberValue = Number(value);
@@ -98,66 +101,6 @@ function validateEventConnectedAccount(order, eventAccountId) {
     return null;
 }
 
-async function restoreStockAfterPaidRefund(transaction, order, orderId) {
-    const entries = (order.items || [])
-        .map((item) => {
-            const itemId = item.id || item.originalId;
-            const col = item.collectionName || item.collection || 'furniture';
-            if (!itemId) return null;
-            return {
-                item,
-                ref: db.doc(`artifacts/${APP_ID}/public/data/${col}/${itemId}`)
-            };
-        })
-        .filter(Boolean);
-
-    const snaps = [];
-    for (const entry of entries) {
-        snaps.push({ ...entry, snap: await transaction.get(entry.ref) });
-    }
-
-    const conflicts = [];
-    for (const { item, ref, snap } of snaps) {
-        const itemId = item.id || item.originalId || null;
-        if (!snap.exists) {
-            conflicts.push({ itemId, reason: 'missing_product' });
-            continue;
-        }
-        const currentBuyerId = snap.data()?.buyerId || null;
-        if (currentBuyerId && currentBuyerId !== order.userId) {
-            conflicts.push({ itemId, reason: 'reserved_by_other_buyer' });
-            continue;
-        }
-        const quantity = Number(item.quantity) || 1;
-        const currentStock = Number(snap.data()?.stock ?? 0);
-        const stockBefore = Number(item.stockBefore);
-        const targetStock = Number.isFinite(stockBefore) && stockBefore >= quantity
-            ? Math.max(currentStock, stockBefore)
-            : currentStock + quantity;
-        const alreadyAvailable = !currentBuyerId && snap.data()?.sold !== true && currentStock >= quantity;
-        if (!Number.isFinite(stockBefore) && alreadyAvailable) {
-            transaction.update(ref, {
-                sold: false,
-                refundedFromOrderId: orderId,
-                refundedAt: admin.firestore.FieldValue.serverTimestamp(),
-                soldAt: admin.firestore.FieldValue.delete(),
-                buyerId: admin.firestore.FieldValue.delete()
-            });
-            continue;
-        }
-        transaction.update(ref, {
-            stock: targetStock,
-            sold: false,
-            refundedFromOrderId: orderId,
-            refundedAt: admin.firestore.FieldValue.serverTimestamp(),
-            soldAt: admin.firestore.FieldValue.delete(),
-            buyerId: admin.firestore.FieldValue.delete()
-        });
-    }
-
-    return conflicts;
-}
-
 async function findOrderRefForRefund(refund) {
     const orderId = refund?.metadata?.orderId || null;
     if (orderId) return db.collection('orders').doc(orderId);
@@ -187,6 +130,7 @@ async function handleStripeRefundEvent(refund, eventAccountId = null) {
         if (!orderSnap.exists) return;
 
         const order = orderSnap.data();
+        assertLegacyOrderDocument(null, order, 'legacy-stripe-refund-webhook');
         const orderId = orderSnap.id;
         const accountValidationError = validateEventConnectedAccount(order, eventAccountId);
         if (accountValidationError) {
@@ -222,11 +166,8 @@ async function handleStripeRefundEvent(refund, eventAccountId = null) {
             failureReason = failureReason || refundValidationErrors.join(',');
         }
 
-        let stockRestoreConflicts = [];
-        if (nextStatus === 'refunded' && order.stockRestoredAfterRefund !== true) {
-            stockRestoreConflicts = await restoreStockAfterPaidRefund(transaction, order, orderId);
-        }
-        const stockRestored = nextStatus === 'refunded' && stockRestoreConflicts.length === 0;
+        const stockRestoreConflicts = [];
+        const stockRestored = order.stockRestoredAfterRefund === true;
 
         transaction.update(orderRef, {
             status: nextStatus,
@@ -242,7 +183,8 @@ async function handleStripeRefundEvent(refund, eventAccountId = null) {
                 : admin.firestore.FieldValue.delete(),
             stockRestoredAfterRefund: stockRestored || order.stockRestoredAfterRefund === true,
             stockRestoreConflict: stockRestoreConflicts.length > 0,
-            stockRestoreConflictDetails: stockRestoreConflicts.length > 0 ? stockRestoreConflicts : admin.firestore.FieldValue.delete()
+            stockRestoreConflictDetails: admin.firestore.FieldValue.delete(),
+            physicalDispositionRequired: nextStatus === 'refunded'
         });
     });
 }
@@ -329,7 +271,10 @@ async function handlePaymentIntentSucceeded(paymentIntent, idempRef, eventAccoun
         await idempRef.set({
             status: 'ignored',
             ignoredAt: admin.firestore.FieldValue.serverTimestamp(),
-            ignoreReason: 'missing_order_id'
+            ignoreReason: 'missing_order_id',
+            requiresReview: true,
+            incidentCode: 'paid_payment_intent_missing_order_id',
+            incidentPaymentIntentId: paymentIntent.id
         }, { merge: true });
         return;
     }
@@ -338,10 +283,18 @@ async function handlePaymentIntentSucceeded(paymentIntent, idempRef, eventAccoun
     const result = await db.runTransaction(async (transaction) => {
         const freshOrderSnap = await transaction.get(orderRef);
         if (!freshOrderSnap.exists) {
+            transaction.update(idempRef, {
+                requiresReview: true,
+                incidentCode: 'paid_payment_intent_missing_order',
+                incidentOrderId: orderId,
+                incidentPaymentIntentId: paymentIntent.id,
+                incidentAt: admin.firestore.FieldValue.serverTimestamp()
+            });
             return { ok: true, skipped: true, reason: 'missing_order' };
         }
 
         const freshOrder = freshOrderSnap.data();
+        assertLegacyOrderDocument(null, freshOrder, 'legacy-stripe-payment-webhook');
         const accountValidationError = validateEventConnectedAccount(freshOrder, eventAccountId);
         if (accountValidationError) {
             transaction.update(orderRef, {
@@ -381,70 +334,6 @@ async function handlePaymentIntentSucceeded(paymentIntent, idempRef, eventAccoun
     console.log('Stripe PaymentIntent confirmed order:', orderId, result);
 }
 
-async function handleCheckoutSessionCompleted(stripe, session) {
-    const userId = session.metadata?.userId || null;
-    const shippingMeta = session.metadata?.shippingMeta ? JSON.parse(session.metadata.shippingMeta) : {};
-    const total = Number(session.amount_total || 0) / 100;
-
-    const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
-        expand: ['data.price.product']
-    });
-
-    const items = lineItems.data.map((li) => {
-        const product = li.price.product;
-        return {
-            id: product.metadata?.id || product.metadata?.firestoreId || null,
-            collectionName: product.metadata?.collection || product.metadata?.collectionName || 'furniture',
-            name: product.name,
-            price: li.amount_total / 100,
-            quantity: li.quantity || 1
-        };
-    });
-
-    const orderRef = db.collection('orders').doc();
-    const orderData = {
-        userId,
-        userEmail: session.customer_details?.email || session.customer_email || null,
-        items,
-        total,
-        shipping: shippingMeta,
-        paymentMethod: 'stripe',
-        stripeSessionId: session.id,
-        status: 'paid',
-        stockReserved: true,
-        createdAt: admin.firestore.FieldValue.serverTimestamp()
-    };
-
-    await db.runTransaction(async (transaction) => {
-        const productReads = [];
-        for (const item of items) {
-            if (!item.id) continue;
-            const colName = item.collectionName || 'furniture';
-            const itemRef = db.doc(`artifacts/${APP_ID}/public/data/${colName}/${item.id}`);
-            const itemSnap = await transaction.get(itemRef);
-            productReads.push({ item, itemRef, itemSnap });
-        }
-
-        for (const { item, itemRef, itemSnap } of productReads) {
-            if (!itemSnap.exists) continue;
-            const itemDb = itemSnap.data();
-            const currentStock = itemDb.stock !== undefined ? Number(itemDb.stock) : 1;
-            const quantity = Number(item.quantity) || 1;
-            const nextStock = Math.max(0, currentStock - quantity);
-            transaction.update(itemRef, {
-                stock: nextStock,
-                sold: nextStock === 0,
-                buyerId: userId,
-                soldAt: admin.firestore.FieldValue.serverTimestamp()
-            });
-        }
-
-        transaction.set(orderRef, orderData);
-    });
-
-    console.log('Stripe Checkout session created paid order:', orderRef.id);
-}
-
 async function handleCheckoutSessionExpired(session) {
     console.log('Webhook: Checkout session expired:', session.id);
     const orderId = session.metadata?.orderId || null;
@@ -455,6 +344,7 @@ async function handleCheckoutSessionExpired(session) {
         const orderSnap = await transaction.get(orderRef);
         if (!orderSnap.exists) return;
         const order = orderSnap.data() || {};
+        assertLegacyOrderDocument(null, order, 'legacy-checkout-session-webhook');
         if (order.status === 'paid' || order.paidAt) return;
         if (order.stripeSessionId && order.stripeSessionId !== session.id) return;
 
@@ -476,6 +366,7 @@ async function handlePaymentIntentTerminal(pi, nextOrderFields, eventAccountId =
         if (!orderSnap.exists) return;
 
         const order = orderSnap.data();
+        assertLegacyOrderDocument(null, order, 'legacy-stripe-terminal-webhook');
         const accountValidationError = validateEventConnectedAccount(order, eventAccountId);
         if (accountValidationError) {
             transaction.update(orderRef, {
@@ -497,17 +388,26 @@ async function handlePaymentIntentTerminal(pi, nextOrderFields, eventAccountId =
     });
 }
 
-async function processStripeEvent(stripe, event, res) {
+async function processStripeEvent(_stripe, event, res) {
     const eventAccountId = event.account || null;
     const safeAccountKey = eventAccountId ? String(eventAccountId).replace(/[^A-Za-z0-9_]/g, '_') : 'platform';
     const idempRef = db.doc(`sys_idempotency/stripe_${safeAccountKey}_${event.id}`);
+    const leaseToken = crypto.randomUUID();
     const markWebhookFailed = async (reason) => {
         try {
-            await idempRef.set({
-                status: 'failed',
-                failedAt: admin.firestore.FieldValue.serverTimestamp(),
-                failureReason: String(reason?.message || reason || 'unknown').slice(0, 500)
-            }, { merge: true });
+            await db.runTransaction(async (tx) => {
+                const marker = await tx.get(idempRef);
+                if (!marker.exists || marker.data()?.leaseToken !== leaseToken) {
+                    console.warn('Webhook failure marker ignored after lease loss:', event.id);
+                    return;
+                }
+                tx.update(idempRef, {
+                    status: 'failed',
+                    failedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    failureReason: String(reason?.message || reason || 'unknown').slice(0, 500),
+                    processingUntil: admin.firestore.FieldValue.delete()
+                });
+            });
         } catch (error) {
             console.error('Idempotence failure marker error:', error);
         }
@@ -517,10 +417,16 @@ async function processStripeEvent(stripe, event, res) {
         const shouldProcess = await db.runTransaction(async (tx) => {
             const snap = await tx.get(idempRef);
             if (snap.exists) {
-                const status = snap.data()?.status;
-                if (status === 'failed') {
+                const marker = snap.data() || {};
+                const status = marker.status;
+                const processingUntilMillis = marker.processingUntil?.toMillis
+                    ? marker.processingUntil.toMillis()
+                    : 0;
+                if (status === 'failed' || (status === 'processing' && processingUntilMillis <= Date.now())) {
                     tx.update(idempRef, {
                         status: 'processing',
+                        leaseToken,
+                        processingUntil: admin.firestore.Timestamp.fromMillis(Date.now() + WEBHOOK_LEASE_MS),
                         retryAt: admin.firestore.FieldValue.serverTimestamp()
                     });
                     return true;
@@ -532,6 +438,8 @@ async function processStripeEvent(stripe, event, res) {
                 type: event.type,
                 stripeAccount: eventAccountId,
                 status: 'processing',
+                leaseToken,
+                processingUntil: admin.firestore.Timestamp.fromMillis(Date.now() + WEBHOOK_LEASE_MS),
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
             });
@@ -568,7 +476,13 @@ async function processStripeEvent(stripe, event, res) {
         if (event.type === 'checkout.session.completed') {
             const session = event.data.object;
             console.log('Webhook: Checkout session completed:', session.id);
-            await handleCheckoutSessionCompleted(stripe, session);
+            await idempRef.set({
+                requiresReview: true,
+                incidentCode: 'legacy_checkout_session_completed',
+                incidentCheckoutSessionId: session.id,
+                incidentPaymentIntentId: session.payment_intent || null,
+                incidentAt: admin.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
         }
 
         if (event.type === 'checkout.session.expired') {
@@ -579,11 +493,7 @@ async function processStripeEvent(stripe, event, res) {
         if (event.type === 'payment_intent.payment_failed') {
             const pi = event.data.object;
             console.error(`Payment failed for PI ${pi.id}, Order: ${pi.metadata?.orderId || 'N/A'}, Reason: ${pi.last_payment_error?.message || 'unknown'}`);
-            await handlePaymentIntentTerminal(pi, {
-                status: 'payment_failed',
-                failedAt: admin.firestore.FieldValue.serverTimestamp(),
-                failureReason: pi.last_payment_error?.message || 'Payment failed'
-            }, eventAccountId);
+            await handlePaymentIntentRetryableFailure(pi, eventAccountId);
         }
 
         if (event.type === 'payment_intent.canceled') {
@@ -614,10 +524,17 @@ async function processStripeEvent(stripe, event, res) {
             }
         }
 
-        await idempRef.set({
-            status: 'processed',
-            processedAt: admin.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
+        await db.runTransaction(async (tx) => {
+            const marker = await tx.get(idempRef);
+            if (!marker.exists || marker.data()?.leaseToken !== leaseToken) {
+                throw new Error('Webhook lease lost before commit');
+            }
+            tx.update(idempRef, {
+                status: 'processed',
+                processedAt: admin.firestore.FieldValue.serverTimestamp(),
+                processingUntil: admin.firestore.FieldValue.delete()
+            });
+        });
 
         return res.json({ received: true });
     } catch (error) {
@@ -625,6 +542,28 @@ async function processStripeEvent(stripe, event, res) {
         await markWebhookFailed(error);
         return res.status(500).send('Webhook handler error');
     }
+}
+
+async function handlePaymentIntentRetryableFailure(pi, eventAccountId = null) {
+    const orderId = pi.metadata?.orderId;
+    if (!orderId) return;
+    const orderRef = db.collection('orders').doc(orderId);
+    await db.runTransaction(async (transaction) => {
+        const orderSnap = await transaction.get(orderRef);
+        if (!orderSnap.exists) return;
+        const order = orderSnap.data();
+        assertLegacyOrderDocument(null, order, 'legacy-stripe-retryable-webhook');
+        if (order.status === 'paid' || order.paidAt) return;
+        if (validateEventConnectedAccount(order, eventAccountId)) return;
+        if (order.stripePaymentIntentId && order.stripePaymentIntentId !== pi.id) return;
+        transaction.update(orderRef, {
+            status: 'pending_payment',
+            stockReserved: true,
+            paymentAttemptStatus: 'requires_payment_method',
+            paymentFailedAt: admin.firestore.FieldValue.serverTimestamp(),
+            paymentFailureReason: pi.last_payment_error?.message || 'Payment method refused'
+        });
+    });
 }
 
 function constructStripeEvent(req, res, stripe, endpointSecret, secretName) {

@@ -131,19 +131,31 @@ carte produit
   -> order paid + email triggers
   -> /mes-commandes + /admin
 
-voies actuelles a stabiliser
-  |-- fermeture/client/admin -> cancel/restock sans neutralisation Stripe garantie
-  |-- AdminOrders -> ecriture directe orders + produits [DB]
-  |-- AdminForm/AdminAppIsland -> champs stock/sold directs [DB]
-  `-- cleanup -> second chemin de paiement/compensation
+confinement Gate 0B CODE_READY
+  |-- createOrder/manual/deferred -> refus fail-closed avant effet
+  |-- fermeture/client/admin/cleanup/refund -> aucun release legacy
+  |-- webhook PI existant -> drainage signe + lease fencee
+  |-- Admin commerce -> consultation read-only
+  `-- Rules -> orders/policy/champs commerce/delete media fermes
 ```
 
 Audit contre-valide, cible additive et ordre d'execution 0A a 8:
 `_DOCS/commerce/NOYAU_COMMERCE_STABILISATION.md`.
 
-Flux cible approuve mais non encore executable:
+Noyau pur Gate 1 executable localement, writer non branche:
 
 ```text
+politique/control backend fail-closed
+  -> schema v2 + validateurs/reducer pur
+  -> commandId/payloadHash/expectedVersion idempotents
+  -> policy/livraison/Connect epingles [Gate 2 local]
+  -> inventoryKey + holds quantitatifs [Gate 2 local]
+  -> projection legacy + readers v1/v2
+  -> flags checkout/reprise frontend off
+  -X createCheckout/writer v2 non exporte
+
+Flux cible restant:
+
 politique/control backend fail-closed
   -> createCheckout + clientOrderId/requestHash
   -> reservation quantitative par commande/cle inventaire
@@ -154,19 +166,18 @@ politique/control backend fail-closed
   -> UI client/admin via commandes serveur
 ```
 
-La prochaine etape n'est pas l'activation de ce flux: Gate 0A construit le
-harnais sentinelle, puis Gate 0B confine le moteur actuel.
+Gates 0A a 3 sont `CODE_READY_LOCAL`. Elles ne sont pas `SANDBOX_ACTIVE`;
+le runtime writer/workers v2 Gate 3 reste dormant et non exporte.
 
 ### 4.5 Remboursement
 
 ```text
 AdminReturns
-  -> refundOrderAdmin [F]
-  -> Stripe Refund [EXT]
-  -> stripeWebhook/syncRefundStatusAdmin [F]
+  -> refundOrderAdmin legacy refuse avant effet [F]
+  -> stripeWebhook/syncRefundStatusAdmin drainent un refund deja ouvert [F]
   -> order refunded [DB]
-  -> stock actuellement restaure automatiquement [DB]
-  -> email client
+  -> physicalDispositionRequired=true
+  `-> aucune remise en stock automatique
 ```
 
 La cible separe refund financier, retour physique, inspection et remise en stock.
@@ -203,7 +214,7 @@ Mesure des lectures et couts: `_DOCS/data/AUDIT_COUTS_FIRESTORE.md` (Usage Insig
 |-- .agents/skills/ .................. Skills locaux UI/design
 |-- .github/workflows/quality.yml .... CI Node 22/pnpm
 |-- package.json / pnpm-lock.yaml .... Dependances et commandes racine
-|-- next.config.mjs .................. Next, CSP, headers et redirects
+|-- next.config.mjs .................. Next, deploymentId, expiration ISR, CSP, headers et redirects
 |-- apphosting.yaml .................. App Hosting sandbox
 |-- firebase.json .................... Firebase resources et codebases
 |-- .firebaserc ...................... Alias projet sandbox
@@ -370,6 +381,9 @@ src/kit/commerce/
 |-- CheckoutView.jsx .................. orchestration checkout
 |-- CheckoutStripeModal.jsx ........... suivi commande/paiement
 |-- CheckoutPaymentStep.jsx ........... Stripe Payment Element
+|-- checkoutController.js ............. reducer v2 dormant, flag off
+|-- orderAdapter.js ................... lecture UI v1/v2 sans ambiguite
+|-- checkoutRecovery.js ............... descripteur namespace, sans secret, flag off
 |-- OrderSuccessModal.jsx ............. confirmation
 |-- MyOrdersView.jsx .................. espace client
 `-- LoginView.jsx ..................... login admin/compatibilite
@@ -455,7 +469,7 @@ src/lib/seo/
 
 src/utils/
 |-- imageUtils.js ..................... variantes/metadata/images
-|-- generateInvoice.js ................ PDF facture
+|-- generateInvoice.js ................ generateur PDF legacy non expose avant Gate 7A
 |-- shippingAddress.js ................ format adresse
 |-- slug.js ........................... slugs
 `-- time.js ........................... temps/dates
@@ -480,6 +494,38 @@ functions/
     |   `-- passkeys.js
     |-- commerce/
     |   |-- createOrder.js
+    |   |-- legacyContainment.js ........ hard-stop backend fail-closed Gate 0B
+    |   |-- domain/ ...................... noyau v2 Gates 1 a 3, runtime dormant
+    |   |   |-- orderState.js ............ schema, factory, reducer, reader
+    |   |   |-- money.js
+    |   |   |-- inventoryInvariants.js
+    |   |   |-- legacyProjection.js
+    |   |   |-- policy.js
+    |   |   |-- idempotency.js
+    |   |   |-- dependencies.js
+    |   |   |-- failpoints.js
+    |   |   |-- checkoutInput.js ......... entree allowlistee et lignes versionnees
+    |   |   |-- inventoryKey.js .......... identite canonique de SKU
+    |   |   |-- connectPolicy.js ......... readiness et compte epingle
+    |   |   |-- reservationRepository.js . mouvements hold/commit/release
+    |   |   |-- checkoutRepository.js .... order, hold, tentative et identite atomiques
+    |   |   |-- checkoutCoordinator.js ... create/resume sur etat durable
+    |   |   |-- checkoutSaga.js .......... tentative PI et matrice de reprise
+    |   |   |-- checkoutSagaService.js ... orchestration Stripe injectee, non exportee
+    |   |   |-- checkoutSagaRepository.js  persistance saga et settlement atomique
+    |   |   |-- webhookInbox.js .......... lease, backoff et fencing
+    |   |   |-- webhookInboxRepository.js  commit inbox + effet atomique
+    |   |   |-- stripeWebhookIngress.js ... signature et scope plateforme/Connect
+    |   |   |-- webhookWorker.js .......... retrieve PI puis apply sous fence
+    |   |   |-- reconcilePayment.js ...... mapping complet des statuts PI
+    |   |   |-- paymentEffectApplier.js ... order/inventaire/fait/outbox atomiques
+    |   |   |-- commerceEffects.js ....... faits financiers/outbox deterministes
+    |   |   |-- outboxRepository.js / outboxWorker.js
+    |   |   |-- checkoutAccessToken*.js ... token backend opaque rotatif
+    |   |   |-- guestCheckoutCoordinator.js
+    |   |   |-- boundedWorkerSweeper.js / firestoreWorkerQueries.js
+    |   |   |-- reservationExpiryWorker.js
+    |   |   `-- v2Runtime.js .............. cablage dormant, aucun export Function
     |   |-- stripeWebhook.js
     |   |-- stripeConnect.js
     |   |-- cancelOrder.js
@@ -579,7 +625,8 @@ Storage
 ### Outils de developpement local
 
 ```text
-with-env.mjs ......................... charge l'environnement et lance Next; `dev:host:auto` choisit un port libre et affiche les URL bureau/mobile
+with-env.mjs ......................... charge l'environnement et lance Next; genere NEXT_DEPLOYMENT_ID avant chaque build
+deployment-id.mjs .................... identifiant URL-safe unique et validation du version skew
 ```
 
 ### Gates de contrat
@@ -591,6 +638,7 @@ check-seo-indexability.cjs
 check-performance-budget.cjs
 check-product-ssr.mjs
 verify-analytics-reliability.mjs
+tests/deployment-cache-contract.test.mjs
 ```
 
 ### Audits techniques hors galerie
@@ -636,11 +684,24 @@ tests/billing-onboarding-contract.test.cjs
 tests/smoke.spec.mjs
 tests/catalog/*.test.cjs
 tests/catalog/emulator/*.test.cjs
+tests/commerce/runner/*.cjs
+tests/commerce/suites/*.cjs
+tests/commerce/domain/*.test.cjs
+tests/commerce/faults/*.test.cjs
+tests/commerce/rules/*.cjs
+tests/commerce/fixtures/*.json
+tests/commerce/runner-self-test.cjs
+tests/commerce/run-rules-containment.cjs
 ```
 
-Il n'existe pas encore de suite locale `test:commerce:*`. Gate 0A cree le runner
-anti-faux-vert, `test:commerce:containment`, l'agregat et `lint:functions`;
-Gate 1 ajoute les suites domaine, property, Firestore, Rules et failpoints.
+Gate 0A fournit le runner anti-faux-vert, `test:commerce:containment`,
+`test:commerce:rules:containment`, l'agregat et `lint:functions`. Gate 0B ajoute
+les preuves hard-stop et Rules Firestore/Storage. Gate 1 fournit les suites
+domaine, property, Firestore, Rules et failpoints. Gate 2 etend ces suites avec
+policy, Connect, concurrence stock et mouvements quantitatifs. Gates 1 a 3
+sont `CODE_READY_LOCAL`. Gate 3 ajoute writer/reprise, saga PI, inbox,
+reconciler, effets atomiques, outbox, expiration, tokens et workers bornes
+dans un runtime dormant. Aucun export Function v2 ni activation sandbox.
 
 ## 12. Matrice d'impact rapide
 
@@ -653,7 +714,7 @@ Gate 1 ajoute les suites domaine, property, Firestore, Rules et failpoints.
 | Auth | `AUTHENTIFICATION.md` | authStore, AuthContext, modal, auth Functions | `test:auth` + smoke |
 | securite/rules | `SECURITE_GLOBALE.md` | rules, helpers security, Functions | tests negatifs + sandbox cible |
 | espace client | `ESPACE_CLIENT.md` | routes compte, MyOrders, wishlist | smoke compte |
-| paiement/refund | `COMMERCE_STRIPE.md` + `NOYAU_COMMERCE_STABILISATION.md` temporaire | commerce client/Functions/admin | 0A harnais, 0B confinement, puis gates ordonnees; E2E final 7B seulement sur autorisation |
+| paiement/refund | `COMMERCE_STRIPE.md` + `NOYAU_COMMERCE_STABILISATION.md` temporaire | commerce client/Functions/admin | Gates 0A a 3 `CODE_READY_LOCAL`, runtime v2 dormant, aucun export Function v2 ni activation sandbox; E2E final 7B seulement sur autorisation |
 | admin | `BACKOFFICE.md` | AdminAppIsland, tabs, Functions | smoke tabs + action cible |
 | infra | `INFRASTRUCTURE.md` | yaml/json/env/runtime | audits read-only + build |
 | donnees | `DONNEES_ANALYTICS.md` + `AUDIT_COUTS_FIRESTORE.md` | rules/indexes/scripts/Functions | dry-run/comptage/rollback + mesure avant/apres |

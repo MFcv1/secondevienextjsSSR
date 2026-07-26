@@ -23,6 +23,7 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 | Commerce et Stripe | [COMMERCE_STRIPE.md](commerce/COMMERCE_STRIPE.md) | panier, checkout, paiements, webhooks, remboursements, Connect |
 | Back-office | [BACKOFFICE.md](admin/BACKOFFICE.md) | onglets, droits, publication, ventes, maintenance, analytics |
 | Infrastructure | [INFRASTRUCTURE.md](infra/INFRASTRUCTURE.md) | Firebase, App Hosting, regions, environnements, production |
+| Deploiement et cache client | [DEPLOIEMENT_CACHE_CLIENT.md](infra/DEPLOIEMENT_CACHE_CLIENT.md) | identite des builds, version skew, cache CDN ISR, rollback |
 | Donnees et analytics | [DONNEES_ANALYTICS.md](data/DONNEES_ANALYTICS.md) | collections, rollups, retention, migration et fiabilite |
 | Audit couts Firestore | [AUDIT_COUTS_FIRESTORE.md](data/AUDIT_COUTS_FIRESTORE.md) | mesures Usage/Query Insights, attribution des lectures et protocole avant/apres |
 | Exploitation | [EXPLOITATION.md](operations/EXPLOITATION.md) | commandes, deploiement, rollback, incidents et backlog controle |

@@ -22,8 +22,8 @@ Les deux routes personnelles sont dynamiques et non indexables:
 
 | Section | Source | Capacite actuelle |
 | --- | --- | --- |
-| Commandes | `orders` actuellement filtre par e-mail verifie | historique borne, statuts, detail, annulation admissible |
-| Factures et avoirs | snapshots de commande | PDF client actuel a reclasser comme recu provisoire |
+| Commandes | `orders` actuellement filtre par e-mail verifie | historique borne et statuts en lecture seule |
+| Documents | snapshots de commande | aucun PDF fiscal legacy propose avant Gate 7A |
 | Liste de souhaits | `users/{uid}/wishlist` | apercu et lien vers `/wishlist` |
 | Adresse | derniere commande | affichage livraison/facturation |
 | Profil | Firebase Auth + derniere commande | affichage nom, email, telephone |
@@ -46,16 +46,19 @@ Les statuts importants sont actuellement reconstruits depuis le champ composite 
 - `refund_failed`;
 - statuts logistiques comme expedition ou completion.
 
-Une commande carte payee ne peut pas etre annulee librement. Elle passe par le flux de remboursement admin/Stripe. L'annulation non payee actuelle ne neutralise toutefois pas d'abord le PaymentIntent et son chemin multi-SKU doit etre corrige avant recette.
+L'affordance d'annulation client est masquee en Gate 0B et la callable legacy
+est bloquee avant effet. Les commandes existantes convergent uniquement par les
+signaux Stripe autoritaires et les lecteurs de suivi.
 
 ## 4. Factures et avoirs
 
-Le PDF actuel est genere cote client via un import dynamique de `src/utils/generateInvoice.js`, a partir du snapshot de commande. Il peut etre produit pour un ordre non paye, derive son numero de l'ID et ne constitue pas encore une facture autoritaire archivee.
+Le generateur PDF legacy reste en source mais n'est plus appelable depuis
+`MyOrdersView`. La section Documents indique explicitement qu'aucune facture ni
+aucun avoir definitif n'est emis pendant la stabilisation.
 
 Jusqu'a la gate documentaire/comptable du noyau:
 
-- parler de recu provisoire;
-- ne proposer aucun document comme facture avant paiement confirme;
+- ne proposer aucun document legacy comme facture ou avoir;
 - produire cote serveur un recu sandbox immutable apres paiement;
 - reserver les termes facture/avoir a des documents juridiquement et
   comptablement valides avant live;

@@ -59,8 +59,19 @@ service cloud.firestore {
 
     function isProtectedMetadataDoc(docId) {
       return docId in [
-        'stripe_connect'
+        'stripe_connect',
+        'delivery',
+        'payment_settings'
       ];
+    }
+
+    function productCommerceFieldsAreUnchanged() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+        'stock', 'sold', 'soldAt', 'buyerId', 'status',
+        'currentPrice', 'startingPrice', 'price', 'priceOnRequest',
+        'inventoryVersion', 'disponibilite', 'provenanceVente',
+        'stockReserved', 'reservation', 'reservations'
+      ]);
     }
 
     function hasTrustedCheckoutAuth() {
@@ -92,8 +103,8 @@ service cloud.firestore {
     // Collections produits (furniture, cutting_boards, etc.)
     match /artifacts/{appId}/public/data/{collectionName}/{itemId} {
       allow read: if isStrongArtisan();
-      allow create, update: if isStrongArtisan() && isValidProduct();
-      allow delete: if isStrongArtisan();
+      allow create, delete: if false;
+      allow update: if isStrongArtisan() && isValidProduct() && productCommerceFieldsAreUnchanged();
 
     }
 
@@ -147,7 +158,7 @@ service cloud.firestore {
 
     // Commandes
     match /orders/{orderId} {
-      allow read, write: if isStrongArtisan();
+      allow read: if isStrongArtisan();
       allow read: if request.auth != null && (
         (
           hasTrustedCheckoutAuth() &&
@@ -162,6 +173,80 @@ service cloud.firestore {
         )
       );
       allow create: if false; // Via Cloud Function uniquement
+      allow update, delete: if false;
+
+      match /payment_attempts/{attemptId} {
+        allow read, write: if false;
+      }
+
+      match /refunds/{refundId} {
+        allow read, write: if false;
+      }
+
+      match /returns/{returnId} {
+        allow read, write: if false;
+      }
+
+      match /fulfillments/{fulfillmentId} {
+        allow read, write: if false;
+      }
+
+      match /events/{eventId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /inventory_reservations/{reservationId} {
+      allow read, write: if false;
+    }
+
+    match /inventory_movements/{movementId} {
+      allow read, write: if false;
+    }
+
+    match /commerce_webhook_inbox/{inboxId} {
+      allow read, write: if false;
+    }
+
+    match /commerce_outbox/{outboxId} {
+      allow read, write: if false;
+    }
+
+    match /commerce_incidents/{incidentId} {
+      allow read, write: if false;
+    }
+
+    match /commerce_financial_facts/{factId} {
+      allow read, write: if false;
+    }
+
+    match /commerce_order_access_tokens/{tokenId} {
+      allow read, write: if false;
+    }
+
+    match /commerce_checkout_identities/{identityId} {
+      allow read, write: if false;
+    }
+
+    match /commerce_connect_accounts/{accountId} {
+      allow read, write: if false;
+    }
+
+    match /commerce_fixture_scopes/{scopeId} {
+      allow read, write: if false;
+    }
+
+    match /commerce_policy_versions/{policyVersion} {
+      allow read, write: if false;
+    }
+
+    match /commerce_command_results/{commandId} {
+      allow read, write: if false;
+    }
+
+    match /sys_commerce_public/{docId} {
+      allow read: if docId == 'current';
+      allow write: if false;
     }
 
     // System Metadata
@@ -182,6 +267,10 @@ service cloud.firestore {
 
     // Idempotency Keys (Backend-Only)
     match /sys_idempotency/{docId} {
+      allow read, write: if false;
+    }
+
+    match /sys_commerce_control/{docId} {
       allow read, write: if false;
     }
 

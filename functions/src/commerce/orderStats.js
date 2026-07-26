@@ -7,6 +7,7 @@ const {
 } = require('../analytics/constants');
 
 const db = admin.firestore();
+const V2_STATS_PROJECTION_REQUIRED = 2;
 
 function isCancelledStatus(status) {
     return status === 'cancelled' || status === 'cancelled_by_client';
@@ -68,6 +69,10 @@ exports.onOrderStatsWrite = onDocumentWritten(
     async (event) => {
         const before = event.data?.before?.exists ? event.data.before.data() : null;
         const after = event.data?.after?.exists ? event.data.after.data() : null;
+        if (
+            before?.schemaVersion === V2_STATS_PROJECTION_REQUIRED ||
+            after?.schemaVersion === V2_STATS_PROJECTION_REQUIRED
+        ) return null;
 
         const delta = diffMetrics(summarizeOrder(after), summarizeOrder(before));
         if (Object.keys(delta).length === 0) return null;

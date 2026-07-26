@@ -105,6 +105,7 @@ Ne pas convertir Node 24 local en nouvelle baseline sans migration dediee. Ne ja
 | commerce/Stripe | [COMMERCE_STRIPE.md](_DOCS/commerce/COMMERCE_STRIPE.md) | commerce client/Functions/admin | stabilisation active |
 | back-office | [BACKOFFICE.md](_DOCS/admin/BACKOFFICE.md) | AdminAppIsland, `src/kit/admin` | preprod |
 | infrastructure | [INFRASTRUCTURE.md](_DOCS/infra/INFRASTRUCTURE.md) | Firebase/App Hosting/config/env | sandbox actif |
+| deploiement/cache client | [DEPLOIEMENT_CACHE_CLIENT.md](_DOCS/infra/DEPLOIEMENT_CACHE_CLIENT.md) | `next.config.mjs`, `scripts/with-env.mjs`, `scripts/deployment-id.mjs` | actif |
 | donnees/analytics | [DONNEES_ANALYTICS.md](_DOCS/data/DONNEES_ANALYTICS.md) + [AUDIT_COUTS_FIRESTORE.md](_DOCS/data/AUDIT_COUTS_FIRESTORE.md) | Firestore, UID/IP, sessions live, couts et migrations | moteur Tous a Table adapte, P1 couts public/analytics implemente, catalogue post-cutover mesure a zero lecture Firestore publique |
 | exploitation | [EXPLOITATION.md](_DOCS/operations/EXPLOITATION.md) | commandes, deploy, rollback, backlog | actif |
 | qualite/tests | [QUALITE_TESTS.md](_DOCS/quality/QUALITE_TESTS.md) | CI, tests, scripts | actif |
@@ -115,7 +116,7 @@ Ne pas creer une nouvelle roadmap pour un de ces domaines. Mettre a jour son cha
 
 Plan temporaire explicitement demande et actuellement actif:
 
-- [NOYAU_COMMERCE_STABILISATION.md](_DOCS/commerce/NOYAU_COMMERCE_STABILISATION.md): audit contre-valide, specification d'implementation additive et gates 0A a 8; prochaine etape Gate 0A, echeance de gouvernance 2026-09-30, puis fusion dans les chapitres canoniques et suppression.
+- [NOYAU_COMMERCE_STABILISATION.md](_DOCS/commerce/NOYAU_COMMERCE_STABILISATION.md): audit contre-valide, specification d'implementation additive et gates 0A a 8; Gates 0A a 3 `CODE_READY_LOCAL`, activation sandbox Gate 0B non effectuee, runtime v2 Gate 3 dormant et aucun export Function v2 actif; echeance de gouvernance 2026-09-30, puis fusion dans les chapitres canoniques et suppression.
 
 ## 6. Invariants d'architecture publique
 
@@ -175,6 +176,7 @@ Interdictions:
 - aucune galerie visible entre menu et espace client;
 - sur mobile, la galerie conserve volontairement son conteneur de scroll interne fixe et peut donc laisser la barre d'URL Chrome visible; les pages categorie utilisent le scroll document natif, qui masque la barre en descendant et la restaure en remontant;
 - `app/ViewportHeightSyncIsland.jsx` reste l'unique proprietaire global de `--marketplace-viewport-height` et doit suivre `visualViewport` pendant le repli des barres navigateur, l'orientation et le retour au premier plan; ne pas remettre cette mesure dans une route ou une ile qui se demonte a la navigation;
+- chaque build App Hosting doit embarquer un `deploymentId` unique et conserver `expireTime: 300`; ne jamais fixer `NEXT_DEPLOYMENT_ID` a une constante partagee entre rollouts;
 - respecter `prefers-reduced-motion` pour les animations non essentielles;
 - ne pas redesign une zone lors d'un correctif technique cible.
 
@@ -273,6 +275,7 @@ Gates courantes:
 
 ```bash
 npm run lint
+npm run test:deployment-cache
 npm run build
 npm run seo:surface
 npm run next:routes

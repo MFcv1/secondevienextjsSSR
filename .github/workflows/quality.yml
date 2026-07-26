@@ -28,8 +28,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: npm ci --prefix functions
       - run: pnpm lint
+      - run: pnpm lint:functions
+      - run: pnpm test:commerce
       - run: pnpm test:catalog
       - run: pnpm test:auth
+      - run: pnpm test:deployment-cache
       - run: pnpm seo:surface
       - run: pnpm build
         env:

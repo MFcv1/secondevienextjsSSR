@@ -20,24 +20,37 @@ Toujours annoncer ce qui a ete lance et ce qui ne l'a pas ete.
 `.github/workflows/quality.yml` s'execute sur pull request et push `main` avec Node 22/pnpm:
 
 1. installation frozen lockfile;
-2. lint;
-3. suites catalogue coeur, resilience et Rules Emulator;
-4. contrat SEO public;
-5. build Next;
-6. classification des routes;
-7. budget performance en rapport non bloquant.
+2. lint application puis `lint:functions`;
+3. agregat bloquant `test:commerce`;
+4. suites catalogue coeur, resilience et Rules Emulator;
+5. tests Auth;
+6. contrat de coherence des versions de deploiement et du cache ISR;
+7. contrat SEO public;
+8. build Next;
+9. classification des routes;
+10. budget performance en rapport non bloquant.
 
 Une CI verte ne remplace pas les E2E Firebase/Stripe ni une recette visuelle.
 
 ### 2.1 Restriction noyau commerce
 
-Il n'existe actuellement:
+Etat `CODE_READY`:
 
-- aucun script `test:commerce:*`;
-- aucune suite comportementale locale pour create/order/webhook/cancel/cleanup/refund;
-- aucune suite Rules Emulator sur les commandes et champs de vente admin;
-- aucune gate commerce dans la CI;
-- aucun lint de `functions/**` ou `scripts/**`, ces chemins etant ignores.
+- `lint:functions` couvre commerce, e-mail, maintenance et le harnais;
+- `test:commerce:runner` prouve les sorties rouges, timeouts, statuts interdits
+  et manifests incomplets;
+- `test:commerce:containment` compte les effets et prouve le hard-stop Gate 0B;
+- `test:commerce:rules:containment` utilise Firestore + Storage Emulator;
+- `test:commerce:unit` valide schema, reducer, projections et compatibilite;
+- `test:commerce:property` genere algebre monetaire, cycles Stripe non
+  terminaux et permutations de payload sans reseau;
+- `test:commerce:faults` prouve idempotence, ordre lookup/version, saga,
+  annulation provider-first, scopes webhook et reprise des workers;
+- `test:commerce:firebase` valide atomicite/rollback sur Firestore Emulator,
+  dont create/attach PI, inbox, capture + mouvement + fait + outbox et token
+  guest mono-usage;
+- `test:commerce:rules` ferme explicitement sous-collections et collections v2;
+- `test:commerce` agrege toutes les suites et bloque la CI.
 
 Les scripts actuels `e2e:hosted-stripe` et `e2e:refund-stripe` sont en
 quarantaine `DO_NOT_RUN`: le premier peut sortir vert sur preuve incomplete et
@@ -46,12 +59,13 @@ qu'apres remplacement fail-closed, `runId/orderId` explicites, fixture dediee,
 region correcte, AAL2/App Check et zero fallback.
 
 Gate 0A de [NOYAU_COMMERCE_STABILISATION.md](../commerce/NOYAU_COMMERCE_STABILISATION.md)
-cree d'abord `test:commerce:runner`, `test:commerce:containment`,
-`test:commerce:rules:containment`,
-`test:commerce` et `lint:functions`, avec un self-test qui prouve l'exit non nul.
-Gate 1 ajoute ensuite `test:commerce:unit`, `test:commerce:property`,
+a cree `test:commerce:runner`, `test:commerce:containment`,
+`test:commerce:rules:containment`, `test:commerce` et `lint:functions`, avec un
+self-test qui prouve l'exit non nul. Gate 0B etend les scenarios de confinement.
+Gate 1 ajoute `test:commerce:unit`, `test:commerce:property`,
 `test:commerce:firebase`, `test:commerce:rules` et
-`test:commerce:faults`. Toutes deviennent bloquantes avant une activation.
+`test:commerce:faults`. Elles sont `CODE_READY_LOCAL` et bloquantes dans
+l'agregat avant une activation.
 
 ## 3. Tests automatises Auth
 
@@ -114,12 +128,13 @@ Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCa
 | Functions/rules | tests cibles, audit exports/rules, deploiement sandbox cible |
 | guide facturation | `test:billing-onboarding`, lint cible, reprise de progression, smoke compte test/super-admin uniquement sur demande |
 | couts Firestore | `test:analytics`, mesure Usage Insights/Data Access avant-apres si necessaire |
-| infra | `infra:env`, `infra:deploy`, `appcheck:audit` en lecture |
+| infra | `test:deployment-cache`, `infra:env`, `infra:deploy`, `appcheck:audit` en lecture |
 
 ## 5. Gates publiques
 
 ```bash
 npm run lint
+npm run test:deployment-cache
 npm run build
 npm run seo:surface
 npm run seo:check
@@ -172,13 +187,15 @@ Une modification `firestore.rules` ou `storage.rules` doit avoir au moins des ca
 La passe Auth de demonstration deja close n'impose pas de rouvrir toutes ses
 preuves historiques. En revanche, toute nouvelle Rule commerce, reservation,
 sous-collection commande ou champ inventaire doit etre couverte par
-`test:commerce:rules` sous Emulator Suite.
+`test:commerce:rules:containment` en Gate 0B, puis
+`test:commerce:rules` sous Emulator Suite a partir de Gate 1.
 
 Le wrapper commerce unique utilise
-`firebase emulators:exec --project demo-secondevie-commerce --only firestore`
-(ajouter Auth seulement si le scenario l'exige), fixe les ports, refuse tout
-credential/projet reel et lance integration, faults et Rules dans la meme
-session.
+`firebase emulators:exec --project demo-secondevie-commerce`: Firestore +
+Storage pour le confinement Gate 0B, Firestore seul pour integration et Rules
+Gate 1. Il fixe les ports, refuse tout credential/projet reel et n'autorise que
+les suites manifestees. Les tests unit/property/faults utilisent un garde
+reseau qui refuse meme les connexions locales.
 
 L'emulateur ne prouve pas a lui seul:
 

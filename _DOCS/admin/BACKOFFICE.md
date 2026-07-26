@@ -82,11 +82,15 @@ Apres mutation:
 
 Etat actuel:
 
-- le remboursement et plusieurs actions Connect passent bien par des Functions fortes;
-- `AdminOrders` ecrit encore directement le statut et restaure le stock depuis le navigateur;
-- `AdminForm` et `AdminAppIsland` peuvent modifier les champs de vente produit sans verifier une commande payee;
-- `AdminLivraison` et `AdminPaymentSettings` ecrivent directement les politiques;
-- les Rules autorisent encore les ecritures admin sur `orders`.
+- les onglets Publication, Inventaire, Ventes, Retours, Livraison, Paiement et
+  Maintenance sont enveloppes par une surface read-only explicite;
+- les composants legacy restent montes pour consultation mais leurs controles
+  sont `inert` et sans interaction;
+- les Rules refusent les writes SDK `orders`, create/delete produit, champs
+  commerce produit et politiques, y compris avec claims admin forts;
+- le dashboard masque les KPI financiers legacy et retire les raccourcis de
+  purge;
+- cet etat est `CODE_READY_LOCAL`, non deploye sur le sandbox.
 
 Cible: toute transition commande, fulfillment, inventaire, refund/retour et politique commerce passe par une commande serveur idempotente. Firestore reste une projection et non une API metier admin.
 
@@ -187,17 +191,16 @@ Les operations de `AdminMaintenance` et `AdminDashboard` peuvent purger utilisat
 
 Ne pas ajouter de bouton de maintenance qui ecrit directement un grand ensemble Firestore depuis le navigateur.
 
-Etat actuel a ne pas utiliser pendant la recette:
+Etat Gate 0B:
 
 - `resetAllStats`, `runGarbageCollector`, `resetAllUsers`, `purgeAnonymousUsers`,
-  `purgeAllProducts` et `resetAllOrders` restent actuellement des callables
-  executables cote serveur;
-- `resetAllOrders` supprime toutes les commandes dans un batch unique, sans archive durable ni retention comptable;
-- le CSV prealable n'est pas un backup restaurable;
-- le GC manuel ne possede ni dry-run, ni grace, ni quarantaine et peut courir pendant une publication media.
+  `purgeAllProducts` et `resetAllOrders` appellent le hard-stop avant
+  authentification, lecture ou mutation;
+- leurs boutons rapides ne sont plus proposes par Stats et l'onglet Maintenance
+  est read-only;
+- leur ancien corps reste temporairement en source pour historique et future
+  reconstruction, mais il est inaccessible tant que le hard-stop est en place.
 
-Ces six actions doivent etre neutralisees dans la Gate 0B du plan commerce.
-Elles ne sont pas encore neutralisees par la seule mise a jour documentaire.
 Gate 7A exige seulement un cleanup fixture run-scoped, borne et audite. Les
 purges globales restent desactivees; leur eventuelle reconstruction avec
 comptage, sauvegarde, pagination, reprise et quarantaine attend un besoin

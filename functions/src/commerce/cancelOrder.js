@@ -10,11 +10,13 @@ const admin = require('firebase-admin');
 const { APP_ID } = require('../../helpers/config');
 const { normalizeFirestoreId, normalizeProductCollection } = require('../../helpers/security');
 const { assertGuestCheckoutOtpVerified } = require('../auth/guestCheckoutOtp');
+const { assertLegacyMutationBlocked, assertLegacyOrderDocument } = require('./legacyContainment');
 
 const db = admin.firestore();
 const CLIENT_CANCELLABLE_STATUSES = new Set(['pending_payment', 'payment_failed', 'canceled']);
 
-exports.cancelOrderClient = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+async function cancelOrderClientHandler(data, context) {
+    assertLegacyMutationBlocked(functions, 'legacy-order-cancellation');
     const startedAt = Date.now();
     const orderId = normalizeFirestoreId(data?.orderId, 'ID commande');
 
@@ -32,6 +34,7 @@ exports.cancelOrderClient = regionalFunctions().runWith({ enforceAppCheck: true 
             }
 
             const orderData = orderSnap.data();
+            assertLegacyOrderDocument(functions, orderData, 'legacy-order-cancellation');
 
             if (userId && orderData.userId !== userId) {
                 throw new functions.https.HttpsError('permission-denied', 'Cette commande ne vous appartient pas.');
@@ -111,4 +114,7 @@ exports.cancelOrderClient = regionalFunctions().runWith({ enforceAppCheck: true 
         });
         throw error;
     }
-});
+}
+
+exports.cancelOrderClient = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(cancelOrderClientHandler);
+exports.cancelOrderClientHandler = cancelOrderClientHandler;

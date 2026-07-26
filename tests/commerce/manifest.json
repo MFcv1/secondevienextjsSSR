@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "runnerVersion": "commerce-sentinel-v1",
+  "suites": {
+    "containment": {
+      "module": "./suites/containment.cjs",
+      "timeoutMs": 1500,
+      "scenarios": [
+        "effect-ledger-zero-is-explicit",
+        "effect-ledger-counts-all-required-effects",
+        "runner-blocks-hosted-network",
+        "control-absent-fails-closed-before-effects",
+        "control-off-or-unknown-cannot-reenable-commerce",
+        "manual-and-deferred-orders-are-blocked",
+        "ambiguous-payment-outcomes-never-release-stock",
+        "six-destructive-maintenance-actions-are-blocked",
+        "server-wiring-blocks-writers-before-effects",
+        "webhook-drainage-preserves-retryable-and-paid-orders",
+        "refund-confirmation-never-restocks-automatically",
+        "commerce-ui-is-explicitly-read-only"
+      ]
+    },
+    "rules-containment": {
+      "module": "./suites/rules-containment.cjs",
+      "timeoutMs": 10000,
+      "scenarios": [
+        "visitor-order-write-is-denied",
+        "owner-order-read-remains-allowed",
+        "admin-order-read-remains-allowed",
+        "admin-order-write-is-denied",
+        "admin-order-delete-is-denied",
+        "admin-product-commerce-update-is-denied",
+        "admin-product-editorial-update-remains-allowed",
+        "admin-protected-commerce-settings-write-is-denied",
+        "commerce-control-document-is-backend-only",
+        "storage-admin-delete-is-denied"
+      ]
+    },
+    "firebase-domain": {
+      "module": "./suites/firebase-domain.cjs",
+      "timeoutMs": 10000,
+      "scenarios": [
+        "firestore-command-result-is-atomic-and-retryable",
+        "firestore-transaction-rolls-back-before-persist-failpoint",
+        "gate2-stock-one-allows-a-single-concurrent-hold",
+        "gate2-holds-and-release-use-quantity-deltas-exactly-once",
+        "gate2-multi-sku-hold-is-atomic",
+        "gate3-inbox-fencing-and-domain-effect-commit-are-atomic",
+        "gate3-inbox-failpoints-converge-across-every-commit-window",
+        "gate3-create-checkout-is-atomic-and-idempotent-before-stripe",
+        "gate3-success-commits-order-movement-fact-and-outbox-exactly-once",
+        "gate3-guest-resume-token-is-single-use-and-rotated-transactionally"
+      ]
+    },
+    "rules-v2": {
+      "module": "./rules/v2-boundaries.cjs",
+      "timeoutMs": 10000,
+      "scenarios": [
+        "owner-v2-root-read-remains-allowed",
+        "order-v2-subcollections-are-backend-only",
+        "commerce-v2-internal-collections-are-backend-only",
+        "gate2-policy-is-private-and-public-projection-is-read-only"
+      ]
+    }
+  }
+}

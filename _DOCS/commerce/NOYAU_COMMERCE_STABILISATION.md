@@ -1,12 +1,13 @@
 # Audit et roadmap de stabilisation du noyau commerce
 
-Derniere verification: 2026-07-26
+Derniere verification: 2026-07-27
 Statut: `PLAN_TEMPORAIRE_EXECUTION`
 Decision de recette: `NO_GO_TRANSACTIONNEL`
 Proprietaire: noyau commerce, commandes, inventaire, Stripe et control plane admin
 Echeance de gouvernance: 2026-09-30
 Specification d'implementation: `STABILISEE_PAR_CONTRE_EXPERTISE`
-Prochaine execution autorisee: `GATE_0A_HARNAIS_SENTINELLE`, puis `GATE_0B_CONFINEMENT`
+Etat d'execution: `GATE_0A_CODE_READY` + `GATE_0B_CODE_READY_LOCAL` + `GATE_1_CODE_READY_LOCAL` + `GATE_2_CODE_READY_LOCAL` + `GATE_3_CODE_READY_LOCAL`
+Prochaine execution locale: Gate 4 commandes/refunds/retours; prochaine mutation runtime: activation sandbox Gate 0B sur autorisation explicite
 
 ## 1. Gouvernance du document
 
@@ -19,6 +20,10 @@ Ce document existe a la demande explicite de l'utilisateur pour regrouper:
 - les gates automatiques et manuelles qui permettent de declarer le moteur testable.
 
 Il est temporaire. Il ne devient pas une seconde reference canonique permanente. Jusqu'a sa cloture, il constitue toutefois la specification d'execution unique du chantier commerce: un agent suivant ne doit ni recreer une nouvelle roadmap, ni reordonner les gates sans nouvelle preuve executable.
+
+Les constats et numeros de ligne des sections d'audit decrivent le snapshot
+anterieur au confinement. L'etat executable courant et les preuves rejouees
+sont consignes en section 21.
 
 La contre-expertise du 2026-07-26 a activement cherche a refuter l'audit initial. Elle a confirme le `NO_GO_TRANSACTIONNEL`, reduit plusieurs severites, corrige le modele cible et remplace la strategie de bascule big-bang par une migration additive. Les sections 6, 11 a 17 et 20 incorporent ces corrections.
 
@@ -2667,64 +2672,117 @@ Arreter le lot et conserver `NO_GO_TRANSACTIONNEL` si:
 - pour migration, activation ou test heberge, l'etat cloud necessaire n'est pas
   connu ou l'autorisation manque; cela ne bloque pas les modules/tests locaux.
 
-## 21. Etat de passation documentaire au 2026-07-26
+## 21. Etat d'execution local au 2026-07-27
 
-Les modifications commerce du worktree forment un ensemble coherent:
+Les Gates 0A a 3 de la roadmap sont `CODE_READY_LOCAL` dans le worktree:
 
-- `AGENTS.md` porte `STABILISATION_ACTIVE`, `NO_GO_TRANSACTIONNEL` et la
-  prochaine Gate 0A;
-- `_DOCS/README.md` enregistre ce plan temporaire, son echeance et sa condition
-  de suppression;
-- `COMMERCE_STRIPE.md` separe l'etat executable actuel des invariants cibles;
-- `BACKOFFICE.md` documente les writers directs, les six maintenances a
-  neutraliser et la periode read-only;
-- `ESPACE_CLIENT.md` reclasse les PDF comme provisoires et bloque la recette
-  transactionnelle avant Gate 8;
-- `QUALITE_TESTS.md` met les anciens E2E en quarantaine et fixe le harnais
-  anti-faux-vert;
-- `map.md` cartographie le moteur actuel, la cible additive et l'ordre des gates.
+- Gate 0A fournit le runner sentinelle, son self-test, les compteurs d'effets,
+  le lint Functions cible, l'agregat `test:commerce` et les jobs CI bloquants;
+- Gate 0B refuse toute creation legacy avant rate limit, reservation, commande,
+  idempotence ou appel Stripe, y compris `manual/deferred`;
+- annulation client, cleaner, refund legacy et les six maintenances sont
+  bloques avant effet;
+- `payment_failed` conserve la commande et le hold, tandis que seul un signal
+  terminal autoritaire peut liberer;
+- les webhooks conservent le drainage des PI existants, utilisent une lease
+  recuperable et fencee, et marquent les paiements orphelins a revoir;
+- aucun refund ne remet automatiquement le produit en vente;
+- checkout, espace client et control plane admin affichent le confinement;
+  PDF fiscal legacy et KPI comptables sont masques ou declares indisponibles;
+- Firestore ferme les writers SDK commandes, champs commerce produit et
+  politiques; Storage ferme la suppression media depuis le navigateur.
+- Gate 1 fournit le schema racine v2, ses validateurs, le reducer pur a matrice
+  fermee, les invariants argent/inventaire et la projection legacy atomique;
+- l'adaptateur serveur lit v1/v2 sans relire le statut legacy comme verite v2;
+  cleaner, cancel, refund et webhook legacy refusent explicitement un document
+  `schemaVersion: 2`;
+- les triggers e-mail et stats ignorent v2 en attente des outbox/projections
+  dediees; aucune Function d'ecriture v2 n'est exportee;
+- horloge, IDs, Stripe et Firestore possedent des frontieres injectables;
+  idempotence et failpoints sont purs et nommes;
+- le reducer checkout, l'adaptateur commande et le descripteur de reprise sont
+  additifs dans `src/kit/commerce` avec flags v2 toujours `false`;
+- les sous-collections et collections internes v2 ont des Rules backend-only
+  explicites, preparees localement et non deployees.
+- Gate 2 ajoute une entree checkout strictement allowlistee sans prix client,
+  des lignes versionnees, un hash canonique et une aggregation par
+  `inventoryKey` longueur-prefixee et normalisee Unicode;
+- policy, livraison et compte Connect sont valides, versionnes et epingles;
+  le mode offline reste refuse et le controle incomplet reste `off`;
+- le repository de reservations lit tous les documents avant ecriture et
+  applique `hold/commit/release` par mouvements a effet deterministe, sans
+  `stockBefore` ni `buyerId`;
+- les indexes `orders(userId, createdAt)` et
+  `inventory_reservations(status, expiresAt)` sont prepares localement;
+  policy, mouvements et reservations restent backend-only.
+- Gate 3 fournit un repository transactionnel qui cree commande, hold,
+  tentative PI et identite d'idempotence avant tout appel Stripe, puis
+  rattache le PI durablement avant de rendre son secret client;
+- `createCheckout`/`resumeCheckout` reprennent
+  `create_pending/create_inflight/create_unknown/attached` avec la meme cle;
+  annulation et expiration retrouvent ou creent le meme PI, l'annulent
+  provider-first et ne liberent qu'apres observation `canceled`;
+- ingress signee plateforme/Connect, inbox a lease fencee, worker, sweeper
+  pagine, outbox worker et expiration sont cables dans `v2Runtime.js`;
+- le reconciler applique commande, reservation, mouvement, fait financier et
+  intention outbox dans la meme transaction fencee; mismatch, conflit et PI
+  orphelin produisent un incident durable;
+- le token guest est backend-only, opaque, lie au proprietaire, mono-usage et
+  tourne transactionnellement lors de `resumeCheckout`;
+- le runtime Gate 3 reste dormant et non importe par `functions/index.js`:
+  aucun endpoint, scheduler, writer v2 ou appel Stripe n'est actif.
 
-La modification simultanee de `_DOCS/ux/INTERFACE_NAVIGATION.md` est un chantier
-UX distinct. Elle correspond aux changements executables presents dans
-`ProductReturnRestoreIsland`, `ProductDetailShellIsland`,
-`CatalogVersionSyncIsland` et `GalleryMobileShellIsland`, ainsi qu'aux nouvelles
-assertions du contrat mobile. Elle n'ouvre, ne ferme et ne reordonne aucune gate
-commerce; elle a ete preservee sans modification dans cette passe.
+### 21.1 Preuves rejouees
 
-Points de passation Git:
+Executees localement:
 
-- ce document est actuellement non suivi (`??`); il doit rester visible dans
-  `git status --short` jusqu'a une prise en charge volontaire;
-- aucun changement executable du worktree ne prouve qu'une gate commerce est
-  implementee;
-- aucun commit, push, deploiement, migration ou appel cloud n'a ete effectue
-  pendant la stabilisation documentaire;
-- le prochain agent doit recontroler le status et isoler son lot Gate 0A sans
-  ecraser les changements UX presents.
+- `lint:functions`: vert;
+- `test:commerce:runner`: 13/13 tests;
+- `test:commerce:containment`: 12/12 scenarios, 213 assertions;
+- `test:commerce:rules:containment`: 10/10 scenarios sous Firestore + Storage
+  Emulator, projet fixe `demo-secondevie-commerce`;
+- `test:commerce:unit`: 24/24 tests, dont schema, matrice fermee, projection,
+  barrières v1/v2, readers, flags frontend, policy/livraison/Connect et contrat
+  panier/inventoryKey;
+- `test:commerce:property`: 3/3 proprietes, 500 algebres monetaires, plus de
+  3 600 transitions non terminales et 300 permutations de payload;
+- `test:commerce:faults`: 27/27 tests, idempotence, fenetres create/cancel,
+  PI perdu/repris, scopes plateforme/Connect, workers/sweeper, incidents,
+  outbox et token;
+- `test:commerce:firebase`: 10/10 scenarios, 42 assertions sous Firestore
+  Emulator pour atomicite, rollback, concurrence stock 1, create/attach PI,
+  toutes les fenetres inbox, capture + mouvement + fait + outbox exactement
+  une fois et token guest mono-usage;
+- `test:commerce:rules`: 4/4 scenarios couvrant les cinq sous-collections de
+  commande, les collections internes v2, la policy privee et sa projection
+  publique read-only;
+- lint UI cible des quatre surfaces modifiees: zero erreur; avertissements
+  legacy non bloquants conserves;
+- aucune tentative d'acces heberge: le runner bloque le reseau et le projet
+  `demo-*` refuse les services non emules.
 
-### 21.1 Validations de cette passation
+Les compteurs de confinement affichent explicitement zero ecriture/suppression
+Firestore, appel Stripe, creation/annulation de PI, e-mail, outbox et mouvement
+de stock sur les chemins refuses. Les lectures du document de controle sont
+comptees separement.
 
-Executees localement, sans mutation de donnees:
+### 21.2 Qualification et arret
 
-- bornes de 72 references `fichier:ligne` sur 28 fichiers: OK;
-- presence des 40 liens Markdown locaux des documents touches: OK;
-- matrice NC-001 a NC-022: une ligne et une fiche detaillee par ID;
-- ordre des headings de gates:
-  `0A -> 0B -> 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7A -> 7B -> 8`;
-- `git diff --check`: OK sur les fichiers suivis;
-- espaces finaux, fences de code et marqueurs de conflit du plan non suivi: OK;
-- contrat mobile execute directement avec le runtime Node local: 20 assertions
-  OK, ce qui confirme la coherence du diff UX distinct.
+- Gate 0A: `CODE_READY`;
+- Gate 0B: `CODE_READY_LOCAL`;
+- Gate 0B: pas `SANDBOX_ACTIVE`, car aucun deploiement n'etait autorise;
+- Gate 1: `CODE_READY_LOCAL`, modules additifs et flags `off`;
+- Gate 1: aucun writer v2, aucune migration et aucune activation Rules sandbox;
+- Gate 2: `CODE_READY_LOCAL`, policy et reservations additives non branchees;
+- Gate 2: aucun `createCheckout`, aucun appel Stripe et aucune policy active;
+- Gate 3: `CODE_READY_LOCAL`; runtime complet mais dormant, non exporte;
+- Gate 3: pas `SANDBOX_ACTIVE`, aucun secret, endpoint, scheduler ou policy
+  active;
+- decision globale: `NO_GO_TRANSACTIONNEL` inchangee.
 
-La commande enveloppe `npm run mobile:contract` n'a pas pu demarrer car `npm`
-n'est pas expose dans le PATH de ce terminal; le script Node equivalent a bien
-ete execute et est vert.
-
-Non executees, car hors passation documentaire ou interdites sans autorisation:
-
-- lint global, build et tests applicatifs;
-- futures suites `test:commerce:*`, qui n'existent pas encore;
-- Emulator Suite;
-- E2E Stripe/Firebase sandbox;
-- lecture/ecriture cloud, migration ou deploiement;
-- recette avec comptes client/admin.
+Non executes: build global, E2E Stripe/Firebase heberges, migration, deploiement,
+recette comptes client/admin, commit ou push. La prochaine mutation runtime
+possible est l'activation sandbox Gate 0B avec smoke, observation et rollback,
+uniquement sur autorisation explicite. Gate 4 peut commencer localement de
+facon additive, mais aucun writer, policy ou rail checkout v2 ne peut etre
+active tant que la sequence de gates precedente n'est pas close sur la cible.

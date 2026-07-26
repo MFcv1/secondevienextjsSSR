@@ -4,6 +4,11 @@ const Stripe = require('stripe');
 const { APP_ID } = require('../../helpers/config');
 const { STRIPE_SECRET_KEY } = require('../../helpers/secrets');
 const { normalizeFirestoreId, normalizeProductCollection } = require('../../helpers/security');
+const {
+    assertLegacyMutationBlocked,
+    assertLegacyOrderDocument,
+    isV2Order
+} = require('./legacyContainment');
 
 const db = admin.firestore();
 const PENDING_PAYMENT_TTL_MINUTES = 45;
@@ -15,6 +20,7 @@ const terminalFailureStatuses = new Set([
 ]);
 
 async function restoreReservedStock(transaction, orderRef, order) {
+    assertLegacyOrderDocument(null, order, 'legacy-pending-payment-cleanup');
     for (const item of (order.items || [])) {
         const itemId = item.originalId || item.id;
         if (!itemId) continue;
@@ -62,10 +68,15 @@ async function cancelPaymentIntentIfNeeded(stripe, paymentIntentId, stripeConnec
     return { status: 'processing', paymentIntent };
 }
 
+async function cleanupPendingPaymentsHandler() {
+    assertLegacyMutationBlocked(functions, 'legacy-pending-payment-cleanup');
+}
+
 exports.cleanupPendingPayments = functions
     .runWith({ secrets: [STRIPE_SECRET_KEY], timeoutSeconds: 300, memory: '512MB' })
     .pubsub.schedule('every 15 minutes')
     .onRun(async () => {
+        await cleanupPendingPaymentsHandler();
         const stripe = Stripe(STRIPE_SECRET_KEY.value());
         const cutoffMillis = Date.now() - PENDING_PAYMENT_TTL_MINUTES * 60 * 1000;
         const snap = await db.collection('orders')
@@ -80,6 +91,10 @@ exports.cleanupPendingPayments = functions
         for (const orderSnap of snap.docs) {
             const order = orderSnap.data();
             const orderRef = orderSnap.ref;
+            if (isV2Order(order)) {
+                skipped += 1;
+                continue;
+            }
             const createdAtMillis = order.createdAt?.toMillis ? order.createdAt.toMillis() : 0;
 
             if (order.paymentMethod !== 'stripe_elements' || !createdAtMillis || createdAtMillis > cutoffMillis) {
@@ -119,6 +134,7 @@ exports.cleanupPendingPayments = functions
                     const freshOrderSnap = await transaction.get(orderRef);
                     if (!freshOrderSnap.exists) return;
                     const freshOrder = freshOrderSnap.data();
+                    assertLegacyOrderDocument(null, freshOrder, 'legacy-pending-payment-cleanup');
                     if (freshOrder.status !== 'pending_payment' || freshOrder.stockReserved !== true) return;
                     await restoreReservedStock(transaction, orderRef, freshOrder);
                 });
@@ -136,3 +152,5 @@ exports.cleanupPendingPayments = functions
         console.log(`Pending payment cleanup done. cleaned=${cleaned}, confirmed=${confirmed}, skipped=${skipped}`);
         return { cleaned, confirmed, skipped };
     });
+
+exports.cleanupPendingPaymentsHandler = cleanupPendingPaymentsHandler;

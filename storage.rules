@@ -11,7 +11,7 @@ service firebase.storage {
       // BLINDAGE ADMINISTRATEUR (Standard & Robuste)
       // Seul l'admin identifié peut uploader. 
       // On bloque les fichiers trop gros (>10Mo), les non-images et les SVG executables.
-      allow write: if topLevel != 'catalog-projection'
+      allow create, update: if topLevel != 'catalog-projection'
         && request.auth != null
         && (
           request.auth.token.admin == true ||
@@ -32,6 +32,7 @@ service firebase.storage {
             request.resource.contentType.matches('image/(jpeg|png|webp|gif|avif)')
           )
         );
+      allow delete: if false;
     }
   }
 }

@@ -17,6 +17,7 @@ const { APP_ID } = require('../../helpers/config');
 const { timestampFromNow, SYSTEM_DOC_RETENTION_DAYS } = require('../analytics/constants');
 const { assertGuestCheckoutOtpVerified, normalizeGuestCheckoutEmail } = require('../auth/guestCheckoutOtp');
 const { getStripeConnectRouting } = require('./stripeConnect');
+const { assertLegacyOrderCreationBlocked } = require('./legacyContainment');
 
 const db = admin.firestore();
 const Stripe = require('stripe');
@@ -124,9 +125,13 @@ async function resolveCheckoutIdentity(context, orderData) {
 }
 
 async function createOrderHandler(data, context) {
-    const stripe = Stripe(STRIPE_SECRET_KEY.value());
-
     const rawOrderData = data?.orderData;
+    await assertLegacyOrderCreationBlocked({
+        db,
+        functions,
+        paymentMethod: rawOrderData?.paymentMethod
+    });
+    const stripe = Stripe(STRIPE_SECRET_KEY.value());
 
     if (!rawOrderData || !rawOrderData.items || !Array.isArray(rawOrderData.items) || rawOrderData.items.length === 0 || rawOrderData.items.length > 20) {
         throw new functions.https.HttpsError('invalid-argument', 'Format de commande invalide.');

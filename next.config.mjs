@@ -26,9 +26,13 @@ const securityHeaders = [
     : [])
 ];
 
+const deploymentId = process.env.NEXT_DEPLOYMENT_ID?.trim();
+
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  expireTime: 300,
+  ...(deploymentId ? { deploymentId } : {}),
   experimental: {
     optimizePackageImports: ['lucide-react']
   },

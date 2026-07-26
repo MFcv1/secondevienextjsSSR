@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { networkInterfaces } from 'node:os';
 import { basename, resolve } from 'node:path';
+import { ensureDeploymentId } from './deployment-id.mjs';
 
 const require = createRequire(import.meta.url);
 
@@ -91,6 +92,15 @@ for (const key of FORBIDDEN_PUBLIC_OWNER_KEYS) {
 env.NEXT_TELEMETRY_DISABLED = env.NEXT_TELEMETRY_DISABLED || '1';
 
 const isNextCommand = command === 'next';
+const isNextBuild = isNextCommand && args[0] === 'build';
+
+if (isNextBuild) {
+  const { deploymentId, generated } = ensureDeploymentId(env);
+  console.log(
+    `[build] NEXT_DEPLOYMENT_ID ${generated ? 'genere' : 'fourni'}: ${deploymentId}`,
+  );
+}
+
 const readOption = (sourceArgs, optionNames, fallback) => {
   const optionIndex = sourceArgs.findIndex((arg) => optionNames.includes(arg));
   return optionIndex >= 0 && sourceArgs[optionIndex + 1] ? sourceArgs[optionIndex + 1] : fallback;

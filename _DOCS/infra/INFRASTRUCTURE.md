@@ -1,6 +1,6 @@
 # Infrastructure Firebase, Next.js et environnements
 
-Derniere mise a jour: 2026-07-25
+Derniere mise a jour: 2026-07-26
 Statut: `PREPROD_READY - PRODUCTION_DEFERRED`
 
 ## 1. Runtime et gestionnaire de paquets
@@ -181,6 +181,12 @@ Pour un E2E ponctuel, un jeton debug peut etre enregistre uniquement avec autori
 Le bloc `hosting`, ses rewrites et les Functions SEO historiques ont ete retires. Le site Firebase Hosting sandbox `secondevienextjsssr` est desactive depuis le 2026-07-18; un nouveau deploiement Hosting explicite serait necessaire pour le reactiver. Le site public de reference reste exclusivement l'App Hosting `secondevie-next-sandbox`.
 
 ## 10. Deploiement sandbox
+
+Le contrat de coherence entre versions navigateur, assets Next et rollouts est
+detaille dans
+[DEPLOIEMENT_CACHE_CLIENT.md](DEPLOIEMENT_CACHE_CLIENT.md). Chaque build doit
+embarquer un `deploymentId` unique et les pages ISR ne doivent pas conserver la
+fenetre stale annuelle par defaut.
 
 Le dashboard local est l'entree conseillee:
 

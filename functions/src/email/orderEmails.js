@@ -18,6 +18,7 @@ const {
 
 const db = admin.firestore();
 const REFUND_EMAIL_STATUSES = new Set(['refund_pending', 'refunded', 'refund_failed']);
+const V2_EMAIL_OUTBOX_REQUIRED = 2;
 
 function escapeHtml(unsafe) {
     if (!unsafe || typeof unsafe !== 'string') return unsafe;
@@ -321,6 +322,7 @@ exports.onOrderCreated = onDocumentCreated(
         console.log("⚡ onOrderCreated TRIGGERED! ID:", event.params.orderId);
         const order = event.data?.data();
         if (!order) return null;
+        if (order.schemaVersion === V2_EMAIL_OUTBOX_REQUIRED) return null;
 
         // Si c'est une commande Stripe Elements "pending", on NE FAIT RIEN pour l'instant.
         // L'email sera envoyé via onOrderUpdated une fois le paiement confirmé (status => 'paid')
@@ -342,6 +344,10 @@ exports.onOrderUpdated = onDocumentUpdated(
         const orderBefore = event.data?.before?.data();
         const orderAfter = event.data?.after?.data();
         if (!orderBefore || !orderAfter) return null;
+        if (
+            orderBefore.schemaVersion === V2_EMAIL_OUTBOX_REQUIRED ||
+            orderAfter.schemaVersion === V2_EMAIL_OUTBOX_REQUIRED
+        ) return null;
         const orderId = event.params.orderId;
         const clientEmail = orderAfter.userEmail || orderAfter.shipping?.email;
 

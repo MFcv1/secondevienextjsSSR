@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "runnerVersion": "commerce-sentinel-self-test-v1",
+  "suites": {
+    "sentinel": {
+      "module": "./sentinel-scenarios.cjs",
+      "timeoutMs": 120,
+      "scenarios": [
+        "passing",
+        "false-assertion",
+        "rejected-promise",
+        "timeout",
+        "incomplete",
+        "skipped",
+        "todo",
+        "cancelled",
+        "open-handle"
+      ]
+    }
+  }
+}

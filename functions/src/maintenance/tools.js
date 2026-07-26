@@ -17,10 +17,12 @@ const {
 const { APP_ID, PRODUCT_COLLECTIONS } = require('../../helpers/config');
 const { collectStoragePaths } = require('../triggers/mediaCleanup');
 const { regionalFunctions } = require('../../helpers/runtime');
+const { assertLegacyMutationBlocked } = require('../commerce/legacyContainment');
 const db = admin.firestore();
 
 // --- RESET STATS (Compteurs produits) ---
 exports.resetAllStats = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+    assertLegacyMutationBlocked(functions, 'resetAllStats');
     await checkRecentActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'RESET STATS', 'reset stats');
     let totalOp = 0;
@@ -55,6 +57,7 @@ exports.resetAllStats = regionalFunctions().runWith({ enforceAppCheck: true }).h
 
 // --- GARBAGE COLLECTOR (Storage orphelin) ---
 exports.runGarbageCollector = regionalFunctions().runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
+    assertLegacyMutationBlocked(functions, 'runGarbageCollector');
     await checkRecentActiveStrongAdmin(context);
     assertConfirmText(data, 'NETTOYER CLOUD', 'nettoyage cloud');
     const bucket = admin.storage().bucket();
@@ -95,7 +98,7 @@ exports.runGarbageCollector = regionalFunctions().runWith({ enforceAppCheck: tru
                     try {
                         await file.delete();
                         stats.orphanedImagesDeleted++;
-                    } catch (e) { stats.errors.push(file.name); }
+                    } catch { stats.errors.push(file.name); }
                 }
             }
         }
@@ -109,6 +112,7 @@ exports.runGarbageCollector = regionalFunctions().runWith({ enforceAppCheck: tru
 
 // --- PURGE UTILISATEURS (Super Admin) ---
 exports.resetAllUsers = regionalFunctions().runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
+    assertLegacyMutationBlocked(functions, 'resetAllUsers');
     await checkRecentActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'PURGER CLIENTS', 'purge clients');
     try {
@@ -146,6 +150,7 @@ exports.resetAllUsers = regionalFunctions().runWith({ enforceAppCheck: true, tim
 
 // --- PURGE ANONYMES ---
 exports.purgeAnonymousUsers = regionalFunctions().runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
+    assertLegacyMutationBlocked(functions, 'purgeAnonymousUsers');
     await checkRecentActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'PURGER ANONYMES', 'purge anonymes');
     try {
@@ -174,6 +179,7 @@ exports.purgeAnonymousUsers = regionalFunctions().runWith({ enforceAppCheck: tru
 
 // --- PURGE MEUBLES (Tous les produits + images + sous-collections) ---
 exports.purgeAllProducts = regionalFunctions().runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
+    assertLegacyMutationBlocked(functions, 'purgeAllProducts');
     await checkRecentActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'PURGER MEUBLES', 'purge meubles');
     const bucket = admin.storage().bucket();
@@ -221,7 +227,7 @@ exports.purgeAllProducts = regionalFunctions().runWith({ enforceAppCheck: true, 
         for (const colName of PRODUCT_COLLECTIONS) {
             const [files] = await bucket.getFiles({ prefix: `${colName}/` });
             for (const file of files) {
-                try { await file.delete(); totalImagesDeleted++; } catch (e) { /* ignore */ }
+                try { await file.delete(); totalImagesDeleted++; } catch { /* ignore */ }
             }
         }
 
@@ -244,6 +250,7 @@ exports.purgeAllProducts = regionalFunctions().runWith({ enforceAppCheck: true, 
 
 // --- PURGE COMMANDES ---
 exports.resetAllOrders = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+    assertLegacyMutationBlocked(functions, 'resetAllOrders');
     await checkRecentActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'PURGER COMMANDES', 'purge commandes');
     try {

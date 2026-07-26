@@ -34,6 +34,46 @@
       ]
     },
     {
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "inventory_reservations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "expiresAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "commerce_webhook_inbox",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "nextAttemptAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "commerce_webhook_inbox",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "processingUntil", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "commerce_outbox",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "nextAttemptAt", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "sys_catalog_media_gc",
       "queryScope": "COLLECTION",
       "fields": [
