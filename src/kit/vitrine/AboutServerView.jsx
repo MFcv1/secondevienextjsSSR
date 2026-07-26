@@ -413,7 +413,7 @@ function FaqSection({ items }) {
                 VOS <br />
                 <span className="font-light lowercase italic tracking-normal text-[#A68A64]">questions.</span>
               </h2>
-              <p className="mt-9 border-l border-[#1A1A1A]/10 pl-6 text-base font-light leading-relaxed text-[#5A5550] md:mt-12 md:text-lg">
+              <p className="mt-16 border-l border-[#1A1A1A]/10 pl-6 text-base font-light leading-relaxed text-[#5A5550] md:mt-12 md:text-lg">
                 Tout ce que vous devez savoir sur notre processus de restauration, l'expedition et l'entretien de vos futures pieces.
               </p>
             </div>

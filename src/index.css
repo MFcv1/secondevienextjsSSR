@@ -4319,11 +4319,13 @@ html.dark .before-after-premium-copy--warm::after,
 }
 
 @media (pointer: coarse) {
-  .before-after-media-stage {
+  .before-after-media-stage,
+  .about-before-slider-surface {
     touch-action: pan-y;
   }
 
-  .before-after-media-stage [data-ba-range] {
+  .before-after-media-stage [data-ba-range],
+  .about-before-slider-range {
     pointer-events: none;
   }
 }

@@ -143,7 +143,7 @@ export default function AboutBeforeAfterIsland({ projects }) {
         <div className="about-before-visual relative h-[50vh] min-h-[350px] w-full md:h-[60vh] md:min-h-[500px] xl:h-auto xl:w-[60%]">
           <div
             ref={sliderSurfaceRef}
-            className="absolute inset-0 h-full w-full bg-[#111]"
+            className="about-before-slider-surface absolute inset-0 h-full w-full bg-[#111]"
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={endSliderDrag}
@@ -175,7 +175,7 @@ export default function AboutBeforeAfterIsland({ projects }) {
                 </div>
               </div>
             </div>
-            <input ref={rangeRef} type="range" min="0" max="100" value={sliderPos} onChange={(event) => setSliderPos(Number(event.target.value))} className="absolute inset-0 z-30 h-full w-full cursor-ew-resize touch-pan-y opacity-0" aria-label="Curseur Avant Apres" />
+            <input ref={rangeRef} type="range" min="0" max="100" value={sliderPos} onChange={(event) => setSliderPos(Number(event.target.value))} className="about-before-slider-range absolute inset-0 z-30 h-full w-full cursor-ew-resize touch-pan-y opacity-0" aria-label="Curseur Avant Apres" />
           </div>
         </div>
       </div>
