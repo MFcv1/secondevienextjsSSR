@@ -232,6 +232,10 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /commerce_return_allocations/{allocationId} {
+      allow read, write: if false;
+    }
+
     match /commerce_fixture_scopes/{scopeId} {
       allow read, write: if false;
     }
@@ -241,6 +245,10 @@ service cloud.firestore {
     }
 
     match /commerce_command_results/{commandId} {
+      allow read, write: if false;
+    }
+
+    match /commerce_product_audits/{productKey}/events/{eventId} {
       allow read, write: if false;
     }
 

@@ -49,7 +49,11 @@
         "gate3-inbox-failpoints-converge-across-every-commit-window",
         "gate3-create-checkout-is-atomic-and-idempotent-before-stripe",
         "gate3-success-commits-order-movement-fact-and-outbox-exactly-once",
-        "gate3-guest-resume-token-is-single-use-and-rotated-transactionally"
+        "gate3-guest-resume-token-is-single-use-and-rotated-transactionally",
+        "gate4-command-retry-is-one-transition-with-one-append-only-audit",
+        "gate4-partial-refunds-are-cumulative-idempotent-and-never-restock",
+        "gate4-concurrent-returns-and-partial-dispositions-conserve-quantities",
+        "gate4-product-commands-are-atomic-idempotent-and-soft-archive"
       ]
     },
     "rules-v2": {

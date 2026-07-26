@@ -3,6 +3,10 @@
 const crypto = require('node:crypto');
 const { createBoundedWorkerSweeper } = require('./boundedWorkerSweeper');
 const {
+    createCancellationAuditRepository
+} = require('./cancellationAuditRepository');
+const { createCancellationCoordinator } = require('./cancellationCoordinator');
+const {
     createCheckoutAccessTokenRepository
 } = require('./checkoutAccessTokenRepository');
 const { createCheckoutCoordinator } = require('./checkoutCoordinator');
@@ -13,8 +17,14 @@ const { createFirestoreWorkerQueries } = require('./firestoreWorkerQueries');
 const { createGuestCheckoutCoordinator } = require('./guestCheckoutCoordinator');
 const { createOutboxRepository } = require('./outboxRepository');
 const { createOutboxWorker } = require('./outboxWorker');
+const { createOrderCommandRepository } = require('./orderCommandRepository');
 const { createPaymentEffectApplier } = require('./paymentEffectApplier');
+const { createProductCommandRepository } = require('./productCommandRepository');
+const { createRefundCoordinator } = require('./refundCoordinator');
+const { createRefundRepository } = require('./refundRepository');
+const { createRefundSagaService } = require('./refundSagaService');
 const { createReservationExpiryWorker } = require('./reservationExpiryWorker');
+const { createReturnRepository } = require('./returnRepository');
 const { createStripeWebhookIngress } = require('./stripeWebhookIngress');
 const { createWebhookInboxRepository } = require('./webhookInboxRepository');
 const { createWebhookWorker } = require('./webhookWorker');
@@ -69,6 +79,27 @@ function createStripeAdapter(stripe) {
                 ...paymentIntent,
                 connectedAccountId: accountId || null
             };
+        },
+        async createRefund(params, options) {
+            const refund = await stripe.refunds.create(params, {
+                idempotencyKey: options.idempotencyKey,
+                ...connectedAccountOptions(options.connectedAccountId)
+            });
+            return {
+                ...refund,
+                connectedAccountId: options.connectedAccountId || null
+            };
+        },
+        async retrieveRefund(refundId, accountId) {
+            const refund = await stripe.refunds.retrieve(
+                refundId,
+                {},
+                connectedAccountOptions(accountId)
+            );
+            return {
+                ...refund,
+                connectedAccountId: accountId || null
+            };
         }
     });
 }
@@ -85,6 +116,22 @@ function createRefs(db, appId) {
         order: (orderId) => document(`orders/${orderId}`),
         attempt: (orderId, attemptId) => document(
             `orders/${orderId}/payment_attempts/${attemptId}`
+        ),
+        refundAttempt: (orderId, refundRequestId) => document(
+            `orders/${orderId}/refunds/${refundRequestId}`
+        ),
+        returnCase: (orderId, returnId) => document(
+            `orders/${orderId}/returns/${returnId}`
+        ),
+        auditEvent: (orderId, eventId) => document(
+            `orders/${orderId}/events/${eventId}`
+        ),
+        commandResult: (commandId) => document(`commerce_command_results/${commandId}`),
+        productAuditEvent: (collectionName, productId, eventId) => document(
+            `commerce_product_audits/${collectionName}_${productId}/events/${eventId}`
+        ),
+        returnAllocation: (orderId, lineId) => document(
+            `commerce_return_allocations/${orderId}_${lineId}`
         ),
         product: (group) => document(
             `artifacts/${appId}/public/data/${group.collectionName}/${group.productId}`
@@ -115,6 +162,7 @@ function createCommerceV2Runtime({
         typeof db?.doc !== 'function' ||
         typeof db?.runTransaction !== 'function' ||
         !stripe?.paymentIntents ||
+        !stripe?.refunds ||
         typeof stripe?.webhooks?.constructEvent !== 'function' ||
         typeof appId !== 'string' ||
         !appId ||
@@ -211,6 +259,47 @@ function createCommerceV2Runtime({
         clock
     });
     const queries = createFirestoreWorkerQueries({ db });
+    const orderCommands = createOrderCommandRepository({
+        db: database,
+        refs,
+        clock,
+        failpoints
+    });
+    const productCommands = createProductCommandRepository({
+        db: database,
+        refs,
+        clock,
+        failpoints
+    });
+    const refundRepository = createRefundRepository({
+        db: database,
+        refs,
+        clock
+    });
+    const refunds = createRefundCoordinator({
+        repository: refundRepository,
+        sagaService: createRefundSagaService({
+            stripe: stripeAdapter,
+            repository: refundRepository,
+            clock,
+            failpoints
+        })
+    });
+    const returns = createReturnRepository({
+        db: database,
+        refs,
+        clock
+    });
+    const cancellationAuditRepository = createCancellationAuditRepository({
+        db: database,
+        refs,
+        clock
+    });
+    const cancellations = createCancellationCoordinator({
+        checkoutRepository,
+        sagaService,
+        auditRepository: cancellationAuditRepository
+    });
 
     return Object.freeze({
         checkout: checkoutCoordinator,
@@ -219,6 +308,11 @@ function createCommerceV2Runtime({
         webhookWorker,
         outboxWorker,
         expiryWorker,
+        orderCommands,
+        productCommands,
+        cancellations,
+        refunds,
+        returns,
         queries,
         sweepers: Object.freeze({
             dueInbox: createBoundedWorkerSweeper({

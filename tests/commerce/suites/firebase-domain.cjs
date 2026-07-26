@@ -22,6 +22,27 @@ const {
     createPaymentEffectApplier
 } = require('../../../functions/src/commerce/domain/paymentEffectApplier');
 const {
+    createProductCommandRepository
+} = require('../../../functions/src/commerce/domain/productCommandRepository');
+const {
+    createOrderCommandRepository
+} = require('../../../functions/src/commerce/domain/orderCommandRepository');
+const {
+    createRefundCoordinator
+} = require('../../../functions/src/commerce/domain/refundCoordinator');
+const {
+    createRefundRepository
+} = require('../../../functions/src/commerce/domain/refundRepository');
+const {
+    createRefundSagaService
+} = require('../../../functions/src/commerce/domain/refundSagaService');
+const {
+    createReturnRepository
+} = require('../../../functions/src/commerce/domain/returnRepository');
+const {
+    reduceOrder
+} = require('../../../functions/src/commerce/domain/orderState');
+const {
     executeIdempotentCommand
 } = require('../../../functions/src/commerce/domain/idempotency');
 const {
@@ -146,6 +167,26 @@ function gate3Refs(firestore) {
             firestore,
             `orders/${orderId}/payment_attempts/${attemptId}`
         ),
+        refundAttempt: (orderId, refundRequestId) => doc(
+            firestore,
+            `orders/${orderId}/refunds/${refundRequestId}`
+        ),
+        auditEvent: (orderId, eventId) => doc(
+            firestore,
+            `orders/${orderId}/events/${eventId}`
+        ),
+        commandResult: (commandId) => doc(
+            firestore,
+            `commerce_command_results/${commandId}`
+        ),
+        returnCase: (orderId, returnId) => doc(
+            firestore,
+            `orders/${orderId}/returns/${returnId}`
+        ),
+        returnAllocation: (orderId, lineId) => doc(
+            firestore,
+            `commerce_return_allocations/${orderId}_${lineId}`
+        ),
         product: (groupValue) => doc(firestore, `gate3_products/${groupValue.inventoryKey}`),
         reservation: (orderId, inventoryKey) => doc(
             firestore,
@@ -158,6 +199,23 @@ function gate3Refs(firestore) {
         accessToken: (tokenHash) => doc(
             firestore,
             `commerce_order_access_tokens/${tokenHash}`
+        )
+    };
+}
+
+function gate4ProductRefs(firestore) {
+    return {
+        product: ({ collectionName, productId }) => doc(
+            firestore,
+            `artifacts/secondevie/public/data/${collectionName}/${productId}`
+        ),
+        commandResult: (commandId) => doc(
+            firestore,
+            `commerce_command_results/${commandId}`
+        ),
+        productAuditEvent: (collectionName, productId, eventId) => doc(
+            firestore,
+            `commerce_product_audits/${collectionName}_${productId}/events/${eventId}`
         )
     };
 }
@@ -703,6 +761,485 @@ const scenarios = {
             denied = error?.code === 'COMMERCE_ACCESS_TOKEN_DENIED';
         }
         context.equal(denied, true, 'consumed token cannot be replayed');
+    }),
+
+    'gate4-command-retry-is-one-transition-with-one-append-only-audit': async (context) => withBackend(async (firestore) => {
+        const seeded = await seedGate3Checkout(firestore);
+        const prepared = await seeded.checkoutRepository.prepareCheckout({
+            ownerUid: 'owner-uid-gate3',
+            ownerEmail: 'client@example.test',
+            input: gate3CheckoutInput(),
+            fixtureContext: {
+                runId: 'run-gate4-command',
+                fixtureScopeVersion: 'fixture-gate3',
+                policyVersion: 'policy-gate3',
+                expiresAt: '2026-07-26T13:00:00.000Z'
+            }
+        });
+        const applier = createPaymentEffectApplier({
+            refs: seeded.refs,
+            clock: {
+                now: () => '2026-07-26T12:05:00.000Z',
+                nowMillis: () => Date.parse('2026-07-26T12:05:00.000Z')
+            }
+        });
+        await runTransaction(firestore, (transaction) => applier.apply(transaction, {
+            entry: { scope: 'connect', accountId: 'acct_gate3ready01' },
+            paymentIntent: {
+                id: 'pi_gate4_command_0001',
+                status: 'succeeded',
+                amount: prepared.order.amounts.totalCents,
+                currency: 'eur',
+                metadata: {
+                    orderId: prepared.order.id,
+                    requestHash: prepared.order.checkout.requestHash
+                },
+                connectedAccountId: 'acct_gate3ready01'
+            }
+        }));
+        const paidOrder = (await getDoc(seeded.refs.order(prepared.order.id))).data();
+        const commands = createOrderCommandRepository({
+            db: { runTransaction: (run) => runTransaction(firestore, run) },
+            refs: seeded.refs,
+            clock: { now: () => '2026-07-26T12:10:00.000Z' }
+        });
+        const request = {
+            orderId: prepared.order.id,
+            action: 'fulfillment_prepare',
+            command: {
+                commandId: 'command-gate4-prepare-0001',
+                expectedVersion: paidOrder.stateVersion
+            },
+            actor: {
+                uid: 'admin-gate4',
+                role: 'admin',
+                aal2: true
+            },
+            reason: 'preparation atelier'
+        };
+        const first = await commands.execute(request);
+        const retry = await commands.execute({
+            ...request,
+            command: {
+                ...request.command,
+                expectedVersion: 999
+            }
+        });
+        context.deepEqual(retry, first, 'ack retry returns the first durable command result');
+        context.equal(first.action, 'fulfillment_prepare', 'allowed admin action is applied');
+        context.equal(
+            (await getDoc(seeded.refs.order(prepared.order.id))).data().fulfillmentSummary.status,
+            'preparing',
+            'order transitioned once'
+        );
+        context.equal(
+            (await getDocs(collection(
+                firestore,
+                `orders/${prepared.order.id}/events`
+            ))).size,
+            1,
+            'one append-only audit event exists'
+        );
+    }),
+
+    'gate4-partial-refunds-are-cumulative-idempotent-and-never-restock': async (context) => withBackend(async (firestore) => {
+        const seeded = await seedGate3Checkout(firestore);
+        const prepared = await seeded.checkoutRepository.prepareCheckout({
+            ownerUid: 'owner-uid-gate3',
+            ownerEmail: 'client@example.test',
+            input: gate3CheckoutInput(),
+            fixtureContext: {
+                runId: 'run-gate4-refund',
+                fixtureScopeVersion: 'fixture-gate3',
+                policyVersion: 'policy-gate3',
+                expiresAt: '2026-07-26T13:00:00.000Z'
+            }
+        });
+        const effectClock = {
+            now: () => '2026-07-26T12:05:00.000Z',
+            nowMillis: () => Date.parse('2026-07-26T12:05:00.000Z')
+        };
+        const applier = createPaymentEffectApplier({
+            refs: seeded.refs,
+            clock: effectClock
+        });
+        await runTransaction(firestore, (transaction) => applier.apply(transaction, {
+            entry: { scope: 'connect', accountId: 'acct_gate3ready01' },
+            paymentIntent: {
+                id: 'pi_gate4_refund_firestore',
+                status: 'succeeded',
+                amount: prepared.order.amounts.totalCents,
+                currency: 'eur',
+                metadata: {
+                    orderId: prepared.order.id,
+                    requestHash: prepared.order.checkout.requestHash
+                },
+                connectedAccountId: 'acct_gate3ready01'
+            }
+        }));
+        const refundStore = new Map();
+        const stripe = {
+            async createRefund(params, options) {
+                let refund = refundStore.get(options.idempotencyKey);
+                if (!refund) {
+                    refund = {
+                        id: `re_firestore_${refundStore.size + 1}`,
+                        status: 'succeeded',
+                        amount: params.amount,
+                        currency: 'eur',
+                        payment_intent: params.payment_intent,
+                        metadata: params.metadata,
+                        connectedAccountId: options.connectedAccountId
+                    };
+                    refundStore.set(options.idempotencyKey, refund);
+                }
+                return { ...refund };
+            },
+            async retrieveRefund(refundId) {
+                return [...refundStore.values()].find((value) => value.id === refundId) || null;
+            }
+        };
+        const repository = createRefundRepository({
+            db: { runTransaction: (run) => runTransaction(firestore, run) },
+            refs: seeded.refs,
+            clock: effectClock
+        });
+        const coordinator = createRefundCoordinator({
+            repository,
+            sagaService: createRefundSagaService({
+                stripe,
+                repository,
+                clock: effectClock
+            })
+        });
+        const base = {
+            orderId: prepared.order.id,
+            actor: {
+                uid: 'admin-gate4',
+                role: 'admin',
+                aal2: true
+            },
+            reason: 'geste commercial documente'
+        };
+        await coordinator.requestRefund({
+            ...base,
+            refundRequestId: 'refund-firestore-one',
+            amountCents: 3000
+        });
+        await coordinator.requestRefund({
+            ...base,
+            refundRequestId: 'refund-firestore-one',
+            amountCents: 3000
+        });
+        await coordinator.requestRefund({
+            ...base,
+            refundRequestId: 'refund-firestore-two',
+            amountCents: 2000
+        });
+        const order = (await getDoc(seeded.refs.order(prepared.order.id))).data();
+        context.equal(order.amounts.refundedCents, 5000, 'partial refunds sum exactly');
+        context.equal(refundStore.size, 2, 'same request is deduped and distinct requests remain distinct');
+        context.equal(
+            (await getDocs(collection(firestore, 'inventory_movements'))).size,
+            2,
+            'refund adds no inventory movement after hold and commit'
+        );
+        context.equal(
+            (await getDocs(collection(firestore, 'commerce_financial_facts'))).size,
+            3,
+            'one capture fact and two refund facts exist'
+        );
+    }),
+
+    'gate4-concurrent-returns-and-partial-dispositions-conserve-quantities': async (context) => withBackend(async (firestore) => {
+        const seeded = await seedGate3Checkout(firestore);
+        await setDoc(seeded.refs.product({ inventoryKey: seeded.inventoryKey }), {
+            stock: 5
+        }, { merge: true });
+        const input = gate3CheckoutInput();
+        input.items[0].quantity = 5;
+        const prepared = await seeded.checkoutRepository.prepareCheckout({
+            ownerUid: 'owner-uid-gate3',
+            ownerEmail: 'client@example.test',
+            input,
+            fixtureContext: {
+                runId: 'run-gate4-returns',
+                fixtureScopeVersion: 'fixture-gate3',
+                policyVersion: 'policy-gate3',
+                expiresAt: '2026-07-26T13:00:00.000Z'
+            }
+        });
+        const effectClock = {
+            now: () => '2026-07-26T12:05:00.000Z',
+            nowMillis: () => Date.parse('2026-07-26T12:05:00.000Z')
+        };
+        const applier = createPaymentEffectApplier({
+            refs: seeded.refs,
+            clock: effectClock
+        });
+        await runTransaction(firestore, (transaction) => applier.apply(transaction, {
+            entry: { scope: 'connect', accountId: 'acct_gate3ready01' },
+            paymentIntent: {
+                id: 'pi_gate4_returns_firestore',
+                status: 'succeeded',
+                amount: prepared.order.amounts.totalCents,
+                currency: 'eur',
+                metadata: {
+                    orderId: prepared.order.id,
+                    requestHash: prepared.order.checkout.requestHash
+                },
+                connectedAccountId: 'acct_gate3ready01'
+            }
+        }));
+        const orderRef = seeded.refs.order(prepared.order.id);
+        let delivered = {
+            ...(await getDoc(orderRef)).data(),
+            id: prepared.order.id
+        };
+        delivered = reduceOrder(delivered, {
+            type: 'fulfillment_shipped',
+            trackingNumber: 'TRACK-GATE4-RETURNS'
+        }, { clock: effectClock });
+        delivered = reduceOrder(delivered, {
+            type: 'fulfillment_delivered'
+        }, { clock: effectClock });
+        const { id: _ignoredId, ...deliveredDocument } = delivered;
+        await setDoc(orderRef, deliveredDocument);
+
+        const returns = createReturnRepository({
+            db: { runTransaction: (run) => runTransaction(firestore, run) },
+            refs: seeded.refs,
+            clock: effectClock
+        });
+        const actor = { uid: 'admin-gate4', role: 'admin', aal2: true };
+        const lineId = prepared.order.items[0].lineId;
+        const [first, second] = await Promise.all([
+            returns.create({
+                orderId: prepared.order.id,
+                returnRequestId: 'return-firestore-first',
+                requestedLines: [{ lineId, quantity: 3 }],
+                actor,
+                reason: 'premier colis retour'
+            }),
+            returns.create({
+                orderId: prepared.order.id,
+                returnRequestId: 'return-firestore-second',
+                requestedLines: [{ lineId, quantity: 2 }],
+                actor,
+                reason: 'second colis retour'
+            })
+        ]);
+        const allocationRef = seeded.refs.returnAllocation(prepared.order.id, lineId);
+        context.equal(
+            (await getDoc(allocationRef)).data().requestedQty,
+            5,
+            'two concurrent returns reserve exactly q=5'
+        );
+        let exceeded = false;
+        try {
+            await returns.create({
+                orderId: prepared.order.id,
+                returnRequestId: 'return-firestore-excess',
+                requestedLines: [{ lineId, quantity: 1 }],
+                actor,
+                reason: 'depassement interdit'
+            });
+        } catch (error) {
+            exceeded = error?.code === 'COMMERCE_RETURN_ALLOCATION_EXCEEDED';
+        }
+        context.equal(exceeded, true, 'aggregate return allocation cannot exceed sold quantity');
+        await returns.apply({
+            orderId: prepared.order.id,
+            returnId: second.returnCase.returnId,
+            commandId: 'command-return-cancel-0001',
+            expectedVersion: 0,
+            event: { type: 'cancel' },
+            actor,
+            reason: 'annulation du retour pending'
+        });
+        context.equal(
+            (await getDoc(allocationRef)).data().requestedQty,
+            3,
+            'canceling a pending return releases only its allocation'
+        );
+        await returns.apply({
+            orderId: prepared.order.id,
+            returnId: first.returnCase.returnId,
+            commandId: 'command-return-receive-0001',
+            expectedVersion: 0,
+            event: {
+                type: 'receive',
+                lines: [{ lineId, quantity: 2 }]
+            },
+            actor,
+            reason: 'reception physique partielle'
+        });
+        await returns.apply({
+            orderId: prepared.order.id,
+            returnId: first.returnCase.returnId,
+            commandId: 'command-return-restock-0001',
+            expectedVersion: 1,
+            event: {
+                type: 'restock',
+                lines: [{ lineId, quantity: 1 }]
+            },
+            actor,
+            reason: 'inspection conforme'
+        });
+        await returns.apply({
+            orderId: prepared.order.id,
+            returnId: first.returnCase.returnId,
+            commandId: 'command-return-writeoff-0001',
+            expectedVersion: 2,
+            event: {
+                type: 'write_off',
+                lines: [{ lineId, quantity: 1 }]
+            },
+            actor,
+            reason: 'inspection non revendable'
+        });
+        await returns.apply({
+            orderId: prepared.order.id,
+            returnId: first.returnCase.returnId,
+            commandId: 'command-return-resolve-0001',
+            expectedVersion: 3,
+            event: { type: 'resolve' },
+            actor,
+            reason: 'dossier inspecte'
+        });
+        const finalOrder = (await getDoc(orderRef)).data();
+        context.equal(finalOrder.inventorySummary.restockedQty, 1, 'one unit is restocked');
+        context.equal(finalOrder.inventorySummary.writtenOffQty, 1, 'one unit is written off');
+        context.equal(finalOrder.inventorySummary.committedQty, 3, 'three committed units remain');
+        context.equal(
+            (await getDoc(seeded.refs.product({
+                inventoryKey: seeded.inventoryKey
+            }))).data().stock,
+            1,
+            'only inspected restock returns to available stock'
+        );
+    }),
+
+    'gate4-product-commands-are-atomic-idempotent-and-soft-archive': async (context) => withBackend(async (firestore) => {
+        const refs = gate4ProductRefs(firestore);
+        const commands = createProductCommandRepository({
+            db: { runTransaction: (run) => runTransaction(firestore, run) },
+            refs,
+            clock: { now: () => '2026-07-27T12:00:00.000Z' }
+        });
+        const actor = { uid: 'admin-gate4', role: 'admin', aal2: true };
+        const productId = 'product-gate4-firestore';
+        const base = {
+            collectionName: 'furniture',
+            productId,
+            actor
+        };
+        const createRequest = {
+            ...base,
+            action: 'create_product',
+            command: {
+                commandId: 'command-product-create-0001',
+                expectedVersion: 0
+            },
+            reason: 'creation catalogue auditee',
+            payload: {
+                editorial: {
+                    name: 'Buffet Firestore Gate 4',
+                    description: 'Buffet restaure avec une description detaillee et exploitable.',
+                    seoIndexable: true,
+                    category: 'buffets'
+                },
+                media: {
+                    images: ['https://example.test/product.webp'],
+                    imageUrl: 'https://example.test/product.webp'
+                }
+            }
+        };
+        const [firstCreate, retryCreate] = await Promise.all([
+            commands.execute(createRequest),
+            commands.execute(createRequest)
+        ]);
+        context.deepEqual(retryCreate, firstCreate, 'concurrent create reuses one durable result');
+
+        const offer = await commands.execute({
+            ...base,
+            action: 'update_product_offer',
+            command: {
+                commandId: 'command-product-offer-0001',
+                expectedVersion: 0
+            },
+            reason: 'offre catalogue auditee',
+            payload: {
+                offer: {
+                    currentPrice: 350,
+                    startingPrice: 420,
+                    priceOnRequest: false
+                }
+            }
+        });
+        const inventory = await commands.execute({
+            ...base,
+            action: 'adjust_inventory',
+            command: {
+                commandId: 'command-product-stock-0001',
+                expectedVersion: offer.commerceVersion
+            },
+            reason: 'stock physique controle',
+            payload: {
+                delta: 1,
+                expectedInventoryVersion: 0
+            }
+        });
+        const publicationRequest = {
+            ...base,
+            action: 'publish_product',
+            command: {
+                commandId: 'command-product-publish-0001',
+                expectedVersion: inventory.commerceVersion
+            },
+            reason: 'publication catalogue auditee',
+            payload: { published: true }
+        };
+        const publication = await commands.execute(publicationRequest);
+        const publicationRetry = await commands.execute({
+            ...publicationRequest,
+            command: {
+                ...publicationRequest.command,
+                expectedVersion: 999
+            }
+        });
+        context.deepEqual(
+            publicationRetry,
+            publication,
+            'acknowledged publication retry wins before stale version'
+        );
+        const archive = await commands.execute({
+            ...base,
+            action: 'archive_product',
+            command: {
+                commandId: 'command-product-archive-0001',
+                expectedVersion: publication.commerceVersion
+            },
+            reason: 'archive sans suppression physique',
+            payload: {}
+        });
+
+        const product = (await getDoc(refs.product({
+            collectionName: 'furniture',
+            productId
+        }))).data();
+        context.equal(archive.status, 'archived', 'archive is terminal and soft');
+        context.equal(product.status, 'archived', 'source product remains stored');
+        context.equal(product.stock, 1, 'archive does not invent an inventory movement');
+        context.equal(product.inventoryVersion, 1, 'only explicit stock adjustment increments inventory');
+        context.equal(
+            (await getDocs(collection(
+                firestore,
+                `commerce_product_audits/furniture_${productId}/events`
+            ))).size,
+            5,
+            'each distinct product command has one append-only audit'
+        );
     })
 };
 

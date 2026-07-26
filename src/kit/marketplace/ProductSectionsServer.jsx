@@ -204,6 +204,67 @@ const restorationProjects = [
   { title: 'Le Bureau Vintage', tag: 'Reparation & Traitement', desc: 'Consolidation et vernis mat impermeable.', avant: '/images/before-after/avantx-gallery.webp', avantAvif: '/images/before-after/avantx-gallery.avif', apres: '/images/before-after/apresx-gallery.webp', apresAvif: '/images/before-after/apresx-gallery.avif' },
 ];
 
+const BeforeAfterProjectLayer = ({ project, index, darkMode }) => (
+  <div
+    data-ba-project-layer
+    data-ba-project-index={index}
+    data-ba-layer-state={index === 0 ? 'active' : 'inactive'}
+    aria-hidden={index === 0 ? undefined : 'true'}
+    className="before-after-project-layer absolute inset-0"
+  >
+    <picture className="absolute inset-0 block h-full w-full">
+      <source type="image/avif" srcSet={project.apresAvif} />
+      <img
+        src={project.apres}
+        sizes="(max-width: 768px) calc(100vw - 3rem), 700px"
+        alt={`Projet ${project.title} apres restauration`}
+        width={1600}
+        height={970}
+        loading="lazy"
+        decoding="async"
+        fetchPriority="low"
+        data-ba-after-img
+        className="h-full w-full object-cover"
+      />
+    </picture>
+    <div className="pointer-events-none absolute right-3 top-3 z-20 sm:right-5 sm:top-5">
+      <span data-state="after" className={`before-after-state-badge inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-sans text-[7.5px] font-extrabold uppercase tracking-[0.16em] shadow-[0_14px_30px_-22px_rgba(24,18,12,0.72)] ring-1 sm:px-3.5 sm:py-2 sm:text-[9px] ${
+        darkMode ? 'bg-[#0f0d0a]/84 text-[#d8ad73] ring-[#d8ad73]/14' : 'bg-[#fffaf3]/94 text-[#3e352c] ring-white/90 dark:bg-[#0f0d0a]/84 dark:text-[#d8ad73] dark:ring-[#d8ad73]/14'
+      }`}>
+        <span className="before-after-state-index">02</span>
+        <span className="before-after-state-divider" aria-hidden="true" />
+        Apres
+      </span>
+    </div>
+    <div data-ba-clip className="absolute inset-0 z-10 h-full w-full" style={{ clipPath: 'polygon(0 0, 50% 0, 50% 100%, 0 100%)' }}>
+      <picture className="absolute inset-0 block h-full w-full">
+        <source type="image/avif" srcSet={project.avantAvif} />
+        <img
+          src={project.avant}
+          sizes="(max-width: 768px) calc(100vw - 3rem), 700px"
+          alt={`Projet ${project.title} avant restauration`}
+          width={1600}
+          height={970}
+          loading="lazy"
+          decoding="async"
+          fetchPriority="low"
+          data-ba-before-img
+          className="h-full w-full object-cover"
+        />
+      </picture>
+      <div className="pointer-events-none absolute left-3 top-3 sm:left-5 sm:top-5">
+        <span data-state="before" className={`before-after-state-badge inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-sans text-[7.5px] font-extrabold uppercase tracking-[0.16em] shadow-[0_14px_30px_-22px_rgba(24,18,12,0.72)] ring-1 sm:px-3.5 sm:py-2 sm:text-[9px] ${
+          darkMode ? 'bg-[#0f0d0a]/84 text-[#d8ad73] ring-[#d8ad73]/14' : 'bg-[#fffaf3]/94 text-[#3e352c] ring-white/90 dark:bg-[#0f0d0a]/84 dark:text-[#d8ad73] dark:ring-[#d8ad73]/14'
+        }`}>
+          <span className="before-after-state-index">01</span>
+          <span className="before-after-state-divider" aria-hidden="true" />
+          Avant
+        </span>
+      </div>
+    </div>
+  </div>
+);
+
 const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projects = restorationProjects, darkMode = false } = {}) => (
   <div
     className="before-after-interactive"
@@ -221,64 +282,14 @@ const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projec
         <div data-ba-media-stage className={`before-after-media-stage relative aspect-[4/3] w-full overflow-hidden rounded-[16px] ring-1 md:aspect-[16/9.7] sm:rounded-[19px] ${
           darkMode ? 'bg-[#0f0e0c] ring-[#d8ad73]/10' : 'bg-[#e8dbc9] ring-[#d7c3aa] dark:bg-[#0f0e0c] dark:ring-[#d8ad73]/10'
         }`}>
-          <picture className="absolute inset-0 block h-full w-full">
-            <source
-              data-ba-after-source
-              type="image/avif"
-              srcSet={project.apresAvif}
+          {projects.map((layerProject, index) => (
+            <BeforeAfterProjectLayer
+              key={`${layerProject.avant}-${layerProject.apres}`}
+              project={layerProject}
+              index={index}
+              darkMode={darkMode}
             />
-            <img
-              src={project.apres}
-              sizes="(max-width: 768px) calc(100vw - 3rem), 700px"
-              alt="Projet restauration apres"
-              width={1600}
-              height={970}
-              loading="lazy"
-              decoding="async"
-              fetchPriority="low"
-              data-ba-after-img
-              className="h-full w-full object-cover"
-            />
-          </picture>
-          <div className="pointer-events-none absolute right-3 top-3 z-20 sm:right-5 sm:top-5">
-            <span data-state="after" className={`before-after-state-badge inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-sans text-[7.5px] font-extrabold uppercase tracking-[0.16em] shadow-[0_14px_30px_-22px_rgba(24,18,12,0.72)] ring-1 sm:px-3.5 sm:py-2 sm:text-[9px] ${
-              darkMode ? 'bg-[#0f0d0a]/84 text-[#d8ad73] ring-[#d8ad73]/14' : 'bg-[#fffaf3]/94 text-[#3e352c] ring-white/90 dark:bg-[#0f0d0a]/84 dark:text-[#d8ad73] dark:ring-[#d8ad73]/14'
-            }`}>
-              <span className="before-after-state-index">02</span>
-              <span className="before-after-state-divider" aria-hidden="true" />
-              Apres
-            </span>
-          </div>
-          <div data-ba-clip className="absolute inset-0 z-10 h-full w-full" style={{ clipPath: 'polygon(0 0, 50% 0, 50% 100%, 0 100%)' }}>
-            <picture className="absolute inset-0 block h-full w-full">
-              <source
-                data-ba-before-source
-                type="image/avif"
-                srcSet={project.avantAvif}
-              />
-              <img
-                src={project.avant}
-                sizes="(max-width: 768px) calc(100vw - 3rem), 700px"
-                alt="Projet restauration avant"
-                width={1600}
-                height={970}
-                loading="lazy"
-                decoding="async"
-                fetchPriority="low"
-                data-ba-before-img
-                className="h-full w-full object-cover"
-              />
-            </picture>
-            <div className="pointer-events-none absolute left-3 top-3 sm:left-5 sm:top-5">
-              <span data-state="before" className={`before-after-state-badge inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-sans text-[7.5px] font-extrabold uppercase tracking-[0.16em] shadow-[0_14px_30px_-22px_rgba(24,18,12,0.72)] ring-1 sm:px-3.5 sm:py-2 sm:text-[9px] ${
-                darkMode ? 'bg-[#0f0d0a]/84 text-[#d8ad73] ring-[#d8ad73]/14' : 'bg-[#fffaf3]/94 text-[#3e352c] ring-white/90 dark:bg-[#0f0d0a]/84 dark:text-[#d8ad73] dark:ring-[#d8ad73]/14'
-              }`}>
-                <span className="before-after-state-index">01</span>
-                <span className="before-after-state-divider" aria-hidden="true" />
-                Avant
-              </span>
-            </div>
-          </div>
+          ))}
           <div
             data-ba-line
             className={`pointer-events-none absolute bottom-0 top-0 z-[25] w-px ${darkMode ? 'bg-[#f1d6aa]/58 shadow-[0_0_0_1px_rgba(216,173,115,0.1),0_0_16px_rgba(0,0,0,0.2)]' : 'bg-white/[0.95] shadow-[0_0_0_1px_rgba(64,43,24,0.18),0_0_18px_rgba(0,0,0,0.18)] dark:bg-[#f1d6aa]/58 dark:shadow-[0_0_0_1px_rgba(216,173,115,0.1),0_0_16px_rgba(0,0,0,0.2)]'}`}

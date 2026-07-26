@@ -23,10 +23,15 @@ import {
   Package,
 } from 'lucide-react';
 import LoginView from '../../src/kit/commerce/LoginView';
+import {
+  adjustInventoryAdmin,
+  archiveProductAdmin,
+  COMMERCE_V2_ADMIN_COMMANDS_ENABLED,
+  publishProductAdmin,
+} from '../../src/kit/commerce/adminProductCommandClient';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
 import KIT_CONFIG from '../../src/kit/config/constants';
-import { appId } from '../../src/kit/config/firebaseEnv';
-import { getCallableFunction, getDb, loadFirestoreModule } from '../../src/kit/config/firebaseLazy';
+import { getCallableFunction } from '../../src/kit/config/firebaseLazy';
 import {
   ADMIN_PUBLIC_CATALOG_INVALIDATED_EVENT,
   clearAdminPublicCatalogCache,
@@ -81,6 +86,12 @@ const adminTabs = KIT_CONFIG.adminTabs.map((tab, index) => ({
 
 const ADMIN_PUBLIC_CATALOG_TABS = new Set(['dashboard', 'analytics', 'inventory']);
 const COMMERCE_READ_ONLY_TABS = new Set(['furniture', 'inventory', 'orders', 'returns', 'livraison', 'payment_settings', 'maintenance']);
+const PRODUCT_COMMAND_TABS = new Set(['furniture', 'inventory']);
+
+const isCommerceReadOnlyTab = (tabId) => (
+  COMMERCE_READ_ONLY_TABS.has(tabId) &&
+  (!COMMERCE_V2_ADMIN_COMMANDS_ENABLED || !PRODUCT_COMMAND_TABS.has(tabId))
+);
 
 function CommerceReadOnlySurface({ children, darkMode, readOnly }) {
   if (!readOnly) return children;
@@ -128,11 +139,6 @@ const ADMIN_NAV_GROUPS = [
   { label: 'Communication', tabs: ['homepage', 'newsletter', 'seo'] },
   { label: 'Administration', tabs: ['account', 'users', 'ip_manager', 'maintenance'] },
 ];
-const getAdminFirestoreRuntime = async () => {
-  const [db, firestore] = await Promise.all([getDb(), loadFirestoreModule()]);
-  return { db, firestore };
-};
-
 function AdminContent() {
   const { user, isAdmin, isSuperAdmin, hasStrongAuth, loading } = useAuth();
   const [adminCollection, setAdminCollection] = useState('dashboard');
@@ -232,43 +238,39 @@ function AdminContent() {
   };
 
   const handleToggleStatus = async (item, collectionName) => {
-    const { db, firestore } = await getAdminFirestoreRuntime();
-    const { doc, updateDoc } = firestore;
-    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', collectionName, item.id), {
-      status: item.status === 'published' ? 'draft' : 'published',
-    });
+    await publishProductAdmin(item, collectionName, item.status !== 'published');
     clearAdminPublicCatalogCache();
   };
 
-  const handleDeleteItem = async (_year, id, collectionName) => {
-    if (!window.confirm('Supprimer ?')) return;
-    const { db, firestore } = await getAdminFirestoreRuntime();
-    const { deleteDoc, doc } = firestore;
-    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', collectionName, id));
+  const handleDeleteItem = async (_year, item, collectionName) => {
+    if (!window.confirm('Archiver ce produit sans supprimer son historique ?')) return;
+    await archiveProductAdmin(item, collectionName);
     clearAdminPublicCatalogCache();
   };
 
   const handleMarkAsSold = async (item, collectionName) => {
     if (!window.confirm(`Marquer "${item.name}" comme VENDU ? (Stock a 0)`)) return;
-    const { db, firestore } = await getAdminFirestoreRuntime();
-    const { doc, serverTimestamp, updateDoc } = firestore;
-    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', collectionName, item.id), {
-      sold: true,
-      stock: 0,
-      soldAt: serverTimestamp(),
-    });
+    const currentStock = Number(item.stock || 0);
+    if (!Number.isSafeInteger(currentStock) || currentStock <= 0) return;
+    await adjustInventoryAdmin(
+      item,
+      collectionName,
+      -currentStock,
+      'Stock ramene a zero depuis le back-office'
+    );
     clearAdminPublicCatalogCache();
   };
 
   const handleMarkAsAvailable = async (item, collectionName) => {
     if (!window.confirm(`Remettre "${item.name}" en vente ? (Stock a 1)`)) return;
-    const { db, firestore } = await getAdminFirestoreRuntime();
-    const { doc, updateDoc } = firestore;
-    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', collectionName, item.id), {
-      sold: false,
-      stock: 1,
-      soldAt: null,
-    });
+    const currentStock = Number(item.stock || 0);
+    if (!Number.isSafeInteger(currentStock) || currentStock >= 1) return;
+    await adjustInventoryAdmin(
+      item,
+      collectionName,
+      1,
+      'Remise en stock apres controle physique'
+    );
     clearAdminPublicCatalogCache();
   };
 
@@ -411,7 +413,7 @@ function AdminContent() {
         <Suspense fallback={<div className="flex items-center justify-center p-20"><div className="h-10 w-10 animate-spin rounded-full border-4 border-stone-200 border-t-stone-800" /></div>}>
           <CommerceReadOnlySurface
             darkMode={darkMode}
-            readOnly={COMMERCE_READ_ONLY_TABS.has(adminCollection)}
+            readOnly={isCommerceReadOnlyTab(adminCollection)}
           >
           {adminCollection === 'dashboard' ? (
             <AdminDashboard user={user} darkMode={darkMode} items={catalogState.items} />
@@ -487,7 +489,7 @@ function AdminContent() {
                     window.scrollTo(0, 0);
                   }}
                   onToggleStatus={(item) => handleToggleStatus(item, adminCollection)}
-                  onDelete={(id) => handleDeleteItem(null, id, adminCollection)}
+                  onDelete={(item) => handleDeleteItem(null, item, adminCollection)}
                   onMarkAsSold={(item) => handleMarkAsSold(item, adminCollection)}
                   onMarkAsAvailable={(item) => handleMarkAsAvailable(item, adminCollection)}
                 />

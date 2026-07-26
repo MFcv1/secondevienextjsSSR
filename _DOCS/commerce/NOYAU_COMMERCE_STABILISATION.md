@@ -6,8 +6,8 @@ Decision de recette: `NO_GO_TRANSACTIONNEL`
 Proprietaire: noyau commerce, commandes, inventaire, Stripe et control plane admin
 Echeance de gouvernance: 2026-09-30
 Specification d'implementation: `STABILISEE_PAR_CONTRE_EXPERTISE`
-Etat d'execution: `GATE_0A_CODE_READY` + `GATE_0B_CODE_READY_LOCAL` + `GATE_1_CODE_READY_LOCAL` + `GATE_2_CODE_READY_LOCAL` + `GATE_3_CODE_READY_LOCAL`
-Prochaine execution locale: Gate 4 commandes/refunds/retours; prochaine mutation runtime: activation sandbox Gate 0B sur autorisation explicite
+Etat d'execution: `GATE_0A_CODE_READY` + `GATE_0B_CODE_READY_LOCAL` + `GATE_1_CODE_READY_LOCAL` + `GATE_2_CODE_READY_LOCAL` + `GATE_3_CODE_READY_LOCAL` + `GATE_4_IN_PROGRESS_LOCAL`
+Prochaine execution locale: Gate 4 transports callable fulfillment/annulation/refund/retour et UI correspondantes; prochaine mutation runtime: activation sandbox Gate 0B sur autorisation explicite
 
 ## 1. Gouvernance du document
 
@@ -2741,18 +2741,22 @@ Executees localement:
 - `test:commerce:containment`: 12/12 scenarios, 213 assertions;
 - `test:commerce:rules:containment`: 10/10 scenarios sous Firestore + Storage
   Emulator, projet fixe `demo-secondevie-commerce`;
-- `test:commerce:unit`: 24/24 tests, dont schema, matrice fermee, projection,
+- `test:commerce:unit`: 31/31 tests, dont schema, matrice fermee, projection,
   barrières v1/v2, readers, flags frontend, policy/livraison/Connect et contrat
-  panier/inventoryKey;
+  panier/inventoryKey, actions serveur, retours/dispositions quantitatifs et
+  cycle produit create/offre/stock/publication/archive et transport produit
+  AAL2/App Check dormant sous flag frontend `false`;
 - `test:commerce:property`: 3/3 proprietes, 500 algebres monetaires, plus de
   3 600 transitions non terminales et 300 permutations de payload;
-- `test:commerce:faults`: 27/27 tests, idempotence, fenetres create/cancel,
+- `test:commerce:faults`: 33/33 tests, idempotence, fenetres create/cancel,
   PI perdu/repris, scopes plateforme/Connect, workers/sweeper, incidents,
-  outbox et token;
-- `test:commerce:firebase`: 10/10 scenarios, 42 assertions sous Firestore
+  outbox, token et refund accepte avec reponse perdue;
+- `test:commerce:firebase`: 14/14 scenarios, 64 assertions sous Firestore
   Emulator pour atomicite, rollback, concurrence stock 1, create/attach PI,
   toutes les fenetres inbox, capture + mouvement + fait + outbox exactement
-  une fois et token guest mono-usage;
+  une fois, token guest mono-usage, commandes auditees, refunds partiels
+  cumules sans restock, retours/dispositions q=5 concurrents et commandes
+  produit atomiques avec archive douce;
 - `test:commerce:rules`: 4/4 scenarios couvrant les cinq sous-collections de
   commande, les collections internes v2, la policy privee et sa projection
   publique read-only;
@@ -2778,6 +2782,13 @@ comptees separement.
 - Gate 3: `CODE_READY_LOCAL`; runtime complet mais dormant, non exporte;
 - Gate 3: pas `SANDBOX_ACTIVE`, aucun secret, endpoint, scheduler ou policy
   active;
+- Gate 4: `IN_PROGRESS_LOCAL`; `allowedActions`, commandes fulfillment,
+  annulation auditee convergente, saga/repository refund,
+  retours/dispositions, commandes produit, soft-archive, audits et cablage
+  runtime dormant sont verts;
+- Gate 4: callables produit et formulaire/liste produit sont cables derriere
+  un flag compile a `false`; transports callable et UI
+  fulfillment/annulation/refund/retour restent absents;
 - decision globale: `NO_GO_TRANSACTIONNEL` inchangee.
 
 Non executes: build global, E2E Stripe/Firebase heberges, migration, deploiement,

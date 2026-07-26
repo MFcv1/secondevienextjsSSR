@@ -116,7 +116,8 @@ Ne pas creer une nouvelle roadmap pour un de ces domaines. Mettre a jour son cha
 
 Plan temporaire explicitement demande et actuellement actif:
 
-- [NOYAU_COMMERCE_STABILISATION.md](_DOCS/commerce/NOYAU_COMMERCE_STABILISATION.md): audit contre-valide, specification d'implementation additive et gates 0A a 8; Gates 0A a 3 `CODE_READY_LOCAL`, activation sandbox Gate 0B non effectuee, runtime v2 Gate 3 dormant et aucun export Function v2 actif; echeance de gouvernance 2026-09-30, puis fusion dans les chapitres canoniques et suppression.
+- [NOYAU_COMMERCE_STABILISATION.md](_DOCS/commerce/NOYAU_COMMERCE_STABILISATION.md): audit contre-valide, specification d'implementation additive et gates 0A a 8; Gates 0A a 3 `CODE_READY_LOCAL`, Gate 4 `IN_PROGRESS_LOCAL`, activation sandbox Gate 0B non effectuee, runtime v2 Gate 3 dormant et aucun export Function v2 actif; echeance de gouvernance 2026-09-30, puis fusion dans les chapitres canoniques et suppression.
+- [TODO.md](TODO.md): handoff temporaire de reprise au 2026-07-28; fin de validite 2026-07-31, rapprochement obligatoire avec la roadmap puis suppression a la cloture de la Gate 4.
 
 ## 6. Invariants d'architecture publique
 

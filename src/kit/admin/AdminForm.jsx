@@ -2,12 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Upload, Trash2, Download } from 'lucide-react';
 import { db, appId } from '../config/firebase';
 import { getStorageInstance } from '../config/firebaseStorage';
-import { doc, addDoc, updateDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { PRODUCT_IMAGE_VARIANT_SPECS, compressImage, createProductImageVariantFiles, getImageFileMetadata } from '../../utils/imageUtils'; // [NEW] Import compression utility
 import ImageCropperModal from './components/ImageCropperModal';
 import KIT_CONFIG from '../config/constants';
 import { clearAdminPublicCatalogCache } from './adminPublicCatalog';
+import {
+  adjustInventoryAdmin,
+  createProductCommandSession,
+  createProductDraftAdmin,
+  publishProductAdmin,
+  updateProductOfferAdmin
+} from '../commerce/adminProductCommandClient';
 
 const WOOD_TYPES = [
   "Acacia", "Acajou", "Bambou", "Bouleau", "Châtaignier",
@@ -120,6 +127,7 @@ const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkM
   const widthInputRef = useRef(null);
   const depthInputRef = useRef(null);
   const heightInputRef = useRef(null);
+  const productCommandSessionRef = useRef(null);
 
   // New state for drag reordering
   const [isDragging, setIsDragging] = useState(false);
@@ -148,6 +156,7 @@ const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkM
   };
 
   useEffect(() => {
+    productCommandSessionRef.current = null;
     if (editData) {
       const material = editData.material || '';
       const isCustom = material && !getCategoryMeta(editData.category || '').materialOptions.includes(material) && material !== "Autre";
@@ -406,34 +415,103 @@ const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkM
       if (!Number.isInteger(parsedStock) || parsedStock < 0) {
         throw new Error('Le stock doit etre un nombre entier positif ou nul.');
       }
-      const data = {
-        ...formData,
+      const editorial = {
+        name: formData.name,
+        description: formData.description,
+        seoTitle: formData.seoTitle,
+        seoDescription: formData.seoDescription,
+        seoIndexable: formData.seoIndexable,
+        material: formData.material,
+        color: formData.color,
+        dimensions: formData.dimensions,
+        width: formData.width,
+        depth: formData.depth,
+        height: formData.height,
+        category: formData.category,
+        style: formData.style
+      };
+      const media = {
         images: finalImageUrls,
         thumbnails: finalThumbnails,
         imageVariants: finalImageVariants,
         imageMetadata: finalImageMetadata,
         imageUrl: finalImageUrls[0] || "",
-        thumbnailUrl: finalThumbnails[0] || finalImageUrls[0] || "",
-        currentPrice: Number(formData.startingPrice),
-        startingPrice: Number(formData.startingPrice),
-        stock: parsedStock,
-        sold: parsedStock === 0,
-        soldAt: parsedStock === 0 ? (editData?.soldAt || Timestamp.now()) : null,
-        priceOnRequest: formData.priceOnRequest || false,
+        thumbnailUrl: finalThumbnails[0] || finalImageUrls[0] || ""
       };
 
+      const session = productCommandSessionRef.current || createProductCommandSession(editData?.id);
+      productCommandSessionRef.current = session;
+      let commandProduct;
       if (editData) {
-        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', collectionName, editData.id), data);
+        await updateDoc(
+          doc(db, 'artifacts', appId, 'public', 'data', collectionName, editData.id),
+          { ...editorial, ...media }
+        );
+        commandProduct = {
+          id: editData.id,
+          commerceVersion: Number(editData.commerceVersion || 0),
+          inventoryVersion: Number(editData.inventoryVersion || 0)
+        };
       } else {
-        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', collectionName), {
-          ...data,
-          status: 'published',
-          createdAt: serverTimestamp()
+        const created = await createProductDraftAdmin({
+          collectionName,
+          productId: session.productId,
+          editorial,
+          media,
+          commandId: session.createCommandId
         });
+        commandProduct = {
+          id: created.productId,
+          commerceVersion: created.commerceVersion,
+          inventoryVersion: created.inventoryVersion
+        };
+      }
+
+      const offered = await updateProductOfferAdmin(
+        commandProduct,
+        collectionName,
+        {
+          currentPrice: Number(formData.startingPrice),
+          startingPrice: Number(formData.startingPrice),
+          priceOnRequest: formData.priceOnRequest || false
+        },
+        session.offerCommandId
+      );
+      commandProduct = {
+        ...commandProduct,
+        commerceVersion: offered.commerceVersion,
+        inventoryVersion: offered.inventoryVersion
+      };
+
+      const currentStock = editData ? Number(editData.stock || 0) : 0;
+      const stockDelta = parsedStock - currentStock;
+      if (stockDelta !== 0) {
+        const adjusted = await adjustInventoryAdmin(
+          commandProduct,
+          collectionName,
+          stockDelta,
+          'Ajustement depuis le formulaire produit',
+          session.inventoryCommandId
+        );
+        commandProduct = {
+          ...commandProduct,
+          commerceVersion: adjusted.commerceVersion,
+          inventoryVersion: adjusted.inventoryVersion
+        };
+      }
+
+      if (!editData) {
+        await publishProductAdmin(
+          commandProduct,
+          collectionName,
+          true,
+          session.publishCommandId
+        );
       }
       clearAdminPublicCatalogCache();
 
       setMsg("✅ Enregistre. Publication du catalogue en cours...");
+      productCommandSessionRef.current = null;
       resetForm();
       if (onCancelEdit) onCancelEdit();
     } catch (err) {

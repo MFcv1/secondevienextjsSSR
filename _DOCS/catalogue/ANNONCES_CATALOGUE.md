@@ -1,6 +1,6 @@
 # Annonces, catalogue et recherche
 
-Derniere mise a jour: 2026-07-19
+Derniere mise a jour: 2026-07-27
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Perimetre
@@ -43,6 +43,16 @@ La taxonomie executable vit dans `src/kit/config/constants.js` et `src/lib/seo/c
 - medias: `images`, `imageUrl`, `thumbnails`, `thumbnailUrl`, `imageVariants`, `imageMetadata`.
 
 Les anciennes formes de donnees restent normalisees par `src/lib/server/products.js` et `src/utils/imageUtils.js`, mais les nouvelles ecritures doivent produire le modele courant complet.
+
+La stabilisation commerce ajoute localement un rail serveur dormant dans
+`functions/src/commerce/domain/productCommands.js` et
+`productCommandRepository.js`. Il separe creation en brouillon, offre/prix,
+ajustement de stock versionne, publication et archive douce. Chaque commande
+exige un admin AAL2, une raison, une cle idempotente, une version attendue et
+un audit append-only. `v2ProductCommands.js` prepare les callables AAL2/App
+Check sans les exporter, et le formulaire admin les orchestre derriere
+`COMMERCE_V2_ADMIN_COMMANDS_ENABLED=false`. Le catalogue reste donc en lecture
+seule tant que la Gate 4 reste `IN_PROGRESS_LOCAL`.
 
 ## 4. Cycle de vie
 
@@ -185,6 +195,10 @@ app/api/catalog/route.js
 src/lib/server/materializedCatalog.js
 src/lib/server/materializedCatalogValidation.cjs
 functions/src/catalog/
+functions/src/commerce/domain/productCommands.js
+functions/src/commerce/domain/productCommandRepository.js
+functions/src/commerce/v2ProductCommands.js
+src/kit/commerce/adminProductCommandClient.js
 functions/src/catalog/catalogMaintenance.js
 functions/src/triggers/onArtifactDeleted.js
 functions/src/triggers/onArtifactUpdated.js

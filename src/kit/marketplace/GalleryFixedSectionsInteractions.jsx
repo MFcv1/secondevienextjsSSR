@@ -123,9 +123,6 @@ const setupRichSectionsPrewarm = () => {
         }
       });
     }
-    beforeAfterSection.querySelectorAll('[data-ba-after-img], [data-ba-before-img]').forEach((image) => {
-      tasks.push(() => warmImage(image));
-    });
   }
 
   if (instagramSection) {
@@ -394,6 +391,8 @@ const setupMobileCarouselSwipe = (surface, {
 };
 
 const setupBeforeAfter = () => {
+  const cleanups = [];
+
   document.querySelectorAll('[data-before-after-section]').forEach((root) => {
     if (root.dataset.interactionsReady === 'true') return;
     root.dataset.interactionsReady = 'true';
@@ -402,26 +401,30 @@ const setupBeforeAfter = () => {
     if (!projects.length) return;
 
     let activeIndex = 0;
-    const clip = root.querySelector('[data-ba-clip]');
+    let requestedIndex = 0;
+    let requestVersion = 0;
+    let transitionRunning = false;
+    let disposed = false;
+    let touchGesture = null;
+    let layerAnimations = [];
+    let copyAnimation = null;
+    const eventController = new AbortController();
+    const eventOptions = { signal: eventController.signal };
+    const layerPreparePromises = new Map();
+    const clips = Array.from(root.querySelectorAll('[data-ba-clip]'));
     const line = root.querySelector('[data-ba-line]');
     const handle = root.querySelector('[data-ba-handle]');
     const range = root.querySelector('[data-ba-range]');
     const pointerSurface = root.querySelector('[data-ba-media-stage]') || range;
-    const beforeImg = root.querySelector('[data-ba-before-img]');
-    const afterImg = root.querySelector('[data-ba-after-img]');
-    const beforeSource = root.querySelector('[data-ba-before-source]');
-    const afterSource = root.querySelector('[data-ba-after-source]');
+    const projectLayers = Array.from(root.querySelectorAll('[data-ba-project-layer]'));
     const tag = root.querySelector('[data-ba-tag]');
     const title = root.querySelector('[data-ba-title]');
     const desc = root.querySelector('[data-ba-desc]');
     const count = root.querySelector('[data-ba-count]');
     const section = root.closest('.before-after-premium');
     const projectCopy = root.querySelector('[data-ba-project-copy]');
-    const projectActions = root.querySelector('[data-ba-project-actions]');
     const premiumVisual = section?.querySelector('.before-after-premium-visual');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let projectAnimations = [];
-    let touchGesture = null;
 
     if (section) {
       section.dataset.baMotionReady = 'true';
@@ -435,6 +438,7 @@ const setupBeforeAfter = () => {
           premiumVisual.removeEventListener('transitionend', releasePreparedVisualLayer);
         };
         premiumVisual?.addEventListener('transitionend', releasePreparedVisualLayer);
+        cleanups.push(() => premiumVisual?.removeEventListener('transitionend', releasePreparedVisualLayer));
         const revealObserver = new IntersectionObserver(
           ([entry]) => {
             if (!entry?.isIntersecting) return;
@@ -444,40 +448,206 @@ const setupBeforeAfter = () => {
           { threshold: 0.18 },
         );
         revealObserver.observe(section);
+        cleanups.push(() => revealObserver.disconnect());
       }
     }
 
-    const animateProjectChange = () => {
-      if (reduceMotion) return;
-      projectAnimations.forEach((animation) => animation.cancel());
-      projectAnimations = [
-        ...[beforeImg, afterImg].map((image) => image?.animate(
-          [
-            { opacity: 0.4, transform: 'scale(1.03)' },
-            { opacity: 1, transform: 'scale(1)' }
-          ],
-          { duration: 850, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
-        )),
-        projectCopy?.animate(
-          [
-            { opacity: 0, transform: 'translateY(12px)' },
-            { opacity: 1, transform: 'translateY(0)' },
-          ],
-          { duration: 750, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
+    const waitForImageLoad = (image) => new Promise((resolve) => {
+      if (image.complete) {
+        resolve(image.naturalWidth > 0);
+        return;
+      }
+
+      const finish = () => {
+        image.removeEventListener('load', finish);
+        image.removeEventListener('error', finish);
+        resolve(image.naturalWidth > 0);
+      };
+      image.addEventListener('load', finish, { once: true });
+      image.addEventListener('error', finish, { once: true });
+    });
+
+    const prepareLayer = (index, { urgent = false } = {}) => {
+      const layer = projectLayers[index];
+      if (!layer) return Promise.resolve(false);
+
+      const images = Array.from(layer.querySelectorAll('img'));
+      images.forEach((image) => {
+        image.loading = 'eager';
+        image.fetchPriority = urgent ? 'high' : 'low';
+      });
+
+      const existing = layerPreparePromises.get(index);
+      if (existing) return existing;
+
+      const preparation = Promise.all(images.map(async (image) => {
+        const loaded = await waitForImageLoad(image);
+        if (!loaded) return false;
+        if (typeof image.decode !== 'function') return true;
+        try {
+          await image.decode();
+          return image.naturalWidth > 0;
+        } catch {
+          return image.complete && image.naturalWidth > 0;
+        }
+      })).then((results) => {
+        const ready = results.every(Boolean);
+        layer.dataset.baLayerReady = ready ? 'true' : 'false';
+        if (!ready) layerPreparePromises.delete(index);
+        return ready;
+      });
+
+      layerPreparePromises.set(index, preparation);
+      return preparation;
+    };
+
+    const prewarmAllLayers = () => {
+      projectLayers.forEach((_, index) => {
+        void prepareLayer(index);
+      });
+    };
+
+    if ('IntersectionObserver' in window) {
+      const prewarmObserver = new IntersectionObserver(
+        ([entry]) => {
+          if (!entry?.isIntersecting) return;
+          prewarmAllLayers();
+          prewarmObserver.disconnect();
+        },
+        { rootMargin: '900px 0px', threshold: 0.01 },
+      );
+      prewarmObserver.observe(root);
+      cleanups.push(() => prewarmObserver.disconnect());
+    } else {
+      prewarmAllLayers();
+    }
+
+    const setLayerState = (layer, state) => {
+      if (!layer) return;
+      layer.dataset.baLayerState = state;
+      if (state === 'active' || state === 'incoming') {
+        layer.removeAttribute('aria-hidden');
+      } else {
+        layer.setAttribute('aria-hidden', 'true');
+      }
+    };
+
+    const updateProjectCopy = (index) => {
+      const project = projects[index];
+      if (!project) return;
+      if (tag) tag.textContent = project.tag;
+      if (title) title.textContent = project.title;
+      if (desc) desc.textContent = project.desc;
+      if (count) count.textContent = `0${index + 1} / 0${projects.length}`;
+    };
+
+    const animateProjectCopy = () => {
+      copyAnimation?.cancel();
+      copyAnimation = null;
+      if (reduceMotion || !projectCopy) return;
+      copyAnimation = projectCopy.animate(
+        [
+          { opacity: 0.45, transform: 'translateY(6px)' },
+          { opacity: 1, transform: 'translateY(0)' },
+        ],
+        { duration: 360, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+      );
+    };
+
+    const waitForNextFrame = () => new Promise((resolve) => {
+      window.requestAnimationFrame(() => resolve());
+    });
+
+    const transitionLayers = async (fromIndex, toIndex) => {
+      const outgoingLayer = projectLayers[fromIndex];
+      const incomingLayer = projectLayers[toIndex];
+      if (!outgoingLayer || !incomingLayer || outgoingLayer === incomingLayer) return;
+
+      layerAnimations.forEach((animation) => animation.cancel());
+      layerAnimations = [];
+      setLayerState(outgoingLayer, 'outgoing');
+      setLayerState(incomingLayer, 'incoming');
+      root.dataset.baTransitioning = 'true';
+      updateProjectCopy(toIndex);
+      animateProjectCopy();
+
+      if (reduceMotion) {
+        setLayerState(outgoingLayer, 'inactive');
+        setLayerState(incomingLayer, 'active');
+        root.dataset.baTransitioning = 'false';
+        return;
+      }
+
+      await waitForNextFrame();
+      if (disposed) return;
+      layerAnimations = [
+        outgoingLayer.animate(
+          [{ opacity: 1 }, { opacity: 0 }],
+          {
+            duration: 420,
+            easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+            fill: 'both',
+          },
         ),
-        projectActions?.animate(
-          [
-            { opacity: 0, transform: 'translateX(8px)' },
-            { opacity: 1, transform: 'translateX(0)' },
-          ],
-          { duration: 700, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
+        incomingLayer.animate(
+          [{ opacity: 0 }, { opacity: 1 }],
+          {
+            duration: 420,
+            easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+            fill: 'both',
+          },
         ),
-      ].filter(Boolean);
+      ];
+      await Promise.allSettled(layerAnimations.map((animation) => animation.finished));
+      if (disposed) return;
+      setLayerState(outgoingLayer, 'inactive');
+      setLayerState(incomingLayer, 'active');
+      layerAnimations.forEach((animation) => animation.cancel());
+      layerAnimations = [];
+      root.dataset.baTransitioning = 'false';
+    };
+
+    const processRequestedProject = async () => {
+      if (transitionRunning) return;
+      transitionRunning = true;
+      root.setAttribute('aria-busy', 'true');
+
+      try {
+        while (!disposed && activeIndex !== requestedIndex) {
+          const targetIndex = requestedIndex;
+          const targetVersion = requestVersion;
+          const ready = await prepareLayer(targetIndex, { urgent: true });
+
+          if (disposed) break;
+          if (targetVersion !== requestVersion || targetIndex !== requestedIndex) continue;
+          if (!ready) {
+            requestedIndex = activeIndex;
+            break;
+          }
+
+          await transitionLayers(activeIndex, targetIndex);
+          if (disposed) break;
+          activeIndex = targetIndex;
+        }
+      } finally {
+        transitionRunning = false;
+        root.removeAttribute('aria-busy');
+        if (!disposed && activeIndex !== requestedIndex) void processRequestedProject();
+      }
+    };
+
+    const requestProject = (direction) => {
+      if (disposed) return;
+      requestedIndex = wrapIndex(requestedIndex + direction, projects.length);
+      requestVersion += 1;
+      void processRequestedProject();
     };
 
     const setSlider = (value) => {
       const percentage = `${value}%`;
-      if (clip) clip.style.clipPath = `polygon(0 0, ${percentage} 0, ${percentage} 100%, 0 100%)`;
+      clips.forEach((clip) => {
+        clip.style.clipPath = `polygon(0 0, ${percentage} 0, ${percentage} 100%, 0 100%)`;
+      });
       if (line) line.style.left = percentage;
       if (handle) handle.style.left = percentage;
     };
@@ -489,28 +659,6 @@ const setupBeforeAfter = () => {
       const value = Math.min(100, Math.max(0, ((event.clientX - bounds.left) / bounds.width) * 100));
       range.value = String(value);
       setSlider(value);
-    };
-
-    const setProject = (nextIndex) => {
-      activeIndex = wrapIndex(nextIndex, projects.length);
-      const project = projects[activeIndex];
-      if (beforeSource && project.avantAvif) {
-        beforeSource.setAttribute('srcset', project.avantAvif);
-      }
-      if (afterSource && project.apresAvif) {
-        afterSource.setAttribute('srcset', project.apresAvif);
-      }
-      if (beforeImg) {
-        beforeImg.src = project.avant;
-      }
-      if (afterImg) {
-        afterImg.src = project.apres;
-      }
-      if (tag) tag.textContent = project.tag;
-      if (title) title.textContent = project.title;
-      if (desc) desc.textContent = project.desc;
-      if (count) count.textContent = `0${activeIndex + 1} / 0${projects.length}`;
-      animateProjectChange();
     };
 
     const startSliderDrag = (event) => {
@@ -527,7 +675,7 @@ const setupBeforeAfter = () => {
       if (touchGesture?.pointerId === event.pointerId) touchGesture = null;
     };
 
-    range?.addEventListener('input', (event) => setSlider(event.currentTarget.value));
+    range?.addEventListener('input', (event) => setSlider(event.currentTarget.value), eventOptions);
     pointerSurface?.addEventListener('pointerdown', (event) => {
       if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
 
@@ -542,7 +690,7 @@ const setupBeforeAfter = () => {
       }
 
       startSliderDrag(event);
-    });
+    }, eventOptions);
     pointerSurface?.addEventListener('pointermove', (event) => {
       if (event.pointerType === 'touch') {
         if (!touchGesture || touchGesture.pointerId !== event.pointerId) return;
@@ -571,12 +719,33 @@ const setupBeforeAfter = () => {
       if (!pointerSurface.hasPointerCapture(event.pointerId)) return;
       event.preventDefault();
       setSliderFromPointer(event);
+    }, eventOptions);
+    pointerSurface?.addEventListener('pointerup', endSliderDrag, eventOptions);
+    pointerSurface?.addEventListener('pointercancel', endSliderDrag, eventOptions);
+    root.querySelector('[data-ba-prev]')?.addEventListener('click', () => requestProject(-1), eventOptions);
+    root.querySelector('[data-ba-next]')?.addEventListener('click', () => requestProject(1), eventOptions);
+    cleanups.push(() => {
+      disposed = true;
+      eventController.abort();
+      layerAnimations.forEach((animation) => animation.cancel());
+      copyAnimation?.cancel();
+      projectLayers.forEach((layer, index) => {
+        setLayerState(layer, index === 0 ? 'active' : 'inactive');
+      });
+      activeIndex = 0;
+      requestedIndex = 0;
+      updateProjectCopy(0);
+      if (range) range.value = '50';
+      setSlider(50);
+      root.dataset.interactionsReady = 'false';
+      root.dataset.baTransitioning = 'false';
+      root.removeAttribute('aria-busy');
     });
-    pointerSurface?.addEventListener('pointerup', endSliderDrag);
-    pointerSurface?.addEventListener('pointercancel', endSliderDrag);
-    root.querySelector('[data-ba-prev]')?.addEventListener('click', () => setProject(activeIndex - 1));
-    root.querySelector('[data-ba-next]')?.addEventListener('click', () => setProject(activeIndex + 1));
   });
+
+  return () => {
+    cleanups.forEach((cleanup) => cleanup());
+  };
 };
 
 const setupInstagram = () => {
@@ -959,11 +1128,12 @@ const setupTestimonials = () => {
 
 export default function GalleryFixedSectionsInteractions() {
   useEffect(() => {
-    setupBeforeAfter();
+    const cleanupBeforeAfter = setupBeforeAfter();
     setupInstagram();
     setupTestimonials();
     const cleanupPrewarm = setupRichSectionsPrewarm();
     return () => {
+      cleanupBeforeAfter();
       cleanupPrewarm();
     };
   }, []);

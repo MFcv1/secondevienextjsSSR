@@ -11,6 +11,7 @@ const FAILPOINT_NAMES = Object.freeze([
     'create.after_attach_before_response',
     'cancel.after_request',
     'cancel.after_stripe_cancel_before_release',
+    'refund.after_provider_response_before_persist',
     'inbox.after_persist',
     'inbox.after_claim',
     'inbox.after_retrieve',

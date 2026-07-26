@@ -289,6 +289,10 @@ test('dormant v2 runtime wires every writer and worker without exporting a Funct
                 retrieve: async () => null,
                 cancel: async () => null
             },
+            refunds: {
+                create: async () => null,
+                retrieve: async () => null
+            },
             webhooks: {
                 constructEvent: () => null
             }
@@ -306,6 +310,11 @@ test('dormant v2 runtime wires every writer and worker without exporting a Funct
     assert.equal(typeof runtime.webhookWorker.process, 'function');
     assert.equal(typeof runtime.outboxWorker.process, 'function');
     assert.equal(typeof runtime.expiryWorker.process, 'function');
+    assert.equal(typeof runtime.orderCommands.execute, 'function');
+    assert.equal(typeof runtime.productCommands.execute, 'function');
+    assert.equal(typeof runtime.cancellations.requestCancellation, 'function');
+    assert.equal(typeof runtime.refunds.requestRefund, 'function');
+    assert.equal(typeof runtime.returns.create, 'function');
     assert.equal(typeof runtime.sweepers.dueInbox.run, 'function');
     assert.equal(typeof runtime.sweepers.expiredReservations.run, 'function');
 });

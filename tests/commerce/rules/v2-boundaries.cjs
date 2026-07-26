@@ -103,6 +103,7 @@ const scenarios = {
             'commerce_order_access_tokens',
             'commerce_checkout_identities',
             'commerce_connect_accounts',
+            'commerce_return_allocations',
             'commerce_fixture_scopes'
         ];
         for (const collection of collections) {
@@ -111,6 +112,13 @@ const scenarios = {
             await assertFails(getDoc(doc(admin, documentPath)));
             await assertFails(setDoc(doc(admin, `${collection}/write-proof`), { schemaVersion: 2 }));
         }
+        const productAuditPath = 'commerce_product_audits/furniture_product/events/proof';
+        await seed(environment, [[productAuditPath, { schemaVersion: 2 }]]);
+        await assertFails(getDoc(doc(admin, productAuditPath)));
+        await assertFails(setDoc(doc(
+            admin,
+            'commerce_product_audits/furniture_product/events/write-proof'
+        ), { schemaVersion: 2 }));
         context.ok(true, 'all v2 internal collections deny client and admin SDK access');
     }),
 

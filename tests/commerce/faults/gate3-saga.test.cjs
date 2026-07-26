@@ -12,6 +12,9 @@ const {
     createCheckoutSagaService
 } = require('../../../functions/src/commerce/domain/checkoutSagaService');
 const {
+    createCancellationCoordinator
+} = require('../../../functions/src/commerce/domain/cancellationCoordinator');
+const {
     createFailpointController
 } = require('../../../functions/src/commerce/domain/failpoints');
 const {
@@ -277,6 +280,55 @@ test('succeeded PI wins a cancellation race and commits instead of releasing', a
     assert.equal(result.outcome, 'paid');
     assert.equal(repository.commitCount, 1);
     assert.equal(repository.releaseCount, 0);
+});
+
+test('client cancellation retry returns one audited provider-first result', async () => {
+    let auditResult = null;
+    let cancellationCalls = 0;
+    const coordinator = createCancellationCoordinator({
+        checkoutRepository: {
+            async loadOwnedCheckout() {
+                return {
+                    order: makeSagaOrder(),
+                    attempt: makeAttempt()
+                };
+            }
+        },
+        sagaService: {
+            async cancelProviderFirst() {
+                cancellationCalls += 1;
+                return {
+                    outcome: 'canceled',
+                    paymentIntentId: 'pi_cancel_audited_0001'
+                };
+            }
+        },
+        auditRepository: {
+            async lookup() {
+                return auditResult;
+            },
+            async record(input) {
+                auditResult = {
+                    orderId: input.orderId,
+                    commandId: input.commandId,
+                    outcome: input.outcome,
+                    paymentIntentId: input.paymentIntentId
+                };
+                return auditResult;
+            }
+        }
+    });
+    const request = {
+        orderId: 'order-saga-0001',
+        commandId: 'command-cancel-audited-0001',
+        ownerUid: 'owner-uid-0001',
+        reason: 'annulation client'
+    };
+    const first = await coordinator.requestCancellation(request);
+    const retry = await coordinator.requestCancellation(request);
+    assert.deepEqual(retry, first);
+    assert.equal(cancellationCalls, 1);
+    assert.equal(first.outcome, 'canceled');
 });
 
 test('attempt matrix is closed and resumes unknown creation with the same key', () => {

@@ -384,6 +384,7 @@ src/kit/commerce/
 |-- checkoutController.js ............. reducer v2 dormant, flag off
 |-- orderAdapter.js ................... lecture UI v1/v2 sans ambiguite
 |-- checkoutRecovery.js ............... descripteur namespace, sans secret, flag off
+|-- adminProductCommandClient.js ...... callables produit, flag Gate 4 off
 |-- OrderSuccessModal.jsx ............. confirmation
 |-- MyOrdersView.jsx .................. espace client
 `-- LoginView.jsx ..................... login admin/compatibilite
@@ -525,7 +526,17 @@ functions/
     |   |   |-- guestCheckoutCoordinator.js
     |   |   |-- boundedWorkerSweeper.js / firestoreWorkerQueries.js
     |   |   |-- reservationExpiryWorker.js
+    |   |   |-- allowedActions.js ......... actions client/admin derivees serveur
+    |   |   |-- returnCase.js ............. retours/dispositions quantitatifs Gate 4
+    |   |   |-- orderCommandRepository.js . fulfillment idempotent + audit
+    |   |   |-- cancellationCoordinator.js / cancellationAuditRepository.js
+    |   |   |-- refundSaga*.js ............ refund Stripe reprenable et epingle
+    |   |   |-- refundRepository.js ....... cumul/fait/outbox atomiques, sans stock
+    |   |   |-- returnRepository.js ....... allocations, dispositions et audit
+    |   |   |-- productCommands.js ......... transitions produit fermees Gate 4
+    |   |   |-- productCommandRepository.js  produit idempotent + audit append-only
     |   |   `-- v2Runtime.js .............. cablage dormant, aucun export Function
+    |   |-- v2ProductCommands.js ........... callables produit AAL2/App Check, non exportees
     |   |-- stripeWebhook.js
     |   |-- stripeConnect.js
     |   |-- cancelOrder.js
@@ -714,7 +725,7 @@ dans un runtime dormant. Aucun export Function v2 ni activation sandbox.
 | Auth | `AUTHENTIFICATION.md` | authStore, AuthContext, modal, auth Functions | `test:auth` + smoke |
 | securite/rules | `SECURITE_GLOBALE.md` | rules, helpers security, Functions | tests negatifs + sandbox cible |
 | espace client | `ESPACE_CLIENT.md` | routes compte, MyOrders, wishlist | smoke compte |
-| paiement/refund | `COMMERCE_STRIPE.md` + `NOYAU_COMMERCE_STABILISATION.md` temporaire | commerce client/Functions/admin | Gates 0A a 3 `CODE_READY_LOCAL`, runtime v2 dormant, aucun export Function v2 ni activation sandbox; E2E final 7B seulement sur autorisation |
+| paiement/refund | `COMMERCE_STRIPE.md` + `NOYAU_COMMERCE_STABILISATION.md` temporaire | commerce client/Functions/admin | Gates 0A a 3 `CODE_READY_LOCAL`, Gate 4 `IN_PROGRESS_LOCAL` (actions, fulfillment, annulation auditee, refunds, retours et commandes produit/soft-archive verts; callables/UI produit cables sous flag off, transports commandes/refund/retour et UI correspondantes restants), runtime v2 dormant, aucun export Function v2 ni activation sandbox; E2E final 7B seulement sur autorisation |
 | admin | `BACKOFFICE.md` | AdminAppIsland, tabs, Functions | smoke tabs + action cible |
 | infra | `INFRASTRUCTURE.md` | yaml/json/env/runtime | audits read-only + build |
 | donnees | `DONNEES_ANALYTICS.md` + `AUDIT_COUTS_FIRESTORE.md` | rules/indexes/scripts/Functions | dry-run/comptage/rollback + mesure avant/apres |

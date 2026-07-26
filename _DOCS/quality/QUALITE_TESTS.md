@@ -41,14 +41,17 @@ Etat `CODE_READY`:
   et manifests incomplets;
 - `test:commerce:containment` compte les effets et prouve le hard-stop Gate 0B;
 - `test:commerce:rules:containment` utilise Firestore + Storage Emulator;
-- `test:commerce:unit` valide schema, reducer, projections et compatibilite;
+- `test:commerce:unit` valide schema, reducer, projections, compatibilite,
+  actions serveur et retours quantitatifs;
 - `test:commerce:property` genere algebre monetaire, cycles Stripe non
   terminaux et permutations de payload sans reseau;
 - `test:commerce:faults` prouve idempotence, ordre lookup/version, saga,
-  annulation provider-first, scopes webhook et reprise des workers;
+  annulation provider-first, scopes webhook, reprise des workers et refund
+  accepte avec reponse perdue;
 - `test:commerce:firebase` valide atomicite/rollback sur Firestore Emulator,
   dont create/attach PI, inbox, capture + mouvement + fait + outbox et token
-  guest mono-usage;
+  guest mono-usage, commandes auditees, refunds cumules sans restock et
+  retours/dispositions concurrents;
 - `test:commerce:rules` ferme explicitement sous-collections et collections v2;
 - `test:commerce` agrege toutes les suites et bloque la CI.
 
@@ -196,6 +199,12 @@ Storage pour le confinement Gate 0B, Firestore seul pour integration et Rules
 Gate 1. Il fixe les ports, refuse tout credential/projet reel et n'autorise que
 les suites manifestees. Les tests unit/property/faults utilisent un garde
 reseau qui refuse meme les connexions locales.
+
+La couverture Gate 4 ajoute les commandes fulfillment/annulation, les refunds
+reprenables, les retours quantitatifs et le rail produit. Le scenario produit
+Firestore exerce un double create concurrent, l'offre, l'ajustement de stock,
+la publication, le retry acquitte avant version obsolete, l'archive douce et
+un audit append-only par commande.
 
 L'emulateur ne prouve pas a lui seul:
 

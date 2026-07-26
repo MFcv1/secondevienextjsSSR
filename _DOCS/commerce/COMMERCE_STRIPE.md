@@ -252,6 +252,21 @@ que le token guest backend opaque, mono-usage et rotatif. Ce runtime n'est
 importe par aucune Function et aucun endpoint/scheduler v2 n'est exporte:
 `CODE_READY_LOCAL` ne signifie ni `SANDBOX_ACTIVE` ni recette transactionnelle.
 
+Gate 4 est `IN_PROGRESS_LOCAL`: `allowedActions` est derive exclusivement du
+schema v2 et de l'acteur/AAL2. Les commandes fulfillment sont idempotentes et
+auditees; la saga refund conserve une cle Stripe par `refundRequestId`, epingle
+le compte Connect historique, cumule les montants dans une transaction avec
+fait/outbox et ne touche jamais au stock. Les retours bornent les allocations
+concurrentes par ligne, puis appliquent reception, restock et write-off dans
+les memes transactions que commande, reservation, produit, mouvement et audit.
+L'annulation provider-first possede maintenant un audit convergent. Le rail
+produit separe creation en brouillon, offre/prix, stock versionne, publication
+et archive souple; il refuse les collections non autorisees et conserve un
+audit par commande. Le transport callable et le cablage admin derriere flag
+produit sont prepares sous un flag compile a `false`, sans export Function.
+Les transports et interfaces fulfillment, annulation, refund et retour restent
+a brancher; aucune action Gate 4 n'est active.
+
 ## 13. Conditions production
 
 - [ ] cles et webhooks Stripe live separes;

@@ -56,6 +56,7 @@ const EVENT_TYPES = Object.freeze([
     'fulfillment_delivered',
     'refund_requested',
     'refund_confirmed',
+    'refund_failed',
     'return_received',
     'return_restocked',
     'return_written_off',
@@ -491,6 +492,29 @@ function applyEvent(next, event, now) {
             next.refundAggregate.status = next.refundAggregate.pendingCents > 0
                 ? 'pending'
                 : (next.amounts.refundedCents === next.amounts.capturedCents ? 'full' : 'partial');
+            return true;
+        }
+        case 'refund_failed': {
+            assertPaid(next, event.type);
+            if (
+                !Number.isSafeInteger(event.amountCents) ||
+                event.amountCents <= 0 ||
+                event.amountCents > next.refundAggregate.pendingCents
+            ) {
+                throw domainError('COMMERCE_REFUND_AMOUNT_INVALID');
+            }
+            next.refundAggregate.pendingCents -= event.amountCents;
+            next.refundAggregate.hasFailure = true;
+            if (next.refundAggregate.pendingCents > 0) {
+                next.refundAggregate.status = 'pending';
+            } else if (next.refundAggregate.succeededCents === 0) {
+                next.refundAggregate.status = 'needs_review';
+            } else {
+                next.refundAggregate.status =
+                    next.refundAggregate.succeededCents === next.amounts.capturedCents
+                        ? 'full'
+                        : 'partial';
+            }
             return true;
         }
         case 'return_received':
