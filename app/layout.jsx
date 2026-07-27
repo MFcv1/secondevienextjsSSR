@@ -55,6 +55,28 @@ try {
 } catch (error) {}
 `;
 
+const productReturnBootScript = `
+try {
+  var pendingKey = 'secondevie:product-return-pending:v1';
+  var returnKey = 'secondevie:product-return:v1';
+  var currentHref = window.location.pathname + (window.location.search || '') + (window.location.hash || '');
+  var pendingHref = window.sessionStorage && window.sessionStorage.getItem(pendingKey);
+  var rawReturn = window.sessionStorage && window.sessionStorage.getItem(returnKey);
+  var savedReturn = rawReturn ? JSON.parse(rawReturn) : null;
+  var savedAt = Number(savedReturn && savedReturn.savedAt || 0);
+  var committedAt = Number(savedReturn && savedReturn.committedAt || 0);
+  var freshReturn = savedAt > 0 && Date.now() - savedAt <= 1800000;
+  var freshCommit = committedAt <= 0 || Date.now() - committedAt <= 5000;
+
+  if (pendingHref === currentHref && freshReturn && freshCommit) {
+    document.documentElement.setAttribute('data-product-return-pending', 'true');
+  } else if (pendingHref === currentHref) {
+    window.sessionStorage.removeItem(pendingKey);
+    window.sessionStorage.removeItem(returnKey);
+  }
+} catch (error) {}
+`;
+
 export const metadata = {
   metadataBase: new URL(siteUrl),
   title: {
@@ -104,6 +126,7 @@ export default function RootLayout({ children }) {
         <link rel="dns-prefetch" href="//firebasestorage.googleapis.com" />
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="" />
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+        <script dangerouslySetInnerHTML={{ __html: productReturnBootScript }} />
       </head>
       <body>
         <ViewportHeightSyncIsland />

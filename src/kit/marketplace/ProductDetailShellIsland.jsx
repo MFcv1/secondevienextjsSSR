@@ -77,7 +77,20 @@ const IMAGE_PREWARM_MAX = 11;
 const PRODUCT_SWIPE_EXIT_HINT_STORAGE_KEY = 'secondevie:product-swipe-exit-hint:v2';
 const PRODUCT_RETURN_STORAGE_KEY = 'secondevie:product-return:v1';
 const PRODUCT_RETURN_PENDING_STORAGE_KEY = 'secondevie:product-return-pending:v1';
+const PRODUCT_RETURN_SCROLL_RESTORATION_STORAGE_KEY = 'secondevie:product-return-scroll-restoration:v1';
 const PRODUCT_RETURN_PENDING_ATTRIBUTE = 'data-product-return-pending';
+
+const getDeploymentId = () => {
+  const asset = document.querySelector('script[src*="dpl="], link[href*="dpl="]');
+  const assetUrl = asset?.getAttribute('src') || asset?.getAttribute('href') || '';
+  if (!assetUrl) return '';
+
+  try {
+    return new URL(assetUrl, window.location.origin).searchParams.get('dpl') || '';
+  } catch {
+    return '';
+  }
+};
 
 const isConstrainedConnection = () => {
   if (typeof navigator === 'undefined') return false;
@@ -629,10 +642,18 @@ export default function ProductDetailShellIsland({
         && savedProduct.origin === window.location.origin
         && `${savedProduct.pathname}${savedProduct.search}` === currentProductHref
       );
+      const hasSourceDeploymentId = Object.prototype.hasOwnProperty.call(
+        saved,
+        'sourceDeploymentId',
+      );
+      const matchesSourceDeployment = hasSourceDeploymentId
+        && String(saved.sourceDeploymentId || '') === getDeploymentId();
 
       return {
         href: sourceHref,
-        canUseHistory: matchesCurrentProduct && window.history.length > 1,
+        canUseHistory: matchesCurrentProduct
+          && matchesSourceDeployment
+          && window.history.length > 1,
       };
     } catch {
       return null;
@@ -647,6 +668,15 @@ export default function ProductDetailShellIsland({
       document.documentElement.setAttribute(PRODUCT_RETURN_PENDING_ATTRIBUTE, 'true');
       try {
         window.sessionStorage.setItem(PRODUCT_RETURN_PENDING_STORAGE_KEY, returnTarget.href);
+        if ('scrollRestoration' in window.history) {
+          if (!window.sessionStorage.getItem(PRODUCT_RETURN_SCROLL_RESTORATION_STORAGE_KEY)) {
+            window.sessionStorage.setItem(
+              PRODUCT_RETURN_SCROLL_RESTORATION_STORAGE_KEY,
+              window.history.scrollRestoration,
+            );
+          }
+          window.history.scrollRestoration = 'manual';
+        }
       } catch {
         // Native history remains the primary return path without storage.
       }
@@ -666,6 +696,15 @@ export default function ProductDetailShellIsland({
     document.documentElement.setAttribute(PRODUCT_RETURN_PENDING_ATTRIBUTE, 'true');
     try {
       window.sessionStorage.setItem(PRODUCT_RETURN_PENDING_STORAGE_KEY, targetHref);
+      if ('scrollRestoration' in window.history) {
+        if (!window.sessionStorage.getItem(PRODUCT_RETURN_SCROLL_RESTORATION_STORAGE_KEY)) {
+          window.sessionStorage.setItem(
+            PRODUCT_RETURN_SCROLL_RESTORATION_STORAGE_KEY,
+            window.history.scrollRestoration,
+          );
+        }
+        window.history.scrollRestoration = 'manual';
+      }
     } catch {
       // Navigation still proceeds when session storage is unavailable.
     }

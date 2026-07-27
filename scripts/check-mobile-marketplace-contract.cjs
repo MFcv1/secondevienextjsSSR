@@ -59,9 +59,9 @@ const checks = [
     pattern: /router\.back\(\)[\s\S]*window\.location\.pathname\.startsWith\('\/produit\/'\)[\s\S]*router\.replace\(targetHref\)/,
   },
   {
-    label: 'Product return restoration is atomic and no longer polls visible frames',
+    label: 'Product return restoration stays masked until geometry is stable',
     file: files.productReturn,
-    pattern: /applyAtomicRestore\(\);[\s\S]*requestAnimationFrame[\s\S]*applyAtomicRestore\(\);[\s\S]*requestAnimationFrame[\s\S]*finishRestore\(\)/,
+    pattern: /REQUIRED_STABLE_FRAMES[\s\S]*applyAtomicRestore\(\)[\s\S]*stableFrameCount[\s\S]*markConsumedReturnCommitted\(\)[\s\S]*finishRestore\(\)/,
   },
   {
     label: 'Product return restoration has no fixed multi-frame retry loop',

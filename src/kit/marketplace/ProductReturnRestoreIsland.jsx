@@ -4,8 +4,25 @@ import { useLayoutEffect } from 'react';
 
 const RETURN_KEY = 'secondevie:product-return:v1';
 const PENDING_KEY = 'secondevie:product-return-pending:v1';
+const SCROLL_RESTORATION_KEY = 'secondevie:product-return-scroll-restoration:v1';
 const PENDING_ATTRIBUTE = 'data-product-return-pending';
 const MAX_AGE_MS = 30 * 60 * 1000;
+const RESTORE_TIMEOUT_MS = 1200;
+const RETURN_COMMIT_SURVIVAL_MS = 5000;
+const REQUIRED_STABLE_FRAMES = 2;
+const POSITION_EPSILON = 1.5;
+
+const getDeploymentId = () => {
+  const asset = document.querySelector('script[src*="dpl="], link[href*="dpl="]');
+  const assetUrl = asset?.getAttribute('src') || asset?.getAttribute('href') || '';
+  if (!assetUrl) return '';
+
+  try {
+    return new URL(assetUrl, window.location.origin).searchParams.get('dpl') || '';
+  } catch {
+    return '';
+  }
+};
 
 const currentHref = () => (
   window.location.pathname + (window.location.search || '') + (window.location.hash || '')
@@ -94,6 +111,7 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
         window.sessionStorage.setItem(RETURN_KEY, JSON.stringify({
           href: currentHref(),
           productHref: productUrl.pathname + productUrl.search,
+          sourceDeploymentId: getDeploymentId(),
           productSectionId: link.closest('[data-expandable-product-grid][id]')?.id || '',
           productAnchorKind: link.hasAttribute('aria-label') ? 'media' : 'details',
           productAnchorViewportTop: Number.isFinite(anchorRect.top) ? anchorRect.top : null,
@@ -114,14 +132,13 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
     let cleanupTimer = 0;
     let popstateFrame = 0;
     let popstateCommitFrame = 0;
-    let cancelledByUser = false;
     let restoreInProgress = false;
     let consumedReturnSavedAt = null;
+    let restoreStartedAt = 0;
+    let stableFrameCount = 0;
+    let previousStableSignature = '';
     const root = document.documentElement;
     const previousScrollBehavior = root.style.scrollBehavior;
-    const previousScrollRestoration = 'scrollRestoration' in window.history
-      ? window.history.scrollRestoration
-      : null;
 
     const releaseReturnMask = () => {
       root.removeAttribute(PENDING_ATTRIBUTE);
@@ -138,7 +155,18 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
       cleanupTimer = 0;
     };
 
-    const removeConsumedReturnRecord = () => {
+    const restoreNativeScrollMode = () => {
+      if (!('scrollRestoration' in window.history)) return;
+      try {
+        const savedMode = window.sessionStorage.getItem(SCROLL_RESTORATION_KEY);
+        window.history.scrollRestoration = savedMode === 'manual' ? 'manual' : 'auto';
+        window.sessionStorage.removeItem(SCROLL_RESTORATION_KEY);
+      } catch {
+        window.history.scrollRestoration = 'auto';
+      }
+    };
+
+    const clearConsumedReturnTransaction = () => {
       const consumedSavedAt = consumedReturnSavedAt;
       consumedReturnSavedAt = null;
       if (!Number.isFinite(consumedSavedAt)) return;
@@ -148,34 +176,45 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
         const current = raw ? JSON.parse(raw) : null;
         if (Number(current?.savedAt) === consumedSavedAt) {
           window.sessionStorage.removeItem(RETURN_KEY);
+          if (window.sessionStorage.getItem(PENDING_KEY) === currentHref()) {
+            window.sessionStorage.removeItem(PENDING_KEY);
+          }
         }
       } catch {
         // A newer return target must survive even if the consumed record is unreadable.
       }
     };
 
-    function cancelRestore() {
-      cancelledByUser = true;
-      clearScheduledRestore();
-      removeConsumedReturnRecord();
+    const markConsumedReturnCommitted = () => {
+      const consumedSavedAt = consumedReturnSavedAt;
+      if (!Number.isFinite(consumedSavedAt)) return;
       try {
-        window.sessionStorage.removeItem(PENDING_KEY);
+        const raw = window.sessionStorage.getItem(RETURN_KEY);
+        const current = raw ? JSON.parse(raw) : null;
+        if (Number(current?.savedAt) === consumedSavedAt) {
+          window.sessionStorage.setItem(RETURN_KEY, JSON.stringify({
+            ...current,
+            committedAt: Date.now(),
+          }));
+        }
       } catch {
-        // The user interaction still wins when storage is unavailable.
+        // The visible return remains valid when storage becomes unavailable.
       }
-      finishRestore();
-    }
+    };
 
-    function finishRestore() {
+    const scheduleTransactionCleanup = () => {
+      if (cleanupTimer) window.clearTimeout(cleanupTimer);
+      cleanupTimer = window.setTimeout(() => {
+        cleanupTimer = 0;
+        clearConsumedReturnTransaction();
+      }, RETURN_COMMIT_SURVIVAL_MS);
+    };
+
+    function finishRestore({ releaseMask = true, restoreScrollMode = true } = {}) {
       restoreInProgress = false;
-      window.removeEventListener('wheel', cancelRestore);
-      window.removeEventListener('touchstart', cancelRestore);
-      window.removeEventListener('keydown', cancelRestore);
       root.style.scrollBehavior = previousScrollBehavior;
-      if (previousScrollRestoration !== null) {
-        window.history.scrollRestoration = previousScrollRestoration;
-      }
-      releaseReturnMask();
+      if (restoreScrollMode) restoreNativeScrollMode();
+      if (releaseMask) releaseReturnMask();
     }
 
     const restoreProductReturn = () => {
@@ -185,12 +224,14 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
         const sourceHref = currentHref();
         if (window.sessionStorage.getItem(PENDING_KEY) !== sourceHref) {
           releaseReturnMask();
+          restoreNativeScrollMode();
           return false;
         }
 
-        window.sessionStorage.removeItem(PENDING_KEY);
+        root.setAttribute(PENDING_ATTRIBUTE, 'true');
         const raw = window.sessionStorage.getItem(RETURN_KEY);
         const saved = raw ? JSON.parse(raw) : null;
+        const committedAt = Number(saved?.committedAt || 0);
         const target = saved?.href
           ? new URL(saved.href, window.location.origin)
           : null;
@@ -201,10 +242,14 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
         if (
           !saved
           || Date.now() - Number(saved.savedAt || 0) > MAX_AGE_MS
+          || (committedAt > 0 && Date.now() - committedAt > RETURN_COMMIT_SURVIVAL_MS)
           || target?.origin !== window.location.origin
           || targetHref !== sourceHref
         ) {
+          window.sessionStorage.removeItem(PENDING_KEY);
+          window.sessionStorage.removeItem(RETURN_KEY);
           releaseReturnMask();
+          restoreNativeScrollMode();
           return false;
         }
 
@@ -212,25 +257,27 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
         const windowTop = Math.max(0, Number(saved.scrollY || 0));
         restoreInProgress = true;
         consumedReturnSavedAt = Number(saved.savedAt);
-        cancelledByUser = false;
+        restoreStartedAt = window.performance.now();
+        stableFrameCount = 0;
+        previousStableSignature = '';
 
         root.style.scrollBehavior = 'auto';
-        if (previousScrollRestoration !== null) {
+        if ('scrollRestoration' in window.history) {
           window.history.scrollRestoration = 'manual';
         }
-
-        window.addEventListener('wheel', cancelRestore, { passive: true, once: true });
-        window.addEventListener('touchstart', cancelRestore, { passive: true, once: true });
-        window.addEventListener('keydown', cancelRestore, { passive: true, once: true });
 
         const applyAtomicRestore = () => {
           restoreExpandedProductGrids(saved.expandedProductGridIds);
           prepareDeferredReturnLayout(saved);
 
+          const scroller = scrollContainerId
+            ? document.getElementById(scrollContainerId)
+            : null;
+          let maxTop = 0;
+
           if (scrollContainerId) {
-            const scroller = document.getElementById(scrollContainerId);
             if (scroller) {
-              const maxTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+              maxTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
               scroller.scrollTop = maxTop > 0 ? Math.min(containerTop, maxTop) : containerTop;
             }
           }
@@ -241,12 +288,9 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
           const savedAnchorTop = Number(saved.productAnchorViewportTop);
           if (anchor && Number.isFinite(savedAnchorTop)) {
             const anchorDelta = anchor.getBoundingClientRect().top - savedAnchorTop;
-            const scroller = scrollContainerId
-              ? document.getElementById(scrollContainerId)
-              : null;
-            const maxTop = scroller
+            maxTop = scroller
               ? Math.max(0, scroller.scrollHeight - scroller.clientHeight)
-              : 0;
+              : maxTop;
 
             if (scroller && maxTop > 0) {
               scroller.scrollTop = Math.max(0, Math.min(scroller.scrollTop + anchorDelta, maxTop));
@@ -259,28 +303,59 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
           if (announcement && scrollContainerId && window.matchMedia('(max-width: 767px)').matches) {
             announcement.setAttribute('data-announcement-collapsed', containerTop > 8 ? 'true' : 'false');
           }
+
+          const anchorTop = anchor?.getBoundingClientRect().top;
+          const anchorReady = !saved.productHref || Boolean(anchor);
+          const scrollRangeReady = !scrollContainerId
+            || Boolean(scroller && (containerTop <= 1 || maxTop >= containerTop - POSITION_EPSILON));
+          const anchorAligned = !anchor
+            || !Number.isFinite(savedAnchorTop)
+            || Math.abs(anchorTop - savedAnchorTop) <= POSITION_EPSILON;
+          const appliedScrollTop = scroller?.scrollTop ?? window.scrollY;
+
+          return {
+            ready: anchorReady && scrollRangeReady && anchorAligned,
+            signature: `${Math.round(appliedScrollTop * 10)}:${Math.round((anchorTop || 0) * 10)}`,
+          };
+        };
+
+        const runRestoreFrame = () => {
+          restoreFrame = 0;
+          if (!restoreInProgress) return;
+
+          const result = applyAtomicRestore();
+          if (result.ready && result.signature === previousStableSignature) {
+            stableFrameCount += 1;
+          } else {
+            stableFrameCount = result.ready ? 1 : 0;
+            previousStableSignature = result.ready ? result.signature : '';
+          }
+
+          const timedOut = window.performance.now() - restoreStartedAt >= RESTORE_TIMEOUT_MS;
+          if (stableFrameCount >= REQUIRED_STABLE_FRAMES || timedOut) {
+            applyAtomicRestore();
+            markConsumedReturnCommitted();
+            finishRestore();
+            scheduleTransactionCleanup();
+            return;
+          }
+
+          restoreFrame = window.requestAnimationFrame(runRestoreFrame);
         };
 
         applyAtomicRestore();
-
-        restoreFrame = window.requestAnimationFrame(() => {
-          restoreFrame = 0;
-          if (cancelledByUser) return;
-          applyAtomicRestore();
-          restoreFrame = window.requestAnimationFrame(() => {
-            restoreFrame = 0;
-            if (cancelledByUser) return;
-            cleanupTimer = window.setTimeout(() => {
-              cleanupTimer = 0;
-              removeConsumedReturnRecord();
-              finishRestore();
-            }, 0);
-          });
-        });
+        restoreFrame = window.requestAnimationFrame(runRestoreFrame);
 
         return true;
       } catch {
+        try {
+          window.sessionStorage.removeItem(PENDING_KEY);
+          window.sessionStorage.removeItem(RETURN_KEY);
+        } catch {
+          // The visual fallback must still be released when storage is unavailable.
+        }
         releaseReturnMask();
+        restoreNativeScrollMode();
         // Best effort return restoration only.
         return false;
       }
@@ -302,13 +377,20 @@ export default function ProductReturnRestoreIsland({ scrollContainerId = '' } = 
     restoreProductReturn();
 
     return () => {
-      cancelledByUser = true;
       document.removeEventListener('pointerdown', rememberProductReturnTarget, true);
       document.removeEventListener('click', rememberProductReturnTarget, true);
       window.removeEventListener('popstate', scheduleProductReturnRestore);
       clearScheduledRestore();
-      removeConsumedReturnRecord();
-      finishRestore();
+      let returnStillPending = false;
+      try {
+        returnStillPending = window.sessionStorage.getItem(PENDING_KEY) === currentHref();
+      } catch {
+        returnStillPending = false;
+      }
+      finishRestore({
+        releaseMask: !returnStillPending,
+        restoreScrollMode: !returnStillPending,
+      });
     };
   }, [scrollContainerId]);
 

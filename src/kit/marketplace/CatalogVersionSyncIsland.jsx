@@ -4,6 +4,29 @@ import { useCallback, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { getDb, loadFirestoreModule } from '../config/firebaseLazy';
 
+const PRODUCT_RETURN_PENDING_KEY = 'secondevie:product-return-pending:v1';
+const PRODUCT_RETURN_KEY = 'secondevie:product-return:v1';
+const PRODUCT_RETURN_PENDING_ATTRIBUTE = 'data-product-return-pending';
+const PRODUCT_RETURN_COMMIT_SURVIVAL_MS = 5000;
+
+const currentHref = () => (
+  window.location.pathname + (window.location.search || '') + (window.location.hash || '')
+);
+
+const isProductReturnSettling = () => {
+  if (document.documentElement.hasAttribute(PRODUCT_RETURN_PENDING_ATTRIBUTE)) return true;
+
+  try {
+    if (window.sessionStorage.getItem(PRODUCT_RETURN_PENDING_KEY) !== currentHref()) return false;
+    const raw = window.sessionStorage.getItem(PRODUCT_RETURN_KEY);
+    const saved = raw ? JSON.parse(raw) : null;
+    const committedAt = Number(saved?.committedAt || 0);
+    return committedAt <= 0 || Date.now() - committedAt <= PRODUCT_RETURN_COMMIT_SURVIVAL_MS;
+  } catch {
+    return false;
+  }
+};
+
 const isSignalRelevant = (signal, routeKind, routeId) => {
   if (!signal || signal.full === true) return Boolean(signal);
   if (routeKind === 'gallery') return signal.affectsGallery === true;
@@ -37,6 +60,7 @@ export default function CatalogVersionSyncIsland({
   const refreshForVersion = useCallback((nextVersion) => {
     if (!activeRef.current) return;
     if (!nextVersion || nextVersion === renderedVersionRef.current) return;
+    if (isProductReturnSettling()) return;
     if (refreshedVersionsRef.current.has(nextVersion)) return;
     refreshedVersionsRef.current.add(nextVersion);
     window.dispatchEvent(new CustomEvent('sv:catalog-version-changed', {
