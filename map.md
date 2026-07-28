@@ -139,8 +139,9 @@ confinement Gate 0B SANDBOX_ACTIVE
   `-- Rules -> orders/policy/champs commerce/delete media fermes
 ```
 
-Audit contre-valide, cible additive et ordre d'execution 0A a 8:
-`_DOCS/commerce/NOYAU_COMMERCE_STABILISATION.md`.
+L'audit et la roadmap temporaire 0A a 8 sont clos. Leur verite durable est
+fusionnee dans `_DOCS/commerce/COMMERCE_STRIPE.md` et les chapitres canoniques
+admin, client, qualite, infrastructure et exploitation.
 
 Noyau v2 deploye en sandbox, writer verrouille par controle absent:
 
@@ -167,11 +168,11 @@ politique/control backend fail-closed
   -> UI client/admin via commandes serveur
 ```
 
-Gates 0A a 7B sont fermees en sandbox depuis le 2026-07-28. Checkout et
-workers v2 sont actifs uniquement pour `fixture_gate6_20260728`; lecteurs
-UID/admin et exploitation Gate 7A sont actifs. Gate 7B est verte deux fois
-sur le release final; l'UI publique, les mutations admin et le paiement
-offline restent fermes pendant la recette humaine Gate 8.
+Gates 0A a 8 sont fermees en sandbox depuis le 2026-07-28. Checkout et workers
+v2 restent bornes a `fixture_gate6_20260728`; lecteurs UID/admin et
+exploitation sont actifs. La recette Gate 8 a ferme les parcours client/admin,
+le rapprochement et le cleanup. L'UI fixture est refermee, les mutations admin
+sont `read_only` et le paiement offline reste `off`.
 
 Gate 6 ajoute un rail de migration sans writer:
 
@@ -788,7 +789,7 @@ restent actifs; l'UI publique et les mutations admin restent fermees.
 | Auth | `AUTHENTIFICATION.md` | authStore, AuthContext, modal, auth Functions | `test:auth` + smoke |
 | securite/rules | `SECURITE_GLOBALE.md` | rules, helpers security, Functions | tests negatifs + sandbox cible |
 | espace client | `ESPACE_CLIENT.md` | routes compte, MyOrders, wishlist | smoke compte |
-| paiement/refund | `COMMERCE_STRIPE.md` + `NOYAU_COMMERCE_STABILISATION.md` temporaire | commerce client/Functions/admin | Gates 0A a 7B fermees; `CORE_V2_FIXTURE_QUALIFIED` sur `c5259a8` et release final, checkout/workers limites au scope fixture; UI publique, mutations admin et offline fermes; Gate 8 autorisee uniquement en sandbox |
+| paiement/refund | `COMMERCE_STRIPE.md` | commerce client/Functions/admin | Gates 0A a 8 fermees; `PREPROD_TRANSACTIONAL_READY` sur sandbox/fixtures, checkout/workers limites au scope fixture; UI fixture refermee, mutations admin `read_only`, offline et live fermes |
 | admin | `BACKOFFICE.md` | AdminAppIsland, tabs, Functions | smoke tabs + action cible |
 | infra | `INFRASTRUCTURE.md` | yaml/json/env/runtime | audits read-only + build |
 | donnees | `DONNEES_ANALYTICS.md` + `AUDIT_COUTS_FIRESTORE.md` | rules/indexes/scripts/Functions | dry-run/comptage/rollback + mesure avant/apres |

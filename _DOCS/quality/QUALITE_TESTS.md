@@ -74,8 +74,8 @@ le second peut cibler la derniere commande. Ils ne redeviennent executables
 qu'apres remplacement fail-closed, `runId/orderId` explicites, fixture dediee,
 region correcte, AAL2/App Check et zero fallback.
 
-Gate 0A de [NOYAU_COMMERCE_STABILISATION.md](../commerce/NOYAU_COMMERCE_STABILISATION.md)
-a cree `test:commerce:runner`, `test:commerce:containment`,
+La stabilisation du noyau commerce a cree `test:commerce:runner`,
+`test:commerce:containment`,
 `test:commerce:rules:containment`, `test:commerce` et `lint:functions`, avec un
 self-test qui prouve l'exit non nul. Gate 0B etend les scenarios de confinement.
 Gate 1 ajoute `test:commerce:unit`, `test:commerce:property`,
@@ -285,7 +285,11 @@ L'emulateur ne prouve pas a lui seul:
 
 Ces limites sont couvertes separement: l'outbox et la reconciliation sont
 couvertes en Gate 7A; regions, Stripe/Connect, 3DS et provider e-mail reel
-sont valides par Gate 7B puis observes humainement en Gate 8. Gmail
+ont ete valides par Gate 7B puis observes humainement en Gate 8. Cette recette
+a couvert carte acceptee, refus/retry, 3DS, reprise, annulation, concurrence
+stock, mutations admin autorisees/interdites, refund, retour/restock, policy,
+e-mails, documents et cleanup. Le rapprochement final est sans divergence,
+les operations sont `healthy` et tous les compteurs sont a zero. Gmail
 post-acceptation reste
 `delivery_unknown`, jamais une preuve exactly-once. Elles ne doivent pas etre
 masquees par un test local vert.

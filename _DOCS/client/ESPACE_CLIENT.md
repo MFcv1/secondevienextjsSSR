@@ -5,7 +5,9 @@ Statut: `PREPROD_READY`
 
 Restriction active:
 
-> Le statut ne qualifie pas encore le suivi transactionnel, la reprise guest/3DS ni les factures. Ces surfaces suivent [NOYAU_COMMERCE_STABILISATION.md](../commerce/NOYAU_COMMERCE_STABILISATION.md).
+> Le suivi transactionnel, la reprise 3DS/reload, l'annulation et les documents
+> sandbox ont ete qualifies en Gate 8 sur fixtures. Aucun document n'est une
+> facture fiscale et aucune activation publique ou live n'en decoule.
 
 ## 1. Routes et acces
 
@@ -170,7 +172,8 @@ Smoke recommande pour une passe compte non transactionnelle:
 
 Ce smoke reste une verification UI. Il ne qualifie pas la coherence Stripe/commande/stock et ne remplace pas les gates commerce.
 
-La recette transactionnelle client/guest commence en Gate 8 sur fixtures
-uniquement. Gates 0A a 7B sont fermees; les deux runs qualifiants sont verts
-sur `release_gate7a_c5259a87f875_f00378380561`. L'UI publique reste fermee:
-la recette utilise le perimetre technique explicitement autorise.
+La recette Gate 8 est fermee sur fixtures: paiement accepte, refus/retry, 3DS,
+reprise, annulation provider-first, concurrence stock, suivi commande et
+documents sandbox ont converge vers la verite serveur. La verification OTP
+invite a ete observee; les commandes financieres finales restent correlees au
+compte fixture allowliste. L'UI fixture publique est refermee.

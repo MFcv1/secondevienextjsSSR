@@ -5,7 +5,9 @@ Statut: `PREPROD_READY`
 
 Restriction active:
 
-> Ce statut ne couvre pas encore le control plane commerce. Les onglets Ventes, Retours, Livraison, Paiement et les outils destructifs suivent le plan [NOYAU_COMMERCE_STABILISATION.md](../commerce/NOYAU_COMMERCE_STABILISATION.md): gates 0A a 7B avant la recette humaine Gate 8.
+> Le control plane commerce v2 a ete qualifie en Gate 8 sur fixtures avec
+> App Check et admin AAL2. Apres recette, les mutations admin sont revenues en
+> `read_only`; leur activation publique ou live reste interdite.
 
 ## 1. Architecture
 
@@ -92,8 +94,9 @@ Etat actuel:
   et retire les raccourcis de purge;
 - cet etat est deploye sur le sandbox; le release qualifiant Gate 7B est
   `build-2026-07-28-009` / `release_gate7a_c5259a87f875_f00378380561`.
-- Gate 8 peut maintenant observer les lectures et parcours admin humains sur
-  fixtures; les mutations admin restent `read_only` et ne sont pas reactivees.
+- Gate 8 a valide actions autorisees derivees serveur, transition interdite,
+  fulfillment, refunds avant/apres livraison, retour/restock et suspension de
+  policy; les mutations admin sont revenues en `read_only`.
 
 Cible: toute transition commande, fulfillment, inventaire, refund/retour et politique commerce passe par une commande serveur idempotente. Firestore reste une projection et non une API metier admin.
 
@@ -283,7 +286,7 @@ storage.rules
 | pagination complete de certaines listes | `DEBT` | croissance reelle des volumes ou mesure de cout |
 | politique de roles plus fine qu'admin/super-admin | `CONCEPTION` | plusieurs operateurs metier confirmes |
 | suppression des outils E2E/etude embarquee | `DEBT` | decision produit apres stabilisation preprod |
-| incidents/reconciliation sandbox | `STABILISATION_ACTIVE` | Gate 7A, seuil machine bloquant avant recette |
+| incidents/reconciliation sandbox | `PREPROD_READY` | surveiller les compteurs avant toute nouvelle fenetre fixture |
 | alert policies, SLO, astreinte et runbooks live | `PRODUCTION_DEFERRED` | rail production et SLO approuves |
 
 ## 12. Validation

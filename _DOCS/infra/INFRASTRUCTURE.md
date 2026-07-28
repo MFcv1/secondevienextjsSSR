@@ -217,8 +217,13 @@ Etat commerce sandbox au 2026-07-28:
 - webhooks et cleaner historiques maintenus en `us-central1`;
 - Rules Firestore/Storage restrictives publiees apres le rollout UI;
 - aucun rail production ni flag transactionnel public active.
-- Gate 7B verte deux fois avec 11 scenarios par run; la decision
-  `GO_SANDBOX_RECETTE` n'autorise que la recette humaine Gate 8 sur fixtures.
+- Gate 7B verte deux fois avec 11 scenarios par run;
+- Gate 8 fermee sur fixtures avec rapprochement final vide, operations
+  `healthy`, cleanup borne sans suppression et controle revision 22;
+- endpoint Stripe Connect sandbox actif:
+  `stripeConnectWebhookV2` en `europe-west1`;
+- UI fixture refermee apres recette, mutations admin `read_only`, offline
+  `off`; aucune cible live ou production activee.
 
 ## 11. Rollback
 

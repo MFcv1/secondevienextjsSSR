@@ -1,25 +1,18 @@
 # Commerce, checkout et Stripe
 
 Derniere mise a jour: 2026-07-28
-Statut: `STABILISATION_ACTIVE`
+Statut: `PREPROD_TRANSACTIONAL_READY`
 
 Restriction active:
 
-> Decision `GO_SANDBOX_RECETTE` limitee a la Gate 8 et aux fixtures. Le
-> parcours nominal carte est implemente et le noyau est
-> `CORE_V2_FIXTURE_QUALIFIED`. L'audit
-> executable a invalide le precedent statut `PREPROD_READY` sur les courses
-> paiement/annulation, les compensations stock, les mutations admin et les
-> preuves automatisees. Le plan ferme est
-> [NOYAU_COMMERCE_STABILISATION.md](NOYAU_COMMERCE_STABILISATION.md).
-> Les Gates 0A a 7B sont fermees en sandbox depuis le 2026-07-28.
-> Le checkout et les workers v2 sont actifs uniquement pour le scope
-> `fixture_gate6_20260728`; l'UI publique, les mutations admin et le paiement
-> offline restent fermes. Les projections, documents sandbox non fiscaux,
-> outbox, reconciler et controles d'exploitation Gate 7A sont actifs sur le
-> manifeste immutable `release_gate7a_c5259a87f875_f00378380561`, SHA
-> `c5259a8`, build `build-2026-07-28-009`. Ce statut autorise la recette
-> humaine Gate 8 seulement; il ne vaut ni activation publique ni GO live.
+> Les Gates 0A a 8 sont fermees en sandbox depuis le 2026-07-28. La recette
+> humaine Gate 8 a qualifie paiement accepte, refus/retry, 3DS, reprise,
+> annulation provider-first, concurrence stock, commandes client, fulfillment,
+> refund, retour/restock, suspension de policy, e-mails, documents et
+> rapprochement. Le statut `PREPROD_TRANSACTIONAL_READY` reste strictement
+> borne au sandbox et aux fixtures. L'UI fixture est refermee, les mutations
+> admin sont `read_only`, le paiement offline est `off`; ni `v2_all`, ni Stripe
+> live, ni un rail production ne sont autorises.
 
 ## 1. Perimetre
 
@@ -191,7 +184,30 @@ L'architecture PaymentIntent reste le choix cible; aucune migration vers Checkou
 Gate 7A a ferme les projections/exploitation et Gate 7B a qualifie le
 manifeste `release_gate7a_c5259a87f875_f00378380561`. Les deux runs
 consecutifs, 11 scenarios chacun, sont verts sur le meme SHA `c5259a8` avec
-fixtures et IDs correles. La preuve suivante est la recette humaine Gate 8.
+fixtures et IDs correles. Gate 8 a ensuite ferme la recette humaine sur le
+release `release_gate7a_27dda7ebd409_3b1c4e7b0ade`.
+
+Preuves Gate 8:
+
+- paiement carte accepte, refus puis retry sur le meme order/PI et challenge
+  3DS complete avec reprise durable;
+- annulation explicite provider-first et concurrence deux onglets sur stock 1,
+  sans survente ni panier concurrent perdu;
+- commande authentifiee et verification OTP invite, suivi et documents
+  sandbox admissibles;
+- fulfillment prepare/expedie/livre, transition interdite refusee, refunds
+  avant et apres livraison, retour physique puis restock;
+- policy suspendue refusee a zero commande/stock, puis reactivatee;
+- 3 captures et 2 refunds de 1 200 centimes EUR correles, cinq e-mails `sent`
+  avec identifiant fournisseur, recus et confirmations de remboursement
+  immuables `non_fiscal_sandbox`;
+- projection finale sans divergence, operations `healthy`, tous les compteurs
+  a zero, aucun hold ni incident ouvert;
+- cleanup borne des runs `run_gate8_recipe_v4_20260728` et
+  `run_gate8_recipe_v5_20260728`: 10 auxiliaires quarantaines, 41 preuves
+  preservees, aucune suppression;
+- fenetre fermee a la revision de controle 22, mutations admin revenues en
+  `read_only`, puis flag UI fixture compile a `false`.
 
 ## 11. Fichiers structurants
 
@@ -234,10 +250,10 @@ Les gates locales et CI actives sont `lint:functions`,
 `test:commerce:rules:containment`, `test:commerce:unit`,
 `test:commerce:property`, `test:commerce:firebase`,
 `test:commerce:rules`, `test:commerce:faults` et leur agregat
-`test:commerce`. Gates 0A a 7B sont fermees; seul le checkout fixture est
-actif et les anciens E2E transactionnels heberges restent en quarantaine. Les
-rapports qualifiants sont lies aux runs `run_gate7b_1_1785265815207` et
-`run_gate7b_2_1785265899510`.
+`test:commerce`. Gates 0A a 8 sont fermees et les anciens E2E transactionnels
+heberges restent en quarantaine. Les rapports Gate 7B sont lies aux runs
+`run_gate7b_1_1785265815207` et `run_gate7b_2_1785265899510`; les preuves
+humaines finales sont correlees aux runs Gate 8 v4/v5 listes ci-dessus.
 
 Gate 6 ajoute `classify-legacy-commerce.mjs`,
 `prepare-commerce-fixtures.mjs`, les contrats purs
@@ -314,10 +330,9 @@ portent `cartLineId/cartRevision`; le succes exige
 lignes achetees demeurees identiques. `MyOrdersView` utilise le reader UID et
 sa pagination; les readers commandes et retours admin sont egalement actifs,
 avec un adaptateur v1 explicitement read-only. Les transports Gate 5 restent
-exportes. Depuis Gate 7A, le controle serveur autorise seulement
-`newCheckoutMode=v2_fixture` pour le scope epingle; tous les flags de commande
-publics restent `false`, les mutations admin sont `read_only` et le paiement
-offline est `off`. Rollout qualifiant actif: `build-2026-07-28-009`.
+exportes. Le controle serveur reste borne a `newCheckoutMode=v2_fixture` pour
+le scope epingle; tous les flags de commande publics sont revenus a `false`,
+les mutations admin sont `read_only` et le paiement offline est `off`.
 
 Gate 7A ajoute les projections financieres absolues, les recus sandbox
 explicitement non fiscaux, l'outbox avec leases/dead-letter et statut
@@ -326,6 +341,14 @@ admin de statut/rebuild/cleanup ainsi que les incidents durables. Le dashboard
 lit cette projection serveur et affiche source, fraicheur, montants captures,
 rembourses, net et divergences. La sante sandbox est `healthy`, tous les
 compteurs sont a zero et aucune TTL commerce n'est activee.
+
+Gate 8 a execute la matrice client/admin complete sur fixtures sandbox. Un
+defaut reel du contrat d'annulation client (`cancellationRequestId` au lieu de
+`commandId`) a ete corrige et couvert par regression avant reprise de la
+recette. L'endpoint Stripe Connect sandbox actif cible maintenant
+`stripeConnectWebhookV2` en `europe-west1`; les evenements sont signes,
+persistes et rapproches par le runtime v2. La fermeture ne supprime aucune
+commande, aucun fait financier, aucun audit ni document.
 
 ## 13. Conditions production
 

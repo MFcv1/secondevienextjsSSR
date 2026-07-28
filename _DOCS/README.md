@@ -31,16 +31,12 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 | Assistant devis IA | [ASSISTANT_DEVIS.md](ai/ASSISTANT_DEVIS.md) | cadrage MVP non implemente, garde-fous et conditions de reprise |
 | Legal | [CGV_RETOURS_DRAFT.md](legal/CGV_RETOURS_DRAFT.md) | brouillon metier a faire valider par un professionnel du droit |
 
-## Plan temporaire actif
-
-| Perimetre | Document | Statut | Echeance et cloture |
-| --- | --- | --- | --- |
-| noyau commerce | [NOYAU_COMMERCE_STABILISATION.md](commerce/NOYAU_COMMERCE_STABILISATION.md) | `PLAN_TEMPORAIRE_EXECUTION`, specification contre-validee, `NO_GO_TRANSACTIONNEL` | Gates 0A a 5 `SANDBOX_ACTIVE_READ_ONLY`; Gate 6 suivante: classification legacy et preparation fixtures en dry-run, toute adoption/ecriture restant soumise a sa gate cloud; revue au plus tard le 2026-09-30, fusion canonique et suppression |
-
 ## Niveaux de statut
 
 - `REFERENCE_ACTIVE`: verite actuelle, a maintenir avec le code.
 - `PREPROD_READY`: implemente et acceptable pour la demonstration, avec conditions de production explicites.
+- `PREPROD_TRANSACTIONAL_READY`: noyau transactionnel qualifie sur sandbox et
+  fixtures, sans autoriser une activation publique ou live.
 - `PRODUCTION_DEFERRED`: volontairement reporte jusqu'au domaine, aux comptes live ou a une decision metier.
 - `CONCEPTION`: specification conservee mais fonctionnalite non implementee.
 - `DEBT`: dette connue, non bloquante tant que sa condition de reprise n'est pas atteinte.

@@ -55,8 +55,8 @@ Une contradiction entre code et documentation doit etre signalee et corrigee dan
 | catalogue | `furniture` autoritaire, snapshot Storage materialise actif, API same-origin non persistante, revalidation evenementielle |
 | Auth | passe de demonstration close, `PREPROD_READY`; production differee |
 | espace client | commandes, documents PDF provisoires, wishlist, adresse/profil de synthese, support |
-| commerce | `STABILISATION_ACTIVE`; recette transactionnelle bloquee jusqu'aux gates du plan noyau |
-| back-office | 16 onglets lazy et acces admin fort; control plane commerce en stabilisation |
+| commerce | `PREPROD_TRANSACTIONAL_READY` sur sandbox/fixtures; activation publique et live differees |
+| back-office | 16 onglets lazy et acces admin fort; commandes commerce v2 qualifiees sur fixtures |
 | images | variantes Storage WebP, `detailFast`, miniatures 320/384, metadata anti-CLS |
 | securite | rules fortes, AAL2 admin, secrets serveur; App Check prod encore differe |
 | infrastructure | App Hosting sandbox actif; rail production absent |
@@ -68,11 +68,12 @@ Objectif de livraison courant:
 
 > Maintenir un etat de preproduction stable et presentable a la cliente, avec les fonctionnalites majeures codees. Les travaux qui dependent du domaine, des comptes live, du DNS ou du trafic production restent explicitement differes.
 
-Exception active: decision `GO_SANDBOX_RECETTE` strictement limitee a la Gate
-8 et aux fixtures techniques. Le noyau est `CORE_V2_FIXTURE_QUALIFIED` apres
-deux runs Gate 7B consecutifs sur le meme manifeste/SHA. L'UI transactionnelle
-publique, les mutations admin et tout rail live restent fermes; ce statut
-n'est ni un GO production ni une activation `v2_all`.
+Le noyau commerce a ferme les Gates 0A a 8 le 2026-07-28 et porte le statut
+`PREPROD_TRANSACTIONAL_READY`. Cette qualification couvre le sandbox et les
+fixtures techniques seulement. L'UI fixture a ete refermee, les mutations
+admin sont revenues en `read_only`, le paiement offline reste `off` et tout
+rail live demeure differe. Ce statut n'est ni un GO production ni une
+activation `v2_all`.
 
 ## 4. Environnement de reference
 
@@ -103,7 +104,7 @@ Ne pas convertir Node 24 local en nouvelle baseline sans migration dediee. Ne ja
 | authentification | [AUTHENTIFICATION.md](_DOCS/security/AUTHENTIFICATION.md) | authStore, AuthContext, modal, auth Functions | preprod close |
 | securite globale | [SECURITE_GLOBALE.md](_DOCS/security/SECURITE_GLOBALE.md) | rules, helpers security, secrets, headers | preprod |
 | espace client | [ESPACE_CLIENT.md](_DOCS/client/ESPACE_CLIENT.md) | routes compte, MyOrders, wishlist | preprod |
-| commerce/Stripe | [COMMERCE_STRIPE.md](_DOCS/commerce/COMMERCE_STRIPE.md) | commerce client/Functions/admin | stabilisation active |
+| commerce/Stripe | [COMMERCE_STRIPE.md](_DOCS/commerce/COMMERCE_STRIPE.md) | commerce client/Functions/admin | preprod transactionnelle sandbox |
 | back-office | [BACKOFFICE.md](_DOCS/admin/BACKOFFICE.md) | AdminAppIsland, `src/kit/admin` | preprod |
 | infrastructure | [INFRASTRUCTURE.md](_DOCS/infra/INFRASTRUCTURE.md) | Firebase/App Hosting/config/env | sandbox actif |
 | deploiement/cache client | [DEPLOIEMENT_CACHE_CLIENT.md](_DOCS/infra/DEPLOIEMENT_CACHE_CLIENT.md) | `next.config.mjs`, `scripts/with-env.mjs`, `scripts/deployment-id.mjs` | actif |
@@ -115,9 +116,10 @@ Ne pas convertir Node 24 local en nouvelle baseline sans migration dediee. Ne ja
 
 Ne pas creer une nouvelle roadmap pour un de ces domaines. Mettre a jour son chapitre canonique, sauf si l'utilisateur demande explicitement un plan temporaire distinct. Un plan temporaire doit avoir une date de fin et etre fusionne/supprime a la cloture.
 
-Plan temporaire explicitement demande et actuellement actif:
-
-- [NOYAU_COMMERCE_STABILISATION.md](_DOCS/commerce/NOYAU_COMMERCE_STABILISATION.md): audit contre-valide, specification d'implementation additive et gates 0A a 8; Gates 0A a 7B fermees en sandbox sur le SHA `c5259a8`, le manifeste `release_gate7a_c5259a87f875_f00378380561` et App Hosting `build-2026-07-28-009`; les deux runs Gate 7B ont chacun valide 11 scenarios correles, dont paiement/retry, 3DS succes et abandon, concurrence, refund/retour/restock, OTP Gmail et drain `healthy`; `newCheckoutMode=v2_fixture` reste limite au scope `fixture_gate6_20260728`, tandis que mutations admin, paiement offline et UI publique restent fermes; prochaine tranche Gate 8 sous decision `GO_SANDBOX_RECETTE`; echeance de gouvernance 2026-09-30, puis fusion dans les chapitres canoniques et suppression.
+Le plan temporaire du noyau commerce a ete clos apres la Gate 8. Ses decisions
+durables et preuves de qualification sont fusionnees dans les chapitres
+canoniques commerce, admin, client, qualite, infrastructure et exploitation.
+Git conserve l'audit et la roadmap retires.
 
 ## 6. Invariants d'architecture publique
 
@@ -204,7 +206,10 @@ Interdictions:
 - snapshot de commande conserve l'historique;
 - Stripe sandbox et live strictement separes.
 
-Etat transitoire: plusieurs de ces invariants ne sont pas encore garantis par tous les chemins executables. Jusqu'a la cloture de `NOYAU_COMMERCE_STABILISATION.md`, aucune preuve sandbox ponctuelle ne suffit a reclasser le noyau en preproduction transactionnelle.
+La qualification actuelle reste bornee au sandbox et aux fixtures. Toute
+activation publique `v2_all`, Stripe live ou production exige une decision,
+une fenetre d'observation et les gates live correspondantes; aucune preuve
+sandbox ponctuelle ne suffit a les autoriser.
 
 ### 7.6 Admin et securite
 
