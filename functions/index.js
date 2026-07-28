@@ -78,6 +78,17 @@ const {
     listOrdersAdminV2,
     listReturnsAdminV2
 } = require('./src/commerce/v2OrderQueries');
+const {
+    cleanupFixtureRunAdmin,
+    commerceOperationsReconciler,
+    commerceOutboxDispatcher,
+    getCommerceOperationsStatusAdmin,
+    rebuildCommerceOperationsAdmin
+} = require('./src/commerce/v2Operations');
+const {
+    stripeConnectWebhookV2,
+    stripeWebhookV2
+} = require('./src/commerce/v2Webhooks');
 
 exports.adjustInventoryAdmin = adjustInventoryAdmin;
 exports.archiveProductAdmin = archiveProductAdmin;
@@ -103,6 +114,13 @@ exports.resumeCheckoutV2 = resumeCheckoutV2;
 exports.listMyOrdersV2 = listMyOrdersV2;
 exports.listOrdersAdminV2 = listOrdersAdminV2;
 exports.listReturnsAdminV2 = listReturnsAdminV2;
+exports.cleanupFixtureRunAdmin = cleanupFixtureRunAdmin;
+exports.commerceOperationsReconciler = commerceOperationsReconciler;
+exports.commerceOutboxDispatcher = commerceOutboxDispatcher;
+exports.getCommerceOperationsStatusAdmin = getCommerceOperationsStatusAdmin;
+exports.rebuildCommerceOperationsAdmin = rebuildCommerceOperationsAdmin;
+exports.stripeWebhookV2 = stripeWebhookV2;
+exports.stripeConnectWebhookV2 = stripeConnectWebhookV2;
 
 // ── AUTH ──────────────────────────────────────────────────
 const { grantAdminOnAuth } = require('./src/auth/grantAdmin');

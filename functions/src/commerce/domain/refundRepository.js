@@ -154,7 +154,7 @@ function createRefundRepository({ db, refs, clock }) {
             order.id,
             `refund-${outcome}-${nextAttempt.refundRequestId}`
         );
-        const fact = outcome === 'succeeded'
+        const baseFact = outcome === 'succeeded'
             ? buildFinancialFact({
                 orderId: order.id,
                 type: 'refund',
@@ -166,7 +166,10 @@ function createRefundRepository({ db, refs, clock }) {
                 commandId: nextAttempt.refundRequestId
             })
             : null;
-        const outbox = fact
+        const fact = baseFact && order.testContext
+            ? { ...baseFact, testContext: { ...order.testContext } }
+            : baseFact;
+        const baseOutbox = fact
             ? buildOutboxIntent({
                 effectId: fact.effectId,
                 aggregateType: 'order',
@@ -187,6 +190,9 @@ function createRefundRepository({ db, refs, clock }) {
                 clock
             })
             : null;
+        const outbox = baseOutbox && order.testContext
+            ? { ...baseOutbox, testContext: { ...order.testContext } }
+            : baseOutbox;
         const factRef = fact ? refs.financialFact(fact.effectId) : null;
         const outboxRef = outbox ? refs.outbox(outbox.outboxId) : null;
 

@@ -71,7 +71,10 @@ function validateFixtureScope(scope, { now = new Date() } = {}) {
             inventoryKey
         };
     }).sort((left, right) => left.inventoryKey.localeCompare(right.inventoryKey));
-    const expiresAt = new Date(scope.expiresAt);
+    const expiresAtValue = typeof scope.expiresAt?.toDate === 'function'
+        ? scope.expiresAt.toDate()
+        : scope.expiresAt;
+    const expiresAt = new Date(expiresAtValue);
     if (!Number.isFinite(expiresAt.getTime()) || expiresAt <= now) {
         throw fixtureError('COMMERCE_FIXTURE_SCOPE_EXPIRED');
     }

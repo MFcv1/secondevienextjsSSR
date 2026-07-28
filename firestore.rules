@@ -194,6 +194,14 @@ service cloud.firestore {
       match /events/{eventId} {
         allow read, write: if false;
       }
+
+      match /documents/{documentId} {
+        allow read: if isStrongArtisan() || (
+          request.auth != null &&
+          request.auth.uid == get(/databases/$(database)/documents/orders/$(orderId)).data.userId
+        );
+        allow write: if false;
+      }
     }
 
     match /inventory_reservations/{reservationId} {
@@ -217,6 +225,14 @@ service cloud.firestore {
     }
 
     match /commerce_financial_facts/{factId} {
+      allow read, write: if false;
+    }
+
+    match /commerce_financial_projections/{projectionId} {
+      allow read, write: if false;
+    }
+
+    match /commerce_release_manifests/{manifestId} {
       allow read, write: if false;
     }
 
@@ -255,6 +271,10 @@ service cloud.firestore {
     match /sys_commerce_public/{docId} {
       allow read: if docId == 'current';
       allow write: if false;
+    }
+
+    match /sys_commerce_operations/{docId} {
+      allow read, write: if false;
     }
 
     // System Metadata

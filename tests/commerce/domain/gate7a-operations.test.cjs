@@ -1,6 +1,9 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const { spawnSync } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
 const test = require('node:test');
 const {
     buildPaymentReceipt,
@@ -18,6 +21,8 @@ const {
 const {
     createOutboxWorker
 } = require('../../../functions/src/commerce/domain/outboxWorker');
+
+const repositoryRoot = path.resolve(__dirname, '..', '..', '..');
 
 function fact(overrides = {}) {
     return {
@@ -302,4 +307,54 @@ test('Gate 7A: cleanup fixture dry-run ne supprime aucune preuve', () => {
         plan.actions.find((entry) => entry.collection === 'commerce_outbox').action,
         'quarantine'
     );
+    const commitPlan = planFixtureCleanup({
+        runId,
+        documents: [{
+            collection: 'commerce_outbox',
+            id: 'outbox-terminal',
+            status: 'sent',
+            testContext: { runId }
+        }],
+        dryRun: false
+    });
+    assert.equal(commitPlan.writes, 1);
+    assert.equal(commitPlan.deletes, 0);
+});
+
+test('Gate 7A: manifeste et activation refusent toute cible non sandbox exacte', () => {
+    for (const script of [
+        'scripts/build-commerce-release-manifest.mjs',
+        'scripts/activate-commerce-fixture.mjs'
+    ]) {
+        const result = spawnSync(process.execPath, [
+            path.join(repositoryRoot, script),
+            '--project=production-interdite',
+            '--env=production'
+        ], {
+            cwd: repositoryRoot,
+            encoding: 'utf8'
+        });
+        assert.notEqual(result.status, 0);
+        assert.match(result.stderr, /GATE7A_/);
+    }
+});
+
+test('Gate 7A: dashboard et triggers legacy exposent les fences attendues', () => {
+    const dashboard = fs.readFileSync(
+        path.join(repositoryRoot, 'src/kit/admin/AdminDashboard.jsx'),
+        'utf8'
+    );
+    const email = fs.readFileSync(
+        path.join(repositoryRoot, 'functions/src/email/orderEmails.js'),
+        'utf8'
+    );
+    const stats = fs.readFileSync(
+        path.join(repositoryRoot, 'functions/src/commerce/orderStats.js'),
+        'utf8'
+    );
+    assert.match(dashboard, /getCommerceOperationsStatusAdmin/);
+    assert.match(dashboard, /projection\?\.source/);
+    assert.match(dashboard, /divergenceCount/);
+    assert.match(email, />= V2_EMAIL_OUTBOX_REQUIRED/);
+    assert.match(stats, />= V2_STATS_PROJECTION_REQUIRED/);
 });

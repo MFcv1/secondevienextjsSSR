@@ -70,8 +70,8 @@ exports.onOrderStatsWrite = onDocumentWritten(
         const before = event.data?.before?.exists ? event.data.before.data() : null;
         const after = event.data?.after?.exists ? event.data.after.data() : null;
         if (
-            before?.schemaVersion === V2_STATS_PROJECTION_REQUIRED ||
-            after?.schemaVersion === V2_STATS_PROJECTION_REQUIRED
+            Number(before?.schemaVersion || 0) >= V2_STATS_PROJECTION_REQUIRED ||
+            Number(after?.schemaVersion || 0) >= V2_STATS_PROJECTION_REQUIRED
         ) return null;
 
         const delta = diffMetrics(summarizeOrder(after), summarizeOrder(before));

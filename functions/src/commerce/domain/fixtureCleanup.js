@@ -69,7 +69,9 @@ function planFixtureCleanup({ runId, documents, dryRun = true }) {
         schemaVersion: 2,
         runId,
         dryRun,
-        writes: 0,
+        writes: dryRun
+            ? 0
+            : actions.filter((entry) => entry.action === 'quarantine').length,
         deletes: 0,
         actions: actions.sort((left, right) => (
             left.collection.localeCompare(right.collection) ||

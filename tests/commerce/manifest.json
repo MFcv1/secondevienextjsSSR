@@ -48,6 +48,7 @@
         "gate3-inbox-fencing-and-domain-effect-commit-are-atomic",
         "gate3-inbox-failpoints-converge-across-every-commit-window",
         "gate3-create-checkout-is-atomic-and-idempotent-before-stripe",
+        "gate7a-fixture-checkout-is-bound-to-control-uid-and-inventory",
         "gate3-success-commits-order-movement-fact-and-outbox-exactly-once",
         "gate3-guest-resume-token-is-single-use-and-rotated-transactionally",
         "gate4-command-retry-is-one-transition-with-one-append-only-audit",
@@ -62,6 +63,7 @@
       "scenarios": [
         "owner-v2-root-read-remains-allowed",
         "order-v2-subcollections-are-backend-only",
+        "owner-can-read-immutable-commerce-documents-only",
         "commerce-v2-internal-collections-are-backend-only",
         "gate2-policy-is-private-and-public-projection-is-read-only"
       ]

@@ -18,6 +18,7 @@ test-results/
 !.env.example
 !.env.sandbox.example
 !.env.production.example
+!functions/.env.secondevienextjsssr.example
 
 # Firebase local state
 .firebase/

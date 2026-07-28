@@ -322,7 +322,7 @@ exports.onOrderCreated = onDocumentCreated(
         console.log("⚡ onOrderCreated TRIGGERED! ID:", event.params.orderId);
         const order = event.data?.data();
         if (!order) return null;
-        if (order.schemaVersion === V2_EMAIL_OUTBOX_REQUIRED) return null;
+        if (Number(order.schemaVersion || 0) >= V2_EMAIL_OUTBOX_REQUIRED) return null;
 
         // Si c'est une commande Stripe Elements "pending", on NE FAIT RIEN pour l'instant.
         // L'email sera envoyé via onOrderUpdated une fois le paiement confirmé (status => 'paid')
@@ -345,8 +345,8 @@ exports.onOrderUpdated = onDocumentUpdated(
         const orderAfter = event.data?.after?.data();
         if (!orderBefore || !orderAfter) return null;
         if (
-            orderBefore.schemaVersion === V2_EMAIL_OUTBOX_REQUIRED ||
-            orderAfter.schemaVersion === V2_EMAIL_OUTBOX_REQUIRED
+            Number(orderBefore.schemaVersion || 0) >= V2_EMAIL_OUTBOX_REQUIRED ||
+            Number(orderAfter.schemaVersion || 0) >= V2_EMAIL_OUTBOX_REQUIRED
         ) return null;
         const orderId = event.params.orderId;
         const clientEmail = orderAfter.userEmail || orderAfter.shipping?.email;

@@ -175,7 +175,7 @@ async function main() {
   const now = Timestamp.now();
   const documents = [
     ...products.map((product) => ({
-      path: `furniture/${product.identity.productId}`,
+      path: `artifacts/secondevie/public/data/furniture/${product.identity.productId}`,
       data: { ...product.data, createdAt: now, updatedAt: now }
     })),
     {

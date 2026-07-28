@@ -73,6 +73,16 @@ function createFirestoreWorkerQueries({ db }) {
             );
         },
 
+        listExpiredOutboxLeases(input) {
+            return execute(
+                db.collection('commerce_outbox')
+                    .where('status', '==', 'processing')
+                    .where('processingUntil', '<=', input.nowMillis)
+                    .orderBy('processingUntil', 'asc'),
+                input
+            );
+        },
+
         listExpiredReservations(input) {
             return execute(
                 db.collection('inventory_reservations')

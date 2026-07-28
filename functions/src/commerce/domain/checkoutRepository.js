@@ -3,6 +3,7 @@
 const { validateCheckoutInput, aggregateCheckoutLines } = require('./checkoutInput');
 const { createPaymentAttempt, validatePaymentAttempt } = require('./checkoutSaga');
 const { pinConnectedAccount } = require('./connectPolicy');
+const { authorizeFixtureRequest } = require('./fixtureScope');
 const { hashPayload } = require('./idempotency');
 const { eurosToCents } = require('./money');
 const { createOrderV2, validateOrderV2 } = require('./orderState');
@@ -29,6 +30,7 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
     for (const name of [
         'control',
         'policy',
+        'fixtureScope',
         'connectAccount',
         'checkoutIdentity',
         'order',
@@ -97,18 +99,42 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
 
             const policySnap = await transaction.get(refs.policy(activePolicyVersion));
             if (!snapshotExists(policySnap)) throw checkoutError('COMMERCE_POLICY_MISSING');
-            const policy = resolvePolicyForCheckout(control, policySnap.data(), {
-                fixture: Boolean(fixtureContext)
-            });
-            if (
-                fixtureContext &&
-                (
-                    fixtureContext.fixtureScopeVersion !== control.fixtureScopeVersion ||
-                    fixtureContext.policyVersion !== policy.version
-                )
-            ) {
+            let authorizedFixtureContext = null;
+            if (control.newCheckoutMode === 'v2_fixture') {
+                if (!fixtureContext) throw checkoutError('COMMERCE_CHECKOUT_MODE_OFF');
+                const fixtureScopeVersion = control.fixtureScopeVersion;
+                if (
+                    typeof fixtureScopeVersion !== 'string' ||
+                    fixtureContext.fixtureScopeVersion !== fixtureScopeVersion
+                ) {
+                    throw checkoutError('COMMERCE_FIXTURE_SCOPE_MISMATCH');
+                }
+                const fixtureScopeSnap = await transaction.get(
+                    refs.fixtureScope(fixtureScopeVersion)
+                );
+                if (!snapshotExists(fixtureScopeSnap)) {
+                    throw checkoutError('COMMERCE_FIXTURE_SCOPE_MISSING');
+                }
+                authorizedFixtureContext = authorizeFixtureRequest(
+                    fixtureScopeSnap.data(),
+                    {
+                        uid: ownerUid,
+                        inventoryKeys: groups.map((group) => group.inventoryKey),
+                        fixtureScopeVersion,
+                        runId: fixtureContext.runId,
+                        now: new Date(clock.now())
+                    }
+                );
+            } else if (fixtureContext) {
                 throw checkoutError('COMMERCE_FIXTURE_SCOPE_MISMATCH');
             }
+            const policy = resolvePolicyForCheckout(control, policySnap.data(), {
+                fixture: Boolean(authorizedFixtureContext)
+            });
+            if (
+                authorizedFixtureContext &&
+                authorizedFixtureContext.policyVersion !== policy.version
+            ) throw checkoutError('COMMERCE_FIXTURE_SCOPE_MISMATCH');
             const delivery = resolveDelivery(
                 policy,
                 validated.value.deliveryModeId,
@@ -184,10 +210,10 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
                 shippingCents: delivery.shippingCents,
                 customerSnapshot: { email: ownerEmail || null },
                 shippingSnapshot: validated.value.shippingAddress,
-                expiresAt: fixtureContext?.expiresAt || null,
-                testContext: fixtureContext ? {
-                    runId: fixtureContext.runId,
-                    fixtureScopeVersion: fixtureContext.fixtureScopeVersion
+                expiresAt: authorizedFixtureContext?.expiresAt || null,
+                testContext: authorizedFixtureContext ? {
+                    runId: authorizedFixtureContext.runId,
+                    fixtureScopeVersion: authorizedFixtureContext.fixtureScopeVersion
                 } : null,
                 clock
             });
@@ -230,7 +256,13 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
                     writtenOffQty: 0,
                     inventoryVersion: source.inventoryVersion + 1,
                     stateVersion: 0,
-                    expiresAt: fixtureContext?.expiresAt || null,
+                    expiresAt: authorizedFixtureContext?.expiresAt || null,
+                    ...(authorizedFixtureContext ? {
+                        testContext: {
+                            runId: authorizedFixtureContext.runId,
+                            fixtureScopeVersion: authorizedFixtureContext.fixtureScopeVersion
+                        }
+                    } : {}),
                     createdAt: now,
                     updatedAt: now
                 };
@@ -260,6 +292,12 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
                         quantity: group.quantity,
                         commandId
                     }),
+                    ...(authorizedFixtureContext ? {
+                        testContext: {
+                            runId: authorizedFixtureContext.runId,
+                            fixtureScopeVersion: authorizedFixtureContext.fixtureScopeVersion
+                        }
+                    } : {}),
                     createdAt: now
                 });
             }
@@ -274,6 +312,12 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
                 attemptId,
                 policyVersion: policy.version,
                 connectedAccountId: connectedAccount.accountId,
+                ...(authorizedFixtureContext ? {
+                    testContext: {
+                        runId: authorizedFixtureContext.runId,
+                        fixtureScopeVersion: authorizedFixtureContext.fixtureScopeVersion
+                    }
+                } : {}),
                 createdAt: now
             });
             return {

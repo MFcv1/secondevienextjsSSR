@@ -13,7 +13,8 @@ const {
 } = require('../../../functions/src/commerce/domain/checkoutInput');
 const {
     createCheckoutHandler,
-    createResumeCheckoutHandler
+    createResumeCheckoutHandler,
+    normalizeFixtureRequest
 } = require('../../../functions/src/commerce/v2Checkout');
 const {
     requireCommerceMutationsEnabled,
@@ -99,8 +100,27 @@ test('checkout v2 transport derives owner identity from Auth and ignores payload
     assert.deepEqual(calls, [{
         ownerUid: 'trusted-owner-uid',
         ownerEmail: 'owner@example.test',
-        input
+        input,
+        fixtureContext: null
     }]);
+});
+
+test('checkout fixture transport accepts only the bounded public request fields', async () => {
+    assert.deepEqual(normalizeFixtureRequest({
+        runId: 'run_gate7a_20260728',
+        fixtureScopeVersion: 'fixture_gate6_20260728'
+    }), {
+        runId: 'run_gate7a_20260728',
+        fixtureScopeVersion: 'fixture_gate6_20260728'
+    });
+    assert.throws(
+        () => normalizeFixtureRequest({
+            runId: 'run_gate7a_20260728',
+            fixtureScopeVersion: 'fixture_gate6_20260728',
+            ownerUid: 'forged-owner'
+        }),
+        (error) => error.code === 'invalid-argument'
+    );
 });
 
 test('checkout resume derives owner from Auth and validates before runtime', async () => {

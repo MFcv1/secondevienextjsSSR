@@ -74,6 +74,14 @@
       ]
     },
     {
+      "collectionGroup": "commerce_outbox",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "processingUntil", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "sys_catalog_media_gc",
       "queryScope": "COLLECTION",
       "fields": [

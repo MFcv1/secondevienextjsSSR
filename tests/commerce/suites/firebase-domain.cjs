@@ -157,6 +157,7 @@ function gate3Refs(firestore) {
     return {
         control: () => doc(firestore, 'commerce_control/current'),
         policy: (version) => doc(firestore, `commerce_policy_versions/${version}`),
+        fixtureScope: (version) => doc(firestore, `commerce_fixture_scopes/${version}`),
         connectAccount: (accountId) => doc(firestore, `commerce_connect_accounts/${accountId}`),
         checkoutIdentity: (identityId) => doc(
             firestore,
@@ -226,7 +227,7 @@ function gate3CheckoutInput() {
         items: [{
             cartLineId: 'cart-line-gate3',
             cartRevision: 1,
-            productId: 'product-gate3',
+            productId: 'fixture_gate3_product',
             collectionName: 'furniture',
             variantId: null,
             quantity: 1
@@ -247,7 +248,7 @@ async function seedGate3Checkout(firestore) {
     const refs = gate3Refs(firestore);
     const inventoryKey = createInventoryKey({
         collectionName: 'furniture',
-        productId: 'product-gate3',
+        productId: 'fixture_gate3_product',
         variantId: null
     });
     await setDoc(refs.control(), {
@@ -255,14 +256,14 @@ async function seedGate3Checkout(firestore) {
         legacyMode: 'disabled',
         adminMutationMode: 'v2',
         offlinePaymentMode: 'off',
-        activePolicyVersion: 'policy-gate3',
-        fixtureScopeVersion: 'fixture-gate3',
-        fixtureScopeRef: 'commerce_fixture_scopes/fixture-gate3',
+        activePolicyVersion: 'fixture_policy_gate3',
+        fixtureScopeVersion: 'fixture_gate3_20260726',
+        fixtureScopeRef: 'commerce_fixture_scopes/fixture_gate3_20260726',
         controlRevision: 3
     });
-    await setDoc(refs.policy('policy-gate3'), {
+    await setDoc(refs.policy('fixture_policy_gate3'), {
         schemaVersion: 2,
-        version: 'policy-gate3',
+        version: 'fixture_policy_gate3',
         active: true,
         currency: 'EUR',
         offlinePaymentEnabled: false,
@@ -274,6 +275,22 @@ async function seedGate3Checkout(firestore) {
             countries: ['FR'],
             postalPrefixes: ['75']
         }]
+    });
+    await setDoc(refs.fixtureScope('fixture_gate3_20260726'), {
+        schemaVersion: 2,
+        fixtureScopeVersion: 'fixture_gate3_20260726',
+        environment: 'sandbox',
+        projectId: 'secondevienextjsssr',
+        policyVersion: 'fixture_policy_gate3',
+        active: true,
+        uids: ['owner-uid-gate3'],
+        inventoryKeys: [inventoryKey],
+        fixtureProducts: [{
+            collectionName: 'furniture',
+            productId: 'fixture_gate3_product',
+            variantId: null
+        }],
+        expiresAt: '2026-08-26T13:00:00.000Z'
     });
     await setDoc(refs.connectAccount('acct_gate3ready01'), {
         accountId: 'acct_gate3ready01',
@@ -606,10 +623,8 @@ const scenarios = {
             ownerEmail: 'client@example.test',
             input: gate3CheckoutInput(),
             fixtureContext: {
-                runId: 'run-gate3-0001',
-                fixtureScopeVersion: 'fixture-gate3',
-                policyVersion: 'policy-gate3',
-                expiresAt: '2026-07-26T13:00:00.000Z'
+                runId: 'run_gate3_0001',
+                fixtureScopeVersion: 'fixture_gate3_20260726'
             }
         };
         const first = await seeded.checkoutRepository.prepareCheckout(request);
@@ -653,6 +668,69 @@ const scenarios = {
         );
     }),
 
+    'gate7a-fixture-checkout-is-bound-to-control-uid-and-inventory': async (context) => withBackend(async (firestore) => {
+        const seeded = await seedGate3Checkout(firestore);
+        const exactFixture = {
+            runId: 'run_gate7a_scope',
+            fixtureScopeVersion: 'fixture_gate3_20260726'
+        };
+        for (const attempt of [
+            {
+                ownerUid: 'public-user-gate7a',
+                input: gate3CheckoutInput(),
+                fixtureContext: exactFixture,
+                expected: 'COMMERCE_FIXTURE_UID_DENIED'
+            },
+            {
+                ownerUid: 'owner-uid-gate3',
+                input: {
+                    ...gate3CheckoutInput(),
+                    items: [{
+                        ...gate3CheckoutInput().items[0],
+                        productId: 'product-outside-fixture'
+                    }]
+                },
+                fixtureContext: exactFixture,
+                expected: 'COMMERCE_FIXTURE_INVENTORY_DENIED'
+            },
+            {
+                ownerUid: 'owner-uid-gate3',
+                input: gate3CheckoutInput(),
+                fixtureContext: null,
+                expected: 'COMMERCE_CHECKOUT_MODE_OFF'
+            }
+        ]) {
+            let code = null;
+            try {
+                await seeded.checkoutRepository.prepareCheckout({
+                    ownerUid: attempt.ownerUid,
+                    ownerEmail: 'client@example.test',
+                    input: attempt.input,
+                    fixtureContext: attempt.fixtureContext
+                });
+            } catch (error) {
+                code = error?.code;
+            }
+            context.equal(code, attempt.expected, `request is rejected with ${attempt.expected}`);
+        }
+        await setDoc(seeded.refs.control(), {
+            newCheckoutMode: 'off'
+        }, { merge: true });
+        let offCode = null;
+        try {
+            await seeded.checkoutRepository.prepareCheckout({
+                ownerUid: 'owner-uid-gate3',
+                ownerEmail: 'client@example.test',
+                input: gate3CheckoutInput(),
+                fixtureContext: exactFixture
+            });
+        } catch (error) {
+            offCode = error?.code;
+        }
+        context.equal(offCode, 'COMMERCE_FIXTURE_SCOPE_MISMATCH', 'control off rejects fixture context');
+        context.equal((await getDocs(collection(firestore, 'orders'))).size, 0, 'rejected requests write no order');
+    }),
+
     'gate3-success-commits-order-movement-fact-and-outbox-exactly-once': async (context) => withBackend(async (firestore) => {
         const seeded = await seedGate3Checkout(firestore);
         const prepared = await seeded.checkoutRepository.prepareCheckout({
@@ -660,10 +738,8 @@ const scenarios = {
             ownerEmail: 'client@example.test',
             input: gate3CheckoutInput(),
             fixtureContext: {
-                runId: 'run-gate3-0002',
-                fixtureScopeVersion: 'fixture-gate3',
-                policyVersion: 'policy-gate3',
-                expiresAt: '2026-07-26T13:00:00.000Z'
+                runId: 'run_gate3_0002',
+                fixtureScopeVersion: 'fixture_gate3_20260726'
             }
         });
         const applier = createPaymentEffectApplier({
@@ -718,10 +794,8 @@ const scenarios = {
             ownerEmail: 'client@example.test',
             input: gate3CheckoutInput(),
             fixtureContext: {
-                runId: 'run-gate3-token',
-                fixtureScopeVersion: 'fixture-gate3',
-                policyVersion: 'policy-gate3',
-                expiresAt: '2026-07-26T13:00:00.000Z'
+                runId: 'run_gate3_token',
+                fixtureScopeVersion: 'fixture_gate3_20260726'
             }
         });
         let tokenCounter = 0;
@@ -770,10 +844,8 @@ const scenarios = {
             ownerEmail: 'client@example.test',
             input: gate3CheckoutInput(),
             fixtureContext: {
-                runId: 'run-gate4-command',
-                fixtureScopeVersion: 'fixture-gate3',
-                policyVersion: 'policy-gate3',
-                expiresAt: '2026-07-26T13:00:00.000Z'
+                runId: 'run_gate4_command',
+                fixtureScopeVersion: 'fixture_gate3_20260726'
             }
         });
         const applier = createPaymentEffectApplier({
@@ -849,10 +921,8 @@ const scenarios = {
             ownerEmail: 'client@example.test',
             input: gate3CheckoutInput(),
             fixtureContext: {
-                runId: 'run-gate4-refund',
-                fixtureScopeVersion: 'fixture-gate3',
-                policyVersion: 'policy-gate3',
-                expiresAt: '2026-07-26T13:00:00.000Z'
+                runId: 'run_gate4_refund',
+                fixtureScopeVersion: 'fixture_gate3_20260726'
             }
         });
         const effectClock = {
@@ -963,10 +1033,8 @@ const scenarios = {
             ownerEmail: 'client@example.test',
             input,
             fixtureContext: {
-                runId: 'run-gate4-returns',
-                fixtureScopeVersion: 'fixture-gate3',
-                policyVersion: 'policy-gate3',
-                expiresAt: '2026-07-26T13:00:00.000Z'
+                runId: 'run_gate4_returns',
+                fixtureScopeVersion: 'fixture_gate3_20260726'
             }
         });
         const effectClock = {

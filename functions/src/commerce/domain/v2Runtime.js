@@ -282,6 +282,7 @@ function createRefs(db, appId) {
     return Object.freeze({
         control: () => document('sys_commerce_control/current'),
         policy: (version) => document(`commerce_policy_versions/${version}`),
+        fixtureScope: (version) => document(`commerce_fixture_scopes/${version}`),
         connectAccount: (accountId) => document(`commerce_connect_accounts/${accountId}`),
         checkoutIdentity: (identityId) => document(
             `commerce_checkout_identities/${identityId}`
@@ -500,6 +501,11 @@ function createCommerceV2Runtime({
             }),
             dueOutbox: createBoundedWorkerSweeper({
                 listEligible: queries.listDueOutbox,
+                processItem: (item) => outboxWorker.process(item.id),
+                clock
+            }),
+            expiredOutboxLeases: createBoundedWorkerSweeper({
+                listEligible: queries.listExpiredOutboxLeases,
                 processItem: (item) => outboxWorker.process(item.id),
                 clock
             }),

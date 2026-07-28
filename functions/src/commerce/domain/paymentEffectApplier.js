@@ -202,6 +202,7 @@ function createPaymentEffectApplier({ refs, clock }) {
                 effectiveAt: effectiveAt(paymentIntent, clock),
                 commandId: `payment-intent:${paymentIntent.id}`
             });
+            if (order.testContext) fact = { ...fact, testContext: { ...order.testContext } };
             outbox = buildOutboxIntent({
                 effectId: fact.effectId,
                 aggregateType: 'order',
@@ -220,6 +221,7 @@ function createPaymentEffectApplier({ refs, clock }) {
                 },
                 clock
             });
+            if (order.testContext) outbox = { ...outbox, testContext: { ...order.testContext } };
             factRef = refs.financialFact(fact.effectId);
             outboxRef = refs.outbox(outbox.outboxId);
         }
@@ -311,6 +313,7 @@ function createPaymentEffectApplier({ refs, clock }) {
                     quantity: entryValue.group.quantity,
                     paymentIntentId: paymentIntent.id
                 }),
+                ...(order.testContext ? { testContext: { ...order.testContext } } : {}),
                 createdAt: now
             });
         }

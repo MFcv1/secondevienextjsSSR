@@ -799,6 +799,12 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
     const [statusCounts, setStatusCounts] = useState({ paid: 0, pending: 0, shipped: 0 });
     const [loading, setLoading] = useState(true);
     const [inventoryStatsAvailable, setInventoryStatsAvailable] = useState(true);
+    const [commerceOperations, setCommerceOperations] = useState({
+        loading: true,
+        error: false,
+        operations: null,
+        control: null
+    });
     const [insights, setInsights] = useState({
         loading: true,
         error: false,
@@ -847,6 +853,12 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
     useEffect(() => {
         if (!user || user.isAnonymous) {
             setIsSuperAdmin(false);
+            setCommerceOperations({
+                loading: false,
+                error: false,
+                operations: null,
+                control: null
+            });
             return undefined;
         }
 
@@ -871,6 +883,35 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
 
         syncSuperAdminClaim();
 
+        return () => {
+            cancelled = true;
+        };
+    }, [user]);
+
+    useEffect(() => {
+        if (!user || user.isAnonymous) return undefined;
+        let cancelled = false;
+        httpsCallable(functions, 'getCommerceOperationsStatusAdmin')({})
+            .then((response) => {
+                if (cancelled) return;
+                setCommerceOperations({
+                    loading: false,
+                    error: false,
+                    operations: response.data?.operations || null,
+                    control: response.data?.control || null
+                });
+            })
+            .catch((error) => {
+                console.error('Failed to fetch commerce operations status', error);
+                if (!cancelled) {
+                    setCommerceOperations({
+                        loading: false,
+                        error: true,
+                        operations: null,
+                        control: null
+                    });
+                }
+            });
         return () => {
             cancelled = true;
         };
@@ -1408,16 +1449,45 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
                     <div className="flex flex-col gap-6">
                         <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-start">
                             <div>
-                                <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Commerce en lecture seule</p>
-                                <h2 className={`mt-2 text-xl font-semibold tracking-[-0.03em] ${textBase}`}>Indicateurs comptables suspendus</h2>
-                                <p className={`mt-1 text-[11px] ${textMuted}`}>Les montants legacy ne sont pas qualifiés comme chiffre d’affaires.</p>
+                                <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Projection commerce v2</p>
+                                <h2 className={`mt-2 text-xl font-semibold tracking-[-0.03em] ${textBase}`}>Rapprochement reconstructible</h2>
+                                <p className={`mt-1 text-[11px] ${textMuted}`}>
+                                    Source : {commerceOperations.operations?.projection?.source || 'commerce_financial_facts'}
+                                </p>
                             </div>
-                            <div className={`rounded-xl px-4 py-3 text-[10px] font-bold uppercase tracking-[0.1em] ring-1 ${darkMode ? 'bg-amber-400/[0.05] text-amber-200/65 ring-amber-300/10' : 'bg-amber-50 text-amber-700 ring-amber-900/10'}`}>
-                                Lecture et rapprochement uniquement
+                            <div className={`rounded-xl px-4 py-3 text-[10px] font-bold uppercase tracking-[0.1em] ring-1 ${
+                                commerceOperations.operations?.status === 'healthy'
+                                    ? (darkMode ? 'bg-emerald-400/[0.06] text-emerald-200/70 ring-emerald-300/10' : 'bg-emerald-50 text-emerald-700 ring-emerald-900/10')
+                                    : (darkMode ? 'bg-amber-400/[0.05] text-amber-200/65 ring-amber-300/10' : 'bg-amber-50 text-amber-700 ring-amber-900/10')
+                            }`}>
+                                {commerceOperations.loading
+                                    ? 'Chargement'
+                                    : commerceOperations.error
+                                        ? 'Statut indisponible'
+                                        : commerceOperations.operations?.status || 'Non construit'}
                             </div>
                         </div>
-                        <div className={`flex h-[240px] items-center justify-center rounded-2xl px-6 text-center text-sm ${darkMode ? 'bg-white/[0.03] text-white/38' : 'bg-stone-900/[0.03] text-stone-400'}`}>
-                            Données conservées pour lecture et rapprochement uniquement. Aucun indicateur comptable n&apos;est affiché avant la Gate 7A.
+                        <div className="grid gap-3 sm:grid-cols-3">
+                            {[
+                                ['Capturé', commerceOperations.operations?.projection?.currencies?.EUR?.capturedCents],
+                                ['Remboursé', commerceOperations.operations?.projection?.currencies?.EUR?.refundedCents],
+                                ['Net', commerceOperations.operations?.projection?.currencies?.EUR?.netCents]
+                            ].map(([label, cents]) => (
+                                <div key={label} className={`rounded-2xl p-4 ring-1 ${darkMode ? 'bg-white/[0.03] ring-white/[0.06]' : 'bg-stone-900/[0.025] ring-stone-900/[0.05]'}`}>
+                                    <p className={`text-[9px] font-bold uppercase tracking-[0.14em] ${textMuted}`}>{label}</p>
+                                    <p className={`mt-2 text-lg font-semibold tabular-nums ${textBase}`}>
+                                        {Number.isSafeInteger(cents) ? `${(cents / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €` : '—'}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                        <div className={`flex flex-wrap gap-x-5 gap-y-2 rounded-2xl px-4 py-3 text-[10px] ${darkMode ? 'bg-white/[0.025] text-white/48' : 'bg-stone-900/[0.025] text-stone-500'}`}>
+                            <span>Fraîcheur : {commerceOperations.operations?.projection?.builtAt
+                                ? new Date(commerceOperations.operations.projection.builtAt).toLocaleString('fr-FR')
+                                : '—'}</span>
+                            <span>Faits : {commerceOperations.operations?.projection?.factCount ?? '—'}</span>
+                            <span>Divergences : {commerceOperations.operations?.projection?.divergenceCount ?? '—'}</span>
+                            <span>Mode : {commerceOperations.control?.newCheckoutMode || 'off'}</span>
                         </div>
                     </div>
                 </PanelFrame>

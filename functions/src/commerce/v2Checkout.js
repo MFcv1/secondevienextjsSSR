@@ -32,10 +32,46 @@ function checkoutRuntime() {
     });
 }
 
+function normalizeFixtureRequest(value) {
+    if (value === undefined || value === null) return null;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        throw new functions.https.HttpsError(
+            'invalid-argument',
+            'Contexte fixture invalide.'
+        );
+    }
+    const keys = Object.keys(value).sort();
+    if (
+        keys.length !== 2 ||
+        keys[0] !== 'fixtureScopeVersion' ||
+        keys[1] !== 'runId'
+    ) {
+        throw new functions.https.HttpsError(
+            'invalid-argument',
+            'Contexte fixture invalide.'
+        );
+    }
+    const runId = normalizeFirestoreId(value.runId, 'Run fixture');
+    const fixtureScopeVersion = normalizeFirestoreId(
+        value.fixtureScopeVersion,
+        'Scope fixture'
+    );
+    if (
+        !/^run_[A-Za-z0-9_-]{8,80}$/.test(runId) ||
+        !/^fixture_[A-Za-z0-9_-]{8,72}$/.test(fixtureScopeVersion)
+    ) {
+        throw new functions.https.HttpsError(
+            'invalid-argument',
+            'Contexte fixture invalide.'
+        );
+    }
+    return { runId, fixtureScopeVersion };
+}
+
 function mapDomainError(error) {
     if (error instanceof functions.https.HttpsError) return error;
     const code = String(error?.code || '');
-    if (code.includes('MODE_OFF') || code.includes('FIXTURE_SCOPE')) {
+    if (code.includes('MODE_OFF') || code.includes('FIXTURE_')) {
         return new functions.https.HttpsError(
             'failed-precondition',
             'Le checkout v2 est desactive.',
@@ -98,7 +134,8 @@ function createCheckoutHandler({
             return await runtimeFactory().checkout.createCheckout({
                 ownerUid: owner.uid,
                 ownerEmail: owner.email,
-                input: data.input
+                input: data.input,
+                fixtureContext: normalizeFixtureRequest(data.fixture)
             });
         } catch (error) {
             throw mapDomainError(error);
@@ -141,5 +178,6 @@ module.exports = {
     createCheckoutHandler,
     createCheckoutV2,
     createResumeCheckoutHandler,
+    normalizeFixtureRequest,
     resumeCheckoutV2
 };
