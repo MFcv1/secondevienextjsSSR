@@ -8,6 +8,53 @@ const PROJECT_ID = 'secondevienextjsssr';
 const ENVIRONMENT = 'sandbox';
 const FALLBACK_CHECKOUT_MODE = 'v2_fixture';
 const MAX_WINDOW_MINUTES = 60;
+const V2_ALL_POLICY_VERSION = 'sandbox_v2all_policy_20260729';
+
+function buildV2AllPolicy(sourcePolicy) {
+  return {
+    schemaVersion: 2,
+    version: V2_ALL_POLICY_VERSION,
+    currency: 'EUR',
+    offlinePaymentEnabled: false,
+    stripeConnectedAccountId: sourcePolicy.stripeConnectedAccountId,
+    holdDurationSeconds: sourcePolicy.holdDurationSeconds,
+    deliveryModes: [
+      {
+        id: 'delivery-pickup',
+        active: true,
+        shippingCents: 0,
+        countries: ['FR']
+      },
+      {
+        id: 'delivery-local',
+        active: true,
+        shippingCents: 4900,
+        countries: ['FR'],
+        postalPrefixes: ['13']
+      },
+      {
+        id: 'delivery-carrier',
+        active: true,
+        shippingCents: 9000,
+        countries: ['FR']
+      }
+    ],
+    active: true
+  };
+}
+
+function policyMatches(actual, expected) {
+  return [
+    'schemaVersion',
+    'version',
+    'currency',
+    'offlinePaymentEnabled',
+    'stripeConnectedAccountId',
+    'holdDurationSeconds',
+    'active'
+  ].every((field) => actual?.[field] === expected[field]) &&
+    JSON.stringify(actual?.deliveryModes) === JSON.stringify(expected.deliveryModes);
+}
 
 function parseArgs(argv) {
   return new Map(argv.map((argument) => {
@@ -99,19 +146,37 @@ async function main() {
     control: db.doc('sys_commerce_control/current'),
     operations: db.doc('sys_commerce_operations/current'),
     run: db.doc(`commerce_gate_runs/${runId}`),
+    sourcePolicy: null,
+    v2AllPolicy: db.doc(`commerce_policy_versions/${V2_ALL_POLICY_VERSION}`),
     products: productIds.map((productId) => db.doc(
       `artifacts/secondevie/public/data/furniture/${productId}`
     ))
   };
-  const [controlSnap, operationsSnap, runSnap, ...productSnaps] = await Promise.all([
+  const [controlSnap, operationsSnap, runSnap] = await Promise.all([
     refs.control.get(),
     refs.operations.get(),
-    refs.run.get(),
-    ...refs.products.map((reference) => reference.get())
+    refs.run.get()
   ]);
   invariant(controlSnap.exists && operationsSnap.exists, 'V2_ALL_PREFLIGHT_EVIDENCE_MISSING');
   const control = controlSnap.data();
   const operations = operationsSnap.data();
+  refs.sourcePolicy = db.doc(`commerce_policy_versions/${control.activePolicyVersion}`);
+  const [sourcePolicySnap, v2AllPolicySnap, ...productSnaps] = await Promise.all([
+    refs.sourcePolicy.get(),
+    refs.v2AllPolicy.get(),
+    ...refs.products.map((reference) => reference.get())
+  ]);
+  invariant(sourcePolicySnap.exists, 'V2_ALL_SOURCE_POLICY_MISSING');
+  const sourcePolicy = sourcePolicySnap.data();
+  const v2AllPolicy = buildV2AllPolicy(sourcePolicy);
+  invariant(
+    typeof v2AllPolicy.stripeConnectedAccountId === 'string' &&
+      /^acct_[A-Za-z0-9]{8,}$/.test(v2AllPolicy.stripeConnectedAccountId) &&
+      Number.isSafeInteger(v2AllPolicy.holdDurationSeconds) &&
+      v2AllPolicy.holdDurationSeconds > 0 &&
+      (!v2AllPolicySnap.exists || policyMatches(v2AllPolicySnap.data(), v2AllPolicy)),
+    'V2_ALL_POLICY_INVALID'
+  );
   invariant(
     control.offlinePaymentMode === 'off' &&
       typeof control.activePolicyVersion === 'string' &&
@@ -165,6 +230,8 @@ async function main() {
       runId,
       controlRevision: control.controlRevision,
       operationsStatus: operations.status,
+      sourcePolicyVersion: control.activePolicyVersion,
+      v2AllPolicyVersion: V2_ALL_POLICY_VERSION,
       buyerUidHash: hash(buyer.uid),
       products
     }));
@@ -189,10 +256,19 @@ async function main() {
       openedAt.toMillis() + durationMinutes * 60 * 1000
     );
     await db.runTransaction(async (transaction) => {
-      const [freshControl, freshOperations, freshRun, ...freshProducts] = await Promise.all([
+      const [
+        freshControl,
+        freshOperations,
+        freshRun,
+        freshSourcePolicy,
+        freshV2AllPolicy,
+        ...freshProducts
+      ] = await Promise.all([
         transaction.get(refs.control),
         transaction.get(refs.operations),
         transaction.get(refs.run),
+        transaction.get(refs.sourcePolicy),
+        transaction.get(refs.v2AllPolicy),
         ...refs.products.map((reference) => transaction.get(reference))
       ]);
       invariant(
@@ -201,7 +277,10 @@ async function main() {
           freshControl.data()?.adminMutationMode === 'read_only' &&
           freshOperations.data()?.status === 'healthy' &&
           healthCountersAreZero(freshOperations.data()?.counters) &&
-          !freshRun.exists,
+          !freshRun.exists &&
+          freshSourcePolicy.exists &&
+          freshSourcePolicy.data()?.version === control.activePolicyVersion &&
+          (!freshV2AllPolicy.exists || policyMatches(freshV2AllPolicy.data(), v2AllPolicy)),
         'V2_ALL_OPEN_PRECONDITION_CHANGED'
       );
       freshProducts.forEach((snapshot, index) => {
@@ -218,9 +297,17 @@ async function main() {
           `V2_ALL_PRODUCT_CHANGED:${productIds[index]}`
         );
       });
+      if (!freshV2AllPolicy.exists) {
+        transaction.create(refs.v2AllPolicy, {
+          ...v2AllPolicy,
+          createdAt: openedAt,
+          updatedAt: openedAt
+        });
+      }
       transaction.update(refs.control, {
         newCheckoutMode: 'v2_all',
         adminMutationMode: 'v2',
+        activePolicyVersion: V2_ALL_POLICY_VERSION,
         controlRevision: control.controlRevision + 1,
         v2AllRunId: runId,
         v2AllExpiresAt: expiresAt,
@@ -234,6 +321,8 @@ async function main() {
         environment,
         projectId,
         releaseManifestId: control.releaseManifestId,
+        previousActivePolicyVersion: control.activePolicyVersion,
+        activePolicyVersion: V2_ALL_POLICY_VERSION,
         buyerUidHash: hash(buyer.uid),
         buyerEmailHash: hash(buyerEmail),
         products,
@@ -247,6 +336,7 @@ async function main() {
       status: 'OPEN',
       runId,
       controlRevision: control.controlRevision + 1,
+      activePolicyVersion: V2_ALL_POLICY_VERSION,
       expiresAt: expiresAt.toDate().toISOString(),
       products
     }));
@@ -271,13 +361,16 @@ async function main() {
       freshControl.data()?.controlRevision === control.controlRevision &&
         freshControl.data()?.newCheckoutMode === 'v2_all' &&
         freshControl.data()?.adminMutationMode === 'v2' &&
+        freshControl.data()?.activePolicyVersion === V2_ALL_POLICY_VERSION &&
         freshControl.data()?.v2AllRunId === runId &&
-        freshRun.data()?.status === 'open',
+        freshRun.data()?.status === 'open' &&
+        typeof freshRun.data()?.previousActivePolicyVersion === 'string',
       'V2_ALL_CLOSE_PRECONDITION_CHANGED'
     );
     transaction.update(refs.control, {
       newCheckoutMode: FALLBACK_CHECKOUT_MODE,
       adminMutationMode: 'read_only',
+      activePolicyVersion: freshRun.data().previousActivePolicyVersion,
       controlRevision: control.controlRevision + 1,
       v2AllRunId: FieldValue.delete(),
       v2AllExpiresAt: FieldValue.delete(),

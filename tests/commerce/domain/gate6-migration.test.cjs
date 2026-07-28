@@ -2,6 +2,7 @@
 
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
+const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const {
@@ -188,4 +189,16 @@ test('Gate 6: les outils refusent toute cible autre que le sandbox exact', () =>
     });
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /GATE6_TARGET_MUST_BE_EXACT_SANDBOX/);
+});
+
+test('Gate 6: la fenetre v2_all epingle la politique UI et restaure la precedente', () => {
+    const source = fs.readFileSync(
+        path.resolve('scripts/commerce-v2-all-window.mjs'),
+        'utf8'
+    );
+    for (const deliveryModeId of ['delivery-pickup', 'delivery-local', 'delivery-carrier']) {
+        assert.match(source, new RegExp(`id: '${deliveryModeId}'`));
+    }
+    assert.match(source, /previousActivePolicyVersion: control\.activePolicyVersion/);
+    assert.match(source, /activePolicyVersion: freshRun\.data\(\)\.previousActivePolicyVersion/);
 });
