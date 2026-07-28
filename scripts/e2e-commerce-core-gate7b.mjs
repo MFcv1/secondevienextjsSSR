@@ -195,6 +195,26 @@ function createImapClient({ user, pass }) {
   };
 }
 
+function decodeQuotedPrintable(value) {
+  const binary = String(value || '')
+    .replace(/=\r?\n/g, '')
+    .replace(/=([0-9A-F]{2})/gi, (_match, hex) =>
+      String.fromCharCode(Number.parseInt(hex, 16)));
+  return Buffer.from(binary, 'latin1').toString('utf8');
+}
+
+function readableEmailBody(message) {
+  const decoded = /Content-Transfer-Encoding:\s*quoted-printable/i.test(message)
+    ? decodeQuotedPrintable(message)
+    : message;
+  return decoded
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&apos;|&#39;/gi, "'")
+    .replace(/\s+/g, ' ');
+}
+
 async function readLatestOtp({ user, pass, email, notBefore }) {
   const imap = createImapClient({ user, pass });
   const escape = (value) => String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
@@ -209,7 +229,8 @@ async function readLatestOtp({ user, pass, email, notBefore }) {
       if (!message.toLowerCase().includes(email.toLowerCase())) continue;
       const dateMatch = message.match(/^Date:\s*(.+)$/mi);
       if (dateMatch && Date.parse(dateMatch[1]) < notBefore - 60_000) continue;
-      const code = message.match(/(?:code[^0-9]{0,80})(\d{6})/i)?.[1];
+      const code = readableEmailBody(message)
+        .match(/(?:code[^0-9]{0,200})(\d{6})/i)?.[1];
       if (code) return code;
     }
   } finally {
@@ -599,7 +620,7 @@ async function main() {
     await page.evaluate((clientSecret) => {
       window.__gate7bActionState = { settled: false };
       window.__gate7bPromise = window.__gate7bStripeClient
-        .handleCardAction(clientSecret)
+        .confirmCardPayment(clientSecret)
         .then((result) => {
           window.__gate7bActionState = {
             settled: true,
