@@ -228,7 +228,7 @@ export const requestOrderCancellation = (
   'requestOrderCancellation',
   {
     orderId,
-    cancellationRequestId: cancellationRequestId || createCommerceCommandId('cancel'),
+    commandId: cancellationRequestId || createCommerceCommandId('cancel'),
     reason
   }
 );
