@@ -570,16 +570,36 @@ async function main() {
     const stripePublicKey = process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY ||
       process.env.VITE_STRIPE_PUBLIC_KEY;
     invariant(stripePublicKey, 'GATE7B_STRIPE_PUBLIC_KEY_MISSING');
-    await page.evaluate(({ key, accountId: stripeAccount, clientSecret }) => {
+    const threeDsPrepared = await page.evaluate(async ({
+      key,
+      accountId: stripeAccount,
+      clientSecret
+    }) => {
       const stripeClient = window.Stripe(key, { stripeAccount });
-      window.__gate7bPromise = stripeClient.confirmCardPayment(clientSecret, {
-        payment_method: 'pm_card_threeDSecure2Required'
-      });
+      window.__gate7bStripeClient = stripeClient;
+      const prepared = await stripeClient.confirmCardPayment(
+        clientSecret,
+        { payment_method: 'pm_card_threeDSecure2Required' },
+        { handleActions: false }
+      );
+      return {
+        errorCode: prepared.error?.code || null,
+        paymentIntentStatus: prepared.paymentIntent?.status || null
+      };
     }, {
       key: stripePublicKey,
       accountId: threeDs.connectedAccountId,
       clientSecret: threeDs.clientSecret
     });
+    invariant(
+      threeDsPrepared.errorCode === null &&
+        threeDsPrepared.paymentIntentStatus === 'requires_action',
+      `GATE7B_3DS_NOT_PREPARED:${threeDsPrepared.errorCode || threeDsPrepared.paymentIntentStatus}`
+    );
+    await page.evaluate((clientSecret) => {
+      window.__gate7bPromise =
+        window.__gate7bStripeClient.handleCardAction(clientSecret);
+    }, threeDs.clientSecret);
     await waitFor(async () => {
       for (const frame of page.frames()) {
         const challenge = frame.getByRole('button', {
@@ -627,26 +647,31 @@ async function main() {
     const stripePublicKey = process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY ||
       process.env.VITE_STRIPE_PUBLIC_KEY;
     invariant(stripePublicKey, 'GATE7B_STRIPE_PUBLIC_KEY_MISSING');
-    await page.evaluate(({ key, accountId: stripeAccount, clientSecret }) => {
+    const abandonedPrepared = await page.evaluate(async ({
+      key,
+      accountId: stripeAccount,
+      clientSecret
+    }) => {
       const stripeClient = window.Stripe(key, { stripeAccount });
-      window.__gate7bAbandonPromise = stripeClient.confirmCardPayment(
+      const prepared = await stripeClient.confirmCardPayment(
         clientSecret,
-        { payment_method: 'pm_card_threeDSecure2Required' }
+        { payment_method: 'pm_card_threeDSecure2Required' },
+        { handleActions: false }
       );
+      return {
+        errorCode: prepared.error?.code || null,
+        paymentIntentStatus: prepared.paymentIntent?.status || null
+      };
     }, {
       key: stripePublicKey,
       accountId: threeDsAbandon.connectedAccountId,
       clientSecret: threeDsAbandon.clientSecret
     });
-    await waitFor(async () => {
-      for (const frame of page.frames()) {
-        const challenge = frame.getByRole('button', {
-          name: /complete|authorize|confirmer|autoriser/i
-        });
-        if (await challenge.isVisible().catch(() => false)) return true;
-      }
-      return false;
-    }, Boolean, 'GATE7B_3DS_ABANDON_CHALLENGE_NOT_FOUND', 30_000);
+    invariant(
+      abandonedPrepared.errorCode === null &&
+        abandonedPrepared.paymentIntentStatus === 'requires_action',
+      `GATE7B_3DS_ABANDON_NOT_PREPARED:${abandonedPrepared.errorCode || abandonedPrepared.paymentIntentStatus}`
+    );
   } finally {
     await abandonBrowser.close();
   }
