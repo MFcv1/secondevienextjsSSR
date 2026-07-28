@@ -62,6 +62,10 @@ Etat `CODE_READY`:
   pagination, checkpoint, hashes et relecture Stripe;
 - `commerce:fixtures:prepare` exige cible sandbox, manifeste de classification,
   sauvegarde et confirmation avant toute creation additive;
+- `commerce:release:manifest` construit et verifie le manifeste immutable du
+  release Gate 7A;
+- `commerce:fixture:activate` refuse toute cible non sandbox et active
+  atomiquement le seul scope fixture epingle;
 - `test:commerce` agrege toutes les suites et bloque la CI.
 
 Les scripts actuels `e2e:hosted-stripe` et `e2e:refund-stripe` sont en
@@ -236,20 +240,20 @@ avant runtime, runtime minimal, lecteurs UID/admin pagines, `allowedActions`
 retour quantitatives, contrat navigateur sans prix, reprise sans secret,
 nettoyage exact des revisions et absence des anciens writers sur le chemin v2.
 
-Au point d'arret Gate 6 du 2026-07-28, `lint:functions`, le lint UI cible (zero
+Au point d'arret Gate 7A du 2026-07-28, `lint:functions`, le lint UI cible (zero
 erreur), `test:commerce:runner` (13/13), `test:commerce:containment` (12/12,
-217 assertions), `test:commerce:unit` (67/67), `test:commerce:ui` (10/10),
+217 assertions), `test:commerce:unit` (81/81), `test:commerce:ui` (11/11),
 `test:commerce:browser` (4/4), `test:commerce:property` (3/3),
 `test:commerce:faults` (33/33) et le build Next sont verts. Temurin Java
 21.0.11 a ete installe dans le cache utilisateur puis toutes les suites
-Emulator ont ete rejouees: confinement Rules 10/10, Firestore 14/14 avec
-64 assertions et Rules v2 4/4. L'agregat `test:commerce` complet est vert.
+Emulator ont ete rejouees: confinement Rules 10/10, Firestore 15/15 avec
+69 assertions et Rules v2 5/5. L'agregat `test:commerce` complet est vert.
 
-Preuves sandbox du meme jour: indexes commerce `READY`, 24/24 exports v2
+Preuves sandbox du meme jour: indexes commerce `READY`, exports Gate 7A
 presents en `europe-west1`, anciens doublons mutateurs `us-central1` absents,
 callables sans Auth/App Check refuses `401`, webhook non signe refuse `400`,
-Rules Firestore/Storage publiees et rollout App Hosting
-`build-2026-07-28-001` `SUCCEEDED`. La recette authentifiee hebergee valide
+Rules Firestore/Storage publiees et rollout App Hosting qualifiant
+`build-2026-07-28-009` `SUCCEEDED`. La recette authentifiee hebergee valide
 aussi la session client OTP et `listMyOrdersV2`, puis une session admin forte
 sur les lecteurs `Ventes`/`Retours`; `Livraison` et `Paiement` restent
 read-only. Aucun writer ni parcours Stripe n'a ete active pendant ces smokes.
@@ -263,6 +267,15 @@ technique et sept documents backend-only, puis verifie
 `newCheckoutMode=off`, zero commande/stock client touche et exclusion des
 fixtures du catalogue public.
 
+Gate 7A ajoute les tests de projection financiere, documents sandbox,
+outbox/reconciliation, sante operations, cleanup run-scoped et frontieres
+fixture. Gate 7B ajoute `commerce:e2e:gate7b`, fail-closed sur projet,
+environnement, release, confirmation, Auth/App Check et scope. Le manifeste
+`release_gate7a_c5259a87f875_f00378380561` est active a revision 7 avec
+`newCheckoutMode=v2_fixture`; les runs 1 et 2 ont chacun passe 11 scenarios
+sur le SHA `c5259a8`. Le statut operations est `healthy`, tous les compteurs
+de divergence sont a zero et le catalogue public n'expose aucune fixture.
+
 L'emulateur ne prouve pas a lui seul:
 
 - la contention et les limites Firestore hebergees;
@@ -270,10 +283,12 @@ L'emulateur ne prouve pas a lui seul:
 - IAM, App Check reel, regions ou secrets;
 - Stripe/Connect, la livraison de webhooks ou le provider e-mail reel.
 
-Ces limites sont couvertes separement: regions/config Stripe par Gate 7B,
-outbox/provider e-mail par Gate 7A puis recette Gate 8, et reconciliation sur
-le release final. Gmail post-acceptation reste `delivery_unknown`, jamais une
-preuve exactly-once. Elles ne doivent pas etre masquees par un test local vert.
+Ces limites sont couvertes separement: l'outbox et la reconciliation sont
+couvertes en Gate 7A; regions, Stripe/Connect, 3DS et provider e-mail reel
+sont valides par Gate 7B puis observes humainement en Gate 8. Gmail
+post-acceptation reste
+`delivery_unknown`, jamais une preuve exactly-once. Elles ne doivent pas etre
+masquees par un test local vert.
 
 ## 9. Definition de done
 

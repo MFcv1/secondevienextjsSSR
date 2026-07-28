@@ -68,10 +68,11 @@ Objectif de livraison courant:
 
 > Maintenir un etat de preproduction stable et presentable a la cliente, avec les fonctionnalites majeures codees. Les travaux qui dependent du domaine, des comptes live, du DNS ou du trafic production restent explicitement differes.
 
-Exception active: decision `NO_GO_TRANSACTIONNEL`. Le noyau commerce reste
-presentable visuellement mais n'est pas qualifie pour une recette
-transactionnelle. L'implementation suit strictement les gates 0A a 7B du plan
-de stabilisation; la recette humaine commence en gate 8 seulement.
+Exception active: decision `GO_SANDBOX_RECETTE` strictement limitee a la Gate
+8 et aux fixtures techniques. Le noyau est `CORE_V2_FIXTURE_QUALIFIED` apres
+deux runs Gate 7B consecutifs sur le meme manifeste/SHA. L'UI transactionnelle
+publique, les mutations admin et tout rail live restent fermes; ce statut
+n'est ni un GO production ni une activation `v2_all`.
 
 ## 4. Environnement de reference
 
@@ -116,7 +117,7 @@ Ne pas creer une nouvelle roadmap pour un de ces domaines. Mettre a jour son cha
 
 Plan temporaire explicitement demande et actuellement actif:
 
-- [NOYAU_COMMERCE_STABILISATION.md](_DOCS/commerce/NOYAU_COMMERCE_STABILISATION.md): audit contre-valide, specification d'implementation additive et gates 0A a 8; Gates 0A a 6 fermees en sandbox depuis le rollout App Hosting `build-2026-07-28-001`; confinement, indexes, Rules et recettes authentifiees actifs, 24 exports Function v2 deployes, 26 legacy classifiees et scope `fixture_gate6_20260728` prepare; mutations/workers/checkout `off`, lecteurs UID/admin `on`; `NO_GO_TRANSACTIONNEL` maintenu; prochaine tranche Gate 7A; echeance de gouvernance 2026-09-30, puis fusion dans les chapitres canoniques et suppression.
+- [NOYAU_COMMERCE_STABILISATION.md](_DOCS/commerce/NOYAU_COMMERCE_STABILISATION.md): audit contre-valide, specification d'implementation additive et gates 0A a 8; Gates 0A a 7B fermees en sandbox sur le SHA `c5259a8`, le manifeste `release_gate7a_c5259a87f875_f00378380561` et App Hosting `build-2026-07-28-009`; les deux runs Gate 7B ont chacun valide 11 scenarios correles, dont paiement/retry, 3DS succes et abandon, concurrence, refund/retour/restock, OTP Gmail et drain `healthy`; `newCheckoutMode=v2_fixture` reste limite au scope `fixture_gate6_20260728`, tandis que mutations admin, paiement offline et UI publique restent fermes; prochaine tranche Gate 8 sous decision `GO_SANDBOX_RECETTE`; echeance de gouvernance 2026-09-30, puis fusion dans les chapitres canoniques et suppression.
 
 ## 6. Invariants d'architecture publique
 

@@ -1,7 +1,9 @@
 import { getCallableFunction, getFirebaseAuth, loadAuthModule } from '../config/firebaseLazy';
 export { buildCheckoutV2Input } from './checkoutContract';
 
-export const COMMERCE_V2_CONSUMERS_ENABLED = false;
+export const COMMERCE_V2_CONSUMERS_ENABLED =
+  typeof process !== 'undefined' &&
+  process.env.NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI === 'true';
 export const COMMERCE_V2_ORDER_READERS_ENABLED = true;
 export const COMMERCE_V2_ADMIN_READERS_ENABLED = true;
 
@@ -26,10 +28,13 @@ const assertConsumersEnabled = () => {
   }
 };
 
-export const createCheckoutV2 = async (input) => {
+export const createCheckoutV2 = async (input, { fixture = null } = {}) => {
   assertConsumersEnabled();
   await ensureCheckoutAnonymousIdentity();
-  return execute('createCheckoutV2', { input });
+  return execute('createCheckoutV2', {
+    input,
+    ...(fixture ? { fixture } : {})
+  });
 };
 
 export const resumeCheckoutV2 = async (orderId) => {

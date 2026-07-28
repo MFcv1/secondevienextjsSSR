@@ -89,7 +89,14 @@ const PremiumActionBtn = ({ children, isLoading, disabled, onClick, darkMode }) 
  * CheckoutView — Flow Single Page Premium (Mars 2026)
  * Tout sur la même page : formulaire au-dessus, choix du paiement, et Stripe injecté en dessous.
  */
-const CheckoutView = ({ cartItems, user, darkMode = false, onBack, onPlaceOrder }) => {
+const CheckoutView = ({
+    cartItems,
+    user,
+    darkMode = false,
+    onBack,
+    onPlaceOrder,
+    fixtureContext = null
+}) => {
     const toast = useToast();
     // --- STATE ---
     const [formData, setFormData] = useState({
@@ -555,7 +562,9 @@ const CheckoutView = ({ cartItems, user, darkMode = false, onBack, onPlaceOrder 
                     deliveryModeId: formData.deliveryMode,
                     shippingAddress: formData
                 });
-                const result = await createCheckoutV2(input);
+                const result = await createCheckoutV2(input, {
+                    fixture: fixtureContext
+                });
                 advanceCheckoutController({
                     type: 'CREATED',
                     clientOrderId,

@@ -1,8 +1,12 @@
 import { getCallableFunction } from '../config/firebaseLazy';
 
-export const COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED = false;
-export const COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED = false;
-export const COMMERCE_V2_CLIENT_COMMANDS_ENABLED = false;
+const GATE8_FIXTURE_UI_ENABLED =
+  typeof process !== 'undefined' &&
+  process.env.NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI === 'true';
+
+export const COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED = GATE8_FIXTURE_UI_ENABLED;
+export const COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED = GATE8_FIXTURE_UI_ENABLED;
+export const COMMERCE_V2_CLIENT_COMMANDS_ENABLED = GATE8_FIXTURE_UI_ENABLED;
 
 export const createCommerceCommandId = (action) => {
   const suffix = globalThis.crypto?.randomUUID?.()

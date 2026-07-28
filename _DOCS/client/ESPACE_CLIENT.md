@@ -162,12 +162,15 @@ Smoke recommande pour une passe compte non transactionnelle:
 2. `Quitter` dans le header et `Mon espace` dans le menu;
 3. ouverture directe et via menu de `/mes-commandes` sans flash galerie;
 4. commandes limitees au compte;
-5. avant Gate 7A: PDF legacy non presente comme facture/avoir ou section
-   masquee; apres Gate 7A: seul recu sandbox serveur admissible;
+5. le PDF fiscal legacy reste masque; Gate 7A autorise seulement un recu
+   sandbox serveur explicitement non fiscal apres capture, distinct de la
+   confirmation de remboursement;
 6. wishlist puis ajout panier d'un produit disponible;
 7. deconnexion et protection des routes.
 
 Ce smoke reste une verification UI. Il ne qualifie pas la coherence Stripe/commande/stock et ne remplace pas les gates commerce.
 
-La recette transactionnelle client/guest ne commence qu'en Gate 8, apres
-fermeture de Gate 7A et deux runs Gate 7B sur le release final.
+La recette transactionnelle client/guest commence en Gate 8 sur fixtures
+uniquement. Gates 0A a 7B sont fermees; les deux runs qualifiants sont verts
+sur `release_gate7a_c5259a87f875_f00378380561`. L'UI publique reste fermee:
+la recette utilise le perimetre technique explicitement autorise.

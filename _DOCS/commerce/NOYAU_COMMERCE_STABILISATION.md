@@ -2,12 +2,12 @@
 
 Derniere verification: 2026-07-28
 Statut: `PLAN_TEMPORAIRE_EXECUTION`
-Decision de recette: `NO_GO_TRANSACTIONNEL`
+Decision de recette: `GO_SANDBOX_RECETTE` limite aux fixtures Gate 8
 Proprietaire: noyau commerce, commandes, inventaire, Stripe et control plane admin
 Echeance de gouvernance: 2026-09-30
 Specification d'implementation: `STABILISEE_PAR_CONTRE_EXPERTISE`
-Etat d'execution: `GATE_0A_CODE_READY` + `GATES_0B_A_6_SANDBOX_CLOSED_CHECKOUT_OFF`
-Prochaine tranche: Gate 7A, projections, documents et exploitation; le scope fixture Gate 6 reste prepare mais `newCheckoutMode=off`
+Etat d'execution: `GATES_0A_A_7B_CLOSED` + `CORE_V2_FIXTURE_QUALIFIED`
+Prochaine tranche: Gate 8, recette humaine client/admin sur fixtures sandbox uniquement
 
 ## 1. Gouvernance du document
 
@@ -2368,7 +2368,7 @@ Meta-tests obligatoires:
 
 ### 17.1 Pre-requis
 
-- Gates 0A a 7A fermees et preuves attachees au release manifest final;
+- Gates 0A a 7B fermees et preuves attachees au release manifest final;
 - Gate 7B verte deux fois sur ce meme release;
 - aucun `P0/P1` ouvert; une exception ne peut viser qu'un scenario hors Gate 8,
   sans alterer une preuve obligatoire, et porte proprietaire, mitigation et
@@ -2514,18 +2514,21 @@ separees; il n'est pas implicite dans la Definition of Done fixture.
 
 ### 20.1 Instruction de depart
 
-Le prochain agent reprend en Gate 6 uniquement. Il ne recree pas de roadmap,
-ne renomme pas `NOYAU_COMMERCE_STABILISATION.md`, ne reactive aucun checkout
-ou writer v2 et ne commence pas par une refonte UI. Avant tout patch:
+Le prochain agent reprend en Gate 8 uniquement. Il ne recree pas de roadmap,
+ne renomme pas `NOYAU_COMMERCE_STABILISATION.md`, n'elargit pas
+`v2_fixture`, ne reactive aucun writer admin/public et ne commence pas par une
+refonte UI. Avant tout patch:
 
 1. lire `AGENTS.md`, `map.md`, ce document et les chapitres canoniques lies;
 2. lancer `git status --short` et preserver tout changement utilisateur;
-3. verifier que le controle commerce distant reste absent/off, que les
-   lecteurs sont actifs et que le rollout `build-2026-07-28-001` est servi;
-4. annoncer Gate 6 et son critere d'acceptation;
-5. commencer par l'outil de classification read-only et son `--dry-run`;
-6. ne lancer adoption, fixture, ecriture cloud, Stripe ou activation sans la
-   sous-gate et les preuves explicites prevues en Gate 6.
+3. verifier le manifeste final, le controle revision 7 `v2_fixture`, le scope
+   exact, la sante `healthy` et le build `build-2026-07-28-009`;
+4. conserver les deux rapports Gate 7B verts comme prerequis, sans les rejouer
+   comme une nouvelle preuve;
+5. annoncer Gate 8 et suivre la matrice humaine de la section 17 avec comptes
+   et produits fixture uniquement;
+6. terminer par un rapprochement vide, un cleanup borne et la fusion
+   documentaire prevue, sans elargissement de scope.
 
 Une gate n'est jamais marquee fermee dans la documentation avant que ses
 commandes de validation existent, aient ete executees et que leur sortie soit
@@ -2676,8 +2679,9 @@ Arreter le lot et conserver `NO_GO_TRANSACTIONNEL` si:
 
 ## 21. Etat d'execution sandbox au 2026-07-28
 
-Les Gates 0A a 6 de la roadmap sont fermees en sandbox, checkout et mutations
-toujours `off`:
+Les Gates 0A a 7B de la roadmap sont fermees en sandbox. Le checkout v2 est
+actif uniquement pour le scope fixture borne; mutations admin, paiement
+offline et consommateurs transactionnels publics restent `off`:
 
 - Gate 0A fournit le runner sentinelle, son self-test, les compteurs d'effets,
   le lint Functions cible, l'agregat `test:commerce` et les jobs CI bloquants;
@@ -2747,7 +2751,7 @@ Executees localement:
 - `test:commerce:containment`: 12/12 scenarios, 217 assertions;
 - `test:commerce:rules:containment`: 10/10 scenarios sous Firestore + Storage
   Emulator, projet fixe `demo-secondevie-commerce`;
-- `test:commerce:unit`: 67/67 tests, dont schema, matrice fermee, projection,
+- `test:commerce:unit`: 81/81 tests, dont schema, matrice fermee, projection,
   barrières v1/v2, readers, flags frontend, policy/livraison/Connect et contrat
   panier/inventoryKey, actions serveur, retours/dispositions quantitatifs et
   cycle produit create/offre/stock/publication/archive et transport produit
@@ -2763,27 +2767,27 @@ Executees localement:
 - `test:commerce:faults`: 33/33 tests, idempotence, fenetres create/cancel,
   PI perdu/repris, scopes plateforme/Connect, workers/sweeper, incidents,
   outbox, token et refund accepte avec reponse perdue;
-- `test:commerce:firebase`: 14/14 scenarios, 64 assertions sous Firestore
+- `test:commerce:firebase`: 15/15 scenarios, 69 assertions sous Firestore
   Emulator pour atomicite, rollback, concurrence stock 1, create/attach PI,
   toutes les fenetres inbox, capture + mouvement + fait + outbox exactement
   une fois, token guest mono-usage, commandes auditees, refunds partiels
   cumules sans restock, retours/dispositions q=5 concurrents et commandes
   produit atomiques avec archive douce;
-- `test:commerce:rules`: 4/4 scenarios couvrant les cinq sous-collections de
+- `test:commerce:rules`: 5/5 scenarios couvrant les cinq sous-collections de
   commande, les collections internes v2, la policy privee et sa projection
   publique read-only;
 - lint UI cible des quatre surfaces modifiees: zero erreur; avertissements
   legacy non bloquants conserves;
-- build Next vert, `test:commerce:ui` 10/10 et
+- build Next vert, `test:commerce:ui` 11/11 et
   `test:commerce:browser` 4/4;
 - Temurin Java 21.0.11 local et Emulator Suite complet:
   `test:commerce:rules:containment` 10/10,
-  `test:commerce:firebase` 14/14 avec 64 assertions et
-  `test:commerce:rules` 4/4;
-- preuves sandbox: indexes `READY`, 24/24 exports v2 presents, doublons
+  `test:commerce:firebase` 15/15 avec 69 assertions et
+  `test:commerce:rules` 5/5;
+- preuves sandbox: indexes `READY`, exports Gate 7A presents, doublons
   mutateurs legacy `us-central1` retires, Auth/App Check refuses `401`,
-  webhook non signe `400`, Rules publiees et rollout App Hosting
-  `build-2026-07-28-001` `SUCCEEDED`;
+  webhook non signe `400`, Rules publiees et rollout App Hosting final
+  `build-2026-07-28-009` `SUCCEEDED`;
 - recette authentifiee sandbox: OTP Gmail recupere par le lecteur IMAP local,
   session client Firebase et `listMyOrdersV2` fonctionnels sous Auth/App Check;
   la vue Documents conserve le message de suspension fiscale legacy;
@@ -2804,9 +2808,17 @@ Executees localement:
   stock 1/2/10, un compte Connect v2 verifie test, une policy immutable et le
   registre backend-only. Sept documents Firestore ont ete crees, zero commande
   et zero stock client touches;
-- `sys_commerce_control/current` est maintenant explicite a revision 1 avec
-  `newCheckoutMode=off`, `adminMutationMode=read_only` et le scope fixture
-  epingle. Le catalogue public sert 38 produits et exclut les fixtures.
+- Gate 7A/7B a publie le manifeste final
+  `release_gate7a_c5259a87f875_f00378380561`, active le controle revision 7
+  avec `newCheckoutMode=v2_fixture`, `adminMutationMode=read_only` et le scope
+  fixture epingle. Le statut operations est `healthy`, les compteurs sont a
+  zero et le catalogue public sert 38 produits sans exposer les fixtures.
+- Gate 7B est verte deux fois sur le SHA `c5259a8` et App Hosting
+  `build-2026-07-28-009`: runs `run_gate7b_1_1785265815207` et
+  `run_gate7b_2_1785265899510`, 11 scenarios chacun. Les preuves couvrent
+  paiement durable/reprise, refus puis retry sur le meme PI, 3DS succes et
+  abandon sans faux succes, dismiss/annulation, stock 1 concurrent, refund,
+  retour/restock physique, OTP Gmail, lectures client/admin et drain final.
 
 Les compteurs de confinement affichent explicitement zero ecriture/suppression
 Firestore, appel Stripe, creation/annulation de PI, e-mail, outbox et mouvement
@@ -2822,8 +2834,8 @@ comptees separement.
 - Gates 1 et 2: contrats, policy, reservations, indexes et Rules deployes;
   la policy fixture est epinglee depuis Gate 6 mais aucun checkout n'est admis
   tant que `newCheckoutMode=off`;
-- Gate 3: runtime embarque par les callables, mais aucun worker/scheduler
-  exporte et aucune saga Stripe activable avec le controle fail-closed;
+- Gate 3: runtime embarque par les callables; ses workers sont ensuite actives
+  en Gate 7A sous controle fixture fail-closed;
 - Gate 4: `SANDBOX_ACTIVE_OFF`; 19 callables produit, fulfillment,
   annulation, refund et retour sont exportees avec App Check, Auth/AAL2 selon
   le role et verrou serveur mutations. Tous les flags UI de commande restent
@@ -2847,20 +2859,38 @@ comptees separement.
 - Gate 6: le code d'adoption eventuelle est teste idempotent avec delta stock
   zero mais son execution reste differee; tout mode ecriture exige projet,
   environnement, sauvegarde et confirmation exacts;
-- decision globale: `NO_GO_TRANSACTIONNEL` inchangee.
+- Gate 7A: `SANDBOX_ACTIVE_FIXTURE_ONLY`; projections financieres absolues,
+  recus sandbox non fiscaux, outbox a lease/dead-letter/`delivery_unknown`,
+  reconciler planifie et manuel, statut incidents/sante et cleanup fixture
+  run-scoped sont deployes;
+- Gate 7A: les triggers legacy e-mail/stats ignorent `schemaVersion >= 2`; le
+  dashboard affiche source, fraicheur, capture, refund, net et divergences.
+  L'etat operations est `healthy`, tous les compteurs de divergence sont a
+  zero et le catalogue public n'expose aucun ID fixture;
+- Gate 7A: aucune TTL commerce n'est activee. Le cleanup ne supprime ni
+  commandes, ni faits financiers, ni mouvements, ni audits; il ne met en
+  quarantaine que les auxiliaires terminaux du run;
+- Gate 7A/7B: activation atomique du manifeste final
+  `release_gate7a_c5259a87f875_f00378380561`, revision de controle 7,
+  `newCheckoutMode=v2_fixture` pour `fixture_gate6_20260728`,
+  `adminMutationMode=read_only` et `offlinePaymentMode=off`;
+- Gate 7B: `CORE_V2_FIXTURE_QUALIFIED`; decision explicite
+  `GO_SANDBOX_RECETTE` pour Gate 8 seulement. Aucun GO live ou `v2_all`.
 
 Deploiement cible `secondevienextjsssr`:
 
 - indexes commerce tous `READY`;
-- Functions: 24/24 exports v2 en `europe-west1`; webhooks et cleaner
-  historiques maintenus en `us-central1`;
-- App Hosting: rollout `build-2026-07-28-001`, URL sandbox canonique;
+- Functions Gate 7A actives en `europe-west1`: checkout fixture, dispatcher
+  outbox, reconciler operations, statut/rebuild/cleanup admin; webhooks et
+  cleaner historiques maintenus en `us-central1`;
+- App Hosting: rollout `rollout-2026-07-28-006`,
+  build `build-2026-07-28-009`, URL sandbox canonique;
 - Firestore/Storage Rules publiees apres le rollout UI;
-- rollback: ancien rollout `rollout-2026-07-27-001` /
-  build `build-2026-07-27-002`; ne jamais restaurer les anciens writers ou
+- rollback: rollout precedent `rollout-2026-07-28-002` /
+  build `build-2026-07-28-003`; ne jamais restaurer les anciens writers ou
   doublons legacy pour effectuer ce rollback.
 
-Non executes: E2E Stripe transactionnels, adoption legacy, commit ou push.
-Gate 7A ferme ensuite projections, documents et exploitation. Le scope et la
-policy fixture sont prepares, mais aucun checkout, worker ou mutation v2 n'est
-active.
+Non executes: adoption legacy, activation UI transactionnelle publique,
+mutations admin et tout rail Stripe live/production. La prochaine tranche est
+la recette humaine Gate 8 sur les fixtures sandbox; elle ne peut ni elargir
+`v2_fixture` ni reclasser automatiquement le noyau en `v2_all`.

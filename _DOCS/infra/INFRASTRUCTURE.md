@@ -103,6 +103,8 @@ storage.rules              autorisations Storage
 .firebaseignore            exclusions de deploiement
 .env.sandbox.example       contrat local sandbox
 .env.production.example    contrat futur production
+functions/.env.secondevienextjsssr.example
+                           parametres non secrets Functions sandbox
 ```
 
 Les vrais `.env` sont locaux. Verifier avec `git ls-files` avant toute hypothese et ne jamais afficher leurs valeurs dans un rapport.
@@ -201,23 +203,30 @@ Ne jamais utiliser un `firebase deploy` sans `--only` pendant une passe ciblee.
 
 Etat commerce sandbox au 2026-07-28:
 
-- App Hosting `build-2026-07-28-001` `SUCCEEDED`;
-- archive source
-  `secondevie-next-sandbox--36338-c7l4CMPBh44g-.zip`;
+- App Hosting `rollout-2026-07-28-006` /
+  `build-2026-07-28-009` `SUCCEEDED`;
 - indexes commerce `READY`;
-- 24 Functions v2 en `europe-west1`, mutations/checkout `off`, lecteurs
-  UID/admin actifs;
+- Functions Gate 7A en `europe-west1`: checkout fixture, dispatcher outbox,
+  reconciler operations et commandes admin de statut/rebuild/cleanup;
+- manifeste immutable `release_gate7a_c5259a87f875_f00378380561`, SHA
+  `c5259a8`;
+- controle revision 7: `newCheckoutMode=v2_fixture` limite a
+  `fixture_gate6_20260728`, mutations admin `read_only`, offline `off`;
+- sante operations `healthy`, compteurs de divergence a zero et TTL commerce
+  explicitement desactivee;
 - webhooks et cleaner historiques maintenus en `us-central1`;
 - Rules Firestore/Storage restrictives publiees apres le rollout UI;
-- aucun rail production ni flag transactionnel active.
+- aucun rail production ni flag transactionnel public active.
+- Gate 7B verte deux fois avec 11 scenarios par run; la decision
+  `GO_SANDBOX_RECETTE` n'autorise que la recette humaine Gate 8 sur fixtures.
 
 ## 11. Rollback
 
 App Hosting:
 
 1. ouvrir les rollouts du backend sandbox dans Firebase Console;
-2. pour le lot commerce du 2026-07-28, le precedent stable est
-   `rollout-2026-07-27-001` / `build-2026-07-27-002`;
+2. pour le lot commerce Gate 7A du 2026-07-28, le precedent stable est
+   `rollout-2026-07-28-002` / `build-2026-07-28-003`;
 3. lancer le rollback;
 4. verifier `/`, `/produit/...`, Auth et la zone touchee;
 5. consulter les logs Functions si le changement les concernait.

@@ -29,7 +29,7 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 
 | ID | Label | Module principal | Role |
 | --- | --- | --- | --- |
-| `dashboard` | Stats | `AdminDashboard` | indicateurs commerce legacy non financiers avant Gate 7A, commandes, inventaire, devis, tendances, exports |
+| `dashboard` | Stats | `AdminDashboard` | projection v2 serveur avec source, fraicheur, capture, refund, net et divergences, plus commandes, inventaire, devis, tendances et exports |
 | `analytics` | Data | `AdminAnalytics` | visiteurs UID/IP, sessions live, parcours, courbe |
 | `furniture` | Publication | `AdminForm`, `AdminItemList` | CRUD annonces et images |
 | `inventory` | Vue Globale | `GlobalInventoryView` | ordres editoriaux et stock catalogue |
@@ -88,10 +88,12 @@ Etat actuel:
   sont `inert` et sans interaction;
 - les Rules refusent les writes SDK `orders`, create/delete produit, champs
   commerce produit et politiques, y compris avec claims admin forts;
-- le dashboard masque les KPI financiers legacy et retire les raccourcis de
-  purge;
-- cet etat est deploye sur le sandbox depuis le rollout
-  `build-2026-07-28-001`.
+- le dashboard masque les KPI financiers legacy, lit la projection v2 Gate 7A
+  et retire les raccourcis de purge;
+- cet etat est deploye sur le sandbox; le release qualifiant Gate 7B est
+  `build-2026-07-28-009` / `release_gate7a_c5259a87f875_f00378380561`.
+- Gate 8 peut maintenant observer les lectures et parcours admin humains sur
+  fixtures; les mutations admin restent `read_only` et ne sont pas reactivees.
 
 Cible: toute transition commande, fulfillment, inventaire, refund/retour et politique commerce passe par une commande serveur idempotente. Firestore reste une projection et non une API metier admin.
 
@@ -235,8 +237,10 @@ Etat Gate 0B:
 - leur ancien corps reste temporairement en source pour historique et future
   reconstruction, mais il est inaccessible tant que le hard-stop est en place.
 
-Gate 7A exige seulement un cleanup fixture run-scoped, borne et audite. Les
-purges globales restent desactivees; leur eventuelle reconstruction avec
+Gate 7A fournit un cleanup fixture run-scoped, borne et audite. Il ne supprime
+ni commandes, ni faits financiers, ni mouvements, ni audits; seuls les
+auxiliaires terminaux du run sont mis en quarantaine. Les purges globales
+restent desactivees; leur eventuelle reconstruction avec
 comptage, sauvegarde, pagination, reprise et quarantaine attend un besoin
 metier/pre-live distinct.
 

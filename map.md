@@ -167,10 +167,11 @@ politique/control backend fail-closed
   -> UI client/admin via commandes serveur
 ```
 
-Gates 0A a 6 sont fermees en sandbox depuis le 2026-07-28:
-confinement legacy, indexes et Rules actifs; 24 Functions v2 sont exportees.
-Les lecteurs UID/admin sont actifs, tandis que checkout, mutations et workers
-v2 restent coupes par flags et controle serveur explicite fail-closed.
+Gates 0A a 7B sont fermees en sandbox depuis le 2026-07-28. Checkout et
+workers v2 sont actifs uniquement pour `fixture_gate6_20260728`; lecteurs
+UID/admin et exploitation Gate 7A sont actifs. Gate 7B est verte deux fois
+sur le release final; l'UI publique, les mutations admin et le paiement
+offline restent fermes pendant la recette humaine Gate 8.
 
 Gate 6 ajoute un rail de migration sans writer:
 
@@ -187,6 +188,12 @@ scripts/prepare-commerce-fixtures.mjs
   -> produits furniture e2eOnly stocks 1/2/10
   -> policy + compte Connect v2 + commerce_fixture_scopes backend-only
   -> sys_commerce_control/current explicitement newCheckoutMode=off
+
+scripts/build-commerce-release-manifest.mjs
+  -> manifeste Gate 7A immutable, hash source et cibles regionales
+
+scripts/activate-commerce-fixture.mjs
+  -> activation atomique fail-closed du seul scope et manifeste epingles
 ```
 
 Le scope `fixture_gate6_20260728` ne reference que les produits
@@ -497,7 +504,7 @@ src/lib/seo/
 
 src/utils/
 |-- imageUtils.js ..................... variantes/metadata/images
-|-- generateInvoice.js ................ generateur PDF legacy non expose avant Gate 7A
+|-- generateInvoice.js ................ generateur PDF legacy non fiscal et masque
 |-- shippingAddress.js ................ format adresse
 |-- slug.js ........................... slugs
 `-- time.js ........................... temps/dates
@@ -548,7 +555,11 @@ functions/
     |   |   |-- reconcilePayment.js ...... mapping complet des statuts PI
     |   |   |-- paymentEffectApplier.js ... order/inventaire/fait/outbox atomiques
     |   |   |-- commerceEffects.js ....... faits financiers/outbox deterministes
-    |   |   |-- outboxRepository.js / outboxWorker.js
+    |   |   |-- outboxRepository.js / outboxWorker.js ... lease, dead-letter et delivery_unknown
+    |   |   |-- financialProjection.js .. projection financiere absolue
+    |   |   |-- commerceDocuments.js ..... recus sandbox non fiscaux
+    |   |   |-- operationsHealth.js ...... incidents, seuils et sante Gate 7A
+    |   |   |-- fixtureScope.js / fixtureCleanup.js ... autorisation et cleanup run-scoped
     |   |   |-- checkoutAccessToken*.js ... token backend opaque rotatif
     |   |   |-- guestCheckoutCoordinator.js
     |   |   |-- boundedWorkerSweeper.js / firestoreWorkerQueries.js
@@ -562,12 +573,13 @@ functions/
     |   |   |-- returnRepository.js ....... allocations, dispositions et audit
     |   |   |-- productCommands.js ......... transitions produit fermees Gate 4
     |   |   |-- productCommandRepository.js  produit idempotent + audit append-only
-    |   |   `-- v2Runtime.js .............. cablage exporte via callables, workers non exportes
+    |   |   `-- v2Runtime.js .............. cablage callables et workers Gate 7A
     |   |-- v2ProductCommands.js ........... callables produit exportees, controle mutations off
     |   |-- v2OrderCommands.js ............. callables fulfillment/archive exportees, controle off
     |   |-- v2Cancellation.js .............. callable annulation exportee, controle mutations off
     |   |-- v2ControlGuard.js ............... verrou serveur mutations selon controle
-    |   |-- v2Checkout.js .................. create/resume exportes, checkout mode off
+    |   |-- v2Checkout.js .................. create/resume limites au scope fixture
+    |   |-- v2Operations.js ................ schedulers et commandes exploitation Gate 7A
     |   |-- v2OrderQueries.js .............. lecteurs UID/admin exportes et actifs
     |   |-- v2RefundCommands.js ............ callable refund exportee, controle mutations off
     |   |-- v2ReturnCommands.js ............ callables retours exportees, controle mutations off
@@ -618,6 +630,8 @@ functions/
 | Domaine | Exports |
 | --- | --- |
 | commerce | `createOrder`, `stripeWebhook`, `stripeConnectWebhook`, `cancelOrderClient`, `cleanupPendingPayments`, `getOrderStatusClient` |
+| commerce v2 checkout/lecture | `createCheckoutV2`, `resumeCheckoutV2`, `listMyOrdersV2`, `getMyOrderV2`, `listOrdersAdminV2`, `listReturnCasesAdminV2` |
+| commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
 | refunds/Connect | `refundOrderAdmin`, `syncRefundStatusAdmin`, `getStripeConnectStatus`, `startStripeConnectOnboarding`, `syncStripeConnectAccount`, `requestStripeConnectReconnect`, `confirmStripeConnectReconnect` |
 | preuves E2E | `e2eCheckoutProof`, `e2eStripeHardeningProof` |
 | Auth/admin | `grantAdminOnAuth`, `addAdminUser`, `removeAdminUser`, `logUserConnection`, `getUserStats`, `syncSuperAdminClaim`, `ensureAdminAccessRegistry` |
@@ -640,6 +654,16 @@ Firestore
 |   |-- passkeys/{credentialId}
 |   `-- passkey_challenges/{type}
 |-- orders/{orderId}
+|   `-- documents/{documentId} ........ recus sandbox non fiscaux immutables
+|-- commerce_financial_facts/{factId} . faits financiers append-only
+|-- commerce_financial_projections/current
+|-- commerce_outbox/{eventId}
+|-- commerce_webhook_inbox/{eventId}
+|-- commerce_incidents/{incidentId}
+|-- commerce_fixture_scopes/{scopeId}
+|-- commerce_release_manifests/{releaseId}
+|-- sys_commerce_control/current
+|-- sys_commerce_operations/current
 |-- newsletter_subscribers/{id}
 |-- sys_metadata/{docId}
 |-- sys_ratelimit/{id} ................ backend-only
@@ -746,11 +770,12 @@ les preuves hard-stop et Rules Firestore/Storage. Gate 1 fournit les suites
 domaine, property, Firestore, Rules et failpoints. Gate 2 etend ces suites avec
 policy, Connect, concurrence stock et mouvements quantitatifs. Gates 1 a 5
 sont deployees en sandbox en mode read-only. Gate 6 ajoute le classificateur,
-les manifests locaux ignores et le scope fixture backend-only garde a `off`.
-Gate 3 ajoute writer/reprise,
-saga PI, inbox, reconciler, effets atomiques, outbox, expiration, tokens et
-workers bornes; les callables sont exportees mais checkout/mutations/workers
-restent `off`. Les trois lecteurs Gate 5 sont actifs.
+les manifests locaux ignores et le scope fixture backend-only. Gate 7A active
+ce seul scope, les workers bornes, projections, documents sandbox,
+exploitation et cleanup audite sur un manifeste immutable. Gate 7B execute le
+runner `scripts/e2e-commerce-core-gate7b.mjs` deux fois sur le meme SHA/release
+avec Stripe Connect, 3DS, OTP Gmail et drain final. Les trois lecteurs Gate 5
+restent actifs; l'UI publique et les mutations admin restent fermees.
 
 ## 12. Matrice d'impact rapide
 
@@ -763,7 +788,7 @@ restent `off`. Les trois lecteurs Gate 5 sont actifs.
 | Auth | `AUTHENTIFICATION.md` | authStore, AuthContext, modal, auth Functions | `test:auth` + smoke |
 | securite/rules | `SECURITE_GLOBALE.md` | rules, helpers security, Functions | tests negatifs + sandbox cible |
 | espace client | `ESPACE_CLIENT.md` | routes compte, MyOrders, wishlist | smoke compte |
-| paiement/refund | `COMMERCE_STRIPE.md` + `NOYAU_COMMERCE_STABILISATION.md` temporaire | commerce client/Functions/admin | Gates 0A a 6 fermees en sandbox: 24 Functions v2 exportees, lecteurs UID/admin actifs, 26 legacy classifiees, scope fixture dedie prepare; checkout, commandes et workers coupes par flags + controle serveur explicite `off`, Rules restrictives; `NO_GO_TRANSACTIONNEL` et E2E transactionnels maintenus jusqu'aux gates suivantes |
+| paiement/refund | `COMMERCE_STRIPE.md` + `NOYAU_COMMERCE_STABILISATION.md` temporaire | commerce client/Functions/admin | Gates 0A a 7B fermees; `CORE_V2_FIXTURE_QUALIFIED` sur `c5259a8` et release final, checkout/workers limites au scope fixture; UI publique, mutations admin et offline fermes; Gate 8 autorisee uniquement en sandbox |
 | admin | `BACKOFFICE.md` | AdminAppIsland, tabs, Functions | smoke tabs + action cible |
 | infra | `INFRASTRUCTURE.md` | yaml/json/env/runtime | audits read-only + build |
 | donnees | `DONNEES_ANALYTICS.md` + `AUDIT_COUTS_FIRESTORE.md` | rules/indexes/scripts/Functions | dry-run/comptage/rollback + mesure avant/apres |

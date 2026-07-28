@@ -64,6 +64,70 @@ test('deployed v2 mutations fail closed until the server control enables them', 
     assert.equal(handlerCalls, 1);
 });
 
+test('Gate 8 admin mutations are restricted to the active fixture scope', async () => {
+    const documents = new Map([
+        ['sys_commerce_control/current', {
+            newCheckoutMode: 'v2_fixture',
+            legacyMode: 'reconcile_only',
+            adminMutationMode: 'v2',
+            offlinePaymentMode: 'off',
+            activePolicyVersion: 'fixture_policy_gate6_20260728',
+            fixtureScopeVersion: 'fixture_gate6_20260728',
+            fixtureScopeRef: 'commerce_fixture_scopes/fixture_gate6_20260728',
+            controlRevision: 8
+        }],
+        ['orders/order-gate8-fixture', {
+            schemaVersion: 2,
+            testContext: {
+                runId: 'run_gate8_fixture_scope',
+                fixtureScopeVersion: 'fixture_gate6_20260728'
+            }
+        }],
+        ['orders/order-customer', {
+            schemaVersion: 2
+        }],
+        ['artifacts/secondevie/public/data/furniture/fixture_gate6_stock1_01', {
+            schemaVersion: 2,
+            e2eOnly: true,
+            fixtureScopeVersion: 'fixture_gate6_20260728'
+        }]
+    ]);
+    const db = {
+        doc: (documentPath) => ({
+            get: async () => ({
+                exists: documents.has(documentPath),
+                data: () => documents.get(documentPath)
+            })
+        })
+    };
+
+    await assert.doesNotReject(requireCommerceMutationsEnabled({
+        db,
+        data: { orderId: 'order-gate8-fixture' }
+    }));
+    await assert.doesNotReject(requireCommerceMutationsEnabled({
+        db,
+        data: {
+            collectionName: 'furniture',
+            productId: 'fixture_gate6_stock1_01'
+        }
+    }));
+    await assert.rejects(
+        requireCommerceMutationsEnabled({
+            db,
+            data: { orderId: 'order-customer' }
+        }),
+        (error) => (
+            error.code === 'permission-denied' &&
+            error.details?.reason === 'COMMERCE_ADMIN_FIXTURE_SCOPE_DENIED'
+        )
+    );
+    await assert.rejects(
+        requireCommerceMutationsEnabled({ db, data: {} }),
+        (error) => error.details?.reason === 'COMMERCE_ADMIN_FIXTURE_SCOPE_DENIED'
+    );
+});
+
 test('checkout v2 transport derives owner identity from Auth and ignores payload identity', async () => {
     const calls = [];
     const handler = createCheckoutHandler({
@@ -382,15 +446,16 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(adminReturns.includes('markReturnReceivedAdmin'));
     assert.ok(myOrders.includes('listMyOrdersV2'));
     assert.ok(myOrders.includes('requestOrderCancellation'));
-    assert.ok(checkout.includes('createCheckoutV2(input)'));
+    assert.ok(checkout.includes('createCheckoutV2(input, {'));
     assert.ok(checkoutPage.includes('resumeCheckoutV2(recoverableOrderId)'));
     assert.ok(checkoutPage.includes('isPurchasedCartLineUnchanged'));
     assert.equal(checkout.includes('pagehide'), false);
     assert.equal(checkout.includes('beforeunload'), false);
-    assert.ok(commandClient.includes('COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED = false'));
-    assert.ok(commandClient.includes('COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED = false'));
-    assert.ok(commandClient.includes('COMMERCE_V2_CLIENT_COMMANDS_ENABLED = false'));
-    assert.ok(consumerClient.includes('COMMERCE_V2_CONSUMERS_ENABLED = false'));
+    assert.ok(commandClient.includes('NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI'));
+    assert.ok(commandClient.includes('COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED = GATE8_FIXTURE_UI_ENABLED'));
+    assert.ok(commandClient.includes('COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED = GATE8_FIXTURE_UI_ENABLED'));
+    assert.ok(commandClient.includes('COMMERCE_V2_CLIENT_COMMANDS_ENABLED = GATE8_FIXTURE_UI_ENABLED'));
+    assert.ok(consumerClient.includes('NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI'));
     assert.ok(consumerClient.includes('COMMERCE_V2_ORDER_READERS_ENABLED = true'));
     assert.ok(consumerClient.includes('COMMERCE_V2_ADMIN_READERS_ENABLED = true'));
 });

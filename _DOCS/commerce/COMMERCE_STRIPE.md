@@ -5,19 +5,21 @@ Statut: `STABILISATION_ACTIVE`
 
 Restriction active:
 
-> Decision `NO_GO_TRANSACTIONNEL`. Le parcours nominal carte est implemente,
-> mais le noyau n'est pas qualifie pour une recette transactionnelle. L'audit
+> Decision `GO_SANDBOX_RECETTE` limitee a la Gate 8 et aux fixtures. Le
+> parcours nominal carte est implemente et le noyau est
+> `CORE_V2_FIXTURE_QUALIFIED`. L'audit
 > executable a invalide le precedent statut `PREPROD_READY` sur les courses
 > paiement/annulation, les compensations stock, les mutations admin et les
 > preuves automatisees. Le plan ferme est
 > [NOYAU_COMMERCE_STABILISATION.md](NOYAU_COMMERCE_STABILISATION.md).
-> Les Gates 0A a 6 sont fermees en sandbox depuis le 2026-07-28:
-> le confinement legacy, les indexes et les Rules sont actifs; 24 Functions v2
-> sont exportees avec App Check. Les lecteurs UID/admin sont actifs, mais le
-> checkout, toutes les mutations et les workers v2 restent `off` par flags et
-> controle serveur fail-closed. Gate 6 a classe les 26 commandes legacy en
-> revue conservatrice et prepare un scope fixture backend-only sans l'activer.
-> Ce statut ne vaut pas recette transactionnelle.
+> Les Gates 0A a 7B sont fermees en sandbox depuis le 2026-07-28.
+> Le checkout et les workers v2 sont actifs uniquement pour le scope
+> `fixture_gate6_20260728`; l'UI publique, les mutations admin et le paiement
+> offline restent fermes. Les projections, documents sandbox non fiscaux,
+> outbox, reconciler et controles d'exploitation Gate 7A sont actifs sur le
+> manifeste immutable `release_gate7a_c5259a87f875_f00378380561`, SHA
+> `c5259a8`, build `build-2026-07-28-009`. Ce statut autorise la recette
+> humaine Gate 8 seulement; il ne vaut ni activation publique ni GO live.
 
 ## 1. Perimetre
 
@@ -186,9 +188,10 @@ Ces executions ne sont pas des gates de release actuelles. Les scripts peuvent u
 
 L'architecture PaymentIntent reste le choix cible; aucune migration vers Checkout Sessions n'est recommandee. Le travail consiste a rendre l'orchestration PaymentIntent actuelle idempotente, reprenable et testee.
 
-Gate 7A ferme les projections/exploitation. La preuve qualifiante du coeur sera
-ensuite le nouvel E2E sandbox isole de la Gate 7B, vert deux fois sur le release
-final avec fixtures et IDs correles, avant la recette humaine Gate 8.
+Gate 7A a ferme les projections/exploitation et Gate 7B a qualifie le
+manifeste `release_gate7a_c5259a87f875_f00378380561`. Les deux runs
+consecutifs, 11 scenarios chacun, sont verts sur le meme SHA `c5259a8` avec
+fixtures et IDs correles. La preuve suivante est la recette humaine Gate 8.
 
 ## 11. Fichiers structurants
 
@@ -221,17 +224,20 @@ pnpm maintenance:audit
 
 Ces commandes touchent des services externes et creent des donnees sandbox.
 `e2e:hosted-stripe` et `e2e:refund-stripe` actuels sont en quarantaine
-`DO_NOT_RUN` jusqu'a leur remplacement fail-closed: ils ne constituent ni gate,
-ni outil diagnostique sur une donnee reelle. Le futur runner Gate 7B exige
-fixture, `runId/orderId`, cible, AAL2/App Check et zero fallback.
+`DO_NOT_RUN`: ils ne constituent ni gate, ni outil diagnostique sur une donnee
+reelle. Le runner qualifiant est `commerce:e2e:gate7b`; il exige fixture,
+`runId/orderId`, release, cible, AAL2/App Check, confirmation exacte et zero
+fallback.
 
 Les gates locales et CI actives sont `lint:functions`,
 `test:commerce:runner`, `test:commerce:containment`,
 `test:commerce:rules:containment`, `test:commerce:unit`,
 `test:commerce:property`, `test:commerce:firebase`,
 `test:commerce:rules`, `test:commerce:faults` et leur agregat
-`test:commerce`. Gates 0A a 6 sont fermees avec checkout `off`; les E2E
-transactionnels heberges restent en quarantaine.
+`test:commerce`. Gates 0A a 7B sont fermees; seul le checkout fixture est
+actif et les anciens E2E transactionnels heberges restent en quarantaine. Les
+rapports qualifiants sont lies aux runs `run_gate7b_1_1785265815207` et
+`run_gate7b_2_1785265899510`.
 
 Gate 6 ajoute `classify-legacy-commerce.mjs`,
 `prepare-commerce-fixtures.mjs`, les contrats purs
@@ -239,7 +245,8 @@ Gate 6 ajoute `classify-legacy-commerce.mjs`,
 est reproductible: 26 legacy, 26 `needs_review`, 10 non terminales et zero
 ligne non classee. Le scope `fixture_gate6_20260728` contient uniquement un UID
 technique et trois inventoryKeys de produits `e2eOnly` stock 1/2/10. Le
-controle serveur est explicite mais conserve `newCheckoutMode=off`.
+controle serveur est explicite. Gate 7A l'a fait passer a
+`newCheckoutMode=v2_fixture` sur le seul scope epingle.
 
 Gate 1 ajoute `functions/src/commerce/domain`: schema v2, reducer pur,
 invariants monétaires/quantitatifs, projection legacy, controle fail-closed,
@@ -306,10 +313,19 @@ portent `cartLineId/cartRevision`; le succes exige
 `payment.status=succeeded`, s'affiche avant nettoyage et ne supprime que les
 lignes achetees demeurees identiques. `MyOrdersView` utilise le reader UID et
 sa pagination; les readers commandes et retours admin sont egalement actifs,
-avec un adaptateur v1 explicitement read-only. Les 24 transports sont exportes,
-mais le flag checkout et tous les flags de commande restent `false`; le
-document de controle absent verrouille aussi les mutations cote serveur.
-Rollout actif: `build-2026-07-28-001`.
+avec un adaptateur v1 explicitement read-only. Les transports Gate 5 restent
+exportes. Depuis Gate 7A, le controle serveur autorise seulement
+`newCheckoutMode=v2_fixture` pour le scope epingle; tous les flags de commande
+publics restent `false`, les mutations admin sont `read_only` et le paiement
+offline est `off`. Rollout qualifiant actif: `build-2026-07-28-009`.
+
+Gate 7A ajoute les projections financieres absolues, les recus sandbox
+explicitement non fiscaux, l'outbox avec leases/dead-letter et statut
+`delivery_unknown`, le dispatcher et le reconciler planifies, les commandes
+admin de statut/rebuild/cleanup ainsi que les incidents durables. Le dashboard
+lit cette projection serveur et affiche source, fraicheur, montants captures,
+rembourses, net et divergences. La sante sandbox est `healthy`, tous les
+compteurs sont a zero et aucune TTL commerce n'est activee.
 
 ## 13. Conditions production
 

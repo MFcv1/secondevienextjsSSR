@@ -29,6 +29,7 @@
     "commerce:release:manifest": "node scripts/with-env.mjs .env.sandbox node scripts/build-commerce-release-manifest.mjs --project=secondevienextjsssr --env=sandbox",
     "commerce:fixture:activate": "node scripts/with-env.mjs .env.sandbox node scripts/activate-commerce-fixture.mjs --project=secondevienextjsssr --env=sandbox",
     "commerce:e2e:gate7b": "node scripts/with-env.mjs .env.sandbox node scripts/e2e-commerce-core-gate7b.mjs --project=secondevienextjsssr --env=sandbox",
+    "commerce:gate8:window": "node scripts/with-env.mjs .env.sandbox node scripts/gate8-commerce-window.mjs --project=secondevienextjsssr --env=sandbox",
     "maintenance:audit": "node scripts/maintenance-audit.mjs",
     "lint": "eslint .",
     "lint:functions": "eslint \"functions/src/commerce/**/*.{js,cjs,mjs}\" \"functions/src/email/**/*.{js,cjs,mjs}\" \"functions/src/maintenance/**/*.{js,cjs,mjs}\" \"src/kit/commerce/checkoutController.js\" \"src/kit/commerce/orderAdapter.js\" \"src/kit/commerce/checkoutRecovery.js\" \"tests/commerce/**/*.cjs\" --max-warnings 0",

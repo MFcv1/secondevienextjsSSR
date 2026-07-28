@@ -1,4 +1,6 @@
-export const COMMERCE_V2_CHECKOUT_ENABLED = false;
+export const COMMERCE_V2_CHECKOUT_ENABLED =
+    typeof process !== 'undefined' &&
+    process.env.NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI === 'true';
 
 export const CHECKOUT_CONTROLLER_STATES = Object.freeze([
     'idle',

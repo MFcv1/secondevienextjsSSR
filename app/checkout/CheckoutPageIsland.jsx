@@ -27,6 +27,11 @@ import {
   resumeCheckoutV2,
 } from '../../src/kit/commerce/commerceV2Client';
 import { adaptCommerceOrder } from '../../src/kit/commerce/orderAdapter';
+import {
+  persistGate8FixtureContext,
+  readGate8FixtureContext,
+  restoreGate8FixtureContext,
+} from '../../src/kit/commerce/gate8FixtureSession';
 
 const getCartTotal = (items) => (
   items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0)
@@ -81,6 +86,7 @@ function CheckoutPageContent() {
   const [orderSuccessMethod, setOrderSuccessMethod] = useState('');
   const [checkoutReturnNotice, setCheckoutReturnNotice] = useState('');
   const [cartLoading, setCartLoading] = useState(true);
+  const [fixtureContext, setFixtureContext] = useState(null);
   const handledStripeReturnRef = useRef(false);
 
   useEffect(() => {
@@ -96,6 +102,13 @@ function CheckoutPageContent() {
     } catch {
       setDarkMode(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const fromUrl = readGate8FixtureContext(window.location.search);
+    setFixtureContext(
+      fromUrl ? persistGate8FixtureContext(fromUrl) : restoreGate8FixtureContext()
+    );
   }, []);
 
   useEffect(() => {
@@ -348,6 +361,7 @@ function CheckoutPageContent() {
         darkMode={darkMode}
         onBack={handleContinueShopping}
         onPlaceOrder={handlePlaceOrder}
+        fixtureContext={fixtureContext}
       />
       {showOrderSuccess ? (
         <OrderSuccessModal
