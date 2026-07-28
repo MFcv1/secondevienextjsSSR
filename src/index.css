@@ -4164,20 +4164,22 @@ html.dark .before-after-premium-atmosphere,
   height: auto;
   pointer-events: none;
   user-select: none;
-  opacity: 0.14;
+  opacity: 0.28;
 
-  /* Sepia plutot que grayscale : le filigrane se fond dans la matiere chaude
-     du panneau au lieu de poser un gris froid dessus. */
-  filter: sepia(0.7) saturate(1.25) brightness(0.94) contrast(1.05);
-  mix-blend-mode: multiply;
+  /* Aucun sepia : le logo source est un vermillon vif, et sepia() ecrase par
+     construction toutes les teintes vers un brun uniforme — c'est ce qui le
+     rendait fade. On garde la couleur de marque telle quelle, juste appuyee,
+     et la discretion se joue uniquement sur l'opacite. */
+  filter: saturate(1.12);
   transform: translateY(-50%);
 }
 
 html.dark .before-after-premium-copy > .before-after-premium-brand-watermark,
 .before-after-premium--dark .before-after-premium-copy > .before-after-premium-brand-watermark {
-  opacity: 0.1;
-  filter: sepia(0.6) saturate(1.4) brightness(1.5);
-  mix-blend-mode: screen;
+  /* Meme logique en sombre : hue de marque conservee, juste eclaircie pour
+     rester lisible sur le panneau fonce. */
+  opacity: 0.24;
+  filter: saturate(1.2) brightness(1.18);
 }
 
 @media (min-width: 1024px) {
@@ -4482,62 +4484,64 @@ html.dark .before-after-media-stage,
   box-shadow: none;
 }
 
+/* --------------------------------------------------------------------------
+   ETIQUETTES AVANT / APRES
+   Aucune couleur propre : elles reprennent la paire espresso / creme du bouton
+   principal du module, seule signature chromatique forte de la section. Le fond
+   sombre garantit aussi la lisibilite sur n'importe quelle photo, ce qu'un fond
+   clair ne pouvait pas faire.
+   -------------------------------------------------------------------------- */
 .before-after-state-badge {
   position: relative;
-  min-height: 32px;
-  padding-right: 13px;
-  padding-left: 11px;
-  color: #2f2820;
+  min-height: 34px;
+  padding-right: 15px;
+  padding-left: 15px;
+  color: #fff7ec;
   border: 0;
-  border-radius: 999px;
-  background: rgba(255, 252, 247, 0.76);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-radius: 9px;
+  background: #211911;
   box-shadow:
-    0 0 0 1.5px rgba(255, 255, 255, 0.9),
-    0 12px 26px -18px rgba(24, 18, 12, 0.62);
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 14px 30px -18px rgba(0, 0, 0, 0.85);
 }
 
-/* La pastille de couleur remplace la barre : plus lisible a cette taille. */
+/* Plus de pastille ni de tranche coloree. */
 .before-after-state-badge::before {
-  width: 7px;
-  height: 7px;
-  content: '';
-  border-radius: 999px;
-  background: var(--ba-bronze);
-  box-shadow: 0 0 0 3px rgba(184, 117, 63, 0.16);
+  display: none;
 }
 
-.before-after-state-badge[data-state='after']::before {
-  background: var(--ba-sage);
-  box-shadow: 0 0 0 3px rgba(127, 148, 110, 0.18);
-}
-
+/* Numero en serif italique : rappelle le "01 — 03" du chapeau de la section. */
 .before-after-state-index {
-  color: var(--ba-bronze);
-  font-size: 6.5px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  color: currentcolor;
+  font-family: var(--font-cormorant), ui-serif, serif;
+  font-size: 13px;
+  font-style: italic;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  opacity: 0.55;
 }
 
 .before-after-state-badge[data-state='after'] .before-after-state-index {
-  color: var(--ba-sage);
+  color: currentcolor;
 }
 
 .before-after-state-divider {
   width: 1px;
-  height: 11px;
-  background: rgba(126,91,55,0.2);
+  height: 14px;
+  background: currentcolor;
+  opacity: 0.22;
 }
 
+/* Mode sombre : paire inversee, comme le CTA de la section. */
 html.dark .before-after-state-badge,
 .before-after-premium--dark .before-after-state-badge {
-  color: #f2e7d8;
+  color: #18130f;
   border-color: transparent;
-  background: rgba(20, 16, 13, 0.74);
+  background: #f8efe2;
   box-shadow:
-    0 0 0 1.5px rgba(241, 214, 170, 0.34),
-    0 14px 28px -18px rgba(0, 0, 0, 0.86);
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 14px 30px -18px rgba(0, 0, 0, 0.9);
 }
 
 /* --------------------------------------------------------------------------
@@ -4550,16 +4554,24 @@ html.dark .before-after-state-badge,
 .before-after-state-badge[data-ba-chip] {
   --ba-presence: 1;
 
+  /* Easing lineaire et duree courte : pendant un glissement continu, une courbe
+     d'attenuation redemarre a chaque frame et donne une progression saccadee.
+     En lineaire, l'etiquette suit le curseur de maniere reguliere. */
   transition:
-    opacity 300ms cubic-bezier(0.32, 0.72, 0, 1),
-    transform 520ms cubic-bezier(0.32, 0.72, 0, 1),
-    filter 320ms linear;
+    opacity 130ms linear,
+    transform 150ms linear,
+    filter 150ms linear;
+
+  /* L'ombre portee se creuse avec la presence : le volet dominant decolle. */
+  filter: drop-shadow(0 calc(5px * var(--ba-presence)) calc(10px * var(--ba-presence)) rgba(0, 0, 0, 0.45));
   will-change: opacity, transform;
-  opacity: calc(0.4 + var(--ba-presence) * 0.6);
-  filter: saturate(calc(0.4 + var(--ba-presence) * 0.6));
+
+  /* Amplitude large pour que la bascule se voie franchement :
+     l'etiquette du volet dominant monte, grandit et s'opacifie. */
+  opacity: calc(0.34 + var(--ba-presence) * 0.66);
   transform:
-    translateY(calc(-3px * var(--ba-presence)))
-    scale(calc(0.88 + var(--ba-presence) * 0.12));
+    translateY(calc(-5px * var(--ba-presence)))
+    scale(calc(0.8 + var(--ba-presence) * 0.24));
 }
 
 .before-after-state-badge[data-ba-chip='before'] {
@@ -4570,10 +4582,10 @@ html.dark .before-after-state-badge,
   transform-origin: right center;
 }
 
-/* La pastille pulse legerement quand son cote domine. */
-.before-after-state-badge[data-ba-chip]::before {
-  transition: transform 460ms cubic-bezier(0.32, 0.72, 0, 1);
-  transform: scale(calc(0.7 + var(--ba-presence) * 0.5));
+/* Le numero s'affirme quand son cote domine. */
+.before-after-state-badge[data-ba-chip] .before-after-state-index {
+  transition: opacity 130ms linear;
+  opacity: calc(0.3 + var(--ba-presence) * 0.45);
 }
 
 @media (prefers-reduced-motion: reduce) {

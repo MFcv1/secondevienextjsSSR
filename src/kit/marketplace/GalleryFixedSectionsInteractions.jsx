@@ -661,10 +661,12 @@ const setupBeforeAfter = () => {
       if (line) line.style.left = percentage;
       if (handle) handle.style.left = percentage;
 
-      // Le CSS derive opacite / echelle / saturation de cette seule variable.
+      // Le CSS derive opacite / echelle de cette seule variable.
+      // `value` est la largeur du volet "avant" : plus il grandit, plus son
+      // etiquette s'affirme, et inversement pour "apres".
       const ratio = Math.min(1, Math.max(0, Number(value) / 100));
       chips.forEach((chip) => {
-        const presence = chip.dataset.baChip === 'before' ? 1 - ratio : ratio;
+        const presence = chip.dataset.baChip === 'before' ? ratio : 1 - ratio;
         chip.style.setProperty('--ba-presence', presence.toFixed(3));
       });
     };
