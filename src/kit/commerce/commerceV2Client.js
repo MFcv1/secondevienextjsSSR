@@ -1,9 +1,8 @@
 import { getCallableFunction, getFirebaseAuth, loadAuthModule } from '../config/firebaseLazy';
+import { COMMERCE_V2_UI_ENABLED } from './commerceUiFlags.js';
 export { buildCheckoutV2Input } from './checkoutContract';
 
-export const COMMERCE_V2_CONSUMERS_ENABLED =
-  typeof process !== 'undefined' &&
-  process.env.NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI === 'true';
+export const COMMERCE_V2_CONSUMERS_ENABLED = COMMERCE_V2_UI_ENABLED;
 export const COMMERCE_V2_ORDER_READERS_ENABLED = true;
 export const COMMERCE_V2_ADMIN_READERS_ENABLED = true;
 

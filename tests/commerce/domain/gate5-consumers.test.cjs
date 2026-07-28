@@ -451,13 +451,13 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(checkoutPage.includes('isPurchasedCartLineUnchanged'));
     assert.equal(checkout.includes('pagehide'), false);
     assert.equal(checkout.includes('beforeunload'), false);
-    assert.ok(commandClient.includes('NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI'));
-    assert.ok(commandClient.includes('COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED = GATE8_FIXTURE_UI_ENABLED'));
-    assert.ok(commandClient.includes('COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED = GATE8_FIXTURE_UI_ENABLED'));
-    assert.ok(commandClient.includes('COMMERCE_V2_CLIENT_COMMANDS_ENABLED = GATE8_FIXTURE_UI_ENABLED'));
+    assert.ok(commandClient.includes("import { COMMERCE_V2_UI_ENABLED } from './commerceUiFlags.js'"));
+    assert.ok(commandClient.includes('COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED = COMMERCE_V2_UI_ENABLED'));
+    assert.ok(commandClient.includes('COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED = COMMERCE_V2_UI_ENABLED'));
+    assert.ok(commandClient.includes('COMMERCE_V2_CLIENT_COMMANDS_ENABLED = COMMERCE_V2_UI_ENABLED'));
     assert.ok(commandClient.includes("commandId: cancellationRequestId || createCommerceCommandId('cancel')"));
     assert.equal(commandClient.includes('cancellationRequestId: cancellationRequestId'), false);
-    assert.ok(consumerClient.includes('NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI'));
+    assert.ok(consumerClient.includes("import { COMMERCE_V2_UI_ENABLED } from './commerceUiFlags.js'"));
     assert.ok(consumerClient.includes('COMMERCE_V2_ORDER_READERS_ENABLED = true'));
     assert.ok(consumerClient.includes('COMMERCE_V2_ADMIN_READERS_ENABLED = true'));
 });

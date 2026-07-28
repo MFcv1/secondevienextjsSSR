@@ -220,10 +220,10 @@ const scenarios = {
     const dashboard = readSource('src/kit/admin/AdminDashboard.jsx');
 
     context.ok(checkout.includes('const COMMERCE_READ_ONLY = !COMMERCE_V2_CONSUMERS_ENABLED'));
-    context.ok(consumers.includes('NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI'));
+    context.ok(consumers.includes("import { COMMERCE_V2_UI_ENABLED } from './commerceUiFlags.js'"));
     context.ok(consumers.includes('COMMERCE_V2_ORDER_READERS_ENABLED = true'));
     context.ok(consumers.includes('COMMERCE_V2_ADMIN_READERS_ENABLED = true'));
-    context.ok(commands.includes('COMMERCE_V2_CLIENT_COMMANDS_ENABLED = GATE8_FIXTURE_UI_ENABLED'));
+    context.ok(commands.includes('COMMERCE_V2_CLIENT_COMMANDS_ENABLED = COMMERCE_V2_UI_ENABLED'));
     context.ok(checkout.includes('Paiement temporairement indisponible'));
     context.ok(checkout.includes('Fermer la modale ne compense jamais'));
     context.ok(!checkout.includes("httpsCallable(functions, 'cancelOrderClient')"));

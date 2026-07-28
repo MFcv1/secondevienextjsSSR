@@ -1,7 +1,8 @@
+import { COMMERCE_V2_UI_ENABLED } from './commerceUiFlags.js';
+
 export const CHECKOUT_RECOVERY_CONTRACT_VERSION = 1;
 export const COMMERCE_V2_RECOVERY_ENABLED =
-    typeof process !== 'undefined' &&
-    process.env.NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI === 'true';
+    COMMERCE_V2_UI_ENABLED;
 export const CHECKOUT_RECOVERY_STORAGE_KEY = 'secondevie:checkout-recovery:v1';
 
 const FORBIDDEN_FIELDS = Object.freeze([
