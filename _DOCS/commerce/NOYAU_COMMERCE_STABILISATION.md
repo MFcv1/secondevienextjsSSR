@@ -6,7 +6,7 @@ Decision de recette: `NO_GO_TRANSACTIONNEL`
 Proprietaire: noyau commerce, commandes, inventaire, Stripe et control plane admin
 Echeance de gouvernance: 2026-09-30
 Specification d'implementation: `STABILISEE_PAR_CONTRE_EXPERTISE`
-Etat d'execution: `GATE_0A_CODE_READY` + `GATES_0B_A_5_SANDBOX_ACTIVE_READ_ONLY`
+Etat d'execution: `GATE_0A_CODE_READY` + `GATES_0B_A_5_SANDBOX_ACTIVE_READ_ONLY_CLOSED`
 Prochaine tranche: Gate 6, outil de classification legacy read-only et preparation des fixtures; toute adoption/ecriture sandbox reste soumise aux controles de cette gate
 
 ## 1. Gouvernance du document
@@ -2782,7 +2782,15 @@ Executees localement:
 - preuves sandbox: indexes `READY`, 24/24 exports v2 presents, doublons
   mutateurs legacy `us-central1` retires, Auth/App Check refuses `401`,
   webhook non signe `400`, Rules publiees et rollout App Hosting
-  `build-2026-07-28-001` `SUCCEEDED`.
+  `build-2026-07-28-001` `SUCCEEDED`;
+- recette authentifiee sandbox: OTP Gmail recupere par le lecteur IMAP local,
+  session client Firebase et `listMyOrdersV2` fonctionnels sous Auth/App Check;
+  la vue Documents conserve le message de suspension fiscale legacy;
+- recette admin sandbox sous session forte existante: dashboard charge,
+  `Ventes` et `Retours` lisent leurs endpoints pagines sans erreur sous les
+  Rules restrictives, tandis que `Livraison` et `Paiement` restent
+  explicitement read-only. Aucun controle de mutation commerce n'a ete
+  active ni utilise.
 
 Les compteurs de confinement affichent explicitement zero ecriture/suppression
 Firestore, appel Stripe, creation/annulation de PI, e-mail, outbox et mouvement
@@ -2803,7 +2811,7 @@ comptees separement.
   annulation, refund et retour sont exportees avec App Check, Auth/AAL2 selon
   le role et verrou serveur mutations. Tous les flags UI de commande restent
   compiles a `false`; Livraison et Paiement n'ont aucun writer SDK commerce;
-- Gate 5: `SANDBOX_ACTIVE_READ_ONLY`; `createCheckoutV2`,
+- Gate 5: `SANDBOX_ACTIVE_READ_ONLY_CLOSED`; `createCheckoutV2`,
   `resumeCheckoutV2` et les trois lecteurs commandes/retours UID-admin sont
   exportes avec App Check et identite serveur. Checkout/reprise restent
   compiles a `false`; les lecteurs sont actifs;
@@ -2813,7 +2821,8 @@ comptees separement.
   `payment.status=succeeded`, la pagination UID et l'adaptateur v1 read-only
   sont deployes; seuls les consommateurs transactionnels restent `off`;
 - Gate 5: `test:commerce:ui` 10/10, `test:commerce:browser` 4/4, build Next,
-  Emulator Suite et smokes cloud sont verts;
+  Emulator Suite, smokes cloud et recettes authentifiees client/admin
+  read-only sont verts;
 - decision globale: `NO_GO_TRANSACTIONNEL` inchangee.
 
 Deploiement cible `secondevienextjsssr`:
@@ -2827,7 +2836,6 @@ Deploiement cible `secondevienextjsssr`:
   build `build-2026-07-27-002`; ne jamais restaurer les anciens writers ou
   doublons legacy pour effectuer ce rollback.
 
-Non executes: E2E Stripe transactionnels, migration/adoption legacy, recette
-authentifiee avec comptes client/admin, commit ou push. Gate 6 commence par un
-outil et un dry-run read-only; aucune activation de policy, fixture, checkout
-ou mutation v2 n'est implicite.
+Non executes: E2E Stripe transactionnels, migration/adoption legacy, commit ou
+push. Gate 6 commence par un outil et un dry-run read-only; aucune activation
+de policy, fixture, checkout ou mutation v2 n'est implicite.

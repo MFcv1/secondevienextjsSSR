@@ -63,6 +63,12 @@ renvoie les actions autorisees calculees serveur. `MyOrdersView` consomme ce
 reader et sa pagination; l'adaptateur historique v1 ne promeut jamais une
 commande ambigue.
 
+Recette sandbox du 2026-07-28: un OTP Gmail a ouvert une session Firebase
+cliente, puis `/mes-commandes` a charge `listMyOrdersV2` sous Auth/App Check et
+Rules restrictives sans erreur. La section Documents a conserve la suspension
+explicite des PDF fiscaux legacy. Aucun checkout, cancel ou writer commerce
+n'a ete active.
+
 ## 4. Factures et avoirs
 
 Le generateur PDF legacy reste en source mais n'est plus appelable depuis

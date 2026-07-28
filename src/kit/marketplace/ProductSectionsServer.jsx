@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, AtSign, Bookmark, ChevronLeft, ChevronRight, CreditCard, Heart, HeartHandshake, Instagram, LockKeyhole, Mail, MessageCircle, Quote, Send, ShieldCheck, Sparkles, Star, Tag, Truck } from 'lucide-react';
 import GalleryProductCardServer from './GalleryProductCardServer';
@@ -228,7 +229,7 @@ const BeforeAfterProjectLayer = ({ project, index, darkMode }) => (
       />
     </picture>
     <div className="pointer-events-none absolute right-3 top-3 z-20 sm:right-5 sm:top-5">
-      <span data-state="after" className={`before-after-state-badge inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-sans text-[7.5px] font-extrabold uppercase tracking-[0.16em] shadow-[0_14px_30px_-22px_rgba(24,18,12,0.72)] ring-1 sm:px-3.5 sm:py-2 sm:text-[9px] ${
+      <span data-state="after" data-ba-chip="after" className={`before-after-state-badge inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-sans text-[7.5px] font-extrabold uppercase tracking-[0.16em] shadow-[0_14px_30px_-22px_rgba(24,18,12,0.72)] ring-1 sm:px-3.5 sm:py-2 sm:text-[9px] ${
         darkMode ? 'bg-[#0f0d0a]/84 text-[#d8ad73] ring-[#d8ad73]/14' : 'bg-[#fffaf3]/94 text-[#3e352c] ring-white/90 dark:bg-[#0f0d0a]/84 dark:text-[#d8ad73] dark:ring-[#d8ad73]/14'
       }`}>
         <span className="before-after-state-index">02</span>
@@ -253,7 +254,7 @@ const BeforeAfterProjectLayer = ({ project, index, darkMode }) => (
         />
       </picture>
       <div className="pointer-events-none absolute left-3 top-3 sm:left-5 sm:top-5">
-        <span data-state="before" className={`before-after-state-badge inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-sans text-[7.5px] font-extrabold uppercase tracking-[0.16em] shadow-[0_14px_30px_-22px_rgba(24,18,12,0.72)] ring-1 sm:px-3.5 sm:py-2 sm:text-[9px] ${
+        <span data-state="before" data-ba-chip="before" className={`before-after-state-badge inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-sans text-[7.5px] font-extrabold uppercase tracking-[0.16em] shadow-[0_14px_30px_-22px_rgba(24,18,12,0.72)] ring-1 sm:px-3.5 sm:py-2 sm:text-[9px] ${
           darkMode ? 'bg-[#0f0d0a]/84 text-[#d8ad73] ring-[#d8ad73]/14' : 'bg-[#fffaf3]/94 text-[#3e352c] ring-white/90 dark:bg-[#0f0d0a]/84 dark:text-[#d8ad73] dark:ring-[#d8ad73]/14'
         }`}>
           <span className="before-after-state-index">01</span>
@@ -297,14 +298,14 @@ const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projec
           />
           <span
             data-ba-handle
-            className={`before-after-slider-handle pointer-events-none absolute top-1/2 z-[26] flex h-10 w-10 items-center justify-center rounded-full shadow-[0_18px_38px_rgba(37,27,17,0.2),inset_0_1px_0_rgba(255,255,255,0.88)] ring-1 sm:h-11 sm:w-11 ${
-              darkMode ? 'bg-[#17130f] text-[#f5eadb] ring-[#d8ad73]/16 shadow-[0_16px_34px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.06)]' : 'bg-[#fffaf3] text-[#151515] ring-[#d9c3a6] dark:bg-[#17130f] dark:text-[#f5eadb] dark:ring-[#d8ad73]/16 dark:shadow-[0_16px_34px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.06)]'
+            className={`before-after-slider-handle pointer-events-none absolute top-1/2 z-[26] flex h-11 items-center justify-center rounded-full px-1.5 sm:h-[52px] sm:px-2 ${
+              darkMode ? 'text-[#f5eadb]' : 'text-[#1d1914] dark:text-[#f5eadb]'
             }`}
             style={{ left: '50%' }}
           >
-            <ChevronLeft className="before-after-slider-handle__left" size={14} strokeWidth={1.35} />
-            <span className="before-after-slider-handle__divider mx-0.5 h-3.5 w-px bg-[#d4c1aa]" />
-            <ChevronRight className="before-after-slider-handle__right" size={14} strokeWidth={1.35} />
+            <ChevronLeft className="before-after-slider-handle__left" size={14} strokeWidth={1.6} />
+            <span className="before-after-slider-handle__divider mx-1 h-4 w-px" />
+            <ChevronRight className="before-after-slider-handle__right" size={14} strokeWidth={1.6} />
           </span>
           <input
             data-ba-range
@@ -341,20 +342,28 @@ const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projec
           {project.desc}
         </p>
       </div>
-      <div data-ba-project-actions className="before-after-project-actions relative flex items-center justify-between gap-2 px-1 md:justify-end md:gap-2.5 md:px-2.5 md:pb-1">
-        <div className="before-after-project-nav flex gap-2">
-          <button type="button" data-ba-prev className={`before-after-project-nav__button flex h-8 w-8 items-center justify-center rounded-full ring-1 transition-all duration-300 ease-out hover:scale-105 active:scale-95 md:h-9 md:w-9 ${darkMode ? 'bg-[#17130f] text-[#f8f1e8] ring-[#d8ad73]/14' : 'bg-[#fffaf3] text-[#151515] ring-[#dfd1c2] shadow-[0_14px_26px_-20px_rgba(43,31,19,0.78)] dark:bg-[#17130f] dark:text-[#f8f1e8] dark:ring-[#d8ad73]/14 dark:shadow-none'}`} aria-label="Projet precedent">
-            <ChevronLeft size={16} strokeWidth={1.45} />
-          </button>
-          <button type="button" data-ba-next className={`before-after-project-nav__button flex h-8 w-8 items-center justify-center rounded-full ring-1 transition-all duration-300 ease-out hover:scale-105 active:scale-95 md:h-9 md:w-9 ${darkMode ? 'bg-[#17130f] text-[#f8f1e8] ring-[#d8ad73]/14' : 'bg-[#fffaf3] text-[#151515] ring-[#dfd1c2] shadow-[0_14px_26px_-20px_rgba(43,31,19,0.78)] dark:bg-[#17130f] dark:text-[#f8f1e8] dark:ring-[#d8ad73]/14 dark:shadow-none'}`} aria-label="Projet suivant">
-            <ChevronRight size={16} strokeWidth={1.45} />
-          </button>
+      <div data-ba-project-actions className="before-after-project-actions relative flex items-center justify-between gap-3 px-1 md:justify-end md:gap-4 md:px-2.5 md:pb-1">
+        <div className="before-after-project-segments flex items-center gap-1.5" aria-hidden="true">
+          {projects.map((segmentProject, segmentIndex) => (
+            <span
+              key={`segment-${segmentProject.avant}`}
+              data-ba-segment={segmentIndex}
+              data-ba-segment-state={segmentIndex === 0 ? 'active' : 'idle'}
+              className="before-after-project-segment"
+            />
+          ))}
         </div>
-        <span data-ba-count className={`before-after-project-count rounded-full px-3 py-1.5 font-sans text-[8px] font-extrabold uppercase tracking-[0.16em] ring-1 md:px-3.5 md:text-[8.5px] ${
-          darkMode ? 'bg-[#17130f] text-[#d8c9b8] ring-[#d8ad73]/12' : 'bg-[#fff8ee] text-[#9A714C] ring-[#dfd1c2] dark:bg-[#17130f] dark:text-[#d8c9b8] dark:ring-[#d8ad73]/12'
-        }`}>
+        <span data-ba-count className="before-after-project-count font-sans text-[9px] font-extrabold uppercase tracking-[0.14em]">
           01 / 03
         </span>
+        <div className="before-after-project-nav flex gap-1.5">
+          <button type="button" data-ba-prev className="before-after-project-nav__button flex h-9 w-9 items-center justify-center rounded-full md:h-10 md:w-10" aria-label="Projet precedent">
+            <ChevronLeft size={16} strokeWidth={1.6} />
+          </button>
+          <button type="button" data-ba-next className="before-after-project-nav__button flex h-9 w-9 items-center justify-center rounded-full md:h-10 md:w-10" aria-label="Projet suivant">
+            <ChevronRight size={16} strokeWidth={1.6} />
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -938,47 +947,18 @@ export const TestimonialsSectionServer = ({ darkMode = false } = {}) => (
   <TestimonialsCarouselPlaceholder darkMode={darkMode} />
 );
 
-const discountCards = [
-  {
-    Icon: LockKeyhole,
-    toneLabel: 'Liberte',
-    accent: '#9B6741',
-    soft: '#F8ECE5',
-    wash: 'linear-gradient(135deg, rgba(255,248,243,0.96), rgba(248,236,229,0.72))',
-    ring: 'rgba(155,103,65,0.18)',
-    title: 'Sans engagement',
-    text: 'Tu restes libre de te desabonner a tout moment.',
-  },
-  {
-    Icon: Tag,
-    toneLabel: 'Primeur',
-    accent: '#6E765D',
-    soft: '#EEF2E7',
-    wash: 'linear-gradient(135deg, rgba(250,250,245,0.96), rgba(238,242,231,0.78))',
-    ring: 'rgba(110,118,93,0.18)',
-    title: 'Offres en avant-premiere',
-    text: "Decouvre nos nouveautes et profite d'offres exclusives.",
-  },
-  {
-    Icon: Mail,
-    toneLabel: 'Simple',
-    accent: '#A36E55',
-    soft: '#F7EAE3',
-    wash: 'linear-gradient(135deg, rgba(255,249,244,0.97), rgba(247,234,227,0.76))',
-    ring: 'rgba(163,110,85,0.17)',
-    title: 'Desinscription facile',
-    text: 'Un clic suffit pour ne plus recevoir nos e-mails.',
-  },
-  {
-    Icon: ShieldCheck,
-    toneLabel: 'Confiance',
-    accent: '#757466',
-    soft: '#ECEDE4',
-    wash: 'linear-gradient(135deg, rgba(250,249,244,0.97), rgba(236,237,228,0.72))',
-    ring: 'rgba(117,116,102,0.18)',
-    title: 'Paiement securise',
-    text: 'Vos transactions sont protegees et 100% securisees.',
-  },
+// Les trois gains possibles. La ponderation reelle du tirage reste cote serveur :
+// ces libelles servent uniquement a annoncer la mecanique avant de jouer.
+const prizeTiers = [
+  { value: 5, label: 'Frequent' },
+  { value: 10, label: 'Courant' },
+  { value: 15, label: 'Rare' },
+];
+
+const newsletterAssurances = [
+  { Icon: LockKeyhole, title: 'Sans engagement', text: 'Desabonnement libre a tout moment.' },
+  { Icon: Tag, title: 'Offres en avant-premiere', text: 'Nos nouveautes avant tout le monde.' },
+  { Icon: ShieldCheck, title: 'Paiement securise', text: 'Transactions protegees a 100%.' },
 ];
 
 export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
@@ -1006,89 +986,104 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
 
             <h2 className={`relative mt-7 max-w-[690px] font-serif text-[clamp(2.85rem,4.15vw,4.55rem)] font-medium leading-[0.9] tracking-normal sm:mt-8 lg:mt-9 dark:text-[#f8f1e8] ${darkMode ? 'text-[#f8f1e8]' : 'text-[#191713]'}`}>
               <span className="block">Abonne-toi</span>
-              <span className="block">et recois ton</span>
+              <span className="block">et tente</span>
               <span className="mt-1 block md:whitespace-nowrap">
-                <span className="italic text-[#9B734A]">code</span> promotionnel
+                <span className="italic text-[#9B734A]">ta chance</span>
               </span>
             </h2>
 
-            <div className="relative mt-2 flex flex-nowrap items-center gap-x-3 gap-y-2 sm:mt-6 sm:flex-wrap sm:gap-x-4 sm:gap-y-2.5">
-              <span className="inline-flex shrink-0 items-baseline font-serif text-[clamp(3.25rem,14vw,4rem)] font-light italic leading-[0.78] tracking-normal text-[#9B734A] sm:translate-y-[-3px] sm:text-[clamp(3.9rem,4.2vw,4.95rem)] lg:translate-y-[-4px]" aria-label="10%">
-                <span>10</span>
-                <span className="ml-[0.01em] inline-block translate-y-[0.015em] text-[0.82em]">%</span>
-              </span>
-              <span className={`ml-1.5 h-[32px] w-px shrink-0 translate-y-[5px] sm:ml-0 sm:h-[48px] sm:translate-y-0 dark:bg-[#5c4a36]/65 ${darkMode ? 'bg-[#5c4a36]/65' : 'bg-[rgba(155,115,74,0.35)]'}`} aria-hidden="true" />
-              <span className={`translate-x-1 translate-y-[6px] whitespace-nowrap font-sans text-[8px] font-bold uppercase leading-none tracking-[0.13em] sm:max-w-[260px] sm:translate-x-0 sm:translate-y-0 sm:text-[10.5px] sm:tracking-[0.2em] lg:text-[11.5px] dark:text-[#f2e8dc] ${darkMode ? 'text-[#f2e8dc]' : 'text-[#26221D]'}`}>
-                Sur ta premiere decouverte
-              </span>
-              <span className={`hidden h-px min-w-[100px] flex-1 md:block dark:bg-[#5c4a36]/55 ${darkMode ? 'bg-[#5c4a36]/55' : 'bg-[#dfd0be]'}`} aria-hidden="true" />
-              <span className={`hidden text-[40px] leading-none md:block dark:text-[#8a6b48] ${darkMode ? 'text-[#8a6b48]' : 'text-[#b79e7d]'}`} aria-hidden="true">*</span>
+            <div className="discount-tier-row relative mt-6 flex items-stretch sm:mt-7">
+              {prizeTiers.map((tier, tierIndex) => (
+                <Fragment key={tier.value}>
+                  {tierIndex > 0 ? <span className="discount-tier-separator" aria-hidden="true" /> : null}
+                  <div className="discount-tier" data-nl-tier={tier.value} data-nl-tier-state="idle">
+                    <span className="discount-tier__value">
+                      {tier.value}
+                      <span className="discount-tier__percent">%</span>
+                    </span>
+                    <span className="discount-tier__label">{tier.label}</span>
+                  </div>
+                </Fragment>
+              ))}
             </div>
 
-            <form className={`relative mt-6 grid w-full max-w-[640px] grid-cols-[minmax(0,1fr)_50px] gap-2 rounded-[20px] p-1.5 ring-1 sm:grid-cols-[minmax(0,1fr)_auto] dark:bg-[#211d18] dark:ring-[#3a332a]/95 dark:shadow-[0_18px_38px_-31px_rgba(12,9,7,0.7),inset_0_1px_0_rgba(255,255,255,0.06)] ${darkMode ? 'bg-[#211d18] ring-[#3a332a]/95 shadow-[0_18px_38px_-31px_rgba(12,9,7,0.7),inset_0_1px_0_rgba(255,255,255,0.06)]' : 'bg-[#f3e8dc] ring-[#dccab8] shadow-[0_18px_38px_-31px_rgba(52,37,25,0.45),inset_0_1px_0_rgba(255,255,255,0.82)]'}`}>
+            <form
+              data-nl-form
+              className={`discount-form relative mt-6 grid w-full max-w-[640px] grid-cols-[minmax(0,1fr)_50px] gap-2 rounded-[20px] p-1.5 ring-1 sm:grid-cols-[minmax(0,1fr)_auto] dark:bg-[#211d18] dark:ring-[#3a332a]/95 dark:shadow-[0_18px_38px_-31px_rgba(12,9,7,0.7),inset_0_1px_0_rgba(255,255,255,0.06)] ${darkMode ? 'bg-[#211d18] ring-[#3a332a]/95 shadow-[0_18px_38px_-31px_rgba(12,9,7,0.7),inset_0_1px_0_rgba(255,255,255,0.06)]' : 'bg-[#f3e8dc] ring-[#dccab8] shadow-[0_18px_38px_-31px_rgba(52,37,25,0.45),inset_0_1px_0_rgba(255,255,255,0.82)]'}`}
+            >
               <label className={`flex min-h-[50px] min-w-0 items-center gap-3 rounded-[15px] px-4 ring-1 transition-colors duration-300 focus-within:ring-[#cbb89f] sm:min-h-[56px] sm:px-5 dark:bg-[#151310] dark:text-[#f8f1e8] dark:ring-[#3a332a]/80 ${darkMode ? 'bg-[#151310] text-[#f8f1e8] ring-[#3a332a]/80' : 'bg-[#fffdf8] text-[#242221] ring-[#eadfce]'}`}>
                 <Mail size={18} strokeWidth={1.45} className={`dark:text-[#a68a63] ${darkMode ? 'text-[#a68a63]' : 'text-[#9a7651]'}`} aria-hidden="true" />
-                <input type="email" placeholder="Ton adresse e-mail" className={`min-w-0 flex-1 bg-transparent font-serif text-[15.5px] outline-none placeholder:text-[#91877b] dark:text-[#f8f1e8] dark:placeholder:text-[#8f8171] ${darkMode ? 'text-[#f8f1e8]' : 'text-[#242221]'}`} />
+                <input data-nl-email type="email" required placeholder="Ton adresse e-mail" className={`min-w-0 flex-1 bg-transparent font-serif text-[15.5px] outline-none placeholder:text-[#91877b] dark:text-[#f8f1e8] dark:placeholder:text-[#8f8171] ${darkMode ? 'text-[#f8f1e8]' : 'text-[#242221]'}`} />
               </label>
-              <button type="button" aria-label="Recevoir mon code" className={`group inline-flex min-h-[50px] w-[50px] items-center justify-center rounded-[15px] px-0 font-sans text-[9px] font-black uppercase tracking-[0.18em] shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_15px_28px_-20px_rgba(20,15,12,0.8)] ring-1 transition-all duration-500 hover:-translate-y-0.5 active:scale-[0.97] sm:min-h-[56px] sm:w-auto sm:min-w-[250px] sm:justify-between sm:px-3 sm:pl-7 dark:bg-[#f8efe2] dark:text-[#17120e] dark:ring-white/20 dark:hover:bg-[#fff6e8] ${darkMode ? 'bg-[#f8efe2] text-[#17120e] ring-white/20 hover:bg-[#fff6e8]' : 'bg-[#fffaf3] text-[#7b4f2b] ring-[#dccab8] hover:bg-[#f8efe2] sm:bg-[#251f18] sm:text-[#fff8ee] sm:ring-black/10 sm:hover:bg-[#18130f]'}`}>
-                <span className="hidden sm:inline">Recevoir mon code</span>
+              <button data-nl-submit type="submit" disabled aria-label="Recevoir mon code" className={`discount-form__submit group inline-flex min-h-[50px] w-[50px] items-center justify-center rounded-[15px] px-0 font-sans text-[9px] font-black uppercase tracking-[0.18em] shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_15px_28px_-20px_rgba(20,15,12,0.8)] ring-1 transition-all duration-500 hover:-translate-y-0.5 active:scale-[0.97] sm:min-h-[56px] sm:w-auto sm:min-w-[250px] sm:justify-between sm:px-3 sm:pl-7 dark:bg-[#f8efe2] dark:text-[#17120e] dark:ring-white/20 dark:hover:bg-[#fff6e8] ${darkMode ? 'bg-[#f8efe2] text-[#17120e] ring-white/20 hover:bg-[#fff6e8]' : 'bg-[#fffaf3] text-[#7b4f2b] ring-[#dccab8] hover:bg-[#f8efe2] sm:bg-[#251f18] sm:text-[#fff8ee] sm:ring-black/10 sm:hover:bg-[#18130f]'}`}>
+                <span data-nl-submit-label className="hidden sm:inline">Tire une carte d&apos;abord</span>
                 <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#fff8ee] ring-1 transition-transform duration-500 group-hover:translate-x-1 sm:ml-4 ${darkMode ? 'bg-[#7d542b] ring-[#b48655]/50' : 'bg-[#6f4825] ring-[#b48655]/45'}`}>
                   <ArrowRight size={16} strokeWidth={1.55} />
                 </span>
               </button>
             </form>
 
-            <div className={`relative mt-4 flex items-center gap-2.5 font-sans text-[9px] font-extrabold uppercase tracking-[0.17em] sm:text-[10px] dark:text-[#9a8a77] ${darkMode ? 'text-[#9a8a77]' : 'text-[#75695f]'}`}>
+            <div data-nl-fine className={`discount-fine relative mt-4 flex items-center gap-2.5 font-sans text-[9px] font-extrabold uppercase tracking-[0.17em] sm:text-[10px] dark:text-[#9a8a77] ${darkMode ? 'text-[#9a8a77]' : 'text-[#75695f]'}`}>
               <Mail size={14} strokeWidth={1.45} aria-hidden="true" />
-              <span>Ton code est envoye instantanement par e-mail.</span>
+              <span data-nl-fine-text>Ton code et nos nouveautes, dans le meme e-mail.</span>
             </div>
+
+            <div data-nl-sent hidden className="discount-sent relative mt-4 flex items-center gap-3.5 rounded-[16px] p-3.5">
+              <span data-nl-sent-code className="discount-sent__code font-serif text-[17px] italic">SV-XXXXX</span>
+              <span className="discount-sent__text font-sans text-[11px] leading-[1.5]">
+                <b>Enregistre dans ton espace client</b> et envoye par e-mail. Tu es aussi abonne(e) a la newsletter.
+              </span>
+            </div>
+
+            <ul className="discount-assurances relative mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
+              {newsletterAssurances.map(({ Icon, title, text }) => (
+                <li key={title} className="discount-assurance" title={text}>
+                  <Icon size={13} strokeWidth={1.5} aria-hidden="true" />
+                  <span>{title}</span>
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <div className={`relative hidden min-h-full sm:flex sm:p-4 md:p-5 lg:p-6 dark:bg-[#181511] ${darkMode ? 'bg-[#1d1a16]' : 'bg-[#fffbf5]'}`}>
-            <div className="mx-auto grid w-full max-w-[355px] grid-cols-2 gap-2 sm:max-w-none sm:gap-3 lg:grid-cols-2">
-              {discountCards.map(({ Icon, toneLabel, title, text, accent, soft, wash, ring }) => (
-                <article
-                  key={title}
-                  style={{
-                    '--feature-accent': accent,
-                    '--feature-soft': soft,
-                    '--feature-wash': wash,
-                    '--feature-ring': ring,
-                  }}
-                  className={`discount-industrial-card group relative min-h-[64px] overflow-hidden rounded-[12px] p-[1px] transition-all duration-500 hover:-translate-y-1 sm:min-h-[206px] sm:rounded-[22px] lg:min-h-[214px] dark:bg-gradient-to-br dark:from-[#3a3026] dark:via-[#211d18] dark:to-[#171411] dark:shadow-[0_18px_46px_-36px_rgba(0,0,0,0.95)] ${darkMode ? 'bg-gradient-to-br from-[#3a3026] via-[#211d18] to-[#171411] shadow-[0_18px_46px_-36px_rgba(0,0,0,0.95)]' : 'bg-transparent ring-1 ring-[#ebdccb]/40 shadow-[0_18px_44px_-38px_rgba(62,43,27,0.62)] hover:shadow-[0_28px_58px_-40px_rgba(62,43,27,0.72)]'}`}
+          <div data-nl-game className={`discount-game relative flex min-h-[420px] flex-col items-center justify-center overflow-hidden p-6 sm:p-7 md:p-8 lg:p-9 dark:bg-[#181511] ${darkMode ? 'bg-[#1d1a16]' : 'bg-[#fffbf5]'}`}>
+            <span className="discount-game__glow" aria-hidden="true" />
+
+            <p data-nl-game-label className="discount-game__label relative font-sans text-[10px] font-extrabold uppercase tracking-[0.24em]">
+              Choisis une carte
+            </p>
+
+            <div data-nl-cards className="discount-game__cards relative mt-7 flex items-start justify-center">
+              {[0, 1, 2].map((cardIndex) => (
+                <button
+                  key={cardIndex}
+                  type="button"
+                  data-nl-card={cardIndex}
+                  className="discount-card"
+                  aria-label={`Retourner la carte ${cardIndex + 1}`}
                 >
-                  <div className={`relative flex h-full flex-col overflow-hidden rounded-[11px] bg-[image:var(--feature-wash)] p-2.5 ring-1 sm:rounded-[21px] sm:p-5 dark:bg-[linear-gradient(135deg,#211d18,#191612)] dark:text-[#f8f1e8] dark:ring-[#3d3228] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.055)] ${darkMode ? 'bg-[linear-gradient(135deg,#211d18,#191612)] text-[#f8f1e8] ring-[#3d3228] shadow-[inset_0_1px_0_rgba(255,255,255,0.055)]' : 'text-[#181716] ring-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.78)]'}`}>
-                    <div className={`pointer-events-none absolute inset-[4px] rounded-[8px] ring-1 sm:inset-[6px] sm:rounded-[16px] dark:ring-[#3d3228]/80 ${darkMode ? 'ring-[#3d3228]/80' : 'ring-white/65'}`} />
-                    <div className={`pointer-events-none absolute -right-10 -top-10 hidden h-32 w-32 rounded-full opacity-50 blur-3xl transition-transform duration-700 group-hover:scale-110 sm:block dark:bg-[#b9864f]/20 ${darkMode ? 'bg-[#b9864f]/20' : 'bg-[color:var(--feature-soft)]'}`} />
-
-                    <div className="relative z-10 flex h-full items-center gap-2.5 sm:h-auto sm:items-start sm:gap-3">
-                      <span className={`relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[color:var(--feature-accent)] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_-20px_rgba(60,42,26,0.55)] ring-1 transition-transform duration-500 group-hover:-translate-y-0.5 sm:h-[50px] sm:w-[50px] dark:bg-[#e8ddd0]/86 dark:ring-[#6d543b]/35 ${darkMode ? 'bg-[#e8ddd0]/86 ring-[#6d543b]/35' : 'bg-[#fffbf6]/72 ring-[color:var(--feature-ring)]'}`}>
-                        <span className="absolute inset-[4px] rounded-full ring-1 ring-[color:var(--feature-ring)] sm:inset-[5px]" aria-hidden="true" />
-                        <Icon size={18} strokeWidth={1.35} className="h-3.5 w-3.5 sm:h-[22px] sm:w-[22px]" aria-hidden="true" />
-                      </span>
-                      <div className="min-w-0 pt-0 sm:pt-1">
-                        <span className="hidden font-sans text-[5.8px] font-black uppercase tracking-[0.16em] text-[color:var(--feature-accent)] dark:text-[#c89b6e] sm:block sm:text-[8px] sm:tracking-[0.26em]">
-                          {toneLabel}
-                        </span>
-                        <h3 className="max-w-[116px] font-serif text-[10px] font-semibold uppercase leading-[1.02] tracking-normal dark:text-[#fbf2e7] sm:mt-3 sm:max-w-[220px] sm:text-[21px] sm:leading-[0.96]">
-                          {title}
-                        </h3>
-                      </div>
-                    </div>
-
-                    <p className={`relative z-10 mt-5 hidden max-w-[250px] font-serif text-[15.5px] leading-[1.38] sm:block dark:text-stone-300 ${darkMode ? 'text-stone-300' : 'text-[#62584e]'}`}>
-                      {text}
-                    </p>
-
-                    <div className="relative z-10 mt-auto hidden items-center gap-3 pt-5 sm:flex">
-                      <span className={`h-px flex-1 dark:bg-[#5c4a36]/55 ${darkMode ? 'bg-[#5c4a36]/55' : 'bg-[#dfd1c1]'}`} aria-hidden="true" />
-                      <span className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--feature-accent)] ring-1 ring-[color:var(--feature-ring)] transition-transform duration-500 group-hover:translate-x-1 dark:bg-[#e8ddd0]/70 ${darkMode ? 'bg-[#e8ddd0]/70' : 'bg-[#fffbf6]/58'}`}>
-                        <ArrowRight size={16} strokeWidth={1.35} aria-hidden="true" />
-                      </span>
-                    </div>
-                  </div>
-                </article>
+                  <span className="discount-card__flip">
+                    <span className="discount-card__face discount-card__face--back">
+                      <span className="discount-card__sheen" aria-hidden="true" />
+                      <Sparkles size={30} strokeWidth={1.1} aria-hidden="true" />
+                    </span>
+                    <span className="discount-card__face discount-card__face--front">
+                      <span className="discount-card__value" data-nl-card-value>—</span>
+                      <span className="discount-card__caption">de reduction</span>
+                    </span>
+                  </span>
+                </button>
               ))}
+            </div>
+
+            <div data-nl-won hidden className="discount-game__won relative mt-8 text-center">
+              <p data-nl-won-value className="discount-game__won-value font-serif">
+                0<span className="discount-game__won-percent">%</span>
+              </p>
+              <p className="discount-game__won-sub font-sans">de reduction remportes</p>
+              <p className="discount-game__won-hint font-sans">
+                <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
+                Laisse ton e-mail pour le recevoir
+              </p>
             </div>
           </div>
         </div>

@@ -4458,26 +4458,68 @@ html.dark .before-after-state-badge,
 
 .before-after-slider-handle {
   translate: -50% -50%;
-  border: 1px solid var(--ba-border);
-  background: var(--ba-surface-raised);
+  min-width: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  border-radius: 999px;
+  background: rgba(255, 250, 243, 0.66);
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
   box-shadow:
-    inset 0 0 0 4px var(--ba-surface),
-    inset 0 0 0 5px var(--ba-border-soft),
-    0 13px 28px -14px rgba(35,24,15,0.44);
-  transition: box-shadow 360ms cubic-bezier(0.32,0.72,0,1);
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 16px 36px -16px rgba(35, 24, 15, 0.5);
+  transition:
+    box-shadow 420ms cubic-bezier(0.32, 0.72, 0, 1),
+    background-color 420ms cubic-bezier(0.32, 0.72, 0, 1),
+    scale 420ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (min-width: 640px) {
+  .before-after-slider-handle {
+    min-width: 52px;
+  }
+}
+
+html.dark .before-after-slider-handle,
+.before-after-premium--dark .before-after-slider-handle {
+  border-color: rgba(216, 173, 115, 0.2);
+  background: rgba(23, 19, 15, 0.62);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 16px 36px -16px rgba(0, 0, 0, 0.62);
 }
 
 .before-after-slider-handle__left,
 .before-after-slider-handle__right {
-  transition: transform 420ms cubic-bezier(0.32,0.72,0,1);
+  transition: transform 420ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .before-after-slider-handle__divider {
-  opacity: 0.58;
+  background: currentcolor;
+  opacity: 0.22;
 }
 
-.before-after-media-stage:has([data-ba-range]:active) .before-after-slider-handle {
-  scale: 0.96;
+.before-after-media-stage:has([data-ba-range]:active) .before-after-slider-handle,
+.before-after-media-stage[data-ba-dragging='true'] .before-after-slider-handle {
+  scale: 1.08;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 22px 46px -16px rgba(35, 24, 15, 0.58);
+}
+
+.before-after-media-stage[data-ba-dragging='true'] .before-after-slider-handle__left {
+  transform: translateX(-2px);
+}
+
+.before-after-media-stage[data-ba-dragging='true'] .before-after-slider-handle__right {
+  transform: translateX(2px);
+}
+
+/* Les puces Avant / Apres suivent le curseur en direct. */
+.before-after-state-badge[data-ba-chip] {
+  transition:
+    opacity 220ms linear,
+    transform 420ms cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: opacity, transform;
 }
 
 .before-after-project-rail {
@@ -4508,22 +4550,52 @@ html.dark .before-after-state-badge,
 }
 
 .before-after-project-nav {
-  padding: 3px;
-  border: 1px solid var(--ba-border-soft);
-  border-radius: 999px;
-  background: rgba(255,255,255,0.22);
-  box-shadow: inset 0 1px 0 var(--ba-highlight);
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
 }
 
 .before-after-project-nav__button {
-  transition: transform 420ms cubic-bezier(0.32,0.72,0,1), color 420ms cubic-bezier(0.32,0.72,0,1), background-color 420ms cubic-bezier(0.32,0.72,0,1);
+  color: var(--ba-ink);
+  border: 1px solid var(--ba-border);
+  background: var(--ba-surface-raised);
+  box-shadow:
+    inset 0 1px 0 var(--ba-highlight),
+    0 12px 24px -18px var(--ba-contact-shadow);
+  transition:
+    transform 420ms cubic-bezier(0.32, 0.72, 0, 1),
+    color 420ms cubic-bezier(0.32, 0.72, 0, 1),
+    border-color 420ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.before-after-project-nav__button:active {
+  transform: scale(0.93);
+}
+
+/* Segments de progression : l'actif s'allonge au lieu d'un simple compteur fige. */
+.before-after-project-segment {
+  display: block;
+  width: 16px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--ba-border);
+  transition:
+    width 520ms cubic-bezier(0.32, 0.72, 0, 1),
+    background-color 520ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.before-after-project-segment[data-ba-segment-state='active'] {
+  width: 28px;
+  background: var(--ba-bronze);
 }
 
 .before-after-project-count {
+  color: var(--ba-muted);
   font-variant-numeric: tabular-nums;
-  border: 1px solid var(--ba-border-soft);
-  background: var(--ba-surface-raised);
-  box-shadow: inset 0 1px 0 var(--ba-highlight);
+  border: 0;
+  background: none;
+  box-shadow: none;
 }
 
 html.dark .before-after-project-card,
@@ -4977,5 +5049,462 @@ html.dark .discount-section__ornament,
   .atelier-showcase__arch,
   .atelier-showcase__ornament {
     display: none;
+  }
+}
+
+/* ==========================================================================
+   NEWSLETTER + JEU DE REVELATION
+   Le module unifie remplace la grille de tuiles de reassurance : on gagne un
+   code, et l'abonnement se fait dans le meme envoi.
+   ========================================================================== */
+
+.discount-section {
+  --nl-ink: #191713;
+  --nl-muted: #6d6258;
+  --nl-bronze: #9b734a;
+  --nl-accent: #8b5c42;
+  --nl-surface: #fffdf8;
+  --nl-raised: #fffaf3;
+  --nl-border: rgba(177, 128, 82, 0.26);
+  --nl-border-soft: rgba(177, 128, 82, 0.14);
+  --nl-highlight: rgba(255, 255, 255, 0.9);
+  --nl-shadow: rgba(93, 57, 30, 0.24);
+}
+
+html.dark .discount-section,
+.discount-section--dark {
+  --nl-ink: #f8f1e8;
+  --nl-muted: #c5b6a3;
+  --nl-bronze: #d8ad73;
+  --nl-accent: #d9b58d;
+  --nl-surface: #1d1a16;
+  --nl-raised: #17130f;
+  --nl-border: rgba(216, 173, 115, 0.18);
+  --nl-border-soft: rgba(216, 173, 115, 0.09);
+  --nl-highlight: rgba(239, 204, 157, 0.1);
+  --nl-shadow: rgba(0, 0, 0, 0.6);
+}
+
+/* --- Rangee des trois gains --- */
+.discount-tier-row {
+  max-width: 640px;
+}
+
+.discount-tier {
+  flex: 1;
+  padding: 12px 4px;
+  text-align: center;
+  border-radius: 14px;
+  transition:
+    background-color 520ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 520ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.discount-tier[data-nl-tier-state='won'] {
+  background: var(--nl-raised);
+  box-shadow:
+    inset 0 1px 0 var(--nl-highlight),
+    0 16px 32px -26px var(--nl-shadow);
+  transform: scale(1.06);
+}
+
+.discount-tier[data-nl-tier-state='dimmed'] {
+  opacity: 0.4;
+}
+
+.discount-tier__value {
+  display: block;
+  color: var(--nl-bronze);
+  font-family: var(--font-cormorant), ui-serif, serif;
+  font-size: clamp(1.6rem, 2.6vw, 2.1rem);
+  font-style: italic;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  transition: color 420ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.discount-tier[data-nl-tier-state='won'] .discount-tier__value {
+  color: var(--nl-accent);
+}
+
+.discount-tier__percent {
+  font-size: 0.62em;
+  vertical-align: 0.22em;
+}
+
+.discount-tier__label {
+  display: block;
+  margin-top: 6px;
+  color: var(--nl-muted);
+  font-family: var(--font-manrope), ui-sans-serif, sans-serif;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.78;
+}
+
+.discount-tier-separator {
+  flex-shrink: 0;
+  align-self: center;
+  width: 1px;
+  height: 32px;
+  background: var(--nl-border-soft);
+}
+
+/* --- Formulaire : verrouille tant qu'on n'a pas joue --- */
+.discount-form__submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.44;
+  transform: none !important;
+}
+
+.discount-fine {
+  transition: color 420ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.discount-fine[data-nl-fine-state='armed'] {
+  color: var(--nl-accent) !important;
+}
+
+.discount-sent {
+  border: 1px solid var(--nl-border-soft);
+  background: var(--nl-raised);
+  box-shadow: inset 0 1px 0 var(--nl-highlight);
+  animation: discount-sent-in 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes discount-sent-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.discount-sent__code {
+  flex-shrink: 0;
+  padding: 7px 15px;
+  color: var(--nl-accent);
+  white-space: nowrap;
+  border: 1px dashed var(--nl-accent);
+  border-radius: 11px;
+  background: var(--nl-surface);
+}
+
+.discount-sent__text {
+  color: var(--nl-muted);
+}
+
+.discount-sent__text b {
+  color: var(--nl-ink);
+}
+
+/* --- Reassurances : une ligne discrete, plus une grille de tuiles --- */
+.discount-assurances {
+  max-width: 640px;
+}
+
+.discount-assurance {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  color: var(--nl-muted);
+  font-family: var(--font-manrope), ui-sans-serif, sans-serif;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.discount-assurance svg {
+  color: var(--nl-bronze);
+}
+
+/* --- Panneau de jeu --- */
+.discount-game__glow {
+  position: absolute;
+  width: 340px;
+  height: 340px;
+  border-radius: 999px;
+  background: var(--nl-accent);
+  opacity: 0;
+  filter: blur(90px);
+  transition: opacity 1s ease;
+  pointer-events: none;
+}
+
+.discount-game[data-nl-game-state='won'] .discount-game__glow {
+  opacity: 0.14;
+}
+
+.discount-game__label {
+  color: var(--nl-muted);
+  transition:
+    opacity 420ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 420ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.discount-game[data-nl-game-state='won'] .discount-game__label {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.discount-game__cards {
+  gap: clamp(10px, 1.6vw, 20px);
+  perspective: 1600px;
+}
+
+.discount-card {
+  position: relative;
+  width: clamp(96px, 9vw, 124px);
+  height: clamp(134px, 12.6vw, 174px);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transition:
+    transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 620ms ease;
+}
+
+.discount-card:nth-child(1) { transform: rotate(-7deg) translateY(8px); }
+.discount-card:nth-child(3) { transform: rotate(7deg) translateY(8px); }
+
+.discount-card:focus-visible {
+  outline: 2px solid var(--nl-accent);
+  outline-offset: 6px;
+  border-radius: 20px;
+}
+
+/* Distribution en cascade a l'entree dans le viewport. */
+.discount-game[data-nl-dealt='false'] .discount-card { opacity: 0; }
+.discount-game[data-nl-dealt='true'] .discount-card:nth-child(1) { animation: discount-deal-left 820ms cubic-bezier(0.22, 1, 0.36, 1) 50ms both; }
+.discount-game[data-nl-dealt='true'] .discount-card:nth-child(2) { animation: discount-deal-mid 820ms cubic-bezier(0.22, 1, 0.36, 1) 140ms both; }
+.discount-game[data-nl-dealt='true'] .discount-card:nth-child(3) { animation: discount-deal-right 820ms cubic-bezier(0.22, 1, 0.36, 1) 230ms both; }
+
+@keyframes discount-deal-left {
+  from { opacity: 0; transform: translateY(38px) rotate(-16deg) scale(0.9); }
+  to { opacity: 1; transform: rotate(-7deg) translateY(8px); }
+}
+
+@keyframes discount-deal-mid {
+  from { opacity: 0; transform: translateY(38px) scale(0.9); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes discount-deal-right {
+  from { opacity: 0; transform: translateY(38px) rotate(16deg) scale(0.9); }
+  to { opacity: 1; transform: rotate(7deg) translateY(8px); }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .discount-game[data-nl-game-state='idle'] .discount-card:hover {
+    z-index: 4;
+    transform: translateY(-12px) rotate(0deg) scale(1.03);
+  }
+
+  .discount-game[data-nl-game-state='idle'] .discount-card:nth-child(1):hover {
+    transform: translateY(-12px) rotate(-3deg) scale(1.03);
+  }
+
+  .discount-game[data-nl-game-state='idle'] .discount-card:nth-child(3):hover {
+    transform: translateY(-12px) rotate(3deg) scale(1.03);
+  }
+
+  .discount-game[data-nl-game-state='idle'] .discount-card:hover .discount-card__sheen {
+    animation: discount-sheen 900ms ease;
+  }
+}
+
+.discount-card[data-nl-card-state='faded'] {
+  opacity: 0.2 !important;
+  transform: scale(0.86) translateY(20px) !important;
+}
+
+.discount-card[data-nl-card-state='picked'] { z-index: 6; }
+.discount-card[data-nl-card-state='picked']:nth-child(1),
+.discount-card[data-nl-card-state='picked']:nth-child(3) {
+  transform: rotate(0deg) translateY(-10px) scale(1.08) !important;
+}
+.discount-card[data-nl-card-state='picked']:nth-child(2) {
+  transform: translateY(-10px) scale(1.08) !important;
+}
+
+.discount-card__flip {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 850ms cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+.discount-card[data-nl-card-flipped='true'] .discount-card__flip {
+  transform: rotateY(180deg);
+}
+
+.discount-card__face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 18px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 22px 46px -22px rgba(20, 15, 10, 0.5);
+}
+
+.discount-card__face--back {
+  color: var(--nl-bronze);
+  border: 1px solid var(--nl-border);
+  background: linear-gradient(155deg, #fffaf3, #f5e9d9);
+}
+
+html.dark .discount-card__face--back,
+.discount-section--dark .discount-card__face--back {
+  background: linear-gradient(155deg, #221d18, #181411);
+}
+
+.discount-card__face--back svg { opacity: 0.55; }
+
+.discount-card__sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.5) 48%, transparent 62%);
+  transform: translateX(-100%);
+}
+
+@keyframes discount-sheen {
+  to { transform: translateX(100%); }
+}
+
+.discount-card__face--front {
+  color: #fff8f0;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(158deg, #a06a48, #6f4825);
+  transform: rotateY(180deg);
+}
+
+html.dark .discount-card__face--front,
+.discount-section--dark .discount-card__face--front {
+  color: #1e1611;
+  background: linear-gradient(158deg, #e0bd94, #b98d5c);
+}
+
+.discount-card__value {
+  font-family: var(--font-cormorant), ui-serif, serif;
+  font-size: 2.35rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.discount-card__value::after {
+  margin-left: 1px;
+  content: '%';
+  font-size: 0.48em;
+  vertical-align: 0.28em;
+}
+
+.discount-card__caption {
+  font-family: var(--font-manrope), ui-sans-serif, sans-serif;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.82;
+}
+
+/* --- Panneau de gain --- */
+.discount-game__won-value {
+  color: var(--nl-ink);
+  font-size: clamp(3rem, 5.5vw, 4.4rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.discount-game__won-percent {
+  margin-left: 2px;
+  color: var(--nl-bronze);
+  font-size: 0.5em;
+  font-style: italic;
+  font-weight: 300;
+  vertical-align: 0.36em;
+}
+
+.discount-game__won-sub {
+  margin-top: 10px;
+  color: var(--nl-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.discount-game__won-hint {
+  display: inline-flex;
+  gap: 9px;
+  align-items: center;
+  margin-top: 18px;
+  color: var(--nl-accent);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.discount-game__won-hint svg {
+  transform: rotate(180deg);
+  animation: discount-nudge 1.6s ease-in-out infinite;
+}
+
+@keyframes discount-nudge {
+  0%, 100% { transform: rotate(180deg) translateX(0); }
+  50% { transform: rotate(180deg) translateX(5px); }
+}
+
+@media (max-width: 1023px) {
+  .discount-game__won-hint svg {
+    transform: rotate(-90deg);
+    animation: none;
+  }
+}
+
+.discount-spark {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--nl-bronze);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .discount-card,
+  .discount-card__flip,
+  .discount-game__label,
+  .discount-tier {
+    transition-duration: 0.01ms !important;
+    animation: none !important;
+  }
+
+  .discount-game[data-nl-dealt='true'] .discount-card {
+    opacity: 1;
+    animation: none !important;
+  }
+
+  .discount-game__won-hint svg {
+    animation: none !important;
   }
 }

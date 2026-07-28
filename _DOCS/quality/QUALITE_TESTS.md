@@ -245,7 +245,10 @@ Preuves sandbox du meme jour: indexes commerce `READY`, 24/24 exports v2
 presents en `europe-west1`, anciens doublons mutateurs `us-central1` absents,
 callables sans Auth/App Check refuses `401`, webhook non signe refuse `400`,
 Rules Firestore/Storage publiees et rollout App Hosting
-`build-2026-07-28-001` `SUCCEEDED`.
+`build-2026-07-28-001` `SUCCEEDED`. La recette authentifiee hebergee valide
+aussi la session client OTP et `listMyOrdersV2`, puis une session admin forte
+sur les lecteurs `Ventes`/`Retours`; `Livraison` et `Paiement` restent
+read-only. Aucun writer ni parcours Stripe n'a ete active pendant ces smokes.
 
 L'emulateur ne prouve pas a lui seul:
 

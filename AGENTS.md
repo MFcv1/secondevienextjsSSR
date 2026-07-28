@@ -116,7 +116,7 @@ Ne pas creer une nouvelle roadmap pour un de ces domaines. Mettre a jour son cha
 
 Plan temporaire explicitement demande et actuellement actif:
 
-- [NOYAU_COMMERCE_STABILISATION.md](_DOCS/commerce/NOYAU_COMMERCE_STABILISATION.md): audit contre-valide, specification d'implementation additive et gates 0A a 8; Gates 0A a 5 `SANDBOX_ACTIVE_READ_ONLY` depuis le rollout App Hosting `build-2026-07-28-001`; confinement Gate 0B, indexes et Rules actifs, 24 exports Function v2 deployes avec mutations/checkout `off`, lecteurs UID/admin `on`; `NO_GO_TRANSACTIONNEL` maintenu; echeance de gouvernance 2026-09-30, puis fusion dans les chapitres canoniques et suppression.
+- [NOYAU_COMMERCE_STABILISATION.md](_DOCS/commerce/NOYAU_COMMERCE_STABILISATION.md): audit contre-valide, specification d'implementation additive et gates 0A a 8; Gates 0A a 5 `SANDBOX_ACTIVE_READ_ONLY_CLOSED` depuis le rollout App Hosting `build-2026-07-28-001` et les recettes authentifiees client/admin; confinement Gate 0B, indexes et Rules actifs, 24 exports Function v2 deployes avec mutations/checkout `off`, lecteurs UID/admin `on`; `NO_GO_TRANSACTIONNEL` maintenu; echeance de gouvernance 2026-09-30, puis fusion dans les chapitres canoniques et suppression.
 
 ## 6. Invariants d'architecture publique
 

@@ -421,6 +421,8 @@ const setupBeforeAfter = () => {
     const title = root.querySelector('[data-ba-title]');
     const desc = root.querySelector('[data-ba-desc]');
     const count = root.querySelector('[data-ba-count]');
+    const segments = Array.from(root.querySelectorAll('[data-ba-segment]'));
+    const chips = Array.from(root.querySelectorAll('[data-ba-chip]'));
     const section = root.closest('.before-after-premium');
     const projectCopy = root.querySelector('[data-ba-project-copy]');
     const premiumVisual = section?.querySelector('.before-after-premium-visual');
@@ -539,6 +541,9 @@ const setupBeforeAfter = () => {
       if (title) title.textContent = project.title;
       if (desc) desc.textContent = project.desc;
       if (count) count.textContent = `0${index + 1} / 0${projects.length}`;
+      segments.forEach((segment, segmentIndex) => {
+        segment.dataset.baSegmentState = segmentIndex === index ? 'active' : 'idle';
+      });
     };
 
     const animateProjectCopy = () => {
@@ -580,22 +585,27 @@ const setupBeforeAfter = () => {
 
       await waitForNextFrame();
       if (disposed) return;
+      // Fondu enchaine avec un leger recul / avancee : la bascule se lit comme
+      // un changement de piece plutot que comme un simple changement d'opacite.
+      const dissolve = {
+        duration: 620,
+        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+        fill: 'both',
+      };
       layerAnimations = [
         outgoingLayer.animate(
-          [{ opacity: 1 }, { opacity: 0 }],
-          {
-            duration: 420,
-            easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-            fill: 'both',
-          },
+          [
+            { opacity: 1, transform: 'scale(1)', filter: 'blur(0px)' },
+            { opacity: 0, transform: 'scale(1.035)', filter: 'blur(3px)' },
+          ],
+          dissolve,
         ),
         incomingLayer.animate(
-          [{ opacity: 0 }, { opacity: 1 }],
-          {
-            duration: 420,
-            easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-            fill: 'both',
-          },
+          [
+            { opacity: 0, transform: 'scale(1.045)', filter: 'blur(4px)' },
+            { opacity: 1, transform: 'scale(1)', filter: 'blur(0px)' },
+          ],
+          dissolve,
         ),
       ];
       await Promise.allSettled(layerAnimations.map((animation) => animation.finished));
@@ -650,6 +660,15 @@ const setupBeforeAfter = () => {
       });
       if (line) line.style.left = percentage;
       if (handle) handle.style.left = percentage;
+
+      // Les puces s'estompent du cote que le curseur recouvre.
+      const ratio = Math.min(1, Math.max(0, Number(value) / 100));
+      chips.forEach((chip) => {
+        const isBefore = chip.dataset.baChip === 'before';
+        const presence = isBefore ? 1 - ratio : ratio;
+        chip.style.opacity = String((0.4 + presence * 0.6).toFixed(3));
+        chip.style.transform = `translateX(${((isBefore ? -1 : 1) * (1 - presence) * 5).toFixed(2)}px)`;
+      });
     };
 
     const setSliderFromPointer = (event) => {
@@ -661,10 +680,13 @@ const setupBeforeAfter = () => {
       setSlider(value);
     };
 
+    const mediaStage = root.querySelector('[data-ba-media-stage]');
+
     const startSliderDrag = (event) => {
       event.preventDefault();
       range?.focus({ preventScroll: true });
       pointerSurface?.setPointerCapture(event.pointerId);
+      if (mediaStage) mediaStage.dataset.baDragging = 'true';
       setSliderFromPointer(event);
     };
 
@@ -672,6 +694,7 @@ const setupBeforeAfter = () => {
       if (pointerSurface?.hasPointerCapture(event.pointerId)) {
         pointerSurface.releasePointerCapture(event.pointerId);
       }
+      if (mediaStage) mediaStage.dataset.baDragging = 'false';
       if (touchGesture?.pointerId === event.pointerId) touchGesture = null;
     };
 
@@ -1126,14 +1149,208 @@ const setupTestimonials = () => {
   });
 };
 
+// Ponderation d'affichage uniquement. Le tirage qui fait foi doit venir du
+// serveur : un pourcentage calcule ici serait forcable depuis la console.
+const PRIZE_WEIGHTS = [
+  { value: 5, weight: 55 },
+  { value: 10, weight: 30 },
+  { value: 15, weight: 15 },
+];
+
+const drawPrizeLocally = () => {
+  const total = PRIZE_WEIGHTS.reduce((sum, tier) => sum + tier.weight, 0);
+  let cursor = Math.random() * total;
+  for (const tier of PRIZE_WEIGHTS) {
+    cursor -= tier.weight;
+    if (cursor <= 0) return tier.value;
+  }
+  return PRIZE_WEIGHTS[0].value;
+};
+
+const setupNewsletterGame = () => {
+  const cleanups = [];
+
+  document.querySelectorAll('[data-nl-game]').forEach((game) => {
+    const section = game.closest('.discount-section');
+    if (!section) return;
+
+    const cards = Array.from(game.querySelectorAll('[data-nl-card]'));
+    const cardsWrap = game.querySelector('[data-nl-cards]');
+    const won = game.querySelector('[data-nl-won]');
+    const wonValue = game.querySelector('[data-nl-won-value]');
+    const form = section.querySelector('[data-nl-form]');
+    const email = section.querySelector('[data-nl-email]');
+    const submit = section.querySelector('[data-nl-submit]');
+    const submitLabel = section.querySelector('[data-nl-submit-label]');
+    const fine = section.querySelector('[data-nl-fine]');
+    const fineText = section.querySelector('[data-nl-fine-text]');
+    const sent = section.querySelector('[data-nl-sent]');
+    const sentCode = section.querySelector('[data-nl-sent-code]');
+    const tiers = Array.from(section.querySelectorAll('[data-nl-tier]'));
+    if (!cards.length) return;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const eventController = new AbortController();
+    const eventOptions = { signal: eventController.signal };
+    const timers = [];
+    let disposed = false;
+    let prize = null;
+
+    game.dataset.nlGameState = 'idle';
+    game.dataset.nlDealt = 'false';
+
+    const later = (callback, delay) => {
+      timers.push(window.setTimeout(() => {
+        if (!disposed) callback();
+      }, delay));
+    };
+
+    if ('IntersectionObserver' in window) {
+      const dealObserver = new IntersectionObserver(([entry]) => {
+        if (!entry?.isIntersecting) return;
+        game.dataset.nlDealt = 'true';
+        dealObserver.disconnect();
+      }, { threshold: 0.3 });
+      dealObserver.observe(cardsWrap || game);
+      cleanups.push(() => dealObserver.disconnect());
+    } else {
+      game.dataset.nlDealt = 'true';
+    }
+
+    const burst = (card) => {
+      if (reduceMotion || !cardsWrap) return;
+      const cardBounds = card.getBoundingClientRect();
+      const hostBounds = cardsWrap.getBoundingClientRect();
+      const originX = cardBounds.left - hostBounds.left + cardBounds.width / 2;
+      const originY = cardBounds.top - hostBounds.top + cardBounds.height / 2;
+
+      for (let index = 0; index < 18; index += 1) {
+        const spark = document.createElement('span');
+        spark.className = 'discount-spark';
+        spark.style.left = `${originX}px`;
+        spark.style.top = `${originY}px`;
+        cardsWrap.appendChild(spark);
+
+        const angle = (Math.PI * 2 * index) / 18 + Math.random() * 0.5;
+        const distance = 52 + Math.random() * 46;
+        const animation = spark.animate(
+          [
+            { transform: 'translate(-50%, -50%) scale(0.3)', opacity: 1 },
+            { transform: `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px) scale(1)`, opacity: 0 },
+          ],
+          { duration: 700 + Math.random() * 300, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+        );
+        animation.finished.catch(() => {}).finally(() => spark.remove());
+      }
+    };
+
+    const countUp = (target) => {
+      if (!wonValue) return;
+      const render = (value) => {
+        wonValue.innerHTML = `${value}<span class="discount-game__won-percent">%</span>`;
+      };
+      if (reduceMotion) {
+        render(target);
+        return;
+      }
+      let startTime = null;
+      const step = (timestamp) => {
+        if (disposed) return;
+        if (startTime === null) startTime = timestamp;
+        const progress = Math.min(1, (timestamp - startTime) / 800);
+        render(Math.round((1 - (1 - progress) ** 3) * target));
+        if (progress < 1) window.requestAnimationFrame(step);
+      };
+      window.requestAnimationFrame(step);
+    };
+
+    const revealPrize = () => {
+      game.dataset.nlGameState = 'won';
+      if (won) won.hidden = false;
+      countUp(prize);
+
+      tiers.forEach((tier) => {
+        tier.dataset.nlTierState = Number(tier.dataset.nlTier) === prize ? 'won' : 'dimmed';
+      });
+
+      if (submit) submit.disabled = false;
+      if (submitLabel) submitLabel.textContent = `Recevoir mes ${prize}%`;
+      if (fine) fine.dataset.nlFineState = 'armed';
+      if (fineText) fineText.textContent = `Ton code de ${prize}% et nos nouveautes, dans le meme e-mail.`;
+    };
+
+    cards.forEach((card) => {
+      card.addEventListener('click', () => {
+        if (game.dataset.nlGameState !== 'idle') return;
+        game.dataset.nlGameState = 'revealing';
+
+        // TODO: remplacer par l'appel a la Cloud Function qui tranche le gain.
+        prize = drawPrizeLocally();
+        cards.forEach((other) => {
+          const value = other.querySelector('[data-nl-card-value]');
+          if (value) value.textContent = String(prize);
+          other.dataset.nlCardState = other === card ? 'picked' : 'faded';
+          other.disabled = true;
+        });
+
+        later(() => {
+          card.dataset.nlCardFlipped = 'true';
+          burst(card);
+        }, reduceMotion ? 0 : 300);
+        later(revealPrize, reduceMotion ? 0 : 1050);
+      }, eventOptions);
+    });
+
+    form?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (submit?.disabled || prize === null) return;
+      if (email && !email.checkValidity()) {
+        email.reportValidity();
+        return;
+      }
+
+      // Placeholder d'affichage : le code definitif sera emis par le serveur.
+      const suffix = Math.random().toString(36).slice(2, 7).toUpperCase();
+      if (sentCode) sentCode.textContent = `SV${prize}-${suffix}`;
+      if (sent) sent.hidden = false;
+      if (submit) submit.disabled = true;
+      if (submitLabel) submitLabel.textContent = 'Envoye';
+      email?.blur();
+    }, eventOptions);
+
+    cleanups.push(() => {
+      disposed = true;
+      eventController.abort();
+      timers.forEach((timer) => window.clearTimeout(timer));
+      game.dataset.nlGameState = 'idle';
+      game.dataset.nlDealt = 'false';
+      cards.forEach((card) => {
+        card.disabled = false;
+        delete card.dataset.nlCardState;
+        delete card.dataset.nlCardFlipped;
+      });
+      tiers.forEach((tier) => {
+        tier.dataset.nlTierState = 'idle';
+      });
+      if (won) won.hidden = true;
+      if (sent) sent.hidden = true;
+      if (submit) submit.disabled = true;
+    });
+  });
+
+  return () => cleanups.forEach((cleanup) => cleanup());
+};
+
 export default function GalleryFixedSectionsInteractions() {
   useEffect(() => {
     const cleanupBeforeAfter = setupBeforeAfter();
     setupInstagram();
     setupTestimonials();
+    const cleanupNewsletterGame = setupNewsletterGame();
     const cleanupPrewarm = setupRichSectionsPrewarm();
     return () => {
       cleanupBeforeAfter();
+      cleanupNewsletterGame();
       cleanupPrewarm();
     };
   }, []);

@@ -127,6 +127,12 @@ Publication utilise ses commandes produit dormantes, Ventes/Retours leurs
 commandes verrouillees, et Livraison/Paiement restent explicitement read-only.
 Les flags de lecture sont `true`; les flags de commande restent `false`.
 
+Recette sandbox du 2026-07-28: une session admin forte existante a charge le
+dashboard et les lecteurs pagines `Ventes`/`Retours` sans erreur sous les Rules
+restrictives. `Livraison` et `Paiement` ont confirme leur etat read-only;
+`Publication` ne presentait aucun controle de mutation commerce actif. Aucune
+commande, aucun refund et aucune transition de retour n'ont ete executes.
+
 ## 6. Utilisateurs et securite
 
 `AdminUsers` appelle les Functions de gestion d'acces. Les promotions/retraits doivent etre traces et exiger le niveau d'assurance defini dans le chapitre Auth.
