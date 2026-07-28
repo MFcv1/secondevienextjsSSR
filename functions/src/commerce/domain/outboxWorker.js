@@ -18,6 +18,7 @@ function createOutboxWorker({
         typeof repository?.claim !== 'function' ||
         typeof repository?.markSent !== 'function' ||
         typeof repository?.markFailed !== 'function' ||
+        typeof repository?.markDeliveryUnknown !== 'function' ||
         typeof send !== 'function' ||
         typeof ids?.leaseToken !== 'function' ||
         typeof clock?.now !== 'function' ||
@@ -54,11 +55,20 @@ function createOutboxWorker({
             });
         } catch (cause) {
             try {
-                await repository.markFailed(outboxId, {
-                    leaseToken,
-                    nowMillis: clock.nowMillis(),
-                    errorMessage: cause?.code || cause?.message || 'unknown'
-                });
+                if (cause?.deliveryUnknown === true || cause?.code === 'GMAIL_DELIVERY_UNKNOWN') {
+                    await repository.markDeliveryUnknown(outboxId, {
+                        leaseToken,
+                        nowMillis: clock.nowMillis(),
+                        errorMessage: cause?.code || cause?.message || 'unknown',
+                        observedAt: clock.now()
+                    });
+                } else {
+                    await repository.markFailed(outboxId, {
+                        leaseToken,
+                        nowMillis: clock.nowMillis(),
+                        errorMessage: cause?.code || cause?.message || 'unknown'
+                    });
+                }
             } catch (failureCause) {
                 if (failureCause?.code !== 'COMMERCE_OUTBOX_FENCE_LOST') throw failureCause;
             }

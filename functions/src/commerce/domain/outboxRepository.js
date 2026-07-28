@@ -119,6 +119,32 @@ function createOutboxRepository({ db, refs }) {
                 transaction.set(ref, next);
                 return next;
             });
+        },
+
+        async markDeliveryUnknown(outboxId, {
+            leaseToken,
+            nowMillis,
+            errorMessage,
+            observedAt
+        }) {
+            const ref = refs.outbox(outboxId);
+            return db.runTransaction(async (transaction) => {
+                const snapshot = await transaction.get(ref);
+                if (!snapshotExists(snapshot)) throw outboxError('COMMERCE_OUTBOX_MISSING');
+                const entry = snapshot.data();
+                assertFence(entry, leaseToken, nowMillis);
+                const next = {
+                    ...entry,
+                    status: 'delivery_unknown',
+                    leaseToken: null,
+                    processingUntil: null,
+                    nextAttemptAt: null,
+                    lastError: String(errorMessage || 'gmail_delivery_unknown').slice(0, 500),
+                    deliveryUnknownAt: observedAt
+                };
+                transaction.set(ref, next);
+                return next;
+            });
         }
     });
 }

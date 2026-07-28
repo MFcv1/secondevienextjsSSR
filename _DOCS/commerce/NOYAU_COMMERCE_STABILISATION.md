@@ -6,8 +6,8 @@ Decision de recette: `NO_GO_TRANSACTIONNEL`
 Proprietaire: noyau commerce, commandes, inventaire, Stripe et control plane admin
 Echeance de gouvernance: 2026-09-30
 Specification d'implementation: `STABILISEE_PAR_CONTRE_EXPERTISE`
-Etat d'execution: `GATE_0A_CODE_READY` + `GATES_0B_A_5_SANDBOX_ACTIVE_READ_ONLY_CLOSED`
-Prochaine tranche: Gate 6, outil de classification legacy read-only et preparation des fixtures; toute adoption/ecriture sandbox reste soumise aux controles de cette gate
+Etat d'execution: `GATE_0A_CODE_READY` + `GATES_0B_A_6_SANDBOX_CLOSED_CHECKOUT_OFF`
+Prochaine tranche: Gate 7A, projections, documents et exploitation; le scope fixture Gate 6 reste prepare mais `newCheckoutMode=off`
 
 ## 1. Gouvernance du document
 
@@ -2676,7 +2676,8 @@ Arreter le lot et conserver `NO_GO_TRANSACTIONNEL` si:
 
 ## 21. Etat d'execution sandbox au 2026-07-28
 
-Les Gates 0A a 5 de la roadmap sont `SANDBOX_ACTIVE_READ_ONLY`:
+Les Gates 0A a 6 de la roadmap sont fermees en sandbox, checkout et mutations
+toujours `off`:
 
 - Gate 0A fournit le runner sentinelle, son self-test, les compteurs d'effets,
   le lint Functions cible, l'agregat `test:commerce` et les jobs CI bloquants;
@@ -2700,14 +2701,14 @@ Les Gates 0A a 5 de la roadmap sont `SANDBOX_ACTIVE_READ_ONLY`:
   `schemaVersion: 2`;
 - les triggers e-mail et stats ignorent v2 en attente des outbox/projections
   dediees; les Functions d'ecriture v2 sont exportees mais verrouillees par le
-  controle serveur absent;
+  controle serveur explicite `off`;
 - horloge, IDs, Stripe et Firestore possedent des frontieres injectables;
   idempotence et failpoints sont purs et nommes;
 - le reducer checkout, l'adaptateur commande et le descripteur de reprise sont
   additifs dans `src/kit/commerce`; lecteurs UID/admin `true`, checkout,
   reprise et commandes `false`;
 - les sous-collections et collections internes v2 ont des Rules backend-only
-  explicites et deployees.
+  explicites et deployees;
 - Gate 2 ajoute une entree checkout strictement allowlistee sans prix client,
   des lignes versionnees, un hash canonique et une aggregation par
   `inventoryKey` longueur-prefixee et normalisee Unicode;
@@ -2735,7 +2736,7 @@ Les Gates 0A a 5 de la roadmap sont `SANDBOX_ACTIVE_READ_ONLY`:
   tourne transactionnellement lors de `resumeCheckout`;
 - le runtime Gate 3 est importe par les callables Gate 4/5; 24 endpoints v2
   sont deployes, mais aucun scheduler/worker n'est exporte et aucun checkout,
-  writer v2 ou appel Stripe ne peut passer tant que le controle reste absent.
+  writer v2 ou appel Stripe ne peut passer avec le controle explicite `off`.
 
 ### 21.1 Preuves rejouees
 
@@ -2746,7 +2747,7 @@ Executees localement:
 - `test:commerce:containment`: 12/12 scenarios, 217 assertions;
 - `test:commerce:rules:containment`: 10/10 scenarios sous Firestore + Storage
   Emulator, projet fixe `demo-secondevie-commerce`;
-- `test:commerce:unit`: 58/58 tests, dont schema, matrice fermee, projection,
+- `test:commerce:unit`: 67/67 tests, dont schema, matrice fermee, projection,
   barrières v1/v2, readers, flags frontend, policy/livraison/Connect et contrat
   panier/inventoryKey, actions serveur, retours/dispositions quantitatifs et
   cycle produit create/offre/stock/publication/archive et transport produit
@@ -2790,7 +2791,22 @@ Executees localement:
   `Ventes` et `Retours` lisent leurs endpoints pagines sans erreur sous les
   Rules restrictives, tandis que `Livraison` et `Paiement` restent
   explicitement read-only. Aucun controle de mutation commerce n'a ete
-  active ni utilise.
+  active ni utilise;
+- Gate 6: `classify-legacy-commerce.mjs` pagine, checkpoint/reprend, relit
+  Stripe quand une preuve financiere est disponible et produit un manifeste
+  sans PII fonde sur `updateTime/sourceHash`;
+- deux dry-runs finaux ont produit le meme digest: 26 commandes legacy,
+  0 `safe_to_adopt`, 26 `needs_review`, 10 non terminales et zero non-terminal
+  non classe. Les preuves Stripe absentes ou inaccessibles sont conservees
+  comme ambiguite, jamais transformees en statut invente;
+- Gate 6: sauvegarde des cibles puis creation additive du scope
+  `fixture_gate6_20260728`: un UID Auth technique, trois produits `e2eOnly`
+  stock 1/2/10, un compte Connect v2 verifie test, une policy immutable et le
+  registre backend-only. Sept documents Firestore ont ete crees, zero commande
+  et zero stock client touches;
+- `sys_commerce_control/current` est maintenant explicite a revision 1 avec
+  `newCheckoutMode=off`, `adminMutationMode=read_only` et le scope fixture
+  epingle. Le catalogue public sert 38 produits et exclut les fixtures.
 
 Les compteurs de confinement affichent explicitement zero ecriture/suppression
 Firestore, appel Stripe, creation/annulation de PI, e-mail, outbox et mouvement
@@ -2804,7 +2820,8 @@ comptees separement.
   bloquees avant effet, webhooks signes conserves pour drainage, anciens
   doublons mutateurs `us-central1` supprimes et Rules restrictives publiees;
 - Gates 1 et 2: contrats, policy, reservations, indexes et Rules deployes;
-  aucune policy active et aucun checkout admis tant que le controle est absent;
+  la policy fixture est epinglee depuis Gate 6 mais aucun checkout n'est admis
+  tant que `newCheckoutMode=off`;
 - Gate 3: runtime embarque par les callables, mais aucun worker/scheduler
   exporte et aucune saga Stripe activable avec le controle fail-closed;
 - Gate 4: `SANDBOX_ACTIVE_OFF`; 19 callables produit, fulfillment,
@@ -2823,6 +2840,13 @@ comptees separement.
 - Gate 5: `test:commerce:ui` 10/10, `test:commerce:browser` 4/4, build Next,
   Emulator Suite, smokes cloud et recettes authentifiees client/admin
   read-only sont verts;
+- Gate 6: `SANDBOX_CLASSIFIED_FIXTURE_PREPARED_OFF`; toutes les lignes legacy
+  sont classees, aucune adoption n'est candidate, le scope fixture est borne
+  aux IDs `fixture_*`, les produits sont exclus du snapshot public et le
+  controle reste `newCheckoutMode=off`;
+- Gate 6: le code d'adoption eventuelle est teste idempotent avec delta stock
+  zero mais son execution reste differee; tout mode ecriture exige projet,
+  environnement, sauvegarde et confirmation exacts;
 - decision globale: `NO_GO_TRANSACTIONNEL` inchangee.
 
 Deploiement cible `secondevienextjsssr`:
@@ -2836,6 +2860,7 @@ Deploiement cible `secondevienextjsssr`:
   build `build-2026-07-27-002`; ne jamais restaurer les anciens writers ou
   doublons legacy pour effectuer ce rollback.
 
-Non executes: E2E Stripe transactionnels, migration/adoption legacy, commit ou
-push. Gate 6 commence par un outil et un dry-run read-only; aucune activation
-de policy, fixture, checkout ou mutation v2 n'est implicite.
+Non executes: E2E Stripe transactionnels, adoption legacy, commit ou push.
+Gate 7A ferme ensuite projections, documents et exploitation. Le scope et la
+policy fixture sont prepares, mais aucun checkout, worker ou mutation v2 n'est
+active.

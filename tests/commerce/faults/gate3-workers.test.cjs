@@ -262,6 +262,9 @@ test('outbox worker forwards the deterministic outbox id as provider idempotency
             },
             async markFailed() {
                 throw new Error('must not fail');
+            },
+            async markDeliveryUnknown() {
+                throw new Error('must not become unknown');
             }
         },
         send: async (input) => {

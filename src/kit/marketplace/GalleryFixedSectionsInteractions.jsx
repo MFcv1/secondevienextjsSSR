@@ -661,13 +661,11 @@ const setupBeforeAfter = () => {
       if (line) line.style.left = percentage;
       if (handle) handle.style.left = percentage;
 
-      // Les puces s'estompent du cote que le curseur recouvre.
+      // Le CSS derive opacite / echelle / saturation de cette seule variable.
       const ratio = Math.min(1, Math.max(0, Number(value) / 100));
       chips.forEach((chip) => {
-        const isBefore = chip.dataset.baChip === 'before';
-        const presence = isBefore ? 1 - ratio : ratio;
-        chip.style.opacity = String((0.4 + presence * 0.6).toFixed(3));
-        chip.style.transform = `translateX(${((isBefore ? -1 : 1) * (1 - presence) * 5).toFixed(2)}px)`;
+        const presence = chip.dataset.baChip === 'before' ? 1 - ratio : ratio;
+        chip.style.setProperty('--ba-presence', presence.toFixed(3));
       });
     };
 

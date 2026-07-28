@@ -58,6 +58,10 @@ Etat `CODE_READY`:
   guest mono-usage, commandes auditees, refunds cumules sans restock et
   retours/dispositions concurrents;
 - `test:commerce:rules` ferme explicitement sous-collections et collections v2;
+- `commerce:legacy:classify` produit le manifeste Gate 6 read-only avec
+  pagination, checkpoint, hashes et relecture Stripe;
+- `commerce:fixtures:prepare` exige cible sandbox, manifeste de classification,
+  sauvegarde et confirmation avant toute creation additive;
 - `test:commerce` agrege toutes les suites et bloque la CI.
 
 Les scripts actuels `e2e:hosted-stripe` et `e2e:refund-stripe` sont en
@@ -232,9 +236,9 @@ avant runtime, runtime minimal, lecteurs UID/admin pagines, `allowedActions`
 retour quantitatives, contrat navigateur sans prix, reprise sans secret,
 nettoyage exact des revisions et absence des anciens writers sur le chemin v2.
 
-Au point d'arret du 2026-07-28, `lint:functions`, le lint UI cible (zero
+Au point d'arret Gate 6 du 2026-07-28, `lint:functions`, le lint UI cible (zero
 erreur), `test:commerce:runner` (13/13), `test:commerce:containment` (12/12,
-217 assertions), `test:commerce:unit` (58/58), `test:commerce:ui` (10/10),
+217 assertions), `test:commerce:unit` (67/67), `test:commerce:ui` (10/10),
 `test:commerce:browser` (4/4), `test:commerce:property` (3/3),
 `test:commerce:faults` (33/33) et le build Next sont verts. Temurin Java
 21.0.11 a ete installe dans le cache utilisateur puis toutes les suites
@@ -249,6 +253,15 @@ Rules Firestore/Storage publiees et rollout App Hosting
 aussi la session client OTP et `listMyOrdersV2`, puis une session admin forte
 sur les lecteurs `Ventes`/`Retours`; `Livraison` et `Paiement` restent
 read-only. Aucun writer ni parcours Stripe n'a ete active pendant ces smokes.
+
+Gate 6 ajoute 9 tests de classification, adoption delta stock zero, scope
+fixture, refus de cible et confirmation d'ecriture. Le classificateur sandbox a
+ete rejoue deux fois avec le meme digest: 26 commandes legacy classees, 10 non
+terminales, zero non-classee et aucune candidate d'adoption. La preparation
+fixture a prouve le compte Stripe test, sauvegarde les cibles, cree un UID
+technique et sept documents backend-only, puis verifie
+`newCheckoutMode=off`, zero commande/stock client touche et exclusion des
+fixtures du catalogue public.
 
 L'emulateur ne prouve pas a lui seul:
 

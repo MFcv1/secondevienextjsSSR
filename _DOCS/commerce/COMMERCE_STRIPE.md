@@ -11,11 +11,13 @@ Restriction active:
 > paiement/annulation, les compensations stock, les mutations admin et les
 > preuves automatisees. Le plan ferme est
 > [NOYAU_COMMERCE_STABILISATION.md](NOYAU_COMMERCE_STABILISATION.md).
-> Les Gates 0A a 5 sont `SANDBOX_ACTIVE_READ_ONLY` depuis le 2026-07-28:
+> Les Gates 0A a 6 sont fermees en sandbox depuis le 2026-07-28:
 > le confinement legacy, les indexes et les Rules sont actifs; 24 Functions v2
 > sont exportees avec App Check. Les lecteurs UID/admin sont actifs, mais le
 > checkout, toutes les mutations et les workers v2 restent `off` par flags et
-> controle serveur fail-closed. Ce statut ne vaut pas recette transactionnelle.
+> controle serveur fail-closed. Gate 6 a classe les 26 commandes legacy en
+> revue conservatrice et prepare un scope fixture backend-only sans l'activer.
+> Ce statut ne vaut pas recette transactionnelle.
 
 ## 1. Perimetre
 
@@ -228,8 +230,16 @@ Les gates locales et CI actives sont `lint:functions`,
 `test:commerce:rules:containment`, `test:commerce:unit`,
 `test:commerce:property`, `test:commerce:firebase`,
 `test:commerce:rules`, `test:commerce:faults` et leur agregat
-`test:commerce`. Gates 0A a 5 sont `SANDBOX_ACTIVE_READ_ONLY`; les E2E
+`test:commerce`. Gates 0A a 6 sont fermees avec checkout `off`; les E2E
 transactionnels heberges restent en quarantaine.
+
+Gate 6 ajoute `classify-legacy-commerce.mjs`,
+`prepare-commerce-fixtures.mjs`, les contrats purs
+`legacyClassification.js`/`fixtureScope.js` et 9 tests dedies. Le dry-run final
+est reproductible: 26 legacy, 26 `needs_review`, 10 non terminales et zero
+ligne non classee. Le scope `fixture_gate6_20260728` contient uniquement un UID
+technique et trois inventoryKeys de produits `e2eOnly` stock 1/2/10. Le
+controle serveur est explicite mais conserve `newCheckoutMode=off`.
 
 Gate 1 ajoute `functions/src/commerce/domain`: schema v2, reducer pur,
 invariants monétaires/quantitatifs, projection legacy, controle fail-closed,

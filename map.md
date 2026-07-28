@@ -153,7 +153,7 @@ politique/control backend fail-closed
   -> projection legacy + readers v1/v2
   -> lecteurs UID/admin frontend actifs
   -> flags checkout/reprise et commandes frontend off
-  -X createCheckout/mutations v2 refuses par controle serveur absent
+  -X createCheckout/mutations v2 refuses par controle serveur explicite off
 
 Flux cible restant:
 
@@ -167,10 +167,31 @@ politique/control backend fail-closed
   -> UI client/admin via commandes serveur
 ```
 
-Gates 0A a 5 sont `SANDBOX_ACTIVE_READ_ONLY` depuis le 2026-07-28:
+Gates 0A a 6 sont fermees en sandbox depuis le 2026-07-28:
 confinement legacy, indexes et Rules actifs; 24 Functions v2 sont exportees.
 Les lecteurs UID/admin sont actifs, tandis que checkout, mutations et workers
-v2 restent coupes par flags et controle serveur fail-closed.
+v2 restent coupes par flags et controle serveur explicite fail-closed.
+
+Gate 6 ajoute un rail de migration sans writer:
+
+```text
+scripts/classify-legacy-commerce.mjs
+  -> pagination orders + checkpoint local ignore
+  -> relecture Stripe sandbox des etats financiers ambigus
+  -> legacy_terminal_read_only | safe_to_adopt | needs_review
+  -> manifeste hash/updateTime sans PII
+
+scripts/prepare-commerce-fixtures.mjs
+  -> preflight + sauvegarde des cibles
+  -> UID technique Firebase Auth
+  -> produits furniture e2eOnly stocks 1/2/10
+  -> policy + compte Connect v2 + commerce_fixture_scopes backend-only
+  -> sys_commerce_control/current explicitement newCheckoutMode=off
+```
+
+Le scope `fixture_gate6_20260728` ne reference que les produits
+`fixture_*`; le snapshot public exclut `e2eOnly`. Aucune adoption legacy ni
+activation checkout n'est effectuee en Gate 6.
 
 ### 4.5 Remboursement
 
@@ -710,7 +731,7 @@ tests/catalog/*.test.cjs
 tests/catalog/emulator/*.test.cjs
 tests/commerce/runner/*.cjs
 tests/commerce/suites/*.cjs
-tests/commerce/domain/*.test.cjs .......... unitaire + contrat UI Gate 5
+tests/commerce/domain/*.test.cjs .......... unitaire + contrats UI/migration Gates 5/6
 tests/commerce/browser/*.spec.mjs ......... reprise/revisions multi-onglet locale
 tests/commerce/faults/*.test.cjs
 tests/commerce/rules/*.cjs
@@ -724,7 +745,9 @@ Gate 0A fournit le runner anti-faux-vert, `test:commerce:containment`,
 les preuves hard-stop et Rules Firestore/Storage. Gate 1 fournit les suites
 domaine, property, Firestore, Rules et failpoints. Gate 2 etend ces suites avec
 policy, Connect, concurrence stock et mouvements quantitatifs. Gates 1 a 5
-sont deployees en sandbox en mode read-only. Gate 3 ajoute writer/reprise,
+sont deployees en sandbox en mode read-only. Gate 6 ajoute le classificateur,
+les manifests locaux ignores et le scope fixture backend-only garde a `off`.
+Gate 3 ajoute writer/reprise,
 saga PI, inbox, reconciler, effets atomiques, outbox, expiration, tokens et
 workers bornes; les callables sont exportees mais checkout/mutations/workers
 restent `off`. Les trois lecteurs Gate 5 sont actifs.
@@ -740,7 +763,7 @@ restent `off`. Les trois lecteurs Gate 5 sont actifs.
 | Auth | `AUTHENTIFICATION.md` | authStore, AuthContext, modal, auth Functions | `test:auth` + smoke |
 | securite/rules | `SECURITE_GLOBALE.md` | rules, helpers security, Functions | tests negatifs + sandbox cible |
 | espace client | `ESPACE_CLIENT.md` | routes compte, MyOrders, wishlist | smoke compte |
-| paiement/refund | `COMMERCE_STRIPE.md` + `NOYAU_COMMERCE_STABILISATION.md` temporaire | commerce client/Functions/admin | Gates 0A a 5 `SANDBOX_ACTIVE_READ_ONLY`: 24 Functions v2 exportees, lecteurs UID/admin actifs, checkout et commandes coupes par flags + controle serveur absent, Rules restrictives; `NO_GO_TRANSACTIONNEL` et E2E transactionnels maintenus jusqu'aux gates suivantes |
+| paiement/refund | `COMMERCE_STRIPE.md` + `NOYAU_COMMERCE_STABILISATION.md` temporaire | commerce client/Functions/admin | Gates 0A a 6 fermees en sandbox: 24 Functions v2 exportees, lecteurs UID/admin actifs, 26 legacy classifiees, scope fixture dedie prepare; checkout, commandes et workers coupes par flags + controle serveur explicite `off`, Rules restrictives; `NO_GO_TRANSACTIONNEL` et E2E transactionnels maintenus jusqu'aux gates suivantes |
 | admin | `BACKOFFICE.md` | AdminAppIsland, tabs, Functions | smoke tabs + action cible |
 | infra | `INFRASTRUCTURE.md` | yaml/json/env/runtime | audits read-only + build |
 | donnees | `DONNEES_ANALYTICS.md` + `AUDIT_COUTS_FIRESTORE.md` | rules/indexes/scripts/Functions | dry-run/comptage/rollback + mesure avant/apres |

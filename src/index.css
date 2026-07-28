@@ -4047,8 +4047,68 @@ html.dark .before-after-premium,
   --ba-shell-fill: #15120f;
 }
 
+/* --------------------------------------------------------------------------
+   ENCADREMENT — logique de passe-partout d'encadreur
+   Le pixel de padding du shell devient un filet en degrade : lumiere en haut a
+   gauche, matiere plus dense en bas a droite. Une bordure d'une seule couleur
+   restait plate quelle que soit l'epaisseur.
+   -------------------------------------------------------------------------- */
 .before-after-premium-shell {
   isolation: isolate;
+  background:
+    linear-gradient(
+      152deg,
+      rgba(255, 255, 255, 0.98) 0%,
+      rgba(233, 216, 194, 0.86) 34%,
+      rgba(203, 178, 148, 0.72) 68%,
+      rgba(226, 207, 183, 0.9) 100%
+    ) !important;
+}
+
+html.dark .before-after-premium-shell,
+.before-after-premium--dark .before-after-premium-shell {
+  background:
+    linear-gradient(
+      152deg,
+      rgba(216, 173, 115, 0.28) 0%,
+      rgba(58, 48, 39, 0.9) 36%,
+      rgba(32, 27, 22, 0.95) 70%,
+      rgba(216, 173, 115, 0.16) 100%
+    ) !important;
+}
+
+/* Reflet rasant sur l'arete superieure, comme une moulure qui accroche la lumiere. */
+.before-after-premium-shell::before {
+  position: absolute;
+  z-index: 5;
+  top: 0;
+  right: 14%;
+  left: 14%;
+  height: 1px;
+  content: '';
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
+}
+
+html.dark .before-after-premium-shell::before,
+.before-after-premium--dark .before-after-premium-shell::before {
+  background: linear-gradient(90deg, transparent, rgba(241, 214, 170, 0.4), transparent);
+}
+
+/* Second filet en retrait : le double trait est ce qui distingue un vrai
+   passe-partout d'un simple cadre. */
+.before-after-premium-shell__inner-ring::before {
+  position: absolute;
+  inset: 5px;
+  content: '';
+  pointer-events: none;
+  border: 1px solid rgba(226, 207, 186, 0.55);
+  border-radius: 17px;
+}
+
+html.dark .before-after-premium-shell__inner-ring::before,
+.before-after-premium--dark .before-after-premium-shell__inner-ring::before {
+  border-color: rgba(216, 173, 115, 0.09);
 }
 
 .before-after-premium-atmosphere {
@@ -4075,8 +4135,12 @@ html.dark .before-after-premium-atmosphere,
   isolation: isolate;
 }
 
+/* Degrade diagonal : la lumiere tombe en haut a gauche, la matiere se rechauffe
+   vers le coin du filigrane. Un aplat unique laissait la zone du logo plate. */
 .before-after-premium-copy--warm {
-  background: #fffaf3 !important;
+  background:
+    radial-gradient(ellipse 62% 78% at 88% 46%, rgba(186, 143, 92, 0.15) 0%, rgba(186, 143, 92, 0.05) 42%, transparent 72%),
+    linear-gradient(154deg, #fffefb 0%, #fffaf2 38%, #fbf1e2 74%, #f6e9d6 100%) !important;
 }
 
 .before-after-premium-copy--warm::after {
@@ -4100,9 +4164,20 @@ html.dark .before-after-premium-atmosphere,
   height: auto;
   pointer-events: none;
   user-select: none;
-  opacity: 0.095;
-  filter: grayscale(1);
+  opacity: 0.14;
+
+  /* Sepia plutot que grayscale : le filigrane se fond dans la matiere chaude
+     du panneau au lieu de poser un gris froid dessus. */
+  filter: sepia(0.7) saturate(1.25) brightness(0.94) contrast(1.05);
+  mix-blend-mode: multiply;
   transform: translateY(-50%);
+}
+
+html.dark .before-after-premium-copy > .before-after-premium-brand-watermark,
+.before-after-premium--dark .before-after-premium-copy > .before-after-premium-brand-watermark {
+  opacity: 0.1;
+  filter: sepia(0.6) saturate(1.4) brightness(1.5);
+  mix-blend-mode: screen;
 }
 
 @media (min-width: 1024px) {
@@ -4113,7 +4188,9 @@ html.dark .before-after-premium-atmosphere,
 
 html.dark .before-after-premium-copy--warm,
 .before-after-premium--dark .before-after-premium-copy--warm {
-  background: #1d1a16 !important;
+  background:
+    radial-gradient(ellipse 62% 78% at 88% 46%, rgba(216, 173, 115, 0.11) 0%, rgba(216, 173, 115, 0.035) 42%, transparent 72%),
+    linear-gradient(154deg, #221e19 0%, #1d1a16 46%, #171410 100%) !important;
 }
 
 html.dark .before-after-premium-copy--warm::after,
@@ -4407,28 +4484,33 @@ html.dark .before-after-media-stage,
 
 .before-after-state-badge {
   position: relative;
-  min-height: 30px;
-  padding-right: 12px;
-  padding-left: 12px;
-  color: #3e352c;
-  border: 1px solid rgba(143, 98, 54, 0.2);
-  border-radius: 10px;
-  background: rgba(255,250,243,0.94);
+  min-height: 32px;
+  padding-right: 13px;
+  padding-left: 11px;
+  color: #2f2820;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 252, 247, 0.76);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.95),
-    0 14px 26px -21px rgba(24,18,12,0.62);
+    0 0 0 1.5px rgba(255, 255, 255, 0.9),
+    0 12px 26px -18px rgba(24, 18, 12, 0.62);
 }
 
+/* La pastille de couleur remplace la barre : plus lisible a cette taille. */
 .before-after-state-badge::before {
-  width: 2px;
-  height: 10px;
+  width: 7px;
+  height: 7px;
   content: '';
   border-radius: 999px;
   background: var(--ba-bronze);
+  box-shadow: 0 0 0 3px rgba(184, 117, 63, 0.16);
 }
 
 .before-after-state-badge[data-state='after']::before {
   background: var(--ba-sage);
+  box-shadow: 0 0 0 3px rgba(127, 148, 110, 0.18);
 }
 
 .before-after-state-index {
@@ -4451,22 +4533,71 @@ html.dark .before-after-media-stage,
 html.dark .before-after-state-badge,
 .before-after-premium--dark .before-after-state-badge {
   color: #f2e7d8;
-  border-color: rgba(216,173,115,0.16);
-  background: rgba(18,15,12,0.9);
-  box-shadow: inset 0 1px 0 rgba(216,173,115,0.08), 0 16px 28px -20px rgba(0,0,0,0.82);
+  border-color: transparent;
+  background: rgba(20, 16, 13, 0.74);
+  box-shadow:
+    0 0 0 1.5px rgba(241, 214, 170, 0.34),
+    0 14px 28px -18px rgba(0, 0, 0, 0.86);
 }
 
+/* --------------------------------------------------------------------------
+   Vignettes pilotees par la position du curseur.
+   `--ba-presence` (0 -> 1) est ecrit par le JS : le cote recouvert recule,
+   se desature et s'estompe au lieu de rester fige.
+   -------------------------------------------------------------------------- */
+/* Pas de deplacement horizontal : la vignette sortirait du cadre et se ferait
+   rogner. Le recul se joue sur l'echelle, l'elevation et la saturation. */
+.before-after-state-badge[data-ba-chip] {
+  --ba-presence: 1;
+
+  transition:
+    opacity 300ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 520ms cubic-bezier(0.32, 0.72, 0, 1),
+    filter 320ms linear;
+  will-change: opacity, transform;
+  opacity: calc(0.4 + var(--ba-presence) * 0.6);
+  filter: saturate(calc(0.4 + var(--ba-presence) * 0.6));
+  transform:
+    translateY(calc(-3px * var(--ba-presence)))
+    scale(calc(0.88 + var(--ba-presence) * 0.12));
+}
+
+.before-after-state-badge[data-ba-chip='before'] {
+  transform-origin: left center;
+}
+
+.before-after-state-badge[data-ba-chip='after'] {
+  transform-origin: right center;
+}
+
+/* La pastille pulse legerement quand son cote domine. */
+.before-after-state-badge[data-ba-chip]::before {
+  transition: transform 460ms cubic-bezier(0.32, 0.72, 0, 1);
+  transform: scale(calc(0.7 + var(--ba-presence) * 0.5));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .before-after-state-badge[data-ba-chip] {
+    transform: none;
+    filter: none;
+    opacity: calc(0.45 + var(--ba-presence) * 0.55);
+  }
+}
+
+/* Anneaux traces au box-shadow plutot qu'en border : une bordure combinee a un
+   inset top rendait le liseret plus epais en haut qu'en bas. */
 .before-after-slider-handle {
   translate: -50% -50%;
-  min-width: 44px;
-  border: 1px solid rgba(255, 255, 255, 0.86);
+  min-width: 46px;
+  border: 0;
   border-radius: 999px;
-  background: rgba(255, 250, 243, 0.66);
-  backdrop-filter: blur(18px) saturate(180%);
-  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  background: rgba(255, 252, 247, 0.8);
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 16px 36px -16px rgba(35, 24, 15, 0.5);
+    0 0 0 1.5px rgba(255, 255, 255, 0.96),
+    0 0 0 5px rgba(255, 255, 255, 0.14),
+    0 18px 34px -14px rgba(35, 24, 15, 0.42);
   transition:
     box-shadow 420ms cubic-bezier(0.32, 0.72, 0, 1),
     background-color 420ms cubic-bezier(0.32, 0.72, 0, 1),
@@ -4475,17 +4606,17 @@ html.dark .before-after-state-badge,
 
 @media (min-width: 640px) {
   .before-after-slider-handle {
-    min-width: 52px;
+    min-width: 54px;
   }
 }
 
 html.dark .before-after-slider-handle,
 .before-after-premium--dark .before-after-slider-handle {
-  border-color: rgba(216, 173, 115, 0.2);
-  background: rgba(23, 19, 15, 0.62);
+  background: rgba(26, 21, 17, 0.72);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    0 16px 36px -16px rgba(0, 0, 0, 0.62);
+    0 0 0 1.5px rgba(241, 214, 170, 0.5),
+    0 0 0 5px rgba(241, 214, 170, 0.08),
+    0 18px 34px -14px rgba(0, 0, 0, 0.66);
 }
 
 .before-after-slider-handle__left,
@@ -4500,10 +4631,19 @@ html.dark .before-after-slider-handle,
 
 .before-after-media-stage:has([data-ba-range]:active) .before-after-slider-handle,
 .before-after-media-stage[data-ba-dragging='true'] .before-after-slider-handle {
-  scale: 1.08;
+  scale: 1.09;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 22px 46px -16px rgba(35, 24, 15, 0.58);
+    0 0 0 1.5px rgba(255, 255, 255, 1),
+    0 0 0 9px rgba(255, 255, 255, 0.18),
+    0 24px 46px -14px rgba(35, 24, 15, 0.52);
+}
+
+html.dark .before-after-media-stage[data-ba-dragging='true'] .before-after-slider-handle,
+.before-after-premium--dark .before-after-media-stage[data-ba-dragging='true'] .before-after-slider-handle {
+  box-shadow:
+    0 0 0 1.5px rgba(241, 214, 170, 0.62),
+    0 0 0 9px rgba(241, 214, 170, 0.12),
+    0 24px 46px -14px rgba(0, 0, 0, 0.7);
 }
 
 .before-after-media-stage[data-ba-dragging='true'] .before-after-slider-handle__left {
@@ -5507,4 +5647,45 @@ html.dark .discount-card__face--front,
   .discount-game__won-hint svg {
     animation: none !important;
   }
+}
+
+/* Le module newsletter partage la logique d'encadrement du module avant/apres. */
+.discount-shell {
+  background:
+    linear-gradient(
+      152deg,
+      rgba(255, 255, 255, 0.98) 0%,
+      rgba(233, 216, 194, 0.86) 34%,
+      rgba(203, 178, 148, 0.72) 68%,
+      rgba(226, 207, 183, 0.9) 100%
+    ) !important;
+}
+
+html.dark .discount-shell,
+.discount-section--dark .discount-shell {
+  background:
+    linear-gradient(
+      152deg,
+      rgba(216, 173, 115, 0.28) 0%,
+      rgba(58, 48, 39, 0.9) 36%,
+      rgba(32, 27, 22, 0.95) 70%,
+      rgba(216, 173, 115, 0.16) 100%
+    ) !important;
+}
+
+.discount-shell::before {
+  position: absolute;
+  z-index: 5;
+  top: 0;
+  right: 14%;
+  left: 14%;
+  height: 1px;
+  content: '';
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
+}
+
+html.dark .discount-shell::before,
+.discount-section--dark .discount-shell::before {
+  background: linear-gradient(90deg, transparent, rgba(241, 214, 170, 0.4), transparent);
 }

@@ -1,6 +1,8 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const { spawnSync } = require('node:child_process');
+const path = require('node:path');
 const test = require('node:test');
 const {
     LEGACY_CLASSES,
@@ -157,4 +159,33 @@ test('Gate 6: un scope ne peut pas viser un inventoryKey client', () => {
         }),
         /COMMERCE_FIXTURE_SCOPE_INVALID/
     );
+});
+
+test('Gate 6: le classificateur refuse un mode ecriture sans confirmation', () => {
+    const result = spawnSync(process.execPath, [
+        path.resolve('scripts/classify-legacy-commerce.mjs'),
+        '--project=secondevienextjsssr',
+        '--env=sandbox',
+        '--commit',
+        '--backup=package.json'
+    ], {
+        cwd: process.cwd(),
+        encoding: 'utf8'
+    });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Le mode ecriture exige --confirm/);
+});
+
+test('Gate 6: les outils refusent toute cible autre que le sandbox exact', () => {
+    const result = spawnSync(process.execPath, [
+        path.resolve('scripts/prepare-commerce-fixtures.mjs'),
+        '--project=production-interdite',
+        '--env=production',
+        '--backup=package.json'
+    ], {
+        cwd: process.cwd(),
+        encoding: 'utf8'
+    });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /GATE6_TARGET_MUST_BE_EXACT_SANDBOX/);
 });
