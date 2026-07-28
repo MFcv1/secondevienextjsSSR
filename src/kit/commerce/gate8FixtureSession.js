@@ -12,6 +12,23 @@ export const COMMERCE_GATE8_FIXTURE_SESSION_KEY =
 
 const RUN_ID_PATTERN = /^run_gate8_[A-Za-z0-9_-]{8,120}$/;
 const SCOPE_PATTERN = /^fixture_[A-Za-z0-9_-]{8,72}$/;
+const FIXTURE_PRODUCTS = Object.freeze({
+  fixture_gate6_stock1_01: Object.freeze({
+    name: 'Fixture Gate 8 stock 1',
+    price: 10,
+    stock: 1
+  }),
+  fixture_gate6_stock2_02: Object.freeze({
+    name: 'Fixture Gate 8 stock 2',
+    price: 11,
+    stock: 2
+  }),
+  fixture_gate6_stock10_03: Object.freeze({
+    name: 'Fixture Gate 8 stock 10',
+    price: 12,
+    stock: 10
+  })
+});
 
 export function normalizeGate8FixtureContext(value) {
   if (!COMMERCE_GATE8_FIXTURE_UI_ENABLED || !value) return null;
@@ -34,6 +51,29 @@ export function readGate8FixtureContext(search = '') {
     runId: params.get('gate8_run'),
     fixtureScopeVersion: params.get('gate8_scope')
   });
+}
+
+export function readGate8FixtureCart(search = '', context = null) {
+  const normalizedContext = normalizeGate8FixtureContext(context);
+  if (!normalizedContext) return [];
+  const productId = new URLSearchParams(search).get('gate8_product');
+  const product = FIXTURE_PRODUCTS[productId];
+  if (!product) return [];
+  return [Object.freeze({
+    id: `cart_furniture_${productId}`,
+    originalId: productId,
+    collectionName: 'furniture',
+    name: product.name,
+    price: product.price,
+    stock: product.stock,
+    sold: false,
+    priceOnRequest: false,
+    image: '',
+    material: 'Bois',
+    quantity: 1,
+    cartLineId: `cart-line-${normalizedContext.runId}-${productId}`,
+    cartRevision: 1
+  })];
 }
 
 export function persistGate8FixtureContext(context) {

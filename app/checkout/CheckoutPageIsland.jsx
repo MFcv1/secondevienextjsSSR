@@ -29,6 +29,7 @@ import {
 import { adaptCommerceOrder } from '../../src/kit/commerce/orderAdapter';
 import {
   persistGate8FixtureContext,
+  readGate8FixtureCart,
   readGate8FixtureContext,
   restoreGate8FixtureContext,
 } from '../../src/kit/commerce/gate8FixtureSession';
@@ -87,6 +88,7 @@ function CheckoutPageContent() {
   const [checkoutReturnNotice, setCheckoutReturnNotice] = useState('');
   const [cartLoading, setCartLoading] = useState(true);
   const [fixtureContext, setFixtureContext] = useState(null);
+  const [fixtureCartItems, setFixtureCartItems] = useState([]);
   const handledStripeReturnRef = useRef(false);
 
   useEffect(() => {
@@ -106,19 +108,31 @@ function CheckoutPageContent() {
 
   useEffect(() => {
     const fromUrl = readGate8FixtureContext(window.location.search);
-    setFixtureContext(
-      fromUrl ? persistGate8FixtureContext(fromUrl) : restoreGate8FixtureContext()
-    );
+    const context = fromUrl
+      ? persistGate8FixtureContext(fromUrl)
+      : restoreGate8FixtureContext();
+    setFixtureContext(context);
+    setFixtureCartItems(readGate8FixtureCart(window.location.search, context));
   }, []);
 
   useEffect(() => {
+    if (fixtureCartItems.length > 0) {
+      setCartItems(fixtureCartItems);
+      setCartLoading(false);
+      return;
+    }
     const handoffItems = readCheckoutCartHandoff();
     if (handoffItems.length === 0) return;
     setCartItems(handoffItems);
     setCartLoading(false);
-  }, []);
+  }, [fixtureCartItems]);
 
   useEffect(() => {
+    if (fixtureCartItems.length > 0) {
+      setCartItems(fixtureCartItems);
+      setCartLoading(false);
+      return undefined;
+    }
     if (!user) {
       setCartItems(readGuestCart());
       setCartLoading(false);
@@ -167,7 +181,7 @@ function CheckoutPageContent() {
       cancelled = true;
       unsubscribe?.();
     };
-  }, [user]);
+  }, [fixtureCartItems, user]);
 
   useEffect(() => {
     if (user) return undefined;
