@@ -110,7 +110,7 @@ env:
       - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI
-    value: "true"
+    value: "false"
     availability:
       - BUILD
       - RUNTIME
