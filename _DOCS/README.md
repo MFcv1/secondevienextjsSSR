@@ -20,7 +20,8 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 | Authentification | [AUTHENTIFICATION.md](security/AUTHENTIFICATION.md) | OTP, Google, passkeys, session, step-up admin, reprise production |
 | Securite globale | [SECURITE_GLOBALE.md](security/SECURITE_GLOBALE.md) | frontieres de confiance, rules, App Check, secrets, risques |
 | Espace client | [ESPACE_CLIENT.md](client/ESPACE_CLIENT.md) | compte, commandes, documents provisoires, wishlist, adresse, support |
-| Commerce et Stripe | [COMMERCE_STRIPE.md](commerce/COMMERCE_STRIPE.md) | panier, checkout, paiements, webhooks, remboursements, Connect |
+| Commerce - synthese | [COMMERCE_SYNTHESE.md](commerce/COMMERCE_SYNTHESE.md) | point d'entree unique: statut, Gates, preuves, limites et liens |
+| Commerce et Stripe - detail | [COMMERCE_STRIPE.md](commerce/COMMERCE_STRIPE.md) | panier, checkout, paiements, webhooks, remboursements, Connect |
 | Back-office | [BACKOFFICE.md](admin/BACKOFFICE.md) | onglets, droits, publication, ventes, maintenance, analytics |
 | Infrastructure | [INFRASTRUCTURE.md](infra/INFRASTRUCTURE.md) | Firebase, App Hosting, regions, environnements, production |
 | Deploiement et cache client | [DEPLOIEMENT_CACHE_CLIENT.md](infra/DEPLOIEMENT_CACHE_CLIENT.md) | identite des builds, version skew, cache CDN ISR, rollback |
@@ -30,6 +31,12 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 | Qualite et tests | [QUALITE_TESTS.md](quality/QUALITE_TESTS.md) | CI, gates, tests cibles, matrice de validation |
 | Assistant devis IA | [ASSISTANT_DEVIS.md](ai/ASSISTANT_DEVIS.md) | cadrage MVP non implemente, garde-fous et conditions de reprise |
 | Legal | [CGV_RETOURS_DRAFT.md](legal/CGV_RETOURS_DRAFT.md) | brouillon metier a faire valider par un professionnel du droit |
+
+## Plan temporaire actif
+
+| Perimetre | Document | Statut | Echeance et cloture |
+| --- | --- | --- | --- |
+| reprise commerce post-Gate 8 | [COMMERCE_REPRISE.md](commerce/COMMERCE_REPRISE.md) | `PLAN_REPRISE_DIFFERE`, R0 documentaire termine, R1 UX suivant | revue au plus tard le 2026-10-31, fusion canonique puis suppression avec `TODO.md` |
 
 ## Niveaux de statut
 

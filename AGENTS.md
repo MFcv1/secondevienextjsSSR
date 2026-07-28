@@ -104,7 +104,7 @@ Ne pas convertir Node 24 local en nouvelle baseline sans migration dediee. Ne ja
 | authentification | [AUTHENTIFICATION.md](_DOCS/security/AUTHENTIFICATION.md) | authStore, AuthContext, modal, auth Functions | preprod close |
 | securite globale | [SECURITE_GLOBALE.md](_DOCS/security/SECURITE_GLOBALE.md) | rules, helpers security, secrets, headers | preprod |
 | espace client | [ESPACE_CLIENT.md](_DOCS/client/ESPACE_CLIENT.md) | routes compte, MyOrders, wishlist | preprod |
-| commerce/Stripe | [COMMERCE_STRIPE.md](_DOCS/commerce/COMMERCE_STRIPE.md) | commerce client/Functions/admin | preprod transactionnelle sandbox |
+| commerce/Stripe | [COMMERCE_SYNTHESE.md](_DOCS/commerce/COMMERCE_SYNTHESE.md), puis [COMMERCE_STRIPE.md](_DOCS/commerce/COMMERCE_STRIPE.md) | commerce client/Functions/admin | preprod transactionnelle sandbox |
 | back-office | [BACKOFFICE.md](_DOCS/admin/BACKOFFICE.md) | AdminAppIsland, `src/kit/admin` | preprod |
 | infrastructure | [INFRASTRUCTURE.md](_DOCS/infra/INFRASTRUCTURE.md) | Firebase/App Hosting/config/env | sandbox actif |
 | deploiement/cache client | [DEPLOIEMENT_CACHE_CLIENT.md](_DOCS/infra/DEPLOIEMENT_CACHE_CLIENT.md) | `next.config.mjs`, `scripts/with-env.mjs`, `scripts/deployment-id.mjs` | actif |
@@ -120,6 +120,13 @@ Le plan temporaire du noyau commerce a ete clos apres la Gate 8. Ses decisions
 durables et preuves de qualification sont fusionnees dans les chapitres
 canoniques commerce, admin, client, qualite, infrastructure et exploitation.
 Git conserve l'audit et la roadmap retires.
+
+Plan temporaire de reprise explicitement demande:
+
+- [COMMERCE_REPRISE.md](_DOCS/commerce/COMMERCE_REPRISE.md): axes post-Gate 8
+  R0 a R5; R0 documentaire ferme, prochaine reprise R1 UX; aucune activation
+  `v2_all`, live ou production implicite; revue au plus tard le 2026-10-31,
+  puis fusion canonique et suppression avec [TODO.md](TODO.md).
 
 ## 6. Invariants d'architecture publique
 

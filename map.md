@@ -143,6 +143,10 @@ L'audit et la roadmap temporaire 0A a 8 sont clos. Leur verite durable est
 fusionnee dans `_DOCS/commerce/COMMERCE_STRIPE.md` et les chapitres canoniques
 admin, client, qualite, infrastructure et exploitation.
 
+La reprise post-Gate 8 est bornee par
+`_DOCS/commerce/COMMERCE_REPRISE.md` et le handoff `TODO.md`. Elle commence en
+R1 UX et n'autorise aucune activation `v2_all`, live ou production.
+
 Noyau v2 deploye en sandbox, writer verrouille par controle absent:
 
 ```text
@@ -789,7 +793,7 @@ restent actifs; l'UI publique et les mutations admin restent fermees.
 | Auth | `AUTHENTIFICATION.md` | authStore, AuthContext, modal, auth Functions | `test:auth` + smoke |
 | securite/rules | `SECURITE_GLOBALE.md` | rules, helpers security, Functions | tests negatifs + sandbox cible |
 | espace client | `ESPACE_CLIENT.md` | routes compte, MyOrders, wishlist | smoke compte |
-| paiement/refund | `COMMERCE_STRIPE.md` | commerce client/Functions/admin | Gates 0A a 8 fermees; `PREPROD_TRANSACTIONAL_READY` sur sandbox/fixtures, checkout/workers limites au scope fixture; UI fixture refermee, mutations admin `read_only`, offline et live fermes |
+| paiement/refund | `COMMERCE_SYNTHESE.md`, puis `COMMERCE_STRIPE.md` | commerce client/Functions/admin | Gates 0A a 8 fermees; `PREPROD_TRANSACTIONAL_READY` sur sandbox/fixtures, checkout/workers limites au scope fixture; UI fixture refermee, mutations admin `read_only`, offline et live fermes |
 | admin | `BACKOFFICE.md` | AdminAppIsland, tabs, Functions | smoke tabs + action cible |
 | infra | `INFRASTRUCTURE.md` | yaml/json/env/runtime | audits read-only + build |
 | donnees | `DONNEES_ANALYTICS.md` + `AUDIT_COUTS_FIRESTORE.md` | rules/indexes/scripts/Functions | dry-run/comptage/rollback + mesure avant/apres |

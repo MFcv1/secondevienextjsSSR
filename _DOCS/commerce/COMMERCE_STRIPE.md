@@ -20,10 +20,10 @@ Le tunnel couvre panier, verification e-mail, reservation stock, paiement
 Stripe, confirmation par webhook, espace client, annulation admissible,
 remboursement admin, retour/inspection et disposition eventuelle du stock.
 
-Invariant cible: le navigateur orchestre seulement l'UX; Cloud Functions et
-Stripe sont autoritaires pour prix, stock et paiement. Le code Gate 0B coupe le
-checkout et les mutations legacy avant effet; les anciens readers et webhooks
-restent disponibles uniquement pour le drainage.
+Invariant actif: le navigateur orchestre seulement l'UX; Cloud Functions et
+Stripe sont autoritaires pour prix, stock et paiement. Les mutations legacy
+restent coupees avant effet; leurs readers et webhooks ne servent qu'au
+drainage et a la compatibilite read-only.
 
 ## 2. Flux d'achat
 
@@ -33,8 +33,8 @@ produit achetable
   -> /checkout dynamique
   -> connexion ou OTP invite
   -> snapshot panier verrouille
-  -> createOrder
-  -> transaction stock + order pending_payment
+  -> createCheckoutV2
+  -> transaction commande v2 + reservations quantitatives
   -> Payment Element
   -> Stripe PaymentIntent
   -> webhook signe
@@ -43,9 +43,9 @@ produit achetable
   -> e-mails + espace client + admin
 ```
 
-Le flux ci-dessus decrit le legacy conserve en source pour drainage et reprise.
-Dans le worktree Gate 0B, `createOrder` refuse avant Stripe, rate limit,
-idempotence, commande ou reservation, et `CheckoutView` affiche la maintenance.
+Le flux ci-dessus decrit le runtime v2 qualifie sur fixtures. `createOrder`
+legacy reste confine avant Stripe, rate limit, commande ou reservation. Hors
+fenetre explicitement autorisee, le flag UI fixture reste ferme.
 
 ## 3. Panier et checkout
 
@@ -61,11 +61,13 @@ Pendant le paiement, le recap utilise un snapshot du panier. Une reservation sto
 
 ## 4. Stock et idempotence
 
-La creation de commande reserve actuellement le stock dans une transaction. Cette reservation initiale protege le chemin nominal contre une survente simple.
+Le runtime v2 agrege les lignes par `inventoryKey`, reserve les quantites dans
+une transaction et conserve un mouvement deterministe par effet. La creation
+du PaymentIntent reutilise une cle d'idempotence derivee de l'operation. Les
+anciens chemins bases sur `stockBefore`, `buyerId` ou une restauration directe
+restent confines.
 
-Les compensations ne sont pas encore fiables pour plusieurs allocations: elles melangent `stockBefore`, `buyerId`, increments et restaurations directes admin. La creation du PaymentIntent ne fournit pas non plus de cle d'idempotence Stripe. Ces points sont bloquants dans le plan de stabilisation.
-
-Invariants cibles:
+Invariants actifs:
 
 - pas de stock negatif;
 - lignes d'une meme cle d'inventaire agregees avant reservation, avec snapshots
@@ -82,7 +84,7 @@ Invariants cibles:
 convergence des PI existants passe par les webhooks signes; un echec reessayable
 conserve la commande et le hold.
 
-## 5. Statuts actuels et cible
+## 5. Statuts et axes v2
 
 | Statut | Sens |
 | --- | --- |
@@ -94,16 +96,16 @@ conserve la commande et le hold.
 | `refunded` | remboursement confirme; aucune remise en vente automatique, disposition physique requise |
 | `refund_failed` | intervention ou nouvelle synchronisation requise |
 
-Le code actuel reutilise le meme champ `status` pour paiement, annulation,
-logistique et remboursement. La cible additive separe `checkout`, `payment`,
-`fulfillment/custody`, une projection `inventorySummary`, les demandes de
-refund et les dossiers de retour. Refund et retour ne deviennent pas des
-statuts de paiement/fulfillment. Le champ legacy reste temporairement une
-projection ecrite atomiquement, jamais une source de verite v2.
+Le schema v2 separe `checkout`, `payment`, `fulfillment/custody`, la projection
+`inventorySummary`, les demandes de refund et les dossiers de retour. Refund
+et retour ne deviennent pas des statuts de paiement/fulfillment. Le champ
+legacy `status` reste une projection ecrite atomiquement pour compatibilite,
+jamais une source de verite v2.
 
 ## 6. Webhooks
 
-`stripeWebhook` et `stripeConnectWebhook` verifient la signature Stripe. Le handler doit:
+`stripeWebhookV2` et `stripeConnectWebhookV2` verifient la signature Stripe.
+Le handler:
 
 - utiliser le secret de l'environnement correspondant;
 - traiter l'evenement de facon idempotente;
@@ -113,7 +115,7 @@ projection ecrite atomiquement, jamais une source de verite v2.
 
 Evenements principaux: succes/echec/annulation PaymentIntent et creation/mise a jour/echec de refund, avec `charge.refunded` comme signal complementaire.
 
-Etat Gate 0B:
+Historique du confinement Gate 0B:
 
 - un marqueur `processing` possede une lease expiree recuperable et un token de
   fencing pour succes comme echec;
@@ -122,31 +124,37 @@ Etat Gate 0B:
 - le succes PaymentIntent reste drainable et un refus reessayable ne libere
   rien;
 - la creation de commande depuis `checkout.session.completed` est retiree;
-- le reducer monotone commun et l'inbox durable arrivent en Gates 1 et 3.
+- le reducer monotone commun et l'inbox durable ont ete ajoutes en Gates 1 et
+  3.
 
 ## 7. Remboursements
 
-`refundOrderAdmin` legacy est neutralise avant authentification, lecture ou appel
-Stripe. `syncRefundStatusAdmin` et les webhooks peuvent encore rapprocher un
-refund deja ouvert, sans modifier le stock. Le moteur cible separe refund
-financier, retour physique, inspection et disposition de stock.
+`refundOrderAdmin` legacy est neutralise avant authentification, lecture ou
+appel Stripe. Les commandes v2 separent refund financier, retour physique,
+inspection et disposition de stock. Un refund confirme ne modifie jamais seul
+le stock.
 
-Le back-office `AdminReturns` fournit:
+Le back-office `AdminReturns` et les callables v2 fournissent:
 
 - liste des commandes remboursables;
 - confirmation explicite;
-- remboursement legacy desactive;
+- remboursement v2 idempotent sous controle serveur;
 - synchronisation Stripe;
 - e-mail client;
 - preuve du refund et de la restauration.
 
 Les Rules Gate 0B interdisent creation, mise a jour et suppression SDK de
 `orders`, y compris a un admin fort, tout en conservant les lectures legitimes.
-Les futures commandes serveur restaureront uniquement les actions admissibles.
+Les commandes serveur n'exposent que les actions admissibles derivees de
+l'etat v2 et de l'acteur.
 
 ## 8. Stripe Connect
 
-Des parcours sandbox historiques ont valide Connect sur le chemin nominal. Ils ne qualifient pas l'etat actuel comme stable: `account.updated` ecrit des champs differents de ceux lus par le routage, et une reconnexion peut melanger l'etat pending et actif. `AdminPaymentSettings` reste une surface de pilotage, pas la source financiere.
+Stripe Connect sandbox a ete qualifie en Gates 7B/8, y compris le routage
+historique epingle et le webhook v2 en `europe-west1`.
+`AdminPaymentSettings` reste une surface de pilotage, pas la source
+financiere. Connect Live et ses responsabilites d'exploitation restent
+distincts et non qualifies.
 
 Avant production:
 
@@ -161,9 +169,9 @@ Avant production:
 
 Les evenements commande et remboursement passent par `functions/src/email/transactionalEmail.js`. Gmail reste actif pour la demonstration; Resend est code mais inactif jusqu'au domaine expediteur valide. Voir `../security/AUTHENTIFICATION.md` et `../infra/INFRASTRUCTURE.md`.
 
-Un echec e-mail ne doit pas inverser un paiement confirme. Le code actuel
-absorbe plusieurs erreurs et Gmail n'applique pas la cle d'idempotence transmise.
-L'outbox rend l'effet metier rejouable, mais Gmail SMTP ne peut pas garantir
+Un echec e-mail n'inverse jamais un paiement confirme. L'outbox durable rend
+l'effet metier reprenable, mais Gmail SMTP n'applique pas la cle d'idempotence
+transmise et ne peut pas garantir
 exactement-un envoi si l'accuse est perdu apres acceptation: cet etat devient
 `delivery_unknown` sans retry automatique. Une garantie fournisseur plus forte
 attend Resend ou un provider avec idempotence effective.
@@ -177,9 +185,14 @@ Des executions historiques ont observe:
 - remboursement et visibilite Stripe;
 - parcours Connect sandbox.
 
-Ces executions ne sont pas des gates de release actuelles. Les scripts peuvent utiliser un produit reel, correler la derniere commande par e-mail ou terminer sans rendre toute assertion bloquante. Ils ne couvrent pas refus puis retry, fermeture concurrente, PI orphelin, webhook bloque, stock partage, livraison injectee ou mutation admin.
+Ces executions historiques ne sont pas des gates de release actuelles. Les
+anciens scripts restent en quarantaine parce qu'ils peuvent utiliser un produit
+reel, correler la derniere commande par e-mail ou finir sur une preuve
+incomplete. Les Gates 7B/8 les ont remplaces par des runs fail-closed,
+run-scoped et correles.
 
-L'architecture PaymentIntent reste le choix cible; aucune migration vers Checkout Sessions n'est recommandee. Le travail consiste a rendre l'orchestration PaymentIntent actuelle idempotente, reprenable et testee.
+L'architecture PaymentIntent est le choix qualifie; aucune migration vers
+Checkout Sessions n'est recommandee.
 
 Gate 7A a ferme les projections/exploitation et Gate 7B a qualifie le
 manifeste `release_gate7a_c5259a87f875_f00378380561`. Les deux runs
@@ -277,16 +290,18 @@ transactionnel applique des deltas quantitatifs idempotents et conserve un
 mouvement par effet. Il est embarque par les callables v2, mais le controle
 reste `off`.
 
-Gate 3 est deployee en sandbox en mode `off`. Le runtime v2 couvre le repository
+Etat historique a la fermeture Gate 3: deploiement sandbox en mode `off`. Le runtime v2 couvre le repository
 commande/hold/tentative, `createCheckout`/`resumeCheckout`, la meme cle Stripe
 sous retry, l'annulation provider-first, le reconciler de tous les statuts PI,
 l'ingress signee plateforme/Connect, l'inbox a lease/fencing, les workers et
 sweepers bornes, l'expiration, le fait financier et l'outbox atomiques, ainsi
 que le token guest backend opaque, mono-usage et rotatif. Les callables
 Gate 4/5 importent ce runtime, mais aucun worker/scheduler n'est exporte et le
-controle absent refuse checkout et mutations: aucune recette transactionnelle.
+controle absent refusait checkout et mutations avant les activations bornees
+des Gates suivantes.
 
-Gate 4 est `SANDBOX_ACTIVE_OFF`: `allowedActions` est derive exclusivement du
+Etat historique a la fermeture Gate 4: `SANDBOX_ACTIVE_OFF`.
+`allowedActions` est derive exclusivement du
 schema v2 et de l'acteur/AAL2. Les commandes fulfillment sont idempotentes et
 auditees; la saga refund conserve une cle Stripe par `refundRequestId`, epingle
 le compte Connect historique, cumule les montants dans une transaction avec
@@ -317,8 +332,8 @@ quantitatives, avec acteur derive du contexte Auth et runtime minimal. Ils
 sont exportes mais bloques par le controle serveur. Les interfaces fulfillment,
 annulation, refund et retour sont branchees derriere des flags compiles a
 `false`; Livraison et Paiement
-n'ecrivent plus directement les champs commerce. Aucune action Gate 4 n'est
-active.
+n'ecrivent plus directement les champs commerce. Ces actions ont ensuite ete
+ouvertes uniquement pendant la fenetre Gate 8, puis refermees.
 
 Gate 5 est `SANDBOX_ACTIVE_READ_ONLY`. Le transport fournit
 `createCheckoutV2`, `resumeCheckoutV2` et des lecteurs commandes/retours
