@@ -565,7 +565,9 @@ const CheckoutView = ({
                 const input = buildCheckoutV2Input({
                     clientOrderId,
                     cartItems: itemsWithCol,
-                    deliveryModeId: formData.deliveryMode,
+                    deliveryModeId: fixtureContext
+                        ? 'fixture_delivery_fr'
+                        : formData.deliveryMode,
                     shippingAddress: formData
                 });
                 const result = await createCheckoutV2(input, {
