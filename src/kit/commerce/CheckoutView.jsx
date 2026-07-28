@@ -352,6 +352,12 @@ const CheckoutView = ({
     // --- TEMPS RÉEL : SURVEILLANCE STOCK ---
     useEffect(() => {
         if (cartItems.length === 0) return;
+        if (fixtureContext) {
+            // Les fixtures Gate 8 sont volontairement exclues du snapshot public.
+            // Le callable v2 revalide scope, UID, prix et stock cote serveur.
+            setUnavailableItems([]);
+            return;
+        }
 
         let cancelled = false;
         Promise.all(cartItems.map(async (item) => {
@@ -379,7 +385,7 @@ const CheckoutView = ({
         });
 
         return () => { cancelled = true; };
-    }, [cartItems]);
+    }, [cartItems, fixtureContext]);
 
     // --- ON CHANGE FORM ---
     const handleChange = (e) => {
