@@ -597,21 +597,57 @@ async function main() {
       `GATE7B_3DS_NOT_PREPARED:${threeDsPrepared.errorCode || threeDsPrepared.paymentIntentStatus}`
     );
     await page.evaluate((clientSecret) => {
-      window.__gate7bPromise =
-        window.__gate7bStripeClient.handleCardAction(clientSecret);
-    }, threeDs.clientSecret);
-    await waitFor(async () => {
-      for (const frame of page.frames()) {
-        const challenge = frame.getByRole('button', {
-          name: /complete|authorize|confirmer|autoriser/i
+      window.__gate7bActionState = { settled: false };
+      window.__gate7bPromise = window.__gate7bStripeClient
+        .handleCardAction(clientSecret)
+        .then((result) => {
+          window.__gate7bActionState = {
+            settled: true,
+            errorCode: result.error?.code || null,
+            errorType: result.error?.type || null,
+            paymentIntentStatus: result.paymentIntent?.status || null
+          };
+          return result;
         });
-        if (await challenge.isVisible().catch(() => false)) {
-          await challenge.click();
-          return true;
+    }, threeDs.clientSecret);
+    let challengeState;
+    try {
+      challengeState = await waitFor(async () => {
+        const action = await page.evaluate(() => window.__gate7bActionState);
+        if (action?.settled) return { action };
+        for (const frame of page.frames()) {
+          const challenge = frame.getByRole('button', {
+            name: /complete|authorize|confirmer|autoriser/i
+          });
+          if (await challenge.isVisible().catch(() => false)) {
+            await challenge.click();
+            return { clicked: true };
+          }
         }
+        return null;
+      }, Boolean, 'GATE7B_3DS_CHALLENGE_NOT_FOUND', 45_000);
+    } catch (error) {
+      if (error?.message !== 'GATE7B_3DS_CHALLENGE_NOT_FOUND') throw error;
+      const frames = [];
+      for (const frame of page.frames()) {
+        frames.push({
+          url: frame.url().slice(0, 180),
+          buttons: await frame.locator('button, input[type="submit"]')
+            .evaluateAll((elements) => elements.slice(0, 8).map((element) => ({
+              text: String(element.textContent || element.value || '').trim().slice(0, 80),
+              ariaLabel: String(element.getAttribute('aria-label') || '').slice(0, 80),
+              visible: Boolean(element.offsetWidth || element.offsetHeight)
+            }))).catch(() => [])
+        });
       }
-      return false;
-    }, Boolean, 'GATE7B_3DS_CHALLENGE_NOT_FOUND', 30_000);
+      throw new Error(
+        `GATE7B_3DS_CHALLENGE_NOT_FOUND:${JSON.stringify(frames)}`
+      );
+    }
+    invariant(
+      challengeState.clicked === true,
+      `GATE7B_3DS_ACTION_SETTLED:${challengeState.action?.errorCode || challengeState.action?.paymentIntentStatus}`
+    );
     threeDsResult = await page.evaluate(() => window.__gate7bPromise);
   } finally {
     await browser.close();
