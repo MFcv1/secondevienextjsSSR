@@ -176,6 +176,42 @@ const scenarios = {
     context.ok(true, 'control document cannot be read or mutated through the client SDK');
   }),
 
+  'owner-v2-cart-write-remains-allowed': async (context) => withEnvironment(async (environment) => {
+    const owner = environment.authenticatedContext('cart-owner-v2').firestore();
+    await assertSucceeds(setDoc(doc(owner, 'users/cart-owner-v2/cart/furniture_product-v2'), {
+      originalId: 'product-v2',
+      collectionName: 'furniture',
+      name: 'Meuble panier v2',
+      price: 120,
+      stock: 1,
+      sold: false,
+      priceOnRequest: false,
+      image: '',
+      material: 'Bois',
+      quantity: 1,
+      cartLineId: 'cart-line-product-v2',
+      cartRevision: 1,
+      addedAt: new Date('2026-07-29T00:00:00.000Z'),
+      updatedAt: new Date('2026-07-29T00:00:00.000Z'),
+    }));
+    context.ok(true, 'the authenticated checkout cart contract is accepted by Firestore Rules');
+  }),
+
+  'owner-invalid-v2-cart-revision-is-denied': async (context) => withEnvironment(async (environment) => {
+    const owner = environment.authenticatedContext('cart-owner-invalid').firestore();
+    await assertFails(setDoc(doc(owner, 'users/cart-owner-invalid/cart/furniture_invalid'), {
+      originalId: 'invalid',
+      collectionName: 'furniture',
+      price: 10,
+      quantity: 1,
+      cartLineId: 'cart-line-invalid',
+      cartRevision: -1,
+      addedAt: new Date('2026-07-29T00:00:00.000Z'),
+      updatedAt: new Date('2026-07-29T00:00:00.000Z'),
+    }));
+    context.ok(true, 'invalid v2 cart revisions remain rejected');
+  }),
+
   'storage-admin-delete-is-denied': async (context) => withEnvironment(async (environment) => {
     const storage = strongAdmin(environment).storage();
     const mediaRef = ref(storage, 'furniture/gate-0b-delete-proof.jpg');

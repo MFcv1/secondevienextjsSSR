@@ -129,7 +129,10 @@ service cloud.firestore {
           'image',
           'material',
           'quantity',
-          'addedAt'
+          'cartLineId',
+          'cartRevision',
+          'addedAt',
+          'updatedAt'
         ]) &&
         (data.quantity is number && data.quantity > 0) &&
         (data.price is number && data.price >= 0) &&
@@ -141,7 +144,10 @@ service cloud.firestore {
         (!('priceOnRequest' in data) || data.priceOnRequest is bool) &&
         (!('image' in data) || data.image is string) &&
         (!('material' in data) || data.material is string) &&
-        (!('addedAt' in data) || data.addedAt is timestamp);
+        (!('cartLineId' in data) || data.cartLineId is string) &&
+        (!('cartRevision' in data) || (data.cartRevision is int && data.cartRevision >= 0)) &&
+        (!('addedAt' in data) || data.addedAt is timestamp) &&
+        (!('updatedAt' in data) || data.updatedAt is timestamp);
     }
 
     // Panier utilisateur

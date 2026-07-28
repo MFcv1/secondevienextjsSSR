@@ -33,6 +33,8 @@
         "admin-product-editorial-update-remains-allowed",
         "admin-protected-commerce-settings-write-is-denied",
         "commerce-control-document-is-backend-only",
+        "owner-v2-cart-write-remains-allowed",
+        "owner-invalid-v2-cart-revision-is-denied",
         "storage-admin-delete-is-denied"
       ]
     },
