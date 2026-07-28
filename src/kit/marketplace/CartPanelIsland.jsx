@@ -39,15 +39,6 @@ const LegacyLoginModalIsland = dynamic(() => import('./LegacyLoginModalFullIslan
   loading: () => null,
 });
 
-const hasPersistedFirebaseUser = () => {
-  if (typeof window === 'undefined') return false;
-  try {
-    return Object.keys(window.localStorage).some((key) => key.startsWith('firebase:authUser:'));
-  } catch {
-    return false;
-  }
-};
-
 const getCartTotal = (items) => (
   items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0)
 );
@@ -59,7 +50,7 @@ const isDesktopViewport = () => (
 );
 
 const resolvePersistedAuthUser = async () => {
-  if (typeof window === 'undefined' || !hasPersistedFirebaseUser()) return null;
+  if (typeof window === 'undefined') return null;
   await initializeAuthStore({ forceInitialize: true });
   return getAuthSnapshot().user || null;
 };

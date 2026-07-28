@@ -426,6 +426,7 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     const commandClient = source('src/kit/commerce/commerceCommandClient.js');
     const consumerClient = source('src/kit/commerce/commerceV2Client.js');
     const uiFlags = source('src/kit/commerce/commerceUiFlags.js');
+    const cartPanel = source('src/kit/marketplace/CartPanelIsland.jsx');
 
     assert.equal(adminOrders.includes('updateDoc'), false);
     assert.equal(adminOrders.includes('deleteDoc'), false);
@@ -464,4 +465,6 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(uiFlags.includes('process.env.NEXT_PUBLIC_COMMERCE_V2_UI'));
     assert.ok(uiFlags.includes('process.env.NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI'));
     assert.equal(uiFlags.includes('commerceEnv.'), false);
+    assert.ok(cartPanel.includes('initializeAuthStore({ forceInitialize: true })'));
+    assert.equal(cartPanel.includes('hasPersistedFirebaseUser'), false);
 });
