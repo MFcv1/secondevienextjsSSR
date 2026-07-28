@@ -425,6 +425,7 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     const checkoutPage = source('app/checkout/CheckoutPageIsland.jsx');
     const commandClient = source('src/kit/commerce/commerceCommandClient.js');
     const consumerClient = source('src/kit/commerce/commerceV2Client.js');
+    const uiFlags = source('src/kit/commerce/commerceUiFlags.js');
 
     assert.equal(adminOrders.includes('updateDoc'), false);
     assert.equal(adminOrders.includes('deleteDoc'), false);
@@ -460,4 +461,7 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(consumerClient.includes("import { COMMERCE_V2_UI_ENABLED } from './commerceUiFlags.js'"));
     assert.ok(consumerClient.includes('COMMERCE_V2_ORDER_READERS_ENABLED = true'));
     assert.ok(consumerClient.includes('COMMERCE_V2_ADMIN_READERS_ENABLED = true'));
+    assert.ok(uiFlags.includes('process.env.NEXT_PUBLIC_COMMERCE_V2_UI'));
+    assert.ok(uiFlags.includes('process.env.NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI'));
+    assert.equal(uiFlags.includes('commerceEnv.'), false);
 });

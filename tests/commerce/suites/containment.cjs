@@ -215,6 +215,7 @@ const scenarios = {
     const checkout = readSource('src/kit/commerce/CheckoutView.jsx');
     const consumers = readSource('src/kit/commerce/commerceV2Client.js');
     const commands = readSource('src/kit/commerce/commerceCommandClient.js');
+    const uiFlags = readSource('src/kit/commerce/commerceUiFlags.js');
     const orders = readSource('src/kit/commerce/MyOrdersView.jsx');
     const adminIsland = readSource('app/admin/AdminAppIsland.jsx');
     const dashboard = readSource('src/kit/admin/AdminDashboard.jsx');
@@ -224,6 +225,8 @@ const scenarios = {
     context.ok(consumers.includes('COMMERCE_V2_ORDER_READERS_ENABLED = true'));
     context.ok(consumers.includes('COMMERCE_V2_ADMIN_READERS_ENABLED = true'));
     context.ok(commands.includes('COMMERCE_V2_CLIENT_COMMANDS_ENABLED = COMMERCE_V2_UI_ENABLED'));
+    context.ok(uiFlags.includes('process.env.NEXT_PUBLIC_COMMERCE_V2_UI'));
+    context.ok(!uiFlags.includes('commerceEnv.'));
     context.ok(checkout.includes('Paiement temporairement indisponible'));
     context.ok(checkout.includes('Fermer la modale ne compense jamais'));
     context.ok(!checkout.includes("httpsCallable(functions, 'cancelOrderClient')"));
