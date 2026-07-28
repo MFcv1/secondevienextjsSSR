@@ -52,7 +52,8 @@ exige un admin AAL2, une raison, une cle idempotente, une version attendue et
 un audit append-only. `v2ProductCommands.js` prepare les callables AAL2/App
 Check sans les exporter, et le formulaire admin les orchestre derriere
 `COMMERCE_V2_ADMIN_COMMANDS_ENABLED=false`. Le catalogue reste donc en lecture
-seule tant que la Gate 4 reste `IN_PROGRESS_LOCAL`.
+seule tant que les commandes Gate 4 restent dormantes et leurs flags compiles
+a `false`.
 
 ## 4. Cycle de vie
 

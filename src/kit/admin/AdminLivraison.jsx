@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Truck, Save, RefreshCw } from 'lucide-react';
 
@@ -47,17 +47,10 @@ const AdminLivraison = ({ darkMode }) => {
         if (hasErrors) return;
         setSaving(true);
         try {
-            // Normaliser les prix en Number avant sauvegarde
-            const sanitized = {};
-            for (const [key, mode] of Object.entries(settings)) {
-                sanitized[key] = { ...mode, price: Number(mode.price) || 0, label: mode.label.trim(), sub: (mode.sub || '').trim() };
-            }
-            await setDoc(doc(db, 'sys_metadata', 'delivery'), sanitized, { merge: true });
-            setSettings(sanitized);
-            alert("✅ Paramètres de livraison enregistrés avec succès.");
+            throw new Error('COMMERCE_V2_POLICY_COMMANDS_OFF');
         } catch (e) {
             console.error(e);
-            alert("❌ Erreur lors de l'enregistrement : " + e.message);
+            alert("Parametres de livraison en lecture seule jusqu'a l'activation du writer de policy v2.");
         } finally {
             setSaving(false);
         }
@@ -158,11 +151,11 @@ const AdminLivraison = ({ darkMode }) => {
                 <div className="pt-8 mt-8 border-t border-stone-200 dark:border-stone-800 flex justify-end">
                     <button
                         onClick={handleSave}
-                        disabled={saving || hasErrors}
+                        disabled
                         className={`flex items-center gap-2 text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition-colors ${saving || hasErrors ? 'bg-stone-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
                     >
                         {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
-                        {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+                        {saving ? 'Enregistrement...' : 'Policy v2 en lecture seule'}
                     </button>
                 </div>
             </div>

@@ -39,6 +39,71 @@ exports.syncStripeConnectAccount = syncStripeConnectAccount;
 exports.requestStripeConnectReconnect = requestStripeConnectReconnect;
 exports.confirmStripeConnectReconnect = confirmStripeConnectReconnect;
 
+// ── COMMERCE V2 (controle serveur fail-closed) ───────────
+const {
+    adjustInventoryAdmin,
+    archiveProductAdmin,
+    createProductAdmin,
+    publishProductAdmin,
+    updateProductOfferAdmin
+} = require('./src/commerce/v2ProductCommands');
+const {
+    archiveOrderAdmin,
+    markOrderDeliveredAdmin,
+    markOrderPickedUpAdmin,
+    markOrderPreparingAdmin,
+    markOrderReadyForPickupAdmin,
+    markOrderShippedAdmin
+} = require('./src/commerce/v2OrderCommands');
+const {
+    requestOrderCancellation
+} = require('./src/commerce/v2Cancellation');
+const {
+    requestRefundAdmin
+} = require('./src/commerce/v2RefundCommands');
+const {
+    cancelReturnAdmin,
+    markReturnReceivedAdmin,
+    openReturnAdmin,
+    resolveReturnAdmin,
+    restockReturnLinesAdmin,
+    writeOffReturnLinesAdmin
+} = require('./src/commerce/v2ReturnCommands');
+const {
+    createCheckoutV2,
+    resumeCheckoutV2
+} = require('./src/commerce/v2Checkout');
+const {
+    listMyOrdersV2,
+    listOrdersAdminV2,
+    listReturnsAdminV2
+} = require('./src/commerce/v2OrderQueries');
+
+exports.adjustInventoryAdmin = adjustInventoryAdmin;
+exports.archiveProductAdmin = archiveProductAdmin;
+exports.createProductAdmin = createProductAdmin;
+exports.publishProductAdmin = publishProductAdmin;
+exports.updateProductOfferAdmin = updateProductOfferAdmin;
+exports.archiveOrderAdmin = archiveOrderAdmin;
+exports.markOrderDeliveredAdmin = markOrderDeliveredAdmin;
+exports.markOrderPickedUpAdmin = markOrderPickedUpAdmin;
+exports.markOrderPreparingAdmin = markOrderPreparingAdmin;
+exports.markOrderReadyForPickupAdmin = markOrderReadyForPickupAdmin;
+exports.markOrderShippedAdmin = markOrderShippedAdmin;
+exports.requestOrderCancellation = requestOrderCancellation;
+exports.requestRefundAdmin = requestRefundAdmin;
+exports.cancelReturnAdmin = cancelReturnAdmin;
+exports.markReturnReceivedAdmin = markReturnReceivedAdmin;
+exports.openReturnAdmin = openReturnAdmin;
+exports.resolveReturnAdmin = resolveReturnAdmin;
+exports.restockReturnLinesAdmin = restockReturnLinesAdmin;
+exports.writeOffReturnLinesAdmin = writeOffReturnLinesAdmin;
+exports.createCheckoutV2 = createCheckoutV2;
+exports.resumeCheckoutV2 = resumeCheckoutV2;
+exports.listMyOrdersV2 = listMyOrdersV2;
+exports.listOrdersAdminV2 = listOrdersAdminV2;
+exports.listReturnsAdminV2 = listReturnsAdminV2;
+
 // ── AUTH ──────────────────────────────────────────────────
 const { grantAdminOnAuth } = require('./src/auth/grantAdmin');
 const { addAdminUser, removeAdminUser, logUserConnection, getUserStats, syncSuperAdminClaim, ensureAdminAccessRegistry } = require('./src/auth/adminManagement');

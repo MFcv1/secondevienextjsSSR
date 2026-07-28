@@ -276,7 +276,7 @@ test('outbox worker forwards the deterministic outbox id as provider idempotency
     assert.equal(marked.providerMessageId, 'message-worker-0001');
 });
 
-test('dormant v2 runtime wires every writer and worker without exporting a Function', () => {
+test('v2 runtime wiring keeps workers injectable while public transports stay separately guarded', () => {
     const runtime = createCommerceV2Runtime({
         db: {
             doc: (path) => ({ path }),

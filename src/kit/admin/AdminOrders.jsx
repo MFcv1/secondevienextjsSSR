@@ -1,20 +1,51 @@
-import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, limit, serverTimestamp } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import { db, appId, functions } from '../config/firebase';
+import { useState, useEffect } from 'react';
+import { collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
+import { db } from '../config/firebase';
 import { Package, Clock, CheckCircle, Mail, ChevronDown, ChevronUp, Download, Loader2, Truck, XCircle } from 'lucide-react';
 import { downloadCsv } from './exportCsv';
 import { formatShippingAddress } from '../../utils/shippingAddress';
+import {
+    archiveOrderAdmin,
+    COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED,
+    markOrderDeliveredAdmin,
+    markOrderPickedUpAdmin,
+    markOrderPreparingAdmin,
+    markOrderReadyForPickupAdmin,
+    markOrderShippedAdmin,
+} from '../commerce/commerceCommandClient';
+import {
+    COMMERCE_V2_ADMIN_READERS_ENABLED,
+    listOrdersAdminV2,
+} from '../commerce/commerceV2Client';
 
 const AdminOrders = ({ darkMode = false }) => {
     const [orders, setOrders] = useState([]);
     const [expandedOrder, setExpandedOrder] = useState(null);
     const [orderLimit, setOrderLimit] = useState(50);
     const [isLoading, setIsLoading] = useState(true);
-    const [refundingOrderId, setRefundingOrderId] = useState(null);
+    const [activeOrderId, setActiveOrderId] = useState(null);
+    const [nextCursor, setNextCursor] = useState(null);
 
     useEffect(() => {
         setIsLoading(true);
+        if (COMMERCE_V2_ADMIN_READERS_ENABLED) {
+            let cancelled = false;
+            listOrdersAdminV2({ pageSize: 50 })
+                .then((result) => {
+                    if (cancelled) return;
+                    setOrders(result.orders || []);
+                    setNextCursor(result.nextCursor || null);
+                    setIsLoading(false);
+                })
+                .catch((error) => {
+                    if (cancelled) return;
+                    console.error('Admin v2 orders read failed:', error);
+                    setIsLoading(false);
+                });
+            return () => {
+                cancelled = true;
+            };
+        }
         const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(orderLimit));
 
         const unsub = onSnapshot(q, (snap) => {
@@ -25,127 +56,54 @@ const AdminOrders = ({ darkMode = false }) => {
         return () => unsub();
     }, [orderLimit]);
 
-    const updateOrderStatus = async (order, newStatus) => {
-        await updateDoc(doc(db, 'orders', order.id), { status: newStatus });
-    };
-
-    const terminalUnpaidStatuses = new Set(['payment_failed', 'canceled', 'cancelled', 'cancelled_by_client']);
-    const paidStripeStatuses = new Set(['paid', 'shipped', 'completed', 'refund_pending', 'refunded', 'refund_failed']);
-
-    const isTerminalUnpaidOrder = (order) => terminalUnpaidStatuses.has(order?.status);
-
-    const isPaidStripeOrder = (order) => (
-        Boolean(order?.stripePaymentIntentId)
-        && order?.paymentMethod !== 'deferred'
-        && !isTerminalUnpaidOrder(order)
-        && (
-            paidStripeStatuses.has(order?.status)
-            || Boolean(order?.paidAt)
-        )
-    );
-
-    // Helper to get collection name (handles inconsistencies/legacy data)
-    const getCollectionFromItem = (item) => {
-        if (item.collection) return item.collection; // New Stripe Format
-        if (item.collectionName) return item.collectionName; // Old Cart Format
-        // Fallback guess based on usage? Or default to furniture. Safe to verify?
-        // Most items have it.
-        return 'furniture';
-    };
-
-    const handleCancelAndRestore = async (order) => {
-        if (isTerminalUnpaidOrder(order)) {
-            alert("Commande deja annulee ou en paiement echoue : aucune restauration manuelle n'est necessaire.");
-            return;
-        }
-
-        if (isPaidStripeOrder(order)) {
-            alert("Commande payee par Stripe : annulation bloquee. Creez d'abord un remboursement Stripe, puis archivez la commande avec une trace claire.");
-            return;
-        }
-
-        if (!window.confirm("ATTENTION : \n\nVous allez ANNULER cette commande.\n\nACTIONS AUTOMATIQUES :\n1. Le stock des produits sera REMIS a jour (+1).\n2. Les produits seront marques comme 'Non Vendu'.\n3. La commande restera visible avec le statut Annulee.\n\nConfirmer ?")) return;
-
+    const loadMoreOrders = async () => {
+        if (!COMMERCE_V2_ADMIN_READERS_ENABLED || !nextCursor || isLoading) return;
+        setIsLoading(true);
         try {
-            setIsLoading(true);
-
-            // 1. Restaurer le Stock pour chaque article
-            if (order.items && order.items.length > 0) {
-                // Import increment dynamically
-                const { increment, updateDoc, getDoc } = await import('firebase/firestore');
-                // Note: db and appId form closure
-                // appId is imported from '../config/firebase'
-
-                for (const item of order.items) {
-                    // Determine ID and Collection
-                    const itemId = item.originalId || item.id;
-                    const col = getCollectionFromItem(item); // Need helper or simple check
-
-                    if (!itemId) continue;
-
-                    // Let's use the unified 'furniture' collection
-                    const finalCol = 'furniture';
-
-                    const itemRef = doc(db, 'artifacts', appId, 'public', 'data', finalCol, itemId);
-                    const itemSnap = await getDoc(itemRef);
-
-                    if (itemSnap.exists()) {
-                        await updateDoc(itemRef, {
-                            stock: increment(item.quantity || 1),
-                            sold: false, // Mark as available again
-                            soldAt: null,
-                            buyerId: null
-                        });
-                        console.log(`Restored stock for ${item.name}`);
-                    }
-                }
-            }
-
-            // 2. Conserver la commande en historique avec un statut terminal.
-            await updateDoc(doc(db, 'orders', order.id), {
-                status: 'cancelled',
-                cancelledAt: serverTimestamp(),
-                stockReserved: false,
-                clientNote: 'Annulee par admin - stock restaure'
+            const result = await listOrdersAdminV2({
+                pageSize: 50,
+                cursor: nextCursor
             });
-
-            // UI Update handled by snapshot
-            alert("Commande annulee, visible en historique, et stocks restaures avec succes !");
-
-        } catch (error) {
-            console.error("Error cancelling order:", error);
-            alert("Erreur lors de l'annulation : " + error.message);
+            setOrders((current) => [...current, ...(result.orders || [])]);
+            setNextCursor(result.nextCursor || null);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleRefundOrder = async (order) => {
-        const message = [
-            `Confirmer le remboursement Stripe de la commande ${order.id} ?`,
-            '',
-            'Si Stripe accepte le remboursement, le meuble sera automatiquement remis en vente.',
-            'Le client voit generalement le credit sous environ 5 a 10 jours ouvrables selon sa banque.'
-        ].join('\n');
-        if (!window.confirm(message)) return;
-        const confirmText = window.prompt('Tapez REMBOURSER COMMANDE pour confirmer le remboursement Stripe.');
-        if (confirmText !== 'REMBOURSER COMMANDE') return;
+    const allowedActions = (order) => new Set(
+        Array.isArray(order?.allowedActions) ? order.allowedActions : []
+    );
 
+    const runOrderAction = async (order, action, confirmation) => {
+        if (!COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED) return;
+        if (!allowedActions(order).has(action)) return;
+        if (confirmation && !window.confirm(confirmation)) return;
         try {
-            setRefundingOrderId(order.id);
-            const refundOrderAdmin = httpsCallable(functions, 'refundOrderAdmin');
-            const result = await refundOrderAdmin({
-                orderId: order.id,
-                reason: 'Remboursement admin avec remise en vente',
-                confirmText
-            });
-            const refundId = result.data?.refundId ? `\nRefund: ${result.data.refundId}` : '';
-            alert(`Remboursement Stripe lance avec succes. Stock remis en vente si le remboursement est reussi.${refundId}`);
+            setActiveOrderId(order.id);
+            if (action === 'fulfillment_ship') {
+                const trackingNumber = window.prompt(
+                    'Numero de suivi (facultatif).',
+                    order.fulfillmentSummary?.trackingNumber || ''
+                );
+                if (trackingNumber === null) return;
+                await markOrderShippedAdmin(order, trackingNumber);
+            } else if (action === 'fulfillment_prepare') {
+                await markOrderPreparingAdmin(order);
+            } else if (action === 'fulfillment_ready') {
+                await markOrderReadyForPickupAdmin(order);
+            } else if (action === 'fulfillment_pickup') {
+                await markOrderPickedUpAdmin(order);
+            } else if (action === 'fulfillment_deliver') {
+                await markOrderDeliveredAdmin(order);
+            } else if (action === 'archive_order') {
+                await archiveOrderAdmin(order);
+            }
         } catch (error) {
-            console.error("Error refunding order:", error);
-            alert("Erreur lors du remboursement : " + (error.message || error));
+            console.error('Order command failed:', error);
+            alert(`Commande non appliquee : ${error.message || error}`);
         } finally {
-            setRefundingOrderId(null);
+            setActiveOrderId(null);
         }
     };
 
@@ -220,9 +178,6 @@ const AdminOrders = ({ darkMode = false }) => {
             <div className={`grid gap-4 pr-2 overflow-y-auto scrollbar-thin ${darkMode ? 'scrollbar-thumb-stone-700 scrollbar-track-stone-900/20' : 'scrollbar-thumb-stone-200 scrollbar-track-stone-50'} max-h-[750px] custom-scrollbar`}>
                 {orders.map(order => {
                     const badge = getStatusBadge(order.status);
-                    const terminalUnpaidActionLabel = order.status === 'payment_failed'
-                        ? 'Paiement echoue - stock restaure'
-                        : 'Annulee - stock restaure';
 
                     return (
                         <div key={order.id} className={`ring-1 rounded-3xl shadow-sm overflow-hidden hover:shadow-md transition-shadow will-change-transform ${darkMode ? 'bg-stone-800 ring-stone-700/50' : 'bg-white ring-stone-100'}`}>
@@ -291,115 +246,113 @@ const AdminOrders = ({ darkMode = false }) => {
                                                     <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Emails:</strong> client {order.emailProof?.client?.sent ? 'envoye' : 'non confirme'} / admin {order.emailProof?.admin?.sent ? 'envoye' : 'non confirme'}</p>
                                                 ) : null}
                                                 <p className="text-[10px] opacity-50 mt-2 font-mono">UID: {order.userId}</p>
-                                            <div className="flex flex-col gap-3 pt-6">
-                                                <div className="flex flex-col xl:flex-row gap-3">
-                                                    {/* Status Actions */}
-                                                    {((order.status === 'pending_payment' && !order.stripePaymentIntentId) || order.status === 'paid' || !order.status) ? (
+                                                <div className="flex flex-col gap-3 pt-6">
+                                                    {COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED && order.schemaVersion === 2 ? (
                                                         <>
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); updateOrderStatus(order, 'shipped'); }}
-                                                                className={`group flex-1 py-4 xl:py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all duration-300 shadow-xl flex items-center justify-center gap-2 ${
-                                                                    darkMode 
-                                                                        ? 'bg-white text-stone-900 hover:bg-stone-200' 
-                                                                        : 'bg-stone-900 text-white hover:bg-black'
-                                                                }`}
-                                                            >
-                                                                <Truck size={16} className="group-hover:translate-x-1 transition-transform" />
-                                                                Expédiée
-                                                            </button>
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); updateOrderStatus(order, 'completed'); }}
-                                                                className={`group flex-1 py-4 xl:py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all duration-300 shadow-xl flex items-center justify-center gap-2 ${
-                                                                    darkMode 
-                                                                        ? 'bg-emerald-500/10 text-emerald-500 border-2 border-emerald-500/20 hover:bg-emerald-500 hover:text-white' 
-                                                                        : 'bg-emerald-50 text-emerald-600 border-2 border-emerald-100 hover:bg-emerald-600 hover:text-white'
-                                                                }`}
-                                                            >
-                                                                <CheckCircle size={16} className="group-hover:scale-110 transition-transform" />
-                                                                Livrée
-                                                            </button>
+                                                            {allowedActions(order).has('fulfillment_prepare') ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                        runOrderAction(order, 'fulfillment_prepare');
+                                                                    }}
+                                                                    disabled={activeOrderId === order.id}
+                                                                    className="group flex items-center justify-center gap-2 rounded-2xl border-2 border-stone-200 py-3.5 text-[10px] font-black uppercase tracking-widest text-stone-700 disabled:opacity-50"
+                                                                >
+                                                                    <Package size={16} />
+                                                                    Mettre en preparation
+                                                                </button>
+                                                            ) : null}
+                                                            {allowedActions(order).has('fulfillment_ready') ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                        runOrderAction(order, 'fulfillment_ready');
+                                                                    }}
+                                                                    disabled={activeOrderId === order.id}
+                                                                    className="group flex items-center justify-center gap-2 rounded-2xl border-2 border-stone-200 py-3.5 text-[10px] font-black uppercase tracking-widest text-stone-700 disabled:opacity-50"
+                                                                >
+                                                                    <CheckCircle size={16} />
+                                                                    Prete au retrait
+                                                                </button>
+                                                            ) : null}
+                                                            {allowedActions(order).has('fulfillment_ship') ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                        runOrderAction(order, 'fulfillment_ship');
+                                                                    }}
+                                                                    disabled={activeOrderId === order.id}
+                                                                    className="group flex items-center justify-center gap-2 rounded-2xl bg-stone-900 py-3.5 text-[10px] font-black uppercase tracking-widest text-white disabled:opacity-50"
+                                                                >
+                                                                    {activeOrderId === order.id ? <Loader2 size={16} className="animate-spin" /> : <Truck size={16} />}
+                                                                    Confirmer l&apos;expedition
+                                                                </button>
+                                                            ) : null}
+                                                            {allowedActions(order).has('fulfillment_pickup') ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                        runOrderAction(
+                                                                            order,
+                                                                            'fulfillment_pickup',
+                                                                            'Confirmer le retrait physique ?'
+                                                                        );
+                                                                    }}
+                                                                    disabled={activeOrderId === order.id}
+                                                                    className="group flex items-center justify-center gap-2 rounded-2xl border-2 border-emerald-100 bg-emerald-50 py-3.5 text-[10px] font-black uppercase tracking-widest text-emerald-700 disabled:opacity-50"
+                                                                >
+                                                                    <CheckCircle size={16} />
+                                                                    Confirmer le retrait
+                                                                </button>
+                                                            ) : null}
+                                                            {allowedActions(order).has('fulfillment_deliver') ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                        runOrderAction(
+                                                                            order,
+                                                                            'fulfillment_deliver',
+                                                                            'Confirmer la livraison physique ?'
+                                                                        );
+                                                                    }}
+                                                                    disabled={activeOrderId === order.id}
+                                                                    className="group flex items-center justify-center gap-2 rounded-2xl border-2 border-emerald-100 bg-emerald-50 py-3.5 text-[10px] font-black uppercase tracking-widest text-emerald-700 disabled:opacity-50"
+                                                                >
+                                                                    <CheckCircle size={16} />
+                                                                    Confirmer la livraison
+                                                                </button>
+                                                            ) : null}
+                                                            {allowedActions(order).has('archive_order') ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                        runOrderAction(
+                                                                            order,
+                                                                            'archive_order',
+                                                                            'Archiver cette commande sans supprimer son historique ?'
+                                                                        );
+                                                                    }}
+                                                                    disabled={activeOrderId === order.id}
+                                                                    className="group flex items-center justify-center gap-2 rounded-2xl border-2 border-stone-200 py-3.5 text-[10px] font-black uppercase tracking-widest text-stone-600 disabled:opacity-50"
+                                                                >
+                                                                    <Package size={16} />
+                                                                    Archiver
+                                                                </button>
+                                                            ) : null}
                                                         </>
-                                                    ) : order.status === 'shipped' ? (
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); updateOrderStatus(order, 'completed'); }}
-                                                            className={`group flex-1 py-4 xl:py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all duration-300 shadow-xl flex items-center justify-center gap-2 ${
-                                                                darkMode 
-                                                                    ? 'bg-white text-stone-900 hover:bg-stone-200' 
-                                                                    : 'bg-stone-900 text-white hover:bg-black'
-                                                            }`}
-                                                        >
-                                                            <CheckCircle size={16} className="group-hover:scale-110 transition-transform" />
-                                                            Livrée
-                                                        </button>
-                                                    ) : order.status === 'completed' && !isPaidStripeOrder(order) ? (
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); updateOrderStatus(order, 'pending_payment'); }}
-                                                            className={`group flex-1 py-4 xl:py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all duration-300 border-2 flex items-center justify-center gap-2 ${
-                                                                darkMode 
-                                                                    ? 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:text-white' 
-                                                                    : 'bg-stone-100 border-stone-200 text-stone-500 hover:bg-stone-200 hover:text-stone-900'
-                                                            }`}
-                                                        >
-                                                            <Clock size={16} />
-                                                            Réouvrir
-                                                        </button>
-                                                    ) : null}
+                                                    ) : (
+                                                        <p className={`rounded-2xl border px-4 py-3 text-xs ${darkMode ? 'border-white/10 text-stone-400' : 'border-stone-200 text-stone-500'}`}>
+                                                            Actions commerce neutralisees. Aucun statut ni stock n&apos;est modifie depuis le navigateur.
+                                                        </p>
+                                                    )}
                                                 </div>
-
-                                                {isPaidStripeOrder(order) && order.status !== 'refund_pending' && order.status !== 'refunded' && order.status !== 'refund_failed' ? (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleRefundOrder(order);
-                                                        }}
-                                                        disabled={refundingOrderId === order.id}
-                                                        className={`group w-full py-4 xl:py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all duration-300 border-2 flex items-center justify-center gap-2 ${
-                                                            darkMode
-                                                                ? 'bg-sky-500/5 border-sky-500/15 text-sky-300 hover:bg-sky-500 hover:text-stone-950'
-                                                                : 'bg-sky-50 border-sky-100 text-sky-700 hover:bg-sky-600 hover:text-white'
-                                                        } disabled:opacity-60 disabled:cursor-wait`}
-                                                        title="Rembourser Stripe et remettre automatiquement le meuble en vente"
-                                                    >
-                                                        {refundingOrderId === order.id ? <Loader2 size={16} className="animate-spin" /> : <Package size={16} />}
-                                                        Rembourser et remettre en vente
-                                                    </button>
-                                                ) : isTerminalUnpaidOrder(order) ? (
-                                                    <button
-                                                        type="button"
-                                                        disabled
-                                                        className={`w-full py-4 xl:py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] border-2 flex items-center justify-center gap-2 cursor-not-allowed ${
-                                                            darkMode
-                                                                ? 'bg-white/5 border-white/5 text-white/40'
-                                                                : 'bg-stone-100 border-stone-200 text-stone-500'
-                                                        }`}
-                                                        title="Commande terminale Stripe : le webhook a deja traite le stock"
-                                                    >
-                                                        <XCircle size={16} />
-                                                        {terminalUnpaidActionLabel}
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleCancelAndRestore(order);
-                                                        }}
-                                                        disabled={order.status === 'refund_pending' || order.status === 'refunded' || order.status === 'refund_failed'}
-                                                        className={`group w-full py-4 xl:py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all duration-300 border-2 flex items-center justify-center gap-2 ${
-                                                            order.status === 'refund_pending' || order.status === 'refunded' || order.status === 'refund_failed'
-                                                                ? (darkMode
-                                                                    ? 'bg-white/5 border-white/5 text-white/35'
-                                                                    : 'bg-stone-100 border-stone-200 text-stone-400')
-                                                                : (darkMode
-                                                                    ? 'bg-red-500/5 border-red-500/10 text-red-500 hover:bg-red-500 hover:text-white'
-                                                                    : 'bg-red-50 border-red-100 text-red-600 hover:bg-red-600 hover:text-white')
-                                                        } disabled:cursor-not-allowed`}
-                                                        title="Annuler : remet le stock et conserve la commande en historique"
-                                                    >
-                                                        <XCircle size={16} className="group-hover:rotate-90 transition-transform" />
-                                                        {order.status === 'refunded' ? 'Remboursee' : order.status === 'refund_pending' ? 'Remboursement en cours' : order.status === 'refund_failed' ? 'Remboursement a verifier' : 'Annuler & Restaurer'}
-                                                    </button>
-                                                )}
-                                            </div>                                     </div>
+                                            </div>
                                         </div>
 
                                     </div>
@@ -417,9 +370,15 @@ const AdminOrders = ({ darkMode = false }) => {
                 )}
 
                 {/* Load More Button */}
-                {orders.length >= orderLimit && (
+                {(COMMERCE_V2_ADMIN_READERS_ENABLED ? Boolean(nextCursor) : orders.length >= orderLimit) && (
                     <button
-                        onClick={() => setOrderLimit(prev => prev + 50)}
+                        onClick={() => {
+                            if (COMMERCE_V2_ADMIN_READERS_ENABLED) {
+                                loadMoreOrders();
+                            } else {
+                                setOrderLimit(prev => prev + 50);
+                            }
+                        }}
                         className={`group w-full py-6 rounded-3xl border-2 border-dashed transition-all duration-300 flex items-center justify-center gap-3 ${
                             darkMode 
                                 ? 'border-white/5 text-white/30 hover:border-white/20 hover:text-white hover:bg-white/5 shadow-2xl shadow-black/20' 

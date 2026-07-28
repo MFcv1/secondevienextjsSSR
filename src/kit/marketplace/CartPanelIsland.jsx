@@ -176,20 +176,32 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
     const cartDocId = getCartDocumentId(item);
     if (!cartDocId) return false;
 
-    const [db, { doc, serverTimestamp, setDoc }] = await Promise.all([getDb(), loadFirestoreModule()]);
-    await setDoc(doc(db, 'users', cartUser.uid, 'cart', cartDocId), {
-      originalId: item.originalId || item.id,
-      collectionName: item.collectionName || 'furniture',
-      name: item.name || item.title || 'Piece Seconde Vie',
-      price: Number(item.price || item.currentPrice || item.startingPrice || 0),
-      stock: Number(item.stock || 0),
-      sold: Boolean(item.sold),
-      priceOnRequest: Boolean(item.priceOnRequest),
-      image: item.image || item.imageUrl || '',
-      material: item.material || 'Bois',
-      quantity: Number(item.quantity || 1),
-      addedAt: serverTimestamp(),
-    }, { merge: true });
+    const [db, { doc, runTransaction, serverTimestamp }] = await Promise.all([getDb(), loadFirestoreModule()]);
+    const cartRef = doc(db, 'users', cartUser.uid, 'cart', cartDocId);
+    await runTransaction(db, async (transaction) => {
+      const snapshot = await transaction.get(cartRef);
+      const current = snapshot.exists() ? snapshot.data() : null;
+      const suffix = globalThis.crypto?.randomUUID?.()
+        || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      transaction.set(cartRef, {
+        originalId: item.originalId || item.id,
+        collectionName: item.collectionName || 'furniture',
+        name: item.name || item.title || 'Piece Seconde Vie',
+        price: Number(item.price || item.currentPrice || item.startingPrice || 0),
+        stock: Number(item.stock || 0),
+        sold: Boolean(item.sold),
+        priceOnRequest: Boolean(item.priceOnRequest),
+        image: item.image || item.imageUrl || '',
+        material: item.material || 'Bois',
+        quantity: Number(item.quantity || 1),
+        cartLineId: current?.cartLineId || `cart-line-${suffix}`,
+        cartRevision: Number.isSafeInteger(current?.cartRevision)
+          ? current.cartRevision + 1
+          : 1,
+        addedAt: current?.addedAt || serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+    });
     openCart();
     return true;
   }, [openCart, user]);

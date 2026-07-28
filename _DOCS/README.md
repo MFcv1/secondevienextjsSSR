@@ -1,6 +1,6 @@
 # Bibliotheque canonique - Seconde Vie Next
 
-Derniere consolidation: 2026-07-26
+Derniere consolidation: 2026-07-28
 Statut: `REFERENCE_ACTIVE`
 
 ## Role
@@ -35,7 +35,7 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 
 | Perimetre | Document | Statut | Echeance et cloture |
 | --- | --- | --- | --- |
-| noyau commerce | [NOYAU_COMMERCE_STABILISATION.md](commerce/NOYAU_COMMERCE_STABILISATION.md) | `PLAN_TEMPORAIRE_EXECUTION`, specification contre-validee, `NO_GO_TRANSACTIONNEL` | Gates 0A a 3 `CODE_READY_LOCAL`, Gate 4 `IN_PROGRESS_LOCAL`; prochaine tranche: transports callable et UI fulfillment/annulation/refund/retour en mode dormant; revue au plus tard le 2026-09-30, fusion canonique et suppression |
+| noyau commerce | [NOYAU_COMMERCE_STABILISATION.md](commerce/NOYAU_COMMERCE_STABILISATION.md) | `PLAN_TEMPORAIRE_EXECUTION`, specification contre-validee, `NO_GO_TRANSACTIONNEL` | Gates 0A a 5 `SANDBOX_ACTIVE_READ_ONLY`; Gate 6 suivante: classification legacy et preparation fixtures en dry-run, toute adoption/ecriture restant soumise a sa gate cloud; revue au plus tard le 2026-09-30, fusion canonique et suppression |
 
 ## Niveaux de statut
 

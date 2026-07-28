@@ -6,6 +6,8 @@ import { httpsCallable } from 'firebase/functions';
 import { getStripePromise, isStripeConfigured } from '../config/stripe';
 import { db, functions } from '../config/firebase';
 import CheckoutPaymentStep from './CheckoutPaymentStep';
+import { COMMERCE_V2_CONSUMERS_ENABLED } from './commerceV2Client';
+import { adaptCommerceOrder } from './orderAdapter';
 
 const isTerminalPaymentFailure = (status) => ['payment_failed', 'canceled', 'cancelled', 'cancelled_by_client'].includes(status);
 
@@ -59,14 +61,21 @@ const waitForPaidOrder = ({ orderId, email, checkoutOtpToken }, timeoutMs = 4500
     const unsubscribe = onSnapshot(doc(db, 'orders', orderId), (snap) => {
         if (!snap.exists()) return;
         const order = snap.data();
-        if (order.status === 'paid') {
+        const projectedOrder = adaptCommerceOrder(order, snap.id);
+        const paymentSucceeded = projectedOrder.schemaVersion === 2
+            ? projectedOrder.paymentStatus === 'succeeded'
+            : projectedOrder.status === 'paid';
+        if (paymentSucceeded) {
             settled = true;
             window.clearTimeout(timeout);
             unsubscribe();
             resolve(order);
             return;
         }
-        if (isTerminalPaymentFailure(order.status)) {
+        if (
+            isTerminalPaymentFailure(projectedOrder.status) ||
+            isTerminalPaymentFailure(projectedOrder.paymentStatus)
+        ) {
             settled = true;
             window.clearTimeout(timeout);
             unsubscribe();
@@ -76,6 +85,10 @@ const waitForPaidOrder = ({ orderId, email, checkoutOtpToken }, timeoutMs = 4500
         if (settled) return;
         window.clearTimeout(timeout);
         unsubscribe();
+        if (COMMERCE_V2_CONSUMERS_ENABLED) {
+            reject(new Error('La projection de commande est inaccessible. Le panier est conserve.'));
+            return;
+        }
         waitForPaidOrderViaFunction({ orderId, email, checkoutOtpToken }, timeoutMs).then(resolve, reject);
     });
 });
@@ -117,6 +130,7 @@ const CheckoutStripeModal = ({
     stripeConnectedAccountId,
     formData,
     stripeElementsOptions,
+    purchasedCartLines,
     onClose,
     onPlaceOrder,
     onPaymentConfirmed,
@@ -192,7 +206,8 @@ const CheckoutStripeModal = ({
                                             ...formData,
                                             paymentMethod: 'stripe_elements',
                                             total: orderTotal,
-                                            paymentIntentId: paymentIntent.id
+                                            paymentIntentId: paymentIntent.id,
+                                            purchasedCartLines
                                         });
                                     } catch (error) {
                                         console.error('Order paid confirmation timeout:', error);

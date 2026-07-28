@@ -104,6 +104,179 @@ function createStripeAdapter(stripe) {
     });
 }
 
+function createCancellationRuntime({
+    db,
+    stripe,
+    appId,
+    clock = createClock(),
+    failpoints = null
+}) {
+    if (
+        typeof db?.doc !== 'function' ||
+        typeof db?.runTransaction !== 'function' ||
+        typeof stripe?.paymentIntents?.create !== 'function' ||
+        typeof stripe?.paymentIntents?.retrieve !== 'function' ||
+        typeof stripe?.paymentIntents?.cancel !== 'function' ||
+        typeof appId !== 'string' ||
+        !appId
+    ) {
+        throw runtimeError('COMMERCE_V2_CANCELLATION_RUNTIME_DEPENDENCY_INVALID');
+    }
+    const refs = createRefs(db, appId);
+    const database = {
+        runTransaction: (run) => db.runTransaction(run)
+    };
+    const checkoutRepository = createCheckoutRepository({
+        db: database,
+        refs,
+        ids: {
+            orderId: () => `ord_${crypto.randomUUID()}`,
+            attemptId: () => `att_${crypto.randomUUID()}`,
+            commandId: () => `cmd_${crypto.randomUUID()}`
+        },
+        clock
+    });
+    const paymentEffectApplier = createPaymentEffectApplier({ refs, clock });
+    const sagaRepository = createCheckoutSagaRepository({
+        db: database,
+        checkoutRepository,
+        paymentEffectApplier
+    });
+    const sagaService = createCheckoutSagaService({
+        stripe: createStripeAdapter(stripe),
+        repository: sagaRepository,
+        clock,
+        failpoints
+    });
+    const auditRepository = createCancellationAuditRepository({
+        db: database,
+        refs,
+        clock
+    });
+    return Object.freeze({
+        cancellations: createCancellationCoordinator({
+            checkoutRepository,
+            sagaService,
+            auditRepository
+        })
+    });
+}
+
+function createCheckoutRuntime({
+    db,
+    stripe,
+    appId,
+    clock = createClock(),
+    failpoints = null
+}) {
+    if (
+        typeof db?.doc !== 'function' ||
+        typeof db?.runTransaction !== 'function' ||
+        typeof stripe?.paymentIntents?.create !== 'function' ||
+        typeof stripe?.paymentIntents?.retrieve !== 'function' ||
+        typeof stripe?.paymentIntents?.cancel !== 'function' ||
+        typeof appId !== 'string' ||
+        !appId
+    ) {
+        throw runtimeError('COMMERCE_V2_CHECKOUT_RUNTIME_DEPENDENCY_INVALID');
+    }
+    const refs = createRefs(db, appId);
+    const database = {
+        runTransaction: (run) => db.runTransaction(run)
+    };
+    const checkoutRepository = createCheckoutRepository({
+        db: database,
+        refs,
+        ids: {
+            orderId: () => `ord_${crypto.randomUUID()}`,
+            attemptId: () => `att_${crypto.randomUUID()}`,
+            commandId: () => `cmd_${crypto.randomUUID()}`
+        },
+        clock
+    });
+    const paymentEffectApplier = createPaymentEffectApplier({ refs, clock });
+    const sagaRepository = createCheckoutSagaRepository({
+        db: database,
+        checkoutRepository,
+        paymentEffectApplier
+    });
+    return Object.freeze({
+        checkout: createCheckoutCoordinator({
+            checkoutRepository,
+            sagaService: createCheckoutSagaService({
+                stripe: createStripeAdapter(stripe),
+                repository: sagaRepository,
+                clock,
+                failpoints
+            })
+        })
+    });
+}
+
+function createRefundRuntime({
+    db,
+    stripe,
+    appId,
+    clock = createClock(),
+    failpoints = null
+}) {
+    if (
+        typeof db?.doc !== 'function' ||
+        typeof db?.runTransaction !== 'function' ||
+        typeof stripe?.refunds?.create !== 'function' ||
+        typeof stripe?.refunds?.retrieve !== 'function' ||
+        typeof appId !== 'string' ||
+        !appId
+    ) {
+        throw runtimeError('COMMERCE_V2_REFUND_RUNTIME_DEPENDENCY_INVALID');
+    }
+    const refs = createRefs(db, appId);
+    const database = {
+        runTransaction: (run) => db.runTransaction(run)
+    };
+    const repository = createRefundRepository({
+        db: database,
+        refs,
+        clock
+    });
+    return Object.freeze({
+        refunds: createRefundCoordinator({
+            repository,
+            sagaService: createRefundSagaService({
+                stripe: createStripeAdapter(stripe),
+                repository,
+                clock,
+                failpoints
+            })
+        })
+    });
+}
+
+function createReturnRuntime({
+    db,
+    appId,
+    clock = createClock()
+}) {
+    if (
+        typeof db?.doc !== 'function' ||
+        typeof db?.runTransaction !== 'function' ||
+        typeof appId !== 'string' ||
+        !appId
+    ) {
+        throw runtimeError('COMMERCE_V2_RETURN_RUNTIME_DEPENDENCY_INVALID');
+    }
+    const refs = createRefs(db, appId);
+    return Object.freeze({
+        returns: createReturnRepository({
+            db: {
+                runTransaction: (run) => db.runTransaction(run)
+            },
+            refs,
+            clock
+        })
+    });
+}
+
 function createRefs(db, appId) {
     const document = (path) => db.doc(path);
     return Object.freeze({
@@ -340,6 +513,10 @@ function createCommerceV2Runtime({
 }
 
 module.exports = {
+    createCancellationRuntime,
+    createCheckoutRuntime,
     createCommerceV2Runtime,
+    createRefundRuntime,
+    createReturnRuntime,
     createStripeAdapter
 };

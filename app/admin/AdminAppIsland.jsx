@@ -29,6 +29,9 @@ import {
   COMMERCE_V2_ADMIN_COMMANDS_ENABLED,
   publishProductAdmin,
 } from '../../src/kit/commerce/adminProductCommandClient';
+import {
+  COMMERCE_V2_ADMIN_READERS_ENABLED,
+} from '../../src/kit/commerce/commerceV2Client';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
 import KIT_CONFIG from '../../src/kit/config/constants';
 import { getCallableFunction } from '../../src/kit/config/firebaseLazy';
@@ -88,10 +91,19 @@ const ADMIN_PUBLIC_CATALOG_TABS = new Set(['dashboard', 'analytics', 'inventory'
 const COMMERCE_READ_ONLY_TABS = new Set(['furniture', 'inventory', 'orders', 'returns', 'livraison', 'payment_settings', 'maintenance']);
 const PRODUCT_COMMAND_TABS = new Set(['furniture', 'inventory']);
 
-const isCommerceReadOnlyTab = (tabId) => (
-  COMMERCE_READ_ONLY_TABS.has(tabId) &&
-  (!COMMERCE_V2_ADMIN_COMMANDS_ENABLED || !PRODUCT_COMMAND_TABS.has(tabId))
-);
+const isCommerceReadOnlyTab = (tabId) => {
+  if (!COMMERCE_READ_ONLY_TABS.has(tabId)) return false;
+  if (PRODUCT_COMMAND_TABS.has(tabId)) {
+    return !COMMERCE_V2_ADMIN_COMMANDS_ENABLED;
+  }
+  if (tabId === 'orders') {
+    return !COMMERCE_V2_ADMIN_READERS_ENABLED;
+  }
+  if (tabId === 'returns') {
+    return !COMMERCE_V2_ADMIN_READERS_ENABLED;
+  }
+  return true;
+};
 
 function CommerceReadOnlySurface({ children, darkMode, readOnly }) {
   if (!readOnly) return children;

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import {
     AlertTriangle,
@@ -16,8 +16,6 @@ import {
 } from 'lucide-react';
 import { db, functions } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
-
-const PAYMENT_SETTINGS_CACHE_KEY = 'paymentSettings';
 
 const statusCopy = {
     not_connected: {
@@ -51,7 +49,6 @@ const getToneClass = (tone, darkMode) => {
 const AdminPaymentSettings = ({ darkMode }) => {
     const { isAdmin, isSuperAdmin } = useAuth();
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
     const [stripeEnabled, setStripeEnabled] = useState(true);
     const [connectLoading, setConnectLoading] = useState(true);
     const [connectAction, setConnectAction] = useState('');
@@ -123,28 +120,6 @@ const AdminPaymentSettings = ({ darkMode }) => {
             }
         }
     }, []);
-
-    const handleToggle = async () => {
-        const newValue = !stripeEnabled;
-        setSaving(true);
-        try {
-            await setDoc(doc(db, 'sys_metadata', 'payment_settings'), {
-                stripeEnabled: newValue,
-                updatedAt: Date.now()
-            }, { merge: true });
-            try {
-                localStorage.setItem(PAYMENT_SETTINGS_CACHE_KEY, JSON.stringify({ stripeEnabled: newValue }));
-            } catch {
-                // Cache optional.
-            }
-            setStripeEnabled(newValue);
-        } catch (err) {
-            console.error('Error saving payment settings:', err);
-            alert('Erreur lors de la sauvegarde.');
-        } finally {
-            setSaving(false);
-        }
-    };
 
     const startConnect = async () => {
         let redirectingToStripe = false;
@@ -346,9 +321,8 @@ const AdminPaymentSettings = ({ darkMode }) => {
                         </div>
                         <button
                             type="button"
-                            onClick={handleToggle}
-                            disabled={saving || !stripeReady}
-                            className={`transition-all ${saving || !stripeReady ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105 active:scale-95'}`}
+                            disabled
+                            className="cursor-not-allowed opacity-50"
                             aria-label={stripeEnabled ? 'Desactiver les paiements par carte' : 'Activer les paiements par carte'}
                         >
                             {stripeEnabled ? (

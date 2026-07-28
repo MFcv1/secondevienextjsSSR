@@ -21,6 +21,25 @@ const {
     assertProductIdentity
 } = require('../../../functions/src/commerce/domain/productCommands');
 const {
+    createAdminOrderCommandHandler,
+    normalizeShipmentPayload
+} = require('../../../functions/src/commerce/v2OrderCommands');
+const {
+    createClientCancellationHandler
+} = require('../../../functions/src/commerce/v2Cancellation');
+const {
+    createCancellationRuntime,
+    createRefundRuntime,
+    createReturnRuntime
+} = require('../../../functions/src/commerce/domain/v2Runtime');
+const {
+    createAdminRefundHandler
+} = require('../../../functions/src/commerce/v2RefundCommands');
+const {
+    createAdminOpenReturnHandler,
+    createAdminReturnCommandHandler
+} = require('../../../functions/src/commerce/v2ReturnCommands');
+const {
     fixedClock,
     makeLine,
     makeOrder
@@ -148,6 +167,13 @@ test('return disposition never exceeds received quantity and pending can be canc
             lines: [{ lineId: order.items[0].lineId, quantity: 1 }]
         }, { clock: laterClock }),
         { code: 'COMMERCE_RETURN_DISPOSITION_EXCEEDED' }
+    );
+    assert.throws(
+        () => reduceReturnCase(value, {
+            type: 'receive',
+            lines: [{ lineId: 'unknown-return-line', quantity: 1 }]
+        }, { clock: laterClock }),
+        { code: 'COMMERCE_RETURN_QUANTITY_INVALID' }
     );
     const canceled = reduceReturnCase(value, { type: 'cancel' }, { clock: laterClock });
     assert.equal(canceled.status, 'canceled');
@@ -302,7 +328,7 @@ test('product archive is a soft terminal state and never deletes history', () =>
     assert.equal(archived.commerceVersion, 6);
 });
 
-test('product callable transport is AAL2/App Check guarded and remains dormant', () => {
+test('product callable transport is exported but server-control dormant', () => {
     const transport = fs.readFileSync(
         path.join(repositoryRoot, 'functions/src/commerce/v2ProductCommands.js'),
         'utf8'
@@ -331,10 +357,11 @@ test('product callable transport is AAL2/App Check guarded and remains dormant',
         'archiveProductAdmin'
     ]) {
         assert.ok(transport.includes(functionName));
-        assert.equal(functionsIndex.includes(functionName), false);
+        assert.equal(functionsIndex.includes(functionName), true);
     }
     assert.ok(transport.includes('checkRecentActiveStrongAdmin(context)'));
     assert.ok(transport.includes('enforceAppCheck: true'));
+    assert.ok(transport.includes('withCommerceMutationsEnabled'));
     assert.ok(client.includes('COMMERCE_V2_ADMIN_COMMANDS_ENABLED = false'));
     assert.ok(adminIsland.includes('isCommerceReadOnlyTab(adminCollection)'));
     assert.equal(adminIsland.includes('deleteDoc'), false);
@@ -344,4 +371,638 @@ test('product callable transport is AAL2/App Check guarded and remains dormant',
     assert.ok(adminForm.includes('updateProductOfferAdmin'));
     assert.ok(adminForm.includes('adjustInventoryAdmin'));
     assert.ok(adminForm.includes('publishProductAdmin'));
+});
+
+test('fulfillment callable transport derives its strong admin actor from Auth context', async () => {
+    const calls = [];
+    const handler = createAdminOrderCommandHandler(
+        'fulfillment_ship',
+        (data) => ({ trackingNumber: data.trackingNumber }),
+        {
+            authorize: async (context) => {
+                assert.equal(context.auth.uid, 'trusted-admin-uid');
+                return { access: { active: true } };
+            },
+            repositoryFactory: () => ({
+                execute: async (request) => {
+                    calls.push(request);
+                    return { applied: true };
+                }
+            })
+        }
+    );
+    const result = await handler({
+        orderId: 'order-gate4-transport',
+        commandId: 'command-gate4-transport',
+        expectedVersion: 7,
+        reason: 'expedition confirmee',
+        trackingNumber: 'TRACK-42',
+        uid: 'payload-attacker',
+        role: 'customer',
+        aal2: false
+    }, {
+        auth: {
+            uid: 'trusted-admin-uid',
+            token: {}
+        }
+    });
+    assert.deepEqual(result, { applied: true });
+    assert.equal(calls.length, 1);
+    assert.deepEqual(calls[0].actor, {
+        uid: 'trusted-admin-uid',
+        role: 'admin',
+        aal2: true
+    });
+    assert.equal(calls[0].action, 'fulfillment_ship');
+    assert.deepEqual(calls[0].command, {
+        commandId: 'command-gate4-transport',
+        expectedVersion: 7
+    });
+    assert.deepEqual(calls[0].payload, { trackingNumber: 'TRACK-42' });
+});
+
+test('fulfillment callable transport authorizes before repository access', async () => {
+    let repositoryCalls = 0;
+    const handler = createAdminOrderCommandHandler(
+        'archive_order',
+        () => ({}),
+        {
+            authorize: async () => {
+                const error = new Error('weak admin');
+                error.code = 'COMMERCE_ACTOR_INVALID';
+                throw error;
+            },
+            repositoryFactory: () => {
+                repositoryCalls += 1;
+                return { execute: async () => ({}) };
+            }
+        }
+    );
+    await assert.rejects(
+        handler({
+            orderId: 'order-gate4-transport',
+            commandId: 'command-gate4-transport',
+            expectedVersion: 7,
+            reason: 'archive controlee'
+        }, {
+            auth: {
+                uid: 'weak-admin-uid',
+                token: {}
+            }
+        }),
+        (error) => error.code === 'permission-denied'
+    );
+    assert.equal(repositoryCalls, 0);
+});
+
+test('fulfillment callable transport rejects path injection and malformed tracking', async () => {
+    let repositoryCalls = 0;
+    const handler = createAdminOrderCommandHandler(
+        'fulfillment_ship',
+        normalizeShipmentPayload,
+        {
+            authorize: async () => ({ access: { active: true } }),
+            repositoryFactory: () => {
+                repositoryCalls += 1;
+                return { execute: async () => ({}) };
+            }
+        }
+    );
+    const context = {
+        auth: {
+            uid: 'trusted-admin-uid',
+            token: {}
+        }
+    };
+    await assert.rejects(
+        handler({
+            orderId: 'order/escaped',
+            commandId: 'command-gate4-transport',
+            expectedVersion: 7,
+            reason: 'expedition controlee'
+        }, context),
+        (error) => error.code === 'invalid-argument'
+    );
+    await assert.rejects(
+        handler({
+            orderId: 'order-gate4-transport',
+            commandId: 'command/escaped',
+            expectedVersion: 7,
+            reason: 'expedition controlee'
+        }, context),
+        (error) => error.code === 'invalid-argument'
+    );
+    await assert.rejects(
+        handler({
+            orderId: 'order-gate4-transport',
+            commandId: 'command-gate4-transport',
+            expectedVersion: 7,
+            reason: 'expedition controlee',
+            trackingNumber: { forged: true }
+        }, context),
+        (error) => error.code === 'invalid-argument'
+    );
+    assert.equal(repositoryCalls, 0);
+});
+
+test('fulfillment and archive callables are exported behind App Check and server control', () => {
+    const transport = fs.readFileSync(
+        path.join(repositoryRoot, 'functions/src/commerce/v2OrderCommands.js'),
+        'utf8'
+    );
+    const functionsIndex = fs.readFileSync(
+        path.join(repositoryRoot, 'functions/index.js'),
+        'utf8'
+    );
+    for (const functionName of [
+        'markOrderPreparingAdmin',
+        'markOrderReadyForPickupAdmin',
+        'markOrderShippedAdmin',
+        'markOrderPickedUpAdmin',
+        'markOrderDeliveredAdmin',
+        'archiveOrderAdmin'
+    ]) {
+        assert.ok(transport.includes(functionName));
+        assert.equal(functionsIndex.includes(functionName), true);
+    }
+    assert.ok(transport.includes('checkRecentActiveStrongAdmin'));
+    assert.ok(transport.includes('enforceAppCheck: true'));
+    assert.ok(transport.includes('withCommerceMutationsEnabled'));
+    assert.ok(transport.includes('uid: context.auth.uid'));
+});
+
+test('client cancellation transport derives ownership from Auth and ignores forged actor payload', async () => {
+    const calls = [];
+    const handler = createClientCancellationHandler({
+        authorize: (context) => {
+            assert.equal(context.auth.uid, 'owner-auth-uid');
+            return context.auth.uid;
+        },
+        runtimeFactory: () => ({
+            cancellations: {
+                requestCancellation: async (request) => {
+                    calls.push(request);
+                    return { outcome: 'canceled' };
+                }
+            }
+        })
+    });
+    const result = await handler({
+        orderId: 'order-cancellation-transport',
+        commandId: 'command-cancellation-transport',
+        reason: 'demande du proprietaire',
+        ownerUid: 'forged-owner-uid',
+        uid: 'forged-owner-uid',
+        role: 'admin',
+        aal2: true
+    }, {
+        auth: {
+            uid: 'owner-auth-uid',
+            token: {}
+        }
+    });
+    assert.deepEqual(result, { outcome: 'canceled' });
+    assert.deepEqual(calls, [{
+        orderId: 'order-cancellation-transport',
+        commandId: 'command-cancellation-transport',
+        ownerUid: 'owner-auth-uid',
+        reason: 'demande du proprietaire'
+    }]);
+});
+
+test('client cancellation transport rejects unauthenticated and malformed requests before runtime', async () => {
+    let runtimeCalls = 0;
+    const runtimeFactory = () => {
+        runtimeCalls += 1;
+        return {
+            cancellations: {
+                requestCancellation: async () => ({})
+            }
+        };
+    };
+    const handler = createClientCancellationHandler({ runtimeFactory });
+    await assert.rejects(
+        handler({
+            orderId: 'order-cancellation-transport',
+            commandId: 'command-cancellation-transport',
+            reason: 'demande client'
+        }, { auth: null }),
+        (error) => error.code === 'unauthenticated'
+    );
+    await assert.rejects(
+        handler({
+            orderId: 'order/escaped',
+            commandId: 'command-cancellation-transport',
+            reason: 'demande client'
+        }, {
+            auth: { uid: 'owner-auth-uid', token: {} }
+        }),
+        (error) => error.code === 'invalid-argument'
+    );
+    await assert.rejects(
+        handler({
+            orderId: 'order-cancellation-transport',
+            commandId: 'command-cancellation-transport',
+            reason: 'x'
+        }, {
+            auth: { uid: 'owner-auth-uid', token: {} }
+        }),
+        (error) => error.code === 'invalid-argument'
+    );
+    assert.equal(runtimeCalls, 0);
+});
+
+test('client cancellation callable is exported behind App Check, Stripe secret and server control', () => {
+    const transport = fs.readFileSync(
+        path.join(repositoryRoot, 'functions/src/commerce/v2Cancellation.js'),
+        'utf8'
+    );
+    const functionsIndex = fs.readFileSync(
+        path.join(repositoryRoot, 'functions/index.js'),
+        'utf8'
+    );
+    assert.ok(transport.includes('requestOrderCancellation'));
+    assert.ok(transport.includes('enforceAppCheck: true'));
+    assert.ok(transport.includes('secrets: [STRIPE_SECRET_KEY]'));
+    assert.ok(transport.includes('const ownerUid = authorize(context)'));
+    assert.ok(transport.includes('withCommerceMutationsEnabled'));
+    assert.equal(functionsIndex.includes('requestOrderCancellation'), true);
+});
+
+test('client cancellation runtime wires only the provider-first cancellation surface', () => {
+    const runtime = createCancellationRuntime({
+        db: {
+            doc: (documentPath) => ({ path: documentPath }),
+            runTransaction: async () => {
+                throw new Error('not executed during wiring test');
+            }
+        },
+        stripe: {
+            paymentIntents: {
+                create: async () => ({}),
+                retrieve: async () => ({}),
+                cancel: async () => ({})
+            }
+        },
+        appId: 'secondevie'
+    });
+    assert.equal(
+        typeof runtime.cancellations.requestCancellation,
+        'function'
+    );
+    assert.deepEqual(Object.keys(runtime), ['cancellations']);
+});
+
+test('admin refund transport derives its strong actor from Auth and forwards integer cents', async () => {
+    const calls = [];
+    const handler = createAdminRefundHandler({
+        authorize: async (context) => {
+            assert.equal(context.auth.uid, 'trusted-refund-admin');
+            return { access: { active: true } };
+        },
+        runtimeFactory: () => ({
+            refunds: {
+                requestRefund: async (request) => {
+                    calls.push(request);
+                    return { outcome: 'succeeded', refundId: 're_transport_1' };
+                }
+            }
+        })
+    });
+    const result = await handler({
+        orderId: 'order-refund-transport',
+        refundRequestId: 'refund-request-transport',
+        amountCents: 3200,
+        reason: 'geste commercial valide',
+        uid: 'forged-admin',
+        role: 'customer',
+        aal2: false
+    }, {
+        auth: {
+            uid: 'trusted-refund-admin',
+            token: {}
+        }
+    });
+    assert.deepEqual(result, {
+        outcome: 'succeeded',
+        refundId: 're_transport_1'
+    });
+    assert.deepEqual(calls, [{
+        orderId: 'order-refund-transport',
+        refundRequestId: 'refund-request-transport',
+        amountCents: 3200,
+        actor: {
+            uid: 'trusted-refund-admin',
+            role: 'admin',
+            aal2: true
+        },
+        reason: 'geste commercial valide'
+    }]);
+});
+
+test('admin refund transport authorizes and validates before runtime access', async () => {
+    let runtimeCalls = 0;
+    const runtimeFactory = () => {
+        runtimeCalls += 1;
+        return {
+            refunds: {
+                requestRefund: async () => ({})
+            }
+        };
+    };
+    const weakHandler = createAdminRefundHandler({
+        authorize: async () => {
+            const error = new Error('weak admin');
+            error.code = 'COMMERCE_ACTOR_INVALID';
+            throw error;
+        },
+        runtimeFactory
+    });
+    await assert.rejects(
+        weakHandler({
+            orderId: 'order-refund-transport',
+            refundRequestId: 'refund-request-transport',
+            amountCents: 3200,
+            reason: 'geste commercial valide'
+        }, {
+            auth: { uid: 'weak-refund-admin', token: {} }
+        }),
+        (error) => error.code === 'permission-denied'
+    );
+    const handler = createAdminRefundHandler({
+        authorize: async () => ({ access: { active: true } }),
+        runtimeFactory
+    });
+    await assert.rejects(
+        handler({
+            orderId: 'order/refund-escaped',
+            refundRequestId: 'refund-request-transport',
+            amountCents: 3200,
+            reason: 'geste commercial valide'
+        }, {
+            auth: { uid: 'trusted-refund-admin', token: {} }
+        }),
+        (error) => error.code === 'invalid-argument'
+    );
+    await assert.rejects(
+        handler({
+            orderId: 'order-refund-transport',
+            refundRequestId: 'refund-request-transport',
+            amountCents: '3200',
+            reason: 'geste commercial valide'
+        }, {
+            auth: { uid: 'trusted-refund-admin', token: {} }
+        }),
+        (error) => error.code === 'invalid-argument'
+    );
+    assert.equal(runtimeCalls, 0);
+});
+
+test('admin refund callable is exported behind strong auth and server control', () => {
+    const transport = fs.readFileSync(
+        path.join(repositoryRoot, 'functions/src/commerce/v2RefundCommands.js'),
+        'utf8'
+    );
+    const functionsIndex = fs.readFileSync(
+        path.join(repositoryRoot, 'functions/index.js'),
+        'utf8'
+    );
+    assert.ok(transport.includes('requestRefundAdmin'));
+    assert.ok(transport.includes('checkRecentActiveStrongAdmin'));
+    assert.ok(transport.includes('enforceAppCheck: true'));
+    assert.ok(transport.includes('secrets: [STRIPE_SECRET_KEY]'));
+    assert.ok(transport.includes('uid: context.auth.uid'));
+    assert.ok(transport.includes('withCommerceMutationsEnabled'));
+    assert.equal(functionsIndex.includes('requestRefundAdmin'), true);
+});
+
+test('admin refund runtime wires only the resumable refund surface', () => {
+    const runtime = createRefundRuntime({
+        db: {
+            doc: (documentPath) => ({ path: documentPath }),
+            runTransaction: async () => {
+                throw new Error('not executed during wiring test');
+            }
+        },
+        stripe: {
+            refunds: {
+                create: async () => ({}),
+                retrieve: async () => ({})
+            }
+        },
+        appId: 'secondevie'
+    });
+    assert.equal(typeof runtime.refunds.requestRefund, 'function');
+    assert.deepEqual(Object.keys(runtime), ['refunds']);
+});
+
+test('admin return opening derives its actor from Auth and preserves line quantities', async () => {
+    const calls = [];
+    const handler = createAdminOpenReturnHandler({
+        authorize: async (context) => {
+            assert.equal(context.auth.uid, 'trusted-return-admin');
+            return { access: { active: true } };
+        },
+        runtimeFactory: () => ({
+            returns: {
+                create: async (request) => {
+                    calls.push(request);
+                    return { returnCase: { returnId: 'return-transport-1' } };
+                }
+            }
+        })
+    });
+    const result = await handler({
+        orderId: 'order-return-transport',
+        returnRequestId: 'return-request-transport',
+        requestedLines: [
+            { lineId: 'line-return-a', quantity: 2 },
+            { lineId: 'line-return-b', quantity: 1 }
+        ],
+        reason: 'retour physique confirme',
+        uid: 'forged-admin',
+        role: 'customer',
+        aal2: false
+    }, {
+        auth: { uid: 'trusted-return-admin', token: {} }
+    });
+    assert.deepEqual(result, {
+        returnCase: { returnId: 'return-transport-1' }
+    });
+    assert.deepEqual(calls, [{
+        orderId: 'order-return-transport',
+        returnRequestId: 'return-request-transport',
+        requestedLines: [
+            { lineId: 'line-return-a', quantity: 2 },
+            { lineId: 'line-return-b', quantity: 1 }
+        ],
+        actor: {
+            uid: 'trusted-return-admin',
+            role: 'admin',
+            aal2: true
+        },
+        reason: 'retour physique confirme'
+    }]);
+});
+
+test('admin return transitions use fixed event types and server Auth actor', async () => {
+    const calls = [];
+    const handler = createAdminReturnCommandHandler(
+        'write_off',
+        { withLines: true },
+        {
+            authorize: async () => ({ access: { active: true } }),
+            runtimeFactory: () => ({
+                returns: {
+                    apply: async (request) => {
+                        calls.push(request);
+                        return { returnStatus: 'received' };
+                    }
+                }
+            })
+        }
+    );
+    const result = await handler({
+        orderId: 'order-return-transport',
+        returnId: 'return-case-transport',
+        commandId: 'return-command-transport',
+        expectedVersion: 3,
+        lines: [{ lineId: 'line-return-a', quantity: 1 }],
+        event: { type: 'restock' },
+        reason: 'article non revendable',
+        uid: 'forged-admin'
+    }, {
+        auth: { uid: 'trusted-return-admin', token: {} }
+    });
+    assert.deepEqual(result, { returnStatus: 'received' });
+    assert.deepEqual(calls, [{
+        orderId: 'order-return-transport',
+        returnId: 'return-case-transport',
+        commandId: 'return-command-transport',
+        expectedVersion: 3,
+        event: {
+            type: 'write_off',
+            lines: [{ lineId: 'line-return-a', quantity: 1 }]
+        },
+        actor: {
+            uid: 'trusted-return-admin',
+            role: 'admin',
+            aal2: true
+        },
+        reason: 'article non revendable'
+    }]);
+});
+
+test('admin return transport authorizes and validates before runtime access', async () => {
+    let runtimeCalls = 0;
+    const runtimeFactory = () => {
+        runtimeCalls += 1;
+        return {
+            returns: {
+                create: async () => ({}),
+                apply: async () => ({})
+            }
+        };
+    };
+    const weakHandler = createAdminOpenReturnHandler({
+        authorize: async () => {
+            const error = new Error('weak admin');
+            error.code = 'COMMERCE_ACTOR_INVALID';
+            throw error;
+        },
+        runtimeFactory
+    });
+    await assert.rejects(
+        weakHandler({
+            orderId: 'order-return-transport',
+            returnRequestId: 'return-request-transport',
+            requestedLines: [{ lineId: 'line-return-a', quantity: 1 }],
+            reason: 'retour physique confirme'
+        }, {
+            auth: { uid: 'weak-return-admin', token: {} }
+        }),
+        (error) => error.code === 'permission-denied'
+    );
+    const openingHandler = createAdminOpenReturnHandler({
+        authorize: async () => ({ access: { active: true } }),
+        runtimeFactory
+    });
+    await assert.rejects(
+        openingHandler({
+            orderId: 'order-return-transport',
+            returnRequestId: 'return-request-transport',
+            requestedLines: [
+                { lineId: 'line-return-a', quantity: 1 },
+                { lineId: 'line-return-a', quantity: 1 }
+            ],
+            reason: 'retour physique confirme'
+        }, {
+            auth: { uid: 'trusted-return-admin', token: {} }
+        }),
+        (error) => error.code === 'invalid-argument'
+    );
+    const transitionHandler = createAdminReturnCommandHandler(
+        'receive',
+        { withLines: true },
+        {
+            authorize: async () => ({ access: { active: true } }),
+            runtimeFactory
+        }
+    );
+    await assert.rejects(
+        transitionHandler({
+            orderId: 'order-return-transport',
+            returnId: 'return-case-transport',
+            commandId: 'return-command-transport',
+            expectedVersion: -1,
+            lines: [{ lineId: 'line-return-a', quantity: 1 }],
+            reason: 'reception physique'
+        }, {
+            auth: { uid: 'trusted-return-admin', token: {} }
+        }),
+        (error) => error.code === 'invalid-argument'
+    );
+    assert.equal(runtimeCalls, 0);
+});
+
+test('admin return callables are exported behind strong auth and server control', () => {
+    const transport = fs.readFileSync(
+        path.join(repositoryRoot, 'functions/src/commerce/v2ReturnCommands.js'),
+        'utf8'
+    );
+    const functionsIndex = fs.readFileSync(
+        path.join(repositoryRoot, 'functions/index.js'),
+        'utf8'
+    );
+    for (const name of [
+        'openReturnAdmin',
+        'cancelReturnAdmin',
+        'markReturnReceivedAdmin',
+        'restockReturnLinesAdmin',
+        'writeOffReturnLinesAdmin',
+        'resolveReturnAdmin'
+    ]) {
+        assert.ok(transport.includes(name));
+        assert.equal(functionsIndex.includes(name), true);
+    }
+    assert.ok(transport.includes('checkRecentActiveStrongAdmin'));
+    assert.ok(transport.includes('enforceAppCheck: true'));
+    assert.ok(transport.includes('withCommerceMutationsEnabled'));
+    assert.ok(transport.includes('uid: context.auth.uid'));
+    assert.equal(transport.includes('data?.event'), false);
+});
+
+test('admin return runtime wires only the quantitative return surface', () => {
+    const runtime = createReturnRuntime({
+        db: {
+            doc: (documentPath) => ({ path: documentPath }),
+            runTransaction: async () => {
+                throw new Error('not executed during wiring test');
+            }
+        },
+        appId: 'secondevie'
+    });
+    assert.equal(typeof runtime.returns.create, 'function');
+    assert.equal(typeof runtime.returns.apply, 'function');
+    assert.deepEqual(Object.keys(runtime), ['returns']);
 });

@@ -152,6 +152,12 @@ function updateLines(returnCase, quantities, field) {
         }
         requested.set(value.lineId, value.quantity);
     }
+    const knownLineIds = new Set(returnCase.lines.map((line) => line.lineId));
+    for (const lineId of requested.keys()) {
+        if (!knownLineIds.has(lineId)) {
+            throw returnError('COMMERCE_RETURN_QUANTITY_INVALID', lineId);
+        }
+    }
     return returnCase.lines.map((line) => {
         const quantity = requested.get(line.lineId) || 0;
         if (quantity === 0) return { ...line };

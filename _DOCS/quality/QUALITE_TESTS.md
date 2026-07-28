@@ -1,6 +1,6 @@
 # Qualite, tests et gates
 
-Derniere mise a jour: 2026-07-26
+Derniere mise a jour: 2026-07-28
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Principe de proportion
@@ -43,6 +43,11 @@ Etat `CODE_READY`:
 - `test:commerce:rules:containment` utilise Firestore + Storage Emulator;
 - `test:commerce:unit` valide schema, reducer, projections, compatibilite,
   actions serveur et retours quantitatifs;
+- `test:commerce:ui` valide les transports/consommateurs Gates 4 et 5, le
+  contrat checkout sans prix client, l'identite Auth serveur et l'absence de
+  writer SDK sur les surfaces v2;
+- `test:commerce:browser` exerce localement sous Chromium la reprise
+  namespacee, le reload et les conflits `cartLineId/cartRevision` multi-onglet;
 - `test:commerce:property` genere algebre monetaire, cycles Stripe non
   terminaux et permutations de payload sans reseau;
 - `test:commerce:faults` prouve idempotence, ordre lookup/version, saga,
@@ -67,8 +72,8 @@ a cree `test:commerce:runner`, `test:commerce:containment`,
 self-test qui prouve l'exit non nul. Gate 0B etend les scenarios de confinement.
 Gate 1 ajoute `test:commerce:unit`, `test:commerce:property`,
 `test:commerce:firebase`, `test:commerce:rules` et
-`test:commerce:faults`. Elles sont `CODE_READY_LOCAL` et bloquantes dans
-l'agregat avant une activation.
+`test:commerce:faults`. Elles sont vertes, bloquantes dans l'agregat et ont
+precede l'activation sandbox read-only.
 
 ## 3. Tests automatises Auth
 
@@ -205,6 +210,42 @@ reprenables, les retours quantitatifs et le rail produit. Le scenario produit
 Firestore exerce un double create concurrent, l'offre, l'ajustement de stock,
 la publication, le retry acquitte avant version obsolete, l'archive douce et
 un audit append-only par commande.
+
+Le transport callable fulfillment/archive commande est couvert dans
+`test:commerce:unit`: acteur derive du contexte Auth, autorisation avant acces
+repository, App Check exige, export present et garde controle fail-closed.
+Le transport d'annulation client ajoute les preuves de session obligatoire,
+proprietaire derive du contexte Auth, payload acteur ignore, validation avant
+runtime, App Check/secret Stripe, export present et runtime minimal
+provider-first verrouille.
+Le transport refund admin couvre admin fort derive du contexte Auth, montant
+entier en centimes, validation avant runtime, App Check/secret Stripe et runtime
+minimal verrouille. `test:commerce:faults` conserve les preuves de reponse
+Stripe perdue, cumul exact, compte Connect historique et zero restock.
+Les transports retour admin couvrent acteur Auth/AAL2 serveur, commandes
+d'evenement fermees, quantites et versions validees avant runtime, refus des
+lignes inconnues, App Check, runtime retour minimal, exports presents et
+controle mutations `off`.
+
+Gate 5 ajoute les preuves create/resume checkout lies a l'UID Auth, validation
+avant runtime, runtime minimal, lecteurs UID/admin pagines, `allowedActions`
+retour quantitatives, contrat navigateur sans prix, reprise sans secret,
+nettoyage exact des revisions et absence des anciens writers sur le chemin v2.
+
+Au point d'arret du 2026-07-28, `lint:functions`, le lint UI cible (zero
+erreur), `test:commerce:runner` (13/13), `test:commerce:containment` (12/12,
+217 assertions), `test:commerce:unit` (58/58), `test:commerce:ui` (10/10),
+`test:commerce:browser` (4/4), `test:commerce:property` (3/3),
+`test:commerce:faults` (33/33) et le build Next sont verts. Temurin Java
+21.0.11 a ete installe dans le cache utilisateur puis toutes les suites
+Emulator ont ete rejouees: confinement Rules 10/10, Firestore 14/14 avec
+64 assertions et Rules v2 4/4. L'agregat `test:commerce` complet est vert.
+
+Preuves sandbox du meme jour: indexes commerce `READY`, 24/24 exports v2
+presents en `europe-west1`, anciens doublons mutateurs `us-central1` absents,
+callables sans Auth/App Check refuses `401`, webhook non signe refuse `400`,
+Rules Firestore/Storage publiees et rollout App Hosting
+`build-2026-07-28-001` `SUCCEEDED`.
 
 L'emulateur ne prouve pas a lui seul:
 

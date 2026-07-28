@@ -7,6 +7,9 @@ const {
 } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
 const {
+    withCommerceMutationsEnabled
+} = require('./v2ControlGuard');
+const {
     createProductCommandRepository
 } = require('./domain/productCommandRepository');
 
@@ -125,7 +128,7 @@ function createHandler(action, payloadFromData) {
 
 const callable = (handler) => regionalFunctions()
     .runWith({ enforceAppCheck: true })
-    .https.onCall(handler);
+    .https.onCall(withCommerceMutationsEnabled(handler));
 
 const createProductAdmin = callable(createHandler(
     'create_product',

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
 import {
     AlertTriangle,
     ArrowRight,
@@ -20,15 +19,25 @@ import {
     WalletCards,
     XCircle,
 } from 'lucide-react';
-import { db, functions } from '../config/firebase';
+import { db } from '../config/firebase';
 import KIT_CONFIG from '../config/constants';
 import { formatShippingCityLine } from '../../utils/shippingAddress';
+import {
+    COMMERCE_V2_ORDER_READERS_ENABLED,
+    listMyOrdersV2,
+} from './commerceV2Client';
+import {
+    COMMERCE_V2_CLIENT_COMMANDS_ENABLED,
+    createCommerceCommandId,
+    requestOrderCancellation,
+} from './commerceCommandClient';
+import { adaptCommerceOrder } from './orderAdapter';
 
 const BUSINESS_PHONE = process.env.NEXT_PUBLIC_BUSINESS_PHONE || '';
 const BUSINESS_PHONE_TEL = BUSINESS_PHONE.replace(/\s/g, '');
 const CONTACT_NAME = process.env.NEXT_PUBLIC_CONTACT_NAME || KIT_CONFIG.brandName;
 const REVIEW_URL = process.env.NEXT_PUBLIC_REVIEW_URL || '';
-const COMMERCE_READ_ONLY = true;
+const COMMERCE_READ_ONLY = !COMMERCE_V2_CLIENT_COMMANDS_ENABLED;
 
 const FALLBACK_ITEM_IMAGES = [
     '/images/before-after/apresu.webp',
@@ -109,6 +118,10 @@ const getStatusInfo = (status = '') => {
 };
 
 const canCancel = (order) => {
+    if (order?.schemaVersion === 2) {
+        return Array.isArray(order.allowedActions) &&
+            order.allowedActions.includes('request_cancellation');
+    }
     const status = order?.status || '';
     const isPaidStripeOrder = status === 'paid' || Boolean(order?.paidAt) || (
         Boolean(order?.stripePaymentIntentId)
@@ -200,6 +213,9 @@ const MyOrdersView = ({
     const [showContactPopup, setShowContactPopup] = useState(false);
     const [orderToCancelId, setOrderToCancelId] = useState(null);
     const [isCancelling, setIsCancelling] = useState(false);
+    const [ordersCursor, setOrdersCursor] = useState(null);
+    const [loadingMoreOrders, setLoadingMoreOrders] = useState(false);
+    const cancellationRequestIdsRef = useRef(new Map());
     const topRef = useRef(null);
     const ordersRef = useRef(null);
     const wishlistRef = useRef(null);
@@ -240,7 +256,7 @@ const MyOrdersView = ({
         ].filter(Boolean)
         : [];
 
-    const recentOrders = orders.slice(0, 6);
+    const recentOrders = COMMERCE_V2_ORDER_READERS_ENABLED ? orders : orders.slice(0, 6);
     const addressCount = addressLines.length > 1 ? 1 : 0;
     const refundedTotal = orders.reduce((sum, order) => (
         getRefundHelpText(order.status) ? sum + getRefundAmount(order) : sum
@@ -248,6 +264,29 @@ const MyOrdersView = ({
 
     useEffect(() => {
         if (!user) return;
+        if (COMMERCE_V2_ORDER_READERS_ENABLED) {
+            let cancelled = false;
+            setLoading(true);
+            listMyOrdersV2({ pageSize: 25 })
+                .then((result) => {
+                    if (cancelled) return;
+                    setOrders((result.orders || []).map((order) => ({
+                        ...order,
+                        ...adaptCommerceOrder(order, order.id),
+                        allowedActions: order.allowedActions || []
+                    })));
+                    setOrdersCursor(result.nextCursor || null);
+                    setLoading(false);
+                })
+                .catch((error) => {
+                    if (cancelled) return;
+                    console.error('Error fetching v2 orders:', error);
+                    setLoading(false);
+                });
+            return () => {
+                cancelled = true;
+            };
+        }
 
         const q = query(
             collection(db, 'orders'),
@@ -270,15 +309,50 @@ const MyOrdersView = ({
         return () => unsub();
     }, [user]);
 
+    const loadMoreOrders = async () => {
+        if (!COMMERCE_V2_ORDER_READERS_ENABLED || !ordersCursor || loadingMoreOrders) return;
+        setLoadingMoreOrders(true);
+        try {
+            const result = await listMyOrdersV2({
+                pageSize: 25,
+                cursor: ordersCursor
+            });
+            setOrders((current) => [
+                ...current,
+                ...(result.orders || []).map((order) => ({
+                    ...order,
+                    ...adaptCommerceOrder(order, order.id),
+                    allowedActions: order.allowedActions || []
+                }))
+            ]);
+            setOrdersCursor(result.nextCursor || null);
+        } finally {
+            setLoadingMoreOrders(false);
+        }
+    };
+
     const handleConfirmCancel = async () => {
         const orderId = orderToCancelId;
 
         try {
             setIsCancelling(true);
-            const cancelOrderClient = httpsCallable(functions, 'cancelOrderClient');
-            await cancelOrderClient({ orderId });
+            let requestId = cancellationRequestIdsRef.current.get(orderId);
+            if (!requestId) {
+                requestId = createCommerceCommandId('cancel');
+                cancellationRequestIdsRef.current.set(orderId, requestId);
+            }
+            await requestOrderCancellation(
+                orderId,
+                'Annulation explicite demandee depuis espace client',
+                requestId
+            );
 
             setShowCancelSuccess(true);
+            setOrders((current) => current.map((order) => (
+                order.id === orderId
+                    ? { ...order, allowedActions: [] }
+                    : order
+            )));
             setOrderToCancelId(null);
         } catch (e) {
             console.error('Erreur annulation:', e);
@@ -465,6 +539,16 @@ const MyOrdersView = ({
                                         </article>
                                     );
                                 })}
+                                {COMMERCE_V2_ORDER_READERS_ENABLED && ordersCursor ? (
+                                    <button
+                                        type="button"
+                                        onClick={loadMoreOrders}
+                                        disabled={loadingMoreOrders}
+                                        className="m-4 inline-flex min-h-10 items-center justify-center rounded-full border border-[#d2d2d7] px-4 text-[13px] font-medium text-[#1d1d1f] disabled:opacity-50"
+                                    >
+                                        {loadingMoreOrders ? 'Chargement...' : 'Charger plus de commandes'}
+                                    </button>
+                                ) : null}
                             </div>
                         )}
                     </AccountPanel>

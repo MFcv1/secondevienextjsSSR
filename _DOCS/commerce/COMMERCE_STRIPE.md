@@ -1,6 +1,6 @@
 # Commerce, checkout et Stripe
 
-Derniere mise a jour: 2026-07-27
+Derniere mise a jour: 2026-07-28
 Statut: `STABILISATION_ACTIVE`
 
 Restriction active:
@@ -11,10 +11,11 @@ Restriction active:
 > paiement/annulation, les compensations stock, les mutations admin et les
 > preuves automatisees. Le plan ferme est
 > [NOYAU_COMMERCE_STABILISATION.md](NOYAU_COMMERCE_STABILISATION.md).
-> Les Gates 0A a 3 sont `CODE_READY_LOCAL` mais pas `SANDBOX_ACTIVE`:
-> aucune nouvelle transaction legacy n'est admise par le code courant et aucun
-> deploiement n'a ete effectue. Le runtime v2 Gate 3 est additif, dormant,
-> non exporte et ses flags frontend restent `off`.
+> Les Gates 0A a 5 sont `SANDBOX_ACTIVE_READ_ONLY` depuis le 2026-07-28:
+> le confinement legacy, les indexes et les Rules sont actifs; 24 Functions v2
+> sont exportees avec App Check. Les lecteurs UID/admin sont actifs, mais le
+> checkout, toutes les mutations et les workers v2 restent `off` par flags et
+> controle serveur fail-closed. Ce statut ne vaut pas recette transactionnelle.
 
 ## 1. Perimetre
 
@@ -227,8 +228,8 @@ Les gates locales et CI actives sont `lint:functions`,
 `test:commerce:rules:containment`, `test:commerce:unit`,
 `test:commerce:property`, `test:commerce:firebase`,
 `test:commerce:rules`, `test:commerce:faults` et leur agregat
-`test:commerce`. Gates 0A a 3 sont `CODE_READY_LOCAL`; les E2E heberges
-restent en quarantaine.
+`test:commerce`. Gates 0A a 5 sont `SANDBOX_ACTIVE_READ_ONLY`; les E2E
+transactionnels heberges restent en quarantaine.
 
 Gate 1 ajoute `functions/src/commerce/domain`: schema v2, reducer pur,
 invariants monétaires/quantitatifs, projection legacy, controle fail-closed,
@@ -240,19 +241,19 @@ Gate 2 ajoute les contrats purs `checkoutInput`, `inventoryKey`,
 `connectPolicy` et `reservationRepository`. La policy calcule les frais de
 livraison en centimes et epingle sa version et le compte Connect. Le repository
 transactionnel applique des deltas quantitatifs idempotents et conserve un
-mouvement par effet. Il n'est importe par aucune Function et le controle reste
-`off`.
+mouvement par effet. Il est embarque par les callables v2, mais le controle
+reste `off`.
 
-Gate 3 est `CODE_READY_LOCAL`. Le runtime v2 dormant couvre le repository
+Gate 3 est deployee en sandbox en mode `off`. Le runtime v2 couvre le repository
 commande/hold/tentative, `createCheckout`/`resumeCheckout`, la meme cle Stripe
 sous retry, l'annulation provider-first, le reconciler de tous les statuts PI,
 l'ingress signee plateforme/Connect, l'inbox a lease/fencing, les workers et
 sweepers bornes, l'expiration, le fait financier et l'outbox atomiques, ainsi
-que le token guest backend opaque, mono-usage et rotatif. Ce runtime n'est
-importe par aucune Function et aucun endpoint/scheduler v2 n'est exporte:
-`CODE_READY_LOCAL` ne signifie ni `SANDBOX_ACTIVE` ni recette transactionnelle.
+que le token guest backend opaque, mono-usage et rotatif. Les callables
+Gate 4/5 importent ce runtime, mais aucun worker/scheduler n'est exporte et le
+controle absent refuse checkout et mutations: aucune recette transactionnelle.
 
-Gate 4 est `IN_PROGRESS_LOCAL`: `allowedActions` est derive exclusivement du
+Gate 4 est `SANDBOX_ACTIVE_OFF`: `allowedActions` est derive exclusivement du
 schema v2 et de l'acteur/AAL2. Les commandes fulfillment sont idempotentes et
 auditees; la saga refund conserve une cle Stripe par `refundRequestId`, epingle
 le compte Connect historique, cumule les montants dans une transaction avec
@@ -262,10 +263,43 @@ les memes transactions que commande, reservation, produit, mouvement et audit.
 L'annulation provider-first possede maintenant un audit convergent. Le rail
 produit separe creation en brouillon, offre/prix, stock versionne, publication
 et archive souple; il refuse les collections non autorisees et conserve un
-audit par commande. Le transport callable et le cablage admin derriere flag
-produit sont prepares sous un flag compile a `false`, sans export Function.
-Les transports et interfaces fulfillment, annulation, refund et retour restent
-a brancher; aucune action Gate 4 n'est active.
+audit par commande. Le transport callable est exporte avec App Check et verrou
+serveur; le cablage admin produit reste sous un flag compile a `false`.
+Le transport callable fulfillment/archive commande est egalement prepare avec
+App Check, registre admin actif et AAL2 recent; son acteur est derive du
+contexte Auth; il est exporte mais son verrou serveur et son branchement UI
+compile a `false` interdisent toute mutation. Le transport
+d'annulation client provider-first est prepare avec App Check et secret Stripe;
+le proprietaire vient exclusivement du contexte Auth et le runtime minimal ne
+branche que la coordination d'annulation. Il est exporte, verrouille `off` et
+sans affordance UI. Le
+transport refund admin est egalement prepare avec App Check, secret Stripe,
+registre admin actif et AAL2 recent; il derive l'acteur du contexte Auth et
+branche un runtime minimal sur la saga refund reprenable. Il est exporte,
+verrouille `off` et sans UI. Les transports retour admin sont prepares sous
+App Check, registre
+admin actif et AAL2 recent: ouverture, annulation, reception, restock,
+write-off et resolution sont des commandes fermees, versionnees et
+quantitatives, avec acteur derive du contexte Auth et runtime minimal. Ils
+sont exportes mais bloques par le controle serveur. Les interfaces fulfillment,
+annulation, refund et retour sont branchees derriere des flags compiles a
+`false`; Livraison et Paiement
+n'ecrivent plus directement les champs commerce. Aucune action Gate 4 n'est
+active.
+
+Gate 5 est `SANDBOX_ACTIVE_READ_ONLY`. Le transport fournit
+`createCheckoutV2`, `resumeCheckoutV2` et des lecteurs commandes/retours
+pagines par UID ou admin fort. Cote navigateur, un controller unique suit
+`stateVersion`; la reprise 3DS/reload est lue avant les gardes panier,
+namespacee par UID et ne persiste aucun secret. Les paniers local et Firestore
+portent `cartLineId/cartRevision`; le succes exige
+`payment.status=succeeded`, s'affiche avant nettoyage et ne supprime que les
+lignes achetees demeurees identiques. `MyOrdersView` utilise le reader UID et
+sa pagination; les readers commandes et retours admin sont egalement actifs,
+avec un adaptateur v1 explicitement read-only. Les 24 transports sont exportes,
+mais le flag checkout et tous les flags de commande restent `false`; le
+document de controle absent verrouille aussi les mutations cote serveur.
+Rollout actif: `build-2026-07-28-001`.
 
 ## 13. Conditions production
 

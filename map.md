@@ -131,7 +131,7 @@ carte produit
   -> order paid + email triggers
   -> /mes-commandes + /admin
 
-confinement Gate 0B CODE_READY
+confinement Gate 0B SANDBOX_ACTIVE
   |-- createOrder/manual/deferred -> refus fail-closed avant effet
   |-- fermeture/client/admin/cleanup/refund -> aucun release legacy
   |-- webhook PI existant -> drainage signe + lease fencee
@@ -142,17 +142,18 @@ confinement Gate 0B CODE_READY
 Audit contre-valide, cible additive et ordre d'execution 0A a 8:
 `_DOCS/commerce/NOYAU_COMMERCE_STABILISATION.md`.
 
-Noyau pur Gate 1 executable localement, writer non branche:
+Noyau v2 deploye en sandbox, writer verrouille par controle absent:
 
 ```text
 politique/control backend fail-closed
   -> schema v2 + validateurs/reducer pur
   -> commandId/payloadHash/expectedVersion idempotents
-  -> policy/livraison/Connect epingles [Gate 2 local]
-  -> inventoryKey + holds quantitatifs [Gate 2 local]
+  -> policy/livraison/Connect epingles [Gate 2]
+  -> inventoryKey + holds quantitatifs [Gate 2]
   -> projection legacy + readers v1/v2
-  -> flags checkout/reprise frontend off
-  -X createCheckout/writer v2 non exporte
+  -> lecteurs UID/admin frontend actifs
+  -> flags checkout/reprise et commandes frontend off
+  -X createCheckout/mutations v2 refuses par controle serveur absent
 
 Flux cible restant:
 
@@ -166,8 +167,10 @@ politique/control backend fail-closed
   -> UI client/admin via commandes serveur
 ```
 
-Gates 0A a 3 sont `CODE_READY_LOCAL`. Elles ne sont pas `SANDBOX_ACTIVE`;
-le runtime writer/workers v2 Gate 3 reste dormant et non exporte.
+Gates 0A a 5 sont `SANDBOX_ACTIVE_READ_ONLY` depuis le 2026-07-28:
+confinement legacy, indexes et Rules actifs; 24 Functions v2 sont exportees.
+Les lecteurs UID/admin sont actifs, tandis que checkout, mutations et workers
+v2 restent coupes par flags et controle serveur fail-closed.
 
 ### 4.5 Remboursement
 
@@ -381,9 +384,12 @@ src/kit/commerce/
 |-- CheckoutView.jsx .................. orchestration checkout
 |-- CheckoutStripeModal.jsx ........... suivi commande/paiement
 |-- CheckoutPaymentStep.jsx ........... Stripe Payment Element
-|-- checkoutController.js ............. reducer v2 dormant, flag off
+|-- checkoutController.js ............. controller v2 et stateVersion
 |-- orderAdapter.js ................... lecture UI v1/v2 sans ambiguite
-|-- checkoutRecovery.js ............... descripteur namespace, sans secret, flag off
+|-- checkoutRecovery.js ............... reprise 3DS/reload namespacee, sans secret
+|-- checkoutContract.js ............... entree checkout allowlistee, sans prix client
+|-- commerceV2Client.js ............... lecteurs v2 on; checkout/reprise Gate 5 off
+|-- commerceCommandClient.js .......... commandes admin/client, flags Gate 4 off
 |-- adminProductCommandClient.js ...... callables produit, flag Gate 4 off
 |-- OrderSuccessModal.jsx ............. confirmation
 |-- MyOrdersView.jsx .................. espace client
@@ -496,7 +502,7 @@ functions/
     |-- commerce/
     |   |-- createOrder.js
     |   |-- legacyContainment.js ........ hard-stop backend fail-closed Gate 0B
-    |   |-- domain/ ...................... noyau v2 Gates 1 a 3, runtime dormant
+    |   |-- domain/ ...................... noyau v2 Gates 1 a 4, mutations off
     |   |   |-- orderState.js ............ schema, factory, reducer, reader
     |   |   |-- money.js
     |   |   |-- inventoryInvariants.js
@@ -535,8 +541,15 @@ functions/
     |   |   |-- returnRepository.js ....... allocations, dispositions et audit
     |   |   |-- productCommands.js ......... transitions produit fermees Gate 4
     |   |   |-- productCommandRepository.js  produit idempotent + audit append-only
-    |   |   `-- v2Runtime.js .............. cablage dormant, aucun export Function
-    |   |-- v2ProductCommands.js ........... callables produit AAL2/App Check, non exportees
+    |   |   `-- v2Runtime.js .............. cablage exporte via callables, workers non exportes
+    |   |-- v2ProductCommands.js ........... callables produit exportees, controle mutations off
+    |   |-- v2OrderCommands.js ............. callables fulfillment/archive exportees, controle off
+    |   |-- v2Cancellation.js .............. callable annulation exportee, controle mutations off
+    |   |-- v2ControlGuard.js ............... verrou serveur mutations selon controle
+    |   |-- v2Checkout.js .................. create/resume exportes, checkout mode off
+    |   |-- v2OrderQueries.js .............. lecteurs UID/admin exportes et actifs
+    |   |-- v2RefundCommands.js ............ callable refund exportee, controle mutations off
+    |   |-- v2ReturnCommands.js ............ callables retours exportees, controle mutations off
     |   |-- stripeWebhook.js
     |   |-- stripeConnect.js
     |   |-- cancelOrder.js
@@ -697,7 +710,8 @@ tests/catalog/*.test.cjs
 tests/catalog/emulator/*.test.cjs
 tests/commerce/runner/*.cjs
 tests/commerce/suites/*.cjs
-tests/commerce/domain/*.test.cjs
+tests/commerce/domain/*.test.cjs .......... unitaire + contrat UI Gate 5
+tests/commerce/browser/*.spec.mjs ......... reprise/revisions multi-onglet locale
 tests/commerce/faults/*.test.cjs
 tests/commerce/rules/*.cjs
 tests/commerce/fixtures/*.json
@@ -709,10 +723,11 @@ Gate 0A fournit le runner anti-faux-vert, `test:commerce:containment`,
 `test:commerce:rules:containment`, l'agregat et `lint:functions`. Gate 0B ajoute
 les preuves hard-stop et Rules Firestore/Storage. Gate 1 fournit les suites
 domaine, property, Firestore, Rules et failpoints. Gate 2 etend ces suites avec
-policy, Connect, concurrence stock et mouvements quantitatifs. Gates 1 a 3
-sont `CODE_READY_LOCAL`. Gate 3 ajoute writer/reprise, saga PI, inbox,
-reconciler, effets atomiques, outbox, expiration, tokens et workers bornes
-dans un runtime dormant. Aucun export Function v2 ni activation sandbox.
+policy, Connect, concurrence stock et mouvements quantitatifs. Gates 1 a 5
+sont deployees en sandbox en mode read-only. Gate 3 ajoute writer/reprise,
+saga PI, inbox, reconciler, effets atomiques, outbox, expiration, tokens et
+workers bornes; les callables sont exportees mais checkout/mutations/workers
+restent `off`. Les trois lecteurs Gate 5 sont actifs.
 
 ## 12. Matrice d'impact rapide
 
@@ -725,7 +740,7 @@ dans un runtime dormant. Aucun export Function v2 ni activation sandbox.
 | Auth | `AUTHENTIFICATION.md` | authStore, AuthContext, modal, auth Functions | `test:auth` + smoke |
 | securite/rules | `SECURITE_GLOBALE.md` | rules, helpers security, Functions | tests negatifs + sandbox cible |
 | espace client | `ESPACE_CLIENT.md` | routes compte, MyOrders, wishlist | smoke compte |
-| paiement/refund | `COMMERCE_STRIPE.md` + `NOYAU_COMMERCE_STABILISATION.md` temporaire | commerce client/Functions/admin | Gates 0A a 3 `CODE_READY_LOCAL`, Gate 4 `IN_PROGRESS_LOCAL` (actions, fulfillment, annulation auditee, refunds, retours et commandes produit/soft-archive verts; callables/UI produit cables sous flag off, transports commandes/refund/retour et UI correspondantes restants), runtime v2 dormant, aucun export Function v2 ni activation sandbox; E2E final 7B seulement sur autorisation |
+| paiement/refund | `COMMERCE_STRIPE.md` + `NOYAU_COMMERCE_STABILISATION.md` temporaire | commerce client/Functions/admin | Gates 0A a 5 `SANDBOX_ACTIVE_READ_ONLY`: 24 Functions v2 exportees, lecteurs UID/admin actifs, checkout et commandes coupes par flags + controle serveur absent, Rules restrictives; `NO_GO_TRANSACTIONNEL` et E2E transactionnels maintenus jusqu'aux gates suivantes |
 | admin | `BACKOFFICE.md` | AdminAppIsland, tabs, Functions | smoke tabs + action cible |
 | infra | `INFRASTRUCTURE.md` | yaml/json/env/runtime | audits read-only + build |
 | donnees | `DONNEES_ANALYTICS.md` + `AUDIT_COUTS_FIRESTORE.md` | rules/indexes/scripts/Functions | dry-run/comptage/rollback + mesure avant/apres |

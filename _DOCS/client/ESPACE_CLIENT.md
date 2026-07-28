@@ -1,6 +1,6 @@
 # Espace client
 
-Derniere mise a jour: 2026-07-26
+Derniere mise a jour: 2026-07-28
 Statut: `PREPROD_READY`
 
 Restriction active:
@@ -22,7 +22,7 @@ Les deux routes personnelles sont dynamiques et non indexables:
 
 | Section | Source | Capacite actuelle |
 | --- | --- | --- |
-| Commandes | `orders` actuellement filtre par e-mail verifie | historique borne et statuts en lecture seule |
+| Commandes | reader v2 UID actif; adaptateur v1 historique explicitement read-only | pagination serveur v2 et historique v1 read-only |
 | Documents | snapshots de commande | aucun PDF fiscal legacy propose avant Gate 7A |
 | Liste de souhaits | `users/{uid}/wishlist` | apercu et lien vers `/wishlist` |
 | Adresse | derniere commande | affichage livraison/facturation |
@@ -49,6 +49,19 @@ Les statuts importants sont actuellement reconstruits depuis le champ composite 
 L'affordance d'annulation client est masquee en Gate 0B et la callable legacy
 est bloquee avant effet. Les commandes existantes convergent uniquement par les
 signaux Stripe autoritaires et les lecteurs de suivi.
+
+La callable v2 `requestOrderCancellation` est deployee dans
+`functions/src/commerce/v2Cancellation.js`. Elle exige App Check et une session
+Firebase, derive le proprietaire exclusivement du contexte Auth puis execute la
+coordination provider-first. Elle est exportee mais le controle mutations
+serveur absent la refuse avant effet et son branchement `MyOrdersView` reste
+derriere un flag compile a `false`: l'affordance reste masquee.
+
+Gate 5 active `listMyOrdersV2` en sandbox: la Function filtre exclusivement par
+`userId`, borne la page, verifie que le curseur appartient au meme UID et
+renvoie les actions autorisees calculees serveur. `MyOrdersView` consomme ce
+reader et sa pagination; l'adaptateur historique v1 ne promeut jamais une
+commande ambigue.
 
 ## 4. Factures et avoirs
 
@@ -78,7 +91,15 @@ Un passage wishlist -> panier doit revalider `isPurchasable`. Les informations d
 
 ## 6. Panier et handoff
 
-Le panier invite est persiste localement par `src/kit/commerce/guestCart.js`. Apres connexion, l'identite produit deterministe evite les doublons. Le checkout utilise une handoff explicite pour ne pas perdre le panier pendant l'authentification ou une navigation.
+Le panier invite est persiste localement par `src/kit/commerce/guestCart.js`.
+Chaque ligne porte un `cartLineId` et une `cartRevision`; la variante
+Firestore preserve ces champs et incremente la revision dans une transaction.
+Le checkout v2 cree explicitement une identite Firebase anonyme avant une
+commande invitee, enregistre un descripteur de reprise sans secret lie a l'UID
+et reprend 3DS/reload avant les gardes panier vide. Le succes n'est affiche
+qu'apres `payment.status=succeeded`, avant un nettoyage qui ne retire que les
+lignes achetees dont ID et revision sont inchanges. Une ligne retiree puis
+reajoutee ou modifiee dans un autre onglet est donc preservee.
 
 ## 7. Coherence Auth/UI
 
@@ -109,6 +130,9 @@ app/mes-commandes/OrdersPageIsland.jsx
 app/wishlist/page.jsx
 app/wishlist/WishlistPageIsland.jsx
 src/kit/commerce/MyOrdersView.jsx
+src/kit/commerce/commerceV2Client.js
+src/kit/commerce/checkoutRecovery.js
+src/kit/commerce/checkoutContract.js
 src/kit/marketplace/WishlistView.jsx
 src/kit/marketplace/wishlistState.js
 src/kit/commerce/guestCart.js

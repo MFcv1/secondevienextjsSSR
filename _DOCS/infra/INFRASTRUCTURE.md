@@ -199,12 +199,25 @@ Il doit rester limite au projet `secondevienextjsssr` et au backend sandbox. Pou
 
 Ne jamais utiliser un `firebase deploy` sans `--only` pendant une passe ciblee.
 
+Etat commerce sandbox au 2026-07-28:
+
+- App Hosting `build-2026-07-28-001` `SUCCEEDED`;
+- archive source
+  `secondevie-next-sandbox--36338-c7l4CMPBh44g-.zip`;
+- indexes commerce `READY`;
+- 24 Functions v2 en `europe-west1`, mutations/checkout `off`, lecteurs
+  UID/admin actifs;
+- webhooks et cleaner historiques maintenus en `us-central1`;
+- Rules Firestore/Storage restrictives publiees apres le rollout UI;
+- aucun rail production ni flag transactionnel active.
+
 ## 11. Rollback
 
 App Hosting:
 
 1. ouvrir les rollouts du backend sandbox dans Firebase Console;
-2. choisir le dernier rollout stable;
+2. pour le lot commerce du 2026-07-28, le precedent stable est
+   `rollout-2026-07-27-001` / `build-2026-07-27-002`;
 3. lancer le rollback;
 4. verifier `/`, `/produit/...`, Auth et la zone touchee;
 5. consulter les logs Functions si le changement les concernait.
@@ -215,6 +228,8 @@ Functions/rules:
 - deployer un codebase ou une Function cible;
 - restaurer le commit stable et redeployer la meme cible en cas de regression;
 - ne pas restaurer des rules permissives pour contourner un incident.
+- ne pas recreer les neuf doublons mutateurs legacy supprimes en
+  `us-central1`.
 
 Rollback specifique au guide:
 

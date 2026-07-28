@@ -1,18 +1,30 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
 import {
     AlertTriangle,
     CheckCircle,
     Clock,
     Loader2,
-    Mail,
     Package,
-    RefreshCw,
     RotateCcw,
     Search,
 } from 'lucide-react';
-import { db, functions } from '../config/firebase';
+import { db } from '../config/firebase';
+import {
+    cancelReturnAdmin,
+    COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED,
+    markReturnReceivedAdmin,
+    openReturnAdmin,
+    requestRefundAdmin,
+    resolveReturnAdmin,
+    restockReturnLinesAdmin,
+    writeOffReturnLinesAdmin,
+} from '../commerce/commerceCommandClient';
+import {
+    COMMERCE_V2_ADMIN_READERS_ENABLED,
+    listOrdersAdminV2,
+    listReturnsAdminV2,
+} from '../commerce/commerceV2Client';
 
 const REFUNDABLE_STATUSES = new Set(['paid', 'shipped', 'completed']);
 const REFUND_TRACKED_STATUSES = new Set(['refund_pending', 'refunded', 'refund_failed']);
@@ -107,6 +119,10 @@ function StatusBadge({ order, darkMode }) {
 
 const AdminReturns = ({ darkMode = false }) => {
     const [orders, setOrders] = useState([]);
+    const [returnCases, setReturnCases] = useState([]);
+    const [ordersCursor, setOrdersCursor] = useState(null);
+    const [returnsCursor, setReturnsCursor] = useState(null);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [operation, setOperation] = useState(null);
@@ -114,6 +130,28 @@ const AdminReturns = ({ darkMode = false }) => {
 
     useEffect(() => {
         setLoading(true);
+        if (COMMERCE_V2_ADMIN_READERS_ENABLED) {
+            let cancelled = false;
+            Promise.all([
+                listOrdersAdminV2({ pageSize: 50 }),
+                listReturnsAdminV2({ pageSize: 50 })
+            ]).then(([ordersResult, returnsResult]) => {
+                if (cancelled) return;
+                setOrders(ordersResult.orders || []);
+                setReturnCases(returnsResult.returns || []);
+                setOrdersCursor(ordersResult.nextCursor || null);
+                setReturnsCursor(returnsResult.nextCursor || null);
+                setLoading(false);
+            }).catch((error) => {
+                if (cancelled) return;
+                console.error('Admin v2 returns read failed:', error);
+                setNotice({ type: 'error', text: error.message || String(error) });
+                setLoading(false);
+            });
+            return () => {
+                cancelled = true;
+            };
+        }
         const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(200));
         const unsub = onSnapshot(q, (snap) => {
             setOrders(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
@@ -128,7 +166,17 @@ const AdminReturns = ({ darkMode = false }) => {
 
     const refundOrders = useMemo(() => {
         const needle = search.trim().toLowerCase();
+        const returnsByOrder = new Map();
+        for (const returnCase of returnCases) {
+            const current = returnsByOrder.get(returnCase.orderId) || [];
+            current.push(returnCase);
+            returnsByOrder.set(returnCase.orderId, current);
+        }
         return orders
+            .map((order) => ({
+                ...order,
+                returnCases: returnsByOrder.get(order.id) || []
+            }))
             .filter(isStripeRefundCandidate)
             .filter((order) => {
                 if (!needle) return true;
@@ -141,7 +189,48 @@ const AdminReturns = ({ darkMode = false }) => {
                     getItemsLabel(order),
                 ].some((value) => String(value || '').toLowerCase().includes(needle));
             });
-    }, [orders, search]);
+    }, [orders, returnCases, search]);
+
+    const loadMoreV2 = async () => {
+        if (
+            !COMMERCE_V2_ADMIN_READERS_ENABLED ||
+            loadingMore ||
+            (!ordersCursor && !returnsCursor)
+        ) return;
+        setLoadingMore(true);
+        setNotice(null);
+        try {
+            const [ordersResult, returnsResult] = await Promise.all([
+                ordersCursor
+                    ? listOrdersAdminV2({ pageSize: 50, cursor: ordersCursor })
+                    : Promise.resolve({ orders: [], nextCursor: null }),
+                returnsCursor
+                    ? listReturnsAdminV2({ pageSize: 50, cursor: returnsCursor })
+                    : Promise.resolve({ returns: [], nextCursor: null })
+            ]);
+            setOrders((current) => {
+                const merged = new Map(current.map((order) => [order.id, order]));
+                for (const order of ordersResult.orders || []) merged.set(order.id, order);
+                return Array.from(merged.values());
+            });
+            setReturnCases((current) => {
+                const merged = new Map(
+                    current.map((returnCase) => [returnCase.returnId, returnCase])
+                );
+                for (const returnCase of returnsResult.returns || []) {
+                    merged.set(returnCase.returnId, returnCase);
+                }
+                return Array.from(merged.values());
+            });
+            setOrdersCursor(ordersResult.nextCursor || null);
+            setReturnsCursor(returnsResult.nextCursor || null);
+        } catch (error) {
+            console.error('Admin v2 returns pagination failed:', error);
+            setNotice({ type: 'error', text: error.message || String(error) });
+        } finally {
+            setLoadingMore(false);
+        }
+    };
 
     const stats = useMemo(() => ({
         actionable: refundOrders.filter((order) => REFUNDABLE_STATUSES.has(order.status)).length,
@@ -168,40 +257,104 @@ const AdminReturns = ({ darkMode = false }) => {
         const message = [
             `Initier le remboursement Stripe de la commande ${order.id} ?`,
             '',
-            'Si Stripe accepte, le statut passera en remboursement et le meuble sera remis en vente automatiquement.',
+            'Le remboursement financier ne remet jamais le meuble en vente.',
             'Le client recevra son credit bancaire selon les delais de sa banque.'
         ].join('\n');
         if (!window.confirm(message)) return;
-        const confirmText = window.prompt('Tapez REMBOURSER COMMANDE pour confirmer le remboursement Stripe.');
-        if (confirmText !== 'REMBOURSER COMMANDE') return;
+        const remainingCents = Number(order.amounts?.totalCents || 0)
+            - Number(order.refundAggregate?.succeededCents || 0)
+            - Number(order.refundAggregate?.pendingCents || 0);
+        const amountInput = window.prompt(
+            'Montant a rembourser en euros.',
+            (Math.max(remainingCents, 0) / 100).toFixed(2)
+        );
+        if (amountInput === null) return;
+        const amountCents = Math.round(Number(amountInput.replace(',', '.')) * 100);
+        if (!Number.isSafeInteger(amountCents) || amountCents <= 0) {
+            setNotice({ type: 'error', text: 'Montant de remboursement invalide.' });
+            return;
+        }
 
         await runAction(order.id, 'refund', async () => {
-            const refundOrderAdmin = httpsCallable(functions, 'refundOrderAdmin');
-            const res = await refundOrderAdmin({
-                orderId: order.id,
-                reason: 'Remboursement admin depuis gestion retours',
-                confirmText
-            });
+            const res = await requestRefundAdmin(
+                order,
+                amountCents,
+                'Remboursement admin depuis gestion retours'
+            );
             setSearch(order.id);
-            return `Remboursement lance. Reference Stripe: ${res.data?.refundId || 'en attente'}.`;
+            return `Remboursement lance. Reference Stripe: ${res?.refundId || 'en attente'}.`;
         });
     };
 
-    const handleSync = async (order) => {
-        await runAction(order.id, 'sync', async () => {
-            const syncRefundStatusAdmin = httpsCallable(functions, 'syncRefundStatusAdmin');
-            const res = await syncRefundStatusAdmin({ orderId: order.id });
+    const handleOpenReturn = async (order) => {
+        const requestedLines = [];
+        for (const line of order.items || []) {
+            if (!line.lineId) continue;
+            const rawQuantity = window.prompt(
+                `Quantite retournee pour ${line.titleSnapshot || line.name || line.lineId} (0 pour ignorer).`,
+                String(line.quantity || 1)
+            );
+            if (rawQuantity === null) return;
+            const quantity = Number(rawQuantity);
+            if (!Number.isSafeInteger(quantity) || quantity < 0 || quantity > Number(line.quantity || 0)) {
+                setNotice({ type: 'error', text: 'Quantite de retour invalide.' });
+                return;
+            }
+            if (quantity > 0) requestedLines.push({ lineId: line.lineId, quantity });
+        }
+        if (requestedLines.length === 0) return;
+        const reason = window.prompt('Motif du retour physique.');
+        if (!reason) return;
+        await runAction(order.id, 'return', async () => {
+            const result = await openReturnAdmin(order, requestedLines, reason);
             setSearch(order.id);
-            return `Stripe synchronise: ${res.data?.refundStatus || 'statut inconnu'}.`;
+            return `Dossier retour ouvert: ${result?.returnCase?.returnId || 'confirme'}.`;
         });
     };
 
-    const handleEmail = async (order) => {
-        await runAction(order.id, 'email', async () => {
-            const sendRefundStatusEmailAdmin = httpsCallable(functions, 'sendRefundStatusEmailAdmin');
-            const res = await sendRefundStatusEmailAdmin({ orderId: order.id });
-            setSearch(order.id);
-            return `Email envoye a ${res.data?.to || getOrderEmail(order)}.`;
+    const collectReturnLines = (returnCase, mode) => {
+        const lines = [];
+        for (const line of returnCase.lines || []) {
+            const maximum = mode === 'receive'
+                ? line.requestedQty - line.receivedQty
+                : line.receivedQty - line.restockedQty - line.writtenOffQty;
+            if (maximum <= 0) continue;
+            const rawQuantity = window.prompt(
+                `Quantite ${mode === 'receive' ? 'recue' : 'inspectee'} pour ${line.lineId} (max ${maximum}).`,
+                String(maximum)
+            );
+            if (rawQuantity === null) return null;
+            const quantity = Number(rawQuantity);
+            if (!Number.isSafeInteger(quantity) || quantity < 0 || quantity > maximum) {
+                setNotice({ type: 'error', text: 'Quantite de retour invalide.' });
+                return null;
+            }
+            if (quantity > 0) lines.push({ lineId: line.lineId, quantity });
+        }
+        return lines;
+    };
+
+    const handleReturnTransition = async (returnCase, action) => {
+        const reason = window.prompt('Motif de cette transition de retour.');
+        if (!reason) return;
+        await runAction(returnCase.orderId, action, async () => {
+            if (action === 'cancel_return') {
+                await cancelReturnAdmin(returnCase, reason);
+            } else if (action === 'resolve_return') {
+                await resolveReturnAdmin(returnCase, reason);
+            } else {
+                const mode = action === 'receive_return' ? 'receive' : 'disposition';
+                const lines = collectReturnLines(returnCase, mode);
+                if (!lines?.length) return 'Aucune quantite appliquee.';
+                if (action === 'receive_return') {
+                    await markReturnReceivedAdmin(returnCase, lines, reason);
+                } else if (action === 'restock_return') {
+                    await restockReturnLinesAdmin(returnCase, lines, reason);
+                } else if (action === 'write_off_return') {
+                    await writeOffReturnLinesAdmin(returnCase, lines, reason);
+                }
+            }
+            return 'Transition de retour appliquee et auditee.';
         });
     };
 
@@ -218,7 +371,7 @@ const AdminReturns = ({ darkMode = false }) => {
                     <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${mutedText}`}>Stripe et retours client</p>
                     <h2 className={`text-3xl font-black tracking-tighter md:text-4xl ${darkMode ? 'text-white' : 'text-stone-950'}`}>Retours & remboursements</h2>
                     <p className={`max-w-3xl text-sm leading-6 ${mutedText}`}>
-                        Poste de controle pour rembourser une commande Stripe, remettre le meuble en vente, suivre le statut du refund et prevenir la cliente.
+                        Poste de controle pour separer remboursement financier, retour physique, inspection et disposition explicite du stock.
                     </p>
                 </div>
                 <div className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${softPanel}`}>
@@ -300,9 +453,11 @@ const AdminReturns = ({ darkMode = false }) => {
                     <div className="divide-y divide-stone-100 dark:divide-white/10">
                         {refundOrders.map((order) => {
                             const email = getOrderEmail(order);
-                            const hasRefund = Boolean(order.stripeRefundId);
-                            const canRefund = REFUNDABLE_STATUSES.has(order.status) || (order.status === 'refund_failed' && !hasRefund);
-                            const canEmail = Boolean(email) && (order.status === 'refund_pending' || order.status === 'refunded' || order.status === 'refund_failed');
+                            const allowedActions = new Set(
+                                Array.isArray(order.allowedActions) ? order.allowedActions : []
+                            );
+                            const canRefund = allowedActions.has('request_refund');
+                            const canOpenReturn = allowedActions.has('open_return');
                             const activeOperation = operation?.endsWith(`:${order.id}`) ? operation.split(':')[0] : null;
                             return (
                                 <div key={order.id} className={`grid grid-cols-12 gap-4 px-5 py-5 ${darkMode ? 'hover:bg-white/[0.02]' : 'hover:bg-stone-50/70'}`}>
@@ -338,44 +493,84 @@ const AdminReturns = ({ darkMode = false }) => {
                                     </div>
 
                                     <div className="col-span-12 flex flex-col gap-2 md:col-span-5 lg:col-span-2">
-                                        {canRefund ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => handleRefund(order)}
-                                                disabled={Boolean(activeOperation)}
-                                                className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-widest transition disabled:cursor-wait disabled:opacity-60 ${darkMode ? 'bg-white text-stone-950 hover:bg-stone-200' : 'bg-stone-950 text-white hover:bg-black'}`}
-                                            >
-                                                {activeOperation === 'refund' ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
-                                                {order.status === 'refund_failed' ? 'Reessayer' : 'Rembourser'}
-                                            </button>
-                                        ) : null}
-                                        {hasRefund ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => handleSync(order)}
-                                                disabled={Boolean(activeOperation)}
-                                                className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-[10px] font-black uppercase tracking-widest transition disabled:cursor-wait disabled:opacity-60 ${darkMode ? 'border-white/10 text-white hover:bg-white/10' : 'border-stone-200 text-stone-700 hover:bg-stone-100'}`}
-                                            >
-                                                {activeOperation === 'sync' ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                                                Sync Stripe
-                                            </button>
-                                        ) : null}
-                                        <button
-                                            type="button"
-                                            onClick={() => handleEmail(order)}
-                                            disabled={!canEmail || Boolean(activeOperation)}
-                                            className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-[10px] font-black uppercase tracking-widest transition disabled:cursor-not-allowed disabled:opacity-45 ${darkMode ? 'border-white/10 text-white hover:bg-white/10' : 'border-stone-200 text-stone-700 hover:bg-stone-100'}`}
-                                            title={!canEmail ? 'Email disponible apres initiation du remboursement' : 'Informer le client'}
-                                        >
-                                            {activeOperation === 'email' ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
-                                            Email client
-                                        </button>
+                                        {COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED && order.schemaVersion === 2 ? (
+                                            <>
+                                                {canRefund ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRefund(order)}
+                                                        disabled={Boolean(activeOperation)}
+                                                        className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-widest transition disabled:cursor-wait disabled:opacity-60 ${darkMode ? 'bg-white text-stone-950 hover:bg-stone-200' : 'bg-stone-950 text-white hover:bg-black'}`}
+                                                    >
+                                                        {activeOperation === 'refund' ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                                                        Rembourser
+                                                    </button>
+                                                ) : null}
+                                                {canOpenReturn ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleOpenReturn(order)}
+                                                        disabled={Boolean(activeOperation)}
+                                                        className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-[10px] font-black uppercase tracking-widest transition disabled:cursor-wait disabled:opacity-60 ${darkMode ? 'border-white/10 text-white hover:bg-white/10' : 'border-stone-200 text-stone-700 hover:bg-stone-100'}`}
+                                                    >
+                                                        {activeOperation === 'return' ? <Loader2 size={14} className="animate-spin" /> : <Package size={14} />}
+                                                        Ouvrir un retour
+                                                    </button>
+                                                ) : null}
+                                            </>
+                                        ) : (
+                                            <p className={`rounded-2xl border px-3 py-3 text-[11px] ${darkMode ? 'border-white/10 text-stone-400' : 'border-stone-200 text-stone-500'}`}>
+                                                Actions refund et retour neutralisees.
+                                            </p>
+                                        )}
                                     </div>
+                                    {COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED && Array.isArray(order.returnCases) && order.returnCases.length > 0 ? (
+                                        <div className={`col-span-12 space-y-3 rounded-2xl border p-4 ${softPanel}`}>
+                                            <p className="text-[10px] font-black uppercase tracking-widest">Dossiers de retour physique</p>
+                                            {order.returnCases.map((returnCase) => (
+                                                <div key={returnCase.returnId} className={`rounded-xl border p-3 ${darkMode ? 'border-white/10' : 'border-stone-200 bg-white'}`}>
+                                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                                        <span className="font-mono text-[11px]">#{returnCase.returnId}</span>
+                                                        <span className="text-xs font-bold">{returnCase.status}</span>
+                                                    </div>
+                                                    <div className="mt-3 flex flex-wrap gap-2">
+                                                        {(returnCase.allowedActions || []).map((action) => (
+                                                            <button
+                                                                key={action}
+                                                                type="button"
+                                                                onClick={() => handleReturnTransition(returnCase, action)}
+                                                                disabled={Boolean(activeOperation)}
+                                                                className={`rounded-full border px-3 py-2 text-[10px] font-black uppercase tracking-wider disabled:opacity-50 ${darkMode ? 'border-white/10 text-white' : 'border-stone-200 text-stone-700'}`}
+                                                            >
+                                                                {action === 'receive_return' ? 'Receptionner' :
+                                                                    action === 'restock_return' ? 'Remettre en stock' :
+                                                                    action === 'write_off_return' ? 'Sortir du stock' :
+                                                                    action === 'resolve_return' ? 'Resoudre' :
+                                                                    'Annuler le retour'}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : null}
                                 </div>
                             );
                         })}
                     </div>
                 )}
+                {COMMERCE_V2_ADMIN_READERS_ENABLED && (ordersCursor || returnsCursor) ? (
+                    <div className={`border-t p-4 text-center ${darkMode ? 'border-white/10' : 'border-stone-100'}`}>
+                        <button
+                            type="button"
+                            onClick={loadMoreV2}
+                            disabled={loadingMore}
+                            className={`rounded-full border px-5 py-2.5 text-[10px] font-black uppercase tracking-widest disabled:opacity-50 ${darkMode ? 'border-white/10 text-white' : 'border-stone-200 text-stone-700'}`}
+                        >
+                            {loadingMore ? 'Chargement...' : 'Charger la suite'}
+                        </button>
+                    </div>
+                ) : null}
             </div>
         </div>
     );

@@ -4,6 +4,16 @@ export const GUEST_CART_CHANGED_EVENT = 'sv:guest-cart-changed';
 export const CART_STATE_CHANGED_EVENT = 'sv:cart-state-changed';
 
 const encodeCartKeyPart = (value) => encodeURIComponent(String(value || '').trim()).replace(/\./g, '%2E');
+const createCartLineId = () => {
+  const suffix = globalThis.crypto?.randomUUID?.()
+    || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return `cart-line-${suffix}`;
+};
+const getLegacyCartLineId = (item) => (
+  typeof item.id === 'string' && item.id.startsWith('cart_')
+    ? `cart-line-legacy-${item.id.replace(/[^A-Za-z0-9_-]/g, '_')}`.slice(0, 160)
+    : null
+);
 
 export const getCartDocumentId = (item = {}) => {
   const productId = item.originalId || item.productId || item.id;
@@ -28,6 +38,8 @@ const normalizeGuestCartItem = (item = {}) => {
     image: item.image || item.imageUrl || '',
     material: item.material || 'Bois',
     quantity: Number(item.quantity || 1),
+    cartLineId: item.cartLineId || getLegacyCartLineId(item) || createCartLineId(),
+    cartRevision: Number.isSafeInteger(item.cartRevision) ? item.cartRevision : 1,
   };
 };
 

@@ -1,13 +1,13 @@
 # Audit et roadmap de stabilisation du noyau commerce
 
-Derniere verification: 2026-07-27
+Derniere verification: 2026-07-28
 Statut: `PLAN_TEMPORAIRE_EXECUTION`
 Decision de recette: `NO_GO_TRANSACTIONNEL`
 Proprietaire: noyau commerce, commandes, inventaire, Stripe et control plane admin
 Echeance de gouvernance: 2026-09-30
 Specification d'implementation: `STABILISEE_PAR_CONTRE_EXPERTISE`
-Etat d'execution: `GATE_0A_CODE_READY` + `GATE_0B_CODE_READY_LOCAL` + `GATE_1_CODE_READY_LOCAL` + `GATE_2_CODE_READY_LOCAL` + `GATE_3_CODE_READY_LOCAL` + `GATE_4_IN_PROGRESS_LOCAL`
-Prochaine execution locale: Gate 4 transports callable fulfillment/annulation/refund/retour et UI correspondantes; prochaine mutation runtime: activation sandbox Gate 0B sur autorisation explicite
+Etat d'execution: `GATE_0A_CODE_READY` + `GATES_0B_A_5_SANDBOX_ACTIVE_READ_ONLY`
+Prochaine tranche: Gate 6, outil de classification legacy read-only et preparation des fixtures; toute adoption/ecriture sandbox reste soumise aux controles de cette gate
 
 ## 1. Gouvernance du document
 
@@ -2514,24 +2514,26 @@ separees; il n'est pas implicite dans la Definition of Done fixture.
 
 ### 20.1 Instruction de depart
 
-Le prochain agent commence par Gate 0A uniquement. Il ne recree pas de roadmap,
-ne renomme pas `NOYAU_COMMERCE_STABILISATION.md` et ne commence pas par une
-refonte UI. Avant tout patch:
+Le prochain agent reprend en Gate 6 uniquement. Il ne recree pas de roadmap,
+ne renomme pas `NOYAU_COMMERCE_STABILISATION.md`, ne reactive aucun checkout
+ou writer v2 et ne commence pas par une refonte UI. Avant tout patch:
 
 1. lire `AGENTS.md`, `map.md`, ce document et les chapitres canoniques lies;
 2. lancer `git status --short` et preserver tout changement utilisateur;
-3. verifier les lignes de preuve du constat traite dans le code courant;
-4. annoncer la gate et le critere d'acceptation vises;
-5. limiter le premier changement au harnais sentinelle;
-6. n'effectuer ni cloud, ni E2E, ni deploiement sans autorisation explicite.
+3. verifier que le controle commerce distant reste absent/off, que les
+   lecteurs sont actifs et que le rollout `build-2026-07-28-001` est servi;
+4. annoncer Gate 6 et son critere d'acceptation;
+5. commencer par l'outil de classification read-only et son `--dry-run`;
+6. ne lancer adoption, fixture, ecriture cloud, Stripe ou activation sans la
+   sous-gate et les preuves explicites prevues en Gate 6.
 
 Une gate n'est jamais marquee fermee dans la documentation avant que ses
 commandes de validation existent, aient ete executees et que leur sortie soit
 non ambigue.
 
-Gate 0A et le hard-stop Gate 0B forment la premiere livraison. Si le sandbox
-peut encore accepter un paiement, ne pas deployer/laisser Gate 0A seule: cabler
-immediatement le controle off et l'UI maintenance, puis terminer les preuves.
+Les implementations 0A a 5 ci-dessous restent l'historique ordonne et la
+reference de rollback. Elles sont fermees en sandbox read-only et ne doivent
+pas etre rejouees comme un nouveau chantier.
 
 ### 20.2 Cinq premieres implementations strictement ordonnees
 
@@ -2672,9 +2674,9 @@ Arreter le lot et conserver `NO_GO_TRANSACTIONNEL` si:
 - pour migration, activation ou test heberge, l'etat cloud necessaire n'est pas
   connu ou l'autorisation manque; cela ne bloque pas les modules/tests locaux.
 
-## 21. Etat d'execution local au 2026-07-27
+## 21. Etat d'execution sandbox au 2026-07-28
 
-Les Gates 0A a 3 de la roadmap sont `CODE_READY_LOCAL` dans le worktree:
+Les Gates 0A a 5 de la roadmap sont `SANDBOX_ACTIVE_READ_ONLY`:
 
 - Gate 0A fournit le runner sentinelle, son self-test, les compteurs d'effets,
   le lint Functions cible, l'agregat `test:commerce` et les jobs CI bloquants;
@@ -2697,13 +2699,15 @@ Les Gates 0A a 3 de la roadmap sont `CODE_READY_LOCAL` dans le worktree:
   cleaner, cancel, refund et webhook legacy refusent explicitement un document
   `schemaVersion: 2`;
 - les triggers e-mail et stats ignorent v2 en attente des outbox/projections
-  dediees; aucune Function d'ecriture v2 n'est exportee;
+  dediees; les Functions d'ecriture v2 sont exportees mais verrouillees par le
+  controle serveur absent;
 - horloge, IDs, Stripe et Firestore possedent des frontieres injectables;
   idempotence et failpoints sont purs et nommes;
 - le reducer checkout, l'adaptateur commande et le descripteur de reprise sont
-  additifs dans `src/kit/commerce` avec flags v2 toujours `false`;
+  additifs dans `src/kit/commerce`; lecteurs UID/admin `true`, checkout,
+  reprise et commandes `false`;
 - les sous-collections et collections internes v2 ont des Rules backend-only
-  explicites, preparees localement et non deployees.
+  explicites et deployees.
 - Gate 2 ajoute une entree checkout strictement allowlistee sans prix client,
   des lignes versionnees, un hash canonique et une aggregation par
   `inventoryKey` longueur-prefixee et normalisee Unicode;
@@ -2712,9 +2716,9 @@ Les Gates 0A a 3 de la roadmap sont `CODE_READY_LOCAL` dans le worktree:
 - le repository de reservations lit tous les documents avant ecriture et
   applique `hold/commit/release` par mouvements a effet deterministe, sans
   `stockBefore` ni `buyerId`;
-- les indexes `orders(userId, createdAt)` et
-  `inventory_reservations(status, expiresAt)` sont prepares localement;
-  policy, mouvements et reservations restent backend-only.
+- les indexes `orders(userId, createdAt)`,
+  `inventory_reservations(status, expiresAt)`, inbox et outbox sont deployes
+  et `READY`; policy, mouvements et reservations restent backend-only.
 - Gate 3 fournit un repository transactionnel qui cree commande, hold,
   tentative PI et identite d'idempotence avant tout appel Stripe, puis
   rattache le PI durablement avant de rendre son secret client;
@@ -2729,8 +2733,9 @@ Les Gates 0A a 3 de la roadmap sont `CODE_READY_LOCAL` dans le worktree:
   orphelin produisent un incident durable;
 - le token guest est backend-only, opaque, lie au proprietaire, mono-usage et
   tourne transactionnellement lors de `resumeCheckout`;
-- le runtime Gate 3 reste dormant et non importe par `functions/index.js`:
-  aucun endpoint, scheduler, writer v2 ou appel Stripe n'est actif.
+- le runtime Gate 3 est importe par les callables Gate 4/5; 24 endpoints v2
+  sont deployes, mais aucun scheduler/worker n'est exporte et aucun checkout,
+  writer v2 ou appel Stripe ne peut passer tant que le controle reste absent.
 
 ### 21.1 Preuves rejouees
 
@@ -2738,14 +2743,20 @@ Executees localement:
 
 - `lint:functions`: vert;
 - `test:commerce:runner`: 13/13 tests;
-- `test:commerce:containment`: 12/12 scenarios, 213 assertions;
+- `test:commerce:containment`: 12/12 scenarios, 217 assertions;
 - `test:commerce:rules:containment`: 10/10 scenarios sous Firestore + Storage
   Emulator, projet fixe `demo-secondevie-commerce`;
-- `test:commerce:unit`: 31/31 tests, dont schema, matrice fermee, projection,
+- `test:commerce:unit`: 58/58 tests, dont schema, matrice fermee, projection,
   barrières v1/v2, readers, flags frontend, policy/livraison/Connect et contrat
   panier/inventoryKey, actions serveur, retours/dispositions quantitatifs et
   cycle produit create/offre/stock/publication/archive et transport produit
-  AAL2/App Check dormant sous flag frontend `false`;
+  AAL2/App Check verrouille sous flag frontend `false`, ainsi que transport
+  fulfillment/archive verrouille, acteur Auth serveur et garde controle, ainsi
+  que transport d'annulation client provider-first, proprietaire Auth, App
+  Check/secret Stripe et runtime minimal verrouille, et transport refund
+  admin fort avec montant en centimes/runtime minimal verrouille, et
+  transports retour admin a evenements fermes, acteur Auth serveur, quantites
+  bornees et runtime minimal verrouille;
 - `test:commerce:property`: 3/3 proprietes, 500 algebres monetaires, plus de
   3 600 transitions non terminales et 300 permutations de payload;
 - `test:commerce:faults`: 33/33 tests, idempotence, fenetres create/cancel,
@@ -2762,8 +2773,16 @@ Executees localement:
   publique read-only;
 - lint UI cible des quatre surfaces modifiees: zero erreur; avertissements
   legacy non bloquants conserves;
-- aucune tentative d'acces heberge: le runner bloque le reseau et le projet
-  `demo-*` refuse les services non emules.
+- build Next vert, `test:commerce:ui` 10/10 et
+  `test:commerce:browser` 4/4;
+- Temurin Java 21.0.11 local et Emulator Suite complet:
+  `test:commerce:rules:containment` 10/10,
+  `test:commerce:firebase` 14/14 avec 64 assertions et
+  `test:commerce:rules` 4/4;
+- preuves sandbox: indexes `READY`, 24/24 exports v2 presents, doublons
+  mutateurs legacy `us-central1` retires, Auth/App Check refuses `401`,
+  webhook non signe `400`, Rules publiees et rollout App Hosting
+  `build-2026-07-28-001` `SUCCEEDED`.
 
 Les compteurs de confinement affichent explicitement zero ecriture/suppression
 Firestore, appel Stripe, creation/annulation de PI, e-mail, outbox et mouvement
@@ -2773,27 +2792,42 @@ comptees separement.
 ### 21.2 Qualification et arret
 
 - Gate 0A: `CODE_READY`;
-- Gate 0B: `CODE_READY_LOCAL`;
-- Gate 0B: pas `SANDBOX_ACTIVE`, car aucun deploiement n'etait autorise;
-- Gate 1: `CODE_READY_LOCAL`, modules additifs et flags `off`;
-- Gate 1: aucun writer v2, aucune migration et aucune activation Rules sandbox;
-- Gate 2: `CODE_READY_LOCAL`, policy et reservations additives non branchees;
-- Gate 2: aucun `createCheckout`, aucun appel Stripe et aucune policy active;
-- Gate 3: `CODE_READY_LOCAL`; runtime complet mais dormant, non exporte;
-- Gate 3: pas `SANDBOX_ACTIVE`, aucun secret, endpoint, scheduler ou policy
-  active;
-- Gate 4: `IN_PROGRESS_LOCAL`; `allowedActions`, commandes fulfillment,
-  annulation auditee convergente, saga/repository refund,
-  retours/dispositions, commandes produit, soft-archive, audits et cablage
-  runtime dormant sont verts;
-- Gate 4: callables produit et formulaire/liste produit sont cables derriere
-  un flag compile a `false`; transports callable et UI
-  fulfillment/annulation/refund/retour restent absents;
+- Gate 0B: `SANDBOX_ACTIVE`; creation/cancel/refund/maintenances legacy
+  bloquees avant effet, webhooks signes conserves pour drainage, anciens
+  doublons mutateurs `us-central1` supprimes et Rules restrictives publiees;
+- Gates 1 et 2: contrats, policy, reservations, indexes et Rules deployes;
+  aucune policy active et aucun checkout admis tant que le controle est absent;
+- Gate 3: runtime embarque par les callables, mais aucun worker/scheduler
+  exporte et aucune saga Stripe activable avec le controle fail-closed;
+- Gate 4: `SANDBOX_ACTIVE_OFF`; 19 callables produit, fulfillment,
+  annulation, refund et retour sont exportees avec App Check, Auth/AAL2 selon
+  le role et verrou serveur mutations. Tous les flags UI de commande restent
+  compiles a `false`; Livraison et Paiement n'ont aucun writer SDK commerce;
+- Gate 5: `SANDBOX_ACTIVE_READ_ONLY`; `createCheckoutV2`,
+  `resumeCheckoutV2` et les trois lecteurs commandes/retours UID-admin sont
+  exportes avec App Check et identite serveur. Checkout/reprise restent
+  compiles a `false`; les lecteurs sont actifs;
+- Gate 5: le controller checkout, la reprise 3DS/reload avant les gardes
+  panier, le descripteur sans secret lie a l'UID, les revisions
+  `cartLineId/cartRevision`, le nettoyage selectif, la confirmation
+  `payment.status=succeeded`, la pagination UID et l'adaptateur v1 read-only
+  sont deployes; seuls les consommateurs transactionnels restent `off`;
+- Gate 5: `test:commerce:ui` 10/10, `test:commerce:browser` 4/4, build Next,
+  Emulator Suite et smokes cloud sont verts;
 - decision globale: `NO_GO_TRANSACTIONNEL` inchangee.
 
-Non executes: build global, E2E Stripe/Firebase heberges, migration, deploiement,
-recette comptes client/admin, commit ou push. La prochaine mutation runtime
-possible est l'activation sandbox Gate 0B avec smoke, observation et rollback,
-uniquement sur autorisation explicite. Gate 4 peut commencer localement de
-facon additive, mais aucun writer, policy ou rail checkout v2 ne peut etre
-active tant que la sequence de gates precedente n'est pas close sur la cible.
+Deploiement cible `secondevienextjsssr`:
+
+- indexes commerce tous `READY`;
+- Functions: 24/24 exports v2 en `europe-west1`; webhooks et cleaner
+  historiques maintenus en `us-central1`;
+- App Hosting: rollout `build-2026-07-28-001`, URL sandbox canonique;
+- Firestore/Storage Rules publiees apres le rollout UI;
+- rollback: ancien rollout `rollout-2026-07-27-001` /
+  build `build-2026-07-27-002`; ne jamais restaurer les anciens writers ou
+  doublons legacy pour effectuer ce rollback.
+
+Non executes: E2E Stripe transactionnels, migration/adoption legacy, recette
+authentifiee avec comptes client/admin, commit ou push. Gate 6 commence par un
+outil et un dry-run read-only; aucune activation de policy, fixture, checkout
+ou mutation v2 n'est implicite.

@@ -1,6 +1,6 @@
 # Back-office
 
-Derniere mise a jour: 2026-07-26
+Derniere mise a jour: 2026-07-28
 Statut: `PREPROD_READY`
 
 Restriction active:
@@ -90,7 +90,8 @@ Etat actuel:
   commerce produit et politiques, y compris avec claims admin forts;
 - le dashboard masque les KPI financiers legacy et retire les raccourcis de
   purge;
-- cet etat est `CODE_READY_LOCAL`, non deploye sur le sandbox.
+- cet etat est deploye sur le sandbox depuis le rollout
+  `build-2026-07-28-001`.
 
 Cible: toute transition commande, fulfillment, inventaire, refund/retour et politique commerce passe par une commande serveur idempotente. Firestore reste une projection et non une API metier admin.
 
@@ -98,6 +99,33 @@ De Gate 0B jusqu'a l'activation fixture, Publication, Ventes, Retours,
 Livraison et Paiement restent read-only pour prix, stock, vente, commande,
 policy et medias destructifs. Les actions reviennent uniquement via les
 commandes serveur et `allowedActions`.
+
+Le transport callable fulfillment/archive commande est deploye dans
+`functions/src/commerce/v2OrderCommands.js`: App Check, registre admin actif,
+AAL2 recent et acteur derive du contexte Auth. Il est exporte mais bloque par
+le controle mutations serveur absent; `AdminOrders` l'appelle uniquement
+derriere un flag compile a `false` et des `allowedActions` calcules serveur.
+
+Le transport refund admin est prepare dans
+`functions/src/commerce/v2RefundCommands.js` avec les memes controles forts,
+le secret Stripe et un runtime minimal reprenable. Il est exporte mais bloque
+par le controle serveur; `AdminReturns` l'appelle uniquement derriere un flag
+compile a `false`.
+
+Les transports de retour physique sont prepares dans
+`functions/src/commerce/v2ReturnCommands.js`: ouverture, annulation,
+reception, restock, write-off et resolution sont des commandes fermees avec
+App Check, registre admin actif, AAL2 recent, acteur Auth serveur, versions et
+quantites bornees. Ils sont exportes mais bloques par le controle serveur et
+sont branches a `AdminReturns` derriere le meme flag `false`.
+
+Gate 5 active les lecteurs Functions pagines pour Ventes et Retours. Les
+commandes v2 exposent leurs seules `allowedActions` serveur et les historiques
+v1 restent read-only. Aucun des cinq onglets
+commerce n'ecrit plus directement un champ commerce via le SDK navigateur:
+Publication utilise ses commandes produit dormantes, Ventes/Retours leurs
+commandes verrouillees, et Livraison/Paiement restent explicitement read-only.
+Les flags de lecture sont `true`; les flags de commande restent `false`.
 
 ## 6. Utilisateurs et securite
 

@@ -1,5 +1,6 @@
 export const CHECKOUT_RECOVERY_CONTRACT_VERSION = 1;
 export const COMMERCE_V2_RECOVERY_ENABLED = false;
+export const CHECKOUT_RECOVERY_STORAGE_KEY = 'secondevie:checkout-recovery:v1';
 
 const FORBIDDEN_FIELDS = Object.freeze([
     'clientSecret',
@@ -58,4 +59,52 @@ export function validateCheckoutRecoveryDescriptor(descriptor, activeUid) {
     } catch {
         return false;
     }
+}
+
+export function writeCheckoutRecoveryDescriptor(
+    descriptor,
+    { enabled = COMMERCE_V2_RECOVERY_ENABLED } = {}
+) {
+    if (!enabled || typeof window === 'undefined') return false;
+    if (!validateCheckoutRecoveryDescriptor(descriptor, descriptor?.ownerUid)) {
+        throw new Error('COMMERCE_RECOVERY_INVALID');
+    }
+    window.localStorage.setItem(
+        CHECKOUT_RECOVERY_STORAGE_KEY,
+        JSON.stringify(descriptor)
+    );
+    return true;
+}
+
+export function readCheckoutRecoveryDescriptor(
+    activeUid,
+    { enabled = COMMERCE_V2_RECOVERY_ENABLED } = {}
+) {
+    if (!enabled || typeof window === 'undefined') return null;
+    try {
+        const descriptor = JSON.parse(
+            window.localStorage.getItem(CHECKOUT_RECOVERY_STORAGE_KEY) || 'null'
+        );
+        return validateCheckoutRecoveryDescriptor(descriptor, activeUid)
+            ? descriptor
+            : null;
+    } catch {
+        return null;
+    }
+}
+
+export function clearCheckoutRecoveryDescriptor(
+    { enabled = COMMERCE_V2_RECOVERY_ENABLED } = {}
+) {
+    if (!enabled || typeof window === 'undefined') return;
+    window.localStorage.removeItem(CHECKOUT_RECOVERY_STORAGE_KEY);
+}
+
+export function isPurchasedCartLineUnchanged(currentLine, purchasedLine) {
+    return Boolean(
+        currentLine &&
+        purchasedLine &&
+        currentLine.cartLineId === purchasedLine.cartLineId &&
+        currentLine.cartRevision === purchasedLine.cartRevision
+    );
 }

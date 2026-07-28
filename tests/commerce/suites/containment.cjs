@@ -213,11 +213,17 @@ const scenarios = {
 
   'commerce-ui-is-explicitly-read-only': async (context) => {
     const checkout = readSource('src/kit/commerce/CheckoutView.jsx');
+    const consumers = readSource('src/kit/commerce/commerceV2Client.js');
+    const commands = readSource('src/kit/commerce/commerceCommandClient.js');
     const orders = readSource('src/kit/commerce/MyOrdersView.jsx');
     const adminIsland = readSource('app/admin/AdminAppIsland.jsx');
     const dashboard = readSource('src/kit/admin/AdminDashboard.jsx');
 
-    context.ok(checkout.includes('const COMMERCE_READ_ONLY = true'));
+    context.ok(checkout.includes('const COMMERCE_READ_ONLY = !COMMERCE_V2_CONSUMERS_ENABLED'));
+    context.ok(consumers.includes('COMMERCE_V2_CONSUMERS_ENABLED = false'));
+    context.ok(consumers.includes('COMMERCE_V2_ORDER_READERS_ENABLED = true'));
+    context.ok(consumers.includes('COMMERCE_V2_ADMIN_READERS_ENABLED = true'));
+    context.ok(commands.includes('COMMERCE_V2_CLIENT_COMMANDS_ENABLED = false'));
     context.ok(checkout.includes('Paiement temporairement indisponible'));
     context.ok(checkout.includes('Fermer la modale ne compense jamais'));
     context.ok(!checkout.includes("httpsCallable(functions, 'cancelOrderClient')"));

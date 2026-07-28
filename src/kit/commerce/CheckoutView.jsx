@@ -8,12 +8,27 @@ import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from '../ui/Toast';
 import { getPurchaseUnavailableLabel, isPurchasable } from './purchasability';
 import { logClientPerf, startClientPerf } from '../shared/clientPerf';
+import {
+    COMMERCE_V2_CONSUMERS_ENABLED,
+    createCheckoutV2,
+    ensureCheckoutAnonymousIdentity,
+} from './commerceV2Client';
+import { buildCheckoutV2Input } from './checkoutContract';
+import {
+    createCheckoutControllerState,
+    reduceCheckoutController,
+} from './checkoutController';
+import {
+    COMMERCE_V2_RECOVERY_ENABLED,
+    createCheckoutRecoveryDescriptor,
+    writeCheckoutRecoveryDescriptor,
+} from './checkoutRecovery';
 
 const DELIVERY_SETTINGS_CACHE_KEY = 'secondevie:delivery-settings:v1';
 const PAYMENT_SETTINGS_CACHE_KEY = 'paymentSettings';
 const CheckoutStripeModal = lazy(() => import('./CheckoutStripeModal'));
 const RELIABLE_EMAIL_PROVIDER_IDS = new Set(['google.com']);
-const COMMERCE_READ_ONLY = true;
+const COMMERCE_READ_ONLY = !COMMERCE_V2_CONSUMERS_ENABLED;
 
 const normalizeCheckoutEmail = (email) => String(email || '').trim().toLowerCase();
 const getCheckoutItemsTotal = (items = []) => (
@@ -140,7 +155,9 @@ const CheckoutView = ({ cartItems, user, darkMode = false, onBack, onPlaceOrder 
                 // Cache optional.
             }
             setStripeEnabled(enabled);
-            if (!enabled) setPaymentMethod('deferred');
+            if (!enabled && !COMMERCE_V2_CONSUMERS_ENABLED) {
+                setPaymentMethod('deferred');
+            }
         }).catch((error) => {
             console.error('Payment settings load error:', error);
         });
@@ -149,6 +166,7 @@ const CheckoutView = ({ cartItems, user, darkMode = false, onBack, onPlaceOrder 
 
     // Status global : 'editing' -> 'fetching_stripe' -> 'ready_to_pay' -> 'processing_deferred' -> 'order_success'
     const [checkoutState, setCheckoutState] = useState('editing'); 
+    const checkoutControllerRef = useRef(createCheckoutControllerState());
     
     const [clientSecret, setClientSecret] = useState(null);
     const [createdOrderId, setCreatedOrderId] = useState(null);
@@ -198,6 +216,14 @@ const CheckoutView = ({ cartItems, user, darkMode = false, onBack, onPlaceOrder 
     };
     const resetCheckoutClientOrderId = () => {
         checkoutClientOrderIdRef.current = null;
+    };
+    const advanceCheckoutController = (event) => {
+        checkoutControllerRef.current = reduceCheckoutController(
+            checkoutControllerRef.current,
+            event,
+            { enabled: COMMERCE_V2_CONSUMERS_ENABLED }
+        );
+        return checkoutControllerRef.current;
     };
 
     // Fermer la modale ne compense jamais une operation Stripe ambigue.
@@ -513,6 +539,59 @@ const CheckoutView = ({ cartItems, user, darkMode = false, onBack, onPlaceOrder 
 
         const createOrderStartedAt = startClientPerf();
         try {
+            if (COMMERCE_V2_CONSUMERS_ENABLED) {
+                if (paymentMethod !== 'stripe_elements') {
+                    throw new Error('COMMERCE_V2_OFFLINE_PAYMENT_DISABLED');
+                }
+                const identity = await ensureCheckoutAnonymousIdentity();
+                const clientOrderId = getCheckoutClientOrderId();
+                advanceCheckoutController({
+                    type: 'START',
+                    clientOrderId
+                });
+                const input = buildCheckoutV2Input({
+                    clientOrderId,
+                    cartItems: itemsWithCol,
+                    deliveryModeId: formData.deliveryMode,
+                    shippingAddress: formData
+                });
+                const result = await createCheckoutV2(input);
+                advanceCheckoutController({
+                    type: 'CREATED',
+                    clientOrderId,
+                    orderId: result.orderId
+                });
+                const purchasedCartLines = input.items.map((line) => ({
+                    cartLineId: line.cartLineId,
+                    cartRevision: line.cartRevision
+                }));
+                writeCheckoutRecoveryDescriptor(
+                    createCheckoutRecoveryDescriptor({
+                        ownerUid: identity.uid,
+                        clientOrderId,
+                        orderId: result.orderId,
+                        cartLines: purchasedCartLines
+                    }),
+                    { enabled: COMMERCE_V2_RECOVERY_ENABLED }
+                );
+                setClientSecret(result.clientSecret);
+                setCreatedOrderId(result.orderId);
+                setCreatedOrderOtpToken('');
+                setCreatedStripeConnectedAccountId(
+                    result.connectedAccountId || ''
+                );
+                setLockedOrderDraft({
+                    items: itemsWithCol,
+                    subtotal: draftSubtotal,
+                    purchasedCartLines
+                });
+                setCheckoutState('ready_to_pay');
+                logClientPerf('checkout.createOrderV2', createOrderStartedAt, {
+                    phase: 'success',
+                    paymentMethod
+                });
+                return;
+            }
             const createOrder = httpsCallable(functions, 'createOrder');
 
             const result = await createOrder({
@@ -555,6 +634,15 @@ const CheckoutView = ({ cartItems, user, darkMode = false, onBack, onPlaceOrder 
                 throw new Error("Erreur de création de commande.");
             }
         } catch (error) {
+            if (
+                COMMERCE_V2_CONSUMERS_ENABLED &&
+                checkoutControllerRef.current.status === 'creating'
+            ) {
+                advanceCheckoutController({
+                    type: 'FAILED_RETRYABLE',
+                    errorCode: error?.code || 'checkout-create-failed'
+                });
+            }
             logClientPerf('checkout.createOrder', createOrderStartedAt, {
                 phase: 'error',
                 paymentMethod,
@@ -941,7 +1029,7 @@ const CheckoutView = ({ cartItems, user, darkMode = false, onBack, onPlaceOrder 
                                 </div>}
 
                                 {/* VIREMENT / WERO */}
-                                <div 
+                                {!COMMERCE_V2_CONSUMERS_ENABLED ? <div
                                     onClick={() => {
                                         setPaymentMethod('deferred');
                                         setCheckoutState('editing');
@@ -986,7 +1074,7 @@ const CheckoutView = ({ cartItems, user, darkMode = false, onBack, onPlaceOrder 
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                </div> : null}
                             </div>
 
                             {/* BOUTON D'ACTION DÉPLACÉ DANS LA COLONNE DE DROITE */}
@@ -1074,9 +1162,13 @@ const CheckoutView = ({ cartItems, user, darkMode = false, onBack, onPlaceOrder 
                     stripeConnectedAccountId={createdStripeConnectedAccountId}
                     formData={formData}
                     stripeElementsOptions={stripeElementsOptions}
+                    purchasedCartLines={lockedOrderDraft?.purchasedCartLines || []}
                     onClose={handleClosePaymentModal}
                     onPlaceOrder={onPlaceOrder}
                     onPaymentConfirmed={() => {
+                        if (COMMERCE_V2_CONSUMERS_ENABLED) {
+                            advanceCheckoutController({ type: 'SUCCEEDED' });
+                        }
                         setUnavailableItems([]);
                         setCheckoutState('order_success');
                         resetCheckoutClientOrderId();

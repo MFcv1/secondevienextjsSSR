@@ -13,7 +13,20 @@ import {
   GUEST_CART_CHANGED_EVENT,
   readCheckoutCartHandoff,
   readGuestCart,
+  writeGuestCart,
 } from '../../src/kit/commerce/guestCart';
+import {
+  clearCheckoutRecoveryDescriptor,
+  COMMERCE_V2_RECOVERY_ENABLED,
+  isPurchasedCartLineUnchanged,
+  readCheckoutRecoveryDescriptor,
+} from '../../src/kit/commerce/checkoutRecovery';
+import {
+  COMMERCE_V2_CONSUMERS_ENABLED,
+  ensureCheckoutAnonymousIdentity,
+  resumeCheckoutV2,
+} from '../../src/kit/commerce/commerceV2Client';
+import { adaptCommerceOrder } from '../../src/kit/commerce/orderAdapter';
 
 const getCartTotal = (items) => (
   items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0)
@@ -30,6 +43,8 @@ const getUserCartPayload = (item = {}, serverTimestamp) => ({
   image: item.image || item.imageUrl || '',
   material: item.material || 'Bois',
   quantity: Number(item.quantity || 1),
+  cartLineId: item.cartLineId,
+  cartRevision: Number.isSafeInteger(item.cartRevision) ? item.cartRevision : 1,
   addedAt: serverTimestamp(),
 });
 
@@ -37,21 +52,22 @@ const migrateGuestCartToUserCart = async (db, firestore, user) => {
   const guestItems = readGuestCart();
   if (!user || guestItems.length === 0) return false;
 
-  const batch = firestore.writeBatch(db);
-  let hasWrites = false;
-  guestItems.forEach((item) => {
+  for (const item of guestItems) {
     const cartDocId = getCartDocumentId(item);
-    if (!cartDocId) return;
-    batch.set(
-      firestore.doc(db, 'users', user.uid, 'cart', cartDocId),
-      getUserCartPayload(item, firestore.serverTimestamp),
-      { merge: true }
-    );
-    hasWrites = true;
-  });
-
-  if (!hasWrites) return false;
-  await batch.commit();
+    if (!cartDocId) continue;
+    const cartRef = firestore.doc(db, 'users', user.uid, 'cart', cartDocId);
+    await firestore.runTransaction(db, async (transaction) => {
+      const currentSnapshot = await transaction.get(cartRef);
+      const current = currentSnapshot.exists() ? currentSnapshot.data() : null;
+      transaction.set(cartRef, {
+        ...getUserCartPayload(item, firestore.serverTimestamp),
+        cartLineId: current?.cartLineId || item.cartLineId,
+        cartRevision: Number.isSafeInteger(current?.cartRevision)
+          ? current.cartRevision + 1
+          : item.cartRevision,
+      }, { merge: true });
+    });
+  }
   clearGuestCart();
   return true;
 };
@@ -66,6 +82,13 @@ function CheckoutPageContent() {
   const [checkoutReturnNotice, setCheckoutReturnNotice] = useState('');
   const [cartLoading, setCartLoading] = useState(true);
   const handledStripeReturnRef = useRef(false);
+
+  useEffect(() => {
+    if (!COMMERCE_V2_CONSUMERS_ENABLED || user) return;
+    ensureCheckoutAnonymousIdentity().catch((error) => {
+      console.error('Anonymous checkout identity failed:', error);
+    });
+  }, [user]);
 
   useEffect(() => {
     try {
@@ -146,33 +169,47 @@ function CheckoutPageContent() {
 
   const total = useMemo(() => getCartTotal(cartItems), [cartItems]);
 
-  const clearCartAfterOrder = useCallback(async () => {
+  const clearCartAfterOrder = useCallback(async (purchasedCartLines = []) => {
+    if (!Array.isArray(purchasedCartLines) || purchasedCartLines.length === 0) {
+      return;
+    }
+    const purchasedByLineId = new Map(
+      purchasedCartLines.map((line) => [line.cartLineId, line])
+    );
     if (!user) {
+      const remaining = readGuestCart().filter((line) => {
+        const purchased = purchasedByLineId.get(line.cartLineId);
+        return !isPurchasedCartLineUnchanged(line, purchased);
+      });
       clearCheckoutCartHandoff();
-      clearGuestCart();
-      setCartItems([]);
+      writeGuestCart(remaining);
+      setCartItems(remaining);
       return;
     }
     const [db, { collection, doc, getDocs, writeBatch }] = await Promise.all([getDb(), loadFirestoreModule()]);
+    const cartSnap = await getDocs(collection(db, 'users', user.uid, 'cart'));
     const batch = writeBatch(db);
-    let itemsToDelete = cartItems;
-    if (itemsToDelete.length === 0) {
-      const cartSnap = await getDocs(collection(db, 'users', user.uid, 'cart'));
-      itemsToDelete = cartSnap.docs.map((docSnap) => ({ id: docSnap.id }));
-    }
-    if (itemsToDelete.length === 0) return;
-    itemsToDelete.forEach((item) => {
-      batch.delete(doc(db, 'users', user.uid, 'cart', item.id));
+    let deleteCount = 0;
+    cartSnap.docs.forEach((docSnap) => {
+      const line = docSnap.data();
+      const purchased = purchasedByLineId.get(line.cartLineId);
+      if (!isPurchasedCartLineUnchanged(line, purchased)) return;
+      batch.delete(doc(db, 'users', user.uid, 'cart', docSnap.id));
+      deleteCount += 1;
     });
-    await batch.commit();
+    if (deleteCount > 0) await batch.commit();
     clearCheckoutCartHandoff();
-    setCartItems([]);
-  }, [cartItems, user]);
+  }, [user]);
 
   const handlePlaceOrder = async (orderData = {}) => {
-    await clearCartAfterOrder();
     setOrderSuccessMethod(orderData.paymentMethod || 'deferred');
     setShowOrderSuccess(true);
+    try {
+      await clearCartAfterOrder(orderData.purchasedCartLines || []);
+      clearCheckoutRecoveryDescriptor({ enabled: COMMERCE_V2_RECOVERY_ENABLED });
+    } catch (error) {
+      console.error('Paid order cart cleanup failed:', error);
+    }
   };
 
   const closeOrderSuccess = () => {
@@ -198,7 +235,17 @@ function CheckoutPageContent() {
     const paymentIntentClientSecret = params.get('payment_intent_client_secret');
     const redirectStatus = params.get('redirect_status');
 
-    if (!isStripeReturn || !orderId) return undefined;
+    const recoveryDescriptor = user
+      ? readCheckoutRecoveryDescriptor(user.uid, {
+          enabled: COMMERCE_V2_RECOVERY_ENABLED,
+        })
+      : null;
+    const recoverableOrderId = recoveryDescriptor?.orderId || orderId;
+
+    if (!isStripeReturn && !recoveryDescriptor) return undefined;
+    if (!recoverableOrderId || (COMMERCE_V2_CONSUMERS_ENABLED && !user)) {
+      return undefined;
+    }
     if (paymentIntentClientSecret) {
       console.info('Stripe redirect returned a payment intent client secret; waiting for server-side order confirmation.');
     }
@@ -214,26 +261,46 @@ function CheckoutPageContent() {
       return undefined;
     }
 
-    Promise.all([getDb(), loadFirestoreModule()])
-      .then(([db, { doc, onSnapshot }]) => {
+    const resumePromise = COMMERCE_V2_CONSUMERS_ENABLED
+      ? resumeCheckoutV2(recoverableOrderId)
+      : Promise.resolve(null);
+
+    Promise.all([resumePromise, getDb(), loadFirestoreModule()])
+      .then(([, db, { doc, onSnapshot }]) => {
         if (cancelled) return;
         timeoutId = window.setTimeout(() => {
           if (cancelled) return;
           window.history.replaceState({}, '', '/checkout');
         }, 45000);
-        unsubscribe = onSnapshot(doc(db, 'orders', orderId), async (snap) => {
+        unsubscribe = onSnapshot(doc(db, 'orders', recoverableOrderId), async (snap) => {
           if (!snap.exists()) return;
           const order = snap.data();
-          if (order.status !== 'paid') return;
+          const projection = adaptCommerceOrder(order, recoverableOrderId);
+          const isPaid = projection.schemaVersion === 2
+            ? projection.paymentStatus === 'succeeded'
+            : projection.status === 'paid';
+          if (!isPaid) return;
           if (cancelled) return;
           cancelled = true;
           window.clearTimeout(timeoutId);
           unsubscribe?.();
-          await clearCartAfterOrder();
           setOrderSuccessMethod('stripe_elements');
           setCheckoutReturnNotice('');
           setShowOrderSuccess(true);
           window.history.replaceState({}, '', '/checkout');
+          try {
+            await clearCartAfterOrder(
+              recoveryDescriptor?.cartLines || cartItems.map((item) => ({
+                cartLineId: item.cartLineId,
+                cartRevision: item.cartRevision,
+              }))
+            );
+            clearCheckoutRecoveryDescriptor({
+              enabled: COMMERCE_V2_RECOVERY_ENABLED,
+            });
+          } catch (error) {
+            console.error('Stripe return cart cleanup failed:', error);
+          }
         }, (error) => {
           console.error('Stripe return confirmation error:', error);
           window.history.replaceState({}, '', '/checkout');
