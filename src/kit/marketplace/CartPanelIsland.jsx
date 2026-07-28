@@ -5,9 +5,8 @@ import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { ShoppingBag } from 'lucide-react';
-import { getDb, loadFirestoreModule } from '../config/firebaseLazy';
+import { getDb, getFirebaseAuth, loadFirestoreModule } from '../config/firebaseLazy';
 import { useAuthState } from '../contexts/AuthContext';
-import { getAuthSnapshot, initializeAuthStore } from '../auth/authStore';
 import {
   addGuestCartItem,
   CART_STATE_CHANGED_EVENT,
@@ -51,8 +50,9 @@ const isDesktopViewport = () => (
 
 const resolvePersistedAuthUser = async () => {
   if (typeof window === 'undefined') return null;
-  await initializeAuthStore({ forceInitialize: true });
-  return getAuthSnapshot().user || null;
+  const auth = await getFirebaseAuth();
+  await auth.authStateReady?.();
+  return auth.currentUser || null;
 };
 
 export default function CartPanelIsland({ className = '', darkMode = false, initialEvent = null, onReady } = {}) {

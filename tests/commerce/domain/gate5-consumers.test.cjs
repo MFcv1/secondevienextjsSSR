@@ -465,6 +465,7 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(uiFlags.includes('process.env.NEXT_PUBLIC_COMMERCE_V2_UI'));
     assert.ok(uiFlags.includes('process.env.NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI'));
     assert.equal(uiFlags.includes('commerceEnv.'), false);
-    assert.ok(cartPanel.includes('initializeAuthStore({ forceInitialize: true })'));
+    assert.ok(cartPanel.includes('await auth.authStateReady?.()'));
+    assert.ok(cartPanel.includes('return auth.currentUser || null'));
     assert.equal(cartPanel.includes('hasPersistedFirebaseUser'), false);
 });
