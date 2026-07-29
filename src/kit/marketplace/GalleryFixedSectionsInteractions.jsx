@@ -407,7 +407,8 @@ const setupBeforeAfter = () => {
     let disposed = false;
     let touchGesture = null;
     let layerAnimations = [];
-    let copyAnimation = null;
+    let copyAnimations = [];
+    let copyVersion = 0;
     const eventController = new AbortController();
     const eventOptions = { signal: eventController.signal };
     const layerPreparePromises = new Map();
@@ -546,17 +547,59 @@ const setupBeforeAfter = () => {
       });
     };
 
-    const animateProjectCopy = () => {
-      copyAnimation?.cancel();
-      copyAnimation = null;
-      if (reduceMotion || !projectCopy) return;
-      copyAnimation = projectCopy.animate(
+    // L'ancien traitement remplacait le texte puis faisait remonter la carte entiere
+    // depuis 0.45 d'opacite : on lisait le nouveau libelle avant meme que
+    // l'animation commence, et le bloc "sautait" d'un projet a l'autre. On separe
+    // donc une sortie et une entree, avec le remplacement du texte au creux de la
+    // bascule et un leger decalage ligne par ligne.
+    const copyLines = () => [tag, title, desc].filter(Boolean);
+
+    const cancelCopyAnimations = () => {
+      copyAnimations.forEach((animation) => animation.cancel());
+      copyAnimations = [];
+    };
+
+    const runProjectCopyTransition = (index) => {
+      copyVersion += 1;
+      const version = copyVersion;
+      cancelCopyAnimations();
+
+      const lines = copyLines();
+      if (reduceMotion || !projectCopy || !lines.length) {
+        updateProjectCopy(index);
+        return;
+      }
+
+      const exit = lines.map((node, lineIndex) => node.animate(
         [
-          { opacity: 0.45, transform: 'translateY(6px)' },
-          { opacity: 1, transform: 'translateY(0)' },
+          { opacity: 1, transform: 'translateY(0)', filter: 'blur(0px)' },
+          { opacity: 0, transform: 'translateY(-8px)', filter: 'blur(2px)' },
         ],
-        { duration: 360, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
-      );
+        { duration: 200, delay: lineIndex * 30, easing: 'cubic-bezier(0.4, 0, 0.8, 0.35)', fill: 'both' },
+      ));
+      copyAnimations = exit;
+
+      void Promise.allSettled(exit.map((animation) => animation.finished)).then(() => {
+        if (disposed || version !== copyVersion) return;
+
+        // Le compteur, les segments et les libelles basculent une fois le bloc vide.
+        updateProjectCopy(index);
+
+        const enter = lines.map((node, lineIndex) => node.animate(
+          [
+            { opacity: 0, transform: 'translateY(10px)', filter: 'blur(2px)' },
+            { opacity: 1, transform: 'translateY(0)', filter: 'blur(0px)' },
+          ],
+          { duration: 460, delay: lineIndex * 55, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'both' },
+        ));
+        copyAnimations = enter;
+
+        void Promise.allSettled(enter.map((animation) => animation.finished)).then(() => {
+          if (disposed || version !== copyVersion) return;
+          // On relache le `fill: both` pour rendre la main aux styles de la feuille.
+          cancelCopyAnimations();
+        });
+      });
     };
 
     const waitForNextFrame = () => new Promise((resolve) => {
@@ -573,8 +616,7 @@ const setupBeforeAfter = () => {
       setLayerState(outgoingLayer, 'outgoing');
       setLayerState(incomingLayer, 'incoming');
       root.dataset.baTransitioning = 'true';
-      updateProjectCopy(toIndex);
-      animateProjectCopy();
+      runProjectCopyTransition(toIndex);
 
       if (reduceMotion) {
         setLayerState(outgoingLayer, 'inactive');
@@ -751,7 +793,8 @@ const setupBeforeAfter = () => {
       disposed = true;
       eventController.abort();
       layerAnimations.forEach((animation) => animation.cancel());
-      copyAnimation?.cancel();
+      copyVersion += 1;
+      cancelCopyAnimations();
       projectLayers.forEach((layer, index) => {
         setLayerState(layer, index === 0 ? 'active' : 'inactive');
       });

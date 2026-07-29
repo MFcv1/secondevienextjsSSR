@@ -5,8 +5,7 @@ const { defineString } = require('firebase-functions/params');
 const {
     assertConfirmText,
     checkActiveStrongAdmin,
-    checkActiveStrongSuperAdmin,
-    checkRecentActiveStrongSuperAdmin,
+    checkRecentActiveStrongAdmin,
     getSuperAdminEmail,
     normalizeEmail,
     normalizeFirestoreId,
@@ -264,7 +263,7 @@ exports.getBillingGuideOperatorStatus = regionalFunctions().runWith({
     enforceAppCheck: true,
     secrets: [SUPER_ADMIN_EMAIL]
 }).https.onCall(async (_data, context) => {
-    await checkActiveStrongSuperAdmin(context);
+    await checkActiveStrongAdmin(context);
     const config = getBillingGuideConfig();
     if (!['test', 'live'].includes(config.mode)) {
         return { mode: config.mode, journey: null };
@@ -291,7 +290,7 @@ exports.completeBillingGuideAdmin = regionalFunctions().runWith({
     enforceAppCheck: true,
     secrets: [SUPER_ADMIN_EMAIL]
 }).https.onCall(async (data, context) => {
-    await checkRecentActiveStrongSuperAdmin(context);
+    await checkRecentActiveStrongAdmin(context);
     assertConfirmText(data, COMPLETE_CONFIRMATION, 'validation facturation');
     const targetUid = normalizeFirestoreId(data?.targetUid, 'Compte client');
     const config = getBillingGuideConfig();
@@ -328,7 +327,7 @@ exports.resetBillingGuideTest = regionalFunctions().runWith({
     enforceAppCheck: true,
     secrets: [SUPER_ADMIN_EMAIL]
 }).https.onCall(async (data, context) => {
-    await checkRecentActiveStrongSuperAdmin(context);
+    await checkRecentActiveStrongAdmin(context);
     assertConfirmText(data, RESET_CONFIRMATION, 'reinitialisation test');
     const targetUid = normalizeFirestoreId(data?.targetUid, 'Compte test');
     const config = getBillingGuideConfig();

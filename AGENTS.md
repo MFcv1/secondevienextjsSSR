@@ -91,9 +91,12 @@ permanente.
 | catalogue public actif | bucket prive `secondevienextjsssr-catalog-europe-west4`, API `/api/catalog` |
 | email actif | Gmail |
 | email futur | Resend, inactif |
+| compte recette admin | `loa.gto`, reserve aux parcours et controles administrateur |
+| compte recette client type | `pvml7008@gmail.com`, utilisateur lambda sans claim, role ni droit admin; reserve aux parcours client |
 | production | non cablee dans `.firebaserc` |
 
 Ne pas convertir Node 24 local en nouvelle baseline sans migration dediee. Ne jamais traiter le sandbox comme le domaine final WebAuthn ou e-mail.
+Ne jamais promouvoir le compte recette client type en administrateur. Aucun mot de passe, code d'application, OTP ou token de ces comptes ne doit etre inscrit dans le depot.
 
 ## 5. Bibliotheque des modules
 

@@ -136,15 +136,21 @@ Secrets serveur centralises dans `functions/helpers/secrets.js`:
 - `SUPER_ADMIN_EMAIL`.
 - `CATALOG_REVALIDATION_HMAC_SECRET` pour l'appel machine Function -> App Hosting.
 
-Etat Secret Manager verifie le 2026-07-29:
+Etat Secret Manager verifie le 2026-07-29 apres nettoyage definitif:
 
-- le build App Hosting actif `build-2026-07-29-006` reference
+- le build App Hosting actif `build-2026-07-29-011` reference uniquement
   `SUPER_ADMIN_EMAIL@3` et `CATALOG_REVALIDATION_HMAC_SECRET@3`;
-- 14 anciennes versions Gmail, Stripe, E2E, super-admin et HMAC catalogue sont
-  planifiees pour destruction le 2026-08-05 avec un delai recuperable de sept
-  jours;
-- les versions courantes restent actives; les anciennes versions analytics
-  desactivees, hors lot autorise, n'ont pas ete detruites.
+- 14 anciennes versions Gmail, Stripe, E2E, super-admin et HMAC catalogue ont
+  ete detruites immediatement apres confirmation explicite; leurs versions
+  courantes sont restees actives;
+- les trois secrets orphelins `ANALYTICS_SESSION_HMAC_KEY`,
+  `ANALYTICS_AUDIENCE_HMAC_KEY` et `ANALYTICS_BROWSER_HMAC_KEY` ont ete
+  supprimes avec leurs six versions, apres verification qu'aucun build actif,
+  Function deployee ou code executable courant ne les reference;
+- Secret Manager contient desormais 11 secrets et 11 versions actives, soit
+  une seule version utile par secret;
+- le delai de destruction de sept jours a ete restaure sur les secrets
+  rotatifs concernes pour proteger les futures rotations.
 
 Parametres non secrets:
 

@@ -228,7 +228,10 @@ const BeforeAfterProjectLayer = ({ project, index, darkMode }) => (
         className="h-full w-full object-cover"
       />
     </picture>
-    <div className="pointer-events-none absolute right-3 top-3 z-20 sm:right-5 sm:top-5">
+    {/* z-index volontairement sous `[data-ba-clip]` (z-10) : l'etiquette Apres doit
+        etre recouverte par le volet Avant quand celui-ci gagne du terrain, exactement
+        comme l'etiquette Avant est rognee par le clip quand elle recule. */}
+    <div className="pointer-events-none absolute right-3 top-3 z-[5] sm:right-5 sm:top-5">
       <span data-state="after" data-ba-chip="after" className={`before-after-state-badge inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-sans text-[7.5px] font-extrabold uppercase tracking-[0.16em] shadow-[0_14px_30px_-22px_rgba(24,18,12,0.72)] ring-1 sm:px-3.5 sm:py-2 sm:text-[9px] ${
         darkMode ? 'bg-[#0f0d0a]/84 text-[#d8ad73] ring-[#d8ad73]/14' : 'bg-[#fffaf3]/94 text-[#3e352c] ring-white/90 dark:bg-[#0f0d0a]/84 dark:text-[#d8ad73] dark:ring-[#d8ad73]/14'
       }`}>
@@ -298,13 +301,13 @@ const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projec
           />
           <span
             data-ba-handle
-            className={`before-after-slider-handle pointer-events-none absolute top-1/2 z-[26] flex h-11 items-center justify-center rounded-full px-1.5 sm:h-[52px] sm:px-2 ${
+            className={`before-after-slider-handle pointer-events-none absolute top-1/2 z-[26] flex h-[30px] items-center justify-center rounded-full px-1 sm:h-[52px] sm:px-2 ${
               darkMode ? 'text-[#f5eadb]' : 'text-[#1d1914] dark:text-[#f5eadb]'
             }`}
             style={{ left: '50%' }}
           >
             <ChevronLeft className="before-after-slider-handle__left" size={14} strokeWidth={1.6} />
-            <span className="before-after-slider-handle__divider mx-1 h-4 w-px" />
+            <span className="before-after-slider-handle__divider mx-0.5 h-3 w-px sm:mx-1 sm:h-4" />
             <ChevronRight className="before-after-slider-handle__right" size={14} strokeWidth={1.6} />
           </span>
           <input

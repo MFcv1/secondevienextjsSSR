@@ -26,6 +26,7 @@ import {
     listOrdersAdminV2,
     listReturnsAdminV2,
 } from '../commerce/commerceV2Client';
+import { getAdminCachedData, loadAdminCachedData } from './adminDataCache';
 import { adaptCommerceOrder } from '../commerce/orderAdapter';
 
 const REFUNDABLE_STATUSES = new Set(['paid', 'shipped', 'completed']);
@@ -164,34 +165,48 @@ function StatusBadge({ order, darkMode }) {
     );
 }
 
-const AdminReturns = ({ darkMode = false }) => {
-    const [orders, setOrders] = useState([]);
-    const [returnCases, setReturnCases] = useState([]);
+const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
+    const cachedPage = getAdminCachedData('admin-returns:first-page');
+    const returnCommandsEnabled = mutationsEnabled && COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED;
+    const [orders, setOrders] = useState(cachedPage?.orders || []);
+    const [returnCases, setReturnCases] = useState(cachedPage?.returns || []);
     const [ordersCursor, setOrdersCursor] = useState(null);
     const [returnsCursor, setReturnsCursor] = useState(null);
     const [loadingMore, setLoadingMore] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!cachedPage);
     const [search, setSearch] = useState('');
     const [operation, setOperation] = useState(null);
     const [notice, setNotice] = useState(null);
 
     useEffect(() => {
-        setLoading(true);
+        setLoading(!getAdminCachedData('admin-returns:first-page'));
         if (COMMERCE_V2_ADMIN_READERS_ENABLED) {
             let cancelled = false;
-            Promise.allSettled([
-                listOrdersAdminV2({ pageSize: 50 }),
-                listReturnsAdminV2({ pageSize: 50 })
-            ]).then(([ordersOutcome, returnsOutcome]) => {
+            loadAdminCachedData('admin-returns:first-page', async () => {
+                const [ordersOutcome, returnsOutcome] = await Promise.allSettled([
+                    listOrdersAdminV2({ pageSize: 50 }),
+                    listReturnsAdminV2({ pageSize: 50 })
+                ]);
+                return {
+                    ordersOutcome,
+                    returnsOutcome,
+                    orders: ordersOutcome.status === 'fulfilled'
+                        ? (ordersOutcome.value.orders || []).map(normalizeAdminOrder)
+                        : [],
+                    returns: returnsOutcome.status === 'fulfilled'
+                        ? (returnsOutcome.value.returns || [])
+                        : []
+                };
+            }).then(({ ordersOutcome, returnsOutcome, orders: loadedOrders, returns: loadedReturns }) => {
                 if (cancelled) return;
                 if (ordersOutcome.status === 'fulfilled') {
                     const ordersResult = ordersOutcome.value;
-                    setOrders((ordersResult.orders || []).map(normalizeAdminOrder));
+                    setOrders(loadedOrders);
                     setOrdersCursor(ordersResult.nextCursor || null);
                 }
                 if (returnsOutcome.status === 'fulfilled') {
                     const returnsResult = returnsOutcome.value;
-                    setReturnCases(returnsResult.returns || []);
+                    setReturnCases(loadedReturns);
                     setReturnsCursor(returnsResult.nextCursor || null);
                 }
                 if (ordersOutcome.status === 'rejected') {
@@ -566,7 +581,7 @@ const AdminReturns = ({ darkMode = false }) => {
                                     </div>
 
                                     <div className="col-span-12 flex flex-col gap-2 md:col-span-5 lg:col-span-2">
-                                        {COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED && order.schemaVersion === 2 ? (
+                                        {returnCommandsEnabled && order.schemaVersion === 2 ? (
                                             <>
                                                 {canRefund ? (
                                                     <button
@@ -615,7 +630,7 @@ const AdminReturns = ({ darkMode = false }) => {
                                                             <p key={summary}>{summary}</p>
                                                         ))}
                                                     </div>
-                                                    {COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED && (returnCase.allowedActions || []).length > 0 ? (
+                                                    {returnCommandsEnabled && (returnCase.allowedActions || []).length > 0 ? (
                                                         <div className="mt-3 flex flex-wrap gap-2">
                                                             {(returnCase.allowedActions || []).map((action) => (
                                                             <button

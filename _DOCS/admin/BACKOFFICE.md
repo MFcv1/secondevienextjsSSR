@@ -150,9 +150,13 @@ isoles avec `Promise.allSettled`: une indisponibilite du second ne masque plus
 les remboursements deja projetes dans les commandes. Cet index a ete deploye
 sur le sandbox `secondevienextjsssr` le 2026-07-29 apres confirmation dans les
 logs de l'erreur Firestore `FAILED_PRECONDITION`.
-Publication utilise ses commandes produit dormantes, Ventes/Retours leurs
-commandes verrouillees, et Livraison/Paiement restent explicitement read-only.
-Les flags de lecture sont `true`; les flags de commande restent `false`.
+Publication, Ventes et Retours embarquent leurs transports de commande, mais
+leur exposition ne depend plus du flag public checkout. `AdminAppIsland` lit
+le control plane et n'autorise les mutations que lorsque
+`adminMutationMode=v2`; le backend reste fail-closed. Dans l'etat sandbox
+courant `read_only`, aucune commande n'est donc active. Livraison/Paiement
+restent explicitement read-only tant que leur writer de policy n'est pas
+qualifie.
 
 Recette sandbox du 2026-07-28: une session admin forte existante a charge le
 dashboard et les lecteurs pagines `Ventes`/`Retours` sans erreur sous les Rules
@@ -162,7 +166,12 @@ commande, aucun refund et aucune transition de retour n'ont ete executes.
 
 ## 6. Utilisateurs et securite
 
-`AdminUsers` appelle les Functions de gestion d'acces. Les promotions/retraits doivent etre traces et exiger le niveau d'assurance defini dans le chapitre Auth.
+`AdminUsers` appelle les Functions de gestion d'acces. Un administrateur actif
+et fort recent peut ajouter ou retirer un autre administrateur. L'owner reste
+protege a trois niveaux: email configure, enregistrement `superAdmin/owner` et
+registre `sys_admin_access`; aucune interface ni Function ne peut le revoquer.
+Les promotions/retraits restent traces et exigent le niveau d'assurance defini
+dans le chapitre Auth.
 
 La gestion IP est un signal complementaire; elle ne remplace pas Auth, AAL2, rules ou registre admin sauf si un controle serveur explicite l'impose.
 
@@ -180,7 +189,15 @@ Le parcours remplace temporairement les onglets pour l'unique UID cible et compr
 
 Les emplacements de captures sont volontairement des placeholders tant que le parcours reel avec le compte test n'a pas ete photographie. Les captures devront etre recadrees pour masquer adresse personnelle, carte, raison sociale sensible, identifiant Payments et toute donnee inutile avant integration.
 
-Le compte super-admin conserve un bypass permanent. L'onglet dedie `Mon compte` charge paresseusement `BillingOnboardingOperator`: en mode actif, ce panneau montre uniquement le compte cible, son etat, son e-mail admin et son identifiant Billing. Aucun statut d'onboarding n'est affiche dans Stats. La validation exige la phrase `VALIDER LA FACTURATION`; la reinitialisation exige `REINITIALISER LE TEST` et n'existe qu'en mode `test`. Ces actions passent par Functions, exigent une authentification super-admin forte recente et sont auditees sans donnee bancaire.
+Le compte super-admin conserve un bypass permanent du parcours cible.
+L'onglet dedie `Mon compte` charge paresseusement
+`BillingOnboardingOperator` pour tout administrateur actif: en mode actif, ce
+panneau montre uniquement le compte cible, son etat, son e-mail admin et son
+identifiant Billing. Aucun statut d'onboarding n'est affiche dans Stats. La
+validation exige la phrase `VALIDER LA FACTURATION`; la reinitialisation exige
+`REINITIALISER LE TEST` et n'existe qu'en mode `test`. Ces actions passent par
+Functions, exigent une authentification admin forte recente et sont auditees
+sans donnee bancaire.
 
 Quand les callables ne sont pas encore deployees ou accessibles depuis le runtime local, `Mon compte` affiche un etat neutre `Non raccorde`; il ne doit jamais exposer au super-admin le message brut Firebase `internal`. Cette indisponibilite n'active aucun parcours et ne bloque pas Stats.
 
@@ -227,6 +244,12 @@ Le dashboard lit de preference les agregats:
 Le dashboard consomme les claims admin deja resolus par `AuthContext`. Il ne
 force pas de renouvellement du jeton Firebase a son montage: un rafraichissement
 de claims en arriere-plan ne doit jamais demonter puis remonter Stats en boucle.
+
+Les montants financiers conservent un etat `loading/error/ready`: une valeur
+absente n'est jamais rendue comme un vrai `0 EUR`. Le compteur clients utilise
+`sys_user_stats/current`, maintenu par les triggers Auth create/delete; le
+premier appel apres migration initialise ce document par un scan borne aux
+pages Firebase Auth, puis les ouvertures suivantes lisent le compteur.
 
 La surface Stats affiche les ventes nettes, les montants encaisses et
 rembourses ainsi que le panier moyen des commandes encaissees. La carte
@@ -302,6 +325,9 @@ metier/pre-live distinct.
 ## 9. Performance du back-office
 
 - garder les vues lourdes lazy;
+- precharger Stats, Ventes et Retours pendant une periode idle apres l'acces;
+- conserver deux minutes les premieres pages Ventes/Retours et l'etat commerce
+  dans `adminDataCache`, avec rafraichissement serveur au-dela;
 - borner listeners, requetes et exports;
 - paginer ou limiter les collections croissantes;
 - eviter les calculs de stats complets dans le navigateur;
@@ -321,8 +347,10 @@ src/kit/admin/BillingOnboardingOperator.jsx
 src/kit/admin/components/*
 src/kit/admin/analyticsReliability.js
 src/kit/admin/adminPublicCatalog.js
+src/kit/admin/adminDataCache.js
 src/kit/config/constants.js
 functions/src/auth/adminManagement.js
+functions/src/auth/userStats.js
 functions/src/onboarding/billingGuide.js
 functions/src/onboarding/billingGuideContract.js
 functions/src/maintenance/*

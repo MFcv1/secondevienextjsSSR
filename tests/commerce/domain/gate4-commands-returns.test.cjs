@@ -362,8 +362,9 @@ test('product callable transport is exported but server-control dormant', () => 
     assert.ok(transport.includes('checkRecentActiveStrongAdmin(context)'));
     assert.ok(transport.includes('enforceAppCheck: true'));
     assert.ok(transport.includes('withCommerceMutationsEnabled'));
-    assert.ok(client.includes('COMMERCE_V2_ADMIN_COMMANDS_ENABLED = false'));
-    assert.ok(adminIsland.includes('isCommerceReadOnlyTab(adminCollection)'));
+    assert.ok(client.includes('COMMERCE_V2_ADMIN_COMMANDS_ENABLED = true'));
+    assert.ok(adminIsland.includes('isCommerceReadOnlyTab(adminCollection, commerceMutationsEnabled)'));
+    assert.ok(adminIsland.includes("adminMutationMode === 'v2'"));
     assert.equal(adminIsland.includes('deleteDoc'), false);
     assert.equal(adminIsland.includes('updateDoc'), false);
     assert.equal(adminForm.includes('addDoc'), false);

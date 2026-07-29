@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
 import {
     AlertTriangle,
     CheckCircle2,
@@ -14,7 +13,8 @@ import {
     ToggleRight,
     Wallet
 } from 'lucide-react';
-import { db, functions } from '../config/firebase';
+import { db } from '../config/firebase';
+import { getCallableFunction } from '../config/firebaseLazy';
 import { useAuth } from '../contexts/AuthContext';
 
 const statusCopy = {
@@ -47,7 +47,7 @@ const getToneClass = (tone, darkMode) => {
 };
 
 const AdminPaymentSettings = ({ darkMode }) => {
-    const { isAdmin, isSuperAdmin } = useAuth();
+    const { isAdmin } = useAuth();
     const [loading, setLoading] = useState(true);
     const [stripeEnabled, setStripeEnabled] = useState(true);
     const [connectLoading, setConnectLoading] = useState(true);
@@ -62,7 +62,7 @@ const AdminPaymentSettings = ({ darkMode }) => {
         if (!silent) setConnectAction('sync');
         setConnectError('');
         try {
-            const getStatus = httpsCallable(functions, 'getStripeConnectStatus');
+            const getStatus = await getCallableFunction('getStripeConnectStatus');
             const result = await getStatus();
             setConnectState(result.data?.connect || { status: 'not_connected' });
         } catch (error) {
@@ -78,7 +78,7 @@ const AdminPaymentSettings = ({ darkMode }) => {
         setConnectAction(action);
         setConnectError('');
         try {
-            const syncAccount = httpsCallable(functions, 'syncStripeConnectAccount');
+            const syncAccount = await getCallableFunction('syncStripeConnectAccount');
             const result = await syncAccount();
             setConnectState(result.data?.connect || { status: 'not_connected' });
             if (clearReturnParam && typeof window !== 'undefined') {
@@ -127,7 +127,7 @@ const AdminPaymentSettings = ({ darkMode }) => {
         setConnectRedirecting(false);
         setConnectError('');
         try {
-            const startOnboarding = httpsCallable(functions, 'startStripeConnectOnboarding');
+            const startOnboarding = await getCallableFunction('startStripeConnectOnboarding');
             const result = await startOnboarding({ origin: window.location.origin });
             if (result.data?.url) {
                 redirectingToStripe = true;
@@ -152,7 +152,7 @@ const AdminPaymentSettings = ({ darkMode }) => {
         setConnectAction('request-reconnect');
         setConnectError('');
         try {
-            const requestFn = httpsCallable(functions, 'requestStripeConnectReconnect');
+            const requestFn = await getCallableFunction('requestStripeConnectReconnect');
             await requestFn({ confirmText: reconnectRequestText });
             setReconnectRequestText('');
             await refreshConnectStatus({ silent: true });
@@ -168,7 +168,7 @@ const AdminPaymentSettings = ({ darkMode }) => {
         setConnectAction('confirm-reconnect');
         setConnectError('');
         try {
-            const confirmFn = httpsCallable(functions, 'confirmStripeConnectReconnect');
+            const confirmFn = await getCallableFunction('confirmStripeConnectReconnect');
             const result = await confirmFn({ confirmText: reconnectConfirmText });
             setReconnectConfirmText('');
             setConnectState(result.data?.connect || { status: 'not_connected' });
@@ -361,7 +361,7 @@ const AdminPaymentSettings = ({ darkMode }) => {
                 </div>
             </div>
 
-            {isSuperAdmin && connectState.hasActiveAccount ? (
+            {isAdmin && connectState.hasActiveAccount ? (
                 <div className={`p-6 rounded-[2rem] ring-1 space-y-5 ${darkMode ? 'bg-stone-900/50 ring-stone-800' : 'bg-stone-50 ring-stone-200'}`}>
                     <div className="flex items-start gap-4">
                         <ShieldCheck size={20} className="text-stone-500 shrink-0 mt-0.5" />

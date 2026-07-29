@@ -1,7 +1,6 @@
 import React from 'react';
 import { AlertTriangle, CheckCircle2, RefreshCw, ShieldAlert, Wrench } from 'lucide-react';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../config/firebase';
+import { getCallableFunction } from '../config/firebaseLazy';
 
 const STATUS_STYLES = {
   OK: {
@@ -62,7 +61,8 @@ const AdminMaintenance = ({ darkMode }) => {
   const [catalogConfirmationValue, setCatalogConfirmationValue] = React.useState('');
 
   const refreshCatalogStatus = React.useCallback(async () => {
-    const result = await httpsCallable(functions, 'getCatalogPublicationStatus')({});
+    const getStatus = await getCallableFunction('getCatalogPublicationStatus');
+    const result = await getStatus({});
     setCatalogStatus(result.data);
   }, []);
 
@@ -89,7 +89,8 @@ const AdminMaintenance = ({ darkMode }) => {
     setCatalogAction(`rollback:${target}`);
     setCatalogMessage('Validation et bascule du snapshot en cours...');
     try {
-      const result = await httpsCallable(functions, 'rollbackCatalogSnapshot')({ target, confirmText: confirmation });
+      const rollback = await getCallableFunction('rollbackCatalogSnapshot');
+      const result = await rollback({ target, confirmText: confirmation });
       setCatalogMessage(result.data?.revalidationQueued === false
         ? 'Rollback applique et mis en pause, mais la revalidation doit etre relancee par une reconstruction.'
         : 'Rollback applique. La publication est en pause jusqu a la reconstruction.');
@@ -113,7 +114,8 @@ const AdminMaintenance = ({ darkMode }) => {
     setCatalogAction('rebuild');
     setCatalogMessage('Reconstruction demandee...');
     try {
-      await httpsCallable(functions, 'rebuildCatalogSnapshot')({ confirmText: confirmation });
+      const rebuild = await getCallableFunction('rebuildCatalogSnapshot');
+      await rebuild({ confirmText: confirmation });
       setCatalogMessage('Reconstruction planifiee. Le catalogue repasse en mode actif.');
       await refreshCatalogStatus();
     } catch (actionError) {

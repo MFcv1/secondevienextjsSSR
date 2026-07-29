@@ -359,7 +359,8 @@ serveur; le cablage admin produit reste sous un flag compile a `false`.
 Le transport callable fulfillment/archive commande est egalement prepare avec
 App Check, registre admin actif et AAL2 recent; son acteur est derive du
 contexte Auth; il est exporte mais son verrou serveur et son branchement UI
-compile a `false` interdisent toute mutation. Le transport
+conditionne par `adminMutationMode=v2` interdisent toute mutation dans l'etat
+sandbox courant. Le transport
 d'annulation client provider-first est prepare avec App Check et secret Stripe;
 le proprietaire vient exclusivement du contexte Auth et le runtime minimal ne
 branche que la coordination d'annulation. Il est exporte, verrouille `off` et
@@ -373,8 +374,9 @@ admin actif et AAL2 recent: ouverture, annulation, reception, restock,
 write-off et resolution sont des commandes fermees, versionnees et
 quantitatives, avec acteur derive du contexte Auth et runtime minimal. Ils
 sont exportes mais bloques par le controle serveur. Les interfaces fulfillment,
-annulation, refund et retour sont branchees derriere des flags compiles a
-`false`; Livraison et Paiement
+annulation, refund et retour sont compilees mais ne sont exposees par
+`AdminAppIsland` que lorsque le control plane autorise `adminMutationMode=v2`;
+le flag public checkout ne pilote plus les commandes admin. Livraison et Paiement
 n'ecrivent plus directement les champs commerce. Ces actions ont ensuite ete
 ouvertes uniquement pendant la fenetre Gate 8, puis refermees.
 
@@ -390,14 +392,15 @@ sa pagination; les readers commandes et retours admin sont egalement actifs,
 avec un adaptateur v1 explicitement read-only. Les transports Gate 5 restent
 exportes. Le controle serveur reste borne a `newCheckoutMode=v2_fixture` pour
 le scope epingle; tous les flags de commande publics sont revenus a `false`,
-les mutations admin sont `read_only` et le paiement offline est `off`.
+les mutations admin restent `read_only` cote serveur et le paiement offline
+est `off`.
 
 Gate 7A ajoute les projections financieres absolues, les recus sandbox
 explicitement non fiscaux, l'outbox avec leases/dead-letter et statut
 `delivery_unknown`, le dispatcher et le reconciler planifies, les commandes
 admin de statut/rebuild/cleanup ainsi que les incidents durables. Le dashboard
-lit cette projection serveur et affiche source, fraicheur, montants captures,
-rembourses, net et divergences. La sante sandbox est `healthy`, tous les
+lit cette projection serveur et affiche les montants captures, rembourses et
+nets sans convertir un chargement ou une erreur en zero financier. La sante sandbox est `healthy`, tous les
 compteurs sont a zero et aucune TTL commerce n'est activee.
 
 Gate 8 a execute la matrice client/admin complete sur fixtures sandbox. Un

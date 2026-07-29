@@ -19,22 +19,28 @@ import {
     getOrderTimelineAdminV2,
     listOrdersAdminV2,
 } from '../commerce/commerceV2Client';
+import { getAdminCachedData, loadAdminCachedData } from './adminDataCache';
 
-const AdminOrders = ({ darkMode = false }) => {
-    const [orders, setOrders] = useState([]);
+const AdminOrders = ({ darkMode = false, mutationsEnabled = false }) => {
+    const cachedPage = getAdminCachedData('admin-orders:first-page');
+    const orderCommandsEnabled = mutationsEnabled && COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED;
+    const [orders, setOrders] = useState(cachedPage?.orders || []);
     const [expandedOrder, setExpandedOrder] = useState(null);
     const [orderLimit, setOrderLimit] = useState(50);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(!cachedPage);
     const [activeOrderId, setActiveOrderId] = useState(null);
     const [nextCursor, setNextCursor] = useState(null);
     const [orderTimelines, setOrderTimelines] = useState({});
     const [timelineLoadingId, setTimelineLoadingId] = useState(null);
 
     useEffect(() => {
-        setIsLoading(true);
+        setIsLoading(!getAdminCachedData('admin-orders:first-page'));
         if (COMMERCE_V2_ADMIN_READERS_ENABLED) {
             let cancelled = false;
-            listOrdersAdminV2({ pageSize: 50 })
+            loadAdminCachedData(
+                'admin-orders:first-page',
+                () => listOrdersAdminV2({ pageSize: 50 })
+            )
                 .then((result) => {
                     if (cancelled) return;
                     setOrders(result.orders || []);
@@ -80,7 +86,7 @@ const AdminOrders = ({ darkMode = false }) => {
     );
 
     const runOrderAction = async (order, action, confirmation) => {
-        if (!COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED) return;
+        if (!orderCommandsEnabled) return;
         if (!allowedActions(order).has(action)) return;
         if (confirmation && !window.confirm(confirmation)) return;
         try {
@@ -362,7 +368,7 @@ const AdminOrders = ({ darkMode = false }) => {
                                                 ) : null}
                                                 <p className="text-[10px] opacity-50 mt-2 font-mono">UID: {order.userId}</p>
                                                 <div className="flex flex-col gap-3 pt-6">
-                                                    {COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED && order.schemaVersion === 2 ? (
+                                                    {orderCommandsEnabled && order.schemaVersion === 2 ? (
                                                         <>
                                                             {allowedActions(order).has('fulfillment_prepare') ? (
                                                                 <button

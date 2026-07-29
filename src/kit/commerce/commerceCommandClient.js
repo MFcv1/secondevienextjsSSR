@@ -1,8 +1,11 @@
 import { getCallableFunction } from '../config/firebaseLazy';
 import { COMMERCE_V2_UI_ENABLED } from './commerceUiFlags.js';
 
-export const COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED = COMMERCE_V2_UI_ENABLED;
-export const COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED = COMMERCE_V2_UI_ENABLED;
+// Admin commands are independent from the public checkout flag. Their UI is
+// unlocked from the server-side adminMutationMode and every callable remains
+// fail-closed when that control is not `v2`.
+export const COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED = true;
+export const COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED = true;
 export const COMMERCE_V2_CLIENT_COMMANDS_ENABLED = COMMERCE_V2_UI_ENABLED;
 
 export const createCommerceCommandId = (action) => {

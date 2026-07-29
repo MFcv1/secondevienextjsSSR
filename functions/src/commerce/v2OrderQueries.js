@@ -3,7 +3,7 @@
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
 const {
-    checkRecentActiveStrongAdmin,
+    checkActiveStrongAdmin,
     normalizeFirestoreId
 } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
@@ -278,7 +278,7 @@ async function paginatedQuery({
 }
 
 function createGetOrderTimelineAdminHandler({
-    authorize = checkRecentActiveStrongAdmin,
+    authorize = checkActiveStrongAdmin,
     dbFactory = () => admin.firestore()
 } = {}) {
     return async (data, context) => {
@@ -351,7 +351,7 @@ function createListMyOrdersHandler({
 }
 
 function createListOrdersAdminHandler({
-    authorize = checkRecentActiveStrongAdmin,
+    authorize = checkActiveStrongAdmin,
     dbFactory = () => admin.firestore()
 } = {}) {
     return async (data, context) => {
@@ -383,7 +383,7 @@ function createListOrdersAdminHandler({
 }
 
 function createListReturnsAdminHandler({
-    authorize = checkRecentActiveStrongAdmin,
+    authorize = checkActiveStrongAdmin,
     dbFactory = () => admin.firestore()
 } = {}) {
     return async (data, context) => {

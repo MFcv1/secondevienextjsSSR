@@ -146,7 +146,9 @@ Dans le contrat interne actuel, Google peut produire `aal2` pour l'administratio
 
 ### 5.5 Step-up administrateur
 
-Un role `admin` ou `superAdmin` ne suffit pas. Une operation protegee exige:
+Un role `admin` ou `superAdmin` ne suffit pas. L'ouverture et la consultation
+du back-office exigent un role actif et une assurance forte, mais ne deconnectent
+pas la session apres quinze minutes. Seule une mutation sensible exige:
 
 - un role autorise;
 - une entree active dans le registre administrateur;
@@ -155,6 +157,14 @@ Un role `admin` ou `superAdmin` ne suffit pas. Une operation protegee exige:
 - une authentification recente, limite actuelle: 15 minutes.
 
 OTP seul reste `aal1`. Le client est redirige vers le step-up sans creer une deuxieme interface de connexion.
+
+Les lecteurs dashboard, ventes, retours et chronologie utilisent
+`checkActiveStrongAdmin`; les commandes de mutation conservent
+`checkRecentActiveStrongAdmin`. Lorsqu'une commande renvoie
+`recent-strong-auth-required`, `firebaseLazy` emet
+`sv:admin-step-up-required` et `AdminAppIsland` rouvre la modale unifiee sans
+appeler `signOut`. L'administrateur confirme Google ou sa passkey puis reprend
+son action sans perdre la route ni sa session Firebase.
 
 Firestore Rules et les callables sensibles appliquent cette politique cote serveur. Storage applique role + AAL2 pour les ecritures directes couvertes par les Rules.
 
@@ -283,14 +293,15 @@ Ne pas reintroduire le bouton generique `Utiliser une passkey` avant enrôlement
 
 ### 9.2 Progression des tests
 
-Les suites ont progresse d'une baseline d'environ 18 controles contractuels cibles vers 54 tests Auth finaux:
+Les suites ont progresse d'une baseline d'environ 18 controles contractuels cibles vers 56 tests Auth:
 
 - apres H1: 23 tests;
 - apres H2: 29 tests;
 - apres H3: 32 tests;
 - apres H4: 40 tests;
 - apres adaptateur email: 53 tests;
-- gate finale: 54 tests.
+- gate initiale: 54 tests;
+- contrat session admin persistante et step-up sans deconnexion: 56 tests.
 
 ### 9.3 Mesures ponctuelles
 

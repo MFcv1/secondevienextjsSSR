@@ -299,6 +299,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Compteur materialise des comptes inscrits, maintenu par Auth Functions.
+    match /sys_user_stats/{docId} {
+      allow read, write: if false;
+    }
+
     // Idempotency Keys (Backend-Only)
     match /sys_idempotency/{docId} {
       allow read, write: if false;

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { Suspense } from 'react';
-import { BadgeCheck, ShieldCheck } from 'lucide-react';
+import { BadgeCheck } from 'lucide-react';
 
 const BillingOnboardingOperator = React.lazy(() => import('./BillingOnboardingOperator'));
 
@@ -53,32 +53,17 @@ export default function AdminAccount({ darkMode, isSuperAdmin, user }) {
       </section>
 
       <div>
-        {isSuperAdmin ? (
-          <Suspense
-            fallback={(
-              <div className={`flex min-h-40 items-center justify-center rounded-2xl border ${panelClass}`}>
-                <span className={`text-xs font-bold ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
-                  Chargement de l’onboarding…
-                </span>
-              </div>
-            )}
-          >
-            <BillingOnboardingOperator darkMode={darkMode} />
-          </Suspense>
-        ) : (
-          <section className={`rounded-2xl border p-6 ${panelClass}`} aria-labelledby="admin-account-onboarding-title">
-            <span className={`grid h-11 w-11 place-items-center rounded-full ${darkMode ? 'bg-white/10' : 'bg-stone-100'}`}>
-              <ShieldCheck size={19} />
-            </span>
-            <h3 className="mt-5 text-lg font-black" id="admin-account-onboarding-title">
-              Onboarding facturation
-            </h3>
-            <p className={`mt-2 max-w-xl text-sm leading-6 ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
-              Si une mise en route est nécessaire pour ce compte, le guide s’ouvre automatiquement avant le
-              back-office. Une fois validé, cet onglet reste votre espace de compte habituel.
-            </p>
-          </section>
-        )}
+        <Suspense
+          fallback={(
+            <div className={`flex min-h-40 items-center justify-center rounded-2xl border ${panelClass}`}>
+              <span className={`text-xs font-bold ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
+                Chargement de l’onboarding…
+              </span>
+            </div>
+          )}
+        >
+          <BillingOnboardingOperator darkMode={darkMode} />
+        </Suspense>
       </div>
     </div>
   );

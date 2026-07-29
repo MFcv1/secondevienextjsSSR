@@ -12,6 +12,7 @@ const {
     TRANSACTIONAL_EMAIL_PROVIDER
 } = require('../../helpers/secrets');
 const {
+    checkActiveStrongAdmin,
     checkRecentActiveStrongAdmin,
     normalizeFirestoreId
 } = require('../../helpers/security');
@@ -389,7 +390,7 @@ const commerceOperationsReconciler = regionalFunctions()
 const getCommerceOperationsStatusAdmin = regionalFunctions()
     .runWith({ enforceAppCheck: true })
     .https.onCall(async (_data, context) => {
-        await checkRecentActiveStrongAdmin(context);
+        await checkActiveStrongAdmin(context);
         const [operations, control] = await Promise.all([
             db.doc('sys_commerce_operations/current').get(),
             db.doc('sys_commerce_control/current').get()

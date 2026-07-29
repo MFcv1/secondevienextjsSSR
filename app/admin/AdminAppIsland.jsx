@@ -29,12 +29,16 @@ import {
   COMMERCE_V2_ADMIN_COMMANDS_ENABLED,
   publishProductAdmin,
 } from '../../src/kit/commerce/adminProductCommandClient';
-import {
-  COMMERCE_V2_ADMIN_READERS_ENABLED,
-} from '../../src/kit/commerce/commerceV2Client';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
 import KIT_CONFIG from '../../src/kit/config/constants';
-import { getCallableFunction } from '../../src/kit/config/firebaseLazy';
+import {
+  ADMIN_STEP_UP_REQUIRED_EVENT,
+  getCallableFunction,
+} from '../../src/kit/config/firebaseLazy';
+import {
+  getAdminCachedData,
+  loadAdminCachedData,
+} from '../../src/kit/admin/adminDataCache';
 import {
   ADMIN_PUBLIC_CATALOG_INVALIDATED_EVENT,
   clearAdminPublicCatalogCache,
@@ -42,10 +46,14 @@ import {
 } from '../../src/kit/admin/adminPublicCatalog';
 import AdminSidebar from './AdminSidebar';
 
-const AdminDashboard = React.lazy(() => import('../../src/kit/admin/AdminDashboard'));
+const loadAdminDashboard = () => import('../../src/kit/admin/AdminDashboard');
+const loadAdminOrders = () => import('../../src/kit/admin/AdminOrders');
+const loadAdminReturns = () => import('../../src/kit/admin/AdminReturns');
+
+const AdminDashboard = React.lazy(loadAdminDashboard);
 const AdminHomepage = React.lazy(() => import('../../src/kit/admin/AdminHomepage'));
-const AdminOrders = React.lazy(() => import('../../src/kit/admin/AdminOrders'));
-const AdminReturns = React.lazy(() => import('../../src/kit/admin/AdminReturns'));
+const AdminOrders = React.lazy(loadAdminOrders);
+const AdminReturns = React.lazy(loadAdminReturns);
 const AdminLivraison = React.lazy(() => import('../../src/kit/admin/AdminLivraison'));
 const AdminStudio = React.lazy(() => import('../../src/kit/admin/AdminStudio'));
 const AdminForm = React.lazy(() => import('../../src/kit/admin/AdminForm'));
@@ -91,18 +99,12 @@ const ADMIN_PUBLIC_CATALOG_TABS = new Set(['dashboard', 'analytics', 'inventory'
 const COMMERCE_READ_ONLY_TABS = new Set(['furniture', 'inventory', 'orders', 'returns', 'livraison', 'payment_settings', 'maintenance']);
 const PRODUCT_COMMAND_TABS = new Set(['furniture', 'inventory']);
 
-const isCommerceReadOnlyTab = (tabId) => {
+const isCommerceReadOnlyTab = (tabId, mutationsEnabled) => {
   if (!COMMERCE_READ_ONLY_TABS.has(tabId)) return false;
-  if (PRODUCT_COMMAND_TABS.has(tabId)) {
-    return !COMMERCE_V2_ADMIN_COMMANDS_ENABLED;
-  }
-  if (tabId === 'orders') {
-    return !COMMERCE_V2_ADMIN_READERS_ENABLED;
-  }
-  if (tabId === 'returns') {
-    return !COMMERCE_V2_ADMIN_READERS_ENABLED;
-  }
-  return true;
+  if (['orders', 'returns'].includes(tabId)) return false;
+  if (tabId === 'maintenance') return true;
+  if (PRODUCT_COMMAND_TABS.has(tabId) && !COMMERCE_V2_ADMIN_COMMANDS_ENABLED) return true;
+  return !mutationsEnabled;
 };
 
 function CommerceReadOnlySurface({ children, darkMode, readOnly }) {
@@ -160,6 +162,11 @@ function AdminContent() {
   const [stepUpOpen, setStepUpOpen] = useState(false);
   const [catalogState, setCatalogState] = useState({ items: [], status: 'idle', error: null });
   const [billingGate, setBillingGate] = useState({ status: 'idle', data: null, error: null });
+  const [commerceStatus, setCommerceStatus] = useState(() => ({
+    status: getAdminCachedData('commerce-status') ? 'ready' : 'idle',
+    data: getAdminCachedData('commerce-status'),
+    error: null,
+  }));
   const catalogStatusRef = React.useRef('idle');
   const catalogRequestRef = React.useRef(null);
 
@@ -188,6 +195,48 @@ function AdminContent() {
   }, [hasStrongAuth, isAdmin, isSuperAdmin, refreshBillingGate, user]);
 
   const backOfficeReady = isSuperAdmin || (billingGate.status === 'ready' && billingGate.data?.required !== true);
+  const commerceMutationsEnabled = commerceStatus.data?.control?.adminMutationMode === 'v2';
+
+  React.useEffect(() => {
+    if (!user || !isAdmin || !hasStrongAuth) return undefined;
+    let cancelled = false;
+    if (!commerceStatus.data) {
+      setCommerceStatus((current) => ({ ...current, status: 'loading', error: null }));
+    }
+    void loadAdminCachedData('commerce-status', async () => {
+      const getCommerceStatus = await getCallableFunction('getCommerceOperationsStatusAdmin');
+      const result = await getCommerceStatus({});
+      return result.data;
+    }).then((data) => {
+      if (!cancelled) setCommerceStatus({ status: 'ready', data, error: null });
+    }).catch((error) => {
+      if (!cancelled) setCommerceStatus((current) => ({ ...current, status: 'error', error }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [commerceStatus.data, hasStrongAuth, isAdmin, user]);
+
+  React.useEffect(() => {
+    const handleStepUpRequired = () => setStepUpOpen(true);
+    window.addEventListener(ADMIN_STEP_UP_REQUIRED_EVENT, handleStepUpRequired);
+    return () => window.removeEventListener(ADMIN_STEP_UP_REQUIRED_EVENT, handleStepUpRequired);
+  }, []);
+
+  React.useEffect(() => {
+    if (!user || !isAdmin || !hasStrongAuth || !backOfficeReady) return undefined;
+    const preload = () => {
+      void loadAdminDashboard();
+      void loadAdminOrders();
+      void loadAdminReturns();
+    };
+    if ('requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(preload, { timeout: 1800 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+    const timeoutId = window.setTimeout(preload, 500);
+    return () => window.clearTimeout(timeoutId);
+  }, [backOfficeReady, hasStrongAuth, isAdmin, user]);
 
   const ensureAdminCatalog = React.useCallback(async () => {
     if (catalogStatusRef.current === 'loaded') return;
@@ -425,7 +474,7 @@ function AdminContent() {
         <Suspense fallback={<div className="flex items-center justify-center p-20"><div className="h-10 w-10 animate-spin rounded-full border-4 border-stone-200 border-t-stone-800" /></div>}>
           <CommerceReadOnlySurface
             darkMode={darkMode}
-            readOnly={isCommerceReadOnlyTab(adminCollection)}
+            readOnly={isCommerceReadOnlyTab(adminCollection, commerceMutationsEnabled)}
           >
           {adminCollection === 'dashboard' ? (
             <AdminDashboard
@@ -433,15 +482,16 @@ function AdminContent() {
               darkMode={darkMode}
               isSuperAdmin={isSuperAdmin}
               items={catalogState.items}
+              commerceStatus={commerceStatus}
             />
           ) : adminCollection === 'account' ? (
             <AdminAccount darkMode={darkMode} isSuperAdmin={isSuperAdmin} user={user} />
           ) : adminCollection === 'homepage' ? (
             <AdminHomepage darkMode={darkMode} />
           ) : adminCollection === 'orders' ? (
-            <AdminOrders darkMode={darkMode} />
+            <AdminOrders darkMode={darkMode} mutationsEnabled={commerceMutationsEnabled} />
           ) : adminCollection === 'returns' ? (
-            <AdminReturns darkMode={darkMode} />
+            <AdminReturns darkMode={darkMode} mutationsEnabled={commerceMutationsEnabled} />
           ) : adminCollection === 'livraison' ? (
             <AdminLivraison darkMode={darkMode} />
           ) : adminCollection === 'studio' ? (
@@ -517,6 +567,13 @@ function AdminContent() {
         </Suspense>
       </main>
       </div>
+      <Suspense fallback={null}>
+        <LegacyLoginModalIsland
+          open={stepUpOpen}
+          onOpenChange={setStepUpOpen}
+          renderTrigger={false}
+        />
+      </Suspense>
     </div>
   );
 }

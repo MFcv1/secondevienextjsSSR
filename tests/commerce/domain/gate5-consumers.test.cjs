@@ -257,7 +257,7 @@ test('checkout and query Functions are exported with App Check and fail-closed c
     }
     assert.ok(checkout.includes('enforceAppCheck: true'));
     assert.ok(checkout.includes('secrets: [STRIPE_SECRET_KEY]'));
-    assert.ok(queries.includes('checkRecentActiveStrongAdmin'));
+    assert.ok(queries.includes('checkActiveStrongAdmin'));
     assert.ok(queries.includes('enforceAppCheck: true'));
 });
 
@@ -553,8 +553,8 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.equal(checkout.includes('pagehide'), false);
     assert.equal(checkout.includes('beforeunload'), false);
     assert.ok(commandClient.includes("import { COMMERCE_V2_UI_ENABLED } from './commerceUiFlags.js'"));
-    assert.ok(commandClient.includes('COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED = COMMERCE_V2_UI_ENABLED'));
-    assert.ok(commandClient.includes('COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED = COMMERCE_V2_UI_ENABLED'));
+    assert.ok(commandClient.includes('COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED = true'));
+    assert.ok(commandClient.includes('COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED = true'));
     assert.ok(commandClient.includes('COMMERCE_V2_CLIENT_COMMANDS_ENABLED = COMMERCE_V2_UI_ENABLED'));
     assert.ok(commandClient.includes("commandId: cancellationRequestId || createCommerceCommandId('cancel')"));
     assert.equal(commandClient.includes('cancellationRequestId: cancellationRequestId'), false);

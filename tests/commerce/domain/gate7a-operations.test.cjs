@@ -340,6 +340,10 @@ test('Gate 7A: manifeste et activation refusent toute cible non sandbox exacte',
 });
 
 test('Gate 7A: le dashboard consomme les montants qualifies sans exposer les controles internes', () => {
+    const adminIsland = fs.readFileSync(
+        path.join(repositoryRoot, 'app/admin/AdminAppIsland.jsx'),
+        'utf8'
+    );
     const dashboard = fs.readFileSync(
         path.join(repositoryRoot, 'src/kit/admin/AdminDashboard.jsx'),
         'utf8'
@@ -352,7 +356,9 @@ test('Gate 7A: le dashboard consomme les montants qualifies sans exposer les con
         path.join(repositoryRoot, 'functions/src/commerce/orderStats.js'),
         'utf8'
     );
-    assert.match(dashboard, /getCommerceOperationsStatusAdmin/);
+    assert.match(adminIsland, /getCommerceOperationsStatusAdmin/);
+    assert.match(adminIsland, /commerceStatus=\{commerceStatus\}/);
+    assert.match(dashboard, /commerceStatus\.data\?\.operations\?\.projection/);
     assert.match(dashboard, /Bilan des ventes/);
     assert.match(dashboard, /Affichage des ventes/);
     assert.match(dashboard, /Évolution du chiffre d’affaires/);

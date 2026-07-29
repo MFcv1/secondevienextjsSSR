@@ -10,6 +10,28 @@ let authInstance = null;
 let storageInstance = null;
 let googleProviderInstance = null;
 let appCheckPromise = null;
+export const ADMIN_STEP_UP_REQUIRED_EVENT = 'sv:admin-step-up-required';
+
+const getCallableReason = (error) => (
+  error?.details?.reason
+  || error?.customData?.details?.reason
+  || error?.customData?._tokenResponse?.details?.reason
+  || null
+);
+
+const emitAdminStepUpRequired = (error) => {
+  if (
+    typeof window === 'undefined'
+    || !['strong-auth-required', 'recent-strong-auth-required'].includes(getCallableReason(error))
+  ) return;
+
+  window.dispatchEvent(new CustomEvent(ADMIN_STEP_UP_REQUIRED_EVENT, {
+    detail: {
+      reason: getCallableReason(error),
+      maxAgeSeconds: Number(error?.details?.maxAgeSeconds || error?.customData?.details?.maxAgeSeconds || 0) || null,
+    },
+  }));
+};
 
 const ensureAppCheck = () => {
   if (typeof window === 'undefined') return Promise.resolve(null);
@@ -98,7 +120,15 @@ export const getCallableFunction = async (name) => {
     loadFunctionsModule(),
     getFunctionsInstance(),
   ]);
-  return httpsCallable(functions, name);
+  const callable = httpsCallable(functions, name);
+  return async (payload) => {
+    try {
+      return await callable(payload);
+    } catch (error) {
+      emitAdminStepUpRequired(error);
+      throw error;
+    }
+  };
 };
 
 export const loadAuthModule = () => {

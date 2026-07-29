@@ -1,6 +1,8 @@
 import { getCallableFunction } from '../config/firebaseLazy';
 
-export const COMMERCE_V2_ADMIN_COMMANDS_ENABLED = false;
+// The server control plane remains authoritative. AdminAppIsland only exposes
+// these commands when sys_commerce_control/current.adminMutationMode is `v2`.
+export const COMMERCE_V2_ADMIN_COMMANDS_ENABLED = true;
 
 const commandId = (action) => {
   const suffix = globalThis.crypto?.randomUUID?.()

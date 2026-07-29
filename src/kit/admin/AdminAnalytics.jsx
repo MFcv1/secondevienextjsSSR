@@ -4,8 +4,8 @@ import {
     TrendingUp, MousePointerClick, ShoppingBag, RefreshCw
 } from 'lucide-react';
 import { collection, query, orderBy, limit, getDocs, onSnapshot, where, Timestamp } from 'firebase/firestore';
-import { db, functions } from '../config/firebase';
-import { httpsCallable } from 'firebase/functions';
+import { db } from '../config/firebase';
+import { getCallableFunction } from '../config/firebaseLazy';
 import { CATEGORY_RAIL_IMAGE_SOURCES } from '../config/constants';
 import { getProductImageItems } from '../../utils/imageUtils';
 import { getProductUrl } from '../../utils/slug';
@@ -1299,7 +1299,8 @@ const BoutiqueAnalytics = ({ darkMode, sessions = [], onRefreshSessions, session
     const handleClearAllAffiliate = async () => {
         if (!window.confirm("☢️ ACTION CRITIQUE : Supprimer TOUS les clics affiliés (boutique) définitivement ?")) return;
         try {
-            await httpsCallable(functions, 'clearAllAffiliateClicks')({});
+            const clearAffiliateClicks = await getCallableFunction('clearAllAffiliateClicks');
+            await clearAffiliateClicks({});
             cachedAffiliateClicks = [];
             cachedAffiliateClicksLoadedAt = Date.now();
             setClicks([]);
@@ -1963,7 +1964,8 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
     const handleDeleteSession = async (id) => {
         if (!window.confirm("Supprimer cette session ? (Action irréversible)")) return;
         try {
-            await httpsCallable(functions, 'deleteSession')({ sessionId: id });
+            const deleteSession = await getCallableFunction('deleteSession');
+            await deleteSession({ sessionId: id });
             loadSessions();
         } catch (e) {
             console.error("Delete error:", e);
@@ -1975,7 +1977,8 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
         if (!window.confirm("☢️ ACTION CRITIQUE : Supprimer TOUTES les données d'analytics définitivement ?")) return;
         setLoading(true);
         try {
-            await httpsCallable(functions, 'clearAllSessions')({});
+            const clearSessions = await getCallableFunction('clearAllSessions');
+            await clearSessions({});
             clearAdminAnalyticsCache(ADMIN_SESSIONS_CACHE_KEY);
             await loadSessions();
             setLoading(false);

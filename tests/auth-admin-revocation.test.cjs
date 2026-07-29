@@ -114,6 +114,7 @@ async function loadRemovalHarness({
     checkRecentSuperAdmin: () => undefined,
     checkStrongAdmin: () => ({ assurance: { level: 'aal2' } }),
     checkRecentActiveStrongSuperAdmin: async () => undefined,
+    checkRecentActiveStrongAdmin: async () => undefined,
     checkActiveStrongAdmin: async () => undefined,
     getSuperAdminEmail: () => '',
     normalizeEmail: (value) => String(value || '').trim().toLowerCase(),

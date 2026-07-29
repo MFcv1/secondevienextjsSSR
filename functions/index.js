@@ -124,6 +124,7 @@ exports.stripeConnectWebhookV2 = stripeConnectWebhookV2;
 
 // ── AUTH ──────────────────────────────────────────────────
 const { grantAdminOnAuth } = require('./src/auth/grantAdmin');
+const { onRegisteredUserCreated, onRegisteredUserDeleted } = require('./src/auth/userStats');
 const { addAdminUser, removeAdminUser, logUserConnection, getUserStats, syncSuperAdminClaim, ensureAdminAccessRegistry } = require('./src/auth/adminManagement');
 const { sendGuestCheckoutOtp, verifyGuestCheckoutOtp } = require('./src/auth/guestCheckoutOtp');
 const { sendCustomerLoginOtp, verifyCustomerLoginOtp } = require('./src/auth/customerLoginOtp');
@@ -135,6 +136,8 @@ const {
 } = require('./src/auth/passkeys');
 
 exports.grantAdminOnAuth = grantAdminOnAuth;
+exports.onRegisteredUserCreated = onRegisteredUserCreated;
+exports.onRegisteredUserDeleted = onRegisteredUserDeleted;
 exports.addAdminUser = addAdminUser;
 exports.removeAdminUser = removeAdminUser;
 exports.logUserConnection = logUserConnection;

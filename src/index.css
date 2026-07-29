@@ -4146,28 +4146,90 @@ html.dark .before-after-premium-atmosphere,
   background:
     radial-gradient(
       circle 320px at 100% 0%,
-      rgba(198, 140, 76, 0.07) 0%,
-      rgba(198, 140, 76, 0.058) 22%,
-      rgba(198, 140, 76, 0.041) 44%,
-      rgba(198, 140, 76, 0.023) 65%,
-      rgba(198, 140, 76, 0.008) 84%,
+      rgba(198, 140, 76, 0.1) 0%,
+      rgba(198, 140, 76, 0.083) 22%,
+      rgba(198, 140, 76, 0.059) 44%,
+      rgba(198, 140, 76, 0.033) 65%,
+      rgba(198, 140, 76, 0.012) 84%,
       transparent 100%
     ),
     radial-gradient(
       circle 920px at 100% 0%,
-      rgba(197, 145, 88, 0.115) 0%,
-      rgba(197, 145, 88, 0.106) 11%,
-      rgba(197, 145, 88, 0.092) 22%,
-      rgba(197, 145, 88, 0.075) 33%,
-      rgba(197, 145, 88, 0.057) 44%,
-      rgba(197, 145, 88, 0.041) 55%,
-      rgba(197, 145, 88, 0.027) 66%,
-      rgba(197, 145, 88, 0.016) 77%,
-      rgba(197, 145, 88, 0.007) 87%,
-      rgba(197, 145, 88, 0.002) 95%,
+      rgba(197, 145, 88, 0.165) 0%,
+      rgba(197, 145, 88, 0.152) 11%,
+      rgba(197, 145, 88, 0.132) 22%,
+      rgba(197, 145, 88, 0.108) 33%,
+      rgba(197, 145, 88, 0.082) 44%,
+      rgba(197, 145, 88, 0.059) 55%,
+      rgba(197, 145, 88, 0.039) 66%,
+      rgba(197, 145, 88, 0.023) 77%,
+      rgba(197, 145, 88, 0.01) 87%,
+      rgba(197, 145, 88, 0.003) 95%,
       transparent 100%
     ),
     linear-gradient(180deg, #fffefc 0%, #fffcf7 100%) !important;
+}
+
+/* Sous 1024px le panneau ne fait plus que ~350px de large : les rayons desktop
+   le debordent completement et le quart de soleil se lit comme un aplat.
+   On les ramene a l'echelle du panneau pour retrouver l'angle lumineux. */
+@media (max-width: 1023px) {
+  .before-after-premium-copy--warm {
+    background:
+      radial-gradient(
+        circle 165px at 100% 0%,
+        rgba(198, 140, 76, 0.105) 0%,
+        rgba(198, 140, 76, 0.087) 22%,
+        rgba(198, 140, 76, 0.062) 44%,
+        rgba(198, 140, 76, 0.035) 65%,
+        rgba(198, 140, 76, 0.013) 84%,
+        transparent 100%
+      ),
+      radial-gradient(
+        circle 470px at 100% 0%,
+        rgba(197, 145, 88, 0.17) 0%,
+        rgba(197, 145, 88, 0.157) 11%,
+        rgba(197, 145, 88, 0.136) 22%,
+        rgba(197, 145, 88, 0.111) 33%,
+        rgba(197, 145, 88, 0.085) 44%,
+        rgba(197, 145, 88, 0.061) 55%,
+        rgba(197, 145, 88, 0.04) 66%,
+        rgba(197, 145, 88, 0.024) 77%,
+        rgba(197, 145, 88, 0.01) 87%,
+        rgba(197, 145, 88, 0.003) 95%,
+        transparent 100%
+      ),
+      linear-gradient(180deg, #fffefc 0%, #fffcf7 100%) !important;
+  }
+
+  html.dark .before-after-premium-copy--warm,
+  .before-after-premium--dark .before-after-premium-copy--warm {
+    background:
+      radial-gradient(
+        circle 165px at 100% 0%,
+        rgba(216, 173, 115, 0.052) 0%,
+        rgba(216, 173, 115, 0.042) 22%,
+        rgba(216, 173, 115, 0.03) 44%,
+        rgba(216, 173, 115, 0.016) 65%,
+        rgba(216, 173, 115, 0.006) 84%,
+        transparent 100%
+      ),
+      radial-gradient(
+        circle 470px at 100% 0%,
+        rgba(216, 173, 115, 0.088) 0%,
+        rgba(216, 173, 115, 0.08) 11%,
+        rgba(216, 173, 115, 0.07) 22%,
+        rgba(216, 173, 115, 0.057) 33%,
+        rgba(216, 173, 115, 0.044) 44%,
+        rgba(216, 173, 115, 0.031) 55%,
+        rgba(216, 173, 115, 0.021) 66%,
+        rgba(216, 173, 115, 0.012) 77%,
+        rgba(216, 173, 115, 0.005) 87%,
+        rgba(216, 173, 115, 0.002) 95%,
+        transparent 100%
+      ),
+      linear-gradient(180deg, #201c17 0%, #1a1713 100%) !important;
+  }
 }
 
 .before-after-premium-copy--warm::after {
@@ -4184,13 +4246,25 @@ html.dark .before-after-premium-atmosphere,
 .before-after-premium-copy > .before-after-premium-brand-watermark {
   position: absolute;
   z-index: 0 !important;
+
+  /* Meme geometrie qu'en desktop a tous les paliers : ancrage au bord droit
+     avec un debord minime. Un debord exprime en pourcentage plus important
+     grandissait avec le panneau alors que la largeur du logo est plafonnee en
+     px, donc le logo se faisait rogner de plus en plus. Seule la taille varie
+     ensuite selon la place disponible. */
   top: 34%;
   right: -2%;
-  display: none;
-  width: min(48%, 320px);
+  display: block;
+  width: min(64%, 244px);
   height: auto;
   pointer-events: none;
   user-select: none;
+
+  /* Opacite unique a tous les paliers. Les anciennes valeurs degressives
+     (0.17 mobile, 0.28 tablette) ne changeaient pas la teinte appliquee mais
+     laissaient passer le creme du panneau au travers : le logo virait au rose
+     delave sur petit ecran alors que le desktop gardait une terre de sienne
+     dense. Meme opacite = meme couleur rendue partout. */
   opacity: 0.46;
 
   /* Un orange moyen pose a faible opacite se delave en rose poudre. On part
@@ -4209,9 +4283,19 @@ html.dark .before-after-premium-copy > .before-after-premium-brand-watermark,
   filter: saturate(1.2) brightness(1.18);
 }
 
+/* Palier tablette : le panneau redevient large et le texte ne remplit plus la
+   colonne, le logo peut donc grandir et s'affirmer. Position inchangee. */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .before-after-premium-copy > .before-after-premium-brand-watermark {
+    width: min(46%, 300px);
+  }
+}
+
 @media (min-width: 1024px) {
   .before-after-premium-copy > .before-after-premium-brand-watermark {
-    display: block;
+    top: 34%;
+    right: -2%;
+    width: min(50%, 340px);
   }
 }
 
@@ -4604,24 +4688,26 @@ html.dark .before-after-state-badge,
 .before-after-state-badge[data-ba-chip] {
   --ba-presence: 1;
 
-  /* Easing lineaire et duree courte : pendant un glissement continu, une courbe
-     d'attenuation redemarre a chaque frame et donne une progression saccadee.
-     En lineaire, l'etiquette suit le curseur de maniere reguliere. */
+  /* Le JS reecrit `--ba-presence` a chaque frame du glissement : toute transition
+     un peu longue se relance en boucle, reste en retard sur le curseur, puis
+     rattrape d'un coup en fin de course. On garde donc un lissage minimal et
+     strictement lineaire, juste de quoi absorber les sauts d'un clic clavier. */
   transition:
-    opacity 130ms linear,
-    transform 150ms linear,
-    filter 150ms linear;
+    opacity 90ms linear,
+    transform 90ms linear,
+    filter 90ms linear;
 
   /* L'ombre portee se creuse avec la presence : le volet dominant decolle. */
-  filter: drop-shadow(0 calc(5px * var(--ba-presence)) calc(10px * var(--ba-presence)) rgba(0, 0, 0, 0.45));
+  filter: drop-shadow(0 calc(4px * var(--ba-presence)) calc(9px * var(--ba-presence)) rgba(0, 0, 0, 0.45));
   will-change: opacity, transform;
 
-  /* Amplitude large pour que la bascule se voie franchement :
-     l'etiquette du volet dominant monte, grandit et s'opacifie. */
-  opacity: calc(0.34 + var(--ba-presence) * 0.66);
+  /* Amplitude resserree : une plage 0.8 -> 1.04 concentrait tout le grossissement
+     visible sur les derniers pourcents. Ici chaque pourcent de course rend une
+     variation d'echelle et d'opacite equivalente. */
+  opacity: calc(0.42 + var(--ba-presence) * 0.58);
   transform:
-    translateY(calc(-5px * var(--ba-presence)))
-    scale(calc(0.8 + var(--ba-presence) * 0.24));
+    translateY(calc(-4px * var(--ba-presence)))
+    scale(calc(0.9 + var(--ba-presence) * 0.12));
 }
 
 .before-after-state-badge[data-ba-chip='before'] {
@@ -4650,7 +4736,7 @@ html.dark .before-after-state-badge,
    inset top rendait le liseret plus epais en haut qu'en bas. */
 .before-after-slider-handle {
   translate: -50% -50%;
-  min-width: 46px;
+  min-width: 32px;
   border: 0;
   border-radius: 999px;
   background: rgba(255, 252, 247, 0.8);
@@ -4658,17 +4744,42 @@ html.dark .before-after-state-badge,
   -webkit-backdrop-filter: blur(20px) saturate(190%);
   box-shadow:
     0 0 0 1.5px rgba(255, 255, 255, 0.96),
-    0 0 0 5px rgba(255, 255, 255, 0.14),
-    0 18px 34px -14px rgba(35, 24, 15, 0.42);
+    0 0 0 4px rgba(255, 255, 255, 0.14),
+    0 12px 24px -12px rgba(35, 24, 15, 0.42);
   transition:
     box-shadow 420ms cubic-bezier(0.32, 0.72, 0, 1),
     background-color 420ms cubic-bezier(0.32, 0.72, 0, 1),
     scale 420ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+/* Chevrons proportionnels a la pastille : sur mobile la version desktop (14px)
+   remplissait tout le disque et donnait une poignee massive. */
+.before-after-slider-handle svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* Un flou plein cadre a chaque frame de glissement fait tomber le framerate sur
+   telephone : on allege le backdrop-filter des que le pointeur est tactile. */
+@media (pointer: coarse) {
+  .before-after-slider-handle {
+    backdrop-filter: blur(9px) saturate(150%);
+    -webkit-backdrop-filter: blur(9px) saturate(150%);
+  }
+}
+
 @media (min-width: 640px) {
   .before-after-slider-handle {
     min-width: 54px;
+    box-shadow:
+      0 0 0 1.5px rgba(255, 255, 255, 0.96),
+      0 0 0 5px rgba(255, 255, 255, 0.14),
+      0 18px 34px -14px rgba(35, 24, 15, 0.42);
+  }
+
+  .before-after-slider-handle svg {
+    width: 14px;
+    height: 14px;
   }
 }
 
@@ -4693,11 +4804,22 @@ html.dark .before-after-slider-handle,
 
 .before-after-media-stage:has([data-ba-range]:active) .before-after-slider-handle,
 .before-after-media-stage[data-ba-dragging='true'] .before-after-slider-handle {
-  scale: 1.09;
+  scale: 1.07;
   box-shadow:
     0 0 0 1.5px rgba(255, 255, 255, 1),
-    0 0 0 9px rgba(255, 255, 255, 0.18),
-    0 24px 46px -14px rgba(35, 24, 15, 0.52);
+    0 0 0 6px rgba(255, 255, 255, 0.18),
+    0 16px 30px -12px rgba(35, 24, 15, 0.52);
+}
+
+@media (min-width: 640px) {
+  .before-after-media-stage:has([data-ba-range]:active) .before-after-slider-handle,
+  .before-after-media-stage[data-ba-dragging='true'] .before-after-slider-handle {
+    scale: 1.09;
+    box-shadow:
+      0 0 0 1.5px rgba(255, 255, 255, 1),
+      0 0 0 9px rgba(255, 255, 255, 0.18),
+      0 24px 46px -14px rgba(35, 24, 15, 0.52);
+  }
 }
 
 html.dark .before-after-media-stage[data-ba-dragging='true'] .before-after-slider-handle,
@@ -4714,14 +4836,6 @@ html.dark .before-after-media-stage[data-ba-dragging='true'] .before-after-slide
 
 .before-after-media-stage[data-ba-dragging='true'] .before-after-slider-handle__right {
   transform: translateX(2px);
-}
-
-/* Les puces Avant / Apres suivent le curseur en direct. */
-.before-after-state-badge[data-ba-chip] {
-  transition:
-    opacity 220ms linear,
-    transform 420ms cubic-bezier(0.32, 0.72, 0, 1);
-  will-change: opacity, transform;
 }
 
 .before-after-project-rail {
@@ -4809,6 +4923,60 @@ html.dark .before-after-project-card,
 html.dark .before-after-project-nav,
 .before-after-premium--dark .before-after-project-nav {
   background: rgba(255,255,255,0.025);
+}
+
+/* --------------------------------------------------------------------------
+   MOBILE : suppression des cadres decoratifs empiles.
+   Sur grand ecran, le bezel creme du media et le plateau du rail se lisent comme
+   un encadrement d'atelier. Sous 640px ils se reduisent a des bandes de 4 a 6px :
+   on n'y lit plus un cadre mais une marge parasite le long du trait de separation
+   et sous la carte de legende. On les aplatit pour que la photo et le texte
+   s'appuient directement sur le panneau, avec le meme retrait que la colonne de
+   titre au-dessus.
+   -------------------------------------------------------------------------- */
+@media (max-width: 639.98px) {
+  /* Les variantes sombres sont reprises explicitement : leur specificite
+     (`html.dark .x`) l'emporterait sinon sur la remise a plat. */
+  .before-after-media-bezel,
+  .before-after-media-bezel__core,
+  .before-after-project-rail,
+  .before-after-project-card,
+  html.dark .before-after-media-bezel,
+  html.dark .before-after-media-bezel__core,
+  html.dark .before-after-project-card,
+  .before-after-premium--dark .before-after-media-bezel,
+  .before-after-premium--dark .before-after-media-bezel__core,
+  .before-after-premium--dark .before-after-project-card {
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  /* Filets de brillance des cadres : sans cadre, ils flottent. */
+  .before-after-media-bezel::before,
+  .before-after-project-rail::before {
+    display: none;
+  }
+
+  /* 1.25rem = le `p-5` du panneau de titre : la photo, le libelle et les fleches
+     s'alignent desormais sur la meme verticale que "Chiner sans courir...". */
+  .before-after-premium-visual {
+    padding: 1.25rem;
+  }
+
+  /* Sans plateau ni coins arrondis a rogner, le `overflow: hidden` du rail n'a
+     plus d'objet — et comme la legende s'appuie desormais pile sur son arete,
+     il rabotait l'approche gauche du premier glyphe du tag ("RENOVATION"). */
+  .before-after-project-rail {
+    overflow: visible;
+    border-radius: 0;
+    gap: 0.8rem;
+  }
+
+  .before-after-project-actions {
+    padding: 0;
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {

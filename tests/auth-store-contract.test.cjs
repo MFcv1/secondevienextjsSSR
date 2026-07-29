@@ -25,10 +25,23 @@ test('admin dashboard consumes resolved claims without forcing a token refresh o
   const dashboard = read('src/kit/admin/AdminDashboard.jsx');
 
   assert.match(adminIsland, /<AdminDashboard[\s\S]*isSuperAdmin={isSuperAdmin}/);
-  assert.match(dashboard, /const AdminDashboard = \(\{ user, darkMode = false, isSuperAdmin = false, items = \[\] \}\)/);
+  assert.match(dashboard, /const AdminDashboard = \(\{[\s\S]*isSuperAdmin = false,[\s\S]*commerceStatus =/);
+  assert.match(dashboard, /loading={financialLoading}/);
+  assert.match(dashboard, /registeredUsers: cachedUserCount/);
   assert.doesNotMatch(dashboard, /getIdTokenResult/);
   assert.doesNotMatch(dashboard, /ensureAdminAccessRegistry/);
   assert.doesNotMatch(dashboard, /syncSuperAdminClaim/);
+});
+
+test('stale sensitive admin calls request a step-up without clearing Firebase session', () => {
+  const firebaseLazy = read('src/kit/config/firebaseLazy.js');
+  const adminIsland = read('app/admin/AdminAppIsland.jsx');
+
+  assert.match(firebaseLazy, /recent-strong-auth-required/);
+  assert.match(firebaseLazy, /ADMIN_STEP_UP_REQUIRED_EVENT/);
+  assert.match(adminIsland, /addEventListener\(ADMIN_STEP_UP_REQUIRED_EVENT/);
+  assert.equal((adminIsland.match(/<LegacyLoginModalIsland/g) || []).length, 2);
+  assert.doesNotMatch(adminIsland, /signOut\(/);
 });
 
 test('header, menu and cart consume the shared auth snapshot', () => {

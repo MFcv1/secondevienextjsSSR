@@ -8,7 +8,7 @@ const {
     assertConfirmText,
     checkActiveStrongAdmin,
     checkStrongAdmin,
-    checkRecentActiveStrongSuperAdmin,
+    checkRecentActiveStrongAdmin,
     checkRecentSuperAdmin,
     getSuperAdminEmail,
     normalizeEmail,
@@ -194,7 +194,7 @@ exports.syncSuperAdminClaim = regionalFunctions().runWith({ enforceAppCheck: tru
 
 // --- AJOUTER UN ADMIN ---
 exports.addAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
-    await checkRecentActiveStrongSuperAdmin(context);
+    await checkRecentActiveStrongAdmin(context);
     assertConfirmText(data, 'AJOUTER ADMIN', 'ajout admin');
     const normalizedEmail = normalizeEmail(data?.email);
     const name = data?.name;
@@ -279,7 +279,7 @@ exports.addAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, secr
 
 // --- RÉVOQUER UN ADMIN ---
 exports.removeAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
-    await checkRecentActiveStrongSuperAdmin(context);
+    await checkRecentActiveStrongAdmin(context);
     assertConfirmText(data, 'RETIRER ADMIN', 'retrait admin');
     const { uid } = data;
     const email = normalizeEmail(data?.email);
@@ -437,6 +437,17 @@ exports.getUserStats = regionalFunctions().runWith({ timeoutSeconds: 300, memory
 
     try {
         const includeUsers = data?.includeUsers === true;
+        const statsRef = db.doc('sys_user_stats/current');
+        if (!includeUsers) {
+            const cachedStats = await statsRef.get();
+            if (cachedStats.exists && Number.isSafeInteger(cachedStats.data()?.registeredUsers)) {
+                return {
+                    success: true,
+                    count: Math.max(0, cachedStats.data().registeredUsers),
+                    users: []
+                };
+            }
+        }
         let nextPageToken;
         const allUsers = [];
         const userMetadataMap = {};
@@ -449,7 +460,7 @@ exports.getUserStats = regionalFunctions().runWith({ timeoutSeconds: 300, memory
         do {
             const listUsersResult = await admin.auth().listUsers(1000, nextPageToken);
             listUsersResult.users.forEach((userRecord) => {
-                if (!userRecord.email || userRecord.providerData.length === 0) return;
+                if (!userRecord.email) return;
                 if (!includeUsers) {
                     allUsers.push({ uid: userRecord.uid });
                     return;
@@ -468,6 +479,19 @@ exports.getUserStats = regionalFunctions().runWith({ timeoutSeconds: 300, memory
             });
             nextPageToken = listUsersResult.pageToken;
         } while (nextPageToken);
+
+        if (!includeUsers) {
+            await db.runTransaction(async (transaction) => {
+                const current = await transaction.get(statsRef);
+                if (!current.exists) {
+                    transaction.set(statsRef, {
+                        registeredUsers: allUsers.length,
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                        version: 1
+                    });
+                }
+            });
+        }
 
         if (includeUsers) {
             allUsers.sort((a, b) => new Date(b.creationTime) - new Date(a.creationTime));

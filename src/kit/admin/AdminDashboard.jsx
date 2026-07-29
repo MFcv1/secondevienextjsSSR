@@ -5,8 +5,9 @@ import {
     Archive, Users, Eye, FileText, Send, CircleDollarSign, PackageCheck
 } from 'lucide-react';
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, where, Timestamp } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import { db, functions } from '../config/firebase';
+import { db } from '../config/firebase';
+import { getCallableFunction } from '../config/firebaseLazy';
+import { getAdminCachedData, loadAdminCachedData } from './adminDataCache';
 import { getProductImageItems } from '../../utils/imageUtils';
 import { getProductUrl } from '../../utils/slug';
 import { getMillis } from '../../utils/time';
@@ -364,6 +365,8 @@ const KpiCard = ({
     meta,
     delta,
     darkMode,
+    loading = false,
+    unavailable = false,
     accent = false,
     action = null,
     className = ''
@@ -378,13 +381,25 @@ const KpiCard = ({
             </div>
             <div>
                 <div className="flex flex-wrap items-end gap-3">
-                    <p className={`text-[clamp(2rem,3.8vw,3.7rem)] font-semibold leading-none tracking-[-0.055em] tabular-nums ${darkMode ? 'text-white' : 'text-[#22221f]'}`}>
-                        <AnimatedNumber value={value} format={format} />
-                    </p>
+                    {loading ? (
+                        <span
+                            aria-label={`${label} en cours de chargement`}
+                            aria-busy="true"
+                            className={`block h-12 w-36 animate-pulse rounded-xl ${darkMode ? 'bg-white/10' : 'bg-stone-200/80'}`}
+                        />
+                    ) : unavailable ? (
+                        <span className={`text-[clamp(2rem,3.8vw,3.7rem)] font-semibold leading-none ${darkMode ? 'text-white/55' : 'text-stone-400'}`}>
+                            —
+                        </span>
+                    ) : (
+                        <p className={`text-[clamp(2rem,3.8vw,3.7rem)] font-semibold leading-none tracking-[-0.055em] tabular-nums ${darkMode ? 'text-white' : 'text-[#22221f]'}`}>
+                            <AnimatedNumber value={value} format={format} />
+                        </p>
+                    )}
                     <TrendPill delta={delta} />
                 </div>
                 <div className={`mt-3 flex min-h-5 items-center justify-between gap-3 text-[11px] font-medium ${darkMode ? 'text-white/46' : 'text-stone-500'}`}>
-                    <span>{meta}</span>
+                    <span>{loading ? 'Chargement des données…' : unavailable ? 'Données momentanément indisponibles' : meta}</span>
                     {action}
                 </div>
             </div>
@@ -824,13 +839,22 @@ const LoadingProgress = ({ progress, text, darkMode }) => (
 );
 
 
-const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
+const AdminDashboard = ({
+    user,
+    darkMode = false,
+    isSuperAdmin = false,
+    items = [],
+    commerceStatus = { status: 'loading', data: null, error: null }
+}) => {
+    void user;
+    void isSuperAdmin;
+    const cachedUserCount = getAdminCachedData('registered-user-count');
     const [stats, setStats] = useState({
         totalRevenue: 0,
         totalOrders: 0,
         averageOrderValue: 0,
         totalStockValue: 0,
-        registeredUsers: 0
+        registeredUsers: cachedUserCount
     });
 
     const [salesPanelView, setSalesPanelView] = useState('summary');
@@ -844,12 +868,6 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
     const [statusCounts, setStatusCounts] = useState({ paid: 0, pending: 0, shipped: 0 });
     const [loading, setLoading] = useState(true);
     const [inventoryStatsAvailable, setInventoryStatsAvailable] = useState(true);
-    const [commerceOperations, setCommerceOperations] = useState({
-        loading: true,
-        error: false,
-        operations: null,
-        control: null
-    });
     const [insights, setInsights] = useState({
         loading: true,
         error: false,
@@ -894,35 +912,6 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
     // Progress states
     const [progressValue, setProgressValue] = useState(0);
     const [progressSubtitle, setProgressSubtitle] = useState('');
-
-    useEffect(() => {
-        if (!user || user.isAnonymous) return undefined;
-        let cancelled = false;
-        httpsCallable(functions, 'getCommerceOperationsStatusAdmin')({})
-            .then((response) => {
-                if (cancelled) return;
-                setCommerceOperations({
-                    loading: false,
-                    error: false,
-                    operations: response.data?.operations || null,
-                    control: response.data?.control || null
-                });
-            })
-            .catch((error) => {
-                console.error('Failed to fetch commerce operations status', error);
-                if (!cancelled) {
-                    setCommerceOperations({
-                        loading: false,
-                        error: true,
-                        operations: null,
-                        control: null
-                    });
-                }
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [user]);
 
     const executeWithProgress = async (actionFn, estimatedMs = 8000) => {
         setProgressValue(0);
@@ -1208,13 +1197,16 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
                     totalOrders: orderCount,
                     averageOrderValue: orderCount > 0 ? Math.round(revenue / orderCount) : 0,
                     totalStockValue: stockValue,
-                    registeredUsers: 0
+                    registeredUsers: getAdminCachedData('registered-user-count')
                 });
 
-                // 3. Fetch User Stats
-                httpsCallable(functions, 'getUserStats')({ includeUsers: false }).then(res => {
-                    setStats(prev => ({ ...prev, registeredUsers: res.data.count }));
-                }).catch(err => console.error("Failed to fetch user stats", err));
+                void loadAdminCachedData('registered-user-count', async () => {
+                    const getUserStats = await getCallableFunction('getUserStats');
+                    const result = await getUserStats({ includeUsers: false });
+                    return result.data.count;
+                }, { maxAgeMs: 300_000 }).then((count) => {
+                    setStats((previous) => ({ ...previous, registeredUsers: count }));
+                }).catch((error) => console.error('Failed to fetch user stats', error));
 
                 setLoading(false);
             } catch (error) {
@@ -1361,7 +1353,7 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
         setResettingOrders(true);
         try {
             await exportToCsv(allOrders);
-            const resetOrdersFn = httpsCallable(functions, 'resetAllOrders');
+            const resetOrdersFn = await getCallableFunction('resetAllOrders');
             const result = await executeWithProgress(() => resetOrdersFn({ confirmText }), 5000);
             const count = result.data.count;
             setStats(prev => ({ ...prev, totalRevenue: 0, totalOrders: 0, averageOrderValue: 0 }));
@@ -1384,7 +1376,7 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
         if (!confirmText) return;
         setCleaningCloud(true);
         try {
-            const garbageCollectorFn = httpsCallable(functions, 'runGarbageCollector');
+            const garbageCollectorFn = await getCallableFunction('runGarbageCollector');
             const result = await executeWithProgress(() => garbageCollectorFn({ confirmText }), 12000);
             const s = result.data.stats;
             const freedMb = (s.storageSpaceFreedBytes / (1024 * 1024)).toFixed(2);
@@ -1399,7 +1391,7 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
         if (!confirmText) return;
         setResettingUsers(true);
         try {
-            const resetUsersFn = httpsCallable(functions, 'resetAllUsers');
+            const resetUsersFn = await getCallableFunction('resetAllUsers');
             const result = await executeWithProgress(() => resetUsersFn({ confirmText }), 4000);
             setIsResetUsersModalOpen(false);
             alert(`✅ Succès !\n${result.data.message}`);
@@ -1412,7 +1404,7 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
         if (!confirmText) return;
         setPurgingAnonymous(true);
         try {
-            const purgeAnonymousFn = httpsCallable(functions, 'purgeAnonymousUsers');
+            const purgeAnonymousFn = await getCallableFunction('purgeAnonymousUsers');
             const result = await executeWithProgress(() => purgeAnonymousFn({ confirmText }), 4000);
             setIsPurgeAnonymousModalOpen(false);
             alert(`✅ Succès !\n${result.data.message}`);
@@ -1425,7 +1417,7 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
         if (!confirmText) return;
         setPurgingProducts(true);
         try {
-            const purgeProductsFn = httpsCallable(functions, 'purgeAllProducts');
+            const purgeProductsFn = await getCallableFunction('purgeAllProducts');
             const result = await executeWithProgress(() => purgeProductsFn({ confirmText }), 15000);
             setIsPurgeProductsModalOpen(false);
             alert(`✅ Purge terminée !\n${result.data.message}`);
@@ -1436,7 +1428,7 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
     const handleExportUsers = async () => {
         setExportingUsers(true);
         try {
-            const getUserStatsFn = httpsCallable(functions, 'getUserStats');
+            const getUserStatsFn = await getCallableFunction('getUserStats');
             const result = await getUserStatsFn({ includeUsers: true });
             const users = result.data.users;
 
@@ -1473,7 +1465,10 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
             ? 'Vue horaire'
             : 'Vue quotidienne';
     const bestPointLabel = ['1hour', '1day'].includes(timeFilter) ? 'Meilleur créneau' : 'Meilleur jour';
-    const financialAmounts = commerceOperations.operations?.projection?.currencies?.EUR;
+    const financialAmounts = commerceStatus.data?.operations?.projection?.currencies?.EUR;
+    const financialLoading = ['idle', 'loading'].includes(commerceStatus.status);
+    const financialUnavailable = commerceStatus.status === 'error'
+        || (commerceStatus.status === 'ready' && !financialAmounts);
     const capturedRevenue = Number.isSafeInteger(financialAmounts?.capturedCents)
         ? financialAmounts.capturedCents / 100
         : 0;
@@ -1500,6 +1495,8 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
                     meta={refundedRevenue > 0 ? `${formatEuroAmount(refundedRevenue)} remboursés` : 'Après remboursements'}
                     delta={null}
                     darkMode={darkMode}
+                    loading={financialLoading}
+                    unavailable={financialUnavailable}
                     accent
                     className="lg:col-span-3"
                 />
@@ -1518,6 +1515,8 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
                     icon={PackageCheck}
                     meta={paidOrderCount > 0 ? `Sur ${paidOrderCount} commandes encaissées` : 'Aucune commande encaissée'}
                     darkMode={darkMode}
+                    loading={financialLoading}
+                    unavailable={financialUnavailable}
                     className="lg:col-span-3"
                 />
                 <KpiCard
@@ -1526,6 +1525,7 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
                     icon={Users}
                     meta={inventoryStatsAvailable ? `Catalogue : ${Math.round(stats.totalStockValue).toLocaleString('fr-FR')} €` : 'Valeur catalogue : —'}
                     darkMode={darkMode}
+                    loading={stats.registeredUsers == null}
                     className="lg:col-span-3"
                     action={(
                         <button

@@ -1,6 +1,6 @@
 # Cartographie du projet Seconde Vie Next
 
-Derniere verification: 2026-07-26
+Derniere verification: 2026-07-29
 Statut: `CARTE_CANONIQUE_ACTIVE`
 
 ## 1. Role et maintenance
@@ -115,6 +115,8 @@ header/menu/route privee
   `-- passkey -> 4 callables WebAuthn [F] -> users/{uid}/passkeys [DB]
   -> loginWithCustomToken
   -> etat partage header/menu/espace client
+  -> session admin persistante pour les lectures
+  -> mutation sensible expiree -> evenement step-up -> meme modale, sans signOut
 ```
 
 ### 4.4 Achat
@@ -493,9 +495,10 @@ src/kit/admin/
 |-- AdminMaintenance.jsx .............. maintenance
 |-- AdminAccount.jsx .................. profil admin et conteneur onboarding dedie
 |-- BillingOnboardingGuide.jsx ........ guide Google Billing manuel, progression et placeholders captures
-|-- BillingOnboardingOperator.jsx ..... validation/reinitialisation super-admin
+|-- BillingOnboardingOperator.jsx ..... validation/reinitialisation admin forte
 |-- analyticsReliability.js ........... fiabilite/checkpoints
 |-- exportCsv.js ...................... exports
+|-- adminDataCache.js ................. cache memoire borne Stats/Ventes/Retours
 |-- adminPublicCatalog.js ............. lecture snapshot admin sans cache persistant
 `-- components/
     |-- AdminImageCard.jsx
@@ -656,7 +659,7 @@ functions/
 | commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
 | refunds/Connect | `refundOrderAdmin`, `syncRefundStatusAdmin`, `getStripeConnectStatus`, `startStripeConnectOnboarding`, `syncStripeConnectAccount`, `requestStripeConnectReconnect`, `confirmStripeConnectReconnect` |
 | preuves E2E | `e2eCheckoutProof`, `e2eStripeHardeningProof` |
-| Auth/admin | `grantAdminOnAuth`, `addAdminUser`, `removeAdminUser`, `logUserConnection`, `getUserStats`, `syncSuperAdminClaim`, `ensureAdminAccessRegistry` |
+| Auth/admin | `grantAdminOnAuth`, `onRegisteredUserCreated`, `onRegisteredUserDeleted`, `addAdminUser`, `removeAdminUser`, `logUserConnection`, `getUserStats`, `syncSuperAdminClaim`, `ensureAdminAccessRegistry` |
 | OTP/passkeys | `sendGuestCheckoutOtp`, `verifyGuestCheckoutOtp`, `sendCustomerLoginOtp`, `verifyCustomerLoginOtp`, quatre endpoints passkey |
 | onboarding facturation | `getBillingGuideStatus`, `saveBillingGuideProgress`, `getBillingGuideOperatorStatus`, `completeBillingGuideAdmin`, `resetBillingGuideTest` |
 | e-mail | `onOrderCreated`, `onOrderUpdated`, `sendTestEmail`, `sendRefundStatusEmailAdmin` |
@@ -691,6 +694,7 @@ Firestore
 |-- sys_metadata/{docId}
 |-- sys_ratelimit/{id} ................ backend-only
 |-- sys_admin_access/{uid} ............ backend-only
+|-- sys_user_stats/current ............ compteur comptes, triggers Auth backend-only
 |-- sys_idempotency/{id} .............. backend-only
 |-- sys_billing_onboarding/{uid} ...... progression guide, backend-only
 |-- sys_catalog_publication/secondevie  mode, lease et revisions

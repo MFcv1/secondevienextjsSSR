@@ -8,7 +8,18 @@ import { initializeAuthStore, resetAuthStoreAfterSignOut, syncAuthStoreUser } fr
 
 const LegacyLoginModalIsland = dynamic(() => import('./LegacyLoginModalFullIsland'), {
   ssr: false,
-  loading: () => null,
+  loading: () => (
+    <div
+      className="fixed inset-0 z-[3000] flex items-center justify-center bg-stone-950/80 backdrop-blur-xl"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="flex items-center gap-3 rounded-full bg-white px-5 py-3 text-xs font-bold text-stone-700 shadow-2xl">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-stone-300 border-t-stone-900" />
+        Préparation de la connexion…
+      </div>
+    </div>
+  ),
 });
 
 export const preloadLoginModal = () => {
@@ -102,7 +113,16 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
 
   if (authState.status === 'unknown') {
     return (
-      <div className="hidden h-9 w-[94px] animate-pulse rounded-full bg-stone-100/80 dark:bg-white/[0.055] md:block" aria-label="Vérification de la connexion" aria-busy="true" />
+      <button
+        type="button"
+        className={`${loginButtonClass} cursor-wait opacity-70`}
+        aria-label="Vérification de la connexion"
+        aria-busy="true"
+        disabled
+      >
+        <ShieldCheck size={14} className="text-stone-400" />
+        <span className="text-[10px] font-black uppercase tracking-[0.16em]">Connexion</span>
+      </button>
     );
   }
 
@@ -127,7 +147,7 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
 
   return (
     <>
-      <button type="button" className={loginButtonClass} onPointerEnter={preloadLoginModal} onFocus={preloadLoginModal} onClick={async () => { await preloadLoginModal(); setLoginOpen(true); }} aria-label="Ouvrir la connexion">
+      <button type="button" className={loginButtonClass} onPointerEnter={preloadLoginModal} onFocus={preloadLoginModal} onClick={() => { setLoginOpen(true); void preloadLoginModal(); }} aria-label="Ouvrir la connexion">
         <ShieldCheck size={14} className="text-stone-400 transition-colors group-hover:text-amber-500 dark:text-stone-300 dark:group-hover:text-[#D9B58D]" />
         <span className="text-[10px] font-black uppercase tracking-[0.16em]">Connexion</span>
       </button>

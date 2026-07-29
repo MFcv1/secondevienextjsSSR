@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { httpsCallable } from 'firebase/functions';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { functions, db } from '../config/firebase';
+import { db } from '../config/firebase';
+import { getCallableFunction } from '../config/firebaseLazy';
 import { Users, UserPlus, Trash2, Shield, Loader, AlertCircle } from 'lucide-react';
 
 const isOwnerAdminRecord = (user) => user?.superAdmin === true || user?.role === 'owner';
@@ -46,7 +46,7 @@ const AdminUsers = ({ darkMode }) => {
         setErrorMsg('');
 
         try {
-            const addAdminFn = httpsCallable(functions, 'addAdminUser');
+            const addAdminFn = await getCallableFunction('addAdminUser');
             // Call Cloud Function
             const result = await addAdminFn({
                 email: newEmail,
@@ -75,7 +75,7 @@ const AdminUsers = ({ darkMode }) => {
         if (!window.confirm(`Voulez-vous vraiment retirer les droits d'administration à ${email} ?`)) return;
 
         try {
-            const removeAdminFn = httpsCallable(functions, 'removeAdminUser');
+            const removeAdminFn = await getCallableFunction('removeAdminUser');
             await removeAdminFn({ uid, email, confirmText: 'RETIRER ADMIN' });
             // Firestore sync is automatic via onSnapshot
         } catch (error) {

@@ -89,7 +89,7 @@ precede l'activation sandbox read-only.
 npm run test:auth
 ```
 
-Suite actuelle:
+Suite actuelle (56 contrats apres ajout du step-up admin sans deconnexion):
 
 ```text
 auth-claims.test.cjs

@@ -4,8 +4,7 @@ const Stripe = require('stripe');
 const { STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL: SUPER_ADMIN_EMAIL_SECRET } = require('../../helpers/secrets');
 const {
     checkActiveStrongAdmin,
-    checkRecentActiveStrongAdmin,
-    checkRecentActiveStrongSuperAdmin
+    checkRecentActiveStrongAdmin
 } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
 
@@ -177,7 +176,7 @@ exports.getStripeConnectStatus = regionalFunctions()
 exports.startStripeConnectOnboarding = regionalFunctions()
     .runWith({ secrets: [STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL_SECRET] })
     .https.onCall(async (data, context) => {
-        await checkRecentActiveStrongSuperAdmin(context);
+        await checkRecentActiveStrongAdmin(context);
         try {
             const stripe = getStripe();
             const origin = sanitizeOrigin(data?.origin);
@@ -276,7 +275,7 @@ exports.syncStripeConnectAccount = regionalFunctions()
 exports.requestStripeConnectReconnect = regionalFunctions()
     .runWith({ secrets: [STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL_SECRET] })
     .https.onCall(async (data, context) => {
-        await checkRecentActiveStrongSuperAdmin(context);
+        await checkRecentActiveStrongAdmin(context);
         if (String(data?.confirmText || '').trim() !== 'DEMANDER CHANGEMENT STRIPE') {
             throw new functions.https.HttpsError('invalid-argument', 'Phrase de confirmation invalide.');
         }
@@ -311,7 +310,7 @@ exports.requestStripeConnectReconnect = regionalFunctions()
 exports.confirmStripeConnectReconnect = regionalFunctions()
     .runWith({ secrets: [STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL_SECRET] })
     .https.onCall(async (data, context) => {
-        await checkRecentActiveStrongSuperAdmin(context);
+        await checkRecentActiveStrongAdmin(context);
         if (String(data?.confirmText || '').trim() !== 'ACTIVER NOUVEAU STRIPE') {
             throw new functions.https.HttpsError('invalid-argument', 'Phrase de confirmation invalide.');
         }
