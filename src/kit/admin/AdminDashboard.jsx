@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, animate, useReducedMotion } from 'framer-motion';
 import {
-    TrendingUp, TrendingDown, ShoppingBag, AlertTriangle, RefreshCw, Mail,
+    TrendingUp, TrendingDown, ShoppingBag, AlertTriangle, RefreshCw,
     Archive, Users, Eye, FileText, Send, CircleDollarSign, PackageCheck
 } from 'lucide-react';
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, where, Timestamp } from 'firebase/firestore';
@@ -32,6 +32,11 @@ const formatEuroShort = (value) => {
     }
     return `${Math.round(value)}€`;
 };
+
+const formatEuroAmount = (value) => `${Number(value || 0).toLocaleString('fr-FR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+})} €`;
 
 const AnimatedNumber = ({ value, format, duration = 1.4 }) => {
     const ref = useRef(null);
@@ -782,7 +787,7 @@ const LoadingProgress = ({ progress, text, darkMode }) => (
 );
 
 
-const AdminDashboard = ({ user, darkMode = false, isSuperAdmin = false, items = [] }) => {
+const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
     const [stats, setStats] = useState({
         totalRevenue: 0,
         totalOrders: 0,
@@ -1348,6 +1353,25 @@ const AdminDashboard = ({ user, darkMode = false, isSuperAdmin = false, items = 
 
     const _chartGranularityLabel = 'Vue quotidienne';
     const _bestPointLabel = 'Meilleur jour';
+    const financialAmounts = commerceOperations.operations?.projection?.currencies?.EUR;
+    const capturedRevenue = Number.isSafeInteger(financialAmounts?.capturedCents)
+        ? financialAmounts.capturedCents / 100
+        : 0;
+    const refundedRevenue = Number.isSafeInteger(financialAmounts?.refundedCents)
+        ? financialAmounts.refundedCents / 100
+        : 0;
+    const netRevenue = Number.isSafeInteger(financialAmounts?.netCents)
+        ? financialAmounts.netCents / 100
+        : 0;
+    const paidOrderCount = statusCounts.paid + statusCounts.shipped;
+    const averagePaidOrderValue = paidOrderCount > 0 ? capturedRevenue / paidOrderCount : 0;
+    const paymentStatusLabel = commerceOperations.loading
+        ? 'Chargement'
+        : commerceOperations.error
+            ? 'Données indisponibles'
+            : commerceOperations.operations?.status === 'healthy'
+                ? 'À jour'
+                : 'À vérifier';
 
     return (
         <motion.div
@@ -1357,32 +1381,32 @@ const AdminDashboard = ({ user, darkMode = false, isSuperAdmin = false, items = 
         >
             <motion.div custom={0} variants={sectionVariants} className="grid gap-5 lg:grid-cols-12">
                 <KpiCard
-                    label="Indicateur commerce legacy"
-                    value={0}
-                    format={() => 'Indisponible'}
+                    label="Ventes nettes"
+                    value={netRevenue}
+                    format={formatEuroAmount}
                     icon={CircleDollarSign}
-                    meta="Non comptable avant la Gate 7A"
+                    meta={refundedRevenue > 0 ? `${formatEuroAmount(refundedRevenue)} remboursés` : 'Après remboursements'}
                     delta={null}
                     darkMode={darkMode}
                     accent
-                    className="lg:col-span-5"
+                    className="lg:col-span-3"
                 />
                 <KpiCard
                     label="Commandes"
                     value={stats.totalOrders}
                     icon={ShoppingBag}
-                    meta={`${statusCounts.paid + statusCounts.shipped} encaissées`}
+                    meta={`${paidOrderCount} encaissées`}
                     darkMode={darkMode}
-                    className="lg:col-span-2"
+                    className="lg:col-span-3"
                 />
                 <KpiCard
-                    label="Panier moyen legacy"
-                    value={0}
-                    format={() => 'Indisponible'}
+                    label="Panier moyen"
+                    value={averagePaidOrderValue}
+                    format={formatEuroAmount}
                     icon={PackageCheck}
-                    meta="Non comptable avant la Gate 7A"
+                    meta={paidOrderCount > 0 ? `Sur ${paidOrderCount} commandes encaissées` : 'Aucune commande encaissée'}
                     darkMode={darkMode}
-                    className="lg:col-span-2"
+                    className="lg:col-span-3"
                 />
                 <KpiCard
                     label="Clients inscrits"
@@ -1410,29 +1434,23 @@ const AdminDashboard = ({ user, darkMode = false, isSuperAdmin = false, items = 
                     <div className="flex flex-col gap-6">
                         <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-start">
                             <div>
-                                <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Projection commerce v2</p>
-                                <h2 className={`mt-2 text-xl font-semibold tracking-[-0.03em] ${textBase}`}>Rapprochement reconstructible</h2>
-                                <p className={`mt-1 text-[11px] ${textMuted}`}>
-                                    Source : {commerceOperations.operations?.projection?.source || 'commerce_financial_facts'}
-                                </p>
+                                <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Paiements</p>
+                                <h2 className={`mt-2 text-xl font-semibold tracking-[-0.03em] ${textBase}`}>Bilan des ventes</h2>
+                                <p className={`mt-1 text-[11px] ${textMuted}`}>Montants cumulés après remboursements</p>
                             </div>
                             <div className={`rounded-xl px-4 py-3 text-[10px] font-bold uppercase tracking-[0.1em] ring-1 ${
                                 commerceOperations.operations?.status === 'healthy'
                                     ? (darkMode ? 'bg-emerald-400/[0.06] text-emerald-200/70 ring-emerald-300/10' : 'bg-emerald-50 text-emerald-700 ring-emerald-900/10')
                                     : (darkMode ? 'bg-amber-400/[0.05] text-amber-200/65 ring-amber-300/10' : 'bg-amber-50 text-amber-700 ring-amber-900/10')
                             }`}>
-                                {commerceOperations.loading
-                                    ? 'Chargement'
-                                    : commerceOperations.error
-                                        ? 'Statut indisponible'
-                                        : commerceOperations.operations?.status || 'Non construit'}
+                                {paymentStatusLabel}
                             </div>
                         </div>
                         <div className="grid gap-3 sm:grid-cols-3">
                             {[
-                                ['Capturé', commerceOperations.operations?.projection?.currencies?.EUR?.capturedCents],
-                                ['Remboursé', commerceOperations.operations?.projection?.currencies?.EUR?.refundedCents],
-                                ['Net', commerceOperations.operations?.projection?.currencies?.EUR?.netCents]
+                                ['Encaissé', financialAmounts?.capturedCents],
+                                ['Remboursé', financialAmounts?.refundedCents],
+                                ['Ventes nettes', financialAmounts?.netCents]
                             ].map(([label, cents]) => (
                                 <div key={label} className={`rounded-2xl p-4 ring-1 ${darkMode ? 'bg-white/[0.03] ring-white/[0.06]' : 'bg-stone-900/[0.025] ring-stone-900/[0.05]'}`}>
                                     <p className={`text-[9px] font-bold uppercase tracking-[0.14em] ${textMuted}`}>{label}</p>
@@ -1441,14 +1459,6 @@ const AdminDashboard = ({ user, darkMode = false, isSuperAdmin = false, items = 
                                     </p>
                                 </div>
                             ))}
-                        </div>
-                        <div className={`flex flex-wrap gap-x-5 gap-y-2 rounded-2xl px-4 py-3 text-[10px] ${darkMode ? 'bg-white/[0.025] text-white/48' : 'bg-stone-900/[0.025] text-stone-500'}`}>
-                            <span>Fraîcheur : {commerceOperations.operations?.projection?.builtAt
-                                ? new Date(commerceOperations.operations.projection.builtAt).toLocaleString('fr-FR')
-                                : '—'}</span>
-                            <span>Faits : {commerceOperations.operations?.projection?.factCount ?? '—'}</span>
-                            <span>Divergences : {commerceOperations.operations?.projection?.divergenceCount ?? '—'}</span>
-                            <span>Mode : {commerceOperations.control?.newCheckoutMode || 'off'}</span>
                         </div>
                     </div>
                 </PanelFrame>
@@ -1506,10 +1516,10 @@ const AdminDashboard = ({ user, darkMode = false, isSuperAdmin = false, items = 
                 <PanelFrame darkMode={darkMode} innerClassName="p-5 sm:p-7">
                     <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                         <div>
-                            <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Rapprochement opérationnel</p>
-                            <h2 className={`mt-2 text-xl font-semibold tracking-[-0.03em] ${textBase}`}>Commandes legacy récentes</h2>
+                            <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Activité récente</p>
+                            <h2 className={`mt-2 text-xl font-semibold tracking-[-0.03em] ${textBase}`}>Dernières commandes</h2>
                         </div>
-                        <p className={`text-[10px] ${textMuted}`}>Montants de dossier non qualifiés comme comptabilité</p>
+                        <p className={`text-[10px] ${textMuted}`}>Hors commandes annulées</p>
                     </div>
                     <div className="w-full overflow-x-auto">
                         <table className="w-full min-w-[640px] border-collapse text-left">
@@ -1568,45 +1578,6 @@ const AdminDashboard = ({ user, darkMode = false, isSuperAdmin = false, items = 
                     </div>
                 </PanelFrame>
             </motion.div>
-
-            {isSuperAdmin && (
-                <motion.div custom={4} variants={sectionVariants} className="grid gap-5 lg:grid-cols-12">
-                    <PanelFrame darkMode={darkMode} className="lg:col-span-4" innerClassName="p-6">
-                        <div className="flex items-center gap-2">
-                            <RefreshCw size={14} strokeWidth={1.4} className={textMuted} />
-                            <h2 className={`text-[9px] font-bold uppercase tracking-[0.16em] ${textMuted}`}>Contrôles système</h2>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={async () => {
-                                if (!window.confirm("Tester flux email ?")) return;
-                                try {
-                                    const res = await httpsCallable(functions, 'sendTestEmail')();
-                                    alert(res.data.success ? "✅ Mail Flux OK" : "❌ Erreur Mail");
-                                } catch (e) { alert(e.message); }
-                            }}
-                            className={`group mt-5 flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-[10px] font-bold uppercase tracking-[0.12em] ring-1 transition-[transform,background-color,color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#62816c] ${darkMode ? 'bg-white/[0.045] text-white/62 ring-white/[0.065] hover:bg-white/[0.08] hover:text-white' : 'bg-[#f1ede7] text-stone-600 ring-stone-900/[0.05] hover:bg-[#e6e0d8] hover:text-stone-900'}`}
-                        >
-                            Diagnostic mail
-                            <span className={`flex h-8 w-8 items-center justify-center rounded-xl ${darkMode ? 'bg-white/[0.06]' : 'bg-white/70'}`}>
-                                <Mail size={15} strokeWidth={1.4} />
-                            </span>
-                        </button>
-                    </PanelFrame>
-
-                    <div className={`relative rounded-[30px] p-1.5 ring-1 lg:col-span-8 ${darkMode ? 'bg-red-500/[0.025] ring-red-400/15' : 'bg-red-50/70 ring-red-900/10'}`}>
-                        <div className={`h-full rounded-[24px] p-6 ${darkMode ? 'bg-[#191615]' : 'bg-[#fffaf7]'}`}>
-                            <div className={`flex items-center gap-2 ${darkMode ? 'text-red-300/70' : 'text-red-700'}`}>
-                                <AlertTriangle size={14} strokeWidth={1.45} />
-                                <h2 className="text-[9px] font-bold uppercase tracking-[0.16em]">Actions critiques</h2>
-                            </div>
-                            <div className={`relative mt-5 rounded-2xl px-4 py-5 text-sm ring-1 ${darkMode ? 'bg-white/[0.025] text-white/45 ring-white/[0.06]' : 'bg-white/70 text-stone-500 ring-red-900/10'}`}>
-                                Les six actions destructives legacy sont neutralisées pendant la stabilisation commerce.
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
-            )}
 
             {/* MODALS */}
             {isOrderResetModalOpen && (

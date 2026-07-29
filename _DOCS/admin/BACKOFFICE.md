@@ -31,7 +31,7 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 
 | ID | Label | Module principal | Role |
 | --- | --- | --- | --- |
-| `dashboard` | Stats | `AdminDashboard` | projection v2 serveur avec source, fraicheur, capture, refund, net et divergences, plus commandes, inventaire, devis, tendances et exports |
+| `dashboard` | Stats | `AdminDashboard` | synthese cliente des ventes nettes, encaissements, remboursements, panier moyen, commandes, clients, devis, tendances et exports |
 | `analytics` | Data | `AdminAnalytics` | visiteurs UID/IP, sessions live, parcours, courbe |
 | `furniture` | Publication | `AdminForm`, `AdminItemList` | CRUD annonces et images |
 | `inventory` | Vue Globale | `GlobalInventoryView` | ordres editoriaux et stock catalogue |
@@ -90,8 +90,8 @@ Etat actuel:
   sont `inert` et sans interaction;
 - les Rules refusent les writes SDK `orders`, create/delete produit, champs
   commerce produit et politiques, y compris avec claims admin forts;
-- le dashboard masque les KPI financiers legacy, lit la projection v2 Gate 7A
-  et retire les raccourcis de purge;
+- le dashboard presente les montants financiers autoritaires avec des libelles
+  metier et sans exposer les metadonnees techniques de qualification;
 - cet etat est deploye sur le sandbox; le release qualifiant Gate 7B est
   `build-2026-07-28-009` / `release_gate7a_c5259a87f875_f00378380561`.
 - Gate 8 a valide actions autorisees derivees serveur, transition interdite,
@@ -127,7 +127,23 @@ sont branches a `AdminReturns` derriere le meme flag `false`.
 Gate 5 active les lecteurs Functions pagines pour Ventes et Retours. Les
 commandes v2 exposent leurs seules `allowedActions` serveur et les historiques
 v1 restent read-only. Aucun des cinq onglets
-commerce n'ecrit plus directement un champ commerce via le SDK navigateur:
+commerce n'ecrit plus directement un champ commerce via le SDK navigateur.
+
+Dans Ventes, la ligne de commande normalise les Timestamps Firestore et
+callable afin d'afficher la date et l'heure jusqu'a la seconde. L'ouverture
+d'une commande charge, via `getOrderTimelineAdminV2`, au plus 100 entrees de
+son journal serveur et compose une chronologie bornee: creation, paiement
+confirme, annulation et etapes de remboursement. Les commandes legacy sans
+journal conservent un repli sur leurs champs de projection disponibles,
+signale comme moins detaille lorsque aucune date exploitable n'existe.
+
+Dans Retours, les commandes v2 sont normalisees depuis `payment`,
+`refundAggregate`, `shippingSnapshot` et les projections de statut avant le
+filtrage Stripe. Les dossiers `orders/{orderId}/returns/{returnId}` lus par
+`listReturnsAdminV2` restent visibles et detailles meme lorsque les commandes
+de mutation admin sont en `read_only`: statut, motif, date et quantites
+demandees, recues puis disposees. L'activation future des boutons ne change
+pas ce contrat de consultation.
 Publication utilise ses commandes produit dormantes, Ventes/Retours leurs
 commandes verrouillees, et Livraison/Paiement restent explicitement read-only.
 Les flags de lecture sont `true`; les flags de commande restent `false`.
@@ -205,6 +221,12 @@ Le dashboard lit de preference les agregats:
 Le dashboard consomme les claims admin deja resolus par `AuthContext`. Il ne
 force pas de renouvellement du jeton Firebase a son montage: un rafraichissement
 de claims en arriere-plan ne doit jamais demonter puis remonter Stats en boucle.
+
+La surface Stats affiche les ventes nettes, les montants encaisses et
+rembourses ainsi que le panier moyen des commandes encaissees. Les champs de
+controle internes de la projection (source, mode, faits, divergences et date de
+construction) restent disponibles cote serveur pour l'exploitation mais ne
+sont pas exposes a la cliente.
 
 Restriction commerce: le rollup actuel ne mesure pas un chiffre d'affaires encaisse. Il inclut notamment plusieurs commandes pending, echouees ou remboursees et n'est pas idempotent face a une rediffusion de trigger. Ne pas utiliser ce KPI comme preuve financiere avant sa reconstruction depuis les etats de paiement.
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import {
     AlertTriangle,
@@ -10,6 +10,7 @@ import {
     Search,
 } from 'lucide-react';
 import { db } from '../config/firebase';
+import { getMillis } from '../../utils/time';
 import {
     cancelReturnAdmin,
     COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED,
@@ -25,6 +26,7 @@ import {
     listOrdersAdminV2,
     listReturnsAdminV2,
 } from '../commerce/commerceV2Client';
+import { adaptCommerceOrder } from '../commerce/orderAdapter';
 
 const REFUNDABLE_STATUSES = new Set(['paid', 'shipped', 'completed']);
 const REFUND_TRACKED_STATUSES = new Set(['refund_pending', 'refunded', 'refund_failed']);
@@ -66,10 +68,8 @@ const toneClasses = {
 };
 
 function formatDate(timestamp) {
-    if (!timestamp) return '-';
-    if (timestamp.seconds) return new Date(timestamp.seconds * 1000).toLocaleString('fr-FR');
-    const value = new Date(timestamp);
-    return Number.isNaN(value.getTime()) ? '-' : value.toLocaleString('fr-FR');
+    const millis = getMillis(timestamp);
+    return millis ? new Date(millis).toLocaleString('fr-FR') : '-';
 }
 
 function formatAmount(order) {
@@ -82,23 +82,70 @@ function formatAmount(order) {
 }
 
 function getOrderEmail(order) {
-    return order.userEmail || order.shipping?.email || '';
+    return order.userEmail
+        || order.customerSnapshot?.email
+        || order.shippingSnapshot?.email
+        || order.shipping?.email
+        || '';
 }
 
 function getItemsLabel(order) {
     const items = Array.isArray(order.items) ? order.items : [];
     if (items.length === 0) return 'Produit non renseigne';
-    return items.map((item) => `${item.quantity || 1}x ${item.name || 'Article'}`).join(', ');
+    return items
+        .map((item) => `${item.quantity || 1}x ${item.titleSnapshot || item.name || 'Article'}`)
+        .join(', ');
 }
 
 function isStripeRefundCandidate(order) {
-    return Boolean(order?.stripePaymentIntentId)
-        && order?.paymentMethod !== 'deferred'
+    const paymentIntentId = order?.payment?.paymentIntentId
+        || order?.stripePaymentIntentId;
+    const stripePayment = order?.schemaVersion === 2
+        ? order?.payment?.provider === 'stripe'
+        : order?.paymentMethod !== 'deferred';
+    const captured = order?.schemaVersion === 2
+        ? order?.payment?.status === 'succeeded'
+        : false;
+    return Boolean(paymentIntentId)
+        && stripePayment
         && (
+            captured ||
             REFUNDABLE_STATUSES.has(order?.status)
             || REFUND_TRACKED_STATUSES.has(order?.status)
+            || Number(order?.refundAggregate?.requestedCents || 0) > 0
             || Boolean(order?.stripeRefundId)
         );
+}
+
+function normalizeAdminOrder(order) {
+    const adapted = adaptCommerceOrder(order, order.id);
+    const shipping = order.shipping || order.shippingSnapshot || {};
+    return {
+        ...order,
+        ...adapted,
+        shipping,
+        userEmail: getOrderEmail(order),
+        stripePaymentIntentId: order.stripePaymentIntentId
+            || order.payment?.paymentIntentId
+            || null,
+    };
+}
+
+function returnStatusLabel(status) {
+    switch (status) {
+        case 'pending': return 'Retour ouvert';
+        case 'received': return 'Recu a l atelier';
+        case 'resolved': return 'Retour resolu';
+        case 'canceled': return 'Retour annule';
+        default: return status || 'Etat inconnu';
+    }
+}
+
+function returnLineSummary(returnCase) {
+    return (returnCase.lines || []).map((line) => {
+        const disposed = Number(line.restockedQty || 0) + Number(line.writtenOffQty || 0);
+        return `${line.lineId}: ${line.requestedQty} demande, ${line.receivedQty} recu, ${disposed} traite`;
+    });
 }
 
 function getStatusMeta(order) {
@@ -137,7 +184,7 @@ const AdminReturns = ({ darkMode = false }) => {
                 listReturnsAdminV2({ pageSize: 50 })
             ]).then(([ordersResult, returnsResult]) => {
                 if (cancelled) return;
-                setOrders(ordersResult.orders || []);
+                setOrders((ordersResult.orders || []).map(normalizeAdminOrder));
                 setReturnCases(returnsResult.returns || []);
                 setOrdersCursor(ordersResult.nextCursor || null);
                 setReturnsCursor(returnsResult.nextCursor || null);
@@ -210,7 +257,9 @@ const AdminReturns = ({ darkMode = false }) => {
             ]);
             setOrders((current) => {
                 const merged = new Map(current.map((order) => [order.id, order]));
-                for (const order of ordersResult.orders || []) merged.set(order.id, order);
+                for (const order of ordersResult.orders || []) {
+                    merged.set(order.id, normalizeAdminOrder(order));
+                }
                 return Array.from(merged.values());
             });
             setReturnCases((current) => {
@@ -237,7 +286,8 @@ const AdminReturns = ({ darkMode = false }) => {
         pending: refundOrders.filter((order) => order.status === 'refund_pending').length,
         refunded: refundOrders.filter((order) => order.status === 'refunded').length,
         failed: refundOrders.filter((order) => order.status === 'refund_failed').length,
-    }), [refundOrders]);
+        returns: returnCases.length,
+    }), [refundOrders, returnCases]);
 
     const runAction = async (orderId, action, runner) => {
         setOperation(`${action}:${orderId}`);
@@ -385,12 +435,13 @@ const AdminReturns = ({ darkMode = false }) => {
                 </div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 {[
                     ['A rembourser', stats.actionable, 'emerald'],
                     ['En attente Stripe', stats.pending, 'amber'],
                     ['Remboursees', stats.refunded, 'sky'],
                     ['A verifier', stats.failed, 'red'],
+                    ['Retours physiques', stats.returns, 'stone'],
                 ].map(([label, value, tone]) => {
                     const classes = toneClasses[tone];
                     return (
@@ -408,11 +459,11 @@ const AdminReturns = ({ darkMode = false }) => {
                         <RotateCcw size={18} />
                     </div>
                     <div className="space-y-3">
-                        <h3 className="text-lg font-black tracking-tight">Mode d'emploi simple</h3>
+                        <h3 className="text-lg font-black tracking-tight">Mode d&apos;emploi simple</h3>
                         <div className={`grid gap-3 text-sm leading-6 ${mutedText} md:grid-cols-3`}>
-                            <p><b className={darkMode ? 'text-white' : 'text-stone-900'}>1. Initier</b><br />Le bouton lance un refund Stripe sur le paiement initial et demande la remise en vente du meuble.</p>
-                            <p><b className={darkMode ? 'text-white' : 'text-stone-900'}>2. Synchroniser</b><br />Stripe peut laisser un refund en attente si le solde disponible est insuffisant. La synchro relit le statut Stripe.</p>
-                            <p><b className={darkMode ? 'text-white' : 'text-stone-900'}>3. Informer</b><br />L'email client annonce le statut et rappelle le delai bancaire habituel de 5 a 10 jours ouvrables.</p>
+                            <p><b className={darkMode ? 'text-white' : 'text-stone-900'}>1. Rembourser</b><br />Le remboursement Stripe reste financier et ne remet jamais seul le meuble en vente.</p>
+                            <p><b className={darkMode ? 'text-white' : 'text-stone-900'}>2. Receptionner</b><br />Le dossier de retour suit separement la reception physique et les quantites reellement recues.</p>
+                            <p><b className={darkMode ? 'text-white' : 'text-stone-900'}>3. Inspecter</b><br />Apres controle, chaque ligne est remise en stock ou sortie du stock, puis le dossier est resolu.</p>
                         </div>
                         <p className={`text-xs leading-5 ${mutedText}`}>
                             Note comptable: Stripe rembourse le client depuis le solde Stripe disponible. Les frais de paiement initiaux ne sont generalement pas restitues au marchand.
@@ -446,8 +497,8 @@ const AdminReturns = ({ darkMode = false }) => {
                     </div>
                 ) : refundOrders.length === 0 ? (
                     <div className="p-12 text-center">
-                        <p className="text-lg font-black">Aucun retour Stripe a traiter</p>
-                        <p className={`mt-2 text-sm ${mutedText}`}>Les commandes payees et les remboursements apparaitront ici.</p>
+                        <p className="text-lg font-black">Aucune commande remboursable ni retour physique</p>
+                        <p className={`mt-2 text-sm ${mutedText}`}>Les commandes payees, remboursements et dossiers de retour apparaitront ici.</p>
                     </div>
                 ) : (
                     <div className="divide-y divide-stone-100 dark:divide-white/10">
@@ -520,21 +571,31 @@ const AdminReturns = ({ darkMode = false }) => {
                                             </>
                                         ) : (
                                             <p className={`rounded-2xl border px-3 py-3 text-[11px] ${darkMode ? 'border-white/10 text-stone-400' : 'border-stone-200 text-stone-500'}`}>
-                                                Actions refund et retour neutralisees.
+                                                Consultation active. Les actions restent protegees par le mode administrateur.
                                             </p>
                                         )}
                                     </div>
-                                    {COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED && Array.isArray(order.returnCases) && order.returnCases.length > 0 ? (
+                                    {Array.isArray(order.returnCases) && order.returnCases.length > 0 ? (
                                         <div className={`col-span-12 space-y-3 rounded-2xl border p-4 ${softPanel}`}>
                                             <p className="text-[10px] font-black uppercase tracking-widest">Dossiers de retour physique</p>
                                             {order.returnCases.map((returnCase) => (
                                                 <div key={returnCase.returnId} className={`rounded-xl border p-3 ${darkMode ? 'border-white/10' : 'border-stone-200 bg-white'}`}>
                                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                                         <span className="font-mono text-[11px]">#{returnCase.returnId}</span>
-                                                        <span className="text-xs font-bold">{returnCase.status}</span>
+                                                        <span className="text-xs font-bold">{returnStatusLabel(returnCase.status)}</span>
                                                     </div>
-                                                    <div className="mt-3 flex flex-wrap gap-2">
-                                                        {(returnCase.allowedActions || []).map((action) => (
+                                                    <p className={`mt-2 text-[11px] ${mutedText}`}>
+                                                        Mis a jour le {formatDate(returnCase.updatedAt)}
+                                                        {returnCase.reason ? ` · ${returnCase.reason}` : ''}
+                                                    </p>
+                                                    <div className={`mt-3 space-y-1 rounded-lg p-3 text-[11px] ${darkMode ? 'bg-black/20 text-stone-300' : 'bg-stone-50 text-stone-600'}`}>
+                                                        {returnLineSummary(returnCase).map((summary) => (
+                                                            <p key={summary}>{summary}</p>
+                                                        ))}
+                                                    </div>
+                                                    {COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED && (returnCase.allowedActions || []).length > 0 ? (
+                                                        <div className="mt-3 flex flex-wrap gap-2">
+                                                            {(returnCase.allowedActions || []).map((action) => (
                                                             <button
                                                                 key={action}
                                                                 type="button"
@@ -548,8 +609,13 @@ const AdminReturns = ({ darkMode = false }) => {
                                                                     action === 'resolve_return' ? 'Resoudre' :
                                                                     'Annuler le retour'}
                                                             </button>
-                                                        ))}
-                                                    </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <p className={`mt-3 text-[11px] ${mutedText}`}>
+                                                            Consultation uniquement.
+                                                        </p>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>

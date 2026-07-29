@@ -56,6 +56,13 @@ export const listOrdersAdminV2 = async ({ pageSize = 50, cursor = null } = {}) =
   return execute('listOrdersAdminV2', { pageSize, cursor });
 };
 
+export const getOrderTimelineAdminV2 = async (orderId) => {
+  if (!COMMERCE_V2_ADMIN_READERS_ENABLED) {
+    throw new Error('COMMERCE_V2_ADMIN_READERS_OFF');
+  }
+  return execute('getOrderTimelineAdminV2', { orderId });
+};
+
 export const listReturnsAdminV2 = async ({ pageSize = 50, cursor = null } = {}) => {
   if (!COMMERCE_V2_ADMIN_READERS_ENABLED) {
     throw new Error('COMMERCE_V2_ADMIN_READERS_OFF');

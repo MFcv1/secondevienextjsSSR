@@ -230,13 +230,14 @@ const scenarios = {
     context.ok(checkout.includes('Paiement temporairement indisponible'));
     context.ok(checkout.includes('Fermer la modale ne compense jamais'));
     context.ok(!checkout.includes("httpsCallable(functions, 'cancelOrderClient')"));
-    context.ok(orders.includes('Aucun document fiscal definitif'));
+    context.ok(orders.includes('sandbox. Ils ne constituent ni une facture ni un avoir fiscal'));
+    context.ok(orders.includes('generateCommerceDocument'));
     context.ok(orders.includes('!COMMERCE_READ_ONLY && canCancel(order)'));
     context.ok(!orders.includes('FAC-{'));
     context.ok(adminIsland.includes('COMMERCE_READ_ONLY_TABS'));
     context.ok(adminIsland.includes('inert=""'));
-    context.ok(dashboard.includes('Non comptable avant la Gate 7A'));
-    context.ok(dashboard.includes('six actions destructives legacy sont neutralisées'));
+    context.ok(dashboard.includes('commerceOperations.operations?.projection'));
+    context.ok(!dashboard.includes('Actions critiques'));
     assertZeroEffects(context, context.effects, 'gate-0b-read-only-ui');
   },
 };

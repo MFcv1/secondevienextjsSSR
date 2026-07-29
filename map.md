@@ -159,6 +159,7 @@ politique/control backend fail-closed
   -> inventoryKey + holds quantitatifs [Gate 2]
   -> projection legacy + readers v1/v2
   -> lecteurs UID/admin frontend actifs
+  -> timeline admin bornee: creation/paiement + journal annulation/refund
   -> flags checkout/reprise et commandes frontend off
   -X createCheckout/mutations v2 refuses par controle serveur explicite off
 
@@ -480,7 +481,7 @@ src/kit/admin/
 |-- AdminStudio.jsx ................... studio contenu
 |-- AdminHomepage.jsx ................. personnalisation publique
 |-- AdminOrders.jsx ................... ventes/logistique
-|-- AdminReturns.jsx .................. remboursements
+|-- AdminReturns.jsx .................. remboursements + retours physiques detailles
 |-- AdminLivraison.jsx ................ configuration livraison
 |-- AdminUsers.jsx .................... comptes/acces admin
 |-- AdminIPManager.jsx ................ configuration IP complementaire
@@ -524,6 +525,7 @@ src/lib/seo/
 
 src/utils/
 |-- imageUtils.js ..................... variantes/metadata/images
+|-- generateCommerceDocument.js ....... PDF sandbox non fiscal depuis document immutable
 |-- generateInvoice.js ................ generateur PDF legacy non fiscal et masque
 |-- shippingAddress.js ................ format adresse
 |-- slug.js ........................... slugs
@@ -650,7 +652,7 @@ functions/
 | Domaine | Exports |
 | --- | --- |
 | commerce | `createOrder`, `stripeWebhook`, `stripeConnectWebhook`, `cancelOrderClient`, `cleanupPendingPayments`, `getOrderStatusClient` |
-| commerce v2 checkout/lecture | `createCheckoutV2`, `resumeCheckoutV2`, `listMyOrdersV2`, `getMyOrderV2`, `listOrdersAdminV2`, `listReturnCasesAdminV2` |
+| commerce v2 checkout/lecture | `createCheckoutV2`, `resumeCheckoutV2`, `listMyOrdersV2`, `listOrdersAdminV2`, `getOrderTimelineAdminV2`, `listReturnsAdminV2` |
 | commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
 | refunds/Connect | `refundOrderAdmin`, `syncRefundStatusAdmin`, `getStripeConnectStatus`, `startStripeConnectOnboarding`, `syncStripeConnectAccount`, `requestStripeConnectReconnect`, `confirmStripeConnectReconnect` |
 | preuves E2E | `e2eCheckoutProof`, `e2eStripeHardeningProof` |

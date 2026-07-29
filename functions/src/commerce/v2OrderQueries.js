@@ -87,6 +87,141 @@ function serializeOrder(snapshot, actor) {
     };
 }
 
+function serializeCommerceDocument(snapshot, order) {
+    const document = snapshot.data();
+    if (
+        document?.schemaVersion !== 2 ||
+        document?.orderId !== snapshot.ref.parent.parent.id ||
+        document?.ownerUid !== order.userId ||
+        ![
+            'sandbox_payment_receipt',
+            'sandbox_refund_confirmation'
+        ].includes(document?.kind) ||
+        document?.legalStatus !== 'non_fiscal_sandbox'
+    ) {
+        return null;
+    }
+    return {
+        documentId: snapshot.id,
+        kind: document.kind,
+        legalStatus: document.legalStatus,
+        currency: document.currency,
+        capturedCents: Number.isSafeInteger(document.capturedCents)
+            ? document.capturedCents
+            : null,
+        refundedCents: Number.isSafeInteger(document.refundedCents)
+            ? document.refundedCents
+            : null,
+        issuedAt: document.issuedAt || null
+    };
+}
+
+async function serializeOwnedOrder(snapshot, actor) {
+    const order = snapshot.data();
+    const documentsSnapshot = await snapshot.ref.collection('documents')
+        .orderBy('issuedAt', 'desc')
+        .limit(20)
+        .get();
+    return {
+        ...serializeOrder(snapshot, actor),
+        documents: documentsSnapshot.docs
+            .map((documentSnapshot) => serializeCommerceDocument(
+                documentSnapshot,
+                order
+            ))
+            .filter(Boolean)
+    };
+}
+
+function timestampMillis(value) {
+    if (!value) return 0;
+    if (typeof value.toMillis === 'function') return value.toMillis();
+    if (value instanceof Date) return value.getTime();
+    if (typeof value === 'number') {
+        return value > 0 && value < 100000000000 ? value * 1000 : value;
+    }
+    if (typeof value === 'string') {
+        const parsed = Date.parse(value);
+        return Number.isNaN(parsed) ? 0 : parsed;
+    }
+    const seconds = Number(value.seconds ?? value._seconds);
+    const nanoseconds = Number(value.nanoseconds ?? value._nanoseconds ?? 0);
+    if (!Number.isFinite(seconds)) return 0;
+    return (seconds * 1000) +
+        (Number.isFinite(nanoseconds) ? Math.floor(nanoseconds / 1000000) : 0);
+}
+
+function eventData(snapshot) {
+    return typeof snapshot?.data === 'function' ? snapshot.data() : snapshot;
+}
+
+function buildAdminOrderTimeline(order, eventSnapshots = []) {
+    const timeline = [];
+    const append = (type, at, extra = {}) => {
+        if (!timestampMillis(at)) return;
+        timeline.push({ type, at, ...extra });
+    };
+
+    append('order_created', order.createdAt);
+    append('payment_succeeded', order.payment?.succeededAt || order.paidAt);
+
+    let hasCancellationEvent = false;
+    let hasRefundEvent = false;
+    for (const snapshot of eventSnapshots) {
+        const event = eventData(snapshot) || {};
+        const type = event.type || event.action;
+        if (type === 'cancellation_completed') {
+            hasCancellationEvent = true;
+            append('order_cancelled', event.createdAt);
+        } else if (type === 'refund_requested') {
+            hasRefundEvent = true;
+            append('refund_requested', event.createdAt, {
+                amountCents: event.amountCents,
+                currency: event.currency
+            });
+        } else if (type === 'refund_succeeded') {
+            hasRefundEvent = true;
+            append('refund_succeeded', event.createdAt, {
+                amountCents: event.amountCents,
+                currency: event.currency
+            });
+        } else if (type === 'refund_failed') {
+            hasRefundEvent = true;
+            append('refund_failed', event.createdAt, {
+                amountCents: event.amountCents,
+                currency: event.currency
+            });
+        }
+    }
+
+    const status = String(order.status || '');
+    const isCancelled = [
+        'cancelled',
+        'canceled',
+        'cancelled_by_client'
+    ].includes(status) || order.payment?.status === 'canceled';
+    if (isCancelled && !hasCancellationEvent) {
+        append('order_cancelled', order.cancelledAt || order.canceledAt || order.updatedAt);
+    }
+    const hasRefund = (
+        ['refund_pending', 'refunded', 'refund_failed'].includes(status) ||
+        Number(order.refundAggregate?.requestedCents || 0) > 0
+    );
+    if (hasRefund && !hasRefundEvent) {
+        append(
+            status === 'refund_pending' ? 'refund_requested' :
+                (status === 'refund_failed' ? 'refund_failed' : 'refund_succeeded'),
+            order.refundUpdatedAt || order.updatedAt,
+            {
+                amountCents: order.refundAggregate?.succeededCents || order.refundAmount,
+                currency: order.currency || order.refundCurrency
+            }
+        );
+    }
+
+    return timeline.sort((left, right) => timestampMillis(left.at) - timestampMillis(right.at));
+}
+
 function returnActions(returnCase) {
     if (['resolved', 'canceled'].includes(returnCase.status)) return [];
     const actions = [];
@@ -142,6 +277,38 @@ async function paginatedQuery({
     };
 }
 
+function createGetOrderTimelineAdminHandler({
+    authorize = checkRecentActiveStrongAdmin,
+    dbFactory = () => admin.firestore()
+} = {}) {
+    return async (data, context) => {
+        await authorize(context);
+        const orderId = normalizeFirestoreId(data?.orderId, 'Commande');
+        const db = dbFactory();
+        const orderRef = db.collection('orders').doc(orderId);
+        const [orderSnapshot, eventsSnapshot] = await Promise.all([
+            orderRef.get(),
+            orderRef.collection('events')
+                .orderBy('createdAt', 'asc')
+                .limit(100)
+                .get()
+        ]);
+        if (!orderSnapshot.exists) {
+            throw new functions.https.HttpsError(
+                'not-found',
+                'Commande introuvable.'
+            );
+        }
+        const order = orderSnapshot.data();
+        if (order.schemaVersion === 2) validateOrderV2(order);
+        return {
+            orderId,
+            timeline: buildAdminOrderTimeline(order, eventsSnapshot.docs),
+            truncated: eventsSnapshot.size === 100
+        };
+    };
+}
+
 function createListMyOrdersHandler({
     authorize = requireOwner,
     dbFactory = () => admin.firestore()
@@ -172,9 +339,11 @@ function createListMyOrdersHandler({
             pageSize
         });
         return {
-            orders: result.snapshot.docs.map((snapshot) => serializeOrder(
-                snapshot,
-                { uid: ownerUid, role: 'customer', aal2: false }
+            orders: await Promise.all(result.snapshot.docs.map(
+                (snapshot) => serializeOwnedOrder(
+                    snapshot,
+                    { uid: ownerUid, role: 'customer', aal2: false }
+                )
             )),
             nextCursor: result.nextCursor
         };
@@ -255,15 +424,20 @@ const callable = (handler) => regionalFunctions()
 const listMyOrdersV2 = callable(createListMyOrdersHandler());
 const listOrdersAdminV2 = callable(createListOrdersAdminHandler());
 const listReturnsAdminV2 = callable(createListReturnsAdminHandler());
+const getOrderTimelineAdminV2 = callable(createGetOrderTimelineAdminHandler());
 
 module.exports = {
+    buildAdminOrderTimeline,
+    createGetOrderTimelineAdminHandler,
     createListMyOrdersHandler,
     createListOrdersAdminHandler,
     createListReturnsAdminHandler,
     decodeReturnCursor,
+    getOrderTimelineAdminV2,
     listMyOrdersV2,
     listOrdersAdminV2,
     listReturnsAdminV2,
     normalizePageSize,
-    returnActions
+    returnActions,
+    serializeCommerceDocument
 };

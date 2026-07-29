@@ -21,12 +21,15 @@ const {
     withCommerceMutationsEnabled
 } = require('../../../functions/src/commerce/v2ControlGuard');
 const {
+    buildAdminOrderTimeline,
+    createGetOrderTimelineAdminHandler,
     createListMyOrdersHandler,
     createListOrdersAdminHandler,
     createListReturnsAdminHandler,
     decodeReturnCursor,
     normalizePageSize,
-    returnActions
+    returnActions,
+    serializeCommerceDocument
 } = require('../../../functions/src/commerce/v2OrderQueries');
 
 const repositoryRoot = path.resolve(__dirname, '..', '..', '..');
@@ -244,6 +247,7 @@ test('checkout and query Functions are exported with App Check and fail-closed c
     for (const functionName of [
         'createCheckoutV2',
         'resumeCheckoutV2',
+        'getOrderTimelineAdminV2',
         'listMyOrdersV2',
         'listOrdersAdminV2',
         'listReturnsAdminV2'
@@ -255,6 +259,51 @@ test('checkout and query Functions are exported with App Check and fail-closed c
     assert.ok(checkout.includes('secrets: [STRIPE_SECRET_KEY]'));
     assert.ok(queries.includes('checkRecentActiveStrongAdmin'));
     assert.ok(queries.includes('enforceAppCheck: true'));
+});
+
+test('admin order timeline keeps exact payment, cancellation and refund event times', () => {
+    const timeline = buildAdminOrderTimeline({
+        createdAt: { seconds: 100 },
+        payment: {
+            status: 'succeeded',
+            succeededAt: { _seconds: 200, _nanoseconds: 500000000 }
+        },
+        refundAggregate: {
+            requestedCents: 8000
+        },
+        status: 'refunded'
+    }, [
+        {
+            type: 'refund_succeeded',
+            amountCents: 8000,
+            currency: 'EUR',
+            createdAt: new Date(400000)
+        },
+        {
+            type: 'refund_requested',
+            amountCents: 8000,
+            currency: 'EUR',
+            createdAt: '1970-01-01T00:05:00.000Z'
+        },
+        {
+            type: 'cancellation_completed',
+            createdAt: { seconds: 250 }
+        }
+    ]);
+
+    assert.deepEqual(timeline.map((event) => event.type), [
+        'order_created',
+        'payment_succeeded',
+        'order_cancelled',
+        'refund_requested',
+        'refund_succeeded'
+    ]);
+    assert.deepEqual(timeline[1].at, {
+        _seconds: 200,
+        _nanoseconds: 500000000
+    });
+    assert.equal(timeline[4].amountCents, 8000);
+    assert.equal(typeof createGetOrderTimelineAdminHandler, 'function');
 });
 
 test('order query guards reject invalid pagination and authorize before Firestore', async () => {
@@ -349,6 +398,46 @@ test('return actions are server-derived from quantitative state', () => {
             writtenOffQty: 1
         }]
     }), ['resolve_return']);
+});
+
+test('customer order documents expose only bounded non-fiscal metadata', () => {
+    const snapshot = {
+        id: 'document-receipt',
+        ref: {
+            parent: {
+                parent: { id: 'order-document' }
+            }
+        },
+        data: () => ({
+            schemaVersion: 2,
+            documentId: 'document-receipt',
+            orderId: 'order-document',
+            ownerUid: 'owner-document',
+            kind: 'sandbox_payment_receipt',
+            legalStatus: 'non_fiscal_sandbox',
+            currency: 'EUR',
+            capturedCents: 40000,
+            sourceEffectIds: ['effect-private'],
+            contentHash: 'hash-private',
+            issuedAt: '2026-07-29T12:00:00.000Z'
+        })
+    };
+    assert.deepEqual(
+        serializeCommerceDocument(snapshot, { userId: 'owner-document' }),
+        {
+            documentId: 'document-receipt',
+            kind: 'sandbox_payment_receipt',
+            legalStatus: 'non_fiscal_sandbox',
+            currency: 'EUR',
+            capturedCents: 40000,
+            refundedCents: null,
+            issuedAt: '2026-07-29T12:00:00.000Z'
+        }
+    );
+    assert.equal(
+        serializeCommerceDocument(snapshot, { userId: 'other-owner' }),
+        null
+    );
 });
 
 test('recovery descriptor is identity-bound and cleanup matches line plus revision', async () => {
@@ -447,7 +536,11 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(adminReturns.includes('openReturnAdmin'));
     assert.ok(adminReturns.includes('markReturnReceivedAdmin'));
     assert.ok(myOrders.includes('listMyOrdersV2'));
+    assert.ok(myOrders.includes('generateCommerceDocument'));
+    assert.ok(myOrders.includes('order.documents'));
     assert.ok(myOrders.includes('requestOrderCancellation'));
+    assert.ok(adminReturns.includes('adaptCommerceOrder'));
+    assert.ok(adminReturns.includes('returnLineSummary'));
     assert.ok(checkout.includes('createCheckoutV2(input, {'));
     assert.ok(checkoutPage.includes('resumeCheckoutV2(recoverableOrderId)'));
     assert.ok(checkoutPage.includes('isPurchasedCartLineUnchanged'));

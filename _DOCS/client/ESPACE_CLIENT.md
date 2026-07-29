@@ -76,24 +76,29 @@ commandes v2 durables, dont une commande de trois meubles et un remboursement
 Stripe complet. Les compteurs Commandes et Remboursements, les statuts Payee
 et Remboursee et le texte de delai bancaire sont corrects.
 
-Dettes UX observees sur ces donnees reelles:
+La reprise UX du 2026-07-29 normalise les timestamps callable, projette
+`shippingSnapshot` vers le bloc Adresse, raccorde les documents immuables et
+rend les actions de document adaptatives sans chevauchement sur les largeurs
+intermediaires. Les recus de paiement et confirmations de remboursement sont
+joints par `listMyOrdersV2`, puis telechargeables en PDF explicitement marque
+`sandbox` et `non fiscal`.
 
-- le timestamp callable v2 n'est pas normalise vers le format attendu par
-  `formatDate`, ce qui affiche `Date en attente`;
-- `shippingSnapshot` n'est pas adapte vers `shipping`, donc Adresse reste a
-  zero malgre les coordonnees presentes dans la commande;
+Dettes UX restantes observees sur ces donnees reelles:
+
 - le contrat d'entree v2 ne conserve pas le telephone saisi au checkout, donc
   le profil affiche encore `A completer`;
 - les snapshots d'item n'alimentent pas l'image attendue par `getItemImage`,
   donc plusieurs dossiers affichent la meme image de repli;
-- le polissage visuel de la table doit suivre la correction de ces trois
-  projections, sans masquer le statut durable ni le remboursement.
+- ces projections ne doivent jamais masquer le statut durable ni le
+  remboursement.
 
 ## 4. Factures et avoirs
 
-Le generateur PDF legacy reste en source mais n'est plus appelable depuis
-`MyOrdersView`. La section Documents indique explicitement qu'aucune facture ni
-aucun avoir definitif n'est emis pendant la stabilisation.
+Le generateur PDF fiscal legacy reste en source mais n'est plus appelable
+depuis `MyOrdersView`. Le lecteur client joint au plus 20 documents immuables
+par commande et n'expose que leurs metadonnees utiles. Le generateur
+`generateCommerceDocument.js` produit localement le PDF correspondant avec
+une mention visible `sandbox - non fiscal`.
 
 Jusqu'a la gate documentaire/comptable du noyau:
 
@@ -162,6 +167,7 @@ src/kit/commerce/checkoutContract.js
 src/kit/marketplace/WishlistView.jsx
 src/kit/marketplace/wishlistState.js
 src/kit/commerce/guestCart.js
+src/utils/generateCommerceDocument.js
 src/utils/generateInvoice.js
 src/utils/shippingAddress.js
 ```

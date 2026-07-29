@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { Package, Clock, CheckCircle, Mail, ChevronDown, ChevronUp, Download, Loader2, Truck, XCircle } from 'lucide-react';
+import { Package, Clock, CheckCircle, Mail, ChevronDown, ChevronUp, Download, Loader2, Truck, XCircle, RotateCcw } from 'lucide-react';
 import { downloadCsv } from './exportCsv';
 import { formatShippingAddress } from '../../utils/shippingAddress';
+import { getMillis } from '../../utils/time';
 import {
     archiveOrderAdmin,
     COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED,
@@ -15,6 +16,7 @@ import {
 } from '../commerce/commerceCommandClient';
 import {
     COMMERCE_V2_ADMIN_READERS_ENABLED,
+    getOrderTimelineAdminV2,
     listOrdersAdminV2,
 } from '../commerce/commerceV2Client';
 
@@ -25,6 +27,8 @@ const AdminOrders = ({ darkMode = false }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [activeOrderId, setActiveOrderId] = useState(null);
     const [nextCursor, setNextCursor] = useState(null);
+    const [orderTimelines, setOrderTimelines] = useState({});
+    const [timelineLoadingId, setTimelineLoadingId] = useState(null);
 
     useEffect(() => {
         setIsLoading(true);
@@ -109,8 +113,80 @@ const AdminOrders = ({ darkMode = false }) => {
 
     const formatPrice = (price) => `${price} €`;
     const formatDate = (timestamp) => {
-        if (!timestamp) return '-';
-        return new Date(timestamp.seconds * 1000).toLocaleString('fr-FR');
+        const millis = getMillis(timestamp);
+        if (!millis) return 'Date indisponible';
+        return new Date(millis).toLocaleString('fr-FR', {
+            dateStyle: 'medium',
+            timeStyle: 'medium',
+        });
+    };
+
+    const fallbackTimeline = (order) => {
+        const events = [
+            { type: 'order_created', at: order.createdAt },
+            { type: 'payment_succeeded', at: order.payment?.succeededAt || order.paidAt },
+        ].filter((event) => getMillis(event.at));
+        const status = String(order.status || '');
+        if (
+            ['cancelled', 'canceled', 'cancelled_by_client'].includes(status) ||
+            order.payment?.status === 'canceled'
+        ) {
+            events.push({
+                type: 'order_cancelled',
+                at: order.cancelledAt || order.canceledAt || order.updatedAt,
+            });
+        }
+        if (
+            ['refund_pending', 'refunded', 'refund_failed'].includes(status) ||
+            Number(order.refundAggregate?.requestedCents || 0) > 0
+        ) {
+            events.push({
+                type: status === 'refund_pending' ? 'refund_requested' :
+                    (status === 'refund_failed' ? 'refund_failed' : 'refund_succeeded'),
+                at: order.refundUpdatedAt || order.updatedAt,
+            });
+        }
+        return events
+            .filter((event) => getMillis(event.at))
+            .sort((left, right) => getMillis(left.at) - getMillis(right.at));
+    };
+
+    const loadOrderTimeline = async (order) => {
+        if (orderTimelines[order.id] || timelineLoadingId === order.id) return;
+        setTimelineLoadingId(order.id);
+        try {
+            const result = await getOrderTimelineAdminV2(order.id);
+            setOrderTimelines((current) => ({
+                ...current,
+                [order.id]: result.timeline || [],
+            }));
+        } catch (error) {
+            console.error('Admin order timeline read failed:', error);
+            setOrderTimelines((current) => ({
+                ...current,
+                [order.id]: fallbackTimeline(order),
+            }));
+        } finally {
+            setTimelineLoadingId(null);
+        }
+    };
+
+    const toggleOrder = (order) => {
+        const willOpen = expandedOrder !== order.id;
+        setExpandedOrder(willOpen ? order.id : null);
+        if (willOpen) loadOrderTimeline(order);
+    };
+
+    const timelineMeta = (event) => {
+        switch (event.type) {
+            case 'order_created': return { label: 'Commande créée', icon: Package, tone: 'text-stone-500 bg-stone-100' };
+            case 'payment_succeeded': return { label: 'Paiement confirmé', icon: CheckCircle, tone: 'text-emerald-700 bg-emerald-50' };
+            case 'order_cancelled': return { label: 'Commande annulée', icon: XCircle, tone: 'text-red-700 bg-red-50' };
+            case 'refund_requested': return { label: 'Remboursement demandé', icon: RotateCcw, tone: 'text-amber-700 bg-amber-50' };
+            case 'refund_succeeded': return { label: 'Remboursement confirmé', icon: RotateCcw, tone: 'text-sky-700 bg-sky-50' };
+            case 'refund_failed': return { label: 'Remboursement à vérifier', icon: XCircle, tone: 'text-red-700 bg-red-50' };
+            default: return { label: 'Événement', icon: Clock, tone: 'text-stone-500 bg-stone-100' };
+        }
     };
 
     const getStatusBadge = (status) => {
@@ -119,7 +195,7 @@ const AdminOrders = ({ darkMode = false }) => {
             case 'completed': return { color: 'text-emerald-600', bg: 'bg-emerald-500', bgLight: 'bg-emerald-50', bgDark: 'bg-emerald-900/40', label: 'Terminée' };
             case 'paid': return { color: 'text-emerald-600', bg: 'bg-emerald-500', bgLight: 'bg-emerald-50', bgDark: 'bg-emerald-900/40', label: 'Payee' };
             case 'refund_pending': return { color: 'text-amber-600', bg: 'bg-amber-500', bgLight: 'bg-amber-50', bgDark: 'bg-amber-900/40', label: 'Remboursement en cours' };
-            case 'refunded': return { color: 'text-sky-600', bg: 'bg-sky-500', bgLight: 'bg-sky-50', bgDark: 'bg-sky-900/40', label: 'Remboursee + remise en vente' };
+            case 'refunded': return { color: 'text-sky-600', bg: 'bg-sky-500', bgLight: 'bg-sky-50', bgDark: 'bg-sky-900/40', label: 'Remboursée' };
             case 'refund_failed': return { color: 'text-red-600', bg: 'bg-red-500', bgLight: 'bg-red-50', bgDark: 'bg-red-900/40', label: 'Remboursement a verifier' };
             case 'payment_failed': return { color: 'text-red-600', bg: 'bg-red-500', bgLight: 'bg-red-50', bgDark: 'bg-red-900/40', label: 'Paiement echoue' };
             case 'cancelled':
@@ -132,8 +208,8 @@ const AdminOrders = ({ darkMode = false }) => {
     const exportToCsv = () => {
         const data = orders.map(order => ({
             'ID Commande': order.id,
-            'Date': order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleDateString('fr-FR') : 'N/A',
-            'Heure': order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleTimeString('fr-FR') : 'N/A',
+            'Date et heure': formatDate(order.createdAt),
+            'Paiement confirmé le': formatDate(order.payment?.succeededAt || order.paidAt),
             'Client': order.shipping?.fullName || 'N/A',
             'Email': order.shipping?.email || 'N/A',
             'Téléphone': order.shipping?.phone || 'N/A',
@@ -182,9 +258,11 @@ const AdminOrders = ({ darkMode = false }) => {
                     return (
                         <div key={order.id} className={`ring-1 rounded-3xl shadow-sm overflow-hidden hover:shadow-md transition-shadow will-change-transform ${darkMode ? 'bg-stone-800 ring-stone-700/50' : 'bg-white ring-stone-100'}`}>
                             {/* Header de la commande */}
-                            <div
-                                onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
-                                className="p-5 md:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer"
+                            <button
+                                type="button"
+                                onClick={() => toggleOrder(order)}
+                                aria-expanded={expandedOrder === order.id}
+                                className="flex w-full cursor-pointer flex-col justify-between gap-4 p-5 text-left md:p-6 sm:flex-row sm:items-center"
                             >
                                 <div className="flex items-center gap-4">
                                     <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white ${badge.bg}`}>
@@ -203,11 +281,48 @@ const AdminOrders = ({ darkMode = false }) => {
                                     </span>
                                     {expandedOrder === order.id ? <ChevronUp size={16} className="text-stone-300" /> : <ChevronDown size={16} className="text-stone-300" />}
                                 </div>
-                            </div>
+                            </button>
 
                             {/* Détails déroulants */}
                             {expandedOrder === order.id && (
                                 <div className={`px-6 pb-6 pt-0 border-t ${darkMode ? 'border-stone-700 bg-stone-900/20' : 'border-stone-50 bg-stone-50/50'}`}>
+                                    <div className="mt-6">
+                                        <h4 className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-stone-400">
+                                            <Clock size={12} /> Historique horodaté
+                                        </h4>
+                                        <div className={`rounded-2xl ring-1 ring-inset ${darkMode ? 'bg-stone-900/40 ring-stone-700' : 'bg-white ring-stone-100'}`}>
+                                            {timelineLoadingId === order.id ? (
+                                                <div className="flex items-center gap-2 px-4 py-4 text-xs text-stone-400">
+                                                    <Loader2 size={14} className="animate-spin" />
+                                                    Chargement des événements…
+                                                </div>
+                                            ) : Array.isArray(orderTimelines[order.id]) && orderTimelines[order.id].length > 0 ? (
+                                                <ol className="divide-y divide-stone-100">
+                                                    {orderTimelines[order.id].map((event, index) => {
+                                                        const meta = timelineMeta(event);
+                                                        const Icon = meta.icon;
+                                                        return (
+                                                            <li key={`${event.type}-${getMillis(event.at)}-${index}`} className="flex items-center gap-3 px-4 py-3">
+                                                                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${darkMode ? 'bg-white/5 text-stone-300' : meta.tone}`}>
+                                                                    <Icon size={14} />
+                                                                </span>
+                                                                <div className="min-w-0">
+                                                                    <p className={`text-sm font-bold ${darkMode ? 'text-stone-200' : 'text-stone-800'}`}>{meta.label}</p>
+                                                                    <time className="text-xs tabular-nums text-stone-400" dateTime={new Date(getMillis(event.at)).toISOString()}>
+                                                                        {formatDate(event.at)}
+                                                                    </time>
+                                                                </div>
+                                                            </li>
+                                                        );
+                                                    })}
+                                                </ol>
+                                            ) : (
+                                                <p className="px-4 py-4 text-xs text-stone-400">
+                                                    L’historique précis n’est pas disponible pour cette ancienne commande.
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
                                     <div className="grid md:grid-cols-2 gap-6 mt-6">
 
                                         {/* Panier */}

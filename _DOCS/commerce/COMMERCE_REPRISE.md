@@ -100,10 +100,11 @@ Defauts UX/contrat a corriger avant polissage:
   PaymentIntent existant;
 - le retry apres reload avec le meme panier produit une demande invalide au
   lieu d'une reprise explicite;
-- le reader renvoie les Timestamps v2 sous une forme que `MyOrdersView` ne
-  formate pas, d'ou `Date en attente`;
-- `shippingSnapshot` n'est pas projete vers le modele `shipping` attendu par
-  l'espace client, d'ou le compteur Adresse a zero;
+- corrige le 2026-07-29: `MyOrdersView` normalise les Timestamps callable,
+  projette `shippingSnapshot`, raccorde les documents immuables et evite le
+  chevauchement des actions de document;
+- corrige le 2026-07-29: Retours normalise les champs Stripe/refund v2 et
+  affiche les dossiers physiques detailles meme en consultation read-only;
 - le contrat `shippingAddress` v2 exclut le telephone saisi au checkout; le
   profil reste donc `A completer` malgre la saisie visible;
 - les snapshots d'item ne fournissent pas encore l'image attendue par la vue,

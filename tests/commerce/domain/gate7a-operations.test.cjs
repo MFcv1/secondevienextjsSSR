@@ -339,7 +339,7 @@ test('Gate 7A: manifeste et activation refusent toute cible non sandbox exacte',
     }
 });
 
-test('Gate 7A: dashboard et triggers legacy exposent les fences attendues', () => {
+test('Gate 7A: le dashboard consomme les montants qualifies sans exposer les controles internes', () => {
     const dashboard = fs.readFileSync(
         path.join(repositoryRoot, 'src/kit/admin/AdminDashboard.jsx'),
         'utf8'
@@ -353,8 +353,9 @@ test('Gate 7A: dashboard et triggers legacy exposent les fences attendues', () =
         'utf8'
     );
     assert.match(dashboard, /getCommerceOperationsStatusAdmin/);
-    assert.match(dashboard, /projection\?\.source/);
-    assert.match(dashboard, /divergenceCount/);
+    assert.match(dashboard, /Bilan des ventes/);
+    assert.match(dashboard, /Panier moyen/);
+    assert.doesNotMatch(dashboard, /Fraîcheur :|Faits :|Divergences :|Mode :/);
     assert.match(email, />= V2_EMAIL_OUTBOX_REQUIRED/);
     assert.match(stats, />= V2_STATS_PROJECTION_REQUIRED/);
 });

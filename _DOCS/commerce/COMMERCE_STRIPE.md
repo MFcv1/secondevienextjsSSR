@@ -240,10 +240,13 @@ Recette catalogue reel bornee du 2026-07-29:
 
 Cette recette a trouve deux contrats frontend a reprendre: la fermeture de la
 modale apres creation ne reutilise pas correctement le PaymentIntent en
-`awaiting_method`, et la projection de `/mes-commandes` n'adapte pas encore
-les Timestamps, `shippingSnapshot` et images d'items v2. Ces limites
-n'affectent ni la capture, ni les mouvements, ni les preuves financieres
-durables; elles sont suivies dans `COMMERCE_REPRISE.md`.
+`awaiting_method`. La reprise UX du 2026-07-29 adapte desormais
+les timestamps callable de `/mes-commandes`, joint les documents immuables
+aux commandes client et normalise les projections v2 de Retours avant filtrage.
+Les limites restantes autour du telephone, des images d'items v2 et de la
+reprise de paiement n'affectent ni la capture, ni les mouvements, ni les
+preuves financieres durables; elles sont suivies dans
+`COMMERCE_REPRISE.md`.
 
 ## 11. Fichiers structurants
 

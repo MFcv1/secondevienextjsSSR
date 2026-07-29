@@ -33,10 +33,12 @@ defauts observes sur les commandes reelles sandbox:
 
 - la reprise du paiement apres fermeture de la modale reste bloquee en
   `awaiting_method`;
-- `/mes-commandes` projette les timestamps v2 en `Date en attente`, ne reprend
-  pas encore `shippingSnapshot` et affiche la meme image de repli pour les
-  dossiers;
-- le polissage UI/UX doit venir apres ces corrections de projection.
+- `/mes-commandes` normalise maintenant les timestamps v2, reprend
+  `shippingSnapshot` et expose les recus/confirmations sandbox; les snapshots
+  d'item affichent encore la meme image de repli pour plusieurs dossiers;
+- Retours reprend maintenant les champs Stripe/refund v2 et les dossiers
+  physiques detailles; la recette visuelle hebergee reste a faire apres
+  deploiement cible.
 
 Continuer ensuite la recette admin AAL2 visible, le paiement invite OTP bout en
 bout et la matrice Safari/iPhone plus Chrome Android.

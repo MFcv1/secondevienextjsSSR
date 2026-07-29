@@ -74,6 +74,7 @@ const {
     resumeCheckoutV2
 } = require('./src/commerce/v2Checkout');
 const {
+    getOrderTimelineAdminV2,
     listMyOrdersV2,
     listOrdersAdminV2,
     listReturnsAdminV2
@@ -111,6 +112,7 @@ exports.restockReturnLinesAdmin = restockReturnLinesAdmin;
 exports.writeOffReturnLinesAdmin = writeOffReturnLinesAdmin;
 exports.createCheckoutV2 = createCheckoutV2;
 exports.resumeCheckoutV2 = resumeCheckoutV2;
+exports.getOrderTimelineAdminV2 = getOrderTimelineAdminV2;
 exports.listMyOrdersV2 = listMyOrdersV2;
 exports.listOrdersAdminV2 = listOrdersAdminV2;
 exports.listReturnsAdminV2 = listReturnsAdminV2;

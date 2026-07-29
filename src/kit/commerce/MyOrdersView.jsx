@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import {
     AlertTriangle,
@@ -22,6 +22,7 @@ import {
 import { db } from '../config/firebase';
 import KIT_CONFIG from '../config/constants';
 import { formatShippingCityLine } from '../../utils/shippingAddress';
+import { getMillis } from '../../utils/time';
 import {
     COMMERCE_V2_ORDER_READERS_ENABLED,
     listMyOrdersV2,
@@ -50,9 +51,10 @@ const formatPrice = (price = 0) => (
     new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(Number(price) || 0)
 );
 
-const formatDate = (seconds) => {
-    if (!seconds) return 'Date en attente';
-    return new Date(seconds * 1000).toLocaleDateString('fr-FR', {
+const formatDate = (value) => {
+    const millis = getMillis(value);
+    if (!millis) return 'Date indisponible';
+    return new Date(millis).toLocaleDateString('fr-FR', {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
@@ -87,9 +89,21 @@ const getOrderNumber = (order) => {
 
 const getOrderItemsSummary = (order) => (
     (order?.items || [])
-        .map((item) => item?.name)
+        .map((item) => item?.titleSnapshot || item?.name)
         .filter(Boolean)
         .join(', ')
+);
+
+const getDocumentLabel = (document) => (
+    document?.kind === 'sandbox_refund_confirmation'
+        ? 'Confirmation de remboursement'
+        : 'Recu de paiement'
+);
+
+const getDocumentAmount = (document) => (
+    document?.kind === 'sandbox_refund_confirmation'
+        ? document.refundedCents
+        : document.capturedCents
 );
 
 const getStatusInfo = (status = '') => {
@@ -215,6 +229,7 @@ const MyOrdersView = ({
     const [isCancelling, setIsCancelling] = useState(false);
     const [ordersCursor, setOrdersCursor] = useState(null);
     const [loadingMoreOrders, setLoadingMoreOrders] = useState(false);
+    const [downloadingDocumentId, setDownloadingDocumentId] = useState(null);
     const cancellationRequestIdsRef = useRef(new Map());
     const topRef = useRef(null);
     const ordersRef = useRef(null);
@@ -242,16 +257,20 @@ const MyOrdersView = ({
     }, [enrichedWishlist]);
 
     const latestOrder = orders[0];
-    const latestShipping = latestOrder?.shipping || {};
+    const latestShipping = latestOrder?.shipping || latestOrder?.shippingSnapshot || {};
     const hasShippingAddress = Boolean(
-        latestShipping.address || latestShipping.street || latestShipping.city || latestShipping.zip || latestShipping.postalCode
+        latestShipping.address || latestShipping.street || latestShipping.line1
+        || latestShipping.city || latestShipping.zip || latestShipping.postalCode
     );
     const addressLines = hasShippingAddress
         ? [
-            latestShipping.name || customerName,
-            latestShipping.address || latestShipping.street,
+            latestShipping.fullName || latestShipping.name || customerName,
+            latestShipping.address || latestShipping.street || latestShipping.line1,
+            latestShipping.line2,
             formatShippingCityLine(latestShipping),
-            latestShipping.country || 'France',
+            latestShipping.country === 'FR'
+                ? 'France'
+                : (latestShipping.country || 'France'),
             latestShipping.phone || user?.phoneNumber,
         ].filter(Boolean)
         : [];
@@ -261,6 +280,11 @@ const MyOrdersView = ({
     const refundedTotal = orders.reduce((sum, order) => (
         getRefundHelpText(order.status) ? sum + getRefundAmount(order) : sum
     ), 0);
+    const orderDocuments = useMemo(() => (
+        orders.flatMap((order) => (
+            (order.documents || []).map((document) => ({ order, document }))
+        ))
+    ), [orders]);
 
     useEffect(() => {
         if (!user) return;
@@ -378,6 +402,20 @@ const MyOrdersView = ({
         else scrollToSection(wishlistRef);
     };
 
+    const downloadDocument = async (order, document) => {
+        if (!document?.documentId || downloadingDocumentId) return;
+        setDownloadingDocumentId(document.documentId);
+        try {
+            const { generateCommerceDocument } = await import('../../utils/generateCommerceDocument');
+            await generateCommerceDocument(order, document);
+        } catch (error) {
+            console.error('Commerce document generation failed:', error);
+            alert('Le document ne peut pas etre genere pour le moment.');
+        } finally {
+            setDownloadingDocumentId(null);
+        }
+    };
+
     const navItems = [
         { label: 'Commandes', Icon: ShoppingBag, active: true, action: () => scrollToSection(ordersRef) },
         { label: 'Documents', Icon: FileText, action: () => scrollToSection(invoicesRef) },
@@ -430,7 +468,7 @@ const MyOrdersView = ({
                             <p className="text-[13px] font-medium text-[#6e6e73]">Dernier dossier</p>
                             <p className="mt-2 text-[22px] font-semibold text-[#1d1d1f]">{latestOrder ? getOrderNumber(latestOrder) : 'Aucune commande'}</p>
                             <p className="mt-2 text-[14px] leading-6 text-[#6e6e73]">
-                                {latestOrder ? `${formatDate(latestOrder.createdAt?.seconds)} - ${formatPrice(getOrderTotal(latestOrder))}` : 'La galerie est prete quand vous l etes.'}
+                                {latestOrder ? `${formatDate(latestOrder.createdAt)} - ${formatPrice(getOrderTotal(latestOrder))}` : 'La galerie est prete quand vous l etes.'}
                             </p>
                         </div>
                     </div>
@@ -478,7 +516,7 @@ const MyOrdersView = ({
                             </div>
                         ) : (
                             <div className="overflow-hidden rounded-[8px] border border-[#e8e8ed]">
-                                <div className="hidden grid-cols-[92px_1fr_170px_120px_100px] gap-4 border-b border-[#e8e8ed] bg-[#fbfbfd] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#86868b] md:grid">
+                                <div className="hidden grid-cols-[76px_minmax(0,1fr)_minmax(130px,150px)_minmax(90px,110px)_minmax(128px,150px)] gap-4 border-b border-[#e8e8ed] bg-[#fbfbfd] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#86868b] lg:grid">
                                     <span>Piece</span>
                                     <span>Dossier</span>
                                     <span>Statut</span>
@@ -490,19 +528,20 @@ const MyOrdersView = ({
                                     const status = getStatusInfo(order.status);
                                     const refundHelpText = getRefundHelpText(order.status);
                                     const itemsSummary = getOrderItemsSummary(order);
+                                    const documents = order.documents || [];
 
                                     return (
-                                        <article key={order.id} className="grid gap-4 border-b border-[#e8e8ed] px-4 py-4 last:border-b-0 md:grid-cols-[92px_1fr_170px_120px_100px] md:items-center">
+                                        <article key={order.id} className="grid gap-4 border-b border-[#e8e8ed] px-4 py-4 last:border-b-0 lg:grid-cols-[76px_minmax(0,1fr)_minmax(130px,150px)_minmax(90px,110px)_minmax(128px,150px)] lg:items-center">
                                             <div className="h-[78px] w-[78px] overflow-hidden rounded-[8px] bg-[#f5f5f7]">
                                                 <img src={getOrderImage(order, index)} alt="" className="h-full w-full object-cover" />
                                             </div>
 
                                             <div className="min-w-0">
-                                                <div className="flex flex-wrap items-center gap-2 md:hidden">
+                                                <div className="flex flex-wrap items-center gap-2 lg:hidden">
                                                     <StatusBadge status={status} />
                                                 </div>
-                                                <p className="mt-2 text-[18px] font-semibold text-[#1d1d1f] md:mt-0">{getOrderNumber(order)}</p>
-                                                <p className="mt-1 text-[13px] text-[#6e6e73]">{formatDate(order.createdAt?.seconds)}</p>
+                                                <p className="mt-2 text-[18px] font-semibold text-[#1d1d1f] lg:mt-0">{getOrderNumber(order)}</p>
+                                                <p className="mt-1 text-[13px] text-[#6e6e73]">{formatDate(order.createdAt)}</p>
                                                 {itemsSummary ? (
                                                     <p className="mt-2 max-w-2xl truncate text-[14px] text-[#424245]">{itemsSummary}</p>
                                                 ) : null}
@@ -526,16 +565,34 @@ const MyOrdersView = ({
                                                 )}
                                             </div>
 
-                                            <div className="hidden md:block">
+                                            <div className="hidden lg:block">
                                                 <StatusBadge status={status} />
                                             </div>
 
-                                            <p className="text-[16px] font-semibold text-[#1d1d1f] md:text-right">{formatPrice(getOrderTotal(order))}</p>
+                                            <p className="text-[16px] font-semibold text-[#1d1d1f] lg:text-right">{formatPrice(getOrderTotal(order))}</p>
 
-                                            <span className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[#d2d2d7] px-4 text-[13px] font-medium text-[#86868b] md:justify-self-end">
-                                                <FileText size={15} />
-                                                Document indisponible
-                                            </span>
+                                            {documents.length > 0 ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => (
+                                                        documents.length === 1
+                                                            ? downloadDocument(order, documents[0])
+                                                            : scrollToSection(invoicesRef)
+                                                    )}
+                                                    disabled={Boolean(downloadingDocumentId)}
+                                                    className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full border border-[#b9d4ee] bg-[#f5faff] px-3 text-center text-[12px] font-medium leading-4 text-[#175c9c] disabled:opacity-50 lg:justify-self-end"
+                                                >
+                                                    {downloadingDocumentId === documents[0]?.documentId
+                                                        ? <Loader2 size={15} className="shrink-0 animate-spin" />
+                                                        : <FileText size={15} className="shrink-0" />}
+                                                    {documents.length === 1 ? 'Telecharger' : `${documents.length} documents`}
+                                                </button>
+                                            ) : (
+                                                <span className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full border border-[#d2d2d7] px-3 text-center text-[12px] font-medium leading-4 text-[#86868b] lg:justify-self-end">
+                                                    <FileText size={15} className="shrink-0" />
+                                                    Document a venir
+                                                </span>
+                                            )}
                                         </article>
                                     );
                                 })}
@@ -556,12 +613,52 @@ const MyOrdersView = ({
                     <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
                         <AccountPanel sectionRef={invoicesRef} className="scroll-mt-28 p-4 md:p-6">
                             <SectionHeader eyebrow="Documents" title="Documents de commande">
-                                Les anciens PDF sont suspendus : ils ne constituent ni une facture ni un avoir definitif.
+                                Retrouvez les recus de paiement et confirmations de remboursement emis pour vos commandes sandbox.
                             </SectionHeader>
 
-                            <div className="rounded-[8px] border border-dashed border-[#d2d2d7] px-5 py-12 text-center text-[#6e6e73]">
-                                Aucun document fiscal definitif n&apos;est emis pendant la stabilisation du noyau commerce.
-                            </div>
+                            {orderDocuments.length > 0 ? (
+                                <div className="space-y-3">
+                                    {orderDocuments.map(({ order, document }) => (
+                                        <article
+                                            key={`${order.id}-${document.documentId}`}
+                                            className="flex flex-col gap-4 rounded-[8px] border border-[#e8e8ed] p-4 sm:flex-row sm:items-center sm:justify-between"
+                                        >
+                                            <div className="min-w-0">
+                                                <p className="text-[14px] font-semibold text-[#1d1d1f]">
+                                                    {getDocumentLabel(document)}
+                                                </p>
+                                                <p className="mt-1 break-words text-[12px] leading-5 text-[#6e6e73]">
+                                                    {getOrderNumber(order)} · {formatDate(document.issuedAt)}
+                                                    {Number.isSafeInteger(getDocumentAmount(document))
+                                                        ? ` · ${formatPrice(getDocumentAmount(document) / 100)}`
+                                                        : ''}
+                                                </p>
+                                                <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.08em] text-[#9a6a35]">
+                                                    Sandbox · document non fiscal
+                                                </p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => downloadDocument(order, document)}
+                                                disabled={Boolean(downloadingDocumentId)}
+                                                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-[#b9d4ee] bg-[#f5faff] px-4 text-[13px] font-medium text-[#175c9c] disabled:opacity-50"
+                                            >
+                                                {downloadingDocumentId === document.documentId
+                                                    ? <Loader2 size={15} className="animate-spin" />
+                                                    : <FileText size={15} />}
+                                                Telecharger le PDF
+                                            </button>
+                                        </article>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="rounded-[8px] border border-dashed border-[#d2d2d7] px-5 py-12 text-center text-[#6e6e73]">
+                                    Aucun recu n&apos;a encore ete emis pour ces commandes.
+                                </div>
+                            )}
+                            <p className="mt-4 text-[12px] leading-5 text-[#86868b]">
+                                Ces documents attestent les operations du sandbox. Ils ne constituent ni une facture ni un avoir fiscal.
+                            </p>
                         </AccountPanel>
 
                         <AccountPanel sectionRef={wishlistRef} className="scroll-mt-28 p-4 md:p-6">

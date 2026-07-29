@@ -21,7 +21,7 @@ const statusCopy = {
     not_connected: {
         label: 'Non connecte',
         tone: 'stone',
-        description: 'Aucun compte Stripe Connect actif. Le site peut encore utiliser le chemin Stripe legacy tant que les cles directes existent.'
+        description: 'Aucun compte Stripe Connect actif. Terminez la configuration pour activer les paiements sur la boutique.'
     },
     action_required: {
         label: 'Configuration a terminer',
