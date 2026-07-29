@@ -202,6 +202,10 @@ Le dashboard lit de preference les agregats:
 - `sales_stats_daily`;
 - commandes recentes bornees.
 
+Le dashboard consomme les claims admin deja resolus par `AuthContext`. Il ne
+force pas de renouvellement du jeton Firebase a son montage: un rafraichissement
+de claims en arriere-plan ne doit jamais demonter puis remonter Stats en boucle.
+
 Restriction commerce: le rollup actuel ne mesure pas un chiffre d'affaires encaisse. Il inclut notamment plusieurs commandes pending, echouees ou remboursees et n'est pas idempotent face a une rediffusion de trigger. Ne pas utiliser ce KPI comme preuve financiere avant sa reconstruction depuis les etats de paiement.
 
 Un fallback historique borne existe encore pour les commandes si leurs agregats manquent. Stats ne scanne plus `furniture` lorsque `inventory_stats/overview` est absent: la valeur catalogue affiche alors un tiret jusqu'a la prochaine publication snapshot, dont le builder regenere l'agregat. Ce garde-fou evite jusqu'a 300 lectures produit a chaque ouverture de Stats sans afficher un faux zero comme une valeur autoritaire.

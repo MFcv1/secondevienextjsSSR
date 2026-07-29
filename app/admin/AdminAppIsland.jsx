@@ -428,7 +428,12 @@ function AdminContent() {
             readOnly={isCommerceReadOnlyTab(adminCollection)}
           >
           {adminCollection === 'dashboard' ? (
-            <AdminDashboard user={user} darkMode={darkMode} items={catalogState.items} />
+            <AdminDashboard
+              user={user}
+              darkMode={darkMode}
+              isSuperAdmin={isSuperAdmin}
+              items={catalogState.items}
+            />
           ) : adminCollection === 'account' ? (
             <AdminAccount darkMode={darkMode} isSuperAdmin={isSuperAdmin} user={user} />
           ) : adminCollection === 'homepage' ? (

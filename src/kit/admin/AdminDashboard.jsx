@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, where, Timestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { db, functions, loadAuthModule } from '../config/firebase';
+import { db, functions } from '../config/firebase';
 import { getProductImageItems } from '../../utils/imageUtils';
 import { getProductUrl } from '../../utils/slug';
 import { getMillis } from '../../utils/time';
@@ -782,8 +782,7 @@ const LoadingProgress = ({ progress, text, darkMode }) => (
 );
 
 
-const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
-    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+const AdminDashboard = ({ user, darkMode = false, isSuperAdmin = false, items = [] }) => {
     const [stats, setStats] = useState({
         totalRevenue: 0,
         totalOrders: 0,
@@ -849,44 +848,6 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
     // Progress states
     const [progressValue, setProgressValue] = useState(0);
     const [progressSubtitle, setProgressSubtitle] = useState('');
-
-    useEffect(() => {
-        if (!user || user.isAnonymous) {
-            setIsSuperAdmin(false);
-            setCommerceOperations({
-                loading: false,
-                error: false,
-                operations: null,
-                control: null
-            });
-            return undefined;
-        }
-
-        let cancelled = false;
-        const syncSuperAdminClaim = async () => {
-            try {
-                const { getIdTokenResult } = await loadAuthModule();
-                await httpsCallable(functions, 'ensureAdminAccessRegistry')({});
-                let tokenResult = await getIdTokenResult(user, true);
-                if (tokenResult.claims.superAdmin === true) {
-                    await httpsCallable(functions, 'syncSuperAdminClaim')({});
-                    tokenResult = await getIdTokenResult(user, true);
-                }
-                if (!cancelled) {
-                    setIsSuperAdmin(tokenResult.claims.superAdmin === true);
-                }
-            } catch (error) {
-                console.error('Error reading super admin claim:', error);
-                if (!cancelled) setIsSuperAdmin(false);
-            }
-        };
-
-        syncSuperAdminClaim();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [user]);
 
     useEffect(() => {
         if (!user || user.isAnonymous) return undefined;

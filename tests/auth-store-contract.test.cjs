@@ -20,6 +20,17 @@ test('AuthStore owns the only Firebase auth observer', () => {
   assert.match(read('src/kit/auth/authStore.js'), /runtime\.unsubscribe = onIdTokenChanged/);
 });
 
+test('admin dashboard consumes resolved claims without forcing a token refresh on mount', () => {
+  const adminIsland = read('app/admin/AdminAppIsland.jsx');
+  const dashboard = read('src/kit/admin/AdminDashboard.jsx');
+
+  assert.match(adminIsland, /<AdminDashboard[\s\S]*isSuperAdmin={isSuperAdmin}/);
+  assert.match(dashboard, /const AdminDashboard = \(\{ user, darkMode = false, isSuperAdmin = false, items = \[\] \}\)/);
+  assert.doesNotMatch(dashboard, /getIdTokenResult/);
+  assert.doesNotMatch(dashboard, /ensureAdminAccessRegistry/);
+  assert.doesNotMatch(dashboard, /syncSuperAdminClaim/);
+});
+
 test('header, menu and cart consume the shared auth snapshot', () => {
   for (const relativePath of sourceFiles.slice(2)) {
     assert.match(read(relativePath), /useAuthState/, `${relativePath} must consume useAuthState`);
