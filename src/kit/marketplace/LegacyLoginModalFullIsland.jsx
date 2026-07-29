@@ -214,8 +214,9 @@ const loginWithPasskey = async (email, preparedAuthentication = null, onStepChan
 };
 
 export function LegacyLoginModalContent({ open, onOpenChange }) {
-  const { loginWithGoogle, loginWithCustomToken } = useAuth();
+  const { preloadGoogleLogin, loginWithGoogle, loginWithCustomToken } = useAuth();
   const toast = useToast();
+  const [googleStatus, setGoogleStatus] = useState('preparing');
   const [passkeyUser, setPasskeyUser] = useState(null);
   const [passkeyStatus, setPasskeyStatus] = useState('idle');
   const [passkeyMessage, setPasskeyMessage] = useState('');
@@ -355,6 +356,22 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
       });
     };
   }, [onOpenChange, open]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    let cancelled = false;
+    setGoogleStatus('preparing');
+    void preloadGoogleLogin()
+      .then(() => {
+        if (!cancelled) setGoogleStatus('ready');
+      })
+      .catch(() => {
+        if (!cancelled) setGoogleStatus('ready');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, preloadGoogleLogin]);
 
   useEffect(() => {
     if (!open || !showPasskeyFirst || !emailValue) {
@@ -498,11 +515,15 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
   };
 
   const handleSocialLogin = async (login) => {
+    if (googleStatus === 'pending' || googleStatus === 'preparing') return;
+    setGoogleStatus('pending');
     try {
       const result = await login();
       offerPasskeyOrClose(result?.user);
     } catch (error) {
       toast(getAuthErrorMessage(error), { type: 'error' });
+    } finally {
+      setGoogleStatus('ready');
     }
   };
 
@@ -747,12 +768,23 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
               <button
                 type="button"
                 onClick={() => handleSocialLogin(loginWithGoogle)}
-                className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#2A2A2E] bg-[#141417] p-4 text-sm font-bold text-white transition-all hover:bg-[#1f1f22]"
+                onPointerEnter={() => void preloadGoogleLogin()}
+                onFocus={() => void preloadGoogleLogin()}
+                disabled={googleStatus === 'preparing' || googleStatus === 'pending'}
+                className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#2A2A2E] bg-[#141417] p-4 text-sm font-bold text-white transition-all hover:bg-[#1f1f22] disabled:cursor-wait disabled:opacity-70"
               >
-                <span className="flex shrink-0 rounded-full bg-white p-0.5">
-                  <img src="https://www.google.com/favicon.ico" className="h-[14px] w-[14px]" alt="" />
+                {googleStatus === 'preparing' || googleStatus === 'pending' ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <span className="flex shrink-0 rounded-full bg-white p-0.5">
+                    <img src="https://www.google.com/favicon.ico" className="h-[14px] w-[14px]" alt="" />
+                  </span>
+                )}
+                <span>
+                  {googleStatus === 'preparing'
+                    ? 'Préparation de Google…'
+                    : googleStatus === 'pending' ? 'Connexion avec Google…' : 'Continuer avec Google'}
                 </span>
-                <span>Continuer avec Google</span>
               </button>
 
               <div className="my-6 flex items-center gap-4">

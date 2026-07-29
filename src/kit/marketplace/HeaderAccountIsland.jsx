@@ -8,18 +8,7 @@ import { initializeAuthStore, resetAuthStoreAfterSignOut, syncAuthStoreUser } fr
 
 const LegacyLoginModalIsland = dynamic(() => import('./LegacyLoginModalFullIsland'), {
   ssr: false,
-  loading: () => (
-    <div
-      className="fixed inset-0 z-[3000] flex items-center justify-center bg-stone-950/80 backdrop-blur-xl"
-      role="status"
-      aria-live="polite"
-    >
-      <div className="flex items-center gap-3 rounded-full bg-white px-5 py-3 text-xs font-bold text-stone-700 shadow-2xl">
-        <span className="h-4 w-4 animate-spin rounded-full border-2 border-stone-300 border-t-stone-900" />
-        Préparation de la connexion…
-      </div>
-    </div>
-  ),
+  loading: () => null,
 });
 
 export const preloadLoginModal = () => {
@@ -147,7 +136,7 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
 
   return (
     <>
-      <button type="button" className={loginButtonClass} onPointerEnter={preloadLoginModal} onFocus={preloadLoginModal} onClick={() => { setLoginOpen(true); void preloadLoginModal(); }} aria-label="Ouvrir la connexion">
+      <button type="button" className={loginButtonClass} onPointerEnter={preloadLoginModal} onFocus={preloadLoginModal} onClick={async () => { await preloadLoginModal(); setLoginOpen(true); }} aria-label="Ouvrir la connexion">
         <ShieldCheck size={14} className="text-stone-400 transition-colors group-hover:text-amber-500 dark:text-stone-300 dark:group-hover:text-[#D9B58D]" />
         <span className="text-[10px] font-black uppercase tracking-[0.16em]">Connexion</span>
       </button>

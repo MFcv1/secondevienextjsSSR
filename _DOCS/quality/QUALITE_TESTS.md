@@ -89,7 +89,8 @@ precede l'activation sandbox read-only.
 npm run test:auth
 ```
 
-Suite actuelle (56 contrats apres ajout du step-up admin sans deconnexion):
+Suite actuelle (57 contrats apres ajout du prechargement Google anti-popup
+orpheline):
 
 ```text
 auth-claims.test.cjs

@@ -20,10 +20,25 @@ function LoginView({
   subtitle = "Acces reserve a l'administration.",
   emailPlaceholder = 'Adresse email',
 }) {
-  const { loginWithGoogle, loginWithEmail } = useAuth();
+  const { preloadGoogleLogin, loginWithGoogle, loginWithEmail } = useAuth();
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [googleStatus, setGoogleStatus] = useState('preparing');
+
+  React.useEffect(() => {
+    let cancelled = false;
+    void preloadGoogleLogin()
+      .then(() => {
+        if (!cancelled) setGoogleStatus('ready');
+      })
+      .catch(() => {
+        if (!cancelled) setGoogleStatus('ready');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [preloadGoogleLogin]);
 
   const handle = async (event) => {
     event.preventDefault();
@@ -57,19 +72,32 @@ function LoginView({
           <button
             type="button"
             onClick={async () => {
+              if (googleStatus !== 'ready') return;
+              setGoogleStatus('pending');
               try {
                 await loginWithGoogle();
                 onSuccess();
               } catch (error) {
                 setErrorMsg(getGoogleLoginErrorMessage(error));
+              } finally {
+                setGoogleStatus('ready');
               }
             }}
-            className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#2A2A2E] bg-[#141417] p-4 text-sm font-bold text-white transition-all hover:bg-[#1f1f22]"
+            onPointerEnter={() => void preloadGoogleLogin()}
+            onFocus={() => void preloadGoogleLogin()}
+            disabled={googleStatus !== 'ready'}
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#2A2A2E] bg-[#141417] p-4 text-sm font-bold text-white transition-all hover:bg-[#1f1f22] disabled:cursor-wait disabled:opacity-70"
           >
-            <span className="flex shrink-0 rounded-full bg-white p-0.5">
-              <img src="https://www.google.com/favicon.ico" className="h-[14px] w-[14px]" alt="" />
+            {googleStatus === 'ready' ? (
+              <span className="flex shrink-0 rounded-full bg-white p-0.5">
+                <img src="https://www.google.com/favicon.ico" className="h-[14px] w-[14px]" alt="" />
+              </span>
+            ) : null}
+            <span>
+              {googleStatus === 'preparing'
+                ? 'Préparation de Google…'
+                : googleStatus === 'pending' ? 'Connexion avec Google…' : 'Continuer avec Google'}
             </span>
-            <span>Continuer avec Google</span>
           </button>
 
           <div className="my-6 flex items-center gap-4">

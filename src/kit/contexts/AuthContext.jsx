@@ -76,6 +76,8 @@ export const useAuthState = () => useSyncExternalStore(
 export const AuthProvider = ({ children, forceInitialize = false, deferUntilReady = true, ensureAnonymous = false }) => {
     const authState = useAuthState();
     const { user } = authState;
+    const googleRuntimeRef = React.useRef(null);
+    const googleRuntimePromiseRef = React.useRef(null);
 
     // Authentication relies on Firestore Rules & Custom Claims now.
     // No hardcoded emails in client bundle.
@@ -115,6 +117,24 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         return { auth, authModule };
     };
 
+    const preloadGoogleLogin = React.useCallback(() => {
+        if (googleRuntimeRef.current) return Promise.resolve(googleRuntimeRef.current);
+        if (!googleRuntimePromiseRef.current) {
+            googleRuntimePromiseRef.current = Promise.all([
+                getFirebaseAuth(),
+                loadAuthModule(),
+                getGoogleProvider(),
+            ]).then(([auth, authModule, provider]) => {
+                const runtime = { auth, authModule, provider };
+                googleRuntimeRef.current = runtime;
+                return runtime;
+            }).catch((error) => {
+                googleRuntimePromiseRef.current = null;
+                throw error;
+            });
+        }
+        return googleRuntimePromiseRef.current;
+    }, []);
 
     const loginWithProvider = async (provider) => {
         const { auth, authModule } = await getAuthRuntime();
@@ -137,8 +157,27 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
     };
 
     const loginWithGoogle = async () => {
-        const googleProvider = await getGoogleProvider();
-        return loginWithProvider(googleProvider);
+        const preparedRuntime = googleRuntimeRef.current;
+        if (!preparedRuntime) {
+            const runtime = await preloadGoogleLogin();
+            return loginWithProvider(runtime.provider);
+        }
+
+        const { auth, authModule, provider } = preparedRuntime;
+        if (isIOSStandalone()) {
+            setRedirectPending();
+            await authModule.signInWithRedirect(auth, provider);
+            return null;
+        }
+
+        // When preloaded, signInWithPopup is invoked before the first await so
+        // the browser still associates it with the user's click.
+        const result = await authModule.signInWithPopup(auth, provider);
+        getCallableFunction('updateUserSessions')
+            .then((updateUserSessions) => updateUserSessions())
+            .catch(err => console.error('Failed to clean sessions after login:', err));
+        syncAuthStoreUser(result.user, { lastAuthMethod: 'google' });
+        return result;
     };
 
     const loginWithEmail = async (email, password) => {
@@ -214,6 +253,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         authTime: authState.claims.authTime,
         hasStrongAuth: authState.claims.authAssurance === 'aal2',
         loading: !authState.authReady || authState.claimsStatus === 'loading',
+        preloadGoogleLogin,
         loginWithGoogle,
         loginWithEmail,
         loginWithCustomToken,

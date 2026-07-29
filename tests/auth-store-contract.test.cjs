@@ -50,6 +50,22 @@ test('header, menu and cart consume the shared auth snapshot', () => {
   }
 });
 
+test('Google popup is prepared before the user click and concurrent requests are blocked', () => {
+  const context = read('src/kit/contexts/AuthContext.jsx');
+  const modal = read('src/kit/marketplace/LegacyLoginModalFullIsland.jsx');
+  const adminLogin = read('src/kit/commerce/LoginView.jsx');
+
+  assert.match(context, /googleRuntimeRef = React\.useRef/);
+  assert.match(context, /preloadGoogleLogin = React\.useCallback/);
+  assert.match(context, /const preparedRuntime = googleRuntimeRef\.current/);
+  assert.match(context, /signInWithPopup\(auth, provider\)/);
+  assert.match(modal, /void preloadGoogleLogin\(\)/);
+  assert.match(modal, /googleStatus === 'pending' \|\| googleStatus === 'preparing'/);
+  assert.match(modal, /disabled=\{googleStatus === 'preparing' \|\| googleStatus === 'pending'\}/);
+  assert.match(adminLogin, /void preloadGoogleLogin\(\)/);
+  assert.match(adminLogin, /disabled=\{googleStatus !== 'ready'\}/);
+});
+
 test('sign out is committed only after Firebase signOut resolves', () => {
   const context = read('src/kit/contexts/AuthContext.jsx');
   const logout = context.slice(context.indexOf('const logout = async'), context.indexOf('const verifyEmail'));

@@ -54,7 +54,7 @@ Cette notation est une grille interne de maturite, pas une certification de secu
 | securite passkey | 55/100 | 92/100 | User Verification exigee et verifiee serveur |
 | securite administrateur | 35/100 | 88/100 | AAL2 recent, registre actif, revocation |
 | resistance aux pannes | 42/100 | 87/100 | idempotence, fallback OTP/Google, rollback documente |
-| tests et non-regression | 35/100 | 93/100 | gate finale 54/54 et recettes reelles |
+| tests et non-regression | 35/100 | 93/100 | gate finale 57/57 et recettes reelles |
 | accessibilite essentielle | 50/100 | 84/100 | focus, clavier, annonces et anti-double soumission |
 | exploitabilite production | 40/100 | 72/100 | regions et provider prepares, domaine/DNS encore manquants |
 
@@ -141,6 +141,13 @@ Le serveur refuse une inscription ou une assertion dont le flag User Verificatio
 ### 5.4 Flux Google
 
 Google reste disponible depuis la meme modale. Le store identifie le fournisseur `google.com` et normalise la methode en `google`.
+
+Le runtime Firebase Auth et le fournisseur Google sont prepares des l'ouverture
+de la modale. Le clic appelle ainsi `signInWithPopup` sans chargement dynamique
+intermediaire susceptible de perdre l'activation utilisateur du navigateur.
+Le bouton bloque aussi les demandes concurrentes afin d'eviter une popup
+annulee ou un onglet `__/auth/handler` orphelin. Le mode PWA iOS conserve
+`signInWithRedirect`, requis par WebKit.
 
 Dans le contrat interne actuel, Google peut produire `aal2` pour l'administration. Avant la production, le compte Google proprietaire doit etre protege par MFA; Firebase ne fournit pas un claim standard permettant de prouver ce MFA externe a chaque connexion.
 
@@ -278,7 +285,7 @@ Ne pas reintroduire le bouton generique `Utiliser une passkey` avant enrôlement
 ### 9.1 Gates finales
 
 - Node de reference: `22.23.1`;
-- `npm run test:auth`: `54/54 PASS`, zero echec;
+- `npm run test:auth`: `57/57 PASS`, zero echec;
 - build Next.js: succes;
 - test accessibilite contractuel cible: `5/5 PASS`;
 - smoke Chrome, Edge et Brave: `3/3 PASS`;
