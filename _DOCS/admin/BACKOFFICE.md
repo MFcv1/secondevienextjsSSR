@@ -229,16 +229,36 @@ force pas de renouvellement du jeton Firebase a son montage: un rafraichissement
 de claims en arriere-plan ne doit jamais demonter puis remonter Stats en boucle.
 
 La surface Stats affiche les ventes nettes, les montants encaisses et
-rembourses ainsi que le panier moyen des commandes encaissees. Les champs de
-controle internes de la projection (source, mode, faits, divergences et date de
-construction) restent disponibles cote serveur pour l'exploitation mais ne
-sont pas exposes a la cliente.
+rembourses ainsi que le panier moyen des commandes encaissees. La carte
+principale conserve ce bilan par defaut et permet de basculer vers le dernier
+graphique des ventes. Les vues 1 heure et 24 heures chargent a la demande un
+historique borne a 300 commandes recentes pour fournir une granularite de cinq
+minutes puis horaire; les vues 7 jours, 30 jours, 365 jours et Max reutilisent
+les rollups quotidiens deja charges. Le selecteur se replie sur deux lignes et
+le SVG reste borne a la largeur de la carte sur mobile.
+
+Les selecteurs Bilan/Graphique et periode forment un meme bloc compact; le
+second apparait directement sous le premier en vue Graphique. L'infobulle des
+montants reste dans une reserve interne en haut du SVG et ne peut plus passer
+sous les controles, y compris lorsqu'un pic atteint le maximum de l'axe.
+Les champs de controle internes de la projection (source, mode, faits,
+divergences et date de construction) restent disponibles cote serveur pour
+l'exploitation mais ne sont pas exposes a la cliente.
 
 Restriction commerce: le rollup actuel ne mesure pas un chiffre d'affaires encaisse. Il inclut notamment plusieurs commandes pending, echouees ou remboursees et n'est pas idempotent face a une rediffusion de trigger. Ne pas utiliser ce KPI comme preuve financiere avant sa reconstruction depuis les etats de paiement.
 
 Un fallback historique borne existe encore pour les commandes si leurs agregats manquent. Stats ne scanne plus `furniture` lorsque `inventory_stats/overview` est absent: la valeur catalogue affiche alors un tiret jusqu'a la prochaine publication snapshot, dont le builder regenere l'agregat. Ce garde-fou evite jusqu'a 300 lectures produit a chaque ouverture de Stats sans afficher un faux zero comme une valeur autoritaire.
 
 Les modules `Intentions de devis` et `Meubles en tendance` lisent separement au maximum 500 documents `analytics_sessions` commences dans les 30 derniers jours, sans listener temps reel. Les sessions admin sont exclues cote client. Les tendances comptent les etapes `detail`, dedupliquent les visiteurs par UID puis IP puis session et reprennent le nom/prix deja embarque dans `journey.itemId`. Le tunnel devis compte les sessions ayant visite `quote`, emis `quote_start` ou emis `quote_email_opened`. Les images du classement sont resolues par identifiant ou slug depuis le snapshot catalogue public court deja utilise par l'admin; elles n'ajoutent aucune lecture Firestore produit et restent purement representatives.
+
+Sur mobile, les libelles et la note du tunnel devis reviennent a la ligne sans
+elargir la carte. Le classement des meubles reste borne a la largeur du panneau
+et utilise un rail horizontal tactile avec snap; seul ce rail defile, jamais la
+page admin complete.
+
+La repartition des commandes utilise trois anneaux ouverts concentriques:
+Payees, Expediees et En attente. Le total reste au centre; la legende compacte
+affiche pour chaque statut son volume et sa part, sans grandes lignes empilees.
 
 Cette lecture analytics est non bloquante: son echec laisse les agregats commerce, l'inventaire et les commandes recentes disponibles. Une couverture de 500 documents est signalee comme plafonnee. `quote_email_opened` reste libelle comme ouverture d'un brouillon e-mail; Stats ne presente jamais ce signal comme un devis recu, envoye ou accepte.
 

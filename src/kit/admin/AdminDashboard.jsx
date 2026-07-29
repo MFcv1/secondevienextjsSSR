@@ -145,9 +145,7 @@ const buildLinearPath = (points) => points.reduce(
     ''
 );
 
-// Conservé pour la réactivation contrôlée des projections Gate 7A.
-// eslint-disable-next-line no-unused-vars
-const RevenueChartLegacy = ({ data, darkMode }) => {
+const RevenueChart = ({ data, darkMode }) => {
     const containerRef = useRef(null);
     const [dims, setDims] = useState({ w: 600, h: 240 });
     const [activeIdx, setActiveIdx] = useState(null);
@@ -166,7 +164,7 @@ const RevenueChartLegacy = ({ data, darkMode }) => {
     }, []);
 
     const maxVal = useMemo(() => Math.max(...data.map((point) => Math.max(0, Number(point.value) || 0)), 100), [data]);
-    const margin = { top: 18, right: 12, bottom: 26, left: 46 };
+    const margin = { top: 48, right: 12, bottom: 26, left: dims.w < 420 ? 40 : 46 };
     const chartW = Math.max(10, dims.w - margin.left - margin.right);
     const chartH = dims.h - margin.top - margin.bottom;
     const baseY = margin.top + chartH;
@@ -246,13 +244,19 @@ const RevenueChartLegacy = ({ data, darkMode }) => {
     return (
         <div
             ref={containerRef}
-            className="relative h-[240px] w-full select-none"
+            className="relative h-[240px] min-w-0 w-full select-none overflow-hidden"
             role="img"
-            aria-label="Chiffre d’affaires quotidien"
+            aria-label="Évolution du chiffre d’affaires"
             onPointerMove={handlePointerMove}
             onPointerLeave={() => setActiveIdx(null)}
         >
-            <svg width={dims.w} height={dims.h} className="block overflow-visible">
+            <svg
+                viewBox={`0 0 ${dims.w} ${dims.h}`}
+                width="100%"
+                height={dims.h}
+                preserveAspectRatio="none"
+                className="block h-[240px] w-full"
+            >
                 <defs>
                     <linearGradient id="dashAreaGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#3B82F6" stopOpacity={denseSeries ? 0.14 : 0.22} />
@@ -330,8 +334,8 @@ const RevenueChartLegacy = ({ data, darkMode }) => {
 
             {activeIdx !== null && data[activeIdx] && points[activeIdx] && (
                 <div
-                    className={`absolute top-0 -translate-x-1/2 -translate-y-[65%] pointer-events-none rounded-xl px-3.5 py-2 ring-1 shadow-[0_18px_48px_-24px_rgba(25,32,28,0.55)] ${darkMode ? 'bg-[#1a1a19] ring-white/10 text-white' : 'bg-[#fffdfa] ring-stone-900/8 text-stone-900'}`}
-                    style={{ left: points[activeIdx].x }}
+                    className={`pointer-events-none absolute top-1 z-10 -translate-x-1/2 rounded-xl px-3 py-1.5 ring-1 shadow-[0_14px_36px_-22px_rgba(25,32,28,0.48)] ${darkMode ? 'bg-[#1a1a19] ring-white/10 text-white' : 'bg-[#fffdfa] ring-stone-900/8 text-stone-900'}`}
+                    style={{ left: clampToRange(points[activeIdx].x, 68, Math.max(68, dims.w - 68)) }}
                 >
                     <p className="mb-0.5 whitespace-nowrap text-[9px] uppercase tracking-wider opacity-50">{data[activeIdx].tooltipLabel || data[activeIdx].label}</p>
                     <p className="whitespace-nowrap text-sm font-black tabular-nums">{Math.round(data[activeIdx].value).toLocaleString('fr-FR')} €</p>
@@ -344,8 +348,8 @@ const RevenueChartLegacy = ({ data, darkMode }) => {
 const PanelFrame = ({ children, className = '', innerClassName = '', darkMode, as = 'section' }) => {
     const Component = as;
     return (
-        <Component className={`rounded-[30px] p-1.5 ring-1 ${darkMode ? 'bg-white/[0.025] ring-white/[0.07]' : 'bg-[#e9e5df]/65 ring-[#25221f]/[0.055]'} ${className}`}>
-            <div className={`h-full rounded-[24px] shadow-[inset_0_1px_0_rgba(255,255,255,0.58),0_26px_72px_-54px_rgba(48,43,37,0.62)] ${darkMode ? 'bg-[#171817] text-white' : 'bg-[#fffdfa] text-[#242320]'} ${innerClassName}`}>
+        <Component className={`min-w-0 max-w-full rounded-[30px] p-1.5 ring-1 ${darkMode ? 'bg-white/[0.025] ring-white/[0.07]' : 'bg-[#e9e5df]/65 ring-[#25221f]/[0.055]'} ${className}`}>
+            <div className={`h-full min-w-0 max-w-full rounded-[24px] shadow-[inset_0_1px_0_rgba(255,255,255,0.58),0_26px_72px_-54px_rgba(48,43,37,0.62)] ${darkMode ? 'bg-[#171817] text-white' : 'bg-[#fffdfa] text-[#242320]'} ${innerClassName}`}>
                 {children}
             </div>
         </Component>
@@ -393,72 +397,103 @@ const KpiCard = ({
 
 const StatusDonut = ({ counts, darkMode }) => {
     const total = counts.paid + counts.pending + counts.shipped;
-    const radius = 48;
-    const strokeWidth = 9;
-    const circumference = 2 * Math.PI * radius;
-    const secured = counts.paid + counts.shipped;
-    const percentage = total === 0 ? 0 : secured / total;
     const reducedMotion = useReducedMotion();
     const segments = [
-        { key: 'paid', label: 'Payées', value: counts.paid, color: '#5f8d70' },
-        { key: 'shipped', label: 'Expédiées', value: counts.shipped, color: '#68849d' },
-        { key: 'pending', label: 'En attente', value: counts.pending, color: '#c99b58' }
+        { key: 'paid', label: 'Payées', value: counts.paid, color: '#4f9870', radius: 54 },
+        { key: 'shipped', label: 'Expédiées', value: counts.shipped, color: '#4e88c7', radius: 43 },
+        { key: 'pending', label: 'En attente', value: counts.pending, color: '#dc921f', radius: 32 }
     ];
-    let runningOffset = 0;
+    const trackFraction = 0.78;
+    const startAngle = 130;
+    const trackDegrees = 360 * trackFraction;
 
     return (
-        <div className="grid min-h-[250px] items-center gap-7 sm:grid-cols-[160px_minmax(0,1fr)] lg:grid-cols-1 xl:grid-cols-[160px_minmax(0,1fr)]">
-            <div className="relative mx-auto h-36 w-36">
-                <svg viewBox="0 0 120 120" className="-rotate-90" role="img" aria-label={`${Math.round(percentage * 100)} % des commandes sont payées ou expédiées`}>
-                <circle
-                    cx="60" cy="60" r={radius}
-                    fill="none"
-                    stroke={darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(30,30,28,0.06)'}
-                    strokeWidth={strokeWidth}
-                />
+        <div className="flex min-h-[286px] min-w-0 flex-col justify-between gap-5">
+            <div className="relative mx-auto h-[190px] w-[190px] sm:h-[210px] sm:w-[210px]">
+                <svg
+                    viewBox="0 0 140 140"
+                    className="h-full w-full overflow-visible"
+                    role="img"
+                    aria-label={`Répartition de ${total} commandes : ${counts.paid} payées, ${counts.shipped} expédiées et ${counts.pending} en attente`}
+                >
                     {segments.map((segment, index) => {
-                        const length = total ? (segment.value / total) * circumference : 0;
-                        const circle = (
+                        const circumference = 2 * Math.PI * segment.radius;
+                        const trackLength = circumference * trackFraction;
+                        const progress = total > 0 ? segment.value / total : 0;
+                        const progressLength = trackLength * progress;
+                        const endAngle = (startAngle + (trackDegrees * progress)) * (Math.PI / 180);
+                        const endX = 70 + (segment.radius * Math.cos(endAngle));
+                        const endY = 70 + (segment.radius * Math.sin(endAngle));
+
+                        return (
+                            <g key={segment.key}>
+                                <circle
+                                    cx="70"
+                                    cy="70"
+                                    r={segment.radius}
+                                    fill="none"
+                                    stroke={darkMode ? 'rgba(255,255,255,0.065)' : 'rgba(45,43,39,0.065)'}
+                                    strokeWidth="7"
+                                    strokeDasharray={`${trackLength} ${circumference - trackLength}`}
+                                    strokeLinecap="round"
+                                    transform={`rotate(${startAngle} 70 70)`}
+                                />
                             <motion.circle
-                                key={segment.key}
-                                cx="60"
-                                cy="60"
-                                r={radius}
+                                cx="70"
+                                cy="70"
+                                r={segment.radius}
                                 fill="none"
                                 stroke={segment.color}
-                                strokeWidth={strokeWidth}
-                                strokeDasharray={`${Math.max(0, length - 2)} ${circumference}`}
-                                strokeDashoffset={-runningOffset}
+                                strokeWidth="7"
+                                strokeDasharray={`${progressLength} ${circumference - progressLength}`}
                                 strokeLinecap="round"
-                                initial={reducedMotion ? false : { opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ duration: 0.8, delay: index * 0.12, ease: EASE_OUT }}
+                                transform={`rotate(${startAngle} 70 70)`}
+                                initial={reducedMotion ? false : { opacity: 0, strokeDashoffset: progressLength }}
+                                animate={{ opacity: 1, strokeDashoffset: 0 }}
+                                transition={{ duration: 0.9, delay: index * 0.1, ease: EASE_OUT }}
                             />
+                                {progress > 0 && (
+                                    <motion.circle
+                                        cx={endX}
+                                        cy={endY}
+                                        r="3.5"
+                                        fill={segment.color}
+                                        initial={reducedMotion ? false : { opacity: 0, scale: 0.5 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ duration: 0.45, delay: 0.55 + (index * 0.1), ease: EASE_OUT }}
+                                        style={{ transformOrigin: `${endX}px ${endY}px` }}
+                                    />
+                                )}
+                            </g>
                         );
-                        runningOffset += length;
-                        return circle;
                     })}
                 </svg>
                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                    <span className={`text-3xl font-semibold tracking-[-0.05em] tabular-nums ${darkMode ? 'text-white' : 'text-stone-900'}`}>
-                        {total > 0 ? Math.round(percentage * 100) : 0}%
+                    <span className={`text-[2.35rem] font-semibold leading-none tracking-[-0.065em] tabular-nums sm:text-[2.65rem] ${darkMode ? 'text-white' : 'text-stone-900'}`}>
+                        {total}
                     </span>
-                    <span className={`mt-1 text-[8px] font-bold uppercase tracking-[0.16em] ${darkMode ? 'text-white/38' : 'text-stone-400'}`}>encaissées</span>
+                    <span className={`mt-2 text-[8px] font-bold uppercase tracking-[0.18em] ${darkMode ? 'text-white/38' : 'text-stone-400'}`}>
+                        Commandes
+                    </span>
                 </div>
             </div>
-            <div className="space-y-3">
+            <div className={`grid min-w-0 grid-cols-3 divide-x rounded-2xl px-2 py-3 ring-1 ${darkMode ? 'divide-white/[0.07] bg-white/[0.025] ring-white/[0.055]' : 'divide-stone-900/[0.06] bg-[#f6f3ee] ring-stone-900/[0.045]'}`}>
                 {segments.map((segment) => (
-                    <div key={segment.key} className={`flex items-center justify-between gap-4 rounded-xl px-3 py-2.5 ${darkMode ? 'bg-white/[0.035]' : 'bg-[#f3f0eb]'}`}>
-                        <span className={`flex items-center gap-2.5 text-[11px] font-medium ${darkMode ? 'text-white/62' : 'text-stone-600'}`}>
-                            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: segment.color }} />
-                            {segment.label}
+                    <div key={segment.key} className="min-w-0 px-2 text-center">
+                        <span className={`flex min-w-0 items-center justify-center gap-1.5 text-[8px] font-bold uppercase tracking-[0.08em] sm:text-[9px] ${darkMode ? 'text-white/42' : 'text-stone-500'}`}>
+                            <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: segment.color }} />
+                            <span className="truncate">{segment.label}</span>
                         </span>
-                        <span className={`text-sm font-semibold tabular-nums ${darkMode ? 'text-white' : 'text-stone-900'}`}>{segment.value}</span>
+                        <div className="mt-2 flex items-baseline justify-center gap-1.5">
+                            <span className={`text-base font-semibold tabular-nums ${darkMode ? 'text-white' : 'text-stone-900'}`}>
+                                {segment.value}
+                            </span>
+                            <span className={`text-[8px] font-medium tabular-nums ${darkMode ? 'text-white/28' : 'text-stone-400'}`}>
+                                {total > 0 ? Math.round((segment.value / total) * 100) : 0}%
+                            </span>
+                        </div>
                     </div>
                 ))}
-                <p className={`pt-1 text-[10px] leading-relaxed ${darkMode ? 'text-white/34' : 'text-stone-400'}`}>
-                    {total} commande{total > 1 ? 's' : ''} hors annulations
-                </p>
             </div>
         </div>
     );
@@ -486,7 +521,7 @@ const QuoteFunnel = ({ quote, loading, error, darkMode }) => {
     }
 
     return (
-        <div className="grid gap-3">
+        <div className="grid min-w-0 max-w-full gap-3 overflow-hidden">
             {stages.map((stage, index) => {
                 const previous = index > 0 ? stages[index - 1].value : null;
                 const rate = previous > 0 ? Math.round((stage.value / previous) * 100) : null;
@@ -494,12 +529,14 @@ const QuoteFunnel = ({ quote, loading, error, darkMode }) => {
                 return (
                     <div key={stage.key}>
                         {index > 0 && (
-                            <div className={`mb-2 ml-12 flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.14em] ${darkMode ? 'text-white/30' : 'text-stone-400'}`}>
+                            <div className={`mb-2 ml-8 flex min-w-0 items-center gap-2 text-[8px] font-bold uppercase tracking-[0.11em] sm:ml-12 sm:text-[9px] sm:tracking-[0.14em] ${darkMode ? 'text-white/30' : 'text-stone-400'}`}>
                                 <span className={`h-4 w-px ${darkMode ? 'bg-white/10' : 'bg-stone-300'}`} />
-                                {rate === null ? 'Conversion non mesurable' : `${rate}% de l’étape précédente`}
+                                <span className="min-w-0 break-words">
+                                    {rate === null ? 'Conversion non mesurable' : `${rate}% de l’étape précédente`}
+                                </span>
                             </div>
                         )}
-                        <div className={`relative overflow-hidden rounded-2xl px-4 py-3.5 ring-1 ${darkMode ? 'bg-white/[0.035] ring-white/[0.055]' : 'bg-[#f4f1ec] ring-stone-900/[0.045]'}`}>
+                        <div className={`relative min-w-0 max-w-full overflow-hidden rounded-2xl px-3 py-3.5 ring-1 sm:px-4 ${darkMode ? 'bg-white/[0.035] ring-white/[0.055]' : 'bg-[#f4f1ec] ring-stone-900/[0.045]'}`}>
                             <motion.div
                                 aria-hidden="true"
                                 className={`absolute inset-y-0 left-0 origin-left ${index === 2 ? (darkMode ? 'bg-[#789782]/14' : 'bg-[#cbdccf]/55') : (darkMode ? 'bg-white/[0.025]' : 'bg-[#e7e1d9]/70')}`}
@@ -508,20 +545,20 @@ const QuoteFunnel = ({ quote, loading, error, darkMode }) => {
                                 transition={{ duration: 0.75, delay: index * 0.1, ease: EASE_OUT }}
                                 style={{ width: '100%' }}
                             />
-                            <div className="relative flex items-center justify-between gap-4">
+                            <div className="relative flex min-w-0 items-center justify-between gap-3">
                                 <div className="flex min-w-0 items-center gap-3">
                                     <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${darkMode ? 'bg-white/[0.055] text-white/58' : 'bg-white/75 text-stone-600'}`}>
                                         <Icon size={15} strokeWidth={1.45} />
                                     </span>
-                                    <span className={`truncate text-[11px] font-semibold ${darkMode ? 'text-white/68' : 'text-stone-600'}`}>{stage.label}</span>
+                                    <span className={`min-w-0 break-words text-[10px] font-semibold leading-tight sm:text-[11px] ${darkMode ? 'text-white/68' : 'text-stone-600'}`}>{stage.label}</span>
                                 </div>
-                                <span className={`text-xl font-semibold tracking-[-0.04em] tabular-nums ${darkMode ? 'text-white' : 'text-stone-900'}`}>{stage.value}</span>
+                                <span className={`shrink-0 text-lg font-semibold tracking-[-0.04em] tabular-nums sm:text-xl ${darkMode ? 'text-white' : 'text-stone-900'}`}>{stage.value}</span>
                             </div>
                         </div>
                     </div>
                 );
             })}
-            <p className={`mt-2 text-[10px] leading-relaxed ${darkMode ? 'text-white/34' : 'text-stone-400'}`}>
+            <p className={`mt-2 min-w-0 max-w-full break-words text-[10px] leading-relaxed ${darkMode ? 'text-white/34' : 'text-stone-400'}`}>
                 « Brouillon ouvert » mesure l’ouverture de l’e-mail prérempli, pas sa réception ni l’acceptation d’un devis.
             </p>
         </div>
@@ -578,11 +615,11 @@ const MiniSparkline = ({ values, darkMode }) => {
 const TrendingProducts = ({ products, loading, error, darkMode }) => {
     if (loading) {
         return (
-            <div className="grid grid-flow-col auto-cols-[minmax(148px,1fr)] gap-2.5 overflow-hidden" aria-label="Chargement des tendances produits">
+            <div className="flex min-w-0 max-w-full gap-2.5 overflow-hidden" aria-label="Chargement des tendances produits">
                 {Array.from({ length: 5 }, (_, index) => (
                     <div
                         key={index}
-                        className={`h-[266px] overflow-hidden rounded-[18px] ring-1 ${darkMode ? 'bg-white/[0.025] ring-white/[0.05]' : 'bg-stone-900/[0.025] ring-stone-900/[0.035]'}`}
+                        className={`h-[266px] w-[min(72vw,190px)] shrink-0 overflow-hidden rounded-[18px] ring-1 ${darkMode ? 'bg-white/[0.025] ring-white/[0.05]' : 'bg-stone-900/[0.025] ring-stone-900/[0.035]'}`}
                     >
                         <div className={`h-[130px] ${darkMode ? 'bg-white/[0.055]' : 'bg-white/75'}`} />
                         <div className="space-y-3 p-3">
@@ -613,7 +650,7 @@ const TrendingProducts = ({ products, loading, error, darkMode }) => {
     }
 
     return (
-        <ol className="grid grid-flow-col auto-cols-[minmax(148px,1fr)] gap-2.5 overflow-x-auto overscroll-x-contain pb-1">
+        <ol className="flex min-w-0 max-w-full snap-x snap-mandatory gap-2.5 overflow-x-auto overscroll-x-contain pb-2 pr-3 [scrollbar-width:thin]">
             {products.map((product, index) => {
                 return (
                     <motion.li
@@ -621,7 +658,7 @@ const TrendingProducts = ({ products, loading, error, darkMode }) => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.42, delay: index * 0.045, ease: EASE_OUT }}
-                        className={`group relative isolate h-[266px] overflow-hidden rounded-[18px] ring-1 transition-[background-color,box-shadow] duration-300 ease-out hover:shadow-[0_18px_38px_-30px_rgba(45,42,38,0.42)] ${darkMode ? 'bg-white/[0.028] ring-white/[0.06] hover:bg-white/[0.038]' : 'bg-[#f6f3ee] ring-stone-900/[0.045] hover:bg-[#f1ede7]'}`}
+                        className={`group relative isolate h-[266px] w-[min(72vw,190px)] shrink-0 snap-start overflow-hidden rounded-[18px] ring-1 transition-[background-color,box-shadow] duration-300 ease-out sm:w-[190px] hover:shadow-[0_18px_38px_-30px_rgba(45,42,38,0.42)] ${darkMode ? 'bg-white/[0.028] ring-white/[0.06] hover:bg-white/[0.038]' : 'bg-[#f6f3ee] ring-stone-900/[0.045] hover:bg-[#f1ede7]'}`}
                     >
                         <div className={`relative h-[130px] w-full overflow-hidden border-b ${darkMode ? 'bg-[#20231f] border-white/[0.06]' : 'bg-[#e9e5df] border-white/70'}`}>
                             {product.imageUrl ? (
@@ -796,7 +833,11 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
         registeredUsers: 0
     });
 
-    const [timeFilter, _setTimeFilter] = useState('1month');
+    const [salesPanelView, setSalesPanelView] = useState('summary');
+    const [timeFilter, setTimeFilter] = useState('1month');
+    const [intradayOrders, setIntradayOrders] = useState(null);
+    const [intradayOrdersLoading, setIntradayOrdersLoading] = useState(false);
+    const intradayRequestRef = useRef(false);
     const [allOrders, setAllOrders] = useState([]);
     const [dailySales, setDailySales] = useState([]);
     const [recentOrders, setRecentOrders] = useState([]);
@@ -927,11 +968,83 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
             .map((dateKey) => ({ dateKey, totalRevenue: map[dateKey] }));
     };
 
+    const selectTimeFilter = async (filterId) => {
+        setTimeFilter(filterId);
+        if (!['1hour', '1day'].includes(filterId) || intradayOrders !== null || intradayRequestRef.current) return;
+
+        intradayRequestRef.current = true;
+        setIntradayOrdersLoading(true);
+        const cutoff = Timestamp.fromMillis(Date.now() - (24 * 60 * 60 * 1000));
+        try {
+            const snapshot = await getDocs(query(
+                collection(db, 'orders'),
+                where('createdAt', '>=', cutoff),
+                orderBy('createdAt', 'asc'),
+                limit(300)
+            ));
+            setIntradayOrders(snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() })));
+        } catch (error) {
+            console.error('Failed to fetch intraday sales', error);
+            setIntradayOrders([]);
+        } finally {
+            intradayRequestRef.current = false;
+            setIntradayOrdersLoading(false);
+        }
+    };
+
     const chartData = useMemo(() => {
+        if (['1hour', '1day'].includes(timeFilter)) {
+            if (!intradayOrders) return [];
+            const end = Date.now();
+            const duration = timeFilter === '1hour' ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+            const step = timeFilter === '1hour' ? 5 * 60 * 1000 : 60 * 60 * 1000;
+            const pointCount = Math.ceil(duration / step);
+            const start = end - duration;
+            const points = Array.from({ length: pointCount }, (_, index) => {
+                const slotStart = start + (index * step);
+                const slotEnd = slotStart + step;
+                const date = new Date(slotStart);
+                const axisLabel = date.toLocaleTimeString('fr-FR', {
+                    hour: '2-digit',
+                    minute: timeFilter === '1hour' ? '2-digit' : undefined
+                });
+                return {
+                    dateKey: new Date(slotStart).toISOString(),
+                    axisLabel,
+                    label: axisLabel,
+                    tooltipLabel: `${date.toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'short'
+                    })} · ${axisLabel}`,
+                    slotStart,
+                    slotEnd,
+                    value: 0
+                };
+            });
+
+            intradayOrders
+                .filter((order) => order.status !== 'cancelled' && order.status !== 'cancelled_by_client')
+                .forEach((order) => {
+                    const timestamp = getMillis(order.createdAt);
+                    if (!timestamp || timestamp < start || timestamp > end) return;
+                    const pointIndex = Math.min(pointCount - 1, Math.floor((timestamp - start) / step));
+                    points[pointIndex].value += Number(order.total || 0);
+                });
+
+            return points;
+        }
+
         if (!dailySales.length) return [];
-        const periodDays = timeFilter === '7days' ? 7 : timeFilter === '1month' ? 30 : 365;
         const now = new Date();
         const endOfTodayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+        const earliestDailyTimestamp = Date.parse(`${dailySales[0]?.dateKey}T00:00:00Z`);
+        const periodDays = timeFilter === '7days'
+            ? 7
+            : timeFilter === '1month'
+                ? 30
+                : timeFilter === 'max' && Number.isFinite(earliestDailyTimestamp)
+                    ? Math.max(1, Math.floor((endOfTodayUtc - earliestDailyTimestamp) / (24 * 60 * 60 * 1000)) + 1)
+                    : 365;
         const revenueByDate = new Map();
 
         dailySales.forEach(({ dateKey, totalRevenue }) => {
@@ -962,9 +1075,9 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
                 value: Math.max(0, Number(revenueByDate.get(dateKey)) || 0)
             };
         });
-    }, [dailySales, timeFilter]);
+    }, [dailySales, intradayOrders, timeFilter]);
 
-    const _revenueSummary = useMemo(() => {
+    const revenueSummary = useMemo(() => {
         const dayMs = 24 * 60 * 60 * 1000;
         const today = new Date();
         const currentStart = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()) - (29 * dayMs);
@@ -1345,14 +1458,21 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
     const textBase = darkMode ? 'text-white' : 'text-stone-900';
     const textMuted = darkMode ? 'text-white/40' : 'text-stone-400';
 
-    const _getFilterLabel = () => {
+    const getFilterLabel = () => {
+        if (timeFilter === '1hour') return "la dernière heure";
+        if (timeFilter === '1day') return "les dernières 24 heures";
         if (timeFilter === '7days') return "les 7 derniers jours";
         if (timeFilter === '1month') return "les 30 derniers jours";
+        if (timeFilter === 'max') return "tout l’historique disponible";
         return "les 365 derniers jours";
     };
 
-    const _chartGranularityLabel = 'Vue quotidienne';
-    const _bestPointLabel = 'Meilleur jour';
+    const chartGranularityLabel = timeFilter === '1hour'
+        ? 'Vue par 5 minutes'
+        : timeFilter === '1day'
+            ? 'Vue horaire'
+            : 'Vue quotidienne';
+    const bestPointLabel = ['1hour', '1day'].includes(timeFilter) ? 'Meilleur créneau' : 'Meilleur jour';
     const financialAmounts = commerceOperations.operations?.projection?.currencies?.EUR;
     const capturedRevenue = Number.isSafeInteger(financialAmounts?.capturedCents)
         ? financialAmounts.capturedCents / 100
@@ -1365,14 +1485,6 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
         : 0;
     const paidOrderCount = statusCounts.paid + statusCounts.shipped;
     const averagePaidOrderValue = paidOrderCount > 0 ? capturedRevenue / paidOrderCount : 0;
-    const paymentStatusLabel = commerceOperations.loading
-        ? 'Chargement'
-        : commerceOperations.error
-            ? 'Données indisponibles'
-            : commerceOperations.operations?.status === 'healthy'
-                ? 'À jour'
-                : 'À vérifier';
-
     return (
         <motion.div
             initial={reducedMotion ? false : 'hidden'}
@@ -1430,36 +1542,119 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
             </motion.div>
 
             <motion.div custom={1} variants={sectionVariants} className="grid gap-5 lg:grid-cols-12">
-                <PanelFrame darkMode={darkMode} className="lg:col-span-8" innerClassName="p-5 sm:p-7">
-                    <div className="flex flex-col gap-6">
+                <PanelFrame darkMode={darkMode} className="min-w-0 lg:col-span-8" innerClassName="overflow-hidden p-5 sm:p-7">
+                    <div className="flex min-w-0 flex-col gap-6">
                         <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-start">
                             <div>
-                                <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Paiements</p>
-                                <h2 className={`mt-2 text-xl font-semibold tracking-[-0.03em] ${textBase}`}>Bilan des ventes</h2>
-                                <p className={`mt-1 text-[11px] ${textMuted}`}>Montants cumulés après remboursements</p>
+                                <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${textMuted}`}>
+                                    {salesPanelView === 'summary' ? 'Paiements' : 'Performance'}
+                                </p>
+                                <h2 className={`mt-2 text-xl font-semibold tracking-[-0.03em] ${textBase}`}>
+                                    {salesPanelView === 'summary' ? 'Bilan des ventes' : 'Évolution du chiffre d’affaires'}
+                                </h2>
+                                <p className={`mt-1 text-[11px] ${textMuted}`}>
+                                    {salesPanelView === 'summary'
+                                        ? 'Montants cumulés après remboursements'
+                                        : `${chartGranularityLabel} · ${getFilterLabel()}`}
+                                </p>
                             </div>
-                            <div className={`rounded-xl px-4 py-3 text-[10px] font-bold uppercase tracking-[0.1em] ring-1 ${
-                                commerceOperations.operations?.status === 'healthy'
-                                    ? (darkMode ? 'bg-emerald-400/[0.06] text-emerald-200/70 ring-emerald-300/10' : 'bg-emerald-50 text-emerald-700 ring-emerald-900/10')
-                                    : (darkMode ? 'bg-amber-400/[0.05] text-amber-200/65 ring-amber-300/10' : 'bg-amber-50 text-amber-700 ring-amber-900/10')
-                            }`}>
-                                {paymentStatusLabel}
-                            </div>
-                        </div>
-                        <div className="grid gap-3 sm:grid-cols-3">
-                            {[
-                                ['Encaissé', financialAmounts?.capturedCents],
-                                ['Remboursé', financialAmounts?.refundedCents],
-                                ['Ventes nettes', financialAmounts?.netCents]
-                            ].map(([label, cents]) => (
-                                <div key={label} className={`rounded-2xl p-4 ring-1 ${darkMode ? 'bg-white/[0.03] ring-white/[0.06]' : 'bg-stone-900/[0.025] ring-stone-900/[0.05]'}`}>
-                                    <p className={`text-[9px] font-bold uppercase tracking-[0.14em] ${textMuted}`}>{label}</p>
-                                    <p className={`mt-2 text-lg font-semibold tabular-nums ${textBase}`}>
-                                        {Number.isSafeInteger(cents) ? `${(cents / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €` : '—'}
-                                    </p>
+                            <div className="flex w-full flex-col gap-1.5 xl:w-auto xl:items-end">
+                                <div
+                                    role="group"
+                                    aria-label="Affichage des ventes"
+                                    className={`grid w-full grid-cols-2 gap-0.5 rounded-[10px] p-0.5 ring-1 xl:w-auto ${darkMode ? 'bg-white/[0.035] ring-white/[0.055]' : 'bg-[#f1ede7] ring-stone-900/[0.045]'}`}
+                                >
+                                    {[
+                                        { id: 'summary', label: 'Bilan' },
+                                        { id: 'chart', label: 'Graphique' }
+                                    ].map((view) => (
+                                        <button
+                                            type="button"
+                                            key={view.id}
+                                            onClick={() => setSalesPanelView(view.id)}
+                                            aria-pressed={salesPanelView === view.id}
+                                            className={`rounded-lg px-4 py-1.5 text-[8px] font-bold uppercase tracking-[0.08em] transition-[transform,background-color,color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#62816c] ${
+                                                salesPanelView === view.id
+                                                    ? (darkMode ? 'bg-[#f4f2ed] text-[#1e211f]' : 'bg-white text-stone-900 shadow-[0_8px_22px_-20px_rgba(38,35,31,0.62)]')
+                                                    : (darkMode ? 'text-white/38 hover:text-white/75' : 'text-stone-400 hover:text-stone-700')
+                                            }`}
+                                        >
+                                            {view.label}
+                                        </button>
+                                    ))}
                                 </div>
-                            ))}
+                                {salesPanelView === 'chart' && (
+                                    <div
+                                        role="group"
+                                        aria-label="Période du graphique"
+                                        className={`grid w-full shrink-0 grid-cols-3 gap-0.5 rounded-[10px] p-0.5 ring-1 sm:grid-cols-6 xl:w-auto ${darkMode ? 'bg-white/[0.035] ring-white/[0.055]' : 'bg-[#f1ede7] ring-stone-900/[0.045]'}`}
+                                    >
+                                        {[
+                                            { id: '1hour', label: '1h' },
+                                            { id: '1day', label: '24h' },
+                                            { id: '7days', label: '7j' },
+                                            { id: '1month', label: '1 mois' },
+                                            { id: '1year', label: '1 an' },
+                                            { id: 'max', label: 'Max' }
+                                        ].map((filter) => (
+                                            <button
+                                                type="button"
+                                                key={filter.id}
+                                                onClick={() => void selectTimeFilter(filter.id)}
+                                                aria-pressed={timeFilter === filter.id}
+                                                className={`rounded-lg px-2.5 py-1.5 text-[8px] font-bold uppercase tracking-[0.06em] transition-[transform,background-color,color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#62816c] ${
+                                                    timeFilter === filter.id
+                                                        ? (darkMode ? 'bg-[#f4f2ed] text-[#1e211f]' : 'bg-white text-stone-900 shadow-[0_8px_22px_-20px_rgba(38,35,31,0.62)]')
+                                                        : (darkMode ? 'text-white/38 hover:text-white/75' : 'text-stone-400 hover:text-stone-700')
+                                                }`}
+                                            >
+                                                {filter.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
+                        {salesPanelView === 'summary' ? (
+                            <div className="grid gap-3 sm:grid-cols-3">
+                                {[
+                                    ['Encaissé', financialAmounts?.capturedCents],
+                                    ['Remboursé', financialAmounts?.refundedCents],
+                                    ['Ventes nettes', financialAmounts?.netCents]
+                                ].map(([label, cents]) => (
+                                    <div key={label} className={`rounded-2xl p-4 ring-1 ${darkMode ? 'bg-white/[0.03] ring-white/[0.06]' : 'bg-stone-900/[0.025] ring-stone-900/[0.05]'}`}>
+                                        <p className={`text-[9px] font-bold uppercase tracking-[0.14em] ${textMuted}`}>{label}</p>
+                                        <p className={`mt-2 text-lg font-semibold tabular-nums ${textBase}`}>
+                                            {Number.isSafeInteger(cents) ? `${(cents / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €` : '—'}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <>
+                                <div className="flex gap-5">
+                                    <div>
+                                        <p className={`text-[8px] font-bold uppercase tracking-[0.13em] ${textMuted}`}>Total période</p>
+                                        <p className={`mt-1 text-sm font-semibold tabular-nums ${textBase}`}>{Math.round(revenueSummary.periodTotal).toLocaleString('fr-FR')} €</p>
+                                    </div>
+                                    <div>
+                                        <p className={`text-[8px] font-bold uppercase tracking-[0.13em] ${textMuted}`}>{bestPointLabel}</p>
+                                        <p className={`mt-1 text-sm font-semibold tabular-nums ${textBase}`}>{revenueSummary.bestPoint?.label || '—'}</p>
+                                    </div>
+                                </div>
+                                {intradayOrdersLoading && ['1hour', '1day'].includes(timeFilter) ? (
+                                    <div className={`flex h-[240px] items-center justify-center rounded-2xl px-6 text-center text-sm ${darkMode ? 'bg-white/[0.03] text-white/38' : 'bg-stone-900/[0.03] text-stone-400'}`}>
+                                        Chargement des ventes récentes…
+                                    </div>
+                                ) : chartData.length > 0 ? (
+                                    <RevenueChart data={chartData} darkMode={darkMode} />
+                                ) : (
+                                    <div className={`flex h-[240px] items-center justify-center rounded-2xl px-6 text-center text-sm ${darkMode ? 'bg-white/[0.03] text-white/38' : 'bg-stone-900/[0.03] text-stone-400'}`}>
+                                        Le chiffre d’affaires apparaîtra après la première vente.
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
                 </PanelFrame>
 
@@ -1472,8 +1667,8 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
                 </PanelFrame>
             </motion.div>
 
-            <motion.div custom={2} variants={sectionVariants} className="grid gap-5 lg:grid-cols-12">
-                <PanelFrame darkMode={darkMode} className="lg:col-span-5" innerClassName="p-5 sm:p-7">
+            <motion.div custom={2} variants={sectionVariants} className="grid min-w-0 max-w-full gap-5 lg:grid-cols-12">
+                <PanelFrame darkMode={darkMode} className="min-w-0 lg:col-span-5" innerClassName="overflow-hidden p-5 sm:p-7">
                     <div className="mb-6 flex items-start justify-between gap-4">
                         <div>
                             <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Restauration</p>
@@ -1487,7 +1682,7 @@ const AdminDashboard = ({ user, darkMode = false, items = [] }) => {
                     <QuoteFunnel quote={insights.quote} loading={insights.loading} error={insights.error} darkMode={darkMode} />
                 </PanelFrame>
 
-                <PanelFrame darkMode={darkMode} className="lg:col-span-7" innerClassName="p-5 sm:p-7">
+                <PanelFrame darkMode={darkMode} className="min-w-0 lg:col-span-7" innerClassName="overflow-hidden p-5 sm:p-7">
                     <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
                         <div>
                             <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Intérêt catalogue</p>

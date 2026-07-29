@@ -4137,10 +4137,19 @@ html.dark .before-after-premium-atmosphere,
 
 /* Degrade diagonal : la lumiere tombe en haut a gauche, la matiere se rechauffe
    vers le coin du filigrane. Un aplat unique laissait la zone du logo plate. */
+/* Quart de soleil ancre dans l'angle superieur droit : le halo rayonne depuis
+   le coin et retombe en diagonale, au lieu d'un degrade qui rechauffait toute
+   la hauteur du panneau. */
 .before-after-premium-copy--warm {
   background:
-    radial-gradient(ellipse 62% 78% at 88% 46%, rgba(186, 143, 92, 0.15) 0%, rgba(186, 143, 92, 0.05) 42%, transparent 72%),
-    linear-gradient(154deg, #fffefb 0%, #fffaf2 38%, #fbf1e2 74%, #f6e9d6 100%) !important;
+    radial-gradient(
+      circle 560px at 100% 0%,
+      rgba(199, 141, 77, 0.32) 0%,
+      rgba(199, 145, 88, 0.17) 34%,
+      rgba(199, 150, 98, 0.06) 55%,
+      transparent 74%
+    ),
+    linear-gradient(180deg, #fffefc 0%, #fffcf7 100%) !important;
 }
 
 .before-after-premium-copy--warm::after {
@@ -4164,13 +4173,12 @@ html.dark .before-after-premium-atmosphere,
   height: auto;
   pointer-events: none;
   user-select: none;
-  opacity: 0.28;
+  opacity: 0.36;
 
-  /* Aucun sepia : le logo source est un vermillon vif, et sepia() ecrase par
-     construction toutes les teintes vers un brun uniforme — c'est ce qui le
-     rendait fade. On garde la couleur de marque telle quelle, juste appuyee,
-     et la discretion se joue uniquement sur l'opacite. */
-  filter: saturate(1.12);
+  /* Hue de marque conservee (pas de sepia, qui la delavait), mais assombrie :
+     on obtient une terre de sienne profonde plutot qu'un peche clair, assez
+     dense pour supporter une opacite plus forte. */
+  filter: saturate(1.2) brightness(0.62);
   transform: translateY(-50%);
 }
 
@@ -4191,8 +4199,14 @@ html.dark .before-after-premium-copy > .before-after-premium-brand-watermark,
 html.dark .before-after-premium-copy--warm,
 .before-after-premium--dark .before-after-premium-copy--warm {
   background:
-    radial-gradient(ellipse 62% 78% at 88% 46%, rgba(216, 173, 115, 0.11) 0%, rgba(216, 173, 115, 0.035) 42%, transparent 72%),
-    linear-gradient(154deg, #221e19 0%, #1d1a16 46%, #171410 100%) !important;
+    radial-gradient(
+      circle 560px at 100% 0%,
+      rgba(216, 173, 115, 0.2) 0%,
+      rgba(216, 173, 115, 0.09) 34%,
+      rgba(216, 173, 115, 0.03) 55%,
+      transparent 74%
+    ),
+    linear-gradient(180deg, #201c17 0%, #1a1713 100%) !important;
 }
 
 html.dark .before-after-premium-copy--warm::after,
@@ -4220,9 +4234,10 @@ html.dark .before-after-premium-copy--warm::after,
 }
 
 @media (min-width: 1024px) {
+  /* Neutralise : le quart de soleil de l'angle porte desormais toute la chaleur.
+     Cette ellipse pleine hauteur la diluait. */
   .before-after-premium-copy::before {
-    background:
-      radial-gradient(ellipse 84% 126% at 86% 23%, rgba(188,142,84,0.12) 0%, transparent 76%);
+    background: none;
   }
 
   .before-after-premium-visual {
