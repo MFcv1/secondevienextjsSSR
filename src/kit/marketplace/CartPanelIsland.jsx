@@ -9,6 +9,7 @@ import { getDb, getFirebaseAuth, loadFirestoreModule } from '../config/firebaseL
 import { useAuthState } from '../contexts/AuthContext';
 import {
   addGuestCartItem,
+  CART_ITEM_ADD_RESULT_EVENT,
   CART_STATE_CHANGED_EVENT,
   getCartDocumentId,
   GUEST_CART_CHANGED_EVENT,
@@ -197,9 +198,28 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
     return true;
   }, [openCart, user]);
 
+  const processProductAdded = useCallback(async (item) => {
+    const requestId = typeof item?.cartRequestId === 'string' ? item.cartRequestId : '';
+    const productId = item?.originalId || item?.id || '';
+
+    try {
+      const added = await addCartItem(item);
+      window.dispatchEvent(new CustomEvent(CART_ITEM_ADD_RESULT_EVENT, {
+        detail: { requestId, productId, success: added },
+      }));
+      return added;
+    } catch (error) {
+      console.error('Add to cart error:', error);
+      window.dispatchEvent(new CustomEvent(CART_ITEM_ADD_RESULT_EVENT, {
+        detail: { requestId, productId, success: false },
+      }));
+      return false;
+    }
+  }, [addCartItem]);
+
   useEffect(() => {
     const handleProductAdded = (event) => {
-      addCartItem(event.detail || {}).catch((error) => console.error('Add to cart error:', error));
+      void processProductAdded(event.detail || {});
     };
 
     window.addEventListener('sv:open-cart', openCart);
@@ -208,7 +228,7 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
       window.removeEventListener('sv:open-cart', openCart);
       window.removeEventListener('sv:product-added', handleProductAdded);
     };
-  }, [addCartItem, openCart]);
+  }, [openCart, processProductAdded]);
 
   useEffect(() => {
     onReady?.();
@@ -225,9 +245,9 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
     }
 
     if (initialEvent.type === 'sv:product-added') {
-      addCartItem(initialEvent.detail || {}).catch((error) => console.error('Add to cart error:', error));
+      void processProductAdded(initialEvent.detail || {});
     }
-  }, [addCartItem, initialEvent, openCart]);
+  }, [initialEvent, openCart, processProductAdded]);
 
   useEffect(() => {
     if (!pendingCartItem || !user) return;

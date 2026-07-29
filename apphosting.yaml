@@ -115,7 +115,7 @@ env:
       - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_COMMERCE_V2_UI
-    value: "false"
+    value: "true"
     availability:
       - BUILD
       - RUNTIME

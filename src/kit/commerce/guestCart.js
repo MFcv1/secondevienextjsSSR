@@ -2,6 +2,7 @@ export const GUEST_CART_STORAGE_KEY = 'secondevie:guest-cart:v1';
 export const CHECKOUT_CART_HANDOFF_KEY = 'secondevie:checkout-cart-handoff:v1';
 export const GUEST_CART_CHANGED_EVENT = 'sv:guest-cart-changed';
 export const CART_STATE_CHANGED_EVENT = 'sv:cart-state-changed';
+export const CART_ITEM_ADD_RESULT_EVENT = 'sv:cart-item-add-result';
 
 const encodeCartKeyPart = (value) => encodeURIComponent(String(value || '').trim()).replace(/\./g, '%2E');
 const createCartLineId = () => {

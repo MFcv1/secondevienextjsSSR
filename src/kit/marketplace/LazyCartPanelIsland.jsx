@@ -240,8 +240,12 @@ export default function LazyCartPanelIsland({ className = '', darkMode = false }
   }, []);
 
   useEffect(() => {
-    const openCart = (event) => ensureCartPanel('sv:open-cart', event?.detail || {});
-    const productAdded = (event) => ensureCartPanel('sv:product-added', event?.detail || {});
+    const openCart = (event) => {
+      if (!CartPanel) ensureCartPanel('sv:open-cart', event?.detail || {});
+    };
+    const productAdded = (event) => {
+      if (!CartPanel) ensureCartPanel('sv:product-added', event?.detail || {});
+    };
 
     window.addEventListener('sv:open-cart', openCart);
     window.addEventListener('sv:product-added', productAdded);
@@ -249,7 +253,7 @@ export default function LazyCartPanelIsland({ className = '', darkMode = false }
       window.removeEventListener('sv:open-cart', openCart);
       window.removeEventListener('sv:product-added', productAdded);
     };
-  }, [ensureCartPanel]);
+  }, [CartPanel, ensureCartPanel]);
 
   return (
     <>

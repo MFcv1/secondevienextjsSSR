@@ -1,9 +1,14 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, ShoppingBag } from 'lucide-react';
-import { CART_STATE_CHANGED_EVENT, getCartDocumentId, readGuestCart } from '../commerce/guestCart';
+import { Heart, Loader2, ShoppingBag } from 'lucide-react';
+import {
+  CART_ITEM_ADD_RESULT_EVENT,
+  CART_STATE_CHANGED_EVENT,
+  getCartDocumentId,
+  readGuestCart,
+} from '../commerce/guestCart';
 import { getCurrentWishlistUser, readWishlistIds, setWishlistItem } from './wishlistState';
 
 export default function ProductDetailActionsIsland({
@@ -17,7 +22,9 @@ export default function ProductDetailActionsIsland({
   quoteHref = '',
 }) {
   const router = useRouter();
+  const cartRequestIdRef = useRef('');
   const [isInCart, setIsInCart] = useState(false);
+  const [cartStatus, setCartStatus] = useState('idle');
   const [liked, setLiked] = useState(false);
 
   useEffect(() => {
@@ -63,6 +70,21 @@ export default function ProductDetailActionsIsland({
     return () => window.removeEventListener(CART_STATE_CHANGED_EVENT, handleCartStateChanged);
   }, [cartItem, productId]);
 
+  useEffect(() => {
+    if (!productId || typeof window === 'undefined') return undefined;
+
+    const handleCartAddResult = (event) => {
+      if (event.detail?.productId !== productId) return;
+      if (cartRequestIdRef.current && event.detail?.requestId !== cartRequestIdRef.current) return;
+      cartRequestIdRef.current = '';
+      setCartStatus(event.detail?.success ? 'idle' : 'error');
+      setIsInCart(Boolean(event.detail?.success));
+    };
+
+    window.addEventListener(CART_ITEM_ADD_RESULT_EVENT, handleCartAddResult);
+    return () => window.removeEventListener(CART_ITEM_ADD_RESULT_EVENT, handleCartAddResult);
+  }, [productId]);
+
   const toggleLiked = useCallback(() => {
     if (!productId || typeof window === 'undefined') return;
     const nextLiked = !readWishlistIds().includes(productId);
@@ -90,19 +112,37 @@ export default function ProductDetailActionsIsland({
       return;
     }
 
-    setIsInCart(true);
+    const requestId = globalThis.crypto?.randomUUID?.()
+      || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    cartRequestIdRef.current = requestId;
+    setCartStatus('adding');
     try {
       const event = new CustomEvent('sv:product-added', {
-        detail: cartItem || { originalId: productId, id: productId, name: productName, price: 0 },
+        detail: {
+          ...(cartItem || { originalId: productId, id: productId, name: productName, price: 0 }),
+          cartRequestId: requestId,
+        },
       });
       window.dispatchEvent(event);
     } catch {
-      // The local route can work without the global cart shell.
+      setCartStatus('error');
     }
   }, [cartItem, isInCart, isUnavailable, productId, productName, quoteHref, router]);
 
-  const disabled = isUnavailable && !quoteHref;
-  const actionLabel = isUnavailable ? unavailableLabel : isInCart ? 'Deja dans le panier' : 'Ajouter au panier';
+  const isAdding = cartStatus === 'adding';
+  const disabled = (isUnavailable && !quoteHref) || isAdding;
+  const actionLabel = isUnavailable
+    ? unavailableLabel
+    : isAdding
+      ? 'Ajout en cours'
+      : isInCart
+        ? 'Deja dans le panier'
+        : cartStatus === 'error'
+          ? "Reessayer l'ajout"
+          : 'Ajouter au panier';
+  const cartFeedback = cartStatus === 'error'
+    ? "Le meuble n'a pas pu être sauvegardé. Vérifiez votre connexion puis réessayez."
+    : '';
 
   if (mobile) {
     return (
@@ -119,10 +159,15 @@ export default function ProductDetailActionsIsland({
           }`}
           onClick={handleCart}
         >
-          <ShoppingBag size={15} />
+          {isAdding ? <Loader2 size={15} className="animate-spin" /> : <ShoppingBag size={15} />}
           {actionLabel}
           {priceLabel && !isUnavailable ? <span className="opacity-50 ml-1">· {priceLabel}</span> : null}
         </button>
+        {cartFeedback ? (
+          <p role="alert" className="mt-2 text-center text-xs font-medium text-rose-700">
+            {cartFeedback}
+          </p>
+        ) : null}
         <button
           type="button"
           onClick={toggleLiked}
@@ -150,7 +195,11 @@ export default function ProductDetailActionsIsland({
               : 'bg-stone-900 text-stone-50 hover:bg-black shadow-md'
           }`}
         >
-          {isUnavailable ? (
+          {isAdding ? (
+            <>
+              <Loader2 size={15} className="animate-spin" /> Ajout en cours
+            </>
+          ) : isUnavailable ? (
             actionLabel
           ) : isInCart ? (
             <>
@@ -161,6 +210,11 @@ export default function ProductDetailActionsIsland({
           )}
         </button>
       </div>
+      {cartFeedback ? (
+        <p role="alert" className="mt-2 px-2 text-center text-xs font-medium text-rose-700">
+          {cartFeedback}
+        </p>
+      ) : null}
     </div>
   );
 }
