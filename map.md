@@ -144,8 +144,10 @@ fusionnee dans `_DOCS/commerce/COMMERCE_STRIPE.md` et les chapitres canoniques
 admin, client, qualite, infrastructure et exploitation.
 
 La reprise post-Gate 8 est bornee par
-`_DOCS/commerce/COMMERCE_REPRISE.md` et le handoff `TODO.md`. Elle commence en
-R1 UX et n'autorise aucune activation `v2_all`, live ou production.
+`_DOCS/commerce/COMMERCE_REPRISE.md` et le handoff `TODO.md`. R2 a execute une
+fenetre `v2_all` catalogue reel autorisee puis refermee le 2026-07-29. La suite
+revient a R1 UX et n'autorise aucune activation `v2_all` permanente, live ou
+production.
 
 Noyau v2 deploye en sandbox, writer verrouille par controle absent:
 
@@ -172,11 +174,11 @@ politique/control backend fail-closed
   -> UI client/admin via commandes serveur
 ```
 
-Gates 0A a 8 sont fermees en sandbox depuis le 2026-07-28. Checkout et workers
-v2 restent bornes a `fixture_gate6_20260728`; lecteurs UID/admin et
-exploitation sont actifs. La recette Gate 8 a ferme les parcours client/admin,
-le rapprochement et le cleanup. L'UI fixture est refermee, les mutations admin
-sont `read_only` et le paiement offline reste `off`.
+Gates 0A a 8 sont fermees en sandbox depuis le 2026-07-28. Apres la fenetre
+catalogue reel du 2026-07-29, checkout et workers v2 sont de nouveau bornes a
+`fixture_gate6_20260728`; lecteurs UID/admin et exploitation restent actifs.
+Les flags UI transactionnels sont refermes, les mutations admin sont
+`read_only` et le paiement offline reste `off`.
 
 Gate 6 ajoute un rail de migration sans writer:
 
@@ -199,6 +201,19 @@ scripts/build-commerce-release-manifest.mjs
 
 scripts/activate-commerce-fixture.mjs
   -> activation atomique fail-closed du seul scope et manifeste epingles
+
+scripts/commerce-v2-all-window.mjs
+  -> preflight, ouverture et fermeture auditee `v2_all` sur cinq produits exacts
+  -> policy UI sandbox epinglee puis policy precedente restauree
+
+scripts/confirm-commerce-order-v2.mjs
+scripts/refund-commerce-order-v2.mjs
+scripts/cleanup-paid-order-cart-v2.mjs
+  -> commandes sandbox exactes, cible/etat/montant/confirmation fail-closed
+
+scripts/inspect-commerce-orders-v2.mjs
+scripts/audit-commerce-orders-v2.mjs
+  -> lecture bornee des commandes, Stripe, stocks, mouvements, outbox et faits
 ```
 
 Le scope `fixture_gate6_20260728` ne reference que les produits
@@ -793,7 +808,7 @@ restent actifs; l'UI publique et les mutations admin restent fermees.
 | Auth | `AUTHENTIFICATION.md` | authStore, AuthContext, modal, auth Functions | `test:auth` + smoke |
 | securite/rules | `SECURITE_GLOBALE.md` | rules, helpers security, Functions | tests negatifs + sandbox cible |
 | espace client | `ESPACE_CLIENT.md` | routes compte, MyOrders, wishlist | smoke compte |
-| paiement/refund | `COMMERCE_SYNTHESE.md`, puis `COMMERCE_STRIPE.md` | commerce client/Functions/admin | Gates 0A a 8 fermees; `PREPROD_TRANSACTIONAL_READY` sur sandbox/fixtures, checkout/workers limites au scope fixture; UI fixture refermee, mutations admin `read_only`, offline et live fermes |
+| paiement/refund | `COMMERCE_SYNTHESE.md`, puis `COMMERCE_STRIPE.md` | commerce client/Functions/admin | Gates 0A a 8 fermees; `PREPROD_TRANSACTIONAL_READY` sandbox, recette catalogue reel R2 refermee; checkout/workers revenus au scope fixture, UI transactionnelle refermee, mutations admin `read_only`, offline et live fermes |
 | admin | `BACKOFFICE.md` | AdminAppIsland, tabs, Functions | smoke tabs + action cible |
 | infra | `INFRASTRUCTURE.md` | yaml/json/env/runtime | audits read-only + build |
 | donnees | `DONNEES_ANALYTICS.md` + `AUDIT_COUTS_FIRESTORE.md` | rules/indexes/scripts/Functions | dry-run/comptage/rollback + mesure avant/apres |

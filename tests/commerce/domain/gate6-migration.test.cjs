@@ -201,4 +201,9 @@ test('Gate 6: la fenetre v2_all epingle la politique UI et restaure la precedent
     }
     assert.match(source, /previousActivePolicyVersion: control\.activePolicyVersion/);
     assert.match(source, /activePolicyVersion: freshRun\.data\(\)\.previousActivePolicyVersion/);
+    assert.ok(
+        source.indexOf("if (action === 'close')") <
+            source.indexOf('refs.sourcePolicy ='),
+        'la fermeture doit rester possible apres consommation des stocks cibles'
+    );
 });

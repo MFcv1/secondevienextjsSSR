@@ -160,6 +160,63 @@ async function main() {
   invariant(controlSnap.exists && operationsSnap.exists, 'V2_ALL_PREFLIGHT_EVIDENCE_MISSING');
   const control = controlSnap.data();
   const operations = operationsSnap.data();
+
+  if (action === 'close') {
+    invariant(
+      args.get('confirm') === `CLOSE_V2_ALL_${runId}_${PROJECT_ID}`,
+      'V2_ALL_CONFIRMATION_INVALID'
+    );
+    invariant(
+      control.newCheckoutMode === 'v2_all' &&
+        control.adminMutationMode === 'v2' &&
+        control.v2AllRunId === runId &&
+        runSnap.exists &&
+        runSnap.data()?.status === 'open',
+      'V2_ALL_WINDOW_NOT_OPEN'
+    );
+    const closedAt = Timestamp.now();
+    await db.runTransaction(async (transaction) => {
+      const [freshControl, freshRun] = await Promise.all([
+        transaction.get(refs.control),
+        transaction.get(refs.run)
+      ]);
+      invariant(
+        freshControl.data()?.controlRevision === control.controlRevision &&
+          freshControl.data()?.newCheckoutMode === 'v2_all' &&
+          freshControl.data()?.adminMutationMode === 'v2' &&
+          freshControl.data()?.activePolicyVersion === V2_ALL_POLICY_VERSION &&
+          freshControl.data()?.v2AllRunId === runId &&
+          freshRun.data()?.status === 'open' &&
+          typeof freshRun.data()?.previousActivePolicyVersion === 'string',
+        'V2_ALL_CLOSE_PRECONDITION_CHANGED'
+      );
+      transaction.update(refs.control, {
+        newCheckoutMode: FALLBACK_CHECKOUT_MODE,
+        adminMutationMode: 'read_only',
+        activePolicyVersion: freshRun.data().previousActivePolicyVersion,
+        controlRevision: control.controlRevision + 1,
+        v2AllRunId: FieldValue.delete(),
+        v2AllExpiresAt: FieldValue.delete(),
+        updatedAt: closedAt,
+        updatedBy: 'commerce-v2-all-window-close'
+      });
+      transaction.update(refs.run, {
+        status: 'closed',
+        controlRevisionClosed: control.controlRevision + 1,
+        closedAt
+      });
+    });
+    console.log(JSON.stringify({
+      ok: true,
+      status: 'CLOSED',
+      runId,
+      controlRevision: control.controlRevision + 1,
+      checkoutMode: FALLBACK_CHECKOUT_MODE,
+      adminMutationMode: 'read_only'
+    }));
+    return;
+  }
+
   refs.sourcePolicy = db.doc(`commerce_policy_versions/${control.activePolicyVersion}`);
   const [sourcePolicySnap, v2AllPolicySnap, ...productSnaps] = await Promise.all([
     refs.sourcePolicy.get(),
@@ -343,54 +400,6 @@ async function main() {
     return;
   }
 
-  invariant(
-    control.newCheckoutMode === 'v2_all' &&
-      control.adminMutationMode === 'v2' &&
-      control.v2AllRunId === runId &&
-      runSnap.exists &&
-      runSnap.data()?.status === 'open',
-    'V2_ALL_WINDOW_NOT_OPEN'
-  );
-  const closedAt = Timestamp.now();
-  await db.runTransaction(async (transaction) => {
-    const [freshControl, freshRun] = await Promise.all([
-      transaction.get(refs.control),
-      transaction.get(refs.run)
-    ]);
-    invariant(
-      freshControl.data()?.controlRevision === control.controlRevision &&
-        freshControl.data()?.newCheckoutMode === 'v2_all' &&
-        freshControl.data()?.adminMutationMode === 'v2' &&
-        freshControl.data()?.activePolicyVersion === V2_ALL_POLICY_VERSION &&
-        freshControl.data()?.v2AllRunId === runId &&
-        freshRun.data()?.status === 'open' &&
-        typeof freshRun.data()?.previousActivePolicyVersion === 'string',
-      'V2_ALL_CLOSE_PRECONDITION_CHANGED'
-    );
-    transaction.update(refs.control, {
-      newCheckoutMode: FALLBACK_CHECKOUT_MODE,
-      adminMutationMode: 'read_only',
-      activePolicyVersion: freshRun.data().previousActivePolicyVersion,
-      controlRevision: control.controlRevision + 1,
-      v2AllRunId: FieldValue.delete(),
-      v2AllExpiresAt: FieldValue.delete(),
-      updatedAt: closedAt,
-      updatedBy: 'commerce-v2-all-window-close'
-    });
-    transaction.update(refs.run, {
-      status: 'closed',
-      controlRevisionClosed: control.controlRevision + 1,
-      closedAt
-    });
-  });
-  console.log(JSON.stringify({
-    ok: true,
-    status: 'CLOSED',
-    runId,
-    controlRevision: control.controlRevision + 1,
-    checkoutMode: FALLBACK_CHECKOUT_MODE,
-    adminMutationMode: 'read_only'
-  }));
 }
 
 main().catch((error) => {

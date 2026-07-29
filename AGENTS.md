@@ -69,11 +69,13 @@ Objectif de livraison courant:
 > Maintenir un etat de preproduction stable et presentable a la cliente, avec les fonctionnalites majeures codees. Les travaux qui dependent du domaine, des comptes live, du DNS ou du trafic production restent explicitement differes.
 
 Le noyau commerce a ferme les Gates 0A a 8 le 2026-07-28 et porte le statut
-`PREPROD_TRANSACTIONAL_READY`. Cette qualification couvre le sandbox et les
-fixtures techniques seulement. L'UI fixture a ete refermee, les mutations
-admin sont revenues en `read_only`, le paiement offline reste `off` et tout
-rail live demeure differe. Ce statut n'est ni un GO production ni une
-activation `v2_all`.
+`PREPROD_TRANSACTIONAL_READY`. La qualification initiale sur fixtures a ete
+completee le 2026-07-29 par une fenetre `v2_all` autorisee, bornee a cinq
+meubles reels et Stripe test, puis refermee sans divergence backend. Les flags
+UI transactionnels sont refermes, les mutations admin sont revenues en
+`read_only`, le paiement offline reste `off` et tout rail live demeure
+differe. Ce statut n'est ni un GO production ni une activation `v2_all`
+permanente.
 
 ## 4. Environnement de reference
 
@@ -124,9 +126,10 @@ Git conserve l'audit et la roadmap retires.
 Plan temporaire de reprise explicitement demande:
 
 - [COMMERCE_REPRISE.md](_DOCS/commerce/COMMERCE_REPRISE.md): axes post-Gate 8
-  R0 a R5; R0 documentaire ferme, prochaine reprise R1 UX; aucune activation
-  `v2_all`, live ou production implicite; revue au plus tard le 2026-10-31,
-  puis fusion canonique et suppression avec [TODO.md](TODO.md).
+  R0 a R5; R0 documentaire et R2 sandbox reel fermes, prochaine reprise R1 UX
+  et corrections de projection/reprise; aucune activation `v2_all`
+  permanente, live ou production implicite; revue au plus tard le
+  2026-10-31, puis fusion canonique et suppression avec [TODO.md](TODO.md).
 
 ## 6. Invariants d'architecture publique
 

@@ -13,11 +13,11 @@ Ce document permet de reprendre plus tard les axes qui commencent apres la
 stabilisation des Gates 0A a 8. Il ne reouvre aucune Gate fermee et
 n'autorise aucune activation cloud par sa seule existence.
 
-Ordre obligatoire:
+Ordre de reprise:
 
 1. terminer le rangement documentaire;
 2. effectuer la recette UX complementaire;
-3. preparer puis autoriser separement `v2_all` sur sandbox;
+3. corriger les enseignements de la fenetre `v2_all` sandbox refermee;
 4. fermer les decisions metier;
 5. construire le rail production;
 6. lancer progressivement avec rollback et observation.
@@ -27,13 +27,16 @@ Ordre obligatoire:
 - statut: `PREPROD_TRANSACTIONAL_READY` sur sandbox/fixtures;
 - Gates 0A a 8 fermees;
 - `NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI=false`;
+- `NEXT_PUBLIC_COMMERCE_V2_UI=false`;
 - `adminMutationMode=read_only`;
 - `offlinePaymentMode=off`;
 - `newCheckoutMode=v2_fixture` borne a `fixture_gate6_20260728`;
 - Stripe test uniquement;
 - operations `healthy`, compteurs a zero;
-- controle revision 22;
-- aucune activation `v2_all`, live ou production.
+- controle revision 32;
+- fenetre `v2_all` catalogue reel du 2026-07-29 refermee avec policy fixture
+  restauree;
+- aucune activation `v2_all` permanente, live ou production.
 
 Avant toute reprise, relire:
 
@@ -66,7 +69,7 @@ Done:
 
 ## 4. Axe R1 - Recette UX complementaire
 
-Etat: `PENDING`
+Etat: `IN_PROGRESS`
 
 Perimetre:
 
@@ -76,6 +79,35 @@ Perimetre:
 - Chrome Android;
 - textes d'erreur, retry, retour 3DS et reprise apres fermeture;
 - accessibilite minimale des actions checkout/admin touchees.
+
+Recette Safari desktop ajoutee le 2026-07-29:
+
+- compte exact `loa.gto15@gmail.com`, parcours client normal malgre le claim
+  admin;
+- commande 10 EUR payee par le Payment Element visible;
+- commande 80 EUR payee puis remboursement Stripe test complet;
+- commande 400 EUR avec trois meubles, hold puis commit quantitatif de trois
+  unites;
+- `/mes-commandes` affiche trois dossiers et 80 EUR rembourses;
+- l'admin du compte n'a pas modifie le contrat checkout, le proprietaire des
+  commandes ou le reader UID. Une smoke non-admin reste necessaire pour
+  verifier l'absence d'effet purement visuel du shell.
+
+Defauts UX/contrat a corriger avant polissage:
+
+- fermer la modale Stripe apres creation laisse le controller en
+  `awaiting_method`; le bouton suivant refuse `START` au lieu de reprendre le
+  PaymentIntent existant;
+- le retry apres reload avec le meme panier produit une demande invalide au
+  lieu d'une reprise explicite;
+- le reader renvoie les Timestamps v2 sous une forme que `MyOrdersView` ne
+  formate pas, d'ou `Date en attente`;
+- `shippingSnapshot` n'est pas projete vers le modele `shipping` attendu par
+  l'espace client, d'ou le compteur Adresse a zero;
+- le contrat `shippingAddress` v2 exclut le telephone saisi au checkout; le
+  profil reste donc `A completer` malgre la saisie visible;
+- les snapshots d'item ne fournissent pas encore l'image attendue par la vue,
+  qui montre la meme image de repli sur les trois dossiers.
 
 Contraintes:
 
@@ -94,9 +126,10 @@ Done:
 
 ## 5. Axe R2 - Activation `v2_all` sandbox
 
-Etat: `PENDING_DECISION`
+Etat: `DONE_CONTROLLED_2026_07_29`
 
-Cette phase exige une autorisation utilisateur explicite.
+Cette phase a ete executee avec autorisation utilisateur explicite, catalogue
+reel borne et Stripe test uniquement.
 
 Preparation:
 
@@ -124,10 +157,33 @@ Rollback:
 
 Done:
 
-- fenetre sans divergence;
-- rapport avant/apres borne;
-- rollback teste;
-- decision explicite de poursuivre ou de refermer.
+- run `run_v2all_20260729_loa_orders_retry5`, cinq produits exacts et policy
+  temporaire `sandbox_v2all_policy_20260729`;
+- trois commandes v2 durables:
+  `ord_8b4f13e1-5a41-4c47-8321-fc54f15904b9` payee 1 000 centimes,
+  `ord_5f591b28-0f34-4028-9196-f10c581d579e` capturee puis remboursee
+  8 000 centimes, et
+  `ord_eb608abd-7d0e-49c6-89ed-c2834e8ef385` payee 40 000 centimes avec trois
+  lignes;
+- cinq reservations finales `committed`, cinq stocks a zero, aucun restock
+  induit par le remboursement;
+- trois webhooks `payment_intent.succeeded` traites, quatre e-mails outbox
+  `sent`, quatre faits financiers correles et aucun incident;
+- operations `healthy`, tous les compteurs a zero;
+- panier de la commande a trois lignes nettoye apres preuve durable du
+  paiement;
+- fermeture testee meme apres consommation des cinq stocks; controle revision
+  32, policy precedente restauree, `v2_fixture` et `read_only`;
+- flag UI transactionnel remis a `false`.
+
+Enseignements non bloquants pour la conservation des preuves:
+
+- `sold` reste `false` lorsque le stock atteint zero; l'achat est bloque par
+  la regle autoritaire de stock, mais la semantique editoriale merite une
+  decision separee;
+- le nettoyage panier automatique n'a pas pu s'executer quand la confirmation
+  Stripe finale a ete effectuee par l'outil serveur apres le blocage de reprise;
+  un cleanup exact et garde a reproduit le nettoyage client attendu.
 
 ## 6. Axe R3 - Decisions metier
 

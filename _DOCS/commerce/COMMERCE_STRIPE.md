@@ -222,6 +222,29 @@ Preuves Gate 8:
 - fenetre fermee a la revision de controle 22, mutations admin revenues en
   `read_only`, puis flag UI fixture compile a `false`.
 
+Recette catalogue reel bornee du 2026-07-29:
+
+- ouverture explicite du run `run_v2all_20260729_loa_orders_retry5` avec cinq
+  produits publies exacts, Stripe test et policy UI temporaire;
+- commande 10 EUR confirmee dans le Payment Element visible;
+- commande 80 EUR capturee puis refund Stripe complet `succeeded`;
+- commande 400 EUR avec trois lignes, creee et reservee par l'UI, puis
+  confirmee sur son PaymentIntent exact apres un blocage de reprise de modale;
+- les cinq reservations ont converge vers `committed`, les cinq stocks vers
+  zero et le remboursement n'a cree aucun mouvement de restock;
+- trois inbox `payment_intent.succeeded` sont `processed`, les quatre outbox
+  paiement/remboursement sont `sent`, les quatre faits financiers sont
+  correles et aucun incident n'est ouvert;
+- fermeture fail-closed a la revision 32, retour a `v2_fixture`, mutations
+  admin `read_only`, policy fixture restauree et flag UI v2 compile a `false`.
+
+Cette recette a trouve deux contrats frontend a reprendre: la fermeture de la
+modale apres creation ne reutilise pas correctement le PaymentIntent en
+`awaiting_method`, et la projection de `/mes-commandes` n'adapte pas encore
+les Timestamps, `shippingSnapshot` et images d'items v2. Ces limites
+n'affectent ni la capture, ni les mouvements, ni les preuves financieres
+durables; elles sont suivies dans `COMMERCE_REPRISE.md`.
+
 ## 11. Fichiers structurants
 
 ```text
@@ -241,6 +264,12 @@ functions/src/commerce/orderStatus.js
 src/kit/admin/AdminOrders.jsx
 src/kit/admin/AdminReturns.jsx
 src/kit/admin/AdminPaymentSettings.jsx
+scripts/commerce-v2-all-window.mjs
+scripts/confirm-commerce-order-v2.mjs
+scripts/refund-commerce-order-v2.mjs
+scripts/cleanup-paid-order-cart-v2.mjs
+scripts/inspect-commerce-orders-v2.mjs
+scripts/audit-commerce-orders-v2.mjs
 ```
 
 ## 12. Gates

@@ -1,6 +1,6 @@
 # Espace client
 
-Derniere mise a jour: 2026-07-28
+Derniere mise a jour: 2026-07-29
 Statut: `PREPROD_READY`
 
 Restriction active:
@@ -70,6 +70,24 @@ cliente, puis `/mes-commandes` a charge `listMyOrdersV2` sous Auth/App Check et
 Rules restrictives sans erreur. La section Documents a conserve la suspension
 explicite des PDF fiscaux legacy. Aucun checkout, cancel ou writer commerce
 n'a ete active.
+
+Recette catalogue reel bornee du 2026-07-29: le compte Loa a charge trois
+commandes v2 durables, dont une commande de trois meubles et un remboursement
+Stripe complet. Les compteurs Commandes et Remboursements, les statuts Payee
+et Remboursee et le texte de delai bancaire sont corrects.
+
+Dettes UX observees sur ces donnees reelles:
+
+- le timestamp callable v2 n'est pas normalise vers le format attendu par
+  `formatDate`, ce qui affiche `Date en attente`;
+- `shippingSnapshot` n'est pas adapte vers `shipping`, donc Adresse reste a
+  zero malgre les coordonnees presentes dans la commande;
+- le contrat d'entree v2 ne conserve pas le telephone saisi au checkout, donc
+  le profil affiche encore `A completer`;
+- les snapshots d'item n'alimentent pas l'image attendue par `getItemImage`,
+  donc plusieurs dossiers affichent la meme image de repli;
+- le polissage visuel de la table doit suivre la correction de ces trois
+  projections, sans masquer le statut durable ni le remboursement.
 
 ## 4. Factures et avoirs
 

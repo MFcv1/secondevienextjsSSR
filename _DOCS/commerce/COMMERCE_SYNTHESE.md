@@ -23,8 +23,10 @@ en section 10 restent autoritaires.
 ## 2. Verdict actuel
 
 Le noyau commerce est qualifie `PREPROD_TRANSACTIONAL_READY` sur le projet
-Firebase sandbox `secondevienextjsssr` et sur les fixtures techniques
-allowlistees.
+Firebase sandbox `secondevienextjsssr`. La qualification initiale sur fixtures
+techniques allowlistees a ete completee le 2026-07-29 par une fenetre
+`v2_all` bornee a cinq meubles reels, trois commandes Loa et Stripe test. Cette
+fenetre est refermee; elle ne constitue pas une ouverture publique permanente.
 
 La qualification couvre:
 
@@ -43,7 +45,7 @@ La qualification couvre:
 
 Elle ne constitue pas:
 
-- une activation publique `v2_all`;
+- une activation publique permanente `v2_all`;
 - une autorisation Stripe Live;
 - un GO production;
 - une validation fiscale, comptable ou juridique;
@@ -123,6 +125,19 @@ Runs humains correles:
 - `run_gate8_recipe_v4_20260728`;
 - `run_gate8_recipe_v5_20260728`.
 
+Recette catalogue reel bornee:
+
+- run `run_v2all_20260729_loa_orders_retry5`;
+- une commande 10 EUR payee;
+- une commande 80 EUR payee puis remboursee integralement;
+- une commande 400 EUR payee avec trois meubles;
+- cinq reservations finales `committed`, cinq stocks a zero et aucun restock
+  automatique sur refund;
+- trois inbox Stripe `payment_intent.succeeded` traites, quatre outbox e-mail
+  `sent`, quatre faits financiers et aucun incident;
+- operations `healthy`, tous les compteurs a zero;
+- controle referme a la revision 32 et policy fixture restauree.
+
 Release fonctionnel Gate 8:
 
 - commit correctif final: `27dda7e`;
@@ -137,6 +152,7 @@ Release fonctionnel Gate 8:
 Apres la recette:
 
 - `NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI=false`;
+- `NEXT_PUBLIC_COMMERCE_V2_UI=false`;
 - `adminMutationMode=read_only`;
 - `offlinePaymentMode=off`;
 - `newCheckoutMode=v2_fixture` reste borne a
@@ -147,6 +163,12 @@ Apres la recette:
   `stripeConnectWebhookV2` en `europe-west1`;
 - commandes, faits financiers, mouvements, audits et documents n'ont pas ete
   supprimes par le cleanup.
+
+Les trois dossiers de cette recette restent visibles sur le compte Loa pour la
+future passe UI/UX de `/mes-commandes`. Les defauts de projection observes
+(`Date en attente`, adresse v2 non reprise, image de repli identique) et la
+reprise `awaiting_method` sont suivis dans
+[COMMERCE_REPRISE.md](COMMERCE_REPRISE.md).
 
 ## 7. Invariants obtenus
 
@@ -167,7 +189,8 @@ Apres la recette:
 
 ## 8. Validations executees
 
-- `test:commerce:unit`: 82 tests verts;
+- `test:commerce:unit`: 83 tests verts avant la recette catalogue reel;
+- `test:commerce:rules`: 12 tests verts apres alignement des champs panier;
 - `lint:functions`: vert;
 - build Next sandbox: reussi;
 - deux runs Gate 7B complets: verts;
@@ -183,8 +206,9 @@ font pas partie de cette stabilisation.
 La prochaine etape n'est pas une nouvelle Gate de correction. Elle exige une
 decision separee et un nouveau perimetre:
 
-1. choisir et autoriser l'activation publique `v2_all`;
-2. definir une fenetre d'observation et un rollback;
+1. corriger la reprise de modale Stripe et la projection v2 de
+   `/mes-commandes`;
+2. terminer la recette UX/appareils de l'Axe R1;
 3. finaliser domaine et URLs de retour;
 4. valider Stripe Connect Live, KYC, cles et webhooks live;
 5. confirmer taxes, livraison, frais, devise et responsabilites;

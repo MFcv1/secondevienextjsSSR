@@ -6,10 +6,16 @@ Fin de validite: 2026-10-31
 
 ## Point de depart
 
-Le noyau commerce est `PREPROD_TRANSACTIONAL_READY` sur sandbox/fixtures. Les
-Gates 0A a 8 sont fermees. L'UI fixture est fermee, les mutations admin sont
-`read_only`, le paiement offline est `off` et aucune activation `v2_all`,
-Stripe Live ou production n'est autorisee.
+Le noyau commerce est `PREPROD_TRANSACTIONAL_READY` sur sandbox. Les Gates 0A
+a 8 sont fermees et une fenetre `v2_all` bornee sur cinq meubles reels du
+catalogue a aussi ete executee puis refermee le 2026-07-29. Trois commandes
+Loa sont conservees pour la recette de `/mes-commandes`: 10 EUR payee, 80 EUR
+payee puis remboursee, et 400 EUR payee avec trois meubles.
+
+Etat ferme: UI transactionnelle compilee a `false`, controle revision 32,
+`newCheckoutMode=v2_fixture`, mutations admin `read_only`, paiement offline
+`off`, policy fixture restauree, operations `healthy` et compteurs a zero.
+Stripe Live et production restent interdits.
 
 ## Documents a lire
 
@@ -22,9 +28,18 @@ Stripe Live ou production n'est autorisee.
 ## Prochaine action
 
 Reprendre en Axe R1 du
-[plan commerce](_DOCS/commerce/COMMERCE_REPRISE.md): recette UX
-complementaire admin AAL2 visible, paiement invite OTP bout en bout et matrice
-Safari/iPhone plus Chrome Android.
+[plan commerce](_DOCS/commerce/COMMERCE_REPRISE.md), en commencant par les
+defauts observes sur les commandes reelles sandbox:
+
+- la reprise du paiement apres fermeture de la modale reste bloquee en
+  `awaiting_method`;
+- `/mes-commandes` projette les timestamps v2 en `Date en attente`, ne reprend
+  pas encore `shippingSnapshot` et affiche la meme image de repli pour les
+  dossiers;
+- le polissage UI/UX doit venir apres ces corrections de projection.
+
+Continuer ensuite la recette admin AAL2 visible, le paiement invite OTP bout en
+bout et la matrice Safari/iPhone plus Chrome Android.
 
 Ne pas ouvrir `v2_all`, le live ou la production pendant R1. Toute interaction
 Touch ID, passkey, Google ou OTP indispensable doit etre demandee a
