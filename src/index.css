@@ -4137,17 +4137,35 @@ html.dark .before-after-premium-atmosphere,
 
 /* Degrade diagonal : la lumiere tombe en haut a gauche, la matiere se rechauffe
    vers le coin du filigrane. Un aplat unique laissait la zone du logo plate. */
-/* Quart de soleil ancre dans l'angle superieur droit : le halo rayonne depuis
-   le coin et retombe en diagonale, au lieu d'un degrade qui rechauffait toute
-   la hauteur du panneau. */
+/* Quart de soleil ancre dans l'angle superieur droit.
+   Deux calques concentriques et de nombreux arrets suivant une courbe
+   d'attenuation : un radial-gradient interpole lineairement entre ses arrets,
+   donc trop peu d'arrets produit des cassures visibles et un effet de tache.
+   Le calque large porte la diffusion, le coeur ne fait que densifier l'angle. */
 .before-after-premium-copy--warm {
   background:
     radial-gradient(
-      circle 560px at 100% 0%,
-      rgba(199, 141, 77, 0.32) 0%,
-      rgba(199, 145, 88, 0.17) 34%,
-      rgba(199, 150, 98, 0.06) 55%,
-      transparent 74%
+      circle 320px at 100% 0%,
+      rgba(198, 140, 76, 0.07) 0%,
+      rgba(198, 140, 76, 0.058) 22%,
+      rgba(198, 140, 76, 0.041) 44%,
+      rgba(198, 140, 76, 0.023) 65%,
+      rgba(198, 140, 76, 0.008) 84%,
+      transparent 100%
+    ),
+    radial-gradient(
+      circle 920px at 100% 0%,
+      rgba(197, 145, 88, 0.115) 0%,
+      rgba(197, 145, 88, 0.106) 11%,
+      rgba(197, 145, 88, 0.092) 22%,
+      rgba(197, 145, 88, 0.075) 33%,
+      rgba(197, 145, 88, 0.057) 44%,
+      rgba(197, 145, 88, 0.041) 55%,
+      rgba(197, 145, 88, 0.027) 66%,
+      rgba(197, 145, 88, 0.016) 77%,
+      rgba(197, 145, 88, 0.007) 87%,
+      rgba(197, 145, 88, 0.002) 95%,
+      transparent 100%
     ),
     linear-gradient(180deg, #fffefc 0%, #fffcf7 100%) !important;
 }
@@ -4173,12 +4191,13 @@ html.dark .before-after-premium-atmosphere,
   height: auto;
   pointer-events: none;
   user-select: none;
-  opacity: 0.36;
+  opacity: 0.46;
 
-  /* Hue de marque conservee (pas de sepia, qui la delavait), mais assombrie :
-     on obtient une terre de sienne profonde plutot qu'un peche clair, assez
-     dense pour supporter une opacite plus forte. */
-  filter: saturate(1.2) brightness(0.62);
+  /* Un orange moyen pose a faible opacite se delave en rose poudre. On part
+     donc d'une terre de sienne nettement plus sombre et plus saturee : la
+     teinte reste dense une fois fondue dans le creme, et l'opacite ne fait que
+     la temperer au lieu de la laver. */
+  filter: saturate(1.4) brightness(0.52);
   transform: translateY(-50%);
 }
 
@@ -4200,11 +4219,27 @@ html.dark .before-after-premium-copy--warm,
 .before-after-premium--dark .before-after-premium-copy--warm {
   background:
     radial-gradient(
-      circle 560px at 100% 0%,
-      rgba(216, 173, 115, 0.2) 0%,
-      rgba(216, 173, 115, 0.09) 34%,
+      circle 320px at 100% 0%,
+      rgba(216, 173, 115, 0.05) 0%,
+      rgba(216, 173, 115, 0.04) 22%,
+      rgba(216, 173, 115, 0.028) 44%,
+      rgba(216, 173, 115, 0.015) 65%,
+      rgba(216, 173, 115, 0.005) 84%,
+      transparent 100%
+    ),
+    radial-gradient(
+      circle 920px at 100% 0%,
+      rgba(216, 173, 115, 0.085) 0%,
+      rgba(216, 173, 115, 0.078) 11%,
+      rgba(216, 173, 115, 0.068) 22%,
+      rgba(216, 173, 115, 0.055) 33%,
+      rgba(216, 173, 115, 0.042) 44%,
       rgba(216, 173, 115, 0.03) 55%,
-      transparent 74%
+      rgba(216, 173, 115, 0.02) 66%,
+      rgba(216, 173, 115, 0.012) 77%,
+      rgba(216, 173, 115, 0.005) 87%,
+      rgba(216, 173, 115, 0.002) 95%,
+      transparent 100%
     ),
     linear-gradient(180deg, #201c17 0%, #1a1713 100%) !important;
 }
