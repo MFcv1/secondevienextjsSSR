@@ -72,7 +72,7 @@ export async function POST(request) {
   try {
     contract = validateCatalogRevalidationBody(body, {
       projectId: publicEnv.projectId,
-      audience: new URL(request.url).origin,
+      audience: publicEnv.siteUrl,
     });
   } catch (error) {
     return NextResponse.json({ error: error?.message || 'invalid_contract' }, { status: 400 });

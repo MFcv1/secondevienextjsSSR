@@ -218,6 +218,8 @@ test('aucun moteur catalogue legacy ne subsiste dans le code executable', () => 
 
   const revalidationRoute = read('app/api/revalidate-catalog/route.js');
   assert.match(revalidationRoute, /validateCatalogRevalidationBody/);
+  assert.match(revalidationRoute, /audience: publicEnv\.siteUrl/);
+  assert.doesNotMatch(revalidationRoute, /audience: new URL\(request\.url\)\.origin/);
   assert.match(read('src/lib/server/catalogRevalidationContract.js'), /catalog:api-pointer/);
   assert.doesNotMatch(revalidationRoute, /revalidatePath\([^\n]+,\s*'route'\)/);
 });

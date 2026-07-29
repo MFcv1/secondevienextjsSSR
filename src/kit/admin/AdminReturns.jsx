@@ -179,20 +179,36 @@ const AdminReturns = ({ darkMode = false }) => {
         setLoading(true);
         if (COMMERCE_V2_ADMIN_READERS_ENABLED) {
             let cancelled = false;
-            Promise.all([
+            Promise.allSettled([
                 listOrdersAdminV2({ pageSize: 50 }),
                 listReturnsAdminV2({ pageSize: 50 })
-            ]).then(([ordersResult, returnsResult]) => {
+            ]).then(([ordersOutcome, returnsOutcome]) => {
                 if (cancelled) return;
-                setOrders((ordersResult.orders || []).map(normalizeAdminOrder));
-                setReturnCases(returnsResult.returns || []);
-                setOrdersCursor(ordersResult.nextCursor || null);
-                setReturnsCursor(returnsResult.nextCursor || null);
-                setLoading(false);
-            }).catch((error) => {
-                if (cancelled) return;
-                console.error('Admin v2 returns read failed:', error);
-                setNotice({ type: 'error', text: error.message || String(error) });
+                if (ordersOutcome.status === 'fulfilled') {
+                    const ordersResult = ordersOutcome.value;
+                    setOrders((ordersResult.orders || []).map(normalizeAdminOrder));
+                    setOrdersCursor(ordersResult.nextCursor || null);
+                }
+                if (returnsOutcome.status === 'fulfilled') {
+                    const returnsResult = returnsOutcome.value;
+                    setReturnCases(returnsResult.returns || []);
+                    setReturnsCursor(returnsResult.nextCursor || null);
+                }
+                if (ordersOutcome.status === 'rejected') {
+                    console.error('Admin v2 orders read failed:', ordersOutcome.reason);
+                    setNotice({
+                        type: 'error',
+                        text: 'Les commandes ne peuvent pas etre chargees pour le moment.'
+                    });
+                } else if (returnsOutcome.status === 'rejected') {
+                    console.error('Admin v2 physical returns read failed:', returnsOutcome.reason);
+                    setNotice({
+                        type: 'error',
+                        text: 'Les remboursements sont affiches, mais le detail des retours physiques est momentanement indisponible.'
+                    });
+                } else {
+                    setNotice(null);
+                }
                 setLoading(false);
             });
             return () => {
@@ -275,7 +291,10 @@ const AdminReturns = ({ darkMode = false }) => {
             setReturnsCursor(returnsResult.nextCursor || null);
         } catch (error) {
             console.error('Admin v2 returns pagination failed:', error);
-            setNotice({ type: 'error', text: error.message || String(error) });
+            setNotice({
+                type: 'error',
+                text: 'La suite des retours ne peut pas etre chargee pour le moment.'
+            });
         } finally {
             setLoadingMore(false);
         }
@@ -297,7 +316,10 @@ const AdminReturns = ({ darkMode = false }) => {
             setNotice({ type: 'success', text: result });
         } catch (error) {
             console.error(`Refund action ${action} failed:`, error);
-            setNotice({ type: 'error', text: error.message || String(error) });
+            setNotice({
+                type: 'error',
+                text: 'Cette action n a pas pu etre terminee. Rechargez les donnees avant de reessayer.'
+            });
         } finally {
             setOperation(null);
         }

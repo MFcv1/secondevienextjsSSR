@@ -41,6 +41,7 @@ function createCheckoutSagaService({ stripe, repository, clock, failpoints = nul
                 orderId: order.id,
                 paymentIntentId: existing.id,
                 clientSecret: existing.client_secret,
+                totalCents: order.amounts.totalCents,
                 connectedAccountId: attempt.connectedAccountId,
                 reused: true
             };
@@ -84,6 +85,7 @@ function createCheckoutSagaService({ stripe, repository, clock, failpoints = nul
             orderId: order.id,
             paymentIntentId: paymentIntent.id,
             clientSecret: paymentIntent.client_secret,
+            totalCents: order.amounts.totalCents,
             connectedAccountId: current.connectedAccountId,
             reused: false
         };

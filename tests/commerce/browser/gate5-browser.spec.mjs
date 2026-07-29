@@ -24,6 +24,14 @@ test.beforeAll(async () => {
       ));
       return;
     }
+    if (request.url === '/commerceUiFlags.js') {
+      response.setHeader('content-type', 'text/javascript');
+      response.end(await readFile(
+        path.join(repositoryRoot, 'src/kit/commerce/commerceUiFlags.js'),
+        'utf8'
+      ));
+      return;
+    }
     if (request.url === '/guestCart.js') {
       response.setHeader('content-type', 'text/javascript');
       response.end(await readFile(

@@ -25,11 +25,10 @@ test('legacy handler barrier refuses schemaVersion 2 explicitly', () => {
     assert.doesNotThrow(() => assertLegacyOrderDocument(null, { status: 'paid' }, 'test-handler'));
 });
 
-test('legacy cleaner and webhook fence v2 before legacy mutations', () => {
-    const cleaner = read('functions/src/commerce/cleanupPendingPayments.js');
+test('legacy cleaner stays retired and webhook fences v2 before legacy mutations', () => {
+    const functionsIndex = read('functions/index.js');
     const webhook = read('functions/src/commerce/stripeWebhook.js');
-    assert.match(cleaner, /if \(isV2Order\(order\)\)/);
-    assert.match(cleaner, /assertLegacyOrderDocument\(null, freshOrder/);
+    assert.doesNotMatch(functionsIndex, /cleanupPendingPayments/);
     assert.ok((webhook.match(/assertLegacyOrderDocument\(null,/g) || []).length >= 5);
 });
 

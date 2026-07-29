@@ -89,13 +89,30 @@ function CheckoutPageContent() {
   const [cartLoading, setCartLoading] = useState(true);
   const [fixtureContext, setFixtureContext] = useState(null);
   const [fixtureCartItems, setFixtureCartItems] = useState([]);
+  const [checkoutRecoveryChecked, setCheckoutRecoveryChecked] = useState(!COMMERCE_V2_CONSUMERS_ENABLED);
+  const [hasRecoverableCheckout, setHasRecoverableCheckout] = useState(false);
   const handledStripeReturnRef = useRef(false);
 
   useEffect(() => {
-    if (!COMMERCE_V2_CONSUMERS_ENABLED || user) return;
-    ensureCheckoutAnonymousIdentity().catch((error) => {
-      console.error('Anonymous checkout identity failed:', error);
-    });
+    if (!COMMERCE_V2_CONSUMERS_ENABLED) return undefined;
+    let cancelled = false;
+    ensureCheckoutAnonymousIdentity()
+      .then((identity) => {
+        if (cancelled) return;
+        const descriptor = readCheckoutRecoveryDescriptor(identity.uid, {
+          enabled: COMMERCE_V2_RECOVERY_ENABLED,
+        });
+        setHasRecoverableCheckout(Boolean(descriptor));
+      })
+      .catch((error) => {
+        console.error('Checkout recovery identity failed:', error);
+      })
+      .finally(() => {
+        if (!cancelled) setCheckoutRecoveryChecked(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   useEffect(() => {
@@ -269,7 +286,10 @@ function CheckoutPageContent() {
       : null;
     const recoverableOrderId = recoveryDescriptor?.orderId || orderId;
 
-    if (!isStripeReturn && !recoveryDescriptor) return undefined;
+    // La reprise simple apres fermeture/reload est geree dans CheckoutView afin
+    // de rouvrir le Payment Element. Cette branche reste reservee au retour
+    // Stripe, dont elle confirme le statut durable avant de nettoyer le panier.
+    if (!isStripeReturn) return undefined;
     if (!recoverableOrderId || (COMMERCE_V2_CONSUMERS_ENABLED && !user)) {
       return undefined;
     }
@@ -345,11 +365,11 @@ function CheckoutPageContent() {
     };
   }, [cartItems, clearCartAfterOrder, user]);
 
-  if (loading || cartLoading) {
+  if (loading || cartLoading || !checkoutRecoveryChecked) {
     return <div className="min-h-screen bg-[#FAFAF9]" />;
   }
 
-  if (cartItems.length === 0) {
+  if (cartItems.length === 0 && !hasRecoverableCheckout) {
     return (
       <CheckoutState
         darkMode={darkMode}
@@ -376,6 +396,7 @@ function CheckoutPageContent() {
         onBack={handleContinueShopping}
         onPlaceOrder={handlePlaceOrder}
         fixtureContext={fixtureContext}
+        recoveryExpected={hasRecoverableCheckout}
       />
       {showOrderSuccess ? (
         <OrderSuccessModal

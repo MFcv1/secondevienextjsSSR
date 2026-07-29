@@ -1,6 +1,6 @@
 # Infrastructure Firebase, Next.js et environnements
 
-Derniere mise a jour: 2026-07-26
+Derniere mise a jour: 2026-07-29
 Statut: `PREPROD_READY - PRODUCTION_DEFERRED`
 
 ## 1. Runtime et gestionnaire de paquets
@@ -75,7 +75,13 @@ App Hosting (`apphosting.yaml`):
 | --- | --- | --- |
 | `main` | `functions/` | Auth, admin, commerce, email, analytics, maintenance et catalogue materialise |
 
-Le runtime source de `main` converge vers `europe-west1` via `functions/helpers/runtime.js`. Des copies historiques `us-central1` peuvent encore exister dans le cloud comme rollback; leur suppression exige inventaire CLI, observation et rollback documente.
+Le runtime source de `main` converge vers `europe-west1` via
+`functions/helpers/runtime.js`. Les 23 doublons `us-central1` sans execution sur
+sept jours ont ete supprimes du sandbox le 2026-07-29. Les cinq Functions
+uniques conservees dans cette region sont `grantAdminOnAuth`,
+`e2eCheckoutProof`, `e2eStripeHardeningProof`, `stripeWebhook` et
+`stripeConnectWebhook`; elles ne doivent pas etre supprimees comme de simples
+doublons.
 
 Le codebase public historique et Firebase Hosting ne font plus partie de la configuration. Les Functions SEO/`publicCatalog` historiques ont ete supprimees du sandbox le 2026-07-18 et le site Hosting `secondevienextjsssr` a ete desactive apres verification de l'URL App Hosting.
 
@@ -129,6 +135,16 @@ Secrets serveur centralises dans `functions/helpers/secrets.js`:
 - `E2E_PROOF_TOKEN`;
 - `SUPER_ADMIN_EMAIL`.
 - `CATALOG_REVALIDATION_HMAC_SECRET` pour l'appel machine Function -> App Hosting.
+
+Etat Secret Manager verifie le 2026-07-29:
+
+- le build App Hosting actif `build-2026-07-29-006` reference
+  `SUPER_ADMIN_EMAIL@3` et `CATALOG_REVALIDATION_HMAC_SECRET@3`;
+- 14 anciennes versions Gmail, Stripe, E2E, super-admin et HMAC catalogue sont
+  planifiees pour destruction le 2026-08-05 avec un delai recuperable de sept
+  jours;
+- les versions courantes restent actives; les anciennes versions analytics
+  desactivees, hors lot autorise, n'ont pas ete detruites.
 
 Parametres non secrets:
 
@@ -201,6 +217,24 @@ Il doit rester limite au projet `secondevienextjsssr` et au backend sandbox. Pou
 
 Ne jamais utiliser un `firebase deploy` sans `--only` pendant une passe ciblee.
 
+Optimisation de cout appliquee le 2026-07-29:
+
+- inventaire final Functions: 91, dont 86 en `europe-west1` et 5 uniques en
+  `us-central1`;
+- politiques Artifact Registry actives sur les deux depots
+  `gcf-artifacts`: suppression apres sept jours et conservation de la version
+  la plus recente par package, apres dry-run sans candidat;
+- meme politique active sur le depot gere App Hosting
+  `firebaseapphosting-images`, apres inventaire d'un seul package et d'une
+  seule version courante, sans candidat age de plus de sept jours;
+- le smoke Stripe a confirme la cle sandbox et la signature du webhook v2 avec
+  un evenement sans effet metier;
+- le smoke catalogue a confirme l'authentification HMAC, puis revele que le
+  build deploye compare l'audience a l'URL interne Cloud Run. Le code source
+  compare desormais le contrat a `publicEnv.siteUrl`; ce correctif sera actif
+  au prochain rollout App Hosting, qui devra etre suivi d'un nouveau smoke
+  complet de revalidation.
+
 Etat commerce sandbox au 2026-07-28:
 
 - App Hosting `rollout-2026-07-28-006` /
@@ -214,7 +248,9 @@ Etat commerce sandbox au 2026-07-28:
   `fixture_gate6_20260728`, mutations admin `read_only`, offline `off`;
 - sante operations `healthy`, compteurs de divergence a zero et TTL commerce
   explicitement desactivee;
-- webhooks et cleaner historiques maintenus en `us-central1`;
+- webhooks historiques maintenus en `us-central1`; le cleaner legacy
+  `cleanupPendingPayments` a ete retire le 2026-07-29 apres verification de
+  son absence d'effet et de 67 executions inutiles sur sept jours;
 - Rules Firestore/Storage restrictives publiees apres le rollout UI;
 - aucun rail production ni flag transactionnel public active.
 - Gate 7B verte deux fois avec 11 scenarios par run;

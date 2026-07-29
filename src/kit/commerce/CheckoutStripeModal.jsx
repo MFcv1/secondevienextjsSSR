@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Elements } from '@stripe/react-stripe-js';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -81,7 +81,7 @@ const waitForPaidOrder = ({ orderId, email, checkoutOtpToken }, timeoutMs = 4500
             unsubscribe();
             reject(new Error('Le paiement n a pas ete confirme. Aucun panier ne sera vide.'));
         }
-    }, (error) => {
+    }, (_error) => {
         if (settled) return;
         window.clearTimeout(timeout);
         unsubscribe();
@@ -94,9 +94,9 @@ const waitForPaidOrder = ({ orderId, email, checkoutOtpToken }, timeoutMs = 4500
 });
 
 const PaymentConfirmationPanel = ({ darkMode, state, message }) => (
-    <div className={`rounded-[1.75rem] border p-5 md:p-6 ${darkMode ? 'border-white/10 bg-white/[0.03]' : 'border-stone-200 bg-[#f5f5f7]'}`}>
-        <div className="flex items-start gap-4">
-            <div className={`relative mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${darkMode ? 'bg-white text-stone-950' : 'bg-stone-950 text-white'}`}>
+    <div className={`border-y px-0 py-6 md:py-8 ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
+        <div className="flex items-start gap-4 md:gap-5">
+            <div className={`relative mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${darkMode ? 'bg-stone-100 text-stone-950' : 'bg-stone-900 text-white'}`}>
                 {state === 'error' ? (
                     <span className="text-xl leading-none">!</span>
                 ) : (
@@ -107,13 +107,13 @@ const PaymentConfirmationPanel = ({ darkMode, state, message }) => (
                 )}
             </div>
             <div className="min-w-0">
-                <p className={`text-[11px] font-black uppercase tracking-[0.2em] ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
-                    {state === 'error' ? 'Verification requise' : 'Confirmation securisee'}
+                <p className={`text-[11px] font-semibold uppercase tracking-[0.2em] ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
+                    {state === 'error' ? 'Vérification requise' : 'Confirmation sécurisée'}
                 </p>
-                <h4 className={`mt-2 text-xl font-semibold tracking-[-0.02em] ${darkMode ? 'text-white' : 'text-[#1d1d1f]'}`}>
-                    {state === 'error' ? 'Paiement a verifier' : 'Paiement recu. Finalisation en cours.'}
+                <h4 className={`mt-2 text-xl font-semibold tracking-[-0.025em] md:text-2xl ${darkMode ? 'text-white' : 'text-stone-900'}`}>
+                    {state === 'error' ? 'Paiement à vérifier' : 'Paiement reçu. Finalisation en cours.'}
                 </h4>
-                <p className={`mt-2 text-sm leading-6 ${darkMode ? 'text-stone-400' : 'text-[#6e6e73]'}`}>
+                <p className={`mt-2 max-w-[58ch] text-sm leading-6 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
                     {message || "Nous attendons la confirmation durable du serveur avant de valider la commande et vider le panier."}
                 </p>
             </div>
@@ -134,100 +134,231 @@ const CheckoutStripeModal = ({
     onClose,
     onPlaceOrder,
     onPaymentConfirmed,
-    setCheckoutState,
 }) => {
     const [confirmationState, setConfirmationState] = useState('idle');
     const [confirmationMessage, setConfirmationMessage] = useState('');
+    const closeButtonRef = useRef(null);
+    const dialogRef = useRef(null);
     const stripePromise = getStripePromise(stripeConnectedAccountId || '');
 
-    if (typeof document === 'undefined') return null;
     const canClose = confirmationState === 'idle' || confirmationState === 'error';
-    const requestClose = () => {
+    const requestClose = useCallback(() => {
         if (!canClose) return;
-        if (confirmationState === 'error') {
-            setCheckoutState('editing');
-            return;
-        }
         onClose();
-    };
+    }, [canClose, onClose]);
+
+    useEffect(() => {
+        const previousActiveElement = document.activeElement;
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        closeButtonRef.current?.focus({ preventScroll: true });
+
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape' && canClose) {
+                event.preventDefault();
+                requestClose();
+                return;
+            }
+            if (event.key !== 'Tab') return;
+            const focusable = Array.from(dialogRef.current?.querySelectorAll(
+                'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+            ) || []).filter((element) => element.getClientRects().length > 0);
+            if (focusable.length === 0) {
+                event.preventDefault();
+                return;
+            }
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            document.body.style.overflow = previousOverflow;
+            previousActiveElement?.focus?.({ preventScroll: true });
+        };
+    }, [canClose, requestClose]);
+
+    if (typeof document === 'undefined') return null;
+
+    const shortOrderId = createdOrderId
+        ? createdOrderId.replace(/^ord_/, '').slice(0, 8).toUpperCase()
+        : '';
 
     return createPortal(
         <div
-        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300"
-        style={{ background: 'rgba(0,0,0,0.72)' }}
-        onClick={(event) => { if (event.target === event.currentTarget) requestClose(); }}
-    >
-        <div className={`w-full max-w-lg relative p-6 md:p-8 rounded-[2rem] shadow-2xl animate-in zoom-in-95 duration-300 max-h-[85dvh] overflow-y-auto ios-modal-scroll custom-scrollbar ${darkMode ? 'bg-[#0a0a0a] ring-1 ring-white/5' : 'bg-white ring-1 ring-stone-200'}`}>
-            <button
-                type="button"
-                onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    requestClose();
-                }}
-                disabled={!canClose}
-                className={`absolute z-50 top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full transition-colors ${!canClose ? 'cursor-not-allowed opacity-30' : 'cursor-pointer'} ${darkMode ? 'hover:bg-white/10 text-stone-400 hover:text-white' : 'hover:bg-stone-100 text-stone-500 hover:text-stone-900'}`}
-                aria-label="Fermer le paiement"
-            >
-                <svg className="w-5 h-5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
+            ref={dialogRef}
+            className={`fixed inset-0 z-[300] min-h-[100dvh] overflow-y-auto overscroll-contain ${
+                darkMode ? 'bg-stone-950 text-stone-100' : 'bg-[#f7f4ef] text-stone-900'
+            }`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="stripe-payment-title"
+            aria-describedby="stripe-payment-description"
+        >
+            <div className="mx-auto grid min-h-[100dvh] w-full max-w-[1440px] lg:grid-cols-[minmax(20rem,0.78fr)_minmax(34rem,1.22fr)]">
+                <aside className="relative overflow-hidden bg-[#20201e] px-5 pb-8 pt-5 text-stone-100 sm:px-8 lg:flex lg:min-h-[100dvh] lg:flex-col lg:px-12 lg:pb-12 lg:pt-10 xl:px-16">
+                    <div className="relative flex items-center justify-between gap-4">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-300">
+                            Seconde Vie
+                        </span>
+                        <span className="text-[11px] font-medium tabular-nums text-stone-500">
+                            {shortOrderId ? `Commande ${shortOrderId}` : 'Commande sécurisée'}
+                        </span>
+                    </div>
 
-            <div className="mb-6 pr-10">
-                <h3 className={`text-2xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-stone-900'}`}>Paiement sécurisé.</h3>
-                <p className={`text-xs mt-1 font-medium ${darkMode ? 'text-stone-500' : 'text-stone-500'}`}>Finalisez votre transaction via Stripe.</p>
+                    <div className="relative mt-10 max-w-md lg:my-auto lg:mt-16">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-400">
+                            Dernière étape
+                        </p>
+                        <h2 className="mt-4 max-w-[12ch] text-3xl font-semibold leading-[1.02] tracking-[-0.045em] text-white sm:text-4xl lg:text-5xl">
+                            Votre pièce est réservée pendant le paiement.
+                        </h2>
+                        <p className="mt-5 max-w-[46ch] text-sm leading-6 text-stone-400 lg:text-base lg:leading-7">
+                            Vous pouvez revenir au récapitulatif sans perdre la commande. À la reprise, nous rouvrons exactement le même paiement.
+                        </p>
+
+                        <div className="mt-8 border-y border-white/10 py-5 lg:mt-10 lg:py-6">
+                            <div className="flex items-end justify-between gap-4">
+                                <span className="pb-1 text-xs font-medium text-stone-400">Total à régler</span>
+                                <span className="text-3xl font-semibold tracking-[-0.04em] tabular-nums text-white sm:text-4xl">
+                                    {finalTotal}&nbsp;€
+                                </span>
+                            </div>
+                        </div>
+
+                        <ol className="mt-6 hidden space-y-4 text-sm lg:block">
+                            <li className="flex items-center gap-3 text-white">
+                                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-stone-100 text-[11px] font-bold text-stone-900">1</span>
+                                Coordonnées et livraison vérifiées
+                            </li>
+                            <li className="flex items-center gap-3 text-white">
+                                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-stone-100 text-[11px] font-bold text-stone-900">2</span>
+                                Paiement sécurisé
+                            </li>
+                            <li className="flex items-center gap-3 text-stone-500">
+                                <span className="flex h-6 w-6 items-center justify-center rounded-full border border-white/15 text-[11px] font-bold">3</span>
+                                Confirmation durable
+                            </li>
+                        </ol>
+                    </div>
+
+                    <p className="relative mt-8 hidden max-w-sm text-xs leading-5 text-stone-500 lg:block">
+                        Le paiement est traité par Stripe. Seconde Vie ne stocke pas vos données bancaires.
+                    </p>
+                    <div className="pointer-events-none absolute -bottom-24 -right-20 h-64 w-64 rounded-full border border-white/[0.06]" />
+                    <div className="pointer-events-none absolute -bottom-10 -right-4 h-40 w-40 rounded-full border border-white/[0.08]" />
+                </aside>
+
+                <main className={`px-5 pb-12 pt-5 sm:px-8 lg:px-12 lg:pb-16 lg:pt-10 xl:px-20 ${
+                    darkMode ? 'bg-stone-950' : 'bg-[#f7f4ef]'
+                }`}>
+                    <div className="mx-auto w-full max-w-[640px]">
+                        <div className="flex min-h-11 items-center justify-between">
+                            <button
+                                ref={closeButtonRef}
+                                type="button"
+                                onClick={requestClose}
+                                disabled={!canClose}
+                                className={`group inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-semibold transition-[color,background-color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.98] ${
+                                    !canClose ? 'cursor-not-allowed opacity-35' : ''
+                                } ${
+                                    darkMode
+                                        ? 'text-stone-300 hover:bg-white/5 hover:text-white focus-visible:ring-white focus-visible:ring-offset-stone-950'
+                                        : 'text-stone-600 hover:bg-stone-200/60 hover:text-stone-950 focus-visible:ring-stone-900 focus-visible:ring-offset-[#f7f4ef]'
+                                }`}
+                                aria-label="Revenir au récapitulatif de la commande"
+                            >
+                                <svg className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M15 18l-6-6 6-6" />
+                                </svg>
+                                <span>Récapitulatif</span>
+                            </button>
+                            <span className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
+                                Paiement
+                            </span>
+                        </div>
+
+                        <header className="pb-7 pt-10 sm:pt-14 lg:pb-9 lg:pt-20">
+                            <p className={`text-[11px] font-semibold uppercase tracking-[0.2em] ${darkMode ? 'text-stone-500' : 'text-stone-500'}`}>
+                                Étape 2 sur 3
+                            </p>
+                            <h1 id="stripe-payment-title" className={`mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl ${darkMode ? 'text-white' : 'text-stone-950'}`}>
+                                Choisissez votre moyen de paiement
+                            </h1>
+                            <p id="stripe-payment-description" className={`mt-4 max-w-[58ch] text-sm leading-6 sm:text-base ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
+                                Carte bancaire et options compatibles avec votre appareil sont proposées directement par Stripe.
+                            </p>
+                        </header>
+
+                        {isStripeConfigured ? (
+                            <>
+                                {confirmationState !== 'idle' ? (
+                                    <PaymentConfirmationPanel darkMode={darkMode} state={confirmationState} message={confirmationMessage} />
+                                ) : null}
+                                {confirmationState === 'idle' ? (
+                                    <Elements stripe={stripePromise} options={stripeElementsOptions}>
+                                        <CheckoutPaymentStep
+                                            total={finalTotal}
+                                            orderId={createdOrderId}
+                                            darkMode={darkMode}
+                                            shipping={formData}
+                                            onPaymentSuccess={async (paymentIntent) => {
+                                                setConfirmationState('waiting');
+                                                setConfirmationMessage('');
+                                                try {
+                                                    await waitForPaidOrder({
+                                                        orderId: createdOrderId,
+                                                        email: formData.email,
+                                                        checkoutOtpToken
+                                                    });
+                                                    onPaymentConfirmed?.();
+                                                    await onPlaceOrder({
+                                                        id: createdOrderId,
+                                                        ...formData,
+                                                        paymentMethod: 'stripe_elements',
+                                                        total: orderTotal,
+                                                        paymentIntentId: paymentIntent.id,
+                                                        purchasedCartLines
+                                                    });
+                                                } catch (error) {
+                                                    console.error('Order paid confirmation timeout:', error);
+                                                    setConfirmationState('error');
+                                                    setConfirmationMessage(error?.message || 'Paiement reçu. La commande sera confirmée dès que le serveur Stripe aura terminé.');
+                                                }
+                                            }}
+                                            onPaymentError={(error) => {
+                                                console.error('Payment error inline:', error);
+                                            }}
+                                        />
+                                    </Elements>
+                                ) : null}
+                            </>
+                        ) : (
+                            <div className={`border-y py-6 text-sm leading-6 ${
+                                darkMode
+                                    ? 'border-amber-300/20 text-amber-100'
+                                    : 'border-amber-300 text-amber-950'
+                            }`}>
+                                Le paiement Stripe n’est pas configuré. Aucun paiement ne peut être lancé depuis cet écran.
+                            </div>
+                        )}
+
+                        <footer className={`mt-8 flex flex-col gap-2 border-t pt-5 text-xs leading-5 sm:flex-row sm:items-center sm:justify-between ${
+                            darkMode ? 'border-white/10 text-stone-500' : 'border-stone-200 text-stone-500'
+                        }`}>
+                            <span>Connexion chiffrée</span>
+                            <span>Données bancaires traitées par Stripe</span>
+                        </footer>
+                    </div>
+                </main>
             </div>
-
-            {isStripeConfigured ? (
-                <>
-                    {confirmationState !== 'idle' ? (
-                        <PaymentConfirmationPanel darkMode={darkMode} state={confirmationState} message={confirmationMessage} />
-                    ) : null}
-                    {confirmationState === 'idle' ? (
-                        <Elements stripe={stripePromise} options={stripeElementsOptions}>
-                            <CheckoutPaymentStep
-                                total={finalTotal}
-                                orderId={createdOrderId}
-                                darkMode={darkMode}
-                                shipping={formData}
-                                onPaymentSuccess={async (paymentIntent) => {
-                                    setConfirmationState('waiting');
-                                    setConfirmationMessage('');
-                                    try {
-                                        await waitForPaidOrder({
-                                            orderId: createdOrderId,
-                                            email: formData.email,
-                                            checkoutOtpToken
-                                        });
-                                        onPaymentConfirmed?.();
-                                        await onPlaceOrder({
-                                            id: createdOrderId,
-                                            ...formData,
-                                            paymentMethod: 'stripe_elements',
-                                            total: orderTotal,
-                                            paymentIntentId: paymentIntent.id,
-                                            purchasedCartLines
-                                        });
-                                    } catch (error) {
-                                        console.error('Order paid confirmation timeout:', error);
-                                        setConfirmationState('error');
-                                        setConfirmationMessage(error?.message || 'Paiement recu. La commande sera confirmee des que le serveur Stripe aura termine.');
-                                    }
-                                }}
-                                onPaymentError={(error) => {
-                                    console.error("Payment error inline:", error);
-                                }}
-                            />
-                        </Elements>
-                    ) : null}
-                </>
-            ) : (
-                <div className={`rounded-2xl border p-5 text-sm leading-relaxed ${darkMode ? 'border-amber-400/20 bg-amber-400/10 text-amber-100' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
-                    Le paiement Stripe n'est pas encore configuré. Choisissez un autre moyen de paiement ou ajoutez la clé publique Stripe avant la mise en ligne.
-                </div>
-            )}
-        </div>
         </div>,
         document.body
     );

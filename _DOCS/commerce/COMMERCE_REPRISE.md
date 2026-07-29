@@ -95,11 +95,18 @@ Recette Safari desktop ajoutee le 2026-07-29:
 
 Defauts UX/contrat a corriger avant polissage:
 
-- fermer la modale Stripe apres creation laisse le controller en
-  `awaiting_method`; le bouton suivant refuse `START` au lieu de reprendre le
-  PaymentIntent existant;
-- le retry apres reload avec le meme panier produit une demande invalide au
-  lieu d'une reprise explicite;
+- corrige localement le 2026-07-29: quitter l'ecran Stripe conserve le
+  controller en `awaiting_method`, le `clientSecret` en memoire et une action
+  explicite de reprise; aucun nouveau `START` n'est emis;
+- corrige localement le 2026-07-29: apres reload, le descriptor lie a
+  l'identite Firebase recharge `orderId`/`clientOrderId`, appelle
+  `resumeCheckoutV2`, recupere le total autoritaire et rouvre le PaymentIntent
+  existant avant la garde panier vide, sans dependre du formulaire
+  reinitialise;
+- corrige localement le 2026-07-29: le paiement Stripe est presente comme un
+  ecran plein viewport responsive avec retour au recapitulatif, focus initial,
+  Escape, piege de focus et restauration du focus; la qualification hebergee
+  et la matrice appareils restent a executer;
 - corrige le 2026-07-29: `MyOrdersView` normalise les Timestamps callable,
   projette `shippingSnapshot`, raccorde les documents immuables et evite le
   chevauchement des actions de document;

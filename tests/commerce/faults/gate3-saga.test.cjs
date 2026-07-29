@@ -154,6 +154,7 @@ test('Stripe accepts then response is lost: retry reuses one PI and attaches it'
         attempt: repository.attempt
     });
     assert.equal(result.paymentIntentId, 'pi_saga_1');
+    assert.equal(result.totalCents, makeSagaOrder().amounts.totalCents);
     assert.equal(stripe.byKey.size, 1);
     assert.equal(repository.attempt.status, 'attached');
 });
@@ -202,6 +203,7 @@ test('crash after attach returns the attached PI on retry without creation', asy
         clock: fixedClock()
     }).ensurePaymentIntent({ order: makeSagaOrder(), attempt: repository.attempt });
     assert.equal(retry.reused, true);
+    assert.equal(retry.totalCents, makeSagaOrder().amounts.totalCents);
     assert.equal(stripe.createCalls, createCalls);
 });
 

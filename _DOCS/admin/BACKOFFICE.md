@@ -143,7 +143,13 @@ filtrage Stripe. Les dossiers `orders/{orderId}/returns/{returnId}` lus par
 `listReturnsAdminV2` restent visibles et detailles meme lorsque les commandes
 de mutation admin sont en `read_only`: statut, motif, date et quantites
 demandees, recues puis disposees. L'activation future des boutons ne change
-pas ce contrat de consultation.
+pas ce contrat de consultation. La requete collection group `returns` est
+portee par l'index `updatedAt` ascendant/descendant de
+`firestore.indexes.json`. Les lecteurs commandes et retours physiques sont
+isoles avec `Promise.allSettled`: une indisponibilite du second ne masque plus
+les remboursements deja projetes dans les commandes. Cet index a ete deploye
+sur le sandbox `secondevienextjsssr` le 2026-07-29 apres confirmation dans les
+logs de l'erreur Firestore `FAILED_PRECONDITION`.
 Publication utilise ses commandes produit dormantes, Ventes/Retours leurs
 commandes verrouillees, et Livraison/Paiement restent explicitement read-only.
 Les flags de lecture sont `true`; les flags de commande restent `false`.

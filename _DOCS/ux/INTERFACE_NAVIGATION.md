@@ -1,6 +1,6 @@
 # Interface, navigation et contrats UX
 
-Derniere mise a jour: 2026-07-19
+Derniere mise a jour: 2026-07-29
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Intention
@@ -71,6 +71,13 @@ home/galerie -> categorie ou recherche -> produit -> wishlist/panier/devis
 ```text
 panier -> connexion/verification email -> checkout -> Stripe -> confirmation durable -> mes commandes
 ```
+
+Le paiement Stripe utilise un ecran plein viewport, pas une petite modale
+desktop. Sur grand ecran il separe contexte de commande et formulaire; sur
+mobile il revient a une colonne sans scroll horizontal. Le retour au
+recapitulatif conserve la commande et doit proposer la reprise exacte du meme
+PaymentIntent. Apres reload, la reprise ne depend ni d'un formulaire encore
+rempli ni d'une nouvelle creation de commande.
 
 ### Client connecte
 

@@ -171,14 +171,12 @@ const scenarios = {
   'server-wiring-blocks-writers-before-effects': async (context) => {
     const createOrder = readSource('functions/src/commerce/createOrder.js');
     const cancelOrder = readSource('functions/src/commerce/cancelOrder.js');
-    const cleanup = readSource('functions/src/commerce/cleanupPendingPayments.js');
     const refund = readSource('functions/src/commerce/refundOrder.js');
     const e2eHardening = readSource('functions/src/commerce/e2eStripeHardeningProof.js');
     const maintenance = readSource('functions/src/maintenance/tools.js');
 
     assertGuardPrecedes(context, createOrder, 'await assertLegacyOrderCreationBlocked({', 'const stripe = Stripe(', 'createOrder');
     assertGuardPrecedes(context, cancelOrder, "assertLegacyMutationBlocked(functions, 'legacy-order-cancellation')", 'const orderId = normalizeFirestoreId(', 'cancelOrderClient');
-    assertGuardPrecedes(context, cleanup, "assertLegacyMutationBlocked(functions, 'legacy-pending-payment-cleanup')", "const snap = await db.collection('orders')", 'cleanupPendingPayments');
     assertGuardPrecedes(context, refund, "assertLegacyMutationBlocked(functions, 'legacy-refund')", 'const adminInfo = await checkRecentActiveStrongAdmin(', 'refundOrderAdmin');
     assertGuardPrecedes(context, e2eHardening, "assertLegacyMutationBlocked(functions, 'legacy-e2e-stripe-hardening')", 'if (!isE2eProofAllowed())', 'e2eStripeHardeningProof');
     for (const action of DESTRUCTIVE_MAINTENANCE_ACTIONS) {
@@ -228,7 +226,7 @@ const scenarios = {
     context.ok(uiFlags.includes('process.env.NEXT_PUBLIC_COMMERCE_V2_UI'));
     context.ok(!uiFlags.includes('commerceEnv.'));
     context.ok(checkout.includes('Paiement temporairement indisponible'));
-    context.ok(checkout.includes('Fermer la modale ne compense jamais'));
+    context.ok(checkout.includes("Quitter l'ecran Stripe ne compense jamais"));
     context.ok(!checkout.includes("httpsCallable(functions, 'cancelOrderClient')"));
     context.ok(orders.includes('sandbox. Ils ne constituent ni une facture ni un avoir fiscal'));
     context.ok(orders.includes('generateCommerceDocument'));

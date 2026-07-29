@@ -235,6 +235,21 @@ test('frontend controller, reader and recovery descriptor remain behind off flag
     assert.strictEqual(controller.reduceCheckoutController(initial, { type: 'START' }), initial);
     const creating = controller.reduceCheckoutController(initial, { type: 'START' }, { enabled: true });
     assert.equal(creating.status, 'creating');
+    const restored = controller.reduceCheckoutController(initial, {
+        type: 'RESTORE',
+        orderId: 'order-id-restore-0001',
+        clientOrderId: 'client-order-restore-0001'
+    }, { enabled: true });
+    assert.deepEqual(restored, {
+        status: 'awaiting_method',
+        orderId: 'order-id-restore-0001',
+        clientOrderId: 'client-order-restore-0001',
+        errorCode: null
+    });
+    assert.throws(
+        () => controller.reduceCheckoutController(restored, { type: 'START' }, { enabled: true }),
+        /COMMERCE_CHECKOUT_CONTROLLER_TRANSITION_DENIED:awaiting_method:START/
+    );
     assert.equal(controller.COMMERCE_V2_CHECKOUT_ENABLED, false);
     assert.equal(recovery.COMMERCE_V2_RECOVERY_ENABLED, false);
 

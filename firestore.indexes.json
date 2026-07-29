@@ -105,6 +105,20 @@
       "collectionGroup": "analytics_sessions",
       "fieldPath": "geo",
       "indexes": []
+    },
+    {
+      "collectionGroup": "returns",
+      "fieldPath": "updatedAt",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
     }
   ]
 }

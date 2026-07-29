@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { PaymentElement, ExpressCheckoutElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { AlertCircle, Lock, ShieldCheck } from 'lucide-react';
 
@@ -10,8 +10,7 @@ const buildStripeReturnUrl = (orderId) => {
 };
 
 /**
- * CheckoutPaymentStep — Placé INLINE dans la page de checkout
- * Couleurs Premium : Amber / Stone / Noir (Zéro violet)
+ * CheckoutPaymentStep — formulaire Stripe isole dans l'ecran de paiement.
  */
 const CheckoutPaymentStep = ({ total, orderId, onPaymentSuccess, onPaymentError, darkMode = false }) => {
     const stripe = useStripe();
@@ -77,15 +76,14 @@ const CheckoutPaymentStep = ({ total, orderId, onPaymentSuccess, onPaymentError,
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500 mt-4">
-            {/* BADGE SÉCURITÉ PREMIUM */}
-            <div className={`flex items-center gap-4 p-4 rounded-xl ring-1 ring-inset ${darkMode ? 'bg-[#0a0a0a] ring-white/10' : 'bg-stone-50 ring-stone-200'}`}>
-                <div className={`p-2.5 rounded-lg ${darkMode ? 'bg-white/5 text-white' : 'bg-white shadow-sm text-stone-900'}`}>
-                    <ShieldCheck size={18} strokeWidth={2} />
+        <div className="space-y-7 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className={`flex items-center gap-4 border-y py-4 ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${darkMode ? 'bg-white/5 text-stone-200' : 'bg-stone-200/70 text-stone-800'}`}>
+                    <ShieldCheck size={18} strokeWidth={1.75} />
                 </div>
                 <div>
-                    <p className={`text-xs font-black tracking-wide ${darkMode ? 'text-white' : 'text-stone-900'}`}>Paiement 100% sécurisé</p>
-                    <p className={`text-[10px] font-medium mt-0.5 ${darkMode ? 'text-stone-500' : 'text-stone-500'}`}>Cryptage SSL 256 bits — Stripe PCI DSS</p>
+                    <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-stone-900'}`}>Paiement traité par Stripe</p>
+                    <p className={`mt-0.5 text-xs leading-5 ${darkMode ? 'text-stone-500' : 'text-stone-500'}`}>Vos données bancaires ne transitent pas par nos serveurs.</p>
                 </div>
             </div>
 
@@ -115,16 +113,16 @@ const CheckoutPaymentStep = ({ total, orderId, onPaymentSuccess, onPaymentError,
 
             {/* SÉPARATEUR */}
             {expressCheckoutReady && (
-                <div className="flex items-center gap-4 py-2">
+                <div className="flex items-center gap-4 py-1">
                     <div className={`flex-1 h-px ${darkMode ? 'bg-stone-800' : 'bg-stone-200'}`} />
-                    <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>ou par carte</span>
+                    <span className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>ou par carte</span>
                     <div className={`flex-1 h-px ${darkMode ? 'bg-stone-800' : 'bg-stone-200'}`} />
                 </div>
             )}
 
             {/* FORMULAIRE CARTE */}
             <form onSubmit={handleCardSubmit} className="space-y-6">
-                <div className={`p-4 md:p-5 rounded-2xl ring-1 ring-inset ${darkMode ? 'bg-stone-900/50 ring-stone-800' : 'bg-white ring-stone-200'}`}>
+                <div className={`rounded-2xl border p-4 md:p-5 ${darkMode ? 'border-white/10 bg-white/[0.025]' : 'border-stone-200 bg-white'}`}>
                     <PaymentElement
                         options={{
                             layout: {
@@ -146,49 +144,39 @@ const CheckoutPaymentStep = ({ total, orderId, onPaymentSuccess, onPaymentError,
 
                 {/* ERREUR */}
                 {errorMessage && (
-                    <div className={`p-4 rounded-xl flex items-start gap-3 text-sm animate-in fade-in ${darkMode ? 'bg-red-500/10 ring-1 ring-red-500/20 text-red-400' : 'bg-red-50 ring-1 ring-red-100 text-red-600'}`}>
+                    <div className={`flex items-start gap-3 border-y py-4 text-sm animate-in fade-in ${darkMode ? 'border-red-400/20 text-red-300' : 'border-red-200 text-red-700'}`} role="alert">
                         <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                         <div>
-                            <p className="font-bold">Erreur de paiement</p>
+                            <p className="font-semibold">Le paiement n’a pas abouti</p>
                             <p className="mt-1 text-xs opacity-90">{errorMessage}</p>
                         </div>
                     </div>
                 )}
 
-            {/* BOUTON PAYER TOTAL PREMIUM */}
             <button
                 type="submit"
                 disabled={!stripe || isProcessing}
-                className={`relative w-full overflow-hidden py-4 md:py-5 rounded-[1rem] font-black uppercase text-[11px] md:text-xs tracking-widest transition-all duration-500 flex items-center justify-center gap-3 shadow-xl outline-none group
-                    ${(!stripe || isProcessing) ? 'cursor-wait' : 'cursor-pointer active:scale-[0.985] hover:shadow-[0_8px_30px_rgba(255,255,255,0.15)]'}
+                className={`relative flex min-h-14 w-full items-center justify-center gap-3 overflow-hidden rounded-xl px-5 py-4 text-sm font-semibold transition-[background-color,color,transform] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+                    ${(!stripe || isProcessing) ? 'cursor-wait' : 'cursor-pointer active:scale-[0.985]'}
                     ${(!stripe || isProcessing)
                         ? (darkMode ? 'bg-stone-800/50 text-stone-500 opacity-70' : 'bg-stone-200 text-stone-400 opacity-70')
-                        : (darkMode ? 'bg-white text-stone-900 shadow-[0_4px_20px_rgba(0,0,0,0.5)]' : 'bg-stone-900 text-white shadow-[0_4px_20px_rgba(0,0,0,0.1)]')
+                        : (darkMode ? 'bg-stone-100 text-stone-950 hover:bg-white focus-visible:ring-white focus-visible:ring-offset-stone-950' : 'bg-stone-900 text-white hover:bg-stone-800 focus-visible:ring-stone-900 focus-visible:ring-offset-[#f7f4ef]')
                     }
                 `}
             >
-                {/* Effet Shimmer de base pour le bouton au hover */}
-                {!isProcessing && stripe && (
-                    <div className={`absolute inset-0 -translate-x-[150%] group-hover:animate-[shimmer-sweep_2s_infinite_cubic-bezier(0.16,1,0.3,1)] w-1/2 skew-x-12 blur-md pointer-events-none ${
-                        darkMode 
-                            ? 'bg-gradient-to-r from-transparent via-stone-400/20 to-transparent' 
-                            : 'bg-gradient-to-r from-transparent via-white/20 to-transparent'
-                    }`} />
-                )}
-
-                <div className="relative z-10 flex items-center justify-center gap-3 w-full">
+                <div className="relative flex w-full items-center justify-center gap-3">
                     {isProcessing ? (
                         <>
                             <svg className={`animate-spin h-5 w-5 ${darkMode ? 'text-stone-500' : 'text-stone-400'}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            <span className={darkMode ? 'text-stone-500' : 'text-stone-400'}>Traitement en cours...</span>
+                            <span className={darkMode ? 'text-stone-500' : 'text-stone-400'}>Paiement en cours…</span>
                         </>
                     ) : (
                         <>
                             <Lock size={16} className={darkMode ? 'text-stone-900/80' : 'text-white/80'} />
-                            Payer {total} €
+                            <span>Payer <span className="tabular-nums">{total}&nbsp;€</span></span>
                         </>
                     )}
                 </div>

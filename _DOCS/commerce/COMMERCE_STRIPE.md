@@ -1,6 +1,6 @@
 # Commerce, checkout et Stripe
 
-Derniere mise a jour: 2026-07-28
+Derniere mise a jour: 2026-07-29
 Statut: `PREPROD_TRANSACTIONAL_READY`
 
 Restriction active:
@@ -54,10 +54,20 @@ Composants principaux:
 - `CartSidebar` pour le panneau;
 - `guestCart.js` pour la persistance visiteur et l'handoff;
 - `CheckoutView` pour adresse, livraison et creation de commande;
-- `CheckoutStripeModal` pour le suivi durable de commande;
+- `CheckoutStripeModal` pour l'ecran Stripe plein viewport et le suivi durable
+  de commande;
 - `CheckoutPaymentStep` pour Stripe Elements.
 
 Pendant le paiement, le recap utilise un snapshot du panier. Une reservation stock ne doit pas faire disparaitre visuellement les articles ou modifier le total deja presente.
+
+Quitter l'ecran Stripe ne libere pas le hold et ne remet pas le controller a
+`idle`. L'interface conserve localement la session quand le document reste
+monte et propose une reprise du meme paiement. Apres reload, elle relit le
+descriptor sans secret lie a l'UID Firebase, appelle `resumeCheckoutV2` et
+recupere un nouveau `clientSecret` et le total serveur pour le meme
+PaymentIntent. Cette detection precede la garde panier vide: le formulaire et
+le panier reinitialises ne sont pas une condition de reprise et aucun nouveau
+`START`/checkout n'est emis.
 
 ## 4. Stock et idempotence
 
@@ -80,9 +90,11 @@ Invariants actifs:
   Stripe et disposition physique;
 - les conflits de restauration passent en etat a verifier, pas en succes silencieux.
 
-`cleanupPendingPayments` est neutralise avant toute lecture/ecriture. La
-convergence des PI existants passe par les webhooks signes; un echec reessayable
-conserve la commande et le hold.
+Le scheduler legacy `cleanupPendingPayments`, neutralise depuis la Gate 0B, a
+ete retire du code et du sandbox le 2026-07-29 apres sept jours sans autre
+activite `us-central1` que ses propres executions inutiles. La convergence des
+PI existants passe par les webhooks signes; un echec reessayable conserve la
+commande et le hold.
 
 ## 5. Statuts et axes v2
 
@@ -261,7 +273,6 @@ functions/src/commerce/legacyContainment.js
 functions/src/commerce/stripeWebhook.js
 functions/src/commerce/stripeConnect.js
 functions/src/commerce/cancelOrder.js
-functions/src/commerce/cleanupPendingPayments.js
 functions/src/commerce/refundOrder.js
 functions/src/commerce/orderStatus.js
 src/kit/admin/AdminOrders.jsx

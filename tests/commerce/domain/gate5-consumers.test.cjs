@@ -541,7 +541,13 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(myOrders.includes('requestOrderCancellation'));
     assert.ok(adminReturns.includes('adaptCommerceOrder'));
     assert.ok(adminReturns.includes('returnLineSummary'));
+    assert.ok(adminReturns.includes('Promise.allSettled'));
+    assert.equal(adminReturns.includes("text: error.message || String(error)"), false);
     assert.ok(checkout.includes('createCheckoutV2(input, {'));
+    assert.ok(checkout.includes('readCheckoutRecoveryDescriptor(identity.uid'));
+    assert.ok(checkout.includes('await resumeCheckoutV2(descriptor.orderId)'));
+    assert.ok(checkout.includes('await openExistingPayment()'));
+    assert.ok(checkout.includes("setCheckoutState('payment_paused')"));
     assert.ok(checkoutPage.includes('resumeCheckoutV2(recoverableOrderId)'));
     assert.ok(checkoutPage.includes('isPurchasedCartLineUnchanged'));
     assert.equal(checkout.includes('pagehide'), false);

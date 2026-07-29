@@ -12,6 +12,7 @@ import {
     COMMERCE_V2_CONSUMERS_ENABLED,
     createCheckoutV2,
     ensureCheckoutAnonymousIdentity,
+    resumeCheckoutV2,
 } from './commerceV2Client';
 import { buildCheckoutV2Input } from './checkoutContract';
 import {
@@ -21,6 +22,7 @@ import {
 import {
     COMMERCE_V2_RECOVERY_ENABLED,
     createCheckoutRecoveryDescriptor,
+    readCheckoutRecoveryDescriptor,
     writeCheckoutRecoveryDescriptor,
 } from './checkoutRecovery';
 
@@ -95,7 +97,8 @@ const CheckoutView = ({
     darkMode = false,
     onBack,
     onPlaceOrder,
-    fixtureContext = null
+    fixtureContext = null,
+    recoveryExpected = false
 }) => {
     const toast = useToast();
     // --- STATE ---
@@ -172,7 +175,9 @@ const CheckoutView = ({
     }, []);
 
     // Status global : 'editing' -> 'fetching_stripe' -> 'ready_to_pay' -> 'processing_deferred' -> 'order_success'
-    const [checkoutState, setCheckoutState] = useState('editing'); 
+    const [checkoutState, setCheckoutState] = useState(
+        recoveryExpected ? 'fetching_stripe' : 'editing'
+    );
     const checkoutControllerRef = useRef(createCheckoutControllerState());
     
     const [clientSecret, setClientSecret] = useState(null);
@@ -180,6 +185,8 @@ const CheckoutView = ({
     const [createdOrderOtpToken, setCreatedOrderOtpToken] = useState('');
     const [createdStripeConnectedAccountId, setCreatedStripeConnectedAccountId] = useState('');
     const [lockedOrderDraft, setLockedOrderDraft] = useState(null);
+    const [recoveredOrderTotal, setRecoveredOrderTotal] = useState(null);
+    const [paymentResumeNotice, setPaymentResumeNotice] = useState('');
     const [priceOverrides, setPriceOverrides] = useState({});
     const [unavailableItems, setUnavailableItems] = useState([]);
     const [isCleaningUp] = useState(false);
@@ -192,6 +199,7 @@ const CheckoutView = ({
         error: ''
     });
     const guestOtpVerifyInFlightRef = useRef(false);
+    const checkoutRecoveryAttemptedRef = useRef(false);
 
     const normalizedCheckoutEmail = normalizeCheckoutEmail(formData.email);
     const requiresGuestCheckoutOtp = !hasReliableEmailProvider(user, formData.email);
@@ -201,7 +209,7 @@ const CheckoutView = ({
         && Boolean(guestOtp.token)
     );
     const hasVerifiedCheckoutEmail = hasVerifiedGuestCheckoutOtp;
-    const isCheckoutLocked = ['fetching_stripe', 'ready_to_pay', 'processing_deferred', 'order_success'].includes(checkoutState);
+    const isCheckoutLocked = ['fetching_stripe', 'ready_to_pay', 'payment_paused', 'processing_deferred', 'order_success'].includes(checkoutState);
     const currentCartItems = useMemo(() => cartItems.map((item) => {
         const id = String(item.originalId || item.id || '');
         return Object.prototype.hasOwnProperty.call(priceOverrides, id)
@@ -213,7 +221,7 @@ const CheckoutView = ({
     const checkoutSubtotal = isCheckoutLocked && lockedOrderDraft ? lockedOrderDraft.subtotal : currentSubtotal;
     const selectedDelivery = formData.deliveryMode ? deliverySettings[formData.deliveryMode] : null;
     const shippingCost = selectedDelivery ? selectedDelivery.price : 0;
-    const finalTotal = checkoutSubtotal + shippingCost;
+    const finalTotal = recoveredOrderTotal ?? (checkoutSubtotal + shippingCost);
     const getCheckoutClientOrderId = () => {
         if (!checkoutClientOrderIdRef.current) {
             const randomPart = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -233,11 +241,107 @@ const CheckoutView = ({
         return checkoutControllerRef.current;
     };
 
-    // Fermer la modale ne compense jamais une operation Stripe ambigue.
-    // La commande et son hold restent drainables par les webhooks autoritaires.
+    const hasPendingV2Payment = Boolean(
+        COMMERCE_V2_CONSUMERS_ENABLED
+        && checkoutControllerRef.current.status === 'awaiting_method'
+        && createdOrderId
+    );
+
+    const openExistingPayment = async () => {
+        if (!hasPendingV2Payment) return false;
+        setCheckoutState('fetching_stripe');
+        setPaymentResumeNotice('');
+        try {
+            const resumed = clientSecret
+                ? null
+                : await resumeCheckoutV2(createdOrderId);
+            if (resumed) {
+                setClientSecret(resumed.clientSecret);
+                setRecoveredOrderTotal(Number.isSafeInteger(resumed.totalCents)
+                    ? resumed.totalCents / 100
+                    : null);
+                setCreatedStripeConnectedAccountId(resumed.connectedAccountId || '');
+            }
+            setCheckoutState('ready_to_pay');
+        } catch (error) {
+            console.error('Checkout payment resume failed:', error);
+            setCheckoutState('payment_paused');
+            setPaymentResumeNotice(
+                'La commande reste réservée. Nous n’avons pas pu rouvrir le paiement pour le moment; réessayez sans recréer la commande.'
+            );
+        }
+        return true;
+    };
+
+    useEffect(() => {
+        if (!COMMERCE_V2_CONSUMERS_ENABLED || typeof window === 'undefined') return undefined;
+        if (checkoutRecoveryAttemptedRef.current) return undefined;
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('order_success') === 'true') return undefined;
+        checkoutRecoveryAttemptedRef.current = true;
+
+        let cancelled = false;
+        const restorePayment = async () => {
+            try {
+                const identity = await ensureCheckoutAnonymousIdentity();
+                if (cancelled) return;
+                const descriptor = readCheckoutRecoveryDescriptor(identity.uid, {
+                    enabled: COMMERCE_V2_RECOVERY_ENABLED
+                });
+                if (!descriptor) return;
+
+                checkoutControllerRef.current = reduceCheckoutController(
+                    createCheckoutControllerState(),
+                    {
+                        type: 'RESTORE',
+                        orderId: descriptor.orderId,
+                        clientOrderId: descriptor.clientOrderId
+                    },
+                    { enabled: COMMERCE_V2_CONSUMERS_ENABLED }
+                );
+                checkoutClientOrderIdRef.current = descriptor.clientOrderId;
+                setCreatedOrderId(descriptor.orderId);
+                setLockedOrderDraft({
+                    items: currentCartItems,
+                    subtotal: currentSubtotal,
+                    purchasedCartLines: descriptor.cartLines
+                });
+                setCheckoutState('fetching_stripe');
+
+                const resumed = await resumeCheckoutV2(descriptor.orderId);
+                if (cancelled) return;
+                setClientSecret(resumed.clientSecret);
+                setRecoveredOrderTotal(Number.isSafeInteger(resumed.totalCents)
+                    ? resumed.totalCents / 100
+                    : null);
+                setCreatedStripeConnectedAccountId(resumed.connectedAccountId || '');
+                setPaymentResumeNotice('Votre commande réservée a été retrouvée. Vous pouvez reprendre le paiement là où vous l’aviez laissé.');
+                setCheckoutState('ready_to_pay');
+            } catch (error) {
+                if (cancelled) return;
+                console.error('Checkout recovery failed:', error);
+                if (checkoutControllerRef.current.status === 'awaiting_method') {
+                    setCheckoutState('payment_paused');
+                    setPaymentResumeNotice(
+                        'Votre commande reste réservée, mais le paiement n’a pas pu être rouvert. Utilisez « Reprendre le paiement » pour réessayer.'
+                    );
+                }
+            }
+        };
+
+        void restorePayment();
+        return () => {
+            cancelled = true;
+        };
+    }, [currentCartItems, currentSubtotal]);
+
+    // Quitter l'ecran Stripe ne compense jamais une operation ambigue et ne
+    // detruit plus les informations permettant de reprendre le meme PaymentIntent.
     const handleClosePaymentModal = () => {
-        setClientSecret(null);
-        setCheckoutState('editing');
+        setPaymentResumeNotice(
+            'Votre commande est réservée. Reprenez ce même paiement quand vous êtes prêt; aucun nouveau dossier ne sera créé.'
+        );
+        setCheckoutState('payment_paused');
     };
     
     // --- ADDRESS AUTOCOMPLETE ---
@@ -520,6 +624,7 @@ const CheckoutView = ({
 
     // --- SUBMIT ACTION : FETCH STRIPE OU CONFIRM DEFERRED ---
     const handleActionClick = async () => {
+        if (await openExistingPayment()) return;
         if (!isFormValid) return;
         if (cartItems.length === 0) {
             toast('Votre panier est vide.', { type: 'warning' });
@@ -741,6 +846,27 @@ const CheckoutView = ({
         );
     }
 
+    if (checkoutState === 'fetching_stripe' && recoveryExpected && !clientSecret) {
+        return (
+            <section className={`flex min-h-[100dvh] items-center px-5 py-12 ${darkMode ? 'bg-stone-950 text-white' : 'bg-[#f7f4ef] text-stone-950'}`} aria-live="polite">
+                <div className="mx-auto w-full max-w-xl">
+                    <p className={`text-[11px] font-semibold uppercase tracking-[0.2em] ${darkMode ? 'text-stone-500' : 'text-stone-500'}`}>
+                        Reprise sécurisée
+                    </p>
+                    <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+                        Nous retrouvons votre paiement
+                    </h1>
+                    <p className={`mt-4 max-w-[52ch] text-sm leading-6 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
+                        La commande déjà réservée est en cours de vérification. Aucun nouveau dossier ne sera créé.
+                    </p>
+                    <div className={`mt-9 overflow-hidden rounded-full ${darkMode ? 'bg-white/10' : 'bg-stone-200'}`}>
+                        <span className={`sv-auth-loading-bar block h-1.5 w-1/2 ${darkMode ? 'bg-stone-100' : 'bg-stone-900'}`} />
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
 
     // --- RENDU OUT OF STOCK ---
     // On ne bloque pas si on est en train de processer une commande (fetching_stripe, processing_deferred)
@@ -748,7 +874,7 @@ const CheckoutView = ({
     // mis le stock à sold=true pour le réserver !
     // On ne bloque pas non plus si on est en cours de nettoyage (isCleaningUp) après avoir fermé la modale Stripe, 
     // pour laisser le temps au serveur de remettre sold=false sans déclencher l'alerte !
-    if (unavailableItems.length > 0 && checkoutState !== 'processing_deferred' && checkoutState !== 'fetching_stripe' && checkoutState !== 'ready_to_pay' && checkoutState !== 'order_success' && !isCleaningUp) {
+    if (unavailableItems.length > 0 && checkoutState !== 'processing_deferred' && checkoutState !== 'fetching_stripe' && checkoutState !== 'ready_to_pay' && checkoutState !== 'payment_paused' && checkoutState !== 'order_success' && !isCleaningUp) {
         const unavailableMessage = unavailableItems.length === 1
             ? `L'article "${unavailableItems[0].name}" n'est plus disponible au paiement en ligne (${unavailableItems[0].reason || 'indisponible'}).`
             : "Certains articles ne sont plus disponibles au paiement en ligne.";
@@ -1138,13 +1264,28 @@ const CheckoutView = ({
                             
                             {/* BOUTON D'ACTION PREMIUM (Magnetic Spotlight & Layout Morph) */}
                             <div className="flex flex-col gap-4 items-center">
+                                {paymentResumeNotice ? (
+                                    <div
+                                        className={`w-full rounded-2xl border px-4 py-3 text-sm leading-6 ${
+                                            darkMode
+                                                ? 'border-amber-300/20 bg-amber-200/10 text-amber-100'
+                                                : 'border-amber-200 bg-amber-50 text-amber-950'
+                                        }`}
+                                        role="status"
+                                        aria-live="polite"
+                                    >
+                                        {paymentResumeNotice}
+                                    </div>
+                                ) : null}
                                 <PremiumActionBtn
                                     onClick={handleActionClick}
-                                    disabled={!isFormValid || !hasVerifiedCheckoutEmail}
+                                    disabled={!hasPendingV2Payment && (!isFormValid || !hasVerifiedCheckoutEmail)}
                                     isLoading={checkoutState === 'fetching_stripe' || checkoutState === 'processing_deferred' || guestOtp.status === 'sending' || guestOtp.status === 'verifying'}
                                     darkMode={darkMode}
                                 >
-                                    {paymentMethod === 'stripe_elements' ? (
+                                    {hasPendingV2Payment ? (
+                                        <span>Reprendre le paiement sécurisé</span>
+                                    ) : paymentMethod === 'stripe_elements' ? (
                                         <span>Procéder au paiement sécurisé</span>
                                     ) : (
                                         <span>Confirmer ma commande</span>
@@ -1167,7 +1308,7 @@ const CheckoutView = ({
 
         </div>
 
-        {/* MODAL STRIPE (POP-UP) RENDU DANS UN PORTAL POUR ÉVITER LES BUGS Z-INDEX ET STACKING CONTEXT SUR IOS */}
+        {/* ECRAN STRIPE PLEINE PAGE, rendu dans un portal pour rester independant du shell checkout. */}
         {checkoutState === 'ready_to_pay' && clientSecret && stripeElementsOptions && paymentMethod === 'stripe_elements' && (
             <Suspense fallback={null}>
                 <CheckoutStripeModal
@@ -1190,7 +1331,6 @@ const CheckoutView = ({
                         setCheckoutState('order_success');
                         resetCheckoutClientOrderId();
                     }}
-                    setCheckoutState={setCheckoutState}
                 />
             </Suspense>
         )}

@@ -127,6 +127,7 @@ carte produit
   -> createOrder [F]
   -> transaction stock + orders [DB]
   -> Stripe Payment Element [EXT]
+  -> fermeture/reload: descriptor UID -> resumeCheckoutV2 -> meme PaymentIntent
   -> stripeWebhook [F]
   -> order paid + email triggers
   -> /mes-commandes + /admin
@@ -608,7 +609,6 @@ functions/
     |   |-- stripeWebhook.js
     |   |-- stripeConnect.js
     |   |-- cancelOrder.js
-    |   |-- cleanupPendingPayments.js
     |   |-- refundOrder.js
     |   |-- orderStatus.js
     |   |-- orderStats.js
@@ -651,7 +651,7 @@ functions/
 
 | Domaine | Exports |
 | --- | --- |
-| commerce | `createOrder`, `stripeWebhook`, `stripeConnectWebhook`, `cancelOrderClient`, `cleanupPendingPayments`, `getOrderStatusClient` |
+| commerce | `createOrder`, `stripeWebhook`, `stripeConnectWebhook`, `cancelOrderClient`, `getOrderStatusClient` |
 | commerce v2 checkout/lecture | `createCheckoutV2`, `resumeCheckoutV2`, `listMyOrdersV2`, `listOrdersAdminV2`, `getOrderTimelineAdminV2`, `listReturnsAdminV2` |
 | commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
 | refunds/Connect | `refundOrderAdmin`, `syncRefundStatusAdmin`, `getStripeConnectStatus`, `startStripeConnectOnboarding`, `syncStripeConnectAccount`, `requestStripeConnectReconnect`, `confirmStripeConnectReconnect` |
@@ -676,7 +676,8 @@ Firestore
 |   |-- passkeys/{credentialId}
 |   `-- passkey_challenges/{type}
 |-- orders/{orderId}
-|   `-- documents/{documentId} ........ recus sandbox non fiscaux immutables
+|   |-- documents/{documentId} ........ recus sandbox non fiscaux immutables
+|   `-- returns/{returnId} ............ retours physiques, index group updatedAt
 |-- commerce_financial_facts/{factId} . faits financiers append-only
 |-- commerce_financial_projections/current
 |-- commerce_outbox/{eventId}
