@@ -29,3 +29,12 @@ test('lazy cart handoff does not process an add event twice once the panel is mo
   assert.ok(lazyCartPanel.includes("if (!CartPanel) ensureCartPanel('sv:product-added'"));
   assert.ok(lazyCartPanel.includes('}, [CartPanel, ensureCartPanel]);'));
 });
+
+test('paid checkout keeps the success confirmation visible after cart cleanup', () => {
+  const checkoutPage = source('app/checkout/CheckoutPageIsland.jsx');
+
+  assert.ok(checkoutPage.includes(
+    'cartItems.length === 0 && !hasRecoverableCheckout && !showOrderSuccess'
+  ));
+  assert.ok(checkoutPage.includes('<OrderSuccessModal'));
+});

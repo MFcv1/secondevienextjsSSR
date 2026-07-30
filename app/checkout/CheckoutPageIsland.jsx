@@ -369,7 +369,7 @@ function CheckoutPageContent() {
     return <div className="min-h-screen bg-[#FAFAF9]" />;
   }
 
-  if (cartItems.length === 0 && !hasRecoverableCheckout) {
+  if (cartItems.length === 0 && !hasRecoverableCheckout && !showOrderSuccess) {
     return (
       <CheckoutState
         darkMode={darkMode}
