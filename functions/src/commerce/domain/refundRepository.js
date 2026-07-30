@@ -1,7 +1,9 @@
 'use strict';
 
+const admin = require('firebase-admin');
 const { buildFinancialFact, buildOutboxIntent } = require('./commerceEffects');
 const { assertActionAllowed } = require('./allowedActions');
+const { writeFinancialRollups } = require('./financialRollup');
 const { hashPayload } = require('./idempotency');
 const { reduceOrder, validateOrderV2 } = require('./orderState');
 const {
@@ -34,6 +36,8 @@ function createRefundRepository({ db, refs, clock }) {
         'refundAttempt',
         'auditEvent',
         'financialFact',
+        'financialDaily',
+        'financialTotals',
         'outbox'
     ]) {
         requireDependency(refs?.[name], `refs.${name}`);
@@ -60,20 +64,51 @@ function createRefundRepository({ db, refs, clock }) {
             const storedOrder = orderSnap.data();
             validateOrderV2(storedOrder);
             const order = { ...storedOrder, id: orderId };
-            assertActionAllowed(order, actor, 'request_refund');
             if (snapshotExists(attemptSnap)) {
                 const existing = attemptSnap.data();
                 validateRefundAttempt(existing);
                 if (
                     existing.orderId !== orderId ||
                     existing.refundRequestId !== refundRequestId ||
-                    existing.amountCents !== amountCents ||
-                    existing.actorUid !== actor.uid
+                    existing.amountCents !== amountCents
                 ) {
                     throw repositoryError('COMMERCE_REFUND_IDEMPOTENCY_CONFLICT');
                 }
+                if (
+                    actor?.role !== 'admin' ||
+                    actor?.aal2 !== true ||
+                    typeof actor?.uid !== 'string' ||
+                    actor.uid.length < 3
+                ) {
+                    throw repositoryError('COMMERCE_REFUND_ACCESS_DENIED');
+                }
+                const resumeEventId =
+                    `refund-resumed-${refundRequestId}-${existing.stateVersion}-${hashPayload(actor.uid).slice(0, 16)}`;
+                const resumeAuditRef = refs.auditEvent(orderId, resumeEventId);
+                const resumeAuditSnap = await transaction.get(resumeAuditRef);
+                if (!snapshotExists(resumeAuditSnap)) {
+                    transaction.set(resumeAuditRef, {
+                        schemaVersion: 2,
+                        eventId: resumeEventId,
+                        orderId,
+                        type: 'refund_resume_requested',
+                        actor: {
+                            uid: actor.uid,
+                            role: actor.role,
+                            aal2: actor.aal2
+                        },
+                        reason,
+                        amountCents: existing.amountCents,
+                        currency: existing.currency,
+                        refundRequestId,
+                        attemptStatus: existing.status,
+                        attemptStateVersion: existing.stateVersion,
+                        createdAt: clock.now()
+                    });
+                }
                 return { order, attempt: existing, reused: true };
             }
+            assertActionAllowed(order, actor, 'request_refund');
             if (snapshotExists(auditSnap)) {
                 throw repositoryError('COMMERCE_AUDIT_APPEND_ONLY_CONFLICT');
             }
@@ -250,7 +285,15 @@ function createRefundRepository({ db, refs, clock }) {
                 stateVersionAfter: nextOrder.stateVersion,
                 createdAt: clock.now()
             });
-            if (factRef && !snapshotExists(snapshots[3])) transaction.set(factRef, fact);
+            if (factRef && !snapshotExists(snapshots[3])) {
+                transaction.set(factRef, fact);
+                writeFinancialRollups(transaction, {
+                    refs,
+                    fact,
+                    updatedAt: clock.now(),
+                    increment: admin.firestore.FieldValue.increment
+                });
+            }
             if (outboxRef && !snapshotExists(snapshots[4])) transaction.set(outboxRef, outbox);
             return { order: nextOrder, attempt: nextAttempt, reused: false };
         });

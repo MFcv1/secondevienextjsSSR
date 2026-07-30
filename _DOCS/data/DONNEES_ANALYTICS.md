@@ -1,6 +1,6 @@
 # Donnees, Firestore et analytics
 
-Derniere mise a jour: 2026-07-24
+Derniere mise a jour: 2026-07-30
 Statut: `REFERENCE_ACTIVE`
 
 Deploiement sandbox: moteur actif depuis le 2026-07-15 sur App Hosting et Functions `europe-west1`.
@@ -27,6 +27,10 @@ users/{uid}
   passkeys/{credentialId}
   passkey_challenges/{type}
 orders/{orderId}
+commerce_financial_facts/{factId}
+commerce_financial_projections/current
+commerce_financial_totals/{currency}
+commerce_financial_daily/{date}_{currency}
 newsletter_subscribers/{id}
 sys_metadata/{docId}
 sys_ratelimit/{id}
@@ -73,6 +77,14 @@ Les sous-collections panier et wishlist appartiennent a l'utilisateur. Les passk
 - refund, idempotence et e-mails.
 
 La retention des commandes doit respecter les obligations comptables. Une demande de suppression utilisateur ne signifie pas la suppression brute d'une facture.
+
+Les faits financiers v2 sont append-only. Le total par devise et la serie
+quotidienne sont des projections reconstruisibles, maintenues dans la meme
+transaction que chaque nouveau fait puis rapprochees par le reconciliateur
+horaire. Ces quatre collections sont backend-only dans `firestore.rules`;
+l'admin les consomme par callable fort. La serie quotidienne utilise l'index
+simple automatique `dateKey`, sans index composite. Aucun TTL ne s'applique:
+les rollups suivent la retention des faits et commandes dont ils derivent.
 
 ## 6. Metadata systeme
 

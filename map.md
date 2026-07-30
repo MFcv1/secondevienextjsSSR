@@ -1,6 +1,6 @@
 # Cartographie du projet Seconde Vie Next
 
-Derniere verification: 2026-07-29
+Derniere verification: 2026-07-30
 Statut: `CARTE_CANONIQUE_ACTIVE`
 
 ## 1. Role et maintenance
@@ -231,8 +231,11 @@ activation checkout n'est effectuee en Gate 6.
 
 ```text
 AdminReturns
-  -> refundOrderAdmin legacy refuse avant effet [F]
-  -> stripeWebhook/syncRefundStatusAdmin drainent un refund deja ouvert [F]
+  -> requestRefundAdmin v2, demande idempotente [F]
+  -> etat pending conserve la meme refundRequestId
+  -> lecture admin joint la derniere tentative bornee
+  -> Rapprocher Stripe rejoue exactement cette tentative [F]
+  -> Stripe create/retrieve avec la meme cle idempotente [EXT]
   -> order refunded [DB]
   -> physicalDispositionRequired=true
   `-> aucune remise en stock automatique
@@ -277,7 +280,7 @@ Mesure des lectures et couts: `_DOCS/data/AUDIT_COUTS_FIRESTORE.md` (Usage Insig
 |-- firebase.json .................... Firebase resources et codebases
 |-- .firebaserc ...................... Alias projet sandbox
 |-- firestore.rules ................. Autorisations Firestore
-|-- firestore.indexes.json .......... Indexes/exemptions
+|-- firestore.indexes.json .......... Indexes/exemptions, dont agregation faits financiers type + montant
 |-- storage.rules .................... Autorisations Storage
 |-- playwright.config.mjs ........... Configuration navigateur
 |-- eslint.config.mjs ............... Qualite statique
@@ -501,6 +504,7 @@ src/kit/admin/
 |-- BillingOnboardingOperator.jsx ..... validation/reinitialisation admin forte
 |-- analyticsReliability.js ........... fiabilite/checkpoints
 |-- exportCsv.js ...................... exports
+|-- adminCommerceData.js .............. premiere page partagee Ventes/Retours et prechargement de session
 |-- adminDataCache.js ................. cache memoire borne Stats/Ventes/Retours
 |-- adminPublicCatalog.js ............. lecture snapshot admin sans cache persistant
 `-- components/
@@ -586,6 +590,7 @@ functions/
     |   |   |-- commerceEffects.js ....... faits financiers/outbox deterministes
     |   |   |-- outboxRepository.js / outboxWorker.js ... lease, dead-letter et delivery_unknown
     |   |   |-- financialProjection.js .. projection financiere absolue
+    |   |   |-- financialRollup.js ....... deltas total/jour atomiques et idempotents
     |   |   |-- commerceDocuments.js ..... recus sandbox non fiscaux
     |   |   |-- operationsHealth.js ...... incidents, seuils et sante Gate 7A
     |   |   |-- fixtureScope.js / fixtureCleanup.js ... autorisation et cleanup run-scoped
@@ -608,7 +613,7 @@ functions/
     |   |-- v2Cancellation.js .............. callable annulation exportee, controle mutations off
     |   |-- v2ControlGuard.js ............... verrou serveur mutations selon controle
     |   |-- v2Checkout.js .................. create/resume limites au scope fixture
-    |   |-- v2Operations.js ................ schedulers et commandes exploitation Gate 7A
+    |   |-- v2Operations.js ................ schedulers, exploitation et synthese Stats fraiche par agregations
     |   |-- v2OrderQueries.js .............. lecteurs UID/admin exportes et actifs
     |   |-- v2RefundCommands.js ............ callable refund exportee, controle mutations off
     |   |-- v2ReturnCommands.js ............ callables retours exportees, controle mutations off
@@ -686,6 +691,8 @@ Firestore
 |   `-- returns/{returnId} ............ retours physiques, index group updatedAt
 |-- commerce_financial_facts/{factId} . faits financiers append-only
 |-- commerce_financial_projections/current
+|-- commerce_financial_totals/{currency} . total financier materialise backend-only
+|-- commerce_financial_daily/{date}_{currency} . serie quotidienne materialisee backend-only
 |-- commerce_outbox/{eventId}
 |-- commerce_webhook_inbox/{eventId}
 |-- commerce_incidents/{incidentId}

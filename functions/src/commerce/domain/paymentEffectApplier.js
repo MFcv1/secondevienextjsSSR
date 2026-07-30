@@ -1,10 +1,12 @@
 'use strict';
 
+const admin = require('firebase-admin');
 const {
     buildFinancialFact,
     buildOutboxIntent,
     deterministicEffectId
 } = require('./commerceEffects');
+const { writeFinancialRollups } = require('./financialRollup');
 const { hashPayload } = require('./idempotency');
 const { deriveInventoryStatus, validateInventorySummary } = require('./inventoryInvariants');
 const { reduceOrder, validateOrderV2 } = require('./orderState');
@@ -67,6 +69,8 @@ function createPaymentEffectApplier({ refs, clock }) {
         'movement',
         'incident',
         'financialFact',
+        'financialDaily',
+        'financialTotals',
         'outbox'
     ]) {
         requireDependency(refs?.[name], `refs.${name}`);
@@ -334,6 +338,12 @@ function createPaymentEffectApplier({ refs, clock }) {
                 }
             } else {
                 transaction.set(factRef, fact);
+                writeFinancialRollups(transaction, {
+                    refs,
+                    fact,
+                    updatedAt: now,
+                    increment: admin.firestore.FieldValue.increment
+                });
             }
         }
         if (outboxRef) {

@@ -1,6 +1,6 @@
 # Qualite, tests et gates
 
-Derniere mise a jour: 2026-07-28
+Derniere mise a jour: 2026-07-30
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Principe de proportion
@@ -152,6 +152,7 @@ Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCa
 ```bash
 npm run lint
 npm run test:deployment-cache
+npm run test:admin-cache
 npm run build
 npm run seo:surface
 npm run seo:check
@@ -230,7 +231,10 @@ provider-first verrouille.
 Le transport refund admin couvre admin fort derive du contexte Auth, montant
 entier en centimes, validation avant runtime, App Check/secret Stripe et runtime
 minimal verrouille. `test:commerce:faults` conserve les preuves de reponse
-Stripe perdue, cumul exact, compte Connect historique et zero restock.
+Stripe perdue, reprise de la meme tentative par un second administrateur fort,
+audit de reprise, cumul exact, compte Connect historique et zero restock. La
+lecture admin couvre aussi la jointure bornee de la derniere tentative, sa
+reference Stripe et son indicateur `resumable`.
 Les transports retour admin couvrent acteur Auth/AAL2 serveur, commandes
 d'evenement fermees, quantites et versions validees avant runtime, refus des
 lignes inconnues, App Check, runtime retour minimal, exports presents et

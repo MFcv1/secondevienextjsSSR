@@ -164,21 +164,29 @@ const RevenueChart = ({ data, darkMode }) => {
         return () => ro.disconnect();
     }, []);
 
-    const maxVal = useMemo(() => Math.max(...data.map((point) => Math.max(0, Number(point.value) || 0)), 100), [data]);
+    const chartBounds = useMemo(() => {
+        const values = data.map((point) => Number(point.value) || 0);
+        return {
+            min: Math.min(...values, 0),
+            max: Math.max(...values, 100)
+        };
+    }, [data]);
+    const valueRange = Math.max(1, chartBounds.max - chartBounds.min);
     const margin = { top: 48, right: 12, bottom: 26, left: dims.w < 420 ? 40 : 46 };
     const chartW = Math.max(10, dims.w - margin.left - margin.right);
     const chartH = dims.h - margin.top - margin.bottom;
     const baseY = margin.top + chartH;
+    const zeroY = margin.top + ((chartBounds.max / valueRange) * chartH);
     const step = chartW / Math.max(1, data.length - 1);
     const denseSeries = data.length > 90;
 
     const points = useMemo(() => data.map((point, index) => {
-        const value = Math.max(0, Number(point.value) || 0);
+        const value = Number(point.value) || 0;
         return {
             x: margin.left + index * step,
-            y: baseY - ((value / maxVal) * chartH)
+            y: margin.top + (((chartBounds.max - value) / valueRange) * chartH)
         };
-    }), [data, step, baseY, maxVal, chartH, margin.left]);
+    }), [chartBounds.max, chartH, data, margin.left, margin.top, step, valueRange]);
 
     const linePath = useMemo(
         () => (denseSeries ? buildLinearPath(points) : buildBoundedMonotonePath(points)),
@@ -188,14 +196,14 @@ const RevenueChart = ({ data, darkMode }) => {
         if (!linePath || points.length < 2) return '';
         const firstPoint = points[0];
         const lastPoint = points[points.length - 1];
-        return `${linePath} L ${lastPoint.x.toFixed(2)},${baseY} L ${firstPoint.x.toFixed(2)},${baseY} Z`;
-    }, [baseY, linePath, points]);
+        return `${linePath} L ${lastPoint.x.toFixed(2)},${zeroY.toFixed(2)} L ${firstPoint.x.toFixed(2)},${zeroY.toFixed(2)} Z`;
+    }, [linePath, points, zeroY]);
 
     const peakIdx = useMemo(() => {
         let indexOfPeak = -1;
-        let peak = 0;
+        let peak = Number.NEGATIVE_INFINITY;
         data.forEach((point, index) => {
-            const value = Math.max(0, Number(point.value) || 0);
+            const value = Number(point.value) || 0;
             if (value > peak) {
                 peak = value;
                 indexOfPeak = index;
@@ -230,7 +238,11 @@ const RevenueChart = ({ data, darkMode }) => {
         return candidates.filter((_, index) => index === 0 || index === candidates.length - 1 || index % every === 0);
     }, [chartW, data]);
 
-    const ticks = [1, 0.5, 0];
+    const ticks = [
+        chartBounds.max,
+        chartBounds.min + (valueRange / 2),
+        chartBounds.min
+    ];
     const gridColor = darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
     const labelColor = darkMode ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)';
 
@@ -270,15 +282,15 @@ const RevenueChart = ({ data, darkMode }) => {
                     </linearGradient>
                 </defs>
 
-                {ticks.map((tick) => {
-                    const y = margin.top + chartH - (tick * chartH);
+                {ticks.map((tick, index) => {
+                    const y = margin.top + (((chartBounds.max - tick) / valueRange) * chartH);
                     return (
                         <g key={tick}>
                             <line x1={margin.left} y1={y} x2={margin.left + chartW} y2={y}
-                                  stroke={gridColor} strokeWidth="1" strokeDasharray={tick === 0 ? undefined : '3 5'} />
+                                  stroke={gridColor} strokeWidth="1" strokeDasharray={index === 2 ? undefined : '3 5'} />
                             <text x={margin.left - 10} y={y + 3} textAnchor="end"
                                   style={{ fontSize: 9, fontWeight: 700, fill: labelColor, letterSpacing: '0.05em' }}>
-                                {formatEuroShort(maxVal * tick)}
+                                {formatEuroShort(tick)}
                             </text>
                         </g>
                     );
@@ -294,7 +306,7 @@ const RevenueChart = ({ data, darkMode }) => {
                 {data.length > 1 && (
                     <>
                         <motion.path
-                            key={`area-${data.length}-${maxVal}`}
+                            key={`area-${data.length}-${chartBounds.min}-${chartBounds.max}`}
                             d={areaPath}
                             fill="url(#dashAreaGradient)"
                             initial={reducedMotion ? false : { opacity: 0 }}
@@ -302,7 +314,7 @@ const RevenueChart = ({ data, darkMode }) => {
                             transition={{ duration: 1.1, delay: 0.5 }}
                         />
                         <motion.path
-                            key={`line-${data.length}-${maxVal}`}
+                            key={`line-${data.length}-${chartBounds.min}-${chartBounds.max}`}
                             d={linePath}
                             fill="none"
                             stroke="url(#dashLineGradient)"
@@ -820,6 +832,248 @@ const getRelativeOrderDate = (value) => {
     return new Date(timestamp).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
 };
 
+const DASHBOARD_CORE_CACHE_KEY = 'admin-dashboard:core';
+const DASHBOARD_INSIGHTS_CACHE_KEY = 'admin-dashboard:insights';
+
+const buildDailySalesFromOrders = (orders) => {
+    const totalsByDay = {};
+    orders
+        .filter((order) => order.status !== 'cancelled' && order.status !== 'cancelled_by_client')
+        .forEach((order) => {
+            const timestamp = getMillis(order.createdAt);
+            if (!timestamp) return;
+            const dateKey = new Date(timestamp).toISOString().split('T')[0];
+            totalsByDay[dateKey] = (totalsByDay[dateKey] || 0) + Number(order.total || 0);
+        });
+
+    return Object.keys(totalsByDay)
+        .sort()
+        .map((dateKey) => ({ dateKey, totalRevenue: totalsByDay[dateKey] }));
+};
+
+const loadAdminDashboardCoreData = ({ force = false } = {}) => loadAdminCachedData(
+    DASHBOARD_CORE_CACHE_KEY,
+    async () => {
+        const today = new Date();
+        const rollupCutoffUtc = Date.UTC(
+            today.getUTCFullYear(),
+            today.getUTCMonth(),
+            today.getUTCDate() - 364
+        );
+        const rollupCutoffKey = new Date(rollupCutoffUtc).toISOString().slice(0, 10);
+        const [
+            dashboardSnap,
+            inventorySnap,
+            salesSnap,
+            recentOrdersSnap
+        ] = await Promise.all([
+            getDoc(doc(db, 'dashboard_stats', 'commerce')),
+            getDoc(doc(db, 'inventory_stats', 'overview')),
+            getDocs(query(
+                collection(db, 'sales_stats_daily'),
+                where('dateKey', '>=', rollupCutoffKey),
+                orderBy('dateKey', 'asc'),
+                limit(366)
+            )),
+            getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(5)))
+        ]);
+
+        let revenue = 0;
+        let orderCount = 0;
+        let paid = 0;
+        let pending = 0;
+        let shipped = 0;
+        let stockValue = 0;
+        let allOrders = [];
+        let dailySales = salesSnap.docs
+            .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+            .sort((left, right) => String(left.dateKey).localeCompare(String(right.dateKey)));
+
+        if (dashboardSnap.exists()) {
+            const data = dashboardSnap.data();
+            revenue = Number(data.totalRevenue || 0);
+            orderCount = Number(data.totalOrders || 0);
+            paid = Number(data.paidOrders || 0);
+            pending = Number(data.pendingOrders || 0);
+            shipped = Number(data.shippedOrders || 0);
+        }
+
+        if (inventorySnap.exists()) {
+            stockValue = Number(inventorySnap.data().totalStockValue || 0);
+        }
+
+        if (!dashboardSnap.exists() || !inventorySnap.exists() || dailySales.length === 0) {
+            console.warn('Dashboard stats docs missing; using capped legacy orders fallback.');
+            const ordersSnapshot = await getDocs(query(
+                collection(db, 'orders'),
+                orderBy('createdAt', 'desc'),
+                limit(300)
+            ));
+            let legacyRevenue = 0;
+            let legacyOrderCount = 0;
+            let legacyPaid = 0;
+            let legacyPending = 0;
+            let legacyShipped = 0;
+
+            allOrders = ordersSnapshot.docs.map((docSnap) => ({
+                id: docSnap.id,
+                ...docSnap.data()
+            }));
+            allOrders.forEach((order) => {
+                const isCancelled = order.status === 'cancelled'
+                    || order.status === 'cancelled_by_client';
+                if (isCancelled) return;
+                legacyRevenue += Number(order.total || 0);
+                legacyOrderCount += 1;
+                if (order.status === 'completed' || order.status === 'paid') legacyPaid += 1;
+                else if (order.status === 'shipped') legacyShipped += 1;
+                else legacyPending += 1;
+            });
+
+            if (!dashboardSnap.exists()) {
+                revenue = legacyRevenue;
+                orderCount = legacyOrderCount;
+                paid = legacyPaid;
+                pending = legacyPending;
+                shipped = legacyShipped;
+            }
+            if (dailySales.length === 0) {
+                dailySales = buildDailySalesFromOrders(allOrders);
+            }
+        }
+
+        return {
+            stats: {
+                totalRevenue: revenue,
+                totalOrders: orderCount,
+                averageOrderValue: orderCount > 0 ? Math.round(revenue / orderCount) : 0,
+                totalStockValue: stockValue,
+                registeredUsers: getAdminCachedData('registered-user-count')
+            },
+            statusCounts: { paid, pending, shipped },
+            recentOrders: recentOrdersSnap.docs
+                .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+                .filter((order) => order.status !== 'cancelled' && order.status !== 'cancelled_by_client'),
+            dailySales,
+            allOrders,
+            inventoryStatsAvailable: inventorySnap.exists()
+        };
+    },
+    { maxAgeMs: 120_000, force }
+);
+
+const loadRegisteredUserCount = ({ force = false } = {}) => loadAdminCachedData(
+    'registered-user-count',
+    async () => {
+        const getUserStats = await getCallableFunction('getUserStats');
+        const result = await getUserStats({ includeUsers: false });
+        return result.data.count;
+    },
+    { maxAgeMs: 300_000, force }
+);
+
+const loadAdminDashboardInsightsData = ({ force = false } = {}) => loadAdminCachedData(
+    DASHBOARD_INSIGHTS_CACHE_KEY,
+    async () => {
+        const now = Date.now();
+        const dayMs = 24 * 60 * 60 * 1000;
+        const cutoff = Timestamp.fromMillis(now - (30 * dayMs));
+        const sessionsSnap = await getDocs(query(
+            collection(db, 'analytics_sessions'),
+            where('startedAt', '>=', cutoff),
+            orderBy('startedAt', 'desc'),
+            limit(500)
+        ));
+        const sessions = sessionsSnap.docs
+            .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+            .filter((session) => session.type !== 'admin');
+        const quoteVisits = new Set();
+        const quoteStarts = new Set();
+        const quoteEmailOpened = new Set();
+        const productMap = new Map();
+        const allProductViewers = new Set();
+        let totalProductViews = 0;
+        const recentDayKeys = Array.from({ length: 7 }, (_, index) => (
+            new Date(now - ((6 - index) * dayMs)).toISOString().slice(0, 10)
+        ));
+
+        sessions.forEach((session) => {
+            const sessionId = session.id;
+            const visitorKey = getSessionVisitorKey(session);
+            const journey = Array.isArray(session.journey) ? session.journey : [];
+            const eventActions = new Set(
+                (Array.isArray(session.lastEventPreview) ? session.lastEventPreview : [])
+                    .map((event) => event?.action)
+                    .filter(Boolean)
+            );
+            if (journey.some((step) => step?.page === 'quote')) quoteVisits.add(sessionId);
+            if (eventActions.has('quote_start')) quoteStarts.add(sessionId);
+            if (eventActions.has('quote_email_opened')) quoteEmailOpened.add(sessionId);
+
+            journey.forEach((step) => {
+                if (step?.page !== 'detail') return;
+                const tracked = getTrackedProduct(step.itemId);
+                if (!tracked) return;
+                const stepTimestamp = Number(step.timestampMs)
+                    || getMillis(session.startedAt)
+                    || now;
+                const dayKey = new Date(stepTimestamp).toISOString().slice(0, 10);
+                const entry = productMap.get(tracked.id) || {
+                    ...tracked,
+                    views: 0,
+                    viewers: new Set(),
+                    viewsByDay: new Map()
+                };
+                entry.views += 1;
+                entry.viewers.add(visitorKey);
+                entry.viewsByDay.set(dayKey, (entry.viewsByDay.get(dayKey) || 0) + 1);
+                if (entry.name === entry.id && tracked.name !== tracked.id) entry.name = tracked.name;
+                if (entry.price === null && tracked.price !== null) entry.price = tracked.price;
+                productMap.set(tracked.id, entry);
+                allProductViewers.add(visitorKey);
+                totalProductViews += 1;
+            });
+        });
+
+        return {
+            loading: false,
+            error: false,
+            coverageLimited: sessionsSnap.size >= 500,
+            quote: {
+                visits: quoteVisits.size,
+                starts: quoteStarts.size,
+                emailOpened: quoteEmailOpened.size
+            },
+            products: Array.from(productMap.values())
+                .sort((left, right) => (
+                    right.views - left.views
+                    || right.viewers.size - left.viewers.size
+                    || left.name.localeCompare(right.name, 'fr')
+                ))
+                .slice(0, 5)
+                .map((product) => ({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    views: product.views,
+                    viewers: product.viewers.size,
+                    dailyViews: recentDayKeys.map((dayKey) => product.viewsByDay.get(dayKey) || 0)
+                })),
+            totalProductViews,
+            uniqueProductViewers: allProductViewers.size
+        };
+    },
+    { maxAgeMs: 120_000, force }
+);
+
+export const preloadAdminDashboardData = async ({ force = false } = {}) => {
+    await Promise.allSettled([
+        loadAdminDashboardCoreData({ force }),
+        loadAdminDashboardInsightsData({ force }),
+        loadRegisteredUserCount({ force })
+    ]);
+};
+
 
 // ─── ADMIN DASHBOARD ───
 
@@ -848,8 +1102,10 @@ const AdminDashboard = ({
 }) => {
     void user;
     void isSuperAdmin;
+    const cachedCore = getAdminCachedData(DASHBOARD_CORE_CACHE_KEY);
+    const cachedInsights = getAdminCachedData(DASHBOARD_INSIGHTS_CACHE_KEY);
     const cachedUserCount = getAdminCachedData('registered-user-count');
-    const [stats, setStats] = useState({
+    const [stats, setStats] = useState(cachedCore?.stats || {
         totalRevenue: 0,
         totalOrders: 0,
         averageOrderValue: 0,
@@ -862,13 +1118,17 @@ const AdminDashboard = ({
     const [intradayOrders, setIntradayOrders] = useState(null);
     const [intradayOrdersLoading, setIntradayOrdersLoading] = useState(false);
     const intradayRequestRef = useRef(false);
-    const [allOrders, setAllOrders] = useState([]);
-    const [dailySales, setDailySales] = useState([]);
-    const [recentOrders, setRecentOrders] = useState([]);
-    const [statusCounts, setStatusCounts] = useState({ paid: 0, pending: 0, shipped: 0 });
-    const [loading, setLoading] = useState(true);
-    const [inventoryStatsAvailable, setInventoryStatsAvailable] = useState(true);
-    const [insights, setInsights] = useState({
+    const [allOrders, setAllOrders] = useState(cachedCore?.allOrders || []);
+    const [dailySales, setDailySales] = useState(cachedCore?.dailySales || []);
+    const [recentOrders, setRecentOrders] = useState(cachedCore?.recentOrders || []);
+    const [statusCounts, setStatusCounts] = useState(
+        cachedCore?.statusCounts || { paid: 0, pending: 0, shipped: 0 }
+    );
+    const [loading, setLoading] = useState(!cachedCore);
+    const [inventoryStatsAvailable, setInventoryStatsAvailable] = useState(
+        cachedCore?.inventoryStatsAvailable ?? true
+    );
+    const [insights, setInsights] = useState(cachedInsights || {
         loading: true,
         error: false,
         coverageLimited: false,
@@ -939,22 +1199,6 @@ const AdminDashboard = ({
             clearInterval(interval);
             throw e;
         }
-    };
-
-    const buildDailySalesFromOrders = (orders) => {
-        const map = {};
-        orders
-            .filter(o => o.status !== 'cancelled' && o.status !== 'cancelled_by_client')
-            .forEach((order) => {
-                const ts = getMillis(order.createdAt);
-                if (!ts) return;
-                const dateKey = new Date(ts).toISOString().split('T')[0];
-                map[dateKey] = (map[dateKey] || 0) + Number(order.total || 0);
-            });
-
-        return Object.keys(map)
-            .sort()
-            .map((dateKey) => ({ dateKey, totalRevenue: map[dateKey] }));
     };
 
     const selectTimeFilter = async (filterId) => {
@@ -1061,7 +1305,7 @@ const AdminDashboard = ({
                     year: 'numeric',
                     timeZone: 'UTC'
                 }),
-                value: Math.max(0, Number(revenueByDate.get(dateKey)) || 0)
+                value: Number(revenueByDate.get(dateKey)) || 0
             };
         });
     }, [dailySales, intradayOrders, timeFilter]);
@@ -1098,229 +1342,66 @@ const AdminDashboard = ({
     }, [chartData, dailySales]);
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const today = new Date();
-                const rollupCutoffUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - 364);
-                const rollupCutoffKey = new Date(rollupCutoffUtc).toISOString().slice(0, 10);
-                const [
-                    dashboardSnap,
-                    inventorySnap,
-                    salesSnap,
-                    recentOrdersSnap
-                ] = await Promise.all([
-                    getDoc(doc(db, 'dashboard_stats', 'commerce')),
-                    getDoc(doc(db, 'inventory_stats', 'overview')),
-                    getDocs(query(
-                        collection(db, 'sales_stats_daily'),
-                        where('dateKey', '>=', rollupCutoffKey),
-                        orderBy('dateKey', 'asc'),
-                        limit(366)
-                    )),
-                    getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(5)))
-                ]);
+        let cancelled = false;
+        void loadAdminDashboardCoreData()
+            .then((data) => {
+                if (cancelled) return;
+                setStats((previous) => ({
+                    ...data.stats,
+                    registeredUsers: previous.registeredUsers
+                        ?? data.stats.registeredUsers
+                }));
+                setStatusCounts(data.statusCounts);
+                setRecentOrders(data.recentOrders);
+                setDailySales(data.dailySales);
+                setAllOrders(data.allOrders);
+                setInventoryStatsAvailable(data.inventoryStatsAvailable);
+                setLoading(false);
+            })
+            .catch((error) => {
+                console.error('Error fetching dashboard data:', error);
+                if (!cancelled) setLoading(false);
+            });
 
-                let revenue = 0;
-                let orderCount = 0;
-                let p = 0, w = 0, s = 0;
-                let stockValue = 0;
-
-                const dailyStats = salesSnap.docs
-                    .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
-                    .sort((a, b) => String(a.dateKey).localeCompare(String(b.dateKey)));
-
-                setDailySales(dailyStats);
-
-                if (dashboardSnap.exists()) {
-                    const data = dashboardSnap.data();
-                    revenue = Number(data.totalRevenue || 0);
-                    orderCount = Number(data.totalOrders || 0);
-                    p = Number(data.paidOrders || 0);
-                    w = Number(data.pendingOrders || 0);
-                    s = Number(data.shippedOrders || 0);
-                }
-
-                if (inventorySnap.exists()) {
-                    const data = inventorySnap.data();
-                    stockValue = Number(data.totalStockValue || 0);
-                    setInventoryStatsAvailable(true);
-                } else {
-                    setInventoryStatsAvailable(false);
-                }
-
-                if (!dashboardSnap.exists() || !inventorySnap.exists() || dailyStats.length === 0) {
-                    console.warn('Dashboard stats docs missing; using capped legacy orders fallback.');
-                    const ordersSnapshot = await getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(300)));
-                    const legacyOrders = [];
-                    let legacyRevenue = 0;
-                    let legacyOrderCount = 0;
-                    let legacyPaid = 0;
-                    let legacyPending = 0;
-                    let legacyShipped = 0;
-
-                    ordersSnapshot.forEach((docSnap) => {
-                        const data = docSnap.data();
-                        const isCancelled = data.status === 'cancelled' || data.status === 'cancelled_by_client';
-
-                        if (!isCancelled) {
-                            legacyRevenue += (data.total || 0);
-                            legacyOrderCount += 1;
-                            if (data.status === 'completed' || data.status === 'paid') legacyPaid += 1;
-                            else if (data.status === 'shipped') legacyShipped += 1;
-                            else legacyPending += 1;
-                        }
-                        legacyOrders.push({ id: docSnap.id, ...data });
-                    });
-
-                    if (!dashboardSnap.exists()) {
-                        revenue = legacyRevenue;
-                        orderCount = legacyOrderCount;
-                        p = legacyPaid;
-                        w = legacyPending;
-                        s = legacyShipped;
-                    }
-
-                    if (dailyStats.length === 0) {
-                        setDailySales(buildDailySalesFromOrders(legacyOrders));
-                    }
-                }
-
-                setStatusCounts({ paid: p, pending: w, shipped: s });
-                setRecentOrders(
-                    recentOrdersSnap.docs
-                        .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
-                        .filter((order) => order.status !== 'cancelled' && order.status !== 'cancelled_by_client')
-                );
-
-                setStats({
-                    totalRevenue: revenue,
-                    totalOrders: orderCount,
-                    averageOrderValue: orderCount > 0 ? Math.round(revenue / orderCount) : 0,
-                    totalStockValue: stockValue,
-                    registeredUsers: getAdminCachedData('registered-user-count')
-                });
-
-                void loadAdminCachedData('registered-user-count', async () => {
-                    const getUserStats = await getCallableFunction('getUserStats');
-                    const result = await getUserStats({ includeUsers: false });
-                    return result.data.count;
-                }, { maxAgeMs: 300_000 }).then((count) => {
+        void loadRegisteredUserCount()
+            .then((count) => {
+                if (!cancelled) {
                     setStats((previous) => ({ ...previous, registeredUsers: count }));
-                }).catch((error) => console.error('Failed to fetch user stats', error));
+                }
+            })
+            .catch((error) => console.error('Failed to fetch user stats', error));
 
-                setLoading(false);
-            } catch (error) {
-                console.error("Error fetching dashboard data:", error);
-                setLoading(false);
-            }
+        return () => {
+            cancelled = true;
         };
-
-        fetchData();
     }, []);
 
     useEffect(() => {
+        const financialDaily = commerceStatus.data?.financialDaily;
+        if (!Array.isArray(financialDaily) || financialDaily.length === 0) return;
+        setDailySales(financialDaily
+            .filter((day) => day.currency === 'EUR' && day.dateKey)
+            .map((day) => ({
+                dateKey: day.dateKey,
+                totalRevenue: Number(day.netCents || 0) / 100,
+                capturedRevenue: Number(day.capturedCents || 0) / 100,
+                refundedRevenue: Number(day.refundedCents || 0) / 100
+            }))
+            .sort((left, right) => String(left.dateKey).localeCompare(String(right.dateKey))));
+    }, [commerceStatus.data?.financialDaily]);
+
+    useEffect(() => {
         let cancelled = false;
-
-        const fetchCommercialInsights = async () => {
-            try {
-                const now = Date.now();
-                const dayMs = 24 * 60 * 60 * 1000;
-                const cutoff = Timestamp.fromMillis(now - (30 * dayMs));
-                const sessionsSnap = await getDocs(query(
-                    collection(db, 'analytics_sessions'),
-                    where('startedAt', '>=', cutoff),
-                    orderBy('startedAt', 'desc'),
-                    limit(500)
-                ));
-                if (cancelled) return;
-
-                const sessions = sessionsSnap.docs
-                    .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
-                    .filter((session) => session.type !== 'admin');
-                const quoteVisits = new Set();
-                const quoteStarts = new Set();
-                const quoteEmailOpened = new Set();
-                const productMap = new Map();
-                const allProductViewers = new Set();
-                let totalProductViews = 0;
-                const recentDayKeys = Array.from({ length: 7 }, (_, index) => {
-                    const day = new Date(now - ((6 - index) * dayMs));
-                    return day.toISOString().slice(0, 10);
-                });
-
-                sessions.forEach((session) => {
-                    const sessionId = session.id;
-                    const visitorKey = getSessionVisitorKey(session);
-                    const journey = Array.isArray(session.journey) ? session.journey : [];
-                    const eventActions = new Set(
-                        (Array.isArray(session.lastEventPreview) ? session.lastEventPreview : [])
-                            .map((event) => event?.action)
-                            .filter(Boolean)
-                    );
-
-                    if (journey.some((step) => step?.page === 'quote')) quoteVisits.add(sessionId);
-                    if (eventActions.has('quote_start')) quoteStarts.add(sessionId);
-                    if (eventActions.has('quote_email_opened')) quoteEmailOpened.add(sessionId);
-
-                    journey.forEach((step) => {
-                        if (step?.page !== 'detail') return;
-                        const tracked = getTrackedProduct(step.itemId);
-                        if (!tracked) return;
-
-                        const stepTimestamp = Number(step.timestampMs) || getMillis(session.startedAt) || now;
-                        const dayKey = new Date(stepTimestamp).toISOString().slice(0, 10);
-                        const entry = productMap.get(tracked.id) || {
-                            ...tracked,
-                            views: 0,
-                            viewers: new Set(),
-                            viewsByDay: new Map()
-                        };
-
-                        entry.views += 1;
-                        entry.viewers.add(visitorKey);
-                        entry.viewsByDay.set(dayKey, (entry.viewsByDay.get(dayKey) || 0) + 1);
-                        if (entry.name === entry.id && tracked.name !== tracked.id) entry.name = tracked.name;
-                        if (entry.price === null && tracked.price !== null) entry.price = tracked.price;
-                        productMap.set(tracked.id, entry);
-                        allProductViewers.add(visitorKey);
-                        totalProductViews += 1;
-                    });
-                });
-
-                const products = Array.from(productMap.values())
-                    .sort((a, b) => b.views - a.views || b.viewers.size - a.viewers.size || a.name.localeCompare(b.name, 'fr'))
-                    .slice(0, 5)
-                    .map((product) => ({
-                        id: product.id,
-                        name: product.name,
-                        price: product.price,
-                        views: product.views,
-                        viewers: product.viewers.size,
-                        dailyViews: recentDayKeys.map((dayKey) => product.viewsByDay.get(dayKey) || 0)
-                    }));
-
-                setInsights({
-                    loading: false,
-                    error: false,
-                    coverageLimited: sessionsSnap.size >= 500,
-                    quote: {
-                        visits: quoteVisits.size,
-                        starts: quoteStarts.size,
-                        emailOpened: quoteEmailOpened.size
-                    },
-                    products,
-                    totalProductViews,
-                    uniqueProductViewers: allProductViewers.size
-                });
-            } catch (error) {
+        void loadAdminDashboardInsightsData()
+            .then((data) => {
+                if (!cancelled) setInsights(data);
+            })
+            .catch((error) => {
                 console.error('Error fetching dashboard commercial insights:', error);
                 if (!cancelled) {
                     setInsights((previous) => ({ ...previous, loading: false, error: true }));
                 }
-            }
-        };
-
-        fetchCommercialInsights();
+            });
         return () => {
             cancelled = true;
         };
@@ -1465,7 +1546,8 @@ const AdminDashboard = ({
             ? 'Vue horaire'
             : 'Vue quotidienne';
     const bestPointLabel = ['1hour', '1day'].includes(timeFilter) ? 'Meilleur créneau' : 'Meilleur jour';
-    const financialAmounts = commerceStatus.data?.operations?.projection?.currencies?.EUR;
+    const financialAmounts = commerceStatus.data?.financialSummary?.currencies?.EUR
+        || commerceStatus.data?.operations?.projection?.currencies?.EUR;
     const financialLoading = ['idle', 'loading'].includes(commerceStatus.status);
     const financialUnavailable = commerceStatus.status === 'error'
         || (commerceStatus.status === 'ready' && !financialAmounts);
@@ -1478,7 +1560,18 @@ const AdminDashboard = ({
     const netRevenue = Number.isSafeInteger(financialAmounts?.netCents)
         ? financialAmounts.netCents / 100
         : 0;
-    const paidOrderCount = statusCounts.paid + statusCounts.shipped;
+    const freshOrderSummary = commerceStatus.data?.orderSummary;
+    const displayedStatusCounts = freshOrderSummary
+        ? {
+            paid: Number(freshOrderSummary.paidOrders || 0),
+            shipped: Number(freshOrderSummary.shippedOrders || 0),
+            pending: Number(freshOrderSummary.pendingOrders || 0)
+        }
+        : statusCounts;
+    const displayedOrderCount = freshOrderSummary
+        ? Number(freshOrderSummary.totalOrders || 0)
+        : stats.totalOrders;
+    const paidOrderCount = displayedStatusCounts.paid + displayedStatusCounts.shipped;
     const averagePaidOrderValue = paidOrderCount > 0 ? capturedRevenue / paidOrderCount : 0;
     return (
         <motion.div
@@ -1502,7 +1595,7 @@ const AdminDashboard = ({
                 />
                 <KpiCard
                     label="Commandes"
-                    value={stats.totalOrders}
+                    value={displayedOrderCount}
                     icon={ShoppingBag}
                     meta={`${paidOrderCount} encaissées`}
                     darkMode={darkMode}
@@ -1663,7 +1756,7 @@ const AdminDashboard = ({
                         <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Flux des commandes</p>
                         <h2 className={`mt-2 text-xl font-semibold tracking-[-0.03em] ${textBase}`}>Répartition des statuts</h2>
                     </div>
-                    <StatusDonut counts={statusCounts} darkMode={darkMode} />
+                    <StatusDonut counts={displayedStatusCounts} darkMode={darkMode} />
                 </PanelFrame>
             </motion.div>
 

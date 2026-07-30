@@ -1,6 +1,6 @@
 # Back-office
 
-Derniere mise a jour: 2026-07-28
+Derniere mise a jour: 2026-07-30
 Statut: `PREPROD_READY`
 
 Restriction active:
@@ -150,6 +150,25 @@ isoles avec `Promise.allSettled`: une indisponibilite du second ne masque plus
 les remboursements deja projetes dans les commandes. Cet index a ete deploye
 sur le sandbox `secondevienextjsssr` le 2026-07-29 apres confirmation dans les
 logs de l'erreur Firestore `FAILED_PRECONDITION`.
+
+La lecture admin joint au plus la derniere tentative
+`orders/{orderId}/refunds/{refundRequestId}` pour chaque commande remboursee
+ou en rapprochement. Elle expose uniquement la reference, le montant, les
+statuts fournisseur/domaine et la date necessaires a l'exploitation. Une
+commande `refund_pending` propose `Rapprocher Stripe` lorsque les mutations
+admin v2 sont autorisees: l'action rejoue la meme `refundRequestId` et la meme
+cle Stripe idempotente, y compris avec un autre administrateur fort, sans
+creer un second remboursement. Chaque reprise porte un evenement d'audit
+dedupe par tentative, version et acteur.
+
+Apres une mutation, Retours force une relecture de sa premiere page au lieu de
+conserver le cache deux minutes. Un bouton `Actualiser` reste disponible. Les
+compteurs utilisent les `allowedActions` et axes v2 (`pending`, `full`,
+`needs_review`) plutot que les seuls statuts legacy; leur perimetre charge est
+affiche et ils s'etendent avec la pagination. Les references Refund et dates
+de synchronisation proviennent de la tentative v2 lorsque la projection
+legacy ne les contient pas.
+
 Publication, Ventes et Retours embarquent leurs transports de commande, mais
 leur exposition ne depend plus du flag public checkout. `AdminAppIsland` lit
 le control plane et n'autorise les mutations que lorsque
@@ -248,12 +267,25 @@ Cette recette n'autorise aucun rattachement du vrai sandbox ou d'une future prod
 
 ## 7. Analytics et statistiques
 
-Le dashboard lit de preference les agregats:
+Le dashboard lit les agregats:
 
 - `dashboard_stats/commerce`;
 - `inventory_stats/overview`;
 - `sales_stats_daily`;
 - commandes recentes bornees.
+
+Les cartes `Ventes nettes`, `Commandes`, `Panier moyen` et la repartition des
+statuts ne dependent plus seules du rollup legacy. Chaque nouveau fait
+financier met a jour atomiquement `commerce_financial_totals/{currency}` et
+`commerce_financial_daily/{date}_{currency}`. A chaque nouvelle consultation
+authentifiee de `/admin`, `getCommerceOperationsStatusAdmin` lit le total
+materialise et au plus 366 jours, sans rescanner les faits financiers. Les
+nombres de commandes payees, expediees, en attente et annulees restent
+calcules par des agregations `count`.
+
+La valeur deja connue reste affichee pendant cet aller-retour puis est
+remplacee par la synthese serveur complete. Le navigateur ne l'ajoute jamais
+localement a l'ancienne valeur, ce qui evite le double comptage.
 
 Le dashboard consomme les claims admin deja resolus par `AuthContext`. Il ne
 force pas de renouvellement du jeton Firebase a son montage: un rafraichissement
@@ -282,7 +314,13 @@ Les champs de controle internes de la projection (source, mode, faits,
 divergences et date de construction) restent disponibles cote serveur pour
 l'exploitation mais ne sont pas exposes a la cliente.
 
-Restriction commerce: le rollup actuel ne mesure pas un chiffre d'affaires encaisse. Il inclut notamment plusieurs commandes pending, echouees ou remboursees et n'est pas idempotent face a une rediffusion de trigger. Ne pas utiliser ce KPI comme preuve financiere avant sa reconstruction depuis les etats de paiement.
+Restriction commerce: le rollup legacy conserve uniquement le repli historique
+tant que la projection v2 n'a pas encore ete initialisee. Les cartes et le
+graphique quotidien utilisent les faits immuables qualifies via leurs rollups
+materialises. Un encaissement ou remboursement confirme actualise ces rollups
+dans la meme transaction idempotente; l'ecran n'attend donc aucun scheduler.
+Le reconciliateur horaire reconstruit les valeurs absolues uniquement comme
+filet de securite et moyen de reprise.
 
 Un fallback historique borne existe encore pour les commandes si leurs agregats manquent. Stats ne scanne plus `furniture` lorsque `inventory_stats/overview` est absent: la valeur catalogue affiche alors un tiret jusqu'a la prochaine publication snapshot, dont le builder regenere l'agregat. Ce garde-fou evite jusqu'a 300 lectures produit a chaque ouverture de Stats sans afficher un faux zero comme une valeur autoritaire.
 
@@ -339,9 +377,17 @@ metier/pre-live distinct.
 ## 9. Performance du back-office
 
 - garder les vues lourdes lazy;
-- precharger Stats, Ventes et Retours pendant une periode idle apres l'acces;
-- conserver deux minutes les premieres pages Ventes/Retours et l'etat commerce
-  dans `adminDataCache`, avec rafraichissement serveur au-dela;
+- lancer le chargement utile de Stats puis precharger les donnees Ventes et
+  Retours des que l'acces admin fort est valide, sans attendre une periode idle;
+- partager une seule premiere page commandes entre Ventes et Retours via
+  `adminCommerceData`, au lieu de refaire le meme appel serveur dans chaque vue;
+- conserver deux minutes les agregats Stats, tendances et premieres pages
+  Ventes/Retours dans `adminDataCache`; une donnee connue reste affichee
+  pendant son rafraichissement, mais l'entree dans une nouvelle session admin
+  force une synthese serveur fraiche des montants, commandes et statuts;
+  le cache de session est vide a la deconnexion ou au changement de compte;
+- ne jamais afficher `0` comme resultat tant que la premiere lecture Ventes ou
+  Retours n'est pas terminee; utiliser un squelette ou un tiret neutre;
 - borner listeners, requetes et exports;
 - paginer ou limiter les collections croissantes;
 - eviter les calculs de stats complets dans le navigateur;
@@ -360,6 +406,7 @@ src/kit/admin/BillingOnboardingGuide.jsx
 src/kit/admin/BillingOnboardingOperator.jsx
 src/kit/admin/components/*
 src/kit/admin/analyticsReliability.js
+src/kit/admin/adminCommerceData.js
 src/kit/admin/adminPublicCatalog.js
 src/kit/admin/adminDataCache.js
 src/kit/config/constants.js

@@ -3,8 +3,12 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const {
-    createRefundAttempt
+    createRefundAttempt,
+    transitionRefundAttempt
 } = require('../../../functions/src/commerce/domain/refundSaga');
+const {
+    createRefundRepository
+} = require('../../../functions/src/commerce/domain/refundRepository');
 const {
     createRefundSagaService
 } = require('../../../functions/src/commerce/domain/refundSagaService');
@@ -141,6 +145,93 @@ test('refund accepted then response lost resumes one provider refund and one cum
     assert.equal(stripe.byKey.size, 1);
     assert.equal(repository.order.amounts.refundedCents, 3000);
     assert.equal(repository.stockEffects, 0);
+});
+
+test('stored pending refund can be resumed by another strong admin without creating a new request', async () => {
+    const prepared = prepare(paidOrder());
+    const inflight = transitionRefundAttempt(
+        prepared.attempt,
+        { type: 'create_started' },
+        { clock }
+    );
+    const unknown = transitionRefundAttempt(
+        inflight,
+        { type: 'create_unknown' },
+        { clock }
+    );
+    const { id: _ignoredOrderId, ...storedOrder } = prepared.order;
+    const documents = new Map([
+        ['orders/order-gate4-refund-0001', storedOrder],
+        ['orders/order-gate4-refund-0001/refunds/refund-request-0001', unknown],
+        ['orders/order-gate4-refund-0001/events/refund-requested-refund-request-0001', {
+            type: 'refund_requested'
+        }]
+    ]);
+    const ref = (path) => ({ path });
+    const snapshot = (documentRef) => ({
+        exists: documents.has(documentRef.path),
+        data: () => documents.get(documentRef.path)
+    });
+    const repository = createRefundRepository({
+        db: {
+            runTransaction: async (run) => run({
+                get: async (documentRef) => snapshot(documentRef),
+                set: (documentRef, value) => documents.set(documentRef.path, value)
+            })
+        },
+        refs: {
+            order: (orderId) => ref(`orders/${orderId}`),
+            refundAttempt: (orderId, refundRequestId) => ref(
+                `orders/${orderId}/refunds/${refundRequestId}`
+            ),
+            auditEvent: (orderId, eventId) => ref(
+                `orders/${orderId}/events/${eventId}`
+            ),
+            financialFact: (effectId) => ref(`commerce_financial_facts/${effectId}`),
+            financialDaily: (dateKey, currency) => ref(
+                `commerce_financial_daily/${dateKey}_${currency}`
+            ),
+            financialTotals: (currency) => ref(`commerce_financial_totals/${currency}`),
+            outbox: (outboxId) => ref(`commerce_outbox/${outboxId}`)
+        },
+        clock
+    });
+    const resumed = await repository.prepareRefund({
+        orderId: 'order-gate4-refund-0001',
+        refundRequestId: 'refund-request-0001',
+        amountCents: 3000,
+        actor: {
+            uid: 'second-strong-admin',
+            role: 'admin',
+            aal2: true
+        },
+        reason: 'reprise du rapprochement'
+    });
+    assert.equal(resumed.reused, true);
+    assert.equal(resumed.attempt.status, 'unknown');
+    assert.equal(resumed.attempt.actorUid, 'admin-gate4');
+    assert.equal(
+        [...documents.values()].some(
+            (document) => document?.type === 'refund_resume_requested'
+                && document?.actor?.uid === 'second-strong-admin'
+        ),
+        true
+    );
+
+    await assert.rejects(
+        repository.prepareRefund({
+            orderId: 'order-gate4-refund-0001',
+            refundRequestId: 'refund-request-0001',
+            amountCents: 3000,
+            actor: {
+                uid: 'weak-admin',
+                role: 'admin',
+                aal2: false
+            },
+            reason: 'reprise faible'
+        }),
+        { code: 'COMMERCE_REFUND_ACCESS_DENIED' }
+    );
 });
 
 test('failed refund clears pending money without any inventory disposition', async () => {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import {
     AlertTriangle,
@@ -26,7 +26,11 @@ import {
     listOrdersAdminV2,
     listReturnsAdminV2,
 } from '../commerce/commerceV2Client';
-import { getAdminCachedData, loadAdminCachedData } from './adminDataCache';
+import { getAdminCachedData } from './adminDataCache';
+import {
+    ADMIN_RETURNS_FIRST_PAGE_KEY,
+    loadAdminReturnsFirstPage,
+} from './adminCommerceData';
 import { adaptCommerceOrder } from '../commerce/orderAdapter';
 
 const REFUNDABLE_STATUSES = new Set(['paid', 'shipped', 'completed']);
@@ -39,6 +43,7 @@ const STATUS_COPY = {
     refund_pending: { label: 'En attente Stripe', tone: 'amber', icon: Clock },
     refunded: { label: 'Remboursee', tone: 'sky', icon: CheckCircle },
     refund_failed: { label: 'A verifier', tone: 'red', icon: AlertTriangle },
+    needs_review: { label: 'A verifier', tone: 'red', icon: AlertTriangle },
 };
 
 const toneClasses = {
@@ -121,13 +126,21 @@ function isStripeRefundCandidate(order) {
 function normalizeAdminOrder(order) {
     const adapted = adaptCommerceOrder(order, order.id);
     const shipping = order.shipping || order.shippingSnapshot || {};
+    const latestRefundAttempt = order.latestRefundAttempt || null;
     return {
         ...order,
         ...adapted,
         shipping,
+        latestRefundAttempt,
         userEmail: getOrderEmail(order),
         stripePaymentIntentId: order.stripePaymentIntentId
             || order.payment?.paymentIntentId
+            || null,
+        stripeRefundId: order.stripeRefundId
+            || latestRefundAttempt?.refundId
+            || null,
+        refundUpdatedAt: order.refundUpdatedAt
+            || latestRefundAttempt?.updatedAt
             || null,
     };
 }
@@ -150,6 +163,20 @@ function returnLineSummary(returnCase) {
 }
 
 function getStatusMeta(order) {
+    if (order.refundAttemptReadError) {
+        return {
+            label: 'A verifier',
+            tone: 'red',
+            icon: AlertTriangle
+        };
+    }
+    if (order.refundAggregate?.status === 'partial') {
+        return {
+            label: 'Partiellement remboursee',
+            tone: 'sky',
+            icon: CheckCircle
+        };
+    }
     return STATUS_COPY[order.status] || { label: order.status || 'A traiter', tone: 'stone', icon: Clock };
 }
 
@@ -166,13 +193,16 @@ function StatusBadge({ order, darkMode }) {
 }
 
 const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
-    const cachedPage = getAdminCachedData('admin-returns:first-page');
+    const cachedPage = getAdminCachedData(ADMIN_RETURNS_FIRST_PAGE_KEY);
     const returnCommandsEnabled = mutationsEnabled && COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED;
-    const [orders, setOrders] = useState(cachedPage?.orders || []);
+    const [orders, setOrders] = useState(
+        (cachedPage?.orders || []).map(normalizeAdminOrder)
+    );
     const [returnCases, setReturnCases] = useState(cachedPage?.returns || []);
     const [ordersCursor, setOrdersCursor] = useState(null);
     const [returnsCursor, setReturnsCursor] = useState(null);
     const [loadingMore, setLoadingMore] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(!cachedPage);
     const [search, setSearch] = useState('');
     const [operation, setOperation] = useState(null);
@@ -180,52 +210,56 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
     const [refundDraft, setRefundDraft] = useState(null);
     const [refundAmount, setRefundAmount] = useState('');
 
+    const applyFirstPage = useCallback(({
+        ordersOutcome,
+        returnsOutcome,
+        orders: loadedOrders,
+        returns: loadedReturns
+    }, { reportErrors = true } = {}) => {
+        if (ordersOutcome.status === 'fulfilled') {
+            const ordersResult = ordersOutcome.value;
+            setOrders(loadedOrders.map(normalizeAdminOrder));
+            setOrdersCursor(ordersResult.nextCursor || null);
+        }
+        if (returnsOutcome.status === 'fulfilled') {
+            const returnsResult = returnsOutcome.value;
+            setReturnCases(loadedReturns);
+            setReturnsCursor(returnsResult.nextCursor || null);
+        }
+        if (!reportErrors) return;
+        if (ordersOutcome.status === 'rejected') {
+            console.error('Admin v2 orders read failed:', ordersOutcome.reason);
+            setNotice({
+                type: 'error',
+                text: 'Les commandes ne peuvent pas etre chargees pour le moment.'
+            });
+        } else if (returnsOutcome.status === 'rejected') {
+            console.error('Admin v2 physical returns read failed:', returnsOutcome.reason);
+            setNotice({
+                type: 'error',
+                text: 'Les remboursements sont affiches, mais le detail des retours physiques est momentanement indisponible.'
+            });
+        } else {
+            setNotice(null);
+        }
+    }, []);
+
+    const refreshFirstPage = useCallback(async () => {
+        const page = await loadAdminReturnsFirstPage({ force: true });
+        applyFirstPage(page, { reportErrors: false });
+        if (page.ordersOutcome.status === 'rejected') {
+            throw page.ordersOutcome.reason;
+        }
+        return page;
+    }, [applyFirstPage]);
+
     useEffect(() => {
-        setLoading(!getAdminCachedData('admin-returns:first-page'));
+        setLoading(!getAdminCachedData(ADMIN_RETURNS_FIRST_PAGE_KEY));
         if (COMMERCE_V2_ADMIN_READERS_ENABLED) {
             let cancelled = false;
-            loadAdminCachedData('admin-returns:first-page', async () => {
-                const [ordersOutcome, returnsOutcome] = await Promise.allSettled([
-                    listOrdersAdminV2({ pageSize: 50 }),
-                    listReturnsAdminV2({ pageSize: 50 })
-                ]);
-                return {
-                    ordersOutcome,
-                    returnsOutcome,
-                    orders: ordersOutcome.status === 'fulfilled'
-                        ? (ordersOutcome.value.orders || []).map(normalizeAdminOrder)
-                        : [],
-                    returns: returnsOutcome.status === 'fulfilled'
-                        ? (returnsOutcome.value.returns || [])
-                        : []
-                };
-            }).then(({ ordersOutcome, returnsOutcome, orders: loadedOrders, returns: loadedReturns }) => {
+            loadAdminReturnsFirstPage().then((page) => {
                 if (cancelled) return;
-                if (ordersOutcome.status === 'fulfilled') {
-                    const ordersResult = ordersOutcome.value;
-                    setOrders(loadedOrders);
-                    setOrdersCursor(ordersResult.nextCursor || null);
-                }
-                if (returnsOutcome.status === 'fulfilled') {
-                    const returnsResult = returnsOutcome.value;
-                    setReturnCases(loadedReturns);
-                    setReturnsCursor(returnsResult.nextCursor || null);
-                }
-                if (ordersOutcome.status === 'rejected') {
-                    console.error('Admin v2 orders read failed:', ordersOutcome.reason);
-                    setNotice({
-                        type: 'error',
-                        text: 'Les commandes ne peuvent pas etre chargees pour le moment.'
-                    });
-                } else if (returnsOutcome.status === 'rejected') {
-                    console.error('Admin v2 physical returns read failed:', returnsOutcome.reason);
-                    setNotice({
-                        type: 'error',
-                        text: 'Les remboursements sont affiches, mais le detail des retours physiques est momentanement indisponible.'
-                    });
-                } else {
-                    setNotice(null);
-                }
+                applyFirstPage(page);
                 setLoading(false);
             });
             return () => {
@@ -242,7 +276,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
             setLoading(false);
         });
         return () => unsub();
-    }, []);
+    }, [applyFirstPage]);
 
     const refundOrders = useMemo(() => {
         const needle = search.trim().toLowerCase();
@@ -318,10 +352,20 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
     };
 
     const stats = useMemo(() => ({
-        actionable: refundOrders.filter((order) => REFUNDABLE_STATUSES.has(order.status)).length,
-        pending: refundOrders.filter((order) => order.status === 'refund_pending').length,
+        actionable: refundOrders.filter(
+            (order) => (order.allowedActions || []).includes('request_refund')
+        ).length,
+        pending: refundOrders.filter(
+            (order) => order.status === 'refund_pending'
+                || order.refundAggregate?.status === 'pending'
+        ).length,
         refunded: refundOrders.filter((order) => order.status === 'refunded').length,
-        failed: refundOrders.filter((order) => order.status === 'refund_failed').length,
+        failed: refundOrders.filter(
+            (order) => order.status === 'refund_failed'
+                || order.refundAggregate?.status === 'needs_review'
+                || order.latestRefundAttempt?.status === 'failed'
+                || order.refundAttemptReadError
+        ).length,
         returns: returnCases.length,
     }), [refundOrders, returnCases]);
 
@@ -330,7 +374,16 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
         setNotice(null);
         try {
             const result = await runner();
-            setNotice({ type: 'success', text: result });
+            try {
+                await refreshFirstPage();
+                setNotice({ type: 'success', text: result });
+            } catch (refreshError) {
+                console.error('Admin returns refresh failed:', refreshError);
+                setNotice({
+                    type: 'success',
+                    text: `${result} Actualisation indisponible: rechargez la page pour voir le nouvel etat.`
+                });
+            }
         } catch (error) {
             console.error(`Refund action ${action} failed:`, error);
             setNotice({
@@ -339,6 +392,50 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
             });
         } finally {
             setOperation(null);
+        }
+    };
+
+    const handleResumeRefund = async (order) => {
+        const attempt = order.latestRefundAttempt;
+        if (
+            !attempt?.resumable ||
+            !attempt.refundRequestId ||
+            !Number.isSafeInteger(attempt.amountCents) ||
+            attempt.amountCents <= 0
+        ) {
+            setNotice({
+                type: 'error',
+                text: 'La reference de reprise est absente. Ce dossier doit etre verifie.'
+            });
+            return;
+        }
+        await runAction(order.id, 'refund-sync', async () => {
+            const result = await requestRefundAdmin(
+                order,
+                attempt.amountCents,
+                'Rapprochement Stripe depuis gestion retours',
+                attempt.refundRequestId
+            );
+            setSearch(order.id);
+            return result?.outcome === 'succeeded'
+                ? 'Remboursement confirme par Stripe.'
+                : 'Remboursement toujours en attente chez Stripe.';
+        });
+    };
+
+    const handleManualRefresh = async () => {
+        setRefreshing(true);
+        setNotice(null);
+        try {
+            await refreshFirstPage();
+        } catch (error) {
+            console.error('Admin returns manual refresh failed:', error);
+            setNotice({
+                type: 'error',
+                text: 'Les donnees ne peuvent pas etre actualisees pour le moment.'
+            });
+        } finally {
+            setRefreshing(false);
         }
     };
 
@@ -373,7 +470,13 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                 'Remboursement admin depuis gestion retours'
             );
             setSearch(order.id);
-            return `Remboursement lance. Reference Stripe: ${res?.refundId || 'en attente'}.`;
+            if (res?.outcome === 'succeeded') {
+                return `Remboursement confirme par Stripe. Reference: ${res.refundId}.`;
+            }
+            if (res?.outcome === 'failed') {
+                return 'Stripe a refuse le remboursement. Le dossier est a verifier.';
+            }
+            return `Remboursement cree et encore en attente chez Stripe. Reference: ${res?.refundId || 'indisponible'}.`;
         });
     };
 
@@ -537,6 +640,23 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                 </div>
             </div>
 
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className={`text-xs ${mutedText}`}>
+                    {loading && orders.length === 0
+                        ? 'Chargement du périmètre…'
+                        : `Périmètre chargé : ${orders.length} commandes et ${returnCases.length} retours physiques${ordersCursor || returnsCursor ? '. Chargez la suite pour élargir la synthèse.' : '.'}`}
+                </p>
+                <button
+                    type="button"
+                    onClick={handleManualRefresh}
+                    disabled={refreshing}
+                    className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-wider disabled:cursor-wait disabled:opacity-60 ${darkMode ? 'border-white/10 text-white' : 'border-stone-200 text-stone-700'}`}
+                >
+                    <RotateCcw size={13} className={refreshing ? 'animate-spin' : ''} />
+                    Actualiser
+                </button>
+            </div>
+
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 {[
                     ['A rembourser', stats.actionable, 'emerald'],
@@ -549,7 +669,9 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                     return (
                         <div key={label} className={`rounded-2xl border p-4 ${darkMode ? classes.dark : classes.light}`}>
                             <p className="text-[10px] font-black uppercase tracking-[0.22em] opacity-70">{label}</p>
-                            <p className="mt-2 text-3xl font-black tracking-tight">{value}</p>
+                            <p className="mt-2 text-3xl font-black tracking-tight">
+                                {loading && !cachedPage ? '—' : value}
+                            </p>
                         </div>
                     );
                 })}
@@ -610,6 +732,8 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                                 Array.isArray(order.allowedActions) ? order.allowedActions : []
                             );
                             const canRefund = allowedActions.has('request_refund');
+                            const canResumeRefund = order.status === 'refund_pending'
+                                && order.latestRefundAttempt?.resumable === true;
                             const canOpenReturn = allowedActions.has('open_return');
                             const activeOperation = operation?.endsWith(`:${order.id}`) ? operation.split(':')[0] : null;
                             return (
@@ -640,6 +764,16 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                                         <p className={`break-all font-mono text-[11px] ${mutedText}`}>PI: {order.stripePaymentIntentId || '-'}</p>
                                         <p className={`break-all font-mono text-[11px] ${mutedText}`}>Refund: {order.stripeRefundId || '-'}</p>
                                         <p className={`text-[11px] ${mutedText}`}>Derniere synchro: {formatDate(order.refundUpdatedAt)}</p>
+                                        {order.latestRefundAttempt?.providerStatus ? (
+                                            <p className={`text-[11px] ${mutedText}`}>
+                                                Etat Stripe: {order.latestRefundAttempt.providerStatus}
+                                            </p>
+                                        ) : null}
+                                        {order.refundAttemptReadError ? (
+                                            <p className="text-[11px] font-bold text-red-500">
+                                                Reference de rapprochement indisponible.
+                                            </p>
+                                        ) : null}
                                         {order.refundFailureReason ? (
                                             <p className="text-[11px] font-bold text-red-500">Erreur: {order.refundFailureReason}</p>
                                         ) : null}
@@ -648,6 +782,17 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                                     <div className="col-span-12 flex flex-col gap-2 md:col-span-5 lg:col-span-2">
                                         {returnCommandsEnabled && order.schemaVersion === 2 ? (
                                             <>
+                                                {canResumeRefund ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleResumeRefund(order)}
+                                                        disabled={Boolean(activeOperation)}
+                                                        className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-widest transition disabled:cursor-wait disabled:opacity-60 ${darkMode ? 'bg-amber-300 text-stone-950 hover:bg-amber-200' : 'bg-amber-500 text-white hover:bg-amber-600'}`}
+                                                    >
+                                                        {activeOperation === 'refund-sync' ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                                                        Rapprocher Stripe
+                                                    </button>
+                                                ) : null}
                                                 {canRefund ? (
                                                     <button
                                                         type="button"
@@ -673,7 +818,9 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                                             </>
                                         ) : (
                                             <p className={`rounded-2xl border px-3 py-3 text-[11px] ${darkMode ? 'border-white/10 text-stone-400' : 'border-stone-200 text-stone-500'}`}>
-                                                Consultation active. Les actions restent protegees par le mode administrateur.
+                                                {canResumeRefund
+                                                    ? 'Rapprochement requis. L action sera disponible pendant une fenetre admin v2 autorisee.'
+                                                    : 'Consultation active. Les actions restent protegees par le mode administrateur.'}
                                             </p>
                                         )}
                                     </div>

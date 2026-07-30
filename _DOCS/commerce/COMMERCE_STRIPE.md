@@ -1,6 +1,6 @@
 # Commerce, checkout et Stripe
 
-Derniere mise a jour: 2026-07-29
+Derniere mise a jour: 2026-07-30
 Statut: `PREPROD_TRANSACTIONAL_READY`
 
 Restriction active:
@@ -113,6 +113,16 @@ Le schema v2 separe `checkout`, `payment`, `fulfillment/custody`, la projection
 et retour ne deviennent pas des statuts de paiement/fulfillment. Le champ
 legacy `status` reste une projection ecrite atomiquement pour compatibilite,
 jamais une source de verite v2.
+
+Un remboursement peut passer de `refund_pending` a `refunded` dans le meme
+appel lorsque Stripe renvoie immediatement `succeeded`; l'etat intermediaire
+n'a pas vocation a rester visible. S'il persiste (`unknown`,
+`provider_pending` ou interruption avant persistance), la reprise admin relit
+la derniere tentative bornee et rejoue exactement sa `refundRequestId`. La
+cle Stripe idempotente reste identique: une reponse perdue ne cree donc pas un
+second refund. La reprise exige un administrateur actif avec AAL2 recent,
+reste soumise au control plane `adminMutationMode=v2` et ajoute un evenement
+d'audit distinct sans modifier l'auteur initial de la demande.
 
 ## 6. Webhooks
 
@@ -400,7 +410,11 @@ explicitement non fiscaux, l'outbox avec leases/dead-letter et statut
 `delivery_unknown`, le dispatcher et le reconciler planifies, les commandes
 admin de statut/rebuild/cleanup ainsi que les incidents durables. Le dashboard
 lit cette projection serveur et affiche les montants captures, rembourses et
-nets sans convertir un chargement ou une erreur en zero financier. La sante sandbox est `healthy`, tous les
+nets sans convertir un chargement ou une erreur en zero financier. Les faits
+nouveaux incrementent atomiquement un total par devise et un rollup quotidien;
+le reconciliateur, desormais horaire, ne pilote plus la fraicheur de l'UI et
+sert seulement a reconstruire les valeurs absolues et controler les
+divergences. La sante sandbox est `healthy`, tous les
 compteurs sont a zero et aucune TTL commerce n'est activee.
 
 Gate 8 a execute la matrice client/admin complete sur fixtures sandbox. Un

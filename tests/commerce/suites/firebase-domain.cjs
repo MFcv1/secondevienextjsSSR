@@ -196,6 +196,11 @@ function gate3Refs(firestore) {
         movement: (effectId) => doc(firestore, `inventory_movements/${effectId}`),
         incident: (incidentId) => doc(firestore, `commerce_incidents/${incidentId}`),
         financialFact: (factId) => doc(firestore, `commerce_financial_facts/${factId}`),
+        financialDaily: (dateKey, currency) => doc(
+            firestore,
+            `commerce_financial_daily/${dateKey}_${currency}`
+        ),
+        financialTotals: (currency) => doc(firestore, `commerce_financial_totals/${currency}`),
         outbox: (outboxId) => doc(firestore, `commerce_outbox/${outboxId}`),
         accessToken: (tokenHash) => doc(
             firestore,

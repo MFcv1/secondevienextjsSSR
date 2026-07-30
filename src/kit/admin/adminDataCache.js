@@ -55,3 +55,7 @@ export const loadAdminCachedData = async (
 export const invalidateAdminCachedData = (key) => {
   runtime.entries.delete(key);
 };
+
+export const clearAdminDataCache = () => {
+  runtime.entries.clear();
+};

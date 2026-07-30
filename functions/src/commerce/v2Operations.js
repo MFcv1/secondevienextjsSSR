@@ -28,6 +28,9 @@ const {
     buildFinancialProjection
 } = require('./domain/financialProjection');
 const {
+    buildFinancialRollupDelta
+} = require('./domain/financialRollup');
+const {
     createFirestoreWorkerQueries
 } = require('./domain/firestoreWorkerQueries');
 const {
@@ -343,13 +346,91 @@ async function persistHealthIncidents(health) {
     await batch.commit();
 }
 
+async function persistFinancialRollups(facts, projection, builtAt) {
+    const counts = new Map();
+    for (const fact of facts) {
+        if (fact?.status && fact.status !== 'succeeded') continue;
+        const delta = buildFinancialRollupDelta(fact);
+        const dayId = `${delta.dateKey}_${delta.currency}`;
+        counts.set(dayId, (counts.get(dayId) || 0) + 1);
+        counts.set(delta.currency, (counts.get(delta.currency) || 0) + 1);
+    }
+    const writes = [];
+    for (const [currency, amounts] of Object.entries(projection.currencies)) {
+        writes.push({
+            reference: db.doc(`commerce_financial_totals/${currency}`),
+            data: {
+                schemaVersion: 2,
+                currency,
+                ...amounts,
+                factCount: counts.get(currency) || 0,
+                rebuiltAt: builtAt,
+                updatedAt: builtAt
+            }
+        });
+    }
+    for (const day of Object.values(projection.days)) {
+        const dayId = `${day.date}_${day.currency}`;
+        writes.push({
+            reference: db.doc(`commerce_financial_daily/${dayId}`),
+            data: {
+                schemaVersion: 2,
+                dateKey: day.date,
+                currency: day.currency,
+                capturedCents: day.capturedCents,
+                refundedCents: day.refundedCents,
+                netCents: day.netCents,
+                factCount: counts.get(dayId) || 0,
+                rebuiltAt: builtAt,
+                updatedAt: builtAt
+            }
+        });
+    }
+    let repairedDocuments = 0;
+    let newerDocumentsPreserved = 0;
+    for (let offset = 0; offset < writes.length; offset += 100) {
+        const chunk = writes.slice(offset, offset + 100);
+        const result = await db.runTransaction(async (transaction) => {
+            const snapshots = await Promise.all(
+                chunk.map((write) => transaction.get(write.reference))
+            );
+            let repaired = 0;
+            let preserved = 0;
+            snapshots.forEach((snapshot, index) => {
+                const write = chunk[index];
+                const currentFactCount = snapshot.exists
+                    ? Number(snapshot.data()?.factCount || 0)
+                    : -1;
+                if (currentFactCount > write.data.factCount) {
+                    preserved += 1;
+                    return;
+                }
+                transaction.set(write.reference, write.data);
+                repaired += 1;
+            });
+            return { repaired, preserved };
+        });
+        repairedDocuments += result.repaired;
+        newerDocumentsPreserved += result.preserved;
+    }
+    return {
+        totalDocuments: Object.keys(projection.currencies).length,
+        dailyDocuments: Object.keys(projection.days).length,
+        repairedDocuments,
+        newerDocumentsPreserved
+    };
+}
+
 async function runOperationsRebuild() {
     const factsSnapshot = await db.collection('commerce_financial_facts').limit(MAX_FACTS).get();
     const facts = factsSnapshot.docs.map((document) => document.data());
     const builtAt = new Date().toISOString();
     const projection = buildFinancialProjection(facts, { builtAt });
     await db.doc('commerce_financial_projections/current').set(projection);
-    const documents = await rebuildDocuments(facts);
+    const [documents, financialRollups] = await Promise.all([
+        rebuildDocuments(facts),
+        persistFinancialRollups(facts, projection, builtAt)
+    ]);
     const health = await buildHealth(projection);
     await Promise.all([
         db.doc('sys_commerce_operations/current').set({
@@ -363,11 +444,12 @@ async function runOperationsRebuild() {
                 currencies: projection.currencies
             },
             documents,
+            financialRollups,
             appId: APP_ID
         }),
         persistHealthIncidents(health)
     ]);
-    return { projection, health, documents };
+    return { projection, health, documents, financialRollups };
 }
 
 async function runOutboxDispatcher() {
@@ -377,6 +459,80 @@ async function runOutboxDispatcher() {
     return { due, expiredLeases };
 }
 
+const PAID_ORDER_STATUSES = [
+    'paid',
+    'completed',
+    'refunded',
+    'refund_pending',
+    'refund_failed'
+];
+const CANCELLED_ORDER_STATUSES = [
+    'cancelled',
+    'cancelled_by_client',
+    'canceled'
+];
+
+async function countOrders(query) {
+    const snapshot = await query.count().get();
+    return Number(snapshot.data().count || 0);
+}
+
+async function buildAdminOrderSummary() {
+    const orders = db.collection('orders');
+    const [allOrders, cancelledOrders, paidOrders, shippedOrders] = await Promise.all([
+        countOrders(orders),
+        countOrders(orders.where('status', 'in', CANCELLED_ORDER_STATUSES)),
+        countOrders(orders.where('status', 'in', PAID_ORDER_STATUSES)),
+        countOrders(orders.where('status', '==', 'shipped'))
+    ]);
+    const totalOrders = Math.max(0, allOrders - cancelledOrders);
+    const pendingOrders = Math.max(0, totalOrders - paidOrders - shippedOrders);
+    return {
+        totalOrders,
+        paidOrders,
+        shippedOrders,
+        pendingOrders,
+        cancelledOrders,
+        countedAt: new Date().toISOString()
+    };
+}
+
+async function buildAdminFinancialSummary() {
+    const snapshot = await db.doc('commerce_financial_totals/EUR').get();
+    if (!snapshot.exists) return null;
+    const amounts = snapshot.data();
+    return {
+        currencies: {
+            EUR: {
+                capturedCents: Number(amounts.capturedCents || 0),
+                refundedCents: Number(amounts.refundedCents || 0),
+                netCents: Number(amounts.netCents || 0)
+            }
+        },
+        countedAt: amounts.updatedAt || new Date().toISOString(),
+        source: 'commerce_financial_totals'
+    };
+}
+
+async function buildAdminFinancialDaily() {
+    const snapshot = await db.collection('commerce_financial_daily')
+        .orderBy('dateKey', 'desc')
+        .limit(366)
+        .get();
+    return snapshot.docs
+        .map((document) => {
+            const day = document.data();
+            return {
+                dateKey: day.dateKey,
+                currency: day.currency,
+                capturedCents: Number(day.capturedCents || 0),
+                refundedCents: Number(day.refundedCents || 0),
+                netCents: Number(day.netCents || 0)
+            };
+        })
+        .sort((left, right) => String(left.dateKey).localeCompare(String(right.dateKey)));
+}
+
 const commerceOutboxDispatcher = regionalFunctions()
     .runWith({ secrets: OUTBOX_SECRETS, timeoutSeconds: 300, memory: '512MB' })
     .pubsub.schedule('every 2 minutes')
@@ -384,20 +540,26 @@ const commerceOutboxDispatcher = regionalFunctions()
 
 const commerceOperationsReconciler = regionalFunctions()
     .runWith({ timeoutSeconds: 300, memory: '512MB' })
-    .pubsub.schedule('every 5 minutes')
+    .pubsub.schedule('every 60 minutes')
     .onRun(runOperationsRebuild);
 
 const getCommerceOperationsStatusAdmin = regionalFunctions()
     .runWith({ enforceAppCheck: true })
     .https.onCall(async (_data, context) => {
         await checkActiveStrongAdmin(context);
-        const [operations, control] = await Promise.all([
+        const [operations, control, orderSummary, financialSummary, financialDaily] = await Promise.all([
             db.doc('sys_commerce_operations/current').get(),
-            db.doc('sys_commerce_control/current').get()
+            db.doc('sys_commerce_control/current').get(),
+            buildAdminOrderSummary(),
+            buildAdminFinancialSummary(),
+            buildAdminFinancialDaily()
         ]);
         return {
             success: true,
             operations: operations.exists ? operations.data() : null,
+            orderSummary,
+            financialSummary,
+            financialDaily,
             control: control.exists ? {
                 newCheckoutMode: control.data()?.newCheckoutMode || 'off',
                 adminMutationMode: control.data()?.adminMutationMode || 'read_only',
@@ -417,7 +579,8 @@ const rebuildCommerceOperationsAdmin = regionalFunctions()
             projectionHash: result.projection.projectionHash,
             factCount: result.projection.factCount,
             healthStatus: result.health.status,
-            documents: result.documents
+            documents: result.documents,
+            financialRollups: result.financialRollups
         };
     });
 
@@ -481,11 +644,15 @@ const cleanupFixtureRunAdmin = regionalFunctions()
     });
 
 module.exports = {
+    buildAdminFinancialDaily,
+    buildAdminFinancialSummary,
+    buildAdminOrderSummary,
     cleanupFixtureRunAdmin,
     commerceOperationsReconciler,
     commerceOutboxDispatcher,
     getCommerceOperationsStatusAdmin,
     rebuildCommerceOperationsAdmin,
+    persistFinancialRollups,
     runOperationsRebuild,
     runOutboxDispatcher
 };

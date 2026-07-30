@@ -9,6 +9,7 @@ const {
 const { regionalFunctions } = require('../../helpers/runtime');
 const { computeAllowedActions } = require('./domain/allowedActions');
 const { validateOrderV2 } = require('./domain/orderState');
+const { validateRefundAttempt } = require('./domain/refundSaga');
 const { validateReturnCase } = require('./domain/returnCase');
 
 function normalizePageSize(value, fallback = 25) {
@@ -85,6 +86,53 @@ function serializeOrder(snapshot, actor) {
         allowedActions: [],
         legacyReadOnly: true
     };
+}
+
+function serializeRefundAttempt(snapshot) {
+    const attempt = snapshot.data();
+    validateRefundAttempt(attempt);
+    return {
+        refundRequestId: attempt.refundRequestId,
+        amountCents: attempt.amountCents,
+        status: attempt.status,
+        providerStatus: attempt.providerStatus || null,
+        refundId: attempt.refundId || null,
+        updatedAt: attempt.updatedAt || null,
+        resumable: !['succeeded', 'failed'].includes(attempt.status)
+    };
+}
+
+async function serializeAdminOrder(snapshot, actor) {
+    const serialized = serializeOrder(snapshot, actor);
+    if (
+        serialized.schemaVersion !== 2 ||
+        Number(serialized.refundAggregate?.requestedCents || 0) <= 0
+    ) {
+        return serialized;
+    }
+    try {
+        const attemptsSnapshot = await snapshot.ref.collection('refunds')
+            .orderBy('updatedAt', 'desc')
+            .limit(1)
+            .get();
+        return {
+            ...serialized,
+            latestRefundAttempt: attemptsSnapshot.empty
+                ? null
+                : serializeRefundAttempt(attemptsSnapshot.docs[0]),
+            refundAttemptReadError: false
+        };
+    } catch (error) {
+        console.error('Admin refund attempt read failed', {
+            orderId: snapshot.id,
+            code: String(error?.code || error?.message || 'unknown')
+        });
+        return {
+            ...serialized,
+            latestRefundAttempt: null,
+            refundAttemptReadError: true
+        };
+    }
 }
 
 function serializeCommerceDocument(snapshot, order) {
@@ -374,9 +422,9 @@ function createListOrdersAdminHandler({
             aal2: true
         };
         return {
-            orders: result.snapshot.docs.map(
-                (snapshot) => serializeOrder(snapshot, actor)
-            ),
+            orders: await Promise.all(result.snapshot.docs.map(
+                (snapshot) => serializeAdminOrder(snapshot, actor)
+            )),
             nextCursor: result.nextCursor
         };
     };
@@ -439,5 +487,6 @@ module.exports = {
     listReturnsAdminV2,
     normalizePageSize,
     returnActions,
+    serializeAdminOrder,
     serializeCommerceDocument
 };

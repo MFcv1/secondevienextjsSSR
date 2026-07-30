@@ -29,8 +29,20 @@ const {
     decodeReturnCursor,
     normalizePageSize,
     returnActions,
+    serializeAdminOrder,
     serializeCommerceDocument
 } = require('../../../functions/src/commerce/v2OrderQueries');
+const {
+    createRefundAttempt,
+    transitionRefundAttempt
+} = require('../../../functions/src/commerce/domain/refundSaga');
+const {
+    reduceOrder
+} = require('../../../functions/src/commerce/domain/orderState');
+const {
+    fixedClock,
+    makeOrder
+} = require('../fixtures/order-v2.cjs');
 
 const repositoryRoot = path.resolve(__dirname, '..', '..', '..');
 const source = (relativePath) => fs.readFileSync(
@@ -306,6 +318,92 @@ test('admin order timeline keeps exact payment, cancellation and refund event ti
     assert.equal(typeof createGetOrderTimelineAdminHandler, 'function');
 });
 
+test('admin order reader exposes one bounded resumable Stripe refund reference', async () => {
+    const clock = fixedClock('2026-07-30T10:00:00.000Z');
+    const base = makeOrder();
+    base.payment.connectedAccountId = 'acct_admin_refund_reader';
+    const paid = {
+        ...reduceOrder(base, {
+            type: 'payment_succeeded',
+            amountCents: base.amounts.totalCents,
+            currency: 'EUR',
+            paymentIntentId: 'pi_admin_refund_reader'
+        }, { clock }),
+        id: 'order-admin-refund-reader'
+    };
+    const attempt = createRefundAttempt({
+        order: paid,
+        refundRequestId: 'refund-admin-reader',
+        amountCents: 3000,
+        actorUid: 'admin-refund-reader',
+        reason: 'remboursement a rapprocher',
+        clock
+    });
+    const providerPending = transitionRefundAttempt(
+        transitionRefundAttempt(
+            attempt,
+            { type: 'create_started' },
+            { clock }
+        ),
+        {
+            type: 'provider_observed',
+            refundId: 're_admin_reader',
+            providerStatus: 'pending'
+        },
+        { clock }
+    );
+    const pendingOrder = reduceOrder(paid, {
+        type: 'refund_requested',
+        amountCents: 3000
+    }, { clock });
+    const snapshot = {
+        id: paid.id,
+        data: () => {
+            const { id: _ignored, ...stored } = pendingOrder;
+            return stored;
+        },
+        ref: {
+            collection: (name) => {
+                assert.equal(name, 'refunds');
+                return {
+                    orderBy: (field, direction) => {
+                        assert.equal(field, 'updatedAt');
+                        assert.equal(direction, 'desc');
+                        return {
+                            limit: (value) => {
+                                assert.equal(value, 1);
+                                return {
+                                    get: async () => ({
+                                        empty: false,
+                                        docs: [{
+                                            data: () => providerPending
+                                        }]
+                                    })
+                                };
+                            }
+                        };
+                    }
+                };
+            }
+        }
+    };
+    const serialized = await serializeAdminOrder(snapshot, {
+        uid: 'admin-refund-reader',
+        role: 'admin',
+        aal2: true
+    });
+    assert.deepEqual(serialized.latestRefundAttempt, {
+        refundRequestId: 'refund-admin-reader',
+        amountCents: 3000,
+        status: 'provider_pending',
+        providerStatus: 'pending',
+        refundId: 're_admin_reader',
+        updatedAt: '2026-07-30T10:00:00.000Z',
+        resumable: true
+    });
+    assert.equal(serialized.refundAttemptReadError, false);
+});
+
 test('order query guards reject invalid pagination and authorize before Firestore', async () => {
     assert.equal(normalizePageSize(undefined), 25);
     assert.throws(() => normalizePageSize(51), (error) => error.code === 'invalid-argument');
@@ -510,6 +608,9 @@ test('browser checkout contract maps UI delivery/address without forwarding pric
 test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () => {
     const adminOrders = source('src/kit/admin/AdminOrders.jsx');
     const adminReturns = source('src/kit/admin/AdminReturns.jsx');
+    const adminCommerceData = source('src/kit/admin/adminCommerceData.js');
+    const adminDashboard = source('src/kit/admin/AdminDashboard.jsx');
+    const adminIsland = source('app/admin/AdminAppIsland.jsx');
     const adminDelivery = source('src/kit/admin/AdminLivraison.jsx');
     const adminPayment = source('src/kit/admin/AdminPaymentSettings.jsx');
     const myOrders = source('src/kit/commerce/MyOrdersView.jsx');
@@ -544,7 +645,19 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(myOrders.includes('requestOrderCancellation'));
     assert.ok(adminReturns.includes('adaptCommerceOrder'));
     assert.ok(adminReturns.includes('returnLineSummary'));
-    assert.ok(adminReturns.includes('Promise.allSettled'));
+    assert.ok(adminCommerceData.includes('Promise.allSettled'));
+    assert.ok(adminCommerceData.includes('loadAdminOrdersFirstPage({ force })'));
+    assert.ok(adminOrders.includes('loadAdminOrdersFirstPage()'));
+    assert.ok(adminReturns.includes('loadAdminReturnsFirstPage()'));
+    assert.ok(adminIsland.includes('preloadAdminCommerceData'));
+    assert.ok(adminIsland.includes('preloadAdminDashboardData'));
+    assert.equal(adminIsland.includes('requestIdleCallback(preload'), false);
+    assert.ok(adminDashboard.includes("DASHBOARD_CORE_CACHE_KEY = 'admin-dashboard:core'"));
+    assert.ok(adminDashboard.includes("DASHBOARD_INSIGHTS_CACHE_KEY = 'admin-dashboard:insights'"));
+    assert.ok(adminReturns.includes('Rapprocher Stripe'));
+    assert.ok(adminReturns.includes('attempt.refundRequestId'));
+    assert.ok(adminReturns.includes('loadAdminReturnsFirstPage({ force: true })'));
+    assert.ok(adminReturns.includes("order.refundAggregate?.status === 'needs_review'"));
     assert.equal(adminReturns.includes("text: error.message || String(error)"), false);
     assert.ok(checkout.includes('createCheckoutV2(input, {'));
     assert.ok(checkout.includes('readCheckoutRecoveryDescriptor(identity.uid'));

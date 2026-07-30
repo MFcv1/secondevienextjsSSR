@@ -318,6 +318,10 @@ function createRefs(db, appId) {
         outbox: (outboxId) => document(`commerce_outbox/${outboxId}`),
         incident: (incidentId) => document(`commerce_incidents/${incidentId}`),
         financialFact: (factId) => document(`commerce_financial_facts/${factId}`),
+        financialDaily: (dateKey, currency) => document(
+            `commerce_financial_daily/${dateKey}_${currency}`
+        ),
+        financialTotals: (currency) => document(`commerce_financial_totals/${currency}`),
         accessToken: (tokenHash) => document(`commerce_order_access_tokens/${tokenHash}`)
     });
 }

@@ -13,6 +13,9 @@ const {
     buildFinancialProjection
 } = require('../../../functions/src/commerce/domain/financialProjection');
 const {
+    buildFinancialRollupDelta
+} = require('../../../functions/src/commerce/domain/financialRollup');
+const {
     planFixtureCleanup
 } = require('../../../functions/src/commerce/domain/fixtureCleanup');
 const {
@@ -75,6 +78,29 @@ test('Gate 7A: captures et refunds succeeded construisent des montants absolus',
     });
     assert.equal(projection.factCount, 2);
     assert.equal(projection.divergences.length, 0);
+});
+
+test('Gate 7A: le rollup journalier applique des deltas signes et dates', () => {
+    assert.deepEqual(buildFinancialRollupDelta(fact()), {
+        dateKey: '2026-07-28',
+        currency: 'EUR',
+        capturedCents: 10000,
+        refundedCents: 0,
+        netCents: 10000,
+        factCount: 1
+    });
+    assert.deepEqual(buildFinancialRollupDelta(fact({
+        type: 'refund',
+        amountCents: 2500,
+        effectiveAt: '2026-07-29T23:59:00.000Z'
+    })), {
+        dateKey: '2026-07-29',
+        currency: 'EUR',
+        capturedCents: 0,
+        refundedCents: 2500,
+        netCents: -2500,
+        factCount: 1
+    });
 });
 
 test('Gate 7A: rebuild repete produit exactement le meme hash', () => {
@@ -356,9 +382,15 @@ test('Gate 7A: le dashboard consomme les montants qualifies sans exposer les con
         path.join(repositoryRoot, 'functions/src/commerce/orderStats.js'),
         'utf8'
     );
+    const operations = fs.readFileSync(
+        path.join(repositoryRoot, 'functions/src/commerce/v2Operations.js'),
+        'utf8'
+    );
     assert.match(adminIsland, /getCommerceOperationsStatusAdmin/);
     assert.match(adminIsland, /commerceStatus=\{commerceStatus\}/);
     assert.match(dashboard, /commerceStatus\.data\?\.operations\?\.projection/);
+    assert.match(dashboard, /commerceStatus\.data\?\.financialSummary\?\.currencies\?\.EUR/);
+    assert.match(dashboard, /commerceStatus\.data\?\.orderSummary/);
     assert.match(dashboard, /Bilan des ventes/);
     assert.match(dashboard, /Affichage des ventes/);
     assert.match(dashboard, /Évolution du chiffre d’affaires/);
@@ -378,4 +410,11 @@ test('Gate 7A: le dashboard consomme les montants qualifies sans exposer les con
     assert.doesNotMatch(dashboard, /Fraîcheur :|Faits :|Divergences :|Mode :/);
     assert.match(email, />= V2_EMAIL_OUTBOX_REQUIRED/);
     assert.match(stats, />= V2_STATS_PROJECTION_REQUIRED/);
+    assert.match(operations, /buildAdminOrderSummary/);
+    assert.match(operations, /commerce_financial_totals\/EUR/);
+    assert.match(operations, /commerce_financial_daily/);
+    assert.match(operations, /\.pubsub\.schedule\('every 60 minutes'\)/);
+    assert.match(operations, /orderSummary,/);
+    assert.match(operations, /financialSummary,/);
+    assert.match(operations, /financialDaily,/);
 });

@@ -238,6 +238,14 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /commerce_financial_totals/{currency} {
+      allow read, write: if false;
+    }
+
+    match /commerce_financial_daily/{dayId} {
+      allow read, write: if false;
+    }
+
     match /commerce_release_manifests/{manifestId} {
       allow read, write: if false;
     }

@@ -36,9 +36,11 @@ import {
   getCallableFunction,
 } from '../../src/kit/config/firebaseLazy';
 import {
+  clearAdminDataCache,
   getAdminCachedData,
   loadAdminCachedData,
 } from '../../src/kit/admin/adminDataCache';
+import { preloadAdminCommerceData } from '../../src/kit/admin/adminCommerceData';
 import {
   ADMIN_PUBLIC_CATALOG_INVALIDATED_EVENT,
   clearAdminPublicCatalogCache,
@@ -169,6 +171,20 @@ function AdminContent() {
   }));
   const catalogStatusRef = React.useRef('idle');
   const catalogRequestRef = React.useRef(null);
+  const cachedAdminUidRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const nextUid = user?.uid || null;
+    if (!nextUid) {
+      if (cachedAdminUidRef.current) clearAdminDataCache();
+      cachedAdminUidRef.current = null;
+      return;
+    }
+    if (cachedAdminUidRef.current && cachedAdminUidRef.current !== nextUid) {
+      clearAdminDataCache();
+    }
+    cachedAdminUidRef.current = nextUid;
+  }, [user]);
 
   const refreshBillingGate = React.useCallback(async () => {
     if (!user || !isAdmin || !hasStrongAuth || isSuperAdmin) return null;
@@ -200,7 +216,8 @@ function AdminContent() {
   React.useEffect(() => {
     if (!user || !isAdmin || !hasStrongAuth) return undefined;
     let cancelled = false;
-    if (!commerceStatus.data) {
+    const cachedStatus = getAdminCachedData('commerce-status');
+    if (!cachedStatus) {
       setCommerceStatus((current) => ({ ...current, status: 'loading', error: null }));
     }
     void loadAdminCachedData('commerce-status', async () => {
@@ -218,7 +235,7 @@ function AdminContent() {
         }
       }
       throw lastError;
-    }).then((data) => {
+    }, { force: true }).then((data) => {
       if (!cancelled) setCommerceStatus({ status: 'ready', data, error: null });
     }).catch((error) => {
       if (!cancelled) {
@@ -232,7 +249,7 @@ function AdminContent() {
     return () => {
       cancelled = true;
     };
-  }, [commerceStatus.data, hasStrongAuth, isAdmin, user]);
+  }, [hasStrongAuth, isAdmin, user]);
 
   React.useEffect(() => {
     const handleStepUpRequired = () => setStepUpOpen(true);
@@ -242,17 +259,19 @@ function AdminContent() {
 
   React.useEffect(() => {
     if (!user || !isAdmin || !hasStrongAuth || !backOfficeReady) return undefined;
-    const preload = () => {
-      void loadAdminDashboard();
+    let cancelled = false;
+    const preload = async () => {
+      const dashboardModule = await loadAdminDashboard();
+      if (cancelled) return;
+      void dashboardModule.preloadAdminDashboardData?.({ force: true }).catch(() => {});
+      void preloadAdminCommerceData({ force: true }).catch(() => {});
       void loadAdminOrders();
       void loadAdminReturns();
     };
-    if ('requestIdleCallback' in window) {
-      const idleId = window.requestIdleCallback(preload, { timeout: 1800 });
-      return () => window.cancelIdleCallback(idleId);
-    }
-    const timeoutId = window.setTimeout(preload, 500);
-    return () => window.clearTimeout(timeoutId);
+    void preload().catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [backOfficeReady, hasStrongAuth, isAdmin, user]);
 
   const ensureAdminCatalog = React.useCallback(async () => {

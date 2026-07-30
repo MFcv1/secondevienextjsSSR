@@ -19,7 +19,11 @@ import {
     getOrderTimelineAdminV2,
     listOrdersAdminV2,
 } from '../commerce/commerceV2Client';
-import { getAdminCachedData, loadAdminCachedData } from './adminDataCache';
+import { getAdminCachedData } from './adminDataCache';
+import {
+    ADMIN_ORDERS_FIRST_PAGE_KEY,
+    loadAdminOrdersFirstPage,
+} from './adminCommerceData';
 import { adaptCommerceOrder } from '../commerce/orderAdapter';
 
 const normalizeAdminOrder = (order) => {
@@ -58,7 +62,7 @@ const normalizeAdminOrder = (order) => {
 const normalizeAdminOrders = (orders = []) => orders.map(normalizeAdminOrder);
 
 const AdminOrders = ({ darkMode = false, mutationsEnabled = false }) => {
-    const cachedPage = getAdminCachedData('admin-orders:first-page');
+    const cachedPage = getAdminCachedData(ADMIN_ORDERS_FIRST_PAGE_KEY);
     const orderCommandsEnabled = mutationsEnabled && COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED;
     const [orders, setOrders] = useState(normalizeAdminOrders(cachedPage?.orders || []));
     const [expandedOrder, setExpandedOrder] = useState(null);
@@ -70,13 +74,10 @@ const AdminOrders = ({ darkMode = false, mutationsEnabled = false }) => {
     const [timelineLoadingId, setTimelineLoadingId] = useState(null);
 
     useEffect(() => {
-        setIsLoading(!getAdminCachedData('admin-orders:first-page'));
+        setIsLoading(!getAdminCachedData(ADMIN_ORDERS_FIRST_PAGE_KEY));
         if (COMMERCE_V2_ADMIN_READERS_ENABLED) {
             let cancelled = false;
-            loadAdminCachedData(
-                'admin-orders:first-page',
-                () => listOrdersAdminV2({ pageSize: 50 })
-            )
+            loadAdminOrdersFirstPage()
                 .then((result) => {
                     if (cancelled) return;
                     setOrders(normalizeAdminOrders(result.orders || []));
@@ -278,7 +279,9 @@ const AdminOrders = ({ darkMode = false, mutationsEnabled = false }) => {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <h2 className={`text-2xl font-black tracking-tighter ${darkMode ? 'text-white' : 'text-stone-900'}`}>Commandes ({orders.length})</h2>
+                    <h2 className={`text-2xl font-black tracking-tighter ${darkMode ? 'text-white' : 'text-stone-900'}`}>
+                        Commandes ({isLoading && orders.length === 0 ? '…' : orders.length})
+                    </h2>
                     <button
                         onClick={exportToCsv}
                         className={`group flex items-center gap-2.5 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 border-2 shadow-xl ${
@@ -299,6 +302,17 @@ const AdminOrders = ({ darkMode = false, mutationsEnabled = false }) => {
             </div>
 
             <div className={`grid gap-4 pr-2 overflow-y-auto scrollbar-thin ${darkMode ? 'scrollbar-thumb-stone-700 scrollbar-track-stone-900/20' : 'scrollbar-thumb-stone-200 scrollbar-track-stone-50'} max-h-[750px] custom-scrollbar`}>
+                {isLoading && orders.length === 0 ? (
+                    <div className="space-y-3" aria-busy="true" aria-label="Chargement des commandes">
+                        {Array.from({ length: 3 }, (_, index) => (
+                            <div
+                                key={index}
+                                className={`h-28 animate-pulse rounded-3xl border ${darkMode ? 'border-white/5 bg-white/[0.035]' : 'border-stone-100 bg-stone-900/[0.035]'}`}
+                            />
+                        ))}
+                        <span className="sr-only">Chargement des commandes…</span>
+                    </div>
+                ) : null}
                 {orders.map(order => {
                     const badge = getStatusBadge(order.status);
 
