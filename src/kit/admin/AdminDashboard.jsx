@@ -414,9 +414,9 @@ const StatusDonut = ({ counts, darkMode }) => {
     const total = counts.paid + counts.pending + counts.shipped;
     const reducedMotion = useReducedMotion();
     const segments = [
-        { key: 'paid', label: 'Payées', value: counts.paid, color: '#4f9870', radius: 54 },
-        { key: 'shipped', label: 'Expédiées', value: counts.shipped, color: '#4e88c7', radius: 43 },
-        { key: 'pending', label: 'En attente', value: counts.pending, color: '#dc921f', radius: 32 }
+        { key: 'paid', label: 'Payées', value: counts.paid, color: '#4f9870', radius: 58 },
+        { key: 'shipped', label: 'Expédiées', value: counts.shipped, color: '#4e88c7', radius: 47 },
+        { key: 'pending', label: 'En attente', value: counts.pending, color: '#dc921f', radius: 36 }
     ];
     const trackFraction = 0.78;
     const startAngle = 130;
@@ -665,7 +665,7 @@ const TrendingProducts = ({ products, loading, error, darkMode }) => {
     }
 
     return (
-        <ol className="flex min-w-0 max-w-full snap-x snap-mandatory gap-2.5 overflow-x-auto overscroll-x-contain pb-2 pr-3 [scrollbar-width:thin]">
+        <ol className="no-scrollbar flex min-w-0 max-w-full snap-x snap-mandatory gap-2.5 overflow-x-auto overscroll-x-contain pb-2 pr-3 [scrollbar-width:none]">
             {products.map((product, index) => {
                 return (
                     <motion.li
