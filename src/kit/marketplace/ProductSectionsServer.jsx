@@ -987,7 +987,7 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
               <span className={`hidden text-[22px] leading-none sm:block dark:text-[#8a6b48] ${darkMode ? 'text-[#8a6b48]' : 'text-[#b79e7d]'}`} aria-hidden="true">*</span>
             </div>
 
-            <h2 className={`relative mt-7 max-w-[690px] font-serif text-[clamp(2.85rem,4.15vw,4.55rem)] font-medium leading-[0.9] tracking-normal sm:mt-8 lg:mt-9 dark:text-[#f8f1e8] ${darkMode ? 'text-[#f8f1e8]' : 'text-[#191713]'}`}>
+            <h2 className={`discount-title relative mt-7 max-w-[690px] font-serif text-[clamp(2.85rem,4.15vw,4.55rem)] font-medium leading-[0.9] tracking-normal sm:mt-8 lg:mt-9 dark:text-[#f8f1e8] ${darkMode ? 'text-[#f8f1e8]' : 'text-[#191713]'}`}>
               <span className="block">Abonne-toi</span>
               <span className="block">et tente</span>
               <span className="mt-1 block md:whitespace-nowrap">

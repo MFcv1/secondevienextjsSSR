@@ -4272,7 +4272,16 @@ html.dark .before-after-premium-atmosphere,
 }
 
 @media (max-width: 639.98px) {
+  .before-after-premium-title {
+    font-size: clamp(2.7rem, 11.5vw, 2.8rem);
+  }
+
+  .discount-title {
+    font-size: clamp(2.45rem, 10.4vw, 2.55rem);
+  }
+
   .before-after-premium-copy > .before-after-premium-brand-watermark {
+    right: -7%;
     width: min(53%, 202px);
     opacity: 0.17;
   }
