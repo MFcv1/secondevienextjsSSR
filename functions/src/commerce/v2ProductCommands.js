@@ -130,6 +130,18 @@ const callable = (handler) => regionalFunctions()
     .runWith({ enforceAppCheck: true })
     .https.onCall(withCommerceMutationsEnabled(handler));
 
+const preflightProductMutationAdmin = callable(async (_data, context) => {
+    try {
+        await checkRecentActiveStrongAdmin(context);
+        return {
+            ok: true,
+            authorization: 'recent-strong-admin'
+        };
+    } catch (error) {
+        throw mapDomainError(error);
+    }
+});
+
 const createProductAdmin = callable(createHandler(
     'create_product',
     (data) => ({
@@ -165,6 +177,7 @@ module.exports = {
     adjustInventoryAdmin,
     archiveProductAdmin,
     createProductAdmin,
+    preflightProductMutationAdmin,
     publishProductAdmin,
     updateProductOfferAdmin
 };

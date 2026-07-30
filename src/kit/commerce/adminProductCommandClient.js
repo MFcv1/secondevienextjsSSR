@@ -54,6 +54,13 @@ export const createProductDraftAdmin = ({
   }
 );
 
+export const preflightProductMutationAdmin = async () => {
+  assertEnabled();
+  const callable = await getCallableFunction('preflightProductMutationAdmin');
+  const result = await callable({});
+  return result.data;
+};
+
 export const updateProductOfferAdmin = (
   item,
   collectionName,

@@ -4,6 +4,11 @@ Derniere mise a jour: 2026-07-29
 Statut: `REPRISE_DIFFEREE`
 Fin de validite: 2026-10-31
 
+Campagne de recette commerce sandbox en cours:
+[TEST_COMMERCE_SANDBOX.md](TEST_COMMERCE_SANDBOX.md), avec registre temporaire
+[anomalies.md](anomalies.md). Fusion et suppression au plus tard le
+2026-08-06.
+
 ## Point de depart
 
 Le noyau commerce est `PREPROD_TRANSACTIONAL_READY` sur sandbox. Les Gates 0A

@@ -58,6 +58,12 @@ Le catalogue public court (`scope=cards&limit=120`) est charge paresseusement un
 
 `AdminForm` gere les champs produit, la compression/upload image, les variantes et la sauvegarde. `AdminItemList` affiche les annonces. `GlobalInventoryView` pilote les classements editoriaux.
 
+Avant le premier upload, `AdminForm` appelle
+`preflightProductMutationAdmin`. Le serveur confirme a la fois
+`adminMutationMode=v2`, App Check et une authentification admin forte recente.
+Une reauthentification necessaire intervient donc avant tout transfert
+Storage, et non plus a la finalisation du formulaire.
+
 Apres mutation:
 
 - l'ecriture doit respecter `firestore.rules`;

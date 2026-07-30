@@ -61,7 +61,11 @@ function effectiveAt(paymentIntent, clock) {
     return clock.now();
 }
 
-function createPaymentEffectApplier({ refs, clock }) {
+function createPaymentEffectApplier({
+    refs,
+    clock,
+    increment = admin.firestore.FieldValue.increment
+}) {
     for (const name of [
         'order',
         'reservation',
@@ -76,6 +80,7 @@ function createPaymentEffectApplier({ refs, clock }) {
         requireDependency(refs?.[name], `refs.${name}`);
     }
     requireDependency(clock?.now, 'clock.now');
+    requireDependency(increment, 'increment');
 
     async function persistIncident(transaction, {
         code,
@@ -342,7 +347,7 @@ function createPaymentEffectApplier({ refs, clock }) {
                     refs,
                     fact,
                     updatedAt: now,
-                    increment: admin.firestore.FieldValue.increment
+                    increment
                 });
             }
         }

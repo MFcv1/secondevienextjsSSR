@@ -234,7 +234,7 @@ const scenarios = {
     context.ok(!orders.includes('FAC-{'));
     context.ok(adminIsland.includes('COMMERCE_READ_ONLY_TABS'));
     context.ok(adminIsland.includes('inert=""'));
-    context.ok(dashboard.includes('commerceOperations.operations?.projection'));
+    context.ok(dashboard.includes('commerceStatus.data?.operations?.projection'));
     context.ok(!dashboard.includes('Actions critiques'));
     assertZeroEffects(context, context.effects, 'gate-0b-read-only-ui');
   },

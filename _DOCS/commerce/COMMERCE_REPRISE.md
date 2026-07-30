@@ -7,6 +7,12 @@ Echeance de gouvernance: 2026-10-31
 Point d'entree et etat actuel:
 [COMMERCE_SYNTHESE.md](COMMERCE_SYNTHESE.md)
 
+Campagne temporaire explicitement demandee le 2026-07-30:
+[TEST_COMMERCE_SANDBOX.md](../../TEST_COMMERCE_SANDBOX.md), avec registre
+[anomalies.md](../../anomalies.md). Elle est bornee au sandbox et a Stripe
+test, doit etre fusionnee dans les chapitres canoniques puis supprimee au plus
+tard le 2026-08-06, et n'autorise aucune activation permanente de `v2_all`.
+
 ## 1. Objectif
 
 Ce document permet de reprendre plus tard les axes qui commencent apres la

@@ -91,6 +91,7 @@ route publique [S]
 ```text
 /admin [C]
   -> AdminForm / AdminItemList
+  -> preflightProductMutationAdmin [F] (fenetre v2 + AAL2 recent)
   -> upload variantes [ST]
   -> furniture/{id} [DB]
   -> onCatalogSourceWrite [F]
@@ -665,6 +666,7 @@ functions/
 | commerce | `createOrder`, `stripeWebhook`, `stripeConnectWebhook`, `cancelOrderClient`, `getOrderStatusClient` |
 | commerce v2 checkout/lecture | `createCheckoutV2`, `resumeCheckoutV2`, `listMyOrdersV2`, `listOrdersAdminV2`, `getOrderTimelineAdminV2`, `listReturnsAdminV2` |
 | commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
+| commerce v2 produit | `preflightProductMutationAdmin`, `createProductAdmin`, `updateProductOfferAdmin`, `publishProductAdmin`, `adjustInventoryAdmin`, `archiveProductAdmin` |
 | refunds/Connect | `refundOrderAdmin`, `syncRefundStatusAdmin`, `getStripeConnectStatus`, `startStripeConnectOnboarding`, `syncStripeConnectAccount`, `requestStripeConnectReconnect`, `confirmStripeConnectReconnect` |
 | preuves E2E | `e2eCheckoutProof`, `e2eStripeHardeningProof` |
 | Auth/admin | `grantAdminOnAuth`, `onRegisteredUserCreated`, `onRegisteredUserDeleted`, `addAdminUser`, `removeAdminUser`, `logUserConnection`, `getUserStats`, `syncSuperAdminClaim`, `ensureAdminAccessRegistry` |

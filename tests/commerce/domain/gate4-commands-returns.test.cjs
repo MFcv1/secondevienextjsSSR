@@ -351,6 +351,7 @@ test('product callable transport is exported but server-control dormant', () => 
     );
     for (const functionName of [
         'createProductAdmin',
+        'preflightProductMutationAdmin',
         'updateProductOfferAdmin',
         'publishProductAdmin',
         'adjustInventoryAdmin',
@@ -368,6 +369,12 @@ test('product callable transport is exported but server-control dormant', () => 
     assert.equal(adminIsland.includes('deleteDoc'), false);
     assert.equal(adminIsland.includes('updateDoc'), false);
     assert.equal(adminForm.includes('addDoc'), false);
+    assert.ok(client.includes('preflightProductMutationAdmin'));
+    assert.ok(adminForm.includes('preflightProductMutationAdmin'));
+    assert.ok(
+        adminForm.indexOf('await preflightProductMutationAdmin()')
+        < adminForm.indexOf('await uploadProductVariantSet(')
+    );
     assert.ok(adminForm.includes('createProductDraftAdmin'));
     assert.ok(adminForm.includes('updateProductOfferAdmin'));
     assert.ok(adminForm.includes('adjustInventoryAdmin'));

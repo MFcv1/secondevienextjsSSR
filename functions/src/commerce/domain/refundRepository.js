@@ -29,7 +29,12 @@ function requireDependency(value, name) {
     }
 }
 
-function createRefundRepository({ db, refs, clock }) {
+function createRefundRepository({
+    db,
+    refs,
+    clock,
+    increment = admin.firestore.FieldValue.increment
+}) {
     requireDependency(db?.runTransaction, 'db.runTransaction');
     for (const name of [
         'order',
@@ -43,6 +48,7 @@ function createRefundRepository({ db, refs, clock }) {
         requireDependency(refs?.[name], `refs.${name}`);
     }
     requireDependency(clock?.now, 'clock.now');
+    requireDependency(increment, 'increment');
 
     async function prepareRefund({
         orderId,
@@ -291,7 +297,7 @@ function createRefundRepository({ db, refs, clock }) {
                     refs,
                     fact,
                     updatedAt: clock.now(),
-                    increment: admin.firestore.FieldValue.increment
+                    increment
                 });
             }
             if (outboxRef && !snapshotExists(snapshots[4])) transaction.set(outboxRef, outbox);

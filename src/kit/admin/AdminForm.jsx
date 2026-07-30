@@ -12,6 +12,7 @@ import {
   adjustInventoryAdmin,
   createProductCommandSession,
   createProductDraftAdmin,
+  preflightProductMutationAdmin,
   publishProductAdmin,
   updateProductOfferAdmin
 } from '../commerce/adminProductCommandClient';
@@ -353,6 +354,10 @@ const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkM
     setMsg("⏳ Préparation des fichiers...");
 
     try {
+      setMsg("⏳ Vérification de la session administrateur...");
+      await preflightProductMutationAdmin();
+      setMsg("⏳ Préparation des fichiers...");
+
       let finalImageUrls = [];
       let finalThumbnails = [];
       let finalImageVariants = [];

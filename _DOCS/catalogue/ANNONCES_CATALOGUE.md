@@ -49,11 +49,12 @@ La stabilisation commerce ajoute localement un rail serveur dormant dans
 `productCommandRepository.js`. Il separe creation en brouillon, offre/prix,
 ajustement de stock versionne, publication et archive douce. Chaque commande
 exige un admin AAL2, une raison, une cle idempotente, une version attendue et
-un audit append-only. `v2ProductCommands.js` prepare les callables AAL2/App
-Check sans les exporter, et le formulaire admin les orchestre derriere
-`COMMERCE_V2_ADMIN_COMMANDS_ENABLED=false`. Le catalogue reste donc en lecture
-seule tant que les commandes Gate 4 restent dormantes et leurs flags compiles
-a `false`.
+un audit append-only. `v2ProductCommands.js` expose les callables AAL2/App
+Check derriere le controle serveur fail-closed; le formulaire ne les rend
+actifs que lorsque `adminMutationMode=v2`. Avant toute compression ou ecriture
+Storage, `preflightProductMutationAdmin` verifie la fenetre de mutation et la
+fraicheur AAL2. Une session expiree est ainsi reprise avant l'envoi des images.
+Hors fenetre bornee, le catalogue reste en lecture seule.
 
 ## 4. Cycle de vie
 

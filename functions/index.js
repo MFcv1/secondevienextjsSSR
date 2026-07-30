@@ -42,6 +42,7 @@ const {
     adjustInventoryAdmin,
     archiveProductAdmin,
     createProductAdmin,
+    preflightProductMutationAdmin,
     publishProductAdmin,
     updateProductOfferAdmin
 } = require('./src/commerce/v2ProductCommands');
@@ -92,6 +93,7 @@ const {
 exports.adjustInventoryAdmin = adjustInventoryAdmin;
 exports.archiveProductAdmin = archiveProductAdmin;
 exports.createProductAdmin = createProductAdmin;
+exports.preflightProductMutationAdmin = preflightProductMutationAdmin;
 exports.publishProductAdmin = publishProductAdmin;
 exports.updateProductOfferAdmin = updateProductOfferAdmin;
 exports.archiveOrderAdmin = archiveOrderAdmin;

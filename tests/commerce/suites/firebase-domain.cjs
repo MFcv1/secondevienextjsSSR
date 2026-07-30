@@ -6,6 +6,7 @@ const {
     doc,
     getDoc,
     getDocs,
+    increment,
     runTransaction,
     setDoc
 } = require('firebase/firestore');
@@ -749,7 +750,8 @@ const scenarios = {
         });
         const applier = createPaymentEffectApplier({
             refs: seeded.refs,
-            clock: { now: () => '2026-07-26T12:05:00.000Z' }
+            clock: { now: () => '2026-07-26T12:05:00.000Z' },
+            increment
         });
         const paymentIntent = {
             id: 'pi_gate3_success_0001',
@@ -858,7 +860,8 @@ const scenarios = {
             clock: {
                 now: () => '2026-07-26T12:05:00.000Z',
                 nowMillis: () => Date.parse('2026-07-26T12:05:00.000Z')
-            }
+            },
+            increment
         });
         await runTransaction(firestore, (transaction) => applier.apply(transaction, {
             entry: { scope: 'connect', accountId: 'acct_gate3ready01' },
@@ -936,7 +939,8 @@ const scenarios = {
         };
         const applier = createPaymentEffectApplier({
             refs: seeded.refs,
-            clock: effectClock
+            clock: effectClock,
+            increment
         });
         await runTransaction(firestore, (transaction) => applier.apply(transaction, {
             entry: { scope: 'connect', accountId: 'acct_gate3ready01' },
@@ -977,7 +981,8 @@ const scenarios = {
         const repository = createRefundRepository({
             db: { runTransaction: (run) => runTransaction(firestore, run) },
             refs: seeded.refs,
-            clock: effectClock
+            clock: effectClock,
+            increment
         });
         const coordinator = createRefundCoordinator({
             repository,
@@ -1048,7 +1053,8 @@ const scenarios = {
         };
         const applier = createPaymentEffectApplier({
             refs: seeded.refs,
-            clock: effectClock
+            clock: effectClock,
+            increment
         });
         await runTransaction(firestore, (transaction) => applier.apply(transaction, {
             entry: { scope: 'connect', accountId: 'acct_gate3ready01' },
