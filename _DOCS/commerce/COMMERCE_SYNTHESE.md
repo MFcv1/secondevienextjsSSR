@@ -201,6 +201,13 @@ reprise `awaiting_method` sont suivis dans
 Les warnings generaux non bloquants deja presents dans le build frontend ne
 font pas partie de cette stabilisation.
 
+Passe UX du 2026-07-30: le contrat checkout accepte desormais un telephone
+optionnel, borne a 40 caracteres, et le persiste dans le snapshot de livraison.
+Il reste non autoritaire pour toute donnee financiere. La demande de retour
+depuis l'espace client est un contact contextualise avec l'atelier: le
+remboursement Stripe, la reception physique et le restock restent exclusivement
+des transitions serveur/admin protegees.
+
 ## 9. Ce qui reste avant une ouverture publique
 
 La prochaine etape n'est pas une nouvelle Gate de correction. Elle exige une

@@ -291,6 +291,9 @@ Ne pas reintroduire le bouton generique `Utiliser une passkey` avant enrôlement
 - smoke Chrome, Edge et Brave: `3/3 PASS`;
 - benchmark ouverture modale: `30/30 PASS`;
 - recette OTP Gmail reelle: succes;
+- la recette client du 2026-07-29 a confirme une livraison classee en spam par
+  Gmail; l'interface indique donc explicitement de verifier les courriers
+  indesirables apres envoi et l'OTP checkout fournit aussi une partie texte;
 - activation Windows Hello: succes;
 - deconnexion puis reconnexion passkey: succes;
 - `Quitter` et `Mon espace` visibles de facon coherente;
@@ -400,7 +403,7 @@ Ne pas lancer automatiquement les tests physiques WebAuthn: Windows Hello, Face 
 | --- | --- |
 | passkey annulee/indisponible | OTP Gmail, puis Google |
 | OTP expire | attendre le delai et renvoyer un seul code |
-| email lent | verifier les spams, puis Google |
+| email lent ou absent de la boite principale | l'interface invite a verifier les spams, puis Google |
 | action admin refusee | step-up passkey ou Google proprietaire |
 | regression App Hosting | restaurer la revision sandbox precedente stable |
 

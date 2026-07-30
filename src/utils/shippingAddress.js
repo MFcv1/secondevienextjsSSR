@@ -16,5 +16,5 @@ export const formatShippingCityLine = (shipping = {}) => (
 );
 
 export const formatShippingAddress = (shipping = {}) => (
-    [shipping?.address || shipping?.street, formatShippingCityLine(shipping)].filter(Boolean).join(', ')
+    [shipping?.address || shipping?.street || shipping?.line1, shipping?.line2, formatShippingCityLine(shipping)].filter(Boolean).join(', ')
 );

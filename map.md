@@ -126,6 +126,7 @@ carte produit
   -> guestCart ou users/{uid}/cart
   -> /checkout
   -> OTP/compte verifie
+  -> adresse + telephone normalises dans shippingSnapshot
   -> createOrder [F]
   -> transaction stock + orders [DB]
   -> Stripe Payment Element [EXT]
@@ -133,6 +134,8 @@ carte produit
   -> stripeWebhook [F]
   -> order paid + email triggers
   -> /mes-commandes + /admin
+  -> demande client de retour contextualisee vers l'atelier
+     -> decision refund/retour physique conservee cote admin serveur
 
 confinement Gate 0B SANDBOX_ACTIVE
   |-- createOrder/manual/deferred -> refus fail-closed avant effet

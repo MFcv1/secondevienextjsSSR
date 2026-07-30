@@ -36,6 +36,7 @@ import { adaptCommerceOrder } from './orderAdapter';
 
 const BUSINESS_PHONE = process.env.NEXT_PUBLIC_BUSINESS_PHONE || '';
 const BUSINESS_PHONE_TEL = BUSINESS_PHONE.replace(/\s/g, '');
+const BUSINESS_EMAIL = process.env.NEXT_PUBLIC_BUSINESS_EMAIL || 'contact@secondevie-marseille.fr';
 const CONTACT_NAME = process.env.NEXT_PUBLIC_CONTACT_NAME || KIT_CONFIG.brandName;
 const REVIEW_URL = process.env.NEXT_PUBLIC_REVIEW_URL || '';
 const COMMERCE_READ_ONLY = !COMMERCE_V2_CLIENT_COMMANDS_ENABLED;
@@ -149,6 +150,11 @@ const canCancel = (order) => {
     const diffDays = (new Date() - orderDate) / (1000 * 60 * 60 * 24);
     return diffDays <= 7;
 };
+
+const canRequestReturn = (order) => (
+    ['paid', 'shipped', 'completed'].includes(order?.status)
+    && !['pending', 'full', 'needs_review'].includes(order?.refundStatus)
+);
 
 const getRefundHelpText = (status = '') => {
     if (status === 'refund_pending') {
@@ -402,6 +408,22 @@ const MyOrdersView = ({
         else scrollToSection(wishlistRef);
     };
 
+    const requestReturn = (order) => {
+        const orderNumber = getOrderNumber(order);
+        const subject = `Demande de retour - ${orderNumber}`;
+        const body = [
+            `Bonjour ${CONTACT_NAME},`,
+            '',
+            `Je souhaite demander un retour ou un remboursement pour la commande ${orderNumber}.`,
+            `Article(s) : ${getOrderItemsSummary(order) || 'a preciser'}`,
+            '',
+            'Motif : ',
+            '',
+            `Compte client : ${user?.email || ''}`,
+        ].join('\n');
+        window.location.href = `mailto:${BUSINESS_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    };
+
     const downloadDocument = async (order, document) => {
         if (!document?.documentId || downloadingDocumentId) return;
         setDownloadingDocumentId(document.documentId);
@@ -466,9 +488,11 @@ const MyOrdersView = ({
                         </div>
                         <div className="rounded-[8px] border border-[#e8e8ed] bg-white p-5">
                             <p className="text-[13px] font-medium text-[#6e6e73]">Dernier dossier</p>
-                            <p className="mt-2 text-[22px] font-semibold text-[#1d1d1f]">{latestOrder ? getOrderNumber(latestOrder) : 'Aucune commande'}</p>
+                            <p className="mt-2 text-[22px] font-semibold text-[#1d1d1f]">{loading ? 'Chargement...' : (latestOrder ? getOrderNumber(latestOrder) : 'Aucune commande')}</p>
                             <p className="mt-2 text-[14px] leading-6 text-[#6e6e73]">
-                                {latestOrder ? `${formatDate(latestOrder.createdAt)} - ${formatPrice(getOrderTotal(latestOrder))}` : 'La galerie est prete quand vous l etes.'}
+                                {loading
+                                    ? 'Nous recuperons votre historique.'
+                                    : (latestOrder ? `${formatDate(latestOrder.createdAt)} - ${formatPrice(getOrderTotal(latestOrder))}` : 'La galerie est prete quand vous l etes.')}
                             </p>
                         </div>
                     </div>
@@ -476,10 +500,10 @@ const MyOrdersView = ({
 
                 <main className="space-y-6">
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                        <MetricButton icon={ShoppingBag} value={orders.length} label="Commandes" action="Historique complet" onClick={() => scrollToSection(ordersRef)} />
+                        <MetricButton icon={ShoppingBag} value={loading ? '—' : orders.length} label="Commandes" action="Historique complet" onClick={() => scrollToSection(ordersRef)} />
                         <MetricButton icon={Heart} value={wishlistItems.length} label="Pieces suivies" action="Liste de souhaits" onClick={openWishlist} />
-                        <MetricButton icon={MapPin} value={addressCount} label="Adresse" action="Livraison et facturation" onClick={() => scrollToSection(addressesRef)} />
-                        <MetricButton icon={WalletCards} value={formatPrice(refundedTotal)} label="Remboursements" action="Suivi Stripe" onClick={() => scrollToSection(invoicesRef)} />
+                        <MetricButton icon={MapPin} value={loading ? '—' : addressCount} label="Adresse" action="Livraison et facturation" onClick={() => scrollToSection(addressesRef)} />
+                        <MetricButton icon={WalletCards} value={loading ? '—' : formatPrice(refundedTotal)} label="Remboursements" action="Suivi Stripe" onClick={() => scrollToSection(invoicesRef)} />
                     </div>
 
                     <AccountPanel sectionRef={ordersRef} className="scroll-mt-28 p-4 md:p-6">
@@ -563,6 +587,15 @@ const MyOrdersView = ({
                                                         Annuler la commande
                                                     </button>
                                                 )}
+                                                {canRequestReturn(order) ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => requestReturn(order)}
+                                                        className="mt-3 block text-[13px] font-medium text-[#0066cc]"
+                                                    >
+                                                        Demander un retour ou un remboursement
+                                                    </button>
+                                                ) : null}
                                             </div>
 
                                             <div className="hidden lg:block">
@@ -743,7 +776,7 @@ const MyOrdersView = ({
                                 {[
                                     ['Nom complet', customerName],
                                     ['E-mail', user?.email || 'Non renseigne'],
-                                    ['Telephone', user?.phoneNumber || latestShipping.phone || BUSINESS_PHONE || 'A completer'],
+                                    ['Telephone', user?.phoneNumber || latestShipping.phone || 'A completer'],
                                     ['Date inscription', createdAt],
                                 ].map(([label, value]) => (
                                     <div key={label} className="border-t border-[#e8e8ed] pt-4">

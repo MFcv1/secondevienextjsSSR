@@ -164,6 +164,20 @@ restrictives. `Livraison` et `Paiement` ont confirme leur etat read-only;
 `Publication` ne presentait aucun controle de mutation commerce actif. Aucune
 commande, aucun refund et aucune transition de retour n'ont ete executes.
 
+Passe UX du 2026-07-30:
+
+- `Ventes` normalise les commandes v1 et v2 avant affichage et export:
+  `shippingSnapshot`, `customerSnapshot`, montants en centimes, titres et prix
+  snapshots sont projetes vers un modele d'affichage unique;
+- une valeur financiere absente n'est plus rendue comme `undefined EUR`, et les
+  coordonnees absentes portent un libelle explicite;
+- le statut financier du dashboard retente deux fois la lecture admin apres une
+  erreur transitoire. Une projection deja en cache reste affichee si le
+  rafraichissement echoue, sans inventer de chiffre.
+
+Ces changements ne modifient pas `adminMutationMode`: le mode protege
+`read_only` reste la valeur attendue hors fenetre de recette.
+
 ## 6. Utilisateurs et securite
 
 `AdminUsers` appelle les Functions de gestion d'acces. Un administrateur actif

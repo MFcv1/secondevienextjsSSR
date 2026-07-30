@@ -105,7 +105,7 @@ const CheckoutView = ({
     const [formData, setFormData] = useState({
         fullName: user?.displayName || '',
         email: user?.email || '',
-        phone: '',
+        phone: user?.phoneNumber || '',
         address: '',
         city: '',
         zip: '',
@@ -559,7 +559,7 @@ const CheckoutView = ({
                 token: '',
                 error: ''
             }));
-            toast('Code envoye par email.', { type: 'success' });
+            toast('Code envoye. Verifiez aussi vos courriers indesirables.', { type: 'success' });
         } catch (error) {
             logClientPerf('checkout.guest.sendGuestCheckoutOtp', startedAt, {
                 phase: 'error',
@@ -933,11 +933,11 @@ const CheckoutView = ({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                                 <div>
                                     <label htmlFor="checkout-fullName" className="sr-only">Nom complet</label>
-                                    <input id="checkout-fullName" name="fullName" value={formData.fullName} onChange={handleChange} placeholder="Nom complet" className={inputClasses} required />
+                                    <input id="checkout-fullName" name="fullName" value={formData.fullName} onChange={handleChange} placeholder="Nom complet" autoComplete="name" className={inputClasses} required />
                                 </div>
                                 <div>
                                     <label htmlFor="checkout-phone" className="sr-only">Téléphone</label>
-                                    <input id="checkout-phone" name="phone" value={formData.phone} onChange={handleChange} placeholder="Téléphone" className={inputClasses} required />
+                                    <input id="checkout-phone" name="phone" value={formData.phone} onChange={handleChange} placeholder="Téléphone" type="tel" inputMode="tel" autoComplete="tel" maxLength={40} className={inputClasses} required />
                                 </div>
                             </div>
                             <div>
@@ -1002,6 +1002,10 @@ const CheckoutView = ({
 
                                     {guestOtp.status === 'verified' ? (
                                         <p className="text-xs font-bold text-emerald-600">Email verifie pour cette commande.</p>
+                                    ) : guestOtp.status === 'sent' ? (
+                                        <p className={`text-xs font-medium ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
+                                            Code envoye. S&apos;il n&apos;apparait pas, verifiez aussi vos courriers indesirables.
+                                        </p>
                                     ) : guestOtp.error ? (
                                         <p className="text-xs font-bold text-red-500">{guestOtp.error}</p>
                                     ) : null}
@@ -1025,7 +1029,7 @@ const CheckoutView = ({
                                         placeholder="Adresse (N°, Rue)"
                                         className={inputClasses}
                                         required
-                                        autoComplete="off"
+                                        autoComplete="street-address"
                                     />
                                 </div>
 
@@ -1044,7 +1048,7 @@ const CheckoutView = ({
                                             placeholder="Code Postal"
                                             className={inputClasses}
                                             required
-                                            autoComplete="off"
+                                            autoComplete="postal-code"
                                             inputMode="numeric"
                                         />
                                     </div>
@@ -1062,7 +1066,7 @@ const CheckoutView = ({
                                             placeholder="Ville"
                                             className={inputClasses}
                                             required
-                                            autoComplete="off"
+                                            autoComplete="address-level2"
                                         />
                                     </div>
                                 </div>

@@ -75,6 +75,20 @@ function buildEmailHtml(code) {
     `;
 }
 
+function buildEmailText(code) {
+    const siteUrl = getSiteUrl();
+    return [
+        'Validation Seconde Vie',
+        '',
+        `Votre code de validation : ${code}`,
+        '',
+        "Ce code expire dans 10 minutes et ne peut etre utilise qu'une seule fois.",
+        "Si vous n'etes pas a l'origine de cette demande, ignorez cet email.",
+        '',
+        siteUrl
+    ].join('\n');
+}
+
 async function clearOtpAfterMailFailure(emailRef, error) {
     await emailRef.set({
         otpHash: admin.firestore.FieldValue.delete(),
@@ -179,6 +193,7 @@ exports.sendGuestCheckoutOtp = regionalFunctions()
                 from: `Seconde Vie <${emailRuntime.fromAddress}>`,
                 to: email,
                 subject: 'Votre code de validation Seconde Vie',
+                text: buildEmailText(code),
                 html: buildEmailHtml(code)
             }, {
                 idempotencyKey: `guest-checkout-otp/${emailHash}/${expiresAtMillis}`

@@ -205,12 +205,29 @@ function AdminContent() {
     }
     void loadAdminCachedData('commerce-status', async () => {
       const getCommerceStatus = await getCallableFunction('getCommerceOperationsStatusAdmin');
-      const result = await getCommerceStatus({});
-      return result.data;
+      let lastError = null;
+      for (const delayMs of [0, 500, 1500]) {
+        if (delayMs > 0) {
+          await new Promise((resolve) => window.setTimeout(resolve, delayMs));
+        }
+        try {
+          const result = await getCommerceStatus({});
+          return result.data;
+        } catch (error) {
+          lastError = error;
+        }
+      }
+      throw lastError;
     }).then((data) => {
       if (!cancelled) setCommerceStatus({ status: 'ready', data, error: null });
     }).catch((error) => {
-      if (!cancelled) setCommerceStatus((current) => ({ ...current, status: 'error', error }));
+      if (!cancelled) {
+        setCommerceStatus((current) => (
+          current.data
+            ? { ...current, status: 'ready', error }
+            : { ...current, status: 'error', error }
+        ));
+      }
     });
     return () => {
       cancelled = true;

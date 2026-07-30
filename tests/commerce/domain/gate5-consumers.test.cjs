@@ -492,6 +492,7 @@ test('browser checkout contract maps UI delivery/address without forwarding pric
         deliveryModeId: 'retrait',
         shippingAddress: {
             fullName: 'Client Test',
+            phone: '06 12 34 56 78',
             address: '1 rue du Test',
             zip: '13001',
             city: 'Marseille',
@@ -500,8 +501,10 @@ test('browser checkout contract maps UI delivery/address without forwarding pric
     });
     assert.equal(input.deliveryModeId, 'delivery-pickup');
     assert.equal(input.shippingAddress.country, 'FR');
+    assert.equal(input.shippingAddress.phone, '06 12 34 56 78');
     assert.equal(Object.hasOwn(input.items[0], 'price'), false);
-    assert.doesNotThrow(() => validateCheckoutInput(input));
+    const validated = validateCheckoutInput(input);
+    assert.equal(validated.value.shippingAddress.phone, '06 12 34 56 78');
 });
 
 test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () => {

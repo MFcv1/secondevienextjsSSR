@@ -25,6 +25,7 @@ export const buildCheckoutV2Input = ({
     deliveryModeId: deliveryAliases[deliveryModeId] || deliveryModeId,
     shippingAddress: {
       fullName: shippingAddress.fullName || shippingAddress.name,
+      phone: shippingAddress.phone || '',
       line1: shippingAddress.line1 || shippingAddress.address || shippingAddress.street,
       line2: shippingAddress.line2 || shippingAddress.address2 || '',
       postalCode: shippingAddress.postalCode || shippingAddress.zip,

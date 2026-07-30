@@ -201,3 +201,16 @@ reprise, annulation provider-first, concurrence stock, suivi commande et
 documents sandbox ont converge vers la verite serveur. La verification OTP
 invite a ete observee; les commandes financieres finales restent correlees au
 compte fixture allowliste. L'UI fixture publique est refermee.
+
+Correctifs UX du 2026-07-30:
+
+- le telephone saisi au checkout est conserve dans `shippingSnapshot` et
+  reutilise dans la synthese du profil client;
+- nom, telephone, rue, code postal et ville exposent les attributs
+  d'autocompletion navigateur adaptes;
+- les compteurs de commandes, adresse et remboursements restent neutres pendant
+  le chargement et n'affichent plus de faux zero;
+- une commande payee non deja remboursee propose une action directe
+  `Demander un retour ou un remboursement`. Cette action prepare une demande
+  adressee a l'atelier avec le numero de commande; elle ne declenche ni Stripe
+  ni remise en stock.

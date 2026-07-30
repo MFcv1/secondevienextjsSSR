@@ -20,11 +20,47 @@ import {
     listOrdersAdminV2,
 } from '../commerce/commerceV2Client';
 import { getAdminCachedData, loadAdminCachedData } from './adminDataCache';
+import { adaptCommerceOrder } from '../commerce/orderAdapter';
+
+const normalizeAdminOrder = (order) => {
+    const adapted = adaptCommerceOrder(order, order?.id || null);
+    if (order?.schemaVersion !== 2) {
+        return {
+            ...order,
+            ...adapted,
+            shipping: order?.shipping || {},
+        };
+    }
+
+    const customerEmail = order.customerSnapshot?.email || order.userEmail || '';
+    const shipping = {
+        ...(order.shippingSnapshot || {}),
+        email: order.shippingSnapshot?.email || customerEmail,
+    };
+    return {
+        ...order,
+        ...adapted,
+        shipping,
+        userEmail: customerEmail,
+        total: Number.isSafeInteger(adapted.totalCents) ? adapted.totalCents / 100 : null,
+        paymentMethod: 'stripe_elements',
+        stripePaymentIntentId: order.payment?.paymentIntentId || null,
+        items: (order.items || []).map((item) => ({
+            ...item,
+            name: item.name || item.titleSnapshot || item.productId || 'Article',
+            price: Number.isSafeInteger(item.unitAmountCents)
+                ? item.unitAmountCents / 100
+                : (Number.isFinite(Number(item.price)) ? Number(item.price) : null),
+        })),
+    };
+};
+
+const normalizeAdminOrders = (orders = []) => orders.map(normalizeAdminOrder);
 
 const AdminOrders = ({ darkMode = false, mutationsEnabled = false }) => {
     const cachedPage = getAdminCachedData('admin-orders:first-page');
     const orderCommandsEnabled = mutationsEnabled && COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED;
-    const [orders, setOrders] = useState(cachedPage?.orders || []);
+    const [orders, setOrders] = useState(normalizeAdminOrders(cachedPage?.orders || []));
     const [expandedOrder, setExpandedOrder] = useState(null);
     const [orderLimit, setOrderLimit] = useState(50);
     const [isLoading, setIsLoading] = useState(!cachedPage);
@@ -43,7 +79,7 @@ const AdminOrders = ({ darkMode = false, mutationsEnabled = false }) => {
             )
                 .then((result) => {
                     if (cancelled) return;
-                    setOrders(result.orders || []);
+                    setOrders(normalizeAdminOrders(result.orders || []));
                     setNextCursor(result.nextCursor || null);
                     setIsLoading(false);
                 })
@@ -60,7 +96,7 @@ const AdminOrders = ({ darkMode = false, mutationsEnabled = false }) => {
 
         const unsub = onSnapshot(q, (snap) => {
             console.log(`🔥 FIRESTORE READ: Chargement de ${snap.docs.length} commandes`);
-            setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            setOrders(normalizeAdminOrders(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
             setIsLoading(false);
         });
         return () => unsub();
@@ -74,7 +110,7 @@ const AdminOrders = ({ darkMode = false, mutationsEnabled = false }) => {
                 pageSize: 50,
                 cursor: nextCursor
             });
-            setOrders((current) => [...current, ...(result.orders || [])]);
+            setOrders((current) => [...current, ...normalizeAdminOrders(result.orders || [])]);
             setNextCursor(result.nextCursor || null);
         } finally {
             setIsLoading(false);
@@ -117,7 +153,12 @@ const AdminOrders = ({ darkMode = false, mutationsEnabled = false }) => {
         }
     };
 
-    const formatPrice = (price) => `${price} €`;
+    const formatPrice = (price) => {
+        const amount = Number(price);
+        return Number.isFinite(amount)
+            ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount)
+            : 'Prix indisponible';
+    };
     const formatDate = (timestamp) => {
         const millis = getMillis(timestamp);
         if (!millis) return 'Date indisponible';
@@ -353,8 +394,8 @@ const AdminOrders = ({ darkMode = false, mutationsEnabled = false }) => {
                                             <h4 className="text-xs font-black uppercase tracking-widest text-stone-400 flex items-center gap-2"><Mail size={12} /> Contact & Livraison</h4>
                                             <div className={`p-4 rounded-2xl ring-1 ring-inset text-sm space-y-1 ${darkMode ? 'bg-stone-900/40 ring-stone-700 text-stone-400' : 'bg-white ring-stone-100 text-stone-600'}`}>
                                                 <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Compte:</strong> {order.userEmail}</p>
-                                                <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Livraison:</strong> {order.shipping?.email}</p>
-                                                <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Tél:</strong> {order.shipping?.phone}</p>
+                                                <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Livraison:</strong> {order.shipping?.email || 'Non renseigne'}</p>
+                                                <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Tél:</strong> {order.shipping?.phone || 'Non renseigne'}</p>
                                                 <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Adresse:</strong> {formatShippingAddress(order.shipping) || 'Non renseignee'}</p>
                                                 <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Paiement:</strong> {order.paymentMethod === 'deferred' ? 'Différé (Virement/Chèque)' : 'Stripe'}</p>
                                                 {order.stripePaymentIntentId ? (

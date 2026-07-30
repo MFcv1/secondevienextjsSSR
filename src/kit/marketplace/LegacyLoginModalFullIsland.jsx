@@ -585,7 +585,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
       logClientPerf('auth.email.sendCustomerLoginOtp', startedAt, { phase: 'success' });
       setResendAfter(Number(result.data?.resendAfterSeconds || 60));
       setOtpStatus('sent');
-      setOtpMessage(`Code envoye a ${email}.`);
+      setOtpMessage(`Code envoye a ${email}. S'il n'apparait pas, verifiez aussi les courriers indesirables.`);
     } catch (error) {
       logClientPerf('auth.email.sendCustomerLoginOtp', startedAt, {
         phase: 'error',

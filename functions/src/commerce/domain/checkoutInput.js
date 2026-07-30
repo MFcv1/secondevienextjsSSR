@@ -12,7 +12,7 @@ const LINE_FIELDS = new Set([
     'variantId',
     'quantity'
 ]);
-const ADDRESS_FIELDS = new Set(['fullName', 'line1', 'line2', 'postalCode', 'city', 'country']);
+const ADDRESS_FIELDS = new Set(['fullName', 'phone', 'line1', 'line2', 'postalCode', 'city', 'country']);
 
 function inputError(code, field) {
     const error = new Error(field ? `${code}:${field}` : code);
@@ -97,8 +97,12 @@ function validateShippingAddressShape(address) {
         normalized[field] = address[field].normalize('NFC').trim();
     }
     normalized.line2 = typeof address.line2 === 'string' ? address.line2.normalize('NFC').trim() : '';
+    normalized.phone = typeof address.phone === 'string'
+        ? address.phone.normalize('NFC').trim()
+        : '';
     if (normalized.fullName.length > 120 || normalized.line1.length > 160 ||
-        normalized.line2.length > 160 || normalized.city.length > 120) {
+        normalized.line2.length > 160 || normalized.city.length > 120 ||
+        normalized.phone.length > 40) {
         throw inputError('COMMERCE_ADDRESS_INVALID', 'length');
     }
     normalized.country = normalized.country.toUpperCase();
