@@ -177,6 +177,8 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
     const [search, setSearch] = useState('');
     const [operation, setOperation] = useState(null);
     const [notice, setNotice] = useState(null);
+    const [refundDraft, setRefundDraft] = useState(null);
+    const [refundAmount, setRefundAmount] = useState('');
 
     useEffect(() => {
         setLoading(!getAdminCachedData('admin-returns:first-page'));
@@ -340,28 +342,30 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
         }
     };
 
-    const handleRefund = async (order) => {
-        const message = [
-            `Initier le remboursement Stripe de la commande ${order.id} ?`,
-            '',
-            'Le remboursement financier ne remet jamais le meuble en vente.',
-            'Le client recevra son credit bancaire selon les delais de sa banque.'
-        ].join('\n');
-        if (!window.confirm(message)) return;
+    const openRefundDialog = (order) => {
         const remainingCents = Number(order.amounts?.totalCents || 0)
             - Number(order.refundAggregate?.succeededCents || 0)
             - Number(order.refundAggregate?.pendingCents || 0);
-        const amountInput = window.prompt(
-            'Montant a rembourser en euros.',
-            (Math.max(remainingCents, 0) / 100).toFixed(2)
-        );
-        if (amountInput === null) return;
-        const amountCents = Math.round(Number(amountInput.replace(',', '.')) * 100);
-        if (!Number.isSafeInteger(amountCents) || amountCents <= 0) {
+        setRefundDraft({ order, remainingCents: Math.max(remainingCents, 0) });
+        setRefundAmount((Math.max(remainingCents, 0) / 100).toFixed(2));
+        setNotice(null);
+    };
+
+    const submitRefund = async (event) => {
+        event.preventDefault();
+        if (!refundDraft) return;
+        const amountCents = Math.round(Number(refundAmount.replace(',', '.')) * 100);
+        if (
+            !Number.isSafeInteger(amountCents) ||
+            amountCents <= 0 ||
+            amountCents > refundDraft.remainingCents
+        ) {
             setNotice({ type: 'error', text: 'Montant de remboursement invalide.' });
             return;
         }
 
+        const { order } = refundDraft;
+        setRefundDraft(null);
         await runAction(order.id, 'refund', async () => {
             const res = await requestRefundAdmin(
                 order,
@@ -453,6 +457,67 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
 
     return (
         <div className="space-y-6">
+            {refundDraft ? (
+                <div
+                    className="fixed inset-0 z-[120] flex items-center justify-center bg-stone-950/55 p-4 backdrop-blur-sm"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="refund-dialog-title"
+                >
+                    <form
+                        onSubmit={submitRefund}
+                        className={`w-full max-w-lg rounded-3xl border p-6 shadow-2xl ${panelClass}`}
+                    >
+                        <p className={`text-[10px] font-black uppercase tracking-[0.24em] ${mutedText}`}>
+                            Remboursement Stripe
+                        </p>
+                        <h3 id="refund-dialog-title" className="mt-2 text-2xl font-black tracking-tight">
+                            Confirmer le remboursement
+                        </h3>
+                        <p className={`mt-3 break-all text-sm ${mutedText}`}>
+                            Commande {refundDraft.order.id}
+                        </p>
+                        <p className={`mt-4 text-sm leading-6 ${mutedText}`}>
+                            Le remboursement financier ne remet jamais seul le meuble en vente.
+                            Le crédit bancaire dépend ensuite des délais de la banque du client.
+                        </p>
+                        <label className="mt-5 block">
+                            <span className="text-xs font-black uppercase tracking-wider">
+                                Montant à rembourser
+                            </span>
+                            <div className={`mt-2 flex items-center rounded-2xl border px-4 ${darkMode ? 'border-white/10 bg-black/20' : 'border-stone-200 bg-stone-50'}`}>
+                                <input
+                                    value={refundAmount}
+                                    onChange={(event) => setRefundAmount(event.target.value)}
+                                    inputMode="decimal"
+                                    aria-describedby="refund-amount-help"
+                                    className={`min-w-0 flex-1 bg-transparent py-3 text-lg font-black outline-none ${darkMode ? 'text-white' : 'text-stone-950'}`}
+                                />
+                                <span className={`text-sm font-black ${mutedText}`}>EUR</span>
+                            </div>
+                        </label>
+                        <p id="refund-amount-help" className={`mt-2 text-xs ${mutedText}`}>
+                            Maximum disponible : {(refundDraft.remainingCents / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} EUR
+                        </p>
+                        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                            <button
+                                type="button"
+                                onClick={() => setRefundDraft(null)}
+                                className={`rounded-2xl border px-5 py-3 text-xs font-black uppercase tracking-wider ${darkMode ? 'border-white/10 text-white' : 'border-stone-200 text-stone-700'}`}
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                type="submit"
+                                className="rounded-2xl bg-stone-950 px-5 py-3 text-xs font-black uppercase tracking-wider text-white hover:bg-black"
+                            >
+                                Rembourser {refundAmount || '0'} EUR
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            ) : null}
+
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                 <div className="space-y-2">
                     <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${mutedText}`}>Stripe et retours client</p>
@@ -586,7 +651,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                                                 {canRefund ? (
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleRefund(order)}
+                                                        onClick={() => openRefundDialog(order)}
                                                         disabled={Boolean(activeOperation)}
                                                         className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-widest transition disabled:cursor-wait disabled:opacity-60 ${darkMode ? 'bg-white text-stone-950 hover:bg-stone-200' : 'bg-stone-950 text-white hover:bg-black'}`}
                                                     >
