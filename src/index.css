@@ -4260,11 +4260,7 @@ html.dark .before-after-premium-atmosphere,
   pointer-events: none;
   user-select: none;
 
-  /* Opacite unique a tous les paliers. Les anciennes valeurs degressives
-     (0.17 mobile, 0.28 tablette) ne changeaient pas la teinte appliquee mais
-     laissaient passer le creme du panneau au travers : le logo virait au rose
-     delave sur petit ecran alors que le desktop gardait une terre de sienne
-     dense. Meme opacite = meme couleur rendue partout. */
+  /* Valeur de reference desktop, ajustee localement sur le petit mobile. */
   opacity: 0.46;
 
   /* Un orange moyen pose a faible opacite se delave en rose poudre. On part
@@ -4273,6 +4269,13 @@ html.dark .before-after-premium-atmosphere,
      la temperer au lieu de la laver. */
   filter: saturate(1.4) brightness(0.52);
   transform: translateY(-50%);
+}
+
+@media (max-width: 639.98px) {
+  .before-after-premium-copy > .before-after-premium-brand-watermark {
+    width: min(53%, 202px);
+    opacity: 0.17;
+  }
 }
 
 html.dark .before-after-premium-copy > .before-after-premium-brand-watermark,
