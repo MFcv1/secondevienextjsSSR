@@ -1230,6 +1230,7 @@ const setupNewsletterGame = () => {
     const sent = section.querySelector('[data-nl-sent]');
     const sentCode = section.querySelector('[data-nl-sent-code]');
     const tiers = Array.from(section.querySelectorAll('[data-nl-tier]'));
+    const promoCycle = section.querySelector('[data-nl-promo-cycle]');
     if (!cards.length) return;
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1312,6 +1313,8 @@ const setupNewsletterGame = () => {
       if (won) won.hidden = false;
       countUp(prize);
 
+      if (promoCycle) promoCycle.dataset.nlPromoResult = String(prize);
+
       tiers.forEach((tier) => {
         tier.dataset.nlTierState = Number(tier.dataset.nlTier) === prize ? 'won' : 'dimmed';
       });
@@ -1375,6 +1378,7 @@ const setupNewsletterGame = () => {
       tiers.forEach((tier) => {
         tier.dataset.nlTierState = 'idle';
       });
+      if (promoCycle) delete promoCycle.dataset.nlPromoResult;
       if (won) won.hidden = true;
       if (sent) sent.hidden = true;
       if (submit) submit.disabled = true;

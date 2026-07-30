@@ -995,19 +995,31 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
               </span>
             </h2>
 
-            <div className="discount-tier-row relative mt-6 flex items-stretch sm:mt-7">
-              {prizeTiers.map((tier, tierIndex) => (
-                <Fragment key={tier.value}>
-                  {tierIndex > 0 ? <span className="discount-tier-separator" aria-hidden="true" /> : null}
-                  <div className="discount-tier" data-nl-tier={tier.value} data-nl-tier-state="idle">
-                    <span className="discount-tier__value">
-                      {tier.value}
-                      <span className="discount-tier__percent">%</span>
-                    </span>
-                    <span className="discount-tier__label">{tier.label}</span>
-                  </div>
-                </Fragment>
-              ))}
+            <div
+              data-nl-promo-cycle
+              className="discount-promo-cycle relative mt-6 flex w-full items-center sm:mt-7"
+              aria-label="Tente ta chance et recois un code promotionnel de 5, 10 ou 15 pour cent."
+            >
+              <span className="discount-promo-cycle__viewport" aria-hidden="true">
+                <span className="discount-promo-cycle__digit discount-promo-cycle__digit--tens">
+                  <span className="discount-promo-cycle__digit-layer discount-promo-cycle__digit-layer--one">1</span>
+                </span>
+                <span className="discount-promo-cycle__tail">
+                  <span className="discount-promo-cycle__digit discount-promo-cycle__digit--units">
+                    <span className="discount-promo-cycle__digit-layer discount-promo-cycle__digit-layer--zero">0</span>
+                    <span className="discount-promo-cycle__digit-layer discount-promo-cycle__digit-layer--five-teen">5</span>
+                    <span className="discount-promo-cycle__digit-layer discount-promo-cycle__digit-layer--five-solo">5</span>
+                  </span>
+                  <span className="discount-promo-cycle__percent">%</span>
+                </span>
+              </span>
+              <span className="discount-promo-cycle__descriptor">
+                <span className="discount-promo-cycle__divider" aria-hidden="true" />
+                <span className="discount-promo-cycle__copy">
+                  <span>De reduction</span>
+                  <strong>avec ton code promotionnel</strong>
+                </span>
+              </span>
             </div>
 
             <form
@@ -1038,7 +1050,7 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
               </span>
             </div>
 
-            <ul className="discount-assurances relative mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
+            <ul className="discount-assurances relative mt-6 hidden flex-wrap items-center gap-x-5 gap-y-2 sm:flex">
               {newsletterAssurances.map(({ Icon, title, text }) => (
                 <li key={title} className="discount-assurance" title={text}>
                   <Icon size={13} strokeWidth={1.5} aria-hidden="true" />
@@ -1077,6 +1089,30 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
                 </button>
               ))}
             </div>
+
+            <div className="discount-tier-row relative mt-8 flex w-full items-stretch sm:hidden">
+              {prizeTiers.map((tier, tierIndex) => (
+                <Fragment key={tier.value}>
+                  {tierIndex > 0 ? <span className="discount-tier-separator" aria-hidden="true" /> : null}
+                  <div className="discount-tier" data-nl-tier={tier.value} data-nl-tier-state="idle">
+                    <span className="discount-tier__value">
+                      {tier.value}
+                      <span className="discount-tier__percent">%</span>
+                    </span>
+                    <span className="discount-tier__label">{tier.label}</span>
+                  </div>
+                </Fragment>
+              ))}
+            </div>
+
+            <ul className="discount-assurances relative mt-7 flex w-full flex-col items-start gap-3 sm:hidden">
+              {newsletterAssurances.map(({ Icon, title, text }) => (
+                <li key={title} className="discount-assurance" title={text}>
+                  <Icon size={13} strokeWidth={1.5} aria-hidden="true" />
+                  <span>{title}</span>
+                </li>
+              ))}
+            </ul>
 
             <div data-nl-won hidden className="discount-game__won relative mt-8 text-center">
               <p data-nl-won-value className="discount-game__won-value font-serif">
