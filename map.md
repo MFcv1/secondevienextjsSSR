@@ -125,7 +125,7 @@ Reference visuelle et cycle de vie:
 
 Plan temporaire de reproduction humaine sans correction de code:
 `_DOCS/email/RECETTE_EMAILS_LUNA.md`.
-Skill reutilisable de cette recette dans un nouveau chat Luna:
+Skill reutilisable de cette recette par l'agent du chat actif:
 `.agents/skills/client-admin-test/SKILL.md`, invoque par `$client-admin-test`.
 Guide court: `TEST_CLIENT_ADMIN_LUNA.md`.
 

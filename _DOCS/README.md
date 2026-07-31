@@ -39,7 +39,7 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 | --- | --- | --- | --- |
 | reprise commerce post-Gate 8 | [COMMERCE_REPRISE.md](commerce/COMMERCE_REPRISE.md) | `PLAN_REPRISE_DIFFERE`, R0 documentaire termine, R1 UX suivant | revue au plus tard le 2026-10-31, fusion canonique puis suppression avec `TODO.md` |
 | recette reelle e-mails Luna | [RECETTE_EMAILS_LUNA.md](email/RECETTE_EMAILS_LUNA.md) | `PLAN_TEMPORAIRE_EXECUTION`, Luna teste et documente sans corriger | execution avant le 2026-08-06, fusion dans les chapitres e-mail/commerce puis suppression |
-| skill client/admin Luna | [.agents/skills/client-admin-test/SKILL.md](../.agents/skills/client-admin-test/SKILL.md) | `LANCEUR_TEMPORAIRE_ACTIF`, invocation `$client-admin-test` sans prompt a recopier; guide [TEST_CLIENT_ADMIN_LUNA.md](../TEST_CLIENT_ADMIN_LUNA.md) | fusion avec la recette Luna puis suppression avant le 2026-08-06 |
+| skill client/admin autonome | [.agents/skills/client-admin-test/SKILL.md](../.agents/skills/client-admin-test/SKILL.md) | `LANCEUR_TEMPORAIRE_ACTIF`, execution par l'agent du chat, invocation `$client-admin-test` sans prompt a recopier; guide [TEST_CLIENT_ADMIN_LUNA.md](../TEST_CLIENT_ADMIN_LUNA.md) | fusion avec la recette e-mail puis suppression avant le 2026-08-06 |
 
 ## Niveaux de statut
 
