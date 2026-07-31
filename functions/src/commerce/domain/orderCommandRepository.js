@@ -33,6 +33,15 @@ function eventForAction(action, payload) {
         case 'fulfillment_ship':
             return {
                 type: 'fulfillment_shipped',
+                carrierCode: payload.carrierCode || null,
+                carrierName: payload.carrierName || null,
+                trackingNumber: payload.trackingNumber || null
+            };
+        case 'fulfillment_update_tracking':
+            return {
+                type: 'fulfillment_tracking_updated',
+                carrierCode: payload.carrierCode || null,
+                carrierName: payload.carrierName || null,
                 trackingNumber: payload.trackingNumber || null
             };
         case 'fulfillment_deliver':
@@ -52,6 +61,8 @@ function emailTemplateForAction(action) {
             return 'order-picked-up';
         case 'fulfillment_ship':
             return 'order-shipped';
+        case 'fulfillment_update_tracking':
+            return 'order-tracking-updated';
         case 'fulfillment_deliver':
             return 'order-delivered';
         default:
@@ -189,6 +200,8 @@ function createOrderCommandRepository({ db, refs, clock, failpoints = null }) {
                                 orderId,
                                 amountCents: order.amounts.totalCents,
                                 currency: order.currency,
+                                carrierCode: payload.carrierCode || null,
+                                carrierName: payload.carrierName || null,
                                 trackingNumber: payload.trackingNumber || null
                             },
                             clock

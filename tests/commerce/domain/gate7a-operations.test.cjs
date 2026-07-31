@@ -213,10 +213,12 @@ test('Gate 7A: remboursement client et admin exposent Stripe sans restock implic
 
 test('Gate 7A: chaque transition fulfillment et anomalie refund possede un rendu client', () => {
     for (const template of [
+        'commerce-document-copy',
         'order-preparing',
         'order-ready-for-pickup',
         'order-picked-up',
         'order-shipped',
+        'order-tracking-updated',
         'order-delivered',
         'order-refund-failed'
     ]) {
@@ -226,12 +228,18 @@ test('Gate 7A: chaque transition fulfillment et anomalie refund possede un rendu
                 orderId: 'ord_cf6220c7-890d-4e78-bb6f-c049df51fb08',
                 amountCents: 12000,
                 currency: 'EUR',
+                carrierCode: 'chronopost',
                 trackingNumber: 'TRACK-SANDBOX-123'
             }
         }, premiumEmailOrder(), 'admin@example.test');
         assert.equal(message.to, 'client@example.test');
         assert.match(message.html, /CMD-ORD_CF6220/);
-        assert.match(message.html, /Voir ma commande/);
+        assert.match(
+            message.html,
+            template === 'commerce-document-copy'
+                ? /Retrouver mes documents/
+                : /Voir ma commande/
+        );
         assert.match(message.text, /120,00/);
     }
     const failedAdmin = messageFor({

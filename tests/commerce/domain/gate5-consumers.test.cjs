@@ -637,6 +637,9 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.equal(adminPayment.includes('setDoc'), false);
     assert.equal(adminPayment.includes('updateDoc'), false);
     assert.ok(adminOrders.includes('markOrderShippedAdmin'));
+    assert.ok(adminOrders.includes('updateOrderTrackingAdmin'));
+    assert.equal(adminOrders.includes('window.prompt'), false);
+    assert.ok(adminOrders.includes('Expédier sans suivi'));
     assert.ok(adminOrders.includes('markOrderPreparingAdmin'));
     assert.ok(adminOrders.includes('markOrderReadyForPickupAdmin'));
     assert.ok(adminOrders.includes('markOrderPickedUpAdmin'));
@@ -645,8 +648,12 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(adminReturns.includes('openReturnAdmin'));
     assert.ok(adminReturns.includes('markReturnReceivedAdmin'));
     assert.ok(myOrders.includes('listMyOrdersV2'));
-    assert.ok(myOrders.includes('generateCommerceDocument'));
+    assert.ok(myOrders.includes('CommerceDocumentModal'));
+    assert.equal(myOrders.includes('generateCommerceDocument'), false);
+    assert.ok(consumerClient.includes('prepareCommerceDocumentDelivery'));
     assert.ok(myOrders.includes('order.documents'));
+    assert.ok(myOrders.includes('order.shipmentTracking'));
+    assert.ok(myOrders.includes('Suivre mon colis'));
     assert.ok(myOrders.includes('requestOrderCancellation'));
     assert.ok(adminReturns.includes('adaptCommerceOrder'));
     assert.ok(adminReturns.includes('returnLineSummary'));

@@ -1,6 +1,6 @@
 # Plan de reprise commerce
 
-Derniere mise a jour: 2026-07-29
+Derniere mise a jour: 2026-07-31
 Statut: `PLAN_REPRISE_DIFFERE`
 Proprietaire: commerce, UX transactionnelle, exploitation et production
 Echeance de gouvernance: 2026-10-31
@@ -122,6 +122,122 @@ Defauts UX/contrat a corriger avant polissage:
   profil reste donc `A completer` malgre la saisie visible;
 - les snapshots d'item ne fournissent pas encore l'image attendue par la vue,
   qui montre la meme image de repli sur les trois dossiers.
+
+### R1.1 - Suivi d'expedition admin, e-mail et espace client
+
+Etat: `IMPLEMENTE_LOCAL_A_DEPLOYER_ET_REQUALIFIER_2026_07_31`
+
+Constat de la recette `run_v2all_20260731_terra02`:
+
+- `AdminOrders` utilise encore un `window.prompt` natif pour demander le
+  numero de suivi au moment de la transition `fulfillment_ship`;
+- le dialogue n'explique ni l'effet de `OK` avec un champ vide, ni la
+  difference entre annuler et expedier sans suivi;
+- la commande et l'e-mail savent deja conserver et restituer
+  `trackingNumber`, mais `/mes-commandes` ne presente pas encore un bloc de
+  suivi explicite au client;
+- la boite native a rendu la recette Chrome ambigue: M08 n'a pas ete prouve,
+  puis M09 et les scenarios logistiques suivants n'ont pas ete executes avant
+  la fermeture sure de la fenetre bornee.
+
+Objectif ferme:
+
+> Remplacer la boite native par un parcours d'expedition integre au
+> back-office, conserver une donnee de suivi autoritaire et auditee, envoyer
+> la meme information au client par e-mail et la rendre lisible dans
+> `/mes-commandes`, sans permettre un double envoi ni une double transition.
+
+#### Lot 1 - Contrat de suivi
+
+- conserver `trackingNumber` pour la compatibilite des commandes existantes;
+- ajouter un transporteur normalise (`carrierCode` et libelle affiche), avec
+  une valeur `other` pour les transporteurs non proposes;
+- deriver les URLs de suivi cote serveur depuis une liste de transporteurs
+  autorises; ne jamais accepter une URL de redirection arbitraire fournie par
+  le navigateur;
+- autoriser explicitement deux modes: `avec suivi` et `sans suivi`;
+- ajouter une commande auditee separee pour ajouter ou corriger le suivi d'une
+  commande deja expediee, sans rejouer `fulfillment_ship`;
+- definir l'evenement et l'e-mail idempotent de mise a jour du suivi afin de
+  ne jamais renvoyer aveuglement la confirmation d'expedition.
+
+#### Lot 2 - Interface administrateur
+
+- remplacer `window.prompt` par une modale locale a `AdminOrders`, avec titre,
+  reference de commande et rappel du destinataire;
+- proposer le transporteur, le numero de suivi, une aide contextuelle et un
+  apercu de l'information qui sera envoyee au client;
+- fournir deux actions sans ambiguite: `Confirmer l'expedition` et
+  `Expedier sans suivi`, plus `Annuler` sans mutation;
+- desactiver la validation pendant la commande, afficher l'erreur dans la
+  modale et relire l'etat autoritaire apres une reponse ambigue;
+- gerer clavier, focus initial, piege et restauration du focus, Escape et
+  affichage mobile;
+- apres succes, afficher le transporteur et le suivi dans la commande admin,
+  avec une action distincte `Ajouter ou modifier le suivi` tant que la
+  politique serveur l'autorise.
+
+#### Lot 3 - E-mail client
+
+- conserver `order-shipped` pour la confirmation d'expedition;
+- afficher transporteur et numero lorsqu'ils existent, avec un bouton de
+  suivi uniquement si l'URL a ete derivee de facon sure;
+- afficher un texte explicite lorsque l'expedition est confirmee sans suivi;
+- ajouter le modele de mise a jour du suivi si le numero est ajoute ou corrige
+  apres l'expedition;
+- conserver la reference de commande et le lien vers `/mes-commandes` comme
+  sources de rapprochement.
+
+#### Lot 4 - Espace client
+
+- enrichir le reader client avec le transporteur, le numero et l'URL de suivi
+  derivable, sans exposer de champ administratif;
+- ajouter dans chaque commande un bloc `Suivi de livraison` coherent avec la
+  chronologie: preparation, expediee, en cours de livraison et livree;
+- afficher le numero copiable et `Suivre mon colis` lorsqu'un lien sur existe;
+- afficher un repli clair sans faux lien lorsque le transporteur n'a pas de
+  suivi ou communique directement avec le client;
+- conserver l'historique et les documents accessibles sans faire dependre la
+  commande d'un service transporteur externe.
+
+#### Lot 5 - Validations et requalification
+
+- tests domaine: validation du transporteur/numero, idempotence, mise a jour
+  sans seconde transition, commandes anciennes sans nouveaux champs;
+- tests UI: annulation sans effet, expedition avec et sans suivi, chargement,
+  erreur, retry apres relecture et accessibilite clavier;
+- tests e-mail: M08 avec suivi, M08 sans suivi et mise a jour ulterieure;
+- test reader/client: meme valeur dans l'admin, l'e-mail et
+  `/mes-commandes`;
+- recette sandbox bornee: M08 puis M09 sur la branche livraison, M04 dans la
+  boite admin exacte, puis rapprochement de l'etat et fermeture des controles;
+- lancer les gates commerce/UI ciblees, `npm run lint`, `npm run build` et les
+  validations e-mail du perimetre avant toute qualification hebergee.
+
+Done:
+
+- aucun `window.prompt` ou `window.confirm` ne subsiste dans le parcours
+  d'expedition touche;
+- l'administrateur peut expedier avec ou sans suivi sans ambiguite, puis
+  corriger le suivi par une commande distincte et auditee;
+- le client recoit et retrouve la meme information dans l'e-mail et dans
+  `/mes-commandes`;
+- M04, M08 et M09 sont requalifies sur le sandbox avec preuves directes;
+- aucune double transition, double e-mail, divergence de stock ou incident
+  final n'est observe;
+- les decisions durables sont fusionnees dans les chapitres canoniques admin,
+  commerce, client et e-mail avant la cloture de R1, au plus tard a l'echeance
+  de gouvernance du 2026-10-31.
+
+Implementation locale du 2026-07-31:
+
+- contrat transporteur, commande de correction du suivi, modale admin, e-mail
+  et restitution client codes;
+- skill Terra durci pour que M08/M09 ne bloquent plus les scenarios retrait,
+  remboursement, documents ou Gmail independants;
+- tests commerce unitaires `92/92`, lint Functions sans avertissement, lint
+  global sans erreur et build Next complet verts;
+- aucun deploiement effectue: la requalification hebergee reste obligatoire.
 
 Contraintes:
 

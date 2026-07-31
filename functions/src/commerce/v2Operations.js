@@ -28,6 +28,9 @@ const {
     buildRefundConfirmation
 } = require('./domain/commerceDocuments');
 const {
+    materializeCommerceDocumentArtifact
+} = require('./domain/commerceDocumentArtifact');
+const {
     buildFinancialProjection
 } = require('./domain/financialProjection');
 const {
@@ -387,17 +390,41 @@ function createOutboxRuntime() {
             const orderSnapshot = await db.doc(`orders/${orderId}`).get();
             if (!orderSnapshot.exists) throw operationsError('COMMERCE_OUTBOX_ORDER_MISSING');
             try {
+                const order = { id: orderId, ...orderSnapshot.data() };
+                const message = messageFor(
+                    {
+                        template: entry.template,
+                        payloadSnapshot: entry.payload
+                    },
+                    order,
+                    sender.provider === 'resend'
+                        ? RESEND_FROM_EMAIL.value()
+                        : GMAIL_EMAIL.value()
+                );
+                if (entry.template === 'commerce-document-copy') {
+                    const documentId = normalizeFirestoreId(
+                        entry.payload?.documentId,
+                        'Document outbox'
+                    );
+                    const documentRef = db.doc(`orders/${orderId}/documents/${documentId}`);
+                    const documentSnapshot = await documentRef.get();
+                    if (!documentSnapshot.exists) {
+                        throw operationsError('COMMERCE_OUTBOX_DOCUMENT_MISSING');
+                    }
+                    const artifact = await materializeCommerceDocumentArtifact({
+                        bucket: admin.storage().bucket(),
+                        artifactRef: documentRef.collection('artifacts').doc('current'),
+                        order,
+                        document: documentSnapshot.data()
+                    });
+                    message.attachments = [{
+                        filename: artifact.filename,
+                        content: artifact.buffer,
+                        contentType: artifact.contentType
+                    }];
+                }
                 const result = await sender.send(
-                    messageFor(
-                        {
-                            template: entry.template,
-                            payloadSnapshot: entry.payload
-                        },
-                        orderSnapshot.data(),
-                        sender.provider === 'resend'
-                            ? RESEND_FROM_EMAIL.value()
-                            : GMAIL_EMAIL.value()
-                    ),
+                    message,
                     { idempotencyKey: entry.idempotencyKey }
                 );
                 if (!result?.id) throw operationsError('COMMERCE_OUTBOX_PROVIDER_RESPONSE_INVALID');

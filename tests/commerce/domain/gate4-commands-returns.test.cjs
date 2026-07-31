@@ -113,6 +113,16 @@ test('allowedActions is server-derived and refuses weak admin or unpaid fulfillm
     assert.ok(actions.includes('fulfillment_prepare'));
     assert.ok(actions.includes('request_refund'));
     assert.equal(actions.includes('archive_order'), false);
+    const shipped = reduceOrder(paid, {
+        type: 'fulfillment_shipped',
+        carrierCode: 'chronopost',
+        trackingNumber: 'TRACK-GATE4-UPDATE'
+    }, { clock: laterClock });
+    assert.ok(computeAllowedActions(shipped, {
+        uid: 'admin-gate4',
+        role: 'admin',
+        aal2: true
+    }).includes('fulfillment_update_tracking'));
     const delivered = paidOrder({ delivered: true });
     assert.ok(computeAllowedActions(delivered, {
         uid: 'admin-gate4',
@@ -511,7 +521,43 @@ test('fulfillment callable transport rejects path injection and malformed tracki
         }, context),
         (error) => error.code === 'invalid-argument'
     );
+    await assert.rejects(
+        handler({
+            orderId: 'order-gate4-transport',
+            commandId: 'command-gate4-carrier',
+            expectedVersion: 7,
+            reason: 'expedition controlee',
+            carrierCode: 'carrier-injecte',
+            trackingNumber: 'TRACK-42'
+        }, context),
+        (error) => error.code === 'invalid-argument'
+    );
     assert.equal(repositoryCalls, 0);
+});
+
+test('shipment payload normalizes tracked and untracked deliveries', () => {
+    assert.deepEqual(normalizeShipmentPayload({
+        carrierCode: 'chronopost',
+        trackingNumber: '  TRACK-42  '
+    }), {
+        carrierCode: 'chronopost',
+        carrierName: null,
+        trackingNumber: 'TRACK-42'
+    });
+    assert.deepEqual(normalizeShipmentPayload({ trackingNumber: '' }), {
+        carrierCode: null,
+        carrierName: null,
+        trackingNumber: null
+    });
+    assert.deepEqual(normalizeShipmentPayload({
+        carrierCode: 'other',
+        carrierName: ' Transporteur recette ',
+        trackingNumber: 'RECETTE-RUN'
+    }), {
+        carrierCode: 'other',
+        carrierName: 'Transporteur recette',
+        trackingNumber: 'RECETTE-RUN'
+    });
 });
 
 test('fulfillment and archive callables are exported behind App Check and server control', () => {
@@ -527,6 +573,7 @@ test('fulfillment and archive callables are exported behind App Check and server
         'markOrderPreparingAdmin',
         'markOrderReadyForPickupAdmin',
         'markOrderShippedAdmin',
+        'updateOrderTrackingAdmin',
         'markOrderPickedUpAdmin',
         'markOrderDeliveredAdmin',
         'archiveOrderAdmin'

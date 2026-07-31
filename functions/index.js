@@ -52,11 +52,15 @@ const {
     markOrderPickedUpAdmin,
     markOrderPreparingAdmin,
     markOrderReadyForPickupAdmin,
-    markOrderShippedAdmin
+    markOrderShippedAdmin,
+    updateOrderTrackingAdmin
 } = require('./src/commerce/v2OrderCommands');
 const {
     requestOrderCancellation
 } = require('./src/commerce/v2Cancellation');
+const {
+    prepareCommerceDocumentDelivery
+} = require('./src/commerce/v2DocumentDelivery');
 const {
     requestRefundAdmin
 } = require('./src/commerce/v2RefundCommands');
@@ -102,7 +106,9 @@ exports.markOrderPickedUpAdmin = markOrderPickedUpAdmin;
 exports.markOrderPreparingAdmin = markOrderPreparingAdmin;
 exports.markOrderReadyForPickupAdmin = markOrderReadyForPickupAdmin;
 exports.markOrderShippedAdmin = markOrderShippedAdmin;
+exports.updateOrderTrackingAdmin = updateOrderTrackingAdmin;
 exports.requestOrderCancellation = requestOrderCancellation;
+exports.prepareCommerceDocumentDelivery = prepareCommerceDocumentDelivery;
 exports.requestRefundAdmin = requestRefundAdmin;
 exports.cancelReturnAdmin = cancelReturnAdmin;
 exports.markReturnReceivedAdmin = markReturnReceivedAdmin;

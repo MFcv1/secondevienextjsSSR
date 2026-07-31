@@ -86,7 +86,8 @@ Elle ne constitue pas:
 
 - consultation des commandes et actions autorisees derivees serveur;
 - transition interdite refusee sans changement de version;
-- preparation, expedition avec tracking et livraison;
+- preparation, expedition avec ou sans suivi, correction auditee du suivi et
+  livraison;
 - remboursement avant fulfillment;
 - remboursement apres livraison;
 - ouverture, reception et resolution d'un retour;

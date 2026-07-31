@@ -5,13 +5,19 @@ service firebase.storage {
       allow read, write: if false;
     }
 
+    match /commerce-documents/{allPaths=**} {
+      allow read, write: if false;
+    }
+
     match /{topLevel}/{allPaths=**} {
-      allow read: if topLevel != 'catalog-projection';
+      allow read: if topLevel != 'catalog-projection'
+        && topLevel != 'commerce-documents';
       
       // BLINDAGE ADMINISTRATEUR (Standard & Robuste)
       // Seul l'admin identifié peut uploader. 
       // On bloque les fichiers trop gros (>10Mo), les non-images et les SVG executables.
       allow create, update: if topLevel != 'catalog-projection'
+        && topLevel != 'commerce-documents'
         && request.auth != null
         && (
           request.auth.token.admin == true ||

@@ -283,6 +283,14 @@ Rollout e-mail v2 du 2026-07-30:
 - URL admin avec `order_id` et `/mes-commandes` verifiees en HTTP `200`;
 - aucun flag commerce, rail live ou cible production n'a ete active.
 
+Correctif transport Auth OTP du 2026-07-31:
+
+- App Hosting `build-2026-07-31-003`, rollout `SUCCEEDED` a 19:14:46
+  Europe/Paris;
+- `/galerie` verifiee en HTTP `200` et chunk Auth public controle;
+- aucune Function, rule, donnee, configuration commerce ou cible production
+  modifiee.
+
 ## 11. Rollback
 
 App Hosting:

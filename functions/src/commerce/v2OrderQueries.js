@@ -11,6 +11,7 @@ const { computeAllowedActions } = require('./domain/allowedActions');
 const { validateOrderV2 } = require('./domain/orderState');
 const { validateRefundAttempt } = require('./domain/refundSaga');
 const { validateReturnCase } = require('./domain/returnCase');
+const { resolveShippingTracking } = require('./domain/shippingTracking');
 
 function normalizePageSize(value, fallback = 25) {
     const pageSize = value == null ? fallback : value;
@@ -74,6 +75,7 @@ function serializeOrder(snapshot, actor) {
         return {
             ...order,
             id: snapshot.id,
+            shipmentTracking: resolveShippingTracking(order.fulfillmentSummary),
             allowedActions: computeAllowedActions(
                 { ...order, id: snapshot.id },
                 actor
@@ -245,10 +247,13 @@ function buildAdminOrderTimeline(order, eventSnapshots = []) {
             'fulfillment_ready',
             'fulfillment_pickup',
             'fulfillment_ship',
+            'fulfillment_update_tracking',
             'fulfillment_deliver'
         ].includes(type)) {
             hasFulfillmentEvent = true;
             append(type, event.createdAt, {
+                carrierCode: event.carrierCode || null,
+                carrierName: event.carrierName || null,
                 trackingNumber: event.trackingNumber || null
             });
         }
@@ -264,6 +269,8 @@ function buildAdminOrderTimeline(order, eventSnapshots = []) {
         }[order.fulfillmentSummary?.status];
         if (fallbackType) {
             append(fallbackType, order.updatedAt, {
+                carrierCode: order.fulfillmentSummary?.carrierCode || null,
+                carrierName: order.fulfillmentSummary?.carrierName || null,
                 trackingNumber: order.fulfillmentSummary?.trackingNumber || null
             });
         }

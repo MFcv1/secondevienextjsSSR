@@ -40,6 +40,7 @@ function computeAllowedActions(order, actor) {
         }
         if (order.fulfillmentSummary.status === 'shipped') {
             actions.add('fulfillment_deliver');
+            actions.add('fulfillment_update_tracking');
         }
         const refundableCents = order.amounts.capturedCents -
             order.refundAggregate.succeededCents -

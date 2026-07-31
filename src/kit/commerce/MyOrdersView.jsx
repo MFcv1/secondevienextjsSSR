@@ -4,6 +4,8 @@ import {
     AlertTriangle,
     ArrowRight,
     CheckCircle,
+    Copy,
+    ExternalLink,
     FileText,
     Headphones,
     Heart,
@@ -33,6 +35,7 @@ import {
     requestOrderCancellation,
 } from './commerceCommandClient';
 import { adaptCommerceOrder } from './orderAdapter';
+import CommerceDocumentModal from './CommerceDocumentModal';
 
 const BUSINESS_PHONE = process.env.NEXT_PUBLIC_BUSINESS_PHONE || '';
 const BUSINESS_PHONE_TEL = BUSINESS_PHONE.replace(/\s/g, '');
@@ -235,7 +238,8 @@ const MyOrdersView = ({
     const [isCancelling, setIsCancelling] = useState(false);
     const [ordersCursor, setOrdersCursor] = useState(null);
     const [loadingMoreOrders, setLoadingMoreOrders] = useState(false);
-    const [downloadingDocumentId, setDownloadingDocumentId] = useState(null);
+    const [selectedDocument, setSelectedDocument] = useState(null);
+    const [copiedTrackingOrderId, setCopiedTrackingOrderId] = useState(null);
     const cancellationRequestIdsRef = useRef(new Map());
     const topRef = useRef(null);
     const ordersRef = useRef(null);
@@ -424,20 +428,6 @@ const MyOrdersView = ({
         window.location.href = `mailto:${BUSINESS_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     };
 
-    const downloadDocument = async (order, document) => {
-        if (!document?.documentId || downloadingDocumentId) return;
-        setDownloadingDocumentId(document.documentId);
-        try {
-            const { generateCommerceDocument } = await import('../../utils/generateCommerceDocument');
-            await generateCommerceDocument(order, document);
-        } catch (error) {
-            console.error('Commerce document generation failed:', error);
-            alert('Le document ne peut pas etre genere pour le moment.');
-        } finally {
-            setDownloadingDocumentId(null);
-        }
-    };
-
     const navItems = [
         { label: 'Commandes', Icon: ShoppingBag, active: true, action: () => scrollToSection(ordersRef) },
         { label: 'Documents', Icon: FileText, action: () => scrollToSection(invoicesRef) },
@@ -578,6 +568,52 @@ const MyOrdersView = ({
                                                         <p className="mt-2 text-[13px] leading-5 text-[#3b5d78]">{refundHelpText}</p>
                                                     </div>
                                                 ) : null}
+                                                {['shipped', 'delivered'].includes(order.fulfillmentStatus) ? (
+                                                    <div className="mt-3 rounded-[8px] border border-[#d8e6f5] bg-[#f5faff] px-4 py-3">
+                                                        <div className="flex items-center gap-2 text-[#175c9c]">
+                                                            <Truck size={16} />
+                                                            <p className="text-[13px] font-semibold">Suivi de livraison</p>
+                                                        </div>
+                                                        {order.shipmentTracking?.mode === 'tracked' ? (
+                                                            <>
+                                                                <p className="mt-2 text-[13px] text-[#3b5d78]">{order.shipmentTracking.carrierLabel}</p>
+                                                                <p className="mt-1 break-all font-mono text-[13px] font-semibold text-[#1d1d1f]">{order.shipmentTracking.trackingNumber}</p>
+                                                                <div className="mt-3 flex flex-wrap gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={async () => {
+                                                                            try {
+                                                                                await navigator.clipboard.writeText(order.shipmentTracking.trackingNumber);
+                                                                                setCopiedTrackingOrderId(order.id);
+                                                                            } catch {
+                                                                                setCopiedTrackingOrderId(null);
+                                                                            }
+                                                                        }}
+                                                                        className="inline-flex min-h-9 items-center gap-2 rounded-full border border-[#b9d4ee] bg-white px-3 text-[12px] font-medium text-[#175c9c]"
+                                                                    >
+                                                                        <Copy size={14} />
+                                                                        {copiedTrackingOrderId === order.id ? 'Numéro copié' : 'Copier le numéro'}
+                                                                    </button>
+                                                                    {order.shipmentTracking.trackingUrl ? (
+                                                                        <a
+                                                                            href={order.shipmentTracking.trackingUrl}
+                                                                            target="_blank"
+                                                                            rel="noreferrer"
+                                                                            className="inline-flex min-h-9 items-center gap-2 rounded-full bg-[#175c9c] px-3 text-[12px] font-medium text-white"
+                                                                        >
+                                                                            Suivre mon colis
+                                                                            <ExternalLink size={14} />
+                                                                        </a>
+                                                                    ) : null}
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <p className="mt-2 text-[13px] leading-5 text-[#3b5d78]">
+                                                                Cette expédition ne possède pas de numéro de suivi. Le transporteur vous communiquera directement les modalités de remise.
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                ) : null}
                                                 {!COMMERCE_READ_ONLY && canCancel(order) && (
                                                     <button
                                                         type="button"
@@ -609,16 +645,13 @@ const MyOrdersView = ({
                                                     type="button"
                                                     onClick={() => (
                                                         documents.length === 1
-                                                            ? downloadDocument(order, documents[0])
+                                                            ? setSelectedDocument({ order, document: documents[0] })
                                                             : scrollToSection(invoicesRef)
                                                     )}
-                                                    disabled={Boolean(downloadingDocumentId)}
-                                                    className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full border border-[#b9d4ee] bg-[#f5faff] px-3 text-center text-[12px] font-medium leading-4 text-[#175c9c] disabled:opacity-50 lg:justify-self-end"
+                                                    className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full border border-[#b9d4ee] bg-[#f5faff] px-3 text-center text-[12px] font-medium leading-4 text-[#175c9c] lg:justify-self-end"
                                                 >
-                                                    {downloadingDocumentId === documents[0]?.documentId
-                                                        ? <Loader2 size={15} className="shrink-0 animate-spin" />
-                                                        : <FileText size={15} className="shrink-0" />}
-                                                    {documents.length === 1 ? 'Telecharger' : `${documents.length} documents`}
+                                                    <FileText size={15} className="shrink-0" />
+                                                    {documents.length === 1 ? 'Ouvrir le document' : `${documents.length} documents`}
                                                 </button>
                                             ) : (
                                                 <span className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full border border-[#d2d2d7] px-3 text-center text-[12px] font-medium leading-4 text-[#86868b] lg:justify-self-end">
@@ -672,14 +705,11 @@ const MyOrdersView = ({
                                             </div>
                                             <button
                                                 type="button"
-                                                onClick={() => downloadDocument(order, document)}
-                                                disabled={Boolean(downloadingDocumentId)}
-                                                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-[#b9d4ee] bg-[#f5faff] px-4 text-[13px] font-medium text-[#175c9c] disabled:opacity-50"
+                                                onClick={() => setSelectedDocument({ order, document })}
+                                                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-[#b9d4ee] bg-[#f5faff] px-4 text-[13px] font-medium text-[#175c9c]"
                                             >
-                                                {downloadingDocumentId === document.documentId
-                                                    ? <Loader2 size={15} className="animate-spin" />
-                                                    : <FileText size={15} />}
-                                                Telecharger le PDF
+                                                <FileText size={15} />
+                                                Ouvrir le PDF
                                             </button>
                                         </article>
                                     ))}
@@ -910,6 +940,12 @@ const MyOrdersView = ({
                     </div>
                 </div>
             )}
+            {selectedDocument ? (
+                <CommerceDocumentModal
+                    entry={selectedDocument}
+                    onClose={() => setSelectedDocument(null)}
+                />
+            ) : null}
         </div>
     );
 };

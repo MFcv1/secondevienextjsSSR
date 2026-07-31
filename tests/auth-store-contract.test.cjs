@@ -73,9 +73,17 @@ test('sign out is committed only after Firebase signOut resolves', () => {
 });
 
 test('passkey and OTP custom-token methods are attributed explicitly', () => {
+  const context = read('src/kit/contexts/AuthContext.jsx');
+  const resilientSignIn = read('src/kit/auth/customTokenSignIn.js');
   const modal = read('src/kit/marketplace/LegacyLoginModalFullIsland.jsx');
   assert.match(modal, /loginWithCustomToken\(result\.token, 'passkey'\)/);
-  assert.match(modal, /loginWithCustomToken\(result\.data\.token, 'email_otp'\)/);
+  assert.match(modal, /loginWithCustomToken\(customToken, 'email_otp'\)/);
+  assert.match(resilientSignIn, /CUSTOM_TOKEN_NETWORK_RETRY_DELAYS_MS = \[400, 1200\]/);
+  assert.match(resilientSignIn, /error\?\.code !== 'auth\/network-request-failed'/);
+  assert.match(context, /signInWithCustomTokenResilient\(\{ authModule, auth, token \}\)/);
+  assert.match(modal, /otpCustomTokenRef\.current = customToken/);
+  assert.match(modal, /Reessayez sans demander un nouveau code/);
+  assert.match(modal, /isSignInFailure \? 'auth\.email\.signInWithCustomToken' : 'auth\.email\.verifyCustomerLoginOtp'/);
 });
 
 test('auth modal preserves essential keyboard and OTP accessibility contracts', () => {

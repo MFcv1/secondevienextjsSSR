@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Package, Clock, CheckCircle, Mail, ChevronDown, ChevronUp, Download, Loader2, Truck, XCircle, RotateCcw } from 'lucide-react';
@@ -13,7 +13,13 @@ import {
     markOrderPreparingAdmin,
     markOrderReadyForPickupAdmin,
     markOrderShippedAdmin,
+    updateOrderTrackingAdmin,
 } from '../commerce/commerceCommandClient';
+import {
+    DEFAULT_SHIPPING_CARRIER,
+    SHIPPING_CARRIERS,
+    getShippingCarrierLabel,
+} from '../commerce/shippingCarriers';
 import {
     COMMERCE_V2_ADMIN_READERS_ENABLED,
     getOrderTimelineAdminV2,
@@ -61,6 +67,217 @@ const normalizeAdminOrder = (order) => {
 
 const normalizeAdminOrders = (orders = []) => orders.map(normalizeAdminOrder);
 
+const ShipmentDialog = ({
+    darkMode,
+    mode,
+    order,
+    pending,
+    error,
+    onClose,
+    onSubmit,
+}) => {
+    const current = order.shipmentTracking || {};
+    const [withTracking, setWithTracking] = useState(
+        current.mode ? current.mode === 'tracked' : true
+    );
+    const [carrierCode, setCarrierCode] = useState(
+        current.carrierCode || DEFAULT_SHIPPING_CARRIER
+    );
+    const [carrierName, setCarrierName] = useState(
+        current.carrierCode === 'other' ? current.carrierLabel || '' : ''
+    );
+    const [trackingNumber, setTrackingNumber] = useState(current.trackingNumber || '');
+    const firstFieldRef = useRef(null);
+    const dialogRef = useRef(null);
+
+    useEffect(() => {
+        firstFieldRef.current?.focus();
+    }, []);
+
+    const submitTracked = () => {
+        const normalizedTrackingNumber = trackingNumber.trim();
+        const normalizedCarrierName = carrierName.trim();
+        if (!normalizedTrackingNumber) return;
+        if (carrierCode === 'other' && !normalizedCarrierName) return;
+        onSubmit({
+            carrierCode,
+            carrierName: carrierCode === 'other' ? normalizedCarrierName : null,
+            trackingNumber: normalizedTrackingNumber,
+        });
+    };
+
+    const canSubmitTracked = Boolean(
+        trackingNumber.trim() && (carrierCode !== 'other' || carrierName.trim())
+    );
+
+    return (
+        <div
+            className="fixed inset-0 z-[120] flex items-end justify-center bg-stone-950/55 p-0 backdrop-blur-sm sm:items-center sm:p-6"
+            role="presentation"
+            onMouseDown={(event) => {
+                if (event.target === event.currentTarget && !pending) onClose();
+            }}
+            onKeyDown={(event) => {
+                if (event.key === 'Escape' && !pending) onClose();
+                if (event.key !== 'Tab') return;
+                const focusable = [...(dialogRef.current?.querySelectorAll(
+                    'button:not([disabled]), input:not([disabled]), select:not([disabled]), a[href]'
+                ) || [])];
+                if (focusable.length === 0) return;
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first.focus();
+                }
+            }}
+        >
+            <section
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="shipment-dialog-title"
+                aria-describedby="shipment-dialog-description"
+                className={`max-h-[min(760px,calc(100dvh-24px))] w-full overflow-y-auto rounded-t-[24px] border p-5 shadow-2xl sm:max-w-[620px] sm:rounded-[24px] sm:p-7 ${
+                    darkMode
+                        ? 'border-white/10 bg-stone-900 text-white shadow-black/40'
+                        : 'border-stone-200 bg-white text-stone-950 shadow-stone-950/15'
+                }`}
+            >
+                <div className="flex items-start justify-between gap-5">
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-stone-500">
+                            Commande {String(order.id).slice(0, 12)}
+                        </p>
+                        <h3 id="shipment-dialog-title" className="mt-2 text-2xl font-black tracking-tight">
+                            {mode === 'update' ? 'Modifier le suivi' : 'Confirmer l’expédition'}
+                        </h3>
+                        <p id="shipment-dialog-description" className="mt-2 max-w-[52ch] text-sm leading-6 text-stone-500">
+                            Ces informations seront envoyées au client et resteront accessibles dans son espace commandes.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={pending}
+                        aria-label="Fermer"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-stone-200 text-stone-500 disabled:opacity-50"
+                    >
+                        <XCircle size={19} />
+                    </button>
+                </div>
+
+                <div className={`mt-6 grid grid-cols-2 gap-1 rounded-xl p-1 ${darkMode ? 'bg-white/5' : 'bg-stone-100'}`}>
+                    <button
+                        ref={firstFieldRef}
+                        type="button"
+                        onClick={() => setWithTracking(true)}
+                        className={`rounded-lg px-3 py-2.5 text-xs font-bold ${withTracking ? (darkMode ? 'bg-white text-stone-950' : 'bg-white text-stone-950 shadow-sm') : 'text-stone-500'}`}
+                    >
+                        Avec numéro de suivi
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setWithTracking(false)}
+                        className={`rounded-lg px-3 py-2.5 text-xs font-bold ${!withTracking ? (darkMode ? 'bg-white text-stone-950' : 'bg-white text-stone-950 shadow-sm') : 'text-stone-500'}`}
+                    >
+                        Sans numéro de suivi
+                    </button>
+                </div>
+
+                {withTracking ? (
+                    <div className="mt-6 space-y-5">
+                        <label className="block">
+                            <span className="text-xs font-bold">Transporteur</span>
+                            <select
+                                value={carrierCode}
+                                onChange={(event) => setCarrierCode(event.target.value)}
+                                disabled={pending}
+                                className={`mt-2 min-h-12 w-full rounded-xl border px-3 text-sm outline-none focus:border-stone-500 ${darkMode ? 'border-white/10 bg-stone-950' : 'border-stone-300 bg-white'}`}
+                            >
+                                {SHIPPING_CARRIERS.map((carrier) => (
+                                    <option key={carrier.code} value={carrier.code}>{carrier.label}</option>
+                                ))}
+                            </select>
+                        </label>
+                        {carrierCode === 'other' ? (
+                            <label className="block">
+                                <span className="text-xs font-bold">Nom du transporteur</span>
+                                <input
+                                    value={carrierName}
+                                    onChange={(event) => setCarrierName(event.target.value)}
+                                    maxLength={80}
+                                    disabled={pending}
+                                    placeholder="Ex. transporteur régional"
+                                    className={`mt-2 min-h-12 w-full rounded-xl border px-3 text-sm outline-none focus:border-stone-500 ${darkMode ? 'border-white/10 bg-stone-950' : 'border-stone-300 bg-white'}`}
+                                />
+                            </label>
+                        ) : null}
+                        <label className="block">
+                            <span className="text-xs font-bold">Numéro de suivi</span>
+                            <input
+                                value={trackingNumber}
+                                onChange={(event) => setTrackingNumber(event.target.value)}
+                                maxLength={120}
+                                disabled={pending}
+                                autoComplete="off"
+                                placeholder="Saisissez le numéro figurant sur le bordereau"
+                                className={`mt-2 min-h-12 w-full rounded-xl border px-3 font-mono text-sm outline-none focus:border-stone-500 ${darkMode ? 'border-white/10 bg-stone-950' : 'border-stone-300 bg-white'}`}
+                            />
+                            <span className="mt-2 block text-xs leading-5 text-stone-500">
+                                Le client verra {getShippingCarrierLabel(carrierCode, carrierName)} et ce numéro dans l’e-mail et son espace personnel.
+                            </span>
+                        </label>
+                    </div>
+                ) : (
+                    <div className={`mt-6 rounded-xl border px-4 py-4 text-sm leading-6 ${darkMode ? 'border-white/10 bg-white/5 text-stone-300' : 'border-stone-200 bg-stone-50 text-stone-600'}`}>
+                        La commande sera marquée comme expédiée sans numéro. Le client sera informé que le transporteur communiquera directement les modalités de remise.
+                    </div>
+                )}
+
+                {error ? (
+                    <p role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        {error}
+                    </p>
+                ) : null}
+
+                <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={pending}
+                        className="min-h-11 rounded-full border border-stone-300 px-5 text-sm font-bold text-stone-600 disabled:opacity-50"
+                    >
+                        Annuler
+                    </button>
+                    {withTracking ? (
+                        <button
+                            type="button"
+                            onClick={submitTracked}
+                            disabled={pending || !canSubmitTracked}
+                            className="min-h-11 rounded-full bg-stone-900 px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                            {pending ? 'Enregistrement…' : (mode === 'update' ? 'Enregistrer le suivi' : 'Confirmer avec suivi')}
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => onSubmit({ carrierCode: null, carrierName: null, trackingNumber: null })}
+                            disabled={pending}
+                            className="min-h-11 rounded-full bg-stone-900 px-5 text-sm font-bold text-white disabled:opacity-50"
+                        >
+                            {pending ? 'Enregistrement…' : (mode === 'update' ? 'Retirer le suivi' : 'Expédier sans suivi')}
+                        </button>
+                    )}
+                </div>
+            </section>
+        </div>
+    );
+};
+
 const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled = false }) => {
     const cachedPage = getAdminCachedData(ADMIN_ORDERS_FIRST_PAGE_KEY);
     const orderCommandsEnabled = mutationsEnabled && COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED;
@@ -72,6 +289,8 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
     const [nextCursor, setNextCursor] = useState(null);
     const [orderTimelines, setOrderTimelines] = useState({});
     const [timelineLoadingId, setTimelineLoadingId] = useState(null);
+    const [shipmentDialog, setShipmentDialog] = useState(null);
+    const [shipmentError, setShipmentError] = useState('');
 
     useEffect(() => {
         setIsLoading(!getAdminCachedData(ADMIN_ORDERS_FIRST_PAGE_KEY));
@@ -129,6 +348,43 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
         Array.isArray(order?.allowedActions) ? order.allowedActions : []
     );
 
+    const refreshOrder = async (order) => {
+        const result = await loadAdminOrdersFirstPage({ force: true });
+        const refreshedOrders = normalizeAdminOrders(result.orders || []);
+        setOrders(refreshedOrders);
+        setNextCursor(result.nextCursor || null);
+        const timeline = await getOrderTimelineAdminV2(order.id);
+        setOrderTimelines((current) => ({
+            ...current,
+            [order.id]: timeline.timeline || [],
+        }));
+    };
+
+    const runShipmentAction = async (shipment) => {
+        const dialog = shipmentDialog;
+        if (!dialog || activeOrderId === dialog.order.id) return;
+        let commandApplied = false;
+        try {
+            setShipmentError('');
+            setActiveOrderId(dialog.order.id);
+            if (dialog.mode === 'update') {
+                await updateOrderTrackingAdmin(dialog.order, shipment);
+            } else {
+                await markOrderShippedAdmin(dialog.order, shipment);
+            }
+            commandApplied = true;
+            await refreshOrder(dialog.order);
+            setShipmentDialog(null);
+        } catch (error) {
+            console.error('Shipment command failed:', error);
+            setShipmentError(commandApplied
+                ? 'La commande a été appliquée, mais l’actualisation a échoué. Fermez puis actualisez avant toute nouvelle action.'
+                : `La commande n’a pas été appliquée : ${error.message || error}`);
+        } finally {
+            setActiveOrderId(null);
+        }
+    };
+
     const runOrderAction = async (order, action, confirmation) => {
         if (!orderCommandsEnabled) return;
         if (!allowedActions(order).has(action)) return;
@@ -136,14 +392,7 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
         let commandApplied = false;
         try {
             setActiveOrderId(order.id);
-            if (action === 'fulfillment_ship') {
-                const trackingNumber = window.prompt(
-                    'Numero de suivi (facultatif).',
-                    order.fulfillmentSummary?.trackingNumber || ''
-                );
-                if (trackingNumber === null) return;
-                await markOrderShippedAdmin(order, trackingNumber);
-            } else if (action === 'fulfillment_prepare') {
+            if (action === 'fulfillment_prepare') {
                 await markOrderPreparingAdmin(order);
             } else if (action === 'fulfillment_ready') {
                 await markOrderReadyForPickupAdmin(order);
@@ -155,15 +404,7 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
                 await archiveOrderAdmin(order);
             }
             commandApplied = true;
-            const result = await loadAdminOrdersFirstPage({ force: true });
-            const refreshedOrders = normalizeAdminOrders(result.orders || []);
-            setOrders(refreshedOrders);
-            setNextCursor(result.nextCursor || null);
-            const timeline = await getOrderTimelineAdminV2(order.id);
-            setOrderTimelines((current) => ({
-                ...current,
-                [order.id]: timeline.timeline || [],
-            }));
+            await refreshOrder(order);
         } catch (error) {
             console.error('Order command failed:', error);
             alert(commandApplied
@@ -257,6 +498,7 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
             case 'fulfillment_ready': return { label: 'Prête au retrait', icon: CheckCircle, tone: 'text-sky-700 bg-sky-50' };
             case 'fulfillment_pickup': return { label: 'Retrait confirmé', icon: CheckCircle, tone: 'text-emerald-700 bg-emerald-50' };
             case 'fulfillment_ship': return { label: 'Expédition confirmée', icon: Truck, tone: 'text-indigo-700 bg-indigo-50' };
+            case 'fulfillment_update_tracking': return { label: 'Suivi transporteur mis à jour', icon: Truck, tone: 'text-sky-700 bg-sky-50' };
             case 'fulfillment_deliver': return { label: 'Livraison confirmée', icon: CheckCircle, tone: 'text-emerald-700 bg-emerald-50' };
             default: return { label: 'Événement', icon: Clock, tone: 'text-stone-500 bg-stone-100' };
         }
@@ -462,6 +704,19 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
                                                 {order.emailProof ? (
                                                     <p><strong className={darkMode ? 'text-stone-200' : 'text-stone-900'}>Emails:</strong> client {order.emailProof?.client?.sent ? 'envoye' : 'non confirme'} / admin {order.emailProof?.admin?.sent ? 'envoye' : 'non confirme'}</p>
                                                 ) : null}
+                                                {order.fulfillmentSummary?.status === 'shipped' ? (
+                                                    <div className={`mt-4 rounded-xl border px-3 py-3 ${darkMode ? 'border-white/10 bg-white/5' : 'border-stone-200 bg-stone-50'}`}>
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">Suivi de livraison</p>
+                                                        {order.shipmentTracking?.mode === 'tracked' ? (
+                                                            <>
+                                                                <p className={`mt-2 font-bold ${darkMode ? 'text-white' : 'text-stone-900'}`}>{order.shipmentTracking.carrierLabel}</p>
+                                                                <p className="mt-1 break-all font-mono text-xs">{order.shipmentTracking.trackingNumber}</p>
+                                                            </>
+                                                        ) : (
+                                                            <p className="mt-2 text-xs leading-5 text-stone-500">Expédition confirmée sans numéro de suivi.</p>
+                                                        )}
+                                                    </div>
+                                                ) : null}
                                                 <p className="text-[10px] opacity-50 mt-2 font-mono">UID: {order.userId}</p>
                                                 <div className="flex flex-col gap-3 pt-6">
                                                     {orderCommandsEnabled && order.schemaVersion === 2 ? (
@@ -499,13 +754,29 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
                                                                     type="button"
                                                                     onClick={(event) => {
                                                                         event.stopPropagation();
-                                                                        runOrderAction(order, 'fulfillment_ship');
+                                                                        setShipmentError('');
+                                                                        setShipmentDialog({ order, mode: 'ship' });
                                                                     }}
                                                                     disabled={activeOrderId === order.id}
                                                                     className="group flex items-center justify-center gap-2 rounded-2xl bg-stone-900 py-3.5 text-[10px] font-black uppercase tracking-widest text-white disabled:opacity-50"
                                                                 >
                                                                     {activeOrderId === order.id ? <Loader2 size={16} className="animate-spin" /> : <Truck size={16} />}
                                                                     Confirmer l&apos;expedition
+                                                                </button>
+                                                            ) : null}
+                                                            {allowedActions(order).has('fulfillment_update_tracking') ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                        setShipmentError('');
+                                                                        setShipmentDialog({ order, mode: 'update' });
+                                                                    }}
+                                                                    disabled={activeOrderId === order.id}
+                                                                    className="group flex items-center justify-center gap-2 rounded-2xl border-2 border-sky-100 bg-sky-50 py-3.5 text-[10px] font-black uppercase tracking-widest text-sky-700 disabled:opacity-50"
+                                                                >
+                                                                    <Truck size={16} />
+                                                                    Ajouter ou modifier le suivi
                                                                 </button>
                                                             ) : null}
                                                             {allowedActions(order).has('fulfillment_pickup') ? (
@@ -613,6 +884,22 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
                     </button>
                 )}
             </div>
+            {shipmentDialog ? (
+                <ShipmentDialog
+                    key={`${shipmentDialog.order.id}-${shipmentDialog.mode}`}
+                    darkMode={darkMode}
+                    mode={shipmentDialog.mode}
+                    order={shipmentDialog.order}
+                    pending={activeOrderId === shipmentDialog.order.id}
+                    error={shipmentError}
+                    onClose={() => {
+                        if (activeOrderId === shipmentDialog.order.id) return;
+                        setShipmentDialog(null);
+                        setShipmentError('');
+                    }}
+                    onSubmit={runShipmentAction}
+                />
+            ) : null}
         </div>
     );
 };

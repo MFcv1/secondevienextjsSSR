@@ -7,6 +7,9 @@ const {
     renderEmailShell,
     renderSummaryGrid
 } = require('./emailDesignSystem');
+const {
+    resolveShippingTracking
+} = require('../commerce/domain/shippingTracking');
 
 function formatMoney(amountCents, currency = 'EUR') {
     return new Intl.NumberFormat('fr-FR', {
@@ -241,6 +244,20 @@ function adminTemplate({
 }
 
 const CUSTOMER_TEMPLATES = Object.freeze({
+    'commerce-document-copy': {
+        subject: ({ reference }) => `Votre document ${reference} · Seconde Vie`,
+        eyebrow: 'Document de commande',
+        title: 'Votre document est joint à cet e-mail.',
+        intro: () => 'la copie demandée depuis votre espace client est prête.',
+        status: 'Disponible',
+        role: 'info',
+        actionLabel: 'Retrouver mes documents',
+        callout: () => ({
+            title: 'Deux façons de le retrouver',
+            body: 'Ouvrez la pièce jointe de cet e-mail ou revenez dans la section Documents de votre espace client.'
+        }),
+        detail: ({ documentLabel }) => documentLabel || null
+    },
     'order-paid': {
         subject: ({ reference }) => `Commande ${reference} confirmée · Seconde Vie`,
         eyebrow: 'Paiement confirmé',
@@ -302,7 +319,32 @@ const CUSTOMER_TEMPLATES = Object.freeze({
             title: 'Suivi de livraison',
             body: 'Le transporteur vous communiquera les détails de remise. Vérifiez l’état extérieur avant de confirmer la réception.'
         }),
-        detail: ({ trackingNumber }) => trackingNumber ? `Suivi : ${trackingNumber}` : null
+        detail: ({ shipmentTracking }) => shipmentTracking.mode === 'tracked'
+            ? [
+                shipmentTracking.carrierLabel,
+                `suivi ${shipmentTracking.trackingNumber}`,
+                shipmentTracking.trackingUrl
+            ].filter(Boolean).join(' · ')
+            : 'Cette expédition ne possède pas de numéro de suivi. Le transporteur communiquera directement les modalités de remise.'
+    },
+    'order-tracking-updated': {
+        subject: ({ reference }) => `Suivi mis à jour · ${reference} · Seconde Vie`,
+        eyebrow: 'Suivi de livraison',
+        title: 'Les informations de suivi sont disponibles.',
+        intro: () => 'le suivi transporteur de votre commande vient d’être mis à jour.',
+        status: 'Expédiée',
+        role: 'info',
+        callout: () => ({
+            title: 'Informations actualisées',
+            body: 'Retrouvez également ces informations dans votre espace client.'
+        }),
+        detail: ({ shipmentTracking }) => shipmentTracking.mode === 'tracked'
+            ? [
+                shipmentTracking.carrierLabel,
+                `suivi ${shipmentTracking.trackingNumber}`,
+                shipmentTracking.trackingUrl
+            ].filter(Boolean).join(' · ')
+            : 'Le suivi a été retiré. Le transporteur communiquera directement les modalités de remise.'
     },
     'order-delivered': {
         subject: ({ reference }) => `${reference} est livrée · Seconde Vie`,
@@ -412,6 +454,11 @@ function renderCommerceEmail({
         throw error;
     }
     const data = baseData({ order: normalizedOrder, payload, siteUrl });
+    const shipmentTracking = resolveShippingTracking({
+        carrierCode: payload.carrierCode || normalizedOrder.fulfillmentSummary?.carrierCode || null,
+        carrierName: payload.carrierName || normalizedOrder.fulfillmentSummary?.carrierName || null,
+        trackingNumber: payload.trackingNumber || normalizedOrder.fulfillmentSummary?.trackingNumber || null
+    });
     return customerTemplate({
         order: normalizedOrder,
         payload: {
@@ -434,7 +481,12 @@ function renderCommerceEmail({
         includeAddress: copy.includeAddress,
         detail: copy.detail ? copy.detail({
             ...data,
-            trackingNumber: payload.trackingNumber || normalizedOrder.fulfillmentSummary?.trackingNumber || null
+            shipmentTracking,
+            documentLabel: payload.documentKind === 'sandbox_refund_confirmation'
+                ? 'Confirmation de remboursement · document sandbox non fiscal'
+                : payload.documentKind === 'sandbox_payment_receipt'
+                    ? 'Reçu de paiement · document sandbox non fiscal'
+                    : null
         }) : null
     });
 }

@@ -49,6 +49,13 @@ export const listMyOrdersV2 = async ({ pageSize = 25, cursor = null } = {}) => {
   return execute('listMyOrdersV2', { pageSize, cursor });
 };
 
+export const prepareCommerceDocumentDelivery = async (orderId, documentId) => {
+  if (!COMMERCE_V2_ORDER_READERS_ENABLED) {
+    throw new Error('COMMERCE_V2_ORDER_READERS_OFF');
+  }
+  return execute('prepareCommerceDocumentDelivery', { orderId, documentId });
+};
+
 export const listOrdersAdminV2 = async ({ pageSize = 50, cursor = null } = {}) => {
   if (!COMMERCE_V2_ADMIN_READERS_ENABLED) {
     throw new Error('COMMERCE_V2_ADMIN_READERS_OFF');

@@ -44,6 +44,9 @@ defauts observes sur les commandes reelles sandbox:
 - Retours reprend maintenant les champs Stripe/refund v2 et les dossiers
   physiques detailles; la recette visuelle hebergee reste a faire apres
   deploiement cible.
+- R1.1 implemente localement: deployer de facon ciblee la modale d'expedition,
+  la callable de correction du suivi et les readers/e-mails, puis requalifier
+  M04/M08/M09 dans l'e-mail et `/mes-commandes`.
 
 Continuer ensuite la recette admin AAL2 visible, le paiement invite OTP bout en
 bout et la matrice Safari/iPhone plus Chrome Android.

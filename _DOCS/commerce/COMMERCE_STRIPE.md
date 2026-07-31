@@ -230,6 +230,14 @@ Chaque commande v2 emet aussi un message client lors des transitions
 `order-shipped` et `order-delivered`. Le numero de suivi est inclus lorsqu'il
 existe.
 
+L'expedition accepte un transporteur normalise et un numero facultatif. Les
+pages de suivi sont derivees cote serveur depuis une allowlist et ne proviennent
+jamais d'une URL libre du navigateur. `fulfillment_update_tracking` et la
+callable `updateOrderTrackingAdmin` modifient uniquement les metadonnees d'une
+commande deja expediee: elles ne rejouent ni `fulfillment_ship`, ni le transfert
+de garde, ni l'e-mail d'expedition. Une outbox idempotente
+`order-tracking-updated` informe le client de la correction.
+
 Un remboursement confirme ou en echec cree egalement deux intentions
 atomiques, client et administrateur. Les modeles
 `order-refunded[-admin]` et `order-refund-failed[-admin]` portent la reference
@@ -347,6 +355,7 @@ src/kit/admin/AdminOrders.jsx
 src/kit/admin/AdminReturns.jsx
 src/kit/admin/AdminPaymentSettings.jsx
 scripts/commerce-v2-all-window.mjs
+scripts/audit-refund-failed-v2.mjs
 scripts/confirm-commerce-order-v2.mjs
 scripts/refund-commerce-order-v2.mjs
 scripts/cleanup-paid-order-cart-v2.mjs
@@ -378,6 +387,17 @@ Les gates locales et CI actives sont `lint:functions`,
 heberges restent en quarantaine. Les rapports Gate 7B sont lies aux runs
 `run_gate7b_1_1785265815207` et `run_gate7b_2_1785265899510`; les preuves
 humaines finales sont correlees aux runs Gate 8 v4/v5 listes ci-dessus.
+
+Pour la recette M01-M13, `commerce:v2-all:window` expose d'abord un statut
+read-only, puis une decouverte deterministe des cinq produits achetables les
+moins chers hors donnees `[RECETTE]`. `preflight` et `open` epinglent ces cinq
+IDs; `close` ne redemande ni buyer ni produits, afin de rester executable
+depuis un checkpoint minimal. `commerce:refund-failed:preflight` est une gate
+non mutante: elle exige les trois Functions A-017/A-018 actives et redeployees
+apres leur correction, des endpoints qui refusent une signature invalide et
+les trois abonnements Stripe test `refund.created|updated|failed`. Elle ne
+cree aucun evenement, paiement ou remboursement; ses deux requetes non signees
+creent seulement des invocations rejetees et leurs logs techniques.
 
 Gate 6 ajoute `classify-legacy-commerce.mjs`,
 `prepare-commerce-fixtures.mjs`, les contrats purs
@@ -474,6 +494,15 @@ le reconciliateur, desormais horaire, ne pilote plus la fraicheur de l'UI et
 sert seulement a reconstruire les valeurs absolues et controler les
 divergences. La sante sandbox est `healthy`, tous les
 compteurs sont a zero et aucune TTL commerce n'est activee.
+
+La livraison documentaire ajoute un rail de consultation sans modifier les
+faits financiers: `prepareCommerceDocumentDelivery` controle Auth, App Check
+et l'UID proprietaire, puis materialise un PDF immutable dans le prefixe
+Storage prive `commerce-documents/v2`. Le navigateur recoit les octets bornes
+pour ouvrir, enregistrer ou partager le document; une outbox dedupliquee
+programme la meme copie en piece jointe vers l'adresse de commande. Une panne
+ou une limite e-mail ne modifie ni le paiement, ni le document, ni son acces.
+Ce rail est code mais non deploye au 2026-07-31.
 
 Gate 8 a execute la matrice client/admin complete sur fixtures sandbox. Un
 defaut reel du contrat d'annulation client (`cancellationRequestId` au lieu de

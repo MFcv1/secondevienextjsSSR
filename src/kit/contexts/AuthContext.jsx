@@ -10,6 +10,7 @@ import {
     subscribeAuthStore,
     syncAuthStoreUser,
 } from '../auth/authStore';
+import { signInWithCustomTokenResilient } from '../auth/customTokenSignIn';
 
 // Detect iOS standalone PWA mode (added to home screen)
 // In this mode, signInWithPopup is blocked by WebKit: must use signInWithRedirect
@@ -218,7 +219,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
 
     const loginWithCustomToken = async (token, method = 'custom_token') => {
         const { auth, authModule } = await getAuthRuntime();
-        const result = await authModule.signInWithCustomToken(auth, token);
+        const result = await signInWithCustomTokenResilient({ authModule, auth, token });
         getCallableFunction('updateUserSessions')
             .then((updateUserSessions) => updateUserSessions())
             .catch(err => console.error('Failed to clean sessions after login:', err));

@@ -14,9 +14,10 @@ Lanceur Luna: `$client-admin-test` via
 
 Qualifier de bout en bout, avec deux identites distinctes:
 
-1. la creation et la publication d'un meuble par l'administrateur de recette;
-2. sa disponibilite dans le catalogue materialise;
-3. son achat par le compte client lambda sans droit administrateur;
+1. la creation et la publication d'un meuble de smoke par l'administrateur;
+2. sa disponibilite dans le catalogue materialise, puis son archivage;
+3. deux achats du client lambda parmi les cinq produits autorises avant
+   ouverture, sans droit administrateur;
 4. la projection durable de la commande cote client et cote back-office;
 5. les e-mails de commande recus par le client et l'administrateur;
 6. un remboursement Stripe test complet;
@@ -54,7 +55,7 @@ La configuration de recette validee le 2026-07-31 est la suivante:
 
 - utiliser le Chrome externe avec l'extension ChatGPT active; le navigateur
   integre ne doit pas servir a la connexion Google administrateur;
-- le profil Chrome conserve les sessions Google des deux comptes de recette;
+- l'instance Chrome reliee expose les sessions Google des deux comptes de recette;
 - si un autre compte de recette est affiche, l'agent ouvre le selecteur Google
   et bascule lui-meme vers `pvml7008@gmail.com` ou `loa.gto15@gmail.com` selon
   le parcours;
@@ -115,7 +116,8 @@ Toute ouverture utilise:
 
 - un `runId` unique;
 - une policy et un perimetre explicites;
-- `v2_all` uniquement le temps strictement necessaire au meuble de recette;
+- `v2_all` uniquement le temps strictement necessaire aux cinq produits
+  autorises, aux deux commandes et au smoke de publication separe;
 - mutations admin `v2` uniquement le temps des commandes autorisees;
 - Stripe test;
 - observation des commandes, holds, stocks, inbox, outbox, faits financiers
@@ -157,13 +159,13 @@ executes depuis les interfaces normales du site Hosting.
 
 1. ouvrir `/admin` avec l'administrateur;
 2. confirmer claim, registre et assurance forte;
-3. creer le meuble avec ses medias;
+3. creer au plus un meuble de smoke avec ses medias, sans l'ajouter aux achats;
 4. verifier les validations, messages, focus, retry et absence d'erreur
    console/reseau pertinente;
 5. suivre `furniture` vers le build snapshot, la revalidation et la version
    publique;
-6. ouvrir la fiche produit et verifier titre, prix, categorie, stock, images,
-   metadata anti-CLS et achat possible.
+6. ouvrir la fiche produit et verifier titre, prix, categorie, stock, images
+   et metadata anti-CLS, puis prevoir son archivage.
 
 Gate B: une seule annonce exacte, snapshot publie, fiche publique coherente,
 aucune friction bloquante.
@@ -172,7 +174,9 @@ aucune friction bloquante.
 
 1. fermer la session admin et ouvrir une session distincte client;
 2. confirmer l'absence de tout acces ou controle administrateur;
-3. ajouter le meuble exact au panier;
+3. ajouter seulement les produits affectes aux commandes A et B parmi les
+   cinq IDs epingles avant ouverture; ne jamais acheter le smoke nouvellement
+   publie;
 4. terminer adresse, livraison et Payment Element avec une carte Stripe test;
 5. verifier que le serveur reste autoritaire pour total et stock;
 6. attendre le statut durable `paid`;
@@ -204,7 +208,7 @@ sur la meme commande.
 
 ### Phase E - Qualite premium des e-mails
 
-Auditer et, si necessaire, corriger:
+L'agent de recette audite uniquement:
 
 - identite visuelle Seconde Vie et rendu responsive;
 - hierarchie claire, typographie, contraste et texte de repli;
@@ -217,9 +221,10 @@ Auditer et, si necessaire, corriger:
 - idempotence/outbox, gestion `delivery_unknown` et reprise;
 - compatibilite Gmail et lisibilite sans images.
 
-Apres changement: lancer les tests e-mail/commerce cibles, deployer uniquement
-les Functions sandbox necessaires, puis rejouer la notification concernee sans
-creer de doublon non maitrise.
+Si un ecart est observe, l'agent le consigne dans `anomalies.md`, poursuit les
+scenarios independants et remet la correction a Sol dans une tache separee. Il
+ne modifie, ne deploie et ne rejoue aucune notification ambiguë pendant la
+campagne Terra/Luna.
 
 Gate E: contenu premium et exact, transport prouve, aucune regression metier.
 
@@ -241,16 +246,16 @@ Gate E: contenu premium et exact, transport prouve, aucune regression metier.
 Gate F: un remboursement financier exact, zero doublon, zero restock implicite,
 projections et communications coherentes.
 
-### Phase G - Cloture
+### Phase G - Cloture de la campagne Terra/Luna
 
 1. refermer la fenetre selon la section 4;
-2. rejouer les validations du perimetre modifie;
-3. verifier les liens documentaires, `git diff --check` et l'absence de secret;
-4. fusionner les decisions durables dans les chapitres canoniques;
-5. conserver dans les chapitres canoniques les preuves utiles et la dette
-   concrete;
-6. supprimer ce plan et `anomalies.md` au plus tard le 2026-08-06, une fois
-   toutes les informations utiles fusionnees; Git en conserve l'historique.
+2. verifier l'absence de secret dans les preuves et le diff limite aux
+   nouvelles anomalies eventuelles;
+3. rendre le rapport final et le handoff a Sol.
+
+La fusion des decisions durables, les validations d'un correctif et la
+suppression finale de ce plan ou de `anomalies.md` relevent ensuite de Sol ou
+du proprietaire documentaire, jamais de l'agent de recette.
 
 ## 6. Regle de traitement des anomalies
 
@@ -261,17 +266,19 @@ Chaque anomalie est ajoutee a `anomalies.md` avant correction avec:
 - attendu, observe et preuve sans secret;
 - impact et severite;
 - cause racine confirmee ou hypothese explicite;
-- correction minimale et raison du choix;
-- tests de non-regression;
+- handoff a Sol sans correctif propose ni solution imposee;
+- preuve de requalification attendue;
 - resultat de requalification.
 
-Une anomalie bloquante stoppe la phase suivante. Apres correction, le scenario
-reprend au dernier point autoritaire stable; il ne saute jamais la preuve qui
-avait echoue.
+Une anomalie bloquante stoppe seulement le sous-parcours dependant. Les
+scenarios independants continuent apres securisation. Apres correction par Sol
+dans une tache separee, une nouvelle qualification reprend au dernier point
+autoritaire stable; elle ne saute jamais la preuve qui avait echoue.
 
-## 7. Strategie de correction
+## 7. Strategie de correction reservee a Sol
 
-Pour chaque defaut:
+Cette section n'est jamais executee par Terra ou Luna. Dans une tache de
+correction separee, Sol doit pour chaque defaut:
 
 1. reproduire et borner l'impact;
 2. verifier la source autoritaire et les invariants amont/aval;
@@ -296,6 +303,11 @@ npm run test:commerce
 npm run test:auth
 ```
 
+Ce socle « avant/apres changement » appartient a la tache de correction Sol.
+Terra ou Luna ne l'interprete jamais comme une autorisation de modifier ou
+deployer; pendant la recette, l'agent lance seulement les preflights et
+validations read-only necessaires aux scenarios courants.
+
 Selon le code touche: lint UI cible, build Next, tests catalogue, verification
 des routes, recette navigateur sandbox et controle Gmail. Les scripts
 `e2e:hosted-stripe` et `e2e:refund-stripe` restent interdits
@@ -307,7 +319,8 @@ bornee. Aucun produit hors policy ne doit etre achete ou modifie.
 
 ## 9. Definition de done
 
-- annonce publiee et achetee une seule fois par le client lambda;
+- annonce de smoke publiee puis archivee; exactement deux commandes client
+  realisees avec les produits preautorises;
 - compte client toujours sans droit admin;
 - commande `paid` visible et exacte sur les deux interfaces;
 - e-mails commande client/admin recus, exacts et premium;
@@ -318,8 +331,8 @@ bornee. Aucun produit hors policy ne doit etre achete ou modifie.
 - stock, holds, webhooks, inbox/outbox, faits et timeline sans divergence;
 - toutes les anomalies fermees ou dette externe explicitement classee;
 - controle referme, operations `healthy`, aucun incident ouvert;
-- chapitres canoniques mis a jour;
-- ce plan et `anomalies.md` fusionnes puis supprimes avant l'echeance.
+- anomalies applicatives consignees pour le handoff a Sol;
+- aucune suppression documentaire par l'agent de recette.
 
 ## 10. Etat de la campagne au 2026-07-30
 
@@ -399,6 +412,12 @@ Run: `run_v2all_20260731_chrome01`.
 - outbox serveur `sent` pour les destinataires client/admin attendus;
 - M01, M03, M04, M05, M06, M10 et M11 sont requalifies sur le vrai parcours;
   M02, M07, M08, M09, M12 et M13 restent non executes pendant ce run.
+
+Regle de reprise apres `run_v2all_20260731_terra02`: M08 utilise la modale
+d'expedition integree avec `Autre transporteur`, `Transporteur recette` et
+`RECETTE-<runId>`. Une indisponibilite de cette surface bloque uniquement
+M08/M09 apres rapprochement autoritaire; elle ne doit plus interrompre M06/M07,
+M10-M13, les documents ou les controles Gmail independants.
 
 ### 11.4 Etat final autoritaire
 

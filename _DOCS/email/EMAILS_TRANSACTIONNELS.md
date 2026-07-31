@@ -1,8 +1,8 @@
 # E-mails transactionnels - Seconde Vie
 
-Derniere mise a jour: 2026-07-30
+Derniere mise a jour: 2026-07-31
 Statut: `PREPROD_READY`
-Perimetre: Auth OTP, paiement, cycle de commande v2 et remboursements
+Perimetre: Auth OTP, paiement, cycle de commande v2, remboursements et copie de document
 
 ## 1. Role
 
@@ -21,15 +21,19 @@ mot de passe, donnee de carte ou donnee personnelle de recette n'y figure.
 
 ## 2. Etat de reference
 
-La bibliotheque active regroupe 13 rendus:
+La bibliotheque source regroupe 15 rendus. Les 13 rendus historiques restent
+le lot actuellement deploye et capture; le rendu de correction de suivi et le
+nouveau rendu de copie de document sont implementes mais non deployes au
+moment de cette mise a jour.
 
 | Famille | Nombre | Audience |
 | --- | ---: | --- |
 | OTP | 2 | client |
 | paiement | 2 | client + administrateur |
-| cycle de commande | 5 | client |
+| cycle de commande | 6 | client |
 | remboursement | 4 | client + administrateur |
-| **Total** | **13** | - |
+| copie de document | 1 | client |
+| **Total source** | **15** | - |
 
 Le lot a ete deploye le 2026-07-30:
 
@@ -66,12 +70,14 @@ functions/src/email/otpEmailTemplates.js
 `-- OTP connexion + OTP checkout
 
 functions/src/email/commerceEmailTemplates.js
-`-- paiement + fulfillment + remboursement client/admin
+`-- paiement + fulfillment + remboursement + copie document client/admin
 ```
 
 ## 4. Galerie complete
 
-Cette planche rassemble les 13 rendus de reference.
+Cette planche rassemble les 13 rendus de reference actuellement acceptes. Le
+script local genere aussi les candidats 14 `suivi corrige` et 15 `copie de
+document`, sans remplacer automatiquement cette planche canonique.
 
 ![Galerie complete des e-mails](captures/00-galerie-complete.png)
 
@@ -148,6 +154,7 @@ Le rejeu du meme `commandId` ne cree pas un second message.
 | prete au retrait | `order-ready-for-pickup` | adresse et consigne de prise de rendez-vous |
 | retrait confirme | `order-picked-up` | confirmation de remise et fin de commande |
 | expedition | `order-shipped` | numero de suivi lorsqu'il existe |
+| suivi corrige | `order-tracking-updated` | transporteur et numero actualises, sans nouvelle expedition |
 | livraison | `order-delivered` | confirmation de livraison et support |
 
 ### 7.1 En preparation
@@ -165,6 +172,12 @@ Le rejeu du meme `commandId` ne cree pas un second message.
 ### 7.4 Expediee
 
 ![Commande expediee](captures/08-commande-expediee.png)
+
+Le modele reprend le transporteur et le numero saisis dans la modale admin.
+Pour Colissimo/La Poste, Chronopost et Mondial Relay, la page de suivi est
+derivee cote serveur. Une expedition sans numero contient un repli explicite.
+Une correction ulterieure utilise `order-tracking-updated` et ne renvoie pas
+la confirmation d'expedition.
 
 ### 7.5 Livree
 
@@ -219,7 +232,31 @@ pas relancer aveuglement afin d'eviter un double remboursement.
 
 ![Anomalie remboursement administrateur](captures/13-remboursement-echec-admin.png)
 
-## 9. Livraison et idempotence
+## 9. Copie de document
+
+Modele: `commerce-document-copy`.
+
+Le clic client sur un document appelle `prepareCommerceDocumentDelivery`.
+Apres verification Auth/App Check et UID proprietaire, la Function materialise
+le PDF prive et cree une intention outbox deterministe. Le message contient:
+
+- la reference et le montant de la commande;
+- un rappel `document sandbox non fiscal`;
+- une piece jointe PDF strictement identique a celle ouverte sur le site;
+- un bouton authentifie vers la section Documents de `/mes-commandes`.
+
+La destination provient exclusivement du snapshot e-mail de la commande. Le
+navigateur ne fournit jamais une adresse libre. Une fenetre de deduplication
+de dix minutes absorbe doubles clics et rechargements; un compteur backend
+borne les nouvelles intentions a 24 par UID et par jour. La piece jointe est
+chargee en memoire par le worker: Gmail conserve `disableFileAccess` et
+`disableUrlAccess`; Resend recoit le contenu Base64. Le transport refuse les
+types autres que PDF et plafonne les pieces jointes a 5 Mio.
+
+Ce modele n'a pas encore de capture canonique. Sa capture sera ajoutee a la
+galerie lors d'un deploiement et d'une recette visuelle explicitement valides.
+
+## 10. Livraison et idempotence
 
 Les e-mails commerce v2 passent par `commerce_outbox`:
 
@@ -237,10 +274,12 @@ Regles:
 - un echec e-mail n'inverse jamais un paiement ou un remboursement;
 - le paiement et le remboursement creent une intention par audience;
 - les changements d'etat creent une intention client;
+- la copie de document est idempotente dans sa fenetre et ne conditionne
+  jamais l'acces au PDF;
 - Gmail ambigu devient `delivery_unknown` sans retry automatique;
 - les identifiants techniques servent a l'idempotence sans exposer de secret.
 
-## 10. Limites et production
+## 11. Limites et production
 
 Le contenu et le transport Gmail sandbox ont ete qualifies, avec SPF, DKIM et
 DMARC valides. Gmail peut toutefois classer le message de recette en spam.
@@ -254,7 +293,7 @@ La livraison production attend:
 - une montee en reputation;
 - une recette multi-fournisseurs.
 
-## 11. Regeneration des captures
+## 12. Regeneration des captures
 
 Commande:
 
@@ -269,7 +308,7 @@ changement que ce chapitre.
 
 Avant remplacement:
 
-1. regenerer les 13 rendus;
+1. regenerer les 15 rendus source;
 2. inspecter la galerie et les captures individuelles;
 3. verifier les donnees, liens, statuts et identifiants attendus;
 4. lancer les tests Auth et commerce;

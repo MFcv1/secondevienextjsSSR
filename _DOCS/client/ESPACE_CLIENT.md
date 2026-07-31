@@ -1,6 +1,6 @@
 # Espace client
 
-Derniere mise a jour: 2026-07-30
+Derniere mise a jour: 2026-07-31
 Statut: `PREPROD_READY`
 
 Restriction active:
@@ -28,7 +28,8 @@ vers `/admin`.
 | Section | Source | Capacite actuelle |
 | --- | --- | --- |
 | Commandes | reader v2 UID actif; adaptateur v1 historique explicitement read-only | pagination serveur v2 et historique v1 read-only |
-| Documents | snapshots de commande | aucun PDF fiscal legacy propose avant Gate 7A |
+| Suivi de livraison | `shipmentTracking` derive par le reader v2 | transporteur, numero copiable, lien officiel allowliste ou repli sans suivi |
+| Documents | snapshots de commande + PDF serveur prive | ouvrir, enregistrer, partager et recevoir par e-mail les seuls documents sandbox admissibles |
 | Liste de souhaits | `users/{uid}/wishlist` | apercu et lien vers `/wishlist` |
 | Adresse | derniere commande | affichage livraison/facturation |
 | Profil | Firebase Auth + derniere commande | affichage nom, email, telephone |
@@ -68,6 +69,12 @@ renvoie les actions autorisees calculees serveur. `MyOrdersView` consomme ce
 reader et sa pagination; l'adaptateur historique v1 ne promeut jamais une
 commande ambigue.
 
+Pour une commande expediee ou livree, le reader derive `shipmentTracking`
+depuis `fulfillmentSummary`: libelle du transporteur, numero et page de suivi
+officielle lorsqu'elle est allowlistee. `MyOrdersView` restitue ces valeurs
+dans le dossier de commande et n'affiche aucun faux lien pour une expedition
+sans suivi ou un transporteur libre.
+
 Recette sandbox du 2026-07-28: un OTP Gmail a ouvert une session Firebase
 cliente, puis `/mes-commandes` a charge `listMyOrdersV2` sous Auth/App Check et
 Rules restrictives sans erreur. La section Documents a conserve la suspension
@@ -83,8 +90,17 @@ La reprise UX du 2026-07-29 normalise les timestamps callable, projette
 `shippingSnapshot` vers le bloc Adresse, raccorde les documents immuables et
 rend les actions de document adaptatives sans chevauchement sur les largeurs
 intermediaires. Les recus de paiement et confirmations de remboursement sont
-joints par `listMyOrdersV2`, puis telechargeables en PDF explicitement marque
+joints par `listMyOrdersV2`, puis ouvrables en PDF explicitement marque
 `sandbox` et `non fiscal`.
+
+Depuis le 2026-07-31, l'action document ouvre une bottom sheet mobile ou une
+modale desktop. `prepareCommerceDocumentDelivery` exige Auth et App Check,
+reverifie l'UID proprietaire, materialise un PDF serveur immutable sous hash,
+renvoie ses octets au navigateur et programme une copie e-mail. L'interface
+propose ensuite `Ouvrir le PDF`, `Enregistrer`, le partage natif lorsque
+`navigator.canShare({ files })` l'autorise, et une aide de localisation adaptee
+a iPhone, Android ou ordinateur. Elle annonce `Telechargement lance`, jamais
+une fin de telechargement que le navigateur ne permet pas d'observer.
 
 Dettes UX restantes observees sur ces donnees reelles:
 
@@ -97,11 +113,19 @@ Dettes UX restantes observees sur ces donnees reelles:
 
 ## 4. Factures et avoirs
 
-Le generateur PDF fiscal legacy reste en source mais n'est plus appelable
-depuis `MyOrdersView`. Le lecteur client joint au plus 20 documents immuables
-par commande et n'expose que leurs metadonnees utiles. Le generateur
-`generateCommerceDocument.js` produit localement le PDF correspondant avec
-une mention visible `sandbox - non fiscal`.
+Les generateurs PDF client legacy restent en source mais ne sont plus
+appelables depuis `MyOrdersView`. Le lecteur client joint au plus 20 documents
+immuables par commande et n'expose que leurs metadonnees utiles. Le renderer
+Node `commerceDocumentArtifact.js` produit le PDF prive correspondant avec une
+mention visible `sandbox - non fiscal`; le meme artefact exact sert a
+l'ouverture, l'enregistrement, au partage et a la piece jointe e-mail.
+
+Le stockage utilise `commerce-documents/v2/...` sous un identifiant
+proprietaire hashe. Les Rules refusent toute lecture ou ecriture directe de ce
+prefixe. La callable renvoie un contenu borne a 2 Mio uniquement apres controle
+du proprietaire. L'e-mail est deduplique par fenetre de dix minutes, limite a
+24 nouvelles intentions quotidiennes par UID et ne peut cibler qu'une adresse
+derivee de la commande. Un echec d'envoi ne bloque jamais le PDF.
 
 Jusqu'a la gate documentaire/comptable du noyau:
 
@@ -168,15 +192,19 @@ app/mes-commandes/OrdersPageIsland.jsx
 app/wishlist/page.jsx
 app/wishlist/WishlistPageIsland.jsx
 src/kit/commerce/MyOrdersView.jsx
+src/kit/commerce/CommerceDocumentModal.jsx
 src/kit/commerce/commerceV2Client.js
 src/kit/commerce/checkoutRecovery.js
 src/kit/commerce/checkoutContract.js
+src/kit/commerce/shippingCarriers.js
 src/kit/marketplace/WishlistView.jsx
 src/kit/marketplace/wishlistState.js
 src/kit/commerce/guestCart.js
 src/utils/generateCommerceDocument.js
 src/utils/generateInvoice.js
 src/utils/shippingAddress.js
+functions/src/commerce/v2DocumentDelivery.js
+functions/src/commerce/domain/commerceDocumentArtifact.js
 ```
 
 ## 10. Dettes controlees
@@ -198,8 +226,11 @@ Smoke recommande pour une passe compte non transactionnelle:
 5. le PDF fiscal legacy reste masque; Gate 7A autorise seulement un recu
    sandbox serveur explicitement non fiscal apres capture, distinct de la
    confirmation de remboursement;
-6. wishlist puis ajout panier d'un produit disponible;
-7. deconnexion et protection des routes.
+6. la modale document ouvre le PDF, lance l'enregistrement, propose le partage
+   seulement lorsque le navigateur l'autorise et affiche l'e-mail masque;
+7. un double clic ne cree pas deux intentions e-mail dans la meme fenetre;
+8. wishlist puis ajout panier d'un produit disponible;
+9. deconnexion et protection des routes.
 
 Ce smoke reste une verification UI. Il ne qualifie pas la coherence Stripe/commande/stock et ne remplace pas les gates commerce.
 

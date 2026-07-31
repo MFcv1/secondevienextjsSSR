@@ -110,12 +110,18 @@ email
   -> transaction active -> issuing -> completed
   -> creation/reprise utilisateur
   -> Firebase Custom Token
-  -> signInWithCustomToken attendu
+  -> signInWithCustomToken avec reprise reseau bornee du meme token
   -> fermeture modale
   -> header Quitter + menu Mon espace
 ```
 
 L'OTP produit une assurance interne `aal1`. Il permet l'espace client, mais pas une operation administrative sensible.
+Le Custom Token reste uniquement en memoire dans la modale jusqu'a la
+connexion. Une erreur `auth/network-request-failed` declenche deux reprises
+courtes de l'echange Firebase Auth sans rappeler la Function OTP; si elles
+echouent, le bouton reutilise encore ce meme token au lieu de consommer une
+nouvelle operation OTP. Les metriques distinguent desormais validation du
+code et ouverture de session.
 
 ### 5.3 Flux passkey
 
@@ -205,6 +211,8 @@ Firestore Rules et les callables sensibles appliquent cette politique cote serve
 - emission Custom Token recuperable;
 - token jamais stocke dans Firestore;
 - verrous client synchrones contre double envoi et double verification.
+- reprise reseau bornee de `signInWithCustomToken` avec le meme token en
+  memoire, sans nouvelle verification OTP.
 
 Le mot de passe Gmail ne doit jamais redevenir le secret HMAC OTP.
 

@@ -155,8 +155,20 @@ test('refund and fulfillment projections are deterministic', () => {
         amountCents: 14000,
         currency: 'EUR'
     }, { clock: laterClock });
-    order = reduceOrder(order, { type: 'fulfillment_shipped', trackingNumber: 'TRACK-1' }, { clock: laterClock });
+    order = reduceOrder(order, {
+        type: 'fulfillment_shipped',
+        carrierCode: 'colissimo',
+        trackingNumber: 'TRACK-1'
+    }, { clock: laterClock });
     assert.equal(order.status, 'shipped');
+    order = reduceOrder(order, {
+        type: 'fulfillment_tracking_updated',
+        carrierCode: 'chronopost',
+        trackingNumber: 'TRACK-2'
+    }, { clock: laterClock });
+    assert.equal(order.status, 'shipped');
+    assert.equal(order.fulfillmentSummary.carrierCode, 'chronopost');
+    assert.equal(order.fulfillmentSummary.trackingNumber, 'TRACK-2');
     order = reduceOrder(order, { type: 'fulfillment_delivered' }, { clock: laterClock });
     assert.equal(order.status, 'completed');
     order = reduceOrder(order, { type: 'refund_requested', amountCents: 5000 }, { clock: laterClock });

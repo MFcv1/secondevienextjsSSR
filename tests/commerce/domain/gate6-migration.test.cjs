@@ -206,4 +206,22 @@ test('Gate 6: la fenetre v2_all epingle la politique UI et restaure la precedent
             source.indexOf('refs.sourcePolicy ='),
         'la fermeture doit rester possible apres consommation des stocks cibles'
     );
+    assert.match(source, /\['status', 'discover', 'preflight', 'open', 'close'\]/);
+    assert.match(source, /const productsRequired = \['preflight', 'open'\]\.includes\(action\)/);
+    assert.match(source, /action === 'status' \? null : safeRunId/);
+    assert.match(source, /await main\(\)/);
+    assert.match(source, /V2_ALL_DISCOVERY_NOT_ENOUGH_PRODUCTS/);
+});
+
+test('Gate 6: le preflight refund.failed reste non mutateur pour le commerce', () => {
+    const source = fs.readFileSync(
+        path.resolve('scripts/audit-refund-failed-v2.mjs'),
+        'utf8'
+    );
+    for (const eventType of ['refund.created', 'refund.updated', 'refund.failed']) {
+        assert.match(source, new RegExp(`'${eventType.replace('.', '\\.')}'`));
+    }
+    assert.match(source, /invalid-read-only-preflight/);
+    assert.match(source, /await main\(\)/);
+    assert.doesNotMatch(source, /webhookEndpoints\.update|events\.create|refunds\.create/);
 });

@@ -404,6 +404,10 @@ Statuts:
   contenu HTML et lien same-origin verifies.
 - resultat de requalification: transport qualifie; placement inbox non
   qualifiable sur le Gmail sandbox actuel.
+- observation complementaire du run `run_v2all_20260731_codex02`: l'OTP M01
+  a ete recu, lu sans exposition et utilise avec succes, mais le message est
+  encore classe `SPAM`; aucune erreur SMTP, MIME ou Auth applicative n'a ete
+  observee.
 - documentation canonique a mettre a jour:
   `_DOCS/commerce/COMMERCE_STRIPE.md`,
   `_DOCS/infra/INFRASTRUCTURE.md`.
@@ -688,9 +692,20 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
 - validations lancees: routage ingress/worker local vert; Firestore Emulator
   16/16, 75 assertions, dont echec refund durable, tentative terminale, zero
   faux fait financier et deux alertes outbox.
-- resultat de requalification: code corrige localement; fermeture attend le
-  deploiement des deux webhooks v2, la verification des evenements actifs sur
-  l'endpoint Stripe test et un smoke sandbox borne.
+- preuve de deploiement complementaire du 2026-07-31: `stripeWebhookV2` et
+  `stripeConnectWebhookV2` sont `ACTIVE`, revision 4, issus du meme build et
+  mis a jour respectivement a 16:11:03 et 16:11:09 Europe/Paris, apres la
+  correction de 16:03. Le statut reste `CORRIGEE_A_REQUALIFIER` jusqu'au smoke
+  fonctionnel M12/M13; l'ancien texte « deploiement attendu » ne bloque plus
+  le reste de la campagne.
+- resultat de requalification: code et webhooks v2 deployes; la gate non mutante
+  `commerce:refund-failed:preflight`, puis le smoke sandbox borne M12/M13,
+  ferment la requalification.
+- gate technique du 2026-07-31: `commerce:refund-failed:preflight` retourne
+  `READY`; les trois Functions sont actives, les deux endpoints refusent la
+  requete non signee et l'endpoint Stripe test Connect ecoute
+  `refund.created`, `refund.updated` et `refund.failed`. M12/M13 ne sont plus
+  bloques avant paiement; seul leur smoke fonctionnel reste a executer.
 - documentation canonique a mettre a jour: commerce, qualite et cartographie,
   mis a jour dans le meme changement.
 
@@ -728,10 +743,68 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
   contrat `gate5-consumers`.
 - validations lancees: lecture sandbox ciblee; tests lecteurs/workers 24/24;
   Firestore Emulator 16/16 et 75 assertions.
-- resultat de requalification: correction locale terminee; fermeture attend
-  le deploiement App Hosting/Function et un smoke admin borne.
+- preuve de deploiement complementaire du 2026-07-31: le lecteur
+  `getOrderTimelineAdminV2` est `ACTIVE`, revision 3, mis a jour a 16:10:20
+  Europe/Paris; le backend App Hosting sandbox a ete mis a jour a 16:19:19.
+  L'ancien texte « deploiement attendu » ne constitue donc plus un blocage.
+- resultat de requalification: correction Function et App Hosting deployee;
+  la branche livraison A-018 doit encore fermer le smoke admin borne sans
+  repetition d'une transition ambiguë.
 - documentation canonique a mettre a jour: commerce et back-office, mis a
   jour dans le meme changement.
+
+### A-019 - Validation OTP client en erreur reseau persistante
+
+- statut: `CORRIGEE_A_REQUALIFIER`
+- severite: `MAJEURE`
+- phase: M01 avant ouverture de la fenetre commerce; classe a tort en P0 par
+  la campagne initiale
+- environnement: sandbox / Stripe test
+- `runId`: `run_v2all_20260731_terra01`
+- `productId`: sans objet
+- `orderId`: sans objet
+- reference provider non sensible: `auth/network-request-failed`
+- attendu: le code de connexion recu dans la boite de recette client ouvre la
+  session de `pvml7008@gmail.com`, qui reste sans droit administrateur.
+- observe: apres un seul envoi OTP et la saisie directe du code courant, la
+  modale a affiche `Firebase: Error (auth/network-request-failed)`. Un unique
+  retry controle avec le meme code a produit la meme erreur. Aucun second OTP,
+  achat, publication, ouverture `v2_all`, paiement, remboursement ou mutation
+  admin n'a ete tente.
+- preuve: parcours Chrome externe sur le sandbox, 2026-07-31; les deux
+  tentatives ont ete faites avant toute ouverture, avec la boite client
+  accessible par le connecteur. Le code n'est pas conserve dans ce registre.
+- impact: M01 a ete interrompu et Terra a assimile a tort ce scenario a la
+  Gate P0, ce qui a condamne M02--M13 alors que M02 et les controles
+  independants pouvaient encore progresser sans paiement.
+- cause racine: les logs Cloud sanitizes de 18:53 Europe/Paris prouvent deux
+  succes `verifyCustomerLoginOtp` consecutifs pour le meme hash client, le
+  second en reprise. L'OTP, App Check et la Function etaient donc sains. Les
+  deux echecs ont eu lieu ensuite pendant `signInWithCustomToken`. La modale
+  regroupait les deux phases dans le meme `catch`, perdait le Custom Token
+  apres l'erreur et journalisait a tort l'ensemble comme un echec de
+  verification OTP. La recette traitait en plus M01 comme une Gate P0 globale.
+- decision de correction: le client retente desormais deux fois, de facon
+  courte et bornee, l'echange Firebase Auth avec le meme Custom Token. Si le
+  transport reste indisponible, le token demeure uniquement en memoire dans
+  la modale pour un retry utilisateur sans nouvel appel OTP. Les metriques
+  separent verification et ouverture de session. La recette qualifie M01 hors
+  P0, poursuit M02 jusqu'au paiement sans payer, puis requalifie M01 avant de
+  completer P1.
+- fichiers/Functions touches: `customTokenSignIn.js`, `AuthContext.jsx`,
+  `LegacyLoginModalFullIsland.jsx`, tests, contrat Auth et procedure de recette;
+  aucune Function, rule, donnee ou configuration cloud modifiee.
+- validations lancees: status sandbox `CLOSED`, preflight des cinq produits
+  `READY`, gate A-017 `READY`, puis status final `CLOSED` avec operations
+  `healthy` et compteurs nuls.
+- resultat de requalification: 61/61 tests Auth, lint cible sans erreur et
+  build sandbox verts. App Hosting `build-2026-07-31-003` a termine son rollout
+  `SUCCEEDED` le 2026-07-31 a 19:14:46 Europe/Paris; `/galerie` repond HTTP 200
+  et le chunk public contient la metrique et le message de reprise. M01 reste
+  a rejouer fonctionnellement par Terra.
+- documentation canonique a mettre a jour:
+  `_DOCS/security/AUTHENTIFICATION.md`,
+  `_DOCS/email/RECETTE_EMAILS_LUNA.md`, `map.md`.
 
 ## Journal de campagne
 

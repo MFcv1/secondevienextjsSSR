@@ -13,6 +13,7 @@ const {
 const {
     createOrderCommandRepository
 } = require('./domain/orderCommandRepository');
+const { isCarrierCode } = require('./domain/shippingTracking');
 
 function refs(db) {
     return Object.freeze({
@@ -110,7 +111,35 @@ function normalizeShipmentPayload(data) {
             'Numero de suivi invalide.'
         );
     }
-    return { trackingNumber: trackingNumber || null };
+    if (data?.carrierCode != null && !isCarrierCode(data.carrierCode)) {
+        throw new functions.https.HttpsError(
+            'invalid-argument',
+            'Transporteur invalide.'
+        );
+    }
+    if (data?.carrierName != null && typeof data.carrierName !== 'string') {
+        throw new functions.https.HttpsError(
+            'invalid-argument',
+            'Nom du transporteur invalide.'
+        );
+    }
+    const carrierCode = trackingNumber
+        ? (data?.carrierCode || 'other')
+        : null;
+    const carrierName = carrierCode === 'other'
+        ? (data?.carrierName?.trim() || 'Transporteur')
+        : null;
+    if (carrierName && carrierName.length > 80) {
+        throw new functions.https.HttpsError(
+            'invalid-argument',
+            'Nom du transporteur invalide.'
+        );
+    }
+    return {
+        carrierCode,
+        carrierName,
+        trackingNumber: trackingNumber || null
+    };
 }
 
 function createAdminOrderCommandHandler(
@@ -165,6 +194,11 @@ const markOrderShippedAdmin = callable(createAdminOrderCommandHandler(
     normalizeShipmentPayload
 ));
 
+const updateOrderTrackingAdmin = callable(createAdminOrderCommandHandler(
+    'fulfillment_update_tracking',
+    normalizeShipmentPayload
+));
+
 const markOrderPickedUpAdmin = callable(createAdminOrderCommandHandler(
     'fulfillment_pickup',
     noPayload
@@ -188,5 +222,6 @@ module.exports = {
     markOrderPreparingAdmin,
     markOrderReadyForPickupAdmin,
     markOrderShippedAdmin,
+    updateOrderTrackingAdmin,
     normalizeShipmentPayload
 };

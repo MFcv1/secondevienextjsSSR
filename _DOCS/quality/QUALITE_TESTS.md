@@ -1,6 +1,6 @@
 # Qualite, tests et gates
 
-Derniere mise a jour: 2026-07-30
+Derniere mise a jour: 2026-07-31
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Principe de proportion
@@ -288,6 +288,13 @@ environnement, release, confirmation, Auth/App Check et scope. Le manifeste
 sur le SHA `c5259a8`. Le statut operations est `healthy`, tous les compteurs
 de divergence sont a zero et le catalogue public n'expose aucune fixture.
 
+`tests/commerce/domain/document-delivery.test.cjs` couvre en plus le rendu PDF
+deterministe, la reutilisation de l'artefact Storage immutable, la
+deduplication e-mail, le masquage du destinataire, le confinement du prefixe
+Storage et le contrat UI ouvrir/enregistrer/partager. Le test adaptateur e-mail
+verifie la piece jointe PDF en memoire pour Gmail et son encodage Base64 pour
+Resend.
+
 L'emulateur ne prouve pas a lui seul:
 
 - la contention et les limites Firestore hebergees;
@@ -305,6 +312,12 @@ les operations sont `healthy` et tous les compteurs sont a zero. Gmail
 post-acceptation reste
 `delivery_unknown`, jamais une preuve exactly-once. Elles ne doivent pas etre
 masquees par un test local vert.
+
+Avant le scenario humain M12/M13, lancer
+`npm run commerce:refund-failed:preflight`. Cette gate externe reste non
+mutante pour le commerce: versions Functions, rejet d'une requete webhook non signee et
+abonnements Stripe test. Une sortie rouge suspend seulement le remboursement
+asynchrone en echec; elle ne remplace pas la preuve fonctionnelle finale.
 
 ## 9. Definition de done
 

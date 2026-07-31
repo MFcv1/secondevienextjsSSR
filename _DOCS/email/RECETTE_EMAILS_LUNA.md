@@ -1,9 +1,9 @@
-# Recette reelle des e-mails - Plan Luna
+# Recette reelle des e-mails - Plan Luna ou Terra
 
 Derniere mise a jour: 2026-07-31
 Statut: `PLAN_TEMPORAIRE_EXECUTION`
-Executeur: `Luna`, agent rapide de reproduction et diagnostic
-Correcteur ulterieur: `GPT-5.6-sol`
+Executeur: `Luna` en raisonnement tres eleve ou `Terra` en raisonnement eleve
+Correcteur exclusif: Sol (`GPT-5.6-sol`)
 Echeance: 2026-08-06
 Cloture: fusion des preuves utiles dans `EMAILS_TRANSACTIONNELS.md` et
 `COMMERCE_STRIPE.md`, puis suppression de ce plan
@@ -13,7 +13,7 @@ Lanceur de nouveau chat: `$client-admin-test` via
 
 ## 1. Mission
 
-Luna doit reproduire sur le vrai site sandbox le parcours humain complet qui
+Luna ou Terra doit reproduire sur le vrai site sandbox le parcours humain complet qui
 permet de declencher et de recevoir les e-mails transactionnels.
 
 L'objectif est de verifier en conditions reelles:
@@ -29,7 +29,12 @@ L'objectif est de verifier en conditions reelles:
 - l'absence de doublon;
 - la coherence entre client, administrateur, Firestore et Stripe.
 
-Luna est un agent de test et de diagnostic. Il ne corrige aucune anomalie.
+Luna et Terra sont exclusivement des agents de test et de diagnostic. Chaque
+modele execute toute la recette lorsqu'il est selectionne, recueille les
+preuves et remplit les anomalies. Aucun des deux ne modifie le code. Dans la
+suite de ce document, toute mention historique de « Luna » s'applique aussi a
+Terra. Seul Sol (`GPT-5.6-sol`) implemente les corrections dans une tache
+separee.
 
 ## 2. Directive absolue pour Luna
 
@@ -73,6 +78,18 @@ Si une anomalie apparait, Luna:
 7. continue uniquement les scenarios independants;
 8. remet le diagnostic a GPT-5.6-sol sans proposer de patch.
 
+Semantique du registre pendant cette recette:
+
+- `CORRIGEE_A_REQUALIFIER` ordonne de rejouer la gate ou le parcours concerne;
+  ce statut n'est pas un blocage et n'exige pas un nouveau deploiement sans
+  preuve executable actuelle;
+- une anomalie `OUVERTE` ou une gate actuelle rouge suspend seulement le
+  sous-parcours touche;
+- A-017 doit d'abord repasser sa gate technique de remboursement asynchrone;
+  si elle est verte, M12/M13 sont executes;
+- A-018 doit etre requalifiee par la branche livraison avec controle
+  autoritaire apres chaque transition, sans rejouer une commande ambiguë.
+
 ## 3. Environnement obligatoire
 
 | Element | Valeur |
@@ -97,7 +114,7 @@ de test Stripe. Ils ne doivent jamais etre utilises hors du sandbox.
 
 La recette doit utiliser le Chrome externe avec l'extension ChatGPT active.
 Cette surface sait ouvrir la fenetre Google OAuth et reutiliser les sessions
-du profil Chrome; le navigateur integre avait bloque cette confirmation lors
+de l'instance Chrome reliee; le navigateur integre avait bloque cette confirmation lors
 du run precedent.
 
 - boite client: connecteur Gmail autorise pour `pvml7008@gmail.com`;
@@ -124,6 +141,23 @@ doit rechercher les messages client avec `in:anywhere` et controler aussi le
 dossier spam. Les notifications admin doivent etre verifiees directement dans
 la boite admin, meme si le transfert est active.
 
+Le texte envoye par l'utilisateur avec `$client-admin-test` porte
+explicitement l'autorisation de controler Chrome sur le sandbox et Gmail, de
+lire les deux boites de recette, de selectionner les comptes deja connectes,
+d'accomplir Google OAuth pour l'administrateur, de saisir les OTP et les
+coordonnees fictives dans le sandbox, puis de televerser les images de recette
+sans donnee personnelle. Le skill ne peut toutefois pas neutraliser une
+confirmation imposee au moment exact par la plateforme.
+
+Avant d'ouvrir un onglet, Luna liste les onglets Chrome existants et revendique
+l'onglet sandbox ou Gmail exact lorsqu'il existe. Elle confirme aussi le profil
+du connecteur Gmail avant toute recherche. Si une surface echoue, elle tente
+uniquement une recuperation sure et differente, continue les preuves
+independantes et conserve le meme `runId`. Un refus explicite de la politique
+Chrome ne doit jamais etre rejoue ou contourne: Luna demande alors d'ouvrir la
+boite admin dans Chrome, garde la campagne au dernier checkpoint sur et reprend
+en revendiquant cet onglet.
+
 ## 4. Resultat attendu
 
 La recette doit retrouver les 13 modeles visuels:
@@ -149,29 +183,26 @@ metier incompatibles sur une meme commande.
 
 ## 5. Strategie de donnees
 
-Creer deux annonces reelles depuis le site admin:
+Le script officiel decouvre exactement cinq produits existants, publies,
+achetables et non marques comme recette. Ces cinq IDs forment le perimetre
+borne de la fenetre. Deux commandes exactes utilisent des produits de ce
+perimetre; la publication admin reste un smoke separe d'au plus une annonce,
+jamais ajoutee aux commandes du run.
 
-### Produit A - livraison
+### Commande A - livraison
 
-- titre prefixe: `[RECETTE EMAIL LIVRAISON]`;
-- une ou deux images sans donnee personnelle;
-- description clairement marquee comme recette;
-- prix faible compatible avec Stripe test;
-- stock `1`;
-- categorie valide choisie dans l'interface;
+- un ou deux des cinq produits autorises, afin de couvrir le panier multiple
+  sans creer une troisieme commande;
 - destination: parcours livraison/transporteur.
 
-### Produit B - retrait et remboursement en echec
+### Commande B - retrait et remboursement en echec
 
-- titre prefixe: `[RECETTE EMAIL RETRAIT]`;
-- images et description differentes;
-- prix faible compatible avec Stripe test;
-- stock `1`;
-- categorie valide;
+- un autre produit parmi les cinq autorises;
 - destination: retrait atelier.
 
-Les annonces sont publiees par l'interface normale. Luna ne cree pas les
-documents directement dans Firestore.
+Le meuble de smoke porte le prefixe `[RECETTE <runId>]`, utilise au plus deux
+images sans donnee personnelle et est publie puis archive par l'interface
+normale. Luna ne cree jamais les documents directement dans Firestore.
 
 ## 6. Preflight ferme
 
@@ -186,7 +217,8 @@ Avant tout achat:
 7. confirmer que le compte client n'a aucun role ou claim admin;
 8. confirmer l'acces autorise aux deux boites Gmail;
 9. relever l'heure de debut Europe/Paris;
-10. creer un `runId` unique prefixe `run_email_luna_`;
+10. creer un `runId` unique au format `run_v2all_YYYYMMDD_<suffixe>`, seul
+    format accepte par l'outil de fenetre;
 11. verifier qu'aucune ancienne recherche Gmail ne peut etre confondue avec le
     nouveau run;
 12. preparer un dossier de preuves ignore par Git sous
@@ -201,6 +233,32 @@ Gate P0:
 - controles temporaires encore fermes.
 
 Si P0 echoue, ne rien publier et documenter le blocage.
+
+Un P0 incomplet ne justifie pas un arret immediat de toute la tache. Luna doit
+terminer les lectures serveur, la verification des controles, la selection des
+produits, l'identification du connecteur Gmail et la preparation de fermeture.
+Elle suspend ensuite uniquement la premiere mutation dependante de la preuve
+manquante et demande une action humaine unique et precise.
+
+Sequence serveur canonique avant toute mutation:
+
+```text
+npm run commerce:v2-all:window -- --action=status
+npm run commerce:v2-all:window -- --action=discover --run-id=<runId> --buyer-email=pvml7008@gmail.com
+npm run commerce:v2-all:window -- --action=preflight --run-id=<runId> --buyer-email=pvml7008@gmail.com --products=<id1,id2,id3,id4,id5>
+npm run commerce:refund-failed:preflight
+```
+
+Terra conserve les cinq IDs decouverts et prepare avant ouverture la commande
+de fermeture minimale:
+
+```text
+npm run commerce:v2-all:window -- --action=close --run-id=<runId> --confirm=CLOSE_V2_ALL_<runId>_secondevienextjsssr
+```
+
+Le statut `READY` de `commerce:refund-failed:preflight` prouve la gate
+technique prealable A-017 sans injecter d'evenement. Il ne remplace pas le
+scenario fonctionnel M12/M13.
 
 ## 7. Scenario OTP connexion - M01
 
@@ -228,7 +286,7 @@ Verifier:
 ## 8. Scenario OTP checkout - M02
 
 1. deconnecter proprement le client;
-2. ajouter le Produit A au panier;
+2. ajouter le ou les produits affectes a la commande A au panier;
 3. commencer le checkout comme utilisateur humain;
 4. demander la verification e-mail checkout;
 5. attendre un unique message;
@@ -246,6 +304,16 @@ Verifier:
 - code a usage unique.
 
 Gate P1: M01 et M02 recus, lisibles et utilisables.
+
+M01 n'est pas une composante de la Gate P0. Une erreur
+`auth/network-request-failed` affichée après validation du code doit être
+distinguée de l'appel `verifyCustomerLoginOtp` : si celui-ci est en succès
+dans les logs sanitizés, le code est valide et seul l'échange Firebase Auth a
+échoué. Le client retente cet échange avec le même Custom Token sans rappeler
+la Function. Si M01 reste rouge, Luna/Terra exécute M02 jusqu'au paiement sans
+payer, puis rejoue M01 une fois avec un nouvel OTP après réussite de M02. La
+campagne entière ne s'arrête que si la Gate P1 reste réellement impossible ;
+les contrôles indépendants continuent dans tous les cas.
 
 ## 9. Commande A - livraison et remboursement reussi
 
@@ -288,15 +356,23 @@ Depuis le back-office normal:
 1. passer la commande en preparation;
 2. attendre et verifier M05;
 3. confirmer qu'une seule notification a ete recue;
-4. passer la commande en expedition avec un numero de suivi de recette;
+4. ouvrir la modale d'expedition integree, choisir `Autre transporteur`,
+   saisir `Transporteur recette` et le numero deterministe
+   `RECETTE-<runId>`, puis confirmer;
 5. attendre et verifier M08;
-6. confirmer que le numero de suivi apparait;
+6. confirmer que le meme transporteur et le meme numero apparaissent dans
+   l'etat autoritaire, l'e-mail et `/mes-commandes`;
 7. passer la commande en livraison terminee;
 8. attendre et verifier M09;
 9. verifier chaque statut dans les interfaces client et admin.
 
 Ne pas cliquer deux fois pour forcer un resultat. En cas de reponse lente,
 attendre puis rafraichir les preuves serveur avant toute nouvelle action.
+Si la modale ou Chrome reste indisponible apres la recuperation bornee, bloquer
+seulement M08/M09. Poursuivre la branche retrait, les remboursements, les
+documents et les controles Gmail independants tant que l'etat autoritaire ne
+signale aucune mutation ambigue. Le caractere facultatif du suivi ne constitue
+jamais une condition d'arret globale de la campagne.
 
 ### 9.3 Remboursement reussi
 
@@ -336,9 +412,9 @@ Reference officielle:
 
 ### 10.1 Gate technique obligatoire avant utilisation
 
-Le code observe au 2026-07-30 montre que le worker webhook v2 traite
-explicitement les evenements `payment_intent.*`. Luna doit verifier le
-comportement deploye, mais ne doit pas corriger ce point.
+Le registre courant marque A-017 `CORRIGEE_A_REQUALIFIER`. Luna doit donc
+verifier le comportement deploye actuel et la gate technique, sans deduire un
+blocage du seul historique du 2026-07-30 et sans corriger le code.
 
 Avant de payer avec la carte de remboursement en echec:
 
@@ -347,18 +423,19 @@ Avant de payer avec la carte de remboursement en echec:
    consommateur v2;
 3. verifier qu'un echec tardif peut mettre a jour la commande, la tentative,
    les faits financiers et les deux outbox d'anomalie;
-4. si cette prise en charge n'est pas prouvable, creer immediatement une
-   anomalie `BLOQUANTE`;
-5. transmettre a GPT-5.6-sol;
-6. ne pas executer le remboursement en echec tant que le blocage n'est pas
-   corrige et redeploye par un autre agent.
+4. si cette prise en charge n'est pas prouvable apres les controles actuels,
+   conserver ou rouvrir l'anomalie `BLOQUANTE` avec la preuve nouvelle;
+5. transmettre ce seul sous-parcours a GPT-5.6-sol et continuer les scenarios
+   independants;
+6. ne pas executer le remboursement en echec tant que la gate actuelle reste
+   rouge.
 
 Luna peut continuer les tests de retrait independants, mais pas improviser un
 document `refund_failed` ou injecter une outbox.
 
 ### 10.2 Paiement et retrait
 
-1. acheter le Produit B avec le compte client;
+1. acheter le produit affecte a la commande B avec le compte client;
 2. choisir retrait atelier;
 3. utiliser uniquement la carte Stripe test de remboursement en echec;
 4. attendre `paid`;
@@ -494,19 +571,25 @@ Severites:
 
 ## 14. Arret et securisation
 
-Arret immediat si:
+Arret global immediat et fermeture de la fenetre si:
 
 - projet ou URL non sandbox;
 - Stripe n'est pas clairement en mode test;
 - compte client admin par erreur;
 - montant ou stock incoherent;
 - deux PaymentIntents pour une action;
-- remboursement ambigu;
-- evenement `refund.failed` non pris en charge;
+- remboursement deja lance dont le resultat est ambigu;
 - e-mail adresse au mauvais destinataire;
 - secret ou OTP visible dans une preuve persistante;
 - operations commerce en divergence;
-- controls impossibles a refermer.
+- controles impossibles a refermer.
+
+Une gate actuelle rouge sur `refund.failed` avant toute demande de
+remboursement suspend uniquement M12/M13. Elle n'arrete pas les achats, la
+branche retrait, la branche livraison ni les e-mails independants. De meme,
+une projection admin visuellement stale suspend seulement la transition
+suivante tant que l'etat autoritaire n'est pas rapproche; elle ne transforme
+pas A-018 `CORRIGEE_A_REQUALIFIER` en blocage global.
 
 Dans tous les cas:
 
@@ -525,7 +608,7 @@ Le nettoyage ne supprime aucune commande payee.
 
 Luna doit:
 
-- archiver les deux annonces de recette avec la commande admin normale;
+- archiver l'unique annonce de smoke avec la commande admin normale;
 - ne pas les remettre en vente sur la seule base d'un remboursement;
 - laisser les commandes, evenements, faits financiers et preuves Stripe;
 - fermer les controles temporaires;

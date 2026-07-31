@@ -84,7 +84,8 @@ Apres mutation:
 
 ## 5. Ventes, retours et paiements
 
-- `AdminOrders`: consultation, statut logistique et actions admissibles;
+- `AdminOrders`: consultation, statut logistique, modale d'expedition et
+  actions admissibles;
 - `AdminReturns`: remboursement, synchronisation et e-mail client;
 - `AdminPaymentSettings`: Connect, carte/wallets et etat de disponibilite;
 - `AdminLivraison`: configuration des frais.
@@ -116,7 +117,15 @@ Le transport callable fulfillment/archive commande est deploye dans
 `functions/src/commerce/v2OrderCommands.js`: App Check, registre admin actif,
 AAL2 recent et acteur derive du contexte Auth. Il est exporte mais bloque par
 le controle mutations serveur absent; `AdminOrders` l'appelle uniquement
-derriere un flag compile a `false` et des `allowedActions` calcules serveur.
+derriere l'autorisation serveur et des `allowedActions` calcules serveur.
+
+L'expedition n'utilise plus de dialogue natif. Une modale integree distingue
+explicitement l'expedition avec suivi, sans suivi et l'annulation sans effet.
+Le transporteur et le numero sont valides serveur. Une commande distincte
+`updateOrderTrackingAdmin` permet ensuite d'ajouter, corriger ou retirer le
+suivi d'une commande expediee sans rejouer la transition d'expedition. Les
+liens client sont derives d'une liste de transporteurs autorises; aucune URL
+libre du navigateur n'est stockee.
 
 Le transport refund admin est prepare dans
 `functions/src/commerce/v2RefundCommands.js` avec les memes controles forts,

@@ -1,6 +1,6 @@
 # Cartographie du projet Seconde Vie Next
 
-Derniere verification: 2026-07-30
+Derniere verification: 2026-07-31
 Statut: `CARTE_CANONIQUE_ACTIVE`
 
 ## 1. Role et maintenance
@@ -114,7 +114,7 @@ header/menu/route privee
   |-- Google -> Firebase Auth [EXT]
   |-- OTP -> send/verifyCustomerLoginOtp [F] -> Gmail/Resend [EXT]
   `-- passkey -> 4 callables WebAuthn [F] -> users/{uid}/passkeys [DB]
-  -> loginWithCustomToken
+  -> loginWithCustomToken (retry reseau borne, meme token garde en memoire)
   -> etat partage header/menu/espace client
   -> session admin persistante pour les lectures
   -> mutation sensible expiree -> evenement step-up -> meme modale, sans signOut
@@ -145,6 +145,12 @@ carte produit
   -> stripeWebhook [F]
   -> order paid + deux outbox atomiques: client + notification admin dediee
   -> /mes-commandes + /admin
+  -> expedition admin: modale transporteur/suivi -> commande idempotente
+     -> outbox client -> meme suivi dans /mes-commandes
+     -> correction du suivi par commande separee, sans rejouer l'expedition
+  -> document client: modale mobile/desktop -> prepareCommerceDocumentDelivery [F]
+     -> Auth/App Check + UID proprietaire -> PDF immutable prive [ST]
+     -> ouvrir/enregistrer/partager [C] + copie e-mail outbox dedupliquee
   -> demande client de retour contextualisee vers l'atelier
      -> decision refund/retour physique conservee cote admin serveur
 
@@ -221,8 +227,13 @@ scripts/activate-commerce-fixture.mjs
   -> activation atomique fail-closed du seul scope et manifeste epingles
 
 scripts/commerce-v2-all-window.mjs
-  -> preflight, ouverture et fermeture auditee `v2_all` sur cinq produits exacts
+  -> statut recuperable, decouverte read-only, preflight, ouverture et fermeture
+     auditee `v2_all` sur cinq produits exacts
   -> policy UI sandbox epinglee puis policy precedente restauree
+
+scripts/audit-refund-failed-v2.mjs
+  -> gate non mutante des Functions deployees, rejet non signe et abonnements
+     Stripe test `refund.created|updated|failed` avant M12/M13
 
 scripts/confirm-commerce-order-v2.mjs
 scripts/refund-commerce-order-v2.mjs
@@ -370,7 +381,8 @@ src/
 ```text
 src/kit/
 |-- auth/
-|   `-- authStore.js .................. source et abonnement session UI
+|   |-- authStore.js .................. source et abonnement session UI
+|   `-- customTokenSignIn.js .......... reprise reseau bornee du Custom Token
 |-- contexts/
 |   `-- AuthContext.jsx ............... login Google/OTP/passkey et session
 |-- config/
@@ -458,10 +470,12 @@ src/kit/commerce/
 |-- checkoutRecovery.js ............... reprise 3DS/reload namespacee, sans secret
 |-- checkoutContract.js ............... entree checkout allowlistee, sans prix client
 |-- commerceV2Client.js ............... lecteurs v2 on; checkout/reprise Gate 5 off
-|-- commerceCommandClient.js .......... commandes admin/client, flags Gate 4 off
+|-- commerceCommandClient.js .......... commandes admin/client, controle serveur fail-closed
+|-- shippingCarriers.js ............... choix transporteurs UI sans URL libre
 |-- adminProductCommandClient.js ...... callables produit, flag Gate 4 off
 |-- OrderSuccessModal.jsx ............. confirmation
-|-- MyOrdersView.jsx .................. espace client
+|-- CommerceDocumentModal.jsx ......... PDF ouvrir/enregistrer/partager + etat e-mail
+|-- MyOrdersView.jsx .................. espace client, suivi et entree documents
 `-- LoginView.jsx ..................... login admin/compatibilite
 ```
 
@@ -500,7 +514,7 @@ src/kit/admin/
 |-- GlobalInventoryView.jsx ........... vue catalogue/ordres
 |-- AdminStudio.jsx ................... studio contenu
 |-- AdminHomepage.jsx ................. personnalisation publique
-|-- AdminOrders.jsx ................... ventes/logistique
+|-- AdminOrders.jsx ................... ventes/logistique, modale expedition/suivi
 |-- AdminReturns.jsx .................. remboursements + retours physiques detailles
 |-- AdminLivraison.jsx ................ configuration livraison
 |-- AdminUsers.jsx .................... comptes/acces admin
@@ -547,7 +561,7 @@ src/lib/seo/
 
 src/utils/
 |-- imageUtils.js ..................... variantes/metadata/images
-|-- generateCommerceDocument.js ....... PDF sandbox non fiscal depuis document immutable
+|-- generateCommerceDocument.js ....... ancien renderer PDF client, non appele
 |-- generateInvoice.js ................ generateur PDF legacy non fiscal et masque
 |-- shippingAddress.js ................ format adresse
 |-- slug.js ........................... slugs
@@ -604,6 +618,7 @@ functions/
     |   |   |-- financialProjection.js .. projection financiere absolue
     |   |   |-- financialRollup.js ....... deltas total/jour atomiques et idempotents
     |   |   |-- commerceDocuments.js ..... recus sandbox non fiscaux
+    |   |   |-- commerceDocumentArtifact.js  PDF Node deterministe + Storage prive
     |   |   |-- operationsHealth.js ...... incidents, seuils et sante Gate 7A
     |   |   |-- fixtureScope.js / fixtureCleanup.js ... autorisation et cleanup run-scoped
     |   |   |-- checkoutAccessToken*.js ... token backend opaque rotatif
@@ -619,14 +634,16 @@ functions/
     |   |   |-- returnRepository.js ....... allocations, dispositions et audit
     |   |   |-- productCommands.js ......... transitions produit fermees Gate 4
     |   |   |-- productCommandRepository.js  produit idempotent + audit append-only
+    |   |   |-- shippingTracking.js ....... transporteurs allowlistes et liens officiels
     |   |   `-- v2Runtime.js .............. cablage callables et workers Gate 7A
     |   |-- v2ProductCommands.js ........... callables produit exportees, controle mutations off
-    |   |-- v2OrderCommands.js ............. callables fulfillment/archive exportees, controle off
+    |   |-- v2OrderCommands.js ............. fulfillment/archive/suivi idempotents, controle off
     |   |-- v2Cancellation.js .............. callable annulation exportee, controle mutations off
     |   |-- v2ControlGuard.js ............... verrou serveur mutations selon controle
     |   |-- v2Checkout.js .................. create/resume limites au scope fixture
     |   |-- v2Operations.js ................ schedulers, exploitation et synthese Stats fraiche par agregations
     |   |-- v2OrderQueries.js .............. lecteurs UID/admin exportes et actifs
+    |   |-- v2DocumentDelivery.js .......... acces PDF proprietaire + outbox bornee
     |   |-- v2RefundCommands.js ............ callable refund exportee, controle mutations off
     |   |-- v2ReturnCommands.js ............ callables retours exportees, controle mutations off
     |   |-- stripeWebhook.js
@@ -639,9 +656,9 @@ functions/
     |   `-- e2eStripeHardeningProof.js
     |-- email/
     |   |-- emailDesignSystem.js .......... shell HTML/texte premium partage
-    |   |-- commerceEmailTemplates.js ..... paiement, fulfillment, refund client/admin v2
+    |   |-- commerceEmailTemplates.js ..... paiement, fulfillment, refund et document v2
     |   |-- otpEmailTemplates.js .......... OTP connexion/checkout unifies
-    |   |-- transactionalEmail.js
+    |   |-- transactionalEmail.js ......... Gmail/Resend + PDF memoire borne
     |   |-- transactionalEmailRuntime.js
     |   `-- orderEmails.js
     |-- analytics/
@@ -678,7 +695,7 @@ functions/
 | Domaine | Exports |
 | --- | --- |
 | commerce | `createOrder`, `stripeWebhook`, `stripeConnectWebhook`, `cancelOrderClient`, `getOrderStatusClient` |
-| commerce v2 checkout/lecture | `createCheckoutV2`, `resumeCheckoutV2`, `listMyOrdersV2`, `listOrdersAdminV2`, `getOrderTimelineAdminV2`, `listReturnsAdminV2` |
+| commerce v2 checkout/lecture | `createCheckoutV2`, `resumeCheckoutV2`, `listMyOrdersV2`, `prepareCommerceDocumentDelivery`, `listOrdersAdminV2`, `getOrderTimelineAdminV2`, `listReturnsAdminV2` |
 | commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
 | commerce v2 produit | `preflightProductMutationAdmin`, `createProductAdmin`, `updateProductOfferAdmin`, `publishProductAdmin`, `adjustInventoryAdmin`, `archiveProductAdmin` |
 | refunds/Connect | `refundOrderAdmin`, `syncRefundStatusAdmin`, `getStripeConnectStatus`, `startStripeConnectOnboarding`, `syncStripeConnectAccount`, `requestStripeConnectReconnect`, `confirmStripeConnectReconnect` |
@@ -704,7 +721,9 @@ Firestore
 |   `-- passkey_challenges/{type}
 |-- orders/{orderId}
 |   |-- documents/{documentId} ........ recus sandbox non fiscaux immutables
+|   |   `-- artifacts/current ......... chemin/hash/taille PDF backend-only
 |   `-- returns/{returnId} ............ retours physiques, index group updatedAt
+|-- commerce_document_delivery_limits/{uidHash}_{day} . quota backend-only
 |-- commerce_financial_facts/{factId} . faits financiers append-only
 |-- commerce_financial_projections/current
 |-- commerce_financial_totals/{currency} . total financier materialise backend-only
@@ -739,6 +758,7 @@ Storage
 |-- furniture/responsive/... .......... card/detailFast/medium/large/full
 |-- catalog-projection/v1/releases/{rev}/  objets immuables, manifeste et plan d'impact
 |-- catalog-projection/v1/pointers/ .... current/previous/last-known-good
+|-- commerce-documents/v2/... ......... PDF commande prives, lecture directe interdite
 `-- autres chemins admin .............. contenus hero/about selon configuration
 ```
 
@@ -784,6 +804,7 @@ e2e-sandbox-role-session.mjs ......... bootstrap ephemere client/admin, sandbox 
 e2e-hosted-stripe-checkout.mjs ........ en quarantaine commerce
 e2e-refund-latest-stripe-order.mjs .... en quarantaine commerce
 read-latest-auth-otp.mjs .............. outil local sensible
+audit-refund-failed-v2.mjs ............ gate non mutante M12/M13, zero evenement injecte
 ```
 
 ### Donnees/images

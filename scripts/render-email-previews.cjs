@@ -60,7 +60,8 @@ const payload = {
     currency: 'EUR',
     paymentIntentId: order.payment.paymentIntentId,
     refundId: 're_3PremiumDemoRefund',
-    trackingNumber: order.fulfillmentSummary.trackingNumber
+    trackingNumber: order.fulfillmentSummary.trackingNumber,
+    documentKind: 'sandbox_payment_receipt'
 };
 
 const previews = [
@@ -85,7 +86,9 @@ const previews = [
         ['10-remboursement-confirme-client', 'Remboursement confirmé · Client', 'order-refunded'],
         ['11-remboursement-confirme-admin', 'Remboursement confirmé · Admin', 'order-refunded-admin'],
         ['12-remboursement-echec-client', 'Anomalie remboursement · Client', 'order-refund-failed'],
-        ['13-remboursement-echec-admin', 'Anomalie remboursement · Admin', 'order-refund-failed-admin']
+        ['13-remboursement-echec-admin', 'Anomalie remboursement · Admin', 'order-refund-failed-admin'],
+        ['14-suivi-corrige', 'Suivi corrigé · Client', 'order-tracking-updated'],
+        ['15-copie-document', 'Copie document · Client', 'commerce-document-copy']
     ].map(([slug, label, template]) => ({
         slug,
         label,
@@ -94,7 +97,10 @@ const previews = [
             order,
             payload: {
                 ...payload,
-                refundId: template.includes('refund') ? payload.refundId : null
+                refundId: template.includes('refund') ? payload.refundId : null,
+                documentKind: template === 'commerce-document-copy'
+                    ? payload.documentKind
+                    : null
             },
             senderEmail: 'admin@secondevie.example',
             siteUrl: SITE_URL

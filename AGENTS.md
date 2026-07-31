@@ -140,8 +140,16 @@ Plan temporaire de reprise explicitement demande:
   execution et fusion au plus tard le 2026-08-06, puis suppression.
 - [.agents/skills/client-admin-test/SKILL.md](.agents/skills/client-admin-test/SKILL.md):
   skill de projet invoque par `$client-admin-test`; lance automatiquement la
-  recette humaine client/admin dans Chrome sans prompt a recopier; Luna en
-  raisonnement tres eleve recommande; guide court dans
+  recette humaine client/admin dans Chrome avec une autorisation sensible
+  explicite integree au prompt par defaut et une reprise progressive des
+  blocages transitoires; si le modele courant n'est pas Terra, la campagne
+  complete est deleguee a un unique `gpt-5.6-terra` en raisonnement eleve avec
+  `fork_turns=none` et un contexte autonome, sans controle Chrome concurrent
+  du parent ni delegation recursive; `CORRIGEE_A_REQUALIFIER` ordonne la
+  requalification et ne constitue jamais un blocage par son seul statut;
+  Luna en raisonnement tres eleve reste un secours; les deux testent et
+  documentent sans corriger, Sol (`GPT-5.6-sol`) restant le seul correcteur;
+  guide court dans
   [TEST_CLIENT_ADMIN_LUNA.md](TEST_CLIENT_ADMIN_LUNA.md); fusion et suppression
   au plus tard le 2026-08-06.
 

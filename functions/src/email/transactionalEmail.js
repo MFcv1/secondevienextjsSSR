@@ -3,6 +3,7 @@ const nodemailer = require('nodemailer');
 const RESEND_EMAIL_ENDPOINT = 'https://api.resend.com/emails';
 const DEFAULT_TIMEOUT_MS = 5000;
 const DEFAULT_MAX_ATTEMPTS = 2;
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const RETRYABLE_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
 
 class EmailProviderError extends Error {
@@ -39,6 +40,50 @@ function normalizeIdempotencyKey(value) {
     return key;
 }
 
+function normalizeAttachments(attachments) {
+    if (attachments == null) return undefined;
+    if (!Array.isArray(attachments) || attachments.length > 3) {
+        throw new EmailProviderError('Pièces jointes invalides.', {
+            code: 'EMAIL_ATTACHMENTS_INVALID',
+            retryable: false
+        });
+    }
+    let totalBytes = 0;
+    return attachments.map((attachment) => {
+        const filename = requireString(attachment?.filename, 'Nom de pièce jointe')
+            .replace(/[^A-Za-z0-9._-]/g, '_')
+            .slice(0, 120);
+        const content = Buffer.isBuffer(attachment?.content)
+            ? attachment.content
+            : attachment?.content instanceof Uint8Array
+                ? Buffer.from(attachment.content)
+                : null;
+        if (!content || !content.length) {
+            throw new EmailProviderError('Contenu de pièce jointe invalide.', {
+                code: 'EMAIL_ATTACHMENT_CONTENT_INVALID',
+                retryable: false
+            });
+        }
+        totalBytes += content.length;
+        if (totalBytes > MAX_ATTACHMENT_BYTES) {
+            throw new EmailProviderError('Pièces jointes trop volumineuses.', {
+                code: 'EMAIL_ATTACHMENTS_TOO_LARGE',
+                retryable: false
+            });
+        }
+        const contentType = String(attachment?.contentType || 'application/octet-stream')
+            .trim()
+            .toLowerCase();
+        if (contentType !== 'application/pdf') {
+            throw new EmailProviderError('Type de pièce jointe refusé.', {
+                code: 'EMAIL_ATTACHMENT_TYPE_INVALID',
+                retryable: false
+            });
+        }
+        return { filename, content, contentType };
+    });
+}
+
 function normalizeMessage(message = {}) {
     return {
         from: requireString(message.from, 'Expediteur'),
@@ -48,7 +93,8 @@ function normalizeMessage(message = {}) {
         text: message.text,
         cc: message.cc,
         bcc: message.bcc,
-        replyTo: message.replyTo || message.reply_to
+        replyTo: message.replyTo || message.reply_to,
+        attachments: normalizeAttachments(message.attachments)
     };
 }
 
@@ -128,6 +174,12 @@ function createResendEmailSender({
             if (normalizedMessage.cc !== undefined) payload.cc = normalizedMessage.cc;
             if (normalizedMessage.bcc !== undefined) payload.bcc = normalizedMessage.bcc;
             if (normalizedMessage.replyTo !== undefined) payload.reply_to = normalizedMessage.replyTo;
+            if (normalizedMessage.attachments !== undefined) {
+                payload.attachments = normalizedMessage.attachments.map((attachment) => ({
+                    filename: attachment.filename,
+                    content: attachment.content.toString('base64')
+                }));
+            }
 
             let lastError = null;
             for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -198,7 +250,10 @@ function createTransactionalEmailSender(options = {}) {
 
 module.exports = {
     EmailProviderError,
+    MAX_ATTACHMENT_BYTES,
     createGmailEmailSender,
     createResendEmailSender,
-    createTransactionalEmailSender
+    createTransactionalEmailSender,
+    normalizeAttachments,
+    normalizeMessage
 };

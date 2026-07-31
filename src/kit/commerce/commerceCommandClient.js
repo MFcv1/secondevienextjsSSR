@@ -65,14 +65,35 @@ export const markOrderReadyForPickupAdmin = (order, stableCommandId) => orderCom
 
 export const markOrderShippedAdmin = (
   order,
-  trackingNumber = null,
+  shipment = {},
   stableCommandId = null
 ) => orderCommand(
   'markOrderShippedAdmin',
   'fulfillment-ship',
   order,
   'Expedition confirmee depuis le back-office',
-  { trackingNumber },
+  {
+    carrierCode: shipment.carrierCode || null,
+    carrierName: shipment.carrierName || null,
+    trackingNumber: shipment.trackingNumber || null,
+  },
+  stableCommandId
+);
+
+export const updateOrderTrackingAdmin = (
+  order,
+  shipment = {},
+  stableCommandId = null
+) => orderCommand(
+  'updateOrderTrackingAdmin',
+  'fulfillment-update-tracking',
+  order,
+  'Suivi transporteur mis a jour depuis le back-office',
+  {
+    carrierCode: shipment.carrierCode || null,
+    carrierName: shipment.carrierName || null,
+    trackingNumber: shipment.trackingNumber || null,
+  },
   stableCommandId
 );
 

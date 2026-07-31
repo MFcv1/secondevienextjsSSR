@@ -95,6 +95,63 @@ test('Resend envoie le contrat API avec une cle idempotente', async () => {
     assert.deepEqual(result, { provider: 'resend', id: 'resend-message-id' });
 });
 
+test('Gmail et Resend transportent uniquement les pièces jointes PDF en mémoire', async () => {
+    const pdf = Buffer.from('%PDF-1.4\nfixture');
+    let gmailMessage = null;
+    const gmail = createGmailEmailSender({
+        user: 'sender@example.test',
+        password: 'not-a-real-secret',
+        nodemailerImpl: {
+            createTransport() {
+                return {
+                    async sendMail(message) {
+                        gmailMessage = message;
+                        return { messageId: 'gmail-pdf' };
+                    }
+                };
+            }
+        }
+    });
+    await gmail.send({
+        from: 'Seconde Vie <sender@example.test>',
+        to: 'customer@example.test',
+        subject: 'Votre document',
+        text: 'Pièce jointe',
+        attachments: [{
+            filename: 'Recu CMD 001.pdf',
+            content: pdf,
+            contentType: 'application/pdf'
+        }]
+    });
+    assert.equal(gmailMessage.attachments[0].filename, 'Recu_CMD_001.pdf');
+    assert.equal(gmailMessage.attachments[0].content.equals(pdf), true);
+    assert.equal(gmailMessage.attachments[0].path, undefined);
+
+    let resendPayload = null;
+    const resend = createResendEmailSender({
+        apiKey: 're_test_key',
+        fetchImpl: async (_url, options) => {
+            resendPayload = JSON.parse(options.body);
+            return { ok: true, status: 200, json: async () => ({ id: 'resend-pdf' }) };
+        }
+    });
+    await resend.send({
+        from: 'Seconde Vie <sender@example.test>',
+        to: 'customer@example.test',
+        subject: 'Votre document',
+        text: 'Pièce jointe',
+        attachments: [{
+            filename: 'recu.pdf',
+            content: pdf,
+            contentType: 'application/pdf'
+        }]
+    }, { idempotencyKey: 'document-pdf-fixture' });
+    assert.deepEqual(resendPayload.attachments, [{
+        filename: 'recu.pdf',
+        content: pdf.toString('base64')
+    }]);
+});
+
 test('Resend retente une seule fois une erreur temporaire avec la meme idempotence', async () => {
     const keys = [];
     let calls = 0;

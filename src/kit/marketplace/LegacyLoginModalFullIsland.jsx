@@ -238,6 +238,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
   const [resendAfter, setResendAfter] = useState(0);
   const otpSendInFlightRef = useRef(false);
   const otpVerifyInFlightRef = useRef(false);
+  const otpCustomTokenRef = useRef(null);
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
@@ -574,6 +575,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     setOtpStep('code');
     setOtpDigits(['', '', '', '', '', '']);
     setResendAfter(0);
+    otpCustomTokenRef.current = null;
     preloadOtpSignInRuntime();
     window.setTimeout(() => {
       document.querySelector('[data-otp-index="0"]')?.focus();
@@ -615,24 +617,42 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     setOtpStatus('verifying');
     setOtpMessage('');
     const verifyStartedAt = startClientPerf();
+    let currentPhase = 'verify';
+    let signInStartedAt = null;
     try {
-      const verifyOtp = httpsCallable(functions, 'verifyCustomerLoginOtp');
-      const result = await verifyOtp({ email, code });
-      logClientPerf('auth.email.verifyCustomerLoginOtp', verifyStartedAt, { phase: 'success' });
-      if (!result.data?.token) throw new Error('Token de connexion manquant.');
+      let customToken = otpCustomTokenRef.current;
+      if (!customToken) {
+        const verifyOtp = httpsCallable(functions, 'verifyCustomerLoginOtp');
+        const result = await verifyOtp({ email, code });
+        logClientPerf('auth.email.verifyCustomerLoginOtp', verifyStartedAt, { phase: 'success' });
+        if (!result.data?.token) throw new Error('Token de connexion manquant.');
+        customToken = result.data.token;
+        otpCustomTokenRef.current = customToken;
+      }
+      currentPhase = 'sign-in';
       setOtpStatus('signing-in');
-      const signInStartedAt = startClientPerf();
-      const userCredential = await loginWithCustomToken(result.data.token, 'email_otp');
+      signInStartedAt = startClientPerf();
+      const userCredential = await loginWithCustomToken(customToken, 'email_otp');
       logClientPerf('auth.email.signInWithCustomToken', signInStartedAt, { phase: 'success' });
+      otpCustomTokenRef.current = null;
       setOtpStatus('success');
       setOtpMessage('Email verifie. Connexion ouverte.');
       offerPasskeyOrClose(userCredential?.user);
     } catch (error) {
-      logClientPerf('auth.email.verifyCustomerLoginOtp', verifyStartedAt, {
+      const isSignInFailure = currentPhase === 'sign-in';
+      logClientPerf(
+        isSignInFailure ? 'auth.email.signInWithCustomToken' : 'auth.email.verifyCustomerLoginOtp',
+        isSignInFailure ? signInStartedAt : verifyStartedAt,
+        {
         phase: 'error',
         code: error?.code || null
-      });
-      const message = error?.message || 'Code invalide ou expire.';
+        }
+      );
+      const isRetryableNetworkFailure = isSignInFailure && error?.code === 'auth/network-request-failed';
+      if (!isRetryableNetworkFailure) otpCustomTokenRef.current = null;
+      const message = isRetryableNetworkFailure
+        ? 'La connexion reseau a ete interrompue apres validation du code. Reessayez sans demander un nouveau code.'
+        : (error?.message || 'Code invalide ou expire.');
       setOtpStatus('error');
       setOtpMessage(message);
       toast(message, { type: 'error' });

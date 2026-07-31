@@ -15,6 +15,7 @@ const {
     projectLegacyOrder,
     validateLegacyProjection
 } = require('./legacyProjection');
+const { isCarrierCode } = require('./shippingTracking');
 
 const CHECKOUT_STATUSES = Object.freeze(['active', 'cancellation_requested', 'closed', 'needs_review']);
 const CLOSE_REASONS = Object.freeze([null, 'paid', 'canceled', 'expired']);
@@ -53,6 +54,7 @@ const EVENT_TYPES = Object.freeze([
     'fulfillment_ready_for_pickup',
     'fulfillment_picked_up',
     'fulfillment_shipped',
+    'fulfillment_tracking_updated',
     'fulfillment_delivered',
     'refund_requested',
     'refund_confirmed',
@@ -144,6 +146,24 @@ function validateOrderV2(order, { requireProjection = true } = {}) {
     assertEnum(order.payment?.status, PAYMENT_STATUSES, 'payment.status');
     assertEnum(order.fulfillmentSummary?.status, FULFILLMENT_STATUSES, 'fulfillmentSummary.status');
     assertEnum(order.fulfillmentSummary?.custody, CUSTODY_STATUSES, 'fulfillmentSummary.custody');
+    const trackingNumber = order.fulfillmentSummary?.trackingNumber;
+    const carrierCode = order.fulfillmentSummary?.carrierCode;
+    const carrierName = order.fulfillmentSummary?.carrierName;
+    if (
+        trackingNumber != null &&
+        (typeof trackingNumber !== 'string' || !trackingNumber.trim() || trackingNumber.length > 120)
+    ) {
+        throw domainError('COMMERCE_ORDER_TRACKING_INVALID', 'trackingNumber');
+    }
+    if (carrierCode != null && !isCarrierCode(carrierCode)) {
+        throw domainError('COMMERCE_ORDER_TRACKING_INVALID', 'carrierCode');
+    }
+    if (
+        carrierName != null &&
+        (typeof carrierName !== 'string' || !carrierName.trim() || carrierName.length > 80)
+    ) {
+        throw domainError('COMMERCE_ORDER_TRACKING_INVALID', 'carrierName');
+    }
     assertEnum(order.refundAggregate?.status, REFUND_STATUSES, 'refundAggregate.status');
 
     for (const field of ['requestedCents', 'pendingCents', 'succeededCents']) {
@@ -301,6 +321,8 @@ function createOrderV2({
         fulfillmentSummary: {
             status: 'unfulfilled',
             custody: 'merchant',
+            carrierCode: null,
+            carrierName: null,
             trackingNumber: null,
             shippedAt: null,
             deliveredAt: null
@@ -454,8 +476,19 @@ function applyEvent(next, event, now) {
             }
             next.fulfillmentSummary.status = 'shipped';
             next.fulfillmentSummary.custody = 'carrier';
+            next.fulfillmentSummary.carrierCode = event.carrierCode || null;
+            next.fulfillmentSummary.carrierName = event.carrierName || null;
             next.fulfillmentSummary.trackingNumber = event.trackingNumber || null;
             next.fulfillmentSummary.shippedAt = now;
+            return true;
+        case 'fulfillment_tracking_updated':
+            assertPaid(next, event.type);
+            if (next.fulfillmentSummary.status !== 'shipped') {
+                throw domainError('COMMERCE_TRANSITION_PRECONDITION_FAILED', event.type);
+            }
+            next.fulfillmentSummary.carrierCode = event.carrierCode || null;
+            next.fulfillmentSummary.carrierName = event.carrierName || null;
+            next.fulfillmentSummary.trackingNumber = event.trackingNumber || null;
             return true;
         case 'fulfillment_delivered':
             assertPaid(next, event.type);
