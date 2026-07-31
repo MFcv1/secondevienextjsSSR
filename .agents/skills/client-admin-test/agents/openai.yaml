@@ -1,0 +1,7 @@
+interface:
+  display_name: "Test client / admin"
+  short_description: "Lance la recette sandbox client et admin"
+  default_prompt: "Utilise $client-admin-test pour exécuter la recette complète du sandbox sans appliquer de correctif. Bascule entre les comptes Google de recette déjà connectés et saisis toi-même les OTP sandbox accessibles, sans les afficher ni les conserver."
+
+policy:
+  allow_implicit_invocation: true

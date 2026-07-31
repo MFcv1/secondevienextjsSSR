@@ -9,7 +9,6 @@ import { getProductStockAmount, isPurchasable } from '../../src/kit/commerce/pur
 import {
   clearWishlist,
   getWishlistProductId,
-  readWishlistIds,
   setWishlistItem,
   subscribeWishlistItems,
 } from '../../src/kit/marketplace/wishlistState';
@@ -50,9 +49,7 @@ const fetchPublicCatalogProduct = async (id) => {
 function WishlistPageContent({ initialItems = [] }) {
   const router = useRouter();
   const { user } = useAuth();
-  const [wishlistItems, setWishlistItems] = useState(() => (
-    readWishlistIds().map((id) => ({ id, originalId: id }))
-  ));
+  const [wishlistItems, setWishlistItems] = useState([]);
   const [catalogItems, setCatalogItems] = useState(initialItems);
   const [darkMode, setDarkMode] = useState(false);
   const wishlistIds = useMemo(() => (
@@ -154,6 +151,10 @@ function WishlistPageContent({ initialItems = [] }) {
     }
   };
 
+  const openLogin = () => {
+    window.dispatchEvent(new CustomEvent('sv:open-login'));
+  };
+
   return (
     <WishlistView
       wishlistItems={wishlistItems}
@@ -165,7 +166,7 @@ function WishlistPageContent({ initialItems = [] }) {
       onBack={() => { router.push('/'); }}
       darkMode={darkMode}
       user={user}
-      onShowLogin={() => { router.push('/admin'); }}
+      onShowLogin={openLogin}
     />
   );
 }

@@ -61,7 +61,7 @@ const normalizeAdminOrder = (order) => {
 
 const normalizeAdminOrders = (orders = []) => orders.map(normalizeAdminOrder);
 
-const AdminOrders = ({ darkMode = false, mutationsEnabled = false }) => {
+const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled = false }) => {
     const cachedPage = getAdminCachedData(ADMIN_ORDERS_FIRST_PAGE_KEY);
     const orderCommandsEnabled = mutationsEnabled && COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED;
     const [orders, setOrders] = useState(normalizeAdminOrders(cachedPage?.orders || []));
@@ -103,6 +103,13 @@ const AdminOrders = ({ darkMode = false, mutationsEnabled = false }) => {
         return () => unsub();
     }, [orderLimit]);
 
+    useEffect(() => {
+        if (!focusOrderId || expandedOrder) return;
+        if (orders.some((order) => order.id === focusOrderId)) {
+            setExpandedOrder(focusOrderId);
+        }
+    }, [expandedOrder, focusOrderId, orders]);
+
     const loadMoreOrders = async () => {
         if (!COMMERCE_V2_ADMIN_READERS_ENABLED || !nextCursor || isLoading) return;
         setIsLoading(true);
@@ -126,6 +133,7 @@ const AdminOrders = ({ darkMode = false, mutationsEnabled = false }) => {
         if (!orderCommandsEnabled) return;
         if (!allowedActions(order).has(action)) return;
         if (confirmation && !window.confirm(confirmation)) return;
+        let commandApplied = false;
         try {
             setActiveOrderId(order.id);
             if (action === 'fulfillment_ship') {
@@ -146,9 +154,21 @@ const AdminOrders = ({ darkMode = false, mutationsEnabled = false }) => {
             } else if (action === 'archive_order') {
                 await archiveOrderAdmin(order);
             }
+            commandApplied = true;
+            const result = await loadAdminOrdersFirstPage({ force: true });
+            const refreshedOrders = normalizeAdminOrders(result.orders || []);
+            setOrders(refreshedOrders);
+            setNextCursor(result.nextCursor || null);
+            const timeline = await getOrderTimelineAdminV2(order.id);
+            setOrderTimelines((current) => ({
+                ...current,
+                [order.id]: timeline.timeline || [],
+            }));
         } catch (error) {
             console.error('Order command failed:', error);
-            alert(`Commande non appliquee : ${error.message || error}`);
+            alert(commandApplied
+                ? 'Commande appliquée, mais l’actualisation a échoué. Utilisez Actualiser avant toute nouvelle action.'
+                : `Commande non appliquée : ${error.message || error}`);
         } finally {
             setActiveOrderId(null);
         }
@@ -233,9 +253,22 @@ const AdminOrders = ({ darkMode = false, mutationsEnabled = false }) => {
             case 'refund_requested': return { label: 'Remboursement demandé', icon: RotateCcw, tone: 'text-amber-700 bg-amber-50' };
             case 'refund_succeeded': return { label: 'Remboursement confirmé', icon: RotateCcw, tone: 'text-sky-700 bg-sky-50' };
             case 'refund_failed': return { label: 'Remboursement à vérifier', icon: XCircle, tone: 'text-red-700 bg-red-50' };
+            case 'fulfillment_prepare': return { label: 'Mise en préparation', icon: Package, tone: 'text-amber-700 bg-amber-50' };
+            case 'fulfillment_ready': return { label: 'Prête au retrait', icon: CheckCircle, tone: 'text-sky-700 bg-sky-50' };
+            case 'fulfillment_pickup': return { label: 'Retrait confirmé', icon: CheckCircle, tone: 'text-emerald-700 bg-emerald-50' };
+            case 'fulfillment_ship': return { label: 'Expédition confirmée', icon: Truck, tone: 'text-indigo-700 bg-indigo-50' };
+            case 'fulfillment_deliver': return { label: 'Livraison confirmée', icon: CheckCircle, tone: 'text-emerald-700 bg-emerald-50' };
             default: return { label: 'Événement', icon: Clock, tone: 'text-stone-500 bg-stone-100' };
         }
     };
+
+    const getFulfillmentBadge = (status) => ({
+        preparing: { label: 'En préparation', tone: 'bg-amber-50 text-amber-700' },
+        ready_for_pickup: { label: 'Prête au retrait', tone: 'bg-sky-50 text-sky-700' },
+        picked_up: { label: 'Retirée', tone: 'bg-emerald-50 text-emerald-700' },
+        shipped: { label: 'Expédiée', tone: 'bg-indigo-50 text-indigo-700' },
+        delivered: { label: 'Livrée', tone: 'bg-emerald-50 text-emerald-700' },
+    }[status] || null);
 
     const getStatusBadge = (status) => {
         switch (status) {
@@ -315,6 +348,7 @@ const AdminOrders = ({ darkMode = false, mutationsEnabled = false }) => {
                 ) : null}
                 {orders.map(order => {
                     const badge = getStatusBadge(order.status);
+                    const fulfillmentBadge = getFulfillmentBadge(order.fulfillmentSummary?.status);
 
                     return (
                         <div key={order.id} className={`ring-1 rounded-3xl shadow-sm overflow-hidden hover:shadow-md transition-shadow will-change-transform ${darkMode ? 'bg-stone-800 ring-stone-700/50' : 'bg-white ring-stone-100'}`}>
@@ -337,9 +371,16 @@ const AdminOrders = ({ darkMode = false, mutationsEnabled = false }) => {
                                     </div>
                                 </div>
                                 <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-none pt-4 sm:pt-0">
-                                    <span className={`px-3 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest ${darkMode ? badge.bgDark + ' ' + badge.color : badge.bgLight + ' ' + badge.color}`}>
-                                        {badge.label}
-                                    </span>
+                                    <div className="flex flex-wrap justify-end gap-2">
+                                        <span className={`px-3 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest ${darkMode ? badge.bgDark + ' ' + badge.color : badge.bgLight + ' ' + badge.color}`}>
+                                            {badge.label}
+                                        </span>
+                                        {fulfillmentBadge ? (
+                                            <span className={`px-3 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest ${darkMode ? 'bg-white/10 text-stone-200' : fulfillmentBadge.tone}`}>
+                                                {fulfillmentBadge.label}
+                                            </span>
+                                        ) : null}
+                                    </div>
                                     {expandedOrder === order.id ? <ChevronUp size={16} className="text-stone-300" /> : <ChevronDown size={16} className="text-stone-300" />}
                                 </div>
                             </button>

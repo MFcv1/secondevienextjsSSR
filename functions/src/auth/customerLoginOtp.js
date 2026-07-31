@@ -8,6 +8,7 @@ const {
     TRANSACTIONAL_EMAIL_SECRETS,
     getTransactionalEmailRuntime
 } = require('../email/transactionalEmailRuntime');
+const { renderOtpEmail } = require('../email/otpEmailTemplates');
 
 const db = admin.firestore();
 
@@ -77,40 +78,19 @@ function getIpRef(context) {
 }
 
 function buildEmailHtml(code) {
-    const siteUrl = getSiteUrl();
-    return `
-        <div style="font-family: Arial, sans-serif; color: #1c1917; max-width: 560px; padding: 8px;">
-            <p style="margin:0 0 12px;color:#78716c;font-size:13px;">Connexion Seconde Vie</p>
-            <h1 style="margin:0 0 16px;font-size:24px;">Votre code de connexion</h1>
-            <p style="margin:0 0 18px;">Saisissez ce code pour ouvrir votre espace client :</p>
-            <div style="margin:24px 0;">
-                <div style="display:inline-block;border:1px solid #d6d3d1;border-radius:16px;background:#fafaf9;padding:16px 18px;">
-                    <div style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#78716c;margin:0 0 8px;">Code de connexion</div>
-                    <div style="font-size:36px;letter-spacing:8px;font-weight:800;color:#0f0f11;line-height:1;user-select:all;-webkit-user-select:all;">${code}</div>
-                </div>
-                <p style="margin:8px 0 0;color:#78716c;font-size:12px;">Selectionnez le code pour le copier depuis votre application mail.</p>
-            </div>
-            <p style="margin:0 0 12px;">Ce code expire dans 10 minutes et ne peut etre utilise qu'une seule fois.</p>
-            <p style="color:#78716c;font-size:12px;">Si vous n'etes pas a l'origine de cette demande, ignorez cet email.</p>
-            <p style="color:#78716c;font-size:12px;">${siteUrl}</p>
-        </div>
-    `;
+    return renderOtpEmail({
+        variant: 'login',
+        code,
+        siteUrl: getSiteUrl()
+    }).html;
 }
 
 function buildEmailText(code) {
-    const siteUrl = getSiteUrl();
-    return [
-        'Connexion Seconde Vie',
-        '',
-        'Votre code de connexion',
-        '',
-        `Code: ${code}`,
-        '',
-        "Ce code expire dans 10 minutes et ne peut etre utilise qu'une seule fois.",
-        "Si vous n'etes pas a l'origine de cette demande, ignorez cet email.",
-        '',
-        siteUrl
-    ].join('\n');
+    return renderOtpEmail({
+        variant: 'login',
+        code,
+        siteUrl: getSiteUrl()
+    }).text;
 }
 
 async function clearOtpAfterMailFailure(emailRef, error) {
@@ -255,7 +235,11 @@ exports.sendCustomerLoginOtp = regionalFunctions()
             await emailRuntime.sender.send({
                 from: `Seconde Vie <${emailRuntime.fromAddress}>`,
                 to: email,
-                subject: 'Votre code de connexion Seconde Vie',
+                subject: renderOtpEmail({
+                    variant: 'login',
+                    code,
+                    siteUrl: getSiteUrl()
+                }).subject,
                 text: buildEmailText(code),
                 html: buildEmailHtml(code)
             }, {

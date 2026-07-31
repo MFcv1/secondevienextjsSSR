@@ -1,7 +1,11 @@
 'use strict';
 
 const admin = require('firebase-admin');
-const { buildFinancialFact, buildOutboxIntent } = require('./commerceEffects');
+const {
+    buildFinancialFact,
+    buildOutboxIntent,
+    deterministicEffectId
+} = require('./commerceEffects');
 const { assertActionAllowed } = require('./allowedActions');
 const { writeFinancialRollups } = require('./financialRollup');
 const { hashPayload } = require('./idempotency');
@@ -210,32 +214,62 @@ function createRefundRepository({
         const fact = baseFact && order.testContext
             ? { ...baseFact, testContext: { ...order.testContext } }
             : baseFact;
-        const baseOutbox = fact
-            ? buildOutboxIntent({
-                effectId: fact.effectId,
+        const emailEffectId = fact?.effectId || deterministicEffectId([
+            'refund',
+            outcome,
+            order.id,
+            nextAttempt.refundRequestId
+        ]);
+        const effectType = outcome === 'succeeded' ? 'refund_succeeded' : 'refund_failed';
+        const customerTemplate = outcome === 'succeeded'
+            ? 'order-refunded'
+            : 'order-refund-failed';
+        const adminTemplate = outcome === 'succeeded'
+            ? 'order-refunded-admin'
+            : 'order-refund-failed-admin';
+        const payloadSnapshot = {
+            orderId: order.id,
+            refundId: refund.id || null,
+            amountCents: nextAttempt.amountCents,
+            currency: nextAttempt.currency
+        };
+        const baseOutboxes = [
+            buildOutboxIntent({
+                effectId: emailEffectId,
                 aggregateType: 'order',
                 aggregateId: order.id,
-                effectType: 'refund_succeeded',
-                template: 'order-refunded',
+                effectType,
+                template: customerTemplate,
                 recipientRole: 'customer',
                 recipientHash: hashPayload({
                     email: order.customerSnapshot?.email || null,
                     ownerUid: order.userId
                 }),
-                payloadSnapshot: {
-                    orderId: order.id,
-                    refundId: refund.id,
-                    amountCents: nextAttempt.amountCents,
-                    currency: nextAttempt.currency
-                },
+                payloadSnapshot,
+                clock
+            }),
+            buildOutboxIntent({
+                effectId: emailEffectId,
+                aggregateType: 'order',
+                aggregateId: order.id,
+                effectType,
+                template: adminTemplate,
+                recipientRole: 'admin',
+                recipientHash: hashPayload({
+                    role: 'admin',
+                    channel: 'transactional-sender'
+                }),
+                payloadSnapshot,
                 clock
             })
-            : null;
-        const outbox = baseOutbox && order.testContext
-            ? { ...baseOutbox, testContext: { ...order.testContext } }
-            : baseOutbox;
+        ];
+        const outboxes = baseOutboxes.map((intent) => (
+            order.testContext
+                ? { ...intent, testContext: { ...order.testContext } }
+                : intent
+        ));
         const factRef = fact ? refs.financialFact(fact.effectId) : null;
-        const outboxRef = outbox ? refs.outbox(outbox.outboxId) : null;
+        const outboxRefs = outboxes.map((intent) => refs.outbox(intent.outboxId));
 
         return db.runTransaction(async (transaction) => {
             const reads = [
@@ -244,7 +278,7 @@ function createRefundRepository({
                 transaction.get(auditRef)
             ];
             if (factRef) reads.push(transaction.get(factRef));
-            if (outboxRef) reads.push(transaction.get(outboxRef));
+            for (const outboxRef of outboxRefs) reads.push(transaction.get(outboxRef));
             const snapshots = await Promise.all(reads);
             if (!snapshotExists(snapshots[0]) || !snapshotExists(snapshots[1])) {
                 throw repositoryError('COMMERCE_REFUND_SETTLEMENT_INCOMPLETE');
@@ -291,7 +325,8 @@ function createRefundRepository({
                 stateVersionAfter: nextOrder.stateVersion,
                 createdAt: clock.now()
             });
-            if (factRef && !snapshotExists(snapshots[3])) {
+            let nextSnapshotIndex = 3;
+            if (factRef && !snapshotExists(snapshots[nextSnapshotIndex])) {
                 transaction.set(factRef, fact);
                 writeFinancialRollups(transaction, {
                     refs,
@@ -300,7 +335,12 @@ function createRefundRepository({
                     increment
                 });
             }
-            if (outboxRef && !snapshotExists(snapshots[4])) transaction.set(outboxRef, outbox);
+            if (factRef) nextSnapshotIndex += 1;
+            for (let index = 0; index < outboxes.length; index += 1) {
+                if (!snapshotExists(snapshots[nextSnapshotIndex + index])) {
+                    transaction.set(outboxRefs[index], outboxes[index]);
+                }
+            }
             return { order: nextOrder, attempt: nextAttempt, reused: false };
         });
     }

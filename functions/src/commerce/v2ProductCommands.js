@@ -3,7 +3,7 @@
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
 const {
-    checkRecentActiveStrongAdmin
+    checkActiveStrongAdmin
 } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
 const {
@@ -106,7 +106,7 @@ function normalizeCommand(data) {
 function createHandler(action, payloadFromData) {
     return async (data, context) => {
         try {
-            await checkRecentActiveStrongAdmin(context);
+            await checkActiveStrongAdmin(context);
             return await commandRepository().execute({
                 collectionName: data?.collectionName || 'furniture',
                 productId: data?.productId,
@@ -132,7 +132,7 @@ const callable = (handler) => regionalFunctions()
 
 const preflightProductMutationAdmin = callable(async (_data, context) => {
     try {
-        await checkRecentActiveStrongAdmin(context);
+        await checkActiveStrongAdmin(context);
         return {
             ok: true,
             authorization: 'recent-strong-admin'

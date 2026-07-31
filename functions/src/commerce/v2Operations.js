@@ -3,7 +3,7 @@
 const crypto = require('node:crypto');
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
-const { APP_ID } = require('../../helpers/config');
+const { APP_ID, getSiteUrl } = require('../../helpers/config');
 const {
     GMAIL_EMAIL,
     GMAIL_PASSWORD,
@@ -20,6 +20,9 @@ const { regionalFunctions } = require('../../helpers/runtime');
 const {
     createTransactionalEmailSender
 } = require('../email/transactionalEmail');
+const {
+    renderCommerceEmail
+} = require('../email/commerceEmailTemplates');
 const {
     buildPaymentReceipt,
     buildRefundConfirmation
@@ -99,27 +102,261 @@ function createEmailSender() {
     });
 }
 
+function escapeEmailHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function formatMoney(amountCents, currency = 'EUR') {
+    return new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: String(currency || 'EUR').toUpperCase()
+    }).format(Number(amountCents || 0) / 100);
+}
+
+function orderReference(orderId) {
+    return `CMD-${String(orderId || '').slice(0, 10).toUpperCase()}`;
+}
+
+function deliveryLabel(order) {
+    const modeId = order?.deliverySnapshot?.id;
+    if (modeId === 'delivery-pickup') return 'Retrait à l’atelier (Marseille)';
+    if (modeId === 'delivery-local') return 'Livraison Marseille & alentours';
+    if (modeId === 'delivery-carrier') return 'Transporteur spécialisé';
+    return Number(order?.amounts?.shippingCents || 0) === 0
+        ? 'Livraison offerte'
+        : 'Livraison';
+}
+
+function addressLines(order) {
+    const shipping = order?.shippingSnapshot || {};
+    return [
+        shipping.fullName,
+        shipping.line1,
+        shipping.line2,
+        [shipping.postalCode, shipping.city].filter(Boolean).join(' '),
+        shipping.country
+    ].filter(Boolean).map((value) => String(value));
+}
+
+function itemText(order) {
+    return (order?.items || []).map((item) => (
+        `${Number(item.quantity || 1)} × ${item.titleSnapshot || 'Pièce restaurée'} — ` +
+        formatMoney(Number(item.unitAmountCents || 0) * Number(item.quantity || 1), order.currency)
+    ));
+}
+
+function itemRowsHtml(order) {
+    return (order?.items || []).map((item) => {
+        const title = escapeEmailHtml(item.titleSnapshot || 'Pièce restaurée');
+        const quantity = Number(item.quantity || 1);
+        const total = formatMoney(Number(item.unitAmountCents || 0) * quantity, order.currency);
+        return `
+            <tr>
+                <td style="padding:14px 0;border-bottom:1px solid #e7e5e4;color:#1c1917;font-size:15px;line-height:1.45;">
+                    <strong>${title}</strong><br>
+                    <span style="color:#78716c;font-size:13px;">Quantité ${quantity}</span>
+                </td>
+                <td style="padding:14px 0;border-bottom:1px solid #e7e5e4;color:#1c1917;font-size:15px;text-align:right;white-space:nowrap;">
+                    ${escapeEmailHtml(total)}
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function premiumEmailShell({
+    eyebrow,
+    title,
+    intro,
+    reference,
+    statusLabel,
+    amountLabel,
+    detailsHtml,
+    calloutHtml,
+    actionLabel,
+    actionUrl
+}) {
+    return `
+        <!doctype html>
+        <html lang="fr">
+        <body style="margin:0;background:#f3f1ec;color:#1c1917;font-family:Arial,Helvetica,sans-serif;">
+            <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeEmailHtml(intro)}</div>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f1ec;">
+                <tr>
+                    <td align="center" style="padding:28px 14px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e7e5e4;border-radius:24px;overflow:hidden;">
+                            <tr>
+                                <td style="background:#1c1917;padding:28px 32px;color:#ffffff;">
+                                    <div style="font-family:Georgia,serif;font-size:25px;letter-spacing:-0.4px;">Seconde Vie<span style="color:#d97706;">.</span></div>
+                                    <div style="margin-top:6px;color:#d6d3d1;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;">Mobilier restauré à Marseille</div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding:34px 32px 18px;">
+                                    <div style="color:#a16207;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">${escapeEmailHtml(eyebrow)}</div>
+                                    <h1 style="margin:10px 0 12px;font-family:Georgia,serif;font-size:34px;line-height:1.08;font-weight:500;letter-spacing:-0.6px;">${escapeEmailHtml(title)}</h1>
+                                    <p style="margin:0;color:#57534e;font-size:16px;line-height:1.65;">${escapeEmailHtml(intro)}</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding:10px 32px 0;">
+                                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fafaf9;border:1px solid #e7e5e4;border-radius:16px;">
+                                        <tr>
+                                            <td style="padding:18px 20px;">
+                                                <div style="color:#78716c;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;">Commande</div>
+                                                <div style="margin-top:5px;font-weight:700;font-size:15px;">${escapeEmailHtml(reference)}</div>
+                                            </td>
+                                            <td style="padding:18px 20px;text-align:center;border-left:1px solid #e7e5e4;border-right:1px solid #e7e5e4;">
+                                                <div style="color:#78716c;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;">Statut</div>
+                                                <div style="margin-top:5px;color:#166534;font-weight:700;font-size:15px;">${escapeEmailHtml(statusLabel)}</div>
+                                            </td>
+                                            <td style="padding:18px 20px;text-align:right;">
+                                                <div style="color:#78716c;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;">Montant</div>
+                                                <div style="margin-top:5px;font-weight:700;font-size:15px;white-space:nowrap;">${escapeEmailHtml(amountLabel)}</div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr><td style="padding:24px 32px 0;">${detailsHtml}</td></tr>
+                            <tr><td style="padding:20px 32px 0;">${calloutHtml}</td></tr>
+                            <tr>
+                                <td style="padding:26px 32px 36px;">
+                                    <a href="${escapeEmailHtml(actionUrl)}" style="display:inline-block;background:#1c1917;color:#ffffff;text-decoration:none;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:700;">${escapeEmailHtml(actionLabel)}</a>
+                                    <p style="margin:24px 0 0;color:#78716c;font-size:12px;line-height:1.6;">Message automatique envoyé depuis le sandbox Seconde Vie. Ce document ne constitue ni une facture ni un avoir fiscal.</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+    `;
+}
+
 function messageFor(entry, order, senderEmail) {
+    if (entry?.template) {
+        return {
+            from: `Seconde Vie <${senderEmail}>`,
+            replyTo: senderEmail,
+            ...renderCommerceEmail({
+                template: entry.template,
+                order,
+                payload: entry.payloadSnapshot || {},
+                senderEmail,
+                siteUrl: getSiteUrl()
+            })
+        };
+    }
     const recipient = order?.customerSnapshot?.email || order?.userEmail || null;
     if (typeof recipient !== 'string' || !recipient.includes('@')) {
         throw operationsError('COMMERCE_OUTBOX_RECIPIENT_MISSING');
     }
     const amount = Number(entry.payloadSnapshot?.amountCents || 0);
-    const amountLabel = `${(amount / 100).toFixed(2)} EUR`;
+    const currency = entry.payloadSnapshot?.currency || order.currency || 'EUR';
+    const amountLabel = formatMoney(amount, currency);
+    const reference = orderReference(order.id || entry.payloadSnapshot?.orderId);
+    const customerName = String(order.shippingSnapshot?.fullName || '').trim();
+    const greeting = customerName ? `Bonjour ${customerName}, ` : '';
+    const siteUrl = getSiteUrl().replace(/\/$/, '');
+    const ordersUrl = `${siteUrl}/mes-commandes`;
+    const address = addressLines(order);
+    const lines = itemText(order);
+    const rows = itemRowsHtml(order);
+    const shared = {
+        from: `Seconde Vie <${senderEmail}>`,
+        to: recipient,
+        bcc: senderEmail,
+        replyTo: senderEmail
+    };
     if (entry.template === 'order-paid') {
+        const shippingCents = Number(order.amounts?.shippingCents || 0);
+        const detailsHtml = `
+            <h2 style="margin:0;font-size:18px;">Votre pièce</h2>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:8px;">${rows}</table>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;">
+                <tr><td style="padding:5px 0;color:#78716c;font-size:14px;">${escapeEmailHtml(deliveryLabel(order))}</td><td style="padding:5px 0;text-align:right;font-size:14px;">${escapeEmailHtml(formatMoney(shippingCents, currency))}</td></tr>
+                <tr><td style="padding:9px 0 0;font-weight:700;font-size:16px;">Total payé</td><td style="padding:9px 0 0;text-align:right;font-weight:700;font-size:18px;">${escapeEmailHtml(amountLabel)}</td></tr>
+            </table>
+        `;
+        const calloutHtml = `
+            <div style="background:#f5f5f4;border-left:4px solid #d97706;border-radius:12px;padding:18px 20px;">
+                <div style="font-weight:700;margin-bottom:7px;">${escapeEmailHtml(deliveryLabel(order))}</div>
+                <div style="color:#57534e;font-size:14px;line-height:1.6;">${address.map(escapeEmailHtml).join('<br>')}</div>
+            </div>
+        `;
         return {
-            from: senderEmail,
-            to: recipient,
-            subject: 'Paiement sandbox confirme',
-            text: `Votre paiement sandbox de ${amountLabel} est confirme. Ce message ne constitue pas une facture.`
+            ...shared,
+            subject: `Commande ${reference} confirmée · Seconde Vie`,
+            text: [
+                `${greeting}votre paiement est confirmé.`,
+                `Commande ${reference} — ${amountLabel}`,
+                ...lines,
+                `${deliveryLabel(order)} — ${formatMoney(shippingCents, currency)}`,
+                ...address,
+                `Suivre la commande : ${ordersUrl}`,
+                'Sandbox : ce message ne constitue pas une facture.'
+            ].filter(Boolean).join('\n'),
+            html: premiumEmailShell({
+                eyebrow: 'Paiement confirmé',
+                title: 'Votre pièce est réservée.',
+                intro: `${greeting}le paiement Stripe est confirmé et votre commande est maintenant enregistrée.`,
+                reference,
+                statusLabel: 'Payée',
+                amountLabel,
+                detailsHtml,
+                calloutHtml,
+                actionLabel: 'Voir ma commande',
+                actionUrl: ordersUrl
+            })
         };
     }
     if (entry.template === 'order-refunded') {
+        const refundId = entry.payloadSnapshot?.refundId || null;
+        const detailsHtml = `
+            <h2 style="margin:0;font-size:18px;">Récapitulatif du remboursement</h2>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:8px;">${rows}</table>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;">
+                <tr><td style="padding:9px 0 0;font-weight:700;font-size:16px;">Montant remboursé</td><td style="padding:9px 0 0;text-align:right;font-weight:700;font-size:18px;">${escapeEmailHtml(amountLabel)}</td></tr>
+            </table>
+        `;
+        const calloutHtml = `
+            <div style="background:#ecfdf5;border:1px solid #bbf7d0;border-radius:12px;padding:18px 20px;">
+                <div style="color:#166534;font-weight:700;margin-bottom:7px;">Remboursement confirmé par Stripe</div>
+                <div style="color:#3f3f46;font-size:14px;line-height:1.6;">Le crédit est renvoyé sur le moyen de paiement initial. Selon votre banque, son apparition peut prendre quelques jours ouvrables.</div>
+                ${refundId ? `<div style="margin-top:10px;color:#78716c;font-size:11px;">Référence Stripe : ${escapeEmailHtml(refundId)}</div>` : ''}
+            </div>
+        `;
         return {
-            from: senderEmail,
-            to: recipient,
-            subject: 'Remboursement sandbox confirme',
-            text: `Votre remboursement sandbox de ${amountLabel} est confirme. Le delai bancaire reste indicatif.`
+            ...shared,
+            subject: `Remboursement ${reference} confirmé · Seconde Vie`,
+            text: [
+                `${greeting}votre remboursement Stripe est confirmé.`,
+                `Commande ${reference} — ${amountLabel} remboursés`,
+                ...lines,
+                refundId ? `Référence Stripe : ${refundId}` : null,
+                'Le crédit peut prendre quelques jours ouvrables selon votre banque.',
+                `Consulter le dossier : ${ordersUrl}`,
+                'Sandbox : ce message ne constitue pas un avoir fiscal.'
+            ].filter(Boolean).join('\n'),
+            html: premiumEmailShell({
+                eyebrow: 'Remboursement confirmé',
+                title: 'Le remboursement est en route.',
+                intro: `${greeting}Stripe a confirmé le remboursement sur le moyen de paiement utilisé lors de l’achat.`,
+                reference,
+                statusLabel: 'Remboursée',
+                amountLabel,
+                detailsHtml,
+                calloutHtml,
+                actionLabel: 'Consulter le dossier',
+                actionUrl: ordersUrl
+            })
         };
     }
     throw operationsError('COMMERCE_OUTBOX_TEMPLATE_UNSUPPORTED');
@@ -651,6 +888,7 @@ module.exports = {
     commerceOperationsReconciler,
     commerceOutboxDispatcher,
     getCommerceOperationsStatusAdmin,
+    messageFor,
     rebuildCommerceOperationsAdmin,
     persistFinancialRollups,
     runOperationsRebuild,

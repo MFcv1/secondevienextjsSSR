@@ -91,7 +91,7 @@ route publique [S]
 ```text
 /admin [C]
   -> AdminForm / AdminItemList
-  -> preflightProductMutationAdmin [F] (fenetre v2 + AAL2 recent)
+  -> preflightProductMutationAdmin [F] (fenetre v2 + admin actif + AAL2)
   -> upload variantes [ST]
   -> furniture/{id} [DB]
   -> onCatalogSourceWrite [F]
@@ -120,6 +120,15 @@ header/menu/route privee
   -> mutation sensible expiree -> evenement step-up -> meme modale, sans signOut
 ```
 
+Reference visuelle et cycle de vie:
+`_DOCS/email/EMAILS_TRANSACTIONNELS.md`.
+
+Plan temporaire de reproduction humaine sans correction de code:
+`_DOCS/email/RECETTE_EMAILS_LUNA.md`.
+Skill reutilisable de cette recette dans un nouveau chat Luna:
+`.agents/skills/client-admin-test/SKILL.md`, invoque par `$client-admin-test`.
+Guide court: `TEST_CLIENT_ADMIN_LUNA.md`.
+
 ### 4.4 Achat
 
 ```text
@@ -128,12 +137,13 @@ carte produit
   -> /checkout
   -> OTP/compte verifie
   -> adresse + telephone normalises dans shippingSnapshot
+  -> methode/policy de livraison figee dans deliverySnapshot
   -> createOrder [F]
   -> transaction stock + orders [DB]
   -> Stripe Payment Element [EXT]
   -> fermeture/reload: descriptor UID -> resumeCheckoutV2 -> meme PaymentIntent
   -> stripeWebhook [F]
-  -> order paid + email triggers
+  -> order paid + deux outbox atomiques: client + notification admin dediee
   -> /mes-commandes + /admin
   -> demande client de retour contextualisee vers l'atelier
      -> decision refund/retour physique conservee cote admin serveur
@@ -585,9 +595,10 @@ functions/
     |   |   |-- webhookInbox.js .......... lease, backoff et fencing
     |   |   |-- webhookInboxRepository.js  commit inbox + effet atomique
     |   |   |-- stripeWebhookIngress.js ... signature et scope plateforme/Connect
-    |   |   |-- webhookWorker.js .......... retrieve PI puis apply sous fence
+    |   |   |-- webhookWorker.js .......... retrieve PI/refund puis apply sous fence
     |   |   |-- reconcilePayment.js ...... mapping complet des statuts PI
     |   |   |-- paymentEffectApplier.js ... order/inventaire/fait/outbox atomiques
+    |   |   |-- refundEffectApplier.js .... refund webhook, tentative/audit/outbox atomiques
     |   |   |-- commerceEffects.js ....... faits financiers/outbox deterministes
     |   |   |-- outboxRepository.js / outboxWorker.js ... lease, dead-letter et delivery_unknown
     |   |   |-- financialProjection.js .. projection financiere absolue
@@ -627,6 +638,9 @@ functions/
     |   |-- e2eCheckoutProof.js
     |   `-- e2eStripeHardeningProof.js
     |-- email/
+    |   |-- emailDesignSystem.js .......... shell HTML/texte premium partage
+    |   |-- commerceEmailTemplates.js ..... paiement, fulfillment, refund client/admin v2
+    |   |-- otpEmailTemplates.js .......... OTP connexion/checkout unifies
     |   |-- transactionalEmail.js
     |   |-- transactionalEmailRuntime.js
     |   `-- orderEmails.js
@@ -766,6 +780,7 @@ benchmark-auth-ui.mjs
 
 ```text
 e2e-auth-email-otp.mjs
+e2e-sandbox-role-session.mjs ......... bootstrap ephemere client/admin, sandbox strict, sans secret persiste
 e2e-hosted-stripe-checkout.mjs ........ en quarantaine commerce
 e2e-refund-latest-stripe-order.mjs .... en quarantaine commerce
 read-latest-auth-otp.mjs .............. outil local sensible

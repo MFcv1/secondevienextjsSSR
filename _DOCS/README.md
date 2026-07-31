@@ -18,6 +18,7 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 | Interface et navigation | [INTERFACE_NAVIGATION.md](ux/INTERFACE_NAVIGATION.md) | header, mega menu, mobile, transitions, accessibilite UX |
 | Images et medias | [IMAGES_MEDIA.md](images/IMAGES_MEDIA.md) | Storage, variantes, metadata, affichage, backfills |
 | Authentification | [AUTHENTIFICATION.md](security/AUTHENTIFICATION.md) | OTP, Google, passkeys, session, step-up admin, reprise production |
+| E-mails transactionnels | [EMAILS_TRANSACTIONNELS.md](email/EMAILS_TRANSACTIONNELS.md) | galerie, OTP, paiement, cycle de commande, remboursements, transport et captures |
 | Securite globale | [SECURITE_GLOBALE.md](security/SECURITE_GLOBALE.md) | frontieres de confiance, rules, App Check, secrets, risques |
 | Espace client | [ESPACE_CLIENT.md](client/ESPACE_CLIENT.md) | compte, commandes, documents provisoires, wishlist, adresse, support |
 | Commerce - synthese | [COMMERCE_SYNTHESE.md](commerce/COMMERCE_SYNTHESE.md) | point d'entree unique: statut, Gates, preuves, limites et liens |
@@ -37,6 +38,8 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 | Perimetre | Document | Statut | Echeance et cloture |
 | --- | --- | --- | --- |
 | reprise commerce post-Gate 8 | [COMMERCE_REPRISE.md](commerce/COMMERCE_REPRISE.md) | `PLAN_REPRISE_DIFFERE`, R0 documentaire termine, R1 UX suivant | revue au plus tard le 2026-10-31, fusion canonique puis suppression avec `TODO.md` |
+| recette reelle e-mails Luna | [RECETTE_EMAILS_LUNA.md](email/RECETTE_EMAILS_LUNA.md) | `PLAN_TEMPORAIRE_EXECUTION`, Luna teste et documente sans corriger | execution avant le 2026-08-06, fusion dans les chapitres e-mail/commerce puis suppression |
+| skill client/admin Luna | [.agents/skills/client-admin-test/SKILL.md](../.agents/skills/client-admin-test/SKILL.md) | `LANCEUR_TEMPORAIRE_ACTIF`, invocation `$client-admin-test` sans prompt a recopier; guide [TEST_CLIENT_ADMIN_LUNA.md](../TEST_CLIENT_ADMIN_LUNA.md) | fusion avec la recette Luna puis suppression avant le 2026-08-06 |
 
 ## Niveaux de statut
 

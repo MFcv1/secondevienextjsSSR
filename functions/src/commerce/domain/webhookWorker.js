@@ -11,6 +11,8 @@ function createWebhookWorker({
     inboxRepository,
     retrievePaymentIntent,
     applyPaymentIntent,
+    retrieveRefund = null,
+    applyRefund = null,
     ids,
     clock,
     leaseMs = 60_000,
@@ -40,19 +42,30 @@ function createWebhookWorker({
             leaseMs
         });
         try {
-            if (
-                !claimed.objectId ||
-                !claimed.type.startsWith('payment_intent.')
-            ) {
+            if (!claimed.objectId) {
                 throw workerError('COMMERCE_WEBHOOK_EVENT_UNSUPPORTED');
             }
             const accountId = claimed.scope === 'connect' ? claimed.accountId : null;
-            const paymentIntent = await retrievePaymentIntent(claimed.objectId, accountId);
+            const isPaymentIntent = claimed.type.startsWith('payment_intent.');
+            const isRefund = ['refund.created', 'refund.updated', 'refund.failed']
+                .includes(claimed.type);
+            if (!isPaymentIntent && !isRefund) {
+                throw workerError('COMMERCE_WEBHOOK_EVENT_UNSUPPORTED');
+            }
+            if (isRefund && (
+                typeof retrieveRefund !== 'function' ||
+                typeof applyRefund !== 'function'
+            )) {
+                throw workerError('COMMERCE_WEBHOOK_EVENT_UNSUPPORTED');
+            }
+            const providerObject = isPaymentIntent
+                ? await retrievePaymentIntent(claimed.objectId, accountId)
+                : await retrieveRefund(claimed.objectId, accountId);
             failpoints?.hit('inbox.after_retrieve');
             if (
-                !paymentIntent ||
-                paymentIntent.id !== claimed.objectId ||
-                (paymentIntent.connectedAccountId || null) !== accountId
+                !providerObject ||
+                providerObject.id !== claimed.objectId ||
+                (providerObject.connectedAccountId || null) !== accountId
             ) {
                 throw workerError('COMMERCE_WEBHOOK_PROVIDER_SCOPE_MISMATCH');
             }
@@ -61,10 +74,15 @@ function createWebhookWorker({
                 leaseToken,
                 nowMillis: clock.nowMillis(),
                 processedAt: clock.now(),
-                applyDomainEffects: (transaction, entry) => applyPaymentIntent(transaction, {
-                    entry,
-                    paymentIntent
-                })
+                applyDomainEffects: (transaction, entry) => isPaymentIntent
+                    ? applyPaymentIntent(transaction, {
+                        entry,
+                        paymentIntent: providerObject
+                    })
+                    : applyRefund(transaction, {
+                        entry,
+                        refund: providerObject
+                    })
             });
         } catch (cause) {
             try {

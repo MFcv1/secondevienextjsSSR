@@ -22,7 +22,8 @@ function refs(db) {
         ),
         auditEvent: (orderId, eventId) => db.doc(
             `orders/${orderId}/events/${eventId}`
-        )
+        ),
+        outbox: (outboxId) => db.doc(`commerce_outbox/${outboxId}`)
     });
 }
 

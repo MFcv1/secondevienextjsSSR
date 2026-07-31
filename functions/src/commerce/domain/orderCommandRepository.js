@@ -6,6 +6,10 @@ const {
     hashPayload,
     validateCommand
 } = require('./idempotency');
+const {
+    buildOutboxIntent,
+    deterministicEffectId
+} = require('./commerceEffects');
 const { reduceOrder, validateOrderV2 } = require('./orderState');
 
 function repositoryError(code) {
@@ -38,6 +42,23 @@ function eventForAction(action, payload) {
     }
 }
 
+function emailTemplateForAction(action) {
+    switch (action) {
+        case 'fulfillment_prepare':
+            return 'order-preparing';
+        case 'fulfillment_ready':
+            return 'order-ready-for-pickup';
+        case 'fulfillment_pickup':
+            return 'order-picked-up';
+        case 'fulfillment_ship':
+            return 'order-shipped';
+        case 'fulfillment_deliver':
+            return 'order-delivered';
+        default:
+            return null;
+    }
+}
+
 function validateActor(actor) {
     if (
         !actor ||
@@ -56,6 +77,7 @@ function createOrderCommandRepository({ db, refs, clock, failpoints = null }) {
         typeof refs?.order !== 'function' ||
         typeof refs?.commandResult !== 'function' ||
         typeof refs?.auditEvent !== 'function' ||
+        typeof refs?.outbox !== 'function' ||
         typeof clock?.now !== 'function'
     ) {
         throw repositoryError('COMMERCE_COMMAND_REPOSITORY_DEPENDENCY_INVALID');
@@ -77,6 +99,14 @@ function createOrderCommandRepository({ db, refs, clock, failpoints = null }) {
         const commandRef = refs.commandResult(command.commandId);
         const orderRef = refs.order(orderId);
         const auditRef = refs.auditEvent(orderId, command.commandId);
+        const emailTemplate = emailTemplateForAction(action);
+        const emailEffectId = emailTemplate
+            ? deterministicEffectId(['order-command', orderId, action, command.commandId])
+            : null;
+        const outboxId = emailTemplate
+            ? deterministicEffectId([emailEffectId, emailTemplate, 'customer', 'email'])
+            : null;
+        const outboxRef = outboxId ? refs.outbox(outboxId) : null;
         const commandPayload = {
             action,
             orderId,
@@ -85,11 +115,13 @@ function createOrderCommandRepository({ db, refs, clock, failpoints = null }) {
             reason
         };
         return db.runTransaction(async (transaction) => {
-            const [commandSnap, orderSnap, auditSnap] = await Promise.all([
+            const snapshots = await Promise.all([
                 transaction.get(commandRef),
                 transaction.get(orderRef),
-                transaction.get(auditRef)
+                transaction.get(auditRef),
+                ...(outboxRef ? [transaction.get(outboxRef)] : [])
             ]);
+            const [commandSnap, orderSnap, auditSnap, outboxSnap] = snapshots;
             const existing = snapshotExists(commandSnap) ? commandSnap.data() : null;
             if (existing && existing.actorUid !== actor.uid) {
                 throw repositoryError('COMMERCE_COMMAND_RESULT_ACCESS_DENIED');
@@ -141,6 +173,27 @@ function createOrderCommandRepository({ db, refs, clock, failpoints = null }) {
                         throw repositoryError('COMMERCE_AUDIT_APPEND_ONLY_CONFLICT');
                     }
                     const result = record.result;
+                    const outbox = emailTemplate
+                        ? buildOutboxIntent({
+                            effectId: emailEffectId,
+                            aggregateType: 'order',
+                            aggregateId: orderId,
+                            effectType: action,
+                            template: emailTemplate,
+                            recipientRole: 'customer',
+                            recipientHash: hashPayload({
+                                email: order.customerSnapshot?.email || null,
+                                ownerUid: order.userId
+                            }),
+                            payloadSnapshot: {
+                                orderId,
+                                amountCents: order.amounts.totalCents,
+                                currency: order.currency,
+                                trackingNumber: payload.trackingNumber || null
+                            },
+                            clock
+                        })
+                        : null;
                     transaction.set(orderRef, result.order);
                     transaction.set(commandRef, {
                         schemaVersion: 2,
@@ -168,6 +221,14 @@ function createOrderCommandRepository({ db, refs, clock, failpoints = null }) {
                         stateVersionAfter: result.order.stateVersion,
                         createdAt: clock.now()
                     });
+                    if (outbox && !snapshotExists(outboxSnap)) {
+                        transaction.set(
+                            outboxRef,
+                            order.testContext
+                                ? { ...outbox, testContext: { ...order.testContext } }
+                                : outbox
+                        );
+                    }
                 },
                 failpoints
             }).then((result) => result.response || result);
@@ -179,5 +240,6 @@ function createOrderCommandRepository({ db, refs, clock, failpoints = null }) {
 
 module.exports = {
     createOrderCommandRepository,
+    emailTemplateForAction,
     eventForAction
 };

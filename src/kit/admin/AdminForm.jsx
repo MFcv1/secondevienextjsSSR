@@ -97,7 +97,13 @@ const getCategoryMeta = (categoryId) => {
   }
 };
 
-const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkMode = false }) => {
+const AdminForm = ({
+  editData,
+  onCancelEdit,
+  collectionName = 'furniture',
+  darkMode = false,
+  mutationsEnabled = false
+}) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -129,6 +135,7 @@ const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkM
   const depthInputRef = useRef(null);
   const heightInputRef = useRef(null);
   const productCommandSessionRef = useRef(null);
+  const initialPreflightStartedRef = useRef(false);
 
   // New state for drag reordering
   const [isDragging, setIsDragging] = useState(false);
@@ -147,6 +154,15 @@ const AdminForm = ({ editData, onCancelEdit, collectionName = 'furniture', darkM
 
   // [NEW] Cropper State
   const [cropperConfig, setCropperConfig] = useState({ isOpen: false, image: null, itemId: null, aspect: 3 / 4 });
+
+  useEffect(() => {
+    if (!mutationsEnabled || initialPreflightStartedRef.current) return;
+    initialPreflightStartedRef.current = true;
+
+    void preflightProductMutationAdmin().catch(() => {
+      setMsg("⚠️ Confirmez votre session administrateur avant de préparer l'annonce.");
+    });
+  }, [mutationsEnabled]);
 
   const formatBytes = (bytes) => {
     if (bytes === 0) return '0 B';

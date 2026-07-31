@@ -1,6 +1,6 @@
 # Commerce, checkout et Stripe
 
-Derniere mise a jour: 2026-07-30
+Derniere mise a jour: 2026-07-31
 Statut: `PREPROD_TRANSACTIONAL_READY`
 
 Restriction active:
@@ -57,6 +57,13 @@ Composants principaux:
 - `CheckoutStripeModal` pour l'ecran Stripe plein viewport et le suivi durable
   de commande;
 - `CheckoutPaymentStep` pour Stripe Elements.
+
+Le checkout visible emploie uniquement un vocabulaire client. Les notions de
+projection, webhook, serveur, `PaymentIntent`, idempotence et controle plane
+restent dans le code, les journaux et le back-office. L'ecran de paiement est
+plein cadre sans gouttiere exterieure sur grand ecran, passe en une colonne sur
+mobile et conserve une largeur de lecture bornee pour Stripe. La confirmation
+finale est elle aussi un ecran plein viewport, pas une carte modale centree.
 
 Pendant le paiement, le recap utilise un snapshot du panier. Une reservation stock ne doit pas faire disparaitre visuellement les articles ou modifier le total deja presente.
 
@@ -137,6 +144,14 @@ Le handler:
 
 Evenements principaux: succes/echec/annulation PaymentIntent et creation/mise a jour/echec de refund, avec `charge.refunded` comme signal complementaire.
 
+Le rail v2 ingere explicitement `refund.created`, `refund.updated` et
+`refund.failed`. Le worker relit l'objet Refund autoritaire dans le compte
+Connect epingle, verifie commande, tentative, montant, devise et metadata,
+puis applique sous le fencing inbox la tentative, la commande, l'audit et les
+deux outbox client/admin. Un echec libere le montant `pending`, place le refund
+en `needs_review` lorsqu'aucun remboursement n'a reussi et ne cree aucun faux
+fait financier de remboursement.
+
 Historique du confinement Gate 0B:
 
 - un marqueur `processing` possede une lease expiree recuperable et un token de
@@ -191,12 +206,54 @@ Avant production:
 
 Les evenements commande et remboursement passent par `functions/src/email/transactionalEmail.js`. Gmail reste actif pour la demonstration; Resend est code mais inactif jusqu'au domaine expediteur valide. Voir `../security/AUTHENTIFICATION.md` et `../infra/INFRASTRUCTURE.md`.
 
+La galerie, l'inventaire des 13 rendus et leur cycle de vie visuel sont
+documentes dans
+[EMAILS_TRANSACTIONNELS.md](../email/EMAILS_TRANSACTIONNELS.md).
+
+Pour commerce v2, `commerceEmailTemplates.js` et
+`emailDesignSystem.js` rendent les confirmations paiement, les transitions
+d'execution et les remboursements en HTML responsive avec repli texte. Les
+valeurs commande sont echappees avant insertion HTML.
+
+Le paiement cree atomiquement deux intentions outbox distinctes:
+
+- `order-paid` pour le client;
+- `order-paid-admin` pour l'administrateur, sans copie BCC.
+
+La notification administrateur porte les coordonnees client, l'adresse, la
+methode de livraison, les lignes, le montant, le PaymentIntent Stripe et un
+lien direct `/admin?order_id=...`. Le back-office ouvre alors l'onglet
+commandes et deploie la commande cible.
+
+Chaque commande v2 emet aussi un message client lors des transitions
+`order-preparing`, `order-ready-for-pickup`, `order-picked-up`,
+`order-shipped` et `order-delivered`. Le numero de suivi est inclus lorsqu'il
+existe.
+
+Un remboursement confirme ou en echec cree egalement deux intentions
+atomiques, client et administrateur. Les modeles
+`order-refunded[-admin]` et `order-refund-failed[-admin]` portent la reference
+Stripe, expliquent l'absence de restock implicite et interdisent une relance
+aveugle en cas de resultat non confirme.
+
+Chaque nouvelle commande conserve aussi `deliverySnapshot` en plus de
+`shippingSnapshot` et des montants. Le premier restitue la policy/methode
+choisie; le second reste le snapshot d'adresse et de contact. Les anciennes
+commandes financieres ne sont pas retro-modifiees.
+
 Un echec e-mail n'inverse jamais un paiement confirme. L'outbox durable rend
 l'effet metier reprenable, mais Gmail SMTP n'applique pas la cle d'idempotence
 transmise et ne peut pas garantir
 exactement-un envoi si l'accuse est perdu apres acceptation: cet etat devient
 `delivery_unknown` sans retry automatique. Une garantie fournisseur plus forte
 attend Resend ou un provider avec idempotence effective.
+
+La recette reelle du 2026-07-30 a confirme un MIME multipart valide et
+SPF/DKIM/DMARC `pass` via Gmail SMTP. Gmail a toutefois place le message dans
+les spams: la reputation du compte de recette ne constitue pas une preuve de
+delivrabilite production. Le placement inbox attend le domaine final, Resend
+et ses DNS SPF/DKIM/DMARC; il ne doit pas etre contourne par une modification
+du contrat metier ou un marquage automatique de la boite cliente.
 
 ## 10. Preuves sandbox historiques et qualification
 
@@ -285,6 +342,7 @@ functions/src/commerce/stripeConnect.js
 functions/src/commerce/cancelOrder.js
 functions/src/commerce/refundOrder.js
 functions/src/commerce/orderStatus.js
+functions/src/commerce/domain/refundEffectApplier.js
 src/kit/admin/AdminOrders.jsx
 src/kit/admin/AdminReturns.jsx
 src/kit/admin/AdminPaymentSettings.jsx

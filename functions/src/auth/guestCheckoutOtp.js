@@ -8,6 +8,7 @@ const {
     TRANSACTIONAL_EMAIL_SECRETS,
     getTransactionalEmailRuntime
 } = require('../email/transactionalEmailRuntime');
+const { renderOtpEmail } = require('../email/otpEmailTemplates');
 
 const db = admin.firestore();
 
@@ -63,30 +64,19 @@ function getIpRef(context) {
 }
 
 function buildEmailHtml(code) {
-    const siteUrl = getSiteUrl();
-    return `
-        <div style="font-family: sans-serif; color: #1c1917; max-width: 560px;">
-            <h1 style="margin:0 0 16px;">Code de validation</h1>
-            <p>Votre code de validation Seconde Vie est :</p>
-            <p style="font-size:32px; letter-spacing:8px; font-weight:700; margin:24px 0;">${code}</p>
-            <p>Ce code expire dans 10 minutes. Si vous n'etes pas a l'origine de cette demande, ignorez cet email.</p>
-            <p style="color:#78716c;font-size:12px;">${siteUrl}</p>
-        </div>
-    `;
+    return renderOtpEmail({
+        variant: 'checkout',
+        code,
+        siteUrl: getSiteUrl()
+    }).html;
 }
 
 function buildEmailText(code) {
-    const siteUrl = getSiteUrl();
-    return [
-        'Validation Seconde Vie',
-        '',
-        `Votre code de validation : ${code}`,
-        '',
-        "Ce code expire dans 10 minutes et ne peut etre utilise qu'une seule fois.",
-        "Si vous n'etes pas a l'origine de cette demande, ignorez cet email.",
-        '',
-        siteUrl
-    ].join('\n');
+    return renderOtpEmail({
+        variant: 'checkout',
+        code,
+        siteUrl: getSiteUrl()
+    }).text;
 }
 
 async function clearOtpAfterMailFailure(emailRef, error) {
@@ -192,7 +182,11 @@ exports.sendGuestCheckoutOtp = regionalFunctions()
             await emailRuntime.sender.send({
                 from: `Seconde Vie <${emailRuntime.fromAddress}>`,
                 to: email,
-                subject: 'Votre code de validation Seconde Vie',
+                subject: renderOtpEmail({
+                    variant: 'checkout',
+                    code,
+                    siteUrl: getSiteUrl()
+                }).subject,
                 text: buildEmailText(code),
                 html: buildEmailHtml(code)
             }, {

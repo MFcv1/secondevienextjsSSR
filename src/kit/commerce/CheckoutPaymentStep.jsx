@@ -83,7 +83,7 @@ const CheckoutPaymentStep = ({ total, orderId, onPaymentSuccess, onPaymentError,
                 </div>
                 <div>
                     <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-stone-900'}`}>Paiement traité par Stripe</p>
-                    <p className={`mt-0.5 text-xs leading-5 ${darkMode ? 'text-stone-500' : 'text-stone-500'}`}>Vos données bancaires ne transitent pas par nos serveurs.</p>
+                    <p className={`mt-0.5 text-xs leading-5 ${darkMode ? 'text-stone-500' : 'text-stone-500'}`}>Vos informations bancaires sont saisies et protégées directement par Stripe.</p>
                 </div>
             </div>
 

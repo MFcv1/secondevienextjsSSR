@@ -12,6 +12,9 @@ const {
     buildEmailIdempotencyKey,
     createTransactionalEmailRuntime
 } = require('../functions/src/email/transactionalEmailRuntime');
+const {
+    renderOtpEmail
+} = require('../functions/src/email/otpEmailTemplates');
 
 test('Gmail reste un adaptateur injectable et actif par defaut', async () => {
     let transportConfig = null;
@@ -206,6 +209,29 @@ test('les cles idempotentes masquent les identifiants et restent stables', () =>
     assert.match(first, /^order-created-client\/[a-f0-9]{64}$/);
     assert.doesNotMatch(first, /order-123|customer@example\.test/);
     assert.ok(first.length <= 256);
+});
+
+test('les OTP connexion et checkout partagent le meme design premium sans melanger leur objet', () => {
+    const login = renderOtpEmail({
+        variant: 'login',
+        code: '123456',
+        siteUrl: 'https://sandbox.example.test'
+    });
+    const checkout = renderOtpEmail({
+        variant: 'checkout',
+        code: '654321',
+        siteUrl: 'https://sandbox.example.test'
+    });
+
+    assert.match(login.subject, /connexion/);
+    assert.match(checkout.subject, /commande/);
+    assert.match(login.html, /Seconde Vie/);
+    assert.match(checkout.html, /Seconde Vie/);
+    assert.match(login.html, /123456/);
+    assert.match(checkout.html, /654321/);
+    assert.match(login.text, /Usage unique|utilisé qu’une seule fois/);
+    assert.doesNotMatch(login.html, /654321/);
+    assert.doesNotMatch(checkout.html, /123456/);
 });
 
 test('les performances Auth utilisent un log structure et une liste de champs bornee', () => {

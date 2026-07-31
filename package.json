@@ -22,6 +22,8 @@
     "infra:deploy": "node scripts/audit-infra-deploy.cjs",
     "appcheck:audit": "node scripts/audit-app-check-paths.cjs",
     "e2e:auth-email": "node scripts/e2e-auth-email-otp.mjs",
+    "e2e:sandbox:client": "node scripts/with-env.mjs .env.sandbox node scripts/e2e-sandbox-role-session.mjs --role=client",
+    "e2e:sandbox:admin": "node scripts/with-env.mjs .env.sandbox node scripts/e2e-sandbox-role-session.mjs --role=admin",
     "e2e:hosted-stripe": "node scripts/e2e-hosted-stripe-checkout.mjs",
     "e2e:refund-stripe": "node scripts/with-env.mjs .env.sandbox node scripts/e2e-refund-latest-stripe-order.mjs",
     "commerce:legacy:classify": "node scripts/with-env.mjs .env.sandbox node scripts/classify-legacy-commerce.mjs --project=secondevienextjsssr --env=sandbox --dry-run",

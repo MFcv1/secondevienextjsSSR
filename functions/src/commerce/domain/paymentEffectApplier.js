@@ -197,9 +197,9 @@ function createPaymentEffectApplier({
         }
 
         let fact = null;
-        let outbox = null;
+        let outboxes = [];
         let factRef = null;
-        let outboxRef = null;
+        let outboxRefs = [];
         if (movementType === 'commit') {
             fact = buildFinancialFact({
                 orderId,
@@ -212,7 +212,7 @@ function createPaymentEffectApplier({
                 commandId: `payment-intent:${paymentIntent.id}`
             });
             if (order.testContext) fact = { ...fact, testContext: { ...order.testContext } };
-            outbox = buildOutboxIntent({
+            const customerOutbox = buildOutboxIntent({
                 effectId: fact.effectId,
                 aggregateType: 'order',
                 aggregateId: orderId,
@@ -230,9 +230,32 @@ function createPaymentEffectApplier({
                 },
                 clock
             });
-            if (order.testContext) outbox = { ...outbox, testContext: { ...order.testContext } };
+            const adminOutbox = buildOutboxIntent({
+                effectId: fact.effectId,
+                aggregateType: 'order',
+                aggregateId: orderId,
+                effectType: 'payment_succeeded',
+                template: 'order-paid-admin',
+                recipientRole: 'admin',
+                recipientHash: hashPayload({
+                    role: 'admin',
+                    channel: 'transactional-sender'
+                }),
+                payloadSnapshot: {
+                    orderId,
+                    paymentIntentId: paymentIntent.id,
+                    amountCents: paymentIntent.amount,
+                    currency: String(paymentIntent.currency).toUpperCase()
+                },
+                clock
+            });
+            outboxes = [customerOutbox, adminOutbox].map((intent) => (
+                order.testContext
+                    ? { ...intent, testContext: { ...order.testContext } }
+                    : intent
+            ));
             factRef = refs.financialFact(fact.effectId);
-            outboxRef = refs.outbox(outbox.outboxId);
+            outboxRefs = outboxes.map((intent) => refs.outbox(intent.outboxId));
         }
 
         const reads = [];
@@ -242,7 +265,7 @@ function createPaymentEffectApplier({
             reads.push(transaction.get(entryValue.movementRef));
         }
         if (factRef) reads.push(transaction.get(factRef));
-        if (outboxRef) reads.push(transaction.get(outboxRef));
+        for (const outboxRef of outboxRefs) reads.push(transaction.get(outboxRef));
         const snapshots = await Promise.all(reads);
         const now = clock.now();
 
@@ -351,8 +374,10 @@ function createPaymentEffectApplier({
                 });
             }
         }
-        if (outboxRef) {
-            const outboxSnap = snapshots[factOffset + 1];
+        for (let index = 0; index < outboxes.length; index += 1) {
+            const outbox = outboxes[index];
+            const outboxRef = outboxRefs[index];
+            const outboxSnap = snapshots[factOffset + 1 + index];
             if (snapshotExists(outboxSnap)) {
                 const existingOutbox = outboxSnap.data();
                 if (
@@ -371,7 +396,8 @@ function createPaymentEffectApplier({
             action: reconciliation.action,
             order: reconciliation.order,
             financialFactId: fact?.effectId || null,
-            outboxId: outbox?.outboxId || null
+            outboxId: outboxes[0]?.outboxId || null,
+            outboxIds: outboxes.map((intent) => intent.outboxId)
         };
     }
 

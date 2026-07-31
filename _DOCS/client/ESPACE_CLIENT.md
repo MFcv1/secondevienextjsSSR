@@ -1,6 +1,6 @@
 # Espace client
 
-Derniere mise a jour: 2026-07-29
+Derniere mise a jour: 2026-07-30
 Statut: `PREPROD_READY`
 
 Restriction active:
@@ -17,6 +17,9 @@ Les deux routes personnelles sont dynamiques et non indexables:
 - `/wishlist`: liste de souhaits complete.
 
 `OrdersPageIsland` et `WishlistPageIsland` attendent la resolution Auth avant d'afficher les donnees personnelles. Un utilisateur non connecte est dirige vers le workflow de connexion commun.
+Les actions `connectez-vous` et `inscrivez-vous` de `/wishlist` ouvrent la
+modale Auth publique commune via `sv:open-login`; elles ne redirigent jamais
+vers `/admin`.
 
 ## 2. Sections de Mon espace
 
@@ -119,6 +122,10 @@ La wishlist utilise:
 - le catalogue courant pour rafraichir disponibilite et visuel.
 
 Un passage wishlist -> panier doit revalider `isPurchasable`. Les informations de prix/stock conservees dans la wishlist ne sont jamais autoritaires.
+Le premier rendu de `WishlistPageIsland` reste identique entre serveur et
+navigateur. La liste locale est chargee uniquement par
+`subscribeWishlistItems` apres montage afin d'eviter toute divergence
+d'hydratation avec `localStorage`.
 
 ## 6. Panier et handoff
 

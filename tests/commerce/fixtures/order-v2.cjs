@@ -34,6 +34,11 @@ function makeOrder(overrides = {}) {
         shippingCents: 1500,
         customerSnapshot: { email: 'client@example.test' },
         shippingSnapshot: { country: 'FR' },
+        deliverySnapshot: {
+            id: 'delivery-carrier',
+            shippingCents: 1500,
+            policyVersion: 'policy-0001'
+        },
         expiresAt: '2026-07-26T11:00:00.000Z',
         clock: fixedClock()
     });

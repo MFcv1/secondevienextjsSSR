@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import process from 'node:process';
-import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { applicationDefault, cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore';
 
@@ -131,10 +131,10 @@ async function main() {
       durationMinutes <= MAX_WINDOW_MINUTES,
     'V2_ALL_DURATION_INVALID'
   );
-  invariant(process.env.FIREBASE_SERVICE_ACCOUNT_JSON, 'V2_ALL_SERVICE_ACCOUNT_MISSING');
-
   const app = getApps().find((entry) => entry.name === 'commerce-v2-all-window') || initializeApp({
-    credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)),
+    credential: process.env.FIREBASE_SERVICE_ACCOUNT_JSON
+      ? cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON))
+      : applicationDefault(),
     projectId
   }, 'commerce-v2-all-window');
   const db = getFirestore(app);

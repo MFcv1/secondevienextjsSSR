@@ -109,6 +109,12 @@ const isCommerceReadOnlyTab = (tabId, mutationsEnabled) => {
   return !mutationsEnabled;
 };
 
+const readAdminOrderTarget = () => {
+  if (typeof window === 'undefined') return null;
+  const orderId = new URLSearchParams(window.location.search).get('order_id');
+  return orderId && /^[A-Za-z0-9_-]{8,128}$/.test(orderId) ? orderId : null;
+};
+
 function CommerceReadOnlySurface({ children, darkMode, readOnly }) {
   if (!readOnly) return children;
   return (
@@ -157,6 +163,7 @@ const ADMIN_NAV_GROUPS = [
 ];
 function AdminContent() {
   const { user, isAdmin, isSuperAdmin, hasStrongAuth, loading } = useAuth();
+  const [focusedOrderId, setFocusedOrderId] = useState(null);
   const [adminCollection, setAdminCollection] = useState('dashboard');
   const [editingItem, setEditingItem] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -172,6 +179,13 @@ function AdminContent() {
   const catalogStatusRef = React.useRef('idle');
   const catalogRequestRef = React.useRef(null);
   const cachedAdminUidRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const orderId = readAdminOrderTarget();
+    if (!orderId) return;
+    setFocusedOrderId(orderId);
+    setAdminCollection('orders');
+  }, []);
 
   React.useEffect(() => {
     const nextUid = user?.uid || null;
@@ -525,7 +539,11 @@ function AdminContent() {
           ) : adminCollection === 'homepage' ? (
             <AdminHomepage darkMode={darkMode} />
           ) : adminCollection === 'orders' ? (
-            <AdminOrders darkMode={darkMode} mutationsEnabled={commerceMutationsEnabled} />
+            <AdminOrders
+              darkMode={darkMode}
+              focusOrderId={focusedOrderId}
+              mutationsEnabled={commerceMutationsEnabled}
+            />
           ) : adminCollection === 'returns' ? (
             <AdminReturns darkMode={darkMode} mutationsEnabled={commerceMutationsEnabled} />
           ) : adminCollection === 'livraison' ? (
@@ -582,6 +600,7 @@ function AdminContent() {
                 onCancelEdit={() => setEditingItem(null)}
                 collectionName={adminCollection}
                 darkMode={darkMode}
+                mutationsEnabled={commerceMutationsEnabled}
               />
               <div className="pt-10">
                 <AdminItemList

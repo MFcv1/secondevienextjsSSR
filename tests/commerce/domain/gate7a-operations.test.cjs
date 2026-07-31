@@ -5,6 +5,7 @@ const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const admin = require('../../../functions/node_modules/firebase-admin');
 const {
     buildPaymentReceipt,
     buildRefundConfirmation
@@ -24,6 +25,13 @@ const {
 const {
     createOutboxWorker
 } = require('../../../functions/src/commerce/domain/outboxWorker');
+
+if (!admin.apps.length) {
+    admin.initializeApp({ projectId: 'secondevienextjsssr' });
+}
+const {
+    messageFor
+} = require('../../../functions/src/commerce/v2Operations');
 
 const repositoryRoot = path.resolve(__dirname, '..', '..', '..');
 
@@ -117,6 +125,125 @@ test('Gate 7A: rebuild repete produit exactement le meme hash', () => {
         buildFinancialProjection(facts).projectionHash,
         buildFinancialProjection([...facts].reverse()).projectionHash
     );
+});
+
+function premiumEmailOrder() {
+    return {
+        currency: 'EUR',
+        customerSnapshot: { email: 'client@example.test' },
+        shippingSnapshot: {
+            fullName: 'Client Recette',
+            line1: '12 rue de la Recette',
+            postalCode: '13002',
+            city: 'Marseille',
+            country: 'FR',
+            phone: '0612345678'
+        },
+        deliverySnapshot: {
+            id: 'delivery-pickup',
+            shippingCents: 0,
+            policyVersion: 'sandbox_v2all_policy_20260729'
+        },
+        payment: { paymentIntentId: 'pi_sandbox_123' },
+        amounts: { shippingCents: 0, totalCents: 12000 },
+        items: [{
+            titleSnapshot: 'Chevet <restaure>',
+            quantity: 1,
+            unitAmountCents: 12000
+        }]
+    };
+}
+
+test('Gate 7A: paiement client et notification admin sont deux messages premium distincts', () => {
+    const entry = {
+        template: 'order-paid',
+        payloadSnapshot: {
+            orderId: 'ord_cf6220c7-890d-4e78-bb6f-c049df51fb08',
+            paymentIntentId: 'pi_sandbox_123',
+            amountCents: 12000,
+            currency: 'EUR'
+        }
+    };
+    const message = messageFor(entry, premiumEmailOrder(), 'admin@example.test');
+    const adminMessage = messageFor({
+        ...entry,
+        template: 'order-paid-admin'
+    }, premiumEmailOrder(), 'admin@example.test');
+
+    assert.equal(message.to, 'client@example.test');
+    assert.equal(message.bcc, undefined);
+    assert.equal(adminMessage.to, 'admin@example.test');
+    assert.match(message.subject, /CMD-ORD_CF6220/);
+    assert.match(message.text, /Retrait à l’atelier/);
+    assert.match(message.html, /Voir ma commande/);
+    assert.match(message.html, /Chevet &lt;restaure&gt;/);
+    assert.doesNotMatch(message.html, /Chevet <restaure>/);
+    assert.match(adminMessage.subject, /Nouvelle commande CMD-ORD_CF6220/);
+    assert.match(adminMessage.html, /Ouvrir dans le back-office/);
+    assert.match(adminMessage.html, /admin\?order_id=ord_cf6220c7-890d-4e78-bb6f-c049df51fb08/);
+    assert.match(adminMessage.text, /pi_sandbox_123/);
+    assert.match(adminMessage.text, /0612345678/);
+});
+
+test('Gate 7A: remboursement client et admin exposent Stripe sans restock implicite', () => {
+    const entry = {
+        template: 'order-refunded',
+        payloadSnapshot: {
+            orderId: 'ord_cf6220c7-890d-4e78-bb6f-c049df51fb08',
+            refundId: 're_sandbox_123',
+            amountCents: 12000,
+            currency: 'EUR'
+        }
+    };
+    const message = messageFor(entry, premiumEmailOrder(), 'admin@example.test');
+    const adminMessage = messageFor({
+        ...entry,
+        template: 'order-refunded-admin'
+    }, premiumEmailOrder(), 'admin@example.test');
+
+    assert.equal(message.to, 'client@example.test');
+    assert.equal(adminMessage.to, 'admin@example.test');
+    assert.match(message.subject, /Remboursement CMD-ORD_CF6220 confirmé/);
+    assert.match(message.text, /re_sandbox_123/);
+    assert.match(message.html, /Crédit bancaire en cours/);
+    assert.match(message.html, /Voir ma commande/);
+    assert.match(adminMessage.text, /re_sandbox_123/);
+    assert.match(adminMessage.html, /Stock inchangé/);
+});
+
+test('Gate 7A: chaque transition fulfillment et anomalie refund possede un rendu client', () => {
+    for (const template of [
+        'order-preparing',
+        'order-ready-for-pickup',
+        'order-picked-up',
+        'order-shipped',
+        'order-delivered',
+        'order-refund-failed'
+    ]) {
+        const message = messageFor({
+            template,
+            payloadSnapshot: {
+                orderId: 'ord_cf6220c7-890d-4e78-bb6f-c049df51fb08',
+                amountCents: 12000,
+                currency: 'EUR',
+                trackingNumber: 'TRACK-SANDBOX-123'
+            }
+        }, premiumEmailOrder(), 'admin@example.test');
+        assert.equal(message.to, 'client@example.test');
+        assert.match(message.html, /CMD-ORD_CF6220/);
+        assert.match(message.html, /Voir ma commande/);
+        assert.match(message.text, /120,00/);
+    }
+    const failedAdmin = messageFor({
+        template: 'order-refund-failed-admin',
+        payloadSnapshot: {
+            orderId: 'ord_cf6220c7-890d-4e78-bb6f-c049df51fb08',
+            amountCents: 12000,
+            currency: 'EUR'
+        }
+    }, premiumEmailOrder(), 'admin@example.test');
+    assert.equal(failedAdmin.to, 'admin@example.test');
+    assert.match(failedAdmin.html, /Ne pas relancer à l’aveugle/);
 });
 
 test('Gate 7A: devises et dates effectives restent separees', () => {

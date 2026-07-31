@@ -24,7 +24,7 @@ const waitForPaidOrderViaFunction = ({ orderId, email, checkoutOtpToken }, timeo
                 return;
             }
             if (isTerminalPaymentFailure(order.status)) {
-                reject(new Error('Le paiement n a pas ete confirme. Aucun panier ne sera vide.'));
+                reject(new Error('Le paiement n’a pas été confirmé. Vos articles restent dans votre panier.'));
                 return;
             }
         } catch (error) {
@@ -35,7 +35,7 @@ const waitForPaidOrderViaFunction = ({ orderId, email, checkoutOtpToken }, timeo
         }
 
         if (Date.now() - startedAt > timeoutMs) {
-            reject(new Error('Paiement recu. Confirmation de commande encore en cours.'));
+            reject(new Error('Nous vérifions encore le paiement. Votre commande apparaîtra dans votre espace dès sa confirmation.'));
             return;
         }
         window.setTimeout(tick, 2500);
@@ -55,7 +55,7 @@ const waitForPaidOrder = ({ orderId, email, checkoutOtpToken }, timeoutMs = 4500
         if (settled) return;
         settled = true;
         unsubscribe();
-        reject(new Error('Paiement recu. Confirmation de commande encore en cours.'));
+        reject(new Error('Nous vérifions encore le paiement. Votre commande apparaîtra dans votre espace dès sa confirmation.'));
     }, timeoutMs);
 
     const unsubscribe = onSnapshot(doc(db, 'orders', orderId), (snap) => {
@@ -79,14 +79,14 @@ const waitForPaidOrder = ({ orderId, email, checkoutOtpToken }, timeoutMs = 4500
             settled = true;
             window.clearTimeout(timeout);
             unsubscribe();
-            reject(new Error('Le paiement n a pas ete confirme. Aucun panier ne sera vide.'));
+            reject(new Error('Le paiement n’a pas été confirmé. Vos articles restent dans votre panier.'));
         }
     }, (_error) => {
         if (settled) return;
         window.clearTimeout(timeout);
         unsubscribe();
         if (COMMERCE_V2_CONSUMERS_ENABLED) {
-            reject(new Error('La projection de commande est inaccessible. Le panier est conserve.'));
+            reject(new Error('Nous ne pouvons pas encore afficher la confirmation. Vos articles restent dans votre panier.'));
             return;
         }
         waitForPaidOrderViaFunction({ orderId, email, checkoutOtpToken }, timeoutMs).then(resolve, reject);
@@ -94,7 +94,7 @@ const waitForPaidOrder = ({ orderId, email, checkoutOtpToken }, timeoutMs = 4500
 });
 
 const PaymentConfirmationPanel = ({ darkMode, state, message }) => (
-    <div className={`border-y px-0 py-6 md:py-8 ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
+    <div className={`border-y px-0 py-6 md:py-8 ${darkMode ? 'border-white/10' : 'border-stone-200'}`} aria-live="polite">
         <div className="flex items-start gap-4 md:gap-5">
             <div className={`relative mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${darkMode ? 'bg-stone-100 text-stone-950' : 'bg-stone-900 text-white'}`}>
                 {state === 'error' ? (
@@ -102,19 +102,19 @@ const PaymentConfirmationPanel = ({ darkMode, state, message }) => (
                 ) : (
                     <>
                         <span className="h-2.5 w-2.5 rounded-full bg-current opacity-70" />
-                        <span className="absolute inset-0 rounded-full border border-current opacity-20 animate-ping" />
+                        <span className="absolute inset-0 rounded-full border border-current opacity-20 animate-ping motion-reduce:animate-none" />
                     </>
                 )}
             </div>
             <div className="min-w-0">
                 <p className={`text-[11px] font-semibold uppercase tracking-[0.2em] ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
-                    {state === 'error' ? 'Vérification requise' : 'Confirmation sécurisée'}
+                    {state === 'error' ? 'À vérifier' : 'Paiement reçu'}
                 </p>
                 <h4 className={`mt-2 text-xl font-semibold tracking-[-0.025em] md:text-2xl ${darkMode ? 'text-white' : 'text-stone-900'}`}>
-                    {state === 'error' ? 'Paiement à vérifier' : 'Paiement reçu. Finalisation en cours.'}
+                    {state === 'error' ? 'Nous vérifions votre paiement' : 'Votre commande se finalise'}
                 </h4>
                 <p className={`mt-2 max-w-[58ch] text-sm leading-6 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
-                    {message || "Nous attendons la confirmation durable du serveur avant de valider la commande et vider le panier."}
+                    {message || "Cela ne prend généralement que quelques instants. Vous retrouverez ensuite la commande dans votre espace client."}
                 </p>
             </div>
         </div>
@@ -202,8 +202,8 @@ const CheckoutStripeModal = ({
             aria-labelledby="stripe-payment-title"
             aria-describedby="stripe-payment-description"
         >
-            <div className="mx-auto grid min-h-[100dvh] w-full max-w-[1440px] lg:grid-cols-[minmax(20rem,0.78fr)_minmax(34rem,1.22fr)]">
-                <aside className="relative overflow-hidden bg-[#20201e] px-5 pb-8 pt-5 text-stone-100 sm:px-8 lg:flex lg:min-h-[100dvh] lg:flex-col lg:px-12 lg:pb-12 lg:pt-10 xl:px-16">
+            <div className="grid min-h-[100dvh] w-full lg:grid-cols-[minmax(20rem,38vw)_minmax(0,1fr)] 2xl:grid-cols-[minmax(28rem,42vw)_minmax(0,1fr)]">
+                <aside className="relative overflow-hidden bg-[#20201e] px-5 pb-7 pt-5 text-stone-100 sm:px-8 sm:pb-8 lg:sticky lg:top-0 lg:flex lg:h-[100dvh] lg:flex-col lg:px-[clamp(3rem,5vw,6.5rem)] lg:pb-12 lg:pt-10">
                     <div className="relative flex items-center justify-between gap-4">
                         <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-300">
                             Seconde Vie
@@ -213,15 +213,15 @@ const CheckoutStripeModal = ({
                         </span>
                     </div>
 
-                    <div className="relative mt-10 max-w-md lg:my-auto lg:mt-16">
+                    <div className="relative mt-8 max-w-xl lg:my-auto lg:mt-12">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-400">
                             Dernière étape
                         </p>
-                        <h2 className="mt-4 max-w-[12ch] text-3xl font-semibold leading-[1.02] tracking-[-0.045em] text-white sm:text-4xl lg:text-5xl">
-                            Votre pièce est réservée pendant le paiement.
+                        <h2 className="mt-3 max-w-[14ch] text-[2rem] font-semibold leading-[1.02] tracking-[-0.045em] text-white sm:text-4xl lg:mt-4 lg:text-[clamp(2.6rem,4vw,4.8rem)]">
+                            Votre pièce vous attend.
                         </h2>
-                        <p className="mt-5 max-w-[46ch] text-sm leading-6 text-stone-400 lg:text-base lg:leading-7">
-                            Vous pouvez revenir au récapitulatif sans perdre la commande. À la reprise, nous rouvrons exactement le même paiement.
+                        <p className="mt-4 max-w-[46ch] text-sm leading-6 text-stone-400 lg:mt-6 lg:text-base lg:leading-7">
+                            Elle reste réservée le temps de régler votre commande. Vous pouvez encore revenir vérifier vos informations.
                         </p>
 
                         <div className="mt-8 border-y border-white/10 py-5 lg:mt-10 lg:py-6">
@@ -244,7 +244,7 @@ const CheckoutStripeModal = ({
                             </li>
                             <li className="flex items-center gap-3 text-stone-500">
                                 <span className="flex h-6 w-6 items-center justify-center rounded-full border border-white/15 text-[11px] font-bold">3</span>
-                                Confirmation durable
+                                Commande confirmée
                             </li>
                         </ol>
                     </div>
@@ -256,10 +256,10 @@ const CheckoutStripeModal = ({
                     <div className="pointer-events-none absolute -bottom-10 -right-4 h-40 w-40 rounded-full border border-white/[0.08]" />
                 </aside>
 
-                <main className={`px-5 pb-12 pt-5 sm:px-8 lg:px-12 lg:pb-16 lg:pt-10 xl:px-20 ${
+                <main className={`px-5 pb-12 pt-5 sm:px-8 lg:px-[clamp(3rem,6vw,8rem)] lg:pb-16 lg:pt-10 ${
                     darkMode ? 'bg-stone-950' : 'bg-[#f7f4ef]'
                 }`}>
-                    <div className="mx-auto w-full max-w-[640px]">
+                    <div className="mx-auto w-full max-w-[720px]">
                         <div className="flex min-h-11 items-center justify-between">
                             <button
                                 ref={closeButtonRef}
@@ -285,15 +285,15 @@ const CheckoutStripeModal = ({
                             </span>
                         </div>
 
-                        <header className="pb-7 pt-10 sm:pt-14 lg:pb-9 lg:pt-20">
+                        <header className="pb-7 pt-9 sm:pt-12 lg:pb-10 lg:pt-[clamp(4rem,8vh,7rem)]">
                             <p className={`text-[11px] font-semibold uppercase tracking-[0.2em] ${darkMode ? 'text-stone-500' : 'text-stone-500'}`}>
                                 Étape 2 sur 3
                             </p>
                             <h1 id="stripe-payment-title" className={`mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl ${darkMode ? 'text-white' : 'text-stone-950'}`}>
-                                Choisissez votre moyen de paiement
+                                Comment souhaitez-vous régler&nbsp;?
                             </h1>
                             <p id="stripe-payment-description" className={`mt-4 max-w-[58ch] text-sm leading-6 sm:text-base ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
-                                Carte bancaire et options compatibles avec votre appareil sont proposées directement par Stripe.
+                                Choisissez la carte ou l’option de paiement disponible sur votre appareil.
                             </p>
                         </header>
 
@@ -330,7 +330,7 @@ const CheckoutStripeModal = ({
                                                 } catch (error) {
                                                     console.error('Order paid confirmation timeout:', error);
                                                     setConfirmationState('error');
-                                                    setConfirmationMessage(error?.message || 'Paiement reçu. La commande sera confirmée dès que le serveur Stripe aura terminé.');
+                                                    setConfirmationMessage(error?.message || 'Nous vérifions encore le paiement. Votre commande apparaîtra dans votre espace dès sa confirmation.');
                                                 }
                                             }}
                                             onPaymentError={(error) => {

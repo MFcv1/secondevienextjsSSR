@@ -3,6 +3,12 @@
 const crypto = require('node:crypto');
 const { createInboxEntry } = require('./webhookInbox');
 
+const SUPPORTED_REFUND_EVENTS = new Set([
+    'refund.created',
+    'refund.updated',
+    'refund.failed'
+]);
+
 function ingressError(code, cause = null) {
     const error = new Error(code);
     error.code = code;
@@ -60,7 +66,10 @@ function createStripeWebhookIngress({
         ) || (scope === 'platform' && event.account)) {
             throw ingressError('COMMERCE_WEBHOOK_SCOPE_MISMATCH');
         }
-        if (!event.type.startsWith('payment_intent.')) {
+        if (
+            !event.type.startsWith('payment_intent.') &&
+            !SUPPORTED_REFUND_EVENTS.has(event.type)
+        ) {
             return {
                 ignored: true,
                 eventId: event.id,

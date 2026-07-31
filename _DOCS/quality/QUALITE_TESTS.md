@@ -89,8 +89,8 @@ precede l'activation sandbox read-only.
 npm run test:auth
 ```
 
-Suite actuelle (57 contrats apres ajout du prechargement Google anti-popup
-orpheline):
+Suite actuelle (58 contrats, dont la reprise OTP apres erreur transitoire et le
+prechargement Google anti-popup orpheline):
 
 ```text
 auth-claims.test.cjs
@@ -174,7 +174,13 @@ npm run perf:budget
 - retour arriere et refresh;
 - etat froid puis chaud si le probleme concernait la performance.
 
-Windows Hello, Face ID, Touch ID, selecteur de compte Google et certains wallets requierent une intervention humaine sur l'appareil. Le test peut etre orchestre par l'agent, mais le secret/PIN reste saisi par l'utilisateur.
+Windows Hello, Face ID, Touch ID et certains wallets requierent une
+intervention humaine sur l'appareil. Dans une recette sandbox explicitement
+autorisee, l'agent peut utiliser le selecteur de comptes Google deja connectes,
+lire un OTP dans la boite de recette autorisee et le saisir directement dans
+le site sans jamais l'afficher ni le conserver. Les mots de passe, PIN
+systeme, passkeys, CAPTCHA et confirmations materielles restent saisis par
+l'utilisateur.
 
 ## 7. Tests cloud
 
@@ -251,8 +257,9 @@ erreur), `test:commerce:runner` (13/13), `test:commerce:containment` (12/12,
 `test:commerce:browser` (4/4), `test:commerce:property` (3/3),
 `test:commerce:faults` (33/33) et le build Next sont verts. Temurin Java
 21.0.11 a ete installe dans le cache utilisateur puis toutes les suites
-Emulator ont ete rejouees: confinement Rules 10/10, Firestore 15/15 avec
-69 assertions et Rules v2 5/5. L'agregat `test:commerce` complet est vert.
+Emulator ont ete rejouees. La requalification du 2026-07-31 conserve
+l'agregat complet vert: confinement Rules 12/12, Firestore 16/16 avec 75
+assertions, dont le settlement webhook `refund.failed`, et Rules v2 5/5.
 
 Preuves sandbox du meme jour: indexes commerce `READY`, exports Gate 7A
 presents en `europe-west1`, anciens doublons mutateurs `us-central1` absents,

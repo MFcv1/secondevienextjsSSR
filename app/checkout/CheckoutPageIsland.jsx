@@ -303,7 +303,7 @@ function CheckoutPageContent() {
     let cancelled = false;
 
     if (redirectStatus && !['succeeded', 'processing'].includes(redirectStatus)) {
-      setCheckoutReturnNotice('Paiement annule ou non finalise. Votre panier est conserve, vous pouvez reprendre le paiement.');
+      setCheckoutReturnNotice('Le paiement n’a pas été finalisé. Vos articles sont toujours là et vous pouvez reprendre quand vous le souhaitez.');
       window.history.replaceState({}, '', '/checkout');
       return undefined;
     }
@@ -374,7 +374,7 @@ function CheckoutPageContent() {
       <CheckoutState
         darkMode={darkMode}
         title="Panier vide"
-        message="Ajoutez une piece depuis la galerie avant de lancer le checkout."
+        message="Ajoutez une pièce depuis la galerie pour commencer votre commande."
         primaryLabel="Retour galerie"
         onPrimary={() => { router.push('/'); }}
       />

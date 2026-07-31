@@ -1,0 +1,448 @@
+'use strict';
+
+const {
+    EMAIL_COLORS,
+    escapeHtml,
+    renderCallout,
+    renderEmailShell,
+    renderSummaryGrid
+} = require('./emailDesignSystem');
+
+function formatMoney(amountCents, currency = 'EUR') {
+    return new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: String(currency || 'EUR').toUpperCase()
+    }).format(Number(amountCents || 0) / 100);
+}
+
+function orderReference(orderId) {
+    return `CMD-${String(orderId || '').slice(0, 10).toUpperCase()}`;
+}
+
+function deliveryLabel(order) {
+    const modeId = order?.deliverySnapshot?.id;
+    if (modeId === 'delivery-pickup') return 'Retrait à l’atelier';
+    if (modeId === 'delivery-local') return 'Livraison Marseille & alentours';
+    if (modeId === 'delivery-carrier') return 'Transporteur spécialisé';
+    return Number(order?.amounts?.shippingCents || 0) === 0 ? 'Livraison offerte' : 'Livraison';
+}
+
+function customerName(order) {
+    return String(order?.shippingSnapshot?.fullName || '').trim();
+}
+
+function customerGreeting(order) {
+    const name = customerName(order);
+    return name ? `Bonjour ${name}, ` : '';
+}
+
+function statusColor(role) {
+    if (role === 'danger') return EMAIL_COLORS.danger;
+    if (role === 'info') return EMAIL_COLORS.info;
+    if (role === 'warning') return EMAIL_COLORS.warning;
+    return EMAIL_COLORS.success;
+}
+
+function addressLines(order) {
+    const shipping = order?.shippingSnapshot || {};
+    return [
+        shipping.fullName,
+        shipping.line1,
+        shipping.line2,
+        [shipping.postalCode, shipping.city].filter(Boolean).join(' '),
+        shipping.country,
+        shipping.phone
+    ].filter(Boolean).map(String);
+}
+
+function renderItems(order) {
+    const rows = (order?.items || []).map((item) => {
+        const quantity = Number(item.quantity || 1);
+        const amount = Number(item.unitAmountCents || 0) * quantity;
+        return `
+            <tr>
+                <td style="padding:13px 0;border-bottom:1px solid ${EMAIL_COLORS.line};color:${EMAIL_COLORS.text};font:400 14px/1.45 Arial,Helvetica,sans-serif;">
+                    <strong>${escapeHtml(item.titleSnapshot || 'Pièce restaurée')}</strong><br>
+                    <span style="color:${EMAIL_COLORS.muted};font-size:12px;">Quantité ${quantity}</span>
+                </td>
+                <td style="padding:13px 0;border-bottom:1px solid ${EMAIL_COLORS.line};color:${EMAIL_COLORS.text};font:600 14px/1.45 Arial,Helvetica,sans-serif;text-align:right;white-space:nowrap;">
+                    ${escapeHtml(formatMoney(amount, order.currency))}
+                </td>
+            </tr>
+        `;
+    }).join('');
+    return `
+        <h2 style="margin:0;color:${EMAIL_COLORS.text};font:600 18px/1.3 Arial,Helvetica,sans-serif;">La pièce concernée</h2>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:7px;">${rows}</table>
+    `;
+}
+
+function renderAddress(order) {
+    const lines = addressLines(order);
+    return `
+        <div style="margin-top:17px;padding:16px 18px;background:${EMAIL_COLORS.surfaceMuted};border-left:3px solid ${EMAIL_COLORS.accent};border-radius:10px;">
+            <div style="font:700 13px/1.4 Arial,Helvetica,sans-serif;">${escapeHtml(deliveryLabel(order))}</div>
+            <div style="margin-top:6px;color:#57504a;font:400 13px/1.55 Arial,Helvetica,sans-serif;">${lines.map(escapeHtml).join('<br>')}</div>
+        </div>
+    `;
+}
+
+function textItems(order) {
+    return (order?.items || []).map((item) => {
+        const quantity = Number(item.quantity || 1);
+        return `${quantity} × ${item.titleSnapshot || 'Pièce restaurée'} — ${formatMoney(Number(item.unitAmountCents || 0) * quantity, order.currency)}`;
+    });
+}
+
+function baseData({ order, payload, siteUrl }) {
+    const orderId = order.id || payload.orderId;
+    const amountCents = Number(payload.amountCents ?? order.amounts?.totalCents ?? 0);
+    const currency = payload.currency || order.currency || 'EUR';
+    return {
+        orderId,
+        reference: orderReference(orderId),
+        amountLabel: formatMoney(amountCents, currency),
+        ordersUrl: `${siteUrl.replace(/\/$/, '')}/mes-commandes`,
+        adminUrl: `${siteUrl.replace(/\/$/, '')}/admin?order_id=${encodeURIComponent(orderId)}`,
+        amountCents,
+        currency
+    };
+}
+
+function customerTemplate({
+    order,
+    payload,
+    siteUrl,
+    subject,
+    eyebrow,
+    title,
+    intro,
+    status,
+    role,
+    callout,
+    actionLabel = 'Voir ma commande',
+    includeAddress = false,
+    detail = null
+}) {
+    const data = baseData({ order, payload, siteUrl });
+    const contentHtml = `${renderItems(order)}${includeAddress ? renderAddress(order) : ''}`;
+    const calloutData = callout(data);
+    return {
+        to: order.customerSnapshot?.email || order.userEmail,
+        subject: subject(data),
+        text: [
+            `${customerGreeting(order)}${intro(data)}`,
+            `Commande ${data.reference}`,
+            `Statut : ${status}`,
+            `Montant : ${data.amountLabel}`,
+            ...textItems(order),
+            includeAddress ? `Livraison : ${deliveryLabel(order)}` : null,
+            ...(includeAddress ? addressLines(order) : []),
+            detail,
+            calloutData.detail || null,
+            `Consulter : ${data.ordersUrl}`
+        ].filter(Boolean).join('\n'),
+        html: renderEmailShell({
+            preheader: `${data.reference} · ${status} · ${data.amountLabel}`,
+            eyebrow,
+            title,
+            intro: `${customerGreeting(order)}${intro(data)}`,
+            summaryHtml: renderSummaryGrid([
+                { label: 'Commande', value: data.reference },
+                { label: 'Statut', value: status, color: statusColor(role) },
+                { label: 'Montant', value: data.amountLabel }
+            ]),
+            contentHtml,
+            calloutHtml: renderCallout({
+                ...calloutData,
+                role,
+                detail: calloutData.detail || detail
+            }),
+            actionLabel,
+            actionUrl: data.ordersUrl,
+            footer: 'Message transactionnel Seconde Vie. Les documents du sandbox ne constituent ni facture ni avoir fiscal.'
+        })
+    };
+}
+
+function renderAdminContact(order) {
+    const email = order.customerSnapshot?.email || order.userEmail || 'Non renseigné';
+    const address = addressLines(order);
+    return `
+        <h2 style="margin:0;color:${EMAIL_COLORS.text};font:600 18px/1.3 Arial,Helvetica,sans-serif;">Client et exécution</h2>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:9px;">
+            <tr><td style="padding:6px 0;color:${EMAIL_COLORS.muted};font-size:13px;">Client</td><td style="padding:6px 0;text-align:right;font:600 13px/1.4 Arial,Helvetica,sans-serif;">${escapeHtml(customerName(order) || 'Non renseigné')}</td></tr>
+            <tr><td style="padding:6px 0;color:${EMAIL_COLORS.muted};font-size:13px;">Email</td><td style="padding:6px 0;text-align:right;font:600 13px/1.4 Arial,Helvetica,sans-serif;">${escapeHtml(email)}</td></tr>
+            <tr><td style="padding:6px 0;color:${EMAIL_COLORS.muted};font-size:13px;">Livraison</td><td style="padding:6px 0;text-align:right;font:600 13px/1.4 Arial,Helvetica,sans-serif;">${escapeHtml(deliveryLabel(order))}</td></tr>
+        </table>
+        <div style="margin-top:12px;color:#57504a;font:400 13px/1.55 Arial,Helvetica,sans-serif;">${address.map(escapeHtml).join('<br>')}</div>
+        <div style="margin-top:22px;">${renderItems(order)}</div>
+    `;
+}
+
+function adminTemplate({
+    order,
+    payload,
+    siteUrl,
+    senderEmail,
+    subject,
+    eyebrow,
+    title,
+    intro,
+    status,
+    role,
+    callout
+}) {
+    const data = baseData({ order, payload, siteUrl });
+    const paymentIntentId = order.payment?.paymentIntentId || payload.paymentIntentId || null;
+    const refundId = payload.refundId || null;
+    const providerDetail = refundId
+        ? `Refund Stripe : ${refundId}`
+        : paymentIntentId
+            ? `PaymentIntent : ${paymentIntentId}`
+            : null;
+    return {
+        to: senderEmail,
+        subject: subject(data),
+        text: [
+            intro(data),
+            `Commande ${data.reference}`,
+            `Statut : ${status}`,
+            `Montant : ${data.amountLabel}`,
+            `Client : ${customerName(order) || 'Non renseigné'}`,
+            `Email : ${order.customerSnapshot?.email || order.userEmail || 'Non renseigné'}`,
+            `Livraison : ${deliveryLabel(order)}`,
+            ...addressLines(order),
+            ...textItems(order),
+            providerDetail,
+            `Ouvrir : ${data.adminUrl}`
+        ].filter(Boolean).join('\n'),
+        html: renderEmailShell({
+            preheader: `${data.reference} · ${status} · action back-office`,
+            eyebrow,
+            title,
+            intro: intro(data),
+            summaryHtml: renderSummaryGrid([
+                { label: 'Commande', value: data.reference },
+                { label: 'Statut', value: status, color: statusColor(role) },
+                { label: 'Montant', value: data.amountLabel }
+            ]),
+            contentHtml: renderAdminContact(order),
+            calloutHtml: renderCallout({
+                ...callout(data),
+                role,
+                detail: providerDetail
+            }),
+            actionLabel: 'Ouvrir dans le back-office',
+            actionUrl: data.adminUrl,
+            footer: 'Notification opérationnelle réservée à l’administration Seconde Vie.'
+        })
+    };
+}
+
+const CUSTOMER_TEMPLATES = Object.freeze({
+    'order-paid': {
+        subject: ({ reference }) => `Commande ${reference} confirmée · Seconde Vie`,
+        eyebrow: 'Paiement confirmé',
+        title: 'Votre pièce est réservée.',
+        intro: () => 'votre paiement est confirmé et votre commande est enregistrée.',
+        status: 'Payée',
+        role: 'success',
+        includeAddress: true,
+        callout: () => ({
+            title: 'La suite',
+            body: 'L’atelier prépare maintenant votre pièce. Vous recevrez un message lors de la prochaine étape.'
+        })
+    },
+    'order-preparing': {
+        subject: ({ reference }) => `${reference} est en préparation · Seconde Vie`,
+        eyebrow: 'Préparation atelier',
+        title: 'Votre pièce passe entre nos mains.',
+        intro: () => 'la préparation de votre commande a commencé à l’atelier.',
+        status: 'En préparation',
+        role: 'info',
+        callout: () => ({
+            title: 'Préparation en cours',
+            body: 'Nous vérifions la pièce, sa protection et les modalités de remise avant son départ.'
+        })
+    },
+    'order-ready-for-pickup': {
+        subject: ({ reference }) => `${reference} est prête à être retirée · Seconde Vie`,
+        eyebrow: 'Retrait atelier',
+        title: 'Votre pièce vous attend.',
+        intro: () => 'votre commande est prête pour son retrait à l’atelier.',
+        status: 'Prête au retrait',
+        role: 'success',
+        includeAddress: true,
+        callout: () => ({
+            title: 'Avant de vous déplacer',
+            body: 'Répondez à cet email pour convenir du créneau de retrait et éviter toute attente.'
+        })
+    },
+    'order-picked-up': {
+        subject: ({ reference }) => `${reference} a été retirée · Seconde Vie`,
+        eyebrow: 'Commande remise',
+        title: 'La pièce est entre vos mains.',
+        intro: () => 'le retrait de votre commande est confirmé.',
+        status: 'Terminée',
+        role: 'success',
+        callout: () => ({
+            title: 'Merci pour votre confiance',
+            body: 'Conservez vos documents de commande dans votre espace client. L’atelier reste disponible si nécessaire.'
+        })
+    },
+    'order-shipped': {
+        subject: ({ reference }) => `${reference} est expédiée · Seconde Vie`,
+        eyebrow: 'Expédition confirmée',
+        title: 'Votre pièce prend la route.',
+        intro: () => 'votre commande a quitté l’atelier et son expédition est confirmée.',
+        status: 'Expédiée',
+        role: 'info',
+        callout: () => ({
+            title: 'Suivi de livraison',
+            body: 'Le transporteur vous communiquera les détails de remise. Vérifiez l’état extérieur avant de confirmer la réception.'
+        }),
+        detail: ({ trackingNumber }) => trackingNumber ? `Suivi : ${trackingNumber}` : null
+    },
+    'order-delivered': {
+        subject: ({ reference }) => `${reference} est livrée · Seconde Vie`,
+        eyebrow: 'Livraison terminée',
+        title: 'Votre pièce est arrivée.',
+        intro: () => 'la livraison de votre commande est confirmée.',
+        status: 'Terminée',
+        role: 'success',
+        callout: () => ({
+            title: 'Une question après livraison ?',
+            body: 'Répondez à cet email en indiquant votre référence de commande. L’atelier retrouvera immédiatement votre dossier.'
+        })
+    },
+    'order-refunded': {
+        subject: ({ reference }) => `Remboursement ${reference} confirmé · Seconde Vie`,
+        eyebrow: 'Remboursement confirmé',
+        title: 'Le remboursement est en route.',
+        intro: () => 'Stripe a confirmé le remboursement sur le moyen de paiement utilisé lors de l’achat.',
+        status: 'Remboursée',
+        role: 'success',
+        callout: ({ refundId }) => ({
+            title: 'Crédit bancaire en cours',
+            body: 'Selon votre banque, le crédit peut prendre quelques jours ouvrables avant d’apparaître.',
+            detail: refundId ? `Référence Stripe : ${refundId}` : null
+        })
+    },
+    'order-refund-failed': {
+        subject: ({ reference }) => `Remboursement ${reference} à vérifier · Seconde Vie`,
+        eyebrow: 'Vérification nécessaire',
+        title: 'Votre remboursement demande une vérification.',
+        intro: () => 'Stripe n’a pas confirmé le remboursement. Aucun nouveau débit n’a été créé.',
+        status: 'À vérifier',
+        role: 'danger',
+        callout: () => ({
+            title: 'L’atelier reprend le dossier',
+            body: 'Vous n’avez aucune action à effectuer. Nous vérifions la situation avant toute nouvelle tentative.'
+        })
+    }
+});
+
+function renderCommerceEmail({
+    template,
+    order,
+    payload = {},
+    senderEmail,
+    siteUrl
+}) {
+    const normalizedOrder = { ...order, id: order.id || payload.orderId };
+    if (template === 'order-paid-admin') {
+        return adminTemplate({
+            order: normalizedOrder,
+            payload,
+            siteUrl,
+            senderEmail,
+            subject: ({ reference }) => `Nouvelle commande ${reference} · ${formatMoney(payload.amountCents, payload.currency)}`,
+            eyebrow: 'Nouvelle commande payée',
+            title: 'Une pièce vient d’être vendue.',
+            intro: ({ reference }) => `Le paiement de ${reference} est confirmé. La commande peut entrer en préparation.`,
+            status: 'Payée',
+            role: 'success',
+            callout: () => ({
+                title: 'Action recommandée',
+                body: 'Vérifiez les coordonnées et passez la commande en préparation depuis le back-office.'
+            })
+        });
+    }
+    if (template === 'order-refunded-admin') {
+        return adminTemplate({
+            order: normalizedOrder,
+            payload,
+            siteUrl,
+            senderEmail,
+            subject: ({ reference }) => `Remboursement confirmé · ${reference}`,
+            eyebrow: 'Remboursement Stripe',
+            title: 'Le remboursement est confirmé.',
+            intro: ({ reference }) => `${reference} a été remboursée sans remise en stock automatique.`,
+            status: 'Remboursée',
+            role: 'success',
+            callout: () => ({
+                title: 'Stock inchangé',
+                body: 'Le remboursement financier ne remet pas la pièce en vente. Une disposition physique reste nécessaire.'
+            })
+        });
+    }
+    if (template === 'order-refund-failed-admin') {
+        return adminTemplate({
+            order: normalizedOrder,
+            payload,
+            siteUrl,
+            senderEmail,
+            subject: ({ reference }) => `Action requise · remboursement ${reference}`,
+            eyebrow: 'Incident remboursement',
+            title: 'Stripe demande une vérification.',
+            intro: ({ reference }) => `Le remboursement de ${reference} n’a pas été confirmé.`,
+            status: 'À vérifier',
+            role: 'danger',
+            callout: () => ({
+                title: 'Ne pas relancer à l’aveugle',
+                body: 'Ouvrez le dossier et vérifiez la tentative Stripe avant toute reprise afin d’éviter un double remboursement.'
+            })
+        });
+    }
+    const copy = CUSTOMER_TEMPLATES[template];
+    if (!copy) {
+        const error = new Error('COMMERCE_OUTBOX_TEMPLATE_UNSUPPORTED');
+        error.code = 'COMMERCE_OUTBOX_TEMPLATE_UNSUPPORTED';
+        throw error;
+    }
+    const data = baseData({ order: normalizedOrder, payload, siteUrl });
+    return customerTemplate({
+        order: normalizedOrder,
+        payload: {
+            ...payload,
+            trackingNumber: payload.trackingNumber || normalizedOrder.fulfillmentSummary?.trackingNumber || null,
+            refundId: payload.refundId || null
+        },
+        siteUrl,
+        subject: copy.subject,
+        eyebrow: copy.eyebrow,
+        title: copy.title,
+        intro: copy.intro,
+        status: copy.status,
+        role: copy.role,
+        callout: (templateData) => copy.callout({
+            ...templateData,
+            refundId: payload.refundId || null
+        }),
+        actionLabel: copy.actionLabel,
+        includeAddress: copy.includeAddress,
+        detail: copy.detail ? copy.detail({
+            ...data,
+            trackingNumber: payload.trackingNumber || normalizedOrder.fulfillmentSummary?.trackingNumber || null
+        }) : null
+    });
+}
+
+module.exports = {
+    CUSTOMER_TEMPLATES,
+    deliveryLabel,
+    formatMoney,
+    orderReference,
+    renderCommerceEmail
+};

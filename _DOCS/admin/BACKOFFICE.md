@@ -58,11 +58,12 @@ Le catalogue public court (`scope=cards&limit=120`) est charge paresseusement un
 
 `AdminForm` gere les champs produit, la compression/upload image, les variantes et la sauvegarde. `AdminItemList` affiche les annonces. `GlobalInventoryView` pilote les classements editoriaux.
 
-Avant le premier upload, `AdminForm` appelle
-`preflightProductMutationAdmin`. Le serveur confirme a la fois
-`adminMutationMode=v2`, App Check et une authentification admin forte recente.
-Une reauthentification necessaire intervient donc avant tout transfert
-Storage, et non plus a la finalisation du formulaire.
+Des que les mutations catalogue deviennent disponibles, puis de nouveau avant
+le premier upload, `AdminForm` appelle `preflightProductMutationAdmin`. Le
+serveur confirme `adminMutationMode=v2`, App Check, le registre admin actif et
+une authentification forte AAL2. Les commandes produit courantes n'imposent
+plus une reconnexion toutes les quinze minutes; la recence reste reservee aux
+remboursements et aux operations destructives.
 
 Apres mutation:
 
@@ -139,9 +140,15 @@ Dans Ventes, la ligne de commande normalise les Timestamps Firestore et
 callable afin d'afficher la date et l'heure jusqu'a la seconde. L'ouverture
 d'une commande charge, via `getOrderTimelineAdminV2`, au plus 100 entrees de
 son journal serveur et compose une chronologie bornee: creation, paiement
-confirme, annulation et etapes de remboursement. Les commandes legacy sans
+confirme, cinq etapes fulfillment, annulation et etapes de remboursement. Les commandes legacy sans
 journal conservent un repli sur leurs champs de projection disponibles,
 signale comme moins detaille lorsque aucune date exploitable n'existe.
+
+Apres une commande fulfillment, Ventes force une relecture de la premiere page
+et de la chronologie ciblee. Le badge financier (`paid`, rembourse, etc.) reste
+separe du badge logistique (`preparing`, prete au retrait, expediee, livree):
+un paiement durable ne doit jamais etre interprete comme l'absence de
+transition logistique.
 
 Dans Retours, les commandes v2 sont normalisees depuis `payment`,
 `refundAggregate`, `shippingSnapshot` et les projections de statut avant le

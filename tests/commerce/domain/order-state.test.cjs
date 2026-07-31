@@ -38,6 +38,11 @@ test('factory creates a complete valid v2 order with integer cents', () => {
     assert.equal(order.status, 'pending_payment');
     assert.equal(order.amounts.totalCents, 14000);
     assert.equal(order.inventorySummary.heldQty, 1);
+    assert.deepEqual(order.deliverySnapshot, {
+        id: 'delivery-carrier',
+        shippingCents: 1500,
+        policyVersion: 'policy-0001'
+    });
 });
 
 test('floating, incoherent and excessive money values are rejected', () => {

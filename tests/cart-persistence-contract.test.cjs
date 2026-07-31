@@ -38,3 +38,26 @@ test('paid checkout keeps the success confirmation visible after cart cleanup', 
   ));
   assert.ok(checkoutPage.includes('<OrderSuccessModal'));
 });
+
+test('checkout payment and confirmation stay full-page and hide implementation vocabulary', () => {
+  const payment = source('src/kit/commerce/CheckoutStripeModal.jsx');
+  const paymentStep = source('src/kit/commerce/CheckoutPaymentStep.jsx');
+  const success = source('src/kit/commerce/OrderSuccessModal.jsx');
+  const checkout = source('src/kit/commerce/CheckoutView.jsx');
+
+  assert.ok(payment.includes('grid min-h-[100dvh] w-full'));
+  assert.equal(payment.includes('max-w-[1440px]'), false);
+  assert.ok(success.includes('grid min-h-[100dvh] w-full'));
+
+  const customerCopy = [payment, paymentStep, success, checkout].join('\n');
+  [
+    'Validee cote serveur',
+    'validation serveur',
+    'confirmation durable du serveur',
+    'nos serveurs',
+    'Le noyau commerce',
+    'aucun nouveau dossier',
+  ].forEach((technicalPhrase) => {
+    assert.equal(customerCopy.includes(technicalPhrase), false, technicalPhrase);
+  });
+});

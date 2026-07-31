@@ -55,6 +55,7 @@
         "gate3-guest-resume-token-is-single-use-and-rotated-transactionally",
         "gate4-command-retry-is-one-transition-with-one-append-only-audit",
         "gate4-partial-refunds-are-cumulative-idempotent-and-never-restock",
+        "gate4-refund-failed-webhook-settles-attempt-order-and-two-outboxes",
         "gate4-concurrent-returns-and-partial-dispositions-conserve-quantities",
         "gate4-product-commands-are-atomic-idempotent-and-soft-archive"
       ]

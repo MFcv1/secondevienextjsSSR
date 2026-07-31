@@ -1,11 +1,14 @@
 # Campagne de recette commerce sandbox
 
-Derniere mise a jour: 2026-07-30
-Statut: `PREPARATION`
+Derniere mise a jour: 2026-07-31
+Statut: `RECETTE_REELLE_EXECUTEE_CONTROLES_FERMES`
 Proprietaire: recette commerce
 Environnement exclusif: `secondevienextjsssr` / App Hosting sandbox / Stripe test
 Echeance de cloture: 2026-08-06
 Registre associe: [anomalies.md](anomalies.md)
+Lanceur Luna: `$client-admin-test` via
+[.agents/skills/client-admin-test/SKILL.md](.agents/skills/client-admin-test/SKILL.md)
+(guide: [TEST_CLIENT_ADMIN_LUNA.md](TEST_CLIENT_ADMIN_LUNA.md))
 
 ## 1. Objectif ferme
 
@@ -38,15 +41,44 @@ Elle n'autorise ni Stripe live, ni production, ni activation permanente de
 - aucun mot de passe, OTP, token, PIN, secret ou donnee de carte n'est consigne
   dans ce fichier, dans `anomalies.md`, dans un log partage ou dans une capture.
 
-Les interactions Touch ID, passkey, Google ou OTP qui exigent une presence
-humaine sont interrompues au point exact, puis reprises apres l'interaction de
+L'agent utilise lui-meme le selecteur de comptes Google deja connectes et lit
+puis saisit les OTP recus dans les boites sandbox autorisees. Les interactions
+Touch ID, Face ID, passkey, PIN systeme, CAPTCHA, recuperation de compte ou
+confirmation materielle qui exigent reellement une presence humaine sont
+interrompues au point exact, puis reprises apres l'interaction de
 l'utilisateur. Un secret n'est jamais demande dans la conversation.
+
+### 2.1 Acces durable pour Codex, Luna et les agents suivants
+
+La configuration de recette validee le 2026-07-31 est la suivante:
+
+- utiliser le Chrome externe avec l'extension ChatGPT active; le navigateur
+  integre ne doit pas servir a la connexion Google administrateur;
+- le profil Chrome conserve les sessions Google des deux comptes de recette;
+- si un autre compte de recette est affiche, l'agent ouvre le selecteur Google
+  et bascule lui-meme vers `pvml7008@gmail.com` ou `loa.gto15@gmail.com` selon
+  le parcours;
+- la boite client est lisible par le connecteur Gmail autorise;
+- la boite administrateur est ouverte dans Chrome;
+- le transfert Gmail admin vers la boite client est actif, mais il ne remplace
+  jamais le controle direct de la boite admin: Gmail peut ne pas transferer
+  certains messages emis vers soi-meme;
+- le client se connecte avec l'OTP reel recu dans sa boite;
+- l'agent lit cet OTP et le saisit directement dans le sandbox, sans le
+  montrer dans le chat, un log, une capture ou un document;
+- l'administrateur se connecte avec Google OAuth dans Chrome, ce qui etablit
+  l'assurance forte necessaire au back-office.
+
+Au debut de chaque recette, nommer le `runId`, ouvrir uniquement le sandbox,
+identifier explicitement les onglets site et Gmail, puis confirmer l'adresse
+du compte visible avant toute mutation. Aucun mot de passe, OTP, cookie ou
+token ne doit etre inscrit dans cette procedure.
 
 ## 3. Donnee de recette
 
-Le meuble est une donnee sandbox identifiable et reversible:
+Toute donnee creee pour la publication est identifiable et reversible:
 
-- titre prefixe par `[RECETTE 2026-07-30]`;
+- titre prefixe par `[RECETTE AAAA-MM-JJ]`;
 - description fictive sans donnee personnelle;
 - categorie choisie parmi les categories existantes;
 - prix en EUR borne et compatible avec Stripe test;
@@ -55,9 +87,12 @@ Le meuble est une donnee sandbox identifiable et reversible:
 - identifiant produit, revision catalogue, `runId`, `orderId`, PaymentIntent,
   refund et documents correles releves sans secret.
 
-Le produit ne doit jamais etre choisi par un fallback du type « dernier
-produit » ou « derniere commande ». Toutes les operations sont correlees par
-les identifiants exacts de la campagne.
+Pour les achats, une campagne bornee peut utiliser des meubles sandbox
+existants explicitement autorises par sa policy. Pour la publication, elle
+cree au plus un meuble de smoke test, de preference non indexable s'il n'a pas
+de medias. Un produit ne doit jamais etre choisi par un fallback du type
+« dernier produit » ou « derniere commande ». Toutes les operations sont
+correlees par les identifiants exacts de la campagne.
 
 ## 4. Garde-fous d'ouverture et de fermeture
 
@@ -144,6 +179,11 @@ aucune friction bloquante.
 7. verifier nettoyage du panier, stock et absence de double commande;
 8. ouvrir `/mes-commandes` et verifier commande, montant, articles, image,
    adresse, telephone, statut et document sandbox non fiscal.
+
+Le bouton client de demande de retour/remboursement ouvre le parcours de
+contact support. Il ne declenche pas directement un remboursement Stripe. Le
+remboursement financier qualifiant est une action administrateur forte depuis
+Retours.
 
 Gate C: commande exacte `paid`, stock commis une fois, lecture limitee au
 client proprietaire, aucune elevation de privilege.
@@ -262,9 +302,8 @@ des routes, recette navigateur sandbox et controle Gmail. Les scripts
 (`DO_NOT_RUN`). Le rail qualifiant exige toujours `runId`, `orderId`, release,
 AAL2/App Check et zero fallback.
 
-Les fixtures existantes ne sont ni achetees ni modifiees pendant cette
-campagne. Le meuble cree depuis le formulaire admin normal est l'unique cible
-fonctionnelle du parcours.
+Les produits exacts utilises par une campagne sont listes dans sa policy
+bornee. Aucun produit hors policy ne doit etre achete ou modifie.
 
 ## 9. Definition de done
 
@@ -281,3 +320,95 @@ fonctionnelle du parcours.
 - controle referme, operations `healthy`, aucun incident ouvert;
 - chapitres canoniques mis a jour;
 - ce plan et `anomalies.md` fusionnes puis supprimes avant l'echeance.
+
+## 10. Etat de la campagne au 2026-07-30
+
+- annonce reelle publiee depuis `/admin`:
+  `product-2c1f1f00-be4c-4508-8b90-559f2357c162`;
+- achat reel du client lambda confirme:
+  `ord_cf6220c7-890d-4e78-bb6f-c049df51fb08`, 120 EUR, Stripe test;
+- commande `paid` verifiee cote client et admin, puis remboursement complet
+  unique confirme par Stripe;
+- commande `refunded`, montant, delai bancaire et documents sandbox verifies
+  dans `/mes-commandes`;
+- projection admin Retours `REMBOURSEE`, identifiant Stripe et etat
+  `succeeded` verifies;
+- outbox paiement et remboursement `sent`, sans derniere erreur et avec
+  identifiants fournisseur;
+- e-mail de remboursement premium recu et MIME qualifie;
+- refonte complete deployee le 2026-07-30: notification admin dediee
+  sans BCC, lien direct commande, transitions v2 preparation/expedition/
+  livraison/retrait, anomalies de remboursement et OTP visuellement unifies;
+- 13 captures de reference generees sous `logs/email-previews/`; 15 Functions
+  `ACTIVE`, App Hosting `build-2026-07-30-019` `READY`, rollout `SUCCEEDED`
+  et smoke HTTP client/admin `200`; A-011 fermee;
+- Gmail sandbox a classe le message client en spam malgre SPF, DKIM et DMARC
+  `pass`; dette externe A-010 liee au rail Gmail de recette et au domaine final;
+- rapprochement final: commande `refunded`, capture 120 EUR, remboursement
+  120 EUR, net zero, produit toujours publie avec stock `0` et inventaire
+  version `2`; aucun restock implicite;
+- preflight final en lecture seule: operations `healthy`, compteurs de sante
+  nuls et controle revision 50 ferme;
+- fenetre `v8` refermee a la revision 50:
+  `newCheckoutMode=v2_fixture`, `adminMutationMode=read_only`,
+  `offlinePaymentMode=off`.
+
+## 11. Execution humaine automatisee du 2026-07-31
+
+Run: `run_v2all_20260731_chrome01`.
+
+### 11.1 Parcours client
+
+- identite `pvml7008@gmail.com` confirmee, sans contexte administrateur;
+- achat simple de 750 EUR par retrait reussi:
+  `ord_033f4418-2e02-488e-ab68-60f2f24b5629`;
+- achat multiple de deux meubles, livraison comprise, total 2 449 EUR reussi:
+  `ord_fcc6307f-c996-4c40-b576-b9ce391838e1`;
+- panier vide apres paiement, commandes et lignes visibles dans
+  `/mes-commandes`, adresse/profil de recette projetes;
+- commande simple ensuite affichee `REMBOURSEE`, total rembourse exact et
+  delai bancaire correctement explique;
+- les documents des deux nouvelles commandes n'etaient pas encore visibles
+  au controle immediat; voir A-016 pour la relecture differee.
+
+### 11.2 Parcours administrateur
+
+- Google OAuth reel reussi dans Chrome externe; A-013 est requalifiee fermee;
+- les deux commandes, clients, lignes, montants et statuts sont visibles dans
+  Ventes;
+- publication reussie du meuble non indexable
+  `product-6d13f3bf-0f2a-449b-94ad-4c72fda7729d`, catalogue public version
+  `198`;
+- la protection SEO a correctement refuse une publication indexable sans
+  image, puis a autorise la publication apres desactivation explicite de
+  l'indexation;
+- transitions `EN PREPARATION` puis `PRETE AU RETRAIT` confirmees par l'audit
+  durable et les e-mails;
+- remboursement complet unique de 750 EUR confirme par Stripe test, sans
+  restock automatique;
+- l'archivage final du meuble de smoke test reste a faire, voir A-015.
+
+### 11.3 E-mails et rapprochement
+
+- boite client: OTP, confirmations des deux commandes, preparation, pret au
+  retrait et remboursement recus;
+- ces six messages ont tous ete classes dans `SPAM`, recurrence de A-010;
+- boite admin controlee directement dans Chrome: deux notifications de
+  nouvelle commande et une confirmation de remboursement presentes dans la
+  boite de reception;
+- outbox serveur `sent` pour les destinataires client/admin attendus;
+- M01, M03, M04, M05, M06, M10 et M11 sont requalifies sur le vrai parcours;
+  M02, M07, M08, M09, M12 et M13 restent non executes pendant ce run.
+
+### 11.4 Etat final autoritaire
+
+- commande multiple `paid`, 244 900 centimes, deux lignes commises;
+- commande simple `refunded`, remboursement Stripe test unique de 75 000
+  centimes et aucun restock implicite;
+- operations `healthy`, neuf compteurs a zero, aucun incident ouvert;
+- fermeture confirmee a `controlRevision=52`:
+  `newCheckoutMode=v2_fixture`, `adminMutationMode=read_only`,
+  `offlinePaymentMode=off`;
+- aucun correctif de code ni deploiement realise pendant cette recette;
+- toute correction applicative issue du registre est reservee a
+  `GPT-5.6-sol` apres reproduction et validation.

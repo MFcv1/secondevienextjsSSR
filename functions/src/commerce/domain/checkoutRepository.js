@@ -210,6 +210,7 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
                 shippingCents: delivery.shippingCents,
                 customerSnapshot: { email: ownerEmail || null },
                 shippingSnapshot: validated.value.shippingAddress,
+                deliverySnapshot: delivery,
                 expiresAt: authorizedFixtureContext?.expiresAt || null,
                 testContext: authorizedFixtureContext ? {
                     runId: authorizedFixtureContext.runId,

@@ -1,6 +1,6 @@
 # Interface, navigation et contrats UX
 
-Derniere mise a jour: 2026-07-29
+Derniere mise a jour: 2026-07-31
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Intention
@@ -78,6 +78,13 @@ mobile il revient a une colonne sans scroll horizontal. Le retour au
 recapitulatif conserve la commande et doit proposer la reprise exacte du meme
 PaymentIntent. Apres reload, la reprise ne depend ni d'un formulaire encore
 rempli ni d'une nouvelle creation de commande.
+
+L'ecran plein viewport occupe toute la largeur disponible: la colonne sombre
+ne doit pas etre entouree d'une marge de fond clair sur les grands ecrans. La
+confirmation apres paiement suit le meme contrat plein ecran. Les textes
+client de ces deux surfaces expliquent seulement l'action, l'attente, la
+securite utile et la prochaine etape; ils n'exposent pas le vocabulaire
+interne de serveur, projection, webhook ou idempotence.
 
 ### Client connecte
 

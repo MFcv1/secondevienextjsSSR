@@ -159,6 +159,51 @@ test('webhook ingress rejects a wrong secret and separates two Connect accounts'
     ]);
 });
 
+test('webhook ingress persists supported refund events and ignores unrelated Stripe events', async () => {
+    const persisted = [];
+    const ingress = createStripeWebhookIngress({
+        verifyPlatformEvent: async (rawBody) => JSON.parse(rawBody.toString()),
+        verifyConnectEvent: async (rawBody) => JSON.parse(rawBody.toString()),
+        inboxRepository: {
+            async persist(entry) {
+                persisted.push(entry);
+                return entry;
+            }
+        },
+        clock: fixedRuntimeClock()
+    });
+    const refundEntry = await ingress.ingest({
+        scope: 'connect',
+        rawBody: Buffer.from(JSON.stringify({
+            id: 'evt_refund_failed_worker',
+            type: 'refund.failed',
+            account: 'acct_workerready01',
+            created: 1,
+            livemode: false,
+            data: { object: { id: 're_worker_0001' } }
+        })),
+        signature: 'connect-secret',
+        accountId: 'acct_workerready01'
+    });
+    const ignored = await ingress.ingest({
+        scope: 'connect',
+        rawBody: Buffer.from(JSON.stringify({
+            id: 'evt_charge_worker',
+            type: 'charge.updated',
+            account: 'acct_workerready01',
+            created: 1,
+            livemode: false,
+            data: { object: { id: 'ch_worker_0001' } }
+        })),
+        signature: 'connect-secret',
+        accountId: 'acct_workerready01'
+    });
+    assert.equal(refundEntry.type, 'refund.failed');
+    assert.equal(refundEntry.objectId, 're_worker_0001');
+    assert.equal(ignored.ignored, true);
+    assert.equal(persisted.length, 1);
+});
+
 test('worker crash after retrieve is retryable and commits no domain effect', async () => {
     const repository = fakeInboxRepository({
         inboxId: 'inbox-worker-0001',
@@ -206,6 +251,43 @@ test('worker pins provider retrieval to the inbox Connect account', async () => 
     });
     assert.equal(repository.applied, 0);
     assert.equal(repository.failed, 1);
+});
+
+test('worker routes refund.failed through the authoritative refund retriever and applier', async () => {
+    const repository = fakeInboxRepository({
+        inboxId: 'inbox-refund-worker-0001',
+        type: 'refund.failed',
+        objectId: 're_worker_0001',
+        scope: 'connect',
+        accountId: 'acct_workerready01'
+    });
+    let applied = null;
+    const worker = createWebhookWorker({
+        inboxRepository: repository,
+        retrievePaymentIntent: async () => {
+            throw new Error('must not retrieve a payment intent');
+        },
+        applyPaymentIntent: async () => {
+            throw new Error('must not apply a payment intent');
+        },
+        retrieveRefund: async (refundId, accountId) => ({
+            id: refundId,
+            status: 'failed',
+            connectedAccountId: accountId
+        }),
+        applyRefund: async (_transaction, input) => {
+            applied = input;
+            return { action: 'failed' };
+        },
+        ids: { leaseToken: () => 'lease-refund-worker-0001' },
+        clock: fixedRuntimeClock()
+    });
+    const result = await worker.process('inbox-refund-worker-0001');
+    assert.equal(result.action, 'failed');
+    assert.equal(applied.refund.id, 're_worker_0001');
+    assert.equal(applied.entry.type, 'refund.failed');
+    assert.equal(repository.failed, 0);
+    assert.equal(repository.applied, 1);
 });
 
 test('bounded sweeper finds an eligible item behind more than fifty irrelevant rows', async () => {

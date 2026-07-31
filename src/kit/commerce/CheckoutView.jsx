@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useState, useEffect, useMemo, useRef } from 'react';
+import { lazy, Suspense, useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, CreditCard, Truck, AlertCircle, Landmark, Wallet, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -36,6 +36,17 @@ const normalizeCheckoutEmail = (email) => String(email || '').trim().toLowerCase
 const getCheckoutItemsTotal = (items = []) => (
     items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0)
 );
+
+const getCheckoutOtpError = (error, fallback) => {
+    const code = String(error?.code || '').toLowerCase();
+    if (code.includes('resource-exhausted') || code.includes('too-many-requests')) {
+        return 'Trop de tentatives rapprochées. Patientez quelques minutes avant de réessayer.';
+    }
+    if (code.includes('network')) {
+        return 'La connexion a été interrompue. Vérifiez votre réseau puis réessayez.';
+    }
+    return fallback;
+};
 
 const hasReliableEmailProvider = (user, checkoutEmail) => {
     if (!user || user.isAnonymous) return false;
@@ -76,7 +87,7 @@ const PremiumActionBtn = ({ children, isLoading, disabled, onClick, darkMode }) 
         >
             {isLoading ? <Loader2 size={18} className="relative animate-spin opacity-70" /> : null}
             <span className="relative z-10 flex items-center justify-center gap-3 whitespace-nowrap">
-                {isLoading ? 'Securisation...' : children}
+                {isLoading ? 'Préparation…' : children}
             </span>
             {isLoading ? (
                 <span className={`absolute inset-x-0 bottom-0 h-1 ${darkMode ? 'bg-stone-700' : 'bg-stone-300'}`}>
@@ -267,7 +278,7 @@ const CheckoutView = ({
             console.error('Checkout payment resume failed:', error);
             setCheckoutState('payment_paused');
             setPaymentResumeNotice(
-                'La commande reste réservée. Nous n’avons pas pu rouvrir le paiement pour le moment; réessayez sans recréer la commande.'
+                'Votre commande reste réservée. Le paiement ne peut pas être rouvert pour le moment. Réessayez dans quelques instants.'
             );
         }
         return true;
@@ -315,7 +326,7 @@ const CheckoutView = ({
                     ? resumed.totalCents / 100
                     : null);
                 setCreatedStripeConnectedAccountId(resumed.connectedAccountId || '');
-                setPaymentResumeNotice('Votre commande réservée a été retrouvée. Vous pouvez reprendre le paiement là où vous l’aviez laissé.');
+                setPaymentResumeNotice('Votre commande vous attend. Vous pouvez reprendre le paiement là où vous l’aviez laissé.');
                 setCheckoutState('ready_to_pay');
             } catch (error) {
                 if (cancelled) return;
@@ -323,7 +334,7 @@ const CheckoutView = ({
                 if (checkoutControllerRef.current.status === 'awaiting_method') {
                     setCheckoutState('payment_paused');
                     setPaymentResumeNotice(
-                        'Votre commande reste réservée, mais le paiement n’a pas pu être rouvert. Utilisez « Reprendre le paiement » pour réessayer.'
+                        'Votre commande reste réservée. Utilisez « Reprendre le paiement » pour réessayer.'
                     );
                 }
             }
@@ -339,7 +350,7 @@ const CheckoutView = ({
     // detruit plus les informations permettant de reprendre le meme PaymentIntent.
     const handleClosePaymentModal = () => {
         setPaymentResumeNotice(
-            'Votre commande est réservée. Reprenez ce même paiement quand vous êtes prêt; aucun nouveau dossier ne sera créé.'
+            'Votre commande reste réservée. Reprenez le paiement quand vous êtes prêt.'
         );
         setCheckoutState('payment_paused');
     };
@@ -566,12 +577,13 @@ const CheckoutView = ({
                 code: error?.code || null
             });
             console.error('Guest checkout OTP send error:', error);
+            const message = getCheckoutOtpError(error, "Impossible d’envoyer le code pour le moment.");
             setGuestOtp(prev => ({
                 ...prev,
                 status: 'idle',
-                error: error.message || "Impossible d'envoyer le code pour le moment."
+                error: message
             }));
-            toast(error.message || "Impossible d'envoyer le code pour le moment.", { type: 'error' });
+            toast(message, { type: 'error' });
         }
     };
 
@@ -611,12 +623,13 @@ const CheckoutView = ({
                 code: error?.code || null
             });
             console.error('Guest checkout OTP verify error:', error);
+            const message = getCheckoutOtpError(error, 'Le code est incorrect ou a expiré.');
             setGuestOtp(prev => ({
                 ...prev,
                 status: 'sent',
-                error: error.message || 'Code invalide ou expire.'
+                error: message
             }));
-            toast(error.message || 'Code invalide ou expire.', { type: 'error' });
+            toast(message, { type: 'error' });
         } finally {
             guestOtpVerifyInFlightRef.current = false;
         }
@@ -782,13 +795,11 @@ const CheckoutView = ({
                 toast('Le prix du panier a change. Le total a ete actualise; confirmez-le avant de continuer.', { type: 'warning' });
                 return;
             }
-            let msg = "Une erreur est survenue lors de la commande.";
-            if (error.message.includes('vendu')) {
+            let msg = "Nous n’avons pas pu préparer votre commande. Vérifiez vos informations puis réessayez.";
+            if (error.message?.includes('vendu')) {
                 msg = "Désolé, cet article vient d'être vendu à l'instant.";
-            } else if (error.message.includes('stock')) {
+            } else if (error.message?.includes('stock')) {
                 msg = "Stock insuffisant pour cet article.";
-            } else if (error.message) {
-                msg = error.message;
             }
             toast(msg, { type: 'error' });
         }
@@ -836,7 +847,7 @@ const CheckoutView = ({
                     <AlertCircle size={34} className="mx-auto text-amber-500" />
                     <h2 className="mt-5 text-2xl font-black">Paiement temporairement indisponible</h2>
                     <p className={`mt-3 text-sm leading-6 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
-                        Le noyau commerce est en maintenance. Aucune nouvelle commande ni aucun paiement differe ne peut etre cree.
+                        Nous ne pouvons pas accepter de nouvelle commande pour le moment. Revenez dans quelques instants.
                     </p>
                     <button type="button" onClick={onBack} className="mt-6 rounded-xl bg-stone-900 px-5 py-3 text-xs font-bold uppercase tracking-widest text-white">
                         Retourner a la galerie
@@ -857,7 +868,7 @@ const CheckoutView = ({
                         Nous retrouvons votre paiement
                     </h1>
                     <p className={`mt-4 max-w-[52ch] text-sm leading-6 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
-                        La commande déjà réservée est en cours de vérification. Aucun nouveau dossier ne sera créé.
+                        Nous préparons la reprise de votre commande. Vous allez retrouver le paiement là où vous l’aviez laissé.
                     </p>
                     <div className={`mt-9 overflow-hidden rounded-full ${darkMode ? 'bg-white/10' : 'bg-stone-200'}`}>
                         <span className={`sv-auth-loading-bar block h-1.5 w-1/2 ${darkMode ? 'bg-stone-100' : 'bg-stone-900'}`} />
@@ -901,12 +912,12 @@ const CheckoutView = ({
             ? 'bg-stone-900 ring-stone-800 focus:ring-white text-white placeholder:text-stone-600 autofill-dark' 
             : 'bg-stone-50 ring-stone-200 focus:ring-stone-900 text-stone-900 placeholder:text-stone-400 autofill-light'
     }`;
-    const cardClasses = `p-5 md:p-6 rounded-3xl border shadow-sm space-y-4 ${darkMode ? 'bg-stone-900/50 border-stone-800/50' : 'bg-white border-stone-100'}`;
+    const cardClasses = `space-y-4 rounded-2xl border p-5 md:p-6 ${darkMode ? 'border-stone-800/80 bg-stone-900/40' : 'border-stone-200/80 bg-white'}`;
 
     return (
         <>
         <div
-            className={`min-h-screen pt-10 px-4 md:px-6 animate-in fade-in transition-colors duration-700 bg-transparent`}
+            className={`min-h-[100dvh] px-4 pt-8 md:px-6 md:pt-10 animate-in fade-in transition-colors duration-700 bg-transparent`}
             style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6rem)' }}
         >
             <div className="max-w-[1240px] mx-auto w-full">
@@ -916,7 +927,7 @@ const CheckoutView = ({
                         <ArrowLeft size={14} /> Continuer mes achats
                     </button>
                     <h2 className={`text-3xl md:text-5xl font-black tracking-tighter ${darkMode ? 'text-white' : 'text-stone-900'}`}>
-                        Finaliser la commande.
+                        Finaliser la commande
                     </h2>
                 </div>
 
@@ -1080,12 +1091,13 @@ const CheckoutView = ({
                             </h3>
                             <div className="space-y-3">
                                 {Object.values(deliverySettings).filter(m => m.active).map(mode => (
-                                    <label key={mode.id} className={`flex items-start gap-4 p-4 rounded-xl cursor-pointer border transition-all ${formData.deliveryMode === mode.id ? (darkMode ? 'border-white bg-white/5' : 'border-stone-900 bg-stone-50') : (darkMode ? 'border-stone-800 hover:bg-stone-800' : 'border-stone-200 hover:bg-stone-50')}`}>
+                                    <label htmlFor={`checkout-delivery-${mode.id}`} key={mode.id} className={`flex items-start gap-4 p-4 rounded-xl cursor-pointer border transition-all ${formData.deliveryMode === mode.id ? (darkMode ? 'border-white bg-white/5' : 'border-stone-900 bg-stone-50') : (darkMode ? 'border-stone-800 hover:bg-stone-800' : 'border-stone-200 hover:bg-stone-50')}`}>
+                                        <span className="sr-only">{mode.label}</span>
                                         <div className="pt-1 flex items-center">
                                             <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${formData.deliveryMode === mode.id ? 'border-current' : 'border-stone-300'}`}>
                                                 {formData.deliveryMode === mode.id && <div className="w-2 h-2 rounded-full bg-current" />}
                                             </div>
-                                            <input type="radio" className="hidden" name="deliveryMode" value={mode.id} checked={formData.deliveryMode === mode.id} onChange={handleChange} />
+                                            <input id={`checkout-delivery-${mode.id}`} type="radio" className="sr-only" name="deliveryMode" value={mode.id} checked={formData.deliveryMode === mode.id} onChange={handleChange} />
                                         </div>
                                         <div className="flex-1">
                                             <div className="flex justify-between">
@@ -1099,15 +1111,15 @@ const CheckoutView = ({
                             </div>
 
                             <div className="mt-6 pt-6 border-t border-stone-200 dark:border-stone-800">
-                                <label className="flex items-start gap-3 cursor-pointer group">
+                                <label htmlFor="checkout-terms" className="flex items-start gap-3 cursor-pointer group">
                                     <div className="pt-0.5">
                                         <div className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-colors ${rgpdAccepted ? (darkMode ? 'bg-white border-white text-stone-900' : 'bg-stone-900 border-stone-900 text-white') : (darkMode ? 'border-stone-600 bg-transparent group-hover:border-stone-500' : 'border-stone-300 bg-white group-hover:border-stone-400')}`}>
                                             {rgpdAccepted && <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                                         </div>
-                                        <input type="checkbox" className="hidden" checked={rgpdAccepted} onChange={(e) => setRgpdAccepted(e.target.checked)} />
+                                        <input id="checkout-terms" type="checkbox" className="sr-only" checked={rgpdAccepted} onChange={(e) => setRgpdAccepted(e.target.checked)} />
                                     </div>
                                     <div className={`text-xs leading-5 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
-                                        J'accepte les conditions générales de vente et je confirme avoir pris connaissance de la politique de confidentialité (RGPD).
+                                        J&apos;accepte les conditions générales de vente et je confirme avoir pris connaissance de la politique de confidentialité (RGPD).
                                     </div>
                                 </label>
                             </div>
@@ -1121,12 +1133,14 @@ const CheckoutView = ({
                             
                             <div className={stripeEnabled ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4' : 'flex flex-col'}>
                                 {/* PAIEMENT DIRECT */}
-                                {stripeEnabled && <div
+                                {stripeEnabled && <button
+                                    type="button"
+                                    aria-pressed={paymentMethod === 'stripe_elements'}
                                     onClick={() => {
                                         setPaymentMethod('stripe_elements');
                                         setCheckoutState('editing'); // Reset si on change d'avis
                                     }}
-                                    className={`relative group p-[1.5px] rounded-[1.125rem] overflow-hidden cursor-pointer w-full transition-all`}
+                                    className="group relative w-full cursor-pointer overflow-hidden rounded-[1.125rem] p-[1.5px] text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-900 focus-visible:ring-offset-2"
                                 >
                                     {paymentMethod === 'stripe_elements' && (
                                         <div className={`absolute inset-0 z-0 rounded-[1.125rem] border-2 ${darkMode ? 'border-white/50' : 'border-stone-900'}`} />
@@ -1173,15 +1187,17 @@ const CheckoutView = ({
                                             </div>
                                         </div>
                                     </div>
-                                </div>}
+                                </button>}
 
                                 {/* VIREMENT / WERO */}
-                                {!COMMERCE_V2_CONSUMERS_ENABLED ? <div
+                                {!COMMERCE_V2_CONSUMERS_ENABLED ? <button
+                                    type="button"
+                                    aria-pressed={paymentMethod === 'deferred'}
                                     onClick={() => {
                                         setPaymentMethod('deferred');
                                         setCheckoutState('editing');
                                     }}
-                                    className={`relative group p-[1.5px] rounded-[1.125rem] overflow-hidden cursor-pointer w-full transition-all`}
+                                    className="group relative w-full cursor-pointer overflow-hidden rounded-[1.125rem] p-[1.5px] text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-900 focus-visible:ring-offset-2"
                                 >
                                     {paymentMethod === 'deferred' && (
                                         <div className={`absolute inset-0 z-0 rounded-[1.125rem] border-2 ${darkMode ? 'border-white/50' : 'border-stone-900'}`} />
@@ -1221,7 +1237,7 @@ const CheckoutView = ({
                                             </div>
                                         </div>
                                     </div>
-                                </div> : null}
+                                </button> : null}
                             </div>
 
                             {/* BOUTON D'ACTION DÉPLACÉ DANS LA COLONNE DE DROITE */}
@@ -1232,7 +1248,7 @@ const CheckoutView = ({
                     {/* COLONNE DROITE : RÉSUMÉ STICKY */}
                     <div className="relative w-full">
                         <div className="sticky top-24 space-y-6">
-                            <div className={`p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden ${darkMode ? 'bg-stone-900' : 'bg-[#1a1a1a]'} text-white`}>
+                            <div className={`relative overflow-hidden rounded-3xl border p-6 text-white md:p-8 ${darkMode ? 'border-stone-800 bg-stone-900' : 'border-stone-800 bg-[#20201e]'}`}>
                                 <div className="relative z-10">
                                     <h3 className="text-xl font-black mb-6 text-white">Résumé de la commande</h3>
                                     
@@ -1262,8 +1278,6 @@ const CheckoutView = ({
                                         <span className="text-4xl lg:text-5xl font-black tracking-tighter text-white">{finalTotal} €</span>
                                     </div>
                                 </div>
-                                {/* Éclat décoratif en haut à droite */}
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
                             </div>
                             
                             {/* BOUTON D'ACTION PREMIUM (Magnetic Spotlight & Layout Morph) */}

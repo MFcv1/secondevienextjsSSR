@@ -93,6 +93,7 @@ function cloneOrder(order) {
         items: order.items.map((item) => ({ ...item })),
         customerSnapshot: { ...order.customerSnapshot },
         shippingSnapshot: { ...order.shippingSnapshot },
+        ...(order.deliverySnapshot ? { deliverySnapshot: { ...order.deliverySnapshot } } : {}),
         ...(order.testContext ? { testContext: { ...order.testContext } } : {})
     };
 }
@@ -251,6 +252,7 @@ function createOrderV2({
     taxCents = 0,
     customerSnapshot = {},
     shippingSnapshot = {},
+    deliverySnapshot = {},
     expiresAt = null,
     paymentProvider = 'stripe',
     testContext = null,
@@ -314,6 +316,7 @@ function createOrderV2({
         items: items.map((line) => ({ ...line })),
         customerSnapshot: { ...customerSnapshot },
         shippingSnapshot: { ...shippingSnapshot },
+        deliverySnapshot: { ...deliverySnapshot },
         ...(testContext ? { testContext: { ...testContext } } : {}),
         createdAt: now,
         updatedAt: now

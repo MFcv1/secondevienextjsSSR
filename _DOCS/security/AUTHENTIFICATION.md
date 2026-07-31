@@ -155,7 +155,8 @@ Dans le contrat interne actuel, Google peut produire `aal2` pour l'administratio
 
 Un role `admin` ou `superAdmin` ne suffit pas. L'ouverture et la consultation
 du back-office exigent un role actif et une assurance forte, mais ne deconnectent
-pas la session apres quinze minutes. Seule une mutation sensible exige:
+pas la session apres quinze minutes. Seule une mutation sensible, notamment un
+remboursement ou une operation destructive, exige:
 
 - un role autorise;
 - une entree active dans le registre administrateur;
@@ -165,9 +166,10 @@ pas la session apres quinze minutes. Seule une mutation sensible exige:
 
 OTP seul reste `aal1`. Le client est redirige vers le step-up sans creer une deuxieme interface de connexion.
 
-Les lecteurs dashboard, ventes, retours et chronologie utilisent
-`checkActiveStrongAdmin`; les commandes de mutation conservent
-`checkRecentActiveStrongAdmin`. Lorsqu'une commande renvoie
+Les lecteurs dashboard, ventes, retours et chronologie ainsi que les commandes
+produit courantes utilisent `checkActiveStrongAdmin`. Les remboursements et
+operations destructives conservent `checkRecentActiveStrongAdmin`. Lorsqu'une
+commande sensible renvoie
 `recent-strong-auth-required`, `firebaseLazy` emet
 `sv:admin-step-up-required` et `AdminAppIsland` rouvre la modale unifiee sans
 appeler `signOut`. L'administrateur confirme Google ou sa passkey puis reprend
@@ -227,6 +229,14 @@ Tous les flux raccordes passent par l'adaptateur central:
 - e-mails de commande;
 - e-mails de remboursement/statut;
 - e-mails de test couverts.
+
+Les OTP connexion et checkout partagent le meme rendu
+`functions/src/email/otpEmailTemplates.js`, construit sur
+`emailDesignSystem.js`: identite visuelle commune, code a six chiffres,
+expiration, usage unique, avertissement anti-partage et repli texte. La logique
+de generation, de hash, d'expiration et de verification reste separee par
+parcours. Les captures de reference sont conservees dans
+[EMAILS_TRANSACTIONNELS.md](../email/EMAILS_TRANSACTIONNELS.md).
 
 Configuration:
 
@@ -608,3 +618,34 @@ Les preuves doivent utiliser uniquement les noms de secrets, versions, statuts I
 Avant l'achat du domaine: aucune nouvelle phase Auth n'est requise pour la demonstration, sauf bug bloquant reel.
 
 Des que le domaine est confirme: commencer a la section **Gate P1 - Decision domaine**, poursuivre dans l'ordre jusqu'a **Gate P7 - Validation finale**, puis remplacer le statut en tete par `VALIDEE_PRODUCTION` uniquement si tous les criteres de la section 14 sont satisfaits.
+
+## 19. Sessions de recette automatisee sandbox
+
+Deux commandes locales permettent a un agent de charger les vues privees avec
+les comptes de recette exacts, sans conserver de mot de passe ni d'OTP:
+
+```bash
+npm run e2e:sandbox:client
+npm run e2e:sandbox:admin
+```
+
+Le rail `scripts/e2e-sandbox-role-session.mjs` est fail-closed:
+
+- cible limitee au projet `secondevienextjsssr`, au sandbox App Hosting exact
+  ou a localhost;
+- client exact `pvml7008@gmail.com`, refuse si un claim ou registre admin est
+  detecte;
+- administrateur exact `loa.gto15@gmail.com`, refuse si le claim ou le registre
+  actif manque;
+- Custom Token garde uniquement en memoire, jamais ecrit dans les preuves;
+- ouverture via un hook navigateur expose seulement avec `e2e_run` sur le
+  sandbox exact ou localhost;
+- aucune creation de compte, promotion admin, modification de mot de passe ou
+  desactivation de protection.
+
+Cette session technique qualifie les vues et leurs autorisations, pas la
+ceremonie humaine de connexion. Les preuves OTP/Gmail, Google et passkey restent
+des scenarios separes. Le connecteur Gmail de Codex est lie a un seul compte a
+la fois; l'acces simultane aux deux boites doit passer par deux connexions
+autorisees distinctes ou par un transfert Gmail explicite vers la boite de
+recette centrale, jamais par un secret inscrit dans le depot.

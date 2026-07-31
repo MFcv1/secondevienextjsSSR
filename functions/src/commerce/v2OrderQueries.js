@@ -215,6 +215,7 @@ function buildAdminOrderTimeline(order, eventSnapshots = []) {
 
     let hasCancellationEvent = false;
     let hasRefundEvent = false;
+    let hasFulfillmentEvent = false;
     for (const snapshot of eventSnapshots) {
         const event = eventData(snapshot) || {};
         const type = event.type || event.action;
@@ -238,6 +239,32 @@ function buildAdminOrderTimeline(order, eventSnapshots = []) {
             append('refund_failed', event.createdAt, {
                 amountCents: event.amountCents,
                 currency: event.currency
+            });
+        } else if ([
+            'fulfillment_prepare',
+            'fulfillment_ready',
+            'fulfillment_pickup',
+            'fulfillment_ship',
+            'fulfillment_deliver'
+        ].includes(type)) {
+            hasFulfillmentEvent = true;
+            append(type, event.createdAt, {
+                trackingNumber: event.trackingNumber || null
+            });
+        }
+    }
+
+    if (!hasFulfillmentEvent) {
+        const fallbackType = {
+            preparing: 'fulfillment_prepare',
+            ready_for_pickup: 'fulfillment_ready',
+            picked_up: 'fulfillment_pickup',
+            shipped: 'fulfillment_ship',
+            delivered: 'fulfillment_deliver'
+        }[order.fulfillmentSummary?.status];
+        if (fallbackType) {
+            append(fallbackType, order.updatedAt, {
+                trackingNumber: order.fulfillmentSummary?.trackingNumber || null
             });
         }
     }

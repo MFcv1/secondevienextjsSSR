@@ -267,6 +267,22 @@ Etat commerce sandbox au 2026-07-28:
 - UI fixture refermee apres recette, mutations admin `read_only`, offline
   `off`; aucune cible live ou production activee.
 
+Le transport Gmail sandbox utilise un mot de passe d'application dedie stocke
+uniquement dans Secret Manager sous `GMAIL_PASSWORD`. En cas de `EAUTH`, la
+rotation consiste a creer une nouvelle version du secret, redeployer seulement
+le dispatcher outbox, reprendre les entrees echouees puis verifier
+`providerMessageId`; aucun mot de passe ordinaire, mot de passe d'application
+ou fichier temporaire ne doit rester dans le depot ou les rapports. Cette
+rotation ne resout pas la reputation Gmail: la delivrabilite finale reste
+conditionnee au domaine expediteur Resend et a ses DNS.
+
+Rollout e-mail v2 du 2026-07-30:
+
+- 15 Functions Auth/commerce ciblees `ACTIVE` en `europe-west1`;
+- App Hosting `build-2026-07-30-019` `READY`, rollout `SUCCEEDED`;
+- URL admin avec `order_id` et `/mes-commandes` verifiees en HTTP `200`;
+- aucun flag commerce, rail live ou cible production n'a ete active.
+
 ## 11. Rollback
 
 App Hosting:

@@ -360,7 +360,8 @@ test('product callable transport is exported but server-control dormant', () => 
         assert.ok(transport.includes(functionName));
         assert.equal(functionsIndex.includes(functionName), true);
     }
-    assert.ok(transport.includes('checkRecentActiveStrongAdmin(context)'));
+    assert.ok(transport.includes('checkActiveStrongAdmin(context)'));
+    assert.equal(transport.includes('checkRecentActiveStrongAdmin(context)'), false);
     assert.ok(transport.includes('enforceAppCheck: true'));
     assert.ok(transport.includes('withCommerceMutationsEnabled'));
     assert.ok(client.includes('COMMERCE_V2_ADMIN_COMMANDS_ENABLED = true'));

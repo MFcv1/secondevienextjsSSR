@@ -273,7 +273,7 @@ test('checkout and query Functions are exported with App Check and fail-closed c
     assert.ok(queries.includes('enforceAppCheck: true'));
 });
 
-test('admin order timeline keeps exact payment, cancellation and refund event times', () => {
+test('admin order timeline keeps exact payment, fulfillment, cancellation and refund event times', () => {
     const timeline = buildAdminOrderTimeline({
         createdAt: { seconds: 100 },
         payment: {
@@ -298,6 +298,10 @@ test('admin order timeline keeps exact payment, cancellation and refund event ti
             createdAt: '1970-01-01T00:05:00.000Z'
         },
         {
+            action: 'fulfillment_prepare',
+            createdAt: { seconds: 225 }
+        },
+        {
             type: 'cancellation_completed',
             createdAt: { seconds: 250 }
         }
@@ -306,6 +310,7 @@ test('admin order timeline keeps exact payment, cancellation and refund event ti
     assert.deepEqual(timeline.map((event) => event.type), [
         'order_created',
         'payment_succeeded',
+        'fulfillment_prepare',
         'order_cancelled',
         'refund_requested',
         'refund_succeeded'
@@ -314,7 +319,7 @@ test('admin order timeline keeps exact payment, cancellation and refund event ti
         _seconds: 200,
         _nanoseconds: 500000000
     });
-    assert.equal(timeline[4].amountCents, 8000);
+    assert.equal(timeline[5].amountCents, 8000);
     assert.equal(typeof createGetOrderTimelineAdminHandler, 'function');
 });
 
@@ -647,7 +652,8 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(adminReturns.includes('returnLineSummary'));
     assert.ok(adminCommerceData.includes('Promise.allSettled'));
     assert.ok(adminCommerceData.includes('loadAdminOrdersFirstPage({ force })'));
-    assert.ok(adminOrders.includes('loadAdminOrdersFirstPage()'));
+    assert.ok(adminOrders.includes('loadAdminOrdersFirstPage({ force: true })'));
+    assert.ok(adminOrders.includes("case 'fulfillment_prepare'"));
     assert.ok(adminReturns.includes('loadAdminReturnsFirstPage()'));
     assert.ok(adminIsland.includes('preloadAdminCommerceData'));
     assert.ok(adminIsland.includes('preloadAdminDashboardData'));

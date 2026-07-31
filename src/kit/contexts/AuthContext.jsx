@@ -226,6 +226,30 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         return result;
     };
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return undefined;
+        const isE2ERun = new URLSearchParams(window.location.search).has('e2e_run');
+        const isApprovedSandboxHost = [
+            'secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app',
+            'localhost',
+            '127.0.0.1',
+        ].includes(window.location.hostname);
+        if (!isE2ERun || !isApprovedSandboxHost) return undefined;
+
+        window.__svE2ELoginWithCustomToken = async ({ token, method = 'sandbox_session' }) => {
+            const result = await loginWithCustomToken(token, method);
+            return {
+                uid: result?.user?.uid || null,
+                email: result?.user?.email || null,
+                emailVerified: Boolean(result?.user?.emailVerified),
+            };
+        };
+
+        return () => {
+            delete window.__svE2ELoginWithCustomToken;
+        };
+    }, []);
+
     const logout = async () => {
         const { auth, authModule } = await getAuthRuntime();
         await authModule.signOut(auth);

@@ -32,6 +32,9 @@ const {
     createRefundCoordinator
 } = require('../../../functions/src/commerce/domain/refundCoordinator');
 const {
+    createRefundEffectApplier
+} = require('../../../functions/src/commerce/domain/refundEffectApplier');
+const {
     createRefundRepository
 } = require('../../../functions/src/commerce/domain/refundRepository');
 const {
@@ -787,10 +790,16 @@ const scenarios = {
             1,
             'capture fact is unique'
         );
+        const outboxSnapshot = await getDocs(collection(firestore, 'commerce_outbox'));
         context.equal(
-            (await getDocs(collection(firestore, 'commerce_outbox'))).size,
-            1,
-            'outbox intent is unique'
+            outboxSnapshot.size,
+            2,
+            'customer and admin outbox intents are each unique'
+        );
+        context.deepEqual(
+            outboxSnapshot.docs.map((document) => document.data().template).sort(),
+            ['order-paid', 'order-paid-admin'],
+            'payment atomically creates one dedicated message per audience'
         );
     }),
 
@@ -1028,6 +1037,100 @@ const scenarios = {
             (await getDocs(collection(firestore, 'commerce_financial_facts'))).size,
             3,
             'one capture fact and two refund facts exist'
+        );
+    }),
+
+    'gate4-refund-failed-webhook-settles-attempt-order-and-two-outboxes': async (context) => withBackend(async (firestore) => {
+        const seeded = await seedGate3Checkout(firestore);
+        const prepared = await seeded.checkoutRepository.prepareCheckout({
+            ownerUid: 'owner-uid-gate3',
+            ownerEmail: 'client@example.test',
+            input: gate3CheckoutInput(),
+            fixtureContext: {
+                runId: 'run_gate4_refund_failed',
+                fixtureScopeVersion: 'fixture_gate3_20260726'
+            }
+        });
+        const effectClock = {
+            now: () => '2026-07-26T12:05:00.000Z',
+            nowMillis: () => Date.parse('2026-07-26T12:05:00.000Z')
+        };
+        const paymentApplier = createPaymentEffectApplier({
+            refs: seeded.refs,
+            clock: effectClock,
+            increment
+        });
+        await runTransaction(firestore, (transaction) => paymentApplier.apply(transaction, {
+            entry: { scope: 'connect', accountId: 'acct_gate3ready01' },
+            paymentIntent: {
+                id: 'pi_gate4_refund_failed',
+                status: 'succeeded',
+                amount: prepared.order.amounts.totalCents,
+                currency: 'eur',
+                metadata: {
+                    orderId: prepared.order.id,
+                    requestHash: prepared.order.checkout.requestHash
+                },
+                connectedAccountId: 'acct_gate3ready01'
+            }
+        }));
+        const repository = createRefundRepository({
+            db: { runTransaction: (run) => runTransaction(firestore, run) },
+            refs: seeded.refs,
+            clock: effectClock,
+            increment
+        });
+        const refundRequestId = 'refund-failed-webhook-0001';
+        await repository.prepareRefund({
+            orderId: prepared.order.id,
+            refundRequestId,
+            amountCents: 3000,
+            actor: { uid: 'admin-gate4', role: 'admin', aal2: true },
+            reason: 'qualification webhook refund failed'
+        });
+        const refundApplier = createRefundEffectApplier({
+            refs: seeded.refs,
+            clock: effectClock,
+            increment
+        });
+        const refund = {
+            id: 're_gate4_failed_webhook',
+            status: 'failed',
+            amount: 3000,
+            currency: 'eur',
+            payment_intent: 'pi_gate4_refund_failed',
+            metadata: {
+                orderId: prepared.order.id,
+                refundRequestId
+            },
+            connectedAccountId: 'acct_gate3ready01'
+        };
+        await runTransaction(firestore, (transaction) => refundApplier.apply(transaction, {
+            entry: { scope: 'connect', accountId: 'acct_gate3ready01' },
+            refund
+        }));
+        const order = (await getDoc(seeded.refs.order(prepared.order.id))).data();
+        const attempt = (await getDoc(
+            seeded.refs.refundAttempt(prepared.order.id, refundRequestId)
+        )).data();
+        const outboxes = await getDocs(collection(firestore, 'commerce_outbox'));
+        context.equal(order.refundAggregate.status, 'needs_review', 'failed refund is durable');
+        context.equal(order.refundAggregate.pendingCents, 0, 'failed pending amount is released');
+        context.equal(attempt.status, 'failed', 'refund attempt is terminal failed');
+        context.equal(
+            (await getDocs(collection(firestore, 'commerce_financial_facts'))).size,
+            1,
+            'failed refund creates no false financial refund fact'
+        );
+        context.deepEqual(
+            outboxes.docs.map((document) => document.data().template).sort(),
+            [
+                'order-paid',
+                'order-paid-admin',
+                'order-refund-failed',
+                'order-refund-failed-admin'
+            ],
+            'failed refund adds one customer and one admin alert'
         );
     }),
 

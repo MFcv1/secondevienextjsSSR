@@ -107,6 +107,7 @@ Ne jamais promouvoir le compte recette client type en administrateur. Aucun mot 
 | interface/navigation | [INTERFACE_NAVIGATION.md](_DOCS/ux/INTERFACE_NAVIGATION.md) | layout, header, mega menu, CSS | actif |
 | images/medias | [IMAGES_MEDIA.md](_DOCS/images/IMAGES_MEDIA.md) | imageUtils, Storage, scripts image | actif |
 | authentification | [AUTHENTIFICATION.md](_DOCS/security/AUTHENTIFICATION.md) | authStore, AuthContext, modal, auth Functions | preprod close |
+| e-mails transactionnels | [EMAILS_TRANSACTIONNELS.md](_DOCS/email/EMAILS_TRANSACTIONNELS.md) | design system, OTP, commerce v2, outbox, captures | preprod |
 | securite globale | [SECURITE_GLOBALE.md](_DOCS/security/SECURITE_GLOBALE.md) | rules, helpers security, secrets, headers | preprod |
 | espace client | [ESPACE_CLIENT.md](_DOCS/client/ESPACE_CLIENT.md) | routes compte, MyOrders, wishlist | preprod |
 | commerce/Stripe | [COMMERCE_SYNTHESE.md](_DOCS/commerce/COMMERCE_SYNTHESE.md), puis [COMMERCE_STRIPE.md](_DOCS/commerce/COMMERCE_STRIPE.md) | commerce client/Functions/admin | preprod transactionnelle sandbox |
@@ -133,6 +134,16 @@ Plan temporaire de reprise explicitement demande:
   et corrections de projection/reprise; aucune activation `v2_all`
   permanente, live ou production implicite; revue au plus tard le
   2026-10-31, puis fusion canonique et suppression avec [TODO.md](TODO.md).
+- [RECETTE_EMAILS_LUNA.md](_DOCS/email/RECETTE_EMAILS_LUNA.md): reproduction
+  humaine des 13 e-mails sur sandbox par Luna; diagnostic et preuves
+  uniquement, aucune correction de code; anomalies remises a GPT-5.6-sol;
+  execution et fusion au plus tard le 2026-08-06, puis suppression.
+- [.agents/skills/client-admin-test/SKILL.md](.agents/skills/client-admin-test/SKILL.md):
+  skill de projet invoque par `$client-admin-test`; lance automatiquement la
+  recette humaine client/admin dans Chrome sans prompt a recopier; Luna en
+  raisonnement tres eleve recommande; guide court dans
+  [TEST_CLIENT_ADMIN_LUNA.md](TEST_CLIENT_ADMIN_LUNA.md); fusion et suppression
+  au plus tard le 2026-08-06.
 
 ## 6. Invariants d'architecture publique
 

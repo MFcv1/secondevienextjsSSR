@@ -21,6 +21,7 @@ const { createOrderCommandRepository } = require('./orderCommandRepository');
 const { createPaymentEffectApplier } = require('./paymentEffectApplier');
 const { createProductCommandRepository } = require('./productCommandRepository');
 const { createRefundCoordinator } = require('./refundCoordinator');
+const { createRefundEffectApplier } = require('./refundEffectApplier');
 const { createRefundRepository } = require('./refundRepository');
 const { createRefundSagaService } = require('./refundSagaService');
 const { createReservationExpiryWorker } = require('./reservationExpiryWorker');
@@ -368,6 +369,7 @@ function createCommerceV2Runtime({
         clock
     });
     const paymentEffectApplier = createPaymentEffectApplier({ refs, clock });
+    const refundEffectApplier = createRefundEffectApplier({ refs, clock });
     const sagaRepository = createCheckoutSagaRepository({
         db: database,
         checkoutRepository,
@@ -417,6 +419,11 @@ function createCommerceV2Runtime({
         inboxRepository,
         retrievePaymentIntent: stripeAdapter.retrievePaymentIntent,
         applyPaymentIntent: (transaction, input) => paymentEffectApplier.apply(
+            transaction,
+            input
+        ),
+        retrieveRefund: stripeAdapter.retrieveRefund,
+        applyRefund: (transaction, input) => refundEffectApplier.apply(
             transaction,
             input
         ),
