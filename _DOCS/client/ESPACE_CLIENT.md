@@ -1,6 +1,6 @@
 # Espace client
 
-Derniere mise a jour: 2026-07-31
+Derniere mise a jour: 2026-08-01
 Statut: `PREPROD_READY`
 
 Restriction active:
@@ -20,6 +20,13 @@ Les deux routes personnelles sont dynamiques et non indexables:
 Les actions `connectez-vous` et `inscrivez-vous` de `/wishlist` ouvrent la
 modale Auth publique commune via `sv:open-login`; elles ne redirigent jamais
 vers `/admin`.
+
+La route privee `/payer/[orderId]/[token]` est un tunnel distinct, dynamique
+et non indexable pour les liens emis par l'administration. Elle collecte les
+coordonnees et affiche Stripe sans creer de compte ni ouvrir de session Auth.
+La commande est confirmee et recapitulée par e-mail mais n'apparait pas
+automatiquement dans `/mes-commandes`, dont la lecture reste liee a un UID
+authentifie. Ce rail est code localement et non deploye au 2026-08-01.
 
 ## 2. Sections de Mon espace
 

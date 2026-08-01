@@ -50,10 +50,34 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
         ownerUid,
         ownerEmail,
         input,
-        fixtureContext = null
+        fixtureContext = null,
+        checkoutExpiresAt = null,
+        checkoutChannel = null,
+        checkoutMetadata = null
     }) {
         if (typeof ownerUid !== 'string' || ownerUid.length < 8) {
             throw checkoutError('COMMERCE_CHECKOUT_OWNER_INVALID');
+        }
+        if (
+            checkoutExpiresAt !== null &&
+            (
+                typeof checkoutExpiresAt !== 'string' ||
+                !Number.isSafeInteger(Date.parse(checkoutExpiresAt))
+            )
+        ) {
+            throw checkoutError('COMMERCE_CHECKOUT_EXPIRY_INVALID');
+        }
+        if (
+            checkoutChannel !== null &&
+            (
+                typeof checkoutChannel !== 'string' ||
+                !/^[a-z0-9_]{3,64}$/.test(checkoutChannel) ||
+                !checkoutMetadata ||
+                typeof checkoutMetadata !== 'object' ||
+                Array.isArray(checkoutMetadata)
+            )
+        ) {
+            throw checkoutError('COMMERCE_CHECKOUT_CHANNEL_INVALID');
         }
         const validated = validateCheckoutInput(input);
         const groups = aggregateCheckoutLines(validated.value.items);
@@ -201,6 +225,7 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
                     quantity: line.quantity
                 };
             });
+            const expiresAt = authorizedFixtureContext?.expiresAt || checkoutExpiresAt || null;
             let order = createOrderV2({
                 userId: ownerUid,
                 clientOrderId: validated.value.clientOrderId,
@@ -211,13 +236,23 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
                 customerSnapshot: { email: ownerEmail || null },
                 shippingSnapshot: validated.value.shippingAddress,
                 deliverySnapshot: delivery,
-                expiresAt: authorizedFixtureContext?.expiresAt || null,
+                expiresAt,
                 testContext: authorizedFixtureContext ? {
                     runId: authorizedFixtureContext.runId,
                     fixtureScopeVersion: authorizedFixtureContext.fixtureScopeVersion
                 } : null,
                 clock
             });
+            if (checkoutChannel) {
+                order = {
+                    ...order,
+                    checkout: {
+                        ...order.checkout,
+                        channel: checkoutChannel,
+                        ...checkoutMetadata
+                    }
+                };
+            }
             order = {
                 ...order,
                 payment: {
@@ -257,7 +292,7 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
                     writtenOffQty: 0,
                     inventoryVersion: source.inventoryVersion + 1,
                     stateVersion: 0,
-                    expiresAt: authorizedFixtureContext?.expiresAt || null,
+                    expiresAt,
                     ...(authorizedFixtureContext ? {
                         testContext: {
                             runId: authorizedFixtureContext.runId,
@@ -313,6 +348,7 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
                 attemptId,
                 policyVersion: policy.version,
                 connectedAccountId: connectedAccount.accountId,
+                ...(checkoutChannel ? { checkoutChannel } : {}),
                 ...(authorizedFixtureContext ? {
                     testContext: {
                         runId: authorizedFixtureContext.runId,

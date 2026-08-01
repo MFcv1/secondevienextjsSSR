@@ -1,6 +1,6 @@
 # E-mails transactionnels - Seconde Vie
 
-Derniere mise a jour: 2026-07-31
+Derniere mise a jour: 2026-08-01
 Statut: `PREPROD_READY`
 Perimetre: Auth OTP, paiement, cycle de commande v2, remboursements et copie de document
 
@@ -123,7 +123,10 @@ Informations:
 - article et quantite;
 - methode et adresse de livraison;
 - prochaine etape;
-- bouton vers `/mes-commandes`.
+- bouton vers `/mes-commandes` pour une commande authentifiee;
+- pour le rail admin sans compte `admin_payment_link`, le meme recapitulatif
+  est envoye a l'adresse collectee mais l'action revient vers la galerie: elle
+  ne pretend pas donner acces a un espace client sans UID.
 
 ![Commande payee client](captures/03-commande-payee-client.png)
 
@@ -269,6 +272,15 @@ Ce modele n'a pas encore de capture canonique. Sa capture sera ajoutee a la
 galerie lors d'un deploiement et d'une recette visuelle explicitement valides.
 
 ## 10. Livraison et idempotence
+
+L'onglet admin Factures ajoute un envoi operationnel hors cycle de commande:
+le callable `sendManualInvoiceAdmin` emet et verrouille le brouillon, genere le
+PDF serveur puis l'envoie avec le meme adaptateur Gmail/Resend. Chaque demande
+porte un `sendRequestId`; son etat `sending`, `sent`, `failed` ou
+`delivery_unknown` est conserve sous la facture. Le destinataire libre saisi
+par l'administratrice est valide serveur et n'est persiste que sous forme de
+hash. Ce rendu ne fait pas partie de la galerie historique des e-mails
+commerce tant qu'aucune recette visuelle sandbox ne l'a accepte.
 
 Les e-mails commerce v2 passent par `commerce_outbox`:
 

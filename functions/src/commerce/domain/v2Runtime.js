@@ -1,6 +1,9 @@
 'use strict';
 
 const crypto = require('node:crypto');
+const {
+    createAdminPaymentLinkCoordinator
+} = require('./adminPaymentLinkCoordinator');
 const { createBoundedWorkerSweeper } = require('./boundedWorkerSweeper');
 const {
     createCancellationAuditRepository
@@ -210,6 +213,75 @@ function createCheckoutRuntime({
                 clock,
                 failpoints
             })
+        })
+    });
+}
+
+function createAdminPaymentLinkRuntime({
+    db,
+    stripe,
+    appId,
+    tokenSecret,
+    siteUrl,
+    clock = createClock(),
+    failpoints = null
+}) {
+    if (
+        typeof db?.doc !== 'function' ||
+        typeof db?.collection !== 'function' ||
+        typeof db?.runTransaction !== 'function' ||
+        typeof stripe?.paymentIntents?.create !== 'function' ||
+        typeof stripe?.paymentIntents?.retrieve !== 'function' ||
+        typeof stripe?.paymentIntents?.cancel !== 'function' ||
+        typeof appId !== 'string' ||
+        !appId ||
+        typeof tokenSecret !== 'string' ||
+        tokenSecret.length < 32 ||
+        typeof siteUrl !== 'string' ||
+        !siteUrl
+    ) {
+        throw runtimeError('COMMERCE_ADMIN_PAYMENT_LINK_RUNTIME_DEPENDENCY_INVALID');
+    }
+    const refs = createRefs(db, appId);
+    const database = {
+        collection: (path) => db.collection(path),
+        runTransaction: (run) => db.runTransaction(run)
+    };
+    const ids = {
+        orderId: () => `ord_${crypto.randomUUID()}`,
+        attemptId: () => `att_${crypto.randomUUID()}`,
+        commandId: () => `cmd_${crypto.randomUUID()}`,
+        requestId: () => `req_${crypto.randomUUID()}`,
+        tokenNonce: () => crypto.randomBytes(24).toString('base64url')
+    };
+    const checkoutRepository = createCheckoutRepository({
+        db: database,
+        refs,
+        ids,
+        clock
+    });
+    const paymentEffectApplier = createPaymentEffectApplier({ refs, clock });
+    const sagaRepository = createCheckoutSagaRepository({
+        db: database,
+        checkoutRepository,
+        paymentEffectApplier
+    });
+    const sagaService = createCheckoutSagaService({
+        stripe: createStripeAdapter(stripe),
+        repository: sagaRepository,
+        clock,
+        failpoints
+    });
+    return Object.freeze({
+        paymentLinks: createAdminPaymentLinkCoordinator({
+            db: database,
+            refs,
+            checkoutRepository,
+            sagaService,
+            ids,
+            clock,
+            tokenSecret,
+            siteUrl
         })
     });
 }
@@ -530,6 +602,7 @@ function createCommerceV2Runtime({
 }
 
 module.exports = {
+    createAdminPaymentLinkRuntime,
     createCancellationRuntime,
     createCheckoutRuntime,
     createCommerceV2Runtime,

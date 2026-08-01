@@ -1,6 +1,6 @@
 # Synthese du noyau commerce
 
-Derniere mise a jour: 2026-07-29
+Derniere mise a jour: 2026-08-01
 Statut: `POINT_ENTREE_COMMERCE`
 Qualification actuelle: `PREPROD_TRANSACTIONAL_READY`
 
@@ -50,6 +50,12 @@ Elle ne constitue pas:
 - un GO production;
 - une validation fiscale, comptable ou juridique;
 - une validation du domaine final, du DNS ou de Resend.
+
+Le rail admin de liens de paiement sans compte est `CODE_READY_LOCAL` depuis
+le 2026-08-01. Il reutilise les orders, reservations, PaymentIntent, webhooks et
+outboxes v2; il n'elargit pas la qualification precedente. Son secret HMAC,
+ses Functions, son index et sa route App Hosting ne sont pas deployes et les
+controls sandbox restent `v2_fixture/read_only`.
 
 ## 3. Ce qui a ete realise par Gate
 

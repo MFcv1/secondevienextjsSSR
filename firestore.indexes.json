@@ -42,6 +42,23 @@
       ]
     },
     {
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "checkout.channel", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "checkout.channel", "order": "ASCENDING" },
+        { "fieldPath": "checkout.status", "order": "ASCENDING" },
+        { "fieldPath": "checkout.expiresAt", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "inventory_reservations",
       "queryScope": "COLLECTION",
       "fields": [

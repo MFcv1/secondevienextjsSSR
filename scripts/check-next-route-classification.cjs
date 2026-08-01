@@ -140,6 +140,7 @@ const requestTimePublicEntries = [
 const dynamicRouteAllowlist = [
   { route: '/admin', file: 'app/admin/page.jsx' },
   { route: '/checkout', file: 'app/checkout/page.jsx' },
+  { route: '/payer/[orderId]/[token]', file: 'app/payer/[orderId]/[token]/page.jsx' },
   { route: '/wishlist', file: 'app/wishlist/page.jsx' },
   { route: '/mes-commandes', file: 'app/mes-commandes/page.jsx' },
   { route: '/api/catalog', file: 'app/api/catalog/route.js' },
@@ -210,6 +211,16 @@ for (const route of publicSeoRoutes) {
 for (const route of dynamicRouteAllowlist) {
   assertSourceIncludes(route.file, /dynamic\s*=\s*['"]force-dynamic['"]/, `${route.route} explicit force-dynamic tunnel`);
 }
+assertSourceIncludes(
+  'app/payer/[orderId]/[token]/page.jsx',
+  /robots:\s*\{\s*index:\s*false,\s*follow:\s*false/,
+  '/payer/[orderId]/[token] private robots metadata'
+);
+assertSourceIncludes(
+  'app/payer/[orderId]/[token]/page.jsx',
+  /referrer:\s*['"]no-referrer['"]/,
+  '/payer/[orderId]/[token] referrer protection'
+);
 
 const publicRouteFiles = [...publicSeoRoutes, ...publicMetadataRoutes].map((route) => route.file);
 

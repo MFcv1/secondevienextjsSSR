@@ -1,6 +1,6 @@
 # Cartographie du projet Seconde Vie Next
 
-Derniere verification: 2026-07-31
+Derniere verification: 2026-08-01
 Statut: `CARTE_CANONIQUE_ACTIVE`
 
 ## 1. Role et maintenance
@@ -41,6 +41,7 @@ Seconde Vie
 |-- /devis ........................... Demande de restauration/devis
 |-- /wishlist ........................ Liste personnelle dynamique
 |-- /checkout ........................ Tunnel panier/paiement dynamique
+|-- /payer/[orderId]/[token] ......... Paiement prive sans compte, lien admin signe
 |-- /mes-commandes ................... Espace client dynamique
 |-- /admin ........................... Back-office dynamique
 |-- /api/search ...................... Recherche catalogue serveur
@@ -64,6 +65,7 @@ Seconde Vie
 | `/recherche` | `[S]+[C]` | ISR 300 | noindex/follow | `app/recherche/page.jsx` | `SearchResultsIsland` |
 | `/wishlist` | `[C]` tunnel | DYN | noindex/nofollow | `app/wishlist/page.jsx` | `WishlistPageIsland` |
 | `/checkout` | `[C]` tunnel | DYN | noindex/nofollow | `app/checkout/page.jsx` | `CheckoutPageIsland` |
+| `/payer/[orderId]/[token]` | `[C]` tunnel prive | DYN | noindex/nofollow, no-referrer | route dynamique | `PaymentLinkPageIsland` |
 | `/mes-commandes` | `[C]` tunnel | DYN | noindex/nofollow | `app/mes-commandes/page.jsx` | `OrdersPageIsland` |
 | `/admin` | `[C]` tunnel | DYN | noindex/nofollow | `app/admin/page.jsx` | `AdminAppIsland` |
 | `/api/search` | `[API]` | reponse non persistante | non indexable | `route.js` | recherche serveur |
@@ -165,6 +167,21 @@ confinement Gate 0B SANDBOX_ACTIVE
   |-- webhook PI existant -> drainage signe + lease fencee
   |-- Admin commerce -> consultation read-only
   `-- Rules -> orders/policy/champs commerce/delete media fermes
+```
+
+Rail de secours admin, code local non deploye au 2026-08-01:
+
+```text
+/admin -> Liens de paiement [C]
+  -> selection de 1 a 20 meubles + livraison + validite + e-mail optionnel
+  -> createAdminPaymentLink [F] sous admin fort recent et control v2
+  -> prix/stock/policy/Connect relus serveur, hold + order v2 atomiques [DB]
+  -> URL HMAC opaque /payer/[orderId]/[token], sans compte ni OTP
+  -> coordonnees client allowlistees -> PaymentIntent idempotent [EXT]
+  -> webhooks v2 -> paid + stock commit + outboxes client/admin [DB]
+  -> extension bornee a 24 h; rotation invalide l'ancienne URL avant PI
+  -> annulation/expiration provider-first -> stock libere seulement apres Stripe
+  -> lien ferme -> recreation = nouvelle commande et nouvelle verification stock/prix
 ```
 
 L'audit et la roadmap temporaire 0A a 8 sont clos. Leur verite durable est
@@ -350,6 +367,9 @@ app/
 |-- checkout/
 |   |-- page.jsx ...................... route dynamique
 |   `-- CheckoutPageIsland.jsx ........ auth/panier vers CheckoutView
+|-- payer/[orderId]/[token]/
+|   |-- page.jsx ...................... route privee dynamique noindex/no-referrer
+|   `-- PaymentLinkPageIsland.jsx ..... coordonnees puis Payment Element sans compte
 |-- mes-commandes/
 |   |-- page.jsx ...................... route dynamique
 |   |-- loading.jsx ................... loading coherent du compte
@@ -472,6 +492,7 @@ src/kit/commerce/
 |-- CheckoutView.jsx .................. orchestration checkout
 |-- CheckoutStripeModal.jsx ........... suivi commande/paiement
 |-- CheckoutPaymentStep.jsx ........... Stripe Payment Element
+|-- adminPaymentLinkClient.js ......... callables admin/public du rail de secours
 |-- checkoutController.js ............. controller v2 et stateVersion
 |-- orderAdapter.js ................... lecture UI v1/v2 sans ambiguite
 |-- checkoutRecovery.js ............... reprise 3DS/reload namespacee, sans secret
@@ -522,6 +543,8 @@ src/kit/admin/
 |-- AdminStudio.jsx ................... studio contenu
 |-- AdminHomepage.jsx ................. personnalisation publique
 |-- AdminOrders.jsx ................... ventes/logistique, modale expedition/suivi
+|-- AdminPaymentLinks.jsx ............. creation, copie et cycle de vie des liens prives
+|-- AdminInvoices.jsx ................ selection meubles, edition, apercu A4, brouillons et envoi PDF
 |-- AdminReturns.jsx .................. demandes client + remboursements + retours physiques detailles
 |-- AdminLivraison.jsx ................ configuration livraison
 |-- AdminUsers.jsx .................... comptes/acces admin
@@ -609,6 +632,8 @@ functions/
     |   |   |-- connectPolicy.js ......... readiness et compte epingle
     |   |   |-- reservationRepository.js . mouvements hold/commit/release
     |   |   |-- checkoutRepository.js .... order, hold, tentative et identite atomiques
+    |   |   |-- adminPaymentLink.js ...... token HMAC, expiration et statuts du lien
+    |   |   |-- adminPaymentLinkCoordinator.js  reservation, PI, rotation et liberation sure
     |   |   |-- checkoutCoordinator.js ... create/resume sur etat durable
     |   |   |-- checkoutSaga.js .......... tentative PI et matrice de reprise
     |   |   |-- checkoutSagaService.js ... orchestration Stripe injectee, non exportee
@@ -648,6 +673,7 @@ functions/
     |   |-- v2Cancellation.js .............. callable annulation exportee, controle mutations off
     |   |-- v2ControlGuard.js ............... verrou serveur mutations selon controle
     |   |-- v2Checkout.js .................. create/resume limites au scope fixture
+    |   |-- v2AdminPaymentLinks.js ......... callables admin/public + expiration planifiee
     |   |-- v2Operations.js ................ schedulers, exploitation et synthese Stats fraiche par agregations
     |   |-- v2OrderQueries.js .............. lecteurs UID/admin exportes et actifs
     |   |-- v2DocumentDelivery.js .......... acces PDF proprietaire + outbox bornee
@@ -669,6 +695,10 @@ functions/
     |   |-- transactionalEmail.js ......... Gmail/Resend + PDF memoire borne
     |   |-- transactionalEmailRuntime.js
     |   `-- orderEmails.js
+    |-- invoicing/
+    |   |-- manualInvoiceDomain.js .... validation, montants entiers, hash et numerotation
+    |   |-- manualInvoicePdf.js ....... rendu PDF deterministe facture/brouillon
+    |   `-- manualInvoices.js ......... callables admin, persistance privee et envoi e-mail
     |-- analytics/
     |   |-- constants.js
     |   |-- sessionAuthorizationCache.js ... cache borne/TTL du hash de jeton
@@ -704,6 +734,7 @@ functions/
 | --- | --- |
 | commerce | `createOrder`, `stripeWebhook`, `stripeConnectWebhook`, `cancelOrderClient`, `getOrderStatusClient` |
 | commerce v2 checkout/lecture | `createCheckoutV2`, `resumeCheckoutV2`, `listMyOrdersV2`, `prepareCommerceDocumentDelivery`, `requestCustomerReturn`, `listOrdersAdminV2`, `getOrderTimelineAdminV2`, `listReturnsAdminV2`, `listCustomerReturnRequestsAdminV2` |
+| liens de paiement admin | `createAdminPaymentLink`, `listAdminPaymentLinks`, `extendAdminPaymentLink`, `regenerateAdminPaymentLink`, `recreateAdminPaymentLink`, `cancelAdminPaymentLink`, `getAdminPaymentLinkPublic`, `prepareAdminPaymentLinkPayment`, `resumeAdminPaymentLinkPayment`, `expireAdminPaymentLinks` |
 | commerce v2 retours client | `decideCustomerReturnRequestAdmin`, puis commandes refund/retour v2 existantes selon le parcours choisi |
 | commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
 | commerce v2 produit | `preflightProductMutationAdmin`, `createProductAdmin`, `updateProductOfferAdmin`, `publishProductAdmin`, `adjustInventoryAdmin`, `archiveProductAdmin` |
@@ -712,6 +743,7 @@ functions/
 | Auth/admin | `grantAdminOnAuth`, `onRegisteredUserCreated`, `onRegisteredUserDeleted`, `addAdminUser`, `removeAdminUser`, `logUserConnection`, `getUserStats`, `syncSuperAdminClaim`, `ensureAdminAccessRegistry` |
 | OTP/passkeys | `sendGuestCheckoutOtp`, `verifyGuestCheckoutOtp`, `sendCustomerLoginOtp`, `verifyCustomerLoginOtp`, quatre endpoints passkey |
 | onboarding facturation | `getBillingGuideStatus`, `saveBillingGuideProgress`, `getBillingGuideOperatorStatus`, `completeBillingGuideAdmin`, `resetBillingGuideTest` |
+| factures manuelles admin | `getManualInvoiceWorkspaceAdmin`, `saveManualInvoiceDraftAdmin`, `prepareManualInvoicePdfAdmin`, `sendManualInvoiceAdmin` |
 | e-mail | `onOrderCreated`, `onOrderUpdated`, `sendTestEmail`, `sendRefundStatusEmailAdmin` |
 | analytics | `initLiveSession`, `syncSession`, `syncSessionBeacon`, `deleteSession`, `clearAllSessions`, `trackAdminIP`, `updateUserSessions` |
 | maintenance | resets/purges, `runGarbageCollector`, `getUploadUrl` |
@@ -752,6 +784,11 @@ Firestore
 |-- sys_user_stats/current ............ compteur comptes, triggers Auth backend-only
 |-- sys_idempotency/{id} .............. backend-only
 |-- sys_billing_onboarding/{uid} ...... progression guide, backend-only
+|-- admin_business_profiles/invoicing . profil emetteur backend-only
+|-- admin_invoices/{invoiceId} ........ brouillon ou facture emise verrouillee
+|   |-- artifacts/{contentHash} ....... preuve du PDF prive materialise
+|   `-- deliveries/{sendRequestId} .... statut d'envoi et hash destinataire
+|-- admin_invoice_sequences/{year} .... numerotation transactionnelle backend-only
 |-- sys_catalog_publication/secondevie  mode, lease et revisions
 |-- sys_catalog_publication_events/{eventHash}
 |   `-- deduplication/outbox catalogue
@@ -769,6 +806,7 @@ Storage
 |-- catalog-projection/v1/releases/{rev}/  objets immuables, manifeste et plan d'impact
 |-- catalog-projection/v1/pointers/ .... current/previous/last-known-good
 |-- commerce-documents/v2/... ......... PDF commande prives, lecture directe interdite
+|-- admin-invoices/v1/... ............. PDF factures emises prives, lecture directe interdite
 `-- autres chemins admin .............. contenus hero/about selon configuration
 ```
 

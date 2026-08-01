@@ -229,6 +229,6 @@ test('client and admin surfaces use the durable request workflow', () => {
     assert.equal(myOrders.includes('mailto:'), false);
     assert.equal(myOrders.includes('requestCustomerReturn'), true);
     assert.equal(adminReturns.includes('Rembourser maintenant'), true);
-    assert.equal(adminReturns.includes('Rembourser apres inspection'), true);
+    assert.equal(adminReturns.includes("openCustomerDecision(request, 'refund_after_return')"), true);
     assert.equal(emails.includes('customer-return-requested-admin'), true);
 });

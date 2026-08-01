@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { PaymentElement, ExpressCheckoutElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { AlertCircle, Lock, ShieldCheck } from 'lucide-react';
 
-const buildStripeReturnUrl = (orderId) => {
-    const url = new URL('/checkout', window.location.origin);
+const buildStripeReturnUrl = (orderId, returnPath = '/checkout') => {
+    const url = new URL(returnPath, window.location.origin);
     url.searchParams.set('order_success', 'true');
     if (orderId) url.searchParams.set('order_id', orderId);
     return url.toString();
@@ -12,7 +12,7 @@ const buildStripeReturnUrl = (orderId) => {
 /**
  * CheckoutPaymentStep — formulaire Stripe isole dans l'ecran de paiement.
  */
-const CheckoutPaymentStep = ({ total, orderId, onPaymentSuccess, onPaymentError, darkMode = false }) => {
+const CheckoutPaymentStep = ({ total, orderId, onPaymentSuccess, onPaymentError, darkMode = false, returnPath = '/checkout' }) => {
     const stripe = useStripe();
     const elements = useElements();
     const [isProcessing, setIsProcessing] = useState(false);
@@ -30,7 +30,7 @@ const CheckoutPaymentStep = ({ total, orderId, onPaymentSuccess, onPaymentError,
             const { error, paymentIntent } = await stripe.confirmPayment({
                 elements,
                 confirmParams: {
-                    return_url: buildStripeReturnUrl(orderId),
+                    return_url: buildStripeReturnUrl(orderId, returnPath),
                 },
                 redirect: 'if_required'
             });
@@ -39,8 +39,11 @@ const CheckoutPaymentStep = ({ total, orderId, onPaymentSuccess, onPaymentError,
                 setErrorMessage(error.message);
                 onPaymentError?.(error.message);
                 setIsProcessing(false);
-            } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+            } else if (paymentIntent) {
                 onPaymentSuccess?.(paymentIntent);
+            } else {
+                setErrorMessage('Stripe n’a pas renvoyé d’état de paiement. Réessayez sans recréer la commande.');
+                setIsProcessing(false);
             }
         } catch (err) {
             setErrorMessage(err?.message || "Une erreur inattendue est survenue.");
@@ -57,7 +60,7 @@ const CheckoutPaymentStep = ({ total, orderId, onPaymentSuccess, onPaymentError,
             const { error, paymentIntent } = await stripe.confirmPayment({
                 elements,
                 confirmParams: {
-                    return_url: buildStripeReturnUrl(orderId),
+                    return_url: buildStripeReturnUrl(orderId, returnPath),
                 },
                 redirect: 'if_required'
             });
@@ -66,8 +69,11 @@ const CheckoutPaymentStep = ({ total, orderId, onPaymentSuccess, onPaymentError,
                 setErrorMessage(error.message);
                 onPaymentError?.(error.message);
                 setIsProcessing(false);
-            } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+            } else if (paymentIntent) {
                 onPaymentSuccess?.(paymentIntent);
+            } else {
+                setErrorMessage('Stripe n’a pas renvoyé d’état de paiement. Réessayez sans recréer la commande.');
+                setIsProcessing(false);
             }
         } catch {
             setErrorMessage("Erreur lors du paiement express.");

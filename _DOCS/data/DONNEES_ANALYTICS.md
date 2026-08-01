@@ -186,6 +186,9 @@ Avant production, definir explicitement:
 - cookies/consentement;
 - droit d'acces et suppression;
 - retention commandes/factures;
+- conservation des `admin_invoices` emis et de leurs PDF selon les obligations
+  comptables; les brouillons non emis peuvent suivre une retention plus courte,
+  a definir avant production;
 - sauvegarde et restauration;
 - responsable du traitement et sous-traitants.
 

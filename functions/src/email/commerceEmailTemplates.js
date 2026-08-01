@@ -101,14 +101,18 @@ function baseData({ order, payload, siteUrl }) {
     const orderId = order.id || payload.orderId;
     const amountCents = Number(payload.amountCents ?? order.amounts?.totalCents ?? 0);
     const currency = payload.currency || order.currency || 'EUR';
+    const isGuestPaymentLink = order.checkout?.channel === 'admin_payment_link';
     return {
         orderId,
         reference: orderReference(orderId),
         amountLabel: formatMoney(amountCents, currency),
-        ordersUrl: `${siteUrl.replace(/\/$/, '')}/mes-commandes`,
+        ordersUrl: isGuestPaymentLink
+            ? `${siteUrl.replace(/\/$/, '')}/`
+            : `${siteUrl.replace(/\/$/, '')}/mes-commandes`,
         adminUrl: `${siteUrl.replace(/\/$/, '')}/admin?order_id=${encodeURIComponent(orderId)}`,
         amountCents,
-        currency
+        currency,
+        isGuestPaymentLink
     };
 }
 
@@ -161,7 +165,7 @@ function customerTemplate({
                 role,
                 detail: calloutData.detail || detail
             }),
-            actionLabel,
+            actionLabel: data.isGuestPaymentLink ? 'Voir la galerie' : actionLabel,
             actionUrl: data.ordersUrl,
             footer: 'Message transactionnel Seconde Vie. Les documents du sandbox ne constituent ni facture ni avoir fiscal.'
         })

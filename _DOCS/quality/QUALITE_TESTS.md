@@ -1,6 +1,6 @@
 # Qualite, tests et gates
 
-Derniere mise a jour: 2026-07-31
+Derniere mise a jour: 2026-08-01
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Principe de proportion
@@ -43,7 +43,8 @@ Etat `CODE_READY`:
 - `test:commerce:rules:containment` utilise Firestore + Storage Emulator;
 - `test:commerce:unit` valide schema, reducer, projections, compatibilite,
   actions serveur, retours quantitatifs et separation entre demande client,
-  retour physique et remboursement Stripe;
+  retour physique et remboursement Stripe; il couvre aussi signature opaque,
+  rotation, bornes d'expiration et statuts des liens admin sans compte;
 - `test:commerce:ui` valide les transports/consommateurs Gates 4 et 5, le
   contrat checkout sans prix client, l'identite Auth serveur et l'absence de
   writer SDK sur les surfaces v2;
@@ -150,6 +151,7 @@ Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCa
 | catalogue materialise | `test:catalog`, recette navigateur sandbox et Data Access seulement si explicitement demande |
 | Functions/rules | tests cibles, audit exports/rules, deploiement sandbox cible |
 | guide facturation | `test:billing-onboarding`, lint cible, reprise de progression, smoke compte test/super-admin uniquement sur demande |
+| factures manuelles admin | `test:invoices`, lint cible, build; envoi Gmail reel uniquement sur demande explicite |
 | couts Firestore | `test:analytics`, mesure Usage Insights/Data Access avant-apres si necessaire |
 | infra | `test:deployment-cache`, `infra:env`, `infra:deploy`, `appcheck:audit` en lecture |
 

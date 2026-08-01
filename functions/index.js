@@ -98,6 +98,18 @@ const {
     stripeConnectWebhookV2,
     stripeWebhookV2
 } = require('./src/commerce/v2Webhooks');
+const {
+    cancelAdminPaymentLink,
+    createAdminPaymentLink,
+    expireAdminPaymentLinks,
+    extendAdminPaymentLink,
+    getAdminPaymentLinkPublic,
+    listAdminPaymentLinks,
+    prepareAdminPaymentLinkPayment,
+    recreateAdminPaymentLink,
+    regenerateAdminPaymentLink,
+    resumeAdminPaymentLinkPayment
+} = require('./src/commerce/v2AdminPaymentLinks');
 
 exports.adjustInventoryAdmin = adjustInventoryAdmin;
 exports.archiveProductAdmin = archiveProductAdmin;
@@ -137,6 +149,16 @@ exports.getCommerceOperationsStatusAdmin = getCommerceOperationsStatusAdmin;
 exports.rebuildCommerceOperationsAdmin = rebuildCommerceOperationsAdmin;
 exports.stripeWebhookV2 = stripeWebhookV2;
 exports.stripeConnectWebhookV2 = stripeConnectWebhookV2;
+exports.cancelAdminPaymentLink = cancelAdminPaymentLink;
+exports.createAdminPaymentLink = createAdminPaymentLink;
+exports.expireAdminPaymentLinks = expireAdminPaymentLinks;
+exports.extendAdminPaymentLink = extendAdminPaymentLink;
+exports.getAdminPaymentLinkPublic = getAdminPaymentLinkPublic;
+exports.listAdminPaymentLinks = listAdminPaymentLinks;
+exports.prepareAdminPaymentLinkPayment = prepareAdminPaymentLinkPayment;
+exports.recreateAdminPaymentLink = recreateAdminPaymentLink;
+exports.regenerateAdminPaymentLink = regenerateAdminPaymentLink;
+exports.resumeAdminPaymentLinkPayment = resumeAdminPaymentLinkPayment;
 
 // ── AUTH ──────────────────────────────────────────────────
 const { grantAdminOnAuth } = require('./src/auth/grantAdmin');
@@ -183,6 +205,19 @@ exports.saveBillingGuideProgress = saveBillingGuideProgress;
 exports.getBillingGuideOperatorStatus = getBillingGuideOperatorStatus;
 exports.completeBillingGuideAdmin = completeBillingGuideAdmin;
 exports.resetBillingGuideTest = resetBillingGuideTest;
+
+// ── FACTURES MANUELLES ADMIN ─────────────────────────────
+const {
+    getManualInvoiceWorkspaceAdmin,
+    prepareManualInvoicePdfAdmin,
+    saveManualInvoiceDraftAdmin,
+    sendManualInvoiceAdmin
+} = require('./src/invoicing/manualInvoices');
+
+exports.getManualInvoiceWorkspaceAdmin = getManualInvoiceWorkspaceAdmin;
+exports.prepareManualInvoicePdfAdmin = prepareManualInvoicePdfAdmin;
+exports.saveManualInvoiceDraftAdmin = saveManualInvoiceDraftAdmin;
+exports.sendManualInvoiceAdmin = sendManualInvoiceAdmin;
 
 // ── EMAIL (Triggers) ─────────────────────────────────────
 const { onOrderCreated, onOrderUpdated, sendTestEmail, sendRefundStatusEmailAdmin } = require('./src/email/orderEmails');

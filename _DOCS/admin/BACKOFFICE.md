@@ -1,6 +1,6 @@
 # Back-office
 
-Derniere mise a jour: 2026-07-30
+Derniere mise a jour: 2026-08-01
 Statut: `PREPROD_READY`
 
 Restriction active:
@@ -23,7 +23,7 @@ La navigation visible utilise un panneau lateral persistant sur desktop et un ti
 
 - `Vue d'ensemble`: Stats, Data;
 - `Catalogue`: Publication, Vue Globale, Studio;
-- `Ventes`: Ventes, Retours, Livraison, Paiement;
+- `Ventes`: Ventes, Liens de paiement, Factures, Retours, Livraison, Paiement;
 - `Communication`: Personnalisation, Infos, SEO;
 - `Administration`: Mon compte, Clients, Securite, Maintenance.
 
@@ -38,6 +38,8 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 | `studio` | Studio | `AdminStudio` | outils de contenu/creation |
 | `homepage` | Personnalisation | `AdminHomepage` | hero, categories, contenus vitrine |
 | `orders` | Ventes | `AdminOrders` | commandes et logistique |
+| `payment_links` | Liens de paiement | `AdminPaymentLinks` | reservation de meubles et paiement Stripe prive sans compte |
+| `invoices` | Factures | `AdminInvoices` | selection de meubles, brouillons, apercu A4, emission PDF verrouillee et envoi e-mail |
 | `returns` | Retours | `AdminReturns` | remboursements Stripe |
 | `livraison` | Livraison | `AdminLivraison` | tarifs et configuration livraison |
 | `users` | Clients | `AdminUsers` | comptes et acces admin |
@@ -50,7 +52,7 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 
 Les labels peuvent evoluer; les ID sont des contrats de navigation et ne doivent pas etre renommes sans migration.
 
-Sur desktop (`>= 1024 px`), `AdminAppIsland` affiche une navigation laterale fixe en cinq groupes. Elle reference les 16 memes IDs que `KIT_CONFIG.adminTabs`, sans precharger leurs vues. Sous ce seuil, `AdminSidebar` devient un tiroir lateral; les IDs et le lazy loading restent identiques.
+Sur desktop (`>= 1024 px`), `AdminAppIsland` affiche une navigation laterale fixe en cinq groupes. Elle reference les IDs de `KIT_CONFIG.adminTabs`, sans precharger leurs vues. Sous ce seuil, `AdminSidebar` devient un tiroir lateral; les IDs et le lazy loading restent identiques.
 
 Le catalogue public court (`scope=cards&limit=120`) est charge paresseusement uniquement par Stats, Data et Vue Globale, qui consomment ses miniatures ou ses donnees. Seule une requete en vol est dedupliquee; aucun catalogue n'est conserve dans `sessionStorage` ou dans un cache module persistant.
 
@@ -86,6 +88,8 @@ Apres mutation:
 
 - `AdminOrders`: consultation, statut logistique, modale d'expedition et
   actions admissibles;
+- `AdminInvoices`: creation assistee de factures manuelles et reprise des
+  brouillons;
 - `AdminReturns`: remboursement, synchronisation et e-mail client;
 - `AdminPaymentSettings`: Connect, carte/wallets et etat de disponibilite;
 - `AdminLivraison`: configuration des frais.
@@ -107,6 +111,30 @@ Etat actuel:
   policy; les mutations admin sont revenues en `read_only`.
 
 Cible: toute transition commande, fulfillment, inventaire, refund/retour et politique commerce passe par une commande serveur idempotente. Firestore reste une projection et non une API metier admin.
+
+### 5.1 Factures manuelles
+
+L'onglet `invoices` est distinct des recus commerce sandbox. Il charge
+paresseusement `AdminInvoices` et propose trois etapes: selection de plusieurs
+meubles, edition des coordonnees/lignes avec apercu A4, puis envoi du PDF. Une
+ligne libre reste possible et les prix du brouillon sont explicites; cette
+surface ne modifie ni le catalogue, ni le stock, ni une commande Stripe.
+
+Les quatre callables `getManualInvoiceWorkspaceAdmin`,
+`saveManualInvoiceDraftAdmin`, `prepareManualInvoicePdfAdmin` et
+`sendManualInvoiceAdmin` exigent App Check, registre admin actif et AAL2. Les
+brouillons restent modifiables avec controle de version. Le premier envoi
+attribue dans une transaction un numero `FAC-AAAA-NNNNNN`, passe le document a
+`issued` et le verrouille. Le PDF serveur est materialise sous un chemin
+Storage prive derive de son hash; l'envoi reutilise le provider transactionnel
+et conserve un dossier de livraison sans stocker l'adresse e-mail en clair.
+
+Le profil emetteur `admin_business_profiles/invoicing`, les factures
+`admin_invoices`, leurs sous-collections et les sequences
+`admin_invoice_sequences` sont backend-only dans les Rules. L'administratrice
+doit completer nom legal, adresse, e-mail et SIREN avant la premiere
+sauvegarde. Le regime TVA reste un choix explicite a valider avec les
+informations juridiques et comptables finales avant production.
 
 De Gate 0B jusqu'a l'activation fixture, Publication, Ventes, Retours,
 Livraison et Paiement restent read-only pour prix, stock, vente, commande,
@@ -186,11 +214,22 @@ derriere `adminMutationMode=v2`; l'etat sandbox courant `read_only` est
 inchange. L'index collection-group `customer_return_requests.updatedAt` est
 declare mais non deploye par ce changement local.
 
+La seconde passe UX du 2026-08-01 remplace la synthese en six cartes et le
+mode d'emploi permanent par une file de travail compacte. Les vues `A traiter`,
+`Retours en cours`, `Stripe`, `Remboursement manuel`, `Historique` et `Tout`
+comptent des commandes distinctes et partagent une recherche meuble/client.
+Le meuble, le client et l'etape metier restent au premier niveau; IDs Stripe,
+dates de synchronisation et quantites detaillees sont replies dans le dossier.
+Les actions de reception, disposition et resolution utilisent une modale
+quantitative integree et n'ouvrent plus de `window.prompt`. Le mode
+`read_only` est signale une fois en tete sans repeter une explication dans
+chaque ligne.
+
 La lecture admin joint au plus la derniere tentative
 `orders/{orderId}/refunds/{refundRequestId}` pour chaque commande remboursee
 ou en rapprochement. Elle expose uniquement la reference, le montant, les
 statuts fournisseur/domaine et la date necessaires a l'exploitation. Une
-commande `refund_pending` propose `Rapprocher Stripe` lorsque les mutations
+commande `refund_pending` propose `Verifier Stripe` lorsque les mutations
 admin v2 sont autorisees: l'action rejoue la meme `refundRequestId` et la meme
 cle Stripe idempotente, y compris avec un autre administrateur fort, sans
 creer un second remboursement. Chaque reprise porte un evenement d'audit
@@ -231,6 +270,33 @@ Passe UX du 2026-07-30:
 
 Ces changements ne modifient pas `adminMutationMode`: le mode protege
 `read_only` reste la valeur attendue hors fenetre de recette.
+
+### 5.2 Liens de paiement de secours
+
+L'onglet `payment_links` charge paresseusement `AdminPaymentLinks`. Il permet
+de selectionner un a vingt meubles achetables depuis le snapshot admin, de
+choisir la livraison et une validite de 30 minutes a 24 heures, puis de copier
+une URL privee. L'e-mail client est facultatif; lorsqu'il est renseigne il est
+verrouille et masque sur la page publique. Aucun compte, OTP ou session client
+n'est requis pour payer.
+
+Le serveur relit les produits Firestore, le prix, le stock, la policy et le
+compte Connect avant de creer atomiquement l'order v2 et ses reservations. Les
+actions sensibles exigent App Check, registre admin actif, AAL2 recent,
+`newCheckoutMode=v2_all` et `adminMutationMode=v2`. L'etat sandbox courant
+`v2_fixture/read_only` laisse donc la surface en consultation et interdit toute
+creation ou mutation.
+
+Un lien actif peut etre prolonge sans depasser 24 heures restantes. Son URL ne
+peut etre changee que tant qu'aucun PaymentIntent n'a ete remis au client;
+l'ancienne signature devient alors invalide. L'annulation et l'expiration
+passent par la saga provider-first: Stripe est rapproche avant liberation du
+stock. Un lien expire ou annule n'est jamais reactive; `Nouveau lien` cree une
+nouvelle commande et revalide prix et disponibilite. Un etat Stripe ambigu
+reste `needs_review` et ne propose aucune duplication aveugle.
+
+Ce rail, son index Firestore et le secret `PAYMENT_LINK_HMAC_SECRET` sont codes
+localement mais non deployes ni actives au 2026-08-01.
 
 ## 6. Utilisateurs et securite
 

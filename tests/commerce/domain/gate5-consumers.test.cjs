@@ -667,7 +667,7 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.equal(adminIsland.includes('requestIdleCallback(preload'), false);
     assert.ok(adminDashboard.includes("DASHBOARD_CORE_CACHE_KEY = 'admin-dashboard:core'"));
     assert.ok(adminDashboard.includes("DASHBOARD_INSIGHTS_CACHE_KEY = 'admin-dashboard:insights'"));
-    assert.ok(adminReturns.includes('Rapprocher Stripe'));
+    assert.ok(adminReturns.includes('handleResumeRefund(order)'));
     assert.ok(adminReturns.includes('attempt.refundRequestId'));
     assert.ok(adminReturns.includes('loadAdminReturnsFirstPage({ force: true })'));
     assert.ok(adminReturns.includes("order.refundAggregate?.status === 'needs_review'"));

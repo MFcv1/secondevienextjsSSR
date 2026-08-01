@@ -1,6 +1,6 @@
 # Infrastructure Firebase, Next.js et environnements
 
-Derniere mise a jour: 2026-07-29
+Derniere mise a jour: 2026-08-01
 Statut: `PREPROD_READY - PRODUCTION_DEFERRED`
 
 ## 1. Runtime et gestionnaire de paquets
@@ -132,9 +132,16 @@ Secrets serveur centralises dans `functions/helpers/secrets.js`:
 - `RESEND_API_KEY`;
 - `OTP_HMAC_SECRET`;
 - `STRIPE_SECRET_KEY`, `STRIPE_WH_SECRET`, `STRIPE_CONNECT_WH_SECRET`;
+- `PAYMENT_LINK_HMAC_SECRET`, signature opaque des liens admin sans compte;
 - `E2E_PROOF_TOKEN`;
 - `SUPER_ADMIN_EMAIL`.
 - `CATALOG_REVALIDATION_HMAC_SECRET` pour l'appel machine Function -> App Hosting.
+
+`PAYMENT_LINK_HMAC_SECRET` est reference par le code local du 2026-08-01 mais
+n'est ni provisionne dans Secret Manager ni attache a une Function deployee.
+Une valeur aleatoire d'au moins 32 caracteres, distincte des secrets OTP et
+catalogue, doit etre creee avant tout deploiement cible. Sa rotation invalide
+les URL non payees en circulation et doit donc etre planifiee.
 
 Etat Secret Manager verifie le 2026-07-29 apres nettoyage definitif:
 

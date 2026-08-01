@@ -11,6 +11,7 @@ import {
   Grid,
   Layout,
   LayoutPanelTop,
+  Link2,
   Mail,
   Menu,
   Palette,
@@ -21,6 +22,7 @@ import {
   CircleUserRound,
   Users,
   Package,
+  ReceiptText,
 } from 'lucide-react';
 import LoginView from '../../src/kit/commerce/LoginView';
 import {
@@ -55,6 +57,7 @@ const loadAdminReturns = () => import('../../src/kit/admin/AdminReturns');
 const AdminDashboard = React.lazy(loadAdminDashboard);
 const AdminHomepage = React.lazy(() => import('../../src/kit/admin/AdminHomepage'));
 const AdminOrders = React.lazy(loadAdminOrders);
+const AdminInvoices = React.lazy(() => import('../../src/kit/admin/AdminInvoices'));
 const AdminReturns = React.lazy(loadAdminReturns);
 const AdminLivraison = React.lazy(() => import('../../src/kit/admin/AdminLivraison'));
 const AdminStudio = React.lazy(() => import('../../src/kit/admin/AdminStudio'));
@@ -66,6 +69,7 @@ const AdminAnalytics = React.lazy(() => import('../../src/kit/admin/AdminAnalyti
 const AdminSEO = React.lazy(() => import('../../src/kit/admin/AdminSEO'));
 const AdminIPManager = React.lazy(() => import('../../src/kit/admin/AdminIPManager'));
 const AdminPaymentSettings = React.lazy(() => import('../../src/kit/admin/AdminPaymentSettings'));
+const AdminPaymentLinks = React.lazy(() => import('../../src/kit/admin/AdminPaymentLinks'));
 const AdminIPTracker = React.lazy(() => import('../../src/kit/admin/AdminIPTracker'));
 const AdminGlobalInventory = React.lazy(() => import('../../src/kit/admin/GlobalInventoryView'));
 const AdminMaintenance = React.lazy(() => import('../../src/kit/admin/AdminMaintenance'));
@@ -85,6 +89,8 @@ const TAB_ICONS = {
   seo: Share2,
   newsletter: Mail,
   payment_settings: CreditCard,
+  payment_links: Link2,
+  invoices: ReceiptText,
   account: CircleUserRound,
   inventory: Grid,
   maintenance: RefreshCw,
@@ -97,13 +103,13 @@ const adminTabs = KIT_CONFIG.adminTabs.map((tab, index) => ({
   icon: TAB_ICONS[tab.id] ?? COLLECTION_ICONS[index % COLLECTION_ICONS.length],
 }));
 
-const ADMIN_PUBLIC_CATALOG_TABS = new Set(['dashboard', 'analytics', 'inventory']);
+const ADMIN_PUBLIC_CATALOG_TABS = new Set(['dashboard', 'analytics', 'inventory', 'payment_links']);
 const COMMERCE_READ_ONLY_TABS = new Set(['furniture', 'inventory', 'orders', 'returns', 'livraison', 'payment_settings', 'maintenance']);
 const PRODUCT_COMMAND_TABS = new Set(['furniture', 'inventory']);
 
 const isCommerceReadOnlyTab = (tabId, mutationsEnabled) => {
   if (!COMMERCE_READ_ONLY_TABS.has(tabId)) return false;
-  if (['orders', 'returns'].includes(tabId)) return false;
+  if (['orders', 'returns', 'payment_links'].includes(tabId)) return false;
   if (tabId === 'maintenance') return true;
   if (PRODUCT_COMMAND_TABS.has(tabId) && !COMMERCE_V2_ADMIN_COMMANDS_ENABLED) return true;
   return !mutationsEnabled;
@@ -157,7 +163,7 @@ function AdminCatalogStatus({ darkMode, error, loading, onRetry }) {
 const ADMIN_NAV_GROUPS = [
   { label: "Vue d'ensemble", tabs: ['dashboard', 'analytics'] },
   { label: 'Catalogue', tabs: ['furniture', 'inventory', 'studio'] },
-  { label: 'Ventes', tabs: ['orders', 'returns', 'livraison', 'payment_settings'] },
+  { label: 'Ventes', tabs: ['orders', 'payment_links', 'invoices', 'returns', 'livraison', 'payment_settings'] },
   { label: 'Communication', tabs: ['homepage', 'newsletter', 'seo'] },
   { label: 'Administration', tabs: ['account', 'users', 'ip_manager', 'maintenance'] },
 ];
@@ -544,6 +550,8 @@ function AdminContent() {
               focusOrderId={focusedOrderId}
               mutationsEnabled={commerceMutationsEnabled}
             />
+          ) : adminCollection === 'invoices' ? (
+            <AdminInvoices darkMode={darkMode} />
           ) : adminCollection === 'returns' ? (
             <AdminReturns darkMode={darkMode} mutationsEnabled={commerceMutationsEnabled} />
           ) : adminCollection === 'livraison' ? (
@@ -570,6 +578,20 @@ function AdminContent() {
             </div>
           ) : adminCollection === 'payment_settings' ? (
             <AdminPaymentSettings darkMode={darkMode} />
+          ) : adminCollection === 'payment_links' ? (
+            <div>
+              <AdminCatalogStatus
+                darkMode={darkMode}
+                error={catalogState.error}
+                loading={catalogState.status === 'loading'}
+                onRetry={ensureAdminCatalog}
+              />
+              <AdminPaymentLinks
+                darkMode={darkMode}
+                items={catalogState.items}
+                mutationsEnabled={commerceMutationsEnabled}
+              />
+            </div>
           ) : adminCollection === 'inventory' ? (
             <div>
               <AdminCatalogStatus

@@ -39,13 +39,13 @@ const REFUNDABLE_STATUSES = new Set(['paid', 'shipped', 'completed']);
 const REFUND_TRACKED_STATUSES = new Set(['refund_pending', 'refunded', 'refund_failed']);
 
 const STATUS_COPY = {
-    paid: { label: 'Payee', tone: 'emerald', icon: CheckCircle },
-    shipped: { label: 'Expediee', tone: 'indigo', icon: Package },
-    completed: { label: 'Livree', tone: 'emerald', icon: CheckCircle },
+    paid: { label: 'Payée', tone: 'emerald', icon: CheckCircle },
+    shipped: { label: 'Expédiée', tone: 'indigo', icon: Package },
+    completed: { label: 'Livrée', tone: 'emerald', icon: CheckCircle },
     refund_pending: { label: 'En attente Stripe', tone: 'amber', icon: Clock },
-    refunded: { label: 'Remboursee', tone: 'sky', icon: CheckCircle },
-    refund_failed: { label: 'A verifier', tone: 'red', icon: AlertTriangle },
-    needs_review: { label: 'A verifier', tone: 'red', icon: AlertTriangle },
+    refunded: { label: 'Remboursée', tone: 'sky', icon: CheckCircle },
+    refund_failed: { label: 'À vérifier', tone: 'red', icon: AlertTriangle },
+    needs_review: { label: 'À vérifier', tone: 'red', icon: AlertTriangle },
 };
 
 const toneClasses = {
@@ -80,6 +80,17 @@ function formatDate(timestamp) {
     return millis ? new Date(millis).toLocaleString('fr-FR') : '-';
 }
 
+function formatShortDate(timestamp) {
+    const millis = getMillis(timestamp);
+    return millis
+        ? new Date(millis).toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        })
+        : '-';
+}
+
 function formatAmount(order) {
     const refundAmount = Number(order.refundAmount);
     if (Number.isFinite(refundAmount) && refundAmount > 0) {
@@ -103,6 +114,17 @@ function getItemsLabel(order) {
     return items
         .map((item) => `${item.quantity || 1}x ${item.titleSnapshot || item.name || 'Article'}`)
         .join(', ');
+}
+
+function getRequestItemsLabel(request) {
+    const requested = new Map(
+        (request.lines || []).map((line) => [line.lineId, line.quantity])
+    );
+    const items = request.order?.items || [];
+    const labels = items
+        .filter((item) => requested.has(item.lineId))
+        .map((item) => `${requested.get(item.lineId)}× ${item.titleSnapshot || item.name || 'Article'}`);
+    return labels.length > 0 ? labels.join(', ') : 'Article non renseigné';
 }
 
 function isStripeRefundCandidate(order) {
@@ -150,57 +172,103 @@ function normalizeAdminOrder(order) {
 function returnStatusLabel(status) {
     switch (status) {
         case 'pending': return 'Retour ouvert';
-        case 'received': return 'Recu a l atelier';
-        case 'resolved': return 'Retour resolu';
-        case 'canceled': return 'Retour annule';
-        default: return status || 'Etat inconnu';
+        case 'received': return 'Reçu à l’atelier';
+        case 'resolved': return 'Retour clôturé';
+        case 'canceled': return 'Retour annulé';
+        default: return status || 'État inconnu';
     }
 }
 
-function returnLineSummary(returnCase) {
+function returnLineSummary(returnCase, order) {
     return (returnCase.lines || []).map((line) => {
         const disposed = Number(line.restockedQty || 0) + Number(line.writtenOffQty || 0);
-        return `${line.lineId}: ${line.requestedQty} demande, ${line.receivedQty} recu, ${disposed} traite`;
+        const orderLine = (order?.items || []).find((item) => item.lineId === line.lineId);
+        const label = orderLine?.titleSnapshot || orderLine?.name || line.lineId;
+        return `${label} · ${line.receivedQty}/${line.requestedQty} reçu · ${disposed} traité`;
     });
 }
 
 function customerRequestStatus(request) {
     switch (request.status) {
-        case 'pending_review': return { label: 'A examiner', tone: 'amber' };
-        case 'return_authorized': return { label: 'Retour autorise', tone: 'sky' };
-        case 'refund_initiated': return { label: 'Remboursement lance', tone: 'amber' };
-        case 'completed': return { label: 'Terminee', tone: 'emerald' };
-        case 'refund_failed': return { label: 'A verifier', tone: 'red' };
-        case 'rejected': return { label: 'Refusee', tone: 'stone' };
+        case 'pending_review': return { label: 'À examiner', tone: 'amber' };
+        case 'return_authorized': return { label: 'Retour autorisé', tone: 'sky' };
+        case 'refund_initiated': return { label: 'Remboursement lancé', tone: 'amber' };
+        case 'completed': return { label: 'Terminée', tone: 'emerald' };
+        case 'refund_failed': return { label: 'À vérifier', tone: 'red' };
+        case 'rejected': return { label: 'Refusée', tone: 'stone' };
         default: return { label: request.status || 'Inconnue', tone: 'stone' };
     }
 }
 
 function customerRequestReason(reason) {
     return {
-        changed_mind: 'Le client a change d avis',
-        damaged: 'Piece signalee endommagee',
-        not_as_expected: 'Piece differente des attentes',
+        changed_mind: 'Changement d’avis',
+        damaged: 'Meuble endommagé',
+        not_as_expected: 'Ne correspond pas aux attentes',
         other: 'Autre motif'
-    }[reason] || 'Motif non renseigne';
+    }[reason] || 'Motif non renseigné';
+}
+
+function customerRequestStep(request) {
+    if (request.status === 'rejected') return 'Demande refusée';
+    if (request.status === 'completed') return 'Remboursement terminé';
+    if (request.status === 'refund_failed') return 'Remboursement à vérifier';
+    if (request.status === 'refund_initiated') return 'Traitement Stripe en cours';
+    if (request.canRefundAfterReturn) return 'Prêt à rembourser';
+    if (request.status === 'return_authorized') {
+        return request.returnCase?.status === 'received'
+            ? 'Inspection en cours'
+            : 'En attente du meuble';
+    }
+    return request.order?.fulfillmentSummary?.custody === 'merchant'
+        ? 'Décision requise · à l’atelier'
+        : 'Décision requise · meuble expédié';
+}
+
+function isRefundPending(order) {
+    return order.status === 'refund_pending'
+        || order.refundAggregate?.status === 'pending';
+}
+
+function isRefundIssue(order) {
+    return order.status === 'refund_failed'
+        || order.refundAggregate?.status === 'needs_review'
+        || order.latestRefundAttempt?.status === 'failed'
+        || order.refundAttemptReadError;
+}
+
+function hasActiveReturn(order) {
+    return (order.returnCases || []).some(
+        (returnCase) => ['pending', 'received'].includes(returnCase.status)
+    );
+}
+
+function returnActionLabel(action) {
+    return {
+        receive_return: 'Réceptionner',
+        restock_return: 'Remettre en stock',
+        write_off_return: 'Sortir du stock',
+        resolve_return: 'Clôturer le retour',
+        cancel_return: 'Annuler le retour'
+    }[action] || action;
 }
 
 function getStatusMeta(order) {
     if (order.refundAttemptReadError) {
         return {
-            label: 'A verifier',
+            label: 'À vérifier',
             tone: 'red',
             icon: AlertTriangle
         };
     }
     if (order.refundAggregate?.status === 'partial') {
         return {
-            label: 'Partiellement remboursee',
+            label: 'Partiellement remboursée',
             tone: 'sky',
             icon: CheckCircle
         };
     }
-    return STATUS_COPY[order.status] || { label: order.status || 'A traiter', tone: 'stone', icon: Clock };
+    return STATUS_COPY[order.status] || { label: order.status || 'À traiter', tone: 'stone', icon: Clock };
 }
 
 function StatusBadge({ order, darkMode }) {
@@ -208,7 +276,7 @@ function StatusBadge({ order, darkMode }) {
     const Icon = meta.icon;
     const classes = toneClasses[meta.tone] || toneClasses.stone;
     return (
-        <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-widest ${darkMode ? classes.dark : classes.light}`}>
+        <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] font-black ${darkMode ? classes.dark : classes.light}`}>
             <Icon size={13} />
             {meta.label}
         </span>
@@ -230,11 +298,13 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(!cachedPage);
     const [search, setSearch] = useState('');
+    const [view, setView] = useState('attention');
     const [operation, setOperation] = useState(null);
     const [notice, setNotice] = useState(null);
     const [refundDraft, setRefundDraft] = useState(null);
     const [refundAmount, setRefundAmount] = useState('');
     const [decisionDraft, setDecisionDraft] = useState(null);
+    const [returnDraft, setReturnDraft] = useState(null);
 
     const applyFirstPage = useCallback(({
         ordersOutcome,
@@ -317,7 +387,6 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
     }, [applyFirstPage]);
 
     const refundOrders = useMemo(() => {
-        const needle = search.trim().toLowerCase();
         const returnsByOrder = new Map();
         for (const returnCase of returnCases) {
             const current = returnsByOrder.get(returnCase.orderId) || [];
@@ -329,7 +398,69 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                 ...order,
                 returnCases: returnsByOrder.get(order.id) || []
             }))
-            .filter(isStripeRefundCandidate)
+            .filter(isStripeRefundCandidate);
+    }, [orders, returnCases]);
+
+    const visibleCustomerRequests = useMemo(() => {
+        const needle = search.trim().toLowerCase();
+        return customerRequests
+            .filter((request) => {
+                if (view === 'attention') {
+                    return request.status === 'pending_review'
+                        || request.status === 'refund_failed'
+                        || request.canRefundAfterReturn;
+                }
+                if (view === 'returns') return request.status === 'return_authorized';
+                if (view === 'stripe') {
+                    return ['refund_initiated', 'refund_failed'].includes(request.status);
+                }
+                if (view === 'history') {
+                    return ['completed', 'rejected'].includes(request.status);
+                }
+                if (view === 'eligible') return false;
+                return true;
+            })
+            .filter((request) => {
+                if (!needle) return true;
+                const order = request.order || {};
+                return [
+                    request.requestId,
+                    request.orderId,
+                    order.customerSnapshot?.email,
+                    order.shippingSnapshot?.fullName,
+                    getRequestItemsLabel(request),
+                    customerRequestReason(request.reason),
+                    request.note
+                ].some((value) => String(value || '').toLowerCase().includes(needle));
+            });
+    }, [customerRequests, search, view]);
+
+    const visibleRefundOrders = useMemo(() => {
+        const needle = search.trim().toLowerCase();
+        return refundOrders
+            .filter((order) => {
+                if (view === 'attention') {
+                    return isRefundIssue(order)
+                        || (order.returnCases || []).some(
+                            (returnCase) => (returnCase.allowedActions || []).length > 0
+                        );
+                }
+                if (view === 'returns') return hasActiveReturn(order);
+                if (view === 'stripe') return isRefundPending(order) || isRefundIssue(order);
+                if (view === 'history') {
+                    return order.status === 'refunded'
+                        || (order.returnCases || []).some(
+                            (returnCase) => ['resolved', 'canceled'].includes(returnCase.status)
+                        );
+                }
+                if (view === 'eligible') {
+                    return (order.allowedActions || []).includes('request_refund')
+                        && !hasActiveReturn(order)
+                        && !isRefundPending(order)
+                        && !isRefundIssue(order);
+                }
+                return true;
+            })
             .filter((order) => {
                 if (!needle) return true;
                 return [
@@ -341,23 +472,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                     getItemsLabel(order),
                 ].some((value) => String(value || '').toLowerCase().includes(needle));
             });
-    }, [orders, returnCases, search]);
-
-    const visibleCustomerRequests = useMemo(() => {
-        const needle = search.trim().toLowerCase();
-        return customerRequests.filter((request) => {
-            if (!needle) return true;
-            const order = request.order || {};
-            return [
-                request.requestId,
-                request.orderId,
-                order.customerSnapshot?.email,
-                order.shippingSnapshot?.fullName,
-                customerRequestReason(request.reason),
-                request.note
-            ].some((value) => String(value || '').toLowerCase().includes(needle));
-        });
-    }, [customerRequests, search]);
+    }, [refundOrders, search, view]);
 
     const loadMoreV2 = async () => {
         if (
@@ -416,26 +531,40 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
         }
     };
 
-    const stats = useMemo(() => ({
-        actionable: refundOrders.filter(
-            (order) => (order.allowedActions || []).includes('request_refund')
-        ).length,
-        pending: refundOrders.filter(
-            (order) => order.status === 'refund_pending'
-                || order.refundAggregate?.status === 'pending'
-        ).length,
-        refunded: refundOrders.filter((order) => order.status === 'refunded').length,
-        failed: refundOrders.filter(
-            (order) => order.status === 'refund_failed'
-                || order.refundAggregate?.status === 'needs_review'
-                || order.latestRefundAttempt?.status === 'failed'
-                || order.refundAttemptReadError
-        ).length,
-        returns: returnCases.length,
-        customerRequests: customerRequests.filter(
+    const stats = useMemo(() => {
+        const requestsToReview = customerRequests.filter(
             (request) => request.status === 'pending_review'
-        ).length,
-    }), [refundOrders, returnCases, customerRequests]);
+                || request.status === 'refund_failed'
+                || request.canRefundAfterReturn
+        );
+        const ordersToReview = refundOrders.filter(isRefundIssue);
+        const actionableReturns = returnCases.filter(
+            (returnCase) => ['pending', 'received'].includes(returnCase.status)
+                && (returnCase.allowedActions || []).length > 0
+        );
+        const activeReturns = returnCases.filter(
+            (returnCase) => ['pending', 'received'].includes(returnCase.status)
+        );
+        const pendingStripe = refundOrders.filter(isRefundPending);
+        const history = customerRequests.filter(
+            (request) => ['completed', 'rejected'].includes(request.status)
+        );
+        const distinctOrders = (...groups) => new Set(
+            groups.flat().map((entry) => entry.orderId || entry.id).filter(Boolean)
+        ).size;
+        return {
+            attention: distinctOrders(requestsToReview, ordersToReview, actionableReturns),
+            returns: distinctOrders(activeReturns),
+            stripe: distinctOrders(pendingStripe, ordersToReview),
+            history: distinctOrders(history, refundOrders.filter(
+                (order) => order.status === 'refunded'
+            )),
+            eligible: distinctOrders(refundOrders.filter(
+                (order) => (order.allowedActions || []).includes('request_refund')
+            )),
+            all: distinctOrders(customerRequests, refundOrders)
+        };
+    }, [refundOrders, returnCases, customerRequests]);
 
     const submitCustomerRequestDecision = async (event) => {
         event.preventDefault();
@@ -583,75 +712,97 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
         });
     };
 
-    const handleOpenReturn = async (order) => {
-        const requestedLines = [];
-        for (const line of order.items || []) {
-            if (!line.lineId) continue;
-            const rawQuantity = window.prompt(
-                `Quantite retournee pour ${line.titleSnapshot || line.name || line.lineId} (0 pour ignorer).`,
-                String(line.quantity || 1)
-            );
-            if (rawQuantity === null) return;
-            const quantity = Number(rawQuantity);
-            if (!Number.isSafeInteger(quantity) || quantity < 0 || quantity > Number(line.quantity || 0)) {
-                setNotice({ type: 'error', text: 'Quantite de retour invalide.' });
-                return;
-            }
-            if (quantity > 0) requestedLines.push({ lineId: line.lineId, quantity });
-        }
-        if (requestedLines.length === 0) return;
-        const reason = window.prompt('Motif du retour physique.');
-        if (!reason) return;
-        await runAction(order.id, 'return', async () => {
-            const result = await openReturnAdmin(order, requestedLines, reason);
-            setSearch(order.id);
-            return `Dossier retour ouvert: ${result?.returnCase?.returnId || 'confirme'}.`;
+    const openReturnDraft = (order) => {
+        const lines = (order.items || [])
+            .filter((line) => line.lineId)
+            .map((line) => ({
+                lineId: line.lineId,
+                label: line.titleSnapshot || line.name || line.lineId,
+                maximum: Number(line.quantity || 0),
+                quantity: Number(line.quantity || 0)
+            }));
+        setReturnDraft({
+            type: 'open',
+            order,
+            action: 'open_return',
+            reason: 'Retour administrateur',
+            lines
         });
+        setNotice(null);
     };
 
-    const collectReturnLines = (returnCase, mode) => {
-        const lines = [];
-        for (const line of returnCase.lines || []) {
-            const maximum = mode === 'receive'
-                ? line.requestedQty - line.receivedQty
-                : line.receivedQty - line.restockedQty - line.writtenOffQty;
-            if (maximum <= 0) continue;
-            const rawQuantity = window.prompt(
-                `Quantite ${mode === 'receive' ? 'recue' : 'inspectee'} pour ${line.lineId} (max ${maximum}).`,
-                String(maximum)
-            );
-            if (rawQuantity === null) return null;
-            const quantity = Number(rawQuantity);
-            if (!Number.isSafeInteger(quantity) || quantity < 0 || quantity > maximum) {
-                setNotice({ type: 'error', text: 'Quantite de retour invalide.' });
-                return null;
-            }
-            if (quantity > 0) lines.push({ lineId: line.lineId, quantity });
+    const openReturnTransitionDraft = (returnCase, action, order) => {
+        const needsLines = ['receive_return', 'restock_return', 'write_off_return'].includes(action);
+        const lines = needsLines
+            ? (returnCase.lines || []).map((line) => {
+                const maximum = action === 'receive_return'
+                    ? line.requestedQty - line.receivedQty
+                    : line.receivedQty - line.restockedQty - line.writtenOffQty;
+                const orderLine = (order.items || []).find((item) => item.lineId === line.lineId);
+                return {
+                    lineId: line.lineId,
+                    label: orderLine?.titleSnapshot || orderLine?.name || line.lineId,
+                    maximum,
+                    quantity: Math.max(maximum, 0)
+                };
+            }).filter((line) => line.maximum > 0)
+            : [];
+        setReturnDraft({
+            type: 'transition',
+            order,
+            returnCase,
+            action,
+            reason: returnActionLabel(action),
+            lines
+        });
+        setNotice(null);
+    };
+
+    const updateReturnDraftLine = (lineId, rawQuantity) => {
+        const quantity = Number(rawQuantity);
+        setReturnDraft((current) => ({
+            ...current,
+            lines: current.lines.map((line) => (
+                line.lineId === lineId ? { ...line, quantity } : line
+            ))
+        }));
+    };
+
+    const submitReturnDraft = async (event) => {
+        event.preventDefault();
+        if (!returnDraft) return;
+        const reason = returnDraft.reason.trim();
+        const lines = returnDraft.lines
+            .filter((line) => Number.isSafeInteger(line.quantity) && line.quantity > 0)
+            .map((line) => ({ lineId: line.lineId, quantity: line.quantity }));
+        const invalidQuantity = returnDraft.lines.some(
+            (line) => !Number.isSafeInteger(line.quantity)
+                || line.quantity < 0
+                || line.quantity > line.maximum
+        );
+        if (!reason || invalidQuantity || (returnDraft.lines.length > 0 && lines.length === 0)) {
+            setNotice({ type: 'error', text: 'Vérifiez le motif et les quantités.' });
+            return;
         }
-        return lines;
-    };
-
-    const handleReturnTransition = async (returnCase, action) => {
-        const reason = window.prompt('Motif de cette transition de retour.');
-        if (!reason) return;
-        await runAction(returnCase.orderId, action, async () => {
-            if (action === 'cancel_return') {
-                await cancelReturnAdmin(returnCase, reason);
-            } else if (action === 'resolve_return') {
-                await resolveReturnAdmin(returnCase, reason);
-            } else {
-                const mode = action === 'receive_return' ? 'receive' : 'disposition';
-                const lines = collectReturnLines(returnCase, mode);
-                if (!lines?.length) return 'Aucune quantite appliquee.';
-                if (action === 'receive_return') {
-                    await markReturnReceivedAdmin(returnCase, lines, reason);
-                } else if (action === 'restock_return') {
-                    await restockReturnLinesAdmin(returnCase, lines, reason);
-                } else if (action === 'write_off_return') {
-                    await writeOffReturnLinesAdmin(returnCase, lines, reason);
-                }
+        const draft = returnDraft;
+        setReturnDraft(null);
+        await runAction(draft.order.id, draft.action, async () => {
+            if (draft.type === 'open') {
+                const result = await openReturnAdmin(draft.order, lines, reason);
+                return `Dossier retour ouvert : ${result?.returnCase?.returnId || 'confirmé'}.`;
             }
-            return 'Transition de retour appliquee et auditee.';
+            if (draft.action === 'cancel_return') {
+                await cancelReturnAdmin(draft.returnCase, reason);
+            } else if (draft.action === 'resolve_return') {
+                await resolveReturnAdmin(draft.returnCase, reason);
+            } else if (draft.action === 'receive_return') {
+                await markReturnReceivedAdmin(draft.returnCase, lines, reason);
+            } else if (draft.action === 'restock_return') {
+                await restockReturnLinesAdmin(draft.returnCase, lines, reason);
+            } else if (draft.action === 'write_off_return') {
+                await writeOffReturnLinesAdmin(draft.returnCase, lines, reason);
+            }
+            return `${returnActionLabel(draft.action)} : opération enregistrée.`;
         });
     };
 
@@ -660,34 +811,52 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
         : 'border-stone-200 bg-white text-stone-900';
     const mutedText = darkMode ? 'text-stone-400' : 'text-stone-500';
     const softPanel = darkMode ? 'border-white/10 bg-white/[0.03]' : 'border-stone-200 bg-stone-50/70';
+    const fieldClass = darkMode
+        ? 'border-white/10 bg-white/[0.04] text-white placeholder:text-stone-600'
+        : 'border-stone-200 bg-stone-50 text-stone-950 placeholder:text-stone-400';
+    const secondaryButton = darkMode
+        ? 'border-white/10 text-stone-200 hover:bg-white/[0.06]'
+        : 'border-stone-200 text-stone-700 hover:bg-stone-100';
+    const primaryButton = darkMode
+        ? 'bg-white text-stone-950 hover:bg-stone-200'
+        : 'bg-stone-950 text-white hover:bg-stone-800';
+    const viewOptions = [
+        { id: 'attention', label: 'À traiter', count: stats.attention },
+        { id: 'returns', label: 'Retours en cours', count: stats.returns },
+        { id: 'stripe', label: 'Stripe', count: stats.stripe },
+        { id: 'eligible', label: 'Remboursement manuel', count: stats.eligible },
+        { id: 'history', label: 'Historique', count: stats.history },
+        { id: 'all', label: 'Tout', count: stats.all }
+    ];
+    const visibleCount = new Set([
+        ...visibleCustomerRequests.map((request) => request.orderId),
+        ...visibleRefundOrders.map((order) => order.id)
+    ]).size;
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-5">
             {decisionDraft ? (
                 <div className="fixed inset-0 z-[125] flex items-center justify-center bg-stone-950/55 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
                     <form onSubmit={submitCustomerRequestDecision} className={`w-full max-w-lg rounded-2xl border p-6 shadow-2xl ${panelClass}`}>
-                        <p className={`text-[10px] font-black uppercase tracking-[0.24em] ${mutedText}`}>Decision administrateur</p>
-                        <h3 className="mt-2 text-2xl font-black tracking-tight">
+                        <p className={`text-xs font-semibold ${mutedText}`}>Commande #{decisionDraft.request.orderId}</p>
+                        <h3 className="mt-1 text-xl font-black tracking-tight">
                             {decisionDraft.decision === 'refund_now' ? 'Rembourser maintenant' :
                                 decisionDraft.decision === 'authorize_return' ? 'Autoriser le retour' :
-                                    decisionDraft.decision === 'refund_after_return' ? 'Rembourser apres inspection' :
+                                    decisionDraft.decision === 'refund_after_return' ? 'Rembourser après inspection' :
                                         'Refuser la demande'}
                         </h3>
-                        <p className={`mt-3 text-sm leading-6 ${mutedText}`}>
-                            Commande {decisionDraft.request.orderId}. Cette decision sera tracee dans le dossier.
-                        </p>
-                        <label className="mt-5 block text-xs font-black uppercase tracking-wider">
-                            Motif de la decision
+                        <label className="mt-5 block text-sm font-bold">
+                            Motif
                             <textarea
                                 value={decisionDraft.reason}
                                 onChange={(event) => setDecisionDraft((current) => ({ ...current, reason: event.target.value.slice(0, 500) }))}
                                 rows={3}
-                                className={`mt-2 w-full resize-none rounded-lg border px-3 py-3 text-sm font-medium outline-none ${darkMode ? 'border-white/10 bg-black/20 text-white' : 'border-stone-200 bg-stone-50 text-stone-950'}`}
+                                className={`mt-2 w-full resize-none rounded-lg border px-3 py-3 text-sm font-medium outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15 ${fieldClass}`}
                             />
                         </label>
-                        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                            <button type="button" onClick={() => setDecisionDraft(null)} className={`rounded-lg border px-5 py-3 text-xs font-black uppercase tracking-wider ${darkMode ? 'border-white/10 text-white' : 'border-stone-200 text-stone-700'}`}>Annuler</button>
-                            <button type="submit" className={`rounded-lg px-5 py-3 text-xs font-black uppercase tracking-wider text-white ${decisionDraft.decision === 'reject' ? 'bg-red-700' : 'bg-stone-950'}`}>Confirmer</button>
+                        <div className="mt-6 flex justify-end gap-2">
+                            <button type="button" onClick={() => setDecisionDraft(null)} className={`rounded-lg border px-4 py-2.5 text-sm font-bold transition active:translate-y-px ${secondaryButton}`}>Annuler</button>
+                            <button type="submit" className={`rounded-lg px-4 py-2.5 text-sm font-bold transition active:translate-y-px ${decisionDraft.decision === 'reject' ? 'bg-red-700 text-white hover:bg-red-800' : primaryButton}`}>Confirmer</button>
                         </div>
                     </form>
                 </div>
@@ -702,32 +871,23 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                 >
                     <form
                         onSubmit={submitRefund}
-                        className={`w-full max-w-lg rounded-3xl border p-6 shadow-2xl ${panelClass}`}
+                        className={`w-full max-w-lg rounded-2xl border p-6 shadow-2xl ${panelClass}`}
                     >
-                        <p className={`text-[10px] font-black uppercase tracking-[0.24em] ${mutedText}`}>
+                        <p className={`text-xs font-semibold ${mutedText}`}>Commande #{refundDraft.order.id}</p>
+                        <h3 id="refund-dialog-title" className="mt-1 text-xl font-black tracking-tight">
                             Remboursement Stripe
-                        </p>
-                        <h3 id="refund-dialog-title" className="mt-2 text-2xl font-black tracking-tight">
-                            Confirmer le remboursement
                         </h3>
-                        <p className={`mt-3 break-all text-sm ${mutedText}`}>
-                            Commande {refundDraft.order.id}
-                        </p>
-                        <p className={`mt-4 text-sm leading-6 ${mutedText}`}>
-                            Le remboursement financier ne remet jamais seul le meuble en vente.
-                            Le crédit bancaire dépend ensuite des délais de la banque du client.
-                        </p>
                         <label className="mt-5 block">
-                            <span className="text-xs font-black uppercase tracking-wider">
+                            <span className="text-sm font-bold">
                                 Montant à rembourser
                             </span>
-                            <div className={`mt-2 flex items-center rounded-2xl border px-4 ${darkMode ? 'border-white/10 bg-black/20' : 'border-stone-200 bg-stone-50'}`}>
+                            <div className={`mt-2 flex items-center rounded-lg border px-4 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/15 ${fieldClass}`}>
                                 <input
                                     value={refundAmount}
                                     onChange={(event) => setRefundAmount(event.target.value)}
                                     inputMode="decimal"
                                     aria-describedby="refund-amount-help"
-                                    className={`min-w-0 flex-1 bg-transparent py-3 text-lg font-black outline-none ${darkMode ? 'text-white' : 'text-stone-950'}`}
+                                    className="min-w-0 flex-1 bg-transparent py-3 text-lg font-black outline-none"
                                 />
                                 <span className={`text-sm font-black ${mutedText}`}>EUR</span>
                             </div>
@@ -735,17 +895,18 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                         <p id="refund-amount-help" className={`mt-2 text-xs ${mutedText}`}>
                             Maximum disponible : {(refundDraft.remainingCents / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} EUR
                         </p>
-                        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                        <p className={`mt-4 text-xs ${mutedText}`}>Le stock reste inchangé.</p>
+                        <div className="mt-6 flex justify-end gap-2">
                             <button
                                 type="button"
                                 onClick={() => setRefundDraft(null)}
-                                className={`rounded-2xl border px-5 py-3 text-xs font-black uppercase tracking-wider ${darkMode ? 'border-white/10 text-white' : 'border-stone-200 text-stone-700'}`}
+                                className={`rounded-lg border px-4 py-2.5 text-sm font-bold transition active:translate-y-px ${secondaryButton}`}
                             >
                                 Annuler
                             </button>
                             <button
                                 type="submit"
-                                className="rounded-2xl bg-stone-950 px-5 py-3 text-xs font-black uppercase tracking-wider text-white hover:bg-black"
+                                className={`rounded-lg px-4 py-2.5 text-sm font-bold transition active:translate-y-px ${primaryButton}`}
                             >
                                 Rembourser {refundAmount || '0'} EUR
                             </button>
@@ -754,73 +915,142 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                 </div>
             ) : null}
 
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                <div className="space-y-2">
-                    <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${mutedText}`}>Stripe et retours client</p>
-                    <h2 className={`text-3xl font-black tracking-tighter md:text-4xl ${darkMode ? 'text-white' : 'text-stone-950'}`}>Retours & remboursements</h2>
-                    <p className={`max-w-3xl text-sm leading-6 ${mutedText}`}>
-                        Poste de controle pour separer remboursement financier, retour physique, inspection et disposition explicite du stock.
-                    </p>
-                </div>
-                <div className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${softPanel}`}>
-                    <Search size={16} className={mutedText} />
-                    <input
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        placeholder="Commande, cliente, produit, Stripe..."
-                        className={`w-full min-w-[220px] bg-transparent text-sm font-semibold outline-none placeholder:text-stone-400 ${darkMode ? 'text-white' : 'text-stone-900'}`}
-                    />
-                </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className={`text-xs ${mutedText}`}>
-                    {loading && orders.length === 0
-                        ? 'Chargement du périmètre…'
-                        : `Périmètre chargé : ${orders.length} commandes et ${returnCases.length} retours physiques${ordersCursor || returnsCursor ? '. Chargez la suite pour élargir la synthèse.' : '.'}`}
-                </p>
-                <button
-                    type="button"
-                    onClick={handleManualRefresh}
-                    disabled={refreshing}
-                    className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-wider disabled:cursor-wait disabled:opacity-60 ${darkMode ? 'border-white/10 text-white' : 'border-stone-200 text-stone-700'}`}
-                >
-                    <RotateCcw size={13} className={refreshing ? 'animate-spin' : ''} />
-                    Actualiser
-                </button>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-                {[
-                    ['Demandes client', stats.customerRequests, 'amber'],
-                    ['Remboursables', stats.actionable, 'emerald'],
-                    ['En attente Stripe', stats.pending, 'amber'],
-                    ['Remboursees', stats.refunded, 'sky'],
-                    ['A verifier', stats.failed, 'red'],
-                    ['Retours physiques', stats.returns, 'stone'],
-                ].map(([label, value, tone]) => {
-                    const classes = toneClasses[tone];
-                    return (
-                        <div key={label} className={`rounded-2xl border p-4 ${darkMode ? classes.dark : classes.light}`}>
-                            <p className="text-[10px] font-black uppercase tracking-[0.22em] opacity-70">{label}</p>
-                            <p className="mt-2 text-3xl font-black tracking-tight">
-                                {loading && !cachedPage ? '—' : value}
-                            </p>
+            {returnDraft ? (
+                <div className="fixed inset-0 z-[125] flex items-center justify-center bg-stone-950/55 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="return-dialog-title">
+                    <form onSubmit={submitReturnDraft} className={`max-h-[90dvh] w-full max-w-xl overflow-y-auto rounded-2xl border p-6 shadow-2xl ${panelClass}`}>
+                        <p className={`text-xs font-semibold ${mutedText}`}>Commande #{returnDraft.order.id}</p>
+                        <h3 id="return-dialog-title" className="mt-1 text-xl font-black tracking-tight">
+                            {returnDraft.type === 'open' ? 'Ouvrir un retour' : returnActionLabel(returnDraft.action)}
+                        </h3>
+                        {returnDraft.lines.length > 0 ? (
+                            <div className={`mt-5 divide-y rounded-xl border ${darkMode ? 'divide-white/10 border-white/10' : 'divide-stone-200 border-stone-200'}`}>
+                                {returnDraft.lines.map((line) => (
+                                    <div key={line.lineId} className="grid grid-cols-[minmax(0,1fr)_84px] items-center gap-4 px-4 py-3">
+                                        <span className="min-w-0">
+                                            <span className="block truncate text-sm font-bold">{line.label}</span>
+                                            <span className={`mt-0.5 block font-mono text-[10px] ${mutedText}`}>Maximum {line.maximum}</span>
+                                        </span>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max={line.maximum}
+                                            step="1"
+                                            aria-label={`Quantité pour ${line.label}`}
+                                            value={line.quantity}
+                                            onChange={(event) => updateReturnDraftLine(line.lineId, event.target.value)}
+                                            className={`w-full rounded-lg border px-3 py-2 text-right text-sm font-black outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15 ${fieldClass}`}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        ) : null}
+                        <label className="mt-5 block text-sm font-bold">
+                            Motif
+                            <textarea
+                                value={returnDraft.reason}
+                                onChange={(event) => setReturnDraft((current) => ({ ...current, reason: event.target.value.slice(0, 500) }))}
+                                rows={3}
+                                className={`mt-2 w-full resize-none rounded-lg border px-3 py-3 text-sm font-medium outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15 ${fieldClass}`}
+                            />
+                        </label>
+                        <div className="mt-6 flex justify-end gap-2">
+                            <button type="button" onClick={() => setReturnDraft(null)} className={`rounded-lg border px-4 py-2.5 text-sm font-bold transition active:translate-y-px ${secondaryButton}`}>Annuler</button>
+                            <button type="submit" className={`rounded-lg px-4 py-2.5 text-sm font-bold transition active:translate-y-px ${primaryButton}`}>Confirmer</button>
                         </div>
+                    </form>
+                </div>
+            ) : null}
+
+            <header className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+                <div>
+                    <div className="flex items-center gap-3">
+                        <h2 className={`text-3xl font-black tracking-tighter md:text-4xl ${darkMode ? 'text-white' : 'text-stone-950'}`}>Retours</h2>
+                        {!loading && stats.attention > 0 ? (
+                            <span className={`rounded-md px-2 py-1 text-xs font-black tabular-nums ${darkMode ? 'bg-amber-300 text-stone-950' : 'bg-amber-400 text-stone-950'}`}>{stats.attention}</span>
+                        ) : null}
+                    </div>
+                    <p className={`mt-1 text-sm ${mutedText}`}>Demandes, retours physiques et remboursements.</p>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                    <label className={`flex min-w-0 items-center gap-3 rounded-xl border px-3.5 py-2.5 sm:min-w-[280px] ${fieldClass}`}>
+                        <Search size={16} className="shrink-0" />
+                        <span className="sr-only">Rechercher un dossier</span>
+                        <input
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                            placeholder="Meuble, client, commande…"
+                            className="min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none"
+                        />
+                    </label>
+                    <button
+                        type="button"
+                        onClick={handleManualRefresh}
+                        disabled={refreshing}
+                        className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition active:translate-y-px disabled:cursor-wait disabled:opacity-60 ${secondaryButton}`}
+                    >
+                        <RotateCcw size={15} className={refreshing ? 'animate-spin' : ''} />
+                        Actualiser
+                    </button>
+                </div>
+            </header>
+
+            <nav className={`flex gap-1 overflow-x-auto rounded-xl border p-1 ${darkMode ? 'border-white/10 bg-white/[0.03]' : 'border-stone-200 bg-stone-100/70'}`} aria-label="Filtrer les retours">
+                {viewOptions.map((option) => {
+                    const active = view === option.id;
+                    return (
+                        <button
+                            key={option.id}
+                            type="button"
+                            aria-pressed={active}
+                            onClick={() => setView(option.id)}
+                            className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold transition active:translate-y-px ${active
+                                ? (darkMode ? 'bg-white text-stone-950 shadow-sm' : 'bg-white text-stone-950 shadow-sm')
+                                : (darkMode ? 'text-stone-400 hover:bg-white/[0.05] hover:text-white' : 'text-stone-500 hover:bg-white/70 hover:text-stone-900')}`}
+                        >
+                            {option.label}
+                            <span className={`min-w-5 rounded px-1.5 py-0.5 text-center text-[10px] tabular-nums ${active ? 'bg-stone-100 text-stone-700' : (darkMode ? 'bg-white/[0.06]' : 'bg-stone-200/70')}`}>
+                                {loading && !cachedPage ? '—' : option.count}
+                            </span>
+                        </button>
                     );
                 })}
+            </nav>
+
+            {notice ? (
+                <div className={`rounded-xl border px-4 py-3 text-sm font-bold ${
+                    notice.type === 'success'
+                        ? (darkMode ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' : 'border-emerald-100 bg-emerald-50 text-emerald-700')
+                        : (darkMode ? 'border-red-500/20 bg-red-500/10 text-red-300' : 'border-red-100 bg-red-50 text-red-700')
+                }`} role="status">
+                    {notice.text}
+                </div>
+            ) : null}
+
+            <div className="flex items-center justify-between gap-4">
+                <p className={`text-xs tabular-nums ${mutedText}`}>
+                    {loading && !cachedPage ? 'Chargement…' : `${visibleCount} dossier${visibleCount > 1 ? 's' : ''}`}
+                </p>
+                {!returnCommandsEnabled ? <span className={`text-xs font-semibold ${mutedText}`}>Lecture seule</span> : null}
             </div>
 
-            <section className={`overflow-hidden rounded-2xl border ${panelClass}`}>
-                <div className={`flex flex-col gap-2 border-b px-5 py-4 ${darkMode ? 'border-white/10' : 'border-stone-100'}`}>
-                    <h3 className="text-lg font-black tracking-tight">Demandes client</h3>
-                    <p className={`text-xs ${mutedText}`}>Choisissez le remboursement direct seulement si la piece est encore a l atelier. Sinon, autorisez son retour.</p>
+            {loading && !cachedPage ? (
+                <div className={`overflow-hidden rounded-2xl border ${panelClass}`} aria-label="Chargement des dossiers">
+                    {[0, 1, 2].map((index) => (
+                        <div key={index} className={`grid animate-pulse gap-4 border-b px-5 py-6 last:border-b-0 md:grid-cols-[minmax(0,1fr)_180px_120px] ${darkMode ? 'border-white/10' : 'border-stone-100'}`}>
+                            <div className={`h-10 rounded-lg ${darkMode ? 'bg-white/[0.06]' : 'bg-stone-100'}`} />
+                            <div className={`h-10 rounded-lg ${darkMode ? 'bg-white/[0.06]' : 'bg-stone-100'}`} />
+                            <div className={`h-10 rounded-lg ${darkMode ? 'bg-white/[0.06]' : 'bg-stone-100'}`} />
+                        </div>
+                    ))}
                 </div>
-                {visibleCustomerRequests.length === 0 ? (
-                    <div className="px-5 py-8 text-center">
-                        <p className="text-sm font-bold">Aucune demande client dans le perimetre charge.</p>
+            ) : null}
+
+            {!loading && visibleCustomerRequests.length > 0 ? (
+                <section className={`overflow-hidden rounded-2xl border ${panelClass}`}>
+                    <div className={`flex items-center justify-between border-b px-5 py-3.5 ${darkMode ? 'border-white/10' : 'border-stone-100'}`}>
+                        <h3 className="text-sm font-black">Demandes client</h3>
+                        <span className={`text-xs tabular-nums ${mutedText}`}>{visibleCustomerRequests.length}</span>
                     </div>
-                ) : (
                     <div className={`divide-y ${darkMode ? 'divide-white/10' : 'divide-stone-100'}`}>
                         {visibleCustomerRequests.map((request) => {
                             const status = customerRequestStatus(request);
@@ -828,97 +1058,57 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                             const order = request.order || {};
                             const activeOperation = operation?.endsWith(`:${request.orderId}`);
                             return (
-                                <article key={request.requestId} className="grid gap-4 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_minmax(220px,0.55fr)_minmax(240px,0.7fr)] lg:items-start">
+                                <article key={request.requestId} className={`grid gap-4 px-5 py-5 transition md:grid-cols-[minmax(0,1.3fr)_minmax(190px,0.65fr)] lg:grid-cols-[minmax(0,1.4fr)_minmax(210px,0.65fr)_minmax(190px,0.55fr)] lg:items-center ${darkMode ? 'hover:bg-white/[0.02]' : 'hover:bg-stone-50/70'}`}>
                                     <div className="min-w-0">
                                         <div className="flex flex-wrap items-center gap-2">
-                                            <span className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-widest ${darkMode ? classes.dark : classes.light}`}>{status.label}</span>
-                                            <span className={`text-[11px] ${mutedText}`}>{formatDate(request.createdAt)}</span>
+                                            <span className={`rounded-md border px-2 py-1 text-[10px] font-black ${darkMode ? classes.dark : classes.light}`}>{status.label}</span>
+                                            <span className={`text-xs ${mutedText}`}>{formatShortDate(request.createdAt)}</span>
                                         </div>
-                                        <p className="mt-3 font-black tracking-tight">{order.shippingSnapshot?.fullName || 'Client non renseigne'}</p>
-                                        <p className={`mt-1 text-xs ${mutedText}`}>{order.customerSnapshot?.email || 'Email absent'} · #{request.orderId}</p>
-                                        <p className="mt-3 text-sm font-semibold">{customerRequestReason(request.reason)}</p>
-                                        {request.note ? <p className={`mt-1 text-sm leading-6 ${mutedText}`}>{request.note}</p> : null}
-                                    </div>
-                                    <div className={`rounded-xl border p-3 text-xs leading-5 ${softPanel}`}>
-                                        <p className="font-black uppercase tracking-wider">Parcours</p>
-                                        <p className={`mt-2 ${mutedText}`}>
-                                            {order.fulfillmentSummary?.custody === 'merchant'
-                                                ? 'Piece encore a l atelier : remboursement direct disponible.'
-                                                : request.returnCase?.status === 'resolved'
-                                                    ? 'Retour recu, inspecte et resolu : remboursement final disponible.'
-                                                    : 'Piece partie : retour physique requis avant remboursement.'}
+                                        <p className="mt-2 truncate text-base font-black tracking-tight">{getRequestItemsLabel(request)}</p>
+                                        <p className={`mt-1 truncate text-xs ${mutedText}`}>
+                                            {order.shippingSnapshot?.fullName || 'Client non renseigné'} · {order.customerSnapshot?.email || 'Email absent'}
                                         </p>
-                                        {request.returnCase ? <p className="mt-2 font-bold">Retour : {returnStatusLabel(request.returnCase.status)}</p> : null}
+                                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                            <span className="text-xs font-bold">{customerRequestReason(request.reason)}</span>
+                                            <span className={`font-mono text-[10px] ${mutedText}`}>#{request.orderId}</span>
+                                        </div>
+                                        {request.note ? (
+                                            <details className="mt-2 text-xs">
+                                                <summary className={`cursor-pointer font-semibold ${mutedText}`}>Message du client</summary>
+                                                <p className={`mt-2 max-w-2xl leading-5 ${mutedText}`}>{request.note}</p>
+                                            </details>
+                                        ) : null}
                                     </div>
-                                    <div className="flex flex-col gap-2">
+                                    <div className="min-w-0">
+                                        <p className={`text-[10px] font-bold uppercase tracking-[0.14em] ${mutedText}`}>Étape</p>
+                                        <p className="mt-1.5 text-sm font-black">{customerRequestStep(request)}</p>
+                                        {request.returnCase ? <p className={`mt-1 text-xs ${mutedText}`}>{returnStatusLabel(request.returnCase.status)}</p> : null}
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 md:col-span-2 lg:col-span-1 lg:justify-end">
                                         {returnCommandsEnabled ? (
                                             <>
-                                                {request.canRefundNow ? <button type="button" disabled={activeOperation} onClick={() => openCustomerDecision(request, 'refund_now')} className="rounded-lg bg-stone-950 px-4 py-3 text-[10px] font-black uppercase tracking-wider text-white disabled:opacity-50">Rembourser maintenant</button> : null}
-                                                {request.canAuthorizeReturn ? <button type="button" disabled={activeOperation} onClick={() => openCustomerDecision(request, 'authorize_return')} className={`rounded-lg border px-4 py-3 text-[10px] font-black uppercase tracking-wider disabled:opacity-50 ${darkMode ? 'border-white/10 text-white' : 'border-stone-200 text-stone-700'}`}>Autoriser le retour</button> : null}
-                                                {request.canRefundAfterReturn ? <button type="button" disabled={activeOperation} onClick={() => openCustomerDecision(request, 'refund_after_return')} className="rounded-lg bg-stone-950 px-4 py-3 text-[10px] font-black uppercase tracking-wider text-white disabled:opacity-50">Rembourser apres inspection</button> : null}
-                                                {request.canReject ? <button type="button" disabled={activeOperation} onClick={() => openCustomerDecision(request, 'reject')} className="rounded-lg px-4 py-2 text-[10px] font-black uppercase tracking-wider text-red-600 disabled:opacity-50">Refuser</button> : null}
+                                                {request.canRefundNow ? <button type="button" disabled={activeOperation} onClick={() => openCustomerDecision(request, 'refund_now')} className={`rounded-lg px-3.5 py-2.5 text-xs font-bold transition active:translate-y-px disabled:opacity-50 ${primaryButton}`}>Rembourser</button> : null}
+                                                {request.canAuthorizeReturn ? <button type="button" disabled={activeOperation} onClick={() => openCustomerDecision(request, 'authorize_return')} className={`rounded-lg border px-3.5 py-2.5 text-xs font-bold transition active:translate-y-px disabled:opacity-50 ${secondaryButton}`}>Autoriser le retour</button> : null}
+                                                {request.canRefundAfterReturn ? <button type="button" disabled={activeOperation} onClick={() => openCustomerDecision(request, 'refund_after_return')} className={`rounded-lg px-3.5 py-2.5 text-xs font-bold transition active:translate-y-px disabled:opacity-50 ${primaryButton}`}>Rembourser</button> : null}
+                                                {request.canReject ? <button type="button" disabled={activeOperation} onClick={() => openCustomerDecision(request, 'reject')} className="rounded-lg px-3 py-2.5 text-xs font-bold text-red-600 transition hover:bg-red-500/10 active:translate-y-px disabled:opacity-50">Refuser</button> : null}
                                             </>
-                                        ) : (
-                                            <p className={`rounded-lg border px-3 py-3 text-[11px] ${darkMode ? 'border-white/10 text-stone-400' : 'border-stone-200 text-stone-500'}`}>Consultation active. Les decisions seront disponibles pendant une fenetre admin autorisee.</p>
-                                        )}
+                                        ) : null}
                                     </div>
                                 </article>
                             );
                         })}
                     </div>
-                )}
             </section>
-
-            <div className={`rounded-3xl border p-6 ${panelClass}`}>
-                <div className="flex items-start gap-4">
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${darkMode ? 'bg-sky-500/10 text-sky-300' : 'bg-sky-50 text-sky-700'}`}>
-                        <RotateCcw size={18} />
-                    </div>
-                    <div className="space-y-3">
-                        <h3 className="text-lg font-black tracking-tight">Mode d&apos;emploi simple</h3>
-                        <div className={`grid gap-3 text-sm leading-6 ${mutedText} md:grid-cols-3`}>
-                            <p><b className={darkMode ? 'text-white' : 'text-stone-900'}>1. Rembourser</b><br />Le remboursement Stripe reste financier et ne remet jamais seul le meuble en vente.</p>
-                            <p><b className={darkMode ? 'text-white' : 'text-stone-900'}>2. Receptionner</b><br />Le dossier de retour suit separement la reception physique et les quantites reellement recues.</p>
-                            <p><b className={darkMode ? 'text-white' : 'text-stone-900'}>3. Inspecter</b><br />Apres controle, chaque ligne est remise en stock ou sortie du stock, puis le dossier est resolu.</p>
-                        </div>
-                        <p className={`text-xs leading-5 ${mutedText}`}>
-                            Note comptable: Stripe rembourse le client depuis le solde Stripe disponible. Les frais de paiement initiaux ne sont generalement pas restitues au marchand.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {notice ? (
-                <div className={`rounded-2xl border px-4 py-3 text-sm font-bold ${
-                    notice.type === 'success'
-                        ? (darkMode ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' : 'border-emerald-100 bg-emerald-50 text-emerald-700')
-                        : (darkMode ? 'border-red-500/20 bg-red-500/10 text-red-300' : 'border-red-100 bg-red-50 text-red-700')
-                }`}>
-                    {notice.text}
-                </div>
             ) : null}
 
-            <div className={`overflow-hidden rounded-3xl border ${panelClass}`}>
-                <div className={`grid grid-cols-12 gap-4 border-b px-5 py-3 text-[10px] font-black uppercase tracking-[0.22em] ${darkMode ? 'border-white/10 text-stone-500' : 'border-stone-100 text-stone-400'}`}>
-                    <div className="col-span-5">Commande</div>
-                    <div className="col-span-2 hidden md:block">Montant</div>
-                    <div className="col-span-3 hidden lg:block">Stripe</div>
-                    <div className="col-span-7 md:col-span-5 lg:col-span-2">Actions</div>
-                </div>
-
-                {loading ? (
-                    <div className="flex items-center justify-center gap-3 p-12">
-                        <Loader2 className="animate-spin" size={20} />
-                        <span className={`text-sm font-bold ${mutedText}`}>Chargement des retours...</span>
+            {!loading && visibleRefundOrders.length > 0 ? (
+                <section className={`overflow-hidden rounded-2xl border ${panelClass}`}>
+                    <div className={`flex items-center justify-between border-b px-5 py-3.5 ${darkMode ? 'border-white/10' : 'border-stone-100'}`}>
+                        <h3 className="text-sm font-black">Dossiers</h3>
+                        <span className={`text-xs tabular-nums ${mutedText}`}>{visibleRefundOrders.length}</span>
                     </div>
-                ) : refundOrders.length === 0 ? (
-                    <div className="p-12 text-center">
-                        <p className="text-lg font-black">Aucune commande remboursable ni retour physique</p>
-                        <p className={`mt-2 text-sm ${mutedText}`}>Les commandes payees, remboursements et dossiers de retour apparaitront ici.</p>
-                    </div>
-                ) : (
-                    <div className="divide-y divide-stone-100 dark:divide-white/10">
-                        {refundOrders.map((order) => {
+                    <div className={darkMode ? 'divide-y divide-white/10' : 'divide-y divide-stone-100'}>
+                        {visibleRefundOrders.map((order) => {
                             const email = getOrderEmail(order);
                             const allowedActions = new Set(
                                 Array.isArray(order.allowedActions) ? order.allowedActions : []
@@ -929,8 +1119,8 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                             const canOpenReturn = allowedActions.has('open_return');
                             const activeOperation = operation?.endsWith(`:${order.id}`) ? operation.split(':')[0] : null;
                             return (
-                                <div key={order.id} className={`grid grid-cols-12 gap-4 px-5 py-5 ${darkMode ? 'hover:bg-white/[0.02]' : 'hover:bg-stone-50/70'}`}>
-                                    <div className="col-span-12 space-y-3 md:col-span-5">
+                                <article key={order.id} className={`grid gap-4 px-5 py-5 transition md:grid-cols-[minmax(0,1.35fr)_minmax(170px,0.65fr)_120px] lg:grid-cols-[minmax(0,1.4fr)_minmax(180px,0.6fr)_120px_minmax(170px,0.55fr)] lg:items-center ${darkMode ? 'hover:bg-white/[0.02]' : 'hover:bg-stone-50/70'}`}>
+                                    <div className="min-w-0">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <StatusBadge order={order} darkMode={darkMode} />
                                             {order.stockRestoredAfterRefund ? (
@@ -939,39 +1129,28 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                                                 </span>
                                             ) : null}
                                         </div>
-                                        <div>
-                                            <p className="font-black tracking-tight">{order.shipping?.fullName || 'Client inconnu'}</p>
-                                            <p className={`text-xs ${mutedText}`}>{email || 'Email absent'} - {formatDate(order.createdAt)}</p>
-                                            <p className={`mt-2 text-sm font-semibold ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>{getItemsLabel(order)}</p>
-                                        </div>
-                                        <p className={`font-mono text-[11px] ${mutedText}`}>#{order.id}</p>
+                                        <p className="mt-2 truncate text-base font-black tracking-tight">{getItemsLabel(order)}</p>
+                                        <p className={`mt-1 truncate text-xs ${mutedText}`}>{order.shipping?.fullName || 'Client inconnu'} · {email || 'Email absent'}</p>
+                                        <p className={`mt-1 font-mono text-[10px] ${mutedText}`}>#{order.id} · {formatShortDate(order.createdAt)}</p>
                                     </div>
 
-                                    <div className="col-span-6 md:col-span-2">
+                                    <div>
+                                        <p className={`text-[10px] font-bold uppercase tracking-[0.14em] ${mutedText}`}>Suivi</p>
+                                        <p className="mt-1.5 text-sm font-black">
+                                            {isRefundIssue(order) ? 'À vérifier' :
+                                                isRefundPending(order) ? 'Stripe en cours' :
+                                                    hasActiveReturn(order) ? 'Retour physique' :
+                                                        order.status === 'refunded' ? 'Remboursé' : 'Éligible'}
+                                        </p>
+                                        {hasActiveReturn(order) ? <p className={`mt-1 text-xs ${mutedText}`}>{order.returnCases.filter((returnCase) => ['pending', 'received'].includes(returnCase.status)).map((returnCase) => returnStatusLabel(returnCase.status)).join(', ')}</p> : null}
+                                    </div>
+
+                                    <div>
                                         <p className="text-sm font-black">{formatAmount(order)}</p>
-                                        <p className={`mt-1 text-[11px] ${mutedText}`}>Commande: {Number(order.total || 0).toLocaleString('fr-FR')} EUR</p>
+                                        <p className={`mt-1 text-[11px] ${mutedText}`}>sur {Number(order.total || 0).toLocaleString('fr-FR')} EUR</p>
                                     </div>
 
-                                    <div className="col-span-12 space-y-1 lg:col-span-3">
-                                        <p className={`break-all font-mono text-[11px] ${mutedText}`}>PI: {order.stripePaymentIntentId || '-'}</p>
-                                        <p className={`break-all font-mono text-[11px] ${mutedText}`}>Refund: {order.stripeRefundId || '-'}</p>
-                                        <p className={`text-[11px] ${mutedText}`}>Derniere synchro: {formatDate(order.refundUpdatedAt)}</p>
-                                        {order.latestRefundAttempt?.providerStatus ? (
-                                            <p className={`text-[11px] ${mutedText}`}>
-                                                Etat Stripe: {order.latestRefundAttempt.providerStatus}
-                                            </p>
-                                        ) : null}
-                                        {order.refundAttemptReadError ? (
-                                            <p className="text-[11px] font-bold text-red-500">
-                                                Reference de rapprochement indisponible.
-                                            </p>
-                                        ) : null}
-                                        {order.refundFailureReason ? (
-                                            <p className="text-[11px] font-bold text-red-500">Erreur: {order.refundFailureReason}</p>
-                                        ) : null}
-                                    </div>
-
-                                    <div className="col-span-12 flex flex-col gap-2 md:col-span-5 lg:col-span-2">
+                                    <div className="flex flex-wrap gap-2 md:col-span-3 lg:col-span-1 lg:justify-end">
                                         {returnCommandsEnabled && order.schemaVersion === 2 ? (
                                             <>
                                                 {canResumeRefund ? (
@@ -979,10 +1158,10 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                                                         type="button"
                                                         onClick={() => handleResumeRefund(order)}
                                                         disabled={Boolean(activeOperation)}
-                                                        className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-widest transition disabled:cursor-wait disabled:opacity-60 ${darkMode ? 'bg-amber-300 text-stone-950 hover:bg-amber-200' : 'bg-amber-500 text-white hover:bg-amber-600'}`}
+                                                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-400 px-3.5 py-2.5 text-xs font-bold text-stone-950 transition hover:bg-amber-300 active:translate-y-px disabled:cursor-wait disabled:opacity-60"
                                                     >
                                                         {activeOperation === 'refund-sync' ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
-                                                        Rapprocher Stripe
+                                                        Vérifier Stripe
                                                     </button>
                                                 ) : null}
                                                 {canRefund ? (
@@ -990,7 +1169,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                                                         type="button"
                                                         onClick={() => openRefundDialog(order)}
                                                         disabled={Boolean(activeOperation)}
-                                                        className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-widest transition disabled:cursor-wait disabled:opacity-60 ${darkMode ? 'bg-white text-stone-950 hover:bg-stone-200' : 'bg-stone-950 text-white hover:bg-black'}`}
+                                                        className={`inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2.5 text-xs font-bold transition active:translate-y-px disabled:cursor-wait disabled:opacity-60 ${primaryButton}`}
                                                     >
                                                         {activeOperation === 'refund' ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
                                                         Rembourser
@@ -999,38 +1178,40 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                                                 {canOpenReturn ? (
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleOpenReturn(order)}
+                                                        onClick={() => openReturnDraft(order)}
                                                         disabled={Boolean(activeOperation)}
-                                                        className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-[10px] font-black uppercase tracking-widest transition disabled:cursor-wait disabled:opacity-60 ${darkMode ? 'border-white/10 text-white hover:bg-white/10' : 'border-stone-200 text-stone-700 hover:bg-stone-100'}`}
+                                                        className={`inline-flex items-center justify-center gap-2 rounded-lg border px-3.5 py-2.5 text-xs font-bold transition active:translate-y-px disabled:cursor-wait disabled:opacity-60 ${secondaryButton}`}
                                                     >
                                                         {activeOperation === 'return' ? <Loader2 size={14} className="animate-spin" /> : <Package size={14} />}
                                                         Ouvrir un retour
                                                     </button>
                                                 ) : null}
                                             </>
-                                        ) : (
-                                            <p className={`rounded-2xl border px-3 py-3 text-[11px] ${darkMode ? 'border-white/10 text-stone-400' : 'border-stone-200 text-stone-500'}`}>
-                                                {canResumeRefund
-                                                    ? 'Rapprochement requis. L action sera disponible pendant une fenetre admin v2 autorisee.'
-                                                    : 'Consultation active. Les actions restent protegees par le mode administrateur.'}
-                                            </p>
-                                        )}
+                                        ) : null}
                                     </div>
-                                    {Array.isArray(order.returnCases) && order.returnCases.length > 0 ? (
-                                        <div className={`col-span-12 space-y-3 rounded-2xl border p-4 ${softPanel}`}>
-                                            <p className="text-[10px] font-black uppercase tracking-widest">Dossiers de retour physique</p>
+
+                                    {(Array.isArray(order.returnCases) && order.returnCases.length > 0) || order.stripePaymentIntentId ? (
+                                        <details className={`rounded-xl border md:col-span-3 lg:col-span-4 ${softPanel}`}>
+                                            <summary className="cursor-pointer px-4 py-3 text-xs font-bold">Détails du dossier</summary>
+                                            <div className={`border-t p-4 ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
+                                                <div className={`grid gap-2 text-[11px] md:grid-cols-2 ${mutedText}`}>
+                                                    <p className="break-all font-mono">PaymentIntent : {order.stripePaymentIntentId || '-'}</p>
+                                                    <p className="break-all font-mono">Remboursement : {order.stripeRefundId || '-'}</p>
+                                                    <p>Synchronisé : {formatDate(order.refundUpdatedAt)}</p>
+                                                    {order.latestRefundAttempt?.providerStatus ? <p>Stripe : {order.latestRefundAttempt.providerStatus}</p> : null}
+                                                    {order.refundAttemptReadError ? <p className="font-bold text-red-500">Référence de rapprochement indisponible.</p> : null}
+                                                    {order.refundFailureReason ? <p className="font-bold text-red-500">{order.refundFailureReason}</p> : null}
+                                                </div>
+                                                {Array.isArray(order.returnCases) && order.returnCases.length > 0 ? (
+                                                    <div className={`mt-4 space-y-3 border-t pt-4 ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
                                             {order.returnCases.map((returnCase) => (
-                                                <div key={returnCase.returnId} className={`rounded-xl border p-3 ${darkMode ? 'border-white/10' : 'border-stone-200 bg-white'}`}>
+                                                <div key={returnCase.returnId}>
                                                     <div className="flex flex-wrap items-center justify-between gap-2">
-                                                        <span className="font-mono text-[11px]">#{returnCase.returnId}</span>
-                                                        <span className="text-xs font-bold">{returnStatusLabel(returnCase.status)}</span>
+                                                        <span className="text-xs font-black">{returnStatusLabel(returnCase.status)}</span>
+                                                        <span className={`font-mono text-[10px] ${mutedText}`}>#{returnCase.returnId}</span>
                                                     </div>
-                                                    <p className={`mt-2 text-[11px] ${mutedText}`}>
-                                                        Mis a jour le {formatDate(returnCase.updatedAt)}
-                                                        {returnCase.reason ? ` · ${returnCase.reason}` : ''}
-                                                    </p>
-                                                    <div className={`mt-3 space-y-1 rounded-lg p-3 text-[11px] ${darkMode ? 'bg-black/20 text-stone-300' : 'bg-stone-50 text-stone-600'}`}>
-                                                        {returnLineSummary(returnCase).map((summary) => (
+                                                    <div className={`mt-2 space-y-1 text-[11px] ${mutedText}`}>
+                                                        {returnLineSummary(returnCase, order).map((summary) => (
                                                             <p key={summary}>{summary}</p>
                                                         ))}
                                                     </div>
@@ -1040,45 +1221,48 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                                                             <button
                                                                 key={action}
                                                                 type="button"
-                                                                onClick={() => handleReturnTransition(returnCase, action)}
+                                                                onClick={() => openReturnTransitionDraft(returnCase, action, order)}
                                                                 disabled={Boolean(activeOperation)}
-                                                                className={`rounded-full border px-3 py-2 text-[10px] font-black uppercase tracking-wider disabled:opacity-50 ${darkMode ? 'border-white/10 text-white' : 'border-stone-200 text-stone-700'}`}
+                                                                className={`rounded-lg border px-3 py-2 text-xs font-bold transition active:translate-y-px disabled:opacity-50 ${secondaryButton}`}
                                                             >
-                                                                {action === 'receive_return' ? 'Receptionner' :
-                                                                    action === 'restock_return' ? 'Remettre en stock' :
-                                                                    action === 'write_off_return' ? 'Sortir du stock' :
-                                                                    action === 'resolve_return' ? 'Resoudre' :
-                                                                    'Annuler le retour'}
+                                                                {returnActionLabel(action)}
                                                             </button>
                                                             ))}
                                                         </div>
-                                                    ) : (
-                                                        <p className={`mt-3 text-[11px] ${mutedText}`}>
-                                                            Consultation uniquement.
-                                                        </p>
-                                                    )}
+                                                    ) : null}
                                                 </div>
                                             ))}
-                                        </div>
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                        </details>
                                     ) : null}
-                                </div>
+                                </article>
                             );
                         })}
                     </div>
-                )}
-                {COMMERCE_V2_ADMIN_READERS_ENABLED && (ordersCursor || returnsCursor || requestsCursor) ? (
-                    <div className={`border-t p-4 text-center ${darkMode ? 'border-white/10' : 'border-stone-100'}`}>
-                        <button
-                            type="button"
-                            onClick={loadMoreV2}
-                            disabled={loadingMore}
-                            className={`rounded-full border px-5 py-2.5 text-[10px] font-black uppercase tracking-widest disabled:opacity-50 ${darkMode ? 'border-white/10 text-white' : 'border-stone-200 text-stone-700'}`}
-                        >
-                            {loadingMore ? 'Chargement...' : 'Charger la suite'}
-                        </button>
-                    </div>
-                ) : null}
-            </div>
+                </section>
+            ) : null}
+
+            {!loading && visibleCount === 0 ? (
+                <div className={`rounded-2xl border px-6 py-14 text-center ${panelClass}`}>
+                    <p className="text-lg font-black">Aucun dossier ici</p>
+                    <p className={`mt-1 text-sm ${mutedText}`}>{search ? 'Essayez une autre recherche.' : 'Cette vue est à jour.'}</p>
+                </div>
+            ) : null}
+
+            {COMMERCE_V2_ADMIN_READERS_ENABLED && (ordersCursor || returnsCursor || requestsCursor) ? (
+                <div className="text-center">
+                    <button
+                        type="button"
+                        onClick={loadMoreV2}
+                        disabled={loadingMore}
+                        className={`rounded-lg border px-5 py-2.5 text-sm font-bold transition active:translate-y-px disabled:opacity-50 ${secondaryButton}`}
+                    >
+                        {loadingMore ? 'Chargement…' : 'Charger la suite'}
+                    </button>
+                </div>
+            ) : null}
         </div>
     );
 };

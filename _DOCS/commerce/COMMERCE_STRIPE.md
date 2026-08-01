@@ -1,6 +1,6 @@
 # Commerce, checkout et Stripe
 
-Derniere mise a jour: 2026-07-31
+Derniere mise a jour: 2026-08-01
 Statut: `PREPROD_TRANSACTIONAL_READY`
 
 Restriction active:
@@ -525,6 +525,44 @@ recette. L'endpoint Stripe Connect sandbox actif cible maintenant
 `stripeConnectWebhookV2` en `europe-west1`; les evenements sont signes,
 persistes et rapproches par le runtime v2. La fermeture ne supprime aucune
 commande, aucun fait financier, aucun audit ni document.
+
+### 12.1 Liens de paiement admin sans compte
+
+Le rail de secours code le 2026-08-01 reutilise le noyau v2 et Stripe Payment
+Element; il ne repose pas sur les Payment Links statiques du Dashboard Stripe.
+L'administratrice selectionne un ou plusieurs meubles, une policy de livraison,
+une validite bornee et, facultativement, un e-mail verrouille. Le serveur cree
+l'order, la tentative et les holds dans la transaction autoritaire existante,
+sans faire confiance au prix ou au stock du navigateur.
+
+L'URL `/payer/[orderId]/[token]` contient uniquement l'identifiant de commande
+et une signature HMAC opaque, rotative et non stockee en clair. La route est
+dynamique, `noindex/nofollow`, `no-referrer`, ne demande ni compte ni OTP et
+collecte nom, e-mail, telephone et adresse. Ces coordonnees sont validees par
+allowlist puis la saga cree ou reprend le meme PaymentIntent. Le succes reste
+exclusivement derive de l'etat durable `paid` produit par le webhook v2.
+
+Cycle de vie:
+
+- creation: reservation immediate pour 30 minutes a 24 heures;
+- prolongation: ajout a l'echeance actuelle, plafond de 24 heures restantes;
+- changement d'URL: rotation HMAC uniquement avant remise du PaymentIntent;
+- annulation/expiration: verification et annulation Stripe provider-first,
+  puis liberation idempotente des holds;
+- expiration: scheduler borne aux seules commandes actives arrivees a echeance;
+- lien ferme: recreation d'une nouvelle order, avec nouvelle validation du
+  prix, du stock, de la policy et du compte Connect;
+- etat ambigu: `needs_review`, sans recreation ni liberation optimiste.
+
+Les mutations exigent un admin actif avec AAL2 recent, App Check,
+`newCheckoutMode=v2_all`, `adminMutationMode=v2`, une policy active et le
+secret serveur `PAYMENT_LINK_HMAC_SECRET`. La lecture publique exige la
+signature HMAC et App Check. Les e-mails d'une commande sans compte contiennent
+le recapitulatif mais ne pointent pas vers `/mes-commandes`.
+
+Etat au 2026-08-01: code, tests unitaires, route, onglet, index et documentation
+prepares localement; aucun secret cree, aucune Function/index deploye, aucun
+flag active, aucune transaction sandbox ou live executee.
 
 ## 13. Conditions production
 

@@ -345,6 +345,23 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Factures manuelles, numerotation et profil emetteur: Functions uniquement.
+    match /admin_invoices/{invoiceId} {
+      allow read, write: if false;
+
+      match /{subcollection}/{documentId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /admin_invoice_sequences/{year} {
+      allow read, write: if false;
+    }
+
+    match /admin_business_profiles/{profileId} {
+      allow read, write: if false;
+    }
+
     // Etat interne du catalogue public materialise. Admin SDK/IAM uniquement.
     match /sys_catalog_publication/{docId} {
       allow read, write: if false;
