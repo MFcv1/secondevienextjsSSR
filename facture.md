@@ -1,7 +1,7 @@
 # Factures manuelles administrateur
 
 Derniere mise a jour: 2026-08-01
-Statut: `IMPLEMENTE_LOCAL_NON_DEPLOYE`
+Statut: `DEPLOYE_SANDBOX_CONTROLES_FERMES`
 Point d'entree associe: [jean.md](jean.md)
 
 ## 1. Role du document

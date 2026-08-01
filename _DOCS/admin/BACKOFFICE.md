@@ -212,7 +212,7 @@ indisponible jusqu'a sa reception, sa disposition (`restock` ou `write_off`)
 et sa resolution. Un refus est trace sans appel Stripe. Les decisions restent
 derriere `adminMutationMode=v2`; l'etat sandbox courant `read_only` est
 inchange. L'index collection-group `customer_return_requests.updatedAt` est
-declare mais non deploye par ce changement local.
+deploye sur le sandbox depuis le 2026-08-01.
 
 La seconde passe UX du 2026-08-01 remplace la synthese en six cartes et le
 mode d'emploi permanent par une file de travail compacte. Les vues `A traiter`,
@@ -295,8 +295,10 @@ stock. Un lien expire ou annule n'est jamais reactive; `Nouveau lien` cree une
 nouvelle commande et revalide prix et disponibilite. Un etat Stripe ambigu
 reste `needs_review` et ne propose aucune duplication aveugle.
 
-Ce rail, son index Firestore et le secret `PAYMENT_LINK_HMAC_SECRET` sont codes
-localement mais non deployes ni actives au 2026-08-01.
+Ce rail, son index Firestore, ses Functions et le secret
+`PAYMENT_LINK_HMAC_SECRET@1` sont deployes sur le sandbox depuis le 2026-08-01.
+Les controls `v2_fixture/read_only` le maintiennent en consultation: aucune
+creation de lien ni transaction publique n'a ete ouverte par le deploiement.
 
 ## 6. Utilisateurs et securite
 

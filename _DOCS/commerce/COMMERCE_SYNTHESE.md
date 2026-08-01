@@ -51,11 +51,12 @@ Elle ne constitue pas:
 - une validation fiscale, comptable ou juridique;
 - une validation du domaine final, du DNS ou de Resend.
 
-Le rail admin de liens de paiement sans compte est `CODE_READY_LOCAL` depuis
-le 2026-08-01. Il reutilise les orders, reservations, PaymentIntent, webhooks et
-outboxes v2; il n'elargit pas la qualification precedente. Son secret HMAC,
-ses Functions, son index et sa route App Hosting ne sont pas deployes et les
-controls sandbox restent `v2_fixture/read_only`.
+Le rail admin de liens de paiement sans compte est `SANDBOX_DEPLOYED_DORMANT`
+depuis le 2026-08-01. Il reutilise les orders, reservations, PaymentIntent,
+webhooks et outboxes v2; il n'elargit pas la qualification precedente. Son
+secret HMAC, ses Functions, ses index et sa route App Hosting sont deployes,
+mais les controls restent `v2_fixture/read_only`: aucune creation de lien ou
+transaction publique n'est activee.
 
 ## 3. Ce qui a ete realise par Gate
 

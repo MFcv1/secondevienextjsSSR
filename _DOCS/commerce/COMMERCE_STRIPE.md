@@ -516,7 +516,8 @@ Storage prive `commerce-documents/v2`. Le navigateur recoit les octets bornes
 pour ouvrir, enregistrer ou partager le document; une outbox dedupliquee
 programme la meme copie en piece jointe vers l'adresse de commande. Une panne
 ou une limite e-mail ne modifie ni le paiement, ni le document, ni son acces.
-Ce rail est code mais non deploye au 2026-07-31.
+Ce rail est deploye sur le sandbox depuis le 2026-08-01; son acces client reste
+soumis aux controles et proprietes v2 existants.
 
 Gate 8 a execute la matrice client/admin complete sur fixtures sandbox. Un
 defaut reel du contrat d'annulation client (`cancellationRequestId` au lieu de
@@ -560,9 +561,10 @@ secret serveur `PAYMENT_LINK_HMAC_SECRET`. La lecture publique exige la
 signature HMAC et App Check. Les e-mails d'une commande sans compte contiennent
 le recapitulatif mais ne pointent pas vers `/mes-commandes`.
 
-Etat au 2026-08-01: code, tests unitaires, route, onglet, index et documentation
-prepares localement; aucun secret cree, aucune Function/index deploye, aucun
-flag active, aucune transaction sandbox ou live executee.
+Etat au 2026-08-01: code, tests unitaires, route, onglet, index, secret HMAC et
+Functions deployes sur le sandbox depuis le commit `bd86467`. Les smokes HTTP
+et App Check sont verts. Aucun flag n'a ete active, les controls restent
+`v2_fixture/read_only`, et aucune transaction sandbox ou live n'a ete executee.
 
 ## 13. Conditions production
 

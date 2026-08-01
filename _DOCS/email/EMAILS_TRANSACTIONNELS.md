@@ -21,10 +21,9 @@ mot de passe, donnee de carte ou donnee personnelle de recette n'y figure.
 
 ## 2. Etat de reference
 
-La bibliotheque source regroupe 15 rendus. Les 13 rendus historiques restent
-le lot actuellement deploye et capture; le rendu de correction de suivi et le
-nouveau rendu de copie de document sont implementes mais non deployes au
-moment de cette mise a jour.
+La bibliotheque source regroupe 15 rendus, tous deployes sur le sandbox depuis
+le 2026-08-01. Les 13 rendus historiques conservent leurs captures de
+reference; la correction de suivi et la copie de document restent a recapturer.
 
 | Famille | Nombre | Audience |
 | --- | ---: | --- |

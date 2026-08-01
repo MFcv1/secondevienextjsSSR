@@ -137,11 +137,10 @@ Secrets serveur centralises dans `functions/helpers/secrets.js`:
 - `SUPER_ADMIN_EMAIL`.
 - `CATALOG_REVALIDATION_HMAC_SECRET` pour l'appel machine Function -> App Hosting.
 
-`PAYMENT_LINK_HMAC_SECRET` est reference par le code local du 2026-08-01 mais
-n'est ni provisionne dans Secret Manager ni attache a une Function deployee.
-Une valeur aleatoire d'au moins 32 caracteres, distincte des secrets OTP et
-catalogue, doit etre creee avant tout deploiement cible. Sa rotation invalide
-les URL non payees en circulation et doit donc etre planifiee.
+`PAYMENT_LINK_HMAC_SECRET@1` est provisionne dans Secret Manager depuis le
+2026-08-01 et attache uniquement aux Functions du rail de paiement admin. Sa
+valeur aleatoire est distincte des secrets OTP et catalogue. Sa rotation
+invalide les URL non payees en circulation et doit donc etre planifiee.
 
 Etat Secret Manager verifie le 2026-07-29 apres nettoyage definitif:
 
@@ -297,6 +296,20 @@ Correctif transport Auth OTP du 2026-07-31:
 - `/galerie` verifiee en HTTP `200` et chunk Auth public controle;
 - aucune Function, rule, donnee, configuration commerce ou cible production
   modifiee.
+
+Deploiement commerce/admin du 2026-08-01:
+
+- commit `bd86467` pousse sur `origin/main`;
+- App Hosting sandbox deploye, Cloud Build
+  `e6b6fc20-823d-4533-ad22-fb7ec35c7919` `SUCCESS`;
+- liens de paiement, expiration planifiee, demandes client de retour et quatre
+  callables de facturation manuelle `ACTIVE` en `europe-west1`;
+- `PAYMENT_LINK_HMAC_SECRET@1`, Rules Firestore/Storage et nouveaux index
+  deployes; index liens de paiement `READY`;
+- smokes `/`, `/admin`, `/payer/...` et `/api/catalog/version` en HTTP `200`;
+- callable publique sans App Check refusee en HTTP `401`;
+- controle commerce revision 62: `v2_fixture`, `read_only`, offline `off`,
+  operations `healthy` et compteurs a zero; aucune fenetre `v2_all` ouverte.
 
 ## 11. Rollback
 

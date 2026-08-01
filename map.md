@@ -169,7 +169,7 @@ confinement Gate 0B SANDBOX_ACTIVE
   `-- Rules -> orders/policy/champs commerce/delete media fermes
 ```
 
-Rail de secours admin, code local non deploye au 2026-08-01:
+Rail de secours admin, deploye sur le sandbox avec controls fermes au 2026-08-01:
 
 ```text
 /admin -> Liens de paiement [C]
