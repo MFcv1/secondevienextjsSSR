@@ -393,6 +393,33 @@ function renderCommerceEmail({
     siteUrl
 }) {
     const normalizedOrder = { ...order, id: order.id || payload.orderId };
+    if (template === 'customer-return-requested-admin') {
+        const reasonLabels = {
+            changed_mind: 'Le client a changé d’avis',
+            damaged: 'La pièce est signalée endommagée',
+            not_as_expected: 'La pièce ne correspond pas aux attentes',
+            other: 'Autre motif'
+        };
+        return adminTemplate({
+            order: normalizedOrder,
+            payload,
+            siteUrl,
+            senderEmail,
+            subject: ({ reference }) => `Nouvelle demande de retour · ${reference}`,
+            eyebrow: 'Demande client',
+            title: 'Un retour doit être examiné.',
+            intro: ({ reference }) => `${reference} fait l’objet d’une demande de retour ou de remboursement.`,
+            status: 'À examiner',
+            role: 'warning',
+            callout: () => ({
+                title: 'Choisir le bon parcours',
+                body: normalizedOrder.fulfillmentSummary?.custody === 'merchant'
+                    ? 'La pièce est encore indiquée à l’atelier : le remboursement direct peut être choisi dans le back-office.'
+                    : 'La pièce a quitté l’atelier : autorisez le retour, puis remboursez seulement après réception et inspection.',
+                detail: reasonLabels[payload.reason] || reasonLabels.other
+            })
+        });
+    }
     if (template === 'order-paid-admin') {
         return adminTemplate({
             order: normalizedOrder,

@@ -117,6 +117,13 @@ function checkStrongSuperAdmin(context) {
 
 function checkRecentStrongSuperAdmin(context, maxAgeSeconds = 900) {
     const result = checkStrongSuperAdmin(context);
+    if (result.assurance.method !== 'passkey' || result.assurance.userVerified !== true) {
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'Utilisez une passkey verifiee sur cet appareil avant cette action sensible.',
+            { reason: 'verified-passkey-required', requiredAssurance: 'aal2', requiredMethod: 'passkey' }
+        );
+    }
     const authTime = Number(context.auth?.token?.auth_time || 0);
     const nowSeconds = Math.floor(Date.now() / 1000);
     if (!authTime || nowSeconds - authTime > maxAgeSeconds) {
@@ -131,6 +138,13 @@ function checkRecentStrongSuperAdmin(context, maxAgeSeconds = 900) {
 
 function checkRecentStrongAdmin(context, maxAgeSeconds = 900) {
     const result = checkStrongAdmin(context);
+    if (result.assurance.method !== 'passkey' || result.assurance.userVerified !== true) {
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'Utilisez une passkey verifiee sur cet appareil avant cette action sensible.',
+            { reason: 'verified-passkey-required', requiredAssurance: 'aal2', requiredMethod: 'passkey' }
+        );
+    }
     const authTime = Number(context.auth?.token?.auth_time || 0);
     const nowSeconds = Math.floor(Date.now() / 1000);
     if (!authTime || nowSeconds - authTime > maxAgeSeconds) {

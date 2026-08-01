@@ -86,6 +86,16 @@ commandes v2 durables, dont une commande de trois meubles et un remboursement
 Stripe complet. Les compteurs Commandes et Remboursements, les statuts Payee
 et Remboursee et le texte de delai bancaire sont corrects.
 
+Depuis le 2026-08-01, `Demander un retour ou un remboursement` ouvre une
+modale integree et appelle `requestCustomerReturn` sous Auth et App Check. Le
+serveur reverifie l'UID proprietaire, le paiement, les lignes et quantites,
+puis cree un dossier backend-only et une notification e-mail administrateur.
+Le client retrouve le dernier etat dans sa commande: a examiner, retour
+autorise, remboursement lance, termine, refuse ou a verifier. La demande ne
+declenche jamais Stripe elle-meme: l'administratrice choisit le remboursement
+direct si la piece est encore a l'atelier, ou le remboursement apres retour et
+inspection si elle a deja quitte l'atelier.
+
 La reprise UX du 2026-07-29 normalise les timestamps callable, projette
 `shippingSnapshot` vers le bloc Adresse, raccorde les documents immuables et
 rend les actions de document adaptatives sans chevauchement sur les largeurs

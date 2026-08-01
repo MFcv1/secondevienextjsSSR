@@ -14,6 +14,7 @@ import { getMillis } from '../../utils/time';
 import {
     cancelReturnAdmin,
     COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED,
+    decideCustomerReturnRequestAdmin,
     markReturnReceivedAdmin,
     openReturnAdmin,
     requestRefundAdmin,
@@ -23,6 +24,7 @@ import {
 } from '../commerce/commerceCommandClient';
 import {
     COMMERCE_V2_ADMIN_READERS_ENABLED,
+    listCustomerReturnRequestsAdminV2,
     listOrdersAdminV2,
     listReturnsAdminV2,
 } from '../commerce/commerceV2Client';
@@ -162,6 +164,27 @@ function returnLineSummary(returnCase) {
     });
 }
 
+function customerRequestStatus(request) {
+    switch (request.status) {
+        case 'pending_review': return { label: 'A examiner', tone: 'amber' };
+        case 'return_authorized': return { label: 'Retour autorise', tone: 'sky' };
+        case 'refund_initiated': return { label: 'Remboursement lance', tone: 'amber' };
+        case 'completed': return { label: 'Terminee', tone: 'emerald' };
+        case 'refund_failed': return { label: 'A verifier', tone: 'red' };
+        case 'rejected': return { label: 'Refusee', tone: 'stone' };
+        default: return { label: request.status || 'Inconnue', tone: 'stone' };
+    }
+}
+
+function customerRequestReason(reason) {
+    return {
+        changed_mind: 'Le client a change d avis',
+        damaged: 'Piece signalee endommagee',
+        not_as_expected: 'Piece differente des attentes',
+        other: 'Autre motif'
+    }[reason] || 'Motif non renseigne';
+}
+
 function getStatusMeta(order) {
     if (order.refundAttemptReadError) {
         return {
@@ -199,8 +222,10 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
         (cachedPage?.orders || []).map(normalizeAdminOrder)
     );
     const [returnCases, setReturnCases] = useState(cachedPage?.returns || []);
+    const [customerRequests, setCustomerRequests] = useState(cachedPage?.requests || []);
     const [ordersCursor, setOrdersCursor] = useState(null);
     const [returnsCursor, setReturnsCursor] = useState(null);
+    const [requestsCursor, setRequestsCursor] = useState(null);
     const [loadingMore, setLoadingMore] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(!cachedPage);
@@ -209,12 +234,15 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
     const [notice, setNotice] = useState(null);
     const [refundDraft, setRefundDraft] = useState(null);
     const [refundAmount, setRefundAmount] = useState('');
+    const [decisionDraft, setDecisionDraft] = useState(null);
 
     const applyFirstPage = useCallback(({
         ordersOutcome,
         returnsOutcome,
+        requestsOutcome,
         orders: loadedOrders,
-        returns: loadedReturns
+        returns: loadedReturns,
+        requests: loadedRequests
     }, { reportErrors = true } = {}) => {
         if (ordersOutcome.status === 'fulfilled') {
             const ordersResult = ordersOutcome.value;
@@ -225,6 +253,10 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
             const returnsResult = returnsOutcome.value;
             setReturnCases(loadedReturns);
             setReturnsCursor(returnsResult.nextCursor || null);
+        }
+        if (requestsOutcome.status === 'fulfilled') {
+            setCustomerRequests(loadedRequests);
+            setRequestsCursor(requestsOutcome.value.nextCursor || null);
         }
         if (!reportErrors) return;
         if (ordersOutcome.status === 'rejected') {
@@ -238,6 +270,12 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
             setNotice({
                 type: 'error',
                 text: 'Les remboursements sont affiches, mais le detail des retours physiques est momentanement indisponible.'
+            });
+        } else if (requestsOutcome.status === 'rejected') {
+            console.error('Admin customer return requests read failed:', requestsOutcome.reason);
+            setNotice({
+                type: 'error',
+                text: 'Les remboursements sont affiches, mais les nouvelles demandes client sont momentanement indisponibles.'
             });
         } else {
             setNotice(null);
@@ -305,22 +343,41 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
             });
     }, [orders, returnCases, search]);
 
+    const visibleCustomerRequests = useMemo(() => {
+        const needle = search.trim().toLowerCase();
+        return customerRequests.filter((request) => {
+            if (!needle) return true;
+            const order = request.order || {};
+            return [
+                request.requestId,
+                request.orderId,
+                order.customerSnapshot?.email,
+                order.shippingSnapshot?.fullName,
+                customerRequestReason(request.reason),
+                request.note
+            ].some((value) => String(value || '').toLowerCase().includes(needle));
+        });
+    }, [customerRequests, search]);
+
     const loadMoreV2 = async () => {
         if (
             !COMMERCE_V2_ADMIN_READERS_ENABLED ||
             loadingMore ||
-            (!ordersCursor && !returnsCursor)
+            (!ordersCursor && !returnsCursor && !requestsCursor)
         ) return;
         setLoadingMore(true);
         setNotice(null);
         try {
-            const [ordersResult, returnsResult] = await Promise.all([
+            const [ordersResult, returnsResult, requestsResult] = await Promise.all([
                 ordersCursor
                     ? listOrdersAdminV2({ pageSize: 50, cursor: ordersCursor })
                     : Promise.resolve({ orders: [], nextCursor: null }),
                 returnsCursor
                     ? listReturnsAdminV2({ pageSize: 50, cursor: returnsCursor })
-                    : Promise.resolve({ returns: [], nextCursor: null })
+                    : Promise.resolve({ returns: [], nextCursor: null }),
+                requestsCursor
+                    ? listCustomerReturnRequestsAdminV2({ pageSize: 50, cursor: requestsCursor })
+                    : Promise.resolve({ requests: [], nextCursor: null })
             ]);
             setOrders((current) => {
                 const merged = new Map(current.map((order) => [order.id, order]));
@@ -340,6 +397,14 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
             });
             setOrdersCursor(ordersResult.nextCursor || null);
             setReturnsCursor(returnsResult.nextCursor || null);
+            setCustomerRequests((current) => {
+                const merged = new Map(current.map((request) => [request.requestId, request]));
+                for (const request of requestsResult.requests || []) {
+                    merged.set(request.requestId, request);
+                }
+                return Array.from(merged.values());
+            });
+            setRequestsCursor(requestsResult.nextCursor || null);
         } catch (error) {
             console.error('Admin v2 returns pagination failed:', error);
             setNotice({
@@ -367,7 +432,45 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                 || order.refundAttemptReadError
         ).length,
         returns: returnCases.length,
-    }), [refundOrders, returnCases]);
+        customerRequests: customerRequests.filter(
+            (request) => request.status === 'pending_review'
+        ).length,
+    }), [refundOrders, returnCases, customerRequests]);
+
+    const submitCustomerRequestDecision = async (event) => {
+        event.preventDefault();
+        if (!decisionDraft) return;
+        const { request, decision, reason } = decisionDraft;
+        setDecisionDraft(null);
+        await runAction(request.orderId, `customer-${decision}`, async () => {
+            const result = await decideCustomerReturnRequestAdmin(
+                request,
+                decision,
+                reason
+            );
+            if (decision === 'refund_now' || decision === 'refund_after_return') {
+                return result?.outcome === 'succeeded'
+                    ? 'Remboursement confirme par Stripe.'
+                    : 'Remboursement lance. Le suivi Stripe reste visible dans ce dossier.';
+            }
+            if (decision === 'authorize_return') {
+                return 'Retour autorise. Le remboursement restera bloque jusqu a la reception et l inspection.';
+            }
+            return 'Demande refusee et decision enregistree.';
+        });
+    };
+
+    const openCustomerDecision = (request, decision) => {
+        const defaultReason = decision === 'refund_now'
+            ? 'Remboursement direct, piece encore a l atelier'
+            : decision === 'authorize_return'
+                ? 'Retour autorise avant remboursement'
+                : decision === 'refund_after_return'
+                    ? 'Retour recu et inspecte, remboursement autorise'
+                    : 'Demande refusee apres examen';
+        setDecisionDraft({ request, decision, reason: defaultReason });
+        setNotice(null);
+    };
 
     const runAction = async (orderId, action, runner) => {
         setOperation(`${action}:${orderId}`);
@@ -560,6 +663,36 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
 
     return (
         <div className="space-y-6">
+            {decisionDraft ? (
+                <div className="fixed inset-0 z-[125] flex items-center justify-center bg-stone-950/55 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+                    <form onSubmit={submitCustomerRequestDecision} className={`w-full max-w-lg rounded-2xl border p-6 shadow-2xl ${panelClass}`}>
+                        <p className={`text-[10px] font-black uppercase tracking-[0.24em] ${mutedText}`}>Decision administrateur</p>
+                        <h3 className="mt-2 text-2xl font-black tracking-tight">
+                            {decisionDraft.decision === 'refund_now' ? 'Rembourser maintenant' :
+                                decisionDraft.decision === 'authorize_return' ? 'Autoriser le retour' :
+                                    decisionDraft.decision === 'refund_after_return' ? 'Rembourser apres inspection' :
+                                        'Refuser la demande'}
+                        </h3>
+                        <p className={`mt-3 text-sm leading-6 ${mutedText}`}>
+                            Commande {decisionDraft.request.orderId}. Cette decision sera tracee dans le dossier.
+                        </p>
+                        <label className="mt-5 block text-xs font-black uppercase tracking-wider">
+                            Motif de la decision
+                            <textarea
+                                value={decisionDraft.reason}
+                                onChange={(event) => setDecisionDraft((current) => ({ ...current, reason: event.target.value.slice(0, 500) }))}
+                                rows={3}
+                                className={`mt-2 w-full resize-none rounded-lg border px-3 py-3 text-sm font-medium outline-none ${darkMode ? 'border-white/10 bg-black/20 text-white' : 'border-stone-200 bg-stone-50 text-stone-950'}`}
+                            />
+                        </label>
+                        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                            <button type="button" onClick={() => setDecisionDraft(null)} className={`rounded-lg border px-5 py-3 text-xs font-black uppercase tracking-wider ${darkMode ? 'border-white/10 text-white' : 'border-stone-200 text-stone-700'}`}>Annuler</button>
+                            <button type="submit" className={`rounded-lg px-5 py-3 text-xs font-black uppercase tracking-wider text-white ${decisionDraft.decision === 'reject' ? 'bg-red-700' : 'bg-stone-950'}`}>Confirmer</button>
+                        </div>
+                    </form>
+                </div>
+            ) : null}
+
             {refundDraft ? (
                 <div
                     className="fixed inset-0 z-[120] flex items-center justify-center bg-stone-950/55 p-4 backdrop-blur-sm"
@@ -657,9 +790,10 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                 </button>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
                 {[
-                    ['A rembourser', stats.actionable, 'emerald'],
+                    ['Demandes client', stats.customerRequests, 'amber'],
+                    ['Remboursables', stats.actionable, 'emerald'],
                     ['En attente Stripe', stats.pending, 'amber'],
                     ['Remboursees', stats.refunded, 'sky'],
                     ['A verifier', stats.failed, 'red'],
@@ -676,6 +810,64 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                     );
                 })}
             </div>
+
+            <section className={`overflow-hidden rounded-2xl border ${panelClass}`}>
+                <div className={`flex flex-col gap-2 border-b px-5 py-4 ${darkMode ? 'border-white/10' : 'border-stone-100'}`}>
+                    <h3 className="text-lg font-black tracking-tight">Demandes client</h3>
+                    <p className={`text-xs ${mutedText}`}>Choisissez le remboursement direct seulement si la piece est encore a l atelier. Sinon, autorisez son retour.</p>
+                </div>
+                {visibleCustomerRequests.length === 0 ? (
+                    <div className="px-5 py-8 text-center">
+                        <p className="text-sm font-bold">Aucune demande client dans le perimetre charge.</p>
+                    </div>
+                ) : (
+                    <div className={`divide-y ${darkMode ? 'divide-white/10' : 'divide-stone-100'}`}>
+                        {visibleCustomerRequests.map((request) => {
+                            const status = customerRequestStatus(request);
+                            const classes = toneClasses[status.tone] || toneClasses.stone;
+                            const order = request.order || {};
+                            const activeOperation = operation?.endsWith(`:${request.orderId}`);
+                            return (
+                                <article key={request.requestId} className="grid gap-4 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_minmax(220px,0.55fr)_minmax(240px,0.7fr)] lg:items-start">
+                                    <div className="min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-widest ${darkMode ? classes.dark : classes.light}`}>{status.label}</span>
+                                            <span className={`text-[11px] ${mutedText}`}>{formatDate(request.createdAt)}</span>
+                                        </div>
+                                        <p className="mt-3 font-black tracking-tight">{order.shippingSnapshot?.fullName || 'Client non renseigne'}</p>
+                                        <p className={`mt-1 text-xs ${mutedText}`}>{order.customerSnapshot?.email || 'Email absent'} · #{request.orderId}</p>
+                                        <p className="mt-3 text-sm font-semibold">{customerRequestReason(request.reason)}</p>
+                                        {request.note ? <p className={`mt-1 text-sm leading-6 ${mutedText}`}>{request.note}</p> : null}
+                                    </div>
+                                    <div className={`rounded-xl border p-3 text-xs leading-5 ${softPanel}`}>
+                                        <p className="font-black uppercase tracking-wider">Parcours</p>
+                                        <p className={`mt-2 ${mutedText}`}>
+                                            {order.fulfillmentSummary?.custody === 'merchant'
+                                                ? 'Piece encore a l atelier : remboursement direct disponible.'
+                                                : request.returnCase?.status === 'resolved'
+                                                    ? 'Retour recu, inspecte et resolu : remboursement final disponible.'
+                                                    : 'Piece partie : retour physique requis avant remboursement.'}
+                                        </p>
+                                        {request.returnCase ? <p className="mt-2 font-bold">Retour : {returnStatusLabel(request.returnCase.status)}</p> : null}
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        {returnCommandsEnabled ? (
+                                            <>
+                                                {request.canRefundNow ? <button type="button" disabled={activeOperation} onClick={() => openCustomerDecision(request, 'refund_now')} className="rounded-lg bg-stone-950 px-4 py-3 text-[10px] font-black uppercase tracking-wider text-white disabled:opacity-50">Rembourser maintenant</button> : null}
+                                                {request.canAuthorizeReturn ? <button type="button" disabled={activeOperation} onClick={() => openCustomerDecision(request, 'authorize_return')} className={`rounded-lg border px-4 py-3 text-[10px] font-black uppercase tracking-wider disabled:opacity-50 ${darkMode ? 'border-white/10 text-white' : 'border-stone-200 text-stone-700'}`}>Autoriser le retour</button> : null}
+                                                {request.canRefundAfterReturn ? <button type="button" disabled={activeOperation} onClick={() => openCustomerDecision(request, 'refund_after_return')} className="rounded-lg bg-stone-950 px-4 py-3 text-[10px] font-black uppercase tracking-wider text-white disabled:opacity-50">Rembourser apres inspection</button> : null}
+                                                {request.canReject ? <button type="button" disabled={activeOperation} onClick={() => openCustomerDecision(request, 'reject')} className="rounded-lg px-4 py-2 text-[10px] font-black uppercase tracking-wider text-red-600 disabled:opacity-50">Refuser</button> : null}
+                                            </>
+                                        ) : (
+                                            <p className={`rounded-lg border px-3 py-3 text-[11px] ${darkMode ? 'border-white/10 text-stone-400' : 'border-stone-200 text-stone-500'}`}>Consultation active. Les decisions seront disponibles pendant une fenetre admin autorisee.</p>
+                                        )}
+                                    </div>
+                                </article>
+                            );
+                        })}
+                    </div>
+                )}
+            </section>
 
             <div className={`rounded-3xl border p-6 ${panelClass}`}>
                 <div className="flex items-start gap-4">
@@ -874,7 +1066,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                         })}
                     </div>
                 )}
-                {COMMERCE_V2_ADMIN_READERS_ENABLED && (ordersCursor || returnsCursor) ? (
+                {COMMERCE_V2_ADMIN_READERS_ENABLED && (ordersCursor || returnsCursor || requestsCursor) ? (
                     <div className={`border-t p-4 text-center ${darkMode ? 'border-white/10' : 'border-stone-100'}`}>
                         <button
                             type="button"

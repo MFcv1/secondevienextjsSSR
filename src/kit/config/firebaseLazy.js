@@ -22,7 +22,7 @@ const getCallableReason = (error) => (
 const emitAdminStepUpRequired = (error) => {
   if (
     typeof window === 'undefined'
-    || !['strong-auth-required', 'recent-strong-auth-required'].includes(getCallableReason(error))
+    || !['strong-auth-required', 'recent-strong-auth-required', 'verified-passkey-required'].includes(getCallableReason(error))
   ) return;
 
   window.dispatchEvent(new CustomEvent(ADMIN_STEP_UP_REQUIRED_EVENT, {

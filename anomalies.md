@@ -39,6 +39,8 @@ Echeance de fusion et suppression: 2026-08-06
 | A-016 | Documents client | `MINEURE` | `FERMEE` | Les documents ont ete projetes apres le controle immediat; aucune perte durable |
 | A-017 | Remboursement asynchrone | `BLOQUANTE` | `CORRIGEE_A_REQUALIFIER` | Le rail v2 ingere et applique desormais les evenements `refund.*` supportes |
 | A-018 | Fulfillment livraison | `MAJEURE` | `CORRIGEE_A_REQUALIFIER` | L'etat durable etait correct; le cache et la chronologie admin restaient obsoletes |
+| A-019 | Session client / checkout | `MINEURE` | `FERMEE` | Le panier et la session etaient charges apres hydratation; la reprise a permis les deux commandes |
+| A-020 | Accès administrateur Google | `BLOQUANTE` | `FERMEE` | Le premier parcours n’achevait pas le sélecteur Google; reprise explicite du compte admin réussie |
 
 Severites:
 
@@ -806,10 +808,68 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
   `_DOCS/security/AUTHENTIFICATION.md`,
   `_DOCS/email/RECETTE_EMAILS_LUNA.md`, `map.md`.
 
+### A-019 - Session OTP cliente perdue avant le checkout
+
+- statut: `FERMEE`
+- severite: `MINEURE`
+- phase: connexion client et checkout
+- environnement: App Hosting sandbox / Stripe test
+- `runId`: `run_v2all_20260801_luna01`
+- identite: `pvml7008@gmail.com`, sans role admin attendu
+- attendu: apres OTP valide, la session cliente et les deux ajouts panier
+  persistent jusqu'a `/checkout`, qui permet de choisir livraison ou retrait.
+- observe: l'interface a expose `Se deconnecter` apres validation OTP, puis,
+  apres l'ouverture de deux fiches produit autorisees et le passage a
+  `/checkout`, elle est revenue sur la galerie avec `Connexion` et un panier
+  vide. Aucun formulaire de checkout, Payment Element, paiement, commande,
+  publication, transition, remboursement ou mutation admin n'a ete atteint.
+- etapes: ouvrir le sandbox; deconnecter la session initiale; demander et
+  saisir l'OTP courant du client; ajouter les produits autorises
+  `9yl4isQ7IjfnApVGQC5C` et `9eA4qVqGCUsPZLkg7bEu`; ouvrir `/checkout`.
+- resultat de requalification: apres attente d'hydratation et observation de
+  l'aside panier, les deux lignes etaient presentes; `/checkout` a conserve la
+  session et a permis les commandes `CMD-ORD_337B35` et `CMD-ORD_7A455C`.
+- impact: friction de chargement initiale sans perte de données; les deux
+  commandes sont devenues durables et payées.
+- preuve sanitisee: preflight `READY`, gate A-017 `READY`; status avant
+  fermeture `OPEN` avec operations `healthy` et compteurs nuls; status final
+  `CLOSED`, `v2_fixture`, admin `read_only`, offline `off`, revision `60`.
+- residus: aucune commande, hold, paiement, remboursement, produit smoke ou
+  mutation admin creee par ce run; les deux produits autorises doivent etre
+  verifies disponibles avant requalification.
+- controle: fermer la fenetre avant tout retry; ne pas rejouer un paiement.
+
+### A-020 - Connexion Google administrateur interrompue lors du premier parcours
+
+- statut: `FERMEE`
+- severite: `BLOQUANTE`
+- phase: accès administrateur
+- environnement: App Hosting sandbox / Stripe test
+- `runId`: `run_v2all_20260801_luna02`
+- identite: `loa.gto15@gmail.com`; session admin obtenue lors de la reprise
+- attendu: Google OAuth ouvre le back-office avec assurance forte.
+- observe: deux clics contrôlés sur `Continuer avec Google` ont laissé
+  `/admin` sur l'écran d'accès avec `Firebase: Error (auth/network-request-failed)`.
+  La reprise a ouvert le sélecteur Google avec plusieurs comptes; la sélection
+  explicite de `loa.gto15@gmail.com` a fermé la popup et chargé le back-office.
+- impact initial: l'accès admin était bloqué dans le premier parcours; les
+  transitions livraison/retrait, l'archivage A-015, le remboursement et
+  M04/M05-M13 restent volontairement non exécutés dans ce run ciblé.
+- preuve sanitizée: l'admin affiche `Loa A`, l'adresse `loa.gto15@gmail.com`,
+  le rôle `Administrateur` et `Authentification forte confirmée`; aucun contrôle
+  métier ni aucune mutation n'a été lancé pendant la reprise.
+- résidus: produit smoke historique A-015 toujours à archiver; aucune nouvelle
+  commande, hold, paiement ou mutation créée.
+- contrôle: session laissée en lecture seule, puis fermeture de la fenêtre après
+  vérification de l'identité et de la protection serveur.
+
 ## Journal de campagne
 
 | Horodatage Europe/Paris | Evenement | Resultat | Identifiants non sensibles |
 | --- | --- | --- | --- |
+| 2026-08-01 | Recette client interrompue et fermeture de securite | OTP client confirme, puis retour galerie/panier vide au checkout; aucun paiement ni mutation admin; controles restaures | `run_v2all_20260801_luna01`, `controlRevision=60`, A-019 |
+| 2026-08-01 | Reprise recette client | Panier hydrate puis deux commandes Stripe test payees: livraison 464 EUR et retrait 350 EUR; historique client confirme; OAuth admin bloque par transport | `run_v2all_20260801_luna02`, `CMD-ORD_337B35`, `CMD-ORD_7A455C`, `A-020` |
+| 2026-08-01 | Reprise ciblée accès admin | Sélecteur Google repris avec `loa.gto15@gmail.com`; back-office chargé, rôle Administrateur et authentification forte confirmés; aucune mutation | `run_v2all_20260801_luna02`, `A-020` |
 | 2026-07-30 | Initialisation du plan et du registre | En attente du preflight | - |
 | 2026-07-30 15:15 | Publication admin depuis le site Hosting | Bloquee en finalisation par une demande de connexion | `run_v2all_recipe_20260730_client_purchase_v1` |
 | 2026-07-30 15:18 | Fermeture de securite de la fenetre commerce | `v2_fixture`, mutations `read_only`, paiement offline `off` | `controlRevision=36` |

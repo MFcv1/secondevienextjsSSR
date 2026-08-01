@@ -1,18 +1,7 @@
 import React, { useState } from 'react';
 import { Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-
-const getGoogleLoginErrorMessage = (error) => {
-  if (error?.code === 'auth/unauthorized-domain') {
-    return 'Connexion Google bloquee: domaine App Hosting non autorise dans Firebase Authentication.';
-  }
-  if (error?.code === 'auth/operation-not-allowed') {
-    return 'Connexion Google desactivee dans Firebase Authentication.';
-  }
-  if (error?.code === 'auth/popup-blocked') return 'Popup Google bloquee par le navigateur.';
-  if (error?.code === 'auth/popup-closed-by-user') return 'Connexion Google annulee.';
-  return `Erreur Google : ${error?.message || 'connexion impossible'}`;
-};
+import { getGoogleAuthErrorMessage } from '../auth/googleAuthDiagnostics';
 
 function LoginView({
   onSuccess = () => {},
@@ -26,14 +15,30 @@ function LoginView({
   const [errorMsg, setErrorMsg] = useState('');
   const [googleStatus, setGoogleStatus] = useState('preparing');
 
+  const prepareGoogle = React.useCallback(async ({ force = false } = {}) => {
+    setGoogleStatus('preparing');
+    try {
+      await preloadGoogleLogin({ force });
+      setGoogleStatus('ready');
+      return true;
+    } catch (error) {
+      setErrorMsg(getGoogleAuthErrorMessage(error));
+      setGoogleStatus('preload-error');
+      return false;
+    }
+  }, [preloadGoogleLogin]);
+
   React.useEffect(() => {
     let cancelled = false;
     void preloadGoogleLogin()
       .then(() => {
         if (!cancelled) setGoogleStatus('ready');
       })
-      .catch(() => {
-        if (!cancelled) setGoogleStatus('ready');
+      .catch((error) => {
+        if (!cancelled) {
+          setErrorMsg(getGoogleAuthErrorMessage(error));
+          setGoogleStatus('preload-error');
+        }
       });
     return () => {
       cancelled = true;
@@ -72,20 +77,25 @@ function LoginView({
           <button
             type="button"
             onClick={async () => {
+              if (googleStatus === 'preload-error') {
+                await prepareGoogle({ force: true });
+                return;
+              }
               if (googleStatus !== 'ready') return;
               setGoogleStatus('pending');
+              setErrorMsg('');
               try {
                 await loginWithGoogle();
                 onSuccess();
               } catch (error) {
-                setErrorMsg(getGoogleLoginErrorMessage(error));
+                setErrorMsg(getGoogleAuthErrorMessage(error));
               } finally {
                 setGoogleStatus('ready');
               }
             }}
             onPointerEnter={() => void preloadGoogleLogin()}
             onFocus={() => void preloadGoogleLogin()}
-            disabled={googleStatus !== 'ready'}
+            disabled={googleStatus === 'preparing' || googleStatus === 'pending'}
             className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#2A2A2E] bg-[#141417] p-4 text-sm font-bold text-white transition-all hover:bg-[#1f1f22] disabled:cursor-wait disabled:opacity-70"
           >
             {googleStatus === 'ready' ? (
@@ -96,7 +106,11 @@ function LoginView({
             <span>
               {googleStatus === 'preparing'
                 ? 'Préparation de Google…'
-                : googleStatus === 'pending' ? 'Connexion avec Google…' : 'Continuer avec Google'}
+                : googleStatus === 'pending'
+                  ? 'Connexion avec Google…'
+                  : googleStatus === 'preload-error'
+                    ? 'Réessayer la préparation Google'
+                    : 'Continuer avec Google'}
             </span>
           </button>
 

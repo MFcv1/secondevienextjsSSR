@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  listCustomerReturnRequestsAdminV2,
   listOrdersAdminV2,
   listReturnsAdminV2,
 } from '../commerce/commerceV2Client';
@@ -21,18 +22,23 @@ export const loadAdminReturnsFirstPage = ({ force = false } = {}) => (
   loadAdminCachedData(
     ADMIN_RETURNS_FIRST_PAGE_KEY,
     async () => {
-      const [ordersOutcome, returnsOutcome] = await Promise.allSettled([
+      const [ordersOutcome, returnsOutcome, requestsOutcome] = await Promise.allSettled([
         loadAdminOrdersFirstPage({ force }),
         listReturnsAdminV2({ pageSize: 50 }),
+        listCustomerReturnRequestsAdminV2({ pageSize: 50 }),
       ]);
       return {
         ordersOutcome,
         returnsOutcome,
+        requestsOutcome,
         orders: ordersOutcome.status === 'fulfilled'
           ? (ordersOutcome.value.orders || [])
           : [],
         returns: returnsOutcome.status === 'fulfilled'
           ? (returnsOutcome.value.returns || [])
+          : [],
+        requests: requestsOutcome.status === 'fulfilled'
+          ? (requestsOutcome.value.requests || [])
           : [],
       };
     },

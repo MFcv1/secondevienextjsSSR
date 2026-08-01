@@ -63,7 +63,12 @@ Toute nouvelle collection doit avoir une decision explicite dans les rules avant
 
 ## 4. Storage Rules
 
-`storage.rules` protege les medias. Les lectures publiques servent le catalogue; les ecritures doivent etre reservees a l'administration forte et aux chemins attendus.
+`storage.rules` protege les medias. Les lectures publiques servent le catalogue;
+les ecritures directes exigent un claim admin, une passkey verifiee et un
+`auth_time` inferieur a quinze minutes. Storage ne pouvant pas consulter le
+registre Firestore, cette fraicheur borne a quinze minutes le reliquat maximal
+d'un ID token emis avant revocation; les refresh tokens sont revoques en
+parallele.
 
 Avant d'ajouter un chemin Storage:
 
@@ -71,7 +76,10 @@ Avant d'ajouter un chemin Storage:
 - borner type MIME et taille lorsque possible;
 - verifier que le nom de chemin ne permet pas d'ecraser un autre domaine;
 - prevoir la suppression liee au document Firestore;
-- tester un token admin revoque, car les tokens deja emis ont une duree de vie limitee.
+- tester un admin Google seul, une passkey recente et une passkey vieille de
+  plus de quinze minutes;
+- conserver une Function avec registre actif avant les parcours metier qui
+  precedent un upload direct.
 
 ## 5. Cloud Functions
 

@@ -6,6 +6,7 @@ import { httpsCallable } from 'firebase/functions';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { functions } from '../config/firebase';
 import { getFirebaseAuth, loadAuthModule } from '../config/firebaseLazy';
+import { getGoogleAuthErrorMessage } from '../auth/googleAuthDiagnostics';
 import { logClientPerf, startClientPerf } from '../shared/clientPerf';
 import { ToastProvider, useToast } from '../ui/Toast';
 
@@ -13,19 +14,6 @@ const PASSKEY_ENABLED_KEY = 'secondevie:passkey-enabled';
 const PASSKEY_EMAIL_KEY = 'secondevie:passkey-email';
 const PASSKEY_EMAILS_KEY = 'secondevie:passkey-emails';
 const PASSKEY_PREPARED_TTL_MS = 4 * 60 * 1000;
-
-const getAuthErrorMessage = (error) => {
-  if (error?.code === 'auth/invalid-email') return "L'adresse email n'est pas valide.";
-  if (error?.code === 'auth/user-not-found' || error?.code === 'auth/wrong-password' || error?.code === 'auth/invalid-credential') {
-    return 'Identifiants incorrects.';
-  }
-  if (error?.code === 'auth/unauthorized-domain') return 'Connexion bloquee: domaine non autorise dans Firebase.';
-  if (error?.code === 'auth/operation-not-allowed') return 'Ce mode de connexion est desactive dans Firebase.';
-  if (error?.code === 'auth/account-exists-with-different-credential') return 'Un compte existe deja avec un autre mode de connexion.';
-  if (error?.code === 'auth/popup-blocked') return 'Fenetre de connexion bloquee par le navigateur.';
-  if (error?.code === 'auth/popup-closed-by-user') return 'Connexion annulee.';
-  return 'Une erreur est survenue.';
-};
 
 const normalizeEmailValue = (email) => String(email || '').trim().toLowerCase();
 
@@ -367,7 +355,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
         if (!cancelled) setGoogleStatus('ready');
       })
       .catch(() => {
-        if (!cancelled) setGoogleStatus('ready');
+        if (!cancelled) setGoogleStatus('preload-error');
       });
     return () => {
       cancelled = true;
@@ -517,12 +505,23 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
 
   const handleSocialLogin = async (login) => {
     if (googleStatus === 'pending' || googleStatus === 'preparing') return;
+    if (googleStatus === 'preload-error') {
+      setGoogleStatus('preparing');
+      try {
+        await preloadGoogleLogin({ force: true });
+        setGoogleStatus('ready');
+      } catch (error) {
+        setGoogleStatus('preload-error');
+        toast(getGoogleAuthErrorMessage(error), { type: 'error' });
+      }
+      return;
+    }
     setGoogleStatus('pending');
     try {
       const result = await login();
       offerPasskeyOrClose(result?.user);
     } catch (error) {
-      toast(getAuthErrorMessage(error), { type: 'error' });
+      toast(getGoogleAuthErrorMessage(error), { type: 'error' });
     } finally {
       setGoogleStatus('ready');
     }
@@ -723,11 +722,26 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
         <div className="safe-pb-auth safe-pt-auth flex w-full flex-col justify-center overflow-y-auto px-6 text-white md:w-1/2 md:px-14">
           {passkeyUser ? (
                 <div className="space-y-6 text-center animate-in fade-in slide-in-from-bottom-4">
-                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 shadow-sm">
-                    <ShieldCheck size={40} />
+                  <div className="sv-auth-success-mark mx-auto" aria-hidden="true">
+                    <span className="sv-auth-success-mark__halo" />
+                    <svg viewBox="0 0 80 80" focusable="false">
+                      <circle className="sv-auth-success-mark__disc" cx="40" cy="40" r="31" />
+                      <circle
+                        className="sv-auth-success-mark__ring"
+                        cx="40"
+                        cy="40"
+                        r="31"
+                        pathLength="1"
+                      />
+                      <path
+                        className="sv-auth-success-mark__check"
+                        d="M25 40.5 35.5 51 56 30.5"
+                        pathLength="1"
+                      />
+                    </svg>
                   </div>
                   <div className="space-y-2">
-                    <h3 className="text-2xl font-bold tracking-tight text-white">Connexion reussie</h3>
+                    <h3 className="text-2xl font-bold tracking-tight text-white">Connexion réussie</h3>
                     <p className="px-2 text-sm font-medium leading-relaxed text-stone-400">
                       Vous pouvez continuer, ou activer la connexion rapide sur cet appareil.
                     </p>
@@ -803,7 +817,11 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
                 <span>
                   {googleStatus === 'preparing'
                     ? 'Préparation de Google…'
-                    : googleStatus === 'pending' ? 'Connexion avec Google…' : 'Continuer avec Google'}
+                    : googleStatus === 'pending'
+                      ? 'Connexion avec Google…'
+                      : googleStatus === 'preload-error'
+                        ? 'Réessayer la préparation Google'
+                        : 'Continuer avec Google'}
                 </span>
               </button>
 

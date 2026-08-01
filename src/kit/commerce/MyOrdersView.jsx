@@ -28,6 +28,7 @@ import { getMillis } from '../../utils/time';
 import {
     COMMERCE_V2_ORDER_READERS_ENABLED,
     listMyOrdersV2,
+    requestCustomerReturn,
 } from './commerceV2Client';
 import {
     COMMERCE_V2_CLIENT_COMMANDS_ENABLED,
@@ -39,7 +40,6 @@ import CommerceDocumentModal from './CommerceDocumentModal';
 
 const BUSINESS_PHONE = process.env.NEXT_PUBLIC_BUSINESS_PHONE || '';
 const BUSINESS_PHONE_TEL = BUSINESS_PHONE.replace(/\s/g, '');
-const BUSINESS_EMAIL = process.env.NEXT_PUBLIC_BUSINESS_EMAIL || 'contact@secondevie-marseille.fr';
 const CONTACT_NAME = process.env.NEXT_PUBLIC_CONTACT_NAME || KIT_CONFIG.brandName;
 const REVIEW_URL = process.env.NEXT_PUBLIC_REVIEW_URL || '';
 const COMMERCE_READ_ONLY = !COMMERCE_V2_CLIENT_COMMANDS_ENABLED;
@@ -155,9 +155,31 @@ const canCancel = (order) => {
 };
 
 const canRequestReturn = (order) => (
-    ['paid', 'shipped', 'completed'].includes(order?.status)
+    order?.schemaVersion === 2
+    && ['paid', 'shipped', 'completed'].includes(order?.status)
     && !['pending', 'full', 'needs_review'].includes(order?.refundStatus)
+    && !order?.latestCustomerReturnRequest
 );
+
+const getCustomerReturnRequestCopy = (request) => {
+    if (!request) return null;
+    switch (request.status) {
+        case 'pending_review':
+            return 'Votre demande a ete transmise a l atelier et doit etre examinee.';
+        case 'return_authorized':
+            return 'Le retour est autorise. Le remboursement sera lance apres reception et inspection de la piece.';
+        case 'refund_initiated':
+            return 'Le remboursement a ete lance et attend la confirmation de Stripe.';
+        case 'completed':
+            return 'Votre demande est terminee et le remboursement a ete confirme.';
+        case 'refund_failed':
+            return 'Le remboursement demande une verification par l atelier.';
+        case 'rejected':
+            return `La demande a ete refusee${request.decisionReason ? ` : ${request.decisionReason}` : '.'}`;
+        default:
+            return 'Votre demande est en cours de traitement.';
+    }
+};
 
 const getRefundHelpText = (status = '') => {
     if (status === 'refund_pending') {
@@ -240,7 +262,11 @@ const MyOrdersView = ({
     const [loadingMoreOrders, setLoadingMoreOrders] = useState(false);
     const [selectedDocument, setSelectedDocument] = useState(null);
     const [copiedTrackingOrderId, setCopiedTrackingOrderId] = useState(null);
+    const [returnDraft, setReturnDraft] = useState(null);
+    const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
+    const [returnNotice, setReturnNotice] = useState(null);
     const cancellationRequestIdsRef = useRef(new Map());
+    const returnRequestIdsRef = useRef(new Map());
     const topRef = useRef(null);
     const ordersRef = useRef(null);
     const wishlistRef = useRef(null);
@@ -412,20 +438,67 @@ const MyOrdersView = ({
         else scrollToSection(wishlistRef);
     };
 
-    const requestReturn = (order) => {
-        const orderNumber = getOrderNumber(order);
-        const subject = `Demande de retour - ${orderNumber}`;
-        const body = [
-            `Bonjour ${CONTACT_NAME},`,
-            '',
-            `Je souhaite demander un retour ou un remboursement pour la commande ${orderNumber}.`,
-            `Article(s) : ${getOrderItemsSummary(order) || 'a preciser'}`,
-            '',
-            'Motif : ',
-            '',
-            `Compte client : ${user?.email || ''}`,
-        ].join('\n');
-        window.location.href = `mailto:${BUSINESS_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const openReturnRequest = (order) => {
+        setReturnNotice(null);
+        setReturnDraft({
+            order,
+            reason: 'changed_mind',
+            note: '',
+            lines: (order.items || [])
+                .filter((line) => line.lineId)
+                .map((line) => ({
+                    lineId: line.lineId,
+                    quantity: Number(line.quantity || 1),
+                    title: line.titleSnapshot || line.name || 'Article',
+                    selected: true
+                }))
+        });
+    };
+
+    const submitReturnRequest = async (event) => {
+        event.preventDefault();
+        if (!returnDraft || isSubmittingReturn) return;
+        const lines = returnDraft.lines
+            .filter((line) => line.selected)
+            .map(({ lineId, quantity }) => ({ lineId, quantity }));
+        if (lines.length === 0) {
+            setReturnNotice({ type: 'error', text: 'Selectionnez au moins un article.' });
+            return;
+        }
+        setIsSubmittingReturn(true);
+        setReturnNotice(null);
+        try {
+            let requestId = returnRequestIdsRef.current.get(returnDraft.order.id);
+            if (!requestId) {
+                requestId = createCommerceCommandId('customer-return');
+                returnRequestIdsRef.current.set(returnDraft.order.id, requestId);
+            }
+            const result = await requestCustomerReturn({
+                orderId: returnDraft.order.id,
+                requestId,
+                lines,
+                reason: returnDraft.reason,
+                note: returnDraft.note
+            });
+            setOrders((current) => current.map((order) => (
+                order.id === returnDraft.order.id
+                    ? { ...order, latestCustomerReturnRequest: result.request }
+                    : order
+            )));
+            setReturnDraft(null);
+            setReturnNotice({
+                type: 'success',
+                text: 'Votre demande a ete transmise a l atelier.'
+            });
+        } catch (error) {
+            console.error('Customer return request failed:', error);
+            setReturnNotice({
+                type: 'error',
+                text: 'La demande n a pas pu etre transmise. Reessayez dans quelques instants.'
+            });
+        } finally {
+            setIsSubmittingReturn(false);
+        }
     };
 
     const navItems = [
@@ -543,6 +616,9 @@ const MyOrdersView = ({
                                     const refundHelpText = getRefundHelpText(order.status);
                                     const itemsSummary = getOrderItemsSummary(order);
                                     const documents = order.documents || [];
+                                    const customerReturnCopy = getCustomerReturnRequestCopy(
+                                        order.latestCustomerReturnRequest
+                                    );
 
                                     return (
                                         <article key={order.id} className="grid gap-4 border-b border-[#e8e8ed] px-4 py-4 last:border-b-0 lg:grid-cols-[76px_minmax(0,1fr)_minmax(130px,150px)_minmax(90px,110px)_minmax(128px,150px)] lg:items-center">
@@ -566,6 +642,12 @@ const MyOrdersView = ({
                                                             <span className="text-[12px] text-[#4d6d8f]">Stripe</span>
                                                         </div>
                                                         <p className="mt-2 text-[13px] leading-5 text-[#3b5d78]">{refundHelpText}</p>
+                                                    </div>
+                                                ) : null}
+                                                {customerReturnCopy ? (
+                                                    <div className="mt-3 rounded-[8px] border border-[#eadfbf] bg-[#fffaf0] px-4 py-3">
+                                                        <p className="text-[13px] font-semibold text-[#8a5a13]">Demande de retour</p>
+                                                        <p className="mt-1 text-[13px] leading-5 text-[#6f521f]">{customerReturnCopy}</p>
                                                     </div>
                                                 ) : null}
                                                 {['shipped', 'delivered'].includes(order.fulfillmentStatus) ? (
@@ -626,7 +708,7 @@ const MyOrdersView = ({
                                                 {canRequestReturn(order) ? (
                                                     <button
                                                         type="button"
-                                                        onClick={() => requestReturn(order)}
+                                                        onClick={() => openReturnRequest(order)}
                                                         className="mt-3 block text-[13px] font-medium text-[#0066cc]"
                                                     >
                                                         Demander un retour ou un remboursement
@@ -845,6 +927,97 @@ const MyOrdersView = ({
                     </section>
                 </main>
             </div>
+
+            {returnNotice && !returnDraft ? (
+                <div className="fixed bottom-5 left-1/2 z-[130] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-[8px] border border-[#d2d2d7] bg-white px-4 py-3 text-[13px] font-medium text-[#1d1d1f] shadow-[0_16px_50px_rgba(0,0,0,.16)]">
+                    {returnNotice.text}
+                </div>
+            ) : null}
+
+            {returnDraft ? (
+                <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-md">
+                    <form
+                        onSubmit={submitReturnRequest}
+                        className="w-full max-w-lg rounded-[12px] bg-white p-6 text-[#1d1d1f] shadow-[0_24px_80px_rgba(0,0,0,.18)]"
+                    >
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#86868b]">Demande client</p>
+                        <h3 className="mt-2 text-[26px] font-semibold">Retour ou remboursement</h3>
+                        <p className="mt-2 text-[14px] leading-6 text-[#6e6e73]">
+                            L atelier choisira un remboursement direct si la piece est encore sur place, sinon le remboursement interviendra apres son retour et son inspection.
+                        </p>
+
+                        <fieldset className="mt-5 space-y-2">
+                            <legend className="text-[12px] font-semibold text-[#424245]">Articles concernes</legend>
+                            {returnDraft.lines.map((line, index) => (
+                                <label key={line.lineId} className="flex items-center gap-3 rounded-[8px] border border-[#e8e8ed] px-3 py-3 text-[13px]">
+                                    <input
+                                        type="checkbox"
+                                        checked={line.selected}
+                                        onChange={(event) => setReturnDraft((current) => ({
+                                            ...current,
+                                            lines: current.lines.map((item, itemIndex) => (
+                                                itemIndex === index
+                                                    ? { ...item, selected: event.target.checked }
+                                                    : item
+                                            ))
+                                        }))}
+                                    />
+                                    <span className="min-w-0 flex-1 font-medium">{line.title}</span>
+                                    <span className="text-[#86868b]">x{line.quantity}</span>
+                                </label>
+                            ))}
+                        </fieldset>
+
+                        <label className="mt-5 block text-[12px] font-semibold text-[#424245]">
+                            Motif
+                            <select
+                                value={returnDraft.reason}
+                                onChange={(event) => setReturnDraft((current) => ({ ...current, reason: event.target.value }))}
+                                className="mt-2 w-full rounded-[8px] border border-[#d2d2d7] bg-white px-3 py-3 text-[14px] outline-none focus:border-[#0066cc]"
+                            >
+                                <option value="changed_mind">J ai change d avis</option>
+                                <option value="damaged">La piece est endommagee</option>
+                                <option value="not_as_expected">La piece ne correspond pas a mes attentes</option>
+                                <option value="other">Autre motif</option>
+                            </select>
+                        </label>
+
+                        <label className="mt-4 block text-[12px] font-semibold text-[#424245]">
+                            Commentaire facultatif
+                            <textarea
+                                value={returnDraft.note}
+                                onChange={(event) => setReturnDraft((current) => ({ ...current, note: event.target.value.slice(0, 1000) }))}
+                                rows={4}
+                                className="mt-2 w-full resize-none rounded-[8px] border border-[#d2d2d7] px-3 py-3 text-[14px] outline-none focus:border-[#0066cc]"
+                                placeholder="Precisez votre demande..."
+                            />
+                        </label>
+
+                        {returnNotice?.type === 'error' ? (
+                            <p className="mt-3 text-[13px] font-medium text-[#9f3434]">{returnNotice.text}</p>
+                        ) : null}
+
+                        <div className="mt-6 grid grid-cols-2 gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setReturnDraft(null)}
+                                disabled={isSubmittingReturn}
+                                className="rounded-full border border-[#d2d2d7] py-3 text-[13px] font-semibold"
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={isSubmittingReturn}
+                                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#1d1d1f] py-3 text-[13px] font-semibold text-white disabled:opacity-60"
+                            >
+                                {isSubmittingReturn ? <Loader2 size={14} className="animate-spin" /> : null}
+                                Envoyer la demande
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            ) : null}
 
             {showCancelSuccess && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4 backdrop-blur-md">

@@ -131,6 +131,20 @@ second refund. La reprise exige un administrateur actif avec AAL2 recent,
 reste soumise au control plane `adminMutationMode=v2` et ajoute un evenement
 d'audit distinct sans modifier l'auteur initial de la demande.
 
+Le workflow client ajoute le 2026-08-01 une couche distincte
+`orders/{orderId}/customer_return_requests/{requestId}`. Sa creation exige le
+proprietaire Auth, App Check, une commande v2 payee et des lignes quantitatives
+valides; elle ne contacte jamais Stripe et programme une notification admin
+outbox. La decision admin reste forte et fail-closed. `refund_now` est admis
+seulement avec une garde `merchant` et reutilise la saga refund complete. Une
+demande couvrant toute la commande rembourse le solde restant; une demande
+partielle rembourse le prix serveur des lignes demandees, borne par ce solde.
+`authorize_return` est admis avec une garde `carrier` ou
+`customer` et reutilise le dossier physique existant. Dans ce second parcours,
+`refund_after_return` exige un retour `resolved`, donc des quantites recues et
+entierement disposees apres inspection. Le refund conserve son identite
+deterministe derivee de la demande client et ne provoque aucun restock seul.
+
 ## 6. Webhooks
 
 `stripeWebhookV2` et `stripeConnectWebhookV2` verifient la signature Stripe.

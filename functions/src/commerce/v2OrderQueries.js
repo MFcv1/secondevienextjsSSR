@@ -8,6 +8,9 @@ const {
 } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
 const { computeAllowedActions } = require('./domain/allowedActions');
+const {
+    validateCustomerReturnRequest
+} = require('./domain/customerReturnRequest');
 const { validateOrderV2 } = require('./domain/orderState');
 const { validateRefundAttempt } = require('./domain/refundSaga');
 const { validateReturnCase } = require('./domain/returnCase');
@@ -55,6 +58,40 @@ function decodeReturnCursor(value) {
     }
     normalizeFirestoreId(segments[1], 'Commande curseur');
     normalizeFirestoreId(segments[3], 'Retour curseur');
+    return documentPath;
+}
+
+function decodeCustomerReturnRequestCursor(value) {
+    if (
+        typeof value !== 'string' ||
+        value.length < 1 ||
+        value.length > 500 ||
+        !/^[A-Za-z0-9_-]+$/.test(value)
+    ) {
+        throw new functions.https.HttpsError(
+            'invalid-argument',
+            'Curseur de demande invalide.'
+        );
+    }
+    let documentPath;
+    try {
+        documentPath = Buffer.from(value, 'base64url').toString('utf8');
+    } catch {
+        documentPath = '';
+    }
+    const segments = documentPath.split('/');
+    if (
+        segments.length !== 4 ||
+        segments[0] !== 'orders' ||
+        segments[2] !== 'customer_return_requests'
+    ) {
+        throw new functions.https.HttpsError(
+            'invalid-argument',
+            'Curseur de demande invalide.'
+        );
+    }
+    normalizeFirestoreId(segments[1], 'Commande curseur');
+    normalizeFirestoreId(segments[3], 'Demande curseur');
     return documentPath;
 }
 
@@ -168,18 +205,121 @@ function serializeCommerceDocument(snapshot, order) {
 
 async function serializeOwnedOrder(snapshot, actor) {
     const order = snapshot.data();
-    const documentsSnapshot = await snapshot.ref.collection('documents')
-        .orderBy('issuedAt', 'desc')
-        .limit(20)
-        .get();
+    const [documentsSnapshot, requestsSnapshot] = await Promise.all([
+        snapshot.ref.collection('documents')
+            .orderBy('issuedAt', 'desc')
+            .limit(20)
+            .get(),
+        snapshot.ref.collection('customer_return_requests')
+            .orderBy('updatedAt', 'desc')
+            .limit(1)
+            .get()
+    ]);
+    let latestCustomerReturnRequest = requestsSnapshot.empty
+        ? null
+        : serializeCustomerReturnRequest(requestsSnapshot.docs[0]);
+    if (latestCustomerReturnRequest?.refundRequestId) {
+        const refundSnapshot = await snapshot.ref.collection('refunds')
+            .doc(latestCustomerReturnRequest.refundRequestId)
+            .get();
+        if (refundSnapshot.exists) {
+            const refundAttempt = serializeRefundAttempt(refundSnapshot);
+            latestCustomerReturnRequest = {
+                ...latestCustomerReturnRequest,
+                status: refundAttempt.status === 'succeeded'
+                    ? 'completed'
+                    : (refundAttempt.status === 'failed'
+                        ? 'refund_failed'
+                        : latestCustomerReturnRequest.status)
+            };
+        }
+    }
     return {
         ...serializeOrder(snapshot, actor),
+        latestCustomerReturnRequest,
         documents: documentsSnapshot.docs
             .map((documentSnapshot) => serializeCommerceDocument(
                 documentSnapshot,
                 order
             ))
             .filter(Boolean)
+    };
+}
+
+function serializeCustomerReturnRequest(snapshot) {
+    const request = snapshot.data();
+    validateCustomerReturnRequest(request);
+    return {
+        requestId: snapshot.id,
+        orderId: request.orderId,
+        status: request.status,
+        resolutionMode: request.resolutionMode,
+        stateVersion: request.stateVersion,
+        lines: request.lines,
+        reason: request.reason,
+        note: request.note,
+        returnId: request.returnId,
+        refundRequestId: request.refundRequestId,
+        decisionReason: request.decisionReason,
+        createdAt: request.createdAt,
+        updatedAt: request.updatedAt
+    };
+}
+
+async function serializeCustomerReturnRequestAdmin(snapshot, db) {
+    const request = serializeCustomerReturnRequest(snapshot);
+    const orderRef = db.doc(`orders/${request.orderId}`);
+    const linkedRefs = [orderRef];
+    if (request.returnId) {
+        linkedRefs.push(db.doc(`orders/${request.orderId}/returns/${request.returnId}`));
+    }
+    if (request.refundRequestId) {
+        linkedRefs.push(db.doc(`orders/${request.orderId}/refunds/${request.refundRequestId}`));
+    }
+    const snapshots = await Promise.all(linkedRefs.map((reference) => reference.get()));
+    const orderSnapshot = snapshots[0];
+    if (!orderSnapshot.exists) {
+        throw new functions.https.HttpsError('not-found', 'Commande de la demande introuvable.');
+    }
+    const order = orderSnapshot.data();
+    validateOrderV2(order);
+    let index = 1;
+    const returnSnapshot = request.returnId ? snapshots[index++] : null;
+    const refundSnapshot = request.refundRequestId ? snapshots[index] : null;
+    const returnCase = returnSnapshot?.exists ? serializeReturn(returnSnapshot) : null;
+    const refundAttempt = refundSnapshot?.exists
+        ? serializeRefundAttempt(refundSnapshot)
+        : null;
+    const derivedStatus = refundAttempt?.status === 'succeeded'
+        ? 'completed'
+        : (refundAttempt?.status === 'failed' ? 'refund_failed' : request.status);
+    const remainingCents = order.amounts.capturedCents
+        - order.refundAggregate.succeededCents
+        - order.refundAggregate.pendingCents;
+    return {
+        ...request,
+        status: derivedStatus,
+        order: {
+            id: request.orderId,
+            customerSnapshot: order.customerSnapshot,
+            shippingSnapshot: order.shippingSnapshot,
+            items: order.items,
+            amounts: order.amounts,
+            currency: order.currency,
+            fulfillmentSummary: order.fulfillmentSummary,
+            refundAggregate: order.refundAggregate
+        },
+        returnCase,
+        refundAttempt,
+        canRefundNow: request.status === 'pending_review'
+            && order.fulfillmentSummary.custody === 'merchant'
+            && remainingCents > 0,
+        canAuthorizeReturn: request.status === 'pending_review'
+            && ['carrier', 'customer'].includes(order.fulfillmentSummary.custody),
+        canRefundAfterReturn: request.status === 'return_authorized'
+            && returnCase?.status === 'resolved'
+            && remainingCents > 0,
+        canReject: request.status === 'pending_review'
     };
 }
 
@@ -499,6 +639,47 @@ function createListReturnsAdminHandler({
     };
 }
 
+function createListCustomerReturnRequestsAdminHandler({
+    authorize = checkActiveStrongAdmin,
+    dbFactory = () => admin.firestore()
+} = {}) {
+    return async (data, context) => {
+        await authorize(context);
+        const pageSize = normalizePageSize(data?.pageSize);
+        const cursorPath = data?.cursor
+            ? decodeCustomerReturnRequestCursor(data.cursor)
+            : null;
+        const db = dbFactory();
+        let query = db.collectionGroup('customer_return_requests')
+            .orderBy('updatedAt', 'desc');
+        if (cursorPath) {
+            const cursor = await db.doc(cursorPath).get();
+            if (!cursor.exists) {
+                throw new functions.https.HttpsError(
+                    'invalid-argument',
+                    'Curseur de demande invalide.'
+                );
+            }
+            query = query.startAfter(cursor);
+        }
+        const snapshot = await query.limit(pageSize).get();
+        return {
+            requests: await Promise.all(snapshot.docs.map(
+                (requestSnapshot) => serializeCustomerReturnRequestAdmin(
+                    requestSnapshot,
+                    db
+                )
+            )),
+            nextCursor: snapshot.size === pageSize
+                ? Buffer.from(
+                    snapshot.docs[snapshot.docs.length - 1].ref.path,
+                    'utf8'
+                ).toString('base64url')
+                : null
+        };
+    };
+}
+
 const callable = (handler) => regionalFunctions()
     .runWith({ enforceAppCheck: true })
     .https.onCall(handler);
@@ -506,6 +687,9 @@ const callable = (handler) => regionalFunctions()
 const listMyOrdersV2 = callable(createListMyOrdersHandler());
 const listOrdersAdminV2 = callable(createListOrdersAdminHandler());
 const listReturnsAdminV2 = callable(createListReturnsAdminHandler());
+const listCustomerReturnRequestsAdminV2 = callable(
+    createListCustomerReturnRequestsAdminHandler()
+);
 const getOrderTimelineAdminV2 = callable(createGetOrderTimelineAdminHandler());
 
 module.exports = {
@@ -513,14 +697,19 @@ module.exports = {
     createGetOrderTimelineAdminHandler,
     createListMyOrdersHandler,
     createListOrdersAdminHandler,
+    createListCustomerReturnRequestsAdminHandler,
     createListReturnsAdminHandler,
     decodeReturnCursor,
+    decodeCustomerReturnRequestCursor,
     getOrderTimelineAdminV2,
     listMyOrdersV2,
     listOrdersAdminV2,
+    listCustomerReturnRequestsAdminV2,
     listReturnsAdminV2,
     normalizePageSize,
     returnActions,
     serializeAdminOrder,
-    serializeCommerceDocument
+    serializeCommerceDocument,
+    serializeCustomerReturnRequest,
+    serializeCustomerReturnRequestAdmin
 };

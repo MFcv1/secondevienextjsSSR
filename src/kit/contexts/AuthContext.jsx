@@ -11,6 +11,14 @@ import {
     syncAuthStoreUser,
 } from '../auth/authStore';
 import { signInWithCustomTokenResilient } from '../auth/customTokenSignIn';
+import {
+    beginGoogleAuthAttempt,
+    recordGoogleAuthDiagnostic,
+} from '../auth/googleAuthDiagnostics';
+import {
+    hasAuthRedirectPending,
+    markAuthRedirectPending,
+} from '../auth/redirectState';
 
 // Detect iOS standalone PWA mode (added to home screen)
 // In this mode, signInWithPopup is blocked by WebKit: must use signInWithRedirect
@@ -22,15 +30,6 @@ const isIOSStandalone = () => {
     const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
     return isIOS && isStandalone;
 };
-
-// Persist redirect flag across page reloads (useRef resets on reload, sessionStorage doesn't)
-const REDIRECT_KEY = 'kit_auth_redirect_pending';
-const LEGACY_GOOGLE_REDIRECT_KEY = 'kit_google_redirect_pending';
-const setRedirectPending = () => sessionStorage.setItem(REDIRECT_KEY, 'true');
-const hasRedirectPending = () => (
-    typeof window !== 'undefined' &&
-    (window.sessionStorage.getItem(REDIRECT_KEY) === 'true' || window.sessionStorage.getItem(LEGACY_GOOGLE_REDIRECT_KEY) === 'true')
-);
 
 const hasPersistedFirebaseUser = () => {
     if (typeof window === 'undefined') return false;
@@ -51,7 +50,7 @@ const isAuthRoute = () => {
 };
 
 const shouldInitializeAuthOnMount = (forceInitialize = false) => (
-    forceInitialize || hasRedirectPending() || hasPersistedFirebaseUser() || isAuthRoute()
+    forceInitialize || hasAuthRedirectPending() || hasPersistedFirebaseUser() || isAuthRoute()
 );
 
 const getEmailVerificationReturnUrl = () => {
@@ -118,9 +117,14 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         return { auth, authModule };
     };
 
-    const preloadGoogleLogin = React.useCallback(() => {
+    const preloadGoogleLogin = React.useCallback(({ force = false } = {}) => {
+        if (force) {
+            googleRuntimeRef.current = null;
+            googleRuntimePromiseRef.current = null;
+        }
         if (googleRuntimeRef.current) return Promise.resolve(googleRuntimeRef.current);
         if (!googleRuntimePromiseRef.current) {
+            const attempt = beginGoogleAuthAttempt();
             googleRuntimePromiseRef.current = Promise.all([
                 getFirebaseAuth(),
                 loadAuthModule(),
@@ -128,57 +132,58 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
             ]).then(([auth, authModule, provider]) => {
                 const runtime = { auth, authModule, provider };
                 googleRuntimeRef.current = runtime;
+                recordGoogleAuthDiagnostic({ attempt, phase: 'preload', outcome: 'success' });
                 return runtime;
             }).catch((error) => {
                 googleRuntimePromiseRef.current = null;
+                recordGoogleAuthDiagnostic({ attempt, phase: 'preload', outcome: 'error', error });
                 throw error;
             });
         }
         return googleRuntimePromiseRef.current;
     }, []);
 
-    const loginWithProvider = async (provider) => {
-        const { auth, authModule } = await getAuthRuntime();
-
-        if (isIOSStandalone()) {
-            // iOS standalone (PWA home screen): signInWithPopup is blocked by WebKit
-            // Use signInWithRedirect: page will reload and getRedirectResult handles it above
-            // Flag persists in sessionStorage so the redirect lifecycle survives reload.
-            setRedirectPending();
-            await authModule.signInWithRedirect(auth, provider);
-            return null; // Page reloads, this line won't execute
-        }
-        // Normal browser (Safari, Chrome, etc.): signInWithPopup works fine
-        const result = await authModule.signInWithPopup(auth, provider);
-        getCallableFunction('updateUserSessions')
-            .then((updateUserSessions) => updateUserSessions())
-            .catch(err => console.error('Failed to clean sessions after login:', err));
-        syncAuthStoreUser(result.user, { lastAuthMethod: 'google' });
-        return result;
-    };
-
     const loginWithGoogle = async () => {
         const preparedRuntime = googleRuntimeRef.current;
         if (!preparedRuntime) {
-            const runtime = await preloadGoogleLogin();
-            return loginWithProvider(runtime.provider);
+            const error = Object.assign(
+                new Error('Google authentication runtime is not prepared.'),
+                { code: 'auth/google-not-prepared' }
+            );
+            const attempt = beginGoogleAuthAttempt();
+            recordGoogleAuthDiagnostic({ attempt, phase: 'popup', outcome: 'error', error });
+            throw error;
         }
 
         const { auth, authModule, provider } = preparedRuntime;
+        const attempt = beginGoogleAuthAttempt();
         if (isIOSStandalone()) {
-            setRedirectPending();
-            await authModule.signInWithRedirect(auth, provider);
-            return null;
+            markAuthRedirectPending();
+            recordGoogleAuthDiagnostic({ attempt, phase: 'redirect', outcome: 'started' });
+            try {
+                await authModule.signInWithRedirect(auth, provider);
+                return null;
+            } catch (error) {
+                recordGoogleAuthDiagnostic({ attempt, phase: 'redirect', outcome: 'error', error });
+                throw error;
+            }
         }
 
         // When preloaded, signInWithPopup is invoked before the first await so
         // the browser still associates it with the user's click.
-        const result = await authModule.signInWithPopup(auth, provider);
-        getCallableFunction('updateUserSessions')
-            .then((updateUserSessions) => updateUserSessions())
-            .catch(err => console.error('Failed to clean sessions after login:', err));
-        syncAuthStoreUser(result.user, { lastAuthMethod: 'google' });
-        return result;
+        recordGoogleAuthDiagnostic({ attempt, phase: 'popup', outcome: 'started' });
+        try {
+            const result = await authModule.signInWithPopup(auth, provider);
+            recordGoogleAuthDiagnostic({ attempt, phase: 'popup', outcome: 'success' });
+            getCallableFunction('updateUserSessions')
+                .then((updateUserSessions) => updateUserSessions())
+                .catch(err => console.error('Failed to clean sessions after login:', err));
+            syncAuthStoreUser(result.user, { lastAuthMethod: 'google' });
+            return result;
+        } catch (error) {
+            recordGoogleAuthDiagnostic({ attempt, phase: 'popup', outcome: 'error', error });
+            throw error;
+        }
     };
 
     const loginWithEmail = async (email, password) => {

@@ -155,7 +155,19 @@ Le bouton bloque aussi les demandes concurrentes afin d'eviter une popup
 annulee ou un onglet `__/auth/handler` orphelin. Le mode PWA iOS conserve
 `signInWithRedirect`, requis par WebKit.
 
-Dans le contrat interne actuel, Google peut produire `aal2` pour l'administration. Avant la production, le compte Google proprietaire doit etre protege par MFA; Firebase ne fournit pas un claim standard permettant de prouver ce MFA externe a chaque connexion.
+Un echec de preparation ne rend plus le bouton faussement disponible: l'UI
+affiche une reprise explicite qui recharge le runtime avant une nouvelle
+ceremonie. Les tentatives conservent pendant sept jours un diagnostic local
+borne et sans identite, token, URL ou message brut: etape, resultat, code
+Firebase, categorie transport, etat reseau et identifiant aleatoire de
+tentative. Cela distingue notamment offline, fetch Auth, popup bloquee et
+transport iframe/GAPI sans exposer les donnees OAuth.
+
+Google produit encore `aal2` pour ouvrir et consulter l'administration, afin
+de conserver le fallback operationnel. Il ne suffit plus pour une mutation
+sensible: une passkey recente avec User Verification est alors obligatoire.
+Cette separation ne pretend plus deduire le MFA externe du compte Google, que
+Firebase ne prouve pas dans son ID token.
 
 ### 5.5 Step-up administrateur
 
@@ -167,7 +179,7 @@ remboursement ou une operation destructive, exige:
 - un role autorise;
 - une entree active dans le registre administrateur;
 - `authAssurance=aal2`;
-- une methode forte reconnue;
+- une passkey avec `userVerified=true` pour toute mutation sensible;
 - une authentification recente, limite actuelle: 15 minutes.
 
 OTP seul reste `aal1`. Le client est redirige vers le step-up sans creer une deuxieme interface de connexion.
@@ -176,12 +188,16 @@ Les lecteurs dashboard, ventes, retours et chronologie ainsi que les commandes
 produit courantes utilisent `checkActiveStrongAdmin`. Les remboursements et
 operations destructives conservent `checkRecentActiveStrongAdmin`. Lorsqu'une
 commande sensible renvoie
-`recent-strong-auth-required`, `firebaseLazy` emet
+`recent-strong-auth-required` ou `verified-passkey-required`, `firebaseLazy` emet
 `sv:admin-step-up-required` et `AdminAppIsland` rouvre la modale unifiee sans
-appeler `signOut`. L'administrateur confirme Google ou sa passkey puis reprend
-son action sans perdre la route ni sa session Firebase.
+appeler `signOut`. Google reste valable pour la lecture; l'administrateur doit
+utiliser sa passkey pour reprendre la mutation sans perdre sa session Firebase.
 
-Firestore Rules et les callables sensibles appliquent cette politique cote serveur. Storage applique role + AAL2 pour les ecritures directes couvertes par les Rules.
+Firestore Rules et les callables sensibles appliquent cette politique cote
+serveur. Les ecritures directes Firestore et Storage exigent egalement une
+passkey verifiee et un `auth_time` inferieur a quinze minutes. Firestore ajoute
+le registre actif; Storage ne peut pas lire Firestore et borne donc la session
+residuelle par cette fenetre courte.
 
 ## 6. Garanties techniques implementees
 
@@ -226,7 +242,12 @@ Le mot de passe Gmail ne doit jamais redevenir le secret HMAC OTP.
 - journalisation structuree des etapes de revocation;
 - reprise idempotente d'une revocation partiellement terminee.
 
-Limite connue: un ID Token Storage deja emis peut rester valable jusqu'a son expiration. Une coupure Storage strictement immediate demanderait de supprimer les ecritures directes et de les faire passer par des callables ou URLs signees.
+Limite bornee: Storage Rules ne peut pas consulter `sys_admin_access`. Un ID
+Token passkey emis avant une revocation peut donc encore ecrire jusqu'a la fin
+de sa fenetre de fraicheur, au maximum quinze minutes. La revocation des refresh
+tokens empeche ensuite son renouvellement. Une coupure Storage strictement
+immediate demanderait de supprimer les ecritures directes et de les faire
+passer par des callables ou URLs signees.
 
 ### 6.4 Emails transactionnels
 

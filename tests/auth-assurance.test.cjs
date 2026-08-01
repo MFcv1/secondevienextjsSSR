@@ -113,6 +113,16 @@ test('Google admin is accepted as AAL2 by the documented operational policy', ()
   assert.equal(checkStrongAdmin(caller).assurance.method, 'google');
 });
 
+test('Google alone cannot authorize a recent sensitive admin mutation', () => {
+  const { checkRecentStrongAdmin } = loadSecurity();
+  const caller = context(adminToken({ firebase: { sign_in_provider: 'google.com' } }));
+  assert.throws(() => checkRecentStrongAdmin(caller), (error) => (
+    error.code === 'failed-precondition'
+    && error.details?.reason === 'verified-passkey-required'
+    && error.details?.requiredMethod === 'passkey'
+  ));
+});
+
 test('strong authentication never replaces the admin role check', () => {
   const { checkStrongAdmin } = loadSecurity();
   const caller = context(adminToken({
@@ -164,8 +174,12 @@ test('token minting and Firebase rules carry the same AAL contract', () => {
   assert.match(otp, /authMethod:\s*'email_otp'[\s\S]*authAssurance:\s*'aal1'[\s\S]*userVerified:\s*false/);
   assert.match(firestoreRules, /function isStrongArtisan\(\)/);
   assert.match(firestoreRules, /function hasActiveAdminAccess\(\)/);
+  assert.match(firestoreRules, /function hasRecentVerifiedPasskey\(\)/);
+  assert.match(firestoreRules, /function isRecentPasskeyArtisan\(\)/);
   assert.match(firestoreRules, /documents\/sys_admin_access\/\$\(request\.auth\.uid\)/);
   assert.doesNotMatch(firestoreRules, /allow (?:read|write|create|update|delete|read, write|read, update, delete): if isArtisan\(\)/);
   assert.match(storageRules, /request\.auth\.token\.authAssurance == 'aal2'/);
   assert.match(storageRules, /request\.auth\.token\.userVerified == true/);
+  assert.match(storageRules, /request\.auth\.token\.authMethod == 'passkey'/);
+  assert.match(storageRules, /request\.auth\.token\.auth_time/);
 });

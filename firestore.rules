@@ -57,6 +57,20 @@ service cloud.firestore {
       return isArtisan() && hasStrongAuth() && hasActiveAdminAccess();
     }
 
+    function hasRecentVerifiedPasskey() {
+      return request.auth != null &&
+        request.auth.token.keys().hasAll(['authMethod', 'authAssurance', 'userVerified', 'auth_time']) &&
+        request.auth.token.authMethod == 'passkey' &&
+        request.auth.token.authAssurance == 'aal2' &&
+        request.auth.token.userVerified == true &&
+        request.auth.token.auth_time is int &&
+        request.auth.token.auth_time > request.time.toMillis() / 1000 - 900;
+    }
+
+    function isRecentPasskeyArtisan() {
+      return isArtisan() && hasActiveAdminAccess() && hasRecentVerifiedPasskey();
+    }
+
     function isProtectedMetadataDoc(docId) {
       return docId in [
         'stripe_connect',
@@ -85,7 +99,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId) || isStrongArtisan();
       allow create: if isOwner(userId) && ownerProfileCreateIsSafe();
-      allow update: if isStrongArtisan() || (isOwner(userId) && ownerProfileWriteIsSafe());
+      allow update: if isRecentPasskeyArtisan() || (isOwner(userId) && ownerProfileWriteIsSafe());
     }
 
     // Validation Helpers
@@ -104,14 +118,15 @@ service cloud.firestore {
     match /artifacts/{appId}/public/data/{collectionName}/{itemId} {
       allow read: if isStrongArtisan();
       allow create, delete: if false;
-      allow update: if isStrongArtisan() && isValidProduct() && productCommerceFieldsAreUnchanged();
+      allow update: if isRecentPasskeyArtisan() && isValidProduct() && productCommerceFieldsAreUnchanged();
 
     }
 
     // Newsletter Subscribers
     match /newsletter_subscribers/{docId} {
       allow create: if false; // Via Cloud Function uniquement
-      allow read, update, delete: if isStrongArtisan();
+      allow read: if isStrongArtisan();
+      allow update, delete: if isRecentPasskeyArtisan();
     }
 
     // Fonction Validation Cart
@@ -190,6 +205,10 @@ service cloud.firestore {
       }
 
       match /returns/{returnId} {
+        allow read, write: if false;
+      }
+
+      match /customer_return_requests/{requestId} {
         allow read, write: if false;
       }
 
@@ -294,7 +313,7 @@ service cloud.firestore {
     // System Metadata
     match /sys_metadata/{docId} {
       allow read: if isStrongArtisan() || isPublicMetadataDoc(docId);
-      allow write: if isStrongArtisan() && !isProtectedMetadataDoc(docId);
+      allow write: if isRecentPasskeyArtisan() && !isProtectedMetadataDoc(docId);
     }
 
     // Rate Limiting (Backend-Only)

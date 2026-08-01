@@ -76,3 +76,24 @@ export const listReturnsAdminV2 = async ({ pageSize = 50, cursor = null } = {}) 
   }
   return execute('listReturnsAdminV2', { pageSize, cursor });
 };
+
+export const listCustomerReturnRequestsAdminV2 = async ({ pageSize = 50, cursor = null } = {}) => {
+  if (!COMMERCE_V2_ADMIN_READERS_ENABLED) {
+    throw new Error('COMMERCE_V2_ADMIN_READERS_OFF');
+  }
+  return execute('listCustomerReturnRequestsAdminV2', { pageSize, cursor });
+};
+
+export const requestCustomerReturn = async ({
+  orderId,
+  requestId,
+  lines,
+  reason,
+  note = ''
+}) => execute('requestCustomerReturn', {
+  orderId,
+  requestId,
+  lines,
+  reason,
+  note,
+});

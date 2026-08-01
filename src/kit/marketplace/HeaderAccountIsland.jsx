@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { LogOut, ShieldCheck } from 'lucide-react';
 import { useAuthState } from '../contexts/AuthContext';
 import { initializeAuthStore, resetAuthStoreAfterSignOut, syncAuthStoreUser } from '../auth/authStore';
+import { hasAuthRedirectPending } from '../auth/redirectState';
 
 const LegacyLoginModalIsland = dynamic(() => import('./LegacyLoginModalFullIsland'), {
   ssr: false,
@@ -14,21 +15,6 @@ const LegacyLoginModalIsland = dynamic(() => import('./LegacyLoginModalFullIslan
 export const preloadLoginModal = () => {
   LegacyLoginModalIsland.preload?.();
   return import('./LegacyLoginModalFullIsland').catch(() => null);
-};
-
-const REDIRECT_KEY = 'kit_auth_redirect_pending';
-const LEGACY_GOOGLE_REDIRECT_KEY = 'kit_google_redirect_pending';
-
-const hasAuthRedirectPending = () => {
-  if (typeof window === 'undefined') return false;
-  try {
-    return (
-      window.sessionStorage.getItem(REDIRECT_KEY) === 'true' ||
-      window.sessionStorage.getItem(LEGACY_GOOGLE_REDIRECT_KEY) === 'true'
-    );
-  } catch {
-    return false;
-  }
 };
 
 const hasPersistedFirebaseUser = () => {

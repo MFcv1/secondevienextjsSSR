@@ -116,8 +116,8 @@ header/menu/route privee
   `-- passkey -> 4 callables WebAuthn [F] -> users/{uid}/passkeys [DB]
   -> loginWithCustomToken (retry reseau borne, meme token garde en memoire)
   -> etat partage header/menu/espace client
-  -> session admin persistante pour les lectures
-  -> mutation sensible expiree -> evenement step-up -> meme modale, sans signOut
+  -> Google diagnostique et session admin persistante pour les lectures
+  -> mutation sensible -> passkey UV recente -> evenement step-up, sans signOut
 ```
 
 Reference visuelle et cycle de vie:
@@ -151,8 +151,13 @@ carte produit
   -> document client: modale mobile/desktop -> prepareCommerceDocumentDelivery [F]
      -> Auth/App Check + UID proprietaire -> PDF immutable prive [ST]
      -> ouvrir/enregistrer/partager [C] + copie e-mail outbox dedupliquee
-  -> demande client de retour contextualisee vers l'atelier
-     -> decision refund/retour physique conservee cote admin serveur
+  -> demande client de retour persistante [F]
+     -> orders/{orderId}/customer_return_requests/{requestId} [DB]
+     -> outbox notification administrateur [DB]
+     -> Retours admin: rembourser maintenant si custody=merchant
+        ou autoriser le retour si custody=carrier/customer
+     -> reception + disposition + resolution du retour physique
+     -> remboursement Stripe seulement apres inspection dans ce second parcours
 
 confinement Gate 0B SANDBOX_ACTIVE
   |-- createOrder/manual/deferred -> refus fail-closed avant effet
@@ -382,7 +387,9 @@ src/
 src/kit/
 |-- auth/
 |   |-- authStore.js .................. source et abonnement session UI
-|   `-- customTokenSignIn.js .......... reprise reseau bornee du Custom Token
+|   |-- customTokenSignIn.js .......... reprise reseau bornee du Custom Token
+|   |-- googleAuthDiagnostics.js ...... classification et historique local sanitise Google
+|   `-- redirectState.js .............. marqueur redirect borne, session/localStorage resilient
 |-- contexts/
 |   `-- AuthContext.jsx ............... login Google/OTP/passkey et session
 |-- config/
@@ -515,7 +522,7 @@ src/kit/admin/
 |-- AdminStudio.jsx ................... studio contenu
 |-- AdminHomepage.jsx ................. personnalisation publique
 |-- AdminOrders.jsx ................... ventes/logistique, modale expedition/suivi
-|-- AdminReturns.jsx .................. remboursements + retours physiques detailles
+|-- AdminReturns.jsx .................. demandes client + remboursements + retours physiques detailles
 |-- AdminLivraison.jsx ................ configuration livraison
 |-- AdminUsers.jsx .................... comptes/acces admin
 |-- AdminIPManager.jsx ................ configuration IP complementaire
@@ -529,7 +536,7 @@ src/kit/admin/
 |-- BillingOnboardingOperator.jsx ..... validation/reinitialisation admin forte
 |-- analyticsReliability.js ........... fiabilite/checkpoints
 |-- exportCsv.js ...................... exports
-|-- adminCommerceData.js .............. premiere page partagee Ventes/Retours et prechargement de session
+|-- adminCommerceData.js .............. premiere page commandes/demandes/retours et prechargement de session
 |-- adminDataCache.js ................. cache memoire borne Stats/Ventes/Retours
 |-- adminPublicCatalog.js ............. lecture snapshot admin sans cache persistant
 `-- components/
@@ -646,6 +653,7 @@ functions/
     |   |-- v2DocumentDelivery.js .......... acces PDF proprietaire + outbox bornee
     |   |-- v2RefundCommands.js ............ callable refund exportee, controle mutations off
     |   |-- v2ReturnCommands.js ............ callables retours exportees, controle mutations off
+    |   |-- v2CustomerReturnRequests.js .... demande client + decisions admin vers refund/retour existants
     |   |-- stripeWebhook.js
     |   |-- stripeConnect.js
     |   |-- cancelOrder.js
@@ -695,7 +703,8 @@ functions/
 | Domaine | Exports |
 | --- | --- |
 | commerce | `createOrder`, `stripeWebhook`, `stripeConnectWebhook`, `cancelOrderClient`, `getOrderStatusClient` |
-| commerce v2 checkout/lecture | `createCheckoutV2`, `resumeCheckoutV2`, `listMyOrdersV2`, `prepareCommerceDocumentDelivery`, `listOrdersAdminV2`, `getOrderTimelineAdminV2`, `listReturnsAdminV2` |
+| commerce v2 checkout/lecture | `createCheckoutV2`, `resumeCheckoutV2`, `listMyOrdersV2`, `prepareCommerceDocumentDelivery`, `requestCustomerReturn`, `listOrdersAdminV2`, `getOrderTimelineAdminV2`, `listReturnsAdminV2`, `listCustomerReturnRequestsAdminV2` |
+| commerce v2 retours client | `decideCustomerReturnRequestAdmin`, puis commandes refund/retour v2 existantes selon le parcours choisi |
 | commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
 | commerce v2 produit | `preflightProductMutationAdmin`, `createProductAdmin`, `updateProductOfferAdmin`, `publishProductAdmin`, `adjustInventoryAdmin`, `archiveProductAdmin` |
 | refunds/Connect | `refundOrderAdmin`, `syncRefundStatusAdmin`, `getStripeConnectStatus`, `startStripeConnectOnboarding`, `syncStripeConnectAccount`, `requestStripeConnectReconnect`, `confirmStripeConnectReconnect` |
@@ -722,6 +731,7 @@ Firestore
 |-- orders/{orderId}
 |   |-- documents/{documentId} ........ recus sandbox non fiscaux immutables
 |   |   `-- artifacts/current ......... chemin/hash/taille PDF backend-only
+|   |-- customer_return_requests/{requestId} . demande client et decision admin, backend-only
 |   `-- returns/{returnId} ............ retours physiques, index group updatedAt
 |-- commerce_document_delivery_limits/{uidHash}_{day} . quota backend-only
 |-- commerce_financial_facts/{factId} . faits financiers append-only

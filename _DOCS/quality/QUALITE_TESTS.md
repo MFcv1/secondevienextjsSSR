@@ -42,7 +42,8 @@ Etat `CODE_READY`:
 - `test:commerce:containment` compte les effets et prouve le hard-stop Gate 0B;
 - `test:commerce:rules:containment` utilise Firestore + Storage Emulator;
 - `test:commerce:unit` valide schema, reducer, projections, compatibilite,
-  actions serveur et retours quantitatifs;
+  actions serveur, retours quantitatifs et separation entre demande client,
+  retour physique et remboursement Stripe;
 - `test:commerce:ui` valide les transports/consommateurs Gates 4 et 5, le
   contrat checkout sans prix client, l'identite Auth serveur et l'absence de
   writer SDK sur les surfaces v2;
@@ -89,12 +90,15 @@ precede l'activation sandbox read-only.
 npm run test:auth
 ```
 
-Suite actuelle (58 contrats, dont la reprise OTP apres erreur transitoire et le
-prechargement Google anti-popup orpheline):
+Suite actuelle (68 contrats, dont la reprise OTP apres erreur transitoire, le
+prechargement Google fail-closed, le diagnostic transport borne et la passkey
+obligatoire pour les mutations administrateur sensibles):
 
 ```text
 auth-claims.test.cjs
 auth-store-contract.test.cjs
+auth-custom-token-sign-in.test.mjs
+auth-google-diagnostics.test.mjs
 auth-unified-otp-contract.test.cjs
 auth-backend-transitions.test.cjs
 auth-admin-revocation.test.cjs
@@ -105,7 +109,9 @@ passkey-portability-contract.test.cjs
 passkey-server-hardening.test.cjs
 ```
 
-Les contrats testent la source de session, les transitions OTP, l'idempotence, la revocation, AAL2, les regions, l'adaptateur e-mail et WebAuthn.
+Les contrats testent la source de session, les transitions OTP, l'idempotence,
+la revocation, la separation Google-lecture/passkey-mutation, les diagnostics
+sans donnee brute, les regions, l'adaptateur e-mail et WebAuthn.
 
 Le contrat analytics importe le verificateur du moteur Tous a Table et controle la deduplication UID/IP, les fenetres temporelles, la coherence KPI/courbe/groupes, le masquage IP et le jeton de reprise:
 

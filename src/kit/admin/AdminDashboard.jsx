@@ -404,7 +404,7 @@ const KpiCard = ({
                             —
                         </span>
                     ) : (
-                        <p className={`text-[clamp(2rem,3.8vw,3.7rem)] font-semibold leading-none tracking-[-0.055em] tabular-nums ${darkMode ? 'text-white' : 'text-[#22221f]'}`}>
+                        <p className={`whitespace-nowrap text-[clamp(2rem,3.8vw,3.7rem)] font-semibold leading-none tracking-[-0.055em] tabular-nums ${darkMode ? 'text-white' : 'text-[#22221f]'}`}>
                             <AnimatedNumber value={value} format={format} />
                         </p>
                     )}
@@ -426,9 +426,9 @@ const StatusDonut = ({ counts, darkMode }) => {
     const total = counts.paid + counts.pending + counts.shipped;
     const reducedMotion = useReducedMotion();
     const segments = [
-        { key: 'paid', label: 'Payées', value: counts.paid, color: '#4f9870', radius: 58 },
-        { key: 'shipped', label: 'Expédiées', value: counts.shipped, color: '#4e88c7', radius: 47 },
-        { key: 'pending', label: 'En attente', value: counts.pending, color: '#dc921f', radius: 36 }
+        { key: 'paid', label: 'Payées', value: counts.paid, color: '#4f9870', radius: 62 },
+        { key: 'shipped', label: 'Expédiées', value: counts.shipped, color: '#4e88c7', radius: 51 },
+        { key: 'pending', label: 'En attente', value: counts.pending, color: '#dc921f', radius: 40 }
     ];
     const trackFraction = 0.78;
     const startAngle = 130;

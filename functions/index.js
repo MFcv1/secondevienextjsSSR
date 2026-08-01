@@ -65,6 +65,10 @@ const {
     requestRefundAdmin
 } = require('./src/commerce/v2RefundCommands');
 const {
+    decideCustomerReturnRequestAdmin,
+    requestCustomerReturn
+} = require('./src/commerce/v2CustomerReturnRequests');
+const {
     cancelReturnAdmin,
     markReturnReceivedAdmin,
     openReturnAdmin,
@@ -80,6 +84,7 @@ const {
     getOrderTimelineAdminV2,
     listMyOrdersV2,
     listOrdersAdminV2,
+    listCustomerReturnRequestsAdminV2,
     listReturnsAdminV2
 } = require('./src/commerce/v2OrderQueries');
 const {
@@ -110,6 +115,8 @@ exports.updateOrderTrackingAdmin = updateOrderTrackingAdmin;
 exports.requestOrderCancellation = requestOrderCancellation;
 exports.prepareCommerceDocumentDelivery = prepareCommerceDocumentDelivery;
 exports.requestRefundAdmin = requestRefundAdmin;
+exports.decideCustomerReturnRequestAdmin = decideCustomerReturnRequestAdmin;
+exports.requestCustomerReturn = requestCustomerReturn;
 exports.cancelReturnAdmin = cancelReturnAdmin;
 exports.markReturnReceivedAdmin = markReturnReceivedAdmin;
 exports.openReturnAdmin = openReturnAdmin;
@@ -121,6 +128,7 @@ exports.resumeCheckoutV2 = resumeCheckoutV2;
 exports.getOrderTimelineAdminV2 = getOrderTimelineAdminV2;
 exports.listMyOrdersV2 = listMyOrdersV2;
 exports.listOrdersAdminV2 = listOrdersAdminV2;
+exports.listCustomerReturnRequestsAdminV2 = listCustomerReturnRequestsAdminV2;
 exports.listReturnsAdminV2 = listReturnsAdminV2;
 exports.cleanupFixtureRunAdmin = cleanupFixtureRunAdmin;
 exports.commerceOperationsReconciler = commerceOperationsReconciler;

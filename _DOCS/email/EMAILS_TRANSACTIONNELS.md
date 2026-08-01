@@ -183,6 +183,18 @@ la confirmation d'expedition.
 
 ![Commande livree](captures/09-commande-livree.png)
 
+### 7.6 Nouvelle demande client de retour
+
+Modele: `customer-return-requested-admin`
+
+La creation durable d'une demande depuis `/mes-commandes` programme une seule
+notification operationnelle vers l'adresse administrateur du provider
+transactionnel. Le message contient la commande, le client, le motif et un
+bouton vers le back-office. Il indique le parcours conseille selon la garde
+serveur: remboursement direct si la piece est encore a l'atelier, sinon retour
+physique avant remboursement. L'e-mail n'est jamais la source de verite; le
+dossier `customer_return_requests` reste visible meme si l'envoi echoue.
+
 ## 8. Remboursements
 
 Un remboursement confirme ou echoue cree deux messages distincts: un pour le

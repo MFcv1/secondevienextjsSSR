@@ -204,10 +204,18 @@ font pas partie de cette stabilisation.
 
 Passe UX du 2026-07-30: le contrat checkout accepte desormais un telephone
 optionnel, borne a 40 caracteres, et le persiste dans le snapshot de livraison.
-Il reste non autoritaire pour toute donnee financiere. La demande de retour
-depuis l'espace client est un contact contextualise avec l'atelier: le
-remboursement Stripe, la reception physique et le restock restent exclusivement
-des transitions serveur/admin protegees.
+Il reste non autoritaire pour toute donnee financiere.
+
+Depuis le 2026-08-01, la demande de retour depuis l'espace client est un
+dossier persistant `customer_return_requests`, et non plus un `mailto:`. Elle
+cree une notification outbox administrateur et rejoint l'onglet Retours. Deux
+decisions admin reutilisent les rails v2 existants: remboursement direct
+uniquement lorsque `fulfillmentSummary.custody=merchant`, ou autorisation du
+retour lorsque la piece a quitte l'atelier. Dans ce second parcours, le refund
+Stripe n'est disponible qu'apres reception, disposition d'inspection et
+resolution du dossier physique. Le stock reste une decision separee. Le code
+et les tests sont locaux; aucun deploiement ni activation `adminMutationMode=v2`
+n'en decoule.
 
 ## 9. Ce qui reste avant une ouverture publique
 

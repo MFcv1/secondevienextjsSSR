@@ -62,8 +62,31 @@ test('Google popup is prepared before the user click and concurrent requests are
   assert.match(modal, /void preloadGoogleLogin\(\)/);
   assert.match(modal, /googleStatus === 'pending' \|\| googleStatus === 'preparing'/);
   assert.match(modal, /disabled=\{googleStatus === 'preparing' \|\| googleStatus === 'pending'\}/);
+  assert.match(modal, /setGoogleStatus\('preload-error'\)/);
   assert.match(adminLogin, /void preloadGoogleLogin\(\)/);
-  assert.match(adminLogin, /disabled=\{googleStatus !== 'ready'\}/);
+  assert.match(adminLogin, /disabled=\{googleStatus === 'preparing' \|\| googleStatus === 'pending'\}/);
+  assert.match(adminLogin, /setGoogleStatus\('preload-error'\)/);
+  assert.match(context, /auth\/google-not-prepared/);
+  assert.match(context, /recordGoogleAuthDiagnostic/);
+});
+
+test('Google failures are diagnosed without persisting raw Firebase details', () => {
+  const diagnostics = read('src/kit/auth/googleAuthDiagnostics.js');
+  assert.match(diagnostics, /auth\.google\.\$\{phase\}/);
+  assert.match(diagnostics, /GOOGLE_AUTH_DIAGNOSTICS_LIMIT = 12/);
+  assert.match(diagnostics, /classifyGoogleAuthError/);
+  assert.doesNotMatch(diagnostics, /underlyingMessage[,}]/);
+});
+
+test('redirect state tolerates restricted session storage and expires its fallback', () => {
+  const redirectState = read('src/kit/auth/redirectState.js');
+  const authStore = read('src/kit/auth/authStore.js');
+  assert.match(redirectState, /\['sessionStorage', 'localStorage'\]/);
+  assert.match(redirectState, /const storage = window\[storageName\]/);
+  assert.match(redirectState, /REDIRECT_STATE_TTL_MS = 10 \* 60 \* 1000/);
+  assert.match(redirectState, /catch \{/);
+  assert.match(authStore, /hasAuthRedirectPending\(\)/);
+  assert.match(authStore, /clearAuthRedirectPending\(\)/);
 });
 
 test('sign out is committed only after Firebase signOut resolves', () => {

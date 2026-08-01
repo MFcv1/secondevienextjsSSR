@@ -1,8 +1,11 @@
 'use client';
 
 import { getFirebaseAuth, loadAuthModule } from '../config/firebaseLazy';
+import {
+  clearAuthRedirectPending,
+  hasAuthRedirectPending,
+} from './redirectState';
 
-const REDIRECT_KEYS = ['kit_auth_redirect_pending', 'kit_google_redirect_pending'];
 const AUTH_ROUTES = ['/admin', '/checkout', '/wishlist', '/mes-commandes'];
 const AUTH_CHANNEL = 'secondevie-auth';
 const AUTH_SIGNAL_KEY = 'sv:auth-signal';
@@ -102,18 +105,13 @@ const broadcastAuthStatus = (status) => {
 
 export const hasAuthSessionHint = () => {
   if (typeof window === 'undefined') return false;
+  if (hasAuthRedirectPending()) return true;
   try {
-    if (REDIRECT_KEYS.some((key) => window.sessionStorage.getItem(key) === 'true')) return true;
     if (Object.keys(window.localStorage).some((key) => key.startsWith('firebase:authUser:'))) return true;
   } catch {
     // Storage can be unavailable in hardened/private browsing contexts.
   }
   return AUTH_ROUTES.some((path) => window.location.pathname.startsWith(path));
-};
-
-const clearRedirectPending = () => {
-  if (typeof window === 'undefined') return;
-  REDIRECT_KEYS.forEach((key) => window.sessionStorage.removeItem(key));
 };
 
 const syncClaims = async (user) => {
@@ -184,11 +182,11 @@ export const initializeAuthStore = ({ forceInitialize = false } = {}) => {
   runtime.initializePromise = (async () => {
     const auth = await getFirebaseAuth();
     const { getRedirectResult, onIdTokenChanged } = await loadAuthModule();
-    if (REDIRECT_KEYS.some((key) => window.sessionStorage.getItem(key) === 'true')) {
+    if (hasAuthRedirectPending()) {
       try {
         await getRedirectResult(auth);
       } finally {
-        clearRedirectPending();
+        clearAuthRedirectPending();
       }
     }
     runtime.unsubscribe = onIdTokenChanged(auth, (user) => syncAuthStoreUser(user || null));

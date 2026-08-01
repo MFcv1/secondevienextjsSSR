@@ -65,7 +65,10 @@ function strongAdmin(environment, uid = 'admin-1') {
     admin: true,
     email: `${uid}@example.test`,
     email_verified: true,
-    firebase: { sign_in_provider: 'google.com' },
+    authMethod: 'passkey',
+    authAssurance: 'aal2',
+    userVerified: true,
+    auth_time: Math.floor(Date.now() / 1000),
   });
 }
 

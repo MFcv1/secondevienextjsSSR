@@ -173,6 +173,19 @@ les remboursements deja projetes dans les commandes. Cet index a ete deploye
 sur le sandbox `secondevienextjsssr` le 2026-07-29 apres confirmation dans les
 logs de l'erreur Firestore `FAILED_PRECONDITION`.
 
+Depuis le 2026-08-01, Retours charge aussi la file bornee
+`orders/{orderId}/customer_return_requests/{requestId}` avec
+`listCustomerReturnRequestsAdminV2`. Une demande client est separee du refund
+Stripe et du retour physique. L'administratrice choisit soit `Rembourser
+maintenant` lorsque la garde serveur est encore `merchant`, soit `Autoriser le
+retour` lorsque la garde est `carrier` ou `customer`. Le second choix cree le
+dossier physique quantitatif existant; `Rembourser apres inspection` reste
+indisponible jusqu'a sa reception, sa disposition (`restock` ou `write_off`)
+et sa resolution. Un refus est trace sans appel Stripe. Les decisions restent
+derriere `adminMutationMode=v2`; l'etat sandbox courant `read_only` est
+inchange. L'index collection-group `customer_return_requests.updatedAt` est
+declare mais non deploye par ce changement local.
+
 La lecture admin joint au plus la derniere tentative
 `orders/{orderId}/refunds/{refundRequestId}` pour chaque commande remboursee
 ou en rapprochement. Elle expose uniquement la reference, le montant, les

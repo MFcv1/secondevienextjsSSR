@@ -141,6 +141,22 @@ export const requestRefundAdmin = (
   }
 );
 
+export const decideCustomerReturnRequestAdmin = (
+  request,
+  decision,
+  reason
+) => execute(
+  COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED,
+  'COMMERCE_V2_ADMIN_RETURN_COMMANDS_OFF',
+  'decideCustomerReturnRequestAdmin',
+  {
+    orderId: request.orderId,
+    requestId: request.requestId,
+    decision,
+    reason,
+  }
+);
+
 const returnCommand = (
   functionName,
   action,
