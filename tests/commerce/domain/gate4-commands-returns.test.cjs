@@ -338,7 +338,7 @@ test('product archive is a soft terminal state and never deletes history', () =>
     assert.equal(archived.commerceVersion, 6);
 });
 
-test('product callable transport is exported but server-control dormant', () => {
+test('product callable transport stays available to active strong admins outside commerce windows', () => {
     const transport = fs.readFileSync(
         path.join(repositoryRoot, 'functions/src/commerce/v2ProductCommands.js'),
         'utf8'
@@ -373,10 +373,12 @@ test('product callable transport is exported but server-control dormant', () => 
     assert.ok(transport.includes('checkActiveStrongAdmin(context)'));
     assert.equal(transport.includes('checkRecentActiveStrongAdmin(context)'), false);
     assert.ok(transport.includes('enforceAppCheck: true'));
-    assert.ok(transport.includes('withCommerceMutationsEnabled'));
+    assert.equal(transport.includes('withCommerceMutationsEnabled'), false);
     assert.ok(client.includes('COMMERCE_V2_ADMIN_COMMANDS_ENABLED = true'));
-    assert.ok(adminIsland.includes('isCommerceReadOnlyTab(adminCollection, commerceMutationsEnabled)'));
-    assert.ok(adminIsland.includes("adminMutationMode === 'v2'"));
+    assert.equal(adminIsland.includes('CommerceReadOnlySurface'), false);
+    assert.equal(adminIsland.includes('COMMERCE_READ_ONLY_TABS'), false);
+    assert.ok(adminIsland.includes('<AdminOrders'));
+    assert.ok(adminIsland.includes('mutationsEnabled'));
     assert.equal(adminIsland.includes('deleteDoc'), false);
     assert.equal(adminIsland.includes('updateDoc'), false);
     assert.equal(adminForm.includes('addDoc'), false);

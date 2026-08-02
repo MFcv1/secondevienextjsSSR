@@ -30,8 +30,6 @@ const DELIVERY_SETTINGS_CACHE_KEY = 'secondevie:delivery-settings:v1';
 const PAYMENT_SETTINGS_CACHE_KEY = 'paymentSettings';
 const CheckoutStripeModal = lazy(() => import('./CheckoutStripeModal'));
 const RELIABLE_EMAIL_PROVIDER_IDS = new Set(['google.com']);
-const COMMERCE_READ_ONLY = !COMMERCE_V2_CONSUMERS_ENABLED;
-
 const normalizeCheckoutEmail = (email) => String(email || '').trim().toLowerCase();
 const getCheckoutItemsTotal = (items = []) => (
     items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0)
@@ -839,23 +837,6 @@ const CheckoutView = ({
             locale: 'fr',
         };
     }, [clientSecret, darkMode]);
-
-    if (COMMERCE_READ_ONLY) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-transparent px-6 py-16">
-                <div className={`max-w-xl rounded-3xl border p-8 text-center shadow-xl ${darkMode ? 'border-stone-800 bg-stone-900 text-white' : 'border-stone-200 bg-white text-stone-900'}`}>
-                    <AlertCircle size={34} className="mx-auto text-amber-500" />
-                    <h2 className="mt-5 text-2xl font-black">Paiement temporairement indisponible</h2>
-                    <p className={`mt-3 text-sm leading-6 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
-                        Nous ne pouvons pas accepter de nouvelle commande pour le moment. Revenez dans quelques instants.
-                    </p>
-                    <button type="button" onClick={onBack} className="mt-6 rounded-xl bg-stone-900 px-5 py-3 text-xs font-bold uppercase tracking-widest text-white">
-                        Retourner a la galerie
-                    </button>
-                </div>
-            </div>
-        );
-    }
 
     if (checkoutState === 'fetching_stripe' && recoveryExpected && !clientSecret) {
         return (

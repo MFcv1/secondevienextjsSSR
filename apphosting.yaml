@@ -109,16 +109,6 @@ env:
     availability:
       - BUILD
       - RUNTIME
-  - variable: NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI
-    value: "false"
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: NEXT_PUBLIC_COMMERCE_V2_UI
-    value: "true"
-    availability:
-      - BUILD
-      - RUNTIME
   - variable: NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_SCOPE_VERSION
     value: "fixture_gate6_20260728"
     availability:

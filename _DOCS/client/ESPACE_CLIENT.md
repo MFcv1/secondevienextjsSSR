@@ -1,6 +1,6 @@
 # Espace client
 
-Derniere mise a jour: 2026-08-01
+Derniere mise a jour: 2026-08-02
 Statut: `PREPROD_READY`
 
 Restriction active:
@@ -26,8 +26,8 @@ et non indexable pour les liens emis par l'administration. Elle collecte les
 coordonnees et affiche Stripe sans creer de compte ni ouvrir de session Auth.
 La commande est confirmee et recapitulée par e-mail mais n'apparait pas
 automatiquement dans `/mes-commandes`, dont la lecture reste liee a un UID
-authentifie. Ce rail est deploye sur le sandbox depuis le 2026-08-01 mais reste
-dormant tant que les controls commerce sont `v2_fixture/read_only`.
+authentifie. Ce rail est deploye sur le sandbox depuis le 2026-08-01 et actif
+depuis le 2026-08-02 avec les controls `v2_all/v2` et Stripe test.
 
 ## 2. Sections de Mon espace
 

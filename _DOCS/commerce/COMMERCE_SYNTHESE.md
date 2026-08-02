@@ -1,6 +1,6 @@
 # Synthese du noyau commerce
 
-Derniere mise a jour: 2026-08-01
+Derniere mise a jour: 2026-08-02
 Statut: `POINT_ENTREE_COMMERCE`
 Qualification actuelle: `PREPROD_TRANSACTIONAL_READY`
 
@@ -51,12 +51,11 @@ Elle ne constitue pas:
 - une validation fiscale, comptable ou juridique;
 - une validation du domaine final, du DNS ou de Resend.
 
-Le rail admin de liens de paiement sans compte est `SANDBOX_DEPLOYED_DORMANT`
+Le rail admin de liens de paiement sans compte est deploye sur le sandbox
 depuis le 2026-08-01. Il reutilise les orders, reservations, PaymentIntent,
-webhooks et outboxes v2; il n'elargit pas la qualification precedente. Son
-secret HMAC, ses Functions, ses index et sa route App Hosting sont deployes,
-mais les controls restent `v2_fixture/read_only`: aucune creation de lien ou
-transaction publique n'est activee.
+webhooks et outboxes v2. Depuis le 2026-08-02, le sandbox est active en
+`v2_all` avec mutations admin `v2` pour une batterie de tests fonctionnels;
+Stripe reste exclusivement en mode test.
 
 ## 3. Ce qui a ete realise par Gate
 
@@ -155,18 +154,16 @@ Release fonctionnel Gate 8:
   `sv-ms56blql-cbe19551502f`;
 - commit de cloture documentaire: `3a4bd99`.
 
-## 6. Etat de securite et de fermeture
+## 6. Etat fonctionnel du sandbox
 
-Apres la recette:
+Depuis la decision du 2026-08-02:
 
-- `NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI=false`;
-- `NEXT_PUBLIC_COMMERCE_V2_UI=false`;
-- `adminMutationMode=read_only`;
+- le checkout v2 est toujours expose dans le build sandbox;
+- `adminMutationMode=v2`;
 - `offlinePaymentMode=off`;
-- `newCheckoutMode=v2_fixture` reste borne a
-  `fixture_gate6_20260728`;
+- `newCheckoutMode=v2_all`;
 - les produits de test restent `e2eOnly` et exclus du catalogue public;
-- Stripe est exclusivement en mode test;
+- Stripe est exclusivement en mode test et aucun secret live n'est attendu;
 - l'endpoint Connect sandbox qualifie est
   `stripeConnectWebhookV2` en `europe-west1`;
 - commandes, faits financiers, mouvements, audits et documents n'ont pas ete

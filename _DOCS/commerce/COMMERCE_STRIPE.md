@@ -1,18 +1,18 @@
 # Commerce, checkout et Stripe
 
-Derniere mise a jour: 2026-08-01
+Derniere mise a jour: 2026-08-02
 Statut: `PREPROD_TRANSACTIONAL_READY`
 
-Restriction active:
+Etat actif:
 
 > Les Gates 0A a 8 sont fermees en sandbox depuis le 2026-07-28. La recette
 > humaine Gate 8 a qualifie paiement accepte, refus/retry, 3DS, reprise,
 > annulation provider-first, concurrence stock, commandes client, fulfillment,
 > refund, retour/restock, suspension de policy, e-mails, documents et
 > rapprochement. Le statut `PREPROD_TRANSACTIONAL_READY` reste strictement
-> borne au sandbox et aux fixtures. L'UI fixture est refermee, les mutations
-> admin sont `read_only`, le paiement offline est `off`; ni `v2_all`, ni Stripe
-> live, ni un rail production ne sont autorises.
+> borne au sandbox. Depuis le 2026-08-02, `v2_all` et les mutations admin sont
+> actifs pour les tests fonctionnels publication/achat. Le paiement offline
+> reste `off`; Stripe live et le rail production ne sont pas autorises.
 
 ## 1. Perimetre
 
@@ -456,33 +456,33 @@ les memes transactions que commande, reservation, produit, mouvement et audit.
 L'annulation provider-first possede maintenant un audit convergent. Le rail
 produit separe creation en brouillon, offre/prix, stock versionne, publication
 et archive souple; il refuse les collections non autorisees et conserve un
-audit par commande. Le transport callable est exporte avec App Check et verrou
-serveur; le cablage admin produit reste sous un flag compile a `false`.
+audit par commande. Le transport callable est exporte avec App Check; le
+cablage admin produit est actif et independant du control transactionnel.
 Le transport callable fulfillment/archive commande est egalement prepare avec
 App Check, registre admin actif et AAL2 recent; son acteur est derive du
 contexte Auth; il est exporte mais son verrou serveur et son branchement UI
-conditionne par `adminMutationMode=v2` interdisent toute mutation dans l'etat
+conditionne par `adminMutationMode=v2` autorisent les mutations dans l'etat
 sandbox courant. Le transport
 d'annulation client provider-first est prepare avec App Check et secret Stripe;
 le proprietaire vient exclusivement du contexte Auth et le runtime minimal ne
-branche que la coordination d'annulation. Il est exporte, verrouille `off` et
-sans affordance UI. Le
+branche que la coordination d'annulation. Il est exporte et actif dans l'UI
+sandbox. Le
 transport refund admin est egalement prepare avec App Check, secret Stripe,
 registre admin actif et AAL2 recent; il derive l'acteur du contexte Auth et
-branche un runtime minimal sur la saga refund reprenable. Il est exporte,
-verrouille `off` et sans UI. Les transports retour admin sont prepares sous
+branche un runtime minimal sur la saga refund reprenable. Il est exporte et
+actif dans l'UI sandbox. Les transports retour admin sont prepares sous
 App Check, registre
 admin actif et AAL2 recent: ouverture, annulation, reception, restock,
 write-off et resolution sont des commandes fermees, versionnees et
 quantitatives, avec acteur derive du contexte Auth et runtime minimal. Ils
-sont exportes mais bloques par le controle serveur. Les interfaces fulfillment,
+sont exportes et autorises par le controle serveur sandbox. Les interfaces fulfillment,
 annulation, refund et retour sont compilees mais ne sont exposees par
 `AdminAppIsland` que lorsque le control plane autorise `adminMutationMode=v2`;
 le flag public checkout ne pilote plus les commandes admin. Livraison et Paiement
 n'ecrivent plus directement les champs commerce. Ces actions ont ensuite ete
-ouvertes uniquement pendant la fenetre Gate 8, puis refermees.
+ouvertes durablement sur le sandbox depuis le 2026-08-02.
 
-Gate 5 est `SANDBOX_ACTIVE_READ_ONLY`. Le transport fournit
+Gate 5 est `SANDBOX_TRANSACTIONAL_ACTIVE`. Le transport fournit
 `createCheckoutV2`, `resumeCheckoutV2` et des lecteurs commandes/retours
 pagines par UID ou admin fort. Cote navigateur, un controller unique suit
 `stateVersion`; la reprise 3DS/reload est lue avant les gardes panier,
@@ -491,11 +491,10 @@ portent `cartLineId/cartRevision`; le succes exige
 `payment.status=succeeded`, s'affiche avant nettoyage et ne supprime que les
 lignes achetees demeurees identiques. `MyOrdersView` utilise le reader UID et
 sa pagination; les readers commandes et retours admin sont egalement actifs,
-avec un adaptateur v1 explicitement read-only. Les transports Gate 5 restent
-exportes. Le controle serveur reste borne a `newCheckoutMode=v2_fixture` pour
-le scope epingle; tous les flags de commande publics sont revenus a `false`,
-les mutations admin restent `read_only` cote serveur et le paiement offline
-est `off`.
+avec un adaptateur v1 historique explicitement read-only. Les transports Gate 5
+restent exportes. Le controle serveur sandbox est `newCheckoutMode=v2_all`,
+les commandes publiques et admin sont actives, et le paiement offline reste
+`off`.
 
 Gate 7A ajoute les projections financieres absolues, les recus sandbox
 explicitement non fiscaux, l'outbox avec leases/dead-letter et statut
@@ -561,10 +560,10 @@ secret serveur `PAYMENT_LINK_HMAC_SECRET`. La lecture publique exige la
 signature HMAC et App Check. Les e-mails d'une commande sans compte contiennent
 le recapitulatif mais ne pointent pas vers `/mes-commandes`.
 
-Etat au 2026-08-01: code, tests unitaires, route, onglet, index, secret HMAC et
-Functions deployes sur le sandbox depuis le commit `bd86467`. Les smokes HTTP
-et App Check sont verts. Aucun flag n'a ete active, les controls restent
-`v2_fixture/read_only`, et aucune transaction sandbox ou live n'a ete executee.
+Etat au 2026-08-02: code, tests unitaires, route, onglet, index, secret HMAC et
+Functions deployes sur le sandbox. Les smokes HTTP et App Check sont verts. Les
+controls sont `v2_all/v2`, le paiement offline est `off` et Stripe reste en
+mode test; aucune transaction live n'est autorisee.
 
 ## 13. Conditions production
 

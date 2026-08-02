@@ -1,13 +1,14 @@
 # Back-office
 
-Derniere mise a jour: 2026-08-01
+Derniere mise a jour: 2026-08-02
 Statut: `PREPROD_READY`
 
-Restriction active:
+Etat actif:
 
-> Le control plane commerce v2 a ete qualifie en Gate 8 sur fixtures avec
-> App Check et admin AAL2. Apres recette, les mutations admin sont revenues en
-> `read_only`; leur activation publique ou live reste interdite.
+> Le sandbox est fonctionnel en `v2_all` avec mutations admin actives pour les
+> tests publication, commandes, fulfillment, remboursements et retours.
+> App Check, registre admin, AAL2, idempotence et audit restent obligatoires.
+> Stripe live et la production ne sont pas actifs.
 
 ## 1. Architecture
 
@@ -60,10 +61,11 @@ Le catalogue public court (`scope=cards&limit=120`) est charge paresseusement un
 
 `AdminForm` gere les champs produit, la compression/upload image, les variantes et la sauvegarde. `AdminItemList` affiche les annonces. `GlobalInventoryView` pilote les classements editoriaux.
 
-Des que les mutations catalogue deviennent disponibles, puis de nouveau avant
-le premier upload, `AdminForm` appelle `preflightProductMutationAdmin`. Le
-serveur confirme `adminMutationMode=v2`, App Check, le registre admin actif et
-une authentification forte AAL2. Les commandes produit courantes n'imposent
+Avant le premier upload, `AdminForm` appelle
+`preflightProductMutationAdmin`. Le serveur confirme App Check, le registre
+admin actif et une authentification forte AAL2. La publication catalogue est
+independante de `adminMutationMode`, qui reste reserve aux commandes commerce
+transactionnelles. Les commandes produit courantes n'imposent
 plus une reconnexion toutes les quinze minutes; la recence reste reservee aux
 remboursements et aux operations destructives.
 
@@ -94,12 +96,11 @@ Apres mutation:
 - `AdminPaymentSettings`: Connect, carte/wallets et etat de disponibilite;
 - `AdminLivraison`: configuration des frais.
 
-Etat actuel:
+Etat actuel depuis le 2026-08-02:
 
-- les onglets Publication, Inventaire, Ventes, Retours, Livraison, Paiement et
-  Maintenance sont enveloppes par une surface read-only explicite;
-- les composants legacy restent montes pour consultation mais leurs controles
-  sont `inert` et sans interaction;
+- les onglets Publication, Inventaire, Ventes, Retours, Livraison et Paiement
+  sont utilisables sur le sandbox avec Stripe test;
+- l'ancien wrapper UI `read_only`/`inert` a ete retire;
 - les Rules refusent les writes SDK `orders`, create/delete produit, champs
   commerce produit et politiques, y compris avec claims admin forts;
 - le dashboard presente les montants financiers autoritaires avec des libelles
@@ -108,7 +109,8 @@ Etat actuel:
   `build-2026-07-28-009` / `release_gate7a_c5259a87f875_f00378380561`.
 - Gate 8 a valide actions autorisees derivees serveur, transition interdite,
   fulfillment, refunds avant/apres livraison, retour/restock et suspension de
-  policy; les mutations admin sont revenues en `read_only`.
+  policy; ces commandes sont maintenant ouvertes durablement sur le sandbox
+  pour la batterie de tests fonctionnels.
 
 Cible: toute transition commande, fulfillment, inventaire, refund/retour et politique commerce passe par une commande serveur idempotente. Firestore reste une projection et non une API metier admin.
 
@@ -190,10 +192,10 @@ transition logistique.
 Dans Retours, les commandes v2 sont normalisees depuis `payment`,
 `refundAggregate`, `shippingSnapshot` et les projections de statut avant le
 filtrage Stripe. Les dossiers `orders/{orderId}/returns/{returnId}` lus par
-`listReturnsAdminV2` restent visibles et detailles meme lorsque les commandes
-de mutation admin sont en `read_only`: statut, motif, date et quantites
-demandees, recues puis disposees. L'activation future des boutons ne change
-pas ce contrat de consultation. La requete collection group `returns` est
+`listReturnsAdminV2` restent visibles et detailles independamment des commandes
+de mutation: statut, motif, date et quantites demandees, recues puis disposees.
+L'activation des boutons ne change pas ce contrat de consultation. La requete
+collection group `returns` est
 portee par l'index `updatedAt` ascendant/descendant de
 `firestore.indexes.json`. Les lecteurs commandes et retours physiques sont
 isoles avec `Promise.allSettled`: une indisponibilite du second ne masque plus
@@ -210,8 +212,8 @@ retour` lorsque la garde est `carrier` ou `customer`. Le second choix cree le
 dossier physique quantitatif existant; `Rembourser apres inspection` reste
 indisponible jusqu'a sa reception, sa disposition (`restock` ou `write_off`)
 et sa resolution. Un refus est trace sans appel Stripe. Les decisions restent
-derriere `adminMutationMode=v2`; l'etat sandbox courant `read_only` est
-inchange. L'index collection-group `customer_return_requests.updatedAt` est
+derriere `adminMutationMode=v2`, actif sur le sandbox depuis le 2026-08-02.
+L'index collection-group `customer_return_requests.updatedAt` est
 deploye sur le sandbox depuis le 2026-08-01.
 
 La seconde passe UX du 2026-08-01 remplace la synthese en six cartes et le
@@ -244,12 +246,9 @@ de synchronisation proviennent de la tentative v2 lorsque la projection
 legacy ne les contient pas.
 
 Publication, Ventes et Retours embarquent leurs transports de commande, mais
-leur exposition ne depend plus du flag public checkout. `AdminAppIsland` lit
-le control plane et n'autorise les mutations que lorsque
-`adminMutationMode=v2`; le backend reste fail-closed. Dans l'etat sandbox
-courant `read_only`, aucune commande n'est donc active. Livraison/Paiement
-restent explicitement read-only tant que leur writer de policy n'est pas
-qualifie.
+leur exposition ne depend plus du flag public checkout. Le backend conserve le
+control plane fail-closed; `adminMutationMode=v2` est actif sur le sandbox.
+Livraison/Paiement continuent de passer par leurs commandes serveur qualifiees.
 
 Recette sandbox du 2026-07-28: une session admin forte existante a charge le
 dashboard et les lecteurs pagines `Ventes`/`Retours` sans erreur sous les Rules
@@ -268,8 +267,7 @@ Passe UX du 2026-07-30:
   erreur transitoire. Une projection deja en cache reste affichee si le
   rafraichissement echoue, sans inventer de chiffre.
 
-Ces changements ne modifient pas `adminMutationMode`: le mode protege
-`read_only` reste la valeur attendue hors fenetre de recette.
+Cette passe historique precede l'activation sandbox permanente du 2026-08-02.
 
 ### 5.2 Liens de paiement de secours
 
@@ -283,9 +281,8 @@ n'est requis pour payer.
 Le serveur relit les produits Firestore, le prix, le stock, la policy et le
 compte Connect avant de creer atomiquement l'order v2 et ses reservations. Les
 actions sensibles exigent App Check, registre admin actif, AAL2 recent,
-`newCheckoutMode=v2_all` et `adminMutationMode=v2`. L'etat sandbox courant
-`v2_fixture/read_only` laisse donc la surface en consultation et interdit toute
-creation ou mutation.
+`newCheckoutMode=v2_all` et `adminMutationMode=v2`. Ces conditions sont actives
+sur le sandbox depuis le 2026-08-02.
 
 Un lien actif peut etre prolonge sans depasser 24 heures restantes. Son URL ne
 peut etre changee que tant qu'aucun PaymentIntent n'a ete remis au client;
@@ -297,8 +294,8 @@ reste `needs_review` et ne propose aucune duplication aveugle.
 
 Ce rail, son index Firestore, ses Functions et le secret
 `PAYMENT_LINK_HMAC_SECRET@1` sont deployes sur le sandbox depuis le 2026-08-01.
-Les controls `v2_fixture/read_only` le maintiennent en consultation: aucune
-creation de lien ni transaction publique n'a ete ouverte par le deploiement.
+Les controls `v2_all/v2` rendent ce rail utilisable sur le sandbox depuis le
+2026-08-02 avec Stripe test.
 
 ## 6. Utilisateurs et securite
 

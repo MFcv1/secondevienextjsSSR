@@ -1,6 +1,6 @@
 # Infrastructure Firebase, Next.js et environnements
 
-Derniere mise a jour: 2026-08-01
+Derniere mise a jour: 2026-08-02
 Statut: `PREPROD_READY - PRODUCTION_DEFERRED`
 
 ## 1. Runtime et gestionnaire de paquets
@@ -310,6 +310,15 @@ Deploiement commerce/admin du 2026-08-01:
 - callable publique sans App Check refusee en HTTP `401`;
 - controle commerce revision 62: `v2_fixture`, `read_only`, offline `off`,
   operations `healthy` et compteurs a zero; aucune fenetre `v2_all` ouverte.
+
+Activation fonctionnelle sandbox du 2026-08-02:
+
+- App Hosting sandbox et six Functions catalogue redeployes avec succes;
+- smokes `/`, `/admin`, `/checkout` et `/api/catalog/version` en HTTP `200`;
+- controle commerce revision 63: `v2_all`, mutations admin `v2`, offline `off`;
+- policy active `sandbox_transactional_policy_20260802`;
+- operations `healthy` et compteurs a zero;
+- Stripe reste en mode test; aucun rail live ou production active.
 
 ## 11. Rollback
 

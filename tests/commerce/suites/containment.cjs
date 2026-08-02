@@ -209,7 +209,7 @@ const scenarios = {
     assertZeroEffects(context, context.effects, 'gate-0b-refund-no-restock');
   },
 
-  'commerce-ui-is-explicitly-read-only': async (context) => {
+  'commerce-ui-is-active-with-server-side-guards': async (context) => {
     const checkout = readSource('src/kit/commerce/CheckoutView.jsx');
     const consumers = readSource('src/kit/commerce/commerceV2Client.js');
     const commands = readSource('src/kit/commerce/commerceCommandClient.js');
@@ -218,25 +218,25 @@ const scenarios = {
     const adminIsland = readSource('app/admin/AdminAppIsland.jsx');
     const dashboard = readSource('src/kit/admin/AdminDashboard.jsx');
 
-    context.ok(checkout.includes('const COMMERCE_READ_ONLY = !COMMERCE_V2_CONSUMERS_ENABLED'));
+    context.ok(!checkout.includes('const COMMERCE_READ_ONLY'));
     context.ok(consumers.includes("import { COMMERCE_V2_UI_ENABLED } from './commerceUiFlags.js'"));
     context.ok(consumers.includes('COMMERCE_V2_ORDER_READERS_ENABLED = true'));
     context.ok(consumers.includes('COMMERCE_V2_ADMIN_READERS_ENABLED = true'));
     context.ok(commands.includes('COMMERCE_V2_CLIENT_COMMANDS_ENABLED = COMMERCE_V2_UI_ENABLED'));
-    context.ok(uiFlags.includes('process.env.NEXT_PUBLIC_COMMERCE_V2_UI'));
+    context.ok(uiFlags.includes('COMMERCE_V2_UI_ENABLED = true'));
     context.ok(!uiFlags.includes('commerceEnv.'));
-    context.ok(checkout.includes('Paiement temporairement indisponible'));
+    context.ok(!checkout.includes('Paiement temporairement indisponible'));
     context.ok(checkout.includes("Quitter l'ecran Stripe ne compense jamais"));
     context.ok(!checkout.includes("httpsCallable(functions, 'cancelOrderClient')"));
     context.ok(orders.includes('sandbox. Ils ne constituent ni une facture ni un avoir fiscal'));
-    context.ok(orders.includes('generateCommerceDocument'));
-    context.ok(orders.includes('!COMMERCE_READ_ONLY && canCancel(order)'));
+    context.ok(!orders.includes('generateCommerceDocument'));
+    context.ok(orders.includes('COMMERCE_V2_CLIENT_COMMANDS_ENABLED && canCancel(order)'));
     context.ok(!orders.includes('FAC-{'));
-    context.ok(adminIsland.includes('COMMERCE_READ_ONLY_TABS'));
-    context.ok(adminIsland.includes('inert=""'));
+    context.ok(!adminIsland.includes('COMMERCE_READ_ONLY_TABS'));
+    context.ok(!adminIsland.includes('inert=""'));
     context.ok(dashboard.includes('commerceStatus.data?.operations?.projection'));
     context.ok(!dashboard.includes('Actions critiques'));
-    assertZeroEffects(context, context.effects, 'gate-0b-read-only-ui');
+    assertZeroEffects(context, context.effects, 'gate-0b-active-ui-contract');
   },
 };
 

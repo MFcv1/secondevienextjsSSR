@@ -242,15 +242,14 @@ test('v2 factory rejects line totals that cannot be represented safely', () => {
     );
 });
 
-test('frontend controller, reader and recovery descriptor remain behind off flags', async () => {
+test('frontend controller and recovery descriptor are active by default', async () => {
     const root = path.resolve(__dirname, '..', '..', '..');
     const controller = await import(pathToFileURL(path.join(root, 'src/kit/commerce/checkoutController.js')));
     const adapter = await import(pathToFileURL(path.join(root, 'src/kit/commerce/orderAdapter.js')));
     const recovery = await import(pathToFileURL(path.join(root, 'src/kit/commerce/checkoutRecovery.js')));
 
     const initial = controller.createCheckoutControllerState();
-    assert.strictEqual(controller.reduceCheckoutController(initial, { type: 'START' }), initial);
-    const creating = controller.reduceCheckoutController(initial, { type: 'START' }, { enabled: true });
+    const creating = controller.reduceCheckoutController(initial, { type: 'START' });
     assert.equal(creating.status, 'creating');
     const restored = controller.reduceCheckoutController(initial, {
         type: 'RESTORE',
@@ -267,8 +266,8 @@ test('frontend controller, reader and recovery descriptor remain behind off flag
         () => controller.reduceCheckoutController(restored, { type: 'START' }, { enabled: true }),
         /COMMERCE_CHECKOUT_CONTROLLER_TRANSITION_DENIED:awaiting_method:START/
     );
-    assert.equal(controller.COMMERCE_V2_CHECKOUT_ENABLED, false);
-    assert.equal(recovery.COMMERCE_V2_RECOVERY_ENABLED, false);
+    assert.equal(controller.COMMERCE_V2_CHECKOUT_ENABLED, true);
+    assert.equal(recovery.COMMERCE_V2_RECOVERY_ENABLED, true);
 
     const adapted = adapter.adaptCommerceOrder(makeOrder(), 'order-v2');
     assert.equal(adapted.status, 'pending_payment');

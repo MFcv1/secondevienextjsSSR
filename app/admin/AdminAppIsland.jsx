@@ -28,7 +28,6 @@ import LoginView from '../../src/kit/commerce/LoginView';
 import {
   adjustInventoryAdmin,
   archiveProductAdmin,
-  COMMERCE_V2_ADMIN_COMMANDS_ENABLED,
   publishProductAdmin,
 } from '../../src/kit/commerce/adminProductCommandClient';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
@@ -104,36 +103,11 @@ const adminTabs = KIT_CONFIG.adminTabs.map((tab, index) => ({
 }));
 
 const ADMIN_PUBLIC_CATALOG_TABS = new Set(['dashboard', 'analytics', 'inventory', 'payment_links']);
-const COMMERCE_READ_ONLY_TABS = new Set(['furniture', 'inventory', 'orders', 'returns', 'livraison', 'payment_settings', 'maintenance']);
-const PRODUCT_COMMAND_TABS = new Set(['furniture', 'inventory']);
-
-const isCommerceReadOnlyTab = (tabId, mutationsEnabled) => {
-  if (!COMMERCE_READ_ONLY_TABS.has(tabId)) return false;
-  if (['orders', 'returns', 'payment_links'].includes(tabId)) return false;
-  if (tabId === 'maintenance') return true;
-  if (PRODUCT_COMMAND_TABS.has(tabId) && !COMMERCE_V2_ADMIN_COMMANDS_ENABLED) return true;
-  return !mutationsEnabled;
-};
-
 const readAdminOrderTarget = () => {
   if (typeof window === 'undefined') return null;
   const orderId = new URLSearchParams(window.location.search).get('order_id');
   return orderId && /^[A-Za-z0-9_-]{8,128}$/.test(orderId) ? orderId : null;
 };
-
-function CommerceReadOnlySurface({ children, darkMode, readOnly }) {
-  if (!readOnly) return children;
-  return (
-    <section>
-      <div className={`mb-4 rounded-2xl border px-5 py-4 text-sm ${darkMode ? 'border-amber-300/20 bg-amber-300/10 text-amber-100' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
-        Commerce en lecture seule : commandes, prix, stocks, remboursements, politiques et outils destructifs sont neutralises.
-      </div>
-      <div inert="" aria-disabled="true" className="pointer-events-none select-none opacity-60">
-        {children}
-      </div>
-    </section>
-  );
-}
 
 function AdminCatalogStatus({ darkMode, error, loading, onRetry }) {
   if (!loading && !error) return null;
@@ -231,8 +205,6 @@ function AdminContent() {
   }, [hasStrongAuth, isAdmin, isSuperAdmin, refreshBillingGate, user]);
 
   const backOfficeReady = isSuperAdmin || (billingGate.status === 'ready' && billingGate.data?.required !== true);
-  const commerceMutationsEnabled = commerceStatus.data?.control?.adminMutationMode === 'v2';
-
   React.useEffect(() => {
     if (!user || !isAdmin || !hasStrongAuth) return undefined;
     let cancelled = false;
@@ -528,10 +500,6 @@ function AdminContent() {
         </div>
 
         <Suspense fallback={<div className="flex items-center justify-center p-20"><div className="h-10 w-10 animate-spin rounded-full border-4 border-stone-200 border-t-stone-800" /></div>}>
-          <CommerceReadOnlySurface
-            darkMode={darkMode}
-            readOnly={isCommerceReadOnlyTab(adminCollection, commerceMutationsEnabled)}
-          >
           {adminCollection === 'dashboard' ? (
             <AdminDashboard
               user={user}
@@ -548,12 +516,12 @@ function AdminContent() {
             <AdminOrders
               darkMode={darkMode}
               focusOrderId={focusedOrderId}
-              mutationsEnabled={commerceMutationsEnabled}
+              mutationsEnabled
             />
           ) : adminCollection === 'invoices' ? (
             <AdminInvoices darkMode={darkMode} />
           ) : adminCollection === 'returns' ? (
-            <AdminReturns darkMode={darkMode} mutationsEnabled={commerceMutationsEnabled} />
+            <AdminReturns darkMode={darkMode} mutationsEnabled />
           ) : adminCollection === 'livraison' ? (
             <AdminLivraison darkMode={darkMode} />
           ) : adminCollection === 'studio' ? (
@@ -589,7 +557,7 @@ function AdminContent() {
               <AdminPaymentLinks
                 darkMode={darkMode}
                 items={catalogState.items}
-                mutationsEnabled={commerceMutationsEnabled}
+                mutationsEnabled
               />
             </div>
           ) : adminCollection === 'inventory' ? (
@@ -622,7 +590,7 @@ function AdminContent() {
                 onCancelEdit={() => setEditingItem(null)}
                 collectionName={adminCollection}
                 darkMode={darkMode}
-                mutationsEnabled={commerceMutationsEnabled}
+                mutationsEnabled
               />
               <div className="pt-10">
                 <AdminItemList
@@ -640,7 +608,6 @@ function AdminContent() {
               </div>
             </>
           )}
-          </CommerceReadOnlySurface>
         </Suspense>
       </main>
       </div>

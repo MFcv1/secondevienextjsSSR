@@ -690,8 +690,9 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(consumerClient.includes("import { COMMERCE_V2_UI_ENABLED } from './commerceUiFlags.js'"));
     assert.ok(consumerClient.includes('COMMERCE_V2_ORDER_READERS_ENABLED = true'));
     assert.ok(consumerClient.includes('COMMERCE_V2_ADMIN_READERS_ENABLED = true'));
-    assert.ok(uiFlags.includes('process.env.NEXT_PUBLIC_COMMERCE_V2_UI'));
-    assert.ok(uiFlags.includes('process.env.NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI'));
+    assert.ok(uiFlags.includes('COMMERCE_V2_UI_ENABLED = true'));
+    assert.equal(uiFlags.includes('process.env.NEXT_PUBLIC_COMMERCE_V2_UI'), false);
+    assert.equal(uiFlags.includes('process.env.NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI'), false);
     assert.equal(uiFlags.includes('commerceEnv.'), false);
     assert.ok(cartPanel.includes('await auth.authStateReady?.()'));
     assert.ok(cartPanel.includes('return auth.currentUser || null'));

@@ -1,6 +1,6 @@
 # Plan de reprise commerce
 
-Derniere mise a jour: 2026-07-31
+Derniere mise a jour: 2026-08-02
 Statut: `PLAN_REPRISE_DIFFERE`
 Proprietaire: commerce, UX transactionnelle, exploitation et production
 Echeance de gouvernance: 2026-10-31
@@ -32,17 +32,16 @@ Ordre de reprise:
 
 - statut: `PREPROD_TRANSACTIONAL_READY` sur sandbox/fixtures;
 - Gates 0A a 8 fermees;
-- `NEXT_PUBLIC_COMMERCE_GATE8_FIXTURE_UI=false`;
-- `NEXT_PUBLIC_COMMERCE_V2_UI=false`;
-- `adminMutationMode=read_only`;
+- checkout v2 expose en permanence dans le build sandbox;
+- `adminMutationMode=v2`;
 - `offlinePaymentMode=off`;
-- `newCheckoutMode=v2_fixture` borne a `fixture_gate6_20260728`;
+- `newCheckoutMode=v2_all` pour la batterie de tests fonctionnels;
 - Stripe test uniquement;
 - operations `healthy`, compteurs a zero;
-- controle revision 32;
+- controle revision 63;
 - fenetre `v2_all` catalogue reel du 2026-07-29 refermee avec policy fixture
   restauree;
-- aucune activation `v2_all` permanente, live ou production.
+- activation `v2_all` permanente sur sandbox uniquement; aucun live ni production.
 
 Avant toute reprise, relire:
 

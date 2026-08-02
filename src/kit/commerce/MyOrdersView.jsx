@@ -42,8 +42,6 @@ const BUSINESS_PHONE = process.env.NEXT_PUBLIC_BUSINESS_PHONE || '';
 const BUSINESS_PHONE_TEL = BUSINESS_PHONE.replace(/\s/g, '');
 const CONTACT_NAME = process.env.NEXT_PUBLIC_CONTACT_NAME || KIT_CONFIG.brandName;
 const REVIEW_URL = process.env.NEXT_PUBLIC_REVIEW_URL || '';
-const COMMERCE_READ_ONLY = !COMMERCE_V2_CLIENT_COMMANDS_ENABLED;
-
 const FALLBACK_ITEM_IMAGES = [
     '/images/before-after/apresu.webp',
     '/images/before-after/apres.webp',
@@ -696,7 +694,7 @@ const MyOrdersView = ({
                                                         )}
                                                     </div>
                                                 ) : null}
-                                                {!COMMERCE_READ_ONLY && canCancel(order) && (
+                                                {COMMERCE_V2_CLIENT_COMMANDS_ENABLED && canCancel(order) && (
                                                     <button
                                                         type="button"
                                                         onClick={() => setOrderToCancelId(order.id)}
