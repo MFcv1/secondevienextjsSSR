@@ -1,6 +1,6 @@
 # Donnees, Firestore et analytics
 
-Derniere mise a jour: 2026-07-30
+Derniere mise a jour: 2026-08-03
 Statut: `REFERENCE_ACTIVE`
 
 Deploiement sandbox: moteur actif depuis le 2026-07-15 sur App Hosting et Functions `europe-west1`.
@@ -141,7 +141,7 @@ Contrat du moteur:
 - une session explicitement fermee ne peut etre reprise que pendant une grace de 15 secondes, afin de tolerer un rechargement immediat sans fusionner un retour plusieurs minutes plus tard;
 - l'admin lit au maximum 5 000 sessions commencees dans la derniere annee;
 - l'onglet Stats effectue une lecture distincte, sans listener, bornee a 500 sessions commencees dans les 30 derniers jours pour les intentions devis et tendances produits; une erreur de cette lecture ne bloque pas les agregats commerce;
-- les vues et visiteurs du classement restent calcules exclusivement depuis `analytics_sessions`; le catalogue public court ne sert qu'a resoudre les miniatures par identifiant ou slug, sans lecture de `furniture`;
+- les vues et visiteurs restent calcules exclusivement depuis `analytics_sessions`; le classement « Meubles en tendance » est ensuite filtre par les identifiants/slugs du catalogue public courant, afin qu'un meuble supprime disparaisse immediatement sans effacer l'historique de visite; le catalogue ne sert aussi qu'a resoudre les miniatures, sans lecture de `furniture`;
 - un cache IndexedDB de six heures evite une nouvelle lecture complete a chaque ouverture;
 - l'etat live est derive d'une activite de moins de 30 secondes et l'admin ecoute en temps reel les 100 sessions les plus recentes;
 - les erreurs analytics ne bloquent jamais checkout, Auth ou navigation;

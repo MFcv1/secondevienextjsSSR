@@ -4,6 +4,7 @@ import { getProductPriceAmount, getProductStockAmount, getPurchaseUnavailableLab
 import ProductDetailActionsIsland from './ProductDetailActionsIsland';
 import ProductDetailShellIsland from './ProductDetailShellIsland';
 import CatalogVersionSyncIsland from './CatalogVersionSyncIsland';
+import RichTextStory from '../shared/RichTextStory';
 
 const normalizeText = (value, fallback = '') => String(value || fallback).replace(/\s+/g, ' ').trim();
 
@@ -89,9 +90,7 @@ function ProductDetailDesktopInfo({ product, title, description, priceLabel, fac
       <div className="flex-1 overflow-y-auto custom-scrollbar px-10">
         <section className={`detail-stagger pt-6 border-t pb-6 ${darkMode ? 'border-white/10' : 'border-zinc-200/20'}`}>
           <h2 className="font-label text-[10px] tracking-[0.3em] uppercase text-[#91a293] mb-4">La Pièce</h2>
-          <p className={`font-sans leading-[1.8] text-[13px] tracking-wide whitespace-pre-wrap transition-colors duration-1000 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
-            {description}
-          </p>
+          <RichTextStory value={description} className={`font-sans text-[13px] leading-[1.8] tracking-wide transition-colors duration-1000 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`} />
         </section>
       </div>
 
@@ -120,7 +119,7 @@ export default function ProductDetailServerView({
 }) {
   const images = getProductImageItems(product);
   const title = normalizeText(product?.name || product?.title, 'Produit Seconde Vie');
-  const description = normalizeText(product?.description, 'Pièce restaurée par Seconde Vie.');
+  const description = String(product?.description || 'Pièce restaurée par Seconde Vie.').trim();
   const priceLabel = formatPrice(product);
   const facts = getFacts(product);
   const cartItem = getCartItemPayload(product, title);

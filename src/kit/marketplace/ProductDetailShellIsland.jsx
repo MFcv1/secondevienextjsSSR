@@ -14,6 +14,8 @@ import {
   preloadImage,
 } from '../../utils/imageUtils';
 import ProductDetailActionsIsland from './ProductDetailActionsIsland';
+import RichTextStory from '../shared/RichTextStory';
+import { stripStoryFormatting } from '../../lib/content/storyFormatting';
 import { getCurrentWishlistUser, readWishlistIds, setWishlistItem } from './wishlistState';
 
 const ProductDetailLightboxIsland = dynamic(() => import('./ProductDetailLightboxIsland'), {
@@ -285,6 +287,7 @@ export default function ProductDetailShellIsland({
   const backdropColor = activeImage.metadata?.dominantColor || DEFAULT_DETAIL_BACKDROP_COLOR;
   const title = product?.name || product?.title || 'Produit';
   const description = product?.description || '';
+  const plainDescription = stripStoryFormatting(description);
   const productId = product?.id || '';
   useEffect(() => {
     if (!productId || typeof window === 'undefined') return undefined;
@@ -1186,7 +1189,7 @@ export default function ProductDetailShellIsland({
               </div>
               <div className="flex-1 pr-4">
                 <h2 className="font-serif text-[18px] line-clamp-1 mb-1 text-stone-950 drop-shadow-[0_1px_8px_rgba(255,255,255,0.95)]">{title}</h2>
-                <p className="font-sans text-[12px] line-clamp-2 text-stone-600 drop-shadow-[0_1px_8px_rgba(255,255,255,0.95)]">{description}</p>
+                <p className="font-sans text-[12px] line-clamp-2 text-stone-600 drop-shadow-[0_1px_8px_rgba(255,255,255,0.95)]">{plainDescription}</p>
               </div>
               <div className="flex items-center gap-5 flex-shrink-0 pb-1 text-stone-950 drop-shadow-[0_1px_8px_rgba(255,255,255,0.95)]">
                 <button type="button" onClick={() => setIsMobilePanelOpen(true)} aria-label="Ouvrir les details">
@@ -1244,7 +1247,7 @@ export default function ProductDetailShellIsland({
                   onTouchEnd={onDescriptionTouchEnd}
                   onWheel={onDescriptionWheel}
                 >
-                  <p className="font-sans text-[13px] leading-[1.65] whitespace-pre-wrap text-stone-600">{description}</p>
+                  <RichTextStory value={description} className="font-sans text-[13px] leading-[1.65] text-stone-600" />
                 </div>
               </div>
               <ProductDetailActionsIsland

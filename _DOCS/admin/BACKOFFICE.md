@@ -59,7 +59,41 @@ Le catalogue public court (`scope=cards&limit=120`) est charge paresseusement un
 
 ## 3. Publication catalogue
 
-`AdminForm` gere les champs produit, la compression/upload image, les variantes et la sauvegarde. `AdminItemList` affiche les annonces. `GlobalInventoryView` pilote les classements editoriaux.
+`AdminPublicationWorkspace` separe Publication en deux vues grand ecran plein
+viewport: `Creer` regroupe le formulaire aere et son resume vivant;
+`Publications` affiche une table avec recherche, categories, actions et
+synthese des statuts. A partir de `1280 px`, le document ne scrolle pas: seules
+les zones de contenu internes prennent le relais sur un ecran bas. Les formats
+plus etroits reviennent au scroll naturel et les categories utilisent un rail
+horizontal sans barre visible, puis passent sur plusieurs lignes quand la
+largeur le permet. `AdminForm` gere les champs produit, la
+compression/upload image, les variantes et la sauvegarde. Sa grille droite
+utilise quatre rangees `auto / auto / auto / minmax(220px, 1fr)`: seule la
+quatrieme rangee absorbe l'espace vertical restant. Dimensions occupe la
+troisieme rangee, avec des controles bornes en largeur. Le formulaire ne
+presente plus de panneau SEO manuel: titre, description et eligibilite sont
+deduits automatiquement du nom, de l'histoire, de l'image et du statut public.
+`StoryEditor` occupe ensuite les six colonnes de la rangee
+extensible; le panneau Photos et le resume utilisent eux aussi `flex: 1` sur ce
+meme axe. L'editeur WYSIWYG masque toute syntaxe technique pendant la saisie et
+convertit un DOM borne en Markdown au changement: gras, italique, surlignage,
+intertitre, citation et listes. Un second clic retire les formats bascules, le
+collage est force en texte brut et aucun HTML arbitraire n'est conserve.
+Le surlignage est applique par une balise `mark` locale a un seul paragraphe;
+l'outil propose les modes Fond, Souligne et Texte avec cinq couleurs stables.
+La selection native reste translucide puis se replie apres application pour ne
+pas masquer le resultat; la palette sait aussi recolorer ou retirer un `mark`
+depuis un simple curseur place dans le texte.
+L'intertitre H2 ne transforme qu'une ligne complete et refuse une selection
+partielle avec un retour visible dans le pied de l'editeur.
+Deux commandes Annuler et Retablir, placees entre les outils et le choix
+Ecrire/Apercu, partagent le meme historique avec les raccourcis clavier. Cet
+historique garde au plus 80 etats, regroupe la frappe par salves de 700 ms et
+isole chaque collage ou commande de mise en forme afin de restaurer le contenu
+et son apparence ensemble.
+`RichTextStory` previsualise ce sous-ensemble et l'affiche sur la fiche publique.
+`AdminItemList`
+affiche les annonces. `GlobalInventoryView` pilote les classements editoriaux.
 
 Avant le premier upload, `AdminForm` appelle
 `preflightProductMutationAdmin`. Le serveur confirme App Check, le registre

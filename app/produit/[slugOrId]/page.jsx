@@ -12,6 +12,7 @@ import {
   buildProductJsonLd
 } from '../../../src/lib/seo/productStructuredData';
 import ProductDetailServerView from '../../../src/kit/marketplace/ProductDetailServerView';
+import { stripStoryFormatting } from '../../../src/lib/content/storyFormatting';
 
 export const revalidate = 300;
 export const dynamicParams = true;
@@ -75,7 +76,7 @@ export async function generateMetadata({ params }) {
   const title = product.seoTitle || product.name || product.title || 'Produit';
   const descriptionSource = product.seoDescription || product.description;
   const description = descriptionSource
-    ? String(descriptionSource).replace(/\s+/g, ' ').slice(0, 160)
+    ? stripStoryFormatting(descriptionSource).slice(0, 160)
     : publicEnv.siteDescription;
   const image = getPrimaryImage(product);
   const url = getProductUrl(product, publicEnv.siteUrl);
@@ -114,7 +115,7 @@ export default async function ProductPage({ params }) {
   const detailImagePreloads = getInitialDetailImagePreloads(product);
   const primaryImmediateImage = detailImagePreloads[0]?.href || '';
   const productTitle = normalizeText(product.name || product.title, 'Produit Seconde Vie');
-  const productDescription = normalizeText(product.description, publicEnv.siteDescription);
+  const productDescription = stripStoryFormatting(product.description) || publicEnv.siteDescription;
 
   return (
     <>

@@ -92,7 +92,9 @@ route publique [S]
 
 ```text
 /admin [C]
-  -> AdminForm / AdminItemList
+  -> AdminPublicationWorkspace (vues Creer / Publications plein viewport)
+  -> AdminForm / StoryEditor / AdminItemList
+  -> description Markdown bornee -> RichTextStory (resume admin + fiche publique)
   -> preflightProductMutationAdmin [F] (App Check + admin actif + AAL2)
   -> upload variantes [ST]
   -> furniture/{id} [DB]

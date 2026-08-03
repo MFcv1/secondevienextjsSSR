@@ -38,6 +38,8 @@ const MEDIA_FIELDS = new Set([
     'imageMetadata'
 ]);
 
+const MAX_PRODUCT_IMAGES = 23;
+
 function productError(code, field) {
     const error = new Error(field ? `${code}:${field}` : code);
     error.code = code;
@@ -136,6 +138,9 @@ function normalizeMedia(value) {
     if (serialized.length > 300000) throw productError('COMMERCE_PRODUCT_MEDIA_TOO_LARGE');
     for (const field of ['images', 'thumbnails', 'imageVariants', 'imageMetadata']) {
         if (normalized[field] !== undefined && !Array.isArray(normalized[field])) {
+            throw productError('COMMERCE_PRODUCT_FIELD_INVALID', `media.${field}`);
+        }
+        if (normalized[field]?.length > MAX_PRODUCT_IMAGES) {
             throw productError('COMMERCE_PRODUCT_FIELD_INVALID', `media.${field}`);
         }
     }

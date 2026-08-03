@@ -2662,6 +2662,48 @@ footer.gallery-deferred-render {
   background-color: rgba(120, 113, 108, 0.5);
 }
 
+.story-wysiwyg:empty::before {
+  color: rgb(168 162 158);
+  content: attr(data-placeholder);
+  pointer-events: none;
+}
+
+.story-wysiwyg p,
+.story-wysiwyg h3,
+.story-wysiwyg blockquote,
+.story-wysiwyg ul,
+.story-wysiwyg ol {
+  margin: 0 0 0.65rem;
+}
+
+.story-wysiwyg h3 {
+  font-size: 1.08em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.story-wysiwyg blockquote {
+  border-left: 2px solid rgb(16 185 129 / 45%);
+  font-style: italic;
+  opacity: 0.8;
+  padding-left: 0.75rem;
+}
+
+.story-wysiwyg ul,
+.story-wysiwyg ol {
+  padding-left: 1.25rem;
+}
+
+.story-wysiwyg ul { list-style: disc; }
+.story-wysiwyg ol { list-style: decimal; }
+.story-wysiwyg mark { border-radius: 0.2rem; padding: 0 0.125rem; }
+
+.story-wysiwyg::selection,
+.story-wysiwyg *::selection {
+  background: rgb(120 113 108 / 18%);
+  color: inherit;
+}
+
 /* Dark mode specific overrides for scrollbar if needed */
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: rgba(168, 162, 158, 0.2);

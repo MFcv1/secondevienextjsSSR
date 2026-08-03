@@ -789,7 +789,6 @@ const buildDashboardProductVisualMap = (items) => {
             || item?.thumbnailUrl
             || item?.imageUrl
             || null;
-        if (!imageUrl) return;
 
         const productName = String(item?.name || item?.title || 'Meuble').trim();
         const pathKey = decodeURIComponent(String(getProductUrl(item)).split('/').filter(Boolean).pop() || '');
@@ -1050,7 +1049,6 @@ const loadAdminDashboardInsightsData = ({ force = false } = {}) => loadAdminCach
                     || right.viewers.size - left.viewers.size
                     || left.name.localeCompare(right.name, 'fr')
                 ))
-                .slice(0, 5)
                 .map((product) => ({
                     id: product.id,
                     name: product.name,
@@ -1139,18 +1137,18 @@ const AdminDashboard = ({
     });
     const trendingProducts = useMemo(() => {
         const visuals = buildDashboardProductVisualMap(items);
-        return insights.products.map((product) => {
-            const visual = visuals.get(product.id);
-            return {
-                ...product,
-                name: product.name === product.id && visual?.catalogName ? visual.catalogName : product.name,
-                price: product.price ?? visual?.catalogPrice ?? null,
-                ...(visual || {
-                    imageUrl: null,
-                    imageAlt: `${product.name}, visuel indisponible`
-                })
-            };
-        });
+        return insights.products
+            .filter((product) => visuals.has(product.id))
+            .slice(0, 5)
+            .map((product) => {
+                const visual = visuals.get(product.id);
+                return {
+                    ...product,
+                    name: product.name === product.id && visual?.catalogName ? visual.catalogName : product.name,
+                    price: product.price ?? visual?.catalogPrice ?? null,
+                    ...visual
+                };
+            });
     }, [insights.products, items]);
     const reducedMotion = useReducedMotion();
 

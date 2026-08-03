@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, Trash2, Download } from 'lucide-react';
+import { Check, Upload, Trash2, Download } from 'lucide-react';
 import { db, appId } from '../config/firebase';
 import { getStorageInstance } from '../config/firebaseStorage';
 import { doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { PRODUCT_IMAGE_VARIANT_SPECS, compressImage, createProductImageVariantFiles, getImageFileMetadata } from '../../utils/imageUtils'; // [NEW] Import compression utility
 import ImageCropperModal from './components/ImageCropperModal';
+import StoryEditor from './components/StoryEditor';
 import KIT_CONFIG from '../config/constants';
+import RichTextStory from '../shared/RichTextStory';
 import { clearAdminPublicCatalogCache } from './adminPublicCatalog';
 import {
   adjustInventoryAdmin,
@@ -43,6 +45,8 @@ const STYLE_OPTIONS = [
   "Campagne", "Contemporain", "Classique", "Mid-Century", "Rustique",
   "Baroque", "Minimaliste", "Ethnique", "Shabby Chic", "Autre"
 ];
+
+const MAX_PRODUCT_IMAGES = 23;
 
 const COLOR_BANK = [
   { name: 'Naturel / Brut', hex: '#DEB887' },
@@ -100,6 +104,7 @@ const getCategoryMeta = (categoryId) => {
 const AdminForm = ({
   editData,
   onCancelEdit,
+  onSaved,
   collectionName = 'furniture',
   darkMode = false,
   mutationsEnabled = false
@@ -107,9 +112,6 @@ const AdminForm = ({
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    seoTitle: '',
-    seoDescription: '',
-    seoIndexable: true,
     startingPrice: 0,
     material: '',
     color: '',
@@ -160,7 +162,7 @@ const AdminForm = ({
     initialPreflightStartedRef.current = true;
 
     void preflightProductMutationAdmin().catch(() => {
-      setMsg("⚠️ Confirmez votre session administrateur avant de préparer l'annonce.");
+      setMsg("Confirmez votre session administrateur avant de préparer l'annonce.");
     });
   }, [mutationsEnabled]);
 
@@ -182,9 +184,6 @@ const AdminForm = ({
       setFormData({
         name: editData.name || '',
         description: editData.description || '',
-        seoTitle: editData.seoTitle || '',
-        seoDescription: editData.seoDescription || '',
-        seoIndexable: editData.seoIndexable !== false,
         startingPrice: editData.startingPrice || 0,
         stock: editData.stock !== undefined ? editData.stock : '', // [NEW] Load stock
         material: material,
@@ -203,7 +202,7 @@ const AdminForm = ({
       const initialVariants = Array.isArray(editData.imageVariants) ? editData.imageVariants : [];
       const initialMetadata = Array.isArray(editData.imageMetadata) ? editData.imageMetadata : [];
 
-      setGalleryItems(initialImages.map((url, idx) => ({
+      setGalleryItems(initialImages.slice(0, MAX_PRODUCT_IMAGES).map((url, idx) => ({
         id: `existing-${idx}-${Date.now()}`,
         file: null,
         preview: url,
@@ -230,9 +229,6 @@ const AdminForm = ({
     setFormData({
       name: '',
       description: '',
-      seoTitle: '',
-      seoDescription: '',
-      seoIndexable: true,
       startingPrice: 0,
       stock: '', // [NEW] Reset stock
       material: '',
@@ -251,9 +247,18 @@ const AdminForm = ({
   };
 
   const processFiles = async (files) => {
-    setMsg("⏳ Optimisation automatique...");
+    const availableSlots = Math.max(0, MAX_PRODUCT_IMAGES - galleryItems.length);
+    const acceptedFiles = files.slice(0, availableSlots);
+    const omittedCount = files.length - acceptedFiles.length;
+    if (acceptedFiles.length === 0) {
+      setMsg(`La galerie est limitée à ${MAX_PRODUCT_IMAGES} images.`);
+      return;
+    }
+    setMsg(omittedCount > 0
+      ? `${acceptedFiles.length} image(s) ajoutée(s) · limite de ${MAX_PRODUCT_IMAGES} atteinte.`
+      : "Optimisation automatique...");
 
-    const newItems = files.map(file => ({
+    const newItems = acceptedFiles.map(file => ({
       id: `new-${Date.now()}-${Math.random()}`,
       file: file,
       preview: URL.createObjectURL(file),
@@ -288,13 +293,25 @@ const AdminForm = ({
       return optimized || current;
     }));
 
-    setMsg("✅ Images ajoutées et optimisées !");
+    setMsg(omittedCount > 0
+      ? `Galerie complète · ${MAX_PRODUCT_IMAGES} images maximum.`
+      : "Images ajoutées et optimisées.");
     setTimeout(() => setMsg(""), 3000);
   };
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length > 0) processFiles(files);
+    e.target.value = '';
+  };
+
+  const handleClearImages = () => {
+    galleryItems.forEach((item) => {
+      if (item.preview && !item.isExisting) URL.revokeObjectURL(item.preview);
+    });
+    setGalleryItems([]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    setMsg('Toutes les images ont été retirées.');
   };
 
   const handleDownloadImages = (e) => {
@@ -315,7 +332,7 @@ const AdminForm = ({
         count++;
       }
     });
-    setMsg(`✅ Téléchargement de ${count} images lancé !`);
+    setMsg(`Téléchargement de ${count} images lancé.`);
   };
 
   const sanitizeStorageName = (name) => {
@@ -327,7 +344,7 @@ const AdminForm = ({
   };
 
   const uploadProductVariantSet = async (sourceFile, progressPrefix, slotIndex) => {
-    setMsg(`⏳ ${progressPrefix} Creation des formats responsive...`);
+    setMsg(`${progressPrefix} Création des formats responsive...`);
     const variantFiles = await createProductImageVariantFiles(sourceFile);
     const uploadStamp = Date.now();
     const uploaded = {};
@@ -337,7 +354,7 @@ const AdminForm = ({
       const variantFile = variantFiles[spec.key];
       if (!variantFile) continue;
 
-      setMsg(`⏳ ${progressPrefix} Envoi ${spec.key} ${spec.width}px...`);
+      setMsg(`${progressPrefix} Envoi ${spec.key} ${spec.width}px...`);
       const safeName = sanitizeStorageName(variantFile.name);
       const imageRef = ref(storage, `${collectionName}/${spec.folder}/${uploadStamp}_${slotIndex}_${spec.key}_${safeName}`);
       await uploadBytes(imageRef, variantFile, {
@@ -351,28 +368,23 @@ const AdminForm = ({
   };
 
   const addMeuble = async () => {
-    if (!formData.name) { setMsg("⚠️ Nom requis"); return; }
+    if (!formData.name) { setMsg("Nom requis"); return; }
     // ── Validation catégorie obligatoire ──
     if (!formData.category) {
-      setMsg("⚠️ Choisis un type de publication (Mobilier, Tables, Miroirs…)");
+      setMsg("Choisis un type de publication (Mobilier, Tables, Miroirs…).");
       return;
     }
-    const effectiveSeoDescription = String(formData.seoDescription || formData.description || '').trim();
-    if (formData.seoIndexable && effectiveSeoDescription.length < 48) {
-      setMsg("⚠️ SEO : ajoute une description utile d'au moins 48 caractères, ou désactive l'indexation");
-      return;
-    }
-    if (formData.seoIndexable && galleryItems.length === 0) {
-      setMsg("⚠️ SEO : ajoute une image principale, ou désactive l'indexation");
+    if (galleryItems.length > MAX_PRODUCT_IMAGES) {
+      setMsg(`La galerie est limitée à ${MAX_PRODUCT_IMAGES} images.`);
       return;
     }
     setUploading(true);
-    setMsg("⏳ Préparation des fichiers...");
+    setMsg("Préparation des fichiers...");
 
     try {
-      setMsg("⏳ Vérification de la session administrateur...");
+      setMsg("Vérification de la session administrateur...");
       await preflightProductMutationAdmin();
-      setMsg("⏳ Préparation des fichiers...");
+      setMsg("Préparation des fichiers...");
 
       let finalImageUrls = [];
       let finalThumbnails = [];
@@ -396,7 +408,7 @@ const AdminForm = ({
             uploadedVariants = await uploadProductVariantSet(item.file, progressPrefix, count - 1);
           } catch (err) {
             console.warn("Responsive variant upload failed, falling back to single WebP", err);
-            setMsg(`⏳ ${progressPrefix} Compression WebP...`);
+            setMsg(`${progressPrefix} Compression WebP...`);
             let fileToUpload = item.file;
             if (!item.isCompressed) {
               try {
@@ -406,7 +418,7 @@ const AdminForm = ({
               }
             }
 
-            setMsg(`⏳ ${progressPrefix} Envoi de l'image...`);
+            setMsg(`${progressPrefix} Envoi de l'image...`);
             const uploadStamp = Date.now();
             const storage = await getStorageInstance();
             const imageRef = ref(storage, `${collectionName}/${uploadStamp}_tat_${fileToUpload.name}`);
@@ -431,17 +443,22 @@ const AdminForm = ({
         }
       }
 
-      setMsg("⏳ Finalisation...");
+      setMsg("Finalisation...");
       const parsedStock = Number(formData.stock);
       if (!Number.isInteger(parsedStock) || parsedStock < 0) {
         throw new Error('Le stock doit etre un nombre entier positif ou nul.');
       }
+      const automaticSeoIndexable = (
+        String(formData.name || '').trim().length >= 4
+        && String(formData.description || '').trim().length >= 48
+        && finalImageUrls.length > 0
+      );
       const editorial = {
         name: formData.name,
         description: formData.description,
-        seoTitle: formData.seoTitle,
-        seoDescription: formData.seoDescription,
-        seoIndexable: formData.seoIndexable,
+        seoTitle: '',
+        seoDescription: '',
+        seoIndexable: automaticSeoIndexable,
         material: formData.material,
         color: formData.color,
         dimensions: formData.dimensions,
@@ -531,16 +548,17 @@ const AdminForm = ({
       }
       clearAdminPublicCatalogCache();
 
-      setMsg("✅ Enregistre. Publication du catalogue en cours...");
+      setMsg("Enregistré. Publication du catalogue en cours...");
       productCommandSessionRef.current = null;
       resetForm();
       if (onCancelEdit) onCancelEdit();
+      if (onSaved) onSaved();
     } catch (err) {
       console.error("CRITICAL UPLOAD ERROR:", err);
       let errorPrefix = "Erreur";
       if (err.message?.includes("storage")) errorPrefix = "Stockage plein ou bloqué";
       else if (err.code === "permission-denied") errorPrefix = "Session expirée";
-      setMsg(`❌ ${errorPrefix}: ${err.message || "Inconnue"}`);
+      setMsg(`${errorPrefix}: ${err.message || "Inconnue"}`);
     } finally {
       setUploading(false);
       setTimeout(() => setMsg(""), 8000);
@@ -682,432 +700,178 @@ const AdminForm = ({
     }
   };
 
-  const handleDescriptionWheelCapture = (e) => {
-    const el = e.currentTarget;
-    const isScrollable = el.scrollHeight > el.clientHeight + 1;
-
-    // Only lock wheel to textarea when vertical overflow exists.
-    if (isScrollable) {
-      e.stopPropagation();
-    }
-  };
-
   const catMeta = getCategoryMeta(formData.category);
 
   const filteredColors = COLOR_BANK.filter(c => c.name.toLowerCase().includes((formData.color || '').toLowerCase()));
   const selectedColorObj = COLOR_BANK.find(c => c.name.toLowerCase() === (formData.color || '').toLowerCase());
 
+  const fieldClass = `w-full rounded-[14px] border-none px-3.5 py-3 text-[13px] font-bold outline-none ring-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] focus:ring-2 ${darkMode ? 'bg-stone-950 text-white ring-white/10 placeholder:text-stone-700 focus:ring-white/25' : 'bg-[#F7F6F3] text-stone-950 ring-black/[0.045] placeholder:text-stone-400 focus:bg-white focus:ring-stone-300'}`;
+  const labelClass = `mb-1.5 block text-[9px] font-extrabold uppercase tracking-[0.12em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`;
+  const categoryLabel = KIT_CONFIG.productCategories.find(category => category.id === formData.category)?.label || 'Non choisie';
+  const dimensionsSummary = [formData.width, catMeta.showDepth ? formData.depth : null, formData.height].filter(Boolean).join(' × ');
+
   return (
-    <div className={`p-5 md:p-12 rounded-3xl md:rounded-[3rem] border shadow-2xl space-y-10 animate-in slide-in-from-top-4 transition-all ${darkMode ? 'bg-stone-800 border-stone-700 text-white' : 'bg-white border-stone-200/60 text-stone-900'}`}>
-      
-      {/* ── HEADER + SÉLECTEUR DE TYPE (PILL GROUP) ── */}
-      <div className={`border-b pb-6 space-y-5 ${darkMode ? 'border-stone-700' : 'border-stone-100'}`}>
-        <div className="flex justify-between items-center">
-          <p className={`text-xs font-black uppercase tracking-widest ${darkMode ? 'text-stone-400' : 'text-stone-900'}`}>{editData ? 'Modification en cours' : 'Nouvelle publication'}</p>
-          {editData && <button onClick={onCancelEdit} className="text-[10px] font-black text-red-500 uppercase hover:text-red-700 transition-colors">Annuler</button>}
-        </div>
+    <div className="grid min-h-0 grid-cols-1 gap-5 xl:h-full xl:grid-cols-[minmax(0,1fr)_minmax(250px,20%)] 2xl:gap-6">
+      <div className={`min-h-0 overflow-hidden rounded-[26px] border ${darkMode ? 'border-white/10 bg-[#11110f]' : 'border-stone-200 bg-white'}`}>
+        <div className="flex h-full min-h-0 flex-col overflow-y-auto px-5 py-5 sm:px-6 sm:py-6 xl:px-7 xl:py-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h3 className="text-[15px] font-extrabold tracking-[-0.025em]">{editData ? 'Modifier la publication' : 'Nouvelle publication'}</h3>
+              <p className={`mt-0.5 text-[10px] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Les informations essentielles, dans l’ordre naturel de saisie.</p>
+            </div>
+            {editData && <button type="button" onClick={onCancelEdit} className="rounded-full px-3 py-2 text-[10px] font-extrabold text-red-500 ring-1 ring-red-500/15 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500 hover:text-white">Annuler</button>}
+          </div>
 
-        {/* SÉLECTEUR DE TYPE — pill group */}
-        <div className="flex flex-wrap gap-2">
-          {KIT_CONFIG.productCategories.map(cat => {
-            const isActive = formData.category === cat.id;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setFormData({ ...formData, category: cat.id })}
-                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-300
-                  ${isActive
-                    ? (darkMode ? 'bg-white text-stone-900 border-white shadow-[0_0_15px_rgba(255,255,255,0.15)]' : 'bg-stone-900 text-white border-stone-900 shadow-lg')
-                    : (darkMode ? 'border-stone-700 text-stone-400 hover:border-stone-500 hover:text-stone-200' : 'border-stone-200 text-stone-500 hover:border-stone-400 hover:text-stone-700')
-                  }`}
+          <div className="-mx-1 mt-4 flex gap-2 overflow-x-auto px-1 py-1 no-scrollbar 2xl:flex-wrap 2xl:overflow-visible">
+            {KIT_CONFIG.productCategories.map(cat => {
+              const active = formData.category === cat.id;
+              return (
+                <button key={cat.id} type="button" onClick={() => setFormData({ ...formData, category: cat.id })} className={`shrink-0 rounded-full px-3.5 py-2.5 text-[9px] font-extrabold uppercase tracking-[0.08em] ring-1 transition-colors duration-200 active:scale-[0.98] ${active ? (darkMode ? 'bg-white text-stone-950 ring-white' : 'bg-stone-950 text-white ring-stone-950') : (darkMode ? 'text-stone-500 ring-white/10 hover:text-white' : 'text-stone-500 ring-black/[0.07] hover:bg-stone-50 hover:text-stone-950')}`}>
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-5 grid min-h-0 flex-1 grid-flow-dense grid-cols-1 gap-6 lg:grid-cols-12 xl:gap-7">
+            <div className="flex min-h-0 flex-col lg:col-span-4 2xl:col-span-3">
+              <div className="flex items-center justify-between">
+                <span className={labelClass}>Photos</span>
+                <div className="mb-1.5 flex items-center gap-1">
+                  {galleryItems.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClearImages}
+                      title="Retirer toutes les images"
+                      aria-label="Retirer toutes les images importées"
+                      className={`grid h-5 w-5 place-items-center rounded-full transition-colors ${darkMode ? 'text-stone-600 hover:bg-red-500/15 hover:text-red-400' : 'text-stone-300 hover:bg-red-50 hover:text-red-500'}`}
+                    >
+                      <Trash2 size={11} strokeWidth={1.8} />
+                    </button>
+                  )}
+                  <span className={`text-[8px] font-bold tabular-nums ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>{galleryItems.length}/{MAX_PRODUCT_IMAGES}</span>
+                </div>
+              </div>
+              <div
+                className={`grid min-h-[250px] flex-1 grid-cols-3 content-start gap-2.5 rounded-[18px] p-3 ring-1 transition-colors duration-200 lg:min-h-[330px] ${isDragging ? 'bg-emerald-500/5 ring-emerald-500/50' : (darkMode ? 'bg-black/20 ring-white/10' : 'bg-[#F8F7F4] ring-black/[0.045]')}`}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
               >
-                {cat.label}
-              </button>
-            );
-          })}
-        </div>
+                {galleryItems.slice(0, MAX_PRODUCT_IMAGES).map((item, idx) => (
+                  <div key={item.id} draggable onDragStart={(event) => onDragStartItem(event, idx)} onDragOver={onDragOverItem} onDrop={(event) => onDropItem(event, idx)} onTouchStart={() => handleTouchStart(idx)} onTouchEnd={handleTouchEnd} data-index={idx} className={`group relative aspect-square cursor-move overflow-hidden rounded-[12px] ring-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${draggedItemIndex === idx ? 'scale-95 opacity-50 ring-emerald-500' : (darkMode ? 'ring-white/10' : 'ring-black/[0.06]')}`}>
+                    <img src={item.preview} className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105" alt="" />
+                    <div className="absolute inset-x-1 bottom-1 flex translate-y-2 justify-end gap-1 opacity-0 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-y-0 group-hover:opacity-100">
+                      <button type="button" onClick={(event) => { event.stopPropagation(); handleOpenCropper(item); }} className="grid h-7 w-7 place-items-center rounded-full bg-white text-stone-950 shadow-[0_5px_14px_rgba(0,0,0,0.16)]" title="Recadrer"><span className="text-[11px]">↗</span></button>
+                      <button type="button" onClick={(event) => { event.stopPropagation(); if (item.preview && !item.isExisting) URL.revokeObjectURL(item.preview); setGalleryItems(items => items.filter((_, index) => index !== idx)); }} className="grid h-7 w-7 place-items-center rounded-full bg-red-500 text-white" title="Retirer"><Trash2 size={12} strokeWidth={1.7} /></button>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  disabled={uploading || galleryItems.length >= MAX_PRODUCT_IMAGES}
+                  onClick={() => fileInputRef.current.click()}
+                  title={galleryItems.length >= MAX_PRODUCT_IMAGES ? `Limite de ${MAX_PRODUCT_IMAGES} images atteinte` : 'Ajouter des images'}
+                  className={`group flex aspect-square flex-col items-center justify-center rounded-[12px] border border-dashed transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] disabled:cursor-not-allowed ${galleryItems.length >= MAX_PRODUCT_IMAGES
+                    ? (darkMode ? 'border-white/10 bg-white/[0.025] text-stone-700' : 'border-stone-300 bg-stone-100/70 text-stone-400')
+                    : (darkMode ? 'border-white/15 text-stone-600 hover:bg-white/5 hover:text-white' : 'border-stone-300 text-stone-400 hover:bg-white hover:text-stone-950')}`}
+                >
+                  {galleryItems.length >= MAX_PRODUCT_IMAGES
+                    ? <Check size={17} strokeWidth={1.7} />
+                    : <Upload size={17} strokeWidth={1.5} className="transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:-translate-y-0.5" />}
+                  <span className="mt-1 text-[8px] font-extrabold uppercase">{galleryItems.length >= MAX_PRODUCT_IMAGES ? 'Max' : 'Ajouter'}</span>
+                </button>
+              </div>
+              <input type="file" id="fileInput" ref={fileInputRef} className="hidden" accept="image/*" multiple onChange={handleImageChange} />
+            </div>
 
-        {/* Catégorie sélectionnée — indicateur visuel */}
-        {!formData.category && (
-          <p className={`text-[10px] font-bold uppercase tracking-wider ${darkMode ? 'text-amber-500/80' : 'text-amber-600/80'}`}>
-            ↑ Sélectionne un type avant de publier
-          </p>
-        )}
+            <div className="grid h-full min-h-0 grid-cols-1 content-start gap-x-4 gap-y-4 md:grid-cols-6 md:grid-rows-[auto_auto_auto_minmax(220px,1fr)] lg:col-span-8 2xl:col-span-9 2xl:gap-x-5">
+              <div className="md:col-span-3">
+                <label className={labelClass}>Nom de l’ouvrage</label>
+                <input ref={nameInputRef} enterKeyHint="next" placeholder={catMeta.namePlaceholder} className={fieldClass} value={formData.name} onChange={event => setFormData({ ...formData, name: event.target.value })} onKeyDown={(event) => handleEnterFocus(event, startingPriceInputRef)} />
+              </div>
+              <div className="md:col-span-2">
+                <div className="flex items-center justify-between">
+                  <label className={labelClass}>Prix de départ</label>
+                  <label className={`mb-1.5 flex cursor-pointer items-center gap-1.5 text-[8px] font-bold ${formData.priceOnRequest ? 'text-emerald-600' : 'text-stone-400'}`}><input type="checkbox" checked={formData.priceOnRequest} onChange={event => setFormData({ ...formData, priceOnRequest: event.target.checked })} className="accent-emerald-600" />Sur demande</label>
+                </div>
+                <input ref={startingPriceInputRef} type="number" enterKeyHint="next" disabled={formData.priceOnRequest} placeholder="0 €" className={`${fieldClass} disabled:opacity-45`} value={formData.priceOnRequest ? '' : (formData.startingPrice === 0 ? '' : formData.startingPrice)} onChange={event => setFormData({ ...formData, startingPrice: event.target.value === '' ? 0 : Number(event.target.value) })} onKeyDown={(event) => handleEnterFocus(event, stockInputRef)} />
+              </div>
+              <div className="md:col-span-1">
+                <label className={labelClass}>Stock</label>
+                <input ref={stockInputRef} type="number" enterKeyHint="next" placeholder="1" className={`${fieldClass} text-center`} value={formData.stock} onChange={event => setFormData({ ...formData, stock: event.target.value })} onKeyDown={(event) => handleEnterFocus(event, widthInputRef)} />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className={labelClass}>{catMeta.materialLabel}</label>
+                <select className={`${fieldClass} cursor-pointer appearance-none`} value={isCustomMaterial ? 'Autre' : formData.material} onChange={event => { const value = event.target.value; if (value === 'Autre') { setIsCustomMaterial(true); setFormData({ ...formData, material: '' }); } else { setIsCustomMaterial(false); setFormData({ ...formData, material: value }); } }}>
+                  <option value="">Sélectionner…</option>
+                  {catMeta.materialOptions.map(material => <option key={material} value={material}>{material}</option>)}
+                </select>
+                {isCustomMaterial && <input autoFocus placeholder="Préciser la matière" className={`${fieldClass} mt-2`} value={formData.material} onChange={event => setFormData({ ...formData, material: event.target.value })} />}
+              </div>
+              <div className="relative md:col-span-2">
+                <label className={labelClass}>Couleur dominante</label>
+                <span className="absolute bottom-[14px] left-3.5 h-3.5 w-3.5 rounded-full ring-1 ring-black/10" style={{ backgroundColor: selectedColorObj?.hex || 'transparent' }} />
+                <input onFocus={() => setShowColorDropdown(true)} onBlur={() => setShowColorDropdown(false)} placeholder="Cuivré, vert sauge…" className={`${fieldClass} pl-9`} value={formData.color} onChange={event => { setFormData({ ...formData, color: event.target.value }); setShowColorDropdown(true); }} />
+                {showColorDropdown && <div data-native-scroll-region="true" className={`absolute z-20 mt-1 max-h-44 w-full overflow-y-auto rounded-[14px] p-1.5 shadow-[0_18px_50px_rgba(28,25,23,0.14)] ring-1 ${darkMode ? 'bg-stone-900 ring-white/10' : 'bg-white ring-black/[0.06]'}`}>{filteredColors.length ? filteredColors.map(color => <button type="button" key={color.name} className={`flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-left text-[11px] font-semibold ${darkMode ? 'hover:bg-white/5' : 'hover:bg-stone-50'}`} onMouseDown={event => { event.preventDefault(); setFormData({ ...formData, color: color.name }); setShowColorDropdown(false); }}><span className="h-3.5 w-3.5 rounded-full ring-1 ring-black/10" style={{ backgroundColor: color.hex }} />{color.name}</button>) : <p className="px-3 py-2 text-[11px] text-stone-500">Couleur personnalisée</p>}</div>}
+              </div>
+              <div className="md:col-span-2">
+                <label className={labelClass}>Style</label>
+                <select className={`${fieldClass} cursor-pointer appearance-none`} value={formData.style} onChange={event => setFormData({ ...formData, style: event.target.value })}><option value="">Aucun / Non défini</option>{STYLE_OPTIONS.map(style => <option key={style} value={style}>{style}</option>)}</select>
+              </div>
+
+              <div className="md:col-span-6">
+                <label className={labelClass}>Dimensions en cm</label>
+                <div className={`grid max-w-[270px] gap-2 ${catMeta.showDepth ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                  <input ref={widthInputRef} type="number" placeholder={catMeta.widthLabel} className={`${fieldClass} text-center`} value={formData.width} onChange={event => setFormData({ ...formData, width: event.target.value })} onKeyDown={(event) => handleEnterFocus(event, catMeta.showDepth ? depthInputRef : heightInputRef)} />
+                  {catMeta.showDepth && <input ref={depthInputRef} type="number" placeholder={catMeta.depthLabel} className={`${fieldClass} text-center`} value={formData.depth} onChange={event => setFormData({ ...formData, depth: event.target.value })} onKeyDown={(event) => handleEnterFocus(event, heightInputRef)} />}
+                  <input ref={heightInputRef} type="number" placeholder={catMeta.heightLabel} className={`${fieldClass} text-center`} value={formData.height} onChange={event => setFormData({ ...formData, height: event.target.value })} />
+                </div>
+              </div>
+              <div className="flex min-h-[260px] flex-col md:col-span-6 md:min-h-0">
+                <label className={labelClass}>Histoire de l’objet</label>
+                <StoryEditor value={formData.description} onChange={(description) => setFormData({ ...formData, description })} darkMode={darkMode} />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        <div className="lg:col-span-4 space-y-4">
-          <div
-            className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-3 p-4 rounded-3xl transition-all border-2 border-dashed ${isDragging ? (darkMode ? 'border-amber-500/50 bg-amber-900/10' : 'border-amber-500 bg-amber-50/50 scale-[1.02]') : (darkMode ? 'bg-stone-800 border-stone-700/50' : 'border-stone-100')}`}
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-          >
-            {galleryItems.map((item, idx) => (
-              <div
-                key={item.id}
-                draggable
-                onDragStart={(e) => onDragStartItem(e, idx)}
-                onDragOver={(e) => onDragOverItem(e, idx)}
-                onDrop={(e) => onDropItem(e, idx)}
-                onTouchStart={() => handleTouchStart(idx)}
-                onTouchEnd={handleTouchEnd}
-                data-index={idx}
-                className={`aspect-square rounded-2xl overflow-hidden relative group shadow-md border cursor-move transition-all duration-300 ${draggedItemIndex === idx ? 'opacity-50 scale-110 border-amber-500 z-10 rotate-2' : (darkMode ? 'border-stone-700 hover:scale-[1.02]' : 'border-stone-50 hover:scale-[1.02]')}`}
-              >
-                <img src={item.preview} className="w-full h-full object-cover pointer-events-none" alt="" />
-
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-all duration-300 backdrop-blur-[2px]">
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); handleOpenCropper(item); }}
-                    className="p-2 bg-amber-500 rounded-full text-white hover:scale-110 transition-transform shadow-lg"
-                    title="Recadrer"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6.13 1L6 16a2 2 0 0 0 2 2h15" /><path d="M1 6.13L16 6a2 2 0 0 1 2 2v15" /></svg>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (item.preview && !item.isExisting) URL.revokeObjectURL(item.preview);
-                      setGalleryItems(items => items.filter((_, i) => i !== idx));
-                    }}
-                    className="p-2 bg-red-500 rounded-full text-white hover:scale-110 transition-transform shadow-lg"
-                    title="Supprimer"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                </div>
-
-                <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-md text-white text-[10px] font-black w-6 h-6 flex items-center justify-center rounded-lg border border-white/20 select-none shadow-lg">{idx + 1}</div>
-                {item.isCompressed && <div className="absolute bottom-2 right-2 bg-emerald-500 text-white p-1 rounded-full shadow-lg"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="20 6 9 17 4 12" /></svg></div>}
-              </div>
-            ))}
-            <button
-              onClick={() => !uploading && fileInputRef.current.click()}
-              type="button"
-              className={`aspect-square rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all gap-2 ${darkMode ? 'bg-stone-900/40 border-stone-700 text-stone-600 hover:bg-stone-900/60 hover:border-stone-500' : 'bg-stone-50 border-stone-200 text-stone-300 hover:bg-stone-100 hover:border-stone-300'}`}
-            >
-              <Upload size={24} />
-              <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Ajouter</span>
+      <aside className={`min-h-0 rounded-[26px] border p-5 sm:p-6 ${darkMode ? 'border-white/10 bg-[#11110f]' : 'border-stone-200 bg-white'}`}>
+        <div className="flex h-full min-h-[360px] flex-col">
+          <p className={`text-[9px] font-extrabold uppercase tracking-[0.14em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Résumé de la publication</p>
+          <div className={`mt-3 overflow-hidden rounded-[16px] ring-1 ${darkMode ? 'bg-black/20 ring-white/10' : 'bg-[#F7F6F3] ring-black/[0.045]'}`}>
+            {galleryItems[0]?.preview ? <img src={galleryItems[0].preview} alt="Aperçu principal" className="h-32 w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:scale-105" /> : <div className="grid h-32 place-items-center text-center text-[10px] text-stone-400"><span><Upload size={20} strokeWidth={1.3} className="mx-auto mb-2" />Le premier visuel apparaîtra ici</span></div>}
+          </div>
+          <h4 className="mt-3 truncate text-[16px] font-extrabold tracking-[-0.025em]">{formData.name || 'Sans titre'}</h4>
+          <dl className={`mt-3 divide-y text-[10px] ${darkMode ? 'divide-white/10' : 'divide-black/[0.055]'}`}>
+            {[
+              ['Catégorie', categoryLabel],
+              ['Prix', formData.priceOnRequest ? 'Sur demande' : `${Number(formData.startingPrice || 0).toLocaleString('fr-FR')} €`],
+              ['Stock', formData.stock === '' ? '—' : formData.stock],
+              ['Dimensions', dimensionsSummary ? `${dimensionsSummary} cm` : '—'],
+              ['Style', formData.style || 'Non défini'],
+            ].map(([label, value]) => <div key={label} className="flex items-center justify-between gap-3 py-2"><dt className="text-stone-400">{label}</dt><dd className="truncate font-bold">{value}</dd></div>)}
+          </dl>
+          <div className={`mt-4 min-h-[150px] flex-1 overflow-y-auto rounded-[16px] border p-4 text-[10px] leading-5 ${darkMode ? 'border-white/10 bg-black/20 text-stone-400' : 'border-stone-200 bg-[#F8F7F4] text-stone-600'}`}>
+            <p className={`mb-3 text-[8px] font-extrabold uppercase tracking-[0.14em] ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>Aperçu de l’histoire</p>
+            {formData.description.trim() ? <RichTextStory value={formData.description} /> : <p className="text-stone-400">Le récit mis en forme apparaîtra ici pendant la rédaction.</p>}
+          </div>
+          <div className="mt-auto pt-3">
+            {msg && <p className={`mb-2 rounded-[12px] px-3 py-2 text-[9px] font-bold ${msg.startsWith('Enregistré') || msg.includes('optimisées') ? 'bg-emerald-500/10 text-emerald-600' : 'bg-stone-500/10 text-stone-500'}`}>{msg}</p>}
+            {(totalOriginalSize > 0 || totalCompressedSize > 0) && <div className="mb-2 flex items-center justify-between text-[9px] text-stone-400"><span>{formatBytes(totalOriginalSize)}</span>{totalCompressedSize > 0 && <span className="font-bold text-emerald-600">Optimisé {formatBytes(totalCompressedSize)}</span>}</div>}
+            {totalCompressedSize > 0 && <button type="button" onClick={handleDownloadImages} className={`mb-2 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-[9px] font-extrabold ring-1 ${darkMode ? 'ring-white/10 hover:bg-white/5' : 'ring-black/[0.06] hover:bg-stone-50'}`}><Download size={13} strokeWidth={1.5} />Télécharger les images</button>}
+            <button type="button" onClick={addMeuble} disabled={uploading} className="group flex w-full items-center justify-between rounded-full bg-stone-950 py-1.5 pl-5 pr-1.5 text-[10px] font-extrabold text-white shadow-[0_14px_34px_rgba(28,25,23,0.2)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] disabled:opacity-50 dark:bg-white dark:text-stone-950">
+              <span>{uploading ? 'Enregistrement…' : (editData ? 'Enregistrer' : 'Publier l’ouvrage')}</span>
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-white/10 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 dark:bg-black/5">↗</span>
             </button>
           </div>
-          <input type="file" id="fileInput" ref={fileInputRef} className="hidden" accept="image/*" multiple onChange={handleImageChange} />
         </div>
-        <div className="lg:col-span-8 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)] gap-4 items-end">
-            <div className="space-y-1.5">
-              <div className="flex items-center min-h-[22px] ml-2">
-                <label className="text-[9px] font-black uppercase text-stone-400">Nom de l'ouvrage</label>
-              </div>
-              <input
-                ref={nameInputRef}
-                enterKeyHint="next"
-                placeholder={catMeta.namePlaceholder}
-                className={`w-full p-4 rounded-xl border-none font-bold outline-none focus:ring-4 transition-all shadow-inner ${darkMode ? 'bg-stone-900 text-white ring-stone-700 placeholder:text-stone-600' : 'bg-stone-50 text-stone-900 ring-stone-100'}`}
-                value={formData.name}
-                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                onKeyDown={(e) => handleEnterFocus(e, startingPriceInputRef)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between ml-2 min-h-[22px]">
-                <label className="text-[9px] font-black uppercase text-stone-400">Prix de départ (€)</label>
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    className="hidden"
-                    checked={formData.priceOnRequest}
-                    onChange={e => setFormData({ ...formData, priceOnRequest: e.target.checked })}
-                  />
-                  <div className={`w-3.5 h-3.5 rounded-full border transition-all flex items-center justify-center ${formData.priceOnRequest ? 'bg-amber-500 border-amber-500' : 'border-stone-300 dark:border-stone-600'}`}>
-                    {formData.priceOnRequest && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><polyline points="20 6 9 17 4 12" /></svg>}
-                  </div>
-                  <span className={`text-[8px] font-black uppercase transition-colors ${formData.priceOnRequest ? 'text-amber-500' : 'text-stone-400 group-hover:text-stone-500'}`}>Prix sur demande</span>
-                </label>
-              </div>
-              <input
-                ref={startingPriceInputRef}
-                type="number"
-                enterKeyHint="next"
-                disabled={formData.priceOnRequest}
-                placeholder={formData.priceOnRequest ? "Demande" : "0"}
-                className={`w-full p-4 rounded-xl border-none font-bold outline-none appearance-none [appearance:textfield] [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:ring-4 transition-all shadow-inner disabled:opacity-50 ${darkMode ? 'bg-stone-900 text-white ring-stone-700 placeholder:text-stone-600' : 'bg-stone-50 text-stone-900 ring-stone-100'}`}
-                value={formData.priceOnRequest ? "" : (formData.startingPrice === 0 ? "" : formData.startingPrice)}
-                onChange={e => setFormData({ ...formData, startingPrice: e.target.value === "" ? 0 : Number(e.target.value) })}
-                onKeyDown={(e) => handleEnterFocus(e, stockInputRef)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center min-h-[22px] ml-2">
-                <label className="text-[9px] font-black uppercase text-stone-400">Stock Initial</label>
-              </div>
-              <input
-                ref={stockInputRef}
-                type="number"
-                enterKeyHint="next"
-                placeholder="1"
-                className={`w-full p-4 rounded-xl border-none font-bold outline-none appearance-none [appearance:textfield] [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:ring-4 transition-all shadow-inner ${darkMode ? 'bg-stone-900 text-white ring-stone-700 placeholder:text-stone-600' : 'bg-stone-50 text-stone-900 ring-stone-100'}`}
-                value={formData.stock}
-                onChange={e => setFormData({ ...formData, stock: e.target.value })}
-                onKeyDown={(e) => handleEnterFocus(e, widthInputRef)}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1.2fr)] gap-4 items-start">
-            <div className="space-y-1.5">
-              <div className="flex items-center min-h-[22px] ml-2">
-                <label className="text-[9px] font-black uppercase text-stone-400">{catMeta.materialLabel}</label>
-              </div>
-              <div className="relative space-y-2">
-                <div className="relative">
-                  <select
-                    className={`w-full p-4 rounded-xl border-none font-bold outline-none text-sm focus:ring-4 transition-all shadow-inner appearance-none cursor-pointer ${darkMode ? 'bg-stone-900 text-white ring-stone-700' : 'bg-stone-50 text-stone-900 ring-stone-100'}`}
-                    value={isCustomMaterial ? "Autre" : formData.material}
-                    onChange={e => {
-                      const val = e.target.value;
-                      if (val === "Autre") {
-                        setIsCustomMaterial(true);
-                        setFormData({ ...formData, material: "" });
-                      } else {
-                        setIsCustomMaterial(false);
-                        setFormData({ ...formData, material: val });
-                      }
-                    }}
-                  >
-                    <option value="" disabled>Sélectionner...</option>
-                    {catMeta.materialOptions.map(mat => (
-                      <option key={mat} value={mat}>{mat}</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-stone-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-                  </div>
-                </div>
-                {isCustomMaterial && (
-                  <input
-                    autoFocus
-                    placeholder="Précisez l'essence de bois..."
-                    className={`w-full p-4 rounded-xl border font-bold outline-none text-sm focus:ring-4 transition-all shadow-inner animate-in slide-in-from-top-2 ${darkMode ? 'bg-stone-900 text-white border-stone-700 ring-stone-700 placeholder:text-stone-600' : 'bg-amber-50 text-stone-900 border-amber-200/50 ring-amber-100'}`}
-                    value={formData.material}
-                    onChange={e => setFormData({ ...formData, material: e.target.value })}
-                  />
-                )}
-              </div>
-            </div>
+      </aside>
 
-            {/* ── Couleur ── */}
-            <div className="space-y-1.5 relative">
-              <div className="flex items-center min-h-[22px] ml-2">
-                <label className="text-[9px] font-black uppercase text-stone-400">Couleur dominante</label>
-              </div>
-              <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <div 
-                    className={`w-4 h-4 rounded-full border shadow-sm ${darkMode ? 'border-stone-600' : 'border-stone-300'}`} 
-                    style={{ backgroundColor: selectedColorObj ? selectedColorObj.hex : 'transparent' }}
-                  />
-                </div>
-                <input
-                  onFocus={() => setShowColorDropdown(true)}
-                  onBlur={() => setShowColorDropdown(false)}
-                  placeholder="Ex: Cuivré..."
-                  className={`w-full p-4 pl-11 rounded-xl border-none font-bold outline-none text-sm focus:ring-4 transition-all shadow-inner ${darkMode ? 'bg-stone-900 text-white ring-stone-700 placeholder:text-stone-600' : 'bg-stone-50 text-stone-900 ring-stone-100'}`}
-                  value={formData.color}
-                  onChange={e => {
-                    setFormData({ ...formData, color: e.target.value });
-                    setShowColorDropdown(true);
-                  }}
-                />
-                
-                {showColorDropdown && (
-                  <div data-native-scroll-region="true" className={`absolute z-50 w-full mt-2 py-2 rounded-xl border shadow-2xl max-h-48 overflow-y-auto overscroll-contain animate-in fade-in slide-in-from-top-2 ${darkMode ? 'bg-stone-800 border-stone-700' : 'bg-white border-stone-100'}`}>
-                    {filteredColors.length > 0 ? (
-                      filteredColors.map(c => (
-                        <div 
-                          key={c.name}
-                          className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${darkMode ? 'hover:bg-stone-700 text-stone-200' : 'hover:bg-stone-50 text-stone-700'}`}
-                          onMouseDown={(e) => { 
-                            e.preventDefault(); // Prevents input blur
-                            setFormData({ ...formData, color: c.name });
-                            setShowColorDropdown(false);
-                          }}
-                        >
-                          <div className="w-5 h-5 rounded-full border shadow-sm border-black/10" style={{ backgroundColor: c.hex }} />
-                          <span className="text-xs font-bold">{c.name}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="px-4 py-3 text-xs text-stone-500 italic">
-                        Couleur perso : "{formData.color}"
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* ── Style ── */}
-            <div className="space-y-1.5">
-              <div className="flex items-center min-h-[22px] ml-2">
-                <label className="text-[9px] font-black uppercase text-stone-400">Style</label>
-              </div>
-              <div className="relative">
-                <select
-                  className={`w-full p-4 rounded-xl border-none font-bold outline-none text-sm focus:ring-4 transition-all shadow-inner appearance-none cursor-pointer ${darkMode ? 'bg-stone-900 text-white ring-stone-700' : 'bg-stone-50 text-stone-900 ring-stone-100'}`}
-                  value={formData.style}
-                  onChange={e => setFormData({ ...formData, style: e.target.value })}
-                >
-                  <option value="">Aucun / Non défini</option>
-                  {STYLE_OPTIONS.map(s => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-stone-400">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-                </div>
-              </div>
-            </div>
-
-            {/* ── Dimensions ── */}
-            <div className="space-y-1.5 flex flex-col">
-              <div className="flex items-center min-h-[22px] ml-2">
-                <label className="text-[9px] font-black uppercase text-stone-400">
-                  Dimensions ({catMeta.widthLabel}{catMeta.showDepth ? ` × ${catMeta.depthLabel}` : ''} × {catMeta.heightLabel} cm)
-                </label>
-              </div>
-              <div className={`grid gap-2 ${catMeta.showDepth ? 'grid-cols-3' : 'grid-cols-2'}`}>
-                <input
-                  ref={widthInputRef}
-                  type="number"
-                  enterKeyHint="next"
-                  placeholder={catMeta.widthLabel}
-                  className={`w-full px-3 py-4 rounded-xl border-none font-bold outline-none text-sm tabular-nums text-center appearance-none [appearance:textfield] [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:ring-4 transition-all ${darkMode ? 'bg-stone-900 text-white ring-stone-700 placeholder:text-stone-600' : 'bg-stone-50 text-stone-900 ring-stone-100'}`}
-                  value={formData.width}
-                  onChange={e => setFormData({ ...formData, width: e.target.value })}
-                  onKeyDown={(e) => handleEnterFocus(e, catMeta.showDepth ? depthInputRef : heightInputRef)}
-                />
-                {catMeta.showDepth && (
-                  <input
-                    ref={depthInputRef}
-                    type="number"
-                    enterKeyHint="next"
-                    placeholder={catMeta.depthLabel}
-                    className={`w-full px-3 py-4 rounded-xl border-none font-bold outline-none text-sm tabular-nums text-center appearance-none [appearance:textfield] [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:ring-4 transition-all ${darkMode ? 'bg-stone-900 text-white ring-stone-700 placeholder:text-stone-600' : 'bg-stone-50 text-stone-900 ring-stone-100'}`}
-                    value={formData.depth}
-                    onChange={e => setFormData({ ...formData, depth: e.target.value })}
-                    onKeyDown={(e) => handleEnterFocus(e, heightInputRef)}
-                  />
-                )}
-                <input
-                  ref={heightInputRef}
-                  type="number"
-                  enterKeyHint="done"
-                  placeholder={catMeta.heightLabel}
-                  className={`w-full px-3 py-4 rounded-xl border-none font-bold outline-none text-sm tabular-nums text-center appearance-none [appearance:textfield] [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:ring-4 transition-all ${darkMode ? 'bg-stone-900 text-white ring-stone-700 placeholder:text-stone-600' : 'bg-stone-50 text-stone-900 ring-stone-100'}`}
-                  value={formData.height}
-                  onChange={e => setFormData({ ...formData, height: e.target.value })}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[9px] font-black uppercase text-stone-400 ml-2">L'histoire de l'objet</label>
-            <textarea
-              placeholder="Décrivez l'origine du bois, le temps de travail, les détails uniques..."
-              className={`w-full p-5 rounded-2xl border-none font-bold text-sm h-64 overflow-y-auto overscroll-contain resize-none outline-none focus:ring-4 transition-all shadow-inner ${darkMode ? 'bg-stone-900 text-white ring-stone-700 placeholder:text-stone-600' : 'bg-stone-50 text-stone-900 ring-stone-100'}`}
-              value={formData.description}
-              onChange={e => setFormData({ ...formData, description: e.target.value })}
-              onWheelCapture={handleDescriptionWheelCapture}
-            />
-          </div>
-          <div className={`space-y-4 rounded-2xl p-5 ring-1 ${darkMode ? 'bg-stone-900/60 ring-stone-700' : 'bg-stone-50 ring-stone-100'}`}>
-            <div>
-              <label htmlFor="product-seo-title" className="ml-2 text-[9px] font-black uppercase text-stone-400">Titre SEO optionnel</label>
-              <input
-                id="product-seo-title"
-                type="text"
-                maxLength={70}
-                className={`mt-1.5 w-full rounded-xl border-none px-4 py-3 text-sm font-bold outline-none focus:ring-4 ${darkMode ? 'bg-stone-950 text-white ring-stone-700' : 'bg-white text-stone-900 ring-stone-100'}`}
-                value={formData.seoTitle}
-                onChange={e => setFormData({ ...formData, seoTitle: e.target.value })}
-                placeholder={formData.name || 'Fallback automatique sur le nom'}
-              />
-            </div>
-            <div>
-              <label htmlFor="product-seo-description" className="ml-2 text-[9px] font-black uppercase text-stone-400">Description SEO optionnelle</label>
-              <textarea
-                id="product-seo-description"
-                maxLength={180}
-                className={`mt-1.5 h-24 w-full resize-none rounded-xl border-none px-4 py-3 text-sm font-bold outline-none focus:ring-4 ${darkMode ? 'bg-stone-950 text-white ring-stone-700' : 'bg-white text-stone-900 ring-stone-100'}`}
-                value={formData.seoDescription}
-                onChange={e => setFormData({ ...formData, seoDescription: e.target.value })}
-                placeholder="Fallback automatique sur l'histoire de l'objet"
-              />
-            </div>
-            <label className="flex cursor-pointer items-center gap-3 text-[10px] font-black uppercase tracking-wide text-stone-500">
-              <input
-                type="checkbox"
-                checked={formData.seoIndexable}
-                onChange={e => setFormData({ ...formData, seoIndexable: e.target.checked })}
-                className="h-4 w-4 accent-stone-900"
-              />
-              Autoriser l'indexation Google
-            </label>
-          </div>
-        </div>
-      </div>
-
-      {/* Metrics Display (Responsive Fix) */}
-      {(totalOriginalSize > 0 || totalCompressedSize > 0) && (
-        <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-6 gap-6 mt-4 border-t border-dashed border-stone-700/30">
-          <div className="flex flex-col gap-1 text-center sm:text-left">
-            <p className="text-[10px] font-black uppercase text-stone-500 tracking-tighter">Diagnostic Poids</p>
-            <div className="text-[11px] font-mono leading-tight">
-              <span className={darkMode ? 'text-stone-400' : 'text-stone-500'}>Initial: {formatBytes(totalOriginalSize)}</span>
-              {totalCompressedSize > 0 && (
-                <div className="text-emerald-500 font-bold mt-1">
-                  Optimisé: {formatBytes(totalCompressedSize)}
-                  <span className="ml-2 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">-{((1 - totalCompressedSize / totalOriginalSize) * 100).toFixed(0)}%</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-3 w-full sm:w-auto">
-            {/* Download Button */}
-            {totalCompressedSize > 0 && (
-              <button
-                onClick={handleDownloadImages}
-                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-4 rounded-2xl text-[10px] font-black uppercase transition-all shadow-xl active:scale-95 ${darkMode ? 'bg-stone-700 text-stone-300 hover:bg-stone-600' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}
-              >
-                <Download size={16} /> Télécharger
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-
-      <div className={`flex flex-col items-end gap-3 border-t pt-6 ${darkMode ? 'border-stone-700' : 'border-stone-100'}`}>
-        {msg && <div className={`text-[9px] font-black uppercase px-4 py-2 rounded-full border shadow-sm ${msg.includes('✅') ? (darkMode ? 'bg-emerald-950/40 text-emerald-400 border-emerald-900/40' : 'bg-emerald-50 text-emerald-600 border-emerald-100') : (darkMode ? 'bg-red-950/40 text-red-400 border-red-900/40' : 'bg-red-50 text-red-600 border-red-100')}`}>{msg}</div>}
-        <button onClick={addMeuble} disabled={uploading} className={`w-full md:w-auto px-16 py-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-2xl hover:translate-y-[-2px] active:translate-y-[1px] transition-all disabled:opacity-50 ${darkMode ? 'bg-white text-stone-900 hover:bg-stone-200' : 'bg-stone-900 text-white hover:bg-stone-800'}`}>
-          {editData ? "Confirmer les modifications" : "Publier l'ouvrage"}
-        </button>
-      </div>
-
-      <ImageCropperModal
-        isOpen={cropperConfig.isOpen}
-        image={cropperConfig.image}
-        aspect={cropperConfig.aspect}
-        onClose={() => setCropperConfig(prev => ({ ...prev, isOpen: false }))}
-        onCropComplete={handleCropComplete}
-        darkMode={darkMode}
-      />
+      <ImageCropperModal isOpen={cropperConfig.isOpen} image={cropperConfig.image} aspect={cropperConfig.aspect} onClose={() => setCropperConfig(prev => ({ ...prev, isOpen: false }))} onCropComplete={handleCropComplete} darkMode={darkMode} />
     </div>
   );
 };

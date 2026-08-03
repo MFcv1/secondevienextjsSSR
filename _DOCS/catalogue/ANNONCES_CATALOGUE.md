@@ -35,12 +35,21 @@ La taxonomie executable vit dans `src/kit/config/constants.js` et `src/lib/seo/c
 `src/kit/admin/AdminForm.jsx` est le formulaire principal. Les champs structurants incluent:
 
 - identite: `name`, identifiant Firestore, dates, collection;
-- contenu: `description`, materiau, couleur, style;
+- contenu: `description`, materiau, couleur, style; `description` accepte le
+  sous-ensemble Markdown borne de `StoryEditor`, rendu par `RichTextStory` et
+  reduit en texte brut pour metadata et donnees structurees;
 - dimensions: largeur, profondeur, hauteur et texte libre de dimensions;
 - vente: prix, prix de depart, stock, vendu/reserve, prix sur demande;
 - classement: categorie, nouveaute, petit prix et ordres editoriaux;
-- SEO: `seoTitle`, `seoDescription`, `seoIndexable`;
+- SEO automatique: `seoTitle` et `seoDescription` restent vides pour activer
+  les replis nom/histoire; `seoIndexable` est calcule a chaque sauvegarde;
 - medias: `images`, `imageUrl`, `thumbnails`, `thumbnailUrl`, `imageVariants`, `imageMetadata`.
+
+Une publication accepte au maximum 23 images. `AdminForm` borne la selection,
+affiche le compteur et conserve l'ordre des 23 vignettes; la case d'ajout reste
+alors visible dans un etat desactive `MAX`. Une commande de vidage placee pres
+du compteur retire en une fois toutes les images du formulaire. La commande
+produit refuse egalement tout tableau media qui depasse cette limite.
 
 Les anciennes formes de donnees restent normalisees par `src/lib/server/products.js` et `src/utils/imageUtils.js`, mais les nouvelles ecritures doivent produire le modele courant complet.
 
@@ -122,7 +131,11 @@ Le code de ce chantier est local uniquement jusqu'a la phase de deploiement expl
 
 ## 5. Publication et indexabilite
 
-Une annonce visible n'est pas automatiquement indexable. `src/lib/seo/indexability.js` exige un ensemble coherent de titre, description, categorie, image et intention `seoIndexable`.
+Une annonce visible n'est pas automatiquement indexable. `AdminForm` active
+automatiquement l'intention `seoIndexable` lorsque le nom contient au moins
+quatre caracteres, l'histoire au moins 48 caracteres et une image est presente.
+`src/lib/seo/indexability.js` revalide ensuite titre, description, categorie,
+image, statut public et cette intention. Aucun champ SEO manuel n'est demande.
 
 Regles:
 

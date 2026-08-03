@@ -1,6 +1,7 @@
 import { getCategoryUrl, getProductUrl } from '../../utils/slug';
 import { getProductImageItems } from '../../utils/imageUtils';
 import { getCategoryLabel } from './categories';
+import { stripStoryFormatting } from '../content/storyFormatting';
 
 const compact = (value) => (
   Array.isArray(value)
@@ -60,7 +61,7 @@ export const buildProductJsonLd = (product, siteUrl) => {
     '@type': 'Product',
     '@id': `${url}#product`,
     name: product?.name || product?.title,
-    description: product?.description,
+    description: stripStoryFormatting(product?.description),
     image: images.length ? images : undefined,
     sku: product?.id,
     category: product?.category,

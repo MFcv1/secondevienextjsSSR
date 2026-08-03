@@ -39,6 +39,7 @@ import {
 import {
   clearAdminDataCache,
   getAdminCachedData,
+  invalidateAdminCachedData,
   loadAdminCachedData,
 } from '../../src/kit/admin/adminDataCache';
 import { preloadAdminCommerceData } from '../../src/kit/admin/adminCommerceData';
@@ -60,8 +61,7 @@ const AdminInvoices = React.lazy(() => import('../../src/kit/admin/AdminInvoices
 const AdminReturns = React.lazy(loadAdminReturns);
 const AdminLivraison = React.lazy(() => import('../../src/kit/admin/AdminLivraison'));
 const AdminStudio = React.lazy(() => import('../../src/kit/admin/AdminStudio'));
-const AdminForm = React.lazy(() => import('../../src/kit/admin/AdminForm'));
-const AdminItemList = React.lazy(() => import('../../src/kit/admin/AdminItemList'));
+const AdminPublicationWorkspace = React.lazy(() => import('../../src/kit/admin/AdminPublicationWorkspace'));
 const AdminUsers = React.lazy(() => import('../../src/kit/admin/AdminUsers'));
 const AdminNewsletter = React.lazy(() => import('../../src/kit/admin/AdminNewsletter'));
 const AdminAnalytics = React.lazy(() => import('../../src/kit/admin/AdminAnalytics'));
@@ -158,6 +158,7 @@ function AdminContent() {
   }));
   const catalogStatusRef = React.useRef('idle');
   const catalogRequestRef = React.useRef(null);
+  const deletedProductIdsRef = React.useRef(new Set());
   const cachedAdminUidRef = React.useRef(null);
 
   React.useEffect(() => {
@@ -275,9 +276,13 @@ function AdminContent() {
 
     const request = loadAdminPublicCatalog()
       .then((items) => {
+        const currentItems = items.filter((item) => (
+          !deletedProductIdsRef.current.has(String(item?.id || '').trim())
+          && !deletedProductIdsRef.current.has(String(item?.originalId || '').trim())
+        ));
         catalogStatusRef.current = 'loaded';
-        setCatalogState({ items, status: 'loaded', error: null });
-        return items;
+        setCatalogState({ items: currentItems, status: 'loaded', error: null });
+        return currentItems;
       })
       .catch((error) => {
         catalogStatusRef.current = 'error';
@@ -334,6 +339,11 @@ function AdminContent() {
   const handleDeleteItem = async (_year, item, collectionName) => {
     if (!window.confirm(`Supprimer définitivement « ${item.name || 'ce meuble'} » ?`)) return;
     await deleteProductAdmin(item, collectionName);
+    [item?.id, item?.originalId]
+      .map((value) => String(value || '').trim())
+      .filter(Boolean)
+      .forEach((productId) => deletedProductIdsRef.current.add(productId));
+    invalidateAdminCachedData('admin-dashboard:insights');
     clearAdminPublicCatalogCache();
   };
 
@@ -455,7 +465,7 @@ function AdminContent() {
   }
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-[#0A0A0A] text-white' : 'bg-[#FAFAF9] text-stone-900'}`}>
+    <div className={`${adminCollection === 'furniture' ? 'xl:h-[100dvh] xl:overflow-hidden' : 'min-h-screen'} ${darkMode ? 'bg-[#0A0A0A] text-white' : 'bg-[#FAFAF9] text-stone-900'}`}>
       <AdminSidebar
         activeTabId={adminCollection}
         darkMode={darkMode}
@@ -466,8 +476,8 @@ function AdminContent() {
         tabs={adminTabs}
       />
 
-      <div className="min-h-screen lg:pl-[17.5rem]">
-        <main className="mx-auto max-w-[100rem] space-y-8 px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
+      <div className={`${adminCollection === 'furniture' ? 'xl:h-[100dvh] xl:overflow-hidden' : 'min-h-screen'} lg:pl-[17.5rem]`}>
+        <main className={`${adminCollection === 'furniture' ? 'max-w-none xl:grid xl:h-full xl:grid-rows-[auto_minmax(0,1fr)] xl:gap-5 xl:py-6' : 'mx-auto max-w-[100rem] space-y-8 lg:py-10'} px-4 py-8 sm:px-6 lg:px-7 2xl:px-10`}>
         <Suspense fallback={null}>
           <AdminIPTracker />
         </Suspense>
@@ -583,30 +593,17 @@ function AdminContent() {
           ) : adminCollection === 'maintenance' ? (
             <AdminMaintenance darkMode={darkMode} />
           ) : (
-            <>
-              <AdminForm
-                key={adminCollection}
-                editData={editingItem}
-                onCancelEdit={() => setEditingItem(null)}
-                collectionName={adminCollection}
-                darkMode={darkMode}
-                mutationsEnabled
-              />
-              <div className="pt-10">
-                <AdminItemList
-                  collectionName={adminCollection}
-                  darkMode={darkMode}
-                  onEdit={(item) => {
-                    setEditingItem(item);
-                    window.scrollTo(0, 0);
-                  }}
-                  onToggleStatus={(item) => handleToggleStatus(item, adminCollection)}
-                  onDelete={(item) => handleDeleteItem(null, item, adminCollection)}
-                  onMarkAsSold={(item) => handleMarkAsSold(item, adminCollection)}
-                  onMarkAsAvailable={(item) => handleMarkAsAvailable(item, adminCollection)}
-                />
-              </div>
-            </>
+            <AdminPublicationWorkspace
+              collectionName={adminCollection}
+              darkMode={darkMode}
+              editData={editingItem}
+              onCancelEdit={() => setEditingItem(null)}
+              onEdit={(item) => setEditingItem(item)}
+              onToggleStatus={(item) => handleToggleStatus(item, adminCollection)}
+              onDelete={(item) => handleDeleteItem(null, item, adminCollection)}
+              onMarkAsSold={(item) => handleMarkAsSold(item, adminCollection)}
+              onMarkAsAvailable={(item) => handleMarkAsAvailable(item, adminCollection)}
+            />
           )}
         </Suspense>
       </main>
