@@ -738,7 +738,7 @@ functions/
 | liens de paiement admin | `createAdminPaymentLink`, `listAdminPaymentLinks`, `extendAdminPaymentLink`, `regenerateAdminPaymentLink`, `recreateAdminPaymentLink`, `cancelAdminPaymentLink`, `getAdminPaymentLinkPublic`, `prepareAdminPaymentLinkPayment`, `resumeAdminPaymentLinkPayment`, `expireAdminPaymentLinks` |
 | commerce v2 retours client | `decideCustomerReturnRequestAdmin`, puis commandes refund/retour v2 existantes selon le parcours choisi |
 | commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
-| commerce v2 produit | `preflightProductMutationAdmin`, `createProductAdmin`, `updateProductOfferAdmin`, `publishProductAdmin`, `adjustInventoryAdmin`, `archiveProductAdmin` |
+| commerce v2 produit | `preflightProductMutationAdmin`, `createProductAdmin`, `updateProductOfferAdmin`, `publishProductAdmin`, `adjustInventoryAdmin`, `deleteProductAdmin` |
 | refunds/Connect | `refundOrderAdmin`, `syncRefundStatusAdmin`, `getStripeConnectStatus`, `startStripeConnectOnboarding`, `syncStripeConnectAccount`, `requestStripeConnectReconnect`, `confirmStripeConnectReconnect` |
 | preuves E2E | `e2eCheckoutProof`, `e2eStripeHardeningProof` |
 | Auth/admin | `grantAdminOnAuth`, `onRegisteredUserCreated`, `onRegisteredUserDeleted`, `addAdminUser`, `removeAdminUser`, `logUserConnection`, `getUserStats`, `syncSuperAdminClaim`, `ensureAdminAccessRegistry` |

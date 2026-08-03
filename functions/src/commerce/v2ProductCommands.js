@@ -165,14 +165,14 @@ const adjustInventoryAdmin = callable(createHandler(
     })
 ));
 
-const archiveProductAdmin = callable(createHandler(
-    'archive_product',
+const deleteProductAdmin = callable(createHandler(
+    'delete_product',
     () => ({})
 ));
 
 module.exports = {
     adjustInventoryAdmin,
-    archiveProductAdmin,
+    deleteProductAdmin,
     createProductAdmin,
     preflightProductMutationAdmin,
     publishProductAdmin,

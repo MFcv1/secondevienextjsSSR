@@ -47,9 +47,11 @@ Les anciennes formes de donnees restent normalisees par `src/lib/server/products
 La stabilisation commerce ajoute localement un rail serveur dormant dans
 `functions/src/commerce/domain/productCommands.js` et
 `productCommandRepository.js`. Il separe creation en brouillon, offre/prix,
-ajustement de stock versionne, publication et archive douce. Chaque commande
+ajustement de stock versionne, publication et suppression definitive. Chaque commande
 exige un admin AAL2 actif, App Check, une raison, une cle idempotente, une
-version attendue et un audit append-only. Les commandes catalogue ne dependent
+version attendue et un audit append-only. La suppression retire le document
+source du catalogue; les commandes conservees gardent leur snapshot produit et
+les medias retires suivent la quarantaine Storage. Les commandes catalogue ne dependent
 plus de `adminMutationMode`, reserve au rail commerce transactionnel: un
 administrateur autorise doit pouvoir gerer les annonces lorsque checkout,
 commandes et remboursements restent en lecture seule. Avant toute compression

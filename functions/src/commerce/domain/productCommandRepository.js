@@ -101,9 +101,9 @@ function createProductCommandRepository({ db, refs, clock, failpoints = null }) 
                             collectionName,
                             commandId: command.commandId,
                             action,
-                            commerceVersion: nextProduct.commerceVersion,
-                            inventoryVersion: nextProduct.inventoryVersion,
-                            status: nextProduct.status
+                            commerceVersion: nextProduct?.commerceVersion ?? version + 1,
+                            inventoryVersion: nextProduct?.inventoryVersion ?? existingProduct?.inventoryVersion ?? 0,
+                            status: nextProduct?.status ?? 'deleted'
                         }
                     };
                 },
@@ -112,7 +112,11 @@ function createProductCommandRepository({ db, refs, clock, failpoints = null }) 
                         throw repositoryError('COMMERCE_AUDIT_APPEND_ONLY_CONFLICT');
                     }
                     const now = clock.now();
-                    transaction.set(productRef, record.result.product);
+                    if (record.result.product) {
+                        transaction.set(productRef, record.result.product);
+                    } else {
+                        transaction.delete(productRef);
+                    }
                     transaction.set(commandRef, {
                         schemaVersion: 2,
                         commandId: command.commandId,
@@ -138,9 +142,9 @@ function createProductCommandRepository({ db, refs, clock, failpoints = null }) 
                         reason,
                         payloadHash: hashPayload(payload),
                         commerceVersionBefore: version,
-                        commerceVersionAfter: record.result.product.commerceVersion,
+                        commerceVersionAfter: record.result.product?.commerceVersion ?? null,
                         inventoryVersionBefore: existingProduct?.inventoryVersion ?? null,
-                        inventoryVersionAfter: record.result.product.inventoryVersion,
+                        inventoryVersionAfter: record.result.product?.inventoryVersion ?? null,
                         createdAt: now
                     });
                 },

@@ -1302,7 +1302,7 @@ const scenarios = {
         );
     }),
 
-    'gate4-product-commands-are-atomic-idempotent-and-soft-archive': async (context) => withBackend(async (firestore) => {
+    'gate4-product-commands-are-atomic-idempotent-and-delete-source': async (context) => withBackend(async (firestore) => {
         const refs = gate4ProductRefs(firestore);
         const commands = createProductCommandRepository({
             db: { runTransaction: (run) => runTransaction(firestore, run) },
@@ -1395,25 +1395,23 @@ const scenarios = {
             publication,
             'acknowledged publication retry wins before stale version'
         );
-        const archive = await commands.execute({
+        const deletion = await commands.execute({
             ...base,
-            action: 'archive_product',
+            action: 'delete_product',
             command: {
-                commandId: 'command-product-archive-0001',
+                commandId: 'command-product-delete-0001',
                 expectedVersion: publication.commerceVersion
             },
-            reason: 'archive sans suppression physique',
+            reason: 'suppression definitive demandee',
             payload: {}
         });
 
-        const product = (await getDoc(refs.product({
+        const product = await getDoc(refs.product({
             collectionName: 'furniture',
             productId
-        }))).data();
-        context.equal(archive.status, 'archived', 'archive is terminal and soft');
-        context.equal(product.status, 'archived', 'source product remains stored');
-        context.equal(product.stock, 1, 'archive does not invent an inventory movement');
-        context.equal(product.inventoryVersion, 1, 'only explicit stock adjustment increments inventory');
+        }));
+        context.equal(deletion.status, 'deleted', 'delete command reports source deletion');
+        context.equal(product.exists(), false, 'source product is removed');
         context.equal(
             (await getDocs(collection(
                 firestore,

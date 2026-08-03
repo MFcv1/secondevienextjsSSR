@@ -97,14 +97,14 @@ export const publishProductAdmin = (
   }
 );
 
-export const archiveProductAdmin = (item, collectionName) => execute(
-  'archiveProductAdmin',
-  'archive-product',
+export const deleteProductAdmin = (item, collectionName) => execute(
+  'deleteProductAdmin',
+  'delete-product',
   {
     collectionName,
     productId: item.id,
     expectedVersion: Number(item.commerceVersion || 0),
-    reason: 'Archive douce depuis le back-office'
+    reason: 'Suppression definitive depuis le back-office'
   }
 );
 

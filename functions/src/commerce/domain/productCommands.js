@@ -5,7 +5,7 @@ const PRODUCT_ACTIONS = Object.freeze([
     'update_product_offer',
     'publish_product',
     'adjust_inventory',
-    'archive_product'
+    'delete_product'
 ]);
 
 const EDITORIAL_FIELDS = new Set([
@@ -288,9 +288,6 @@ function applyProductAction({
     }
 
     const versions = validateExistingProduct(product);
-    if (product.status === 'archived') {
-        throw productError('COMMERCE_PRODUCT_ARCHIVED');
-    }
     const next = {
         ...product,
         commerceVersion: versions.commerceVersion + 1,
@@ -338,13 +335,7 @@ function applyProductAction({
             inventoryVersion: versions.inventoryVersion + 1
         };
     }
-    return {
-        ...next,
-        status: 'archived',
-        archivedAt: now,
-        archivedBy: actor.uid,
-        archiveReason: reason
-    };
+    return null;
 }
 
 module.exports = {

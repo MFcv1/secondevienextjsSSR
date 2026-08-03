@@ -40,7 +40,7 @@ exports.confirmStripeConnectReconnect = confirmStripeConnectReconnect;
 // ── COMMERCE V2 (controle serveur fail-closed) ───────────
 const {
     adjustInventoryAdmin,
-    archiveProductAdmin,
+    deleteProductAdmin,
     createProductAdmin,
     preflightProductMutationAdmin,
     publishProductAdmin,
@@ -112,7 +112,7 @@ const {
 } = require('./src/commerce/v2AdminPaymentLinks');
 
 exports.adjustInventoryAdmin = adjustInventoryAdmin;
-exports.archiveProductAdmin = archiveProductAdmin;
+exports.deleteProductAdmin = deleteProductAdmin;
 exports.createProductAdmin = createProductAdmin;
 exports.preflightProductMutationAdmin = preflightProductMutationAdmin;
 exports.publishProductAdmin = publishProductAdmin;

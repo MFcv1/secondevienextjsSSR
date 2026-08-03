@@ -27,7 +27,7 @@ import {
 import LoginView from '../../src/kit/commerce/LoginView';
 import {
   adjustInventoryAdmin,
-  archiveProductAdmin,
+  deleteProductAdmin,
   publishProductAdmin,
 } from '../../src/kit/commerce/adminProductCommandClient';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
@@ -332,8 +332,8 @@ function AdminContent() {
   };
 
   const handleDeleteItem = async (_year, item, collectionName) => {
-    if (!window.confirm('Archiver ce produit sans supprimer son historique ?')) return;
-    await archiveProductAdmin(item, collectionName);
+    if (!window.confirm(`Supprimer définitivement « ${item.name || 'ce meuble'} » ?`)) return;
+    await deleteProductAdmin(item, collectionName);
     clearAdminPublicCatalogCache();
   };
 

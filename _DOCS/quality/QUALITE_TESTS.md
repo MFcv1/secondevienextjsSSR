@@ -232,7 +232,7 @@ reseau qui refuse meme les connexions locales.
 La couverture Gate 4 ajoute les commandes fulfillment/annulation, les refunds
 reprenables, les retours quantitatifs et le rail produit. Le scenario produit
 Firestore exerce un double create concurrent, l'offre, l'ajustement de stock,
-la publication, le retry acquitte avant version obsolete, l'archive douce et
+la publication, le retry acquitte avant version obsolete, la suppression source et
 un audit append-only par commande.
 
 Le transport callable fulfillment/archive commande est couvert dans

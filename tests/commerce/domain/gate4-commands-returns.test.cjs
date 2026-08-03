@@ -309,9 +309,9 @@ test('product command policy rejects weak admin, foreign collections and stock r
     );
 });
 
-test('product archive is a soft terminal state and never deletes history', () => {
-    const archived = applyProductAction({
-        action: 'archive_product',
+test('product deletion returns no source document', () => {
+    const deleted = applyProductAction({
+        action: 'delete_product',
         product: {
             name: 'Produit vendu',
             description: 'Description',
@@ -328,14 +328,10 @@ test('product archive is a soft terminal state and never deletes history', () =>
         },
         payload: {},
         actor: { uid: 'admin-gate4', role: 'admin', aal2: true },
-        reason: 'piece vendue et dossier conserve',
+        reason: 'suppression definitive demandee',
         now: laterClock.now()
     });
-    assert.equal(archived.status, 'archived');
-    assert.equal(archived.archivedBy, 'admin-gate4');
-    assert.equal(archived.stock, 0);
-    assert.equal(archived.createdAt, '2026-07-26T08:00:00.000Z');
-    assert.equal(archived.commerceVersion, 6);
+    assert.equal(deleted, null);
 });
 
 test('product callable transport stays available to active strong admins outside commerce windows', () => {
@@ -365,7 +361,7 @@ test('product callable transport stays available to active strong admins outside
         'updateProductOfferAdmin',
         'publishProductAdmin',
         'adjustInventoryAdmin',
-        'archiveProductAdmin'
+        'deleteProductAdmin'
     ]) {
         assert.ok(transport.includes(functionName));
         assert.equal(functionsIndex.includes(functionName), true);
