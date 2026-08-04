@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
+import { QUOTE_INTRO_SETTLED_MS } from './quoteTheme';
 
 const EnhancedQuoteForm = dynamic(() => import('./QuoteFormIsland'), {
   ssr: false,
@@ -14,19 +15,25 @@ export default function QuoteFormDeferredIsland({ initialDarkMode = false }) {
   useEffect(() => {
     let disposed = false;
     let timeoutId;
-    let idleId;
 
     const reveal = () => {
       if (disposed) return;
       setReady(true);
     };
 
+    /*
+     * L'echange shell -> assistant attend la fin de la cascade d'ouverture.
+     * Arriver au milieu donnait un enchainement illisible : le hero se
+     * composait pendant que le formulaire, lui, se remontait par-dessous.
+     * Toute interaction court-circuite l'attente : la reactivite prime.
+     */
     const schedule = () => {
-      if ('requestIdleCallback' in window) {
-        idleId = window.requestIdleCallback(reveal, { timeout: 1400 });
+      if (document.documentElement.dataset.quoteMotion === 'complete') {
+        reveal();
         return;
       }
-      timeoutId = window.setTimeout(reveal, 700);
+
+      timeoutId = window.setTimeout(reveal, QUOTE_INTRO_SETTLED_MS);
     };
 
     const events = ['pointerdown', 'keydown', 'touchstart', 'focusin'];
@@ -36,7 +43,6 @@ export default function QuoteFormDeferredIsland({ initialDarkMode = false }) {
     return () => {
       disposed = true;
       if (timeoutId) window.clearTimeout(timeoutId);
-      if (idleId && 'cancelIdleCallback' in window) window.cancelIdleCallback(idleId);
       events.forEach((eventName) => window.removeEventListener(eventName, reveal));
     };
   }, []);

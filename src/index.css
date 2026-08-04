@@ -6403,6 +6403,8 @@ html.dark .discount-shell::before,
 
 .quote-surface {
   --quote-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  /* Sortie longue et sans rebond : la courbe des transitions systeme Apple. */
+  --quote-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes quote-step-forward {
@@ -6489,6 +6491,23 @@ html.dark .discount-shell::before,
   animation: quote-value-in 420ms cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 
+/*
+ * Cartes d'une etape : elles se remplissent une a une, apres l'en-tete.
+ * Cascade purement temporelle et non liee au scroll : le panneau est
+ * toujours a l'ecran quand il se monte, et il remonte a chaque etape.
+ */
+.quote-cards > * {
+  animation: quote-rise 620ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.quote-cards > *:nth-child(1) { animation-delay: 200ms; }
+.quote-cards > *:nth-child(2) { animation-delay: 255ms; }
+.quote-cards > *:nth-child(3) { animation-delay: 310ms; }
+.quote-cards > *:nth-child(4) { animation-delay: 365ms; }
+.quote-cards > *:nth-child(5) { animation-delay: 420ms; }
+.quote-cards > *:nth-child(6) { animation-delay: 470ms; }
+.quote-cards > *:nth-child(n + 7) { animation-delay: 515ms; }
+
 .quote-action-bar {
   animation: quote-bar-in 420ms cubic-bezier(0.32, 0.72, 0, 1) both;
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
@@ -6538,6 +6557,70 @@ html.dark .discount-shell::before,
   appearance: textfield;
 }
 
+/* ------------------------------------------------------------
+   Reveals uniques de /devis.
+
+   Le script inline pose `pending` avant le rendu. L'island passe ensuite a
+   `active` et consomme chaque groupe une seule fois. Apres actualisation,
+   `complete` laisse tout dans son etat final sans rejouer la page.
+   ------------------------------------------------------------ */
+
+:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal,
+:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-group .quote-reveal-item,
+:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-group [class*='quote-reveal-item-'],
+:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-title {
+  opacity: 0;
+  transform: translate3d(0, 24px, 0);
+  transition:
+    opacity 720ms var(--quote-out) var(--quote-delay, var(--quote-reveal-delay, 0ms)),
+    transform 720ms var(--quote-out) var(--quote-delay, var(--quote-reveal-delay, 0ms)),
+    filter 720ms var(--quote-out) var(--quote-delay, var(--quote-reveal-delay, 0ms));
+}
+
+:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-title,
+:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-soft {
+  filter: blur(8px);
+  transform: translate3d(0, 28px, 0);
+}
+
+:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-media {
+  opacity: 0;
+  transform: scale(1.06);
+  transition:
+    opacity 1200ms var(--quote-out),
+    transform 1200ms var(--quote-out);
+}
+
+:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-rule {
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 900ms var(--quote-out) var(--quote-delay, 0ms);
+}
+
+[data-quote-motion='active'] .quote-reveal.is-in,
+[data-quote-motion='active'] .quote-reveal-group.is-in .quote-reveal-item,
+[data-quote-motion='active'] .quote-reveal-group.is-in [class*='quote-reveal-item-'],
+[data-quote-motion='active'] .quote-reveal-group.is-in .quote-reveal-title,
+[data-quote-motion='active'] .quote-reveal-group.is-in .quote-reveal-media {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  filter: blur(0);
+}
+
+[data-quote-motion='active'] .quote-reveal-group.is-in .quote-reveal-rule {
+  transform: scaleX(1);
+}
+
+/* Cascade nommee : l'ordre de lecture du panneau. */
+.quote-reveal-item-1 { --quote-reveal-delay: 40ms; }
+.quote-reveal-item-2 { --quote-reveal-delay: 120ms; }
+.quote-reveal-item-3 { --quote-reveal-delay: 210ms; }
+.quote-reveal-item-4 { --quote-reveal-delay: 290ms; }
+.quote-reveal-item-5 { --quote-reveal-delay: 370ms; }
+.quote-reveal-item-6 { --quote-reveal-delay: 450ms; }
+.quote-reveal-item-7 { --quote-reveal-delay: 530ms; }
+.quote-reveal-item-8 { --quote-reveal-delay: 610ms; }
+
 /* Piste de progression du rail d'etapes. */
 .quote-progress-fill {
   transition: width 520ms cubic-bezier(0.32, 0.72, 0, 1);
@@ -6552,8 +6635,213 @@ html.dark .discount-shell::before,
 @media (prefers-reduced-motion: reduce) {
   .quote-step,
   .quote-stagger > *,
+  .quote-cards > *,
   .quote-value,
   .quote-action-bar {
+    animation: none !important;
+  }
+
+  .quote-reveal,
+  .quote-reveal-group .quote-reveal-item,
+  .quote-reveal-group [class*='quote-reveal-item-'],
+  .quote-reveal-title,
+  .quote-reveal-media,
+  .quote-reveal-rule,
+  .quote-reveal-soft {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+}
+
+/* ============================================================
+   ADMIN - PUBLICATION EN DEUX TEMPS (composition puis diffusion)
+   Toute la motion du parcours vit ici pour garder les composants
+   lisibles et respecter la meme courbe qu'ailleurs dans le kit.
+   ============================================================ */
+
+.pub-surface {
+  --pub-ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Les deux volets restent montes : on glisse l'un sur l'autre. */
+.pub-pane {
+  transition:
+    transform 620ms var(--pub-ease),
+    opacity 380ms var(--pub-ease),
+    filter 620ms var(--pub-ease);
+  will-change: transform, opacity;
+}
+
+.pub-pane[data-state='idle'] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  filter: blur(6px);
+}
+
+.pub-pane[data-state='idle'][data-side='before'] {
+  transform: translate3d(-4%, 0, 0) scale(0.975);
+}
+
+.pub-pane[data-state='idle'][data-side='after'] {
+  transform: translate3d(4%, 0, 0) scale(0.975);
+}
+
+/* `none` plutot que blur(0) : le volet actif ne cree aucun contexte
+   d'empilement qui piegerait les surcouches du formulaire. */
+.pub-pane[data-state='active'] {
+  position: relative;
+  transform: translate3d(0, 0, 0) scale(1);
+  opacity: 1;
+  filter: none;
+}
+
+@keyframes pub-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* L'ecran de diffusion se compose element par element a l'arrivee. */
+.pub-pane[data-state='active'] .pub-stagger > * {
+  animation: pub-rise 620ms var(--pub-ease) both;
+}
+
+.pub-pane[data-state='active'] .pub-stagger > *:nth-child(1) { animation-delay: 90ms; }
+.pub-pane[data-state='active'] .pub-stagger > *:nth-child(2) { animation-delay: 150ms; }
+.pub-pane[data-state='active'] .pub-stagger > *:nth-child(3) { animation-delay: 210ms; }
+.pub-pane[data-state='active'] .pub-stagger > *:nth-child(4) { animation-delay: 270ms; }
+.pub-pane[data-state='active'] .pub-stagger > *:nth-child(5) { animation-delay: 320ms; }
+.pub-pane[data-state='active'] .pub-stagger > *:nth-child(n + 6) { animation-delay: 370ms; }
+
+@keyframes pub-fade-swap {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+/* Changement de canal dans le panneau d'apercu. */
+.pub-channel-enter {
+  animation: pub-fade-swap 520ms var(--pub-ease) both;
+}
+
+@keyframes pub-bar-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Le pied vit dans la carte de publication : plus de barre flottante,
+   donc plus de marge de securite d'ecran a compenser. */
+.pub-action-bar {
+  animation: pub-bar-in 460ms var(--pub-ease) both;
+}
+
+@keyframes pub-zoom-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+/* Apercu agrandi : le fond s'installe, la fenetre monte. */
+@keyframes pub-zoom-veil {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.pub-zoom-backdrop {
+  animation: pub-zoom-veil 320ms var(--pub-ease, cubic-bezier(0.32, 0.72, 0, 1)) both;
+}
+
+.pub-zoom-panel {
+  animation: pub-zoom-in 460ms var(--pub-ease, cubic-bezier(0.32, 0.72, 0, 1)) both;
+}
+
+@keyframes pub-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Pastille de validation d'une destination. */
+.pub-pop {
+  animation: pub-pop 420ms var(--pub-ease) both;
+}
+
+@keyframes pub-sheen {
+  from { transform: translate3d(-100%, 0, 0); }
+  to { transform: translate3d(280%, 0, 0); }
+}
+
+.pub-sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 38%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: pub-sheen 1400ms linear infinite;
+}
+
+/* Barre de progression d'envoi : la largeur est pilotee en JS. */
+.pub-progress-fill {
+  transition: width 520ms var(--pub-ease);
+}
+
+@keyframes pub-halo {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.06); }
+}
+
+.pub-halo {
+  animation: pub-halo 2600ms ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pub-pane,
+  .pub-progress-fill {
+    transition: none;
+  }
+
+  .pub-pane[data-state='idle'] {
+    filter: none;
+    transform: none;
+  }
+
+  .pub-pane[data-state='active'] .pub-stagger > *,
+  .pub-channel-enter,
+  .pub-zoom-backdrop,
+  .pub-zoom-panel,
+  .pub-action-bar,
+  .pub-pop,
+  .pub-sheen::after,
+  .pub-halo {
     animation: none !important;
   }
 }

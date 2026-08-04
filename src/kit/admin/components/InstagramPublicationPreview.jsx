@@ -2,14 +2,9 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { ArrowLeft, Check, Image as ImageIcon, Info, Layers3 } from 'lucide-react';
-import { parseStoryBlocks, tokenizeStoryInline } from '../../../lib/content/storyFormatting';
-
-const INSTAGRAM_MEDIA_LIMIT = 10;
-const PHONE_WIDTH = 430;
-const PHONE_HEIGHT = 910;
-const SCREEN_WIDTH = 402;
-const SCREEN_HEIGHT = 874;
+import { Image as ImageIcon } from 'lucide-react';
+import { HomeIndicator, PhoneChrome, PhoneScreen, ScaledPhone, StatusBar } from './PublicationPhoneShell';
+import { INSTAGRAM_MEDIA_LIMIT, storyToPlainText } from './publicationContent';
 
 const iconProps = {
   fill: 'none',
@@ -44,64 +39,6 @@ function FeedIcon({ name, className = 'h-6 w-6' }) {
   return <svg aria-hidden="true" className={className} viewBox="0 0 24 24"><rect {...iconProps} x="3" y="3" width="18" height="18" rx="5" /><path {...iconProps} d="M12 8v8M8 12h8" /></svg>;
 }
 
-function storyToPlainText(value) {
-  return parseStoryBlocks(value).map((block) => {
-    if (Array.isArray(block.items)) {
-      return block.items.map((item) => tokenizeStoryInline(item).map((token) => token.text).join('')).join(' · ');
-    }
-    return tokenizeStoryInline(block.text || '').map((token) => token.text).join('');
-  }).filter(Boolean).join(' ');
-}
-
-function ScaledPhone({ children }) {
-  const stageRef = React.useRef(null);
-  const [scale, setScale] = React.useState(0.72);
-
-  React.useLayoutEffect(() => {
-    const stage = stageRef.current;
-    if (!stage) return undefined;
-
-    const updateScale = () => {
-      const availableWidth = stage.getBoundingClientRect().width;
-      setScale(Math.min(0.82, Math.max(0.55, availableWidth / PHONE_WIDTH)));
-    };
-
-    updateScale();
-    const observer = new ResizeObserver(updateScale);
-    observer.observe(stage);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div ref={stageRef} className="mx-auto w-full max-w-[354px]" aria-label="Aperçu sur iPhone 17 Pro">
-      <div className="relative mx-auto" style={{ width: PHONE_WIDTH * scale, height: PHONE_HEIGHT * scale }}>
-        <div
-          className="absolute left-0 top-0 origin-top-left"
-          style={{ width: PHONE_WIDTH, height: PHONE_HEIGHT, transform: `scale(${scale})` }}
-        >
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StatusBar() {
-  return (
-    <div className="relative flex h-[54px] items-center justify-between px-[29px] pt-[3px] text-black">
-      <span className="w-[80px] text-center text-[15px] font-semibold tracking-[-0.02em]">9:41</span>
-      <div className="absolute left-1/2 top-[10px] h-[36px] w-[126px] -translate-x-1/2 rounded-full bg-black" aria-hidden="true">
-        <span className="absolute right-[9px] top-1/2 h-[10px] w-[10px] -translate-y-1/2 rounded-full bg-[#15181d] ring-1 ring-[#262a31]" />
-      </div>
-      <div className="flex w-[80px] items-center justify-center gap-[6px]" aria-hidden="true">
-        <svg className="h-[12px] w-[18px]" viewBox="0 0 18 12"><path fill="currentColor" d="M1 9h2v3H1V9Zm4-3h2v6H5V6Zm4-3h2v9H9V3Zm4-3h2v12h-2V0Z" /></svg>
-        <svg className="h-[13px] w-[17px]" viewBox="0 0 17 13"><path d="M1 4.7a11.4 11.4 0 0 1 15 0M3.6 7.5a7.5 7.5 0 0 1 9.8 0M6.3 10.1a3.4 3.4 0 0 1 4.4 0" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" /><circle cx="8.5" cy="12" r="1" fill="currentColor" /></svg>
-        <span className="relative h-[12px] w-[25px] rounded-[3px] border-[1.5px] border-black"><span className="absolute inset-[2px] rounded-[1px] bg-black" /><span className="absolute -right-[3px] top-[3px] h-[5px] w-[2px] rounded-r bg-black/45" /></span>
-      </div>
-    </div>
-  );
-}
-
 function InstagramScreen({ galleryItems, name, description, hashtags }) {
   const availableItems = galleryItems.slice(0, INSTAGRAM_MEDIA_LIMIT);
   const [activeImageIndex, setActiveImageIndex] = React.useState(0);
@@ -122,7 +59,7 @@ function InstagramScreen({ galleryItems, name, description, hashtags }) {
   };
 
   return (
-    <div className="absolute left-[14px] top-[18px] overflow-hidden rounded-[58px] bg-white text-[#0d0d0d]" style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}>
+    <PhoneScreen>
       <StatusBar />
 
       <div className="flex h-[48px] items-center justify-between border-b border-black/[0.08] px-[16px]">
@@ -203,77 +140,24 @@ function InstagramScreen({ galleryItems, name, description, hashtags }) {
         <div className="grid h-[25px] w-[25px] place-items-center overflow-hidden rounded-full border border-black/80 bg-[#f5efe8]">
           <Image src="/images/logoanais-320.webp" alt="" width={18} height={18} className="h-[18px] w-[18px] object-contain" />
         </div>
-        <span className="absolute bottom-[6px] left-1/2 h-[5px] w-[134px] -translate-x-1/2 rounded-full bg-black" />
+        <HomeIndicator />
       </div>
-    </div>
+    </PhoneScreen>
   );
 }
 
+/** Rendu iPhone du post Instagram, alimente en direct par le formulaire. */
 export default function InstagramPublicationPreview({
-  darkMode = false,
   galleryItems = [],
   name = '',
   description = '',
   hashtags = '',
-  onHashtagsChange,
-  onBack,
+  expanded = false,
 }) {
-  const mediaCount = Math.min(galleryItems.length, INSTAGRAM_MEDIA_LIMIT);
-  const omittedMediaCount = Math.max(0, galleryItems.length - INSTAGRAM_MEDIA_LIMIT);
-  const story = storyToPlainText(description);
-
   return (
-    <div className="grid min-h-0 gap-7 py-1 lg:grid-cols-[minmax(320px,1.08fr)_minmax(250px,0.92fr)] lg:items-start xl:h-full xl:gap-9">
-      <div data-native-scroll-region="true" className={`flex min-h-[650px] items-start justify-center overflow-x-hidden overflow-y-auto rounded-[24px] border px-3 py-6 sm:px-6 xl:h-full xl:min-h-0 ${darkMode ? 'border-white/10 bg-black/20' : 'border-black/[0.055] bg-[#f3f1ed]'}`}>
-        <ScaledPhone>
-          <div className="absolute -left-[4px] top-[171px] h-[35px] w-[5px] rounded-l-[3px] bg-[#343330]" />
-          <div className="absolute -left-[4px] top-[224px] h-[69px] w-[5px] rounded-l-[3px] bg-[#343330]" />
-          <div className="absolute -left-[4px] top-[310px] h-[69px] w-[5px] rounded-l-[3px] bg-[#343330]" />
-          <div className="absolute -right-[4px] top-[251px] h-[108px] w-[5px] rounded-r-[3px] bg-[#343330]" />
-          <div className="absolute inset-0 rounded-[76px] bg-[#77736d] shadow-[0_34px_70px_rgba(28,25,23,0.28),0_10px_24px_rgba(28,25,23,0.18)]" />
-          <div className="absolute inset-[3px] rounded-[73px] bg-[#1d1d1c] ring-1 ring-white/30" />
-          <div className="absolute inset-[8px] rounded-[68px] bg-black ring-1 ring-black" />
-          <InstagramScreen galleryItems={galleryItems} name={name} description={description} hashtags={hashtags} />
-        </ScaledPhone>
-      </div>
-
-      <div className="flex min-h-0 flex-col lg:max-w-[390px]">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-emerald-500/10 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.12em] text-emerald-700 dark:text-emerald-400">Aperçu privé</span>
-          <span className={`rounded-full px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.12em] ${darkMode ? 'bg-white/5 text-stone-400 ring-1 ring-white/10' : 'bg-stone-100 text-stone-500 ring-1 ring-black/[0.04]'}`}>iPhone 17 Pro</span>
-        </div>
-        <h4 className="mt-5 text-[24px] font-extrabold leading-[1.02] tracking-[-0.045em] sm:text-[28px]">Votre publication, telle qu’elle apparaîtra dans le fil.</h4>
-        <p className={`mt-3 max-w-[38rem] text-[11px] leading-5 ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>Le titre, l’histoire et les images suivent le formulaire en direct. Les informations commerciales du site ne sont pas envoyées à Instagram.</p>
-
-        <div className={`mt-5 rounded-[18px] border p-4 ${darkMode ? 'border-white/10 bg-white/[0.025]' : 'border-stone-200 bg-[#faf9f7]'}`}>
-          <div className="flex items-center justify-between gap-3">
-            <span className="flex items-center gap-2 text-[10px] font-extrabold"><Layers3 size={14} strokeWidth={1.7} />Contenu Instagram</span>
-            <span className={`text-[9px] font-bold tabular-nums ${omittedMediaCount ? 'text-amber-600' : (darkMode ? 'text-stone-500' : 'text-stone-400')}`}>{mediaCount}/{INSTAGRAM_MEDIA_LIMIT} médias</span>
-          </div>
-          <div className={`mt-3 divide-y text-[10px] ${darkMode ? 'divide-white/10' : 'divide-black/[0.055]'}`}>
-            <div className="flex items-start justify-between gap-4 py-2.5"><span className="text-stone-400">Titre</span><span className="max-w-[70%] text-right font-bold">{name.trim() || 'À compléter'}</span></div>
-            <div className="flex items-start justify-between gap-4 py-2.5"><span className="text-stone-400">Histoire</span><span className="max-w-[70%] text-right font-bold">{story ? `${story.length} caractères` : 'À compléter'}</span></div>
-            <div className="flex items-start justify-between gap-4 py-2.5"><span className="text-stone-400">Format</span><span className="max-w-[70%] text-right font-bold">Publication photo 3:4</span></div>
-          </div>
-        </div>
-
-        <label className={`mt-5 text-[9px] font-extrabold uppercase tracking-[0.12em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`} htmlFor="instagram-publication-hashtags">Hashtags Instagram</label>
-        <textarea
-          id="instagram-publication-hashtags"
-          value={hashtags}
-          onChange={(event) => onHashtagsChange?.(event.target.value.slice(0, 500))}
-          rows={3}
-          placeholder="#secondevie #mobilierancien #artisanat"
-          className={`mt-2 w-full resize-none rounded-[16px] border-none px-4 py-3 text-[11px] font-semibold leading-5 outline-none ring-1 transition-colors focus:ring-2 ${darkMode ? 'bg-black/20 text-white ring-white/10 placeholder:text-stone-700 focus:ring-white/25' : 'bg-[#f7f6f3] text-stone-950 ring-black/[0.055] placeholder:text-stone-400 focus:bg-white focus:ring-stone-300'}`}
-        />
-        <p className={`mt-1 text-right text-[8px] font-bold tabular-nums ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>{hashtags.length}/500</p>
-
-        {omittedMediaCount > 0 && <p className="mt-3 flex items-start gap-2 rounded-[14px] bg-amber-500/10 px-3 py-2.5 text-[9px] font-bold leading-4 text-amber-700 dark:text-amber-400"><Info size={13} className="mt-0.5 shrink-0" />{omittedMediaCount} image{omittedMediaCount > 1 ? 's' : ''} restera{omittedMediaCount > 1 ? 'ont' : ''} sur le site et ne sera{omittedMediaCount > 1 ? 'ont' : ''} pas envoyée{omittedMediaCount > 1 ? 's' : ''} à Instagram.</p>}
-        {!omittedMediaCount && mediaCount > 0 && <p className="mt-3 flex items-center gap-2 text-[9px] font-bold text-emerald-700 dark:text-emerald-400"><Check size={13} />Toutes les images sélectionnées tiennent dans la publication.</p>}
-
-        <div className={`mt-5 rounded-[14px] px-3 py-2.5 text-[9px] font-bold leading-4 ${darkMode ? 'bg-white/5 text-stone-400' : 'bg-stone-100 text-stone-500'}`}>Cet aperçu reprend le contenu envoyé à Instagram. Le site reste prioritaire et confirme sa publication avant l’envoi Meta.</div>
-        <button type="button" onClick={onBack} className={`mt-4 flex w-fit items-center gap-2 rounded-full px-4 py-2.5 text-[10px] font-extrabold ring-1 transition-colors ${darkMode ? 'text-stone-300 ring-white/10 hover:bg-white/5 hover:text-white' : 'text-stone-600 ring-black/[0.08] hover:bg-stone-50 hover:text-stone-950'}`}><ArrowLeft size={14} strokeWidth={1.7} />Revenir aux informations</button>
-      </div>
-    </div>
+    <ScaledPhone label="Aperçu Instagram sur iPhone 17 Pro" expanded={expanded}>
+      <PhoneChrome />
+      <InstagramScreen galleryItems={galleryItems} name={name} description={description} hashtags={hashtags} />
+    </ScaledPhone>
   );
 }

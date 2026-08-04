@@ -73,6 +73,8 @@ export const quoteTokens = (darkMode = false) => ({
     accentOn: darkMode ? 'text-[#171411]' : 'text-white',
     trackBg: darkMode ? 'bg-white/[0.10]' : 'bg-[#e6e0d8]',
     hairline: darkMode ? 'border-white/[0.08]' : 'border-[#eae4dc]',
+    /* Meme filet, mais en fond : seul un fond peut se tracer au scaleX. */
+    rule: darkMode ? 'bg-white/[0.12]' : 'bg-[#ded5c9]',
     divide: darkMode ? 'divide-white/[0.08]' : 'divide-[#eae4dc]',
     markIdle: darkMode ? 'ring-1 ring-white/15' : 'ring-1 ring-[#d3c9bc] bg-white',
     primaryBtn: darkMode
@@ -96,9 +98,30 @@ export const quoteTokens = (darkMode = false) => ({
 export const QUOTE_EASE = 'transition-all duration-[420ms] ease-[cubic-bezier(0.32,0.72,0,1)]';
 
 /* Echelle typographique unique. */
+/*
+ * Cascade d'ouverture de la page devis.
+ * Le hero se compose, puis le formulaire prend le relais : le rail
+ * d'etapes, enfin le premier panneau. Les deux blocs sont partages avec
+ * le shell SSR pour que la sequence reste une seule et meme phrase.
+ */
+export const QUOTE_INTRO_DELAY = {
+    breadcrumb: '0ms',
+    eyebrow: '90ms',
+    title: '160ms',
+    lead: '340ms',
+    rule: '470ms',
+    spec: (index) => `${540 + index * 90}ms`,
+    cta: '830ms',
+};
+
+/* Fin de la cascade : l'assistant enrichi ne doit pas la couper. */
+export const QUOTE_INTRO_SETTLED_MS = 1960;
+
 export const QUOTE_TYPE = {
     eyebrow: 'font-sans text-[11px] font-semibold uppercase tracking-[0.2em]',
     display: 'font-serif text-[clamp(2.5rem,5.6vw,3.85rem)] leading-[0.98] tracking-[-0.02em]',
+    /* Chapo du hero : un cran au-dessus du body, sans faire enfler le bloc. */
+    lead: 'font-sans text-[15px] font-light leading-[1.68] tracking-[0.004em] md:text-[16px] md:leading-[1.66]',
     section: 'font-serif text-[clamp(1.55rem,3.2vw,2.2rem)] leading-[1.04] tracking-[-0.02em]',
     price: 'font-serif text-[clamp(2.35rem,4vw,2.85rem)] leading-none tracking-[-0.02em] tabular-nums',
     cardTitle: 'font-sans text-[13.5px] font-semibold leading-snug',

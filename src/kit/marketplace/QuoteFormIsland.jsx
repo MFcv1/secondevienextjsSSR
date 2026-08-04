@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { emitAnalyticsEvent } from '../shared/analyticsEvents';
 import {
     QUOTE_CONTROL_HEIGHT,
@@ -283,11 +283,38 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
     const photoPreviewsRef = useRef([]);
     const railRef = useRef(null);
     const quoteStartTrackedRef = useRef(false);
-    const stepMountedRef = useRef(false);
+
+    /*
+     * useLayoutEffect et non useEffect : le shell doit disparaitre dans la
+     * meme frame que l'apparition de l'island, sinon les deux coexistent
+     * le temps d'une peinture et la page fait un bond.
+     */
+    useLayoutEffect(() => {
+        document.getElementById('quote-ssr-form-shell')?.setAttribute('hidden', '');
+        window.dispatchEvent(new Event('quote:form-ready'));
+    }, []);
+
+    /*
+     * L'island prend la place d'un shell identique, deja apparu avec la
+     * cascade d'ouverture. Son premier rendu ne rejoue donc aucune entree :
+     * sinon le rail et le panneau semblent surgir une seconde fois.
+     * Les animations d'etape ne s'arment qu'a la premiere navigation.
+     */
+    const [stepMotionArmed, setStepMotionArmed] = useState(false);
+    const firstStepRenderRef = useRef(true);
 
     useEffect(() => {
-        document.getElementById('quote-ssr-form-shell')?.setAttribute('hidden', '');
-    }, []);
+        if (firstStepRenderRef.current) {
+            firstStepRenderRef.current = false;
+            return;
+        }
+        setStepMotionArmed(true);
+    }, [step]);
+
+    const panelMotion = stepMotionArmed ? 'quote-step' : '';
+    const contentMotion = stepMotionArmed ? 'quote-stagger' : '';
+    const cardsMotion = stepMotionArmed ? 'quote-cards' : '';
+    const initialStepReveal = step === 0 && !stepMotionArmed;
 
     useEffect(() => {
         photoPreviewsRef.current = photoPreviews;
@@ -296,17 +323,6 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
     useEffect(() => () => {
         photoPreviewsRef.current.forEach(photo => URL.revokeObjectURL(photo.url));
     }, []);
-
-    useEffect(() => {
-        if (!stepMountedRef.current) {
-            stepMountedRef.current = true;
-            return;
-        }
-        const node = railRef.current;
-        if (!node) return;
-        const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-        node.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'start' });
-    }, [step]);
 
     const trackQuoteStart = useCallback(() => {
         if (quoteStartTrackedRef.current) return;
@@ -527,11 +543,12 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
     const isLastStep = step === steps.length - 1;
 
     return (
-        <div className={`${QUOTE_SHELL} pb-6 pt-6 lg:pt-16`}>
+        <div className={`${QUOTE_SHELL} pb-6 pt-6 lg:pt-9`}>
             {/* rail d'etapes : colonnes egales + piste de progression */}
             <div
                 ref={railRef}
-                className={`quote-anchor sticky top-16 z-30 -mx-5 mb-6 border-b px-5 py-3.5 backdrop-blur-xl sm:-mx-8 sm:px-8 md:top-[76px] lg:mx-0 lg:mb-6 lg:rounded-[18px] lg:border lg:px-7 lg:py-4 ${t.hairline} ${t.railBg}`}
+                data-quote-reveal="progress"
+                className={`quote-reveal quote-anchor sticky top-16 z-30 -mx-5 mb-6 border-b px-5 py-3.5 backdrop-blur-xl sm:-mx-8 sm:px-8 md:top-[76px] lg:mx-0 lg:mb-6 lg:rounded-[18px] lg:border lg:px-7 lg:py-4 ${t.hairline} ${t.railBg}`}
             >
                 <div className="flex items-baseline justify-between gap-4 lg:hidden">
                     <p className={`font-sans text-[11px] font-semibold uppercase tracking-[0.16em] ${t.accent}`}>
@@ -579,10 +596,11 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                 <div
                     key={activeStep.id}
                     data-direction={direction}
-                    className={`quote-step flex flex-col gap-7 ${QUOTE_STEP_HEIGHT} ${QUOTE_STEP_RADIUS} ${QUOTE_STEP_PADDING} ${t.stepPanel}`}
+                    data-quote-reveal={initialStepReveal ? 'step-1' : undefined}
+                    className={`${initialStepReveal ? 'quote-reveal-group' : ''} ${panelMotion} flex flex-col gap-7 ${QUOTE_STEP_HEIGHT} ${QUOTE_STEP_RADIUS} ${QUOTE_STEP_PADDING} ${t.stepPanel}`}
                 >
-                    <div className="quote-stagger min-h-0 flex-1 overflow-visible lg:mx-0 lg:px-0">
-                        <header className="mb-8 lg:mb-7">
+                    <div className={`${contentMotion} min-h-0 flex-1 overflow-visible lg:mx-0 lg:px-0`}>
+                        <header className={`${initialStepReveal ? 'quote-reveal-item-1' : ''} mb-8 lg:mb-7`}>
                             <p className={`${QUOTE_TYPE.eyebrow} ${t.accent}`}>
                                 Étape {step + 1} sur {steps.length}
                             </p>
@@ -600,9 +618,9 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                                 <div
                                     role="radiogroup"
                                     aria-label="Type de meuble"
-                                    className="mx-auto grid w-full max-w-[430px] grid-cols-2 gap-3 lg:max-w-none lg:grid-cols-6"
+                                    className={`${cardsMotion} mx-auto grid w-full max-w-[430px] grid-cols-2 gap-3 lg:max-w-none lg:grid-cols-6`}
                                 >
-                                    {furnitureCards.map(type => {
+                                    {furnitureCards.map((type, index) => {
                                         const isSelected = selectedType === type.id;
                                         return (
                                             <button
@@ -614,7 +632,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                                                     trackQuoteStart();
                                                     setSelectedType(type.id);
                                                 }}
-                                                className={`group relative overflow-hidden ${QUOTE_RADIUS_CARD} ${QUOTE_EASE} active:scale-[0.98] ${t.focusRing} ${isSelected ? t.furnitureCardActive : t.furnitureCardIdle}`}
+                                                className={`${initialStepReveal ? `quote-reveal-item-${index + 2}` : ''} group relative overflow-hidden ${QUOTE_RADIUS_CARD} ${QUOTE_EASE} active:scale-[0.98] ${t.focusRing} ${isSelected ? t.furnitureCardActive : t.furnitureCardIdle}`}
                                             >
                                                 <span className={`block aspect-[5/6] w-full overflow-hidden lg:aspect-[4/5] ${t.imageBed}`}>
                                                     <img
@@ -642,7 +660,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                             <div
                                 role="radiogroup"
                                 aria-label="État général"
-                                className="grid gap-3 pt-5 min-[520px]:grid-cols-2 min-[520px]:pt-6 lg:grid-cols-4 lg:pt-12"
+                                className={`${cardsMotion} grid gap-3 pt-5 min-[520px]:grid-cols-2 min-[520px]:pt-6 lg:grid-cols-4 lg:pt-12`}
                             >
                                 {conditionOptions.map(option => {
                                     const isSelected = fields.condition === option.value;

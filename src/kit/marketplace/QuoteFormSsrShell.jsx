@@ -14,6 +14,13 @@ import {
 
 const TOTAL_STEPS = 7;
 
+/*
+ * Le rail de l'assistant, en version figee. Il n'existe que pour
+ * occuper exactement la meme hauteur que celui de l'island : sans lui,
+ * l'arrivee du formulaire enrichi pousserait toute la page vers le bas.
+ */
+const RAIL_STEPS = ['Meuble', 'État', 'Photos', 'Détails', 'Prestations', 'Contact', 'Estimation'];
+
 const furnitureCards = [
   ['buffet', 'Buffet', '/images/categories/buffets-config-rail.webp'],
   ['armoire', 'Armoire', '/images/categories/armoires-config-rail.webp'],
@@ -67,6 +74,7 @@ export default function QuoteFormSsrShell({ darkMode = false } = {}) {
   const fieldClass = `${QUOTE_CONTROL_HEIGHT} w-full ${QUOTE_RADIUS_FIELD} px-4 font-sans text-[14px] outline-none ${t.field}`;
   const areaClass = `w-full resize-none ${QUOTE_RADIUS_FIELD} p-4 font-sans text-[14px] leading-[1.6] outline-none ${t.field}`;
   const panelClass = `${QUOTE_GUTTER_BOTTOM} ${QUOTE_STEP_RADIUS} ${QUOTE_STEP_PADDING} ${t.stepPanel}`;
+  const firstPanelClass = `quote-reveal-group ${panelClass}`;
 
   const SectionHead = ({ index, title, hint, airyHint = false }) => (
     <header className="mb-8">
@@ -89,16 +97,53 @@ export default function QuoteFormSsrShell({ darkMode = false } = {}) {
       action="mailto:contact@seconde-vie-anais.fr"
       method="post"
       encType="text/plain"
-      className={`${QUOTE_SHELL} pb-6 pt-6 lg:pt-16`}
+      className={`${QUOTE_SHELL} pb-6 pt-6 lg:pt-9`}
     >
+      {/* Gabarit du rail : meme boite que l'island, donc aucun saut au remplacement. */}
+      <div
+        aria-hidden="true"
+        data-quote-reveal="progress"
+        className={`quote-reveal quote-anchor sticky top-16 z-30 -mx-5 mb-6 border-b px-5 py-3.5 backdrop-blur-xl sm:-mx-8 sm:px-8 md:top-[76px] lg:mx-0 lg:mb-6 lg:rounded-[18px] lg:border lg:px-7 lg:py-4 ${t.hairline} ${t.railBg}`}
+      >
+        <div className="flex items-baseline justify-between gap-4 lg:hidden">
+          <p className={`font-sans text-[11px] font-semibold uppercase tracking-[0.16em] ${t.accent}`}>
+            Étape 1 / {TOTAL_STEPS}
+          </p>
+          <p className="font-sans text-[13px] font-semibold">{RAIL_STEPS[0]}</p>
+        </div>
+
+        <ol className="hidden lg:grid lg:grid-cols-7">
+          {RAIL_STEPS.map((label, index) => (
+            <li key={label} className="min-w-0">
+              <span className="flex w-full items-center gap-2.5 rounded-full py-1 pr-3 text-left">
+                <span
+                  className={`flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full font-sans text-[11px] font-semibold ${index === 0 ? `${t.accentBg} ${t.accentOn}` : darkMode ? 'bg-white/[0.08] text-stone-500' : 'bg-[#ece6de] text-[#8d8479]'}`}
+                >
+                  {index + 1}
+                </span>
+                <span className={`truncate font-sans text-[12.5px] ${index === 0 ? 'font-semibold' : `font-medium ${t.muted}`}`}>
+                  {label}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ol>
+
+        <div className={`mt-3 h-[3px] w-full overflow-hidden rounded-full lg:mt-3.5 ${t.trackBg}`}>
+          <div className={`h-full rounded-full ${t.accentBg}`} style={{ width: `${(1 / TOTAL_STEPS) * 100}%` }} />
+        </div>
+      </div>
+
       {/* 1 — TYPE DE MEUBLE */}
-      <section className={panelClass}>
-        <SectionHead index={1} title="Quel meuble souhaitez-vous restaurer ?" hint="Choisissez la catégorie la plus proche." />
+      <section data-quote-reveal="step-1" className={firstPanelClass}>
+        <div className="quote-reveal-item-1">
+          <SectionHead index={1} title="Quel meuble souhaitez-vous restaurer ?" hint="Choisissez la catégorie la plus proche." />
+        </div>
         <div className="mx-auto grid w-full max-w-[430px] grid-cols-2 gap-3 lg:max-w-none lg:grid-cols-6">
           {furnitureCards.map(([id, label, image], index) => (
             <label
               key={id}
-              className={`cursor-pointer overflow-hidden ${QUOTE_RADIUS_CARD} ${index === 0 ? t.furnitureCardActive : t.furnitureCardIdle}`}
+              className={`quote-reveal-item-${index + 2} cursor-pointer overflow-hidden ${QUOTE_RADIUS_CARD} ${index === 0 ? t.furnitureCardActive : t.furnitureCardIdle}`}
             >
               <input className="sr-only" type="radio" name="furnitureType" value={id} defaultChecked={index === 0} />
               <span className={`block aspect-[5/6] w-full overflow-hidden lg:aspect-[4/5] ${t.imageBed}`}>

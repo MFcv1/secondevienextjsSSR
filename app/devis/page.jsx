@@ -15,6 +15,19 @@ try {
     window.history.scrollRestoration = 'manual';
   }
   window.scrollTo(0, 0);
+
+  var quoteMotionRoot = document.documentElement;
+  var quoteMotionReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var quoteMotionVisited = window.sessionStorage.getItem('seconde-vie:quote-motion:v1') === 'seen';
+
+  quoteMotionRoot.dataset.quoteMotion = quoteMotionReduced || quoteMotionVisited ? 'complete' : 'pending';
+
+  if (!quoteMotionReduced && !quoteMotionVisited) {
+    window.sessionStorage.setItem('seconde-vie:quote-motion:v1', 'seen');
+    window.__secondeVieQuoteMotionFallback = window.setTimeout(function () {
+      quoteMotionRoot.dataset.quoteMotion = 'complete';
+    }, 4000);
+  }
 } catch (error) {}
 `;
 

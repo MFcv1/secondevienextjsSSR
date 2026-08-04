@@ -6,12 +6,14 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { PRODUCT_IMAGE_VARIANT_SPECS, compressImage, createProductImageVariantFiles, getImageFileMetadata } from '../../utils/imageUtils'; // [NEW] Import compression utility
 import ImageCropperModal from './components/ImageCropperModal';
-import InstagramPublicationPreview from './components/InstagramPublicationPreview';
-import MetaConnectionControl from './components/MetaConnectionControl';
+import MetaConnectionBadge from './components/MetaConnectionBadge';
+import PublicationActionBar from './components/PublicationActionBar';
+import PublicationReviewStep from './components/PublicationReviewStep';
 import StoryEditor from './components/StoryEditor';
+import useMetaConnection from './components/useMetaConnection';
 import KIT_CONFIG from '../config/constants';
-import RichTextStory from '../shared/RichTextStory';
 import { clearAdminPublicCatalogCache } from './adminPublicCatalog';
+import { describeChannels } from './components/publicationContent';
 import { getFirebaseAuth } from '../config/firebaseLazy';
 import {
   adjustInventoryAdmin,
@@ -127,6 +129,58 @@ const getCategoryMeta = (categoryId) => {
   }
 };
 
+const PUBLICATION_STEPS = [
+  { id: 'compose', label: 'Composition', hint: 'Les informations de l’ouvrage' },
+  { id: 'review', label: 'Diffusion', hint: 'Où et comment publier' }
+];
+
+/**
+ * Rail d'etapes : la position dans le parcours doit se lire d'un coup d'oeil,
+ * et le retour en arriere reste possible a tout instant.
+ */
+const PublicationStepRail = ({ step, onSelect, darkMode, disabled }) => {
+  const activeIndex = PUBLICATION_STEPS.findIndex((entry) => entry.id === step);
+
+  return (
+    <ol className="flex items-center gap-2" aria-label="Étapes de publication">
+      {PUBLICATION_STEPS.map((entry, index) => {
+        const isActive = index === activeIndex;
+        const isDone = index < activeIndex;
+        return (
+          <li key={entry.id} className="flex items-center gap-2">
+            {index > 0 && (
+              <span aria-hidden="true" className={`h-px w-5 rounded-full transition-colors duration-500 sm:w-8 ${isDone || isActive ? 'bg-emerald-500' : (darkMode ? 'bg-white/12' : 'bg-stone-950/10')}`} />
+            )}
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => onSelect(entry.id)}
+              aria-current={isActive ? 'step' : undefined}
+              title={entry.hint}
+              className={`group flex min-h-9 items-center gap-2 rounded-full pl-1.5 pr-3 text-[10px] font-extrabold transition-[background-color,color,transform] duration-400 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] disabled:cursor-not-allowed ${
+                isActive
+                  ? (darkMode ? 'bg-white text-stone-950' : 'bg-stone-950 text-white')
+                  : (darkMode ? 'text-stone-500 hover:bg-white/[0.06] hover:text-stone-200' : 'text-stone-400 hover:bg-stone-100 hover:text-stone-900')
+              }`}
+            >
+              <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[9px] tabular-nums transition-colors duration-400 ${
+                isDone
+                  ? 'bg-emerald-500 text-white'
+                  : isActive
+                    ? (darkMode ? 'bg-stone-950 text-white' : 'bg-white/15 text-white')
+                    : (darkMode ? 'bg-white/[0.07] text-stone-500' : 'bg-stone-950/[0.06] text-stone-400')
+              }`}>
+                {isDone ? <Check size={11} strokeWidth={3} /> : index + 1}
+              </span>
+              <span className="hidden sm:inline">{entry.label}</span>
+            </button>
+          </li>
+        );
+      })}
+    </ol>
+  );
+};
+
 const AdminForm = ({
   editData,
   onCancelEdit,
@@ -155,11 +209,11 @@ const AdminForm = ({
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState("");
   const [categoryError, setCategoryError] = useState(false);
-  const [instagramEnabled, setInstagramEnabled] = useState(false);
-  const [publicationView, setPublicationView] = useState('details');
+  const [step, setStep] = useState('compose');
+  const [progress, setProgress] = useState(0);
   const [instagramHashtags, setInstagramHashtags] = useState('#secondevie #mobilierancien #artisanat');
   const [metaConnection, setMetaConnection] = useState({ status: 'loading', connected: false });
-  const [socialTargets, setSocialTargets] = useState({ instagram: true, facebook: true });
+  const [socialTargets, setSocialTargets] = useState({ instagram: false, facebook: false });
   const [socialPublication, setSocialPublication] = useState(null);
   const fileInputRef = useRef();
   const categoryGroupRef = useRef(null);
@@ -197,12 +251,18 @@ const AdminForm = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  // Une destination n'est retenue que si le compte Meta la rend reellement possible.
+  const metaConnected = Boolean(metaConnection.connected);
+  const instagramTarget = Boolean(socialTargets.instagram) && metaConnected && metaConnection.instagramAvailable !== false;
+  const facebookTarget = Boolean(socialTargets.facebook) && metaConnected;
+  const socialEnabled = instagramTarget || facebookTarget;
+
   useEffect(() => {
     productCommandSessionRef.current = null;
-    setInstagramEnabled(false);
-    setPublicationView('details');
+    setStep('compose');
+    setProgress(0);
     setInstagramHashtags('#secondevie #mobilierancien #artisanat');
-    setSocialTargets({ instagram: true, facebook: true });
+    setSocialTargets({ instagram: false, facebook: false });
     setSocialPublication(null);
     if (editData) {
       const material = editData.material || '';
@@ -273,12 +333,28 @@ const AdminForm = ({
     setGalleryItems([]);
     setIsCustomMaterial(false);
     setCategoryError(false);
-    setInstagramEnabled(false);
-    setPublicationView('details');
+    setStep('compose');
+    setProgress(0);
     setInstagramHashtags('#secondevie #mobilierancien #artisanat');
-    setSocialTargets({ instagram: true, facebook: true });
+    setSocialTargets({ instagram: false, facebook: false });
     setSocialPublication(null);
   };
+
+  // Le compte Meta pilote ce qui reste selectionnable : on aligne les cibles dessus.
+  const handleMetaConnectionChange = React.useCallback((connection) => {
+    setMetaConnection(connection || { status: 'not_connected', connected: false });
+    if (!connection?.connected) {
+      setSocialTargets({ instagram: false, facebook: false });
+      return;
+    }
+    if (connection.instagramAvailable === false) {
+      setSocialTargets((current) => ({ ...current, instagram: false }));
+    }
+  }, []);
+
+  // Le protocole Meta vit au niveau du formulaire : l'en-tete et l'ecran
+  // de diffusion parlent ainsi de la meme connexion.
+  const meta = useMetaConnection({ onConnectionChange: handleMetaConnectionChange });
 
   const processFiles = async (files) => {
     const availableSlots = Math.max(0, MAX_PRODUCT_IMAGES - galleryItems.length);
@@ -401,9 +477,44 @@ const AdminForm = ({
     return uploaded;
   };
 
+  /** Verifie ce qui bloquerait la publication avant d'ouvrir l'ecran de diffusion. */
+  const validateComposition = () => {
+    if (!formData.category) {
+      setCategoryError(true);
+      setMsg('Choisis un type de publication pour continuer.');
+      categoryGroupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      categoryGroupRef.current?.querySelector('button')?.focus({ preventScroll: true });
+      return false;
+    }
+    setCategoryError(false);
+    if (!String(formData.name || '').trim()) {
+      setMsg('Donne un nom à l’ouvrage pour continuer.');
+      nameInputRef.current?.focus();
+      return false;
+    }
+    const parsedStock = Number(formData.stock === '' ? 0 : formData.stock);
+    if (!Number.isInteger(parsedStock) || parsedStock < 0) {
+      setMsg('Le stock doit être un nombre entier positif ou nul.');
+      stockInputRef.current?.focus();
+      return false;
+    }
+    if (galleryItems.length > MAX_PRODUCT_IMAGES) {
+      setMsg(`La galerie est limitée à ${MAX_PRODUCT_IMAGES} images.`);
+      return false;
+    }
+    setMsg('');
+    return true;
+  };
+
+  const goToReview = () => {
+    if (!validateComposition()) return;
+    setStep('review');
+  };
+
   const addMeuble = async () => {
     if (socialPublication && socialPublication.overallStatus !== 'published') {
       setUploading(true);
+      setProgress(0.9);
       setMsg('Reprise de la publication Meta…');
       try {
         await refreshAdminAuthorizationToken();
@@ -420,6 +531,7 @@ const AdminForm = ({
           setMsg('Le site est publié, mais une destination Meta doit encore être relancée.');
           return;
         }
+        setProgress(1);
         setMsg('Le meuble est publié sur le site et les réseaux sélectionnés.');
         productCommandSessionRef.current = null;
         resetForm();
@@ -438,30 +550,22 @@ const AdminForm = ({
       }
       return;
     }
-    if (!formData.name) { setMsg("Nom requis"); return; }
-    // ── Validation catégorie obligatoire ──
-    if (!formData.category) {
-      setCategoryError(true);
-      setMsg("Publication impossible : choisis un type de publication.");
-      categoryGroupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      categoryGroupRef.current?.querySelector('button')?.focus({ preventScroll: true });
-      return;
-    }
-    setCategoryError(false);
-    if (galleryItems.length > MAX_PRODUCT_IMAGES) {
-      setMsg(`La galerie est limitée à ${MAX_PRODUCT_IMAGES} images.`);
-      return;
-    }
-    if (instagramEnabled && !metaConnection.connected) {
-      setMsg('Connecte Meta avant d’activer la publication simultanée.');
-      return;
-    }
-    if (instagramEnabled && !socialTargets.instagram && !socialTargets.facebook) {
-      setMsg('Garde au moins une destination Meta active.');
+    // Le parcours passe deja par cette validation, on la rejoue par securite.
+    if (!validateComposition()) {
+      setStep('compose');
       return;
     }
     setUploading(true);
+    setProgress(0.04);
     setMsg("Préparation des fichiers...");
+
+    // Progression indicative : images, enregistrement, offre, stock puis reseaux.
+    const totalStages = galleryItems.length + 3 + (socialEnabled ? 2 : 0);
+    let completedStages = 0;
+    const advanceProgress = () => {
+      completedStages += 1;
+      setProgress(Math.min(0.97, 0.04 + (completedStages / totalStages) * 0.93));
+    };
 
     try {
       setMsg("Vérification de la session administrateur...");
@@ -525,10 +629,11 @@ const AdminForm = ({
           finalImageMetadata.push(imageMetadata || {});
 
         }
+        advanceProgress();
       }
 
       setMsg("Finalisation...");
-      const parsedStock = Number(formData.stock);
+      const parsedStock = Number(formData.stock === '' ? 0 : formData.stock);
       if (!Number.isInteger(parsedStock) || parsedStock < 0) {
         throw new Error('Le stock doit etre un nombre entier positif ou nul.');
       }
@@ -604,6 +709,7 @@ const AdminForm = ({
         commerceVersion: offered.commerceVersion,
         inventoryVersion: offered.inventoryVersion
       };
+      advanceProgress();
 
       const currentStock = editData ? Number(editData.stock || 0) : 0;
       const stockDelta = parsedStock - currentStock;
@@ -631,17 +737,19 @@ const AdminForm = ({
         );
       }
       clearAdminPublicCatalogCache();
+      advanceProgress();
 
-      if (instagramEnabled) {
+      if (socialEnabled) {
         setMsg('Meuble publié sur le site. Préparation de Meta…');
         const prepared = await prepareSocialPublicationAdmin({
           collectionName,
           productId: commandProduct.id,
           commandId: session.socialCommandId,
-          targets: socialTargets,
+          targets: { instagram: instagramTarget, facebook: facebookTarget },
           hashtags: instagramHashtags
         });
         setSocialPublication(prepared);
+        advanceProgress();
         setMsg('Envoi vers les réseaux sélectionnés…');
         const socialResult = await runSocialPublicationAdmin(prepared.publicationId);
         setSocialPublication(socialResult);
@@ -649,9 +757,11 @@ const AdminForm = ({
           setMsg('Le site est publié, mais une destination Meta doit encore être relancée.');
           return;
         }
+        advanceProgress();
       }
 
-      setMsg(instagramEnabled
+      setProgress(1);
+      setMsg(socialEnabled
         ? 'Le meuble est publié sur le site et les réseaux sélectionnés.'
         : 'Enregistré. Publication du catalogue en cours...');
       productCommandSessionRef.current = null;
@@ -823,57 +933,72 @@ const AdminForm = ({
   const fieldClass = `w-full rounded-[14px] border-none px-3.5 py-3 text-[13px] font-bold outline-none ring-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] focus:ring-2 ${darkMode ? 'bg-stone-950 text-white ring-white/10 placeholder:text-stone-700 focus:ring-white/25' : 'bg-[#F7F6F3] text-stone-950 ring-black/[0.045] placeholder:text-stone-400 focus:bg-white focus:ring-stone-300'}`;
   const labelClass = `mb-1.5 block text-[9px] font-extrabold uppercase tracking-[0.12em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`;
   const categoryLabel = KIT_CONFIG.productCategories.find(category => category.id === formData.category)?.label || 'Non choisie';
-  const dimensionsSummary = [formData.width, catMeta.showDepth ? formData.depth : null, formData.height].filter(Boolean).join(' × ');
   const messageIsError = msg.startsWith('Erreur')
     || msg.startsWith('Publication impossible')
     || msg.startsWith('Nom requis')
+    || msg.startsWith('Choisis un type')
+    || msg.startsWith('Donne un nom')
+    || msg.startsWith('Le stock doit')
+    || msg.startsWith('La galerie est limitée')
     || msg.startsWith('Session expirée')
     || msg.startsWith('Confirme ton identité')
     || msg.startsWith('Autorisation d’envoi')
+    || msg.startsWith('Publication Meta à reprendre')
     || msg.startsWith('Envoi des images impossible');
+  const messageTone = messageIsError
+    ? 'error'
+    : (msg.startsWith('Enregistré') || msg.includes('optimisées') || msg.startsWith('Le meuble est publié'))
+      ? 'success'
+      : 'neutral';
+  const isReview = step === 'review';
+  const publishLabel = uploading
+    ? 'Publication…'
+    : socialPublication && socialPublication.overallStatus !== 'published'
+      ? 'Réessayer les réseaux'
+      : editData
+        ? 'Enregistrer les modifications'
+        : instagramTarget && facebookTarget
+          ? 'Publier sur 3 destinations'
+          : socialEnabled
+            ? `Publier sur le site + ${instagramTarget ? 'Instagram' : 'Facebook'}`
+            : 'Publier sur le site';
 
   return (
-    <div className="grid min-h-0 grid-cols-1 gap-5 xl:h-full xl:grid-cols-[minmax(0,1fr)_minmax(290px,26%)] 2xl:gap-6">
-      <div className={`min-h-0 overflow-hidden rounded-[26px] border ${darkMode ? 'border-white/10 bg-[#11110f]' : 'border-stone-200 bg-white'}`}>
-        <div className="flex h-full min-h-0 flex-col overflow-hidden px-5 py-5 sm:px-6 sm:py-6 xl:px-7 xl:py-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
+    <div className="pub-surface flex min-h-0 w-full flex-col xl:h-full">
+      <div className={`relative min-h-0 flex-1 overflow-hidden rounded-[26px] border ${darkMode ? 'border-white/10 bg-[#11110f]' : 'border-stone-200 bg-white'}`}>
+        <div className="flex h-full min-h-0 flex-col overflow-hidden px-4 py-4 sm:px-5 sm:py-5 xl:px-6 xl:py-5">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+            <div className="min-w-0">
               <h3 className="text-[15px] font-extrabold tracking-[-0.025em]">{editData ? 'Modifier la publication' : 'Nouvelle publication'}</h3>
-              <p className={`mt-0.5 text-[10px] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>{publicationView === 'instagram' ? 'Aperçu du contenu destiné au fil Instagram.' : 'Les informations essentielles, dans l’ordre naturel de saisie.'}</p>
+              <p className={`mt-0.5 text-[10px] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
+                {isReview
+                  ? `Vérifiez le rendu, puis choisissez la portée — actuellement ${describeChannels({ instagram: instagramTarget, facebook: facebookTarget })}.`
+                  : 'Les informations essentielles, dans l’ordre naturel de saisie.'}
+              </p>
             </div>
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              {editData && <button type="button" onClick={onCancelEdit} className="rounded-full px-3 py-2 text-[10px] font-extrabold text-red-500 ring-1 ring-red-500/15 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500 hover:text-white">Annuler</button>}
-              {instagramEnabled && publicationView === 'details' && (
-                <button type="button" onClick={() => setPublicationView('instagram')} className={`rounded-full px-3 py-2 text-[9px] font-extrabold ring-1 transition-colors ${darkMode ? 'text-stone-300 ring-white/10 hover:bg-white/5 hover:text-white' : 'text-stone-600 ring-black/[0.07] hover:bg-stone-50 hover:text-stone-950'}`}>Voir l’aperçu</button>
-              )}
-              <MetaConnectionControl
+            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+              <MetaConnectionBadge darkMode={darkMode} meta={meta} disabled={uploading} />
+              <PublicationStepRail
+                step={step}
                 darkMode={darkMode}
-                enabled={instagramEnabled}
-                onEnabledChange={(nextEnabled) => {
-                  setInstagramEnabled(nextEnabled);
-                  setPublicationView(nextEnabled && socialTargets.instagram ? 'instagram' : 'details');
-                }}
-                onConnectionChange={(connection) => {
-                  setMetaConnection(connection);
-                  if (connection.connected && !connection.instagramAvailable) {
-                    setSocialTargets((current) => ({ ...current, instagram: false, facebook: true }));
-                  }
-                }}
-                targets={socialTargets}
-                onTargetsChange={(nextTargets) => {
-                  if (!nextTargets.instagram && !nextTargets.facebook) {
-                    setMsg('Garde au moins une destination Meta active.');
-                    return;
-                  }
-                  setSocialTargets(nextTargets);
-                  if (!nextTargets.instagram && publicationView === 'instagram') setPublicationView('details');
+                disabled={uploading}
+                onSelect={(nextStep) => {
+                  if (nextStep === step) return;
+                  if (nextStep === 'review') goToReview();
+                  else setStep('compose');
                 }}
               />
             </div>
           </div>
 
-          <div className="relative mt-4 min-h-0 flex-1">
-            <div className={`min-h-0 transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transform-none motion-reduce:transition-none xl:h-full xl:overflow-y-auto xl:pr-1 ${publicationView === 'details' ? 'relative translate-x-0 opacity-100' : 'pointer-events-none absolute inset-0 -translate-x-5 opacity-0'}`} aria-hidden={publicationView !== 'details'} inert={publicationView !== 'details'}>
+          <div className="relative mt-3.5 min-h-0 flex-1">
+            <div
+              className="pub-pane min-h-0 xl:flex xl:h-full xl:flex-col xl:overflow-y-auto xl:pr-1"
+              data-state={isReview ? 'idle' : 'active'}
+              data-side="before"
+              aria-hidden={isReview}
+              inert={isReview}
+            >
           <div ref={categoryGroupRef} role="group" aria-labelledby="publication-category-label" aria-describedby={categoryError ? 'publication-category-error' : undefined}>
             <div className="flex items-center justify-between gap-3">
               <p id="publication-category-label" className={labelClass}>Type de publication</p>
@@ -907,8 +1032,8 @@ const AdminForm = ({
             )}
           </div>
 
-          <div className="mt-5 grid min-h-0 flex-1 grid-flow-dense grid-cols-1 gap-6 lg:grid-cols-12 xl:gap-7">
-            <div className="flex min-h-0 flex-col lg:col-span-4 2xl:col-span-3">
+          <div className="mt-4 grid min-h-0 grid-flow-dense grid-cols-1 gap-5 lg:grid-cols-12 xl:min-h-0 xl:flex-1 xl:auto-rows-fr xl:items-stretch xl:gap-6">
+            <div className="flex min-h-0 flex-col lg:col-span-4 xl:h-full 2xl:col-span-3">
               <div className="flex items-center justify-between">
                 <span className={labelClass}>Photos</span>
                 <div className="mb-1.5 flex items-center gap-1">
@@ -927,7 +1052,7 @@ const AdminForm = ({
                 </div>
               </div>
               <div
-                className={`grid min-h-[250px] flex-1 grid-cols-3 content-start gap-2.5 rounded-[18px] p-3 ring-1 transition-colors duration-200 lg:min-h-[330px] ${isDragging ? 'bg-emerald-500/5 ring-emerald-500/50' : (darkMode ? 'bg-black/20 ring-white/10' : 'bg-[#F8F7F4] ring-black/[0.045]')}`}
+                className={`grid min-h-[250px] flex-1 grid-cols-3 content-start gap-2.5 rounded-[18px] p-3 ring-1 transition-colors duration-200 lg:min-h-[330px] xl:min-h-[220px] ${isDragging ? 'bg-emerald-500/5 ring-emerald-500/50' : (darkMode ? 'bg-black/20 ring-white/10' : 'bg-[#F8F7F4] ring-black/[0.045]')}`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
@@ -958,9 +1083,25 @@ const AdminForm = ({
                 </button>
               </div>
               <input type="file" id="fileInput" ref={fileInputRef} className="hidden" accept="image/*" multiple onChange={handleImageChange} />
+
+              {(totalOriginalSize > 0 || totalCompressedSize > 0) && (
+                <div className={`mt-2.5 flex items-center justify-between gap-2 text-[9px] font-bold ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
+                  <span>{formatBytes(totalOriginalSize)} importés</span>
+                  {totalCompressedSize > 0 && <span className="text-emerald-600 dark:text-emerald-400">Optimisé {formatBytes(totalCompressedSize)}</span>}
+                </div>
+              )}
+              {totalCompressedSize > 0 && (
+                <button
+                  type="button"
+                  onClick={handleDownloadImages}
+                  className={`mt-2 flex min-h-10 w-full items-center justify-center gap-2 rounded-full text-[9px] font-extrabold ring-1 transition-[transform,background-color] duration-400 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] ${darkMode ? 'text-stone-300 ring-white/10 hover:bg-white/[0.06]' : 'text-stone-600 ring-black/[0.06] hover:bg-stone-50'}`}
+                >
+                  <Download size={13} strokeWidth={1.7} />Télécharger les images optimisées
+                </button>
+              )}
             </div>
 
-            <div className="grid h-full min-h-0 grid-cols-1 content-start gap-x-4 gap-y-4 md:grid-cols-6 md:grid-rows-[auto_auto_auto_minmax(220px,1fr)] lg:col-span-8 2xl:col-span-9 2xl:gap-x-5">
+            <div className="grid h-full min-h-0 grid-cols-1 content-start gap-x-4 gap-y-4 md:grid-cols-6 md:grid-rows-[auto_auto_auto_minmax(220px,1fr)] lg:col-span-8 xl:content-stretch 2xl:col-span-9 2xl:gap-x-5">
               <div className="md:col-span-3">
                 <label className={labelClass}>Nom de l’ouvrage</label>
                 <input ref={nameInputRef} enterKeyHint="next" placeholder={catMeta.namePlaceholder} className={fieldClass} value={formData.name} onChange={event => setFormData({ ...formData, name: event.target.value })} onKeyDown={(event) => handleEnterFocus(event, startingPriceInputRef)} />
@@ -1004,7 +1145,7 @@ const AdminForm = ({
                   <input ref={heightInputRef} type="number" placeholder={catMeta.heightLabel} className={`${fieldClass} text-center`} value={formData.height} onChange={event => setFormData({ ...formData, height: event.target.value })} />
                 </div>
               </div>
-              <div className="flex min-h-[260px] flex-col md:col-span-6 md:min-h-0">
+              <div className="flex min-h-[260px] flex-col md:col-span-6 md:min-h-0 xl:h-full">
                 <label className={labelClass}>Histoire de l’objet</label>
                 <StoryEditor value={formData.description} onChange={(description) => setFormData({ ...formData, description })} darkMode={darkMode} />
               </div>
@@ -1012,67 +1153,53 @@ const AdminForm = ({
           </div>
             </div>
 
-            <div className={`min-h-0 transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transform-none motion-reduce:transition-none xl:h-full xl:overflow-y-auto xl:pr-1 ${publicationView === 'instagram' ? 'relative translate-x-0 opacity-100' : 'pointer-events-none absolute inset-0 translate-x-5 opacity-0'}`} aria-hidden={publicationView !== 'instagram'} inert={publicationView !== 'instagram'}>
-              <InstagramPublicationPreview
+            <div
+              className="pub-pane min-h-0 xl:h-full"
+              data-state={isReview ? 'active' : 'idle'}
+              data-side="after"
+              aria-hidden={!isReview}
+              inert={!isReview}
+            >
+              <PublicationReviewStep
                 darkMode={darkMode}
+                formData={formData}
                 galleryItems={galleryItems}
-                name={formData.name}
-                description={formData.description}
+                targets={socialTargets}
+                onTargetsChange={setSocialTargets}
+                connection={metaConnection}
+                onConnectRequest={meta.beginOAuth}
                 hashtags={instagramHashtags}
                 onHashtagsChange={setInstagramHashtags}
-                onBack={() => setPublicationView('details')}
+                socialPublication={socialPublication}
+                uploading={uploading}
               />
             </div>
           </div>
+
+        <PublicationActionBar
+          darkMode={darkMode}
+          step={step}
+          categoryLabel={categoryLabel}
+          priceLabel={formData.priceOnRequest ? 'Sur demande' : `${Number(formData.startingPrice || 0).toLocaleString('fr-FR')} €`}
+          stockLabel={formData.stock === '' ? '—' : String(formData.stock)}
+          photoCount={galleryItems.length}
+          photoLimit={MAX_PRODUCT_IMAGES}
+          targets={socialTargets}
+          connection={metaConnection}
+          editData={editData}
+          uploading={uploading}
+          progress={progress}
+          message={msg}
+          messageTone={messageTone}
+          onBack={() => setStep('compose')}
+          onNext={goToReview}
+          onPublish={addMeuble}
+          onCancelEdit={onCancelEdit}
+          publishLabel={publishLabel}
+          retryMode={Boolean(socialPublication && socialPublication.overallStatus !== 'published')}
+        />
         </div>
       </div>
-
-      <aside className={`min-h-0 rounded-[26px] border p-5 sm:p-6 ${darkMode ? 'border-white/10 bg-[#11110f]' : 'border-stone-200 bg-white'}`}>
-        <div className="flex h-full min-h-[360px] flex-col">
-          <p className={`text-[9px] font-extrabold uppercase tracking-[0.14em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Résumé de la publication</p>
-          <h4 className="mt-4 break-words text-[16px] font-extrabold leading-[1.15] tracking-[-0.025em]">{formData.name || 'Sans titre'}</h4>
-          <dl className={`mt-3 divide-y text-[10px] ${darkMode ? 'divide-white/10' : 'divide-black/[0.055]'}`}>
-            {[
-              ['Catégorie', categoryLabel],
-              ['Prix', formData.priceOnRequest ? 'Sur demande' : `${Number(formData.startingPrice || 0).toLocaleString('fr-FR')} €`],
-              ['Stock', formData.stock === '' ? '—' : formData.stock],
-              ['Dimensions', dimensionsSummary ? `${dimensionsSummary} cm` : '—'],
-              ['Style', formData.style || 'Non défini'],
-            ].map(([label, value]) => <div key={label} className="flex items-center justify-between gap-3 py-2"><dt className="text-stone-400">{label}</dt><dd className="truncate font-bold">{value}</dd></div>)}
-          </dl>
-          <div className={`mt-4 min-h-[150px] flex-1 overflow-y-auto rounded-[16px] border p-4 text-[10px] leading-5 ${darkMode ? 'border-white/10 bg-black/20 text-stone-400' : 'border-stone-200 bg-[#F8F7F4] text-stone-600'}`}>
-            <p className={`mb-3 text-[8px] font-extrabold uppercase tracking-[0.14em] ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>Aperçu de l’histoire</p>
-            {formData.description.trim() ? <RichTextStory value={formData.description} /> : <p className="text-stone-400">Le récit mis en forme apparaîtra ici pendant la rédaction.</p>}
-          </div>
-          <div className="mt-auto pt-3">
-            {socialPublication && (
-              <div className={`mb-2 rounded-[12px] px-3 py-2 ring-1 ${darkMode ? 'bg-black/20 ring-white/10' : 'bg-[#F7F6F3] ring-black/[0.05]'}`}>
-                <div className="flex items-center justify-between gap-3 text-[8px] font-extrabold uppercase tracking-[0.08em]">
-                  <span>Publication simultanée</span>
-                  <span className={socialPublication.overallStatus === 'published' ? 'text-emerald-600' : socialPublication.overallStatus.includes('failure') || socialPublication.overallStatus === 'failed' ? 'text-red-600' : 'text-stone-400'}>{socialPublication.overallStatus === 'published' ? 'Terminée' : socialPublication.overallStatus === 'partial_failure' ? 'À reprendre' : 'En cours'}</span>
-                </div>
-                <div className="mt-2 grid grid-cols-3 gap-1.5 text-[8px] font-bold">
-                  <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-center text-emerald-700">Site publié</span>
-                  {['instagram', 'facebook'].map((destination) => {
-                    const stage = socialPublication.destinations?.[destination];
-                    if (!stage?.requested) return <span key={destination} className="rounded-full bg-stone-500/10 px-2 py-1 text-center text-stone-400">{destination === 'instagram' ? 'Instagram' : 'Facebook'} ignoré</span>;
-                    const success = stage.status === 'published';
-                    const failed = stage.status === 'failed';
-                    return <span key={destination} className={`rounded-full px-2 py-1 text-center ${success ? 'bg-emerald-500/10 text-emerald-700' : failed ? 'bg-red-500/10 text-red-700' : 'bg-stone-500/10 text-stone-500'}`}>{destination === 'instagram' ? 'Instagram' : 'Facebook'} {success ? 'publié' : failed ? 'échoué' : 'envoi'}</span>;
-                  })}
-                </div>
-              </div>
-            )}
-            {msg && <p role={messageIsError ? 'alert' : 'status'} aria-live={messageIsError ? 'assertive' : 'polite'} className={`mb-2 rounded-[12px] px-3 py-2 text-[9px] font-bold ${msg.startsWith('Enregistré') || msg.includes('optimisées') ? 'bg-emerald-500/10 text-emerald-600' : messageIsError ? 'bg-red-500/10 text-red-600 ring-1 ring-red-500/15' : 'bg-stone-500/10 text-stone-500'}`}>{msg}</p>}
-            {(totalOriginalSize > 0 || totalCompressedSize > 0) && <div className="mb-2 flex items-center justify-between text-[9px] text-stone-400"><span>{formatBytes(totalOriginalSize)}</span>{totalCompressedSize > 0 && <span className="font-bold text-emerald-600">Optimisé {formatBytes(totalCompressedSize)}</span>}</div>}
-            {totalCompressedSize > 0 && <button type="button" onClick={handleDownloadImages} className={`mb-2 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-[9px] font-extrabold ring-1 ${darkMode ? 'ring-white/10 hover:bg-white/5' : 'ring-black/[0.06] hover:bg-stone-50'}`}><Download size={13} strokeWidth={1.5} />Télécharger les images</button>}
-            <button type="button" onClick={addMeuble} disabled={uploading} className="group flex w-full items-center justify-between rounded-full bg-stone-950 py-1.5 pl-5 pr-1.5 text-[10px] font-extrabold text-white shadow-[0_14px_34px_rgba(28,25,23,0.2)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] disabled:opacity-50 dark:bg-white dark:text-stone-950">
-              <span>{uploading ? 'Publication en cours…' : socialPublication && socialPublication.overallStatus !== 'published' ? 'Réessayer les réseaux' : (editData ? 'Enregistrer' : 'Publier l’ouvrage')}</span>
-              <span className="grid h-8 w-8 place-items-center rounded-full bg-white/10 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 dark:bg-black/5">↗</span>
-            </button>
-          </div>
-        </div>
-      </aside>
 
       <ImageCropperModal isOpen={cropperConfig.isOpen} image={cropperConfig.image} aspect={cropperConfig.aspect} onClose={() => setCropperConfig(prev => ({ ...prev, isOpen: false }))} onCropComplete={handleCropComplete} darkMode={darkMode} />
     </div>
