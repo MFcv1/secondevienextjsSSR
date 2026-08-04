@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { AlertCircle, Check, Upload, Trash2, Download } from 'lucide-react';
+import { AlertCircle, Check, Crop, Upload, Trash2, Download } from 'lucide-react';
 import { db, appId } from '../config/firebase';
 import { getStorageInstance } from '../config/firebaseStorage';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -813,6 +813,54 @@ const AdminForm = ({
   const labelClass = `mb-1.5 block text-[9px] font-extrabold uppercase tracking-[0.12em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`;
   const categoryLabel = KIT_CONFIG.productCategories.find(category => category.id === formData.category)?.label || 'Non choisie';
   const dimensionsSummary = [formData.width, catMeta.showDepth ? formData.depth : null, formData.height].filter(Boolean).join(' × ');
+  const instagramSelected = Boolean(
+    instagramEnabled
+    && metaConnection.instagramAvailable
+    && socialTargets.instagram
+  );
+  const facebookSelected = Boolean(
+    instagramEnabled
+    && metaConnection.facebookAvailable
+    && socialTargets.facebook
+  );
+  const selectedSocialLabels = [
+    instagramSelected ? 'Instagram' : '',
+    facebookSelected ? 'Facebook' : ''
+  ].filter(Boolean);
+  const publishActionLabel = uploading
+    ? 'Publication en cours…'
+    : socialPublication && socialPublication.overallStatus !== 'published'
+      ? 'Réessayer les réseaux'
+      : editData
+        ? selectedSocialLabels.length > 0
+          ? `Enregistrer + ${selectedSocialLabels.join(' + ')}`
+          : 'Enregistrer sur le site'
+        : selectedSocialLabels.length > 0
+          ? `Publier sur le site + ${selectedSocialLabels.join(' + ')}`
+          : 'Publier sur le site';
+
+  const toggleFinalDestination = (destination) => {
+    const available = destination === 'instagram'
+      ? metaConnection.instagramAvailable
+      : metaConnection.facebookAvailable;
+    if (!available) {
+      setMsg(destination === 'instagram'
+        ? 'Connecte Instagram en haut de la publication avant de l’ajouter.'
+        : 'Connecte une Page Facebook avant de l’ajouter.');
+      return;
+    }
+
+    const currentlySelected = instagramEnabled && socialTargets[destination];
+    const nextTargets = { ...socialTargets, [destination]: !currentlySelected };
+    setSocialTargets(nextTargets);
+    setInstagramEnabled(nextTargets.instagram || nextTargets.facebook);
+    if (destination === 'instagram' && currentlySelected && publicationView === 'instagram') {
+      setPublicationView('details');
+    }
+    setMsg(!currentlySelected
+      ? `${destination === 'instagram' ? 'Instagram' : 'Facebook'} sera inclus dans cette publication.`
+      : `${destination === 'instagram' ? 'Instagram' : 'Facebook'} ne recevra pas cette publication.`);
+  };
   const messageIsError = msg.startsWith('Erreur')
     || msg.startsWith('Publication impossible')
     || msg.startsWith('Nom requis')
@@ -934,9 +982,9 @@ const AdminForm = ({
               >
                 {galleryItems.slice(0, MAX_PRODUCT_IMAGES).map((item, idx) => (
                   <div key={item.id} draggable onDragStart={(event) => onDragStartItem(event, idx)} onDragOver={onDragOverItem} onDrop={(event) => onDropItem(event, idx)} onTouchStart={() => handleTouchStart(idx)} onTouchEnd={handleTouchEnd} data-index={idx} className={`group relative aspect-square cursor-move overflow-hidden rounded-[12px] ring-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${draggedItemIndex === idx ? 'scale-95 opacity-50 ring-emerald-500' : (darkMode ? 'ring-white/10' : 'ring-black/[0.06]')}`}>
-                    <img src={item.preview} className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105" alt="" />
+                    <img src={item.preview} className="h-full w-full object-cover" alt="" />
                     <div className="absolute inset-x-1 bottom-1 flex translate-y-2 justify-end gap-1 opacity-0 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-y-0 group-hover:opacity-100">
-                      <button type="button" onClick={(event) => { event.stopPropagation(); handleOpenCropper(item); }} className="grid h-7 w-7 place-items-center rounded-full bg-white text-stone-950 shadow-[0_5px_14px_rgba(0,0,0,0.16)]" title="Recadrer"><span className="text-[11px]">↗</span></button>
+                      <button type="button" onClick={(event) => { event.stopPropagation(); handleOpenCropper(item); }} className="grid h-7 w-7 place-items-center rounded-full bg-white text-stone-950 shadow-[0_5px_14px_rgba(0,0,0,0.16)]" title="Recadrer" aria-label="Recadrer cette image"><Crop size={12} strokeWidth={1.7} /></button>
                       <button type="button" onClick={(event) => { event.stopPropagation(); if (item.preview && !item.isExisting) URL.revokeObjectURL(item.preview); setGalleryItems(items => items.filter((_, index) => index !== idx)); }} className="grid h-7 w-7 place-items-center rounded-full bg-red-500 text-white" title="Retirer"><Trash2 size={12} strokeWidth={1.7} /></button>
                     </div>
                   </div>
@@ -1030,7 +1078,7 @@ const AdminForm = ({
         <div className="flex h-full min-h-[360px] flex-col">
           <p className={`text-[9px] font-extrabold uppercase tracking-[0.14em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Résumé de la publication</p>
           <div className={`mt-3 overflow-hidden rounded-[16px] ring-1 ${darkMode ? 'bg-black/20 ring-white/10' : 'bg-[#F7F6F3] ring-black/[0.045]'}`}>
-            {galleryItems[0]?.preview ? <img src={galleryItems[0].preview} alt="Aperçu principal" className="h-32 w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:scale-105" /> : <div className="grid h-32 place-items-center text-center text-[10px] text-stone-400"><span><Upload size={20} strokeWidth={1.3} className="mx-auto mb-2" />Le premier visuel apparaîtra ici</span></div>}
+            {galleryItems[0]?.preview ? <img src={galleryItems[0].preview} alt="Aperçu principal" className="h-32 w-full object-cover" /> : <div className="grid h-32 place-items-center text-center text-[10px] text-stone-400"><span><Upload size={20} strokeWidth={1.3} className="mx-auto mb-2" />Le premier visuel apparaîtra ici</span></div>}
           </div>
           <h4 className="mt-3 break-words text-[16px] font-extrabold leading-[1.15] tracking-[-0.025em]">{formData.name || 'Sans titre'}</h4>
           <dl className={`mt-3 divide-y text-[10px] ${darkMode ? 'divide-white/10' : 'divide-black/[0.055]'}`}>
@@ -1068,9 +1116,42 @@ const AdminForm = ({
             {msg && <p role={messageIsError ? 'alert' : 'status'} aria-live={messageIsError ? 'assertive' : 'polite'} className={`mb-2 rounded-[12px] px-3 py-2 text-[9px] font-bold ${msg.startsWith('Enregistré') || msg.includes('optimisées') ? 'bg-emerald-500/10 text-emerald-600' : messageIsError ? 'bg-red-500/10 text-red-600 ring-1 ring-red-500/15' : 'bg-stone-500/10 text-stone-500'}`}>{msg}</p>}
             {(totalOriginalSize > 0 || totalCompressedSize > 0) && <div className="mb-2 flex items-center justify-between text-[9px] text-stone-400"><span>{formatBytes(totalOriginalSize)}</span>{totalCompressedSize > 0 && <span className="font-bold text-emerald-600">Optimisé {formatBytes(totalCompressedSize)}</span>}</div>}
             {totalCompressedSize > 0 && <button type="button" onClick={handleDownloadImages} className={`mb-2 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-[9px] font-extrabold ring-1 ${darkMode ? 'ring-white/10 hover:bg-white/5' : 'ring-black/[0.06] hover:bg-stone-50'}`}><Download size={13} strokeWidth={1.5} />Télécharger les images</button>}
-            <button type="button" onClick={addMeuble} disabled={uploading} className="group flex w-full items-center justify-between rounded-full bg-stone-950 py-1.5 pl-5 pr-1.5 text-[10px] font-extrabold text-white shadow-[0_14px_34px_rgba(28,25,23,0.2)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] disabled:opacity-50 dark:bg-white dark:text-stone-950">
-              <span>{uploading ? 'Publication en cours…' : socialPublication && socialPublication.overallStatus !== 'published' ? 'Réessayer les réseaux' : (editData ? 'Enregistrer' : 'Publier l’ouvrage')}</span>
-              <span className="grid h-8 w-8 place-items-center rounded-full bg-white/10 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 dark:bg-black/5">↗</span>
+            <div className={`mb-2.5 rounded-[14px] p-3 ring-1 ${darkMode ? 'bg-black/20 ring-white/10' : 'bg-[#F7F6F3] ring-black/[0.05]'}`}>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[9px] font-extrabold">Envoi final</p>
+                  <p className="mt-0.5 text-[8px] text-stone-400">Choisis ici avant de publier.</p>
+                </div>
+                <span className="flex items-center gap-1 text-[8px] font-extrabold text-emerald-700"><Check size={11} strokeWidth={2} />Site inclus</span>
+              </div>
+              <div className={`mt-2 grid gap-1.5 ${metaConnection.facebookAvailable ? 'grid-cols-2' : 'grid-cols-1'}`} role="group" aria-label="Destinations sociales de cette publication">
+                <button
+                  type="button"
+                  aria-pressed={instagramSelected}
+                  disabled={uploading || metaConnection.status === 'loading'}
+                  onClick={() => toggleFinalDestination('instagram')}
+                  className={`flex min-h-9 items-center justify-between rounded-[10px] px-2.5 text-left text-[8px] font-extrabold ring-1 transition-[background-color,color,transform] duration-200 active:scale-[0.98] disabled:cursor-wait disabled:opacity-50 ${instagramSelected ? (darkMode ? 'bg-emerald-400/10 text-emerald-300 ring-emerald-400/25' : 'bg-emerald-50 text-emerald-700 ring-emerald-600/20') : (darkMode ? 'text-stone-400 ring-white/10' : 'bg-white text-stone-500 ring-black/[0.06]')}`}
+                >
+                  <span>Instagram</span>
+                  <span className={`grid h-4 w-4 place-items-center rounded-full ring-1 ${instagramSelected ? 'bg-emerald-600 text-white ring-emerald-600' : (darkMode ? 'ring-white/20' : 'ring-black/10')}`} aria-hidden="true">{instagramSelected && <Check size={10} strokeWidth={2.4} />}</span>
+                </button>
+                {metaConnection.facebookAvailable && (
+                  <button
+                    type="button"
+                    aria-pressed={facebookSelected}
+                    disabled={uploading || metaConnection.status === 'loading'}
+                    onClick={() => toggleFinalDestination('facebook')}
+                    className={`flex min-h-9 items-center justify-between rounded-[10px] px-2.5 text-left text-[8px] font-extrabold ring-1 transition-[background-color,color,transform] duration-200 active:scale-[0.98] disabled:cursor-wait disabled:opacity-50 ${facebookSelected ? (darkMode ? 'bg-emerald-400/10 text-emerald-300 ring-emerald-400/25' : 'bg-emerald-50 text-emerald-700 ring-emerald-600/20') : (darkMode ? 'text-stone-400 ring-white/10' : 'bg-white text-stone-500 ring-black/[0.06]')}`}
+                  >
+                    <span>Facebook</span>
+                    <span className={`grid h-4 w-4 place-items-center rounded-full ring-1 ${facebookSelected ? 'bg-emerald-600 text-white ring-emerald-600' : (darkMode ? 'ring-white/20' : 'ring-black/10')}`} aria-hidden="true">{facebookSelected && <Check size={10} strokeWidth={2.4} />}</span>
+                  </button>
+                )}
+              </div>
+              {!metaConnection.instagramAvailable && metaConnection.status !== 'loading' && <p className="mt-2 text-[8px] leading-3 text-stone-400">Instagram n’est pas connecté. Utilise le contrôle en haut pour l’ajouter.</p>}
+            </div>
+            <button type="button" onClick={addMeuble} disabled={uploading} className="flex min-h-11 w-full items-center justify-center rounded-full bg-stone-950 px-5 py-3 text-center text-[10px] font-extrabold text-white shadow-[0_14px_34px_rgba(28,25,23,0.2)] transition-[transform,opacity] duration-200 active:scale-[0.98] disabled:opacity-50 dark:bg-white dark:text-stone-950">
+              <span>{publishActionLabel}</span>
             </button>
           </div>
         </div>

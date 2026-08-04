@@ -140,6 +140,13 @@ premier echange de token ne doit pas lui etre compare comme une identite
 publique. La fermeture du popup conserve une fenetre de grace de 18 secondes
 pour laisser le callback terminer avant d'afficher un echec.
 
+La confirmation finale distingue la connexion du routage de la publication.
+Le site est toujours inclus. Un controle `Envoi final`, place juste au-dessus
+de l'action principale, montre et permet de changer les destinations sociales
+de cette publication. Le libelle de l'action nomme les destinations retenues,
+par exemple `Publier sur le site` ou `Publier sur le site + Instagram`. Une
+connexion Instagram active ne provoque donc jamais, a elle seule, un envoi.
+
 La configuration Meta/Firebase, la recette et le diagnostic OAuth sont
 centralises dans [INSTAGRAM_OAUTH_RUNBOOK.md](INSTAGRAM_OAUTH_RUNBOOK.md).
 

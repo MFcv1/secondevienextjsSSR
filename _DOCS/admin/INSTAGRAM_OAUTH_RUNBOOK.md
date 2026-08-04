@@ -283,6 +283,12 @@ Le succes visuel attendu est:
 - actions `Verifier`, `Reassocier`, `Deconnecter`;
 - absence du bouton `Connecter en direct`.
 
+La connexion et la destination restent deux decisions distinctes. Juste avant
+l'action principale, le bloc `Envoi final` garde le site obligatoire et montre
+Instagram/Facebook comme choix explicites pour la publication courante. Le
+bouton final reprend ces choix dans son libelle. Si Instagram n'est pas choisi,
+la publication du meuble reste limitee au site, meme si le compte est connecte.
+
 ## 10. Publication apres connexion
 
 La publication du meuble reste autoritaire:
