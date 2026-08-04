@@ -1,6 +1,16 @@
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
+
 # AGENTS.md - Bible operationnelle de Seconde Vie Next
 
-Derniere consolidation: 2026-07-28
+Derniere consolidation: 2026-08-04
 Statut: `REFERENCE_MAITRE_ACTIVE`
 Projet: `secondevienextjsSSR`
 
@@ -50,7 +60,7 @@ Une contradiction entre code et documentation doit etre signalee et corrigee dan
 
 | Domaine | Etat actuel |
 | --- | --- |
-| application publique | Next App Router natif, pages publiques serveur/ISR |
+| application publique | Next.js 16.3, App Router natif, Turbopack par defaut, pages publiques serveur/ISR |
 | home | `/` est la galerie canonique; `/galerie` est un alias |
 | catalogue | `furniture` autoritaire, snapshot Storage materialise actif, API same-origin non persistante, revalidation evenementielle |
 | Auth | passe de demonstration close, `PREPROD_READY`; production differee |
@@ -85,6 +95,8 @@ production.
 | --- | --- |
 | Node | `22.x` |
 | pnpm | `11.7.0` |
+| Next.js | `16.3.x`, Turbopack par defaut |
+| React | `19.2.x` |
 | Firebase projet courant | `secondevienextjsssr` |
 | App Hosting | `secondevie-next-sandbox` |
 | URL | `https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app` |
@@ -99,6 +111,11 @@ production.
 
 Ne pas convertir Node 24 local en nouvelle baseline sans migration dediee. Ne jamais traiter le sandbox comme le domaine final WebAuthn ou e-mail.
 Ne jamais promouvoir le compte recette client type en administrateur. Aucun mot de passe, code d'application, OTP ou token de ces comptes ne doit etre inscrit dans le depot.
+
+`cacheComponents`, `partialPrefetching`, le React Compiler Rust et le mode
+offline Next restent des opt-ins inactifs. Leur adoption est un changement de
+modele de cache/navigation distinct, pas une consequence implicite du socle
+Next.js 16.3.
 
 ## 5. Bibliotheque des modules
 
@@ -466,7 +483,7 @@ Ne pas utiliser `git reset --hard`, `git clean`, `git checkout --` ou une suppre
 - assets candidats apres audit visuel;
 - pagination admin selon volumes;
 - gestion passkeys dans l'espace client si besoin confirme;
-- Next 16/Turbopack;
+- Cache Components / Partial Prefetching, uniquement dans une passe UX/cache dediee;
 - assistant IA devis.
 
 Ces elements ne doivent pas revenir dans un patch en cours sauf demande explicite ou bug directement lie.

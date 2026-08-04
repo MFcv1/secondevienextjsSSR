@@ -1,6 +1,6 @@
 # Qualite, tests et gates
 
-Derniere mise a jour: 2026-08-01
+Derniere mise a jour: 2026-08-04
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Principe de proportion
@@ -154,6 +154,7 @@ Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCa
 | factures manuelles admin | `test:invoices`, lint cible, build; envoi Gmail reel uniquement sur demande explicite |
 | couts Firestore | `test:analytics`, mesure Usage Insights/Data Access avant-apres si necessaire |
 | infra | `test:deployment-cache`, `infra:env`, `infra:deploy`, `appcheck:audit` en lecture |
+| socle Next.js majeur | lint, `test:deployment-cache`, `test:auth`, `test:admin-cache`, `test:catalog:core`, `test:catalog:resilience`, `test:catalog:security`, `seo:surface`, build Turbopack, `next:routes`, `mobile:contract`, smoke local, puis smoke sandbox lors du deploiement autorise |
 
 ## 5. Gates publiques
 

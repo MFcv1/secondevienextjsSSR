@@ -1,6 +1,6 @@
 # Deploiement atomique et coherence du cache client
 
-Derniere mise a jour: 2026-07-26
+Derniere mise a jour: 2026-08-04
 Statut: `REFERENCE_ACTIVE`
 Proprietaire: infrastructure Next.js et Firebase App Hosting
 
@@ -60,16 +60,18 @@ References officielles:
   `apphosting.yaml` ou dans un fichier `.env`.
 
 `next.config.mjs` transmet cet identifiant a l'option native `deploymentId`.
-Avec la version Next.js 15.5.20 actuellement verrouillee, Next.js ajoute
-`?dpl=<deploymentId>` aux assets et `x-deployment-id` aux requetes de navigation
-client. L'App Router compare aussi l'identifiant du build client avec celui de
-la reponse RSC et remplace une navigation incompatible par une navigation
-document complete.
+Avec la version Next.js 16.3.0 actuellement verrouillee, Next.js:
 
-La documentation Next.js la plus recente mentionne aussi `data-dpl-id` et
-`x-nextjs-deployment-id`. Ces deux marqueurs appartiennent a une implementation
-plus recente et ne constituent pas une gate tant que le projet reste en
-15.5.20.
+- ajoute `?dpl=<deploymentId>` aux assets;
+- ajoute `x-deployment-id` aux requetes de navigation client;
+- ajoute `x-nextjs-deployment-id` aux reponses de navigation;
+- injecte `data-dpl-id` sur l'element `<html>`.
+
+L'App Router compare ainsi l'identifiant du build client avec celui de la
+reponse RSC et remplace une navigation incompatible par une navigation
+document complete. Le build doit prouver les marqueurs applicables aux
+artefacts statiques et au manifeste; le smoke sandbox doit ensuite prouver les
+en-tetes de navigation reels.
 
 ### 3.2 Cache ISR borne
 

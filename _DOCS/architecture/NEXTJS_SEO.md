@@ -1,11 +1,17 @@
 # Architecture Next.js et SEO
 
-Derniere mise a jour: 2026-07-19
+Derniere mise a jour: 2026-08-04
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Decision d'architecture
 
 Le site public est une application Next.js App Router native. La migration depuis l'ancienne SPA globale est terminee. Les pages publiques doivent livrer leur contenu final depuis le serveur; les composants client sont reserves aux interactions qui en ont besoin.
+
+Le socle executable est Next.js 16.3 avec React 19.2 et Turbopack par defaut
+pour `next dev` et `next build`. La migration conserve le modele de rendu
+existant: `cacheComponents` et `partialPrefetching` restent desactives, les
+exports `dynamic`/`revalidate` restent autoritaires et ISR 300 reste le filet
+temporel public.
 
 Interdictions structurelles:
 
@@ -58,6 +64,7 @@ Le cache repose sur trois niveaux sans double fenetre temporelle:
 - ISR Next a 300 secondes comme unique filet temporel des routes publiques;
 - une lecture fraiche du pointeur Storage `current`, puis `previous`/`last-known-good`, pendant chaque regeneration de page;
 - un cache interne de pointeur API de 15 secondes, invalide par le tag `catalog:api-pointer`;
+- l'invalidation Next 16 utilise `revalidateTag(tag, { expire: 0 })` pour conserver le miss bloquant immediat exige par la preuve de publication;
 - un cache long non tague des objets de release immuables;
 - `/api/revalidate-catalog` pour revalider uniquement les chemins du plan d'impact;
 - le trigger `onCatalogSourceWrite` et la task de revalidation signee.
@@ -136,7 +143,7 @@ src/kit/marketplace/*Server*.jsx
 | Dette | Statut | Condition de reprise |
 | --- | --- | --- |
 | image OG finale | `SURVEILLANCE` | `public/og-image.jpg` existe; verifier son rendu et la remplacer par l'asset de marque final au cutover |
-| migration Next 16/Turbopack | `PRODUCTION_DEFERRED` | branche dediee apres stabilisation fonctionnelle, jamais pendant un patch metier |
+| Cache Components / Partial Prefetching | `DEFERRED` | passe UX/cache dediee avec migration des routes, caches, prefetchs et gates |
 | budget JS/CSS public | `DEBT` | traiter dans une passe performance avec mesures avant/apres |
 
 ## 9. Gates

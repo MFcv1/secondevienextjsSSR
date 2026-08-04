@@ -78,7 +78,7 @@ export async function POST(request) {
     return NextResponse.json({ error: error?.message || 'invalid_contract' }, { status: 400 });
   }
   const { tags, pathEntries } = getCatalogRevalidationTargets(contract);
-  tags.forEach((tag) => revalidateTag(tag));
+  tags.forEach((tag) => revalidateTag(tag, { expire: 0 }));
   pathEntries.forEach(({ path, type }) => {
     if (type) revalidatePath(path, type);
     else revalidatePath(path);

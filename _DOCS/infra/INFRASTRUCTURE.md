@@ -1,6 +1,6 @@
 # Infrastructure Firebase, Next.js et environnements
 
-Derniere mise a jour: 2026-08-02
+Derniere mise a jour: 2026-08-04
 Statut: `PREPROD_READY - PRODUCTION_DEFERRED`
 
 ## 1. Runtime et gestionnaire de paquets
@@ -9,11 +9,21 @@ Statut: `PREPROD_READY - PRODUCTION_DEFERRED`
 | --- | --- |
 | Node.js | `22.x` |
 | gestionnaire | `pnpm 11.7.0` |
-| Next.js | branche 15 actuelle du `package.json` |
-| React | 19 |
+| Next.js | `16.3.x`, Turbopack par defaut |
+| React | `19.2.x` |
 | Functions | Node 22 dans le package prive `functions/` |
 
-Node 24 local ne doit pas devenir la reference tant que `engines`, CI, App Hosting et Functions imposent Node 22. Une migration majeure se fait dans une branche dediee avec build et E2E.
+Node 24 local ne doit pas devenir la reference tant que `engines`, CI, App Hosting et Functions imposent Node 22. La migration Next.js 16.3 est qualifiee localement sous Node 22; son deploiement doit encore etre qualifie sur le sandbox avant toute promotion.
+
+Next.js 16.3 conserve ici le modele de cache historique. `cacheComponents`,
+`partialPrefetching`, le React Compiler Rust et `experimental.useOffline` ne
+sont pas actifs. Turbopack est le bundler standard de developpement et de
+build; aucun fallback Webpack ne doit etre ajoute sans incompatibilite prouvee.
+
+La publication 16.3 etant recente, `pnpm-workspace.yaml` porte une exception
+`minimumReleaseAgeExclude` bornee aux paquets Next/SWC 16.3.0 effectivement
+verrouilles. Elle ne permet aucune autre famille ou version et pourra etre
+retiree apres la fenetre de refroidissement du registre.
 
 ## 2. Etat des environnements
 
@@ -32,6 +42,22 @@ https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app
 ```
 
 Le sandbox est l'environnement de demonstration cliente. Il n'est pas le domaine final et ses passkeys seront a reenroler.
+
+Firebase classe les versions de framework plus recentes que sa version active
+comme preview App Hosting. Le build local ne suffit donc pas a qualifier Next
+16.3: un rollout sandbox et les smokes ISR/catalogue/navigation restent requis
+avant toute promotion.
+
+Qualification locale du 2026-08-04 sous Node 22.22.3:
+
+- build Turbopack complet, 52 pages generees sur 52;
+- compilation Turbopack observee a 6,8 s a froid puis 1,2 s avec cache chaud;
+- build Webpack de controle sous Next 16.3 compile en 14,6 s;
+- contrats lint, Auth, catalogue, SEO, routes, mobile et cache de deploiement
+  valides;
+- smoke du serveur final: `/`, `/a-propos`, `/admin` et `/robots.txt` en 200,
+  revalidation catalogue sans authentification refusee en 401;
+- aucun deploiement cloud effectue; le rollout sandbox reste la prochaine gate.
 
 Serveur local accessible sur le reseau:
 

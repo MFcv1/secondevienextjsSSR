@@ -33,6 +33,11 @@ const checks = [
     pattern: /<ViewportHeightSyncIsland\s*\/>/,
   },
   {
+    label: 'Root layout preserves instant route scrolling under Next 16',
+    file: files.rootLayout,
+    pattern: /<html[^>]+data-scroll-behavior="smooth"/,
+  },
+  {
     label: 'Global viewport synchronizer owns the marketplace viewport height',
     file: files.viewportSync,
     pattern: /visualViewport[\s\S]*VIEWPORT_HEIGHT_PROPERTY[\s\S]*setProperty/,

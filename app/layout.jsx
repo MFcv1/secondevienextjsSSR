@@ -121,7 +121,7 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="fr" className={fontVariables} suppressHydrationWarning>
+    <html lang="fr" className={fontVariables} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <link rel="dns-prefetch" href="//firebasestorage.googleapis.com" />
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="" />
