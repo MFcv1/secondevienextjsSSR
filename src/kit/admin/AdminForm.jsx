@@ -8,6 +8,7 @@ import { PRODUCT_IMAGE_VARIANT_SPECS, compressImage, createProductImageVariantFi
 import ImageCropperModal from './components/ImageCropperModal';
 import InstagramPublicationPreview from './components/InstagramPublicationPreview';
 import MetaConnectionControl from './components/MetaConnectionControl';
+import PublicationConfirmationDialog from './components/PublicationConfirmationDialog';
 import StoryEditor from './components/StoryEditor';
 import KIT_CONFIG from '../config/constants';
 import RichTextStory from '../shared/RichTextStory';
@@ -143,6 +144,7 @@ const AdminForm = ({
   const [metaConnection, setMetaConnection] = useState({ status: 'loading', connected: false });
   const [socialTargets, setSocialTargets] = useState({ instagram: true, facebook: true });
   const [socialPublication, setSocialPublication] = useState(null);
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const fileInputRef = useRef();
   const categoryGroupRef = useRef(null);
   const nameInputRef = useRef(null);
@@ -196,6 +198,7 @@ const AdminForm = ({
     setInstagramHashtags('#secondevie #mobilierancien #artisanat');
     setSocialTargets({ instagram: true, facebook: true });
     setSocialPublication(null);
+    setPublishDialogOpen(false);
     if (editData) {
       const material = editData.material || '';
       const isCustom = material && !getCategoryMeta(editData.category || '').materialOptions.includes(material) && material !== "Autre";
@@ -885,7 +888,6 @@ const AdminForm = ({
               )}
               <MetaConnectionControl
                 darkMode={darkMode}
-                enabled={instagramEnabled}
                 onEnabledChange={(nextEnabled) => {
                   setInstagramEnabled(nextEnabled);
                   setPublicationView(nextEnabled && socialTargets.instagram ? 'instagram' : 'details');
@@ -905,15 +907,6 @@ const AdminForm = ({
                       return next;
                     });
                   }
-                }}
-                targets={socialTargets}
-                onTargetsChange={(nextTargets) => {
-                  if (!nextTargets.instagram && !nextTargets.facebook) {
-                    setMsg('Garde au moins une destination Meta active.');
-                    return;
-                  }
-                  setSocialTargets(nextTargets);
-                  if (!nextTargets.instagram && publicationView === 'instagram') setPublicationView('details');
                 }}
               />
             </div>
@@ -1116,46 +1109,30 @@ const AdminForm = ({
             {msg && <p role={messageIsError ? 'alert' : 'status'} aria-live={messageIsError ? 'assertive' : 'polite'} className={`mb-2 rounded-[12px] px-3 py-2 text-[9px] font-bold ${msg.startsWith('Enregistré') || msg.includes('optimisées') ? 'bg-emerald-500/10 text-emerald-600' : messageIsError ? 'bg-red-500/10 text-red-600 ring-1 ring-red-500/15' : 'bg-stone-500/10 text-stone-500'}`}>{msg}</p>}
             {(totalOriginalSize > 0 || totalCompressedSize > 0) && <div className="mb-2 flex items-center justify-between text-[9px] text-stone-400"><span>{formatBytes(totalOriginalSize)}</span>{totalCompressedSize > 0 && <span className="font-bold text-emerald-600">Optimisé {formatBytes(totalCompressedSize)}</span>}</div>}
             {totalCompressedSize > 0 && <button type="button" onClick={handleDownloadImages} className={`mb-2 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-[9px] font-extrabold ring-1 ${darkMode ? 'ring-white/10 hover:bg-white/5' : 'ring-black/[0.06] hover:bg-stone-50'}`}><Download size={13} strokeWidth={1.5} />Télécharger les images</button>}
-            <div className={`mb-2.5 rounded-[14px] p-3 ring-1 ${darkMode ? 'bg-black/20 ring-white/10' : 'bg-[#F7F6F3] ring-black/[0.05]'}`}>
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[9px] font-extrabold">Envoi final</p>
-                  <p className="mt-0.5 text-[8px] text-stone-400">Choisis ici avant de publier.</p>
-                </div>
-                <span className="flex items-center gap-1 text-[8px] font-extrabold text-emerald-700"><Check size={11} strokeWidth={2} />Site inclus</span>
-              </div>
-              <div className={`mt-2 grid gap-1.5 ${metaConnection.facebookAvailable ? 'grid-cols-2' : 'grid-cols-1'}`} role="group" aria-label="Destinations sociales de cette publication">
-                <button
-                  type="button"
-                  aria-pressed={instagramSelected}
-                  disabled={uploading || metaConnection.status === 'loading'}
-                  onClick={() => toggleFinalDestination('instagram')}
-                  className={`flex min-h-9 items-center justify-between rounded-[10px] px-2.5 text-left text-[8px] font-extrabold ring-1 transition-[background-color,color,transform] duration-200 active:scale-[0.98] disabled:cursor-wait disabled:opacity-50 ${instagramSelected ? (darkMode ? 'bg-emerald-400/10 text-emerald-300 ring-emerald-400/25' : 'bg-emerald-50 text-emerald-700 ring-emerald-600/20') : (darkMode ? 'text-stone-400 ring-white/10' : 'bg-white text-stone-500 ring-black/[0.06]')}`}
-                >
-                  <span>Instagram</span>
-                  <span className={`grid h-4 w-4 place-items-center rounded-full ring-1 ${instagramSelected ? 'bg-emerald-600 text-white ring-emerald-600' : (darkMode ? 'ring-white/20' : 'ring-black/10')}`} aria-hidden="true">{instagramSelected && <Check size={10} strokeWidth={2.4} />}</span>
-                </button>
-                {metaConnection.facebookAvailable && (
-                  <button
-                    type="button"
-                    aria-pressed={facebookSelected}
-                    disabled={uploading || metaConnection.status === 'loading'}
-                    onClick={() => toggleFinalDestination('facebook')}
-                    className={`flex min-h-9 items-center justify-between rounded-[10px] px-2.5 text-left text-[8px] font-extrabold ring-1 transition-[background-color,color,transform] duration-200 active:scale-[0.98] disabled:cursor-wait disabled:opacity-50 ${facebookSelected ? (darkMode ? 'bg-emerald-400/10 text-emerald-300 ring-emerald-400/25' : 'bg-emerald-50 text-emerald-700 ring-emerald-600/20') : (darkMode ? 'text-stone-400 ring-white/10' : 'bg-white text-stone-500 ring-black/[0.06]')}`}
-                  >
-                    <span>Facebook</span>
-                    <span className={`grid h-4 w-4 place-items-center rounded-full ring-1 ${facebookSelected ? 'bg-emerald-600 text-white ring-emerald-600' : (darkMode ? 'ring-white/20' : 'ring-black/10')}`} aria-hidden="true">{facebookSelected && <Check size={10} strokeWidth={2.4} />}</span>
-                  </button>
-                )}
-              </div>
-              {!metaConnection.instagramAvailable && metaConnection.status !== 'loading' && <p className="mt-2 text-[8px] leading-3 text-stone-400">Instagram n’est pas connecté. Utilise le contrôle en haut pour l’ajouter.</p>}
-            </div>
-            <button type="button" onClick={addMeuble} disabled={uploading} className="flex min-h-11 w-full items-center justify-center rounded-full bg-stone-950 px-5 py-3 text-center text-[10px] font-extrabold text-white shadow-[0_14px_34px_rgba(28,25,23,0.2)] transition-[transform,opacity] duration-200 active:scale-[0.98] disabled:opacity-50 dark:bg-white dark:text-stone-950">
-              <span>{publishActionLabel}</span>
+            <button type="button" onClick={() => { setMsg(''); setPublishDialogOpen(true); }} disabled={uploading} className="flex min-h-11 w-full items-center justify-center rounded-full bg-stone-950 px-5 py-3 text-center text-[10px] font-extrabold text-white shadow-[0_14px_34px_rgba(28,25,23,0.2)] transition-[transform,opacity] duration-200 active:scale-[0.98] disabled:opacity-50 dark:bg-white dark:text-stone-950">
+              <span>{socialPublication && socialPublication.overallStatus !== 'published' ? 'Reprendre la publication' : editData ? 'Enregistrer' : 'Publier'}</span>
             </button>
           </div>
         </div>
       </aside>
+
+      <PublicationConfirmationDialog
+        actionLabel={publishActionLabel}
+        darkMode={darkMode}
+        facebookAvailable={Boolean(metaConnection.facebookAvailable)}
+        facebookSelected={facebookSelected}
+        instagramAvailable={Boolean(metaConnection.instagramAvailable)}
+        instagramSelected={instagramSelected}
+        instagramUsername={metaConnection.instagramUsername}
+        message={msg}
+        messageIsError={messageIsError}
+        onClose={() => setPublishDialogOpen(false)}
+        onConfirm={addMeuble}
+        onToggle={toggleFinalDestination}
+        open={publishDialogOpen}
+        pageName={metaConnection.pageName}
+        uploading={uploading}
+      />
 
       <ImageCropperModal isOpen={cropperConfig.isOpen} image={cropperConfig.image} aspect={cropperConfig.aspect} onClose={() => setCropperConfig(prev => ({ ...prev, isOpen: false }))} onCropComplete={handleCropComplete} darkMode={darkMode} />
     </div>

@@ -16,11 +16,8 @@ const isTerminalStatus = (status) => ['connected', 'selection_required'].include
 
 const MetaConnectionControl = ({
   darkMode = false,
-  enabled,
   onEnabledChange,
-  onConnectionChange,
-  targets,
-  onTargetsChange
+  onConnectionChange
 }) => {
   const [instagram, setInstagram] = useState({ status: 'loading', connected: false });
   const [facebook, setFacebook] = useState({ status: 'loading', connected: false });
@@ -31,6 +28,7 @@ const MetaConnectionControl = ({
   const [fallbackUrl, setFallbackUrl] = useState('');
   const [disconnectProvider, setDisconnectProvider] = useState('');
   const [disconnectText, setDisconnectText] = useState('');
+  const [panelOpen, setPanelOpen] = useState(false);
   const popupRef = useRef(null);
   const oauthOriginRef = useRef('');
   const onEnabledChangeRef = useRef(onEnabledChange);
@@ -98,6 +96,7 @@ const MetaConnectionControl = ({
       setOauthProvider('');
       if (providerState && isTerminalStatus(providerState.status)) {
         setError('');
+        setPanelOpen(true);
         setNotice(provider === 'instagram'
           ? `Instagram @${providerState.instagramUsername} est connecté et prêt à publier.`
           : 'La Page Facebook est connectée.');
@@ -120,6 +119,7 @@ const MetaConnectionControl = ({
       const providerState = provider === 'instagram' ? next?.instagram : next?.facebook;
       if (providerState && isTerminalStatus(providerState.status)) {
         setOauthProvider('');
+        setPanelOpen(true);
         setNotice(provider === 'instagram'
           ? `Instagram @${providerState.instagramUsername} est connecté et prêt à publier.`
           : 'La Page Facebook est connectée.');
@@ -178,7 +178,7 @@ const MetaConnectionControl = ({
       || (facebook.connected && facebook.instagramAvailable);
     const facebookAvailable = facebook.connected && facebook.facebookAvailable;
     if (instagramAvailable || facebookAvailable) {
-      onEnabledChange(!enabled);
+      setPanelOpen((current) => !current);
       return;
     }
     await beginOAuth('instagram');
@@ -247,34 +247,21 @@ const MetaConnectionControl = ({
     <div className="relative">
       <button
         type="button"
-        role="switch"
-        aria-checked={enabled}
-        aria-label={connected ? 'Activer la publication sociale' : 'Connecter Instagram'}
+        aria-expanded={connected ? panelOpen : undefined}
+        aria-label={connected ? 'Gérer les connexions sociales' : 'Connecter Instagram'}
         disabled={busy || loading || Boolean(oauthProvider)}
         onClick={connectOrToggle}
-        className={`flex min-h-9 items-center gap-2 rounded-full py-1.5 pl-3 pr-2 text-[9px] font-extrabold ring-1 transition-[transform,background-color,color,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none ${enabled && connected ? (darkMode ? 'bg-white text-stone-950 ring-white' : 'bg-stone-950 text-white ring-stone-950') : (darkMode ? 'text-stone-300 ring-white/10 hover:bg-white/5' : 'text-stone-600 ring-black/[0.07] hover:bg-stone-50')}`}
+        className={`flex min-h-9 items-center gap-2 rounded-full px-3 py-1.5 text-[9px] font-extrabold ring-1 transition-[transform,background-color,color,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none ${panelOpen && connected ? (darkMode ? 'bg-white text-stone-950 ring-white' : 'bg-stone-950 text-white ring-stone-950') : (darkMode ? 'text-stone-300 ring-white/10 hover:bg-white/5' : 'text-stone-600 ring-black/[0.07] hover:bg-stone-50')}`}
       >
         <span className={`h-1.5 w-1.5 rounded-full ${connected ? 'bg-emerald-500' : 'bg-stone-400'}`} aria-hidden="true" />
         <span>{connected ? connectedLabel : 'Connecter Instagram'}</span>
-        <span className={`relative h-5 w-9 shrink-0 rounded-full ring-1 transition-colors duration-300 ${enabled && connected ? (darkMode ? 'bg-stone-200 ring-black/10' : 'bg-white/20 ring-white/15') : (darkMode ? 'bg-stone-700 ring-white/10' : 'bg-stone-200 ring-black/[0.04]')}`} aria-hidden="true">
-          <span className={`absolute left-[3px] top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${enabled && connected ? `translate-x-[15px] ${darkMode ? 'bg-stone-950' : 'bg-white'}` : `translate-x-0 ${darkMode ? 'bg-stone-300' : 'bg-stone-500'}`}`} />
-        </span>
+        {connected && <span className={`text-[8px] font-bold ${panelOpen && connected ? 'opacity-65' : 'text-stone-400'}`}>Gérer</span>}
       </button>
 
-      {connected && enabled && (
+      {connected && panelOpen && (
         <div className={`absolute right-0 top-11 z-30 w-72 rounded-[16px] p-3 shadow-[0_18px_50px_rgba(28,25,23,0.14)] ring-1 ${darkMode ? 'bg-stone-900 ring-white/10' : 'bg-white ring-black/[0.07]'}`}>
-          <p className="text-[9px] font-extrabold">Destinations</p>
-          <p className={`mt-0.5 text-[8px] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Instagram fonctionne sans compte Facebook.</p>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <label className={`flex items-center gap-2 rounded-[11px] px-2.5 py-2 text-[9px] font-bold ring-1 ${targets.instagram && instagramAvailable ? 'text-emerald-700 ring-emerald-500/30' : 'text-stone-500 ring-black/[0.06]'} ${!instagramAvailable ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}`}>
-              <input type="checkbox" checked={targets.instagram && instagramAvailable} disabled={!instagramAvailable} onChange={(event) => onTargetsChange({ ...targets, instagram: event.target.checked })} className="accent-emerald-600" />
-              Instagram
-            </label>
-            <label className={`flex items-center gap-2 rounded-[11px] px-2.5 py-2 text-[9px] font-bold ring-1 ${targets.facebook && facebookAvailable ? 'text-emerald-700 ring-emerald-500/30' : 'text-stone-500 ring-black/[0.06]'} ${!facebookAvailable ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}`}>
-              <input type="checkbox" checked={targets.facebook && facebookAvailable} disabled={!facebookAvailable} onChange={(event) => onTargetsChange({ ...targets, facebook: event.target.checked })} className="accent-emerald-600" />
-              Facebook
-            </label>
-          </div>
+          <p className="text-[9px] font-extrabold">Connexions sociales</p>
+          <p className={`mt-0.5 text-[8px] leading-3 ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Les destinations se choisissent uniquement au moment de publier.</p>
 
           <div className={`mt-3 rounded-[11px] p-2.5 ring-1 ${directInstagram ? (darkMode ? 'bg-emerald-400/5 ring-emerald-400/20' : 'bg-emerald-50/70 ring-emerald-600/15') : (darkMode ? 'ring-white/10' : 'ring-black/[0.06]')}`}>
             <div className="flex items-center justify-between gap-3">
@@ -294,13 +281,14 @@ const MetaConnectionControl = ({
 
           {notice && <p aria-live="polite" className={`mt-3 rounded-[10px] px-2.5 py-2 text-[8px] font-bold ${darkMode ? 'bg-emerald-400/10 text-emerald-300' : 'bg-emerald-50 text-emerald-700'}`}>{notice}</p>}
 
-          <div className={`mt-2 rounded-[11px] p-2.5 ring-1 ${darkMode ? 'ring-white/10' : 'ring-black/[0.06]'}`}>
+          {facebookAvailable && <div className={`mt-2 rounded-[11px] p-2.5 ring-1 ${darkMode ? 'ring-white/10' : 'ring-black/[0.06]'}`}>
             <div className="flex items-center justify-between gap-3">
-              <div><p className="text-[8px] font-extrabold">Facebook <span className="font-medium text-stone-400">· facultatif</span></p><p className="mt-0.5 text-[8px] text-stone-400">{facebookAvailable ? facebook.pageName : 'Ajoute une Page seulement si nécessaire.'}</p></div>
-              {!facebookAvailable && <button type="button" onClick={() => beginOAuth('facebook')} disabled={busy} className="rounded-full px-2.5 py-1.5 text-[8px] font-extrabold ring-1 ring-black/[0.08]">Ajouter</button>}
+              <div><p className="text-[8px] font-extrabold">Facebook</p><p className="mt-0.5 text-[8px] text-stone-400">{facebook.pageName}</p></div>
             </div>
-            {facebookAvailable && <div className="mt-2 flex gap-3"><button type="button" onClick={() => verify('facebook')} disabled={busy} className="text-[8px] font-bold text-stone-500 underline underline-offset-2">Vérifier</button><button type="button" onClick={() => beginOAuth('facebook')} disabled={busy} className="text-[8px] font-bold text-stone-500 underline underline-offset-2">Réassocier</button><button type="button" onClick={() => { setDisconnectProvider('facebook'); setDisconnectText(''); }} disabled={busy} className="text-[8px] font-bold text-red-600">Déconnecter</button></div>}
-          </div>
+            <div className="mt-2 flex gap-3"><button type="button" onClick={() => verify('facebook')} disabled={busy} className="text-[8px] font-bold text-stone-500 underline underline-offset-2">Vérifier</button><button type="button" onClick={() => beginOAuth('facebook')} disabled={busy} className="text-[8px] font-bold text-stone-500 underline underline-offset-2">Réassocier</button><button type="button" onClick={() => { setDisconnectProvider('facebook'); setDisconnectText(''); }} disabled={busy} className="text-[8px] font-bold text-red-600">Déconnecter</button></div>
+          </div>}
+
+          {!facebookAvailable && <button type="button" onClick={() => beginOAuth('facebook')} disabled={busy} className="mt-3 text-[8px] font-bold text-stone-400 underline decoration-stone-300 underline-offset-4 transition-colors hover:text-stone-700 disabled:opacity-40 dark:hover:text-stone-200">Ajouter Facebook</button>}
 
           {disconnectProvider && (
             <div className="mt-3 rounded-[11px] bg-red-500/5 p-2 ring-1 ring-red-500/15">

@@ -141,11 +141,13 @@ publique. La fermeture du popup conserve une fenetre de grace de 18 secondes
 pour laisser le callback terminer avant d'afficher un echec.
 
 La confirmation finale distingue la connexion du routage de la publication.
-Le site est toujours inclus. Un controle `Envoi final`, place juste au-dessus
-de l'action principale, montre et permet de changer les destinations sociales
-de cette publication. Le libelle de l'action nomme les destinations retenues,
-par exemple `Publier sur le site` ou `Publier sur le site + Instagram`. Une
-connexion Instagram active ne provoque donc jamais, a elle seule, un envoi.
+Le resume conserve une seule action `Publier`. Elle ouvre un dialogue modal ou
+le site est toujours inclus et ou seules les destinations sociales reellement
+connectees sont proposees. L'operatrice peut choisir le site seul, le site avec
+Instagram, le site avec Facebook ou les trois. Le bouton de confirmation nomme
+les destinations retenues. Une connexion Instagram active ne provoque donc
+jamais, a elle seule, un envoi, et une cliente sans Page ne voit pas Facebook
+dans ce dialogue.
 
 La configuration Meta/Firebase, la recette et le diagnostic OAuth sont
 centralises dans [INSTAGRAM_OAUTH_RUNBOOK.md](INSTAGRAM_OAUTH_RUNBOOK.md).
