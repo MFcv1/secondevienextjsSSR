@@ -113,6 +113,7 @@ const MetaConnectionControl = ({
   }, [refreshStatus]);
 
   const pollPopup = async (provider) => {
+    let closedAttempts = 0;
     for (let attempt = 0; attempt < 60; attempt += 1) {
       await new Promise((resolve) => window.setTimeout(resolve, 1500));
       const next = await refreshStatus();
@@ -125,11 +126,14 @@ const MetaConnectionControl = ({
         return;
       }
       if (popupRef.current?.closed) {
+        closedAttempts += 1;
+        if (closedAttempts < 12) continue;
         setOauthProvider('');
         setNotice('');
-        setError('La fenêtre s’est fermée sans confirmation du serveur. Relance la connexion.');
+        setError('Instagram n’a pas confirmé la connexion. Relance l’autorisation.');
         return;
       }
+      closedAttempts = 0;
     }
     setOauthProvider('');
     setError('La confirmation prend trop de temps. Relance la connexion.');

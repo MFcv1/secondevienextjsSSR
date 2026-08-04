@@ -135,6 +135,10 @@ un etat de synchronisation jusqu'a la confirmation serveur. Il distingue
 explicitement `Connecte`, `Via Facebook` et `Non connecte`; le bouton generique
 `Connecter` devient `Connecter en direct` lorsque seul le fallback Facebook est
 actif, puis disparait des que la connexion Instagram directe est confirmee.
+L'identifiant `user_id` du profil est autoritaire: l'identifiant app-scope du
+premier echange de token ne doit pas lui etre compare comme une identite
+publique. La fermeture du popup conserve une fenetre de grace de 18 secondes
+pour laisser le callback terminer avant d'afficher un echec.
 
 ## 4. Personnalisation
 

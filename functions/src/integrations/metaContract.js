@@ -238,9 +238,7 @@ function publicInstagramConnectionState(data = {}) {
 function normalizeInstagramProfileResponse(payload = {}, expectedUserId = '') {
     const profile = Array.isArray(payload.data) ? payload.data[0] : payload;
     const instagramUserId = String(profile?.user_id || profile?.id || expectedUserId || '');
-    if (!instagramUserId || (expectedUserId && instagramUserId !== String(expectedUserId))) {
-        throw new Error('INSTAGRAM_PROFILE_MISMATCH');
-    }
+    if (!instagramUserId) throw new Error('INSTAGRAM_PROFILE_MISSING');
     return {
         instagramUserId,
         instagramUsername: String(profile?.username || '').slice(0, 180)

@@ -144,7 +144,12 @@ test('Instagram Login profile normalizes the current data envelope', () => {
         instagramUsername: 'legacy_account'
     });
 
-    assert.throws(() => normalizeInstagramProfileResponse({
+    assert.deepEqual(normalizeInstagramProfileResponse({
         data: [{ user_id: 'other-id', username: 'xori_on' }]
-    }, 'expected-id'), /INSTAGRAM_PROFILE_MISMATCH/);
+    }, 'app-scoped-id'), {
+        instagramUserId: 'other-id',
+        instagramUsername: 'xori_on'
+    });
+
+    assert.throws(() => normalizeInstagramProfileResponse({}), /INSTAGRAM_PROFILE_MISSING/);
 });
