@@ -305,6 +305,17 @@ AnalyticsCollectorIsland + AuthProvider anonyme [C]
 
 Mesure des lectures et couts: `_DOCS/data/AUDIT_COUTS_FIRESTORE.md` (Usage Insights, Query Insights, Monitoring, Data Access et attribution au code).
 
+### 4.7 Demande de devis restauration
+
+```text
+/devis [S]+[C]
+  -> shell serveur complet sans JavaScript
+  -> assistant interactif en 7 étapes: meuble -> état -> photos -> détails
+     -> prestations -> contact -> estimation indicative
+  -> validation des coordonnées avant l'estimation finale
+  -> envoi seulement depuis l'étape Estimation -> mailto prérempli
+```
+
 ## 5. Arborescence racine
 
 ```text

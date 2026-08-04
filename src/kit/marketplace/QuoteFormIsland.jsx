@@ -1,9 +1,29 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { emitAnalyticsEvent } from '../shared/analyticsEvents';
+import {
+    QUOTE_CONTROL_HEIGHT,
+    QUOTE_DROPZONE_HEIGHT,
+    QUOTE_EASE,
+    QUOTE_PANEL_PADDING,
+    QUOTE_RADIUS_CARD,
+    QUOTE_RADIUS_FIELD,
+    QUOTE_RADIUS_PANEL,
+    QUOTE_READABLE,
+    QUOTE_SHELL,
+    QUOTE_STEP_HEIGHT,
+    QUOTE_STEP_PADDING,
+    QUOTE_STEP_RADIUS,
+    QUOTE_TYPE,
+    quoteTokens,
+} from './quoteTheme';
 
-const IconBase = ({ size = 24, strokeWidth = 1.5, className = '', children }) => (
+const CONTACT_EMAIL = 'contact@seconde-vie-anais.fr';
+const CONTACT_PHONE = '+33612345678';
+const MAX_PHOTOS = 10;
+
+const IconBase = ({ size = 20, strokeWidth = 1.6, className = '', children }) => (
     <svg
         aria-hidden="true"
         width={size}
@@ -20,6 +40,12 @@ const IconBase = ({ size = 24, strokeWidth = 1.5, className = '', children }) =>
     </svg>
 );
 
+const Check = (props) => (
+    <IconBase {...props}>
+        <path d="m20 6-11 11-5-5" />
+    </IconBase>
+);
+
 const ArrowRight = (props) => (
     <IconBase {...props}>
         <path d="M5 12h14" />
@@ -27,94 +53,62 @@ const ArrowRight = (props) => (
     </IconBase>
 );
 
-const Check = (props) => (
+const ArrowLeft = (props) => (
     <IconBase {...props}>
-        <path d="m20 6-11 11-5-5" />
+        <path d="M19 12H5" />
+        <path d="m11 18-6-6 6-6" />
     </IconBase>
 );
 
-const ChevronDown = (props) => (
+const Close = (props) => (
     <IconBase {...props}>
-        <path d="m6 9 6 6 6-6" />
+        <path d="M18 6 6 18" />
+        <path d="m6 6 12 12" />
     </IconBase>
 );
 
-const HelpCircle = (props) => (
+const PhotoPlus = (props) => (
     <IconBase {...props}>
-        <circle cx="12" cy="12" r="10" />
-        <path d="M9.1 9a3 3 0 1 1 5.8 1c-.6 1-1.6 1.4-2.2 2.2-.4.5-.6 1-.6 1.8" />
-        <path d="M12 17h.01" />
+        <path d="M21 14V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h9" />
+        <circle cx="9" cy="10" r="1.6" />
+        <path d="m4 17 4.5-4.5 3 3" />
+        <path d="M18 15v6" />
+        <path d="M15 18h6" />
     </IconBase>
 );
 
-const Info = (props) => (
-    <IconBase {...props}>
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 16v-4" />
-        <path d="M12 8h.01" />
-    </IconBase>
-);
-
-const Mail = (props) => (
-    <IconBase {...props}>
-        <rect width="18" height="14" x="3" y="5" rx="2" />
-        <path d="m3 7 9 6 9-6" />
-    </IconBase>
-);
-
-const Phone = (props) => (
-    <IconBase {...props}>
-        <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7A2 2 0 0 1 22 16.9Z" />
-    </IconBase>
-);
-
-const Ruler = (props) => (
-    <IconBase {...props}>
-        <path d="M21.3 15.3 15.3 21.3a2.4 2.4 0 0 1-3.4 0L2.7 12.1a2.4 2.4 0 0 1 0-3.4l6-6a2.4 2.4 0 0 1 3.4 0l9.2 9.2a2.4 2.4 0 0 1 0 3.4Z" />
-        <path d="m14.5 4.5-2 2" />
-        <path d="m18.5 8.5-2 2" />
-        <path d="m10.5 8.5-2 2" />
-        <path d="m14.5 12.5-2 2" />
-    </IconBase>
-);
-
-const Upload = (props) => (
-    <IconBase {...props}>
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-        <path d="M17 8 12 3 7 8" />
-        <path d="M12 3v12" />
-    </IconBase>
-);
-
-const Wand2 = (props) => (
-    <IconBase {...props}>
-        <path d="m21.6 3.6-2.2-2.2a1.4 1.4 0 0 0-2 0L2.4 16.4a1.4 1.4 0 0 0 0 2l2.2 2.2a1.4 1.4 0 0 0 2 0l15-15a1.4 1.4 0 0 0 0-2Z" />
-        <path d="m14 5 5 5" />
-        <path d="M5 2v3" />
-        <path d="M19 14v3" />
-        <path d="M10 2v2" />
-        <path d="M7 8H4" />
-        <path d="M21 19h-3" />
-    </IconBase>
-);
-
-const furnitureTypes = [
-    { id: 'buffet', label: 'Buffet', image: '/images/newsletter/discount-sideboard.webp' },
-    { id: 'armoire', label: 'Armoire', image: '/images/hero/hero-blob-1.webp' },
-    { id: 'commode', label: 'Commode', image: '/images/before-after/apresu.webp' },
-    { id: 'miroir', label: 'Miroir', image: '/images/gallery-hero-4.webp' },
-    { id: 'chaise', label: 'Chaise', image: '/images/gallery-hero-1.webp' },
-    { id: 'table', label: 'Table', image: '/images/hero/hero-furniture.webp' },
-    { id: 'autre', label: 'Autre', image: null }
+const furnitureCards = [
+    { id: 'buffet', label: 'Buffet', image: '/images/categories/buffets-config-rail.webp' },
+    { id: 'armoire', label: 'Armoire', image: '/images/categories/armoires-config-rail.webp' },
+    { id: 'commode', label: 'Commode', image: '/images/categories/commodes-config-rail.webp' },
+    { id: 'miroir', label: 'Miroir', image: '/images/categories/miroirs-config-rail.webp' },
+    { id: 'chaise', label: 'Chaise', image: 'https://firebasestorage.googleapis.com/v0/b/secondevienextjsssr.firebasestorage.app/o/furniture%2Fthumbnails%2Fcard_thumb_5ZBinIKs3IIj9ugh6ar9_0_thumb384_cac4c47aca97.webp?alt=media&token=4aba7696-9e2f-4957-afe1-7c36b17b7125' },
+    { id: 'table', label: 'Table', image: 'https://firebasestorage.googleapis.com/v0/b/secondevienextjsssr.firebasestorage.app/o/furniture%2Fthumbnails%2Fcard_thumb_BfVsRJC01QMNDvx9Tldf_0_thumb384_15d13c1c4664.webp?alt=media&token=de92ff95-d87c-482c-a697-e810004f82bb' }
 ];
 
-const MAX_PHOTOS = 10;
+const allTypes = furnitureCards;
+
+const conditionOptions = [
+    { value: 'Bon état, entretien léger', label: 'Bon état', text: 'Entretien léger, patine à raviver.' },
+    { value: 'Rayures ou marques visibles', label: 'Rayures ou marques', text: 'Défauts visibles en surface.' },
+    { value: 'Structure fragilisée', label: 'Structure fragilisée', text: 'Assemblages ou pieds à reprendre.' },
+    { value: 'Restauration complète', label: 'Restauration complète', text: 'Reprise intégrale du meuble.' }
+];
+
+const severityOptions = ['Légers', 'Modérés', 'Importants'];
+
+const dimensionFields = [
+    ['height', 'Hauteur', 'cm'],
+    ['width', 'Largeur', 'cm'],
+    ['depth', 'Profondeur', 'cm']
+];
+
+const reassurance = ['Devis gratuit', 'Réponse sous 48h', 'Sans engagement'];
 
 const serviceGroups = [
     {
         id: 'preparation',
         title: 'Préparation',
-        subtitle: 'Nettoyage & diagnostic',
         services: [
             {
                 id: 'poncage',
@@ -122,7 +116,7 @@ const serviceGroups = [
                 text: 'Ponçage en plusieurs grains pour retirer les anciennes couches sans abîmer le bois.',
                 min: 45,
                 max: 120,
-                defaultSelected: true
+                defaultSelected: false
             },
             {
                 id: 'nettoyage',
@@ -130,14 +124,13 @@ const serviceGroups = [
                 text: 'Élimination des saletés, graisses et résidus accumulés.',
                 min: 20,
                 max: 45,
-                defaultSelected: true
+                defaultSelected: false
             }
         ]
     },
     {
         id: 'bois',
         title: 'Restauration du bois',
-        subtitle: 'Redonner vie à la matière',
         services: [
             {
                 id: 'entretien',
@@ -145,7 +138,7 @@ const serviceGroups = [
                 text: 'Nourrit le bois en profondeur et ravive sa patine naturelle.',
                 min: 25,
                 max: 55,
-                defaultSelected: true
+                defaultSelected: false
             },
             {
                 id: 'defauts',
@@ -161,7 +154,6 @@ const serviceGroups = [
     {
         id: 'reparations',
         title: 'Réparations',
-        subtitle: 'Consolidation & structure',
         services: [
             {
                 id: 'renforts',
@@ -176,12 +168,11 @@ const serviceGroups = [
     {
         id: 'finition',
         title: 'Finition',
-        subtitle: 'Patine & protection',
         services: [
             {
                 id: 'protection',
                 label: 'Finition & protection',
-            text: "Application d'une cire ou d'un vernis mat pour protéger durablement.",
+                text: "Application d'une cire ou d'un vernis mat pour protéger durablement.",
                 min: 30,
                 max: 75,
                 defaultSelected: false
@@ -190,32 +181,109 @@ const serviceGroups = [
     }
 ];
 
+const allServices = serviceGroups.flatMap(group => group.services);
+
+/* Un ecran = une seule question. */
+const steps = [
+    {
+        id: 'type',
+        label: 'Meuble',
+        title: 'Quel meuble souhaitez-vous restaurer ?',
+        hint: 'Choisissez la catégorie la plus proche.'
+    },
+    {
+        id: 'etat',
+        label: 'État',
+        title: 'Dans quel état est-il ?',
+        hint: 'Une seule réponse suffit, Anaïs affinera après vos photos.'
+    },
+    {
+        id: 'photos',
+        label: 'Photos',
+        title: 'Montrez-nous votre meuble',
+        hint: 'Deux ou trois photos suffisent pour un devis précis. Cette étape est facultative.'
+    },
+    {
+        id: 'details',
+        label: 'Détails',
+        title: 'Décrivez votre projet',
+        hint: 'Dites-nous ce que vous attendez de cette restauration.'
+    },
+    {
+        id: 'prestations',
+        label: 'Prestations',
+        title: 'Quelles interventions souhaitez-vous ?',
+        hint: 'Cochez ce qui vous parle, la sélection reste ajustable.'
+    },
+    {
+        id: 'contact',
+        label: 'Contact',
+        title: 'Où vous envoyer le devis ?',
+        hint: 'Devis gratuit et sans engagement, envoyé sous 48h.'
+    },
+    {
+        id: 'estimation',
+        label: 'Estimation',
+        title: 'Votre estimation indicative',
+        hint: "Vérifiez la fourchette et le détail avant d'envoyer votre demande."
+    }
+];
+
+const CONTACT_STEP_INDEX = 5;
+const ESTIMATE_STEP_INDEX = 6;
+
+const emptyFields = {
+    condition: '',
+    description: '',
+    height: '',
+    width: '',
+    depth: '',
+    weight: '',
+    severity: 'Modérés',
+    firstname: '',
+    lastname: '',
+    email: '',
+    phone: '',
+    location: '',
+    notes: ''
+};
+
 const formatPhotoName = (name = '') => {
     const cleanName = name.replace(/\.[^/.]+$/, '');
     if (cleanName.length <= 10) return cleanName;
     return `${cleanName.slice(0, 10)}...`;
 };
 
+const formatRange = (min, max) => `${min}€ – ${max}€`;
+
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
+const isValidPhone = (value) => value.replace(/[^\d+]/g, '').length >= 9;
+
 const QuoteFormIsland = ({ initialDarkMode = false }) => {
     const darkMode = initialDarkMode;
+    const t = quoteTokens(darkMode);
+
+    const [step, setStep] = useState(0);
+    const [direction, setDirection] = useState('forward');
     const [selectedType, setSelectedType] = useState('buffet');
-    const [activeGroup, setActiveGroup] = useState('bois');
-    const [hoveredGroup, setHoveredGroup] = useState(null);
+    const [fields, setFields] = useState(emptyFields);
     const [selectedServices, setSelectedServices] = useState(() => {
         const defaults = {};
-        serviceGroups.forEach(group => {
-            group.services.forEach(service => {
-                defaults[service.id] = Boolean(service.defaultSelected);
-            });
+        allServices.forEach(service => {
+            defaults[service.id] = Boolean(service.defaultSelected);
         });
         return defaults;
     });
     const [photoPreviews, setPhotoPreviews] = useState([]);
+    const [errors, setErrors] = useState({});
     const [submitted, setSubmitted] = useState(false);
+    const [dragging, setDragging] = useState(false);
+
     const fileInputRef = useRef(null);
     const photoPreviewsRef = useRef([]);
-    const serviceGroupRefs = useRef({});
+    const railRef = useRef(null);
     const quoteStartTrackedRef = useRef(false);
+    const stepMountedRef = useRef(false);
 
     useEffect(() => {
         document.getElementById('quote-ssr-form-shell')?.setAttribute('hidden', '');
@@ -229,91 +297,142 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
         photoPreviewsRef.current.forEach(photo => URL.revokeObjectURL(photo.url));
     }, []);
 
-    const selectedServiceList = useMemo(
-        () => serviceGroups.flatMap(group => group.services).filter(service => selectedServices[service.id]),
-        [selectedServices]
-    );
+    useEffect(() => {
+        if (!stepMountedRef.current) {
+            stepMountedRef.current = true;
+            return;
+        }
+        const node = railRef.current;
+        if (!node) return;
+        const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        node.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'start' });
+    }, [step]);
 
-    const estimate = useMemo(() => {
-        return selectedServiceList.reduce(
-            (acc, service) => ({
-                min: acc.min + service.min,
-                max: acc.max + service.max
-            }),
-            { min: 0, max: 0 }
-        );
-    }, [selectedServiceList]);
-
-    const trackQuoteStart = () => {
+    const trackQuoteStart = useCallback(() => {
         if (quoteStartTrackedRef.current) return;
         quoteStartTrackedRef.current = true;
         emitAnalyticsEvent('quote_start', null, null, { form: 'restoration' });
-    };
+    }, []);
 
-    const handleFiles = (files) => {
+    const updateField = useCallback((name, value) => {
         trackQuoteStart();
-        const incoming = Array.from(files || []).slice(0, Math.max(0, MAX_PHOTOS - photoPreviews.length));
-        if (!incoming.length) return;
+        setFields(prev => ({ ...prev, [name]: value }));
+        setErrors(prev => (prev[name] ? { ...prev, [name]: undefined } : prev));
+    }, [trackQuoteStart]);
 
-        const next = incoming.map(file => ({
-            id: `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2)}`,
-            name: file.name,
-            url: URL.createObjectURL(file)
-        }));
-        setPhotoPreviews(prev => [...prev, ...next]);
-    };
+    const handleFiles = useCallback((files) => {
+        trackQuoteStart();
+        setPhotoPreviews(prev => {
+            const room = Math.max(0, MAX_PHOTOS - prev.length);
+            const incoming = Array.from(files || []).slice(0, room);
+            if (!incoming.length) return prev;
+            const next = incoming.map(file => ({
+                id: `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2)}`,
+                name: file.name,
+                url: URL.createObjectURL(file)
+            }));
+            return [...prev, ...next];
+        });
+    }, [trackQuoteStart]);
 
-    const removePhoto = (id) => {
+    const removePhoto = useCallback((id) => {
         setPhotoPreviews(prev => {
             const target = prev.find(photo => photo.id === id);
             if (target) URL.revokeObjectURL(target.url);
             return prev.filter(photo => photo.id !== id);
         });
-    };
+    }, []);
 
-    const toggleService = (id) => {
+    const toggleService = useCallback((id) => {
         trackQuoteStart();
         setSelectedServices(prev => ({ ...prev, [id]: !prev[id] }));
-    };
+    }, [trackQuoteStart]);
 
-    const handleGroupSelect = (id) => {
+    const goToStep = useCallback((nextStep) => {
+        const target = Math.min(steps.length - 1, Math.max(0, nextStep));
+        setDirection(target >= step ? 'forward' : 'backward');
+        setStep(target);
+    }, [step]);
+
+    const selectedServiceList = useMemo(
+        () => allServices.filter(service => selectedServices[service.id]),
+        [selectedServices]
+    );
+
+    const estimate = useMemo(
+        () => selectedServiceList.reduce(
+            (acc, service) => ({ min: acc.min + service.min, max: acc.max + service.max }),
+            { min: 0, max: 0 }
+        ),
+        [selectedServiceList]
+    );
+
+    const selectedTypeLabel = useMemo(
+        () => allTypes.find(item => item.id === selectedType)?.label || selectedType,
+        [selectedType]
+    );
+
+    const dimensionsLine = `${fields.height || '-'} x ${fields.width || '-'} x ${fields.depth || '-'} cm`;
+
+    const buildMailBody = useCallback(() => [
+        'Bonjour Anaïs,',
+        '',
+        `Je souhaite recevoir un devis pour un meuble de type : ${selectedTypeLabel}.`,
+        `État général : ${fields.condition || 'Non précisé'}`,
+        `Dimensions : ${dimensionsLine}`,
+        `Poids : ${fields.weight ? `${fields.weight} kg` : 'Non précisé'}`,
+        '',
+        'Prestations souhaitées :',
+        ...selectedServiceList.map(service => `- ${service.label} (${service.min}€-${service.max}€)${service.hasSeverity ? ` [défauts ${fields.severity}]` : ''}`),
+        '',
+        `Estimation indicative affichée : ${estimate.min}€ - ${estimate.max}€`,
+        `Photos préparées : ${photoPreviews.length}`,
+        '',
+        `Description : ${fields.description || 'Non précisée'}`,
+        `Précision complémentaire : ${fields.notes || 'Non précisée'}`,
+        '',
+        `Contact : ${fields.firstname} ${fields.lastname}`.trim(),
+        `Email : ${fields.email}`,
+        `Téléphone : ${fields.phone}`,
+        `Localisation : ${fields.location}`
+    ].join('\n'), [selectedTypeLabel, fields, dimensionsLine, selectedServiceList, estimate, photoPreviews.length]);
+
+    const validateContact = useCallback(() => {
+        const nextErrors = {};
+        if (!fields.firstname.trim()) nextErrors.firstname = 'Indiquez votre prénom.';
+        if (!isValidEmail(fields.email)) nextErrors.email = 'Indiquez un email valide.';
+        if (!isValidPhone(fields.phone)) nextErrors.phone = 'Indiquez un numéro joignable.';
+
+        setErrors(nextErrors);
+        return Object.keys(nextErrors).length === 0;
+    }, [fields.email, fields.firstname, fields.phone]);
+
+    const showEstimate = useCallback(() => {
         trackQuoteStart();
-        setActiveGroup(id);
-        const node = serviceGroupRefs.current[id];
-        if (!node || typeof window === 'undefined') return;
-
-        const rect = node.getBoundingClientRect();
-        const shouldScroll = window.innerWidth < 1024 || rect.top < 120 || rect.bottom > window.innerHeight - 80;
-        if (shouldScroll) {
-            node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (!validateContact()) {
+            goToStep(CONTACT_STEP_INDEX);
+            return;
         }
-    };
+        goToStep(ESTIMATE_STEP_INDEX);
+    }, [goToStep, trackQuoteStart, validateContact]);
 
     const handleSubmit = (event) => {
         event.preventDefault();
         trackQuoteStart();
-        const form = new FormData(event.currentTarget);
-        const type = furnitureTypes.find(item => item.id === selectedType)?.label || selectedType;
-        const body = [
-            'Bonjour Anais,',
-            '',
-            `Je souhaite recevoir un devis pour un meuble de type : ${type}.`,
-            `État général : ${form.get('condition') || 'Non précisé'}`,
-            `Dimensions : ${form.get('height') || '-'} x ${form.get('width') || '-'} x ${form.get('depth') || '-'} cm`,
-            '',
-            'Prestations souhaitées :',
-            ...selectedServiceList.map(service => `- ${service.label} (${service.min}€-${service.max}€)`),
-            '',
-            `Estimation indicative affichee : ${estimate.min}€ - ${estimate.max}€`,
-            '',
-            `Description : ${form.get('description') || 'Non précisée'}`,
-            `Précision complémentaire : ${form.get('notes') || 'Non précisée'}`,
-            '',
-            `Contact : ${form.get('firstname') || ''} ${form.get('lastname') || ''}`,
-            `Email : ${form.get('email') || ''}`,
-            `Telephone : ${form.get('phone') || ''}`,
-            `Localisation : ${form.get('location') || ''}`
-        ].join('\n');
+
+        if (step !== ESTIMATE_STEP_INDEX) {
+            if (step === CONTACT_STEP_INDEX) {
+                showEstimate();
+            } else {
+                goToStep(step + 1);
+            }
+            return;
+        }
+
+        if (!validateContact()) {
+            goToStep(CONTACT_STEP_INDEX);
+            return;
+        }
 
         emitAnalyticsEvent('quote_email_opened', null, null, {
             form: 'restoration',
@@ -321,380 +440,660 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
             photoCount: photoPreviews.length,
             furnitureType: selectedType
         });
+
         setSubmitted(true);
-        window.location.href = `mailto:contact@seconde-vie-anais.fr?subject=${encodeURIComponent('Demande de devis restauration')}&body=${encodeURIComponent(body)}`;
+        window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Demande de devis restauration')}&body=${encodeURIComponent(buildMailBody())}`;
     };
 
-    return (
-        <form onSubmit={handleSubmit} onChange={trackQuoteStart} className="mx-auto max-w-[1480px] px-4 py-8 sm:px-6 md:py-12 lg:px-10 xl:px-16">
-                <section className="space-y-5">
-                    <h2 className="font-serif text-2xl leading-tight md:text-[2rem]">1. Quel type de meuble souhaitez-vous faire restaurer ?</h2>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
-                        {furnitureTypes.map(type => {
-                            const isSelected = selectedType === type.id;
-                            return (
-                                <button
-                                    key={type.id}
-                                    type="button"
-                                    onClick={() => {
-                                        trackQuoteStart();
-                                        setSelectedType(type.id);
-                                    }}
-                                    className={`group min-h-[142px] rounded-[8px] p-2.5 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${isSelected
-                                        ? 'bg-white ring-1 ring-[#9A714C] shadow-[0_18px_45px_rgba(86,61,39,0.12)]'
-                                        : darkMode ? 'bg-white/[0.045] ring-1 ring-white/8 hover:bg-white/[0.07]' : 'bg-white/58 ring-1 ring-[#eee7df] hover:bg-white'
-                                    }`}
-                                >
-                                    <span className="flex h-[88px] items-center justify-center overflow-hidden rounded-[6px]">
-                                        {type.image ? (
-                                            <img
-                                                src={type.image}
-                                                alt={type.label}
-                                                className="h-full w-full object-contain transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
-                                            />
-                                        ) : (
-                                            <span className={`flex h-14 w-14 items-center justify-center rounded-full ring-1 ${darkMode ? 'ring-white/16' : 'ring-[#d6c8b9]'}`}>
-                                                <HelpCircle size={24} strokeWidth={1.35} />
-                                            </span>
-                                        )}
-                                    </span>
-                                    <span className="mt-3 block font-sans text-[13px] font-semibold">{type.label}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </section>
+    const inputClass = (name) => `mt-2.5 ${QUOTE_CONTROL_HEIGHT} w-full ${QUOTE_RADIUS_FIELD} px-4 font-sans text-[14px] outline-none transition-[box-shadow,background-color] duration-300 ${errors[name] ? (darkMode ? 'bg-[#141312] text-stone-100 ring-[1.5px] ring-red-400/60' : 'bg-white text-[#1c1917] ring-[1.5px] ring-red-400') : t.field}`;
 
-                <div className="mt-8 grid gap-5 lg:grid-cols-2">
-                    <section className={`rounded-[8px] p-4 ring-1 sm:p-6 ${darkMode ? 'bg-white/[0.035] ring-white/8' : 'bg-white/72 ring-[#eee7df]'}`}>
-                        <h2 className="font-serif text-2xl leading-tight">2. Décrivez votre meuble</h2>
-                        <div className="mt-5 space-y-4 font-sans">
-                            <label className="block">
-                                <span className="text-[12px] font-bold">État général</span>
-                                <span className="relative mt-2 block">
-                                    <select
-                                        name="condition"
-                                        className={`h-12 w-full appearance-none rounded-[6px] px-4 pr-10 text-[13px] outline-none ring-1 transition-colors ${darkMode ? 'bg-[#151515] ring-white/10 focus:ring-white/24' : 'bg-white ring-[#ddd3c9] focus:ring-[#9A714C]/50'}`}
-                                        defaultValue=""
-                                    >
-                                        <option value="" disabled>Sélectionnez l’état général</option>
-                                        <option>Bon état, entretien léger</option>
-                                        <option>Rayures ou marques visibles</option>
-                                        <option>Structure fragilisée</option>
-                                        <option>Restauration complète</option>
-                                    </select>
-                                    <ChevronDown size={16} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 opacity-55" />
-                                </span>
-                            </label>
-                            <label className="block">
-                                <span className="text-[12px] font-bold">Description des travaux souhaités</span>
-                                <textarea
-                                    name="description"
-                                    rows={5}
-                                    placeholder="Décrivez votre projet, les réparations ou finitions souhaitées..."
-                                    className={`mt-2 w-full resize-none rounded-[6px] p-4 text-[13px] outline-none ring-1 transition-colors ${darkMode ? 'bg-[#151515] ring-white/10 placeholder:text-stone-600 focus:ring-white/24' : 'bg-white ring-[#ddd3c9] placeholder:text-[#a49a91] focus:ring-[#9A714C]/50'}`}
-                                />
-                            </label>
-                            <div>
-                                <span className="flex items-center gap-2 text-[12px] font-bold">
-                                    <Ruler size={14} strokeWidth={1.5} />
-                                    Dimensions <span className="font-normal opacity-55">(facultatif)</span>
-                                </span>
-                                <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                    {[
-                                        ['height', 'Hauteur (cm)'],
-                                        ['width', 'Largeur (cm)'],
-                                        ['depth', 'Profondeur (cm)']
-                                    ].map(([name, placeholder]) => (
-                                        <input
-                                            key={name}
-                                            name={name}
-                                            type="number"
-                                            min="0"
-                                            placeholder={placeholder}
-                                            className={`h-12 rounded-[6px] px-4 text-[13px] outline-none ring-1 transition-colors ${darkMode ? 'bg-[#151515] ring-white/10 placeholder:text-stone-600 focus:ring-white/24' : 'bg-white ring-[#ddd3c9] placeholder:text-[#a49a91] focus:ring-[#9A714C]/50'}`}
-                                        />
-                                    ))}
-                                </div>
+    const Mark = ({ on, round = true, size = 18 }) => (
+        <span
+            className={`flex shrink-0 items-center justify-center ${round ? 'rounded-full' : 'rounded-[6px]'} ${QUOTE_EASE} ${on ? `${t.accentBg} ${t.accentOn}` : t.markIdle}`}
+            style={{ height: size, width: size }}
+        >
+            {on ? <Check size={Math.round(size * 0.6)} strokeWidth={2.6} /> : null}
+        </span>
+    );
+
+    /* ---------------- ecran recapitulatif ---------------- */
+    if (submitted) {
+        return (
+            <div className={`${QUOTE_SHELL} py-12 lg:py-20`}>
+                <div className={`quote-step mx-auto max-w-[760px] ${QUOTE_RADIUS_PANEL} ${QUOTE_PANEL_PADDING} ${t.panel}`}>
+                    <span className={`flex h-11 w-11 items-center justify-center rounded-full ${darkMode ? 'bg-[#D9B58D]/15 text-[#D9B58D]' : 'bg-[#f1f5f0] text-[#4a7c59]'}`}>
+                        <Check size={21} strokeWidth={1.9} />
+                    </span>
+                    <h2 className={`quote-balance mt-6 ${QUOTE_TYPE.section}`}>Votre demande est prête</h2>
+                    <p className={`mt-4 max-w-[46ch] font-sans text-[14px] leading-[1.65] ${t.muted}`}>
+                        Votre logiciel de messagerie vient de s'ouvrir avec le récapitulatif ci-dessous.
+                        Il ne reste qu'à l'envoyer, puis à y joindre vos photos.
+                    </p>
+
+                    <dl className={`mt-8 divide-y ${QUOTE_RADIUS_CARD} ${t.divide} ${t.panelQuiet}`}>
+                        {[
+                            ['Meuble', selectedTypeLabel],
+                            ['État général', fields.condition || 'Non précisé'],
+                            ['Prestations', selectedServiceList.length ? `${selectedServiceList.length} sélectionnée${selectedServiceList.length > 1 ? 's' : ''}` : 'À définir'],
+                            ['Estimation', selectedServiceList.length ? formatRange(estimate.min, estimate.max) : 'Sur devis'],
+                            ['Photos', photoPreviews.length ? `${photoPreviews.length} à joindre` : 'Aucune'],
+                            ['Contact', [fields.firstname, fields.lastname].filter(Boolean).join(' ') || '—']
+                        ].map(([label, value]) => (
+                            <div key={label} className="flex items-baseline justify-between gap-6 px-5 py-3.5">
+                                <dt className={`${QUOTE_TYPE.meta} ${t.muted}`}>{label}</dt>
+                                <dd className="text-right font-sans text-[13.5px] font-semibold">{value}</dd>
                             </div>
-                        </div>
-                    </section>
+                        ))}
+                    </dl>
 
-                    <section className={`flex h-full min-h-[420px] flex-col rounded-[8px] p-4 ring-1 sm:p-6 ${darkMode ? 'bg-white/[0.035] ring-white/8' : 'bg-white/72 ring-[#eee7df]'}`}>
-                        <h2 className="font-serif text-2xl leading-tight">3. Ajoutez des photos</h2>
-                        <p className={`mt-2 font-sans text-[12px] ${darkMode ? 'text-stone-400' : 'text-[#6e655d]'}`}>Plus vous ajoutez de photos, plus le devis sera précis.</p>
-                        <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            onDragOver={(event) => event.preventDefault()}
-                            onDrop={(event) => {
-                                event.preventDefault();
-                                handleFiles(event.dataTransfer.files);
-                            }}
-                            className={`mt-5 flex w-full flex-col items-center justify-center rounded-[8px] border border-dashed p-6 text-center transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${photoPreviews.length > 0 ? 'min-h-[104px] flex-none' : 'min-h-[280px] flex-1'} ${darkMode ? 'border-white/16 bg-[#151515] hover:border-white/36' : 'border-[#d4c4b4] bg-white/58 hover:border-[#9A714C]'}`}
-                        >
-                            <Upload size={photoPreviews.length > 0 ? 22 : 34} strokeWidth={1.35} />
-                            <span className="mt-4 font-sans text-[13px] font-bold">{photoPreviews.length > 0 ? 'Ajouter d’autres photos' : 'Cliquez pour ajouter vos photos'}</span>
-                            <span className={`mt-1 font-sans text-[12px] ${darkMode ? 'text-stone-500' : 'text-[#7c7168]'}`}>ou glissez-déposez ici</span>
-                            <span className={`mt-4 font-sans text-[11px] ${darkMode ? 'text-stone-600' : 'text-[#9b9087]'}`}>
-                                JPG, PNG, WEBP · {photoPreviews.length}/{MAX_PHOTOS} photos · conservées temporairement
-                            </span>
-                        </button>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/png,image/jpeg,image/webp"
-                            multiple
-                            className="hidden"
-                            onChange={(event) => handleFiles(event.target.files)}
-                        />
-                        {photoPreviews.length > 0 && (
-                            <div className="mt-4 grid content-start gap-3 [grid-template-columns:repeat(auto-fill,minmax(118px,1fr))]">
-                                {photoPreviews.map(photo => (
-                                    <button
-                                        key={photo.id}
-                                        type="button"
-                                        onClick={() => removePhoto(photo.id)}
-                                        className="group relative aspect-[4/3] max-h-[132px] overflow-hidden rounded-[7px] bg-stone-100"
-                                        title="Retirer cette photo"
-                                    >
-                                        <img src={photo.url} alt={photo.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                                        <span className="absolute inset-x-2 bottom-2 rounded-full bg-black/55 px-2 py-1 font-sans text-[10px] font-bold text-white backdrop-blur-sm">
-                                            {formatPhotoName(photo.name)}
-                                        </span>
-                                        <span className="absolute inset-0 flex items-center justify-center bg-black/45 font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-white opacity-0 transition-opacity group-hover:opacity-100">
-                                            Retirer
-                                        </span>
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </section>
-                </div>
-
-                <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-                    <section className={`rounded-[8px] p-4 ring-1 sm:p-6 ${darkMode ? 'bg-white/[0.035] ring-white/8' : 'bg-white/72 ring-[#eee7df]'}`}>
-                        <h2 className="font-serif text-2xl leading-tight md:text-[2rem]">4. Choisissez les prestations souhaitées</h2>
-                        <p className={`mt-2 font-sans text-[12px] ${darkMode ? 'text-stone-400' : 'text-[#6e655d]'}`}>Sélectionnez les interventions que vous souhaitez pour votre meuble.</p>
-                        <div className="mt-6 space-y-3">
-                            {serviceGroups.map(group => {
-                                const isActive = activeGroup === group.id;
-                                const isHovered = hoveredGroup === group.id;
-                                const selectedCount = group.services.filter(service => selectedServices[service.id]).length;
-
-                                return (
-                                    <div
-                                        key={group.id}
-                                        ref={(node) => {
-                                            if (node) serviceGroupRefs.current[group.id] = node;
-                                        }}
-                                        className="grid gap-3 md:grid-cols-[210px_34px_minmax(0,1fr)] md:items-stretch"
-                                    >
-                                        <button
-                                            type="button"
-                                            onClick={() => handleGroupSelect(group.id)}
-                                            onMouseEnter={() => setHoveredGroup(group.id)}
-                                            onMouseLeave={() => setHoveredGroup(null)}
-                                            onFocus={() => setHoveredGroup(group.id)}
-                                            onBlur={() => setHoveredGroup(null)}
-                                            className={`relative min-h-[92px] rounded-[8px] p-4 text-left transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] md:min-h-full ${isHovered
-                                                ? darkMode ? 'bg-white/10 ring-1 ring-white/22' : 'bg-[#fbf1e7] ring-1 ring-[#d8b991] shadow-[0_14px_35px_rgba(120,86,51,0.08)]'
-                                                : darkMode ? 'bg-[#151515] ring-1 ring-white/8 hover:bg-white/[0.06]' : 'bg-white/70 ring-1 ring-[#eee7df] hover:bg-white'
-                                            }`}
-                                        >
-                                            <span className="flex items-start justify-between gap-3">
-                                                <span>
-                                                    <span className="block font-sans text-[12px] font-bold">{group.title}</span>
-                                                    <span className={`mt-2 block font-sans text-[11px] leading-relaxed ${darkMode ? 'text-stone-500' : 'text-[#6e655d]'}`}>{group.subtitle}</span>
-                                                </span>
-                                                <span className={`flex h-7 min-w-7 items-center justify-center rounded-full px-2 font-sans text-[10px] font-bold transition-all ${selectedCount > 0
-                                                    ? 'bg-[#d5b99d] text-white'
-                                                    : darkMode ? 'bg-white/8 text-stone-500' : 'bg-[#f2ece5] text-[#9a8f84]'
-                                                }`}>
-                                                    {selectedCount}
-                                                </span>
-                                            </span>
-                                            <span className={`absolute inset-y-4 left-0 w-[3px] rounded-r-full transition-opacity ${isHovered ? 'opacity-100' : 'opacity-0'} ${darkMode ? 'bg-white/50' : 'bg-[#b98a5d]'}`} />
-                                        </button>
-
-                                        <div className="hidden items-center md:flex" aria-hidden="true">
-                                            <span className={`h-px flex-1 transition-colors ${isHovered ? 'bg-[#b98a5d]' : darkMode ? 'bg-white/10' : 'bg-[#e4d8ca]'}`} />
-                                            <span className={`h-2.5 w-2.5 rounded-full ring-4 transition-all ${isHovered
-                                                ? darkMode ? 'bg-white ring-white/10' : 'bg-[#b98a5d] ring-[#f4e7d9]'
-                                                : darkMode ? 'bg-white/20 ring-white/5' : 'bg-[#d8cfc6] ring-[#f8f4ef]'
-                                            }`} />
-                                            <span className={`h-px flex-1 transition-colors ${isHovered ? 'bg-[#b98a5d]' : darkMode ? 'bg-white/10' : 'bg-[#e4d8ca]'}`} />
-                                        </div>
-
-                                        <div className={`overflow-hidden rounded-[8px] ring-1 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${isActive
-                                            ? darkMode ? 'ring-white/22' : 'ring-[#d8b991] shadow-[0_14px_35px_rgba(120,86,51,0.06)]'
-                                            : darkMode ? 'ring-white/8' : 'ring-[#eadfd3]'
-                                        }`}>
-                                            {group.services.map(service => {
-                                                const checked = Boolean(selectedServices[service.id]);
-                                                return (
-                                                    <div
-                                                        key={service.id}
-                                                        onClick={() => setActiveGroup(group.id)}
-                                                        className={`grid gap-3 border-b p-4 last:border-b-0 sm:grid-cols-[26px_1fr_auto] sm:p-5 ${darkMode ? 'border-white/8' : 'border-[#eadfd3]'}`}
-                                                    >
-                                                        <button
-                                                            type="button"
-                                                            onClick={(event) => {
-                                                                event.stopPropagation();
-                                                                setActiveGroup(group.id);
-                                                                toggleService(service.id);
-                                                            }}
-                                                            className={`flex h-[22px] w-[22px] items-center justify-center rounded-[5px] ring-1 transition-all ${checked ? 'bg-[#d5b99d] text-white ring-[#d5b99d]' : darkMode ? 'bg-transparent ring-white/18' : 'bg-white ring-[#d2c7bb]'}`}
-                                                            aria-label={checked ? `Retirer ${service.label}` : `Ajouter ${service.label}`}
-                                                        >
-                                                            {checked && <Check size={14} strokeWidth={2} />}
-                                                        </button>
-                                                        <div>
-                                                            <h3 className="font-sans text-[13px] font-bold">{service.label}</h3>
-                                                            <p className={`mt-1 max-w-[42rem] font-sans text-[12px] leading-relaxed ${darkMode ? 'text-stone-400' : 'text-[#6e655d]'}`}>{service.text}</p>
-                                                            {service.hasSeverity && checked && (
-                                                                <label className="mt-4 inline-flex items-center gap-3 font-sans text-[12px]">
-                                                                    <span className={darkMode ? 'text-stone-400' : 'text-[#6e655d]'}>Severite des defauts</span>
-                                                                    <span className="relative">
-                                                                        <select name="severity" className={`h-10 appearance-none rounded-[6px] px-4 pr-9 text-[12px] outline-none ring-1 ${darkMode ? 'bg-[#151515] ring-white/10' : 'bg-white ring-[#ddd3c9]'}`} defaultValue="Moderes">
-                                                                            <option>Legers</option>
-                                                                            <option>Moderes</option>
-                                                                            <option>Importants</option>
-                                                                        </select>
-                                                                        <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 opacity-55" />
-                                                                    </span>
-                                                                </label>
-                                                            )}
-                                                        </div>
-                                                        <div className="font-sans text-[13px] font-semibold sm:text-right">{service.min}€ - {service.max}€</div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-
-                            <div className="grid gap-3 md:grid-cols-[210px_34px_minmax(0,1fr)]">
-                                <div className="hidden md:block" />
-                                <div className="hidden md:block" />
-                                <div className={`flex items-start gap-3 rounded-[8px] p-4 font-sans text-[12px] ${darkMode ? 'bg-white/[0.045] text-stone-300' : 'bg-[#f7efe5] text-[#5d5146]'}`}>
-                                    <Info size={16} strokeWidth={1.45} className="mt-0.5 shrink-0" />
-                                    <span>Besoin d'un conseil ? Anais etudiera votre demande et ajustera le devis si necessaire.</span>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
-                        <div className={`rounded-[8px] p-6 ring-1 ${darkMode ? 'bg-white/[0.045] ring-white/8' : 'bg-white/82 ring-[#eadfd3]'}`}>
-                            <h2 className="font-serif text-2xl leading-tight">Estimation en temps reel</h2>
-                            <p className={`mt-2 font-sans text-[12px] leading-relaxed ${darkMode ? 'text-stone-400' : 'text-[#6e655d]'}`}>Le prix varie selon les prestations et l'etat de votre meuble.</p>
-                            <p className="mt-6 font-sans text-[12px] font-bold">Fourchette estimative</p>
-                            <div className="mt-2 font-serif text-[3rem] leading-none tracking-normal">{estimate.min}€ - {estimate.max}€</div>
-                            <p className="mt-3 font-sans text-[13px] font-semibold">Délai estimé : 2 à 4 semaines</p>
-                            <div className={`my-6 h-px ${darkMode ? 'bg-white/10' : 'bg-[#eadfd3]'}`} />
-                            <div className="space-y-3">
-                                {selectedServiceList.map(service => (
-                                    <div key={service.id} className="flex justify-between gap-4 font-sans text-[12px]">
-                                        <span className={darkMode ? 'text-stone-400' : 'text-[#6e655d]'}>{service.label}</span>
-                                        <span className="shrink-0 font-semibold">{service.min}€ - {service.max}€</span>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className={`my-6 h-px ${darkMode ? 'bg-white/10' : 'bg-[#eadfd3]'}`} />
-                            <div className="flex justify-between gap-4 font-sans text-[14px] font-bold">
-                                <span>Total estimatif</span>
-                                <span>{estimate.min}€ - {estimate.max}€</span>
-                            </div>
-                            <p className={`mt-5 font-sans text-[11px] leading-relaxed ${darkMode ? 'text-stone-500' : 'text-[#887b70]'}`}>Cette estimation est indicative. Le devis final vous sera envoye sous 48h apres etude detaillee.</p>
-                        </div>
-
-                        <div className={`rounded-[8px] p-5 ring-1 ${darkMode ? 'bg-white/[0.035] ring-white/8' : 'bg-white/72 ring-[#eadfd3]'}`}>
-                            <h3 className="flex items-center gap-2 font-serif text-xl">
-                                <HelpCircle size={18} strokeWidth={1.45} />
-                                Besoin de précisions ?
-                            </h3>
-                            <p className={`mt-2 font-sans text-[12px] leading-relaxed ${darkMode ? 'text-stone-400' : 'text-[#6e655d]'}`}>Anais peut vous conseiller selon votre projet et l'etat reel du meuble.</p>
-                            <a href="tel:+33612345678" className={`mt-4 inline-flex h-11 w-full items-center justify-center gap-3 rounded-[6px] border font-sans text-[11px] font-bold uppercase tracking-[0.18em] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${darkMode ? 'border-white/14 hover:bg-white hover:text-black' : 'border-[#2a2520] hover:bg-[#2a2520] hover:text-white'}`}>
-                                <Phone size={15} strokeWidth={1.45} />
-                                Etre rappele
+                    <div className={`mt-6 ${QUOTE_RADIUS_CARD} p-5 ${t.panelQuiet}`}>
+                        <p className="font-sans text-[13px] font-semibold">Rien ne s'est ouvert ?</p>
+                        <p className={`mt-1.5 ${QUOTE_TYPE.meta} ${t.muted}`}>
+                            Copiez le récapitulatif et envoyez-le à {CONTACT_EMAIL}, ou appelez l'atelier.
+                        </p>
+                        <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
+                            <button
+                                type="button"
+                                onClick={() => navigator.clipboard?.writeText(buildMailBody())}
+                                className={`inline-flex h-12 items-center justify-center rounded-full px-6 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.98] ${t.primaryBtn} ${t.focusRing}`}
+                            >
+                                Copier le récapitulatif
+                            </button>
+                            <a
+                                href={`tel:${CONTACT_PHONE}`}
+                                className={`inline-flex h-12 items-center justify-center rounded-full px-6 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.98] ${t.ghostBtn} ${t.focusRing}`}
+                            >
+                                Appeler l'atelier
                             </a>
                         </div>
-                    </aside>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setSubmitted(false);
+                            goToStep(0);
+                        }}
+                        className={`mt-7 font-sans text-[13px] font-semibold underline decoration-1 underline-offset-4 ${t.muted} ${t.focusRing}`}
+                    >
+                        Modifier ma demande
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    const activeStep = steps[step];
+    const isLastStep = step === steps.length - 1;
+
+    return (
+        <div className={`${QUOTE_SHELL} pb-6 pt-6 lg:pt-16`}>
+            {/* rail d'etapes : colonnes egales + piste de progression */}
+            <div
+                ref={railRef}
+                className={`quote-anchor sticky top-16 z-30 -mx-5 mb-6 border-b px-5 py-3.5 backdrop-blur-xl sm:-mx-8 sm:px-8 md:top-[76px] lg:mx-0 lg:mb-6 lg:rounded-[18px] lg:border lg:px-7 lg:py-4 ${t.hairline} ${t.railBg}`}
+            >
+                <div className="flex items-baseline justify-between gap-4 lg:hidden">
+                    <p className={`font-sans text-[11px] font-semibold uppercase tracking-[0.16em] ${t.accent}`}>
+                        Étape {step + 1} / {steps.length}
+                    </p>
+                    <p className="font-sans text-[13px] font-semibold">{activeStep.label}</p>
                 </div>
 
-                <div className="mt-8 grid gap-5 lg:grid-cols-[1fr_1fr]">
-                    <section className={`rounded-[8px] p-4 ring-1 sm:p-6 ${darkMode ? 'bg-white/[0.035] ring-white/8' : 'bg-white/72 ring-[#eee7df]'}`}>
-                        <h2 className="font-serif text-2xl leading-tight">5. Vos informations</h2>
-                        <div className="mt-5 grid gap-4 font-sans sm:grid-cols-2">
-                            {[
-                                ['firstname', 'Prenom', 'Votre prenom', 'text'],
-                                ['lastname', 'Nom', 'Votre nom', 'text'],
-                                ['email', 'Email', 'votre@email.com', 'email'],
-                                ['phone', 'Telephone', '06 12 34 56 78', 'tel']
-                            ].map(([name, label, placeholder, type]) => (
-                                <label key={name} className="block">
-                                    <span className="text-[12px] font-bold">{label}</span>
-                                    <input
-                                        name={name}
-                                        type={type}
-                                        required={['firstname', 'email', 'phone'].includes(name)}
-                                        placeholder={placeholder}
-                                        className={`mt-2 h-12 w-full rounded-[6px] px-4 text-[13px] outline-none ring-1 transition-colors ${darkMode ? 'bg-[#151515] ring-white/10 placeholder:text-stone-600 focus:ring-white/24' : 'bg-white ring-[#ddd3c9] placeholder:text-[#a49a91] focus:ring-[#9A714C]/50'}`}
-                                    />
-                                </label>
-                            ))}
-                            <label className="block sm:col-span-2">
-                                <span className="text-[12px] font-bold">Localisation du meuble</span>
-                                <input
-                                    name="location"
-                                    placeholder="Ville ou code postal"
-                                    className={`mt-2 h-12 w-full rounded-[6px] px-4 text-[13px] outline-none ring-1 transition-colors ${darkMode ? 'bg-[#151515] ring-white/10 placeholder:text-stone-600 focus:ring-white/24' : 'bg-white ring-[#ddd3c9] placeholder:text-[#a49a91] focus:ring-[#9A714C]/50'}`}
-                                />
-                            </label>
-                        </div>
-                    </section>
+                <ol className="hidden lg:grid lg:grid-cols-7" aria-label="Progression de la demande">
+                    {steps.map((item, index) => {
+                        const isDone = index < step;
+                        const isCurrent = index === step;
+                        return (
+                            <li key={item.id} className="min-w-0">
+                                <button
+                                    type="button"
+                                    onClick={() => (index === ESTIMATE_STEP_INDEX ? showEstimate() : goToStep(index))}
+                                    aria-current={isCurrent ? 'step' : undefined}
+                                    className={`flex w-full items-center gap-2.5 rounded-full py-1 pr-3 text-left ${QUOTE_EASE} ${t.focusRing}`}
+                                >
+                                    <span
+                                        className={`flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full font-sans text-[11px] font-semibold ${QUOTE_EASE} ${isDone || isCurrent ? `${t.accentBg} ${t.accentOn}` : darkMode ? 'bg-white/[0.08] text-stone-500' : 'bg-[#ece6de] text-[#8d8479]'}`}
+                                    >
+                                        {isDone ? <Check size={12} strokeWidth={2.4} /> : index + 1}
+                                    </span>
+                                    <span className={`truncate font-sans text-[12.5px] ${isCurrent ? 'font-semibold' : `font-medium ${t.muted}`}`}>
+                                        {item.label}
+                                    </span>
+                                </button>
+                            </li>
+                        );
+                    })}
+                </ol>
 
-                    <section className={`rounded-[8px] p-4 ring-1 sm:p-6 ${darkMode ? 'bg-white/[0.035] ring-white/8' : 'bg-white/72 ring-[#eee7df]'}`}>
-                        <h2 className="font-serif text-2xl leading-tight">6. Informations complementaires <span className="font-sans text-[12px] opacity-55">(facultatif)</span></h2>
-                        <label className="mt-5 block font-sans">
-                            <span className="text-[12px] font-bold">Souhaitez-vous ajouter des précisions ?</span>
-                            <textarea
-                                name="notes"
-                                rows={7}
-                                placeholder="Informations supplémentaires, contraintes d’accès, délais souhaités, etc."
-                                className={`mt-2 w-full resize-none rounded-[6px] p-4 text-[13px] outline-none ring-1 transition-colors ${darkMode ? 'bg-[#151515] ring-white/10 placeholder:text-stone-600 focus:ring-white/24' : 'bg-white ring-[#ddd3c9] placeholder:text-[#a49a91] focus:ring-[#9A714C]/50'}`}
-                            />
-                        </label>
-                    </section>
+                <div className={`mt-3 h-[3px] w-full overflow-hidden rounded-full lg:mt-3.5 ${t.trackBg}`} aria-hidden="true">
+                    <div
+                        className={`quote-progress-fill h-full rounded-full ${t.accentBg}`}
+                        style={{ width: `${((step + 1) / steps.length) * 100}%` }}
+                    />
                 </div>
+            </div>
 
-                <div className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,1fr)_390px]">
-                    <section className={`rounded-[8px] p-7 text-center ring-1 ${darkMode ? 'bg-white/[0.055] ring-white/8' : 'bg-[#f4eee7] ring-[#eadfd3]'}`}>
-                        <Wand2 size={24} strokeWidth={1.35} className="mx-auto mb-4 opacity-70" />
-                        <h2 className="font-serif text-2xl leading-tight md:text-3xl">Prêt à redonner vie à votre meuble ?</h2>
-                        <p className={`mx-auto mt-4 max-w-[18rem] font-sans text-[13px] leading-relaxed ${darkMode ? 'text-stone-400' : 'text-[#6e655d]'}`}>Envoyez votre demande et recevez votre devis personnalisé sous 48h.</p>
-                        <button
-                            type="submit"
-                            className={`group mt-7 inline-flex min-h-[58px] w-full max-w-[300px] items-center justify-center gap-4 rounded-[8px] px-6 font-sans text-[11px] font-bold uppercase tracking-[0.18em] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.98] ${darkMode ? 'bg-white text-[#171411] hover:bg-[#d7c0a8]' : 'bg-[#2a2928] text-white hover:bg-[#111]'}`}
-                        >
-                            Envoyer ma demande de devis
-                            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-1 ${darkMode ? 'bg-black/8' : 'bg-white/10'}`}>
-                                <ArrowRight size={16} strokeWidth={1.5} />
-                            </span>
-                        </button>
-                        <p className={`mt-4 font-sans text-[11px] ${darkMode ? 'text-stone-500' : 'text-[#8a7d72]'}`}>Sans engagement</p>
-                        {submitted && (
-                            <div className={`mt-5 flex items-center justify-center gap-2 rounded-[8px] px-4 py-3 font-sans text-[12px] ${darkMode ? 'bg-emerald-400/10 text-emerald-200' : 'bg-emerald-50 text-emerald-800'}`}>
-                                <Mail size={14} strokeWidth={1.5} />
-                                Votre email de demande est pret.
+            <form onSubmit={handleSubmit} noValidate>
+                {/* gap-8 garantit un ecart minimum entre le contenu et la barre de navigation */}
+                <div
+                    key={activeStep.id}
+                    data-direction={direction}
+                    className={`quote-step flex flex-col gap-7 ${QUOTE_STEP_HEIGHT} ${QUOTE_STEP_RADIUS} ${QUOTE_STEP_PADDING} ${t.stepPanel}`}
+                >
+                    <div className="quote-stagger min-h-0 flex-1 overflow-visible lg:mx-0 lg:px-0">
+                        <header className="mb-8 lg:mb-7">
+                            <p className={`${QUOTE_TYPE.eyebrow} ${t.accent}`}>
+                                Étape {step + 1} sur {steps.length}
+                            </p>
+                            <h2 className={`quote-balance mt-3 max-w-[24ch] ${QUOTE_TYPE.section}`}>
+                                {activeStep.title}
+                            </h2>
+                            <p className={`${step === 1 ? 'mt-5' : 'mt-3'} max-w-[56ch] ${QUOTE_TYPE.body} ${t.muted}`}>
+                                {activeStep.hint}
+                            </p>
+                        </header>
+
+                        {/* 1 — TYPE DE MEUBLE */}
+                        {step === 0 && (
+                            <div>
+                                <div
+                                    role="radiogroup"
+                                    aria-label="Type de meuble"
+                                    className="mx-auto grid w-full max-w-[430px] grid-cols-2 gap-3 lg:max-w-none lg:grid-cols-6"
+                                >
+                                    {furnitureCards.map(type => {
+                                        const isSelected = selectedType === type.id;
+                                        return (
+                                            <button
+                                                key={type.id}
+                                                type="button"
+                                                role="radio"
+                                                aria-checked={isSelected}
+                                                onClick={() => {
+                                                    trackQuoteStart();
+                                                    setSelectedType(type.id);
+                                                }}
+                                                className={`group relative overflow-hidden ${QUOTE_RADIUS_CARD} ${QUOTE_EASE} active:scale-[0.98] ${t.focusRing} ${isSelected ? t.furnitureCardActive : t.furnitureCardIdle}`}
+                                            >
+                                                <span className={`block aspect-[5/6] w-full overflow-hidden lg:aspect-[4/5] ${t.imageBed}`}>
+                                                    <img
+                                                        src={type.image}
+                                                        alt=""
+                                                        loading="lazy"
+                                                        decoding="async"
+                                                        className={`h-full w-full object-cover ${QUOTE_EASE} group-hover:scale-[1.05]`}
+                                                    />
+                                                </span>
+                                                <span className="flex items-center justify-between gap-1.5 px-2.5 py-2 lg:px-3 lg:py-2.5">
+                                                    <span className="truncate font-sans text-[12.5px] font-semibold">{type.label}</span>
+                                                    <Mark on={isSelected} size={16} />
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
                             </div>
                         )}
-                    </section>
+
+                        {/* 2 — ETAT GENERAL */}
+                        {step === 1 && (
+                            <div
+                                role="radiogroup"
+                                aria-label="État général"
+                                className="grid gap-3 pt-5 min-[520px]:grid-cols-2 min-[520px]:pt-6 lg:grid-cols-4 lg:pt-12"
+                            >
+                                {conditionOptions.map(option => {
+                                    const isSelected = fields.condition === option.value;
+                                    return (
+                                        <button
+                                            key={option.value}
+                                            type="button"
+                                            role="radio"
+                                            aria-checked={isSelected}
+                                            onClick={() => updateField('condition', option.value)}
+                                            className={`flex flex-col items-start gap-3 ${QUOTE_RADIUS_CARD} p-4 text-left ${QUOTE_EASE} active:scale-[0.99] min-[520px]:min-h-[142px] lg:min-h-[168px] lg:gap-4 lg:p-5 ${t.focusRing} ${isSelected ? t.optionActive : t.optionIdle}`}
+                                        >
+                                            <Mark on={isSelected} size={20} />
+                                            <span className="min-w-0">
+                                                <span className="block font-sans text-[14px] font-semibold leading-snug">{option.label}</span>
+                                                <span className={`mt-1.5 block ${QUOTE_TYPE.meta} ${t.muted}`}>{option.text}</span>
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* 3 — PHOTOS */}
+                        {step === 2 && (
+                            <div>
+                                <div className="flex items-baseline justify-between gap-4">
+                                    <span className={QUOTE_TYPE.label}>Photos du meuble</span>
+                                    <span className={`font-sans text-[11.5px] tabular-nums ${t.faint}`}>
+                                        {photoPreviews.length}/{MAX_PHOTOS}
+                                    </span>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    onDragOver={(event) => {
+                                        event.preventDefault();
+                                        setDragging(true);
+                                    }}
+                                    onDragLeave={() => setDragging(false)}
+                                    onDrop={(event) => {
+                                        event.preventDefault();
+                                        setDragging(false);
+                                        handleFiles(event.dataTransfer.files);
+                                    }}
+                                    disabled={photoPreviews.length >= MAX_PHOTOS}
+                                    className={`mt-2.5 flex w-full flex-col items-center justify-center border border-dashed ${QUOTE_RADIUS_CARD} ${QUOTE_DROPZONE_HEIGHT} px-4 py-8 text-center ${QUOTE_EASE} lg:px-6 lg:py-10 ${t.focusRing} disabled:cursor-not-allowed disabled:opacity-55 ${dragging
+                                        ? darkMode ? 'border-[#D9B58D]/70 bg-[#D9B58D]/[0.08]' : 'border-[#8B5C42] bg-[#fbf7f3]'
+                                        : darkMode ? 'border-white/16 bg-white/[0.02] hover:border-white/30' : 'border-[#d5cbbf] bg-white hover:border-[#b9ab9a] hover:bg-[#f5f2ee]'
+                                    }`}
+                                >
+                                    <PhotoPlus size={28} strokeWidth={1.4} className={`h-6 w-6 lg:h-7 lg:w-7 ${t.faint}`} />
+                                    <span className="mt-3 font-sans text-[13.5px] font-semibold lg:mt-4 lg:text-[14px]">
+                                        {photoPreviews.length > 0 ? 'Ajouter d’autres photos' : 'Déposez vos photos'}
+                                    </span>
+                                    <span className={`mt-1.5 ${QUOTE_TYPE.meta} ${t.muted}`}>
+                                        ou cliquez pour parcourir
+                                    </span>
+                                </button>
+
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/webp"
+                                    multiple
+                                    className="hidden"
+                                    onChange={(event) => {
+                                        handleFiles(event.target.files);
+                                        event.target.value = '';
+                                    }}
+                                />
+
+                                {photoPreviews.length > 0 && (
+                                    <div className="mt-4 grid grid-cols-3 gap-3 min-[520px]:grid-cols-4 sm:grid-cols-5 lg:grid-cols-6">
+                                        {photoPreviews.map(photo => (
+                                            <div
+                                                key={photo.id}
+                                                className={`group relative aspect-[4/5] overflow-hidden ${QUOTE_RADIUS_FIELD} ${t.imageBed}`}
+                                            >
+                                                <img src={photo.url} alt={photo.name} className={`h-full w-full object-cover ${QUOTE_EASE} group-hover:scale-[1.05]`} />
+                                                <span className="pointer-events-none absolute inset-x-1.5 bottom-1.5 truncate rounded-full bg-black/55 px-2 py-1 font-sans text-[10px] font-semibold text-white backdrop-blur-sm">
+                                                    {formatPhotoName(photo.name)}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removePhoto(photo.id)}
+                                                    aria-label={`Retirer ${photo.name}`}
+                                                    className={`absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm ${QUOTE_EASE} hover:bg-black/80 ${t.focusRing}`}
+                                                >
+                                                    <Close size={13} strokeWidth={2} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <p className={`mt-4 ${QUOTE_TYPE.micro} ${t.faint}`}>
+                                    Les photos restent sur votre appareil : pensez à les joindre à l'e-mail final.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* 4 — DESCRIPTION & DIMENSIONS */}
+                        {step === 3 && (
+                            <div className={`${QUOTE_READABLE} space-y-6 lg:space-y-7`}>
+                                <label className="block">
+                                    <span className={QUOTE_TYPE.label}>Description des travaux souhaités</span>
+                                    <textarea
+                                        rows={5}
+                                        value={fields.description}
+                                        onChange={(event) => updateField('description', event.target.value)}
+                                        placeholder="Décrivez votre projet, les réparations ou finitions souhaitées…"
+                                        className={`mt-2.5 min-h-[132px] w-full resize-none ${QUOTE_RADIUS_FIELD} p-3.5 font-sans text-[13.5px] leading-[1.6] outline-none transition-[box-shadow,background-color] duration-300 lg:p-4 lg:text-[14px] ${t.field}`}
+                                    />
+                                </label>
+
+                                <div className="pt-4 lg:pt-7">
+                                    <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                        <div className="w-full min-w-0 sm:max-w-[520px]">
+                                            <span className={QUOTE_TYPE.label}>
+                                                Dimensions <span className="font-normal opacity-60">(facultatif)</span>
+                                            </span>
+                                            <div className="mt-2.5 grid grid-cols-3 gap-2.5">
+                                                {dimensionFields.map(([name, label, unit]) => (
+                                                    <span key={name} className="relative block">
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            inputMode="numeric"
+                                                            value={fields[name]}
+                                                            onChange={(event) => updateField(name, event.target.value)}
+                                                            placeholder={label}
+                                                            aria-label={`${label} en centimètres`}
+                                                            className={`${QUOTE_CONTROL_HEIGHT} w-full ${QUOTE_RADIUS_FIELD} pl-3.5 pr-8 font-sans text-[13px] outline-none transition-[box-shadow,background-color] duration-300 lg:pl-4 lg:pr-9 lg:text-[14px] ${t.field}`}
+                                                        />
+                                                        <span className={`pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 font-sans text-[12px] ${t.faint}`}>
+                                                            {unit}
+                                                        </span>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <label className="block w-full max-w-[160px] sm:w-[170px] sm:max-w-none sm:shrink-0">
+                                            <span className={QUOTE_TYPE.label}>
+                                                Poids <span className="font-normal opacity-60">(facultatif)</span>
+                                            </span>
+                                            <span className="relative mt-2.5 block">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    inputMode="decimal"
+                                                    value={fields.weight}
+                                                    onChange={(event) => updateField('weight', event.target.value)}
+                                                    placeholder="Poids"
+                                                    aria-label="Poids en kilogrammes"
+                                                    className={`${QUOTE_CONTROL_HEIGHT} w-full ${QUOTE_RADIUS_FIELD} pl-3.5 pr-8 font-sans text-[13px] outline-none transition-[box-shadow,background-color] duration-300 lg:pl-4 lg:pr-9 lg:text-[14px] ${t.field}`}
+                                                />
+                                                <span className={`pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 font-sans text-[12px] ${t.faint}`}>
+                                                    kg
+                                                </span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 5 — PRESTATIONS */}
+                        {step === 4 && (
+                            <div className="grid gap-y-6 lg:grid-cols-2 lg:gap-x-6 lg:gap-y-7">
+                                {serviceGroups.map(group => {
+                                    const groupCount = group.services.filter(service => selectedServices[service.id]).length;
+                                    return (
+                                        <section key={group.id}>
+                                            <div className={`flex items-baseline justify-between gap-4 border-b pb-2.5 ${t.hairline}`}>
+                                                <h3 className="font-sans text-[12px] font-semibold uppercase tracking-[0.12em]">
+                                                    {group.title}
+                                                </h3>
+                                                <span className={`shrink-0 font-sans text-[11.5px] font-medium tabular-nums ${groupCount > 0 ? t.accent : t.faint}`}>
+                                                    {groupCount}/{group.services.length}
+                                                </span>
+                                            </div>
+
+                                            <div className="mt-2.5 space-y-2.5">
+                                                {group.services.map(service => {
+                                                    const checked = Boolean(selectedServices[service.id]);
+                                                    return (
+                                                        <div
+                                                            key={service.id}
+                                                            className={`${QUOTE_RADIUS_CARD} ${QUOTE_EASE} ${checked ? t.optionActive : t.optionIdle}`}
+                                                        >
+                                                            <button
+                                                                type="button"
+                                                                role="checkbox"
+                                                                aria-checked={checked}
+                                                                onClick={() => toggleService(service.id)}
+                                className={`flex min-h-[92px] w-full items-start gap-3 ${QUOTE_RADIUS_CARD} p-4 text-left lg:min-h-0 lg:gap-3.5 ${t.focusRing}`}
+                                                            >
+                                                                <span className="mt-0.5">
+                                                                    <Mark on={checked} round={false} size={20} />
+                                                                </span>
+                                <span className="flex min-h-[52px] min-w-0 flex-1 flex-col justify-between lg:min-h-0">
+                                                                    <span className="flex items-baseline justify-between gap-3">
+                                                                        <span className={QUOTE_TYPE.cardTitle}>{service.label}</span>
+                                                                        <span className="shrink-0 font-sans text-[12.5px] font-semibold tabular-nums">
+                                                                            {formatRange(service.min, service.max)}
+                                                                        </span>
+                                                                    </span>
+                                    <span className={`mt-2 block font-sans text-[11px] leading-[1.5] lg:mt-1 lg:text-[11.5px] ${t.muted}`}>{service.text}</span>
+                                                                </span>
+                                                            </button>
+
+                                                            {service.hasSeverity && checked && (
+                                                                <div className={`border-t px-4 py-3.5 ${t.hairline}`}>
+                                                                    <span className={`${QUOTE_TYPE.micro} font-medium ${t.muted}`}>Sévérité des défauts</span>
+                                                                    <div
+                                                                        role="radiogroup"
+                                                                        aria-label="Sévérité des défauts"
+                                                                        className={`mt-2 inline-flex max-w-full flex-wrap rounded-full p-1 ${darkMode ? 'bg-white/[0.06]' : 'bg-[#ece6de]'}`}
+                                                                    >
+                                                                        {severityOptions.map(option => {
+                                                                            const isActive = fields.severity === option;
+                                                                            return (
+                                                                                <button
+                                                                                    key={option}
+                                                                                    type="button"
+                                                                                    role="radio"
+                                                                                    aria-checked={isActive}
+                                                                                    onClick={() => updateField('severity', option)}
+                                                                                    className={`rounded-full px-3 py-1.5 font-sans text-[11.5px] font-semibold lg:px-3.5 lg:text-[12px] ${QUOTE_EASE} ${t.focusRing} ${isActive ? (darkMode ? 'bg-[#D9B58D] text-[#171411]' : 'bg-white text-[#1c1917] shadow-[0_1px_3px_rgba(28,25,23,0.10)]') : t.muted}`}
+                                                                                >
+                                                                                    {option}
+                                                                                </button>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </section>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* 6 — COORDONNEES */}
+                        {step === 5 && (
+                            <div className="grid items-stretch gap-6 lg:grid-cols-2 lg:gap-8">
+                                <div className="grid gap-4 min-[520px]:grid-cols-2">
+                                    {[
+                                        ['firstname', 'Prénom', 'Votre prénom', 'text', true, 'given-name'],
+                                        ['lastname', 'Nom', 'Votre nom', 'text', false, 'family-name'],
+                                        ['email', 'Email', 'votre@email.com', 'email', true, 'email'],
+                                        ['phone', 'Téléphone', '06 12 34 56 78', 'tel', true, 'tel']
+                                    ].map(([name, label, placeholder, type, required, autoComplete]) => (
+                                        <label key={name} className="block">
+                                            <span className={QUOTE_TYPE.label}>
+                                                {label}
+                                                {required ? <span className={t.accent}> *</span> : null}
+                                            </span>
+                                            <input
+                                                type={type}
+                                                autoComplete={autoComplete}
+                                                value={fields[name]}
+                                                onChange={(event) => updateField(name, event.target.value)}
+                                                placeholder={placeholder}
+                                                aria-invalid={errors[name] ? 'true' : undefined}
+                                                className={inputClass(name)}
+                                            />
+                                            <span
+                                                aria-hidden={errors[name] ? undefined : 'true'}
+                                                className={`mt-1.5 block min-h-[18px] font-sans text-[11.5px] font-medium ${errors[name] ? (darkMode ? 'text-red-300' : 'text-red-600') : 'invisible'}`}
+                                            >
+                                                {errors[name] || 'Aucune erreur'}
+                                            </span>
+                                        </label>
+                                    ))}
+
+                                    <label className="block min-[520px]:col-span-2">
+                                        <span className={QUOTE_TYPE.label}>Localisation du meuble</span>
+                                        <input
+                                            autoComplete="address-level2"
+                                            value={fields.location}
+                                            onChange={(event) => updateField('location', event.target.value)}
+                                            placeholder="Ville ou code postal"
+                                            className={inputClass('location')}
+                                        />
+                                    </label>
+                                </div>
+
+                                <label className="block lg:flex lg:h-full lg:flex-col">
+                                    <span className={QUOTE_TYPE.label}>
+                                        Précisions complémentaires <span className="font-normal opacity-60">(facultatif)</span>
+                                    </span>
+                                    <textarea
+                                        rows={3}
+                                        value={fields.notes}
+                                        onChange={(event) => updateField('notes', event.target.value)}
+                                        placeholder="Contraintes d'accès, délais souhaités, histoire du meuble…"
+                                    className={`mt-2.5 min-h-[120px] w-full resize-none ${QUOTE_RADIUS_FIELD} p-3.5 font-sans text-[13.5px] leading-[1.6] outline-none transition-[box-shadow,background-color] duration-300 lg:min-h-0 lg:flex-1 lg:p-4 lg:text-[14px] ${t.field}`}
+                                    />
+                                </label>
+                            </div>
+                        )}
+
+                        {/* 7 — ESTIMATION FINALE */}
+                        {step === ESTIMATE_STEP_INDEX && (
+                            <div className={`grid gap-6 min-[560px]:grid-cols-2 lg:grid-cols-3 lg:gap-0 lg:divide-x ${t.divide}`}>
+                                <div className="lg:pr-9">
+                                    <p className={`font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] ${t.muted}`}>
+                                        Fourchette estimée
+                                    </p>
+                                    <p
+                                        key={`${estimate.min}-${estimate.max}`}
+                                        className={`quote-value mt-2.5 ${QUOTE_TYPE.price}`}
+                                        aria-live="polite"
+                                    >
+                                        {selectedServiceList.length ? formatRange(estimate.min, estimate.max) : 'Sur devis'}
+                                    </p>
+                                    <p className={`mt-3 font-sans text-[13px] font-medium ${t.muted}`}>
+                                        Délai estimé : 2 à 4 semaines
+                                    </p>
+                                    <ul className="mt-4 space-y-2 lg:mt-6">
+                                        {reassurance.map(item => (
+                                            <li key={item} className="flex items-center gap-2.5">
+                                                <Check size={13} strokeWidth={2.4} className={t.accent} />
+                                                <span className={`${QUOTE_TYPE.meta} ${t.muted}`}>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <div className={`border-t pt-6 min-[560px]:border-t-0 min-[560px]:pt-0 lg:px-9 ${t.hairline}`}>
+                                    <p className={`font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] ${t.muted}`}>
+                                        Détail des prestations
+                                    </p>
+                                    {selectedServiceList.length > 0 ? (
+                                        <>
+                                            <ul className="mt-4 space-y-2.5">
+                                                {selectedServiceList.map(service => (
+                                                    <li key={service.id} className="flex items-baseline justify-between gap-4">
+                                                        <span className={`${QUOTE_TYPE.meta} ${t.muted}`}>{service.label}</span>
+                                                        <span className="shrink-0 font-sans text-[12.5px] font-semibold tabular-nums">
+                                                            {formatRange(service.min, service.max)}
+                                                        </span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                            <div className={`mt-4 flex items-baseline justify-between gap-4 border-t pt-4 ${t.hairline}`}>
+                                                <span className="font-sans text-[13px] font-semibold">Total estimatif</span>
+                                                <span className="font-sans text-[13px] font-semibold tabular-nums">
+                                                    {formatRange(estimate.min, estimate.max)}
+                                                </span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <p className={`mt-4 ${QUOTE_TYPE.meta} ${t.muted}`}>
+                                            Aucune prestation sélectionnée. Anaïs précisera la proposition après étude de votre meuble.
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className={`border-t pt-6 min-[560px]:col-span-2 lg:col-span-1 lg:border-t-0 lg:pl-9 lg:pt-0 ${t.hairline}`}>
+                                    <p className={`font-sans text-[10.5px] font-semibold uppercase tracking-[0.16em] ${t.muted}`}>
+                                        Votre demande
+                                    </p>
+                                    <dl className="mt-4 space-y-3">
+                                        {[
+                                            ['Meuble', selectedTypeLabel],
+                                            ['État', fields.condition || 'À préciser'],
+                                            ['Photos', photoPreviews.length ? `${photoPreviews.length} ajoutée${photoPreviews.length > 1 ? 's' : ''}` : 'Aucune'],
+                                            ['Contact', fields.firstname]
+                                        ].map(([label, value]) => (
+                                            <div key={label} className="flex items-baseline justify-between gap-4">
+                                                <dt className={`${QUOTE_TYPE.meta} ${t.muted}`}>{label}</dt>
+                                                <dd className="text-right font-sans text-[12.5px] font-semibold">{value}</dd>
+                                            </div>
+                                        ))}
+                                    </dl>
+                                    <p className={`mt-5 border-t pt-4 ${QUOTE_TYPE.micro} ${t.hairline} ${t.faint}`}>
+                                        Fourchette indicative. Le devis final est établi par Anaïs après étude de vos informations et de vos photos.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* navigation desktop */}
+                    <div className={`mt-auto hidden items-center justify-between gap-4 border-t pt-7 lg:flex ${t.hairline}`}>
+                        <button
+                            type="button"
+                            onClick={() => goToStep(step - 1)}
+                            disabled={step === 0}
+                            className={`inline-flex ${QUOTE_CONTROL_HEIGHT} items-center gap-2.5 rounded-full px-6 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.98] disabled:pointer-events-none disabled:opacity-0 ${t.ghostBtn} ${t.focusRing}`}
+                        >
+                            <ArrowLeft size={16} />
+                            Retour
+                        </button>
+
+                        <button
+                            type={isLastStep ? 'submit' : 'button'}
+                            onClick={isLastStep ? undefined : step === CONTACT_STEP_INDEX ? showEstimate : () => goToStep(step + 1)}
+                            className={`group inline-flex ${QUOTE_CONTROL_HEIGHT} items-center gap-3 rounded-full pl-7 pr-2 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.98] ${t.primaryBtn} ${t.focusRing}`}
+                        >
+                            {isLastStep ? 'Envoyer ma demande' : step === CONTACT_STEP_INDEX ? 'Voir mon estimation' : 'Continuer'}
+                            <span className={`flex h-9 w-9 items-center justify-center rounded-full ${QUOTE_EASE} group-hover:translate-x-0.5 ${darkMode ? 'bg-black/10' : 'bg-white/15'}`}>
+                                <ArrowRight size={16} />
+                            </span>
+                        </button>
+                    </div>
                 </div>
-        </form>
+
+                {/* barre d'action sticky mobile */}
+                <div
+                    className={`quote-action-bar fixed inset-x-0 bottom-0 z-[190] border-t px-5 pt-3 backdrop-blur-xl lg:hidden ${t.hairline} ${t.barBg}`}
+                >
+                    <div className="quote-action-bar-inner mx-auto flex max-w-[640px] items-center gap-4">
+                        {step > 0 ? (
+                            <button
+                                type="button"
+                                onClick={() => goToStep(step - 1)}
+                                aria-label="Étape précédente"
+                                className={`flex ${QUOTE_CONTROL_HEIGHT} w-[52px] shrink-0 items-center justify-center rounded-full ${QUOTE_EASE} active:scale-[0.96] ${t.ghostBtn} ${t.focusRing}`}
+                            >
+                                <ArrowLeft size={17} />
+                            </button>
+                        ) : null}
+
+                        <div className="min-w-0 flex-1">
+                            <p className={`font-sans text-[10px] font-semibold uppercase tracking-[0.14em] ${t.faint}`}>
+                                Étape {step + 1} / {steps.length}
+                            </p>
+                            <p className="truncate font-sans text-[14px] font-semibold">{activeStep.label}</p>
+                        </div>
+
+                        <button
+                            type={isLastStep ? 'submit' : 'button'}
+                            onClick={isLastStep ? undefined : step === CONTACT_STEP_INDEX ? showEstimate : () => goToStep(step + 1)}
+                            className={`inline-flex ${QUOTE_CONTROL_HEIGHT} shrink-0 items-center gap-2 rounded-full px-6 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.97] ${t.primaryBtn} ${t.focusRing}`}
+                        >
+                            {isLastStep ? 'Envoyer' : step === CONTACT_STEP_INDEX ? "Voir l'estimation" : 'Continuer'}
+                            <ArrowRight size={15} />
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
     );
 };
 

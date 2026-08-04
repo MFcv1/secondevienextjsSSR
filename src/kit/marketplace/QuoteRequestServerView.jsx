@@ -1,13 +1,16 @@
-import {
-    ClipboardCheck,
-    ShieldCheck,
-    Sparkles,
-} from 'lucide-react';
 import quoteRestorationHero from '../../assets/quote-restoration-hero.webp';
 import ArchitecturalHeaderServer from './ArchitecturalHeaderServer';
 import PageBreadcrumb from './PageBreadcrumb';
 import QuoteFormDeferredIsland from './QuoteFormDeferredIsland';
 import QuoteFormSsrShell from './QuoteFormSsrShell';
+import {
+    QUOTE_EASE,
+    QUOTE_SHELL,
+    QUOTE_STEP_PADDING,
+    QUOTE_STEP_RADIUS,
+    QUOTE_TYPE,
+    quoteTokens,
+} from './quoteTheme';
 
 const quoteRestorationHeroSrc = typeof quoteRestorationHero === 'string'
     ? quoteRestorationHero
@@ -20,102 +23,139 @@ const processSteps = [
     },
     {
         title: 'Nous analysons votre projet',
-        text: 'Sous 48h, Anais etudie votre meuble.',
+        text: 'Sous 48h, Anaïs étudie votre meuble.',
     },
     {
-        title: 'Devis personnalise sous 48h',
-        text: 'Vous recevez un devis detaille et sans engagement.',
+        title: 'Devis personnalisé sous 48h',
+        text: 'Vous recevez un devis détaillé et sans engagement.',
     },
     {
         title: 'Restauration & livraison',
-        text: 'Votre meuble est restaure avec soin et livre chez vous.',
+        text: 'Votre meuble est restauré avec soin et livré chez vous.',
     },
 ];
 
-const proofItems = [
-    { icon: ClipboardCheck, text: 'Devis personnalise sous 48h' },
-    { icon: Sparkles, text: 'Artisanat francais & eco-responsable' },
-    { icon: ShieldCheck, text: 'Un accompagnement sur-mesure' },
+const heroSpecs = [
+    { value: '48 h', label: 'Réponse au devis' },
+    { value: 'Gratuit', label: 'Sans engagement' },
+    { value: 'Atelier', label: 'Artisanat français' },
 ];
 
-const QuoteHero = ({ darkMode = false } = {}) => (
-    <section className="relative overflow-hidden h-[calc(100dvh-92px)] lg:h-auto lg:min-h-[540px]">
-        <div className={`absolute inset-0 ${darkMode ? 'bg-[#12100d]' : 'bg-[#f4eee5]'}`} />
-        <div className="absolute inset-y-0 right-0 hidden w-[56%] lg:block">
-            <img
-                src={quoteRestorationHeroSrc}
-                alt="Meuble ancien en restauration dans un atelier artisanal"
-                className="h-full w-full object-cover object-bottom"
-            />
-            <div className={`absolute inset-0 ${darkMode ? 'bg-gradient-to-r from-[#12100d] via-[#12100d]/62 to-transparent' : 'bg-gradient-to-r from-[#f4eee5] via-[#f4eee5]/38 to-transparent'}`} />
-        </div>
-        <div className={`absolute inset-0 opacity-80 ${darkMode ? 'bg-[radial-gradient(circle_at_18%_20%,rgba(166,138,100,0.16),transparent_32%),linear-gradient(90deg,rgba(0,0,0,0.58),transparent_58%)]' : 'bg-[radial-gradient(circle_at_18%_20%,rgba(166,138,100,0.18),transparent_32%),linear-gradient(90deg,rgba(255,255,255,0.62),transparent_58%)]'}`} />
+const QuoteHero = ({ darkMode = false } = {}) => {
+    const t = quoteTokens(darkMode);
 
-        <div className="relative mx-auto flex flex-col justify-start max-w-[1480px] px-4 pt-3.5 pb-7 sm:px-6 md:pt-6 md:pb-9 h-full lg:h-auto lg:min-h-[540px] lg:px-10 xl:min-h-[560px] xl:px-16">
-            <div className="w-full mb-4">
-                <PageBreadcrumb current="Devis" darkMode={darkMode} />
-            </div>
-
-            <div className="flex max-w-[540px] flex-col py-3 md:py-5">
-                <h1 className="max-w-[500px] font-serif text-[clamp(2.35rem,5vw,3.75rem)] leading-[0.98] tracking-normal">
-                    Demandez un devis de restauration
-                </h1>
-                <p className={`mt-5 max-w-[33rem] font-sans text-[13px] leading-[1.65] md:text-[16px] ${darkMode ? 'text-stone-300' : 'text-[#3f3933]'}`}>
-                    Vous avez un meuble à restaurer ?
-                </p>
-                <p className={`mt-2.5 max-w-[33rem] font-sans text-[13px] leading-[1.65] md:text-[16px] ${darkMode ? 'text-stone-300' : 'text-[#3f3933]'}`}>
-                    Anaïs vous accompagne pour lui offrir une seconde vie.
-                </p>
-                <div className="mt-5 grid gap-3 font-sans text-[12px] font-semibold sm:grid-cols-3 lg:grid-cols-1">
-                    {proofItems.map(({ icon: Icon, text }) => (
-                        <div key={text} className="flex items-center gap-3">
-                            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-1 ${darkMode ? 'bg-white/10 ring-white/10' : 'bg-white/70 ring-[#d8c7b5]'}`}>
-                                <Icon size={16} strokeWidth={1.45} />
-                            </span>
-                            <span>{text}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-            <div className={`mt-4 flex-1 min-h-[140px] overflow-hidden rounded-[18px] ring-1 sm:h-[280px] sm:flex-none lg:hidden ${darkMode ? 'ring-white/10' : 'ring-black/5'}`}>
+    return (
+        <section className="relative overflow-hidden">
+            <div className={`absolute inset-0 ${t.heroBg}`} />
+            <div className="absolute inset-y-0 right-0 hidden w-[48%] lg:block">
                 <img
                     src={quoteRestorationHeroSrc}
-                    alt="Meuble ancien en restauration"
+                    alt="Meuble ancien en restauration dans un atelier artisanal"
                     className="h-full w-full object-cover object-bottom"
                 />
+                <div className={`absolute inset-0 bg-gradient-to-r ${darkMode ? 'from-[#100e0c] via-[#100e0c]/70 to-transparent' : 'from-[#f4f1ec] via-[#f4f1ec]/45 to-transparent'}`} />
             </div>
-        </div>
-    </section>
-);
 
-const QuoteProcessSection = ({ darkMode = false } = {}) => (
-    <section className="mx-auto max-w-[1480px] px-4 pb-4 sm:px-6 lg:px-10 xl:px-16">
-        <div className={`rounded-[8px] p-5 ring-1 sm:p-6 ${darkMode ? 'bg-white/[0.045] ring-white/10' : 'bg-white/72 ring-[#eee7df]'}`}>
-            <h2 className="font-serif text-2xl leading-tight">Comment ca se passe ?</h2>
-            <div className="mt-6 grid gap-5 md:grid-cols-4">
-                {processSteps.map((step, index) => (
-                    <div key={step.title} className="relative flex gap-4 md:block">
-                        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-serif text-xl ring-1 ${darkMode ? 'bg-white/10 ring-white/12' : 'bg-white ring-[#d7c7b6]'}`}>
-                            {index + 1}
-                        </div>
-                        <div className={index < processSteps.length - 1 ? `md:after:absolute md:after:left-[3.25rem] md:after:top-[1.35rem] md:after:h-px md:after:w-[calc(100%-3rem)] ${darkMode ? 'md:after:bg-white/12' : 'md:after:bg-[#d7c7b6]'}` : ''}>
-                            <h3 className="mt-1 font-sans text-[13px] font-bold md:mt-5">{step.title}</h3>
-                            <p className={`mt-2 font-sans text-[12px] leading-relaxed ${darkMode ? 'text-stone-400' : 'text-[#6e655d]'}`}>{step.text}</p>
-                        </div>
+            <div className={`relative ${QUOTE_SHELL} pb-11 pt-4 lg:min-h-[560px] lg:pb-16 lg:pt-6`}>
+                <PageBreadcrumb current="Devis" darkMode={darkMode} />
+
+                <div className="mt-7 max-w-[36rem] lg:mt-11">
+                    <p className={`${QUOTE_TYPE.eyebrow} ${t.accent}`}>
+                        Restauration de meubles anciens
+                    </p>
+                    <h1 className={`quote-balance mt-4 max-w-[20ch] ${QUOTE_TYPE.display}`}>
+                        Demandez un devis de restauration
+                    </h1>
+                    <p className={`mt-5 max-w-[34rem] font-sans text-[14.5px] leading-[1.65] md:text-[15.5px] ${darkMode ? 'text-stone-300' : 'text-[#4a443d]'}`}>
+                        Décrivez votre meuble en quelques étapes. Anaïs étudie votre projet
+                        et vous répond avec un devis détaillé, sans engagement.
+                    </p>
+
+                    <dl className={`mt-9 grid grid-cols-3 border-t pt-6 ${t.hairline}`}>
+                        {heroSpecs.map(({ value, label }, index) => (
+                            <div
+                                key={label}
+                                className={index > 0 ? `border-l pl-4 sm:pl-6 ${t.hairline}` : 'pr-4'}
+                            >
+                                <dt className="font-serif text-[1.35rem] leading-none tracking-[-0.01em] sm:text-[1.5rem]">
+                                    {value}
+                                </dt>
+                                <dd className={`mt-2 font-sans text-[10.5px] font-medium uppercase leading-[1.3] tracking-[0.1em] ${t.faint}`}>
+                                    {label}
+                                </dd>
+                            </div>
+                        ))}
+                    </dl>
+
+                    <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <a
+                            href="#demande-de-devis"
+                            className={`group inline-flex h-[54px] items-center justify-center gap-3 rounded-full pl-7 pr-2 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.98] ${t.primaryBtn} ${t.focusRing}`}
+                        >
+                            Commencer ma demande
+                            <span className={`flex h-9 w-9 items-center justify-center rounded-full ${QUOTE_EASE} group-hover:translate-x-0.5 ${darkMode ? 'bg-black/10' : 'bg-white/15'}`}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                    <path d="M5 12h14" />
+                                    <path d="m13 6 6 6-6 6" />
+                                </svg>
+                            </span>
+                        </a>
+                        <a
+                            href="tel:+33612345678"
+                            className={`inline-flex h-[54px] items-center justify-center rounded-full px-7 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.98] ${t.ghostBtn} ${t.focusRing}`}
+                        >
+                            Parler à Anaïs
+                        </a>
                     </div>
-                ))}
+                </div>
             </div>
-        </div>
-    </section>
-);
+        </section>
+    );
+};
+
+const QuoteProcessSection = ({ darkMode = false } = {}) => {
+    const t = quoteTokens(darkMode);
+
+    return (
+        <section className={`${QUOTE_SHELL} quote-process-section pt-7 lg:pt-0`}>
+            <div className={`${QUOTE_STEP_RADIUS} ${QUOTE_STEP_PADDING} ${t.stepPanel}`}>
+                <p className={`${QUOTE_TYPE.eyebrow} ${t.accent}`}>Le parcours</p>
+                <h2 className={`quote-balance mt-3 max-w-[22ch] ${QUOTE_TYPE.section}`}>
+                    Comment ça se passe ?
+                </h2>
+
+                <ol className="mt-8 grid grid-cols-2 gap-x-5 gap-y-9 sm:gap-x-8 lg:mt-9 lg:grid-cols-4 lg:gap-x-6 lg:gap-y-8">
+                    {processSteps.map((step, index) => (
+                        <li
+                            key={step.title}
+                            className={`min-w-0 ${index > 0 ? `lg:border-l lg:pl-6 ${t.hairline}` : ''}`}
+                        >
+                            <span className={`font-serif text-[1.35rem] leading-none tracking-[-0.01em] lg:text-[1.6rem] ${darkMode ? 'text-white/25' : 'text-[#c9beb0]'}`}>
+                                {String(index + 1).padStart(2, '0')}
+                            </span>
+                            <h3 className={`mt-3 text-pretty ${QUOTE_TYPE.cardTitle} lg:mt-4`}>{step.title}</h3>
+                            <p className={`mt-1.5 max-w-[26ch] ${QUOTE_TYPE.meta} ${t.muted} lg:mt-2`}>
+                                {step.text}
+                            </p>
+                        </li>
+                    ))}
+                </ol>
+            </div>
+        </section>
+    );
+};
 
 export default function QuoteRequestServerView({ darkMode = false } = {}) {
+    const t = quoteTokens(darkMode);
+
     return (
-        <main data-ssr-quote="true" className={`overflow-x-hidden ${darkMode ? 'bg-[#0A0A0A] text-stone-100' : 'bg-[#fbfaf7] text-[#1f1b17]'}`}>
+        <main data-ssr-quote="true" className={`quote-surface overflow-x-hidden ${t.surface}`}>
             <ArchitecturalHeaderServer darkMode={darkMode} />
             <QuoteHero darkMode={darkMode} />
-            <QuoteFormSsrShell darkMode={darkMode} />
-            <QuoteFormDeferredIsland initialDarkMode={darkMode} />
+            <div id="demande-de-devis" className="quote-anchor">
+                <QuoteFormSsrShell darkMode={darkMode} />
+                <QuoteFormDeferredIsland initialDarkMode={darkMode} />
+            </div>
             <QuoteProcessSection darkMode={darkMode} />
         </main>
     );

@@ -66,6 +66,28 @@ Le contrat statique est verifie par `npm run mobile:contract`; le comportement v
 home/galerie -> categorie ou recherche -> produit -> wishlist/panier/devis
 ```
 
+Le parcours `/devis` est un assistant à colonne unique en sept étapes. L'estimation
+indicative constitue la dernière étape, après la saisie et la validation des
+coordonnées; elle ne reste pas affichée sous les étapes précédentes. Le bouton
+d'envoi réel apparaît uniquement sur cet écran final. Sous le breakpoint desktop,
+les étapes utilisent le scroll naturel du document, sans hauteur fixe, sans
+conteneur interne défilant et sans panneau décoratif imbriqué. La progression
+reste collante en haut et les actions retour/suivant restent fixes en bas. Le
+lanceur d'aide WhatsApp est masqué sur `/devis` mobile pour ne pas concurrencer
+ces actions. Le bloc `Le parcours` prolonge l'assistant sans panneau sur mobile,
+présente ses quatre étapes en grille 2 x 2 et réserve une marge basse suffisante
+pour ne jamais être masqué par la barre d'actions. L'étape meuble conserve sur
+mobile une galerie portrait compacte 2 x 3, bornée à 430 px et au ratio 5:6 afin
+de garder de la profondeur sans surdimensionner les cartes. Entre 520 et 560 px, les autres
+grilles — états, coordonnées et estimation — gagnent une colonne
+intermédiaire afin d'éviter des cartes surdimensionnées avant le breakpoint
+desktop; les contrôles mobiles restent compacts sans modifier les dimensions
+qualifiées sur laptop et desktop. Les prestations restent en pleine largeur
+jusqu'au desktop pour préserver les intitulés, les prix et les descriptions;
+leurs cartes mobiles gardent une hauteur compacte et un corps descriptif plus
+petit; la zone texte répartit la ligne titre/prix et la description avec un
+écart mesuré, sans vide résiduel.
+
 ### Acheteur
 
 ```text
