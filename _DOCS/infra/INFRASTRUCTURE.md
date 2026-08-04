@@ -57,7 +57,27 @@ Qualification locale du 2026-08-04 sous Node 22.22.3:
   valides;
 - smoke du serveur final: `/`, `/a-propos`, `/admin` et `/robots.txt` en 200,
   revalidation catalogue sans authentification refusee en 401;
-- aucun deploiement cloud effectue; le rollout sandbox reste la prochaine gate.
+- qualification locale fermee avant le premier rollout sandbox Next 16.3.
+
+Rollout Next.js 16.3 sandbox du 2026-08-04:
+
+- source locale commit `072aed2` (`chore: migrer vers Next.js 16.3`), Node 22;
+- App Hosting build `build-2026-08-04-003` `READY`, rollout du meme nom
+  `SUCCEEDED` a 11:53:00 UTC;
+- URL active:
+  `https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app`;
+- `deploymentId` servi: `sv-mseljeam-4fd6db9da896`, identique dans
+  `data-dpl-id`, les assets `?dpl=` et `x-nextjs-deployment-id` sur navigation
+  RSC;
+- `/`, `/galerie`, `/a-propos`, `/devis`, `/recherche`, `/admin`, `/checkout`,
+  `/mes-commandes`, `/wishlist`, `/robots.txt`, `/sitemap.xml` et
+  `/api/catalog/version` en HTTP 200;
+- routes publiques en `s-maxage=300`, tunnels prives en `no-store`, catalogue
+  revision 227 et routes categorie/produit en HTTP 200;
+- rollback App Hosting de reference: build precedent `build-2026-08-04-002`;
+- le push de `072aed2` vers `origin/main` a ete refuse par la protection locale:
+  le sandbox est donc temporairement en avance sur le depot distant et aucun
+  redeploiement depuis Git ne doit etre lance avant synchronisation explicite.
 
 Serveur local accessible sur le reseau:
 
