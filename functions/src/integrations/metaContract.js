@@ -235,6 +235,18 @@ function publicInstagramConnectionState(data = {}) {
     };
 }
 
+function normalizeInstagramProfileResponse(payload = {}, expectedUserId = '') {
+    const profile = Array.isArray(payload.data) ? payload.data[0] : payload;
+    const instagramUserId = String(profile?.user_id || profile?.id || expectedUserId || '');
+    if (!instagramUserId || (expectedUserId && instagramUserId !== String(expectedUserId))) {
+        throw new Error('INSTAGRAM_PROFILE_MISMATCH');
+    }
+    return {
+        instagramUserId,
+        instagramUsername: String(profile?.username || '').slice(0, 180)
+    };
+}
+
 function safeErrorCode(error) {
     const graphCode = Number(error?.graphCode || error?.details?.graphCode || error?.details?.code);
     if ([10, 100, 190, 200, 368].includes(graphCode)) return `meta_${graphCode}`;
@@ -259,6 +271,7 @@ module.exports = {
     encryptToken,
     normalizeCommandId,
     normalizeHashtags,
+    normalizeInstagramProfileResponse,
     normalizeMediaUrls,
     normalizeTargets,
     parseAndVerifyOAuthState,

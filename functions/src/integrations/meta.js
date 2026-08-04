@@ -37,6 +37,7 @@ const {
     encryptToken,
     normalizeCommandId,
     normalizeHashtags,
+    normalizeInstagramProfileResponse,
     normalizeMediaUrls,
     normalizeTargets,
     parseAndVerifyOAuthState,
@@ -441,16 +442,9 @@ async function fetchInstagramProfile(token, expectedUserId = '') {
     const profile = await graphRequest('me', {
         host: 'graph.instagram.com',
         token,
-        params: { fields: 'id,username,user_type' }
+        params: { fields: 'user_id,username' }
     });
-    const instagramUserId = String(profile.id || expectedUserId || '');
-    if (!instagramUserId || (expectedUserId && instagramUserId !== String(expectedUserId))) {
-        throw new Error('INSTAGRAM_PROFILE_MISMATCH');
-    }
-    return {
-        instagramUserId,
-        instagramUsername: String(profile.username || '').slice(0, 180)
-    };
+    return normalizeInstagramProfileResponse(profile, expectedUserId);
 }
 
 async function startInstagramOAuthHandler(data, context) {

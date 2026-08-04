@@ -129,6 +129,13 @@ Les destinations sont validees independamment: Instagram exige une connexion
 Instagram directe ou liee a Facebook; Facebook exige une Page connectee. Les
 projections renvoyees au navigateur n'exposent ni ID distant ni jeton chiffre.
 
+Le profil renvoye par l'API Instagram Login est lu selon son enveloppe
+`data[]` et ses champs `user_id,username`. Apres le callback, le controle garde
+un etat de synchronisation jusqu'a la confirmation serveur. Il distingue
+explicitement `Connecte`, `Via Facebook` et `Non connecte`; le bouton generique
+`Connecter` devient `Connecter en direct` lorsque seul le fallback Facebook est
+actif, puis disparait des que la connexion Instagram directe est confirmee.
+
 ## 4. Personnalisation
 
 `AdminHomepage` ecrit des documents `sys_metadata` pour hero, images, textes et sections. Chaque nouveau bloc personnalisable doit avoir:

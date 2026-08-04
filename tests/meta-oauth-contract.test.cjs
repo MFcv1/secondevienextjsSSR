@@ -10,6 +10,7 @@ const {
     decryptToken,
     encryptToken,
     normalizeHashtags,
+    normalizeInstagramProfileResponse,
     normalizeMediaUrls,
     normalizeTargets,
     parseAndVerifyOAuthState,
@@ -125,4 +126,25 @@ test('Direct Instagram connection projection exposes only safe account metadata'
     assert.deepEqual(state.scopes, ['instagram_business_basic']);
     assert.equal('instagramUserId' in state, false);
     assert.equal('instagramAccessToken' in state, false);
+});
+
+test('Instagram Login profile normalizes the current data envelope', () => {
+    assert.deepEqual(normalizeInstagramProfileResponse({
+        data: [{ user_id: '17841400000000000', username: 'xori_on' }]
+    }, '17841400000000000'), {
+        instagramUserId: '17841400000000000',
+        instagramUsername: 'xori_on'
+    });
+
+    assert.deepEqual(normalizeInstagramProfileResponse({
+        id: 'legacy-id',
+        username: 'legacy_account'
+    }), {
+        instagramUserId: 'legacy-id',
+        instagramUsername: 'legacy_account'
+    });
+
+    assert.throws(() => normalizeInstagramProfileResponse({
+        data: [{ user_id: 'other-id', username: 'xori_on' }]
+    }, 'expected-id'), /INSTAGRAM_PROFILE_MISMATCH/);
 });
