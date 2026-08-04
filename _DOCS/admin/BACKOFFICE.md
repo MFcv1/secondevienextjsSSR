@@ -140,6 +140,9 @@ premier echange de token ne doit pas lui etre compare comme une identite
 publique. La fermeture du popup conserve une fenetre de grace de 18 secondes
 pour laisser le callback terminer avant d'afficher un echec.
 
+La configuration Meta/Firebase, la recette et le diagnostic OAuth sont
+centralises dans [INSTAGRAM_OAUTH_RUNBOOK.md](INSTAGRAM_OAUTH_RUNBOOK.md).
+
 ## 4. Personnalisation
 
 `AdminHomepage` ecrit des documents `sys_metadata` pour hero, images, textes et sections. Chaque nouveau bloc personnalisable doit avoir:

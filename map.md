@@ -1,6 +1,6 @@
 # Cartographie du projet Seconde Vie Next
 
-Derniere verification: 2026-08-01
+Derniere verification: 2026-08-04
 Statut: `CARTE_CANONIQUE_ACTIVE`
 
 ## 1. Role et maintenance
@@ -108,6 +108,9 @@ route publique [S]
   -> preuve /api/catalog/version + HTML versionne
   -> sys_catalog_live/current [DB] -> onglets visibles -> router.refresh
 ```
+
+Connexion et exploitation sociales:
+`_DOCS/admin/INSTAGRAM_OAUTH_RUNBOOK.md`.
 
 ### 4.3 Authentification
 
