@@ -1,6 +1,6 @@
 # Back-office
 
-Derniere mise a jour: 2026-08-02
+Derniere mise a jour: 2026-08-04
 Statut: `PREPROD_READY`
 
 Etat actif:
@@ -109,6 +109,25 @@ Apres mutation:
 - `onCatalogSourceWrite` enregistre la revision et construit le snapshot;
 - la task HMAC rafraichit les routes ISR;
 - les erreurs partielles doivent rester visibles et reprenables.
+
+### 3.1 Publication Instagram directe et Facebook optionnel
+
+`MetaConnectionControl` donne la priorite a la connexion professionnelle
+Instagram. Le popup officiel Instagram demande les identifiants au fournisseur,
+jamais au back-office. Un compte Instagram Business ou Creator peut donc
+autoriser la publication sans compte ni Page Facebook. Le serveur conserve le
+jeton long terme chiffre dans `sys_meta_connections/instagram_direct`.
+
+Facebook reste un rail distinct et facultatif dans
+`sys_meta_connections/default`. Il est ajoute uniquement lorsque la Page doit
+elle aussi recevoir la publication. Pour Instagram, la saga prefere toujours
+la connexion directe et conserve l'ancien compte Instagram lie a une Page
+comme fallback de compatibilite. Le choix du fournisseur est fige lors de la
+preparation afin qu'une reprise ne change pas silencieusement d'identite.
+
+Les destinations sont validees independamment: Instagram exige une connexion
+Instagram directe ou liee a Facebook; Facebook exige une Page connectee. Les
+projections renvoyees au navigateur n'exposent ni ID distant ni jeton chiffre.
 
 ## 4. Personnalisation
 

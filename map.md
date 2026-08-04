@@ -552,6 +552,7 @@ src/kit/admin/
 |-- AdminDashboard.jsx ................ pilotage commerce, devis/tendances analytics bornes, miniatures du snapshot public, exports et maintenance rapide
 |-- AdminAnalytics.jsx ................ moteur Data canonique: UID/IP, live, parcours illustres, courbes
 |-- AdminForm.jsx ..................... creation/edition annonces
+|-- metaPublicationClient.js ......... callables OAuth Instagram direct, Facebook optionnel et saga sociale
 |-- AdminItemList.jsx ................. liste publications
 |-- GlobalInventoryView.jsx ........... vue catalogue/ordres
 |-- AdminStudio.jsx ................... studio contenu
@@ -579,6 +580,7 @@ src/kit/admin/
 `-- components/
     |-- AdminImageCard.jsx
     |-- ImageCropperModal.jsx
+    |-- MetaConnectionControl.jsx ..... connexion Instagram principale, Facebook facultatif et destinations
     `-- TextEditorModal.jsx
 ```
 
@@ -758,6 +760,7 @@ functions/
 | OTP/passkeys | `sendGuestCheckoutOtp`, `verifyGuestCheckoutOtp`, `sendCustomerLoginOtp`, `verifyCustomerLoginOtp`, quatre endpoints passkey |
 | onboarding facturation | `getBillingGuideStatus`, `saveBillingGuideProgress`, `getBillingGuideOperatorStatus`, `completeBillingGuideAdmin`, `resetBillingGuideTest` |
 | factures manuelles admin | `getManualInvoiceWorkspaceAdmin`, `saveManualInvoiceDraftAdmin`, `prepareManualInvoicePdfAdmin`, `sendManualInvoiceAdmin` |
+| publication sociale | `startInstagramOAuthAdmin`, `instagramOAuthCallback`, `getInstagramConnectionStatusAdmin`, `verifyInstagramConnectionAdmin`, `disconnectInstagramConnectionAdmin`; rail Facebook optionnel `startMetaOAuthAdmin`, `metaOAuthCallback`, `getMetaConnectionStatusAdmin`, `selectMetaAssetAdmin`, `verifyMetaConnectionAdmin`, `disconnectMetaConnectionAdmin`; saga `prepareSocialPublicationAdmin`, `runSocialPublicationAdmin`, `getSocialPublicationStatusAdmin` |
 | e-mail | `onOrderCreated`, `onOrderUpdated`, `sendTestEmail`, `sendRefundStatusEmailAdmin` |
 | analytics | `initLiveSession`, `syncSession`, `syncSessionBeacon`, `deleteSession`, `clearAllSessions`, `trackAdminIP`, `updateUserSessions` |
 | maintenance | resets/purges, `runGarbageCollector`, `getUploadUrl` |

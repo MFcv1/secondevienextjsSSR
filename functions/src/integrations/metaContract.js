@@ -3,6 +3,7 @@
 const crypto = require('crypto');
 
 const META_CONNECTION_ID = 'default';
+const INSTAGRAM_CONNECTION_ID = 'instagram_direct';
 const META_OAUTH_TTL_MS = 10 * 60 * 1000;
 const META_ASSET_CHOICE_TTL_MS = 15 * 60 * 1000;
 const META_PUBLICATION_LOCK_MS = 10 * 60 * 1000;
@@ -16,6 +17,10 @@ const META_OAUTH_SCOPES = Object.freeze([
     'instagram_basic',
     'instagram_content_publish',
     'business_management'
+]);
+const INSTAGRAM_OAUTH_SCOPES = Object.freeze([
+    'instagram_business_basic',
+    'instagram_business_content_publish'
 ]);
 
 function sha256(value) {
@@ -211,6 +216,25 @@ function publicConnectionState(data = {}) {
     };
 }
 
+function publicInstagramConnectionState(data = {}) {
+    const status = String(data.status || 'not_connected');
+    return {
+        connected: status === 'connected',
+        status,
+        provider: 'instagram_login',
+        instagramUsername: String(data.instagramUsername || ''),
+        instagramAvailable: Boolean(data.instagramUserId),
+        facebookAvailable: false,
+        scopes: Array.isArray(data.scopes)
+            ? data.scopes.filter((scope) => INSTAGRAM_OAUTH_SCOPES.includes(scope))
+            : [],
+        connectedAtMillis: timestampToMillis(data.connectedAt),
+        lastVerifiedAtMillis: timestampToMillis(data.lastVerifiedAt),
+        tokenExpiresAtMillis: timestampToMillis(data.tokenExpiresAt),
+        reauthorizationRequired: data.reauthorizationRequired === true
+    };
+}
+
 function safeErrorCode(error) {
     const graphCode = Number(error?.graphCode || error?.details?.graphCode || error?.details?.code);
     if ([10, 100, 190, 200, 368].includes(graphCode)) return `meta_${graphCode}`;
@@ -222,9 +246,11 @@ module.exports = {
     META_ASSET_CHOICE_TTL_MS,
     META_CAPTION_LIMIT,
     META_CONNECTION_ID,
+    INSTAGRAM_CONNECTION_ID,
     META_GRAPH_VERSION_DEFAULT,
     META_MEDIA_LIMIT,
     META_OAUTH_SCOPES,
+    INSTAGRAM_OAUTH_SCOPES,
     META_OAUTH_TTL_MS,
     META_PUBLICATION_LOCK_MS,
     buildSocialCaption,
@@ -237,6 +263,7 @@ module.exports = {
     normalizeTargets,
     parseAndVerifyOAuthState,
     publicConnectionState,
+    publicInstagramConnectionState,
     publicationDocumentId,
     safeErrorCode,
     sha256,

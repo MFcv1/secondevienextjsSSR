@@ -32,6 +32,13 @@ Toujours annoncer ce qui a ete lance et ce qui ne l'a pas ete.
 
 Une CI verte ne remplace pas les E2E Firebase/Stripe ni une recette visuelle.
 
+Le contrat OAuth social est couvert par
+`node --test tests/meta-oauth-contract.test.cjs`: state anti-rejeu,
+chiffrement authentifie, projection sans secret, normalisation medias/legende,
+destinations et idempotence. Une connexion ou
+une publication reelle reste une gate externe sandbox et ne doit jamais etre
+declenchee automatiquement par cette suite.
+
 ### 2.1 Restriction noyau commerce
 
 Etat `CODE_READY`:

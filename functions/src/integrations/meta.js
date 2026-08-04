@@ -17,10 +17,15 @@ const {
     META_APP_ID,
     META_APP_SECRET,
     META_OAUTH_REDIRECT_URI,
+    INSTAGRAM_APP_ID,
+    INSTAGRAM_APP_SECRET,
+    INSTAGRAM_OAUTH_REDIRECT_URI,
     META_TOKEN_ENCRYPTION_KEY
 } = require('../../helpers/secrets');
 const {
     META_ASSET_CHOICE_TTL_MS,
+    INSTAGRAM_CONNECTION_ID,
+    INSTAGRAM_OAUTH_SCOPES,
     META_CONNECTION_ID,
     META_GRAPH_VERSION_DEFAULT,
     META_OAUTH_SCOPES,
@@ -36,6 +41,7 @@ const {
     normalizeTargets,
     parseAndVerifyOAuthState,
     publicConnectionState,
+    publicInstagramConnectionState,
     publicationDocumentId,
     safeErrorCode,
     stablePayloadHash
@@ -48,6 +54,7 @@ const ASSET_CHOICE_COLLECTION = 'sys_meta_asset_choices';
 const PUBLICATION_COLLECTION = 'sys_social_publications';
 const META_AUDIT_COLLECTION = 'sys_audit_meta';
 const META_SECRETS = [META_APP_ID, META_APP_SECRET, META_OAUTH_REDIRECT_URI, META_TOKEN_ENCRYPTION_KEY];
+const INSTAGRAM_SECRETS = [INSTAGRAM_APP_ID, INSTAGRAM_APP_SECRET, INSTAGRAM_OAUTH_REDIRECT_URI, META_TOKEN_ENCRYPTION_KEY];
 const PUBLICATION_SECRETS = [META_TOKEN_ENCRYPTION_KEY];
 
 function secretValue(secret, envName) {
@@ -60,10 +67,10 @@ function serverTimestamp() {
     return admin.firestore.FieldValue.serverTimestamp();
 }
 
-function graphBaseUrl() {
+function graphBaseUrl(host = 'graph.facebook.com') {
     const version = String(process.env.META_GRAPH_VERSION || META_GRAPH_VERSION_DEFAULT).trim();
-    if (!/^v\d+\.\d+$/.test(version)) return `https://graph.facebook.com/${META_GRAPH_VERSION_DEFAULT}`;
-    return `https://graph.facebook.com/${version}`;
+    if (!/^v\d+\.\d+$/.test(version)) return `https://${host}/${META_GRAPH_VERSION_DEFAULT}`;
+    return `https://${host}/${version}`;
 }
 
 function graphError(status, payload) {
@@ -75,7 +82,7 @@ function graphError(status, payload) {
     return error;
 }
 
-async function graphRequest(path, { method = 'GET', token, params = {} } = {}) {
+async function graphRequest(path, { method = 'GET', token, params = {}, host = 'graph.facebook.com', versioned = true } = {}) {
     const cleanPath = String(path || '').replace(/^\/+/, '');
     if (!/^[A-Za-z0-9_.?=&/:-]+$/.test(cleanPath)) throw new Error('META_GRAPH_PATH_INVALID');
     const query = new URLSearchParams();
@@ -85,7 +92,8 @@ async function graphRequest(path, { method = 'GET', token, params = {} } = {}) {
         if (value !== undefined && value !== null && value !== '') target.set(key, String(value));
     }
     if (token) target.set('access_token', token);
-    const url = `${graphBaseUrl()}/${cleanPath}${query.size ? `?${query}` : ''}`;
+    const baseUrl = versioned ? graphBaseUrl(host) : `https://${host}`;
+    const url = `${baseUrl}/${cleanPath}${query.size ? `?${query}` : ''}`;
     const response = await fetch(url, {
         method,
         headers: method === 'GET' ? undefined : { 'content-type': 'application/x-www-form-urlencoded' },
@@ -159,16 +167,16 @@ function connectionDocument(candidate, encryptedPageToken, context) {
     };
 }
 
-function callbackHtml({ origin, status, message, nonce }) {
-    const safePayload = JSON.stringify({ source: 'seconde-vie-meta-oauth', status, message }).replace(/</g, '\\u003c');
+function callbackHtml({ origin, status, message, nonce, source = 'seconde-vie-meta-oauth', title = 'Connexion Meta' }) {
+    const safePayload = JSON.stringify({ source, status, message }).replace(/</g, '\\u003c');
     const safeOrigin = JSON.stringify(origin).replace(/</g, '\\u003c');
     const safeAdminUrl = JSON.stringify(`${origin}/admin`).replace(/</g, '\\u003c');
-    return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Connexion Meta</title></head><body><p>${status === 'connected' ? 'Connexion terminée. Cette fenêtre va se fermer.' : 'La connexion n’a pas abouti. Tu peux fermer cette fenêtre.'}</p><script nonce="${nonce}">if(window.opener){window.opener.postMessage(${safePayload},${safeOrigin});window.close();}else{window.location.replace(${safeAdminUrl});}</script></body></html>`;
+    return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title></head><body><p>${status === 'connected' ? 'Connexion terminée. Cette fenêtre va se fermer.' : 'La connexion n’a pas abouti. Tu peux fermer cette fenêtre.'}</p><script nonce="${nonce}">if(window.opener){window.opener.postMessage(${safePayload},${safeOrigin});window.close();}else{window.location.replace(${safeAdminUrl});}</script></body></html>`;
 }
 
-function sendCallback(res, origin, status, message, httpStatus = 200) {
+function sendCallback(res, origin, status, message, httpStatus = 200, options = {}) {
     const nonce = crypto.randomBytes(18).toString('base64url');
-    const html = callbackHtml({ origin, status, message, nonce });
+    const html = callbackHtml({ origin, status, message, nonce, ...options });
     res.status(httpStatus)
         .set('cache-control', 'no-store, max-age=0')
         .set('x-frame-options', 'DENY')
@@ -263,6 +271,7 @@ async function startMetaOAuthHandler(data, context) {
     const { stateId, verifierHash, state } = createOAuthState();
     await db().collection(OAUTH_STATE_COLLECTION).doc(stateId).set({
         verifierHash,
+        provider: 'facebook',
         origin,
         status: 'pending',
         uid: context.auth.uid,
@@ -300,7 +309,7 @@ async function metaOAuthCallbackHandler(req, res) {
     const stateSnap = await stateRef.get();
     const stateData = stateSnap.exists ? stateSnap.data() : null;
     const origin = stateData?.origin || new URL(getSiteUrl()).origin;
-    if (!stateData || !parseAndVerifyOAuthState(rawState, stateData.verifierHash)) {
+    if (!stateData || stateData.provider !== 'facebook' || !parseAndVerifyOAuthState(rawState, stateData.verifierHash)) {
         sendCallback(res, origin, 'error', 'État OAuth invalide.', 400);
         return;
     }
@@ -388,6 +397,225 @@ async function metaOAuthCallbackHandler(req, res) {
         await stateRef.update({ status: 'failed', errorCode: safeErrorCode(error), completedAt: serverTimestamp() });
         sendCallback(res, origin, 'error', 'La connexion Meta n’a pas abouti.', 400);
     }
+}
+
+async function exchangeInstagramOAuthCode(code) {
+    const appId = secretValue(INSTAGRAM_APP_ID, 'INSTAGRAM_APP_ID');
+    const appSecret = secretValue(INSTAGRAM_APP_SECRET, 'INSTAGRAM_APP_SECRET');
+    const redirectUri = secretValue(INSTAGRAM_OAUTH_REDIRECT_URI, 'INSTAGRAM_OAUTH_REDIRECT_URI');
+    const shortToken = await graphRequest('oauth/access_token', {
+        method: 'POST',
+        host: 'api.instagram.com',
+        versioned: false,
+        params: {
+            client_id: appId,
+            client_secret: appSecret,
+            grant_type: 'authorization_code',
+            redirect_uri: redirectUri,
+            code
+        }
+    });
+    const shortAccessToken = String(shortToken.access_token || '');
+    if (!shortAccessToken || !shortToken.user_id) throw new Error('INSTAGRAM_TOKEN_EXCHANGE_INVALID');
+    const longToken = await graphRequest('access_token', {
+        host: 'graph.instagram.com',
+        versioned: false,
+        params: {
+            grant_type: 'ig_exchange_token',
+            client_secret: appSecret,
+            access_token: shortAccessToken
+        }
+    });
+    const token = String(longToken.access_token || shortAccessToken);
+    const expiresInSeconds = Number(longToken.expires_in || shortToken.expires_in || 0);
+    return {
+        token,
+        instagramUserId: String(shortToken.user_id),
+        tokenExpiresAt: expiresInSeconds > 0
+            ? admin.firestore.Timestamp.fromMillis(Date.now() + expiresInSeconds * 1000)
+            : null
+    };
+}
+
+async function fetchInstagramProfile(token, expectedUserId = '') {
+    const profile = await graphRequest('me', {
+        host: 'graph.instagram.com',
+        token,
+        params: { fields: 'id,username,user_type' }
+    });
+    const instagramUserId = String(profile.id || expectedUserId || '');
+    if (!instagramUserId || (expectedUserId && instagramUserId !== String(expectedUserId))) {
+        throw new Error('INSTAGRAM_PROFILE_MISMATCH');
+    }
+    return {
+        instagramUserId,
+        instagramUsername: String(profile.username || '').slice(0, 180)
+    };
+}
+
+async function startInstagramOAuthHandler(data, context) {
+    await checkActiveStrongAdmin(context);
+    const origin = normalizeOrigin(data?.origin);
+    const appId = secretValue(INSTAGRAM_APP_ID, 'INSTAGRAM_APP_ID');
+    const redirectUri = secretValue(INSTAGRAM_OAUTH_REDIRECT_URI, 'INSTAGRAM_OAUTH_REDIRECT_URI');
+    const { stateId, verifierHash, state } = createOAuthState();
+    await db().collection(OAUTH_STATE_COLLECTION).doc(stateId).set({
+        verifierHash,
+        provider: 'instagram',
+        origin,
+        status: 'pending',
+        uid: context.auth.uid,
+        email: String(context.auth.token.email || '').toLowerCase().slice(0, 320),
+        createdAt: serverTimestamp(),
+        expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + META_OAUTH_TTL_MS)
+    });
+    const query = new URLSearchParams({
+        client_id: appId,
+        redirect_uri: redirectUri,
+        state,
+        response_type: 'code',
+        scope: INSTAGRAM_OAUTH_SCOPES.join(','),
+        force_reauth: 'true'
+    });
+    await auditMeta('instagram_oauth_started', context);
+    return {
+        url: `https://www.instagram.com/oauth/authorize?${query}`,
+        callbackOrigin: new URL(redirectUri).origin
+    };
+}
+
+async function instagramOAuthCallbackHandler(req, res) {
+    const callbackOptions = { source: 'seconde-vie-instagram-oauth', title: 'Connexion Instagram' };
+    if (req.method !== 'GET') {
+        res.status(405).set('allow', 'GET').send('Method not allowed');
+        return;
+    }
+    const rawState = String(req.query.state || '');
+    const stateId = rawState.split('.', 1)[0];
+    if (!/^[a-f0-9]{32}$/i.test(stateId)) {
+        sendCallback(res, new URL(getSiteUrl()).origin, 'error', 'État OAuth invalide.', 400, callbackOptions);
+        return;
+    }
+    const stateRef = db().collection(OAUTH_STATE_COLLECTION).doc(stateId);
+    const stateSnap = await stateRef.get();
+    const stateData = stateSnap.exists ? stateSnap.data() : null;
+    const origin = stateData?.origin || new URL(getSiteUrl()).origin;
+    if (!stateData || stateData.provider !== 'instagram' || !parseAndVerifyOAuthState(rawState, stateData.verifierHash)) {
+        sendCallback(res, origin, 'error', 'État OAuth invalide.', 400, callbackOptions);
+        return;
+    }
+    if (stateData.status !== 'pending' || (stateData.expiresAt?.toMillis?.() || 0) <= Date.now()) {
+        sendCallback(res, origin, 'error', 'Cette tentative de connexion a expiré.', 400, callbackOptions);
+        return;
+    }
+    try {
+        await db().runTransaction(async (transaction) => {
+            const current = await transaction.get(stateRef);
+            const currentData = current.exists ? current.data() : null;
+            if (!currentData || currentData.status !== 'pending' || (currentData.expiresAt?.toMillis?.() || 0) <= Date.now()) {
+                throw new Error('INSTAGRAM_OAUTH_STATE_ALREADY_USED');
+            }
+            transaction.update(stateRef, { status: 'processing', processingAt: serverTimestamp() });
+        });
+    } catch {
+        sendCallback(res, origin, 'error', 'Cette tentative de connexion a déjà été utilisée.', 400, callbackOptions);
+        return;
+    }
+    if (req.query.error || !req.query.code) {
+        await stateRef.update({ status: 'cancelled', completedAt: serverTimestamp() });
+        sendCallback(res, origin, 'cancelled', 'Connexion Instagram annulée.', 200, callbackOptions);
+        return;
+    }
+    try {
+        const tokenInfo = await exchangeInstagramOAuthCode(String(req.query.code));
+        const profile = await fetchInstagramProfile(tokenInfo.token, tokenInfo.instagramUserId);
+        const encryptionKey = secretValue(META_TOKEN_ENCRYPTION_KEY, 'META_TOKEN_ENCRYPTION_KEY');
+        await db().collection(CONNECTION_COLLECTION).doc(INSTAGRAM_CONNECTION_ID).set({
+            status: 'connected',
+            provider: 'instagram_login',
+            instagramUserId: profile.instagramUserId,
+            instagramUsername: profile.instagramUsername,
+            instagramAccessToken: encryptToken(tokenInfo.token, encryptionKey),
+            scopes: [...INSTAGRAM_OAUTH_SCOPES],
+            tokenExpiresAt: tokenInfo.tokenExpiresAt,
+            connectedByUid: stateData.uid,
+            connectedByEmail: stateData.email,
+            connectedAt: serverTimestamp(),
+            lastVerifiedAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            reauthorizationRequired: false
+        }, { merge: true });
+        await stateRef.update({ status: 'completed', completedAt: serverTimestamp() });
+        await auditMeta('instagram_oauth_connected', { auth: { uid: stateData.uid, token: { email: stateData.email } } }, {
+            instagramUsername: profile.instagramUsername
+        });
+        sendCallback(res, origin, 'connected', 'Compte Instagram connecté.', 200, callbackOptions);
+    } catch (error) {
+        console.error('Instagram OAuth callback failed', { code: safeErrorCode(error), graphTraceId: error?.graphTraceId || null });
+        await stateRef.update({ status: 'failed', errorCode: safeErrorCode(error), completedAt: serverTimestamp() });
+        sendCallback(res, origin, 'error', 'La connexion Instagram n’a pas abouti.', 400, callbackOptions);
+    }
+}
+
+async function getInstagramConnectionStatusHandler(data, context) {
+    await checkActiveStrongAdmin(context);
+    const snap = await db().collection(CONNECTION_COLLECTION).doc(INSTAGRAM_CONNECTION_ID).get();
+    return publicInstagramConnectionState(snap.exists ? snap.data() : {});
+}
+
+async function verifyInstagramConnectionHandler(data, context) {
+    await checkActiveStrongAdmin(context);
+    const ref = db().collection(CONNECTION_COLLECTION).doc(INSTAGRAM_CONNECTION_ID);
+    const snap = await ref.get();
+    const connection = snap.exists ? snap.data() : null;
+    if (!connection || connection.status !== 'connected' || !connection.instagramAccessToken) {
+        throw new functions.https.HttpsError('failed-precondition', 'Aucun compte Instagram n’est connecté.');
+    }
+    try {
+        const token = decryptToken(connection.instagramAccessToken, secretValue(META_TOKEN_ENCRYPTION_KEY, 'META_TOKEN_ENCRYPTION_KEY'));
+        const profile = await fetchInstagramProfile(token, connection.instagramUserId);
+        await ref.update({
+            instagramUsername: profile.instagramUsername,
+            lastVerifiedAt: serverTimestamp(),
+            reauthorizationRequired: false,
+            updatedAt: serverTimestamp()
+        });
+        const updated = await ref.get();
+        return publicInstagramConnectionState(updated.data());
+    } catch (error) {
+        const requiresAuth = Number(error.graphCode) === 190;
+        await ref.update({
+            reauthorizationRequired: requiresAuth,
+            lastVerificationErrorCode: safeErrorCode(error),
+            updatedAt: serverTimestamp()
+        });
+        throw new functions.https.HttpsError(
+            requiresAuth ? 'failed-precondition' : 'unavailable',
+            requiresAuth ? 'La connexion Instagram doit être renouvelée.' : 'Instagram ne répond pas pour le moment.',
+            { reason: requiresAuth ? 'instagram-reauthorization-required' : 'instagram-verification-failed' }
+        );
+    }
+}
+
+async function disconnectInstagramConnectionHandler(data, context) {
+    await checkActiveStrongSuperAdmin(context);
+    assertConfirmText(data, 'DECONNECTER INSTAGRAM', 'déconnexion');
+    await db().collection(CONNECTION_COLLECTION).doc(INSTAGRAM_CONNECTION_ID).set({
+        status: 'not_connected',
+        instagramUserId: admin.firestore.FieldValue.delete(),
+        instagramUsername: admin.firestore.FieldValue.delete(),
+        instagramAccessToken: admin.firestore.FieldValue.delete(),
+        scopes: admin.firestore.FieldValue.delete(),
+        tokenExpiresAt: admin.firestore.FieldValue.delete(),
+        reauthorizationRequired: false,
+        disconnectedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+    }, { merge: true });
+    await Promise.all([
+        auditMeta('instagram_disconnected', context),
+        writeSecurityAudit('instagram_disconnected', context)
+    ]);
+    return { connected: false, status: 'not_connected', provider: 'instagram_login' };
 }
 
 async function getMetaConnectionStatusHandler(data, context) {
@@ -517,11 +745,12 @@ function preparedDestination(requested) {
 
 async function prepareSocialPublicationHandler(data, context) {
     await checkActiveStrongAdmin(context);
-    const connectionSnap = await db().collection(CONNECTION_COLLECTION).doc(META_CONNECTION_ID).get();
-    const connection = connectionSnap.exists ? connectionSnap.data() : null;
-    if (!connection || connection.status !== 'connected') {
-        throw new functions.https.HttpsError('failed-precondition', 'Connecte d’abord le compte Meta.');
-    }
+    const [facebookSnap, instagramSnap] = await db().getAll(
+        db().collection(CONNECTION_COLLECTION).doc(META_CONNECTION_ID),
+        db().collection(CONNECTION_COLLECTION).doc(INSTAGRAM_CONNECTION_ID)
+    );
+    const facebookConnection = facebookSnap.exists ? facebookSnap.data() : null;
+    const instagramConnection = instagramSnap.exists ? instagramSnap.data() : null;
     const collectionName = normalizeProductCollection(data?.collectionName);
     const productId = normalizeFirestoreId(data?.productId, 'Produit');
     let targets;
@@ -532,9 +761,24 @@ async function prepareSocialPublicationHandler(data, context) {
     } catch {
         throw new functions.https.HttpsError('invalid-argument', 'Paramètres de publication Meta invalides.');
     }
-    if (targets.instagram && !connection.instagramUserId) {
-        throw new functions.https.HttpsError('failed-precondition', 'Aucun compte Instagram professionnel n’est lié à cette Page.');
+    const directInstagramAvailable = instagramConnection?.status === 'connected'
+        && Boolean(instagramConnection.instagramUserId && instagramConnection.instagramAccessToken);
+    const facebookInstagramAvailable = facebookConnection?.status === 'connected'
+        && Boolean(facebookConnection.instagramUserId && facebookConnection.pageToken);
+    const facebookAvailable = facebookConnection?.status === 'connected'
+        && Boolean(facebookConnection.pageId && facebookConnection.pageToken);
+    if (targets.instagram && !directInstagramAvailable && !facebookInstagramAvailable) {
+        throw new functions.https.HttpsError('failed-precondition', 'Connecte d’abord un compte Instagram professionnel.');
     }
+    if (targets.facebook && !facebookAvailable) {
+        throw new functions.https.HttpsError('failed-precondition', 'Connecte Facebook pour publier aussi sur la Page.');
+    }
+    const routing = {
+        instagramProvider: targets.instagram
+            ? (directInstagramAvailable ? 'instagram_login' : 'facebook_login')
+            : '',
+        facebookProvider: targets.facebook ? 'facebook_login' : ''
+    };
     const productRef = db().doc(`artifacts/${APP_ID}/public/data/${collectionName}/${productId}`);
     const productSnap = await productRef.get();
     const product = productSnap.exists ? productSnap.data() : null;
@@ -546,7 +790,7 @@ async function prepareSocialPublicationHandler(data, context) {
         throw new functions.https.HttpsError('failed-precondition', 'Ajoute au moins une image publique au meuble.');
     }
     const hashtags = normalizeHashtags(data?.hashtags || '');
-    const payload = { productId, collectionName, targets, hashtags };
+    const payload = { productId, collectionName, targets, hashtags, routing };
     const payloadHash = stablePayloadHash(payload);
     const publicationId = publicationDocumentId(commandId);
     const ref = db().collection(PUBLICATION_COLLECTION).doc(publicationId);
@@ -563,6 +807,7 @@ async function prepareSocialPublicationHandler(data, context) {
             payloadHash,
             productId,
             collectionName,
+            routing,
             product: {
                 name: String(product.name || '').slice(0, 180),
                 description: String(product.description || '').slice(0, 12_000),
@@ -597,10 +842,11 @@ async function updateDestination(ref, destination, patch) {
     await ref.update(prefixed);
 }
 
-async function waitForInstagramContainer(containerId, pageToken) {
+async function waitForInstagramContainer(containerId, accessToken, graphHost) {
     for (let attempt = 0; attempt < 8; attempt += 1) {
         const container = await graphRequest(containerId, {
-            token: pageToken,
+            token: accessToken,
+            host: graphHost,
             params: { fields: 'status_code,status' }
         });
         const statusCode = String(container.status_code || '').toUpperCase();
@@ -617,37 +863,38 @@ async function waitForInstagramContainer(containerId, pageToken) {
     throw error;
 }
 
-async function publishInstagram(publication, connection, pageToken, ref) {
+async function publishInstagram(publication, connection, accessToken, graphHost, ref) {
     const media = publication.product.mediaUrls;
     await updateDestination(ref, 'instagram', { status: 'creating_media', errorCode: admin.firestore.FieldValue.delete() });
     let creationId;
     if (media.length === 1) {
         const created = await graphRequest(`${connection.instagramUserId}/media`, {
-            method: 'POST', token: pageToken, params: { image_url: media[0], caption: publication.product.caption }
+            method: 'POST', host: graphHost, token: accessToken, params: { image_url: media[0], caption: publication.product.caption }
         });
         creationId = String(created.id);
-        await waitForInstagramContainer(creationId, pageToken);
+        await waitForInstagramContainer(creationId, accessToken, graphHost);
     } else {
         const children = [];
         for (const imageUrl of media) {
             const child = await graphRequest(`${connection.instagramUserId}/media`, {
-                method: 'POST', token: pageToken, params: { image_url: imageUrl, is_carousel_item: 'true' }
+                method: 'POST', host: graphHost, token: accessToken, params: { image_url: imageUrl, is_carousel_item: 'true' }
             });
             const childId = String(child.id);
-            await waitForInstagramContainer(childId, pageToken);
+            await waitForInstagramContainer(childId, accessToken, graphHost);
             children.push(childId);
         }
         const parent = await graphRequest(`${connection.instagramUserId}/media`, {
             method: 'POST',
-            token: pageToken,
+            host: graphHost,
+            token: accessToken,
             params: { media_type: 'CAROUSEL', children: children.join(','), caption: publication.product.caption }
         });
         creationId = String(parent.id);
-        await waitForInstagramContainer(creationId, pageToken);
+        await waitForInstagramContainer(creationId, accessToken, graphHost);
     }
     await updateDestination(ref, 'instagram', { status: 'publishing', creationId });
     const published = await graphRequest(`${connection.instagramUserId}/media_publish`, {
-        method: 'POST', token: pageToken, params: { creation_id: creationId }
+        method: 'POST', host: graphHost, token: accessToken, params: { creation_id: creationId }
     });
     await updateDestination(ref, 'instagram', { status: 'published', remoteId: String(published.id || '') });
 }
@@ -726,17 +973,38 @@ async function runSocialPublicationHandler(data, context) {
         const current = await ref.get();
         return publicPublicationState(publicationId, current.data());
     }
-    const connectionSnap = await db().collection(CONNECTION_COLLECTION).doc(META_CONNECTION_ID).get();
-    const connection = connectionSnap.exists ? connectionSnap.data() : null;
-    if (!connection || connection.status !== 'connected' || !connection.pageToken) {
-        await ref.update({ overallStatus: 'failed', lockUntil: admin.firestore.FieldValue.delete(), lockOwnerUid: admin.firestore.FieldValue.delete(), updatedAt: serverTimestamp() });
-        throw new functions.https.HttpsError('failed-precondition', 'La connexion Meta n’est plus disponible.');
-    }
-    const token = decryptToken(connection.pageToken, secretValue(META_TOKEN_ENCRYPTION_KEY, 'META_TOKEN_ENCRYPTION_KEY'));
+    const [facebookSnap, instagramSnap] = await db().getAll(
+        db().collection(CONNECTION_COLLECTION).doc(META_CONNECTION_ID),
+        db().collection(CONNECTION_COLLECTION).doc(INSTAGRAM_CONNECTION_ID)
+    );
+    const facebookConnection = facebookSnap.exists ? facebookSnap.data() : null;
+    const instagramConnection = instagramSnap.exists ? instagramSnap.data() : null;
+    const encryptionKey = secretValue(META_TOKEN_ENCRYPTION_KEY, 'META_TOKEN_ENCRYPTION_KEY');
     for (const destination of runnable) {
         try {
-            if (destination === 'instagram') await publishInstagram(publication, connection, token, ref);
-            if (destination === 'facebook') await publishFacebook(publication, connection, token, ref);
+            if (destination === 'instagram') {
+                const useDirectInstagram = publication.routing?.instagramProvider === 'instagram_login';
+                const connection = useDirectInstagram ? instagramConnection : facebookConnection;
+                const encryptedToken = useDirectInstagram ? connection?.instagramAccessToken : connection?.pageToken;
+                if (!connection || connection.status !== 'connected' || !connection.instagramUserId || !encryptedToken) {
+                    throw new Error('INSTAGRAM_CONNECTION_UNAVAILABLE');
+                }
+                const token = decryptToken(encryptedToken, encryptionKey);
+                await publishInstagram(
+                    publication,
+                    connection,
+                    token,
+                    useDirectInstagram ? 'graph.instagram.com' : 'graph.facebook.com',
+                    ref
+                );
+            }
+            if (destination === 'facebook') {
+                if (!facebookConnection || facebookConnection.status !== 'connected' || !facebookConnection.pageId || !facebookConnection.pageToken) {
+                    throw new Error('FACEBOOK_CONNECTION_UNAVAILABLE');
+                }
+                const token = decryptToken(facebookConnection.pageToken, encryptionKey);
+                await publishFacebook(publication, facebookConnection, token, ref);
+            }
         } catch (error) {
             console.error('Meta publication destination failed', {
                 destination,
@@ -778,22 +1046,32 @@ const publicationRuntime = { enforceAppCheck: true, secrets: PUBLICATION_SECRETS
 
 const startMetaOAuthAdmin = regionalFunctions().runWith(callableRuntime).https.onCall(startMetaOAuthHandler);
 const metaOAuthCallback = regionalFunctions().runWith({ secrets: META_SECRETS, timeoutSeconds: 60, memory: '256MB' }).https.onRequest(metaOAuthCallbackHandler);
+const startInstagramOAuthAdmin = regionalFunctions().runWith({ ...callableRuntime, secrets: INSTAGRAM_SECRETS }).https.onCall(startInstagramOAuthHandler);
+const instagramOAuthCallback = regionalFunctions().runWith({ secrets: INSTAGRAM_SECRETS, timeoutSeconds: 60, memory: '256MB' }).https.onRequest(instagramOAuthCallbackHandler);
 const getMetaConnectionStatusAdmin = regionalFunctions().runWith({ enforceAppCheck: true, secrets: PUBLICATION_SECRETS }).https.onCall(getMetaConnectionStatusHandler);
+const getInstagramConnectionStatusAdmin = regionalFunctions().runWith({ enforceAppCheck: true, secrets: PUBLICATION_SECRETS }).https.onCall(getInstagramConnectionStatusHandler);
 const selectMetaAssetAdmin = regionalFunctions().runWith({ enforceAppCheck: true, secrets: PUBLICATION_SECRETS }).https.onCall(selectMetaAssetHandler);
 const verifyMetaConnectionAdmin = regionalFunctions().runWith({ enforceAppCheck: true, secrets: PUBLICATION_SECRETS }).https.onCall(verifyMetaConnectionHandler);
 const disconnectMetaConnectionAdmin = regionalFunctions().runWith({ enforceAppCheck: true, secrets: PUBLICATION_SECRETS }).https.onCall(disconnectMetaConnectionHandler);
+const verifyInstagramConnectionAdmin = regionalFunctions().runWith({ enforceAppCheck: true, secrets: PUBLICATION_SECRETS }).https.onCall(verifyInstagramConnectionHandler);
+const disconnectInstagramConnectionAdmin = regionalFunctions().runWith({ enforceAppCheck: true, secrets: PUBLICATION_SECRETS }).https.onCall(disconnectInstagramConnectionHandler);
 const prepareSocialPublicationAdmin = regionalFunctions().runWith(publicationRuntime).https.onCall(prepareSocialPublicationHandler);
 const runSocialPublicationAdmin = regionalFunctions().runWith(publicationRuntime).https.onCall(runSocialPublicationHandler);
 const getSocialPublicationStatusAdmin = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(getSocialPublicationStatusHandler);
 
 module.exports = {
+    disconnectInstagramConnectionAdmin,
     disconnectMetaConnectionAdmin,
+    getInstagramConnectionStatusAdmin,
     getMetaConnectionStatusAdmin,
     getSocialPublicationStatusAdmin,
+    instagramOAuthCallback,
     metaOAuthCallback,
     prepareSocialPublicationAdmin,
     runSocialPublicationAdmin,
     selectMetaAssetAdmin,
+    startInstagramOAuthAdmin,
     startMetaOAuthAdmin,
+    verifyInstagramConnectionAdmin,
     verifyMetaConnectionAdmin
 };

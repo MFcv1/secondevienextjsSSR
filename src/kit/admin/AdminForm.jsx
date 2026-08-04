@@ -844,8 +844,18 @@ const AdminForm = ({
                 }}
                 onConnectionChange={(connection) => {
                   setMetaConnection(connection);
-                  if (connection.connected && !connection.instagramAvailable) {
-                    setSocialTargets((current) => ({ ...current, instagram: false, facebook: true }));
+                  if (connection.connected) {
+                    setSocialTargets((current) => {
+                      const next = {
+                        instagram: connection.instagramAvailable ? current.instagram : false,
+                        facebook: connection.facebookAvailable ? current.facebook : false
+                      };
+                      if (!next.instagram && !next.facebook) {
+                        if (connection.instagramAvailable) next.instagram = true;
+                        else if (connection.facebookAvailable) next.facebook = true;
+                      }
+                      return next;
+                    });
                   }
                 }}
                 targets={socialTargets}

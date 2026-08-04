@@ -1,6 +1,6 @@
 # Securite globale
 
-Derniere mise a jour: 2026-07-14
+Derniere mise a jour: 2026-08-04
 Statut: `PREPROD_READY`
 Reference Auth associee: `AUTHENTIFICATION.md`
 
@@ -58,6 +58,7 @@ La suppression d'un acces admin doit retirer les claims, desactiver le registre 
 | `sys_admin_access` | controle strict | serveur/super-admin |
 | `sys_idempotency` | aucune lecture client | serveur uniquement |
 | analytics et rollups | admin selon besoin | serveur |
+| `sys_meta_connections`, `sys_meta_oauth_states`, `sys_meta_asset_choices`, `sys_social_publications`, `sys_audit_meta` | aucune lecture client | serveur uniquement |
 
 Toute nouvelle collection doit avoir une decision explicite dans les rules avant son utilisation. Le fallback final doit rester deny-by-default.
 
@@ -95,6 +96,14 @@ Controles attendus selon le type:
 - endpoint E2E: fail-closed hors configuration de test explicite.
 
 Le catalogue public ne possede plus de Function HTTP ni de codebase separe. App Hosting lit le bucket snapshot prive avec son compte de service; les clients Firestore anonymes ne peuvent pas lire `furniture`.
+
+Les callbacks OAuth Meta/Instagram sont les seuls endpoints publics du rail
+social. Chaque tentative utilise un state aleatoire dont seul le hash est
+stocke, lie a l'UID et a l'origine admin, avec expiration et consommation
+unique. Les echanges de code et de jeton restent serveur; les jetons Facebook
+et Instagram sont chiffres AES-256-GCM avec le secret commun de chiffrement.
+La deconnexion exige le super-admin, une assurance forte et une confirmation
+textuelle specifique au fournisseur.
 
 ## 6. App Check
 

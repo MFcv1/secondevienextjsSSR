@@ -181,6 +181,9 @@ Secrets serveur centralises dans `functions/helpers/secrets.js`:
 - `PAYMENT_LINK_HMAC_SECRET`, signature opaque des liens admin sans compte;
 - `E2E_PROOF_TOKEN`;
 - `SUPER_ADMIN_EMAIL`.
+- `META_APP_ID`, `META_APP_SECRET`, `META_OAUTH_REDIRECT_URI` pour le rail Facebook optionnel;
+- `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, `INSTAGRAM_OAUTH_REDIRECT_URI` pour Instagram Login;
+- `META_TOKEN_ENCRYPTION_KEY`, commun au chiffrement des deux familles de jetons sans les confondre;
 - `CATALOG_REVALIDATION_HMAC_SECRET` pour l'appel machine Function -> App Hosting.
 
 `PAYMENT_LINK_HMAC_SECRET@1` est provisionne dans Secret Manager depuis le
