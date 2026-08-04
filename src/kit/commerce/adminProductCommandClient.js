@@ -15,7 +15,8 @@ export const createProductCommandSession = (existingProductId = null) => ({
   createCommandId: commandId('create-product'),
   offerCommandId: commandId('offer-product'),
   inventoryCommandId: commandId('inventory-product'),
-  publishCommandId: commandId('publish-product')
+  publishCommandId: commandId('publish-product'),
+  socialCommandId: commandId('publish-social')
 });
 
 const assertEnabled = () => {

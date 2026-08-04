@@ -160,6 +160,29 @@ exports.recreateAdminPaymentLink = recreateAdminPaymentLink;
 exports.regenerateAdminPaymentLink = regenerateAdminPaymentLink;
 exports.resumeAdminPaymentLinkPayment = resumeAdminPaymentLinkPayment;
 
+// ── PUBLICATION META (OAuth + Instagram/Facebook) ───────
+const {
+    disconnectMetaConnectionAdmin,
+    getMetaConnectionStatusAdmin,
+    getSocialPublicationStatusAdmin,
+    metaOAuthCallback,
+    prepareSocialPublicationAdmin,
+    runSocialPublicationAdmin,
+    selectMetaAssetAdmin,
+    startMetaOAuthAdmin,
+    verifyMetaConnectionAdmin
+} = require('./src/integrations/meta');
+
+exports.disconnectMetaConnectionAdmin = disconnectMetaConnectionAdmin;
+exports.getMetaConnectionStatusAdmin = getMetaConnectionStatusAdmin;
+exports.getSocialPublicationStatusAdmin = getSocialPublicationStatusAdmin;
+exports.metaOAuthCallback = metaOAuthCallback;
+exports.prepareSocialPublicationAdmin = prepareSocialPublicationAdmin;
+exports.runSocialPublicationAdmin = runSocialPublicationAdmin;
+exports.selectMetaAssetAdmin = selectMetaAssetAdmin;
+exports.startMetaOAuthAdmin = startMetaOAuthAdmin;
+exports.verifyMetaConnectionAdmin = verifyMetaConnectionAdmin;
+
 // ── AUTH ──────────────────────────────────────────────────
 const { grantAdminOnAuth } = require('./src/auth/grantAdmin');
 const { onRegisteredUserCreated, onRegisteredUserDeleted } = require('./src/auth/userStats');

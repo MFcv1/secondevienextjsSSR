@@ -271,7 +271,7 @@ export default function InstagramPublicationPreview({
         {omittedMediaCount > 0 && <p className="mt-3 flex items-start gap-2 rounded-[14px] bg-amber-500/10 px-3 py-2.5 text-[9px] font-bold leading-4 text-amber-700 dark:text-amber-400"><Info size={13} className="mt-0.5 shrink-0" />{omittedMediaCount} image{omittedMediaCount > 1 ? 's' : ''} restera{omittedMediaCount > 1 ? 'ont' : ''} sur le site et ne sera{omittedMediaCount > 1 ? 'ont' : ''} pas envoyée{omittedMediaCount > 1 ? 's' : ''} à Instagram.</p>}
         {!omittedMediaCount && mediaCount > 0 && <p className="mt-3 flex items-center gap-2 text-[9px] font-bold text-emerald-700 dark:text-emerald-400"><Check size={13} />Toutes les images sélectionnées tiennent dans la publication.</p>}
 
-        <div className={`mt-5 rounded-[14px] px-3 py-2.5 text-[9px] font-bold leading-4 ${darkMode ? 'bg-white/5 text-stone-400' : 'bg-stone-100 text-stone-500'}`}>Aperçu uniquement pour le moment · la connexion Meta et l’envoi simultané seront ajoutés dans l’étape suivante.</div>
+        <div className={`mt-5 rounded-[14px] px-3 py-2.5 text-[9px] font-bold leading-4 ${darkMode ? 'bg-white/5 text-stone-400' : 'bg-stone-100 text-stone-500'}`}>Cet aperçu reprend le contenu envoyé à Instagram. Le site reste prioritaire et confirme sa publication avant l’envoi Meta.</div>
         <button type="button" onClick={onBack} className={`mt-4 flex w-fit items-center gap-2 rounded-full px-4 py-2.5 text-[10px] font-extrabold ring-1 transition-colors ${darkMode ? 'text-stone-300 ring-white/10 hover:bg-white/5 hover:text-white' : 'text-stone-600 ring-black/[0.08] hover:bg-stone-50 hover:text-stone-950'}`}><ArrowLeft size={14} strokeWidth={1.7} />Revenir aux informations</button>
       </div>
     </div>

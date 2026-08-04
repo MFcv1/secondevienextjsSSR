@@ -345,6 +345,27 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // OAuth Meta, jetons chiffrés et sagas de publication: Admin SDK uniquement.
+    match /sys_meta_connections/{docId} {
+      allow read, write: if false;
+    }
+
+    match /sys_meta_oauth_states/{docId} {
+      allow read, write: if false;
+    }
+
+    match /sys_meta_asset_choices/{docId} {
+      allow read, write: if false;
+    }
+
+    match /sys_social_publications/{docId} {
+      allow read, write: if false;
+    }
+
+    match /sys_audit_meta/{docId} {
+      allow read, write: if false;
+    }
+
     // Factures manuelles, numerotation et profil emetteur: Functions uniquement.
     match /admin_invoices/{invoiceId} {
       allow read, write: if false;

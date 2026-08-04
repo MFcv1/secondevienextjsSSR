@@ -54,6 +54,7 @@
     "test:billing-onboarding": "node --test tests/billing-onboarding-contract.test.cjs",
     "test:invoices": "node --test tests/invoicing/manual-invoices.test.cjs",
     "test:admin-cache": "node --test tests/admin-data-cache-contract.test.mjs",
+    "test:meta": "node --test tests/meta-oauth-contract.test.cjs",
     "test:catalog": "pnpm run test:catalog:core && pnpm run test:catalog:resilience && pnpm run test:catalog:security",
     "test:catalog:core": "node --test tests/catalog/core.test.cjs",
     "test:catalog:resilience": "node --test tests/catalog/resilience.test.cjs",
