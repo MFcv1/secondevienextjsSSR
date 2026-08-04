@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Check, Upload, Trash2, Download } from 'lucide-react';
+import { AlertCircle, Check, Upload, Trash2, Download } from 'lucide-react';
 import { db, appId } from '../config/firebase';
 import { getStorageInstance } from '../config/firebaseStorage';
 import { doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { PRODUCT_IMAGE_VARIANT_SPECS, compressImage, createProductImageVariantFiles, getImageFileMetadata } from '../../utils/imageUtils'; // [NEW] Import compression utility
 import ImageCropperModal from './components/ImageCropperModal';
+import InstagramPublicationPreview from './components/InstagramPublicationPreview';
 import StoryEditor from './components/StoryEditor';
 import KIT_CONFIG from '../config/constants';
 import RichTextStory from '../shared/RichTextStory';
@@ -129,7 +130,12 @@ const AdminForm = ({
   const [galleryItems, setGalleryItems] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState("");
+  const [categoryError, setCategoryError] = useState(false);
+  const [instagramEnabled, setInstagramEnabled] = useState(false);
+  const [publicationView, setPublicationView] = useState('details');
+  const [instagramHashtags, setInstagramHashtags] = useState('#secondevie #mobilierancien #artisanat');
   const fileInputRef = useRef();
+  const categoryGroupRef = useRef(null);
   const nameInputRef = useRef(null);
   const startingPriceInputRef = useRef(null);
   const stockInputRef = useRef(null);
@@ -176,6 +182,9 @@ const AdminForm = ({
 
   useEffect(() => {
     productCommandSessionRef.current = null;
+    setInstagramEnabled(false);
+    setPublicationView('details');
+    setInstagramHashtags('#secondevie #mobilierancien #artisanat');
     if (editData) {
       const material = editData.material || '';
       const isCustom = material && !getCategoryMeta(editData.category || '').materialOptions.includes(material) && material !== "Autre";
@@ -244,6 +253,10 @@ const AdminForm = ({
     galleryItems.forEach(item => { if (item.preview && !item.isExisting) URL.revokeObjectURL(item.preview); });
     setGalleryItems([]);
     setIsCustomMaterial(false);
+    setCategoryError(false);
+    setInstagramEnabled(false);
+    setPublicationView('details');
+    setInstagramHashtags('#secondevie #mobilierancien #artisanat');
   };
 
   const processFiles = async (files) => {
@@ -371,9 +384,13 @@ const AdminForm = ({
     if (!formData.name) { setMsg("Nom requis"); return; }
     // ── Validation catégorie obligatoire ──
     if (!formData.category) {
-      setMsg("Choisis un type de publication (Mobilier, Tables, Miroirs…).");
+      setCategoryError(true);
+      setMsg("Publication impossible : choisis un type de publication.");
+      categoryGroupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      categoryGroupRef.current?.querySelector('button')?.focus({ preventScroll: true });
       return;
     }
+    setCategoryError(false);
     if (galleryItems.length > MAX_PRODUCT_IMAGES) {
       setMsg(`La galerie est limitée à ${MAX_PRODUCT_IMAGES} images.`);
       return;
@@ -555,8 +572,18 @@ const AdminForm = ({
       if (onSaved) onSaved();
     } catch (err) {
       console.error("CRITICAL UPLOAD ERROR:", err);
+      const errorReason = err?.details?.reason || err?.customData?.details?.reason || '';
+      const needsStrongAuth = errorReason === 'strong-auth-required';
       let errorPrefix = "Erreur";
-      if (err.message?.includes("storage")) errorPrefix = "Stockage plein ou bloqué";
+      if (needsStrongAuth) {
+        setMsg("Confirme ton identité avec Google ou ta passkey, puis clique de nouveau sur « Publier l’ouvrage ».");
+        return;
+      }
+      if (err.code === 'storage/unauthorized' || err.message?.includes('storage/unauthorized')) {
+        setMsg("Autorisation d’envoi des images refusée. Reconnecte-toi, puis réessaie.");
+        return;
+      }
+      if (err.message?.includes("storage")) errorPrefix = "Envoi des images impossible";
       else if (err.code === "permission-denied") errorPrefix = "Session expirée";
       setMsg(`${errorPrefix}: ${err.message || "Inconnue"}`);
     } finally {
@@ -709,28 +736,81 @@ const AdminForm = ({
   const labelClass = `mb-1.5 block text-[9px] font-extrabold uppercase tracking-[0.12em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`;
   const categoryLabel = KIT_CONFIG.productCategories.find(category => category.id === formData.category)?.label || 'Non choisie';
   const dimensionsSummary = [formData.width, catMeta.showDepth ? formData.depth : null, formData.height].filter(Boolean).join(' × ');
+  const messageIsError = msg.startsWith('Erreur')
+    || msg.startsWith('Publication impossible')
+    || msg.startsWith('Nom requis')
+    || msg.startsWith('Session expirée')
+    || msg.startsWith('Confirme ton identité')
+    || msg.startsWith('Autorisation d’envoi')
+    || msg.startsWith('Envoi des images impossible');
 
   return (
     <div className="grid min-h-0 grid-cols-1 gap-5 xl:h-full xl:grid-cols-[minmax(0,1fr)_minmax(250px,20%)] 2xl:gap-6">
       <div className={`min-h-0 overflow-hidden rounded-[26px] border ${darkMode ? 'border-white/10 bg-[#11110f]' : 'border-stone-200 bg-white'}`}>
-        <div className="flex h-full min-h-0 flex-col overflow-y-auto px-5 py-5 sm:px-6 sm:py-6 xl:px-7 xl:py-6">
-          <div className="flex items-center justify-between gap-4">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden px-5 py-5 sm:px-6 sm:py-6 xl:px-7 xl:py-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h3 className="text-[15px] font-extrabold tracking-[-0.025em]">{editData ? 'Modifier la publication' : 'Nouvelle publication'}</h3>
-              <p className={`mt-0.5 text-[10px] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Les informations essentielles, dans l’ordre naturel de saisie.</p>
+              <p className={`mt-0.5 text-[10px] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>{publicationView === 'instagram' ? 'Aperçu du contenu destiné au fil Instagram.' : 'Les informations essentielles, dans l’ordre naturel de saisie.'}</p>
             </div>
-            {editData && <button type="button" onClick={onCancelEdit} className="rounded-full px-3 py-2 text-[10px] font-extrabold text-red-500 ring-1 ring-red-500/15 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500 hover:text-white">Annuler</button>}
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {editData && <button type="button" onClick={onCancelEdit} className="rounded-full px-3 py-2 text-[10px] font-extrabold text-red-500 ring-1 ring-red-500/15 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500 hover:text-white">Annuler</button>}
+              {instagramEnabled && publicationView === 'details' && (
+                <button type="button" onClick={() => setPublicationView('instagram')} className={`rounded-full px-3 py-2 text-[9px] font-extrabold ring-1 transition-colors ${darkMode ? 'text-stone-300 ring-white/10 hover:bg-white/5 hover:text-white' : 'text-stone-600 ring-black/[0.07] hover:bg-stone-50 hover:text-stone-950'}`}>Voir l’aperçu</button>
+              )}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={instagramEnabled}
+                aria-label="Préparer également cette publication pour Instagram"
+                onClick={() => {
+                  const nextEnabled = !instagramEnabled;
+                  setInstagramEnabled(nextEnabled);
+                  setPublicationView(nextEnabled ? 'instagram' : 'details');
+                }}
+                className={`flex items-center gap-2.5 rounded-full py-1.5 pl-3 pr-2 text-[9px] font-extrabold ring-1 transition-[transform,background-color,color] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] motion-reduce:transition-none ${instagramEnabled ? (darkMode ? 'bg-white text-stone-950 ring-white' : 'bg-stone-950 text-white ring-stone-950') : (darkMode ? 'text-stone-400 ring-white/10 hover:text-white' : 'text-stone-500 ring-black/[0.07] hover:bg-stone-50 hover:text-stone-950')}`}
+              >
+                <span>Instagram</span>
+                <span className={`relative h-5 w-9 shrink-0 overflow-hidden rounded-full ring-1 transition-colors duration-300 ${instagramEnabled ? (darkMode ? 'bg-stone-200 ring-black/10' : 'bg-white/20 ring-white/15') : (darkMode ? 'bg-stone-700 ring-white/10' : 'bg-stone-200 ring-black/[0.04]')}`} aria-hidden="true">
+                  <span className={`absolute left-[3px] top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${instagramEnabled ? `translate-x-[15px] ${darkMode ? 'bg-stone-950' : 'bg-white'}` : `translate-x-0 ${darkMode ? 'bg-stone-300' : 'bg-stone-500'}`}`} />
+                </span>
+              </button>
+            </div>
           </div>
 
-          <div className="-mx-1 mt-4 flex gap-2 overflow-x-auto px-1 py-1 no-scrollbar 2xl:flex-wrap 2xl:overflow-visible">
-            {KIT_CONFIG.productCategories.map(cat => {
-              const active = formData.category === cat.id;
-              return (
-                <button key={cat.id} type="button" onClick={() => setFormData({ ...formData, category: cat.id })} className={`shrink-0 rounded-full px-3.5 py-2.5 text-[9px] font-extrabold uppercase tracking-[0.08em] ring-1 transition-colors duration-200 active:scale-[0.98] ${active ? (darkMode ? 'bg-white text-stone-950 ring-white' : 'bg-stone-950 text-white ring-stone-950') : (darkMode ? 'text-stone-500 ring-white/10 hover:text-white' : 'text-stone-500 ring-black/[0.07] hover:bg-stone-50 hover:text-stone-950')}`}>
-                  {cat.label}
-                </button>
-              );
-            })}
+          <div className="relative mt-4 min-h-0 flex-1">
+            <div className={`min-h-0 transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transform-none motion-reduce:transition-none xl:h-full xl:overflow-y-auto xl:pr-1 ${publicationView === 'details' ? 'relative translate-x-0 opacity-100' : 'pointer-events-none absolute inset-0 -translate-x-5 opacity-0'}`} aria-hidden={publicationView !== 'details'} inert={publicationView !== 'details'}>
+          <div ref={categoryGroupRef} role="group" aria-labelledby="publication-category-label" aria-describedby={categoryError ? 'publication-category-error' : undefined}>
+            <div className="flex items-center justify-between gap-3">
+              <p id="publication-category-label" className={labelClass}>Type de publication</p>
+              <span className={`mb-1.5 text-[8px] font-bold ${categoryError ? 'text-red-500' : (darkMode ? 'text-stone-600' : 'text-stone-400')}`}>Obligatoire</span>
+            </div>
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 py-1 no-scrollbar 2xl:flex-wrap 2xl:overflow-visible">
+              {KIT_CONFIG.productCategories.map(cat => {
+                const active = formData.category === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => {
+                      setFormData({ ...formData, category: cat.id });
+                      setCategoryError(false);
+                      if (msg.startsWith('Publication impossible')) setMsg('');
+                    }}
+                    className={`shrink-0 rounded-full px-3.5 py-2.5 text-[9px] font-extrabold uppercase tracking-[0.08em] ring-1 transition-colors duration-200 active:scale-[0.98] ${active ? (darkMode ? 'bg-white text-stone-950 ring-white' : 'bg-stone-950 text-white ring-stone-950') : categoryError ? 'bg-red-500/5 text-red-600 ring-red-500/30 hover:bg-red-500/10' : (darkMode ? 'text-stone-500 ring-white/10 hover:text-white' : 'text-stone-500 ring-black/[0.07] hover:bg-stone-50 hover:text-stone-950')}`}
+                  >
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
+            {categoryError && (
+              <p id="publication-category-error" role="alert" className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-red-600">
+                <AlertCircle size={13} aria-hidden="true" />
+                Choisis une catégorie avant de publier l’ouvrage.
+              </p>
+            )}
           </div>
 
           <div className="mt-5 grid min-h-0 flex-1 grid-flow-dense grid-cols-1 gap-6 lg:grid-cols-12 xl:gap-7">
@@ -836,6 +916,20 @@ const AdminForm = ({
               </div>
             </div>
           </div>
+            </div>
+
+            <div className={`min-h-0 transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transform-none motion-reduce:transition-none xl:h-full xl:overflow-y-auto xl:pr-1 ${publicationView === 'instagram' ? 'relative translate-x-0 opacity-100' : 'pointer-events-none absolute inset-0 translate-x-5 opacity-0'}`} aria-hidden={publicationView !== 'instagram'} inert={publicationView !== 'instagram'}>
+              <InstagramPublicationPreview
+                darkMode={darkMode}
+                galleryItems={galleryItems}
+                name={formData.name}
+                description={formData.description}
+                hashtags={instagramHashtags}
+                onHashtagsChange={setInstagramHashtags}
+                onBack={() => setPublicationView('details')}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -845,7 +939,7 @@ const AdminForm = ({
           <div className={`mt-3 overflow-hidden rounded-[16px] ring-1 ${darkMode ? 'bg-black/20 ring-white/10' : 'bg-[#F7F6F3] ring-black/[0.045]'}`}>
             {galleryItems[0]?.preview ? <img src={galleryItems[0].preview} alt="Aperçu principal" className="h-32 w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:scale-105" /> : <div className="grid h-32 place-items-center text-center text-[10px] text-stone-400"><span><Upload size={20} strokeWidth={1.3} className="mx-auto mb-2" />Le premier visuel apparaîtra ici</span></div>}
           </div>
-          <h4 className="mt-3 truncate text-[16px] font-extrabold tracking-[-0.025em]">{formData.name || 'Sans titre'}</h4>
+          <h4 className="mt-3 break-words text-[16px] font-extrabold leading-[1.15] tracking-[-0.025em]">{formData.name || 'Sans titre'}</h4>
           <dl className={`mt-3 divide-y text-[10px] ${darkMode ? 'divide-white/10' : 'divide-black/[0.055]'}`}>
             {[
               ['Catégorie', categoryLabel],
@@ -860,7 +954,7 @@ const AdminForm = ({
             {formData.description.trim() ? <RichTextStory value={formData.description} /> : <p className="text-stone-400">Le récit mis en forme apparaîtra ici pendant la rédaction.</p>}
           </div>
           <div className="mt-auto pt-3">
-            {msg && <p className={`mb-2 rounded-[12px] px-3 py-2 text-[9px] font-bold ${msg.startsWith('Enregistré') || msg.includes('optimisées') ? 'bg-emerald-500/10 text-emerald-600' : 'bg-stone-500/10 text-stone-500'}`}>{msg}</p>}
+            {msg && <p role={messageIsError ? 'alert' : 'status'} aria-live={messageIsError ? 'assertive' : 'polite'} className={`mb-2 rounded-[12px] px-3 py-2 text-[9px] font-bold ${msg.startsWith('Enregistré') || msg.includes('optimisées') ? 'bg-emerald-500/10 text-emerald-600' : messageIsError ? 'bg-red-500/10 text-red-600 ring-1 ring-red-500/15' : 'bg-stone-500/10 text-stone-500'}`}>{msg}</p>}
             {(totalOriginalSize > 0 || totalCompressedSize > 0) && <div className="mb-2 flex items-center justify-between text-[9px] text-stone-400"><span>{formatBytes(totalOriginalSize)}</span>{totalCompressedSize > 0 && <span className="font-bold text-emerald-600">Optimisé {formatBytes(totalCompressedSize)}</span>}</div>}
             {totalCompressedSize > 0 && <button type="button" onClick={handleDownloadImages} className={`mb-2 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-[9px] font-extrabold ring-1 ${darkMode ? 'ring-white/10 hover:bg-white/5' : 'ring-black/[0.06] hover:bg-stone-50'}`}><Download size={13} strokeWidth={1.5} />Télécharger les images</button>}
             <button type="button" onClick={addMeuble} disabled={uploading} className="group flex w-full items-center justify-between rounded-full bg-stone-950 py-1.5 pl-5 pr-1.5 text-[10px] font-extrabold text-white shadow-[0_14px_34px_rgba(28,25,23,0.2)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] disabled:opacity-50 dark:bg-white dark:text-stone-950">
