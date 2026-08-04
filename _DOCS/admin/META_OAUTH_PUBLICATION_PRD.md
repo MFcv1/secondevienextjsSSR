@@ -1,7 +1,7 @@
 # PRD temporaire - Connexion Meta et publication sans friction
 
 Derniere mise a jour: 2026-08-04
-Statut: `IMPLEMENTATION_LOCALE_M1_M3`
+Statut: `SANDBOX_M4_COMPLETE_M5_OAUTH_VALIDE`
 Proprietaire fonctionnel: Seconde Vie
 Reference prouvee: `jardindechawi`
 Echeance de revue: 2026-10-31
@@ -9,8 +9,10 @@ Echeance de revue: 2026-10-31
 Ce document est le plan d'implementation demande pour reproduire dans Seconde
 Vie l'experience OAuth Meta deja validee dans Les Jardins de Chawi. Il ne
 porte aussi l'etat d'execution: contrats, Functions, Rules, saga et interface
-OAuth sont codes localement. Les secrets, le deploiement et la recette Meta
-reelle ne sont pas lances et restent les Gates M4/M5.
+OAuth sont deployes sur le sandbox. La Gate M4 est fermee. La connexion OAuth
+reelle M5 a ete validee avec `jardin perma` et `@xori_on`; la publication d'un
+meuble de test sur le site, Instagram et Facebook reste volontairement non
+executee tant qu'un contenu de test n'est pas explicitement autorise.
 
 A la cloture, les decisions durables doivent etre fusionnees dans
 `BACKOFFICE.md`, `INFRASTRUCTURE.md`, `SECURITE_GLOBALE.md`,
@@ -424,7 +426,8 @@ App Review/Advanced Access. Cette ouverture n'est pas incluse dans la V1.
 | architecture Seconde Vie | connue | modules, region et securite identifies |
 | interface Instagram | presente | point d'integration UI deja construit |
 | compte Firebase Seconde Vie | connu | cible sandbox identifiee |
-| application Meta historique | identifiee | reutilisation a verifier apres connexion |
+| application Meta dediee | `Seconde Vie Publications` (`1580711783405294`) | configuree et utilisee sur le sandbox |
+| actifs Meta de recette | `jardin perma` / `@xori_on` | OAuth et verification serveur valides |
 
 Ces informations suffisent pour implementer localement le backend, l'interface,
 les tests et les contrats de donnees sans demander de secret dans le chat.
@@ -433,15 +436,12 @@ les tests et les contrats de donnees sans demander de secret dans le chat.
 
 | Intervention | Qui | Moment | Obligatoire |
 | --- | --- | --- | --- |
-| se connecter a Meta Developers avec le compte qui gere `Mlk Publications API Test` | utilisateur | avant configuration Meta | oui |
+| fournir un contenu de publication de test explicitement autorise | utilisateur | avant la fin de M5 | oui |
 | valider un eventuel code 2FA Meta | utilisateur | pendant la connexion | selon Meta |
-| confirmer la Page Facebook Seconde Vie cible | utilisateur | avant le premier OAuth reel | oui |
-| confirmer le compte Instagram professionnel cible et sa liaison a la Page | utilisateur | avant le premier OAuth reel | oui |
-| autoriser les permissions dans la fenetre OAuth | utilisateur | premiere connexion | oui, une fois |
+| fournir l'identite Facebook de la cliente si elle doit tester avant publication de l'app Meta | utilisateur | recette cliente en mode developpement | selon besoin |
+| valider les textes et URL de confidentialite/suppression des donnees | utilisateur/juridique | avant publication de l'app Meta | oui |
+| soumettre les permissions en acces avance et publier l'app Meta | Codex apres validation des prerequis Meta | ouverture aux clientes externes | oui |
 | se connecter a `jardinchawi@gmail.com` | utilisateur | seulement pour inspecter l'ancien Firebase/token | optionnel pour la nouvelle integration |
-| deployer Functions/rules sur le sandbox | Codex apres accord explicite | qualification | oui |
-| ajouter le redirect URI dans l'application Meta | Codex avec session autorisee, ou utilisateur guide | configuration | oui |
-| saisir/rotater les secrets dans Secret Manager | Codex avec acces autorise, sans les afficher | configuration | oui |
 
 L'ancien compte Firebase Chawi n'est pas requis pour recreer le parcours. Il
 sert uniquement a verifier l'etat historique du token ou a recuperer une
@@ -450,18 +450,10 @@ token ne doit pas etre migre dans Seconde Vie.
 
 ## 16. Decision recommandee sur l'application Meta
 
-Ordre de preference:
-
-1. reutiliser `Mlk Publications API Test` si le compte Meta y a toujours acces,
-   que sa configuration est saine et que les permissions utiles sont
-   disponibles;
-2. ajouter un redirect URI Seconde Vie distinct sans supprimer celui de Chawi;
-3. effectuer une nouvelle autorisation pour la Page/Instagram Seconde Vie;
-4. creer une nouvelle application Meta uniquement si l'ancienne est perdue,
-   bloquee, mal typee ou impossible a faire evoluer proprement.
-
-Reutiliser l'application ne signifie pas reutiliser le token Chawi. Chaque
-site possede sa propre connexion chiffree et son propre cycle de revocation.
+La decision executee est une application dediee `Seconde Vie Publications`,
+distincte de `Mlk Publications API Test`. Elle porte les cas d'utilisation
+Instagram et Pages, les six permissions de publication en mode test, le
+redirect Firebase et les domaines sandbox. Le token Chawi n'a pas ete migre.
 
 ## 17. Gates d'implementation
 
