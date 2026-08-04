@@ -11,7 +11,7 @@ const admin = require('firebase-admin');
 const crypto = require('crypto');
 const { isAdminIP } = require('./adminIP');
 const { getClientIpInfo, isPrivateOrLocalIp } = require('./ip');
-const { checkRecentActiveStrongAdmin } = require('../../helpers/security');
+const { checkActiveStrongAdmin } = require('../../helpers/security');
 const {
     canResumeSession,
     hashSyncToken,
@@ -388,7 +388,7 @@ exports.syncSessionBeacon = regionalFunctions().https.onRequest(async (req, res)
 });
 
 exports.deleteSession = regionalFunctions().https.onCall(async (data, context) => {
-    await checkRecentActiveStrongAdmin(context);
+    await checkActiveStrongAdmin(context);
     const { sessionId } = data;
     if (!sessionId) throw new functions.https.HttpsError('invalid-argument', 'Missing sessionId');
     await db.collection('analytics_sessions').doc(sessionId).delete();
@@ -397,7 +397,7 @@ exports.deleteSession = regionalFunctions().https.onCall(async (data, context) =
 });
 
 exports.clearAllSessions = regionalFunctions().https.onCall(async (data, context) => {
-    await checkRecentActiveStrongAdmin(context);
+    await checkActiveStrongAdmin(context);
     try {
         const sessionsRef = db.collection('analytics_sessions');
         let totalDeleted = 0;
@@ -424,7 +424,7 @@ exports.clearAllSessions = regionalFunctions().https.onCall(async (data, context
 });
 
 exports.clearAllAffiliateClicks = regionalFunctions().https.onCall(async (data, context) => {
-    await checkRecentActiveStrongAdmin(context);
+    await checkActiveStrongAdmin(context);
     try {
         const ref = db.collection('affiliate_clicks');
         let totalDeleted = 0;

@@ -1,6 +1,6 @@
 # Cartographie du projet Seconde Vie Next
 
-Derniere verification: 2026-08-01
+Derniere verification: 2026-08-04
 Statut: `CARTE_CANONIQUE_ACTIVE`
 
 ## 1. Role et maintenance
@@ -90,14 +90,34 @@ route publique [S]
 
 ### 4.2 Publication d'une annonce
 
+Le parcours cible de connexion OAuth et de publication simultanee
+site/Instagram/Facebook est borne par le plan temporaire
+`_DOCS/admin/META_OAUTH_PUBLICATION_PRD.md`. Le code local couvre M1 a M3;
+secrets, deploiement et recette Meta reelle restent M4/M5.
+
 ```text
 /admin [C]
   -> AdminPublicationWorkspace (vues Creer / Publications plein viewport)
   -> AdminForm / StoryEditor / AdminItemList
+  -> MetaConnectionControl [C]
+     -> start/get/select/verify Meta OAuth [F]
+     -> popup Meta [EXT] -> metaOAuthCallback [F]
+     -> sys_meta_connections / states / asset_choices [DB, backend-only]
+  -> InstagramPublicationPreview [C] (iPhone 17 Pro 402 x 874,
+     titre + histoire + 10 premiers medias + hashtags)
   -> description Markdown bornee -> RichTextStory (resume admin + fiche publique)
-  -> preflightProductMutationAdmin [F] (App Check + admin actif + AAL2)
+  -> renouvellement du jeton Auth puis preflightProductMutationAdmin [F]
+     (App Check + admin actif + AAL2)
+  -> upload furniture [ST] (admin actif relu dans Firestore + AAL2,
+     sans fenetre de quinze minutes)
   -> upload variantes [ST]
   -> furniture/{id} [DB]
+  -> prepareSocialPublicationAdmin [F] apres confirmation site
+  -> sys_social_publications/{commandHash} [DB, backend-only]
+  -> runSocialPublicationAdmin [F]
+     -> Instagram media/container/media_publish [EXT]
+     -> Facebook photos/feed [EXT]
+     -> reprise ciblee des destinations non publiees
   -> onCatalogSourceWrite [F]
   -> Cloud Tasks build [EXT]
   -> snapshot/manifeste/impact-plan [ST]
@@ -120,8 +140,8 @@ header/menu/route privee
   `-- passkey -> 4 callables WebAuthn [F] -> users/{uid}/passkeys [DB]
   -> loginWithCustomToken (retry reseau borne, meme token garde en memoire)
   -> etat partage header/menu/espace client
-  -> Google diagnostique et session admin persistante pour les lectures
-  -> mutation sensible -> passkey UV recente -> evenement step-up, sans signOut
+  -> admin: claim + registre actif + AAL2 Google ou passkey
+  -> meme session pour lectures et mutations, sans step-up temporel
 ```
 
 Reference visuelle et cycle de vie:
@@ -176,7 +196,7 @@ Rail de secours admin, deploye sur le sandbox avec controls fermes au 2026-08-01
 ```text
 /admin -> Liens de paiement [C]
   -> selection de 1 a 20 meubles + livraison + validite + e-mail optionnel
-  -> createAdminPaymentLink [F] sous admin fort recent et control v2
+  -> createAdminPaymentLink [F] sous admin actif AAL2 et control v2
   -> prix/stock/policy/Connect relus serveur, hold + order v2 atomiques [DB]
   -> URL HMAC opaque /payer/[orderId]/[token], sans compte ni OTP
   -> coordonnees client allowlistees -> PaymentIntent idempotent [EXT]
@@ -184,6 +204,18 @@ Rail de secours admin, deploye sur le sandbox avec controls fermes au 2026-08-01
   -> extension bornee a 24 h; rotation invalide l'ancienne URL avant PI
   -> annulation/expiration provider-first -> stock libere seulement apres Stripe
   -> lien ferme -> recreation = nouvelle commande et nouvelle verification stock/prix
+```
+
+Configuration livraison admin:
+
+```text
+/admin -> Livraison [C]
+  -> getDeliveryPolicyAdmin [F] -> control + policy active [DB]
+  -> saveDeliveryPolicyAdmin [F] (App Check + admin actif AAL2)
+  -> nouvelle commerce_policy_versions/{version} immuable [DB]
+  -> bascule transactionnelle sys_commerce_control/current [DB]
+  -> projection publique sys_metadata/delivery [DB]
+  -> commandes existantes conservees sur leur policy epinglee
 ```
 
 L'audit et la roadmap temporaire 0A a 8 sont clos. Leur verite durable est
@@ -552,6 +584,9 @@ src/kit/admin/
 |-- AdminDashboard.jsx ................ pilotage commerce, devis/tendances analytics bornes, miniatures du snapshot public, exports et maintenance rapide
 |-- AdminAnalytics.jsx ................ moteur Data canonique: UID/IP, live, parcours illustres, courbes
 |-- AdminForm.jsx ..................... creation/edition annonces
+|   |-- components/InstagramPublicationPreview.jsx .. apercu prive Instagram iPhone 17 Pro
+|   |-- components/MetaConnectionControl.jsx ...... OAuth, choix Page et destinations
+|   `-- metaPublicationClient.js ................... commandes Meta callables
 |-- AdminItemList.jsx ................. liste publications
 |-- GlobalInventoryView.jsx ........... vue catalogue/ordres
 |-- AdminStudio.jsx ................... studio contenu
@@ -682,17 +717,18 @@ functions/
     |   |   |-- productCommandRepository.js  produit idempotent + audit append-only
     |   |   |-- shippingTracking.js ....... transporteurs allowlistes et liens officiels
     |   |   `-- v2Runtime.js .............. cablage callables et workers Gate 7A
-    |   |-- v2ProductCommands.js ........... callables produit exportees, controle mutations off
-    |   |-- v2OrderCommands.js ............. fulfillment/archive/suivi idempotents, controle off
-    |   |-- v2Cancellation.js .............. callable annulation exportee, controle mutations off
+    |   |-- v2ProductCommands.js ........... callables produit actives sous controle v2
+    |   |-- v2OrderCommands.js ............. fulfillment/archive/suivi idempotents actifs sous controle v2
+    |   |-- v2Cancellation.js .............. callable annulation active sous controle v2
     |   |-- v2ControlGuard.js ............... verrou serveur mutations selon controle
     |   |-- v2Checkout.js .................. create/resume limites au scope fixture
     |   |-- v2AdminPaymentLinks.js ......... callables admin/public + expiration planifiee
+    |   |-- v2DeliveryPolicyAdmin.js ....... lecture + versionnement immutable des tarifs livraison
     |   |-- v2Operations.js ................ schedulers, exploitation et synthese Stats fraiche par agregations
     |   |-- v2OrderQueries.js .............. lecteurs UID/admin exportes et actifs
     |   |-- v2DocumentDelivery.js .......... acces PDF proprietaire + outbox bornee
-    |   |-- v2RefundCommands.js ............ callable refund exportee, controle mutations off
-    |   |-- v2ReturnCommands.js ............ callables retours exportees, controle mutations off
+    |   |-- v2RefundCommands.js ............ callable refund active sous controle v2
+    |   |-- v2ReturnCommands.js ............ callables retours actives sous controle v2
     |   |-- v2CustomerReturnRequests.js .... demande client + decisions admin vers refund/retour existants
     |   |-- stripeWebhook.js
     |   |-- stripeConnect.js
@@ -724,6 +760,9 @@ functions/
     |-- onboarding/
     |   |-- billingGuide.js ........... callables, modes, etat backend-only
     |   `-- billingGuideContract.js ... modes, etapes, UID cible et format Billing
+    |-- integrations/
+    |   |-- meta.js .................... OAuth, statut et saga Instagram/Facebook
+    |   `-- metaContract.js ............ chiffrement, state et projections purs
     |-- triggers/
     |   |-- onArtifactDeleted.js
     |   |-- onArtifactUpdated.js
@@ -752,6 +791,7 @@ functions/
 | commerce v2 retours client | `decideCustomerReturnRequestAdmin`, puis commandes refund/retour v2 existantes selon le parcours choisi |
 | commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
 | commerce v2 produit | `preflightProductMutationAdmin`, `createProductAdmin`, `updateProductOfferAdmin`, `publishProductAdmin`, `adjustInventoryAdmin`, `deleteProductAdmin` |
+| Meta OAuth/publication | `startMetaOAuthAdmin`, `metaOAuthCallback`, `getMetaConnectionStatusAdmin`, `selectMetaAssetAdmin`, `verifyMetaConnectionAdmin`, `disconnectMetaConnectionAdmin`, `prepareSocialPublicationAdmin`, `runSocialPublicationAdmin`, `getSocialPublicationStatusAdmin` |
 | refunds/Connect | `refundOrderAdmin`, `syncRefundStatusAdmin`, `getStripeConnectStatus`, `startStripeConnectOnboarding`, `syncStripeConnectAccount`, `requestStripeConnectReconnect`, `confirmStripeConnectReconnect` |
 | preuves E2E | `e2eCheckoutProof`, `e2eStripeHardeningProof` |
 | Auth/admin | `grantAdminOnAuth`, `onRegisteredUserCreated`, `onRegisteredUserDeleted`, `addAdminUser`, `removeAdminUser`, `logUserConnection`, `getUserStats`, `syncSuperAdminClaim`, `ensureAdminAccessRegistry` |
@@ -798,6 +838,11 @@ Firestore
 |-- sys_user_stats/current ............ compteur comptes, triggers Auth backend-only
 |-- sys_idempotency/{id} .............. backend-only
 |-- sys_billing_onboarding/{uid} ...... progression guide, backend-only
+|-- sys_meta_connections/default ...... actifs Meta + Page token chiffre
+|-- sys_meta_oauth_states/{stateId} ... state one-shot expire
+|-- sys_meta_asset_choices/{sessionId}  choix temporaire si plusieurs Pages
+|-- sys_social_publications/{id} ...... snapshot et saga par destination
+|-- sys_audit_meta/{id} ............... connexions et publications auditees
 |-- admin_business_profiles/invoicing . profil emetteur backend-only
 |-- admin_invoices/{invoiceId} ........ brouillon ou facture emise verrouillee
 |   |-- artifacts/{contentHash} ....... preuve du PDF prive materialise
@@ -905,8 +950,8 @@ Gate 0A fournit le runner anti-faux-vert, `test:commerce:containment`,
 `test:commerce:rules:containment`, l'agregat et `lint:functions`. Gate 0B ajoute
 les preuves hard-stop et Rules Firestore/Storage. Gate 1 fournit les suites
 domaine, property, Firestore, Rules et failpoints. Gate 2 etend ces suites avec
-policy, Connect, concurrence stock et mouvements quantitatifs. Gates 1 a 5
-sont deployees en sandbox en mode read-only. Gate 6 ajoute le classificateur,
+policy, Connect, concurrence stock et mouvements quantitatifs. Gates 1 a 5 ont
+d'abord ete deployees en sandbox en mode read-only. Gate 6 ajoute le classificateur,
 les manifests locaux ignores et le scope fixture backend-only. Gate 7A active
 ce seul scope, les workers bornes, projections, documents sandbox,
 exploitation et cleanup audite sur un manifeste immutable. Gate 7B execute le

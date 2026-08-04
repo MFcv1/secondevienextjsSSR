@@ -5,7 +5,6 @@ const functions = require('firebase-functions/v1');
 const { APP_ID, PRODUCT_COLLECTIONS, getSiteUrl } = require('../../helpers/config');
 const {
     checkActiveStrongAdmin,
-    checkRecentActiveStrongAdmin,
     normalizeFirestoreId
 } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
@@ -215,7 +214,7 @@ function mapError(error, { publicRequest = false } = {}) {
 
 async function createAdminPaymentLinkHandler(data, context) {
     try {
-        await checkRecentActiveStrongAdmin(context);
+        await checkActiveStrongAdmin(context);
         await requireAdminPaymentLinksEnabled();
         return await runtime().create({
             actorUid: context.auth.uid,
@@ -248,7 +247,7 @@ async function listAdminPaymentLinksHandler(data, context) {
 
 async function extendAdminPaymentLinkHandler(data, context) {
     try {
-        await checkRecentActiveStrongAdmin(context);
+        await checkActiveStrongAdmin(context);
         await requireAdminPaymentLinksEnabled();
         return await runtime().extend({
             orderId: normalizeOrderId(data?.orderId),
@@ -262,7 +261,7 @@ async function extendAdminPaymentLinkHandler(data, context) {
 
 async function regenerateAdminPaymentLinkHandler(data, context) {
     try {
-        await checkRecentActiveStrongAdmin(context);
+        await checkActiveStrongAdmin(context);
         await requireAdminPaymentLinksEnabled();
         return await runtime().regenerate({
             orderId: normalizeOrderId(data?.orderId),
@@ -275,7 +274,7 @@ async function regenerateAdminPaymentLinkHandler(data, context) {
 
 async function recreateAdminPaymentLinkHandler(data, context) {
     try {
-        await checkRecentActiveStrongAdmin(context);
+        await checkActiveStrongAdmin(context);
         await requireAdminPaymentLinksEnabled();
         return await runtime().recreate({
             orderId: normalizeOrderId(data?.orderId),
@@ -289,7 +288,7 @@ async function recreateAdminPaymentLinkHandler(data, context) {
 
 async function cancelAdminPaymentLinkHandler(data, context) {
     try {
-        await checkRecentActiveStrongAdmin(context);
+        await checkActiveStrongAdmin(context);
         await requireAdminPaymentLinksEnabled();
         return await runtime().cancel({
             orderId: normalizeOrderId(data?.orderId),

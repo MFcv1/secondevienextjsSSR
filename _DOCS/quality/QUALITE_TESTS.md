@@ -42,7 +42,8 @@ Etat `CODE_READY`:
 - `test:commerce:containment` compte les effets et prouve le hard-stop Gate 0B;
 - `test:commerce:rules:containment` utilise Firestore + Storage Emulator;
 - `test:commerce:unit` valide schema, reducer, projections, compatibilite,
-  actions serveur, retours quantitatifs et separation entre demande client,
+  actions serveur, retours quantitatifs, versionnement immutable des tarifs de
+  livraison et separation entre demande client,
   retour physique et remboursement Stripe; il couvre aussi signature opaque,
   rotation, bornes d'expiration et statuts des liens admin sans compte;
 - `test:commerce:ui` valide les transports/consommateurs Gates 4 et 5, le
@@ -91,9 +92,9 @@ precede l'activation sandbox read-only.
 npm run test:auth
 ```
 
-Suite actuelle (68 contrats, dont la reprise OTP apres erreur transitoire, le
-prechargement Google fail-closed, le diagnostic transport borne et la passkey
-obligatoire pour les mutations administrateur sensibles):
+Suite actuelle (dont la reprise OTP apres erreur transitoire, le prechargement
+Google fail-closed, le diagnostic transport borne et l'equivalence AAL2 Google
+ou passkey pour les mutations administrateur):
 
 ```text
 auth-claims.test.cjs
@@ -111,7 +112,7 @@ passkey-server-hardening.test.cjs
 ```
 
 Les contrats testent la source de session, les transitions OTP, l'idempotence,
-la revocation, la separation Google-lecture/passkey-mutation, les diagnostics
+la revocation, le registre actif, l'absence de minuterie admin, les diagnostics
 sans donnee brute, les regions, l'adaptateur e-mail et WebAuthn.
 
 Le contrat analytics importe le verificateur du moteur Tous a Table et controle la deduplication UID/IP, les fenetres temporelles, la coherence KPI/courbe/groupes, le masquage IP et le jeton de reprise:
@@ -217,6 +218,11 @@ Une modification `firestore.rules` ou `storage.rules` doit avoir au moins des ca
 - token revoque/expiré si le scenario le permet;
 - schema valide et schema malforme.
 
+Les suites catalogue Firestore et Storage utilisent le meme namespace demo et
+s'executent avec `--test-concurrency=1`. Cette serialisation evite qu'un
+`clearFirestore()` d'une suite efface le registre administrateur prepare par
+l'autre pendant l'evaluation interservice des Storage Rules.
+
 La passe Auth de demonstration deja close n'impose pas de rouvrir toutes ses
 preuves historiques. En revanche, toute nouvelle Rule commerce, reservation,
 sous-collection commande ou champ inventaire doit etre couverte par
@@ -235,6 +241,19 @@ reprenables, les retours quantitatifs et le rail produit. Le scenario produit
 Firestore exerce un double create concurrent, l'offre, l'ajustement de stock,
 la publication, le retry acquitte avant version obsolete, la suppression source et
 un audit append-only par commande.
+
+Le rail Meta possede une gate locale dediee:
+
+```bash
+npm run test:meta
+```
+
+Elle couvre le state OAuth et son anti-rejeu, le chiffrement AES-GCM
+authentifie, la projection publique sans identifiant ni token, la normalisation
+des medias et destinations, la legende sociale bornee et l'idempotence de la
+commande. Elle ne prouve ni les permissions de l'application Meta, ni la
+recuperabilite des URL Storage par Meta, ni une publication distante reelle;
+ces preuves appartiennent aux Gates M4/M5 sandbox.
 
 Le transport callable fulfillment/archive commande est couvert dans
 `test:commerce:unit`: acteur derive du contexte Auth, autorisation avant acces
@@ -371,7 +390,7 @@ Couverture locale actuelle:
 
 Les gates `next:routes` et `mobile:contract` protegent en plus ISR/SSG et le shell mobile. La recette cold/warm, la mesure des telechargements et le comportement `router.refresh()` restent des preuves navigateur sandbox et ne doivent pas etre declares par les tests statiques.
 
-La recette catalogue complete se fait dans le navigateur sandbox. Le rollback reel est exclusivement expose par Maintenance admin et exige App Check, registre actif, authentification forte recente et revisions explicites.
+La recette catalogue complete se fait dans le navigateur sandbox. Le rollback reel est exclusivement expose par Maintenance admin et exige App Check, registre actif, AAL2 Google ou passkey et revisions explicites, sans minuterie de reconnexion.
 
 La recette de cutover du 2026-07-18 a inclus plus de 20 builds de comparaison alors necessaires, creation, prix, stock nul, suppression, publication/revalidation, API same-origin froide/chaude et checkout sans paiement. Ces anciens modes ne sont plus des gates actives: le moteur public unique est le snapshot Storage. Le checkout reste autoritaire sur Firestore, meme si le snapshot est en retard. Le contrat actuel `/api/catalog` est non persistant; seul `/api/catalog/version` utilise un ETag public.
 

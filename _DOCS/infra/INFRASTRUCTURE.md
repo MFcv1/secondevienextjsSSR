@@ -159,6 +159,29 @@ functions/.env.secondevienextjsssr.example
                            parametres non secrets Functions sandbox
 ```
 
+Les rules `furniture/**` utilisent `firestore.get/exists` pour relire le
+registre administrateur actif. Le deploiement initial de ce contrat doit
+conserver l'autorisation interservice Storage Rules vers le Firestore par
+defaut demandee par Firebase CLI; ne pas remplacer ce controle par une
+ouverture publique ou par une simple confiance dans les claims.
+
+Les callables `getDeliveryPolicyAdmin` et `saveDeliveryPolicyAdmin` sont le
+seul writer admin des tarifs de livraison. Ils creent une politique immutable,
+font basculer le control plane dans une transaction et publient la projection
+publique; le navigateur n'ecrit jamais ces documents directement.
+
+Deploiement sandbox du 2026-08-04 a 15:58 Europe/Paris: Functions Node 22,
+Rules Firestore/Storage et rollout App Hosting termines avec succes. Les routes
+`/admin` et `/galerie` repondent HTTP 200 apres rollout; le backend
+`secondevie-next-sandbox` sert cette version depuis `europe-west4`.
+
+Correctif upload admin deploye le 2026-08-04 a 17:58 Europe/Paris: les Rules
+Storage alignees sur le contrat admin Google/passkey ont ete republiees, puis
+le rollout App Hosting du backend `secondevie-next-sandbox` a termine avec
+succes. Les probes `/admin`, `/galerie` et `/api/catalog/version` repondent
+HTTP 200. Aucune Function, donnee, configuration Stripe ou cible production
+n'a ete modifiee pendant ce deploiement cible.
+
 Les vrais `.env` sont locaux. Verifier avec `git ls-files` avant toute hypothese et ne jamais afficher leurs valeurs dans un rapport.
 
 ## 6. Variables publiques et secrets
@@ -180,7 +203,10 @@ Secrets serveur centralises dans `functions/helpers/secrets.js`:
 - `STRIPE_SECRET_KEY`, `STRIPE_WH_SECRET`, `STRIPE_CONNECT_WH_SECRET`;
 - `PAYMENT_LINK_HMAC_SECRET`, signature opaque des liens admin sans compte;
 - `E2E_PROOF_TOKEN`;
-- `SUPER_ADMIN_EMAIL`.
+- `SUPER_ADMIN_EMAIL`;
+- `META_APP_ID`, `META_APP_SECRET`, `META_OAUTH_REDIRECT_URI` et
+  `META_TOKEN_ENCRYPTION_KEY`, declares pour le rail OAuth Meta mais non
+  provisionnes tant que la Gate M4 n'est pas explicitement lancee.
 - `CATALOG_REVALIDATION_HMAC_SECRET` pour l'appel machine Function -> App Hosting.
 
 `PAYMENT_LINK_HMAC_SECRET@1` est provisionne dans Secret Manager depuis le

@@ -3,7 +3,7 @@
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
 const {
-    checkRecentActiveStrongAdmin,
+    checkActiveStrongAdmin,
     normalizeFirestoreId
 } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
@@ -146,7 +146,7 @@ function createAdminOrderCommandHandler(
     action,
     payloadFromData,
     {
-        authorize = checkRecentActiveStrongAdmin,
+        authorize = checkActiveStrongAdmin,
         repositoryFactory = commandRepository
     } = {}
 ) {

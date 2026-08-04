@@ -157,6 +157,7 @@ const CheckoutView = ({
     }, []);
 
     const [stripeEnabled, setStripeEnabled] = useState(() => {
+        if (COMMERCE_V2_CONSUMERS_ENABLED) return true;
         try { const c = localStorage.getItem('paymentSettings'); if (c) return JSON.parse(c).stripeEnabled !== false; } catch { /* ignore error */ }
         return true;
     });
@@ -167,7 +168,7 @@ const CheckoutView = ({
         let mounted = true;
         getDoc(doc(db, 'sys_metadata', 'payment_settings')).then((snap) => {
             if (!mounted || !snap.exists()) return;
-            const enabled = snap.data().stripeEnabled !== false;
+            const enabled = COMMERCE_V2_CONSUMERS_ENABLED || snap.data().stripeEnabled !== false;
             try {
                 localStorage.setItem(PAYMENT_SETTINGS_CACHE_KEY, JSON.stringify({ stripeEnabled: enabled }));
             } catch {

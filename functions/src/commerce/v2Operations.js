@@ -13,7 +13,6 @@ const {
 } = require('../../helpers/secrets');
 const {
     checkActiveStrongAdmin,
-    checkRecentActiveStrongAdmin,
     normalizeFirestoreId
 } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
@@ -836,7 +835,7 @@ const getCommerceOperationsStatusAdmin = regionalFunctions()
 const rebuildCommerceOperationsAdmin = regionalFunctions()
     .runWith({ enforceAppCheck: true, timeoutSeconds: 300, memory: '512MB' })
     .https.onCall(async (_data, context) => {
-        await checkRecentActiveStrongAdmin(context);
+        await checkActiveStrongAdmin(context);
         const result = await runOperationsRebuild();
         return {
             success: true,
@@ -851,7 +850,7 @@ const rebuildCommerceOperationsAdmin = regionalFunctions()
 const cleanupFixtureRunAdmin = regionalFunctions()
     .runWith({ enforceAppCheck: true, timeoutSeconds: 180, memory: '512MB' })
     .https.onCall(async (data, context) => {
-        await checkRecentActiveStrongAdmin(context);
+        await checkActiveStrongAdmin(context);
         const runId = normalizeFirestoreId(data?.runId, 'Run fixture');
         if (!runId.startsWith('run_')) {
             throw new functions.https.HttpsError('invalid-argument', 'Run fixture invalide.');

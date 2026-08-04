@@ -6,10 +6,9 @@ const admin = require('firebase-admin');
 const crypto = require('node:crypto');
 const {
     assertConfirmText,
-    checkActiveStrongAdmin,
     checkStrongAdmin,
-    checkRecentActiveStrongAdmin,
-    checkRecentSuperAdmin,
+    checkActiveStrongAdmin,
+    checkStrongSuperAdmin,
     getSuperAdminEmail,
     normalizeEmail,
     writeSecurityAudit
@@ -124,7 +123,7 @@ exports.ensureAdminAccessRegistry = regionalFunctions().runWith({
 });
 
 exports.syncSuperAdminClaim = regionalFunctions().runWith({ enforceAppCheck: true, secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
-    checkRecentSuperAdmin(context);
+    checkStrongSuperAdmin(context);
     const configuredSuperAdminEmail = getSuperAdminEmail();
     const callerEmail = normalizeEmail(context.auth?.token?.email);
     if (!configuredSuperAdminEmail || callerEmail !== configuredSuperAdminEmail) {
@@ -194,7 +193,7 @@ exports.syncSuperAdminClaim = regionalFunctions().runWith({ enforceAppCheck: tru
 
 // --- AJOUTER UN ADMIN ---
 exports.addAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
-    await checkRecentActiveStrongAdmin(context);
+    await checkActiveStrongAdmin(context);
     assertConfirmText(data, 'AJOUTER ADMIN', 'ajout admin');
     const normalizedEmail = normalizeEmail(data?.email);
     const name = data?.name;
@@ -279,7 +278,7 @@ exports.addAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, secr
 
 // --- RÉVOQUER UN ADMIN ---
 exports.removeAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
-    await checkRecentActiveStrongAdmin(context);
+    await checkActiveStrongAdmin(context);
     assertConfirmText(data, 'RETIRER ADMIN', 'retrait admin');
     const { uid } = data;
     const email = normalizeEmail(data?.email);

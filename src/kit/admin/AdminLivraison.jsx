@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { useState, useEffect } from 'react';
 import { Truck, Save, RefreshCw } from 'lucide-react';
+import {
+    getDeliveryPolicyAdmin,
+    saveDeliveryPolicyAdmin
+} from '../commerce/deliveryPolicyAdminClient';
 
 const DEFAULT_SETTINGS = {
     retrait: { id: 'retrait', active: true, label: "Retrait à l'atelier (Marseille)", sub: "Sur rendez-vous", price: 0 },
@@ -13,22 +15,32 @@ const AdminLivraison = ({ darkMode }) => {
     const [settings, setSettings] = useState(DEFAULT_SETTINGS);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [policyState, setPolicyState] = useState({ policyVersion: null, controlRevision: null });
+    const [message, setMessage] = useState({ type: '', text: '' });
 
     useEffect(() => {
+        let active = true;
         const fetchSettings = async () => {
             try {
-                const docRef = doc(db, 'sys_metadata', 'delivery');
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    setSettings(prev => ({ ...prev, ...docSnap.data() }));
-                }
+                const result = await getDeliveryPolicyAdmin();
+                if (!active) return;
+                setSettings(result.settings);
+                setPolicyState({
+                    policyVersion: result.policyVersion,
+                    controlRevision: result.controlRevision
+                });
             } catch (e) {
                 console.error("Error fetching delivery settings", e);
+                if (active) setMessage({
+                    type: 'error',
+                    text: e.message || 'Chargement des paramètres de livraison impossible.'
+                });
             } finally {
-                setLoading(false);
+                if (active) setLoading(false);
             }
         };
-        fetchSettings();
+        void fetchSettings();
+        return () => { active = false; };
     }, []);
 
     // Validation
@@ -44,13 +56,46 @@ const AdminLivraison = ({ darkMode }) => {
     const hasErrors = Object.keys(validationErrors).length > 0;
 
     const handleSave = async () => {
-        if (hasErrors) return;
+        if (hasErrors || !policyState.policyVersion || !Number.isSafeInteger(policyState.controlRevision)) return;
         setSaving(true);
+        setMessage({ type: '', text: '' });
         try {
-            throw new Error('COMMERCE_V2_POLICY_COMMANDS_OFF');
+            const result = await saveDeliveryPolicyAdmin({
+                settings,
+                sourcePolicyVersion: policyState.policyVersion,
+                expectedControlRevision: policyState.controlRevision
+            });
+            setSettings(result.settings);
+            setPolicyState({
+                policyVersion: result.policyVersion,
+                controlRevision: result.controlRevision
+            });
+            setMessage({ type: 'success', text: 'Paramètres de livraison enregistrés et publiés.' });
         } catch (e) {
             console.error(e);
-            alert("Parametres de livraison en lecture seule jusqu'a l'activation du writer de policy v2.");
+            const reason = e?.details?.reason || e?.customData?.details?.reason;
+            if (reason === 'COMMERCE_DELIVERY_POLICY_STALE') {
+                try {
+                    const fresh = await getDeliveryPolicyAdmin();
+                    setSettings(fresh.settings);
+                    setPolicyState({
+                        policyVersion: fresh.policyVersion,
+                        controlRevision: fresh.controlRevision
+                    });
+                    setMessage({
+                        type: 'error',
+                        text: 'La configuration avait changé. La dernière version a été rechargée.'
+                    });
+                } catch (refreshError) {
+                    console.error('Delivery settings refresh failed', refreshError);
+                    setMessage({ type: 'error', text: 'La configuration a changé. Rechargez la page.' });
+                }
+            } else {
+                setMessage({
+                    type: 'error',
+                    text: e.message || 'Enregistrement des paramètres de livraison impossible.'
+                });
+            }
         } finally {
             setSaving(false);
         }
@@ -97,18 +142,21 @@ const AdminLivraison = ({ darkMode }) => {
                                     <div className="flex-1 space-y-4">
                                         <div className="flex gap-4">
                                             <div className="flex-1">
-                                                <label className={`text-[10px] font-black uppercase tracking-widest ${textMuted}`}>Label Principal</label>
+                                                <label htmlFor={`${key}-delivery-label`} className={`text-[10px] font-black uppercase tracking-widest ${textMuted}`}>Label Principal</label>
                                                 <input
+                                                    id={`${key}-delivery-label`}
                                                     type="text"
-                                                    value={mode.label}
+                                                    value={mode.label || ''}
                                                     onChange={(e) => handleChange(key, 'label', e.target.value)}
                                                     className={inputClass}
                                                     placeholder="Ex: Livraison Marseille & Alentours"
+                                                    disabled={saving}
                                                 />
                                             </div>
                                             <div className="w-32">
-                                                <label className={`text-[10px] font-black uppercase tracking-widest ${textMuted}`}>Prix (€)</label>
+                                                <label htmlFor={`${key}-delivery-price`} className={`text-[10px] font-black uppercase tracking-widest ${textMuted}`}>Prix (€)</label>
                                                 <input
+                                                    id={`${key}-delivery-price`}
                                                     type="number"
                                                     value={mode.price}
                                                     onChange={(e) => handleChange(key, 'price', e.target.value)}
@@ -116,28 +164,33 @@ const AdminLivraison = ({ darkMode }) => {
                                                     className={inputClass}
                                                     min="0"
                                                     step="1"
+                                                    disabled={saving}
                                                 />
                                             </div>
                                         </div>
                                         <div className="w-full">
-                                            <label className={`text-[10px] font-black uppercase tracking-widest ${textMuted}`}>Sous-titre (Description courte)</label>
-                                            <input
-                                                type="text"
-                                                value={mode.sub}
-                                                onChange={(e) => handleChange(key, 'sub', e.target.value)}
-                                                className={inputClass}
-                                                placeholder="Ex: Par nos soins"
+                                            <label htmlFor={`${key}-delivery-description`} className={`text-[10px] font-black uppercase tracking-widest ${textMuted}`}>Sous-titre (Description courte)</label>
+                                                <input
+                                                    id={`${key}-delivery-description`}
+                                                    type="text"
+                                                    value={mode.sub || ''}
+                                                    onChange={(e) => handleChange(key, 'sub', e.target.value)}
+                                                    className={inputClass}
+                                                    placeholder="Ex: Par nos soins"
+                                                    disabled={saving}
                                             />
                                         </div>
                                     </div>
                                     <div className="flex flex-col gap-2 items-end justify-center min-w-[120px]">
-                                        <label className="flex items-center gap-2 cursor-pointer">
+                                        <label htmlFor={`${key}-delivery-active`} className="flex items-center gap-2 cursor-pointer">
                                             <span className={`text-[10px] font-black uppercase tracking-widest ${textMuted}`}>Activer</span>
-                                            <input
-                                                type="checkbox"
-                                                checked={mode.active}
-                                                onChange={(e) => handleChange(key, 'active', e.target.checked)}
-                                                className="w-4 h-4 rounded text-indigo-500 focus:ring-indigo-500 bg-stone-800 border-stone-700"
+                                                <input
+                                                    id={`${key}-delivery-active`}
+                                                    type="checkbox"
+                                                    checked={mode.active}
+                                                    onChange={(e) => handleChange(key, 'active', e.target.checked)}
+                                                    className="w-4 h-4 rounded text-indigo-500 focus:ring-indigo-500 bg-stone-800 border-stone-700"
+                                                    disabled={saving}
                                             />
                                         </label>
                                     </div>
@@ -148,14 +201,21 @@ const AdminLivraison = ({ darkMode }) => {
                     })}
                 </div>
 
-                <div className="pt-8 mt-8 border-t border-stone-200 dark:border-stone-800 flex justify-end">
+                <div className="pt-8 mt-8 border-t border-stone-200 dark:border-stone-800 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div aria-live="polite">
+                        {message.text && (
+                            <p className={`text-sm font-bold ${message.type === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>
+                                {message.text}
+                            </p>
+                        )}
+                    </div>
                     <button
                         onClick={handleSave}
-                        disabled
-                        className={`flex items-center gap-2 text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition-colors ${saving || hasErrors ? 'bg-stone-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                        disabled={saving || hasErrors || !policyState.policyVersion}
+                        className={`flex items-center gap-2 text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition-colors ${saving || hasErrors || !policyState.policyVersion ? 'bg-stone-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
                     >
                         {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
-                        {saving ? 'Enregistrement...' : 'Policy v2 en lecture seule'}
+                        {saving ? 'Enregistrement...' : 'Enregistrer et publier'}
                     </button>
                 </div>
             </div>

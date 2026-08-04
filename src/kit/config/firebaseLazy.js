@@ -22,13 +22,12 @@ const getCallableReason = (error) => (
 const emitAdminStepUpRequired = (error) => {
   if (
     typeof window === 'undefined'
-    || !['strong-auth-required', 'recent-strong-auth-required', 'verified-passkey-required'].includes(getCallableReason(error))
+    || getCallableReason(error) !== 'strong-auth-required'
   ) return;
 
   window.dispatchEvent(new CustomEvent(ADMIN_STEP_UP_REQUIRED_EVENT, {
     detail: {
       reason: getCallableReason(error),
-      maxAgeSeconds: Number(error?.details?.maxAgeSeconds || error?.customData?.details?.maxAgeSeconds || 0) || null,
     },
   }));
 };

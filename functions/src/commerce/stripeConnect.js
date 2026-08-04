@@ -3,8 +3,7 @@ const admin = require('firebase-admin');
 const Stripe = require('stripe');
 const { STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL: SUPER_ADMIN_EMAIL_SECRET } = require('../../helpers/secrets');
 const {
-    checkActiveStrongAdmin,
-    checkRecentActiveStrongAdmin
+    checkActiveStrongAdmin
 } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
 
@@ -176,7 +175,7 @@ exports.getStripeConnectStatus = regionalFunctions()
 exports.startStripeConnectOnboarding = regionalFunctions()
     .runWith({ secrets: [STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL_SECRET] })
     .https.onCall(async (data, context) => {
-        await checkRecentActiveStrongAdmin(context);
+        await checkActiveStrongAdmin(context);
         try {
             const stripe = getStripe();
             const origin = sanitizeOrigin(data?.origin);
@@ -253,7 +252,7 @@ exports.startStripeConnectOnboarding = regionalFunctions()
 exports.syncStripeConnectAccount = regionalFunctions()
     .runWith({ secrets: [STRIPE_SECRET_KEY] })
     .https.onCall(async (_data, context) => {
-        await checkRecentActiveStrongAdmin(context);
+        await checkActiveStrongAdmin(context);
         const stripe = getStripe();
         const snap = await CONNECT_DOC_REF.get();
         const current = snap.exists ? snap.data() : {};
@@ -275,7 +274,7 @@ exports.syncStripeConnectAccount = regionalFunctions()
 exports.requestStripeConnectReconnect = regionalFunctions()
     .runWith({ secrets: [STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL_SECRET] })
     .https.onCall(async (data, context) => {
-        await checkRecentActiveStrongAdmin(context);
+        await checkActiveStrongAdmin(context);
         if (String(data?.confirmText || '').trim() !== 'DEMANDER CHANGEMENT STRIPE') {
             throw new functions.https.HttpsError('invalid-argument', 'Phrase de confirmation invalide.');
         }
@@ -310,7 +309,7 @@ exports.requestStripeConnectReconnect = regionalFunctions()
 exports.confirmStripeConnectReconnect = regionalFunctions()
     .runWith({ secrets: [STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL_SECRET] })
     .https.onCall(async (data, context) => {
-        await checkRecentActiveStrongAdmin(context);
+        await checkActiveStrongAdmin(context);
         if (String(data?.confirmText || '').trim() !== 'ACTIVER NOUVEAU STRIPE') {
             throw new functions.https.HttpsError('invalid-argument', 'Phrase de confirmation invalide.');
         }

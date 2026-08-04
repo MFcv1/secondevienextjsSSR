@@ -4,7 +4,7 @@ const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
 const { APP_ID } = require('../../helpers/config');
 const {
-    checkRecentActiveStrongAdmin,
+    checkActiveStrongAdmin,
     normalizeFirestoreId
 } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
@@ -373,7 +373,7 @@ function decisionRuntimes() {
 }
 
 function createAdminCustomerReturnDecisionHandler({
-    authorize = checkRecentActiveStrongAdmin,
+    authorize = checkActiveStrongAdmin,
     runtimeFactory = decisionRuntimes,
     decisionClock = clock()
 } = {}) {

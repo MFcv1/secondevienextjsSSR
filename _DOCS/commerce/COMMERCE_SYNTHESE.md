@@ -186,8 +186,8 @@ reprise `awaiting_method` sont suivis dans
 - Les retries reutilisent les memes identites metier et Stripe.
 - Un remboursement ne remet jamais seul un produit en vente.
 - Le restock exige un retour physique et une disposition admissible.
-- Les actions admin sensibles exigent App Check, registre admin et AAL2
-  recent.
+- Les actions admin exigent App Check, registre admin et AAL2 Google ou
+  passkey; aucune minuterie de reauthentification n'est appliquee.
 - Les e-mails, faits financiers, documents et mouvements portent des
   identites deterministes.
 - Le cleanup est run-scoped, borne et ne supprime aucune preuve comptable.

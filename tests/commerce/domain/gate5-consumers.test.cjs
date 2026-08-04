@@ -618,6 +618,7 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     const adminIsland = source('app/admin/AdminAppIsland.jsx');
     const adminDelivery = source('src/kit/admin/AdminLivraison.jsx');
     const adminPayment = source('src/kit/admin/AdminPaymentSettings.jsx');
+    const functionsIndex = source('functions/index.js');
     const myOrders = source('src/kit/commerce/MyOrdersView.jsx');
     const checkout = source('src/kit/commerce/CheckoutView.jsx');
     const checkoutPage = source('app/checkout/CheckoutPageIsland.jsx');
@@ -634,8 +635,15 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.equal(adminReturns.includes('sendRefundStatusEmailAdmin'), false);
     assert.equal(adminDelivery.includes('setDoc'), false);
     assert.equal(adminDelivery.includes('updateDoc'), false);
+    assert.ok(adminDelivery.includes('getDeliveryPolicyAdmin'));
+    assert.ok(adminDelivery.includes('saveDeliveryPolicyAdmin'));
+    assert.equal(adminDelivery.includes('COMMERCE_V2_POLICY_COMMANDS_OFF'), false);
+    assert.equal(adminDelivery.includes('Policy v2 en lecture seule'), false);
+    assert.ok(functionsIndex.includes('getDeliveryPolicyAdmin'));
+    assert.ok(functionsIndex.includes('saveDeliveryPolicyAdmin'));
     assert.equal(adminPayment.includes('setDoc'), false);
     assert.equal(adminPayment.includes('updateDoc'), false);
+    assert.equal(adminPayment.includes('disabled\n'), false);
     assert.ok(adminOrders.includes('markOrderShippedAdmin'));
     assert.ok(adminOrders.includes('updateOrderTrackingAdmin'));
     assert.equal(adminOrders.includes('window.prompt'), false);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import {
     AlertTriangle,
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { db } from '../config/firebase';
 import { getCallableFunction } from '../config/firebaseLazy';
+import { COMMERCE_V2_UI_ENABLED } from '../commerce/commerceUiFlags';
 import { useAuth } from '../contexts/AuthContext';
 
 const statusCopy = {
@@ -99,7 +100,7 @@ const AdminPaymentSettings = ({ darkMode }) => {
         const unsub = onSnapshot(doc(db, 'sys_metadata', 'payment_settings'), (snap) => {
             if (snap.exists()) {
                 const data = snap.data();
-                setStripeEnabled(data.stripeEnabled !== false);
+                setStripeEnabled(COMMERCE_V2_UI_ENABLED || data.stripeEnabled !== false);
             }
             setLoading(false);
         }, (err) => {
@@ -319,18 +320,13 @@ const AdminPaymentSettings = ({ darkMode }) => {
                                         : 'Seul le virement / Wero est propose aux clients.'}
                             </p>
                         </div>
-                        <button
-                            type="button"
-                            disabled
-                            className="cursor-not-allowed opacity-50"
-                            aria-label={stripeEnabled ? 'Desactiver les paiements par carte' : 'Activer les paiements par carte'}
-                        >
+                        <div aria-label={stripeEnabled ? 'Paiements par carte actifs' : 'Paiements par carte inactifs'}>
                             {stripeEnabled ? (
                                 <ToggleRight size={48} className={darkMode ? 'text-emerald-400' : 'text-emerald-500'} />
                             ) : (
                                 <ToggleLeft size={48} className="text-stone-500" />
                             )}
-                        </button>
+                        </div>
                     </div>
                 </div>
 
@@ -348,10 +344,10 @@ const AdminPaymentSettings = ({ darkMode }) => {
                     <div className="flex items-center justify-between">
                         <div>
                             <span className={`text-sm font-black uppercase tracking-wider ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                                Toujours actif
+                                Désactivé
                             </span>
                             <p className="text-[10px] text-stone-500 mt-1 max-w-xs">
-                                Ce mode reste disponible si Stripe est incomplet, restreint ou volontairement coupe.
+                                Le paiement différé n’est pas activé sur le sandbox. Stripe test reste le seul rail transactionnel.
                             </p>
                         </div>
                         <div className="opacity-40">
@@ -369,14 +365,15 @@ const AdminPaymentSettings = ({ darkMode }) => {
                             <h3 className="font-black uppercase tracking-widest text-xs">Changement de compte Stripe</h3>
                             <p className="mt-2 text-xs text-stone-500 leading-relaxed">
                                 Action sensible: un changement de compte modifie la destination des prochains paiements.
-                                Les anciennes commandes gardent leur compte Stripe d'origine pour les remboursements.
+                                Les anciennes commandes gardent leur compte Stripe d&apos;origine pour les remboursements.
                             </p>
                         </div>
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">1. Demande</label>
+                            <label htmlFor="stripe-reconnect-request" className="text-[10px] font-black uppercase tracking-widest text-stone-500">1. Demande</label>
                             <input
+                                id="stripe-reconnect-request"
                                 value={reconnectRequestText}
                                 onChange={(event) => setReconnectRequestText(event.target.value)}
                                 placeholder="DEMANDER CHANGEMENT STRIPE"
@@ -392,8 +389,9 @@ const AdminPaymentSettings = ({ darkMode }) => {
                             </button>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">2. Activation finale</label>
+                            <label htmlFor="stripe-reconnect-confirm" className="text-[10px] font-black uppercase tracking-widest text-stone-500">2. Activation finale</label>
                             <input
+                                id="stripe-reconnect-confirm"
                                 value={reconnectConfirmText}
                                 onChange={(event) => setReconnectConfirmText(event.target.value)}
                                 placeholder="ACTIVER NOUVEAU STRIPE"
@@ -416,7 +414,7 @@ const AdminPaymentSettings = ({ darkMode }) => {
                 <ShieldCheck size={20} className="text-stone-500 shrink-0 mt-0.5" />
                 <p className="text-xs text-stone-500 leading-relaxed">
                     Stripe Connect evite de demander les cles Stripe de la cliente. Les actions sensibles passent par le serveur,
-                    sont reservees au super-admin et sont journalisees. Aucune cle secrete Stripe n'est visible dans l'admin.
+                    sont reservees aux administrateurs actifs et sont journalisees. Aucune cle secrete Stripe n&apos;est visible dans l&apos;admin.
                 </p>
             </div>
         </div>

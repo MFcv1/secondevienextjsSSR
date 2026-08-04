@@ -4,7 +4,7 @@ const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
 const { APP_ID } = require('../../helpers/config');
 const {
-    checkRecentActiveStrongAdmin,
+    checkActiveStrongAdmin,
     normalizeFirestoreId
 } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
@@ -111,7 +111,7 @@ function mapDomainError(error) {
 }
 
 function createAdminRefundHandler({
-    authorize = checkRecentActiveStrongAdmin,
+    authorize = checkActiveStrongAdmin,
     runtimeFactory = refundRuntime
 } = {}) {
     return async (data, context) => {

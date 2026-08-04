@@ -77,7 +77,6 @@ export default function AdminPublicationWorkspace({
             onSaved={() => setView('history')}
             collectionName={collectionName}
             darkMode={darkMode}
-            mutationsEnabled
           />
         ) : (
           <AdminItemList

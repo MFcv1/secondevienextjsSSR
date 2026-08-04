@@ -4,7 +4,7 @@ const Stripe = require('stripe');
 const { STRIPE_SECRET_KEY } = require('../../helpers/secrets');
 const {
     assertConfirmText,
-    checkRecentActiveStrongAdmin,
+    checkActiveStrongAdmin,
     normalizeFirestoreId,
     writeSecurityAudit
 } = require('../../helpers/security');
@@ -62,7 +62,7 @@ exports.refundOrderAdmin = regionalFunctions()
     .runWith({ enforceAppCheck: true, secrets: [STRIPE_SECRET_KEY] })
     .https.onCall(async (data, context) => {
         assertLegacyMutationBlocked(functions, 'legacy-refund');
-        const adminInfo = await checkRecentActiveStrongAdmin(context);
+        const adminInfo = await checkActiveStrongAdmin(context);
         assertConfirmText(data, 'REMBOURSER COMMANDE', 'remboursement');
         const orderId = normalizeFirestoreId(data?.orderId, 'ID commande');
         const refundReason = typeof data?.reason === 'string' && data.reason.trim()
@@ -197,7 +197,7 @@ exports.refundOrderAdmin = regionalFunctions()
 exports.syncRefundStatusAdmin = regionalFunctions()
     .runWith({ enforceAppCheck: true, secrets: [STRIPE_SECRET_KEY] })
     .https.onCall(async (data, context) => {
-        await checkRecentActiveStrongAdmin(context);
+        await checkActiveStrongAdmin(context);
         const orderId = normalizeFirestoreId(data?.orderId, 'ID commande');
         const orderRef = db.collection('orders').doc(orderId);
         const stripe = Stripe(STRIPE_SECRET_KEY.value());

@@ -132,7 +132,7 @@ const preflightProductMutationAdmin = callable(async (_data, context) => {
         await checkActiveStrongAdmin(context);
         return {
             ok: true,
-            authorization: 'recent-strong-admin'
+            authorization: 'active-strong-admin'
         };
     } catch (error) {
         throw mapDomainError(error);

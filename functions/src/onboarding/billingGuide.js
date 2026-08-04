@@ -5,7 +5,6 @@ const { defineString } = require('firebase-functions/params');
 const {
     assertConfirmText,
     checkActiveStrongAdmin,
-    checkRecentActiveStrongAdmin,
     getSuperAdminEmail,
     normalizeEmail,
     normalizeFirestoreId,
@@ -290,7 +289,7 @@ exports.completeBillingGuideAdmin = regionalFunctions().runWith({
     enforceAppCheck: true,
     secrets: [SUPER_ADMIN_EMAIL]
 }).https.onCall(async (data, context) => {
-    await checkRecentActiveStrongAdmin(context);
+    await checkActiveStrongAdmin(context);
     assertConfirmText(data, COMPLETE_CONFIRMATION, 'validation facturation');
     const targetUid = normalizeFirestoreId(data?.targetUid, 'Compte client');
     const config = getBillingGuideConfig();
@@ -327,7 +326,7 @@ exports.resetBillingGuideTest = regionalFunctions().runWith({
     enforceAppCheck: true,
     secrets: [SUPER_ADMIN_EMAIL]
 }).https.onCall(async (data, context) => {
-    await checkRecentActiveStrongAdmin(context);
+    await checkActiveStrongAdmin(context);
     assertConfirmText(data, RESET_CONFIRMATION, 'reinitialisation test');
     const targetUid = normalizeFirestoreId(data?.targetUid, 'Compte test');
     const config = getBillingGuideConfig();

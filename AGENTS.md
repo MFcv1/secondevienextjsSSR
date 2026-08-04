@@ -148,6 +148,13 @@ Git conserve l'audit et la roadmap retires.
 
 Plan temporaire de reprise explicitement demande:
 
+- [META_OAUTH_PUBLICATION_PRD.md](_DOCS/admin/META_OAUTH_PUBLICATION_PRD.md):
+  reproduction sans friction du parcours OAuth Meta valide dans Jardins de
+  Chawi, adaptee au back-office Seconde Vie; M1 a M3 implementes localement,
+  sans configuration cloud ni deploiement implicite; gates M4 a M6 restantes,
+  revue au plus tard le
+  2026-10-31, puis fusion dans les chapitres admin, infrastructure, securite,
+  qualite et exploitation avant suppression.
 - [COMMERCE_REPRISE.md](_DOCS/commerce/COMMERCE_REPRISE.md): axes post-Gate 8
   R0 a R5; R0 documentaire et R2 sandbox reel fermes, prochaine reprise R1 UX
   et corrections de projection/reprise; aucune activation `v2_all`
@@ -241,7 +248,10 @@ Interdictions:
 - verification locale WebAuthn exigee et verifiee serveur;
 - fallback OTP/Google toujours disponible;
 - OTP idempotent et secret HMAC dedie;
-- admin sensible = claim + registre + assurance forte recente;
+- admin = claim + registre actif + AAL2 Google ou passkey pendant toute la
+  session Firebase validee; aucune fenetre arbitraire de quinze minutes;
+- la passkey reste un moyen de connexion rapide, pas un niveau d'autorisation
+  superieur a Google;
 - retrait admin = claims + registre + revocation refresh tokens;
 - UI actuelle conservee sauf bug UX confirme;
 - domaine final implique nouveau RP ID et reenrolement des passkeys.

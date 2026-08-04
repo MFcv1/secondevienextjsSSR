@@ -115,51 +115,6 @@ function checkStrongSuperAdmin(context) {
     return { assurance };
 }
 
-function checkRecentStrongSuperAdmin(context, maxAgeSeconds = 900) {
-    const result = checkStrongSuperAdmin(context);
-    if (result.assurance.method !== 'passkey' || result.assurance.userVerified !== true) {
-        throw new functions.https.HttpsError(
-            'failed-precondition',
-            'Utilisez une passkey verifiee sur cet appareil avant cette action sensible.',
-            { reason: 'verified-passkey-required', requiredAssurance: 'aal2', requiredMethod: 'passkey' }
-        );
-    }
-    const authTime = Number(context.auth?.token?.auth_time || 0);
-    const nowSeconds = Math.floor(Date.now() / 1000);
-    if (!authTime || nowSeconds - authTime > maxAgeSeconds) {
-        throw new functions.https.HttpsError(
-            'failed-precondition',
-            'Session admin trop ancienne. Reconnectez-vous avant cette action sensible.',
-            { reason: 'recent-strong-auth-required', requiredAssurance: 'aal2', maxAgeSeconds }
-        );
-    }
-    return result;
-}
-
-function checkRecentStrongAdmin(context, maxAgeSeconds = 900) {
-    const result = checkStrongAdmin(context);
-    if (result.assurance.method !== 'passkey' || result.assurance.userVerified !== true) {
-        throw new functions.https.HttpsError(
-            'failed-precondition',
-            'Utilisez une passkey verifiee sur cet appareil avant cette action sensible.',
-            { reason: 'verified-passkey-required', requiredAssurance: 'aal2', requiredMethod: 'passkey' }
-        );
-    }
-    const authTime = Number(context.auth?.token?.auth_time || 0);
-    const nowSeconds = Math.floor(Date.now() / 1000);
-    if (!authTime || nowSeconds - authTime > maxAgeSeconds) {
-        throw new functions.https.HttpsError(
-            'failed-precondition',
-            'Session admin trop ancienne. Reconnectez-vous avant cette action sensible.',
-            { reason: 'recent-strong-auth-required', requiredAssurance: 'aal2', maxAgeSeconds }
-        );
-    }
-    return result;
-}
-
-const checkRecentSuperAdmin = checkRecentStrongSuperAdmin;
-const checkRecentAdmin = checkRecentStrongAdmin;
-
 async function getActiveAdminAccess(context, { requireOwner = false } = {}) {
     if (!context.auth?.uid) {
         throw new functions.https.HttpsError('unauthenticated', 'Authentification requise.');
@@ -195,18 +150,6 @@ async function checkActiveStrongAdmin(context) {
 
 async function checkActiveStrongSuperAdmin(context) {
     const result = checkStrongSuperAdmin(context);
-    const access = await getActiveAdminAccess(context, { requireOwner: true });
-    return { ...result, access };
-}
-
-async function checkRecentActiveStrongAdmin(context, maxAgeSeconds = 900) {
-    const result = checkRecentStrongAdmin(context, maxAgeSeconds);
-    const access = await getActiveAdminAccess(context);
-    return { ...result, access };
-}
-
-async function checkRecentActiveStrongSuperAdmin(context, maxAgeSeconds = 900) {
-    const result = checkRecentStrongSuperAdmin(context, maxAgeSeconds);
     const access = await getActiveAdminAccess(context, { requireOwner: true });
     return { ...result, access };
 }
@@ -299,15 +242,9 @@ module.exports = {
     getAuthAssurance,
     checkStrongAdmin,
     checkStrongSuperAdmin,
-    checkRecentStrongSuperAdmin,
-    checkRecentStrongAdmin,
-    checkRecentSuperAdmin,
-    checkRecentAdmin,
     getActiveAdminAccess,
     checkActiveStrongAdmin,
     checkActiveStrongSuperAdmin,
-    checkRecentActiveStrongAdmin,
-    checkRecentActiveStrongSuperAdmin,
     assertConfirmText,
     writeSecurityAudit,
     normalizeProductCollection,

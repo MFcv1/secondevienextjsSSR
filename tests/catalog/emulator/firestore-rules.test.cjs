@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { after, before, beforeEach, test } = require('node:test');
 const { assertFails, assertSucceeds, initializeTestEnvironment } = require('@firebase/rules-unit-testing');
-const { doc, getDoc, setDoc } = require('firebase/firestore');
+const { doc, getDoc, setDoc, updateDoc } = require('firebase/firestore');
 const { PROJECT_ID, assertEmulatorEnvironment } = require('./emulator-guard.cjs');
 
 let environment;
@@ -69,6 +69,41 @@ test('catalog publication state is backend-only for every client role', async ()
     }
   }
   assert.equal(contexts.length, 3);
+});
+
+test('active Google or passkey admins can edit back-office content without a time window', async () => {
+  await environment.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'sys_admin_access/admin-google'), { active: true, role: 'admin' });
+    await setDoc(doc(context.firestore(), 'sys_admin_access/admin-passkey'), { active: true, role: 'admin' });
+    await setDoc(doc(context.firestore(), 'artifacts/secondevie/public/data/furniture/editable'), {
+      status: 'published', name: 'Editable', description: '', images: [], stock: 1, startingPrice: 450,
+    });
+    await setDoc(doc(context.firestore(), 'sys_metadata/theme_settings'), { accent: 'stone' });
+    await setDoc(doc(context.firestore(), 'sys_metadata/delivery'), { retrait: { active: true, price: 0 } });
+  });
+
+  const google = environment.authenticatedContext('admin-google', {
+    admin: true,
+    firebase: { sign_in_provider: 'google.com' },
+  }).firestore();
+  await assertSucceeds(updateDoc(
+    doc(google, 'artifacts/secondevie/public/data/furniture/editable'),
+    { name: 'Editable Google' }
+  ));
+  await assertFails(updateDoc(
+    doc(google, 'artifacts/secondevie/public/data/furniture/editable'),
+    { startingPrice: 1 }
+  ));
+  await assertFails(updateDoc(doc(google, 'sys_metadata/delivery'), { retrait: { active: false, price: 0 } }));
+
+  const passkey = environment.authenticatedContext('admin-passkey', {
+    admin: true,
+    authMethod: 'passkey',
+    authAssurance: 'aal2',
+    userVerified: true,
+    auth_time: Math.floor(Date.now() / 1000) - 86400,
+  }).firestore();
+  await assertSucceeds(updateDoc(doc(passkey, 'sys_metadata/theme_settings'), { accent: 'sauge' }));
 });
 
 test('catalog live expose uniquement le signal courant minimal et refuse toute ecriture client', async () => {

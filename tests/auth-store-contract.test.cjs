@@ -33,11 +33,12 @@ test('admin dashboard consumes resolved claims without forcing a token refresh o
   assert.doesNotMatch(dashboard, /syncSuperAdminClaim/);
 });
 
-test('stale sensitive admin calls request a step-up without clearing Firebase session', () => {
+test('only missing AAL2 requests an admin login without clearing Firebase session', () => {
   const firebaseLazy = read('src/kit/config/firebaseLazy.js');
   const adminIsland = read('app/admin/AdminAppIsland.jsx');
 
-  assert.match(firebaseLazy, /recent-strong-auth-required/);
+  assert.match(firebaseLazy, /strong-auth-required/);
+  assert.doesNotMatch(firebaseLazy, /recent-strong-auth-required|verified-passkey-required/);
   assert.match(firebaseLazy, /ADMIN_STEP_UP_REQUIRED_EVENT/);
   assert.match(adminIsland, /addEventListener\(ADMIN_STEP_UP_REQUIRED_EVENT/);
   assert.equal((adminIsland.match(/<LegacyLoginModalIsland/g) || []).length, 2);

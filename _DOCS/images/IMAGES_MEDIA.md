@@ -1,6 +1,6 @@
 # Images produit et medias
 
-Derniere mise a jour: 2026-07-20
+Derniere mise a jour: 2026-08-04
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Architecture
@@ -76,10 +76,13 @@ Politique courante:
 
 1. compresse le fichier;
 2. calcule les metadata;
-3. cree les variantes via `src/utils/imageUtils.js` et Firebase Storage;
-4. conserve l'ordre de galerie;
-5. ecrit URLs, variantes et metadata dans Firestore;
-6. declenche l'invalidation du catalogue apres sauvegarde.
+3. renouvelle le jeton Firebase puis precontrole l'admin actif AAL2;
+   `storage.rules` relit ce registre pour tous les chemins admin autorises sans
+   imposer de fenetre temporelle;
+4. cree les variantes via `src/utils/imageUtils.js` et Firebase Storage;
+5. conserve l'ordre de galerie;
+6. ecrit URLs, variantes et metadata dans Firestore;
+7. declenche l'invalidation du catalogue apres sauvegarde.
 
 Une modification de ce flux doit tester creation neuve, edition sans nouvelle image, recadrage, suppression/reordre et echec partiel d'upload.
 

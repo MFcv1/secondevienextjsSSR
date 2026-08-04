@@ -77,8 +77,8 @@ test('OTP admin remains AAL1 and is denied strong admin access', () => {
   ));
 });
 
-test('recent verified passkey admin is accepted as AAL2', () => {
-  const { checkRecentStrongAdmin, getAuthAssurance } = loadSecurity();
+test('verified passkey admin is accepted as AAL2 without a time window', () => {
+  const { checkStrongAdmin, getAuthAssurance } = loadSecurity();
   const caller = context(adminToken({
     signInProvider: 'passkey',
     authMethod: 'passkey',
@@ -89,11 +89,11 @@ test('recent verified passkey admin is accepted as AAL2', () => {
   assert.deepEqual(getAuthAssurance(caller), {
     level: 'aal2', method: 'passkey', userVerified: true,
   });
-  assert.equal(checkRecentStrongAdmin(caller).assurance.level, 'aal2');
+  assert.equal(checkStrongAdmin(caller).assurance.level, 'aal2');
 });
 
-test('stale passkey admin is denied recent sensitive access', () => {
-  const { checkRecentStrongAdmin } = loadSecurity();
+test('an older passkey session remains AAL2 while the Firebase session is valid', () => {
+  const { checkStrongAdmin } = loadSecurity();
   const caller = context(adminToken({
     auth_time: now() - 901,
     authMethod: 'passkey',
@@ -101,10 +101,7 @@ test('stale passkey admin is denied recent sensitive access', () => {
     userVerified: true,
   }));
 
-  assert.throws(() => checkRecentStrongAdmin(caller), (error) => (
-    error.code === 'failed-precondition'
-    && error.details?.reason === 'recent-strong-auth-required'
-  ));
+  assert.equal(checkStrongAdmin(caller).assurance.method, 'passkey');
 });
 
 test('Google admin is accepted as AAL2 by the documented operational policy', () => {
@@ -113,14 +110,12 @@ test('Google admin is accepted as AAL2 by the documented operational policy', ()
   assert.equal(checkStrongAdmin(caller).assurance.method, 'google');
 });
 
-test('Google alone cannot authorize a recent sensitive admin mutation', () => {
-  const { checkRecentStrongAdmin } = loadSecurity();
+test('Google authorizes admin mutations without a passkey step-up', async () => {
+  const { checkActiveStrongAdmin } = loadSecurity();
   const caller = context(adminToken({ firebase: { sign_in_provider: 'google.com' } }));
-  assert.throws(() => checkRecentStrongAdmin(caller), (error) => (
-    error.code === 'failed-precondition'
-    && error.details?.reason === 'verified-passkey-required'
-    && error.details?.requiredMethod === 'passkey'
-  ));
+  const result = await checkActiveStrongAdmin(caller);
+  assert.equal(result.assurance.method, 'google');
+  assert.equal(result.access.active, true);
 });
 
 test('strong authentication never replaces the admin role check', () => {
@@ -152,14 +147,14 @@ test('active registry is required even when a current AAL2 token still has admin
 });
 
 test('active registry and AAL2 token authorize an admin callable', async () => {
-  const { checkRecentActiveStrongAdmin } = loadSecurity();
+  const { checkActiveStrongAdmin } = loadSecurity();
   const caller = context(adminToken({
     authMethod: 'passkey',
     authAssurance: 'aal2',
     userVerified: true,
   }));
 
-  const result = await checkRecentActiveStrongAdmin(caller);
+  const result = await checkActiveStrongAdmin(caller);
   assert.equal(result.access.active, true);
   assert.equal(result.assurance.level, 'aal2');
 });
@@ -174,12 +169,34 @@ test('token minting and Firebase rules carry the same AAL contract', () => {
   assert.match(otp, /authMethod:\s*'email_otp'[\s\S]*authAssurance:\s*'aal1'[\s\S]*userVerified:\s*false/);
   assert.match(firestoreRules, /function isStrongArtisan\(\)/);
   assert.match(firestoreRules, /function hasActiveAdminAccess\(\)/);
-  assert.match(firestoreRules, /function hasRecentVerifiedPasskey\(\)/);
-  assert.match(firestoreRules, /function isRecentPasskeyArtisan\(\)/);
+  assert.doesNotMatch(firestoreRules, /hasRecentVerifiedPasskey|isRecentPasskeyArtisan|auth_time/);
   assert.match(firestoreRules, /documents\/sys_admin_access\/\$\(request\.auth\.uid\)/);
   assert.doesNotMatch(firestoreRules, /allow (?:read|write|create|update|delete|read, write|read, update, delete): if isArtisan\(\)/);
   assert.match(storageRules, /request\.auth\.token\.authAssurance == 'aal2'/);
   assert.match(storageRules, /request\.auth\.token\.userVerified == true/);
   assert.match(storageRules, /request\.auth\.token\.authMethod == 'passkey'/);
-  assert.match(storageRules, /request\.auth\.token\.auth_time/);
+  assert.doesNotMatch(storageRules, /auth_time|900/);
+  assert.match(storageRules, /match \/furniture\/\{allPaths=\*\*\}/);
+  assert.match(storageRules, /firestore\.exists\(\/databases\/\(default\)\/documents\/sys_admin_access\/\$\(request\.auth\.uid\)\)/);
+  assert.match(storageRules, /request\.auth\.token\.firebase\.sign_in_provider == 'google\.com'/);
+  assert.match(storageRules, /topLevel != 'furniture'/);
+});
+
+test('admin authorization has no hidden recent-passkey gate', () => {
+  const sources = [
+    '../functions/helpers/security.js',
+    '../functions/src/auth/adminManagement.js',
+    '../functions/src/commerce/v2OrderCommands.js',
+    '../functions/src/commerce/v2RefundCommands.js',
+    '../functions/src/commerce/v2ReturnCommands.js',
+    '../functions/src/commerce/v2CustomerReturnRequests.js',
+    '../functions/src/commerce/v2AdminPaymentLinks.js',
+    '../functions/src/commerce/v2DeliveryPolicyAdmin.js',
+    '../functions/src/commerce/stripeConnect.js',
+    '../functions/src/catalog/catalogMaintenance.js',
+    '../functions/src/maintenance/tools.js',
+    '../src/kit/config/firebaseLazy.js'
+  ].map((relativePath) => fs.readFileSync(path.resolve(__dirname, relativePath), 'utf8')).join('\n');
+  assert.doesNotMatch(sources, /checkRecent|recent-strong-auth-required|verified-passkey-required|maxAgeSeconds\s*=\s*900/);
+  assert.match(sources, /checkActiveStrongAdmin/);
 });

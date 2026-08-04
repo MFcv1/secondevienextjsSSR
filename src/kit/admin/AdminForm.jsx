@@ -12,6 +12,7 @@ import StoryEditor from './components/StoryEditor';
 import KIT_CONFIG from '../config/constants';
 import RichTextStory from '../shared/RichTextStory';
 import { clearAdminPublicCatalogCache } from './adminPublicCatalog';
+import { getFirebaseAuth } from '../config/firebaseLazy';
 import {
   adjustInventoryAdmin,
   createProductCommandSession,
@@ -54,6 +55,24 @@ const STYLE_OPTIONS = [
 ];
 
 const MAX_PRODUCT_IMAGES = 23;
+
+const isStorageAuthorizationError = (error) => (
+  error?.code === 'storage/unauthorized'
+  || String(error?.message || '').includes('storage/unauthorized')
+);
+
+const refreshAdminAuthorizationToken = async () => {
+  const auth = await getFirebaseAuth();
+  if (typeof auth.authStateReady === 'function') await auth.authStateReady();
+  const user = auth.currentUser;
+  if (!user || user.isAnonymous) {
+    throw Object.assign(
+      new Error('Session administrateur absente.'),
+      { code: 'auth/admin-session-missing' }
+    );
+  }
+  await user.getIdToken(true);
+};
 
 const COLOR_BANK = [
   { name: 'Naturel / Brut', hex: '#DEB887' },
@@ -113,8 +132,7 @@ const AdminForm = ({
   onCancelEdit,
   onSaved,
   collectionName = 'furniture',
-  darkMode = false,
-  mutationsEnabled = false
+  darkMode = false
 }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -152,7 +170,6 @@ const AdminForm = ({
   const depthInputRef = useRef(null);
   const heightInputRef = useRef(null);
   const productCommandSessionRef = useRef(null);
-  const initialPreflightStartedRef = useRef(false);
 
   // New state for drag reordering
   const [isDragging, setIsDragging] = useState(false);
@@ -171,15 +188,6 @@ const AdminForm = ({
 
   // [NEW] Cropper State
   const [cropperConfig, setCropperConfig] = useState({ isOpen: false, image: null, itemId: null, aspect: 3 / 4 });
-
-  useEffect(() => {
-    if (!mutationsEnabled || initialPreflightStartedRef.current) return;
-    initialPreflightStartedRef.current = true;
-
-    void preflightProductMutationAdmin().catch(() => {
-      setMsg("Confirmez votre session administrateur avant de préparer l'annonce.");
-    });
-  }, [mutationsEnabled]);
 
   const formatBytes = (bytes) => {
     if (bytes === 0) return '0 B';
@@ -398,6 +406,7 @@ const AdminForm = ({
       setUploading(true);
       setMsg('Reprise de la publication Meta…');
       try {
+        await refreshAdminAuthorizationToken();
         const failedDestinations = ['instagram', 'facebook'].filter((destination) => (
           socialPublication.destinations?.[destination]?.requested
           && socialPublication.destinations?.[destination]?.status !== 'published'
@@ -456,6 +465,7 @@ const AdminForm = ({
 
     try {
       setMsg("Vérification de la session administrateur...");
+      await refreshAdminAuthorizationToken();
       await preflightProductMutationAdmin();
       setMsg("Préparation des fichiers...");
 
@@ -480,6 +490,7 @@ const AdminForm = ({
           try {
             uploadedVariants = await uploadProductVariantSet(item.file, progressPrefix, count - 1);
           } catch (err) {
+            if (isStorageAuthorizationError(err)) throw err;
             console.warn("Responsive variant upload failed, falling back to single WebP", err);
             setMsg(`${progressPrefix} Compression WebP...`);
             let fileToUpload = item.file;
@@ -656,8 +667,8 @@ const AdminForm = ({
         setMsg("Confirme ton identité avec Google ou ta passkey, puis clique de nouveau sur « Publier l’ouvrage ».");
         return;
       }
-      if (err.code === 'storage/unauthorized' || err.message?.includes('storage/unauthorized')) {
-        setMsg("Autorisation d’envoi des images refusée. Reconnecte-toi, puis réessaie.");
+      if (isStorageAuthorizationError(err)) {
+        setMsg("Envoi refusé malgré une session admin validée. Les règles d’envoi du site doivent être mises à jour.");
         return;
       }
       if (err.message?.includes("storage")) errorPrefix = "Envoi des images impossible";
@@ -822,7 +833,7 @@ const AdminForm = ({
     || msg.startsWith('Envoi des images impossible');
 
   return (
-    <div className="grid min-h-0 grid-cols-1 gap-5 xl:h-full xl:grid-cols-[minmax(0,1fr)_minmax(250px,20%)] 2xl:gap-6">
+    <div className="grid min-h-0 grid-cols-1 gap-5 xl:h-full xl:grid-cols-[minmax(0,1fr)_minmax(290px,26%)] 2xl:gap-6">
       <div className={`min-h-0 overflow-hidden rounded-[26px] border ${darkMode ? 'border-white/10 bg-[#11110f]' : 'border-stone-200 bg-white'}`}>
         <div className="flex h-full min-h-0 flex-col overflow-hidden px-5 py-5 sm:px-6 sm:py-6 xl:px-7 xl:py-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -1019,10 +1030,7 @@ const AdminForm = ({
       <aside className={`min-h-0 rounded-[26px] border p-5 sm:p-6 ${darkMode ? 'border-white/10 bg-[#11110f]' : 'border-stone-200 bg-white'}`}>
         <div className="flex h-full min-h-[360px] flex-col">
           <p className={`text-[9px] font-extrabold uppercase tracking-[0.14em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Résumé de la publication</p>
-          <div className={`mt-3 overflow-hidden rounded-[16px] ring-1 ${darkMode ? 'bg-black/20 ring-white/10' : 'bg-[#F7F6F3] ring-black/[0.045]'}`}>
-            {galleryItems[0]?.preview ? <img src={galleryItems[0].preview} alt="Aperçu principal" className="h-32 w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:scale-105" /> : <div className="grid h-32 place-items-center text-center text-[10px] text-stone-400"><span><Upload size={20} strokeWidth={1.3} className="mx-auto mb-2" />Le premier visuel apparaîtra ici</span></div>}
-          </div>
-          <h4 className="mt-3 break-words text-[16px] font-extrabold leading-[1.15] tracking-[-0.025em]">{formData.name || 'Sans titre'}</h4>
+          <h4 className="mt-4 break-words text-[16px] font-extrabold leading-[1.15] tracking-[-0.025em]">{formData.name || 'Sans titre'}</h4>
           <dl className={`mt-3 divide-y text-[10px] ${darkMode ? 'divide-white/10' : 'divide-black/[0.055]'}`}>
             {[
               ['Catégorie', categoryLabel],

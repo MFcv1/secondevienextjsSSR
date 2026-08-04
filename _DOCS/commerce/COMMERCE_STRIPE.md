@@ -127,7 +127,7 @@ n'a pas vocation a rester visible. S'il persiste (`unknown`,
 `provider_pending` ou interruption avant persistance), la reprise admin relit
 la derniere tentative bornee et rejoue exactement sa `refundRequestId`. La
 cle Stripe idempotente reste identique: une reponse perdue ne cree donc pas un
-second refund. La reprise exige un administrateur actif avec AAL2 recent,
+second refund. La reprise exige un administrateur actif avec AAL2 Google ou passkey,
 reste soumise au control plane `adminMutationMode=v2` et ajoute un evenement
 d'audit distinct sans modifier l'auteur initial de la demande.
 
@@ -459,7 +459,7 @@ et archive souple; il refuse les collections non autorisees et conserve un
 audit par commande. Le transport callable est exporte avec App Check; le
 cablage admin produit est actif et independant du control transactionnel.
 Le transport callable fulfillment/archive commande est egalement prepare avec
-App Check, registre admin actif et AAL2 recent; son acteur est derive du
+App Check, registre admin actif et AAL2 Google ou passkey; son acteur est derive du
 contexte Auth; il est exporte mais son verrou serveur et son branchement UI
 conditionne par `adminMutationMode=v2` autorisent les mutations dans l'etat
 sandbox courant. Le transport
@@ -468,11 +468,11 @@ le proprietaire vient exclusivement du contexte Auth et le runtime minimal ne
 branche que la coordination d'annulation. Il est exporte et actif dans l'UI
 sandbox. Le
 transport refund admin est egalement prepare avec App Check, secret Stripe,
-registre admin actif et AAL2 recent; il derive l'acteur du contexte Auth et
+registre admin actif et AAL2 Google ou passkey; il derive l'acteur du contexte Auth et
 branche un runtime minimal sur la saga refund reprenable. Il est exporte et
 actif dans l'UI sandbox. Les transports retour admin sont prepares sous
 App Check, registre
-admin actif et AAL2 recent: ouverture, annulation, reception, restock,
+admin actif et AAL2 Google ou passkey: ouverture, annulation, reception, restock,
 write-off et resolution sont des commandes fermees, versionnees et
 quantitatives, avec acteur derive du contexte Auth et runtime minimal. Ils
 sont exportes et autorises par le controle serveur sandbox. Les interfaces fulfillment,
@@ -554,7 +554,7 @@ Cycle de vie:
   prix, du stock, de la policy et du compte Connect;
 - etat ambigu: `needs_review`, sans recreation ni liberation optimiste.
 
-Les mutations exigent un admin actif avec AAL2 recent, App Check,
+Les mutations exigent un admin actif avec AAL2 Google ou passkey, App Check,
 `newCheckoutMode=v2_all`, `adminMutationMode=v2`, une policy active et le
 secret serveur `PAYMENT_LINK_HMAC_SECRET`. La lecture publique exige la
 signature HMAC et App Check. Les e-mails d'une commande sans compte contiennent

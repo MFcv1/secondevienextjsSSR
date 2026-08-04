@@ -426,9 +426,7 @@ test('admin removal clears active claims, profile role and whitelist entry', asy
   const securityMock = {
     assertConfirmText: () => undefined,
     checkIsAdmin: () => undefined,
-    checkRecentSuperAdmin: () => undefined,
-    checkRecentActiveStrongSuperAdmin: async () => undefined,
-    checkRecentActiveStrongAdmin: async () => undefined,
+    checkStrongSuperAdmin: () => undefined,
     checkActiveStrongAdmin: async () => undefined,
     getSuperAdminEmail: () => '',
     normalizeEmail: (value) => String(value || '').trim().toLowerCase(),

@@ -110,6 +110,10 @@ const {
     regenerateAdminPaymentLink,
     resumeAdminPaymentLinkPayment
 } = require('./src/commerce/v2AdminPaymentLinks');
+const {
+    getDeliveryPolicyAdmin,
+    saveDeliveryPolicyAdmin
+} = require('./src/commerce/v2DeliveryPolicyAdmin');
 
 exports.adjustInventoryAdmin = adjustInventoryAdmin;
 exports.deleteProductAdmin = deleteProductAdmin;
@@ -159,6 +163,8 @@ exports.prepareAdminPaymentLinkPayment = prepareAdminPaymentLinkPayment;
 exports.recreateAdminPaymentLink = recreateAdminPaymentLink;
 exports.regenerateAdminPaymentLink = regenerateAdminPaymentLink;
 exports.resumeAdminPaymentLinkPayment = resumeAdminPaymentLinkPayment;
+exports.getDeliveryPolicyAdmin = getDeliveryPolicyAdmin;
+exports.saveDeliveryPolicyAdmin = saveDeliveryPolicyAdmin;
 
 // ── PUBLICATION META (OAuth + Instagram/Facebook) ───────
 const {

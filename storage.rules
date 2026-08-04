@@ -1,6 +1,46 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    function isAdminClaim() {
+      return request.auth != null && (
+        (
+          request.auth.token.keys().hasAll(['admin']) &&
+          request.auth.token.admin == true
+        ) ||
+        (
+          request.auth.token.keys().hasAll(['superAdmin']) &&
+          request.auth.token.superAdmin == true
+        )
+      );
+    }
+
+    function hasStrongAdminAuth() {
+      return request.auth != null && (
+        (
+          request.auth.token.keys().hasAll(['firebase']) &&
+          request.auth.token.firebase.sign_in_provider == 'google.com'
+        ) ||
+        (
+          request.auth.token.keys().hasAll(['authMethod', 'authAssurance', 'userVerified']) &&
+          request.auth.token.authMethod == 'passkey' &&
+          request.auth.token.authAssurance == 'aal2' &&
+          request.auth.token.userVerified == true
+        )
+      );
+    }
+
+    function hasActiveAdminAccess() {
+      return request.auth != null &&
+        firestore.exists(/databases/(default)/documents/sys_admin_access/$(request.auth.uid)) &&
+        firestore.get(/databases/(default)/documents/sys_admin_access/$(request.auth.uid)).data.active == true;
+    }
+
+    function isValidImageWrite() {
+      return request.resource != null &&
+        request.resource.size < 10 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/(jpeg|png|webp|gif|avif)');
+    }
+
     match /catalog-projection/{allPaths=**} {
       allow read, write: if false;
     }
@@ -13,6 +53,15 @@ service firebase.storage {
       allow read, write: if false;
     }
 
+    match /furniture/{allPaths=**} {
+      allow read: if true;
+      allow create, update: if isAdminClaim()
+        && hasStrongAdminAuth()
+        && hasActiveAdminAccess()
+        && isValidImageWrite();
+      allow delete: if false;
+    }
+
     match /{topLevel}/{allPaths=**} {
       allow read: if topLevel != 'catalog-projection'
         && topLevel != 'commerce-documents'
@@ -21,27 +70,14 @@ service firebase.storage {
       // BLINDAGE ADMINISTRATEUR (Standard & Robuste)
       // Seul l'admin identifié peut uploader. 
       // On bloque les fichiers trop gros (>10Mo), les non-images et les SVG executables.
-      allow create, update: if topLevel != 'catalog-projection'
+      allow create, update: if topLevel != 'furniture'
+        && topLevel != 'catalog-projection'
         && topLevel != 'commerce-documents'
         && topLevel != 'admin-invoices'
-        && request.auth != null
-        && (
-          request.auth.token.admin == true ||
-          request.auth.token.superAdmin == true
-        )
-        && request.auth.token.keys().hasAll(['authMethod', 'authAssurance', 'userVerified', 'auth_time'])
-        && request.auth.token.authMethod == 'passkey'
-        && request.auth.token.authAssurance == 'aal2'
-        && request.auth.token.userVerified == true
-        && request.auth.token.auth_time is int
-        && request.auth.token.auth_time > request.time.toMillis() / 1000 - 900
-        && (
-          request.resource == null ||
-          (
-            request.resource.size < 10 * 1024 * 1024 &&
-            request.resource.contentType.matches('image/(jpeg|png|webp|gif|avif)')
-          )
-        );
+        && isAdminClaim()
+        && hasStrongAdminAuth()
+        && hasActiveAdminAccess()
+        && isValidImageWrite();
       allow delete: if false;
     }
   }

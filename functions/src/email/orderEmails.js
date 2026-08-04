@@ -8,7 +8,7 @@ const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
 const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { getSiteUrl } = require('../../helpers/config');
-const { checkActiveStrongAdmin, checkRecentActiveStrongAdmin, normalizeFirestoreId } = require('../../helpers/security');
+const { checkActiveStrongAdmin, normalizeFirestoreId } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
 const {
     TRANSACTIONAL_EMAIL_SECRETS,
@@ -223,7 +223,7 @@ exports.sendTestEmail = regionalFunctions().runWith({ secrets: TRANSACTIONAL_EMA
 });
 
 exports.sendRefundStatusEmailAdmin = regionalFunctions().runWith({ secrets: TRANSACTIONAL_EMAIL_SECRETS }).https.onCall(async (data, context) => {
-    await checkRecentActiveStrongAdmin(context);
+    await checkActiveStrongAdmin(context);
     const orderId = normalizeFirestoreId(data?.orderId, 'ID commande');
     const orderRef = db.collection('orders').doc(orderId);
     const snap = await orderRef.get();

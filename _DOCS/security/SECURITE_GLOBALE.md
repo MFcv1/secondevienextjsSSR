@@ -1,6 +1,6 @@
 # Securite globale
 
-Derniere mise a jour: 2026-07-14
+Derniere mise a jour: 2026-08-04
 Statut: `PREPROD_READY`
 Reference Auth associee: `AUTHENTIFICATION.md`
 
@@ -23,7 +23,7 @@ Regles fondatrices:
 - le navigateur ne constitue jamais une frontiere d'autorisation;
 - une variable `NEXT_PUBLIC_*` est publique par definition;
 - les operations metier sensibles passent par une Function serveur ou des rules strictes;
-- l'identite, le role, l'assurance forte recente et l'etat du registre admin sont des controles distincts;
+- l'identite, le role, l'assurance AAL2 et l'etat du registre admin sont des controles distincts;
 - les webhooks sont authentifies par leur signature fournisseur, pas par App Check;
 - les endpoints publics restent minimaux, bornes et sans donnees privees.
 
@@ -36,7 +36,7 @@ Pour un administrateur, un claim seul ne suffit pas. Le controle fort exige:
 1. un ID token Firebase valide;
 2. un claim `admin` ou `superAdmin`;
 3. une entree active dans `sys_admin_access/{uid}`;
-4. une assurance recente lorsque l'operation est sensible;
+4. une assurance AAL2 Google ou passkey pendant la session Firebase valide;
 5. les controles metier propres a la Function.
 
 La suppression d'un acces admin doit retirer les claims, desactiver le registre et revoquer les refresh tokens. Les interfaces peuvent masquer une action, mais le serveur doit toujours la refuser de facon autonome.
@@ -63,12 +63,11 @@ Toute nouvelle collection doit avoir une decision explicite dans les rules avant
 
 ## 4. Storage Rules
 
-`storage.rules` protege les medias. Les lectures publiques servent le catalogue;
-les ecritures directes exigent un claim admin, une passkey verifiee et un
-`auth_time` inferieur a quinze minutes. Storage ne pouvant pas consulter le
-registre Firestore, cette fraicheur borne a quinze minutes le reliquat maximal
-d'un ID token emis avant revocation; les refresh tokens sont revoques en
-parallele.
+`storage.rules` protege les medias. Les lectures publiques servent le catalogue.
+Tous les chemins d'ecriture admin autorises exigent un claim admin, une
+assurance AAL2 Google ou passkey et une entree active relue dans
+`sys_admin_access` via les fonctions interservices Firestore des Storage Rules.
+Aucune fenetre de quinze minutes ni passkey obligatoire n'est imposee.
 
 Avant d'ajouter un chemin Storage:
 
@@ -76,8 +75,8 @@ Avant d'ajouter un chemin Storage:
 - borner type MIME et taille lorsque possible;
 - verifier que le nom de chemin ne permet pas d'ecraser un autre domaine;
 - prevoir la suppression liee au document Firestore;
-- tester un admin Google seul, une passkey recente et une passkey vieille de
-  plus de quinze minutes;
+- tester un admin sans registre, un admin Google actif, une passkey active meme
+  ancienne, un claim absent et un fichier invalide;
 - conserver une Function avec registre actif avant les parcours metier qui
   precedent un upload direct.
 
@@ -88,7 +87,7 @@ Les helpers communs sont dans `functions/helpers/security.js`, `runtime.js`, `se
 Controles attendus selon le type:
 
 - callable client: Auth, App Check si compatible, validation schema, rate limit et idempotence;
-- callable admin: Auth + role + registre + assurance forte recente;
+- callable admin: Auth + role + registre + assurance AAL2 Google ou passkey;
 - webhook Stripe: lecture du corps brut et verification de signature;
 - trigger Firestore: validation defensive des donnees, idempotence et effets bornes;
 - tache planifiee: limite, retention, journalisation et absence de confiance dans les donnees historiques;
@@ -120,6 +119,8 @@ Secrets typiques:
 - secret HMAC OTP dedie;
 - e-mail super-admin;
 - secrets E2E locaux.
+- identifiants d'application Meta, redirect URI exact et cle AES-GCM dediee au
+  chiffrement du Page access token.
 
 Regles:
 
@@ -129,6 +130,13 @@ Regles:
 - secrets sandbox et production separes;
 - permissions IAM minimales;
 - un secret ne doit pas etre reutilise comme cle cryptographique pour un autre usage.
+
+Le rail Meta stocke uniquement un Page access token chiffre en AES-256-GCM
+dans `sys_meta_connections`. Les states OAuth sont one-shot, expires et
+proteges par un verificateur dont seul le hash est persiste. Les collections
+OAuth, choix d'actifs, sagas sociales et audits sont interdites au navigateur
+par `firestore.rules`; toutes les projections retournees au client retirent les
+IDs Meta et le token chiffre.
 
 ## 8. Securite HTTP et navigateur
 

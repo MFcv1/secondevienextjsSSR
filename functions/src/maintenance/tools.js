@@ -6,8 +6,7 @@ const admin = require('firebase-admin');
 const {
     assertConfirmText,
     checkActiveStrongAdmin,
-    checkRecentActiveStrongAdmin,
-    checkRecentActiveStrongSuperAdmin,
+    checkActiveStrongSuperAdmin,
     getSuperAdminEmail,
     normalizeProductCollection,
     normalizeImageContentType,
@@ -23,7 +22,7 @@ const db = admin.firestore();
 // --- RESET STATS (Compteurs produits) ---
 exports.resetAllStats = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
     assertLegacyMutationBlocked(functions, 'resetAllStats');
-    await checkRecentActiveStrongSuperAdmin(context);
+    await checkActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'RESET STATS', 'reset stats');
     let totalOp = 0;
     try {
@@ -58,7 +57,7 @@ exports.resetAllStats = regionalFunctions().runWith({ enforceAppCheck: true }).h
 // --- GARBAGE COLLECTOR (Storage orphelin) ---
 exports.runGarbageCollector = regionalFunctions().runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
     assertLegacyMutationBlocked(functions, 'runGarbageCollector');
-    await checkRecentActiveStrongAdmin(context);
+    await checkActiveStrongAdmin(context);
     assertConfirmText(data, 'NETTOYER CLOUD', 'nettoyage cloud');
     const bucket = admin.storage().bucket();
     let stats = { scanDate: new Date().toISOString(), ghostDocsDeleted: 0, orphanedImagesDeleted: 0, errors: [] };
@@ -113,7 +112,7 @@ exports.runGarbageCollector = regionalFunctions().runWith({ enforceAppCheck: tru
 // --- PURGE UTILISATEURS (Super Admin) ---
 exports.resetAllUsers = regionalFunctions().runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
     assertLegacyMutationBlocked(functions, 'resetAllUsers');
-    await checkRecentActiveStrongSuperAdmin(context);
+    await checkActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'PURGER CLIENTS', 'purge clients');
     try {
         const superAdminEmail = getSuperAdminEmail();
@@ -151,7 +150,7 @@ exports.resetAllUsers = regionalFunctions().runWith({ enforceAppCheck: true, tim
 // --- PURGE ANONYMES ---
 exports.purgeAnonymousUsers = regionalFunctions().runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
     assertLegacyMutationBlocked(functions, 'purgeAnonymousUsers');
-    await checkRecentActiveStrongSuperAdmin(context);
+    await checkActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'PURGER ANONYMES', 'purge anonymes');
     try {
         let nextPageToken;
@@ -180,7 +179,7 @@ exports.purgeAnonymousUsers = regionalFunctions().runWith({ enforceAppCheck: tru
 // --- PURGE MEUBLES (Tous les produits + images + sous-collections) ---
 exports.purgeAllProducts = regionalFunctions().runWith({ enforceAppCheck: true, timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
     assertLegacyMutationBlocked(functions, 'purgeAllProducts');
-    await checkRecentActiveStrongSuperAdmin(context);
+    await checkActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'PURGER MEUBLES', 'purge meubles');
     const bucket = admin.storage().bucket();
     let totalDocsDeleted = 0;
@@ -251,7 +250,7 @@ exports.purgeAllProducts = regionalFunctions().runWith({ enforceAppCheck: true, 
 // --- PURGE COMMANDES ---
 exports.resetAllOrders = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
     assertLegacyMutationBlocked(functions, 'resetAllOrders');
-    await checkRecentActiveStrongSuperAdmin(context);
+    await checkActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'PURGER COMMANDES', 'purge commandes');
     try {
         const ordersSnap = await db.collection('orders').get();

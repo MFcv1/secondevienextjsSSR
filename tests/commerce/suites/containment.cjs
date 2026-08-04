@@ -177,7 +177,7 @@ const scenarios = {
 
     assertGuardPrecedes(context, createOrder, 'await assertLegacyOrderCreationBlocked({', 'const stripe = Stripe(', 'createOrder');
     assertGuardPrecedes(context, cancelOrder, "assertLegacyMutationBlocked(functions, 'legacy-order-cancellation')", 'const orderId = normalizeFirestoreId(', 'cancelOrderClient');
-    assertGuardPrecedes(context, refund, "assertLegacyMutationBlocked(functions, 'legacy-refund')", 'const adminInfo = await checkRecentActiveStrongAdmin(', 'refundOrderAdmin');
+    assertGuardPrecedes(context, refund, "assertLegacyMutationBlocked(functions, 'legacy-refund')", 'const adminInfo = await checkActiveStrongAdmin(', 'refundOrderAdmin');
     assertGuardPrecedes(context, e2eHardening, "assertLegacyMutationBlocked(functions, 'legacy-e2e-stripe-hardening')", 'if (!isE2eProofAllowed())', 'e2eStripeHardeningProof');
     for (const action of DESTRUCTIVE_MAINTENANCE_ACTIONS) {
       context.ok(maintenance.includes(`assertLegacyMutationBlocked(functions, '${action}')`), `${action} must be guarded`);

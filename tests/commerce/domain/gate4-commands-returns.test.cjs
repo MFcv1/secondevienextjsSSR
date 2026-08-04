@@ -380,10 +380,17 @@ test('product callable transport stays available to active strong admins outside
     assert.equal(adminForm.includes('addDoc'), false);
     assert.ok(client.includes('preflightProductMutationAdmin'));
     assert.ok(adminForm.includes('preflightProductMutationAdmin'));
+    assert.ok(adminForm.includes('await refreshAdminAuthorizationToken()'));
+    assert.ok(adminForm.includes('await user.getIdToken(true)'));
+    assert.ok(
+        adminForm.indexOf('await refreshAdminAuthorizationToken()')
+        < adminForm.indexOf('await preflightProductMutationAdmin()')
+    );
     assert.ok(
         adminForm.indexOf('await preflightProductMutationAdmin()')
         < adminForm.indexOf('await uploadProductVariantSet(')
     );
+    assert.equal(adminForm.includes('Reconnecte-toi, puis réessaie.'), false);
     assert.ok(adminForm.includes('createProductDraftAdmin'));
     assert.ok(adminForm.includes('updateProductOfferAdmin'));
     assert.ok(adminForm.includes('adjustInventoryAdmin'));
@@ -579,7 +586,8 @@ test('fulfillment and archive callables are exported behind App Check and server
         assert.ok(transport.includes(functionName));
         assert.equal(functionsIndex.includes(functionName), true);
     }
-    assert.ok(transport.includes('checkRecentActiveStrongAdmin'));
+    assert.ok(transport.includes('checkActiveStrongAdmin'));
+    assert.equal(transport.includes('checkRecentActiveStrongAdmin'), false);
     assert.ok(transport.includes('enforceAppCheck: true'));
     assert.ok(transport.includes('withCommerceMutationsEnabled'));
     assert.ok(transport.includes('uid: context.auth.uid'));
@@ -822,7 +830,8 @@ test('admin refund callable is exported behind strong auth and server control', 
         'utf8'
     );
     assert.ok(transport.includes('requestRefundAdmin'));
-    assert.ok(transport.includes('checkRecentActiveStrongAdmin'));
+    assert.ok(transport.includes('checkActiveStrongAdmin'));
+    assert.equal(transport.includes('checkRecentActiveStrongAdmin'), false);
     assert.ok(transport.includes('enforceAppCheck: true'));
     assert.ok(transport.includes('secrets: [STRIPE_SECRET_KEY]'));
     assert.ok(transport.includes('uid: context.auth.uid'));
@@ -1039,7 +1048,8 @@ test('admin return callables are exported behind strong auth and server control'
         assert.ok(transport.includes(name));
         assert.equal(functionsIndex.includes(name), true);
     }
-    assert.ok(transport.includes('checkRecentActiveStrongAdmin'));
+    assert.ok(transport.includes('checkActiveStrongAdmin'));
+    assert.equal(transport.includes('checkRecentActiveStrongAdmin'), false);
     assert.ok(transport.includes('enforceAppCheck: true'));
     assert.ok(transport.includes('withCommerceMutationsEnabled'));
     assert.ok(transport.includes('uid: context.auth.uid'));

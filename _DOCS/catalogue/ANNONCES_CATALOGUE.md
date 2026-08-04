@@ -1,6 +1,6 @@
 # Annonces, catalogue et recherche
 
-Derniere mise a jour: 2026-07-27
+Derniere mise a jour: 2026-08-04
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Perimetre
@@ -51,6 +51,14 @@ alors visible dans un etat desactive `MAX`. Une commande de vidage placee pres
 du compteur retire en une fois toutes les images du formulaire. La commande
 produit refuse egalement tout tableau media qui depasse cette limite.
 
+Le panneau d'apercu Instagram de l'administration derive son contenu de ce
+modele sans le modifier: `name` devient l'accroche, `description` est reduite en
+texte brut et les 10 premiers elements de `images` forment le carrousel simule.
+Les hashtags sont pour l'instant un etat local d'interface. Ni ces hashtags ni
+un identifiant de publication Meta ne font partie du modele d'annonce courant;
+leur persistance et l'orchestration multicanale exigent une etape serveur
+dediee avant toute activation reelle.
+
 Les anciennes formes de donnees restent normalisees par `src/lib/server/products.js` et `src/utils/imageUtils.js`, mais les nouvelles ecritures doivent produire le modele courant complet.
 
 La stabilisation commerce ajoute localement un rail serveur dormant dans
@@ -65,7 +73,9 @@ plus de `adminMutationMode`, reserve au rail commerce transactionnel: un
 administrateur autorise doit pouvoir gerer les annonces lorsque checkout,
 commandes et remboursements restent en lecture seule. Avant toute compression
 ou ecriture Storage, `preflightProductMutationAdmin` verifie ces droits. Une
-session expiree est ainsi reprise avant l'envoi des images.
+session non AAL2 est ainsi reprise avant l'envoi des images. Les ecritures
+`furniture/**` relisent en plus le registre actif depuis `storage.rules` et
+acceptent l'assurance AAL2 Google ou passkey pendant toute la session Firebase.
 
 ## 4. Cycle de vie
 

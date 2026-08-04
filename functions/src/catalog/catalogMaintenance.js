@@ -5,7 +5,6 @@ const functions = require('firebase-functions/v1');
 const { regionalFunctions } = require('../../helpers/runtime');
 const {
     assertConfirmText,
-    checkRecentActiveStrongAdmin,
     checkActiveStrongAdmin,
     writeSecurityAudit
 } = require('../../helpers/security');
@@ -182,7 +181,7 @@ const rollbackCatalogSnapshot = regionalFunctions()
         serviceAccount: CATALOG_BUILDER_SERVICE_ACCOUNT
     })
     .https.onCall(async (data, context) => {
-        await checkRecentActiveStrongAdmin(context);
+        await checkActiveStrongAdmin(context);
         const targetName = String(data?.target || '').trim();
         if (!['previous', 'last-known-good'].includes(targetName)) {
             throw new functions.https.HttpsError(
@@ -392,7 +391,7 @@ const rebuildCatalogSnapshot = regionalFunctions()
         serviceAccount: CATALOG_BUILDER_SERVICE_ACCOUNT
     })
     .https.onCall(async (data, context) => {
-        await checkRecentActiveStrongAdmin(context);
+        await checkActiveStrongAdmin(context);
         assertConfirmText(data, 'RECONSTRUIRE CATALOGUE', 'reconstruction catalogue');
         const controlRef = admin.firestore().doc(CONTROL_DOCUMENT);
         const revision = await admin.firestore().runTransaction(async (transaction) => {

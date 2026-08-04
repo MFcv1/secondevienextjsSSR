@@ -1,6 +1,6 @@
 # Back-office
 
-Derniere mise a jour: 2026-08-02
+Derniere mise a jour: 2026-08-04
 Statut: `PREPROD_READY`
 
 Etat actif:
@@ -14,7 +14,10 @@ Etat actif:
 
 `/admin` est une route dynamique, `noindex`, montee par `AdminAppIsland`. Les grandes vues sont chargees avec `React.lazy` pour ne pas placer tout le back-office dans le bundle initial. La route ne lit jamais le catalogue public avant l'authentification. Une fois l'acces admin fort etabli, Stats charge le catalogue public court en parallele de ses agregats afin de resoudre les miniatures des meubles en tendance; ce chargement visuel ne bloque pas les statistiques.
 
-L'interface commune de connexion est conservee. L'acces admin repose sur Firebase Auth, claims, registre `sys_admin_access` et assurance forte recente pour les operations sensibles.
+L'interface commune de connexion est conservee. L'acces admin repose sur
+Firebase Auth, claims, registre `sys_admin_access` et assurance AAL2 Google ou
+passkey. La session valide autorise lectures et mutations sans minuterie de
+quinze minutes.
 
 ## 2. Onglets
 
@@ -84,6 +87,7 @@ l'outil propose les modes Fond, Souligne et Texte avec cinq couleurs stables.
 La selection native reste translucide puis se replie apres application pour ne
 pas masquer le resultat; la palette sait aussi recolorer ou retirer un `mark`
 depuis un simple curseur place dans le texte.
+
 L'intertitre H2 ne transforme qu'une ligne complete et refuse une selection
 partielle avec un retour visible dans le pied de l'editeur.
 Deux commandes Annuler et Retablir, placees entre les outils et le choix
@@ -92,16 +96,47 @@ historique garde au plus 80 etats, regroupe la frappe par salves de 700 ms et
 isole chaque collage ou commande de mise en forme afin de restaurer le contenu
 et son apparence ensemble.
 `RichTextStory` previsualise ce sous-ensemble et l'affiche sur la fiche publique.
+
+Le controle Meta place dans l'en-tete de `AdminForm` ouvre le parcours OAuth
+Facebook dans un popup, relit le statut serveur et active ensuite les
+destinations Instagram et Facebook sans demander de token ni d'identifiant a
+l'operatrice. Si plusieurs Pages sont disponibles, le serveur retourne des
+choix opaques et l'interface demande seulement le couple Page/Instagram a
+utiliser. `MetaConnectionControl` ne recoit jamais le Page access token.
+
+Une fois Instagram active, `InstagramPublicationPreview`
+reproduit un iPhone 17 Pro sur une surface logique `402 x 874`, puis compose un
+fil Instagram clair avec le compte `seconde_vie_pour_nos_objets`, le logo de
+l'atelier, le titre, l'histoire reduite en texte brut, les hashtags et un
+carrousel manipulable. Les 10 premiers medias sont retenus pour cet apercu; les
+eventuels medias 11 a 23 restent destines au site et sont signales dans
+l'interface. Les hashtags restent un parametre editorial de la commande
+sociale, pas un champ du produit public.
+
+La publication simultanee confirme d'abord le meuble sur le site, puis
+`prepareSocialPublicationAdmin` fige un snapshot social derive du produit
+serveur. `runSocialPublicationAdmin` publie ensuite les destinations demandees
+et persiste chaque etape dans `sys_social_publications`. Instagram accepte une
+photo ou un carrousel de dix images maximum; Facebook accepte une photo ou un
+post multi-images. Une destination deja `published` n'est jamais relancee par
+la reprise ciblee. Le code et les Rules sont presents localement; la
+configuration des secrets, le deploiement et la recette Meta reelle restent
+les Gates M4 et M5 du PRD temporaire.
+
 `AdminItemList`
 affiche les annonces. `GlobalInventoryView` pilote les classements editoriaux.
 
-Avant le premier upload, `AdminForm` appelle
-`preflightProductMutationAdmin`. Le serveur confirme App Check, le registre
-admin actif et une authentification forte AAL2. La publication catalogue est
+Avant le premier upload, `AdminForm` force le renouvellement du jeton Firebase
+puis appelle `preflightProductMutationAdmin`. Le serveur confirme App Check, le
+registre admin actif et une authentification forte AAL2. Le meme jeton a jour
+est ensuite presente a Storage. Pour les chemins
+`furniture/**`, `storage.rules` relit aussi `sys_admin_access/{uid}` via
+Firestore et accepte Google ou une passkey AAL2 sans fenetre de quinze minutes.
+La publication catalogue est
 independante de `adminMutationMode`, qui reste reserve aux commandes commerce
-transactionnelles. Les commandes produit courantes n'imposent
-plus une reconnexion toutes les quinze minutes; la recence reste reservee aux
-remboursements et aux operations destructives.
+transactionnelles. Les commandes produit, remboursements et operations
+confirmees n'imposent aucune reconnexion temporelle; les protections a fort
+impact reposent sur confirmation, role, audit et validation serveur.
 
 Apres mutation:
 
@@ -129,6 +164,25 @@ Apres mutation:
 - `AdminReturns`: remboursement, synchronisation et e-mail client;
 - `AdminPaymentSettings`: Connect, carte/wallets et etat de disponibilite;
 - `AdminLivraison`: configuration des frais.
+
+`AdminLivraison` ne possede plus de faux bouton en lecture seule. Les callables
+`getDeliveryPolicyAdmin` et `saveDeliveryPolicyAdmin` lisent la politique
+active puis creent une nouvelle version immutable lors de chaque sauvegarde.
+La transaction bascule `sys_commerce_control/current.activePolicyVersion`,
+incremente `controlRevision` et met a jour la projection publique
+`sys_metadata/delivery`. Les commandes existantes restent epinglees sur leur
+ancienne version. Une revision concurrente est refusee puis rechargee dans
+l'interface au lieu d'ecraser silencieusement les tarifs.
+
+Le sandbox transactionnel garde Stripe carte actif. Le faux interrupteur
+Paiement en lecture seule a ete remplace par un statut: le rail offline/Wero
+reste explicitement inactif tant qu'il n'existe pas de commande serveur v2
+qualifiee correspondante.
+
+Cette politique sans minuterie, le writer Livraison et les corrections de
+Publication ont ete deployes sur le sandbox le 2026-08-04. Le compte Google ou
+la passkey ne donne des droits qu'avec claim et registre admin actif; une
+session OTP/AAL1 ou un registre retire reste refuse.
 
 Etat actuel depuis le 2026-08-02:
 
@@ -172,16 +226,16 @@ doit completer nom legal, adresse, e-mail et SIREN avant la premiere
 sauvegarde. Le regime TVA reste un choix explicite a valider avec les
 informations juridiques et comptables finales avant production.
 
-De Gate 0B jusqu'a l'activation fixture, Publication, Ventes, Retours,
-Livraison et Paiement restent read-only pour prix, stock, vente, commande,
-policy et medias destructifs. Les actions reviennent uniquement via les
-commandes serveur et `allowedActions`.
+Historique Gate 0B: jusqu'a l'activation fixture, Publication, Ventes, Retours,
+Livraison et Paiement etaient read-only pour prix, stock, vente, commande,
+policy et medias destructifs. Depuis l'activation sandbox, les actions metier
+passent par les commandes serveur et `allowedActions`.
 
 Le transport callable fulfillment/archive commande est deploye dans
 `functions/src/commerce/v2OrderCommands.js`: App Check, registre admin actif,
-AAL2 recent et acteur derive du contexte Auth. Il est exporte mais bloque par
-le controle mutations serveur absent; `AdminOrders` l'appelle uniquement
-derriere l'autorisation serveur et des `allowedActions` calcules serveur.
+AAL2 Google ou passkey et acteur derive du contexte Auth. `AdminOrders`
+l'appelle derriere le controle serveur actif et des `allowedActions` calcules
+serveur.
 
 L'expedition n'utilise plus de dialogue natif. Une modale integree distingue
 explicitement l'expedition avec suivi, sans suivi et l'annulation sans effet.
@@ -193,16 +247,15 @@ libre du navigateur n'est stockee.
 
 Le transport refund admin est prepare dans
 `functions/src/commerce/v2RefundCommands.js` avec les memes controles forts,
-le secret Stripe et un runtime minimal reprenable. Il est exporte mais bloque
-par le controle serveur; `AdminReturns` l'appelle uniquement derriere un flag
-compile a `false`.
+le secret Stripe et un runtime minimal reprenable. Il est exporte et actif sur
+le sandbox derriere `adminMutationMode=v2`.
 
 Les transports de retour physique sont prepares dans
 `functions/src/commerce/v2ReturnCommands.js`: ouverture, annulation,
 reception, restock, write-off et resolution sont des commandes fermees avec
-App Check, registre admin actif, AAL2 recent, acteur Auth serveur, versions et
-quantites bornees. Ils sont exportes mais bloques par le controle serveur et
-sont branches a `AdminReturns` derriere le meme flag `false`.
+App Check, registre admin actif, AAL2 Google ou passkey, acteur Auth serveur,
+versions et quantites bornees. Ils sont exportes et actifs sur le sandbox
+derriere `adminMutationMode=v2`.
 
 Gate 5 active les lecteurs Functions pagines pour Ventes et Retours. Les
 commandes v2 exposent leurs seules `allowedActions` serveur et les historiques
@@ -284,9 +337,9 @@ leur exposition ne depend plus du flag public checkout. Le backend conserve le
 control plane fail-closed; `adminMutationMode=v2` est actif sur le sandbox.
 Livraison/Paiement continuent de passer par leurs commandes serveur qualifiees.
 
-Recette sandbox du 2026-07-28: une session admin forte existante a charge le
+Recette historique sandbox du 2026-07-28: une session admin forte existante a charge le
 dashboard et les lecteurs pagines `Ventes`/`Retours` sans erreur sous les Rules
-restrictives. `Livraison` et `Paiement` ont confirme leur etat read-only;
+restrictives. `Livraison` et `Paiement` etaient encore read-only a cette date;
 `Publication` ne presentait aucun controle de mutation commerce actif. Aucune
 commande, aucun refund et aucune transition de retour n'ont ete executes.
 
@@ -314,7 +367,7 @@ n'est requis pour payer.
 
 Le serveur relit les produits Firestore, le prix, le stock, la policy et le
 compte Connect avant de creer atomiquement l'order v2 et ses reservations. Les
-actions sensibles exigent App Check, registre admin actif, AAL2 recent,
+actions exigent App Check, registre admin actif, AAL2 Google ou passkey,
 `newCheckoutMode=v2_all` et `adminMutationMode=v2`. Ces conditions sont actives
 sur le sandbox depuis le 2026-08-02.
 
@@ -334,7 +387,8 @@ Les controls `v2_all/v2` rendent ce rail utilisable sur le sandbox depuis le
 ## 6. Utilisateurs et securite
 
 `AdminUsers` appelle les Functions de gestion d'acces. Un administrateur actif
-et fort recent peut ajouter ou retirer un autre administrateur. L'owner reste
+connecte avec Google ou passkey peut ajouter ou retirer un autre administrateur
+apres la confirmation explicite. L'owner reste
 protege a trois niveaux: email configure, enregistrement `superAdmin/owner` et
 registre `sys_admin_access`; aucune interface ni Function ne peut le revoquer.
 Les promotions/retraits restent traces et exigent le niveau d'assurance defini
@@ -363,7 +417,7 @@ panneau montre uniquement le compte cible, son etat, son e-mail admin et son
 identifiant Billing. Aucun statut d'onboarding n'est affiche dans Stats. La
 validation exige la phrase `VALIDER LA FACTURATION`; la reinitialisation exige
 `REINITIALISER LE TEST` et n'existe qu'en mode `test`. Ces actions passent par
-Functions, exigent une authentification admin forte recente et sont auditees
+Functions, exigent une authentification admin AAL2 active et sont auditees
 sans donnee bancaire.
 
 Quand les callables ne sont pas encore deployees ou accessibles depuis le runtime local, `Mon compte` affiche un etat neutre `Non raccorde`; il ne doit jamais exposer au super-admin le message brut Firebase `internal`. Cette indisponibilite n'active aucun parcours et ne bloque pas Stats.
@@ -483,7 +537,7 @@ Les sessions admin sont exclues a trois niveaux: le collecteur ne demarre pas qu
 
 Les operations de `AdminMaintenance` et `AdminDashboard` peuvent purger utilisateurs, produits, commandes ou statistiques. Elles exigent:
 
-- assurance admin forte recente;
+- assurance admin AAL2 Google ou passkey et registre actif;
 - confirmation explicite et scope lisible;
 - Function serveur;
 - limites et audit;
@@ -539,6 +593,8 @@ src/kit/admin/AdminAccount.jsx
 src/kit/admin/BillingOnboardingGuide.jsx
 src/kit/admin/BillingOnboardingOperator.jsx
 src/kit/admin/components/*
+src/kit/admin/components/MetaConnectionControl.jsx
+src/kit/admin/metaPublicationClient.js
 src/kit/admin/analyticsReliability.js
 src/kit/admin/adminCommerceData.js
 src/kit/admin/adminPublicCatalog.js
@@ -548,6 +604,8 @@ functions/src/auth/adminManagement.js
 functions/src/auth/userStats.js
 functions/src/onboarding/billingGuide.js
 functions/src/onboarding/billingGuideContract.js
+functions/src/integrations/meta.js
+functions/src/integrations/metaContract.js
 functions/src/maintenance/*
 functions/src/analytics/*
 firestore.rules

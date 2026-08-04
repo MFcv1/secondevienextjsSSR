@@ -1,6 +1,6 @@
 # Authentification - reference canonique
 
-Date de consolidation: 2026-07-14
+Date de consolidation: 2026-08-04
 Statut: `AUTH_PATCH_CLOSED_FOR_DEMO - PREPROD_READY - PRODUCTION DIFFEREE`
 Projet Firebase: `secondevienextjsssr`
 Commit de reference du chantier: `34302d6 feat(auth): harden authentication for client demo`
@@ -27,7 +27,8 @@ La passe Auth de demonstration est terminee. Les parcours suivants sont implemen
 - reconnexion par Windows Hello avec verification locale obligatoire;
 - fallback OTP apres annulation ou indisponibilite de la passkey;
 - synchronisation de la session Firebase entre le header, le mega menu et l'espace client;
-- acces administrateur soumis a une authentification forte recente;
+- acces administrateur soumis a une authentification forte Google ou passkey,
+  sans reauthentification temporelle pendant la session Firebase valide;
 - OTP idempotent et secret HMAC separe du mot de passe SMTP;
 - registre administrateur et revocation des refresh tokens;
 - adaptateur transactionnel Gmail/Resend centralise;
@@ -52,7 +53,7 @@ Cette notation est une grille interne de maturite, pas une certification de secu
 | coherence session/UI | 45/100 | 94/100 | source Firebase unique, fermeture apres session reelle, header/menu coherents |
 | fiabilite OTP | 58/100 | 91/100 | transition atomique, reprise bornee, secret dedie |
 | securite passkey | 55/100 | 92/100 | User Verification exigee et verifiee serveur |
-| securite administrateur | 35/100 | 88/100 | AAL2 recent, registre actif, revocation |
+| securite administrateur | 35/100 | 88/100 | AAL2 Google/passkey, registre actif, revocation |
 | resistance aux pannes | 42/100 | 87/100 | idempotence, fallback OTP/Google, rollback documente |
 | tests et non-regression | 35/100 | 93/100 | gate finale 57/57 et recettes reelles |
 | accessibilite essentielle | 50/100 | 84/100 | focus, clavier, annonces et anti-double soumission |
@@ -163,41 +164,37 @@ Firebase, categorie transport, etat reseau et identifiant aleatoire de
 tentative. Cela distingue notamment offline, fetch Auth, popup bloquee et
 transport iframe/GAPI sans exposer les donnees OAuth.
 
-Google produit encore `aal2` pour ouvrir et consulter l'administration, afin
-de conserver le fallback operationnel. Il ne suffit plus pour une mutation
-sensible: une passkey recente avec User Verification est alors obligatoire.
-Cette separation ne pretend plus deduire le MFA externe du compte Google, que
-Firebase ne prouve pas dans son ID token.
+Google produit `aal2` pour ouvrir, consulter et modifier l'administration. Une
+passkey verifiee produit le meme niveau. Les deux methodes sont equivalentes
+pour l'autorisation admin tant que le token Firebase, le claim et le registre
+actif restent valides. La passkey demeure une connexion rapide et locale; elle
+n'est pas un palier d'autorisation impose apres Google.
 
-### 5.5 Step-up administrateur
+### 5.5 Autorisation administrateur sans friction temporelle
 
-Un role `admin` ou `superAdmin` ne suffit pas. L'ouverture et la consultation
-du back-office exigent un role actif et une assurance forte, mais ne deconnectent
-pas la session apres quinze minutes. Seule une mutation sensible, notamment un
-remboursement ou une operation destructive, exige:
+Un role `admin` ou `superAdmin` ne suffit pas. Toute lecture ou mutation du
+back-office exige:
 
 - un role autorise;
 - une entree active dans le registre administrateur;
-- `authAssurance=aal2`;
-- une passkey avec `userVerified=true` pour toute mutation sensible;
-- une authentification recente, limite actuelle: 15 minutes.
+- une assurance AAL2 issue de Google ou d'une passkey verifiee;
+- App Check et les validations metier de la Function lorsque celle-ci est
+  appelee.
 
-OTP seul reste `aal1`. Le client est redirige vers le step-up sans creer une deuxieme interface de connexion.
+OTP seul reste `aal1` et ne donne pas acces a l'administration. Aucune mutation
+ne depend de `auth_time`, d'une passkey recente ou d'une minuterie de quinze
+minutes.
 
-Les lecteurs dashboard, ventes, retours et chronologie ainsi que les commandes
-produit courantes utilisent `checkActiveStrongAdmin`. Les remboursements et
-operations destructives conservent `checkRecentActiveStrongAdmin`. Lorsqu'une
-commande sensible renvoie
-`recent-strong-auth-required` ou `verified-passkey-required`, `firebaseLazy` emet
-`sv:admin-step-up-required` et `AdminAppIsland` rouvre la modale unifiee sans
-appeler `signOut`. Google reste valable pour la lecture; l'administrateur doit
-utiliser sa passkey pour reprendre la mutation sans perdre sa session Firebase.
+Les lecteurs, commandes produit, fulfillment, retours, remboursements, liens de
+paiement, configuration livraison, Stripe Connect et maintenance utilisent
+`checkActiveStrongAdmin` ou `checkActiveStrongSuperAdmin`. Les operations a
+fort impact conservent confirmation explicite, role owner lorsque prevu,
+idempotence, audit et validation serveur; elles ne redemandent pas la passkey.
 
-Firestore Rules et les callables sensibles appliquent cette politique cote
-serveur. Les ecritures directes Firestore et Storage exigent egalement une
-passkey verifiee et un `auth_time` inferieur a quinze minutes. Firestore ajoute
-le registre actif; Storage ne peut pas lire Firestore et borne donc la session
-residuelle par cette fenetre courte.
+Firestore Rules, Storage Rules et les callables appliquent cette politique cote
+serveur. Tous les chemins admin directs relisent le registre actif et acceptent
+Google ou passkey AAL2. Les chemins backend-only, champs commerce et documents
+proteges restent inaccessibles au SDK navigateur et passent par leurs Functions.
 
 ## 6. Garanties techniques implementees
 
@@ -242,12 +239,14 @@ Le mot de passe Gmail ne doit jamais redevenir le secret HMAC OTP.
 - journalisation structuree des etapes de revocation;
 - reprise idempotente d'une revocation partiellement terminee.
 
-Limite bornee: Storage Rules ne peut pas consulter `sys_admin_access`. Un ID
-Token passkey emis avant une revocation peut donc encore ecrire jusqu'a la fin
-de sa fenetre de fraicheur, au maximum quinze minutes. La revocation des refresh
-tokens empeche ensuite son renouvellement. Une coupure Storage strictement
-immediate demanderait de supprimer les ecritures directes et de les faire
-passer par des callables ou URLs signees.
+Pour `furniture/**`, Storage Rules consulte directement `sys_admin_access`:
+le retrait du registre coupe donc les nouveaux uploads sans attendre une
+fenetre d'authentification. Cette lecture interservice est facturee comme une
+lecture Firestore par evaluation de Rules et reste bornee au faible volume des
+uploads administrateur. Les autres chemins Storage directs appliquent le meme
+contrat: claim admin, registre actif et AAL2 Google ou passkey, sans fenetre
+temporelle arbitraire. La revocation des refresh tokens reste le mecanisme de
+coupure de session.
 
 ### 6.4 Emails transactionnels
 
@@ -635,7 +634,9 @@ Les preuves doivent utiliser uniquement les noms de secrets, versions, statuts I
 - conserver l'UX email-first;
 - garder OTP et Google comme fallback de passkey;
 - imposer User Verification cote serveur;
-- ne pas confondre role admin et preuve forte recente;
+- ne pas confondre role admin, registre actif et preuve AAL2;
+- ne pas reintroduire de fenetre temporelle ou de passkey obligatoire apres une
+  connexion Google admin valide;
 - ne pas consommer irreversiblement un OTP avant emission de session;
 - garder le secret OTP independant du transport email;
 - utiliser l'adaptateur transactionnel pour tous les nouveaux e-mails;
