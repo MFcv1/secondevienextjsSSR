@@ -74,7 +74,7 @@ export default function QuoteFormSsrShell({ darkMode = false } = {}) {
   const fieldClass = `${QUOTE_CONTROL_HEIGHT} w-full ${QUOTE_RADIUS_FIELD} px-4 font-sans text-[14px] outline-none ${t.field}`;
   const areaClass = `w-full resize-none ${QUOTE_RADIUS_FIELD} p-4 font-sans text-[14px] leading-[1.6] outline-none ${t.field}`;
   const panelClass = `${QUOTE_GUTTER_BOTTOM} ${QUOTE_STEP_RADIUS} ${QUOTE_STEP_PADDING} ${t.stepPanel}`;
-  const firstPanelClass = `quote-reveal-group ${panelClass}`;
+  const firstPanelClass = panelClass;
 
   const SectionHead = ({ index, title, hint, airyHint = false }) => (
     <header className="mb-8">
@@ -103,9 +103,10 @@ export default function QuoteFormSsrShell({ darkMode = false } = {}) {
       <div
         aria-hidden="true"
         data-quote-reveal="progress"
-        className={`quote-reveal quote-anchor sticky top-16 z-30 -mx-5 mb-6 border-b px-5 py-3.5 backdrop-blur-xl sm:-mx-8 sm:px-8 md:top-[76px] lg:mx-0 lg:mb-6 lg:rounded-[18px] lg:border lg:px-7 lg:py-4 ${t.hairline} ${t.railBg}`}
+        data-quote-reveal-mode="eager"
+        className={`quote-reveal-shell quote-reveal-group quote-anchor sticky top-16 z-30 -mx-5 mb-6 border-b px-5 py-3.5 backdrop-blur-xl sm:-mx-8 sm:px-8 md:top-[76px] lg:static lg:z-auto lg:mx-0 lg:mb-6 lg:rounded-[18px] lg:border lg:px-7 lg:py-4 ${t.hairline} ${t.railBg}`}
       >
-        <div className="flex items-baseline justify-between gap-4 lg:hidden">
+        <div className="quote-reveal-item-1 flex items-baseline justify-between gap-4 lg:hidden">
           <p className={`font-sans text-[11px] font-semibold uppercase tracking-[0.16em] ${t.accent}`}>
             Étape 1 / {TOTAL_STEPS}
           </p>
@@ -114,7 +115,7 @@ export default function QuoteFormSsrShell({ darkMode = false } = {}) {
 
         <ol className="hidden lg:grid lg:grid-cols-7">
           {RAIL_STEPS.map((label, index) => (
-            <li key={label} className="min-w-0">
+            <li key={label} className={`quote-reveal-item-${index + 1} min-w-0`}>
               <span className="flex w-full items-center gap-2.5 rounded-full py-1 pr-3 text-left">
                 <span
                   className={`flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full font-sans text-[11px] font-semibold ${index === 0 ? `${t.accentBg} ${t.accentOn}` : darkMode ? 'bg-white/[0.08] text-stone-500' : 'bg-[#ece6de] text-[#8d8479]'}`}
@@ -129,29 +130,37 @@ export default function QuoteFormSsrShell({ darkMode = false } = {}) {
           ))}
         </ol>
 
-        <div className={`mt-3 h-[3px] w-full overflow-hidden rounded-full lg:mt-3.5 ${t.trackBg}`}>
+        <div className={`quote-reveal-item-8 mt-3 h-[3px] w-full overflow-hidden rounded-full lg:mt-3.5 ${t.trackBg}`}>
           <div className={`h-full rounded-full ${t.accentBg}`} style={{ width: `${(1 / TOTAL_STEPS) * 100}%` }} />
         </div>
       </div>
 
       {/* 1 — TYPE DE MEUBLE */}
-      <section data-quote-reveal="step-1" className={firstPanelClass}>
-        <div className="quote-reveal-item-1">
-          <SectionHead index={1} title="Quel meuble souhaitez-vous restaurer ?" hint="Choisissez la catégorie la plus proche." />
-        </div>
-        <div className="mx-auto grid w-full max-w-[430px] grid-cols-2 gap-3 lg:max-w-none lg:grid-cols-6">
-          {furnitureCards.map(([id, label, image], index) => (
-            <label
-              key={id}
-              className={`quote-reveal-item-${index + 2} cursor-pointer overflow-hidden ${QUOTE_RADIUS_CARD} ${index === 0 ? t.furnitureCardActive : t.furnitureCardIdle}`}
-            >
-              <input className="sr-only" type="radio" name="furnitureType" value={id} defaultChecked={index === 0} />
-              <span className={`block aspect-[5/6] w-full overflow-hidden lg:aspect-[4/5] ${t.imageBed}`}>
-                <img src={image} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
-              </span>
-              <span className="block truncate px-2.5 py-2 font-sans text-[12.5px] font-semibold lg:px-3 lg:py-2.5">{label}</span>
-            </label>
-          ))}
+      <section
+        data-quote-ssr-step-shell
+        aria-hidden="true"
+        className={firstPanelClass}
+      >
+        <p className={`${QUOTE_TYPE.eyebrow} ${t.accent}`}>Étape 1 sur {TOTAL_STEPS}</p>
+        <div>
+          <header className="mb-8">
+            <h2 className={`quote-balance mt-3 max-w-[24ch] ${QUOTE_TYPE.section}`}>Quel meuble souhaitez-vous restaurer ?</h2>
+            <p className={`mt-3 max-w-[56ch] ${QUOTE_TYPE.body} ${t.muted}`}>Choisissez la catégorie la plus proche.</p>
+          </header>
+          <div className="mx-auto grid w-full max-w-[430px] grid-cols-2 gap-3 lg:max-w-none lg:grid-cols-6">
+            {furnitureCards.map(([id, label, image], index) => (
+              <label
+                key={id}
+                className={`cursor-pointer overflow-hidden ${QUOTE_RADIUS_CARD} ${index === 0 ? t.furnitureCardActive : t.furnitureCardIdle}`}
+              >
+                <input className="sr-only" type="radio" name="furnitureType" value={id} defaultChecked={index === 0} />
+                <span className={`block aspect-[5/6] w-full overflow-hidden lg:aspect-[4/5] ${t.imageBed}`}>
+                  <img src={image} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                </span>
+                <span className="block truncate px-2.5 py-2 font-sans text-[12.5px] font-semibold lg:px-3 lg:py-2.5">{label}</span>
+              </label>
+            ))}
+          </div>
         </div>
       </section>
 

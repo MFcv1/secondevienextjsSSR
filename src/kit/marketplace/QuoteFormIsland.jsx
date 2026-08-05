@@ -294,22 +294,10 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
         window.dispatchEvent(new Event('quote:form-ready'));
     }, []);
 
-    /*
-     * L'island prend la place d'un shell identique, deja apparu avec la
-     * cascade d'ouverture. Son premier rendu ne rejoue donc aucune entree :
-     * sinon le rail et le panneau semblent surgir une seconde fois.
-     * Les animations d'etape ne s'arment qu'a la premiere navigation.
-     */
+    /* Les transitions internes ne s'arment que lors d'une vraie navigation
+     * utilisateur. Un effet de montage serait rejoue par React Strict Mode et
+     * rendrait le premier panneau visible avant la fin de l'introduction. */
     const [stepMotionArmed, setStepMotionArmed] = useState(false);
-    const firstStepRenderRef = useRef(true);
-
-    useEffect(() => {
-        if (firstStepRenderRef.current) {
-            firstStepRenderRef.current = false;
-            return;
-        }
-        setStepMotionArmed(true);
-    }, [step]);
 
     const panelMotion = stepMotionArmed ? 'quote-step' : '';
     const contentMotion = stepMotionArmed ? 'quote-stagger' : '';
@@ -366,6 +354,8 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
 
     const goToStep = useCallback((nextStep) => {
         const target = Math.min(steps.length - 1, Math.max(0, nextStep));
+        if (target === step) return;
+        setStepMotionArmed(true);
         setDirection(target >= step ? 'forward' : 'backward');
         setStep(target);
     }, [step]);
@@ -548,9 +538,10 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
             <div
                 ref={railRef}
                 data-quote-reveal="progress"
-                className={`quote-reveal quote-anchor sticky top-16 z-30 -mx-5 mb-6 border-b px-5 py-3.5 backdrop-blur-xl sm:-mx-8 sm:px-8 md:top-[76px] lg:mx-0 lg:mb-6 lg:rounded-[18px] lg:border lg:px-7 lg:py-4 ${t.hairline} ${t.railBg}`}
+                data-quote-reveal-mode="eager"
+                className={`quote-reveal-shell quote-reveal-group quote-anchor sticky top-16 z-30 -mx-5 mb-6 border-b px-5 py-3.5 backdrop-blur-xl sm:-mx-8 sm:px-8 md:top-[76px] lg:static lg:z-auto lg:mx-0 lg:mb-6 lg:rounded-[18px] lg:border lg:px-7 lg:py-4 ${t.hairline} ${t.railBg}`}
             >
-                <div className="flex items-baseline justify-between gap-4 lg:hidden">
+                <div className="quote-reveal-item-1 flex items-baseline justify-between gap-4 lg:hidden">
                     <p className={`font-sans text-[11px] font-semibold uppercase tracking-[0.16em] ${t.accent}`}>
                         Étape {step + 1} / {steps.length}
                     </p>
@@ -562,7 +553,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                         const isDone = index < step;
                         const isCurrent = index === step;
                         return (
-                            <li key={item.id} className="min-w-0">
+                            <li key={item.id} className={`quote-reveal-item-${index + 1} min-w-0`}>
                                 <button
                                     type="button"
                                     onClick={() => (index === ESTIMATE_STEP_INDEX ? showEstimate() : goToStep(index))}
@@ -583,7 +574,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                     })}
                 </ol>
 
-                <div className={`mt-3 h-[3px] w-full overflow-hidden rounded-full lg:mt-3.5 ${t.trackBg}`} aria-hidden="true">
+                <div className={`quote-reveal-item-8 mt-3 h-[3px] w-full overflow-hidden rounded-full lg:mt-3.5 ${t.trackBg}`} aria-hidden="true">
                     <div
                         className={`quote-progress-fill h-full rounded-full ${t.accentBg}`}
                         style={{ width: `${((step + 1) / steps.length) * 100}%` }}
@@ -596,18 +587,31 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                 <div
                     key={activeStep.id}
                     data-direction={direction}
-                    data-quote-reveal={initialStepReveal ? 'step-1' : undefined}
-                    className={`${initialStepReveal ? 'quote-reveal-group' : ''} ${panelMotion} flex flex-col gap-7 ${QUOTE_STEP_HEIGHT} ${QUOTE_STEP_RADIUS} ${QUOTE_STEP_PADDING} ${t.stepPanel}`}
+                    data-quote-reveal={initialStepReveal ? 'step-shell' : undefined}
+                    data-quote-reveal-mode={initialStepReveal ? 'eager' : undefined}
+                    className={`${initialStepReveal ? 'quote-reveal-shell' : ''} ${panelMotion} flex flex-col gap-7 ${QUOTE_STEP_HEIGHT} ${QUOTE_STEP_RADIUS} ${QUOTE_STEP_PADDING} ${t.stepPanel}`}
                 >
-                    <div className={`${contentMotion} min-h-0 flex-1 overflow-visible lg:mx-0 lg:px-0`}>
-                        <header className={`${initialStepReveal ? 'quote-reveal-item-1' : ''} mb-8 lg:mb-7`}>
-                            <p className={`${QUOTE_TYPE.eyebrow} ${t.accent}`}>
-                                Étape {step + 1} sur {steps.length}
-                            </p>
-                            <h2 className={`quote-balance mt-3 max-w-[24ch] ${QUOTE_TYPE.section}`}>
+                    {initialStepReveal ? (
+                        <p className={`${QUOTE_TYPE.eyebrow} ${t.accent}`}>
+                            Étape {step + 1} sur {steps.length}
+                        </p>
+                    ) : null}
+                    <div
+                        className={`${contentMotion} min-h-0 flex-1 overflow-visible lg:mx-0 lg:px-0`}
+                    >
+                        <header
+                            data-quote-reveal={initialStepReveal ? 'step-copy' : undefined}
+                            className={`${initialStepReveal ? 'quote-reveal-group' : ''} mb-8 lg:mb-7`}
+                        >
+                            {!initialStepReveal ? (
+                                <p className={`${QUOTE_TYPE.eyebrow} ${t.accent}`}>
+                                    Étape {step + 1} sur {steps.length}
+                                </p>
+                            ) : null}
+                            <h2 className={`${initialStepReveal ? 'quote-reveal-item-1' : ''} quote-balance mt-3 max-w-[24ch] ${QUOTE_TYPE.section}`}>
                                 {activeStep.title}
                             </h2>
-                            <p className={`${step === 1 ? 'mt-5' : 'mt-3'} max-w-[56ch] ${QUOTE_TYPE.body} ${t.muted}`}>
+                            <p className={`${initialStepReveal ? 'quote-reveal-item-2' : ''} ${step === 1 ? 'mt-5' : 'mt-3'} max-w-[56ch] ${QUOTE_TYPE.body} ${t.muted}`}>
                                 {activeStep.hint}
                             </p>
                         </header>
@@ -618,7 +622,9 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                                 <div
                                     role="radiogroup"
                                     aria-label="Type de meuble"
-                                    className={`${cardsMotion} mx-auto grid w-full max-w-[430px] grid-cols-2 gap-3 lg:max-w-none lg:grid-cols-6`}
+                                    data-quote-reveal={initialStepReveal ? 'step-cards' : undefined}
+                                    data-quote-reveal-mode={initialStepReveal ? 'cards' : undefined}
+                                    className={`${initialStepReveal ? 'quote-reveal-group' : ''} ${cardsMotion} mx-auto grid w-full max-w-[430px] grid-cols-2 gap-3 lg:max-w-none lg:grid-cols-6`}
                                 >
                                     {furnitureCards.map((type, index) => {
                                         const isSelected = selectedType === type.id;
@@ -632,7 +638,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                                                     trackQuoteStart();
                                                     setSelectedType(type.id);
                                                 }}
-                                                className={`${initialStepReveal ? `quote-reveal-item-${index + 2}` : ''} group relative overflow-hidden ${QUOTE_RADIUS_CARD} ${QUOTE_EASE} active:scale-[0.98] ${t.focusRing} ${isSelected ? t.furnitureCardActive : t.furnitureCardIdle}`}
+                                                className={`${initialStepReveal ? `quote-reveal-item-${index + 1}` : ''} group relative overflow-hidden ${QUOTE_RADIUS_CARD} ${QUOTE_EASE} active:scale-[0.98] ${t.focusRing} ${isSelected ? t.furnitureCardActive : t.furnitureCardIdle}`}
                                             >
                                                 <span className={`block aspect-[5/6] w-full overflow-hidden lg:aspect-[4/5] ${t.imageBed}`}>
                                                     <img

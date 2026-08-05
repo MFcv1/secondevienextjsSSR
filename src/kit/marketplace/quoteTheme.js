@@ -114,9 +114,6 @@ export const QUOTE_INTRO_DELAY = {
     cta: '830ms',
 };
 
-/* Fin de la cascade : l'assistant enrichi ne doit pas la couper. */
-export const QUOTE_INTRO_SETTLED_MS = 1960;
-
 export const QUOTE_TYPE = {
     eyebrow: 'font-sans text-[11px] font-semibold uppercase tracking-[0.2em]',
     display: 'font-serif text-[clamp(2.5rem,5.6vw,3.85rem)] leading-[0.98] tracking-[-0.02em]',

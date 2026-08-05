@@ -6565,10 +6565,10 @@ html.dark .discount-shell::before,
    `complete` laisse tout dans son etat final sans rejouer la page.
    ------------------------------------------------------------ */
 
-:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal,
-:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-group .quote-reveal-item,
-:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-group [class*='quote-reveal-item-'],
-:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-title {
+:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal:not(.is-settled),
+:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-group:not(.is-settled) .quote-reveal-item,
+:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-group:not(.is-settled) [class*='quote-reveal-item-'],
+:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-group:not(.is-settled) .quote-reveal-title {
   opacity: 0;
   transform: translate3d(0, 24px, 0);
   transition:
@@ -6577,13 +6577,28 @@ html.dark .discount-shell::before,
     filter 720ms var(--quote-out) var(--quote-delay, var(--quote-reveal-delay, 0ms));
 }
 
-:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-title,
-:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-soft {
+:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-shell:not(.is-settled) {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  transition:
+    opacity 620ms var(--quote-out),
+    transform 620ms var(--quote-out);
+}
+
+/* Le gabarit SSR reserve toute la geometrie du panneau, sans jamais devenir
+   un premier exemplaire visible. Seul le panneau client est anime. */
+[data-quote-ssr-step-shell] {
+  visibility: hidden;
+  opacity: 0;
+}
+
+:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-group:not(.is-settled) .quote-reveal-title,
+:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-group:not(.is-settled) .quote-reveal-soft {
   filter: blur(8px);
   transform: translate3d(0, 28px, 0);
 }
 
-:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-media {
+:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-group:not(.is-settled) .quote-reveal-media {
   opacity: 0;
   transform: scale(1.06);
   transition:
@@ -6591,23 +6606,28 @@ html.dark .discount-shell::before,
     transform 1200ms var(--quote-out);
 }
 
-:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-rule {
+:is([data-quote-motion='pending'], [data-quote-motion='active']) .quote-reveal-group:not(.is-settled) .quote-reveal-rule {
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 900ms var(--quote-out) var(--quote-delay, 0ms);
 }
 
-[data-quote-motion='active'] .quote-reveal.is-in,
-[data-quote-motion='active'] .quote-reveal-group.is-in .quote-reveal-item,
-[data-quote-motion='active'] .quote-reveal-group.is-in [class*='quote-reveal-item-'],
-[data-quote-motion='active'] .quote-reveal-group.is-in .quote-reveal-title,
-[data-quote-motion='active'] .quote-reveal-group.is-in .quote-reveal-media {
+[data-quote-motion='active'] .quote-reveal.is-in:not(.is-settled),
+[data-quote-motion='active'] .quote-reveal-group.is-in:not(.is-settled) .quote-reveal-item,
+[data-quote-motion='active'] .quote-reveal-group.is-in:not(.is-settled) [class*='quote-reveal-item-'],
+[data-quote-motion='active'] .quote-reveal-group.is-in:not(.is-settled) .quote-reveal-title,
+[data-quote-motion='active'] .quote-reveal-group.is-in:not(.is-settled) .quote-reveal-media {
   opacity: 1;
   transform: translate3d(0, 0, 0);
   filter: blur(0);
 }
 
-[data-quote-motion='active'] .quote-reveal-group.is-in .quote-reveal-rule {
+[data-quote-motion='active'] .quote-reveal-shell.is-in:not(.is-settled) {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+[data-quote-motion='active'] .quote-reveal-group.is-in:not(.is-settled) .quote-reveal-rule {
   transform: scaleX(1);
 }
 
@@ -6620,6 +6640,16 @@ html.dark .discount-shell::before,
 .quote-reveal-item-6 { --quote-reveal-delay: 450ms; }
 .quote-reveal-item-7 { --quote-reveal-delay: 530ms; }
 .quote-reveal-item-8 { --quote-reveal-delay: 610ms; }
+
+/* Le rail doit se lire vite de gauche a droite avant l'arrivee du panneau. */
+[data-quote-reveal='progress'] .quote-reveal-item-1 { --quote-reveal-delay: 0ms; }
+[data-quote-reveal='progress'] .quote-reveal-item-2 { --quote-reveal-delay: 45ms; }
+[data-quote-reveal='progress'] .quote-reveal-item-3 { --quote-reveal-delay: 90ms; }
+[data-quote-reveal='progress'] .quote-reveal-item-4 { --quote-reveal-delay: 135ms; }
+[data-quote-reveal='progress'] .quote-reveal-item-5 { --quote-reveal-delay: 180ms; }
+[data-quote-reveal='progress'] .quote-reveal-item-6 { --quote-reveal-delay: 225ms; }
+[data-quote-reveal='progress'] .quote-reveal-item-7 { --quote-reveal-delay: 270ms; }
+[data-quote-reveal='progress'] .quote-reveal-item-8 { --quote-reveal-delay: 315ms; }
 
 /* Piste de progression du rail d'etapes. */
 .quote-progress-fill {
@@ -6647,12 +6677,14 @@ html.dark .discount-shell::before,
   .quote-reveal-title,
   .quote-reveal-media,
   .quote-reveal-rule,
-  .quote-reveal-soft {
+  .quote-reveal-soft,
+  .quote-reveal-shell {
     opacity: 1 !important;
     transform: none !important;
     filter: none !important;
     transition: none !important;
   }
+
 }
 
 /* ============================================================

@@ -52,7 +52,7 @@ const QuoteHero = ({ darkMode = false } = {}) => {
     const surfaceTint = darkMode ? '#0A0A0A' : '#fbfaf8';
 
     return (
-        <section data-quote-reveal="hero" className="quote-reveal-group relative overflow-hidden">
+        <section data-quote-reveal="hero" data-quote-reveal-mode="eager" className="quote-reveal-group relative overflow-hidden">
             <div className={`absolute inset-0 ${t.heroBg}`} />
             <div className="quote-reveal-media absolute inset-y-0 right-0 hidden w-[46%] lg:block">
                 <img

@@ -18,12 +18,12 @@ try {
 
   var quoteMotionRoot = document.documentElement;
   var quoteMotionReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var quoteMotionVisited = window.sessionStorage.getItem('seconde-vie:quote-motion:v1') === 'seen';
+  var quoteNavigation = window.performance.getEntriesByType('navigation')[0];
+  var quoteMotionReload = quoteNavigation && quoteNavigation.type === 'reload';
 
-  quoteMotionRoot.dataset.quoteMotion = quoteMotionReduced || quoteMotionVisited ? 'complete' : 'pending';
+  quoteMotionRoot.dataset.quoteMotion = quoteMotionReduced || quoteMotionReload ? 'complete' : 'pending';
 
-  if (!quoteMotionReduced && !quoteMotionVisited) {
-    window.sessionStorage.setItem('seconde-vie:quote-motion:v1', 'seen');
+  if (!quoteMotionReduced && !quoteMotionReload) {
     window.__secondeVieQuoteMotionFallback = window.setTimeout(function () {
       quoteMotionRoot.dataset.quoteMotion = 'complete';
     }, 4000);
