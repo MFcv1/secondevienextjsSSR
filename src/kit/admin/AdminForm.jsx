@@ -232,6 +232,7 @@ const AdminForm = ({
   const [step, setStep] = useState('compose');
   const [progress, setProgress] = useState(0);
   const [publicationPhase, setPublicationPhase] = useState('authorization');
+  const [completedProduct, setCompletedProduct] = useState(null);
   const [instagramHashtags, setInstagramHashtags] = useState('#secondevie #mobilierancien #artisanat');
   const [metaConnection, setMetaConnection] = useState({ status: 'loading', connected: false });
   const [socialTargets, setSocialTargets] = useState({ instagram: false, facebook: false });
@@ -285,6 +286,7 @@ const AdminForm = ({
     publishedProductRef.current = null;
     setStep('compose');
     setProgress(0);
+    setCompletedProduct(null);
     setInstagramHashtags('#secondevie #mobilierancien #artisanat');
     setSocialTargets({ instagram: false, facebook: false });
     setSocialPublication(null);
@@ -327,9 +329,9 @@ const AdminForm = ({
   }, [editData]);
 
   useEffect(() => {
-    onPublicationBusyChange?.(uploading);
+    onPublicationBusyChange?.(uploading || Boolean(completedProduct));
     return () => onPublicationBusyChange?.(false);
-  }, [onPublicationBusyChange, uploading]);
+  }, [completedProduct, onPublicationBusyChange, uploading]);
 
   useEffect(() => {
     if (!uploading) return undefined;
@@ -615,13 +617,8 @@ const AdminForm = ({
         setPublicationPhase('complete');
         setProgress(1);
         setMsg('Le meuble est publié sur le site et les réseaux sélectionnés.');
-        await new Promise((resolve) => setTimeout(resolve, 900));
         const savedProduct = publishedProductRef.current;
-        productCommandSessionRef.current = null;
-        publishedProductRef.current = null;
-        resetForm();
-        if (editData && onCancelEdit) onCancelEdit();
-        if (onSaved) onSaved({ productId: savedProduct?.id, name: savedProduct?.name });
+        setCompletedProduct({ productId: savedProduct?.id, name: savedProduct?.name });
       } catch (retryError) {
         try {
           const current = await getSocialPublicationStatusAdmin(socialPublication.publicationId);
@@ -815,13 +812,8 @@ const AdminForm = ({
       setMsg(socialEnabled
         ? 'Le meuble est publié sur le site et les réseaux sélectionnés.'
         : 'Le meuble est publié et confirmé dans la galerie Nouveautés.');
-      await new Promise((resolve) => setTimeout(resolve, 900));
       const savedProduct = { productId: commandProduct.id, name: formData.name };
-      productCommandSessionRef.current = null;
-      publishedProductRef.current = null;
-      resetForm();
-      if (editData && onCancelEdit) onCancelEdit();
-      if (onSaved) onSaved(savedProduct);
+      setCompletedProduct(savedProduct);
     } catch (err) {
       console.error("CRITICAL UPLOAD ERROR:", err);
       const errorReason = err?.details?.reason || err?.customData?.details?.reason || '';
@@ -902,6 +894,17 @@ const AdminForm = ({
   // Touch Support for Mobile
   const handleTouchStart = (index) => {
     setDraggedItemIndex(index);
+  };
+
+  const showPublishedProduct = () => {
+    if (!completedProduct) return;
+    const savedProduct = completedProduct;
+    productCommandSessionRef.current = null;
+    publishedProductRef.current = null;
+    setCompletedProduct(null);
+    if (editData && onCancelEdit) onCancelEdit();
+    if (onSaved) onSaved(savedProduct);
+    else resetForm();
   };
 
   const handleTouchEnd = (e) => {
@@ -1022,10 +1025,12 @@ const AdminForm = ({
         <PublicationProgressDialog
           darkMode={darkMode}
           includeSocial={socialEnabled}
-          open={uploading}
+          open={uploading || Boolean(completedProduct)}
           phase={publicationPhase}
           progress={progress}
           message={msg}
+          productName={completedProduct?.name}
+          onShowPublication={completedProduct ? showPublishedProduct : undefined}
         />
         <div className="flex h-full min-h-0 flex-col overflow-hidden px-4 py-4 sm:px-5 sm:py-5 xl:px-6 xl:py-5">
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">

@@ -88,8 +88,9 @@ Une fenetre modale affiche la progression reelle des photos, de l'ecriture et
 de la projection. Le succes n'est confirme qu'apres lecture du produit dans
 `/api/catalog`, puis observation de la revision dans
 `sys_catalog_live/current`; ce second signal n'est emis qu'apres preuve que le
-HTML de la galerie a ete revalide. L'interface maintient ensuite la confirmation
-visible, bascule vers Publications et met en evidence la ligne creee. Un
+HTML de la galerie a ete revalide. L'interface maintient ensuite un ecran de
+succes jusqu'au clic `Voir la publication`; ce clic bascule vers Publications
+sans reinitialiser d'abord le formulaire et met en evidence la ligne creee. Un
 handoff court en `sessionStorage` preserve cette vue si l'ile admin est remontee
 pendant la transition, sans conserver de donnee catalogue.
 Pendant le traitement, les deux vues et l'apercu public sont neutralises et

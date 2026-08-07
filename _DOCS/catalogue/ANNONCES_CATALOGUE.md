@@ -88,9 +88,10 @@ visible:
 5. attendre que `/api/catalog` confirme le produit, puis que
    `sys_catalog_live/current` confirme la revision apres revalidation de la
    page galerie;
-6. afficher un succes explicite, basculer vers Publications et mettre la
-   nouvelle ligne en evidence. Un handoff court en `sessionStorage` conserve
-   cette destination si l'ile admin est remontee pendant la transition.
+6. afficher un succes persistant; le clic `Voir la publication` transfere
+   ensuite l'interface vers Publications, sans remise a zero prealable, et met
+   la nouvelle ligne en evidence. Un handoff court en `sessionStorage`
+   conserve cette destination si l'ile admin est remontee pendant la transition.
 
 Ainsi, un echec d'image ne cree aucun meuble et n'ajoute aucun brouillon a la
 liste. Le rail `product_publication_sessions` qui creait le brouillon avant le

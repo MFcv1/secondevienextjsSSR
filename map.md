@@ -113,7 +113,7 @@ secrets, deploiement et recette Meta reelle restent M4/M5.
   -> createPublishedProductAdmin seulement apres succes de tous les uploads [F]
      -> contenu + offre + stock + publication dans une transaction [DB]
   -> attente de la projection `/api/catalog`, puis de la preuve HTML
-     `sys_catalog_live/current`; succes visible et vue Publications [C]
+     `sys_catalog_live/current`; succes persistant -> vue Publications [C]
   -> prepareSocialPublicationAdmin [F] apres confirmation site
   -> sys_social_publications/{commandHash} [DB, backend-only]
   -> runSocialPublicationAdmin [F]
