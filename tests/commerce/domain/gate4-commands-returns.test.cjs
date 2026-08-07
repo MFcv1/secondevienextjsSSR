@@ -214,6 +214,8 @@ test('product commands separate creation, offer, inventory and publication', () 
     });
     assert.equal(draft.status, 'draft');
     assert.equal(draft.stock, 0);
+    assert.equal(draft.sold, false);
+    assert.equal(draft.soldAt, null);
     assert.equal(draft.currentPrice, 0);
     assert.equal(draft.nouveautesOrder, -1);
 

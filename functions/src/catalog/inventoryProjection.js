@@ -9,9 +9,11 @@ function buildInventoryOverview(sourceDocuments = [], options = {}) {
         totalItems += 1;
         const price = Number(data.currentPrice || data.startingPrice || 0);
         const stock = data.stock !== undefined ? Number(data.stock) : 1;
-        if (data.status === 'published') publishedItems += 1;
-        if (data.sold || stock <= 0) soldItems += 1;
-        if (!data.sold && stock > 0) {
+        const published = data.status === 'published';
+        const sold = published && (data.sold === true || stock <= 0);
+        if (published) publishedItems += 1;
+        if (sold) soldItems += 1;
+        if (published && !sold && stock > 0) {
             totalItemsForSale += 1;
             totalStockValue += price * stock;
         }

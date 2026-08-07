@@ -94,15 +94,25 @@ de toutes les variantes avant la premiere ecriture. Le protocole ferme est:
 
 Le trigger Storage est rejouable et le reconciler `every 15 minutes` reprend
 une finalisation dont le worker aurait perdu son lease ou sa reponse. La
-publication ne depend donc pas de la presence continue du navigateur.
+creation du brouillon est durable avant l'upload; les sources qui n'ont pas
+encore quitte le navigateur restent reprises depuis IndexedDB au retour dans
+le formulaire. Une erreur client est signalee dans la session backend, et le
+reconciler marque les uploads sans activite comme necessitant une reprise sans
+les confondre avec une vente.
+
+Un produit nouvellement cree porte obligatoirement `status: draft`,
+`sold: false`, `soldAt: null` et `stock: 0`. `sold` ne devient vrai qu'apres
+publication et passage reel du stock a zero. Les projections et le back-office
+donnent toujours priorite au statut brouillon: un upload incomplet ne peut donc
+ni compter comme vendu, ni proposer une remise en vente.
 
 Le document de session, ses erreurs internes et les chemins source restent
 backend-only. L'etat callable expose seulement la progression utile. Les
 variantes serveur sont publiquement lisibles comme les autres medias catalogue,
 mais leur ecriture directe par le navigateur est interdite.
 
-Etat au 2026-08-07: implementation locale validee, non encore deployee sur le
-sandbox. L'ancien parcours heberge reste actif jusqu'au deploiement coordonne.
+Etat au 2026-08-07: correctif local pret pour revue, non encore redeploye sur
+le sandbox. Le rollout reste coordonne entre Functions et App Hosting.
 
 ## 4. Cycle de vie
 

@@ -9,6 +9,8 @@ const FILE_DATABASE = 'secondevie-product-publications';
 const FILE_STORE = 'files';
 const POLL_INTERVAL_MS = 1800;
 const PUBLICATION_TIMEOUT_MS = 15 * 60 * 1000;
+const SOURCE_UPLOAD_TIMEOUT_MS = 2 * 60 * 1000;
+const SOURCE_UPLOAD_MAX_ATTEMPTS = 3;
 
 const randomId = (prefix) => {
   const suffix = globalThis.crypto?.randomUUID?.()
@@ -139,9 +141,21 @@ const uploadSourceFile = async ({ sessionId, entry, onProgress }) => {
     customMetadata: { publicationSessionId: sessionId, slotKey: entry.slotKey }
   });
   await new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      task.cancel();
+      const error = new Error('Le délai d’envoi de la photo est dépassé.');
+      error.code = 'PRODUCT_PUBLICATION_UPLOAD_TIMEOUT';
+      reject(error);
+    }, SOURCE_UPLOAD_TIMEOUT_MS);
     task.on('state_changed', (snapshot) => {
       onProgress?.(snapshot.totalBytes > 0 ? snapshot.bytesTransferred / snapshot.totalBytes : 0);
-    }, reject, resolve);
+    }, (error) => {
+      clearTimeout(timeout);
+      reject(error);
+    }, () => {
+      clearTimeout(timeout);
+      resolve();
+    });
   });
 };
 
@@ -166,13 +180,40 @@ const retryFinalization = (sessionId) => callPublicationFunction(
   { sessionId }
 );
 
-export const resumeProductPublication = async (descriptor, { onProgress, onStatus } = {}) => {
+const reportClientFailure = async (sessionId, error) => {
+  if (!sessionId) return;
+  const rawCode = String(error?.code || 'PRODUCT_PUBLICATION_CLIENT_FAILED')
+    .replace(/^storage\//, 'STORAGE_')
+    .replace(/[^A-Za-z0-9_-]+/g, '_')
+    .toUpperCase()
+    .slice(0, 100);
+  try {
+    await callPublicationFunction('reportProductPublicationClientErrorAdmin', {
+      sessionId,
+      stage: error?.publicationStage || 'unknown',
+      code: rawCode || 'PRODUCT_PUBLICATION_CLIENT_FAILED'
+    });
+  } catch {
+    // Le signalement ne doit jamais remplacer l'erreur initiale ni bloquer la reprise locale.
+  }
+};
+
+const resumeProductPublicationInternal = async (descriptor, { onProgress, onStatus } = {}) => {
   const startedAt = Date.now();
   let status = await ensurePublicationStarted(descriptor);
   if (status.status === 'published') return status;
-  const entries = await readPublicationFiles(descriptor.sessionId);
+  let entries;
+  try {
+    entries = await readPublicationFiles(descriptor.sessionId);
+  } catch (error) {
+    error.publicationStage = 'local_files';
+    throw error;
+  }
   if (entries.length !== Number(descriptor.startInput.expectedMediaCount)) {
-    throw new Error('Les photos locales nécessaires à la reprise sont incomplètes.');
+    const error = new Error('Les photos locales nécessaires à la reprise sont incomplètes.');
+    error.code = 'PRODUCT_PUBLICATION_LOCAL_FILES_INCOMPLETE';
+    error.publicationStage = 'local_files';
+    throw error;
   }
 
   const uploadedThisRun = new Set();
@@ -188,18 +229,30 @@ export const resumeProductPublication = async (descriptor, { onProgress, onStatu
 
     for (let index = 0; index < missingEntries.length; index += 1) {
       const entry = missingEntries[index];
-      const attempts = Number(uploadAttempts.get(entry.slotKey) || 0) + 1;
-      if (attempts > 3) throw new Error(`La photo ${Number(entry.slotKey.slice(-2)) + 1} n’a pas pu être traitée après trois tentatives.`);
-      uploadAttempts.set(entry.slotKey, attempts);
       onStatus?.(`Envoi de la photo ${Number(entry.slotKey.slice(-2)) + 1}/${entries.length}…`);
-      await uploadSourceFile({
-        sessionId: descriptor.sessionId,
-        entry,
-        onProgress: (fileProgress) => {
-          const completed = uploadedThisRun.size;
-          onProgress?.(0.12 + ((completed + fileProgress) / entries.length) * 0.48);
+      let uploaded = false;
+      while (!uploaded) {
+        const attempts = Number(uploadAttempts.get(entry.slotKey) || 0) + 1;
+        uploadAttempts.set(entry.slotKey, attempts);
+        try {
+          await uploadSourceFile({
+            sessionId: descriptor.sessionId,
+            entry,
+            onProgress: (fileProgress) => {
+              const completed = uploadedThisRun.size;
+              onProgress?.(0.12 + ((completed + fileProgress) / entries.length) * 0.48);
+            }
+          });
+          uploaded = true;
+        } catch (error) {
+          if (attempts >= SOURCE_UPLOAD_MAX_ATTEMPTS) {
+            error.publicationStage = 'storage_upload';
+            throw error;
+          }
+          onStatus?.(`Nouvelle tentative pour la photo ${Number(entry.slotKey.slice(-2)) + 1}…`);
+          await sleep(POLL_INTERVAL_MS * attempts);
         }
-      });
+      }
       uploadedThisRun.add(entry.slotKey);
     }
 
@@ -226,6 +279,15 @@ export const resumeProductPublication = async (descriptor, { onProgress, onStatu
     await sleep(POLL_INTERVAL_MS);
   }
   throw new Error('La publication continue sur le serveur. Revenez sur cet écran pour vérifier son état.');
+};
+
+export const resumeProductPublication = async (descriptor, options = {}) => {
+  try {
+    return await resumeProductPublicationInternal(descriptor, options);
+  } catch (error) {
+    await reportClientFailure(descriptor?.sessionId, error);
+    throw error;
+  }
 };
 
 export const startDurableProductPublication = async ({ files, startInput, onProgress, onStatus }) => {

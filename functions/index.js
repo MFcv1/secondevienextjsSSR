@@ -172,6 +172,7 @@ const {
     getProductPublicationSessionAdmin,
     processProductPublicationImage,
     reconcileProductPublicationSessions,
+    reportProductPublicationClientErrorAdmin,
     retryProductPublicationFinalizationAdmin,
     startProductPublicationAdmin
 } = require('./src/publication/productPublication');
@@ -180,6 +181,7 @@ exports.cleanupProductPublicationSessions = cleanupProductPublicationSessions;
 exports.getProductPublicationSessionAdmin = getProductPublicationSessionAdmin;
 exports.processProductPublicationImage = processProductPublicationImage;
 exports.reconcileProductPublicationSessions = reconcileProductPublicationSessions;
+exports.reportProductPublicationClientErrorAdmin = reportProductPublicationClientErrorAdmin;
 exports.retryProductPublicationFinalizationAdmin = retryProductPublicationFinalizationAdmin;
 exports.startProductPublicationAdmin = startProductPublicationAdmin;
 

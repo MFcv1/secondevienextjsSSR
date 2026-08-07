@@ -19,6 +19,7 @@ const MEDIA_TRIGGER_REGION = process.env.PRODUCT_MEDIA_REGION || 'us-central1';
 const SESSION_COLLECTION = 'product_publication_sessions';
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const FINALIZATION_LEASE_MS = 5 * 60 * 1000;
+const STALLED_UPLOAD_MS = 15 * 60 * 1000;
 const MAX_PRODUCT_IMAGES = 23;
 const ORIGINAL_PATH_PATTERN = /^furniture\/publication-sessions\/([A-Za-z0-9_-]{8,160})\/originals\/(slot-(\d{2}))\/[^/]+$/;
 
@@ -84,8 +85,19 @@ function safeSession(session = {}) {
         processedMediaCount: Object.values(slots).filter((slot) => slot?.status === 'ready').length,
         slots: slotStates,
         lastError: session.lastError || null,
+        attentionRequired: session.clientState === 'attention_required',
         publishedAt: session.publishedAt || null
     };
+}
+
+function normalizeClientFailure(data = {}) {
+    const stages = new Set(['local_files', 'storage_upload', 'session_poll', 'version_skew', 'unknown']);
+    const stage = stages.has(data.stage) ? data.stage : 'unknown';
+    const rawCode = String(data.code || 'PRODUCT_PUBLICATION_CLIENT_FAILED').toUpperCase();
+    const code = /^[A-Z0-9_-]{3,100}$/.test(rawCode)
+        ? rawCode
+        : 'PRODUCT_PUBLICATION_CLIENT_FAILED';
+    return { stage, code };
 }
 
 function downloadUrl(bucketName, objectName, token) {
@@ -317,13 +329,40 @@ const startProductPublicationAdmin = regionalFunctions()
                 createdAt: now,
                 updatedAt: now,
                 expiresAt: new Date(now.getTime() + SESSION_TTL_MS),
-                lastError: null
+                lastError: null,
+                clientState: 'active'
             };
             await sessionRef.create(session);
             return safeSession(session);
         } catch (error) {
             throw mapDomainError(error);
         }
+    });
+
+const reportProductPublicationClientErrorAdmin = regionalFunctions()
+    .runWith({ enforceAppCheck: true })
+    .https.onCall(async (data, context) => {
+        await checkActiveStrongAdmin(context);
+        const sessionId = assertIdentifier(data?.sessionId, 'Session');
+        const failure = normalizeClientFailure(data);
+        const ref = admin.firestore().collection(SESSION_COLLECTION).doc(sessionId);
+        await admin.firestore().runTransaction(async (transaction) => {
+            const snapshot = await transaction.get(ref);
+            if (!snapshot.exists || snapshot.data()?.ownerUid !== context.auth.uid) {
+                throw new functions.https.HttpsError('not-found', 'Session de publication introuvable.');
+            }
+            if (snapshot.data()?.status === 'published') return;
+            transaction.set(ref, {
+                clientState: 'attention_required',
+                lastClientError: {
+                    ...failure,
+                    at: admin.firestore.FieldValue.serverTimestamp()
+                },
+                lastError: failure.code,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        });
+        return safeSession((await ref.get()).data());
     });
 
 const getProductPublicationSessionAdmin = regionalFunctions()
@@ -404,6 +443,7 @@ const processProductPublicationImage = onObjectFinalized({
             }
             transaction.set(sessionRef, {
                 status: 'processing',
+                clientState: 'active',
                 slots: {
                     ...(current.slots || {}),
                     [slotKey]: {
@@ -447,6 +487,7 @@ const processProductPublicationImage = onObjectFinalized({
             transaction.set(sessionRef, {
                 slots,
                 status: allReady ? 'ready' : 'processing',
+                clientState: 'active',
                 processedMediaCount: processedCount,
                 updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 lastError: null
@@ -523,10 +564,34 @@ const reconcileProductPublicationSessions = onSchedule({
     timeoutSeconds: 540,
     memory: '512MiB'
 }, async () => {
-    const candidates = await admin.firestore().collection(SESSION_COLLECTION)
+    const db = admin.firestore();
+    const [candidates, uploadCandidates] = await Promise.all([
+        db.collection(SESSION_COLLECTION)
         .where('status', 'in', ['ready', 'finalizing', 'failed'])
         .limit(25)
-        .get();
+        .get(),
+        db.collection(SESSION_COLLECTION)
+            .where('status', 'in', ['uploading', 'processing'])
+            .limit(50)
+            .get()
+    ]);
+    const stalledBefore = Date.now() - STALLED_UPLOAD_MS;
+    let attentionRequired = 0;
+    for (const snapshot of uploadCandidates.docs) {
+        const session = snapshot.data();
+        const updatedAt = session?.updatedAt?.toDate?.() || new Date(session?.updatedAt || 0);
+        const expiresAt = session?.expiresAt?.toDate?.() || new Date(session?.expiresAt || 0);
+        if (
+            session?.clientState === 'attention_required' ||
+            updatedAt.getTime() > stalledBefore ||
+            expiresAt.getTime() <= Date.now()
+        ) continue;
+        await snapshot.ref.set({
+            clientState: 'attention_required',
+            lastError: session.lastError || 'PRODUCT_PUBLICATION_UPLOAD_STALLED'
+        }, { merge: true });
+        attentionRequired += 1;
+    }
     let resumed = 0;
     for (const snapshot of candidates.docs) {
         try {
@@ -543,7 +608,7 @@ const reconcileProductPublicationSessions = onSchedule({
             });
         }
     }
-    return { inspected: candidates.size, resumed };
+    return { inspected: candidates.size + uploadCandidates.size, resumed, attentionRequired };
 });
 
 module.exports = {
@@ -558,6 +623,7 @@ module.exports = {
     getProductPublicationSessionAdmin,
     processProductPublicationImage,
     reconcileProductPublicationSessions,
+    reportProductPublicationClientErrorAdmin,
     retryProductPublicationFinalizationAdmin,
     safeSession,
     startProductPublicationAdmin

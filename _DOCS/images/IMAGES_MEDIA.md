@@ -81,7 +81,10 @@ la rotation EXIF, calcule couleur/ratio/blur, fabrique les huit WebP avec Sharp
 et finalise le produit lorsque tous les slots sont prets. L'ordre des slots est
 celui du formulaire. La session permet une reprise apres navigation ou reload;
 les sources sont supprimees du stockage local apres succes et placees dans la
-quarantaine serveur de 90 jours.
+quarantaine serveur de 90 jours. Chaque upload source a un delai maximum et
+trois tentatives; apres echec, le navigateur conserve les fichiers locaux et
+signale un etat `attention_required` au backend pour rendre l'interruption
+observable et reprenable.
 
 L'edition d'un meuble existant conserve pour l'instant le flux historique de
 variantes navigateur. Toute convergence future doit preserver recadrage,

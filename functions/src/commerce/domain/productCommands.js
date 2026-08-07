@@ -284,8 +284,8 @@ function applyProductAction({
             startingPrice: 0,
             priceOnRequest: false,
             stock: 0,
-            sold: true,
-            soldAt: now,
+            sold: false,
+            soldAt: null,
             // Les creations entrent en tete des Nouveautes. La Vue Globale
             // renumerote ensuite toute la selection lors d'un tri manuel.
             nouveautesOrder: -1,

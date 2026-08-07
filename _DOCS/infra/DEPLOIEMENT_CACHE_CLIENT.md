@@ -1,6 +1,6 @@
 # Deploiement atomique et coherence du cache client
 
-Derniere mise a jour: 2026-08-04
+Derniere mise a jour: 2026-08-07
 Statut: `REFERENCE_ACTIVE`
 Proprietaire: infrastructure Next.js et Firebase App Hosting
 
@@ -96,9 +96,16 @@ Le contrat est donc:
 - nouvel acces non cache: nouvelle revision;
 - onglet ancien qui effectue une navigation serveur: detection du mismatch puis
   rechargement automatique;
+- onglet admin ancien qui reprend le focus: lecture non cachee du document
+  `/admin`, comparaison de son `data-dpl-id` avec celui du document courant,
+  blocage des mutations et demande d'actualisation en cas d'ecart;
 - retour purement local dans l'historique: l'etat peut rester affiche jusqu'a
   la prochaine requete, afin de conserver la restauration fluide du scroll;
 - aucun utilisateur ne doit avoir a vider manuellement le cache applicatif.
+
+Le controle admin attend sa premiere verification avant de reprendre une
+publication conservee dans IndexedDB. Une actualisation ne perd donc pas les
+photos deja preparees.
 
 ## 4. Procedure de build et de deploiement
 

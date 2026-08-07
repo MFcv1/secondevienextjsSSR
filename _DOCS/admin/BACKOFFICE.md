@@ -83,7 +83,10 @@ source image unique, la reprise locale et la sauvegarde. Pour une creation,
 immediatement un brouillon serveur via `startProductPublicationAdmin`, puis
 effectue des uploads resumables. `processProductPublicationImage` fabrique les
 huit variantes avec Sharp et finalise offre, stock et publication par des
-commandes idempotentes. Une fermeture ou une navigation ne peut donc plus
+commandes idempotentes. Chaque source est retentee jusqu'a trois fois avec un
+delai borne; un echec client est conserve dans la session serveur et un upload
+inactif est signale par le reconciler. Une fermeture ou une navigation ne peut
+donc plus
 effacer silencieusement toute trace de l'action: le retour dans Publication
 reprend la session, et l'interface attend `/api/catalog?id=...` avant
 d'annoncer que le meuble est visible. Pendant le traitement, les deux vues et
@@ -94,6 +97,11 @@ quatrieme rangee absorbe l'espace vertical restant. Dimensions occupe la
 troisieme rangee, avec des controles bornes en largeur. Le formulaire ne
 presente plus de panneau SEO manuel: titre, description et eligibilite sont
 deduits automatiquement du nom, de l'histoire, de l'image et du statut public.
+
+La liste classe d'abord `status: draft` comme Brouillon, meme si une ancienne
+donnee incoherente porte encore `sold: true`. Seuls les produits publies dont
+le marqueur de vente est actif sont Vendus. Un brouillon sans media affiche `Photos en attente`, ne
+peut pas etre publie manuellement et ne propose aucune action de vente.
 `StoryEditor` occupe ensuite les six colonnes de la rangee
 extensible; le panneau Photos et le resume utilisent eux aussi `flex: 1` sur ce
 meme axe. L'editeur WYSIWYG masque toute syntaxe technique pendant la saisie et

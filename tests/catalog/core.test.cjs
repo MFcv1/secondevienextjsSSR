@@ -55,7 +55,9 @@ test('manifeste et inventaire sont deterministes et integralement hashes', () =>
     assert.equal(metadata.sha256, sha256(first.buffers[name].toString('utf8')));
     assert.equal(metadata.bytes, first.buffers[name].length);
   });
-  assert.equal(inventory.totalStockValue, 390);
+  assert.equal(inventory.totalStockValue, 340);
+  assert.equal(inventory.totalItemsForSale, 3);
+  assert.equal(inventory.soldItems, 0);
 });
 
 test('prix, stock zero et suppression changent exactement la projection publiee', () => {

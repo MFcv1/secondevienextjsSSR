@@ -9,13 +9,15 @@ export const getProductStockAmount = (item) => {
 };
 
 export const isPurchasable = (item) => (
-  !item?.sold
+  (!item?.status || item.status === 'published')
+  && !item?.sold
   && getProductStockAmount(item) > 0
   && getProductPriceAmount(item) > 0
   && !item?.priceOnRequest
 );
 
 export const getPurchaseUnavailableLabel = (item) => {
+  if (item?.status && item.status !== 'published') return 'Indisponible';
   if (item?.sold) return 'Vendu';
   if (getProductStockAmount(item) <= 0) return 'Deja reserve';
   if (item?.priceOnRequest || getProductPriceAmount(item) <= 0) return 'Demander un devis';
@@ -23,7 +25,8 @@ export const getPurchaseUnavailableLabel = (item) => {
 };
 
 export const shouldRequestQuote = (item) => (
-  !item?.sold
+  (!item?.status || item.status === 'published')
+  && !item?.sold
   && getProductStockAmount(item) > 0
   && (item?.priceOnRequest || getProductPriceAmount(item) <= 0)
 );

@@ -112,6 +112,7 @@ secrets, deploiement et recette Meta reelle restent M4/M5.
   -> startProductPublicationAdmin [F]
      -> brouillon furniture/{id} [DB]
      -> product_publication_sessions/{sessionId} [DB, backend-only]
+  -> reportProductPublicationClientErrorAdmin [F] si upload local interrompu
   -> upload resumable originals/slot-XX [ST] (proprietaire admin AAL2 actif)
   -> processProductPublicationImage [F, us-central1: region du bucket media]
      -> huit variantes Sharp [ST, ecriture backend-only]
@@ -799,7 +800,7 @@ functions/
 | commerce v2 retours client | `decideCustomerReturnRequestAdmin`, puis commandes refund/retour v2 existantes selon le parcours choisi |
 | commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
 | commerce v2 produit | `preflightProductMutationAdmin`, `createProductAdmin`, `updateProductOfferAdmin`, `publishProductAdmin`, `adjustInventoryAdmin`, `deleteProductAdmin` |
-| publication produit durable | `startProductPublicationAdmin`, `getProductPublicationSessionAdmin`, `retryProductPublicationFinalizationAdmin`, `processProductPublicationImage`, `reconcileProductPublicationSessions`, `cleanupProductPublicationSessions` |
+| publication produit durable | `startProductPublicationAdmin`, `getProductPublicationSessionAdmin`, `reportProductPublicationClientErrorAdmin`, `retryProductPublicationFinalizationAdmin`, `processProductPublicationImage`, `reconcileProductPublicationSessions`, `cleanupProductPublicationSessions` |
 | Meta OAuth/publication | `startMetaOAuthAdmin`, `metaOAuthCallback`, `getMetaConnectionStatusAdmin`, `selectMetaAssetAdmin`, `verifyMetaConnectionAdmin`, `disconnectMetaConnectionAdmin`, `prepareSocialPublicationAdmin`, `runSocialPublicationAdmin`, `getSocialPublicationStatusAdmin` |
 | refunds/Connect | `refundOrderAdmin`, `syncRefundStatusAdmin`, `getStripeConnectStatus`, `startStripeConnectOnboarding`, `syncStripeConnectAccount`, `requestStripeConnectReconnect`, `confirmStripeConnectReconnect` |
 | preuves E2E | `e2eCheckoutProof`, `e2eStripeHardeningProof` |

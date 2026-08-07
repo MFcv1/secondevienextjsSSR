@@ -18,6 +18,7 @@ test('publication status exposes progress without leaking generated media or own
     productId: 'product-session-0001',
     ownerUid: 'private-admin-uid',
     status: 'processing',
+    clientState: 'attention_required',
     expectedMediaCount: 2,
     slots: {
       'slot-00': { status: 'ready', variants: { full: 'private-before-publication' } },
@@ -27,6 +28,7 @@ test('publication status exposes progress without leaking generated media or own
 
   assert.equal(status.processedMediaCount, 1);
   assert.equal(status.receivedMediaCount, 2);
+  assert.equal(status.attentionRequired, true);
   assert.deepEqual(status.slots['slot-00'], { status: 'ready', error: null });
   assert.equal(Object.hasOwn(status, 'ownerUid'), false);
   assert.equal(Object.hasOwn(status.slots['slot-00'], 'variants'), false);

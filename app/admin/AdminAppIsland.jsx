@@ -149,6 +149,8 @@ function AdminContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [stepUpOpen, setStepUpOpen] = useState(false);
+  const [deploymentStale, setDeploymentStale] = useState(false);
+  const [deploymentVerified, setDeploymentVerified] = useState(false);
   const [catalogState, setCatalogState] = useState({ items: [], status: 'idle', error: null });
   const [billingGate, setBillingGate] = useState({ status: 'idle', data: null, error: null });
   const [commerceStatus, setCommerceStatus] = useState(() => ({
@@ -160,6 +162,44 @@ function AdminContent() {
   const catalogRequestRef = React.useRef(null);
   const deletedProductIdsRef = React.useRef(new Set());
   const cachedAdminUidRef = React.useRef(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const checkDeployment = async () => {
+      try {
+        const currentId = document.documentElement.getAttribute('data-dpl-id');
+        if (!currentId) {
+          if (!cancelled) setDeploymentVerified(true);
+          return;
+        }
+        const response = await fetch(`/admin?deployment_probe=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { accept: 'text/html' },
+        });
+        if (!response.ok || cancelled) return;
+        const html = await response.text();
+        const servedId = html.match(/<html[^>]*data-dpl-id=["']([^"']+)["']/i)?.[1];
+        if (servedId && servedId !== currentId && !cancelled) setDeploymentStale(true);
+      } catch {
+        // Un controle reseau impossible ne bloque pas le travail administrateur courant.
+      } finally {
+        if (!cancelled) setDeploymentVerified(true);
+      }
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') void checkDeployment();
+    };
+    void checkDeployment();
+    window.addEventListener('focus', checkDeployment);
+    window.addEventListener('pageshow', checkDeployment);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('focus', checkDeployment);
+      window.removeEventListener('pageshow', checkDeployment);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, []);
 
   React.useEffect(() => {
     const orderId = readAdminOrderTarget();
@@ -331,12 +371,16 @@ function AdminContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const publicationMutationsBlocked = !deploymentVerified || deploymentStale;
+
   const handleToggleStatus = async (item, collectionName) => {
+    if (publicationMutationsBlocked) return;
     await publishProductAdmin(item, collectionName, item.status !== 'published');
     clearAdminPublicCatalogCache();
   };
 
   const handleDeleteItem = async (_year, item, collectionName) => {
+    if (publicationMutationsBlocked) return;
     if (!window.confirm(`Supprimer définitivement « ${item.name || 'ce meuble'} » ?`)) return;
     await deleteProductAdmin(item, collectionName);
     [item?.id, item?.originalId]
@@ -348,6 +392,7 @@ function AdminContent() {
   };
 
   const handleMarkAsSold = async (item, collectionName) => {
+    if (publicationMutationsBlocked) return;
     if (!window.confirm(`Marquer "${item.name}" comme VENDU ? (Stock a 0)`)) return;
     const currentStock = Number(item.stock || 0);
     if (!Number.isSafeInteger(currentStock) || currentStock <= 0) return;
@@ -361,6 +406,7 @@ function AdminContent() {
   };
 
   const handleMarkAsAvailable = async (item, collectionName) => {
+    if (publicationMutationsBlocked) return;
     if (!window.confirm(`Remettre "${item.name}" en vente ? (Stock a 1)`)) return;
     const currentStock = Number(item.stock || 0);
     if (!Number.isSafeInteger(currentStock) || currentStock >= 1) return;
@@ -603,6 +649,7 @@ function AdminContent() {
               onDelete={(item) => handleDeleteItem(null, item, adminCollection)}
               onMarkAsSold={(item) => handleMarkAsSold(item, adminCollection)}
               onMarkAsAvailable={(item) => handleMarkAsAvailable(item, adminCollection)}
+              mutationsBlocked={publicationMutationsBlocked}
             />
           )}
         </Suspense>
@@ -615,6 +662,16 @@ function AdminContent() {
           renderTrigger={false}
         />
       </Suspense>
+      {deploymentStale && (
+        <div className="fixed inset-0 z-[200] grid place-items-center bg-stone-950/55 px-5 backdrop-blur-sm" role="alertdialog" aria-modal="true" aria-labelledby="admin-version-title">
+          <div className="w-full max-w-md rounded-[24px] bg-white p-7 text-center text-stone-950 shadow-2xl">
+            <ShieldCheck className="mx-auto text-amber-500" size={28} strokeWidth={1.6} />
+            <h2 id="admin-version-title" className="mt-4 text-xl font-black tracking-tight">Une nouvelle version est disponible</h2>
+            <p className="mt-2 text-sm leading-6 text-stone-500">Actualise le back-office avant toute publication. Les photos déjà préparées restent conservées pour la reprise.</p>
+            <button type="button" onClick={() => window.location.reload()} className="mt-5 min-h-11 w-full rounded-full bg-stone-950 px-5 text-sm font-extrabold text-white">Actualiser et reprendre</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

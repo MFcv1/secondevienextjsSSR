@@ -35,6 +35,11 @@ const sortNewestFirst = (left, right) => (
     || String(left.id).localeCompare(String(right.id))
 );
 
+const getProductAdminState = (item) => {
+    if (item?.status !== 'published') return 'draft';
+    return item?.sold === true ? 'sold' : 'published';
+};
+
 const AdminItemList = ({ collectionName, darkMode, onEdit, onToggleStatus, onDelete, onMarkAsSold, onMarkAsAvailable }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -113,10 +118,9 @@ const AdminItemList = ({ collectionName, darkMode, onEdit, onToggleStatus, onDel
                 const searchTerms = normalizeText(debouncedSearch).split(' ').filter(Boolean);
                 const filtered = searchPool.filter(item => {
                     if (filterCategory && normalizeText(item.category) !== filterCategory) return false;
-                    if (filterStatus === 'published' && (item.status !== 'published' || item.sold)) return false;
-                    if (filterStatus === 'draft' && item.status !== 'draft') return false;
-                    if (filterStatus === 'sold' && (item.status !== 'published' || !item.sold)) return false;
-                    const statusLabel = item.sold ? 'vendu' : item.status === 'published' ? 'public publie' : 'brouillon';
+                    const adminState = getProductAdminState(item);
+                    if (filterStatus && adminState !== filterStatus) return false;
+                    const statusLabel = adminState === 'sold' ? 'vendu' : adminState === 'published' ? 'public publie' : 'brouillon';
                     const haystack = normalizeText(`${item.name} ${item.material} ${item.category} ${statusLabel}`);
                     return searchTerms.every(term => haystack.includes(term));
                 });
@@ -169,9 +173,9 @@ const AdminItemList = ({ collectionName, darkMode, onEdit, onToggleStatus, onDel
 
     const loadedSummary = {
         total: items.length,
-        published: items.filter(item => item.status === 'published' && !item.sold).length,
-        drafts: items.filter(item => item.status !== 'published' && !item.sold).length,
-        sold: items.filter(item => item.sold).length,
+        published: items.filter(item => getProductAdminState(item) === 'published').length,
+        drafts: items.filter(item => getProductAdminState(item) === 'draft').length,
+        sold: items.filter(item => getProductAdminState(item) === 'sold').length,
     };
     const summary = catalogStats || loadedSummary;
 
@@ -238,12 +242,18 @@ const AdminItemList = ({ collectionName, darkMode, onEdit, onToggleStatus, onDel
                         ) : (
                             <div className={`divide-y ${darkMode ? 'divide-white/[0.07]' : 'divide-black/[0.055]'}`}>
                                 {displayedItems.map(item => {
-                                    const status = item.sold ? 'Vendu' : (item.status === 'published' ? 'Public' : 'Brouillon');
+                                    const adminState = getProductAdminState(item);
+                                    const status = adminState === 'sold' ? 'Vendu' : adminState === 'published' ? 'Public' : 'Brouillon';
+                                    const imageSource = item.images?.[0] || item.imageUrl || '';
                                     return (
                                         <article key={item.id} className={`group grid gap-3 px-2 py-2.5 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] lg:grid-cols-[minmax(240px,2.2fr)_1.2fr_.7fr_.55fr_1fr_132px] lg:items-center ${darkMode ? 'hover:bg-white/[0.025]' : 'hover:bg-[#FAF9F6]'}`}>
                                             <div className="flex min-w-0 items-center gap-3">
                                                 <div className={`h-11 w-11 shrink-0 overflow-hidden rounded-[12px] ring-1 ${darkMode ? 'ring-white/10' : 'ring-black/[0.06]'}`}>
-                                                    <img src={item.images?.[0] || item.imageUrl} className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105" alt="" />
+                                                    {imageSource ? (
+                                                        <img src={imageSource} className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105" alt="" />
+                                                    ) : (
+                                                        <span className={`grid h-full w-full place-items-center px-1 text-center text-[7px] font-bold leading-3 ${darkMode ? 'bg-white/[0.04] text-stone-500' : 'bg-stone-100 text-stone-400'}`}>Photos en attente</span>
+                                                    )}
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className="truncate text-[12px] font-extrabold tracking-[-0.015em]">{item.name || 'Sans titre'}</p>
@@ -251,13 +261,13 @@ const AdminItemList = ({ collectionName, darkMode, onEdit, onToggleStatus, onDel
                                                 </div>
                                             </div>
                                             <p className={`truncate text-[10px] font-semibold ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>{getCategoryLabel(item.category)}</p>
-                                            <span className={`w-max rounded-full px-2.5 py-1 text-[8px] font-extrabold uppercase tracking-[0.08em] ${item.sold ? 'bg-red-500/10 text-red-500' : item.status === 'published' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}`}>{status}</span>
-                                            <p className="text-[10px] font-bold tabular-nums">{item.sold ? '—' : Number(item.stock || 0)}</p>
+                                            <span className={`w-max rounded-full px-2.5 py-1 text-[8px] font-extrabold uppercase tracking-[0.08em] ${adminState === 'sold' ? 'bg-red-500/10 text-red-500' : adminState === 'published' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}`}>{status}</span>
+                                            <p className="text-[10px] font-bold tabular-nums">{adminState === 'sold' ? '—' : Number(item.stock || 0)}</p>
                                             <p className={`text-[9px] font-medium ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>{formatDate(item.updatedAt || item.createdAt)}</p>
                                             <div className="flex items-center justify-end gap-1.5">
-                                                <button type="button" onClick={() => onToggleStatus(item)} className={actionClass} title={item.status === 'published' ? 'Masquer' : 'Publier'}>{item.status === 'published' ? <Eye size={14} strokeWidth={1.5} /> : <EyeOff size={14} strokeWidth={1.5} />}</button>
+                                                <button type="button" onClick={() => onToggleStatus(item)} disabled={adminState === 'draft' && !imageSource} className={`${actionClass} disabled:cursor-not-allowed disabled:opacity-35`} title={adminState === 'draft' && !imageSource ? 'Ajoutez les photos avant de publier' : item.status === 'published' ? 'Masquer' : 'Publier'}>{item.status === 'published' ? <Eye size={14} strokeWidth={1.5} /> : <EyeOff size={14} strokeWidth={1.5} />}</button>
                                                 <button type="button" onClick={() => onEdit(item)} className={actionClass} title="Modifier"><Pencil size={14} strokeWidth={1.5} /></button>
-                                                <button type="button" onClick={() => item.sold ? onMarkAsAvailable(item) : onMarkAsSold(item)} className={actionClass} title={item.sold ? 'Remettre en vente' : 'Marquer comme vendu'}>{item.sold ? <RotateCcw size={14} strokeWidth={1.5} /> : <CheckCircle size={14} strokeWidth={1.5} />}</button>
+                                                {adminState !== 'draft' && <button type="button" onClick={() => adminState === 'sold' ? onMarkAsAvailable(item) : onMarkAsSold(item)} className={actionClass} title={adminState === 'sold' ? 'Remettre en vente' : 'Marquer comme vendu'}>{adminState === 'sold' ? <RotateCcw size={14} strokeWidth={1.5} /> : <CheckCircle size={14} strokeWidth={1.5} />}</button>}
                                                 <button type="button" onClick={() => onDelete(item)} className={`${actionClass} text-red-500 hover:!bg-red-500 hover:!text-white`} title="Supprimer définitivement"><Trash2 size={14} strokeWidth={1.5} /></button>
                                             </div>
                                         </article>

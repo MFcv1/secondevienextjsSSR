@@ -21,6 +21,7 @@ export default function AdminPublicationWorkspace({
   onMarkAsAvailable,
   onMarkAsSold,
   onToggleStatus,
+  mutationsBlocked = false,
 }) {
   const [view, setView] = React.useState('create');
   const [publicationBusy, setPublicationBusy] = React.useState(false);
@@ -85,6 +86,7 @@ export default function AdminPublicationWorkspace({
             onPublicationBusyChange={setPublicationBusy}
             collectionName={collectionName}
             darkMode={darkMode}
+            mutationsBlocked={mutationsBlocked}
           />
         ) : (
           <AdminItemList

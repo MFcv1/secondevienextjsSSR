@@ -194,7 +194,8 @@ const AdminForm = ({
   onSaved,
   onPublicationBusyChange,
   collectionName = 'furniture',
-  darkMode = false
+  darkMode = false,
+  mutationsBlocked = false
 }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -329,7 +330,7 @@ const AdminForm = ({
   }, [uploading]);
 
   useEffect(() => {
-    if (editData || pendingResumeAttemptedRef.current) return;
+    if (editData || mutationsBlocked || pendingResumeAttemptedRef.current) return;
     const descriptor = getPendingPublicationDescriptor();
     if (!descriptor) return;
     pendingResumeAttemptedRef.current = true;
@@ -368,7 +369,7 @@ const AdminForm = ({
     };
     resume();
     return () => { cancelled = true; };
-  }, [editData, onSaved]);
+  }, [editData, mutationsBlocked, onSaved]);
 
   // Prevent browser from opening files if dropped outside the target
   useEffect(() => {
@@ -716,6 +717,10 @@ const AdminForm = ({
   };
 
   const addMeuble = async () => {
+    if (mutationsBlocked) {
+      setMsg('Actualise le back-office avant de reprendre cette publication.');
+      return;
+    }
     if (socialPublication && socialPublication.overallStatus !== 'published') {
       setUploading(true);
       setProgress(0.9);
