@@ -25,7 +25,11 @@ export default function AdminPublicationWorkspace({
 }) {
   const [view, setView] = React.useState('create');
   const [publicationBusy, setPublicationBusy] = React.useState(false);
-  const handleSaved = React.useCallback(() => setView('history'), []);
+  const [recentProductId, setRecentProductId] = React.useState(null);
+  const handleSaved = React.useCallback((savedProduct = {}) => {
+    setRecentProductId(savedProduct.productId || null);
+    setView('history');
+  }, []);
 
   React.useEffect(() => {
     if (editData) setView('create');
@@ -92,6 +96,7 @@ export default function AdminPublicationWorkspace({
           <AdminItemList
             collectionName={collectionName}
             darkMode={darkMode}
+            highlightProductId={recentProductId}
             onEdit={onEdit}
             onToggleStatus={onToggleStatus}
             onDelete={onDelete}

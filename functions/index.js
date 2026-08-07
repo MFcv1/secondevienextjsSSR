@@ -42,6 +42,7 @@ const {
     adjustInventoryAdmin,
     deleteProductAdmin,
     createProductAdmin,
+    createPublishedProductAdmin,
     preflightProductMutationAdmin,
     publishProductAdmin,
     updateProductOfferAdmin
@@ -118,6 +119,7 @@ const {
 exports.adjustInventoryAdmin = adjustInventoryAdmin;
 exports.deleteProductAdmin = deleteProductAdmin;
 exports.createProductAdmin = createProductAdmin;
+exports.createPublishedProductAdmin = createPublishedProductAdmin;
 exports.preflightProductMutationAdmin = preflightProductMutationAdmin;
 exports.publishProductAdmin = publishProductAdmin;
 exports.updateProductOfferAdmin = updateProductOfferAdmin;

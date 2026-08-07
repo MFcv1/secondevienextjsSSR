@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     collection,
     getCountFromServer,
@@ -40,7 +40,7 @@ const getProductAdminState = (item) => {
     return item?.sold === true ? 'sold' : 'published';
 };
 
-const AdminItemList = ({ collectionName, darkMode, onEdit, onToggleStatus, onDelete, onMarkAsSold, onMarkAsAvailable }) => {
+const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, onToggleStatus, onDelete, onMarkAsSold, onMarkAsAvailable }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [items, setItems] = useState([]);
@@ -51,6 +51,18 @@ const AdminItemList = ({ collectionName, darkMode, onEdit, onToggleStatus, onDel
     const [filterStatus, setFilterStatus] = useState(null);
     const [catalogStats, setCatalogStats] = useState(null);
     const [statsRefreshKey, setStatsRefreshKey] = useState(0);
+    const highlightedRowRef = useRef(null);
+    const highlightScrolledRef = useRef(false);
+
+    useEffect(() => {
+        highlightScrolledRef.current = false;
+    }, [highlightProductId]);
+
+    useEffect(() => {
+        if (!highlightProductId || highlightScrolledRef.current || !highlightedRowRef.current) return;
+        highlightedRowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        highlightScrolledRef.current = true;
+    }, [highlightProductId, items]);
 
 
     // Debounce search input
@@ -246,7 +258,11 @@ const AdminItemList = ({ collectionName, darkMode, onEdit, onToggleStatus, onDel
                                     const status = adminState === 'sold' ? 'Vendu' : adminState === 'published' ? 'Public' : 'Brouillon';
                                     const imageSource = item.images?.[0] || item.imageUrl || '';
                                     return (
-                                        <article key={item.id} className={`group grid gap-3 px-2 py-2.5 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] lg:grid-cols-[minmax(240px,2.2fr)_1.2fr_.7fr_.55fr_1fr_132px] lg:items-center ${darkMode ? 'hover:bg-white/[0.025]' : 'hover:bg-[#FAF9F6]'}`}>
+                                        <article
+                                            key={item.id}
+                                            ref={item.id === highlightProductId ? highlightedRowRef : null}
+                                            className={`group grid gap-3 rounded-[14px] px-2 py-2.5 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] lg:grid-cols-[minmax(240px,2.2fr)_1.2fr_.7fr_.55fr_1fr_132px] lg:items-center ${item.id === highlightProductId ? (darkMode ? 'bg-emerald-500/10 ring-1 ring-emerald-500/25' : 'bg-emerald-50 ring-1 ring-emerald-500/20') : darkMode ? 'hover:bg-white/[0.025]' : 'hover:bg-[#FAF9F6]'}`}
+                                        >
                                             <div className="flex min-w-0 items-center gap-3">
                                                 <div className={`h-11 w-11 shrink-0 overflow-hidden rounded-[12px] ring-1 ${darkMode ? 'ring-white/10' : 'ring-black/[0.06]'}`}>
                                                     {imageSource ? (
@@ -256,7 +272,10 @@ const AdminItemList = ({ collectionName, darkMode, onEdit, onToggleStatus, onDel
                                                     )}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="truncate text-[12px] font-extrabold tracking-[-0.015em]">{item.name || 'Sans titre'}</p>
+                                                    <div className="flex min-w-0 items-center gap-2">
+                                                        <p className="truncate text-[12px] font-extrabold tracking-[-0.015em]">{item.name || 'Sans titre'}</p>
+                                                        {item.id === highlightProductId && <span className="shrink-0 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[7px] font-extrabold uppercase tracking-[0.08em] text-emerald-700 dark:text-emerald-400">Nouveau</span>}
+                                                    </div>
                                                     <p className={`mt-0.5 truncate text-[8px] font-medium ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>ID · {item.id}</p>
                                                 </div>
                                             </div>

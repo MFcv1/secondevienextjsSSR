@@ -71,14 +71,49 @@ export const PRODUCT_IMAGE_VARIANT_SPECS = [
     { key: 'full', width: 1920, quality: 0.85, folder: 'responsive' },
 ];
 
-export const createProductImageVariantFiles = async (file, specs = PRODUCT_IMAGE_VARIANT_SPECS) => {
-    const entries = [];
-    for (const spec of specs) {
-        const variantFile = await compressImage(file, spec.quality, spec.width);
-        entries.push([spec.key, variantFile]);
-    }
+const canvasToWebpFile = (canvas, sourceName, quality) => new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+        if (!blob) {
+            reject(new Error('Canvas is empty'));
+            return;
+        }
+        resolve(new File(
+            [blob],
+            `${String(sourceName || 'image').replace(/\.[^/.]+$/, '')}.webp`,
+            { type: 'image/webp', lastModified: Date.now() }
+        ));
+    }, 'image/webp', quality);
+});
 
-    return Object.fromEntries(entries);
+export const createProductImageVariantFiles = async (file, specs = PRODUCT_IMAGE_VARIANT_SPECS) => {
+    if (!file || typeof window === 'undefined') return {};
+    const sourceUrl = URL.createObjectURL(file);
+    try {
+        const image = new Image();
+        image.decoding = 'async';
+        await new Promise((resolve, reject) => {
+            image.onload = resolve;
+            image.onerror = reject;
+            image.src = sourceUrl;
+        });
+
+        const sourceWidth = image.naturalWidth || image.width;
+        const sourceHeight = image.naturalHeight || image.height;
+        const entries = await Promise.all(specs.map(async (spec) => {
+            const width = Math.min(sourceWidth, spec.width);
+            const height = Math.max(1, Math.round((sourceHeight * width) / sourceWidth));
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const context = canvas.getContext('2d');
+            if (!context) throw new Error('Canvas context unavailable');
+            context.drawImage(image, 0, 0, width, height);
+            return [spec.key, await canvasToWebpFile(canvas, file.name, spec.quality)];
+        }));
+        return Object.fromEntries(entries);
+    } finally {
+        URL.revokeObjectURL(sourceUrl);
+    }
 };
 
 export const getImageFileMetadata = (file) => {

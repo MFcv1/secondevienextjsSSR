@@ -147,6 +147,16 @@ const createProductAdmin = callable(createHandler(
     })
 ));
 
+const createPublishedProductAdmin = callable(createHandler(
+    'create_published_product',
+    (data) => ({
+        editorial: data.editorial,
+        media: data.media || {},
+        offer: data.offer,
+        initialStock: data.initialStock
+    })
+));
+
 const updateProductOfferAdmin = callable(createHandler(
     'update_product_offer',
     (data) => ({ offer: data.offer })
@@ -175,6 +185,7 @@ module.exports = {
     commandRepository,
     deleteProductAdmin,
     createProductAdmin,
+    createPublishedProductAdmin,
     mapDomainError,
     preflightProductMutationAdmin,
     publishProductAdmin,

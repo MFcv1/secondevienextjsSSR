@@ -80,10 +80,14 @@ horizontal sans barre visible, puis passent sur plusieurs lignes quand la
 largeur le permet. `AdminForm` gere les champs produit, la preparation des
 variantes et la sauvegarde. Pour une creation, toutes les images sont envoyees
 sur les chemins Storage catalogue historiques avant la premiere creation
-Firestore. Le formulaire applique ensuite, dans l'ordre, creation, offre,
-stock et publication avec des commandes idempotentes. Un clic Publier ne peut
+Firestore. Le formulaire applique ensuite contenu, offre, stock et statut public
+avec une seule commande idempotente et une seule ecriture produit. Un clic Publier ne peut
 donc plus laisser apparaitre un brouillon technique sans photo: si l'upload
 echoue, aucun meuble n'est cree; s'il reussit, le produit est finalise public.
+Une fenetre modale affiche la progression reelle des photos, de l'ecriture et
+de la projection. Le succes n'est confirme qu'apres lecture du produit dans
+`/api/catalog`; l'interface bascule alors vers Publications et met en evidence
+la ligne creee.
 Pendant le traitement, les deux vues et l'apercu public sont neutralises et
 `beforeunload` avertit avant une fermeture. Sa grille droite
 utilise quatre rangees `auto / auto / auto / minmax(220px, 1fr)`: seule la

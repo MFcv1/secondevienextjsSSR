@@ -79,6 +79,15 @@ catalogue intact au lieu de produire un brouillon sans photo. L'ordre des
 medias reste celui du formulaire et les metadata ratio/couleur/blur sont
 conservees avec les URLs finales.
 
+Les huit largeurs ne sont pas huit telechargements publics: le `srcset` laisse
+le navigateur choisir une seule ressource selon largeur et densite. Elles
+couvrent les quatre niveaux carte/vignette, le detail initial, l'intermediaire,
+le grand detail et le zoom. Leur faible cout Storage est conserve car chaque
+cle reste selectionnable par les surfaces publiques. Cote admin, la source est
+decodee une seule fois par photo et les huit envois sont executes avec une
+concurrence bornee a quatre; cela reduit le temps sans retirer de palier utile
+ni saturer le navigateur.
+
 Le rail serveur `functions/src/publication/productPublication.js` et ses
 chemins `publication-sessions` ne sont plus appeles par le formulaire depuis le
 2026-08-07. Ils restent temporairement deployes pour diagnostiquer et collecter

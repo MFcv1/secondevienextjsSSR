@@ -8,6 +8,7 @@ import { PRODUCT_IMAGE_VARIANT_SPECS, compressImage, createProductImageVariantFi
 import ImageCropperModal from './components/ImageCropperModal';
 import MetaConnectionBadge from './components/MetaConnectionBadge';
 import PublicationActionBar from './components/PublicationActionBar';
+import PublicationProgressDialog from './components/PublicationProgressDialog';
 import PublicationReviewStep from './components/PublicationReviewStep';
 import StoryEditor from './components/StoryEditor';
 import useMetaConnection from './components/useMetaConnection';
@@ -18,9 +19,8 @@ import { getFirebaseAuth } from '../config/firebaseLazy';
 import {
   adjustInventoryAdmin,
   createProductCommandSession,
-  createProductDraftAdmin,
+  createPublishedProductAdmin,
   preflightProductMutationAdmin,
-  publishProductAdmin,
   updateProductOfferAdmin
 } from '../commerce/adminProductCommandClient';
 import {
@@ -30,7 +30,8 @@ import {
 } from './metaPublicationClient';
 import {
   clearPendingProductPublication,
-  getPendingPublicationDescriptor
+  getPendingPublicationDescriptor,
+  waitForPublicCatalogProduct
 } from './productPublicationClient';
 
 const WOOD_TYPES = [
@@ -66,6 +67,18 @@ const isStorageAuthorizationError = (error) => (
   error?.code === 'storage/unauthorized'
   || String(error?.message || '').includes('storage/unauthorized')
 );
+
+const runWithConcurrency = async (items, limit, worker) => {
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      await worker(items[index], index);
+    }
+  });
+  await Promise.all(workers);
+};
 
 const refreshAdminAuthorizationToken = async () => {
   const auth = await getFirebaseAuth();
@@ -218,6 +231,7 @@ const AdminForm = ({
   const [categoryError, setCategoryError] = useState(false);
   const [step, setStep] = useState('compose');
   const [progress, setProgress] = useState(0);
+  const [publicationPhase, setPublicationPhase] = useState('authorization');
   const [instagramHashtags, setInstagramHashtags] = useState('#secondevie #mobilierancien #artisanat');
   const [metaConnection, setMetaConnection] = useState({ status: 'loading', connected: false });
   const [socialTargets, setSocialTargets] = useState({ instagram: false, facebook: false });
@@ -231,6 +245,7 @@ const AdminForm = ({
   const depthInputRef = useRef(null);
   const heightInputRef = useRef(null);
   const productCommandSessionRef = useRef(null);
+  const publishedProductRef = useRef(null);
   const imagePreparationJobsRef = useRef(0);
 
   // New state for drag reordering
@@ -267,6 +282,7 @@ const AdminForm = ({
 
   useEffect(() => {
     productCommandSessionRef.current = null;
+    publishedProductRef.current = null;
     setStep('compose');
     setProgress(0);
     setInstagramHashtags('#secondevie #mobilierancien #artisanat');
@@ -483,26 +499,38 @@ const AdminForm = ({
       .slice(0, 90) || 'image.webp';
   };
 
-  const uploadProductVariantSet = async (sourceFile, progressPrefix, slotIndex) => {
+  const uploadProductVariantSet = async (sourceFile, progressPrefix, slotIndex, onVariantUploaded) => {
     setMsg(`${progressPrefix} Création des formats responsive...`);
     const variantFiles = await createProductImageVariantFiles(sourceFile);
     const uploadStamp = Date.now();
     const uploaded = {};
     const storage = await getStorageInstance();
 
-    for (const spec of PRODUCT_IMAGE_VARIANT_SPECS) {
+    await runWithConcurrency(PRODUCT_IMAGE_VARIANT_SPECS, 4, async (spec) => {
       const variantFile = variantFiles[spec.key];
-      if (!variantFile) continue;
+      if (!variantFile) return;
 
-      setMsg(`${progressPrefix} Envoi ${spec.key} ${spec.width}px...`);
+      setMsg(`${progressPrefix} Envoi sécurisé des formats...`);
       const safeName = sanitizeStorageName(variantFile.name);
       const imageRef = ref(storage, `${collectionName}/${spec.folder}/${uploadStamp}_${slotIndex}_${spec.key}_${safeName}`);
-      await uploadBytes(imageRef, variantFile, {
-        cacheControl: 'public, max-age=31536000, immutable',
-        contentType: variantFile.type || 'image/webp'
-      });
-      uploaded[spec.key] = await getDownloadURL(imageRef);
-    }
+      let lastError;
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        try {
+          await uploadBytes(imageRef, variantFile, {
+            cacheControl: 'public, max-age=31536000, immutable',
+            contentType: variantFile.type || 'image/webp'
+          });
+          uploaded[spec.key] = await getDownloadURL(imageRef);
+          lastError = null;
+          break;
+        } catch (error) {
+          lastError = error;
+          if (isStorageAuthorizationError(error) || attempt === 2) throw error;
+        }
+      }
+      if (lastError) throw lastError;
+      onVariantUploaded?.();
+    });
 
     return uploaded;
   };
@@ -584,12 +612,16 @@ const AdminForm = ({
           setMsg('Le site est publié, mais une destination Meta doit encore être relancée.');
           return;
         }
+        setPublicationPhase('complete');
         setProgress(1);
         setMsg('Le meuble est publié sur le site et les réseaux sélectionnés.');
+        await new Promise((resolve) => setTimeout(resolve, 450));
+        const savedProduct = publishedProductRef.current;
         productCommandSessionRef.current = null;
+        publishedProductRef.current = null;
         resetForm();
         if (onCancelEdit) onCancelEdit();
-        if (onSaved) onSaved();
+        if (onSaved) onSaved({ productId: savedProduct?.id, name: savedProduct?.name });
       } catch (retryError) {
         try {
           const current = await getSocialPublicationStatusAdmin(socialPublication.publicationId);
@@ -610,193 +642,156 @@ const AdminForm = ({
     }
     setUploading(true);
     setProgress(0.04);
-    setMsg("Préparation des fichiers...");
-
-    // Progression indicative : images, enregistrement, offre, stock puis reseaux.
-    const totalStages = galleryItems.length + 3 + (socialEnabled ? 2 : 0);
-    let completedStages = 0;
-    const advanceProgress = () => {
-      completedStages += 1;
-      setProgress(Math.min(0.97, 0.04 + (completedStages / totalStages) * 0.93));
-    };
+    setPublicationPhase('authorization');
+    setMsg('Vérification de la session administrateur…');
 
     try {
-      setMsg("Vérification de la session administrateur...");
-      await refreshAdminAuthorizationToken();
-      await preflightProductMutationAdmin();
-      setMsg("Préparation des fichiers...");
+      const session = productCommandSessionRef.current || createProductCommandSession(editData?.id);
+      productCommandSessionRef.current = session;
+      let commandProduct = !editData ? publishedProductRef.current : null;
 
-      let finalImageUrls = [];
-      let finalThumbnails = [];
-      let finalImageVariants = [];
-      let finalImageMetadata = [];
-      let count = 0;
+      if (!commandProduct) {
+        await refreshAdminAuthorizationToken();
+        await preflightProductMutationAdmin();
+        setProgress(0.1);
+        setPublicationPhase('photos');
+        setMsg('Préparation et envoi sécurisé des photos…');
 
-      for (const item of galleryItems) {
-        count++;
-        const progressPrefix = `[${count}/${galleryItems.length}]`;
+        const finalImageUrls = [];
+        const finalThumbnails = [];
+        const finalImageVariants = [];
+        const finalImageMetadata = [];
+        const uploadTotal = Math.max(1, galleryItems.filter((item) => !item.isExisting && item.file).length * PRODUCT_IMAGE_VARIANT_SPECS.length);
+        let uploadedCount = 0;
+        const onVariantUploaded = () => {
+          uploadedCount += 1;
+          setProgress(0.1 + (uploadedCount / uploadTotal) * 0.54);
+        };
 
-        if (item.isExisting) {
-          finalImageUrls.push(item.preview);
-          finalThumbnails.push(item.thumbnailUrl || item.variantUrls?.thumb || item.preview);
-          finalImageVariants.push(item.variantUrls || {});
-          finalImageMetadata.push(item.metadata || {});
-        } else if (item.file) {
-          let uploadedVariants = {};
+        for (let index = 0; index < galleryItems.length; index += 1) {
+          const item = galleryItems[index];
+          const progressPrefix = `[${index + 1}/${galleryItems.length}]`;
+          if (item.isExisting) {
+            finalImageUrls.push(item.preview);
+            finalThumbnails.push(item.thumbnailUrl || item.variantUrls?.thumb384 || item.variantUrls?.thumb || item.preview);
+            finalImageVariants.push(item.variantUrls || {});
+            finalImageMetadata.push(item.metadata || {});
+            continue;
+          }
+          if (!item.file) continue;
+
+          const uploadedVariants = await uploadProductVariantSet(item.file, progressPrefix, index, onVariantUploaded);
           let imageMetadata = item.metadata || null;
-          try {
-            uploadedVariants = await uploadProductVariantSet(item.file, progressPrefix, count - 1);
-          } catch (err) {
-            if (isStorageAuthorizationError(err)) throw err;
-            console.warn("Responsive variant upload failed, falling back to single WebP", err);
-            setMsg(`${progressPrefix} Compression WebP...`);
-            let fileToUpload = item.file;
-            if (!item.isCompressed) {
-              try {
-                fileToUpload = await compressImage(item.file, 0.85, 1920);
-              } catch (compressErr) {
-                console.warn("Compression failed, using original", compressErr);
-              }
-            }
 
-            setMsg(`${progressPrefix} Envoi de l'image...`);
-            const uploadStamp = Date.now();
-            const storage = await getStorageInstance();
-            const imageRef = ref(storage, `${collectionName}/${uploadStamp}_tat_${fileToUpload.name}`);
-            await uploadBytes(imageRef, fileToUpload, {
-              cacheControl: 'public, max-age=31536000, immutable',
-              contentType: fileToUpload.type || 'image/webp'
-            });
-            uploadedVariants.full = await getDownloadURL(imageRef);
-          }
-
-          if (!imageMetadata) {
-            imageMetadata = await getImageFileMetadata(item.file);
-          }
-
-          const fullUrl = uploadedVariants.full || uploadedVariants.large || uploadedVariants.medium || uploadedVariants.card || uploadedVariants.thumb || "";
-          const thumbUrl = uploadedVariants.thumb || uploadedVariants.card || fullUrl;
+          if (!imageMetadata) imageMetadata = await getImageFileMetadata(item.file);
+          const fullUrl = uploadedVariants.full || uploadedVariants.large || uploadedVariants.medium || uploadedVariants.card || uploadedVariants.thumb || '';
+          const thumbUrl = uploadedVariants.thumb384 || uploadedVariants.thumb || uploadedVariants.card || fullUrl;
           finalImageUrls.push(fullUrl);
           finalThumbnails.push(thumbUrl);
           finalImageVariants.push(uploadedVariants);
           finalImageMetadata.push(imageMetadata || {});
-
         }
-        advanceProgress();
-      }
 
-      setMsg("Finalisation...");
-      const parsedStock = Number(formData.stock === '' ? 0 : formData.stock);
-      if (!Number.isInteger(parsedStock) || parsedStock < 0) {
-        throw new Error('Le stock doit etre un nombre entier positif ou nul.');
-      }
-      const automaticSeoIndexable = (
-        String(formData.name || '').trim().length >= 4
-        && String(formData.description || '').trim().length >= 48
-        && finalImageUrls.length > 0
-      );
-      const editorial = {
-        name: formData.name,
-        description: formData.description,
-        seoTitle: '',
-        seoDescription: '',
-        seoIndexable: automaticSeoIndexable,
-        material: formData.material,
-        color: formData.color,
-        dimensions: formData.dimensions,
-        width: formData.width,
-        depth: formData.depth,
-        height: formData.height,
-        category: formData.category,
-        style: formData.style
-      };
-      const media = {
-        images: finalImageUrls,
-        thumbnails: finalThumbnails,
-        imageVariants: finalImageVariants,
-        imageMetadata: finalImageMetadata,
-        imageUrl: finalImageUrls[0] || "",
-        thumbnailUrl: finalThumbnails[0] || finalImageUrls[0] || ""
-      };
-
-      const session = productCommandSessionRef.current || createProductCommandSession(editData?.id);
-      productCommandSessionRef.current = session;
-      let commandProduct;
-      if (editData) {
-        await updateDoc(
-          doc(db, 'artifacts', appId, 'public', 'data', collectionName, editData.id),
-          { ...editorial, ...media }
-        );
-        commandProduct = {
-          id: editData.id,
-          commerceVersion: Number(editData.commerceVersion || 0),
-          inventoryVersion: Number(editData.inventoryVersion || 0)
+        const parsedStock = Number(formData.stock === '' ? 0 : formData.stock);
+        if (!Number.isInteger(parsedStock) || parsedStock < 0) {
+          throw new Error('Le stock doit être un nombre entier positif ou nul.');
+        }
+        const editorial = {
+          name: formData.name,
+          description: formData.description,
+          seoTitle: '',
+          seoDescription: '',
+          seoIndexable: String(formData.name || '').trim().length >= 4
+            && String(formData.description || '').trim().length >= 48
+            && finalImageUrls.length > 0,
+          material: formData.material,
+          color: formData.color,
+          dimensions: formData.dimensions,
+          width: formData.width,
+          depth: formData.depth,
+          height: formData.height,
+          category: formData.category,
+          style: formData.style
         };
-      } else {
-        const created = await createProductDraftAdmin({
-          collectionName,
-          productId: session.productId,
-          editorial,
-          media,
-          commandId: session.createCommandId
-        });
-        commandProduct = {
-          id: created.productId,
-          commerceVersion: created.commerceVersion,
-          inventoryVersion: created.inventoryVersion
+        const media = {
+          images: finalImageUrls,
+          thumbnails: finalThumbnails,
+          imageVariants: finalImageVariants,
+          imageMetadata: finalImageMetadata,
+          imageUrl: finalImageUrls[0] || '',
+          thumbnailUrl: finalThumbnails[0] || finalImageUrls[0] || ''
         };
-      }
-
-      const offered = await updateProductOfferAdmin(
-        commandProduct,
-        collectionName,
-        {
+        const offer = {
           currentPrice: Number(formData.startingPrice),
           startingPrice: Number(formData.startingPrice),
           priceOnRequest: formData.priceOnRequest || false
-        },
-        session.offerCommandId
-      );
-      commandProduct = {
-        ...commandProduct,
-        commerceVersion: offered.commerceVersion,
-        inventoryVersion: offered.inventoryVersion
-      };
-      advanceProgress();
-
-      const currentStock = editData ? Number(editData.stock || 0) : 0;
-      const stockDelta = parsedStock - currentStock;
-      if (stockDelta !== 0) {
-        const adjusted = await adjustInventoryAdmin(
-          commandProduct,
-          collectionName,
-          stockDelta,
-          'Ajustement depuis le formulaire produit',
-          session.inventoryCommandId
-        );
-        commandProduct = {
-          ...commandProduct,
-          commerceVersion: adjusted.commerceVersion,
-          inventoryVersion: adjusted.inventoryVersion
         };
-      }
 
-      if (!editData) {
-        await publishProductAdmin(
-          commandProduct,
-          collectionName,
-          true,
-          session.publishCommandId
-        );
+        setPublicationPhase('record');
+        setProgress(0.68);
+        setMsg(editData ? 'Enregistrement des modifications…' : 'Enregistrement unique du meuble publié…');
+        if (editData) {
+          await updateDoc(
+            doc(db, 'artifacts', appId, 'public', 'data', collectionName, editData.id),
+            { ...editorial, ...media }
+          );
+          commandProduct = {
+            id: editData.id,
+            commerceVersion: Number(editData.commerceVersion || 0),
+            inventoryVersion: Number(editData.inventoryVersion || 0)
+          };
+          const offered = await updateProductOfferAdmin(commandProduct, collectionName, offer, session.offerCommandId);
+          commandProduct = { ...commandProduct, ...offered };
+          const stockDelta = parsedStock - Number(editData.stock || 0);
+          if (stockDelta !== 0) {
+            const adjusted = await adjustInventoryAdmin(
+              commandProduct,
+              collectionName,
+              stockDelta,
+              'Ajustement depuis le formulaire produit',
+              session.inventoryCommandId
+            );
+            commandProduct = { ...commandProduct, ...adjusted };
+          }
+        } else {
+          const created = await createPublishedProductAdmin({
+            collectionName,
+            productId: session.productId,
+            editorial,
+            media,
+            offer,
+            initialStock: parsedStock,
+            commandId: session.createPublishedCommandId
+          });
+          commandProduct = {
+            id: created.productId,
+            name: formData.name,
+            commerceVersion: created.commerceVersion,
+            inventoryVersion: created.inventoryVersion
+          };
+          publishedProductRef.current = commandProduct;
+        }
+
         const abandonedPublication = getPendingPublicationDescriptor();
         if (abandonedPublication) {
           void clearPendingProductPublication(abandonedPublication.sessionId).catch(() => {});
         }
       }
+
       clearAdminPublicCatalogCache();
-      advanceProgress();
+      setPublicationPhase('catalog');
+      setProgress(0.8);
+      setMsg('Mise à jour et vérification de la galerie publique…');
+      const publicProduct = await waitForPublicCatalogProduct(commandProduct.id);
+      if (!publicProduct) {
+        const catalogError = new Error('Le meuble est enregistré, mais la galerie publique n’a pas encore confirmé sa mise en ligne. Clique de nouveau sur Publier pour reprendre uniquement cette vérification.');
+        catalogError.code = 'CATALOG_PUBLICATION_CONFIRMATION_TIMEOUT';
+        throw catalogError;
+      }
+      setProgress(0.94);
 
       if (socialEnabled) {
+        setPublicationPhase('social');
         setMsg('Meuble publié sur le site. Préparation de Meta…');
         const prepared = await prepareSocialPublicationAdmin({
           collectionName,
@@ -806,7 +801,6 @@ const AdminForm = ({
           hashtags: instagramHashtags
         });
         setSocialPublication(prepared);
-        advanceProgress();
         setMsg('Envoi vers les réseaux sélectionnés…');
         const socialResult = await runSocialPublicationAdmin(prepared.publicationId);
         setSocialPublication(socialResult);
@@ -814,17 +808,20 @@ const AdminForm = ({
           setMsg('Le site est publié, mais une destination Meta doit encore être relancée.');
           return;
         }
-        advanceProgress();
       }
 
+      setPublicationPhase('complete');
       setProgress(1);
       setMsg(socialEnabled
         ? 'Le meuble est publié sur le site et les réseaux sélectionnés.'
-        : 'Enregistré. Publication du catalogue en cours...');
+        : 'Le meuble est publié et confirmé dans la galerie.');
+      await new Promise((resolve) => setTimeout(resolve, 450));
+      const savedProduct = { productId: commandProduct.id, name: formData.name };
       productCommandSessionRef.current = null;
+      publishedProductRef.current = null;
       resetForm();
       if (onCancelEdit) onCancelEdit();
-      if (onSaved) onSaved();
+      if (onSaved) onSaved(savedProduct);
     } catch (err) {
       console.error("CRITICAL UPLOAD ERROR:", err);
       const errorReason = err?.details?.reason || err?.customData?.details?.reason || '';
@@ -843,7 +840,6 @@ const AdminForm = ({
       setMsg(`${errorPrefix}: ${err.message || "Inconnue"}`);
     } finally {
       setUploading(false);
-      setTimeout(() => setMsg(""), 8000);
     }
   };
 
@@ -1023,6 +1019,14 @@ const AdminForm = ({
   return (
     <div className="pub-surface flex min-h-0 w-full flex-col xl:h-full">
       <div className={`relative min-h-0 flex-1 overflow-hidden rounded-[26px] border ${darkMode ? 'border-white/10 bg-[#11110f]' : 'border-stone-200 bg-white'}`}>
+        <PublicationProgressDialog
+          darkMode={darkMode}
+          includeSocial={socialEnabled}
+          open={uploading}
+          phase={publicationPhase}
+          progress={progress}
+          message={msg}
+        />
         <div className="flex h-full min-h-0 flex-col overflow-hidden px-4 py-4 sm:px-5 sm:py-5 xl:px-6 xl:py-5">
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
             <div className="min-w-0">

@@ -279,6 +279,49 @@ test('product commands separate creation, offer, inventory and publication', () 
     assert.equal(published.commerceVersion, 4);
 });
 
+test('new back-office publication creates one complete public product atomically', () => {
+    const published = applyProductAction({
+        action: 'create_published_product',
+        product: null,
+        payload: {
+            editorial: {
+                name: 'Buffet atomique',
+                description: 'Buffet restaure avec une description suffisamment detaillee pour etre indexable.',
+                seoIndexable: true,
+                category: 'buffets'
+            },
+            media: {
+                images: ['https://example.test/buffet-full.webp'],
+                imageUrl: 'https://example.test/buffet-full.webp',
+                thumbnails: ['https://example.test/buffet-384.webp'],
+                thumbnailUrl: 'https://example.test/buffet-384.webp',
+                imageVariants: [{
+                    thumb384: 'https://example.test/buffet-384.webp',
+                    full: 'https://example.test/buffet-full.webp'
+                }]
+            },
+            offer: {
+                currentPrice: 480,
+                startingPrice: 480,
+                priceOnRequest: false
+            },
+            initialStock: 1
+        },
+        actor: { uid: 'admin-gate4', role: 'admin', aal2: true },
+        reason: 'publication atomique initiale',
+        now: laterClock.now()
+    });
+
+    assert.equal(published.status, 'published');
+    assert.equal(published.stock, 1);
+    assert.equal(published.sold, false);
+    assert.equal(published.currentPrice, 480);
+    assert.equal(published.nouveautesOrder, -1);
+    assert.equal(published.publishedAt, laterClock.now());
+    assert.equal(published.commerceVersion, 0);
+    assert.equal(published.inventoryVersion, 1);
+});
+
 test('product command policy rejects weak admin, foreign collections and stock races', () => {
     assert.throws(
         () => assertProductIdentity('legacy_products', 'product-gate4'),
@@ -380,6 +423,7 @@ test('product callable transport stays available to active strong admins outside
     );
     for (const functionName of [
         'createProductAdmin',
+        'createPublishedProductAdmin',
         'preflightProductMutationAdmin',
         'updateProductOfferAdmin',
         'publishProductAdmin',
@@ -414,10 +458,10 @@ test('product callable transport stays available to active strong admins outside
         < adminForm.indexOf('await uploadProductVariantSet(')
     );
     assert.equal(adminForm.includes('Reconnecte-toi, puis réessaie.'), false);
-    assert.ok(adminForm.includes('createProductDraftAdmin'));
-    assert.ok(adminForm.includes('updateProductOfferAdmin'));
-    assert.ok(adminForm.includes('adjustInventoryAdmin'));
-    assert.ok(adminForm.includes('publishProductAdmin'));
+    assert.ok(adminForm.includes('createPublishedProductAdmin'));
+    assert.ok(adminForm.includes('waitForPublicCatalogProduct'));
+    assert.equal(adminForm.includes('createProductDraftAdmin'), false);
+    assert.equal(adminForm.includes('publishProductAdmin'), false);
 });
 
 test('fulfillment callable transport derives its strong admin actor from Auth context', async () => {

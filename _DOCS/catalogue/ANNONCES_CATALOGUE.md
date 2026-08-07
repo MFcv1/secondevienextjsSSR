@@ -63,8 +63,10 @@ Les anciennes formes de donnees restent normalisees par `src/lib/server/products
 
 La stabilisation commerce ajoute localement un rail serveur dans
 `functions/src/commerce/domain/productCommands.js` et
-`productCommandRepository.js`. Il separe creation en brouillon, offre/prix,
-ajustement de stock versionne, publication et suppression definitive. Chaque commande
+`productCommandRepository.js`. Il conserve les commandes distinctes necessaires
+a l'edition, mais expose `create_published_product` pour la creation neuve. Cette
+commande assemble contenu, medias, offre, stock et statut public dans une seule
+transaction et un seul audit. Chaque commande
 exige un admin AAL2 actif, App Check, une raison, une cle idempotente, une
 version attendue et un audit append-only. La suppression retire le document
 source du catalogue; les commandes conservees gardent leur snapshot produit et
@@ -81,8 +83,10 @@ visible:
 1. preparer les variantes images dans le navigateur;
 2. envoyer toutes les variantes sur les chemins Storage catalogue historiques;
 3. ne creer le document `furniture/{id}` qu'apres succes de tous les uploads;
-4. appliquer offre, stock et publication avec des commandes idempotentes;
-5. declencher la projection publique et la revalidation catalogue.
+4. creer directement le produit complet et public avec une seule commande
+   idempotente `createPublishedProductAdmin`;
+5. attendre que `/api/catalog` confirme le produit avant d'afficher le succes;
+6. basculer vers Publications en mettant la nouvelle ligne en evidence.
 
 Ainsi, un echec d'image ne cree aucun meuble et n'ajoute aucun brouillon a la
 liste. Le rail `product_publication_sessions` qui creait le brouillon avant le
@@ -91,28 +95,28 @@ premier upload est retire de `AdminForm` apres deux refus reproductibles
 au diagnostic, a la reprise des donnees historiques et a la collecte; elles ne
 sont plus le chemin de creation de l'interface.
 
-Un produit nouvellement cree porte obligatoirement `status: draft`,
-`sold: false`, `soldAt: null` et `stock: 0`. `sold` ne devient vrai qu'apres
-publication et passage reel du stock a zero. Les projections et le back-office
-donnent toujours priorite au statut brouillon: un upload incomplet ne peut donc
-ni compter comme vendu, ni proposer une remise en vente.
+Une creation neuve validee porte directement `status: published`, le stock saisi,
+`sold: false`, `soldAt: null`, `publishedAt` et `nouveautesOrder: -1`. La
+commande refuse un stock initial inferieur a un. Les commandes de brouillon
+restent disponibles pour les donnees historiques et les actions explicites,
+mais ne sont plus une etape technique de la publication neuve.
 
 Le document de session, ses erreurs internes et les chemins source restent
 backend-only. L'etat callable expose seulement la progression utile. Les
 variantes serveur sont publiquement lisibles comme les autres medias catalogue,
 mais leur ecriture directe par le navigateur est interdite.
 
-Etat au 2026-08-07: retour local au parcours catalogue historique connu comme
-fonctionnel; un rollout App Hosting est requis pour l'activer sur le sandbox.
+Etat au 2026-08-07: publication neuve atomique et confirmation de projection
+publique implementees localement; un rollout Functions et App Hosting est
+requis pour les activer sur le sandbox.
 
 ## 4. Cycle de vie
 
 ```text
 variantes images preparees dans AdminForm
   -> upload de toutes les variantes catalogue
-  -> creation brouillon et offre par commandes idempotentes
-  -> ajustement de stock
-  -> publication immediate
+  -> createPublishedProductAdmin: contenu + offre + stock + statut public
+     dans une transaction unique
   -> onCatalogSourceWrite (deduplication + desiredRevision)
   -> Cloud Tasks dispatchCatalogBuild
   -> snapshot Storage immuable + manifeste + impact-plan.json

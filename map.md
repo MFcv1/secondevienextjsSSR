@@ -109,8 +109,10 @@ secrets, deploiement et recette Meta reelle restent M4/M5.
   -> renouvellement du jeton Auth puis preflightProductMutationAdmin [F]
      (App Check + admin actif + AAL2)
   -> preparation puis upload de toutes les variantes catalogue [ST]
-  -> createProductDraftAdmin seulement apres succes de tous les uploads [F]
-  -> offre + stock + publication immediate idempotente [F/DB]
+     (une lecture source, concurrence bornee a quatre)
+  -> createPublishedProductAdmin seulement apres succes de tous les uploads [F]
+     -> contenu + offre + stock + publication dans une transaction [DB]
+  -> attente de la projection `/api/catalog`, puis vue Publications [C]
   -> prepareSocialPublicationAdmin [F] apres confirmation site
   -> sys_social_publications/{commandHash} [DB, backend-only]
   -> runSocialPublicationAdmin [F]
@@ -792,7 +794,7 @@ functions/
 | liens de paiement admin | `createAdminPaymentLink`, `listAdminPaymentLinks`, `extendAdminPaymentLink`, `regenerateAdminPaymentLink`, `recreateAdminPaymentLink`, `cancelAdminPaymentLink`, `getAdminPaymentLinkPublic`, `prepareAdminPaymentLinkPayment`, `resumeAdminPaymentLinkPayment`, `expireAdminPaymentLinks` |
 | commerce v2 retours client | `decideCustomerReturnRequestAdmin`, puis commandes refund/retour v2 existantes selon le parcours choisi |
 | commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
-| commerce v2 produit | `preflightProductMutationAdmin`, `createProductAdmin`, `updateProductOfferAdmin`, `publishProductAdmin`, `adjustInventoryAdmin`, `deleteProductAdmin` |
+| commerce v2 produit | `preflightProductMutationAdmin`, `createProductAdmin`, `createPublishedProductAdmin`, `updateProductOfferAdmin`, `publishProductAdmin`, `adjustInventoryAdmin`, `deleteProductAdmin` |
 | publication produit durable historique, inactive dans AdminForm | `startProductPublicationAdmin`, `getProductPublicationSessionAdmin`, `reportProductPublicationClientErrorAdmin`, `retryProductPublicationFinalizationAdmin`, `processProductPublicationImage`, `reconcileProductPublicationSessions`, `cleanupProductPublicationSessions` |
 | Meta OAuth/publication | `startMetaOAuthAdmin`, `metaOAuthCallback`, `getMetaConnectionStatusAdmin`, `selectMetaAssetAdmin`, `verifyMetaConnectionAdmin`, `disconnectMetaConnectionAdmin`, `prepareSocialPublicationAdmin`, `runSocialPublicationAdmin`, `getSocialPublicationStatusAdmin` |
 | refunds/Connect | `refundOrderAdmin`, `syncRefundStatusAdmin`, `getStripeConnectStatus`, `startStripeConnectOnboarding`, `syncStripeConnectAccount`, `requestStripeConnectReconnect`, `confirmStripeConnectReconnect` |

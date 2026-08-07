@@ -82,7 +82,7 @@ function createProductCommandRepository({ db, refs, clock, failpoints = null }) 
                 },
                 lookupResult: async () => existingResult,
                 transition: () => {
-                    if (action !== 'create_product' && !existingProduct) {
+                    if (!['create_product', 'create_published_product'].includes(action) && !existingProduct) {
                         throw repositoryError('COMMERCE_PRODUCT_NOT_FOUND');
                     }
                     const now = clock.now();

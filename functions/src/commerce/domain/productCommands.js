@@ -2,6 +2,7 @@
 
 const PRODUCT_ACTIONS = Object.freeze([
     'create_product',
+    'create_published_product',
     'update_product_content',
     'update_product_offer',
     'publish_product',
@@ -188,6 +189,13 @@ function normalizeOffer(value) {
     };
 }
 
+function normalizeInitialStock(value) {
+    if (!Number.isSafeInteger(value) || value < 1 || value > 1000) {
+        throw productError('COMMERCE_PRODUCT_INVENTORY_ADJUSTMENT_INVALID', 'initialStock');
+    }
+    return value;
+}
+
 function assertStrongAdmin(actor) {
     if (
         !actor ||
@@ -270,30 +278,43 @@ function applyProductAction({
     }
     if (typeof now !== 'string' || !now) throw productError('COMMERCE_PRODUCT_CLOCK_INVALID');
 
-    if (action === 'create_product') {
+    if (action === 'create_product' || action === 'create_published_product') {
         if (product) throw productError('COMMERCE_PRODUCT_ALREADY_EXISTS');
-        const allowed = new Set(['editorial', 'media']);
+        const publishedCreation = action === 'create_published_product';
+        const allowed = publishedCreation
+            ? new Set(['editorial', 'media', 'offer', 'initialStock'])
+            : new Set(['editorial', 'media']);
         assertOnlyFields(payload, allowed, 'payload');
         const editorial = normalizeEditorial(payload.editorial);
         const media = normalizeMedia(payload.media || {});
-        return {
+        const offer = publishedCreation
+            ? normalizeOffer(payload.offer)
+            : { currentPrice: 0, startingPrice: 0, priceOnRequest: false };
+        const stock = publishedCreation ? normalizeInitialStock(payload.initialStock) : 0;
+        const created = {
             ...editorial,
             ...media,
-            status: 'draft',
-            currentPrice: 0,
-            startingPrice: 0,
-            priceOnRequest: false,
-            stock: 0,
+            ...offer,
+            status: publishedCreation ? 'published' : 'draft',
+            stock,
             sold: false,
             soldAt: null,
             // Les creations entrent en tete des Nouveautes. La Vue Globale
             // renumerote ensuite toute la selection lors d'un tri manuel.
             nouveautesOrder: -1,
-            inventoryVersion: 0,
+            inventoryVersion: publishedCreation ? 1 : 0,
             commerceVersion: 0,
             createdAt: now,
-            updatedAt: now
+            updatedAt: now,
+            publishedAt: publishedCreation ? now : null
         };
+        if (publishedCreation) {
+            if (!Array.isArray(created.images) || created.images.length === 0) {
+                throw productError('COMMERCE_PRODUCT_NOT_PUBLISHABLE');
+            }
+            assertPublishable(created);
+        }
+        return created;
     }
 
     const versions = validateExistingProduct(product);

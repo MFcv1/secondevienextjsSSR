@@ -13,6 +13,7 @@ const commandId = (action) => {
 export const createProductCommandSession = (existingProductId = null) => ({
   productId: existingProductId || commandId('product'),
   createCommandId: commandId('create-product'),
+  createPublishedCommandId: commandId('create-published-product'),
   offerCommandId: commandId('offer-product'),
   inventoryCommandId: commandId('inventory-product'),
   publishCommandId: commandId('publish-product'),
@@ -51,6 +52,30 @@ export const createProductDraftAdmin = ({
     editorial,
     media,
     reason: 'Creation brouillon depuis le back-office',
+    commandId: stableCommandId
+  }
+);
+
+export const createPublishedProductAdmin = ({
+  collectionName,
+  productId,
+  editorial,
+  media,
+  offer,
+  initialStock,
+  commandId: stableCommandId
+}) => execute(
+  'createPublishedProductAdmin',
+  'create-published-product',
+  {
+    collectionName,
+    productId,
+    expectedVersion: 0,
+    editorial,
+    media,
+    offer,
+    initialStock,
+    reason: 'Creation et publication atomiques depuis le back-office',
     commandId: stableCommandId
   }
 );
