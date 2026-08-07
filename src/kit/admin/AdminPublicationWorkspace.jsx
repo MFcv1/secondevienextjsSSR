@@ -23,12 +23,15 @@ export default function AdminPublicationWorkspace({
   onToggleStatus,
 }) {
   const [view, setView] = React.useState('create');
+  const [publicationBusy, setPublicationBusy] = React.useState(false);
+  const handleSaved = React.useCallback(() => setView('history'), []);
 
   React.useEffect(() => {
     if (editData) setView('create');
   }, [editData]);
 
   const selectView = (nextView) => {
+    if (publicationBusy) return;
     setView(nextView);
     if (nextView === 'history' && editData) onCancelEdit();
   };
@@ -43,8 +46,9 @@ export default function AdminPublicationWorkspace({
               <button
                 key={id}
                 type="button"
+                disabled={publicationBusy && id !== view}
                 onClick={() => selectView(id)}
-                className={`group flex min-h-11 flex-1 items-center justify-center gap-2 rounded-[15px] text-[12px] font-extrabold transition-colors duration-200 active:scale-[0.99] ${active ? (darkMode ? 'bg-white text-stone-950' : 'bg-stone-950 text-white') : (darkMode ? 'text-stone-500 hover:text-white' : 'text-stone-500 hover:text-stone-950')}`}
+                className={`group flex min-h-11 flex-1 items-center justify-center gap-2 rounded-[15px] text-[12px] font-extrabold transition-colors duration-200 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45 ${active ? (darkMode ? 'bg-white text-stone-950' : 'bg-stone-950 text-white') : (darkMode ? 'text-stone-500 hover:text-white' : 'text-stone-500 hover:text-stone-950')}`}
                 aria-pressed={active}
               >
                 <Icon size={16} strokeWidth={1.6} />
@@ -61,7 +65,10 @@ export default function AdminPublicationWorkspace({
           </span>
           <Link
             href="/"
-            className={`group inline-flex min-h-11 items-center gap-2 rounded-full border px-5 text-[11px] font-extrabold transition-colors duration-200 active:scale-[0.99] ${darkMode ? 'border-white/10 text-stone-200 hover:bg-white/[0.06]' : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300 hover:text-stone-950'}`}
+            aria-disabled={publicationBusy}
+            tabIndex={publicationBusy ? -1 : undefined}
+            onClick={(event) => { if (publicationBusy) event.preventDefault(); }}
+            className={`group inline-flex min-h-11 items-center gap-2 rounded-full border px-5 text-[11px] font-extrabold transition-colors duration-200 active:scale-[0.99] ${publicationBusy ? 'cursor-not-allowed opacity-45' : ''} ${darkMode ? 'border-white/10 text-stone-200 hover:bg-white/[0.06]' : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300 hover:text-stone-950'}`}
           >
             <Eye size={14} strokeWidth={1.5} />
             Aperçu public
@@ -74,7 +81,8 @@ export default function AdminPublicationWorkspace({
           <AdminForm
             editData={editData}
             onCancelEdit={onCancelEdit}
-            onSaved={() => setView('history')}
+            onSaved={handleSaved}
+            onPublicationBusyChange={setPublicationBusy}
             collectionName={collectionName}
             darkMode={darkMode}
           />

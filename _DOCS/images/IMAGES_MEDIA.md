@@ -1,6 +1,6 @@
 # Images produit et medias
 
-Derniere mise a jour: 2026-08-04
+Derniere mise a jour: 2026-08-07
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Architecture
@@ -72,17 +72,20 @@ Politique courante:
 
 ## 4. Upload admin
 
-`AdminForm`:
+Pour une creation neuve, `AdminForm` prepare une seule source bornee par photo,
+la conserve temporairement dans IndexedDB, renouvelle le jeton et cree le
+brouillon avant le premier upload. `productPublicationClient.js` utilise les
+uploads Firebase resumables. Le trigger
+`functions/src/publication/productPublication.js` lit chaque source, applique
+la rotation EXIF, calcule couleur/ratio/blur, fabrique les huit WebP avec Sharp
+et finalise le produit lorsque tous les slots sont prets. L'ordre des slots est
+celui du formulaire. La session permet une reprise apres navigation ou reload;
+les sources sont supprimees du stockage local apres succes et placees dans la
+quarantaine serveur de 90 jours.
 
-1. compresse le fichier;
-2. calcule les metadata;
-3. renouvelle le jeton Firebase puis precontrole l'admin actif AAL2;
-   `storage.rules` relit ce registre pour tous les chemins admin autorises sans
-   imposer de fenetre temporelle;
-4. cree les variantes via `src/utils/imageUtils.js` et Firebase Storage;
-5. conserve l'ordre de galerie;
-6. ecrit URLs, variantes et metadata dans Firestore;
-7. declenche l'invalidation du catalogue apres sauvegarde.
+L'edition d'un meuble existant conserve pour l'instant le flux historique de
+variantes navigateur. Toute convergence future doit preserver recadrage,
+suppression/reordre et les medias deja references.
 
 Une modification de ce flux doit tester creation neuve, edition sans nouvelle image, recadrage, suppression/reordre et echec partiel d'upload.
 
@@ -151,6 +154,7 @@ scripts/audit-product-detail-images*.mjs
 scripts/audit-storage-orphans.cjs
 functions/src/triggers/mediaCleanup.js
 functions/src/catalog/mediaGarbageCollection.js
+functions/src/publication/productPublication.js
 ```
 
 ## 9. Gates

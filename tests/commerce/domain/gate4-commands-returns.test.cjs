@@ -215,10 +215,31 @@ test('product commands separate creation, offer, inventory and publication', () 
     assert.equal(draft.status, 'draft');
     assert.equal(draft.stock, 0);
     assert.equal(draft.currentPrice, 0);
+    assert.equal(draft.nouveautesOrder, -1);
+
+    const withProcessedMedia = applyProductAction({
+        action: 'update_product_content',
+        product: draft,
+        payload: {
+            media: {
+                images: ['https://example.test/buffet-server.webp'],
+                imageUrl: 'https://example.test/buffet-server.webp',
+                thumbnails: ['https://example.test/buffet-server-384.webp'],
+                imageVariants: [{ full: 'https://example.test/buffet-server.webp' }],
+                imageMetadata: [{ width: 1200, height: 1600, ratio: 0.75 }]
+            }
+        },
+        actor,
+        reason: 'medias traites par le serveur',
+        now: laterClock.now()
+    });
+    assert.equal(withProcessedMedia.status, 'draft');
+    assert.equal(withProcessedMedia.images[0], 'https://example.test/buffet-server.webp');
+    assert.equal(withProcessedMedia.commerceVersion, 1);
 
     const offered = applyProductAction({
         action: 'update_product_offer',
-        product: draft,
+        product: withProcessedMedia,
         payload: {
             offer: {
                 currentPrice: 350,
@@ -253,7 +274,7 @@ test('product commands separate creation, offer, inventory and publication', () 
     assert.equal(published.stock, 1);
     assert.equal(published.sold, false);
     assert.equal(published.inventoryVersion, 1);
-    assert.equal(published.commerceVersion, 3);
+    assert.equal(published.commerceVersion, 4);
 });
 
 test('product command policy rejects weak admin, foreign collections and stock races', () => {

@@ -1,6 +1,6 @@
 # Back-office
 
-Derniere mise a jour: 2026-08-04
+Derniere mise a jour: 2026-08-07
 Statut: `PREPROD_READY`
 
 Etat actif:
@@ -65,12 +65,30 @@ Le catalogue public court (`scope=cards&limit=120`) est charge paresseusement un
 `AdminPublicationWorkspace` separe Publication en deux vues grand ecran plein
 viewport: `Creer` regroupe le formulaire aere et son resume vivant;
 `Publications` affiche une table avec recherche, categories, actions et
-synthese des statuts. A partir de `1280 px`, le document ne scrolle pas: seules
+synthese des statuts. La liste charge au plus 50 documents par lot; un filtre
+de categorie interroge directement cette categorie au lieu de filtrer la seule
+tranche globale deja chargee. Les compteurs Total, Publiees, Brouillons et
+Vendues proviennent d'agregations Firestore sur toute la collection et ne sont
+donc pas des compteurs du lot visible. La recherche reste bornee aux 200
+publications les plus recentes. Les trois compteurs sont aussi des filtres:
+ils affichent respectivement tous les produits publies disponibles, les
+brouillons et les produits publies vendus; un second clic retire le filtre et
+le filtre de statut se combine avec la categorie active. A partir de `1280 px`, le document ne scrolle pas: seules
 les zones de contenu internes prennent le relais sur un ecran bas. Les formats
 plus etroits reviennent au scroll naturel et les categories utilisent un rail
 horizontal sans barre visible, puis passent sur plusieurs lignes quand la
-largeur le permet. `AdminForm` gere les champs produit, la
-compression/upload image, les variantes et la sauvegarde. Sa grille droite
+largeur le permet. `AdminForm` gere les champs produit, la preparation d'une
+source image unique, la reprise locale et la sauvegarde. Pour une creation,
+`productPublicationClient.js` conserve les fichiers dans IndexedDB, cree
+immediatement un brouillon serveur via `startProductPublicationAdmin`, puis
+effectue des uploads resumables. `processProductPublicationImage` fabrique les
+huit variantes avec Sharp et finalise offre, stock et publication par des
+commandes idempotentes. Une fermeture ou une navigation ne peut donc plus
+effacer silencieusement toute trace de l'action: le retour dans Publication
+reprend la session, et l'interface attend `/api/catalog?id=...` avant
+d'annoncer que le meuble est visible. Pendant le traitement, les deux vues et
+l'apercu public sont neutralises; `beforeunload` reste un avertissement
+secondaire, pas le mecanisme de fiabilite. Sa grille droite
 utilise quatre rangees `auto / auto / auto / minmax(220px, 1fr)`: seule la
 quatrieme rangee absorbe l'espace vertical restant. Dimensions occupe la
 troisieme rangee, avec des controles bornes en largeur. Le formulaire ne
@@ -87,6 +105,10 @@ l'outil propose les modes Fond, Souligne et Texte avec cinq couleurs stables.
 La selection native reste translucide puis se replie apres application pour ne
 pas masquer le resultat; la palette sait aussi recolorer ou retirer un `mark`
 depuis un simple curseur place dans le texte.
+
+Ce rail durable est implemente et valide localement au 2026-08-07. Il ne
+devient actif sur le sandbox qu'apres deploiement coordonne des Functions, des
+Rules et du rollout App Hosting.
 
 L'intertitre H2 ne transforme qu'une ligne complete et refuse une selection
 partielle avec un retour visible dans le pied de l'editeur.
@@ -126,12 +148,15 @@ les Gates M4 et M5 du PRD temporaire.
 `AdminItemList`
 affiche les annonces. `GlobalInventoryView` pilote les classements editoriaux.
 
-Avant le premier upload, `AdminForm` force le renouvellement du jeton Firebase
+Avant de creer la session, `AdminForm` force le renouvellement du jeton Firebase
 puis appelle `preflightProductMutationAdmin`. Le serveur confirme App Check, le
 registre admin actif et une authentification forte AAL2. Le meme jeton a jour
-est ensuite presente a Storage. Pour les chemins
-`furniture/**`, `storage.rules` relit aussi `sys_admin_access/{uid}` via
-Firestore et accepte Google ou une passkey AAL2 sans fenetre de quinze minutes.
+est ensuite presente a Storage. Seul le proprietaire de
+`product_publication_sessions/{sessionId}` peut ecrire les sources sous
+`furniture/publication-sessions/.../originals`; les variantes sont en ecriture
+backend uniquement. Les anciens chemins produit restent reserves a un admin
+fort actif. Les sources d'une publication terminee sont placees dans la
+quarantaine media et les sessions expirees sont collectees quotidiennement.
 La publication catalogue est
 independante de `adminMutationMode`, qui reste reserve aux commandes commerce
 transactionnelles. Les commandes produit, remboursements et operations
@@ -595,6 +620,7 @@ src/kit/admin/BillingOnboardingOperator.jsx
 src/kit/admin/components/*
 src/kit/admin/components/MetaConnectionControl.jsx
 src/kit/admin/metaPublicationClient.js
+src/kit/admin/productPublicationClient.js
 src/kit/admin/analyticsReliability.js
 src/kit/admin/adminCommerceData.js
 src/kit/admin/adminPublicCatalog.js
@@ -606,6 +632,7 @@ functions/src/onboarding/billingGuide.js
 functions/src/onboarding/billingGuideContract.js
 functions/src/integrations/meta.js
 functions/src/integrations/metaContract.js
+functions/src/publication/productPublication.js
 functions/src/maintenance/*
 functions/src/analytics/*
 firestore.rules

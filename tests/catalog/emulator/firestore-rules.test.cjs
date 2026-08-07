@@ -60,6 +60,7 @@ test('catalog publication state is backend-only for every client role', async ()
     'sys_catalog_publication_events/event',
     'sys_catalog_publication_builds/build',
     'sys_catalog_media_gc/media',
+    'product_publication_sessions/publication-session-0001',
   ];
   for (const context of contexts) {
     for (const target of collections) {

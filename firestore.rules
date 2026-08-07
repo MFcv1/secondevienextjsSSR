@@ -287,6 +287,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Sessions de publication et etat des traitements image: backend-only.
+    match /product_publication_sessions/{sessionId} {
+      allow read, write: if false;
+    }
+
     match /sys_commerce_public/{docId} {
       allow read: if docId == 'current';
       allow write: if false;

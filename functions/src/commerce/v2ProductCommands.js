@@ -172,8 +172,10 @@ const deleteProductAdmin = callable(createHandler(
 
 module.exports = {
     adjustInventoryAdmin,
+    commandRepository,
     deleteProductAdmin,
     createProductAdmin,
+    mapDomainError,
     preflightProductMutationAdmin,
     publishProductAdmin,
     updateProductOfferAdmin

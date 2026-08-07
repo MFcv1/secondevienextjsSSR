@@ -41,6 +41,13 @@ service firebase.storage {
         request.resource.contentType.matches('image/(jpeg|png|webp|gif|avif)');
     }
 
+    function isValidAdminImageWrite() {
+      return isAdminClaim()
+        && hasStrongAdminAuth()
+        && hasActiveAdminAccess()
+        && isValidImageWrite();
+    }
+
     match /catalog-projection/{allPaths=**} {
       allow read, write: if false;
     }
@@ -53,19 +60,48 @@ service firebase.storage {
       allow read, write: if false;
     }
 
-    match /furniture/{allPaths=**} {
-      allow read: if true;
+    match /furniture/publication-sessions/{sessionId}/originals/{slotId}/{fileName} {
+      allow read, delete: if false;
       allow create, update: if isAdminClaim()
         && hasStrongAdminAuth()
         && hasActiveAdminAccess()
-        && isValidImageWrite();
+        && isValidImageWrite()
+        && slotId.matches('slot-[0-9][0-9]')
+        && fileName.matches('[A-Za-z0-9._-]{1,90}')
+        && firestore.exists(/databases/(default)/documents/product_publication_sessions/$(sessionId))
+        && firestore.get(/databases/(default)/documents/product_publication_sessions/$(sessionId)).data.ownerUid == request.auth.uid
+        && slotId in firestore.get(/databases/(default)/documents/product_publication_sessions/$(sessionId)).data.allowedSlots
+        && firestore.get(/databases/(default)/documents/product_publication_sessions/$(sessionId)).data.status in ['uploading', 'processing', 'failed'];
+    }
+
+    match /furniture/publication-sessions/{sessionId}/variants/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /furniture/{fileName} {
+      allow read: if true;
+      allow create, update: if isValidAdminImageWrite();
+      allow delete: if false;
+    }
+
+    match /furniture/thumbnails/{allPaths=**} {
+      allow read: if true;
+      allow create, update: if isValidAdminImageWrite();
+      allow delete: if false;
+    }
+
+    match /furniture/responsive/{allPaths=**} {
+      allow read: if true;
+      allow create, update: if isValidAdminImageWrite();
       allow delete: if false;
     }
 
     match /{topLevel}/{allPaths=**} {
       allow read: if topLevel != 'catalog-projection'
         && topLevel != 'commerce-documents'
-        && topLevel != 'admin-invoices';
+        && topLevel != 'admin-invoices'
+        && topLevel != 'furniture';
       
       // BLINDAGE ADMINISTRATEUR (Standard & Robuste)
       // Seul l'admin identifié peut uploader. 

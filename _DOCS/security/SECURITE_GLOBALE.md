@@ -1,6 +1,6 @@
 # Securite globale
 
-Derniere mise a jour: 2026-08-04
+Derniere mise a jour: 2026-08-07
 Statut: `PREPROD_READY`
 Reference Auth associee: `AUTHENTIFICATION.md`
 
@@ -57,6 +57,7 @@ La suppression d'un acces admin doit retirer les claims, desactiver le registre 
 | `sys_ratelimit` | aucune lecture client | serveur uniquement |
 | `sys_admin_access` | controle strict | serveur/super-admin |
 | `sys_idempotency` | aucune lecture client | serveur uniquement |
+| `product_publication_sessions` | aucune lecture client | serveur uniquement |
 | analytics et rollups | admin selon besoin | serveur |
 
 Toute nouvelle collection doit avoir une decision explicite dans les rules avant son utilisation. Le fallback final doit rester deny-by-default.
@@ -79,6 +80,14 @@ Avant d'ajouter un chemin Storage:
   ancienne, un claim absent et un fichier invalide;
 - conserver une Function avec registre actif avant les parcours metier qui
   precedent un upload direct.
+
+Le rail de creation produit isole les sources sous
+`furniture/publication-sessions/{sessionId}/originals/{slotId}`. Storage Rules
+verifie admin fort, registre actif et proprietaire de session. Les sources ne
+sont jamais lisibles directement, les variantes sont en ecriture backend
+uniquement et les anciens chemins `furniture`, `thumbnails` et `responsive`
+restent explicitement separes afin qu'aucune regle recursive ne contourne ces
+restrictions.
 
 ## 5. Cloud Functions
 

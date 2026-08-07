@@ -2,6 +2,7 @@
 
 const PRODUCT_ACTIONS = Object.freeze([
     'create_product',
+    'update_product_content',
     'update_product_offer',
     'publish_product',
     'adjust_inventory',
@@ -285,6 +286,9 @@ function applyProductAction({
             stock: 0,
             sold: true,
             soldAt: now,
+            // Les creations entrent en tete des Nouveautes. La Vue Globale
+            // renumerote ensuite toute la selection lors d'un tri manuel.
+            nouveautesOrder: -1,
             inventoryVersion: 0,
             commerceVersion: 0,
             createdAt: now,
@@ -303,6 +307,18 @@ function applyProductAction({
         const allowed = new Set(['offer']);
         assertOnlyFields(payload, allowed, 'payload');
         return { ...next, ...normalizeOffer(payload.offer) };
+    }
+    if (action === 'update_product_content') {
+        const allowed = new Set(['editorial', 'media']);
+        assertOnlyFields(payload, allowed, 'payload');
+        if (payload.editorial === undefined && payload.media === undefined) {
+            throw productError('COMMERCE_PRODUCT_PAYLOAD_INVALID', 'payload');
+        }
+        return {
+            ...next,
+            ...(payload.editorial === undefined ? {} : normalizeEditorial(payload.editorial)),
+            ...(payload.media === undefined ? {} : normalizeMedia(payload.media))
+        };
     }
     if (action === 'publish_product') {
         const allowed = new Set(['published']);
@@ -348,5 +364,6 @@ module.exports = {
     applyProductAction,
     assertProductIdentity,
     assertStrongAdmin,
+    normalizeOffer,
     validateExistingProduct
 };

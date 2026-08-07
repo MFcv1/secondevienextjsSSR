@@ -1,6 +1,6 @@
 # Infrastructure Firebase, Next.js et environnements
 
-Derniere mise a jour: 2026-08-04
+Derniere mise a jour: 2026-08-07
 Statut: `PREPROD_READY - PRODUCTION_DEFERRED`
 
 ## 1. Runtime et gestionnaire de paquets
@@ -101,6 +101,8 @@ navigateur
        -> trigger catalogue + Cloud Tasks + builder/revalidation
        -> Stripe
        -> Gmail actif / Resend prepare
+  -> bucket medias produit, us-central1
+       -> processProductPublicationImage, us-central1 (contrainte Storage)
 ```
 
 App Hosting (`apphosting.yaml`):
@@ -121,13 +123,18 @@ App Hosting (`apphosting.yaml`):
 | --- | --- | --- |
 | `main` | `functions/` | Auth, admin, commerce, email, analytics, maintenance et catalogue materialise |
 
-Le runtime source de `main` converge vers `europe-west1` via
-`functions/helpers/runtime.js`. Les 23 doublons `us-central1` sans execution sur
+Les callables et taches du codebase `main` convergent vers `europe-west1` via
+`functions/helpers/runtime.js`. Le trigger v2
+`processProductPublicationImage` constitue une exception explicite en
+`us-central1`, localisation verifiee du bucket produit
+`secondevienextjsssr.firebasestorage.app`; un trigger Storage doit suivre la
+region de sa ressource. Les 23 doublons `us-central1` sans execution sur
 sept jours ont ete supprimes du sandbox le 2026-07-29. Les cinq Functions
 uniques conservees dans cette region sont `grantAdminOnAuth`,
 `e2eCheckoutProof`, `e2eStripeHardeningProof`, `stripeWebhook` et
 `stripeConnectWebhook`; elles ne doivent pas etre supprimees comme de simples
-doublons.
+doublons. Le nouveau trigger image n'entre dans cet inventaire qu'apres un
+deploiement sandbox explicitement autorise.
 
 Le codebase public historique et Firebase Hosting ne font plus partie de la configuration. Les Functions SEO/`publicCatalog` historiques ont ete supprimees du sandbox le 2026-07-18 et le site Hosting `secondevienextjsssr` a ete desactive apres verification de l'URL App Hosting.
 
@@ -194,6 +201,12 @@ Variables publiques typiques:
 - cle publique reCAPTCHA/App Check;
 - URL et metadata du site;
 - coordonnees metier destinees a l'affichage.
+
+Variables Functions non secretes du rail media:
+
+- `PRODUCT_MEDIA_BUCKET`: bucket des sources et variantes produit;
+- `PRODUCT_MEDIA_REGION`: region physique du bucket pour le trigger Storage,
+  `us-central1` sur le sandbox courant.
 
 Secrets serveur centralises dans `functions/helpers/secrets.js`:
 

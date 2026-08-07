@@ -100,3 +100,41 @@ test('furniture uploads require active registry, admin claim, strong assurance a
   }).storage();
   await assertFails(uploadBytes(ref(activeGoogleAdmin, 'furniture/not-an-image.txt'), new Uint8Array([1]), { contentType: 'text/plain' }));
 });
+
+test('durable publication accepts only owner source images and reserves variants for the backend', async () => {
+  await environment.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'product_publication_sessions', 'publication-session-0001'), {
+      ownerUid: 'admin-google',
+      status: 'uploading',
+      expectedMediaCount: 1,
+      allowedSlots: ['slot-00'],
+    });
+  });
+  const owner = environment.authenticatedContext('admin-google', {
+    admin: true,
+    firebase: { sign_in_provider: 'google.com' },
+  }).storage();
+  const otherAdmin = environment.authenticatedContext('admin-1', {
+    admin: true,
+    authMethod: 'passkey',
+    authAssurance: 'aal2',
+    userVerified: true,
+  }).storage();
+  const sourcePath = 'furniture/publication-sessions/publication-session-0001/originals/slot-00/source.webp';
+  const variantPath = 'furniture/publication-sessions/publication-session-0001/variants/slot-00/responsive/full.webp';
+
+  await assertSucceeds(uploadBytes(ref(owner, sourcePath), new Uint8Array([1]), { contentType: 'image/webp' }));
+  await assertFails(getBytes(ref(owner, sourcePath)));
+  await assertFails(uploadBytes(ref(otherAdmin, sourcePath), new Uint8Array([2]), { contentType: 'image/webp' }));
+  await assertFails(uploadBytes(ref(owner, variantPath), new Uint8Array([1]), { contentType: 'image/webp' }));
+  await assertFails(uploadBytes(
+    ref(owner, 'furniture/publication-sessions/publication-session-0001/originals/slot-01/extra.webp'),
+    new Uint8Array([1]),
+    { contentType: 'image/webp' }
+  ));
+  await assertFails(uploadBytes(
+    ref(owner, 'furniture/publication-sessions/publication-session-0001/unexpected.webp'),
+    new Uint8Array([1]),
+    { contentType: 'image/webp' }
+  ));
+});

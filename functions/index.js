@@ -166,6 +166,23 @@ exports.resumeAdminPaymentLinkPayment = resumeAdminPaymentLinkPayment;
 exports.getDeliveryPolicyAdmin = getDeliveryPolicyAdmin;
 exports.saveDeliveryPolicyAdmin = saveDeliveryPolicyAdmin;
 
+// ── PUBLICATION PRODUIT DURABLE ──────────────────────────
+const {
+    cleanupProductPublicationSessions,
+    getProductPublicationSessionAdmin,
+    processProductPublicationImage,
+    reconcileProductPublicationSessions,
+    retryProductPublicationFinalizationAdmin,
+    startProductPublicationAdmin
+} = require('./src/publication/productPublication');
+
+exports.cleanupProductPublicationSessions = cleanupProductPublicationSessions;
+exports.getProductPublicationSessionAdmin = getProductPublicationSessionAdmin;
+exports.processProductPublicationImage = processProductPublicationImage;
+exports.reconcileProductPublicationSessions = reconcileProductPublicationSessions;
+exports.retryProductPublicationFinalizationAdmin = retryProductPublicationFinalizationAdmin;
+exports.startProductPublicationAdmin = startProductPublicationAdmin;
+
 // ── PUBLICATION META (OAuth + Instagram/Facebook) ───────
 const {
     disconnectMetaConnectionAdmin,

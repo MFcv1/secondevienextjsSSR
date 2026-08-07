@@ -1,6 +1,6 @@
 # Annonces, catalogue et recherche
 
-Derniere mise a jour: 2026-08-04
+Derniere mise a jour: 2026-08-07
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Perimetre
@@ -61,7 +61,7 @@ dediee avant toute activation reelle.
 
 Les anciennes formes de donnees restent normalisees par `src/lib/server/products.js` et `src/utils/imageUtils.js`, mais les nouvelles ecritures doivent produire le modele courant complet.
 
-La stabilisation commerce ajoute localement un rail serveur dormant dans
+La stabilisation commerce ajoute localement un rail serveur dans
 `functions/src/commerce/domain/productCommands.js` et
 `productCommandRepository.js`. Il separe creation en brouillon, offre/prix,
 ajustement de stock versionne, publication et suppression definitive. Chaque commande
@@ -73,16 +73,46 @@ plus de `adminMutationMode`, reserve au rail commerce transactionnel: un
 administrateur autorise doit pouvoir gerer les annonces lorsque checkout,
 commandes et remboursements restent en lecture seule. Avant toute compression
 ou ecriture Storage, `preflightProductMutationAdmin` verifie ces droits. Une
-session non AAL2 est ainsi reprise avant l'envoi des images. Les ecritures
-`furniture/**` relisent en plus le registre actif depuis `storage.rules` et
-acceptent l'assurance AAL2 Google ou passkey pendant toute la session Firebase.
+session non AAL2 est ainsi reprise avant l'envoi des images.
+
+Pour une creation neuve, le clic final n'attend plus la generation navigateur
+de toutes les variantes avant la premiere ecriture. Le protocole ferme est:
+
+1. conserver les sources preparees dans IndexedDB et un identifiant de session
+   stable dans `localStorage`;
+2. creer immediatement le produit en brouillon et
+   `product_publication_sessions/{sessionId}` avec une commande idempotente;
+3. envoyer une source par slot avec `uploadBytesResumable` sous un chemin que
+   seul l'admin proprietaire de la session peut ecrire;
+4. generer cote serveur `thumb320`, `thumb384`, `thumb`, `card`, `detailFast`,
+   `medium`, `large` et `full`, puis enregistrer les medias en ordre stable;
+5. appliquer offre, stock et publication avec des cles idempotentes;
+6. reprendre automatiquement la session au retour dans le formulaire et
+   verifier l'apparition via `/api/catalog?id=...`;
+7. mettre les sources originales en quarantaine et collecter chaque jour les
+   sessions expirees.
+
+Le trigger Storage est rejouable et le reconciler `every 15 minutes` reprend
+une finalisation dont le worker aurait perdu son lease ou sa reponse. La
+publication ne depend donc pas de la presence continue du navigateur.
+
+Le document de session, ses erreurs internes et les chemins source restent
+backend-only. L'etat callable expose seulement la progression utile. Les
+variantes serveur sont publiquement lisibles comme les autres medias catalogue,
+mais leur ecriture directe par le navigateur est interdite.
+
+Etat au 2026-08-07: implementation locale validee, non encore deployee sur le
+sandbox. L'ancien parcours heberge reste actif jusqu'au deploiement coordonne.
 
 ## 4. Cycle de vie
 
 ```text
-brouillon admin
-  -> validation champs et images
-  -> ecriture Firestore
+brouillon admin cree au clic final
+  -> session de publication backend-only
+  -> upload resumable d'une source par photo
+  -> variantes Sharp cote serveur
+  -> commandes idempotentes contenu/offre/stock/publication
+  -> ecriture Firestore publiee
   -> onCatalogSourceWrite (deduplication + desiredRevision)
   -> Cloud Tasks dispatchCatalogBuild
   -> snapshot Storage immuable + manifeste + impact-plan.json
@@ -94,6 +124,11 @@ brouillon admin
   -> panier/checkout si isPurchasable=true
   -> vendu ou remis en vente selon cycle de commande/refund
 ```
+
+Une creation recoit `nouveautesOrder=-1`: lors de sa publication elle precede
+la selection editoriale deja numerotee. La Vue Globale peut ensuite la replacer
+et renumerote l'ensemble a partir de zero. Une republication conserve en
+revanche le rang existant.
 
 La suppression ou modification d'un produit met ses medias retires en quarantaine. Dans le sandbox, le GC media est actif mais ne peut supprimer qu'apres 90 jours, apres verification de la source Firestore, des generations Storage et des releases retenues. Le GC des releases protege toujours `current`, `previous`, LKG, les 10 releases les plus recentes et toute release de moins de 48 heures. Il s'execute apres une publication et chaque jour. Ne pas contourner ces garde-fous avec une migration non auditee.
 
@@ -208,6 +243,7 @@ src/kit/admin/AdminForm.jsx
 src/kit/admin/AdminItemList.jsx
 src/kit/admin/GlobalInventoryView.jsx
 src/kit/admin/adminPublicCatalog.js
+src/kit/admin/productPublicationClient.js
 src/kit/config/constants.js
 src/lib/server/products.js
 src/lib/server/productRoute.js
@@ -225,6 +261,7 @@ functions/src/catalog/
 functions/src/commerce/domain/productCommands.js
 functions/src/commerce/domain/productCommandRepository.js
 functions/src/commerce/v2ProductCommands.js
+functions/src/publication/productPublication.js
 src/kit/commerce/adminProductCommandClient.js
 functions/src/catalog/catalogMaintenance.js
 functions/src/triggers/onArtifactDeleted.js

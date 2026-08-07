@@ -1,6 +1,6 @@
 # Cartographie du projet Seconde Vie Next
 
-Derniere verification: 2026-08-04
+Derniere verification: 2026-08-07
 Statut: `CARTE_CANONIQUE_ACTIVE`
 
 ## 1. Role et maintenance
@@ -108,10 +108,15 @@ secrets, deploiement et recette Meta reelle restent M4/M5.
   -> description Markdown bornee -> RichTextStory (resume admin + fiche publique)
   -> renouvellement du jeton Auth puis preflightProductMutationAdmin [F]
      (App Check + admin actif + AAL2)
-  -> upload furniture [ST] (admin actif relu dans Firestore + AAL2,
-     sans fenetre de quinze minutes)
-  -> upload variantes [ST]
-  -> furniture/{id} [DB]
+  -> sources conservees dans IndexedDB + session locale de reprise
+  -> startProductPublicationAdmin [F]
+     -> brouillon furniture/{id} [DB]
+     -> product_publication_sessions/{sessionId} [DB, backend-only]
+  -> upload resumable originals/slot-XX [ST] (proprietaire admin AAL2 actif)
+  -> processProductPublicationImage [F, us-central1: region du bucket media]
+     -> huit variantes Sharp [ST, ecriture backend-only]
+     -> contenu/offre/stock/publication idempotents [DB]
+  -> verification /api/catalog?id={productId}
   -> prepareSocialPublicationAdmin [F] apres confirmation site
   -> sys_social_publications/{commandHash} [DB, backend-only]
   -> runSocialPublicationAdmin [F]
@@ -584,6 +589,7 @@ src/kit/admin/
 |-- AdminDashboard.jsx ................ pilotage commerce, devis/tendances analytics bornes, miniatures du snapshot public, exports et maintenance rapide
 |-- AdminAnalytics.jsx ................ moteur Data canonique: UID/IP, live, parcours illustres, courbes
 |-- AdminForm.jsx ..................... creation/edition annonces
+|   |-- productPublicationClient.js ... session locale, IndexedDB, uploads resumables et confirmation catalogue
 |   |-- components/InstagramPublicationPreview.jsx .. apercu prive Instagram iPhone 17 Pro
 |   |-- components/MetaConnectionControl.jsx ...... OAuth, choix Page et destinations
 |   `-- metaPublicationClient.js ................... commandes Meta callables
@@ -763,6 +769,8 @@ functions/
     |-- integrations/
     |   |-- meta.js .................... OAuth, statut et saga Instagram/Facebook
     |   `-- metaContract.js ............ chiffrement, state et projections purs
+    |-- publication/
+    |   `-- productPublication.js ...... brouillon durable, variantes Sharp, finalisation/reprise et collecte
     |-- triggers/
     |   |-- onArtifactDeleted.js
     |   |-- onArtifactUpdated.js
@@ -791,6 +799,7 @@ functions/
 | commerce v2 retours client | `decideCustomerReturnRequestAdmin`, puis commandes refund/retour v2 existantes selon le parcours choisi |
 | commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
 | commerce v2 produit | `preflightProductMutationAdmin`, `createProductAdmin`, `updateProductOfferAdmin`, `publishProductAdmin`, `adjustInventoryAdmin`, `deleteProductAdmin` |
+| publication produit durable | `startProductPublicationAdmin`, `getProductPublicationSessionAdmin`, `retryProductPublicationFinalizationAdmin`, `processProductPublicationImage`, `reconcileProductPublicationSessions`, `cleanupProductPublicationSessions` |
 | Meta OAuth/publication | `startMetaOAuthAdmin`, `metaOAuthCallback`, `getMetaConnectionStatusAdmin`, `selectMetaAssetAdmin`, `verifyMetaConnectionAdmin`, `disconnectMetaConnectionAdmin`, `prepareSocialPublicationAdmin`, `runSocialPublicationAdmin`, `getSocialPublicationStatusAdmin` |
 | refunds/Connect | `refundOrderAdmin`, `syncRefundStatusAdmin`, `getStripeConnectStatus`, `startStripeConnectOnboarding`, `syncStripeConnectAccount`, `requestStripeConnectReconnect`, `confirmStripeConnectReconnect` |
 | preuves E2E | `e2eCheckoutProof`, `e2eStripeHardeningProof` |
@@ -835,6 +844,7 @@ Firestore
 |-- sys_metadata/{docId}
 |-- sys_ratelimit/{id} ................ backend-only
 |-- sys_admin_access/{uid} ............ backend-only
+|-- product_publication_sessions/{id} . progression/reprise backend-only, expiration 30 jours
 |-- sys_user_stats/current ............ compteur comptes, triggers Auth backend-only
 |-- sys_idempotency/{id} .............. backend-only
 |-- sys_billing_onboarding/{uid} ...... progression guide, backend-only
@@ -862,6 +872,8 @@ Storage
 |-- furniture/... ..................... sources et medias produit
 |-- furniture/thumbnails/... .......... thumb320/thumb384/thumb
 |-- furniture/responsive/... .......... card/detailFast/medium/large/full
+|-- furniture/publication-sessions/{id}/originals/slot-XX/ . sources privees reprenables
+|-- furniture/publication-sessions/{id}/variants/slot-XX/ .. variantes serveur publiques
 |-- catalog-projection/v1/releases/{rev}/  objets immuables, manifeste et plan d'impact
 |-- catalog-projection/v1/pointers/ .... current/previous/last-known-good
 |-- commerce-documents/v2/... ......... PDF commande prives, lecture directe interdite
