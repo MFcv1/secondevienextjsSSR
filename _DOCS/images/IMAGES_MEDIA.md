@@ -72,19 +72,17 @@ Politique courante:
 
 ## 4. Upload admin
 
-Pour une creation neuve, `AdminForm` prepare une seule source bornee par photo,
-la conserve temporairement dans IndexedDB, renouvelle le jeton et cree le
-brouillon avant le premier upload. `productPublicationClient.js` utilise les
-uploads Firebase resumables. Le trigger
-`functions/src/publication/productPublication.js` lit chaque source, applique
-la rotation EXIF, calcule couleur/ratio/blur, fabrique les huit WebP avec Sharp
-et finalise le produit lorsque tous les slots sont prets. L'ordre des slots est
-celui du formulaire. La session permet une reprise apres navigation ou reload;
-les sources sont supprimees du stockage local apres succes et placees dans la
-quarantaine serveur de 90 jours. Chaque upload source a un delai maximum et
-trois tentatives; apres echec, le navigateur conserve les fichiers locaux et
-signale un etat `attention_required` au backend pour rendre l'interruption
-observable et reprenable.
+Pour une creation neuve, `AdminForm` prepare les variantes WebP bornees puis
+les envoie sur les chemins catalogue historiques. Le document meuble n'est
+cree qu'une fois tous les uploads termines; une erreur Storage laisse donc le
+catalogue intact au lieu de produire un brouillon sans photo. L'ordre des
+medias reste celui du formulaire et les metadata ratio/couleur/blur sont
+conservees avec les URLs finales.
+
+Le rail serveur `functions/src/publication/productPublication.js` et ses
+chemins `publication-sessions` ne sont plus appeles par le formulaire depuis le
+2026-08-07. Ils restent temporairement deployes pour diagnostiquer et collecter
+les sessions deja creees avant leur retrait gouverne.
 
 L'edition d'un meuble existant conserve pour l'instant le flux historique de
 variantes navigateur. Toute convergence future doit preserver recadrage,

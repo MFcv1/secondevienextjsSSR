@@ -30,10 +30,7 @@ import {
 } from './metaPublicationClient';
 import {
   clearPendingProductPublication,
-  getPendingPublicationDescriptor,
-  resumeProductPublication,
-  startDurableProductPublication,
-  waitForPublicCatalogProduct
+  getPendingPublicationDescriptor
 } from './productPublicationClient';
 
 const WOOD_TYPES = [
@@ -234,7 +231,6 @@ const AdminForm = ({
   const depthInputRef = useRef(null);
   const heightInputRef = useRef(null);
   const productCommandSessionRef = useRef(null);
-  const pendingResumeAttemptedRef = useRef(false);
   const imagePreparationJobsRef = useRef(0);
 
   // New state for drag reordering
@@ -328,48 +324,6 @@ const AdminForm = ({
     window.addEventListener('beforeunload', warnBeforeUnload);
     return () => window.removeEventListener('beforeunload', warnBeforeUnload);
   }, [uploading]);
-
-  useEffect(() => {
-    if (editData || mutationsBlocked || pendingResumeAttemptedRef.current) return;
-    const descriptor = getPendingPublicationDescriptor();
-    if (!descriptor) return;
-    pendingResumeAttemptedRef.current = true;
-    let cancelled = false;
-
-    const resume = async () => {
-      setUploading(true);
-      setStep('review');
-      setProgress(0.08);
-      setMsg('Reprise automatique de la publication interrompue…');
-      try {
-        await refreshAdminAuthorizationToken();
-        const result = await resumeProductPublication(descriptor, {
-          onProgress: (value) => { if (!cancelled) setProgress(value); },
-          onStatus: (value) => { if (!cancelled) setMsg(value); }
-        });
-        if (cancelled) return;
-        setProgress(0.94);
-        setMsg('Meuble enregistré. Synchronisation de la galerie…');
-        const publicProduct = await waitForPublicCatalogProduct(result.productId);
-        await clearPendingProductPublication(descriptor.sessionId);
-        clearAdminPublicCatalogCache();
-        if (cancelled) return;
-        setProgress(1);
-        setMsg(publicProduct
-          ? 'Publication reprise et visible dans la galerie.'
-          : 'Publication enregistrée. La galerie termine sa synchronisation.');
-        if (onSaved) onSaved();
-      } catch (error) {
-        if (!cancelled) {
-          setMsg(`Reprise à terminer : ${error?.message || 'la publication sera retentée ici.'}`);
-        }
-      } finally {
-        if (!cancelled) setUploading(false);
-      }
-    };
-    resume();
-    return () => { cancelled = true; };
-  }, [editData, mutationsBlocked, onSaved]);
 
   // Prevent browser from opening files if dropped outside the target
   useEffect(() => {
@@ -606,116 +560,6 @@ const AdminForm = ({
     setStep('review');
   };
 
-  const buildEditorialPayload = (imageCount) => ({
-    name: formData.name,
-    description: formData.description,
-    seoTitle: '',
-    seoDescription: '',
-    seoIndexable: (
-      String(formData.name || '').trim().length >= 4
-      && String(formData.description || '').trim().length >= 48
-      && imageCount > 0
-    ),
-    material: formData.material,
-    color: formData.color,
-    dimensions: formData.dimensions,
-    width: String(formData.width ?? ''),
-    depth: String(formData.depth ?? ''),
-    height: String(formData.height ?? ''),
-    category: formData.category,
-    style: formData.style
-  });
-
-  const publishNewProductDurably = async () => {
-    setUploading(true);
-    setProgress(0.04);
-    setMsg('Vérification de la session administrateur…');
-    let durableSession = null;
-    try {
-      await refreshAdminAuthorizationToken();
-      await preflightProductMutationAdmin();
-      const files = galleryItems.map((item) => item.file).filter(Boolean);
-      if (files.length !== galleryItems.length) {
-        throw new Error('Une photo locale est introuvable. Retire-la puis ajoute-la de nouveau.');
-      }
-      if (files.some((file) => file.size >= 10 * 1024 * 1024)) {
-        throw new Error('Une photo dépasse 10 Mo après préparation. Réduis-la puis ajoute-la de nouveau.');
-      }
-      const parsedStock = Number(formData.stock === '' ? 0 : formData.stock);
-      const pendingDescriptor = getPendingPublicationDescriptor();
-      const startInput = {
-          expectedMediaCount: files.length,
-          targetStock: parsedStock,
-          editorial: buildEditorialPayload(files.length),
-          offer: {
-            currentPrice: Number(formData.startingPrice),
-            startingPrice: Number(formData.startingPrice),
-            priceOnRequest: Boolean(formData.priceOnRequest)
-          }
-      };
-      const publication = pendingDescriptor
-        ? {
-            descriptor: pendingDescriptor,
-            result: await resumeProductPublication(pendingDescriptor, {
-              onProgress: setProgress,
-              onStatus: setMsg
-            })
-          }
-        : await startDurableProductPublication({
-            files,
-            startInput,
-            onProgress: setProgress,
-            onStatus: setMsg
-          });
-      durableSession = publication.descriptor;
-      const productId = publication.result.productId;
-      setProgress(0.94);
-      setMsg('Meuble enregistré. Synchronisation de la galerie…');
-      const publicProduct = await waitForPublicCatalogProduct(productId);
-      await clearPendingProductPublication(durableSession.sessionId);
-      clearAdminPublicCatalogCache();
-
-      if (socialEnabled) {
-        setMsg('Meuble publié sur le site. Préparation de Meta…');
-        const prepared = await prepareSocialPublicationAdmin({
-          collectionName,
-          productId,
-          commandId: `${durableSession.sessionId}-social`.slice(0, 160),
-          targets: { instagram: instagramTarget, facebook: facebookTarget },
-          hashtags: instagramHashtags
-        });
-        setSocialPublication(prepared);
-        const socialResult = await runSocialPublicationAdmin(prepared.publicationId);
-        setSocialPublication(socialResult);
-        if (socialResult.overallStatus !== 'published') {
-          setMsg('Le site est publié, mais une destination Meta doit encore être relancée.');
-          return;
-        }
-      }
-
-      setProgress(1);
-      setMsg(publicProduct
-        ? (socialEnabled ? 'Le meuble est visible dans la galerie et publié sur les réseaux sélectionnés.' : 'Le meuble est visible dans la galerie.')
-        : 'Le meuble est publié. La galerie termine sa synchronisation.');
-      productCommandSessionRef.current = null;
-      resetForm();
-      if (onCancelEdit) onCancelEdit();
-      if (onSaved) onSaved();
-    } catch (error) {
-      console.error('DURABLE PRODUCT PUBLICATION ERROR:', error);
-      const errorReason = error?.details?.reason || error?.customData?.details?.reason || '';
-      if (errorReason === 'strong-auth-required') {
-        setMsg('Confirme ton identité avec Google ou ta passkey, puis relance la publication.');
-      } else if (isStorageAuthorizationError(error)) {
-        setMsg('Envoi refusé. La publication est conservée et pourra être reprise après correction des règles.');
-      } else {
-        setMsg(`Publication à reprendre : ${error?.message || 'une erreur est survenue.'}`);
-      }
-    } finally {
-      setUploading(false);
-    }
-  };
-
   const addMeuble = async () => {
     if (mutationsBlocked) {
       setMsg('Actualise le back-office avant de reprendre cette publication.');
@@ -759,41 +603,9 @@ const AdminForm = ({
       }
       return;
     }
-    const pendingDescriptor = !editData ? getPendingPublicationDescriptor() : null;
-    if (pendingDescriptor) {
-      setUploading(true);
-      setProgress(0.08);
-      setMsg('Reprise de la publication interrompue…');
-      try {
-        await refreshAdminAuthorizationToken();
-        const result = await resumeProductPublication(pendingDescriptor, {
-          onProgress: setProgress,
-          onStatus: setMsg
-        });
-        setProgress(0.94);
-        setMsg('Meuble enregistré. Synchronisation de la galerie…');
-        const publicProduct = await waitForPublicCatalogProduct(result.productId);
-        await clearPendingProductPublication(pendingDescriptor.sessionId);
-        clearAdminPublicCatalogCache();
-        setProgress(1);
-        setMsg(publicProduct
-          ? 'Publication reprise et visible dans la galerie.'
-          : 'Publication enregistrée. La galerie termine sa synchronisation.');
-        if (onSaved) onSaved();
-      } catch (error) {
-        setMsg(`Reprise à terminer : ${error?.message || 'la publication sera retentée ici.'}`);
-      } finally {
-        setUploading(false);
-      }
-      return;
-    }
     // Le parcours passe deja par cette validation, on la rejoue par securite.
     if (!validateComposition()) {
       setStep('compose');
-      return;
-    }
-    if (!editData) {
-      await publishNewProductDurably();
       return;
     }
     setUploading(true);
@@ -976,6 +788,10 @@ const AdminForm = ({
           true,
           session.publishCommandId
         );
+        const abandonedPublication = getPendingPublicationDescriptor();
+        if (abandonedPublication) {
+          void clearPendingProductPublication(abandonedPublication.sessionId).catch(() => {});
+        }
       }
       clearAdminPublicCatalogCache();
       advanceProgress();

@@ -108,16 +108,9 @@ secrets, deploiement et recette Meta reelle restent M4/M5.
   -> description Markdown bornee -> RichTextStory (resume admin + fiche publique)
   -> renouvellement du jeton Auth puis preflightProductMutationAdmin [F]
      (App Check + admin actif + AAL2)
-  -> sources conservees dans IndexedDB + session locale de reprise
-  -> startProductPublicationAdmin [F]
-     -> brouillon furniture/{id} [DB]
-     -> product_publication_sessions/{sessionId} [DB, backend-only]
-  -> reportProductPublicationClientErrorAdmin [F] si upload local interrompu
-  -> upload resumable originals/slot-XX [ST] (proprietaire admin AAL2 actif)
-  -> processProductPublicationImage [F, us-central1: region du bucket media]
-     -> huit variantes Sharp [ST, ecriture backend-only]
-     -> contenu/offre/stock/publication idempotents [DB]
-  -> verification /api/catalog?id={productId}
+  -> preparation puis upload de toutes les variantes catalogue [ST]
+  -> createProductDraftAdmin seulement apres succes de tous les uploads [F]
+  -> offre + stock + publication immediate idempotente [F/DB]
   -> prepareSocialPublicationAdmin [F] apres confirmation site
   -> sys_social_publications/{commandHash} [DB, backend-only]
   -> runSocialPublicationAdmin [F]
@@ -590,7 +583,7 @@ src/kit/admin/
 |-- AdminDashboard.jsx ................ pilotage commerce, devis/tendances analytics bornes, miniatures du snapshot public, exports et maintenance rapide
 |-- AdminAnalytics.jsx ................ moteur Data canonique: UID/IP, live, parcours illustres, courbes
 |-- AdminForm.jsx ..................... creation/edition annonces
-|   |-- productPublicationClient.js ... session locale, IndexedDB, uploads resumables et confirmation catalogue
+|   |-- productPublicationClient.js ... ancien client de session durable, retire du parcours AdminForm actif
 |   |-- components/InstagramPublicationPreview.jsx .. apercu prive Instagram iPhone 17 Pro
 |   |-- components/MetaConnectionControl.jsx ...... OAuth, choix Page et destinations
 |   `-- metaPublicationClient.js ................... commandes Meta callables
@@ -771,7 +764,7 @@ functions/
     |   |-- meta.js .................... OAuth, statut et saga Instagram/Facebook
     |   `-- metaContract.js ............ chiffrement, state et projections purs
     |-- publication/
-    |   `-- productPublication.js ...... brouillon durable, variantes Sharp, finalisation/reprise et collecte
+    |   `-- productPublication.js ...... rail historique inactif cote UI, diagnostic/reprise/collecte des sessions existantes
     |-- triggers/
     |   |-- onArtifactDeleted.js
     |   |-- onArtifactUpdated.js
@@ -800,7 +793,7 @@ functions/
 | commerce v2 retours client | `decideCustomerReturnRequestAdmin`, puis commandes refund/retour v2 existantes selon le parcours choisi |
 | commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
 | commerce v2 produit | `preflightProductMutationAdmin`, `createProductAdmin`, `updateProductOfferAdmin`, `publishProductAdmin`, `adjustInventoryAdmin`, `deleteProductAdmin` |
-| publication produit durable | `startProductPublicationAdmin`, `getProductPublicationSessionAdmin`, `reportProductPublicationClientErrorAdmin`, `retryProductPublicationFinalizationAdmin`, `processProductPublicationImage`, `reconcileProductPublicationSessions`, `cleanupProductPublicationSessions` |
+| publication produit durable historique, inactive dans AdminForm | `startProductPublicationAdmin`, `getProductPublicationSessionAdmin`, `reportProductPublicationClientErrorAdmin`, `retryProductPublicationFinalizationAdmin`, `processProductPublicationImage`, `reconcileProductPublicationSessions`, `cleanupProductPublicationSessions` |
 | Meta OAuth/publication | `startMetaOAuthAdmin`, `metaOAuthCallback`, `getMetaConnectionStatusAdmin`, `selectMetaAssetAdmin`, `verifyMetaConnectionAdmin`, `disconnectMetaConnectionAdmin`, `prepareSocialPublicationAdmin`, `runSocialPublicationAdmin`, `getSocialPublicationStatusAdmin` |
 | refunds/Connect | `refundOrderAdmin`, `syncRefundStatusAdmin`, `getStripeConnectStatus`, `startStripeConnectOnboarding`, `syncStripeConnectAccount`, `requestStripeConnectReconnect`, `confirmStripeConnectReconnect` |
 | preuves E2E | `e2eCheckoutProof`, `e2eStripeHardeningProof` |

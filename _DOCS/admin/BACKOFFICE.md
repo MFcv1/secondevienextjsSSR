@@ -77,21 +77,15 @@ le filtre de statut se combine avec la categorie active. A partir de `1280 px`, 
 les zones de contenu internes prennent le relais sur un ecran bas. Les formats
 plus etroits reviennent au scroll naturel et les categories utilisent un rail
 horizontal sans barre visible, puis passent sur plusieurs lignes quand la
-largeur le permet. `AdminForm` gere les champs produit, la preparation d'une
-source image unique, la reprise locale et la sauvegarde. Pour une creation,
-`productPublicationClient.js` conserve les fichiers dans IndexedDB, cree
-immediatement un brouillon serveur via `startProductPublicationAdmin`, puis
-effectue des uploads resumables. `processProductPublicationImage` fabrique les
-huit variantes avec Sharp et finalise offre, stock et publication par des
-commandes idempotentes. Chaque source est retentee jusqu'a trois fois avec un
-delai borne; un echec client est conserve dans la session serveur et un upload
-inactif est signale par le reconciler. Une fermeture ou une navigation ne peut
-donc plus
-effacer silencieusement toute trace de l'action: le retour dans Publication
-reprend la session, et l'interface attend `/api/catalog?id=...` avant
-d'annoncer que le meuble est visible. Pendant le traitement, les deux vues et
-l'apercu public sont neutralises; `beforeunload` reste un avertissement
-secondaire, pas le mecanisme de fiabilite. Sa grille droite
+largeur le permet. `AdminForm` gere les champs produit, la preparation des
+variantes et la sauvegarde. Pour une creation, toutes les images sont envoyees
+sur les chemins Storage catalogue historiques avant la premiere creation
+Firestore. Le formulaire applique ensuite, dans l'ordre, creation, offre,
+stock et publication avec des commandes idempotentes. Un clic Publier ne peut
+donc plus laisser apparaitre un brouillon technique sans photo: si l'upload
+echoue, aucun meuble n'est cree; s'il reussit, le produit est finalise public.
+Pendant le traitement, les deux vues et l'apercu public sont neutralises et
+`beforeunload` avertit avant une fermeture. Sa grille droite
 utilise quatre rangees `auto / auto / auto / minmax(220px, 1fr)`: seule la
 quatrieme rangee absorbe l'espace vertical restant. Dimensions occupe la
 troisieme rangee, avec des controles bornes en largeur. Le formulaire ne
@@ -114,9 +108,10 @@ La selection native reste translucide puis se replie apres application pour ne
 pas masquer le resultat; la palette sait aussi recolorer ou retirer un `mark`
 depuis un simple curseur place dans le texte.
 
-Ce rail durable est implemente et valide localement au 2026-08-07. Il ne
-devient actif sur le sandbox qu'apres deploiement coordonne des Functions, des
-Rules et du rollout App Hosting.
+Le rail de brouillon cree avant upload est retire du parcours actif le
+2026-08-07 apres le refus Storage reproductible `STORAGE_UNAUTHORIZED`. Ses
+sessions backend restent temporairement disponibles uniquement pour le
+diagnostic et leur collecte planifiee; `AdminForm` ne les cree ni ne les reprend.
 
 L'intertitre H2 ne transforme qu'une ligne complete et refuse une selection
 partielle avec un retour visible dans le pied de l'editeur.

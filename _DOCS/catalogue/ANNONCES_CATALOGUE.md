@@ -75,30 +75,21 @@ commandes et remboursements restent en lecture seule. Avant toute compression
 ou ecriture Storage, `preflightProductMutationAdmin` verifie ces droits. Une
 session non AAL2 est ainsi reprise avant l'envoi des images.
 
-Pour une creation neuve, le clic final n'attend plus la generation navigateur
-de toutes les variantes avant la premiere ecriture. Le protocole ferme est:
+Pour une creation neuve, le parcours actif privilegie une publication atomique
+visible:
 
-1. conserver les sources preparees dans IndexedDB et un identifiant de session
-   stable dans `localStorage`;
-2. creer immediatement le produit en brouillon et
-   `product_publication_sessions/{sessionId}` avec une commande idempotente;
-3. envoyer une source par slot avec `uploadBytesResumable` sous un chemin que
-   seul l'admin proprietaire de la session peut ecrire;
-4. generer cote serveur `thumb320`, `thumb384`, `thumb`, `card`, `detailFast`,
-   `medium`, `large` et `full`, puis enregistrer les medias en ordre stable;
-5. appliquer offre, stock et publication avec des cles idempotentes;
-6. reprendre automatiquement la session au retour dans le formulaire et
-   verifier l'apparition via `/api/catalog?id=...`;
-7. mettre les sources originales en quarantaine et collecter chaque jour les
-   sessions expirees.
+1. preparer les variantes images dans le navigateur;
+2. envoyer toutes les variantes sur les chemins Storage catalogue historiques;
+3. ne creer le document `furniture/{id}` qu'apres succes de tous les uploads;
+4. appliquer offre, stock et publication avec des commandes idempotentes;
+5. declencher la projection publique et la revalidation catalogue.
 
-Le trigger Storage est rejouable et le reconciler `every 15 minutes` reprend
-une finalisation dont le worker aurait perdu son lease ou sa reponse. La
-creation du brouillon est durable avant l'upload; les sources qui n'ont pas
-encore quitte le navigateur restent reprises depuis IndexedDB au retour dans
-le formulaire. Une erreur client est signalee dans la session backend, et le
-reconciler marque les uploads sans activite comme necessitant une reprise sans
-les confondre avec une vente.
+Ainsi, un echec d'image ne cree aucun meuble et n'ajoute aucun brouillon a la
+liste. Le rail `product_publication_sessions` qui creait le brouillon avant le
+premier upload est retire de `AdminForm` apres deux refus reproductibles
+`STORAGE_UNAUTHORIZED`. Les Functions et sessions existantes restent bornees
+au diagnostic, a la reprise des donnees historiques et a la collecte; elles ne
+sont plus le chemin de creation de l'interface.
 
 Un produit nouvellement cree porte obligatoirement `status: draft`,
 `sold: false`, `soldAt: null` et `stock: 0`. `sold` ne devient vrai qu'apres
@@ -111,18 +102,17 @@ backend-only. L'etat callable expose seulement la progression utile. Les
 variantes serveur sont publiquement lisibles comme les autres medias catalogue,
 mais leur ecriture directe par le navigateur est interdite.
 
-Etat au 2026-08-07: correctif local pret pour revue, non encore redeploye sur
-le sandbox. Le rollout reste coordonne entre Functions et App Hosting.
+Etat au 2026-08-07: retour local au parcours catalogue historique connu comme
+fonctionnel; un rollout App Hosting est requis pour l'activer sur le sandbox.
 
 ## 4. Cycle de vie
 
 ```text
-brouillon admin cree au clic final
-  -> session de publication backend-only
-  -> upload resumable d'une source par photo
-  -> variantes Sharp cote serveur
-  -> commandes idempotentes contenu/offre/stock/publication
-  -> ecriture Firestore publiee
+variantes images preparees dans AdminForm
+  -> upload de toutes les variantes catalogue
+  -> creation brouillon et offre par commandes idempotentes
+  -> ajustement de stock
+  -> publication immediate
   -> onCatalogSourceWrite (deduplication + desiredRevision)
   -> Cloud Tasks dispatchCatalogBuild
   -> snapshot Storage immuable + manifeste + impact-plan.json
