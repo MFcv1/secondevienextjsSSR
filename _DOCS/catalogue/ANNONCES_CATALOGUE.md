@@ -1,6 +1,6 @@
 # Annonces, catalogue et recherche
 
-Derniere mise a jour: 2026-08-07
+Derniere mise a jour: 2026-08-08
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Perimetre
@@ -85,8 +85,12 @@ visible:
 3. ne creer le document `furniture/{id}` qu'apres succes de tous les uploads;
 4. creer directement le produit complet et public avec une seule commande
    idempotente `createPublishedProductAdmin`;
-5. attendre que `/api/catalog` confirme le produit avant d'afficher le succes;
-6. basculer vers Publications en mettant la nouvelle ligne en evidence.
+5. attendre que `/api/catalog` confirme le produit, puis que
+   `sys_catalog_live/current` confirme la revision apres revalidation de la
+   page galerie;
+6. afficher un succes explicite, basculer vers Publications et mettre la
+   nouvelle ligne en evidence. Un handoff court en `sessionStorage` conserve
+   cette destination si l'ile admin est remontee pendant la transition.
 
 Ainsi, un echec d'image ne cree aucun meuble et n'ajoute aucun brouillon a la
 liste. Le rail `product_publication_sessions` qui creait le brouillon avant le
@@ -106,9 +110,9 @@ backend-only. L'etat callable expose seulement la progression utile. Les
 variantes serveur sont publiquement lisibles comme les autres medias catalogue,
 mais leur ecriture directe par le navigateur est interdite.
 
-Etat au 2026-08-07: publication neuve atomique et confirmation de projection
-publique implementees localement; un rollout Functions et App Hosting est
-requis pour les activer sur le sandbox.
+Etat code au 2026-08-08: la publication neuve atomique attend la projection
+publique puis la preuve que la galerie sert cette revision avant de confirmer
+le succes et de transmettre l'interface a la vue Publications.
 
 ## 4. Cycle de vie
 
@@ -132,7 +136,9 @@ variantes images preparees dans AdminForm
 Une creation recoit `nouveautesOrder=-1`: lors de sa publication elle precede
 la selection editoriale deja numerotee. La Vue Globale peut ensuite la replacer
 et renumerote l'ensemble a partir de zero. Une republication conserve en
-revanche le rang existant.
+revanche le rang existant. Lorsque plusieurs creations partagent encore le
+rang `-1`, la galerie les departage par `createdAt` decroissant, qu'il soit un
+Timestamp Firestore ou une date ISO issue du snapshot.
 
 La suppression ou modification d'un produit met ses medias retires en quarantaine. Dans le sandbox, le GC media est actif mais ne peut supprimer qu'apres 90 jours, apres verification de la source Firestore, des generations Storage et des releases retenues. Le GC des releases protege toujours `current`, `previous`, LKG, les 10 releases les plus recentes et toute release de moins de 48 heures. Il s'execute apres une publication et chaque jour. Ne pas contourner ces garde-fous avec une migration non auditee.
 

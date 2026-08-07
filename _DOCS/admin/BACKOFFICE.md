@@ -1,6 +1,6 @@
 # Back-office
 
-Derniere mise a jour: 2026-08-07
+Derniere mise a jour: 2026-08-08
 Statut: `PREPROD_READY`
 
 Etat actif:
@@ -86,8 +86,12 @@ donc plus laisser apparaitre un brouillon technique sans photo: si l'upload
 echoue, aucun meuble n'est cree; s'il reussit, le produit est finalise public.
 Une fenetre modale affiche la progression reelle des photos, de l'ecriture et
 de la projection. Le succes n'est confirme qu'apres lecture du produit dans
-`/api/catalog`; l'interface bascule alors vers Publications et met en evidence
-la ligne creee.
+`/api/catalog`, puis observation de la revision dans
+`sys_catalog_live/current`; ce second signal n'est emis qu'apres preuve que le
+HTML de la galerie a ete revalide. L'interface maintient ensuite la confirmation
+visible, bascule vers Publications et met en evidence la ligne creee. Un
+handoff court en `sessionStorage` preserve cette vue si l'ile admin est remontee
+pendant la transition, sans conserver de donnee catalogue.
 Pendant le traitement, les deux vues et l'apercu public sont neutralises et
 `beforeunload` avertit avant une fermeture. Sa grille droite
 utilise quatre rangees `auto / auto / auto / minmax(220px, 1fr)`: seule la

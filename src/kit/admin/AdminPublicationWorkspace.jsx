@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { BookOpen, Eye, Plus, Sparkles } from 'lucide-react';
+import { BookOpen, CheckCircle2, ExternalLink, Eye, Plus, Sparkles, X } from 'lucide-react';
 import AdminForm from './AdminForm';
 import AdminItemList from './AdminItemList';
 
@@ -10,6 +10,39 @@ const VIEWS = [
   { id: 'create', label: 'Créer', Icon: Plus },
   { id: 'history', label: 'Publications', Icon: BookOpen },
 ];
+
+const PUBLICATION_HANDOFF_KEY = 'secondevie:admin-publication-handoff:v1';
+const PUBLICATION_HANDOFF_TTL_MS = 10 * 60 * 1000;
+const SUCCESS_NOTICE_DURATION_MS = 10000;
+
+const readPublicationHandoff = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const handoff = JSON.parse(window.sessionStorage.getItem(PUBLICATION_HANDOFF_KEY) || 'null');
+    if (!handoff?.productId || Date.now() - Number(handoff.savedAt || 0) > PUBLICATION_HANDOFF_TTL_MS) {
+      window.sessionStorage.removeItem(PUBLICATION_HANDOFF_KEY);
+      return null;
+    }
+    return handoff;
+  } catch {
+    return null;
+  }
+};
+
+const savePublicationHandoff = (savedProduct) => {
+  if (typeof window === 'undefined') return null;
+  const handoff = {
+    productId: savedProduct.productId,
+    name: String(savedProduct.name || 'Le meuble'),
+    savedAt: Date.now(),
+  };
+  try {
+    window.sessionStorage.setItem(PUBLICATION_HANDOFF_KEY, JSON.stringify(handoff));
+  } catch {
+    // Le changement de vue courant reste fonctionnel si sessionStorage est indisponible.
+  }
+  return handoff;
+};
 
 export default function AdminPublicationWorkspace({
   collectionName,
@@ -26,10 +59,32 @@ export default function AdminPublicationWorkspace({
   const [view, setView] = React.useState('create');
   const [publicationBusy, setPublicationBusy] = React.useState(false);
   const [recentProductId, setRecentProductId] = React.useState(null);
+  const [successNotice, setSuccessNotice] = React.useState(null);
   const handleSaved = React.useCallback((savedProduct = {}) => {
-    setRecentProductId(savedProduct.productId || null);
+    const handoff = savedProduct.productId ? savePublicationHandoff(savedProduct) : null;
+    setRecentProductId(handoff?.productId || savedProduct.productId || null);
+    setSuccessNotice(handoff);
     setView('history');
   }, []);
+
+  React.useEffect(() => {
+    const handoff = readPublicationHandoff();
+    if (!handoff) return;
+    setRecentProductId(handoff.productId);
+    setView('history');
+    if (Date.now() - handoff.savedAt < SUCCESS_NOTICE_DURATION_MS) setSuccessNotice(handoff);
+  }, []);
+
+  React.useEffect(() => {
+    if (!successNotice) return undefined;
+    const remaining = Math.max(0, SUCCESS_NOTICE_DURATION_MS - (Date.now() - successNotice.savedAt));
+    if (remaining === 0) {
+      setSuccessNotice(null);
+      return undefined;
+    }
+    const timer = window.setTimeout(() => setSuccessNotice(null), remaining);
+    return () => window.clearTimeout(timer);
+  }, [successNotice]);
 
   React.useEffect(() => {
     if (editData) setView('create');
@@ -38,6 +93,11 @@ export default function AdminPublicationWorkspace({
   const selectView = (nextView) => {
     if (publicationBusy) return;
     setView(nextView);
+    setSuccessNotice(null);
+    if (nextView === 'create') {
+      setRecentProductId(null);
+      try { window.sessionStorage.removeItem(PUBLICATION_HANDOFF_KEY); } catch { /* noop */ }
+    }
     if (nextView === 'history' && editData) onCancelEdit();
   };
 
@@ -80,6 +140,31 @@ export default function AdminPublicationWorkspace({
           </Link>
         </div>
       </div>
+
+      {view === 'history' && successNotice ? (
+        <div className="pointer-events-none fixed right-4 top-4 z-[80] w-[min(420px,calc(100vw-2rem))] sm:right-6 sm:top-6" role="status" aria-live="polite">
+          <div className={`pointer-events-auto rounded-[20px] border p-4 shadow-[0_24px_70px_rgba(28,25,23,0.22)] ${darkMode ? 'border-emerald-400/20 bg-[#171714] text-white' : 'border-emerald-200 bg-white text-stone-950'}`}>
+            <div className="flex items-start gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-emerald-500 text-white">
+                <CheckCircle2 size={19} strokeWidth={2.3} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-extrabold">Publication réussie</p>
+                <p className={`mt-1 text-[11px] leading-5 ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
+                  <span className="font-bold">{successNotice.name}</span> est public et confirmé dans la galerie Nouveautés.
+                </p>
+                <Link href="/#gallery-pieces" target="_blank" className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-stone-950 px-4 text-[10px] font-extrabold text-white transition-colors duration-200 hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
+                  Voir dans la galerie
+                  <ExternalLink size={12} strokeWidth={1.8} />
+                </Link>
+              </div>
+              <button type="button" onClick={() => setSuccessNotice(null)} aria-label="Fermer la confirmation" className={`grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors duration-200 ${darkMode ? 'text-stone-500 hover:bg-white/[0.07] hover:text-white' : 'text-stone-400 hover:bg-stone-100 hover:text-stone-950'}`}>
+                <X size={15} strokeWidth={1.8} />
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="min-h-0 flex-1">
         {view === 'create' ? (

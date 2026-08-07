@@ -615,12 +615,12 @@ const AdminForm = ({
         setPublicationPhase('complete');
         setProgress(1);
         setMsg('Le meuble est publié sur le site et les réseaux sélectionnés.');
-        await new Promise((resolve) => setTimeout(resolve, 450));
+        await new Promise((resolve) => setTimeout(resolve, 900));
         const savedProduct = publishedProductRef.current;
         productCommandSessionRef.current = null;
         publishedProductRef.current = null;
         resetForm();
-        if (onCancelEdit) onCancelEdit();
+        if (editData && onCancelEdit) onCancelEdit();
         if (onSaved) onSaved({ productId: savedProduct?.id, name: savedProduct?.name });
       } catch (retryError) {
         try {
@@ -781,10 +781,10 @@ const AdminForm = ({
       clearAdminPublicCatalogCache();
       setPublicationPhase('catalog');
       setProgress(0.8);
-      setMsg('Mise à jour et vérification de la galerie publique…');
+      setMsg('Mise à jour et vérification de la galerie Nouveautés…');
       const publicProduct = await waitForPublicCatalogProduct(commandProduct.id);
       if (!publicProduct) {
-        const catalogError = new Error('Le meuble est enregistré, mais la galerie publique n’a pas encore confirmé sa mise en ligne. Clique de nouveau sur Publier pour reprendre uniquement cette vérification.');
+        const catalogError = new Error('Le meuble est enregistré, mais la galerie Nouveautés n’a pas encore confirmé sa mise en ligne. Clique de nouveau sur Publier pour reprendre uniquement cette vérification.');
         catalogError.code = 'CATALOG_PUBLICATION_CONFIRMATION_TIMEOUT';
         throw catalogError;
       }
@@ -814,13 +814,13 @@ const AdminForm = ({
       setProgress(1);
       setMsg(socialEnabled
         ? 'Le meuble est publié sur le site et les réseaux sélectionnés.'
-        : 'Le meuble est publié et confirmé dans la galerie.');
-      await new Promise((resolve) => setTimeout(resolve, 450));
+        : 'Le meuble est publié et confirmé dans la galerie Nouveautés.');
+      await new Promise((resolve) => setTimeout(resolve, 900));
       const savedProduct = { productId: commandProduct.id, name: formData.name };
       productCommandSessionRef.current = null;
       publishedProductRef.current = null;
       resetForm();
-      if (onCancelEdit) onCancelEdit();
+      if (editData && onCancelEdit) onCancelEdit();
       if (onSaved) onSaved(savedProduct);
     } catch (err) {
       console.error("CRITICAL UPLOAD ERROR:", err);

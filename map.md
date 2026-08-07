@@ -112,7 +112,8 @@ secrets, deploiement et recette Meta reelle restent M4/M5.
      (une lecture source, concurrence bornee a quatre)
   -> createPublishedProductAdmin seulement apres succes de tous les uploads [F]
      -> contenu + offre + stock + publication dans une transaction [DB]
-  -> attente de la projection `/api/catalog`, puis vue Publications [C]
+  -> attente de la projection `/api/catalog`, puis de la preuve HTML
+     `sys_catalog_live/current`; succes visible et vue Publications [C]
   -> prepareSocialPublicationAdmin [F] apres confirmation site
   -> sys_social_publications/{commandHash} [DB, backend-only]
   -> runSocialPublicationAdmin [F]
@@ -585,7 +586,7 @@ src/kit/admin/
 |-- AdminDashboard.jsx ................ pilotage commerce, devis/tendances analytics bornes, miniatures du snapshot public, exports et maintenance rapide
 |-- AdminAnalytics.jsx ................ moteur Data canonique: UID/IP, live, parcours illustres, courbes
 |-- AdminForm.jsx ..................... creation/edition annonces
-|   |-- productPublicationClient.js ... ancien client de session durable, retire du parcours AdminForm actif
+|   |-- productPublicationClient.js ... utilitaires historiques de session + attente de la preuve galerie active
 |   |-- components/InstagramPublicationPreview.jsx .. apercu prive Instagram iPhone 17 Pro
 |   |-- components/MetaConnectionControl.jsx ...... OAuth, choix Page et destinations
 |   `-- metaPublicationClient.js ................... commandes Meta callables

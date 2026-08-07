@@ -1,7 +1,7 @@
 'use client';
 
 import { ref, uploadBytesResumable } from 'firebase/storage';
-import { getCallableFunction } from '../config/firebaseLazy';
+import { getCallableFunction, getDb, loadFirestoreModule } from '../config/firebaseLazy';
 import { getStorageInstance } from '../config/firebaseStorage';
 
 const PENDING_PUBLICATION_KEY = 'secondevie:pending-product-publication:v1';
@@ -317,18 +317,35 @@ export const startDurableProductPublication = async ({ files, startInput, onProg
 
 export const waitForPublicCatalogProduct = async (productId, { timeoutMs = 120000 } = {}) => {
   const startedAt = Date.now();
+  let publicCatalogPayload = null;
   while (Date.now() - startedAt < timeoutMs) {
-    try {
-      const response = await fetch(`/api/catalog?id=${encodeURIComponent(productId)}`, {
-        cache: 'no-store',
-        headers: { accept: 'application/json' }
-      });
-      if (response.ok) {
-        const payload = await response.json();
-        if (payload?.product?.id === productId || payload?.product?.productId === productId) return payload;
+    if (!publicCatalogPayload) {
+      try {
+        const response = await fetch(`/api/catalog?id=${encodeURIComponent(productId)}`, {
+          cache: 'no-store',
+          headers: { accept: 'application/json' }
+        });
+        if (response.ok) {
+          const payload = await response.json();
+          if (payload?.product?.id === productId || payload?.product?.productId === productId) {
+            publicCatalogPayload = payload;
+          }
+        }
+      } catch {
+        // La publication Firestore est durable; le polling attend sa projection publique.
       }
-    } catch {
-      // La publication Firestore est durable; le polling attend seulement sa projection publique.
+    }
+
+    if (publicCatalogPayload) {
+      try {
+        const [database, { doc, getDoc }] = await Promise.all([getDb(), loadFirestoreModule()]);
+        const liveSnapshot = await getDoc(doc(database, 'sys_catalog_live', 'current'));
+        const liveRevision = Number(liveSnapshot.exists() ? liveSnapshot.data()?.revision : 0);
+        const productRevision = Number(publicCatalogPayload.catalogVersion || 0);
+        if (productRevision > 0 && liveRevision >= productRevision) return publicCatalogPayload;
+      } catch {
+        // Le signal n'est publie qu'apres verification de la page galerie servie.
+      }
     }
     await sleep(POLL_INTERVAL_MS);
   }

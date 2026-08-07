@@ -13,6 +13,16 @@ const getPublishedItems = (items) => (
 
 const getItemPrice = (item) => Number(item?.currentPrice || item?.price || item?.startingPrice || 0);
 
+const getItemCreatedTime = (item) => {
+  const value = item?.createdAt;
+  if (typeof value?.toMillis === 'function') return value.toMillis();
+  if (Number.isFinite(Number(value?.seconds))) {
+    return (Number(value.seconds) * 1000) + (Number(value.nanoseconds || 0) / 1e6);
+  }
+  const parsed = typeof value === 'number' ? value : Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 const SectionLogo = ({ tone }) => {
   const isPrice = tone === 'price';
   return (
@@ -126,7 +136,8 @@ export const getNewestItems = (items, limit = Number.POSITIVE_INFINITY) => (
       const orderA = a?.nouveautesOrder !== undefined ? a.nouveautesOrder : 999999;
       const orderB = b?.nouveautesOrder !== undefined ? b.nouveautesOrder : 999999;
       if (orderA !== orderB) return orderA - orderB;
-      return (b?.createdAt?.seconds || 0) - (a?.createdAt?.seconds || 0);
+      return getItemCreatedTime(b) - getItemCreatedTime(a)
+        || String(a?.id || '').localeCompare(String(b?.id || ''));
     })
     .slice(0, limit)
 );

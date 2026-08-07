@@ -18,6 +18,7 @@ export default function PublicationProgressDialog({ darkMode = false, includeSoc
   const activeIndex = phase === 'complete'
     ? phases.length
     : Math.max(0, phases.findIndex((entry) => entry.id === phase));
+  const complete = phase === 'complete';
   const percent = Math.max(1, Math.min(100, Math.round(progress * 100)));
 
   return (
@@ -31,8 +32,8 @@ export default function PublicationProgressDialog({ darkMode = false, includeSoc
       <div className={`w-full max-w-[430px] rounded-[22px] border p-5 shadow-[0_24px_70px_rgba(28,25,23,0.24)] sm:p-6 ${darkMode ? 'border-white/10 bg-[#171714] text-white' : 'border-stone-200 bg-white text-stone-950'}`}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className={`text-[9px] font-extrabold uppercase tracking-[0.14em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Publication en cours</p>
-            <h3 id="publication-progress-title" className="mt-1.5 text-[18px] font-extrabold tracking-[-0.035em]">Mise en ligne de l’ouvrage</h3>
+            <p className={`text-[9px] font-extrabold uppercase tracking-[0.14em] ${complete ? 'text-emerald-600' : (darkMode ? 'text-stone-500' : 'text-stone-400')}`}>{complete ? 'Publication réussie' : 'Publication en cours'}</p>
+            <h3 id="publication-progress-title" className="mt-1.5 text-[18px] font-extrabold tracking-[-0.035em]">{complete ? 'Le meuble est en ligne' : 'Mise en ligne de l’ouvrage'}</h3>
           </div>
           <span className={`rounded-full px-3 py-1.5 text-[11px] font-extrabold tabular-nums ${darkMode ? 'bg-white/[0.07] text-stone-300' : 'bg-stone-100 text-stone-600'}`}>{percent}%</span>
         </div>
@@ -65,7 +66,7 @@ export default function PublicationProgressDialog({ darkMode = false, includeSoc
         <p id="publication-progress-message" role="status" aria-live="polite" className={`mt-5 min-h-5 text-[10px] font-semibold ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
           {message || 'Préparation de la publication…'}
         </p>
-        <p className={`mt-2 text-[9px] leading-4 ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>Ne fermez pas cette page. La confirmation finale apparaît uniquement quand le meuble est disponible dans le catalogue.</p>
+        <p className={`mt-2 text-[9px] leading-4 ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>{complete ? 'Ouverture de Publications pour afficher le meuble qui vient d’être créé.' : 'Ne fermez pas cette page. La confirmation finale apparaît uniquement quand la galerie Nouveautés est à jour.'}</p>
       </div>
     </div>
   );
