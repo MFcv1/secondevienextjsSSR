@@ -372,6 +372,7 @@ function AdminContent() {
   };
 
   const publicationMutationsBlocked = !deploymentVerified || deploymentStale;
+  const adminAccessIsResolved = Boolean(user && isAdmin && hasStrongAuth);
 
   const handleToggleStatus = async (item, collectionName) => {
     if (publicationMutationsBlocked) return;
@@ -419,7 +420,10 @@ function AdminContent() {
     clearAdminPublicCatalogCache();
   };
 
-  if (loading) return <div className="min-h-screen bg-[#faf9f5]" />;
+  // A forced token refresh emits a short claimsStatus="loading" transition.
+  // Keep an already-resolved strong admin session mounted during that refresh:
+  // publication progress and its final view switch are local UI state.
+  if (loading && !adminAccessIsResolved) return <div className="min-h-screen bg-[#faf9f5]" />;
   if (!user) return <LoginView onSuccess={() => {}} />;
   if (!isAdmin) {
     return (

@@ -94,7 +94,10 @@ sans reinitialiser d'abord le formulaire et met en evidence la ligne creee. Un
 handoff court en `sessionStorage` preserve cette vue si l'ile admin est remontee
 pendant la transition, sans conserver de donnee catalogue.
 Pendant le traitement, les deux vues et l'apercu public sont neutralises et
-`beforeunload` avertit avant une fermeture. Sa grille droite
+`beforeunload` avertit avant une fermeture. L'espace de publication reste monte
+pendant le renouvellement du jeton administrateur: la transition
+interne de relecture des claims ne doit ni fermer la progression, ni perdre le
+passage final vers Publications. Sa grille droite
 utilise quatre rangees `auto / auto / auto / minmax(220px, 1fr)`: seule la
 quatrieme rangee absorbe l'espace vertical restant. Dimensions occupe la
 troisieme rangee, avec des controles bornes en largeur. Le formulaire ne

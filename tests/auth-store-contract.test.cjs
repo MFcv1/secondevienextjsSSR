@@ -45,6 +45,14 @@ test('only missing AAL2 requests an admin login without clearing Firebase sessio
   assert.doesNotMatch(adminIsland, /signOut\(/);
 });
 
+test('a background admin token refresh does not unmount an active publication flow', () => {
+  const adminIsland = read('app/admin/AdminAppIsland.jsx');
+
+  assert.match(adminIsland, /const adminAccessIsResolved = Boolean\(user && isAdmin && hasStrongAuth\)/);
+  assert.match(adminIsland, /if \(loading && !adminAccessIsResolved\) return/);
+  assert.doesNotMatch(adminIsland, /if \(loading\) return/);
+});
+
 test('header, menu and cart consume the shared auth snapshot', () => {
   for (const relativePath of sourceFiles.slice(2)) {
     assert.match(read(relativePath), /useAuthState/, `${relativePath} must consume useAuthState`);

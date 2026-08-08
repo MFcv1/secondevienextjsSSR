@@ -1,6 +1,6 @@
 # Registre temporaire des anomalies de recette commerce
 
-Derniere mise a jour: 2026-07-31
+Derniere mise a jour: 2026-08-08
 Statut: `OUVERT`
 Campagne: [TEST_COMMERCE_SANDBOX.md](TEST_COMMERCE_SANDBOX.md)
 Echeance de fusion et suppression: 2026-08-06
@@ -41,6 +41,7 @@ Echeance de fusion et suppression: 2026-08-06
 | A-018 | Fulfillment livraison | `MAJEURE` | `CORRIGEE_A_REQUALIFIER` | L'etat durable etait correct; le cache et la chronologie admin restaient obsoletes |
 | A-019 | Session client / checkout | `MINEURE` | `FERMEE` | Le panier et la session etaient charges apres hydratation; la reprise a permis les deux commandes |
 | A-020 | Accès administrateur Google | `BLOQUANTE` | `FERMEE` | Le premier parcours n’achevait pas le sélecteur Google; reprise explicite du compte admin réussie |
+| A-021 | Publication admin | `MAJEURE` | `CORRIGEE_A_REQUALIFIER` | Le renouvellement du jeton démontait le parcours, fermait la progression et réinitialisait la vue sur Créer |
 
 Severites:
 
@@ -863,6 +864,41 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
 - contrôle: session laissée en lecture seule, puis fermeture de la fenêtre après
   vérification de l'identité et de la protection serveur.
 
+### A-021 - Confirmation de publication fermee avant le changement de vue
+
+- statut: `CORRIGEE_A_REQUALIFIER`
+- severite: `MAJEURE`
+- phase: publication admin reelle depuis App Hosting
+- environnement: sandbox / App Hosting
+- `runId`: `run_admin_publication_20260808_popup01`
+- `productId`: `product-689bcaf1-19d3-4884-a5bd-2d2b310c05ea`, masque en
+  brouillon apres la recette
+- attendu: la confirmation reste lisible jusqu'a l'action explicite « Voir la
+  publication », puis l'onglet Publications s'ouvre sur le meuble cree.
+- observe: a 407 ms, la modale affiche 4 % et « Verification securisee »; a
+  932 ms, elle a disparu, le formulaire est vide et l'onglet Creer reste
+  actif. Le meuble devient durablement visible comme PUBLIC dans la liste
+  environ neuf secondes plus tard, apres ouverture manuelle de Publications.
+- preuve: parcours humain complet dans Chrome avec trois images et le compte
+  admin deja authentifie; aucun avertissement ni erreur console pendant la
+  publication. Le navigateur charge le rollout
+  `sv-msjjievb-33379840138c`.
+- cause racine: `AdminForm` renouvelle le jeton avant la commande. Le listener
+  Auth passe alors brievement `claimsStatus` a `loading`, tandis que
+  `AdminAppIsland` retournait immediatement son ecran de chargement pour tout
+  etat `loading`. Cette branche demontait `AdminPublicationWorkspace` et
+  `AdminForm`: la modale locale disparaissait, l'operation asynchrone perdait
+  son callback de fin, puis le remontage reprenait la vue initiale `Creer`.
+- decision de correction: conserver monte un back-office dont l'utilisateur,
+  le role admin et l'AAL2 sont deja resolus pendant la seule relecture des
+  claims. Le garde initial reste bloque tant que ces trois preuves ne sont pas
+  disponibles; les controles serveur restent autoritaires pendant la courte
+  relecture.
+- fichiers/Functions touches: `app/admin/AdminAppIsland.jsx`, contrat Auth et
+  chapitre canonique du back-office; aucune Function ni donnee catalogue.
+- resultat de requalification: correction locale en attente de deploiement et
+  d'un nouveau parcours humain complet.
+
 ## Journal de campagne
 
 | Horodatage Europe/Paris | Evenement | Resultat | Identifiants non sensibles |
@@ -870,6 +906,7 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
 | 2026-08-01 | Recette client interrompue et fermeture de securite | OTP client confirme, puis retour galerie/panier vide au checkout; aucun paiement ni mutation admin; controles restaures | `run_v2all_20260801_luna01`, `controlRevision=60`, A-019 |
 | 2026-08-01 | Reprise recette client | Panier hydrate puis deux commandes Stripe test payees: livraison 464 EUR et retrait 350 EUR; historique client confirme; OAuth admin bloque par transport | `run_v2all_20260801_luna02`, `CMD-ORD_337B35`, `CMD-ORD_7A455C`, `A-020` |
 | 2026-08-01 | Reprise ciblée accès admin | Sélecteur Google repris avec `loa.gto15@gmail.com`; back-office chargé, rôle Administrateur et authentification forte confirmés; aucune mutation | `run_v2all_20260801_luna02`, `A-020` |
+| 2026-08-08 | Publication admin reelle | Progression visible environ 0,5 s puis démontage du parcours pendant le renouvellement Auth; retour incorrect sur Creer malgré la création durable du meuble | `run_admin_publication_20260808_popup01`, `A-021`, `sv-msjjievb-33379840138c` |
 | 2026-07-30 | Initialisation du plan et du registre | En attente du preflight | - |
 | 2026-07-30 15:15 | Publication admin depuis le site Hosting | Bloquee en finalisation par une demande de connexion | `run_v2all_recipe_20260730_client_purchase_v1` |
 | 2026-07-30 15:18 | Fermeture de securite de la fenetre commerce | `v2_fixture`, mutations `read_only`, paiement offline `off` | `controlRevision=36` |
