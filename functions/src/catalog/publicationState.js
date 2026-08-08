@@ -88,8 +88,8 @@ function isRollbackActive(state, nowMs = Date.now()) {
 function computeQuietUntil({ dirtySince, nowMs, publicFields = [] }) {
     const stockOnly = publicFields.length > 0
         && publicFields.every((field) => ['stock', 'sold', 'currentPrice', 'startingPrice', 'price'].includes(field));
-    const silenceMs = stockOnly ? 1000 : 5000;
-    const maxBatchAgeMs = stockOnly ? 5000 : 30000;
+    const silenceMs = stockOnly ? 500 : 750;
+    const maxBatchAgeMs = 5000;
     const dirtySinceMs = dirtySince ? toMillis(dirtySince) : nowMs;
     return new Date(Math.min(nowMs + silenceMs, dirtySinceMs + maxBatchAgeMs));
 }

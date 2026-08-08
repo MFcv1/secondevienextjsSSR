@@ -56,6 +56,16 @@ test('Firestore public ne lit pas les meubles et public/meta a disparu', () => {
   assert.doesNotMatch(rules, /public\/meta/);
 });
 
+test('la confirmation admin lit le pointeur frais sans ouvrir un contournement public du cache', () => {
+  const route = read('app/api/admin/catalog-publication-status/route.js');
+  const publicRoute = read('app/api/catalog/route.js');
+  assert.match(route, /verifyIdToken\(token\)/);
+  assert.match(route, /decoded\.admin === true/);
+  assert.match(route, /pointerCache: 'fresh'/);
+  assert.match(route, /cache-control': 'no-store/);
+  assert.doesNotMatch(publicRoute, /searchParams\.get\('fresh'\)/);
+});
+
 test('signature HMAC est stable et lie timestamp et corps', () => {
   const first = signRevalidationBody('secret', '100', '{"revision":1}');
   assert.equal(first, signRevalidationBody('secret', '100', '{"revision":1}'));
@@ -155,7 +165,13 @@ test('dispatcher refuse redirection et JSON incoherent, et N ne peut pas marquer
     desiredRevision: 7,
     buildState: 'verifying_served_version',
   });
-  const accepted = await revalidateCatalog({ ...base, db: currentDb, fetchImpl }, input);
+  const currentFetchImpl = async (url, options = {}) => {
+    if (!options.method && !String(url).includes('/api/catalog/version')) {
+      assert.equal(currentDb.values.has('sys_catalog_live/current'), true);
+    }
+    return fetchImpl(url, options);
+  };
+  const accepted = await revalidateCatalog({ ...base, db: currentDb, fetchImpl: currentFetchImpl }, input);
   assert.equal(accepted.result, 'revalidated');
   assert.equal(currentDb.values.get('sys_catalog_publication/secondevie').servedState, 'observed');
   const signal = currentDb.values.get('sys_catalog_live/current');
@@ -187,6 +203,40 @@ test('preuve HTML ancienne reste served failed et reparable', async () => {
     stateVersion: 1, publishedRevision: 7, currentManifestSha256: 'a'.repeat(64),
     invalidationState: 'accepted', servedState: 'pending',
   });
+  const input = {
+    revision: 7,
+    manifestSha256: 'a'.repeat(64),
+    aggregateSha256,
+    impactPlanSha256: 'b'.repeat(64),
+    planHash: impactPlan.planHash,
+    impactPlan,
+  };
+  const revalidationFetch = async (url, options = {}) => {
+    if (options.method === 'POST') return response({ json: {
+      ok: true,
+      projectId: 'secondevienextjsssr',
+      acceptedRevision: 7,
+      manifestSha256: input.manifestSha256,
+      aggregateSha256,
+      planHash: impactPlan.planHash,
+      mode: impactPlan.mode,
+    } });
+    return fetchImpl(url, options);
+  };
+  await assert.rejects(revalidateCatalog({
+    db,
+    endpoint: 'https://example.test/api/revalidate-catalog',
+    secret: 'secret',
+    projectId: 'secondevienextjsssr',
+    now: () => new Date('2026-07-19T00:00:00.000Z'),
+    delayImpl: async () => {},
+    logger: () => {},
+    fetchImpl: revalidationFetch,
+  }, input), /CATALOG_SERVED_ROUTE_STALE/);
+  const earlySignal = db.values.get('sys_catalog_live/current');
+  assert.equal(earlySignal.aggregateSha256, aggregateSha256);
+  assert.equal(earlySignal.affectsGallery, true);
+
   await markCatalogRevalidationFailure(db, { revision: 7, manifestSha256: 'a'.repeat(64) }, {
     code: 'CATALOG_SERVED_ROUTE_STALE', message: 'CATALOG_SERVED_ROUTE_STALE',
   });
@@ -230,13 +280,14 @@ test('images, categorie, warmup et navigation respectent le contrat unifie', () 
   const layout = readTree('src/kit/layout');
   const category = read('src/kit/marketplace/CategoryServerView.jsx');
   const gallery = read('src/kit/marketplace/ProductSectionsServer.jsx');
+  const liveGallery = read('src/kit/marketplace/GalleryLiveProductGridIsland.jsx');
   const media = read('src/kit/marketplace/ProductCardMediaServer.jsx');
   const imageUtils = read('src/utils/imageUtils.js');
   const gridActions = read('src/kit/marketplace/GalleryGridActionsIsland.jsx');
-  const productMediaFlow = `${category}\n${gallery}\n${media}\n${gridActions}`;
+  const productMediaFlow = `${category}\n${gallery}\n${liveGallery}\n${media}\n${gridActions}`;
   assert.equal((category.match(/\{filteredItems\.map\(/g) || []).length, 1);
   assert.match(category, /priority=\{index < 3\}/);
-  assert.match(gallery, /priority=\{false\}/);
+  assert.match(liveGallery, /priority=\{false\}/);
   assert.match(media, /srcSet=\{cardImage\.srcSet/);
   assert.doesNotMatch(media, /dominantColor/);
   assert.doesNotMatch(media, /blurDataUrl/);
@@ -285,12 +336,18 @@ test('endpoint version retourne contractuellement 200 puis 304 sans donnees prod
 
 test('ile de version ecoute un seul document uniquement dans les onglets visibles et sans polling', () => {
   const island = read('src/kit/marketplace/CatalogVersionSyncIsland.jsx');
+  const liveGallery = read('src/kit/marketplace/GalleryLiveProductGridIsland.jsx');
   assert.match(island, /doc\(db, 'sys_catalog_live', 'current'\)/);
   assert.match(island, /document\.visibilityState !== 'visible'/);
   assert.match(island, /visibilitychange/);
   assert.match(island, /pageshow/);
   assert.match(island, /router\.refresh\(\)/);
   assert.match(island, /refreshedVersionsRef/);
+  assert.match(island, /confirmSignaledVersion/);
+  assert.match(liveGallery, /api\/catalog\?scope=cards&limit=48/);
+  assert.match(liveGallery, /payload\?\.aggregateSha256 === aggregateSha256/);
+  assert.match(liveGallery, /sv:catalog-version-changed/);
+  assert.match(liveGallery, /setRelease/);
   assert.doesNotMatch(island, /setInterval|furniture/);
   const rules = read('firestore.rules');
   assert.match(rules, /match \/sys_catalog_live\/\{docId\}[\s\S]*allow read: if docId == 'current';[\s\S]*allow write: if false;/);

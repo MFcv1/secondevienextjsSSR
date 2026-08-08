@@ -22,6 +22,7 @@ const {
   assertLease,
   buildRollbackControlUpdate,
   buildRollbackPreparationUpdate,
+  computeQuietUntil,
   initialPublicationState,
   isRollbackActive,
   needsCatalogRevalidation,
@@ -125,6 +126,22 @@ const release = async (bucket, revision) => {
     projection, inventory, revision, generatedAt: `2026-07-18T00:00:0${revision}.000Z`,
   }), revision);
 };
+
+test('le debounce catalogue privilegie la publication interactive sans perdre la borne de lot', () => {
+  const nowMs = Date.parse('2026-08-08T18:00:00.000Z');
+  assert.equal(
+    computeQuietUntil({ nowMs, publicFields: ['name', 'images'] }).getTime() - nowMs,
+    750
+  );
+  assert.equal(
+    computeQuietUntil({ nowMs, publicFields: ['stock', 'currentPrice'] }).getTime() - nowMs,
+    500
+  );
+  assert.equal(
+    computeQuietUntil({ dirtySince: new Date(nowMs - 4800), nowMs, publicFields: ['name'] }).getTime() - nowMs,
+    200
+  );
+});
 
 test('publication CAS conserve current, previous et last-known-good valides', async () => {
   const bucket = new FakeBucket();

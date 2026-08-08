@@ -58,6 +58,7 @@ export default function GalleryProductCardServer({
     <div
       className={`group relative flex touch-manipulation flex-col ${compact ? 'gap-3 md:gap-6' : 'gap-6'} w-full text-inherit ${layoutMode === 'list' ? 'flex-row items-center gap-12 border-b border-stone-200 pb-12' : ''}`}
       data-gallery-product-card
+      data-product-id={productId || undefined}
       data-product-url={productUrl}
     >
       <div

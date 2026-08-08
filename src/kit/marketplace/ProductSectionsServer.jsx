@@ -1,11 +1,8 @@
 import { Fragment } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, AtSign, Bookmark, ChevronLeft, ChevronRight, CreditCard, Heart, HeartHandshake, Instagram, LockKeyhole, Mail, MessageCircle, Quote, Send, ShieldCheck, Sparkles, Star, Tag, Truck } from 'lucide-react';
-import GalleryProductCardServer from './GalleryProductCardServer';
-import { ProductGridMoreButtonIsland } from './GalleryFixedSectionsInteractions';
+import GalleryLiveProductGridIsland from './GalleryLiveProductGridIsland';
 import InstagramFloatingTokensReveal from './InstagramFloatingTokensReveal';
-
-const PRODUCT_GRID_INITIAL_COUNT = 10;
 
 const getPublishedItems = (items) => (
   Array.isArray(items) ? items.filter((item) => item?.status === 'published') : []
@@ -85,47 +82,31 @@ const ProductGridSectionServer = ({
   badgeLabel,
   darkMode = false,
   hideWhenEmpty = false,
+  mode = 'newest',
+  catalogVersion = '',
 } = {}) => {
-  if (hideWhenEmpty && !items.length) return null;
+  const selectedItems = mode === 'small-prices' ? getSmallPriceItems(items) : getNewestItems(items);
 
   return (
     <section
       id={id}
       className={`gallery-deferred-render ${className}`}
       data-expandable-product-grid
+      hidden={hideWhenEmpty && !selectedItems.length}
     >
       <div className="mb-10 flex items-center">
         {heading}
       </div>
 
-      <div id={`${id}-grid`} className="anim-grid grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-4 xl:grid-cols-5 xl:gap-6">
-        {items.map((item, index) => (
-          <div
-            key={item.id || index}
-            className="product-card-wrap relative"
-            data-product-grid-item
-            hidden={index >= PRODUCT_GRID_INITIAL_COUNT}
-          >
-            {badgeLabel ? (
-              <div className="absolute left-2 top-2 z-10 rounded-sm bg-[#d4e1d9] px-2 py-1 text-[8px] font-bold uppercase tracking-widest text-[#2d4033] dark:bg-[#203126]/92 dark:text-[#c8ddca] md:text-[9px]">
-                {badgeLabel}
-              </div>
-            ) : null}
-            <GalleryProductCardServer
-              item={item}
-              layoutMode="grid"
-              compact
-              priority={false}
-            />
-          </div>
-        ))}
-      </div>
-
-      {items.length > PRODUCT_GRID_INITIAL_COUNT ? (
-        <div className="product-grid-more-wrap mt-10 flex justify-center">
-          <ProductGridMoreButtonIsland sectionId={id} darkMode={darkMode} />
-        </div>
-      ) : null}
+      <GalleryLiveProductGridIsland
+        sectionId={id}
+        initialItems={selectedItems}
+        initialCatalogVersion={catalogVersion}
+        mode={mode}
+        badgeLabel={badgeLabel}
+        darkMode={darkMode}
+        hideWhenEmpty={hideWhenEmpty}
+      />
     </section>
   );
 };
@@ -154,25 +135,28 @@ export const getSmallPriceItems = (items, limit = Number.POSITIVE_INFINITY) => (
     .slice(0, limit)
 );
 
-export const ProductArrivalsSectionServer = ({ items, darkMode = false } = {}) => (
+export const ProductArrivalsSectionServer = ({ items, darkMode = false, catalogVersion = '' } = {}) => (
   <ProductGridSectionServer
     id="gallery-pieces"
     className="scroll-mt-24 bg-[#FAFAF9] px-4 pb-[48px] pt-2 text-[#181716] transition-colors duration-700 dark:bg-[#080807] dark:text-[#f5efe6] md:px-12 md:py-[60px] lg:px-16"
     heading={<SectionHeading>Nouveautes</SectionHeading>}
-    items={getNewestItems(items)}
+    items={items}
     badgeLabel="Nouveau"
     darkMode={darkMode}
+    catalogVersion={catalogVersion}
   />
 );
 
-export const ProductSmallPricesSectionServer = ({ items, darkMode = false } = {}) => (
+export const ProductSmallPricesSectionServer = ({ items, darkMode = false, catalogVersion = '' } = {}) => (
   <ProductGridSectionServer
     id="gallery-small-prices"
     className="bg-[#FAFAF9] px-4 pb-[48px] pt-[60px] text-[#181716] transition-colors duration-700 dark:bg-[#080807] dark:text-[#f5efe6] md:px-12 md:py-[60px] lg:px-16"
     heading={<SectionHeading tone="price">Petits Prix</SectionHeading>}
-    items={getSmallPriceItems(items)}
+    items={items}
+    mode="small-prices"
     darkMode={darkMode}
     hideWhenEmpty
+    catalogVersion={catalogVersion}
   />
 );
 

@@ -41,7 +41,7 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 | `inventory` | Vue Globale | `GlobalInventoryView` | ordres editoriaux et stock catalogue |
 | `studio` | Studio | `AdminStudio` | outils de contenu/creation |
 | `homepage` | Personnalisation | `AdminHomepage` | hero, categories, contenus vitrine |
-| `orders` | Ventes | `AdminOrders` | commandes et logistique |
+| `orders` | Ventes | `AdminOrders` + `components/orders/*` | commandes et logistique, liste dense et detail maitre/detail |
 | `payment_links` | Liens de paiement | `AdminPaymentLinks` | reservation de meubles et paiement Stripe prive sans compte |
 | `invoices` | Factures | `AdminInvoices` | selection de meubles, brouillons, apercu A4, emission PDF verrouillee et envoi e-mail |
 | `returns` | Retours | `AdminReturns` | remboursements Stripe |
@@ -84,15 +84,36 @@ Firestore. Le formulaire applique ensuite contenu, offre, stock et statut public
 avec une seule commande idempotente et une seule ecriture produit. Un clic Publier ne peut
 donc plus laisser apparaitre un brouillon technique sans photo: si l'upload
 echoue, aucun meuble n'est cree; s'il reussit, le produit est finalise public.
-Une fenetre modale affiche la progression reelle des photos, de l'ecriture et
-de la projection. Le succes n'est confirme qu'apres lecture du produit dans
-`/api/catalog`, puis observation de la revision dans
-`sys_catalog_live/current`; ce second signal n'est emis qu'apres preuve que le
-HTML de la galerie a ete revalide. L'interface maintient ensuite un ecran de
-succes jusqu'au clic `Voir la publication`; ce clic bascule vers Publications
-sans reinitialiser d'abord le formulaire et met en evidence la ligne creee. Un
-handoff court en `sessionStorage` preserve cette vue si l'ile admin est remontee
-pendant la transition, sans conserver de donnee catalogue.
+Une fenetre modale affiche les operations reelles des photos, de l'ecriture et
+de la projection. Elle n'affiche plus de pourcentage interpretable comme une
+duree: les coches sont autoritaires et chaque libelle ne passe au vert qu'apres
+la fin de son operation. La verification securisee couvre le renouvellement du
+jeton et le preflight; Photos couvre la generation puis l'envoi des variantes;
+Enregistrement couvre la commande produit; Galerie couvre la construction et la
+confirmation de la release publique. Le succes n'est confirme qu'apres lecture
+du produit dans `/api/catalog`, puis confirmation de la meme identite par
+`/api/catalog/version`. Le HTML ISR de `/` continue sa revalidation en
+arriere-plan: il n'est plus un verrou du pop-up, car les reprises Cloud Tasks
+peuvent le faire converger plusieurs minutes apres un snapshot public deja
+valide. L'attente bornee reste de cinq minutes pour la construction du
+catalogue. Au succes, l'interface bascule automatiquement vers
+Publications sans reinitialiser d'abord le formulaire et met en evidence la
+ligne creee. Un handoff court en `sessionStorage` preserve cette vue si l'ile
+admin est remontee pendant la transition, sans conserver de donnee catalogue.
+La table Publications reste montee mais masquee pendant la composition: sa
+premiere page et ses compteurs se chargent en arriere-plan, afin que la bascule
+finale n'affiche pas un compteur global rempli au-dessus d'une liste encore
+vide. Le formulaire est remonte a neuf uniquement apres une publication
+reussie. La confirmation persistante apparait en bas a droite pour ne pas
+recouvrir les commandes superieures du back-office. Son lisere vert porte une
+rotation lumineuse legere, neutralisee par `prefers-reduced-motion`. Le
+conteneur interactif conserve les evenements pointeur jusque sur Safari/iPad;
+son bouton est un lien Next natif, pris en charge par la transition galerie,
+qui cible l'identifiant du meuble et revele sa carte. Ce lien demande une
+transition courte sans logo ni signature Atelier. Si le HTML ISR n'inclut pas
+encore le meuble, `/api/catalog?id=...` l'insere directement dans la grille
+Nouveautes; aucune carte de secours distincte ne doit creer de vide ou de
+doublon pendant la convergence de la release.
 Pendant le traitement, les deux vues et l'apercu public sont neutralises et
 `beforeunload` avertit avant une fermeture. L'espace de publication reste monte
 pendant le renouvellement du jeton administrateur: la transition
@@ -198,7 +219,14 @@ Apres mutation:
 ## 5. Ventes, retours et paiements
 
 - `AdminOrders`: consultation, statut logistique, modale d'expedition et
-  actions admissibles;
+  actions admissibles. La vue est organisee en maitre/detail: liste dense
+  segmentee par `A traiter / En cours / Terminees`, recherche locale, puis
+  panneau de detail ouvrant sur l'action attendue, le parcours horodate, le
+  panier et le contact. Le detail passe en feuille sous `xl`. Les fonctions
+  de derivation (avancee en quatre temps, segments, recherche, colonnes CSV)
+  sont isolees dans `components/orders/orderPresentation.js` et ne lisent ni
+  n'ecrivent aucune donnee. Le detail de conception est dans
+  [REVAMP_VENTES.md](REVAMP_VENTES.md);
 - `AdminInvoices`: creation assistee de factures manuelles et reprise des
   brouillons;
 - `AdminReturns`: remboursement, synchronisation et e-mail client;

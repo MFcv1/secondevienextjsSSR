@@ -126,10 +126,12 @@ async function saveImmutable(file, buffer, metadata = {}) {
 }
 
 async function verifyImmutableFile(file, expectedBuffer) {
-    const [metadata] = await file.getMetadata();
+    const [[metadata], [downloaded]] = await Promise.all([
+        file.getMetadata(),
+        file.download()
+    ]);
     const size = Number(metadata.size);
     if (size !== expectedBuffer.length) throw new Error(`SNAPSHOT_SIZE_MISMATCH:${file.name}`);
-    const [downloaded] = await file.download();
     if (sha256(downloaded.toString('utf8')) !== sha256(expectedBuffer.toString('utf8'))) {
         throw new Error(`SNAPSHOT_HASH_MISMATCH:${file.name}`);
     }
@@ -139,23 +141,31 @@ async function verifyImmutableFile(file, expectedBuffer) {
 async function writeImmutableRelease(bucket, { buffers, manifest }, revision) {
     const releaseId = `r${revision}-${manifest.aggregateSha256.slice(0, 12)}`;
     const releasePrefix = `${SNAPSHOT_ROOT}/releases/${releaseId}`;
-    const orderedNames = Object.keys(buffers)
-        .filter((name) => name !== 'manifest.json')
-        .sort((left, right) => (left === 'checksums.json' ? 1 : 0) - (right === 'checksums.json' ? 1 : 0));
-    orderedNames.push('manifest.json');
-
     const generations = {};
-    for (const name of orderedNames) {
-        const file = bucket.file(`${releasePrefix}/${name}`);
-        await saveImmutable(file, buffers[name], {
-            metadata: {
-                schemaVersion: '1',
-                revision: String(revision),
-                sha256: sha256(buffers[name].toString('utf8'))
-            }
-        });
-        generations[name] = await verifyImmutableFile(file, buffers[name]);
-    }
+    const payloadNames = Object.keys(buffers)
+        .filter((name) => !['checksums.json', 'manifest.json'].includes(name))
+        .sort();
+    const persistBatch = async (names) => {
+        const results = await Promise.all(names.map(async (name) => {
+            const file = bucket.file(`${releasePrefix}/${name}`);
+            await saveImmutable(file, buffers[name], {
+                metadata: {
+                    schemaVersion: '1',
+                    revision: String(revision),
+                    sha256: sha256(buffers[name].toString('utf8'))
+                }
+            });
+            return [name, await verifyImmutableFile(file, buffers[name])];
+        }));
+        results.forEach(([name, generation]) => { generations[name] = generation; });
+    };
+
+    // La release reste invisible tant que current.json ne la reference pas.
+    // Les payloads independants peuvent donc etre ecrits en parallele; le
+    // registre de checksums et le manifeste ferment ensuite la release.
+    await persistBatch(payloadNames);
+    if (buffers['checksums.json']) await persistBatch(['checksums.json']);
+    await persistBatch(['manifest.json']);
 
     return {
         releaseId,
@@ -280,9 +290,15 @@ async function verifyStoredRelease(bucket, pointer) {
         throw new Error('CATALOG_IMPACT_POINTER_IDENTITY_MISMATCH');
     }
     const prefix = normalizedPointer.manifestPath.replace(/\/manifest\.json$/, '');
+    const bundleNames = ['catalog-full.json', 'catalog-cards.json'];
+    const impactPlanPath = normalizedPointer.impactPlanPath || `${prefix}/impact-plan.json`;
+    const [bundleObjects, impactObject] = await Promise.all([
+        Promise.all(bundleNames.map((name) => readJsonObject(bucket, `${prefix}/${name}`))),
+        manifest.files?.['impact-plan.json'] ? readJsonObject(bucket, impactPlanPath) : Promise.resolve(null)
+    ]);
     const bundles = {};
-    for (const name of ['catalog-full.json', 'catalog-cards.json']) {
-        const object = await readJsonObject(bucket, `${prefix}/${name}`);
+    bundleNames.forEach((name, index) => {
+        const object = bundleObjects[index];
         if (!object) throw new Error(`CATALOG_BUNDLE_MISSING:${name}`);
         if (sha256(object.buffer.toString('utf8')) !== manifest.files?.[name]?.sha256) {
             throw new Error(`CATALOG_BUNDLE_HASH_MISMATCH:${name}`);
@@ -291,7 +307,7 @@ async function verifyStoredRelease(bucket, pointer) {
             throw new Error(`CATALOG_BUNDLE_REVISION_MISMATCH:${name}`);
         }
         bundles[name] = object.value;
-    }
+    });
     const full = bundles['catalog-full.json']?.products;
     const cards = bundles['catalog-cards.json']?.products;
     if (!Array.isArray(full) || !Array.isArray(cards) || full.length !== cards.length) {
@@ -300,9 +316,7 @@ async function verifyStoredRelease(bucket, pointer) {
     if (full.length !== Number(manifest.productCount)) throw new Error('CATALOG_PRODUCT_COUNT_MISMATCH');
     if (full.some((product, index) => product.id !== cards[index]?.id)) throw new Error('CATALOG_CARD_ORDER_MISMATCH');
     let impactPlan = null;
-    const impactPlanPath = normalizedPointer.impactPlanPath || `${prefix}/impact-plan.json`;
     if (manifest.files?.['impact-plan.json']) {
-        const impactObject = await readJsonObject(bucket, impactPlanPath);
         if (!impactObject) throw new Error('CATALOG_IMPACT_PLAN_MISSING');
         if (sha256(impactObject.buffer.toString('utf8')) !== manifest.files['impact-plan.json'].sha256) {
             throw new Error('CATALOG_IMPACT_PLAN_HASH_MISMATCH');
@@ -312,7 +326,7 @@ async function verifyStoredRelease(bucket, pointer) {
             aggregateSha256: manifest.aggregateSha256
         });
     }
-    return { pointer: normalizedPointer, manifest, productCount: full.length, impactPlan };
+    return { pointer: normalizedPointer, manifest, productCount: full.length, products: full, cards, impactPlan };
 }
 
 function createPointer({
@@ -345,9 +359,7 @@ function createPointer({
 
 async function readReleaseProducts(bucket, pointer) {
     const verified = await verifyStoredRelease(bucket, pointer);
-    const prefix = verified.pointer.manifestPath.replace(/\/manifest\.json$/, '');
-    const fullObject = await readJsonObject(bucket, `${prefix}/catalog-full.json`);
-    return { pointer: verified.pointer, manifest: verified.manifest, products: fullObject.value.products };
+    return { pointer: verified.pointer, manifest: verified.manifest, products: verified.products };
 }
 
 async function readImpactPlan(bucket, pointer) {
@@ -417,6 +429,10 @@ async function readVerifiedPointerOrNull(bucket, path) {
 async function writeFallbackPointers(bucket, { previous, lastKnownGood }) {
     const previousPointer = await verifiedPointerOrNull(bucket, previous);
     const lastKnownGoodPointer = await verifiedPointerOrNull(bucket, lastKnownGood);
+    return writeVerifiedFallbackPointers(bucket, { previousPointer, lastKnownGoodPointer });
+}
+
+async function writeVerifiedFallbackPointers(bucket, { previousPointer, lastKnownGoodPointer }) {
     if (lastKnownGoodPointer && !sameRelease(lastKnownGoodPointer, previousPointer)) {
         await writePointer(bucket, POINTER_PATHS.lastKnownGood, lastKnownGoodPointer);
     }
@@ -444,8 +460,8 @@ async function publishCurrentPointer(bucket, {
         impactPlanSha256: release.impactPlanSha256,
         publishedAt: new Date().toISOString()
     });
-    const previousPointer = await verifiedPointerOrNull(bucket, previous);
-    const [storedPreviousPointer, suppliedLastKnownGoodPointer, storedLastKnownGoodPointer] = await Promise.all([
+    const [previousPointer, storedPreviousPointer, suppliedLastKnownGoodPointer, storedLastKnownGoodPointer] = await Promise.all([
+        verifiedPointerOrNull(bucket, previous),
         readVerifiedPointerOrNull(bucket, POINTER_PATHS.previous),
         verifiedPointerOrNull(bucket, lastKnownGood),
         readVerifiedPointerOrNull(bucket, POINTER_PATHS.lastKnownGood)
@@ -460,7 +476,7 @@ async function publishCurrentPointer(bucket, {
     if (typeof onCurrentCommitted === 'function') {
         await onCurrentCommitted({ ...published, previousPointer, lastKnownGoodPointer });
     }
-    const fallbacks = await writeFallbackPointers(bucket, { previous: previousPointer, lastKnownGood: lastKnownGoodPointer });
+    const fallbacks = await writeVerifiedFallbackPointers(bucket, { previousPointer, lastKnownGoodPointer });
     return {
         ...published,
         ...fallbacks

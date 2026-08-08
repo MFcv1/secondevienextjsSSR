@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { BookOpen, CheckCircle2, ExternalLink, Eye, Plus, Sparkles, X } from 'lucide-react';
+import { ArrowRight, BookOpen, CheckCircle2, Eye, Plus, Sparkles, X } from 'lucide-react';
 import AdminForm from './AdminForm';
 import AdminItemList from './AdminItemList';
 
@@ -60,10 +60,12 @@ export default function AdminPublicationWorkspace({
   const [publicationBusy, setPublicationBusy] = React.useState(false);
   const [recentProductId, setRecentProductId] = React.useState(null);
   const [successNotice, setSuccessNotice] = React.useState(null);
+  const [formRevision, setFormRevision] = React.useState(0);
   const handleSaved = React.useCallback((savedProduct = {}) => {
     const handoff = savedProduct.productId ? savePublicationHandoff(savedProduct) : null;
     setRecentProductId(handoff?.productId || savedProduct.productId || null);
     setSuccessNotice(handoff);
+    setFormRevision((current) => current + 1);
     setView('history');
   }, []);
 
@@ -142,20 +144,21 @@ export default function AdminPublicationWorkspace({
       </div>
 
       {view === 'history' && successNotice ? (
-        <div className="pointer-events-none fixed right-4 top-4 z-[80] w-[min(420px,calc(100vw-2rem))] sm:right-6 sm:top-6" role="status" aria-live="polite">
-          <div className={`pointer-events-auto rounded-[20px] border p-4 shadow-[0_24px_70px_rgba(28,25,23,0.22)] ${darkMode ? 'border-emerald-400/20 bg-[#171714] text-white' : 'border-emerald-200 bg-white text-stone-950'}`}>
-            <div className="flex items-start gap-3">
+        <div className="pointer-events-auto fixed bottom-4 right-4 z-[80] w-[min(420px,calc(100vw-2rem))] sm:bottom-6 sm:right-6" role="status" aria-live="polite">
+          <div className={`publication-success-toast ${darkMode ? 'publication-success-toast--dark text-white' : 'text-stone-950'}`}>
+            <span className="publication-success-toast__orbit" aria-hidden="true" />
+            <div className="publication-success-toast__surface flex items-start gap-3 p-4">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-emerald-500 text-white">
                 <CheckCircle2 size={19} strokeWidth={2.3} />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-extrabold">Publication réussie</p>
                 <p className={`mt-1 text-[11px] leading-5 ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
-                  <span className="font-bold">{successNotice.name}</span> est public et confirmé dans la galerie Nouveautés.
+                  <span className="font-bold">{successNotice.name}</span> est public. La galerie se synchronise automatiquement.
                 </p>
-                <Link href="/#gallery-pieces" target="_blank" className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-stone-950 px-4 text-[10px] font-extrabold text-white transition-colors duration-200 hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
+                <Link href={`/?focusProduct=${encodeURIComponent(successNotice.productId)}#gallery-pieces`} data-route-transition-variant="galleryReturn" className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-stone-950 px-4 text-[10px] font-extrabold text-white transition-colors duration-200 hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                   Voir dans la galerie
-                  <ExternalLink size={12} strokeWidth={1.8} />
+                  <ArrowRight size={12} strokeWidth={1.8} />
                 </Link>
               </div>
               <button type="button" onClick={() => setSuccessNotice(null)} aria-label="Fermer la confirmation" className={`grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors duration-200 ${darkMode ? 'text-stone-500 hover:bg-white/[0.07] hover:text-white' : 'text-stone-400 hover:bg-stone-100 hover:text-stone-950'}`}>
@@ -167,8 +170,9 @@ export default function AdminPublicationWorkspace({
       ) : null}
 
       <div className="min-h-0 flex-1">
-        {view === 'create' ? (
+        <div className={view === 'create' ? 'h-full min-h-0' : 'hidden'} aria-hidden={view !== 'create'}>
           <AdminForm
+            key={formRevision}
             editData={editData}
             onCancelEdit={onCancelEdit}
             onSaved={handleSaved}
@@ -177,7 +181,8 @@ export default function AdminPublicationWorkspace({
             darkMode={darkMode}
             mutationsBlocked={mutationsBlocked}
           />
-        ) : (
+        </div>
+        <div className={view === 'history' ? 'h-full min-h-0' : 'hidden'} aria-hidden={view !== 'history'}>
           <AdminItemList
             collectionName={collectionName}
             darkMode={darkMode}
@@ -188,7 +193,7 @@ export default function AdminPublicationWorkspace({
             onMarkAsSold={onMarkAsSold}
             onMarkAsAvailable={onMarkAsAvailable}
           />
-        )}
+        </div>
       </div>
     </section>
   );

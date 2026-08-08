@@ -45,9 +45,36 @@ async function readJsonResponse(response, errorCode) {
     try { return await response.json(); } catch { throw new Error(`${errorCode}_INVALID_JSON`); }
 }
 
+async function verifyPublishedCatalogVersion(fetchImpl, endpoint, identity, delayImpl = delay) {
+    const versionUrl = new URL('/api/catalog/version', new URL(endpoint).origin);
+    const attempts = [0, 300, 900];
+    let lastError = null;
+    for (const waitMs of attempts) {
+        if (waitMs) await delayImpl(waitMs);
+        try {
+            const response = await fetchImpl(versionUrl, {
+                redirect: 'manual',
+                headers: { accept: 'application/json' },
+                signal: AbortSignal.timeout(8000)
+            });
+            if (!response.ok) throw new Error(`CATALOG_SERVED_VERSION_HTTP_${response.status}`);
+            const version = await readJsonResponse(response, 'CATALOG_SERVED_VERSION');
+            if (Number(version.revision) !== Number(identity.revision)
+                || String(version.aggregateSha256 || '') !== String(identity.aggregateSha256)) {
+                throw new Error('CATALOG_SERVED_VERSION_STALE');
+            }
+            return true;
+        } catch (error) {
+            lastError = error;
+        }
+    }
+    const stale = new Error(lastError?.message || 'CATALOG_SERVED_VERSION_FAILED');
+    stale.code = String(stale.message).startsWith('CATALOG_SERVED') ? stale.message : 'CATALOG_SERVED_VERSION_FAILED';
+    throw stale;
+}
+
 async function verifyServedCatalog(fetchImpl, endpoint, identity, impactPlan, delayImpl = delay) {
     const origin = new URL(endpoint).origin;
-    const versionUrl = new URL('/api/catalog/version', origin);
     const productPath = (impactPlan.paths || []).find((path) => path.startsWith('/produit/'));
     const categoryPath = (impactPlan.paths || []).find((path) => path.startsWith('/categorie/'));
     const routePaths = [...new Set([
@@ -60,17 +87,7 @@ async function verifyServedCatalog(fetchImpl, endpoint, identity, impactPlan, de
     for (const waitMs of attempts) {
         if (waitMs) await delayImpl(waitMs);
         try {
-            const versionResponse = await fetchImpl(versionUrl, {
-                redirect: 'manual',
-                headers: { accept: 'application/json' },
-                signal: AbortSignal.timeout(8000)
-            });
-            if (!versionResponse.ok) throw new Error(`CATALOG_SERVED_VERSION_HTTP_${versionResponse.status}`);
-            const version = await readJsonResponse(versionResponse, 'CATALOG_SERVED_VERSION');
-            if (Number(version.revision) !== Number(identity.revision)
-                || String(version.aggregateSha256 || '') !== String(identity.aggregateSha256)) {
-                throw new Error('CATALOG_SERVED_VERSION_STALE');
-            }
+            await verifyPublishedCatalogVersion(fetchImpl, endpoint, identity, async () => {});
             for (const path of routePaths) {
                 const routeResponse = await fetchImpl(new URL(path, origin), {
                     redirect: 'manual',
@@ -172,16 +189,48 @@ async function revalidateCatalog(dependencies, input) {
         }, { merge: true });
     });
 
-    await verifyServedCatalog(fetchImpl, endpoint, { revision, manifestSha256, aggregateSha256 }, impactPlan, delayImpl);
+    await verifyPublishedCatalogVersion(
+        fetchImpl,
+        endpoint,
+        { revision, manifestSha256, aggregateSha256 },
+        delayImpl
+    );
 
-    const currentIdentityRevalidated = await db.runTransaction(async (transaction) => {
+    await db.runTransaction(async (transaction) => {
         const controlRef = db.doc(CONTROL_DOCUMENT);
         const signalRef = db.doc('sys_catalog_live/current');
         const snap = await transaction.get(controlRef);
         const state = snap.data() || {};
-        if (!catalogIdentityMatches(state, revision, manifestSha256)) return false;
+        if (!catalogIdentityMatches(state, revision, manifestSha256)) return;
         const signalSnap = await transaction.get(signalRef);
         const currentSignal = signalSnap.exists ? signalSnap.data() : {};
+        transaction.set(controlRef, {
+            stateVersion: nextStateVersion(state),
+            buildState: 'verifying_served_html',
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        if (String(currentSignal.aggregateSha256 || '') !== aggregateSha256) {
+            transaction.set(signalRef, {
+                schemaVersion: 1,
+                revision,
+                aggregateSha256,
+                changedProductIds: (impactPlan.changedProductIds || []).slice(0, 120),
+                affectedCategoryIds: (impactPlan.affectedCategoryIds || []).slice(0, 30),
+                affectsGallery: Boolean(impactPlan.affectsGallery),
+                affectsSearch: Boolean(impactPlan.affectsSearch),
+                full: impactPlan.mode === 'full',
+                publishedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+        }
+    });
+
+    await verifyServedCatalog(fetchImpl, endpoint, { revision, manifestSha256, aggregateSha256 }, impactPlan, delayImpl);
+
+    const currentIdentityRevalidated = await db.runTransaction(async (transaction) => {
+        const controlRef = db.doc(CONTROL_DOCUMENT);
+        const snap = await transaction.get(controlRef);
+        const state = snap.data() || {};
+        if (!catalogIdentityMatches(state, revision, manifestSha256)) return false;
         transaction.set(controlRef, {
             stateVersion: nextStateVersion(state),
             revalidatedRevision: revision,
@@ -202,19 +251,6 @@ async function revalidateCatalog(dependencies, input) {
             lastRevalidatedAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
-        if (String(currentSignal.aggregateSha256 || '') !== aggregateSha256) {
-            transaction.set(signalRef, {
-                schemaVersion: 1,
-                revision,
-                aggregateSha256,
-                changedProductIds: (impactPlan.changedProductIds || []).slice(0, 120),
-                affectedCategoryIds: (impactPlan.affectedCategoryIds || []).slice(0, 30),
-                affectsGallery: Boolean(impactPlan.affectsGallery),
-                affectsSearch: Boolean(impactPlan.affectsSearch),
-                full: impactPlan.mode === 'full',
-                publishedAt: admin.firestore.FieldValue.serverTimestamp()
-            });
-        }
         return true;
     });
     const result = currentIdentityRevalidated ? 'revalidated' : 'stale';
@@ -251,5 +287,6 @@ module.exports = {
     markCatalogRevalidationFailure,
     revalidateCatalog,
     signRevalidationBody,
+    verifyPublishedCatalogVersion,
     verifyServedCatalog
 };

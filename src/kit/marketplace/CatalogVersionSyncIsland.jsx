@@ -8,6 +8,9 @@ const PRODUCT_RETURN_PENDING_KEY = 'secondevie:product-return-pending:v1';
 const PRODUCT_RETURN_KEY = 'secondevie:product-return:v1';
 const PRODUCT_RETURN_PENDING_ATTRIBUTE = 'data-product-return-pending';
 const PRODUCT_RETURN_COMMIT_SURVIVAL_MS = 5000;
+const SIGNAL_CONFIRMATION_DELAYS_MS = [0, 400, 1200, 2500];
+
+const wait = (duration) => new Promise((resolve) => window.setTimeout(resolve, duration));
 
 const currentHref = () => (
   window.location.pathname + (window.location.search || '') + (window.location.hash || '')
@@ -96,6 +99,28 @@ export default function CatalogVersionSyncIsland({
     return request;
   }, [refreshForVersion]);
 
+  const confirmSignaledVersion = useCallback(async (expectedAggregateSha256, requestId) => {
+    for (const delayMs of SIGNAL_CONFIRMATION_DELAYS_MS) {
+      if (!activeRef.current || requestId !== signalRequestIdRef.current) return false;
+      if (delayMs) await wait(delayMs);
+      if (!activeRef.current || requestId !== signalRequestIdRef.current) return false;
+      try {
+        const response = await fetch('/api/catalog/version', {
+          cache: 'no-store',
+          headers: { accept: 'application/json' },
+        });
+        if (!response.ok) continue;
+        const payload = await response.json();
+        if (payload.aggregateSha256 !== expectedAggregateSha256) continue;
+        refreshForVersion(expectedAggregateSha256);
+        return true;
+      } catch {
+        // Une confirmation bornee suivante couvre une instance API momentanement en retard.
+      }
+    }
+    return false;
+  }, [refreshForVersion]);
+
   const stopSignal = useCallback(() => {
     signalRequestIdRef.current += 1;
     unsubscribeRef.current?.();
@@ -118,14 +143,14 @@ export default function CatalogVersionSyncIsland({
         if (!activeRef.current) return;
         const signal = snapshot.exists() ? snapshot.data() : null;
         if (!isSignalRelevant(signal, routeKind, routeId)) return;
-        refreshForVersion(signal.aggregateSha256);
+        void confirmSignaledVersion(signal.aggregateSha256, requestId);
       }, () => {
         stopSignal();
       });
     } catch {
       stopSignal();
     }
-  }, [refreshForVersion, routeId, routeKind, stopSignal]);
+  }, [confirmSignaledVersion, routeId, routeKind, stopSignal]);
 
   useEffect(() => {
     activeRef.current = true;

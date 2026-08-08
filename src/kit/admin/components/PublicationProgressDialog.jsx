@@ -14,10 +14,8 @@ export default function PublicationProgressDialog({
   includeSocial = false,
   open,
   phase,
-  progress,
   message,
   productName,
-  onShowPublication,
 }) {
   if (!open) return null;
 
@@ -28,7 +26,7 @@ export default function PublicationProgressDialog({
     ? phases.length
     : Math.max(0, phases.findIndex((entry) => entry.id === phase));
   const complete = phase === 'complete';
-  const percent = Math.max(1, Math.min(100, Math.round(progress * 100)));
+  const stepLabel = complete ? 'Terminé' : `Étape ${Math.min(activeIndex + 1, phases.length)}/${phases.length}`;
 
   return (
     <div
@@ -45,20 +43,10 @@ export default function PublicationProgressDialog({
             <h3 id="publication-progress-title" className="mt-1.5 text-[18px] font-extrabold tracking-[-0.035em]">{complete ? 'Le meuble est en ligne' : 'Mise en ligne de l’ouvrage'}</h3>
             {complete && productName ? <p className={`mt-1 text-[11px] font-semibold ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>{productName}</p> : null}
           </div>
-          <span className={`rounded-full px-3 py-1.5 text-[11px] font-extrabold tabular-nums ${darkMode ? 'bg-white/[0.07] text-stone-300' : 'bg-stone-100 text-stone-600'}`}>{percent}%</span>
+          <span className={`rounded-full px-3 py-1.5 text-[11px] font-extrabold tabular-nums ${darkMode ? 'bg-white/[0.07] text-stone-300' : 'bg-stone-100 text-stone-600'}`}>{stepLabel}</span>
         </div>
 
-        <div
-          className={`mt-5 h-2 overflow-hidden rounded-full ${darkMode ? 'bg-white/[0.07]' : 'bg-stone-100'}`}
-          role="progressbar"
-          aria-valuemin="0"
-          aria-valuemax="100"
-          aria-valuenow={percent}
-        >
-          <div className="h-full rounded-full bg-emerald-500 transition-[width] duration-300 ease-out" style={{ width: `${percent}%` }} />
-        </div>
-
-        <ol className="mt-5 space-y-2.5" aria-label="Étapes de mise en ligne">
+        <ol className="mt-6 space-y-2.5" aria-label="Étapes de mise en ligne">
           {phases.map((entry, index) => {
             const done = index < activeIndex;
             const active = phase !== 'complete' && index === activeIndex;
@@ -76,18 +64,11 @@ export default function PublicationProgressDialog({
         <p id="publication-progress-message" role="status" aria-live="polite" className={`mt-5 min-h-5 text-[10px] font-semibold ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
           {message || 'Préparation de la publication…'}
         </p>
-        {complete && onShowPublication ? (
-          <button
-            type="button"
-            onClick={onShowPublication}
-            className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 text-[11px] font-extrabold text-white shadow-[0_10px_26px_rgba(5,150,105,0.24)] transition-colors duration-200 hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/20"
-          >
-            <Check size={14} strokeWidth={2.6} />
-            Voir la publication
-          </button>
-        ) : (
-          <p className={`mt-2 text-[9px] leading-4 ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>Ne fermez pas cette page. La confirmation finale apparaît uniquement quand la galerie Nouveautés est à jour.</p>
-        )}
+        <p className={`mt-2 text-[9px] leading-4 ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>
+          {complete
+            ? 'Ouverture automatique de la vue Publications…'
+            : 'Chaque coche correspond à une opération terminée. La durée varie selon les photos et la mise à jour du catalogue.'}
+        </p>
       </div>
     </div>
   );

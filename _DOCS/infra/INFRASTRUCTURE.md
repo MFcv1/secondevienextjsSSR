@@ -189,6 +189,73 @@ succes. Les probes `/admin`, `/galerie` et `/api/catalog/version` repondent
 HTTP 200. Aucune Function, donnee, configuration Stripe ou cible production
 n'a ete modifiee pendant ce deploiement cible.
 
+Correctif de confirmation publication deploye le 2026-08-08 a 15:21
+Europe/Paris: App Hosting `build-2026-08-08-003` `SUCCEEDED`, deployment ID
+`sv-mskef8s2-913ad46d9a2a`. Le rollout remplace le faux pourcentage de la
+modale par des etapes reelles, renforce la preuve de galerie et bascule
+automatiquement vers Publications apres succes. Les probes `/admin` et
+`/galerie` repondent HTTP 200, partagent le meme deployment ID, la galerie
+conserve `s-maxage=300` et `/api/catalog/version` sert la revision 255. Le
+deploiement a cible uniquement App Hosting; aucune Function, Rule, donnee,
+configuration Stripe ou cible production n'a ete modifiee.
+
+Correctif d'ouverture Publications deploye le 2026-08-08 a 15:47
+Europe/Paris: App Hosting `build-2026-08-08-004` `SUCCEEDED`, deployment ID
+`sv-mskfcyxa-905c12925108`. La table Publications se precharge desormais hors
+ecran pendant la composition, le formulaire est renouvele apres succes et la
+confirmation apparait en bas a droite. `/admin` repond HTTP 200 en `no-store`.
+Le deploiement a cible uniquement App Hosting; aucune Function, Rule, donnee,
+configuration Stripe ou cible production n'a ete modifiee.
+
+Correctif de decouplage galerie deploye le 2026-08-08 a 16:09 Europe/Paris:
+App Hosting `build-2026-08-08-005` `SUCCEEDED`, deployment ID
+`sv-mskg5z9r-542b0038bb26`. Le pop-up confirme desormais la release publique
+exacte sans attendre la convergence du HTML ISR. Le bouton de confirmation
+cible le meuble par identifiant dans la galerie avec transition et secours API
+si la page statique est encore en retard. Les probes `/admin` et `/` repondent
+HTTP 200. Le deploiement a cible uniquement App Hosting; aucune Function, Rule,
+donnee, configuration Stripe ou cible production n'a ete modifiee.
+
+Synchronisation structurelle catalogue deployee le 2026-08-08 a 16:40
+Europe/Paris: App Hosting `build-2026-08-08-006` `SUCCEEDED`, deployment ID
+`sv-mskh8vli-4f294aaa5d57`, et Function ciblee
+`main:dispatchCatalogRevalidation` `ACTIVE` en `europe-west1`. Le signal
+`sys_catalog_live/current` est maintenant emis apres preuve API exacte et avant
+la preuve HTML; la galerie recharge Nouveautes/Petits Prix depuis cette release
+publique exacte. La preuve HTML reste le controle asynchrone de `servedState` et
+des reprises. `/` et `/api/catalog/version` repondent HTTP 200; la revision
+observee apres rollout est 258. Aucune autre Function, Rule, donnee, configuration
+Stripe ou cible production n'a ete modifiee.
+
+Correctif du bouton post-publication deploye le 2026-08-08 a 18:44
+Europe/Paris: rollout App Hosting `SUCCEEDED`, deployment ID
+`sv-msklnbd1-4a86cd563824`. Le bouton de confirmation envoie desormais une
+demande explicite a la transition galerie, avec repli sur le routeur Next, puis
+cible la carte du meuble par identifiant. Le lisere vert de la confirmation
+porte une rotation CSS legere avec repli `prefers-reduced-motion`. Le sandbox
+sert le nouveau style et la cible `hh` est retrouvee et surlignee sur `/`.
+Aucune Function, Rule, donnee, configuration Stripe ou cible production n'a
+ete modifiee.
+
+Correctif Safari/iPad du clic post-publication deploye le 2026-08-08 a 19:15
+Europe/Paris: rollout App Hosting `SUCCEEDED`, deployment ID
+`sv-mskmsgmx-00209dd5068b`. La passe precedente est remplacee: le conteneur
+racine du pop-up n'utilise plus `pointer-events: none`, et l'action redevient un
+lien Next natif vers `/?focusProduct=<id>#gallery-pieces`. La transition
+admin-vers-galerie a ete reproduite sur le sandbox avant le patch; la correction
+cible donc la zone cliquable Safari/iPad. Aucune Function, Rule, donnee,
+configuration Stripe ou cible production n'a ete modifiee.
+
+Retour galerie post-publication deploye le 2026-08-08 a 19:29 Europe/Paris:
+rollout App Hosting `SUCCEEDED`, deployment ID
+`sv-mskn99jn-5ddbf2b5b053`. Le lien du pop-up utilise la variante courte
+`galleryReturn`, sans logo ni signature Atelier. Le secours produit n'ajoute
+plus de carte autonome au-dessus de Nouveautes: il injecte et dedoublonne le
+meuble directement dans la grille. La verification hebergee retrouve `x` une
+seule fois dans la grille, sans bloc de secours, avec 40 px entre le titre et la
+grille. Aucune Function, Rule, donnee, configuration Stripe ou cible production
+n'a ete modifiee.
+
 Les vrais `.env` sont locaux. Verifier avec `git ls-files` avant toute hypothese et ne jamais afficher leurs valeurs dans un rapport.
 
 ## 6. Variables publiques et secrets

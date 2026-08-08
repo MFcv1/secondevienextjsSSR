@@ -1,13 +1,14 @@
 'use client';
 
 import { ref, uploadBytesResumable } from 'firebase/storage';
-import { getCallableFunction, getDb, loadFirestoreModule } from '../config/firebaseLazy';
+import { getCallableFunction } from '../config/firebaseLazy';
 import { getStorageInstance } from '../config/firebaseStorage';
 
 const PENDING_PUBLICATION_KEY = 'secondevie:pending-product-publication:v1';
 const FILE_DATABASE = 'secondevie-product-publications';
 const FILE_STORE = 'files';
 const POLL_INTERVAL_MS = 1800;
+const CATALOG_POLL_INTERVAL_MS = 750;
 const PUBLICATION_TIMEOUT_MS = 15 * 60 * 1000;
 const SOURCE_UPLOAD_TIMEOUT_MS = 2 * 60 * 1000;
 const SOURCE_UPLOAD_MAX_ATTEMPTS = 3;
@@ -315,39 +316,44 @@ export const startDurableProductPublication = async ({ files, startInput, onProg
   }
 };
 
-export const waitForPublicCatalogProduct = async (productId, { timeoutMs = 120000 } = {}) => {
+export const waitForPublicCatalogProduct = async (productId, {
+  timeoutMs = 5 * 60 * 1000,
+  idToken = '',
+  onStatus
+} = {}) => {
   const startedAt = Date.now();
-  let publicCatalogPayload = null;
+  let lastStatus = '';
+  const reportStatus = (status) => {
+    if (status === lastStatus) return;
+    lastStatus = status;
+    onStatus?.(status);
+  };
   while (Date.now() - startedAt < timeoutMs) {
-    if (!publicCatalogPayload) {
-      try {
-        const response = await fetch(`/api/catalog?id=${encodeURIComponent(productId)}`, {
-          cache: 'no-store',
-          headers: { accept: 'application/json' }
-        });
-        if (response.ok) {
-          const payload = await response.json();
-          if (payload?.product?.id === productId || payload?.product?.productId === productId) {
-            publicCatalogPayload = payload;
-          }
+    reportStatus('Le meuble est enregistré. Construction du catalogue public…');
+    try {
+      const response = await fetch('/api/admin/catalog-publication-status', {
+        method: 'POST',
+        cache: 'no-store',
+        headers: {
+          accept: 'application/json',
+          authorization: `Bearer ${idToken}`,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({ productId })
+      });
+      if (response.ok) {
+        const payload = await response.json();
+        if ((payload?.product?.id === productId || payload?.product?.productId === productId)
+            && Number(payload?.revision || payload?.catalogVersion || 0) > 0
+            && typeof payload?.aggregateSha256 === 'string') {
+          reportStatus('La version exacte du catalogue est publiée.');
+          return payload;
         }
-      } catch {
-        // La publication Firestore est durable; le polling attend sa projection publique.
       }
+    } catch {
+      // La publication Firestore est durable; le polling attend son pointeur public exact.
     }
-
-    if (publicCatalogPayload) {
-      try {
-        const [database, { doc, getDoc }] = await Promise.all([getDb(), loadFirestoreModule()]);
-        const liveSnapshot = await getDoc(doc(database, 'sys_catalog_live', 'current'));
-        const liveRevision = Number(liveSnapshot.exists() ? liveSnapshot.data()?.revision : 0);
-        const productRevision = Number(publicCatalogPayload.catalogVersion || 0);
-        if (productRevision > 0 && liveRevision >= productRevision) return publicCatalogPayload;
-      } catch {
-        // Le signal n'est publie qu'apres verification de la page galerie servie.
-      }
-    }
-    await sleep(POLL_INTERVAL_MS);
+    await sleep(CATALOG_POLL_INTERVAL_MS);
   }
   return null;
 };

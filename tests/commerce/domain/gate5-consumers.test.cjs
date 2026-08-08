@@ -626,10 +626,56 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     const consumerClient = source('src/kit/commerce/commerceV2Client.js');
     const uiFlags = source('src/kit/commerce/commerceUiFlags.js');
     const cartPanel = source('src/kit/marketplace/CartPanelIsland.jsx');
+    const ordersSurface = [
+        'src/kit/admin/components/orders/orderPresentation.js',
+        'src/kit/admin/components/orders/orderTones.js',
+        'src/kit/admin/components/orders/OrderRow.jsx',
+        'src/kit/admin/components/orders/OrderDetailPanel.jsx',
+        'src/kit/admin/components/orders/OrderModalShell.jsx',
+        'src/kit/admin/components/orders/OrderActionButtons.jsx',
+        'src/kit/admin/components/orders/OrdersOverviewPanel.jsx',
+        'src/kit/admin/components/orders/ConfirmDialog.jsx',
+        'src/kit/admin/components/orders/ShipmentDialog.jsx',
+    ].map((path) => [path, source(path)]);
+    const shipmentDialog = source('src/kit/admin/components/orders/ShipmentDialog.jsx');
+    const orderDetailPanel = source('src/kit/admin/components/orders/OrderDetailPanel.jsx');
+    const orderPresentation = source('src/kit/admin/components/orders/orderPresentation.js');
 
     assert.equal(adminOrders.includes('updateDoc'), false);
     assert.equal(adminOrders.includes('deleteDoc'), false);
     assert.equal(adminOrders.includes('refundOrderAdmin'), false);
+
+    // La presentation des ventes est purement declarative : aucun ecrivain direct.
+    for (const [path, content] of ordersSurface) {
+        for (const writer of ['setDoc', 'updateDoc', 'deleteDoc', 'refundOrderAdmin', 'firebase/firestore']) {
+            assert.equal(content.includes(writer), false, `${path} ne doit pas contenir ${writer}`);
+        }
+    }
+
+    // Les etapes horodatees de chaque vente restent couvertes de bout en bout.
+    for (const eventType of [
+        'order_created',
+        'payment_succeeded',
+        'order_cancelled',
+        'refund_requested',
+        'refund_succeeded',
+        'refund_failed',
+        'fulfillment_prepare',
+        'fulfillment_ready',
+        'fulfillment_pickup',
+        'fulfillment_ship',
+        'fulfillment_update_tracking',
+        'fulfillment_deliver',
+    ]) {
+        assert.ok(orderPresentation.includes(eventType), `timeline ${eventType} manquant`);
+    }
+    assert.ok(orderPresentation.includes('buildFallbackTimeline'));
+    assert.ok(orderPresentation.includes('getAllowedActions'));
+    assert.ok(orderDetailPanel.includes('getTimelineMeta'));
+    assert.ok(adminOrders.includes('getOrderTimelineAdminV2'));
+    assert.ok(shipmentDialog.includes('Expédier sans suivi'));
+    assert.equal(adminOrders.includes('window.confirm'), false);
+    assert.equal(adminOrders.includes('alert('), false);
     assert.equal(adminReturns.includes('refundOrderAdmin'), false);
     assert.equal(adminReturns.includes('syncRefundStatusAdmin'), false);
     assert.equal(adminReturns.includes('sendRefundStatusEmailAdmin'), false);
@@ -647,7 +693,6 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(adminOrders.includes('markOrderShippedAdmin'));
     assert.ok(adminOrders.includes('updateOrderTrackingAdmin'));
     assert.equal(adminOrders.includes('window.prompt'), false);
-    assert.ok(adminOrders.includes('Expédier sans suivi'));
     assert.ok(adminOrders.includes('markOrderPreparingAdmin'));
     assert.ok(adminOrders.includes('markOrderReadyForPickupAdmin'));
     assert.ok(adminOrders.includes('markOrderPickedUpAdmin'));

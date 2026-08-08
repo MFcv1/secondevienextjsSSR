@@ -141,6 +141,9 @@ const ADMIN_NAV_GROUPS = [
   { label: 'Communication', tabs: ['homepage', 'newsletter', 'seo'] },
   { label: 'Administration', tabs: ['account', 'users', 'ip_manager', 'maintenance'] },
 ];
+
+/** Onglets qui pilotent leur propre hauteur : liste et detail scrollent separement. */
+const IMMERSIVE_TABS = new Set(['furniture', 'orders']);
 function AdminContent() {
   const { user, isAdmin, isSuperAdmin, hasStrongAuth, loading } = useAuth();
   const [focusedOrderId, setFocusedOrderId] = useState(null);
@@ -514,8 +517,10 @@ function AdminContent() {
     );
   }
 
+  const immersiveLayout = IMMERSIVE_TABS.has(adminCollection);
+
   return (
-    <div className={`${adminCollection === 'furniture' ? 'xl:h-[100dvh] xl:overflow-hidden' : 'min-h-screen'} ${darkMode ? 'bg-[#0A0A0A] text-white' : 'bg-[#FAFAF9] text-stone-900'}`}>
+    <div className={`${immersiveLayout ? 'xl:h-[100dvh] xl:overflow-hidden' : 'min-h-screen'} ${darkMode ? 'bg-[#0A0A0A] text-white' : 'bg-[#FAFAF9] text-stone-900'}`}>
       <AdminSidebar
         activeTabId={adminCollection}
         darkMode={darkMode}
@@ -526,8 +531,8 @@ function AdminContent() {
         tabs={adminTabs}
       />
 
-      <div className={`${adminCollection === 'furniture' ? 'xl:h-[100dvh] xl:overflow-hidden' : 'min-h-screen'} lg:pl-[17.5rem]`}>
-        <main className={`${adminCollection === 'furniture' ? 'max-w-none xl:grid xl:h-full xl:grid-rows-[auto_minmax(0,1fr)] xl:gap-5 xl:py-6' : 'mx-auto max-w-[100rem] space-y-8 lg:py-10'} px-4 py-8 sm:px-6 lg:px-7 2xl:px-10`}>
+      <div className={`${immersiveLayout ? 'xl:h-[100dvh] xl:overflow-hidden' : 'min-h-screen'} lg:pl-[17.5rem]`}>
+        <main className={`${immersiveLayout ? 'max-w-none space-y-6 xl:grid xl:h-full xl:grid-rows-[auto_minmax(0,1fr)] xl:gap-5 xl:space-y-0 xl:py-6' : 'mx-auto max-w-[100rem] space-y-8 lg:py-10'} px-4 py-8 sm:px-6 lg:px-7 2xl:px-10`}>
         <Suspense fallback={null}>
           <AdminIPTracker />
         </Suspense>

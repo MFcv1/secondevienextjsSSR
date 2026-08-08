@@ -383,9 +383,9 @@ npm run test:catalog:security
 
 Couverture locale actuelle:
 
-- `core`: diff prix/stock/vente/remise en vente/titre/categorie/publication/suppression/image/ordre, ancien et nouveau slug, parents, determinisme, bornes `full`, parite des routes et hash du plan dans le manifeste;
-- `resilience`: CAS et fallbacks, publication partielle et reprise `pointer_committed_control_pending`, reconciliations concurrentes, rollback vivant/expire/high-water, `stateVersion`/lease/fence, lecture Storage epinglee et retry de generation, GC releases/medias;
-- `security` partie Node: HMAC corps exact/timestamp, projet/audience, plan strict, redirection/JSON incoherent, version N contre N+1, preuve HTML servie, endpoint version 200/304, contrats images/navigation/signal;
+- `core`: diff prix/stock/vente/remise en vente/titre/categorie/publication/suppression/image/ordre, ancien et nouveau slug, parents, determinisme, bornes `full`, preuve admin fraiche post-publication, parite des routes et hash du plan dans le manifeste;
+- `resilience`: CAS et fallbacks, publication partielle et reprise `pointer_committed_control_pending`, debounce interactif borne, ecriture/verification parallele des payloads immuables, reconciliations concurrentes, rollback vivant/expire/high-water, `stateVersion`/lease/fence, lecture Storage epinglee et retry de generation, GC releases/medias;
+- `security` partie Node: HMAC corps exact/timestamp, projet/audience, plan strict, redirection/JSON incoherent, version N contre N+1, signal exact emis avant une preuve HTML eventuellement stale, preuve HTML servie/reparable, endpoint version 200/304, hydratation galerie exacte et contrats images/navigation/signal;
 - `security` partie emulateurs: interdiction de lire `furniture`/`public/meta`, controle backend des etats et ecriture client refusee sur `sys_catalog_live/current`. Java reste requis pour executer cette partie.
 
 Les gates `next:routes` et `mobile:contract` protegent en plus ISR/SSG et le shell mobile. La recette cold/warm, la mesure des telechargements et le comportement `router.refresh()` restent des preuves navigateur sandbox et ne doivent pas etre declares par les tests statiques.

@@ -78,11 +78,13 @@ mutation admin
   -> impact-plan.json immutable
   -> appel signe HMAC /api/revalidate-catalog
   -> revalidateTag du pointeur API + revalidatePath cibles
-  -> preuve /api/catalog/version + HTML marque data-catalog-version
+  -> preuve exacte /api/catalog/version
   -> signal sys_catalog_live/current aux onglets visibles
+  -> galerie hydratee depuis la release API exacte + router.refresh
+  -> preuve HTML marque data-catalog-version, asynchrone pour servedState
 ```
 
-Chaque surface catalogue rend `data-catalog-revision` et `data-catalog-version`. La petite ile `CatalogVersionSyncIsland` ecoute uniquement `sys_catalog_live/current` dans un onglet visible, controle `/api/catalog/version` au `pageshow`, au retour visible et apres navigation prefetchee, puis appelle au plus un `router.refresh()` par hash. Elle n'effectue aucun polling et la perte du signal laisse ISR et la navigation fonctionnels.
+Chaque surface catalogue rend `data-catalog-revision` et `data-catalog-version`. La petite ile `CatalogVersionSyncIsland` ecoute uniquement `sys_catalog_live/current` dans un onglet visible, confirme un signal par `/api/catalog/version` avec au plus quatre tentatives bornees, controle aussi la version au `pageshow`, au retour visible et apres navigation prefetchee, puis appelle au plus un `router.refresh()` par hash. Elle n'effectue aucun polling permanent et la perte du signal laisse ISR et la navigation fonctionnels. Sur `/`, `GalleryLiveProductGridIsland` consomme le meme evenement, relit les cartes avec `cache: no-store`, exige le meme `aggregateSha256` et remplace directement Nouveautes/Petits Prix; le rendu HTML initial reste SSR et indexable. Lors d'un retour admin avec `focusProduct`, une lecture ciblee insere temporairement le meuble manquant dans la grille Nouveautes elle-meme, puis la release complete le dedoublonne; aucune carte autonome ne precede la grille.
 
 Le rollout sandbox du 2026-07-19 a confirme les routes publiques en `200` avec `s-maxage=300`, `/api/catalog/version` en revalidation obligatoire et son contrat conditionnel `ETag -> 304`. La navigation interactive galerie -> produit -> retour -> categorie est restee une navigation Next, sans document public Firestore ni reapparition de la galerie sur la fiche.
 
@@ -108,6 +110,8 @@ Contrat SEO:
 ## 6. Transitions de route
 
 `app/RouteTransitionIsland.jsx` gere l'habillage global des navigations. Une transition ne doit jamais afficher la galerie comme etape intermediaire d'une route privee ou d'une page publique.
+Le retour post-publication utilise la variante courte `galleryReturn`, sans logo
+ni signature Atelier; les autres destinations gardent leur variante propre.
 
 Pour les liens critiques:
 

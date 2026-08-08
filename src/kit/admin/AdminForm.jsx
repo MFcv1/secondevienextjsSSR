@@ -90,7 +90,7 @@ const refreshAdminAuthorizationToken = async () => {
       { code: 'auth/admin-session-missing' }
     );
   }
-  await user.getIdToken(true);
+  return user.getIdToken(true);
 };
 
 const COLOR_BANK = [
@@ -646,9 +646,9 @@ const AdminForm = ({
       const session = productCommandSessionRef.current || createProductCommandSession(editData?.id);
       productCommandSessionRef.current = session;
       let commandProduct = !editData ? publishedProductRef.current : null;
+      const adminIdToken = await refreshAdminAuthorizationToken();
 
       if (!commandProduct) {
-        await refreshAdminAuthorizationToken();
         await preflightProductMutationAdmin();
         setProgress(0.1);
         setPublicationPhase('photos');
@@ -779,7 +779,10 @@ const AdminForm = ({
       setPublicationPhase('catalog');
       setProgress(0.8);
       setMsg('Mise à jour et vérification de la galerie Nouveautés…');
-      const publicProduct = await waitForPublicCatalogProduct(commandProduct.id);
+      const publicProduct = await waitForPublicCatalogProduct(commandProduct.id, {
+        idToken: adminIdToken,
+        onStatus: setMsg
+      });
       if (!publicProduct) {
         const catalogError = new Error('Le meuble est enregistré, mais la galerie Nouveautés n’a pas encore confirmé sa mise en ligne. Clique de nouveau sur Publier pour reprendre uniquement cette vérification.');
         catalogError.code = 'CATALOG_PUBLICATION_CONFIRMATION_TIMEOUT';
@@ -811,7 +814,7 @@ const AdminForm = ({
       setProgress(1);
       setMsg(socialEnabled
         ? 'Le meuble est publié sur le site et les réseaux sélectionnés.'
-        : 'Le meuble est publié et confirmé dans la galerie Nouveautés.');
+        : 'Le meuble est publié. La galerie se synchronise automatiquement.');
       const savedProduct = { productId: commandProduct.id, name: formData.name };
       setCompletedProduct(savedProduct);
     } catch (err) {
@@ -896,16 +899,20 @@ const AdminForm = ({
     setDraggedItemIndex(index);
   };
 
-  const showPublishedProduct = () => {
+  const showPublishedProduct = React.useCallback(() => {
     if (!completedProduct) return;
     const savedProduct = completedProduct;
     productCommandSessionRef.current = null;
     publishedProductRef.current = null;
     setCompletedProduct(null);
     if (editData && onCancelEdit) onCancelEdit();
-    if (onSaved) onSaved(savedProduct);
-    else resetForm();
-  };
+    onSaved?.(savedProduct);
+  }, [completedProduct, editData, onCancelEdit, onSaved]);
+
+  useEffect(() => {
+    if (publicationPhase !== 'complete' || !completedProduct) return;
+    showPublishedProduct();
+  }, [completedProduct, publicationPhase, showPublishedProduct]);
 
   const handleTouchEnd = (e) => {
     if (draggedItemIndex === null) return;
@@ -1027,10 +1034,8 @@ const AdminForm = ({
           includeSocial={socialEnabled}
           open={uploading || Boolean(completedProduct)}
           phase={publicationPhase}
-          progress={progress}
           message={msg}
           productName={completedProduct?.name}
-          onShowPublication={completedProduct ? showPublishedProduct : undefined}
         />
         <div className="flex h-full min-h-0 flex-col overflow-hidden px-4 py-4 sm:px-5 sm:py-5 xl:px-6 xl:py-5">
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">

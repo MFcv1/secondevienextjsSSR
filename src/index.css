@@ -1670,6 +1670,22 @@ html.dark .gallery-seo-proof-item {
   contain-intrinsic-size: auto 420px;
 }
 
+[data-gallery-product-card][data-publication-focus="true"] {
+  border-radius: 16px;
+  outline: 3px solid rgb(52 211 153 / 0.9);
+  outline-offset: 6px;
+  animation: publication-focus-in 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes publication-focus-in {
+  from { transform: translateY(18px); opacity: 0.35; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-gallery-product-card][data-publication-focus="true"] { animation: none; }
+}
+
 .product-grid-more-wrap {
   overflow-anchor: none;
 }
@@ -6697,6 +6713,55 @@ html.dark .discount-shell::before,
   --pub-ease: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+.publication-success-toast {
+  --publication-toast-surface: #fff;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 1px;
+  border-radius: 20px;
+  background: rgb(167 243 208 / 0.72);
+  box-shadow:
+    0 24px 70px rgb(28 25 23 / 0.22),
+    0 0 26px rgb(16 185 129 / 0.13);
+}
+
+.publication-success-toast--dark {
+  --publication-toast-surface: #171714;
+  background: rgb(52 211 153 / 0.28);
+}
+
+.publication-success-toast__orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 170%;
+  aspect-ratio: 1;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 215deg,
+    rgb(110 231 183 / 0.16) 246deg,
+    rgb(16 185 129 / 0.95) 286deg,
+    rgb(167 243 208 / 0.56) 312deg,
+    transparent 340deg 360deg
+  );
+  transform: translate3d(-50%, -50%, 0) rotate(0deg);
+  animation: publication-success-neon-orbit 3.8s linear infinite;
+  will-change: transform;
+}
+
+.publication-success-toast__surface {
+  position: relative;
+  z-index: 1;
+  min-height: 100%;
+  border-radius: 19px;
+  background: var(--publication-toast-surface);
+}
+
+@keyframes publication-success-neon-orbit {
+  to { transform: translate3d(-50%, -50%, 0) rotate(360deg); }
+}
+
 /* Les deux volets restent montes : on glisse l'un sur l'autre. */
 .pub-pane {
   transition:
@@ -6856,6 +6921,11 @@ html.dark .discount-shell::before,
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .publication-success-toast__orbit {
+    animation: none;
+    transform: translate3d(-50%, -50%, 0) rotate(32deg);
+  }
+
   .pub-pane,
   .pub-progress-fill {
     transition: none;
@@ -6874,6 +6944,46 @@ html.dark .discount-shell::before,
   .pub-pop,
   .pub-sheen::after,
   .pub-halo {
+    animation: none !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Ventes : meme grammaire de mouvement que la publication, en plus sobre.
+   La liste ne bouge jamais ; seuls le detail et les surfaces modales entrent.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@keyframes sales-detail-in {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+.sales-detail {
+  animation: sales-detail-in 460ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@keyframes sales-veil-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.sales-veil {
+  animation: sales-veil-in 260ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@keyframes sales-sheet-in {
+  from { opacity: 0; transform: translate3d(0, 24px, 0) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+.sales-sheet {
+  animation: sales-sheet-in 420ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sales-detail,
+  .sales-veil,
+  .sales-sheet {
     animation: none !important;
   }
 }

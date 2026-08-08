@@ -432,6 +432,13 @@ async function buildCatalog(dependencies, input = {}) {
                         updatedAt: serverTimestamp()
                     }, { merge: true });
                 });
+                logger('info', {
+                    phase: 'pointer_committed',
+                    buildId,
+                    targetRevision: requestedRevision,
+                    durationMs: Date.now() - startedAt,
+                    result: 'success'
+                });
             }
         });
         const previousPointer = published.previousPointer;

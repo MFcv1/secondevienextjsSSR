@@ -169,7 +169,11 @@ export default function RouteTransitionIsland() {
       if (!href) return;
 
       const targetPath = pathKey(href);
-      const targetConfig = ROUTE_TRANSITION_CONFIG.targets[targetPath];
+      const configuredTarget = ROUTE_TRANSITION_CONFIG.targets[targetPath];
+      const requestedVariant = anchor.getAttribute('data-route-transition-variant');
+      const targetConfig = configuredTarget && ROUTE_TRANSITION_CONFIG.variants[requestedVariant]
+        ? { ...configuredTarget, variant: requestedVariant }
+        : configuredTarget;
       if (!targetConfig || targetPath === pathname) return;
 
       event.preventDefault();
@@ -220,32 +224,36 @@ export default function RouteTransitionIsland() {
   };
 
   return (
-    <div className="sv-route-transition" data-phase={transition.phase} style={style} aria-hidden="true">
+    <div className="sv-route-transition" data-phase={transition.phase} data-brand={activeVariant.showBrand === false ? 'none' : 'atelier'} style={style} aria-hidden="true">
       <div className="sv-route-transition__curtain">
         <div className="sv-route-transition__panel sv-route-transition__panel--left" />
         <div className="sv-route-transition__panel sv-route-transition__panel--right" />
-        <img className="sv-route-transition__watermark" src="/images/logoanais-320.webp" alt="" aria-hidden="true" />
-        <div className="sv-route-transition__signature">
-          <span className="sv-route-transition__eyebrow-mask">
-            <span className="sv-route-transition__eyebrow">Seconde Vie</span>
-          </span>
-          <span className="sv-route-transition__title" aria-label={ROUTE_TRANSITION_TITLE}>
-            {ROUTE_TRANSITION_CHARACTERS.map((character, index) => (
-              <span className="sv-route-transition__title-char-mask" aria-hidden="true" key={`${character}-${index}`}>
-                <span
-                  className="sv-route-transition__title-char"
-                  style={{
-                    '--rt-char-delay': `${1350 + Math.abs(index - ROUTE_TRANSITION_CENTER_INDEX) * 110}ms`,
-                    '--rt-char-exit-delay': `${Math.abs(index - ROUTE_TRANSITION_CENTER_INDEX) * 24}ms`,
-                    '--rt-char-sway': `${index % 2 === 0 ? -8 : 8}deg`,
-                  }}
-                >
-                  {character}
-                </span>
+        {activeVariant.showBrand === false ? null : (
+          <>
+            <img className="sv-route-transition__watermark" src="/images/logoanais-320.webp" alt="" aria-hidden="true" />
+            <div className="sv-route-transition__signature">
+              <span className="sv-route-transition__eyebrow-mask">
+                <span className="sv-route-transition__eyebrow">Seconde Vie</span>
               </span>
-            ))}
-          </span>
-        </div>
+              <span className="sv-route-transition__title" aria-label={ROUTE_TRANSITION_TITLE}>
+                {ROUTE_TRANSITION_CHARACTERS.map((character, index) => (
+                  <span className="sv-route-transition__title-char-mask" aria-hidden="true" key={`${character}-${index}`}>
+                    <span
+                      className="sv-route-transition__title-char"
+                      style={{
+                        '--rt-char-delay': `${1350 + Math.abs(index - ROUTE_TRANSITION_CENTER_INDEX) * 110}ms`,
+                        '--rt-char-exit-delay': `${Math.abs(index - ROUTE_TRANSITION_CENTER_INDEX) * 24}ms`,
+                        '--rt-char-sway': `${index % 2 === 0 ? -8 : 8}deg`,
+                      }}
+                    >
+                      {character}
+                    </span>
+                  </span>
+                ))}
+              </span>
+            </div>
+          </>
+        )}
       </div>
       <style dangerouslySetInnerHTML={{ __html: routeTransitionCss }} />
     </div>
@@ -276,6 +284,10 @@ const routeTransitionCss = `
   transform: translate3d(0, 112svh, 0);
   animation: sv-route-curtain-rise var(--rt-enter-ms) cubic-bezier(.22,1,.36,1) forwards;
   will-change: transform;
+}
+.sv-route-transition[data-brand="none"] .sv-route-transition__curtain {
+  top: 0;
+  border-radius: 0;
 }
 .sv-route-transition__panel {
   position: absolute;

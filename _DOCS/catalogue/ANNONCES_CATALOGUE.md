@@ -85,13 +85,13 @@ visible:
 3. ne creer le document `furniture/{id}` qu'apres succes de tous les uploads;
 4. creer directement le produit complet et public avec une seule commande
    idempotente `createPublishedProductAdmin`;
-5. attendre que `/api/catalog` confirme le produit, puis que
-   `sys_catalog_live/current` confirme la revision apres revalidation de la
-   page galerie;
-6. afficher un succes persistant; le clic `Voir la publication` transfere
-   ensuite l'interface vers Publications, sans remise a zero prealable, et met
-   la nouvelle ligne en evidence. Un handoff court en `sessionStorage`
-   conserve cette destination si l'ile admin est remontee pendant la transition.
+5. interroger la route admin non cachee
+   `/api/admin/catalog-publication-status`, qui lit le pointeur Storage frais
+   et confirme atomiquement le produit et l'identite de sa release;
+6. basculer automatiquement l'interface vers Publications, sans remise a zero
+   prealable, et mettre la nouvelle ligne en evidence. Un handoff court en
+   `sessionStorage` conserve cette destination si l'ile admin est remontee
+   pendant la transition.
 
 Ainsi, un echec d'image ne cree aucun meuble et n'ajoute aucun brouillon a la
 liste. Le rail `product_publication_sessions` qui creait le brouillon avant le
@@ -111,9 +111,15 @@ backend-only. L'etat callable expose seulement la progression utile. Les
 variantes serveur sont publiquement lisibles comme les autres medias catalogue,
 mais leur ecriture directe par le navigateur est interdite.
 
-Etat code au 2026-08-08: la publication neuve atomique attend la projection
-publique puis la preuve que la galerie sert cette revision avant de confirmer
-le succes et de transmettre l'interface a la vue Publications.
+Etat code au 2026-08-08: la publication neuve atomique attend la projection et
+la version publiques exactes avant de confirmer le succes et de transmettre
+automatiquement l'interface a la vue Publications. Cette preuve passe par une
+route POST admin non cachee: elle ne depend ni du cache pointeur API de quinze
+secondes, ni de la revalidation HTML. Le debounce du builder est borne a 750 ms
+pour les changements publics et 500 ms pour prix/stock; les payloads immuables
+sont ecrits et verifies en parallele avant checksums, manifeste et CAS. La
+modale exprime des etapes terminees, pas un faux pourcentage de temps; l'attente
+de construction du catalogue reste bornee a cinq minutes.
 
 ## 4. Cycle de vie
 
@@ -126,9 +132,12 @@ variantes images preparees dans AdminForm
   -> Cloud Tasks dispatchCatalogBuild
   -> snapshot Storage immuable + manifeste + impact-plan.json
   -> CAS du pointeur current, puis rotation previous/LKG
+  -> preuve admin fraiche produit + release exacte (non cachee)
   -> dispatchCatalogRevalidation signe HMAC
-  -> revalidation Next ciblee + preuve de version servie
+  -> revalidation Next ciblee + preuve API exacte /api/catalog/version
   -> signal public borne sys_catalog_live/current
+  -> hydratation directe des grilles galerie depuis cette release exacte
+  -> preuve HTML versionnee asynchrone, controle d'exploitation non bloquant
   -> produit visible dans galerie/categorie/recherche/sitemap selon ses flags
   -> panier/checkout si isPurchasable=true
   -> vendu ou remis en vente selon cycle de commande/refund
@@ -179,7 +188,9 @@ La passe de synchronisation locale du 2026-07-19 a ferme les ecarts suivants dan
 - la revalidation HMAC couvre le corps exact, le projet, l'audience et les quatre identites revision/manifeste/agregat/plan; elle invalide les chemins du plan et le seul tag mutable `catalog:api-pointer`, jamais le cache des releases immuables;
 - `integrityState`, `sourceLagState`, `invalidationState` et `servedState` remplacent tout booleen sain ambigu; une version n'est marquee servie qu'apres lecture concordante de `/api/catalog/version` et d'un echantillon HTML;
 - les pages ISR lisent le pointeur Storage frais a chaque regeneration; les API utilisent un cache pointeur de 15 secondes explicitement invalide et des releases immuables; ISR 300 reste l'unique filet temporel de page;
-- apres preuve de version servie, le backend remplace le document minimal `sys_catalog_live/current`; il ne contient ni prix, ni stock, ni image et n'est jamais autoritaire pour le commerce;
+- apres acceptation de l'invalidation et preuve exacte de `/api/catalog/version`, le backend remplace le document minimal `sys_catalog_live/current`, avant le controle HTML; il ne contient ni prix, ni stock, ni image et n'est jamais autoritaire pour le commerce;
+- la galerie visible confirme ce signal par l'endpoint version avec des reprises bornees, charge les 48 cartes de la release exacte depuis `/api/catalog` et remplace ses grilles Nouveautes/Petits Prix sans attendre ISR; `router.refresh()` reste lance pour faire converger le document et les autres surfaces;
+- la preuve HTML versionnee reste obligatoire pour `servedState=observed`, les reprises Cloud Tasks et l'exploitation, mais son retard ne bloque plus le signal ni les cartes visibles;
 - le checkout exige encore le statut `published`, preserve la semantique d'un prix courant egal a zero et relit prix/stock dans Firestore;
 - les backfills image s'appuient uniquement sur `onCatalogSourceWrite` et ne peuvent plus recreer `public/meta`.
 

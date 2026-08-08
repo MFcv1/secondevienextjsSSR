@@ -2,8 +2,12 @@ export const ROUTE_TRANSITION_CONFIG = {
   enabled: true,
   defaultVariant: 'atelierCurtain',
   targets: {
+    '/': {
+      variant: 'galleryCurtain',
+      releaseOnRoute: true,
+    },
     '/a-propos': {
-    variant: 'atelierCurtain',
+      variant: 'atelierCurtain',
       readyEvent: 'sv:hero-video-ready',
       readySelector: '.sv4-hero__video.is-active[data-first-frame-ready="true"]',
       warmupVideo: '/video/hero/1-wood-buffet.mp4',
@@ -12,6 +16,27 @@ export const ROUTE_TRANSITION_CONFIG = {
     },
   },
   variants: {
+    galleryCurtain: {
+      minVisibleMs: 950,
+      enterDelayMs: 260,
+      enterDurationMs: 620,
+      exitDelayMs: 80,
+      exitDurationMs: 560,
+      panel: '#F9F6F0',
+      ink: '#1A130C',
+      accent: '#A68A64',
+    },
+    galleryReturn: {
+      minVisibleMs: 520,
+      enterDelayMs: 140,
+      enterDurationMs: 420,
+      exitDelayMs: 30,
+      exitDurationMs: 360,
+      panel: '#FAFAF9',
+      ink: '#1A130C',
+      accent: '#A68A64',
+      showBrand: false,
+    },
     atelierCurtain: {
       minVisibleMs: 3250,
       enterDelayMs: 900,

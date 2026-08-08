@@ -165,9 +165,9 @@ export default function GalleryServerView({
 
           <GallerySeoIntro darkMode={darkMode} />
           <ReassuranceSectionServer darkMode={darkMode} />
-          <ProductArrivalsSectionServer items={items} darkMode={darkMode} />
+          <ProductArrivalsSectionServer items={items} darkMode={darkMode} catalogVersion={catalogVersion} />
           <BeforeAfterSectionServer darkMode={darkMode} />
-          <ProductSmallPricesSectionServer items={items} darkMode={darkMode} />
+          <ProductSmallPricesSectionServer items={items} darkMode={darkMode} catalogVersion={catalogVersion} />
           <InstagramSectionServer darkMode={darkMode} />
           <TestimonialsSectionServer darkMode={darkMode} />
           <NewsletterSectionServer darkMode={darkMode} />

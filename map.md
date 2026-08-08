@@ -71,6 +71,7 @@ Seconde Vie
 | `/api/search` | `[API]` | reponse non persistante | non indexable | `route.js` | recherche serveur |
 | `/api/catalog` | `[API]` | reponse non persistante | non indexable | `route.js` | catalogue materialise |
 | `/api/catalog/version` | `[API]` | ETag/304 revalide | non indexable | `route.js` | revision + aggregateSha256 |
+| `/api/admin/catalog-publication-status` | `[API]` admin | aucun | non indexable | `route.js` | preuve fraiche de la release exacte post-publication |
 | `/api/revalidate-catalog` | `[API]` | aucun | non indexable | `route.js` | HMAC builder + revalidation catalogue |
 
 ## 4. Parcours et dependances
@@ -112,8 +113,9 @@ secrets, deploiement et recette Meta reelle restent M4/M5.
      (une lecture source, concurrence bornee a quatre)
   -> createPublishedProductAdmin seulement apres succes de tous les uploads [F]
      -> contenu + offre + stock + publication dans une transaction [DB]
-  -> attente de la projection `/api/catalog`, puis de la preuve HTML
-     `sys_catalog_live/current`; succes persistant -> vue Publications [C]
+  -> preuve admin non cachee `/api/admin/catalog-publication-status`
+     du produit et de la release exacte; HTML ISR non bloquant
+  -> succes -> bascule automatique vers Publications [C]
   -> prepareSocialPublicationAdmin [F] apres confirmation site
   -> sys_social_publications/{commandHash} [DB, backend-only]
   -> runSocialPublicationAdmin [F]
@@ -127,8 +129,10 @@ secrets, deploiement et recette Meta reelle restent M4/M5.
   -> dispatchCatalogRevalidation [F]
   -> /api/revalidate-catalog HMAC [API]
   -> tag pointeur API + chemins impactes
-  -> preuve /api/catalog/version + HTML versionne
-  -> sys_catalog_live/current [DB] -> onglets visibles -> router.refresh
+  -> preuve API exacte /api/catalog/version
+  -> sys_catalog_live/current [DB] -> onglets visibles
+     -> grilles galerie rechargees depuis la release exacte + router.refresh
+  -> preuve HTML versionnee asynchrone -> servedState/reprises d'exploitation
 ```
 
 ### 4.3 Authentification
@@ -485,6 +489,7 @@ src/kit/
 src/kit/marketplace/
 |-- GalleryRoutePage.jsx .............. composition donnees de `/` et `/galerie`
 |-- GalleryServerView.jsx ............. rendu final galerie
+|-- GalleryLiveProductGridIsland.jsx .. grilles live + insertion ciblee post-publication sans carte hors grille
 |-- MarketplaceHeroServer.jsx ......... hero serveur
 |-- AnnouncementBannerServer.jsx ...... bandeau commercial
 |-- ArchitecturalHeaderServer.jsx ..... header serveur
@@ -586,7 +591,7 @@ src/kit/admin/
 |-- AdminDashboard.jsx ................ pilotage commerce, devis/tendances analytics bornes, miniatures du snapshot public, exports et maintenance rapide
 |-- AdminAnalytics.jsx ................ moteur Data canonique: UID/IP, live, parcours illustres, courbes
 |-- AdminForm.jsx ..................... creation/edition annonces
-|   |-- productPublicationClient.js ... utilitaires historiques de session + attente de la preuve galerie active
+|   |-- productPublicationClient.js ... utilitaires historiques de session + attente de la release publique exacte
 |   |-- components/InstagramPublicationPreview.jsx .. apercu prive Instagram iPhone 17 Pro
 |   |-- components/MetaConnectionControl.jsx ...... OAuth, choix Page et destinations
 |   `-- metaPublicationClient.js ................... commandes Meta callables
@@ -594,7 +599,16 @@ src/kit/admin/
 |-- GlobalInventoryView.jsx ........... vue catalogue/ordres
 |-- AdminStudio.jsx ................... studio contenu
 |-- AdminHomepage.jsx ................. personnalisation publique
-|-- AdminOrders.jsx ................... ventes/logistique, modale expedition/suivi
+|-- AdminOrders.jsx ................... ventes/logistique: conteneur lectures + commandes commerce
+|   |-- components/orders/orderPresentation.js .... derivations pures: parcours, segments, recherche, formats, CSV
+|   |-- components/orders/orderTones.js ........... tons et surfaces partages clair/sombre
+|   |-- components/orders/OrderRow.jsx ............ ligne dense, avancee en quatre temps
+|   |-- components/orders/OrderDetailPanel.jsx .... detail: prochaine etape, parcours horodate, panier, client
+|   |-- components/orders/OrdersOverviewPanel.jsx . resume affiche tant qu'aucune commande n'est ouverte
+|   |-- components/orders/OrderModalShell.jsx ..... voile, piege de focus, feuille mobile
+|   |-- components/orders/OrderActionButtons.jsx .. action primaire/fantome
+|   |-- components/orders/ConfirmDialog.jsx ....... confirmation retrait/livraison/archivage
+|   `-- components/orders/ShipmentDialog.jsx ...... expedition et suivi transporteur
 |-- AdminPaymentLinks.jsx ............. creation, copie et cycle de vie des liens prives
 |-- AdminInvoices.jsx ................ selection meubles, edition, apercu A4, brouillons et envoi PDF
 |-- AdminReturns.jsx .................. demandes client + remboursements + retours physiques detailles
