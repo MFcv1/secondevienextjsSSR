@@ -1,47 +1,62 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Truck, Save, RefreshCw } from 'lucide-react';
 import {
     getDeliveryPolicyAdmin,
     saveDeliveryPolicyAdmin
 } from '../commerce/deliveryPolicyAdminClient';
+import { getAdminCachedData, loadAdminCachedData } from './adminDataCache';
+
+const DELIVERY_POLICY_CACHE_KEY = 'admin-delivery-policy';
 
 const DEFAULT_SETTINGS = {
     retrait: { id: 'retrait', active: true, label: "Retrait à l'atelier (Marseille)", sub: "Sur rendez-vous", price: 0 },
     idf: { id: 'idf', active: true, label: "Livraison Marseille & Alentours", sub: "Par nos soins", price: 49 },
-    transporteur: { id: 'transporteur', active: true, label: "Transporteur Spécialisé (Cocolis)", sub: "Protections sur-mesure", price: 89 }
+    transporteur: { id: 'transporteur', active: true, label: "Transporteur Spécialisé (Cocolis)", sub: "Protections sur-mesure", price: 90 }
 };
 
+export const preloadAdminDeliveryData = ({ force = false } = {}) => (
+    loadAdminCachedData(
+        DELIVERY_POLICY_CACHE_KEY,
+        getDeliveryPolicyAdmin,
+        { force }
+    )
+);
+
 const AdminLivraison = ({ darkMode }) => {
-    const [settings, setSettings] = useState(DEFAULT_SETTINGS);
-    const [loading, setLoading] = useState(true);
+    const initialPolicyRef = useRef(getAdminCachedData(DELIVERY_POLICY_CACHE_KEY));
+    const [settings, setSettings] = useState(initialPolicyRef.current?.settings || DEFAULT_SETTINGS);
+    const [status, setStatus] = useState(initialPolicyRef.current ? 'ready' : 'loading');
     const [saving, setSaving] = useState(false);
-    const [policyState, setPolicyState] = useState({ policyVersion: null, controlRevision: null });
+    const [policyState, setPolicyState] = useState({
+        policyVersion: initialPolicyRef.current?.policyVersion || null,
+        controlRevision: initialPolicyRef.current?.controlRevision ?? null
+    });
     const [message, setMessage] = useState({ type: '', text: '' });
 
-    useEffect(() => {
-        let active = true;
-        const fetchSettings = async () => {
-            try {
-                const result = await getDeliveryPolicyAdmin();
-                if (!active) return;
-                setSettings(result.settings);
-                setPolicyState({
-                    policyVersion: result.policyVersion,
-                    controlRevision: result.controlRevision
-                });
-            } catch (e) {
-                console.error("Error fetching delivery settings", e);
-                if (active) setMessage({
-                    type: 'error',
-                    text: e.message || 'Chargement des paramètres de livraison impossible.'
-                });
-            } finally {
-                if (active) setLoading(false);
-            }
-        };
-        void fetchSettings();
-        return () => { active = false; };
+    const load = useCallback(async ({ foreground = true, force = true } = {}) => {
+        if (foreground) setStatus('loading');
+        setMessage({ type: '', text: '' });
+        try {
+            const result = await preloadAdminDeliveryData({ force });
+            setSettings(result.settings);
+            setPolicyState({
+                policyVersion: result.policyVersion,
+                controlRevision: result.controlRevision
+            });
+            setStatus('ready');
+        } catch (error) {
+            console.error('Error fetching delivery settings', error);
+            if (!initialPolicyRef.current) setStatus('error');
+            setMessage({
+                type: 'error',
+                text: error.message || 'Chargement des paramètres de livraison impossible.'
+            });
+        }
     }, []);
+
+    useEffect(() => {
+        void load({ foreground: !initialPolicyRef.current, force: false });
+    }, [load]);
 
     // Validation
     const getErrors = () => {
@@ -70,6 +85,11 @@ const AdminLivraison = ({ darkMode }) => {
                 policyVersion: result.policyVersion,
                 controlRevision: result.controlRevision
             });
+            void loadAdminCachedData(
+                DELIVERY_POLICY_CACHE_KEY,
+                async () => result,
+                { force: true }
+            ).catch(() => {});
             setMessage({ type: 'success', text: 'Paramètres de livraison enregistrés et publiés.' });
         } catch (e) {
             console.error(e);
@@ -111,10 +131,6 @@ const AdminLivraison = ({ darkMode }) => {
         }));
     };
 
-    if (loading) {
-        return <div className="p-12 text-center text-stone-400 font-bold animate-pulse">Chargement des paramètres de livraison...</div>;
-    }
-
     const baseCard = darkMode ? 'bg-[#161616] border border-white/5 shadow-2xl' : 'bg-white border border-stone-100 shadow-sm';
     const textBase = darkMode ? 'text-white' : 'text-stone-900';
     const textMuted = darkMode ? 'text-white/40' : 'text-stone-400';
@@ -123,7 +139,7 @@ const AdminLivraison = ({ darkMode }) => {
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 pb-20">
             <div className={`p-8 rounded-[32px] ${baseCard}`}>
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col gap-4 mb-8 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                         <h3 className={`text-xl font-black flex items-center gap-2 ${textBase}`}>
                             <Truck size={24} className="text-indigo-500" />
@@ -131,6 +147,11 @@ const AdminLivraison = ({ darkMode }) => {
                         </h3>
                         <p className={`text-sm mt-2 ${textMuted}`}>Personnalisez les labels, les descriptions et les tarifs des différents modes de livraison disponibles lors de la commande.</p>
                     </div>
+                    {status === 'loading' ? (
+                        <span className={`inline-flex items-center gap-2 text-xs font-bold ${textMuted}`}>
+                            <RefreshCw className="animate-spin" size={14} /> Synchronisation…
+                        </span>
+                    ) : null}
                 </div>
 
                 <div className="space-y-6">
@@ -150,7 +171,7 @@ const AdminLivraison = ({ darkMode }) => {
                                                     onChange={(e) => handleChange(key, 'label', e.target.value)}
                                                     className={inputClass}
                                                     placeholder="Ex: Livraison Marseille & Alentours"
-                                                    disabled={saving}
+                                                    disabled={saving || status !== 'ready'}
                                                 />
                                             </div>
                                             <div className="w-32">
@@ -164,7 +185,7 @@ const AdminLivraison = ({ darkMode }) => {
                                                     className={inputClass}
                                                     min="0"
                                                     step="1"
-                                                    disabled={saving}
+                                                    disabled={saving || status !== 'ready'}
                                                 />
                                             </div>
                                         </div>
@@ -177,7 +198,7 @@ const AdminLivraison = ({ darkMode }) => {
                                                     onChange={(e) => handleChange(key, 'sub', e.target.value)}
                                                     className={inputClass}
                                                     placeholder="Ex: Par nos soins"
-                                                    disabled={saving}
+                                                    disabled={saving || status !== 'ready'}
                                             />
                                         </div>
                                     </div>
@@ -190,7 +211,7 @@ const AdminLivraison = ({ darkMode }) => {
                                                     checked={mode.active}
                                                     onChange={(e) => handleChange(key, 'active', e.target.checked)}
                                                     className="w-4 h-4 rounded text-indigo-500 focus:ring-indigo-500 bg-stone-800 border-stone-700"
-                                                    disabled={saving}
+                                                    disabled={saving || status !== 'ready'}
                                             />
                                         </label>
                                     </div>
@@ -208,11 +229,20 @@ const AdminLivraison = ({ darkMode }) => {
                                 {message.text}
                             </p>
                         )}
+                        {status === 'error' ? (
+                            <button
+                                className={`mt-2 inline-flex items-center gap-2 text-xs font-bold ${darkMode ? 'text-white' : 'text-stone-800'}`}
+                                onClick={() => load()}
+                                type="button"
+                            >
+                                <RefreshCw size={13} /> Réessayer
+                            </button>
+                        ) : null}
                     </div>
                     <button
                         onClick={handleSave}
-                        disabled={saving || hasErrors || !policyState.policyVersion}
-                        className={`flex items-center gap-2 text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition-colors ${saving || hasErrors || !policyState.policyVersion ? 'bg-stone-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                        disabled={saving || status !== 'ready' || hasErrors || !policyState.policyVersion}
+                        className={`flex items-center gap-2 text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition-colors ${saving || status !== 'ready' || hasErrors || !policyState.policyVersion ? 'bg-stone-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
                     >
                         {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
                         {saving ? 'Enregistrement...' : 'Enregistrer et publier'}
