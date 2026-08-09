@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from
 import { useRouter } from 'next/navigation';
 import GlobalMenuDesktop from './GlobalMenuDesktop';
 import GlobalMenuMobile from './GlobalMenuMobile';
+import { focusWithoutScroll, trapDialogTabKey } from '../ui/dialogFocus';
 
 const DESKTOP_MENU_QUERY = '(min-width: 1024px)';
 const DESKTOP_MENU_OPEN_CLASS = 'global-menu-desktop-open';
@@ -74,6 +75,9 @@ const GlobalMenu = ({
     const isMenuClosingRef = useRef(false);
     const closingWheelDeltaRef = useRef(0);
     const lastTouchYRef = useRef(null);
+    const dialogRef = useRef(null);
+    const previouslyFocusedRef = useRef(null);
+    const isMenuInteractive = isMenuOpen && !isMenuClosing;
 
     const closeMenu = useCallback(() => {
         setIsMenuOpen(false);
@@ -155,6 +159,39 @@ const GlobalMenu = ({
     useEffect(() => {
         isMenuClosingRef.current = isMenuClosing;
     }, [isMenuClosing]);
+
+    useEffect(() => {
+        if (!isMenuInteractive) return undefined;
+
+        previouslyFocusedRef.current = document.activeElement;
+        const focusFrame = window.requestAnimationFrame(() => {
+            const panel = getIsDesktopMenuViewport() ? panelRef.current : mobilePanelRef.current;
+            const initialFocus = panel?.querySelector(
+                'input:not([disabled]), button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+            );
+            focusWithoutScroll(initialFocus || dialogRef.current);
+        });
+
+        const handleDialogKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                event.stopPropagation();
+                closeMenu();
+                return;
+            }
+
+            trapDialogTabKey(event, dialogRef.current, dialogRef.current);
+        };
+
+        window.addEventListener('keydown', handleDialogKeyDown);
+        return () => {
+            window.cancelAnimationFrame(focusFrame);
+            window.removeEventListener('keydown', handleDialogKeyDown);
+            if (previouslyFocusedRef.current?.isConnected) {
+                focusWithoutScroll(previouslyFocusedRef.current);
+            }
+        };
+    }, [closeMenu, isMenuInteractive]);
 
     useLayoutEffect(() => {
         if (typeof window === 'undefined') return undefined;
@@ -284,7 +321,10 @@ const GlobalMenu = ({
 
         const handleKeyDown = (event) => {
             const target = event.target;
-            if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable) return;
+            const interactiveTarget = target instanceof Element
+                ? target.closest('button, a[href], input, textarea, select, [role="button"], [role="link"], [contenteditable="true"]')
+                : null;
+            if (interactiveTarget || target?.isContentEditable) return;
 
             const scrollKeys = ['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' '];
             if (scrollKeys.includes(event.key)) {
@@ -323,17 +363,6 @@ const GlobalMenu = ({
             lastTouchYRef.current = null;
         };
     }, [isDesktopMenuViewport, isMenuOpen, isMenuClosing]);
-
-    useEffect(() => {
-        if (!isMenuOpen) return undefined;
-
-        const handleKeyDown = (event) => {
-            if (event.key === 'Escape') closeMenu();
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isMenuOpen, closeMenu]);
 
     const scrollTop = () => {
         requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
@@ -400,8 +429,6 @@ const GlobalMenu = ({
         isMenuClosing,
     };
 
-    const isMenuInteractive = isMenuOpen && !isMenuClosing;
-
     if (!isMenuOpen && !isMenuClosing && !keepMounted) return null;
 
     const isMenuDormant = !isMenuOpen && !isMenuClosing;
@@ -411,6 +438,8 @@ const GlobalMenu = ({
 
     return (
         <div
+            ref={dialogRef}
+            id="global-menu-dialog"
             key="global-menu-shell"
             className={`${isMenuInteractive ? 'pointer-events-auto' : 'pointer-events-none'} ${isMenuDormant ? 'opacity-0' : ''} fixed inset-x-0 bottom-0 z-[2000] overflow-hidden`}
             style={{
@@ -421,6 +450,7 @@ const GlobalMenu = ({
             aria-modal={isMenuInteractive ? 'true' : undefined}
             aria-hidden={!isMenuInteractive}
             aria-label="Menu principal"
+            tabIndex={-1}
             inert={isMenuInteractive ? undefined : true}
         >
             <button
@@ -429,6 +459,7 @@ const GlobalMenu = ({
                 onClick={closeMenu}
                 onWheel={(event) => event.preventDefault()}
                 aria-label="Fermer le menu"
+                tabIndex={-1}
             />
 
             {isDesktopMenuViewport ? (

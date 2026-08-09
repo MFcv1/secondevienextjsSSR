@@ -18,6 +18,8 @@ import {
 import {
   clearCheckoutRecoveryDescriptor,
   COMMERCE_V2_RECOVERY_ENABLED,
+  getCheckoutRecoveryTerminalMessage,
+  getCheckoutRecoveryTerminalReason,
   isPurchasedCartLineUnchanged,
   readCheckoutRecoveryDescriptor,
 } from '../../src/kit/commerce/checkoutRecovery';
@@ -213,6 +215,12 @@ function CheckoutPageContent() {
 
   const total = useMemo(() => getCartTotal(cartItems), [cartItems]);
 
+  const handleRecoveryTerminal = useCallback((reason) => {
+    clearCheckoutRecoveryDescriptor({ enabled: COMMERCE_V2_RECOVERY_ENABLED });
+    setHasRecoverableCheckout(false);
+    setCheckoutReturnNotice(getCheckoutRecoveryTerminalMessage(reason));
+  }, []);
+
   const clearCartAfterOrder = useCallback(async (purchasedCartLines = []) => {
     if (!Array.isArray(purchasedCartLines) || purchasedCartLines.length === 0) {
       return;
@@ -354,7 +362,12 @@ function CheckoutPageContent() {
         });
       })
       .catch((error) => {
-        console.error('Stripe return setup error:', error);
+        const terminalReason = getCheckoutRecoveryTerminalReason(error);
+        if (terminalReason) {
+          handleRecoveryTerminal(terminalReason);
+        } else {
+          console.error('Stripe return setup error:', error);
+        }
         window.history.replaceState({}, '', '/checkout');
       });
 
@@ -363,7 +376,7 @@ function CheckoutPageContent() {
       if (timeoutId) window.clearTimeout(timeoutId);
       unsubscribe?.();
     };
-  }, [cartItems, clearCartAfterOrder, user]);
+  }, [cartItems, clearCartAfterOrder, handleRecoveryTerminal, user]);
 
   if (loading || cartLoading || !checkoutRecoveryChecked) {
     return <div className="min-h-screen bg-[#FAFAF9]" />;
@@ -373,8 +386,8 @@ function CheckoutPageContent() {
     return (
       <CheckoutState
         darkMode={darkMode}
-        title="Panier vide"
-        message="Ajoutez une pièce depuis la galerie pour commencer votre commande."
+        title={checkoutReturnNotice ? 'Réservation terminée' : 'Panier vide'}
+        message={checkoutReturnNotice || 'Ajoutez une pièce depuis la galerie pour commencer votre commande.'}
         primaryLabel="Retour galerie"
         onPrimary={() => { router.push('/'); }}
       />
@@ -389,6 +402,7 @@ function CheckoutPageContent() {
         </div>
       ) : null}
       <CheckoutView
+        key={hasRecoverableCheckout ? 'recovering-checkout' : 'fresh-checkout'}
         cartItems={cartItems}
         total={total}
         user={user}
@@ -397,6 +411,7 @@ function CheckoutPageContent() {
         onPlaceOrder={handlePlaceOrder}
         fixtureContext={fixtureContext}
         recoveryExpected={hasRecoverableCheckout}
+        onRecoveryTerminal={handleRecoveryTerminal}
       />
       {showOrderSuccess ? (
         <OrderSuccessModal

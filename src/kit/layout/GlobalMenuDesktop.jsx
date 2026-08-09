@@ -71,8 +71,8 @@ const ATELIER_LINKS = [
 ];
 
 const SERVICE_ITEMS = [
-    { title: 'Livraison soignée', text: 'Partout en France', Icon: Truck },
-    { title: 'Paiement sécurisé', text: 'et 4x sans frais', Icon: ShieldCheck },
+    { title: 'Livraison soignée', text: 'selon la pièce', Icon: Truck },
+    { title: 'Paiement sécurisé', text: 'via Stripe', Icon: ShieldCheck },
     { title: 'Meubles uniques', text: 'Sélectionnés avec passion', Icon: Sparkles },
     { title: 'Une équipe humaine', text: 'à votre écoute', Icon: Headphones },
 ];
@@ -622,7 +622,7 @@ export default function GlobalMenuDesktop({
                                     <motion.button
                                         type="button"
                                         onClick={() => navigateToPath('/devis')}
-                                        aria-label="Découvrir la livraison offerte"
+                                        aria-label="Découvrir nos options de livraison"
                                         className="group relative h-[172px] w-full overflow-hidden rounded-[16px] bg-[#f8f4ee] text-left outline-none ring-[#9A654B]/0 transition-[box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-[#9A654B]/55"
                                         variants={menuTileVariants}
                                     >

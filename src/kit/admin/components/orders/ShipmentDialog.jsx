@@ -61,7 +61,7 @@ export default function ShipmentDialog({
             <div className="overflow-y-auto p-6 sm:p-7 custom-scrollbar">
                 <div className="flex items-start justify-between gap-5">
                     <div>
-                        <p className={`text-[9px] font-extrabold uppercase tracking-[0.14em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
+                        <p className={`text-[10px] font-extrabold uppercase tracking-[0.12em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
                             {orderReference(order.id)}
                         </p>
                         <h3 id="shipment-dialog-title" className="mt-2 text-[20px] font-extrabold tracking-[-0.03em]">
@@ -105,7 +105,7 @@ export default function ShipmentDialog({
                 {withTracking ? (
                     <div className="mt-5 space-y-4">
                         <label className="block">
-                            <span className={`text-[9px] font-extrabold uppercase tracking-[0.12em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Transporteur</span>
+                            <span className={`text-[10px] font-extrabold uppercase tracking-[0.1em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Transporteur</span>
                             <select
                                 value={carrierCode}
                                 onChange={(event) => setCarrierCode(event.target.value)}
@@ -119,7 +119,7 @@ export default function ShipmentDialog({
                         </label>
                         {carrierCode === 'other' ? (
                             <label className="block">
-                                <span className={`text-[9px] font-extrabold uppercase tracking-[0.12em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Nom du transporteur</span>
+                                <span className={`text-[10px] font-extrabold uppercase tracking-[0.1em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Nom du transporteur</span>
                                 <input
                                     value={carrierName}
                                     onChange={(event) => setCarrierName(event.target.value)}
@@ -131,7 +131,7 @@ export default function ShipmentDialog({
                             </label>
                         ) : null}
                         <label className="block">
-                            <span className={`text-[9px] font-extrabold uppercase tracking-[0.12em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Numéro de suivi</span>
+                            <span className={`text-[10px] font-extrabold uppercase tracking-[0.1em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Numéro de suivi</span>
                             <input
                                 value={trackingNumber}
                                 onChange={(event) => setTrackingNumber(event.target.value)}

@@ -94,6 +94,9 @@ function createProductCommandRepository({ db, refs, clock, failpoints = null }) 
                         reason,
                         now
                     });
+                    if (!nextProduct) {
+                        throw repositoryError('COMMERCE_PRODUCT_SOURCE_RETENTION_REQUIRED');
+                    }
                     return {
                         product: nextProduct,
                         response: {
@@ -101,9 +104,9 @@ function createProductCommandRepository({ db, refs, clock, failpoints = null }) 
                             collectionName,
                             commandId: command.commandId,
                             action,
-                            commerceVersion: nextProduct?.commerceVersion ?? version + 1,
-                            inventoryVersion: nextProduct?.inventoryVersion ?? existingProduct?.inventoryVersion ?? 0,
-                            status: nextProduct?.status ?? 'deleted'
+                            commerceVersion: nextProduct.commerceVersion,
+                            inventoryVersion: nextProduct.inventoryVersion ?? existingProduct?.inventoryVersion ?? 0,
+                            status: nextProduct.status
                         }
                     };
                 },
@@ -112,11 +115,7 @@ function createProductCommandRepository({ db, refs, clock, failpoints = null }) 
                         throw repositoryError('COMMERCE_AUDIT_APPEND_ONLY_CONFLICT');
                     }
                     const now = clock.now();
-                    if (record.result.product) {
-                        transaction.set(productRef, record.result.product);
-                    } else {
-                        transaction.delete(productRef);
-                    }
+                    transaction.set(productRef, record.result.product);
                     transaction.set(commandRef, {
                         schemaVersion: 2,
                         commandId: command.commandId,

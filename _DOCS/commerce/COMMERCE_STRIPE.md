@@ -121,6 +121,13 @@ et retour ne deviennent pas des statuts de paiement/fulfillment. Le champ
 legacy `status` reste une projection ecrite atomiquement pour compatibilite,
 jamais une source de verite v2.
 
+Les actions serveur de fulfillment sont suspendues lorsque
+`refundAggregate.status` vaut `pending`, `needs_review` ou `full`. Elles
+restent admissibles apres un remboursement `partial`, car la commande conserve
+un solde paye et peut encore devoir etre remise au client. Cette interdiction
+est derivee dans `computeAllowedActions` et reappliquee defensivement par la
+presentation Ventes contre un cache client perime.
+
 Un remboursement peut passer de `refund_pending` a `refunded` dans le meme
 appel lorsque Stripe renvoie immediatement `succeeded`; l'etat intermediaire
 n'a pas vocation a rester visible. S'il persiste (`unknown`,

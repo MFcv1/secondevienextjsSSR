@@ -103,8 +103,13 @@ test('projection publique: allowlist, statut, prix et stock zero', () => {
   const result = buildPublicProjection([
     { id: 'published', data: { status: 'published', name: 'Visible', stock: 1, currentPrice: 10 } },
     { id: 'draft', data: { status: 'draft', name: 'Cache', stock: 1, currentPrice: 10 } },
+    { id: 'archived', data: { status: 'archived', name: 'Historique', stock: 1, currentPrice: 10 } },
   ]);
   assert.deepEqual(result.full.map((item) => item.id), ['published']);
+  assert.equal(buildInventoryOverview([
+    { id: 'published', data: { status: 'published', stock: 1, currentPrice: 10 } },
+    { id: 'archived', data: { status: 'archived', stock: 1, currentPrice: 10 } },
+  ]).totalItems, 1);
   assert.deepEqual(buildPublicProjection([]).full, []);
 });
 

@@ -318,6 +318,9 @@ function applyProductAction({
     }
 
     const versions = validateExistingProduct(product);
+    if (product.status === 'archived') {
+        throw productError('COMMERCE_PRODUCT_ARCHIVED');
+    }
     const next = {
         ...product,
         commerceVersion: versions.commerceVersion + 1,
@@ -377,7 +380,18 @@ function applyProductAction({
             inventoryVersion: versions.inventoryVersion + 1
         };
     }
-    return null;
+    if (action === 'delete_product') {
+        assertOnlyFields(payload, new Set(), 'payload');
+        return {
+            ...next,
+            status: 'archived',
+            publishedAt: null,
+            archivedAt: now,
+            archivedBy: actor.uid,
+            archiveReason: reason
+        };
+    }
+    throw productError('COMMERCE_PRODUCT_ACTION_UNSUPPORTED');
 }
 
 module.exports = {

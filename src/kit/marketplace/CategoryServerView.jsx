@@ -329,7 +329,13 @@ export default function CategoryServerView({
           <div className="mx-auto max-w-7xl px-4 py-3 md:px-8 lg:px-12">
             <div className="mb-4 flex items-center justify-between gap-3 md:mb-0">
               <div className="flex items-center gap-2 md:gap-4">
-                <button type="button" data-category-open-filters className={`flex items-center gap-2 rounded-lg border px-3.5 py-2.5 text-[12px] font-medium transition-colors md:hidden ${darkMode ? 'border-stone-700 text-stone-300 hover:border-stone-500' : 'border-stone-200 text-stone-700 hover:border-stone-400'}`}>
+                <button
+                  type="button"
+                  data-category-open-filters
+                  aria-controls="category-filter-dialog"
+                  aria-expanded="false"
+                  className={`flex items-center gap-2 rounded-lg border px-3.5 py-2.5 text-[12px] font-medium transition-colors md:hidden ${darkMode ? 'border-stone-700 text-stone-300 hover:border-stone-500' : 'border-stone-200 text-stone-700 hover:border-stone-400'}`}
+                >
                   <SlidersHorizontal size={15} /> Filtrer
                   <span className="h-1.5 w-1.5 rounded-full bg-amber-500" data-category-active-indicator hidden={!hasActiveFilters} />
                 </button>
@@ -421,7 +427,17 @@ export default function CategoryServerView({
         </div>
 
         <div className={`fixed inset-0 z-[200] bg-black/40 opacity-0 transition-opacity duration-300 md:hidden pointer-events-none`} data-category-close-filters data-category-filter-overlay aria-hidden="true" />
-        <div className={`fixed inset-x-0 bottom-0 z-[201] h-[90dvh] max-h-[90dvh] translate-y-full overflow-hidden overscroll-none rounded-t-[28px] shadow-2xl transition-[transform,background-color,box-shadow] duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] md:hidden pointer-events-none ${darkMode ? 'bg-[#1A1A1A]' : 'bg-[#fffdfb]'}`} data-category-filter-drawer aria-hidden="true">
+        <div
+          id="category-filter-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="category-filter-dialog-title"
+          aria-hidden="true"
+          tabIndex={-1}
+          inert=""
+          className={`fixed inset-x-0 bottom-0 z-[201] h-[90dvh] max-h-[90dvh] translate-y-full overflow-hidden overscroll-none rounded-t-[28px] shadow-2xl transition-[transform,background-color,box-shadow] duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] md:hidden pointer-events-none ${darkMode ? 'bg-[#1A1A1A]' : 'bg-[#fffdfb]'}`}
+          data-category-filter-drawer
+        >
           <div className="safe-pb-filter-drawer flex h-full min-h-0 flex-col p-6">
             <div className="flex-shrink-0 touch-pan-y select-none">
               <button type="button" className="-mx-6 -mt-3 mb-2 flex h-8 w-[calc(100%+3rem)] cursor-pointer items-center justify-center md:hidden" data-category-close-filters aria-label="Fermer les filtres">
@@ -429,7 +445,7 @@ export default function CategoryServerView({
               </button>
               <div className="mb-8 flex items-center justify-between">
                 <div>
-                  <h3 className="font-serif text-2xl">Filtrer</h3>
+                  <h3 id="category-filter-dialog-title" className="font-serif text-2xl">Filtrer</h3>
                   <p className={`mt-1 text-[12px] ${darkMode ? 'text-stone-500' : 'text-stone-500'}`}><span data-category-filtered-count>{filteredItems.length}</span> r\u00e9sultat{filteredItems.length !== 1 ? 's' : ''}</p>
                 </div>
                 <Link href={buildCategoryHref(categoryId, state, {
@@ -442,7 +458,7 @@ export default function CategoryServerView({
                 })} prefetch={false} data-category-reset-link hidden={!hasActiveFilters} className={`text-[12px] underline underline-offset-4 ${darkMode ? 'text-stone-400' : 'text-[#9C8268]'}`}>
                   R\u00e9initialiser
                 </Link>
-                <button type="button" data-category-close-filters className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${darkMode ? 'hover:bg-white/10' : 'hover:bg-stone-100'}`} aria-label="Fermer les filtres">
+                <button type="button" data-category-close-filters data-category-filter-initial-focus className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${darkMode ? 'hover:bg-white/10' : 'hover:bg-stone-100'}`} aria-label="Fermer les filtres">
                   <X size={16} />
                 </button>
               </div>

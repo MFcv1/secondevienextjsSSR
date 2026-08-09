@@ -44,7 +44,9 @@ Etat `CODE_READY`:
 - `test:commerce:unit` valide schema, reducer, projections, compatibilite,
   actions serveur, retours quantitatifs, versionnement immutable des tarifs de
   livraison et separation entre demande client,
-  retour physique et remboursement Stripe; il couvre aussi signature opaque,
+  retour physique et remboursement Stripe; il couvre aussi les segments,
+  priorites et actions de la presentation Ventes, notamment la suspension du
+  fulfillment pendant un remboursement en attente ou complet; il couvre aussi signature opaque,
   rotation, bornes d'expiration et statuts des liens admin sans compte;
 - `test:commerce:ui` valide les transports/consommateurs Gates 4 et 5, le
   contrat checkout sans prix client, l'identite Auth serveur et l'absence de

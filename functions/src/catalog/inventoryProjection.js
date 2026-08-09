@@ -6,6 +6,7 @@ function buildInventoryOverview(sourceDocuments = [], options = {}) {
     let publishedItems = 0;
 
     sourceDocuments.forEach(({ data = {} }) => {
+        if (data.status === 'archived') return;
         totalItems += 1;
         const price = Number(data.currentPrice || data.startingPrice || 0);
         const stock = data.stock !== undefined ? Number(data.stock) : 1;

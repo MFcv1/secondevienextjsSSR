@@ -19,8 +19,11 @@ import {
     quoteTokens,
 } from './quoteTheme';
 
-const CONTACT_EMAIL = 'contact@seconde-vie-anais.fr';
-const CONTACT_PHONE = '+33612345678';
+// Les coordonnées visibles du footer peuvent être temporaires pour la démo.
+// Un envoi réel de devis exige toujours des variables confirmées séparément.
+const CONTACT_EMAIL = process.env.NEXT_PUBLIC_BUSINESS_EMAIL || '';
+const CONTACT_PHONE = process.env.NEXT_PUBLIC_BUSINESS_PHONE || '';
+const CONTACT_CHANNEL_READY = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(CONTACT_EMAIL);
 const MAX_PHOTOS = 10;
 
 const IconBase = ({ size = 20, strokeWidth = 1.6, className = '', children }) => (
@@ -419,9 +422,13 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
             goToStep(CONTACT_STEP_INDEX);
             return;
         }
+
         goToStep(ESTIMATE_STEP_INDEX);
     }, [goToStep, trackQuoteStart, validateContact]);
 
+    // TODO(quote-admin-inbox): remplacer le mailto par une soumission serveur
+    // persistée, puis afficher et gérer ces demandes dans un onglet Devis admin.
+    // La notification e-mail deviendra un effet secondaire optionnel de ce flux.
     const handleSubmit = (event) => {
         event.preventDefault();
         trackQuoteStart();
@@ -437,6 +444,10 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
 
         if (!validateContact()) {
             goToStep(CONTACT_STEP_INDEX);
+            return;
+        }
+
+        if (!CONTACT_CHANNEL_READY) {
             return;
         }
 
@@ -495,7 +506,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                     <div className={`mt-6 ${QUOTE_RADIUS_CARD} p-5 ${t.panelQuiet}`}>
                         <p className="font-sans text-[13px] font-semibold">Rien ne s'est ouvert ?</p>
                         <p className={`mt-1.5 ${QUOTE_TYPE.meta} ${t.muted}`}>
-                            Copiez le récapitulatif et envoyez-le à {CONTACT_EMAIL}, ou appelez l'atelier.
+                            Copiez le récapitulatif et envoyez-le à {CONTACT_EMAIL}{CONTACT_PHONE ? ", ou appelez l'atelier" : ''}.
                         </p>
                         <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
                             <button
@@ -505,12 +516,14 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                             >
                                 Copier le récapitulatif
                             </button>
-                            <a
-                                href={`tel:${CONTACT_PHONE}`}
-                                className={`inline-flex h-12 items-center justify-center rounded-full px-6 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.98] ${t.ghostBtn} ${t.focusRing}`}
-                            >
-                                Appeler l'atelier
-                            </a>
+                            {CONTACT_PHONE ? (
+                                <a
+                                    href={`tel:${CONTACT_PHONE.replace(/\s/g, '')}`}
+                                    className={`inline-flex h-12 items-center justify-center rounded-full px-6 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.98] ${t.ghostBtn} ${t.focusRing}`}
+                                >
+                                    Appeler l'atelier
+                                </a>
+                            ) : null}
                         </div>
                     </div>
 
@@ -1058,6 +1071,12 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                         )}
                     </div>
 
+                    {isLastStep && !CONTACT_CHANNEL_READY ? (
+                        <p role="status" className={`mt-5 rounded-2xl border px-4 py-3 font-sans text-[12.5px] leading-5 ${darkMode ? 'border-amber-300/20 bg-amber-200/10 text-amber-100' : 'border-amber-200 bg-amber-50 text-amber-950'}`}>
+                            L&apos;envoi du devis sera active des que l&apos;adresse de contact de l&apos;atelier aura ete confirmee.
+                        </p>
+                    ) : null}
+
                     {/* navigation desktop */}
                     <div className={`mt-auto hidden items-center justify-between gap-4 border-t pt-7 lg:flex ${t.hairline}`}>
                         <button
@@ -1073,7 +1092,8 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                         <button
                             type={isLastStep ? 'submit' : 'button'}
                             onClick={isLastStep ? undefined : step === CONTACT_STEP_INDEX ? showEstimate : () => goToStep(step + 1)}
-                            className={`group inline-flex ${QUOTE_CONTROL_HEIGHT} items-center gap-3 rounded-full pl-7 pr-2 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.98] ${t.primaryBtn} ${t.focusRing}`}
+                            disabled={isLastStep && !CONTACT_CHANNEL_READY}
+                            className={`group inline-flex ${QUOTE_CONTROL_HEIGHT} items-center gap-3 rounded-full pl-7 pr-2 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 ${t.primaryBtn} ${t.focusRing}`}
                         >
                             {isLastStep ? 'Envoyer ma demande' : step === CONTACT_STEP_INDEX ? 'Voir mon estimation' : 'Continuer'}
                             <span className={`flex h-9 w-9 items-center justify-center rounded-full ${QUOTE_EASE} group-hover:translate-x-0.5 ${darkMode ? 'bg-black/10' : 'bg-white/15'}`}>
@@ -1109,7 +1129,8 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                         <button
                             type={isLastStep ? 'submit' : 'button'}
                             onClick={isLastStep ? undefined : step === CONTACT_STEP_INDEX ? showEstimate : () => goToStep(step + 1)}
-                            className={`inline-flex ${QUOTE_CONTROL_HEIGHT} shrink-0 items-center gap-2 rounded-full px-6 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.97] ${t.primaryBtn} ${t.focusRing}`}
+                            disabled={isLastStep && !CONTACT_CHANNEL_READY}
+                            className={`inline-flex ${QUOTE_CONTROL_HEIGHT} shrink-0 items-center gap-2 rounded-full px-6 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-55 ${t.primaryBtn} ${t.focusRing}`}
                         >
                             {isLastStep ? 'Envoyer' : step === CONTACT_STEP_INDEX ? "Voir l'estimation" : 'Continuer'}
                             <ArrowRight size={15} />

@@ -199,7 +199,7 @@ const TestimonialsHeader = ({ headingId, darkMode, compact = false }) => {
         </h2>
 
         <p className={`mt-6 text-[10px] font-black uppercase tracking-[0.14em] dark:text-[#a99b8c] ${darkMode ? 'text-[#a99b8c]' : 'text-[#77716b]'}`}>
-            Excellent 4.9/5 - basé sur 124 avis Google
+            Témoignages dont la publication a été autorisée
         </p>
     </div>
     );

@@ -2,17 +2,14 @@ import Link from 'next/link';
 import {
   ArrowRight,
   BadgeCheck,
-  ChevronsUpDown,
   Clock,
   Facebook,
   Instagram,
-  Landmark,
   Leaf,
   LockKeyhole,
   Mail,
   MapPin,
   Phone,
-  RotateCcw,
   ShieldCheck,
   Truck,
 } from 'lucide-react';
@@ -22,22 +19,24 @@ import FooterBackToTopButtonIsland from './FooterBackToTopButtonIsland';
 import FooterMapFrameIsland from './FooterMapFrameIsland';
 
 const DEFAULT_CONTACT = {
-  email: process.env.NEXT_PUBLIC_BUSINESS_EMAIL || 'contact@secondevie-marseille.fr',
-  phone: process.env.NEXT_PUBLIC_BUSINESS_PHONE || '+33 6 12 34 56 78',
-  address: process.env.NEXT_PUBLIC_BUSINESS_ADDRESS || 'Marseille, France',
+  email: KIT_CONFIG.contact.email,
+  phone: KIT_CONFIG.contact.phone,
+  address: KIT_CONFIG.contact.address || 'Marseille, France',
+  addressDetails: KIT_CONFIG.contact.addressDetails,
+  openingHours: KIT_CONFIG.contact.openingHours,
   instagram: KIT_CONFIG.socialLinks.instagram,
   facebook: KIT_CONFIG.socialLinks.facebook,
   tiktok: KIT_CONFIG.socialLinks.tiktok,
   footerTitle: KIT_CONFIG.brandName,
   footerSubtitle: KIT_CONFIG.brandTagline,
-  legacyText: `2024 ${KIT_CONFIG.brandName} par Anais. Tous droits reserves.`,
+  legacyText: `${new Date().getFullYear()} ${KIT_CONFIG.brandName} par Anais. Tous droits reserves.`,
 };
 
 const benefitItems = [
   { icon: Leaf, title: 'Seconde main, premier choix', text: 'Des meubles uniques, chines et renoves avec soin.' },
-  { icon: ShieldCheck, title: 'Paiement securise', text: 'Vos transactions sont protegees et 100% securisees.' },
-  { icon: Truck, title: 'Livraison a Marseille', text: 'Livraison rapide et soignee a domicile.' },
-  { icon: RotateCcw, title: 'Satisfait ou rembourse', text: "Vous avez 14 jours pour changer d'avis en toute tranquillite." },
+  { icon: ShieldCheck, title: 'Paiement via Stripe', text: 'Les moyens eligibles sont affiches au moment du paiement.' },
+  { icon: Truck, title: 'Livraison ou retrait', text: 'Les options et leur tarif sont confirmes avant paiement.' },
+  { icon: BadgeCheck, title: 'Piece reelle', text: "Les photos et la description presentent l'exemplaire propose." },
 ];
 
 const sections = [
@@ -59,41 +58,35 @@ const sections = [
       ['Nos valeurs', '/a-propos#valeurs'],
       ['Atelier & Renovations', '/a-propos#atelier'],
       ['Livraison', '/devis'],
-      ['FAQ', '/#faq'],
       ['Contact', '/devis'],
     ],
   },
   {
     title: 'Mon compte',
     links: [
-      ['Se connecter', '/admin'],
-      ['Creer un compte', '/wishlist'],
+      ['Se connecter', '/mes-commandes'],
+      ['Creer un compte', '/mes-commandes'],
       ['Mes commandes', '/mes-commandes'],
       ['Liste de souhaits', '/wishlist'],
-      ['Mes annonces', '/admin'],
       ['Vendre un objet', '/devis'],
     ],
   },
   {
     title: "Besoin d'aide ?",
     links: [
-      ["Centre d'aide", '/devis'],
-      ['Livraison & Retours', '/devis'],
-      ['Paiement securise', '/checkout'],
-      ["Conditions d'utilisation", '/devis'],
-      ['Politique de confidentialite', '/devis'],
-      ['CGV', '/devis'],
+      ['Nous contacter', '/devis'],
+      ['Livraison', '/devis'],
     ],
   },
 ];
 
+const isExternalHttpUrl = (value) => /^https?:\/\//i.test(String(value || '').trim());
+const isLegalHref = (value) => /^(?:https?:\/\/|\/)/i.test(String(value || '').trim());
+
 const PaymentChip = ({ children, variant = 'light', className = '' }) => {
   const variants = {
     light: 'border-stone-200 bg-white text-stone-950 dark:border-[#3a332b] dark:bg-white dark:text-stone-950',
-    dark: 'border-[#3b3835] bg-[#2a2826] text-white',
-    paypal: 'border-[#064fa8] bg-[#064fa8] text-white',
-    bank: 'border-[#2b241e] bg-[#15110e] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_18px_rgba(0,0,0,0.18)]',
-    wero: 'border-[#095cae] bg-[#095cae] text-white',
+    muted: 'border-stone-200 bg-stone-100 text-stone-600 dark:border-[#3a332b] dark:bg-[#2a2826] dark:text-stone-200',
   };
   return (
     <div className={`flex h-8 min-w-0 items-center justify-center rounded-[5px] border px-3 shadow-[0_1px_0_rgba(0,0,0,0.03)] ${variants[variant]} ${className}`}>
@@ -108,28 +101,6 @@ const MastercardLogo = () => (
     <circle cx="32" cy="16" r="12" fill="#F79E1B" />
     <path d="M26 7.4a12 12 0 0 1 0 17.2 12 12 0 0 1 0-17.2Z" fill="#FF5F00" />
   </svg>
-);
-
-const GooglePayLogo = () => (
-  <span className="flex items-center gap-1.5 text-[13px] font-semibold tracking-normal">
-    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-      <path fill="#4285F4" d="M22.6 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.75h3.56c2.08-1.92 3.28-4.74 3.28-8.08Z" />
-      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.67l-3.56-2.75c-.98.66-2.23 1.05-3.72 1.05-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z" />
-      <path fill="#FBBC05" d="M5.84 14.1A6.61 6.61 0 0 1 5.5 12c0-.73.12-1.44.34-2.1V7.06H2.18A11 11 0 0 0 1 12c0 1.77.42 3.45 1.18 4.94l3.66-2.84Z" />
-      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.2 1.64l3.15-3.15C17.45 2.1 14.97 1 12 1A11 11 0 0 0 2.18 7.06L5.84 9.9C6.71 7.31 9.14 5.38 12 5.38Z" />
-    </svg>
-    <span className="text-[#5f6368]">Pay</span>
-  </span>
-);
-
-const ApplePayLogo = () => (
-  <span className="flex items-center gap-1 text-[12px] font-semibold tracking-normal">
-    <svg viewBox="0 0 18 22" className="h-4 w-3.5 fill-current" aria-hidden="true">
-      <path d="M14.7 11.5c0-2.1 1.7-3.1 1.8-3.2-1-1.5-2.6-1.7-3.1-1.7-1.3-.1-2.6.8-3.3.8-.7 0-1.8-.8-2.9-.8-1.5 0-2.9.9-3.7 2.2-1.6 2.8-.4 6.9 1.1 9.2.8 1.1 1.7 2.3 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.2.9-1.3 1.2-2.5 1.2-2.6-.1 0-2.8-1.1-2.8-4Z" />
-      <path d="M12.6 5.2c.6-.7 1-1.7.9-2.7-.9 0-1.9.6-2.5 1.3-.6.6-1 1.7-.9 2.6 1 0 1.9-.5 2.5-1.2Z" />
-    </svg>
-    <span>Pay</span>
-  </span>
 );
 
 const SectionTitle = ({ children, darkMode }) => (
@@ -149,13 +120,25 @@ const FooterLink = ({ children, href, highlight = false, showArrow = false, dark
 
 export default function FooterServer({ darkMode = false, contactInfo: contactInfoOverride } = {}) {
   const contactInfo = { ...DEFAULT_CONTACT, ...(contactInfoOverride || {}) };
-  const email = contactInfo.email || DEFAULT_CONTACT.email;
-  const phone = contactInfo.phone || DEFAULT_CONTACT.phone;
+  const email = String(contactInfo.email || '').trim();
+  const phone = String(contactInfo.phone || '').trim();
   const address = contactInfo.address || DEFAULT_CONTACT.address;
+  const addressDetails = String(contactInfo.addressDetails || '').trim();
+  const openingHours = String(contactInfo.openingHours || '').trim();
   const brandName = contactInfo.footerTitle || KIT_CONFIG.brandName;
   const brandTagline = contactInfo.footerSubtitle || KIT_CONFIG.brandTagline;
   const copyright = contactInfo.legacyText || DEFAULT_CONTACT.legacyText;
   const directionUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+  const socialLinks = [
+    { label: 'Instagram', href: contactInfo.instagram, icon: <Instagram size={19} /> },
+    { label: 'Facebook', href: contactInfo.facebook, icon: <Facebook size={19} /> },
+  ];
+  const legalLinks = [
+    ['Mentions legales', KIT_CONFIG.legalLinks.notice],
+    ['CGV', KIT_CONFIG.legalLinks.terms],
+    ['Politique de confidentialite', KIT_CONFIG.legalLinks.privacy],
+    ['Cookies', KIT_CONFIG.legalLinks.cookies],
+  ];
 
   return (
     <footer
@@ -167,53 +150,32 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
           <h3 className={`font-serif text-[15px] uppercase tracking-normal ${darkMode ? 'text-stone-100' : 'text-stone-950'}`}>Notre atelier a Marseille</h3>
           <div className="mt-4 h-[220px]"><FooterMapFrameIsland darkMode={darkMode} address={address} /></div>
           <div className={`mt-4 grid divide-y text-sm ${darkMode ? 'divide-[#211f1b] text-[#ded6cc]' : 'divide-[#eee6dd] text-stone-700'}`}>
-            <a href={directionUrl} target="_blank" rel="noopener noreferrer" className="flex gap-4 py-3"><MapPin size={17} className="mt-0.5 shrink-0" /><span><span className="block">{address}</span><span className="block text-xs opacity-70">Quartier du Panier, 13002</span></span></a>
-            <a href={`mailto:${email}`} className="flex items-center gap-4 py-3"><Mail size={17} /> <span className="break-all">{email}</span></a>
-            <a href={`tel:${phone.replace(/\s/g, '')}`} className="flex items-center gap-4 py-3"><Phone size={17} /> <span>{phone}</span></a>
-            <div className="flex items-center gap-4 py-3"><Clock size={17} /> <span>Lun - Sam : 10h - 19h</span></div>
+            <a href={directionUrl} target="_blank" rel="noopener noreferrer" className="flex gap-4 py-3"><MapPin size={17} className="mt-0.5 shrink-0" /><span><span className="block">{address}</span>{addressDetails ? <span className="block text-xs opacity-70">{addressDetails}</span> : null}</span></a>
+            {email ? <a href={`mailto:${email}`} className="flex items-center gap-4 py-3"><Mail size={17} /> <span className="break-all">{email}</span></a> : null}
+            {phone ? <a href={`tel:${phone.replace(/\s/g, '')}`} className="flex items-center gap-4 py-3"><Phone size={17} /> <span>{phone}</span></a> : null}
+            {openingHours ? <div className="flex items-center gap-4 py-3"><Clock size={17} /> <span>{openingHours}</span></div> : null}
           </div>
         </div>
 
         <div className={`rounded-[24px] border p-6 ${darkMode ? 'border-[#2e2a25] bg-[#111110]' : 'border-[#eee6dd] bg-[#fdfbf8]'}`}>
-          <h3 className={`mb-4 text-[11px] font-black uppercase tracking-widest ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>Moyens de paiement acceptes</h3>
+          <h3 className={`mb-4 text-[11px] font-black uppercase tracking-widest ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>Paiement</h3>
           <div className={`rounded-xl border px-4 py-3.5 ${darkMode ? 'border-[#2e2a25] bg-[#111110]' : 'border-[#eee6dd] bg-white/45'}`}>
             <div className="mb-3 flex items-center gap-3">
               <LockKeyhole size={18} />
               <div>
-                <p className="font-serif text-base">Carte / Wallets</p>
-                <p className="text-xs opacity-60">Rapide & securise</p>
+                <p className="font-serif text-base">Paiement traite par Stripe</p>
+                <p className="text-xs opacity-60">Moyens affiches selon eligibilite</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2 pl-8">
               <PaymentChip className="min-w-[52px] px-2.5"><span className="text-[12px] font-black italic tracking-normal text-[#1434cb]">VISA</span></PaymentChip>
               <PaymentChip className="min-w-[50px] px-2"><MastercardLogo /></PaymentChip>
-              <PaymentChip variant="dark" className="min-w-[66px] px-2.5"><ApplePayLogo /></PaymentChip>
-              <PaymentChip className="min-w-[62px] px-2.5"><GooglePayLogo /></PaymentChip>
-              <PaymentChip variant="paypal" className="min-w-[68px] px-2.5"><span className="text-[12px] font-black italic tracking-normal">PayPal</span></PaymentChip>
-            </div>
-          </div>
-          <div className={`relative z-10 mx-auto -my-1 flex h-7 w-14 items-center justify-center rounded-full ${darkMode ? 'text-[#c98b45]' : 'text-stone-500'}`} aria-hidden="true">
-            <span className={`absolute left-[-36px] right-[-36px] top-1/2 h-px -translate-y-1/2 ${darkMode ? 'bg-gradient-to-r from-transparent via-[#c98b45]/35 to-transparent' : 'bg-gradient-to-r from-transparent via-stone-300 to-transparent'}`} />
-            <span className={`relative flex h-6 w-6 items-center justify-center rounded-full border ${darkMode ? 'border-[#c98b45]/50 bg-[#111110]' : 'border-[#e8ded2] bg-[#fdfbf8]'}`}>
-              <ChevronsUpDown size={15} strokeWidth={1.9} />
-            </span>
-          </div>
-          <div className={`rounded-xl border px-4 py-3.5 ${darkMode ? 'border-[#2e2a25] bg-[#111110]' : 'border-[#eee6dd] bg-white/45'}`}>
-            <div className="mb-3 flex items-center gap-3">
-              <Landmark size={18} />
-              <div>
-                <p className="font-serif text-base">Virement</p>
-                <p className="text-xs opacity-60">Instructions via email</p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2 pl-8">
-              <PaymentChip variant="bank" className="min-w-[92px] gap-2 px-2.5"><Landmark size={13} strokeWidth={1.8} /><span className="text-[11px] font-black uppercase tracking-[0.08em]">Virement</span></PaymentChip>
-              <PaymentChip variant="wero" className="min-w-[56px] px-2.5"><span className="text-[13px] font-black lowercase tracking-normal">wero</span></PaymentChip>
+              <PaymentChip variant="muted" className="px-2.5"><span className="text-[10px] font-bold uppercase tracking-wide">Autres selon Stripe</span></PaymentChip>
             </div>
           </div>
           <img
             src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'}
-            alt="Livraison partout a Marseille"
+            alt="Livraison et retrait autour de Marseille"
             width={1536}
             height={1024}
             loading="lazy"
@@ -222,9 +184,9 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
             className="mt-6 w-full rounded-md object-contain"
           />
           <div className={`mt-5 grid grid-cols-3 gap-3 text-[10px] ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
-            <div className="flex flex-col items-center gap-1 text-center"><LockKeyhole size={22} />SSL<br />Secure</div>
-            <div className="flex flex-col items-center gap-1 text-center"><span className="rounded bg-[#168b8f] px-2 py-1 text-sm font-black text-white">PCI</span>DSS<br />Compliant</div>
-            <div className="flex flex-col items-center gap-1 text-center"><ShieldCheck size={22} />3D<br />Secure</div>
+            <div className="flex flex-col items-center gap-1 text-center"><LockKeyhole size={22} />Connexion<br />chiffree</div>
+            <div className="flex flex-col items-center gap-1 text-center"><BadgeCheck size={22} />Moyens<br />eligibles</div>
+            <div className="flex flex-col items-center gap-1 text-center"><ShieldCheck size={22} />Total<br />confirme</div>
           </div>
         </div>
 
@@ -260,9 +222,14 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
                 Nous chinons, renovons et selectionnons avec passion des meubles et objets de seconde main pour leur offrir une nouvelle vie et sublimer votre interieur.
               </p>
               <div className="flex items-center gap-4">
-                <a href={contactInfo.instagram || '#'} aria-label="Instagram" className={`flex h-11 w-11 items-center justify-center rounded-full transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}><Instagram size={19} /></a>
-                <a href={contactInfo.facebook || '#'} aria-label="Facebook" className={`flex h-11 w-11 items-center justify-center rounded-full transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}><Facebook size={19} /></a>
-                <Link href="/#gallery-pieces" prefetch={false} aria-label="Pinterest" className={`flex h-11 w-11 items-center justify-center rounded-full text-lg font-semibold transition-all hover:-translate-y-1 ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc] hover:bg-[#2b2823]' : 'bg-[#f3eee7] text-stone-950 hover:bg-[#ece3d8]'}`}>p</Link>
+                {socialLinks.map(({ label, href, icon }) => {
+                  const className = `flex h-11 w-11 items-center justify-center rounded-full transition-all ${darkMode ? 'bg-[#211f1b] text-[#f2e8dc]' : 'bg-[#f3eee7] text-stone-950'}`;
+                  return isExternalHttpUrl(href) ? (
+                    <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className={`${className} hover:-translate-y-1`}>{icon}</a>
+                  ) : (
+                    <span key={label} aria-label={`${label} bientot disponible`} aria-disabled="true" className={`${className} opacity-55`}>{icon}</span>
+                  );
+                })}
               </div>
             </div>
 
@@ -282,10 +249,10 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
               <div className="h-[240px] xl:h-[260px]"><FooterMapFrameIsland darkMode={darkMode} address={address} /></div>
               <div className={`rounded-lg border px-5 py-4 xl:px-6 ${darkMode ? 'border-[#d5b58d]/12 bg-[#121110]' : 'border-[#eee6dd] bg-[#fdfbf8] dark:border-[#d5b58d]/12 dark:bg-[#121110]'}`}>
                 <div className={`grid gap-0 divide-y text-sm ${darkMode ? 'divide-[#211f1b] text-[#ded6cc]' : 'divide-[#eee6dd] text-stone-700'}`}>
-                  <a href={directionUrl} target="_blank" rel="noopener noreferrer" className="flex gap-5 py-4 transition-colors hover:text-orange-500"><MapPin size={18} className="mt-0.5 shrink-0" /><span><span className={`block ${darkMode ? 'text-[#f8f2ea]' : 'text-stone-950'}`}>{address}</span><span className="mt-1 block text-xs opacity-70">Quartier du Panier, 13002</span></span></a>
-                  <a href={`mailto:${email}`} className="flex items-center gap-5 py-4 transition-colors hover:text-orange-500"><Mail size={18} className="shrink-0" /><span className="break-words text-[13px]">{email}</span></a>
-                  <a href={`tel:${phone.replace(/\s/g, '')}`} className="flex items-center gap-5 py-4 transition-colors hover:text-orange-500"><Phone size={18} className="shrink-0" /><span>{phone}</span></a>
-                  <div className="flex items-center gap-5 py-4"><Clock size={18} className="shrink-0" /><span>Lun - Sam : 10h - 19h</span></div>
+                  <a href={directionUrl} target="_blank" rel="noopener noreferrer" className="flex gap-5 py-4 transition-colors hover:text-orange-500"><MapPin size={18} className="mt-0.5 shrink-0" /><span><span className={`block ${darkMode ? 'text-[#f8f2ea]' : 'text-stone-950'}`}>{address}</span>{addressDetails ? <span className="mt-1 block text-xs opacity-70">{addressDetails}</span> : null}</span></a>
+                  {email ? <a href={`mailto:${email}`} className="flex items-center gap-5 py-4 transition-colors hover:text-orange-500"><Mail size={18} className="shrink-0" /><span className="break-words text-[13px]">{email}</span></a> : null}
+                  {phone ? <a href={`tel:${phone.replace(/\s/g, '')}`} className="flex items-center gap-5 py-4 transition-colors hover:text-orange-500"><Phone size={18} className="shrink-0" /><span>{phone}</span></a> : null}
+                  {openingHours ? <div className="flex items-center gap-5 py-4"><Clock size={18} className="shrink-0" /><span>{openingHours}</span></div> : null}
                 </div>
               </div>
             </div>
@@ -295,21 +262,17 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
         <div className={`border-t px-7 py-9 md:px-10 xl:px-12 2xl:px-14 ${darkMode ? 'border-[#d5b58d]/8' : 'border-[#eee6dd] dark:border-[#d5b58d]/8'}`}>
           <div className={`grid gap-9 divide-y lg:grid-cols-[0.95fr_1.25fr_0.95fr] lg:divide-x lg:divide-y-0 xl:grid-cols-[0.95fr_1.35fr_0.95fr] ${darkMode ? 'divide-[#d5b58d]/10' : 'divide-[#eee6dd] dark:divide-[#d5b58d]/10'}`}>
             <div className="space-y-6 lg:pr-0 xl:pr-8">
-              <h3 className={`font-serif text-[15px] uppercase ${darkMode ? 'text-stone-100' : 'text-stone-950'}`}>Moyens de paiement acceptes</h3>
+              <h3 className={`font-serif text-[15px] uppercase ${darkMode ? 'text-stone-100' : 'text-stone-950'}`}>Paiement via Stripe</h3>
               <div className="flex flex-wrap gap-2">
                 <PaymentChip><span className="text-[13px] font-black italic tracking-normal text-[#1434cb]">VISA</span></PaymentChip>
                 <PaymentChip className="min-w-[52px] px-2"><MastercardLogo /></PaymentChip>
-                <PaymentChip variant="dark" className="min-w-[70px] px-2.5"><ApplePayLogo /></PaymentChip>
-                <PaymentChip className="min-w-[64px] px-2.5"><GooglePayLogo /></PaymentChip>
-                <PaymentChip variant="paypal"><span className="text-[13px] font-black italic tracking-normal">PayPal</span></PaymentChip>
-                <PaymentChip variant="bank" className="gap-2"><Landmark size={13} strokeWidth={1.8} /><span className="text-[11px] font-black uppercase tracking-[0.08em]">Virement</span></PaymentChip>
-                <PaymentChip variant="wero"><span className="text-[13px] font-black lowercase tracking-normal">wero</span></PaymentChip>
+                <PaymentChip variant="muted"><span className="text-[10px] font-bold uppercase tracking-wide">Autres selon eligibilite</span></PaymentChip>
               </div>
             </div>
             <div className="flex min-w-0 items-center justify-center pt-8 lg:px-6 lg:pt-0 xl:px-8">
               <img
                 src={darkMode ? '/images/footer-delivery-dark.webp' : '/images/footer-delivery-light.webp'}
-                alt="Livraison partout a Marseille"
+                alt="Livraison et retrait autour de Marseille"
                 width={1536}
                 height={1024}
                 loading="lazy"
@@ -318,11 +281,11 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
               />
             </div>
             <div className="space-y-7 pt-8 lg:pl-8 lg:pt-0 xl:pl-10">
-              <div className="flex items-center gap-5"><BadgeCheck size={28} strokeWidth={1.6} /><h3 className={`font-serif text-[15px] uppercase ${darkMode ? 'text-stone-100' : 'text-stone-950'}`}>Site securise</h3></div>
+              <div className="flex items-center gap-5"><BadgeCheck size={28} strokeWidth={1.6} /><h3 className={`font-serif text-[15px] uppercase ${darkMode ? 'text-stone-100' : 'text-stone-950'}`}>Paiement transparent</h3></div>
               <div className={`flex flex-wrap gap-x-5 gap-y-4 text-xs ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
-                <div className="flex min-w-[86px] items-center gap-3"><LockKeyhole size={30} className={darkMode ? 'text-[#f8f2ea]' : 'text-stone-950'} /><span>SSL<br />Secure</span></div>
-                <div className="flex min-w-[96px] items-center gap-3"><span className="rounded bg-[#168b8f] px-2 py-1.5 text-sm font-black text-white">PCI</span><span>DSS<br />Compliant</span></div>
-                <div className="flex min-w-[88px] items-center gap-3"><ShieldCheck size={30} className={darkMode ? 'text-[#f8f2ea]' : 'text-stone-950'} /><span>3D<br />Secure</span></div>
+                <div className="flex min-w-[86px] items-center gap-3"><LockKeyhole size={30} className={darkMode ? 'text-[#f8f2ea]' : 'text-stone-950'} /><span>Connexion<br />chiffree</span></div>
+                <div className="flex min-w-[96px] items-center gap-3"><BadgeCheck size={30} className={darkMode ? 'text-[#f8f2ea]' : 'text-stone-950'} /><span>Moyens affiches<br />selon eligibilite</span></div>
+                <div className="flex min-w-[88px] items-center gap-3"><ShieldCheck size={30} className={darkMode ? 'text-[#f8f2ea]' : 'text-stone-950'} /><span>Total confirme<br />avant paiement</span></div>
               </div>
             </div>
           </div>
@@ -332,10 +295,13 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
           <div className="flex flex-col gap-6 text-sm lg:flex-row lg:items-center lg:justify-between">
             <p className={darkMode ? 'text-stone-500' : 'text-stone-600'}>© {copyright}</p>
             <div className={`flex flex-wrap gap-x-7 gap-y-3 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
-              <Link href="/devis" prefetch={false} className="hover:text-orange-500">Mentions legales</Link>
-              <Link href="/devis" prefetch={false} className="hover:text-orange-500">CGV</Link>
-              <Link href="/devis" prefetch={false} className="hover:text-orange-500">Politique de confidentialite</Link>
-              <Link href="/devis" prefetch={false} className="hover:text-orange-500">Cookies</Link>
+              {legalLinks.map(([label, href]) => (
+                isLegalHref(href) ? (
+                  <a key={label} href={href} className="hover:text-orange-500">{label}</a>
+                ) : (
+                  <span key={label} aria-label={`${label} bientot disponible`} className="opacity-60">{label}</span>
+                )
+              ))}
             </div>
           </div>
         </div>

@@ -29,7 +29,7 @@ function JourneyTrack({ stage, tone, darkMode }) {
     );
 }
 
-function OrderRow({ darkMode = false, onSelect, order, selected = false }) {
+function OrderRow({ darkMode = false, onKeyDown, onSelect, order, selected = false }) {
     const journey = getOrderJourney(order);
     const items = summarizeItems(order);
     const isException = journey.kind === 'exception';
@@ -39,6 +39,7 @@ function OrderRow({ darkMode = false, onSelect, order, selected = false }) {
             <button
                 type="button"
                 onClick={() => onSelect(order)}
+                onKeyDown={onKeyDown}
                 aria-current={selected ? 'true' : undefined}
                 data-order-row={order.id}
                 className={`group grid w-full grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 rounded-[14px] px-2.5 py-2.5 text-left transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] lg:grid-cols-[minmax(180px,2fr)_1.25fr_1.5fr_.75fr_.9fr] lg:gap-2 lg:items-center ${
@@ -53,7 +54,7 @@ function OrderRow({ darkMode = false, onSelect, order, selected = false }) {
                         <span className="block truncate text-[12px] font-extrabold tracking-[-0.015em]">
                             {order.shipping?.fullName || 'Client inconnu'}
                         </span>
-                        <span className={`mt-0.5 block truncate font-mono text-[8px] ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>
+                        <span className={`mt-0.5 block truncate font-mono text-[10px] ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>
                             {orderReference(order.id)}
                         </span>
                     </span>
@@ -69,11 +70,11 @@ function OrderRow({ darkMode = false, onSelect, order, selected = false }) {
                 <span className="col-start-1 row-start-3 flex min-w-0 items-center gap-2 lg:col-auto lg:row-auto">
                     {isException ? (
                         <>
-                            <span className={`shrink-0 rounded-full px-2 py-1 text-[8px] font-extrabold uppercase tracking-[0.08em] ${pillClass(journey.tone, darkMode)}`}>
+                            <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.06em] ${pillClass(journey.tone, darkMode)}`}>
                                 {journey.label}
                             </span>
                             {journey.detail ? (
-                                <span className={`hidden truncate text-[9px] font-semibold 2xl:inline ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>
+                                <span className={`hidden truncate text-[10px] font-semibold 2xl:inline ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>
                                     {journey.detail}
                                 </span>
                             ) : null}
@@ -81,14 +82,19 @@ function OrderRow({ darkMode = false, onSelect, order, selected = false }) {
                     ) : (
                         <>
                             <JourneyTrack stage={journey.stage} tone={journey.tone} darkMode={darkMode} />
-                            <span className={`truncate text-[9.5px] font-bold ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
+                            <span className={`truncate text-[10.5px] font-bold ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
                                 {journey.label}
                             </span>
+                            {journey.detail ? (
+                                <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${pillClass('info', darkMode)}`} title={journey.detail}>
+                                    Remb. partiel
+                                </span>
+                            ) : null}
                         </>
                     )}
                 </span>
 
-                <span className={`col-start-2 row-start-2 justify-self-end text-[9.5px] font-semibold tabular-nums lg:col-auto lg:row-auto lg:justify-self-auto ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
+                <span className={`col-start-2 row-start-2 justify-self-end text-[10.5px] font-semibold tabular-nums lg:col-auto lg:row-auto lg:justify-self-auto ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
                     {formatShortDate(order.createdAt)}
                     <span className="hidden xl:inline"> · {formatClock(order.createdAt)}</span>
                 </span>

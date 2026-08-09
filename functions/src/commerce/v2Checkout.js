@@ -71,6 +71,13 @@ function normalizeFixtureRequest(value) {
 function mapDomainError(error) {
     if (error instanceof functions.https.HttpsError) return error;
     const code = String(error?.code || '');
+    if (code.startsWith('COMMERCE_CHECKOUT_TERMINAL_')) {
+        return new functions.https.HttpsError(
+            'failed-precondition',
+            'Cette reservation de commande n est plus active.',
+            { reason: code }
+        );
+    }
     if (code.includes('MODE_OFF') || code.includes('FIXTURE_')) {
         return new functions.https.HttpsError(
             'failed-precondition',

@@ -6,14 +6,39 @@ function coordinatorError(code) {
     return error;
 }
 
-function createCheckoutCoordinator({ checkoutRepository, sagaService }) {
+function resolveCheckoutResumeTerminalCode(order, attempt, nowMillis) {
+    if (
+        order?.payment?.status === 'succeeded' ||
+        order?.checkout?.closeReason === 'paid'
+    ) {
+        return null;
+    }
+    const expiresAtMillis = Date.parse(order?.checkout?.expiresAt);
+    if (order?.checkout?.closeReason === 'expired') {
+        return 'COMMERCE_CHECKOUT_TERMINAL_EXPIRED';
+    }
+    const cancellationIsDurable = (
+        order?.checkout?.closeReason === 'canceled' ||
+        order?.payment?.status === 'canceled' ||
+        attempt?.status === 'canceled'
+    );
+    if (cancellationIsDurable) {
+        return Number.isSafeInteger(expiresAtMillis) && expiresAtMillis <= nowMillis
+            ? 'COMMERCE_CHECKOUT_TERMINAL_EXPIRED'
+            : 'COMMERCE_CHECKOUT_TERMINAL_CANCELED';
+    }
+    return null;
+}
+
+function createCheckoutCoordinator({ checkoutRepository, sagaService, clock }) {
     if (
         !checkoutRepository ||
         typeof checkoutRepository.prepareCheckout !== 'function' ||
         typeof checkoutRepository.loadOwnedCheckout !== 'function' ||
         !sagaService ||
         typeof sagaService.ensurePaymentIntent !== 'function' ||
-        typeof sagaService.hitAfterHold !== 'function'
+        typeof sagaService.hitAfterHold !== 'function' ||
+        typeof clock?.nowMillis !== 'function'
     ) {
         throw coordinatorError('COMMERCE_CHECKOUT_COORDINATOR_DEPENDENCY_INVALID');
     }
@@ -29,6 +54,12 @@ function createCheckoutCoordinator({ checkoutRepository, sagaService }) {
 
     async function resumeCheckout({ orderId, ownerUid }) {
         const checkout = await checkoutRepository.loadOwnedCheckout({ orderId, ownerUid });
+        const terminalCode = resolveCheckoutResumeTerminalCode(
+            checkout.order,
+            checkout.attempt,
+            clock.nowMillis()
+        );
+        if (terminalCode) throw coordinatorError(terminalCode);
         return sagaService.ensurePaymentIntent(checkout);
     }
 
@@ -38,4 +69,7 @@ function createCheckoutCoordinator({ checkoutRepository, sagaService }) {
     });
 }
 
-module.exports = { createCheckoutCoordinator };
+module.exports = {
+    createCheckoutCoordinator,
+    resolveCheckoutResumeTerminalCode
+};

@@ -6,7 +6,7 @@ import process from 'node:process';
 
 const rootDir = process.cwd();
 const functionsDir = path.join(rootDir, 'functions');
-const outputPath = path.join(rootDir, 'public', 'maintenance', 'audit.json');
+const outputPath = path.join(rootDir, '.maintenance', 'audit.json');
 const vulnerabilityLevels = ['info', 'low', 'moderate', 'high', 'critical', 'total'];
 
 async function readJson(filePath) {
@@ -204,7 +204,7 @@ async function main() {
 
   await mkdir(path.dirname(outputPath), { recursive: true });
   await writeFile(outputPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
-  console.log(`Maintenance audit written to ${path.relative(rootDir, outputPath)}`);
+  console.log(`Private maintenance audit written to ${path.relative(rootDir, outputPath)}`);
   if (audit.total > 0) console.log(`Vulnerabilities: ${audit.total}`);
   if (!audit.completed) process.exitCode = 1;
 }

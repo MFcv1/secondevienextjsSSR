@@ -8,6 +8,7 @@ import {
   getCategoryQueryState,
   hasActiveCategoryFilters,
 } from './categoryViewModel';
+import { focusWithoutScroll, trapDialogTabKey } from '../ui/dialogFocus';
 
 const setBodyLocked = (locked) => {
   if (typeof document === 'undefined') return;
@@ -50,6 +51,10 @@ const setDrawerOpen = (root, open) => {
   drawer.classList.toggle('pointer-events-none', !open);
   drawer.classList.toggle('translate-y-full', !open);
   drawer.setAttribute('aria-hidden', open ? 'false' : 'true');
+  drawer.toggleAttribute('inert', !open);
+  root.querySelectorAll('[data-category-open-filters]').forEach((trigger) => {
+    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
 
   setBodyLocked(open);
 };
@@ -128,14 +133,37 @@ export default function CategoryControlsIsland({
   filterOptions = {},
 }) {
   const rootRef = React.useRef(null);
+  const drawerTriggerRef = React.useRef(null);
 
-  React.useEffect(() => () => setBodyLocked(false), []);
+  React.useEffect(() => () => {
+    if (rootRef.current) setDrawerOpen(rootRef.current, false);
+    else setBodyLocked(false);
+  }, []);
 
   React.useEffect(() => {
     rootRef.current = document.querySelector('[data-category-native-view]');
     return () => {
       rootRef.current = null;
     };
+  }, []);
+
+  const closeDrawer = React.useCallback((root, { restoreFocus = true } = {}) => {
+    setDrawerOpen(root, false);
+    if (!restoreFocus) return;
+    const trigger = drawerTriggerRef.current;
+    window.requestAnimationFrame(() => {
+      if (trigger?.isConnected) focusWithoutScroll(trigger);
+    });
+  }, []);
+
+  const openDrawer = React.useCallback((root, trigger) => {
+    drawerTriggerRef.current = trigger;
+    setDrawerOpen(root, true);
+    const drawer = root.querySelector('[data-category-filter-drawer]');
+    window.requestAnimationFrame(() => {
+      const initialFocus = drawer?.querySelector('[data-category-filter-initial-focus]');
+      focusWithoutScroll(initialFocus || drawer);
+    });
   }, []);
 
   const applyState = React.useCallback((state, { push = false } = {}) => {
@@ -220,13 +248,13 @@ export default function CategoryControlsIsland({
 
     if (event.target.closest('[data-category-open-filters]')) {
       event.preventDefault();
-      setDrawerOpen(root, true);
+      openDrawer(root, event.target.closest('[data-category-open-filters]'));
       return;
     }
 
     if (event.target.closest('[data-category-close-filters]')) {
       event.preventDefault();
-      setDrawerOpen(root, false);
+      closeDrawer(root);
       return;
     }
 
@@ -251,7 +279,7 @@ export default function CategoryControlsIsland({
         applyState(getCategoryQueryState(targetUrl.searchParams, filterOptions), { push: true });
       }
     }
-  }, [applyState, filterOptions]);
+  }, [applyState, closeDrawer, filterOptions, openDrawer]);
 
   const handleChange = React.useCallback((event) => {
     const form = event.target.closest('form[data-category-filter-form]');
@@ -283,26 +311,42 @@ export default function CategoryControlsIsland({
     if (!form) return;
     event.preventDefault();
     applyState(stateFromForm(form, filterOptions), { push: true });
-    if (rootRef.current) setDrawerOpen(rootRef.current, false);
-  }, [applyState, filterOptions]);
+    if (rootRef.current) closeDrawer(rootRef.current);
+  }, [applyState, closeDrawer, filterOptions]);
 
   React.useEffect(() => {
     const root = rootRef.current || document.querySelector('[data-category-native-view]');
     if (!root) return undefined;
 
     rootRef.current = root;
+    const handleKeyDown = (event) => {
+      const drawer = root.querySelector('[data-category-filter-drawer]');
+      if (!drawer || drawer.getAttribute('aria-hidden') !== 'false') return;
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        closeDrawer(root);
+        return;
+      }
+
+      trapDialogTabKey(event, drawer, drawer);
+    };
+
     root.addEventListener('click', handleClick);
     root.addEventListener('change', handleChange);
     root.addEventListener('input', handleInput);
     root.addEventListener('submit', handleSubmit);
+    document.addEventListener('keydown', handleKeyDown);
 
     return () => {
       root.removeEventListener('click', handleClick);
       root.removeEventListener('change', handleChange);
       root.removeEventListener('input', handleInput);
       root.removeEventListener('submit', handleSubmit);
+      document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [handleChange, handleClick, handleInput, handleSubmit]);
+  }, [closeDrawer, handleChange, handleClick, handleInput, handleSubmit]);
 
   return null;
 }

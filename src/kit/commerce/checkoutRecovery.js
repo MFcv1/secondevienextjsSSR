@@ -5,6 +5,11 @@ export const COMMERCE_V2_RECOVERY_ENABLED =
     COMMERCE_V2_UI_ENABLED;
 export const CHECKOUT_RECOVERY_STORAGE_KEY = 'secondevie:checkout-recovery:v1';
 
+const TERMINAL_CHECKOUT_REASONS = Object.freeze({
+    COMMERCE_CHECKOUT_TERMINAL_EXPIRED: 'expired',
+    COMMERCE_CHECKOUT_TERMINAL_CANCELED: 'canceled'
+});
+
 const FORBIDDEN_FIELDS = Object.freeze([
     'clientSecret',
     'checkoutOtpToken',
@@ -101,6 +106,21 @@ export function clearCheckoutRecoveryDescriptor(
 ) {
     if (!enabled || typeof window === 'undefined') return;
     window.localStorage.removeItem(CHECKOUT_RECOVERY_STORAGE_KEY);
+}
+
+export function getCheckoutRecoveryTerminalReason(error) {
+    const code = String(error?.details?.reason || '');
+    return TERMINAL_CHECKOUT_REASONS[code] || null;
+}
+
+export function getCheckoutRecoveryTerminalMessage(reason) {
+    if (reason === 'expired') {
+        return 'Votre réservation a expiré. Vérifiez votre panier, puis recommencez le paiement.';
+    }
+    if (reason === 'canceled') {
+        return 'Cette réservation a été annulée. Vérifiez votre panier, puis recommencez le paiement.';
+    }
+    return '';
 }
 
 export function isPurchasedCartLineUnchanged(currentLine, purchasedLine) {

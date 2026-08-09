@@ -8,6 +8,9 @@
 // ── MARQUE ────────────────────────────────────────────────────
 const BRAND_NAME    = process.env.NEXT_PUBLIC_BRAND_NAME    || 'Seconde Vie';
 const BRAND_TAGLINE = process.env.NEXT_PUBLIC_BRAND_TAGLINE || 'par Anais';
+const INSTAGRAM_URL = process.env.NEXT_PUBLIC_INSTAGRAM_URL || '';
+const INSTAGRAM_FOLLOWERS_K = Number(process.env.NEXT_PUBLIC_INSTAGRAM_FOLLOWERS_K);
+const HAS_PUBLIC_INSTAGRAM = /^https:\/\/www\.instagram\.com\/[A-Za-z0-9._-]+\/?$/i.test(INSTAGRAM_URL);
 
 export const GALLERY_HERO_PRESETS = [
   { preset: 'imagehero/1.webp', src: '/images/imagehero/1.webp', mobileSrc: '/images/imagehero/1-mobile.webp', objectPosition: 'center center', mobileObjectPosition: '54% center' },
@@ -129,12 +132,17 @@ export const KIT_CONFIG = {
     { id: 'newsletter',       label: 'Infos'       },
     { id: 'payment_settings', label: 'Paiement'    },
     { id: 'account',          label: 'Mon compte'  },
-    { id: 'maintenance',      label: 'Maintenance' },
   ],
 
   // ── FEATURE FLAGS ─────────────────────────────────────────
   features: {
+    // La surface newsletter / jeu promo reste visible pendant la demo.
+    // Sa persistance et son envoi seront branches dans une passe dediee.
     newsletter:      true,
+    // Les temoignages restent masques tant que leur provenance et leur droit
+    // de publication n'ont pas ete confirmes explicitement.
+    testimonials:    process.env.NEXT_PUBLIC_CUSTOMER_TESTIMONIALS_VERIFIED === 'true',
+    instagramCommunity: HAS_PUBLIC_INSTAGRAM,
     analytics:       true,
     darkMode:        true,
     pwa:             true,
@@ -156,11 +164,37 @@ export const KIT_CONFIG = {
     replyHint:      'Reponse rapide en journee',
   },
 
+  // ── CONTACT PUBLIC ────────────────────────────────────────
+  // Valeurs temporaires de demonstration. Les parcours qui envoient réellement
+  // un message utilisent uniquement les variables d'environnement confirmees.
+  contact: {
+    email:          process.env.NEXT_PUBLIC_BUSINESS_EMAIL || 'contact@secondevie-marseille.fr',
+    phone:          process.env.NEXT_PUBLIC_BUSINESS_PHONE || '+33 6 12 34 56 78',
+    address:        process.env.NEXT_PUBLIC_BUSINESS_ADDRESS || '',
+    addressDetails: process.env.NEXT_PUBLIC_BUSINESS_ADDRESS_DETAILS || 'Quartier du Panier, 13002',
+    openingHours:   process.env.NEXT_PUBLIC_BUSINESS_OPENING_HOURS || 'Lun - Sam : 10h - 19h',
+  },
+
   // ── SOCIAL LINKS ──────────────────────────────────────────
   socialLinks: {
-    instagram: '',
-    facebook:  '',
-    tiktok:    '',
+    instagram: HAS_PUBLIC_INSTAGRAM ? INSTAGRAM_URL : '',
+    facebook:  process.env.NEXT_PUBLIC_FACEBOOK_URL || '',
+    tiktok:    process.env.NEXT_PUBLIC_TIKTOK_URL || '',
+  },
+
+  socialProof: {
+    instagramFollowersK: Number.isFinite(INSTAGRAM_FOLLOWERS_K) && INSTAGRAM_FOLLOWERS_K > 0
+      ? INSTAGRAM_FOLLOWERS_K
+      : null,
+  },
+
+  // ── DOCUMENTS JURIDIQUES ─────────────────────────────────
+  // Ces URL restent vides tant que les textes n'ont pas ete valides/publies.
+  legalLinks: {
+    notice:  process.env.NEXT_PUBLIC_LEGAL_NOTICE_URL || '',
+    terms:   process.env.NEXT_PUBLIC_TERMS_URL || '',
+    privacy: process.env.NEXT_PUBLIC_PRIVACY_URL || '',
+    cookies: process.env.NEXT_PUBLIC_COOKIES_URL || '',
   },
 
   // ── CORS DOMAINS ──────────────────────────────────────────

@@ -26,7 +26,7 @@ export default function ConfirmDialog({
             onClose={onCancel}
         >
             <div className="p-6 sm:p-7">
-                <p className={`text-[9px] font-extrabold uppercase tracking-[0.14em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
+                <p className={`text-[10px] font-extrabold uppercase tracking-[0.12em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
                     {orderReference(orderId)}
                 </p>
                 <h3 id="order-confirm-title" className="mt-2 text-[20px] font-extrabold tracking-[-0.03em]">

@@ -50,6 +50,8 @@
         "gate3-inbox-fencing-and-domain-effect-commit-are-atomic",
         "gate3-inbox-failpoints-converge-across-every-commit-window",
         "gate3-create-checkout-is-atomic-and-idempotent-before-stripe",
+        "gate3-v2-all-checkout-pins-policy-hold-expiry",
+        "gate3-expired-hold-sweeper-cancels-provider-first-and-releases-once",
         "gate7a-fixture-checkout-is-bound-to-control-uid-and-inventory",
         "gate3-success-commits-order-movement-fact-and-outbox-exactly-once",
         "gate3-guest-resume-token-is-single-use-and-rotated-transactionally",

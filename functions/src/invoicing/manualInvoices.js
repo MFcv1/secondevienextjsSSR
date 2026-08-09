@@ -36,6 +36,7 @@ const db = admin.firestore();
 const PROFILE_REF = 'admin_business_profiles/invoicing';
 const INVOICES_COLLECTION = 'admin_invoices';
 const INVOICE_SEQUENCES_COLLECTION = 'admin_invoice_sequences';
+const PRODUCTS_COLLECTION = 'artifacts/secondevie/public/data/furniture';
 const INVOICE_STORAGE_ROOT = 'admin-invoices/v1';
 const MAX_RECENT_INVOICES = 60;
 const MAX_PRODUCTS = 300;
@@ -142,7 +143,7 @@ async function getManualInvoiceWorkspaceHandler(_data, context) {
     const [profileSnapshot, invoicesSnapshot, productsSnapshot] = await Promise.all([
         db.doc(PROFILE_REF).get(),
         db.collection(INVOICES_COLLECTION).orderBy('updatedAt', 'desc').limit(MAX_RECENT_INVOICES).get(),
-        db.collection('furniture').limit(MAX_PRODUCTS).get()
+        db.collection(PRODUCTS_COLLECTION).limit(MAX_PRODUCTS).get()
     ]);
     return {
         seller: profileSnapshot.exists ? profileSnapshot.data().seller : defaultSellerProfile(),

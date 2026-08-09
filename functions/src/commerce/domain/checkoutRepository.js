@@ -7,7 +7,11 @@ const { authorizeFixtureRequest } = require('./fixtureScope');
 const { hashPayload } = require('./idempotency');
 const { eurosToCents } = require('./money');
 const { createOrderV2, validateOrderV2 } = require('./orderState');
-const { resolveDelivery, resolvePolicyForCheckout } = require('./policy');
+const {
+    resolveCheckoutExpiry,
+    resolveDelivery,
+    resolvePolicyForCheckout
+} = require('./policy');
 const { effectIdFor } = require('./reservationRepository');
 
 function checkoutError(code, detail) {
@@ -225,7 +229,9 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
                     quantity: line.quantity
                 };
             });
-            const expiresAt = authorizedFixtureContext?.expiresAt || checkoutExpiresAt || null;
+            const expiresAt = authorizedFixtureContext?.expiresAt
+                || checkoutExpiresAt
+                || resolveCheckoutExpiry(policy, clock.now());
             let order = createOrderV2({
                 userId: ownerUid,
                 clientOrderId: validated.value.clientOrderId,

@@ -6,7 +6,7 @@ import { X } from 'lucide-react';
 
 const SEEN_STORAGE_KEY = 'sv:support-chat-seen:v1';
 const HIDDEN_PATHS = ['/a-propos'];
-const HIDDEN_PATH_PREFIXES = ['/admin', '/checkout'];
+const HIDDEN_PATH_PREFIXES = ['/admin', '/checkout', '/payer'];
 const MOBILE_HIDDEN_PATH_PREFIXES = ['/produit/', '/devis'];
 
 const LauncherWhatsAppIcon = ({ size = 24, className = '' }) => (

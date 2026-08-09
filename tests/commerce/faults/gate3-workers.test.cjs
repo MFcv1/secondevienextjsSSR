@@ -6,7 +6,8 @@ const {
     createBoundedWorkerSweeper
 } = require('../../../functions/src/commerce/domain/boundedWorkerSweeper');
 const {
-    createCheckoutCoordinator
+    createCheckoutCoordinator,
+    resolveCheckoutResumeTerminalCode
 } = require('../../../functions/src/commerce/domain/checkoutCoordinator');
 const {
     createFailpointController
@@ -21,8 +22,15 @@ const {
     createWebhookWorker
 } = require('../../../functions/src/commerce/domain/webhookWorker');
 const {
-    createCommerceV2Runtime
+    createCommerceV2Runtime,
+    createReservationExpiryRuntime
 } = require('../../../functions/src/commerce/domain/v2Runtime');
+const {
+    createReservationExpiryWorker
+} = require('../../../functions/src/commerce/domain/reservationExpiryWorker');
+const {
+    createReservationExpiryHandler
+} = require('../../../functions/src/commerce/v2ReservationExpiry');
 
 function fixedRuntimeClock() {
     return {
@@ -95,7 +103,11 @@ test('create crash after hold resumes the durable checkout without a second hold
             return value;
         }
     };
-    const coordinator = createCheckoutCoordinator({ checkoutRepository, sagaService });
+    const coordinator = createCheckoutCoordinator({
+        checkoutRepository,
+        sagaService,
+        clock: fixedRuntimeClock()
+    });
     await assert.rejects(coordinator.createCheckout({}), {
         code: 'COMMERCE_FAILPOINT_TRIGGERED'
     });
@@ -104,6 +116,94 @@ test('create crash after hold resumes the durable checkout without a second hold
     assert.equal(retry.order.id, 'order-worker-0001');
     assert.equal(prepares, 2);
     assert.equal(ensures, 1);
+});
+
+test('checkout resume rejects an expired hold before reopening Stripe', async () => {
+    let ensureCalls = 0;
+    const checkoutRepository = {
+        async prepareCheckout() {
+            throw new Error('not used');
+        },
+        async loadOwnedCheckout() {
+            return {
+                order: {
+                    id: 'order-expired-resume-0001',
+                    checkout: {
+                        status: 'closed',
+                        closeReason: 'canceled',
+                        expiresAt: '2026-07-26T11:59:59.000Z'
+                    },
+                    payment: { status: 'canceled' }
+                },
+                attempt: { status: 'canceled' }
+            };
+        }
+    };
+    const sagaService = {
+        hitAfterHold() {},
+        async ensurePaymentIntent() {
+            ensureCalls += 1;
+        }
+    };
+    const coordinator = createCheckoutCoordinator({
+        checkoutRepository,
+        sagaService,
+        clock: {
+            nowMillis: () => Date.parse('2026-07-26T12:00:00.000Z')
+        }
+    });
+
+    await assert.rejects(
+        coordinator.resumeCheckout({
+            orderId: 'order-expired-resume-0001',
+            ownerUid: 'owner-expired-resume-0001'
+        }),
+        { code: 'COMMERCE_CHECKOUT_TERMINAL_EXPIRED' }
+    );
+    assert.equal(ensureCalls, 0);
+});
+
+test('checkout resume terminal classification distinguishes cancellation from active retries', () => {
+    const activeOrder = {
+        checkout: {
+            status: 'active',
+            closeReason: null,
+            expiresAt: '2026-07-26T12:30:00.000Z'
+        },
+        payment: { status: 'awaiting_method' }
+    };
+    const nowMillis = Date.parse('2026-07-26T12:00:00.000Z');
+
+    assert.equal(
+        resolveCheckoutResumeTerminalCode(activeOrder, { status: 'attached' }, nowMillis),
+        null
+    );
+    assert.equal(
+        resolveCheckoutResumeTerminalCode({
+            ...activeOrder,
+            checkout: {
+                ...activeOrder.checkout,
+                expiresAt: '2026-07-26T11:59:59.000Z'
+            }
+        }, { status: 'attached' }, nowMillis),
+        null
+    );
+    assert.equal(
+        resolveCheckoutResumeTerminalCode(
+            {
+                ...activeOrder,
+                checkout: {
+                    ...activeOrder.checkout,
+                    status: 'closed',
+                    closeReason: 'canceled'
+                },
+                payment: { status: 'canceled' }
+            },
+            { status: 'canceled' },
+            nowMillis
+        ),
+        'COMMERCE_CHECKOUT_TERMINAL_CANCELED'
+    );
 });
 
 test('webhook ingress rejects a wrong secret and separates two Connect accounts', async () => {
@@ -323,6 +423,114 @@ test('bounded sweeper finds an eligible item behind more than fifty irrelevant r
     assert.deepEqual(processed, ['eligible-worker-0001']);
     assert.equal(result.processed, 1);
     assert.equal(result.failures.length, 0);
+});
+
+test('reservation expiry worker cancels only due active unpaid checkouts', async () => {
+    const checkouts = new Map([
+        ['order-expiry-future', {
+            order: {
+                id: 'order-expiry-future',
+                checkout: { status: 'active', closeReason: null, expiresAt: '2026-07-26T12:01:00.000Z' },
+                payment: { status: 'awaiting_method' }
+            },
+            attempt: {}
+        }],
+        ['order-expiry-paid', {
+            order: {
+                id: 'order-expiry-paid',
+                checkout: { status: 'closed', closeReason: 'paid', expiresAt: '2026-07-26T11:59:00.000Z' },
+                payment: { status: 'succeeded' }
+            },
+            attempt: {}
+        }],
+        ['order-expiry-closed', {
+            order: {
+                id: 'order-expiry-closed',
+                checkout: { status: 'closed', closeReason: 'canceled', expiresAt: '2026-07-26T11:59:00.000Z' },
+                payment: { status: 'canceled' }
+            },
+            attempt: {}
+        }],
+        ['order-expiry-due', {
+            order: {
+                id: 'order-expiry-due',
+                checkout: { status: 'active', closeReason: null, expiresAt: '2026-07-26T11:59:00.000Z' },
+                payment: { status: 'awaiting_method' }
+            },
+            attempt: {}
+        }]
+    ]);
+    const cancellationCalls = [];
+    const worker = createReservationExpiryWorker({
+        checkoutRepository: {
+            async loadCheckout({ orderId }) {
+                return checkouts.get(orderId);
+            }
+        },
+        sagaService: {
+            async cancelProviderFirst(checkout) {
+                cancellationCalls.push(checkout.order.id);
+                return { outcome: 'canceled', paymentIntentId: 'pi_expiry_worker_0001' };
+            }
+        },
+        clock: {
+            now: () => '2026-07-26T12:00:00.000Z',
+            nowMillis: () => Date.parse('2026-07-26T12:00:00.000Z')
+        }
+    });
+
+    assert.equal((await worker.process({ data: { orderId: 'order-expiry-future' } })).outcome, 'not_due');
+    assert.equal((await worker.process({ data: { orderId: 'order-expiry-paid' } })).outcome, 'paid');
+    assert.equal((await worker.process({ data: { orderId: 'order-expiry-closed' } })).outcome, 'canceled');
+    assert.equal((await worker.process({ data: { orderId: 'order-expiry-due' } })).outcome, 'canceled');
+    assert.deepEqual(cancellationCalls, ['order-expiry-due']);
+});
+
+test('narrow reservation expiry runtime exposes only provider-first expiry surfaces', () => {
+    const runtime = createReservationExpiryRuntime({
+        db: {
+            doc: (path) => ({ path }),
+            collection: () => ({}),
+            runTransaction: async (run) => run({})
+        },
+        stripe: {
+            paymentIntents: {
+                create: async () => null,
+                retrieve: async () => null,
+                cancel: async () => null
+            }
+        },
+        appId: 'seconde-vie',
+        clock: fixedRuntimeClock()
+    });
+    assert.deepEqual(Object.keys(runtime), ['expiryWorker', 'sweepers']);
+    assert.equal(typeof runtime.expiryWorker.process, 'function');
+    assert.equal(typeof runtime.sweepers.expiredReservations.run, 'function');
+});
+
+test('reservation expiry scheduler delegates once to the bounded sweeper', async () => {
+    let runs = 0;
+    const expected = {
+        pages: 1,
+        processed: 2,
+        failures: [],
+        exhausted: false,
+        nextCursor: null
+    };
+    const handler = createReservationExpiryHandler({
+        runtimeFactory: () => ({
+            sweepers: {
+                expiredReservations: {
+                    async run() {
+                        runs += 1;
+                        return expected;
+                    }
+                }
+            }
+        })
+    });
+    assert.deepEqual(await handler(), expected);
+    assert.equal(runs, 1);
 });
 
 test('outbox worker forwards the deterministic outbox id as provider idempotency key', async () => {

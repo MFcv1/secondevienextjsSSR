@@ -27,20 +27,24 @@ function computeAllowedActions(order, actor) {
     if (!strongAdmin) return [...actions].sort();
 
     if (order.payment.status === 'succeeded') {
-        if (order.fulfillmentSummary.status === 'unfulfilled') {
-            actions.add('fulfillment_prepare');
-            actions.add('fulfillment_ship');
-        }
-        if (order.fulfillmentSummary.status === 'preparing') {
-            actions.add('fulfillment_ready');
-            actions.add('fulfillment_ship');
-        }
-        if (order.fulfillmentSummary.status === 'ready_for_pickup') {
-            actions.add('fulfillment_pickup');
-        }
-        if (order.fulfillmentSummary.status === 'shipped') {
-            actions.add('fulfillment_deliver');
-            actions.add('fulfillment_update_tracking');
+        const fulfillmentBlockedByRefund = ['pending', 'needs_review', 'full']
+            .includes(order.refundAggregate.status);
+        if (!fulfillmentBlockedByRefund) {
+            if (order.fulfillmentSummary.status === 'unfulfilled') {
+                actions.add('fulfillment_prepare');
+                actions.add('fulfillment_ship');
+            }
+            if (order.fulfillmentSummary.status === 'preparing') {
+                actions.add('fulfillment_ready');
+                actions.add('fulfillment_ship');
+            }
+            if (order.fulfillmentSummary.status === 'ready_for_pickup') {
+                actions.add('fulfillment_pickup');
+            }
+            if (order.fulfillmentSummary.status === 'shipped') {
+                actions.add('fulfillment_deliver');
+                actions.add('fulfillment_update_tracking');
+            }
         }
         const refundableCents = order.amounts.capturedCents -
             order.refundAggregate.succeededCents -

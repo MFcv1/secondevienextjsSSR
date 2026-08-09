@@ -1,8 +1,8 @@
 'use client';
 
-import { getMillis } from '../../../../utils/time';
-import { formatShippingAddress } from '../../../../utils/shippingAddress';
-import { adaptCommerceOrder } from '../../../commerce/orderAdapter';
+import { getMillis } from '../../../../utils/time.js';
+import { formatShippingAddress } from '../../../../utils/shippingAddress.js';
+import { adaptCommerceOrder } from '../../../commerce/orderAdapter.js';
 
 /**
  * Couche de presentation des ventes : uniquement des fonctions pures.
@@ -148,13 +148,28 @@ export const resolveFulfillmentStatus = (order) => {
  * en quatre temps, soit une pastille d'exception qui garde l'etape logistique
  * en information secondaire.
  */
+export const isRefundUnsettled = (order) => (
+    ['pending', 'needs_review'].includes(String(order?.refundAggregate?.status || ''))
+);
+
+/**
+ * Un remboursement a echoue et n'est pas encore solde.
+ * `hasFailure` est collant cote domaine : il reste vrai apres une reprise
+ * reussie. On n'alerte donc que tant que l'agregat n'est pas retombe sur
+ * `full` ou `partial`, sinon la commande resterait a vie « a verifier ».
+ */
+export const hasOpenRefundFailure = (order) => (
+    order?.refundAggregate?.hasFailure === true && isRefundUnsettled(order)
+);
+
 export const getOrderJourney = (order) => {
     const status = String(order?.status || '');
     const fulfillment = resolveFulfillmentStatus(order);
     const paid = isOrderPaid(order);
     const stage = paid ? (FULFILLMENT_STAGE[fulfillment] || 1) : 0;
     const fulfillmentLabel = FULFILLMENT_LABEL[fulfillment] || null;
-    const exception = EXCEPTIONS[status];
+    const refundStatus = String(order?.refundAggregate?.status || '');
+    const exception = hasOpenRefundFailure(order) ? EXCEPTIONS.refund_failed : EXCEPTIONS[status];
 
     if (exception) {
         return {
@@ -172,28 +187,45 @@ export const getOrderJourney = (order) => {
         stage: Math.max(stage, 1),
         label,
         tone: stage >= 4 ? 'positive' : stage === 3 ? (fulfillment === 'shipped' ? 'transit' : 'info') : stage === 2 ? 'progress' : 'positive',
-        detail: null,
+        // Un remboursement partiel laisse le statut a « payée » : sans ce
+        // rappel, rien a l'ecran ne dirait qu'une partie a ete rendue.
+        detail: refundStatus === 'partial' ? 'Remboursement partiel' : null,
     };
 };
 
-export const JOURNEY_STEPS = ['Payée', 'Préparation', 'Remise', 'Reçue'];
+export const JOURNEY_STEPS = ['Payée', 'Préparation', 'Acheminement', 'Finalisée'];
 
 // ── Segments ─────────────────────────────────────────────────────────────────
 
 export const ORDER_SEGMENTS = [
     { id: 'todo', label: 'À traiter' },
-    { id: 'waiting', label: 'En cours' },
-    { id: 'done', label: 'Terminées' },
+    { id: 'waiting', label: 'En attente' },
+    { id: 'done', label: 'Clôturées' },
     { id: 'all', label: 'Toutes' },
 ];
+
+/**
+ * Remboursement solde alors que le meuble n'a pas quitte la boutique.
+ * La garde physique est l'autorite; le libelle logistique seul ne suffit pas
+ * a prouver ou se trouve la piece.
+ */
+export const isRefundedWithGoodsOnSite = (order) => (
+    String(order?.refundAggregate?.status || '') === 'full'
+    && order?.fulfillmentSummary?.custody === 'merchant'
+);
 
 export const getOrderSegment = (order) => {
     const status = String(order?.status || '');
     if (['needs_review', 'refund_pending', 'refund_failed', 'payment_failed'].includes(status)) return 'todo';
-    if (order?.refundAggregate?.hasFailure === true) return 'todo';
-    if (['refunded', 'cancelled', 'canceled', 'cancelled_by_client'].includes(status)) return 'done';
+    if (hasOpenRefundFailure(order)) return 'todo';
 
     const fulfillment = resolveFulfillmentStatus(order);
+    // Argent rendu mais meuble encore en boutique : le dossier n'est pas clos,
+    // il reste a le recuperer ou a le remettre en vente.
+    if (status === 'refunded') {
+        return isRefundedWithGoodsOnSite(order) ? 'todo' : 'done';
+    }
+    if (['cancelled', 'canceled', 'cancelled_by_client'].includes(status)) return 'done';
     if (['picked_up', 'delivered', 'canceled'].includes(fulfillment)) return 'done';
     if (isOrderPaid(order) && ['unfulfilled', 'preparing'].includes(fulfillment)) return 'todo';
     return 'waiting';
@@ -259,10 +291,20 @@ export const normalizeSearchQuery = (value) => normalizeText(value).trim();
 
 export const filterOrders = (orders = [], { segment = 'all', search = '' } = {}) => {
     const normalizedQuery = normalizeSearchQuery(search);
-    return orders.filter((order) => (
+    const filtered = orders.filter((order) => (
         (segment === 'all' || getOrderSegment(order) === segment)
         && matchesSearch(order, normalizedQuery)
     ));
+    if (segment !== 'all') return filtered;
+
+    const priority = { todo: 0, waiting: 1, done: 2 };
+    return filtered
+        .map((order, index) => ({ index, order }))
+        .sort((left, right) => (
+            priority[getOrderSegment(left.order)] - priority[getOrderSegment(right.order)]
+            || left.index - right.index
+        ))
+        .map(({ order }) => order);
 };
 
 /** Compteurs et encours calcules sur les commandes reellement chargees. */
@@ -272,16 +314,18 @@ export const buildOrdersSummary = (orders = []) => {
         todo: 0,
         waiting: 0,
         done: 0,
-        todoAmount: 0,
-        collectedAmount: 0,
+        grossCapturedAmount: 0,
     };
     for (const order of orders) {
         const segment = getOrderSegment(order);
         summary[segment] += 1;
+        const capturedCents = Number(order?.amounts?.capturedCents);
+        if (Number.isSafeInteger(capturedCents)) {
+            summary.grossCapturedAmount += capturedCents / 100;
+            continue;
+        }
         const amount = Number(order?.total);
-        if (!Number.isFinite(amount)) continue;
-        if (segment === 'todo') summary.todoAmount += amount;
-        if (isOrderPaid(order)) summary.collectedAmount += amount;
+        if (isOrderPaid(order) && Number.isFinite(amount)) summary.grossCapturedAmount += amount;
     }
     return summary;
 };
@@ -345,6 +389,10 @@ export const getAllowedActions = (order) => new Set(
     Array.isArray(order?.allowedActions) ? order.allowedActions : []
 );
 
+export const isFulfillmentBlockedByRefund = (order) => (
+    ['pending', 'needs_review', 'full'].includes(String(order?.refundAggregate?.status || ''))
+);
+
 /**
  * Une seule action primaire, contextualisee par le mode de livraison :
  * en retrait atelier, la suite naturelle est « prête au retrait »,
@@ -391,6 +439,7 @@ export const buildActionPlan = (order, { enabled = true } = {}) => {
     };
 
     const fulfillment = resolveFulfillmentStatus(order);
+    const fulfillmentBlocked = isFulfillmentBlockedByRefund(order);
     const preferShipping = !isPickupOrder(order);
     const priorityOrder = [
         fulfillment === 'unfulfilled' ? 'fulfillment_prepare' : null,
@@ -406,6 +455,7 @@ export const buildActionPlan = (order, { enabled = true } = {}) => {
 
     const available = priorityOrder.filter((id, index, list) => (
         allowed.has(id) && list.indexOf(id) === index
+        && !(fulfillmentBlocked && id.startsWith('fulfillment_'))
     ));
     const [primaryId, ...secondaryIds] = available;
     return {

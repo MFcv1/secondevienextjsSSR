@@ -279,4 +279,15 @@ test('frontend controller and recovery descriptor are active by default', async 
     });
     assert.equal(recovery.validateCheckoutRecoveryDescriptor(descriptor, 'owner-uid-0001'), true);
     assert.equal(recovery.validateCheckoutRecoveryDescriptor(descriptor, 'other-owner-0001'), false);
+    assert.equal(recovery.getCheckoutRecoveryTerminalReason({
+        code: 'functions/failed-precondition',
+        details: { reason: 'COMMERCE_CHECKOUT_TERMINAL_EXPIRED' }
+    }), 'expired');
+    assert.equal(recovery.getCheckoutRecoveryTerminalReason({
+        code: 'functions/unavailable'
+    }), null);
+    assert.match(
+        recovery.getCheckoutRecoveryTerminalMessage('expired'),
+        /réservation a expiré/
+    );
 });

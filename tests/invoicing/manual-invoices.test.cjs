@@ -96,6 +96,7 @@ test('factures manuelles: UI lazy, callables et stockages priv√©s restent align√
     const firestoreRules = source('firestore.rules');
     const storageRules = source('storage.rules');
     const ui = source('src/kit/admin/AdminInvoices.jsx');
+    const invoiceFunctions = source('functions/src/invoicing/manualInvoices.js');
 
     assert.match(admin, /React\.lazy\(\(\) => import\('\.\.\/\.\.\/src\/kit\/admin\/AdminInvoices'\)\)/);
     for (const callable of [
@@ -110,4 +111,9 @@ test('factures manuelles: UI lazy, callables et stockages priv√©s restent align√
     assert.match(firestoreRules, /match \/admin_invoices\/\{invoiceId\}/);
     assert.match(storageRules, /match \/admin-invoices\/\{allPaths=\*\*\}/);
     assert.match(storageRules, /topLevel != 'admin-invoices'/);
+    assert.match(
+        invoiceFunctions,
+        /PRODUCTS_COLLECTION = 'artifacts\/secondevie\/public\/data\/furniture'/
+    );
+    assert.doesNotMatch(invoiceFunctions, /db\.collection\('furniture'\)/);
 });

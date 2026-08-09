@@ -18,6 +18,8 @@ const CONTROL_VALUES = Object.freeze({
     offlinePaymentMode: new Set(['off', 'v2'])
 });
 
+const MAX_HOLD_DURATION_SECONDS = 24 * 60 * 60;
+
 function policyError(code, field) {
     const error = new Error(field ? `${code}:${field}` : code);
     error.code = code;
@@ -80,6 +82,13 @@ function validateCommercePolicy(policy) {
     ) {
         throw policyError('COMMERCE_POLICY_CONNECT_INVALID');
     }
+    if (
+        !Number.isSafeInteger(policy.holdDurationSeconds) ||
+        policy.holdDurationSeconds <= 0 ||
+        policy.holdDurationSeconds > MAX_HOLD_DURATION_SECONDS
+    ) {
+        throw policyError('COMMERCE_POLICY_HOLD_INVALID');
+    }
     if (!Array.isArray(policy.deliveryModes) || policy.deliveryModes.length === 0 || policy.deliveryModes.length > 10) {
         throw policyError('COMMERCE_POLICY_DELIVERY_INVALID');
     }
@@ -106,6 +115,21 @@ function validateCommercePolicy(policy) {
         modeIds.add(mode.id);
     }
     return true;
+}
+
+function resolveCheckoutExpiry(policy, nowValue) {
+    validateCommercePolicy(policy);
+    const nowMillis = typeof nowValue === 'number'
+        ? nowValue
+        : Date.parse(nowValue);
+    if (!Number.isSafeInteger(nowMillis)) {
+        throw policyError('COMMERCE_POLICY_CLOCK_INVALID');
+    }
+    const expiresAtMillis = nowMillis + (policy.holdDurationSeconds * 1000);
+    if (!Number.isSafeInteger(expiresAtMillis)) {
+        throw policyError('COMMERCE_POLICY_HOLD_INVALID');
+    }
+    return new Date(expiresAtMillis).toISOString();
 }
 
 function resolvePolicyForCheckout(control, policy, { fixture = false } = {}) {
@@ -148,11 +172,13 @@ function assertPinnedPolicy(order, policy) {
 }
 
 module.exports = {
+    MAX_HOLD_DURATION_SECONDS,
     SAFE_CONTROL,
     assertPinnedPolicy,
     isCompleteControl,
     mayCreateV2Checkout,
     normalizeCommerceControl,
+    resolveCheckoutExpiry,
     resolveDelivery,
     resolvePolicyForCheckout,
     validateCommercePolicy

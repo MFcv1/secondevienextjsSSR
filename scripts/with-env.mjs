@@ -94,6 +94,51 @@ env.NEXT_TELEMETRY_DISABLED = env.NEXT_TELEMETRY_DISABLED || '1';
 const isNextCommand = command === 'next';
 const isNextBuild = isNextCommand && args[0] === 'build';
 
+const readAppHostingBuildValue = (variableName) => {
+  const appHostingPath = resolve(process.cwd(), 'apphosting.yaml');
+  if (!existsSync(appHostingPath)) return '';
+  const lines = readFileSync(appHostingPath, 'utf8').split(/\r?\n/);
+  let currentVariable = '';
+  for (const rawLine of lines) {
+    const variableMatch = rawLine.match(/^\s*-\s+variable:\s*([^\s#]+)\s*$/);
+    if (variableMatch) {
+      currentVariable = variableMatch[1];
+      continue;
+    }
+    if (currentVariable !== variableName) continue;
+    const valueMatch = rawLine.match(/^\s+value:\s*(.+?)\s*$/);
+    if (!valueMatch) continue;
+    return valueMatch[1].replace(/^['"]|['"]$/g, '');
+  }
+  return '';
+};
+
+const isHttpsPublicOrigin = (value) => {
+  try {
+    const origin = new URL(value);
+    return origin.protocol === 'https:'
+      && !['localhost', '127.0.0.1', '::1'].includes(origin.hostname);
+  } catch {
+    return false;
+  }
+};
+
+if (isNextBuild && selectedEnvFile === '.env.sandbox') {
+  if (!isHttpsPublicOrigin(env.NEXT_PUBLIC_SITE_URL)) {
+    env.NEXT_PUBLIC_SITE_URL = readAppHostingBuildValue('NEXT_PUBLIC_SITE_URL');
+  }
+  if (env.NEXT_STRICT_PUBLIC_ORIGIN !== 'true') {
+    env.NEXT_STRICT_PUBLIC_ORIGIN = readAppHostingBuildValue('NEXT_STRICT_PUBLIC_ORIGIN');
+  }
+
+  if (
+    env.NEXT_STRICT_PUBLIC_ORIGIN !== 'true'
+    || !isHttpsPublicOrigin(env.NEXT_PUBLIC_SITE_URL)
+  ) {
+    throw new Error('[build] Origine HTTPS stricte du sandbox absente de .env.sandbox et apphosting.yaml.');
+  }
+}
+
 if (isNextBuild) {
   const { deploymentId, generated } = ensureDeploymentId(env);
   console.log(

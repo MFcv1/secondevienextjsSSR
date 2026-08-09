@@ -1,6 +1,6 @@
 # Back-office
 
-Derniere mise a jour: 2026-08-08
+Derniere mise a jour: 2026-08-09
 Statut: `PREPROD_READY`
 
 Etat actif:
@@ -220,18 +220,52 @@ Apres mutation:
 
 - `AdminOrders`: consultation, statut logistique, modale d'expedition et
   actions admissibles. La vue est organisee en maitre/detail: liste dense
-  segmentee par `A traiter / En cours / Terminees`, recherche locale, puis
+  segmentee par `A traiter / En attente / Cloturees`, recherche locale, puis
   panneau de detail ouvrant sur l'action attendue, le parcours horodate, le
   panier et le contact. Le detail passe en feuille sous `xl`. Les fonctions
-  de derivation (avancee en quatre temps, segments, recherche, colonnes CSV)
+  de derivation (etat en quatre temps, segments, recherche, colonnes CSV)
   sont isolees dans `components/orders/orderPresentation.js` et ne lisent ni
-  n'ecrivent aucune donnee. Le detail de conception est dans
-  [REVAMP_VENTES.md](REVAMP_VENTES.md);
+  n'ecrivent aucune donnee;
 - `AdminInvoices`: creation assistee de factures manuelles et reprise des
   brouillons;
 - `AdminReturns`: remboursement, synchronisation et e-mail client;
 - `AdminPaymentSettings`: Connect, carte/wallets et etat de disponibilite;
 - `AdminLivraison`: configuration des frais.
+
+### 5.1 Contrat de la vue Ventes
+
+La vue repond d'abord a l'actionnabilite, sans confondre paiement, logistique,
+remboursement et garde physique:
+
+- `A traiter`: action boutique requise, anomalie a verifier ou remboursement
+  complet dont la piece est encore sous garde `merchant`;
+- `En attente`: paiement, retrait client ou transport en attente d'un tiers;
+- `Cloturees`: dossier logistique termine, annule ou rembourse avec piece
+  sortie de la garde boutique;
+- `Toutes`: commandes chargees, ordonnees `A traiter`, puis `En attente`, puis
+  `Cloturees`, avec ordre chronologique stable dans chaque groupe.
+
+La premiere page reste bornee a 50 commandes. Les compteurs, la recherche et
+l'export CSV portent explicitement sur les commandes chargees; l'interface
+signale quand un historique plus large reste disponible. L'export conserve
+les 15 colonnes comptables et annonce le nombre de lignes exportees. Aucune
+commande n'est selectionnee automatiquement, sauf `focusOrderId`, afin de ne
+pas charger une timeline sans intention operatrice.
+
+Le detail affiche une seule action primaire issue de `allowedActions`. Les
+actions de fulfillment sont suspendues par le serveur lorsque le remboursement
+est `pending`, `needs_review` ou `full`; la presentation applique la meme garde
+contre une projection client en cache. Un remboursement `partial` conserve les
+actions logistiques admissibles et porte le libelle explicite
+`Remb. partiel`. Un remboursement complet avec garde `merchant` reste dans
+`A traiter`, sans bouton de retrait ni d'expedition: la piece ne doit pas etre
+republiee tant que sa remise en stock n'a pas ete enregistree dans `Retours`.
+
+La timeline conserve les douze types d'evenements commerce, le repli des
+commandes v1, le chargement a la demande et le rafraichissement apres commande.
+Les confirmations utilisent les modales communes avec piege de focus, retour
+du focus et `Escape`; les libelles fonctionnels restent lisibles a partir de
+10 px et les montants utilisent des chiffres tabulaires.
 
 `AdminLivraison` ne possede plus de faux bouton en lecture seule. Les callables
 `getDeliveryPolicyAdmin` et `saveDeliveryPolicyAdmin` lisent la politique
@@ -270,7 +304,7 @@ Etat actuel depuis le 2026-08-02:
 
 Cible: toute transition commande, fulfillment, inventaire, refund/retour et politique commerce passe par une commande serveur idempotente. Firestore reste une projection et non une API metier admin.
 
-### 5.1 Factures manuelles
+### 5.2 Factures manuelles
 
 L'onglet `invoices` est distinct des recus commerce sandbox. Il charge
 paresseusement `AdminInvoices` et propose trois etapes: selection de plusieurs

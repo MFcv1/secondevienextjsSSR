@@ -10,7 +10,7 @@ import {
     where,
 } from 'firebase/firestore';
 import { db, appId } from '../config/firebase';
-import { Pencil, Eye, EyeOff, Trash2, Search, Loader2, CheckCircle, RotateCcw } from 'lucide-react';
+import { Pencil, Eye, EyeOff, Archive, Search, Loader2, CheckCircle, RotateCcw } from 'lucide-react';
 import KIT_CONFIG from '../config/constants';
 
 // Helper pour nettoyer le texte (accents, casse)
@@ -89,17 +89,20 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
         const colRef = collection(db, 'artifacts', appId, 'public', 'data', collectionName);
 
         Promise.all([
-            getCountFromServer(colRef),
+            getCountFromServer(query(colRef, where('status', 'in', ['draft', 'published']))),
             getCountFromServer(query(colRef, where('status', '==', 'published'), where('sold', '==', false))),
             getCountFromServer(query(colRef, where('status', '==', 'draft'))),
             getCountFromServer(query(colRef, where('status', '==', 'published'), where('sold', '==', true))),
-        ]).then(([totalSnapshot, publishedSnapshot, draftSnapshot, soldSnapshot]) => {
+        ]).then(([activeSnapshot, publishedSnapshot, draftSnapshot, soldSnapshot]) => {
             if (cancelled) return;
+            const published = publishedSnapshot.data().count;
+            const drafts = draftSnapshot.data().count;
+            const sold = soldSnapshot.data().count;
             setCatalogStats({
-                total: totalSnapshot.data().count,
-                published: publishedSnapshot.data().count,
-                drafts: draftSnapshot.data().count,
-                sold: soldSnapshot.data().count,
+                total: activeSnapshot.data().count,
+                published,
+                drafts,
+                sold,
             });
         }).catch((error) => {
             console.error('Stats fetch error:', error);
@@ -120,9 +123,16 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
                 let searchPool = fullCache;
                 if (!searchPool) {
                     try {
-                        const q = query(colRef, orderBy('createdAt', 'desc'), limit(SEARCH_LIMIT));
+                        const q = query(
+                            colRef,
+                            where('status', 'in', ['draft', 'published']),
+                            orderBy('createdAt', 'desc'),
+                            limit(SEARCH_LIMIT)
+                        );
                         const snap = await getDocs(q);
-                        searchPool = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                        searchPool = snap.docs
+                            .map(d => ({ id: d.id, ...d.data() }))
+                            .filter(item => item.status !== 'archived');
                         setFullCache(searchPool);
                     } catch (e) { console.error(e); setLoading(false); return; }
                 }
@@ -149,14 +159,17 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
                     filters.push(where('status', '==', 'draft'));
                 } else if (filterStatus === 'sold') {
                     filters.push(where('status', '==', 'published'), where('sold', '==', true));
+                } else {
+                    filters.push(where('status', 'in', ['draft', 'published']));
                 }
-                const q = filters.length > 0
+                const q = filterStatus
                     ? query(colRef, ...filters, limit(statsLimit))
-                    : query(colRef, orderBy('createdAt', 'desc'), limit(statsLimit));
+                    : query(colRef, ...filters, orderBy('createdAt', 'desc'), limit(statsLimit));
 
                 unsubscribe = onSnapshot(q, (snap) => {
                     const loadedItems = snap.docs
                         .map(d => ({ id: d.id, ...d.data() }))
+                        .filter(item => item.status !== 'archived')
                         .sort(sortNewestFirst);
                     setItems(loadedItems);
                     setStatsRefreshKey((current) => current + 1);
@@ -287,7 +300,7 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
                                                 <button type="button" onClick={() => onToggleStatus(item)} disabled={adminState === 'draft' && !imageSource} className={`${actionClass} disabled:cursor-not-allowed disabled:opacity-35`} title={adminState === 'draft' && !imageSource ? 'Ajoutez les photos avant de publier' : item.status === 'published' ? 'Masquer' : 'Publier'}>{item.status === 'published' ? <Eye size={14} strokeWidth={1.5} /> : <EyeOff size={14} strokeWidth={1.5} />}</button>
                                                 <button type="button" onClick={() => onEdit(item)} className={actionClass} title="Modifier"><Pencil size={14} strokeWidth={1.5} /></button>
                                                 {adminState !== 'draft' && <button type="button" onClick={() => adminState === 'sold' ? onMarkAsAvailable(item) : onMarkAsSold(item)} className={actionClass} title={adminState === 'sold' ? 'Remettre en vente' : 'Marquer comme vendu'}>{adminState === 'sold' ? <RotateCcw size={14} strokeWidth={1.5} /> : <CheckCircle size={14} strokeWidth={1.5} />}</button>}
-                                                <button type="button" onClick={() => onDelete(item)} className={`${actionClass} text-red-500 hover:!bg-red-500 hover:!text-white`} title="Supprimer définitivement"><Trash2 size={14} strokeWidth={1.5} /></button>
+                                                <button type="button" onClick={() => onDelete(item)} className={`${actionClass} text-red-500 hover:!bg-red-500 hover:!text-white`} title="Archiver"><Archive size={14} strokeWidth={1.5} /></button>
                                             </div>
                                         </article>
                                     );
@@ -331,7 +344,7 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
                         })}
                     </div>
                     <div className="mt-auto pt-4">
-                        <p className={`text-[9px] leading-4 ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>La liste se met à jour en direct. Utilisez l’œil pour masquer, le crayon pour modifier et la poubelle pour supprimer définitivement.</p>
+                        <p className={`text-[9px] leading-4 ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>La liste se met à jour en direct. Utilisez l’œil pour masquer, le crayon pour modifier et l’archive pour retirer une fiche sans effacer son historique.</p>
                     </div>
                 </div>
             </aside>

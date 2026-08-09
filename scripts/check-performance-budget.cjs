@@ -7,6 +7,7 @@ const ROOT = path.resolve(__dirname, '..');
 const NEXT_DIR = path.join(ROOT, '.next');
 const STATIC_DIR = path.join(NEXT_DIR, 'static');
 const APP_BUILD_MANIFEST = path.join(NEXT_DIR, 'app-build-manifest.json');
+const BUILD_MANIFEST = path.join(NEXT_DIR, 'build-manifest.json');
 const SERVER_APP_DIR = path.join(NEXT_DIR, 'server', 'app');
 const PUBLIC_ROBOTS = path.join(ROOT, 'public', 'robots.txt');
 
@@ -95,7 +96,14 @@ const relative = (filePath) => path.relative(ROOT, filePath).replace(/\\/g, '/')
 const loadJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'));
 
 const resolveStaticAsset = (assetPath) => {
-  const normalized = assetPath.replace(/^\/_next\//, '').replace(/^\/+/, '');
+  let normalized;
+  try {
+    normalized = decodeURIComponent(
+      String(assetPath || '').split('?')[0].replace(/^\/_next\//, '').replace(/^\/+/, ''),
+    );
+  } catch {
+    return null;
+  }
   const absolutePath = path.join(NEXT_DIR, normalized);
   return fs.existsSync(absolutePath) ? absolutePath : null;
 };
@@ -147,17 +155,23 @@ const collectServerTextFiles = () =>
 
 if (
   !assertFile(NEXT_DIR, '.next is missing. Run npm run build first.') ||
-  !assertFile(APP_BUILD_MANIFEST, '.next/app-build-manifest.json is missing. Run npm run build first.')
+  !assertFile(BUILD_MANIFEST, '.next/build-manifest.json is missing. Run npm run build first.') ||
+  !assertFile(SERVER_APP_DIR, '.next/server/app is missing. Run npm run build first.')
 ) {
   process.exit(process.exitCode || 1);
 }
 
-const appBuildManifest = loadJson(APP_BUILD_MANIFEST);
+const appBuildManifest = fs.existsSync(APP_BUILD_MANIFEST)
+  ? loadJson(APP_BUILD_MANIFEST)
+  : { pages: {} };
 const staticFiles = walk(STATIC_DIR);
 const jsFiles = staticFiles.filter((filePath) => filePath.endsWith('.js'));
 const cssFiles = staticFiles.filter((filePath) => filePath.endsWith('.css'));
 
 console.log('Next performance budget report');
+if (!fs.existsSync(APP_BUILD_MANIFEST)) {
+  console.log('INFO Next 16 manifest mode: route assets resolved from client-reference manifests.');
+}
 
 for (const budget of routeBudgets) {
   const files = manifestFilesForKeys(appBuildManifest, budget.keys);

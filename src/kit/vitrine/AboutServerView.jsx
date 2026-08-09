@@ -12,6 +12,7 @@ import AboutTestimonialsIsland from './AboutTestimonialsIsland';
 import Sv4HomeHero from './Sv4HomeHero';
 import Sv4SiteNav from './Sv4SiteNav';
 import HomeMotionIslandV4 from '../../../app/HomeMotionIslandV4';
+import KIT_CONFIG from '../config/constants';
 import {
   getFaqItems,
   getProcessSteps,
@@ -348,7 +349,7 @@ function InterludeSection() {
   );
 }
 
-function InstagramSection() {
+function InstagramSection({ instagramUrl, instagramFollowersK }) {
   return (
     <section className="about-instagram relative z-30 -mt-[5vh] flex w-full flex-col overflow-hidden bg-[#111111] pb-[12vh] md:mt-0 md:pb-[20vh]">
       <div className="pointer-events-none absolute inset-0 z-0 opacity-80" style={instagramTextureStyle} />
@@ -367,8 +368,8 @@ function InstagramSection() {
               </h2>
             </div>
             <div className="flex flex-col items-start gap-10 text-left xl:-mt-12 xl:items-end xl:text-right">
-              <AboutInstagramCounterIsland />
-              <a href="https://www.instagram.com/seconde_vie_pour_nos_objets/" target="_blank" rel="noreferrer" className="group relative flex items-center gap-4 overflow-hidden rounded-full border border-white/20 bg-white/5 py-2 pl-6 pr-2 backdrop-blur-md transition-all duration-500 hover:border-white">
+              <AboutInstagramCounterIsland target={instagramFollowersK} />
+              <a href={instagramUrl} target="_blank" rel="noreferrer" className="group relative flex items-center gap-4 overflow-hidden rounded-full border border-white/20 bg-white/5 py-2 pl-6 pr-2 backdrop-blur-md transition-all duration-500 hover:border-white">
                 <span className="relative z-10 ml-2 font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-white/90 transition-colors duration-500 group-hover:text-[#111] md:text-xs">Rejoindre la communaute</span>
                 <span className="absolute inset-0 z-0 -translate-y-[101%] bg-white transition-transform duration-[600ms] group-hover:translate-y-0" />
                 <span className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#111] transition-colors duration-500 group-hover:bg-[#111] group-hover:text-white">
@@ -379,7 +380,7 @@ function InstagramSection() {
           </div>
           <div className="mt-auto grid grid-cols-2 grid-rows-[auto] gap-4 md:grid-cols-4 md:grid-rows-[300px_300px] md:gap-6 lg:grid-rows-[400px_400px]">
             {instagramPosts.map((post) => (
-              <a href="https://www.instagram.com/seconde_vie_pour_nos_objets/" target="_blank" rel="noreferrer" key={post.id} className={`about-instagram-card group relative cursor-pointer overflow-hidden rounded-2xl border border-white/5 bg-[#1A1A1A] shadow-xl md:rounded-3xl ${post.className}`}>
+              <a href={instagramUrl} target="_blank" rel="noreferrer" key={post.id} className={`about-instagram-card group relative cursor-pointer overflow-hidden rounded-2xl border border-white/5 bg-[#1A1A1A] shadow-xl md:rounded-3xl ${post.className}`}>
                 <div className="absolute inset-0 z-10 bg-black/30 mix-blend-color transition-opacity duration-700 group-hover:opacity-0" />
                 <div className="absolute inset-0 z-10 bg-[#A68A64]/10 mix-blend-multiply transition-opacity duration-700 group-hover:opacity-0" />
                 <img src={post.img} alt={post.alt} className="about-instagram-card-image absolute inset-0 h-full w-full scale-[1.08] object-cover object-center grayscale-[20%] transition-all duration-1000 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:grayscale-0" loading="lazy" />
@@ -515,8 +516,13 @@ export default function AboutServerView({ personalization = {} }) {
       <TransitionToServicesSection />
       <ServicesSection steps={steps} />
       <InterludeSection />
-      <AboutTestimonialsIsland />
-      <InstagramSection />
+      {KIT_CONFIG.features.testimonials ? <AboutTestimonialsIsland /> : null}
+      {KIT_CONFIG.features.instagramCommunity ? (
+        <InstagramSection
+          instagramUrl={KIT_CONFIG.socialLinks.instagram}
+          instagramFollowersK={KIT_CONFIG.socialProof.instagramFollowersK}
+        />
+      ) : null}
       <FaqSection items={faqs} />
       <ContactSection />
       <AboutMotionDeferredIsland />

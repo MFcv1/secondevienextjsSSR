@@ -230,6 +230,31 @@ test('checkout resume derives owner from Auth and validates before runtime', asy
     );
 });
 
+test('checkout resume exposes an explicit terminal reason after reservation expiry', async () => {
+    const handler = createResumeCheckoutHandler({
+        authorize: () => ({ uid: 'trusted-owner-uid', email: null }),
+        runtimeFactory: () => ({
+            checkout: {
+                resumeCheckout: async () => {
+                    const error = new Error('expired');
+                    error.code = 'COMMERCE_CHECKOUT_TERMINAL_EXPIRED';
+                    throw error;
+                }
+            }
+        })
+    });
+
+    await assert.rejects(
+        handler({ orderId: 'order-v2-expired' }, {
+            auth: { uid: 'trusted-owner-uid', token: {} }
+        }),
+        (error) => (
+            error.code === 'failed-precondition' &&
+            error.details?.reason === 'COMMERCE_CHECKOUT_TERMINAL_EXPIRED'
+        )
+    );
+});
+
 test('checkout runtime exposes only create/resume checkout coordination', () => {
     const runtime = createCheckoutRuntime({
         db: {
@@ -726,6 +751,8 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(adminReturns.includes("order.refundAggregate?.status === 'needs_review'"));
     assert.equal(adminReturns.includes("text: error.message || String(error)"), false);
     assert.ok(checkout.includes('createCheckoutV2(input, {'));
+    assert.ok(checkout.includes('setRecoveredOrderTotal(Number.isSafeInteger(result.totalCents)'));
+    assert.ok(checkout.includes('setAuthoritativeShippingCost(Number.isSafeInteger(result.shippingCents)'));
     assert.ok(checkout.includes('readCheckoutRecoveryDescriptor(identity.uid'));
     assert.ok(checkout.includes('await resumeCheckoutV2(descriptor.orderId)'));
     assert.ok(checkout.includes('await openExistingPayment()'));

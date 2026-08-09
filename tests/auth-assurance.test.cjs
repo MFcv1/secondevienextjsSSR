@@ -176,7 +176,10 @@ test('token minting and Firebase rules carry the same AAL contract', () => {
   assert.match(storageRules, /request\.auth\.token\.userVerified == true/);
   assert.match(storageRules, /request\.auth\.token\.authMethod == 'passkey'/);
   assert.doesNotMatch(storageRules, /auth_time|900/);
-  assert.match(storageRules, /match \/furniture\/\{allPaths=\*\*\}/);
+  assert.match(storageRules, /match \/furniture\/\{fileName\} \{[\s\S]*?allow create, update: if isValidAdminImageWrite\(\);/);
+  assert.match(storageRules, /match \/furniture\/thumbnails\/\{allPaths=\*\*\} \{[\s\S]*?allow create, update: if isValidAdminImageWrite\(\);/);
+  assert.match(storageRules, /match \/furniture\/responsive\/\{allPaths=\*\*\} \{[\s\S]*?allow create, update: if isValidAdminImageWrite\(\);/);
+  assert.match(storageRules, /match \/furniture\/publication-sessions\/\{sessionId\}\/originals\/[\s\S]*?hasStrongAdminAuth\(\)[\s\S]*?hasActiveAdminAccess\(\)/);
   assert.match(storageRules, /firestore\.exists\(\/databases\/\(default\)\/documents\/sys_admin_access\/\$\(request\.auth\.uid\)\)/);
   assert.match(storageRules, /request\.auth\.token\.firebase\.sign_in_provider == 'google\.com'/);
   assert.match(storageRules, /topLevel != 'furniture'/);

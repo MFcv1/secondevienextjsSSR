@@ -7,6 +7,7 @@ import {
   getProductZoomInitialImageSrc,
   preloadImage,
 } from '../../utils/imageUtils';
+import { focusWithoutScroll, trapDialogTabKey } from '../ui/dialogFocus';
 
 const MORPH_DURATION_MS = 520;
 const CLOSE_DURATION_MS = 260;
@@ -51,6 +52,8 @@ export default function ProductDetailLightboxIsland({
   const rootRef = useRef(null);
   const imageRef = useRef(null);
   const controlsRef = useRef(null);
+  const closeButtonRef = useRef(null);
+  const previouslyFocusedRef = useRef(null);
   const openAnimationPlayedRef = useRef(false);
   const closeTimerRef = useRef(0);
   const wheelStateRef = useRef({ acc: 0, lastSwitchAt: 0, resetTimer: 0 });
@@ -64,6 +67,26 @@ export default function ProductDetailLightboxIsland({
   );
   const lightboxSrc = fullSrc || initialSrc;
   const canNavigate = imageCount > 1;
+
+  useEffect(() => {
+    previouslyFocusedRef.current = document.activeElement;
+    const focusFrame = window.requestAnimationFrame(() => {
+      focusWithoutScroll(closeButtonRef.current || rootRef.current);
+    });
+
+    const handleFocusKeyDown = (event) => {
+      trapDialogTabKey(event, rootRef.current, rootRef.current);
+    };
+
+    window.addEventListener('keydown', handleFocusKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      window.removeEventListener('keydown', handleFocusKeyDown);
+      if (previouslyFocusedRef.current?.isConnected) {
+        focusWithoutScroll(previouslyFocusedRef.current);
+      }
+    };
+  }, []);
 
   useLayoutEffect(() => {
     if (!lightboxSrc || openAnimationPlayedRef.current || typeof window === 'undefined') return undefined;
@@ -194,12 +217,20 @@ export default function ProductDetailLightboxIsland({
   useEffect(() => {
     const onKeyDown = (event) => {
       if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
         requestClose();
         return;
       }
       if (!canNavigate) return;
-      if (event.key === 'ArrowLeft') onPrevious?.(event);
-      if (event.key === 'ArrowRight') onNext?.(event);
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        onPrevious?.(event);
+      }
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        onNext?.(event);
+      }
     };
 
     window.addEventListener('keydown', onKeyDown);
@@ -288,6 +319,7 @@ export default function ProductDetailLightboxIsland({
       role="dialog"
       aria-modal="true"
       aria-label="Image produit agrandie"
+      tabIndex={-1}
       data-product-lightbox="true"
       data-lightbox-closing={isClosing ? 'true' : 'false'}
       className="fixed inset-0 z-[3000] flex items-center justify-center bg-[#f7f2ec]/96 text-stone-800 backdrop-blur-md"
@@ -338,6 +370,7 @@ export default function ProductDetailLightboxIsland({
           <ChevronLeft size={22} strokeWidth={1.8} />
         </button>
         <button
+          ref={closeButtonRef}
           type="button"
           aria-label="Fermer le zoom"
           disabled={isClosing}

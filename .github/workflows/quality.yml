@@ -32,11 +32,15 @@ jobs:
       - run: pnpm test:commerce
       - run: pnpm test:catalog
       - run: pnpm test:auth
+      - run: pnpm test:support-privacy
+      - run: pnpm test:release-contract
+      - run: pnpm test:a11y
       - run: pnpm test:deployment-cache
       - run: pnpm seo:surface
       - run: pnpm build
         env:
           CATALOG_BUILD_FIXTURE: "true"
+      - run: pnpm seo:origin
       - run: pnpm next:routes
       - name: Performance budget report
         continue-on-error: true

@@ -17,6 +17,7 @@ const REQUIRED_FUNCTIONS = [
   'cleanupFixtureRunAdmin',
   'commerceOperationsReconciler',
   'commerceOutboxDispatcher',
+  'commerceReservationExpiryDispatcher',
   'createCheckoutV2',
   'getCommerceOperationsStatusAdmin',
   'rebuildCommerceOperationsAdmin',

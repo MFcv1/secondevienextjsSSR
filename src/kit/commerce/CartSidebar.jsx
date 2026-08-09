@@ -221,11 +221,11 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
                             </div>
                             <div className="flex justify-between">
                                 <span className={darkMode ? 'text-stone-400' : 'text-stone-600'}>Livraison</span>
-                                <span className={darkMode ? 'text-stone-400' : 'text-stone-500'}>Offerte</span>
+                                <span className={darkMode ? 'text-stone-400' : 'text-stone-500'}>Calculée au paiement</span>
                             </div>
                         </div>
                         <div className="flex items-end justify-between">
-                            <span className={`font-serif text-lg ${darkMode ? 'text-stone-200' : 'text-stone-900'}`}>Total</span>
+                            <span className={`font-serif text-lg ${darkMode ? 'text-stone-200' : 'text-stone-900'}`}>Sous-total</span>
                             <span className={`text-xl font-black tracking-tight md:text-4xl md:tracking-tighter ${darkMode ? 'text-white' : 'text-stone-900'} ${isArch ? 'md:font-serif' : ''}`}>{totalPrice} €</span>
                         </div>
                         <button
@@ -239,8 +239,8 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onC
                             Commander
                         </button>
                         <div className={`space-y-3 border-t pt-4 text-sm ${darkMode ? 'border-stone-800 text-stone-400' : 'border-stone-200 text-stone-600'}`}>
-                            <div className="flex items-center gap-3"><ShieldCheck size={18} /> Paiement 100% sécurisé</div>
-                            <div className="flex items-center gap-3"><Truck size={18} /> Livraison partout à Marseille</div>
+                            <div className="flex items-center gap-3"><ShieldCheck size={18} /> Paiement traité par Stripe</div>
+                            <div className="flex items-center gap-3"><Truck size={18} /> Options confirmées au paiement</div>
                         </div>
                     </div>
                 )}

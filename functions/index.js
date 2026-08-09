@@ -96,6 +96,9 @@ const {
     rebuildCommerceOperationsAdmin
 } = require('./src/commerce/v2Operations');
 const {
+    commerceReservationExpiryDispatcher
+} = require('./src/commerce/v2ReservationExpiry');
+const {
     stripeConnectWebhookV2,
     stripeWebhookV2
 } = require('./src/commerce/v2Webhooks');
@@ -151,6 +154,7 @@ exports.listReturnsAdminV2 = listReturnsAdminV2;
 exports.cleanupFixtureRunAdmin = cleanupFixtureRunAdmin;
 exports.commerceOperationsReconciler = commerceOperationsReconciler;
 exports.commerceOutboxDispatcher = commerceOutboxDispatcher;
+exports.commerceReservationExpiryDispatcher = commerceReservationExpiryDispatcher;
 exports.getCommerceOperationsStatusAdmin = getCommerceOperationsStatusAdmin;
 exports.rebuildCommerceOperationsAdmin = rebuildCommerceOperationsAdmin;
 exports.stripeWebhookV2 = stripeWebhookV2;

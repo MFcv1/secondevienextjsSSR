@@ -207,11 +207,75 @@ function createCheckoutRuntime({
     return Object.freeze({
         checkout: createCheckoutCoordinator({
             checkoutRepository,
+            clock,
             sagaService: createCheckoutSagaService({
                 stripe: createStripeAdapter(stripe),
                 repository: sagaRepository,
                 clock,
                 failpoints
+            })
+        })
+    });
+}
+
+function createReservationExpiryRuntime({
+    db,
+    stripe,
+    appId,
+    clock = createClock(),
+    failpoints = null
+}) {
+    if (
+        typeof db?.doc !== 'function' ||
+        typeof db?.collection !== 'function' ||
+        typeof db?.runTransaction !== 'function' ||
+        typeof stripe?.paymentIntents?.create !== 'function' ||
+        typeof stripe?.paymentIntents?.retrieve !== 'function' ||
+        typeof stripe?.paymentIntents?.cancel !== 'function' ||
+        typeof appId !== 'string' ||
+        !appId
+    ) {
+        throw runtimeError('COMMERCE_V2_RESERVATION_EXPIRY_RUNTIME_DEPENDENCY_INVALID');
+    }
+    const refs = createRefs(db, appId);
+    const database = {
+        runTransaction: (run) => db.runTransaction(run)
+    };
+    const checkoutRepository = createCheckoutRepository({
+        db: database,
+        refs,
+        ids: {
+            orderId: () => `ord_${crypto.randomUUID()}`,
+            attemptId: () => `att_${crypto.randomUUID()}`,
+            commandId: () => `cmd_${crypto.randomUUID()}`
+        },
+        clock
+    });
+    const paymentEffectApplier = createPaymentEffectApplier({ refs, clock });
+    const sagaRepository = createCheckoutSagaRepository({
+        db: database,
+        checkoutRepository,
+        paymentEffectApplier
+    });
+    const sagaService = createCheckoutSagaService({
+        stripe: createStripeAdapter(stripe),
+        repository: sagaRepository,
+        clock,
+        failpoints
+    });
+    const expiryWorker = createReservationExpiryWorker({
+        checkoutRepository,
+        sagaService,
+        clock
+    });
+    const queries = createFirestoreWorkerQueries({ db });
+    return Object.freeze({
+        expiryWorker,
+        sweepers: Object.freeze({
+            expiredReservations: createBoundedWorkerSweeper({
+                listEligible: queries.listExpiredReservations,
+                processItem: expiryWorker.process,
+                clock
             })
         })
     });
@@ -456,7 +520,8 @@ function createCommerceV2Runtime({
     });
     const checkoutCoordinator = createCheckoutCoordinator({
         checkoutRepository,
-        sagaService
+        sagaService,
+        clock
     });
     const accessTokenRepository = createCheckoutAccessTokenRepository({
         db: database,
@@ -606,6 +671,7 @@ module.exports = {
     createCancellationRuntime,
     createCheckoutRuntime,
     createCommerceV2Runtime,
+    createReservationExpiryRuntime,
     createRefundRuntime,
     createReturnRuntime,
     createStripeAdapter

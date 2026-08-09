@@ -131,6 +131,42 @@ test('allowedActions is server-derived and refuses weak admin or unpaid fulfillm
     }).includes('archive_order'));
 });
 
+test('refund state suspends fulfillment until a partial refund is settled', () => {
+    const actor = {
+        uid: 'admin-gate4',
+        role: 'admin',
+        aal2: true
+    };
+    const paid = paidOrder();
+    const pending = reduceOrder(paid, {
+        type: 'refund_requested',
+        amountCents: paid.amounts.totalCents
+    }, { clock: laterClock });
+    const pendingActions = computeAllowedActions(pending, actor);
+    assert.equal(pendingActions.includes('fulfillment_prepare'), false);
+    assert.equal(pendingActions.includes('fulfillment_ship'), false);
+
+    const fullyRefunded = reduceOrder(pending, {
+        type: 'refund_confirmed',
+        amountCents: paid.amounts.totalCents
+    }, { clock: laterClock });
+    const fullyRefundedActions = computeAllowedActions(fullyRefunded, actor);
+    assert.equal(fullyRefundedActions.includes('fulfillment_prepare'), false);
+    assert.equal(fullyRefundedActions.includes('fulfillment_ship'), false);
+    assert.equal(fullyRefundedActions.includes('fulfillment_ready'), false);
+    assert.equal(fullyRefundedActions.includes('fulfillment_pickup'), false);
+
+    const partialRequest = reduceOrder(paid, {
+        type: 'refund_requested',
+        amountCents: 1000
+    }, { clock: laterClock });
+    const partiallyRefunded = reduceOrder(partialRequest, {
+        type: 'refund_confirmed',
+        amountCents: 1000
+    }, { clock: laterClock });
+    assert.ok(computeAllowedActions(partiallyRefunded, actor).includes('fulfillment_prepare'));
+});
+
 test('q=5 return supports partial receive, restock one and write-off one', () => {
     const order = paidOrder({ delivered: true, quantity: 5 });
     const value = createReturnCase({
@@ -375,8 +411,8 @@ test('product command policy rejects weak admin, foreign collections and stock r
     );
 });
 
-test('product deletion returns no source document', () => {
-    const deleted = applyProductAction({
+test('product deletion command soft-archives the source and preserves inventory history', () => {
+    const archived = applyProductAction({
         action: 'delete_product',
         product: {
             name: 'Produit vendu',
@@ -394,15 +430,37 @@ test('product deletion returns no source document', () => {
         },
         payload: {},
         actor: { uid: 'admin-gate4', role: 'admin', aal2: true },
-        reason: 'suppression definitive demandee',
+        reason: 'archivage controle demande',
         now: laterClock.now()
     });
-    assert.equal(deleted, null);
+    assert.equal(archived.status, 'archived');
+    assert.equal(archived.stock, 0);
+    assert.equal(archived.inventoryVersion, 2);
+    assert.equal(archived.commerceVersion, 6);
+    assert.equal(archived.archivedAt, laterClock.now());
+    assert.equal(archived.archivedBy, 'admin-gate4');
+    assert.equal(archived.archiveReason, 'archivage controle demande');
+    assert.equal(archived.publishedAt, null);
+    assert.throws(
+        () => applyProductAction({
+            action: 'publish_product',
+            product: archived,
+            payload: { published: true },
+            actor: { uid: 'admin-gate4', role: 'admin', aal2: true },
+            reason: 'republication interdite',
+            now: laterClock.now()
+        }),
+        { code: 'COMMERCE_PRODUCT_ARCHIVED' }
+    );
 });
 
 test('product callable transport stays available to active strong admins outside commerce windows', () => {
     const transport = fs.readFileSync(
         path.join(repositoryRoot, 'functions/src/commerce/v2ProductCommands.js'),
+        'utf8'
+    );
+    const repository = fs.readFileSync(
+        path.join(repositoryRoot, 'functions/src/commerce/domain/productCommandRepository.js'),
         'utf8'
     );
     const functionsIndex = fs.readFileSync(
@@ -421,6 +479,10 @@ test('product callable transport stays available to active strong admins outside
         path.join(repositoryRoot, 'src/kit/admin/AdminForm.jsx'),
         'utf8'
     );
+    const adminItemList = fs.readFileSync(
+        path.join(repositoryRoot, 'src/kit/admin/AdminItemList.jsx'),
+        'utf8'
+    );
     for (const functionName of [
         'createProductAdmin',
         'createPublishedProductAdmin',
@@ -437,18 +499,26 @@ test('product callable transport stays available to active strong admins outside
     assert.equal(transport.includes('checkRecentActiveStrongAdmin(context)'), false);
     assert.ok(transport.includes('enforceAppCheck: true'));
     assert.equal(transport.includes('withCommerceMutationsEnabled'), false);
+    assert.equal(repository.includes('transaction.delete(productRef)'), false);
+    assert.ok(repository.includes('COMMERCE_PRODUCT_SOURCE_RETENTION_REQUIRED'));
     assert.ok(client.includes('COMMERCE_V2_ADMIN_COMMANDS_ENABLED = true'));
+    assert.ok(client.includes('Archivage controle depuis le back-office'));
+    assert.equal(client.includes('Suppression definitive depuis le back-office'), false);
     assert.equal(adminIsland.includes('CommerceReadOnlySurface'), false);
     assert.equal(adminIsland.includes('COMMERCE_READ_ONLY_TABS'), false);
     assert.ok(adminIsland.includes('<AdminOrders'));
     assert.ok(adminIsland.includes('mutationsEnabled'));
     assert.equal(adminIsland.includes('deleteDoc'), false);
     assert.equal(adminIsland.includes('updateDoc'), false);
+    assert.ok(adminIsland.includes('sans effacer son historique'));
+    assert.ok(adminItemList.includes('item.status !== \'archived\''));
+    assert.ok(adminItemList.includes("where('status', 'in', ['draft', 'published'])"));
+    assert.ok(adminItemList.includes('title="Archiver"'));
     assert.equal(adminForm.includes('addDoc'), false);
     assert.ok(client.includes('preflightProductMutationAdmin'));
     assert.ok(adminForm.includes('preflightProductMutationAdmin'));
     assert.ok(adminForm.includes('await refreshAdminAuthorizationToken()'));
-    assert.ok(adminForm.includes('await user.getIdToken(true)'));
+    assert.match(adminForm, /(?:await|return) user\.getIdToken\(true\)/);
     assert.ok(
         adminForm.indexOf('await refreshAdminAuthorizationToken()')
         < adminForm.indexOf('await preflightProductMutationAdmin()')

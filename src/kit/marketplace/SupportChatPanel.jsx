@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import KIT_CONFIG from '../config/constants';
+import { getSafeSupportPageUrl } from './supportPageUrl.mjs';
 
 const SUPPORT = KIT_CONFIG.support || {};
 const ADVISOR_NAME = SUPPORT.advisorName || 'Anais';
@@ -31,7 +32,7 @@ const TOPICS = [
     label: 'Livraison & retrait',
     icon: Truck,
     answer: [
-      'La livraison est offerte des 250 EUR d\'achat, partout en France. En dessous, le tarif depend de la piece et il est indique au moment du paiement.',
+      'Le tarif de livraison depend du mode choisi et il est confirme au moment du paiement.',
       'Vous pouvez aussi retirer votre piece gratuitement autour de Marseille, sur rendez-vous.',
     ],
     actions: [{ type: 'whatsapp', label: 'Une question sur ma livraison' }],
@@ -42,7 +43,7 @@ const TOPICS = [
     icon: CreditCard,
     answer: [
       'Le paiement par carte est entierement securise via Stripe.',
-      'Vous pouvez aussi payer en 2x, 3x ou 4x sans frais avec Klarna, directement au moment du paiement.',
+      'Stripe affiche au moment du paiement les moyens disponibles et eligibles pour votre commande.',
     ],
   },
   {
@@ -89,7 +90,9 @@ const TOPICS = [
 
 const buildWhatsAppHref = (context = '') => {
   if (!WHATSAPP_NUMBER) return '';
-  const page = typeof window !== 'undefined' ? window.location.href : '';
+  const page = typeof window !== 'undefined'
+    ? getSafeSupportPageUrl(window.location.href)
+    : '';
   const text = `Bonjour ${ADVISOR_NAME}, ${context || 'j\'ai une question'}${page ? ` (page : ${page})` : ''}`;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
 };

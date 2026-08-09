@@ -168,9 +168,15 @@ export default function GalleryServerView({
           <ProductArrivalsSectionServer items={items} darkMode={darkMode} catalogVersion={catalogVersion} />
           <BeforeAfterSectionServer darkMode={darkMode} />
           <ProductSmallPricesSectionServer items={items} darkMode={darkMode} catalogVersion={catalogVersion} />
-          <InstagramSectionServer darkMode={darkMode} />
-          <TestimonialsSectionServer darkMode={darkMode} />
-          <NewsletterSectionServer darkMode={darkMode} />
+          {KIT_CONFIG.features.instagramCommunity ? (
+            <InstagramSectionServer
+              darkMode={darkMode}
+              instagramUrl={KIT_CONFIG.socialLinks.instagram}
+              instagramFollowersK={KIT_CONFIG.socialProof.instagramFollowersK}
+            />
+          ) : null}
+          {KIT_CONFIG.features.testimonials ? <TestimonialsSectionServer darkMode={darkMode} /> : null}
+          {KIT_CONFIG.features.newsletter ? <NewsletterSectionServer darkMode={darkMode} /> : null}
           <FooterServer darkMode={darkMode} />
         </div>
       </div>

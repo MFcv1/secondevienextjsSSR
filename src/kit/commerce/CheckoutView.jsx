@@ -1,8 +1,9 @@
-import { lazy, Suspense, useState, useEffect, useMemo, useRef } from 'react';
+import { lazy, Suspense, useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, CreditCard, Truck, AlertCircle, Landmark, Wallet, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { functions, db } from '../config/firebase';
+import KIT_CONFIG from '../config/constants';
 import { httpsCallable } from 'firebase/functions';
 import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from '../ui/Toast';
@@ -20,8 +21,11 @@ import {
     reduceCheckoutController,
 } from './checkoutController';
 import {
+    clearCheckoutRecoveryDescriptor,
     COMMERCE_V2_RECOVERY_ENABLED,
     createCheckoutRecoveryDescriptor,
+    getCheckoutRecoveryTerminalMessage,
+    getCheckoutRecoveryTerminalReason,
     readCheckoutRecoveryDescriptor,
     writeCheckoutRecoveryDescriptor,
 } from './checkoutRecovery';
@@ -30,6 +34,10 @@ const DELIVERY_SETTINGS_CACHE_KEY = 'secondevie:delivery-settings:v1';
 const PAYMENT_SETTINGS_CACHE_KEY = 'paymentSettings';
 const CheckoutStripeModal = lazy(() => import('./CheckoutStripeModal'));
 const RELIABLE_EMAIL_PROVIDER_IDS = new Set(['google.com']);
+const isLegalDocumentUrl = (value) => /^(?:https?:\/\/|\/)/i.test(String(value || '').trim());
+const TERMS_URL = KIT_CONFIG.legalLinks.terms;
+const PRIVACY_URL = KIT_CONFIG.legalLinks.privacy;
+const LEGAL_DOCUMENTS_READY = isLegalDocumentUrl(TERMS_URL) && isLegalDocumentUrl(PRIVACY_URL);
 const normalizeCheckoutEmail = (email) => String(email || '').trim().toLowerCase();
 const getCheckoutItemsTotal = (items = []) => (
     items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0)
@@ -107,7 +115,8 @@ const CheckoutView = ({
     onBack,
     onPlaceOrder,
     fixtureContext = null,
-    recoveryExpected = false
+    recoveryExpected = false,
+    onRecoveryTerminal = null
 }) => {
     const toast = useToast();
     // --- STATE ---
@@ -128,7 +137,7 @@ const CheckoutView = ({
     const [deliverySettings, setDeliverySettings] = useState({
         retrait: { id: 'retrait', active: true, label: "Retrait à l'atelier (Marseille)", sub: "Sur rendez-vous", price: 0 },
         idf: { id: 'idf', active: true, label: "Livraison Marseille & Alentours", sub: "Par nos soins", price: 49 },
-        transporteur: { id: 'transporteur', active: true, label: "Transporteur Spécialisé (Cocolis)", sub: "Protections sur-mesure", price: 89 }
+        transporteur: { id: 'transporteur', active: true, label: "Transporteur Spécialisé (Cocolis)", sub: "Protections sur-mesure", price: 90 }
     });
 
     useEffect(() => {
@@ -196,6 +205,7 @@ const CheckoutView = ({
     const [createdStripeConnectedAccountId, setCreatedStripeConnectedAccountId] = useState('');
     const [lockedOrderDraft, setLockedOrderDraft] = useState(null);
     const [recoveredOrderTotal, setRecoveredOrderTotal] = useState(null);
+    const [authoritativeShippingCost, setAuthoritativeShippingCost] = useState(null);
     const [paymentResumeNotice, setPaymentResumeNotice] = useState('');
     const [priceOverrides, setPriceOverrides] = useState({});
     const [unavailableItems, setUnavailableItems] = useState([]);
@@ -231,6 +241,7 @@ const CheckoutView = ({
     const checkoutSubtotal = isCheckoutLocked && lockedOrderDraft ? lockedOrderDraft.subtotal : currentSubtotal;
     const selectedDelivery = formData.deliveryMode ? deliverySettings[formData.deliveryMode] : null;
     const shippingCost = selectedDelivery ? selectedDelivery.price : 0;
+    const displayedShippingCost = authoritativeShippingCost ?? shippingCost;
     const finalTotal = recoveredOrderTotal ?? (checkoutSubtotal + shippingCost);
     const getCheckoutClientOrderId = () => {
         if (!checkoutClientOrderIdRef.current) {
@@ -250,6 +261,21 @@ const CheckoutView = ({
         );
         return checkoutControllerRef.current;
     };
+    const resetTerminalCheckoutRecovery = useCallback((reason) => {
+        clearCheckoutRecoveryDescriptor({ enabled: COMMERCE_V2_RECOVERY_ENABLED });
+        checkoutControllerRef.current = createCheckoutControllerState();
+        checkoutClientOrderIdRef.current = null;
+        setClientSecret(null);
+        setCreatedOrderId(null);
+        setCreatedOrderOtpToken('');
+        setCreatedStripeConnectedAccountId('');
+        setLockedOrderDraft(null);
+        setRecoveredOrderTotal(null);
+        setAuthoritativeShippingCost(null);
+        setPaymentResumeNotice(getCheckoutRecoveryTerminalMessage(reason));
+        setCheckoutState('editing');
+        onRecoveryTerminal?.(reason);
+    }, [onRecoveryTerminal]);
 
     const hasPendingV2Payment = Boolean(
         COMMERCE_V2_CONSUMERS_ENABLED
@@ -270,10 +296,18 @@ const CheckoutView = ({
                 setRecoveredOrderTotal(Number.isSafeInteger(resumed.totalCents)
                     ? resumed.totalCents / 100
                     : null);
+                setAuthoritativeShippingCost(Number.isSafeInteger(resumed.shippingCents)
+                    ? resumed.shippingCents / 100
+                    : null);
                 setCreatedStripeConnectedAccountId(resumed.connectedAccountId || '');
             }
             setCheckoutState('ready_to_pay');
         } catch (error) {
+            const terminalReason = getCheckoutRecoveryTerminalReason(error);
+            if (terminalReason) {
+                resetTerminalCheckoutRecovery(terminalReason);
+                return true;
+            }
             console.error('Checkout payment resume failed:', error);
             setCheckoutState('payment_paused');
             setPaymentResumeNotice(
@@ -324,11 +358,19 @@ const CheckoutView = ({
                 setRecoveredOrderTotal(Number.isSafeInteger(resumed.totalCents)
                     ? resumed.totalCents / 100
                     : null);
+                setAuthoritativeShippingCost(Number.isSafeInteger(resumed.shippingCents)
+                    ? resumed.shippingCents / 100
+                    : null);
                 setCreatedStripeConnectedAccountId(resumed.connectedAccountId || '');
                 setPaymentResumeNotice('Votre commande vous attend. Vous pouvez reprendre le paiement là où vous l’aviez laissé.');
                 setCheckoutState('ready_to_pay');
             } catch (error) {
                 if (cancelled) return;
+                const terminalReason = getCheckoutRecoveryTerminalReason(error);
+                if (terminalReason) {
+                    resetTerminalCheckoutRecovery(terminalReason);
+                    return;
+                }
                 console.error('Checkout recovery failed:', error);
                 if (checkoutControllerRef.current.status === 'awaiting_method') {
                     setCheckoutState('payment_paused');
@@ -343,7 +385,7 @@ const CheckoutView = ({
         return () => {
             cancelled = true;
         };
-    }, [currentCartItems, currentSubtotal]);
+    }, [currentCartItems, currentSubtotal, resetTerminalCheckoutRecovery]);
 
     // Quitter l'ecran Stripe ne compense jamais une operation ambigue et ne
     // detruit plus les informations permettant de reprendre le meme PaymentIntent.
@@ -660,6 +702,8 @@ const CheckoutView = ({
             items: itemsWithCol,
             subtotal: draftSubtotal
         });
+        setRecoveredOrderTotal(null);
+        setAuthoritativeShippingCost(null);
 
         if (paymentMethod === 'stripe_elements') {
             setCheckoutState('fetching_stripe');
@@ -709,6 +753,12 @@ const CheckoutView = ({
                     { enabled: COMMERCE_V2_RECOVERY_ENABLED }
                 );
                 setClientSecret(result.clientSecret);
+                setRecoveredOrderTotal(Number.isSafeInteger(result.totalCents)
+                    ? result.totalCents / 100
+                    : null);
+                setAuthoritativeShippingCost(Number.isSafeInteger(result.shippingCents)
+                    ? result.shippingCents / 100
+                    : null);
                 setCreatedOrderId(result.orderId);
                 setCreatedOrderOtpToken('');
                 setCreatedStripeConnectedAccountId(
@@ -785,6 +835,8 @@ const CheckoutView = ({
             console.error("Order error:", error);
             setCheckoutState('editing');
             setLockedOrderDraft(null);
+            setRecoveredOrderTotal(null);
+            setAuthoritativeShippingCost(null);
             if (error?.details?.reason === 'price_changed' && Array.isArray(error.details.items)) {
                 setPriceOverrides((current) => ({
                     ...current,
@@ -1093,7 +1145,7 @@ const CheckoutView = ({
                             </div>
 
                             <div className="mt-6 pt-6 border-t border-stone-200 dark:border-stone-800">
-                                <label htmlFor="checkout-terms" className="flex items-start gap-3 cursor-pointer group">
+                                <label htmlFor="checkout-terms" className="flex cursor-pointer items-start gap-3 group">
                                     <div className="pt-0.5">
                                         <div className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-colors ${rgpdAccepted ? (darkMode ? 'bg-white border-white text-stone-900' : 'bg-stone-900 border-stone-900 text-white') : (darkMode ? 'border-stone-600 bg-transparent group-hover:border-stone-500' : 'border-stone-300 bg-white group-hover:border-stone-400')}`}>
                                             {rgpdAccepted && <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
@@ -1101,7 +1153,13 @@ const CheckoutView = ({
                                         <input id="checkout-terms" type="checkbox" className="sr-only" checked={rgpdAccepted} onChange={(e) => setRgpdAccepted(e.target.checked)} />
                                     </div>
                                     <div className={`text-xs leading-5 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
-                                        J&apos;accepte les conditions générales de vente et je confirme avoir pris connaissance de la politique de confidentialité (RGPD).
+                                        {LEGAL_DOCUMENTS_READY ? (
+                                            <>
+                                                J&apos;accepte les <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">conditions générales de vente</a> et je confirme avoir pris connaissance de la <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">politique de confidentialité</a>.
+                                            </>
+                                        ) : (
+                                            <>J&apos;accepte les conditions générales de vente et je confirme avoir pris connaissance de la politique de confidentialité (RGPD).</>
+                                        )}
                                     </div>
                                 </label>
                             </div>
@@ -1252,7 +1310,7 @@ const CheckoutView = ({
                                     
                                     <div className="flex justify-between items-center text-sm mb-6 mt-4 pt-4 border-t border-white/5">
                                         <span className="text-stone-400 font-medium">Frais de livraison</span>
-                                        <span className="font-bold text-white tracking-tight">{shippingCost > 0 ? `+ ${shippingCost} €` : 'Gratuit'}</span>
+                                        <span className="font-bold text-white tracking-tight">{displayedShippingCost > 0 ? `+ ${displayedShippingCost} €` : 'Gratuit'}</span>
                                     </div>
                                     
                                     <div className="border-t border-stone-800 pt-6 flex justify-between items-end">

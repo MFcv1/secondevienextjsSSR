@@ -4,9 +4,9 @@ import { unstable_cache } from 'next/cache';
 import { getAdminDb } from './firebaseAdmin';
 
 export const DEFAULT_ANNOUNCEMENT_MESSAGES = Object.freeze([
-  "🔥 Livraison offerte dès 250€ d'achat",
-  '💡 Payez en 2x, 3x, 4x sans frais avec Klarna',
-  'Rejoignez le programme de fidélité Seconde Vie 🎁',
+  '🚚 Livraison et retrait proposes selon la piece et votre adresse',
+  '🔒 Paiement securise : les moyens eligibles sont affiches par Stripe',
+  '🪑 Chaque meuble est une piece unique restauree avec soin',
 ]);
 
 const sanitizeMessages = (value) => (

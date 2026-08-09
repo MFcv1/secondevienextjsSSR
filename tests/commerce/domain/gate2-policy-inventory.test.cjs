@@ -7,7 +7,9 @@ const {
     validateCheckoutInput
 } = require('../../../functions/src/commerce/domain/checkoutInput');
 const {
+    MAX_HOLD_DURATION_SECONDS,
     assertPinnedPolicy,
+    resolveCheckoutExpiry,
     resolveDelivery,
     resolvePolicyForCheckout,
     validateCommercePolicy
@@ -44,6 +46,7 @@ function makePolicy(overrides = {}) {
         currency: 'EUR',
         offlinePaymentEnabled: false,
         stripeConnectedAccountId: 'acct_gate2ready01',
+        holdDurationSeconds: 1800,
         deliveryModes: [{
             id: 'delivery-home',
             active: true,
@@ -151,6 +154,10 @@ test('inventory identity is versioned, normalized and variant-safe', () => {
 test('policy and delivery are fail-closed and pinned by immutable version', () => {
     const policy = makePolicy();
     assert.equal(validateCommercePolicy(policy), true);
+    assert.equal(
+        resolveCheckoutExpiry(policy, '2026-07-26T12:00:00.000Z'),
+        '2026-07-26T12:30:00.000Z'
+    );
     assert.strictEqual(resolvePolicyForCheckout(makeControl(), policy, { fixture: true }), policy);
     assert.equal(resolveDelivery(policy, 'delivery-home', makeCheckout().shippingAddress).shippingCents, 1500);
     assert.equal(assertPinnedPolicy({ checkout: { policyVersion: 'policy-gate2' } }, policy), true);
@@ -163,6 +170,16 @@ test('policy and delivery are fail-closed and pinned by immutable version', () =
             deliveryModes: [{ ...makePolicy().deliveryModes[0], shippingCents: 1.5 }]
         })),
         { code: 'COMMERCE_POLICY_DELIVERY_INVALID' }
+    );
+    for (const holdDurationSeconds of [undefined, 0, 1.5, MAX_HOLD_DURATION_SECONDS + 1]) {
+        assert.throws(
+            () => validateCommercePolicy(makePolicy({ holdDurationSeconds })),
+            { code: 'COMMERCE_POLICY_HOLD_INVALID' }
+        );
+    }
+    assert.throws(
+        () => resolveCheckoutExpiry(policy, 'not-a-date'),
+        { code: 'COMMERCE_POLICY_CLOCK_INVALID' }
     );
     assert.throws(
         () => resolveDelivery(policy, 'delivery-home', {

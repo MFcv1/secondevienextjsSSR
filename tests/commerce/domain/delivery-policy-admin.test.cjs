@@ -36,6 +36,7 @@ test('delivery settings create a new immutable policy while preserving zones and
     const next = buildNextPolicy(policy(), normalized, 'policy-next');
     assert.equal(next.version, 'policy-next');
     assert.equal(next.stripeConnectedAccountId, 'acct_deliverypolicy01');
+    assert.equal(next.holdDurationSeconds, 1800);
     assert.equal(next.deliveryModes[1].active, false);
     assert.equal(next.deliveryModes[1].shippingCents, 5550);
     assert.deepEqual(next.deliveryModes[1].postalPrefixes, ['13']);

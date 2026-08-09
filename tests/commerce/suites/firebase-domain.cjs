@@ -1,5 +1,6 @@
 'use strict';
 
+const admin = require('firebase-admin');
 const { initializeTestEnvironment } = require('@firebase/rules-unit-testing');
 const {
     collection,
@@ -64,6 +65,10 @@ const {
 const {
     createWebhookInboxRepository
 } = require('../../../functions/src/commerce/domain/webhookInboxRepository');
+const {
+    createCheckoutRuntime,
+    createReservationExpiryRuntime
+} = require('../../../functions/src/commerce/domain/v2Runtime');
 
 const PROJECT_ID = 'demo-secondevie-commerce';
 const FIRESTORE_PORT = 8185;
@@ -277,6 +282,7 @@ async function seedGate3Checkout(firestore) {
         currency: 'EUR',
         offlinePaymentEnabled: false,
         stripeConnectedAccountId: 'acct_gate3ready01',
+        holdDurationSeconds: 1800,
         deliveryModes: [{
             id: 'delivery-home',
             active: true,
@@ -675,6 +681,195 @@ const scenarios = {
             'pi_gate3_attached_0001',
             'PI attachment is durable on the order before client response'
         );
+    }),
+
+    'gate3-v2-all-checkout-pins-policy-hold-expiry': async (context) => withBackend(async (firestore) => {
+        const seeded = await seedGate3Checkout(firestore);
+        await setDoc(seeded.refs.control(), {
+            newCheckoutMode: 'v2_all'
+        }, { merge: true });
+        const request = {
+            ownerUid: 'owner-uid-gate3',
+            ownerEmail: 'client@example.test',
+            input: gate3CheckoutInput()
+        };
+        const first = await seeded.checkoutRepository.prepareCheckout(request);
+        const retry = await seeded.checkoutRepository.prepareCheckout(request);
+        const reservation = (await getDoc(seeded.refs.reservation(
+            first.order.id,
+            seeded.inventoryKey
+        ))).data();
+        context.equal(
+            first.order.checkout.expiresAt,
+            '2026-07-26T12:30:00.000Z',
+            'ordinary checkout pins the policy hold duration'
+        );
+        context.equal(
+            reservation.expiresAt,
+            first.order.checkout.expiresAt,
+            'order and reservation share one authoritative expiry'
+        );
+        context.equal(
+            retry.order.checkout.expiresAt,
+            first.order.checkout.expiresAt,
+            'idempotent retry never extends the hold'
+        );
+        context.equal(retry.reused, true, 'retry reuses the durable checkout');
+        context.equal(
+            (await getDoc(seeded.refs.product({ inventoryKey: seeded.inventoryKey }))).data().stock,
+            1,
+            'retry does not create a second hold'
+        );
+    }),
+
+    'gate3-expired-hold-sweeper-cancels-provider-first-and-releases-once': async (context) => withBackend(async () => {
+        const app = admin.initializeApp(
+            { projectId: PROJECT_ID },
+            `commerce-expiry-${Date.now()}-${Math.random().toString(36).slice(2)}`
+        );
+        try {
+            const db = app.firestore();
+            const productRef = db.doc('artifacts/secondevie/public/data/furniture/expiry-product');
+            await Promise.all([
+                db.doc('sys_commerce_control/current').set({
+                    newCheckoutMode: 'v2_all',
+                    legacyMode: 'disabled',
+                    adminMutationMode: 'v2',
+                    offlinePaymentMode: 'off',
+                    activePolicyVersion: 'expiry-policy',
+                    fixtureScopeVersion: null,
+                    fixtureScopeRef: null,
+                    controlRevision: 1
+                }),
+                db.doc('commerce_policy_versions/expiry-policy').set({
+                    schemaVersion: 2,
+                    version: 'expiry-policy',
+                    active: true,
+                    currency: 'EUR',
+                    offlinePaymentEnabled: false,
+                    stripeConnectedAccountId: 'acct_expiryready01',
+                    holdDurationSeconds: 1800,
+                    deliveryModes: [{
+                        id: 'delivery-home',
+                        active: true,
+                        shippingCents: 1500,
+                        countries: ['FR']
+                    }]
+                }),
+                db.doc('commerce_connect_accounts/acct_expiryready01').set({
+                    accountId: 'acct_expiryready01',
+                    active: true,
+                    activeRevision: 1,
+                    chargesEnabled: true,
+                    detailsSubmitted: true
+                }),
+                productRef.set({
+                    name: 'Produit expiration',
+                    status: 'published',
+                    priceOnRequest: false,
+                    currentPrice: 125,
+                    stock: 2,
+                    inventoryVersion: 0
+                })
+            ]);
+
+            const intents = new Map();
+            let createCalls = 0;
+            let cancelCalls = 0;
+            const stripe = {
+                paymentIntents: {
+                    async create(params, options) {
+                        const key = options.idempotencyKey;
+                        if (intents.has(key)) return intents.get(key);
+                        createCalls += 1;
+                        const intent = {
+                            id: 'pi_expiry_emulator_0001',
+                            client_secret: 'pi_expiry_emulator_0001_secret_test',
+                            status: 'requires_payment_method',
+                            amount: params.amount,
+                            currency: params.currency,
+                            metadata: params.metadata
+                        };
+                        intents.set(key, intent);
+                        return intent;
+                    },
+                    async retrieve(paymentIntentId) {
+                        return [...intents.values()].find((intent) => intent.id === paymentIntentId);
+                    },
+                    async cancel(paymentIntentId) {
+                        cancelCalls += 1;
+                        const [key, current] = [...intents.entries()]
+                            .find(([, intent]) => intent.id === paymentIntentId);
+                        const canceled = { ...current, status: 'canceled' };
+                        intents.set(key, canceled);
+                        return canceled;
+                    }
+                }
+            };
+            const checkoutRuntime = createCheckoutRuntime({
+                db,
+                stripe,
+                appId: 'secondevie',
+                clock: {
+                    now: () => '2026-07-26T12:00:00.000Z',
+                    nowMillis: () => Date.parse('2026-07-26T12:00:00.000Z')
+                }
+            });
+            const checkout = await checkoutRuntime.checkout.createCheckout({
+                ownerUid: 'owner-expiry-uid',
+                ownerEmail: 'client@example.test',
+                input: {
+                    clientOrderId: 'client-order-expiry',
+                    items: [{
+                        cartLineId: 'cart-line-expiry',
+                        cartRevision: 1,
+                        productId: 'expiry-product',
+                        collectionName: 'furniture',
+                        variantId: null,
+                        quantity: 1
+                    }],
+                    deliveryModeId: 'delivery-home',
+                    shippingAddress: {
+                        fullName: 'Client Expiration',
+                        line1: '10 rue du Test',
+                        line2: '',
+                        postalCode: '75001',
+                        city: 'Paris',
+                        country: 'FR'
+                    }
+                }
+            });
+            context.equal((await productRef.get()).data().stock, 1, 'checkout holds stock before payment');
+            context.equal(createCalls, 1, 'one idempotent payment intent exists before expiry');
+
+            const expiryRuntime = createReservationExpiryRuntime({
+                db,
+                stripe,
+                appId: 'secondevie',
+                clock: {
+                    now: () => '2026-07-26T12:31:00.000Z',
+                    nowMillis: () => Date.parse('2026-07-26T12:31:00.000Z')
+                }
+            });
+            const firstSweep = await expiryRuntime.sweepers.expiredReservations.run();
+            const order = (await db.doc(`orders/${checkout.orderId}`).get()).data();
+            const reservations = await db.collection('inventory_reservations')
+                .where('orderId', '==', checkout.orderId)
+                .get();
+            context.equal(firstSweep.failures.length, 0, 'expiry sweep completes without hidden failures');
+            context.equal(firstSweep.processed, 1, 'one expired reservation is processed');
+            context.equal(cancelCalls, 1, 'provider cancellation happens exactly once');
+            context.equal((await productRef.get()).data().stock, 2, 'stock is restored only after provider cancellation');
+            context.equal(reservations.docs[0].data().status, 'released', 'reservation is durably released');
+            context.equal(order.checkout.status, 'closed', 'expired checkout is durably closed');
+            context.equal(order.payment.status, 'canceled', 'provider cancellation is projected on the order');
+
+            const retrySweep = await expiryRuntime.sweepers.expiredReservations.run();
+            context.equal(retrySweep.processed, 0, 'released reservation is no longer eligible');
+            context.equal(cancelCalls, 1, 'retry never cancels or releases twice');
+        } finally {
+            await app.delete();
+        }
     }),
 
     'gate7a-fixture-checkout-is-bound-to-control-uid-and-inventory': async (context) => withBackend(async (firestore) => {
@@ -1302,7 +1497,7 @@ const scenarios = {
         );
     }),
 
-    'gate4-product-commands-are-atomic-idempotent-and-delete-source': async (context) => withBackend(async (firestore) => {
+    'gate4-product-commands-are-atomic-idempotent-and-soft-archive': async (context) => withBackend(async (firestore) => {
         const refs = gate4ProductRefs(firestore);
         const commands = createProductCommandRepository({
             db: { runTransaction: (run) => runTransaction(firestore, run) },
@@ -1402,7 +1597,7 @@ const scenarios = {
                 commandId: 'command-product-delete-0001',
                 expectedVersion: publication.commerceVersion
             },
-            reason: 'suppression definitive demandee',
+            reason: 'archivage controle demande',
             payload: {}
         });
 
@@ -1410,8 +1605,12 @@ const scenarios = {
             collectionName: 'furniture',
             productId
         }));
-        context.equal(deletion.status, 'deleted', 'delete command reports source deletion');
-        context.equal(product.exists(), false, 'source product is removed');
+        context.equal(deletion.status, 'archived', 'delete command reports a soft archive');
+        context.equal(product.exists(), true, 'source product remains available for commerce history');
+        context.equal(product.data().status, 'archived', 'archived source is excluded from the public projection');
+        context.equal(product.data().stock, 1, 'archive preserves the authoritative stock state');
+        context.equal(product.data().inventoryVersion, 1, 'archive never rewrites inventory history');
+        context.equal(product.data().archivedBy, actor.uid, 'archive records its strong-admin actor');
         context.equal(
             (await getDocs(collection(
                 firestore,

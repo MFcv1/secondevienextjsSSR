@@ -257,7 +257,7 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
     };
 
     const exportToCsv = () => {
-        const scope = segment === 'all' && !search.trim() ? 'Commandes' : 'Commandes_filtrees';
+        const scope = segment === 'all' && !search.trim() ? 'Commandes_chargees' : 'Commandes_filtrees';
         downloadCsv(buildCsvRows(visibleOrders), scope);
     };
 
@@ -274,28 +274,34 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
     } : null;
 
     const segmentCounts = { ...summary, all: summary.total };
+    const hasMoreOrders = COMMERCE_V2_ADMIN_READERS_ENABLED
+        ? Boolean(nextCursor)
+        : orders.length >= orderLimit;
 
     return (
         <section className="flex min-h-0 w-full max-w-full flex-col xl:h-full" aria-label="Ventes">
             <div className="mb-5 flex shrink-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex flex-1 items-center gap-2.5">
                     <label className="relative min-w-0 flex-1 lg:max-w-[340px]">
+                        <span className="sr-only">Rechercher dans les commandes chargées</span>
                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" size={15} strokeWidth={1.5} />
                         <input
                             type="search"
                             value={search}
                             onChange={(event) => setSearch(event.target.value)}
-                            placeholder="Client, référence, article, ville…"
+                            placeholder="Rechercher dans les commandes chargées…"
                             className={`w-full rounded-[14px] border-none py-3 pl-10 pr-4 text-[12px] font-semibold outline-none ring-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] focus:ring-2 ${darkMode ? 'bg-black/20 text-white ring-white/10 placeholder:text-stone-700 focus:ring-white/25' : 'bg-white text-stone-950 ring-black/[0.055] placeholder:text-stone-400 focus:ring-stone-300'}`}
                         />
                     </label>
                     <button
                         type="button"
                         onClick={exportToCsv}
-                        className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 text-[11px] font-extrabold ring-1 transition-colors duration-200 active:scale-[0.985] ${darkMode ? 'text-stone-300 ring-white/12 hover:bg-white/[0.07] hover:text-white' : 'bg-white text-stone-600 ring-black/[0.07] hover:text-stone-950'}`}
+                        disabled={visibleOrders.length === 0}
+                        aria-label={`Exporter ${visibleOrders.length} commande${visibleOrders.length !== 1 ? 's' : ''} au format CSV`}
+                        className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 text-[11px] font-extrabold ring-1 transition-colors duration-200 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45 ${darkMode ? 'text-stone-300 ring-white/12 hover:bg-white/[0.07] hover:text-white' : 'bg-white text-stone-600 ring-black/[0.07] hover:text-stone-950'}`}
                     >
                         <Download size={14} strokeWidth={1.8} />
-                        <span className="hidden sm:inline">Export CSV</span>
+                        <span className="hidden sm:inline">Exporter {visibleOrders.length}</span>
                     </button>
                 </div>
 
@@ -312,7 +318,7 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
                                 className={`flex min-h-10 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-[15px] px-3 text-[11.5px] font-extrabold transition-colors duration-200 active:scale-[0.99] lg:flex-none ${active ? (darkMode ? 'bg-white text-stone-950' : 'bg-stone-950 text-white') : (darkMode ? 'text-stone-500 hover:text-white' : 'text-stone-500 hover:text-stone-950')}`}
                             >
                                 {label}
-                                <span className={`rounded-full px-1.5 py-0.5 text-[9px] tabular-nums ${
+                                <span className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
                                     id === 'todo' && count > 0 && !active
                                         ? 'bg-amber-500/15 text-amber-600'
                                         : active
@@ -327,13 +333,18 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
                 </div>
             </div>
 
+            <p className={`mb-3 -mt-2 shrink-0 text-[10.5px] leading-4 ${mutedTextClass(darkMode)}`} aria-live="polite">
+                {orders.length} commande{orders.length !== 1 ? 's' : ''} chargée{orders.length !== 1 ? 's' : ''}
+                {hasMoreOrders ? ' sur un historique plus large' : ''}. Recherche, compteurs et export portent sur ce périmètre.
+            </p>
+
             <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(390px,33%)] 2xl:gap-6">
                 <div className={`min-h-0 overflow-hidden rounded-[26px] border ${surfaceClass(darkMode)}`}>
                     <div className="flex h-full min-h-[520px] flex-col p-4 sm:p-5 xl:min-h-0 xl:p-5 2xl:p-6">
-                        <div className={`hidden shrink-0 grid-cols-[minmax(180px,2fr)_1.25fr_1.5fr_.75fr_.9fr] gap-2 px-2.5 pb-2 text-[8px] font-extrabold uppercase tracking-[0.12em] lg:grid ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>
+                        <div className={`hidden shrink-0 grid-cols-[minmax(180px,2fr)_1.25fr_1.5fr_.75fr_.9fr] gap-2 px-2.5 pb-2 text-[10px] font-extrabold uppercase tracking-[0.1em] lg:grid ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>
                             <span>Commande</span>
                             <span>Panier</span>
-                            <span>Avancée</span>
+                            <span>État</span>
                             <span>Date</span>
                             <span className="text-right">Total</span>
                         </div>
@@ -341,8 +352,8 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
                         <div
                             ref={listRef}
                             data-native-scroll-region="true"
-                            onWheel={(event) => event.stopPropagation()}
-                            onKeyDown={handleListKeyDown}
+                            role="region"
+                            aria-label="Liste des commandes chargées"
                             className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 custom-scrollbar"
                         >
                             {isLoading && orders.length === 0 ? (
@@ -377,6 +388,7 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
                                         <OrderRow
                                             key={order.id}
                                             darkMode={darkMode}
+                                            onKeyDown={handleListKeyDown}
                                             onSelect={selectOrder}
                                             order={order}
                                             selected={order.id === selectedOrderId}
@@ -386,7 +398,7 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
                             )}
                         </div>
 
-                        {(COMMERCE_V2_ADMIN_READERS_ENABLED ? Boolean(nextCursor) : orders.length >= orderLimit) ? (
+                        {hasMoreOrders ? (
                             <button
                                 type="button"
                                 onClick={() => {
@@ -461,7 +473,7 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
                 />
             ) : null}
 
-            <p className={`mt-3 shrink-0 text-[9.5px] leading-4 xl:hidden ${mutedTextClass(darkMode)}`}>
+            <p className={`mt-3 shrink-0 text-[10.5px] leading-4 xl:hidden ${mutedTextClass(darkMode)}`}>
                 Touchez une commande pour ouvrir son parcours et l’action attendue.
             </p>
         </section>

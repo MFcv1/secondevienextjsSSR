@@ -813,6 +813,12 @@ export default function ProductDetailShellIsland({
     setIsLightboxOpen(true);
   }, [activeImageSrc]);
 
+  const handleProductZoomKeyDown = useCallback((event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openProductLightbox();
+  }, [openProductLightbox]);
+
   const resetImageDrag = (animated) => {
     const node = mobileImageDragRef.current;
     if (!node) return;
@@ -1061,7 +1067,10 @@ export default function ProductDetailShellIsland({
         </div>
       ) : null}
 
-      <main className="w-full h-full lg:overflow-hidden lg:flex lg:flex-row relative">
+      <main
+        className="w-full h-full lg:overflow-hidden lg:flex lg:flex-row relative"
+        inert={isLightboxOpen ? true : undefined}
+      >
         <div ref={mobileShellRef} className={`fixed inset-0 overflow-hidden overscroll-none transition-colors duration-500 lg:hidden ${darkMode ? 'bg-[#0A0A0A]' : 'bg-[#FAFAF9]'}`} style={{ height: 'var(--marketplace-viewport-height, 100dvh)' }}>
           <div ref={mobileThumbLayerRef} className={`absolute top-0 left-0 w-full z-20 px-3 safe-pt-product-thumbs pb-1 transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${isMobilePanelOpen ? '-translate-y-full' : 'translate-y-0'}`}>
             <ProductThumbRail
@@ -1085,7 +1094,14 @@ export default function ProductDetailShellIsland({
             onPointerUp={onPointerUp}
             onPointerCancel={onImagePointerCancel}
           >
-            <div className="relative flex h-full w-full cursor-zoom-in items-center justify-center" onClick={openProductLightbox}>
+            <div
+              className="relative flex h-full w-full cursor-zoom-in items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-stone-700/70"
+              role="button"
+              tabIndex={0}
+              aria-label={`Agrandir l'image de ${title}`}
+              onClick={openProductLightbox}
+              onKeyDown={handleProductZoomKeyDown}
+            >
               <div ref={mobileImageDragRef} className="product-detail-mobile-image-shadow pointer-events-none drop-shadow-[0_20px_42px_rgba(92,75,57,0.24)]">
                 <div data-fit-mode={activeImageFitMode} className="product-detail-mobile-image-frame" style={mobileDetailImageFrameStyle}>
                   <div className="product-detail-mobile-image-clip">
@@ -1210,6 +1226,8 @@ export default function ProductDetailShellIsland({
           <div
             data-mobile-bottom-sheet
             className={`absolute bottom-0 left-0 w-full backdrop-blur-3xl rounded-t-3xl border-t transition-[transform,background-color,border-color,box-shadow] duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] z-30 flex h-[clamp(30rem,calc(var(--marketplace-viewport-height,100dvh)*0.66),40rem)] max-h-[calc(var(--marketplace-viewport-height,100dvh)-5.5rem)] flex-col overflow-hidden bg-[#fffdfb]/95 border-stone-200 shadow-[0_-24px_80px_rgba(92,75,57,0.16)] ${isMobilePanelOpen ? 'translate-y-0' : 'translate-y-full'}`}
+            aria-hidden={isMobilePanelOpen ? 'false' : 'true'}
+            inert={isMobilePanelOpen ? undefined : true}
           >
             <div className="flex h-full min-h-0 w-full flex-col px-5 pt-4 safe-pb-product-sheet">
               <div
@@ -1286,8 +1304,12 @@ export default function ProductDetailShellIsland({
             </button>
 
             <div
-              className="relative z-10 w-full h-full flex items-center justify-center cursor-zoom-in"
+              className="relative z-10 w-full h-full flex items-center justify-center cursor-zoom-in outline-none focus-visible:ring-2 focus-visible:ring-white/90"
+              role="button"
+              tabIndex={0}
+              aria-label={`Agrandir l'image de ${title}`}
               onClick={openProductLightbox}
+              onKeyDown={handleProductZoomKeyDown}
               onWheel={handleDesktopImageWheel}
             >
               <div className="absolute inset-0 flex items-center justify-center">

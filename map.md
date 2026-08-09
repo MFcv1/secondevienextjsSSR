@@ -599,10 +599,10 @@ src/kit/admin/
 |-- GlobalInventoryView.jsx ........... vue catalogue/ordres
 |-- AdminStudio.jsx ................... studio contenu
 |-- AdminHomepage.jsx ................. personnalisation publique
-|-- AdminOrders.jsx ................... ventes/logistique: conteneur lectures + commandes commerce
-|   |-- components/orders/orderPresentation.js .... derivations pures: parcours, segments, recherche, formats, CSV
+|-- AdminOrders.jsx ................... ventes/logistique: conteneur lectures + commandes commerce, scope charge explicite
+|   |-- components/orders/orderPresentation.js .... derivations pures: priorite actionnable, remboursements, recherche, formats, CSV
 |   |-- components/orders/orderTones.js ........... tons et surfaces partages clair/sombre
-|   |-- components/orders/OrderRow.jsx ............ ligne dense, avancee en quatre temps
+|   |-- components/orders/OrderRow.jsx ............ ligne dense, etat en quatre temps
 |   |-- components/orders/OrderDetailPanel.jsx .... detail: prochaine etape, parcours horodate, panier, client
 |   |-- components/orders/OrdersOverviewPanel.jsx . resume affiche tant qu'aucune commande n'est ouverte
 |   |-- components/orders/OrderModalShell.jsx ..... voile, piege de focus, feuille mobile

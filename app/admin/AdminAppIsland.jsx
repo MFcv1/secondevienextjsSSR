@@ -71,7 +71,6 @@ const AdminPaymentSettings = React.lazy(() => import('../../src/kit/admin/AdminP
 const AdminPaymentLinks = React.lazy(() => import('../../src/kit/admin/AdminPaymentLinks'));
 const AdminIPTracker = React.lazy(() => import('../../src/kit/admin/AdminIPTracker'));
 const AdminGlobalInventory = React.lazy(() => import('../../src/kit/admin/GlobalInventoryView'));
-const AdminMaintenance = React.lazy(() => import('../../src/kit/admin/AdminMaintenance'));
 const AdminAccount = React.lazy(() => import('../../src/kit/admin/AdminAccount'));
 const BillingOnboardingGuide = React.lazy(() => import('../../src/kit/admin/BillingOnboardingGuide'));
 const LegacyLoginModalIsland = React.lazy(() => import('../../src/kit/marketplace/LegacyLoginModalFullIsland'));
@@ -139,7 +138,7 @@ const ADMIN_NAV_GROUPS = [
   { label: 'Catalogue', tabs: ['furniture', 'inventory', 'studio'] },
   { label: 'Ventes', tabs: ['orders', 'payment_links', 'invoices', 'returns', 'livraison', 'payment_settings'] },
   { label: 'Communication', tabs: ['homepage', 'newsletter', 'seo'] },
-  { label: 'Administration', tabs: ['account', 'users', 'ip_manager', 'maintenance'] },
+  { label: 'Administration', tabs: ['account', 'users', 'ip_manager'] },
 ];
 
 /** Onglets qui pilotent leur propre hauteur : liste et detail scrollent separement. */
@@ -385,7 +384,7 @@ function AdminContent() {
 
   const handleDeleteItem = async (_year, item, collectionName) => {
     if (publicationMutationsBlocked) return;
-    if (!window.confirm(`Supprimer définitivement « ${item.name || 'ce meuble'} » ?`)) return;
+    if (!window.confirm(`Archiver « ${item.name || 'ce meuble'} » ? Il sera retiré du catalogue sans effacer son historique.`)) return;
     await deleteProductAdmin(item, collectionName);
     [item?.id, item?.originalId]
       .map((value) => String(value || '').trim())
@@ -645,8 +644,6 @@ function AdminContent() {
                 />
               )}
             </div>
-          ) : adminCollection === 'maintenance' ? (
-            <AdminMaintenance darkMode={darkMode} />
           ) : (
             <AdminPublicationWorkspace
               collectionName={adminCollection}

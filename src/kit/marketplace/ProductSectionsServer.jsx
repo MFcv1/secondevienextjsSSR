@@ -161,8 +161,8 @@ export const ProductSmallPricesSectionServer = ({ items, darkMode = false, catal
 );
 
 const reassuranceUnits = [
-  { code: '01', Icon: Truck, label: 'Livraison soignee', text: 'Partout en France metropolitaine', meta: 'FRANCE / RETRAIT' },
-  { code: '02', Icon: CreditCard, label: 'Paiement 4x sans frais', text: 'Echelonnez vos paiements facilement', meta: '2X / 3X / FRAIS 0%' },
+  { code: '01', Icon: Truck, label: 'Livraison soignee', text: 'Options et tarif confirmes au paiement', meta: 'LIVRAISON / RETRAIT' },
+  { code: '02', Icon: CreditCard, label: 'Paiement securise', text: 'Moyens eligibles affiches par Stripe', meta: 'CARTE / STRIPE' },
   { code: '03', Icon: HeartHandshake, label: 'On est la pour vous', text: 'Une equipe humaine a votre ecoute', meta: 'CONSEILS / SUPPORT' },
 ];
 
@@ -451,8 +451,6 @@ const instaPosts = [
   { img: '/images/before-after/avantx-gallery.webp', label: 'Inspiration', title: 'Piece chinee' },
 ];
 
-const INSTAGRAM_URL = 'https://www.instagram.com/secondevie_anais';
-
 const instagramFloatingTokens = [
   { id: 'gram', Icon: Instagram, className: 'instagram-floating-token--gram', style: { '--float-x': '6%', '--float-y': '19%', '--float-size': '140px', '--float-enter-duration': '680ms', '--float-arrive-x': '-10px', '--float-arrive-y': '54px', '--float-drift-x': '13px', '--float-drift-y': '-18px', '--float-rotate-start': '-12deg', '--float-rotate-end': '9deg', '--float-duration': '7.4s' } },
   { id: 'heart', Icon: Heart, className: 'instagram-floating-token--heart', style: { '--float-x': '16%', '--float-y': '63%', '--float-size': '108px', '--float-enter-duration': '600ms', '--float-arrive-x': '-12px', '--float-arrive-y': '48px', '--float-drift-x': '-10px', '--float-drift-y': '-15px', '--float-rotate-start': '10deg', '--float-rotate-end': '-8deg', '--float-duration': '8.2s' } },
@@ -513,11 +511,17 @@ const getInstaPositionStyle = (index, activeIndex, positions) => {
   return positions.farRight;
 };
 
-const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } = {}) => (
+const InstagramCarouselPlaceholder = ({
+  darkMode = false,
+  posts = instaPosts,
+  instagramUrl,
+  instagramFollowersK,
+} = {}) => (
   <section
     data-instagram-carousel
     data-item-count={posts.length}
     data-instagram-counter-state="idle"
+    data-instagram-counter-target={instagramFollowersK || undefined}
     data-instagram-input-active="false"
     className="instagram-carousel-section relative isolate overflow-hidden px-0 pb-[64px] pt-[38px] md:px-6 md:py-[72px] lg:min-h-[690px] lg:px-[5vw] lg:py-[78px] xl:py-[86px]"
   >
@@ -561,17 +565,19 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
           Nous aussi on vous aime
         </h2>
         <div className="mt-4 flex flex-col items-center gap-4">
-          <div className="text-center">
-            <p
-              className={`font-serif text-[33px] leading-none tracking-normal ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}
-              aria-label="38,9 milliers d'abonnes Instagram"
-            >
-              <span className="instagram-counter-value tabular-nums" data-instagram-counter-value aria-hidden="true">38.9</span>
-              <span className="instagram-counter-suffix text-[0.52em] italic text-[#A68A64]" aria-hidden="true">k</span>
-            </p>
-            <p className="mt-2 text-[8px] font-black uppercase tracking-[0.22em] text-[#A68A64]">Abonnes Instagram</p>
-          </div>
-          <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" className={`mx-auto flex h-[44px] w-full max-w-[252px] items-center justify-between rounded-full border pl-3.5 pr-1.5 shadow-[0_14px_36px_rgba(32,26,20,0.08)] ${darkMode ? 'border-white/10 bg-white/5 text-white' : 'border-stone-200 bg-white text-[#1A1A1A]'}`}>
+          {instagramFollowersK ? (
+            <div className="text-center">
+              <p
+                className={`font-serif text-[33px] leading-none tracking-normal ${darkMode ? 'text-white' : 'text-[#1A1A1A]'}`}
+                aria-label={`${instagramFollowersK} milliers d'abonnes Instagram`}
+              >
+                <span className="instagram-counter-value tabular-nums" data-instagram-counter-value aria-hidden="true">{instagramFollowersK.toFixed(1)}</span>
+                <span className="instagram-counter-suffix text-[0.52em] italic text-[#A68A64]" aria-hidden="true">k</span>
+              </p>
+              <p className="mt-2 text-[8px] font-black uppercase tracking-[0.22em] text-[#A68A64]">Abonnes Instagram</p>
+            </div>
+          ) : null}
+          <a href={instagramUrl} target="_blank" rel="noreferrer" className={`mx-auto flex h-[44px] w-full max-w-[252px] items-center justify-between rounded-full border pl-3.5 pr-1.5 shadow-[0_14px_36px_rgba(32,26,20,0.08)] ${darkMode ? 'border-white/10 bg-white/5 text-white' : 'border-stone-200 bg-white text-[#1A1A1A]'}`}>
             <Instagram size={15} strokeWidth={1.8} />
             <span className="text-[8px] font-black uppercase tracking-[0.18em] min-[390px]:text-[9px]">Rejoindre Instagram</span>
             <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${darkMode ? 'bg-white text-black' : 'bg-[#1A1A1A] text-white'}`}>
@@ -645,20 +651,22 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
           Nous aussi on vous aime
         </h2>
       </div>
-      <div className="mb-11 grid w-full max-w-[560px] grid-cols-[auto_auto] items-center justify-center gap-x-7">
-        <div className="flex flex-col items-center md:items-end">
-          <div
-            className={`flex origin-bottom translate-y-[-5px] scale-[1.045] items-end font-serif text-[58px] leading-none tracking-normal md:text-[68px] ${darkMode ? 'text-[#F9F6F0]' : 'text-[#1A1A1A]'}`}
-            aria-label="38,9 milliers d'abonnes Instagram"
-          >
-            <span className="instagram-counter-value tabular-nums" data-instagram-counter-value aria-hidden="true">38.9</span>
-            <span className="instagram-counter-suffix mb-1.5 ml-1 text-[30px] italic lowercase tracking-normal text-[#A68A64] md:text-[38px]" aria-hidden="true">k</span>
+      <div className={`mb-11 grid w-full max-w-[560px] items-center justify-center gap-x-7 ${instagramFollowersK ? 'grid-cols-[auto_auto]' : 'grid-cols-1'}`}>
+        {instagramFollowersK ? (
+          <div className="flex flex-col items-center md:items-end">
+            <div
+              className={`flex origin-bottom translate-y-[-5px] scale-[1.045] items-end font-serif text-[58px] leading-none tracking-normal md:text-[68px] ${darkMode ? 'text-[#F9F6F0]' : 'text-[#1A1A1A]'}`}
+              aria-label={`${instagramFollowersK} milliers d'abonnes Instagram`}
+            >
+              <span className="instagram-counter-value tabular-nums" data-instagram-counter-value aria-hidden="true">{instagramFollowersK.toFixed(1)}</span>
+              <span className="instagram-counter-suffix mb-1.5 ml-1 text-[30px] italic lowercase tracking-normal text-[#A68A64] md:text-[38px]" aria-hidden="true">k</span>
+            </div>
+            <p className={`mt-[13px] font-sans text-[8px] font-black uppercase tracking-[0.22em] min-[390px]:text-[9px] ${darkMode ? 'text-white/55' : 'text-[#8f8579]'}`}>
+              abonnes Instagram
+            </p>
           </div>
-          <p className={`mt-[13px] font-sans text-[8px] font-black uppercase tracking-[0.22em] min-[390px]:text-[9px] ${darkMode ? 'text-white/55' : 'text-[#8f8579]'}`}>
-            abonnes Instagram
-          </p>
-        </div>
-        <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" className={`flex h-[58px] min-w-[360px] items-center justify-between rounded-full border pl-6 pr-2 shadow-[0_18px_48px_rgba(32,26,20,0.07)] ${darkMode ? 'border-white/10 bg-white/5 text-white' : 'border-[#ece7df] bg-white/82 text-[#1A1A1A]'}`}>
+        ) : null}
+        <a href={instagramUrl} target="_blank" rel="noreferrer" className={`flex h-[58px] min-w-[360px] items-center justify-between rounded-full border pl-6 pr-2 shadow-[0_18px_48px_rgba(32,26,20,0.07)] ${darkMode ? 'border-white/10 bg-white/5 text-white' : 'border-[#ece7df] bg-white/82 text-[#1A1A1A]'}`}>
           <span className="flex items-center gap-5">
             <Instagram size={18} strokeWidth={1.8} />
             <span className="text-[11px] font-black uppercase tracking-[0.24em]">Rejoindre la communaute</span>
@@ -724,8 +732,13 @@ const InstagramCarouselPlaceholder = ({ darkMode = false, posts = instaPosts } =
   </section>
 );
 
-export const InstagramSectionServer = ({ darkMode = false } = {}) => (
-  <InstagramCarouselPlaceholder darkMode={darkMode} posts={instaPosts} />
+export const InstagramSectionServer = ({ darkMode = false, instagramUrl, instagramFollowersK } = {}) => (
+  <InstagramCarouselPlaceholder
+    darkMode={darkMode}
+    posts={instaPosts}
+    instagramUrl={instagramUrl}
+    instagramFollowersK={instagramFollowersK}
+  />
 );
 
 const testimonials = [
@@ -804,7 +817,7 @@ const TestimonialsHeader = ({ darkMode = false, compact = false } = {}) => (
       La parole a nos clients.
     </h2>
     <p className={`mt-6 text-[10px] font-black uppercase tracking-[0.14em] dark:text-[#a99b8c] ${darkMode ? 'text-[#a99b8c]' : 'text-[#77716b]'}`}>
-      Excellent 4.9/5 - base sur 124 avis Google
+      Temoignages dont la publication a ete autorisee
     </p>
   </div>
 );

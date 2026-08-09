@@ -13,6 +13,9 @@ import {
 } from './quoteTheme';
 
 const TOTAL_STEPS = 7;
+const CONTACT_EMAIL = process.env.NEXT_PUBLIC_BUSINESS_EMAIL || '';
+const CONTACT_PHONE = process.env.NEXT_PUBLIC_BUSINESS_PHONE || '';
+const CONTACT_CHANNEL_READY = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(CONTACT_EMAIL);
 
 /*
  * Le rail de l'assistant, en version figee. Il n'existe que pour
@@ -94,7 +97,7 @@ export default function QuoteFormSsrShell({ darkMode = false } = {}) {
     <form
       id="quote-ssr-form-shell"
       data-quote-ssr-shell
-      action="mailto:contact@seconde-vie-anais.fr"
+      action={CONTACT_CHANNEL_READY ? `mailto:${CONTACT_EMAIL}` : undefined}
       method="post"
       encType="text/plain"
       className={`${QUOTE_SHELL} pb-6 pt-6 lg:pt-9`}
@@ -367,12 +370,14 @@ export default function QuoteFormSsrShell({ darkMode = false } = {}) {
               Anaïs vous répond sur l'état réel de votre meuble et ajuste le devis
               après étude de votre demande.
             </p>
-            <a
-              href="tel:+33612345678"
-              className={`mt-5 inline-flex h-12 w-full items-center justify-center rounded-full font-sans text-[13px] font-semibold sm:w-auto sm:px-7 ${t.ghostBtn}`}
-            >
-              Être rappelé
-            </a>
+            {CONTACT_PHONE ? (
+              <a
+                href={`tel:${CONTACT_PHONE.replace(/\s/g, '')}`}
+                className={`mt-5 inline-flex h-12 w-full items-center justify-center rounded-full font-sans text-[13px] font-semibold sm:w-auto sm:px-7 ${t.ghostBtn}`}
+              >
+                Être rappelé
+              </a>
+            ) : null}
             <p className={`mt-4 ${QUOTE_TYPE.micro} ${t.faint}`}>
               Fourchette indicative. Le devis final est établi après étude de vos photos.
             </p>
@@ -382,9 +387,10 @@ export default function QuoteFormSsrShell({ darkMode = false } = {}) {
           <p className={`${QUOTE_TYPE.meta} ${t.muted}`}>Le devis final sera confirmé après étude de vos informations et de vos photos.</p>
           <button
             type="submit"
-            className={`inline-flex h-[54px] w-full items-center justify-center rounded-full px-8 font-sans text-[13px] font-semibold sm:w-auto ${t.primaryBtn}`}
+            disabled={!CONTACT_CHANNEL_READY}
+            className={`inline-flex h-[54px] w-full items-center justify-center rounded-full px-8 font-sans text-[13px] font-semibold disabled:cursor-not-allowed disabled:opacity-55 sm:w-auto ${t.primaryBtn}`}
           >
-            Envoyer ma demande
+            {CONTACT_CHANNEL_READY ? 'Envoyer ma demande' : 'Envoi bientôt disponible'}
           </button>
         </div>
       </section>

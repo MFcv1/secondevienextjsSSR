@@ -5,7 +5,6 @@ import { useEffect } from 'react';
 const REVEAL_THRESHOLDS = [0, 0.02, 0.1, 0.2, 0.32, 0.44, 0.56];
 const REVEAL_GAP_DESKTOP_MS = 180;
 const REVEAL_GAP_MOBILE_MS = 220;
-const COUNTER_TARGET = 38.9;
 const COUNTER_DURATION_MS = 1200;
 const COUNTER_TO_BUBBLES_LEAD_MS = 450;
 const INPUT_SETTLE_MS = 150;
@@ -72,6 +71,10 @@ export default function InstagramFloatingTokensReveal() {
     const tokenOrder = isMobile.matches ? MOBILE_TOKEN_ORDER : DESKTOP_TOKEN_ORDER;
     const tokens = tokenOrder.map((id) => tokenById.get(id)).filter(Boolean);
     const counterValues = Array.from(section.querySelectorAll('[data-instagram-counter-value]'));
+    const counterTargetValue = Number(section.dataset.instagramCounterTarget);
+    const counterValueTarget = Number.isFinite(counterTargetValue) && counterTargetValue > 0
+      ? counterTargetValue
+      : null;
     const counterTarget = counterValues.find((counterValue) => counterValue.offsetParent !== null)
       || counterValues[0];
     const revealGapMs = isMobile.matches ? REVEAL_GAP_MOBILE_MS : REVEAL_GAP_DESKTOP_MS;
@@ -93,7 +96,7 @@ export default function InstagramFloatingTokensReveal() {
     let inputSettleTimer = null;
     let lastInputAt = window.performance?.now?.() || Date.now();
     let counterAnimationFrame = null;
-    let counterStarted = counterValues.length === 0;
+    let counterStarted = counterValues.length === 0 || counterValueTarget === null;
     let tokenRevealNotBefore = 0;
     const settleFallbacks = new Set();
     const transitionCleanups = new Set();
@@ -191,7 +194,7 @@ export default function InstagramFloatingTokensReveal() {
     };
 
     const startCounterAnimation = () => {
-      if (counterStarted || counterValues.length === 0) return;
+      if (counterStarted || counterValues.length === 0 || counterValueTarget === null) return;
       counterStarted = true;
       const startedAt = window.performance.now();
       tokenRevealNotBefore = startedAt + COUNTER_TO_BUBBLES_LEAD_MS;
@@ -203,8 +206,8 @@ export default function InstagramFloatingTokensReveal() {
         const progress = Math.min(1, (now - startedAt) / COUNTER_DURATION_MS);
         const easedProgress = 1 - (1 - progress) ** 4;
         const displayedValue = progress >= 0.96
-          ? COUNTER_TARGET
-          : COUNTER_TARGET * easedProgress;
+          ? counterValueTarget
+          : counterValueTarget * easedProgress;
         setCounterValue(displayedValue);
 
         if (progress < 1) {
@@ -213,7 +216,7 @@ export default function InstagramFloatingTokensReveal() {
         }
 
         counterAnimationFrame = null;
-        setCounterValue(COUNTER_TARGET);
+        setCounterValue(counterValueTarget);
         section.dataset.instagramCounterState = 'complete';
       };
 
@@ -343,7 +346,7 @@ export default function InstagramFloatingTokensReveal() {
     if (reducedMotion) {
       prepare();
       section.dataset.instagramCounterState = 'complete';
-      setCounterValue(COUNTER_TARGET);
+      if (counterValueTarget !== null) setCounterValue(counterValueTarget);
       tokens.forEach((token) => {
         token.dataset.floatingPrepared = 'true';
         token.dataset.floatingRevealed = 'true';

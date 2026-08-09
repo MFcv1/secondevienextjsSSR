@@ -24,6 +24,7 @@ import {
     getOrderJourney,
     getPaymentLabel,
     getTimelineMeta,
+    isRefundedWithGoodsOnSite,
     orderReference,
 } from './orderPresentation';
 import { insetClass, mutedTextClass, pillClass, softClass } from './orderTones';
@@ -39,7 +40,7 @@ const TIMELINE_ICONS = {
 };
 
 const SectionTitle = ({ children, darkMode }) => (
-    <h4 className={`text-[8px] font-extrabold uppercase tracking-[0.14em] ${mutedTextClass(darkMode)}`}>
+    <h4 className={`text-[10px] font-extrabold uppercase tracking-[0.12em] ${mutedTextClass(darkMode)}`}>
         {children}
     </h4>
 );
@@ -50,14 +51,14 @@ function CopyValue({ darkMode, label, mono = false, value }) {
     if (!value) {
         return (
             <div className="flex items-baseline justify-between gap-3 py-1.5">
-                <span className={`shrink-0 text-[9px] font-extrabold uppercase tracking-[0.1em] ${mutedTextClass(darkMode)}`}>{label}</span>
+                <span className={`shrink-0 text-[10px] font-extrabold uppercase tracking-[0.08em] ${mutedTextClass(darkMode)}`}>{label}</span>
                 <span className={`text-[11px] font-medium ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>Non renseigné</span>
             </div>
         );
     }
     return (
         <div className="group flex items-baseline justify-between gap-3 py-1.5">
-            <span className={`shrink-0 text-[9px] font-extrabold uppercase tracking-[0.1em] ${mutedTextClass(darkMode)}`}>{label}</span>
+            <span className={`shrink-0 text-[10px] font-extrabold uppercase tracking-[0.08em] ${mutedTextClass(darkMode)}`}>{label}</span>
             <span className="flex min-w-0 items-baseline gap-1.5">
                 <span className={`truncate text-right text-[11.5px] font-semibold ${mono ? 'font-mono text-[10.5px]' : ''}`} title={value}>
                     {value}
@@ -103,7 +104,7 @@ export default function OrderDetailPanel({
             <header className={`shrink-0 border-b px-5 pb-4 pt-5 sm:px-6 ${darkMode ? 'border-white/[0.07]' : 'border-black/[0.055]'}`}>
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                        <p className={`font-mono text-[9px] ${mutedTextClass(darkMode)}`}>{orderReference(order.id)}</p>
+                        <p className={`font-mono text-[10px] ${mutedTextClass(darkMode)}`}>{orderReference(order.id)}</p>
                         <h3 className="mt-1 truncate text-[19px] font-extrabold tracking-[-0.035em]">
                             {order.shipping?.fullName || 'Client inconnu'}
                         </h3>
@@ -114,9 +115,12 @@ export default function OrderDetailPanel({
                     <div className="flex shrink-0 items-center gap-2">
                         <div className="text-right">
                             <p className="text-[17px] font-extrabold tabular-nums tracking-[-0.03em]">{formatPrice(order.total)}</p>
-                            <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.08em] ${pillClass(journey.tone, darkMode)}`}>
+                            <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.06em] ${pillClass(journey.tone, darkMode)}`}>
                                 {journey.label}
                             </span>
+                            {journey.detail ? (
+                                <p className={`mt-1 text-[10px] font-semibold ${mutedTextClass(darkMode)}`}>{journey.detail}</p>
+                            ) : null}
                         </div>
                         {variant === 'sheet' ? (
                             <button
@@ -140,6 +144,11 @@ export default function OrderDetailPanel({
                 {/* 1. Ce qu'il reste a faire — toujours en premier, jamais en bas de page. */}
                 <section className="space-y-2.5">
                     <SectionTitle darkMode={darkMode}>Prochaine étape</SectionTitle>
+                    {isRefundedWithGoodsOnSite(order) ? (
+                        <p className={`rounded-[16px] px-4 py-3.5 text-[11px] leading-5 ring-1 ${softClass('info', darkMode)} ring-sky-500/15`}>
+                            Remboursement effectué. Le meuble est toujours à l’atelier. Ne le republiez pas tant que sa remise en stock n’a pas été enregistrée dans <strong className="font-extrabold">Retours</strong>.
+                        </p>
+                    ) : null}
                     {!commandsEnabled ? (
                         <p className={`rounded-[16px] px-4 py-3.5 text-[11px] leading-5 ring-1 ${insetClass(darkMode)} ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
                             Actions commerce neutralisées. Aucun statut ni stock n’est modifié depuis le navigateur.
@@ -216,7 +225,7 @@ export default function OrderDetailPanel({
                                                 {millis ? (
                                                     <time
                                                         dateTime={new Date(millis).toISOString()}
-                                                        className={`shrink-0 text-[9.5px] tabular-nums ${mutedTextClass(darkMode)}`}
+                                                        className={`shrink-0 text-[10px] tabular-nums ${mutedTextClass(darkMode)}`}
                                                     >
                                                         {formatDateTime(event.at)}
                                                     </time>
@@ -267,7 +276,7 @@ export default function OrderDetailPanel({
 
                     {order.fulfillmentSummary?.status === 'shipped' ? (
                         <div className={`rounded-[18px] px-4 py-3 ring-1 ${insetClass(darkMode)}`}>
-                            <p className={`flex items-center gap-1.5 text-[8px] font-extrabold uppercase tracking-[0.14em] ${mutedTextClass(darkMode)}`}>
+                            <p className={`flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.12em] ${mutedTextClass(darkMode)}`}>
                                 <Truck size={11} strokeWidth={2} /> Suivi de livraison
                             </p>
                             {order.shipmentTracking?.mode === 'tracked' ? (
@@ -286,10 +295,10 @@ export default function OrderDetailPanel({
 
                 {/* 5. Le technique se replie : la boutique ne le lit jamais. */}
                 <details className={`group rounded-[18px] px-4 py-3 ring-1 ${insetClass(darkMode)}`}>
-                    <summary className={`flex cursor-pointer list-none items-center justify-between text-[8px] font-extrabold uppercase tracking-[0.14em] ${mutedTextClass(darkMode)}`}>
+                    <summary className={`flex cursor-pointer list-none items-center justify-between text-[10px] font-extrabold uppercase tracking-[0.12em] ${mutedTextClass(darkMode)}`}>
                         Détails techniques
-                        <span className="text-[9px] font-bold normal-case tracking-normal group-open:hidden">Afficher</span>
-                        <span className="hidden text-[9px] font-bold normal-case tracking-normal group-open:inline">Masquer</span>
+                        <span className="text-[10px] font-bold normal-case tracking-normal group-open:hidden">Afficher</span>
+                        <span className="hidden text-[10px] font-bold normal-case tracking-normal group-open:inline">Masquer</span>
                     </summary>
                     <div className="mt-1">
                         <CopyValue darkMode={darkMode} label="PaymentIntent" value={order.stripePaymentIntentId} mono />
@@ -300,7 +309,7 @@ export default function OrderDetailPanel({
                         ) : null}
                         {order.emailProof ? (
                             <div className="flex items-baseline justify-between gap-3 py-1.5">
-                                <span className={`text-[9px] font-extrabold uppercase tracking-[0.1em] ${mutedTextClass(darkMode)}`}>E-mails</span>
+                                <span className={`text-[10px] font-extrabold uppercase tracking-[0.08em] ${mutedTextClass(darkMode)}`}>E-mails</span>
                                 <span className="flex items-center gap-1.5 text-[10px] font-semibold">
                                     <Mail size={11} strokeWidth={1.8} className={mutedTextClass(darkMode)} />
                                     client {order.emailProof?.client?.sent ? 'envoyé' : 'non confirmé'} · admin {order.emailProof?.admin?.sent ? 'envoyé' : 'non confirmé'}

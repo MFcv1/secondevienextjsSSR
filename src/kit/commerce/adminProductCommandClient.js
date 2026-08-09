@@ -130,7 +130,7 @@ export const deleteProductAdmin = (item, collectionName) => execute(
     collectionName,
     productId: item.id,
     expectedVersion: Number(item.commerceVersion || 0),
-    reason: 'Suppression definitive depuis le back-office'
+    reason: 'Archivage controle depuis le back-office'
   }
 );
 

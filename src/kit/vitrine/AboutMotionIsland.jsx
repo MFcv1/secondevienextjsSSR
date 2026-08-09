@@ -673,7 +673,8 @@ function animateInstagramCounter(_gsap, ScrollTrigger, root) {
   const valueEl = select(counter, '.about-ig-counter__value');
   if (!counter || !valueEl) return;
 
-  const TARGET = 38.9;
+  const target = Number(counter.dataset.igCounterTarget);
+  if (!Number.isFinite(target) || target <= 0) return;
   let intervalId = null;
 
   const runCasino = () => {
@@ -692,10 +693,10 @@ function animateInstagramCounter(_gsap, ScrollTrigger, root) {
       currentFrame += 1;
       const progress = Math.min(1, currentFrame / totalFrames);
       const easeProgress = 1 - (1 - progress) ** 3;
-      let currentValue = TARGET * easeProgress;
+      let currentValue = target * easeProgress;
 
       if (progress >= 0.94) {
-        currentValue = TARGET;
+        currentValue = target;
       }
 
       valueEl.textContent = currentValue.toFixed(1);
@@ -703,7 +704,7 @@ function animateInstagramCounter(_gsap, ScrollTrigger, root) {
       if (currentFrame >= totalFrames) {
         window.clearInterval(intervalId);
         intervalId = null;
-        valueEl.textContent = TARGET.toFixed(1);
+        valueEl.textContent = target.toFixed(1);
       }
     }, 1000 / fps);
   };

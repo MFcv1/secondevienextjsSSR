@@ -34,7 +34,10 @@ export function ToastProvider({ children }) {
         {toasts.map(toast => (
           <div
             key={toast.id}
-            className={`sv-toast pointer-events-auto cursor-pointer rounded-xl border px-4 py-3 shadow-lg backdrop-blur-sm
+            role={toast.type === 'error' ? 'alert' : 'status'}
+            aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
+            aria-atomic="true"
+            className={`sv-toast pointer-events-auto flex items-start gap-3 rounded-xl border px-4 py-3 shadow-lg backdrop-blur-sm
                 ${toast.type === 'error'
                   ? 'bg-red-500/90 text-white border-red-400/50'
                   : toast.type === 'success'
@@ -42,10 +45,17 @@ export function ToastProvider({ children }) {
                   : toast.type === 'warning'
                   ? 'bg-amber-500/90 text-white border-amber-400/50'
                   : 'bg-gray-800/90 text-white border-gray-600/50'
-                }`}
-            onClick={() => removeToast(toast.id)}
+            }`}
           >
-            <p className="text-sm font-medium">{toast.message}</p>
+            <p className="min-w-0 flex-1 text-sm font-medium">{toast.message}</p>
+            <button
+              type="button"
+              aria-label="Fermer la notification"
+              className="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-lg leading-none transition-colors hover:bg-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              onClick={() => removeToast(toast.id)}
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
           </div>
         ))}
       </div>
