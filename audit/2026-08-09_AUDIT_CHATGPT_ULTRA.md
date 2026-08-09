@@ -4,17 +4,17 @@ Date : 9 août 2026
 Projet : Seconde Vie Next.js SSR  
 Environnement audité et déployé : sandbox Firebase App Hosting  
 Branche : `main`  
-Commit applicatif déployé : `516ec56`
+Commit applicatif déployé : `036c411`
 
 ## Verdict
 
 Le projet a fait l'objet d'un audit transversal du code exécutable, de la configuration, de la build Next.js, des parcours publics, du back-office, du commerce, de Firebase et des données sandbox.
 
-La release App Hosting issue du commit `516ec56` a été construite et déployée avec succès sur :
+La release App Hosting issue du commit `036c411` a été construite et déployée avec succès sur :
 
 `https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app`
 
-Le déploiement demandé portait uniquement sur App Hosting. Les changements Firebase Functions sont commités sur `main`, mais nécessitent un déploiement Functions séparé pour devenir actifs dans le backend cloud.
+Les quatre Functions de facturation manuelle ont également été déployées séparément et sont actives en Node.js 22 dans `europe-west1`. Les autres changements Functions de l'audit restent à déployer par lots dédiés après leurs gates propres.
 
 ## Corrections principales intégrées
 
@@ -22,6 +22,7 @@ Le déploiement demandé portait uniquement sur App Hosting. Les changements Fir
 - reprise propre d'un paiement expiré ou annulé sans boucle navigateur ;
 - archivage logique des produits au lieu d'une suppression destructive ;
 - correction de la source catalogue utilisée par les factures manuelles ;
+- préchargement de l'atelier Factures, suppression de son écran d'attente plein format et prise en charge des images du catalogue ;
 - synchronisation des frais de livraison et du total avec le serveur ;
 - suppression des promesses de livraison non implémentées ;
 - protection des tokens des liens de paiement vis-à-vis du support ;
@@ -65,6 +66,9 @@ Le déploiement demandé portait uniquement sur App Hosting. Les changements Fir
 - newsletter et jeu promotionnel présents sur la home ;
 - coordonnées de démonstration présentes ;
 - ancienne promesse « livraison offerte dès 250 € » absente.
+- quatre Functions de facturation actives en Node.js 22 dans `europe-west1` ;
+- trois anciens produits techniques « Fixture Gate 6 » supprimés de la collection racine erronée après sauvegarde et contrôle de leurs références ;
+- aucun de ces trois produits n'était lié à une facture, une commande active ou une réservation active.
 
 ## État des données sandbox observé pendant l'audit
 
@@ -77,7 +81,7 @@ Le déploiement demandé portait uniquement sur App Hosting. Les changements Fir
 
 ## Points restant à traiter
 
-1. Déployer Firebase Functions séparément pour activer les corrections backend déjà commitées.
+1. Déployer séparément les Functions hors facturation encore en attente, après leurs gates propres.
 2. Dépublier les cinq fiches de test après validation métier explicite.
 3. Configurer les coordonnées, réseaux et documents juridiques définitifs.
 4. Concevoir puis câbler la réception et la gestion des devis dans le back-office.
