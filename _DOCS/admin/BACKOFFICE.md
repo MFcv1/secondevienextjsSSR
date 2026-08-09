@@ -227,8 +227,8 @@ Apres mutation:
   de derivation (etat en quatre temps, segments, recherche, colonnes CSV)
   sont isolees dans `components/orders/orderPresentation.js` et ne lisent ni
   n'ecrivent aucune donnee;
-- `AdminInvoices`: creation assistee de factures manuelles et reprise des
-  brouillons;
+- `AdminInvoices`: creation assistee de factures manuelles, reprise des
+  brouillons et bascule detail/vue d'ensemble dans le selecteur catalogue;
 - `AdminQuotes`: reception des demandes envoyees depuis `/devis`, recherche
   locale sur les cent dossiers les plus recents, indicateurs bornes, fiche
   client/projet, photos privees, statut de suivi et notes internes;

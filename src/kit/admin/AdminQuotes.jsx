@@ -292,8 +292,8 @@ export default function AdminQuotes({ darkMode = false }) {
 
       {error ? <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-200">{error}</p> : null}
 
-      <section className="grid items-start gap-5 xl:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
-        <div className={`overflow-hidden rounded-2xl border ${surface}`}>
+      <section className="grid items-stretch gap-5 xl:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
+        <div className={`h-full overflow-hidden rounded-2xl border ${surface}`}>
           <div className={`space-y-3 border-b p-4 ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
             <label className="relative block">
               <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${muted}`} size={16} />
@@ -360,14 +360,14 @@ export default function AdminQuotes({ darkMode = false }) {
           </div>
         </div>
 
-        <div id="quote-admin-detail" className="scroll-mt-24">
+        <div id="quote-admin-detail" className="h-full scroll-mt-24">
           {detailStatus === 'loading' ? <DetailSkeleton darkMode={darkMode} /> : detailStatus === 'error' ? (
-            <div className={`rounded-2xl border p-6 text-center ${surface}`}>
+            <div className={`h-full rounded-2xl border p-6 text-center ${surface}`}>
               <p className="text-sm font-bold">La fiche n’a pas pu être ouverte.</p>
               <button type="button" onClick={() => setDetailRefreshKey((value) => value + 1)} className="mt-4 min-h-11 rounded-xl border px-4 text-xs font-bold">Réessayer</button>
             </div>
           ) : detail ? (
-            <div className={`overflow-hidden rounded-2xl border ${surface}`}>
+            <div className={`h-full overflow-hidden rounded-2xl border ${surface}`}>
               <header className={`border-b p-5 sm:p-6 ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
@@ -477,7 +477,7 @@ export default function AdminQuotes({ darkMode = false }) {
               </div>
             </div>
           ) : (
-            <div className={`grid min-h-80 place-items-center rounded-2xl border p-8 text-center ${surface}`}>
+            <div className={`grid h-full min-h-80 place-items-center rounded-2xl border p-8 text-center ${surface}`}>
               <div>
                 <FileText className={`mx-auto ${muted}`} size={34} strokeWidth={1.3} />
                 <p className="mt-4 text-sm font-bold">Sélectionnez une demande</p>

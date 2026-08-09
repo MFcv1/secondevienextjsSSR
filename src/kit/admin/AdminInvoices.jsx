@@ -12,6 +12,8 @@ import {
   Download,
   FilePlus2,
   FileText,
+  Grid2X2,
+  Grid3X3,
   Loader2,
   Mail,
   Minus,
@@ -194,6 +196,7 @@ function InvoicePreview({ invoice }) {
 function ProductPicker({ products, initialSelection = [], onBack, onContinue, darkMode }) {
   const [selected, setSelected] = useState(() => new Set(initialSelection));
   const [search, setSearch] = useState('');
+  const [compactView, setCompactView] = useState(false);
   const filtered = useMemo(() => {
     const needle = search.trim().toLocaleLowerCase('fr');
     if (!needle) return products;
@@ -222,21 +225,37 @@ function ProductPicker({ products, initialSelection = [], onBack, onContinue, da
         <Search className="ml-2 text-stone-400" size={18} />
         <input aria-label="Rechercher un meuble" className="min-h-10 flex-1 bg-transparent text-sm outline-none placeholder:text-stone-400" onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher par nom ou catégorie…" value={search} />
         <span className="rounded-lg bg-amber-100 px-3 py-2 text-xs font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-300">{selected.size} sélectionné{selected.size > 1 ? 's' : ''}</span>
+        <button
+          type="button"
+          aria-label={compactView ? 'Revenir à la vue détaillée' : 'Afficher une vue d’ensemble compacte'}
+          aria-pressed={compactView}
+          title={compactView ? 'Vue détaillée' : 'Vue d’ensemble'}
+          onClick={() => setCompactView((current) => !current)}
+          className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg border transition active:scale-95 ${compactView
+            ? 'border-amber-500 bg-amber-500 text-white shadow-sm'
+            : darkMode
+              ? 'border-white/10 bg-white/[.04] text-stone-300 hover:bg-white/[.08]'
+              : 'border-stone-200 bg-white text-stone-500 hover:border-stone-300 hover:bg-stone-50'}`}
+        >
+          {compactView ? <Grid2X2 size={17} /> : <Grid3X3 size={17} />}
+        </button>
       </div>
       {filtered.length ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className={`grid ${compactView
+          ? 'grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8'
+          : 'grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'}`}>
           {filtered.map((product) => {
             const active = selected.has(product.id);
             return (
-              <button aria-pressed={active} className={`group overflow-hidden rounded-2xl border text-left transition duration-200 active:scale-[.99] ${active ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-500/20 dark:bg-amber-400/10' : darkMode ? 'border-white/10 bg-white/[.035] hover:border-white/25' : 'border-stone-200 bg-white hover:border-stone-400'}`} key={product.id} onClick={() => toggle(product.id)} type="button">
+              <button aria-pressed={active} className={`group overflow-hidden border text-left transition duration-200 active:scale-[.99] ${compactView ? 'rounded-xl' : 'rounded-2xl'} ${active ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-500/20 dark:bg-amber-400/10' : darkMode ? 'border-white/10 bg-white/[.035] hover:border-white/25' : 'border-stone-200 bg-white hover:border-stone-400'}`} key={product.id} onClick={() => toggle(product.id)} type="button">
                 <div className="relative aspect-[4/3] bg-stone-100 dark:bg-stone-800">
-                  {product.image ? <Image alt={product.name} className="object-cover transition duration-500 group-hover:scale-[1.03]" fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw" src={product.image} unoptimized /> : <PackageSearch className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-stone-400" size={24} />}
-                  <span className={`absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-lg border shadow-sm ${active ? 'border-amber-500 bg-amber-500 text-white' : 'border-white/70 bg-white/90 text-transparent'}`}><Check size={15} /></span>
+                  {product.image ? <Image alt={product.name} className="object-cover transition duration-500 group-hover:scale-[1.03]" fill sizes={compactView ? '(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 15vw' : '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw'} src={product.image} unoptimized /> : <PackageSearch className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-stone-400" size={compactView ? 20 : 24} />}
+                  <span className={`absolute grid place-items-center border shadow-sm ${compactView ? 'right-1.5 top-1.5 h-6 w-6 rounded-md' : 'right-2 top-2 h-7 w-7 rounded-lg'} ${active ? 'border-amber-500 bg-amber-500 text-white' : 'border-white/70 bg-white/90 text-transparent'}`}><Check size={compactView ? 13 : 15} /></span>
                   {product.sold ? <span className="absolute bottom-2 left-2 rounded-md bg-stone-950/85 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Vendu / archivé</span> : null}
                 </div>
-                <div className="p-3">
-                  <p className="line-clamp-2 min-h-10 text-sm font-bold leading-5">{product.name}</p>
-                  <p className="mt-2 text-sm font-black tabular-nums">{euro(product.priceCents)}</p>
+                <div className={compactView ? 'p-2' : 'p-3'}>
+                  <p className={`line-clamp-2 font-bold ${compactView ? 'min-h-8 text-[11px] leading-4' : 'min-h-10 text-sm leading-5'}`}>{product.name}</p>
+                  <p className={`font-black tabular-nums ${compactView ? 'mt-1.5 text-xs' : 'mt-2 text-sm'}`}>{euro(product.priceCents)}</p>
                 </div>
               </button>
             );
