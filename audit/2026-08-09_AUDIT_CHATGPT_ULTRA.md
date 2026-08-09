@@ -4,13 +4,13 @@ Date : 9 août 2026
 Projet : Seconde Vie Next.js SSR  
 Environnement audité et déployé : sandbox Firebase App Hosting  
 Branche : `main`  
-Commit applicatif déployé : `036c411`
+Commit applicatif déployé : `ddcee71`
 
 ## Verdict
 
 Le projet a fait l'objet d'un audit transversal du code exécutable, de la configuration, de la build Next.js, des parcours publics, du back-office, du commerce, de Firebase et des données sandbox.
 
-La release App Hosting issue du commit `036c411` a été construite et déployée avec succès sur :
+La release App Hosting issue du commit `ddcee71` a été construite et déployée avec succès sur :
 
 `https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app`
 
@@ -23,6 +23,7 @@ Les quatre Functions de facturation manuelle ont également été déployées s�
 - archivage logique des produits au lieu d'une suppression destructive ;
 - correction de la source catalogue utilisée par les factures manuelles ;
 - préchargement de l'atelier Factures, suppression de son écran d'attente plein format et prise en charge des images du catalogue ;
+- préchargement des paramètres Livraison et remplacement de l'écran d'attente bloquant par une synchronisation non bloquante ;
 - synchronisation des frais de livraison et du total avec le serveur ;
 - suppression des promesses de livraison non implémentées ;
 - protection des tokens des liens de paiement vis-à-vis du support ;
@@ -69,6 +70,7 @@ Les quatre Functions de facturation manuelle ont également été déployées s�
 - quatre Functions de facturation actives en Node.js 22 dans `europe-west1` ;
 - trois anciens produits techniques « Fixture Gate 6 » supprimés de la collection racine erronée après sauvegarde et contrôle de leurs références ;
 - aucun de ces trois produits n'était lié à une facture, une commande active ou une réservation active.
+- page Livraison publiée dans le rollout App Hosting `sv-msm5kozo-6d8587d0ca82`.
 
 ## État des données sandbox observé pendant l'audit
 
