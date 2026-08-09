@@ -144,7 +144,7 @@ Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCa
 | produit/images | `perf:product-direct`, `perf:product-images`, audit images selon scope |
 | A propos | `perf:about-direct` |
 | devis | `perf:quote-direct` |
-| réception devis + admin | `test:quotes`, lint cible, build; envoi Gmail réel uniquement sur demande explicite |
+| réception devis + admin | `test:quotes`, lint cible, build; envoi Gmail réel uniquement sur demande explicite; contrôle hébergé admin avec `node scripts/with-env.mjs .env.sandbox node scripts/e2e-sandbox-role-session.mjs --role=admin --expect-quote=<reference>` |
 | newsletter + avantages client | `test:newsletter`, lint cible, build; recette Gmail et espace client uniquement sur demande explicite |
 | menu/header | `perf:menu-desktop`, `perf:menu-mobile`, `mobile:contract` |
 | Auth | `test:auth`, build, smoke reel selon changement |

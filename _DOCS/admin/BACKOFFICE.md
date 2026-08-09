@@ -258,6 +258,13 @@ effet secondaire: son echec n'annule jamais la reception du dossier. Aucun
 e-mail n'est envoye a une adresse metier Seconde Vie tant que cette adresse
 n'existe pas.
 
+La recette sandbox du 2026-08-10 a valide le parcours public complet, l'accuse
+Gmail client et l'apparition du meme dossier dans la liste puis la fiche admin.
+Le controle admin reproductible utilise
+`e2e-sandbox-role-session.mjs --role=admin --expect-quote=<reference>` avec
+une session ephemere AAL2 et un jeton App Check borne; il ne remplace pas la
+ceremonie de connexion Google reelle.
+
 ### 5.2 Newsletter et avantages
 
 Le jeu public ajoute ou met à jour `newsletter_subscribers` uniquement via
@@ -265,6 +272,10 @@ Function. L'onglet `Infos` conserve sa liste administrateur et son export; le
 code promotionnel reste séparé dans `newsletter_rewards`, inaccessible au SDK
 navigateur. Le tirage est serveur, la partie est temporaire, la réclamation
 est idempotente et le client relit ses codes par callable authentifiée.
+
+La recette sandbox du 2026-08-10 a confirme que la reduction et le code
+durable sont strictement identiques dans la galerie, l'e-mail client et le
+bloc `Mes avantages` de `/mes-commandes`.
 
 ### 5.3 Contrat de la vue Ventes
 

@@ -288,6 +288,10 @@ inscrit sous `confirmationEmail.status` et n'annule jamais la demande deja
 visible dans `AdminQuotes`. Les photos ne sont jamais jointes au message et
 restent dans le stockage prive.
 
+Recette sandbox reelle du 2026-08-10: soumission publique, persistance admin
+et reception Gmail client validees avec la meme reference, sans adresse
+metier Seconde Vie configuree.
+
 ## 11. Avantage newsletter
 
 Modele: `newsletter-reward`.
@@ -304,6 +308,11 @@ ou `failed` reste attaché à `newsletter_rewards`; l'interface confirme alors
 que le gain est conservé même si l'e-mail est retardé. La lecture dans
 l'espace client exige une session Firebase dont l'e-mail est vérifié et
 correspond au hash du gain.
+
+Recette sandbox reelle du 2026-08-10: tirage, reclamation, reception Gmail et
+lecture dans `Mes avantages` valides avec le meme pourcentage, le meme code et
+la meme echeance. Les valeurs de recette ne sont pas conservees dans la
+documentation.
 
 ## 12. Livraison et idempotence
 

@@ -15,12 +15,14 @@ const readArg = (name, fallback = '') => {
 };
 
 const role = readArg('role').trim().toLowerCase();
+const expectedQuote = readArg('expect-quote').trim().toUpperCase();
 const baseUrl = readArg('base-url', process.env.NEXT_BASE_URL || SANDBOX_URL).replace(/\/$/, '');
 const headed = process.argv.includes('--headed');
 const keepOpen = process.argv.includes('--keep-open');
 const projectId = process.env.FIREBASE_PROJECT_ID
   || process.env.VITE_FIREBASE_PROJECT_ID
   || SANDBOX_PROJECT_ID;
+const firebaseAppId = process.env.VITE_FIREBASE_APP_ID || process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '';
 
 if (!Object.hasOwn(ROLE_EMAILS, role)) {
   throw new Error('Role requis: --role=client ou --role=admin.');
@@ -33,6 +35,12 @@ if (baseUrl !== SANDBOX_URL && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.
 }
 if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
   throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON manque dans l environnement local ignore par Git.');
+}
+if (!firebaseAppId) {
+  throw new Error('VITE_FIREBASE_APP_ID manque pour le jeton App Check de recette.');
+}
+if (expectedQuote && !/^DEV-\d{8}-[A-Z0-9]{4,12}$/.test(expectedQuote)) {
+  throw new Error('Reference devis invalide pour la recette.');
 }
 if (keepOpen && !headed) {
   throw new Error('--keep-open exige --headed.');
@@ -74,12 +82,21 @@ const developerClaims = role === 'admin'
   ? { authMethod: 'passkey', authAssurance: 'aal2', userVerified: true }
   : { authMethod: 'email_otp', authAssurance: 'aal1', userVerified: false };
 const customToken = await auth.createCustomToken(user.uid, developerClaims);
+const appCheckToken = await admin.appCheck().createToken(firebaseAppId, { ttlMillis: 30 * 60 * 1000 });
 const runId = `sandbox_role_${role}_${crypto.randomUUID()}`;
 const targetPath = role === 'admin' ? '/admin' : '/mes-commandes';
 const browser = await chromium.launch({ headless: !headed });
 
 try {
   const context = await browser.newContext({ locale: 'fr-FR' });
+  await context.route('**/*.cloudfunctions.net/**', async (route) => {
+    await route.continue({
+      headers: {
+        ...route.request().headers(),
+        'X-Firebase-AppCheck': appCheckToken.token,
+      },
+    });
+  });
   const page = await context.newPage();
   await page.goto(`${baseUrl}${targetPath}?e2e_run=${encodeURIComponent(runId)}`, {
     waitUntil: 'domcontentloaded',
@@ -106,7 +123,17 @@ try {
   if (role === 'admin') {
     await expect(page.getByText('Acces admin refuse')).toHaveCount(0);
     await expect(page.getByText('Confirmez votre identite')).toHaveCount(0);
-    await expect(page.getByRole('navigation', { name: "Navigation de l'administration" })).toBeVisible({ timeout: 45_000 });
+    await expect(page.getByRole('complementary', { name: "Navigation de l'administration" })).toBeVisible({ timeout: 45_000 });
+    if (expectedQuote) {
+      await page.getByRole('button', { name: 'Devis', exact: true }).click();
+      await expect(page.getByRole('heading', { name: 'Demandes de restauration' })).toBeVisible({ timeout: 30_000 });
+      const quoteCard = page.getByRole('button').filter({ hasText: expectedQuote });
+      await expect(quoteCard).toBeVisible({ timeout: 30_000 });
+      await quoteCard.click();
+      await expect(page.getByText(expectedQuote, { exact: true }).last()).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByText('Recette Client', { exact: true }).last()).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByText(/RECETTE SANDBOX/).last()).toBeVisible({ timeout: 30_000 });
+    }
   } else {
     await expect(page.getByRole('heading', { name: 'Vos commandes, simplement.' })).toBeVisible({ timeout: 45_000 });
   }
@@ -118,6 +145,7 @@ try {
     target: `${baseUrl}${targetPath}`,
     sessionType: 'ephemeral_custom_token',
     realLoginCeremonyTested: false,
+    quoteVerified: Boolean(expectedQuote),
   }, null, 2));
 
   if (keepOpen) {
