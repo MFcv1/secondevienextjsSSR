@@ -36,6 +36,7 @@ jobs:
       - run: pnpm test:release-contract
       - run: pnpm test:a11y
       - run: pnpm test:quotes
+      - run: pnpm test:newsletter
       - run: pnpm test:deployment-cache
       - run: pnpm seo:surface
       - run: pnpm build

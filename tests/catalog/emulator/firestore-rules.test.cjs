@@ -100,6 +100,35 @@ test('quote requests and their audit remain backend-only for every client role',
   }
 });
 
+test('newsletter plays and rewards remain backend-only while subscribers stay admin-readable', async () => {
+  await environment.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'sys_admin_access/admin-1'), { active: true });
+    await setDoc(doc(context.firestore(), 'newsletter_reward_plays/play_private'), { percentage: 10 });
+    await setDoc(doc(context.firestore(), 'newsletter_rewards/reward_private'), {
+      code: 'SV10-PRIVATE', emailHash: 'hash', percentage: 10,
+    });
+    await setDoc(doc(context.firestore(), 'newsletter_subscribers/subscriber_private'), {
+      contactInfo: 'client@example.test', status: 'subscribed',
+    });
+  });
+  const visitor = environment.unauthenticatedContext().firestore();
+  const customer = environment.authenticatedContext('customer-1').firestore();
+  const admin = environment.authenticatedContext('admin-1', {
+    admin: true,
+    firebase: { sign_in_provider: 'google.com' },
+  }).firestore();
+
+  for (const firestore of [visitor, customer, admin]) {
+    await assertFails(getDoc(doc(firestore, 'newsletter_reward_plays/play_private')));
+    await assertFails(setDoc(doc(firestore, 'newsletter_reward_plays/play_attack'), { percentage: 15 }));
+    await assertFails(getDoc(doc(firestore, 'newsletter_rewards/reward_private')));
+    await assertFails(setDoc(doc(firestore, 'newsletter_rewards/reward_attack'), { code: 'FORGED' }));
+  }
+  await assertFails(getDoc(doc(visitor, 'newsletter_subscribers/subscriber_private')));
+  await assertFails(getDoc(doc(customer, 'newsletter_subscribers/subscriber_private')));
+  await assertSucceeds(getDoc(doc(admin, 'newsletter_subscribers/subscriber_private')));
+});
+
 test('active Google or passkey admins can edit back-office content without a time window', async () => {
   await environment.withSecurityRulesDisabled(async (context) => {
     await setDoc(doc(context.firestore(), 'sys_admin_access/admin-google'), { active: true, role: 'admin' });

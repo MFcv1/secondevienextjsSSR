@@ -1,6 +1,6 @@
 # Qualite, tests et gates
 
-Derniere mise a jour: 2026-08-04
+Derniere mise a jour: 2026-08-10
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Principe de proportion
@@ -145,6 +145,7 @@ Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCa
 | A propos | `perf:about-direct` |
 | devis | `perf:quote-direct` |
 | réception devis + admin | `test:quotes`, lint cible, build; envoi Gmail réel uniquement sur demande explicite |
+| newsletter + avantages client | `test:newsletter`, lint cible, build; recette Gmail et espace client uniquement sur demande explicite |
 | menu/header | `perf:menu-desktop`, `perf:menu-mobile`, `mobile:contract` |
 | Auth | `test:auth`, build, smoke reel selon changement |
 | checkout/Stripe | toutes les gates transitives 0A a 7B; hosted final seulement en 7B apres projections 7A |

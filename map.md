@@ -1,6 +1,6 @@
 # Cartographie du projet Seconde Vie Next
 
-Derniere verification: 2026-08-07
+Derniere verification: 2026-08-10
 Statut: `CARTE_CANONIQUE_ACTIVE`
 
 ## 1. Role et maintenance
@@ -359,6 +359,20 @@ Mesure des lectures et couts: `_DOCS/data/AUDIT_COUTS_FIRESTORE.md` (Usage Insig
   -> AdminQuotes [C]: recherche, statuts, fiche, photos signées et notes internes
 ```
 
+### 4.8 Jeu newsletter et avantages client
+
+```text
+galerie: choix d'une carte [C]
+  -> drawNewsletterReward [F]: tirage pondéré serveur, App Check et rate limit
+  -> saisie e-mail + consentement newsletter [C]
+  -> claimNewsletterReward [F]: code durable, abonné et envoi Gmail/Resend
+  -> newsletter_rewards/{rewardId} + newsletter_subscribers/{emailHash} [DB]
+  -> confirmation immédiate avec code [C]
+  -> /mes-commandes#avantages
+     -> listMyNewsletterRewards [F]: session Auth et e-mail vérifié
+     -> dernier code visible, copie et historique borné [C]
+```
+
 ## 5. Arborescence racine
 
 ```text
@@ -536,6 +550,7 @@ src/kit/marketplace/
 |-- QuoteFormSsrShell.jsx ............. shell formulaire
 |-- QuoteFormDeferredIsland.jsx ....... lazy formulaire
 |-- QuoteFormIsland.jsx ............... formulaire interactif
+|-- newsletterRewardClient.js ......... tirage, réclamation et lecture des avantages
 |-- FooterBackToTopButtonIsland.jsx ... retour haut
 `-- FooterMapFrameIsland.jsx .......... carte footer differee
 ```
@@ -777,6 +792,10 @@ functions/
     |   |-- quoteRequestDomain.js ..... validation, statuts et estimation autoritaire
     |   |-- quoteEmailTemplates.js .... accusé de réception client
     |   `-- quoteRequests.js .......... dépôt public, photos privées et commandes admin
+    |-- newsletter/
+    |   |-- newsletterRewardDomain.js . validation, tirage et codes serveur
+    |   |-- newsletterRewardEmail.js .. confirmation du gain client
+    |   `-- newsletterRewards.js ...... callables jeu, abonnement et espace client
     |-- analytics/
     |   |-- constants.js
     |   |-- sessionAuthorizationCache.js ... cache borne/TTL du hash de jeton
@@ -830,6 +849,7 @@ functions/
 | onboarding facturation | `getBillingGuideStatus`, `saveBillingGuideProgress`, `getBillingGuideOperatorStatus`, `completeBillingGuideAdmin`, `resetBillingGuideTest` |
 | factures manuelles admin | `getManualInvoiceWorkspaceAdmin`, `saveManualInvoiceDraftAdmin`, `prepareManualInvoicePdfAdmin`, `sendManualInvoiceAdmin` |
 | demandes de devis | `createQuoteRequest`, `uploadQuoteRequestPhoto`, `finalizeQuoteRequest`, `listQuoteRequestsAdmin`, `getQuoteRequestAdmin`, `updateQuoteRequestAdmin`, `onQuoteRequestSubmitted` |
+| newsletter/avantages | `drawNewsletterReward`, `claimNewsletterReward`, `listMyNewsletterRewards` |
 | e-mail | `onOrderCreated`, `onOrderUpdated`, `sendTestEmail`, `sendRefundStatusEmailAdmin` |
 | analytics | `initLiveSession`, `syncSession`, `syncSessionBeacon`, `deleteSession`, `clearAllSessions`, `trackAdminIP`, `updateUserSessions` |
 | maintenance | resets/purges, `runGarbageCollector`, `getUploadUrl` |
@@ -864,6 +884,8 @@ Firestore
 |-- sys_commerce_control/current
 |-- sys_commerce_operations/current
 |-- newsletter_subscribers/{id}
+|-- newsletter_reward_plays/{id} ...... tirage temporaire backend-only
+|-- newsletter_rewards/{id} ........... code et preuve d'envoi backend-only
 |-- sys_metadata/{docId}
 |-- sys_ratelimit/{id} ................ backend-only
 |-- sys_admin_access/{uid} ............ backend-only

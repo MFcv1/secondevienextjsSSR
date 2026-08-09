@@ -1,6 +1,6 @@
 # Espace client
 
-Derniere mise a jour: 2026-08-02
+Derniere mise a jour: 2026-08-10
 Statut: `PREPROD_READY`
 
 Restriction active:
@@ -36,6 +36,7 @@ depuis le 2026-08-02 avec les controls `v2_all/v2` et Stripe test.
 | Section | Source | Capacite actuelle |
 | --- | --- | --- |
 | Commandes | reader v2 UID actif; adaptateur v1 historique explicitement read-only | pagination serveur v2 et historique v1 read-only |
+| Mes avantages | `listMyNewsletterRewards` après vérification Auth/e-mail | dernier code immédiatement visible, copie et historique borné |
 | Suivi de livraison | `shipmentTracking` derive par le reader v2 | transporteur, numero copiable, lien officiel allowliste ou repli sans suivi |
 | Documents | snapshots de commande + PDF serveur prive | ouvrir, enregistrer, partager et recevoir par e-mail les seuls documents sandbox admissibles |
 | Liste de souhaits | `users/{uid}/wishlist` | apercu et lien vers `/wishlist` |
@@ -44,6 +45,12 @@ depuis le 2026-08-02 avec les controls `v2_all/v2` et Stripe test.
 | Support | configuration metier | contact et aide |
 
 Adresse et profil sont aujourd'hui principalement des vues de synthese derivees des commandes; ce ne sont pas encore un carnet d'adresses complet editable.
+
+Les avantages newsletter ne sont jamais lus directement depuis Firestore. La
+callable `listMyNewsletterRewards` dérive l'adresse du jeton Firebase vérifié,
+interroge son hash et renvoie au plus vingt projections minimales. Le dernier
+code est placé avant l'historique des commandes pour être retrouvé sans
+recherche; les anciens codes restent dans le même panneau.
 
 ## 3. Commandes
 
@@ -223,6 +230,8 @@ src/utils/generateInvoice.js
 src/utils/shippingAddress.js
 functions/src/commerce/v2DocumentDelivery.js
 functions/src/commerce/domain/commerceDocumentArtifact.js
+src/kit/marketplace/newsletterRewardClient.js
+functions/src/newsletter/newsletterRewards.js
 ```
 
 ## 10. Dettes controlees
@@ -249,6 +258,7 @@ Smoke recommande pour une passe compte non transactionnelle:
 7. un double clic ne cree pas deux intentions e-mail dans la meme fenetre;
 8. wishlist puis ajout panier d'un produit disponible;
 9. deconnexion et protection des routes.
+10. un code gagné avec la même adresse apparaît dans `Mes avantages` et peut être copié.
 
 Ce smoke reste une verification UI. Il ne qualifie pas la coherence Stripe/commande/stock et ne remplace pas les gates commerce.
 

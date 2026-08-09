@@ -115,6 +115,17 @@ service cloud.firestore {
       allow update, delete: if isStrongArtisan();
     }
 
+    // Tirages et codes promotionnels: lecture/ecriture uniquement via Functions.
+    // L'espace client recoit une projection bornee par callable apres verification
+    // de l'adresse e-mail authentifiee.
+    match /newsletter_reward_plays/{docId} {
+      allow read, write: if false;
+    }
+
+    match /newsletter_rewards/{docId} {
+      allow read, write: if false;
+    }
+
     // Fonction Validation Cart
     function isValidCartItem() {
       let data = request.resource.data;

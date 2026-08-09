@@ -1044,6 +1044,10 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
                   <ArrowRight size={16} strokeWidth={1.55} />
                 </span>
               </button>
+              <label className={`col-span-full flex cursor-pointer items-start gap-2.5 px-2 pb-1 pt-1 font-sans text-[10px] leading-[1.5] dark:text-[#ad9e8c] ${darkMode ? 'text-[#ad9e8c]' : 'text-[#6f645b]'}`}>
+                <input data-nl-consent type="checkbox" required className="mt-0.5 h-4 w-4 shrink-0 accent-[#6f4825]" />
+                <span>J’accepte de recevoir la newsletter Seconde Vie et mon code par e-mail.</span>
+              </label>
             </form>
 
             <div data-nl-fine className={`discount-fine relative mt-4 flex items-center gap-2.5 font-sans text-[9px] font-extrabold uppercase tracking-[0.17em] sm:text-[10px] dark:text-[#9a8a77] ${darkMode ? 'text-[#9a8a77]' : 'text-[#75695f]'}`}>
@@ -1053,10 +1057,12 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
 
             <div data-nl-sent hidden className="discount-sent relative mt-4 flex items-center gap-3.5 rounded-[16px] p-3.5">
               <span data-nl-sent-code className="discount-sent__code font-serif text-[17px] italic">SV-XXXXX</span>
-              <span className="discount-sent__text font-sans text-[11px] leading-[1.5]">
+              <span data-nl-sent-text className="discount-sent__text font-sans text-[11px] leading-[1.5]">
                 <b>Enregistre dans ton espace client</b> et envoye par e-mail. Tu es aussi abonne(e) a la newsletter.
               </span>
             </div>
+
+            <p data-nl-error hidden role="alert" className="relative mt-4 rounded-[12px] border border-[#c45b4c]/25 bg-[#fff2ef] px-4 py-3 font-sans text-[11px] font-semibold leading-[1.5] text-[#8f3328]" />
 
             <ul className="discount-assurances relative mt-6 hidden flex-wrap items-center gap-x-5 gap-y-2 sm:flex">
               {newsletterAssurances.map(({ Icon, title, text }) => (

@@ -1192,24 +1192,6 @@ const setupTestimonials = () => {
   });
 };
 
-// Ponderation d'affichage uniquement. Le tirage qui fait foi doit venir du
-// serveur : un pourcentage calcule ici serait forcable depuis la console.
-const PRIZE_WEIGHTS = [
-  { value: 5, weight: 55 },
-  { value: 10, weight: 30 },
-  { value: 15, weight: 15 },
-];
-
-const drawPrizeLocally = () => {
-  const total = PRIZE_WEIGHTS.reduce((sum, tier) => sum + tier.weight, 0);
-  let cursor = Math.random() * total;
-  for (const tier of PRIZE_WEIGHTS) {
-    cursor -= tier.weight;
-    if (cursor <= 0) return tier.value;
-  }
-  return PRIZE_WEIGHTS[0].value;
-};
-
 const setupNewsletterGame = () => {
   const cleanups = [];
 
@@ -1223,14 +1205,18 @@ const setupNewsletterGame = () => {
     const wonValue = game.querySelector('[data-nl-won-value]');
     const form = section.querySelector('[data-nl-form]');
     const email = section.querySelector('[data-nl-email]');
+    const consent = section.querySelector('[data-nl-consent]');
     const submit = section.querySelector('[data-nl-submit]');
     const submitLabel = section.querySelector('[data-nl-submit-label]');
     const fine = section.querySelector('[data-nl-fine]');
     const fineText = section.querySelector('[data-nl-fine-text]');
     const sent = section.querySelector('[data-nl-sent]');
     const sentCode = section.querySelector('[data-nl-sent-code]');
+    const sentText = section.querySelector('[data-nl-sent-text]');
+    const errorMessage = section.querySelector('[data-nl-error]');
     const tiers = Array.from(section.querySelectorAll('[data-nl-tier]'));
     const promoCycle = section.querySelector('[data-nl-promo-cycle]');
+    const gameLabel = game.querySelector('[data-nl-game-label]');
     if (!cards.length) return;
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1239,6 +1225,8 @@ const setupNewsletterGame = () => {
     const timers = [];
     let disposed = false;
     let prize = null;
+    let playId = null;
+    let isSubmitting = false;
 
     game.dataset.nlGameState = 'idle';
     game.dataset.nlDealt = 'false';
@@ -1247,6 +1235,18 @@ const setupNewsletterGame = () => {
       timers.push(window.setTimeout(() => {
         if (!disposed) callback();
       }, delay));
+    };
+
+    const showError = (message) => {
+      if (!errorMessage) return;
+      errorMessage.textContent = message;
+      errorMessage.hidden = false;
+    };
+
+    const clearError = () => {
+      if (!errorMessage) return;
+      errorMessage.textContent = '';
+      errorMessage.hidden = true;
     };
 
     if ('IntersectionObserver' in window) {
@@ -1326,46 +1326,94 @@ const setupNewsletterGame = () => {
     };
 
     cards.forEach((card) => {
-      card.addEventListener('click', () => {
+      card.addEventListener('click', async () => {
         if (game.dataset.nlGameState !== 'idle') return;
         game.dataset.nlGameState = 'revealing';
+        clearError();
+        cards.forEach((other) => { other.disabled = true; });
+        if (gameLabel) gameLabel.textContent = 'Tirage en cours...';
 
-        // TODO: remplacer par l'appel a la Cloud Function qui tranche le gain.
-        prize = drawPrizeLocally();
-        cards.forEach((other) => {
-          const value = other.querySelector('[data-nl-card-value]');
-          if (value) value.textContent = String(prize);
-          other.dataset.nlCardState = other === card ? 'picked' : 'faded';
-          other.disabled = true;
-        });
-
-        later(() => {
-          card.dataset.nlCardFlipped = 'true';
-          burst(card);
-        }, reduceMotion ? 0 : 300);
-        later(revealPrize, reduceMotion ? 0 : 1050);
+        try {
+          const api = await import('./newsletterRewardClient');
+          playId ||= api.createNewsletterPlayId();
+          const result = await api.drawNewsletterReward({
+            playId,
+            cardIndex: Number(card.dataset.nlCard || 0),
+          });
+          if (disposed) return;
+          prize = Number(result.percentage);
+          cards.forEach((other) => {
+            const value = other.querySelector('[data-nl-card-value]');
+            if (value) value.textContent = String(prize);
+            other.dataset.nlCardState = other === card ? 'picked' : 'faded';
+          });
+          if (gameLabel) gameLabel.textContent = 'Ta carte révèle';
+          later(() => {
+            card.dataset.nlCardFlipped = 'true';
+            burst(card);
+          }, reduceMotion ? 0 : 300);
+          later(revealPrize, reduceMotion ? 0 : 1050);
+        } catch (error) {
+          console.error('Newsletter draw failed:', error);
+          game.dataset.nlGameState = 'idle';
+          prize = null;
+          playId = null;
+          cards.forEach((other) => { other.disabled = false; });
+          if (gameLabel) gameLabel.textContent = 'Choisis une carte';
+          showError('Le tirage n’a pas abouti. Réessaie dans quelques instants.');
+        }
       }, eventOptions);
     });
 
-    form?.addEventListener('submit', (event) => {
+    form?.addEventListener('submit', async (event) => {
       event.preventDefault();
-      if (submit?.disabled || prize === null) return;
+      if (submit?.disabled || prize === null || !playId || isSubmitting) return;
       if (email && !email.checkValidity()) {
         email.reportValidity();
         return;
       }
+      if (consent && !consent.checkValidity()) {
+        consent.reportValidity();
+        return;
+      }
 
-      // Placeholder d'affichage : le code definitif sera emis par le serveur.
-      const suffix = Math.random().toString(36).slice(2, 7).toUpperCase();
-      if (sentCode) sentCode.textContent = `SV${prize}-${suffix}`;
-      if (sent) sent.hidden = false;
+      clearError();
+      isSubmitting = true;
       if (submit) submit.disabled = true;
-      if (submitLabel) submitLabel.textContent = 'Envoye';
-      email?.blur();
+      if (submitLabel) submitLabel.textContent = 'Enregistrement...';
+      try {
+        const api = await import('./newsletterRewardClient');
+        const result = await api.claimNewsletterReward({
+          playId,
+          email: email?.value || '',
+          consent: consent?.checked === true,
+        });
+        if (disposed) return;
+        const reward = result.reward || {};
+        if (sentCode) sentCode.textContent = reward.code || '';
+        if (sentText) {
+          sentText.innerHTML = reward.emailStatus === 'sent'
+            ? '<b>Enregistré dans ton espace client</b> et envoyé par e-mail. Connecte-toi avec cette adresse pour le retrouver.'
+            : '<b>Enregistré dans ton espace client.</b> L’e-mail est momentanément retardé, mais ton code est déjà conservé.';
+        }
+        if (sent) sent.hidden = false;
+        if (submitLabel) submitLabel.textContent = 'Code enregistré';
+        email?.blur();
+      } catch (error) {
+        console.error('Newsletter claim failed:', error);
+        if (submit) submit.disabled = false;
+        if (submitLabel) submitLabel.textContent = `Recevoir mes ${prize}%`;
+        showError('Ton code n’a pas pu être enregistré. Vérifie ton e-mail puis réessaie.');
+      } finally {
+        isSubmitting = false;
+      }
     }, eventOptions);
 
     cleanups.push(() => {
       disposed = true;
+      isSubmitting = false;
+      playId = null;
+      prize = null;
       eventController.abort();
       timers.forEach((timer) => window.clearTimeout(timer));
       game.dataset.nlGameState = 'idle';
@@ -1381,7 +1429,9 @@ const setupNewsletterGame = () => {
       if (promoCycle) delete promoCycle.dataset.nlPromoResult;
       if (won) won.hidden = true;
       if (sent) sent.hidden = true;
+      clearError();
       if (submit) submit.disabled = true;
+      if (gameLabel) gameLabel.textContent = 'Choisis une carte';
     });
   });
 

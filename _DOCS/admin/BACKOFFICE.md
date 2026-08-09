@@ -50,7 +50,7 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 | `users` | Clients | `AdminUsers` | comptes et acces admin |
 | `ip_manager` | Securite | `AdminIPManager` | suivi/configuration IP complementaire |
 | `seo` | SEO | `AdminSEO` | controle contenu/indexation |
-| `newsletter` | Infos | `AdminNewsletter` | abonnes/informations |
+| `newsletter` | Infos | `AdminNewsletter` | abonnés issus notamment du jeu galerie, recherche et export |
 | `payment_settings` | Paiement | `AdminPaymentSettings` | Stripe Connect et activation carte |
 | `account` | Mon compte | `AdminAccount`, `BillingOnboardingOperator` | identite admin et pilotage de l'onboarding facturation |
 | `maintenance` | Maintenance | `AdminMaintenance` | outils destructifs controles |
@@ -258,7 +258,15 @@ effet secondaire: son echec n'annule jamais la reception du dossier. Aucun
 e-mail n'est envoye a une adresse metier Seconde Vie tant que cette adresse
 n'existe pas.
 
-### 5.2 Contrat de la vue Ventes
+### 5.2 Newsletter et avantages
+
+Le jeu public ajoute ou met à jour `newsletter_subscribers` uniquement via
+Function. L'onglet `Infos` conserve sa liste administrateur et son export; le
+code promotionnel reste séparé dans `newsletter_rewards`, inaccessible au SDK
+navigateur. Le tirage est serveur, la partie est temporaire, la réclamation
+est idempotente et le client relit ses codes par callable authentifiée.
+
+### 5.3 Contrat de la vue Ventes
 
 La vue repond d'abord a l'actionnabilite, sans confondre paiement, logistique,
 remboursement et garde physique:
@@ -330,7 +338,7 @@ Etat actuel depuis le 2026-08-02:
 
 Cible: toute transition commande, fulfillment, inventaire, refund/retour et politique commerce passe par une commande serveur idempotente. Firestore reste une projection et non une API metier admin.
 
-### 5.3 Factures manuelles
+### 5.4 Factures manuelles
 
 L'onglet `invoices` est distinct des recus commerce sandbox. Il charge
 paresseusement `AdminInvoices` et propose trois etapes: selection de plusieurs
@@ -484,7 +492,7 @@ Passe UX du 2026-07-30:
 
 Cette passe historique precede l'activation sandbox permanente du 2026-08-02.
 
-### 5.4 Liens de paiement de secours
+### 5.5 Liens de paiement de secours
 
 L'onglet `payment_links` charge paresseusement `AdminPaymentLinks`. Il permet
 de selectionner un a vingt meubles achetables depuis le snapshot admin, de

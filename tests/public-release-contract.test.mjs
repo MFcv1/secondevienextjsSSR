@@ -4,12 +4,13 @@ import test from 'node:test';
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('demo contact, social and legal surfaces remain visible without enabling quote delivery', async () => {
-  const [config, footer, quote, quoteShell] = await Promise.all([
+test('demo contact, social and legal surfaces remain visible while quote requests use the back-office workflow', async () => {
+  const [config, footer, quote, quoteClient, quoteFunctions] = await Promise.all([
     read('src/kit/config/constants.js'),
     read('src/kit/marketplace/FooterServer.jsx'),
     read('src/kit/marketplace/QuoteFormIsland.jsx'),
-    read('src/kit/marketplace/QuoteFormSsrShell.jsx'),
+    read('src/kit/marketplace/quoteRequestClient.js'),
+    read('functions/src/quotes/quoteRequests.js'),
   ]);
   assert.match(config, /contact@secondevie-marseille\.fr/);
   assert.match(config, /\+33 6 12 34 56 78/);
@@ -18,25 +19,26 @@ test('demo contact, social and legal surfaces remain visible without enabling qu
   assert.match(footer, /bientot disponible/);
   assert.equal(footer.includes("['Se connecter', '/admin']"), false);
   assert.match(footer, /legalLinks\.map/);
-  assert.match(quote, /process\.env\.NEXT_PUBLIC_BUSINESS_EMAIL \|\| ''/);
-  assert.match(quoteShell, /process\.env\.NEXT_PUBLIC_BUSINESS_EMAIL \|\| ''/);
+  assert.match(quote, /submitQuoteRequest/);
+  assert.match(quoteClient, /createQuoteRequest/);
+  assert.match(quoteClient, /finalizeQuoteRequest/);
+  assert.match(quoteFunctions, /module\.exports\s*=\s*\{[\s\S]*createQuoteRequest/);
+  assert.match(quoteFunctions, /module\.exports\s*=\s*\{[\s\S]*finalizeQuoteRequest/);
 });
 
-test('newsletter demo stays visible while quote delivery still requires a configured channel', async () => {
-  const [config, gallery, quote, quoteShell] = await Promise.all([
+test('newsletter stays visible and quotes can reach the estimate before durable submission', async () => {
+  const [config, gallery, quote] = await Promise.all([
     read('src/kit/config/constants.js'),
     read('src/kit/marketplace/GalleryServerView.jsx'),
     read('src/kit/marketplace/QuoteFormIsland.jsx'),
-    read('src/kit/marketplace/QuoteFormSsrShell.jsx'),
   ]);
 
   assert.match(config, /newsletter:\s+true/);
   assert.match(gallery, /KIT_CONFIG\.features\.newsletter\s*\?/);
   assert.match(quote, /const showEstimate[\s\S]*goToStep\(ESTIMATE_STEP_INDEX\)/);
-  assert.doesNotMatch(quote, /const showEstimate[\s\S]{0,500}if \(!CONTACT_CHANNEL_READY\)/);
-  assert.match(quote, /const handleSubmit[\s\S]*if \(!CONTACT_CHANNEL_READY\) \{\s*return;/);
-  assert.match(quote, /disabled=\{isLastStep && !CONTACT_CHANNEL_READY\}/);
-  assert.match(quoteShell, /disabled=\{!CONTACT_CHANNEL_READY\}/);
+  assert.match(quote, /const handleSubmit[\s\S]*submitQuoteRequest/);
+  assert.match(quote, /setSubmitted\(true\)/);
+  assert.doesNotMatch(quote, /CONTACT_CHANNEL_READY/);
 });
 
 test('checkout remains demonstrable while linking legal documents as soon as they exist', async () => {

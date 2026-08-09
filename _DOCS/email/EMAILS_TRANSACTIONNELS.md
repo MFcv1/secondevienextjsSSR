@@ -1,8 +1,8 @@
 # E-mails transactionnels - Seconde Vie
 
-Derniere mise a jour: 2026-08-01
+Derniere mise a jour: 2026-08-10
 Statut: `PREPROD_READY`
-Perimetre: Auth OTP, paiement, cycle de commande v2, remboursements, copie de document et réception de devis
+Perimetre: Auth OTP, paiement, cycle de commande v2, remboursements, copie de document, réception de devis et avantage newsletter
 
 ## 1. Role
 
@@ -21,7 +21,7 @@ mot de passe, donnee de carte ou donnee personnelle de recette n'y figure.
 
 ## 2. Etat de reference
 
-La bibliotheque source regroupe 16 rendus. Les 15 rendus historiques ont ete
+La bibliotheque source regroupe 17 rendus. Les 15 rendus historiques ont ete
 deployes sur le sandbox depuis le 2026-08-01; l'accuse de reception de devis
 est ajoute au code le 2026-08-09 et reste a deployer puis recapturer. Les 13
 rendus historiques conservent leurs captures de reference.
@@ -34,7 +34,8 @@ rendus historiques conservent leurs captures de reference.
 | remboursement | 4 | client + administrateur |
 | copie de document | 1 | client |
 | réception de devis | 1 | client |
-| **Total source** | **16** | - |
+| avantage newsletter | 1 | client |
+| **Total source** | **17** | - |
 
 Le lot a ete deploye le 2026-07-30:
 
@@ -287,7 +288,24 @@ inscrit sous `confirmationEmail.status` et n'annule jamais la demande deja
 visible dans `AdminQuotes`. Les photos ne sont jamais jointes au message et
 restent dans le stockage prive.
 
-## 11. Livraison et idempotence
+## 11. Avantage newsletter
+
+Modele: `newsletter-reward`.
+
+Le choix d'une carte appelle d'abord `drawNewsletterReward`: le pourcentage
+est décidé côté serveur et reste stable pour la partie. Après consentement,
+`claimNewsletterReward` crée le code et l'abonnement dans la même transaction,
+puis envoie la confirmation au client. Le message reprend exactement le code
+durable, sa réduction, son échéance et un lien vers
+`/mes-commandes#avantages`.
+
+Un échec du transport ne supprime jamais le code. Son état `sending`, `sent`
+ou `failed` reste attaché à `newsletter_rewards`; l'interface confirme alors
+que le gain est conservé même si l'e-mail est retardé. La lecture dans
+l'espace client exige une session Firebase dont l'e-mail est vérifié et
+correspond au hash du gain.
+
+## 12. Livraison et idempotence
 
 L'onglet admin Factures ajoute un envoi operationnel hors cycle de commande:
 le callable `sendManualInvoiceAdmin` emet et verrouille le brouillon, genere le
@@ -319,7 +337,7 @@ Regles:
 - Gmail ambigu devient `delivery_unknown` sans retry automatique;
 - les identifiants techniques servent a l'idempotence sans exposer de secret.
 
-## 12. Limites et production
+## 13. Limites et production
 
 Le contenu et le transport Gmail sandbox ont ete qualifies, avec SPF, DKIM et
 DMARC valides. Gmail peut toutefois classer le message de recette en spam.
@@ -333,7 +351,7 @@ La livraison production attend:
 - une montee en reputation;
 - une recette multi-fournisseurs.
 
-## 13. Regeneration des captures
+## 14. Regeneration des captures
 
 Commande:
 

@@ -1,6 +1,6 @@
 # Donnees, Firestore et analytics
 
-Derniere mise a jour: 2026-08-03
+Derniere mise a jour: 2026-08-10
 Statut: `REFERENCE_ACTIVE`
 
 Deploiement sandbox: moteur actif depuis le 2026-07-15 sur App Hosting et Functions `europe-west1`.
@@ -32,6 +32,8 @@ commerce_financial_projections/current
 commerce_financial_totals/{currency}
 commerce_financial_daily/{date}_{currency}
 newsletter_subscribers/{id}
+newsletter_reward_plays/{id}
+newsletter_rewards/{id}
 sys_metadata/{docId}
 sys_ratelimit/{id}
 sys_admin_access/{uid}
@@ -91,6 +93,12 @@ les rollups suivent la retention des faits et commandes dont ils derivent.
 `sys_metadata` porte des configurations comme livraison, galerie, images home, paiement et theme. La liste publique autorisee est explicite dans `firestore.rules`; les autres documents exigent un admin fort ou le serveur.
 
 `sys_ratelimit`, `sys_idempotency` et `sys_admin_access` sont backend-only. Ils ne doivent pas servir de stockage UI generaliste.
+
+Les parties newsletter sont temporaires et ne stockent ni e-mail brut ni IP
+brute. `newsletter_rewards` conserve le code, le pourcentage, le hash de
+l'adresse, l'échéance et la preuve d'envoi; `newsletter_subscribers` reste la
+source d'abonnement administrable. La lecture client passe par Function et
+jamais par une requête Firestore du navigateur.
 
 ## 7. Analytics
 

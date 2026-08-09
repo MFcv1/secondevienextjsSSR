@@ -292,6 +292,17 @@ exports.getQuoteRequestAdmin = getQuoteRequestAdmin;
 exports.updateQuoteRequestAdmin = updateQuoteRequestAdmin;
 exports.onQuoteRequestSubmitted = onQuoteRequestSubmitted;
 
+// ── NEWSLETTER ET AVANTAGES CLIENT ─────────────────────
+const {
+    claimNewsletterReward,
+    drawNewsletterReward,
+    listMyNewsletterRewards
+} = require('./src/newsletter/newsletterRewards');
+
+exports.claimNewsletterReward = claimNewsletterReward;
+exports.drawNewsletterReward = drawNewsletterReward;
+exports.listMyNewsletterRewards = listMyNewsletterRewards;
+
 // ── EMAIL (Triggers) ─────────────────────────────────────
 const { onOrderCreated, onOrderUpdated, sendTestEmail, sendRefundStatusEmailAdmin } = require('./src/email/orderEmails');
 

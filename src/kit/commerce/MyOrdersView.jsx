@@ -16,6 +16,7 @@ import {
     Package,
     ShoppingBag,
     Star,
+    TicketPercent,
     Truck,
     UserRound,
     WalletCards,
@@ -37,6 +38,7 @@ import {
 } from './commerceCommandClient';
 import { adaptCommerceOrder } from './orderAdapter';
 import CommerceDocumentModal from './CommerceDocumentModal';
+import { listMyNewsletterRewards } from '../marketplace/newsletterRewardClient';
 
 const BUSINESS_PHONE = process.env.NEXT_PUBLIC_BUSINESS_PHONE || '';
 const BUSINESS_PHONE_TEL = BUSINESS_PHONE.replace(/\s/g, '');
@@ -263,10 +265,14 @@ const MyOrdersView = ({
     const [returnDraft, setReturnDraft] = useState(null);
     const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
     const [returnNotice, setReturnNotice] = useState(null);
+    const [rewards, setRewards] = useState([]);
+    const [loadingRewards, setLoadingRewards] = useState(true);
+    const [copiedRewardId, setCopiedRewardId] = useState(null);
     const cancellationRequestIdsRef = useRef(new Map());
     const returnRequestIdsRef = useRef(new Map());
     const topRef = useRef(null);
     const ordersRef = useRef(null);
+    const advantagesRef = useRef(null);
     const wishlistRef = useRef(null);
     const infoRef = useRef(null);
     const addressesRef = useRef(null);
@@ -319,6 +325,7 @@ const MyOrdersView = ({
             (order.documents || []).map((document) => ({ order, document }))
         ))
     ), [orders]);
+    const latestReward = rewards[0] || null;
 
     useEffect(() => {
         if (!user) return;
@@ -366,6 +373,34 @@ const MyOrdersView = ({
 
         return () => unsub();
     }, [user]);
+
+    useEffect(() => {
+        if (!user || user.isAnonymous) return undefined;
+        let cancelled = false;
+        setLoadingRewards(true);
+        listMyNewsletterRewards()
+            .then((result) => {
+                if (!cancelled) setRewards(result.rewards || []);
+            })
+            .catch((error) => {
+                if (!cancelled) console.error('Customer rewards loading failed:', error);
+            })
+            .finally(() => {
+                if (!cancelled) setLoadingRewards(false);
+            });
+        return () => { cancelled = true; };
+    }, [user]);
+
+    const copyRewardCode = async (reward) => {
+        if (!reward?.code) return;
+        try {
+            await navigator.clipboard.writeText(reward.code);
+            setCopiedRewardId(reward.rewardId);
+            window.setTimeout(() => setCopiedRewardId(null), 1800);
+        } catch (error) {
+            console.error('Reward code copy failed:', error);
+        }
+    };
 
     const loadMoreOrders = async () => {
         if (!COMMERCE_V2_ORDER_READERS_ENABLED || !ordersCursor || loadingMoreOrders) return;
@@ -501,6 +536,7 @@ const MyOrdersView = ({
 
     const navItems = [
         { label: 'Commandes', Icon: ShoppingBag, active: true, action: () => scrollToSection(ordersRef) },
+        { label: 'Avantages', Icon: TicketPercent, action: () => scrollToSection(advantagesRef) },
         { label: 'Documents', Icon: FileText, action: () => scrollToSection(invoicesRef) },
         { label: 'Liste de souhaits', Icon: Heart, action: openWishlist },
         { label: 'Adresse', Icon: MapPin, action: () => scrollToSection(addressesRef) },
@@ -566,6 +602,79 @@ const MyOrdersView = ({
                         <MetricButton icon={MapPin} value={loading ? '—' : addressCount} label="Adresse" action="Livraison et facturation" onClick={() => scrollToSection(addressesRef)} />
                         <MetricButton icon={WalletCards} value={loading ? '—' : formatPrice(refundedTotal)} label="Remboursements" action="Suivi Stripe" onClick={() => scrollToSection(invoicesRef)} />
                     </div>
+
+                    <AccountPanel sectionRef={advantagesRef} className="scroll-mt-28 overflow-hidden" >
+                        <section id="avantages" className="grid min-h-[168px] gap-5 p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:p-6">
+                            <div className="min-w-0">
+                                <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.13em] text-[#8a5a13]">
+                                    <TicketPercent size={16} strokeWidth={1.7} />
+                                    Mes avantages
+                                </p>
+                                {loadingRewards ? (
+                                    <>
+                                        <div className="mt-4 h-8 w-52 animate-pulse rounded-[6px] bg-[#f0f0f2]" />
+                                        <p className="mt-3 text-[14px] text-[#6e6e73]">Chargement de vos codes...</p>
+                                    </>
+                                ) : latestReward ? (
+                                    <>
+                                        <h2 className="mt-3 text-[26px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
+                                            {latestReward.percentage} % à utiliser chez Seconde Vie
+                                        </h2>
+                                        <p className="mt-2 max-w-2xl text-[14px] leading-6 text-[#6e6e73]">
+                                            Code associé à votre adresse e-mail, valable jusqu’au {latestReward.expiresAt ? formatDate(latestReward.expiresAt) : 'délai indiqué par l’atelier'}.
+                                            {rewards.length > 1 ? ` ${rewards.length - 1} autre avantage reste dans votre historique.` : ''}
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h2 className="mt-3 text-[24px] font-semibold text-[#1d1d1f]">Aucun code enregistré</h2>
+                                        <p className="mt-2 text-[14px] leading-6 text-[#6e6e73]">
+                                            Retournez une carte dans la galerie avec cette adresse e-mail pour retrouver votre gain ici.
+                                        </p>
+                                    </>
+                                )}
+                            </div>
+
+                            {latestReward ? (
+                                <button
+                                    type="button"
+                                    onClick={() => copyRewardCode(latestReward)}
+                                    className="group flex min-w-[220px] items-center justify-between gap-5 rounded-[10px] border border-[#e5d5bd] bg-[#fffaf0] px-5 py-4 text-left transition-colors hover:border-[#c8ab80] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8a5a13]"
+                                    aria-label={`Copier le code ${latestReward.code}`}
+                                >
+                                    <span>
+                                        <span className="block text-[10px] font-semibold uppercase tracking-[0.13em] text-[#8a5a13]">Votre code</span>
+                                        <strong className="mt-1 block font-mono text-[20px] tracking-[0.06em] text-[#1d1d1f]">{latestReward.code}</strong>
+                                    </span>
+                                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1d1d1f] text-white">
+                                        {copiedRewardId === latestReward.rewardId ? <CheckCircle size={19} /> : <Copy size={18} />}
+                                    </span>
+                                </button>
+                            ) : null}
+                        </section>
+
+                        {rewards.length > 1 ? (
+                            <div className="border-t border-[#e8e8ed] px-5 py-4 md:px-6">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.13em] text-[#86868b]">Historique des codes</p>
+                                <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                    {rewards.slice(1).map((reward) => (
+                                        <button
+                                            key={reward.rewardId}
+                                            type="button"
+                                            onClick={() => copyRewardCode(reward)}
+                                            className="flex min-h-12 items-center justify-between rounded-[8px] border border-[#e8e8ed] px-3 py-2 text-left transition-colors hover:bg-[#f5f5f7]"
+                                        >
+                                            <span>
+                                                <strong className="block font-mono text-[13px] text-[#1d1d1f]">{reward.code}</strong>
+                                                <small className="mt-0.5 block text-[11px] text-[#86868b]">{reward.percentage} % · {formatDate(reward.createdAt)}</small>
+                                            </span>
+                                            {copiedRewardId === reward.rewardId ? <CheckCircle size={16} className="text-[#2f5d46]" /> : <Copy size={15} className="text-[#86868b]" />}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : null}
+                    </AccountPanel>
 
                     <AccountPanel sectionRef={ordersRef} className="scroll-mt-28 p-4 md:p-6">
                         <SectionHeader
