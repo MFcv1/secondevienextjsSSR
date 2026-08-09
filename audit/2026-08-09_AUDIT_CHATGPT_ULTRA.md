@@ -4,17 +4,17 @@ Date : 9 août 2026
 Projet : Seconde Vie Next.js SSR  
 Environnement audité et déployé : sandbox Firebase App Hosting  
 Branche : `main`  
-Commit applicatif déployé : `ddcee71`
+Commit applicatif déployé : `b786546`
 
 ## Verdict
 
 Le projet a fait l'objet d'un audit transversal du code exécutable, de la configuration, de la build Next.js, des parcours publics, du back-office, du commerce, de Firebase et des données sandbox.
 
-La release App Hosting issue du commit `ddcee71` a été construite et déployée avec succès sur :
+La release App Hosting issue du commit `b786546` a été construite et déployée avec succès via le rollout `rollout-2026-08-09-007` et le build `build-2026-08-09-010` sur :
 
 `https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app`
 
-Les quatre Functions de facturation manuelle ont également été déployées séparément et sont actives en Node.js 22 dans `europe-west1`. Les autres changements Functions de l'audit restent à déployer par lots dédiés après leurs gates propres.
+Les quatre Functions de facturation manuelle et les sept Functions du parcours Devis ont également été déployées séparément et sont actives en Node.js 22 dans `europe-west1`. Les autres changements Functions de l'audit restent à déployer par lots dédiés après leurs gates propres.
 
 ## Corrections principales intégrées
 
@@ -72,8 +72,10 @@ Les quatre Functions de facturation manuelle ont également été déployées s�
 - ancienne promesse « livraison offerte dès 250 € » absente.
 - quatre Functions de facturation actives en Node.js 22 dans `europe-west1` ;
 - trois anciens produits techniques « Fixture Gate 6 » supprimés de la collection racine erronée après sauvegarde et contrôle de leurs références ;
-- aucun de ces trois produits n'était lié à une facture, une commande active ou une réservation active.
-- page Livraison publiée dans le rollout App Hosting `sv-msm5kozo-6d8587d0ca82`.
+- aucun de ces trois produits n'était lié à une facture, une commande active ou une réservation active ;
+- page Livraison publiée dans le rollout App Hosting `sv-msm5kozo-6d8587d0ca82` ;
+- nouveau parcours Devis public/admin publié dans la révision `sv-msm8fwmh-9605e10ab5b3` ;
+- sept Functions Devis actives en Node.js 22 dans `europe-west1`, avec règles Firestore et Storage privées publiées.
 
 ## État des données sandbox observé pendant l'audit
 
@@ -89,7 +91,7 @@ Les quatre Functions de facturation manuelle ont également été déployées s�
 1. Déployer séparément les Functions hors facturation encore en attente, après leurs gates propres.
 2. Dépublier les cinq fiches de test après validation métier explicite.
 3. Configurer les coordonnées, réseaux et documents juridiques définitifs.
-4. Déployer puis tester sur sandbox le nouveau parcours Devis public/admin et son accusé de réception client.
+4. Tester l'accusé de réception Devis avec une adresse de recette réelle.
 5. Câbler réellement la newsletter et le jeu promotionnel.
 6. Rejouer la recette humaine authentifiée client et administrateur après activation de Chrome.
 7. Réduire le CSS initial, actuellement au-dessus du budget indicatif.
