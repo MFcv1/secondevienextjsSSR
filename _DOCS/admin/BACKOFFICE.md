@@ -27,7 +27,7 @@ La navigation visible utilise un panneau lateral persistant sur desktop et un ti
 
 - `Vue d'ensemble`: Stats, Data;
 - `Catalogue`: Publication, Vue Globale, Studio;
-- `Ventes`: Ventes, Liens de paiement, Factures, Retours, Livraison, Paiement;
+- `Ventes`: Ventes, Devis, Liens de paiement, Factures, Retours, Livraison, Paiement;
 - `Communication`: Personnalisation, Infos, SEO;
 - `Administration`: Mon compte, Clients, Securite, Maintenance.
 
@@ -42,6 +42,7 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 | `studio` | Studio | `AdminStudio` | outils de contenu/creation |
 | `homepage` | Personnalisation | `AdminHomepage` | hero, categories, contenus vitrine |
 | `orders` | Ventes | `AdminOrders` + `components/orders/*` | commandes et logistique, liste dense et detail maitre/detail |
+| `quotes` | Devis | `AdminQuotes` | réception, qualification, photos privées, statuts et notes internes |
 | `payment_links` | Liens de paiement | `AdminPaymentLinks` | reservation de meubles et paiement Stripe prive sans compte |
 | `invoices` | Factures | `AdminInvoices` | selection de meubles, brouillons, apercu A4, emission PDF verrouillee et envoi e-mail |
 | `returns` | Retours | `AdminReturns` | remboursements Stripe |
@@ -228,11 +229,36 @@ Apres mutation:
   n'ecrivent aucune donnee;
 - `AdminInvoices`: creation assistee de factures manuelles et reprise des
   brouillons;
+- `AdminQuotes`: reception des demandes envoyees depuis `/devis`, recherche
+  locale sur les cent dossiers les plus recents, indicateurs bornes, fiche
+  client/projet, photos privees, statut de suivi et notes internes;
 - `AdminReturns`: remboursement, synchronisation et e-mail client;
 - `AdminPaymentSettings`: Connect, carte/wallets et etat de disponibilite;
 - `AdminLivraison`: configuration des frais.
 
-### 5.1 Contrat de la vue Ventes
+### 5.1 Demandes de devis
+
+Le formulaire public ne cree aucun document Firestore directement. Il appelle
+`createQuoteRequest`, transmet chaque photo compressee a
+`uploadQuoteRequestPhoto`, puis finalise le dossier avec
+`finalizeQuoteRequest`. Les tarifs indicatifs et libelles de prestations sont
+recalcules par le serveur; le navigateur ne peut pas imposer un montant.
+
+`AdminQuotes` est charge paresseusement et sa premiere liste est prechargee
+apres validation de l'acces admin fort. Les lectures et changements de statut
+passent par des callables qui exigent claim, registre actif et AAL2. Une
+version optimiste empeche d'ecraser une modification concurrente. Les photos
+restent sous `quote-requests/v1` avec lecture Storage directe interdite; la
+fiche admin recoit uniquement des URL signees de quinze minutes.
+
+Le workflow actif est `Nouveau`, `A qualifier`, `A recontacter`, `En etude`,
+`Proposition prete`, `Termine` ou `Non retenu`. Les changements sont audites
+sans recopier les notes libres dans l'audit. La notification client est un
+effet secondaire: son echec n'annule jamais la reception du dossier. Aucun
+e-mail n'est envoye a une adresse metier Seconde Vie tant que cette adresse
+n'existe pas.
+
+### 5.2 Contrat de la vue Ventes
 
 La vue repond d'abord a l'actionnabilite, sans confondre paiement, logistique,
 remboursement et garde physique:
@@ -304,7 +330,7 @@ Etat actuel depuis le 2026-08-02:
 
 Cible: toute transition commande, fulfillment, inventaire, refund/retour et politique commerce passe par une commande serveur idempotente. Firestore reste une projection et non une API metier admin.
 
-### 5.2 Factures manuelles
+### 5.3 Factures manuelles
 
 L'onglet `invoices` est distinct des recus commerce sandbox. Il charge
 paresseusement `AdminInvoices` et propose trois etapes: selection de plusieurs
@@ -458,7 +484,7 @@ Passe UX du 2026-07-30:
 
 Cette passe historique precede l'activation sandbox permanente du 2026-08-02.
 
-### 5.2 Liens de paiement de secours
+### 5.4 Liens de paiement de secours
 
 L'onglet `payment_links` charge paresseusement `AdminPaymentLinks`. Il permet
 de selectionner un a vingt meubles achetables depuis le snapshot admin, de

@@ -19,11 +19,6 @@ import {
     quoteTokens,
 } from './quoteTheme';
 
-// Les coordonnées visibles du footer peuvent être temporaires pour la démo.
-// Un envoi réel de devis exige toujours des variables confirmées séparément.
-const CONTACT_EMAIL = process.env.NEXT_PUBLIC_BUSINESS_EMAIL || '';
-const CONTACT_PHONE = process.env.NEXT_PUBLIC_BUSINESS_PHONE || '';
-const CONTACT_CHANNEL_READY = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(CONTACT_EMAIL);
 const MAX_PHOTOS = 10;
 
 const IconBase = ({ size = 20, strokeWidth = 1.6, className = '', children }) => (
@@ -280,12 +275,15 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
     const [photoPreviews, setPhotoPreviews] = useState([]);
     const [errors, setErrors] = useState({});
     const [submitted, setSubmitted] = useState(false);
+    const [submissionResult, setSubmissionResult] = useState(null);
+    const [submissionState, setSubmissionState] = useState({ status: 'idle', message: '' });
     const [dragging, setDragging] = useState(false);
 
     const fileInputRef = useRef(null);
     const photoPreviewsRef = useRef([]);
     const railRef = useRef(null);
     const quoteStartTrackedRef = useRef(false);
+    const submissionIdentityRef = useRef(null);
 
     /*
      * useLayoutEffect et non useEffect : le shell doit disparaitre dans la
@@ -336,6 +334,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
             const next = incoming.map(file => ({
                 id: `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2)}`,
                 name: file.name,
+                file,
                 url: URL.createObjectURL(file)
             }));
             return [...prev, ...next];
@@ -381,31 +380,6 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
         [selectedType]
     );
 
-    const dimensionsLine = `${fields.height || '-'} x ${fields.width || '-'} x ${fields.depth || '-'} cm`;
-
-    const buildMailBody = useCallback(() => [
-        'Bonjour Anaïs,',
-        '',
-        `Je souhaite recevoir un devis pour un meuble de type : ${selectedTypeLabel}.`,
-        `État général : ${fields.condition || 'Non précisé'}`,
-        `Dimensions : ${dimensionsLine}`,
-        `Poids : ${fields.weight ? `${fields.weight} kg` : 'Non précisé'}`,
-        '',
-        'Prestations souhaitées :',
-        ...selectedServiceList.map(service => `- ${service.label} (${service.min}€-${service.max}€)${service.hasSeverity ? ` [défauts ${fields.severity}]` : ''}`),
-        '',
-        `Estimation indicative affichée : ${estimate.min}€ - ${estimate.max}€`,
-        `Photos préparées : ${photoPreviews.length}`,
-        '',
-        `Description : ${fields.description || 'Non précisée'}`,
-        `Précision complémentaire : ${fields.notes || 'Non précisée'}`,
-        '',
-        `Contact : ${fields.firstname} ${fields.lastname}`.trim(),
-        `Email : ${fields.email}`,
-        `Téléphone : ${fields.phone}`,
-        `Localisation : ${fields.location}`
-    ].join('\n'), [selectedTypeLabel, fields, dimensionsLine, selectedServiceList, estimate, photoPreviews.length]);
-
     const validateContact = useCallback(() => {
         const nextErrors = {};
         if (!fields.firstname.trim()) nextErrors.firstname = 'Indiquez votre prénom.';
@@ -426,10 +400,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
         goToStep(ESTIMATE_STEP_INDEX);
     }, [goToStep, trackQuoteStart, validateContact]);
 
-    // TODO(quote-admin-inbox): remplacer le mailto par une soumission serveur
-    // persistée, puis afficher et gérer ces demandes dans un onglet Devis admin.
-    // La notification e-mail deviendra un effet secondaire optionnel de ce flux.
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
         trackQuoteStart();
 
@@ -447,19 +418,66 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
             return;
         }
 
-        if (!CONTACT_CHANNEL_READY) {
-            return;
+        setSubmissionState({ status: 'submitting', message: 'Enregistrement de votre demande…' });
+        setErrors({});
+        try {
+            const { createQuoteSubmissionIdentity, submitQuoteRequest } = await import('./quoteRequestClient');
+            submissionIdentityRef.current ||= createQuoteSubmissionIdentity();
+            const result = await submitQuoteRequest({
+                identity: submissionIdentityRef.current,
+                files: photoPreviews.map((photo) => photo.file),
+                payload: {
+                    customer: {
+                        firstName: fields.firstname,
+                        lastName: fields.lastname,
+                        email: fields.email,
+                        phone: fields.phone,
+                        location: fields.location,
+                    },
+                    project: {
+                        furnitureType: selectedType,
+                        condition: fields.condition,
+                        dimensions: {
+                            height: fields.height,
+                            width: fields.width,
+                            depth: fields.depth,
+                            weight: fields.weight,
+                        },
+                        description: fields.description,
+                        notes: fields.notes,
+                        severity: fields.severity,
+                        serviceIds: selectedServiceList.map((service) => service.id),
+                    },
+                },
+                onProgress: ({ phase, completed, total }) => {
+                    if (phase === 'photos') {
+                        setSubmissionState({
+                            status: 'submitting',
+                            message: `Transmission des photos ${Math.min(completed + 1, total)} / ${total}…`,
+                        });
+                    } else if (phase === 'finalizing') {
+                        setSubmissionState({ status: 'submitting', message: 'Confirmation de la réception…' });
+                    }
+                },
+            });
+            emitAnalyticsEvent('quote_submitted', null, null, {
+                form: 'restoration',
+                selectedServices: selectedServiceList.length,
+                photoCount: result.photoCount,
+                furnitureType: selectedType
+            });
+            setSubmissionResult(result);
+            setSubmissionState({ status: 'success', message: '' });
+            setSubmitted(true);
+        } catch (error) {
+            const code = String(error?.code || '');
+            const message = code.includes('resource-exhausted')
+                ? 'Trop de demandes ont été envoyées. Réessayez un peu plus tard.'
+                : code.includes('deadline-exceeded')
+                    ? 'La transmission a pris trop de temps. Réessayez pour terminer la demande.'
+                    : 'La demande n’a pas pu être enregistrée. Vérifiez votre connexion puis réessayez.';
+            setSubmissionState({ status: 'error', message });
         }
-
-        emitAnalyticsEvent('quote_email_opened', null, null, {
-            form: 'restoration',
-            selectedServices: selectedServiceList.length,
-            photoCount: photoPreviews.length,
-            furnitureType: selectedType
-        });
-
-        setSubmitted(true);
-        window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Demande de devis restauration')}&body=${encodeURIComponent(buildMailBody())}`;
     };
 
     const inputClass = (name) => `mt-2.5 ${QUOTE_CONTROL_HEIGHT} w-full ${QUOTE_RADIUS_FIELD} px-4 font-sans text-[14px] outline-none transition-[box-shadow,background-color] duration-300 ${errors[name] ? (darkMode ? 'bg-[#141312] text-stone-100 ring-[1.5px] ring-red-400/60' : 'bg-white text-[#1c1917] ring-[1.5px] ring-red-400') : t.field}`;
@@ -481,10 +499,10 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                     <span className={`flex h-11 w-11 items-center justify-center rounded-full ${darkMode ? 'bg-[#D9B58D]/15 text-[#D9B58D]' : 'bg-[#f1f5f0] text-[#4a7c59]'}`}>
                         <Check size={21} strokeWidth={1.9} />
                     </span>
-                    <h2 className={`quote-balance mt-6 ${QUOTE_TYPE.section}`}>Votre demande est prête</h2>
+                    <h2 className={`quote-balance mt-6 ${QUOTE_TYPE.section}`}>Votre demande est bien reçue</h2>
                     <p className={`mt-4 max-w-[46ch] font-sans text-[14px] leading-[1.65] ${t.muted}`}>
-                        Votre logiciel de messagerie vient de s'ouvrir avec le récapitulatif ci-dessous.
-                        Il ne reste qu'à l'envoyer, puis à y joindre vos photos.
+                        Elle est maintenant visible dans l&apos;atelier de suivi de Seconde Vie. Un accusé de réception
+                        va être envoyé à {fields.email}.
                     </p>
 
                     <dl className={`mt-8 divide-y ${QUOTE_RADIUS_CARD} ${t.divide} ${t.panelQuiet}`}>
@@ -493,7 +511,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                             ['État général', fields.condition || 'Non précisé'],
                             ['Prestations', selectedServiceList.length ? `${selectedServiceList.length} sélectionnée${selectedServiceList.length > 1 ? 's' : ''}` : 'À définir'],
                             ['Estimation', selectedServiceList.length ? formatRange(estimate.min, estimate.max) : 'Sur devis'],
-                            ['Photos', photoPreviews.length ? `${photoPreviews.length} à joindre` : 'Aucune'],
+                            ['Photos reçues', submissionResult?.photoCount ? `${submissionResult.photoCount} transmise${submissionResult.photoCount > 1 ? 's' : ''}` : 'Aucune'],
                             ['Contact', [fields.firstname, fields.lastname].filter(Boolean).join(' ') || '—']
                         ].map(([label, value]) => (
                             <div key={label} className="flex items-baseline justify-between gap-6 px-5 py-3.5">
@@ -504,38 +522,33 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                     </dl>
 
                     <div className={`mt-6 ${QUOTE_RADIUS_CARD} p-5 ${t.panelQuiet}`}>
-                        <p className="font-sans text-[13px] font-semibold">Rien ne s'est ouvert ?</p>
-                        <p className={`mt-1.5 ${QUOTE_TYPE.meta} ${t.muted}`}>
-                            Copiez le récapitulatif et envoyez-le à {CONTACT_EMAIL}{CONTACT_PHONE ? ", ou appelez l'atelier" : ''}.
+                        <p className={`${QUOTE_TYPE.micro} ${t.muted}`}>Référence de suivi</p>
+                        <p className="mt-2 font-sans text-[15px] font-semibold tracking-[0.04em]">
+                            {submissionResult?.requestNumber || 'Demande enregistrée'}
                         </p>
-                        <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
-                            <button
-                                type="button"
-                                onClick={() => navigator.clipboard?.writeText(buildMailBody())}
-                                className={`inline-flex h-12 items-center justify-center rounded-full px-6 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.98] ${t.primaryBtn} ${t.focusRing}`}
-                            >
-                                Copier le récapitulatif
-                            </button>
-                            {CONTACT_PHONE ? (
-                                <a
-                                    href={`tel:${CONTACT_PHONE.replace(/\s/g, '')}`}
-                                    className={`inline-flex h-12 items-center justify-center rounded-full px-6 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.98] ${t.ghostBtn} ${t.focusRing}`}
-                                >
-                                    Appeler l'atelier
-                                </a>
-                            ) : null}
-                        </div>
+                        {submissionResult?.failedPhotoCount > 0 ? (
+                            <p className={`mt-3 font-sans text-[12.5px] leading-5 ${darkMode ? 'text-amber-200' : 'text-amber-800'}`}>
+                                {submissionResult.failedPhotoCount} photo{submissionResult.failedPhotoCount > 1 ? 's n’ont' : ' n’a'} pas pu être transmise. La demande reste bien enregistrée et Anaïs pourra vous recontacter.
+                            </p>
+                        ) : (
+                            <p className={`mt-2 ${QUOTE_TYPE.meta} ${t.muted}`}>
+                                Conservez cette référence si vous avez besoin de reparler de votre demande.
+                            </p>
+                        )}
                     </div>
 
                     <button
                         type="button"
                         onClick={() => {
                             setSubmitted(false);
+                            setSubmissionResult(null);
+                            setSubmissionState({ status: 'idle', message: '' });
+                            submissionIdentityRef.current = null;
                             goToStep(0);
                         }}
                         className={`mt-7 font-sans text-[13px] font-semibold underline decoration-1 underline-offset-4 ${t.muted} ${t.focusRing}`}
                     >
-                        Modifier ma demande
+                        Faire une nouvelle demande
                     </button>
                 </div>
             </div>
@@ -1066,14 +1079,22 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                                     <p className={`mt-5 border-t pt-4 ${QUOTE_TYPE.micro} ${t.hairline} ${t.faint}`}>
                                         Fourchette indicative. Le devis final est établi par Anaïs après étude de vos informations et de vos photos.
                                     </p>
+                                    <p className={`mt-3 ${QUOTE_TYPE.micro} ${t.faint}`}>
+                                        En envoyant, vous autorisez Seconde Vie à utiliser ces informations uniquement pour étudier et suivre votre demande.
+                                    </p>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {isLastStep && !CONTACT_CHANNEL_READY ? (
-                        <p role="status" className={`mt-5 rounded-2xl border px-4 py-3 font-sans text-[12.5px] leading-5 ${darkMode ? 'border-amber-300/20 bg-amber-200/10 text-amber-100' : 'border-amber-200 bg-amber-50 text-amber-950'}`}>
-                            L&apos;envoi du devis sera active des que l&apos;adresse de contact de l&apos;atelier aura ete confirmee.
+                    {isLastStep && submissionState.status !== 'idle' ? (
+                        <p
+                            role={submissionState.status === 'error' ? 'alert' : 'status'}
+                            className={`mt-5 rounded-2xl border px-4 py-3 font-sans text-[12.5px] leading-5 ${submissionState.status === 'error'
+                                ? (darkMode ? 'border-red-300/20 bg-red-200/10 text-red-100' : 'border-red-200 bg-red-50 text-red-900')
+                                : (darkMode ? 'border-white/10 bg-white/[0.04] text-stone-200' : 'border-stone-200 bg-stone-50 text-stone-700')}`}
+                        >
+                            {submissionState.message}
                         </p>
                     ) : null}
 
@@ -1082,7 +1103,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                         <button
                             type="button"
                             onClick={() => goToStep(step - 1)}
-                            disabled={step === 0}
+                            disabled={step === 0 || submissionState.status === 'submitting'}
                             className={`inline-flex ${QUOTE_CONTROL_HEIGHT} items-center gap-2.5 rounded-full px-6 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.98] disabled:pointer-events-none disabled:opacity-0 ${t.ghostBtn} ${t.focusRing}`}
                         >
                             <ArrowLeft size={16} />
@@ -1092,10 +1113,12 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                         <button
                             type={isLastStep ? 'submit' : 'button'}
                             onClick={isLastStep ? undefined : step === CONTACT_STEP_INDEX ? showEstimate : () => goToStep(step + 1)}
-                            disabled={isLastStep && !CONTACT_CHANNEL_READY}
+                            disabled={isLastStep && submissionState.status === 'submitting'}
                             className={`group inline-flex ${QUOTE_CONTROL_HEIGHT} items-center gap-3 rounded-full pl-7 pr-2 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 ${t.primaryBtn} ${t.focusRing}`}
                         >
-                            {isLastStep ? 'Envoyer ma demande' : step === CONTACT_STEP_INDEX ? 'Voir mon estimation' : 'Continuer'}
+                            {isLastStep
+                                ? submissionState.status === 'submitting' ? 'Envoi en cours…' : 'Envoyer ma demande'
+                                : step === CONTACT_STEP_INDEX ? 'Voir mon estimation' : 'Continuer'}
                             <span className={`flex h-9 w-9 items-center justify-center rounded-full ${QUOTE_EASE} group-hover:translate-x-0.5 ${darkMode ? 'bg-black/10' : 'bg-white/15'}`}>
                                 <ArrowRight size={16} />
                             </span>
@@ -1112,6 +1135,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                             <button
                                 type="button"
                                 onClick={() => goToStep(step - 1)}
+                                disabled={submissionState.status === 'submitting'}
                                 aria-label="Étape précédente"
                                 className={`flex ${QUOTE_CONTROL_HEIGHT} w-[52px] shrink-0 items-center justify-center rounded-full ${QUOTE_EASE} active:scale-[0.96] ${t.ghostBtn} ${t.focusRing}`}
                             >
@@ -1129,10 +1153,12 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                         <button
                             type={isLastStep ? 'submit' : 'button'}
                             onClick={isLastStep ? undefined : step === CONTACT_STEP_INDEX ? showEstimate : () => goToStep(step + 1)}
-                            disabled={isLastStep && !CONTACT_CHANNEL_READY}
+                            disabled={isLastStep && submissionState.status === 'submitting'}
                             className={`inline-flex ${QUOTE_CONTROL_HEIGHT} shrink-0 items-center gap-2 rounded-full px-6 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-55 ${t.primaryBtn} ${t.focusRing}`}
                         >
-                            {isLastStep ? 'Envoyer' : step === CONTACT_STEP_INDEX ? "Voir l'estimation" : 'Continuer'}
+                            {isLastStep
+                                ? submissionState.status === 'submitting' ? 'Envoi…' : 'Envoyer'
+                                : step === CONTACT_STEP_INDEX ? "Voir l'estimation" : 'Continuer'}
                             <ArrowRight size={15} />
                         </button>
                     </div>

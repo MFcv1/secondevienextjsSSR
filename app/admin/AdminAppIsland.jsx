@@ -20,6 +20,7 @@ import {
   Share2,
   ShieldCheck,
   CircleUserRound,
+  ClipboardList,
   Users,
   Package,
   ReceiptText,
@@ -55,6 +56,7 @@ const loadAdminOrders = () => import('../../src/kit/admin/AdminOrders');
 const loadAdminReturns = () => import('../../src/kit/admin/AdminReturns');
 const loadAdminInvoices = () => import('../../src/kit/admin/AdminInvoices');
 const loadAdminLivraison = () => import('../../src/kit/admin/AdminLivraison');
+const loadAdminQuotes = () => import('../../src/kit/admin/AdminQuotes');
 
 const AdminDashboard = React.lazy(loadAdminDashboard);
 const AdminHomepage = React.lazy(() => import('../../src/kit/admin/AdminHomepage'));
@@ -62,6 +64,7 @@ const AdminOrders = React.lazy(loadAdminOrders);
 const AdminInvoices = React.lazy(loadAdminInvoices);
 const AdminReturns = React.lazy(loadAdminReturns);
 const AdminLivraison = React.lazy(loadAdminLivraison);
+const AdminQuotes = React.lazy(loadAdminQuotes);
 const AdminStudio = React.lazy(() => import('../../src/kit/admin/AdminStudio'));
 const AdminPublicationWorkspace = React.lazy(() => import('../../src/kit/admin/AdminPublicationWorkspace'));
 const AdminUsers = React.lazy(() => import('../../src/kit/admin/AdminUsers'));
@@ -91,6 +94,7 @@ const TAB_ICONS = {
   payment_settings: CreditCard,
   payment_links: Link2,
   invoices: ReceiptText,
+  quotes: ClipboardList,
   account: CircleUserRound,
   inventory: Grid,
   maintenance: RefreshCw,
@@ -138,7 +142,7 @@ function AdminCatalogStatus({ darkMode, error, loading, onRetry }) {
 const ADMIN_NAV_GROUPS = [
   { label: "Vue d'ensemble", tabs: ['dashboard', 'analytics'] },
   { label: 'Catalogue', tabs: ['furniture', 'inventory', 'studio'] },
-  { label: 'Ventes', tabs: ['orders', 'payment_links', 'invoices', 'returns', 'livraison', 'payment_settings'] },
+  { label: 'Ventes', tabs: ['orders', 'quotes', 'payment_links', 'invoices', 'returns', 'livraison', 'payment_settings'] },
   { label: 'Communication', tabs: ['homepage', 'newsletter', 'seo'] },
   { label: 'Administration', tabs: ['account', 'users', 'ip_manager'] },
 ];
@@ -298,15 +302,17 @@ function AdminContent() {
     if (!user || !isAdmin || !hasStrongAuth || !backOfficeReady) return undefined;
     let cancelled = false;
     const preload = async () => {
-      const [dashboardModule, invoicesModule, deliveryModule] = await Promise.all([
+      const [dashboardModule, invoicesModule, deliveryModule, quotesModule] = await Promise.all([
         loadAdminDashboard(),
         loadAdminInvoices(),
         loadAdminLivraison(),
+        loadAdminQuotes(),
       ]);
       if (cancelled) return;
       void dashboardModule.preloadAdminDashboardData?.({ force: true }).catch(() => {});
       void invoicesModule.preloadAdminInvoicesData?.({ force: true }).catch(() => {});
       void deliveryModule.preloadAdminDeliveryData?.({ force: true }).catch(() => {});
+      void quotesModule.preloadAdminQuotesData?.({ force: true }).catch(() => {});
       void preloadAdminCommerceData({ force: true }).catch(() => {});
       void loadAdminOrders();
       void loadAdminReturns();
@@ -592,6 +598,8 @@ function AdminContent() {
             />
           ) : adminCollection === 'invoices' ? (
             <AdminInvoices darkMode={darkMode} />
+          ) : adminCollection === 'quotes' ? (
+            <AdminQuotes darkMode={darkMode} />
           ) : adminCollection === 'returns' ? (
             <AdminReturns darkMode={darkMode} mutationsEnabled />
           ) : adminCollection === 'livraison' ? (

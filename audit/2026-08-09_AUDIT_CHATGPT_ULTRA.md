@@ -35,6 +35,7 @@ Les quatre Functions de facturation manuelle ont également été déployées s�
 - suppression complète de la page Maintenance du back-office ;
 - mise à jour des dépendances sans alerte haute ou critique connue ;
 - nettoyage de deux anciens générateurs PDF clients non utilisés.
+- remplacement du `mailto` du formulaire Devis par une réception serveur durable, photos privées, accusé client et nouvel atelier Devis dans le back-office.
 
 ## Décisions de démonstration conservées
 
@@ -42,8 +43,8 @@ Les quatre Functions de facturation manuelle ont également été déployées s�
 - les coordonnées de démonstration restent visibles dans le footer ;
 - les réseaux sociaux et documents juridiques restent visibles mais inactifs sans URL ;
 - le checkout de démonstration reste utilisable avant publication définitive des CGV ;
-- le formulaire de devis permet d'obtenir une estimation, mais l'envoi réel attend une adresse confirmée ;
-- la future boîte de réception et gestion des devis dans le back-office est laissée en attente des spécifications d'interface.
+- le formulaire de devis enregistre désormais la demande dans le back-office sans dépendre d'une adresse métier ;
+- seul l'accusé de réception destiné à l'utilisateur est préparé par e-mail ; aucune notification vers une boîte Seconde Vie inexistante n'est envoyée.
 
 ## Validations exécutées
 
@@ -57,6 +58,8 @@ Les quatre Functions de facturation manuelle ont également été déployées s�
 - émulateur Firebase commerce : 18 scénarios et 93 assertions réussis ;
 - tests publics, accessibilité, confidentialité, factures et onboarding : 25 réussis ;
 - contrats SEO, sitemap, canonicals, routes et cache de déploiement : réussis ;
+- parcours Devis : 5 tests métier réussis, scénario émulateur création/photo privée/finalisation/suivi admin réussi, règles Firestore et Storage validées ;
+- build de validation du nouveau parcours : Next.js 16.3.0 avec Webpack, 52 pages générées ; Turbopack reste localement bloqué par son processus CSS qui tente d'ouvrir un port interdit sur ce poste ;
 - `git diff --check` : réussi.
 
 ## Vérifications après déploiement
@@ -86,7 +89,7 @@ Les quatre Functions de facturation manuelle ont également été déployées s�
 1. Déployer séparément les Functions hors facturation encore en attente, après leurs gates propres.
 2. Dépublier les cinq fiches de test après validation métier explicite.
 3. Configurer les coordonnées, réseaux et documents juridiques définitifs.
-4. Concevoir puis câbler la réception et la gestion des devis dans le back-office.
+4. Déployer puis tester sur sandbox le nouveau parcours Devis public/admin et son accusé de réception client.
 5. Câbler réellement la newsletter et le jeu promotionnel.
 6. Rejouer la recette humaine authentifiée client et administrateur après activation de Chrome.
 7. Réduire le CSS initial, actuellement au-dessus du budget indicatif.

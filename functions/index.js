@@ -273,6 +273,25 @@ exports.prepareManualInvoicePdfAdmin = prepareManualInvoicePdfAdmin;
 exports.saveManualInvoiceDraftAdmin = saveManualInvoiceDraftAdmin;
 exports.sendManualInvoiceAdmin = sendManualInvoiceAdmin;
 
+// ── DEMANDES DE DEVIS ───────────────────────────────────
+const {
+    createQuoteRequest,
+    uploadQuoteRequestPhoto,
+    finalizeQuoteRequest,
+    listQuoteRequestsAdmin,
+    getQuoteRequestAdmin,
+    updateQuoteRequestAdmin,
+    onQuoteRequestSubmitted
+} = require('./src/quotes/quoteRequests');
+
+exports.createQuoteRequest = createQuoteRequest;
+exports.uploadQuoteRequestPhoto = uploadQuoteRequestPhoto;
+exports.finalizeQuoteRequest = finalizeQuoteRequest;
+exports.listQuoteRequestsAdmin = listQuoteRequestsAdmin;
+exports.getQuoteRequestAdmin = getQuoteRequestAdmin;
+exports.updateQuoteRequestAdmin = updateQuoteRequestAdmin;
+exports.onQuoteRequestSubmitted = onQuoteRequestSubmitted;
+
 // ── EMAIL (Triggers) ─────────────────────────────────────
 const { onOrderCreated, onOrderUpdated, sendTestEmail, sendRefundStatusEmailAdmin } = require('./src/email/orderEmails');
 

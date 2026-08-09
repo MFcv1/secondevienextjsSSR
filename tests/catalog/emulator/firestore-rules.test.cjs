@@ -72,6 +72,34 @@ test('catalog publication state is backend-only for every client role', async ()
   assert.equal(contexts.length, 3);
 });
 
+test('quote requests and their audit remain backend-only for every client role', async () => {
+  await environment.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'sys_admin_access/admin-1'), { active: true });
+    await setDoc(doc(context.firestore(), 'quote_requests/quote_private'), {
+      requestNumber: 'DEV-TEST',
+      customer: { email: 'client@example.test' },
+      status: 'new',
+    });
+    await setDoc(doc(context.firestore(), 'sys_audit_quotes/audit_private'), { quoteId: 'quote_private' });
+  });
+  const contexts = [
+    environment.unauthenticatedContext(),
+    environment.authenticatedContext('customer-1'),
+    environment.authenticatedContext('admin-1', {
+      admin: true,
+      firebase: { sign_in_provider: 'google.com' },
+    }),
+  ];
+  for (const context of contexts) {
+    const quoteRef = doc(context.firestore(), 'quote_requests/quote_private');
+    const auditRef = doc(context.firestore(), 'sys_audit_quotes/audit_private');
+    await assertFails(getDoc(quoteRef));
+    await assertFails(setDoc(quoteRef, { status: 'closed' }));
+    await assertFails(getDoc(auditRef));
+    await assertFails(setDoc(auditRef, { attack: true }));
+  }
+});
+
 test('active Google or passkey admins can edit back-office content without a time window', async () => {
   await environment.withSecurityRulesDisabled(async (context) => {
     await setDoc(doc(context.firestore(), 'sys_admin_access/admin-google'), { active: true, role: 'admin' });

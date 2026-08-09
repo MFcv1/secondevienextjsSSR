@@ -374,6 +374,19 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Demandes de devis, photos et audit: uniquement via les Functions.
+    match /quote_requests/{quoteId} {
+      allow read, write: if false;
+
+      match /{document=**} {
+        allow read, write: if false;
+      }
+    }
+
+    match /sys_audit_quotes/{auditId} {
+      allow read, write: if false;
+    }
+
     // Etat interne du catalogue public materialise. Admin SDK/IAM uniquement.
     match /sys_catalog_publication/{docId} {
       allow read, write: if false;

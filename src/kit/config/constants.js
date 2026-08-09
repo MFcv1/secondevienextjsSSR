@@ -122,6 +122,7 @@ export const KIT_CONFIG = {
     { id: 'studio',           label: 'Studio'      },
     { id: 'homepage',         label: 'Personnalisation' },
     { id: 'orders',           label: 'Ventes'      },
+    { id: 'quotes',           label: 'Devis'       },
     { id: 'payment_links',    label: 'Liens de paiement' },
     { id: 'invoices',         label: 'Factures'    },
     { id: 'returns',          label: 'Retours'     },

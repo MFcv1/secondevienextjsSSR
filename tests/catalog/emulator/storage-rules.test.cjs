@@ -42,6 +42,26 @@ test('public media remains readable while visitor writes are denied', async () =
   await assertFails(uploadBytes(ref(visitor, 'furniture/attack.webp'), new Uint8Array([1]), { contentType: 'image/webp' }));
 });
 
+test('quote photos stay private even for a strong administrator SDK session', async () => {
+  await environment.withSecurityRulesDisabled(async (context) => {
+    await uploadBytes(
+      ref(context.storage(), 'quote-requests/v1/quote_private/photo.webp'),
+      new Uint8Array([1, 2, 3]),
+      { contentType: 'image/webp' }
+    );
+  });
+  const visitor = environment.unauthenticatedContext().storage();
+  const admin = environment.authenticatedContext('admin-google', {
+    admin: true,
+    firebase: { sign_in_provider: 'google.com' },
+  }).storage();
+  const target = 'quote-requests/v1/quote_private/photo.webp';
+  await assertFails(getBytes(ref(visitor, target)));
+  await assertFails(uploadBytes(ref(visitor, target), new Uint8Array([4]), { contentType: 'image/webp' }));
+  await assertFails(getBytes(ref(admin, target)));
+  await assertFails(uploadBytes(ref(admin, target), new Uint8Array([4]), { contentType: 'image/webp' }));
+});
+
 test('active strong admins can upload back-office media without a fifteen-minute window', async () => {
   const googleOnlyAdmin = environment.authenticatedContext('admin-google', {
     admin: true,

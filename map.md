@@ -351,7 +351,12 @@ Mesure des lectures et couts: `_DOCS/data/AUDIT_COUTS_FIRESTORE.md` (Usage Insig
   -> assistant interactif en 7 étapes: meuble -> état -> photos -> détails
      -> prestations -> contact -> estimation indicative
   -> validation des coordonnées avant l'estimation finale
-  -> envoi seulement depuis l'étape Estimation -> mailto prérempli
+  -> createQuoteRequest [F]: validation, prix serveur, rate limit et dossier durable
+  -> uploadQuoteRequestPhoto [F]: compression client puis re-encodage WebP prive
+  -> finalizeQuoteRequest [F]: réception confirmée sans dépendre d'une boîte métier
+  -> onQuoteRequestSubmitted [F]: accusé de réception client asynchrone
+  -> quote_requests/{quoteId} + médias Storage privés
+  -> AdminQuotes [C]: recherche, statuts, fiche, photos signées et notes internes
 ```
 
 ## 5. Arborescence racine
@@ -589,6 +594,8 @@ src/kit/vitrine/
 ```text
 src/kit/admin/
 |-- AdminDashboard.jsx ................ pilotage commerce, devis/tendances analytics bornes, miniatures du snapshot public, exports et maintenance rapide
+|-- AdminQuotes.jsx ................... réception et suivi des demandes de restauration
+|-- quoteAdminClient.js ............... cache court et callables protégées Devis
 |-- AdminAnalytics.jsx ................ moteur Data canonique: UID/IP, live, parcours illustres, courbes
 |-- AdminForm.jsx ..................... creation/edition annonces
 |   |-- productPublicationClient.js ... utilitaires historiques de session + attente de la release publique exacte
@@ -766,6 +773,10 @@ functions/
     |   |-- manualInvoiceDomain.js .... validation, montants entiers, hash et numerotation
     |   |-- manualInvoicePdf.js ....... rendu PDF deterministe facture/brouillon
     |   `-- manualInvoices.js ......... callables admin, persistance privee et envoi e-mail
+    |-- quotes/
+    |   |-- quoteRequestDomain.js ..... validation, statuts et estimation autoritaire
+    |   |-- quoteEmailTemplates.js .... accusé de réception client
+    |   `-- quoteRequests.js .......... dépôt public, photos privées et commandes admin
     |-- analytics/
     |   |-- constants.js
     |   |-- sessionAuthorizationCache.js ... cache borne/TTL du hash de jeton
@@ -818,6 +829,7 @@ functions/
 | OTP/passkeys | `sendGuestCheckoutOtp`, `verifyGuestCheckoutOtp`, `sendCustomerLoginOtp`, `verifyCustomerLoginOtp`, quatre endpoints passkey |
 | onboarding facturation | `getBillingGuideStatus`, `saveBillingGuideProgress`, `getBillingGuideOperatorStatus`, `completeBillingGuideAdmin`, `resetBillingGuideTest` |
 | factures manuelles admin | `getManualInvoiceWorkspaceAdmin`, `saveManualInvoiceDraftAdmin`, `prepareManualInvoicePdfAdmin`, `sendManualInvoiceAdmin` |
+| demandes de devis | `createQuoteRequest`, `uploadQuoteRequestPhoto`, `finalizeQuoteRequest`, `listQuoteRequestsAdmin`, `getQuoteRequestAdmin`, `updateQuoteRequestAdmin`, `onQuoteRequestSubmitted` |
 | e-mail | `onOrderCreated`, `onOrderUpdated`, `sendTestEmail`, `sendRefundStatusEmailAdmin` |
 | analytics | `initLiveSession`, `syncSession`, `syncSessionBeacon`, `deleteSession`, `clearAllSessions`, `trackAdminIP`, `updateUserSessions` |
 | maintenance | resets/purges, `runGarbageCollector`, `getUploadUrl` |
@@ -869,6 +881,8 @@ Firestore
 |   |-- artifacts/{contentHash} ....... preuve du PDF prive materialise
 |   `-- deliveries/{sendRequestId} .... statut d'envoi et hash destinataire
 |-- admin_invoice_sequences/{year} .... numerotation transactionnelle backend-only
+|-- quote_requests/{quoteId} .......... demande, suivi, estimation et pointeurs photos backend-only
+|-- sys_audit_quotes/{auditId} ........ creation et changements de suivi sans contenu libre
 |-- sys_catalog_publication/secondevie  mode, lease et revisions
 |-- sys_catalog_publication_events/{eventHash}
 |   `-- deduplication/outbox catalogue
@@ -888,6 +902,7 @@ Storage
 |-- catalog-projection/v1/releases/{rev}/  objets immuables, manifeste et plan d'impact
 |-- catalog-projection/v1/pointers/ .... current/previous/last-known-good
 |-- commerce-documents/v2/... ......... PDF commande prives, lecture directe interdite
+|-- quote-requests/v1/{quoteId}/... ... photos devis privées, URL admin signée quinze minutes
 |-- admin-invoices/v1/... ............. PDF factures emises prives, lecture directe interdite
 `-- autres chemins admin .............. contenus hero/about selon configuration
 ```

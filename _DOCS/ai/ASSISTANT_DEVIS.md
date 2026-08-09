@@ -1,13 +1,15 @@
 # Assistant IA pour les demandes de devis
 
-Derniere mise a jour: 2026-07-14
-Statut: `CONCEPTION - NON IMPLEMENTE`
+Derniere mise a jour: 2026-08-09
+Statut: `COLLECTE_ET_REVUE_ACTIVE - IA_NON_IMPLEMENTEE`
 
 ## 1. Decision produit
 
 L'assistant doit ameliorer la qualite des demandes de devis sans devenir un chat libre couteux. Le formulaire structure collecte d'abord les donnees; l'IA intervient ensuite pour analyser, resumer et proposer des questions. Anais garde la validation humaine des prix, travaux et reponses.
 
-Ce chapitre est une specification future. Aucune integration IA ne doit etre supposee active dans le site actuel.
+La collecte structuree, le stockage `quote_requests`, les photos privees et la
+vue admin de revue sont actifs dans le code. Aucune integration IA ne doit etre
+supposee active dans le site actuel.
 
 ## 2. Cas d'usage
 
@@ -65,11 +67,13 @@ L'admin corrige, complete et valide avant envoi. Aucun devis contractuel ni enga
 
 ```text
 /devis (formulaire guide)
-  -> upload medias borne
-  -> route serveur authentifiee/rate-limitee
-  -> fournisseur IA avec sortie structuree
+  -> callables publiques App Check et rate-limitees
+  -> upload medias borne, re-encode et prive
   -> quote_requests/{quoteId}
-  -> vue admin de revue
+  -> vue admin de revue protegee AAL2
+  -> accusé de réception client asynchrone
+  -> [future] route serveur IA
+  -> fournisseur IA avec sortie structuree
   -> reponse humaine
 ```
 
@@ -168,8 +172,8 @@ Avant lancement:
 
 ## 10. Phases fermees
 
-1. formulaire guide sans IA;
-2. stockage `quote_requests` + vue admin;
+1. formulaire guide sans IA — implemente;
+2. stockage `quote_requests` + vue admin — implemente;
 3. appel IA serveur structure et garde-fous;
 4. base de cas similaires validee;
 5. mesure qualite/cout;

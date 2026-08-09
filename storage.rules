@@ -60,6 +60,10 @@ service firebase.storage {
       allow read, write: if false;
     }
 
+    match /quote-requests/{allPaths=**} {
+      allow read, write: if false;
+    }
+
     match /furniture/publication-sessions/{sessionId}/originals/{slotId}/{fileName} {
       allow read, delete: if false;
       allow create, update: if isAdminClaim()
@@ -101,6 +105,7 @@ service firebase.storage {
       allow read: if topLevel != 'catalog-projection'
         && topLevel != 'commerce-documents'
         && topLevel != 'admin-invoices'
+        && topLevel != 'quote-requests'
         && topLevel != 'furniture';
       
       // BLINDAGE ADMINISTRATEUR (Standard & Robuste)
@@ -110,6 +115,7 @@ service firebase.storage {
         && topLevel != 'catalog-projection'
         && topLevel != 'commerce-documents'
         && topLevel != 'admin-invoices'
+        && topLevel != 'quote-requests'
         && isAdminClaim()
         && hasStrongAdminAuth()
         && hasActiveAdminAccess()

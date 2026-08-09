@@ -530,7 +530,7 @@ const QuoteFunnel = ({ quote, loading, error, darkMode }) => {
     const stages = [
         { key: 'visits', label: 'Visites de la page', value: quote.visits, icon: Eye },
         { key: 'starts', label: 'Formulaires démarrés', value: quote.starts, icon: FileText },
-        { key: 'emailOpened', label: 'Brouillons e-mail ouverts', value: quote.emailOpened, icon: Send }
+        { key: 'submitted', label: 'Demandes enregistrées', value: quote.submitted, icon: Send }
     ];
     const maxValue = Math.max(...stages.map(stage => stage.value), 1);
     const reducedMotion = useReducedMotion();
@@ -586,7 +586,7 @@ const QuoteFunnel = ({ quote, loading, error, darkMode }) => {
                 );
             })}
             <p className={`mt-2 min-w-0 max-w-full break-words text-[10px] leading-relaxed ${darkMode ? 'text-white/34' : 'text-stone-400'}`}>
-                « Brouillon ouvert » mesure l’ouverture de l’e-mail prérempli, pas sa réception ni l’acceptation d’un devis.
+                « Demande enregistrée » confirme la réception dans le back-office, pas encore l’acceptation d’un devis.
             </p>
         </div>
     );
@@ -988,7 +988,7 @@ const loadAdminDashboardInsightsData = ({ force = false } = {}) => loadAdminCach
             .filter((session) => session.type !== 'admin');
         const quoteVisits = new Set();
         const quoteStarts = new Set();
-        const quoteEmailOpened = new Set();
+        const quoteSubmitted = new Set();
         const productMap = new Map();
         const allProductViewers = new Set();
         let totalProductViews = 0;
@@ -1007,7 +1007,7 @@ const loadAdminDashboardInsightsData = ({ force = false } = {}) => loadAdminCach
             );
             if (journey.some((step) => step?.page === 'quote')) quoteVisits.add(sessionId);
             if (eventActions.has('quote_start')) quoteStarts.add(sessionId);
-            if (eventActions.has('quote_email_opened')) quoteEmailOpened.add(sessionId);
+            if (eventActions.has('quote_submitted') || eventActions.has('quote_email_opened')) quoteSubmitted.add(sessionId);
 
             journey.forEach((step) => {
                 if (step?.page !== 'detail') return;
@@ -1041,7 +1041,7 @@ const loadAdminDashboardInsightsData = ({ force = false } = {}) => loadAdminCach
             quote: {
                 visits: quoteVisits.size,
                 starts: quoteStarts.size,
-                emailOpened: quoteEmailOpened.size
+                submitted: quoteSubmitted.size
             },
             products: Array.from(productMap.values())
                 .sort((left, right) => (
@@ -1130,7 +1130,7 @@ const AdminDashboard = ({
         loading: true,
         error: false,
         coverageLimited: false,
-        quote: { visits: 0, starts: 0, emailOpened: 0 },
+        quote: { visits: 0, starts: 0, submitted: 0 },
         products: [],
         totalProductViews: 0,
         uniqueProductViewers: 0

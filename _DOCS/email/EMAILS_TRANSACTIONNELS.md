@@ -2,7 +2,7 @@
 
 Derniere mise a jour: 2026-08-01
 Statut: `PREPROD_READY`
-Perimetre: Auth OTP, paiement, cycle de commande v2, remboursements et copie de document
+Perimetre: Auth OTP, paiement, cycle de commande v2, remboursements, copie de document et réception de devis
 
 ## 1. Role
 
@@ -21,9 +21,10 @@ mot de passe, donnee de carte ou donnee personnelle de recette n'y figure.
 
 ## 2. Etat de reference
 
-La bibliotheque source regroupe 15 rendus, tous deployes sur le sandbox depuis
-le 2026-08-01. Les 13 rendus historiques conservent leurs captures de
-reference; la correction de suivi et la copie de document restent a recapturer.
+La bibliotheque source regroupe 16 rendus. Les 15 rendus historiques ont ete
+deployes sur le sandbox depuis le 2026-08-01; l'accuse de reception de devis
+est ajoute au code le 2026-08-09 et reste a deployer puis recapturer. Les 13
+rendus historiques conservent leurs captures de reference.
 
 | Famille | Nombre | Audience |
 | --- | ---: | --- |
@@ -32,7 +33,8 @@ reference; la correction de suivi et la copie de document restent a recapturer.
 | cycle de commande | 6 | client |
 | remboursement | 4 | client + administrateur |
 | copie de document | 1 | client |
-| **Total source** | **15** | - |
+| réception de devis | 1 | client |
+| **Total source** | **16** | - |
 
 Le lot a ete deploye le 2026-07-30:
 
@@ -270,7 +272,22 @@ types autres que PDF et plafonne les pieces jointes a 5 Mio.
 Ce modele n'a pas encore de capture canonique. Sa capture sera ajoutee a la
 galerie lors d'un deploiement et d'une recette visuelle explicitement valides.
 
-## 10. Livraison et idempotence
+## 10. Accusé de réception de devis
+
+Modele: `quote-request-received`.
+
+La finalisation durable d'une demande sous `/devis` declenche un message au
+client uniquement. Il contient la reference, le meuble, les prestations et la
+fourchette indicative, puis rappelle qu'aucun prix contractuel n'est confirme
+automatiquement. Aucun e-mail operationnel n'est envoye vers une adresse
+Seconde Vie tant que la boite metier n'existe pas.
+
+Le trigger intervient apres `intakeStatus=submitted`. L'echec du provider est
+inscrit sous `confirmationEmail.status` et n'annule jamais la demande deja
+visible dans `AdminQuotes`. Les photos ne sont jamais jointes au message et
+restent dans le stockage prive.
+
+## 11. Livraison et idempotence
 
 L'onglet admin Factures ajoute un envoi operationnel hors cycle de commande:
 le callable `sendManualInvoiceAdmin` emet et verrouille le brouillon, genere le
@@ -302,7 +319,7 @@ Regles:
 - Gmail ambigu devient `delivery_unknown` sans retry automatique;
 - les identifiants techniques servent a l'idempotence sans exposer de secret.
 
-## 11. Limites et production
+## 12. Limites et production
 
 Le contenu et le transport Gmail sandbox ont ete qualifies, avec SPF, DKIM et
 DMARC valides. Gmail peut toutefois classer le message de recette en spam.
@@ -316,7 +333,7 @@ La livraison production attend:
 - une montee en reputation;
 - une recette multi-fournisseurs.
 
-## 12. Regeneration des captures
+## 13. Regeneration des captures
 
 Commande:
 
@@ -331,7 +348,7 @@ changement que ce chapitre.
 
 Avant remplacement:
 
-1. regenerer les 15 rendus source;
+1. regenerer les rendus source;
 2. inspecter la galerie et les captures individuelles;
 3. verifier les donnees, liens, statuts et identifiants attendus;
 4. lancer les tests Auth et commerce;

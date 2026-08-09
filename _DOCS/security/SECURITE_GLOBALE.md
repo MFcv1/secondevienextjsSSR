@@ -53,6 +53,7 @@ La suppression d'un acces admin doit retirer les claims, desactiver le registre 
 | panier `users/{uid}/cart` | proprietaire | proprietaire |
 | wishlist `users/{uid}/wishlist` | proprietaire | proprietaire |
 | `orders` | client proprietaire ou admin | serveur/admin selon operation |
+| `quote_requests` | Functions admin AAL2 uniquement | Functions publiques bornées ou admin AAL2 |
 | `sys_metadata` | cas par cas | admin fort |
 | `sys_ratelimit` | aucune lecture client | serveur uniquement |
 | `sys_admin_access` | controle strict | serveur/super-admin |
@@ -61,6 +62,12 @@ La suppression d'un acces admin doit retirer les claims, desactiver le registre 
 | analytics et rollups | admin selon besoin | serveur |
 
 Toute nouvelle collection doit avoir une decision explicite dans les rules avant son utilisation. Le fallback final doit rester deny-by-default.
+
+Les demandes de devis suivent une frontiere stricte: aucun SDK client ne peut
+lire ou ecrire `quote_requests` ni `sys_audit_quotes`. Les photos sont
+re-encodees par Function, stockees sous `quote-requests/v1` avec Rules fermees,
+puis exposees a l'admin par URL signee courte. Le rate limit ne conserve pas
+l'adresse IP brute dans le dossier client.
 
 ## 4. Storage Rules
 

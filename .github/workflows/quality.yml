@@ -35,6 +35,7 @@ jobs:
       - run: pnpm test:support-privacy
       - run: pnpm test:release-contract
       - run: pnpm test:a11y
+      - run: pnpm test:quotes
       - run: pnpm test:deployment-cache
       - run: pnpm seo:surface
       - run: pnpm build

@@ -314,7 +314,7 @@ test('images, categorie, warmup et navigation respectent le contrat unifie', () 
   assert.match(gridActions, /intent === 'hover' \|\| intent === 'press'/);
   assert.doesNotMatch(`${marketplace}\n${layout}`, /window\.location\.assign/);
   assert.doesNotMatch(marketplace, /<a[^>]+href=["']\/(?![#])/);
-  assert.match(marketplace, /href="tel:/);
+  assert.match(marketplace, /href=\{`tel:/);
   assert.match(marketplace, /href=\{`mailto:/);
   assert.match(marketplace, /target="_blank"/);
 

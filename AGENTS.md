@@ -66,7 +66,7 @@ Une contradiction entre code et documentation doit etre signalee et corrigee dan
 | Auth | passe de demonstration close, `PREPROD_READY`; production differee |
 | espace client | commandes, documents PDF provisoires, wishlist, adresse/profil de synthese, support |
 | commerce | `PREPROD_TRANSACTIONAL_READY` sur sandbox/fixtures; activation publique et live differees |
-| back-office | onglets lazy et acces admin fort; Factures manuelles ajoutees localement, commandes commerce v2 qualifiees sur fixtures |
+| back-office | onglets lazy et acces admin fort; Factures manuelles et reception des devis codees, commandes commerce v2 qualifiees sur fixtures |
 | images | variantes Storage WebP, `detailFast`, miniatures 320/384, metadata anti-CLS |
 | securite | rules fortes, AAL2 admin, secrets serveur; App Check prod encore differe |
 | infrastructure | App Hosting sandbox actif; rail production absent |
