@@ -98,7 +98,10 @@ test('factures manuelles: UI lazy, callables et stockages priv√©s restent align√
     const ui = source('src/kit/admin/AdminInvoices.jsx');
     const invoiceFunctions = source('functions/src/invoicing/manualInvoices.js');
 
-    assert.match(admin, /React\.lazy\(\(\) => import\('\.\.\/\.\.\/src\/kit\/admin\/AdminInvoices'\)\)/);
+    assert.match(admin, /const loadAdminInvoices = \(\) => import\('\.\.\/\.\.\/src\/kit\/admin\/AdminInvoices'\)/);
+    assert.match(admin, /React\.lazy\(loadAdminInvoices\)/);
+    assert.match(admin, /preloadAdminInvoicesData/);
+    assert.doesNotMatch(ui, /if \(status === 'loading'\) return/);
     for (const callable of [
         'getManualInvoiceWorkspaceAdmin',
         'saveManualInvoiceDraftAdmin',
@@ -116,4 +119,5 @@ test('factures manuelles: UI lazy, callables et stockages priv√©s restent align√
         /PRODUCTS_COLLECTION = 'artifacts\/secondevie\/public\/data\/furniture'/
     );
     assert.doesNotMatch(invoiceFunctions, /db\.collection\('furniture'\)/);
+    assert.match(invoiceFunctions, /Array\.isArray\(product\.imageVariants\)/);
 });

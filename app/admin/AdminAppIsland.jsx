@@ -53,11 +53,12 @@ import AdminSidebar from './AdminSidebar';
 const loadAdminDashboard = () => import('../../src/kit/admin/AdminDashboard');
 const loadAdminOrders = () => import('../../src/kit/admin/AdminOrders');
 const loadAdminReturns = () => import('../../src/kit/admin/AdminReturns');
+const loadAdminInvoices = () => import('../../src/kit/admin/AdminInvoices');
 
 const AdminDashboard = React.lazy(loadAdminDashboard);
 const AdminHomepage = React.lazy(() => import('../../src/kit/admin/AdminHomepage'));
 const AdminOrders = React.lazy(loadAdminOrders);
-const AdminInvoices = React.lazy(() => import('../../src/kit/admin/AdminInvoices'));
+const AdminInvoices = React.lazy(loadAdminInvoices);
 const AdminReturns = React.lazy(loadAdminReturns);
 const AdminLivraison = React.lazy(() => import('../../src/kit/admin/AdminLivraison'));
 const AdminStudio = React.lazy(() => import('../../src/kit/admin/AdminStudio'));
@@ -296,9 +297,13 @@ function AdminContent() {
     if (!user || !isAdmin || !hasStrongAuth || !backOfficeReady) return undefined;
     let cancelled = false;
     const preload = async () => {
-      const dashboardModule = await loadAdminDashboard();
+      const [dashboardModule, invoicesModule] = await Promise.all([
+        loadAdminDashboard(),
+        loadAdminInvoices(),
+      ]);
       if (cancelled) return;
       void dashboardModule.preloadAdminDashboardData?.({ force: true }).catch(() => {});
+      void invoicesModule.preloadAdminInvoicesData?.({ force: true }).catch(() => {});
       void preloadAdminCommerceData({ force: true }).catch(() => {});
       void loadAdminOrders();
       void loadAdminReturns();

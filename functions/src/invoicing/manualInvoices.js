@@ -87,16 +87,19 @@ function serializeInvoice(snapshot) {
 
 function firstImage(product) {
     const candidates = [];
+    if (Array.isArray(product.imageVariants)) candidates.push(...product.imageVariants);
+    if (Array.isArray(product.thumbnails)) candidates.push(...product.thumbnails);
+    if (product.thumbnailUrl) candidates.push(product.thumbnailUrl);
     if (Array.isArray(product.images)) candidates.push(...product.images);
     if (product.image) candidates.push(product.image);
     for (const candidate of candidates) {
         if (typeof candidate === 'string' && candidate) return candidate;
         if (!candidate || typeof candidate !== 'object') continue;
-        for (const key of ['thumb384', 'thumb320', 'thumb', 'card', 'medium', 'src', 'url']) {
+        for (const key of ['thumb320', 'thumb384', 'thumb', 'card', 'detailFast', 'medium', 'src', 'url']) {
             if (typeof candidate[key] === 'string' && candidate[key]) return candidate[key];
         }
     }
-    return product.thumbnailUrl || product.imageUrl || '';
+    return product.imageUrl || '';
 }
 
 function productPriceCents(product) {
