@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  AlertTriangle,
   Ban,
   Check,
   Clock3,
@@ -13,8 +12,17 @@ import {
   RotateCw,
   Search,
   Send,
-  ShieldCheck,
 } from 'lucide-react';
+import {
+  adminSurfaces,
+  Field,
+  focusRingWithin,
+  inputClass,
+  Notice,
+  PageHeader,
+  Panel,
+  StatusDot,
+} from './adminUiKit';
 import {
   cancelAdminPaymentLink,
   createAdminPaymentLink,
@@ -36,30 +44,13 @@ const DELIVERY_LABELS = {
 };
 
 const STATUS = {
-  active: { label: 'Coordonnées attendues', tone: 'warning' },
-  ready_to_pay: { label: 'Prêt à payer', tone: 'info' },
-  payment_in_progress: { label: 'Paiement en cours', tone: 'info' },
-  paid: { label: 'Payé', tone: 'success' },
-  expired: { label: 'Expiré', tone: 'neutral' },
-  canceled: { label: 'Annulé', tone: 'danger' },
-  needs_review: { label: 'À vérifier', tone: 'danger' },
-};
-
-const toneClass = (tone, darkMode) => {
-  const map = darkMode ? {
-    success: 'bg-emerald-400/10 text-emerald-200',
-    info: 'bg-sky-400/10 text-sky-200',
-    warning: 'bg-amber-400/10 text-amber-200',
-    danger: 'bg-red-400/10 text-red-200',
-    neutral: 'bg-white/[0.06] text-stone-400',
-  } : {
-    success: 'bg-emerald-50 text-emerald-700',
-    info: 'bg-sky-50 text-sky-700',
-    warning: 'bg-amber-50 text-amber-800',
-    danger: 'bg-red-50 text-red-700',
-    neutral: 'bg-stone-100 text-stone-600',
-  };
-  return map[tone] || map.neutral;
+  active: { label: 'Coordonnées attendues', tone: 'amber' },
+  ready_to_pay: { label: 'Prêt à payer', tone: 'sky' },
+  payment_in_progress: { label: 'Paiement en cours', tone: 'sky' },
+  paid: { label: 'Payé', tone: 'emerald' },
+  expired: { label: 'Expiré', tone: 'stone' },
+  canceled: { label: 'Annulé', tone: 'red' },
+  needs_review: { label: 'À vérifier', tone: 'red' },
 };
 
 const formatMoney = (amountCents) => new Intl.NumberFormat('fr-FR', {
@@ -72,8 +63,10 @@ const formatDate = (value) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
   return new Intl.DateTimeFormat('fr-FR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
   }).format(date);
 };
 
@@ -89,15 +82,6 @@ const isSelectableProduct = (item) => (
   Number.isSafeInteger(productStock(item)) &&
   productStock(item) > 0
 );
-
-function StatusPill({ darkMode, status }) {
-  const copy = STATUS[status] || { label: status || 'Inconnu', tone: 'neutral' };
-  return (
-    <span className={`inline-flex rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] ${toneClass(copy.tone, darkMode)}`}>
-      {copy.label}
-    </span>
-  );
-}
 
 export default function AdminPaymentLinks({ darkMode, items = [], mutationsEnabled }) {
   const [state, setState] = useState({ status: 'loading', links: [], setup: null, error: '' });
@@ -241,260 +225,278 @@ export default function AdminPaymentLinks({ darkMode, items = [], mutationsEnabl
     }
   };
 
-  const panel = darkMode ? 'border-white/10 bg-[#111111]' : 'border-stone-200 bg-white';
-  const muted = darkMode ? 'text-stone-400' : 'text-stone-500';
-  const field = darkMode
-    ? 'border-white/10 bg-white/[0.04] text-white placeholder:text-stone-600 focus:border-white/30'
-    : 'border-stone-200 bg-white text-stone-900 placeholder:text-stone-400 focus:border-stone-500';
+
+  const surfaces = adminSurfaces(darkMode);
+  const field = inputClass(darkMode);
+  const rowButton = `inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40 ${surfaces.secondaryButton}`;
 
   return (
-    <div className={`space-y-6 ${darkMode ? 'text-white' : 'text-stone-900'}`}>
-      <header className={`rounded-3xl border p-6 md:p-8 ${panel}`}>
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl">
-            <div className="flex items-center gap-3">
-              <span className={`grid h-11 w-11 place-items-center rounded-2xl ${darkMode ? 'bg-white text-stone-950' : 'bg-stone-950 text-white'}`}>
-                <Link2 size={20} />
-              </span>
-              <div>
-                <p className={`text-[9px] font-black uppercase tracking-[0.24em] ${muted}`}>Rail de secours</p>
-                <h2 className="mt-1 text-2xl font-black tracking-[-0.035em] md:text-3xl">Liens de paiement</h2>
-              </div>
-            </div>
-            <p className={`mt-5 max-w-2xl text-sm leading-6 ${muted}`}>
-              Réservez des pièces et envoyez un paiement Stripe sans compte client. Prix, stock, expiration et rapprochement restent contrôlés par Seconde Vie.
-            </p>
-          </div>
+    <div className="space-y-5">
+      <PageHeader
+        darkMode={darkMode}
+        description="Réservez des pièces et envoyez un paiement Stripe sans compte client. Prix, stock et expiration restent contrôlés par Seconde Vie."
+        title="Liens de paiement"
+        actions={(
           <button
-            type="button"
-            onClick={() => void refresh()}
+            className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition active:translate-y-px disabled:cursor-wait disabled:opacity-60 ${surfaces.secondaryButton}`}
             disabled={state.status === 'loading'}
-            className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 text-[10px] font-black uppercase tracking-[0.12em] transition ${darkMode ? 'border-white/10 hover:bg-white/5' : 'border-stone-200 hover:bg-stone-50'}`}
+            onClick={() => void refresh()}
+            type="button"
           >
-            <RefreshCw size={14} className={state.status === 'loading' ? 'animate-spin' : ''} />
+            <RefreshCw className={state.status === 'loading' ? 'animate-spin' : ''} size={15} />
             Actualiser
           </button>
+        )}
+      />
+
+      {!canMutate ? (
+        <Notice darkMode={darkMode} tone="warning">
+          Création et pilotage désactivés par le contrôle commerce. Les liens existants restent visibles et copiables.
+        </Notice>
+      ) : null}
+
+      {notice ? (
+        <div aria-live="polite">
+          <Notice darkMode={darkMode}>{notice}</Notice>
         </div>
-      </header>
+      ) : null}
 
-      {!canMutate && (
-        <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm ${darkMode ? 'border-amber-300/20 bg-amber-300/10 text-amber-100' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
-          <ShieldCheck size={18} className="mt-0.5 shrink-0" />
-          <p>Création et pilotage désactivés par le contrôle commerce. Les liens existants restent visibles et copiables.</p>
-        </div>
-      )}
-
-      {notice && (
-        <div className={`rounded-2xl border px-4 py-3 text-sm ${darkMode ? 'border-white/10 bg-white/[0.04]' : 'border-stone-200 bg-stone-50'}`} aria-live="polite">
-          {notice}
-        </div>
-      )}
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(20rem,0.85fr)_minmax(0,1.35fr)]">
-        <form onSubmit={createLink} className={`rounded-3xl border p-5 md:p-6 ${panel}`}>
-          <h3 className="text-lg font-black tracking-tight">Créer une demande</h3>
-          <p className={`mt-1 text-xs leading-5 ${muted}`}>Le stock est réservé dès la création du lien.</p>
-
-          <label className="mt-6 block">
-            <span className={`text-[10px] font-black uppercase tracking-[0.12em] ${muted}`}>Rechercher un meuble</span>
-            <span className="relative mt-2 block">
-              <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${muted}`} size={15} />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                className={`min-h-11 w-full rounded-xl border pl-10 pr-3 text-sm outline-none transition ${field}`}
-                placeholder="Nom de la pièce"
-              />
-            </span>
-          </label>
-
-          <div className={`mt-3 max-h-64 space-y-1 overflow-y-auto rounded-2xl border p-2 ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
-            {selectableItems.length === 0 ? (
-              <p className={`px-3 py-6 text-center text-xs ${muted}`}>Aucun meuble achetable trouvé.</p>
-            ) : selectableItems.map((item) => {
-              const id = productId(item);
-              const checked = selectedIds.includes(id);
-              return (
+      <div className="grid gap-5 xl:grid-cols-[minmax(20rem,0.8fr)_minmax(0,1.4fr)] xl:items-start">
+        <form onSubmit={createLink}>
+          <Panel
+            darkMode={darkMode}
+            description="Le stock est réservé dès la création du lien."
+            title="Créer une demande"
+            footer={(
+              <>
+                <p className={`text-xs ${surfaces.muted}`}>
+                  {selectedItems.length} pièce{selectedItems.length > 1 ? 's' : ''} ·{' '}
+                  <span className={`font-bold tabular-nums ${darkMode ? 'text-white' : 'text-stone-950'}`}>
+                    {formatMoney(totalCents)}
+                  </span>
+                </p>
                 <button
-                  key={id}
-                  type="button"
-                  onClick={() => toggleProduct(id)}
-                  className={`grid w-full grid-cols-[1fr_auto] items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${checked ? (darkMode ? 'bg-white text-stone-950' : 'bg-stone-950 text-white') : (darkMode ? 'hover:bg-white/5' : 'hover:bg-stone-50')}`}
+                  className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 ${surfaces.primaryButton}`}
+                  disabled={!canMutate || selectedItems.length === 0 || !deliveryModeId || action === 'create'}
+                  type="submit"
                 >
-                  <span className="min-w-0">
-                    <strong className="block truncate text-xs">{productName(item)}</strong>
-                    <small className={`mt-0.5 block text-[10px] ${checked ? 'opacity-70' : muted}`}>Stock {productStock(item)}</small>
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <strong className="text-xs tabular-nums">{formatMoney(productPrice(item) * 100)}</strong>
-                    <span className={`grid h-5 w-5 place-items-center rounded-md border ${checked ? 'border-current' : (darkMode ? 'border-white/20' : 'border-stone-300')}`}>
-                      {checked ? <Check size={12} /> : null}
-                    </span>
-                  </span>
+                  {action === 'create' ? <Loader2 className="animate-spin" size={15} /> : <Send size={15} />}
+                  {action === 'create' ? 'Réservation…' : 'Créer et copier'}
                 </button>
-              );
-            })}
-          </div>
-
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <label>
-              <span className={`text-[10px] font-black uppercase tracking-[0.12em] ${muted}`}>Livraison</span>
-              <select
-                value={deliveryModeId}
-                onChange={(event) => setDeliveryModeId(event.target.value)}
-                className={`mt-2 min-h-11 w-full rounded-xl border px-3 text-sm outline-none ${field}`}
-              >
-                {(state.setup?.deliveryModes || []).map((mode) => (
-                  <option key={mode.id} value={mode.id}>
-                    {DELIVERY_LABELS[mode.id] || mode.id} · {formatMoney(mode.shippingCents)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span className={`text-[10px] font-black uppercase tracking-[0.12em] ${muted}`}>Validité</span>
-              <select
-                value={expiryMinutes}
-                onChange={(event) => setExpiryMinutes(Number(event.target.value))}
-                className={`mt-2 min-h-11 w-full rounded-xl border px-3 text-sm outline-none ${field}`}
-              >
-                <option value={30}>30 minutes</option>
-                <option value={60}>1 heure</option>
-                <option value={120}>2 heures</option>
-                <option value={240}>4 heures</option>
-                <option value={1440}>24 heures</option>
-              </select>
-            </label>
-          </div>
-
-          <label className="mt-4 block">
-            <span className={`text-[10px] font-black uppercase tracking-[0.12em] ${muted}`}>E-mail à verrouiller · facultatif</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className={`mt-2 min-h-11 w-full rounded-xl border px-3 text-sm outline-none ${field}`}
-              placeholder="client@exemple.fr"
-            />
-          </label>
-
-          <div className={`mt-5 rounded-2xl border px-4 py-3 ${darkMode ? 'border-white/10 bg-white/[0.035]' : 'border-stone-200 bg-stone-50'}`}>
-            <div className="flex items-center justify-between gap-4 text-xs">
-              <span className={muted}>{selectedItems.length} pièce{selectedItems.length > 1 ? 's' : ''}</span>
-              <strong className="text-base tabular-nums">{formatMoney(totalCents)}</strong>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={!canMutate || selectedItems.length === 0 || !deliveryModeId || action === 'create'}
-            className={`mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 text-xs font-black uppercase tracking-[0.12em] transition focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-45 ${darkMode ? 'bg-white text-stone-950 hover:bg-stone-200 focus-visible:ring-white' : 'bg-stone-950 text-white hover:bg-stone-800 focus-visible:ring-stone-950'}`}
+              </>
+            )}
           >
-            {action === 'create' ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-            {action === 'create' ? 'Réservation en cours…' : 'Créer et copier le lien'}
-          </button>
+            <div className="space-y-4">
+              <div className="min-w-0">
+                <label className="block text-sm font-bold" htmlFor="payment-link-search">Pièces à réserver</label>
+                <label
+                  className={`mt-2 flex items-center gap-2.5 rounded-lg border px-3 py-2.5 ${surfaces.field} ${focusRingWithin}`}
+                  htmlFor="payment-link-search"
+                >
+                  <Search className="shrink-0" size={15} />
+                  <input
+                    className="min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none"
+                    id="payment-link-search"
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Rechercher un meuble…"
+                    value={query}
+                  />
+                </label>
+
+                <div className={`mt-2 max-h-56 overflow-y-auto rounded-lg border ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
+                  {selectableItems.length === 0 ? (
+                    <p className={`px-3 py-8 text-center text-xs ${surfaces.muted}`}>Aucun meuble achetable trouvé.</p>
+                  ) : (
+                    <div className={`divide-y ${surfaces.hairline}`}>
+                      {selectableItems.map((item) => {
+                        const id = productId(item);
+                        const checked = selectedIds.includes(id);
+                        return (
+                          <button
+                            className={`grid w-full grid-cols-[1fr_auto] items-center gap-3 px-3 py-2.5 text-left transition ${checked ? (darkMode ? 'bg-white/[0.06]' : 'bg-stone-100') : surfaces.hoverRow}`}
+                            key={id}
+                            onClick={() => toggleProduct(id)}
+                            type="button"
+                          >
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-bold tracking-tight">{productName(item)}</span>
+                              <span className={`mt-0.5 block text-xs ${surfaces.muted}`}>Stock {productStock(item)}</span>
+                            </span>
+                            <span className="flex items-center gap-2.5">
+                              <span className="text-sm font-bold tabular-nums">{formatMoney(productPrice(item) * 100)}</span>
+                              <span
+                                className={`grid h-[18px] w-[18px] place-items-center rounded-[6px] border transition ${
+                                  checked
+                                    ? (darkMode ? 'border-white bg-white text-stone-950' : 'border-stone-950 bg-stone-950 text-white')
+                                    : (darkMode ? 'border-white/20' : 'border-stone-300')
+                                }`}
+                              >
+                                {checked ? <Check size={12} strokeWidth={3} /> : null}
+                              </span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field darkMode={darkMode} htmlFor="payment-link-delivery" label="Livraison">
+                  <select
+                    className={field}
+                    id="payment-link-delivery"
+                    onChange={(event) => setDeliveryModeId(event.target.value)}
+                    value={deliveryModeId}
+                  >
+                    {(state.setup?.deliveryModes || []).map((mode) => (
+                      <option key={mode.id} value={mode.id}>
+                        {DELIVERY_LABELS[mode.id] || mode.id} · {formatMoney(mode.shippingCents)}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field darkMode={darkMode} htmlFor="payment-link-expiry" label="Validité">
+                  <select
+                    className={field}
+                    id="payment-link-expiry"
+                    onChange={(event) => setExpiryMinutes(Number(event.target.value))}
+                    value={expiryMinutes}
+                  >
+                    <option value={30}>30 minutes</option>
+                    <option value={60}>1 heure</option>
+                    <option value={120}>2 heures</option>
+                    <option value={240}>4 heures</option>
+                    <option value={1440}>24 heures</option>
+                  </select>
+                </Field>
+              </div>
+
+              <Field
+                darkMode={darkMode}
+                hint="Laissez vide pour un lien ouvert à toute adresse."
+                htmlFor="payment-link-email"
+                label="E-mail à verrouiller"
+              >
+                <input
+                  className={field}
+                  id="payment-link-email"
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="client@exemple.fr"
+                  type="email"
+                  value={email}
+                />
+              </Field>
+            </div>
+          </Panel>
         </form>
 
-        <section className={`rounded-3xl border p-5 md:p-6 ${panel}`}>
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-black tracking-tight">Registre des liens</h3>
-              <p className={`mt-1 text-xs ${muted}`}>{state.links.length} demande{state.links.length > 1 ? 's' : ''} récente{state.links.length > 1 ? 's' : ''}</p>
+        <section className={`overflow-hidden rounded-2xl border ${surfaces.panel}`}>
+          <div className={`flex items-center justify-between border-b px-5 py-3.5 ${surfaces.divider}`}>
+            <div className="min-w-0">
+              <h3 className="text-sm font-black tracking-tight">Registre des liens</h3>
+              <p className={`mt-1 text-xs ${surfaces.muted}`}>Demandes envoyées les plus récentes.</p>
             </div>
+            <span className={`shrink-0 text-xs tabular-nums ${surfaces.muted}`}>{state.links.length}</span>
           </div>
 
           {state.status === 'loading' ? (
-            <div className={`mt-6 flex min-h-48 items-center justify-center gap-3 text-sm ${muted}`}>
-              <Loader2 size={17} className="animate-spin" /> Chargement…
+            <div className={`flex min-h-40 items-center justify-center gap-3 text-sm font-semibold ${surfaces.muted}`}>
+              <Loader2 className="animate-spin" size={16} /> Chargement…
             </div>
           ) : state.error ? (
-            <div className={`mt-6 flex items-start gap-3 rounded-2xl p-4 text-sm ${darkMode ? 'bg-red-400/10 text-red-200' : 'bg-red-50 text-red-700'}`}>
-              <AlertTriangle size={18} className="mt-0.5 shrink-0" />
-              <p>{state.error}</p>
+            <div className="p-5">
+              <Notice darkMode={darkMode} tone="error">{state.error}</Notice>
             </div>
           ) : state.links.length === 0 ? (
-            <div className={`mt-6 flex min-h-48 flex-col items-center justify-center rounded-2xl border border-dashed px-6 text-center ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
-              <Link2 size={24} className={muted} />
-              <p className="mt-3 text-sm font-bold">Aucun lien envoyé</p>
-              <p className={`mt-1 text-xs ${muted}`}>Sélectionnez une pièce pour créer la première demande.</p>
+            <div className="px-6 py-14 text-center">
+              <div className={`mb-3 flex justify-center ${surfaces.faint}`}><Link2 size={24} /></div>
+              <p className="text-sm font-black">Aucun lien envoyé</p>
+              <p className={`mt-1 text-sm ${surfaces.muted}`}>Sélectionnez une pièce pour créer la première demande.</p>
             </div>
           ) : (
-            <div className="mt-5 space-y-3">
+            <div className={`divide-y ${surfaces.hairline}`}>
               {state.links.map((link) => {
                 const active = ['active', 'ready_to_pay', 'payment_in_progress'].includes(link.status);
+                const copy = STATUS[link.status] || { label: link.status || 'Inconnu', tone: 'stone' };
                 return (
-                  <article key={link.orderId} className={`rounded-2xl border p-4 ${darkMode ? 'border-white/10 bg-white/[0.025]' : 'border-stone-200 bg-stone-50/60'}`}>
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <strong className="text-xs tracking-wide">{link.reference}</strong>
-                          <StatusPill darkMode={darkMode} status={link.status} />
-                        </div>
-                        <p className={`mt-2 truncate text-xs ${muted}`}>
-                          {link.items.map((item) => item.title).join(' · ')}
-                        </p>
+                  <article className={`px-5 py-4 transition ${surfaces.hoverRow}`} key={link.orderId}>
+                    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <span className="truncate text-sm font-black tracking-tight">{link.reference}</span>
+                        <StatusDot darkMode={darkMode} label={copy.label} tone={copy.tone} />
                       </div>
-                      <strong className="shrink-0 text-base tabular-nums">{formatMoney(link.totalCents)}</strong>
+                      <span className="shrink-0 text-sm font-black tabular-nums">{formatMoney(link.totalCents)}</span>
                     </div>
 
-                    <dl className={`mt-4 grid gap-2 border-y py-3 text-[10px] sm:grid-cols-3 ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
-                      <div><dt className={muted}>Client</dt><dd className="mt-1 truncate font-bold">{link.customerEmail || 'À renseigner'}</dd></div>
-                      <div><dt className={muted}>Créé</dt><dd className="mt-1 font-bold">{formatDate(link.createdAt)}</dd></div>
-                      <div><dt className={muted}>Expire</dt><dd className="mt-1 font-bold">{formatDate(link.expiresAt)}</dd></div>
+                    <p className={`mt-1 truncate text-xs ${surfaces.muted}`}>
+                      {link.items.map((item) => item.title).join(' · ')}
+                    </p>
+
+                    <dl className={`mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs ${surfaces.muted}`}>
+                      <div className="flex min-w-0 gap-1.5">
+                        <dt>Client</dt>
+                        <dd className="truncate font-semibold">{link.customerEmail || 'à renseigner'}</dd>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <dt>Créé</dt>
+                        <dd className="font-semibold tabular-nums">{formatDate(link.createdAt)}</dd>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <dt>Expire</dt>
+                        <dd className="font-semibold tabular-nums">{formatDate(link.expiresAt)}</dd>
+                      </div>
                     </dl>
 
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => void copyLink(link)}
-                        className={`inline-flex min-h-9 items-center gap-2 rounded-lg border px-3 text-[9px] font-black uppercase tracking-[0.1em] transition ${darkMode ? 'border-white/10 hover:bg-white/5' : 'border-stone-200 bg-white hover:border-stone-400'}`}
-                      >
-                        <Copy size={12} /> Copier
+                      <button className={rowButton} onClick={() => void copyLink(link)} type="button">
+                        <Copy size={13} /> Copier
                       </button>
-                      {active && (
+                      {active ? (
                         <>
                           <button
-                            type="button"
+                            className={rowButton}
                             disabled={!canMutate || Boolean(action)}
                             onClick={() => void updateLink(link.orderId, 'extend', () => extendAdminPaymentLink(link.orderId, 120))}
-                            className={`inline-flex min-h-9 items-center gap-2 rounded-lg border px-3 text-[9px] font-black uppercase tracking-[0.1em] transition disabled:opacity-40 ${darkMode ? 'border-white/10 hover:bg-white/5' : 'border-stone-200 bg-white hover:border-stone-400'}`}
+                            type="button"
                           >
-                            {action === `extend:${link.orderId}` ? <Loader2 size={12} className="animate-spin" /> : <Clock3 size={12} />}
+                            {action === `extend:${link.orderId}` ? <Loader2 className="animate-spin" size={13} /> : <Clock3 size={13} />}
                             + 2 h
                           </button>
-                          {link.status === 'active' && (
+                          {link.status === 'active' ? (
                             <button
-                              type="button"
+                              className={rowButton}
                               disabled={!canMutate || Boolean(action)}
                               onClick={() => regenerate(link)}
-                              className={`inline-flex min-h-9 items-center gap-2 rounded-lg border px-3 text-[9px] font-black uppercase tracking-[0.1em] transition disabled:opacity-40 ${darkMode ? 'border-white/10 hover:bg-white/5' : 'border-stone-200 bg-white hover:border-stone-400'}`}
+                              type="button"
                             >
-                              {action === `regenerate:${link.orderId}` ? <Loader2 size={12} className="animate-spin" /> : <RotateCw size={12} />}
+                              {action === `regenerate:${link.orderId}` ? <Loader2 className="animate-spin" size={13} /> : <RotateCw size={13} />}
                               Changer l’URL
                             </button>
-                          )}
+                          ) : null}
                           <button
-                            type="button"
+                            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40 ${darkMode ? 'border-red-500/20 text-red-300 hover:bg-red-500/10' : 'border-red-100 text-red-700 hover:bg-red-50'}`}
                             disabled={!canMutate || Boolean(action)}
                             onClick={() => cancel(link)}
-                            className={`inline-flex min-h-9 items-center gap-2 rounded-lg border px-3 text-[9px] font-black uppercase tracking-[0.1em] transition disabled:opacity-40 ${darkMode ? 'border-red-300/20 text-red-200 hover:bg-red-300/10' : 'border-red-200 bg-white text-red-700 hover:bg-red-50'}`}
+                            type="button"
                           >
-                            {action === `cancel:${link.orderId}` ? <Loader2 size={12} className="animate-spin" /> : <Ban size={12} />}
+                            {action === `cancel:${link.orderId}` ? <Loader2 className="animate-spin" size={13} /> : <Ban size={13} />}
                             Annuler
                           </button>
                         </>
-                      )}
-                      {!active && ['expired', 'canceled'].includes(link.status) && (
+                      ) : null}
+                      {!active && ['expired', 'canceled'].includes(link.status) ? (
                         <button
-                          type="button"
+                          className={rowButton}
                           disabled={!canMutate || Boolean(action)}
                           onClick={() => void recreate(link)}
-                          className={`inline-flex min-h-9 items-center gap-2 rounded-lg border px-3 text-[9px] font-black uppercase tracking-[0.1em] transition disabled:opacity-40 ${darkMode ? 'border-white/10 hover:bg-white/5' : 'border-stone-200 bg-white hover:border-stone-400'}`}
+                          type="button"
                         >
-                          {action === `recreate:${link.orderId}` ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                          {action === `recreate:${link.orderId}` ? <Loader2 className="animate-spin" size={13} /> : <RefreshCw size={13} />}
                           Nouveau lien
                         </button>
-                      )}
+                      ) : null}
                     </div>
                   </article>
                 );

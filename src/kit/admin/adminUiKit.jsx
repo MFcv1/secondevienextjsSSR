@@ -29,17 +29,15 @@ export const focusRingWithin = 'transition focus-within:border-amber-500 focus-w
 export function PageHeader({ title, description, actions, badge, darkMode }) {
     const surfaces = adminSurfaces(darkMode);
     return (
-        <header className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <header className={`flex flex-col gap-4 rounded-2xl border px-5 py-4 sm:flex-row sm:items-center sm:justify-between ${surfaces.panel}`}>
             <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-3">
-                    <h2 className={`text-3xl font-black tracking-tighter md:text-4xl ${darkMode ? 'text-white' : 'text-stone-950'}`}>
-                        {title}
-                    </h2>
+                <div className="flex flex-wrap items-center gap-2.5">
+                    <h2 className="text-xl font-black tracking-tight">{title}</h2>
                     {badge}
                 </div>
-                {description ? <p className={`mt-1 text-sm ${surfaces.muted}`}>{description}</p> : null}
+                {description ? <p className={`mt-1 text-sm leading-5 ${surfaces.muted}`}>{description}</p> : null}
             </div>
-            {actions ? <div className="flex flex-col gap-2 sm:flex-row">{actions}</div> : null}
+            {actions ? <div className="flex shrink-0 flex-col gap-2 sm:flex-row">{actions}</div> : null}
         </header>
     );
 }
@@ -90,6 +88,9 @@ export function Notice({ tone = 'info', children, darkMode }) {
         error: darkMode
             ? 'border-red-500/20 bg-red-500/10 text-red-300'
             : 'border-red-100 bg-red-50 text-red-700',
+        warning: darkMode
+            ? 'border-amber-500/20 bg-amber-500/10 text-amber-300'
+            : 'border-amber-100 bg-amber-50 text-amber-800',
         info: darkMode
             ? 'border-white/10 bg-white/[0.04] text-stone-300'
             : 'border-stone-200 bg-stone-50 text-stone-600'
@@ -133,6 +134,8 @@ export function StatusDot({ tone = 'stone', label, darkMode }) {
     const tones = {
         emerald: darkMode ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' : 'border-emerald-100 bg-emerald-50 text-emerald-700',
         amber: darkMode ? 'border-amber-500/20 bg-amber-500/10 text-amber-300' : 'border-amber-100 bg-amber-50 text-amber-700',
+        sky: darkMode ? 'border-sky-500/20 bg-sky-500/10 text-sky-300' : 'border-sky-100 bg-sky-50 text-sky-700',
+        red: darkMode ? 'border-red-500/20 bg-red-500/10 text-red-300' : 'border-red-100 bg-red-50 text-red-700',
         stone: darkMode ? 'border-white/10 bg-white/[0.04] text-stone-300' : 'border-stone-200 bg-stone-100 text-stone-600'
     };
     return (
