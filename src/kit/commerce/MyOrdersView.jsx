@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import {
     AlertTriangle,
@@ -503,15 +503,145 @@ select.acc-input{
     background-size: 260% 100%;
 }
 
+/* ------------------------------------------------------------------ *
+ * Mode focus: un module s'ouvre en grand, le reste de la page s'efface.
+ * L'ouverture se joue en deux temps: le decor recule (opening), puis le
+ * module rejoint sa position pleine largeur par une animation FLIP.
+ * ------------------------------------------------------------------ */
+.acc-root .acc-hero,
+.acc-root .acc-segments,
+.acc-root .acc-rail,
+.acc-root .acc-metrics,
+.acc-root [data-acc-section]{
+    transition: opacity .26s var(--acc-ease), transform .3s var(--acc-ease), filter .26s var(--acc-ease);
+}
+.acc-root[data-acc-mode='opening'] .acc-hero,
+.acc-root[data-acc-mode='opening'] .acc-segments,
+.acc-root[data-acc-mode='opening'] .acc-rail,
+.acc-root[data-acc-mode='opening'] .acc-metrics,
+.acc-root[data-acc-mode='opening'] [data-acc-focused='false']{
+    opacity: 0;
+    transform: scale(.968) translateY(8px);
+    filter: blur(7px);
+    pointer-events: none;
+}
+.acc-root[data-acc-mode='opening'] [data-acc-focused='true']{
+    z-index: 3;
+    box-shadow: var(--acc-hairline-card), var(--acc-elev-3);
+}
+.acc-root[data-acc-mode='focus'] .acc-hero,
+.acc-root[data-acc-mode='focus'] .acc-segments,
+.acc-root[data-acc-mode='focus'] .acc-rail,
+.acc-root[data-acc-mode='focus'] .acc-metrics,
+.acc-root[data-acc-mode='focus'] [data-acc-focused='false']{ display: none !important; }
+.acc-root[data-acc-mode='focus'] .acc-body,
+.acc-root[data-acc-mode='focus'] .acc-pair{ grid-template-columns: minmax(0,1fr) !important; }
+.acc-root[data-acc-mode='focus'] [data-acc-focused='true']{ box-shadow: var(--acc-hairline-card), var(--acc-elev-2); }
+
+.acc-focusbar{
+    position: sticky; top: calc(var(--acc-head) + 8px); z-index: 30;
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px; border-radius: 999px;
+    background: var(--acc-glass);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    box-shadow: var(--acc-hairline-card), var(--acc-elev-1);
+    animation: acc-bar-in .44s var(--acc-ease) both;
+}
+.acc-focus-back-label{ display: none; }
+@media (min-width: 430px){ .acc-focus-back-label{ display: inline; } }
+.acc-focus-title{
+    display: none; align-items: center; gap: 8px; min-width: 0;
+    font-size: 13.5px; font-weight: 650; letter-spacing: -.012em; color: var(--acc-ink);
+}
+@media (min-width: 720px){ .acc-focus-title{ display: inline-flex; } }
+.acc-focus-switch{
+    display: flex; align-items: center; gap: 2px; margin-left: auto;
+    max-width: 62%; overflow-x: auto; scrollbar-width: none;
+}
+.acc-focus-switch::-webkit-scrollbar{ display: none; }
+.acc-focus-chip{
+    display: grid; place-items: center; flex: none;
+    width: 32px; height: 32px; border-radius: 999px;
+    color: var(--acc-ink-3); cursor: pointer;
+    transition: background .16s var(--acc-ease), color .16s var(--acc-ease), transform .16s var(--acc-ease);
+}
+.acc-focus-chip:hover{ background: var(--acc-well); color: var(--acc-ink); }
+.acc-focus-chip:active{ transform: scale(.9); }
+.acc-focus-chip[aria-current='true']{
+    color: var(--acc-accent); background: var(--acc-accent-wash);
+    box-shadow: 0 0 0 .5px var(--acc-line);
+}
+
+.acc-root [data-acc-flip='enter'] > *{ animation: acc-focus-content .42s var(--acc-ease) both; }
+.acc-root [data-acc-flip='enter'] > *:nth-child(2){ animation-delay: .07s; }
+.acc-root [data-acc-flip='enter'] > *:nth-child(3){ animation-delay: .13s; }
+.acc-root [data-acc-flip='enter'] > *:nth-child(n+4){ animation-delay: .18s; }
+.acc-root [data-acc-swap='in']{ animation: acc-swap-in .44s var(--acc-ease) both; }
+.acc-root[data-acc-returning='true'] .acc-hero{ animation: acc-return .52s var(--acc-ease) both; }
+.acc-root[data-acc-returning='true'] .acc-segments{ animation: acc-return .52s .04s var(--acc-ease) both; }
+.acc-root[data-acc-returning='true'] .acc-metrics{ animation: acc-return .52s .05s var(--acc-ease) both; }
+.acc-root[data-acc-returning='true'] .acc-rail{ animation: acc-return .52s .07s var(--acc-ease) both; }
+.acc-root[data-acc-returning='true'] [data-acc-section]:not([data-acc-flip='exit']){ animation: acc-return .52s .1s var(--acc-ease) both; }
+
 @keyframes acc-shimmer{ from{ background-position: 130% 0; } to{ background-position: -130% 0; } }
 @keyframes acc-fade{ from{ opacity: 0; } to{ opacity: 1; } }
 @keyframes acc-pop{ from{ opacity: 0; transform: translateY(10px) scale(.975); } to{ opacity: 1; transform: none; } }
 @keyframes acc-rise{ from{ opacity: 0; transform: translateY(26px); } to{ opacity: 1; transform: none; } }
+@keyframes acc-bar-in{ from{ opacity: 0; transform: translateY(-12px) scale(.96); } to{ opacity: 1; transform: none; } }
+@keyframes acc-focus-content{ from{ opacity: 0; transform: translateY(12px); } to{ opacity: 1; transform: none; } }
+@keyframes acc-return{ from{ opacity: 0; transform: translateY(14px) scale(.982); } to{ opacity: 1; transform: none; } }
+@keyframes acc-swap-in{ from{ opacity: 0; transform: translateY(16px) scale(.988); } to{ opacity: 1; transform: none; } }
 
 @media (prefers-reduced-motion: reduce){
     .acc-root *{ animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
 `;
+
+/* Courbe partagee avec --acc-ease: les animations JS doivent respirer comme le CSS. */
+const ACC_EASE = 'cubic-bezier(.32,.72,0,1)';
+const ACC_OPEN_DELAY = 230;
+
+const clampValue = (value, min, max) => Math.min(Math.max(value, min), max);
+
+const prefersReducedMotion = () => (
+    typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+);
+
+/**
+ * Anime un noeud depuis sa geometrie precedente vers sa geometrie actuelle.
+ * L'echelle est bornee pour que le contenu ne se deforme jamais franchement:
+ * on cherche l'impression d'un module qui s'ouvre, pas un zoom litteral.
+ */
+const runFlip = (node, first, direction) => {
+    if (!node || !first || typeof node.animate !== 'function') return;
+    const last = node.getBoundingClientRect();
+    if (!last.width || !first.width) return;
+
+    const maxShift = window.innerHeight * 0.86;
+    const dx = clampValue(first.left - last.left, -window.innerWidth, window.innerWidth);
+    const dy = clampValue(first.top - last.top, -maxShift, maxShift);
+    const scale = clampValue(first.width / last.width, 0.86, 1.14);
+
+    node.dataset.accFlip = direction;
+    node.animate(
+        [
+            {
+                transformOrigin: 'top left',
+                transform: `translate3d(${dx}px, ${dy}px, 0) scale(${scale})`,
+                opacity: 0.55,
+            },
+            { transformOrigin: 'top left', transform: 'none', opacity: 1 },
+        ],
+        { duration: direction === 'enter' ? 520 : 460, easing: ACC_EASE, fill: 'both' }
+    ).addEventListener('finish', (event) => { event.target.cancel(); });
+
+    window.setTimeout(() => {
+        if (node.dataset.accFlip === direction) delete node.dataset.accFlip;
+    }, 760);
+};
 
 const formatPrice = (price = 0) => (
     new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(Number(price) || 0)
@@ -689,11 +819,12 @@ const IconTile = ({ icon: Icon, tone = 'graphite', size = 34, radius = 10 }) => 
     </span>
 );
 
-const Panel = ({ children, className = '', sectionRef, section, raised = false, id }) => (
+const Panel = ({ children, className = '', sectionRef, section, raised = false, id, focused }) => (
     <section
         id={id}
         ref={sectionRef}
         data-acc-section={section}
+        data-acc-focused={focused}
         style={{ scrollMarginTop: 'calc(var(--acc-head) + 60px)' }}
         className={`acc-panel${raised ? ' acc-panel--raised' : ''} ${className}`}
     >
@@ -778,6 +909,17 @@ const MyOrdersView = ({
     const [loadingRewards, setLoadingRewards] = useState(true);
     const [copiedRewardId, setCopiedRewardId] = useState(null);
     const [activeSection, setActiveSection] = useState('commandes');
+    const [focusedSection, setFocusedSection] = useState(null);
+    const [focusMode, setFocusMode] = useState('overview'); // overview | opening | focus
+    const [isReturning, setIsReturning] = useState(false);
+    const enterIntentRef = useRef(null);
+    const exitIntentRef = useRef(null);
+    const swapPendingRef = useRef(false);
+    const restoreScrollRef = useRef(0);
+    const openTimerRef = useRef(null);
+    const returnTimerRef = useRef(null);
+    const closeFocusRef = useRef(null);
+    const focusSwitchRef = useRef(null);
     const cancellationRequestIdsRef = useRef(new Map());
     const returnRequestIdsRef = useRef(new Map());
     const rootRef = useRef(null);
@@ -789,6 +931,19 @@ const MyOrdersView = ({
     const addressesRef = useRef(null);
     const invoicesRef = useRef(null);
     const helpRef = useRef(null);
+
+    // Une seule table associe l'identifiant de section a son noeud: le rail,
+    // les compteurs, le commutateur du mode focus et le FLIP y puisent tous.
+    const sectionRefs = useMemo(() => ({
+        commandes: ordersRef,
+        avantages: advantagesRef,
+        documents: invoicesRef,
+        souhaits: wishlistRef,
+        adresse: addressesRef,
+        profil: infoRef,
+        support: helpRef,
+    }), []);
+    const sectionFlag = (id) => (focusedSection ? String(focusedSection === id) : undefined);
 
     const customerName = user?.displayName || user?.email?.split('@')?.[0] || 'Client';
     const createdAt = user?.metadata?.creationTime
@@ -802,10 +957,12 @@ const MyOrdersView = ({
         })
     ), [items, wishlistItems]);
 
-    const wishlistPreview = useMemo(() => {
-        if (enrichedWishlist.length > 0) return enrichedWishlist.slice(0, 4);
-        return [];
-    }, [enrichedWishlist]);
+    // Ouvert en grand, le module montre toute la selection; en vue d'ensemble
+    // il reste un apercu de quatre pieces.
+    const isWishlistFocused = focusedSection === 'souhaits';
+    const wishlistPreview = useMemo(() => (
+        isWishlistFocused ? enrichedWishlist : enrichedWishlist.slice(0, 4)
+    ), [enrichedWishlist, isWishlistFocused]);
 
     const latestOrder = orders[0];
     const latestShipping = latestOrder?.shipping || latestOrder?.shippingSnapshot || {};
@@ -826,7 +983,9 @@ const MyOrdersView = ({
         ].filter(Boolean)
         : [];
 
-    const recentOrders = COMMERCE_V2_ORDER_READERS_ENABLED ? orders : orders.slice(0, 6);
+    const recentOrders = COMMERCE_V2_ORDER_READERS_ENABLED || focusedSection === 'commandes'
+        ? orders
+        : orders.slice(0, 6);
     const hasAddress = addressLines.length > 1;
     const refundedTotal = orders.reduce((sum, order) => (
         getRefundHelpText(order.status) ? sum + getRefundAmount(order) : sum
@@ -922,6 +1081,52 @@ const MyOrdersView = ({
         return () => observer.disconnect();
     }, [loading, orders.length, orderDocuments.length, wishlistPreview.length]);
 
+    // Bascule vers le plein cadre: la mise en page a change, on rejoue le
+    // trajet du module depuis l'endroit exact ou l'utilisateur l'a quitte.
+    useLayoutEffect(() => {
+        if (focusMode !== 'focus') return;
+        const intent = enterIntentRef.current;
+        if (!intent) return;
+        enterIntentRef.current = null;
+        window.scrollTo(0, 0);
+        runFlip(sectionRefs[intent.id]?.current, intent.first, 'enter');
+    }, [focusMode, sectionRefs]);
+
+    // Retour a la vue d'ensemble: le module regagne sa place pendant que le
+    // decor remonte, et le scroll d'origine est restitue sans saut visible.
+    useLayoutEffect(() => {
+        if (focusMode !== 'overview') return;
+        const intent = exitIntentRef.current;
+        if (!intent) return;
+        exitIntentRef.current = null;
+        window.scrollTo(0, restoreScrollRef.current || 0);
+        runFlip(sectionRefs[intent.id]?.current, intent.first, 'exit');
+    }, [focusMode, sectionRefs]);
+
+    // Passage direct d'un module a un autre depuis le commutateur du bandeau.
+    useEffect(() => {
+        if (focusMode !== 'focus' || !focusedSection || !swapPendingRef.current) return undefined;
+        swapPendingRef.current = false;
+        const node = sectionRefs[focusedSection]?.current;
+        if (!node) return undefined;
+        window.scrollTo(0, 0);
+        node.dataset.accSwap = 'in';
+        const timer = window.setTimeout(() => { delete node.dataset.accSwap; }, 560);
+        return () => window.clearTimeout(timer);
+    }, [focusedSection, focusMode, sectionRefs]);
+
+    // Sur ecran etroit le commutateur defile: la pastille active reste visible.
+    useEffect(() => {
+        if (focusMode !== 'focus') return;
+        const active = focusSwitchRef.current?.querySelector('[aria-current="true"]');
+        active?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+    }, [focusedSection, focusMode]);
+
+    useEffect(() => () => {
+        window.clearTimeout(openTimerRef.current);
+        window.clearTimeout(returnTimerRef.current);
+    }, []);
+
     useEffect(() => {
         if (!returnNotice || returnDraft) return undefined;
         const timer = window.setTimeout(() => setReturnNotice(null), 5200);
@@ -943,6 +1148,18 @@ const MyOrdersView = ({
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [returnDraft, orderToCancelId, showContactPopup, showCancelSuccess, isSubmittingReturn, isCancelling]);
+
+    // Echap referme le module ouvert, mais seulement si aucune feuille ne le
+    // recouvre: la feuille reste prioritaire.
+    useEffect(() => {
+        if (focusMode === 'overview') return undefined;
+        if (returnDraft || orderToCancelId || showContactPopup || showCancelSuccess || selectedDocument) return undefined;
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') closeFocusRef.current?.();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [focusMode, returnDraft, orderToCancelId, showContactPopup, showCancelSuccess, selectedDocument]);
 
     const copyRewardCode = async (reward) => {
         if (!reward?.code) return;
@@ -1013,18 +1230,75 @@ const MyOrdersView = ({
         }
     };
 
-    const scrollToSection = (ref) => {
-        ref?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    /**
+     * Ouvre un module en plein cadre. Le decor recule d'abord (ACC_OPEN_DELAY),
+     * puis la mise en page bascule et le FLIP prend le relais.
+     */
+    const openSection = (id) => {
+        if (!id || !sectionRefs[id]) return;
+        if (focusMode !== 'overview') {
+            switchFocusSection(id);
+            return;
+        }
+
+        const reduce = prefersReducedMotion();
+        restoreScrollRef.current = window.scrollY;
+        enterIntentRef.current = {
+            id,
+            first: reduce ? null : sectionRefs[id].current?.getBoundingClientRect() || null,
+        };
+
+        setFocusedSection(id);
+        setActiveSection(id);
+        window.clearTimeout(openTimerRef.current);
+        if (reduce) {
+            setFocusMode('focus');
+            return;
+        }
+        setFocusMode('opening');
+        openTimerRef.current = window.setTimeout(() => setFocusMode('focus'), ACC_OPEN_DELAY);
     };
+
+    const switchFocusSection = (id) => {
+        if (!id || !sectionRefs[id] || id === focusedSection) return;
+        // Une ouverture encore en cours est abandonnee au profit du nouveau module.
+        enterIntentRef.current = null;
+        swapPendingRef.current = !prefersReducedMotion();
+        setFocusedSection(id);
+        setActiveSection(id);
+        window.clearTimeout(openTimerRef.current);
+        setFocusMode('focus');
+    };
+
+    const closeFocus = () => {
+        if (focusMode === 'overview') return;
+        const id = focusedSection;
+        const reduce = prefersReducedMotion();
+
+        window.clearTimeout(openTimerRef.current);
+        exitIntentRef.current = {
+            id,
+            first: reduce ? null : sectionRefs[id]?.current?.getBoundingClientRect() || null,
+        };
+
+        setFocusedSection(null);
+        setFocusMode('overview');
+        setIsReturning(!reduce);
+        window.clearTimeout(returnTimerRef.current);
+        returnTimerRef.current = window.setTimeout(() => setIsReturning(false), 700);
+    };
+
+    closeFocusRef.current = closeFocus;
 
     const goToGallery = () => {
         onBack?.();
         window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
     };
 
-    const openWishlist = () => {
+    // Le module reste dans l'espace client; la page dediee garde son propre lien.
+    const openWishlistPage = () => {
         if (onOpenWishlist) onOpenWishlist();
-        else scrollToSection(wishlistRef);
+        else openSection('souhaits');
     };
 
     const openReturnRequest = (order) => {
@@ -1091,25 +1365,32 @@ const MyOrdersView = ({
     };
 
     const navItems = [
-        { id: 'commandes', label: 'Commandes', Icon: ShoppingBag, action: () => scrollToSection(ordersRef) },
-        { id: 'avantages', label: 'Avantages', Icon: TicketPercent, action: () => scrollToSection(advantagesRef) },
-        { id: 'documents', label: 'Documents', Icon: FileText, action: () => scrollToSection(invoicesRef) },
-        { id: 'souhaits', label: 'Liste de souhaits', Icon: Heart, action: openWishlist },
-        { id: 'adresse', label: 'Adresse', Icon: MapPin, action: () => scrollToSection(addressesRef) },
-        { id: 'profil', label: 'Profil', Icon: UserRound, action: () => scrollToSection(infoRef) },
-        { id: 'support', label: 'Support', Icon: Headphones, action: () => scrollToSection(helpRef) },
+        { id: 'commandes', label: 'Commandes', Icon: ShoppingBag, tone: 'graphite' },
+        { id: 'avantages', label: 'Avantages', Icon: TicketPercent, tone: 'gold' },
+        { id: 'documents', label: 'Documents', Icon: FileText, tone: 'blue' },
+        { id: 'souhaits', label: 'Liste de souhaits', Icon: Heart, tone: 'rose' },
+        { id: 'adresse', label: 'Adresse', Icon: MapPin, tone: 'warm' },
+        { id: 'profil', label: 'Profil', Icon: UserRound, tone: 'graphite' },
+        { id: 'support', label: 'Support', Icon: Headphones, tone: 'warm' },
     ];
 
+    const focusedNav = navItems.find((item) => item.id === focusedSection) || null;
     const ordersCountLabel = loading ? '—' : orders.length;
     const documentsCountLabel = loading ? '—' : orderDocuments.length;
 
     return (
-        <div ref={rootRef} className="acc-root" data-acc-theme={darkMode ? 'dark' : 'light'}>
+        <div
+            ref={rootRef}
+            className="acc-root"
+            data-acc-theme={darkMode ? 'dark' : 'light'}
+            data-acc-mode={focusMode}
+            data-acc-returning={isReturning ? 'true' : undefined}
+        >
             <style dangerouslySetInnerHTML={{ __html: ACCOUNT_SURFACE_CSS }} />
             <div className="acc-backdrop" aria-hidden="true" />
 
             <div className="acc-shell mx-auto max-w-[1240px] px-4 pb-20 sm:px-6 lg:px-8 lg:pb-28">
-                <header ref={topRef} className="pb-7 pt-6 lg:pt-7">
+                <header ref={topRef} className="acc-hero pb-7 pt-6 lg:pt-7">
                     <button type="button" onClick={goToGallery} className="acc-crumb">
                         <ArrowLeft size={15} strokeWidth={2.2} />
                         Galerie
@@ -1163,7 +1444,7 @@ const MyOrdersView = ({
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={() => scrollToSection(ordersRef)}
+                                    onClick={() => openSection('commandes')}
                                     className="acc-btn acc-btn--well mt-4 w-full"
                                 >
                                     Voir le dossier
@@ -1187,11 +1468,11 @@ const MyOrdersView = ({
                 </header>
 
                 <nav className="acc-segments" aria-label="Sections de l’espace client">
-                    {navItems.map(({ id, label, Icon, action }) => (
+                    {navItems.map(({ id, label, Icon }) => (
                         <button
                             key={id}
                             type="button"
-                            onClick={action}
+                            onClick={() => openSection(id)}
                             className="acc-segment"
                             aria-current={activeSection === id ? 'true' : undefined}
                         >
@@ -1205,14 +1486,14 @@ const MyOrdersView = ({
                     </button>
                 </nav>
 
-                <div className="mt-5 grid items-start gap-6 lg:mt-6 lg:grid-cols-[212px_minmax(0,1fr)] lg:gap-7">
+                <div className="acc-body mt-5 grid items-start gap-6 lg:mt-6 lg:grid-cols-[212px_minmax(0,1fr)] lg:gap-7">
                     <aside className="acc-rail" aria-label="Navigation de l’espace client">
                         <div className="acc-panel acc-rail-group">
-                            {navItems.map(({ id, label, Icon, action }) => (
+                            {navItems.map(({ id, label, Icon }) => (
                                 <button
                                     key={id}
                                     type="button"
-                                    onClick={action}
+                                    onClick={() => openSection(id)}
                                     className="acc-nav-item"
                                     aria-current={activeSection === id ? 'true' : undefined}
                                 >
@@ -1233,6 +1514,39 @@ const MyOrdersView = ({
                     </aside>
 
                     <main className="grid min-w-0 gap-5">
+                        {focusMode === 'focus' && focusedNav ? (
+                            <div className="acc-focusbar">
+                                <button
+                                    type="button"
+                                    onClick={closeFocus}
+                                    className="acc-btn acc-btn--well shrink-0"
+                                    aria-label="Revenir à la vue d’ensemble"
+                                >
+                                    <ArrowLeft size={15} strokeWidth={2.2} />
+                                    <span className="acc-focus-back-label">Vue d’ensemble</span>
+                                </button>
+                                <span className="acc-focus-title">
+                                    <IconTile icon={focusedNav.Icon} tone={focusedNav.tone} size={26} radius={8} />
+                                    <span className="truncate">{focusedNav.label}</span>
+                                </span>
+                                <span ref={focusSwitchRef} className="acc-focus-switch" aria-label="Changer de module">
+                                    {navItems.map(({ id, label, Icon }) => (
+                                        <button
+                                            key={id}
+                                            type="button"
+                                            onClick={() => switchFocusSection(id)}
+                                            className="acc-focus-chip"
+                                            aria-current={focusedSection === id ? 'true' : undefined}
+                                            aria-label={label}
+                                            title={label}
+                                        >
+                                            <Icon size={15} strokeWidth={2} />
+                                        </button>
+                                    ))}
+                                </span>
+                            </div>
+                        ) : null}
+
                         <div className="acc-metrics">
                             <MetricCell
                                 icon={ShoppingBag}
@@ -1240,7 +1554,7 @@ const MyOrdersView = ({
                                 value={ordersCountLabel}
                                 label="Commandes"
                                 sub="Historique complet"
-                                onClick={() => scrollToSection(ordersRef)}
+                                onClick={() => openSection('commandes')}
                             />
                             <MetricCell
                                 icon={Receipt}
@@ -1248,7 +1562,7 @@ const MyOrdersView = ({
                                 value={documentsCountLabel}
                                 label="Documents"
                                 sub="Reçus et confirmations"
-                                onClick={() => scrollToSection(invoicesRef)}
+                                onClick={() => openSection('documents')}
                             />
                             <MetricCell
                                 icon={Heart}
@@ -1256,7 +1570,7 @@ const MyOrdersView = ({
                                 value={wishlistItems.length}
                                 label="Pièces suivies"
                                 sub="Liste de souhaits"
-                                onClick={openWishlist}
+                                onClick={() => openSection('souhaits')}
                             />
                             <MetricCell
                                 icon={WalletCards}
@@ -1264,11 +1578,17 @@ const MyOrdersView = ({
                                 value={loading ? '—' : formatPrice(refundedTotal)}
                                 label="Remboursements"
                                 sub="Suivi Stripe"
-                                onClick={() => scrollToSection(invoicesRef)}
+                                onClick={() => openSection('documents')}
                             />
                         </div>
 
-                        <Panel id="avantages" sectionRef={advantagesRef} section="avantages" className="overflow-hidden">
+                        <Panel
+                            id="avantages"
+                            sectionRef={advantagesRef}
+                            section="avantages"
+                            focused={sectionFlag('avantages')}
+                            className="overflow-hidden"
+                        >
                             <div className="grid gap-5 p-[18px] md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
                                 <div className="min-w-0">
                                     <div className="flex items-center gap-3">
@@ -1352,7 +1672,12 @@ const MyOrdersView = ({
                             ) : null}
                         </Panel>
 
-                        <Panel sectionRef={ordersRef} section="commandes" className="overflow-hidden">
+                        <Panel
+                            sectionRef={ordersRef}
+                            section="commandes"
+                            focused={sectionFlag('commandes')}
+                            className="overflow-hidden"
+                        >
                             <PanelHead
                                 icon={ShoppingBag}
                                 tone="graphite"
@@ -1361,7 +1686,7 @@ const MyOrdersView = ({
                                 count={!loading && orders.length > 0 ? orders.length : undefined}
                                 hint="Paiement, livraison et remboursement restent lisibles dans le même dossier."
                                 aside={(
-                                    <button type="button" onClick={() => scrollToSection(invoicesRef)} className="acc-btn acc-btn--well acc-btn--sm">
+                                    <button type="button" onClick={() => openSection('documents')} className="acc-btn acc-btn--well acc-btn--sm">
                                         Documents
                                         <ArrowUpRight size={14} strokeWidth={2} />
                                     </button>
@@ -1517,7 +1842,7 @@ const MyOrdersView = ({
                                                             onClick={() => (
                                                                 documents.length === 1
                                                                     ? setSelectedDocument({ order, document: documents[0] })
-                                                                    : scrollToSection(invoicesRef)
+                                                                    : openSection('documents')
                                                             )}
                                                             className="acc-btn acc-btn--sm"
                                                         >
@@ -1572,8 +1897,13 @@ const MyOrdersView = ({
                             )}
                         </Panel>
 
-                        <div className="grid gap-5 xl:grid-cols-2">
-                            <Panel sectionRef={invoicesRef} section="documents" className="flex flex-col overflow-hidden">
+                        <div className="acc-pair grid gap-5 xl:grid-cols-2">
+                            <Panel
+                                sectionRef={invoicesRef}
+                                section="documents"
+                                focused={sectionFlag('documents')}
+                                className="flex flex-col overflow-hidden"
+                            >
                                 <PanelHead
                                     icon={Receipt}
                                     tone="blue"
@@ -1637,7 +1967,12 @@ const MyOrdersView = ({
                                 </p>
                             </Panel>
 
-                            <Panel sectionRef={wishlistRef} section="souhaits" className="flex flex-col overflow-hidden">
+                            <Panel
+                                sectionRef={wishlistRef}
+                                section="souhaits"
+                                focused={sectionFlag('souhaits')}
+                                className="flex flex-col overflow-hidden"
+                            >
                                 <PanelHead
                                     icon={Heart}
                                     tone="rose"
@@ -1646,7 +1981,7 @@ const MyOrdersView = ({
                                     count={enrichedWishlist.length > 0 ? enrichedWishlist.length : undefined}
                                     hint="Les pièces que vous gardez sous la main."
                                     aside={(
-                                        <button type="button" onClick={openWishlist} className="acc-btn acc-btn--well acc-btn--sm">
+                                        <button type="button" onClick={openWishlistPage} className="acc-btn acc-btn--well acc-btn--sm">
                                             Ouvrir
                                             <ArrowUpRight size={14} strokeWidth={2} />
                                         </button>
@@ -1661,14 +1996,14 @@ const MyOrdersView = ({
                                             title="Votre liste de souhaits est vide"
                                             body="Les pièces ajoutées au cœur apparaîtront ici."
                                             action={(
-                                                <button type="button" onClick={openWishlist} className="acc-btn mt-1">
+                                                <button type="button" onClick={openWishlistPage} className="acc-btn mt-1">
                                                     Ouvrir la liste de souhaits
                                                     <ArrowUpRight size={14} strokeWidth={2} />
                                                 </button>
                                             )}
                                         />
                                     ) : (
-                                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                        <div className={`grid grid-cols-2 gap-3 sm:grid-cols-4${isWishlistFocused ? ' lg:grid-cols-5 xl:grid-cols-6' : ''}`}>
                                             {wishlistPreview.map((item, index) => {
                                                 const image = getItemImage(item) || FALLBACK_ITEM_IMAGES[index % FALLBACK_ITEM_IMAGES.length];
                                                 const price = item.currentPrice || item.startingPrice || item.price;
@@ -1697,8 +2032,13 @@ const MyOrdersView = ({
                             </Panel>
                         </div>
 
-                        <div className="grid gap-5 xl:grid-cols-2">
-                            <Panel sectionRef={addressesRef} section="adresse" className="flex flex-col overflow-hidden">
+                        <div className="acc-pair grid gap-5 xl:grid-cols-2">
+                            <Panel
+                                sectionRef={addressesRef}
+                                section="adresse"
+                                focused={sectionFlag('adresse')}
+                                className="flex flex-col overflow-hidden"
+                            >
                                 <PanelHead
                                     icon={MapPin}
                                     tone="warm"
@@ -1733,7 +2073,12 @@ const MyOrdersView = ({
                                 </div>
                             </Panel>
 
-                            <Panel sectionRef={infoRef} section="profil" className="flex flex-col overflow-hidden">
+                            <Panel
+                                sectionRef={infoRef}
+                                section="profil"
+                                focused={sectionFlag('profil')}
+                                className="flex flex-col overflow-hidden"
+                            >
                                 <PanelHead
                                     icon={UserRound}
                                     tone="graphite"
@@ -1761,6 +2106,7 @@ const MyOrdersView = ({
                         <section
                             ref={helpRef}
                             data-acc-section="support"
+                            data-acc-focused={sectionFlag('support')}
                             style={{ scrollMarginTop: 'calc(var(--acc-head) + 60px)' }}
                             className="acc-support"
                         >
