@@ -967,6 +967,10 @@ const MyOrdersView = ({
         support: helpRef,
     }), []);
     const sectionFlag = (id) => (focusedSection ? String(focusedSection === id) : undefined);
+    // Les paires de modules restent des items de grille meme videes de leur
+    // contenu: sans ce drapeau, leur gouttiere s'ajoute a l'espace sous le
+    // bandeau et les sections du bas se retrouvent plus basses que les autres.
+    const groupFlag = (...ids) => (focusedSection ? String(ids.includes(focusedSection)) : undefined);
 
     /**
      * Position de lecture d'un module ouvert. On ne remonte jamais plus haut
@@ -1979,7 +1983,7 @@ const MyOrdersView = ({
                             )}
                         </Panel>
 
-                        <div className="acc-pair grid gap-5 xl:grid-cols-2">
+                        <div className="acc-pair grid gap-5 xl:grid-cols-2" data-acc-focused={groupFlag('documents', 'souhaits')}>
                             <Panel
                                 sectionRef={invoicesRef}
                                 section="documents"
@@ -2114,7 +2118,7 @@ const MyOrdersView = ({
                             </Panel>
                         </div>
 
-                        <div className="acc-pair grid gap-5 xl:grid-cols-2">
+                        <div className="acc-pair grid gap-5 xl:grid-cols-2" data-acc-focused={groupFlag('adresse', 'profil')}>
                             <Panel
                                 sectionRef={addressesRef}
                                 section="adresse"
