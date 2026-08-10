@@ -25,6 +25,10 @@ function AccountDashboardFallback({ darkMode = false, isSignedOut = false }) {
   const panel = darkMode
     ? 'bg-[#191817] shadow-[0_0_0_0.5px_rgba(255,255,255,0.09),0_1px_1px_rgba(0,0,0,0.34),0_14px_30px_-20px_rgba(0,0,0,0.8)]'
     : 'bg-white shadow-[0_0_0_0.5px_rgba(28,25,23,0.09),0_1px_1px_rgba(28,25,23,0.03),0_10px_26px_-18px_rgba(28,25,23,0.24)]';
+  // Ecrin de verre du retour Galerie: reprend --acc-glass de l'espace client.
+  const shell = darkMode
+    ? 'bg-[rgba(24,23,22,0.74)] backdrop-blur-xl shadow-[0_0_0_0.5px_rgba(255,255,255,0.09),0_1px_1px_rgba(0,0,0,0.34),0_14px_30px_-20px_rgba(0,0,0,0.8)]'
+    : 'bg-[rgba(255,255,255,0.76)] backdrop-blur-xl shadow-[0_0_0_0.5px_rgba(28,25,23,0.09),0_1px_1px_rgba(28,25,23,0.03),0_10px_26px_-18px_rgba(28,25,23,0.24)]';
   const skeleton = darkMode ? 'bg-white/[0.07]' : 'bg-[#f0edea]';
   const muted = darkMode ? 'text-[#a6a09a]' : 'text-[#6a635c]';
 
@@ -32,16 +36,18 @@ function AccountDashboardFallback({ darkMode = false, isSignedOut = false }) {
     <main className={`relative isolate min-h-screen transition-colors duration-300 ${canvas}`}>
       <div className={`pointer-events-none fixed inset-0 ${wash}`} aria-hidden="true" />
 
-      <div className="relative mx-auto max-w-[1240px] px-4 pb-20 pt-5 sm:px-6 lg:px-8 lg:pb-28">
-        <Link
-          href="/"
-          className={`inline-flex h-7 items-center gap-2 text-[13px] font-semibold transition-colors ${muted} ${darkMode ? 'hover:text-white' : 'hover:text-[#1a1918]'}`}
-        >
-          <span aria-hidden="true">←</span>
-          Galerie
-        </Link>
+      <div className="relative mx-auto max-w-[1240px] px-4 pb-20 pt-6 sm:px-6 lg:px-8 lg:pb-28 lg:pt-7">
+        <span className={`inline-flex items-center rounded-full p-1.5 ${shell}`}>
+          <Link
+            href="/"
+            className={`inline-flex h-[34px] items-center gap-2 rounded-full px-[13px] text-[12.5px] font-semibold transition-colors ${panel} ${darkMode ? 'text-[#f3f1ee]' : 'text-[#1a1918]'}`}
+          >
+            <span aria-hidden="true">←</span>
+            Galerie
+          </Link>
+        </span>
 
-        <section className="grid gap-6 pb-7 pt-6 lg:grid-cols-[minmax(0,1fr)_minmax(300px,352px)] lg:items-center lg:gap-10">
+        <section className="grid gap-6 pb-2.5 pt-0.5 lg:grid-cols-[minmax(0,1fr)_minmax(300px,352px)] lg:items-center lg:gap-10 lg:pb-3.5">
           <div className="flex items-center gap-4">
             <span
               className="h-[54px] w-[54px] flex-none rounded-[17px] bg-[linear-gradient(158deg,#a5714d_0%,#7c4a30_58%,#5e3823_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_8px_20px_-10px_rgba(94,56,35,0.72)]"

@@ -151,17 +151,21 @@ const ACCOUNT_SURFACE_CSS = `
 .acc-root ::selection{ background: var(--acc-accent-wash); color: var(--acc-ink); }
 .acc-root :focus-visible{ outline: none; box-shadow: var(--acc-focus), var(--acc-hairline-card); }
 
-/* Retour galerie: un fil d'Ariane discret, pas une barre de menu supplementaire */
-.acc-crumb{
-    display: inline-flex; align-items: center; gap: 7px;
-    height: 28px; font-size: 13px; font-weight: 600; letter-spacing: -.008em;
-    color: var(--acc-ink-3); background: none; cursor: pointer;
-    transition: color .16s var(--acc-ease);
-}
-.acc-crumb:hover{ color: var(--acc-ink); }
+/* Retour: une seule pastille pour les deux sorties, quitter la galerie et
+   quitter un module ouvert. La fleche recule legerement au survol. */
+.acc-crumb{ color: var(--acc-ink); }
 .acc-crumb svg{ transition: transform .2s var(--acc-ease); }
 .acc-crumb:hover svg{ transform: translateX(-2.5px); }
-.acc-crumb:focus-visible{ box-shadow: none; text-decoration: underline; text-underline-offset: 4px; }
+/* Double coque: la pastille est posee dans un ecrin de verre, exactement
+   comme le bouton de retour l'est dans le bandeau du mode focus. */
+.acc-crumb-shell{
+    display: inline-flex; align-items: center; padding: 6px;
+    border-radius: 999px;
+    background: var(--acc-glass);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    box-shadow: var(--acc-hairline-card), var(--acc-elev-1);
+}
 
 /* Boutons et pastilles */
 .acc-btn{
@@ -536,15 +540,34 @@ select.acc-input{
 .acc-root[data-acc-mode='focus'] [data-acc-focused='false']{ display: none !important; }
 .acc-root[data-acc-mode='focus'] .acc-body,
 .acc-root[data-acc-mode='focus'] .acc-pair{ grid-template-columns: minmax(0,1fr) !important; }
+/* La marge haute fusionnerait hors de .acc-root et decalerait le point de
+   collage du socle par rapport a la fin de page: c'est le socle qui porte
+   cet espace, via son propre rembourrage. */
+.acc-root[data-acc-mode='focus'] .acc-body{ margin-top: 0 !important; }
 .acc-root[data-acc-mode='focus'] [data-acc-focused='true']{ box-shadow: var(--acc-hairline-card), var(--acc-elev-2); }
+/* Un module court ne doit pas laisser de course de defilement residuelle:
+   sans cela le panneau glisse sous le bandeau collant et le chevauche. La
+   hauteur retenue laisse exactement de quoi chasser le bandeau promotionnel. */
+.acc-root[data-acc-mode='focus']{ min-height: calc(100vh - var(--acc-head)); }
 
+/* Le socle porte le collage et le flou, la pastille garde sa marge visuelle.
+   Le flou doit vivre sur le parent: un element a backdrop-filter fonde un
+   backdrop root, donc un enfant floutant n'aurait plus rien a echantillonner.
+   Ses rembourrages valent exactement les marges de repos, en haut comme en
+   bas: une fois colle sous l'en-tete, l'espace beige autour de la pastille
+   appartient au socle, donc le module ne peut plus le traverser. Les marges
+   negatives annulent ces rembourrages dans le flux, la position au repos est
+   inchangee, et la bande floutee avale le contenu qui passe dessous. */
+.acc-focusdock{
+    position: sticky; top: calc(var(--acc-head) + env(safe-area-inset-top, 0px)); z-index: 30;
+    margin-bottom: -20px; padding: 20px 0;
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+}
 .acc-focusbar{
-    position: sticky; top: calc(var(--acc-head) + 8px); z-index: 30;
     display: flex; align-items: center; gap: 8px;
     padding: 6px; border-radius: 999px;
     background: var(--acc-glass);
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
     box-shadow: var(--acc-hairline-card), var(--acc-elev-1);
     animation: acc-bar-in .44s var(--acc-ease) both;
 }
@@ -945,6 +968,46 @@ const MyOrdersView = ({
     }), []);
     const sectionFlag = (id) => (focusedSection ? String(focusedSection === id) : undefined);
 
+    /**
+     * Position de lecture d'un module ouvert. On ne remonte jamais plus haut
+     * que necessaire: le bandeau promotionnel deja chasse par le scroll ne
+     * doit pas reapparaitre, et celui qui n'a pas encore bouge doit rester.
+     * La cible haute place le contenu juste sous l'en-tete collant du site.
+     */
+    /**
+     * Cale la hauteur du module ouvert pour que la course de defilement
+     * s'arrete pile a la position de lecture. Les quelques pixels de rab
+     * suffisaient sinon a faire glisser le panneau sous le bandeau et a
+     * manger la marge qui les separe. La mesure tient compte de tout ce qui
+     * precede et suit l'espace client (banniere, en-tete, menu), dont les
+     * hauteurs ne sont pas connues du CSS.
+     */
+    const syncFocusHeight = (active) => {
+        const root = rootRef.current;
+        if (!root) return;
+        root.style.minHeight = '';
+        if (!active) return;
+        const head = parseFloat(
+            window.getComputedStyle(root).getPropertyValue('--acc-head')
+        ) || 64;
+        const above = root.getBoundingClientRect().top + window.scrollY;
+        const below = Math.max(
+            0,
+            document.documentElement.scrollHeight - above - root.offsetHeight
+        );
+        root.style.minHeight = `${Math.max(0, window.innerHeight - head - below)}px`;
+    };
+
+    const scrollToFocusTop = () => {
+        const root = rootRef.current;
+        if (!root) return;
+        const head = parseFloat(
+            window.getComputedStyle(root).getPropertyValue('--acc-head')
+        ) || 64;
+        const contentTop = Math.max(0, root.getBoundingClientRect().top + window.scrollY - head);
+        window.scrollTo(0, Math.min(window.scrollY, contentTop));
+    };
+
     const customerName = user?.displayName || user?.email?.split('@')?.[0] || 'Client';
     const createdAt = user?.metadata?.creationTime
         ? new Date(user.metadata.creationTime).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -1088,7 +1151,8 @@ const MyOrdersView = ({
         const intent = enterIntentRef.current;
         if (!intent) return;
         enterIntentRef.current = null;
-        window.scrollTo(0, 0);
+        syncFocusHeight(true);
+        scrollToFocusTop();
         runFlip(sectionRefs[intent.id]?.current, intent.first, 'enter');
     }, [focusMode, sectionRefs]);
 
@@ -1099,6 +1163,7 @@ const MyOrdersView = ({
         const intent = exitIntentRef.current;
         if (!intent) return;
         exitIntentRef.current = null;
+        syncFocusHeight(false);
         window.scrollTo(0, restoreScrollRef.current || 0);
         runFlip(sectionRefs[intent.id]?.current, intent.first, 'exit');
     }, [focusMode, sectionRefs]);
@@ -1109,11 +1174,24 @@ const MyOrdersView = ({
         swapPendingRef.current = false;
         const node = sectionRefs[focusedSection]?.current;
         if (!node) return undefined;
-        window.scrollTo(0, 0);
+        syncFocusHeight(true);
+        scrollToFocusTop();
         node.dataset.accSwap = 'in';
         const timer = window.setTimeout(() => { delete node.dataset.accSwap; }, 560);
         return () => window.clearTimeout(timer);
     }, [focusedSection, focusMode, sectionRefs]);
+
+    // Un changement de taille de fenetre invalide la hauteur calculee.
+    useEffect(() => {
+        if (focusMode !== 'focus') return undefined;
+        const handleResize = () => syncFocusHeight(true);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [focusMode, focusedSection]);
+
+    useEffect(() => () => {
+        if (rootRef.current) rootRef.current.style.minHeight = '';
+    }, []);
 
     // Sur ecran etroit le commutateur defile: la pastille active reste visible.
     useEffect(() => {
@@ -1390,13 +1468,15 @@ const MyOrdersView = ({
             <div className="acc-backdrop" aria-hidden="true" />
 
             <div className="acc-shell mx-auto max-w-[1240px] px-4 pb-20 sm:px-6 lg:px-8 lg:pb-28">
-                <header ref={topRef} className="acc-hero pb-7 pt-6 lg:pt-7">
-                    <button type="button" onClick={goToGallery} className="acc-crumb">
-                        <ArrowLeft size={15} strokeWidth={2.2} />
-                        Galerie
-                    </button>
+                <header ref={topRef} className="acc-hero pb-2.5 pt-6 lg:pb-3.5 lg:pt-7">
+                    <span className="acc-crumb-shell">
+                        <button type="button" onClick={goToGallery} className="acc-btn acc-crumb">
+                            <ArrowLeft size={15} strokeWidth={2.2} />
+                            Galerie
+                        </button>
+                    </span>
 
-                    <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(300px,352px)] lg:items-center lg:gap-10">
+                    <div className="mt-0.5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(300px,352px)] lg:items-center lg:gap-10">
                     <div className="flex min-w-0 flex-col items-start gap-3.5 sm:flex-row sm:items-center sm:gap-4">
                         <span className="acc-avatar" aria-hidden="true">{initials}</span>
                         <div className="min-w-0">
@@ -1486,7 +1566,7 @@ const MyOrdersView = ({
                     </button>
                 </nav>
 
-                <div className="acc-body mt-5 grid items-start gap-6 lg:mt-6 lg:grid-cols-[212px_minmax(0,1fr)] lg:gap-7">
+                <div className="acc-body mt-4 grid items-start gap-6 lg:mt-5 lg:grid-cols-[212px_minmax(0,1fr)] lg:gap-7">
                     <aside className="acc-rail" aria-label="Navigation de l’espace client">
                         <div className="acc-panel acc-rail-group">
                             {navItems.map(({ id, label, Icon }) => (
@@ -1515,11 +1595,12 @@ const MyOrdersView = ({
 
                     <main className="grid min-w-0 gap-5">
                         {focusMode === 'focus' && focusedNav ? (
+                            <div className="acc-focusdock">
                             <div className="acc-focusbar">
                                 <button
                                     type="button"
                                     onClick={closeFocus}
-                                    className="acc-btn acc-btn--well shrink-0"
+                                    className="acc-btn acc-crumb shrink-0"
                                     aria-label="Revenir à la vue d’ensemble"
                                 >
                                     <ArrowLeft size={15} strokeWidth={2.2} />
@@ -1544,6 +1625,7 @@ const MyOrdersView = ({
                                         </button>
                                     ))}
                                 </span>
+                            </div>
                             </div>
                         ) : null}
 
