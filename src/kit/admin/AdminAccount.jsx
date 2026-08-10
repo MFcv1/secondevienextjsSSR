@@ -2,14 +2,16 @@
 
 import React, { Suspense } from 'react';
 import { BadgeCheck } from 'lucide-react';
+import { adminSurfaces, LoadingPanel, PageHeader, Panel, StatusDot } from './adminUiKit';
 
 const BillingOnboardingOperator = React.lazy(() => import('./BillingOnboardingOperator'));
 
 function DetailRow({ label, value, darkMode }) {
+  const surfaces = adminSurfaces(darkMode);
   return (
-    <div className={`flex flex-col gap-1 border-t py-4 sm:flex-row sm:items-center sm:justify-between ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
-      <dt className={`text-xs font-semibold ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>{label}</dt>
-      <dd className="break-all text-sm font-bold">{value}</dd>
+    <div className={`flex flex-col gap-1 border-b py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between ${surfaces.divider}`}>
+      <dt className={`text-xs font-semibold ${surfaces.muted}`}>{label}</dt>
+      <dd className="break-all text-sm font-bold sm:text-right">{value}</dd>
     </div>
   );
 }
@@ -17,51 +19,50 @@ function DetailRow({ label, value, darkMode }) {
 export default function AdminAccount({ darkMode, isSuperAdmin, user }) {
   const displayName = user?.displayName || 'Compte administrateur';
   const initial = displayName.trim().charAt(0).toUpperCase() || 'A';
-  const panelClass = darkMode
-    ? 'border-white/10 bg-white/[0.035] text-white'
-    : 'border-stone-200 bg-white text-stone-950';
+  const surfaces = adminSurfaces(darkMode);
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.35fr)]">
-      <section className={`rounded-2xl border p-6 ${panelClass}`} aria-labelledby="admin-account-profile-title">
-        <div className="flex items-center gap-4">
-          <span className={`grid h-14 w-14 shrink-0 place-items-center rounded-full text-lg font-black ${darkMode ? 'bg-white text-stone-950' : 'bg-stone-950 text-white'}`}>
-            {initial}
-          </span>
-          <div className="min-w-0">
-            <p className={`text-[10px] font-black uppercase tracking-[0.18em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
-              Identité
-            </p>
-            <h3 className="mt-1 truncate text-xl font-black tracking-tight" id="admin-account-profile-title">
-              {displayName}
-            </h3>
-          </div>
-        </div>
+    <div className="space-y-5">
+      <PageHeader
+        darkMode={darkMode}
+        description="Identité de connexion et paramètres de facturation de la boutique."
+        title="Mon compte"
+        badge={(
+          <StatusDot
+            darkMode={darkMode}
+            label={isSuperAdmin ? 'Super-administrateur' : 'Administrateur'}
+            tone={isSuperAdmin ? 'emerald' : 'stone'}
+          />
+        )}
+      />
 
-        <dl className="mt-6">
-          <DetailRow darkMode={darkMode} label="Adresse de connexion" value={user?.email || 'Non renseignée'} />
-          <DetailRow darkMode={darkMode} label="Rôle" value={isSuperAdmin ? 'Super-administrateur' : 'Administrateur'} />
-          <DetailRow darkMode={darkMode} label="Sécurité" value="Authentification forte confirmée" />
-        </dl>
-
-        <div className={`mt-2 flex items-start gap-3 rounded-xl border p-4 ${darkMode ? 'border-emerald-300/15 bg-emerald-300/10 text-emerald-200' : 'border-emerald-200 bg-emerald-50 text-emerald-900'}`}>
-          <BadgeCheck className="mt-0.5 shrink-0" size={18} />
-          <p className="text-xs leading-5">
-            Ce compte dispose d’une session administrateur vérifiée.
-          </p>
-        </div>
-      </section>
-
-      <div>
-        <Suspense
-          fallback={(
-            <div className={`flex min-h-40 items-center justify-center rounded-2xl border ${panelClass}`}>
-              <span className={`text-xs font-bold ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
-                Chargement de l’onboarding…
-              </span>
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.35fr)] xl:items-start">
+        <Panel darkMode={darkMode} title="Identité">
+          <div className="flex items-center gap-3">
+            <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-base font-black ${darkMode ? 'bg-white text-stone-950' : 'bg-stone-950 text-white'}`}>
+              {initial}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-base font-black tracking-tight">{displayName}</p>
+              <p className={`mt-0.5 truncate text-xs ${surfaces.muted}`}>{user?.email || 'Adresse non renseignée'}</p>
             </div>
-          )}
-        >
+          </div>
+
+          <dl className="mt-5">
+            <DetailRow darkMode={darkMode} label="Adresse de connexion" value={user?.email || 'Non renseignée'} />
+            <DetailRow darkMode={darkMode} label="Rôle" value={isSuperAdmin ? 'Super-administrateur' : 'Administrateur'} />
+            <DetailRow darkMode={darkMode} label="Sécurité" value="Authentification forte confirmée" />
+          </dl>
+
+          <div className={`mt-4 flex items-start gap-2.5 rounded-xl border px-3.5 py-3 ${darkMode ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' : 'border-emerald-100 bg-emerald-50 text-emerald-700'}`}>
+            <BadgeCheck className="mt-0.5 shrink-0" size={16} />
+            <p className="text-xs font-semibold leading-5">
+              Session administrateur vérifiée sur cet appareil.
+            </p>
+          </div>
+        </Panel>
+
+        <Suspense fallback={<LoadingPanel darkMode={darkMode} label="Chargement de la facturation…" />}>
           <BillingOnboardingOperator darkMode={darkMode} />
         </Suspense>
       </div>

@@ -4,6 +4,13 @@ import { db } from '../config/firebase';
 import { Mail, Trash2, Download, Search } from 'lucide-react';
 import { getMillis } from '../../utils/time';
 import { downloadCsv } from './exportCsv';
+import {
+    adminSurfaces,
+    EmptyState,
+    focusRingWithin,
+    LoadingPanel,
+    PageHeader
+} from './adminUiKit';
 
 const AdminNewsletter = ({ darkMode }) => {
     const [subscribers, setSubscribers] = useState([]);
@@ -58,99 +65,98 @@ const AdminNewsletter = ({ darkMode }) => {
         (sub.lastName || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    if (loading) return <div className="p-12 text-center animate-pulse opacity-50">Chargement de la liste d'abonnés...</div>;
+    const surfaces = adminSurfaces(darkMode);
+
+    if (loading) return <LoadingPanel darkMode={darkMode} label="Chargement de la liste d’abonnés…" />;
 
     return (
-        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 pb-20">
-            {/* Header */}
-            <div className={`p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 ${darkMode ? 'bg-stone-900 text-white' : 'bg-stone-900 text-white'}`}>
-                <div>
-                    <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-1 md:mb-2 flex items-center gap-3">
-                        <Mail size={28} className="text-stone-300" /> Abonnés Newsletter
-                    </h2>
-                    <p className="text-stone-400 font-medium text-xs md:text-sm">Base de données des clients intéressés par la newsletter.</p>
-                </div>
-                <div className="flex flex-col sm:flex-row w-full md:w-auto gap-4">
-                    <div className="relative w-full sm:w-64">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500" size={16} />
-                        <input
-                            type="text"
-                            placeholder="Rechercher (email, nom)..."
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-12 pr-4 py-4 rounded-xl text-stone-900 font-bold bg-white focus:outline-none focus:ring-2 focus:ring-stone-400 text-sm"
-                        />
-                    </div>
-                    <button
-                        onClick={handleExportCsv}
-                        className="w-full sm:w-auto px-6 py-4 bg-white text-stone-900 rounded-xl font-black uppercase text-[10px] md:text-xs tracking-widest hover:bg-stone-200 transition-colors flex items-center justify-center gap-3 shadow-lg shrink-0"
-                    >
-                        <Download size={16} /> Exporter CSV
-                    </button>
-                </div>
-            </div>
+        <div className="space-y-5">
+            <PageHeader
+                darkMode={darkMode}
+                description="Base des personnes inscrites à la newsletter de la boutique."
+                title="Abonnés"
+                actions={(
+                    <>
+                        <label className={`flex min-w-0 items-center gap-3 rounded-xl border px-3.5 py-2.5 sm:min-w-[280px] ${surfaces.field} ${focusRingWithin}`}>
+                            <Search className="shrink-0" size={16} />
+                            <span className="sr-only">Rechercher un abonné</span>
+                            <input
+                                className="min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none"
+                                onChange={(event) => setSearchTerm(event.target.value)}
+                                placeholder="E-mail, nom…"
+                                value={searchTerm}
+                            />
+                        </label>
+                        <button
+                            className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition active:translate-y-px disabled:opacity-50 ${surfaces.secondaryButton}`}
+                            disabled={subscribers.length === 0}
+                            onClick={handleExportCsv}
+                            type="button"
+                        >
+                            <Download size={15} />
+                            Exporter CSV
+                        </button>
+                    </>
+                )}
+            />
 
-            {/* List */}
-            <div className={`rounded-[2.5rem] overflow-hidden shadow-sm ring-1 ${darkMode ? 'bg-stone-800 ring-stone-700/50' : 'bg-white ring-stone-100'}`}>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className={`text-[10px] font-black uppercase tracking-widest ${darkMode ? 'bg-stone-900/50 text-stone-400' : 'bg-stone-50 text-stone-500'}`}>
-                                <th className="p-6 pb-4">Nom Complet</th>
-                                <th className="p-6 pb-4">Contact (Email/Tél)</th>
-                                <th className="p-6 pb-4 hidden md:table-cell">Date d'inscription</th>
-                                <th className="p-6 pb-4 hidden sm:table-cell">Source</th>
-                                <th className="p-6 pb-4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-stone-100 dark:divide-stone-700/50">
-                            {filteredSubscribers.length === 0 ? (
-                                <tr>
-                                    <td colSpan="5" className="p-12 text-center text-stone-400 font-bold">
-                                        Aucun abonné trouvé.
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredSubscribers.map((sub) => (
-                                    <tr key={sub.id} className={`group transition-colors ${darkMode ? 'hover:bg-stone-700/30' : 'hover:bg-stone-50'}`}>
-                                        <td className="p-6 py-4">
-                                            <div className={`font-black tracking-tight ${darkMode ? 'text-white' : 'text-stone-900'}`}>
-                                                {sub.firstName} {sub.lastName}
-                                            </div>
-                                        </td>
-                                        <td className="p-6 py-4">
-                                            <div className={`font-mono text-sm break-all ${darkMode ? 'text-stone-300' : 'text-stone-600'}`}>
-                                                {sub.contactInfo}
-                                            </div>
-                                        </td>
-                                        <td className="p-6 py-4 hidden md:table-cell">
-                                            <div className="text-xs text-stone-400 font-bold">
-                                                {sub.createdAt ? new Date(getMillis(sub.createdAt)).toLocaleDateString('fr-FR', {
-                                                    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                                                }) : '-'}
-                                            </div>
-                                        </td>
-                                        <td className="p-6 py-4 hidden sm:table-cell">
-                                            <span className={`inline-flex items-center px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${darkMode ? 'bg-stone-700 text-stone-300' : 'bg-stone-100 text-stone-500'}`}>
-                                                {sub.source}
-                                            </span>
-                                        </td>
-                                        <td className="p-6 py-4 text-right">
-                                            <button
-                                                onClick={() => handleDelete(sub.id, sub.contactInfo)}
-                                                className={`p-2 rounded-lg transition-colors opacity-100 md:opacity-0 group-hover:opacity-100 ${darkMode ? 'bg-red-900/10 hover:bg-red-900/30 text-red-500' : 'bg-red-50 hover:bg-red-100 text-red-500'}`}
-                                                title="Supprimer l'abonné"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            {filteredSubscribers.length === 0 ? (
+                <EmptyState
+                    darkMode={darkMode}
+                    description={searchTerm ? 'Essayez une autre recherche.' : 'Les inscriptions apparaîtront ici.'}
+                    icon={<Mail size={26} />}
+                    title="Aucun abonné"
+                />
+            ) : (
+                <section className={`overflow-hidden rounded-2xl border ${surfaces.panel}`}>
+                    <div className={`flex items-center justify-between border-b px-5 py-3.5 ${surfaces.divider}`}>
+                        <h3 className="text-sm font-black">Liste des abonnés</h3>
+                        <span className={`text-xs tabular-nums ${surfaces.muted}`}>
+                            {filteredSubscribers.length} / {subscribers.length}
+                        </span>
+                    </div>
+                    <div className={`divide-y ${surfaces.hairline}`}>
+                        {filteredSubscribers.map((subscriber) => {
+                            const fullName = [subscriber.firstName, subscriber.lastName].filter(Boolean).join(' ');
+                            return (
+                                <article
+                                    className={`grid gap-3 px-5 py-4 transition sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_150px_44px] sm:items-center ${surfaces.hoverRow}`}
+                                    key={subscriber.id}
+                                >
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-black tracking-tight">
+                                            {fullName || 'Contact sans nom'}
+                                        </p>
+                                        <p className={`mt-0.5 truncate text-xs ${surfaces.muted}`}>
+                                            {subscriber.contactInfo || 'Coordonnée absente'}
+                                        </p>
+                                    </div>
+                                    <p className={`truncate text-xs ${surfaces.muted}`}>
+                                        {subscriber.source || 'Origine inconnue'}
+                                    </p>
+                                    <p className={`text-xs tabular-nums ${surfaces.muted}`}>
+                                        {subscriber.createdAt
+                                            ? new Date(getMillis(subscriber.createdAt)).toLocaleDateString('fr-FR', {
+                                                day: '2-digit',
+                                                month: 'short',
+                                                year: 'numeric'
+                                            })
+                                            : '—'}
+                                    </p>
+                                    <button
+                                        aria-label={`Supprimer ${subscriber.contactInfo || 'cet abonné'}`}
+                                        className="justify-self-start rounded-lg p-2 text-stone-400 transition hover:bg-red-500/10 hover:text-red-600 sm:justify-self-end"
+                                        onClick={() => handleDelete(subscriber.id, subscriber.contactInfo)}
+                                        type="button"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </article>
+                            );
+                        })}
+                    </div>
+                </section>
+            )}
         </div>
     );
 };

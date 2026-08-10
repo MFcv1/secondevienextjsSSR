@@ -1,10 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Truck, Save, RefreshCw } from 'lucide-react';
+import { Save, RefreshCw } from 'lucide-react';
 import {
     getDeliveryPolicyAdmin,
     saveDeliveryPolicyAdmin
 } from '../commerce/deliveryPolicyAdminClient';
 import { getAdminCachedData, loadAdminCachedData } from './adminDataCache';
+import {
+    adminSurfaces,
+    Field,
+    Notice,
+    PageHeader,
+    Panel,
+    Toggle,
+    inputClass
+} from './adminUiKit';
 
 const DELIVERY_POLICY_CACHE_KEY = 'admin-delivery-policy';
 
@@ -131,124 +140,128 @@ const AdminLivraison = ({ darkMode }) => {
         }));
     };
 
-    const baseCard = darkMode ? 'bg-[#161616] border border-white/5 shadow-2xl' : 'bg-white border border-stone-100 shadow-sm';
-    const textBase = darkMode ? 'text-white' : 'text-stone-900';
-    const textMuted = darkMode ? 'text-white/40' : 'text-stone-400';
-    const inputClass = `w-full px-4 py-2 mt-1 rounded-xl text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${darkMode ? 'bg-stone-900 border-stone-800 text-white placeholder-white/20' : 'bg-stone-50 border-stone-200 text-stone-900 placeholder-stone-400'}`;
+    const surfaces = adminSurfaces(darkMode);
+    const field = inputClass(darkMode);
+    const disabled = saving || status !== 'ready';
+    const saveDisabled = disabled || hasErrors || !policyState.policyVersion;
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 pb-20">
-            <div className={`p-8 rounded-[32px] ${baseCard}`}>
-                <div className="flex flex-col gap-4 mb-8 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                        <h3 className={`text-xl font-black flex items-center gap-2 ${textBase}`}>
-                            <Truck size={24} className="text-indigo-500" />
-                            Modes de Livraison
-                        </h3>
-                        <p className={`text-sm mt-2 ${textMuted}`}>Personnalisez les labels, les descriptions et les tarifs des différents modes de livraison disponibles lors de la commande.</p>
-                    </div>
-                    {status === 'loading' ? (
-                        <span className={`inline-flex items-center gap-2 text-xs font-bold ${textMuted}`}>
-                            <RefreshCw className="animate-spin" size={14} /> Synchronisation…
-                        </span>
-                    ) : null}
-                </div>
+        <div className="space-y-5">
+            <PageHeader
+                darkMode={darkMode}
+                description="Labels, descriptions et tarifs proposés au moment de la commande."
+                title="Livraison"
+                actions={(
+                    <button
+                        className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition active:translate-y-px disabled:cursor-wait disabled:opacity-60 ${surfaces.secondaryButton}`}
+                        disabled={status === 'loading'}
+                        onClick={() => load()}
+                        type="button"
+                    >
+                        <RefreshCw className={status === 'loading' ? 'animate-spin' : ''} size={15} />
+                        Actualiser
+                    </button>
+                )}
+            />
 
-                <div className="space-y-6">
+            {message.text ? (
+                <Notice darkMode={darkMode} tone={message.type === 'success' ? 'success' : 'error'}>
+                    {message.text}
+                </Notice>
+            ) : null}
+
+            <Panel
+                darkMode={darkMode}
+                description="Chaque mode peut être activé, renommé et tarifé indépendamment."
+                title="Modes de livraison"
+                footer={(
+                    <>
+                        <p className={`text-xs ${surfaces.muted}`}>
+                            {hasErrors
+                                ? 'Corrigez les champs signalés avant d’enregistrer.'
+                                : 'La publication est immédiate sur le checkout.'}
+                        </p>
+                        <button
+                            className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 ${surfaces.primaryButton}`}
+                            disabled={saveDisabled}
+                            onClick={handleSave}
+                            type="button"
+                        >
+                            {saving ? <RefreshCw className="animate-spin" size={15} /> : <Save size={15} />}
+                            {saving ? 'Enregistrement…' : 'Enregistrer et publier'}
+                        </button>
+                    </>
+                )}
+            >
+                <div className="space-y-3">
                     {Object.keys(settings).map((key) => {
                         const mode = settings[key];
                         return (
-                            <div key={key} className={`p-6 rounded-2xl border ${darkMode ? 'border-white/5 bg-stone-900/50' : 'border-stone-100 bg-stone-50/50'}`}>
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    <div className="flex-1 space-y-4">
-                                        <div className="flex gap-4">
-                                            <div className="flex-1">
-                                                <label htmlFor={`${key}-delivery-label`} className={`text-[10px] font-black uppercase tracking-widest ${textMuted}`}>Label Principal</label>
-                                                <input
-                                                    id={`${key}-delivery-label`}
-                                                    type="text"
-                                                    value={mode.label || ''}
-                                                    onChange={(e) => handleChange(key, 'label', e.target.value)}
-                                                    className={inputClass}
-                                                    placeholder="Ex: Livraison Marseille & Alentours"
-                                                    disabled={saving || status !== 'ready'}
-                                                />
-                                            </div>
-                                            <div className="w-32">
-                                                <label htmlFor={`${key}-delivery-price`} className={`text-[10px] font-black uppercase tracking-widest ${textMuted}`}>Prix (€)</label>
-                                                <input
-                                                    id={`${key}-delivery-price`}
-                                                    type="number"
-                                                    value={mode.price}
-                                                    onChange={(e) => handleChange(key, 'price', e.target.value)}
-                                                    onFocus={(e) => e.target.select()}
-                                                    className={inputClass}
-                                                    min="0"
-                                                    step="1"
-                                                    disabled={saving || status !== 'ready'}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="w-full">
-                                            <label htmlFor={`${key}-delivery-description`} className={`text-[10px] font-black uppercase tracking-widest ${textMuted}`}>Sous-titre (Description courte)</label>
-                                                <input
-                                                    id={`${key}-delivery-description`}
-                                                    type="text"
-                                                    value={mode.sub || ''}
-                                                    onChange={(e) => handleChange(key, 'sub', e.target.value)}
-                                                    className={inputClass}
-                                                    placeholder="Ex: Par nos soins"
-                                                    disabled={saving || status !== 'ready'}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col gap-2 items-end justify-center min-w-[120px]">
-                                        <label htmlFor={`${key}-delivery-active`} className="flex items-center gap-2 cursor-pointer">
-                                            <span className={`text-[10px] font-black uppercase tracking-widest ${textMuted}`}>Activer</span>
-                                                <input
-                                                    id={`${key}-delivery-active`}
-                                                    type="checkbox"
-                                                    checked={mode.active}
-                                                    onChange={(e) => handleChange(key, 'active', e.target.checked)}
-                                                    className="w-4 h-4 rounded text-indigo-500 focus:ring-indigo-500 bg-stone-800 border-stone-700"
-                                                    disabled={saving || status !== 'ready'}
-                                            />
-                                        </label>
+                            <div className={`rounded-xl border p-4 ${surfaces.softPanel}`} key={key}>
+                                <div className="flex items-center justify-between gap-4">
+                                    <p className="truncate text-sm font-black tracking-tight">
+                                        {mode.label || 'Mode sans nom'}
+                                    </p>
+                                    <div className="flex shrink-0 items-center gap-2">
+                                        <span className={`text-xs font-semibold ${surfaces.muted}`}>
+                                            {mode.active ? 'Actif' : 'Masqué'}
+                                        </span>
+                                        <Toggle
+                                            checked={Boolean(mode.active)}
+                                            disabled={disabled}
+                                            id={`${key}-delivery-active`}
+                                            label={`Activer ${mode.label || key}`}
+                                            onChange={(next) => handleChange(key, 'active', next)}
+                                        />
                                     </div>
                                 </div>
-                                {validationErrors[key] && <p className="text-red-500 text-xs font-bold mt-2">⚠ {validationErrors[key]}</p>}
+
+                                <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_120px]">
+                                    <Field darkMode={darkMode} htmlFor={`${key}-delivery-label`} label="Intitulé">
+                                        <input
+                                            className={field}
+                                            disabled={disabled}
+                                            id={`${key}-delivery-label`}
+                                            onChange={(event) => handleChange(key, 'label', event.target.value)}
+                                            placeholder="Livraison Marseille & Alentours"
+                                            type="text"
+                                            value={mode.label || ''}
+                                        />
+                                    </Field>
+                                    <Field darkMode={darkMode} htmlFor={`${key}-delivery-description`} label="Précision">
+                                        <input
+                                            className={field}
+                                            disabled={disabled}
+                                            id={`${key}-delivery-description`}
+                                            onChange={(event) => handleChange(key, 'sub', event.target.value)}
+                                            placeholder="Par nos soins"
+                                            type="text"
+                                            value={mode.sub || ''}
+                                        />
+                                    </Field>
+                                    <Field darkMode={darkMode} htmlFor={`${key}-delivery-price`} label="Prix (€)">
+                                        <input
+                                            className={`${field} text-right tabular-nums`}
+                                            disabled={disabled}
+                                            id={`${key}-delivery-price`}
+                                            min="0"
+                                            onChange={(event) => handleChange(key, 'price', event.target.value)}
+                                            onFocus={(event) => event.target.select()}
+                                            step="1"
+                                            type="number"
+                                            value={mode.price}
+                                        />
+                                    </Field>
+                                </div>
+
+                                {validationErrors[key] ? (
+                                    <p className="mt-3 text-xs font-bold text-red-600">{validationErrors[key]}</p>
+                                ) : null}
                             </div>
                         );
                     })}
                 </div>
-
-                <div className="pt-8 mt-8 border-t border-stone-200 dark:border-stone-800 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div aria-live="polite">
-                        {message.text && (
-                            <p className={`text-sm font-bold ${message.type === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>
-                                {message.text}
-                            </p>
-                        )}
-                        {status === 'error' ? (
-                            <button
-                                className={`mt-2 inline-flex items-center gap-2 text-xs font-bold ${darkMode ? 'text-white' : 'text-stone-800'}`}
-                                onClick={() => load()}
-                                type="button"
-                            >
-                                <RefreshCw size={13} /> Réessayer
-                            </button>
-                        ) : null}
-                    </div>
-                    <button
-                        onClick={handleSave}
-                        disabled={saving || status !== 'ready' || hasErrors || !policyState.policyVersion}
-                        className={`flex items-center gap-2 text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition-colors ${saving || status !== 'ready' || hasErrors || !policyState.policyVersion ? 'bg-stone-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
-                    >
-                        {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
-                        {saving ? 'Enregistrement...' : 'Enregistrer et publier'}
-                    </button>
-                </div>
-            </div>
+            </Panel>
         </div>
     );
 };

@@ -1,7 +1,28 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { Shield, Clock, AlertCircle } from 'lucide-react';
+import { Shield, AlertCircle } from 'lucide-react';
+import {
+    adminSurfaces,
+    EmptyState,
+    LoadingPanel,
+    Panel,
+    PageHeader,
+    StatusDot
+} from './adminUiKit';
+
+const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+});
+
+const formatTimestamp = (value) => {
+    const date = value?.toDate?.();
+    if (!date || Number.isNaN(date.getTime())) return '—';
+    return dateFormatter.format(date);
+};
 
 const AdminIPManager = ({ darkMode }) => {
     const [adminIPs, setAdminIPs] = useState({});
@@ -62,92 +83,86 @@ const AdminIPManager = ({ darkMode }) => {
 
 
 
-    if (loading) return <div className="p-12 text-center animate-pulse opacity-50">Chargement des IPs admin...</div>;
-
+    const surfaces = adminSurfaces(darkMode);
     const adminsList = Object.values(groupedAdmins);
+    const totalIps = adminsList.reduce((total, admin) => total + admin.ips.length, 0);
+
+    if (loading) return <LoadingPanel darkMode={darkMode} label="Chargement du trafic exclu…" />;
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-            {/* Header (Bento Box simple) */}
-            <div className={`p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] ${darkMode ? 'bg-[#161616] border border-white/5' : 'bg-white border border-stone-100 shadow-sm'}`}>
-                <div>
-                    <h2 className={`text-2xl md:text-3xl font-black tracking-tight mb-2 ${darkMode ? 'text-white' : 'text-stone-900'}`}>Équipe & Trafic Exclu</h2>
-                    <p className={`font-medium text-xs md:text-sm ${darkMode ? 'text-white/50' : 'text-stone-500'}`}>
-                        Membres de l'équipe actuellement bloqués pour garantir la fiabilité des statistiques clients.
-                    </p>
-                </div>
-            </div>
+        <div className="space-y-5">
+            <PageHeader
+                darkMode={darkMode}
+                description="Adresses de l’équipe exclues des statistiques pour garder des chiffres clients fiables."
+                title="Trafic interne"
+                badge={adminsList.length ? (
+                    <StatusDot
+                        darkMode={darkMode}
+                        label={`${totalIps} adresse${totalIps > 1 ? 's' : ''} exclue${totalIps > 1 ? 's' : ''}`}
+                        tone="emerald"
+                    />
+                ) : null}
+            />
 
-            {/* Administrateurs List (Grille Bento Premium) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-                {adminsList.map((admin) => (
-                    <div key={admin.email} className={`rounded-[2rem] p-6 md:p-8 flex flex-col transition-all duration-300 ${darkMode ? 'bg-[#161616] border border-white/5 hover:bg-[#1a1a1a]' : 'bg-white border border-stone-200 shadow-sm hover:shadow-md'}`}>
-                        {/* Avatar & Status */}
-                        <div className="flex justify-between items-start mb-6">
-                            <div className="flex items-center gap-3 w-[70%]">
-                                <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${darkMode ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
-                                    <Shield size={20} strokeWidth={2.5} />
-                                </div>
-                                <div className={`text-sm font-semibold tracking-wide truncate ${darkMode ? 'text-white' : 'text-stone-900'}`} title={admin.email}>
-                                    {admin.email}
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2 bg-[#22c55e]/10 px-2.5 py-1 rounded-full border border-[#22c55e]/20 shrink-0">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse"></span>
-                                <span className="text-[10px] uppercase font-bold text-[#22c55e] tracking-widest hidden sm:inline">Actif</span>
-                            </div>
-                        </div>
-
-                        {/* KPI Block */}
-                        <div className="mb-8">
-                            <p className={`text-[10px] uppercase tracking-widest font-bold mb-2 ${darkMode ? 'text-white/40' : 'text-stone-400'}`}>
-                                Adresses IP Bloquées
-                            </p>
-                            <p className={`text-5xl md:text-6xl font-semibold tracking-tighter mb-2 ${darkMode ? 'text-white' : 'text-stone-900'}`}>
-                                {admin.ips.length}
-                            </p>
-                            <p className={`text-xs font-medium ${darkMode ? 'text-[#a1a1aa]' : 'text-stone-500'}`}>
-                                Trafic anonymisé et invisibilisé.
-                            </p>
-                        </div>
-
-                        {/* Footer Data */}
-                        <div className={`mt-auto space-y-3 pt-6 border-t ${darkMode ? 'border-white/5' : 'border-stone-100'}`}>
-                            <div className="flex justify-between items-center text-xs">
-                                <span className={`font-medium ${darkMode ? 'text-white/40' : 'text-stone-500'}`}>Appareil récent</span>
-                                <span className={`font-mono text-[10px] max-w-[50%] truncate ${darkMode ? 'text-white/80' : 'text-stone-700'}`} title={admin.lastIp}>
-                                    {admin.lastIp}
-                                </span>
-                            </div>
-                        </div>
+            {adminsList.length === 0 ? (
+                <EmptyState
+                    darkMode={darkMode}
+                    description="Aucune session administrateur n’a encore été enregistrée."
+                    icon={<Shield size={26} />}
+                    title="Aucun trafic interne"
+                />
+            ) : (
+                <section className={`overflow-hidden rounded-2xl border ${surfaces.panel}`}>
+                    <div className={`flex items-center justify-between border-b px-5 py-3.5 ${surfaces.divider}`}>
+                        <h3 className="text-sm font-black">Membres suivis</h3>
+                        <span className={`text-xs tabular-nums ${surfaces.muted}`}>{adminsList.length}</span>
                     </div>
-                ))}
-
-                {adminsList.length === 0 && (
-                    <div className="col-span-full text-center py-20 text-stone-400">
-                        <div className="flex flex-col items-center gap-4">
-                            <AlertCircle size={48} className="opacity-50" />
-                            <p>Aucune activité administrateur enregistrée pour le moment.</p>
-                        </div>
+                    <div className={`divide-y ${surfaces.hairline}`}>
+                        {adminsList.map((admin) => (
+                            <article
+                                className={`grid gap-3 px-5 py-4 transition sm:grid-cols-[minmax(0,1.5fr)_110px_minmax(0,1fr)_140px] sm:items-center ${surfaces.hoverRow}`}
+                                key={admin.email}
+                            >
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${darkMode ? 'bg-white/[0.06] text-stone-300' : 'bg-stone-100 text-stone-500'}`}>
+                                        <Shield size={16} />
+                                    </span>
+                                    <p className="truncate text-sm font-bold tracking-tight" title={admin.email}>
+                                        {admin.email}
+                                    </p>
+                                </div>
+                                <p className={`text-xs font-semibold ${surfaces.muted}`}>
+                                    <span className={`text-sm font-black tabular-nums ${darkMode ? 'text-white' : 'text-stone-950'}`}>
+                                        {admin.ips.length}
+                                    </span>{' '}
+                                    IP
+                                </p>
+                                <p className={`truncate font-mono text-xs ${surfaces.muted}`} title={admin.lastIp}>
+                                    {admin.lastIp || '—'}
+                                </p>
+                                <p className={`text-xs font-semibold tabular-nums ${surfaces.muted}`}>
+                                    {formatTimestamp(admin.lastSeen)}
+                                </p>
+                            </article>
+                        ))}
                     </div>
-                )}
-            </div>
+                </section>
+            )}
 
-            {/* Info Légale / Explication */}
-            <div className={`p-6 rounded-2xl ${darkMode ? 'bg-black/20 border border-white/5' : 'bg-stone-50 border border-stone-200'}`}>
-                <div className="flex items-start gap-4">
-                    <AlertCircle size={20} className={`mt-0.5 shrink-0 ${darkMode ? 'text-[#a1a1aa]' : 'text-stone-400'}`} />
-                    <div className={`text-sm ${darkMode ? 'text-[#a1a1aa]' : 'text-stone-500'}`}>
-                        <p className="mb-2">
-                            <strong>Fonctionnement natif (IPv6) :</strong> Les appareils modernes (smartphones, PC récents) génèrent quotidiennement de nouvelles adresses IP pour protéger votre vie privée (Privacy Extensions). 
-                            Cette interface re-groupe automatiquement toutes ces multiples adresses secrètes sous votre identifiant.
+            <Panel darkMode={darkMode} title="Pourquoi plusieurs adresses par personne">
+                <div className={`flex items-start gap-3 text-sm leading-6 ${surfaces.muted}`}>
+                    <AlertCircle className={`mt-0.5 shrink-0 ${surfaces.faint}`} size={17} />
+                    <div className="space-y-2">
+                        <p>
+                            Les appareils récents changent d’adresse IPv6 chaque jour (Privacy Extensions). Ces adresses
+                            sont regroupées automatiquement sous le compte correspondant.
                         </p>
                         <p>
-                            <strong>Nettoyage automatique :</strong> Les anciennes IPs non utilisées depuis plus de 90 jours sont automatiquement purgées de la base de données.
+                            Les adresses inutilisées depuis plus de 90 jours sont purgées automatiquement.
                         </p>
                     </div>
                 </div>
-            </div>
+            </Panel>
         </div>
     );
 };

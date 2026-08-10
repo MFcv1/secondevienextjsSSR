@@ -3,41 +3,48 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import {
     AlertTriangle,
     CheckCircle2,
-    CreditCard,
     ExternalLink,
     Landmark,
     LockKeyhole,
     RefreshCw,
     ShieldCheck,
-    ToggleLeft,
-    ToggleRight,
     Wallet
 } from 'lucide-react';
 import { db } from '../config/firebase';
 import { getCallableFunction } from '../config/firebaseLazy';
 import { COMMERCE_V2_UI_ENABLED } from '../commerce/commerceUiFlags';
 import { useAuth } from '../contexts/AuthContext';
+import {
+    adminSurfaces,
+    Field,
+    LoadingPanel,
+    Notice,
+    PageHeader,
+    Panel,
+    StatusDot,
+    inputClass
+} from './adminUiKit';
 
 const statusCopy = {
     not_connected: {
-        label: 'Non connecte',
+        label: 'Non connecté',
         tone: 'stone',
         description: 'Aucun compte Stripe Connect actif. Terminez la configuration pour activer les paiements sur la boutique.'
     },
     action_required: {
-        label: 'Configuration a terminer',
+        label: 'Configuration à terminer',
         tone: 'amber',
-        description: 'La cliente doit terminer les informations legales ou bancaires dans Stripe.'
+        description: 'La cliente doit terminer les informations légales ou bancaires dans Stripe.'
     },
     pending_review: {
-        label: 'En verification',
+        label: 'En vérification',
         tone: 'amber',
-        description: 'Stripe analyse le compte. Les paiements carte restent bloques tant que Stripe ne valide pas.'
+        description: 'Stripe analyse le compte. Les paiements carte restent bloqués tant que Stripe ne valide pas.'
     },
     active: {
         label: 'Paiements actifs',
         tone: 'emerald',
-        description: 'Le compte Stripe connecte peut encaisser les paiements.'
+        description: 'Le compte Stripe connecté peut encaisser les paiements.'
     }
 };
 
@@ -181,7 +188,10 @@ const AdminPaymentSettings = ({ darkMode }) => {
         }
     };
 
-    if (loading) return <div className="p-12 text-center animate-pulse">Chargement des parametres de paiement...</div>;
+    const surfaces = adminSurfaces(darkMode);
+    const field = inputClass(darkMode);
+
+    if (loading) return <LoadingPanel darkMode={darkMode} label="Chargement des paramètres de paiement…" />;
 
     const connectCopy = statusCopy[connectState.status] || statusCopy.not_connected;
     const stripeReady = connectState.chargesEnabled === true || connectState.status === 'not_connected';
@@ -190,231 +200,200 @@ const AdminPaymentSettings = ({ darkMode }) => {
         : 'https://dashboard.stripe.com/test/dashboard';
 
     return (
-        <div className={`space-y-8 animate-in fade-in ${darkMode ? 'text-white' : 'text-stone-900'}`}>
-            <div className={`p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] ring-1 shadow-sm flex flex-col sm:flex-row items-center gap-4 md:gap-6 ${darkMode ? 'bg-stone-900 ring-stone-800' : 'bg-white ring-stone-200'}`}>
-                <div className={`w-12 h-12 md:w-16 md:h-16 rounded-2xl flex-shrink-0 flex items-center justify-center shadow-inner ${darkMode ? 'bg-stone-800 text-amber-400' : 'bg-amber-50 text-amber-600'}`}>
-                    <CreditCard size={24} className="md:w-8 md:h-8" />
-                </div>
-                <div className="text-center sm:text-left">
-                    <h2 className="text-xl md:text-2xl font-black tracking-tight uppercase">Moyens de Paiement</h2>
-                    <p className="text-[9px] md:text-xs font-bold uppercase tracking-widest opacity-60">Stripe Connect, carte, wallets et virement</p>
-                </div>
-            </div>
+        <div className="space-y-5">
+            <PageHeader
+                darkMode={darkMode}
+                description="Stripe Connect, carte, wallets et virement."
+                title="Paiement"
+                actions={(
+                    <button
+                        className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition active:translate-y-px disabled:cursor-wait disabled:opacity-60 ${surfaces.secondaryButton}`}
+                        disabled={Boolean(connectAction) || connectLoading}
+                        onClick={syncConnect}
+                        type="button"
+                    >
+                        <RefreshCw className={connectAction === 'sync' ? 'animate-spin' : ''} size={15} />
+                        Synchroniser
+                    </button>
+                )}
+            />
 
-            <div className={`p-6 md:p-8 rounded-[2rem] ring-1 shadow-sm ${darkMode ? 'bg-stone-900 ring-stone-800' : 'bg-white ring-stone-200'}`}>
-                {connectAction === 'connect' || connectAction === 'return-sync' ? (
-                    <div className={`mb-5 overflow-hidden rounded-2xl border ${darkMode ? 'border-indigo-300/20 bg-indigo-300/10 text-indigo-100' : 'border-indigo-100 bg-indigo-50 text-indigo-950'}`}>
-                        <div className="flex items-center gap-3 px-4 py-3 text-sm font-bold">
-                            <RefreshCw size={16} className="animate-spin" />
-                            <span>
-                                {connectAction === 'return-sync'
-                                    ? 'Finalisation de la connexion Stripe...'
-                                    : connectRedirecting ? 'Redirection vers Stripe...' : 'Preparation de la connexion Stripe...'}
-                            </span>
-                            <span className={`ml-auto h-2 w-2 rounded-full ${darkMode ? 'bg-indigo-200' : 'bg-indigo-500'} animate-pulse`} />
-                        </div>
-                        <div className={`h-1 w-full ${darkMode ? 'bg-white/10' : 'bg-indigo-100'}`}>
-                            <div className={`h-full w-2/3 animate-pulse ${darkMode ? 'bg-indigo-200' : 'bg-indigo-500'}`} />
-                        </div>
-                    </div>
-                ) : null}
+            {connectAction === 'connect' || connectAction === 'return-sync' ? (
+                <Notice darkMode={darkMode}>
+                    <span className="flex items-center gap-2">
+                        <RefreshCw className="animate-spin" size={15} />
+                        {connectAction === 'return-sync'
+                            ? 'Finalisation de la connexion Stripe…'
+                            : connectRedirecting ? 'Redirection vers Stripe…' : 'Préparation de la connexion Stripe…'}
+                    </span>
+                </Notice>
+            ) : null}
 
-                <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${getToneClass(connectCopy.tone, darkMode)}`}>
-                                {connectState.chargesEnabled ? <CheckCircle2 size={22} /> : <LockKeyhole size={22} />}
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-black tracking-tight">Stripe Connect</h3>
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Encaissement sur le compte de la cliente</p>
-                            </div>
-                        </div>
-                        <div className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${getToneClass(connectCopy.tone, darkMode)}`}>
-                            {connectCopy.label}
-                        </div>
-                        <p className="max-w-2xl text-sm leading-6 text-stone-500">{connectCopy.description}</p>
-                        <div className="grid gap-3 text-xs sm:grid-cols-2">
-                            <div className={`rounded-2xl p-4 ${darkMode ? 'bg-white/[0.04]' : 'bg-stone-50'}`}>
-                                <p className="font-black uppercase tracking-widest text-stone-500 text-[10px]">Compte actif</p>
-                                <p className="mt-2 font-mono text-sm">{connectState.activeAccountIdMasked || '-'}</p>
-                            </div>
-                            <div className={`rounded-2xl p-4 ${darkMode ? 'bg-white/[0.04]' : 'bg-stone-50'}`}>
-                                <p className="font-black uppercase tracking-widest text-stone-500 text-[10px]">Compte en attente</p>
-                                <p className="mt-2 font-mono text-sm">{connectState.pendingAccountIdMasked || '-'}</p>
-                            </div>
-                        </div>
-                    </div>
+            {connectError ? (
+                <Notice darkMode={darkMode} tone="error">
+                    <span className="flex items-start gap-2">
+                        <AlertTriangle className="mt-0.5 shrink-0" size={16} />
+                        {connectError}
+                    </span>
+                </Notice>
+            ) : null}
 
-                    <div className="flex flex-col gap-3 lg:min-w-[260px]">
-                        {isAdmin && (
-                            <button
-                                type="button"
-                                onClick={startConnect}
-                                disabled={Boolean(connectAction)}
-                                className={`relative flex min-h-[44px] items-center justify-center gap-2 overflow-hidden rounded-2xl px-5 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${darkMode ? 'bg-white text-stone-950 hover:bg-stone-200' : 'bg-stone-950 text-white hover:bg-stone-800'} ${connectAction ? 'cursor-wait opacity-80' : ''}`}
-                            >
-                                {connectAction === 'connect' ? (
-                                    <RefreshCw size={14} className="animate-spin" />
-                                ) : (
-                                    <ExternalLink size={14} />
-                                )}
-                                {connectAction === 'connect'
-                                    ? (connectRedirecting ? 'Redirection...' : 'Preparation...')
-                                    : connectState.hasPendingAccount ? 'Continuer Stripe' : connectState.hasActiveAccount ? 'Connecter nouveau' : 'Connecter Stripe'}
-                            </button>
-                        )}
-                        <button
-                            type="button"
-                            onClick={syncConnect}
-                            disabled={Boolean(connectAction) || connectLoading}
-                            className={`flex items-center justify-center gap-2 rounded-2xl border px-5 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${darkMode ? 'border-white/10 text-stone-300 hover:bg-white/5' : 'border-stone-200 text-stone-600 hover:bg-stone-50'} ${connectAction === 'sync' ? 'cursor-wait opacity-60' : ''}`}
-                        >
-                            <RefreshCw size={14} className={connectAction === 'sync' ? 'animate-spin' : ''} />
-                            Synchroniser
-                        </button>
-                        {connectState.hasActiveAccount ? (
-                            <a
-                                href={stripeDashboardUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className={`flex items-center justify-center gap-2 rounded-2xl border px-5 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${darkMode ? 'border-emerald-300/20 text-emerald-200 hover:bg-emerald-300/10' : 'border-emerald-100 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}
-                            >
-                                <ExternalLink size={14} />
-                                Dashboard Stripe
-                            </a>
-                        ) : null}
-                    </div>
+            <Panel
+                darkMode={darkMode}
+                description="Encaissement direct sur le compte de la cliente."
+                title="Stripe Connect"
+                actions={<StatusDot darkMode={darkMode} label={connectCopy.label} tone={connectCopy.tone} />}
+                footer={(
+                    <>
+                        <p className={`text-xs ${surfaces.muted}`}>
+                            {connectState.livemode ? 'Compte en mode réel.' : 'Compte en mode test.'}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {connectState.hasActiveAccount ? (
+                                <a
+                                    className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-bold transition active:translate-y-px ${surfaces.secondaryButton}`}
+                                    href={stripeDashboardUrl}
+                                    rel="noreferrer"
+                                    target="_blank"
+                                >
+                                    <ExternalLink size={15} />
+                                    Tableau de bord Stripe
+                                </a>
+                            ) : null}
+                            {isAdmin ? (
+                                <button
+                                    className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition active:translate-y-px disabled:cursor-wait disabled:opacity-60 ${surfaces.primaryButton}`}
+                                    disabled={Boolean(connectAction)}
+                                    onClick={startConnect}
+                                    type="button"
+                                >
+                                    {connectAction === 'connect'
+                                        ? <RefreshCw className="animate-spin" size={15} />
+                                        : <ExternalLink size={15} />}
+                                    {connectAction === 'connect'
+                                        ? (connectRedirecting ? 'Redirection…' : 'Préparation…')
+                                        : connectState.hasPendingAccount
+                                            ? 'Continuer la configuration'
+                                            : connectState.hasActiveAccount ? 'Connecter un autre compte' : 'Connecter Stripe'}
+                                </button>
+                            ) : null}
+                        </div>
+                    </>
+                )}
+            >
+                <div className="flex items-start gap-3">
+                    <span className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl ${getToneClass(connectCopy.tone, darkMode)}`}>
+                        {connectState.chargesEnabled ? <CheckCircle2 size={17} /> : <LockKeyhole size={17} />}
+                    </span>
+                    <p className={`max-w-2xl text-sm leading-6 ${surfaces.muted}`}>{connectCopy.description}</p>
                 </div>
 
-                {connectError ? (
-                    <div className={`mt-5 flex items-start gap-3 rounded-2xl p-4 text-sm ${darkMode ? 'bg-red-500/10 text-red-200' : 'bg-red-50 text-red-700'}`}>
-                        <AlertTriangle size={18} className="mt-0.5 shrink-0" />
-                        <p>{connectError}</p>
+                <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className={`rounded-xl border p-4 ${surfaces.softPanel}`}>
+                        <dt className={`text-xs font-semibold ${surfaces.muted}`}>Compte actif</dt>
+                        <dd className="mt-1 font-mono text-sm font-bold">{connectState.activeAccountIdMasked || '—'}</dd>
                     </div>
-                ) : null}
-            </div>
+                    <div className={`rounded-xl border p-4 ${surfaces.softPanel}`}>
+                        <dt className={`text-xs font-semibold ${surfaces.muted}`}>Compte en attente</dt>
+                        <dd className="mt-1 font-mono text-sm font-bold">{connectState.pendingAccountIdMasked || '—'}</dd>
+                    </div>
+                </dl>
+            </Panel>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div className={`p-8 rounded-[2.5rem] ring-1 shadow-sm transition-all ${darkMode ? 'bg-stone-900 ring-stone-800' : 'bg-white ring-stone-200'}`}>
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${stripeEnabled && stripeReady ? (darkMode ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : (darkMode ? 'bg-stone-800 text-stone-500' : 'bg-stone-100 text-stone-400')}`}>
-                            <Wallet size={22} />
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="font-black text-lg tracking-tight">Carte / Wallets</h3>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Stripe - moyens actifs et eligibles</p>
-                        </div>
+            <div className="grid gap-5 lg:grid-cols-2">
+                <Panel
+                    darkMode={darkMode}
+                    description="Stripe — moyens actifs et éligibles."
+                    title="Carte et wallets"
+                    actions={(
+                        <StatusDot
+                            darkMode={darkMode}
+                            label={stripeEnabled ? 'Actif' : 'Inactif'}
+                            tone={stripeEnabled && stripeReady ? 'emerald' : 'stone'}
+                        />
+                    )}
+                >
+                    <div className="flex items-start gap-3">
+                        <span className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl ${surfaces.softPanel} border`}>
+                            <Wallet size={17} />
+                        </span>
+                        <p className={`text-sm leading-6 ${surfaces.muted}`}>
+                            {!stripeReady
+                                ? 'Stripe Connect doit être finalisé avant de réactiver les cartes.'
+                                : stripeEnabled
+                                    ? 'Les clients peuvent payer par carte ou wallet sur le checkout.'
+                                    : 'Seul le virement est proposé aux clients.'}
+                        </p>
                     </div>
+                </Panel>
 
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <span className={`text-sm font-black uppercase tracking-wider ${stripeEnabled && stripeReady ? (darkMode ? 'text-emerald-400' : 'text-emerald-600') : 'text-stone-500'}`}>
-                                {stripeEnabled ? 'Active' : 'Desactive'}
-                            </span>
-                            <p className="text-[10px] text-stone-500 mt-1 max-w-xs">
-                                {!stripeReady
-                                    ? 'Stripe Connect doit etre finalise avant de reactiver les cartes.'
-                                    : stripeEnabled
-                                        ? 'Les clients peuvent payer par carte ou wallet sur le checkout.'
-                                        : 'Seul le virement / Wero est propose aux clients.'}
-                            </p>
-                        </div>
-                        <div aria-label={stripeEnabled ? 'Paiements par carte actifs' : 'Paiements par carte inactifs'}>
-                            {stripeEnabled ? (
-                                <ToggleRight size={48} className={darkMode ? 'text-emerald-400' : 'text-emerald-500'} />
-                            ) : (
-                                <ToggleLeft size={48} className="text-stone-500" />
-                            )}
-                        </div>
+                <Panel
+                    darkMode={darkMode}
+                    description="Paiement différé — instructions par e-mail."
+                    title="Virement et Wero"
+                    actions={<StatusDot darkMode={darkMode} label="Désactivé" tone="stone" />}
+                >
+                    <div className="flex items-start gap-3">
+                        <span className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl ${surfaces.softPanel} border`}>
+                            <Landmark size={17} />
+                        </span>
+                        <p className={`text-sm leading-6 ${surfaces.muted}`}>
+                            Le paiement différé n’est pas activé sur le sandbox. Stripe test reste le seul rail transactionnel.
+                        </p>
                     </div>
-                </div>
-
-                <div className={`p-8 rounded-[2.5rem] ring-1 shadow-sm ${darkMode ? 'bg-stone-900 ring-stone-800' : 'bg-white ring-stone-200'}`}>
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${darkMode ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
-                            <Landmark size={22} />
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="font-black text-lg tracking-tight">Virement / Wero</h3>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Paiement differe - Instructions par email</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <span className={`text-sm font-black uppercase tracking-wider ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                                Désactivé
-                            </span>
-                            <p className="text-[10px] text-stone-500 mt-1 max-w-xs">
-                                Le paiement différé n’est pas activé sur le sandbox. Stripe test reste le seul rail transactionnel.
-                            </p>
-                        </div>
-                        <div className="opacity-40">
-                            <ToggleRight size={48} className={darkMode ? 'text-emerald-400' : 'text-emerald-500'} />
-                        </div>
-                    </div>
-                </div>
+                </Panel>
             </div>
 
             {isAdmin && connectState.hasActiveAccount ? (
-                <div className={`p-6 rounded-[2rem] ring-1 space-y-5 ${darkMode ? 'bg-stone-900/50 ring-stone-800' : 'bg-stone-50 ring-stone-200'}`}>
-                    <div className="flex items-start gap-4">
-                        <ShieldCheck size={20} className="text-stone-500 shrink-0 mt-0.5" />
-                        <div>
-                            <h3 className="font-black uppercase tracking-widest text-xs">Changement de compte Stripe</h3>
-                            <p className="mt-2 text-xs text-stone-500 leading-relaxed">
-                                Action sensible: un changement de compte modifie la destination des prochains paiements.
-                                Les anciennes commandes gardent leur compte Stripe d&apos;origine pour les remboursements.
-                            </p>
-                        </div>
-                    </div>
+                <Panel
+                    darkMode={darkMode}
+                    description="Un changement de compte modifie la destination des prochains paiements. Les anciennes commandes conservent leur compte d’origine pour les remboursements."
+                    title="Changement de compte Stripe"
+                >
                     <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
-                            <label htmlFor="stripe-reconnect-request" className="text-[10px] font-black uppercase tracking-widest text-stone-500">1. Demande</label>
+                        <Field darkMode={darkMode} htmlFor="stripe-reconnect-request" label="1. Demande">
                             <input
+                                className={field}
                                 id="stripe-reconnect-request"
-                                value={reconnectRequestText}
                                 onChange={(event) => setReconnectRequestText(event.target.value)}
                                 placeholder="DEMANDER CHANGEMENT STRIPE"
-                                className={`w-full rounded-2xl border px-4 py-3 text-xs font-bold outline-none ${darkMode ? 'border-white/10 bg-black/20 text-white' : 'border-stone-200 bg-white text-stone-900'}`}
+                                value={reconnectRequestText}
                             />
                             <button
-                                type="button"
-                                onClick={requestReconnect}
+                                className={`mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-bold transition active:translate-y-px disabled:cursor-wait disabled:opacity-60 ${surfaces.secondaryButton}`}
                                 disabled={connectAction === 'request-reconnect'}
-                                className={`w-full rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-widest ${darkMode ? 'bg-white/10 text-white' : 'bg-stone-200 text-stone-700'}`}
+                                onClick={requestReconnect}
+                                type="button"
                             >
                                 Demander le changement
                             </button>
-                        </div>
-                        <div className="space-y-2">
-                            <label htmlFor="stripe-reconnect-confirm" className="text-[10px] font-black uppercase tracking-widest text-stone-500">2. Activation finale</label>
+                        </Field>
+                        <Field darkMode={darkMode} htmlFor="stripe-reconnect-confirm" label="2. Activation finale">
                             <input
+                                className={field}
                                 id="stripe-reconnect-confirm"
-                                value={reconnectConfirmText}
                                 onChange={(event) => setReconnectConfirmText(event.target.value)}
                                 placeholder="ACTIVER NOUVEAU STRIPE"
-                                className={`w-full rounded-2xl border px-4 py-3 text-xs font-bold outline-none ${darkMode ? 'border-white/10 bg-black/20 text-white' : 'border-stone-200 bg-white text-stone-900'}`}
+                                value={reconnectConfirmText}
                             />
                             <button
-                                type="button"
-                                onClick={confirmReconnect}
+                                className={`mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition active:translate-y-px disabled:cursor-wait disabled:opacity-60 ${surfaces.primaryButton}`}
                                 disabled={connectAction === 'confirm-reconnect'}
-                                className={`w-full rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-widest ${darkMode ? 'bg-white text-stone-950' : 'bg-stone-950 text-white'}`}
+                                onClick={confirmReconnect}
+                                type="button"
                             >
                                 Activer le nouveau compte
                             </button>
-                        </div>
+                        </Field>
                     </div>
-                </div>
+                </Panel>
             ) : null}
 
-            <div className={`p-6 rounded-[2rem] ring-1 flex items-start gap-4 ${darkMode ? 'bg-stone-900/50 ring-stone-800' : 'bg-stone-50 ring-stone-200'}`}>
-                <ShieldCheck size={20} className="text-stone-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-stone-500 leading-relaxed">
-                    Stripe Connect evite de demander les cles Stripe de la cliente. Les actions sensibles passent par le serveur,
-                    sont reservees aux administrateurs actifs et sont journalisees. Aucune cle secrete Stripe n&apos;est visible dans l&apos;admin.
+            <div className={`flex items-start gap-3 rounded-2xl border p-4 ${surfaces.softPanel}`}>
+                <ShieldCheck className={`mt-0.5 shrink-0 ${surfaces.faint}`} size={17} />
+                <p className={`text-xs leading-5 ${surfaces.muted}`}>
+                    Stripe Connect évite de demander les clés Stripe de la cliente. Les actions sensibles passent par le serveur,
+                    sont réservées aux administrateurs actifs et sont journalisées. Aucune clé secrète n’est visible dans l’admin.
                 </p>
             </div>
         </div>
@@ -422,3 +401,4 @@ const AdminPaymentSettings = ({ darkMode }) => {
 };
 
 export default AdminPaymentSettings;
+
