@@ -52,6 +52,37 @@ interroge son hash et renvoie au plus vingt projections minimales. Le dernier
 code est placé avant l'historique des commandes pour être retrouvé sans
 recherche; les anciens codes restent dans le même panneau.
 
+Refonte de présentation du 2026-08-10, sans changement de contrat de données:
+
+- `MyOrdersView` porte une feuille de style locale `.acc-*` injectée dans le
+  composant. Elle definit les jetons de materiau (fond, hairlines, elevations,
+  grain) et pilote le theme clair/sombre par `data-acc-theme`, sans toucher au
+  Tailwind global;
+- `OrdersPageIsland` ecoute `sv:theme-change`, donc la bascule clair/sombre du
+  header repeint l'espace client sans rechargement;
+- le slogan `Vos commandes, simplement.` est supprime de la vue, du repli
+  d'ile et de `loading.jsx`. L'en-tete est reduit a une identite compacte
+  (monogramme, salutation, e-mail) et a la carte `Dernier dossier`;
+- la page n'ajoute aucune barre collante sous le header et son mega menu. Le
+  retour galerie est un fil d'Ariane discret place au-dessus de la salutation;
+  `Quitter` reste expose par le header, par le rail lateral et par le dernier
+  segment du controle mobile, sans troisieme niveau de menu;
+- la navigation devient un rail lateral avec surlignage par
+  `IntersectionObserver` au-dessus de 1024 px, et un controle segmente
+  horizontal en dessous. Les cibles de defilement restent les memes sections;
+- les quatre compteurs sont Commandes, Documents, Pieces suivies et
+  Remboursements. Le compteur `Adresse` du 2026-07-30 est remplace par une
+  pastille d'etat `Enregistree` / `A completer` dans le panneau Adresses, plus
+  lisible qu'un `0`; les compteurs restent neutres pendant le chargement;
+- les commandes ne sont plus un tableau a cinq colonnes mais un dossier par
+  ligne: vignette, reference, date et nombre de pieces, resume des articles,
+  total et statut a droite, encarts remboursement / retour / suivi, puis
+  actions en pastilles. Aucune affordance n'est ajoutee ni retiree;
+- les feuilles modales sont fermables au clavier par `Echap` et par un bouton
+  de fond explicitement nomme, au lieu d'un `onClick` sur le voile;
+- l'echec d'annulation n'utilise plus `alert()` mais la meme zone de
+  notification que les demandes de retour.
+
 ## 3. Commandes
 
 Le client ne lit que les commandes admises par les Rules et sa requete. Le code actuel interroge `userEmail`; les Rules autorisent le proprietaire UID ou le meme e-mail verifie. La cible est un repository UID autoritaire avec un rattachement invite borne, afin qu'un changement d'e-mail ne fasse pas disparaitre l'historique.
