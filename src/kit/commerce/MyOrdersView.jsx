@@ -529,7 +529,9 @@ select.acc-input{
     filter: blur(7px);
     pointer-events: none;
 }
-.acc-root[data-acc-mode='opening'] [data-acc-focused='true']{
+/* Restreint aux modules: le conteneur de paire porte lui aussi le drapeau et
+   heriterait sinon d'une ombre, dessinant un cadre fantome autour du module. */
+.acc-root[data-acc-mode='opening'] [data-acc-section][data-acc-focused='true']{
     z-index: 3;
     box-shadow: var(--acc-hairline-card), var(--acc-elev-3);
 }
@@ -544,7 +546,7 @@ select.acc-input{
    collage du socle par rapport a la fin de page: c'est le socle qui porte
    cet espace, via son propre rembourrage. */
 .acc-root[data-acc-mode='focus'] .acc-body{ margin-top: 0 !important; }
-.acc-root[data-acc-mode='focus'] [data-acc-focused='true']{ box-shadow: var(--acc-hairline-card), var(--acc-elev-2); }
+.acc-root[data-acc-mode='focus'] [data-acc-section][data-acc-focused='true']{ box-shadow: var(--acc-hairline-card), var(--acc-elev-2); }
 /* Un module court ne doit pas laisser de course de defilement residuelle:
    sans cela le panneau glisse sous le bandeau collant et le chevauche. La
    hauteur retenue laisse exactement de quoi chasser le bandeau promotionnel. */
