@@ -341,6 +341,16 @@ const ACCOUNT_SURFACE_CSS = `
     background: linear-gradient(158deg, #e6cdaa 0%, #c79f74 58%, #9d7548 100%);
     color: #221a12;
 }
+@media (max-width: 639px){
+    .acc-avatar{
+        width: 42px; height: 42px; border-radius: 13px; font-size: 15.5px;
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,.4),
+            inset 0 -1px 0 rgba(0,0,0,.2),
+            0 6px 14px -9px rgba(94,56,35,.72);
+    }
+    .acc-hero-name{ font-size: 23px; }
+}
 .acc-badge{
     display: inline-flex; align-items: center; gap: 5px;
     height: 22px; padding: 0 9px; border-radius: 999px;
@@ -1482,12 +1492,12 @@ const MyOrdersView = ({
                         </button>
                     </span>
 
-                    <div className="mt-0.5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(300px,352px)] lg:items-center lg:gap-10">
-                    <div className="flex min-w-0 flex-col items-start gap-3.5 sm:flex-row sm:items-center sm:gap-4">
+                    <div className="mt-[18px] grid gap-6 sm:mt-0.5 lg:grid-cols-[minmax(0,1fr)_minmax(300px,352px)] lg:items-center lg:gap-10">
+                    <div className="flex min-w-0 flex-row items-center gap-3 sm:gap-4">
                         <span className="acc-avatar" aria-hidden="true">{initials}</span>
                         <div className="min-w-0">
                             <h1 className="acc-hero-name truncate">Bonjour {customerName}</h1>
-                            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                            <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:mt-2.5 sm:gap-2">
                                 <span className="acc-badge">
                                     <ShieldCheck size={13} strokeWidth={2} style={{ color: 'var(--acc-accent)' }} />
                                     Espace personnel
