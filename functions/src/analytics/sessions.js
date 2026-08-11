@@ -10,8 +10,9 @@ const { functions, regionalFunctions } = require('../../helpers/runtime');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 const { isAdminIP } = require('./adminIP');
-const { getClientIpInfo, isPrivateOrLocalIp } = require('./ip');
+const { getClientIpInfo } = require('./ip');
 const { checkActiveStrongAdmin } = require('../../helpers/security');
+const { getSiteUrl } = require('../../helpers/config');
 const {
     canResumeSession,
     hashSyncToken,
@@ -160,27 +161,7 @@ const sanitizeEventPreview = (events) => {
     }));
 };
 
-// Géolocalisation simple via IP (ip-api.com — gratuit, pas de clé API requise)
-const getGeoFromIp = async (ip) => {
-    if (!ip || isPrivateOrLocalIp(ip)) return null;
-    try {
-        const response = await fetch(`http://ip-api.com/json/${ip}?fields=country,regionName,city,status`);
-        const data = await response.json();
-        if (data.status === 'success') {
-            return {
-                country: data.country || 'Unknown',
-                region: data.regionName || 'Unknown',
-                city: data.city || 'Unknown'
-            };
-        }
-        return null;
-    } catch (e) {
-        console.error("GeoLoc Error:", e);
-        return null;
-    }
-};
-
-exports.initLiveSession = regionalFunctions().https.onCall(async (data = {}, context) => {
+exports.initLiveSession = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data = {}, context) => {
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'Auth required');
     }
@@ -188,7 +169,7 @@ exports.initLiveSession = regionalFunctions().https.onCall(async (data = {}, con
     const ipInfo = getClientIpInfo(context.rawRequest);
     const ip = ipInfo.ip;
     const userAgent = context.rawRequest.headers['user-agent'] || 'Unknown';
-    const { userId, email, type, device, browser, os, resumeSessionId, resumeSyncToken } = data;
+    const { userId, email, device, browser, os, resumeSessionId, resumeSyncToken } = data;
     const authUid = context.auth.uid || userId || 'unknown';
     const authEmail = context.auth.token.email || email || null;
     const authProvider = context.auth.token.firebase?.sign_in_provider || 'unknown';
@@ -205,13 +186,14 @@ exports.initLiveSession = regionalFunctions().https.onCall(async (data = {}, con
 
     const syncToken = createSyncToken();
 
-    let geo = await getGeoFromIp(ip);
-
     // Vérifier si l'IP appartient à un admin
     const isFromAdminIP = await isAdminIP(ip);
 
-    // Marquer la session comme admin si type admin ou IP admin
-    const sessionType = (type === 'admin' || isFromAdminIP) ? 'admin' : (type || 'anonymous');
+    // Never trust a client-provided admin type. Derive the session category
+    // from server-observed authentication and the server-maintained IP registry.
+    const sessionType = isFromAdminIP
+        ? 'admin'
+        : (authProvider === 'anonymous' ? 'anonymous' : 'client');
 
     const sessionData = {
         userId: authUid,
@@ -240,11 +222,12 @@ exports.initLiveSession = regionalFunctions().https.onCall(async (data = {}, con
         browser: browser || 'Unknown',
         os: os || 'Unknown',
         userAgent: userAgent,
-        geo: geo || { country: 'Unknown', city: 'Unknown', region: 'Unknown' },
+        // Visitor IPs are not disclosed to an uncontracted third-party geo API.
+        geo: { country: 'Unknown', city: 'Unknown', region: 'Unknown' },
         journey: [],
         lastEventPreview: [],
         sessionActive: true,
-        adminIPDetected: isFromAdminIP && type !== 'admin',
+        adminIPDetected: isFromAdminIP,
         analyticsVersion: 3,
         syncTokenHash: hashSyncToken(syncToken),
         syncReasonCounts: {}
@@ -267,7 +250,7 @@ exports.initLiveSession = regionalFunctions().https.onCall(async (data = {}, con
     }
 });
 
-exports.syncSession = regionalFunctions().https.onCall(async (data = {}, context) => {
+exports.syncSession = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data = {}, context) => {
     if (!context.auth) return { success: false, unauthenticated: true };
 
     const { sessionId, journey, lastEventPreview, duration, sessionActive, syncToken, reason } = data;
@@ -313,21 +296,33 @@ exports.syncSession = regionalFunctions().https.onCall(async (data = {}, context
 });
 
 exports.syncSessionBeacon = regionalFunctions().https.onRequest(async (req, res) => {
-    const allowedOrigins = [
-        'https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app',
-        'http://localhost:3000'
-    ];
+    const configuredOrigin = (() => {
+        try { return new URL(getSiteUrl()).origin; } catch { return ''; }
+    })();
+    const allowedOrigins = new Set([
+        configuredOrigin,
+        'http://localhost:3000',
+        'http://127.0.0.1:3000'
+    ].filter(Boolean));
 
     const origin = req.headers.origin;
-    if (allowedOrigins.includes(origin)) {
-        res.set('Access-Control-Allow-Origin', origin);
-    } else {
-        res.set('Access-Control-Allow-Origin', allowedOrigins[0]);
-    }
+    const originAllowed = allowedOrigins.has(origin);
+    if (originAllowed) res.set('Access-Control-Allow-Origin', origin);
+    res.set('Vary', 'Origin');
     res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.set('Access-Control-Allow-Headers', 'Content-Type');
 
+    if (!originAllowed) { res.status(403).send('Origin denied'); return; }
     if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+    if (req.method !== 'POST') { res.status(405).send('Method not allowed'); return; }
+    if (!/^application\/json(?:\s*;|$)/i.test(req.headers['content-type'] || '')) {
+        res.status(415).send('JSON required');
+        return;
+    }
+    if (req.rawBody && req.rawBody.length > 64 * 1024) {
+        res.status(413).send('Payload too large');
+        return;
+    }
 
     try {
         let payload;
@@ -387,7 +382,7 @@ exports.syncSessionBeacon = regionalFunctions().https.onRequest(async (req, res)
     }
 });
 
-exports.deleteSession = regionalFunctions().https.onCall(async (data, context) => {
+exports.deleteSession = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
     await checkActiveStrongAdmin(context);
     const { sessionId } = data;
     if (!sessionId) throw new functions.https.HttpsError('invalid-argument', 'Missing sessionId');
@@ -396,7 +391,7 @@ exports.deleteSession = regionalFunctions().https.onCall(async (data, context) =
     return { success: true };
 });
 
-exports.clearAllSessions = regionalFunctions().https.onCall(async (data, context) => {
+exports.clearAllSessions = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
     await checkActiveStrongAdmin(context);
     try {
         const sessionsRef = db.collection('analytics_sessions');
@@ -423,7 +418,7 @@ exports.clearAllSessions = regionalFunctions().https.onCall(async (data, context
     }
 });
 
-exports.clearAllAffiliateClicks = regionalFunctions().https.onCall(async (data, context) => {
+exports.clearAllAffiliateClicks = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
     await checkActiveStrongAdmin(context);
     try {
         const ref = db.collection('affiliate_clicks');

@@ -36,9 +36,13 @@ after(async () => environment?.cleanup());
 test('public media remains readable while visitor writes are denied', async () => {
   await environment.withSecurityRulesDisabled(async (context) => {
     await uploadBytes(ref(context.storage(), 'furniture/public.webp'), new Uint8Array([1, 2, 3]), { contentType: 'image/webp' });
+    await uploadBytes(ref(context.storage(), 'gallery/public.webp'), new Uint8Array([1, 2, 3]), { contentType: 'image/webp' });
+    await uploadBytes(ref(context.storage(), 'future-private/data.webp'), new Uint8Array([1, 2, 3]), { contentType: 'image/webp' });
   });
   const visitor = environment.unauthenticatedContext().storage();
   await assertSucceeds(getBytes(ref(visitor, 'furniture/public.webp')));
+  await assertSucceeds(getBytes(ref(visitor, 'gallery/public.webp')));
+  await assertFails(getBytes(ref(visitor, 'future-private/data.webp')));
   await assertFails(uploadBytes(ref(visitor, 'furniture/attack.webp'), new Uint8Array([1]), { contentType: 'image/webp' }));
 });
 
@@ -92,6 +96,7 @@ test('active strong admins can upload back-office media without a fifteen-minute
 
   await assertSucceeds(uploadBytes(ref(googleOnlyAdmin, 'homepage/google.webp'), new Uint8Array([1]), { contentType: 'image/webp' }));
   await assertSucceeds(uploadBytes(ref(stalePasskeyAdmin, 'homepage/stale.webp'), new Uint8Array([1]), { contentType: 'image/webp' }));
+  await assertFails(uploadBytes(ref(googleOnlyAdmin, 'future-private/google.webp'), new Uint8Array([1]), { contentType: 'image/webp' }));
 });
 
 test('furniture uploads require active registry, admin claim, strong assurance and a valid image', async () => {

@@ -23,8 +23,8 @@ function getRuntimeProjectId() {
 }
 
 function isE2eProofAllowed() {
-    if (String(process.env.E2E_PROOF_ENABLED || '').toLowerCase() === 'true') return true;
-    return getRuntimeProjectId() === 'secondevienextjsssr';
+    return getRuntimeProjectId() === 'secondevienextjsssr'
+        && String(process.env.E2E_PROOF_ENABLED || '').toLowerCase() === 'true';
 }
 
 function hasMatchingToken(provided, expected) {
@@ -244,10 +244,11 @@ async function waitForCancellationProof(stripe, orderId, paymentIntentId, produc
 exports.e2eStripeHardeningProof = functions
     .runWith({ secrets: [STRIPE_SECRET_KEY, E2E_PROOF_TOKEN], timeoutSeconds: 180, memory: '512MB' })
     .https.onRequest(async (req, res) => {
-        assertLegacyMutationBlocked(functions, 'legacy-e2e-stripe-hardening');
         if (!isE2eProofAllowed()) {
             return res.status(403).json({ error: 'e2e_proof_disabled' });
         }
+
+        assertLegacyMutationBlocked(functions, 'legacy-e2e-stripe-hardening');
 
         if (req.method !== 'POST') {
             return res.status(405).json({ error: 'method_not_allowed' });

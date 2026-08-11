@@ -7,7 +7,7 @@ runConfig:
 
 env:
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    value: "AIzaSyDCk2iAaqauhtTEJpNiQvctMQex3s41xNI"
+    value: "AIzaSyA1QWWEgPdeGPCsir57EhhvEBthFJR9_No"
     availability:
       - BUILD
       - RUNTIME
@@ -65,10 +65,6 @@ env:
     value: "par Anais"
     availability:
       - BUILD
-      - RUNTIME
-  - variable: SUPER_ADMIN_EMAIL
-    secret: SUPER_ADMIN_EMAIL
-    availability:
       - RUNTIME
   - variable: NEXT_PUBLIC_STRIPE_PUBLIC_KEY
     value: "pk_test_51SugHARgzgSZ0erph4oChFln1v7vXEonNgJBpWn2MozkNXc6fTZOVJzJQVldVOFzO2A1fbACKlp35GVi4TMr1Pu600LnFmbYZA"

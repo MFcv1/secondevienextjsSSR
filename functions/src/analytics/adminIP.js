@@ -6,8 +6,7 @@
  */
 const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
-const { SUPER_ADMIN_EMAIL: SUPER_ADMIN_EMAIL_SECRET } = require('../../helpers/secrets');
-const { getSuperAdminEmail } = require('../../helpers/security');
+const { checkActiveStrongAdmin } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
 
 const db = admin.firestore();
@@ -15,29 +14,10 @@ const ADMIN_IP_CACHE_MS = 5 * 60 * 1000;
 let adminIpCache = { expiresAt: 0, ips: null };
 
 // Mettre à jour les IPs des admins lorsqu'ils se connectent
-exports.trackAdminIP = regionalFunctions().runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
-    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Auth requise.');
+exports.trackAdminIP = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+    await checkActiveStrongAdmin(context);
 
     const email = String(context.auth.token.email || '').trim().toLowerCase();
-    const superAdminEmail = getSuperAdminEmail();
-    let isAdmin = context.auth.token.admin === true || context.auth.token.superAdmin === true || email === superAdminEmail;
-
-    // Vérifier aussi dans Firestore si le custom claim n'est pas encore défini
-    if (!isAdmin) {
-        try {
-            const userDoc = await db.doc(`users/${context.auth.uid}`).get();
-            if (!userDoc.exists || (userDoc.data().role !== 'admin' && userDoc.data().role !== 'super_admin')) {
-                return { success: false, message: 'Non admin' };
-            }
-        } catch (err) {
-            return { success: false, message: 'Erreur vérification admin' };
-        }
-    }
-
-    // Le registry UID est autoritatif; le profil et l'email ne peuvent pas reactiver un admin retire.
-    const accessSnap = await db.collection('sys_admin_access').doc(context.auth.uid).get();
-    isAdmin = accessSnap.exists && accessSnap.data().active === true;
-    if (!isAdmin) return { success: false, message: 'Non admin' };
 
     const rawIp = context.rawRequest.headers['x-forwarded-for'] || context.rawRequest.connection.remoteAddress;
     const ip = rawIp ? rawIp.split(',')[0].trim() : 'Unknown';
@@ -74,7 +54,7 @@ exports.trackAdminIP = regionalFunctions().runWith({ secrets: [SUPER_ADMIN_EMAIL
 
         await adminIpsRef.set(currentData);
         adminIpCache = { expiresAt: 0, ips: null };
-        return { success: true, ip: ip };
+        return { success: true };
     } catch (error) {
         console.error("Track Admin IP Error:", error);
         throw new functions.https.HttpsError('internal', 'Erreur lors du suivi IP');

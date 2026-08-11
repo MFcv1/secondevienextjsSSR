@@ -1,6 +1,6 @@
 # Donnees, Firestore et analytics
 
-Derniere mise a jour: 2026-08-10
+Derniere mise a jour: 2026-08-11
 Statut: `REFERENCE_ACTIVE`
 
 Deploiement sandbox: moteur actif depuis le 2026-07-15 sur App Hosting et Functions `europe-west1`.
@@ -154,6 +154,13 @@ Contrat du moteur:
 - l'etat live est derive d'une activite de moins de 30 secondes et l'admin ecoute en temps reel les 100 sessions les plus recentes;
 - les erreurs analytics ne bloquent jamais checkout, Auth ou navigation;
 - ne pas stocker plus de donnees personnelles que necessaire.
+- les callables navigateur imposent App Check; le beacon de fermeture exige
+  origine exacte, JSON borne et jeton de synchronisation opaque;
+- `initLiveSession` ignore tout type `admin` fourni par le navigateur et derive
+  le type depuis Auth et le registre IP serveur;
+- aucune IP n'est envoyee a un service de geolocalisation tiers; `geo` reste
+  `Unknown` tant qu'un fournisseur HTTPS contractualise n'est pas valide;
+- les logs de conversion ne contiennent ni e-mail ni IP bruts.
 
 Exclusion admin:
 

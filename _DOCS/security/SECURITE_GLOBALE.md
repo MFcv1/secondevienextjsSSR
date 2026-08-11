@@ -1,6 +1,6 @@
 # Securite globale
 
-Derniere mise a jour: 2026-08-07
+Derniere mise a jour: 2026-08-11
 Statut: `PREPROD_READY`
 Reference Auth associee: `AUTHENTIFICATION.md`
 
@@ -40,6 +40,12 @@ Pour un administrateur, un claim seul ne suffit pas. Le controle fort exige:
 5. les controles metier propres a la Function.
 
 La suppression d'un acces admin doit retirer les claims, desactiver le registre et revoquer les refresh tokens. Les interfaces peuvent masquer une action, mais le serveur doit toujours la refuser de facon autonome.
+
+L'e-mail `SUPER_ADMIN_EMAIL` n'est jamais un role operationnel. Il n'est
+accepte que par `syncSuperAdminClaim`, pour amorcer une fois le claim et le
+registre proprietaire avec e-mail verifie et AAL2. Les routes Next admin et les
+Functions exigent ensuite claim, registre actif et AAL2; l'ajout ou le retrait
+d'un autre administrateur exige en plus le role `owner` du registre.
 
 ## 3. Firestore Rules
 
@@ -103,6 +109,10 @@ uniquement et les anciens chemins `furniture`, `thumbnails` et `responsive`
 restent explicitement separes afin qu'aucune regle recursive ne contourne ces
 restrictions.
 
+Les seules racines vitrine generiques publiques sont `gallery` et `homepage`.
+Le fallback Storage final refuse lecture et ecriture: creer un nouveau dossier
+ne peut donc plus le rendre public ou inscriptible implicitement.
+
 ## 5. Cloud Functions
 
 Les helpers communs sont dans `functions/helpers/security.js`, `runtime.js`, `secrets.js` et `config.js`.
@@ -115,6 +125,10 @@ Controles attendus selon le type:
 - trigger Firestore: validation defensive des donnees, idempotence et effets bornes;
 - tache planifiee: limite, retention, journalisation et absence de confiance dans les donnees historiques;
 - endpoint E2E: fail-closed hors configuration de test explicite.
+
+Les endpoints de preuve commerce exigent simultanement le projet sandbox exact,
+`E2E_PROOF_ENABLED=true`, leur secret constant-time et les gardes de confinement
+metier. Le seul fait d'etre deploye sur le sandbox ne les active plus.
 
 Le catalogue public ne possede plus de Function HTTP ni de codebase separe. App Hosting lit le bucket snapshot prive avec son compte de service; les clients Firestore anonymes ne peuvent pas lire `furniture`.
 
@@ -131,6 +145,13 @@ Le dernier etat documente du sandbox est un mode d'observation, avec debug token
 5. activer progressivement avec un rollback ecrit.
 
 Ne jamais committer un debug token App Check.
+
+Les callables analytics/admin/e-mail qui acceptent un appel navigateur imposent
+localement `enforceAppCheck: true`. Les deux routes Next admin verifient aussi
+`x-firebase-appcheck` avec Firebase Admin avant le token Auth. Le beacon de
+fermeture analytics constitue l'exception technique: `sendBeacon` ne porte pas
+le header App Check; il reste limite a une origine exacte, un corps JSON de
+64 Kio et un secret de session aleatoire dont seul le hash est stocke.
 
 ## 7. Secrets et configuration
 
@@ -154,6 +175,14 @@ Regles:
 - permissions IAM minimales;
 - un secret ne doit pas etre reutilise comme cle cryptographique pour un autre usage.
 
+`scripts/with-env.mjs` utilise une allowlist fermee pour le pont historique
+`VITE_*` vers `NEXT_PUBLIC_*`. Une nouvelle variable n'entre donc jamais dans
+le bundle navigateur par simple convention de nom. IBAN, BIC, titulaire
+bancaire et e-mail proprietaire sont explicitement neutralises. `.gitignore`,
+`.firebaseignore` et le contexte App Hosting excluent `.env*`, comptes de
+service et cles PEM. App Hosting ne recoit plus `SUPER_ADMIN_EMAIL`; seul le
+bootstrap Cloud Functions y accede via Secret Manager.
+
 Le rail Meta stocke uniquement un Page access token chiffre en AES-256-GCM
 dans `sys_meta_connections`. Les states OAuth sont one-shot, expires et
 proteges par un verificateur dont seul le hash est persiste. Les collections
@@ -172,10 +201,62 @@ IDs Meta et le token chiffre.
 - Referrer Policy stricte;
 - Permissions Policy;
 - suppression du header `X-Powered-By`.
+- `Cross-Origin-Opener-Policy: same-origin-allow-popups`;
+- `Cross-Origin-Resource-Policy: same-site`;
+- `Origin-Agent-Cluster: ?1` et politique cross-domain Adobe fermee;
+- `script-src-attr 'none'`, upgrade HTTPS et directives worker/manifest bornees;
+- `no-store` et `X-Robots-Tag` sur tunnels et API prives;
+- corps JSON bornes a 4 Kio ou 512 Kio sur les routes admin catalogue.
 
 Une nouvelle origine externe doit etre ajoutee a la directive CSP minimale correspondante. Ne pas ouvrir `connect-src`, `frame-src` ou `script-src` avec un wildcard pour corriger rapidement un blocage.
 
-## 9. Operations destructives
+Le layout de production affiche dans la console un avertissement anti-self-XSS:
+ne jamais coller du code recu par message, video ou assistant IA, et rappel du
+Code penal. Ce message est dissuasif et pedagogique; il ne detecte pas
+l'ouverture des DevTools et ne remplace aucune autorisation serveur.
+
+## 9. Audit de durcissement du 2026-08-11
+
+La passe locale, le controle read-only du cloud puis le deploiement cible
+sandbox ont etabli:
+
+- aucun vrai `.env`, compte de service, PEM ou cle privee suivi par Git;
+- aucune valeur de secret local retrouvee dans le build `.next` inspecte
+  (1 615 fichiers, 7 secrets locaux compares sans afficher leur valeur) ni
+  dans les assets JavaScript servis par le sandbox;
+- aucune source map JavaScript publique observee;
+- acces anonyme refuse a `furniture`, au control plane commerce, aux buckets et
+  a l'IAM projet; metadata publiques limitees aux projections attendues;
+- zero vulnerabilite connue apres mise a jour/verrouillage des dependances,
+  contre 27 avis initiaux sur l'ensemble production + outillage;
+- les cinq anciennes Functions OAuth Instagram absentes du code courant ont
+  ete supprimees de facon ciblee apres autorisation explicite; les Functions
+  Meta actuelles restent deployees;
+- la cle Web du site heberge est desormais distincte de la cle de developpement,
+  limitee aux API Firebase requises et a l'origine exacte du sandbox;
+- les metriques App Check sur sept jours ont confirme des jetons valides pour
+  l'application legitime avant activation. Auth, Firestore et Storage sont
+  maintenant `ENFORCED` sur le projet sandbox, avec rollback `UNENFORCED`
+  documente;
+- les trois comptes de service historiques ne portent plus `roles/editor`.
+  Les roles minimaux ont ete appliques apres inventaire des runtimes, simulation
+  IAM et preparation d'une politique de rollback;
+- la contrainte projet empechant les attributions automatiques futures de
+  `roles/editor` n'a pas pu etre activee: le compte operateur ne possede pas
+  `setOrgPolicy`. Ce verrou preventif reste une action proprietaire cloud.
+
+Les Rules Storage, 18 Functions ciblees et App Hosting ont ensuite ete deployes
+avec succes sur le sandbox. Les sondes hebergees confirment les refus attendus:
+401 sans App Check sur un callable, 403 pour une origine beacon inconnue, 403
+sur les preuves E2E desactivees, 401 sur la route Next admin sans identite, 415
+pour un corps non JSON et 404 sur `/.env` et `/.git/config`.
+
+Le code analytics n'envoie plus l'IP visiteur au service tiers `ip-api.com` en
+HTTP et ne journalise plus e-mail/IP bruts lors de la conversion de session.
+La geolocalisation affiche `Inconnu` tant qu'un fournisseur HTTPS contractualise
+et conforme n'est pas choisi.
+
+## 10. Operations destructives
 
 Les remises a zero, purges, remboursements, retraits admin et nettoyages de donnees exigent:
 
@@ -188,17 +269,19 @@ Les remises a zero, purges, remboursements, retraits admin et nettoyages de donn
 
 Ne jamais lancer un script de migration, de purge ou de backfill en mode commit pour explorer son comportement.
 
-## 10. Dettes production
+## 11. Dettes production
 
 | Sujet | Statut | Condition de fermeture |
 | --- | --- | --- |
 | rail Firebase production absent | `PRODUCTION_DEFERRED` | projet/alias/backend prod, IAM, secrets et recette crees |
-| App Check enforcement non prouve | `PRODUCTION_DEFERRED` | telemetrie representative et rollout progressif |
+| App Check production | `PRODUCTION_DEFERRED` | reproduire sur le futur projet production apres telemetrie representative |
 | domaine, CSP et origines finales | `PRODUCTION_DEFERRED` | domaine achete et configure |
 | sauvegardes, alertes et observabilite prod | `PRODUCTION_DEFERRED` | politique d'exploitation approuvee |
 | endpoints E2E exportes | `DEBT` | garder fail-closed ou retirer dans une passe Functions dediee |
+| prevention des grants Editor automatiques | `CLOUD_OWNER_ACTION` | activer `iam.automaticIamGrantsForDefaultServiceAccounts` avec `setOrgPolicy` |
+| CSP avec `unsafe-inline` | `ARCHITECTURE_DEBT` | migration nonce/hash compatible avec les pages publiques statiques et les integrations tierces |
 
-## 11. Checklist avant livraison production
+## 12. Checklist avant livraison production
 
 - [ ] projet et alias production distincts;
 - [ ] secrets production crees et permissions revues;

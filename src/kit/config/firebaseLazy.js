@@ -66,6 +66,14 @@ const ensureAppCheck = () => {
   return appCheckPromise;
 };
 
+export const getFirebaseAppCheckToken = async () => {
+  const appCheck = await ensureAppCheck();
+  if (!appCheck) return '';
+  const { getToken } = await import('firebase/app-check');
+  const result = await getToken(appCheck, false);
+  return result?.token || '';
+};
+
 export const loadFirestoreModule = () => {
   if (!firestoreModulePromise) {
     firestoreModulePromise = import('firebase/firestore');

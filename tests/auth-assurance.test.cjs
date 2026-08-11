@@ -129,6 +129,35 @@ test('strong authentication never replaces the admin role check', () => {
   assert.throws(() => checkStrongAdmin(caller), { code: 'permission-denied' });
 });
 
+test('configured owner email alone never grants operational admin access', () => {
+  const { checkStrongAdmin } = loadSecurity();
+  const caller = context({
+    admin: false,
+    superAdmin: false,
+    email: 'owner@example.test',
+    email_verified: true,
+    firebase: { sign_in_provider: 'google.com' },
+  });
+  assert.throws(() => checkStrongAdmin(caller), { code: 'permission-denied' });
+});
+
+test('configured owner email remains available only for verified AAL2 bootstrap', () => {
+  const previous = process.env.SUPER_ADMIN_EMAIL;
+  process.env.SUPER_ADMIN_EMAIL = 'owner@example.test';
+  const { checkConfiguredSuperAdminBootstrap } = loadSecurity();
+  const caller = context({
+    email: 'owner@example.test',
+    email_verified: true,
+    firebase: { sign_in_provider: 'google.com' },
+  });
+  try {
+    assert.equal(checkConfiguredSuperAdminBootstrap(caller).assurance.level, 'aal2');
+  } finally {
+    if (previous === undefined) delete process.env.SUPER_ADMIN_EMAIL;
+    else process.env.SUPER_ADMIN_EMAIL = previous;
+  }
+});
+
 test('active registry is required even when a current AAL2 token still has admin claims', async () => {
   const { checkActiveStrongAdmin } = loadSecurity({
     exists: true,
@@ -182,7 +211,8 @@ test('token minting and Firebase rules carry the same AAL contract', () => {
   assert.match(storageRules, /match \/furniture\/publication-sessions\/\{sessionId\}\/originals\/[\s\S]*?hasStrongAdminAuth\(\)[\s\S]*?hasActiveAdminAccess\(\)/);
   assert.match(storageRules, /firestore\.exists\(\/databases\/\(default\)\/documents\/sys_admin_access\/\$\(request\.auth\.uid\)\)/);
   assert.match(storageRules, /request\.auth\.token\.firebase\.sign_in_provider == 'google\.com'/);
-  assert.match(storageRules, /topLevel != 'furniture'/);
+  assert.match(storageRules, /publicRoot in \['gallery', 'homepage'\]/);
+  assert.match(storageRules, /match \/\{allPaths=\*\*\} \{\s*allow read, write: if false;/);
 });
 
 test('admin authorization has no hidden recent-passkey gate', () => {

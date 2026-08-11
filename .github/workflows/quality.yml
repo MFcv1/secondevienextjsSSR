@@ -27,6 +27,7 @@ jobs:
           java-version: 21
       - run: pnpm install --frozen-lockfile
       - run: npm ci --prefix functions
+      - run: pnpm security:audit
       - run: pnpm lint
       - run: pnpm lint:functions
       - run: pnpm test:commerce
@@ -42,6 +43,7 @@ jobs:
       - run: pnpm build
         env:
           CATALOG_BUILD_FIXTURE: "true"
+      - run: pnpm security:audit:bundle
       - run: pnpm seo:origin
       - run: pnpm next:routes
       - name: Performance budget report

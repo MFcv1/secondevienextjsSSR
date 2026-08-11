@@ -1,6 +1,6 @@
 # Infrastructure Firebase, Next.js et environnements
 
-Derniere mise a jour: 2026-08-07
+Derniere mise a jour: 2026-08-11
 Statut: `PREPROD_READY - PRODUCTION_DEFERRED`
 
 ## 1. Runtime et gestionnaire de paquets
@@ -258,6 +258,64 @@ n'a ete modifiee.
 
 Les vrais `.env` sont locaux. Verifier avec `git ls-files` avant toute hypothese et ne jamais afficher leurs valeurs dans un rapport.
 
+Audit et durcissement securite sandbox du 2026-08-11:
+
+- `.env*`, comptes de service et cles PEM sont exclus simultanement de Git, de
+  Firebase CLI et du contexte d'upload App Hosting;
+- le pont `VITE_*` vers `NEXT_PUBLIC_*` est une allowlist fermee; les donnees
+  bancaires ne peuvent plus devenir publiques automatiquement;
+- App Hosting ne reference plus `SUPER_ADMIN_EMAIL`; ce secret reste attache
+  uniquement au bootstrap owner dans Cloud Functions;
+- la cle Web Firebase hebergee est separee de la cle de developpement et limitee
+  a l'origine exacte `secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app`;
+- les cinq anciennes Functions OAuth Instagram sans export local ont ete
+  supprimees apres autorisation explicite; le rail Meta courant est conserve;
+- Auth, Firestore et Storage sont `ENFORCED` App Check sur le sandbox apres
+  lecture des metriques valides sur sept jours;
+- aucun binding IAM public ni aucun `roles/editor` ne subsiste. Les comptes de
+  service Appspot, Compute et Cloud Services portent uniquement leurs roles
+  runtime identifies;
+- l'activation de la contrainte
+  `iam.automaticIamGrantsForDefaultServiceAccounts` reste refusee faute du droit
+  `setOrgPolicy`; elle ne doit pas etre contournee avec un compte plus large non
+  autorise.
+
+Deploiement cible termine le 2026-08-11 a 14:47 Europe/Paris:
+
+- Rules Storage publiees apres validation emulator; tout nouveau repertoire
+  racine est prive par defaut;
+- 18 Functions Auth/admin/analytics/e-mail/E2E mises a jour, dont les deux
+  preuves E2E maintenues desactivees sans flag explicite;
+- rollout App Hosting `SUCCEEDED`, deployment ID
+  `sv-msongnhg-71f98102199c`;
+- controles heberges: `/` et `/admin` HTTP 200, admin en `private, no-store`
+  et `noindex`, chemins `/.env` et `/.git/config` HTTP 404, route admin sans
+  identite HTTP 401, contenu non JSON HTTP 415;
+- controles Functions: appel sans App Check HTTP 401, origine beacon inconnue
+  HTTP 403 et endpoints E2E inactifs HTTP 403.
+
+Aucune Rule Firestore, donnee Firestore/Storage, configuration Stripe, cle API,
+permission IAM ou cible production n'a ete modifiee pendant ce deploiement.
+
+Seconde phase de durcissement explicitement autorisee le 2026-08-11:
+
+- retrait des trois bindings projet `roles/editor` apres inventaire, simulation
+  et sauvegarde de la politique de rollback;
+- suppression ciblee des cinq anciennes Functions Instagram/OAuth, sans toucher
+  aux cinq Functions Meta actuelles;
+- passage App Check a `ENFORCED` pour Auth, Firestore et Storage;
+- cle Firebase Web App Hosting dediee, bornee aux API Firebase requises et au
+  referer exact du sandbox; une origine tierce est refusee par la restriction;
+- rollout App Hosting `build-2026-08-11-002` `SUCCEEDED`, deployment ID
+  `sv-msos946q-a4ef2272161d`;
+- page publique HTTP 200 sans erreur navigateur; la rotation de cle provoque
+  une deconnexion unique des sessions Firebase deja stockees sous l'ancienne
+  cle, puis les nouvelles connexions utilisent la cle bornee;
+- aucune erreur Cloud Functions/Cloud Run observee apres la reduction IAM.
+
+Aucune donnee Firestore/Storage, configuration Stripe, cible ou rail production
+n'a ete cree ou modifie pendant cette seconde phase.
+
 ## 6. Variables publiques et secrets
 
 Variables publiques typiques:
@@ -346,7 +404,15 @@ Le sous-domaine `hosted.app` appartient a Google et ne peut pas servir de domain
 
 ## 8. App Check
 
-Le sandbox a ete configure et observe, mais l'enforcement production n'est pas acquis. Les webhooks, le SSR, les endpoints publics et les tests ont des besoins differents.
+Le sandbox impose App Check depuis le 2026-08-11 sur Firebase Auth, Firestore et
+Storage. L'activation a ete precedee d'une lecture agregee sur sept jours: les
+jetons de l'application Web legitime etaient valides, tandis que du trafic
+invalide ou sans jeton etait encore accepte en mode observation. Les webhooks
+signes, le SSR et les endpoints publics conservent leurs controles propres.
+
+Ce statut ne vaut pas activation production: le futur projet production devra
+etre observe et active separement. Le rollback sandbox consiste a remettre les
+trois services en `UNENFORCED` si un parcours legitime casse.
 
 Commande read-only disponible:
 
@@ -522,6 +588,7 @@ Rollback specifique au guide:
 npm run infra:env
 npm run infra:deploy
 npm run appcheck:audit
+npm run security:audit
 npm run build
 ```
 

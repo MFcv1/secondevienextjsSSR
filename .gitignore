@@ -36,6 +36,7 @@ apphosting.local.yaml
 
 # logs and runtime files
 logs/
+security-audits/
 .maintenance/
 *.log
 *.pid

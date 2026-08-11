@@ -427,7 +427,9 @@ test('admin removal clears active claims, profile role and whitelist entry', asy
     assertConfirmText: () => undefined,
     checkIsAdmin: () => undefined,
     checkStrongSuperAdmin: () => undefined,
+    checkConfiguredSuperAdminBootstrap: () => undefined,
     checkActiveStrongAdmin: async () => undefined,
+    checkActiveStrongSuperAdmin: async () => undefined,
     getSuperAdminEmail: () => '',
     normalizeEmail: (value) => String(value || '').trim().toLowerCase(),
     writeSecurityAudit: async (...args) => calls.audits.push(args)

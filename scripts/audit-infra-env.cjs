@@ -181,9 +181,8 @@ if (!hasAny(productionExample, ['NEXT_PUBLIC_RECAPTCHA_SITE_KEY', 'VITE_RECAPTCH
 
 const serverSuperAdmin = appHostingByName.get('SUPER_ADMIN_EMAIL');
 const publicSuperAdmin = appHostingByName.get('NEXT_PUBLIC_SUPER_ADMIN_EMAIL');
-if (!serverSuperAdmin) addFinding('error', 'admin-security', 'apphosting.yaml missing server-only SUPER_ADMIN_EMAIL used by /api/revalidate-catalog');
-if (serverSuperAdmin?.value) {
-  addFinding('error', 'admin-security', 'SUPER_ADMIN_EMAIL must be referenced as a Secret Manager secret, not stored as a plain apphosting.yaml value');
+if (serverSuperAdmin) {
+  addFinding('error', 'admin-security', 'App Hosting must not receive SUPER_ADMIN_EMAIL; owner bootstrap runs only in Cloud Functions');
 }
 if (publicSuperAdmin) {
   addFinding(
@@ -203,6 +202,24 @@ const firebaseIgnoreRequired = ['.env*', 'service-account.json', '*.pem', '*.key
 for (const pattern of firebaseIgnoreRequired) {
   if (!firebaseIgnoreLines.has(pattern)) {
     addFinding('error', 'secret-hygiene', `.firebaseignore missing explicit exclusion "${pattern}"`);
+  }
+}
+
+const appHostingIgnore = new Set(firebaseJson.apphosting?.[0]?.ignore || []);
+const appHostingIgnoreRequired = ['.env*', '**/.env*', 'service-account.json', '**/service-account.json', '*.pem', '*.key'];
+for (const pattern of appHostingIgnoreRequired) {
+  if (!appHostingIgnore.has(pattern)) {
+    addFinding('error', 'secret-hygiene', `firebase.json App Hosting ignore missing explicit exclusion "${pattern}"`);
+  }
+}
+
+const envBridge = readText('scripts/with-env.mjs');
+if (!envBridge.includes('PUBLIC_ENV_BRIDGE_ALLOWLIST')) {
+  addFinding('error', 'secret-hygiene', 'scripts/with-env.mjs must use an explicit VITE_* public allowlist');
+}
+for (const forbiddenKey of ['NEXT_PUBLIC_SUPER_ADMIN_EMAIL', 'NEXT_PUBLIC_BUSINESS_IBAN', 'NEXT_PUBLIC_BUSINESS_BIC', 'NEXT_PUBLIC_BANK_HOLDER']) {
+  if (!envBridge.includes(`'${forbiddenKey}'`)) {
+    addFinding('error', 'secret-hygiene', `scripts/with-env.mjs does not explicitly neutralize ${forbiddenKey}`);
   }
 }
 

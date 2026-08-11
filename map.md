@@ -71,8 +71,8 @@ Seconde Vie
 | `/api/search` | `[API]` | reponse non persistante | non indexable | `route.js` | recherche serveur |
 | `/api/catalog` | `[API]` | reponse non persistante | non indexable | `route.js` | catalogue materialise |
 | `/api/catalog/version` | `[API]` | ETag/304 revalide | non indexable | `route.js` | revision + aggregateSha256 |
-| `/api/admin/catalog-publication-status` | `[API]` admin | aucun | non indexable | `route.js` | preuve fraiche de la release exacte post-publication |
-| `/api/revalidate-catalog` | `[API]` | aucun | non indexable | `route.js` | HMAC builder + revalidation catalogue |
+| `/api/admin/catalog-publication-status` | `[API]` admin | aucun, no-store | non indexable | `route.js` | App Check + token non revoque + claim + registre actif + AAL2, corps 4 Kio, preuve fraiche de la release exacte |
+| `/api/revalidate-catalog` | `[API]` | aucun, no-store | non indexable | `route.js` | HMAC builder ou App Check + admin fort, corps 512 Kio + revalidation catalogue |
 
 ## 4. Parcours et dependances
 
@@ -114,6 +114,7 @@ secrets, deploiement et recette Meta reelle restent M4/M5.
   -> createPublishedProductAdmin seulement apres succes de tous les uploads [F]
      -> contenu + offre + stock + publication dans une transaction [DB]
   -> preuve admin non cachee `/api/admin/catalog-publication-status`
+     (App Check + token Auth non revoque + claim + registre actif + AAL2)
      du produit et de la release exacte; HTML ISR non bloquant
   -> succes -> bascule automatique vers Publications [C]
   -> prepareSocialPublicationAdmin [F] apres confirmation site
@@ -662,6 +663,8 @@ src/kit/admin/
 src/lib/server/
 |-- env.js ............................ env publique/serveur
 |-- firebaseAdmin.js .................. Firebase Admin Next
+|-- adminAuthorization.js ............. App Check + Auth revoquee + claim + registre + AAL2 pour API Next
+|-- requestBody.js .................... lecture JSON streaming bornee et UTF-8 stricte
 |-- products.js ....................... acces/normalisation catalogue
 |-- productRoute.js ................... resolution pure ID ou slug canonique, y compris IDs avec tirets
 |-- materializedCatalog.js ............ lecteur Storage current/previous/LKG

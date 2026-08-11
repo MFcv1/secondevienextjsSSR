@@ -1,7 +1,7 @@
 'use client';
 
 import { ref, uploadBytesResumable } from 'firebase/storage';
-import { getCallableFunction } from '../config/firebaseLazy';
+import { getCallableFunction, getFirebaseAppCheckToken } from '../config/firebaseLazy';
 import { getStorageInstance } from '../config/firebaseStorage';
 
 const PENDING_PUBLICATION_KEY = 'secondevie:pending-product-publication:v1';
@@ -322,6 +322,10 @@ export const waitForPublicCatalogProduct = async (productId, {
   onStatus
 } = {}) => {
   const startedAt = Date.now();
+  const appCheckToken = await getFirebaseAppCheckToken();
+  if (!appCheckToken) {
+    throw new Error('La protection App Check est indisponible. Rechargez la page avant de confirmer la publication.');
+  }
   let lastStatus = '';
   const reportStatus = (status) => {
     if (status === lastStatus) return;
@@ -337,6 +341,7 @@ export const waitForPublicCatalogProduct = async (productId, {
         headers: {
           accept: 'application/json',
           authorization: `Bearer ${idToken}`,
+          'x-firebase-appcheck': appCheckToken,
           'content-type': 'application/json'
         },
         body: JSON.stringify({ productId })

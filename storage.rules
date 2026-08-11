@@ -101,26 +101,17 @@ service firebase.storage {
       allow delete: if false;
     }
 
-    match /{topLevel}/{allPaths=**} {
-      allow read: if topLevel != 'catalog-projection'
-        && topLevel != 'commerce-documents'
-        && topLevel != 'admin-invoices'
-        && topLevel != 'quote-requests'
-        && topLevel != 'furniture';
-      
-      // BLINDAGE ADMINISTRATEUR (Standard & Robuste)
-      // Seul l'admin identifié peut uploader. 
-      // On bloque les fichiers trop gros (>10Mo), les non-images et les SVG executables.
-      allow create, update: if topLevel != 'furniture'
-        && topLevel != 'catalog-projection'
-        && topLevel != 'commerce-documents'
-        && topLevel != 'admin-invoices'
-        && topLevel != 'quote-requests'
-        && isAdminClaim()
-        && hasStrongAdminAuth()
-        && hasActiveAdminAccess()
-        && isValidImageWrite();
+    // Public showcase media is explicit. New top-level folders are private by
+    // default and cannot silently become readable when a feature is added.
+    match /{publicRoot}/{allPaths=**} {
+      allow read: if publicRoot in ['gallery', 'homepage'];
+      allow create, update: if publicRoot in ['gallery', 'homepage']
+        && isValidAdminImageWrite();
       allow delete: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }

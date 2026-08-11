@@ -8,7 +8,8 @@ const {
     assertConfirmText,
     checkStrongAdmin,
     checkActiveStrongAdmin,
-    checkStrongSuperAdmin,
+    checkActiveStrongSuperAdmin,
+    checkConfiguredSuperAdminBootstrap,
     getSuperAdminEmail,
     normalizeEmail,
     writeSecurityAudit
@@ -123,7 +124,7 @@ exports.ensureAdminAccessRegistry = regionalFunctions().runWith({
 });
 
 exports.syncSuperAdminClaim = regionalFunctions().runWith({ enforceAppCheck: true, secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
-    checkStrongSuperAdmin(context);
+    checkConfiguredSuperAdminBootstrap(context);
     const configuredSuperAdminEmail = getSuperAdminEmail();
     const callerEmail = normalizeEmail(context.auth?.token?.email);
     if (!configuredSuperAdminEmail || callerEmail !== configuredSuperAdminEmail) {
@@ -193,7 +194,7 @@ exports.syncSuperAdminClaim = regionalFunctions().runWith({ enforceAppCheck: tru
 
 // --- AJOUTER UN ADMIN ---
 exports.addAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
-    await checkActiveStrongAdmin(context);
+    await checkActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'AJOUTER ADMIN', 'ajout admin');
     const normalizedEmail = normalizeEmail(data?.email);
     const name = data?.name;
@@ -271,14 +272,15 @@ exports.addAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, secr
         });
         return { success: true, userExists, uid: targetUid };
     } catch (error) {
+        if (error instanceof functions.https.HttpsError) throw error;
         console.error("Erreur Add Admin:", error);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new functions.https.HttpsError('internal', 'Ajout administrateur impossible.');
     }
 });
 
 // --- RÉVOQUER UN ADMIN ---
 exports.removeAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
-    await checkActiveStrongAdmin(context);
+    await checkActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'RETIRER ADMIN', 'retrait admin');
     const { uid } = data;
     const email = normalizeEmail(data?.email);
@@ -391,7 +393,7 @@ exports.removeAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, s
 });
 
 // --- LOG CONNEXION (IP + Device) ---
-exports.logUserConnection = regionalFunctions().https.onCall(async (data, context) => {
+exports.logUserConnection = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
     if (!context.auth) return { success: false, message: "Unauthenticated" };
 
     const userId = context.auth.uid;
@@ -423,15 +425,15 @@ exports.logUserConnection = regionalFunctions().https.onCall(async (data, contex
             }
         }, { merge: true });
 
-        return { success: true, ip: ip };
+        return { success: true };
     } catch (error) {
         console.error("❌ Erreur LogConnection:", error);
-        return { success: false, error: error.message };
+        return { success: false, error: 'connection_log_failed' };
     }
 });
 
 // --- STATS UTILISATEURS (Admin) ---
-exports.getUserStats = regionalFunctions().runWith({ timeoutSeconds: 300, memory: '512MB' }).https.onCall(async (data, context) => {
+exports.getUserStats = regionalFunctions().runWith({ enforceAppCheck: true, timeoutSeconds: 300, memory: '512MB' }).https.onCall(async (data, context) => {
     await checkActiveStrongAdmin(context);
 
     try {
@@ -498,6 +500,6 @@ exports.getUserStats = regionalFunctions().runWith({ timeoutSeconds: 300, memory
         return { success: true, count: allUsers.length, users: includeUsers ? allUsers : [] };
     } catch (error) {
         console.error("❌ Erreur getUserStats:", error);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new functions.https.HttpsError('internal', 'Statistiques utilisateurs indisponibles.');
     }
 });

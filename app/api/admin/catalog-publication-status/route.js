@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getAdminAuth } from '../../../../src/lib/server/firebaseAdmin';
+import { authorizeAdminRequest } from '../../../../src/lib/server/adminAuthorization';
 import { getMaterializedProductResult } from '../../../../src/lib/server/materializedCatalog';
 import { publicEnv } from '../../../../src/lib/server/env';
+import { readBoundedJsonBody, RequestBodyError } from '../../../../src/lib/server/requestBody';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,31 +13,17 @@ const jsonResponse = (payload, status = 200) => NextResponse.json(payload, {
   headers: responseHeaders,
 });
 
-const getBearerToken = (request) => {
-  const match = (request.headers.get('authorization') || '').match(/^Bearer\s+(.+)$/i);
-  return match?.[1] || '';
-};
-
-const isAdminRequest = async (request) => {
-  const token = getBearerToken(request);
-  if (!token) return false;
-  const auth = getAdminAuth();
-  if (!auth) return false;
-  try {
-    const decoded = await auth.verifyIdToken(token);
-    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || '';
-    return decoded.admin === true
-      || decoded.superAdmin === true
-      || Boolean(superAdminEmail && decoded.email === superAdminEmail);
-  } catch {
-    return false;
-  }
-};
-
 export async function POST(request) {
-  if (!await isAdminRequest(request)) return jsonResponse({ error: 'forbidden' }, 403);
+  const adminCheck = await authorizeAdminRequest(request);
+  if (!adminCheck.ok) return jsonResponse({ error: adminCheck.error }, adminCheck.status);
 
-  const body = await request.json().catch(() => ({}));
+  let body;
+  try {
+    ({ body } = await readBoundedJsonBody(request, { maxBytes: 4096 }));
+  } catch (error) {
+    if (error instanceof RequestBodyError) return jsonResponse({ error: error.code }, error.status);
+    return jsonResponse({ error: 'invalid_request' }, 400);
+  }
   const productId = typeof body.productId === 'string' ? body.productId.trim() : '';
   if (!productId || productId.length > 180) {
     return jsonResponse({ error: 'invalid_product_id' }, 400);

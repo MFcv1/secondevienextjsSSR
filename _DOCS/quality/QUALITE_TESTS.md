@@ -1,6 +1,6 @@
 # Qualite, tests et gates
 
-Derniere mise a jour: 2026-08-10
+Derniere mise a jour: 2026-08-11
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Principe de proportion
@@ -20,15 +20,19 @@ Toujours annoncer ce qui a ete lance et ce qui ne l'a pas ete.
 `.github/workflows/quality.yml` s'execute sur pull request et push `main` avec Node 22/pnpm:
 
 1. installation frozen lockfile;
-2. lint application puis `lint:functions`;
-3. agregat bloquant `test:commerce`;
-4. suites catalogue coeur, resilience et Rules Emulator;
-5. tests Auth;
-6. contrat de coherence des versions de deploiement et du cache ISR;
-7. contrat SEO public;
-8. build Next;
-9. classification des routes;
-10. budget performance en rapport non bloquant.
+2. gate `security:audit`: contrats statiques, hygiene env et audits de toutes
+   les dependances racine/production Functions au seuil modere;
+3. lint application puis `lint:functions`;
+4. agregat bloquant `test:commerce`;
+5. suites catalogue coeur, resilience et Rules Emulator;
+6. tests Auth;
+7. contrat de coherence des versions de deploiement et du cache ISR;
+8. contrat SEO public;
+9. build Next;
+10. scan du build contre les valeurs sensibles locales et les source maps
+    publiques avec `security:audit:bundle`;
+11. classification des routes;
+12. budget performance en rapport non bloquant.
 
 Une CI verte ne remplace pas les E2E Firebase/Stripe ni une recette visuelle.
 
@@ -155,6 +159,7 @@ Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCa
 | catalogue securite/Rules | `test:catalog:security` |
 | catalogue materialise | `test:catalog`, recette navigateur sandbox et Data Access seulement si explicitement demande |
 | Functions/rules | tests cibles, audit exports/rules, deploiement sandbox cible |
+| securite transverse | `security:audit`, `test:auth`, `test:catalog:security`, lint, build et probes sandbox passives |
 | guide facturation | `test:billing-onboarding`, lint cible, reprise de progression, smoke compte test/super-admin uniquement sur demande |
 | factures manuelles admin | `test:invoices`, lint cible, build; envoi Gmail reel uniquement sur demande explicite |
 | couts Firestore | `test:analytics`, mesure Usage Insights/Data Access avant-apres si necessaire |
@@ -165,6 +170,7 @@ Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCa
 
 ```bash
 npm run lint
+npm run security:audit
 npm run test:deployment-cache
 npm run test:admin-cache
 npm run build

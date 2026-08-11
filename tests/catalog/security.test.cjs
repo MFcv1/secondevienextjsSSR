@@ -58,9 +58,13 @@ test('Firestore public ne lit pas les meubles et public/meta a disparu', () => {
 
 test('la confirmation admin lit le pointeur frais sans ouvrir un contournement public du cache', () => {
   const route = read('app/api/admin/catalog-publication-status/route.js');
+  const authorization = read('src/lib/server/adminAuthorization.js');
   const publicRoute = read('app/api/catalog/route.js');
-  assert.match(route, /verifyIdToken\(token\)/);
-  assert.match(route, /decoded\.admin === true/);
+  assert.match(route, /authorizeAdminRequest\(request\)/);
+  assert.match(authorization, /verifyIdToken\(token, true\)/);
+  assert.match(authorization, /verifyToken\(appCheckToken\)/);
+  assert.match(authorization, /sys_admin_access/);
+  assert.match(authorization, /hasAal2/);
   assert.match(route, /pointerCache: 'fresh'/);
   assert.match(route, /cache-control': 'no-store/);
   assert.doesNotMatch(publicRoute, /searchParams\.get\('fresh'\)/);

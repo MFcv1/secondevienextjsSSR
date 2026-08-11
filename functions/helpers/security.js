@@ -4,6 +4,7 @@
  */
 const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
+const crypto = require('node:crypto');
 const { PRODUCT_COLLECTIONS } = require('./config');
 
 const SECURITY_AUDIT_COLLECTION = 'sys_audit_security';
@@ -23,26 +24,33 @@ function getSuperAdminEmail() {
     }
 }
 
+function logAuthorizationDenial(reason, context) {
+    const uid = context.auth?.uid || '';
+    console.warn('Security authorization denied', {
+        reason,
+        authenticated: Boolean(context.auth),
+        uidHash: uid ? crypto.createHash('sha256').update(uid).digest('hex').slice(0, 16) : null
+    });
+}
+
 /**
- * Vérifie que l'appelant est un Admin (Custom Claim ou Super Admin email)
+ * Vérifie que l'appelant est un Admin via un Custom Claim.
  * @throws {HttpsError} si non-admin
  * @returns {{ isSuper: boolean }} info sur le statut
  */
 function checkIsAdmin(context) {
     if (!context.auth) {
+        logAuthorizationDenial('authentication-required', context);
         throw new functions.https.HttpsError('unauthenticated', 'Authentification requise.');
     }
-    const email = normalizeEmail(context.auth.token.email);
     const isAdminClaim = context.auth.token.admin === true;
     const isSuperClaim = context.auth.token.superAdmin === true;
-    const isVerifiedEmail = context.auth.token.email_verified === true;
-    const superAdminEmail = getSuperAdminEmail();
-    const isSuperEmail = Boolean(superAdminEmail) && isVerifiedEmail && email === superAdminEmail;
 
-    if (!isAdminClaim && !isSuperClaim && !isSuperEmail) {
+    if (!isAdminClaim && !isSuperClaim) {
+        logAuthorizationDenial('admin-claim-required', context);
         throw new functions.https.HttpsError('permission-denied', 'Accès refusé : droits administrateur requis.');
     }
-    return { isSuper: isSuperClaim || isSuperEmail };
+    return { isSuper: isSuperClaim };
 }
 
 /**
@@ -51,13 +59,12 @@ function checkIsAdmin(context) {
  */
 function checkIsSuperAdmin(context) {
     if (!context.auth) {
+        logAuthorizationDenial('authentication-required', context);
         throw new functions.https.HttpsError('unauthenticated', 'Authentification requise.');
     }
     const isSuperClaim = context.auth.token.superAdmin === true;
-    const isVerifiedEmail = context.auth.token.email_verified === true;
-    const superAdminEmail = getSuperAdminEmail();
-    const isSuperEmail = Boolean(superAdminEmail) && isVerifiedEmail && normalizeEmail(context.auth.token.email) === superAdminEmail;
-    if (!isSuperClaim && !isSuperEmail) {
+    if (!isSuperClaim) {
+        logAuthorizationDenial('super-admin-claim-required', context);
         throw new functions.https.HttpsError('permission-denied', 'Accès refusé : Super Admin uniquement.');
     }
 }
@@ -93,6 +100,7 @@ function checkStrongAdmin(context) {
     const adminInfo = checkIsAdmin(context);
     const assurance = getAuthAssurance(context);
     if (assurance.level !== 'aal2') {
+        logAuthorizationDenial('aal2-required', context);
         throw new functions.https.HttpsError(
             'failed-precondition',
             'Confirmez votre identite avec une passkey ou Google pour ouvrir l administration.',
@@ -106,9 +114,39 @@ function checkStrongSuperAdmin(context) {
     checkIsSuperAdmin(context);
     const assurance = getAuthAssurance(context);
     if (assurance.level !== 'aal2') {
+        logAuthorizationDenial('aal2-required', context);
         throw new functions.https.HttpsError(
             'failed-precondition',
             'Confirmez votre identite avec une passkey ou Google avant cette action sensible.',
+            { reason: 'strong-auth-required', requiredAssurance: 'aal2' }
+        );
+    }
+    return { assurance };
+}
+
+// The configured owner email is accepted only for the one-time bootstrap that
+// creates claims and the active owner registry. It is never an operational role.
+function checkConfiguredSuperAdminBootstrap(context) {
+    if (!context.auth) {
+        logAuthorizationDenial('bootstrap-authentication-required', context);
+        throw new functions.https.HttpsError('unauthenticated', 'Authentification requise.');
+    }
+    const configuredEmail = getSuperAdminEmail();
+    const callerEmail = normalizeEmail(context.auth.token.email);
+    if (
+        !configuredEmail
+        || context.auth.token.email_verified !== true
+        || callerEmail !== configuredEmail
+    ) {
+        logAuthorizationDenial('configured-owner-required', context);
+        throw new functions.https.HttpsError('permission-denied', 'Bootstrap proprietaire refuse.');
+    }
+    const assurance = getAuthAssurance(context);
+    if (assurance.level !== 'aal2') {
+        logAuthorizationDenial('bootstrap-aal2-required', context);
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'Confirmez votre identite avec une passkey ou Google avant le bootstrap.',
             { reason: 'strong-auth-required', requiredAssurance: 'aal2' }
         );
     }
@@ -126,6 +164,7 @@ async function getActiveAdminAccess(context, { requireOwner = false } = {}) {
         .get();
     const access = accessSnap.exists ? accessSnap.data() : null;
     if (!access || access.active !== true) {
+        logAuthorizationDenial('admin-access-inactive', context);
         throw new functions.https.HttpsError(
             'permission-denied',
             'Acces administrateur retire ou non active.',
@@ -133,6 +172,7 @@ async function getActiveAdminAccess(context, { requireOwner = false } = {}) {
         );
     }
     if (requireOwner && access.role !== 'owner') {
+        logAuthorizationDenial('owner-access-required', context);
         throw new functions.https.HttpsError(
             'permission-denied',
             'Acces proprietaire requis.',
@@ -242,6 +282,7 @@ module.exports = {
     getAuthAssurance,
     checkStrongAdmin,
     checkStrongSuperAdmin,
+    checkConfiguredSuperAdminBootstrap,
     getActiveAdminAccess,
     checkActiveStrongAdmin,
     checkActiveStrongSuperAdmin,

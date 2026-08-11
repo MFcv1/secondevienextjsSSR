@@ -112,8 +112,10 @@ async function loadRemovalHarness({
   const securityMock = {
     assertConfirmText: () => undefined,
     checkStrongSuperAdmin: () => undefined,
+    checkConfiguredSuperAdminBootstrap: () => undefined,
     checkStrongAdmin: () => ({ assurance: { level: 'aal2' } }),
     checkActiveStrongAdmin: async () => undefined,
+    checkActiveStrongSuperAdmin: async () => undefined,
     getSuperAdminEmail: () => '',
     normalizeEmail: (value) => String(value || '').trim().toLowerCase(),
     writeSecurityAudit: async (event, _context, payload) => {

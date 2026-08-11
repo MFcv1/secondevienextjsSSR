@@ -21,8 +21,8 @@ function getRuntimeProjectId() {
 }
 
 function isE2eProofAllowed() {
-    if (String(process.env.E2E_PROOF_ENABLED || '').toLowerCase() === 'true') return true;
-    return getRuntimeProjectId() === 'secondevienextjsssr';
+    return getRuntimeProjectId() === 'secondevienextjsssr'
+        && String(process.env.E2E_PROOF_ENABLED || '').toLowerCase() === 'true';
 }
 
 const normalizeEmail = (value) => safeString(value).toLowerCase();

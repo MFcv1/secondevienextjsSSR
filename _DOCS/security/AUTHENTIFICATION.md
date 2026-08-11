@@ -1,6 +1,6 @@
 # Authentification - reference canonique
 
-Date de consolidation: 2026-08-04
+Date de consolidation: 2026-08-11
 Statut: `AUTH_PATCH_CLOSED_FOR_DEMO - PREPROD_READY - PRODUCTION DIFFEREE`
 Projet Firebase: `secondevienextjsssr`
 Commit de reference du chantier: `34302d6 feat(auth): harden authentication for client demo`
@@ -195,6 +195,12 @@ Firestore Rules, Storage Rules et les callables appliquent cette politique cote
 serveur. Tous les chemins admin directs relisent le registre actif et acceptent
 Google ou passkey AAL2. Les chemins backend-only, champs commerce et documents
 proteges restent inaccessibles au SDK navigateur et passent par leurs Functions.
+
+Depuis le durcissement du 2026-08-11, `SUPER_ADMIN_EMAIL` ne constitue plus un
+fallback d'autorisation. Il est lu uniquement par le bootstrap
+`syncSuperAdminClaim`, avec e-mail verifie et AAL2, pour creer le claim et le
+registre owner. Les deux API Next admin ajoutent token non revoque et App Check
+a ce meme contrat. Seul un owner actif AAL2 peut ajouter ou retirer un admin.
 
 ## 6. Garanties techniques implementees
 

@@ -77,6 +77,16 @@ try {
 } catch (error) {}
 `;
 
+const selfXssWarningScript = process.env.NODE_ENV === 'production' ? `
+try {
+  console.log('%cSTOP !', 'color:#b91c1c;font-size:42px;font-weight:800;');
+  console.log('%cNe collez jamais de code dans cette console.', 'font-size:18px;font-weight:700;');
+  console.log('Une instruction reçue par message, vidéo, réseau social ou assistant IA peut voler votre compte. Aucun membre de Seconde Vie ne vous demandera d’exécuter du code ici.');
+  console.log('Cette console est réservée au diagnostic autorisé. L’accès ou le maintien frauduleux dans un système informatique peut faire l’objet de poursuites (Code pénal français, articles 323-1 et suivants).');
+  console.log('Si quelqu’un vous a demandé d’ouvrir cette console, fermez-la et contactez Seconde Vie par le canal officiel.');
+} catch (error) {}
+` : '';
+
 export const metadata = {
   metadataBase: new URL(siteUrl),
   title: {
@@ -127,6 +137,7 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="" />
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <script dangerouslySetInnerHTML={{ __html: productReturnBootScript }} />
+        {selfXssWarningScript ? <script dangerouslySetInnerHTML={{ __html: selfXssWarningScript }} /> : null}
       </head>
       <body>
         <ViewportHeightSyncIsland />

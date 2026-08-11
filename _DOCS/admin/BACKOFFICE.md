@@ -1,6 +1,6 @@
 # Back-office
 
-Derniere mise a jour: 2026-08-09
+Derniere mise a jour: 2026-08-11
 Statut: `PREPROD_READY`
 
 Etat actif:
@@ -533,7 +533,7 @@ Les controls `v2_all/v2` rendent ce rail utilisable sur le sandbox depuis le
 
 ## 6. Utilisateurs et securite
 
-`AdminUsers` appelle les Functions de gestion d'acces. Un administrateur actif
+`AdminUsers` appelle les Functions de gestion d'acces. Seul un owner actif
 connecte avec Google ou passkey peut ajouter ou retirer un autre administrateur
 apres la confirmation explicite. L'owner reste
 protege a trois niveaux: email configure, enregistrement `superAdmin/owner` et

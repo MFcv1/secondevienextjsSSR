@@ -50,18 +50,45 @@ const sibling = siblingEnvPath && existsSync(siblingEnvPath)
   ? parseEnv(readFileSync(siblingEnvPath, 'utf8'))
   : {};
 
-const PUBLIC_ENV_BRIDGE_DENYLIST = new Set([
-  'VITE_SUPER_ADMIN_EMAIL',
+// Only variables deliberately designed for browser use may cross the Vite ->
+// Next public boundary. A denylist is unsafe here: a future VITE_* secret would
+// otherwise become NEXT_PUBLIC_* automatically and could enter a client bundle.
+const PUBLIC_ENV_BRIDGE_ALLOWLIST = new Set([
+  'VITE_FIREBASE_API_KEY',
+  'VITE_FIREBASE_AUTH_DOMAIN',
+  'VITE_FIREBASE_PROJECT_ID',
+  'VITE_FIREBASE_STORAGE_BUCKET',
+  'VITE_FIREBASE_MESSAGING_SENDER_ID',
+  'VITE_FIREBASE_APP_ID',
+  'VITE_FIREBASE_MEASUREMENT_ID',
+  'VITE_RECAPTCHA_SITE_KEY',
+  'VITE_STRIPE_PUBLIC_KEY',
+  'VITE_APP_LOGICAL_NAME',
+  'VITE_BRAND_NAME',
+  'VITE_BRAND_TAGLINE',
+  'VITE_BUSINESS_NAME',
+  'VITE_BUSINESS_PHONE',
+  'VITE_BUSINESS_EMAIL',
+  'VITE_BUSINESS_SIREN',
+  'VITE_BUSINESS_ADDRESS',
+  'VITE_CONTACT_NAME',
+  'VITE_REVIEW_URL',
+  'VITE_SITE_DESCRIPTION',
+  'VITE_SITE_URL',
+  'VITE_OG_IMAGE',
 ]);
 
-const FORBIDDEN_PUBLIC_OWNER_KEYS = [
+const FORBIDDEN_PUBLIC_KEYS = [
   'VITE_SUPER_ADMIN_EMAIL',
   'NEXT_PUBLIC_SUPER_ADMIN_EMAIL',
+  'NEXT_PUBLIC_BUSINESS_IBAN',
+  'NEXT_PUBLIC_BUSINESS_BIC',
+  'NEXT_PUBLIC_BANK_HOLDER',
 ];
 const PRESERVED_PARENT_KEYS = new Set(['GOOGLE_APPLICATION_CREDENTIALS']);
 
 for (const [key, value] of Object.entries(loaded)) {
-  if (key.startsWith('VITE_') && !PUBLIC_ENV_BRIDGE_DENYLIST.has(key)) {
+  if (PUBLIC_ENV_BRIDGE_ALLOWLIST.has(key)) {
     env[`NEXT_PUBLIC_${key.slice('VITE_'.length)}`] = value;
   }
 }
@@ -77,7 +104,7 @@ for (const key of Object.keys(sibling)) {
   if (!hasSelectedEquivalent(key)) {
     env[key] = '';
   }
-  if (key.startsWith('VITE_')) {
+  if (PUBLIC_ENV_BRIDGE_ALLOWLIST.has(key)) {
     const nextKey = `NEXT_PUBLIC_${key.slice('VITE_'.length)}`;
     if (!hasSelectedEquivalent(key)) {
       env[nextKey] = '';
@@ -85,7 +112,7 @@ for (const key of Object.keys(sibling)) {
   }
 }
 
-for (const key of FORBIDDEN_PUBLIC_OWNER_KEYS) {
+for (const key of FORBIDDEN_PUBLIC_KEYS) {
   env[key] = '';
 }
 

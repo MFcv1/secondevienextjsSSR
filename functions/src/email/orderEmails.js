@@ -188,7 +188,7 @@ function getRefundEmailCopy(order) {
     };
 }
 
-exports.sendTestEmail = regionalFunctions().runWith({ secrets: TRANSACTIONAL_EMAIL_SECRETS }).https.onCall(async (data, context) => {
+exports.sendTestEmail = regionalFunctions().runWith({ enforceAppCheck: true, secrets: TRANSACTIONAL_EMAIL_SECRETS }).https.onCall(async (data, context) => {
     await checkActiveStrongAdmin(context);
 
     let emailRuntime;
@@ -222,7 +222,7 @@ exports.sendTestEmail = regionalFunctions().runWith({ secrets: TRANSACTIONAL_EMA
     return { success: true, to: recipient, provider: emailRuntime.provider };
 });
 
-exports.sendRefundStatusEmailAdmin = regionalFunctions().runWith({ secrets: TRANSACTIONAL_EMAIL_SECRETS }).https.onCall(async (data, context) => {
+exports.sendRefundStatusEmailAdmin = regionalFunctions().runWith({ enforceAppCheck: true, secrets: TRANSACTIONAL_EMAIL_SECRETS }).https.onCall(async (data, context) => {
     await checkActiveStrongAdmin(context);
     const orderId = normalizeFirestoreId(data?.orderId, 'ID commande');
     const orderRef = db.collection('orders').doc(orderId);

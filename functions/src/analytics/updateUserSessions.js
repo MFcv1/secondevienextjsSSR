@@ -6,12 +6,11 @@
  */
 const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
-const { SUPER_ADMIN_EMAIL: SUPER_ADMIN_EMAIL_SECRET } = require('../../helpers/secrets');
 const { regionalFunctions } = require('../../helpers/runtime');
 
 const db = admin.firestore();
 
-exports.updateUserSessions = regionalFunctions().runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
+exports.updateUserSessions = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
     if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Authentification requise.');
 
     const rawIp = context.rawRequest.headers['x-forwarded-for'] || context.rawRequest.connection.remoteAddress;
@@ -24,8 +23,6 @@ exports.updateUserSessions = regionalFunctions().runWith({ secrets: [SUPER_ADMIN
     const accessSnap = await db.collection('sys_admin_access').doc(userId).get();
     const isAdmin = accessSnap.exists && accessSnap.data().active === true;
 
-    console.log(`updateUserSessions called for ${email}, isAdmin: ${isAdmin}, IP: ${ip}`);
-
     try {
         // Si c'est un admin, on supprime TOUTES ses sessions (anonymes ou non)
         if (isAdmin) {
@@ -34,8 +31,6 @@ exports.updateUserSessions = regionalFunctions().runWith({ secrets: [SUPER_ADMIN
                 .where('ip', '==', ip)
                 .where('sessionActive', '==', true)
                 .get();
-
-            console.log(`Found ${snapshot.size} active sessions for admin IP ${ip}`);
 
             const batch = db.batch();
             let deletedCount = 0;
@@ -54,7 +49,7 @@ exports.updateUserSessions = regionalFunctions().runWith({ secrets: [SUPER_ADMIN
 
             if (deletedCount > 0) {
                 await batch.commit();
-                console.log(`Deleted ${deletedCount} sessions for admin ${email}`);
+                console.info('Recent admin analytics sessions removed', { deletedCount });
             }
 
             return { success: true, deletedCount, isAdmin: true };
@@ -90,7 +85,7 @@ exports.updateUserSessions = regionalFunctions().runWith({ secrets: [SUPER_ADMIN
 
             if (updatedCount > 0) {
                 await batch.commit();
-                console.log(`Updated ${updatedCount} sessions for client ${email}`);
+                console.info('Recent client analytics sessions converted', { updatedCount });
             }
 
             return { success: true, updatedCount, isAdmin: false };

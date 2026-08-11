@@ -18,6 +18,19 @@ minimumReleaseAgeExclude:
   - '@next/swc-win32-x64-msvc@16.3.0'
   - next@16.3.0
 overrides:
+  '@hono/node-server': 2.0.10
+  '@opentelemetry/core': 2.8.0
+  'brace-expansion@<2': 1.1.18
+  'brace-expansion@>=2 <3': 2.1.4
   fast-xml-parser: 5.10.1
+  fast-uri: 3.1.5
+  hono: 4.12.34
+  ip-address: 10.3.1
+  js-yaml: 4.3.1
   nanoid: 3.3.17
   postcss: 8.5.23
+  re2: 1.26.1
+  tar: 7.5.21
+  'undici@<7': 6.28.0
+  'undici@>=8 <9': 8.9.0
+  uuid: 11.1.1
