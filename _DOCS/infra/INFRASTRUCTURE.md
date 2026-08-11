@@ -316,6 +316,27 @@ Seconde phase de durcissement explicitement autorisee le 2026-08-11:
 Aucune donnee Firestore/Storage, configuration Stripe, cible ou rail production
 n'a ete cree ou modifie pendant cette seconde phase.
 
+Consolidation depuis le commit `ebe2e0a` terminee le 2026-08-11 vers 18:15
+Europe/Paris:
+
+- Storage Rules recompilees et confirmees a jour;
+- le premier redeploiement Functions complet a revele la permission minimale
+  manquante apres le retrait de `Editor`: le compte de build Compute ne pouvait
+  plus lire/ecrire le cache `gcf-artifacts`;
+- `roles/artifactregistry.writer` a ete accorde uniquement sur les depots
+  `gcf-artifacts` de `europe-west1` et `us-central1`, pas au niveau projet;
+- toutes les Functions qui importent le garde-fou central, ainsi que les
+  endpoints directement modifies, ont ensuite ete redeployees par petits lots
+  avec succes; les echecs initiaux de permission/quota sont remplaces par des
+  versions deployees reussies;
+- rollout App Hosting `build-2026-08-11-003` `SUCCEEDED`, deployment ID
+  `sv-msotm4xf-a865f38aaf65`;
+- sondes finales: site HTTP 200, callable sans App Check HTTP 401 et preuve E2E
+  fermee HTTP 403.
+
+Ce correctif IAM de build ne redonne aucun role `Editor` et ne change aucun
+droit des administrateurs humains du back-office.
+
 ## 6. Variables publiques et secrets
 
 Variables publiques typiques:
