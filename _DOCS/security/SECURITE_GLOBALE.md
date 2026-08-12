@@ -70,6 +70,7 @@ d'un autre administrateur exige en plus le role `owner` du registre.
 | `sys_audit_security`, `sys_audit_stripe_connect` | aucune lecture client | serveur uniquement |
 | `product_publication_sessions` | aucune lecture client | serveur uniquement |
 | analytics et rollups | admin selon besoin | serveur |
+| `sys_meta_connections`, `sys_meta_oauth_states`, `sys_meta_asset_choices`, `sys_social_publications`, `sys_audit_meta` | aucune lecture client | serveur uniquement |
 
 Toute nouvelle collection doit avoir une decision explicite dans les rules avant son utilisation. Le fallback final doit rester deny-by-default.
 
@@ -155,6 +156,14 @@ Les endpoints de preuve commerce exigent simultanement le projet sandbox exact,
 metier. Le seul fait d'etre deploye sur le sandbox ne les active plus.
 
 Le catalogue public ne possede plus de Function HTTP ni de codebase separe. App Hosting lit le bucket snapshot prive avec son compte de service; les clients Firestore anonymes ne peuvent pas lire `furniture`.
+
+Les callbacks OAuth Meta/Instagram sont les seuls endpoints publics du rail
+social. Chaque tentative utilise un state aleatoire dont seul le hash est
+stocke, lie a l'UID et a l'origine admin, avec expiration et consommation
+unique. Les echanges de code et de jeton restent serveur; les jetons Facebook
+et Instagram sont chiffres AES-256-GCM avec le secret commun de chiffrement.
+La deconnexion exige le super-admin, une assurance forte et une confirmation
+textuelle specifique au fournisseur.
 
 ## 6. App Check
 

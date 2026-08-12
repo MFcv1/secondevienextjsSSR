@@ -106,7 +106,7 @@ secrets, deploiement et recette Meta reelle restent M4/M5.
 /admin [C]
   -> AdminPublicationWorkspace (vues Creer / Publications plein viewport)
   -> AdminForm / StoryEditor / AdminItemList
-  -> MetaConnectionControl [C]
+  -> MetaConnectionBadge + useMetaConnection [C]
      -> start/get/select/verify Meta OAuth [F]
      -> popup Meta [EXT] -> metaOAuthCallback [F]
      -> sys_meta_connections / states / asset_choices [DB, backend-only]
@@ -141,6 +141,9 @@ secrets, deploiement et recette Meta reelle restent M4/M5.
      -> grilles galerie rechargees depuis la release exacte + router.refresh
   -> preuve HTML versionnee asynchrone -> servedState/reprises d'exploitation
 ```
+
+Connexion et exploitation sociales:
+`_DOCS/admin/INSTAGRAM_OAUTH_RUNBOOK.md`.
 
 ### 4.3 Authentification
 
@@ -622,8 +625,9 @@ src/kit/admin/
 |-- AdminForm.jsx ..................... creation/edition annonces
 |   |-- productPublicationClient.js ... utilitaires historiques de session + attente de la release publique exacte
 |   |-- components/InstagramPublicationPreview.jsx .. apercu prive Instagram iPhone 17 Pro
-|   |-- components/MetaConnectionControl.jsx ...... OAuth, choix Page et destinations
-|   `-- metaPublicationClient.js ................... commandes Meta callables
+|   |-- components/MetaConnectionBadge.jsx ........ gestion des connexions Instagram direct et Facebook
+|   |-- components/useMetaConnection.js ........... etat OAuth agrege des deux fournisseurs
+|   `-- metaPublicationClient.js ................... callables OAuth Instagram direct, Facebook optionnel et saga sociale
 |-- AdminItemList.jsx ................. liste publications
 |-- GlobalInventoryView.jsx ........... vue catalogue/ordres
 |-- AdminStudio.jsx ................... studio contenu
@@ -660,6 +664,8 @@ src/kit/admin/
 `-- components/
     |-- AdminImageCard.jsx
     |-- ImageCropperModal.jsx
+    |-- MetaConnectionBadge.jsx ....... controle Instagram direct et Facebook facultatif
+    |-- useMetaConnection.js .......... etat OAuth agrege et actions par fournisseur
     `-- TextEditorModal.jsx
 ```
 
@@ -860,6 +866,7 @@ functions/
 | factures manuelles admin | `getManualInvoiceWorkspaceAdmin`, `saveManualInvoiceDraftAdmin`, `prepareManualInvoicePdfAdmin`, `sendManualInvoiceAdmin` |
 | demandes de devis | `createQuoteRequest`, `uploadQuoteRequestPhoto`, `finalizeQuoteRequest`, `listQuoteRequestsAdmin`, `getQuoteRequestAdmin`, `updateQuoteRequestAdmin`, `onQuoteRequestSubmitted` |
 | newsletter/avantages | `drawNewsletterReward`, `claimNewsletterReward`, `listMyNewsletterRewards` |
+| publication sociale | `startInstagramOAuthAdmin`, `instagramOAuthCallback`, `getInstagramConnectionStatusAdmin`, `verifyInstagramConnectionAdmin`, `disconnectInstagramConnectionAdmin`; rail Facebook optionnel `startMetaOAuthAdmin`, `metaOAuthCallback`, `getMetaConnectionStatusAdmin`, `selectMetaAssetAdmin`, `verifyMetaConnectionAdmin`, `disconnectMetaConnectionAdmin`; saga `prepareSocialPublicationAdmin`, `runSocialPublicationAdmin`, `getSocialPublicationStatusAdmin` |
 | e-mail | `onOrderCreated`, `onOrderUpdated`, `sendTestEmail`, `sendRefundStatusEmailAdmin` |
 | analytics | `initLiveSession`, `syncSession`, `syncSessionBeacon`, `deleteSession`, `clearAllSessions`, `trackAdminIP`, `updateUserSessions` |
 | maintenance | resets/purges, `runGarbageCollector`, `getUploadUrl` |

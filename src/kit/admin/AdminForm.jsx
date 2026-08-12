@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { AlertCircle, Check, Upload, Trash2, Download } from 'lucide-react';
+import { AlertCircle, Check, Crop, Upload, Trash2, Download } from 'lucide-react';
 import { db, appId } from '../config/firebase';
 import { getStorageInstance } from '../config/firebaseStorage';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -278,7 +278,7 @@ const AdminForm = ({
   // Une destination n'est retenue que si le compte Meta la rend reellement possible.
   const metaConnected = Boolean(metaConnection.connected);
   const instagramTarget = Boolean(socialTargets.instagram) && metaConnected && metaConnection.instagramAvailable !== false;
-  const facebookTarget = Boolean(socialTargets.facebook) && metaConnected;
+  const facebookTarget = Boolean(socialTargets.facebook) && Boolean(metaConnection.facebookAvailable);
   const socialEnabled = instagramTarget || facebookTarget;
 
   useEffect(() => {
@@ -390,6 +390,9 @@ const AdminForm = ({
     }
     if (connection.instagramAvailable === false) {
       setSocialTargets((current) => ({ ...current, instagram: false }));
+    }
+    if (connection.facebookAvailable === false) {
+      setSocialTargets((current) => ({ ...current, facebook: false }));
     }
   }, []);
 
@@ -1131,9 +1134,9 @@ const AdminForm = ({
               >
                 {galleryItems.slice(0, MAX_PRODUCT_IMAGES).map((item, idx) => (
                   <div key={item.id} draggable onDragStart={(event) => onDragStartItem(event, idx)} onDragOver={onDragOverItem} onDrop={(event) => onDropItem(event, idx)} onTouchStart={() => handleTouchStart(idx)} onTouchEnd={handleTouchEnd} data-index={idx} className={`group relative aspect-square cursor-move overflow-hidden rounded-[12px] ring-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${draggedItemIndex === idx ? 'scale-95 opacity-50 ring-emerald-500' : (darkMode ? 'ring-white/10' : 'ring-black/[0.06]')}`}>
-                    <img src={item.preview} className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105" alt="" />
+                    <img src={item.preview} className="h-full w-full object-cover" alt="" />
                     <div className="absolute inset-x-1 bottom-1 flex translate-y-2 justify-end gap-1 opacity-0 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-y-0 group-hover:opacity-100">
-                      <button type="button" onClick={(event) => { event.stopPropagation(); handleOpenCropper(item); }} className="grid h-7 w-7 place-items-center rounded-full bg-white text-stone-950 shadow-[0_5px_14px_rgba(0,0,0,0.16)]" title="Recadrer"><span className="text-[11px]">↗</span></button>
+                      <button type="button" onClick={(event) => { event.stopPropagation(); handleOpenCropper(item); }} className="grid h-7 w-7 place-items-center rounded-full bg-white text-stone-950 shadow-[0_5px_14px_rgba(0,0,0,0.16)]" title="Recadrer" aria-label="Recadrer cette image"><Crop size={12} strokeWidth={1.7} /></button>
                       <button type="button" onClick={(event) => { event.stopPropagation(); if (item.preview && !item.isExisting) URL.revokeObjectURL(item.preview); setGalleryItems(items => items.filter((_, index) => index !== idx)); }} className="grid h-7 w-7 place-items-center rounded-full bg-red-500 text-white" title="Retirer"><Trash2 size={12} strokeWidth={1.7} /></button>
                     </div>
                   </div>

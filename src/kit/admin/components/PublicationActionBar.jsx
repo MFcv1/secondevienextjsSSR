@@ -92,7 +92,7 @@ export default function PublicationActionBar({
   retryMode = false,
 }) {
   const instagramOn = Boolean(targets?.instagram) && Boolean(connection?.connected) && connection?.instagramAvailable !== false;
-  const facebookOn = Boolean(targets?.facebook) && Boolean(connection?.connected);
+  const facebookOn = Boolean(targets?.facebook) && Boolean(connection?.facebookAvailable);
   const isReview = step === 'review';
 
   return (

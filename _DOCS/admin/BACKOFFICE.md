@@ -1,6 +1,6 @@
 # Back-office
 
-Derniere mise a jour: 2026-08-11
+Derniere mise a jour: 2026-08-12
 Statut: `PREPROD_READY`
 
 Etat actif:
@@ -161,7 +161,8 @@ Facebook dans un popup, relit le statut serveur et active ensuite les
 destinations Instagram et Facebook sans demander de token ni d'identifiant a
 l'operatrice. Si plusieurs Pages sont disponibles, le serveur retourne des
 choix opaques et l'interface demande seulement le couple Page/Instagram a
-utiliser. `MetaConnectionControl` ne recoit jamais le Page access token.
+utiliser. `MetaConnectionBadge` et `useMetaConnection` ne recoivent jamais le
+Page access token.
 
 Une fois Instagram active, `InstagramPublicationPreview`
 reproduit un iPhone 17 Pro sur une surface logique `402 x 874`, puis compose un
@@ -206,6 +207,48 @@ Apres mutation:
 - `onCatalogSourceWrite` enregistre la revision et construit le snapshot;
 - la task HMAC rafraichit les routes ISR;
 - les erreurs partielles doivent rester visibles et reprenables.
+
+### 3.1 Publication Instagram directe et Facebook optionnel
+
+`MetaConnectionBadge` et `useMetaConnection` donnent la priorite a la connexion professionnelle
+Instagram. Le popup officiel Instagram demande les identifiants au fournisseur,
+jamais au back-office. Un compte Instagram Business ou Creator peut donc
+autoriser la publication sans compte ni Page Facebook. Le serveur conserve le
+jeton long terme chiffre dans `sys_meta_connections/instagram_direct`.
+
+Facebook reste un rail distinct et facultatif dans
+`sys_meta_connections/default`. Il est ajoute uniquement lorsque la Page doit
+elle aussi recevoir la publication. Pour Instagram, la saga prefere toujours
+la connexion directe et conserve l'ancien compte Instagram lie a une Page
+comme fallback de compatibilite. Le choix du fournisseur est fige lors de la
+preparation afin qu'une reprise ne change pas silencieusement d'identite.
+
+Les destinations sont validees independamment: Instagram exige une connexion
+Instagram directe ou liee a Facebook; Facebook exige une Page connectee. Les
+projections renvoyees au navigateur n'exposent ni ID distant ni jeton chiffre.
+
+Le profil renvoye par l'API Instagram Login est lu selon son enveloppe
+`data[]` et ses champs `user_id,username`. Apres le callback, le controle garde
+un etat de synchronisation jusqu'a la confirmation serveur. Il distingue
+explicitement `Connecte`, `Via Facebook` et `Non connecte`; le bouton generique
+`Connecter` devient `Connecter en direct` lorsque seul le fallback Facebook est
+actif, puis disparait des que la connexion Instagram directe est confirmee.
+L'identifiant `user_id` du profil est autoritaire: l'identifiant app-scope du
+premier echange de token ne doit pas lui etre compare comme une identite
+publique. La fermeture du popup conserve une fenetre de grace de 18 secondes
+pour laisser le callback terminer avant d'afficher un echec.
+
+La confirmation finale distingue la connexion du routage de la publication.
+Le resume conserve une seule action `Publier`. Elle ouvre un dialogue modal ou
+le site est toujours inclus et ou seules les destinations sociales reellement
+connectees sont proposees. L'operatrice peut choisir le site seul, le site avec
+Instagram, le site avec Facebook ou les trois. Le bouton de confirmation nomme
+les destinations retenues. Une connexion Instagram active ne provoque donc
+jamais, a elle seule, un envoi, et une cliente sans Page ne voit pas Facebook
+dans ce dialogue.
+
+La configuration Meta/Firebase, la recette et le diagnostic OAuth sont
+centralises dans [INSTAGRAM_OAUTH_RUNBOOK.md](INSTAGRAM_OAUTH_RUNBOOK.md).
 
 ## 4. Personnalisation
 
@@ -740,7 +783,8 @@ src/kit/admin/AdminAccount.jsx
 src/kit/admin/BillingOnboardingGuide.jsx
 src/kit/admin/BillingOnboardingOperator.jsx
 src/kit/admin/components/*
-src/kit/admin/components/MetaConnectionControl.jsx
+src/kit/admin/components/MetaConnectionBadge.jsx
+src/kit/admin/components/useMetaConnection.js
 src/kit/admin/metaPublicationClient.js
 src/kit/admin/productPublicationClient.js
 src/kit/admin/analyticsReliability.js

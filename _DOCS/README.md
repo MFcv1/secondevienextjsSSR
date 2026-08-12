@@ -24,6 +24,7 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 | Commerce - synthese | [COMMERCE_SYNTHESE.md](commerce/COMMERCE_SYNTHESE.md) | point d'entree unique: statut, Gates, preuves, limites et liens |
 | Commerce et Stripe - detail | [COMMERCE_STRIPE.md](commerce/COMMERCE_STRIPE.md) | panier, checkout, paiements, webhooks, remboursements, Connect |
 | Back-office | [BACKOFFICE.md](admin/BACKOFFICE.md) | onglets, droits, publication, ventes, maintenance, analytics |
+| OAuth Instagram/Facebook | [INSTAGRAM_OAUTH_RUNBOOK.md](admin/INSTAGRAM_OAUTH_RUNBOOK.md) | configuration Meta/Firebase, roles testeurs, flux, deploiement, recette et incidents |
 | Infrastructure | [INFRASTRUCTURE.md](infra/INFRASTRUCTURE.md) | Firebase, App Hosting, regions, environnements, production |
 | Deploiement et cache client | [DEPLOIEMENT_CACHE_CLIENT.md](infra/DEPLOIEMENT_CACHE_CLIENT.md) | identite des builds, version skew, cache CDN ISR, rollback |
 | Donnees et analytics | [DONNEES_ANALYTICS.md](data/DONNEES_ANALYTICS.md) | collections, rollups, retention, migration et fiabilite |

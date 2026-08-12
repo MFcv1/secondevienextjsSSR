@@ -66,6 +66,13 @@ d'audit et l'expiration des sessions. Les emulateurs de confinement couvrent
 aussi l'UID de commande contre une collision d'e-mail, le profil utilisateur
 backend-only, le schema wishlist et les collections d'audit privees.
 
+Le contrat OAuth social est couvert par
+`node --test tests/meta-oauth-contract.test.cjs`: state anti-rejeu,
+chiffrement authentifie, projection sans secret, normalisation medias/legende,
+destinations et idempotence. Une connexion ou
+une publication reelle reste une gate externe sandbox et ne doit jamais etre
+declenchee automatiquement par cette suite.
+
 ### 2.1 Restriction noyau commerce
 
 Etat `CODE_READY`:
