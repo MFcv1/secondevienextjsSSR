@@ -4,8 +4,10 @@ const crypto = require('node:crypto');
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
 const sharp = require('sharp');
+const { getRateLimitClientIp } = require('../../helpers/clientIp');
 const { checkActiveStrongAdmin, normalizeFirestoreId } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
+const { AUDIT_RETENTION_DAYS, timestampAfterDays } = require('../../helpers/retention');
 const {
     GMAIL_EMAIL,
     GMAIL_PASSWORD,
@@ -98,8 +100,7 @@ function serializeQuote(id, value, { includePhotos = false } = {}) {
 }
 
 function clientIp(context) {
-    const forwarded = String(context.rawRequest?.headers?.['x-forwarded-for'] || '').split(',')[0].trim();
-    return forwarded || String(context.rawRequest?.ip || 'unknown').slice(0, 120);
+    return getRateLimitClientIp(context);
 }
 
 function rateLimitRef(scope, value) {
@@ -205,7 +206,8 @@ async function createQuoteRequestHandler(data, context) {
             requestNumber,
             action: 'created_public',
             actorUid: context.auth?.uid || null,
-            createdAt: now
+            createdAt: now,
+            expireAt: timestampAfterDays(AUDIT_RETENTION_DAYS, now.toMillis())
         });
         try {
             await batch.commit();
@@ -361,7 +363,8 @@ async function finalizeQuoteRequestHandler(data) {
                 requestNumber: current.requestNumber,
                 action: 'submitted_public',
                 photoCount: Number(current.photoCount || 0),
-                createdAt: now
+                createdAt: now,
+                expireAt: timestampAfterDays(AUDIT_RETENTION_DAYS, now.toMillis())
             });
             result = next;
         });
@@ -465,7 +468,8 @@ async function updateQuoteRequestAdminHandler(data, context) {
             notesChanged: internalNotes !== String(current.internalNotes || ''),
             previousVersion: currentVersion,
             nextVersion: currentVersion + 1,
-            createdAt: now
+            createdAt: now,
+            expireAt: timestampAfterDays(AUDIT_RETENTION_DAYS, now.toMillis())
         });
     });
     return getQuoteRequestAdminHandler({ quoteId }, context);

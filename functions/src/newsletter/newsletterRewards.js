@@ -3,6 +3,7 @@
 const crypto = require('node:crypto');
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
+const { getRateLimitClientIp } = require('../../helpers/clientIp');
 const { regionalFunctions } = require('../../helpers/runtime');
 const { getSiteUrl } = require('../../helpers/config');
 const {
@@ -51,8 +52,7 @@ function callableError(error, fallback = 'Le jeu newsletter n’a pas pu être t
 }
 
 function clientIp(context) {
-    const forwarded = String(context.rawRequest?.headers?.['x-forwarded-for'] || '').split(',')[0].trim();
-    return forwarded || String(context.rawRequest?.ip || 'unknown').slice(0, 120);
+    return getRateLimitClientIp(context);
 }
 
 function rateLimitRef(scope, value) {

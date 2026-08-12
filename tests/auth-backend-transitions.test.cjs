@@ -482,3 +482,67 @@ test('admin removal clears active claims, profile role and whitelist entry', asy
     'profile-updated'
   ]);
 });
+
+test('transient Auth lookup failure never creates a pending admin invitation', async () => {
+  const calls = { metadataWrites: [], audits: [] };
+  const db = {
+    doc: () => ({
+      set: async (...args) => calls.metadataWrites.push(args)
+    }),
+    collection: () => {
+      throw new Error('Registry access must not start after a failed Auth lookup');
+    }
+  };
+  const firestore = () => db;
+  firestore.FieldValue = {
+    delete: () => 'FIELD_DELETE',
+    serverTimestamp: () => 'SERVER_TIMESTAMP'
+  };
+  const adminMock = {
+    firestore,
+    auth: () => ({
+      getUserByEmail: async () => {
+        const error = new Error('fixture transient lookup failure');
+        error.code = 'auth/internal-error';
+        throw error;
+      }
+    })
+  };
+  const functions = callableFunctionsMock();
+  const securityMock = {
+    assertConfirmText: () => undefined,
+    checkStrongAdmin: () => undefined,
+    checkActiveStrongAdmin: async () => undefined,
+    checkActiveStrongSuperAdmin: async () => undefined,
+    checkConfiguredSuperAdminBootstrap: () => undefined,
+    getSuperAdminEmail: () => '',
+    normalizeEmail: (value) => String(value || '').trim().toLowerCase(),
+    writeSecurityAudit: async (...args) => calls.audits.push(args)
+  };
+
+  await withModuleMocks({
+    entryPath: adminManagementPath,
+    mocks: {
+      'firebase-functions/v1': functions,
+      'firebase-admin': adminMock,
+      '../../helpers/security': securityMock,
+      '../../helpers/secrets': { SUPER_ADMIN_EMAIL: { value: () => '' } },
+      '../analytics/constants': {
+        timestampFromNow: () => 'FIXTURE_EXPIRY',
+        SYSTEM_DOC_RETENTION_DAYS: 1
+      }
+    },
+    run: async ({ addAdminUser }) => {
+      await assert.rejects(
+        addAdminUser(
+          { email: 'future-admin@example.test', confirmText: 'AJOUTER ADMIN' },
+          { auth: { uid: 'uid-owner', token: { email: 'owner@example.test' } } }
+        ),
+        { code: 'internal' }
+      );
+    }
+  });
+
+  assert.deepEqual(calls.metadataWrites, []);
+  assert.deepEqual(calls.audits, []);
+});

@@ -1,6 +1,6 @@
 # Cartographie du projet Seconde Vie Next
 
-Derniere verification: 2026-08-10
+Derniere verification: 2026-08-12
 Statut: `CARTE_CANONIQUE_ACTIVE`
 
 ## 1. Role et maintenance
@@ -10,6 +10,11 @@ Cette carte repond a trois questions:
 1. quelle route ou quel parcours l'utilisateur utilise;
 2. quels fichiers executent ce parcours;
 3. quelles donnees, Functions et services sont traverses.
+
+La stabilisation securite finale du sandbox et ses preuves sont suivies dans
+`_DOCS/security/STABILISATION_SECURITE_SANDBOX.md`. Ce plan temporaire ne cree
+aucun rail production et sera fusionne dans les chapitres canoniques puis
+supprime a la cloture S0-S4.
 
 Elle doit etre mise a jour dans le meme changement que toute creation, suppression, renommage ou deplacement structurel. `AGENTS.md` contient les regles; `_DOCS/README.md` indexe les chapitres metier.
 
@@ -577,7 +582,7 @@ src/kit/commerce/
 |-- adminProductCommandClient.js ...... callables produit, flag Gate 4 off
 |-- OrderSuccessModal.jsx ............. confirmation
 |-- CommerceDocumentModal.jsx ......... PDF ouvrir/enregistrer/partager + etat e-mail
-|-- MyOrdersView.jsx .................. espace client, suivi et entree documents
+|-- MyOrdersView.jsx .................. espace client via reader UID `listMyOrdersV2`, suivi et entree documents
 `-- LoginView.jsx ..................... login admin/compatibilite
 ```
 
@@ -697,6 +702,7 @@ functions/
 |-- helpers/
 |   |-- runtime.js .................... region et logs perf
 |   |-- security.js ................... auth/assurance/validation
+|   |-- clientIp.js ................... identite IP canonique des limites d'abus
 |   |-- secrets.js .................... definitions Secret Manager
 |   `-- config.js ..................... config serveur
 `-- src/
@@ -895,26 +901,28 @@ Firestore
 |-- product_publication_sessions/{id} . progression/reprise backend-only, expiration 30 jours
 |-- sys_user_stats/current ............ compteur comptes, triggers Auth backend-only
 |-- sys_idempotency/{id} .............. backend-only
+|-- sys_audit_security/{id} ........... audit Auth/admin 366 j, acteur reseau hashe, backend-only
+|-- sys_audit_stripe_connect/{id} ..... audit Connect 366 j, backend-only
 |-- sys_billing_onboarding/{uid} ...... progression guide, backend-only
 |-- sys_meta_connections/default ...... actifs Meta + Page token chiffre
 |-- sys_meta_oauth_states/{stateId} ... state one-shot expire
 |-- sys_meta_asset_choices/{sessionId}  choix temporaire si plusieurs Pages
 |-- sys_social_publications/{id} ...... snapshot et saga par destination
-|-- sys_audit_meta/{id} ............... connexions et publications auditees
+|-- sys_audit_meta/{id} ............... connexions et publications auditees, expiration 366 j
 |-- admin_business_profiles/invoicing . profil emetteur backend-only
 |-- admin_invoices/{invoiceId} ........ brouillon ou facture emise verrouillee
 |   |-- artifacts/{contentHash} ....... preuve du PDF prive materialise
 |   `-- deliveries/{sendRequestId} .... statut d'envoi et hash destinataire
 |-- admin_invoice_sequences/{year} .... numerotation transactionnelle backend-only
 |-- quote_requests/{quoteId} .......... demande, suivi, estimation et pointeurs photos backend-only
-|-- sys_audit_quotes/{auditId} ........ creation et changements de suivi sans contenu libre
+|-- sys_audit_quotes/{auditId} ........ creation et changements de suivi sans contenu libre, expiration 366 j
 |-- sys_catalog_publication/secondevie  mode, lease et revisions
 |-- sys_catalog_publication_events/{eventHash}
 |   `-- deduplication/outbox catalogue
 |-- sys_catalog_publication_builds/{buildId}
 |   `-- journal borne des builds catalogue
 |-- sys_catalog_media_gc/{id} ......... quarantaine media
-|-- analytics_sessions/{sessionId} .... session + tableau `journey`
+|-- analytics_sessions/{sessionId} .... session + tableau `journey`, expiration 366 j
 |-- sales_stats_daily/{id}
 `-- inventory_stats/{id}
 
@@ -950,6 +958,14 @@ check-seo-indexability.cjs
 check-performance-budget.cjs
 check-product-ssr.mjs
 verify-analytics-reliability.mjs
+audit-app-check-paths.cjs ............. ordre d'initialisation App Check navigateur
+tests/security-hardening.test.mjs ..... inventaire exhaustif des callables + contrats secrets/Rules/HTTP/logs
+tests/security-client-ip.test.cjs ..... en-tetes forges et canonicalisation IPv4/IPv6 des rate limits
+tests/security-output-encoding.test.cjs  e-mails, JSON-LD, admin, PDF/OAuth sans injection; erreurs provider non exposees
+tests/meta-oauth-contract.test.cjs
+tests/invoicing/manual-invoices.test.cjs
+tests/billing-onboarding-contract.test.cjs
+tests/admin-data-cache-contract.test.mjs
 tests/deployment-cache-contract.test.mjs
 ```
 
@@ -994,6 +1010,9 @@ purge-expired-firestore.cjs
 ```text
 tests/auth-*.test.cjs
 tests/passkey-*.test.cjs
+tests/data-retention-contract.test.cjs ... dry-run, expirations et minimisation des audits
+tests/security-client-ip.test.cjs ........ identite reseau bornee pour OTP/passkeys/devis/newsletter
+tests/security-output-encoding.test.cjs .. encodage HTML/script/PDF + erreurs internes generiques
 tests/billing-onboarding-contract.test.cjs
 tests/smoke.spec.mjs
 tests/catalog/*.test.cjs

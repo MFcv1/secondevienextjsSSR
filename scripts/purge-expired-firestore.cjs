@@ -9,6 +9,10 @@ const {
     ANALYTICS_ROLLUP_RETENTION_DAYS,
     SYSTEM_DOC_RETENTION_DAYS
 } = require('../functions/src/analytics/constants');
+const {
+    AFFILIATE_RETENTION_DAYS,
+    AUDIT_RETENTION_DAYS
+} = require('../functions/helpers/retention');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const FIREBASERC_PATH = path.join(ROOT_DIR, '.firebaserc');
@@ -159,6 +163,60 @@ function createTargets() {
             recursive: false,
             retentionDays: SYSTEM_DOC_RETENTION_DAYS,
             timestampFields: ['expireAt', 'updatedAt', 'createdAt']
+        },
+        {
+            name: 'sys_audit_security',
+            recursive: false,
+            retentionDays: AUDIT_RETENTION_DAYS,
+            timestampFields: ['expireAt', 'createdAt']
+        },
+        {
+            name: 'sys_audit_stripe_connect',
+            recursive: false,
+            retentionDays: AUDIT_RETENTION_DAYS,
+            timestampFields: ['expireAt', 'createdAt']
+        },
+        {
+            name: 'sys_audit_quotes',
+            recursive: false,
+            retentionDays: AUDIT_RETENTION_DAYS,
+            timestampFields: ['expireAt', 'createdAt']
+        },
+        {
+            name: 'sys_audit_meta',
+            recursive: false,
+            retentionDays: AUDIT_RETENTION_DAYS,
+            timestampFields: ['expireAt', 'createdAt']
+        },
+        {
+            name: 'newsletter_reward_plays',
+            recursive: false,
+            retentionDays: SYSTEM_DOC_RETENTION_DAYS,
+            timestampFields: ['expiresAt', 'updatedAt', 'createdAt']
+        },
+        {
+            name: 'newsletter_rewards',
+            recursive: false,
+            retentionDays: SYSTEM_DOC_RETENTION_DAYS,
+            timestampFields: ['expiresAt', 'updatedAt', 'createdAt']
+        },
+        {
+            name: 'sys_meta_oauth_states',
+            recursive: false,
+            retentionDays: SYSTEM_DOC_RETENTION_DAYS,
+            timestampFields: ['expiresAt', 'updatedAt', 'createdAt']
+        },
+        {
+            name: 'sys_meta_asset_choices',
+            recursive: false,
+            retentionDays: SYSTEM_DOC_RETENTION_DAYS,
+            timestampFields: ['expiresAt', 'updatedAt', 'createdAt']
+        },
+        {
+            name: 'affiliate_clicks',
+            recursive: false,
+            retentionDays: AFFILIATE_RETENTION_DAYS,
+            timestampFields: ['expireAt', 'updatedAt', 'createdAt']
         }
     ];
 }
@@ -173,10 +231,11 @@ function selectTargets(options) {
 }
 
 function getDeletionReason(data, target, nowMillis) {
-    const explicitExpiry = toMillis(data.expireAt);
+    const explicitExpiryField = data.expireAt ? 'expireAt' : (data.expiresAt ? 'expiresAt' : null);
+    const explicitExpiry = toMillis(explicitExpiryField ? data[explicitExpiryField] : null);
     if (explicitExpiry !== null && explicitExpiry <= nowMillis) {
         return {
-            reason: 'expireAt',
+            reason: explicitExpiryField,
             referenceMillis: explicitExpiry
         };
     }
@@ -352,9 +411,19 @@ async function main() {
     }
 }
 
-main().catch((error) => {
-    console.error('\nEchec de la purge Firestore:');
-    console.error(error && error.stack ? error.stack : error);
-    console.error("\nAstuce: en local, il faut souvent un acces ADC via 'gcloud auth application-default login' ou une variable GOOGLE_APPLICATION_CREDENTIALS.");
-    process.exit(1);
-});
+if (require.main === module) {
+    main().catch((error) => {
+        console.error('\nEchec de la purge Firestore:');
+        console.error(error && error.stack ? error.stack : error);
+        console.error("\nAstuce: en local, il faut souvent un acces ADC via 'gcloud auth application-default login' ou une variable GOOGLE_APPLICATION_CREDENTIALS.");
+        process.exit(1);
+    });
+}
+
+module.exports = {
+    createTargets,
+    getDeletionReason,
+    parseArgs,
+    selectTargets,
+    toMillis
+};

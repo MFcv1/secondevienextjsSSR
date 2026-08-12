@@ -29,14 +29,13 @@ exports.grantAdminOnAuth = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRE
     )) || [];
 
     if ((pendingData || isConfiguredSuperAdmin) && user.emailVerified !== true) {
-        console.warn(`Admin claim refused for unverified email: ${user.email}`);
+        console.warn('Admin claim refused: account email is not verified.');
         return;
     }
 
     if (pendingData || isConfiguredSuperAdmin) {
-        console.log(`🎯 Nouvel utilisateur Admin détecté: ${user.email}. Attribution des droits...`);
-
         const role = isConfiguredSuperAdmin ? 'owner' : 'admin';
+        console.log('Admin claim assignment started.', { role });
 
         // Le registre serveur coupe les droits Rules avant l'expiration d'un ID token.
         await db.collection('sys_admin_access').doc(user.uid).set({
@@ -91,8 +90,8 @@ exports.grantAdminOnAuth = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRE
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
-        console.log(`✅ Admin ${user.email} activé avec succès (UID: ${user.uid}).`);
+        console.log('Admin claim assignment completed.', { role });
     } else {
-        console.log(`User ${user.email} not in admin whitelist.`);
+        console.log('Admin claim skipped: account is not in the allowlist.');
     }
 });

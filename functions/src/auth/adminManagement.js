@@ -180,7 +180,7 @@ exports.syncSuperAdminClaim = regionalFunctions().runWith({ enforceAppCheck: tru
 
         await writeSecurityAudit('admin.sync_super_admin_claim', context, {
             uid: context.auth.uid,
-            email,
+            emailHash: hashAdminEmail(email),
             migratedAdmins
         });
 
@@ -188,7 +188,7 @@ exports.syncSuperAdminClaim = regionalFunctions().runWith({ enforceAppCheck: tru
     } catch (error) {
         if (error instanceof functions.https.HttpsError) throw error;
         console.error("Erreur Sync Super Admin:", error);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new functions.https.HttpsError('internal', 'Synchronisation super-administrateur impossible.');
     }
 });
 
@@ -225,7 +225,8 @@ exports.addAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, secr
                     superAdmin: isTargetSuperAdmin || userRecord.customClaims?.superAdmin === true
                 });
             }
-        } catch (e) {
+        } catch (error) {
+            if (error?.code !== 'auth/user-not-found') throw error;
             targetUid = `pending_${Date.now()}`;
         }
 
@@ -248,7 +249,7 @@ exports.addAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, secr
             if (!targetEmailVerified) {
                 await writeSecurityAudit('admin.add_admin_user', context, {
                     targetUid,
-                    targetEmail: normalizedEmail,
+                    targetEmailHash: hashAdminEmail(normalizedEmail),
                     userExists,
                     targetEmailVerified,
                     isTargetSuperAdmin
@@ -265,7 +266,7 @@ exports.addAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, secr
         }
         await writeSecurityAudit('admin.add_admin_user', context, {
             targetUid,
-            targetEmail: normalizedEmail,
+            targetEmailHash: hashAdminEmail(normalizedEmail),
             userExists,
             targetEmailVerified,
             isTargetSuperAdmin
@@ -313,7 +314,10 @@ exports.removeAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, s
             try {
                 const userRecord = await admin.auth().getUserByEmail(email);
                 targetUid = userRecord.uid;
-            } catch (e) { /* User might not exist yet */ }
+            } catch (error) {
+                if (error?.code !== 'auth/user-not-found') throw error;
+                // Une invitation en attente peut ne pas encore correspondre a un compte Auth.
+            }
         }
 
         const targetAccessRef = targetUid && !targetUid.startsWith('pending_')
@@ -326,7 +330,7 @@ exports.removeAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, s
 
         await writeSecurityAudit('admin.revoke_started', context, {
             targetUid: targetUid || uid || null,
-            targetEmail: email || null
+            targetEmailHash: email ? hashAdminEmail(email) : null
         });
 
         if (targetAccessRef) {
@@ -374,7 +378,7 @@ exports.removeAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, s
 
         await writeSecurityAudit('admin.revoke_completed', context, {
             targetUid: targetUid || uid || null,
-            targetEmail: email || null,
+            targetEmailHash: email ? hashAdminEmail(email) : null,
             progress
         });
 
@@ -382,13 +386,13 @@ exports.removeAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, s
     } catch (error) {
         await writeSecurityAudit('admin.revoke_failed', context, {
             targetUid: uid || null,
-            targetEmail: email || null,
+            targetEmailHash: email ? hashAdminEmail(email) : null,
             progress,
             errorCode: error?.code || 'internal'
         });
         if (error instanceof functions.https.HttpsError) throw error;
         console.error("Erreur Remove Admin:", error);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new functions.https.HttpsError('internal', 'Retrait administrateur impossible.');
     }
 });
 

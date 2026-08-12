@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const admin = require('firebase-admin');
 const { functions, regionalFunctions, logFunctionPerf } = require('../../helpers/runtime');
+const { getRateLimitClientIp } = require('../../helpers/clientIp');
 const { OTP_HMAC_SECRET } = require('../../helpers/secrets');
 const { getSiteUrl } = require('../../helpers/config');
 const { timestampFromNow, SYSTEM_DOC_RETENTION_DAYS } = require('../analytics/constants');
@@ -73,7 +74,7 @@ function getOtpRef(email) {
 }
 
 function getIpRef(context) {
-    const ip = context.rawRequest?.ip || context.rawRequest?.headers?.['x-forwarded-for'] || 'unknown';
+    const ip = getRateLimitClientIp(context);
     return db.doc(`sys_ratelimit/customer_login_otp_ip_${sha256(ip)}`);
 }
 

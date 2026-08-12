@@ -13,6 +13,7 @@ const {
 } = require('../../helpers/security');
 const { APP_ID, getSiteUrl } = require('../../helpers/config');
 const { regionalFunctions } = require('../../helpers/runtime');
+const { AUDIT_RETENTION_DAYS, timestampAfterDays } = require('../../helpers/retention');
 const {
     META_APP_ID,
     META_APP_SECRET,
@@ -104,12 +105,14 @@ async function graphRequest(path, { method = 'GET', token, params = {} } = {}) {
 
 async function auditMeta(eventType, context, payload = {}) {
     try {
+        const actorEmail = String(context?.auth?.token?.email || '').trim().toLowerCase();
         await db().collection(META_AUDIT_COLLECTION).add({
             eventType,
             actorUid: context?.auth?.uid || null,
-            actorEmail: String(context?.auth?.token?.email || '').toLowerCase().slice(0, 320),
+            actorEmailHash: actorEmail ? crypto.createHash('sha256').update(actorEmail).digest('hex') : null,
             payload,
-            createdAt: serverTimestamp()
+            createdAt: serverTimestamp(),
+            expireAt: timestampAfterDays(AUDIT_RETENTION_DAYS)
         });
     } catch (error) {
         console.error('Meta audit write failed', { eventType, code: safeErrorCode(error) });

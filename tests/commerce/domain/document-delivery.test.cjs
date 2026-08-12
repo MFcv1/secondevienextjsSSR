@@ -152,6 +152,7 @@ test('document delivery: l’interface garde ouvrir, enregistrer, partager et le
     assert.match(modal, /aria-live/);
     assert.match(orders, /CommerceDocumentModal/);
     assert.doesNotMatch(orders, /generateCommerceDocument/);
-    assert.match(rules, /topLevel != 'commerce-documents'/);
     assert.match(rules, /match \/commerce-documents\/\{allPaths=\*\*\}/);
+    assert.match(rules, /match \/\{allPaths=\*\*\} \{\s*allow read, write: if false;/);
+    assert.doesNotMatch(rules, /topLevel != 'commerce-documents'/);
 });

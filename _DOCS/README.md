@@ -1,6 +1,6 @@
 # Bibliotheque canonique - Seconde Vie Next
 
-Derniere consolidation: 2026-08-09
+Derniere consolidation: 2026-08-12
 Statut: `REFERENCE_ACTIVE`
 
 ## Role
@@ -37,6 +37,7 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 
 | Perimetre | Document | Statut | Echeance et cloture |
 | --- | --- | --- | --- |
+| stabilisation securite sandbox | [STABILISATION_SECURITE_SANDBOX.md](security/STABILISATION_SECURITE_SANDBOX.md) | `PLAN_TEMPORAIRE_EXECUTION`, Gates S0-S4 sandbox; production explicitement differee | avant presentation cliente et revue au plus tard le 2026-10-31, fusion securite/qualite/data/infra/commerce/carte puis suppression |
 | publication Meta sans friction | [META_OAUTH_PUBLICATION_PRD.md](admin/META_OAUTH_PUBLICATION_PRD.md) | `IMPLEMENTATION_LOCALE_M1_M3`, OAuth/saga/UI codes, configuration sandbox non lancee | Gates M4-M6, revue au plus tard le 2026-10-31, fusion admin/infra/securite/qualite/carte puis suppression |
 | reprise commerce post-Gate 8 | [COMMERCE_REPRISE.md](commerce/COMMERCE_REPRISE.md) | `PLAN_REPRISE_DIFFERE`, R0 documentaire termine, R1 UX suivant | revue au plus tard le 2026-10-31, fusion canonique puis suppression avec `TODO.md` |
 | recette reelle e-mails Luna | [RECETTE_EMAILS_LUNA.md](email/RECETTE_EMAILS_LUNA.md) | `PLAN_TEMPORAIRE_EXECUTION`, Luna teste et documente sans corriger | execution avant le 2026-08-06, fusion dans les chapitres e-mail/commerce puis suppression |

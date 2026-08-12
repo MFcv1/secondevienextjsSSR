@@ -68,7 +68,7 @@ Une contradiction entre code et documentation doit etre signalee et corrigee dan
 | commerce | `PREPROD_TRANSACTIONAL_READY` sur sandbox/fixtures; activation publique et live differees |
 | back-office | onglets lazy et acces admin fort; Factures manuelles et reception des devis codees, commandes commerce v2 qualifiees sur fixtures |
 | images | variantes Storage WebP, `detailFast`, miniatures 320/384, metadata anti-CLS |
-| securite | rules fortes, AAL2 admin, secrets serveur; App Check prod encore differe |
+| securite | rules fortes, AAL2 admin, secrets serveur; stabilisation sandbox S0-S4 active, App Check prod differe |
 | infrastructure | App Hosting sandbox actif; rail production absent |
 | e-mail | Gmail actif pour demo; Resend code et secret prepare, DNS final manquant |
 | IA devis | conception uniquement, aucune integration active |
@@ -148,6 +148,13 @@ Git conserve l'audit et la roadmap retires.
 
 Plan temporaire de reprise explicitement demande:
 
+- [STABILISATION_SECURITE_SANDBOX.md](_DOCS/security/STABILISATION_SECURITE_SANDBOX.md):
+  campagne finale bornee S0 a S4 pour obtenir
+  `SANDBOX_SECURITY_STABILIZED` avant presentation cliente; production, domaine,
+  Resend, Stripe live et secrets live restent interdits sans decision explicite;
+  revue avant presentation et au plus tard le 2026-10-31, puis fusion dans les
+  chapitres securite, qualite, donnees, infrastructure, commerce et `map.md`
+  avant suppression.
 - [META_OAUTH_PUBLICATION_PRD.md](_DOCS/admin/META_OAUTH_PUBLICATION_PRD.md):
   reproduction sans friction du parcours OAuth Meta valide dans Jardins de
   Chawi, adaptee au back-office Seconde Vie; M1 a M3 implementes localement,

@@ -1,8 +1,9 @@
 # Securite globale
 
-Derniere mise a jour: 2026-08-11
+Derniere mise a jour: 2026-08-12
 Statut: `PREPROD_READY`
 Reference Auth associee: `AUTHENTIFICATION.md`
+Suivi temporaire de cloture: `STABILISATION_SECURITE_SANDBOX.md`
 
 ## 1. Perimetre et modele de confiance
 
@@ -55,10 +56,10 @@ d'un autre administrateur exige en plus le role `owner` du registre.
 | --- | --- | --- |
 | catalogue public `artifacts/.../public/data/...` | public selon rules | admin fort uniquement |
 | metadata publique | selon document | admin fort |
-| `users/{uid}` | proprietaire/admin selon cas | proprietaire borne ou serveur |
+| `users/{uid}` | proprietaire/admin selon cas | serveur uniquement |
 | panier `users/{uid}/cart` | proprietaire | proprietaire |
-| wishlist `users/{uid}/wishlist` | proprietaire | proprietaire |
-| `orders` | client proprietaire ou admin | serveur/admin selon operation |
+| wishlist `users/{uid}/wishlist` | proprietaire | proprietaire, schema borne et ID document concordant |
+| `orders` | UID client proprietaire ou admin fort | serveur uniquement |
 | `quote_requests` | Functions admin AAL2 uniquement | Functions publiques bornées ou admin AAL2 |
 | `newsletter_reward_plays`, `newsletter_rewards` | Functions uniquement | Functions publiques bornées |
 | `newsletter_subscribers` | admin fort | Functions publiques bornées ou admin fort |
@@ -66,16 +67,32 @@ d'un autre administrateur exige en plus le role `owner` du registre.
 | `sys_ratelimit` | aucune lecture client | serveur uniquement |
 | `sys_admin_access` | controle strict | serveur/super-admin |
 | `sys_idempotency` | aucune lecture client | serveur uniquement |
+| `sys_audit_security`, `sys_audit_stripe_connect` | aucune lecture client | serveur uniquement |
 | `product_publication_sessions` | aucune lecture client | serveur uniquement |
 | analytics et rollups | admin selon besoin | serveur |
 
 Toute nouvelle collection doit avoir une decision explicite dans les rules avant son utilisation. Le fallback final doit rester deny-by-default.
 
+Le document racine `users/{uid}` est materialise exclusivement par les
+Functions: ni le proprietaire ni un admin via SDK client ne peut y injecter un
+champ. Le panier conserve son contrat client borne. La wishlist n'accepte que
+son snapshot d'affichage non autoritaire, un `originalId` identique a l'ID du
+document, des tailles/prix bornes et aucun champ supplementaire.
+
+Pour une commande, l'UID materialise au checkout est l'unique preuve de
+propriete cote Rules. Un compte possedant la meme adresse e-mail, meme verifiee
+par Google, ne peut pas lire la commande d'un autre UID. L'e-mail reste une
+coordonnee de snapshot et de notification, jamais une capacite d'acces.
+
 Les demandes de devis suivent une frontiere stricte: aucun SDK client ne peut
 lire ou ecrire `quote_requests` ni `sys_audit_quotes`. Les photos sont
 re-encodees par Function, stockees sous `quote-requests/v1` avec Rules fermees,
 puis exposees a l'admin par URL signee courte. Le rate limit ne conserve pas
-l'adresse IP brute dans le dossier client.
+l'adresse IP brute dans le dossier client. Les limites OTP, passkeys, devis et
+newsletter utilisent le meme helper `helpers/clientIp.js`: l'IP normalisee
+fournie par le runtime prime sur `X-Forwarded-For`, les IPv4 mappees en IPv6 et
+les formes IPv6 equivalentes convergent vers la meme cle, et un en-tete forge
+ne peut donc pas multiplier les quotas lorsque le runtime fournit l'adresse.
 
 Le jeu newsletter suit la même frontière serveur: App Check et rate limit sur
 le tirage/la réclamation, identifiants de documents hashés, aucun e-mail dans
@@ -113,9 +130,16 @@ Les seules racines vitrine generiques publiques sont `gallery` et `homepage`.
 Le fallback Storage final refuse lecture et ecriture: creer un nouveau dossier
 ne peut donc plus le rendre public ou inscriptible implicitement.
 
+La campagne adversariale locale couvre egalement les photos de devis avec un
+jeton etranger, un contenu non image, une image au-dessus de 25 millions de
+pixels et un MIME declare different du format reel. Les echecs ne laissent pas
+d'objet WebP; un format reel supporte est toujours re-encode en WebP prive et
+ne conserve jamais le type annonce par le navigateur.
+
 ## 5. Cloud Functions
 
-Les helpers communs sont dans `functions/helpers/security.js`, `runtime.js`, `secrets.js` et `config.js`.
+Les helpers communs sont dans `functions/helpers/security.js`, `clientIp.js`,
+`runtime.js`, `secrets.js` et `config.js`.
 
 Controles attendus selon le type:
 
@@ -136,7 +160,9 @@ Le catalogue public ne possede plus de Function HTTP ni de codebase separe. App 
 
 App Check reduit l'abus automatise mais ne remplace ni Auth, ni les rules, ni les signatures.
 
-Le dernier etat documente du sandbox est un mode d'observation, avec debug token reserve aux tests. Avant tout enforcement:
+Le sandbox impose App Check sur Auth, Firestore et Storage depuis le
+2026-08-11. Les debug tokens restent reserves aux tests et ne doivent jamais
+entrer dans un environnement live. Pour le futur projet production:
 
 1. re-verifier l'etat reel dans Firebase Console;
 2. mesurer les requetes `VALID`, `MISSING` et `INVALID` par produit;
@@ -146,12 +172,24 @@ Le dernier etat documente du sandbox est un mode d'observation, avec debug token
 
 Ne jamais committer un debug token App Check.
 
-Les callables analytics/admin/e-mail qui acceptent un appel navigateur imposent
-localement `enforceAppCheck: true`. Les deux routes Next admin verifient aussi
-`x-firebase-appcheck` avec Firebase Admin avant le token Auth. Le beacon de
-fermeture analytics constitue l'exception technique: `sendBeacon` ne porte pas
-le header App Check; il reste limite a une origine exacte, un corps JSON de
-64 Kio et un secret de session aleatoire dont seul le hash est stocke.
+Tous les transports `.https.onCall` sous `functions/src`, y compris les cinq
+callables Stripe Connect, imposent localement `enforceAppCheck: true`. La gate
+`tests/security-hardening.test.mjs` decouvre chaque transport callable au lieu
+de verifier une liste manuelle, et echoue lorsqu'un runtime direct ou partage
+n'apporte pas ce controle. Les deux routes Next admin verifient aussi
+`x-firebase-appcheck` avec Firebase Admin avant le token Auth.
+
+Les webhooks Stripe/Meta et le beacon de fermeture analytics restent des
+transports HTTP distincts: les webhooks utilisent leur signature fournisseur;
+`sendBeacon` ne porte pas le header App Check et reste limite a une origine
+exacte, un corps JSON de 64 Kio et un secret de session aleatoire dont seul le
+hash est stocke.
+
+`tests/security-output-encoding.test.cjs` verrouille les frontieres de sortie:
+echappement HTML des e-mails, neutralisation de `</script>` dans tous les
+JSON-LD alimentes par les donnees, conversion sure de l'editeur riche avant
+`innerHTML`, rendu React des notes admin et primitives texte des PDF. Le
+sandbox conserve en plus `script-src-attr 'none'`.
 
 ## 7. Secrets et configuration
 
@@ -255,6 +293,23 @@ Le code analytics n'envoie plus l'IP visiteur au service tiers `ip-api.com` en
 HTTP et ne journalise plus e-mail/IP bruts lors de la conversion de session.
 La geolocalisation affiche `Inconnu` tant qu'un fournisseur HTTPS contractualise
 et conforme n'est pas choisi.
+
+La stabilisation du 2026-08-12 retire aussi e-mail et UID des logs du trigger
+d'attribution admin, ainsi que les adresses destinataires des logs des anciens
+triggers e-mail commande. Les erreurs de ces transports sont journalisees sous
+forme `name`/`code` bornee; les preuves privees metier conservent le
+destinataire seulement lorsqu'il reste necessaire au support et a
+l'idempotence.
+
+Les audits `sys_audit_security`, `sys_audit_stripe_connect`,
+`sys_audit_quotes` et `sys_audit_meta` sont backend-only et recoivent un
+`expireAt` a 366 jours. Les audits de securite conservent l'UID autoritaire
+pour l'imputabilite, mais dupliquent e-mail, IP et user-agent uniquement sous
+forme SHA-256; les e-mails cibles des mutations admin suivent la meme regle et
+Meta conserve de meme un hash d'e-mail. Les reponses Functions `internal`
+restent generiques et ne renvoient jamais le message brut d'un provider. La purge manuelle
+`scripts/purge-expired-firestore.cjs` reste en dry-run par defaut et aucune
+purge sandbox n'a ete executee pendant cette stabilisation.
 
 ## 10. Operations destructives
 

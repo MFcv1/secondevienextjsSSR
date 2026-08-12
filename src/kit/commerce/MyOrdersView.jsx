@@ -1,5 +1,4 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import {
     AlertTriangle,
     ArrowLeft,
@@ -28,7 +27,6 @@ import {
     WalletCards,
     X,
 } from 'lucide-react';
-import { db } from '../config/firebase';
 import KIT_CONFIG from '../config/constants';
 import { formatShippingCityLine } from '../../utils/shippingAddress';
 import { getMillis } from '../../utils/time';
@@ -1079,49 +1077,27 @@ const MyOrdersView = ({
 
     useEffect(() => {
         if (!user) return;
-        if (COMMERCE_V2_ORDER_READERS_ENABLED) {
-            let cancelled = false;
-            setLoading(true);
-            listMyOrdersV2({ pageSize: 25 })
-                .then((result) => {
-                    if (cancelled) return;
-                    setOrders((result.orders || []).map((order) => ({
-                        ...order,
-                        ...adaptCommerceOrder(order, order.id),
-                        allowedActions: order.allowedActions || []
-                    })));
-                    setOrdersCursor(result.nextCursor || null);
-                    setLoading(false);
-                })
-                .catch((error) => {
-                    if (cancelled) return;
-                    console.error('Error fetching v2 orders:', error);
-                    setLoading(false);
-                });
-            return () => {
-                cancelled = true;
-            };
-        }
-
-        const q = query(
-            collection(db, 'orders'),
-            where('userEmail', '==', user.email),
-            orderBy('createdAt', 'desc'),
-            limit(50)
-        );
-
-        const unsub = onSnapshot(q, (snap) => {
-            const fetchedOrders = snap.docs
-                .map(d => ({ id: d.id, ...d.data() }));
-
-            setOrders(fetchedOrders);
-            setLoading(false);
-        }, (err) => {
-            console.error('Error fetching orders:', err);
-            setLoading(false);
-        });
-
-        return () => unsub();
+        let cancelled = false;
+        setLoading(true);
+        listMyOrdersV2({ pageSize: 25 })
+            .then((result) => {
+                if (cancelled) return;
+                setOrders((result.orders || []).map((order) => ({
+                    ...order,
+                    ...adaptCommerceOrder(order, order.id),
+                    allowedActions: order.allowedActions || []
+                })));
+                setOrdersCursor(result.nextCursor || null);
+                setLoading(false);
+            })
+            .catch((error) => {
+                if (cancelled) return;
+                console.error('Error fetching v2 orders:', error);
+                setLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
     }, [user]);
 
     useEffect(() => {

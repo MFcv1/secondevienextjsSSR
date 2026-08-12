@@ -1,6 +1,6 @@
 # Donnees, Firestore et analytics
 
-Derniere mise a jour: 2026-08-11
+Derniere mise a jour: 2026-08-12
 Statut: `REFERENCE_ACTIVE`
 
 Deploiement sandbox: moteur actif depuis le 2026-07-15 sur App Hosting et Functions `europe-west1`.
@@ -61,9 +61,17 @@ Les mutations massives doivent conserver:
 
 ## 4. Utilisateurs
 
-`users/{uid}` contient les donnees de profil autorisees. Les champs de role ou de securite ne peuvent pas etre modifies par le proprietaire. Le registre admin est separe dans `sys_admin_access`.
+`users/{uid}` contient le profil materialise par les Functions. Le document
+racine est en ecriture backend-only; le proprietaire peut le lire mais ne peut
+y injecter ni profil, ni role, ni `securityData`. Le registre admin est separe
+dans `sys_admin_access`.
 
-Les sous-collections panier et wishlist appartiennent a l'utilisateur. Les passkeys et challenges sont geres par les Functions Auth; le client ne doit pas ecrire une attestation WebAuthn arbitraire.
+Les sous-collections panier et wishlist appartiennent a l'utilisateur avec des
+schemas Rules bornes. La wishlist est un snapshot d'affichage non autoritaire:
+son identifiant produit doit correspondre a l'ID du document et ses prix ne
+sont jamais reutilises au checkout. Les passkeys et challenges sont geres par
+les Functions Auth; le client ne doit pas ecrire une attestation WebAuthn
+arbitraire.
 
 ## 5. Commandes
 
@@ -79,6 +87,10 @@ Les sous-collections panier et wishlist appartiennent a l'utilisateur. Les passk
 - refund, idempotence et e-mails.
 
 La retention des commandes doit respecter les obligations comptables. Une demande de suppression utilisateur ne signifie pas la suppression brute d'une facture.
+
+La lecture client est liee uniquement au `userId`/UID materialise au checkout.
+L'e-mail verifie reste dans le snapshot metier, mais ne permet jamais de lire
+la commande d'un UID different.
 
 Les faits financiers v2 sont append-only. Le total par devise et la serie
 quotidienne sont des projections reconstruisibles, maintenues dans la meme
@@ -192,20 +204,41 @@ Dans Stats, ce signal est donc affiche comme `Brouillons e-mail ouverts`. Le tun
 
 ## 8. Retention
 
-Le moteur importe ne comporte pas de tache automatique de retention. La fenetre de lecture admin est d'un an, mais elle ne supprime pas les documents plus anciens.
+Le sandbox applique des bornes explicites a l'ecriture et dispose d'une purge
+manuelle idempotente. Il n'existe volontairement aucune tache planifiee de
+suppression: `scripts/purge-expired-firestore.cjs` est un outil operateur en
+dry-run par defaut; `--commit` exige une decision distincte. Aucune suppression
+n'a ete lancee pendant la passe du 2026-08-12.
 
-Avant production, definir explicitement:
+| Donnees | Finalite/acces | Borne sandbox |
+| --- | --- | --- |
+| `analytics_sessions` | mesure produit, admin fort en lecture | 366 jours, `expireAt` a la creation |
+| anciens rollups analytics | statistiques historiques techniques | 366 jours par timestamp/date |
+| `sys_ratelimit`, `sys_idempotency` | anti-abus et idempotence, backend-only | 30 jours maximum ou expiration explicite |
+| audits securite, Stripe Connect, devis et Meta | imputabilite/support, backend-only | 366 jours, `expireAt` |
+| tirages/gains newsletter et etats OAuth Meta temporaires | anti-rejeu et reprise, Functions uniquement | expiration explicite, fallback 30 jours |
+| `affiliate_clicks` | attribution bornee, backend-only | 90 jours |
+| registre `admin_ips` | exclusion analytics des administrateurs | nettoyage opportuniste apres 90 jours |
 
-- duree sessions et evenements;
-- anonymisation IP/geo;
-- cookies/consentement;
-- droit d'acces et suppression;
-- retention commandes/factures;
-- conservation des `admin_invoices` emis et de leurs PDF selon les obligations
-  comptables; les brouillons non emis peuvent suivre une retention plus courte,
-  a definir avant production;
-- sauvegarde et restauration;
-- responsable du traitement et sous-traitants.
+Les audits securite conservent l'UID brut parce qu'il est la cle
+d'imputabilite, mais e-mail, IP et user-agent y sont hashes. Les sessions
+analytics gardent les donnees minimales necessaires au moteur pendant leur
+fenetre; aucune geolocalisation tierce n'est appelee.
+
+Sont explicitement exclus de la purge technique generique:
+
+- commandes, faits financiers, factures emises et PDF, soumis aux obligations
+  comptables;
+- `quote_requests` et leurs photos, car une suppression correcte doit etre
+  coordonnee entre Firestore et Storage;
+- abonnements newsletter et profils utilisateur, qui exigent une politique
+  metier/juridique de droit d'acces, d'export et de suppression.
+
+Avant production restent a valider: consentement/cookies, durees juridiques
+des documents commerciaux, workflow d'anonymisation/suppression coordonnee,
+sauvegarde/restauration, responsable du traitement et sous-traitants. Ces
+decisions ne sont pas necessaires pour presenter le sandbox mais conditionnent
+le GO production.
 
 ## 9. Indexes
 

@@ -20,6 +20,7 @@ const {
     toMillis
 } = require('./sessionSecurity');
 const { createSessionAuthorizationCache } = require('./sessionAuthorizationCache');
+const { ANALYTICS_SESSION_RETENTION_DAYS, timestampFromNow } = require('./constants');
 
 const db = admin.firestore();
 const MAX_SESSION_DURATION_SECONDS = 24 * 60 * 60;
@@ -230,7 +231,8 @@ exports.initLiveSession = regionalFunctions().runWith({ enforceAppCheck: true })
         adminIPDetected: isFromAdminIP,
         analyticsVersion: 3,
         syncTokenHash: hashSyncToken(syncToken),
-        syncReasonCounts: {}
+        syncReasonCounts: {},
+        expireAt: timestampFromNow(ANALYTICS_SESSION_RETENTION_DAYS)
     };
 
     try {

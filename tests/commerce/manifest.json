@@ -26,6 +26,7 @@
       "scenarios": [
         "visitor-order-write-is-denied",
         "owner-order-read-remains-allowed",
+        "same-email-different-uid-order-read-is-denied",
         "admin-order-read-remains-allowed",
         "admin-order-write-is-denied",
         "admin-order-delete-is-denied",
@@ -33,8 +34,12 @@
         "admin-product-editorial-update-remains-allowed",
         "admin-protected-commerce-settings-write-is-denied",
         "commerce-control-document-is-backend-only",
+        "user-root-profile-is-backend-only",
         "owner-v2-cart-write-remains-allowed",
         "owner-invalid-v2-cart-revision-is-denied",
+        "owner-valid-wishlist-write-remains-allowed",
+        "owner-malformed-wishlist-write-is-denied",
+        "security-audits-are-backend-only",
         "storage-admin-delete-is-denied"
       ]
     },

@@ -214,6 +214,11 @@ historique epingle et le webhook v2 en `europe-west1`.
 financiere. Connect Live et ses responsabilites d'exploitation restent
 distincts et non qualifies.
 
+Les cinq callables de statut, onboarding, synchronisation et reconnexion
+exigent App Check, admin actif et AAL2; le test de durcissement les couvre via
+l'inventaire exhaustif de tous les transports callable, sans liste specifique
+a Stripe Connect.
+
 Avant production:
 
 - creer/valider le compte live de la cliente;

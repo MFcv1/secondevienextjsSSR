@@ -1,6 +1,6 @@
 # Qualite, tests et gates
 
-Derniere mise a jour: 2026-08-11
+Derniere mise a jour: 2026-08-12
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Principe de proportion
@@ -22,25 +22,49 @@ Toujours annoncer ce qui a ete lance et ce qui ne l'a pas ete.
 1. installation frozen lockfile;
 2. gate `security:audit`: contrats statiques, hygiene env et audits de toutes
    les dependances racine/production Functions au seuil modere;
-3. lint application puis `lint:functions`;
+3. lint application puis `lint:functions`, strict sur `functions/index.js`,
+   tous les helpers et tous les domaines `functions/src`;
 4. agregat bloquant `test:commerce`;
 5. suites catalogue coeur, resilience et Rules Emulator;
 6. tests Auth;
-7. contrat de coherence des versions de deploiement et du cache ISR;
-8. contrat SEO public;
-9. build Next;
-10. scan du build contre les valeurs sensibles locales et les source maps
+7. devis, newsletter, analytics, retention, onboarding facturation, factures
+   manuelles, cache admin et Meta OAuth;
+8. audit de l'initialisation App Check cote navigateur;
+9. contrat de coherence des versions de deploiement et du cache ISR;
+10. contrat SEO public;
+11. build Next;
+12. scan du build contre les valeurs sensibles locales et les source maps
     publiques avec `security:audit:bundle`;
-11. classification des routes;
-12. budget performance en rapport non bloquant.
+13. classification des routes;
+14. budget performance en rapport non bloquant.
 
 Une CI verte ne remplace pas les E2E Firebase/Stripe ni une recette visuelle.
+
+Le contrat statique de securite parcourt tous les fichiers JavaScript sous
+`functions/src`, decouvre chaque transport `.https.onCall` et exige
+`enforceAppCheck: true` sur son runtime direct ou partage. Ce controle est
+exhaustif pour les callables et ne remplace pas la verification separee des
+routes HTTP, signatures webhook et exceptions documentees comme `sendBeacon`.
+La meme gate execute `tests/security-client-ip.test.cjs`: priorite a l'IP du
+runtime, refus des valeurs malformees et canonicalisation IPv4/IPv6 pour les
+limites OTP, passkeys, devis et newsletter.
+`tests/security-output-encoding.test.cjs` verifie les sorties e-mail, JSON-LD,
+admin, PDF et OAuth qui pourraient transformer une donnee stockee en markup,
+ainsi que l'absence de message d'erreur provider brut dans les reponses
+`HttpsError('internal')`.
+
+`test:retention` verrouille le dry-run par defaut, l'inventaire des collections
+techniques, les expirations `expireAt`/`expiresAt`, la minimisation des acteurs
+d'audit et l'expiration des sessions. Les emulateurs de confinement couvrent
+aussi l'UID de commande contre une collision d'e-mail, le profil utilisateur
+backend-only, le schema wishlist et les collections d'audit privees.
 
 ### 2.1 Restriction noyau commerce
 
 Etat `CODE_READY`:
 
-- `lint:functions` couvre commerce, e-mail, maintenance et le harnais;
+- `lint:functions` couvre strictement `functions/index.js`, tous les helpers,
+  tous les domaines Functions, les adaptateurs commerce client et le harnais;
 - `test:commerce:runner` prouve les sorties rouges, timeouts, statuts interdits
   et manifests incomplets;
 - `test:commerce:containment` compte les effets et prouve le hard-stop Gate 0B;
@@ -98,9 +122,10 @@ precede l'activation sandbox read-only.
 npm run test:auth
 ```
 
-Suite actuelle (dont la reprise OTP apres erreur transitoire, le prechargement
-Google fail-closed, le diagnostic transport borne et l'equivalence AAL2 Google
-ou passkey pour les mutations administrateur):
+Suite actuelle (dont la reprise OTP apres erreur transitoire, les lookups Auth
+admin fail-closed, le prechargement Google fail-closed, le diagnostic transport
+borne et l'equivalence AAL2 Google ou passkey pour les mutations
+administrateur):
 
 ```text
 auth-claims.test.cjs
@@ -154,7 +179,7 @@ Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCa
 | Auth | `test:auth`, build, smoke reel selon changement |
 | checkout/Stripe | toutes les gates transitives 0A a 7B; hosted final seulement en 7B apres projections 7A |
 | remboursement | toutes les gates transitives; domaine en 4, projections 7A, hosted final 7B |
-| catalogue coeur | `test:catalog:core` |
+| catalogue coeur/publication | `test:catalog:core`, incluant le contrat de publication produit |
 | catalogue resilience | `test:catalog:resilience` |
 | catalogue securite/Rules | `test:catalog:security` |
 | catalogue materialise | `test:catalog`, recette navigateur sandbox et Data Access seulement si explicitement demande |
@@ -163,6 +188,7 @@ Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCa
 | guide facturation | `test:billing-onboarding`, lint cible, reprise de progression, smoke compte test/super-admin uniquement sur demande |
 | factures manuelles admin | `test:invoices`, lint cible, build; envoi Gmail reel uniquement sur demande explicite |
 | couts Firestore | `test:analytics`, mesure Usage Insights/Data Access avant-apres si necessaire |
+| retention/audits | `test:retention`, `security:audit:static`, dry-run de purge uniquement sur autorisation explicite |
 | infra | `test:deployment-cache`, `infra:env`, `infra:deploy`, `appcheck:audit` en lecture |
 | socle Next.js majeur | lint, `test:deployment-cache`, `test:auth`, `test:admin-cache`, `test:catalog:core`, `test:catalog:resilience`, `test:catalog:security`, `seo:surface`, build Turbopack, `next:routes`, `mobile:contract`, smoke local, puis smoke sandbox lors du deploiement autorise |
 

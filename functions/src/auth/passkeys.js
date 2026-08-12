@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const admin = require('firebase-admin');
 const { functions, regionalFunctions, logFunctionPerf } = require('../../helpers/runtime');
+const { getRateLimitClientIp } = require('../../helpers/clientIp');
 const {
     generateRegistrationOptions,
     verifyRegistrationResponse,
@@ -187,10 +188,7 @@ async function resumeFailedTokenMint(operationRef, responseHash) {
 }
 
 function getClientIp(context) {
-    return String(context?.rawRequest?.ip || context?.rawRequest?.headers?.['x-forwarded-for'] || 'unknown')
-        .split(',')[0]
-        .trim()
-        .slice(0, 128);
+    return getRateLimitClientIp(context);
 }
 
 async function consumeRateLimit(key, limit, windowMs = RATE_LIMIT_WINDOW_MS) {

@@ -116,3 +116,100 @@ test('devis: création, photo privée, finalisation et suivi admin restent cohé
   const audits = await db.collection('sys_audit_quotes').where('quoteId', '==', created.quoteId).get();
   assert.equal(audits.size, 3);
 });
+
+test('devis: jeton étranger, faux contenu et dimensions extrêmes restent confinés', async () => {
+  const clientRequestId = crypto.randomUUID();
+  const uploadToken = crypto.randomBytes(32).toString('hex');
+  const created = await createQuoteRequestHandler({
+    clientRequestId,
+    uploadToken,
+    expectedPhotoCount: 1,
+    consent: true,
+    customer: {
+      firstName: 'Alice',
+      lastName: 'Adversarial',
+      email: `alice.${clientRequestId.slice(0, 8)}@example.test`,
+      phone: '06 98 76 54 32',
+      location: 'Lyon',
+    },
+    project: {
+      furnitureType: 'chaise',
+      condition: 'Structure fragilisée',
+      dimensions: {},
+      description: 'Test de frontière upload.',
+      notes: '',
+      severity: 'Importants',
+      serviceIds: ['renforts'],
+    },
+  }, {
+    ...publicContext,
+    rawRequest: {
+      ip: '127.0.0.78',
+      headers: { 'x-forwarded-for': '198.51.100.90' },
+    },
+  });
+
+  const foreignPhotoId = crypto.randomBytes(16).toString('hex');
+  await assert.rejects(uploadQuoteRequestPhotoHandler({
+    quoteId: created.quoteId,
+    uploadToken: crypto.randomBytes(32).toString('hex'),
+    photoId: foreignPhotoId,
+    fileName: 'foreign.jpg',
+    contentType: 'image/jpeg',
+    base64: Buffer.from('not an image').toString('base64'),
+  }), { code: 'permission-denied' });
+
+  const fakePhotoId = crypto.randomBytes(16).toString('hex');
+  await assert.rejects(uploadQuoteRequestPhotoHandler({
+    quoteId: created.quoteId,
+    uploadToken,
+    photoId: fakePhotoId,
+    fileName: 'fake.jpg',
+    contentType: 'image/jpeg',
+    base64: Buffer.from('<script>alert(1)</script>').toString('base64'),
+  }), { code: 'internal' });
+
+  const extremePhotoId = crypto.randomBytes(16).toString('hex');
+  const extremeJpeg = await sharp({
+    create: { width: 5001, height: 5000, channels: 3, background: '#111111' },
+  }).jpeg({ quality: 1 }).toBuffer();
+  await assert.rejects(uploadQuoteRequestPhotoHandler({
+    quoteId: created.quoteId,
+    uploadToken,
+    photoId: extremePhotoId,
+    fileName: 'extreme.jpg',
+    contentType: 'image/jpeg',
+    base64: extremeJpeg.toString('base64'),
+  }), { code: 'internal' });
+
+  const mismatchedPhotoId = crypto.randomBytes(16).toString('hex');
+  const actualPng = await sharp({
+    create: { width: 16, height: 12, channels: 3, background: '#c8a070' },
+  }).png().toBuffer();
+  const mismatched = await uploadQuoteRequestPhotoHandler({
+    quoteId: created.quoteId,
+    uploadToken,
+    photoId: mismatchedPhotoId,
+    fileName: 'declared-as-jpeg.jpg',
+    contentType: 'image/jpeg',
+    base64: actualPng.toString('base64'),
+  });
+  assert.equal(mismatched.photoCount, 1);
+
+  const stored = await db.doc(`quote_requests/${created.quoteId}`).get();
+  assert.equal(stored.data().photoCount, 1);
+  assert.equal(stored.data().photos[0].contentType, 'image/webp');
+  assert.equal(stored.data().photos[0].photoId, mismatchedPhotoId);
+  const [fakeExists] = await admin.storage().bucket()
+    .file(`quote-requests/v1/${created.quoteId}/${fakePhotoId}.webp`)
+    .exists();
+  const [extremeExists] = await admin.storage().bucket()
+    .file(`quote-requests/v1/${created.quoteId}/${extremePhotoId}.webp`)
+    .exists();
+  const [mismatchedExists] = await admin.storage().bucket()
+    .file(`quote-requests/v1/${created.quoteId}/${mismatchedPhotoId}.webp`)
+    .exists();
+  assert.equal(fakeExists, false);
+  assert.equal(extremeExists, false);
+  assert.equal(mismatchedExists, true);
+});

@@ -20,6 +20,13 @@ const db = admin.firestore();
 const REFUND_EMAIL_STATUSES = new Set(['refund_pending', 'refunded', 'refund_failed']);
 const V2_EMAIL_OUTBOX_REQUIRED = 2;
 
+function operationalErrorSummary(error) {
+    return {
+        name: String(error?.name || 'Error').slice(0, 80),
+        code: String(error?.code || 'unknown').slice(0, 120)
+    };
+}
+
 function escapeHtml(unsafe) {
     if (!unsafe || typeof unsafe !== 'string') return unsafe;
     return unsafe
@@ -139,18 +146,18 @@ async function sendNewOrderEmails(orderId, order) {
             });
             emailProof.client.sent = true;
             emailProof.client.provider = emailRuntime.provider;
-            console.log("✅ Email Client envoyé à", clientEmail);
+            console.log("✅ Email Client envoyé.");
         }
     } catch (e) {
         emailProof.error = String(e?.message || e || 'unknown').slice(0, 500);
-        console.error("❌ Erreur Envoi Email:", e);
+        console.error("❌ Erreur Envoi Email:", operationalErrorSummary(e));
     }
 
     await db.collection('orders').doc(orderId).set({
         emailProof,
         emailProofUpdatedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true }).catch((error) => {
-        console.error("Email proof write error:", error);
+        console.error("Email proof write error:", operationalErrorSummary(error));
     });
 }
 
@@ -195,7 +202,7 @@ exports.sendTestEmail = regionalFunctions().runWith({ enforceAppCheck: true, sec
     try {
         emailRuntime = getTransactionalEmailRuntime();
     } catch (error) {
-        console.error('Email diagnostic provider configuration error:', error?.code || error?.message || error);
+        console.error('Email diagnostic provider configuration error:', operationalErrorSummary(error));
         throw new functions.https.HttpsError('failed-precondition', 'Configuration email incomplète.');
     }
 
@@ -260,7 +267,7 @@ exports.sendRefundStatusEmailAdmin = regionalFunctions().runWith({ enforceAppChe
     try {
         emailRuntime = getTransactionalEmailRuntime();
     } catch (error) {
-        console.error('Refund email provider configuration error:', error?.code || error?.message || error);
+        console.error('Refund email provider configuration error:', operationalErrorSummary(error));
         throw new functions.https.HttpsError('failed-precondition', 'Configuration email incomplete.');
     }
 
@@ -382,9 +389,9 @@ exports.onOrderUpdated = onDocumentUpdated(
                 }, {
                     idempotencyKey: buildEmailIdempotencyKey('order-shipped', orderId)
                 });
-                console.log("✅ Email d'expédition envoyé à", clientEmail);
+                console.log("✅ Email d'expédition envoyé.");
             } catch (e) {
-                console.error("❌ Erreur Envoi Email d'expédition:", e);
+                console.error("❌ Erreur Envoi Email d'expédition:", operationalErrorSummary(e));
             }
         }
 
@@ -408,9 +415,9 @@ exports.onOrderUpdated = onDocumentUpdated(
                 }, {
                     idempotencyKey: buildEmailIdempotencyKey('order-completed', orderId)
                 });
-                console.log("✅ Email de Livraison envoyé à", clientEmail);
+                console.log("✅ Email de Livraison envoyé.");
             } catch (e) {
-                console.error("❌ Erreur Envoi Email:", e);
+                console.error("❌ Erreur Envoi Email:", operationalErrorSummary(e));
             }
         }
 

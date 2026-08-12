@@ -3,8 +3,10 @@ const admin = require('firebase-admin');
 const Stripe = require('stripe');
 const { STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL: SUPER_ADMIN_EMAIL_SECRET } = require('../../helpers/secrets');
 const {
-    checkActiveStrongAdmin
+    checkActiveStrongAdmin,
+    getCallerAuditInfo
 } = require('../../helpers/security');
+const { AUDIT_RETENTION_DAYS, timestampAfterDays } = require('../../helpers/retention');
 const { regionalFunctions } = require('../../helpers/runtime');
 
 const db = admin.firestore();
@@ -14,15 +16,6 @@ const RECONNECT_REQUEST_TTL_MS = 24 * 60 * 60 * 1000;
 
 function getStripe() {
     return Stripe(STRIPE_SECRET_KEY.value());
-}
-
-function getCaller(context) {
-    return {
-        uid: context.auth?.uid || null,
-        email: context.auth?.token?.email || null,
-        ip: String(context.rawRequest?.headers?.['x-forwarded-for'] || context.rawRequest?.ip || '').slice(0, 180),
-        userAgent: String(context.rawRequest?.headers?.['user-agent'] || '').slice(0, 500)
-    };
 }
 
 function sanitizeOrigin(value) {
@@ -90,14 +83,17 @@ function publicConnectState(data = {}) {
 }
 
 async function auditConnect(eventType, context, payload = {}) {
-    const caller = getCaller(context);
+    const caller = getCallerAuditInfo(context);
     await db.collection(CONNECT_AUDIT_COLLECTION).add({
         eventType,
         ...payload,
         caller,
-        createdAt: admin.firestore.FieldValue.serverTimestamp()
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        expireAt: timestampAfterDays(AUDIT_RETENTION_DAYS)
     }).catch((error) => {
-        console.error('Stripe Connect audit write failed:', error);
+        console.error('Stripe Connect audit write failed:', {
+            code: String(error?.code || error?.name || 'unknown').slice(0, 120)
+        });
     });
 }
 
@@ -162,7 +158,7 @@ async function getStripeConnectRouting() {
 }
 
 exports.getStripeConnectStatus = regionalFunctions()
-    .runWith({ secrets: [STRIPE_SECRET_KEY] })
+    .runWith({ enforceAppCheck: true, secrets: [STRIPE_SECRET_KEY] })
     .https.onCall(async (_data, context) => {
         await checkActiveStrongAdmin(context);
         const snap = await CONNECT_DOC_REF.get();
@@ -173,7 +169,7 @@ exports.getStripeConnectStatus = regionalFunctions()
     });
 
 exports.startStripeConnectOnboarding = regionalFunctions()
-    .runWith({ secrets: [STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL_SECRET] })
+    .runWith({ enforceAppCheck: true, secrets: [STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL_SECRET] })
     .https.onCall(async (data, context) => {
         await checkActiveStrongAdmin(context);
         try {
@@ -250,7 +246,7 @@ exports.startStripeConnectOnboarding = regionalFunctions()
     });
 
 exports.syncStripeConnectAccount = regionalFunctions()
-    .runWith({ secrets: [STRIPE_SECRET_KEY] })
+    .runWith({ enforceAppCheck: true, secrets: [STRIPE_SECRET_KEY] })
     .https.onCall(async (_data, context) => {
         await checkActiveStrongAdmin(context);
         const stripe = getStripe();
@@ -272,7 +268,7 @@ exports.syncStripeConnectAccount = regionalFunctions()
     });
 
 exports.requestStripeConnectReconnect = regionalFunctions()
-    .runWith({ secrets: [STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL_SECRET] })
+    .runWith({ enforceAppCheck: true, secrets: [STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL_SECRET] })
     .https.onCall(async (data, context) => {
         await checkActiveStrongAdmin(context);
         if (String(data?.confirmText || '').trim() !== 'DEMANDER CHANGEMENT STRIPE') {
@@ -307,7 +303,7 @@ exports.requestStripeConnectReconnect = regionalFunctions()
     });
 
 exports.confirmStripeConnectReconnect = regionalFunctions()
-    .runWith({ secrets: [STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL_SECRET] })
+    .runWith({ enforceAppCheck: true, secrets: [STRIPE_SECRET_KEY, SUPER_ADMIN_EMAIL_SECRET] })
     .https.onCall(async (data, context) => {
         await checkActiveStrongAdmin(context);
         if (String(data?.confirmText || '').trim() !== 'ACTIVER NOUVEAU STRIPE') {
