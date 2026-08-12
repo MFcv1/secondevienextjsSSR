@@ -291,6 +291,7 @@ Sauf nouveau chemin d'exploitation demontre, ne bloquent pas la presentation:
 
 | Date | Commit/base | Action | Resultat | Suite autorisee |
 | --- | --- | --- | --- | --- |
+| 2026-08-12 | `9c6705a` / PR #5 | deuxieme CI du commit gele | Chromium installe et contrats navigateur passes; arret fail-closed au premier harnais Rules car les JAR Firestore/Storage n'etaient pas precharges sur le runner vierge | precharger explicitement les emulateurs locaux, sans credential ni projet cloud, puis requalifier la PR |
 | 2026-08-12 | `b6adaf4` / PR #5 | premiere CI du commit gele | echec d'infrastructure avant les gates suivantes: Chromium Playwright absent du runner; quatre tests navigateur non executes, aucun echec applicatif | installer Chromium explicitement dans la CI puis requalifier la PR |
 | 2026-08-12 | worktree apres `45caf28` | pre-cloture admin et CI | lookups Auth admin transitoires fail-closed; e-mails cibles d'audit hashes; erreurs `internal` generiques; lint strict etendu a toutes les Functions; lint vert, Auth 74/74, retention 5/5, securite statique 24/24 | figer un commit puis obtenir CI GitHub/Turbopack et revue S4 independante |
 | 2026-08-12 | sandbox deploye + worktree apres `45caf28` | fermeture S3 | securite statique 23/23; uploads adversariaux 2/2 sur emulateurs demo; API/callable/webhooks heberges refusent 401/400, E2E 404, routes privees no-store/noindex; aucune mutation ni deploiement | requalifier S1/S2 sur commit gele puis S4 independante |

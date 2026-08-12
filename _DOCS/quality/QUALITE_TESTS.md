@@ -19,7 +19,8 @@ Toujours annoncer ce qui a ete lance et ce qui ne l'a pas ete.
 
 `.github/workflows/quality.yml` s'execute sur pull request et push `main` avec Node 22/pnpm:
 
-1. installation frozen lockfile, dependances Functions et Chromium Playwright;
+1. installation frozen lockfile, dependances Functions, Chromium Playwright et
+   runtimes locaux des emulateurs Firestore/Storage;
 2. gate `security:audit`: contrats statiques, hygiene env et audits de toutes
    les dependances racine/production Functions au seuil modere;
 3. lint application puis `lint:functions`, strict sur `functions/index.js`,
@@ -41,7 +42,10 @@ Toujours annoncer ce qui a ete lance et ce qui ne l'a pas ete.
 Une CI verte ne remplace pas les E2E Firebase/Stripe ni une recette visuelle.
 Chromium est installe explicitement avant `test:commerce`, dont quatre contrats
 navigateur Playwright sont bloquants; un runner GitHub vierge ne fournit pas ce
-binaire par l'installation npm seule.
+binaire par l'installation npm seule. Firestore et Storage sont eux aussi
+precharges explicitement: le harnais commerce refuse volontairement de
+telecharger un JAR pendant un test et continue d'exiger un projet `demo-*` sans
+credential cloud.
 
 Le contrat statique de securite parcourt tous les fichiers JavaScript sous
 `functions/src`, decouvre chaque transport `.https.onCall` et exige
