@@ -87,14 +87,14 @@ Statut global: `FERME`
 - [x] Confirmer le projet sandbox, Stripe test et Gmail actif.
 - [x] Confirmer que le rail production est absent et hors scope.
 - [x] Comparer les audits precedents aux surfaces ajoutees depuis juillet.
-- [x] Produire un inventaire executable des 90 transports callable et exiger
+- [x] Produire un inventaire executable des 94 transports callable et exiger
   App Check sur leur runtime direct ou partage.
-- [x] Completer l'inventaire des huit transports HTTP Functions et des cinq
+- [x] Completer l'inventaire des neuf transports HTTP Functions et des cinq
   routes API Next: beacon origine/corps/token, callback OAuth one-shot,
   webhooks signes, preuves E2E fail-closed, API publiques bornees et routes
   admin AAL2/App Check.
-- [x] Requalifier l'inventaire apres les changements de la Gate S1: 90
-  callables, huit transports HTTP, cinq routes API, Rules Firestore et racines
+- [x] Requalifier l'inventaire apres integration Instagram directe: 94
+  callables, neuf transports HTTP, cinq routes API, Rules Firestore et racines
   Storage couvertes par les contrats statiques/emulateurs.
 
 Condition de fermeture: aucune Function callable, route Next privee, webhook,

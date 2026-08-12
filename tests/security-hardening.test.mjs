@@ -150,6 +150,7 @@ test('every HTTP Function transport is inventoried with its non-App-Check bounda
     'functions/src/commerce/v2Webhooks.js',
     'functions/src/commerce/v2Webhooks.js',
     'functions/src/integrations/meta.js',
+    'functions/src/integrations/meta.js',
   ].sort());
 
   const beacon = read('functions/src/analytics/sessions.js');
