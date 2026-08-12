@@ -114,6 +114,7 @@ export default function PublicationDestinations({
 }) {
   const connected = Boolean(connection?.connected);
   const instagramAvailable = connected && connection?.instagramAvailable !== false;
+  const facebookAvailable = Boolean(connection?.facebookAvailable);
   const accountLabel = connection?.instagramUsername
     ? `@${connection.instagramUsername}`
     : connection?.pageName || '';
@@ -152,10 +153,10 @@ export default function PublicationDestinations({
           id="facebook"
           Icon={Facebook}
           title="Facebook"
-          subtitle={connected ? `Page · ${connection.pageName || 'Seconde Vie'}` : 'Publication sur la Page'}
+          subtitle={facebookAvailable ? `Page · ${connection.pageName || 'Seconde Vie'}` : 'Publication sur la Page'}
           accent="#0866FF"
-          selected={Boolean(targets.facebook) && connected}
-          disabled={disabled || !connected}
+          selected={Boolean(targets.facebook) && facebookAvailable}
+          disabled={disabled || !facebookAvailable}
           darkMode={darkMode}
           onToggle={() => toggleTarget('facebook')}
         />

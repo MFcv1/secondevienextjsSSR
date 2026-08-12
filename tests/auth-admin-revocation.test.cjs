@@ -25,7 +25,9 @@ async function loadRemovalHarness({
   role = 'admin',
   failFirstRevoke = false,
   registryExists = true,
-  registryActive = true
+  registryActive = true,
+  inputUid = 'uid-target',
+  lookupErrorCode = null
 } = {}) {
   const state = {
     registryExists,
@@ -95,7 +97,14 @@ async function loadRemovalHarness({
     firestore,
     auth: () => ({
       getUser: async () => ({ uid: 'uid-target', customClaims: { ...state.claims } }),
-      getUserByEmail: async () => ({ uid: 'uid-target' }),
+      getUserByEmail: async () => {
+        if (lookupErrorCode) {
+          const error = new Error('fixture lookup failure');
+          error.code = lookupErrorCode;
+          throw error;
+        }
+        return { uid: 'uid-target' };
+      },
       setCustomUserClaims: async (_uid, claims) => {
         state.order.push('claims-removed');
         state.claims = { ...claims };
@@ -141,7 +150,7 @@ async function loadRemovalHarness({
     return {
       state,
       remove: () => removeAdminUser(
-        { uid: 'uid-target', email: 'target@example.test', confirmText: 'RETIRER ADMIN' },
+        { uid: inputUid, email: 'target@example.test', confirmText: 'RETIRER ADMIN' },
         { auth: { uid: 'uid-owner', token: { email: 'owner@example.test' } } }
       ),
       ensure: () => ensureAdminAccessRegistry(
@@ -197,6 +206,22 @@ test('failed token revocation is resumed without restoring registry access', asy
     assert.equal(harness.state.revokeAttempts, 2);
     assert.ok(harness.state.audits.some(({ event }) => event === 'admin.revoke_failed'));
     assert.ok(harness.state.audits.some(({ event }) => event === 'admin.revoke_completed'));
+  } finally {
+    harness.close();
+  }
+});
+
+test('transient Auth lookup failure aborts a pending admin revocation', async () => {
+  const harness = await loadRemovalHarness({
+    inputUid: 'pending_fixture',
+    lookupErrorCode: 'auth/internal-error'
+  });
+  try {
+    await assert.rejects(harness.remove(), { code: 'internal' });
+    assert.equal(harness.state.registry.active, true);
+    assert.equal(harness.state.revokeAttempts, 0);
+    assert.deepEqual(harness.state.order, []);
+    assert.deepEqual(harness.state.audits.map(({ event }) => event), ['admin.revoke_failed']);
   } finally {
     harness.close();
   }

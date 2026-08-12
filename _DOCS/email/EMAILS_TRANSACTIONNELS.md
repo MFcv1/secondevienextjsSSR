@@ -1,6 +1,6 @@
 # E-mails transactionnels - Seconde Vie
 
-Derniere mise a jour: 2026-08-10
+Derniere mise a jour: 2026-08-12
 Statut: `PREPROD_READY`
 Perimetre: Auth OTP, paiement, cycle de commande v2, remboursements, copie de document, réception de devis et avantage newsletter
 
@@ -18,6 +18,11 @@ transactionnels de Seconde Vie. Il documente:
 
 Les captures utilisent des donnees fictives. Aucun OTP reel, secret, token,
 mot de passe, donnee de carte ou donnee personnelle de recette n'y figure.
+
+Les preuves d'envoi peuvent conserver le destinataire dans le document metier
+prive lorsqu'il est necessaire au support et a l'idempotence. Les logs Cloud
+des triggers historiques de commande ne recopient plus l'adresse e-mail du
+client et reduisent les erreurs fournisseur a leur nom et code bornes.
 
 ## 2. Etat de reference
 

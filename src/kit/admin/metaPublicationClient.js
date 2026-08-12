@@ -21,6 +21,17 @@ export const disconnectMetaConnectionAdmin = (confirmText) => call('disconnectMe
   confirmText
 });
 
+export const getInstagramConnectionStatusAdmin = () => call('getInstagramConnectionStatusAdmin');
+
+export const startInstagramOAuthAdmin = (origin) => call('startInstagramOAuthAdmin', { origin });
+
+export const verifyInstagramConnectionAdmin = () => call('verifyInstagramConnectionAdmin');
+
+export const disconnectInstagramConnectionAdmin = (confirmText) => call(
+  'disconnectInstagramConnectionAdmin',
+  { confirmText }
+);
+
 export const prepareSocialPublicationAdmin = ({
   collectionName,
   productId,

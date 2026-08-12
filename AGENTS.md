@@ -68,7 +68,7 @@ Une contradiction entre code et documentation doit etre signalee et corrigee dan
 | commerce | `PREPROD_TRANSACTIONAL_READY` sur sandbox/fixtures; activation publique et live differees |
 | back-office | onglets lazy et acces admin fort; Factures manuelles et reception des devis codees, commandes commerce v2 qualifiees sur fixtures |
 | images | variantes Storage WebP, `detailFast`, miniatures 320/384, metadata anti-CLS |
-| securite | rules fortes, AAL2 admin, secrets serveur; App Check prod encore differe |
+| securite | `SANDBOX_SECURITY_STABILIZED`, rules fortes, AAL2 admin, secrets serveur; App Check prod differe |
 | infrastructure | App Hosting sandbox actif; rail production absent |
 | e-mail | Gmail actif pour demo; Resend code et secret prepare, DNS final manquant |
 | IA devis | conception uniquement, aucune integration active |
@@ -131,6 +131,7 @@ Next.js 16.3.
 | espace client | [ESPACE_CLIENT.md](_DOCS/client/ESPACE_CLIENT.md) | routes compte, MyOrders, wishlist | preprod |
 | commerce/Stripe | [COMMERCE_SYNTHESE.md](_DOCS/commerce/COMMERCE_SYNTHESE.md), puis [COMMERCE_STRIPE.md](_DOCS/commerce/COMMERCE_STRIPE.md) | commerce client/Functions/admin | preprod transactionnelle sandbox |
 | back-office | [BACKOFFICE.md](_DOCS/admin/BACKOFFICE.md) | AdminAppIsland, `src/kit/admin` | preprod |
+| OAuth Instagram/Facebook | [INSTAGRAM_OAUTH_RUNBOOK.md](_DOCS/admin/INSTAGRAM_OAUTH_RUNBOOK.md) | `MetaConnectionBadge`, `useMetaConnection`, `functions/src/integrations/meta.js` | sandbox operationnel, production Meta differee |
 | infrastructure | [INFRASTRUCTURE.md](_DOCS/infra/INFRASTRUCTURE.md) | Firebase/App Hosting/config/env | sandbox actif |
 | deploiement/cache client | [DEPLOIEMENT_CACHE_CLIENT.md](_DOCS/infra/DEPLOIEMENT_CACHE_CLIENT.md) | `next.config.mjs`, `scripts/with-env.mjs`, `scripts/deployment-id.mjs` | actif |
 | donnees/analytics | [DONNEES_ANALYTICS.md](_DOCS/data/DONNEES_ANALYTICS.md) + [AUDIT_COUTS_FIRESTORE.md](_DOCS/data/AUDIT_COUTS_FIRESTORE.md) | Firestore, UID/IP, sessions live, couts et migrations | moteur Tous a Table adapte, P1 couts public/analytics implemente, catalogue post-cutover mesure a zero lecture Firestore publique |
@@ -148,6 +149,12 @@ Git conserve l'audit et la roadmap retires.
 
 Plan temporaire de reprise explicitement demande:
 
+- [STABILISATION_SECURITE_SANDBOX.md](_DOCS/security/STABILISATION_SECURITE_SANDBOX.md):
+  campagne finale bornee S0 a S4 fermee sur le socle `05f4830`, statut
+  `SANDBOX_SECURITY_STABILIZED`; production, domaine, Resend, Stripe live et
+  secrets live restent interdits sans decision explicite; compte rendu conserve
+  jusqu'a la fusion de la PR #5, puis decisions durables verifiees dans les
+  chapitres canoniques et document temporaire supprime.
 - [META_OAUTH_PUBLICATION_PRD.md](_DOCS/admin/META_OAUTH_PUBLICATION_PRD.md):
   reproduction sans friction du parcours OAuth Meta valide dans Jardins de
   Chawi, adaptee au back-office Seconde Vie; M1 a M3 implementes localement,

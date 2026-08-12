@@ -101,6 +101,25 @@ const scenarios = {
     context.equal(snapshot.exists(), true, 'legitimate owner read must remain available');
   }),
 
+  'same-email-different-uid-order-read-is-denied': async (context) => withEnvironment(async (environment) => {
+    await seed(environment, [[
+      'orders/email-collision-order',
+      {
+        userId: 'original-owner',
+        userEmail: 'shared@example.test',
+        checkoutAuthMethod: 'authenticated',
+        status: 'paid',
+      },
+    ]]);
+    const otherAccount = environment.authenticatedContext('different-uid', {
+      email: 'shared@example.test',
+      email_verified: true,
+      firebase: { sign_in_provider: 'google.com' },
+    }).firestore();
+    await assertFails(getDoc(doc(otherAccount, 'orders/email-collision-order')));
+    context.ok(true, 'verified email equality never replaces the checkout UID');
+  }),
+
   'admin-order-read-remains-allowed': async (context) => withEnvironment(async (environment) => {
     await seedAdmin(environment);
     await seed(environment, [['orders/admin-readable', { userId: 'customer-1', status: 'paid' }]]);
@@ -179,6 +198,18 @@ const scenarios = {
     context.ok(true, 'control document cannot be read or mutated through the client SDK');
   }),
 
+  'user-root-profile-is-backend-only': async (context) => withEnvironment(async (environment) => {
+    const owner = environment.authenticatedContext('profile-owner').firestore();
+    await assertFails(setDoc(doc(owner, 'users/profile-owner'), {
+      displayName: 'Profil injecte',
+    }));
+    await seed(environment, [['users/profile-owner', { displayName: 'Profil serveur' }]]);
+    await assertFails(updateDoc(doc(owner, 'users/profile-owner'), {
+      displayName: 'Profil modifie',
+    }));
+    context.ok(true, 'root user profiles can only be materialized by trusted Functions');
+  }),
+
   'owner-v2-cart-write-remains-allowed': async (context) => withEnvironment(async (environment) => {
     const owner = environment.authenticatedContext('cart-owner-v2').firestore();
     await assertSucceeds(setDoc(doc(owner, 'users/cart-owner-v2/cart/furniture_product-v2'), {
@@ -215,7 +246,53 @@ const scenarios = {
     context.ok(true, 'invalid v2 cart revisions remain rejected');
   }),
 
+  'owner-valid-wishlist-write-remains-allowed': async (context) => withEnvironment(async (environment) => {
+    const owner = environment.authenticatedContext('wishlist-owner').firestore();
+    const wishlistRef = doc(owner, 'users/wishlist-owner/wishlist/product-1');
+    await assertSucceeds(setDoc(wishlistRef, {
+      originalId: 'product-1',
+      id: 'product-1',
+      collectionName: 'furniture',
+      name: 'Meuble souhaite',
+      price: 120,
+      image: 'https://example.test/product-1.webp',
+      material: 'Bois',
+      addedAt: new Date('2026-08-12T00:00:00.000Z'),
+    }));
+    await assertSucceeds(deleteDoc(wishlistRef));
+    context.ok(true, 'the bounded wishlist payload and owner deletion remain available');
+  }),
+
+  'owner-malformed-wishlist-write-is-denied': async (context) => withEnvironment(async (environment) => {
+    const owner = environment.authenticatedContext('wishlist-invalid').firestore();
+    await assertFails(setDoc(doc(owner, 'users/wishlist-invalid/wishlist/product-1'), {
+      originalId: 'another-product',
+      addedAt: new Date('2026-08-12T00:00:00.000Z'),
+    }));
+    await assertFails(setDoc(doc(owner, 'users/wishlist-invalid/wishlist/product-1'), {
+      originalId: 'product-1',
+      addedAt: new Date('2026-08-12T00:00:00.000Z'),
+      injectedRole: 'admin',
+    }));
+    context.ok(true, 'mismatched IDs and unexpected wishlist fields are denied');
+  }),
+
+  'security-audits-are-backend-only': async (context) => withEnvironment(async (environment) => {
+    await seedAdmin(environment);
+    await seed(environment, [
+      ['sys_audit_security/event-1', { eventType: 'test' }],
+      ['sys_audit_stripe_connect/event-1', { eventType: 'test' }],
+    ]);
+    const admin = strongAdmin(environment).firestore();
+    for (const auditPath of ['sys_audit_security/event-1', 'sys_audit_stripe_connect/event-1']) {
+      await assertFails(getDoc(doc(admin, auditPath)));
+      await assertFails(setDoc(doc(admin, auditPath), { eventType: 'tampered' }));
+    }
+    context.ok(true, 'security audit collections remain inaccessible to every client SDK');
+  }),
+
   'storage-admin-delete-is-denied': async (context) => withEnvironment(async (environment) => {
+    await seedAdmin(environment);
     const storage = strongAdmin(environment).storage();
     const mediaRef = ref(storage, 'furniture/gate-0b-delete-proof.jpg');
     await assertSucceeds(uploadString(mediaRef, 'local-proof', 'raw', { contentType: 'image/jpeg' }));

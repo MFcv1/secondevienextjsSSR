@@ -10,10 +10,12 @@ const {
     decryptToken,
     encryptToken,
     normalizeHashtags,
+    normalizeInstagramProfileResponse,
     normalizeMediaUrls,
     normalizeTargets,
     parseAndVerifyOAuthState,
     publicConnectionState,
+    publicInstagramConnectionState,
     publicationDocumentId,
     stablePayloadHash,
     stripStoryFormatting
@@ -106,4 +108,48 @@ test('Public connection state never exposes technical identifiers or encrypted t
     assert.equal('pageId' in state, false);
     assert.equal('instagramUserId' in state, false);
     assert.equal('encryptedPageAccessToken' in state, false);
+});
+
+test('Direct Instagram connection projection exposes only safe account metadata', () => {
+    const state = publicInstagramConnectionState({
+        status: 'connected',
+        instagramUserId: 'private-instagram-id',
+        instagramUsername: 'seconde_vie',
+        instagramAccessToken: { value: 'ciphertext' },
+        scopes: ['instagram_business_basic', 'unexpected_scope']
+    });
+
+    assert.equal(state.connected, true);
+    assert.equal(state.provider, 'instagram_login');
+    assert.equal(state.instagramAvailable, true);
+    assert.equal(state.facebookAvailable, false);
+    assert.deepEqual(state.scopes, ['instagram_business_basic']);
+    assert.equal('instagramUserId' in state, false);
+    assert.equal('instagramAccessToken' in state, false);
+});
+
+test('Instagram Login profile normalizes the current data envelope', () => {
+    assert.deepEqual(normalizeInstagramProfileResponse({
+        data: [{ user_id: '17841400000000000', username: 'xori_on' }]
+    }, '17841400000000000'), {
+        instagramUserId: '17841400000000000',
+        instagramUsername: 'xori_on'
+    });
+
+    assert.deepEqual(normalizeInstagramProfileResponse({
+        id: 'legacy-id',
+        username: 'legacy_account'
+    }), {
+        instagramUserId: 'legacy-id',
+        instagramUsername: 'legacy_account'
+    });
+
+    assert.deepEqual(normalizeInstagramProfileResponse({
+        data: [{ user_id: 'other-id', username: 'xori_on' }]
+    }, 'app-scoped-id'), {
+        instagramUserId: 'other-id',
+        instagramUsername: 'xori_on'
+    });
+
+    assert.throws(() => normalizeInstagramProfileResponse({}), /INSTAGRAM_PROFILE_MISSING/);
 });

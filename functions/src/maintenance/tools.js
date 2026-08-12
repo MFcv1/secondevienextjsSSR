@@ -105,7 +105,7 @@ exports.runGarbageCollector = regionalFunctions().runWith({ enforceAppCheck: tru
         return { success: true, stats };
     } catch (error) {
         console.error("Critical GC Error:", error);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new functions.https.HttpsError('internal', 'Nettoyage de maintenance impossible.');
     }
 });
 
@@ -143,7 +143,7 @@ exports.resetAllUsers = regionalFunctions().runWith({ enforceAppCheck: true, tim
         return { success: true, count: usersDeleted, message: `${usersDeleted} comptes supprimés.` };
     } catch (error) {
         console.error("❌ Erreur Purge :", error);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new functions.https.HttpsError('internal', 'Purge utilisateurs impossible.');
     }
 });
 
@@ -171,8 +171,8 @@ exports.purgeAnonymousUsers = regionalFunctions().runWith({ enforceAppCheck: tru
         } while (nextPageToken);
         await writeSecurityAudit('maintenance.purge_anonymous_users', context, { totalDeleted });
         return { success: true, count: totalDeleted };
-    } catch (error) {
-        throw new functions.https.HttpsError('internal', error.message);
+    } catch {
+        throw new functions.https.HttpsError('internal', 'Purge utilisateurs anonymes impossible.');
     }
 });
 
@@ -243,7 +243,7 @@ exports.purgeAllProducts = regionalFunctions().runWith({ enforceAppCheck: true, 
         };
     } catch (error) {
         console.error("❌ Erreur Purge Produits:", error);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new functions.https.HttpsError('internal', 'Purge produits impossible.');
     }
 });
 
@@ -259,8 +259,8 @@ exports.resetAllOrders = regionalFunctions().runWith({ enforceAppCheck: true }).
         await batch.commit();
         await writeSecurityAudit('maintenance.reset_all_orders', context, { count: ordersSnap.size });
         return { success: true, count: ordersSnap.size };
-    } catch (error) {
-        throw new functions.https.HttpsError('internal', error.message);
+    } catch {
+        throw new functions.https.HttpsError('internal', 'Purge commandes impossible.');
     }
 });
 
@@ -285,7 +285,7 @@ exports.getUploadUrl = regionalFunctions().runWith({ enforceAppCheck: true }).ht
             contentType: safeContentType
         });
         return { success: true, uploadUrl: url, filePath: filePath };
-    } catch (error) {
-        throw new functions.https.HttpsError('internal', error.message);
+    } catch {
+        throw new functions.https.HttpsError('internal', 'Generation URL upload impossible.');
     }
 });

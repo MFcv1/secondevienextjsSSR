@@ -113,7 +113,10 @@ test('factures manuelles: UI lazy, callables et stockages priv√©s restent align√
     }
     assert.match(firestoreRules, /match \/admin_invoices\/\{invoiceId\}/);
     assert.match(storageRules, /match \/admin-invoices\/\{allPaths=\*\*\}/);
-    assert.match(storageRules, /topLevel != 'admin-invoices'/);
+    assert.match(
+        storageRules,
+        /match \/admin-invoices\/\{allPaths=\*\*\} \{\s*allow read, write: if false;/
+    );
     assert.match(
         invoiceFunctions,
         /PRODUCTS_COLLECTION = 'artifacts\/secondevie\/public\/data\/furniture'/

@@ -6,6 +6,7 @@ const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const crypto = require('node:crypto');
 const { PRODUCT_COLLECTIONS } = require('./config');
+const { AUDIT_RETENTION_DAYS, timestampAfterDays } = require('./retention');
 
 const SECURITY_AUDIT_COLLECTION = 'sys_audit_security';
 const ADMIN_ACCESS_COLLECTION = 'sys_admin_access';
@@ -205,14 +206,20 @@ function assertConfirmText(data, expectedText, label = 'confirmation') {
 }
 
 function getCallerAuditInfo(context) {
+    const email = normalizeEmail(context.auth?.token?.email);
+    const ip = String(context.rawRequest?.headers?.['x-forwarded-for'] || context.rawRequest?.ip || '').slice(0, 180);
+    const userAgent = String(context.rawRequest?.headers?.['user-agent'] || '').slice(0, 500);
+    const hash = (value) => value
+        ? crypto.createHash('sha256').update(String(value)).digest('hex')
+        : null;
     return {
         uid: context.auth?.uid || null,
-        email: normalizeEmail(context.auth?.token?.email),
+        emailHash: hash(email),
         isAdmin: context.auth?.token?.admin === true,
         isSuperAdmin: context.auth?.token?.superAdmin === true,
         authTime: context.auth?.token?.auth_time || null,
-        ip: String(context.rawRequest?.headers?.['x-forwarded-for'] || context.rawRequest?.ip || '').slice(0, 180),
-        userAgent: String(context.rawRequest?.headers?.['user-agent'] || '').slice(0, 500)
+        ipHash: hash(ip),
+        userAgentHash: hash(userAgent)
     };
 }
 
@@ -222,12 +229,13 @@ async function writeSecurityAudit(eventType, context, payload = {}) {
             eventType,
             caller: getCallerAuditInfo(context),
             payload,
-            createdAt: admin.firestore.FieldValue.serverTimestamp()
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            expireAt: timestampAfterDays(AUDIT_RETENTION_DAYS)
         });
     } catch (error) {
         console.error('Security audit write failed:', {
             eventType,
-            message: error?.message || String(error)
+            code: String(error?.code || error?.name || 'unknown').slice(0, 120)
         });
     }
 }
@@ -287,6 +295,7 @@ module.exports = {
     checkActiveStrongAdmin,
     checkActiveStrongSuperAdmin,
     assertConfirmText,
+    getCallerAuditInfo,
     writeSecurityAudit,
     normalizeProductCollection,
     normalizeFirestoreId,

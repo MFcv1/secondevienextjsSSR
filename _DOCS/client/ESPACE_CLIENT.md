@@ -85,7 +85,12 @@ Refonte de présentation du 2026-08-10, sans changement de contrat de données:
 
 ## 3. Commandes
 
-Le client ne lit que les commandes admises par les Rules et sa requete. Le code actuel interroge `userEmail`; les Rules autorisent le proprietaire UID ou le meme e-mail verifie. La cible est un repository UID autoritaire avec un rattachement invite borne, afin qu'un changement d'e-mail ne fasse pas disparaitre l'historique.
+Le client ne recoit que les commandes admises par le reader serveur et les
+Rules. L'UID materialise au checkout est l'unique preuve de propriete; une
+adresse e-mail identique, meme verifiee, ne donne jamais acces a la commande
+d'un autre UID. L'ancien listener Firestore filtre par `userEmail` a ete retire;
+`listMyOrdersV2` est l'unique reader de l'interface. La reprise invite produit
+elle aussi un UID autoritaire borne.
 
 Les statuts importants sont actuellement reconstruits depuis le champ composite `status`, notamment:
 
@@ -202,6 +207,9 @@ La wishlist utilise:
 - le catalogue courant pour rafraichir disponibilite et visuel.
 
 Un passage wishlist -> panier doit revalider `isPurchasable`. Les informations de prix/stock conservees dans la wishlist ne sont jamais autoritaires.
+Les Rules exigent un `originalId` identique a l'ID du document, une liste
+fermee de champs d'affichage et des tailles/prix bornes; la suppression reste
+reservee au proprietaire.
 Le premier rendu de `WishlistPageIsland` reste identique entre serveur et
 navigateur. La liste locale est chargee uniquement par
 `subscribeWishlistItems` apres montage afin d'eviter toute divergence

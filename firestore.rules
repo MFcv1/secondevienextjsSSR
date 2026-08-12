@@ -21,14 +21,6 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    function ownerProfileCreateIsSafe() {
-      return !request.resource.data.keys().hasAny(['role', 'securityData']);
-    }
-
-    function ownerProfileWriteIsSafe() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'securityData']);
-    }
-
     function isPublicMetadataDoc(docId) {
       return docId in [
         'contact_info',
@@ -74,18 +66,11 @@ service cloud.firestore {
       ]);
     }
 
-    function hasTrustedCheckoutAuth() {
-      return request.auth != null && (
-        request.auth.token.email_verified == true ||
-        request.auth.token.firebase.sign_in_provider == 'google.com' ||
-        request.auth.token.firebase.identities['google.com'] is list
-      );
-    }
-
     match /users/{userId} {
       allow read: if isOwner(userId) || isStrongArtisan();
-      allow create: if isOwner(userId) && ownerProfileCreateIsSafe();
-      allow update: if isStrongArtisan() || (isOwner(userId) && ownerProfileWriteIsSafe());
+      // Le profil, les roles et securityData sont materialises par les Functions.
+      // Aucun client, y compris admin, ne doit modifier le document racine.
+      allow create, update, delete: if false;
     }
 
     // Validation Helpers
@@ -162,6 +147,41 @@ service cloud.firestore {
         (!('updatedAt' in data) || data.updatedAt is timestamp);
     }
 
+    function isValidWishlistItem(wishlistItem) {
+      let data = request.resource.data;
+      return
+        data.keys().hasOnly([
+          'originalId',
+          'id',
+          'collectionName',
+          'name',
+          'title',
+          'price',
+          'currentPrice',
+          'startingPrice',
+          'image',
+          'imageUrl',
+          'material',
+          'addedAt'
+        ]) &&
+        data.keys().hasAll(['originalId', 'addedAt']) &&
+        data.originalId is string &&
+        data.originalId == wishlistItem &&
+        data.originalId.size() > 0 &&
+        data.originalId.size() <= 160 &&
+        data.addedAt is timestamp &&
+        (!('id' in data) || (data.id is string && data.id == wishlistItem)) &&
+        (!('collectionName' in data) || data.collectionName == 'furniture') &&
+        (!('name' in data) || (data.name is string && data.name.size() <= 280)) &&
+        (!('title' in data) || (data.title is string && data.title.size() <= 280)) &&
+        (!('price' in data) || (data.price is number && data.price >= 0 && data.price <= 10000000)) &&
+        (!('currentPrice' in data) || (data.currentPrice is number && data.currentPrice >= 0 && data.currentPrice <= 10000000)) &&
+        (!('startingPrice' in data) || (data.startingPrice is number && data.startingPrice >= 0 && data.startingPrice <= 10000000)) &&
+        (!('image' in data) || (data.image is string && data.image.size() <= 2048)) &&
+        (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 2048)) &&
+        (!('material' in data) || (data.material is string && data.material.size() <= 180));
+    }
+
     // Panier utilisateur
     match /users/{userId}/cart/{cartItem} {
       allow read: if request.auth != null && request.auth.uid == userId;
@@ -171,25 +191,18 @@ service cloud.firestore {
     // Wishlist utilisateur
     match /users/{userId}/wishlist/{wishlistItem} {
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null &&
+        request.auth.uid == userId &&
+        isValidWishlistItem(wishlistItem);
+      allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
     // Commandes
     match /orders/{orderId} {
       allow read: if isStrongArtisan();
-      allow read: if request.auth != null && (
-        (
-          hasTrustedCheckoutAuth() &&
-          (
-            request.auth.uid == resource.data.userId ||
-            request.auth.token.email == resource.data.userEmail
-          )
-        ) ||
-        (
-          resource.data.checkoutAuthMethod == 'guest_email_otp' &&
-          request.auth.uid == resource.data.userId
-        )
-      );
+      // L'UID materialise lors du checkout est l'unique identite client.
+      // Une adresse e-mail identique ne donne jamais acces a une commande.
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
       allow create: if false; // Via Cloud Function uniquement
       allow update, delete: if false;
 
@@ -335,6 +348,15 @@ service cloud.firestore {
 
     // Idempotency Keys (Backend-Only)
     match /sys_idempotency/{docId} {
+      allow read, write: if false;
+    }
+
+    // Audits internes: ecriture Admin SDK et purge outillee uniquement.
+    match /sys_audit_security/{docId} {
+      allow read, write: if false;
+    }
+
+    match /sys_audit_stripe_connect/{docId} {
       allow read, write: if false;
     }
 

@@ -191,7 +191,7 @@ export default function PublicationReviewStep({
   const connected = Boolean(connection?.connected);
   const instagramAvailable = connected && connection?.instagramAvailable !== false;
   const instagramSelected = Boolean(targets.instagram) && instagramAvailable;
-  const facebookSelected = Boolean(targets.facebook) && connected;
+  const facebookSelected = Boolean(targets.facebook) && Boolean(connection?.facebookAvailable);
 
   // L'apercu suit la derniere destination activee : le choix se voit tout de suite.
   React.useEffect(() => {

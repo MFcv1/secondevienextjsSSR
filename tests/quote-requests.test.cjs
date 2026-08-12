@@ -123,5 +123,6 @@ test('devis: UI lazy, callables et stockages privés restent alignés', () => {
   assert.match(firestoreRules, /match \/quote_requests\/\{quoteId\}/);
   assert.match(firestoreRules, /match \/sys_audit_quotes\/\{auditId\}/);
   assert.match(storageRules, /match \/quote-requests\/\{allPaths=\*\*\}/);
-  assert.match(storageRules, /topLevel != 'quote-requests'/);
+  assert.match(storageRules, /match \/\{allPaths=\*\*\} \{\s*allow read, write: if false;/);
+  assert.doesNotMatch(storageRules, /topLevel != 'quote-requests'/);
 });

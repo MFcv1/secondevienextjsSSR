@@ -27,6 +27,9 @@ jobs:
           java-version: 21
       - run: pnpm install --frozen-lockfile
       - run: npm ci --prefix functions
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm exec firebase setup:emulators:firestore
+      - run: pnpm exec firebase setup:emulators:storage
       - run: pnpm security:audit
       - run: pnpm lint
       - run: pnpm lint:functions
@@ -38,6 +41,13 @@ jobs:
       - run: pnpm test:a11y
       - run: pnpm test:quotes
       - run: pnpm test:newsletter
+      - run: pnpm appcheck:audit
+      - run: pnpm test:analytics
+      - run: pnpm test:retention
+      - run: pnpm test:billing-onboarding
+      - run: pnpm test:invoices
+      - run: pnpm test:admin-cache
+      - run: pnpm test:meta
       - run: pnpm test:deployment-cache
       - run: pnpm seo:surface
       - run: pnpm build

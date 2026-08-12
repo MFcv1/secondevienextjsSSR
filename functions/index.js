@@ -193,25 +193,35 @@ exports.startProductPublicationAdmin = startProductPublicationAdmin;
 
 // ── PUBLICATION META (OAuth + Instagram/Facebook) ───────
 const {
+    disconnectInstagramConnectionAdmin,
     disconnectMetaConnectionAdmin,
+    getInstagramConnectionStatusAdmin,
     getMetaConnectionStatusAdmin,
     getSocialPublicationStatusAdmin,
+    instagramOAuthCallback,
     metaOAuthCallback,
     prepareSocialPublicationAdmin,
     runSocialPublicationAdmin,
     selectMetaAssetAdmin,
+    startInstagramOAuthAdmin,
     startMetaOAuthAdmin,
+    verifyInstagramConnectionAdmin,
     verifyMetaConnectionAdmin
 } = require('./src/integrations/meta');
 
+exports.disconnectInstagramConnectionAdmin = disconnectInstagramConnectionAdmin;
 exports.disconnectMetaConnectionAdmin = disconnectMetaConnectionAdmin;
+exports.getInstagramConnectionStatusAdmin = getInstagramConnectionStatusAdmin;
 exports.getMetaConnectionStatusAdmin = getMetaConnectionStatusAdmin;
 exports.getSocialPublicationStatusAdmin = getSocialPublicationStatusAdmin;
+exports.instagramOAuthCallback = instagramOAuthCallback;
 exports.metaOAuthCallback = metaOAuthCallback;
 exports.prepareSocialPublicationAdmin = prepareSocialPublicationAdmin;
 exports.runSocialPublicationAdmin = runSocialPublicationAdmin;
 exports.selectMetaAssetAdmin = selectMetaAssetAdmin;
+exports.startInstagramOAuthAdmin = startInstagramOAuthAdmin;
 exports.startMetaOAuthAdmin = startMetaOAuthAdmin;
+exports.verifyInstagramConnectionAdmin = verifyInstagramConnectionAdmin;
 exports.verifyMetaConnectionAdmin = verifyMetaConnectionAdmin;
 
 // ── AUTH ──────────────────────────────────────────────────

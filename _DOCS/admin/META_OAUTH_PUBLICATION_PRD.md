@@ -14,6 +14,12 @@ reelle M5 a ete validee avec `jardin perma` et `@xori_on`; la publication d'un
 meuble de test sur le site, Instagram et Facebook reste volontairement non
 executee tant qu'un contenu de test n'est pas explicitement autorise.
 
+Decision ajoutee le 2026-08-04: Instagram Login devient le parcours principal.
+Il autorise directement un compte Instagram professionnel sans Page Facebook.
+Facebook Login for Business reste une connexion facultative pour publier aussi
+sur une Page et un fallback de compatibilite pour l'ancien couple
+Page/Instagram.
+
 A la cloture, les decisions durables doivent etre fusionnees dans
 `BACKOFFICE.md`, `INFRASTRUCTURE.md`, `SECURITE_GLOBALE.md`,
 `QUALITE_TESTS.md` et `map.md`, puis ce document doit etre supprime. Git reste
@@ -345,6 +351,9 @@ uniquement aux Functions qui en ont besoin:
 - `META_APP_ID`;
 - `META_APP_SECRET`;
 - `META_OAUTH_REDIRECT_URI`;
+- `INSTAGRAM_APP_ID`;
+- `INSTAGRAM_APP_SECRET`;
+- `INSTAGRAM_OAUTH_REDIRECT_URI`;
 - `META_TOKEN_ENCRYPTION_KEY`.
 
 Le redirect URI sandbox cible sera determine par l'export HTTP deploye en
