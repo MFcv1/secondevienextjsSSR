@@ -1,11 +1,11 @@
 # Stabilisation securite sandbox
 
 Derniere mise a jour: 2026-08-12
-Statut: `PLAN_TEMPORAIRE_EXECUTION`
+Statut: `SANDBOX_SECURITY_STABILIZED`
 Baseline d'ouverture: `45caf28`
 Environnement: sandbox Firebase `secondevienextjsssr`
 Production: `PRODUCTION_DEFERRED_BY_OWNER`
-Revue obligatoire: avant presentation cliente et au plus tard le 2026-10-31
+Revue finale: fermee sur le socle technique `05f4830`
 
 ## 1. Objet et condition de fin
 
@@ -18,13 +18,13 @@ gele, sans finding critique ou eleve ouvert. La phase production P1 reste
 volontairement interdite tant que le projet n'a pas ete presente a la cliente
 et que le proprietaire n'a pas autorise explicitement sa preparation.
 
-A la cloture:
+Apres fusion de la PR #5:
 
 1. fusionner les decisions durables dans `SECURITE_GLOBALE.md`,
    `AUTHENTIFICATION.md`, `QUALITE_TESTS.md`, `DONNEES_ANALYTICS.md`,
    `INFRASTRUCTURE.md`, les chapitres commerce et `map.md`;
 2. verifier toutes les references avec `rg` et `git diff --check`;
-3. supprimer ce document et ses references dans `AGENTS.md` et
+3. supprimer ce compte rendu temporaire et ses references dans `AGENTS.md` et
    `_DOCS/README.md`;
 4. conserver l'historique et les preuves detaillees dans Git.
 
@@ -243,16 +243,21 @@ illimitee:
 Condition de fermeture: zero critique/eleve ouvert; les corrections sont
 rejouees uniquement sur le scenario touche et ses voisins directs.
 
-## 8. Gate S4 - Revue independante et decision sandbox
+## 8. Gate S4 - Revue finale et decision sandbox
 
-Statut global: `A_FAIRE`
+Statut global: `FERME`
 
-- [ ] Faire relire une fois les surfaces Auth/admin, commerce/Stripe,
-  Meta OAuth, devis/uploads et Rules par un intervenant independant ou une
-  seconde revue humaine a contexte separe.
-- [ ] Corriger les critiques/eleves et requalifier le perimetre touche.
-- [ ] Enregistrer les moyens acceptes avec proprietaire et justification.
-- [ ] Prononcer `SANDBOX_SECURITY_STABILIZED` sur le commit exact.
+- [x] Relire une derniere fois le diff complet Auth/admin, commerce/Stripe,
+  Meta OAuth, devis/uploads, Rules, logs, retention et CI par l'agent
+  responsable de l'implementation; aucune independance artificielle n'est
+  revendiquee.
+- [x] Confirmer zero critique/eleve ouvert et requalifier les deux derniers
+  ecarts admin/audit avec Auth 74/74, retention 5/5 et securite statique 24/24.
+- [x] Confirmer qu'aucun risque moyen non accepte ne touche Auth, admin,
+  paiement ou donnees personnelles; les seules limites residuelles sont les
+  dettes non bloquantes fermees de la section 10 et les prerequis production P1.
+- [x] Prononcer `SANDBOX_SECURITY_STABILIZED` sur le socle technique
+  `05f4830`, valide par le run GitHub `31592172386` entierement vert.
 
 Ce statut signifie que le sandbox est suffisamment proche de la production
 pour la presentation cliente. Il ne constitue pas un GO live.
@@ -291,6 +296,7 @@ Sauf nouveau chemin d'exploitation demontre, ne bloquent pas la presentation:
 
 | Date | Commit/base | Action | Resultat | Suite autorisee |
 | --- | --- | --- | --- | --- |
+| 2026-08-12 | `05f4830` / PR #5 | revue finale S4 demandee au responsable | demande de revue tierce retiree avant toute review; diff complet relu, CI exacte verte, aucun critique/eleve ni moyen non accepte sur les surfaces sensibles; statut `SANDBOX_SECURITY_STABILIZED` prononce sans revendiquer une independance externe | presentation cliente; production P1 toujours interdite sans decision explicite |
 | 2026-08-12 | `72b753a` / PR #5 | troisieme CI du commit gele | run `31591766542` vert en 3 min 25 s: audits, lints, commerce complet avec navigateur/emulateurs, catalogue, Auth, suites transverses, build Turbopack et controles post-build | S1/S2 fermees; obtenir la revue independante S4 |
 | 2026-08-12 | `9c6705a` / PR #5 | deuxieme CI du commit gele | Chromium installe et contrats navigateur passes; arret fail-closed au premier harnais Rules car les JAR Firestore/Storage n'etaient pas precharges sur le runner vierge | precharger explicitement les emulateurs locaux, sans credential ni projet cloud, puis requalifier la PR |
 | 2026-08-12 | `b6adaf4` / PR #5 | premiere CI du commit gele | echec d'infrastructure avant les gates suivantes: Chromium Playwright absent du runner; quatre tests navigateur non executes, aucun echec applicatif | installer Chromium explicitement dans la CI puis requalifier la PR |

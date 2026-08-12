@@ -12,9 +12,10 @@ Cette carte repond a trois questions:
 3. quelles donnees, Functions et services sont traverses.
 
 La stabilisation securite finale du sandbox et ses preuves sont suivies dans
-`_DOCS/security/STABILISATION_SECURITE_SANDBOX.md`. Ce plan temporaire ne cree
-aucun rail production et sera fusionne dans les chapitres canoniques puis
-supprime a la cloture S0-S4.
+`_DOCS/security/STABILISATION_SECURITE_SANDBOX.md`. Les Gates S0-S4 sont fermees
+avec le statut `SANDBOX_SECURITY_STABILIZED`; aucun rail production n'a ete
+cree. Le compte rendu reste present jusqu'a la fusion de la PR #5, puis ses
+decisions canoniques seront verifiees avant sa suppression.
 
 Elle doit etre mise a jour dans le meme changement que toute creation, suppression, renommage ou deplacement structurel. `AGENTS.md` contient les regles; `_DOCS/README.md` indexe les chapitres metier.
 
