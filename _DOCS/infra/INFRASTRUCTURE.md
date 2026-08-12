@@ -1,6 +1,6 @@
 # Infrastructure Firebase, Next.js et environnements
 
-Derniere mise a jour: 2026-08-11
+Derniere mise a jour: 2026-08-12
 Statut: `PREPROD_READY - PRODUCTION_DEFERRED`
 
 ## 1. Runtime et gestionnaire de paquets
@@ -267,7 +267,9 @@ Audit et durcissement securite sandbox du 2026-08-11:
 - App Hosting ne reference plus `SUPER_ADMIN_EMAIL`; ce secret reste attache
   uniquement au bootstrap owner dans Cloud Functions;
 - la cle Web Firebase hebergee est separee de la cle de developpement et limitee
-  a l'origine exacte `secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app`;
+  aux deux referers techniques requis: l'origine App Hosting
+  `secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app` et le
+  handler Firebase Auth `secondevienextjsssr.firebaseapp.com`;
 - les cinq anciennes Functions OAuth Instagram sans export local ont ete
   supprimees apres autorisation explicite; le rail Meta courant est conserve;
 - Auth, Firestore et Storage sont `ENFORCED` App Check sur le sandbox apres
@@ -304,8 +306,9 @@ Seconde phase de durcissement explicitement autorisee le 2026-08-11:
 - suppression ciblee des cinq anciennes Functions Instagram/OAuth, sans toucher
   aux cinq Functions Meta actuelles;
 - passage App Check a `ENFORCED` pour Auth, Firestore et Storage;
-- cle Firebase Web App Hosting dediee, bornee aux API Firebase requises et au
-  referer exact du sandbox; une origine tierce est refusee par la restriction;
+- cle Firebase Web App Hosting dediee, bornee aux API Firebase requises, au
+  referer du sandbox et au referer du handler Firebase Auth; une origine tierce
+  est refusee par la restriction;
 - rollout App Hosting `build-2026-08-11-002` `SUCCEEDED`, deployment ID
   `sv-msos946q-a4ef2272161d`;
 - page publique HTTP 200 sans erreur navigateur; la rotation de cle provoque
@@ -315,6 +318,18 @@ Seconde phase de durcissement explicitement autorisee le 2026-08-11:
 
 Aucune donnee Firestore/Storage, configuration Stripe, cible ou rail production
 n'a ete cree ou modifie pendant cette seconde phase.
+
+Correction Google Auth du 2026-08-12:
+
+- la premiere restriction de la cle hebergee ne conservait que le referer App
+  Hosting; le popup Firebase echouait donc dans `__/auth/handler` avec
+  `Unable to verify that the app domain is authorized`;
+- `https://secondevienextjsssr.firebaseapp.com/*` a ete ajoute aux referers
+  autorises sans elargir les API accessibles ni retirer la restriction App
+  Hosting;
+- le parcours heberge atteint de nouveau l'ecran de selection de compte Google;
+  aucun compte ni mot de passe n'a ete utilise pendant cette verification;
+- aucune Function, Rule, donnee ou cible production n'a ete modifiee.
 
 Consolidation depuis le commit `ebe2e0a` terminee le 2026-08-11 vers 18:15
 Europe/Paris:

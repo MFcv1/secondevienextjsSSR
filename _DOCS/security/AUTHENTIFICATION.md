@@ -1,6 +1,6 @@
 # Authentification - reference canonique
 
-Date de consolidation: 2026-08-11
+Date de consolidation: 2026-08-12
 Statut: `AUTH_PATCH_CLOSED_FOR_DEMO - PREPROD_READY - PRODUCTION DIFFEREE`
 Projet Firebase: `secondevienextjsssr`
 Commit de reference du chantier: `34302d6 feat(auth): harden authentication for client demo`
@@ -155,6 +155,12 @@ intermediaire susceptible de perdre l'activation utilisateur du navigateur.
 Le bouton bloque aussi les demandes concurrentes afin d'eviter une popup
 annulee ou un onglet `__/auth/handler` orphelin. Le mode PWA iOS conserve
 `signInWithRedirect`, requis par WebKit.
+
+La cle Web Firebase restreinte doit autoriser simultanement le referer App
+Hosting et `https://secondevienextjsssr.firebaseapp.com/*`: le handler OAuth
+Firebase s'execute sur ce second domaine avant de revenir au sandbox. Retirer
+ce referer casse Google popup et redirect meme si le domaine App Hosting reste
+present dans les domaines autorises de Firebase Authentication.
 
 Un echec de preparation ne rend plus le bouton faussement disponible: l'UI
 affiche une reprise explicite qui recharge le runtime avant une nouvelle
