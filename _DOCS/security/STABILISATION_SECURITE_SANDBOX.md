@@ -102,7 +102,7 @@ racine Firestore ou racine Storage sensible n'est absente de l'inventaire.
 
 ## 5. Gate S1 - Ecarts de code connus
 
-Statut global: `FAIT_A_REQUALIFIER`
+Statut global: `FERME`
 
 ### S1.1 App Check Stripe Connect
 
@@ -157,7 +157,7 @@ Statut: `FERME`
 
 ### S1.4 Couverture CI des surfaces recentes
 
-Statut: `FAIT_A_REQUALIFIER`
+Statut: `FERME`
 
 - [x] Integrer `appcheck:audit`, Meta, factures, analytics, onboarding et cache
   admin a la gate qualite appropriee.
@@ -167,8 +167,9 @@ Statut: `FAIT_A_REQUALIFIER`
   six ajouts sont locaux et ne contactent aucun provider.
 - [x] Rejouer localement toute la composition CI sur Node 22.22.3 avec pnpm
   11.7.0 et les lockfiles figes; les installs racine/Functions sont passees.
-- [ ] Obtenir le run GitHub vert sur le commit gele; cette preuve exige
-  commit/push et reste hors des actions implicites de cette passe.
+- [x] Obtenir le run GitHub vert sur le commit gele: PR #5, run
+  `31591766542`, 3 min 25 s, apres installation explicite des prerequis
+  Chromium et emulateurs locaux sur le runner vierge.
 
 Condition de fermeture S1: tous les items ci-dessus sont `FERME` ou portent
 une decision `ACCEPTE_NON_BLOQUANT` explicite et justifiee; aucun risque moyen
@@ -176,7 +177,7 @@ non accepte ne touche Auth, admin, paiement ou donnees personnelles.
 
 ## 6. Gate S2 - Validation automatisee finale
 
-Statut global: `FAIT_A_REQUALIFIER`
+Statut global: `FERME`
 
 Sur la baseline Node 22/pnpm 11.7:
 
@@ -194,6 +195,8 @@ Sur la baseline Node 22/pnpm 11.7:
   retention, cache admin, deploiement-cache, support, release et a11y verts;
 - [x] build Next 16 Webpack, puis scan de 1 633 fichiers du bundle sans secret
   ni source map publique; origine, SEO, routes et contrat mobile verts;
+- [x] build Next 16 Turbopack canonique et controles post-build verts dans
+  GitHub Actions sur le commit `72b753a`;
 - [x] `git diff --check` et liens documentaires avant le lot S3.
 
 Les gates cloud ou hebergees restent separees et ne sont jamais lancees par
@@ -202,12 +205,9 @@ implication de cette liste.
 Condition de fermeture: toutes les gates locales obligatoires sont vertes sur
 le meme commit; tout test non lance est explicitement motive.
 
-Ecart restant avant `FERME`: `npm run build` canonique Turbopack echoue dans
-cette sandbox parce que son worker PostCSS ne peut pas ouvrir son port local
-(`EPERM`), y compris apres autorisation ciblee. Le fallback officiel
-`next build --webpack` compile, typechecke et genere les 22 pages. Le build
-Turbopack canonique et la composition CI seront donc requalifies par GitHub sur
-le commit gele; aucun echec applicatif n'a ete observe.
+La limite locale `EPERM` du worker PostCSS est levee comme incertitude: le
+runner GitHub a compile le build Turbopack canonique, puis passe l'audit bundle,
+l'origine publique, la classification des routes et le rapport performance.
 
 ## 7. Gate S3 - Campagne adversariale sandbox bornee
 
@@ -291,6 +291,7 @@ Sauf nouveau chemin d'exploitation demontre, ne bloquent pas la presentation:
 
 | Date | Commit/base | Action | Resultat | Suite autorisee |
 | --- | --- | --- | --- | --- |
+| 2026-08-12 | `72b753a` / PR #5 | troisieme CI du commit gele | run `31591766542` vert en 3 min 25 s: audits, lints, commerce complet avec navigateur/emulateurs, catalogue, Auth, suites transverses, build Turbopack et controles post-build | S1/S2 fermees; obtenir la revue independante S4 |
 | 2026-08-12 | `9c6705a` / PR #5 | deuxieme CI du commit gele | Chromium installe et contrats navigateur passes; arret fail-closed au premier harnais Rules car les JAR Firestore/Storage n'etaient pas precharges sur le runner vierge | precharger explicitement les emulateurs locaux, sans credential ni projet cloud, puis requalifier la PR |
 | 2026-08-12 | `b6adaf4` / PR #5 | premiere CI du commit gele | echec d'infrastructure avant les gates suivantes: Chromium Playwright absent du runner; quatre tests navigateur non executes, aucun echec applicatif | installer Chromium explicitement dans la CI puis requalifier la PR |
 | 2026-08-12 | worktree apres `45caf28` | pre-cloture admin et CI | lookups Auth admin transitoires fail-closed; e-mails cibles d'audit hashes; erreurs `internal` generiques; lint strict etendu a toutes les Functions; lint vert, Auth 74/74, retention 5/5, securite statique 24/24 | figer un commit puis obtenir CI GitHub/Turbopack et revue S4 independante |
