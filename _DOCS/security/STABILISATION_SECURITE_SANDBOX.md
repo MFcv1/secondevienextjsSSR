@@ -291,6 +291,7 @@ Sauf nouveau chemin d'exploitation demontre, ne bloquent pas la presentation:
 
 | Date | Commit/base | Action | Resultat | Suite autorisee |
 | --- | --- | --- | --- | --- |
+| 2026-08-12 | `b6adaf4` / PR #5 | premiere CI du commit gele | echec d'infrastructure avant les gates suivantes: Chromium Playwright absent du runner; quatre tests navigateur non executes, aucun echec applicatif | installer Chromium explicitement dans la CI puis requalifier la PR |
 | 2026-08-12 | worktree apres `45caf28` | pre-cloture admin et CI | lookups Auth admin transitoires fail-closed; e-mails cibles d'audit hashes; erreurs `internal` generiques; lint strict etendu a toutes les Functions; lint vert, Auth 74/74, retention 5/5, securite statique 24/24 | figer un commit puis obtenir CI GitHub/Turbopack et revue S4 independante |
 | 2026-08-12 | sandbox deploye + worktree apres `45caf28` | fermeture S3 | securite statique 23/23; uploads adversariaux 2/2 sur emulateurs demo; API/callable/webhooks heberges refusent 401/400, E2E 404, routes privees no-store/noindex; aucune mutation ni deploiement | requalifier S1/S2 sur commit gele puis S4 independante |
 | 2026-08-12 | worktree apres `45caf28` | ouverture S3 rate limits et uploads | helper IP commun sur OTP/passkeys/devis/newsletter; 19/19 securite, 72/72 Auth, 14/14 catalogue coeur/publication; upload devis jeton etranger/faux image/nettoyage 2/2 sur emulateurs demo; aucune ecriture cloud | completer bornes images et injections locales |
