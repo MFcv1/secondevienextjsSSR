@@ -112,6 +112,13 @@ restent mono-usage, lies au hash de l'e-mail verifie et ne peuvent pas etre
 appliques depuis un autre compte. Le code brut n'est pas une autorisation: seule
 la validation backend dans la transaction checkout fait foi.
 
+La requalification sandbox du 2026-08-13 a valide le cycle complet avec un
+code admin produit de 10 %: 850 EUR autoritaires, 85 EUR de remise et un
+PaymentIntent Stripe test de 765 EUR. L'abandon puis la reprise du meme checkout
+ont conserve une seule commande et une seule reservation. Apres confirmation,
+la commande est `paid`, le recu client est disponible et les compteurs passent
+de `reserved=1, committed=0` a `reserved=0, committed=1`.
+
 ## 4. Stock et idempotence
 
 Le runtime v2 agrege les lignes par `inventoryKey`, reserve les quantites dans

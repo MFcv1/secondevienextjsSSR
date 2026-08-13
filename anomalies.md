@@ -1703,7 +1703,7 @@ de code.
 
 ## Raccordement codes promotionnels — 2026-08-13
 
-Statut courant: `DEPLOYEE_REQUALIFICATION_FONCTIONNELLE_ACQUISE_PAIEMENT_FINAL_EN_ATTENTE_D_AUTORISATION`.
+Statut courant: `FERMEE_APRES_REQUALIFICATION_STRIPE_SANDBOX`.
 
 - Besoin confirme: les gains 5/10/15 % du jeu newsletter existaient durablement
   dans l'e-mail et `Mes avantages`, mais aucun invariant commerce ne permettait
@@ -1749,8 +1749,24 @@ Statut courant: `DEPLOYEE_REQUALIFICATION_FONCTIONNELLE_ACQUISE_PAIEMENT_FINAL_E
   a 850 EUR; code admin applique a −85 EUR et total 765 EUR. Le code newsletter
   existant du meme client est aussi accepte a 15 %, −127,50 EUR et total
   722,50 EUR. Le format decimal a ete corrige, redeploye et requalifie.
-- Restant avant fermeture complete: creation de la commande, affichage du
-  montant Stripe remisé, paiement test et compteur `committed`. Cette action
-  creerait une troisieme commande alors que la campagne `REC-20260812-C2` a
-  atteint sa limite explicite de deux; aucune commande supplementaire ni
-  reservation durable n'a ete creee sans nouvel accord.
+- Autorisation complementaire: le 2026-08-13, l'utilisateur a explicitement
+  autorise une unique commande Stripe test supplementaire pour fermer la
+  requalification du code promotionnel. Une seule commande a ete creee:
+  `CMD-ORD_5B88D5` / confirmation checkout `5B88D5D7`.
+- Requalification Stripe de bout en bout: prix autoritaire 850 EUR, remise
+  `RECETTE10-AUG13` de 85 EUR et montant Stripe affiche puis paye 765 EUR. Un
+  premier abandon du panneau Stripe a laisse exactement la meme commande et
+  la meme reservation reprenables; la reprise a confirme cette commande, sans
+  doublon. La modale finale affiche la confirmation durable.
+- Preuves client: `/mes-commandes` affiche une seule nouvelle commande
+  `CMD-ORD_5B88D5`, `Buffet vitrine`, 765,00 EUR, statut `Payee`; son recu de
+  paiement est liste, genere et ouvrable en PDF sandbox. Le meuble public est
+  non achetable (`Deja reserve`).
+- Preuves administrateur: la vue Ventes affiche `CMD-ORD_5B88D5`, `Payee`,
+  retrait atelier, prix produit 850,00 EUR et total encaisse 765,00 EUR. Le
+  registre du code est passe de `0/1 utilises · 1 reserve` pendant la reprise
+  a `1/1 utilises · 0 reserves` apres confirmation Stripe.
+- Verdict: le code admin s'applique reellement au PaymentIntent Stripe, est
+  consomme uniquement apres paiement durable et ne reste pas reserve apres le
+  succes. Aucun Stripe live, environnement production, nouvelle Function,
+  nouveau deploiement ou seconde commande supplementaire n'a ete touche.

@@ -344,6 +344,12 @@ backend-only dans les Rules: le back-office ne peut pas forger les compteurs
 avec le SDK Firestore. Les compteurs `reserved` et `committed` distinguent un
 checkout encore payable d'un paiement Stripe confirme.
 
+La requalification sandbox du 2026-08-13 a confirme cette distinction dans le
+back-office: `RECETTE10-AUG13` est passe de `0/1 utilise, 1 reserve` pendant la
+reprise du checkout a `1/1 utilise, 0 reserve` apres paiement Stripe test. La
+vue Ventes expose la meme commande payee a 765 EUR pour un produit affiche a
+850 EUR avant remise.
+
 ### 5.3 Contrat de la vue Ventes
 
 La vue repond d'abord a l'actionnabilite, sans confondre paiement, logistique,
