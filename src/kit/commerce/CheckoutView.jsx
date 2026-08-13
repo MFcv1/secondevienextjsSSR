@@ -45,6 +45,10 @@ const normalizeCheckoutEmail = (email) => String(email || '').trim().toLowerCase
 const getCheckoutItemsTotal = (items = []) => (
     items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0)
 );
+const formatCheckoutEuros = (value) => new Intl.NumberFormat('fr-FR', {
+    minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+    maximumFractionDigits: 2
+}).format(value);
 
 const getCheckoutOtpError = (error, fallback) => {
     const code = String(error?.code || '').toLowerCase();
@@ -1459,7 +1463,7 @@ const CheckoutView = ({
                                     
                                     <div className="border-t border-stone-800 pt-6 flex justify-between items-end">
                                         <span className="text-stone-400 text-[10px] font-black uppercase tracking-widest mb-[2px]">Total à payer</span>
-                                        <span className="text-4xl lg:text-5xl font-black tracking-tighter text-white">{finalTotal} €</span>
+                                        <span className="text-4xl lg:text-5xl font-black tracking-tighter text-white">{formatCheckoutEuros(finalTotal)} €</span>
                                     </div>
                                 </div>
                             </div>
