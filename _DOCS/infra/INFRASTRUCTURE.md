@@ -639,3 +639,13 @@ projet `secondevienextjsssr`, `listMyOrdersV2` a ete mise a jour seule en
 termine et sert le deployment ID `sv-msqodiu9-9adc770019d2`; la route
 `/mes-commandes` repond HTTP 200. Aucune cible production, Function hors scope,
 Rule, Stripe live, cle live, commit ou push n'a ete touche.
+
+Deploiement codes promotionnels du 2026-08-13: projet actif verifie
+`secondevienextjsssr`; 13 Functions strictement ciblees (checkout/reprise,
+annulation/expiration, webhooks/reconciliation, newsletter et quatre callables
+promotion) ont ete creees ou mises a jour en `europe-west1`. Les Rules et
+indexes Firestore du meme projet ont ensuite ete deployes, puis uniquement le
+backend App Hosting `secondevie-next-sandbox` en `europe-west4`. Le correctif de
+format monetaire a donne le rollout final `sv-msqvxgxt-2442e21ef725`, controle
+sur `/checkout`. Stripe reste test-only; aucune production, cle live ou
+Function hors liste ciblee n'a ete modifiee.

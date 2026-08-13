@@ -1703,7 +1703,7 @@ de code.
 
 ## Raccordement codes promotionnels — 2026-08-13
 
-Statut courant: `CORRIGEE_LOCALEMENT_A_DEPLOYER_ET_REQUALIFIER`.
+Statut courant: `DEPLOYEE_REQUALIFICATION_FONCTIONNELLE_ACQUISE_PAIEMENT_FINAL_EN_ATTENTE_D_AUTORISATION`.
 
 - Besoin confirme: les gains 5/10/15 % du jeu newsletter existaient durablement
   dans l'e-mail et `Mes avantages`, mais aucun invariant commerce ne permettait
@@ -1733,10 +1733,24 @@ Statut courant: `CORRIGEE_LOCALEMENT_A_DEPLOYER_ET_REQUALIFIER`.
   `AdminPromotionCodes.jsx`, `promotionCodeClient.js`, `AdminAppIsland.jsx`,
   constantes admin, tests commerce, `map.md` et chapitres canoniques.
 - Preuves locales acquises: lint Functions vert, lint application vert,
-  unitaires commerce 131/131, domaine Firestore 20/20 et 112 assertions dont
+  unitaires commerce 132/132, domaine Firestore 20/20 et 112 assertions dont
   montant Stripe remisé et consommation idempotente, Rules commerce 5/5 avec
-  registre et redemptions inaccessibles au navigateur.
-- Restant avant fermeture: suite newsletter, suite commerce complete, build,
-  controle documentaire, deploiement Functions/Rules/App Hosting strictement
-  sandbox, puis creation admin et application reelle dans le checkout. Aucun
-  deploiement, paiement ou environnement live effectue a ce stade.
+  registre et redemptions inaccessibles au navigateur. Suite newsletter 5/5,
+  suite commerce complete et deux builds Next.js 16.3 de 52 pages verts.
+- Deploiement sandbox: 13 Functions ciblees en `europe-west1`, Rules et indexes
+  Firestore, puis seul backend App Hosting `secondevie-next-sandbox` en
+  `europe-west4`. Version finale servie `sv-msqvxgxt-2442e21ef725`. Aucun
+  environnement production, Stripe live, secret live ou push touche.
+- Requalification humaine acquise: connexion Google exacte admin
+  `loa.gto15@gmail.com`; onglet `Codes promo` visible dans Ventes; creation
+  serveur du code produit `RECETTE10-AUG13`, 10 %, une utilisation globale et
+  par client, cible `Buffet vitrine`; compteur `1 actif`, `0/1 utilise`,
+  `0 reserve`. Connexion exacte client `pvml7008@gmail.com`; panier d'une ligne
+  a 850 EUR; code admin applique a −85 EUR et total 765 EUR. Le code newsletter
+  existant du meme client est aussi accepte a 15 %, −127,50 EUR et total
+  722,50 EUR. Le format decimal a ete corrige, redeploye et requalifie.
+- Restant avant fermeture complete: creation de la commande, affichage du
+  montant Stripe remisé, paiement test et compteur `committed`. Cette action
+  creerait une troisieme commande alors que la campagne `REC-20260812-C2` a
+  atteint sa limite explicite de deux; aucune commande supplementaire ni
+  reservation durable n'a ete creee sans nouvel accord.
