@@ -1,6 +1,6 @@
 # Commerce, checkout et Stripe
 
-Derniere mise a jour: 2026-08-02
+Derniere mise a jour: 2026-08-13
 Statut: `PREPROD_TRANSACTIONAL_READY`
 
 Etat actif:
@@ -75,6 +75,42 @@ recupere un nouveau `clientSecret` et le total serveur pour le meme
 PaymentIntent. Cette detection precede la garde panier vide: le formulaire et
 le panier reinitialises ne sont pas une condition de reprise et aucun nouveau
 `START`/checkout n'est emis.
+
+Une commande deja confirmee est terminale pour la reprise. Le coordinateur
+renvoie `COMMERCE_CHECKOUT_TERMINAL_PAID` avant toute restitution du
+PaymentIntent. Le client supprime alors le descripteur et uniquement les lignes
+achetees dont `cartLineId` et `cartRevision` correspondent, puis reconstruit un
+checkout neuf pour les autres lignes. Un nouveau panier ne peut donc jamais
+heriter du `clientSecret` ni du montant d'une commande payee.
+
+Une commande encore impayee reste reprenable, mais le recapitulatif est alors
+reconstruit exclusivement depuis son snapshot immuable renvoye par le serveur.
+Les lignes ajoutees ensuite au panier ne remplacent jamais visuellement les
+lignes associees au PaymentIntent repris; elles restent preservees pour le
+checkout suivant.
+
+### 3.1 Codes promotionnels
+
+Le navigateur peut transmettre uniquement un code normalise et les identites
+de lignes. `previewPromotionCodeV2` relit les prix autoritaires et fournit un
+apercu; cet apercu n'accorde aucun droit. Lors de `createCheckoutV2`, la meme
+transaction Firestore relit le code, son statut, sa periode, son audience, son
+perimetre produit et ses limites, recalcule la remise, reserve une utilisation,
+reserve le stock et persiste la commande. Le montant du PaymentIntent est
+derive du total de cette commande, jamais d'un montant client.
+
+`commerce_promotion_codes/{sha256(code)}` conserve la definition et les
+compteurs; `customers/{sha256(uid)}` borne l'usage par compte et
+`redemptions/{orderId}` lie l'utilisation a une commande. Un succes Stripe
+deplace atomiquement `reserved` vers `committed`. Une annulation ou expiration
+libere la reservation; un remboursement ne rend jamais le code reutilisable.
+Les retries webhook sont idempotents sur le statut de redemption.
+
+Les gains existants du jeu newsletter sont materialises vers ce meme invariant
+au premier controle, puis les nouveaux gains le sont des leur reclamation. Ils
+restent mono-usage, lies au hash de l'e-mail verifie et ne peuvent pas etre
+appliques depuis un autre compte. Le code brut n'est pas une autorisation: seule
+la validation backend dans la transaction checkout fait foi.
 
 ## 4. Stock et idempotence
 
@@ -172,6 +208,15 @@ puis applique sous le fencing inbox la tentative, la commande, l'audit et les
 deux outbox client/admin. Un echec libere le montant `pending`, place le refund
 en `needs_review` lorsqu'aucun remboursement n'a reussi et ne cree aucun faux
 fait financier de remboursement.
+
+Stripe peut exceptionnellement faire evoluer un Refund du statut `succeeded`
+vers `failed` (par exemple carte expiree ou annulee). Cette transition n'est
+pas un conflit terminal: le worker ajoute un fait financier immuable
+`refund_reversal`, compense le montant rembourse dans le rollup, conserve le
+stock engage et place la commande en `needs_review`. La tentative garde le meme
+ID fournisseur; aucune seconde demande de remboursement n'est creee. Les
+documents deja materialises restent des preuves d'audit, mais la confirmation
+de remboursement devenue fausse n'est plus projetee au client.
 
 Historique du confinement Gate 0B:
 
@@ -478,8 +523,16 @@ sandbox courant. Le transport
 d'annulation client provider-first est prepare avec App Check et secret Stripe;
 le proprietaire vient exclusivement du contexte Auth et le runtime minimal ne
 branche que la coordination d'annulation. Il est exporte et actif dans l'UI
-sandbox. Le
-transport refund admin est egalement prepare avec App Check, secret Stripe,
+sandbox.
+
+La matrice fulfillment est egalement derivee du `deliverySnapshot` fige au
+checkout. Apres preparation, un retrait magasin expose seulement `Pret au
+retrait`, puis `Retire`; une livraison expose seulement `Expedier`, puis
+`Livre` et la mise a jour du suivi. Un snapshot de livraison absent ne donne
+aucun raccourci logistique: le serveur refuse la transition incompatible,
+meme si une ancienne interface la proposait.
+
+Le transport refund admin est egalement prepare avec App Check, secret Stripe,
 registre admin actif et AAL2 Google ou passkey; il derive l'acteur du contexte Auth et
 branche un runtime minimal sur la saga refund reprenable. Il est exporte et
 actif dans l'UI sandbox. Les transports retour admin sont prepares sous
@@ -519,6 +572,14 @@ le reconciliateur, desormais horaire, ne pilote plus la fraicheur de l'UI et
 sert seulement a reconstruire les valeurs absolues et controler les
 divergences. La sante sandbox est `healthy`, tous les
 compteurs sont a zero et aucune TTL commerce n'est activee.
+
+Depuis la correction documentaire du 2026-08-12, le recu sandbox est cree
+dans la meme transaction que la capture, et la confirmation de remboursement
+dans la meme transaction que le fait financier de refund. Le reconciliateur
+horaire conserve uniquement son role de reconstruction idempotente et de
+reparation des documents historiques; il n'est plus le chemin nominal de
+creation des documents visibles dans l'espace client. Une collision d'identite
+ou de `contentHash` echoue explicitement au lieu d'ecraser un document.
 
 La livraison documentaire ajoute un rail de consultation sans modifier les
 faits financiers: `prepareCommerceDocumentDelivery` controle Auth, App Check

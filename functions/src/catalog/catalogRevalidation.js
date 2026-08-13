@@ -75,26 +75,43 @@ async function verifyPublishedCatalogVersion(fetchImpl, endpoint, identity, dela
 
 async function verifyServedCatalog(fetchImpl, endpoint, identity, impactPlan, delayImpl = delay) {
     const origin = new URL(endpoint).origin;
-    const productPath = (impactPlan.paths || []).find((path) => path.startsWith('/produit/'));
+    const productImpact = (impactPlan.products || []).find((product) => (
+        product?.afterPath || product?.beforePath
+    ));
+    const productRoutes = productImpact
+        ? [
+            productImpact.afterPath
+                ? { path: productImpact.afterPath, expectedStatus: 200 }
+                : null,
+            productImpact.beforePath && productImpact.beforePath !== productImpact.afterPath
+                ? { path: productImpact.beforePath, expectedStatus: 404 }
+                : null
+        ].filter(Boolean)
+        : [];
     const categoryPath = (impactPlan.paths || []).find((path) => path.startsWith('/categorie/'));
-    const routePaths = [...new Set([
-        impactPlan.affectsGallery ? '/' : null,
-        productPath,
-        categoryPath,
-    ].filter(Boolean))];
+    const routeExpectations = [
+        impactPlan.affectsGallery ? { path: '/', expectedStatus: 200 } : null,
+        ...productRoutes,
+        categoryPath ? { path: categoryPath, expectedStatus: 200 } : null,
+    ].filter(Boolean).filter((entry, index, entries) => (
+        entries.findIndex((candidate) => candidate.path === entry.path) === index
+    ));
     const attempts = [0, 300, 900];
     let lastError = null;
     for (const waitMs of attempts) {
         if (waitMs) await delayImpl(waitMs);
         try {
             await verifyPublishedCatalogVersion(fetchImpl, endpoint, identity, async () => {});
-            for (const path of routePaths) {
+            for (const { path, expectedStatus } of routeExpectations) {
                 const routeResponse = await fetchImpl(new URL(path, origin), {
                     redirect: 'manual',
                     headers: { accept: 'text/html' },
                     signal: AbortSignal.timeout(10000)
                 });
-                if (!routeResponse.ok) throw new Error(`CATALOG_SERVED_ROUTE_HTTP_${routeResponse.status}`);
+                if (routeResponse.status !== expectedStatus) {
+                    throw new Error(`CATALOG_SERVED_ROUTE_HTTP_${routeResponse.status}`);
+                }
+                if (expectedStatus === 404) continue;
                 const html = await routeResponse.text();
                 if (!html.includes(`data-catalog-version="${identity.aggregateSha256}"`)) {
                     throw new Error('CATALOG_SERVED_ROUTE_STALE');

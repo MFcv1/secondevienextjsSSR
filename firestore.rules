@@ -111,6 +111,15 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Definitions, compteurs et redemptions promotionnels: Functions uniquement.
+    match /commerce_promotion_codes/{codeHash} {
+      allow read, write: if false;
+
+      match /{document=**} {
+        allow read, write: if false;
+      }
+    }
+
     // Fonction Validation Cart
     function isValidCartItem() {
       let data = request.resource.data;

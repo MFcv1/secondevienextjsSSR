@@ -189,6 +189,7 @@ Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCa
 | devis | `perf:quote-direct` |
 | réception devis + admin | `test:quotes`, lint cible, build; envoi Gmail réel uniquement sur demande explicite; contrôle hébergé admin avec `node scripts/with-env.mjs .env.sandbox node scripts/e2e-sandbox-role-session.mjs --role=admin --expect-quote=<reference>` |
 | newsletter + avantages client | `test:newsletter`, lint cible, build; recette Gmail et espace client uniquement sur demande explicite |
+| codes promo checkout/admin | `test:commerce:unit`, `test:commerce:firebase`, `test:commerce:rules`, lint, build; creation admin et application Stripe test sur sandbox uniquement sur demande explicite |
 | menu/header | `perf:menu-desktop`, `perf:menu-mobile`, `mobile:contract` |
 | Auth | `test:auth`, build, smoke reel selon changement |
 | checkout/Stripe | toutes les gates transitives 0A a 7B; hosted final seulement en 7B apres projections 7A |
@@ -289,8 +290,13 @@ reseau qui refuse meme les connexions locales.
 La couverture Gate 4 ajoute les commandes fulfillment/annulation, les refunds
 reprenables, les retours quantitatifs et le rail produit. Le scenario produit
 Firestore exerce un double create concurrent, l'offre, l'ajustement de stock,
-la publication, le retry acquitte avant version obsolete, la suppression source et
+la publication, le retry acquitte avant version obsolete, l'archive souple et
 un audit append-only par commande.
+
+La meme gate couvre la matrice fulfillment par `deliverySnapshot`, le refus du
+titre public illisible ou du materiau vide, la modale d'archivage a cle stable
+et les identites distinctes Ecrire/Apercu. `test:auth` couvre en plus les deux
+reprises bornees d'une erreur reseau pendant le renouvellement du jeton admin.
 
 Le rail Meta possede une gate locale dediee:
 

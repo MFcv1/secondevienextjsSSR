@@ -28,6 +28,7 @@ const {
     subscriberDocumentId
 } = require('./newsletterRewardDomain');
 const { newsletterRewardEmail } = require('./newsletterRewardEmail');
+const { ensurePromotionMaterialized } = require('../commerce/promotionMaterialization');
 
 const db = admin.firestore();
 const PLAYS_COLLECTION = 'newsletter_reward_plays';
@@ -218,6 +219,8 @@ async function claimNewsletterRewardHandler(data, context) {
             if (!subscriberSnapshot.exists) subscriberData.createdAt = now;
             transaction.set(subscriberRef, subscriberData, { merge: true });
         });
+
+        await ensurePromotionMaterialized(db, reward.code, now.toDate().toISOString());
 
         if (shouldSend) {
             try {

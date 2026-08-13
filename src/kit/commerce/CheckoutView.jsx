@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, CreditCard, Truck, AlertCircle, Landmark, Wallet, Loader2 } from 'lucide-react';
+import { ArrowLeft, CreditCard, Truck, AlertCircle, Landmark, Wallet, Loader2, TicketPercent, Check, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { functions, db } from '../config/firebase';
 import KIT_CONFIG from '../config/constants';
@@ -13,6 +13,7 @@ import {
     COMMERCE_V2_CONSUMERS_ENABLED,
     createCheckoutV2,
     ensureCheckoutAnonymousIdentity,
+    previewPromotionCodeV2,
     resumeCheckoutV2,
 } from './commerceV2Client';
 import { buildCheckoutV2Input } from './checkoutContract';
@@ -24,6 +25,8 @@ import {
     clearCheckoutRecoveryDescriptor,
     COMMERCE_V2_RECOVERY_ENABLED,
     createCheckoutRecoveryDescriptor,
+    getCheckoutRecoveryOrderItems,
+    getCheckoutRecoveryTerminalCartLines,
     getCheckoutRecoveryTerminalMessage,
     getCheckoutRecoveryTerminalReason,
     readCheckoutRecoveryDescriptor,
@@ -206,6 +209,11 @@ const CheckoutView = ({
     const [lockedOrderDraft, setLockedOrderDraft] = useState(null);
     const [recoveredOrderTotal, setRecoveredOrderTotal] = useState(null);
     const [authoritativeShippingCost, setAuthoritativeShippingCost] = useState(null);
+    const [authoritativeDiscount, setAuthoritativeDiscount] = useState(null);
+    const [promotionCode, setPromotionCode] = useState('');
+    const [promotionPreview, setPromotionPreview] = useState(null);
+    const [promotionStatus, setPromotionStatus] = useState('idle');
+    const [promotionError, setPromotionError] = useState('');
     const [paymentResumeNotice, setPaymentResumeNotice] = useState('');
     const [priceOverrides, setPriceOverrides] = useState({});
     const [unavailableItems, setUnavailableItems] = useState([]);
@@ -237,12 +245,19 @@ const CheckoutView = ({
             : item;
     }), [cartItems, priceOverrides]);
     const currentSubtotal = useMemo(() => getCheckoutItemsTotal(currentCartItems), [currentCartItems]);
+    const promotionCartSignature = useMemo(() => JSON.stringify(currentCartItems.map((item) => ({
+        id: item.originalId || item.productId || item.id,
+        quantity: Number(item.quantity || 1),
+        revision: Number(item.cartRevision || 0)
+    }))), [currentCartItems]);
+    const promotionCartSignatureRef = useRef(null);
     const checkoutItems = isCheckoutLocked && lockedOrderDraft?.items?.length ? lockedOrderDraft.items : currentCartItems;
     const checkoutSubtotal = isCheckoutLocked && lockedOrderDraft ? lockedOrderDraft.subtotal : currentSubtotal;
     const selectedDelivery = formData.deliveryMode ? deliverySettings[formData.deliveryMode] : null;
     const shippingCost = selectedDelivery ? selectedDelivery.price : 0;
     const displayedShippingCost = authoritativeShippingCost ?? shippingCost;
-    const finalTotal = recoveredOrderTotal ?? (checkoutSubtotal + shippingCost);
+    const displayedDiscount = authoritativeDiscount ?? ((promotionPreview?.discountCents || 0) / 100);
+    const finalTotal = recoveredOrderTotal ?? Math.max(0, checkoutSubtotal + shippingCost - displayedDiscount);
     const getCheckoutClientOrderId = () => {
         if (!checkoutClientOrderIdRef.current) {
             const randomPart = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -261,7 +276,7 @@ const CheckoutView = ({
         );
         return checkoutControllerRef.current;
     };
-    const resetTerminalCheckoutRecovery = useCallback((reason) => {
+    const resetTerminalCheckoutRecovery = useCallback((reason, descriptor = null) => {
         clearCheckoutRecoveryDescriptor({ enabled: COMMERCE_V2_RECOVERY_ENABLED });
         checkoutControllerRef.current = createCheckoutControllerState();
         checkoutClientOrderIdRef.current = null;
@@ -272,9 +287,13 @@ const CheckoutView = ({
         setLockedOrderDraft(null);
         setRecoveredOrderTotal(null);
         setAuthoritativeShippingCost(null);
+        setAuthoritativeDiscount(null);
         setPaymentResumeNotice(getCheckoutRecoveryTerminalMessage(reason));
         setCheckoutState('editing');
-        onRecoveryTerminal?.(reason);
+        onRecoveryTerminal?.(
+            reason,
+            getCheckoutRecoveryTerminalCartLines(reason, descriptor)
+        );
     }, [onRecoveryTerminal]);
 
     const hasPendingV2Payment = Boolean(
@@ -299,13 +318,25 @@ const CheckoutView = ({
                 setAuthoritativeShippingCost(Number.isSafeInteger(resumed.shippingCents)
                     ? resumed.shippingCents / 100
                     : null);
+                setAuthoritativeDiscount(Number.isSafeInteger(resumed.discountCents)
+                    ? resumed.discountCents / 100
+                    : null);
+                if (resumed.promotion) {
+                    setPromotionCode(resumed.promotion.code || '');
+                    setPromotionPreview({
+                        ...resumed.promotion,
+                        discountCents: resumed.discountCents
+                    });
+                }
                 setCreatedStripeConnectedAccountId(resumed.connectedAccountId || '');
             }
             setCheckoutState('ready_to_pay');
         } catch (error) {
             const terminalReason = getCheckoutRecoveryTerminalReason(error);
             if (terminalReason) {
-                resetTerminalCheckoutRecovery(terminalReason);
+                resetTerminalCheckoutRecovery(terminalReason, {
+                    cartLines: lockedOrderDraft?.purchasedCartLines || []
+                });
                 return true;
             }
             console.error('Checkout payment resume failed:', error);
@@ -317,6 +348,45 @@ const CheckoutView = ({
         return true;
     };
 
+    const applyPromotionCode = async () => {
+        const normalized = promotionCode.trim().toUpperCase();
+        if (!normalized) return;
+        setPromotionStatus('loading');
+        setPromotionError('');
+        try {
+            const preview = await previewPromotionCodeV2(normalized, currentCartItems);
+            setPromotionCode(preview.code);
+            setPromotionPreview(preview);
+            promotionCartSignatureRef.current = promotionCartSignature;
+            setPromotionStatus('applied');
+        } catch (error) {
+            setPromotionPreview(null);
+            setPromotionStatus('error');
+            setPromotionError(error?.message || 'Ce code ne peut pas être appliqué à ce panier.');
+        }
+    };
+
+    useEffect(() => {
+        if (!promotionPreview || !promotionCartSignatureRef.current) return;
+        if (promotionCartSignatureRef.current !== promotionCartSignature && !isCheckoutLocked) {
+            setPromotionPreview(null);
+            setPromotionStatus('idle');
+            setPromotionError('Le panier a changé. Appliquez de nouveau le code.');
+            setAuthoritativeDiscount(null);
+            resetCheckoutClientOrderId();
+        }
+    }, [isCheckoutLocked, promotionCartSignature, promotionPreview]);
+
+    const clearPromotionCode = () => {
+        if (isCheckoutLocked) return;
+        setPromotionCode('');
+        setPromotionPreview(null);
+        setPromotionStatus('idle');
+        setPromotionError('');
+        setAuthoritativeDiscount(null);
+        resetCheckoutClientOrderId();
+    };
+
     useEffect(() => {
         if (!COMMERCE_V2_CONSUMERS_ENABLED || typeof window === 'undefined') return undefined;
         if (checkoutRecoveryAttemptedRef.current) return undefined;
@@ -326,10 +396,11 @@ const CheckoutView = ({
 
         let cancelled = false;
         const restorePayment = async () => {
+            let descriptor = null;
             try {
                 const identity = await ensureCheckoutAnonymousIdentity();
                 if (cancelled) return;
-                const descriptor = readCheckoutRecoveryDescriptor(identity.uid, {
+                descriptor = readCheckoutRecoveryDescriptor(identity.uid, {
                     enabled: COMMERCE_V2_RECOVERY_ENABLED
                 });
                 if (!descriptor) return;
@@ -345,15 +416,20 @@ const CheckoutView = ({
                 );
                 checkoutClientOrderIdRef.current = descriptor.clientOrderId;
                 setCreatedOrderId(descriptor.orderId);
-                setLockedOrderDraft({
-                    items: currentCartItems,
-                    subtotal: currentSubtotal,
-                    purchasedCartLines: descriptor.cartLines
-                });
                 setCheckoutState('fetching_stripe');
 
                 const resumed = await resumeCheckoutV2(descriptor.orderId);
                 if (cancelled) return;
+                const recoveredItems = getCheckoutRecoveryOrderItems(resumed);
+                const recoveredSubtotal = recoveredItems.reduce(
+                    (sum, item) => sum + (item.price * item.quantity),
+                    0
+                );
+                setLockedOrderDraft({
+                    items: recoveredItems,
+                    subtotal: recoveredSubtotal,
+                    purchasedCartLines: descriptor.cartLines
+                });
                 setClientSecret(resumed.clientSecret);
                 setRecoveredOrderTotal(Number.isSafeInteger(resumed.totalCents)
                     ? resumed.totalCents / 100
@@ -361,6 +437,13 @@ const CheckoutView = ({
                 setAuthoritativeShippingCost(Number.isSafeInteger(resumed.shippingCents)
                     ? resumed.shippingCents / 100
                     : null);
+                setAuthoritativeDiscount(Number.isSafeInteger(resumed.discountCents)
+                    ? resumed.discountCents / 100
+                    : null);
+                if (resumed.promotion) {
+                    setPromotionCode(resumed.promotion.code || '');
+                    setPromotionPreview({ ...resumed.promotion, discountCents: resumed.discountCents });
+                }
                 setCreatedStripeConnectedAccountId(resumed.connectedAccountId || '');
                 setPaymentResumeNotice('Votre commande vous attend. Vous pouvez reprendre le paiement là où vous l’aviez laissé.');
                 setCheckoutState('ready_to_pay');
@@ -368,7 +451,7 @@ const CheckoutView = ({
                 if (cancelled) return;
                 const terminalReason = getCheckoutRecoveryTerminalReason(error);
                 if (terminalReason) {
-                    resetTerminalCheckoutRecovery(terminalReason);
+                    resetTerminalCheckoutRecovery(terminalReason, descriptor);
                     return;
                 }
                 console.error('Checkout recovery failed:', error);
@@ -704,6 +787,7 @@ const CheckoutView = ({
         });
         setRecoveredOrderTotal(null);
         setAuthoritativeShippingCost(null);
+        setAuthoritativeDiscount(null);
 
         if (paymentMethod === 'stripe_elements') {
             setCheckoutState('fetching_stripe');
@@ -729,7 +813,8 @@ const CheckoutView = ({
                     deliveryModeId: fixtureContext
                         ? 'fixture_delivery_fr'
                         : formData.deliveryMode,
-                    shippingAddress: formData
+                    shippingAddress: formData,
+                    promotionCode: promotionPreview?.code || null
                 });
                 const result = await createCheckoutV2(input, {
                     fixture: fixtureContext
@@ -759,6 +844,10 @@ const CheckoutView = ({
                 setAuthoritativeShippingCost(Number.isSafeInteger(result.shippingCents)
                     ? result.shippingCents / 100
                     : null);
+                setAuthoritativeDiscount(Number.isSafeInteger(result.discountCents)
+                    ? result.discountCents / 100
+                    : null);
+                if (result.promotion) setPromotionPreview(result.promotion);
                 setCreatedOrderId(result.orderId);
                 setCreatedOrderOtpToken('');
                 setCreatedStripeConnectedAccountId(
@@ -837,6 +926,7 @@ const CheckoutView = ({
             setLockedOrderDraft(null);
             setRecoveredOrderTotal(null);
             setAuthoritativeShippingCost(null);
+            setAuthoritativeDiscount(null);
             if (error?.details?.reason === 'price_changed' && Array.isArray(error.details.items)) {
                 setPriceOverrides((current) => ({
                     ...current,
@@ -1312,6 +1402,60 @@ const CheckoutView = ({
                                         <span className="text-stone-400 font-medium">Frais de livraison</span>
                                         <span className="font-bold text-white tracking-tight">{displayedShippingCost > 0 ? `+ ${displayedShippingCost} €` : 'Gratuit'}</span>
                                     </div>
+
+                                    <div className="mb-5 rounded-2xl border border-white/10 bg-white/[0.035] p-3.5">
+                                        <div className="flex items-center gap-2 text-xs font-bold text-stone-200">
+                                            <TicketPercent size={15} strokeWidth={1.8} />
+                                            Code avantage
+                                        </div>
+                                        {promotionPreview ? (
+                                            <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-emerald-400/10 px-3 py-2.5 text-emerald-200">
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-xs font-black tracking-wide">{promotionPreview.code}</p>
+                                                    <p className="mt-0.5 text-[11px] text-emerald-200/75">{promotionPreview.percentage} % appliqués · − {((promotionPreview.discountCents || 0) / 100).toFixed(2).replace('.', ',')} €</p>
+                                                </div>
+                                                {!isCheckoutLocked ? (
+                                                    <button aria-label="Retirer le code promotionnel" className="rounded-lg p-1.5 transition hover:bg-white/10" onClick={clearPromotionCode} type="button"><X size={14} /></button>
+                                                ) : <Check size={15} />}
+                                            </div>
+                                        ) : (
+                                            <div className="mt-3 flex gap-2">
+                                                <input
+                                                    aria-label="Code promotionnel"
+                                                    className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/15 px-3 py-2.5 text-sm font-bold uppercase tracking-wide text-white outline-none transition placeholder:text-stone-600 focus:border-amber-400/60"
+                                                    disabled={isCheckoutLocked || promotionStatus === 'loading'}
+                                                    onChange={(event) => {
+                                                        setPromotionCode(event.target.value.toUpperCase());
+                                                        setPromotionError('');
+                                                    }}
+                                                    onKeyDown={(event) => {
+                                                        if (event.key === 'Enter') {
+                                                            event.preventDefault();
+                                                            void applyPromotionCode();
+                                                        }
+                                                    }}
+                                                    placeholder="SV15-XXXXXX"
+                                                    value={promotionCode}
+                                                />
+                                                <button
+                                                    className="inline-flex min-w-24 items-center justify-center rounded-xl bg-white px-3 text-xs font-black text-stone-950 transition hover:bg-stone-200 disabled:opacity-50"
+                                                    disabled={!promotionCode.trim() || isCheckoutLocked || promotionStatus === 'loading'}
+                                                    onClick={() => void applyPromotionCode()}
+                                                    type="button"
+                                                >
+                                                    {promotionStatus === 'loading' ? <Loader2 className="animate-spin" size={14} /> : 'Appliquer'}
+                                                </button>
+                                            </div>
+                                        )}
+                                        {promotionError ? <p className="mt-2 text-xs leading-5 text-red-300" role="alert">{promotionError}</p> : null}
+                                    </div>
+
+                                    {displayedDiscount > 0 ? (
+                                        <div className="mb-5 flex justify-between text-sm text-emerald-300">
+                                            <span className="font-medium">Avantage appliqué</span>
+                                            <span className="font-black tabular-nums">− {displayedDiscount.toFixed(2).replace('.', ',')} €</span>
+                                        </div>
+                                    ) : null}
                                     
                                     <div className="border-t border-stone-800 pt-6 flex justify-between items-end">
                                         <span className="text-stone-400 text-[10px] font-black uppercase tracking-widest mb-[2px]">Total à payer</span>

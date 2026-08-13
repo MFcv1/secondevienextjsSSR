@@ -50,6 +50,11 @@ affiche le compteur et conserve l'ordre des 23 vignettes; la case d'ajout reste
 alors visible dans un etat desactive `MAX`. Une commande de vidage placee pres
 du compteur retire en une fois toutes les images du formulaire. La commande
 produit refuse egalement tout tableau media qui depasse cette limite.
+Une creation publique exige aussi un titre lisible (au moins quatre caracteres
+et trois lettres ou chiffres) et un materiau non vide. Le formulaire bloque ces
+ecarts avant upload et `productCommands` reverifie le meme invariant dans la
+transaction serveur. Une chaine techniquement non vide telle que `"fr` ne peut
+donc plus devenir une publication catalogue.
 
 Le panneau d'apercu Instagram de l'administration derive son contenu de ce
 modele sans le modifier: `name` devient l'accroche, `description` est reduite en
@@ -68,9 +73,11 @@ a l'edition, mais expose `create_published_product` pour la creation neuve. Cett
 commande assemble contenu, medias, offre, stock et statut public dans une seule
 transaction et un seul audit. Chaque commande
 exige un admin AAL2 actif, App Check, une raison, une cle idempotente, une
-version attendue et un audit append-only. La suppression retire le document
-source du catalogue; les commandes conservees gardent leur snapshot produit et
-les medias retires suivent la quarantaine Storage. Les commandes catalogue ne dependent
+version attendue et un audit append-only. L'archivage conserve le document
+source en `status: archived`, son historique de stock et son audit; il le retire
+des lecteurs publics et actifs sans suppression physique optimiste. Les
+commandes conservees gardent leur snapshot produit et les medias retires
+suivent la quarantaine Storage. Les commandes catalogue ne dependent
 plus de `adminMutationMode`, reserve au rail commerce transactionnel: un
 administrateur autorise doit pouvoir gerer les annonces lorsque checkout,
 commandes et remboursements restent en lecture seule. Avant toute compression
@@ -191,6 +198,7 @@ La passe de synchronisation locale du 2026-07-19 a ferme les ecarts suivants dan
 - apres acceptation de l'invalidation et preuve exacte de `/api/catalog/version`, le backend remplace le document minimal `sys_catalog_live/current`, avant le controle HTML; il ne contient ni prix, ni stock, ni image et n'est jamais autoritaire pour le commerce;
 - la galerie visible confirme ce signal par l'endpoint version avec des reprises bornees, charge les 48 cartes de la release exacte depuis `/api/catalog` et remplace ses grilles Nouveautes/Petits Prix sans attendre ISR; `router.refresh()` reste lance pour faire converger le document et les autres surfaces;
 - la preuve HTML versionnee reste obligatoire pour `servedState=observed`, les reprises Cloud Tasks et l'exploitation, mais son retard ne bloque plus le signal ni les cartes visibles;
+- cette preuve distingue les chemins encore publies des anciennes fiches retirees: une URL courante doit repondre 200 avec le hash de release, tandis que l'ancien chemin d'un archivage ou d'un changement de slug doit repondre 404;
 - le checkout exige encore le statut `published`, preserve la semantique d'un prix courant egal a zero et relit prix/stock dans Firestore;
 - les backfills image s'appuient uniquement sur `onCatalogSourceWrite` et ne peuvent plus recreer `public/meta`.
 

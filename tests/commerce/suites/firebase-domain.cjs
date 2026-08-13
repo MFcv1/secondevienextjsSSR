@@ -69,6 +69,9 @@ const {
     createCheckoutRuntime,
     createReservationExpiryRuntime
 } = require('../../../functions/src/commerce/domain/v2Runtime');
+const {
+    promotionCodeHash
+} = require('../../../functions/src/commerce/domain/promotionCode');
 
 const PROJECT_ID = 'demo-secondevie-commerce';
 const FIRESTORE_PORT = 8185;
@@ -211,6 +214,26 @@ function gate3Refs(firestore) {
         ),
         financialTotals: (currency) => doc(firestore, `commerce_financial_totals/${currency}`),
         outbox: (outboxId) => doc(firestore, `commerce_outbox/${outboxId}`),
+        document: (orderId, documentId) => doc(
+            firestore,
+            `orders/${orderId}/documents/${documentId}`
+        ),
+        promotion: (codeHash) => doc(
+            firestore,
+            `commerce_promotion_codes/${codeHash}`
+        ),
+        promotionCustomer: (codeHash, customerKey) => doc(
+            firestore,
+            `commerce_promotion_codes/${codeHash}/customers/${customerKey}`
+        ),
+        promotionRedemption: (codeHash, orderId) => doc(
+            firestore,
+            `commerce_promotion_codes/${codeHash}/redemptions/${orderId}`
+        ),
+        newsletterReward: (rewardId) => doc(
+            firestore,
+            `newsletter_rewards/${rewardId}`
+        ),
         accessToken: (tokenHash) => doc(
             firestore,
             `commerce_order_access_tokens/${tokenHash}`
@@ -996,6 +1019,90 @@ const scenarios = {
             ['order-paid', 'order-paid-admin'],
             'payment atomically creates one dedicated message per audience'
         );
+        const commerceDocuments = await getDocs(collection(
+            firestore,
+            `orders/${prepared.order.id}/documents`
+        ));
+        context.equal(commerceDocuments.size, 1, 'payment receipt is atomically available');
+        context.equal(
+            commerceDocuments.docs[0].data().kind,
+            'sandbox_payment_receipt',
+            'the atomic payment document is the sandbox receipt'
+        );
+        context.equal(
+            commerceDocuments.docs[0].data().issuedAt,
+            order.payment.succeededAt,
+            'the atomic receipt reuses the timestamp used by the rebuild fallback'
+        );
+    }),
+
+    'gate3-promotion-is-reserved-with-checkout-and-committed-once-after-payment': async (context) => withBackend(async (firestore) => {
+        const seeded = await seedGate3Checkout(firestore);
+        const code = 'RECETTE-10';
+        const codeHash = promotionCodeHash(code);
+        await setDoc(seeded.refs.promotion(codeHash), {
+            schemaVersion: 1,
+            code,
+            codeHash,
+            name: 'Code transactionnel Gate 3',
+            source: 'admin',
+            status: 'active',
+            discount: { type: 'percentage', percentage: 10 },
+            scope: { type: 'products', productIds: ['fixture_gate3_product'] },
+            audience: { type: 'public' },
+            limits: { maxRedemptions: 1, maxPerCustomer: 1 },
+            constraints: { minSubtotalCents: 0, maxDiscountCents: null },
+            usage: { reserved: 0, committed: 0 },
+            startsAt: '2026-07-25T00:00:00.000Z',
+            expiresAt: '2026-08-25T00:00:00.000Z',
+            createdAt: '2026-07-25T00:00:00.000Z',
+            updatedAt: '2026-07-25T00:00:00.000Z'
+        });
+        const prepared = await seeded.checkoutRepository.prepareCheckout({
+            ownerUid: 'owner-uid-gate3',
+            ownerEmail: 'client@example.test',
+            input: { ...gate3CheckoutInput(), promotionCode: code },
+            fixtureContext: {
+                runId: 'run_gate3_promotion',
+                fixtureScopeVersion: 'fixture_gate3_20260726'
+            }
+        });
+        context.equal(prepared.order.amounts.itemsCents, 12_500, 'subtotal is authoritative');
+        context.equal(prepared.order.amounts.discountCents, 1_250, 'only the eligible product is discounted');
+        context.equal(prepared.order.amounts.totalCents, 12_750, 'Stripe total includes shipping and server discount');
+        context.equal(
+            (await getDoc(seeded.refs.promotion(codeHash))).data().usage.reserved,
+            1,
+            'checkout atomically reserves the only global use'
+        );
+        const applier = createPaymentEffectApplier({
+            refs: seeded.refs,
+            clock: { now: () => '2026-07-26T12:05:00.000Z' },
+            increment
+        });
+        const apply = () => runTransaction(firestore, (transaction) => applier.apply(transaction, {
+            entry: { scope: 'connect', accountId: 'acct_gate3ready01' },
+            paymentIntent: {
+                id: 'pi_gate3_promotion_0001',
+                status: 'succeeded',
+                amount: prepared.order.amounts.totalCents,
+                currency: 'eur',
+                metadata: {
+                    orderId: prepared.order.id,
+                    requestHash: prepared.order.checkout.requestHash
+                },
+                connectedAccountId: 'acct_gate3ready01'
+            }
+        }));
+        await apply();
+        await apply();
+        const promotion = (await getDoc(seeded.refs.promotion(codeHash))).data();
+        context.deepEqual(promotion.usage, { reserved: 0, committed: 1 }, 'payment consumes the code exactly once');
+        context.equal(
+            (await getDoc(seeded.refs.promotionRedemption(codeHash, prepared.order.id))).data().status,
+            'committed',
+            'redemption is durably linked to the paid order'
+        );
     }),
 
     'gate3-guest-resume-token-is-single-use-and-rotated-transactionally': async (context) => withBackend(async (firestore) => {
@@ -1233,6 +1340,15 @@ const scenarios = {
             3,
             'one capture fact and two refund facts exist'
         );
+        const commerceDocuments = await getDocs(collection(
+            firestore,
+            `orders/${prepared.order.id}/documents`
+        ));
+        context.equal(
+            commerceDocuments.size,
+            3,
+            'one receipt and two refund confirmations are atomically available'
+        );
     }),
 
     'gate4-refund-failed-webhook-settles-attempt-order-and-two-outboxes': async (context) => withBackend(async (firestore) => {
@@ -1326,6 +1442,111 @@ const scenarios = {
                 'order-refund-failed-admin'
             ],
             'failed refund adds one customer and one admin alert'
+        );
+    }),
+
+    'gate4-refund-succeeded-then-failed-is-compensated-without-restock': async (context) => withBackend(async (firestore) => {
+        const seeded = await seedGate3Checkout(firestore);
+        const prepared = await seeded.checkoutRepository.prepareCheckout({
+            ownerUid: 'owner-uid-gate3',
+            ownerEmail: 'client@example.test',
+            input: gate3CheckoutInput(),
+            fixtureContext: {
+                runId: 'run_gate4_refund_reversal',
+                fixtureScopeVersion: 'fixture_gate3_20260726'
+            }
+        });
+        const effectClock = {
+            now: () => '2026-07-26T12:05:00.000Z',
+            nowMillis: () => Date.parse('2026-07-26T12:05:00.000Z')
+        };
+        const paymentApplier = createPaymentEffectApplier({
+            refs: seeded.refs,
+            clock: effectClock,
+            increment
+        });
+        await runTransaction(firestore, (transaction) => paymentApplier.apply(transaction, {
+            entry: { scope: 'connect', accountId: 'acct_gate3ready01' },
+            paymentIntent: {
+                id: 'pi_gate4_refund_reversal',
+                status: 'succeeded',
+                amount: prepared.order.amounts.totalCents,
+                currency: 'eur',
+                metadata: {
+                    orderId: prepared.order.id,
+                    requestHash: prepared.order.checkout.requestHash
+                },
+                connectedAccountId: 'acct_gate3ready01'
+            }
+        }));
+        const repository = createRefundRepository({
+            db: { runTransaction: (run) => runTransaction(firestore, run) },
+            refs: seeded.refs,
+            clock: effectClock,
+            increment
+        });
+        const refundRequestId = 'refund-reversal-webhook-0001';
+        await repository.prepareRefund({
+            orderId: prepared.order.id,
+            refundRequestId,
+            amountCents: 3000,
+            actor: { uid: 'admin-gate4', role: 'admin', aal2: true },
+            reason: 'qualification webhook refund reversal'
+        });
+        const refundApplier = createRefundEffectApplier({
+            refs: seeded.refs,
+            clock: effectClock,
+            increment
+        });
+        const providerRefund = {
+            id: 're_gate4_async_reversal',
+            status: 'succeeded',
+            amount: 3000,
+            currency: 'eur',
+            payment_intent: 'pi_gate4_refund_reversal',
+            metadata: {
+                orderId: prepared.order.id,
+                refundRequestId
+            },
+            connectedAccountId: 'acct_gate3ready01'
+        };
+        await runTransaction(firestore, (transaction) => refundApplier.apply(transaction, {
+            entry: { scope: 'connect', accountId: 'acct_gate3ready01' },
+            refund: providerRefund
+        }));
+        await runTransaction(firestore, (transaction) => refundApplier.apply(transaction, {
+            entry: { scope: 'connect', accountId: 'acct_gate3ready01' },
+            refund: { ...providerRefund, status: 'failed' }
+        }));
+        const order = (await getDoc(seeded.refs.order(prepared.order.id))).data();
+        const attempt = (await getDoc(
+            seeded.refs.refundAttempt(prepared.order.id, refundRequestId)
+        )).data();
+        const facts = await getDocs(collection(firestore, 'commerce_financial_facts'));
+        const outboxes = await getDocs(collection(firestore, 'commerce_outbox'));
+        context.equal(attempt.status, 'failed', 'same refund attempt records the reversal');
+        context.equal(order.amounts.refundedCents, 0, 'reversed refund is removed from amounts');
+        context.equal(order.amounts.netCents, order.amounts.capturedCents, 'net amount is restored');
+        context.equal(order.refundAggregate.succeededCents, 0, 'refund aggregate is compensated');
+        context.equal(order.refundAggregate.hasFailure, true, 'failure remains explicit');
+        context.equal(order.inventorySummary.committedQty, 1, 'inventory remains committed');
+        context.equal(order.inventorySummary.restockedQty, 0, 'refund reversal never restocks');
+        context.deepEqual(
+            facts.docs.map((document) => document.data().type).sort(),
+            ['capture', 'refund', 'refund_reversal'],
+            'append-only facts contain the compensating reversal'
+        );
+        context.deepEqual(
+            outboxes.docs.map((document) => document.data().template).sort(),
+            [
+                'order-paid',
+                'order-paid-admin',
+                'order-refund-failed',
+                'order-refund-failed-admin',
+                'order-refunded',
+                'order-refunded-admin'
+            ],
+            'customer and admin receive the asynchronous failure alerts once'
         );
     }),
 
@@ -1523,6 +1744,7 @@ const scenarios = {
                 editorial: {
                     name: 'Buffet Firestore Gate 4',
                     description: 'Buffet restaure avec une description detaillee et exploitable.',
+                    material: 'Chene',
                     seoIndexable: true,
                     category: 'buffets'
                 },

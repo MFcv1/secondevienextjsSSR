@@ -24,7 +24,7 @@ function normalizeFact(fact) {
         fact.schemaVersion !== 2 ||
         typeof fact.effectId !== 'string' ||
         typeof fact.orderId !== 'string' ||
-        !['capture', 'refund'].includes(fact.type) ||
+        !['capture', 'refund', 'refund_reversal'].includes(fact.type) ||
         !Number.isSafeInteger(fact.amountCents) ||
         fact.amountCents <= 0 ||
         typeof fact.currency !== 'string' ||
@@ -54,6 +54,7 @@ function emptyAmounts() {
 function addFact(target, fact) {
     if (fact.type === 'capture') target.capturedCents += fact.amountCents;
     if (fact.type === 'refund') target.refundedCents += fact.amountCents;
+    if (fact.type === 'refund_reversal') target.refundedCents -= fact.amountCents;
     target.netCents = target.capturedCents - target.refundedCents;
 }
 

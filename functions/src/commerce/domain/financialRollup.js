@@ -19,7 +19,7 @@ function toDateKey(value) {
 }
 
 function buildFinancialRollupDelta(fact) {
-    if (!fact || !['capture', 'refund'].includes(fact.type)) {
+    if (!fact || !['capture', 'refund', 'refund_reversal'].includes(fact.type)) {
         throw rollupError('COMMERCE_FINANCIAL_ROLLUP_TYPE_INVALID');
     }
     if (!Number.isSafeInteger(fact.amountCents) || fact.amountCents <= 0) {
@@ -30,7 +30,9 @@ function buildFinancialRollupDelta(fact) {
         throw rollupError('COMMERCE_FINANCIAL_ROLLUP_CURRENCY_INVALID');
     }
     const capturedCents = fact.type === 'capture' ? fact.amountCents : 0;
-    const refundedCents = fact.type === 'refund' ? fact.amountCents : 0;
+    const refundedCents = fact.type === 'refund'
+        ? fact.amountCents
+        : (fact.type === 'refund_reversal' ? -fact.amountCents : 0);
     return Object.freeze({
         dateKey: toDateKey(fact.effectiveAt),
         currency,

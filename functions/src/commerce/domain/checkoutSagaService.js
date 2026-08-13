@@ -42,6 +42,8 @@ function createCheckoutSagaService({ stripe, repository, clock, failpoints = nul
                 paymentIntentId: existing.id,
                 clientSecret: existing.client_secret,
                 shippingCents: order.amounts.shippingCents,
+                discountCents: order.amounts.discountCents,
+                promotion: order.promotionSnapshot || null,
                 totalCents: order.amounts.totalCents,
                 connectedAccountId: attempt.connectedAccountId,
                 reused: true
@@ -87,6 +89,8 @@ function createCheckoutSagaService({ stripe, repository, clock, failpoints = nul
             paymentIntentId: paymentIntent.id,
             clientSecret: paymentIntent.client_secret,
             shippingCents: order.amounts.shippingCents,
+            discountCents: order.amounts.discountCents,
+            promotion: order.promotionSnapshot || null,
             totalCents: order.amounts.totalCents,
             connectedAccountId: current.connectedAccountId,
             reused: false

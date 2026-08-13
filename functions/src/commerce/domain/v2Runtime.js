@@ -459,6 +459,17 @@ function createRefs(db, appId) {
             `commerce_financial_daily/${dateKey}_${currency}`
         ),
         financialTotals: (currency) => document(`commerce_financial_totals/${currency}`),
+        document: (orderId, documentId) => document(
+            `orders/${orderId}/documents/${documentId}`
+        ),
+        promotion: (codeHash) => document(`commerce_promotion_codes/${codeHash}`),
+        promotionCustomer: (codeHash, customerKey) => document(
+            `commerce_promotion_codes/${codeHash}/customers/${customerKey}`
+        ),
+        promotionRedemption: (codeHash, orderId) => document(
+            `commerce_promotion_codes/${codeHash}/redemptions/${orderId}`
+        ),
+        newsletterReward: (rewardId) => document(`newsletter_rewards/${rewardId}`),
         accessToken: (tokenHash) => document(`commerce_order_access_tokens/${tokenHash}`)
     });
 }

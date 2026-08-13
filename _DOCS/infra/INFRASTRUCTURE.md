@@ -631,3 +631,11 @@ npm run build
 ```
 
 Les audits cloud necessitent une session CLI valide et doivent rester read-only sauf deploiement explicitement demande.
+
+Deploiement de cloture recette du 2026-08-13: apres verification explicite du
+projet `secondevienextjsssr`, `listMyOrdersV2` a ete mise a jour seule en
+`europe-west1`, puis le seul backend App Hosting
+`secondevie-next-sandbox` a ete deploye en `europe-west4`. Le rollout est
+termine et sert le deployment ID `sv-msqodiu9-9adc770019d2`; la route
+`/mes-commandes` repond HTTP 200. Aucune cible production, Function hors scope,
+Rule, Stripe live, cle live, commit ou push n'a ete touche.

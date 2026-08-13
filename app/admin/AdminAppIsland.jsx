@@ -24,6 +24,7 @@ import {
   Users,
   Package,
   ReceiptText,
+  TicketPercent,
 } from 'lucide-react';
 import LoginView from '../../src/kit/commerce/LoginView';
 import {
@@ -63,6 +64,7 @@ const AdminHomepage = React.lazy(() => import('../../src/kit/admin/AdminHomepage
 const AdminOrders = React.lazy(loadAdminOrders);
 const AdminInvoices = React.lazy(loadAdminInvoices);
 const AdminReturns = React.lazy(loadAdminReturns);
+const AdminPromotionCodes = React.lazy(() => import('../../src/kit/admin/AdminPromotionCodes'));
 const AdminLivraison = React.lazy(loadAdminLivraison);
 const AdminQuotes = React.lazy(loadAdminQuotes);
 const AdminStudio = React.lazy(() => import('../../src/kit/admin/AdminStudio'));
@@ -87,6 +89,7 @@ const TAB_ICONS = {
   homepage: Palette,
   orders: Package,
   returns: RotateCcw,
+  promotions: TicketPercent,
   users: Users,
   ip_manager: Globe,
   seo: Share2,
@@ -107,7 +110,7 @@ const adminTabs = KIT_CONFIG.adminTabs.map((tab, index) => ({
   icon: TAB_ICONS[tab.id] ?? COLLECTION_ICONS[index % COLLECTION_ICONS.length],
 }));
 
-const ADMIN_PUBLIC_CATALOG_TABS = new Set(['dashboard', 'analytics', 'inventory', 'payment_links']);
+const ADMIN_PUBLIC_CATALOG_TABS = new Set(['dashboard', 'analytics', 'inventory', 'payment_links', 'promotions']);
 const readAdminOrderTarget = () => {
   if (typeof window === 'undefined') return null;
   const orderId = new URLSearchParams(window.location.search).get('order_id');
@@ -142,7 +145,7 @@ function AdminCatalogStatus({ darkMode, error, loading, onRetry }) {
 const ADMIN_NAV_GROUPS = [
   { label: "Vue d'ensemble", tabs: ['dashboard', 'analytics'] },
   { label: 'Catalogue', tabs: ['furniture', 'inventory', 'studio'] },
-  { label: 'Ventes', tabs: ['orders', 'quotes', 'payment_links', 'invoices', 'returns', 'livraison', 'payment_settings'] },
+  { label: 'Ventes', tabs: ['orders', 'quotes', 'payment_links', 'invoices', 'returns', 'promotions', 'livraison', 'payment_settings'] },
   { label: 'Communication', tabs: ['homepage', 'newsletter', 'seo'] },
   { label: 'Administration', tabs: ['account', 'users', 'ip_manager'] },
 ];
@@ -396,10 +399,9 @@ function AdminContent() {
     clearAdminPublicCatalogCache();
   };
 
-  const handleDeleteItem = async (_year, item, collectionName) => {
+  const handleDeleteItem = async (_year, item, collectionName, stableCommandId) => {
     if (publicationMutationsBlocked) return;
-    if (!window.confirm(`Archiver « ${item.name || 'ce meuble'} » ? Il sera retiré du catalogue sans effacer son historique.`)) return;
-    await deleteProductAdmin(item, collectionName);
+    await deleteProductAdmin(item, collectionName, stableCommandId);
     [item?.id, item?.originalId]
       .map((value) => String(value || '').trim())
       .filter(Boolean)
@@ -602,6 +604,16 @@ function AdminContent() {
             <AdminQuotes darkMode={darkMode} />
           ) : adminCollection === 'returns' ? (
             <AdminReturns darkMode={darkMode} mutationsEnabled />
+          ) : adminCollection === 'promotions' ? (
+            <div>
+              <AdminCatalogStatus
+                darkMode={darkMode}
+                error={catalogState.error}
+                loading={catalogState.status === 'loading'}
+                onRetry={ensureAdminCatalog}
+              />
+              <AdminPromotionCodes darkMode={darkMode} items={catalogState.items} />
+            </div>
           ) : adminCollection === 'livraison' ? (
             <AdminLivraison darkMode={darkMode} />
           ) : adminCollection === 'studio' ? (
@@ -668,7 +680,7 @@ function AdminContent() {
               onCancelEdit={() => setEditingItem(null)}
               onEdit={(item) => setEditingItem(item)}
               onToggleStatus={(item) => handleToggleStatus(item, adminCollection)}
-              onDelete={(item) => handleDeleteItem(null, item, adminCollection)}
+              onDelete={(item, stableCommandId) => handleDeleteItem(null, item, adminCollection, stableCommandId)}
               onMarkAsSold={(item) => handleMarkAsSold(item, adminCollection)}
               onMarkAsAvailable={(item) => handleMarkAsAvailable(item, adminCollection)}
               mutationsBlocked={publicationMutationsBlocked}

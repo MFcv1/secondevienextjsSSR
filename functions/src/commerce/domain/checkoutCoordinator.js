@@ -6,12 +6,26 @@ function coordinatorError(code) {
     return error;
 }
 
+function summarizeCheckoutResumeItems(order) {
+    if (!Array.isArray(order?.items) || order.items.length === 0) {
+        throw coordinatorError('COMMERCE_CHECKOUT_RESUME_ITEMS_INVALID');
+    }
+    return order.items.map((line) => ({
+        cartLineId: line.cartLineId || line.lineId,
+        cartRevision: line.cartRevision,
+        productId: line.productId,
+        name: line.titleSnapshot,
+        quantity: line.quantity,
+        unitAmountCents: line.unitAmountCents
+    }));
+}
+
 function resolveCheckoutResumeTerminalCode(order, attempt, nowMillis) {
     if (
         order?.payment?.status === 'succeeded' ||
         order?.checkout?.closeReason === 'paid'
     ) {
-        return null;
+        return 'COMMERCE_CHECKOUT_TERMINAL_PAID';
     }
     const expiresAtMillis = Date.parse(order?.checkout?.expiresAt);
     if (order?.checkout?.closeReason === 'expired') {
@@ -60,7 +74,11 @@ function createCheckoutCoordinator({ checkoutRepository, sagaService, clock }) {
             clock.nowMillis()
         );
         if (terminalCode) throw coordinatorError(terminalCode);
-        return sagaService.ensurePaymentIntent(checkout);
+        const payment = await sagaService.ensurePaymentIntent(checkout);
+        return {
+            ...payment,
+            items: summarizeCheckoutResumeItems(checkout.order)
+        };
     }
 
     return Object.freeze({
@@ -71,5 +89,6 @@ function createCheckoutCoordinator({ checkoutRepository, sagaService, clock }) {
 
 module.exports = {
     createCheckoutCoordinator,
-    resolveCheckoutResumeTerminalCode
+    resolveCheckoutResumeTerminalCode,
+    summarizeCheckoutResumeItems
 };

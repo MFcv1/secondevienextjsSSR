@@ -15,7 +15,7 @@ import useMetaConnection from './components/useMetaConnection';
 import KIT_CONFIG from '../config/constants';
 import { clearAdminPublicCatalogCache } from './adminPublicCatalog';
 import { describeChannels } from './components/publicationContent';
-import { getFirebaseAuth } from '../config/firebaseLazy';
+import { refreshAdminAuthorizationToken } from './adminAuthorization';
 import {
   adjustInventoryAdmin,
   createProductCommandSession,
@@ -78,19 +78,6 @@ const runWithConcurrency = async (items, limit, worker) => {
     }
   });
   await Promise.all(workers);
-};
-
-const refreshAdminAuthorizationToken = async () => {
-  const auth = await getFirebaseAuth();
-  if (typeof auth.authStateReady === 'function') await auth.authStateReady();
-  const user = auth.currentUser;
-  if (!user || user.isAnonymous) {
-    throw Object.assign(
-      new Error('Session administrateur absente.'),
-      { code: 'auth/admin-session-missing' }
-    );
-  }
-  return user.getIdToken(true);
 };
 
 const COLOR_BANK = [
@@ -554,9 +541,15 @@ const AdminForm = ({
       return false;
     }
     setCategoryError(false);
-    if (!String(formData.name || '').trim()) {
-      setMsg('Donne un nom à l’ouvrage pour continuer.');
+    const normalizedName = String(formData.name || '').trim();
+    const meaningfulNameCharacters = normalizedName.match(/[\p{L}\p{N}]/gu) || [];
+    if (normalizedName.length < 4 || meaningfulNameCharacters.length < 3) {
+      setMsg('Donne un nom lisible d’au moins 4 caractères à l’ouvrage.');
       nameInputRef.current?.focus();
+      return false;
+    }
+    if (!String(formData.material || '').trim()) {
+      setMsg('Choisis ou précise la matière principale de l’ouvrage.');
       return false;
     }
     const parsedStock = Number(formData.stock === '' ? 0 : formData.stock);
@@ -835,6 +828,10 @@ const AdminForm = ({
       }
       if (err.message?.includes("storage")) errorPrefix = "Envoi des images impossible";
       else if (err.code === "permission-denied") errorPrefix = "Session expirée";
+      else if (err.code === 'auth/network-request-failed') {
+        setMsg('Le réseau reste indisponible après deux reprises sécurisées. Le formulaire et les photos sont conservés : réessaie sans les ressaisir.');
+        return;
+      }
       setMsg(`${errorPrefix}: ${err.message || "Inconnue"}`);
     } finally {
       setUploading(false);

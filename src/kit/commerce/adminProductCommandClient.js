@@ -4,20 +4,20 @@ import { getCallableFunction } from '../config/firebaseLazy';
 // these commands when sys_commerce_control/current.adminMutationMode is `v2`.
 export const COMMERCE_V2_ADMIN_COMMANDS_ENABLED = true;
 
-const commandId = (action) => {
+export const createProductCommandId = (action) => {
   const suffix = globalThis.crypto?.randomUUID?.()
     || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   return `${action}-${suffix}`;
 };
 
 export const createProductCommandSession = (existingProductId = null) => ({
-  productId: existingProductId || commandId('product'),
-  createCommandId: commandId('create-product'),
-  createPublishedCommandId: commandId('create-published-product'),
-  offerCommandId: commandId('offer-product'),
-  inventoryCommandId: commandId('inventory-product'),
-  publishCommandId: commandId('publish-product'),
-  socialCommandId: commandId('publish-social')
+  productId: existingProductId || createProductCommandId('product'),
+  createCommandId: createProductCommandId('create-product'),
+  createPublishedCommandId: createProductCommandId('create-published-product'),
+  offerCommandId: createProductCommandId('offer-product'),
+  inventoryCommandId: createProductCommandId('inventory-product'),
+  publishCommandId: createProductCommandId('publish-product'),
+  socialCommandId: createProductCommandId('publish-social')
 });
 
 const assertEnabled = () => {
@@ -31,7 +31,7 @@ const execute = async (functionName, action, input) => {
   const callable = await getCallableFunction(functionName);
   const result = await callable({
     ...input,
-    commandId: input.commandId || commandId(action)
+    commandId: input.commandId || createProductCommandId(action)
   });
   return result.data;
 };
@@ -123,14 +123,15 @@ export const publishProductAdmin = (
   }
 );
 
-export const deleteProductAdmin = (item, collectionName) => execute(
+export const deleteProductAdmin = (item, collectionName, stableCommandId) => execute(
   'deleteProductAdmin',
   'delete-product',
   {
     collectionName,
     productId: item.id,
     expectedVersion: Number(item.commerceVersion || 0),
-    reason: 'Archivage controle depuis le back-office'
+    reason: 'Archivage controle depuis le back-office',
+    commandId: stableCommandId
   }
 );
 

@@ -13,6 +13,10 @@ const { reduceOrder, validateOrderV2 } = require('./orderState');
 const { buildCommerceIncident, reconcilePaymentIntent } = require('./reconcilePayment');
 const { effectIdFor } = require('./reservationRepository');
 const { validatePaymentIntentForOrder } = require('./checkoutSaga');
+const {
+    buildPaymentReceipt,
+    shouldCreateImmutableDocument
+} = require('./commerceDocuments');
 
 function applierError(code, detail = null) {
     const error = new Error(detail ? `${code}:${detail}` : code);
@@ -75,7 +79,8 @@ function createPaymentEffectApplier({
         'financialFact',
         'financialDaily',
         'financialTotals',
-        'outbox'
+        'outbox',
+        'document'
     ]) {
         requireDependency(refs?.[name], `refs.${name}`);
     }
@@ -200,6 +205,8 @@ function createPaymentEffectApplier({
         let outboxes = [];
         let factRef = null;
         let outboxRefs = [];
+        let receipt = null;
+        let documentRef = null;
         if (movementType === 'commit') {
             fact = buildFinancialFact({
                 orderId,
@@ -256,6 +263,12 @@ function createPaymentEffectApplier({
             ));
             factRef = refs.financialFact(fact.effectId);
             outboxRefs = outboxes.map((intent) => refs.outbox(intent.outboxId));
+            receipt = buildPaymentReceipt({
+                order: reconciliation.order,
+                facts: [fact],
+                issuedAt: reconciliation.order.payment.succeededAt || fact.effectiveAt
+            });
+            documentRef = refs.document(orderId, receipt.documentId);
         }
 
         const reads = [];
@@ -266,6 +279,28 @@ function createPaymentEffectApplier({
         }
         if (factRef) reads.push(transaction.get(factRef));
         for (const outboxRef of outboxRefs) reads.push(transaction.get(outboxRef));
+        if (documentRef) reads.push(transaction.get(documentRef));
+        let promotionReadsOffset = null;
+        let promotionRefs = null;
+        if (order.promotionSnapshot?.codeHash) {
+            for (const name of ['promotion', 'promotionCustomer', 'promotionRedemption', 'newsletterReward']) {
+                requireDependency(refs?.[name], `refs.${name}`);
+            }
+            promotionReadsOffset = reads.length;
+            const customerKey = require('node:crypto').createHash('sha256').update(order.userId).digest('hex');
+            promotionRefs = {
+                promotion: refs.promotion(order.promotionSnapshot.codeHash),
+                customer: refs.promotionCustomer(order.promotionSnapshot.codeHash, customerKey),
+                redemption: refs.promotionRedemption(order.promotionSnapshot.codeHash, orderId),
+                reward: order.promotionSnapshot.sourceRewardId
+                    ? refs.newsletterReward(order.promotionSnapshot.sourceRewardId)
+                    : null
+            };
+            reads.push(transaction.get(promotionRefs.promotion));
+            reads.push(transaction.get(promotionRefs.customer));
+            reads.push(transaction.get(promotionRefs.redemption));
+            if (promotionRefs.reward) reads.push(transaction.get(promotionRefs.reward));
+        }
         const snapshots = await Promise.all(reads);
         const now = clock.now();
 
@@ -391,11 +426,66 @@ function createPaymentEffectApplier({
                 transaction.set(outboxRef, outbox);
             }
         }
+        if (documentRef) {
+            const documentOffset = factOffset + 1 + outboxes.length;
+            if (shouldCreateImmutableDocument(snapshots[documentOffset], receipt)) {
+                transaction.set(documentRef, receipt);
+            }
+        }
+        if (promotionRefs) {
+            const promotionSnap = snapshots[promotionReadsOffset];
+            const customerSnap = snapshots[promotionReadsOffset + 1];
+            const redemptionSnap = snapshots[promotionReadsOffset + 2];
+            if (!snapshotExists(promotionSnap) || !snapshotExists(customerSnap) || !snapshotExists(redemptionSnap)) {
+                throw applierError('COMMERCE_PROMOTION_SETTLEMENT_INCOMPLETE');
+            }
+            const redemption = redemptionSnap.data();
+            const targetStatus = movementType === 'commit' ? 'committed' : 'released';
+            if (redemption.status !== targetStatus) {
+                if (redemption.status !== 'reserved') {
+                    throw applierError('COMMERCE_PROMOTION_SETTLEMENT_CONFLICT');
+                }
+                const promotion = promotionSnap.data();
+                const customer = customerSnap.data();
+                if (Number(promotion.usage?.reserved || 0) < 1 || Number(customer.reserved || 0) < 1) {
+                    throw applierError('COMMERCE_PROMOTION_SETTLEMENT_CONFLICT');
+                }
+                const committedDelta = movementType === 'commit' ? 1 : 0;
+                transaction.update(promotionRefs.promotion, {
+                    usage: {
+                        reserved: Number(promotion.usage.reserved) - 1,
+                        committed: Number(promotion.usage.committed || 0) + committedDelta
+                    },
+                    updatedAt: now
+                });
+                transaction.update(promotionRefs.customer, {
+                    reserved: Number(customer.reserved) - 1,
+                    committed: Number(customer.committed || 0) + committedDelta,
+                    updatedAt: now
+                });
+                transaction.update(promotionRefs.redemption, {
+                    status: targetStatus,
+                    updatedAt: now,
+                    ...(movementType === 'commit' ? { committedAt: now } : { releasedAt: now })
+                });
+                if (movementType === 'commit' && promotionRefs.reward) {
+                    const rewardSnap = snapshots[promotionReadsOffset + 3];
+                    if (!snapshotExists(rewardSnap)) throw applierError('COMMERCE_PROMOTION_REWARD_MISSING');
+                    transaction.update(promotionRefs.reward, {
+                        status: 'used',
+                        usedAt: now,
+                        usedOrderId: orderId,
+                        updatedAt: now
+                    });
+                }
+            }
+        }
         transaction.set(orderRef, stripDocumentId(reconciliation.order));
         return {
             action: reconciliation.action,
             order: reconciliation.order,
             financialFactId: fact?.effectId || null,
+            documentId: receipt?.documentId || null,
             outboxId: outboxes[0]?.outboxId || null,
             outboxIds: outboxes.map((intent) => intent.outboxId)
         };

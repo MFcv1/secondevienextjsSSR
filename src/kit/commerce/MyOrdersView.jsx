@@ -767,6 +767,8 @@ const getStatusInfo = (status = '') => {
             return { label: 'Remboursée', tone: 'blue', icon: CheckCircle };
         case 'refund_failed':
             return { label: 'Remboursement à vérifier', tone: 'red', icon: AlertTriangle };
+        case 'needs_review':
+            return { label: 'À vérifier', tone: 'red', icon: AlertTriangle };
         case 'paid':
             return { label: 'Payée', tone: 'green', icon: CheckCircle };
         default:
@@ -829,6 +831,9 @@ const getRefundHelpText = (status = '') => {
     }
     if (status === 'refund_failed') {
         return 'Le remboursement doit être vérifié par l’atelier. Contactez-nous si vous n’avez pas déjà été recontacté.';
+    }
+    if (status === 'needs_review') {
+        return 'Le remboursement n’a pas été confirmé par Stripe. L’atelier vérifie le dossier avant toute nouvelle tentative.';
     }
     return '';
 };
@@ -927,6 +932,9 @@ const MyOrdersView = ({
 }) => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [ordersError, setOrdersError] = useState('');
+    const [ordersPaginationError, setOrdersPaginationError] = useState('');
+    const [ordersReloadKey, setOrdersReloadKey] = useState(0);
     const [showCancelSuccess, setShowCancelSuccess] = useState(false);
     const [showContactPopup, setShowContactPopup] = useState(false);
     const [orderToCancelId, setOrderToCancelId] = useState(null);
@@ -1079,6 +1087,8 @@ const MyOrdersView = ({
         if (!user) return;
         let cancelled = false;
         setLoading(true);
+        setOrdersError('');
+        setOrdersPaginationError('');
         listMyOrdersV2({ pageSize: 25 })
             .then((result) => {
                 if (cancelled) return;
@@ -1093,12 +1103,17 @@ const MyOrdersView = ({
             .catch((error) => {
                 if (cancelled) return;
                 console.error('Error fetching v2 orders:', error);
+                setOrders([]);
+                setOrdersCursor(null);
+                setOrdersError('Vos commandes n’ont pas pu être chargées. Aucun paiement ne doit être rejoué : réessayez simplement la lecture.');
                 setLoading(false);
             });
         return () => {
             cancelled = true;
         };
-    }, [user]);
+    }, [ordersReloadKey, user]);
+
+    const retryOrdersRead = () => setOrdersReloadKey((current) => current + 1);
 
     useEffect(() => {
         if (!user || user.isAnonymous) return undefined;
@@ -1245,6 +1260,7 @@ const MyOrdersView = ({
     const loadMoreOrders = async () => {
         if (!COMMERCE_V2_ORDER_READERS_ENABLED || !ordersCursor || loadingMoreOrders) return;
         setLoadingMoreOrders(true);
+        setOrdersPaginationError('');
         try {
             const result = await listMyOrdersV2({
                 pageSize: 25,
@@ -1259,6 +1275,9 @@ const MyOrdersView = ({
                 }))
             ]);
             setOrdersCursor(result.nextCursor || null);
+        } catch (error) {
+            console.error('Error fetching the next v2 orders page:', error);
+            setOrdersPaginationError('Les commandes suivantes n’ont pas pu être chargées. La liste déjà affichée reste intacte.');
         } finally {
             setLoadingMoreOrders(false);
         }
@@ -1445,8 +1464,8 @@ const MyOrdersView = ({
     ];
 
     const focusedNav = navItems.find((item) => item.id === focusedSection) || null;
-    const ordersCountLabel = loading ? '—' : orders.length;
-    const documentsCountLabel = loading ? '—' : orderDocuments.length;
+    const ordersCountLabel = loading || ordersError ? '—' : orders.length;
+    const documentsCountLabel = loading || ordersError ? '—' : orderDocuments.length;
 
     return (
         <div
@@ -1499,6 +1518,12 @@ const MyOrdersView = ({
                                     <div className="acc-skel h-4 w-32" />
                                     <div className="acc-skel mt-2 h-3 w-24" />
                                 </div>
+                            </div>
+                        ) : ordersError ? (
+                            <div className="mt-3.5">
+                                <p className="text-[14px] font-semibold text-red-600">Lecture temporairement indisponible</p>
+                                <p className="mt-1.5 text-[12.5px] leading-5" style={{ color: 'var(--acc-ink-2)' }}>{ordersError}</p>
+                                <button type="button" onClick={retryOrdersRead} className="acc-btn acc-btn--dark mt-4 w-full">Réessayer la lecture</button>
                             </div>
                         ) : latestOrder ? (
                             <>
@@ -1649,7 +1674,7 @@ const MyOrdersView = ({
                             <MetricCell
                                 icon={WalletCards}
                                 tone="green"
-                                value={loading ? '—' : formatPrice(refundedTotal)}
+                                value={loading || ordersError ? '—' : formatPrice(refundedTotal)}
                                 label="Remboursements"
                                 sub="Suivi Stripe"
                                 onClick={() => openSection('documents')}
@@ -1779,6 +1804,20 @@ const MyOrdersView = ({
                                             <div className="acc-skel h-6 w-20 rounded-full" />
                                         </div>
                                     ))}
+                                </div>
+                            ) : ordersError ? (
+                                <div className="p-[18px]">
+                                    <EmptyState
+                                        icon={AlertTriangle}
+                                        tone="gold"
+                                        title="Commandes temporairement indisponibles"
+                                        body={ordersError}
+                                        action={(
+                                            <button type="button" onClick={retryOrdersRead} className="acc-btn acc-btn--dark mt-1">
+                                                Réessayer la lecture
+                                            </button>
+                                        )}
+                                    />
                                 </div>
                             ) : recentOrders.length === 0 ? (
                                 <div className="p-[18px]">
@@ -1955,7 +1994,7 @@ const MyOrdersView = ({
                                     })}
 
                                     {COMMERCE_V2_ORDER_READERS_ENABLED && ordersCursor ? (
-                                        <div className="flex justify-center p-[18px]">
+                                        <div className="flex flex-col items-center gap-3 p-[18px]">
                                             <button
                                                 type="button"
                                                 onClick={loadMoreOrders}
@@ -1965,6 +2004,11 @@ const MyOrdersView = ({
                                                 {loadingMoreOrders ? <Loader2 size={14} className="animate-spin" /> : null}
                                                 {loadingMoreOrders ? 'Chargement…' : 'Charger plus de commandes'}
                                             </button>
+                                            {ordersPaginationError ? (
+                                                <p role="alert" className="max-w-xl text-center text-[12.5px] leading-5 text-red-600">
+                                                    {ordersPaginationError}
+                                                </p>
+                                            ) : null}
                                         </div>
                                     ) : null}
                                 </div>
@@ -1987,7 +2031,19 @@ const MyOrdersView = ({
                                     hint="Reçus de paiement et confirmations de remboursement émis pour vos commandes."
                                 />
 
-                                {orderDocuments.length > 0 ? (
+                                {ordersError ? (
+                                    <div className="flex flex-1 flex-col justify-center p-[18px]">
+                                        <EmptyState
+                                            icon={AlertTriangle}
+                                            tone="gold"
+                                            title="Documents temporairement indisponibles"
+                                            body="La lecture des commandes doit réussir avant d’afficher les reçus et confirmations."
+                                            action={(
+                                                <button type="button" onClick={retryOrdersRead} className="acc-btn acc-btn--dark mt-1">Réessayer la lecture</button>
+                                            )}
+                                        />
+                                    </div>
+                                ) : orderDocuments.length > 0 ? (
                                     <div className="acc-list">
                                         {orderDocuments.map(({ order, document }) => (
                                             <article

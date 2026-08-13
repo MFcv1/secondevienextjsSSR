@@ -11,7 +11,8 @@ export const buildCheckoutV2Input = ({
   clientOrderId,
   cartItems,
   deliveryModeId,
-  shippingAddress
+  shippingAddress,
+  promotionCode = null
 }) => {
   const deliveryAliases = {
     retrait: 'delivery-pickup',
@@ -33,6 +34,7 @@ export const buildCheckoutV2Input = ({
       country: countryValue.toLowerCase() === 'france'
         ? 'FR'
         : countryValue.toUpperCase()
-    }
+    },
+    ...(promotionCode ? { promotionCode: String(promotionCode).trim().toUpperCase() } : {})
   };
 };

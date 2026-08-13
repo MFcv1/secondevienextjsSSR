@@ -34,6 +34,9 @@ commerce_financial_daily/{date}_{currency}
 newsletter_subscribers/{id}
 newsletter_reward_plays/{id}
 newsletter_rewards/{id}
+commerce_promotion_codes/{sha256(code)}
+  customers/{sha256(uid)}
+  redemptions/{orderId}
 sys_metadata/{docId}
 sys_ratelimit/{id}
 sys_admin_access/{uid}
@@ -111,6 +114,13 @@ brute. `newsletter_rewards` conserve le code, le pourcentage, le hash de
 l'adresse, l'échéance et la preuve d'envoi; `newsletter_subscribers` reste la
 source d'abonnement administrable. La lecture client passe par Function et
 jamais par une requête Firestore du navigateur.
+
+Les promotions sont backend-only. La racine conserve le code, ses contraintes
+et des compteurs d'usage; les cles client sont des SHA-256 d'UID et chaque
+redemption garde l'UID/orderId necessaire a l'audit transactionnel. Le checkout
+ne lit jamais ces documents depuis le navigateur. Aucun index composite n'est
+requis: la liste admin utilise le champ simple `createdAt` et la materialisation
+newsletter la recherche simple `code`.
 
 ## 7. Analytics
 
@@ -217,6 +227,8 @@ n'a ete lancee pendant la passe du 2026-08-12.
 | `sys_ratelimit`, `sys_idempotency` | anti-abus et idempotence, backend-only | 30 jours maximum ou expiration explicite |
 | audits securite, Stripe Connect, devis et Meta | imputabilite/support, backend-only | 366 jours, `expireAt` |
 | tirages/gains newsletter et etats OAuth Meta temporaires | anti-rejeu et reprise, Functions uniquement | expiration explicite, fallback 30 jours |
+| promotions inactives sans redemption | configuration commerciale backend-only | 366 jours apres expiration, purge operateur uniquement |
+| redemptions et compteurs promotionnels lies a une commande | preuve de montant et anti-double usage, backend-only | meme retention que la commande; aucune purge generique |
 | `affiliate_clicks` | attribution bornee, backend-only | 90 jours |
 | registre `admin_ips` | exclusion analytics des administrateurs | nettoyage opportuniste apres 90 jours |
 

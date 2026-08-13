@@ -493,9 +493,16 @@ async function rebuildDocuments(facts) {
             if (result === 'created') created += 1;
             else reused += 1;
         }
+        const reversedRefundIds = new Set(
+            orderFacts
+                .filter((fact) => fact.type === 'refund_reversal')
+                .map((fact) => fact.providerObjectId)
+        );
         const refundIds = [...new Set(
             orderFacts
-                .filter((fact) => fact.type === 'refund')
+                .filter((fact) => fact.type === 'refund' && !reversedRefundIds.has(
+                    fact.providerObjectId
+                ))
                 .map((fact) => fact.providerObjectId)
         )];
         for (const refundId of refundIds) {

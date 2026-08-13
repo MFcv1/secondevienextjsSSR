@@ -27,21 +27,23 @@ function computeAllowedActions(order, actor) {
     if (!strongAdmin) return [...actions].sort();
 
     if (order.payment.status === 'succeeded') {
+        const deliveryModeId = String(order.deliverySnapshot?.id || '');
+        const isPickup = deliveryModeId === 'delivery-pickup';
+        const isShipping = Boolean(deliveryModeId) && !isPickup;
         const fulfillmentBlockedByRefund = ['pending', 'needs_review', 'full']
             .includes(order.refundAggregate.status);
         if (!fulfillmentBlockedByRefund) {
             if (order.fulfillmentSummary.status === 'unfulfilled') {
                 actions.add('fulfillment_prepare');
-                actions.add('fulfillment_ship');
             }
             if (order.fulfillmentSummary.status === 'preparing') {
-                actions.add('fulfillment_ready');
-                actions.add('fulfillment_ship');
+                if (isPickup) actions.add('fulfillment_ready');
+                if (isShipping) actions.add('fulfillment_ship');
             }
-            if (order.fulfillmentSummary.status === 'ready_for_pickup') {
+            if (isPickup && order.fulfillmentSummary.status === 'ready_for_pickup') {
                 actions.add('fulfillment_pickup');
             }
-            if (order.fulfillmentSummary.status === 'shipped') {
+            if (isShipping && order.fulfillmentSummary.status === 'shipped') {
                 actions.add('fulfillment_deliver');
                 actions.add('fulfillment_update_tracking');
             }

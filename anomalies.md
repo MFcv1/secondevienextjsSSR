@@ -1,7 +1,7 @@
 # Registre temporaire des anomalies de recette commerce
 
-Derniere mise a jour: 2026-08-08
-Statut: `OUVERT`
+Derniere mise a jour: 2026-08-13
+Statut: `FERME_AVEC_RESIDU_EXTERNE_EMAIL`
 Campagne: [TEST_COMMERCE_SANDBOX.md](TEST_COMMERCE_SANDBOX.md)
 Echeance de fusion et suppression: 2026-08-06
 
@@ -37,7 +37,7 @@ Echeance de fusion et suppression: 2026-08-06
 | A-014 | Connexion client | `MINEURE` | `FERMEE` | Une validation OTP a subi une erreur reseau transitoire, puis le retry a reussi |
 | A-015 | Nettoyage recette | `MINEURE` | `OUVERTE` | Le meuble de smoke test publie reste a archiver |
 | A-016 | Documents client | `MINEURE` | `FERMEE` | Les documents ont ete projetes apres le controle immediat; aucune perte durable |
-| A-017 | Remboursement asynchrone | `BLOQUANTE` | `CORRIGEE_A_REQUALIFIER` | Le rail v2 ingere et applique desormais les evenements `refund.*` supportes |
+| A-017 | Remboursement asynchrone | `BLOQUANTE` | `FERMEE_APRES_REQUALIFICATION_SANDBOX` | Le rail v2 applique aussi la reversal Stripe `succeeded -> failed` sans faux remboursement ni restock |
 | A-018 | Fulfillment livraison | `MAJEURE` | `CORRIGEE_A_REQUALIFIER` | L'etat durable etait correct; le cache et la chronologie admin restaient obsoletes |
 | A-019 | Session client / checkout | `MINEURE` | `FERMEE` | Le panier et la session etaient charges apres hydratation; la reprise a permis les deux commandes |
 | A-020 | Accès administrateur Google | `BLOQUANTE` | `FERMEE` | Le premier parcours n’achevait pas le sélecteur Google; reprise explicite du compte admin réussie |
@@ -658,7 +658,7 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
 
 ### A-017 - Evenement Stripe refund.failed non pris en charge par le rail v2
 
-- statut: `CORRIGEE_A_REQUALIFIER`
+- statut: `FERMEE_APRES_REQUALIFICATION_SANDBOX`
 - severite: `BLOQUANTE`
 - phase: gate technique avant remboursement asynchrone M12/M13
 - environnement: sandbox / Stripe test
@@ -709,6 +709,13 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
   requete non signee et l'endpoint Stripe test Connect ecoute
   `refund.created`, `refund.updated` et `refund.failed`. M12/M13 ne sont plus
   bloques avant paiement; seul leur smoke fonctionnel reste a executer.
+- smoke humain final du 2026-08-13: un seul remboursement de 120 EUR a ete
+  demande sur `CMD-ORD_D98296`. Stripe test l'a d'abord retourne `succeeded`,
+  puis `failed` avec `expired_or_canceled_card`. Les trois evenements
+  `refund.created`, `refund.failed` et `refund.updated` ont ete ingeres. Apres
+  correction de la reversal, la tentative unique est `failed`, la commande
+  est `needs_review`, `refundedCents=0`, `netCents=12000`, le stock reste
+  engage et `restockedQty=0`. M12 client et M13 admin ont ete recus une fois.
 - documentation canonique a mettre a jour: commerce, qualite et cartographie,
   mis a jour dans le meme changement.
 
@@ -959,3 +966,777 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
 | 2026-07-31 15:36 | Fermeture et audit final | `v2_fixture`, mutations `read_only`, opérations `healthy`, compteurs nuls | `run_v2all_20260731_email02`, `controlRevision=54` |
 | 2026-07-31 16:00 | Diagnostic A-016/A-018 | Documents differes presents; fulfillment durable `preparing`, axe financier `paid` correct | A-016 fermee; A-018 corrigee a requalifier |
 | 2026-07-31 16:03 | Correction webhook refund v2 | Ingress/worker/refund applier couverts; Firestore 16/16, 75 assertions | A-017 corrigee a requalifier |
+
+## Campagne fonctionnelle humaine objective du 2026-08-12
+
+Identifiant de campagne: `REC-20260812-C1`
+
+Perimetre autorise: sandbox App Hosting `secondevienextjsssr` et Stripe test exclusivement.
+Methode: nouvelle observation humaine dans Chrome; aucun ancien audit, statut documentaire ou resultat historique n'est repris comme preuve. Aucun code, script, endpoint, fixture, seed, configuration cloud ou donnee injectee n'est utilise pour executer les parcours.
+
+### Journal progressif
+
+| Heure Europe/Paris | Scenario | Statut | Compte | Etapes reellement effectuees et observation | Attendu | Friction/anomalie, impact et preuve non sensible | Etat final des donnees |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-12 16:35 | Controle initial: ouverture du sandbox | RÉUSSI | Visiteur non connecte | Ouverture manuelle dans Chrome de l'URL exacte; chargement de la page d'accueil intitulee « Galerie de mobilier ancien restauré »; hero, recherche, navigation, categories, connexion, favoris, panier, menu, CTA pieces et devis visibles. | Le sandbox exact charge une interface publique exploitable sans erreur visible. | Premiere tentative de controle macOS sans rendu Chrome, resolue en utilisant le mode CUA de l'extension Chrome autorisee; ce point concerne l'outil de recette, pas le site. Preuve: URL exacte et capture visuelle non sensible de l'accueil charge. | Aucune donnee creee; visiteur non connecte. |
+| 2026-08-12 16:43 | Parcours public desktop et mobile | RÉUSSI | Visiteur non connecte | Parcours manuel de l'accueil, mega-menu, categorie Meubles, fiche produit Armoire, recherche « Armoire », panier vide, À propos et Devis; ouverture/fermeture du panier et du menu; controle mobile manuel en largeur 390 px puis retour desktop. | Pages principales, navigation, recherche, fiche, panier et devis lisibles et utilisables sans blocage aux deux largeurs. | Navigation globalement fluide. Une publication manifestement incoherente est visible publiquement: titre `"fr`, image de fleur violette, matiere inconnue, prix 23 EUR, classee dans Meubles/LES TABLES (`REC-20260812-A01`). Preuves: captures visuelles non sensibles des pages et identifiant releve ensuite dans l'administration. | Aucun panier conserve et aucune donnee metier creee. |
+| 2026-08-12 16:47 | Connexion Google administrateur et acces back-office | RÉUSSI | `loa.gto15@gmail.com` | Ouverture de la connexion Google, selection explicite du compte autorise, confirmation visuelle de l'identite active, refus de l'enrolement rapide facultatif, puis ouverture de `/admin`; consultation des vues Stats et Publication ainsi que du menu des principales vues. | Le compte administrateur exact obtient un acces fort reconnu et le back-office charge sans erreur visible. | Acces admin confirme par le badge ADMIN, l'entree « Admin. Backoffice » et le chargement effectif du tableau de bord. Aucun compte personnel ni compte client utilise. | Session admin active; aucune mutation metier a ce stade. |
+| 2026-08-12 16:54 | Creation humaine d'une annonce, tentative 1 | ÉCHEC | `loa.gto15@gmail.com` | Depuis Publication > Creer: validation du formulaire vide, choix COMMODES & CHEVETS, saisie du titre « Chevet en chêne miel aux poignées laiton », prix 180 EUR, stock 1, chêne, couleur miel naturel, style vintage, dimensions 42 x 34 x 70 cm, description realiste; televersement manuel d'une photo non sensible de chevet; controle de l'aperçu puis clic unique sur « Publier sur le site ». | L'annonce est enregistree, publiee, visible dans l'administration et le catalogue public. | Echec explicite pendant la verification securisee: `Firebase: Error (auth/network-request-failed)`. Le compteur reste a 33, une recherche exacte retourne 0 resultat et aucune annonce durable n'est visible (`REC-20260812-A03`). L'aperçu du formulaire repetait aussi deux fois une description saisie une seule fois (`REC-20260812-A02`). | Aucune annonce ni brouillon durable cree; aucune action financiere. Une seule nouvelle tentative controlee reste prevue apres ce constat. |
+| 2026-08-12 16:58 | Creation humaine d'une annonce, tentative controlee 2 | RÉUSSI | `loa.gto15@gmail.com` | Sans ressaisie ni nouveau televersement, nouveau clic unique sur « Publier sur le site » apres preuve d'absence durable; les quatre etapes verification, photos, enregistrement et galerie aboutissent; recherche publique exacte puis ouverture de la fiche. | Une seule annonce durable, correctement achetable et sans doublon. | Confirmation « Publication réussie ». Recherche publique a 1 resultat; fiche avec image, titre, prix 180 EUR, description unique, chêne, dimensions 42x34x70 cm, disponibilite et bouton d'ajout au panier. L'echec precedent reste une friction intermittente P1. Preuves non sensibles: captures de confirmation, resultat de recherche et fiche publique. | Annonce publiee: `product-110a2407-4dda-4187-8c88-545da3da7709`; stock public disponible avant achat. |
+| 2026-08-12 17:00 | Separation des permissions | RÉUSSI | `pvml7008@gmail.com` | Deconnexion admin; connexion Google avec selection explicite du compte client; confirmation du profil « ml pv » et de l'adresse du compte dans Mon espace; absence de badge/entree admin; navigation directe vers `/admin`. | Le compte client reste client et l'administration est refusee proprement. | Page claire: « Accès admin refusé — Ce compte n'a pas les droits administrateur », avec retour au site. Aucun compte personnel utilise. | Session client active; aucun droit ni parametre modifie. |
+| 2026-08-12 17:05 | Commande simple du meuble cree, Stripe test | ÉCHEC | `pvml7008@gmail.com` | Recherche et ouverture du chevet; ajout unique au panier; controle image, quantite 1, prix et total 180 EUR; checkout en retrait atelier; coordonnees sandbox; acceptation des conditions; saisie Stripe test; clic unique de paiement; attente de la confirmation; rapprochement ulterieur dans l'administration et les deux boites Gmail. | Le paiement durable `paid` cree une commande client persistante avec ses lignes, son statut et ses documents. | Le paiement et la commande sont durables cote administration, le meuble devient « Déjà réservé » et les e-mails client/admin existent. Pourtant, l'espace client affiche 0 commande et 0 document, y compris apres attente, rafraichissement et reconnexion (`REC-20260812-A04`). Aucun rejeu effectue. | Commande `CMD-ORD_692D22`, identifiant `ord_692d22b6-df80-4be4-96d2-6497641c21d2`, 180 EUR, retrait; paiement confirme puis remboursement total Stripe test confirme; projection client toujours absente. |
+| 2026-08-12 17:12 | E-mails de la commande simple | RÉUSSI | Client `pvml7008@gmail.com`, admin `loa.gto15@gmail.com` | Recherche dans les boites exactes, y compris Tous les messages et spam; ouverture des messages; controle reference, produit, quantite, montant, mode de remise, liens, redaction et rendu. | Un e-mail client et une notification admin coherents arrivent sans doublon ni contenu technique. | Client: confirmation `CMD-ORD_692D22` complete mais classee dans SPAM (`REC-20260812-A05`). Admin: notification inbox complete, montant 180 EUR, produit et lien back-office coherents. Preuves: sujets, horodatages et captures visuelles non sensibles; aucun OTP ni contenu personnel consigne. | E-mails conserves; aucun message supprime ni parametre Gmail modifie. |
+| 2026-08-12 17:20 | Deuxieme commande groupee, Stripe test | ÉCHEC | `pvml7008@gmail.com` | Ajout de deux Armoires distinctes a 1 150 et 1 300 EUR; controle des deux lignes, images et sous-totaux; suppression de la premiere ligne sans perte de la seconde; retour catalogue avec panier persistant; re-ajout; checkout en livraison Marseille a 49 EUR; paiement Stripe test unique; succes puis ouverture de l'espace client. | Une seule commande groupee durable contient les deux lignes distinctes, total 2 499 EUR, livraison et documents, sans melange avec la premiere commande. | Le succes, l'administration et la chronologie confirment la commande groupee et les deux lignes. L'espace client reste cependant a 0 commande et 0 document, comme pour la premiere commande (`REC-20260812-A04`). | Commande `CMD-ORD_C00403`, identifiant `ord_c00403f4-8bc2-4d79-a1ea-f8289bb6bce0`, 2 499 EUR, livraison; paiement confirme puis rembourse en deux etapes; aucun paiement en attente. |
+| 2026-08-12 17:24 | Gestion des deux commandes cote administrateur | RÉUSSI | `loa.gto15@gmail.com` | Rapprochement des deux commandes, client, lignes, montants et modes; commande livraison: preparation puis expedition sans numero de suivi; commande retrait: preparation, prete au retrait puis retrait confirme; attente des confirmations, rafraichissements et controle des chronologies. | Les transitions proposees correspondent au mode, persistent et restent compréhensibles. | Les transitions choisies persistent avec confirmation et chronologie. Les mutations prennent souvent 15 a 20 s avec chargement visible. Des actions incompatibles sont aussi proposees (expedition pour retrait, prete au retrait pour livraison), non utilisees (`REC-20260812-A06`). | `CMD-ORD_C00403` expédiee avant remboursement; `CMD-ORD_692D22` retiree avant remboursement. |
+| 2026-08-12 17:31 | Remboursement total de la commande simple | RÉUSSI | `loa.gto15@gmail.com` | Retours > Remboursement manuel; ouverture de la commande de 180 EUR; verification du montant pre-rempli; clic unique sur « Rembourser 180.00 EUR »; attente; ouverture de l'historique. | Un remboursement total unique est confirme par Stripe test et persiste sans ambiguite. | Dossier deplace de Remboursement manuel vers Historique; reference de remboursement presente, synchronisation horodatee et etat Stripe `succeeded`. Chronologie admin remboursee. | Commande simple entierement remboursee; aucun rejeu; stock a recontroler publiquement apres remboursement. |
+| 2026-08-12 17:32 | Remboursement partiel puis solde de la commande groupee | RÉUSSI | `loa.gto15@gmail.com` | Ouverture de la commande 2 499 EUR; remplacement manuel du montant par 1 150 EUR, correspondant a la premiere ligne; clic unique; attente de `succeeded`; reouverture montrant un solde de 1 349 EUR; clic unique sur ce solde seulement apres preuve durable du partiel; attente puis controle Historique et Ventes. | Le remboursement partiel persiste, le solde restant est exact, puis le remboursement du solde est confirme sans doublon. | Premier remboursement `succeeded`; solde recalcule exactement a 1 349 EUR (1 300 EUR + 49 EUR); second remboursement `succeeded`; deux paires d'evenements demandé/confirme dans la chronologie; commande admin « Remboursée » et encore « Expédiée ». L'interface ne permet pas d'associer explicitement le remboursement a une ligne, seulement de saisir un montant. | Commande groupee remboursee au total en deux operations successives; aucun paiement ni remboursement ambigu. |
+| 2026-08-12 17:37 | E-mails commande groupee, transitions et remboursements | RÉUSSI | Client `pvml7008@gmail.com`, admin `loa.gto15@gmail.com` | Recherche des deux references dans les boites exactes; controle des deux confirmations, de cinq transitions et de trois remboursements cote client; controle des notifications admin de nouvelle commande et de remboursement; lecture des lignes, montants, modes et liens sans recopier de donnees personnelles. | Tous les evenements emis arrivent une seule fois par action, avec lignes et montants exacts, et les notifications admin sont exploitables. | Dix messages client retrouves: deux confirmations, preparation des deux commandes, expedition, prete au retrait, retrait effectue et trois remboursements; les deux Armoires, 1 150/1 300 EUR, total 2 499 EUR et livraison sont exacts. Tous les dix sont classes SPAM (`REC-20260812-A05`). Les notifications admin de commande et remboursement sont en inbox; le remboursement mentionne « sans remise en stock automatique ». | E-mails conserves dans les deux boites; aucun doublon d'action observe, aucun message supprime et aucun parametre modifie. |
+| 2026-08-12 17:40 | Projection client finale apres transitions et remboursements | ÉCHEC | `pvml7008@gmail.com` | Reconnexion Google exacte; ouverture de Mon espace apres tous les evenements; attente de chargement; controle de la vue d'ensemble, Commandes et Documents. | Les deux commandes, leurs chronologies, remboursements et recus apparaissent durablement apres reconnexion. | Toujours 0 commande, 0 document et 0,00 EUR de remboursement; la page Documents affiche « Aucun reçu émis » malgre deux paiements et trois remboursements confirmes (`REC-20260812-A04`). Preuve: capture visuelle non sensible apres synchronisation. | Les donnees existent cote administration/Stripe/e-mails mais aucune projection client exploitable. |
+| 2026-08-12 17:42 | Stock apres remboursements | RÉUSSI | `pvml7008@gmail.com`, puis lecture publique | Recherche du chevet et des deux Armoires apres remboursement total; ouverture de la fiche du chevet. | Aucun remboursement ne remet silencieusement un meuble en vente sans decision physique distincte. | Chevet affiche « Réservé » puis bouton désactivé « Déjà réservé »; les deux Armoires achetees affichent aussi « Réservé ». La notification admin confirme explicitement l'absence de remise en stock automatique. | Les trois meubles ont stock public 0 et restent non achetables. |
+| 2026-08-12 17:46 | Archivage et nettoyage final | BLOQUÉ | `loa.gto15@gmail.com`, puis visiteur | Recherche exacte de l'annonce dans Publication > Publications; constat PUBLIC, stock 0; clic sur l'action Archiver; confirmation native acceptee; attente; controle depuis une seconde vue admin et recherche publique; nouvel essai uniquement apres preuve d'absence de changement; confirmation acceptee; nouveau controle public; verification panier vide; deconnexion finale du site. | L'annonce est archivee et disparait du public; aucun panier, paiement ou remboursement ne reste ambigu; le site est deconnecte. | L'annonce reste PUBLIC et visible en recherche, mais non achetable car reservee. L'acceptation de la confirmation native ne rend jamais un resultat durable et le controle du navigateur expire (`REC-20260812-A07`). Panier vide, deux commandes totalement remboursees, aucun paiement en attente, session du site deconnectee. | Annonce non archivee, publique mais stock 0/non achetable; commandes et remboursements conserves comme preuves; e-mails conserves; aucun autre objet modifie. |
+
+### Anomalies observees pendant la campagne
+
+#### REC-20260812-A01 — P2 — Publication catalogue publiquement incoherente
+
+- Parcours concerne: catalogue public, categorie Meubles et fiche produit.
+- Etapes exactes de reproduction: ouvrir le sandbox; parcourir la galerie ou la categorie Meubles; reperer la publication au titre `"fr`; ouvrir sa fiche si proposee.
+- Attendu: chaque publication publique possede un titre lisible, une photographie de meuble ou objet correspondant, une categorie et des caracteristiques coherentes.
+- Observe: titre `"fr`, image de fleur violette, matiere « Inconnue », prix 23 EUR et classement Meubles/LES TABLES; identifiant `product-fd16e545-6f2c-42bd-94e5-1200a02853ce` releve visuellement dans l'administration.
+- Frequence: 1 publication incoherente observee pendant le parcours catalogue de cette campagne.
+- Impact client ou administrateur: perte de confiance et risque d'achat d'une fiche non qualifiee; pollution du catalogue public.
+- Correction recommandee, sans implementation: auditer la publication via l'administration, l'archiver si elle n'est pas legitime et renforcer les validations de titre/image/categorie avant diffusion.
+- Verifications apres correction: absence de la fiche dans galerie, categorie, recherche et URL publique; impossibilite de republier des donnees equivalentes sans validation explicite.
+
+#### REC-20260812-A02 — P2 — Description dupliquee dans l'aperçu de creation
+
+- Parcours concerne: administration, Publication > Creer, etape Informations.
+- Etapes exactes de reproduction: creer une annonce; saisir une seule fois un paragraphe dans Description; observer l'aperçu a droite; remplacer integralement le texte et observer de nouveau.
+- Attendu: l'aperçu affiche exactement une occurrence du contenu saisi.
+- Observe: le meme paragraphe apparait deux fois dans l'aperçu alors que l'editeur ne contient visuellement qu'une seule occurrence; le remplacement integral n'elimine pas la duplication de l'aperçu.
+- Frequence: 2/2 observations au cours de la meme saisie.
+- Impact client ou administrateur: risque de publier une fiche avec contenu duplique ou de faire corriger inutilement le texte par l'administratrice; confiance reduite dans l'aperçu.
+- Correction recommandee, sans implementation: verifier la source de rendu de l'aperçu et supprimer la double projection du champ riche sans modifier la valeur sauvegardee.
+- Verifications apres correction: texte simple et multiligne affiche une seule fois dans l'aperçu, puis controle identique sur la fiche publique apres publication.
+
+#### REC-20260812-A03 — P1 — Publication admin bloquee par une erreur reseau d'authentification
+
+- Parcours concerne: administration, creation et publication d'un meuble.
+- Etapes exactes de reproduction: se connecter par Google avec `loa.gto15@gmail.com`; ouvrir `/admin`; remplir tous les champs d'une annonce valide; televerser une image; avancer jusqu'a Diffusion; cliquer une seule fois sur « Publier sur le site ».
+- Attendu: verification forte acceptee, photo enregistree, meuble cree et catalogue public mis a jour, avec confirmation durable.
+- Observe: le dialogue de progression s'interrompt avec `Firebase: Error (auth/network-request-failed)`; retour au formulaire; aucune annonce ni brouillon durable, compteur catalogue inchange a 33 et recherche exacte a 0 resultat.
+- Frequence: 1 echec sur 2 tentatives; la seconde tentative controlee a reussi sans doublon apres verification d'absence durable.
+- Impact client ou administrateur: blocage complet de la creation d'annonce et, par dependance, impossibilite d'acheter le meuble de campagne.
+- Correction recommandee, sans implementation: diagnostiquer la phase de verification Firebase dans le contexte OAuth Google, conserver le brouillon local en cas d'echec et presenter une reprise sure distinguant reseau, session expiree et assurance insuffisante.
+- Verifications apres correction: publication unique sans doublon, presence admin puis publique, rafraichissement persistant, et absence de creation fantome apres erreur ou nouvelle tentative.
+
+#### REC-20260812-A04 — P0 — Paiement confirme mais commande absente de l'espace client
+
+- Parcours concerne: achat simple, Stripe test, page de succes et espace client.
+- Etapes exactes de reproduction: avec `pvml7008@gmail.com`, ajouter uniquement `product-110a2407-4dda-4187-8c88-545da3da7709`; choisir retrait; renseigner les champs requis et accepter les conditions; payer une seule fois 180 EUR en Stripe test; depuis le succes cliquer « Voir ma commande »; attendre puis rafraichir.
+- Attendu: apres confirmation durable, la commande et ses documents apparaissent immediatement ou apres un etat de synchronisation explicite et borne.
+- Observe: succes explicite « Commande confirmée », « Paiement Confirmé », « Commande Bien enregistrée », « Suivi Disponible dans votre espace », reference courte `692D22B6`; l'espace `pvml7008@gmail.com` affiche ensuite 0 commande, 0 document et « Aucune commande », encore apres plus de 30 secondes et rafraichissement.
+- Frequence: 2/2 commandes de la campagne, apres attente, rafraichissement et reconnexion.
+- Impact client ou administrateur: critique; le client peut etre debite sans preuve de commande, document ni moyen de suivi, et un rejeu risquerait un double paiement. Les deux paiements ont ete rapproches cote administration et e-mails avant de poursuivre; l'ambiguite financiere est levee mais la projection client reste defectueuse.
+- Correction recommandee, sans implementation: garantir l'atomicite logique entre confirmation durable et projection client, ou afficher un etat de synchronisation recuperable; instrumenter et alerter les webhooks/projections; ne jamais promettre une disponibilite immediate avant lecture effective de la commande.
+- Verifications apres correction: chaque paiement simple ou groupe produit une seule commande visible apres succes, attente, rafraichissement et reconnexion; lignes, images, quantites, montants, mode, chronologie et documents exacts; rapprochement admin/client/Stripe/e-mails; webhook retarde ou rejoue sans doublon.
+
+#### REC-20260812-A05 — P1 — Confirmation client livree dans le dossier spam
+
+- Parcours concerne: e-mail transactionnel client apres paiement.
+- Etapes exactes de reproduction: payer la commande simple en Stripe test avec `pvml7008@gmail.com`; ouvrir la boite exacte; rechercher la reference `CMD-ORD_692D22` dans Tous les messages puis SPAM.
+- Attendu: la confirmation de commande arrive dans la boite de reception principale avec une presentation et des informations correctes.
+- Observe: le message est bien recu, complet et visuellement coherent, mais classe dans SPAM; la notification administrateur correspondante arrive dans l'inbox admin.
+- Frequence: 10/10 messages client de la campagne classes SPAM: deux confirmations, cinq transitions et trois remboursements. Les notifications administrateur correspondantes controlees restent en inbox.
+- Impact client ou administrateur: le client peut croire que sa commande n'existe pas, impact aggrave ici par l'absence simultanee de la commande dans son espace.
+- Correction recommandee, sans implementation: auditer la delivrabilite du canal Gmail sandbox, l'alignement d'expediteur et la reputation; conserver un message transactionnel concis et une aide visible invitant a verifier les indésirables en cas de retard.
+- Verifications apres correction: confirmations simple et groupee, transitions et remboursements recus sans spam, sans doublon, avec references, lignes, totaux, modes et liens exacts; revalidation distincte avec Resend et DNS de production.
+
+#### REC-20260812-A06 — P1 — Transitions de livraison et retrait incompatibles proposees dans l'administration
+
+- Parcours concerne: administration des commandes, progression de preparation, livraison et retrait.
+- Etapes exactes de reproduction: ouvrir une commande livraison payee; la mettre en preparation; observer les actions; ouvrir une commande retrait payee puis en preparation; observer les actions.
+- Attendu: seules les transitions compatibles avec le mode de remise sont proposees et autorisees.
+- Observe: la commande livraison propose « Prête au retrait » et la commande retrait propose « Confirmer l'expédition », en plus de leur action correcte. Les actions incompatibles n'ont pas ete declenchees pendant la campagne.
+- Frequence: observe sur les deux commandes et a plusieurs etats paye/preparation.
+- Impact client ou administrateur: risque important de placer une commande dans un etat incoherent, d'envoyer un mauvais e-mail et de rendre la prochaine action incomprehensible.
+- Correction recommandee, sans implementation: filtrer les transitions par mode de remise dans l'interface et les refuser egalement cote serveur; afficher le parcours attendu avant confirmation.
+- Verifications apres correction: matrice complete livraison/retrait a chaque etat; absence des actions croisees; tentative directe refusee cote serveur; chronologie et e-mails uniquement compatibles.
+
+#### REC-20260812-A07 — P1 — Archivage d'une publication sans resultat durable
+
+- Parcours concerne: administration, Publication > Publications, nettoyage d'une annonce au stock 0.
+- Etapes exactes de reproduction: rechercher « Chevet en chêne miel aux poignées laiton »; constater le statut PUBLIC et le stock 0; cliquer sur l'icone Archiver; accepter la confirmation native; attendre; controler la liste admin et la recherche publique.
+- Attendu: une confirmation durable indique l'archivage; la publication quitte la liste publique et ne peut plus etre ouverte ou achetee.
+- Observe: la confirmation native est bien ouverte et acceptee, mais l'operation ne fournit pas de confirmation durable; apres attente et controle depuis une seconde vue, la publication reste PUBLIC, compte toujours parmi les 34 publiees et demeure visible en recherche. Un second essai n'a ete effectue qu'apres preuve d'absence de changement et produit le meme resultat. Elle reste toutefois non achetable, stock 0 et « Déjà réservé ».
+- Frequence: 2/2 tentatives controlees pendant le nettoyage final; attribution exacte entre le dialogue natif et la mutation applicative a confirmer.
+- Impact client ou administrateur: l'administratrice ne peut pas terminer le cycle de gestion ni retirer proprement une fiche vendue; le catalogue conserve une annonce inutile, meme si aucun nouvel achat n'est possible.
+- Correction recommandee, sans implementation: remplacer ou entourer la confirmation native par une modale applicative accessible avec etat de chargement, retour d'erreur et reprise sure; rendre l'operation idempotente et afficher le statut durable obtenu.
+- Verifications apres correction: archivage unique depuis une fiche stock 0, disparition de la liste publique/recherche/URL, persistance apres rafraichissement et reconnexion, absence de suppression des commandes ou medias historiques, nouvel essai sans doublon apres erreur reseau.
+
+### Journal de correction du 2026-08-12
+
+Les statuts ci-dessous sont intermediaires. `CORRIGEE_A_REQUALIFIER` signifie
+que la correction et ses tests locaux existent, pas que l'anomalie est fermee;
+la fermeture exige encore le deploiement et la recette humaine sandbox.
+
+#### REC-20260812-A04 — `CORRIGEE_A_REQUALIFIER`
+
+- Cause racine prouvee: `listMyOrdersV2` trouvait bien les deux commandes par
+  l'UID exact du compte client, puis echouait entierement avec
+  `FAILED_PRECONDITION` sur la requete
+  `orders/{id}/customer_return_requests orderBy(updatedAt, desc)`. Les logs
+  Functions demandent explicitement un index `COLLECTION`; le fichier et le
+  projet ne portaient que l'index `COLLECTION_GROUP`. Les cinq documents
+  existaient et leurs `ownerUid` correspondaient deja au client. Le `catch` de
+  `MyOrdersView` transformait ensuite cette erreur 500 en tableaux vides, d'ou
+  les faux compteurs zero.
+- Classification: raccordement infrastructure/reader, aggrave par une erreur
+  de presentation silencieuse; ni perte de commande, ni defaut webhook, ni
+  incoherence d'UID.
+- Correction locale: ajout de l'index descendant de portee `COLLECTION` en
+  conservant les index groupe; erreurs initiale et de pagination visibles et
+  rejouables, sans faux historique vide ni perte de la page deja lue.
+- Fichiers: `firestore.indexes.json`,
+  `src/kit/commerce/MyOrdersView.jsx`, tests Gate 5, documentation client et
+  cartographie.
+- Tests locaux: contrat index et etats d'erreur Gate 5 passes sous Node 22.
+
+#### REC-20260812-A06 — `CORRIGEE_A_REQUALIFIER`
+
+- Cause racine prouvee: `computeAllowedActions` derivait les etats financiers
+  et logistiques, mais ignorait `deliverySnapshot`; les deux actions croisees
+  etaient donc autorisees par le serveur et rendues fidelement par l'UI.
+- Classification: incoherence metier du derive serveur des actions.
+- Correction locale: matrice fail-closed fondee sur le snapshot fige:
+  retrait = preparer, pret, retire; transport = preparer, expedier, livre et
+  suivi. Un snapshot absent n'autorise aucun raccourci apres preparation.
+- Fichiers: `functions/src/commerce/domain/allowedActions.js`, tests Gate 4,
+  documentation commerce/admin et cartographie.
+- Tests locaux: matrice des deux rails et refus direct des transitions
+  incompatibles passes sous Node 22.
+
+#### REC-20260812-A07 — `CORRIGEE_A_REQUALIFIER`
+
+- Cause racine prouvee: aucune invocation `deleteProductAdmin` n'apparait dans
+  les logs de la fenetre des deux essais. Le dialogue natif `window.confirm`
+  interrompait le pilotage avant l'appel; le rail serveur existant etait deja
+  une archive souple transactionnelle, auditee et idempotente.
+- Classification: raccordement UI/commande, sans defaut du modele de retention.
+- Correction locale: modale applicative accessible, etats attente/succes/erreur,
+  appel attendu avant confirmation durable et `commandId` stable conserve en
+  cas de reprise; aucune suppression locale optimiste.
+- Fichiers: `src/kit/admin/AdminItemList.jsx`,
+  `app/admin/AdminAppIsland.jsx`,
+  `src/kit/commerce/adminProductCommandClient.js`, tests Gate 4,
+  documentation admin/catalogue et cartographie.
+- Tests locaux: contrats absence de `window.confirm`, modale applicative,
+  idempotence et archive souple passes sous Node 22.
+
+#### REC-20260812-A03 — `CORRIGEE_A_REQUALIFIER`
+
+- Cause racine prouvee: le preflight forcait `user.getIdToken(true)` une seule
+  fois; l'erreur transitoire `auth/network-request-failed` interrompait le
+  parcours avant tout upload ou writer. Le formulaire restant monte explique
+  la seconde tentative reussie sans doublon.
+- Classification: resilience bornee de verification Auth, pas assurance faible
+  ni transaction produit partielle.
+- Correction locale: deux reprises reseau seulement (250 puis 750 ms), aucune
+  reprise des autres erreurs Auth, formulaire/photos conserves et message final
+  explicite. Le preflight reste avant upload et commande.
+- Fichiers: `src/kit/admin/adminAuthorization.js`,
+  `src/kit/admin/adminTokenRetry.js`, `src/kit/admin/AdminForm.jsx`,
+  `tests/admin-token-retry.test.mjs`, `package.json`, tests Gate 4,
+  documentation admin et cartographie.
+- Tests locaux: succes apres deux erreurs, absence de retry d'un refus Auth et
+  borne stricte a trois appels passes sous Node 22.
+
+#### REC-20260812-A05 — `RESIDU_EXTERNE_A_REQUALIFIER`
+
+- Cause racine prouvee dans le perimetre applicatif: les messages utilisent le
+  compte Gmail sandbox authentifie comme `From` et `Reply-To`; les controles
+  MIME de la campagne precedente rapportaient SPF, DKIM et DMARC passes. Les
+  contenus, references et deduplications etaient exacts, tandis que Gmail
+  classait 10/10 messages client en spam mais les notifications admin en inbox.
+- Classification: delivrabilite/reputation du canal Gmail sandbox, externe au
+  code metier; aucune correction de template ne peut garantir la boite
+  principale. Resend et le DNS final restent volontairement differes et
+  interdits par ce perimetre.
+- Correction locale: aucune mutation speculative du contenu, de l'expediteur
+  ou du provider. La requalification doit relire les en-tetes des nouveaux
+  messages et noter le classement reel; le residu externe sera conserve si
+  Gmail sandbox continue de les filtrer.
+- Fichiers: documentation/registre uniquement.
+- Tests locaux: contrat adaptateur e-mail inclus dans `test:auth` a executer
+  avant deploiement; preuve fonctionnelle requise dans Gmail apres les deux
+  commandes autorisees.
+
+#### REC-20260812-A02 — `CORRIGEE_A_REQUALIFIER`
+
+- Cause racine prouvee: les branches Ecrire et Apercu de `StoryEditor` etaient
+  deux `div` conditionnels sans identite. React reutilisait le DOM
+  `contentEditable` non controle, conservait son `innerHTML`, puis montait
+  `RichTextStory` dans le meme noeud: une seule valeur sauvegardee, deux rendus
+  visuels.
+- Classification: reconciliation DOM React dans l'apercu, sans duplication de
+  donnee catalogue.
+- Correction locale: cles distinctes pour forcer deux identites de branche.
+- Fichiers: `src/kit/admin/components/StoryEditor.jsx`, tests Gate 4,
+  documentation admin.
+- Tests locaux: contrat des deux identites de branche passe sous Node 22;
+  controle visuel simple et multiligne encore requis sur sandbox.
+
+#### REC-20260812-A01 — `CORRIGEE_A_REQUALIFIER`
+
+- Cause racine prouvee: le produit releve existe dans `furniture` avec
+  `status: published`, titre `"fr`, `material` vide, stock 1 et
+  `seoIndexable: false`. La validation serveur courante exigeait seulement un
+  nom et une categorie non vides; le formulaire pouvait donc encore produire
+  cette incoherence. La correspondance semantique d'une photo ne peut pas etre
+  prouvee automatiquement dans le rail actuel.
+- Classification: invariant de qualite de publication incomplet et donnee
+  sandbox a nettoyer, pas lecteur catalogue legacy.
+- Correction locale: titre public d'au moins quatre caracteres et trois
+  lettres/chiffres, materiau obligatoire, verifies avant upload puis de nouveau
+  par la commande serveur. La fiche incoherente doit etre archivee via le rail
+  durable corrige pendant la requalification.
+- Fichiers: `src/kit/admin/AdminForm.jsx`,
+  `functions/src/commerce/domain/productCommands.js`, tests Gate 4,
+  documentation catalogue.
+- Tests locaux: refus serveur du titre `"fr` et du materiau vide, publication
+  complete valide, passes sous Node 22.
+
+### Synthese de cloture de la campagne `REC-20260812-C1`
+
+- Verdict sandbox: **NON VALIDABLE pour une future mise en production en l'etat**. Le noyau paiement/remboursement et le back-office sont fonctionnels sur les deux commandes testees, mais le P0 `REC-20260812-A04` prive la cliente de tout historique, document et suivi malgre des paiements durables.
+- Niveau de confiance: **eleve** pour les parcours executes, fondé uniquement sur les observations de cette campagne dans Chrome, les deux espaces du sandbox, Stripe test projete par l'administration et les deux boites Gmail autorisees.
+- Comptes utilises: `loa.gto15@gmail.com` uniquement pour l'administration et sa boite Gmail; `pvml7008@gmail.com` uniquement pour le parcours client et sa boite Gmail. Les comptes personnels visibles n'ont pas ete utilises.
+- Annonce: `Chevet en chêne miel aux poignées laiton`, `product-110a2407-4dda-4187-8c88-545da3da7709`, 180 EUR. Creee et publiee manuellement; achetee; stock final 0; remboursement sans restock; archivage bloque; fiche encore publique mais non achetable.
+- Commande simple: `CMD-ORD_692D22`, 180 EUR, retrait atelier; payee, preparee, prete au retrait, retiree, puis remboursee totalement en Stripe test.
+- Commande groupee: `CMD-ORD_C00403`, 2 499 EUR dont 49 EUR de livraison; deux lignes a 1 150 et 1 300 EUR; payee, preparee et expediee; remboursement partiel durable de 1 150 EUR puis remboursement durable du solde exact de 1 349 EUR.
+- Stripe test: deux paiements confirmes et trois operations de remboursement `succeeded`; aucun double clic, rejeu, paiement en attente ou etat financier ambigu.
+- Client: authentification et panier simple/groupe fonctionnels; separation des permissions correcte; historique final 0 commande, 0 document, 0,00 EUR rembourse malgre toutes les operations.
+- Administration: acces fort, creation et publication, projection des deux commandes, transitions choisies, chronologies et remboursements persistants. Publication initialement intermittente, transitions croisees dangereuses et archivage non abouti.
+- E-mails: dix messages transactionnels client presents avec references, lignes, montants et modes coherents, mais tous dans SPAM. Les notifications administrateur controlees sont en inbox, completes et coherentes.
+- Stock: chevet et deux Armoires restent reserves/non achetables apres remboursement; aucune remise en vente silencieuse.
+- UX: public desktop et largeur mobile 390 px globalement lisibles et fluides; chargements admin de 15 a 20 s mais visibles; apercu de description duplique; libelles de transition incompatibles; nettoyage par confirmation native non concluant.
+- Anomalies de campagne: P0 = 1 (`A04`); P1 = 4 (`A03`, `A05`, `A06`, `A07`); P2 = 2 (`A01`, `A02`); P3 = 0.
+- Scenarios bloques ou non executes: projection client et documents bloques par `A04`; archivage bloque par `A07`; confirmation finale de livraison non executee avant le remboursement total de la commande groupee et devenue indisponible ensuite. Aucun troisieme achat n'a ete cree.
+- Residus: annonce de campagne publique mais stock 0/non achetable; commandes, remboursements et e-mails conserves comme preuves; aucune session du site active, aucun panier ni paiement en attente.
+- Ordre recommande des corrections: 1. `A04` projection client/documents; 2. `A06` garde des transitions; 3. `A07` archivage durable; 4. `A03` reprise sure de publication; 5. `A05` delivrabilite; 6. `A02` apercu; 7. `A01` qualite catalogue.
+- Requalification apres correction: deux nouvelles commandes au maximum couvrant retrait et livraison, projection client apres reconnexion, documents paiement/remboursement, transitions strictement bornees, remboursement partiel avec solde, absence de restock, archivage et delivrabilite inbox.
+- Transposable avec prudence: logique de panier, checkout, paiement Stripe test, projection admin, chronologies, e-mails rendus et remboursements ont fourni des preuves sandbox reelles; elles ne valident aucune configuration live.
+- Revalidation production obligatoire et distincte: domaine final, cles Stripe live, webhooks live et idempotence, Resend avec SPF/DKIM/DMARC et DNS, App Check production, sauvegardes/alertes/SLO, et validation juridique des CGV, retours, factures et conservation des donnees.
+
+## Cloture des corrections et requalification sandbox du 2026-08-12
+
+Cette section remplace les statuts intermediaires `CORRIGEE_A_REQUALIFIER`
+ci-dessus. La cible verifiee avant chaque ecriture cloud etait exclusivement le
+projet Firebase `secondevienextjsssr`, le backend App Hosting
+`secondevie-next-sandbox` et Stripe test. Deux nouvelles commandes exactement
+ont ete creees: `CMD-ORD_1E485D` (retrait, 25 EUR) et `CMD-ORD_AC4D1F`
+(deux lignes, livraison Marseille, 304 EUR).
+
+### REC-20260812-A04 — `FERMEE`
+
+- Cause racine prouvee et classification: index Firestore `COLLECTION`
+  descendant manquant pour `customer_return_requests.updatedAt`, puis erreur
+  transformee par l'UI en faux historique vide; raccordement
+  infrastructure/reader, sans perte de commandes, documents ou UID.
+- Correction: index de collection ajoute sans retirer le `COLLECTION_GROUP`;
+  l'espace client affiche maintenant l'erreur initiale ou de pagination et
+  permet la reprise sans effacer les donnees deja lues.
+- Fichiers: `firestore.indexes.json`, `src/kit/commerce/MyOrdersView.jsx`,
+  `tests/commerce/domain/gate5-consumers.test.cjs`, `_DOCS/client/ESPACE_CLIENT.md`,
+  `_DOCS/quality/QUALITE_TESTS.md`, `map.md`.
+- Tests: Gate 5 ciblee, `test:commerce:unit`, `test:auth`, lint et build passes;
+  index deploye sur le sandbox.
+- Requalification: reconnexion de `pvml7008@gmail.com`, 15 commandes et
+  24 documents visibles; `CMD-ORD_1E485D` expose un recu et une confirmation
+  de remboursement, `CMD-ORD_AC4D1F` un recu et deux confirmations. Le PDF du
+  recu de 304 EUR s'ouvre et sa copie e-mail avec piece jointe est arrivee.
+  Le reconciliateur documentaire horaire, declenche de facon bornee pour ne
+  pas attendre son prochain passage, a produit les cinq documents attendus.
+- Residu externe: aucun pour la projection; le classement Gmail du message de
+  copie releve de `A05`.
+
+### REC-20260812-A06 — `FERMEE`
+
+- Cause racine prouvee et classification: `computeAllowedActions` ignorait le
+  `deliverySnapshot`; incoherence metier du derive serveur.
+- Correction: matrice fail-closed figee par mode de remise, avec aucun
+  raccourci autorise lorsqu'un snapshot est absent.
+- Fichiers: `functions/src/commerce/domain/allowedActions.js`,
+  `tests/commerce/domain/gate4-commands-returns.test.cjs`,
+  `_DOCS/commerce/COMMERCE_STRIPE.md`, `_DOCS/admin/BACKOFFICE.md`, `map.md`.
+- Tests: matrice unitaire retrait/livraison, refus des transitions croisees,
+  Gate 4 et `test:commerce:unit` passes; callables cibles deployes.
+- Requalification: `CMD-ORD_1E485D` a suivi uniquement Payee -> En preparation
+  -> Prete au retrait -> Retiree; `CMD-ORD_AC4D1F` uniquement Payee -> En
+  preparation -> Expediee sans suivi -> Livree. Aucune action incompatible
+  n'a ete proposee. Les chronologies et e-mails correspondants ont ete emis.
+- Residu externe: aucun.
+
+### REC-20260812-A07 — `FERMEE`
+
+- Cause racine prouvee et classification: la confirmation native interrompait
+  le pilotage avant `deleteProductAdmin`; raccordement UI/commande, le modele
+  serveur d'archive souple etant sain.
+- Correction: `alertdialog` applicatif accessible, attente/succes/erreur
+  visibles et `commandId` stable pour une reprise idempotente.
+- Fichiers: `src/kit/admin/AdminItemList.jsx`,
+  `app/admin/AdminAppIsland.jsx`,
+  `src/kit/commerce/adminProductCommandClient.js`, tests Gate 4,
+  `_DOCS/admin/BACKOFFICE.md`, `_DOCS/catalogue/ANNONCES_CATALOGUE.md`, `map.md`.
+- Tests: contrats de modale, absence de `window.confirm`, archive souple et
+  idempotence passes; App Hosting sandbox deploye.
+- Requalification: trois archives ont abouti une seule fois via la modale,
+  dont l'annonce initiale `product-110a2407-4dda-4187-8c88-545da3da7709` et le
+  produit final de recette. Rechargement admin: 32 publications et objets
+  absents. Firestore conserve les trois sources en `status: archived` avec
+  `archivedAt`; le snapshot public n'en contient aucune.
+- Residu externe: aucun.
+
+### REC-20260812-A03 — `FERMEE`
+
+- Cause racine prouvee et classification: `getIdToken(true)` sans reprise sur
+  `auth/network-request-failed`; resilience bornee Auth, sans ecriture
+  produit partielle.
+- Correction: deux reprises reseau seulement (250/750 ms), aucun retry des
+  refus Auth, preflight toujours place avant upload/commande et formulaire
+  conserve.
+- Fichiers: `src/kit/admin/adminAuthorization.js`,
+  `src/kit/admin/adminTokenRetry.js`, `src/kit/admin/AdminForm.jsx`,
+  `tests/admin-token-retry.test.mjs`, `package.json`,
+  `_DOCS/admin/BACKOFFICE.md`, `_DOCS/quality/QUALITE_TESTS.md`, `map.md`.
+- Tests: injection de deux erreurs reseau puis succes, refus Auth non rejoue,
+  borne a trois appels, `test:auth`, lint et build passes.
+- Requalification: publication unique de
+  `product-39905b9c-f3de-429b-87cd-baf5d9e74f3f`; un seul produit cree, quatre
+  etapes terminees, projection admin et publique exacte, aucune perte de
+  formulaire ni duplication. L'archive finale a ensuite reussi.
+- Residu externe: aucun; la panne reseau est couverte par injection
+  deterministe, le parcours nominal complet par Chrome sandbox.
+
+### REC-20260812-A05 — `RESIDU_EXTERNE_CONFIRME`
+
+- Cause racine prouvee et classification: reputation du compte Gmail sandbox.
+  Le message de confirmation groupee porte `From`, `Return-Path` et `Reply-To`
+  Gmail alignes; Gmail rapporte DKIM=pass, SPF=pass et DMARC=pass. Les contenus
+  et deduplications sont exacts. Ce n'est ni une faute de template, ni un
+  defaut d'authentification SMTP corrigeable dans le rail courant.
+- Correction: aucune mutation speculative du contenu ou du provider; le canal
+  Gmail sandbox et ses invariants ont ete conserves. Resend et le domaine final
+  restent differes jusqu'au chantier production explicitement autorise.
+- Fichiers: registre et documentation e-mail existante uniquement; aucun code
+  applicatif modifie pour masquer le signal externe.
+- Tests: contrat adaptateur dans `test:auth`; lecture Gmail des nouveaux
+  messages et d'un en-tete complet.
+- Requalification: 11 messages client de paiement, transitions et
+  remboursements plus la copie PDF ont tous ete emis avec les bonnes
+  references et montants, mais les 12 sont classes `SPAM`. La copie PDF de
+  `CMD-ORD_AC4D1F` est bien jointe.
+- Residu externe: filtre/reputation Gmail sandbox. La fermeture fonctionnelle
+  de l'emission est acquise; l'obtention de l'inbox requiert le futur domaine
+  et Resend avec SPF/DKIM/DMARC, hors perimetre et interdits ici.
+
+### REC-20260812-A02 — `FERMEE`
+
+- Cause racine prouvee et classification: reutilisation par React du meme DOM
+  `contentEditable` entre Ecrire et Apercu; reconciliation UI sans duplication
+  de donnee.
+- Correction: identites React distinctes pour les deux branches.
+- Fichiers: `src/kit/admin/components/StoryEditor.jsx`, tests Gate 4,
+  `_DOCS/admin/BACKOFFICE.md`.
+- Tests: contrat des cles de branche, lint et build passes.
+- Requalification: l'histoire multiligne du chevet de recette apparait une
+  seule fois dans l'apercu avant publication et une seule fois sur la fiche
+  publique.
+- Residu externe: aucun.
+
+### REC-20260812-A01 — `FERMEE`
+
+- Cause racine prouvee et classification: invariant de publication trop faible
+  (titre et categorie seulement), donnees incoherentes acceptees; puis
+  raccordement de preuve HTML qui exigeait a tort HTTP 200 sur l'ancien chemin
+  d'un produit archive, pourtant attendu en 404. Aucun lecteur legacy.
+- Correction: titre public lisible d'au moins quatre caracteres et trois
+  lettres/chiffres, materiau obligatoire, controles UI et serveur; le
+  verificateur catalogue exige 200+hash sur les chemins courants et 404 sur
+  l'ancien chemin archive ou renomme.
+- Fichiers: `src/kit/admin/AdminForm.jsx`,
+  `functions/src/commerce/domain/productCommands.js`,
+  `functions/src/catalog/catalogRevalidation.js`,
+  `tests/commerce/domain/gate4-commands-returns.test.cjs`,
+  `tests/catalog/security.test.cjs`, `_DOCS/catalogue/ANNONCES_CATALOGUE.md`,
+  `map.md`.
+- Tests: refus du titre `"fr` et du materiau vide, publication valide,
+  non-regression 404 d'archivage, 12/12 tests securite catalogue et 14/14
+  tests coeur catalogue passes.
+- Requalification: la mauvaise fiche
+  `product-fd16e545-6f2c-42bd-94e5-1200a02853ce` est archivee et repond 404;
+  le produit valide a ete publie puis archive. Snapshot public revision 286,
+  32 produits, aucune des trois archives; controle catalogue final
+  `buildState: published`, `servedState: observed`, `integrityState: valid`,
+  `sourceLagState: current`, `lastError: null`.
+- Residu externe: aucun.
+
+### Verdict final de la reprise
+
+- Campagne: `FERMEE_AVEC_RESIDU_EXTERNE_A05`.
+- Stripe test: deux paiements, trois remboursements (130, 174 et 25 EUR),
+  aucun paiement ambigu; total rembourse client passe de 3 669 a 3 998 EUR.
+- Stock: les trois lignes achetees restent a 0 apres remboursement; aucune
+  remise en vente automatique.
+- Cloud: index Firestore, callables cibles, App Hosting sandbox et dispatcher
+  de revalidation catalogue cibles deployes; production et Stripe live non
+  touches.
+- Git: aucun commit, push ou merge.
+
+## Nouvelle recette fonctionnelle humaine objective du 2026-08-12
+
+Identifiant de campagne: `REC-20260812-C2`
+
+Debut: 2026-08-12 19:31 Europe/Paris.
+
+Perimetre: URL App Hosting sandbox exacte, projet Firebase
+`secondevienextjsssr`, comptes `loa.gto15@gmail.com` et
+`pvml7008@gmail.com`, Stripe test exclusivement. Cette campagne repart de
+zero: aucun resultat historique ci-dessus n'est repris comme preuve.
+
+Methode: parcours exclusivement humain dans Chrome externe. Aucun script,
+Playwright, requete API, fixture, seed, correction de code, changement cloud,
+deploiement, commit ou push. Seul ce registre peut etre complete.
+
+### Journal progressif `REC-20260812-C2`
+
+| Heure Europe/Paris | Scenario | Statut | Compte | Etapes effectuees et resultat observe | Attendu | Friction/anomalie et preuve non sensible | Etat final des donnees |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-12 19:31 | Initialisation de la campagne | RÉUSSI | Aucun | Cible, comptes autorises, limites Stripe test et regle des deux commandes confirmes avant toute navigation. | Demarrer sans reutiliser d'ancienne preuve et sans mutation hors interface. | Aucune. | Aucune donnee creee; aucune session fonctionnelle ouverte par la campagne. |
+| 2026-08-12 19:32 | Controle public desktop | RÉUSSI | Visiteur deconnecte | Ouverture de l'URL exacte; controle de l'accueil, du menu, d'une categorie Commodes, d'une fiche reservee, de la recherche `armoire`, du panier vide, de la page A propos et du devis; retour navigateur verifie. | Les principales pages, liens, modales et retours chargent sans erreur ni blocage visible. | Le pilotage a selectionne une categorie lors d'un premier clic devenu obsolete apres fermeture du menu; friction de l'outil de recette, sans anomalie du site. Les pages observees sont ensuite toutes exploitables. | Aucune donnee metier creee; visiteur deconnecte et panier vide. |
+| 2026-08-12 19:35 | Controle mobile manuel | RÉUSSI | Visiteur deconnecte | Largeur Chrome ramenee a 390 px sur le devis; header, CTA, formulaire et menu mobile ouverts; recherche et collections accessibles; retour desktop prevu avant connexion. | Navigation, menu, lisibilite et boutons restent utilisables en largeur mobile. | Aucun blocage ni contenu incoherent visible. | Aucune donnee creee. Trois meubles disponibles reperes visuellement pour la commande groupee: `Armoir` 1 250 EUR, `Buffet art deco` 990 EUR et `Buffet` 750 EUR. |
+| 2026-08-12 19:38 | Connexion et habilitations administrateur | RÉUSSI | `loa.gto15@gmail.com` | Connexion Google via le selecteur de compte exact; acces a `/admin`; controle visuel des onglets principaux du back-office. | Le compte administrateur accede au back-office avec ses fonctions et le compte client n'en herite pas. | Aucune anomalie d'authentification observee. | Session administrateur ensuite fermee avant le parcours client. |
+| 2026-08-12 19:40 | Creation et publication d'un produit simple | RÉUSSI | `loa.gto15@gmail.com` | Validation du refus d'un formulaire vide; creation de `Commode basse en châtaignier patiné`, 65 EUR, stock 1, materiau Chataignier, dimensions 82 x 38 x 71, histoire en deux paragraphes et une image locale non sensible; apercu controle; publication Site declenchee une seule fois. La progression se termine par le succes durable. | Une fiche valide est publiee une fois, sans doublon de description, puis visible dans l'administration et le catalogue public. | Aucune erreur Auth/reseau sur ce parcours nominal; le scenario de reprise sur panne n'est pas couvert par cette campagne humaine. L'histoire apparait une seule fois dans l'apercu. | Produit `product-0b66ff63-3d88-4e1d-982a-26bad0ee7325`, PUBLIC, stock 1. |
+| 2026-08-12 19:41 | Visibilite catalogue du produit cree | RÉUSSI | Visiteur | Recherche du titre exact: un resultat unique, image, prix 65 EUR et disponibilite correcte; ouverture de la fiche publique; titre, histoire unique, materiau, dimensions et ajout au panier presents. | La publication admin est raccordee au catalogue public et la fiche est achetable. | Aucune incoherence catalogue visible. | Produit public et ajoutable au panier. |
+| 2026-08-12 19:42 | Separation des roles client/admin | RÉUSSI | `pvml7008@gmail.com` | Deconnexion admin puis connexion Google avec le compte client exact; profil `ml pv` et adresse e-mail exacts; aucun lien Admin dans le menu; acces direct a `/admin` refuse explicitement. | Un client sans droits ne voit ni n'ouvre le back-office. | Aucune. | Session client active. Baseline avant commande: 15 commandes, 24 documents, 3 998 EUR rembourses. |
+| 2026-08-12 19:44 | Panier et checkout commande simple | RÉUSSI JUSQU'AU PAIEMENT | `pvml7008@gmail.com` | Une ligne unique du produit cree, image et prix 65 EUR; retrait atelier gratuit; coordonnees client; CGV acceptees; resume a 65 EUR. Stripe affiche explicitement le mode test; le formulaire carte test est renseigne et la declaration d'action pour autrui cochee. | Une commande simple de 65 EUR doit pouvoir etre payee une seule fois puis apparaitre durablement dans l'espace client. | Une duplication temporaire de l'e-mail a ete provoquee par la saisie de l'outil sur un champ pre-rempli, puis corrigee visuellement avant le checkout; friction de recette, pas anomalie du site. | Reference de checkout visible `8270420A`; aucun clic de paiement confirme avant l'interruption de la recette. |
+| 2026-08-12 19:47 | Reprise apres interruption du checkout simple | REPRISE ATTENDUE | `pvml7008@gmail.com` | Juste apres la coupure, le panier conservait la ligne a 65 EUR et `/checkout` proposait de retrouver le paiement. La projection client a ensuite affiche `CMD-ORD_827042` avec un libelle visuel ambigu `Preparee`, alors que la lecture serveur autoritaire a prouve `status=pending_payment`, `payment.status=awaiting_method`, capture 0 et stock reserve. | Une interruption avant validation Stripe doit conserver une unique commande en attente et permettre de reprendre exactement son PaymentIntent. | La commande n'etait pas payee: la reprise du paiement de 65 EUR etait correcte. La projection client ne suffisait pas a conclure a un paiement durable. | Une commande en attente unique; aucun debit, aucune duplication. |
+| 2026-08-12 19:54 | Nouvelle tentative de paiement demandee apres coupure | DIAGNOSTIC RECTIFIE | `pvml7008@gmail.com` | La tentative a d'abord ete suspendue par prudence a cause du libelle client `Preparee`. L'inspection serveur bornee a ensuite etabli que le paiement avait bien ete interrompu avant confirmation. | Decider la reprise sur l'etat commerce autoritaire, pas sur un libelle de projection. | La coupure expliquait bien l'absence de paiement; la commande devait etre reprise, pas consideree payee. | Commande toujours `pending_payment`, capture 0. |
+| 2026-08-12 19:56 | Preparation commande groupee | RÉUSSI JUSQU'AU CHECKOUT | `pvml7008@gmail.com` | Le panier residuel contenait encore la commode deja commandee; elle a ete retiree. Ajout de `Armoir` 1 250 EUR et `Buffet art deco` 990 EUR. Retrait puis re-ajout de l'armoire verifies sans perte du buffet. Sous-total final correct: 2 240 EUR. | Deux lignes distinctes, images/prix exacts et manipulations de panier independantes. | La ligne deja payee restant dans le panier constitue un defaut de nettoyage, recupere humainement avant toute commande. | Panier groupe final: armoire + buffet uniquement, sous-total 2 240 EUR. |
+| 2026-08-12 19:57 | Checkout groupe apres paiement simple | BLOQUÉ — P0 | `pvml7008@gmail.com` | Le recapitulatif affiche les deux lignes a 1 250 et 990 EUR, mais `TOTAL A PAYER 65 EUR` et `REPRENDRE LE PAIEMENT SECURISE`. L'ouverture retourne au Payment Element test de la reference courte `8270420A`, bouton `Payer 65 EUR`. Deconnexion, reconnexion Google exacte et retour au recapitulatif reproduisent l'incoherence. Aucun clic de paiement n'est effectue. | Le checkout doit creer/reprendre une commande correspondant exactement au panier courant, soit 2 240 EUR plus le mode de livraison choisi; une commande deja durable ne doit plus rester payable. | Nouvelle anomalie `REC-20260812-C2-A02`: session de paiement simple recyclee sur un nouveau panier. Risque de double debit de 65 EUR et de commande groupee au mauvais montant. | Une seule commande durable connue; aucune deuxieme commande/paiement cree; panier groupe conserve dans le recapitulatif mais checkout financier interdit. |
+| 2026-08-12 20:47 | Requalification apres correctif et redeploiement sandbox | RÉUSSI | `pvml7008@gmail.com` | Le checkout repris affiche uniquement `Commode basse en châtaignier patiné` et 65 EUR. Paiement Stripe test soumis une seule fois; page `Commande confirmee`; espace client `CMD-ORD_827042`, une piece, 65 EUR, payee. Lecture serveur: `status=paid`, `paymentStatus=succeeded`, `capturedCents=6500`, `inventoryStatus=committed`. | La reprise doit utiliser le snapshot immutable de la commande interrompue puis confirmer durablement le paiement. | Aucune incoherence de lignes ou de montant apres deploiement. | Une seule commande payee; capture test 65 EUR; stock engage. |
+| 2026-08-12 20:49 | Conservation du panier groupe apres reprise | RÉUSSI | `pvml7008@gmail.com` | Le panier contient toujours uniquement `Armoir` 1 250 EUR et `Buffet art déco` 990 EUR, sous-total 2 240 EUR. `Commander` ouvre un checkout neuf listant exactement ces deux lignes et `TOTAL A PAYER 2240 EUR`; aucun paiement groupe soumis. | Le nettoyage de la commande reprise ne doit supprimer que ses revisions achetees et doit laisser les ajouts posterieurs disponibles pour un checkout neuf. | Aucune. | Panier groupe intact; aucune deuxieme commande creee. |
+| 2026-08-12 21:12 | Deuxieme et derniere commande, branche livraison | RÉUSSI | `pvml7008@gmail.com` | Checkout des deux lignes conservees, livraison Marseille 49 EUR, total 2 289 EUR. Le Payment Element test affiche `Payer 2289 EUR`; soumission unique et confirmation visible. Lecture serveur: `ord_690ae656-6693-4ef6-b5e1-fc9ef61add2f`, `paid`, capture 228 900 centimes, deux lignes et inventaire `committed`. L'espace client affiche `CMD-ORD_690AE6`, deux pieces, 2 289 EUR et 17 commandes. | La seconde commande doit etre une livraison distincte, payee une fois, projetee avec ses deux lignes et son montant exact. | Aucune anomalie de paiement ou de panier. Le recu de cette commande est encore `Document a venir` au controle immediat, tandis que le recu de la commande simple a converge et porte le compteur documents a 25. | Exactement deux nouvelles commandes pour la campagne: retrait 65 EUR et livraison 2 289 EUR. Aucune troisieme commande autorisee ni creee. |
+| 2026-08-12 21:14 | Transition livraison en preparation | RÉUSSI | `loa.gto15@gmail.com` | Ventes affiche la commande groupee exacte; action unique `Mettre en preparation`, puis relecture durable `En preparation` et evenement horodate. | La branche livraison payee accepte sa transition de preparation. | Aucune. | Commande groupee en preparation. |
+| 2026-08-12 21:15 | Expedition avec suivi | RÉUSSI | `loa.gto15@gmail.com` | `Confirmer l'expedition`, mode avec suivi, `Autre transporteur`, nom `Transporteur recette`, numero borne `RECETTE-REC-20260812-C2`; relecture durable `Expediee` et suivi visible. | Les donnees de suivi doivent etre exigees, conservees et projetees. | Aucune. | Commande groupee expediee. |
+| 2026-08-12 21:16 | Livraison finale | RÉUSSI | `loa.gto15@gmail.com` | Confirmation explicite dans la modale, puis relecture durable `Livree`; serveur ensuite `status=completed`, capture 228 900 et stock toujours `committed`. | Une commande expediee peut devenir livree sans alterer son paiement ni son stock. | Aucune. | Commande livraison terminee, aucun remboursement. |
+| 2026-08-12 21:17 | Branche retrait complete | RÉUSSI | `loa.gto15@gmail.com` | Commande simple exacte: `Payee` vers `En preparation`, puis `Prete au retrait`, puis confirmation explicite `Retiree`; chaque etat a ete relu apres convergence. | Les transitions retrait doivent etre compatibles et durables. | Aucune transition incompatible ni blocage. | Commande simple retiree avant remboursement. |
+| 2026-08-12 21:19 | Remboursement Stripe test complet | RÉUSSI | `loa.gto15@gmail.com` | Retours, dossier manuel exact `ord_8270420a-4d64-4975-adc7-120c7fe296d9`, maximum 65 EUR et avertissement stock inchange; soumission unique. Serveur: `status=refunded`, `refundedCents=6500`, capture 6500, inventaire `committed`, `restockedQty=0`. | Remboursement unique, montant exact, aucune remise en stock automatique. | Aucune. | Commande simple remboursee integralement; produit non restocke. |
+| 2026-08-12 21:21 | E-mails commande, transitions et remboursement | PARTIELLEMENT RÉUSSI — RESIDU SPAM | client et administrateur | Boite client: confirmations payees des deux commandes, preparation des deux branches, pret au retrait, retrait, expedition, livraison et remboursement 65 EUR recus avec references/montants exacts; tous portent le libelle Gmail `SPAM`. Boite admin directe: notifications de nouvelle commande et confirmation de remboursement presentes dans la boite de reception; l'e-mail admin precise l'absence de remise en stock automatique. | Les messages M03 a M11 doivent etre recus avec le bon destinataire et le bon contenu; les messages client ne doivent pas etre classes spam. | Transport fonctionnel et contenu coherent, mais recurrence de l'anomalie externe de delivrabilite Gmail sandbox: tous les messages client controles sont en spam. | M03-M11 prouves sur les deux commandes; M01/M02 et M12/M13 restent hors de cette continuation. |
+| 2026-08-12 21:23 | Connexion client par code e-mail et M01 | RÉUSSI AVEC RESIDU SPAM | `pvml7008@gmail.com` | Deconnexion puis demande d'un code de connexion au compte client exact; reception du message `Votre code de connexion · Seconde Vie`, saisie du code dans Chrome et retour authentifie dans `/mes-commandes`. | Le code doit etre recu par le bon compte et ouvrir une session client, sans droit admin. | Le message M01 est fonctionnel mais porte lui aussi le libelle Gmail `SPAM`. Aucun code, token ou secret n'est conserve dans ce registre. | Session client active; compte toujours sans acces administrateur. M02 non execute car le client etait deja authentifie pendant les deux checkouts et la limite de deux commandes est atteinte. |
+| 2026-08-12 21:24 | Archivage durable du produit de recette | RÉUSSI | `loa.gto15@gmail.com`, puis visiteur | Dans Publication, action unique `Archiver durablement` sur `Commode basse en châtaignier patiné`; apres rechargement, le produit est absent des publications actives. Recherche publique du titre exact: zero resultat. | Une archive doit survivre au rechargement et disparaitre du catalogue public. | Aucune. | Produit `product-0b66ff63-3d88-4e1d-982a-26bad0ee7325` archive durablement et non public; stock non restaure par le remboursement precedent. |
+| 2026-08-12 21:27 | Projection finale espace client, adresses et documents | PARTIELLEMENT RÉUSSI — ANOMALIE DOCUMENTAIRE | `pvml7008@gmail.com` | Reconnexion puis rechargement: 17 commandes; `CMD-ORD_690AE6` livree avec deux pieces, 2 289 EUR, transporteur et suivi exacts; `CMD-ORD_827042` remboursee 65 EUR avec delai bancaire explicite. Adresse de livraison/facturation Marseille et profil (nom, e-mail, telephone) repris depuis la derniere commande. Compteur documents reste a 25. | Les deux commandes et tous leurs documents de paiement/remboursement doivent etre visibles et ouvrables apres convergence. | Le recu de paiement de `CMD-ORD_690AE6` reste `Document a venir`; la confirmation de remboursement de `CMD-ORD_827042` est absente de la liste, meme apres rechargement plusieurs minutes apres les operations. Le seul bouton de cette commande ouvre encore son recu de paiement. | Commandes, montants, suivi, remboursement, adresse et profil converges; deux PDF attendus non projetes. Nouvelle anomalie `REC-20260812-C2-A03`. |
+| 2026-08-12 21:28 | Matrice e-mail M01-M13 | PARTIELLEMENT RÉUSSI | client et administrateur | M01, M03, M04, M05, M06, M07, M08, M09, M10 et M11 recus et controles sur les boites exactes. M04 est prouve pour les deux commandes, dont `Nouvelle commande CMD-ORD_690AE6 · 2 289,00 €` en boite admin. | Couvrir les 13 familles sans depasser les limites de donnees ou provoquer artificiellement une erreur financiere. | M02 non execute: aucun OTP checkout requis pendant les deux commandes. M12/M13 non executes: aucun remboursement asynchrone en echec, et une troisieme commande est interdite. Tous les messages client controles, y compris M01, sont classes spam. | Aucune commande supplementaire, aucun echec Stripe provoque et aucun message Gmail deplace. |
+| 2026-08-12 22:20 | Deploiement borne du correctif documentaire | RÉUSSI | Sandbox uniquement | Preflight commerce relu sur `secondevienextjsssr`: `v2_all`, mutations admin v2, paiement offline desactive et operations saines. Deploiement des quatre Functions concernees en `europe-west1`, puis du seul backend App Hosting `secondevie-next-sandbox` en `europe-west4`. Rollout `build-2026-08-12-006` termine `SUCCEEDED`. | Publier le correctif uniquement sur la cible sandbox avant requalification humaine. | Un premier filtre de noms Functions trop court a ete refuse avant toute mutation; la commande corrigee avec les noms de codebase complets a reussi. | Production, Stripe live, donnees reelles, commit et push non touches. |
+| 2026-08-12 22:25 | Requalification des documents manquants | RÉUSSI | `pvml7008@gmail.com` | Rechargement de `/mes-commandes`: compteur passe de 25 a 27. Le recu de paiement de `CMD-ORD_690AE6` et la confirmation de remboursement de `CMD-ORD_827042` sont presents. Chacun ouvre la modale `Votre document est prêt`, avec reference, montant exact, lien PDF blob, sauvegarde/partage et copie e-mail programmee. | Les deux documents jusque-la absents doivent etre listes et ouvrables apres deploiement, sans nouveau paiement ni remboursement. | Aucune anomalie documentaire residuelle. Les documents sandbox portent correctement la mention non fiscale. | 17 commandes et 27 documents; aucune donnee financiere supplementaire creee. |
+| 2026-08-12 22:31 | M02 — code e-mail de validation checkout | RÉUSSI AVEC RESIDU SPAM | `pvml7008@gmail.com` | Deconnexion du compte, ajout temporaire d'un buffet disponible et ouverture du checkout visiteur. Une seule demande de code a ete emise vers le compte client exact; le message `Validez votre commande · Seconde Vie` a ete retrouve, puis le code saisi. Le checkout confirme `Email verifie pour cette commande.` sans creation de commande ni ouverture de paiement. | Le code checkout doit parvenir au bon destinataire et valider l'e-mail avant paiement. | Fonctionnellement reussi, mais le message est classe dans Spam, nouvelle preuve de `REC-20260812-A05`. Aucun code ou secret n'est conserve dans ce registre. | Aucune troisieme commande et aucun paiement; article temporaire a retirer du panier avant cloture. |
+| 2026-08-13 00:15 | M12/M13 — remboursement asynchrone en echec | ÉCHEC METIER ATTENDU, ANOMALIE TECHNIQUE DETECTEE | admin `loa.gto15@gmail.com`, client `pvml7008@gmail.com` | Dans Retours, soumission unique du remboursement total de 120 EUR de `CMD-ORD_D98296`. Stripe test a accepte puis inverse le refund en `failed` (`expired_or_canceled_card`). Les webhooks `refund.created`, `refund.failed` et `refund.updated` sont tous marques traites. | L'echec final doit annuler la projection de remboursement, conserver le stock et emettre M12/M13 sans seconde tentative. | Le worker considerait a tort la tentative `succeeded` comme terminale et classait la transition Stripe valide `succeeded -> failed` en conflit; la commande restait faussement remboursee 120 EUR. Nouvelle anomalie `REC-20260812-C2-A04`. | Un seul refund provider et une seule tentative domaine; aucune nouvelle commande, aucun restock. |
+| 2026-08-13 00:29 | Correction et reparation bornee du refund inverse | RÉUSSI | Sandbox uniquement | Le rail accepte un fait append-only `refund_reversal`, compense le rollup et la commande, conserve l'inventaire et emet les alertes client/admin. Les quatre Functions du rail refund ont ete redeployees; l'evenement deja traite a ete repris une seule fois par le worker contre le Refund Stripe autoritaire, sans nouvel appel de remboursement. | Retablir la verite financiere sans effacer l'audit ni creer une seconde operation Stripe. | Deux essais techniques de reprise de l'inbox sont traces en plus du traitement initial, mais toujours un seul document de tentative de remboursement et un seul refund Stripe. | `capturedCents=12000`, `refundedCents=0`, `netCents=12000`, commande `needs_review`, inventaire `committed`, `restockedQty=0`. |
+| 2026-08-13 00:34 | Contenu M12/M13 | RÉUSSI AVEC RESIDU SPAM CLIENT | client et administrateur | M12 client `Remboursement CMD-ORD_D98296 à vérifier` contient 120 EUR, Chaise, absence de nouveau debit et aucune action requise; M13 admin `Action requise · remboursement CMD-ORD_D98296` contient montant, client, produit, ID refund, interdiction de relancer a l'aveugle et lien back-office. | Un seul message exploitable pour chaque destinataire. | M12 est classe SPAM malgre SPF/DKIM/DMARC passes; M13 arrive en boite de reception. | Outbox client et admin chacune `sent`, `attemptCount=1`; aucun message deplace. |
+| 2026-08-13 00:46 | Projection client finale apres correction et redeploiement | RÉUSSI | `pvml7008@gmail.com` | Apres deploiement de `listMyOrdersV2` et du seul backend App Hosting sandbox, `CMD-ORD_D98296` affiche `À vérifier`, l'explication Stripe correcte et un seul bouton document. La liste conserve uniquement le reçu de paiement de 120 EUR; la confirmation devenue obsolete est masquee. Le reçu s'ouvre dans `Votre document est prêt` avec PDF sandbox non fiscal. | La vue client doit suivre la verite financiere finale sans supprimer la preuve serveur historique. | Aucune anomalie residuelle de projection. | 17 commandes, 27 documents visibles; aucun nouveau paiement, remboursement ou commande. |
+
+### REC-20260812-C2-A01 — reprise de paiement apres fermeture/interruption
+
+- Statut: `COMPORTEMENT_ATTENDU_CONFIRME`.
+- Frequence: reprise stable du meme checkout interrompu avant validation.
+- Preconditions: client Google connecte `pvml7008@gmail.com`, panier simple de
+  65 EUR, retrait atelier, checkout Stripe test deja cree sous la reference
+  visible `8270420A`, mais paiement non confirme.
+- Reproduction:
+  1. interrompre ou fermer l'onglet apres affichage du formulaire Stripe et
+     avant le clic final;
+  2. revenir dans l'espace client, ouvrir le panier conserve et cliquer
+     `Commander`;
+  3. observer `/checkout` sur `Nous retrouvons votre paiement`;
+  4. attendre une boucle complete, rafraichir, puis restaurer l'onglet ferme.
+- Attendu: restaurer le Payment Element associe a la commande existante, ou
+  presenter un retour controle vers le recapitulatif permettant de reprendre
+  sans duplication.
+- Observe initial: la projection client a affiche la commande avec le libelle
+  `Preparee`, mais la preuve serveur autoritaire etait sans ambiguite:
+  `pending_payment`, `awaiting_method`, capture 0 et stock reserve. La reprise
+  du meme PaymentIntent et du meme montant etait donc attendue.
+- Classification finale: interruption utilisateur normale avant paiement; pas
+  une anomalie commerce. Le libelle de projection initial etait insuffisant
+  pour qualifier l'etat financier.
+- Preuve non sensible: total 65 EUR controle avant Stripe test; reference
+  courte `8270420A`; compteurs client inchanges; aucun numero de carte, secret,
+  token ou identifiant Stripe conserve.
+- Requalification: continuer les controles aval sur cette unique commande;
+  ne jamais retenter un paiement tant que la convergence n'a pas ete controlee
+  dans l'historique client.
+
+### REC-20260812-C2-A02 — P0 — lignes du panier courant affichees sur une reprise Stripe anterieure
+
+- Statut: `CORRIGEE_ET_REQUALIFIEE_SANDBOX`.
+- Frequence: 2/2 apres constitution du panier groupe, avant puis apres une
+  deconnexion/reconnexion Google du compte client.
+- Preconditions: commande simple `CMD-ORD_827042` a 65 EUR en realite encore
+  `pending_payment`; nouveau panier contenant `Armoir` 1 250 EUR et
+  `Buffet art deco` 990 EUR.
+- Reproduction:
+  1. apres convergence de la commande simple, retirer sa ligne residuelle du
+     panier;
+  2. ajouter l'armoire et le buffet, verifier le sous-total 2 240 EUR;
+  3. ouvrir le checkout;
+  4. observer que les deux lignes sont listees mais que `TOTAL A PAYER` vaut
+     65 EUR et que l'action propose de reprendre le paiement;
+  5. ouvrir cette reprise: Stripe test affiche encore la commande courte
+     `8270420A` et le bouton `Payer 65 EUR`;
+  6. revenir sans payer, se deconnecter/reconnecter avec
+     `pvml7008@gmail.com`: l'incoherence persiste.
+- Attendu: une reprise active doit afficher les lignes et le montant du snapshot
+  immutable de sa commande. Les lignes ajoutees ensuite au panier doivent etre
+  conservees pour un checkout neuf apres la reprise.
+- Observe: le montant financier de 65 EUR appartenait correctement a la
+  commande en attente, mais l'interface lui substituait les deux lignes du
+  panier courant totalisant 2 240 EUR. Deux contextes metier etaient donc
+  melanges dans le meme recapitulatif.
+- Impact: consentement de paiement trompeur, impossibilite de savoir quels
+  produits seraient acquis et risque de nettoyage des mauvaises lignes apres
+  paiement. Aucun double debit n'avait eu lieu avant la requalification.
+- Recuperations tentees: retour au recapitulatif, deconnexion/reconnexion Google
+  et nouvelle lecture du checkout; echec reproductible. Aucun effacement de
+  stockage navigateur, appel API ou modification de code n'a ete utilise.
+- Requalification requise: reconstruire toute reprise depuis le snapshot
+  serveur de la commande, payer une fois la commande en attente, puis verifier
+  que le panier posterieur reste intact et ouvre un checkout neuf coherent.
+
+#### Correction locale du 2026-08-12
+
+- Cause racine prouvee: la commande n'etait pas payee. `resumeCheckoutV2`
+  rendait correctement le PaymentIntent encore actif et son `totalCents`, mais
+  ne rendait pas les lignes immutables de la commande. `CheckoutView` associait
+  alors ce montant autoritaire aux lignes du panier courant. Le premier
+  durcissement ajoute en parallele sur les commandes reellement payees reste un
+  invariant valide, mais ne constituait pas le declencheur observe.
+- Classification: invariant financier de reprise checkout rompu, P0; defaut
+  de raccordement serveur/client, sans lecteur legacy ni incoherence du domaine
+  v2.
+- Correction appliquee: `resumeCheckoutV2` renvoie maintenant les lignes
+  bornees du snapshot immutable de commande. Le client les valide et reconstruit
+  le brouillon verrouille ainsi que son sous-total depuis cette seule source.
+  Le nettoyage reste revisionnel et ne retire que les lignes effectivement
+  achetees. Une commande reellement payee renvoie en plus le terminal
+  `COMMERCE_CHECKOUT_TERMINAL_PAID` avant tout nouvel appel Stripe.
+- Fichiers modifies:
+  `functions/src/commerce/domain/checkoutCoordinator.js`,
+  `src/kit/commerce/checkoutRecovery.js`,
+  `src/kit/commerce/CheckoutView.jsx`,
+  `app/checkout/CheckoutPageIsland.jsx`, tests commerce, `map.md`,
+  `_DOCS/commerce/COMMERCE_STRIPE.md` et `_DOCS/client/ESPACE_CLIENT.md`.
+- Tests locaux: suite commerce complete verte hors fixture catalogue devenue
+  plus stricte, ensuite corrigee avec le materiau requis; domaine Firebase
+  18/18 (93 assertions), rules v2 5/5, unitaires commerce 125/125, faults 42/42,
+  UI 18/18, browser 4/4, property 3/3 et tests cibles de reprise/panier 52/52.
+  `npm run test:auth` 77/77, `npm run lint -- --quiet`,
+  `npm run lint:functions`, build Next.js 16.3 (53 pages) et
+  `git diff --check` verts.
+- Deploiement sandbox: `resumeCheckoutV2` seule en `europe-west1`, puis backend
+  App Hosting `secondevie-next-sandbox` seul en `europe-west4`, projet explicite
+  `secondevienextjsssr`. Aucun deploiement production, Stripe live, commit ou
+  push.
+- Requalification sandbox: reussie. Le checkout repris montre uniquement la
+  commode et 65 EUR; paiement Stripe test soumis une fois. Serveur:
+  `status=paid`, `paymentStatus=succeeded`, `capturedCents=6500`, stock
+  `committed`. L'espace client affiche `CMD-ORD_827042`, une piece, 65 EUR,
+  payee. Le panier posterieur contient toujours l'armoire et le buffet a
+  2 240 EUR et ouvre un checkout neuf exactement a 2 240 EUR. Aucun second
+  paiement ni nouvelle commande groupee n'a ete cree.
+- Residu externe: le document de la nouvelle commande etait encore affiche
+  `Document a venir` lors du premier controle immediat; generation asynchrone a
+  surveiller dans la requalification documents, sans effet sur le paiement.
+
+### REC-20260812-C2-A03 — P1 — documents partiellement absents apres paiement et remboursement
+
+- Statut: `FERMEE_APRES_REQUALIFICATION_SANDBOX`.
+- Frequence: 2 documents manquants sur les 3 attendus pour les deux commandes
+  de la campagne, apres rechargement et plusieurs minutes de convergence.
+- Preconditions: commandes sandbox exactes `CMD-ORD_690AE6` payee puis livree
+  et `CMD-ORD_827042` payee, retiree puis remboursee integralement.
+- Reproduction:
+  1. ouvrir `/mes-commandes` avec `pvml7008@gmail.com`;
+  2. recharger apres convergence des statuts et des e-mails;
+  3. constater 17 commandes mais toujours 25 documents;
+  4. ouvrir le dossier groupe: `Document a venir`;
+  5. ouvrir le dossier simple rembourse: un seul document disponible, le recu
+     de paiement, sans confirmation de remboursement dans la liste.
+- Attendu: un recu de paiement pour chaque commande payee et une confirmation
+  de remboursement pour le remboursement confirme, tous visibles et ouvrables.
+- Observe: le recu simple de 65 EUR existe et s'ouvre; le recu groupe de
+  2 289 EUR et la confirmation de remboursement de 65 EUR sont absents. Les
+  e-mails correspondant aux trois operations sont pourtant bien recus, ce qui
+  isole l'ecart a la production/projection documentaire.
+- Impact: historique financier client incomplet malgre des commandes et un
+  remboursement durables; requalification complete de l'anomalie documentaire
+  initiale impossible.
+- Recuperations tentees: attente, rechargement de `/mes-commandes`, nouvelle
+  authentification client et nouvelle lecture de l'onglet Documents; echec
+  stable. Aucune commande, mutation cloud ou correction de code supplementaire.
+- Requalification requise: diagnostiquer le pipeline de generation/projection
+  PDF pour les deux evenements exacts, corriger sans regenerer de paiement,
+  redeployer uniquement le sandbox puis verifier compteur, liste et ouverture
+  des deux PDF manquants.
+
+#### Correction locale du 2026-08-12
+
+- Cause racine prouvee: les recus et confirmations n'etaient crees que par
+  `commerceOperationsReconciler`, planifie toutes les 60 minutes. Paiements,
+  refunds, faits financiers et e-mails convergeaient atomiquement, mais le
+  document visible par `listMyOrdersV2` pouvait manquer jusqu'au rebuild
+  horaire suivant.
+- Classification: invariant de projection documentaire rompu, P1; defaut de
+  raccordement du chemin nominal v2, sans incoherence financiere, lecteur
+  legacy ni perte de preuve.
+- Correction appliquee: le recu est maintenant cree dans la transaction du
+  paiement durable; la confirmation est creee dans la transaction du refund
+  reussi, pour le chemin synchrone et le webhook asynchrone. L'identite et le
+  `contentHash` sont controles avant reutilisation. Le rebuild horaire reste
+  un mecanisme idempotent de reparation historique.
+- Fichiers modifies: `functions/src/commerce/domain/commerceDocuments.js`,
+  `paymentEffectApplier.js`, `refundRepository.js`,
+  `refundEffectApplier.js`, `v2Runtime.js`, tests Firebase/faults,
+  `map.md`, `_DOCS/commerce/COMMERCE_STRIPE.md` et
+  `_DOCS/client/ESPACE_CLIENT.md`.
+- Tests locaux deja passes: commerce unitaires 125/125, Firebase domain 18/18
+  avec 97 assertions dont creation atomique du recu et des confirmations,
+  faults 43/43, suite commerce complete, lint Functions, lint applicatif,
+  build Next.js 16.3 et `git diff --check`.
+- Deploiement sandbox: quatre Functions ciblees (`stripeWebhookV2`,
+  `stripeConnectWebhookV2`, `requestRefundAdmin` et
+  `commerceOperationsReconciler`) en `europe-west1`, puis seul backend App
+  Hosting `secondevie-next-sandbox` en `europe-west4`. Rollout
+  `build-2026-08-12-006` `SUCCEEDED`. Aucun environnement production, Stripe
+  live, commit ou push touche.
+- Requalification sandbox: reussie avec le compte client exact. Le compteur
+  passe de 25 a 27 documents. Le recu de `CMD-ORD_690AE6` (2 289 EUR) et la
+  confirmation de remboursement de `CMD-ORD_827042` (65 EUR) sont listes et
+  s'ouvrent chacun dans la modale de document pret avec PDF telechargeable et
+  copie e-mail. Aucun nouveau paiement ni remboursement n'a ete declenche.
+- Residu externe: aucun pour cette anomalie. Le classement Gmail en spam reste
+  suivi separement par `REC-20260812-A05`.
+
+### REC-20260812-C2-A04 — P0 — reversal Stripe d'un remboursement confirme
+
+- Statut: `FERMEE_APRES_REQUALIFICATION_SANDBOX`.
+- Cause racine prouvee: Stripe autorise exceptionnellement un Refund a passer
+  de `succeeded` a `failed`. `refundSaga` traitait pourtant `succeeded` comme
+  terminal et `refundEffectApplier` classait l'evenement ulterieur en conflit.
+  Les webhooks etaient bien signes, ingeres et traites, mais la commande
+  conservait donc a tort 120 EUR rembourses et un document de confirmation.
+- Classification: invariant financier asynchrone rompu, P0; defaut de
+  raccordement au cycle de vie fournisseur actuel, sans regression vers le
+  rail legacy.
+- Correction appliquee: autorisation bornee de la seule transition meme-ID
+  `succeeded -> failed/canceled`; ajout d'un fait append-only
+  `refund_reversal`; compensation du rollup et de la projection financiere;
+  retour de la commande en `needs_review`; conservation du stock engage;
+  emission idempotente des e-mails d'echec client/admin. Le reader client
+  masque la confirmation obsolete lorsque le montant rembourse autoritaire
+  vaut zero, mais ne supprime aucune preuve historique.
+- Fichiers modifies:
+  `functions/src/commerce/domain/commerceEffects.js`,
+  `financialRollup.js`, `financialProjection.js`, `refundSaga.js`,
+  `orderState.js`, `refundEffectApplier.js`,
+  `functions/src/commerce/v2Operations.js`, `v2OrderQueries.js`,
+  `src/kit/commerce/orderAdapter.js`, `MyOrdersView.jsx`, tests commerce,
+  `map.md`, `_DOCS/commerce/COMMERCE_STRIPE.md` et
+  `_DOCS/client/ESPACE_CLIENT.md`.
+- Tests executes: faults 44/44, unitaires commerce finaux 127/127, domaine
+  Firebase 19/19 avec 106 assertions, suite commerce complete, lint Functions,
+  lint applicatif, build Next.js 16.3 de 52 pages et `git diff --check`, tous
+  verts. Le preflight deploye final retourne `READY` pour
+  `refund.created|updated|failed`.
+- Deploiement: Functions refund ciblees puis `listMyOrdersV2` uniquement en
+  `europe-west1`; backend App Hosting `secondevie-next-sandbox` uniquement en
+  `europe-west4`, projet explicite `secondevienextjsssr`. Version servie finale
+  `sv-msqodiu9-9adc770019d2`. Aucun environnement production, Stripe live,
+  commit ou push touche.
+- Resultat de requalification sandbox: un seul refund Stripe test
+  `re_3TzKhZRnGkmlBCey1JwyLKDO` et une seule tentative domaine. Etat final de
+  `CMD-ORD_D98296`: commande `needs_review`, tentative `failed`, capture
+  12 000, rembourse 0, net 12 000 centimes, inventaire `committed`, quantite
+  engagee 1, restockee 0. M12 et M13 sont envoyes une fois. L'espace client
+  affiche `A verifier`, le texte d'echec correct et uniquement le recu de
+  paiement ouvrable.
+- Residu externe: M12 client reste classe dans Spam; M13 admin est en boite de
+  reception. Ce residu est rattache a `REC-20260812-A05`.
+
+## Cloture de la campagne `REC-20260812-C2`
+
+Verdict: `FERMEE_AVEC_RESIDU_EXTERNE_A05`. Les parcours M01 a M13 ont ete
+executes et requalifies sur le sandbox. Exactement deux nouvelles commandes
+ont ete creees pendant la campagne; aucune troisieme commande, aucun Stripe
+live et aucune donnee production n'ont ete touches.
+
+| Anomalie initiale | Cause racine prouvee / classification | Correction et fichiers principaux | Validations et requalification sandbox | Statut final / residu |
+| --- | --- | --- | --- | --- |
+| `REC-20260812-A04` P0 | Reader client non raccorde a la projection UID v2 et documents hors chemin nominal; raccordement commerce/client | Reader UID, projections commandes/remboursements/documents; `v2OrderQueries.js`, pipeline documents, adaptateur/vue client | commandes simple et groupee, espace client, 27 documents, PDFs ouverts | `FERMEE`; aucun residu |
+| `REC-20260812-A06` P1 | Actions fulfillment derivees sans garde stricte du mode de remise; invariant logistique | `allowedActions.js`, presentation admin et tests transitions | branches livraison et retrait completes, aucune action incompatible | `FERMEE`; aucun residu |
+| `REC-20260812-A07` P1 | Archivage UI non raccorde a une commande serveur durable; raccordement catalogue | commande d'archivage serveur, retry Auth et UI publication | produit de campagne archive, absent apres rechargement et recherche publique | `FERMEE`; aucun residu |
+| `REC-20260812-A03` P1 | Renouvellement Auth/reseau demontait le parcours de publication; robustesse transport | retry token/admin sans reinitialiser le formulaire; fichiers admin et client de commande | publication nominale unique et persistante, tests retry | `FERMEE`; panne forcee non rejouee humainement, couverte par tests |
+| `REC-20260812-A05` P1 | Transport et authentification Gmail valides, reputation/domaine sandbox insuffisants; residu externe de delivrabilite | aucun contournement applicatif; diagnostics et contenu e-mail conserves | M01-M12 client tous recus mais classes Spam; messages admin dont M13 en Inbox; SPF/DKIM/DMARC passes | `RESIDU_EXTERNE_CONFIRME`; DNS/domaine/Resend differes |
+| `REC-20260812-A02` P2 | Description rendue deux fois dans l'apercu; defaut de presentation | source unique dans `StoryEditor.jsx` / apercu admin | histoire en deux paragraphes affichee une seule fois avant publication | `FERMEE`; aucun residu |
+| `REC-20260812-A01` P2 | Publication ancienne incoherente et validation metier insuffisante; qualite catalogue | validation titre/matiere et commandes catalogue actuelles | nouvelle fiche complete coherente publiquement, archive durable finale | `FERMEE`; aucun residu |
+
+Matrice e-mail finale: M01 connexion par code, M02 validation checkout, M03
+confirmation client, M04 notification admin, M05 preparation, M06 pret au
+retrait, M07 retrait, M08 expedition, M09 livraison, M10 remboursement client,
+M11 remboursement admin, M12 echec refund client et M13 echec refund admin ont
+tous ete recus et controles sur les comptes exacts. Le contenu et les montants
+sont coherents; seul le classement Spam des messages client demeure externe.
+
+Code modifié par l'agent de recette: NON. Les corrections ont ete effectuees
+pendant des pauses explicites de recette, validees et deployees sur le sandbox;
+la requalification humaine finale a ensuite repris sans nouvelle modification
+de code.
+
+## Raccordement codes promotionnels — 2026-08-13
+
+Statut courant: `CORRIGEE_LOCALEMENT_A_DEPLOYER_ET_REQUALIFIER`.
+
+- Besoin confirme: les gains 5/10/15 % du jeu newsletter existaient durablement
+  dans l'e-mail et `Mes avantages`, mais aucun invariant commerce ne permettait
+  de les appliquer au checkout. Le contrat checkout refusait tout champ de
+  promotion et `discountCents` restait toujours a zero.
+- Classification: fonctionnalite metier non raccordee, avec enjeu financier et
+  anti-double usage; extension vers l'avant du noyau commerce v2 actuel.
+- Correction locale: registre backend-only
+  `commerce_promotion_codes/{sha256(code)}`, compteurs globaux/par compte et
+  redemption liee a la commande. Le serveur relit prix, perimetre, audience,
+  periode et limites, calcule la remise, puis reserve code, stock et commande
+  dans une seule transaction. Stripe recoit uniquement le total durable. Le
+  webhook transforme la reservation en consommation une fois; annulation et
+  expiration la liberent, remboursement sans reutilisation.
+- Newsletter: les gains existants sont materialises paresseusement lors du
+  premier controle; les nouveaux le sont apres reclamation. Ils restent
+  mono-usage et lies au hash de l'e-mail Firebase verifie.
+- Back-office: nouvel onglet Apple OS epure `Codes promo`, groupe Ventes;
+  creation/generation serveur, remise 1–50 %, catalogue ou produits choisis,
+  minimum/plafond, dates, limites, suspension/reactivation. Callables proteges
+  par App Check, admin actif/AAL2 et control plane commerce.
+- Fichiers principaux: `functions/src/commerce/domain/promotionCode.js`,
+  `checkoutInput.js`, `checkoutRepository.js`, `paymentEffectApplier.js`,
+  `promotionMaterialization.js`, `v2PromotionCodes.js`,
+  `newsletterRewards.js`, `functions/index.js`, `firestore.rules`,
+  `CheckoutView.jsx`, `commerceV2Client.js`, `checkoutContract.js`,
+  `AdminPromotionCodes.jsx`, `promotionCodeClient.js`, `AdminAppIsland.jsx`,
+  constantes admin, tests commerce, `map.md` et chapitres canoniques.
+- Preuves locales acquises: lint Functions vert, lint application vert,
+  unitaires commerce 131/131, domaine Firestore 20/20 et 112 assertions dont
+  montant Stripe remisé et consommation idempotente, Rules commerce 5/5 avec
+  registre et redemptions inaccessibles au navigateur.
+- Restant avant fermeture: suite newsletter, suite commerce complete, build,
+  controle documentaire, deploiement Functions/Rules/App Hosting strictement
+  sandbox, puis creation admin et application reelle dans le checkout. Aucun
+  deploiement, paiement ou environnement live effectue a ce stade.

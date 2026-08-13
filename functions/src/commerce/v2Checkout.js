@@ -7,6 +7,7 @@ const { normalizeFirestoreId } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
 const { STRIPE_SECRET_KEY } = require('../../helpers/secrets');
 const { createCheckoutRuntime } = require('./domain/v2Runtime');
+const { ensurePromotionMaterialized } = require('./promotionMaterialization');
 
 function requireOwner(context) {
     if (!context.auth?.uid) {
@@ -71,6 +72,13 @@ function normalizeFixtureRequest(value) {
 function mapDomainError(error) {
     if (error instanceof functions.https.HttpsError) return error;
     const code = String(error?.code || '');
+    if (code.startsWith('COMMERCE_PROMOTION_')) {
+        return new functions.https.HttpsError(
+            code.endsWith('_NOT_FOUND') ? 'not-found' : 'failed-precondition',
+            'Ce code promotionnel ne peut pas être appliqué.',
+            { reason: code }
+        );
+    }
     if (code.startsWith('COMMERCE_CHECKOUT_TERMINAL_')) {
         return new functions.https.HttpsError(
             'failed-precondition',
@@ -136,6 +144,12 @@ function createCheckoutHandler({
                 throw new functions.https.HttpsError(
                     'invalid-argument',
                     'Contrat checkout invalide.'
+                );
+            }
+            if (data.input.promotionCode) {
+                await ensurePromotionMaterialized(
+                    admin.firestore(),
+                    data.input.promotionCode
                 );
             }
             return await runtimeFactory().checkout.createCheckout({

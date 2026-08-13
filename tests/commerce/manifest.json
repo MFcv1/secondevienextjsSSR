@@ -59,10 +59,12 @@
         "gate3-expired-hold-sweeper-cancels-provider-first-and-releases-once",
         "gate7a-fixture-checkout-is-bound-to-control-uid-and-inventory",
         "gate3-success-commits-order-movement-fact-and-outbox-exactly-once",
+        "gate3-promotion-is-reserved-with-checkout-and-committed-once-after-payment",
         "gate3-guest-resume-token-is-single-use-and-rotated-transactionally",
         "gate4-command-retry-is-one-transition-with-one-append-only-audit",
         "gate4-partial-refunds-are-cumulative-idempotent-and-never-restock",
         "gate4-refund-failed-webhook-settles-attempt-order-and-two-outboxes",
+        "gate4-refund-succeeded-then-failed-is-compensated-without-restock",
         "gate4-concurrent-returns-and-partial-dispositions-conserve-quantities",
         "gate4-product-commands-are-atomic-idempotent-and-soft-archive"
       ]

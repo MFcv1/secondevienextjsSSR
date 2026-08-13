@@ -314,6 +314,12 @@ que le gain est conservé même si l'e-mail est retardé. La lecture dans
 l'espace client exige une session Firebase dont l'e-mail est vérifié et
 correspond au hash du gain.
 
+Le code annonce est desormais consommable dans le checkout. Il est materialise
+dans le registre promotionnel backend-only, lie au meme hash d'e-mail et limite
+a une utilisation. L'apercu client ne remplace jamais la revalidation atomique
+effectuee avant Stripe; le gain passe a `used` seulement apres confirmation du
+paiement et reste consomme apres un remboursement.
+
 Recette sandbox reelle du 2026-08-10: tirage, reclamation, reception Gmail et
 lecture dans `Mes avantages` valides avec le meme pourcentage, le meme code et
 la meme echeance. Les valeurs de recette ne sont pas conservees dans la

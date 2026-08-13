@@ -271,6 +271,13 @@ test('frontend controller and recovery descriptor are active by default', async 
 
     const adapted = adapter.adaptCommerceOrder(makeOrder(), 'order-v2');
     assert.equal(adapted.status, 'pending_payment');
+    const needsReview = adapter.adaptCommerceOrder({
+        ...makeOrder(),
+        status: 'needs_review',
+        refundStatus: 'needs_review'
+    }, 'order-v2-review');
+    assert.equal(needsReview.status, 'needs_review');
+    assert.equal(needsReview.needsReview, true);
     const descriptor = recovery.createCheckoutRecoveryDescriptor({
         ownerUid: 'owner-uid-0001',
         clientOrderId: 'client-order-0001',
@@ -284,10 +291,44 @@ test('frontend controller and recovery descriptor are active by default', async 
         details: { reason: 'COMMERCE_CHECKOUT_TERMINAL_EXPIRED' }
     }), 'expired');
     assert.equal(recovery.getCheckoutRecoveryTerminalReason({
+        code: 'functions/failed-precondition',
+        details: { reason: 'COMMERCE_CHECKOUT_TERMINAL_PAID' }
+    }), 'paid');
+    assert.equal(recovery.getCheckoutRecoveryTerminalReason({
         code: 'functions/unavailable'
     }), null);
     assert.match(
         recovery.getCheckoutRecoveryTerminalMessage('expired'),
         /réservation a expiré/
+    );
+    assert.match(
+        recovery.getCheckoutRecoveryTerminalMessage('paid'),
+        /déjà confirmée/
+    );
+    assert.deepEqual(
+        recovery.getCheckoutRecoveryTerminalCartLines('paid', descriptor),
+        descriptor.cartLines
+    );
+    assert.deepEqual(
+        recovery.getCheckoutRecoveryTerminalCartLines('canceled', descriptor),
+        []
+    );
+    assert.deepEqual(
+        recovery.getCheckoutRecoveryOrderItems({
+            items: [{
+                cartLineId: 'cart-line-recovery-0001',
+                productId: 'product-recovery-0001',
+                name: 'Commode de reprise',
+                quantity: 1,
+                unitAmountCents: 6500
+            }]
+        }),
+        [{
+            id: 'cart-line-recovery-0001',
+            originalId: 'product-recovery-0001',
+            name: 'Commode de reprise',
+            price: 65,
+            quantity: 1
+        }]
     );
 });

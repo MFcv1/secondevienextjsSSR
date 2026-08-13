@@ -215,12 +215,6 @@ function CheckoutPageContent() {
 
   const total = useMemo(() => getCartTotal(cartItems), [cartItems]);
 
-  const handleRecoveryTerminal = useCallback((reason) => {
-    clearCheckoutRecoveryDescriptor({ enabled: COMMERCE_V2_RECOVERY_ENABLED });
-    setHasRecoverableCheckout(false);
-    setCheckoutReturnNotice(getCheckoutRecoveryTerminalMessage(reason));
-  }, []);
-
   const clearCartAfterOrder = useCallback(async (purchasedCartLines = []) => {
     if (!Array.isArray(purchasedCartLines) || purchasedCartLines.length === 0) {
       return;
@@ -252,6 +246,18 @@ function CheckoutPageContent() {
     if (deleteCount > 0) await batch.commit();
     clearCheckoutCartHandoff();
   }, [user]);
+
+  const handleRecoveryTerminal = useCallback(async (reason, purchasedCartLines = []) => {
+    clearCheckoutRecoveryDescriptor({ enabled: COMMERCE_V2_RECOVERY_ENABLED });
+    setHasRecoverableCheckout(false);
+    setCheckoutReturnNotice(getCheckoutRecoveryTerminalMessage(reason));
+    if (reason !== 'paid') return;
+    try {
+      await clearCartAfterOrder(purchasedCartLines);
+    } catch (error) {
+      console.error('Paid checkout recovery cart cleanup failed:', error);
+    }
+  }, [clearCartAfterOrder]);
 
   const handlePlaceOrder = async (orderData = {}) => {
     setOrderSuccessMethod(orderData.paymentMethod || 'deferred');

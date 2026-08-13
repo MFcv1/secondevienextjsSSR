@@ -14,6 +14,10 @@ const {
     createRefundAttempt,
     validateRefundAttempt
 } = require('./refundSaga');
+const {
+    buildRefundConfirmation,
+    shouldCreateImmutableDocument
+} = require('./commerceDocuments');
 
 function repositoryError(code) {
     const error = new Error(code);
@@ -47,7 +51,8 @@ function createRefundRepository({
         'financialFact',
         'financialDaily',
         'financialTotals',
-        'outbox'
+        'outbox',
+        'document'
     ]) {
         requireDependency(refs?.[name], `refs.${name}`);
     }
@@ -270,6 +275,17 @@ function createRefundRepository({
         ));
         const factRef = fact ? refs.financialFact(fact.effectId) : null;
         const outboxRefs = outboxes.map((intent) => refs.outbox(intent.outboxId));
+        const confirmation = fact
+            ? buildRefundConfirmation({
+                order,
+                facts: [fact],
+                refundId: refund.id,
+                issuedAt: fact.effectiveAt
+            })
+            : null;
+        const documentRef = confirmation
+            ? refs.document(order.id, confirmation.documentId)
+            : null;
 
         return db.runTransaction(async (transaction) => {
             const reads = [
@@ -279,6 +295,7 @@ function createRefundRepository({
             ];
             if (factRef) reads.push(transaction.get(factRef));
             for (const outboxRef of outboxRefs) reads.push(transaction.get(outboxRef));
+            if (documentRef) reads.push(transaction.get(documentRef));
             const snapshots = await Promise.all(reads);
             if (!snapshotExists(snapshots[0]) || !snapshotExists(snapshots[1])) {
                 throw repositoryError('COMMERCE_REFUND_SETTLEMENT_INCOMPLETE');
@@ -288,6 +305,16 @@ function createRefundRepository({
             validateOrderV2(storedOrder);
             validateRefundAttempt(storedAttempt);
             if (storedAttempt.status === outcome) {
+                const documentSnapshotIndex = 3 + (factRef ? 1 : 0) + outboxRefs.length;
+                if (
+                    documentRef &&
+                    shouldCreateImmutableDocument(
+                        snapshots[documentSnapshotIndex],
+                        confirmation
+                    )
+                ) {
+                    transaction.set(documentRef, confirmation);
+                }
                 return {
                     order: { ...storedOrder, id: order.id },
                     attempt: storedAttempt,
@@ -339,6 +366,15 @@ function createRefundRepository({
             for (let index = 0; index < outboxes.length; index += 1) {
                 if (!snapshotExists(snapshots[nextSnapshotIndex + index])) {
                     transaction.set(outboxRefs[index], outboxes[index]);
+                }
+            }
+            if (documentRef) {
+                const documentSnapshotIndex = 3 + (factRef ? 1 : 0) + outboxRefs.length;
+                if (shouldCreateImmutableDocument(
+                    snapshots[documentSnapshotIndex],
+                    confirmation
+                )) {
+                    transaction.set(documentRef, confirmation);
                 }
             }
             return { order: nextOrder, attempt: nextAttempt, reused: false };

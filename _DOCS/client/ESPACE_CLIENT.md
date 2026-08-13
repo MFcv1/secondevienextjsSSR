@@ -1,6 +1,6 @@
 # Espace client
 
-Derniere mise a jour: 2026-08-10
+Derniere mise a jour: 2026-08-13
 Statut: `PREPROD_READY`
 
 Restriction active:
@@ -51,6 +51,12 @@ callable `listMyNewsletterRewards` dérive l'adresse du jeton Firebase vérifié
 interroge son hash et renvoie au plus vingt projections minimales. Le dernier
 code est placé avant l'historique des commandes pour être retrouvé sans
 recherche; les anciens codes restent dans le même panneau.
+
+Ces codes sont applicables dans le checkout depuis le 2026-08-13. Le client
+peut demander un apercu de la remise, mais le prix, l'eligibilite, l'echeance et
+l'unicite sont recalcules par Function lors de la creation de commande. Un gain
+newsletter est lie a l'e-mail verifie du compte, reserve avec la commande puis
+marque `used` uniquement apres paiement Stripe confirme.
 
 Refonte de présentation du 2026-08-10, sans changement de contrat de données:
 
@@ -103,6 +109,14 @@ Les statuts importants sont actuellement reconstruits depuis le champ composite 
 - `refund_failed`;
 - statuts logistiques comme expedition ou completion.
 
+Le reader expose aussi l'etat plat `needs_review` lorsqu'un remboursement
+initialement confirme est ensuite inverse par Stripe. L'adaptateur client ne le
+rabaisse jamais vers le repli logistique `Preparee`: la commande affiche
+`A verifier` et explique qu'aucun remboursement n'a ete confirme. Lorsque le
+montant rembourse autoritaire revient a zero, le reader masque la confirmation
+de remboursement devenue obsolete et conserve le recu de paiement; le document
+historique n'est pas supprime du journal serveur.
+
 L'affordance d'annulation client est masquee en Gate 0B et la callable legacy
 est bloquee avant effet. Les commandes existantes convergent uniquement par les
 signaux Stripe autoritaires et les lecteurs de suivi.
@@ -119,6 +133,15 @@ Gate 5 active `listMyOrdersV2` en sandbox: la Function filtre exclusivement par
 renvoie les actions autorisees calculees serveur. `MyOrdersView` consomme ce
 reader et sa pagination; l'adaptateur historique v1 ne promeut jamais une
 commande ambigue.
+
+Le reader joint aussi, pour chaque commande, les documents et la derniere
+demande client. La requete de sous-collection
+`customer_return_requests.updatedAt desc` exige l'index de portee `COLLECTION`;
+l'index `COLLECTION_GROUP` utilise par l'administration ne le remplace pas. Une
+erreur de lecture initiale n'est jamais presentee comme un historique vide:
+Commandes, Documents et les compteurs affichent une indisponibilite explicite
+avec reprise manuelle. Une erreur de pagination conserve la page deja chargee
+et propose de rejouer seulement la lecture suivante.
 
 Pour une commande expediee ou livree, le reader derive `shipmentTracking`
 depuis `fulfillmentSummary`: libelle du transporteur, numero et page de suivi
@@ -153,6 +176,12 @@ rend les actions de document adaptatives sans chevauchement sur les largeurs
 intermediaires. Les recus de paiement et confirmations de remboursement sont
 joints par `listMyOrdersV2`, puis ouvrables en PDF explicitement marque
 `sandbox` et `non fiscal`.
+
+Le document metier est disponible des la convergence financiere durable: le
+recu de paiement est persiste atomiquement avec la capture, et la confirmation
+de remboursement avec le fait financier de refund. Le rebuild d'exploitation
+horaire reste un filet idempotent pour l'historique, jamais une dependance de
+fraicheur de `/mes-commandes`.
 
 Depuis le 2026-07-31, l'action document ouvre une bottom sheet mobile ou une
 modale desktop. `prepareCommerceDocumentDelivery` exige Auth et App Check,
@@ -226,6 +255,12 @@ et reprend 3DS/reload avant les gardes panier vide. Le succes n'est affiche
 qu'apres `payment.status=succeeded`, avant un nettoyage qui ne retire que les
 lignes achetees dont ID et revision sont inchanges. Une ligne retiree puis
 reajoutee ou modifiee dans un autre onglet est donc preservee.
+
+Si la confirmation durable arrive pendant une fermeture ou une coupure du
+navigateur, la reprise suivante recoit un terminal `paid`: elle invalide le
+descripteur, nettoie les seules revisions achetees et laisse les nouvelles
+lignes intactes. Le PaymentIntent confirme n'est jamais rouvert sur un panier
+ulterieur.
 
 ## 7. Coherence Auth/UI
 

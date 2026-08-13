@@ -129,7 +129,8 @@ const scenarios = {
             'commerce_checkout_identities',
             'commerce_connect_accounts',
             'commerce_return_allocations',
-            'commerce_fixture_scopes'
+            'commerce_fixture_scopes',
+            'commerce_promotion_codes'
         ];
         for (const collection of collections) {
             const documentPath = `${collection}/proof`;
@@ -147,6 +148,10 @@ const scenarios = {
         await seed(environment, [['sys_commerce_operations/current', { status: 'healthy' }]]);
         await assertFails(getDoc(doc(admin, 'sys_commerce_operations/current')));
         await assertFails(setDoc(doc(admin, 'sys_commerce_operations/current'), { status: 'forged' }));
+        const redemptionPath = 'commerce_promotion_codes/promo-proof/redemptions/order-proof';
+        await seed(environment, [[redemptionPath, { status: 'reserved' }]]);
+        await assertFails(getDoc(doc(admin, redemptionPath)));
+        await assertFails(setDoc(doc(admin, `${redemptionPath}-write`), { status: 'committed' }));
         context.ok(true, 'all v2 internal collections deny client and admin SDK access');
     }),
 

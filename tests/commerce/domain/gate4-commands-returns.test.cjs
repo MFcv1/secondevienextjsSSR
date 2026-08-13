@@ -167,6 +167,72 @@ test('refund state suspends fulfillment until a partial refund is settled', () =
     assert.ok(computeAllowedActions(partiallyRefunded, actor).includes('fulfillment_prepare'));
 });
 
+test('fulfillment actions follow the delivery snapshot without incompatible shortcuts', () => {
+    const actor = { uid: 'admin-gate4', role: 'admin', aal2: true };
+    const pickupPaid = {
+        ...paidOrder(),
+        deliverySnapshot: { id: 'delivery-pickup', shippingCents: 0 }
+    };
+    const shippingPaid = {
+        ...paidOrder(),
+        deliverySnapshot: { id: 'delivery-carrier', shippingCents: 1500 }
+    };
+
+    assert.deepEqual(
+        computeAllowedActions(pickupPaid, actor).filter((action) => action.startsWith('fulfillment_')),
+        ['fulfillment_prepare']
+    );
+    assert.deepEqual(
+        computeAllowedActions(shippingPaid, actor).filter((action) => action.startsWith('fulfillment_')),
+        ['fulfillment_prepare']
+    );
+
+    const pickupPreparing = reduceOrder(pickupPaid, {
+        type: 'fulfillment_preparing'
+    }, { clock: laterClock });
+    assert.ok(computeAllowedActions(pickupPreparing, actor).includes('fulfillment_ready'));
+    assert.equal(computeAllowedActions(pickupPreparing, actor).includes('fulfillment_ship'), false);
+    assert.throws(
+        () => assertActionAllowed(pickupPreparing, actor, 'fulfillment_ship'),
+        { code: 'COMMERCE_ACTION_NOT_ALLOWED' }
+    );
+
+    const shippingPreparing = reduceOrder(shippingPaid, {
+        type: 'fulfillment_preparing'
+    }, { clock: laterClock });
+    assert.ok(computeAllowedActions(shippingPreparing, actor).includes('fulfillment_ship'));
+    assert.equal(computeAllowedActions(shippingPreparing, actor).includes('fulfillment_ready'), false);
+    assert.throws(
+        () => assertActionAllowed(shippingPreparing, actor, 'fulfillment_ready'),
+        { code: 'COMMERCE_ACTION_NOT_ALLOWED' }
+    );
+
+    const pickupReady = reduceOrder(pickupPreparing, {
+        type: 'fulfillment_ready_for_pickup'
+    }, { clock: laterClock });
+    assert.deepEqual(
+        computeAllowedActions(pickupReady, actor).filter((action) => action.startsWith('fulfillment_')),
+        ['fulfillment_pickup']
+    );
+
+    const shippingShipped = reduceOrder(shippingPreparing, {
+        type: 'fulfillment_shipped',
+        carrierCode: 'chronopost',
+        trackingNumber: 'TRACK-MATRIX'
+    }, { clock: laterClock });
+    assert.deepEqual(
+        computeAllowedActions(shippingShipped, actor).filter((action) => action.startsWith('fulfillment_')),
+        ['fulfillment_deliver', 'fulfillment_update_tracking']
+    );
+
+    const legacyWithoutDelivery = { ...shippingPreparing };
+    delete legacyWithoutDelivery.deliverySnapshot;
+    assert.deepEqual(
+        computeAllowedActions(legacyWithoutDelivery, actor).filter((action) => action.startsWith('fulfillment_')),
+        []
+    );
+});
+
 test('q=5 return supports partial receive, restock one and write-off one', () => {
     const order = paidOrder({ delivered: true, quantity: 5 });
     const value = createReturnCase({
@@ -236,7 +302,8 @@ test('product commands separate creation, offer, inventory and publication', () 
                 name: 'Buffet Gate 4',
                 description: 'Buffet restaure avec une description suffisamment detaillee pour le SEO.',
                 seoIndexable: true,
-                category: 'buffets'
+                category: 'buffets',
+                material: 'Chêne'
             },
             media: {
                 images: ['https://example.test/buffet.webp'],
@@ -324,7 +391,8 @@ test('new back-office publication creates one complete public product atomically
                 name: 'Buffet atomique',
                 description: 'Buffet restaure avec une description suffisamment detaillee pour etre indexable.',
                 seoIndexable: true,
-                category: 'buffets'
+                category: 'buffets',
+                material: 'Noyer'
             },
             media: {
                 images: ['https://example.test/buffet-full.webp'],
@@ -411,6 +479,56 @@ test('product command policy rejects weak admin, foreign collections and stock r
     );
 });
 
+test('published products require a readable title and a material', () => {
+    const basePayload = {
+        editorial: {
+            name: 'Table lisible',
+            description: 'Description de publication contrôlée.',
+            category: 'tables',
+            material: 'Bois massif'
+        },
+        media: {
+            images: ['https://example.test/table.webp']
+        },
+        offer: {
+            currentPrice: 230,
+            startingPrice: 230,
+            priceOnRequest: false
+        },
+        initialStock: 1
+    };
+    const actor = { uid: 'admin-gate4', role: 'admin', aal2: true };
+
+    assert.throws(
+        () => applyProductAction({
+            action: 'create_published_product',
+            product: null,
+            payload: {
+                ...basePayload,
+                editorial: { ...basePayload.editorial, name: '"fr' }
+            },
+            actor,
+            reason: 'titre invalide refuse',
+            now: laterClock.now()
+        }),
+        { code: 'COMMERCE_PRODUCT_NOT_PUBLISHABLE' }
+    );
+    assert.throws(
+        () => applyProductAction({
+            action: 'create_published_product',
+            product: null,
+            payload: {
+                ...basePayload,
+                editorial: { ...basePayload.editorial, material: '' }
+            },
+            actor,
+            reason: 'matiere absente refusee',
+            now: laterClock.now()
+        }),
+        { code: 'COMMERCE_PRODUCT_NOT_PUBLISHABLE' }
+    );
+});
+
 test('product deletion command soft-archives the source and preserves inventory history', () => {
     const archived = applyProductAction({
         action: 'delete_product',
@@ -483,6 +601,18 @@ test('product callable transport stays available to active strong admins outside
         path.join(repositoryRoot, 'src/kit/admin/AdminItemList.jsx'),
         'utf8'
     );
+    const adminAuthorization = fs.readFileSync(
+        path.join(repositoryRoot, 'src/kit/admin/adminAuthorization.js'),
+        'utf8'
+    );
+    const adminTokenRetry = fs.readFileSync(
+        path.join(repositoryRoot, 'src/kit/admin/adminTokenRetry.js'),
+        'utf8'
+    );
+    const storyEditor = fs.readFileSync(
+        path.join(repositoryRoot, 'src/kit/admin/components/StoryEditor.jsx'),
+        'utf8'
+    );
     for (const functionName of [
         'createProductAdmin',
         'createPublishedProductAdmin',
@@ -510,15 +640,21 @@ test('product callable transport stays available to active strong admins outside
     assert.ok(adminIsland.includes('mutationsEnabled'));
     assert.equal(adminIsland.includes('deleteDoc'), false);
     assert.equal(adminIsland.includes('updateDoc'), false);
-    assert.ok(adminIsland.includes('sans effacer son historique'));
+    assert.ok(adminItemList.includes('sans effacer son historique'));
     assert.ok(adminItemList.includes('item.status !== \'archived\''));
     assert.ok(adminItemList.includes("where('status', 'in', ['draft', 'published'])"));
     assert.ok(adminItemList.includes('title="Archiver"'));
+    assert.equal(adminItemList.includes('window.confirm'), false);
+    assert.ok(adminItemList.includes('role="alertdialog"'));
+    assert.ok(adminItemList.includes("createProductCommandId('delete-product')"));
+    assert.ok(client.includes('stableCommandId'));
     assert.equal(adminForm.includes('addDoc'), false);
     assert.ok(client.includes('preflightProductMutationAdmin'));
     assert.ok(adminForm.includes('preflightProductMutationAdmin'));
     assert.ok(adminForm.includes('await refreshAdminAuthorizationToken()'));
-    assert.match(adminForm, /(?:await|return) user\.getIdToken\(true\)/);
+    assert.ok(adminAuthorization.includes('getFreshAdminIdToken'));
+    assert.ok(adminTokenRetry.includes('user.getIdToken(true)'));
+    assert.ok(adminTokenRetry.includes('auth/network-request-failed'));
     assert.ok(
         adminForm.indexOf('await refreshAdminAuthorizationToken()')
         < adminForm.indexOf('await preflightProductMutationAdmin()')
@@ -532,6 +668,8 @@ test('product callable transport stays available to active strong admins outside
     assert.ok(adminForm.includes('waitForPublicCatalogProduct'));
     assert.equal(adminForm.includes('createProductDraftAdmin'), false);
     assert.equal(adminForm.includes('publishProductAdmin'), false);
+    assert.ok(storyEditor.includes('key="story-editor-write"'));
+    assert.ok(storyEditor.includes('key="story-editor-preview"'));
 });
 
 test('fulfillment callable transport derives its strong admin actor from Auth context', async () => {

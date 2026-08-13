@@ -126,6 +126,7 @@ export const KIT_CONFIG = {
     { id: 'payment_links',    label: 'Liens de paiement' },
     { id: 'invoices',         label: 'Factures'    },
     { id: 'returns',          label: 'Retours'     },
+    { id: 'promotions',       label: 'Codes promo' },
     { id: 'livraison',        label: 'Livraison'   },
     { id: 'users',            label: 'Clients'     },
     { id: 'ip_manager',       label: 'Sécurité'    },

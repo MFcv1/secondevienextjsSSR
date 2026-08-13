@@ -1,5 +1,7 @@
 'use strict';
 
+const crypto = require('node:crypto');
+
 const { validateCheckoutInput, aggregateCheckoutLines } = require('./checkoutInput');
 const { createPaymentAttempt, validatePaymentAttempt } = require('./checkoutSaga');
 const { pinConnectedAccount } = require('./connectPolicy');
@@ -13,6 +15,7 @@ const {
     resolvePolicyForCheckout
 } = require('./policy');
 const { effectIdFor } = require('./reservationRepository');
+const { calculatePromotionDiscount, promotionCodeHash } = require('./promotionCode');
 
 function checkoutError(code, detail) {
     const error = new Error(detail ? `${code}:${detail}` : code);
@@ -229,6 +232,55 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
                     quantity: line.quantity
                 };
             });
+            let promotion = null;
+            let promotionResult = null;
+            let promotionRef = null;
+            let promotionCustomerRef = null;
+            let promotionCustomer = null;
+            let promotionRedemptionRef = null;
+            let promotionCustomerKey = null;
+            if (validated.value.promotionCode) {
+                for (const name of ['promotion', 'promotionCustomer', 'promotionRedemption']) {
+                    requireDependency(refs?.[name], `refs.${name}`);
+                }
+                const codeHash = promotionCodeHash(validated.value.promotionCode);
+                const customerKey = crypto.createHash('sha256').update(ownerUid).digest('hex');
+                promotionCustomerKey = customerKey;
+                promotionRef = refs.promotion(codeHash);
+                promotionCustomerRef = refs.promotionCustomer(codeHash, customerKey);
+                promotionRedemptionRef = refs.promotionRedemption(codeHash, orderId);
+                const [promotionSnapshot, customerSnapshot, redemptionSnapshot] = await Promise.all([
+                    transaction.get(promotionRef),
+                    transaction.get(promotionCustomerRef),
+                    transaction.get(promotionRedemptionRef)
+                ]);
+                if (!snapshotExists(promotionSnapshot)) {
+                    throw checkoutError('COMMERCE_PROMOTION_NOT_FOUND');
+                }
+                if (snapshotExists(redemptionSnapshot)) {
+                    throw checkoutError('COMMERCE_PROMOTION_REDEMPTION_CONFLICT');
+                }
+                promotion = promotionSnapshot.data();
+                promotionCustomer = snapshotExists(customerSnapshot)
+                    ? customerSnapshot.data()
+                    : { reserved: 0, committed: 0 };
+                const usage = promotion.usage || {};
+                const limits = promotion.limits || {};
+                if (Number(usage.reserved || 0) + Number(usage.committed || 0) >= Number(limits.maxRedemptions || 0)) {
+                    throw checkoutError('COMMERCE_PROMOTION_LIMIT_REACHED');
+                }
+                if (Number(promotionCustomer.reserved || 0) + Number(promotionCustomer.committed || 0) >= Number(limits.maxPerCustomer || 0)) {
+                    throw checkoutError('COMMERCE_PROMOTION_CUSTOMER_LIMIT_REACHED');
+                }
+                const ownerEmailHash = crypto.createHash('sha256')
+                    .update(String(ownerEmail || '').trim().toLowerCase())
+                    .digest('hex');
+                promotionResult = calculatePromotionDiscount(promotion, {
+                    lines: orderLines,
+                    ownerEmailHash,
+                    now: clock.now()
+                });
+            }
             const expiresAt = authorizedFixtureContext?.expiresAt
                 || checkoutExpiresAt
                 || resolveCheckoutExpiry(policy, clock.now());
@@ -239,6 +291,7 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
                 policyVersion: policy.version,
                 items: orderLines,
                 shippingCents: delivery.shippingCents,
+                discountCents: promotionResult?.discountCents || 0,
                 customerSnapshot: { email: ownerEmail || null },
                 shippingSnapshot: validated.value.shippingAddress,
                 deliverySnapshot: delivery,
@@ -249,6 +302,22 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
                 } : null,
                 clock
             });
+            if (promotionResult) {
+                order = {
+                    ...order,
+                    promotionSnapshot: {
+                        code: promotion.code,
+                        codeHash: promotion.codeHash,
+                        name: promotion.name,
+                        source: promotion.source,
+                        sourceRewardId: promotion.sourceRewardId || null,
+                        percentage: promotion.discount.percentage,
+                        discountCents: promotionResult.discountCents,
+                        eligibleCents: promotionResult.eligibleCents,
+                        eligibleProductIds: promotionResult.eligibleProductIds
+                    }
+                };
+            }
             if (checkoutChannel) {
                 order = {
                     ...order,
@@ -341,6 +410,38 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
                         }
                     } : {}),
                     createdAt: now
+                });
+            }
+            if (promotionResult) {
+                transaction.update(promotionRef, {
+                    usage: {
+                        reserved: Number(promotion.usage?.reserved || 0) + 1,
+                        committed: Number(promotion.usage?.committed || 0)
+                    },
+                    updatedAt: now
+                });
+                transaction.set(promotionCustomerRef, {
+                    schemaVersion: 1,
+                    promotionCodeHash: promotion.codeHash,
+                    customerKey: promotionCustomerKey,
+                    reserved: Number(promotionCustomer.reserved || 0) + 1,
+                    committed: Number(promotionCustomer.committed || 0),
+                    updatedAt: now
+                });
+                transaction.set(promotionRedemptionRef, {
+                    schemaVersion: 1,
+                    orderId,
+                    ownerUid,
+                    customerKey: promotionCustomerKey,
+                    codeHash: promotion.codeHash,
+                    code: promotion.code,
+                    source: promotion.source,
+                    sourceRewardId: promotion.sourceRewardId || null,
+                    status: 'reserved',
+                    discountCents: promotionResult.discountCents,
+                    eligibleCents: promotionResult.eligibleCents,
+                    createdAt: now,
+                    updatedAt: now
                 });
             }
             transaction.set(refs.order(orderId), order);

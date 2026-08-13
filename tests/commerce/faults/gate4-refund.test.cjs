@@ -192,7 +192,10 @@ test('stored pending refund can be resumed by another strong admin without creat
                 `commerce_financial_daily/${dateKey}_${currency}`
             ),
             financialTotals: (currency) => ref(`commerce_financial_totals/${currency}`),
-            outbox: (outboxId) => ref(`commerce_outbox/${outboxId}`)
+            outbox: (outboxId) => ref(`commerce_outbox/${outboxId}`),
+            document: (orderId, documentId) => ref(
+                `orders/${orderId}/documents/${documentId}`
+            )
         },
         clock
     });
@@ -252,6 +255,30 @@ test('failed refund clears pending money without any inventory disposition', asy
     assert.equal(repository.order.refundAggregate.hasFailure, true);
     assert.equal(repository.order.inventorySummary.committedQty, 1);
     assert.equal(repository.stockEffects, 0);
+});
+
+test('provider failure reverses an initially succeeded refund without a new attempt', () => {
+    const prepared = prepare(paidOrder());
+    let attempt = transitionRefundAttempt(
+        prepared.attempt,
+        { type: 'create_started' },
+        { clock }
+    );
+    attempt = transitionRefundAttempt(attempt, {
+        type: 'provider_observed',
+        refundId: 're_gate4_async_reversal',
+        providerStatus: 'succeeded'
+    }, { clock });
+    const reversed = transitionRefundAttempt(attempt, {
+        type: 'provider_observed',
+        refundId: 're_gate4_async_reversal',
+        providerStatus: 'failed'
+    }, { clock });
+    assert.equal(attempt.status, 'succeeded');
+    assert.equal(reversed.status, 'failed');
+    assert.equal(reversed.providerStatus, 'failed');
+    assert.equal(reversed.refundRequestId, attempt.refundRequestId);
+    assert.equal(reversed.stateVersion, attempt.stateVersion + 1);
 });
 
 test('crash after refund response before persistence resumes the same refund', async () => {

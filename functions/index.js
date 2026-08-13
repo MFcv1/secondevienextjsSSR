@@ -313,6 +313,19 @@ exports.claimNewsletterReward = claimNewsletterReward;
 exports.drawNewsletterReward = drawNewsletterReward;
 exports.listMyNewsletterRewards = listMyNewsletterRewards;
 
+// ── CODES PROMOTIONNELS SERVEUR ─────────────────────────
+const {
+    createPromotionCodeAdmin,
+    listPromotionCodesAdmin,
+    previewPromotionCodeV2,
+    setPromotionCodeStatusAdmin
+} = require('./src/commerce/v2PromotionCodes');
+
+exports.createPromotionCodeAdmin = createPromotionCodeAdmin;
+exports.listPromotionCodesAdmin = listPromotionCodesAdmin;
+exports.previewPromotionCodeV2 = previewPromotionCodeV2;
+exports.setPromotionCodeStatusAdmin = setPromotionCodeStatusAdmin;
+
 // ── EMAIL (Triggers) ─────────────────────────────────────
 const { onOrderCreated, onOrderUpdated, sendTestEmail, sendRefundStatusEmailAdmin } = require('./src/email/orderEmails');
 

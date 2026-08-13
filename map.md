@@ -113,7 +113,7 @@ secrets, deploiement et recette Meta reelle restent M4/M5.
   -> InstagramPublicationPreview [C] (iPhone 17 Pro 402 x 874,
      titre + histoire + 10 premiers medias + hashtags)
   -> description Markdown bornee -> RichTextStory (resume admin + fiche publique)
-  -> renouvellement du jeton Auth puis preflightProductMutationAdmin [F]
+  -> renouvellement du jeton Auth (2 reprises reseau bornees) puis preflightProductMutationAdmin [F]
      (App Check + admin actif + AAL2)
   -> preparation puis upload de toutes les variantes catalogue [ST]
      (une lecture source, concurrence bornee a quatre)
@@ -123,6 +123,8 @@ secrets, deploiement et recette Meta reelle restent M4/M5.
      (App Check + token Auth non revoque + claim + registre actif + AAL2)
      du produit et de la release exacte; HTML ISR non bloquant
   -> succes -> bascule automatique vers Publications [C]
+  -> archivage: modale applicative + commandId stable -> deleteProductAdmin [F]
+     -> archive souple auditee, historique stock conserve [DB]
   -> prepareSocialPublicationAdmin [F] apres confirmation site
   -> sys_social_publications/{commandHash} [DB, backend-only]
   -> runSocialPublicationAdmin [F]
@@ -139,7 +141,8 @@ secrets, deploiement et recette Meta reelle restent M4/M5.
   -> preuve API exacte /api/catalog/version
   -> sys_catalog_live/current [DB] -> onglets visibles
      -> grilles galerie rechargees depuis la release exacte + router.refresh
-  -> preuve HTML versionnee asynchrone -> servedState/reprises d'exploitation
+  -> preuve HTML versionnee asynchrone (200 courant, 404 ancien chemin retire)
+     -> servedState/reprises d'exploitation
 ```
 
 Connexion et exploitation sociales:
@@ -181,10 +184,18 @@ carte produit
   -> createOrder [F]
   -> transaction stock + orders [DB]
   -> Stripe Payment Element [EXT]
-  -> fermeture/reload: descriptor UID -> resumeCheckoutV2 -> meme PaymentIntent
+  -> fermeture/reload: descriptor UID -> resumeCheckoutV2 -> meme PaymentIntent si encore payable
+     -> recapitulatif reconstruit depuis les lignes immuables de la commande, jamais depuis le panier courant
+  -> paiement deja durable: terminal PAID -> descriptor retire -> lignes achetees nettoyees par revision
   -> stripeWebhook [F]
-  -> order paid + deux outbox atomiques: client + notification admin dediee
+  -> order paid + fait financier + recu sandbox + deux outbox atomiques:
+     client + notification admin dediee
   -> /mes-commandes + /admin
+     -> documents + derniere demande client; index subcollection updatedAt desc
+     -> erreur reader visible/rejouable, jamais convertie en faux historique vide
+  -> fulfillment derive de deliverySnapshot:
+     -> retrait: preparer -> pret -> retire
+     -> transport: preparer -> expedier -> livre/suivi
   -> expedition admin: modale transporteur/suivi -> commande idempotente
      -> outbox client -> meme suivi dans /mes-commandes
      -> correction du suivi par commande separee, sans rejouer l'expedition
@@ -308,6 +319,11 @@ scripts/audit-refund-failed-v2.mjs
   -> gate non mutante des Functions deployees, rejet non signe et abonnements
      Stripe test `refund.created|updated|failed` avant M12/M13
 
+refund `succeeded -> failed`
+  -> inbox Stripe autoritaire + fait append-only `refund_reversal`
+  -> rollup financier compense, stock inchange, commande `needs_review`
+  -> reader client masque la confirmation obsolete sans supprimer la preuve
+
 scripts/confirm-commerce-order-v2.mjs
 scripts/refund-commerce-order-v2.mjs
 scripts/cleanup-paid-order-cart-v2.mjs
@@ -377,10 +393,14 @@ galerie: choix d'une carte [C]
   -> saisie e-mail + consentement newsletter [C]
   -> claimNewsletterReward [F]: code durable, abonné et envoi Gmail/Resend
   -> newsletter_rewards/{rewardId} + newsletter_subscribers/{emailHash} [DB]
+  -> materialisation commerce_promotion_codes/{sha256(code)} [DB backend-only]
   -> confirmation immédiate avec code [C]
   -> /mes-commandes#avantages
      -> listMyNewsletterRewards [F]: session Auth et e-mail vérifié
      -> dernier code visible, copie et historique borné [C]
+  -> /checkout: previewPromotionCodeV2 [F], aperçu prix serveur
+  -> createCheckoutV2 [F]: revalidation + reservation code/stock/commande atomique
+  -> webhook Stripe succeeded [F]: redemption committed et gain newsletter used
 ```
 
 ## 5. Arborescence racine
@@ -390,6 +410,7 @@ galerie: choix d'une carte [C]
 |-- AGENTS.md ......................... Bible agents, etat, regles et index
 |-- map.md ............................ Cette cartographie
 |-- _DOCS/ ........................... Chapitres canoniques
+|-- apphostingaudit/ ................. Photographie read-only architecture Firestore/App Hosting
 |-- app/ ............................. Next App Router
 |-- src/ ............................. Modules UI/metier et helpers
 |-- functions/ ....................... Cloud Functions privees, codebase main
@@ -580,7 +601,7 @@ src/kit/commerce/
 |-- orderAdapter.js ................... lecture UI v1/v2 sans ambiguite
 |-- checkoutRecovery.js ............... reprise 3DS/reload namespacee, sans secret
 |-- checkoutContract.js ............... entree checkout allowlistee, sans prix client
-|-- commerceV2Client.js ............... lecteurs v2 on; checkout/reprise Gate 5 off
+|-- commerceV2Client.js ............... lecteurs v2, checkout/reprise et aperçu promotion serveur
 |-- commerceCommandClient.js .......... commandes admin/client, controle serveur fail-closed
 |-- shippingCarriers.js ............... choix transporteurs UI sans URL libre
 |-- adminProductCommandClient.js ...... callables produit, flag Gate 4 off
@@ -643,6 +664,8 @@ src/kit/admin/
 |   |-- components/orders/ConfirmDialog.jsx ....... confirmation retrait/livraison/archivage
 |   `-- components/orders/ShipmentDialog.jsx ...... expedition et suivi transporteur
 |-- AdminPaymentLinks.jsx ............. creation, copie et cycle de vie des liens prives
+|-- AdminPromotionCodes.jsx ........... creation/suspension des remises bornees et ciblees produit
+|-- promotionCodeClient.js ............ callables promo admin et mapping d'erreurs
 |-- AdminInvoices.jsx ................ selection meubles, edition, apercu A4, brouillons et envoi PDF
 |-- AdminReturns.jsx .................. demandes client + remboursements + retours physiques detailles
 |-- AdminLivraison.jsx ................ configuration livraison
@@ -732,10 +755,11 @@ functions/
     |   |   |-- dependencies.js
     |   |   |-- failpoints.js
     |   |   |-- checkoutInput.js ......... entree allowlistee et lignes versionnees
+    |   |   |-- promotionCode.js ......... normalisation, definition et calcul de remise serveur
     |   |   |-- inventoryKey.js .......... identite canonique de SKU
     |   |   |-- connectPolicy.js ......... readiness et compte epingle
     |   |   |-- reservationRepository.js . mouvements hold/commit/release
-    |   |   |-- checkoutRepository.js .... order, hold, tentative et identite atomiques
+    |   |   |-- checkoutRepository.js .... order, hold, promotion, tentative et identite atomiques
     |   |   |-- adminPaymentLink.js ...... token HMAC, expiration et statuts du lien
     |   |   |-- adminPaymentLinkCoordinator.js  reservation, PI, rotation et liberation sure
     |   |   |-- checkoutCoordinator.js ... create/resume sur etat durable
@@ -747,8 +771,8 @@ functions/
     |   |   |-- stripeWebhookIngress.js ... signature et scope plateforme/Connect
     |   |   |-- webhookWorker.js .......... retrieve PI/refund puis apply sous fence
     |   |   |-- reconcilePayment.js ...... mapping complet des statuts PI
-    |   |   |-- paymentEffectApplier.js ... order/inventaire/fait/outbox atomiques
-    |   |   |-- refundEffectApplier.js .... refund webhook, tentative/audit/outbox atomiques
+    |   |   |-- paymentEffectApplier.js ... order/inventaire/fait/recu/outbox atomiques
+    |   |   |-- refundEffectApplier.js .... refund webhook, tentative/audit/document/outbox atomiques
     |   |   |-- commerceEffects.js ....... faits financiers/outbox deterministes
     |   |   |-- outboxRepository.js / outboxWorker.js ... lease, dead-letter et delivery_unknown
     |   |   |-- financialProjection.js .. projection financiere absolue
@@ -766,12 +790,14 @@ functions/
     |   |   |-- orderCommandRepository.js . fulfillment idempotent + audit
     |   |   |-- cancellationCoordinator.js / cancellationAuditRepository.js
     |   |   |-- refundSaga*.js ............ refund Stripe reprenable et epingle
-    |   |   |-- refundRepository.js ....... cumul/fait/outbox atomiques, sans stock
+    |   |   |-- refundRepository.js ....... cumul/fait/document/outbox atomiques, sans stock
     |   |   |-- returnRepository.js ....... allocations, dispositions et audit
     |   |   |-- productCommands.js ......... transitions produit fermees Gate 4
     |   |   |-- productCommandRepository.js  produit idempotent + audit append-only
     |   |   |-- shippingTracking.js ....... transporteurs allowlistes et liens officiels
     |   |   `-- v2Runtime.js .............. cablage callables et workers Gate 7A
+    |   |-- promotionMaterialization.js ... raccord newsletter vers registre promotionnel
+    |   |-- v2PromotionCodes.js ........... preview client et mutations admin AAL2/App Check
     |   |-- v2ProductCommands.js ........... callables produit actives sous controle v2
     |   |-- v2OrderCommands.js ............. fulfillment/archive/suivi idempotents actifs sous controle v2
     |   |-- v2Cancellation.js .............. callable annulation active sous controle v2
@@ -852,6 +878,7 @@ functions/
 | --- | --- |
 | commerce | `createOrder`, `stripeWebhook`, `stripeConnectWebhook`, `cancelOrderClient`, `getOrderStatusClient` |
 | commerce v2 checkout/lecture | `createCheckoutV2`, `resumeCheckoutV2`, `listMyOrdersV2`, `prepareCommerceDocumentDelivery`, `requestCustomerReturn`, `listOrdersAdminV2`, `getOrderTimelineAdminV2`, `listReturnsAdminV2`, `listCustomerReturnRequestsAdminV2` |
+| codes promotionnels | `previewPromotionCodeV2`, `listPromotionCodesAdmin`, `createPromotionCodeAdmin`, `setPromotionCodeStatusAdmin` |
 | liens de paiement admin | `createAdminPaymentLink`, `listAdminPaymentLinks`, `extendAdminPaymentLink`, `regenerateAdminPaymentLink`, `recreateAdminPaymentLink`, `cancelAdminPaymentLink`, `getAdminPaymentLinkPublic`, `prepareAdminPaymentLinkPayment`, `resumeAdminPaymentLinkPayment`, `expireAdminPaymentLinks` |
 | commerce v2 retours client | `decideCustomerReturnRequestAdmin`, puis commandes refund/retour v2 existantes selon le parcours choisi |
 | commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
@@ -903,6 +930,9 @@ Firestore
 |-- newsletter_subscribers/{id}
 |-- newsletter_reward_plays/{id} ...... tirage temporaire backend-only
 |-- newsletter_rewards/{id} ........... code et preuve d'envoi backend-only
+|-- commerce_promotion_codes/{sha256(code)} . definition/compteurs backend-only
+|   |-- customers/{sha256(uid)} ....... limite par compte backend-only
+|   `-- redemptions/{orderId} ......... reservation/consommation liee a la commande
 |-- sys_metadata/{docId}
 |-- sys_ratelimit/{id} ................ backend-only
 |-- sys_admin_access/{uid} ............ backend-only

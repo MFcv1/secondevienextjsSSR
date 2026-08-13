@@ -183,6 +183,18 @@ test('checkout resume terminal classification distinguishes cancellation from ac
             ...activeOrder,
             checkout: {
                 ...activeOrder.checkout,
+                status: 'closed',
+                closeReason: 'paid'
+            },
+            payment: { status: 'succeeded' }
+        }, { status: 'attached' }, nowMillis),
+        'COMMERCE_CHECKOUT_TERMINAL_PAID'
+    );
+    assert.equal(
+        resolveCheckoutResumeTerminalCode({
+            ...activeOrder,
+            checkout: {
+                ...activeOrder.checkout,
                 expiresAt: '2026-07-26T11:59:59.000Z'
             }
         }, { status: 'attached' }, nowMillis),
@@ -204,6 +216,97 @@ test('checkout resume terminal classification distinguishes cancellation from ac
         ),
         'COMMERCE_CHECKOUT_TERMINAL_CANCELED'
     );
+});
+
+test('checkout resume never reopens Stripe after durable payment', async () => {
+    let ensureCalls = 0;
+    const coordinator = createCheckoutCoordinator({
+        checkoutRepository: {
+            async prepareCheckout() {
+                throw new Error('not used');
+            },
+            async loadOwnedCheckout() {
+                return {
+                    order: {
+                        id: 'order-paid-resume-0001',
+                        checkout: {
+                            status: 'closed',
+                            closeReason: 'paid',
+                            expiresAt: '2026-07-26T12:30:00.000Z'
+                        },
+                        payment: { status: 'succeeded' }
+                    },
+                    attempt: { status: 'attached' }
+                };
+            }
+        },
+        sagaService: {
+            hitAfterHold() {},
+            async ensurePaymentIntent() {
+                ensureCalls += 1;
+            }
+        },
+        clock: { nowMillis: () => Date.parse('2026-07-26T12:00:00.000Z') }
+    });
+
+    await assert.rejects(
+        coordinator.resumeCheckout({
+            orderId: 'order-paid-resume-0001',
+            ownerUid: 'owner-paid-resume-0001'
+        }),
+        { code: 'COMMERCE_CHECKOUT_TERMINAL_PAID' }
+    );
+    assert.equal(ensureCalls, 0);
+});
+
+test('checkout resume returns the immutable order lines instead of the current cart', async () => {
+    const coordinator = createCheckoutCoordinator({
+        checkoutRepository: {
+            async prepareCheckout() {
+                throw new Error('not used');
+            },
+            async loadOwnedCheckout() {
+                return {
+                    order: {
+                        id: 'order-active-resume-0001',
+                        checkout: { status: 'active', closeReason: null },
+                        payment: { status: 'awaiting_method' },
+                        items: [{
+                            lineId: 'cart-line-active-resume-0001',
+                            cartLineId: 'cart-line-active-resume-0001',
+                            cartRevision: 3,
+                            productId: 'product-active-resume-0001',
+                            titleSnapshot: 'Commode de reprise',
+                            quantity: 1,
+                            unitAmountCents: 6500
+                        }]
+                    },
+                    attempt: { status: 'attached' }
+                };
+            }
+        },
+        sagaService: {
+            hitAfterHold() {},
+            async ensurePaymentIntent() {
+                return { orderId: 'order-active-resume-0001', totalCents: 6500 };
+            }
+        },
+        clock: { nowMillis: () => Date.parse('2026-07-26T12:00:00.000Z') }
+    });
+
+    const resumed = await coordinator.resumeCheckout({
+        orderId: 'order-active-resume-0001',
+        ownerUid: 'owner-active-resume-0001'
+    });
+    assert.equal(resumed.totalCents, 6500);
+    assert.deepEqual(resumed.items, [{
+        cartLineId: 'cart-line-active-resume-0001',
+        cartRevision: 3,
+        productId: 'product-active-resume-0001',
+        name: 'Commode de reprise',
+        quantity: 1,
+        unitAmountCents: 6500
+    }]);
 });
 
 test('webhook ingress rejects a wrong secret and separates two Connect accounts', async () => {

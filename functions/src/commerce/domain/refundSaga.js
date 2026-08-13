@@ -96,7 +96,12 @@ function createRefundAttempt({
 function transitionRefundAttempt(attempt, event, { clock }) {
     validateRefundAttempt(attempt);
     if (typeof clock?.now !== 'function') throw refundError('COMMERCE_CLOCK_REQUIRED');
-    if (['succeeded', 'failed'].includes(attempt.status)) return attempt;
+    if (attempt.status === 'failed') return attempt;
+    const reversesSucceeded = attempt.status === 'succeeded' &&
+        event?.type === 'provider_observed' &&
+        ['failed', 'canceled'].includes(event.providerStatus) &&
+        event.refundId === attempt.refundId;
+    if (attempt.status === 'succeeded' && !reversesSucceeded) return attempt;
     const next = { ...attempt };
     switch (event?.type) {
         case 'create_started':

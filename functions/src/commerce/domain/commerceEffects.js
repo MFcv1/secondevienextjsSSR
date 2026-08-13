@@ -29,7 +29,7 @@ function buildFinancialFact({
     commandId
 }) {
     if (
-        !['capture', 'refund'].includes(type) ||
+        !['capture', 'refund', 'refund_reversal'].includes(type) ||
         !Number.isSafeInteger(amountCents) ||
         amountCents <= 0 ||
         currency !== 'EUR'

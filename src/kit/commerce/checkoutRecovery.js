@@ -6,6 +6,7 @@ export const COMMERCE_V2_RECOVERY_ENABLED =
 export const CHECKOUT_RECOVERY_STORAGE_KEY = 'secondevie:checkout-recovery:v1';
 
 const TERMINAL_CHECKOUT_REASONS = Object.freeze({
+    COMMERCE_CHECKOUT_TERMINAL_PAID: 'paid',
     COMMERCE_CHECKOUT_TERMINAL_EXPIRED: 'expired',
     COMMERCE_CHECKOUT_TERMINAL_CANCELED: 'canceled'
 });
@@ -114,6 +115,9 @@ export function getCheckoutRecoveryTerminalReason(error) {
 }
 
 export function getCheckoutRecoveryTerminalMessage(reason) {
+    if (reason === 'paid') {
+        return 'Cette commande est déjà confirmée. Votre panier a été actualisé avant un nouveau paiement.';
+    }
     if (reason === 'expired') {
         return 'Votre réservation a expiré. Vérifiez votre panier, puis recommencez le paiement.';
     }
@@ -121,6 +125,34 @@ export function getCheckoutRecoveryTerminalMessage(reason) {
         return 'Cette réservation a été annulée. Vérifiez votre panier, puis recommencez le paiement.';
     }
     return '';
+}
+
+export function getCheckoutRecoveryTerminalCartLines(reason, descriptor) {
+    if (reason !== 'paid' || !Array.isArray(descriptor?.cartLines)) return [];
+    return descriptor.cartLines;
+}
+
+export function getCheckoutRecoveryOrderItems(result) {
+    if (!Array.isArray(result?.items) || result.items.length === 0 || result.items.length > 50) {
+        throw new Error('COMMERCE_RECOVERY_ORDER_ITEMS_INVALID');
+    }
+    return result.items.map((line) => {
+        if (
+            typeof line?.name !== 'string' || !line.name.trim() || line.name.length > 200 ||
+            typeof line?.productId !== 'string' || !line.productId ||
+            !Number.isSafeInteger(line?.unitAmountCents) || line.unitAmountCents <= 0 ||
+            !Number.isSafeInteger(line?.quantity) || line.quantity <= 0
+        ) {
+            throw new Error('COMMERCE_RECOVERY_ORDER_ITEMS_INVALID');
+        }
+        return Object.freeze({
+            id: line.cartLineId || line.productId,
+            originalId: line.productId,
+            name: line.name.trim(),
+            price: line.unitAmountCents / 100,
+            quantity: line.quantity
+        });
+    });
 }
 
 export function isPurchasedCartLineUnchanged(currentLine, purchasedLine) {

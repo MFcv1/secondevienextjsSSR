@@ -41,6 +41,7 @@ const MEDIA_FIELDS = new Set([
 ]);
 
 const MAX_PRODUCT_IMAGES = 23;
+const PRODUCT_TITLE_MIN_LENGTH = 4;
 
 function productError(code, field) {
     const error = new Error(field ? `${code}:${field}` : code);
@@ -71,6 +72,12 @@ function normalizeText(value, field, maxLength, { required = false } = {}) {
         throw productError('COMMERCE_PRODUCT_FIELD_INVALID', field);
     }
     return normalized;
+}
+
+function isUsableProductTitle(value) {
+    const normalized = String(value || '').normalize('NFC').trim();
+    const meaningfulCharacters = normalized.match(/[\p{L}\p{N}]/gu) || [];
+    return normalized.length >= PRODUCT_TITLE_MIN_LENGTH && meaningfulCharacters.length >= 3;
 }
 
 function normalizeStructuredValue(value, field, depth = 0) {
@@ -223,9 +230,11 @@ function assertProductIdentity(collectionName, productId) {
 function assertPublishable(product) {
     if (
         typeof product.name !== 'string' ||
-        !product.name ||
+        !isUsableProductTitle(product.name) ||
         typeof product.category !== 'string' ||
         !product.category ||
+        typeof product.material !== 'string' ||
+        !product.material.trim() ||
         typeof product.description !== 'string'
     ) {
         throw productError('COMMERCE_PRODUCT_NOT_PUBLISHABLE');
@@ -399,6 +408,7 @@ module.exports = {
     applyProductAction,
     assertProductIdentity,
     assertStrongAdmin,
+    isUsableProductTitle,
     normalizeOffer,
     validateExistingProduct
 };

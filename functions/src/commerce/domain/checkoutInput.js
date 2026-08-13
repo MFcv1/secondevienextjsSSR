@@ -2,8 +2,9 @@
 
 const { canonicalize, hashPayload } = require('./idempotency');
 const { createInventoryKey } = require('./inventoryKey');
+const { normalizePromotionCode } = require('./promotionCode');
 
-const ROOT_FIELDS = new Set(['clientOrderId', 'items', 'deliveryModeId', 'shippingAddress']);
+const ROOT_FIELDS = new Set(['clientOrderId', 'items', 'deliveryModeId', 'shippingAddress', 'promotionCode']);
 const LINE_FIELDS = new Set([
     'cartLineId',
     'cartRevision',
@@ -76,7 +77,8 @@ function validateCheckoutInput(input) {
         clientOrderId: input.clientOrderId,
         items,
         deliveryModeId: input.deliveryModeId,
-        shippingAddress
+        shippingAddress,
+        promotionCode: input.promotionCode ? normalizePromotionCode(input.promotionCode) : null
     };
     return {
         value: normalized,

@@ -42,6 +42,7 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 | `studio` | Studio | `AdminStudio` | outils de contenu/creation |
 | `homepage` | Personnalisation | `AdminHomepage` | hero, categories, contenus vitrine |
 | `orders` | Ventes | `AdminOrders` + `components/orders/*` | commandes et logistique, liste dense et detail maitre/detail |
+| `promotions` | Codes promo | `AdminPromotionCodes` | creation, ciblage produit, bornes temporelles et compteurs d'utilisation des remises serveur |
 | `quotes` | Devis | `AdminQuotes` | réception, qualification, photos privées, statuts et notes internes |
 | `payment_links` | Liens de paiement | `AdminPaymentLinks` | reservation de meubles et paiement Stripe prive sans compte |
 | `invoices` | Factures | `AdminInvoices` | selection de meubles, brouillons, apercu A4, emission PDF verrouillee et envoi e-mail |
@@ -125,6 +126,11 @@ quatrieme rangee absorbe l'espace vertical restant. Dimensions occupe la
 troisieme rangee, avec des controles bornes en largeur. Le formulaire ne
 presente plus de panneau SEO manuel: titre, description et eligibilite sont
 deduits automatiquement du nom, de l'histoire, de l'image et du statut public.
+Le renouvellement force du jeton reprend au maximum deux erreurs transitoires
+`auth/network-request-failed` (250 puis 750 ms) avant le preflight. Les autres
+erreurs Auth ne sont jamais rejouees. En cas d'echec final, formulaire et
+photos restent montes pour une reprise explicite, sans dupliquer une commande
+produit.
 
 La liste classe d'abord `status: draft` comme Brouillon, meme si une ancienne
 donnee incoherente porte encore `sold: true`. Seuls les produits publies dont
@@ -141,6 +147,9 @@ l'outil propose les modes Fond, Souligne et Texte avec cinq couleurs stables.
 La selection native reste translucide puis se replie apres application pour ne
 pas masquer le resultat; la palette sait aussi recolorer ou retirer un `mark`
 depuis un simple curseur place dans le texte.
+Ses branches Ecrire et Apercu possedent des identites React distinctes: le DOM
+`contentEditable` non controle n'est pas reutilise comme conteneur de rendu,
+ce qui garantit une seule histoire dans l'apercu.
 
 Le rail de brouillon cree avant upload est retire du parcours actif le
 2026-08-07 apres le refus Storage reproductible `STORAGE_UNAUTHORIZED`. Ses
@@ -320,6 +329,21 @@ La recette sandbox du 2026-08-10 a confirme que la reduction et le code
 durable sont strictement identiques dans la galerie, l'e-mail client et le
 bloc `Mes avantages` de `/mes-commandes`.
 
+Le 2026-08-13, l'onglet dedie `Codes promo` a ete ajoute au groupe Ventes. Il
+reprend les composants et materiaux normalises du back-office: entete compacte,
+panneaux sans decoration superflue, champs natifs lisibles et etats explicites.
+L'administrateur peut creer un code genere par le serveur ou nomme, choisir un
+pourcentage de 1 a 50 %, une selection de produits ou tout le catalogue, une
+periode, un minimum, un plafond et des limites globale/par client. Il peut
+ensuite suspendre ou reactiver le code.
+
+Toutes ces actions passent exclusivement par des callables App Check qui
+exigent claim admin, registre actif et AAL2, puis verifient le control plane
+commerce. Les documents et sous-collections `commerce_promotion_codes` restent
+backend-only dans les Rules: le back-office ne peut pas forger les compteurs
+avec le SDK Firestore. Les compteurs `reserved` et `committed` distinguent un
+checkout encore payable d'un paiement Stripe confirme.
+
 ### 5.3 Contrat de la vue Ventes
 
 La vue repond d'abord a l'actionnabilite, sans confondre paiement, logistique,
@@ -348,6 +372,10 @@ actions logistiques admissibles et porte le libelle explicite
 `Remb. partiel`. Un remboursement complet avec garde `merchant` reste dans
 `A traiter`, sans bouton de retrait ni d'expedition: la piece ne doit pas etre
 republiee tant que sa remise en stock n'a pas ete enregistree dans `Retours`.
+La methode figee dans `deliverySnapshot` separe ensuite strictement les rails:
+preparation puis pret/retrait pour `delivery-pickup`, preparation puis
+expedition/livraison pour le transport. L'interface ne peut pas rendre une
+action de l'autre rail et le serveur refuse la meme transition en appel direct.
 
 La timeline conserve les douze types d'evenements commerce, le repli des
 commandes v1, le chargement a la demande et le rafraichissement apres commande.
@@ -426,6 +454,13 @@ Le transport callable fulfillment/archive commande est deploye dans
 AAL2 Google ou passkey et acteur derive du contexte Auth. `AdminOrders`
 l'appelle derriere le controle serveur actif et des `allowedActions` calcules
 serveur.
+
+L'archivage d'une publication utilise une modale applicative, pas
+`window.confirm`. La cle de commande est creee a l'ouverture puis conservee
+pendant les reprises; l'interface attend la reponse callable et affiche succes
+ou erreur. Le serveur applique une archive souple idempotente (`status:
+archived`, audit et historique de stock conserves), jamais une suppression
+optimiste locale.
 
 L'expedition n'utilise plus de dialogue natif. Une modale integree distingue
 explicitement l'expedition avec suivi, sans suivi et l'annulation sans effet.

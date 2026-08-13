@@ -59,6 +59,7 @@ const EVENT_TYPES = Object.freeze([
     'refund_requested',
     'refund_confirmed',
     'refund_failed',
+    'refund_reversed',
     'return_received',
     'return_restocked',
     'return_written_off',
@@ -540,6 +541,41 @@ function applyEvent(next, event, now) {
                 throw domainError('COMMERCE_REFUND_AMOUNT_INVALID');
             }
             next.refundAggregate.pendingCents -= event.amountCents;
+            next.refundAggregate.hasFailure = true;
+            if (next.refundAggregate.pendingCents > 0) {
+                next.refundAggregate.status = 'pending';
+            } else if (next.refundAggregate.succeededCents === 0) {
+                next.refundAggregate.status = 'needs_review';
+            } else {
+                next.refundAggregate.status =
+                    next.refundAggregate.succeededCents === next.amounts.capturedCents
+                        ? 'full'
+                        : 'partial';
+            }
+            return true;
+        }
+        case 'refund_reversed': {
+            if (
+                next.payment.status === 'needs_review' &&
+                next.checkout.status === 'needs_review' &&
+                next.payment.lastProviderStatus === 'terminal_refund_conflict'
+            ) {
+                next.payment.status = 'succeeded';
+                next.payment.lastProviderStatus = 'succeeded';
+                next.checkout.status = 'closed';
+                next.checkout.closeReason = 'paid';
+            }
+            assertPaid(next, event.type);
+            if (
+                !Number.isSafeInteger(event.amountCents) ||
+                event.amountCents <= 0 ||
+                event.amountCents > next.refundAggregate.succeededCents
+            ) {
+                throw domainError('COMMERCE_REFUND_AMOUNT_INVALID');
+            }
+            next.refundAggregate.succeededCents -= event.amountCents;
+            next.amounts.refundedCents = next.refundAggregate.succeededCents;
+            next.amounts.netCents = next.amounts.capturedCents - next.amounts.refundedCents;
             next.refundAggregate.hasFailure = true;
             if (next.refundAggregate.pendingCents > 0) {
                 next.refundAggregate.status = 'pending';

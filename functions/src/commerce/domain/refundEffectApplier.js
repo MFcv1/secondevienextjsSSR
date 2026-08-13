@@ -15,6 +15,10 @@ const {
     validateProviderRefund,
     validateRefundAttempt
 } = require('./refundSaga');
+const {
+    buildRefundConfirmation,
+    shouldCreateImmutableDocument
+} = require('./commerceDocuments');
 
 function applierError(code, detail = null) {
     const error = new Error(detail ? `${code}:${detail}` : code);
@@ -51,7 +55,8 @@ function createRefundEffectApplier({
         'financialFact',
         'financialDaily',
         'financialTotals',
-        'outbox'
+        'outbox',
+        'document'
     ]) {
         if (typeof refs?.[name] !== 'function') {
             throw applierError('COMMERCE_REFUND_APPLIER_DEPENDENCY_INVALID', `refs.${name}`);
@@ -157,6 +162,9 @@ function createRefundEffectApplier({
         const providerOutcome = refund.status === 'succeeded'
             ? 'succeeded'
             : (['failed', 'canceled'].includes(refund.status) ? 'failed' : 'pending');
+        const reversesSucceeded = storedAttempt.status === 'succeeded' &&
+            providerOutcome === 'failed' &&
+            storedAttempt.refundId === refund.id;
         if (['succeeded', 'failed'].includes(storedAttempt.status)) {
             if (
                 storedAttempt.status === providerOutcome &&
@@ -164,16 +172,22 @@ function createRefundEffectApplier({
             ) {
                 return { action: providerOutcome, reused: true, order };
             }
-            const reviewed = reduceOrder(order, {
-                type: 'mark_needs_review',
-                reason: 'terminal_refund_conflict'
-            }, { clock });
-            return persistIncident(transaction, {
-                code: 'terminal_refund_conflict',
-                orderId,
-                refund,
-                order: reviewed
-            });
+            if (reversesSucceeded) {
+                // Stripe peut accepter un remboursement puis l'invalider de facon
+                // asynchrone. Cette transition compense l'effet financier deja
+                // projete sans creer une nouvelle tentative ni toucher au stock.
+            } else {
+                const reviewed = reduceOrder(order, {
+                    type: 'mark_needs_review',
+                    reason: 'terminal_refund_conflict'
+                }, { clock });
+                return persistIncident(transaction, {
+                    code: 'terminal_refund_conflict',
+                    orderId,
+                    refund,
+                    order: reviewed
+                });
+            }
         }
 
         const nextAttempt = transitionRefundAttempt(storedAttempt, {
@@ -187,7 +201,8 @@ function createRefundEffectApplier({
         }
 
         const outcome = nextAttempt.status;
-        const auditRef = refs.auditEvent(orderId, `refund-${outcome}-${refundRequestId}`);
+        const auditOutcome = reversesSucceeded ? 'reversed' : outcome;
+        const auditRef = refs.auditEvent(orderId, `refund-${auditOutcome}-${refundRequestId}`);
         const effectType = outcome === 'succeeded' ? 'refund_succeeded' : 'refund_failed';
         const fact = outcome === 'succeeded'
             ? buildFinancialFact({
@@ -200,7 +215,18 @@ function createRefundEffectApplier({
                 effectiveAt: refundEffectiveAt(refund, clock),
                 commandId: refundRequestId
             })
-            : null;
+            : (reversesSucceeded
+                ? buildFinancialFact({
+                    orderId,
+                    type: 'refund_reversal',
+                    amountCents: nextAttempt.amountCents,
+                    currency: nextAttempt.currency,
+                    connectedAccountId: nextAttempt.connectedAccountId,
+                    providerObjectId: refund.id,
+                    effectiveAt: clock.now(),
+                    commandId: refundRequestId
+                })
+                : null);
         const contextualFact = fact && order.testContext
             ? { ...fact, testContext: { ...order.testContext } }
             : fact;
@@ -247,26 +273,40 @@ function createRefundEffectApplier({
             : intent);
         const factRef = contextualFact ? refs.financialFact(contextualFact.effectId) : null;
         const outboxRefs = outboxes.map((intent) => refs.outbox(intent.outboxId));
+        const confirmation = outcome === 'succeeded' && contextualFact
+            ? buildRefundConfirmation({
+                order,
+                facts: [contextualFact],
+                refundId: refund.id,
+                issuedAt: contextualFact.effectiveAt
+            })
+            : null;
+        const documentRef = confirmation
+            ? refs.document(orderId, confirmation.documentId)
+            : null;
         const snapshots = await Promise.all([
             transaction.get(auditRef),
             ...(factRef ? [transaction.get(factRef)] : []),
-            ...outboxRefs.map((ref) => transaction.get(ref))
+            ...outboxRefs.map((ref) => transaction.get(ref)),
+            ...(documentRef ? [transaction.get(documentRef)] : [])
         ]);
         if (snapshotExists(snapshots[0])) {
             throw applierError('COMMERCE_AUDIT_APPEND_ONLY_CONFLICT');
         }
 
         const nextOrder = reduceOrder(order, {
-            type: outcome === 'succeeded' ? 'refund_confirmed' : 'refund_failed',
+            type: outcome === 'succeeded'
+                ? 'refund_confirmed'
+                : (reversesSucceeded ? 'refund_reversed' : 'refund_failed'),
             amountCents: nextAttempt.amountCents
         }, { clock });
         transaction.set(orderRef, stripId(nextOrder));
         transaction.set(attemptRef, nextAttempt);
         transaction.set(auditRef, {
             schemaVersion: 2,
-            eventId: `refund-${outcome}-${refundRequestId}`,
+            eventId: `refund-${auditOutcome}-${refundRequestId}`,
             orderId,
-            type: `refund_${outcome}`,
+            type: reversesSucceeded ? 'refund_reversed' : `refund_${outcome}`,
             actor: 'stripe_webhook_v2',
             reason: `refund_${refund.status}`,
             amountCents: nextAttempt.amountCents,
@@ -293,6 +333,15 @@ function createRefundEffectApplier({
         for (let index = 0; index < outboxes.length; index += 1) {
             if (!snapshotExists(snapshots[snapshotIndex + index])) {
                 transaction.set(outboxRefs[index], outboxes[index]);
+            }
+        }
+        if (documentRef) {
+            const documentSnapshotIndex = 1 + (factRef ? 1 : 0) + outboxRefs.length;
+            if (shouldCreateImmutableDocument(
+                snapshots[documentSnapshotIndex],
+                confirmation
+            )) {
+                transaction.set(documentRef, confirmation);
             }
         }
         return { action: outcome, order: nextOrder, attempt: nextAttempt };

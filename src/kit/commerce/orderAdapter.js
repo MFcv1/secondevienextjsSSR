@@ -1,7 +1,9 @@
 const LEGACY_PENDING = 'pending_payment';
 
 function projectV2Status(order) {
-    const ambiguous = order.checkout?.status === 'needs_review' ||
+    const ambiguous = order.status === 'needs_review' ||
+        order.refundStatus === 'needs_review' ||
+        order.checkout?.status === 'needs_review' ||
         order.payment?.status === 'needs_review' ||
         order.refundAggregate?.status === 'needs_review' ||
         order.inventorySummary?.status === 'conflict';

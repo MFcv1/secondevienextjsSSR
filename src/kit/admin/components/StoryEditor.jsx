@@ -457,6 +457,7 @@ export default function StoryEditor({ value, onChange, darkMode = false }) {
 
       {mode === 'write' ? (
         <div
+          key="story-editor-write"
           ref={editorRef}
           contentEditable
           suppressContentEditableWarning
@@ -496,7 +497,7 @@ export default function StoryEditor({ value, onChange, darkMode = false }) {
           className={`story-wysiwyg min-h-[180px] flex-1 overflow-y-auto px-4 py-3.5 text-[13px] leading-6 outline-none ${darkMode ? 'text-stone-200' : 'text-stone-800'}`}
         />
       ) : (
-        <div className={`min-h-[180px] flex-1 overflow-y-auto px-4 py-3.5 text-[13px] leading-6 ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>
+        <div key="story-editor-preview" className={`min-h-[180px] flex-1 overflow-y-auto px-4 py-3.5 text-[13px] leading-6 ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>
           {value.trim() ? <RichTextStory value={value} /> : <p className="text-stone-400">L’aperçu mis en forme apparaîtra ici.</p>}
         </div>
       )}

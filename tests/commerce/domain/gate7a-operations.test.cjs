@@ -88,6 +88,32 @@ test('Gate 7A: captures et refunds succeeded construisent des montants absolus',
     assert.equal(projection.divergences.length, 0);
 });
 
+test('Gate 7A: une reversal Stripe compense le refund sans effacer les faits', () => {
+    const projection = buildFinancialProjection([
+        fact(),
+        fact({
+            effectId: 'effect-refund-reversed-0001',
+            type: 'refund',
+            amountCents: 2500,
+            providerObjectId: 're_gate7a_reversed_0001',
+            effectiveAt: '2026-07-29T09:00:00.000Z'
+        }),
+        fact({
+            effectId: 'effect-refund-reversal-0001',
+            type: 'refund_reversal',
+            amountCents: 2500,
+            providerObjectId: 're_gate7a_reversed_0001',
+            effectiveAt: '2026-07-29T09:01:00.000Z'
+        })
+    ]);
+    assert.deepEqual(projection.currencies.EUR, {
+        capturedCents: 10000,
+        refundedCents: 0,
+        netCents: 10000
+    });
+    assert.equal(projection.factCount, 3);
+});
+
 test('Gate 7A: le rollup journalier applique des deltas signes et dates', () => {
     assert.deepEqual(buildFinancialRollupDelta(fact()), {
         dateKey: '2026-07-28',
@@ -107,6 +133,18 @@ test('Gate 7A: le rollup journalier applique des deltas signes et dates', () => 
         capturedCents: 0,
         refundedCents: 2500,
         netCents: -2500,
+        factCount: 1
+    });
+    assert.deepEqual(buildFinancialRollupDelta(fact({
+        type: 'refund_reversal',
+        amountCents: 2500,
+        effectiveAt: '2026-07-30T00:01:00.000Z'
+    })), {
+        dateKey: '2026-07-30',
+        currency: 'EUR',
+        capturedCents: 0,
+        refundedCents: -2500,
+        netCents: 2500,
         factCount: 1
     });
 });

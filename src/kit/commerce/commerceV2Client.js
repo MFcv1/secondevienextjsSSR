@@ -42,6 +42,19 @@ export const resumeCheckoutV2 = async (orderId) => {
   return execute('resumeCheckoutV2', { orderId });
 };
 
+export const previewPromotionCodeV2 = async (code, cartItems) => {
+  assertConsumersEnabled();
+  await ensureCheckoutAnonymousIdentity();
+  return execute('previewPromotionCodeV2', {
+    code,
+    items: cartItems.map((item) => ({
+      productId: item.originalId || item.productId || item.id,
+      collectionName: item.collectionName || 'furniture',
+      quantity: Number(item.quantity || 1)
+    }))
+  });
+};
+
 export const listMyOrdersV2 = async ({ pageSize = 25, cursor = null } = {}) => {
   if (!COMMERCE_V2_ORDER_READERS_ENABLED) {
     throw new Error('COMMERCE_V2_ORDER_READERS_OFF');

@@ -27,6 +27,12 @@ function normalizePageSize(value, fallback = 25) {
     return pageSize;
 }
 
+function shouldHideRefundConfirmation(order, document = {}) {
+    return order?.refundAggregate?.status === 'needs_review' &&
+        order?.amounts?.refundedCents === 0 &&
+        document.kind === 'sandbox_refund_confirmation';
+}
+
 function decodeReturnCursor(value) {
     if (
         typeof value !== 'string' ||
@@ -238,6 +244,10 @@ async function serializeOwnedOrder(snapshot, actor) {
         ...serializeOrder(snapshot, actor),
         latestCustomerReturnRequest,
         documents: documentsSnapshot.docs
+            .filter((documentSnapshot) => !shouldHideRefundConfirmation(
+                order,
+                documentSnapshot.data()
+            ))
             .map((documentSnapshot) => serializeCommerceDocument(
                 documentSnapshot,
                 order
@@ -708,6 +718,7 @@ module.exports = {
     listReturnsAdminV2,
     normalizePageSize,
     returnActions,
+    shouldHideRefundConfirmation,
     serializeAdminOrder,
     serializeCommerceDocument,
     serializeCustomerReturnRequest,

@@ -12,6 +12,7 @@ import {
 import { db, appId } from '../config/firebase';
 import { Pencil, Eye, EyeOff, Archive, Search, Loader2, CheckCircle, RotateCcw } from 'lucide-react';
 import KIT_CONFIG from '../config/constants';
+import { createProductCommandId } from '../commerce/adminProductCommandClient';
 
 // Helper pour nettoyer le texte (accents, casse)
 const normalizeText = (text) => {
@@ -51,6 +52,8 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
     const [filterStatus, setFilterStatus] = useState(null);
     const [catalogStats, setCatalogStats] = useState(null);
     const [statsRefreshKey, setStatsRefreshKey] = useState(0);
+    const [archiveRequest, setArchiveRequest] = useState(null);
+    const [archiveNotice, setArchiveNotice] = useState(null);
     const highlightedRowRef = useRef(null);
     const highlightScrolledRef = useRef(false);
 
@@ -224,6 +227,33 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
 
     const actionClass = `grid h-8 w-8 place-items-center rounded-full ring-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 ${darkMode ? 'bg-white/[0.04] text-stone-300 ring-white/10 hover:bg-white hover:text-stone-950' : 'bg-white text-stone-600 ring-black/[0.06] hover:bg-stone-950 hover:text-white'}`;
 
+    const requestArchive = (item) => {
+        setArchiveNotice(null);
+        setArchiveRequest({
+            item,
+            commandId: createProductCommandId('delete-product'),
+            pending: false,
+            error: ''
+        });
+    };
+
+    const confirmArchive = async () => {
+        if (!archiveRequest || archiveRequest.pending) return;
+        setArchiveRequest((current) => ({ ...current, pending: true, error: '' }));
+        try {
+            await onDelete(archiveRequest.item, archiveRequest.commandId);
+            setArchiveNotice(`« ${archiveRequest.item.name || 'La publication'} » a été archivée durablement.`);
+            setArchiveRequest(null);
+        } catch (error) {
+            console.error('Product archive failed:', error);
+            setArchiveRequest((current) => current ? {
+                ...current,
+                pending: false,
+                error: `Archivage non appliqué : ${error?.message || 'erreur inconnue'}`
+            } : current);
+        }
+    };
+
     return (
         <div className="grid min-h-0 grid-cols-1 gap-5 xl:h-full xl:grid-cols-[minmax(0,1fr)_minmax(250px,20%)] 2xl:gap-6">
             <div className={`min-h-0 overflow-hidden rounded-[26px] border ${darkMode ? 'border-white/10 bg-[#11110f]' : 'border-stone-200 bg-white'}`}>
@@ -300,7 +330,7 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
                                                 <button type="button" onClick={() => onToggleStatus(item)} disabled={adminState === 'draft' && !imageSource} className={`${actionClass} disabled:cursor-not-allowed disabled:opacity-35`} title={adminState === 'draft' && !imageSource ? 'Ajoutez les photos avant de publier' : item.status === 'published' ? 'Masquer' : 'Publier'}>{item.status === 'published' ? <Eye size={14} strokeWidth={1.5} /> : <EyeOff size={14} strokeWidth={1.5} />}</button>
                                                 <button type="button" onClick={() => onEdit(item)} className={actionClass} title="Modifier"><Pencil size={14} strokeWidth={1.5} /></button>
                                                 {adminState !== 'draft' && <button type="button" onClick={() => adminState === 'sold' ? onMarkAsAvailable(item) : onMarkAsSold(item)} className={actionClass} title={adminState === 'sold' ? 'Remettre en vente' : 'Marquer comme vendu'}>{adminState === 'sold' ? <RotateCcw size={14} strokeWidth={1.5} /> : <CheckCircle size={14} strokeWidth={1.5} />}</button>}
-                                                <button type="button" onClick={() => onDelete(item)} className={`${actionClass} text-red-500 hover:!bg-red-500 hover:!text-white`} title="Archiver"><Archive size={14} strokeWidth={1.5} /></button>
+                                                <button type="button" onClick={() => requestArchive(item)} className={`${actionClass} text-red-500 hover:!bg-red-500 hover:!text-white`} title="Archiver"><Archive size={14} strokeWidth={1.5} /></button>
                                             </div>
                                         </article>
                                     );
@@ -348,6 +378,30 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
                     </div>
                 </div>
             </aside>
+            {archiveNotice ? (
+                <div className="fixed bottom-5 right-5 z-[240] max-w-sm rounded-[18px] bg-emerald-700 px-4 py-3 text-sm font-semibold text-white shadow-2xl" role="status">
+                    {archiveNotice}
+                </div>
+            ) : null}
+            {archiveRequest ? (
+                <div className="fixed inset-0 z-[250] grid place-items-center bg-stone-950/55 px-5 backdrop-blur-sm" role="presentation">
+                    <div className={`w-full max-w-md rounded-[24px] p-6 shadow-2xl ring-1 ${darkMode ? 'bg-[#171715] text-white ring-white/12' : 'bg-white text-stone-950 ring-black/8'}`} role="alertdialog" aria-modal="true" aria-labelledby="archive-product-title" aria-describedby="archive-product-description">
+                        <Archive className="text-red-500" size={24} strokeWidth={1.7} />
+                        <h2 id="archive-product-title" className="mt-4 text-xl font-extrabold tracking-tight">Archiver cette publication ?</h2>
+                        <p id="archive-product-description" className={`mt-2 text-sm leading-6 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
+                            « {archiveRequest.item.name || 'Ce meuble'} » sera retiré du catalogue public sans effacer son historique, ses commandes ni ses médias de preuve.
+                        </p>
+                        {archiveRequest.error ? <p className="mt-3 rounded-xl bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-600" role="alert">{archiveRequest.error}</p> : null}
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button type="button" disabled={archiveRequest.pending} onClick={() => setArchiveRequest(null)} className={`min-h-11 rounded-full px-5 text-sm font-bold ring-1 ${darkMode ? 'ring-white/15' : 'ring-black/10'}`}>Annuler</button>
+                            <button type="button" disabled={archiveRequest.pending} onClick={confirmArchive} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-red-600 px-5 text-sm font-extrabold text-white disabled:opacity-60">
+                                {archiveRequest.pending ? <Loader2 className="animate-spin" size={16} /> : <Archive size={16} />}
+                                {archiveRequest.pending ? 'Archivage…' : 'Archiver durablement'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 };

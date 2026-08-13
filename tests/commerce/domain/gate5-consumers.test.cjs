@@ -29,9 +29,29 @@ const {
     decodeReturnCursor,
     normalizePageSize,
     returnActions,
+    shouldHideRefundConfirmation,
     serializeAdminOrder,
     serializeCommerceDocument
 } = require('../../../functions/src/commerce/v2OrderQueries');
+
+test('client reader hides a stale refund confirmation after a provider reversal', () => {
+    const reversedOrder = {
+        refundAggregate: { status: 'needs_review' },
+        amounts: { refundedCents: 0 }
+    };
+    assert.equal(shouldHideRefundConfirmation(
+        reversedOrder,
+        { kind: 'sandbox_refund_confirmation' }
+    ), true);
+    assert.equal(shouldHideRefundConfirmation(
+        reversedOrder,
+        { kind: 'sandbox_payment_receipt' }
+    ), false);
+    assert.equal(shouldHideRefundConfirmation({
+        refundAggregate: { status: 'partial' },
+        amounts: { refundedCents: 2_500 }
+    }, { kind: 'sandbox_refund_confirmation' }), false);
+});
 const {
     createRefundAttempt,
     transitionRefundAttempt
@@ -251,6 +271,31 @@ test('checkout resume exposes an explicit terminal reason after reservation expi
         (error) => (
             error.code === 'failed-precondition' &&
             error.details?.reason === 'COMMERCE_CHECKOUT_TERMINAL_EXPIRED'
+        )
+    );
+});
+
+test('checkout resume exposes an explicit terminal reason after durable payment', async () => {
+    const handler = createResumeCheckoutHandler({
+        authorize: () => ({ uid: 'trusted-owner-uid', email: null }),
+        runtimeFactory: () => ({
+            checkout: {
+                resumeCheckout: async () => {
+                    const error = new Error('paid');
+                    error.code = 'COMMERCE_CHECKOUT_TERMINAL_PAID';
+                    throw error;
+                }
+            }
+        })
+    });
+
+    await assert.rejects(
+        handler({ orderId: 'order-v2-paid' }, {
+            auth: { uid: 'trusted-owner-uid', token: {} }
+        }),
+        (error) => (
+            error.code === 'failed-precondition' &&
+            error.details?.reason === 'COMMERCE_CHECKOUT_TERMINAL_PAID'
         )
     );
 });
@@ -731,6 +776,9 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(adminReturns.includes('openReturnAdmin'));
     assert.ok(adminReturns.includes('markReturnReceivedAdmin'));
     assert.ok(myOrders.includes('listMyOrdersV2'));
+    assert.ok(myOrders.includes('setOrdersError('));
+    assert.ok(myOrders.includes('Réessayer la lecture'));
+    assert.ok(myOrders.includes('setOrdersPaginationError('));
     assert.ok(myOrders.includes('CommerceDocumentModal'));
     assert.equal(myOrders.includes('generateCommerceDocument'), false);
     assert.ok(consumerClient.includes('prepareCommerceDocumentDelivery'));
@@ -782,4 +830,19 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(cartPanel.includes('await auth.authStateReady?.()'));
     assert.ok(cartPanel.includes('return auth.currentUser || null'));
     assert.equal(cartPanel.includes('hasPersistedFirebaseUser'), false);
+});
+
+test('customer return request subcollections retain their descending collection index', () => {
+    const indexes = JSON.parse(source('firestore.indexes.json'));
+    const override = indexes.fieldOverrides.find((entry) => (
+        entry.collectionGroup === 'customer_return_requests'
+        && entry.fieldPath === 'updatedAt'
+    ));
+    assert.ok(override, 'index override customer_return_requests.updatedAt manquant');
+    assert.ok(override.indexes.some((index) => (
+        index.queryScope === 'COLLECTION' && index.order === 'DESCENDING'
+    )), 'index descendant de sous-collection requis par listMyOrdersV2 manquant');
+    assert.ok(override.indexes.some((index) => (
+        index.queryScope === 'COLLECTION_GROUP' && index.order === 'DESCENDING'
+    )), 'index descendant collection-group requis par les lecteurs admin manquant');
 });

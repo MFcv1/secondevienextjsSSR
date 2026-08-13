@@ -9,6 +9,27 @@ function documentError(code) {
     return error;
 }
 
+function snapshotExists(snapshot) {
+    return typeof snapshot?.exists === 'function'
+        ? snapshot.exists()
+        : snapshot?.exists === true;
+}
+
+function shouldCreateImmutableDocument(snapshot, document) {
+    if (!snapshotExists(snapshot)) return true;
+    const existing = snapshot.data();
+    if (
+        existing?.documentId !== document.documentId ||
+        existing?.orderId !== document.orderId ||
+        existing?.ownerUid !== document.ownerUid ||
+        existing?.kind !== document.kind ||
+        existing?.contentHash !== document.contentHash
+    ) {
+        throw documentError('COMMERCE_DOCUMENT_IMMUTABILITY_CONFLICT');
+    }
+    return false;
+}
+
 function assertOrder(order) {
     if (
         !order ||
@@ -92,5 +113,6 @@ function buildRefundConfirmation({ order, facts, refundId, issuedAt }) {
 
 module.exports = {
     buildPaymentReceipt,
-    buildRefundConfirmation
+    buildRefundConfirmation,
+    shouldCreateImmutableDocument
 };
