@@ -1411,12 +1411,19 @@ lecture a reussi avec `NODE_OPTIONS=--dns-result-order=ipv4first`. Le wrapper
 borne maintenant cette option au processus Firebase CLI et son test verifie
 qu'elle n'est ni globale ni dupliquee.
 
-Nouveau verdict: `G1_HOLD_NEW_DEPLOY_WINDOW`. Le transport est diagnostique et
-le correctif local est pret, mais le retry de cette fenetre est consomme. Une
-nouvelle tentative exige un nouveau commit propre et une nouvelle fenetre
-cible; aucun autre scheduler ni cible G2 n'est inclus. Le rollback reste la
-version 11 encore active ou le redeploiement cible du dernier commit connu
-avant cette tentative.
+Le chemin Firebase reste bloque avec la session locale meme apres priorite
+IPv4; ADC et le jeton gcloud confirment que les API et permissions cloud sont
+joignables, mais `FIREBASE_TOKEN` n'est pas un transport de deploy acceptable.
+Aucune cle de service n'a ete creee. Le wrapper porte donc un fallback
+`gcloud-gen1` borne exclusivement a `commerceOperationsReconciler`, avec projet,
+generation Gen1, source, entry point, trigger, runtime, build/runtime SA,
+memoire, timeout, max instances, retry et ingress explicites. Le preflight lit
+la Function active et refuse tout drift de nom, etat ou trigger.
+
+Nouveau verdict: `G1_READY_GCLOUD_TARGETED_DEPLOY`. La nouvelle tentative exige
+un commit propre et reste limitee au reconciler; aucun autre scheduler ni cible
+G2 n'est inclus. Le rollback reste la version 11 encore active ou le
+redeploiement cible du dernier commit connu avant cette tentative.
 
 ### G2 - Socle Gen2 et stabilisation des treize cibles existantes
 

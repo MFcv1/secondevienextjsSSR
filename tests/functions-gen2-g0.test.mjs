@@ -16,6 +16,7 @@ import {
 import {
   buildFirebaseCliEnv,
   buildFirebaseDeployArgs,
+  buildGcloudGen1DeployArgs,
   parseDeployArgs,
   validateDeploymentRequest
 } from '../scripts/deploy-functions-targeted.mjs';
@@ -241,4 +242,38 @@ test('le wrapper Firebase borne le contournement DNS au processus CLI', () => {
     buildFirebaseCliEnv(env).NODE_OPTIONS,
     '--trace-warnings --dns-result-order=ipv4first'
   );
+});
+
+test('le fallback gcloud Gen1 reste limite au reconciler et explicite toute sa configuration', () => {
+  const request = validate({
+    ...validationArgs({
+      allowlist: 'commerceOperationsReconciler',
+      transport: 'gcloud-gen1'
+    })
+  });
+  const args = buildGcloudGen1DeployArgs(request);
+  assert.deepEqual(args.slice(0, 3), ['functions', 'deploy', 'commerceOperationsReconciler']);
+  for (const expected of [
+    '--project=secondevienextjsssr',
+    '--region=europe-west1',
+    '--no-gen2',
+    '--runtime=nodejs22',
+    '--source=functions',
+    '--entry-point=commerceOperationsReconciler',
+    '--trigger-topic=firebase-schedule-commerceOperationsReconciler-europe-west1',
+    '--service-account=commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com',
+    '--build-service-account=projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com',
+    '--memory=512MB',
+    '--timeout=300s',
+    '--max-instances=1',
+    '--no-retry',
+    '--ingress-settings=all',
+    '--quiet'
+  ]) assert.ok(args.includes(expected), expected);
+  assert.throws(() => validate({
+    ...validationArgs({ allowlist: 'getCatalogPublicationStatus', transport: 'gcloud-gen1' })
+  }), /limite au reconciler G1 approuve/);
+  assert.throws(() => validate({
+    ...validationArgs({ allowlist: 'commerceOperationsReconciler', transport: 'direct-rest' })
+  }), /Transport interdit/);
 });

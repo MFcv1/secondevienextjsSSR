@@ -886,14 +886,14 @@ decisions par nom, appelants, acces donnees, IAM, secrets et rollback sont dans
 Schedulers, queues et Eventarc est dans
 `apphostingaudit/manifests/functions-platform-g0.json`.
 
-G1 est en `HOLD_NEW_DEPLOY_WINDOW`: protections Firestore, backup,
+G1 est en `READY_GCLOUD_TARGETED_DEPLOY`: protections Firestore, backup,
 restore reconcilie et deux canaux Monitoring testes sont actifs; seules les
 preuves cloud du correctif sante/workers et l'arbitrage financier restent non
 fermes. Le reconciler Gen1 reste en version 11 sur le compte global appspot,
 mais sa source epingle maintenant une identite runtime dediee minimale verifiee.
-Le retry a echoue avant mise a jour sur un probleme DNS du Firebase CLI,
-diagnostique et corrige localement dans le wrapper; une nouvelle fenetre cible
-est requise avant une autre tentative.
+Le chemin Firebase CLI reste bloque avant mise a jour; le wrapper porte un
+fallback gcloud Gen1 fail-closed limite au seul reconciler, sans cle de service
+et avec toute la configuration cloud explicite.
 Les plans read-only P1/P2 sont dans
 `apphostingaudit/manifests/functions-gen2-g1-data-plan.json`; aucun passage G2
 n'est autorise dans cet etat.

@@ -2,7 +2,7 @@
 
 Derniere mise a jour: 2026-08-15
 
-Statut: `G1_HOLD_NEW_DEPLOY_WINDOW`
+Statut: `G1_READY_GCLOUD_TARGETED_DEPLOY`
 
 Projet unique: `secondevienextjsssr`
 
@@ -179,8 +179,11 @@ Le retry cible a echoue avant mise a jour sur la lecture Firebase
 `adminSdkConfig`. La version 11 est restee active. Le meme echec du CLI a ete
 reproduit avec `projects:list`, puis resolu en lecture avec
 `--dns-result-order=ipv4first`. Cette option est maintenant bornee au processus
-Firebase CLI par le wrapper et testee. Ne pas relancer dans la meme fenetre;
-ouvrir une nouvelle fenetre cible apres nouveau commit propre.
+Firebase CLI par le wrapper et testee, mais le chemin deploy reste bloque avec
+la session Firebase locale. Le fallback `gcloud-gen1` du wrapper est strictement
+limite au reconciler et explicite generation, trigger, runtime, build/runtime
+SA, memoire, timeout, max instances, retry et ingress. Il refuse tout drift
+cloud avant ecriture et n'utilise aucune cle de service.
 
 ## 6. Workers G1-E
 

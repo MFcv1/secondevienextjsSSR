@@ -11,6 +11,20 @@ export const EXPECTED_PROJECT = 'secondevienextjsssr';
 export const EXPECTED_CODEBASE = 'main';
 export const MAX_BATCH_SIZE = 10;
 const FIREBASE_DNS_NODE_OPTION = '--dns-result-order=ipv4first';
+const GCLOUD_GEN1_TARGETS = Object.freeze({
+  commerceOperationsReconciler: Object.freeze({
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'commerceOperationsReconciler',
+    triggerTopic: 'firebase-schedule-commerceOperationsReconciler-europe-west1',
+    serviceAccount: 'commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com',
+    memory: '512MB',
+    timeout: '300s',
+    maxInstances: '1',
+    ingressSettings: 'all'
+  })
+});
 
 function fail(message) {
   throw new Error(message);
@@ -125,8 +139,10 @@ export function validateDeploymentRequest({
   const codebase = required(args, 'codebase');
   const commit = required(args, 'commit');
   const allowlist = parseAllowlist(required(args, 'allowlist'));
+  const transport = args.transport || 'firebase';
   if (project !== EXPECTED_PROJECT) fail(`Projet interdit: ${project}`);
   if (codebase !== EXPECTED_CODEBASE) fail(`Codebase interdite: ${codebase}`);
+  if (!['firebase', 'gcloud-gen1'].includes(transport)) fail(`Transport interdit: ${transport}`);
   if (activeFirebaseProject !== EXPECTED_PROJECT) fail(`Projet Firebase effectif different: ${activeFirebaseProject || 'absent'}`);
   if (readFirebaseProject(rootDir) !== EXPECTED_PROJECT) fail('Alias Firebase local different du sandbox attendu');
   if (manifest.metadata?.project !== EXPECTED_PROJECT || manifest.metadata?.codebase !== EXPECTED_CODEBASE) fail('Manifeste projet/codebase invalide');
@@ -148,7 +164,12 @@ export function validateDeploymentRequest({
   }
   const selectors = allowlist.map((name) => `functions:${codebase}:${name}`);
   if (selectors.some((selector) => selector === `functions:${codebase}` || selector === 'functions')) fail('Selecteur Functions global interdit');
-  return { project, codebase, commit, allowlist, selectors, entries };
+  if (transport === 'gcloud-gen1') {
+    if (allowlist.length !== 1 || !GCLOUD_GEN1_TARGETS[allowlist[0]]) {
+      fail('Fallback gcloud Gen1 limite au reconciler G1 approuve');
+    }
+  }
+  return { project, codebase, commit, allowlist, selectors, entries, transport };
 }
 
 export function buildFirebaseDeployArgs(validation) {
@@ -156,6 +177,32 @@ export function buildFirebaseDeployArgs(validation) {
     'deploy',
     '--project', validation.project,
     '--only', validation.selectors.join(',')
+  ];
+}
+
+export function buildGcloudGen1DeployArgs(validation) {
+  const name = validation.allowlist[0];
+  const target = GCLOUD_GEN1_TARGETS[name];
+  if (validation.transport !== 'gcloud-gen1' || validation.allowlist.length !== 1 || !target) {
+    fail('Fallback gcloud Gen1 non autorise');
+  }
+  return [
+    'functions', 'deploy', name,
+    `--project=${validation.project}`,
+    `--region=${target.region}`,
+    '--no-gen2',
+    `--runtime=${target.runtime}`,
+    '--source=functions',
+    `--entry-point=${target.entryPoint}`,
+    `--trigger-topic=${target.triggerTopic}`,
+    `--service-account=${target.serviceAccount}`,
+    `--build-service-account=${target.buildServiceAccount}`,
+    `--memory=${target.memory}`,
+    `--timeout=${target.timeout}`,
+    `--max-instances=${target.maxInstances}`,
+    '--no-retry',
+    `--ingress-settings=${target.ingressSettings}`,
+    '--quiet'
   ];
 }
 
@@ -182,6 +229,33 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
   });
   if (!args.execute) fail('Validation reussie mais deploiement refuse sans --execute explicite');
   assertCleanDeploymentInputs(rootDir);
+  if (validation.transport === 'gcloud-gen1') {
+    const name = validation.allowlist[0];
+    const target = GCLOUD_GEN1_TARGETS[name];
+    const before = JSON.parse(run('gcloud', [
+      'functions', 'describe', name,
+      `--region=${target.region}`,
+      `--project=${validation.project}`,
+      '--format=json'
+    ], { cwd: rootDir }));
+    const expectedName = `projects/${validation.project}/locations/${target.region}/functions/${name}`;
+    const expectedTopic = `projects/${validation.project}/topics/${target.triggerTopic}`;
+    if (before.name !== expectedName || before.status !== 'ACTIVE' || before.entryPoint !== target.entryPoint) {
+      fail('Etat cloud Gen1 inattendu avant fallback gcloud');
+    }
+    if (before.eventTrigger?.resource !== expectedTopic || before.eventTrigger?.eventType !== 'google.pubsub.topic.publish') {
+      fail('Trigger cloud Gen1 inattendu avant fallback gcloud');
+    }
+    process.stdout.write(`Projet: ${validation.project}\nCibles: ${validation.selectors.join(',')}\nCommit: ${validation.commit}\nTransport: gcloud-gen1\n`);
+    const result = spawnSync('gcloud', buildGcloudGen1DeployArgs(validation), {
+      cwd: rootDir,
+      env: process.env,
+      stdio: 'inherit'
+    });
+    if (result.error) fail(result.error.message);
+    if (result.status !== 0) process.exitCode = result.status || 1;
+    return;
+  }
   const firebaseCli = path.join(rootDir, 'node_modules/.bin/firebase');
   if (!fs.existsSync(firebaseCli)) fail('Firebase CLI locale epinglee introuvable');
   const effective = JSON.parse(run(firebaseCli, ['use', '--json'], { cwd: rootDir }));
