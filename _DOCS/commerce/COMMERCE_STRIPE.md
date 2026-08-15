@@ -580,6 +580,14 @@ sert seulement a reconstruire les valeurs absolues et controler les
 divergences. La sante sandbox est `healthy`, tous les
 compteurs sont a zero et aucune TTL commerce n'est activee.
 
+La fermeture G1 du 2026-08-15 qualifie aussi le dispatcher d'expiration avec
+une fixture `e2eOnly` et Stripe test: reservation de 1, annulation fournisseur,
+liberation du stock 10 -> 9 -> 10, puis second passage sans mouvement ni
+variation de stock. Aucun refund, replay financier, restock ou delete n'a ete
+execute. Le runner fail-closed est
+`functions:prove-reservation-expiry:g1`; son manifeste de preuve est
+`apphostingaudit/manifests/functions-gen2-g1-worker-rollout.json`.
+
 Depuis la correction documentaire du 2026-08-12, le recu sandbox est cree
 dans la meme transaction que la capture, et la confirmation de remboursement
 dans la meme transaction que le fait financier de refund. Le reconciliateur

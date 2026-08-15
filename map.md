@@ -886,9 +886,8 @@ decisions par nom, appelants, acces donnees, IAM, secrets et rollback sont dans
 Schedulers, queues et Eventarc est dans
 `apphostingaudit/manifests/functions-platform-g0.json`.
 
-G1 est en `E_RUNTIME_IAM_VERIFIED_RESERVATION_NEXT`: protections Firestore, backup,
-restore reconcilie et deux canaux Monitoring testes sont actifs; seules les
-preuves cloud des workers restent non fermees. Le reconciler Gen1 est en version
+G1 est `TERMINEE_G2_A_LOCAL_ONLY`: protections Firestore, backup,
+restore reconcilie et deux canaux Monitoring testes sont actifs. Le reconciler Gen1 est en version
 12 sur une identite runtime dediee minimale verifiee.
 Le chemin Firebase CLI reste bloque avant mise a jour; le wrapper porte un
 fallback gcloud Gen1 fail-closed limite au seul reconciler, sans cle de service
@@ -897,14 +896,16 @@ compte dedie; son run manuel prouve `stop`, schema 3, un incident primaire et
 aucune troncature. Le resolver borne ferme uniquement l'incident avec un audit
 append-only et interdit toute mutation commande/refund/faits/stock.
 La resolution autorisee a applique deux ecritures et le run suivant prouve
-`healthy`, zero incident primaire et aucune troncature. Les workers G1-E restent
-a qualifier un par un avant tout passage G2.
-Les trois comptes worker dedies sont verifies sans cle, avec roles projet et
-secrets resource-level exacts. La prochaine cible unique est le dispatcher
-d'expiration des reservations.
+`healthy`, zero incident primaire et aucune troncature. Les trois workers G1-E
+sont actifs sur leurs comptes dedies, avec roles projet et secrets
+resource-level exacts, sans cle. Le dispatcher reservations a prouve sur Stripe
+test une annulation fournisseur avant liberation unique, stock fixture
+10 -> 9 -> 10, puis un second run sans effet; aucun refund, replay, restock ou
+delete. Le manifeste est
+`apphostingaudit/manifests/functions-gen2-g1-worker-rollout.json`.
 Les plans read-only P1/P2 sont dans
-`apphostingaudit/manifests/functions-gen2-g1-data-plan.json`; aucun passage G2
-n'est autorise dans cet etat.
+`apphostingaudit/manifests/functions-gen2-g1-data-plan.json`; G2-A local est la
+prochaine phase et G2-B conserve son autorisation cloud distincte.
 
 | Domaine | Exports |
 | --- | --- |

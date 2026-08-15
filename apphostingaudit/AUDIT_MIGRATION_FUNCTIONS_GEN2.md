@@ -2,7 +2,7 @@
 
 Derniere contre-verification: 2026-08-15
 
-Statut: `PLAN_TEMPORAIRE_REVALIDE - G0_TERMINEE - G1_NON_AUTORISEE`
+Statut: `PLAN_TEMPORAIRE_REVALIDE - G1_TERMINEE - G2_A_LOCAL_NEXT`
 
 Proprietaire: mainteneur Seconde Vie et agent charge de la migration
 
@@ -1462,6 +1462,31 @@ cle utilisateur, aucune impersonation publique et uniquement les secrets deja
 lies a sa Function. Aucune valeur de secret n'a ete lue. Verdict courant:
 `G1_E_RUNTIME_IAM_VERIFIED_RESERVATION_NEXT`; le premier deploy reste borne au
 seul `commerceReservationExpiryDispatcher`.
+
+G1-E est ensuite fermee un scheduler a la fois. Les versions actives sont
+`commerceReservationExpiryDispatcher` v3, `commerceOutboxDispatcher` v11 et
+`expireAdminPaymentLinks` v5, chacune sur son compte runtime dedie, 512 MB,
+timeout 300 s, `maxInstances: 1`, retry Function desactive et seules les
+versions de secrets attendues. Les runs outbox et liens de paiement sont
+`completed`, zero echec, non epuises et sans element a traiter.
+
+La preuve metier du dispatcher utilise le runner fail-closed
+`functions:prove-reservation-expiry:g1` au commit
+`6a48a09db7fbd47f00efc79d298a068872e3a126`. La fixture historique ayant ete
+nettoyee, il a recree uniquement son produit deterministe `e2eOnly` stock 10.
+Stripe est strictement en test. Le run `i41gvihfcdsf` a traite exactement une
+reservation expiree: annulation fournisseur observee avant liberation, stock
+10 -> 9 -> 10, mouvement `release` unique, `releasedQty: 1` et
+`restockedQty: 0`. Le replay scheduler `i41gxiq28x2v` a traite zero element;
+le mouvement et le stock sont demeures inchanges. Aucun refund, replay
+financier, restock ou suppression n'a ete effectue. L'audit final conserve
+`healthy`, schema 3, zero incident ouvert, zero compteur divergent et aucune
+troncature. Le manifeste complet est
+`functions-gen2-g1-worker-rollout.json`.
+
+Verdict G1 final: `G1_TERMINEE_G2_A_LOCAL_ONLY`. Les quatre P0 sont fermes; le
+budget Billing reste `NON_VERIFIE` et les plans P1/P2 restent sans ecriture,
+mais ne bloquent pas G2-A local. G2-B conserve son autorisation cloud distincte.
 
 ### G2 - Socle Gen2 et stabilisation des treize cibles existantes
 

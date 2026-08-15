@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-15T23:20:30.000Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "branch": "codex/functions-gen2-migration",
+  "deploymentCommit": "250c7728991a7176461857d8875f3d206d4f8312",
+  "proofRunnerCommit": "6a48a09db7fbd47f00efc79d298a068872e3a126",
+  "verdict": "G1_WORKERS_DEPLOYED_AND_IDEMPOTENT_PROVED",
+  "secretValuesRead": false,
+  "deployments": [
+    {
+      "name": "commerceReservationExpiryDispatcher",
+      "allowlist": ["commerceReservationExpiryDispatcher"],
+      "generation": 1,
+      "region": "europe-west1",
+      "status": "ACTIVE",
+      "version": "3",
+      "buildId": "5b5d1985-f4ee-4d98-bcd9-5e4438ab1fcb",
+      "runtime": "nodejs22",
+      "runtimeServiceAccount": "commerce-reservation-expiry@secondevienextjsssr.iam.gserviceaccount.com",
+      "memoryMb": 512,
+      "timeoutSeconds": 300,
+      "maxInstances": 1,
+      "retry": false,
+      "ingress": "ALLOW_ALL",
+      "secrets": [{"name": "STRIPE_SECRET_KEY", "version": "4"}],
+      "scheduler": {
+        "name": "firebase-schedule-commerceReservationExpiryDispatcher-europe-west1",
+        "location": "us-central1",
+        "state": "ENABLED",
+        "schedule": "every 2 minutes",
+        "timeZone": "America/Los_Angeles",
+        "topic": "firebase-schedule-commerceReservationExpiryDispatcher-europe-west1",
+        "retry": {"minBackoffSeconds": 5, "maxBackoffSeconds": 3600, "maxDoublings": 5, "maxRetryDurationSeconds": 0}
+      },
+      "proof": {
+        "fixtureCreated": true,
+        "fixtureE2eOnly": true,
+        "stripeLivemode": false,
+        "replay": false,
+        "refund": false,
+        "restock": false,
+        "businessRunId": "g1_expiry_1786835931694_19d32ef4",
+        "processedExecutionId": "i41gvihfcdsf",
+        "processedWorkerRunId": "f33b4bc9-db9a-42d2-a373-41d151e53492",
+        "processed": 1,
+        "failureCount": 0,
+        "exhausted": false,
+        "providerCanceledBeforeRelease": true,
+        "stockBefore": 10,
+        "stockDuringHold": 9,
+        "stockAfterRelease": 10,
+        "releasedQuantity": 1,
+        "restockedQuantity": 0,
+        "idempotenceExecutionId": "i41gxiq28x2v",
+        "idempotenceWorkerRunId": "3f980d10-908c-4de1-8068-db960e5e83b0",
+        "idempotenceProcessed": 0,
+        "movementUnchanged": true,
+        "stockUnchanged": true
+      }
+    },
+    {
+      "name": "commerceOutboxDispatcher",
+      "allowlist": ["commerceOutboxDispatcher"],
+      "generation": 1,
+      "region": "europe-west1",
+      "status": "ACTIVE",
+      "version": "11",
+      "buildId": "4cf4e486-51e5-4a4d-97f7-8c99275f095f",
+      "runtime": "nodejs22",
+      "runtimeServiceAccount": "commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com",
+      "memoryMb": 512,
+      "timeoutSeconds": 300,
+      "maxInstances": 1,
+      "retry": false,
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {"name": "GMAIL_EMAIL", "version": "2"},
+        {"name": "GMAIL_PASSWORD", "version": "5"},
+        {"name": "RESEND_API_KEY", "version": "1"}
+      ],
+      "scheduler": {
+        "name": "firebase-schedule-commerceOutboxDispatcher-europe-west1",
+        "location": "us-central1",
+        "state": "ENABLED",
+        "schedule": "every 2 minutes",
+        "timeZone": "America/Los_Angeles",
+        "topic": "firebase-schedule-commerceOutboxDispatcher-europe-west1",
+        "retry": {"minBackoffSeconds": 5, "maxBackoffSeconds": 3600, "maxDoublings": 5, "maxRetryDurationSeconds": 0}
+      },
+      "proof": {
+        "executionId": "gzrthuhe08eu",
+        "workerRunId": "a0226ef3-828d-45ef-aea5-cabb5b407aa2",
+        "status": "completed",
+        "pages": 2,
+        "processed": 0,
+        "failureCount": 0,
+        "exhausted": false,
+        "backlogAgeSeconds": null
+      }
+    },
+    {
+      "name": "expireAdminPaymentLinks",
+      "allowlist": ["expireAdminPaymentLinks"],
+      "generation": 1,
+      "region": "europe-west1",
+      "status": "ACTIVE",
+      "version": "5",
+      "buildId": "b593c8a7-89c9-4115-aaf4-8f2c419ead5e",
+      "runtime": "nodejs22",
+      "runtimeServiceAccount": "admin-payment-link-expiry@secondevienextjsssr.iam.gserviceaccount.com",
+      "memoryMb": 512,
+      "timeoutSeconds": 300,
+      "maxInstances": 1,
+      "retry": false,
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {"name": "STRIPE_SECRET_KEY", "version": "4"},
+        {"name": "PAYMENT_LINK_HMAC_SECRET", "version": "1"}
+      ],
+      "scheduler": {
+        "name": "firebase-schedule-expireAdminPaymentLinks-europe-west1",
+        "location": "us-central1",
+        "state": "ENABLED",
+        "schedule": "every 5 minutes",
+        "timeZone": "America/Los_Angeles",
+        "topic": "firebase-schedule-expireAdminPaymentLinks-europe-west1",
+        "retry": {"minBackoffSeconds": 5, "maxBackoffSeconds": 3600, "maxDoublings": 5, "maxRetryDurationSeconds": 0}
+      },
+      "proof": {
+        "executionId": "oejanfzeeote",
+        "workerRunId": "da60f13e-be58-48e2-bd4d-da6568050ec2",
+        "status": "completed",
+        "pages": 1,
+        "processed": 0,
+        "failureCount": 0,
+        "exhausted": false,
+        "backlogAgeSeconds": null
+      }
+    }
+  ],
+  "postRunHealth": {
+    "status": "healthy",
+    "schemaVersion": 3,
+    "primaryOpenIncidentCount": 0,
+    "truncated": false,
+    "countersAllZero": true,
+    "openIncidents": 0
+  },
+  "dataDeltaFromExpiryProof": {
+    "fixtureProducts": 1,
+    "orders": 1,
+    "inventoryReservations": 1,
+    "inventoryMovements": 2,
+    "webhookInbox": 1,
+    "refunds": 0,
+    "restocks": 0,
+    "deletions": 0
+  },
+  "rollback": {
+    "executed": false,
+    "codeBaseline": "f80dc7213a8d738fb1edde11a926028bcb57ab28",
+    "procedure": "Redeployer une seule cible depuis un worktree isole au codeBaseline, en conservant son compte runtime dedie, son build SA, ses secrets versions, son topic, Node 22, 512 MB, timeout 300 s, maxInstances 1, no-retry et ingress all. Ne jamais restaurer secondevienextjsssr@appspot.gserviceaccount.com. Les donnees deja ecrites ne sont pas inversees par un rollback code.",
+    "preserve": ["runtime service account", "secret versions", "scheduler and topic", "logs, metrics, policies and dashboard", "fixture proof order, reservation and movements"]
+  },
+  "next": "G2_A_LOCAL_ONLY"
+}

@@ -2,7 +2,7 @@
 
 Derniere mise a jour: 2026-08-15
 
-Statut: `G1_E_RUNTIME_IAM_VERIFIED_RESERVATION_NEXT`
+Statut: `G1_TERMINEE_G2_A_LOCAL_ONLY`
 
 Projet unique: `secondevienextjsssr`
 
@@ -221,6 +221,15 @@ local. La preuve metier du dispatcher reservations doit creer un hold Stripe
 test borne, attendre son expiration, verifier annulation fournisseur avant
 liberation et rejouer pour prouver l'effet unique. Elle reste interdite avant
 restore drill et deploiement cible du correctif.
+
+Execution fermee le 2026-08-15: les trois workers sont actifs sur des comptes
+runtime dedies et chaque run publie un resume `completed`. La preuve Stripe
+test du dispatcher a cree une fixture `e2eOnly`, reserve une unite, observe
+l'annulation fournisseur avant la liberation 10 -> 9 -> 10, puis rejoue le
+scheduler sans nouvel effet. Executions `i41gvihfcdsf` puis `i41gxiq28x2v`;
+zero echec, zero epuisement, un seul mouvement `release`, aucun refund, replay,
+restock ou delete. Reprendre en G2-A local uniquement. Le detail machine est
+dans `../manifests/functions-gen2-g1-worker-rollout.json`.
 
 ## 7. Rollback
 

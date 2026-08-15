@@ -2,7 +2,7 @@
 
 Derniere mise a jour: 2026-08-15
 
-Statut: `CENTRE_DE_SUIVI_ACTIF - G0_TERMINEE - G1_NON_AUTORISEE`
+Statut: `CENTRE_DE_SUIVI_ACTIF - G1_TERMINEE - G2_A_LOCAL_NEXT`
 
 Proprietaire: mainteneur Seconde Vie et agent d'execution des phases validees
 
@@ -47,12 +47,12 @@ En cas de contradiction:
 | configuration Gen2 actuelle | CPU 1 et max 20 sur 13/13; concurrence 80 sur 12, worker image 4; options source encore implicites |
 | garde de deploiement | wrapper fail-closed actif; projet/codebase/commit/manifeste/digest/allowlist obligatoires, dix cibles maximum et une seule cible finance/webhook/scheduler |
 | projet operateur | Firebase cible correcte; `gcloud` global observe sur `vibefx-v2`, donc projet explicite obligatoire |
-| dispatcher reservations | actif toutes les deux minutes; runs recents no-op, preuve d'expiration/idempotence manquante |
-| incident commerce | 1 `terminal_refund_conflict` ouvert mais sante affichee `healthy` |
-| recuperation Firestore | PITR et protection desactives; aucune sauvegarde ni schedule |
-| restauration | doit creer une base nommee du meme projet et de la meme localisation; aucun failover de `(default)` |
+| dispatcher reservations | v3 sur SA dedie; expiration Stripe test et replay scheduler sans effet prouves |
+| incident commerce | incident ferme par deux ecritures auditees; aucun replay/refund/restock, sante `healthy` |
+| recuperation Firestore | delete protection, PITR 7 jours, backups quotidien/hebdomadaire actifs et backup `READY` |
+| restauration | restore nomme `restore-drill-20260815-a` reconcilie, isole et sans trafic |
 | Storage | soft delete 7 jours sur buckets media/catalogue, versioning absent, restauration non testee |
-| observabilite | 0 policy, 0 metrique logs personnalisee, 0 dashboard personnalise; canaux non verifies |
+| observabilite | 5 metriques logs, 8 policies, dashboard, e-mail primaire et Pub/Sub secondaire testes |
 | budget/quota | budget Billing non verifie; aucune alerte quota confirmee |
 | produits legacy | 10 meubles sans `inventoryVersion` |
 | commandes legacy | 26 sur 125 |
@@ -88,7 +88,7 @@ Valeurs autorisees:
 | Phase | Objet | Statut | Gate de sortie essentielle | Preuve/compte rendu |
 | --- | --- | --- | --- | --- |
 | G0 | baseline 152/157, manifeste, hold Meta et wrapper de deploiement | `TERMINEE` | projet explicite, zero ecart, deploy global fail-closed, cinq Instagram en hold | manifestes `apphostingaudit/manifests/functions-*-g0.json`, journal section 8 |
-| G1 | alertes, DR/restore, sante/incident et preuve des workers | `A_FAIRE` | quatre P0 fermes; Stripe test borne uniquement | a renseigner |
+| G1 | alertes, DR/restore, sante/incident et preuve des workers | `TERMINEE` | quatre P0 fermes; Stripe test borne uniquement | manifestes `functions-gen2-g1-*.json`, journal G1 |
 | G2 | socle Gen2 puis stabilisation ciblee des 13 Gen2 actuelles | `A_FAIRE` | G2-A local vert; G2-B deploye/observe une cible a la fois apres autorisation | a renseigner |
 | G3 | decisions retrait/migration legacy, E2E, maintenance, publication historique | `A_FAIRE` | decision et observation reversibles; aucune suppression prematuree | a renseigner |
 | G4 | analytics | `A_FAIRE` | parite, App Check, caches concurrents, 48 h observees | a renseigner |
@@ -107,10 +107,10 @@ Valeurs autorisees:
 | Niveau | Action | Statut courant | Gate exacte |
 | --- | --- | --- | --- |
 | P0 | baseline projet/manifeste et deploiement fail-closed | `TERMINEE` | projet explicite, 152/157 reconcilies, wrapper allowlist teste |
-| P0 | alertes, canaux, dashboard et runbooks | `A_FAIRE` | ouverture, notification, acquittement et retour testes |
-| P0 | PITR, protection, backups et restauration | `A_FAIRE` | backup `READY`, base nommee du meme projet et de la meme localisation, RPO/RTO et DR cross-service prouves |
-| P0 | `terminal_refund_conflict` et faux `healthy` | `A_FAIRE` | `healthy -> stop`, triage Stripe read-only, resolution auditee sans replay |
-| P0 | dispatcher et contrat des workers | `A_FAIRE` (plateforme active seulement) | expiration Stripe test, effet unique, failures/backlog/overlap alertes |
+| P0 | alertes, canaux, dashboard et runbooks | `TERMINEE` | ouverture, notification, acquittement et retour testes |
+| P0 | PITR, protection, backups et restauration | `TERMINEE` | backup `READY`, base nommee, RPO/RTO et DR cross-service prouves |
+| P0 | `terminal_refund_conflict` et faux `healthy` | `TERMINEE` | `healthy -> stop -> healthy`, resolution auditee sans replay/refund/restock |
+| P0 | dispatcher et contrat des workers | `TERMINEE` | expiration Stripe test, effet unique et replay scheduler sans effet |
 | P1 | 10 produits, 26 commandes, KPI et reconciler borne | `A_FAIRE` | dry-run/backup/preconditions, cohortes, pagination/`truncated` |
 | P1 | budgets, quota, charge et cout | `A_FAIRE` (budget non verifie) | operateur Billing, alertes quota, charge sandbox mesuree |
 | P2 | analytics historiques | `A_FAIRE` (classification partielle) | export/quarantaine puis decision de retention post-cutover |
@@ -120,8 +120,8 @@ pas une presentation cliente du sandbox en Stripe test, bornee et surveillee.
 Les P1/P2 ne doivent pas retarder la demo par eux-memes.
 
 Un statut partiel dans cette section ne signifie pas qu'une phase ulterieure a
-commence: seul le journal d'execution fait foi. G0 y est fermee; G1 reste non
-autorisee.
+commence: seul le journal d'execution fait foi. G1 est fermee; G2-A local est
+la prochaine phase et G2-B requiert toujours sa gate cloud distincte.
 
 ## 7. Fiche obligatoire pour chaque vague
 
@@ -206,6 +206,48 @@ runtime cibles sans `setGlobalOptions`. Aucune cible n'est remappee. Rollback
 exact: revert du commit local G2-A1; aucun rollback cloud, donnees, IAM, secret,
 endpoint ou App Hosting puisque le lot reste non deploye.
 
+### G1 - fiabilite, incident et workers
+
+- date/fuseau: 2026-08-15, Africa/Casablanca;
+- branche: `codex/functions-gen2-migration`; commits G1 jusqu'au runner de
+  preuve `6a48a09db7fbd47f00efc79d298a068872e3a126`;
+- projet: sandbox `secondevienextjsssr`, toujours passe explicitement aux CLI;
+- observabilite: cinq metriques logs, huit policies, dashboard, canal primaire
+  e-mail et secondaire Pub/Sub testes en ouverture, resolution et
+  acquittement;
+- reprise: delete protection, PITR 7 jours, schedules quotidien 14 jours et
+  hebdomadaire 14 semaines; backup `READY`; restore nomme isole reconcilie,
+  RPO 1 374 s et RTO gere 1 064 s;
+- sante: reconciler v12 sur SA dedie; transition `healthy -> stop` prouvee,
+  incident financier ferme par deux ecritures auditees, puis retour
+  `healthy`, zero incident et aucune troncature; aucun replay, refund, fait
+  financier, commande ou stock modifie par la resolution;
+- workers: reservation v3, outbox v11 et liens de paiement v5, chacun deploye
+  seul, SA dedie, secrets resource-level, 512 MB, 300 s, max instances 1 et
+  retry Function desactive;
+- preuve reservation: fixture deterministe `e2eOnly`, Stripe test, stock
+  10 -> 9 -> 10, annulation fournisseur avant mouvement `release`, puis second
+  run sans effet; `releasedQty: 1`, `restockedQty: 0`, zero refund/replay/delete;
+- preuves machine:
+  `functions-gen2-g1-runtime-iam.json`,
+  `functions-gen2-g1-worker-iam.json`,
+  `functions-gen2-g1-worker-rollout.json`,
+  `functions-gen2-g1-restore.json`,
+  `functions-gen2-g1-cross-service.json` et
+  `functions-gen2-g1-data-plan.json`;
+- donnees de preuve conservees: un produit fixture, une commande annulee, une
+  reservation et ses mouvements; aucune suppression de donnees;
+- rollback: non execute. Pour une cible, redeployer seulement la source
+  `f80dc7213a8d738fb1edde11a926028bcb57ab28` depuis un worktree isole en
+  conservant le SA dedie, build SA, secrets/versions, topic, Node 22, 512 MB,
+  timeout 300 s, max 1, no-retry et ingress; ne jamais restaurer appspot;
+- tests: `test:functions-g0` 19/19, lint cible du runner, audits G1 apres chaque
+  worker; les deux E2E Stripe interdits n'ont pas ete lances;
+- deploiements: quatre Gen1 cibles au total pendant G1 (reconciler et trois
+  workers), toujours par allowlist d'une cible; aucun App Hosting/Gen2/prod;
+- verdict: `G1_TERMINEE_G2_A_LOCAL_ONLY`. Budget Billing reste `NON_VERIFIE`;
+  G2-B n'est pas commence.
+
 ## 9. Conditions d'arret immediat
 
 Arreter la vague au premier:
@@ -227,7 +269,8 @@ Arreter la vague au premier:
 
 ## 10. Point de reprise
 
-Pour commencer le chantier, utiliser le prompt de la section 15 de
-[AUDIT_MIGRATION_FUNCTIONS_GEN2.md](AUDIT_MIGRATION_FUNCTIONS_GEN2.md), en
-commencant exclusivement par G0. Toute reprise ulterieure commence par la
-derniere entree du Journal et regenere la baseline avant de poursuivre.
+La reprise courante commence par G2-A local dans
+[AUDIT_MIGRATION_FUNCTIONS_GEN2.md](AUDIT_MIGRATION_FUNCTIONS_GEN2.md), apres
+lecture de la derniere entree du Journal et regeneration read-only de la
+baseline. G2-B ne commence qu'apres ses gates locales et sa validation cloud
+distincte.

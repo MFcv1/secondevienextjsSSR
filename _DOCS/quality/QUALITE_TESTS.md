@@ -84,6 +84,16 @@ workers incomplets sont couverts par `gate7a-operations.test.cjs` et
 `gate3-workers.test.cjs`. Ces preuves locales n'autorisent pas un deploy avant
 backup `READY`, restore drill et canaux Monitoring redondants testes.
 
+`npm run functions:prove-reservation-expiry:g1 -- --commit=<HEAD>` est
+read-only par defaut. Son mode `--apply` exige la confirmation litterale
+`G1_RESERVATION_EXPIRY_STRIPE_TEST_ONLY_NO_REFUND_NO_RESTOCK`, le projet et les
+credentials sandbox exacts, une sante fraiche sans incident, la Function v3
+sur son compte runtime dedie et Stripe test. Il ne touche qu'une fixture
+`e2eOnly`, exige annulation fournisseur avant liberation et rejoue le
+scheduler pour prouver le mouvement unique. Il interdit refund, restock,
+suppression et toute cle live. Son contrat statique fait partie de
+`test:functions-g0`.
+
 `npm run functions:restore-verify:g1` compare la base nommee au snapshot PITR
 exact et produit uniquement comptages/digests; `npm run
 functions:cross-service-verify:g1` inventorie Auth, Storage, etats de versions
