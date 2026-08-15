@@ -1403,9 +1403,18 @@ porte exactement `datastore.user`, `logging.logWriter` et
 publique, Auth, Storage, Tasks, Editor ou Owner. La source epingle cette
 identite uniquement sur le reconciler et un test interdit sa regression.
 
-Nouveau verdict: `G1_READY_HEALTH_TARGETED_DEPLOY`. Un unique retry du
-reconciler est autorise apres nouveau commit de release et validation du
-wrapper; aucun autre scheduler ni cible G2 n'est inclus. Le rollback reste la
+Le retry autorise du reconciler a ensuite echoue avant mise a jour sur la
+lecture Firebase `adminSdkConfig`. La version 11 est restee `ACTIVE`, runtime
+global appspot, `512 MB`, timeout `300 s`, et aucun code ni IAM runtime n'a ete
+bascule. `firebase projects:list` a reproduit le meme `AggregateError`; la
+lecture a reussi avec `NODE_OPTIONS=--dns-result-order=ipv4first`. Le wrapper
+borne maintenant cette option au processus Firebase CLI et son test verifie
+qu'elle n'est ni globale ni dupliquee.
+
+Nouveau verdict: `G1_HOLD_NEW_DEPLOY_WINDOW`. Le transport est diagnostique et
+le correctif local est pret, mais le retry de cette fenetre est consomme. Une
+nouvelle tentative exige un nouveau commit propre et une nouvelle fenetre
+cible; aucun autre scheduler ni cible G2 n'est inclus. Le rollback reste la
 version 11 encore active ou le redeploiement cible du dernier commit connu
 avant cette tentative.
 

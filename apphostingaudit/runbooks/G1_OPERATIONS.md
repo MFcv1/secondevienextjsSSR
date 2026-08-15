@@ -2,7 +2,7 @@
 
 Derniere mise a jour: 2026-08-15
 
-Statut: `G1_READY_HEALTH_TARGETED_DEPLOY`
+Statut: `G1_HOLD_NEW_DEPLOY_WINDOW`
 
 Projet unique: `secondevienextjsssr`
 
@@ -175,7 +175,12 @@ jour de la Function. La version 11 est restee active. Le compte runtime dedie
 est maintenant epingle dans la source et verifie par
 `functions-gen2-g1-runtime-iam.json`: exactement Firestore user, log writer et
 service usage consumer, aucune cle utilisateur ni capacite Auth/Storage/Tasks.
-Un seul retry cible est autorise apres commit et validation du wrapper.
+Le retry cible a echoue avant mise a jour sur la lecture Firebase
+`adminSdkConfig`. La version 11 est restee active. Le meme echec du CLI a ete
+reproduit avec `projects:list`, puis resolu en lecture avec
+`--dns-result-order=ipv4first`. Cette option est maintenant bornee au processus
+Firebase CLI par le wrapper et testee. Ne pas relancer dans la meme fenetre;
+ouvrir une nouvelle fenetre cible apres nouveau commit propre.
 
 ## 6. Workers G1-E
 

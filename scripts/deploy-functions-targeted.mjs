@@ -10,9 +10,22 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 export const EXPECTED_PROJECT = 'secondevienextjsssr';
 export const EXPECTED_CODEBASE = 'main';
 export const MAX_BATCH_SIZE = 10;
+const FIREBASE_DNS_NODE_OPTION = '--dns-result-order=ipv4first';
 
 function fail(message) {
   throw new Error(message);
+}
+
+export function buildFirebaseCliEnv(baseEnv = process.env) {
+  const nodeOptions = String(baseEnv.NODE_OPTIONS || '')
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!nodeOptions.includes(FIREBASE_DNS_NODE_OPTION)) nodeOptions.push(FIREBASE_DNS_NODE_OPTION);
+  return {
+    ...baseEnv,
+    FIREBASE_CLI_DISABLE_UPDATE_CHECK: 'true',
+    NODE_OPTIONS: nodeOptions.join(' ')
+  };
 }
 
 export function parseDeployArgs(argv) {
@@ -43,10 +56,7 @@ function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     cwd: options.cwd,
     encoding: 'utf8',
-    env: {
-      ...process.env,
-      FIREBASE_CLI_DISABLE_UPDATE_CHECK: 'true'
-    },
+    env: buildFirebaseCliEnv(process.env),
     stdio: options.stdio || ['ignore', 'pipe', 'pipe']
   });
   if (result.error) fail(`${command}: ${result.error.message}`);
@@ -180,7 +190,7 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
   process.stdout.write(`Projet: ${validation.project}\nCibles: ${validation.selectors.join(',')}\nCommit: ${validation.commit}\n`);
   const result = spawnSync(firebaseCli, deployArgs, {
     cwd: rootDir,
-    env: { ...process.env, FIREBASE_CLI_DISABLE_UPDATE_CHECK: 'true' },
+    env: buildFirebaseCliEnv(process.env),
     stdio: 'inherit'
   });
   if (result.error) fail(result.error.message);

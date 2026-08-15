@@ -14,6 +14,7 @@ import {
   extractLocalExports
 } from '../scripts/functions-gen2-inventory.mjs';
 import {
+  buildFirebaseCliEnv,
   buildFirebaseDeployArgs,
   parseDeployArgs,
   validateDeploymentRequest
@@ -229,4 +230,15 @@ test('le reconciler G1 epingle son compte runtime dedie', () => {
   assert.match(source, /COMMERCE_OPERATIONS_RUNTIME_SERVICE_ACCOUNT\s*=\s*\n?\s*['"]commerce-operations-reconciler@secondevienextjsssr\.iam\.gserviceaccount\.com['"]/);
   const reconciler = source.match(/const commerceOperationsReconciler = regionalFunctions\(\)([\s\S]*?)\.pubsub\.schedule\('every 60 minutes'\)/)?.[1] || '';
   assert.match(reconciler, /serviceAccount:\s*COMMERCE_OPERATIONS_RUNTIME_SERVICE_ACCOUNT/);
+});
+
+test('le wrapper Firebase borne le contournement DNS au processus CLI', () => {
+  const env = buildFirebaseCliEnv({ NODE_OPTIONS: '--trace-warnings', KEEP_ME: 'yes' });
+  assert.equal(env.KEEP_ME, 'yes');
+  assert.equal(env.FIREBASE_CLI_DISABLE_UPDATE_CHECK, 'true');
+  assert.equal(env.NODE_OPTIONS, '--trace-warnings --dns-result-order=ipv4first');
+  assert.equal(
+    buildFirebaseCliEnv(env).NODE_OPTIONS,
+    '--trace-warnings --dns-result-order=ipv4first'
+  );
 });
