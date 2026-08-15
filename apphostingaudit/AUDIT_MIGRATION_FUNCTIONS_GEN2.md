@@ -1440,6 +1440,20 @@ source pre-correctif `f80dc7213a8d738fb1edde11a926028bcb57ab28` depuis un
 worktree isole, en conservant le compte runtime dedie et toute la configuration
 de la version 12; ne jamais restaurer le compte appspot global.
 
+La resolution explicitement autorisee a ensuite applique exactement deux
+ecritures transactionnelles avec le digest
+`a87c96b47001269a60c638ea90c0d8ffc867a7bcd34fc1b80dd229a68684b872`:
+fermeture de l'incident et evenement append-only. Les preuves de sortie portent
+`orderMutated: false`, `refundMutated: false`, `financialFactsMutated: false` et
+`stockMutated: false`. Le run suivant `e1tqg5pqyj5o` a termine `ok` en 3,696 s
+avec `status: healthy`, zero incident primaire et aucune troncature. L'audit
+read-only confirme zero incident ouvert et zero compteur operationnel divergent;
+la triage retourne correctement `G1_INCIDENT_EXPECTED_ONE:0`.
+
+Verdict courant: `G1_HEALTH_INCIDENT_CLOSED_WORKERS_NEXT`. G1-E reprend un seul
+worker par deploiement, avec compte runtime dedie minimal et preuve de completion
+ou d'echec; G2 reste interdit tant que les trois workers ne sont pas qualifies.
+
 ### G2 - Socle Gen2 et stabilisation des treize cibles existantes
 
 **G2-A local, sans deploiement:**

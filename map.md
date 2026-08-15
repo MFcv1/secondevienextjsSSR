@@ -886,17 +886,19 @@ decisions par nom, appelants, acces donnees, IAM, secrets et rollback sont dans
 Schedulers, queues et Eventarc est dans
 `apphostingaudit/manifests/functions-platform-g0.json`.
 
-G1 est en `HEALTH_STOP_PROVED_INCIDENT_RESOLUTION_READY`: protections Firestore, backup,
+G1 est en `HEALTH_INCIDENT_CLOSED_WORKERS_NEXT`: protections Firestore, backup,
 restore reconcilie et deux canaux Monitoring testes sont actifs; seules les
-preuves cloud du correctif sante/workers et l'arbitrage financier restent non
-fermes. Le reconciler Gen1 reste en version 11 sur le compte global appspot,
-mais sa source epingle maintenant une identite runtime dediee minimale verifiee.
+preuves cloud des workers restent non fermees. Le reconciler Gen1 est en version
+12 sur une identite runtime dediee minimale verifiee.
 Le chemin Firebase CLI reste bloque avant mise a jour; le wrapper porte un
 fallback gcloud Gen1 fail-closed limite au seul reconciler, sans cle de service
 et avec toute la configuration cloud explicite. La version 12 est active sur le
 compte dedie; son run manuel prouve `stop`, schema 3, un incident primaire et
 aucune troncature. Le resolver borne ferme uniquement l'incident avec un audit
 append-only et interdit toute mutation commande/refund/faits/stock.
+La resolution autorisee a applique deux ecritures et le run suivant prouve
+`healthy`, zero incident primaire et aucune troncature. Les workers G1-E restent
+a qualifier un par un avant tout passage G2.
 Les plans read-only P1/P2 sont dans
 `apphostingaudit/manifests/functions-gen2-g1-data-plan.json`; aucun passage G2
 n'est autorise dans cet etat.

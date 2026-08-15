@@ -2,7 +2,7 @@
 
 Derniere mise a jour: 2026-08-15
 
-Statut: `G1_HEALTH_STOP_PROVED_INCIDENT_RESOLUTION_READY`
+Statut: `G1_HEALTH_INCIDENT_CLOSED_WORKERS_NEXT`
 
 Projet unique: `secondevienextjsssr`
 
@@ -193,6 +193,13 @@ confirme zero compteur operationnel divergent. Le resolver financier est
 read-only par defaut et son apply est borne a deux ecritures: fermeture de
 l'incident et evenement append-only; aucun objet Stripe, commande, refund, fait
 financier ou stock n'est modifie.
+
+Resolution fermee: deux ecritures transactionnelles, digest
+`a87c96b47001269a60c638ea90c0d8ffc867a7bcd34fc1b80dd229a68684b872`, aucune
+mutation commande/refund/faits/stock. Le run suivant `e1tqg5pqyj5o` a termine
+`ok` en 3,696 s avec `healthy`, zero incident primaire et aucune troncature.
+L'audit confirme zero incident ouvert et zero compteur divergent. Reprendre
+G1-E un worker a la fois; G2 reste ferme.
 
 ## 6. Workers G1-E
 
