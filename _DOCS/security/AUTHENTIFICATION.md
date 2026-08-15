@@ -76,7 +76,7 @@ Le gain principal concerne la coherence, la securite et la recuperation apres pa
 | runtime de reference | Node `22.23.1` |
 | region client Functions | `europe-west1` |
 | source Functions privees | `FUNCTION_REGIONS=[europe-west1]` |
-| copies de rollback encore publiees | certaines callables `us-central1` |
+| Functions `us-central1` | six cibles uniques: trigger Auth, preuves E2E, webhooks legacy et worker image; aucune simple copie de callable Auth a retirer |
 | fournisseur email actif | `gmail` |
 | fournisseur prepare | `resend`, inactif |
 | passkey validee | Windows Hello sur sandbox Chromium |
@@ -518,7 +518,8 @@ Le domaine `hosted.app` ne peut pas etre utilise comme domaine expediteur: sa zo
 
 ### Gate P5 - Convergence regionale
 
-Etat observe pendant la cloture demo:
+Etat historique observe pendant la cloture demo, remplace pour les decisions de
+migration par le manifeste G0 du 2026-08-15:
 
 - client dirige vers `europe-west1`;
 - source `FUNCTION_REGIONS` limitee a `europe-west1`;

@@ -20,7 +20,9 @@ const {
     planFixtureCleanup
 } = require('../../../functions/src/commerce/domain/fixtureCleanup');
 const {
-    evaluateCommerceHealth
+    effectiveCommerceHealth,
+    evaluateCommerceHealth,
+    summarizePrimaryIncidents
 } = require('../../../functions/src/commerce/domain/operationsHealth');
 const {
     createOutboxWorker
@@ -470,6 +472,46 @@ test('Gate 7A: seuils exploitation produisent un stop explicite', () => {
     ]);
 });
 
+test('Gate 7A: un incident financier primaire interdit le faux vert', () => {
+    const health = evaluateCommerceHealth({
+        primaryIncidents: [{ code: 'terminal_refund_conflict', status: 'open' }]
+    }, { evaluatedAt: '2026-08-15T12:00:00.000Z' });
+    assert.equal(health.status, 'stop');
+    assert.equal(health.primaryOpenIncidentCount, 1);
+    assert.deepEqual(health.incidentHistogram, { terminal_refund_conflict: 1 });
+    assert.equal(health.truncated, false);
+    assert.equal(health.validUntil, '2026-08-15T13:30:00.000Z');
+});
+
+test('Gate 7A: incidents derives exclus, code inconnu et troncature fail-closed', () => {
+    const summary = summarizePrimaryIncidents([
+        { code: 'operations_dueInbox', source: 'commerce_operations_reconciler' },
+        { code: 'future_financial_code', status: 'open' }
+    ], { truncated: true });
+    assert.equal(summary.count, 1);
+    assert.deepEqual(summary.histogram, { future_financial_code: 1 });
+    const health = evaluateCommerceHealth({
+        primaryIncidents: [{ code: 'future_financial_code', status: 'open' }],
+        primaryIncidentsTruncated: true
+    }, { evaluatedAt: '2026-08-15T12:00:00.000Z' });
+    assert.equal(health.status, 'stop');
+    assert.equal(health.truncated, true);
+});
+
+test('Gate 7A: une sante absente ou stale est effectivement stop', () => {
+    assert.deepEqual(effectiveCommerceHealth(null, { nowMillis: 1 }), {
+        storedStatus: 'unknown',
+        effectiveStatus: 'stop',
+        stale: true,
+        ageSeconds: null
+    });
+    const health = evaluateCommerceHealth({}, { evaluatedAt: '2026-08-15T12:00:00.000Z' });
+    assert.equal(health.status, 'healthy');
+    assert.equal(effectiveCommerceHealth(health, {
+        nowMillis: Date.parse('2026-08-15T13:31:00.000Z')
+    }).effectiveStatus, 'stop');
+});
+
 test('Gate 7A: cleanup fixture dry-run ne supprime aucune preuve', () => {
     const runId = 'run_gate7a_cleanup_0001';
     const plan = planFixtureCleanup({
@@ -581,6 +623,10 @@ test('Gate 7A: le dashboard consomme les montants qualifies sans exposer les con
     assert.match(dashboard, /Répartition de \$\{total\} commandes/);
     assert.match(dashboard, /Panier moyen/);
     assert.doesNotMatch(dashboard, /Fraîcheur :|Faits :|Divergences :|Mode :/);
+    assert.match(dashboard, /Santé commerce/);
+    assert.match(dashboard, /Dernière évaluation/);
+    assert.match(dashboard, /primaryOpenIncidentCount/);
+    assert.match(dashboard, /incidentHistogram/);
     assert.match(email, />= V2_EMAIL_OUTBOX_REQUIRED/);
     assert.match(stats, />= V2_STATS_PROJECTION_REQUIRED/);
     assert.match(operations, /buildAdminOrderSummary/);

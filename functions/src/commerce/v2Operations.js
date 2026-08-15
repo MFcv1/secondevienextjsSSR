@@ -42,6 +42,7 @@ const {
     planFixtureCleanup
 } = require('./domain/fixtureCleanup');
 const {
+    effectiveCommerceHealth,
     evaluateCommerceHealth
 } = require('./domain/operationsHealth');
 const {
@@ -53,6 +54,10 @@ const {
 const {
     createBoundedWorkerSweeper
 } = require('./domain/boundedWorkerSweeper');
+const {
+    assertWorkerRunComplete,
+    buildWorkerRunSummary
+} = require('./domain/workerRunHealth');
 
 const db = admin.firestore();
 const OUTBOX_SECRETS = [GMAIL_EMAIL, GMAIL_PASSWORD, RESEND_API_KEY];
@@ -555,7 +560,7 @@ async function buildHealth(projection) {
     const now = new Date(nowMillis).toISOString();
     const openIncidentsPromise = db.collection('commerce_incidents')
         .where('status', '==', 'open')
-        .limit(100)
+        .limit(101)
         .get();
     const [
         dueInbox,
@@ -580,7 +585,11 @@ async function buildHealth(projection) {
         openIncidentsPromise,
         connectDriftCount()
     ]);
-    const incidentCodes = openIncidents.docs.map((document) => document.data()?.code);
+    const openIncidentData = openIncidents.docs.map((document) => ({
+        id: document.id,
+        ...document.data()
+    }));
+    const incidentCodes = openIncidentData.map((incident) => incident.code);
     const orphanPayments = incidentCodes
         .filter((code) => ['payment_orphan', 'payment_intent_orphan'].includes(code))
         .length;
@@ -596,7 +605,9 @@ async function buildHealth(projection) {
         orphanPayments,
         refundStockDivergences,
         connectDrift,
-        projectionDivergences: projection.divergences.length
+        projectionDivergences: projection.divergences.length,
+        primaryIncidents: openIncidentData,
+        primaryIncidentsTruncated: openIncidents.size > 100
     }, { evaluatedAt: new Date().toISOString() });
 }
 
@@ -719,13 +730,42 @@ async function runOperationsRebuild() {
         }),
         persistHealthIncidents(health)
     ]);
+    const healthLog = {
+        schemaVersion: health.schemaVersion,
+        status: health.status,
+        primaryOpenIncidentCount: health.primaryOpenIncidentCount,
+        incidentSampleCodes: health.incidentSampleCodes,
+        truncated: health.truncated,
+        validUntil: health.validUntil
+    };
+    if (health.status === 'stop') console.error('commerce_health_unhealthy', healthLog);
+    else if (health.status === 'warning') console.warn('commerce_health_unhealthy', healthLog);
+    else console.info('commerce_health_healthy', healthLog);
     return { projection, health, documents, financialRollups };
 }
 
-async function runOutboxDispatcher() {
+async function runOutboxDispatcher({
+    logger = console,
+    nowMillis = () => Date.now(),
+    runId = () => crypto.randomUUID()
+} = {}) {
+    const startedAtMillis = nowMillis();
     const runtime = createOutboxRuntime();
     const due = await runtime.due.run();
     const expiredLeases = await runtime.expiredLeases.run();
+    const summary = buildWorkerRunSummary({
+        worker: 'commerce_outbox',
+        runId: runId(),
+        startedAtMillis,
+        finishedAtMillis: nowMillis(),
+        results: [
+            { name: 'due', result: due },
+            { name: 'expired_leases', result: expiredLeases }
+        ]
+    });
+    if (summary.status === 'incomplete') logger.error('commerce_worker_incomplete', summary);
+    else logger.info('commerce_worker_completed', summary);
+    assertWorkerRunComplete(summary);
     return { due, expiredLeases };
 }
 
@@ -804,12 +844,17 @@ async function buildAdminFinancialDaily() {
 }
 
 const commerceOutboxDispatcher = regionalFunctions()
-    .runWith({ secrets: OUTBOX_SECRETS, timeoutSeconds: 300, memory: '512MB' })
+    .runWith({
+        secrets: OUTBOX_SECRETS,
+        timeoutSeconds: 300,
+        memory: '512MB',
+        maxInstances: 1
+    })
     .pubsub.schedule('every 2 minutes')
     .onRun(runOutboxDispatcher);
 
 const commerceOperationsReconciler = regionalFunctions()
-    .runWith({ timeoutSeconds: 300, memory: '512MB' })
+    .runWith({ timeoutSeconds: 300, memory: '512MB', maxInstances: 1 })
     .pubsub.schedule('every 60 minutes')
     .onRun(runOperationsRebuild);
 
@@ -824,9 +869,13 @@ const getCommerceOperationsStatusAdmin = regionalFunctions()
             buildAdminFinancialSummary(),
             buildAdminFinancialDaily()
         ]);
+        const operationsData = operations.exists ? operations.data() : null;
         return {
             success: true,
-            operations: operations.exists ? operations.data() : null,
+            operations: operationsData ? {
+                ...operationsData,
+                effective: effectiveCommerceHealth(operationsData)
+            } : null,
             orderSummary,
             financialSummary,
             financialDaily,

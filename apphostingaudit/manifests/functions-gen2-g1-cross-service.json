@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-15T18:39:59.500Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "auth": {
+    "userCount": 252,
+    "state": "READABLE_UNCHANGED_PROJECT_SCOPE"
+  },
+  "storage": {
+    "buckets": [
+      {
+        "name": "firebaseapphosting-sources-231220287936-europe-west4",
+        "location": "EUROPE-WEST4",
+        "publicAccessPrevention": null,
+        "uniformBucketLevelAccess": false
+      },
+      {
+        "name": "gcf-sources-231220287936-europe-west1",
+        "location": "EUROPE-WEST1",
+        "publicAccessPrevention": null,
+        "uniformBucketLevelAccess": false
+      },
+      {
+        "name": "gcf-sources-231220287936-us-central1",
+        "location": "US-CENTRAL1",
+        "publicAccessPrevention": null,
+        "uniformBucketLevelAccess": false
+      },
+      {
+        "name": "gcf-v2-sources-231220287936-europe-west1",
+        "location": "EUROPE-WEST1",
+        "publicAccessPrevention": null,
+        "uniformBucketLevelAccess": false
+      },
+      {
+        "name": "gcf-v2-sources-231220287936-us-central1",
+        "location": "US-CENTRAL1",
+        "publicAccessPrevention": null,
+        "uniformBucketLevelAccess": false
+      },
+      {
+        "name": "gcf-v2-uploads-231220287936.europe-west1.cloudfunctions.appspot.com",
+        "location": "EUROPE-WEST1",
+        "publicAccessPrevention": null,
+        "uniformBucketLevelAccess": false
+      },
+      {
+        "name": "secondevienextjsssr-catalog-europe-west4",
+        "location": "EUROPE-WEST4",
+        "publicAccessPrevention": null,
+        "uniformBucketLevelAccess": false
+      },
+      {
+        "name": "secondevienextjsssr.firebasestorage.app",
+        "location": "US-CENTRAL1",
+        "publicAccessPrevention": null,
+        "uniformBucketLevelAccess": false
+      }
+    ]
+  },
+  "secrets": {
+    "valuesRead": false,
+    "versionStates": [
+      {
+        "name": "apphosting-github-conn-obn4d1a-github-oauthtoken-bb4bc0",
+        "states": {
+          "ENABLED": 1
+        }
+      },
+      {
+        "name": "CATALOG_REVALIDATION_HMAC_SECRET",
+        "states": {
+          "DESTROYED": 2,
+          "ENABLED": 1
+        }
+      },
+      {
+        "name": "E2E_PROOF_TOKEN",
+        "states": {
+          "DESTROYED": 1,
+          "ENABLED": 1
+        }
+      },
+      {
+        "name": "GMAIL_EMAIL",
+        "states": {
+          "DESTROYED": 1,
+          "ENABLED": 1
+        }
+      },
+      {
+        "name": "GMAIL_PASSWORD",
+        "states": {
+          "DESTROYED": 3,
+          "ENABLED": 2
+        }
+      },
+      {
+        "name": "INSTAGRAM_APP_ID",
+        "states": {
+          "ENABLED": 1
+        }
+      },
+      {
+        "name": "INSTAGRAM_APP_SECRET",
+        "states": {
+          "ENABLED": 1
+        }
+      },
+      {
+        "name": "INSTAGRAM_OAUTH_REDIRECT_URI",
+        "states": {
+          "ENABLED": 1
+        }
+      },
+      {
+        "name": "META_APP_ID",
+        "states": {
+          "ENABLED": 1
+        }
+      },
+      {
+        "name": "META_APP_SECRET",
+        "states": {
+          "ENABLED": 1
+        }
+      },
+      {
+        "name": "META_OAUTH_REDIRECT_URI",
+        "states": {
+          "ENABLED": 1
+        }
+      },
+      {
+        "name": "META_TOKEN_ENCRYPTION_KEY",
+        "states": {
+          "ENABLED": 1
+        }
+      },
+      {
+        "name": "OTP_HMAC_SECRET",
+        "states": {
+          "ENABLED": 1
+        }
+      },
+      {
+        "name": "PAYMENT_LINK_HMAC_SECRET",
+        "states": {
+          "ENABLED": 1
+        }
+      },
+      {
+        "name": "RESEND_API_KEY",
+        "states": {
+          "ENABLED": 1
+        }
+      },
+      {
+        "name": "STRIPE_CONNECT_WH_SECRET",
+        "states": {
+          "ENABLED": 1
+        }
+      },
+      {
+        "name": "STRIPE_SECRET_KEY",
+        "states": {
+          "DESTROYED": 3,
+          "ENABLED": 1
+        }
+      },
+      {
+        "name": "STRIPE_WH_SECRET",
+        "states": {
+          "DESTROYED": 2,
+          "ENABLED": 1
+        }
+      },
+      {
+        "name": "SUPER_ADMIN_EMAIL",
+        "states": {
+          "DESTROYED": 2,
+          "ENABLED": 1
+        }
+      }
+    ]
+  },
+  "configuration": {
+    "runtimeRestoreReferences": [],
+    "eventarcTargetsRestore": false,
+    "eventarcCount": 7
+  },
+  "verdict": "CROSS_SERVICE_ISOLATION_VERIFIED",
+  "manifestDigest": "06d5d683a5154ea14aa91fe938308c706e2ba85bc85c48e4459c4671addad09b"
+}

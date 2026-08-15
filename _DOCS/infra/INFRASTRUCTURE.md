@@ -123,18 +123,32 @@ App Hosting (`apphosting.yaml`):
 | --- | --- | --- |
 | `main` | `functions/` | Auth, admin, commerce, email, analytics, maintenance et catalogue materialise |
 
-Les callables et taches du codebase `main` convergent vers `europe-west1` via
-`functions/helpers/runtime.js`. Le trigger v2
-`processProductPublicationImage` constitue une exception explicite en
-`us-central1`, localisation verifiee du bucket produit
-`secondevienextjsssr.firebasestorage.app`; un trigger Storage doit suivre la
-region de sa ressource. Les 23 doublons `us-central1` sans execution sur
-sept jours ont ete supprimes du sandbox le 2026-07-29. Les cinq Functions
-uniques conservees dans cette region sont `grantAdminOnAuth`,
-`e2eCheckoutProof`, `e2eStripeHardeningProof`, `stripeWebhook` et
-`stripeConnectWebhook`; elles ne doivent pas etre supprimees comme de simples
-doublons. Le nouveau trigger image n'entre dans cet inventaire qu'apres un
-deploiement sandbox explicitement autorise.
+Le manifeste G0 du 2026-08-15 recense 152 Functions cloud `ACTIVE`: 139 Gen1,
+13 Gen2, 146 en `europe-west1` et 6 en `us-central1`. Les six cibles US sont
+`grantAdminOnAuth`, `e2eCheckoutProof`, `e2eStripeHardeningProof`,
+`stripeWebhook`, `stripeConnectWebhook` et le trigger Gen2
+`processProductPublicationImage`, qui reste proche du bucket produit
+`secondevienextjsssr.firebasestorage.app`. Les 157 exports locaux ajoutent cinq
+cibles Instagram direct absentes du cloud et placees sous
+`HOLD_META_RECONCILIATION`; elles ne doivent etre ni deployees ni retirees par
+un deploiement global. Le detail machine est dans
+`apphostingaudit/manifests/functions-g0.json`.
+
+Depuis G1 le 2026-08-15, Firestore `(default)` `eur3` porte delete protection,
+PITR sept jours, un backup quotidien conserve quatorze jours et un backup
+hebdomadaire dimanche UTC conserve quatorze semaines. Le premier backup est
+`READY` et le restore vers `restore-drill-20260815-a` est reconcilie sans drift
+de donnees/index; aucune nouvelle cible Gen2 ne peut etre deployee avant les
+preuves sante/workers restantes. Monitoring
+porte cinq metriques logs, huit policies, un dashboard, un canal e-mail primaire
+et un canal Pub/Sub interne secondaire, tous deux testes en ouverture/
+resolution. L'IAM publisher du service agent est borne au topic G1.
+
+Le drill mesure un RPO de 1 374 secondes et un RTO de restore de 1 064 secondes.
+Les deux TTL ne sont pas restaures par le backup et restent volontairement
+absents de la base isolee. Auth, Storage, secrets et configuration ont ete
+inventories sans valeur secrete; aucun runtime ou Eventarc ne cible la base de
+drill.
 
 Le codebase public historique et Firebase Hosting ne font plus partie de la configuration. Les Functions SEO/`publicCatalog` historiques ont ete supprimees du sandbox le 2026-07-18 et le site Hosting `secondevienextjsssr` a ete desactive apres verification de l'URL App Hosting.
 
@@ -270,8 +284,11 @@ Audit et durcissement securite sandbox du 2026-08-11:
   aux deux referers techniques requis: l'origine App Hosting
   `secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app` et le
   handler Firebase Auth `secondevienextjsssr.firebaseapp.com`;
-- les cinq anciennes Functions OAuth Instagram sans export local ont ete
-  supprimees apres autorisation explicite; le rail Meta courant est conserve;
+- cinq Functions OAuth Instagram ont ete supprimees du cloud apres
+  autorisation explicite pendant la stabilisation. Le merge source ulterieur
+  `6be360e` a reintroduit leurs exports et appelants UI sans les redeployer;
+  elles sont donc sous `HOLD_META_RECONCILIATION` depuis G0, tandis que les
+  neuf Functions Meta/Facebook/saga restent deployees;
 - Auth, Firestore et Storage sont `ENFORCED` App Check sur le sandbox apres
   lecture des metriques valides sur sept jours;
 - aucun binding IAM public ni aucun `roles/editor` ne subsiste. Les comptes de
@@ -381,8 +398,9 @@ Secrets serveur centralises dans `functions/helpers/secrets.js`:
 - `META_APP_ID`, `META_APP_SECRET`, `META_OAUTH_REDIRECT_URI` pour le rail Facebook optionnel;
 - `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, `INSTAGRAM_OAUTH_REDIRECT_URI` pour Instagram Login;
 - `META_TOKEN_ENCRYPTION_KEY`, commun au chiffrement des deux familles de jetons sans les confondre;
-- ces secrets Meta/Instagram restent non provisionnes tant que la Gate M4
-  n'est pas explicitement lancee;
+- les secrets Meta attaches aux neuf cibles cloud sont consignes uniquement
+  par nom/version dans le manifeste G0; la disponibilite des secrets Instagram
+  directs ne vaut pas autorisation de deployer les cinq exports sous hold;
 - `CATALOG_REVALIDATION_HMAC_SECRET` pour l'appel machine Function -> App Hosting.
 
 `PAYMENT_LINK_HMAC_SECRET@1` est provisionne dans Secret Manager depuis le
@@ -485,7 +503,8 @@ Il doit rester limite au projet `secondevienextjsssr` et au backend sandbox. Pou
 
 Ne jamais utiliser un `firebase deploy` sans `--only` pendant une passe ciblee.
 
-Optimisation de cout appliquee le 2026-07-29:
+Optimisation de cout appliquee le 2026-07-29, inventaire historique remplace
+par le manifeste G0 du 2026-08-15:
 
 - inventaire final Functions: 91, dont 86 en `europe-west1` et 5 uniques en
   `us-central1`;
@@ -631,6 +650,13 @@ npm run build
 ```
 
 Les audits cloud necessitent une session CLI valide et doivent rester read-only sauf deploiement explicitement demande.
+
+Depuis G0, tout deploiement Functions passe par
+`scripts/deploy-functions-targeted.mjs`. Le wrapper exige le projet exact,
+`codebase=main`, le commit HEAD, les manifestes et leurs digests, ainsi qu'une
+allowlist non vide de dix noms maximum. Les cibles finance, webhook et
+scheduler restent seules dans leur lot. `firebase deploy --only functions`,
+y compris en dry-run, n'est plus un chemin autorise.
 
 Deploiement de cloture recette du 2026-08-13: apres verification explicite du
 projet `secondevienextjsssr`, `listMyOrdersV2` a ete mise a jour seule en

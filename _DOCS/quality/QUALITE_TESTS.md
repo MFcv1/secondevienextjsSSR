@@ -60,6 +60,36 @@ admin, PDF et OAuth qui pourraient transformer une donnee stockee en markup,
 ainsi que l'absence de message d'erreur provider brut dans les reponses
 `HttpsError('internal')`.
 
+### 2.2 Garde Functions Gen1 -> Gen2
+
+```bash
+npm run test:functions-g0
+```
+
+Cette suite verrouille l'inventaire G0 a 157 exports/152 cibles cloud, les
+classifications par nom, les 13 Gen2, 8 schedulers, 2 queues et 7 triggers
+Eventarc. Elle interdit un nouveau trigger Auth Gen1 hors
+`grantAdminOnAuth`, `onRegisteredUserCreated` et
+`onRegisteredUserDeleted`, ainsi que tout retour de `functions.config()`.
+Elle prouve aussi que le wrapper de deploiement refuse projet/codebase/commit/
+digest incoherents, allowlist vide ou superieure a dix, cible inconnue, cinq
+Instagram sous hold et lot multiple finance/webhook/scheduler. Aucun test de
+cette suite n'appelle Firebase, Stripe ou un deploy.
+
+Pour G1, `npm run functions:audit:g1` et
+`npm run functions:data-plan:g1` sont des lectures sandbox fail-closed sur le
+projet exact. Le second produit le plan des `inventoryVersion` et les
+comptages/hashes analytics sans payload. Les contrats de faux vert et de runs
+workers incomplets sont couverts par `gate7a-operations.test.cjs` et
+`gate3-workers.test.cjs`. Ces preuves locales n'autorisent pas un deploy avant
+backup `READY`, restore drill et canaux Monitoring redondants testes.
+
+`npm run functions:restore-verify:g1` compare la base nommee au snapshot PITR
+exact et produit uniquement comptages/digests; `npm run
+functions:cross-service-verify:g1` inventorie Auth, Storage, etats de versions
+de secrets et routage sans valeur de secret ni identite utilisateur. Ces deux
+scripts sont read-only et refusent toute autre cible.
+
 `test:retention` verrouille le dry-run par defaut, l'inventaire des collections
 techniques, les expirations `expireAt`/`expiresAt`, la minimisation des acteurs
 d'audit et l'expiration des sessions. Les emulateurs de confinement couvrent

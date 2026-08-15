@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('node:crypto');
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
 const { APP_ID, PRODUCT_COLLECTIONS, getSiteUrl } = require('../../helpers/config');
@@ -16,6 +17,10 @@ const {
     ADMIN_PAYMENT_LINK_CHANNEL,
     normalizeExpiryMinutes
 } = require('./domain/adminPaymentLink');
+const {
+    assertWorkerRunComplete,
+    buildWorkerRunSummary
+} = require('./domain/workerRunHealth');
 const {
     createAdminPaymentLinkRuntime
 } = require('./domain/v2Runtime');
@@ -336,28 +341,53 @@ async function resumeAdminPaymentLinkPaymentHandler(data) {
     }
 }
 
-async function expireAdminPaymentLinksHandler() {
+async function expireAdminPaymentLinksHandler({
+    logger = console,
+    nowMillis = () => Date.now(),
+    runId = () => crypto.randomUUID()
+} = {}) {
+    const startedAtMillis = nowMillis();
     const now = new Date().toISOString();
     const snapshot = await db.collection('orders')
         .where('checkout.channel', '==', ADMIN_PAYMENT_LINK_CHANNEL)
         .where('checkout.status', '==', 'active')
         .where('checkout.expiresAt', '<=', now)
         .orderBy('checkout.expiresAt', 'asc')
-        .limit(25)
+        .limit(26)
         .get();
     const outcomes = [];
-    for (const document of snapshot.docs) {
+    for (const document of snapshot.docs.slice(0, 25)) {
         try {
             outcomes.push(await runtime().expire(document.id));
         } catch (error) {
-            console.error('Admin payment link expiry failed', {
-                orderId: document.id,
-                code: String(error?.code || error?.message || 'unknown')
-            });
-            outcomes.push({ orderId: document.id, outcome: 'error' });
+            outcomes.push({ outcome: 'error', code: String(error?.code || 'unknown').slice(0, 80) });
         }
     }
-    return { processed: outcomes.length, outcomes };
+    const failureCount = outcomes.filter((outcome) => outcome?.outcome === 'error').length;
+    const outcomeCounts = outcomes.reduce((counts, outcome) => {
+        const key = String(outcome?.outcome || 'unknown').slice(0, 40);
+        counts[key] = (counts[key] || 0) + 1;
+        return counts;
+    }, {});
+    const summary = buildWorkerRunSummary({
+        worker: 'admin_payment_link_expiry',
+        runId: runId(),
+        startedAtMillis,
+        finishedAtMillis: nowMillis(),
+        results: [{
+            name: 'expired_links',
+            result: {
+                pages: 1,
+                processed: outcomes.length,
+                failureCount,
+                exhausted: snapshot.size > 25
+            }
+        }]
+    });
+    if (summary.status === 'incomplete') logger.error('commerce_worker_incomplete', summary);
+    else logger.info('commerce_worker_completed', summary);
+    assertWorkerRunComplete(summary);
+    return { processed: outcomes.length, outcomeCounts, summary };
 }
 
 const adminCallable = (handler) => regionalFunctions()
@@ -378,7 +408,7 @@ const prepareAdminPaymentLinkPayment = publicCallable(prepareAdminPaymentLinkPay
 const recreateAdminPaymentLink = adminCallable(recreateAdminPaymentLinkHandler);
 const resumeAdminPaymentLinkPayment = publicCallable(resumeAdminPaymentLinkPaymentHandler);
 const expireAdminPaymentLinks = regionalFunctions()
-    .runWith({ timeoutSeconds: 300, memory: '512MB', secrets: ADMIN_SECRETS })
+    .runWith({ timeoutSeconds: 300, memory: '512MB', maxInstances: 1, secrets: ADMIN_SECRETS })
     .pubsub.schedule('every 5 minutes')
     .onRun(expireAdminPaymentLinksHandler);
 

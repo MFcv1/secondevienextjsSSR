@@ -1,7 +1,7 @@
 # OAuth Instagram et Facebook - Runbook Seconde Vie
 
 Derniere verification: 2026-08-12
-Statut: `REFERENCE_ACTIVE - SANDBOX_OPERATIONNEL`
+Statut: `REFERENCE_ACTIVE - HOLD_META_RECONCILIATION`
 Proprietaire: back-office / integrations sociales
 Perimetre: connexion professionnelle Instagram directe, Facebook optionnel,
 publication sociale depuis `/admin`
@@ -25,26 +25,35 @@ back-office reste decrit dans [BACKOFFICE.md](BACKOFFICE.md).
 
 ## 2. Etat reel valide
 
+Contre-verification G0 du 2026-08-15: la connexion directe decrite dans ce
+runbook a ete qualifiee historiquement, mais ses cinq Functions ne sont plus
+presentes dans le cloud. Elles existent dans le source et l'UI depuis le merge
+`6be360e`, posterieur a leur suppression cloud par la stabilisation securite.
+Le rail Meta/Facebook et la saga conservent neuf cibles cloud. Jusqu'a G7, les
+cinq Instagram direct restent sous `HOLD_META_RECONCILIATION`: aucun deploy,
+aucune suppression de code et aucune utilisation du callback historique comme
+preuve d'etat courant.
+
 | Element | Valeur sandbox |
 | --- | --- |
 | projet Firebase | `secondevienextjsssr` |
 | App Hosting | `secondevie-next-sandbox`, `europe-west4` |
 | URL admin | `https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app/admin` |
-| Functions OAuth | `europe-west1`, Node 22 |
+| Functions OAuth | neuf cibles Meta/Facebook cloud en `europe-west1`; cinq Instagram direct locales sous hold |
 | application Meta parente | `Seconde Vie Publications`, ID `1580711783405294` |
 | application Instagram | `Seconde Vie Publications-IG`, ID `1728940675104024` |
 | compte Instagram de recette | `@xori_on`, professionnel et public |
 | Page Facebook optionnelle | `jardin perma` |
-| callback Instagram | `https://europe-west1-secondevienextjsssr.cloudfunctions.net/instagramOAuthCallback` |
+| callback Instagram | URL historique; cible cloud absente en G0, ne pas configurer ni appeler |
 | callback Facebook | valeur du secret `META_OAUTH_REDIRECT_URI` |
 | dernier correctif qualifie | commit `83b3a69` |
-| Function Instagram qualifiee | `instagramOAuthCallback`, version 3 |
+| Function Instagram qualifiee | preuve historique `instagramOAuthCallback` version 3; aucune version cloud actuelle |
 
-La connexion Instagram directe a ete validee dans le navigateur avec le compte
-testeur autorise. Facebook reste connecte comme rail optionnel et fallback. Le
-sandbox n'est pas une production publique: tant que l'application Meta reste
-en mode developpement, seuls les comptes ayant un role autorise peuvent tester
-le flux.
+La connexion Instagram directe a ete validee historiquement dans le navigateur
+avec le compte testeur autorise. Cette preuve ne leve pas le hold courant.
+Facebook reste le rail cloud present avec la saga sociale. Le sandbox n'est pas
+une production publique: tant que l'application Meta reste en mode
+developpement, seuls les comptes ayant un role autorise peuvent tester le flux.
 
 ## 3. Decision d'architecture
 

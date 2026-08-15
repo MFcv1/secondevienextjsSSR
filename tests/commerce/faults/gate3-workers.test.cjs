@@ -29,6 +29,10 @@ const {
     createReservationExpiryWorker
 } = require('../../../functions/src/commerce/domain/reservationExpiryWorker');
 const {
+    assertWorkerRunComplete,
+    buildWorkerRunSummary
+} = require('../../../functions/src/commerce/domain/workerRunHealth');
+const {
     createReservationExpiryHandler
 } = require('../../../functions/src/commerce/v2ReservationExpiry');
 
@@ -621,6 +625,12 @@ test('reservation expiry scheduler delegates once to the bounded sweeper', async
         nextCursor: null
     };
     const handler = createReservationExpiryHandler({
+        logger: { info() {}, error() {} },
+        nowMillis: (() => {
+            const values = [1_000, 1_050];
+            return () => values.shift();
+        })(),
+        runId: () => 'run_expiry_complete',
         runtimeFactory: () => ({
             sweepers: {
                 expiredReservations: {
@@ -634,6 +644,57 @@ test('reservation expiry scheduler delegates once to the bounded sweeper', async
     });
     assert.deepEqual(await handler(), expected);
     assert.equal(runs, 1);
+});
+
+test('worker heartbeat refuse un run incomplet sans journaliser les identifiants metier', async () => {
+    const logs = [];
+    const handler = createReservationExpiryHandler({
+        logger: {
+            info(message, value) { logs.push({ message, value }); },
+            error(message, value) { logs.push({ message, value }); }
+        },
+        nowMillis: (() => {
+            const values = [2_000, 2_125];
+            return () => values.shift();
+        })(),
+        runId: () => 'run_expiry_incomplete',
+        runtimeFactory: () => ({
+            sweepers: {
+                expiredReservations: {
+                    async run() {
+                        return {
+                            pages: 1,
+                            processed: 0,
+                            failures: [{ id: 'order-secret-0001', code: 'PROVIDER_FAILED' }],
+                            exhausted: false,
+                            nextCursor: null
+                        };
+                    }
+                }
+            }
+        })
+    });
+    await assert.rejects(handler(), { code: 'COMMERCE_WORKER_RUN_INCOMPLETE' });
+    assert.equal(logs[0].message, 'commerce_worker_incomplete');
+    assert.equal(logs[0].value.failureCount, 1);
+    assert.doesNotMatch(JSON.stringify(logs), /order-secret-0001/);
+});
+
+test('worker heartbeat agrege completion, backlog et overlap sans PII', () => {
+    const summary = buildWorkerRunSummary({
+        worker: 'commerce_outbox',
+        runId: 'run_outbox_0001',
+        startedAtMillis: 10,
+        finishedAtMillis: 25,
+        results: [
+            { name: 'due', result: { pages: 1, processed: 2, failures: [], exhausted: false } },
+            { name: 'expired_leases', result: { pages: 1, processed: 1, failures: [], exhausted: false } }
+        ]
+    });
+    assert.equal(summary.status, 'completed');
+    assert.equal(summary.processed, 3);
+    assert.equal(summary.durationMs, 15);
+    assert.equal(assertWorkerRunComplete(summary), summary);
 });
 
 test('outbox worker forwards the deterministic outbox id as provider idempotency key', async () => {

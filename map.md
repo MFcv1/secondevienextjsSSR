@@ -410,7 +410,7 @@ galerie: choix d'une carte [C]
 |-- AGENTS.md ......................... Bible agents, etat, regles et index
 |-- map.md ............................ Cette cartographie
 |-- _DOCS/ ........................... Chapitres canoniques
-|-- apphostingaudit/ ................. Photographie read-only architecture Firestore/App Hosting
+|-- apphostingaudit/ ................. Centre audits Firebase/App Hosting, migration Gen2 et suivi G0-G13
 |-- app/ ............................. Next App Router
 |-- src/ ............................. Modules UI/metier et helpers
 |-- functions/ ....................... Cloud Functions privees, codebase main
@@ -874,6 +874,26 @@ functions/
 
 ## 9. Exports Cloud Functions
 
+Baseline G0 du 2026-08-15: `functions/index.js` contient 157 exports uniques;
+152 sont `ACTIVE` dans le sandbox (139 Gen1, 13 Gen2). Les cinq exports
+Instagram direct `startInstagramOAuthAdmin`, `instagramOAuthCallback`,
+`getInstagramConnectionStatusAdmin`, `verifyInstagramConnectionAdmin` et
+`disconnectInstagramConnectionAdmin` existent dans le source et leurs
+appelants UI, mais pas dans le cloud. Ils restent sous
+`HOLD_META_RECONCILIATION` et sont exclus du wrapper de deploiement. Les
+decisions par nom, appelants, acces donnees, IAM, secrets et rollback sont dans
+`apphostingaudit/manifests/functions-g0.json`; la reconciliation des 13 Gen2,
+Schedulers, queues et Eventarc est dans
+`apphostingaudit/manifests/functions-platform-g0.json`.
+
+G1 est en `HOLD_HEALTH_AND_WORKER_PROOFS`: protections Firestore, backup,
+restore reconcilie et deux canaux Monitoring testes sont actifs; seules les
+preuves cloud du correctif sante/workers et l'arbitrage financier restent non
+fermes.
+Les plans read-only P1/P2 sont dans
+`apphostingaudit/manifests/functions-gen2-g1-data-plan.json`; aucun passage G2
+n'est autorise dans cet etat.
+
 | Domaine | Exports |
 | --- | --- |
 | commerce | `createOrder`, `stripeWebhook`, `stripeConnectWebhook`, `cancelOrderClient`, `getOrderStatusClient` |
@@ -881,7 +901,7 @@ functions/
 | codes promotionnels | `previewPromotionCodeV2`, `listPromotionCodesAdmin`, `createPromotionCodeAdmin`, `setPromotionCodeStatusAdmin` |
 | liens de paiement admin | `createAdminPaymentLink`, `listAdminPaymentLinks`, `extendAdminPaymentLink`, `regenerateAdminPaymentLink`, `recreateAdminPaymentLink`, `cancelAdminPaymentLink`, `getAdminPaymentLinkPublic`, `prepareAdminPaymentLinkPayment`, `resumeAdminPaymentLinkPayment`, `expireAdminPaymentLinks` |
 | commerce v2 retours client | `decideCustomerReturnRequestAdmin`, puis commandes refund/retour v2 existantes selon le parcours choisi |
-| commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
+| commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler`, `commerceReservationExpiryDispatcher`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
 | commerce v2 produit | `preflightProductMutationAdmin`, `createProductAdmin`, `createPublishedProductAdmin`, `updateProductOfferAdmin`, `publishProductAdmin`, `adjustInventoryAdmin`, `deleteProductAdmin` |
 | publication produit durable historique, inactive dans AdminForm | `startProductPublicationAdmin`, `getProductPublicationSessionAdmin`, `reportProductPublicationClientErrorAdmin`, `retryProductPublicationFinalizationAdmin`, `processProductPublicationImage`, `reconcileProductPublicationSessions`, `cleanupProductPublicationSessions` |
 | Meta OAuth/publication | `startMetaOAuthAdmin`, `metaOAuthCallback`, `getMetaConnectionStatusAdmin`, `selectMetaAssetAdmin`, `verifyMetaConnectionAdmin`, `disconnectMetaConnectionAdmin`, `prepareSocialPublicationAdmin`, `runSocialPublicationAdmin`, `getSocialPublicationStatusAdmin` |
@@ -895,7 +915,7 @@ functions/
 | newsletter/avantages | `drawNewsletterReward`, `claimNewsletterReward`, `listMyNewsletterRewards` |
 | publication sociale | `startInstagramOAuthAdmin`, `instagramOAuthCallback`, `getInstagramConnectionStatusAdmin`, `verifyInstagramConnectionAdmin`, `disconnectInstagramConnectionAdmin`; rail Facebook optionnel `startMetaOAuthAdmin`, `metaOAuthCallback`, `getMetaConnectionStatusAdmin`, `selectMetaAssetAdmin`, `verifyMetaConnectionAdmin`, `disconnectMetaConnectionAdmin`; saga `prepareSocialPublicationAdmin`, `runSocialPublicationAdmin`, `getSocialPublicationStatusAdmin` |
 | e-mail | `onOrderCreated`, `onOrderUpdated`, `sendTestEmail`, `sendRefundStatusEmailAdmin` |
-| analytics | `initLiveSession`, `syncSession`, `syncSessionBeacon`, `deleteSession`, `clearAllSessions`, `trackAdminIP`, `updateUserSessions` |
+| analytics | `initLiveSession`, `syncSession`, `syncSessionBeacon`, `deleteSession`, `clearAllSessions`, `clearAllAffiliateClicks`, `trackAdminIP`, `updateUserSessions`, `onOrderStatsWrite` |
 | maintenance | resets/purges, `runGarbageCollector`, `getUploadUrl` |
 | triggers catalogue | `onArtifactDeleted`, `onArtifactUpdated` |
 | catalogue materialise | `onCatalogSourceWrite`, `dispatchCatalogBuild`, `dispatchCatalogRevalidation`, `catalogReconciler`, `catalogMediaGarbageCollector`, `getCatalogPublicationStatus`, `rollbackCatalogSnapshot`, `rebuildCatalogSnapshot` |

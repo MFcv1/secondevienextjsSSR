@@ -1571,12 +1571,59 @@ const AdminDashboard = ({
         : stats.totalOrders;
     const paidOrderCount = displayedStatusCounts.paid + displayedStatusCounts.shipped;
     const averagePaidOrderValue = paidOrderCount > 0 ? capturedRevenue / paidOrderCount : 0;
+    const operationsHealth = commerceStatus.data?.operations;
+    const effectiveHealthStatus = operationsHealth?.effective?.effectiveStatus
+        || operationsHealth?.status
+        || 'unknown';
+    const healthIsHealthy = effectiveHealthStatus === 'healthy';
+    const healthIsWarning = effectiveHealthStatus === 'warning';
+    const healthAgeMinutes = Number.isSafeInteger(operationsHealth?.effective?.ageSeconds)
+        ? Math.floor(operationsHealth.effective.ageSeconds / 60)
+        : null;
+    const primaryIncidentCount = Number(operationsHealth?.primaryOpenIncidentCount || 0);
+    const primaryIncidentCodes = Object.keys(operationsHealth?.incidentHistogram || {});
     return (
         <motion.div
             initial={reducedMotion ? false : 'hidden'}
             animate="visible"
             className="space-y-5 pb-20 font-sans sm:space-y-6"
         >
+            {commerceStatus.status === 'ready' && (
+                <motion.div
+                    custom={0}
+                    variants={sectionVariants}
+                    role={healthIsHealthy ? 'status' : 'alert'}
+                    className={`flex flex-col gap-3 rounded-2xl border px-4 py-4 sm:flex-row sm:items-center sm:justify-between ${
+                        healthIsHealthy
+                            ? (darkMode ? 'border-emerald-400/20 bg-emerald-400/5' : 'border-emerald-200 bg-emerald-50')
+                            : healthIsWarning
+                                ? (darkMode ? 'border-amber-400/30 bg-amber-400/10' : 'border-amber-300 bg-amber-50')
+                                : (darkMode ? 'border-red-400/30 bg-red-400/10' : 'border-red-300 bg-red-50')
+                    }`}
+                >
+                    <div className="flex min-w-0 items-start gap-3">
+                        <AlertTriangle
+                            aria-hidden="true"
+                            size={20}
+                            className={healthIsHealthy ? 'text-emerald-500' : (healthIsWarning ? 'text-amber-500' : 'text-red-500')}
+                        />
+                        <div className="min-w-0">
+                            <p className={`text-xs font-black uppercase tracking-[0.18em] ${textBase}`}>
+                                Santé commerce : {effectiveHealthStatus}
+                            </p>
+                            <p className={`mt-1 text-xs ${textMuted}`}>
+                                {primaryIncidentCount} incident financier ouvert
+                                {primaryIncidentCount > 1 ? 's' : ''}
+                                {primaryIncidentCodes.length > 0 ? ` · ${primaryIncidentCodes.join(', ')}` : ''}
+                                {operationsHealth?.truncated ? ' · liste tronquée' : ''}
+                            </p>
+                        </div>
+                    </div>
+                    <p className={`shrink-0 text-[11px] font-bold ${textMuted}`}>
+                        Dernière évaluation : {healthAgeMinutes === null ? 'inconnue' : `il y a ${healthAgeMinutes} min`}
+                    </p>
+                </motion.div>
+            )}
             <motion.div custom={0} variants={sectionVariants} className="grid gap-5 lg:grid-cols-12">
                 <KpiCard
                     label="Ventes nettes"

@@ -1,7 +1,7 @@
 # PRD temporaire - Connexion Meta et publication sans friction
 
 Derniere mise a jour: 2026-08-04
-Statut: `SANDBOX_M4_COMPLETE_M5_OAUTH_VALIDE`
+Statut: `PREUVES_M4_M5_HISTORIQUES - HOLD_META_RECONCILIATION`
 Proprietaire fonctionnel: Seconde Vie
 Reference prouvee: `jardindechawi`
 Echeance de revue: 2026-10-31
@@ -13,6 +13,18 @@ OAuth sont deployes sur le sandbox. La Gate M4 est fermee. La connexion OAuth
 reelle M5 a ete validee avec `jardin perma` et `@xori_on`; la publication d'un
 meuble de test sur le site, Instagram et Facebook reste volontairement non
 executee tant qu'un contenu de test n'est pas explicitement autorise.
+
+Addendum G0 du 2026-08-15: les preuves M4/M5 ci-dessus sont historiques et ne
+decrivent plus l'inventaire cloud actuel. Les neuf Functions Meta/Facebook et
+saga sont deployees, mais les cinq exports Instagram direct
+`startInstagramOAuthAdmin`, `instagramOAuthCallback`,
+`getInstagramConnectionStatusAdmin`, `verifyInstagramConnectionAdmin` et
+`disconnectInstagramConnectionAdmin` sont uniquement locaux. La suppression
+cloud du chantier securite a precede le merge source `6be360e`, qui a
+reintroduit ces exports et leurs appelants UI sans les redeployer. G0 decide
+`HOLD_META_RECONCILIATION`: ni redeploiement, ni retrait du source, ni nouvelle
+preuve M4/M5 avant G7 et la requalification du redirect, des secrets, d'App
+Check, de l'IAM et du rollback.
 
 Decision ajoutee le 2026-08-04: Instagram Login devient le parcours principal.
 Il autorise directement un compte Instagram professionnel sans Page Facebook.

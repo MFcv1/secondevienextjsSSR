@@ -19,7 +19,7 @@ const {
 const { validateFixtureScope } = fixtureScopeDomain;
 
 const SANDBOX_PROJECT = 'secondevienextjsssr';
-const TOOL_VERSION = 'gate6-legacy-classifier-v1';
+const TOOL_VERSION = 'gate6-legacy-classifier-v2';
 const DEFAULT_OUTPUT = 'logs/commerce/gate6/classification-manifest.json';
 const DEFAULT_CHECKPOINT = 'logs/commerce/gate6/classification-checkpoint.json';
 
@@ -196,7 +196,7 @@ async function main() {
 
   const controlSnapshot = await db.doc('sys_commerce_control/current').get();
   const control = controlSnapshot.exists ? controlSnapshot.data() : null;
-  if (control?.newCheckoutMode && control.newCheckoutMode !== 'off') {
+  if (!dryRun && control?.newCheckoutMode && control.newCheckoutMode !== 'off') {
     throw new Error('GATE6_REQUIRES_NEW_CHECKOUT_MODE_OFF');
   }
 

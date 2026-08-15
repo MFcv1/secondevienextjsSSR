@@ -1,0 +1,1054 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-15T18:38:22.130Z",
+  "project": "secondevienextjsssr",
+  "sourceDatabase": "(default)",
+  "restoreDatabase": "restore-drill-20260815-a",
+  "sourceInfo": {
+    "backup": {
+      "backup": "projects/secondevienextjsssr/locations/eur3/backups/6c33ce73-dfe5-4081-8112-9369ae8b3af8",
+      "snapshotTime": "2026-08-15T17:54:15.202270Z"
+    },
+    "operation": "projects/secondevienextjsssr/databases/restore-drill-20260815-a/operations/L_-7dL_R-4MISBJwHRcxLBAqM3J1ZQQiChAaGg",
+    "progress": "COMPLETED"
+  },
+  "sourceReadTime": "2026-08-15T17:54:15.202270Z",
+  "database": {
+    "sourceLocation": "eur3",
+    "restoreLocation": "eur3",
+    "restoreType": "FIRESTORE_NATIVE",
+    "restoreDeleteProtection": "DELETE_PROTECTION_ENABLED",
+    "restorePitr": "POINT_IN_TIME_RECOVERY_DISABLED"
+  },
+  "roots": [
+    {
+      "name": "analytics_admin_audit_v3",
+      "source": {
+        "count": 605,
+        "digest": "35d3dd5be5e3d8e019f37397b7f24848f7ce7d91a08844ac1280dc1f5d1e730c"
+      },
+      "restored": {
+        "count": 605,
+        "digest": "35d3dd5be5e3d8e019f37397b7f24848f7ce7d91a08844ac1280dc1f5d1e730c"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_business_facts_v3",
+      "source": {
+        "count": 1,
+        "digest": "1cc7419a6ac5189ae8da8064ce5516a8bf3fc733f033bfbb3775a37152978451"
+      },
+      "restored": {
+        "count": 1,
+        "digest": "1cc7419a6ac5189ae8da8064ce5516a8bf3fc733f033bfbb3775a37152978451"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_item_daily",
+      "source": {
+        "count": 7,
+        "digest": "cbbc54b4e34b204932dd0b386efe52a4cac2d38de08f178bed9f9eb08379ff3a"
+      },
+      "restored": {
+        "count": 7,
+        "digest": "cbbc54b4e34b204932dd0b386efe52a4cac2d38de08f178bed9f9eb08379ff3a"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_page_daily",
+      "source": {
+        "count": 6,
+        "digest": "bbf99a55884205cfaf5297985436b4419156cc306dfc65d099eb3b0121aa05e9"
+      },
+      "restored": {
+        "count": 6,
+        "digest": "bbf99a55884205cfaf5297985436b4419156cc306dfc65d099eb3b0121aa05e9"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_rollup_days_v3",
+      "source": {
+        "count": 3,
+        "digest": "d0e37676c686802ab697b85b8f6a6dbbebad3e9488fbbfa60acb0172e31ad6ee"
+      },
+      "restored": {
+        "count": 3,
+        "digest": "d0e37676c686802ab697b85b8f6a6dbbebad3e9488fbbfa60acb0172e31ad6ee"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_rollup_months_v3",
+      "source": {
+        "count": 0,
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "restored": {
+        "count": 0,
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_session_facts_v3",
+      "source": {
+        "count": 14,
+        "digest": "84e4184386da7f4395b7cfa676ed66bfb22fd18a18e26cea5a046c906b3f6a31"
+      },
+      "restored": {
+        "count": 14,
+        "digest": "84e4184386da7f4395b7cfa676ed66bfb22fd18a18e26cea5a046c906b3f6a31"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_sessions",
+      "source": {
+        "count": 345,
+        "digest": "47aa196a16b36811ee68dd077a4d0ab7e409467d6c24bc88aa340463651b43f9"
+      },
+      "restored": {
+        "count": 345,
+        "digest": "47aa196a16b36811ee68dd077a4d0ab7e409467d6c24bc88aa340463651b43f9"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_sessions_v3",
+      "source": {
+        "count": 14,
+        "digest": "63762d15fb4d4637d38dbacaa1c1e177db456ec6c18c08cdf1cd71302fea8d3d"
+      },
+      "restored": {
+        "count": 14,
+        "digest": "63762d15fb4d4637d38dbacaa1c1e177db456ec6c18c08cdf1cd71302fea8d3d"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_transition_daily",
+      "source": {
+        "count": 2,
+        "digest": "fd40ce8e4965273f8bfa9ae130637213b88415a20e1dd0bee323cc6fdfa3bd24"
+      },
+      "restored": {
+        "count": 2,
+        "digest": "fd40ce8e4965273f8bfa9ae130637213b88415a20e1dd0bee323cc6fdfa3bd24"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_unique_markers",
+      "source": {
+        "count": 7,
+        "digest": "8fc0914e165398ce41f868dd97e013c5756a6543e0e9801145793df635609a06"
+      },
+      "restored": {
+        "count": 7,
+        "digest": "8fc0914e165398ce41f868dd97e013c5756a6543e0e9801145793df635609a06"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "artifacts",
+      "source": {
+        "count": 0,
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "restored": {
+        "count": 0,
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_checkout_identities",
+      "source": {
+        "count": 99,
+        "digest": "e2e059b92f4c0db612eb0aa2f364a97049949259e46ee9eb52be69b8c12539b8"
+      },
+      "restored": {
+        "count": 99,
+        "digest": "e2e059b92f4c0db612eb0aa2f364a97049949259e46ee9eb52be69b8c12539b8"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_command_results",
+      "source": {
+        "count": 168,
+        "digest": "95e744bb79a76189c8f17553b4afc86ad1b20d95117204cfd1de4899985ad2e5"
+      },
+      "restored": {
+        "count": 168,
+        "digest": "95e744bb79a76189c8f17553b4afc86ad1b20d95117204cfd1de4899985ad2e5"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_connect_accounts",
+      "source": {
+        "count": 1,
+        "digest": "70da19869c0d083db5b9b58eec958f846c9570c312ccdab73afd164e8fa7b4ea"
+      },
+      "restored": {
+        "count": 1,
+        "digest": "70da19869c0d083db5b9b58eec958f846c9570c312ccdab73afd164e8fa7b4ea"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_document_delivery_limits",
+      "source": {
+        "count": 2,
+        "digest": "ee16e552e6a3cf0c8db0f7ac7192d680c345325984a8b55bfdf91b9c1a7d28fa"
+      },
+      "restored": {
+        "count": 2,
+        "digest": "ee16e552e6a3cf0c8db0f7ac7192d680c345325984a8b55bfdf91b9c1a7d28fa"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_financial_daily",
+      "source": {
+        "count": 5,
+        "digest": "69d5766fed9506587522036e3e5dc9e4901c0eb1249f0e9874d4e64ccd83424e"
+      },
+      "restored": {
+        "count": 5,
+        "digest": "69d5766fed9506587522036e3e5dc9e4901c0eb1249f0e9874d4e64ccd83424e"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_financial_facts",
+      "source": {
+        "count": 74,
+        "digest": "8117df0f274a9573e9822a0f95a8b1c37dd5303d3d60fe5c5d7ca6477d9ea9c0"
+      },
+      "restored": {
+        "count": 74,
+        "digest": "8117df0f274a9573e9822a0f95a8b1c37dd5303d3d60fe5c5d7ca6477d9ea9c0"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_financial_projections",
+      "source": {
+        "count": 1,
+        "digest": "63d9555ecef96f5bea3290a568282d77839813baf969a42a0f74f375a8715abe"
+      },
+      "restored": {
+        "count": 1,
+        "digest": "63d9555ecef96f5bea3290a568282d77839813baf969a42a0f74f375a8715abe"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_financial_totals",
+      "source": {
+        "count": 1,
+        "digest": "5a657d0f3b34451f2cb0da27db439512c31d2e983d26d0d5f68e032cd747245d"
+      },
+      "restored": {
+        "count": 1,
+        "digest": "5a657d0f3b34451f2cb0da27db439512c31d2e983d26d0d5f68e032cd747245d"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_fixture_operations",
+      "source": {
+        "count": 3,
+        "digest": "f3f8a4b7428a62f30d3327ff4354d90f55e28fbd2920435ec0b87883016b45f6"
+      },
+      "restored": {
+        "count": 3,
+        "digest": "f3f8a4b7428a62f30d3327ff4354d90f55e28fbd2920435ec0b87883016b45f6"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_fixture_scopes",
+      "source": {
+        "count": 1,
+        "digest": "721a21f8884674d6b7c2a89deb953c2daee79d1f809c3abf770446848e53ec37"
+      },
+      "restored": {
+        "count": 1,
+        "digest": "721a21f8884674d6b7c2a89deb953c2daee79d1f809c3abf770446848e53ec37"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_gate_runs",
+      "source": {
+        "count": 25,
+        "digest": "c8414a5b85c328c2373fdc88366bd1fbc940551caa72be5eb2c71587e143d06f"
+      },
+      "restored": {
+        "count": 25,
+        "digest": "c8414a5b85c328c2373fdc88366bd1fbc940551caa72be5eb2c71587e143d06f"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_incidents",
+      "source": {
+        "count": 10,
+        "digest": "ceb02398c21adf41d9e4033b51580b0a7b835058aa5a81d7de963f0d2a700a79"
+      },
+      "restored": {
+        "count": 10,
+        "digest": "ceb02398c21adf41d9e4033b51580b0a7b835058aa5a81d7de963f0d2a700a79"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_outbox",
+      "source": {
+        "count": 130,
+        "digest": "4454be4c8ca13e1f546673be05067689f7aeaf9232d44a36a99fe7559250da2b"
+      },
+      "restored": {
+        "count": 130,
+        "digest": "4454be4c8ca13e1f546673be05067689f7aeaf9232d44a36a99fe7559250da2b"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_policy_versions",
+      "source": {
+        "count": 3,
+        "digest": "09a5ce01d5cc2c7db572c98fe6c0e12a05ee158ed4a01769d5ae256d6da50474"
+      },
+      "restored": {
+        "count": 3,
+        "digest": "09a5ce01d5cc2c7db572c98fe6c0e12a05ee158ed4a01769d5ae256d6da50474"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_product_audits",
+      "source": {
+        "count": 0,
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "restored": {
+        "count": 0,
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_promotion_codes",
+      "source": {
+        "count": 2,
+        "digest": "29d8b443f89af209ba0bf29d089e8680fdb91a011975a6e07b940b989a1259f8"
+      },
+      "restored": {
+        "count": 2,
+        "digest": "29d8b443f89af209ba0bf29d089e8680fdb91a011975a6e07b940b989a1259f8"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_release_manifests",
+      "source": {
+        "count": 11,
+        "digest": "c101be93a672395b394919528bdb9fbb3838371873e655140269cfb35c393f59"
+      },
+      "restored": {
+        "count": 11,
+        "digest": "c101be93a672395b394919528bdb9fbb3838371873e655140269cfb35c393f59"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_return_allocations",
+      "source": {
+        "count": 4,
+        "digest": "951b23b43b005937f515f4bf27699847d6d28e3f45ffa585e6e7aa49dfc51f0d"
+      },
+      "restored": {
+        "count": 4,
+        "digest": "951b23b43b005937f515f4bf27699847d6d28e3f45ffa585e6e7aa49dfc51f0d"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_webhook_inbox",
+      "source": {
+        "count": 160,
+        "digest": "90c9acf38ec6460f71463e467acab6e6cd23e95251ae03a773b0b8e4d908fc2e"
+      },
+      "restored": {
+        "count": 160,
+        "digest": "90c9acf38ec6460f71463e467acab6e6cd23e95251ae03a773b0b8e4d908fc2e"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "dashboard_stats",
+      "source": {
+        "count": 1,
+        "digest": "91cb24b7183c675349d50b2ff23c8b68fd4202c22a2f29fc44c2b660e756be34"
+      },
+      "restored": {
+        "count": 1,
+        "digest": "91cb24b7183c675349d50b2ff23c8b68fd4202c22a2f29fc44c2b660e756be34"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "inventory_movements",
+      "source": {
+        "count": 225,
+        "digest": "c53e78093c17d83ec38133c032680e6450f73fcb6a191c40ac370722398277bf"
+      },
+      "restored": {
+        "count": 225,
+        "digest": "c53e78093c17d83ec38133c032680e6450f73fcb6a191c40ac370722398277bf"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "inventory_reservations",
+      "source": {
+        "count": 107,
+        "digest": "37e99ef0371067f677404676f1e120f0731cbd430d45f4f1a25d5ef8f97c76ee"
+      },
+      "restored": {
+        "count": 107,
+        "digest": "37e99ef0371067f677404676f1e120f0731cbd430d45f4f1a25d5ef8f97c76ee"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "inventory_stats",
+      "source": {
+        "count": 1,
+        "digest": "6e31345d43bf42517227731ec0025013eb39a97c1d4544bda52226ede467d576"
+      },
+      "restored": {
+        "count": 1,
+        "digest": "6e31345d43bf42517227731ec0025013eb39a97c1d4544bda52226ede467d576"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "newsletter_reward_plays",
+      "source": {
+        "count": 1,
+        "digest": "1745a593aa55ff6c78a0898438493278e58940632ce57a2d851523a62a539b2e"
+      },
+      "restored": {
+        "count": 1,
+        "digest": "1745a593aa55ff6c78a0898438493278e58940632ce57a2d851523a62a539b2e"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "newsletter_rewards",
+      "source": {
+        "count": 1,
+        "digest": "6adad55b9bbb5b764c76262e19f0f4bc193bc6dc25f863562d24560f7ac07e7d"
+      },
+      "restored": {
+        "count": 1,
+        "digest": "6adad55b9bbb5b764c76262e19f0f4bc193bc6dc25f863562d24560f7ac07e7d"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "newsletter_subscribers",
+      "source": {
+        "count": 1,
+        "digest": "b0f8b252895d37200a99b6fcd67a3cbea88ddb8121e74f3df56e2dd33d83d66c"
+      },
+      "restored": {
+        "count": 1,
+        "digest": "b0f8b252895d37200a99b6fcd67a3cbea88ddb8121e74f3df56e2dd33d83d66c"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "orders",
+      "source": {
+        "count": 125,
+        "digest": "b78b05bd51d8c9e82d57a11629587480cf4b548077613d6a3d8d79037a134919"
+      },
+      "restored": {
+        "count": 125,
+        "digest": "b78b05bd51d8c9e82d57a11629587480cf4b548077613d6a3d8d79037a134919"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "quote_requests",
+      "source": {
+        "count": 1,
+        "digest": "e95036d5f1c5ac5318313e5298d3ff63a965f5ea3229366441a4555f5e6abefc"
+      },
+      "restored": {
+        "count": 1,
+        "digest": "e95036d5f1c5ac5318313e5298d3ff63a965f5ea3229366441a4555f5e6abefc"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sales_stats_daily",
+      "source": {
+        "count": 8,
+        "digest": "584568d198e7efbd53c8e053a46f1c96f57d325189416571fe1c8fe5f31b1795"
+      },
+      "restored": {
+        "count": 8,
+        "digest": "584568d198e7efbd53c8e053a46f1c96f57d325189416571fe1c8fe5f31b1795"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sys_admin_access",
+      "source": {
+        "count": 2,
+        "digest": "126d69355d48994da5da542c26f7c9b157be5d0fa2b2faf18f34ec3218adb667"
+      },
+      "restored": {
+        "count": 2,
+        "digest": "126d69355d48994da5da542c26f7c9b157be5d0fa2b2faf18f34ec3218adb667"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sys_audit_meta",
+      "source": {
+        "count": 13,
+        "digest": "08cbf82dd3fde4ddaa75f180dee2b97a881bf25f7ee0abf56be5a1171ad6b804"
+      },
+      "restored": {
+        "count": 13,
+        "digest": "08cbf82dd3fde4ddaa75f180dee2b97a881bf25f7ee0abf56be5a1171ad6b804"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sys_audit_quotes",
+      "source": {
+        "count": 2,
+        "digest": "a43c931f94269ca62cb508798ae10b7b7ed299389d9e43419653d1ce1d7ec373"
+      },
+      "restored": {
+        "count": 2,
+        "digest": "a43c931f94269ca62cb508798ae10b7b7ed299389d9e43419653d1ce1d7ec373"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sys_audit_security",
+      "source": {
+        "count": 171,
+        "digest": "eb00f5e5ccbddf22135d4636c27147bae1e2dfa6c7db2f38c4f4e0241a64bf87"
+      },
+      "restored": {
+        "count": 171,
+        "digest": "eb00f5e5ccbddf22135d4636c27147bae1e2dfa6c7db2f38c4f4e0241a64bf87"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sys_audit_stripe_connect",
+      "source": {
+        "count": 7,
+        "digest": "b03a0be5e4ba910900cd5fac5a77161dfb6181303adc969d3dd3877e9e756639"
+      },
+      "restored": {
+        "count": 7,
+        "digest": "b03a0be5e4ba910900cd5fac5a77161dfb6181303adc969d3dd3877e9e756639"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sys_catalog_live",
+      "source": {
+        "count": 1,
+        "digest": "07564b4d992b61caacceb01295925b860b4642894221b80aafa4f3a3b7ede099"
+      },
+      "restored": {
+        "count": 1,
+        "digest": "07564b4d992b61caacceb01295925b860b4642894221b80aafa4f3a3b7ede099"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sys_catalog_media_gc",
+      "source": {
+        "count": 672,
+        "digest": "a11843514505788de4cec258d5adc24f6fdcbf4f749f50bcb03c117fcfc5569f"
+      },
+      "restored": {
+        "count": 672,
+        "digest": "a11843514505788de4cec258d5adc24f6fdcbf4f749f50bcb03c117fcfc5569f"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sys_catalog_publication",
+      "source": {
+        "count": 1,
+        "digest": "835aa3201cc0dd4346b43c3a72d5fe4e2ddec5dd9ae1910d2266e42498792b3c"
+      },
+      "restored": {
+        "count": 1,
+        "digest": "835aa3201cc0dd4346b43c3a72d5fe4e2ddec5dd9ae1910d2266e42498792b3c"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sys_catalog_publication_builds",
+      "source": {
+        "count": 165,
+        "digest": "6d5952eabc35978ae1f2bb3ddd3ded9e9fb98678cd451e65bf711a0132596ef9"
+      },
+      "restored": {
+        "count": 165,
+        "digest": "6d5952eabc35978ae1f2bb3ddd3ded9e9fb98678cd451e65bf711a0132596ef9"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sys_catalog_publication_events",
+      "source": {
+        "count": 41,
+        "digest": "3c3723690acea34a9cdaf727a151ebbce0c363515d9d323bbd4263719e8d3fc5"
+      },
+      "restored": {
+        "count": 41,
+        "digest": "3c3723690acea34a9cdaf727a151ebbce0c363515d9d323bbd4263719e8d3fc5"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sys_commerce_control",
+      "source": {
+        "count": 1,
+        "digest": "04bc19c2cd82a18311bb34d698e0ea90d1a881490031a0632225b17ab29abce6"
+      },
+      "restored": {
+        "count": 1,
+        "digest": "04bc19c2cd82a18311bb34d698e0ea90d1a881490031a0632225b17ab29abce6"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sys_commerce_operations",
+      "source": {
+        "count": 1,
+        "digest": "22eadee27d4268ecc807ce299ba3dcf27eaa9570e3e5aa4de9fe975c740e1153"
+      },
+      "restored": {
+        "count": 1,
+        "digest": "22eadee27d4268ecc807ce299ba3dcf27eaa9570e3e5aa4de9fe975c740e1153"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sys_idempotency",
+      "source": {
+        "count": 166,
+        "digest": "f93d93043fb78305d32d6a9e85f07cbde7646189495c11d26600759b8694a37f"
+      },
+      "restored": {
+        "count": 166,
+        "digest": "f93d93043fb78305d32d6a9e85f07cbde7646189495c11d26600759b8694a37f"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sys_meta_connections",
+      "source": {
+        "count": 2,
+        "digest": "16d2b69946fb62545944f0f60e002ecc2d6b4992c2111ed9be07fb98531b5c4e"
+      },
+      "restored": {
+        "count": 2,
+        "digest": "16d2b69946fb62545944f0f60e002ecc2d6b4992c2111ed9be07fb98531b5c4e"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sys_meta_oauth_states",
+      "source": {
+        "count": 11,
+        "digest": "12f9a2c4081fd562ce8d3cce85ad1aa979945f8f174f21c867fff4bda78a147e"
+      },
+      "restored": {
+        "count": 11,
+        "digest": "12f9a2c4081fd562ce8d3cce85ad1aa979945f8f174f21c867fff4bda78a147e"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sys_metadata",
+      "source": {
+        "count": 11,
+        "digest": "92804a3ef360e0de9de474bcadd0b056a71c5dded5fa9ddd712a8531c00b41f3"
+      },
+      "restored": {
+        "count": 11,
+        "digest": "92804a3ef360e0de9de474bcadd0b056a71c5dded5fa9ddd712a8531c00b41f3"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sys_ratelimit",
+      "source": {
+        "count": 207,
+        "digest": "70130e6c1e6f15f918b2e35f72f634e5b2d2d361b3dde3f8db193bb064713497"
+      },
+      "restored": {
+        "count": 207,
+        "digest": "70130e6c1e6f15f918b2e35f72f634e5b2d2d361b3dde3f8db193bb064713497"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "sys_user_stats",
+      "source": {
+        "count": 1,
+        "digest": "2a58ef714436da726a28ee005bbbb4bd8c5b1c78e8b2feb11a3cf2d8b7b70e81"
+      },
+      "restored": {
+        "count": 1,
+        "digest": "2a58ef714436da726a28ee005bbbb4bd8c5b1c78e8b2feb11a3cf2d8b7b70e81"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "users",
+      "source": {
+        "count": 42,
+        "digest": "d94945c78504a5f7d515f729eab5aae70dd3d83d8ef5715cb911a16499b9da7a"
+      },
+      "restored": {
+        "count": 42,
+        "digest": "d94945c78504a5f7d515f729eab5aae70dd3d83d8ef5715cb911a16499b9da7a"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    }
+  ],
+  "criticalCollections": [
+    {
+      "name": "artifacts/secondevie/public/data/furniture",
+      "source": {
+        "count": 36,
+        "digest": "d029d6f7507aae25943f362fd4d136cdfa122f30e2d80a7386e5d472791a8ddf"
+      },
+      "restored": {
+        "count": 36,
+        "digest": "d029d6f7507aae25943f362fd4d136cdfa122f30e2d80a7386e5d472791a8ddf"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "orders",
+      "source": {
+        "count": 125,
+        "digest": "b78b05bd51d8c9e82d57a11629587480cf4b548077613d6a3d8d79037a134919"
+      },
+      "restored": {
+        "count": 125,
+        "digest": "b78b05bd51d8c9e82d57a11629587480cf4b548077613d6a3d8d79037a134919"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "inventory_reservations",
+      "source": {
+        "count": 107,
+        "digest": "37e99ef0371067f677404676f1e120f0731cbd430d45f4f1a25d5ef8f97c76ee"
+      },
+      "restored": {
+        "count": 107,
+        "digest": "37e99ef0371067f677404676f1e120f0731cbd430d45f4f1a25d5ef8f97c76ee"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_outbox",
+      "source": {
+        "count": 130,
+        "digest": "4454be4c8ca13e1f546673be05067689f7aeaf9232d44a36a99fe7559250da2b"
+      },
+      "restored": {
+        "count": 130,
+        "digest": "4454be4c8ca13e1f546673be05067689f7aeaf9232d44a36a99fe7559250da2b"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_webhook_inbox",
+      "source": {
+        "count": 160,
+        "digest": "90c9acf38ec6460f71463e467acab6e6cd23e95251ae03a773b0b8e4d908fc2e"
+      },
+      "restored": {
+        "count": 160,
+        "digest": "90c9acf38ec6460f71463e467acab6e6cd23e95251ae03a773b0b8e4d908fc2e"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "commerce_incidents",
+      "source": {
+        "count": 10,
+        "digest": "ceb02398c21adf41d9e4033b51580b0a7b835058aa5a81d7de963f0d2a700a79"
+      },
+      "restored": {
+        "count": 10,
+        "digest": "ceb02398c21adf41d9e4033b51580b0a7b835058aa5a81d7de963f0d2a700a79"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_sessions",
+      "source": {
+        "count": 345,
+        "digest": "47aa196a16b36811ee68dd077a4d0ab7e409467d6c24bc88aa340463651b43f9"
+      },
+      "restored": {
+        "count": 345,
+        "digest": "47aa196a16b36811ee68dd077a4d0ab7e409467d6c24bc88aa340463651b43f9"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_admin_audit_v3",
+      "source": {
+        "count": 605,
+        "digest": "35d3dd5be5e3d8e019f37397b7f24848f7ce7d91a08844ac1280dc1f5d1e730c"
+      },
+      "restored": {
+        "count": 605,
+        "digest": "35d3dd5be5e3d8e019f37397b7f24848f7ce7d91a08844ac1280dc1f5d1e730c"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_business_facts_v3",
+      "source": {
+        "count": 1,
+        "digest": "1cc7419a6ac5189ae8da8064ce5516a8bf3fc733f033bfbb3775a37152978451"
+      },
+      "restored": {
+        "count": 1,
+        "digest": "1cc7419a6ac5189ae8da8064ce5516a8bf3fc733f033bfbb3775a37152978451"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_session_facts_v3",
+      "source": {
+        "count": 14,
+        "digest": "84e4184386da7f4395b7cfa676ed66bfb22fd18a18e26cea5a046c906b3f6a31"
+      },
+      "restored": {
+        "count": 14,
+        "digest": "84e4184386da7f4395b7cfa676ed66bfb22fd18a18e26cea5a046c906b3f6a31"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_sessions_v3",
+      "source": {
+        "count": 14,
+        "digest": "63762d15fb4d4637d38dbacaa1c1e177db456ec6c18c08cdf1cd71302fea8d3d"
+      },
+      "restored": {
+        "count": 14,
+        "digest": "63762d15fb4d4637d38dbacaa1c1e177db456ec6c18c08cdf1cd71302fea8d3d"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_rollup_days_v3",
+      "source": {
+        "count": 3,
+        "digest": "d0e37676c686802ab697b85b8f6a6dbbebad3e9488fbbfa60acb0172e31ad6ee"
+      },
+      "restored": {
+        "count": 3,
+        "digest": "d0e37676c686802ab697b85b8f6a6dbbebad3e9488fbbfa60acb0172e31ad6ee"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_rollup_months_v3",
+      "source": {
+        "count": 0,
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "restored": {
+        "count": 0,
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_page_daily",
+      "source": {
+        "count": 6,
+        "digest": "bbf99a55884205cfaf5297985436b4419156cc306dfc65d099eb3b0121aa05e9"
+      },
+      "restored": {
+        "count": 6,
+        "digest": "bbf99a55884205cfaf5297985436b4419156cc306dfc65d099eb3b0121aa05e9"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_transition_daily",
+      "source": {
+        "count": 2,
+        "digest": "fd40ce8e4965273f8bfa9ae130637213b88415a20e1dd0bee323cc6fdfa3bd24"
+      },
+      "restored": {
+        "count": 2,
+        "digest": "fd40ce8e4965273f8bfa9ae130637213b88415a20e1dd0bee323cc6fdfa3bd24"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_unique_markers",
+      "source": {
+        "count": 7,
+        "digest": "8fc0914e165398ce41f868dd97e013c5756a6543e0e9801145793df635609a06"
+      },
+      "restored": {
+        "count": 7,
+        "digest": "8fc0914e165398ce41f868dd97e013c5756a6543e0e9801145793df635609a06"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    },
+    {
+      "name": "analytics_item_daily",
+      "source": {
+        "count": 7,
+        "digest": "cbbc54b4e34b204932dd0b386efe52a4cac2d38de08f178bed9f9eb08379ff3a"
+      },
+      "restored": {
+        "count": 7,
+        "digest": "cbbc54b4e34b204932dd0b386efe52a4cac2d38de08f178bed9f9eb08379ff3a"
+      },
+      "countEqual": true,
+      "digestEqual": true
+    }
+  ],
+  "indexes": {
+    "sourceCount": 13,
+    "restoreCount": 13,
+    "sourceDigest": "6d34bbe3c12f6174ede2d2ad255b8396ead423d519fbe4d59a762e2eb53b5223",
+    "restoreDigest": "6d34bbe3c12f6174ede2d2ad255b8396ead423d519fbe4d59a762e2eb53b5223"
+  },
+  "ttl": {
+    "sourceCount": 2,
+    "restoreCount": 0,
+    "sourceFields": [
+      "sys_catalog_publication_builds/expireAt",
+      "sys_catalog_publication_events/expireAt"
+    ],
+    "restoreFields": [],
+    "expectedRestoreOmission": true
+  },
+  "iam": {
+    "publicBindings": []
+  },
+  "anonymousAccess": {
+    "state": "DENIED",
+    "status": 403
+  },
+  "trafficBinding": "NONE_BY_DESIGN_SOURCE_AND_CONFIG_REVIEW_REQUIRED",
+  "verdict": "RESTORE_DATA_PLANE_VERIFIED",
+  "manifestDigest": "abac1a40bd7813c1798ac3889ace37ac5cca0469ab4f04665cd3c2774976a05b"
+}

@@ -1,0 +1,308 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-15T15:30:48.381Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "mode": "READ_ONLY_PLAN",
+  "inventoryVersion": {
+    "collection": "artifacts/secondevie/public/data/furniture",
+    "totalFurniture": 36,
+    "missingCount": 10,
+    "readyCount": 10,
+    "refusedCount": 0,
+    "proposedValue": 0,
+    "executionState": "NOT_EXECUTED",
+    "requiredBeforeWrite": [
+      "BACKUP_READY",
+      "RESTORE_DRILL_PASSED",
+      "EXPLICIT_G8_APPROVAL",
+      "BOUNDED_ADMIN_WINDOW",
+      "LAST_UPDATE_TIME_PRECONDITION"
+    ],
+    "candidates": [
+      {
+        "id": "5GmqLGF7LU55QOlFnMk5",
+        "updateTime": "2026-07-06T13:56:15.455Z",
+        "stock": 1,
+        "status": "published",
+        "sold": false,
+        "evidenceHash": "9af9235a4b1686e1af20f5800af5e03ca08a38c01a223ad8eb676a75c0936724",
+        "proposedInventoryVersion": 0,
+        "classification": "READY_AFTER_BACKUP_AND_APPROVAL",
+        "writePrecondition": {
+          "lastUpdateTime": "2026-07-06T13:56:15.455Z",
+          "inventoryVersionStillMissing": true
+        },
+        "rollbackPrecondition": {
+          "lastUpdateTimeMustEqualBackfillResult": true,
+          "inventoryVersionMustEqual": 0
+        }
+      },
+      {
+        "id": "ffuObA2m3U3SWizSOBXa",
+        "updateTime": "2026-07-06T14:01:04.393Z",
+        "stock": 1,
+        "status": "published",
+        "sold": false,
+        "evidenceHash": "1ce07f5664068dbe31c198738280e2155030d4ab45d1ef5fddaf037edd3e8e8c",
+        "proposedInventoryVersion": 0,
+        "classification": "READY_AFTER_BACKUP_AND_APPROVAL",
+        "writePrecondition": {
+          "lastUpdateTime": "2026-07-06T14:01:04.393Z",
+          "inventoryVersionStillMissing": true
+        },
+        "rollbackPrecondition": {
+          "lastUpdateTimeMustEqualBackfillResult": true,
+          "inventoryVersionMustEqual": 0
+        }
+      },
+      {
+        "id": "fwHUhYOoziewuZuVBha6",
+        "updateTime": "2026-07-06T14:01:18.830Z",
+        "stock": 1,
+        "status": "published",
+        "sold": false,
+        "evidenceHash": "f74ae24a77b8ccfa15dba1cec2c357757cea9f974d7408c03f350dd5393df39c",
+        "proposedInventoryVersion": 0,
+        "classification": "READY_AFTER_BACKUP_AND_APPROVAL",
+        "writePrecondition": {
+          "lastUpdateTime": "2026-07-06T14:01:18.830Z",
+          "inventoryVersionStillMissing": true
+        },
+        "rollbackPrecondition": {
+          "lastUpdateTimeMustEqualBackfillResult": true,
+          "inventoryVersionMustEqual": 0
+        }
+      },
+      {
+        "id": "IGWLqh7q4rnYliO6xlFz",
+        "updateTime": "2026-07-19T13:08:40.217Z",
+        "stock": 1,
+        "status": "published",
+        "sold": false,
+        "evidenceHash": "306518605616020d551be2b01e834798b67a0cc808e9d4e444921127e7579944",
+        "proposedInventoryVersion": 0,
+        "classification": "READY_AFTER_BACKUP_AND_APPROVAL",
+        "writePrecondition": {
+          "lastUpdateTime": "2026-07-19T13:08:40.217Z",
+          "inventoryVersionStillMissing": true
+        },
+        "rollbackPrecondition": {
+          "lastUpdateTimeMustEqualBackfillResult": true,
+          "inventoryVersionMustEqual": 0
+        }
+      },
+      {
+        "id": "LKmnaBTYNSVJGvofyFRJ",
+        "updateTime": "2026-07-06T13:58:19.408Z",
+        "stock": 1,
+        "status": "published",
+        "sold": false,
+        "evidenceHash": "a6a9272a1bb1f95e0c2b376d35d1b91857d2392665832145a77ed0bcd2f7e7fa",
+        "proposedInventoryVersion": 0,
+        "classification": "READY_AFTER_BACKUP_AND_APPROVAL",
+        "writePrecondition": {
+          "lastUpdateTime": "2026-07-06T13:58:19.408Z",
+          "inventoryVersionStillMissing": true
+        },
+        "rollbackPrecondition": {
+          "lastUpdateTimeMustEqualBackfillResult": true,
+          "inventoryVersionMustEqual": 0
+        }
+      },
+      {
+        "id": "Ph7pDL7TGeJzM7JP42An",
+        "updateTime": "2026-07-06T13:58:51.703Z",
+        "stock": 1,
+        "status": "published",
+        "sold": false,
+        "evidenceHash": "cd8ff0402f587012ca12c4c70a7943068633a77a0b21d71b1e3f9a04974f0145",
+        "proposedInventoryVersion": 0,
+        "classification": "READY_AFTER_BACKUP_AND_APPROVAL",
+        "writePrecondition": {
+          "lastUpdateTime": "2026-07-06T13:58:51.703Z",
+          "inventoryVersionStillMissing": true
+        },
+        "rollbackPrecondition": {
+          "lastUpdateTimeMustEqualBackfillResult": true,
+          "inventoryVersionMustEqual": 0
+        }
+      },
+      {
+        "id": "PqFuUrEJ56fSk1ZgqKA9",
+        "updateTime": "2026-07-06T13:59:13.112Z",
+        "stock": 1,
+        "status": "published",
+        "sold": false,
+        "evidenceHash": "448285dbbc2683e170c92acacc59720c5177e5a3211f6d759588527813448415",
+        "proposedInventoryVersion": 0,
+        "classification": "READY_AFTER_BACKUP_AND_APPROVAL",
+        "writePrecondition": {
+          "lastUpdateTime": "2026-07-06T13:59:13.112Z",
+          "inventoryVersionStillMissing": true
+        },
+        "rollbackPrecondition": {
+          "lastUpdateTimeMustEqualBackfillResult": true,
+          "inventoryVersionMustEqual": 0
+        }
+      },
+      {
+        "id": "qVOxtAX7QDZxUjpVE8a5",
+        "updateTime": "2026-07-06T14:03:08.380Z",
+        "stock": 1,
+        "status": "published",
+        "sold": false,
+        "evidenceHash": "9470fea6164533d4f9f69f31f8e219c9e806ee3c2031bec1c45c9018986393fc",
+        "proposedInventoryVersion": 0,
+        "classification": "READY_AFTER_BACKUP_AND_APPROVAL",
+        "writePrecondition": {
+          "lastUpdateTime": "2026-07-06T14:03:08.380Z",
+          "inventoryVersionStillMissing": true
+        },
+        "rollbackPrecondition": {
+          "lastUpdateTimeMustEqualBackfillResult": true,
+          "inventoryVersionMustEqual": 0
+        }
+      },
+      {
+        "id": "RbBBCOXDcLfZ4TJGn6vA",
+        "updateTime": "2026-07-06T13:59:25.862Z",
+        "stock": 1,
+        "status": "published",
+        "sold": false,
+        "evidenceHash": "d796ae28f1274e12b0bddca100161a8760c367e8631bf1b4b1305457638c794a",
+        "proposedInventoryVersion": 0,
+        "classification": "READY_AFTER_BACKUP_AND_APPROVAL",
+        "writePrecondition": {
+          "lastUpdateTime": "2026-07-06T13:59:25.862Z",
+          "inventoryVersionStillMissing": true
+        },
+        "rollbackPrecondition": {
+          "lastUpdateTimeMustEqualBackfillResult": true,
+          "inventoryVersionMustEqual": 0
+        }
+      },
+      {
+        "id": "TjNQTefgt7bxXcQlVVXJ",
+        "updateTime": "2026-07-06T13:59:55.844Z",
+        "stock": 1,
+        "status": "published",
+        "sold": false,
+        "evidenceHash": "e6cf2dc35a8bb4ec7f9c8a81f5444eff83705d9d7393024b81ec2bf39308581e",
+        "proposedInventoryVersion": 0,
+        "classification": "READY_AFTER_BACKUP_AND_APPROVAL",
+        "writePrecondition": {
+          "lastUpdateTime": "2026-07-06T13:59:55.844Z",
+          "inventoryVersionStillMissing": true
+        },
+        "rollbackPrecondition": {
+          "lastUpdateTimeMustEqualBackfillResult": true,
+          "inventoryVersionMustEqual": 0
+        }
+      }
+    ]
+  },
+  "analytics": {
+    "documentPayloadExported": false,
+    "rationale": "G1 classifies and hashes identities only; no purge is planned and document payload may contain personal data.",
+    "requiredBeforeAnyPurge": [
+      "MANAGED_EXPORT_READY",
+      "DATA_ACCESS_ANALYSIS",
+      "PRODUCERS_CLOSED",
+      "QUARANTINE_WINDOW",
+      "EXACT_LIST_APPROVED",
+      "IMPORT_ROLLBACK_PROVED"
+    ],
+    "collections": [
+      {
+        "collection": "analytics_sessions",
+        "classification": "ACTIVE_CURRENT_ENGINE",
+        "count": 345,
+        "identityDigest": "37add2c6295b2d67fefe86b2248ddc93fc84c6f4e6b32a568a9e33c0724ce757",
+        "exportState": "MANIFEST_ONLY_NO_DOCUMENT_PAYLOAD",
+        "purgeState": "FORBIDDEN_BEFORE_POST_CUTOVER_APPROVAL"
+      },
+      {
+        "collection": "analytics_admin_audit_v3",
+        "classification": "HISTORICAL_RESIDUAL",
+        "count": 605,
+        "identityDigest": "a786b60daf5dd68cc663cab88a1c69ec877af88b37f8e28d9c86f57b3779ddc9",
+        "exportState": "MANIFEST_ONLY_NO_DOCUMENT_PAYLOAD",
+        "purgeState": "FORBIDDEN_BEFORE_POST_CUTOVER_APPROVAL"
+      },
+      {
+        "collection": "analytics_business_facts_v3",
+        "classification": "HISTORICAL",
+        "count": 1,
+        "identityDigest": "954d493e40aa9c8eb51a3753084576bf824fdef4ac99e1bf65726cb9cd7af78a",
+        "exportState": "MANIFEST_ONLY_NO_DOCUMENT_PAYLOAD",
+        "purgeState": "FORBIDDEN_BEFORE_POST_CUTOVER_APPROVAL"
+      },
+      {
+        "collection": "analytics_session_facts_v3",
+        "classification": "HISTORICAL",
+        "count": 14,
+        "identityDigest": "aecce380f17731eb11f2f6360b30cec94f23b46fac1f251a7521dbcacf686982",
+        "exportState": "MANIFEST_ONLY_NO_DOCUMENT_PAYLOAD",
+        "purgeState": "FORBIDDEN_BEFORE_POST_CUTOVER_APPROVAL"
+      },
+      {
+        "collection": "analytics_sessions_v3",
+        "classification": "HISTORICAL_RESIDUAL",
+        "count": 14,
+        "identityDigest": "aecce380f17731eb11f2f6360b30cec94f23b46fac1f251a7521dbcacf686982",
+        "exportState": "MANIFEST_ONLY_NO_DOCUMENT_PAYLOAD",
+        "purgeState": "FORBIDDEN_BEFORE_POST_CUTOVER_APPROVAL"
+      },
+      {
+        "collection": "analytics_rollup_days_v3",
+        "classification": "HISTORICAL",
+        "count": 3,
+        "identityDigest": "9287c668c203235423335579e69d4cb8b3f9a300915e9cf5f8cac35c1595e245",
+        "exportState": "MANIFEST_ONLY_NO_DOCUMENT_PAYLOAD",
+        "purgeState": "FORBIDDEN_BEFORE_POST_CUTOVER_APPROVAL"
+      },
+      {
+        "collection": "analytics_rollup_months_v3",
+        "classification": "HISTORICAL_EMPTY_EXPECTED",
+        "count": 0,
+        "identityDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "exportState": "MANIFEST_ONLY_NO_DOCUMENT_PAYLOAD",
+        "purgeState": "FORBIDDEN_BEFORE_POST_CUTOVER_APPROVAL"
+      },
+      {
+        "collection": "analytics_page_daily",
+        "classification": "HISTORICAL",
+        "count": 6,
+        "identityDigest": "f4b1ebc327eba6ed1a59d310224d8115aafa17aa3de815f92ed2f118aa34422b",
+        "exportState": "MANIFEST_ONLY_NO_DOCUMENT_PAYLOAD",
+        "purgeState": "FORBIDDEN_BEFORE_POST_CUTOVER_APPROVAL"
+      },
+      {
+        "collection": "analytics_transition_daily",
+        "classification": "HISTORICAL",
+        "count": 2,
+        "identityDigest": "5fa92e1e527a02fe73f1d1b4475ad2d304232f48800888a4358872d6b976dae7",
+        "exportState": "MANIFEST_ONLY_NO_DOCUMENT_PAYLOAD",
+        "purgeState": "FORBIDDEN_BEFORE_POST_CUTOVER_APPROVAL"
+      },
+      {
+        "collection": "analytics_unique_markers",
+        "classification": "HISTORICAL",
+        "count": 7,
+        "identityDigest": "982aa4eabee056ca25f2cbfc5cbdab3d67ac2fd2fb8916f681c890e8cc83331e",
+        "exportState": "MANIFEST_ONLY_NO_DOCUMENT_PAYLOAD",
+        "purgeState": "FORBIDDEN_BEFORE_POST_CUTOVER_APPROVAL"
+      },
+      {
+        "collection": "analytics_item_daily",
+        "classification": "LEGACY_ROLLUP_PRODUCER_UNPROVEN",
+        "count": 7,
+        "identityDigest": "74323e37818ef349b98ffbaea4b022fbb478dc2c8a3b1de0dff8afb26b8e48b1",
+        "exportState": "MANIFEST_ONLY_NO_DOCUMENT_PAYLOAD",
+        "purgeState": "FORBIDDEN_BEFORE_POST_CUTOVER_APPROVAL"
+      }
+    ]
+  },
+  "manifestDigest": "4d59a0cbd7271b9b6de6d6f11142572b9990f8493a572e7bc31f256bc3dc7717"
+}

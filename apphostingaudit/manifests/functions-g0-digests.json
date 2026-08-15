@@ -1,0 +1,10 @@
+{
+  "baselineCommit": "f80dc7213a8d738fb1edde11a926028bcb57ab28",
+  "codebase": "main",
+  "files": {
+    "apphostingaudit/manifests/functions-g0.json": "a5ddf3b143e27aa51097cd61548f179b3ff186116cdc4d79318d4233008bc652",
+    "apphostingaudit/manifests/functions-platform-g0.json": "8bc63218a699cdd1d2d548cfc5f359fe35de835b76d29cb89e272cc9f97fbc80"
+  },
+  "project": "secondevienextjsssr",
+  "schemaVersion": 1
+}

@@ -276,9 +276,11 @@ sandbox ont etabli:
   a l'IAM projet; metadata publiques limitees aux projections attendues;
 - zero vulnerabilite connue apres mise a jour/verrouillage des dependances,
   contre 27 avis initiaux sur l'ensemble production + outillage;
-- les cinq anciennes Functions OAuth Instagram absentes du code courant ont
-  ete supprimees de facon ciblee apres autorisation explicite; les Functions
-  Meta actuelles restent deployees;
+- cinq Functions OAuth Instagram ont ete supprimees de facon ciblee apres
+  autorisation explicite. Le merge source posterieur `6be360e` a reintroduit
+  leurs exports et appelants sans redeploiement; G0 les place sous
+  `HOLD_META_RECONCILIATION`. Les neuf Functions Meta/Facebook/saga restent
+  deployees;
 - la cle Web du site heberge est desormais distincte de la cle de developpement,
   limitee aux API Firebase requises et a l'origine exacte du sandbox;
 - les metriques App Check sur sept jours ont confirme des jetons valides pour

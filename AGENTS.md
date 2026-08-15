@@ -149,6 +149,15 @@ Git conserve l'audit et la roadmap retires.
 
 Plan temporaire de reprise explicitement demande:
 
+- [AUDIT_MIGRATION_FUNCTIONS_GEN2.md](apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md):
+  contre-audit read-only des 152 Functions cloud et 157 exports locaux, plan
+  ferme G0 a G13 de migration progressive Gen1 vers Gen2 et prerequis de
+  fiabilite hors Functions; execution non lancee, sandbox uniquement, trois
+  triggers Auth Gen1 conserves par limitation Firebase et cinq exports
+  Instagram sous `HOLD_META_RECONCILIATION`; paiements reels bloques avant DR,
+  alertes, sante financiere et preuve des workers; revue au plus tard le
+  2026-10-31, puis fusion des decisions durables dans les chapitres canoniques
+  et suppression du plan temporaire.
 - [STABILISATION_SECURITE_SANDBOX.md](_DOCS/security/STABILISATION_SECURITE_SANDBOX.md):
   campagne finale bornee S0 a S4 fermee sur le socle `05f4830`, statut
   `SANDBOX_SECURITY_STABILIZED`; production, domaine, Resend, Stripe live et
@@ -369,13 +378,16 @@ Gates externes, uniquement sur demande/scope explicite:
 
 ```bash
 npm run e2e:auth-email
-npm run e2e:hosted-stripe
-npm run e2e:refund-stripe
 npm run test:catalog:core
 npm run test:catalog:resilience
 npm run test:catalog:security
 npm run infra:deploy
 ```
+
+`e2e:hosted-stripe` et `e2e:refund-stripe` sont `DO_NOT_RUN`: ils ne sont pas
+des gates autorisables pendant le chantier Gen2. Utiliser uniquement
+`commerce:e2e:gate7b` fail-closed dans la phase sandbox qui l'autorise
+explicitement, avec cible et identifiants bornes.
 
 `perf:budget` reste un rapport non bloquant; ne pas le transformer en chantier pendant une autre passe.
 
@@ -488,7 +500,10 @@ Ne pas utiliser `git reset --hard`, `git clean`, `git checkout --` ou une suppre
 - Firebase/App Hosting production;
 - Stripe live et Connect live;
 - App Check enforcement;
-- sauvegardes, alertes et SLO;
+- SLO et alerting du futur rail production; les protections Firestore,
+  sauvegardes, restauration et alertes du sandbox explicitement exigees par le
+  plan `apphostingaudit` restent autorisees avant les vagues Gen2 sous leurs
+  propres gates;
 - recette Safari/Face ID et matrice finale appareils;
 - p50/p95 production;
 - validation juridique.
