@@ -329,3 +329,24 @@ test('le resolver financier G1 est fail-closed et ne touche ni commande, refund,
   assert.doesNotMatch(source, /transaction\.(?:set|update|delete)\(attemptDocument\.ref/);
   assert.doesNotMatch(source, /transaction\.delete\(/);
 });
+
+test('la preuve G1 du dispatcher reste bornee a une expiration Stripe test idempotente', () => {
+  const source = fs.readFileSync(
+    path.join(ROOT, 'scripts/prove-commerce-reservation-expiry-g1.mjs'),
+    'utf8'
+  );
+  assert.match(source, /G1_RESERVATION_EXPIRY_STRIPE_TEST_ONLY_NO_REFUND_NO_RESTOCK/);
+  assert.match(source, /args\.get\('confirm'\) === CONFIRMATION/);
+  assert.match(source, /args\.get\('commit'\) === currentCommit\(\)/);
+  assert.match(source, /STRIPE_SECRET_KEY\.startsWith\('sk_test_'\)/);
+  assert.match(source, /account\.livemode !== true/);
+  assert.match(source, /accountState\?\.livemode === false/);
+  assert.match(source, /beforeProduct\.e2eOnly === true/);
+  assert.match(source, /checkoutExpiresAt:\s*expiresAt/);
+  assert.match(source, /checkoutChannel:\s*'g1_reservation_expiry_proof'/);
+  assert.equal((source.match(/runScheduler\(\);/g) || []).length, 2);
+  assert.match(source, /secondMovementSnap\.updateTime\.toMillis\(\) === firstMovementUpdateTime/);
+  assert.match(source, /secondReservationSnap\.data\(\)\?\.restockedQty === 0/);
+  assert.doesNotMatch(source, /stripe\.refunds|createRefundRuntime|transaction\.delete\(/);
+  assert.match(source, /`--project=\$\{PROJECT_ID\}`/);
+});
