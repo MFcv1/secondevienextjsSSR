@@ -1538,6 +1538,16 @@ les agregats, puis seulement deployer cette cible unique. Le rollback data
 eventuel exige snapshot, updateTimes et approbation destructive; le rollback
 code conserve trigger et IAM et redeploie l'ancienne source ciblee.
 
+Le lot G2-A2 rend ensuite les options source completes pour trois cibles
+catalogue qui disposent deja d'identites dediees:
+`onCatalogSourceWrite`, `catalogReconciler` et
+`catalogMediaGarbageCollector`. Toutes portent CPU 1, concurrence 1, min 0,
+max 1, memoire et timeout explicites. Le trigger Firestore conserve retry
+actif; les deux schedulers declarent `retryCount: 0`. Aucun deploy ni IAM n'a
+ete modifie. Les suites catalogue core 14/14, resilience 18/18, G2-A 6/6 et le
+lint Functions sont vertes. Leur configuration cloud actuelle reste celle du
+manifeste G0 jusqu'a G2-B ciblee.
+
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
 1. deployer une seule des treize cibles a la fois, depuis l'allowlist G0;

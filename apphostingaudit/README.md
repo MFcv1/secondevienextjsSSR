@@ -261,11 +261,15 @@ endpoint ou App Hosting puisque le lot reste non deploye.
 - garde: une commande legacy historique sans ledger echoue avant increment;
   `deploymentAllowed: false` dans
   `manifests/functions-gen2-g2a-stats.json`;
-- tests: `test:functions-g2a` 5/5, compatibilite/Gate 7A 24/24,
+- tests: `test:functions-g2a` 6/6, compatibilite/Gate 7A 24/24,
   `test:functions-g0` 19/19, `test:retention` 5/5 et lint Functions vert;
 - ecritures cloud/IAM/rules/deploiement: aucune;
+- lot catalogue local: `onCatalogSourceWrite`, `catalogReconciler` et
+  `catalogMediaGarbageCollector` portent CPU/concurrence/min-max explicites;
+  retry event actif et retry schedulers a zero; catalogue core 14/14 et
+  resilience 18/18, aucun deploy;
 - prochaine action G2-A: fermer e-mails/outbox, retry image, alignement Tasks et
-  options/IAM des douze autres Gen2 avant toute G2-B.
+  options/IAM des neuf autres Gen2 avant toute G2-B.
 
 ## 9. Conditions d'arret immediat
 

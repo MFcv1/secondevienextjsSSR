@@ -538,8 +538,13 @@ const catalogReconciler = onSchedule(
         schedule: 'every 5 minutes',
         region: RECONCILER_REGION,
         serviceAccount: CATALOG_ENQUEUER_SERVICE_ACCOUNT,
+        cpu: 1,
+        concurrency: 1,
+        minInstances: 0,
+        maxInstances: 1,
         timeoutSeconds: 120,
-        memory: '256MiB'
+        memory: '256MiB',
+        retryCount: 0
     },
     async () => reconcileCatalog({
         db: admin.firestore(),

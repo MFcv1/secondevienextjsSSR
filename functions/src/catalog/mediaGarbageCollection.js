@@ -169,8 +169,13 @@ const catalogMediaGarbageCollector = onSchedule(
         schedule: 'every 24 hours',
         region: MEDIA_GC_REGION,
         serviceAccount: CATALOG_BUILDER_SERVICE_ACCOUNT,
+        cpu: 1,
+        concurrency: 1,
+        minInstances: 0,
+        maxInstances: 1,
         timeoutSeconds: 540,
-        memory: '512MiB'
+        memory: '512MiB',
+        retryCount: 0
     },
     async () => {
         const snapshotBucket = admin.storage().bucket(CATALOG_SNAPSHOT_BUCKET);

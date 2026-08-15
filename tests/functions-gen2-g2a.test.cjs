@@ -149,3 +149,32 @@ test('G2-A stats: le plan cloud reste read-only et le ledger est interdit aux cl
     assert.match(rules, /match \/order_stats_projections\/\{orderId\}/);
     assert.match(rules, /allow read, write: if false/);
 });
+
+test('G2-A catalogue: les trois cibles a IAM deja dedie ont des limites source completes', () => {
+    for (const relativePath of [
+        'functions/src/catalog/onCatalogSourceWrite.js',
+        'functions/src/catalog/catalogReconciler.js',
+        'functions/src/catalog/mediaGarbageCollection.js'
+    ]) {
+        const source = fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
+        for (const expected of [
+            /cpu:\s*1/,
+            /concurrency:\s*1/,
+            /minInstances:\s*0/,
+            /maxInstances:\s*1/,
+            /timeoutSeconds:\s*\d+/,
+            /memory:\s*['"]\d+(?:MiB|GiB)['"]/
+        ]) assert.match(source, expected, relativePath);
+        assert.match(source, /serviceAccount:\s*CATALOG_(?:ENQUEUER|BUILDER)_SERVICE_ACCOUNT/);
+    }
+    assert.match(
+        fs.readFileSync(path.join(ROOT, 'functions/src/catalog/onCatalogSourceWrite.js'), 'utf8'),
+        /retry:\s*true/
+    );
+    for (const relativePath of [
+        'functions/src/catalog/catalogReconciler.js',
+        'functions/src/catalog/mediaGarbageCollection.js'
+    ]) {
+        assert.match(fs.readFileSync(path.join(ROOT, relativePath), 'utf8'), /retryCount:\s*0/);
+    }
+});

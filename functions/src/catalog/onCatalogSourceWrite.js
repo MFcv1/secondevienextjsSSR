@@ -31,6 +31,10 @@ const onCatalogSourceWrite = onDocumentWritten(
         region: TRIGGER_REGION,
         retry: true,
         serviceAccount: CATALOG_ENQUEUER_SERVICE_ACCOUNT,
+        cpu: 1,
+        concurrency: 1,
+        minInstances: 0,
+        maxInstances: 1,
         timeoutSeconds: 60,
         memory: '256MiB'
     },

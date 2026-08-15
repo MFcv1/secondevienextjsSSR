@@ -159,6 +159,14 @@ Timestamp Firestore ou une date ISO issue du snapshot.
 
 La suppression ou modification d'un produit met ses medias retires en quarantaine. Dans le sandbox, le GC media est actif mais ne peut supprimer qu'apres 90 jours, apres verification de la source Firestore, des generations Storage et des releases retenues. Le GC des releases protege toujours `current`, `previous`, LKG, les 10 releases les plus recentes et toute release de moins de 48 heures. Il s'execute apres une publication et chaque jour. Ne pas contourner ces garde-fous avec une migration non auditee.
 
+Le lot local G2-A2 explicite les limites source de
+`onCatalogSourceWrite`, `catalogReconciler` et
+`catalogMediaGarbageCollector`: CPU 1, concurrence 1, min 0, max 1, memoire et
+timeout bornes. Le trigger Firestore conserve retry actif; les schedulers ont
+`retryCount: 0`. Ces valeurs ne deviennent autoritaires dans le cloud qu'apres
+un deploiement G2-B cible par cible et son observation; aucun deploiement n'a
+ete produit par le lot local.
+
 ### 4.1 Catalogue public materialise
 
 Le sandbox sert le catalogue depuis le bucket prive `secondevienextjsssr-catalog-europe-west4`. Le snapshot est l'unique source publique; aucun selecteur de source, canary ou fallback Firestore n'existe.
