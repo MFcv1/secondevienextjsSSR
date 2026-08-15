@@ -23,6 +23,7 @@
     "functions:data-plan:g1": "node scripts/with-env.mjs .env.sandbox node scripts/plan-functions-gen2-g1-data.mjs --project=secondevienextjsssr --env=sandbox",
     "functions:restore-verify:g1": "node scripts/with-env.mjs .env.sandbox node scripts/verify-functions-gen2-g1-restore.mjs --project=secondevienextjsssr --source='(default)' --restore=restore-drill-20260815-a --snapshot-time=2026-08-15T17:54:15.202270Z",
     "functions:cross-service-verify:g1": "node scripts/with-env.mjs .env.sandbox node scripts/verify-functions-gen2-g1-cross-service.mjs --project=secondevienextjsssr --env=sandbox",
+    "functions:runtime-iam-verify:g1": "node scripts/with-env.mjs .env.sandbox node scripts/verify-functions-gen2-g1-runtime-iam.mjs --project=secondevienextjsssr --env=sandbox",
     "functions:monitoring:g1": "node scripts/with-env.mjs .env.sandbox node scripts/configure-functions-gen2-g1-monitoring.mjs --project=secondevienextjsssr --env=sandbox",
     "commerce:incident:triage:g1": "node scripts/with-env.mjs .env.sandbox node scripts/triage-commerce-incident-g1.mjs --project=secondevienextjsssr --env=sandbox",
     "infra:env": "node scripts/audit-infra-env.cjs",

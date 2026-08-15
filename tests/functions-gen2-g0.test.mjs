@@ -223,3 +223,10 @@ test('le script package Functions ne contient plus de deploy global', () => {
   assert.equal(packageJson.scripts.deploy, 'node ../scripts/deploy-functions-targeted.mjs');
   assert.doesNotMatch(packageJson.scripts.deploy, /firebase\s+deploy\s+--only\s+functions(?:\s|$)/);
 });
+
+test('le reconciler G1 epingle son compte runtime dedie', () => {
+  const source = fs.readFileSync(path.join(ROOT, 'functions/src/commerce/v2Operations.js'), 'utf8');
+  assert.match(source, /COMMERCE_OPERATIONS_RUNTIME_SERVICE_ACCOUNT\s*=\s*\n?\s*['"]commerce-operations-reconciler@secondevienextjsssr\.iam\.gserviceaccount\.com['"]/);
+  const reconciler = source.match(/const commerceOperationsReconciler = regionalFunctions\(\)([\s\S]*?)\.pubsub\.schedule\('every 60 minutes'\)/)?.[1] || '';
+  assert.match(reconciler, /serviceAccount:\s*COMMERCE_OPERATIONS_RUNTIME_SERVICE_ACCOUNT/);
+});

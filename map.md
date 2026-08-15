@@ -886,10 +886,12 @@ decisions par nom, appelants, acces donnees, IAM, secrets et rollback sont dans
 Schedulers, queues et Eventarc est dans
 `apphostingaudit/manifests/functions-platform-g0.json`.
 
-G1 est en `HOLD_HEALTH_AND_WORKER_PROOFS`: protections Firestore, backup,
+G1 est en `READY_HEALTH_TARGETED_DEPLOY`: protections Firestore, backup,
 restore reconcilie et deux canaux Monitoring testes sont actifs; seules les
 preuves cloud du correctif sante/workers et l'arbitrage financier restent non
-fermes.
+fermes. Le reconciler Gen1 reste en version 11 sur le compte global appspot,
+mais sa source epingle maintenant une identite runtime dediee minimale verifiee;
+un unique retry cible est autorise apres commit et validation du wrapper.
 Les plans read-only P1/P2 sont dans
 `apphostingaudit/manifests/functions-gen2-g1-data-plan.json`; aucun passage G2
 n'est autorise dans cet etat.

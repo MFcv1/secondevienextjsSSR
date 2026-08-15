@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-15T19:04:53.694Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "serviceAccount": "commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com",
+  "roles": [
+    "roles/datastore.user",
+    "roles/logging.logWriter",
+    "roles/serviceusage.serviceUsageConsumer"
+  ],
+  "expectedRoles": [
+    "roles/datastore.user",
+    "roles/logging.logWriter",
+    "roles/serviceusage.serviceUsageConsumer"
+  ],
+  "rolesExact": true,
+  "forbiddenCapabilities": {
+    "authAdmin": false,
+    "storageAdmin": false,
+    "tasksEnqueuer": false,
+    "editor": false,
+    "owner": false
+  },
+  "keys": {
+    "types": {
+      "SYSTEM_MANAGED": 2
+    },
+    "userManaged": 0
+  },
+  "publicImpersonation": [],
+  "verdict": "RUNTIME_IAM_MINIMAL_VERIFIED",
+  "manifestDigest": "70714cdb9b7991979872167b501f372003d36c8cd6262df5475e0f9d6fc6e21c"
+}

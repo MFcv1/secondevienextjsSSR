@@ -61,6 +61,8 @@ const {
 
 const db = admin.firestore();
 const OUTBOX_SECRETS = [GMAIL_EMAIL, GMAIL_PASSWORD, RESEND_API_KEY];
+const COMMERCE_OPERATIONS_RUNTIME_SERVICE_ACCOUNT =
+    'commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com';
 const MAX_FACTS = 5000;
 const MAX_ORDERS = 500;
 const FIXTURE_COLLECTIONS = [
@@ -854,7 +856,12 @@ const commerceOutboxDispatcher = regionalFunctions()
     .onRun(runOutboxDispatcher);
 
 const commerceOperationsReconciler = regionalFunctions()
-    .runWith({ timeoutSeconds: 300, memory: '512MB', maxInstances: 1 })
+    .runWith({
+        serviceAccount: COMMERCE_OPERATIONS_RUNTIME_SERVICE_ACCOUNT,
+        timeoutSeconds: 300,
+        memory: '512MB',
+        maxInstances: 1
+    })
     .pubsub.schedule('every 60 minutes')
     .onRun(runOperationsRebuild);
 

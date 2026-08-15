@@ -2,7 +2,7 @@
 
 Derniere mise a jour: 2026-08-15
 
-Statut: `G1_EN_COURS - SANTE_ET_WORKERS_A_PROUVER`
+Statut: `G1_READY_HEALTH_TARGETED_DEPLOY`
 
 Projet unique: `secondevienextjsssr`
 
@@ -160,13 +160,22 @@ Baseline prouvee:
 
 Ordre obligatoire:
 
-1. deployer uniquement le correctif de sante apres G1-A et G1-C;
-2. attendre/rejouer le reconciler sans action Stripe;
-3. prouver status `stop`, fraicheur, histogramme et absence de troncature;
-4. verifier l'alerte et la banniere admin;
-5. resoudre l'incident avec version attendue, evidence, acteur et audit;
-6. ne modifier ni faits financiers, ni refund, ni stock;
-7. relancer le reconciler et justifier le retour a `healthy`.
+1. remplacer le runtime appspot global du reconciler par un compte dedie
+   Firestore/logging, sans Auth, Storage, Tasks ou Editor;
+2. deployer uniquement le correctif de sante apres G1-A et G1-C;
+3. attendre/rejouer le reconciler sans action Stripe;
+4. prouver status `stop`, fraicheur, histogramme et absence de troncature;
+5. verifier l'alerte et la banniere admin;
+6. resoudre l'incident avec version attendue, evidence, acteur et audit;
+7. ne modifier ni faits financiers, ni refund, ni stock;
+8. relancer le reconciler et justifier le retour a `healthy`.
+
+Le premier essai cible du 2026-08-15 a echoue a l'upload, avant toute mise a
+jour de la Function. La version 11 est restee active. Le compte runtime dedie
+est maintenant epingle dans la source et verifie par
+`functions-gen2-g1-runtime-iam.json`: exactement Firestore user, log writer et
+service usage consumer, aucune cle utilisateur ni capacite Auth/Storage/Tasks.
+Un seul retry cible est autorise apres commit et validation du wrapper.
 
 ## 6. Workers G1-E
 

@@ -1387,6 +1387,28 @@ Verdict intermediaire: `G1_HOLD_HEALTH_AND_WORKER_PROOFS`. Aucun deploy
 Functions/App Hosting, paiement, refund, replay, restock, ecriture de document,
 suppression ou passage a G2 n'a ete effectue.
 
+Le premier essai de deploiement cible du reconciler a valide le wrapper puis a
+echoue pendant l'upload du bundle, avant mise a jour Cloud Functions. La cible
+est restee `ACTIVE`, Gen1 version 11, mise a jour du 2026-08-13. La verification
+post-echec a revele qu'elle reutilise encore le compte runtime global
+`secondevienextjsssr@appspot.gserviceaccount.com`, lequel porte notamment Auth
+admin, Storage object admin et Tasks enqueuer en plus de Firestore/logging. Ce
+profil est interdit par les invariants du chantier. Aucun retry n'a ete lance.
+
+Le hold IAM a ete leve localement et cote cloud par le manifeste
+`functions-gen2-g1-runtime-iam.json`: le compte dedie
+`commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com`
+porte exactement `datastore.user`, `logging.logWriter` et
+`serviceusage.serviceUsageConsumer`, sans cle utilisateur, impersonation
+publique, Auth, Storage, Tasks, Editor ou Owner. La source epingle cette
+identite uniquement sur le reconciler et un test interdit sa regression.
+
+Nouveau verdict: `G1_READY_HEALTH_TARGETED_DEPLOY`. Un unique retry du
+reconciler est autorise apres nouveau commit de release et validation du
+wrapper; aucun autre scheduler ni cible G2 n'est inclus. Le rollback reste la
+version 11 encore active ou le redeploiement cible du dernier commit connu
+avant cette tentative.
+
 ### G2 - Socle Gen2 et stabilisation des treize cibles existantes
 
 **G2-A local, sans deploiement:**
