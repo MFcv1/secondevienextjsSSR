@@ -29,7 +29,7 @@ const RECONCILER_REGION = 'europe-west1';
 async function enqueueNamed(queueName, data, id) {
     const queue = getFunctions().taskQueue(`locations/${RECONCILER_REGION}/functions/${queueName}`);
     try {
-        await queue.enqueue(data, { id, scheduleDelaySeconds: 0, dispatchDeadlineSeconds: 1800 });
+        await queue.enqueue(data, { id, scheduleDelaySeconds: 0, dispatchDeadlineSeconds: 300 });
         return true;
     } catch (error) {
         const code = String(error?.code || '').toLowerCase();

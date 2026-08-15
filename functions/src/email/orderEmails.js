@@ -15,10 +15,38 @@ const {
     buildEmailIdempotencyKey,
     getTransactionalEmailRuntime
 } = require('./transactionalEmailRuntime');
+const { createLegacyOrderEmailDelivery } = require('./legacyOrderEmailDelivery');
 
 const db = admin.firestore();
 const REFUND_EMAIL_STATUSES = new Set(['refund_pending', 'refunded', 'refund_failed']);
 const V2_EMAIL_OUTBOX_REQUIRED = 2;
+const LEGACY_ORDER_EMAIL_RUNTIME_SERVICE_ACCOUNT =
+    'legacy-order-email-worker@secondevienextjsssr.iam.gserviceaccount.com';
+let cachedLegacyEmailDelivery = null;
+
+function getLegacyEmailDelivery() {
+    if (!cachedLegacyEmailDelivery) {
+        const emailRuntime = getTransactionalEmailRuntime();
+        cachedLegacyEmailDelivery = {
+            provider: emailRuntime.provider,
+            fromAddress: emailRuntime.fromAddress,
+            deliver: createLegacyOrderEmailDelivery({
+                db,
+                sender: emailRuntime.sender,
+                provider: emailRuntime.provider
+            })
+        };
+    }
+    return cachedLegacyEmailDelivery;
+}
+
+function logLegacyEmailDelivery(kind, outcome) {
+    console.log('legacy_order_email_delivery', {
+        kind,
+        status: outcome.status,
+        correlation: outcome.deliveryId.slice(0, 16)
+    });
+}
 
 function operationalErrorSummary(error) {
     return {
@@ -52,12 +80,8 @@ function formatShippingInfo(shipping = {}) {
  * Extrait en helper pour être réutilisé par onOrderCreated et onOrderUpdated
  */
 async function sendNewOrderEmails(orderId, order) {
-    const emailRuntime = getTransactionalEmailRuntime();
-    const adminEmail = emailRuntime.fromAddress;
-    if (!adminEmail) {
-        console.error("❌ Email transactionnel non configuré.");
-        return;
-    }
+    const emailDelivery = getLegacyEmailDelivery();
+    const adminEmail = emailDelivery.fromAddress;
 
     const clientEmail = order.userEmail || order.shipping?.email;
     const SITE_URL = getSiteUrl();
@@ -133,24 +157,26 @@ async function sendNewOrderEmails(orderId, order) {
         client: { to: clientEmail || null, sent: false }
     };
 
-    try {
-        await emailRuntime.sender.send(adminMailOptions, {
-            idempotencyKey: buildEmailIdempotencyKey('order-created-admin', orderId)
+    const adminOutcome = await emailDelivery.deliver({
+        orderId,
+        kind: 'order-created-admin',
+        message: adminMailOptions
+    });
+    logLegacyEmailDelivery('order-created-admin', adminOutcome);
+    emailProof.admin.sent = adminOutcome.status === 'sent';
+    emailProof.admin.provider = emailDelivery.provider;
+    emailProof.admin.deliveryStatus = adminOutcome.status;
+
+    if (clientMailOptions) {
+        const clientOutcome = await emailDelivery.deliver({
+            orderId,
+            kind: 'order-created-client',
+            message: clientMailOptions
         });
-        emailProof.admin.sent = true;
-        emailProof.admin.provider = emailRuntime.provider;
-        console.log("✅ Email Admin envoyé.");
-        if (clientMailOptions) {
-            await emailRuntime.sender.send(clientMailOptions, {
-                idempotencyKey: buildEmailIdempotencyKey('order-created-client', orderId)
-            });
-            emailProof.client.sent = true;
-            emailProof.client.provider = emailRuntime.provider;
-            console.log("✅ Email Client envoyé.");
-        }
-    } catch (e) {
-        emailProof.error = String(e?.message || e || 'unknown').slice(0, 500);
-        console.error("❌ Erreur Envoi Email:", operationalErrorSummary(e));
+        logLegacyEmailDelivery('order-created-client', clientOutcome);
+        emailProof.client.sent = clientOutcome.status === 'sent';
+        emailProof.client.provider = emailDelivery.provider;
+        emailProof.client.deliveryStatus = clientOutcome.status;
     }
 
     await db.collection('orders').doc(orderId).set({
@@ -324,9 +350,20 @@ exports.sendRefundStatusEmailAdmin = regionalFunctions().runWith({ enforceAppChe
 
 // --- TRIGGER: Nouvelle Commande ---
 exports.onOrderCreated = onDocumentCreated(
-    { document: 'orders/{orderId}', region: 'europe-west1', secrets: TRANSACTIONAL_EMAIL_SECRETS },
+    {
+        document: 'orders/{orderId}',
+        region: 'europe-west1',
+        secrets: TRANSACTIONAL_EMAIL_SECRETS,
+        serviceAccount: LEGACY_ORDER_EMAIL_RUNTIME_SERVICE_ACCOUNT,
+        cpu: 1,
+        concurrency: 1,
+        minInstances: 0,
+        maxInstances: 1,
+        memory: '256MiB',
+        timeoutSeconds: 60,
+        retry: true
+    },
     async (event) => {
-        console.log("⚡ onOrderCreated TRIGGERED! ID:", event.params.orderId);
         const order = event.data?.data();
         if (!order) return null;
         if (Number(order.schemaVersion || 0) >= V2_EMAIL_OUTBOX_REQUIRED) return null;
@@ -334,7 +371,7 @@ exports.onOrderCreated = onDocumentCreated(
         // Si c'est une commande Stripe Elements "pending", on NE FAIT RIEN pour l'instant.
         // L'email sera envoyé via onOrderUpdated une fois le paiement confirmé (status => 'paid')
         if (order.paymentMethod === 'stripe_elements' && order.status === 'pending_payment') {
-            console.log("⏸️ Commande pre-créée (Stripe Elements). On attend le paiement pour envoyer l'email.");
+            console.log('legacy_order_email_deferred', { reason: 'pending_payment' });
             return null;
         }
 
@@ -346,7 +383,19 @@ exports.onOrderCreated = onDocumentCreated(
 
 // --- TRIGGER: Mise à jour commande (confirmation paiement, expédition, livraison) ---
 exports.onOrderUpdated = onDocumentUpdated(
-    { document: 'orders/{orderId}', region: 'europe-west1', secrets: TRANSACTIONAL_EMAIL_SECRETS },
+    {
+        document: 'orders/{orderId}',
+        region: 'europe-west1',
+        secrets: TRANSACTIONAL_EMAIL_SECRETS,
+        serviceAccount: LEGACY_ORDER_EMAIL_RUNTIME_SERVICE_ACCOUNT,
+        cpu: 1,
+        concurrency: 1,
+        minInstances: 0,
+        maxInstances: 1,
+        memory: '256MiB',
+        timeoutSeconds: 60,
+        retry: true
+    },
     async (event) => {
         const orderBefore = event.data?.before?.data();
         const orderAfter = event.data?.after?.data();
@@ -360,19 +409,21 @@ exports.onOrderUpdated = onDocumentUpdated(
 
         // --- 1. EMAIL DE CONFIRMATION (Stripe Elements: pending_payment → paid) ---
         if (orderBefore.status === 'pending_payment' && orderAfter.status === 'paid') {
-            console.log(`✅ Paiement confirmé pour la commande ${orderId}. Envoi de l'email de confirmation.`);
+            console.log('legacy_order_email_transition', { transition: 'pending_payment_to_paid' });
             await sendNewOrderEmails(orderId, orderAfter);
         }
 
         if (!clientEmail) return null;
 
-        const emailRuntime = getTransactionalEmailRuntime();
-        const adminEmail = emailRuntime.fromAddress;
+        const emailDelivery = getLegacyEmailDelivery();
+        const adminEmail = emailDelivery.fromAddress;
 
         // --- 2. SHIPPED ---
         if (orderAfter.status === 'shipped' && orderBefore.status !== 'shipped') {
-            try {
-                await emailRuntime.sender.send({
+            const outcome = await emailDelivery.deliver({
+                orderId,
+                kind: 'order-shipped',
+                message: {
                     from: `Votre Boutique <${adminEmail}>`,
                     to: clientEmail,
                     subject: `📦 Votre commande a été expédiée !`,
@@ -386,19 +437,17 @@ exports.onOrderUpdated = onDocumentUpdated(
                             <p>À très vite,<br/><i>L'équipe</i></p>
                         </div>
                     `
-                }, {
-                    idempotencyKey: buildEmailIdempotencyKey('order-shipped', orderId)
-                });
-                console.log("✅ Email d'expédition envoyé.");
-            } catch (e) {
-                console.error("❌ Erreur Envoi Email d'expédition:", operationalErrorSummary(e));
-            }
+                }
+            });
+            logLegacyEmailDelivery('order-shipped', outcome);
         }
 
         // --- COMPLETED (Delivered) ---
         if (orderAfter.status === 'completed' && orderBefore.status !== 'completed') {
-            try {
-                await emailRuntime.sender.send({
+            const outcome = await emailDelivery.deliver({
+                orderId,
+                kind: 'order-completed',
+                message: {
                     from: `Votre Boutique <${adminEmail}>`,
                     to: clientEmail,
                     subject: `✨ Votre commande est arrivée !`,
@@ -412,13 +461,9 @@ exports.onOrderUpdated = onDocumentUpdated(
                             <p>À très vite,<br/><i>L'équipe</i></p>
                         </div>
                     `
-                }, {
-                    idempotencyKey: buildEmailIdempotencyKey('order-completed', orderId)
-                });
-                console.log("✅ Email de Livraison envoyé.");
-            } catch (e) {
-                console.error("❌ Erreur Envoi Email:", operationalErrorSummary(e));
-            }
+                }
+            });
+            logLegacyEmailDelivery('order-completed', outcome);
         }
 
         return null;

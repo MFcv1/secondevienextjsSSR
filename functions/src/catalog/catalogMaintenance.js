@@ -296,7 +296,10 @@ const rollbackCatalogSnapshot = regionalFunctions()
                     impactPlanSha256: null,
                     planHash: rollbackImpactPlan.planHash,
                     impactPlan: rollbackImpactPlan
-                }, { id: `catalog-rollback-revalidate-r${freshTarget.value.revision}-${Date.now()}` });
+                }, {
+                    id: `catalog-rollback-revalidate-r${freshTarget.value.revision}-${Date.now()}`,
+                    dispatchDeadlineSeconds: 300
+                });
             } catch (enqueueError) {
                 revalidationQueued = false;
                 console.error('Catalog rollback revalidation enqueue failed:', enqueueError);
@@ -432,7 +435,10 @@ const rebuildCatalogSnapshot = regionalFunctions()
         });
         await getFunctions().taskQueue(BUILD_TASK).enqueue(
             { schemaVersion: 1, targetRevision: revision },
-            { id: `catalog-admin-rebuild-r${revision}-${Date.now()}` }
+            {
+                id: `catalog-admin-rebuild-r${revision}-${Date.now()}`,
+                dispatchDeadlineSeconds: 300
+            }
         );
         await writeSecurityAudit('catalog.rebuild', context, { revision });
         return { success: true, mode: 'active', revision };

@@ -135,6 +135,14 @@ Une absence de reference textuelle dans le code ne prouve pas qu'un fichier Stor
 
 Le catalogue materialise ajoute une contrainte: une URL reste protegee tant qu'elle apparait dans `current`, `previous`, `last-known-good` ou une release retenue. `onArtifactUpdated` et `onArtifactDeleted` placent les candidats en quarantaine. Dans le sandbox, `catalogMediaGarbageCollector` peut supprimer apres 90 jours seulement si le media n'est plus reference par Firestore ni par une release retenue et si sa generation Storage n'a pas change. L'activation de `CATALOG_MEDIA_GC_COMMIT=true` du 2026-07-18 a ete precedee d'un dry-run; toute autre cible exige la meme preuve.
 
+Depuis le lot local G2-A6, l'enqueue de quarantaine converge par chemin et
+generation: un replay du meme evenement ne repousse pas la grace et ne remet
+pas les tentatives a zero, tandis qu'une nouvelle generation du meme chemin
+cree bien un nouveau cycle. Le futur `onArtifactDeleted` ne supprime plus
+directement `likes` ou `comments`; cette suppression de donnees devra suivre
+une campagne distincte avec backup READY, restore drill, dry-run, manifeste,
+preconditions, rollback et approbation destructive.
+
 ## 7. Medias statiques sensibles
 
 Sont consideres a risque et ne doivent pas etre supprimes sans inspection visuelle et reseau:

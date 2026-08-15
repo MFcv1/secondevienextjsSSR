@@ -823,6 +823,7 @@ functions/
     |   |-- emailDesignSystem.js .......... shell HTML/texte premium partage
     |   |-- commerceEmailTemplates.js ..... paiement, fulfillment, refund et document v2
     |   |-- otpEmailTemplates.js .......... OTP connexion/checkout unifies
+    |   |-- legacyOrderEmailDelivery.js ... claim/lease e-mail legacy backend-only
     |   |-- transactionalEmail.js ......... Gmail/Resend + PDF memoire borne
     |   |-- transactionalEmailRuntime.js
     |   `-- orderEmails.js
@@ -954,6 +955,7 @@ Firestore
 |-- commerce_financial_totals/{currency} . total financier materialise backend-only
 |-- commerce_financial_daily/{date}_{currency} . serie quotidienne materialisee backend-only
 |-- commerce_outbox/{eventId}
+|-- legacy_order_email_deliveries/{sha256(orderId,type)} . claim e-mail legacy, TTL 90 j planifie G2-B
 |-- commerce_webhook_inbox/{eventId}
 |-- commerce_incidents/{incidentId}
 |-- commerce_fixture_scopes/{scopeId}

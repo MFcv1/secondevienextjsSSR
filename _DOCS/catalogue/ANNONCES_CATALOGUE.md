@@ -175,6 +175,21 @@ concurrence/max 4 et les deux schedulers de reprise/nettoyage a concurrence/max
 `product-publication-worker` seulement apres creation IAM et deploiement G2-B
 cible; leur code local ne modifie pas le sandbox.
 
+Le lot G2-A5 aligne les deux Cloud Tasks catalogue a un timeout et une deadline
+de 300 secondes. La mesure read-only sur trente jours trouve pour le build 22
+latences HTTP, p99 16,181 s et max 16,181 s; pour la revalidation 446 latences,
+p99 5,667 s et max 9,359 s. Les queues restent a une execution concurrente,
+dix tentatives et backoff 5-300 s. CPU, memoire, concurrence et min-max sont
+explicites dans la source; aucun changement de queue ou de Function cloud n'a
+ete applique.
+
+Le lot G2-A6 rend la quarantaine media idempotente par chemin et generation.
+`onArtifactUpdated` et `onArtifactDeleted` ciblent localement le futur SA
+`catalog-media-enqueuer`, avec CPU/concurrence 1, min 0, max 1, 256 MiB,
+timeout 300 s et retry actif. Le trigger de suppression ne supprime plus les
+sous-collections `likes`/`comments`: elles restent conservees jusqu'a une
+procedure de donnees distincte avec backup, dry-run et approbation destructive.
+
 ### 4.1 Catalogue public materialise
 
 Le sandbox sert le catalogue depuis le bucket prive `secondevienextjsssr-catalog-europe-west4`. Le snapshot est l'unique source publique; aucun selecteur de source, canary ou fallback Firestore n'existe.

@@ -264,6 +264,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Ledger backend-only des e-mails de commandes legacy. Les claims et
+    // statuts provider ne doivent jamais etre controles par le navigateur.
+    match /legacy_order_email_deliveries/{deliveryId} {
+      allow read, write: if false;
+    }
+
     match /commerce_incidents/{incidentId} {
       allow read, write: if false;
     }

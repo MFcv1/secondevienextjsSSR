@@ -357,6 +357,18 @@ Regles:
 - Gmail ambigu devient `delivery_unknown` sans retry automatique;
 - les identifiants techniques servent a l'idempotence sans exposer de secret.
 
+Les deux triggers legacy `onOrderCreated` et `onOrderUpdated` restent separes
+de l'outbox v2, mais le lot local G2-A4 leur ajoute le meme niveau de garde:
+ledger backend-only `legacy_order_email_deliveries`, identifiant derive par
+hash commande/type, claim transactionnel, lease, huit tentatives au maximum et
+etats `sent`, `failed`, `dead_letter` ou `delivery_unknown`. Une erreur Gmail
+ambigue n'est jamais renvoyee automatiquement; Resend conserve sa cle
+idempotente fournisseur. Chaque trigger est borne a concurrence/max 1 et vise
+le futur SA `legacy-order-email-worker`, avec acces aux trois secrets nommes
+uniquement. Le ledger porte `purgeAt` a 90 jours; sa policy TTL, l'identite et
+le code ne deviennent actifs qu'en G2-B ciblee. Aucun e-mail n'a ete envoye par
+ce lot local.
+
 ## 13. Limites et production
 
 Le contenu et le transport Gmail sandbox ont ete qualifies, avec SPF, DKIM et

@@ -1558,6 +1558,30 @@ concurrence 4, min 0, max 4, 1 GiB, timeout 540 s et retry actif. Les schedulers
 SA sans cle `product-publication-worker`; aucune creation IAM ni aucun deploy
 n'a eu lieu. Tests G2-A 7/7, catalogue core 14/14 et lint Functions verts.
 
+Le lot G2-A4 remplace l'envoi direct non reclame des deux triggers legacy
+e-mail par un ledger backend-only deterministe, claim/lease transactionnel,
+backoff, plafond huit tentatives et etats terminaux explicites. Gmail ambigu
+devient `delivery_unknown` sans retry; Resend conserve son idempotency key. Les
+deux cibles portent CPU/concurrence 1, min 0, max 1, 256 MiB, timeout 60 s,
+retry actif et futur SA `legacy-order-email-worker`. La collection est refusee
+aux clients et porte `purgeAt` 90 jours; IAM, secrets nommes et TTL restent des
+preconditions G2-B. Aucun e-mail n'a ete emis.
+
+Le lot G2-A5 s'appuie sur une mesure Logging read-only trente jours: build 22
+latences HTTP, p99/max 16,181 s; revalidation 446 latences, p99 5,667 s et max
+9,359 s. Runtime et toutes les dispatch deadlines sont alignes a 300 s, avec
+concurrence/max 1, CPU/memoire explicites. Les deux queues observees restent
+`RUNNING`, max concurrence/debit 1, dix tentatives et backoff 5-300 s. Aucun
+parametre cloud n'a ete modifie.
+
+Le lot G2-A6 rend les intents de quarantaine media idempotents par chemin et
+generation. Les deux triggers artefacts portent CPU/concurrence 1, min 0, max
+1, 256 MiB, timeout 300 s, retry actif et futur SA
+`catalog-media-enqueuer`. Le trigger delete ne supprime plus `likes/comments`:
+ces donnees restent en place jusqu'a une procedure destructive distincte et
+approuvee. Tests G2-A 12/12, catalogue core 14/14, resilience 18/18,
+compatibilite/Gate 7A 24/24 et lint Functions verts.
+
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
 1. deployer une seule des treize cibles a la fois, depuis l'allowlist G0;

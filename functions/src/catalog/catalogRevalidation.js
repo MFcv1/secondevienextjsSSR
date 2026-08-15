@@ -280,6 +280,12 @@ const dispatchCatalogRevalidation = onTaskDispatched(
         region: REVALIDATION_REGION,
         serviceAccount: CATALOG_BUILDER_SERVICE_ACCOUNT,
         secrets: [CATALOG_REVALIDATION_HMAC_SECRET],
+        cpu: 1,
+        concurrency: 1,
+        minInstances: 0,
+        maxInstances: 1,
+        memory: '256MiB',
+        timeoutSeconds: 300,
         retryConfig: { maxAttempts: 10, minBackoffSeconds: 5, maxBackoffSeconds: 300, maxDoublings: 5 },
         rateLimits: { maxConcurrentDispatches: 1, maxDispatchesPerSecond: 1 }
     },

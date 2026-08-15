@@ -26,8 +26,7 @@ async function enqueueMediaCandidates(dependencies, input) {
     const { db, bucket, now = () => new Date() } = dependencies;
     const paths = [...new Set(input.paths || [])].filter((path) => typeof path === 'string' && path.startsWith('furniture/'));
     if (!paths.length) return { queued: 0 };
-    const batch = db.batch();
-    let queued = 0;
+    const candidates = [];
     for (const path of paths) {
         const file = bucket.file(path);
         let generation = null;
@@ -38,22 +37,33 @@ async function enqueueMediaCandidates(dependencies, input) {
             if (Number(error?.code) !== 404) throw error;
         }
         const createdAt = now();
-        batch.set(db.doc(`sys_catalog_media_gc/${mediaCandidateId(path)}`), {
-            schemaVersion: 1,
-            path,
-            generation,
-            reason: input.reason || 'product_update',
-            productId: input.productId || null,
-            createdAt,
-            notBefore: new Date(createdAt.getTime() + MEDIA_GRACE_MS),
-            attempts: 0,
-            lastError: null,
-            state: 'pending'
-        }, { merge: true });
-        queued += 1;
+        candidates.push({
+            reference: db.doc(`sys_catalog_media_gc/${mediaCandidateId(path)}`),
+            value: {
+                schemaVersion: 1,
+                path,
+                generation,
+                reason: input.reason || 'product_update',
+                productId: input.productId || null,
+                createdAt,
+                notBefore: new Date(createdAt.getTime() + MEDIA_GRACE_MS),
+                attempts: 0,
+                lastError: null,
+                state: 'pending'
+            }
+        });
     }
-    await batch.commit();
-    return { queued };
+    return db.runTransaction(async (transaction) => {
+        const snapshots = await Promise.all(candidates.map(({ reference }) => transaction.get(reference)));
+        let queued = 0;
+        candidates.forEach(({ reference, value }, index) => {
+            const existing = snapshots[index].exists ? snapshots[index].data() : null;
+            if (existing && String(existing.generation || '') === String(value.generation || '')) return;
+            transaction.set(reference, value);
+            queued += 1;
+        });
+        return { queued };
+    });
 }
 
 function storagePathFromMediaUrl(url) {

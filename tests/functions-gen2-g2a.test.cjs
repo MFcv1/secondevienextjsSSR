@@ -18,6 +18,12 @@ const {
     requiresProjectionBaseline,
     summarizeOrder
 } = require('../functions/src/commerce/orderStats');
+const {
+    claimDeliveryState,
+    deliveryIdFor,
+    failureState
+} = require('../functions/src/email/legacyOrderEmailDelivery');
+const { enqueueMediaCandidates } = require('../functions/src/catalog/mediaGarbageCollection');
 
 function order(overrides = {}) {
     return {
@@ -193,4 +199,138 @@ test('G2-A publication: worker image rejette les pannes retryables et les trois 
     assert.match(source, /concurrency:\s*4,[\s\S]*maxInstances:\s*4,[\s\S]*retry:\s*true/);
     assert.match(source, /product_publication_image_failed[\s\S]*throw error;/);
     assert.doesNotMatch(source, /231220287936-compute|appspot\.gserviceaccount\.com/);
+});
+
+test('G2-A e-mail: le claim deterministe deduplique et borne les retries provider', () => {
+    const input = {
+        orderId: 'order-sensitive-id',
+        kind: 'order-created-client',
+        provider: 'resend',
+        leaseToken: 'lease-token-a',
+        now: new Date('2026-08-16T00:00:00.000Z'),
+        nowMillis: Date.parse('2026-08-16T00:00:00.000Z'),
+        leaseMs: 60_000,
+        maxAttempts: 2
+    };
+    const claimed = claimDeliveryState(null, input);
+    assert.equal(claimed.action, 'send');
+    assert.equal(claimed.state.attemptCount, 1);
+    assert.equal(claimed.state.orderIdHash.length, 64);
+    assert.equal(JSON.stringify(claimed.state).includes(input.orderId), false);
+    assert.equal(claimDeliveryState(claimed.state, { ...input, leaseToken: 'lease-token-b' }).action, 'skip');
+
+    const failed = failureState(claimed.state, {
+        error: { code: 'RESEND_TIMEOUT', retryable: true },
+        now: input.now,
+        nowMillis: input.nowMillis,
+        maxAttempts: 2
+    });
+    assert.equal(failed.status, 'failed');
+    const retried = claimDeliveryState(failed, {
+        ...input,
+        leaseToken: 'lease-token-b',
+        nowMillis: failed.nextAttemptAt
+    });
+    assert.equal(retried.action, 'send');
+    assert.equal(retried.state.attemptCount, 2);
+    assert.equal(failureState(retried.state, {
+        error: { code: 'RESEND_TIMEOUT', retryable: true },
+        now: input.now,
+        nowMillis: failed.nextAttemptAt,
+        maxAttempts: 2
+    }).status, 'dead_letter');
+    assert.equal(deliveryIdFor(input.orderId, input.kind), deliveryIdFor(input.orderId, input.kind));
+});
+
+test('G2-A e-mail: Gmail ambigu devient delivery_unknown et les deux runtimes sont plafonnes', () => {
+    const gmailFailure = failureState({
+        provider: 'gmail',
+        status: 'processing',
+        attemptCount: 1,
+        leaseToken: 'lease-token-a',
+        processingUntil: 10_000
+    }, {
+        error: { code: 'ETIMEDOUT', retryable: true },
+        now: new Date(0),
+        nowMillis: 0
+    });
+    assert.equal(gmailFailure.status, 'delivery_unknown');
+
+    const source = fs.readFileSync(path.join(ROOT, 'functions/src/email/orderEmails.js'), 'utf8');
+    const rules = fs.readFileSync(path.join(ROOT, 'firestore.rules'), 'utf8');
+    assert.equal((source.match(/serviceAccount:\s*LEGACY_ORDER_EMAIL_RUNTIME_SERVICE_ACCOUNT/g) || []).length, 2);
+    assert.equal((source.match(/concurrency:\s*1/g) || []).length, 2);
+    assert.equal((source.match(/maxInstances:\s*1/g) || []).length, 2);
+    assert.equal((source.match(/retry:\s*true/g) || []).length, 2);
+    assert.match(source, /legacy-order-email-worker@secondevienextjsssr\.iam\.gserviceaccount\.com/);
+    assert.match(source, /createLegacyOrderEmailDelivery/);
+    assert.doesNotMatch(source, /TRIGGERED! ID|commande \$\{orderId\}/);
+    assert.match(rules, /match \/legacy_order_email_deliveries\/\{deliveryId\}/);
+});
+
+test('G2-A Tasks: runtime et deadlines sont alignes a 300 s apres mesure p99', () => {
+    const build = fs.readFileSync(path.join(ROOT, 'functions/src/catalog/buildCatalogSnapshot.js'), 'utf8');
+    const revalidation = fs.readFileSync(path.join(ROOT, 'functions/src/catalog/catalogRevalidation.js'), 'utf8');
+    for (const source of [build, revalidation]) {
+        for (const expected of [
+            /cpu:\s*1/,
+            /concurrency:\s*1/,
+            /minInstances:\s*0/,
+            /maxInstances:\s*1/,
+            /timeoutSeconds:\s*300/,
+            /maxConcurrentDispatches:\s*1/
+        ]) assert.match(source, expected);
+    }
+    const catalogSources = [
+        'functions/src/catalog/buildCatalogSnapshot.js',
+        'functions/src/catalog/onCatalogSourceWrite.js',
+        'functions/src/catalog/catalogMaintenance.js',
+        'functions/src/catalog/catalogReconciler.js'
+    ].map((relativePath) => fs.readFileSync(path.join(ROOT, relativePath), 'utf8')).join('\n');
+    assert.equal((catalogSources.match(/dispatchDeadlineSeconds:\s*300/g) || []).length, 6);
+    assert.doesNotMatch(catalogSources, /dispatchDeadlineSeconds:\s*1800/);
+});
+
+test('G2-A artefacts: la quarantaine media est idempotente par chemin et generation', async () => {
+    const documents = new Map();
+    const db = {
+        doc: (documentPath) => ({ path: documentPath }),
+        runTransaction: async (run) => run({
+            get: async (reference) => ({
+                exists: documents.has(reference.path),
+                data: () => documents.get(reference.path)
+            }),
+            set: (reference, value) => documents.set(reference.path, value)
+        })
+    };
+    const bucket = {
+        file: () => ({ getMetadata: async () => [{ generation: '42' }] })
+    };
+    const input = { paths: ['furniture/item/image.webp'], reason: 'product_update', productId: 'item' };
+    const now = () => new Date('2026-08-16T00:00:00.000Z');
+    assert.deepEqual(await enqueueMediaCandidates({ db, bucket, now }, input), { queued: 1 });
+    assert.deepEqual(await enqueueMediaCandidates({ db, bucket, now }, input), { queued: 0 });
+    assert.equal(documents.size, 1);
+});
+
+test('G2-A artefacts: les deux triggers sont bornes et ne suppriment plus les sous-collections', () => {
+    for (const relativePath of [
+        'functions/src/triggers/onArtifactUpdated.js',
+        'functions/src/triggers/onArtifactDeleted.js'
+    ]) {
+        const source = fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
+        for (const expected of [
+            /catalog-media-enqueuer@secondevienextjsssr\.iam\.gserviceaccount\.com/,
+            /cpu:\s*1/,
+            /concurrency:\s*1/,
+            /minInstances:\s*0/,
+            /maxInstances:\s*1/,
+            /memory:\s*'256MiB'/,
+            /timeoutSeconds:\s*300/,
+            /retry:\s*true/
+        ]) assert.match(source, expected, relativePath);
+        assert.doesNotMatch(source, /appspot\.gserviceaccount\.com|231220287936-compute/);
+    }
+    const deleted = fs.readFileSync(path.join(ROOT, 'functions/src/triggers/onArtifactDeleted.js'), 'utf8');
+    assert.doesNotMatch(deleted, /batch\.delete|deleteSubCollection|\.delete\(/);
 });

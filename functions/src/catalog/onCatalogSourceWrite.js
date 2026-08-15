@@ -13,7 +13,7 @@ async function enqueueCatalogBuild({ revision, quietUntil, taskId }) {
     try {
         await queue.enqueue(
             { schemaVersion: 1, targetRevision: revision },
-            { id: taskId, scheduleTime: quietUntil, dispatchDeadlineSeconds: 1800 }
+            { id: taskId, scheduleTime: quietUntil, dispatchDeadlineSeconds: 300 }
         );
         return { scheduled: true, alreadyExists: false };
     } catch (error) {

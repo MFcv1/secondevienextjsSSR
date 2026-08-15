@@ -44,6 +44,7 @@ sys_idempotency/{id}
 analytics_sessions/{sessionId}
 sales_stats_daily/{id}
 order_stats_projections/{orderId}
+legacy_order_email_deliveries/{deliveryId}
 inventory_stats/{id}
 ```
 
@@ -55,6 +56,12 @@ commande autoritaire et ce ledger dans une transaction avant tout increment;
 un doublon Eventarc ou un evenement ancien recalcule donc la meme projection
 au lieu d'ajouter une seconde fois. Le passage d'une commande legacy vers v2
 ou sa suppression retire une seule fois sa contribution.
+
+`legacy_order_email_deliveries/{deliveryId}` ne contient ni adresse ni ID de
+commande en clair: seulement un hash, le type de message, le provider, le
+claim et le resultat technique. Les etats terminaux portent `purgeAt` a 90
+jours. La policy TTL est une precondition G2-B et n'est pas appliquee par le
+lot local G2-A.
 
 ## 3. Catalogue
 

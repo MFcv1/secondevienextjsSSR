@@ -192,7 +192,7 @@ async function enqueueSuccessorBuild(revision, quietUntil) {
     try {
         await queue.enqueue(
             { schemaVersion: 1, targetRevision: revision },
-            { id: taskId, scheduleTime, dispatchDeadlineSeconds: 1800 }
+            { id: taskId, scheduleTime, dispatchDeadlineSeconds: 300 }
         );
     } catch (error) {
         const code = String(error?.code || '').toLowerCase();
@@ -612,6 +612,12 @@ const dispatchCatalogBuild = onTaskDispatched(
     {
         region: BUILD_REGION,
         serviceAccount: CATALOG_BUILDER_SERVICE_ACCOUNT,
+        cpu: 1,
+        concurrency: 1,
+        minInstances: 0,
+        maxInstances: 1,
+        memory: '512MiB',
+        timeoutSeconds: 300,
         retryConfig: { maxAttempts: 10, minBackoffSeconds: 5, maxBackoffSeconds: 300, maxDoublings: 5 },
         rateLimits: { maxConcurrentDispatches: 1, maxDispatchesPerSecond: 1 }
     },
