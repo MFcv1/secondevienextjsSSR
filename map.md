@@ -816,7 +816,7 @@ functions/
     |   |-- cancelOrder.js
     |   |-- refundOrder.js
     |   |-- orderStatus.js
-    |   |-- orderStats.js
+    |   |-- orderStats.js ................. projection legacy transactionnelle et ledger idempotent G2-A
     |   |-- e2eCheckoutProof.js
     |   `-- e2eStripeHardeningProof.js
     |-- email/
@@ -995,6 +995,7 @@ Firestore
 |-- sys_catalog_media_gc/{id} ......... quarantaine media
 |-- analytics_sessions/{sessionId} .... session + tableau `journey`, expiration 366 j
 |-- sales_stats_daily/{id}
+|-- order_stats_projections/{orderId} . ledger backend-only, retention de la commande
 `-- inventory_stats/{id}
 
 Storage

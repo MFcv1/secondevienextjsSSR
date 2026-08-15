@@ -94,6 +94,14 @@ scheduler pour prouver le mouvement unique. Il interdit refund, restock,
 suppression et toute cle live. Son contrat statique fait partie de
 `test:functions-g0`.
 
+Pour G2-A stats, `npm run test:functions-g2a` couvre creation, replay,
+transition, changement de jour, suppression, exclusion v2, baseline legacy
+manquante, options runtime et confinement du ledger. `npm run
+functions:plan-stats:g2a -- --report=apphostingaudit/manifests/functions-gen2-g2a-stats.json`
+recompte en lecture seule les commandes legacy, le dashboard, les rollups
+journaliers et les ledgers; il refuse tout `--apply` et laisse
+`deploymentAllowed: false` tant que le bootstrap n'est pas approuve et prouve.
+
 `npm run functions:restore-verify:g1` compare la base nommee au snapshot PITR
 exact et produit uniquement comptages/digests; `npm run
 functions:cross-service-verify:g1` inventorie Auth, Storage, etats de versions

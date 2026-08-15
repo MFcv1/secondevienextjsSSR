@@ -43,10 +43,18 @@ sys_admin_access/{uid}
 sys_idempotency/{id}
 analytics_sessions/{sessionId}
 sales_stats_daily/{id}
+order_stats_projections/{orderId}
 inventory_stats/{id}
 ```
 
 Cette carte decrit les collections connues du code. `firestore.rules`, Functions et `map.md` restent les sources pour les permissions et producteurs.
+
+`order_stats_projections/{orderId}` est un ledger backend-only sans TTL propre:
+sa retention suit celle de la commande comptable. `onOrderStatsWrite` relit la
+commande autoritaire et ce ledger dans une transaction avant tout increment;
+un doublon Eventarc ou un evenement ancien recalcule donc la meme projection
+au lieu d'ajouter une seconde fois. Le passage d'une commande legacy vers v2
+ou sa suppression retire une seule fois sa contribution.
 
 ## 3. Catalogue
 

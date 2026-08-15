@@ -691,6 +691,7 @@ Le dashboard lit les agregats:
 - `dashboard_stats/commerce`;
 - `inventory_stats/overview`;
 - `sales_stats_daily`;
+- `order_stats_projections/{orderId}` comme ledger backend-only idempotent;
 - commandes recentes bornees.
 
 Les cartes `Ventes nettes`, `Commandes`, `Panier moyen` et la repartition des

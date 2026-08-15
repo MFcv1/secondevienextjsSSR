@@ -37,5 +37,6 @@ test('legacy email and statistics triggers ignore v2 roots', () => {
     const stats = read('functions/src/commerce/orderStats.js');
     assert.match(emails, /Number\(order\.schemaVersion \|\| 0\) >= V2_EMAIL_OUTBOX_REQUIRED/);
     assert.match(emails, /Number\(orderAfter\.schemaVersion \|\| 0\) >= V2_EMAIL_OUTBOX_REQUIRED/);
-    assert.match(stats, /Number\(after\?\.schemaVersion \|\| 0\) >= V2_STATS_PROJECTION_REQUIRED/);
+    assert.match(stats, /Number\(currentOrder\.schemaVersion \|\| 0\) < V2_STATS_PROJECTION_REQUIRED/);
+    assert.match(stats, /order_stats_projections\/\$\{orderId\}/);
 });

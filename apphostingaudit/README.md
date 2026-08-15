@@ -2,7 +2,7 @@
 
 Derniere mise a jour: 2026-08-15
 
-Statut: `CENTRE_DE_SUIVI_ACTIF - G1_TERMINEE - G2_A_LOCAL_NEXT`
+Statut: `CENTRE_DE_SUIVI_ACTIF - G1_TERMINEE - G2_A_LOCAL_EN_COURS`
 
 Proprietaire: mainteneur Seconde Vie et agent d'execution des phases validees
 
@@ -89,7 +89,7 @@ Valeurs autorisees:
 | --- | --- | --- | --- | --- |
 | G0 | baseline 152/157, manifeste, hold Meta et wrapper de deploiement | `TERMINEE` | projet explicite, zero ecart, deploy global fail-closed, cinq Instagram en hold | manifestes `apphostingaudit/manifests/functions-*-g0.json`, journal section 8 |
 | G1 | alertes, DR/restore, sante/incident et preuve des workers | `TERMINEE` | quatre P0 fermes; Stripe test borne uniquement | manifestes `functions-gen2-g1-*.json`, journal G1 |
-| G2 | socle Gen2 puis stabilisation ciblee des 13 Gen2 actuelles | `A_FAIRE` | G2-A local vert; G2-B deploye/observe une cible a la fois apres autorisation | a renseigner |
+| G2 | socle Gen2 puis stabilisation ciblee des 13 Gen2 actuelles | `EN_COURS` | G2-A local vert; G2-B deploye/observe une cible a la fois apres autorisation | stats A1 local, 26 ledgers a bootstrapper; aucun deploy |
 | G3 | decisions retrait/migration legacy, E2E, maintenance, publication historique | `A_FAIRE` | decision et observation reversibles; aucune suppression prematuree | a renseigner |
 | G4 | analytics | `A_FAIRE` | parite, App Check, caches concurrents, 48 h observees | a renseigner |
 | G5 | Auth callables, OTP et passkeys | `A_FAIRE` | Auth complete, parcours sandbox et rollback client | a renseigner |
@@ -247,6 +247,25 @@ endpoint ou App Hosting puisque le lot reste non deploye.
   workers), toujours par allowlist d'une cible; aucun App Hosting/Gen2/prod;
 - verdict: `G1_TERMINEE_G2_A_LOCAL_ONLY`. Budget Billing reste `NON_VERIFIE`;
   G2-B n'est pas commence.
+
+### G2-A1 - projection stats locale
+
+- cible: `onOrderStatsWrite`, aucun deploy;
+- code: projection transactionnelle depuis la commande autoritaire et ledger
+  `order_stats_projections/{orderId}` backend-only;
+- runtime cible: CPU 1, concurrence 1, min 0, max 1, 256 MiB, 60 s, retry
+  explicite, SA dedie `order-stats-projector` a creer seulement en G2-B;
+- plan read-only: 126 commandes, 26 legacy, 0 ledger existant, 26 manquants;
+- reconciliation: dashboard exact (5 665, 24 commandes) et huit jours exacts,
+  zero drift;
+- garde: une commande legacy historique sans ledger echoue avant increment;
+  `deploymentAllowed: false` dans
+  `manifests/functions-gen2-g2a-stats.json`;
+- tests: `test:functions-g2a` 5/5, compatibilite/Gate 7A 24/24,
+  `test:functions-g0` 19/19, `test:retention` 5/5 et lint Functions vert;
+- ecritures cloud/IAM/rules/deploiement: aucune;
+- prochaine action G2-A: fermer e-mails/outbox, retry image, alignement Tasks et
+  options/IAM des douze autres Gen2 avant toute G2-B.
 
 ## 9. Conditions d'arret immediat
 

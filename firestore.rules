@@ -468,6 +468,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Ledger backend-only de projection stats par commande. Il rend les
+    // livraisons Eventarc rejouables sans double increment.
+    match /order_stats_projections/{orderId} {
+      allow read, write: if false;
+    }
+
     match /inventory_stats/{docId} {
       allow read: if isStrongArtisan();
       allow write: if false;

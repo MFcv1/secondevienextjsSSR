@@ -2,7 +2,7 @@
 
 Derniere contre-verification: 2026-08-15
 
-Statut: `PLAN_TEMPORAIRE_REVALIDE - G1_TERMINEE - G2_A_LOCAL_NEXT`
+Statut: `PLAN_TEMPORAIRE_REVALIDE - G1_TERMINEE - G2_A_LOCAL_EN_COURS`
 
 Proprietaire: mainteneur Seconde Vie et agent charge de la migration
 
@@ -1515,6 +1515,28 @@ mais ne bloquent pas G2-A local. G2-B conserve son autorisation cloud distincte.
 
 Gate G2-A: code/tests locaux verts, options et IAM explicites cible par cible,
 diff et rollback approuves. Aucune ecriture cloud pendant G2-A.
+
+#### Execution G2-A1 locale - projection stats
+
+Le premier lot local ferme le risque de double increment de
+`onOrderStatsWrite`. La Function relit desormais la commande autoritaire et le
+ledger backend-only `order_stats_projections/{orderId}` dans une transaction;
+un replay ou evenement ancien converge vers la projection courante. Une
+commande legacy historique sans ledger echoue avant tout increment. Le runtime
+cible est explicite: Gen2 `europe-west1`, CPU 1, concurrence 1, min 0, max 1,
+256 MiB, timeout 60 s, retry actif et compte dedie planifie
+`order-stats-projector`, sans reutiliser le compte compute/appspot.
+
+Le plan cloud strictement read-only
+`functions-gen2-g2a-stats.json` retrouve 126 commandes dont 26 legacy, zero
+ledger existant et 26 a initialiser. Le recomptage correspond exactement au
+dashboard (5 665 de revenu legacy, 24 commandes) et aux huit rollups journaliers:
+zero drift. Verdict: `G2_A_STATS_BOOTSTRAP_REQUIRED`, `deploymentAllowed:
+false`. Aucun ledger, IAM, rule ou Function n'est deploye. G2-B devra creer le
+SA sans cle, seed les 26 ledgers avec preconditions source, rapprocher encore
+les agregats, puis seulement deployer cette cible unique. Le rollback data
+eventuel exige snapshot, updateTimes et approbation destructive; le rollback
+code conserve trigger et IAM et redeploie l'ancienne source ciblee.
 
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
