@@ -167,6 +167,14 @@ timeout bornes. Le trigger Firestore conserve retry actif; les schedulers ont
 un deploiement G2-B cible par cible et son observation; aucun deploiement n'a
 ete produit par le lot local.
 
+Le lot G2-A3 rend aussi effectif le retry du worker image de publication: une
+panne de traitement marque la session en echec puis est relancee par Eventarc;
+une generation deja finalisee reste un no-op. Le worker est borne a
+concurrence/max 4 et les deux schedulers de reprise/nettoyage a concurrence/max
+1 avec retry scheduler nul. Les trois utiliseront le SA dedie
+`product-publication-worker` seulement apres creation IAM et deploiement G2-B
+cible; leur code local ne modifie pas le sandbox.
+
 ### 4.1 Catalogue public materialise
 
 Le sandbox sert le catalogue depuis le bucket prive `secondevienextjsssr-catalog-europe-west4`. Le snapshot est l'unique source publique; aucun selecteur de source, canary ou fallback Firestore n'existe.

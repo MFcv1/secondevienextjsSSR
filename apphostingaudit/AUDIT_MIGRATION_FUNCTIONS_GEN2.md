@@ -1548,6 +1548,16 @@ ete modifie. Les suites catalogue core 14/14, resilience 18/18, G2-A 6/6 et le
 lint Functions sont vertes. Leur configuration cloud actuelle reste celle du
 manifeste G0 jusqu'a G2-B ciblee.
 
+Le lot G2-A3 ferme localement le faux retry du worker image. Les erreurs de
+traitement sont maintenant persistees dans la session puis relancees vers
+Eventarc; une generation deja `ready` reste idempotente. Le worker porte CPU 1,
+concurrence 4, min 0, max 4, 1 GiB, timeout 540 s et retry actif. Les schedulers
+`cleanupProductPublicationSessions` et
+`reconcileProductPublicationSessions` portent CPU/concurrence 1, min 0, max 1,
+512 MiB, timeout 540 s et `retryCount: 0`. Les trois ciblent localement le futur
+SA sans cle `product-publication-worker`; aucune creation IAM ni aucun deploy
+n'a eu lieu. Tests G2-A 7/7, catalogue core 14/14 et lint Functions verts.
+
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
 1. deployer une seule des treize cibles a la fois, depuis l'allowlist G0;

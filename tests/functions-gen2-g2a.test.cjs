@@ -178,3 +178,19 @@ test('G2-A catalogue: les trois cibles a IAM deja dedie ont des limites source c
         assert.match(fs.readFileSync(path.join(ROOT, relativePath), 'utf8'), /retryCount:\s*0/);
     }
 });
+
+test('G2-A publication: worker image rejette les pannes retryables et les trois runtimes sont bornes', () => {
+    const source = fs.readFileSync(
+        path.join(ROOT, 'functions/src/publication/productPublication.js'),
+        'utf8'
+    );
+    assert.match(
+        source,
+        /product-publication-worker@secondevienextjsssr\.iam\.gserviceaccount\.com/
+    );
+    assert.equal((source.match(/serviceAccount:\s*PRODUCT_PUBLICATION_RUNTIME_SERVICE_ACCOUNT/g) || []).length, 3);
+    assert.equal((source.match(/retryCount:\s*0/g) || []).length, 2);
+    assert.match(source, /concurrency:\s*4,[\s\S]*maxInstances:\s*4,[\s\S]*retry:\s*true/);
+    assert.match(source, /product_publication_image_failed[\s\S]*throw error;/);
+    assert.doesNotMatch(source, /231220287936-compute|appspot\.gserviceaccount\.com/);
+});

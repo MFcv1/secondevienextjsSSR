@@ -16,6 +16,8 @@ const { enqueueMediaCandidates } = require('../catalog/mediaGarbageCollection');
 const REGION = 'europe-west1';
 const MEDIA_BUCKET = process.env.PRODUCT_MEDIA_BUCKET || 'secondevienextjsssr.firebasestorage.app';
 const MEDIA_TRIGGER_REGION = process.env.PRODUCT_MEDIA_REGION || 'us-central1';
+const PRODUCT_PUBLICATION_RUNTIME_SERVICE_ACCOUNT =
+    'product-publication-worker@secondevienextjsssr.iam.gserviceaccount.com';
 const SESSION_COLLECTION = 'product_publication_sessions';
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const FINALIZATION_LEASE_MS = 5 * 60 * 1000;
@@ -400,7 +402,11 @@ const processProductPublicationImage = onObjectFinalized({
     region: MEDIA_TRIGGER_REGION,
     timeoutSeconds: 540,
     memory: '1GiB',
+    cpu: 1,
     concurrency: 4,
+    minInstances: 0,
+    maxInstances: 4,
+    serviceAccount: PRODUCT_PUBLICATION_RUNTIME_SERVICE_ACCOUNT,
     retry: true
 }, async (event) => {
     const object = event.data;
@@ -528,14 +534,21 @@ const processProductPublicationImage = onObjectFinalized({
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
         });
+        throw error;
     }
 });
 
 const cleanupProductPublicationSessions = onSchedule({
     schedule: 'every 24 hours',
     region: REGION,
+    serviceAccount: PRODUCT_PUBLICATION_RUNTIME_SERVICE_ACCOUNT,
+    cpu: 1,
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
     timeoutSeconds: 540,
-    memory: '512MiB'
+    memory: '512MiB',
+    retryCount: 0
 }, async () => {
     const db = admin.firestore();
     const expired = await db.collection(SESSION_COLLECTION)
@@ -561,8 +574,14 @@ const cleanupProductPublicationSessions = onSchedule({
 const reconcileProductPublicationSessions = onSchedule({
     schedule: 'every 15 minutes',
     region: REGION,
+    serviceAccount: PRODUCT_PUBLICATION_RUNTIME_SERVICE_ACCOUNT,
+    cpu: 1,
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
     timeoutSeconds: 540,
-    memory: '512MiB'
+    memory: '512MiB',
+    retryCount: 0
 }, async () => {
     const db = admin.firestore();
     const [candidates, uploadCandidates] = await Promise.all([
@@ -612,6 +631,7 @@ const reconcileProductPublicationSessions = onSchedule({
 });
 
 module.exports = {
+    PRODUCT_PUBLICATION_RUNTIME_SERVICE_ACCOUNT,
     MEDIA_BUCKET,
     MEDIA_TRIGGER_REGION,
     ORIGINAL_PATH_PATTERN,
