@@ -2,7 +2,7 @@
 
 Derniere mise a jour: 2026-08-15
 
-Statut: `G1_HEALTH_INCIDENT_CLOSED_WORKERS_NEXT`
+Statut: `G1_E_RUNTIME_IAM_VERIFIED_RESERVATION_NEXT`
 
 Projet unique: `secondevienextjsssr`
 
@@ -200,6 +200,11 @@ mutation commande/refund/faits/stock. Le run suivant `e1tqg5pqyj5o` a termine
 `ok` en 3,696 s avec `healthy`, zero incident primaire et aucune troncature.
 L'audit confirme zero incident ouvert et zero compteur divergent. Reprendre
 G1-E un worker a la fois; G2 reste ferme.
+
+IAM workers: `functions-gen2-g1-worker-iam.json` prouve trois comptes dedies,
+trois roles projet exacts chacun, zero cle, aucune impersonation publique et
+acces seulement aux secrets nommes/versions deja lies. Premiere cible unique:
+`commerceReservationExpiryDispatcher`.
 
 ## 6. Workers G1-E
 

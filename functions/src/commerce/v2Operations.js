@@ -61,6 +61,8 @@ const {
 
 const db = admin.firestore();
 const OUTBOX_SECRETS = [GMAIL_EMAIL, GMAIL_PASSWORD, RESEND_API_KEY];
+const COMMERCE_OUTBOX_RUNTIME_SERVICE_ACCOUNT =
+    'commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com';
 const COMMERCE_OPERATIONS_RUNTIME_SERVICE_ACCOUNT =
     'commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com';
 const MAX_FACTS = 5000;
@@ -847,6 +849,7 @@ async function buildAdminFinancialDaily() {
 
 const commerceOutboxDispatcher = regionalFunctions()
     .runWith({
+        serviceAccount: COMMERCE_OUTBOX_RUNTIME_SERVICE_ACCOUNT,
         secrets: OUTBOX_SECRETS,
         timeoutSeconds: 300,
         memory: '512MB',

@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-15T23:00:56.562Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "secretNamesInspected": [
+    "CATALOG_REVALIDATION_HMAC_SECRET",
+    "E2E_PROOF_TOKEN",
+    "GMAIL_EMAIL",
+    "GMAIL_PASSWORD",
+    "INSTAGRAM_APP_ID",
+    "INSTAGRAM_APP_SECRET",
+    "INSTAGRAM_OAUTH_REDIRECT_URI",
+    "META_APP_ID",
+    "META_APP_SECRET",
+    "META_OAUTH_REDIRECT_URI",
+    "META_TOKEN_ENCRYPTION_KEY",
+    "OTP_HMAC_SECRET",
+    "PAYMENT_LINK_HMAC_SECRET",
+    "RESEND_API_KEY",
+    "STRIPE_CONNECT_WH_SECRET",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WH_SECRET",
+    "SUPER_ADMIN_EMAIL",
+    "apphosting-github-conn-obn4d1a-github-oauthtoken-bb4bc0"
+  ],
+  "secretValuesRead": false,
+  "accounts": [
+    {
+      "serviceAccount": "commerce-reservation-expiry@secondevienextjsssr.iam.gserviceaccount.com",
+      "roles": [
+        "roles/datastore.user",
+        "roles/logging.logWriter",
+        "roles/serviceusage.serviceUsageConsumer"
+      ],
+      "expectedRoles": [
+        "roles/datastore.user",
+        "roles/logging.logWriter",
+        "roles/serviceusage.serviceUsageConsumer"
+      ],
+      "rolesExact": true,
+      "secretAccess": [
+        "STRIPE_SECRET_KEY"
+      ],
+      "expectedSecretAccess": [
+        "STRIPE_SECRET_KEY"
+      ],
+      "secretsExact": true,
+      "userManagedKeys": 0,
+      "publicImpersonation": [],
+      "forbiddenCapabilities": {
+        "authAdmin": false,
+        "storage": false,
+        "tasksEnqueuer": false,
+        "editor": false,
+        "owner": false
+      }
+    },
+    {
+      "serviceAccount": "commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com",
+      "roles": [
+        "roles/datastore.user",
+        "roles/logging.logWriter",
+        "roles/serviceusage.serviceUsageConsumer"
+      ],
+      "expectedRoles": [
+        "roles/datastore.user",
+        "roles/logging.logWriter",
+        "roles/serviceusage.serviceUsageConsumer"
+      ],
+      "rolesExact": true,
+      "secretAccess": [
+        "GMAIL_EMAIL",
+        "GMAIL_PASSWORD",
+        "RESEND_API_KEY"
+      ],
+      "expectedSecretAccess": [
+        "GMAIL_EMAIL",
+        "GMAIL_PASSWORD",
+        "RESEND_API_KEY"
+      ],
+      "secretsExact": true,
+      "userManagedKeys": 0,
+      "publicImpersonation": [],
+      "forbiddenCapabilities": {
+        "authAdmin": false,
+        "storage": false,
+        "tasksEnqueuer": false,
+        "editor": false,
+        "owner": false
+      }
+    },
+    {
+      "serviceAccount": "admin-payment-link-expiry@secondevienextjsssr.iam.gserviceaccount.com",
+      "roles": [
+        "roles/datastore.user",
+        "roles/logging.logWriter",
+        "roles/serviceusage.serviceUsageConsumer"
+      ],
+      "expectedRoles": [
+        "roles/datastore.user",
+        "roles/logging.logWriter",
+        "roles/serviceusage.serviceUsageConsumer"
+      ],
+      "rolesExact": true,
+      "secretAccess": [
+        "PAYMENT_LINK_HMAC_SECRET",
+        "STRIPE_SECRET_KEY"
+      ],
+      "expectedSecretAccess": [
+        "PAYMENT_LINK_HMAC_SECRET",
+        "STRIPE_SECRET_KEY"
+      ],
+      "secretsExact": true,
+      "userManagedKeys": 0,
+      "publicImpersonation": [],
+      "forbiddenCapabilities": {
+        "authAdmin": false,
+        "storage": false,
+        "tasksEnqueuer": false,
+        "editor": false,
+        "owner": false
+      }
+    }
+  ],
+  "verdict": "G1_WORKER_RUNTIME_IAM_MINIMAL_VERIFIED",
+  "manifestDigest": "15937e00db5af48074cde5d5e62ef82b16838b4e3e973026a0c179e36cb42f6a"
+}

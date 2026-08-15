@@ -272,10 +272,50 @@ test('le fallback gcloud Gen1 reste limite au reconciler et explicite toute sa c
   ]) assert.ok(args.includes(expected), expected);
   assert.throws(() => validate({
     ...validationArgs({ allowlist: 'getCatalogPublicationStatus', transport: 'gcloud-gen1' })
-  }), /limite au reconciler G1 approuve/);
+  }), /limite aux schedulers G1 approuves/);
   assert.throws(() => validate({
     ...validationArgs({ allowlist: 'commerceOperationsReconciler', transport: 'direct-rest' })
   }), /Transport interdit/);
+});
+
+test('les trois workers G1 epinglent runtime, secrets et limites explicites', () => {
+  const reservation = fs.readFileSync(path.join(ROOT, 'functions/src/commerce/v2ReservationExpiry.js'), 'utf8');
+  const operations = fs.readFileSync(path.join(ROOT, 'functions/src/commerce/v2Operations.js'), 'utf8');
+  const paymentLinks = fs.readFileSync(path.join(ROOT, 'functions/src/commerce/v2AdminPaymentLinks.js'), 'utf8');
+  assert.match(reservation, /serviceAccount:\s*RESERVATION_EXPIRY_RUNTIME_SERVICE_ACCOUNT/);
+  assert.match(operations, /serviceAccount:\s*COMMERCE_OUTBOX_RUNTIME_SERVICE_ACCOUNT/);
+  assert.match(paymentLinks, /serviceAccount:\s*PAYMENT_LINK_EXPIRY_RUNTIME_SERVICE_ACCOUNT/);
+  const cases = [
+    ['commerceReservationExpiryDispatcher', '--service-account=commerce-reservation-expiry@secondevienextjsssr.iam.gserviceaccount.com', '--set-secrets=STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:4'],
+    ['commerceOutboxDispatcher', '--service-account=commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com', '--set-secrets=GMAIL_EMAIL=GMAIL_EMAIL:2,GMAIL_PASSWORD=GMAIL_PASSWORD:5,RESEND_API_KEY=RESEND_API_KEY:1'],
+    ['expireAdminPaymentLinks', '--service-account=admin-payment-link-expiry@secondevienextjsssr.iam.gserviceaccount.com', '--set-secrets=STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:4,PAYMENT_LINK_HMAC_SECRET=PAYMENT_LINK_HMAC_SECRET:1']
+  ];
+  for (const [allowlist, serviceAccount, secrets] of cases) {
+    const request = validate({ ...validationArgs({ allowlist, transport: 'gcloud-gen1' }) });
+    const args = buildGcloudGen1DeployArgs(request);
+    assert.ok(args.includes(serviceAccount));
+    assert.ok(args.includes(secrets));
+    assert.ok(args.includes('--max-instances=1'));
+    assert.ok(args.includes('--no-retry'));
+  }
+});
+
+test('le manifeste IAM G1 des workers prouve roles, secrets et absence de cles', () => {
+  const workerIam = JSON.parse(fs.readFileSync(
+    path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g1-worker-iam.json'),
+    'utf8'
+  ));
+  assert.equal(workerIam.project, 'secondevienextjsssr');
+  assert.equal(workerIam.verdict, 'G1_WORKER_RUNTIME_IAM_MINIMAL_VERIFIED');
+  assert.equal(workerIam.secretValuesRead, false);
+  assert.equal(workerIam.accounts.length, 3);
+  for (const account of workerIam.accounts) {
+    assert.equal(account.rolesExact, true);
+    assert.equal(account.secretsExact, true);
+    assert.equal(account.userManagedKeys, 0);
+    assert.deepEqual(account.publicImpersonation, []);
+    assert.ok(Object.values(account.forbiddenCapabilities).every((value) => value === false));
+  }
 });
 
 test('le resolver financier G1 est fail-closed et ne touche ni commande, refund, faits ou stock', () => {

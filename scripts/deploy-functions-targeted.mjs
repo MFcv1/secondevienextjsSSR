@@ -22,7 +22,62 @@ const GCLOUD_GEN1_TARGETS = Object.freeze({
     memory: '512MB',
     timeout: '300s',
     maxInstances: '1',
-    ingressSettings: 'all'
+    ingressSettings: 'all',
+    expectedVersion: '12',
+    expectedServiceAccount: 'commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com',
+    secrets: []
+  }),
+  commerceReservationExpiryDispatcher: Object.freeze({
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'commerceReservationExpiryDispatcher',
+    triggerTopic: 'firebase-schedule-commerceReservationExpiryDispatcher-europe-west1',
+    serviceAccount: 'commerce-reservation-expiry@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com',
+    memory: '512MB',
+    timeout: '300s',
+    maxInstances: '1',
+    ingressSettings: 'all',
+    expectedVersion: '2',
+    expectedServiceAccount: 'secondevienextjsssr@appspot.gserviceaccount.com',
+    secrets: ['STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:4']
+  }),
+  commerceOutboxDispatcher: Object.freeze({
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'commerceOutboxDispatcher',
+    triggerTopic: 'firebase-schedule-commerceOutboxDispatcher-europe-west1',
+    serviceAccount: 'commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com',
+    memory: '512MB',
+    timeout: '300s',
+    maxInstances: '1',
+    ingressSettings: 'all',
+    expectedVersion: '10',
+    expectedServiceAccount: 'secondevienextjsssr@appspot.gserviceaccount.com',
+    secrets: [
+      'GMAIL_EMAIL=GMAIL_EMAIL:2',
+      'GMAIL_PASSWORD=GMAIL_PASSWORD:5',
+      'RESEND_API_KEY=RESEND_API_KEY:1'
+    ]
+  }),
+  expireAdminPaymentLinks: Object.freeze({
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'expireAdminPaymentLinks',
+    triggerTopic: 'firebase-schedule-expireAdminPaymentLinks-europe-west1',
+    serviceAccount: 'admin-payment-link-expiry@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com',
+    memory: '512MB',
+    timeout: '300s',
+    maxInstances: '1',
+    ingressSettings: 'all',
+    expectedVersion: '4',
+    expectedServiceAccount: 'secondevienextjsssr@appspot.gserviceaccount.com',
+    secrets: [
+      'STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:4',
+      'PAYMENT_LINK_HMAC_SECRET=PAYMENT_LINK_HMAC_SECRET:1'
+    ]
   })
 });
 
@@ -166,7 +221,7 @@ export function validateDeploymentRequest({
   if (selectors.some((selector) => selector === `functions:${codebase}` || selector === 'functions')) fail('Selecteur Functions global interdit');
   if (transport === 'gcloud-gen1') {
     if (allowlist.length !== 1 || !GCLOUD_GEN1_TARGETS[allowlist[0]]) {
-      fail('Fallback gcloud Gen1 limite au reconciler G1 approuve');
+      fail('Fallback gcloud Gen1 limite aux schedulers G1 approuves');
     }
   }
   return { project, codebase, commit, allowlist, selectors, entries, transport };
@@ -186,7 +241,7 @@ export function buildGcloudGen1DeployArgs(validation) {
   if (validation.transport !== 'gcloud-gen1' || validation.allowlist.length !== 1 || !target) {
     fail('Fallback gcloud Gen1 non autorise');
   }
-  return [
+  const deployArgs = [
     'functions', 'deploy', name,
     `--project=${validation.project}`,
     `--region=${target.region}`,
@@ -204,6 +259,8 @@ export function buildGcloudGen1DeployArgs(validation) {
     `--ingress-settings=${target.ingressSettings}`,
     '--quiet'
   ];
+  if (target.secrets.length) deployArgs.push(`--set-secrets=${target.secrets.join(',')}`);
+  return deployArgs;
 }
 
 export function main(argv = process.argv.slice(2), dependencies = {}) {
@@ -240,7 +297,11 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
     ], { cwd: rootDir }));
     const expectedName = `projects/${validation.project}/locations/${target.region}/functions/${name}`;
     const expectedTopic = `projects/${validation.project}/topics/${target.triggerTopic}`;
-    if (before.name !== expectedName || before.status !== 'ACTIVE' || before.entryPoint !== target.entryPoint) {
+    if (
+      before.name !== expectedName || before.status !== 'ACTIVE' ||
+      before.entryPoint !== target.entryPoint || before.versionId !== target.expectedVersion ||
+      before.serviceAccountEmail !== target.expectedServiceAccount
+    ) {
       fail('Etat cloud Gen1 inattendu avant fallback gcloud');
     }
     if (before.eventTrigger?.resource !== expectedTopic || before.eventTrigger?.eventType !== 'google.pubsub.topic.publish') {

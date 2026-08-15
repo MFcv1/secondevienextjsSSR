@@ -13,6 +13,9 @@ const {
     buildWorkerRunSummary
 } = require('./domain/workerRunHealth');
 
+const RESERVATION_EXPIRY_RUNTIME_SERVICE_ACCOUNT =
+    'commerce-reservation-expiry@secondevienextjsssr.iam.gserviceaccount.com';
+
 function reservationExpiryRuntime() {
     const Stripe = require('stripe');
     return createReservationExpiryRuntime({
@@ -52,6 +55,7 @@ const runReservationExpiryDispatcher = createReservationExpiryHandler();
 
 const commerceReservationExpiryDispatcher = regionalFunctions()
     .runWith({
+        serviceAccount: RESERVATION_EXPIRY_RUNTIME_SERVICE_ACCOUNT,
         timeoutSeconds: 300,
         memory: '512MB',
         maxInstances: 1,

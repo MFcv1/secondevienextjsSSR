@@ -886,7 +886,7 @@ decisions par nom, appelants, acces donnees, IAM, secrets et rollback sont dans
 Schedulers, queues et Eventarc est dans
 `apphostingaudit/manifests/functions-platform-g0.json`.
 
-G1 est en `HEALTH_INCIDENT_CLOSED_WORKERS_NEXT`: protections Firestore, backup,
+G1 est en `E_RUNTIME_IAM_VERIFIED_RESERVATION_NEXT`: protections Firestore, backup,
 restore reconcilie et deux canaux Monitoring testes sont actifs; seules les
 preuves cloud des workers restent non fermees. Le reconciler Gen1 est en version
 12 sur une identite runtime dediee minimale verifiee.
@@ -899,6 +899,9 @@ append-only et interdit toute mutation commande/refund/faits/stock.
 La resolution autorisee a applique deux ecritures et le run suivant prouve
 `healthy`, zero incident primaire et aucune troncature. Les workers G1-E restent
 a qualifier un par un avant tout passage G2.
+Les trois comptes worker dedies sont verifies sans cle, avec roles projet et
+secrets resource-level exacts. La prochaine cible unique est le dispatcher
+d'expiration des reservations.
 Les plans read-only P1/P2 sont dans
 `apphostingaudit/manifests/functions-gen2-g1-data-plan.json`; aucun passage G2
 n'est autorise dans cet etat.

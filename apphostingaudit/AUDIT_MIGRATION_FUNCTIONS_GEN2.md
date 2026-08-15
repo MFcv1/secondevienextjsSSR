@@ -1454,6 +1454,15 @@ Verdict courant: `G1_HEALTH_INCIDENT_CLOSED_WORKERS_NEXT`. G1-E reprend un seul
 worker par deploiement, avec compte runtime dedie minimal et preuve de completion
 ou d'echec; G2 reste interdit tant que les trois workers ne sont pas qualifies.
 
+Les comptes `commerce-reservation-expiry`, `commerce-outbox-dispatcher` et
+`admin-payment-link-expiry` ont ensuite ete crees sans cle. Le manifeste
+`functions-gen2-g1-worker-iam.json` prouve pour chacun exactement
+`datastore.user`, `logging.logWriter`, `serviceusage.serviceUsageConsumer`, zero
+cle utilisateur, aucune impersonation publique et uniquement les secrets deja
+lies a sa Function. Aucune valeur de secret n'a ete lue. Verdict courant:
+`G1_E_RUNTIME_IAM_VERIFIED_RESERVATION_NEXT`; le premier deploy reste borne au
+seul `commerceReservationExpiryDispatcher`.
+
 ### G2 - Socle Gen2 et stabilisation des treize cibles existantes
 
 **G2-A local, sans deploiement:**

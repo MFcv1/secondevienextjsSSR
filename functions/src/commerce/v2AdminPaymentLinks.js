@@ -28,6 +28,8 @@ const { normalizeCommerceControl } = require('./domain/policy');
 
 const db = admin.firestore();
 const ADMIN_SECRETS = [STRIPE_SECRET_KEY, PAYMENT_LINK_HMAC_SECRET];
+const PAYMENT_LINK_EXPIRY_RUNTIME_SERVICE_ACCOUNT =
+    'admin-payment-link-expiry@secondevienextjsssr.iam.gserviceaccount.com';
 
 function snapshotExists(snapshot) {
     return typeof snapshot?.exists === 'function' ? snapshot.exists() : snapshot?.exists === true;
@@ -408,7 +410,13 @@ const prepareAdminPaymentLinkPayment = publicCallable(prepareAdminPaymentLinkPay
 const recreateAdminPaymentLink = adminCallable(recreateAdminPaymentLinkHandler);
 const resumeAdminPaymentLinkPayment = publicCallable(resumeAdminPaymentLinkPaymentHandler);
 const expireAdminPaymentLinks = regionalFunctions()
-    .runWith({ timeoutSeconds: 300, memory: '512MB', maxInstances: 1, secrets: ADMIN_SECRETS })
+    .runWith({
+        serviceAccount: PAYMENT_LINK_EXPIRY_RUNTIME_SERVICE_ACCOUNT,
+        timeoutSeconds: 300,
+        memory: '512MB',
+        maxInstances: 1,
+        secrets: ADMIN_SECRETS
+    })
     .pubsub.schedule('every 5 minutes')
     .onRun(expireAdminPaymentLinksHandler);
 
