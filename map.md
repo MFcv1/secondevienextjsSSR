@@ -905,8 +905,11 @@ test une annulation fournisseur avant liberation unique, stock fixture
 delete. Le manifeste est
 `apphostingaudit/manifests/functions-gen2-g1-worker-rollout.json`.
 Les plans read-only P1/P2 sont dans
-`apphostingaudit/manifests/functions-gen2-g1-data-plan.json`; G2-A local est la
-prochaine phase et G2-B conserve son autorisation cloud distincte.
+`apphostingaudit/manifests/functions-gen2-g1-data-plan.json`. G2-A local est
+fermee pour les treize Gen2; son runtime/IAM/retry/data/rollback consolide est
+dans `apphostingaudit/manifests/functions-gen2-g2a-plan.json`. G2-B reste
+bloquee sur seed stats, IAM dedie et TTL e-mail, avec autorisation cloud
+distincte et une seule cible a la fois.
 
 | Domaine | Exports |
 | --- | --- |

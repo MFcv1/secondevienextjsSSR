@@ -1,8 +1,8 @@
 # Centre de suivi Firebase, App Hosting et migration Gen2
 
-Derniere mise a jour: 2026-08-15
+Derniere mise a jour: 2026-08-16
 
-Statut: `CENTRE_DE_SUIVI_ACTIF - G1_TERMINEE - G2_A_LOCAL_EN_COURS`
+Statut: `CENTRE_DE_SUIVI_ACTIF - G1_TERMINEE - G2_A_LOCAL_FERMEE - G2_B_BLOCKED`
 
 Proprietaire: mainteneur Seconde Vie et agent d'execution des phases validees
 
@@ -277,8 +277,14 @@ endpoint ou App Hosting puisque le lot reste non deploye.
   concurrence/max 1; queues cloud inchangees;
 - lot artefacts local: quarantaine idempotente, futur SA
   `catalog-media-enqueuer`, aucune suppression de sous-collection;
-- prochaine action G2-A: consolider le manifeste des treize cibles et la
-  matrice IAM/rollback; aucune G2-B avant seed stats, IAM et TTL.
+- cloture G2-A: manifeste des treize cibles et matrice IAM/rollback consolides;
+  aucune G2-B avant seed stats, IAM et TTL.
+
+Le manifeste consolide `manifests/functions-gen2-g2a-plan.json` couvre les 13
+cibles et porte le verdict
+`G2_A_LOCAL_COMPLETE_G2_B_BLOCKED_ON_DATA_IAM_TTL`, avec
+`deploymentAllowed: false`. G2-A est donc fermee localement; la prochaine
+action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
 
 ## 9. Conditions d'arret immediat
 

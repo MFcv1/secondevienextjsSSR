@@ -1582,6 +1582,16 @@ ces donnees restent en place jusqu'a une procedure destructive distincte et
 approuvee. Tests G2-A 12/12, catalogue core 14/14, resilience 18/18,
 compatibilite/Gate 7A 24/24 et lint Functions verts.
 
+Le manifeste consolide `functions-gen2-g2a-plan.json` rapproche ces treize
+decisions de leur baseline cloud G0 et fixe runtime, build/transport/runtime
+SA, IAM, secrets nommes, acces donnees, idempotence, overlap et rollback. Son
+verdict est `G2_A_LOCAL_COMPLETE_G2_B_BLOCKED_ON_DATA_IAM_TTL` et
+`deploymentAllowed: false`. Les blocages sont le seed preconditionne des 26
+ledgers stats, la creation/verification des identites sans cle, le TTL
+`purgeAt` du ledger e-mail et une regeneration source/cloud juste avant chaque
+deploiement cible. Aucun deploiement Gen2, rules, IAM ou TTL n'a ete applique
+pendant G2-A.
+
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
 1. deployer une seule des treize cibles a la fois, depuis l'allowlist G0;

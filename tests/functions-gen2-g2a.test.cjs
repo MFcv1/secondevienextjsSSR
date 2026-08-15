@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const { createRequire } = require('node:module');
+const { spawnSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const requireFromFunctions = createRequire(path.join(ROOT, 'functions/package.json'));
@@ -333,4 +334,42 @@ test('G2-A artefacts: les deux triggers sont bornes et ne suppriment plus les so
     }
     const deleted = fs.readFileSync(path.join(ROOT, 'functions/src/triggers/onArtifactDeleted.js'), 'utf8');
     assert.doesNotMatch(deleted, /batch\.delete|deleteSubCollection|\.delete\(/);
+});
+
+test('G2-A manifeste: exactement treize Gen2 et aucun deploy autorise', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g2a-plan.json'),
+        'utf8'
+    ));
+    assert.equal(manifest.project, 'secondevienextjsssr');
+    assert.equal(manifest.targetCount, 13);
+    assert.equal(new Set(manifest.targets.map(({ name }) => name)).size, 13);
+    assert.equal(manifest.deploymentAllowed, false);
+    assert.match(manifest.verdict, /BLOCKED_ON_DATA_IAM_TTL/);
+    assert.equal(manifest.targets.some(({ name }) => [
+        'grantAdminOnAuth',
+        'onRegisteredUserCreated',
+        'onRegisteredUserDeleted',
+        'startInstagramOAuthAdmin'
+    ].includes(name)), false);
+    for (const target of manifest.targets) {
+        assert.equal(target.runtime.runtimeServiceAccount.includes('appspot.gserviceaccount.com'), false);
+        assert.equal(target.runtime.runtimeServiceAccount.includes('231220287936-compute'), false);
+        assert.match(target.rollback, /Redeploy .* only/);
+    }
+});
+
+test('G2-A manifeste: le planificateur refuse mauvais projet et mode apply', () => {
+    const script = path.join(ROOT, 'scripts/plan-functions-gen2-g2a.mjs');
+    for (const argumentsList of [
+        ['--project=vibefx-v2', '--env=sandbox'],
+        ['--project=secondevienextjsssr', '--env=sandbox', '--apply=true']
+    ]) {
+        const result = spawnSync(process.execPath, [script, ...argumentsList], {
+            cwd: ROOT,
+            encoding: 'utf8'
+        });
+        assert.notEqual(result.status, 0);
+        assert.match(result.stderr, /G2A_PLAN_(?:PROJECT_REQUIRED|READ_ONLY_LOCAL_ONLY)/);
+    }
 });
