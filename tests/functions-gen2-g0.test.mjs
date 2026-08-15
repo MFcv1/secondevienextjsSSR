@@ -277,3 +277,15 @@ test('le fallback gcloud Gen1 reste limite au reconciler et explicite toute sa c
     ...validationArgs({ allowlist: 'commerceOperationsReconciler', transport: 'direct-rest' })
   }), /Transport interdit/);
 });
+
+test('le resolver financier G1 est fail-closed et ne touche ni commande, refund, faits ou stock', () => {
+  const source = fs.readFileSync(path.join(ROOT, 'scripts/resolve-commerce-incident-g1.mjs'), 'utf8');
+  assert.match(source, /G1_RESOLVE_BALANCED_REVERSAL_NO_REPLAY/);
+  assert.match(source, /args\.get\('approval'\) !== APPROVAL/);
+  assert.match(source, /STRIPE_SECRET_KEY[^\n]+startsWith\('sk_test_'\)/);
+  assert.match(source, /transaction\.update\(incidentDocument\.ref/);
+  assert.match(source, /transaction\.set\(auditRef/);
+  assert.doesNotMatch(source, /transaction\.(?:set|update|delete)\(orderRef/);
+  assert.doesNotMatch(source, /transaction\.(?:set|update|delete)\(attemptDocument\.ref/);
+  assert.doesNotMatch(source, /transaction\.delete\(/);
+});

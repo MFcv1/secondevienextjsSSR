@@ -2,7 +2,7 @@
 
 Derniere mise a jour: 2026-08-15
 
-Statut: `G1_READY_GCLOUD_TARGETED_DEPLOY`
+Statut: `G1_HEALTH_STOP_PROVED_INCIDENT_RESOLUTION_READY`
 
 Projet unique: `secondevienextjsssr`
 
@@ -184,6 +184,15 @@ la session Firebase locale. Le fallback `gcloud-gen1` du wrapper est strictement
 limite au reconciler et explicite generation, trigger, runtime, build/runtime
 SA, memoire, timeout, max instances, retry et ingress. Il refuse tout drift
 cloud avant ecriture et n'utilise aucune cle de service.
+
+Resultat du 2026-08-15: version 12 `ACTIVE`, build
+`6f3e9e27-b8cf-4674-90f5-2dddcb3d4a8f`, compte runtime dedie, max instances 1.
+Le run manuel unique `o24ki8o5hysl` a termine `ok` en 6,375 s et produit une
+sante `stop`, schema 3, un incident primaire, `truncated: false`. L'audit G1 a
+confirme zero compteur operationnel divergent. Le resolver financier est
+read-only par defaut et son apply est borne a deux ecritures: fermeture de
+l'incident et evenement append-only; aucun objet Stripe, commande, refund, fait
+financier ou stock n'est modifie.
 
 ## 6. Workers G1-E
 

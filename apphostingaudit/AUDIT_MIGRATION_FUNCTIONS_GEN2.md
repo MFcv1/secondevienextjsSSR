@@ -1420,10 +1420,25 @@ generation Gen1, source, entry point, trigger, runtime, build/runtime SA,
 memoire, timeout, max instances, retry et ingress explicites. Le preflight lit
 la Function active et refuse tout drift de nom, etat ou trigger.
 
-Nouveau verdict: `G1_READY_GCLOUD_TARGETED_DEPLOY`. La nouvelle tentative exige
-un commit propre et reste limitee au reconciler; aucun autre scheduler ni cible
-G2 n'est inclus. Le rollback reste la version 11 encore active ou le
-redeploiement cible du dernier commit connu avant cette tentative.
+Le fallback a deploye avec succes la version 12 le 2026-08-15, build
+`6f3e9e27-b8cf-4674-90f5-2dddcb3d4a8f`: `ACTIVE`, Gen1, Node 22, compte runtime
+dedie, build SA preserve, 512 MB, timeout 300 s, max instances 1, retry desactive,
+variables et topic inchanges. Une execution manuelle unique du scheduler a
+termine en 6,375 s (`o24ki8o5hysl`) et publie `commerce_health_unhealthy` avec
+`status: stop`, schema 3, un incident primaire, aucune troncature et une validite
+de 90 minutes. L'audit immediat confirme zero compteur operationnel divergent et
+un seul incident `terminal_refund_conflict`.
+
+Nouveau verdict: `G1_HEALTH_STOP_PROVED_INCIDENT_RESOLUTION_READY`. Le resolver
+`resolve-commerce-incident-g1.mjs` reste read-only par defaut et exige projet,
+sandbox, HEAD, acteur et approbation litterale. En apply, il ne peut fermer que
+l'unique incident si Stripe test est terminal, refund/reversal sont exactement
+equilibres et la sante est `stop`; il ecrit seulement l'incident et un evenement
+append-only. Aucun replay, refund, restock, changement commande/tentative/fait
+financier n'est permis. Le rollback code exact est le redeploiement cible de la
+source pre-correctif `f80dc7213a8d738fb1edde11a926028bcb57ab28` depuis un
+worktree isole, en conservant le compte runtime dedie et toute la configuration
+de la version 12; ne jamais restaurer le compte appspot global.
 
 ### G2 - Socle Gen2 et stabilisation des treize cibles existantes
 
