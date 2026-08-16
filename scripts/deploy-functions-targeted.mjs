@@ -144,6 +144,28 @@ const GCLOUD_GEN2_TARGETS = Object.freeze({
     minInstances: '0',
     maxInstances: '1',
     ingressSettings: 'all'
+  }),
+  catalogMediaGarbageCollector: Object.freeze({
+    triggerType: 'http-scheduler',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'catalogMediaGarbageCollector',
+    functionUrl: 'https://europe-west1-secondevienextjsssr.cloudfunctions.net/catalogMediaGarbageCollector',
+    schedulerJob: 'firebase-schedule-catalogMediaGarbageCollector-europe-west1',
+    schedule: 'every 24 hours',
+    timeZone: 'UTC',
+    schedulerServiceAccount: 'catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    schedulerAttemptDeadline: '540s',
+    expectedSchedulerAttemptDeadline: '540s',
+    runtimeServiceAccount: 'catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '512Mi',
+    cpu: '1',
+    timeout: '540s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all'
   })
 });
 const G2B_ROLLBACKS = Object.freeze({
@@ -182,6 +204,18 @@ const G2B_ROLLBACKS = Object.freeze({
     concurrency: '80',
     maxInstances: '20',
     schedulerAttemptDeadline: '180s',
+    retry: false
+  }),
+  catalogMediaGarbageCollector: Object.freeze({
+    approval: 'G2B_ROLLBACK_CATALOG_MEDIA_GC',
+    sourceRevision: 'catalogmediagarbagecollector-00009-geb',
+    source: 'gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/catalogMediaGarbageCollector/catalogmediagarbagecollector-00009-geb-function-source.zip',
+    sourceGeneration: '1786890156516126',
+    sourceSize: '345983',
+    sourceSha256: 'fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92',
+    concurrency: '80',
+    maxInstances: '20',
+    schedulerAttemptDeadline: '540s',
     retry: false
   })
 });

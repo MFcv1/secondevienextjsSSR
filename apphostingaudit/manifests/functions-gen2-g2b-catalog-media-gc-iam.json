@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T14:24:06Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "target": "catalogMediaGarbageCollector",
+  "mode": "read-only-verification",
+  "runtimeServiceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+  "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+  "schedulerServiceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+  "runtimeProjectRoles": [
+    "roles/cloudtasks.enqueuer",
+    "roles/datastore.user",
+    "roles/logging.logWriter",
+    "roles/serviceusage.serviceUsageConsumer"
+  ],
+  "resourceRoles": {
+    "catalogBucket": "roles/storage.objectAdmin",
+    "mediaBucket": "roles/storage.objectAdmin",
+    "targetRunService": "roles/run.invoker",
+    "buildArtifactRepository": "roles/artifactregistry.writer",
+    "buildSourceBuckets": "roles/storage.objectViewer"
+  },
+  "checks": {
+    "runtimeRolesExact": true,
+    "runtimeActAs": true,
+    "buildRolesExact": true,
+    "schedulerRunInvokerTargetOnly": true,
+    "publicInvoker": false,
+    "userManagedKeys": 0,
+    "defaultComputeOrAppspotUsed": false
+  },
+  "changes": [],
+  "verdict": "G2B_CATALOG_MEDIA_GC_IAM_VERIFIED"
+}

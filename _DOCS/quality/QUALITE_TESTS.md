@@ -118,6 +118,10 @@ approbation litterale avant d'ajouter uniquement Service Usage Consumer et
 ActAs au runtime `catalog-builder`. `test:functions-g0` verrouille le transport
 HTTP Scheduler et son rollback; `test:functions-g2a` couvre la reprise bornee
 des conflits `RECONCILE_STATE_ADVANCED`.
+La meme suite interdit au scheduler GC d'appeler le nettoyage des releases
+avec `commit: true`: medias et releases doivent recevoir le booleen derive de
+`CATALOG_MEDIA_GC_COMMIT === 'true'`, et les compteurs de dry-run/suppression
+doivent rester observables dans les logs structures.
 
 `npm run functions:restore-verify:g1` compare la base nommee au snapshot PITR
 exact et produit uniquement comptages/digests; `npm run

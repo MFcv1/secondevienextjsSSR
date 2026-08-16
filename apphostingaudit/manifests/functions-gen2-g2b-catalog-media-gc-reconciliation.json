@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T14:24:06Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "mode": "read-only",
+  "target": "catalogMediaGarbageCollector",
+  "cloudBaseline": {
+    "revision": "catalogmediagarbagecollector-00009-geb",
+    "state": "ACTIVE",
+    "region": "europe-west1",
+    "runtime": "nodejs22",
+    "runtimeServiceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "231220287936-compute@developer.gserviceaccount.com",
+    "cpu": 1,
+    "memoryMiB": 512,
+    "timeoutSeconds": 540,
+    "concurrency": 80,
+    "minInstances": 0,
+    "maxInstances": 20
+  },
+  "schedulerBaseline": {
+    "name": "firebase-schedule-catalogMediaGarbageCollector-europe-west1",
+    "state": "ENABLED",
+    "schedule": "every 24 hours",
+    "timeZone": "UTC",
+    "attemptDeadlineSeconds": 540,
+    "retryMaxAttemptsEffective": 0,
+    "oidcServiceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "lastAttemptTime": "2026-08-15T18:26:03.183589Z",
+    "lastObservedHttpStatus": 200,
+    "lastObservedLatencySeconds": 4.475896073
+  },
+  "deletionPlan": {
+    "eligibleMediaCandidates": 0,
+    "totalReleases": 10,
+    "retainedReleases": 10,
+    "candidateReleases": 0,
+    "candidateObjects": 0,
+    "protectedPointerCount": 3,
+    "storageDeletesAuthorized": false,
+    "firestoreWritesAuthorized": false
+  },
+  "drifts": [
+    {
+      "code": "RELEASE_GC_BYPASSED_KILL_SWITCH",
+      "resolution": "Pass the same fail-closed CATALOG_MEDIA_GC_COMMIT boolean to media and release GC."
+    },
+    {
+      "code": "GC_COUNTS_DROPPED_BY_STRUCTURED_LOG_ALLOWLIST",
+      "resolution": "Allow only non-sensitive aggregate counters and result fields."
+    },
+    {
+      "code": "DOCUMENTED_SANDBOX_COMMIT_FLAG_NOT_PRESENT_IN_RUNTIME",
+      "resolution": "Correct canonical media documentation; sandbox remains false until a separate destructive gate."
+    }
+  ],
+  "desired": {
+    "runtimeServiceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "schedulerServiceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "cpu": 1,
+    "memoryMiB": 512,
+    "timeoutSeconds": 540,
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "retryCount": 0,
+    "destructiveCommit": false
+  },
+  "blockers": [],
+  "deploymentAllowed": false,
+  "verdict": "G2B_CATALOG_MEDIA_GC_PREFLIGHT_READY"
+}

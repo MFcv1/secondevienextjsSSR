@@ -923,6 +923,10 @@ reste uniquement l'identite OIDC du job cinq minutes. Les conflits de
 `stateVersion` sont repris trois fois au maximum dans la Function, tandis que
 Scheduler conserve zero retry. La revision `catalogreconciler-00010-dob` est
 fermee apres deux executions naturelles `healthy` et zero drift.
+Le preflight G2-B4 rend `catalogMediaGarbageCollector` fail-closed: un seul
+kill-switch couvre medias et releases et reste `false` sur le sandbox. La
+mesure read-only retrouve zero candidat media/release; aucune suppression
+n'appartient au rollout de configuration.
 
 | Domaine | Exports |
 | --- | --- |

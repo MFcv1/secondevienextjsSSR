@@ -343,6 +343,23 @@ test('le transport gcloud Gen2 est limite au premier lot stats et explicite IAM 
     '--oidc-token-audience=https://europe-west1-secondevienextjsssr.cloudfunctions.net/catalogReconciler',
     '--attempt-deadline=540s', '--max-retry-attempts=0'
   ]) assert.ok(schedulerJobArgs.includes(expected), expected);
+
+  const gcRequest = validate({
+    ...validationArgs({ allowlist: 'catalogMediaGarbageCollector', transport: 'gcloud-gen2' })
+  });
+  const gcFunctionArgs = buildGcloudGen2DeployArgs(gcRequest);
+  for (const expected of [
+    '--entry-point=catalogMediaGarbageCollector', '--trigger-http',
+    '--run-service-account=catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    '--memory=512Mi', '--timeout=540s', '--concurrency=1', '--max-instances=1'
+  ]) assert.ok(gcFunctionArgs.includes(expected), expected);
+  const gcJobArgs = buildGcloudSchedulerUpdateArgs(gcRequest);
+  for (const expected of [
+    'firebase-schedule-catalogMediaGarbageCollector-europe-west1',
+    '--schedule=every 24 hours',
+    '--oidc-service-account-email=catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    '--attempt-deadline=540s'
+  ]) assert.ok(gcJobArgs.includes(expected), expected);
 });
 
 test('le rollback G2-B est borne a la revision et a l archive source preservee', () => {
@@ -411,6 +428,21 @@ test('le rollback G2-B est borne a la revision et a l archive source preservee',
   ]) assert.ok(schedulerFunctionArgs.includes(expected), expected);
   const schedulerJobArgs = buildGcloudSchedulerUpdateArgs(schedulerRequest, { rollback: true });
   assert.ok(schedulerJobArgs.includes('--attempt-deadline=180s'));
+
+  const gcRequest = validate({
+    ...validationArgs({
+      allowlist: 'catalogMediaGarbageCollector',
+      transport: 'gcloud-gen2-rollback',
+      approval: 'G2B_ROLLBACK_CATALOG_MEDIA_GC',
+      'expected-revision': 'catalogmediagarbagecollector-00010-abc',
+      'rollback-source-sha256': 'fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92'
+    })
+  });
+  const gcArgs = buildGcloudGen2RollbackArgs(gcRequest);
+  for (const expected of [
+    '--source=gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/catalogMediaGarbageCollector/catalogmediagarbagecollector-00009-geb-function-source.zip',
+    '--trigger-http', '--concurrency=80', '--max-instances=20', '--timeout=540s'
+  ]) assert.ok(gcArgs.includes(expected), expected);
 });
 
 test('les trois workers G1 epinglent runtime, secrets et limites explicites', () => {

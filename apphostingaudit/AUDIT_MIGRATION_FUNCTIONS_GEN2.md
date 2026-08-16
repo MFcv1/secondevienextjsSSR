@@ -1725,6 +1725,20 @@ quiet-window couvre 584 secondes. Les inventaires restent 157/152, 139 Gen1,
 `functions-gen2-g2b-catalog-reconciler-{reconciliation,iam,inventory,rollout}.json`,
 scelles par leur manifeste de digests. Verdict: `G2B3_COMPLETE`.
 
+#### Preflight G2-B4 - GC catalogue cible unique
+
+Le preflight de `catalogMediaGarbageCollector` trouve zero candidat media
+eligible, dix releases toutes retenues, zero release et zero objet candidat a
+la suppression. Il releve cependant que le GC des releases appelait
+`commit: true` sans partager le kill-switch media et que les champs de compte
+etaient retires des logs structures. Avant rollout, le kill-switch
+`CATALOG_MEDIA_GC_COMMIT` couvre donc les deux GC et reste fail-closed en
+l'absence de variable runtime; les logs exposent desormais candidats et
+comptes supprimes sans chemin d'objet. Aucune suppression n'est autorisee par
+ce lot. Runtime, Scheduler OIDC, deux buckets cibles et IAM sont deja dedies et
+sans invoker public; l'archive revision 9 est sous temporary hold. Verdict:
+`G2B_CATALOG_MEDIA_GC_PREFLIGHT_READY`; rollout non encore ferme.
+
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
 1. deployer une seule des treize cibles a la fois, depuis l'allowlist G0;

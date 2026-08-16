@@ -560,6 +560,17 @@ test('G2-A artefacts: les deux triggers sont bornes et ne suppriment plus les so
     assert.doesNotMatch(deleted, /batch\.delete|deleteSubCollection|\.delete\(/);
 });
 
+test('G2-B GC catalogue: aucune suppression planifiee sans kill-switch explicite', () => {
+    const source = fs.readFileSync(path.join(ROOT, 'functions/src/catalog/mediaGarbageCollection.js'), 'utf8');
+    const logSource = fs.readFileSync(path.join(ROOT, 'functions/src/catalog/structuredLog.js'), 'utf8');
+    assert.match(source, /destructiveCommit\s*=\s*CATALOG_MEDIA_GC_COMMIT\s*===\s*'true'/);
+    assert.equal((source.match(/commit:\s*destructiveCommit/g) || []).length, 2);
+    assert.doesNotMatch(source, /runReleaseGarbageCollection\([^\n]+\{\s*commit:\s*true\s*\}/);
+    for (const field of ['candidateReleases', 'deletedReleases', 'deletedObjects', 'mediaResult', 'releaseResult']) {
+        assert.match(logSource, new RegExp(`['"]${field}['"]`));
+    }
+});
+
 test('G2-A manifeste: exactement treize Gen2 et aucun deploy autorise', () => {
     const manifest = JSON.parse(fs.readFileSync(
         path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g2a-plan.json'),

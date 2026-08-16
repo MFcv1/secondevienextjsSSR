@@ -188,18 +188,22 @@ const catalogMediaGarbageCollector = onSchedule(
         retryCount: 0
     },
     async () => {
+        const destructiveCommit = CATALOG_MEDIA_GC_COMMIT === 'true';
         const snapshotBucket = admin.storage().bucket(CATALOG_SNAPSHOT_BUCKET);
         const media = await runMediaGarbageCollection({
             db: admin.firestore(),
             mediaBucket: admin.storage().bucket(),
             snapshotBucket
-        }, { commit: true });
-        const releases = await runReleaseGarbageCollection(snapshotBucket, { commit: true });
+        }, { commit: destructiveCommit });
+        const releases = await runReleaseGarbageCollection(snapshotBucket, { commit: destructiveCommit });
         catalogLog('info', {
             phase: 'scheduled_gc',
-            result: 'completed',
+            result: destructiveCommit ? 'completed' : 'dry_run',
+            mode: destructiveCommit ? 'commit' : 'dry_run',
             mediaResult: media.result,
             releaseResult: releases.result,
+            inspected: media.inspected,
+            candidateReleases: releases.candidateReleases,
             deletedReleases: releases.deletedReleases,
             deletedObjects: releases.deletedObjects
         });
