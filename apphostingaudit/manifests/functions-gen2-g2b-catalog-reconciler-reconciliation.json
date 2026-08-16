@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T14:02:06.656Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "mode": "read-only",
+  "target": "catalogReconciler",
+  "verdict": "G2B_CATALOG_RECONCILER_PREFLIGHT_READY",
+  "deploymentAllowed": false,
+  "blockers": [],
+  "control": {
+    "schemaVersion": 1,
+    "stateVersion": 14068,
+    "mode": "active",
+    "dirty": false,
+    "buildState": "published",
+    "desiredRevision": 295,
+    "publishedRevision": 295,
+    "revalidatedRevision": 295,
+    "activeLease": false,
+    "leaseExpiresAt": null,
+    "lastErrorPresent": false,
+    "updatedAt": "2026-08-15T23:19:39.941Z"
+  },
+  "pointers": [
+    {
+      "path": "catalog-projection/v1/pointers/current.json",
+      "healthy": true,
+      "generation": "1786835952303890",
+      "revision": 295,
+      "manifestPath": "catalog-projection/v1/releases/r295-5b5e0724dd0f/manifest.json",
+      "manifestSha256": "6851e064a36f169edd1bf5652e9a28f45e8b4bb85b9635892ee5ec9dc73466c8"
+    },
+    {
+      "path": "catalog-projection/v1/pointers/previous.json",
+      "healthy": true,
+      "generation": "1786835952608671",
+      "revision": 292,
+      "manifestPath": "catalog-projection/v1/releases/r292-5b5e0724dd0f/manifest.json",
+      "manifestSha256": "e404c49959c475183ba980dd29b3e5990317f1721f754181c3938065c74df1ab"
+    },
+    {
+      "path": "catalog-projection/v1/pointers/last-known-good.json",
+      "healthy": true,
+      "generation": "1786835952485581",
+      "revision": 291,
+      "manifestPath": "catalog-projection/v1/releases/r291-3f6fb87e44b9/manifest.json",
+      "manifestSha256": "cb4b455869edcd2f7b45243a3db915681609ca1db0195467be1631ae1e50c8c5"
+    }
+  ],
+  "cloudBaseline": {
+    "revision": "catalogreconciler-00009-luf",
+    "runtime": "nodejs22",
+    "runtimeServiceAccount": "catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com",
+    "cpu": "1",
+    "memory": "256Mi",
+    "timeoutSeconds": 120,
+    "concurrency": 80,
+    "minInstances": 0,
+    "maxInstances": 20,
+    "url": "https://europe-west1-secondevienextjsssr.cloudfunctions.net/catalogReconciler"
+  },
+  "schedulerBaseline": {
+    "name": "firebase-schedule-catalogReconciler-europe-west1",
+    "state": "ENABLED",
+    "schedule": "every 5 minutes",
+    "timeZone": "UTC",
+    "uri": "https://europe-west1-secondevienextjsssr.cloudfunctions.net/catalogReconciler",
+    "method": "POST",
+    "oidcServiceAccount": "catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com",
+    "oidcAudience": "https://europe-west1-secondevienextjsssr.cloudfunctions.net/catalogReconciler",
+    "attemptDeadline": "180s",
+    "retryMaxAttemptsEffective": 0,
+    "lastAttemptTime": "2026-08-16T13:58:03.721344Z",
+    "status": {}
+  },
+  "desired": {
+    "runtimeServiceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "schedulerServiceAccount": "catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com",
+    "cpu": 1,
+    "memoryMiB": 512,
+    "timeoutSeconds": 540,
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "retryCount": 0,
+    "attemptDeadlineSeconds": 540
+  },
+  "driftResolution": {
+    "runtimeIdentity": "Use catalog-builder because rollback recovery can rewrite previous pointer with Storage generation preconditions.",
+    "resources": "Align source, function and scheduler deadline to the G2-A manifest: 512 MiB and 540 seconds.",
+    "conflictHandling": "Retry RECONCILE_STATE_ADVANCED internally at most three attempts; Scheduler retry remains zero."
+  },
+  "nextGate": "Verify exact IAM and rollback archive, commit the deployment inputs, then deploy only catalogReconciler and update only its existing Scheduler job."
+}

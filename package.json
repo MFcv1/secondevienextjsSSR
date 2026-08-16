@@ -26,6 +26,8 @@
     "functions:configure-stats-iam:g2b": "node scripts/configure-functions-gen2-g2b-stats-iam.mjs --project=secondevienextjsssr --env=sandbox",
     "functions:plan-catalog:g2b": "node scripts/with-env.mjs .env.sandbox node scripts/plan-functions-gen2-g2b-catalog.mjs --project=secondevienextjsssr --env=sandbox",
     "functions:configure-catalog-iam:g2b": "node scripts/configure-functions-gen2-g2b-catalog-iam.mjs --project=secondevienextjsssr --env=sandbox",
+    "functions:plan-catalog-reconciler:g2b": "node scripts/with-env.mjs .env.sandbox node scripts/plan-functions-gen2-g2b-catalog-reconciler.mjs --project=secondevienextjsssr --env=sandbox",
+    "functions:configure-catalog-reconciler-iam:g2b": "node scripts/configure-functions-gen2-g2b-catalog-reconciler-iam.mjs --project=secondevienextjsssr --env=sandbox",
     "functions:plan:g2a": "node scripts/plan-functions-gen2-g2a.mjs --project=secondevienextjsssr --env=sandbox",
     "functions:data-plan:g1": "node scripts/with-env.mjs .env.sandbox node scripts/plan-functions-gen2-g1-data.mjs --project=secondevienextjsssr --env=sandbox",
     "functions:restore-verify:g1": "node scripts/with-env.mjs .env.sandbox node scripts/verify-functions-gen2-g1-restore.mjs --project=secondevienextjsssr --source='(default)' --restore=restore-drill-20260815-a --snapshot-time=2026-08-15T17:54:15.202270Z",

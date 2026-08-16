@@ -19,6 +19,7 @@ import {
   buildGcloudGen1DeployArgs,
   buildGcloudGen2DeployArgs,
   buildGcloudGen2RollbackArgs,
+  buildGcloudSchedulerUpdateArgs,
   parseDeployArgs,
   validateDeploymentRequest
 } from '../scripts/deploy-functions-targeted.mjs';
@@ -319,6 +320,29 @@ test('le transport gcloud Gen2 est limite au premier lot stats et explicite IAM 
     '--trigger-service-account=functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com',
     '--concurrency=1', '--max-instances=1', '--retry'
   ]) assert.ok(catalogArgs.includes(expected), expected);
+
+  const schedulerRequest = validate({
+    ...validationArgs({ allowlist: 'catalogReconciler', transport: 'gcloud-gen2' })
+  });
+  const schedulerFunctionArgs = buildGcloudGen2DeployArgs(schedulerRequest);
+  for (const expected of [
+    '--trigger-http',
+    '--run-service-account=catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    '--build-service-account=projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    '--memory=512Mi', '--cpu=1', '--timeout=540s', '--concurrency=1',
+    '--min-instances=0', '--max-instances=1', '--no-allow-unauthenticated'
+  ]) assert.ok(schedulerFunctionArgs.includes(expected), expected);
+  assert.equal(schedulerFunctionArgs.includes('--retry'), false);
+  const schedulerJobArgs = buildGcloudSchedulerUpdateArgs(schedulerRequest);
+  for (const expected of [
+    'firebase-schedule-catalogReconciler-europe-west1',
+    '--project=secondevienextjsssr', '--location=europe-west1',
+    '--schedule=every 5 minutes', '--time-zone=UTC', '--http-method=POST',
+    '--uri=https://europe-west1-secondevienextjsssr.cloudfunctions.net/catalogReconciler',
+    '--oidc-service-account-email=catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com',
+    '--oidc-token-audience=https://europe-west1-secondevienextjsssr.cloudfunctions.net/catalogReconciler',
+    '--attempt-deadline=540s', '--max-retry-attempts=0'
+  ]) assert.ok(schedulerJobArgs.includes(expected), expected);
 });
 
 test('le rollback G2-B est borne a la revision et a l archive source preservee', () => {
@@ -368,6 +392,25 @@ test('le rollback G2-B est borne a la revision et a l archive source preservee',
     '--concurrency=80', '--max-instances=20', '--retry',
     '--update-labels=deployment-tool=codex-targeted,migration-rollback-source=oncatalogsourcewrite-00010-gis'
   ]) assert.ok(catalogArgs.includes(expected), expected);
+
+  const schedulerRequest = validate({
+    ...validationArgs({
+      allowlist: 'catalogReconciler',
+      transport: 'gcloud-gen2-rollback',
+      approval: 'G2B_ROLLBACK_CATALOG_RECONCILER',
+      'expected-revision': 'catalogreconciler-00010-abc',
+      'rollback-source-sha256': 'fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92'
+    })
+  });
+  const schedulerFunctionArgs = buildGcloudGen2RollbackArgs(schedulerRequest);
+  for (const expected of [
+    '--source=gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/catalogReconciler/catalogreconciler-00009-luf-function-source.zip',
+    '--trigger-http',
+    '--run-service-account=catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com',
+    '--memory=256Mi', '--timeout=120s', '--concurrency=80', '--max-instances=20'
+  ]) assert.ok(schedulerFunctionArgs.includes(expected), expected);
+  const schedulerJobArgs = buildGcloudSchedulerUpdateArgs(schedulerRequest, { rollback: true });
+  assert.ok(schedulerJobArgs.includes('--attempt-deadline=180s'));
 });
 
 test('les trois workers G1 epinglent runtime, secrets et limites explicites', () => {

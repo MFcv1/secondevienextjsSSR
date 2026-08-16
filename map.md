@@ -917,6 +917,11 @@ Le lot G2-B2 catalogue remplace localement la cle `event.id` du ledger par la
 cle semantique document + `updateTime`, puis deploie seulement
 `onCatalogSourceWrite`; preuves dans `functions-gen2-g2b-catalog-*.json` et
 quiet-window fermee sans drift.
+Le preflight G2-B3 de `catalogReconciler` epingle `catalog-builder` comme
+runtime car la reprise peut reecrire un pointeur Storage; `catalog-enqueuer`
+reste uniquement l'identite OIDC du job cinq minutes. Les conflits de
+`stateVersion` sont repris trois fois au maximum dans la Function, tandis que
+Scheduler conserve zero retry. Le rollout cible reste a fermer.
 
 | Domaine | Exports |
 | --- | --- |

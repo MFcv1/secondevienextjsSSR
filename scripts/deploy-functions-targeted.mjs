@@ -82,6 +82,7 @@ const GCLOUD_GEN1_TARGETS = Object.freeze({
 });
 const GCLOUD_GEN2_TARGETS = Object.freeze({
   onOrderStatsWrite: Object.freeze({
+    triggerType: 'event',
     region: 'europe-west1',
     runtime: 'nodejs22',
     entryPoint: 'onOrderStatsWrite',
@@ -102,6 +103,7 @@ const GCLOUD_GEN2_TARGETS = Object.freeze({
     ingressSettings: 'all'
   }),
   onCatalogSourceWrite: Object.freeze({
+    triggerType: 'event',
     region: 'europe-west1',
     runtime: 'nodejs22',
     entryPoint: 'onCatalogSourceWrite',
@@ -116,6 +118,28 @@ const GCLOUD_GEN2_TARGETS = Object.freeze({
     memory: '256Mi',
     cpu: '1',
     timeout: '60s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all'
+  }),
+  catalogReconciler: Object.freeze({
+    triggerType: 'http-scheduler',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'catalogReconciler',
+    functionUrl: 'https://europe-west1-secondevienextjsssr.cloudfunctions.net/catalogReconciler',
+    schedulerJob: 'firebase-schedule-catalogReconciler-europe-west1',
+    schedule: 'every 5 minutes',
+    timeZone: 'UTC',
+    schedulerServiceAccount: 'catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com',
+    schedulerAttemptDeadline: '540s',
+    expectedSchedulerAttemptDeadline: '180s',
+    runtimeServiceAccount: 'catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '512Mi',
+    cpu: '1',
+    timeout: '540s',
     concurrency: '1',
     minInstances: '0',
     maxInstances: '1',
@@ -144,6 +168,21 @@ const G2B_ROLLBACKS = Object.freeze({
     concurrency: '80',
     maxInstances: '20',
     retry: true
+  }),
+  catalogReconciler: Object.freeze({
+    approval: 'G2B_ROLLBACK_CATALOG_RECONCILER',
+    sourceRevision: 'catalogreconciler-00009-luf',
+    source: 'gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/catalogReconciler/catalogreconciler-00009-luf-function-source.zip',
+    sourceGeneration: '1786888563692570',
+    sourceSize: '345983',
+    sourceSha256: 'fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92',
+    runtimeServiceAccount: 'catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '256Mi',
+    timeout: '120s',
+    concurrency: '80',
+    maxInstances: '20',
+    schedulerAttemptDeadline: '180s',
+    retry: false
   })
 });
 
@@ -355,6 +394,15 @@ export function buildGcloudGen2DeployArgs(validation) {
   if (validation.transport !== 'gcloud-gen2' || validation.allowlist.length !== 1 || !target) {
     fail('Transport gcloud Gen2 non autorise');
   }
+  const triggerArgs = target.triggerType === 'http-scheduler'
+    ? ['--trigger-http']
+    : [
+        `--trigger-event-filters=${target.eventFilters}`,
+        `--trigger-event-filters-path-pattern=${target.eventPathPattern}`,
+        `--trigger-location=${target.triggerLocation}`,
+        `--trigger-service-account=${target.triggerServiceAccount}`
+      ];
+  const retryArgs = target.triggerType === 'http-scheduler' ? [] : ['--retry'];
   return [
     'functions', 'deploy', name,
     `--project=${validation.project}`,
@@ -363,10 +411,7 @@ export function buildGcloudGen2DeployArgs(validation) {
     `--runtime=${target.runtime}`,
     '--source=functions',
     `--entry-point=${target.entryPoint}`,
-    `--trigger-event-filters=${target.eventFilters}`,
-    `--trigger-event-filters-path-pattern=${target.eventPathPattern}`,
-    `--trigger-location=${target.triggerLocation}`,
-    `--trigger-service-account=${target.triggerServiceAccount}`,
+    ...triggerArgs,
     `--run-service-account=${target.runtimeServiceAccount}`,
     `--build-service-account=${target.buildServiceAccount}`,
     `--memory=${target.memory}`,
@@ -375,10 +420,33 @@ export function buildGcloudGen2DeployArgs(validation) {
     `--concurrency=${target.concurrency}`,
     `--min-instances=${target.minInstances}`,
     `--max-instances=${target.maxInstances}`,
-    '--retry',
+    ...retryArgs,
     `--ingress-settings=${target.ingressSettings}`,
     '--no-allow-unauthenticated',
     `--update-labels=deployment-tool=codex-targeted,migration-source-commit=${validation.commit}`,
+    '--quiet'
+  ];
+}
+
+export function buildGcloudSchedulerUpdateArgs(validation, options = {}) {
+  const target = GCLOUD_GEN2_TARGETS[validation.allowlist[0]];
+  const expectedTransport = options.rollback ? 'gcloud-gen2-rollback' : 'gcloud-gen2';
+  if (validation.transport !== expectedTransport || target?.triggerType !== 'http-scheduler') {
+    fail('Mise a jour Scheduler Gen2 non autorisee');
+  }
+  const rollback = options.rollback ? G2B_ROLLBACKS[validation.allowlist[0]] : null;
+  return [
+    'scheduler', 'jobs', 'update', 'http', target.schedulerJob,
+    `--project=${validation.project}`,
+    `--location=${target.region}`,
+    `--schedule=${target.schedule}`,
+    `--time-zone=${target.timeZone}`,
+    '--http-method=POST',
+    `--uri=${target.functionUrl}`,
+    `--oidc-service-account-email=${target.schedulerServiceAccount}`,
+    `--oidc-token-audience=${target.functionUrl}`,
+    `--attempt-deadline=${rollback?.schedulerAttemptDeadline || target.schedulerAttemptDeadline}`,
+    '--max-retry-attempts=0',
     '--quiet'
   ];
 }
@@ -390,6 +458,14 @@ export function buildGcloudGen2RollbackArgs(validation) {
   if (validation.transport !== 'gcloud-gen2-rollback' || !target || !rollback) {
     fail('Rollback gcloud Gen2 non autorise');
   }
+  const triggerArgs = target.triggerType === 'http-scheduler'
+    ? ['--trigger-http']
+    : [
+        `--trigger-event-filters=${target.eventFilters}`,
+        `--trigger-event-filters-path-pattern=${target.eventPathPattern}`,
+        `--trigger-location=${target.triggerLocation}`,
+        `--trigger-service-account=${target.triggerServiceAccount}`
+      ];
   const args = [
     'functions', 'deploy', name,
     `--project=${validation.project}`,
@@ -398,13 +474,10 @@ export function buildGcloudGen2RollbackArgs(validation) {
     `--runtime=${target.runtime}`,
     `--source=${rollback.source}`,
     `--entry-point=${target.entryPoint}`,
-    `--trigger-event-filters=${target.eventFilters}`,
-    `--trigger-event-filters-path-pattern=${target.eventPathPattern}`,
-    `--trigger-location=${target.triggerLocation}`,
-    `--trigger-service-account=${target.triggerServiceAccount}`,
-    `--run-service-account=${target.runtimeServiceAccount}`,
+    ...triggerArgs,
+    `--run-service-account=${rollback.runtimeServiceAccount || target.runtimeServiceAccount}`,
     `--build-service-account=${target.buildServiceAccount}`,
-    `--memory=${target.memory}`, `--cpu=${target.cpu}`, `--timeout=${target.timeout}`,
+    `--memory=${rollback.memory || target.memory}`, `--cpu=${target.cpu}`, `--timeout=${rollback.timeout || target.timeout}`,
     `--concurrency=${rollback.concurrency}`, '--min-instances=0',
     `--max-instances=${rollback.maxInstances}`,
     `--ingress-settings=${target.ingressSettings}`,
@@ -412,7 +485,9 @@ export function buildGcloudGen2RollbackArgs(validation) {
     `--update-labels=deployment-tool=codex-targeted,migration-rollback-source=${rollback.sourceRevision}`,
     '--quiet'
   ];
-  args.splice(args.indexOf(`--ingress-settings=${target.ingressSettings}`), 0, rollback.retry ? '--retry' : '--no-retry');
+  if (target.triggerType !== 'http-scheduler') {
+    args.splice(args.indexOf(`--ingress-settings=${target.ingressSettings}`), 0, rollback.retry ? '--retry' : '--no-retry');
+  }
   return args;
 }
 
@@ -420,8 +495,6 @@ function assertGcloudGen2Preconditions(before, validation) {
   const name = validation.allowlist[0];
   const target = GCLOUD_GEN2_TARGETS[name];
   const manifestEntry = validation.entries[0];
-  const filters = new Map((before.eventTrigger?.eventFilters || []).map((entry) =>
-    [entry.attribute, `${entry.operator || 'exact'}:${entry.value}`]));
   const expectedName = `projects/${validation.project}/locations/${target.region}/functions/${name}`;
   if (
     before.name !== expectedName || before.state !== 'ACTIVE' ||
@@ -429,14 +502,33 @@ function assertGcloudGen2Preconditions(before, validation) {
     before.buildConfig?.entryPoint !== target.entryPoint ||
     before.buildConfig?.serviceAccount !== manifestEntry.identities?.buildServiceAccount ||
     before.serviceConfig?.revision !== manifestEntry.cloud?.revision ||
-    before.serviceConfig?.serviceAccountEmail !== manifestEntry.identities?.runtimeServiceAccount ||
+    before.serviceConfig?.serviceAccountEmail !== manifestEntry.identities?.runtimeServiceAccount
+  ) fail('Etat cloud Gen2 inattendu avant deploiement');
+  if (target.triggerType === 'http-scheduler') {
+    if (before.eventTrigger || before.url !== target.functionUrl) fail('Transport HTTP Scheduler Gen2 inattendu avant deploiement');
+    return;
+  }
+  const filters = new Map((before.eventTrigger?.eventFilters || []).map((entry) =>
+    [entry.attribute, `${entry.operator || 'exact'}:${entry.value}`]));
+  if (
     before.eventTrigger?.eventType !== target.eventType ||
     before.eventTrigger?.triggerRegion !== target.triggerLocation ||
     before.eventTrigger?.serviceAccountEmail !== manifestEntry.trigger?.transportServiceAccount ||
     filters.get('database') !== 'exact:(default)' ||
     filters.get('namespace') !== 'exact:(default)' ||
     filters.get('document') !== `match-path-pattern:${target.documentPathPattern}`
-  ) fail('Etat cloud Gen2 inattendu avant deploiement');
+  ) fail('Trigger cloud Gen2 inattendu avant deploiement');
+}
+
+function assertSchedulerPreconditions(job, target, expectedAttemptDeadline) {
+  if (
+    job.name?.split('/').at(-1) !== target.schedulerJob || job.state !== 'ENABLED' ||
+    job.schedule !== target.schedule || job.timeZone !== target.timeZone ||
+    job.httpTarget?.httpMethod !== 'POST' || job.httpTarget?.uri !== target.functionUrl ||
+    job.httpTarget?.oidcToken?.audience !== target.functionUrl ||
+    job.httpTarget?.oidcToken?.serviceAccountEmail !== target.schedulerServiceAccount ||
+    job.attemptDeadline !== expectedAttemptDeadline
+  ) fail('Etat Cloud Scheduler inattendu avant deploiement');
 }
 
 export function main(argv = process.argv.slice(2), dependencies = {}) {
@@ -504,6 +596,13 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
       '--format=json'
     ], { cwd: rootDir }));
     assertGcloudGen2Preconditions(before, validation);
+    if (target.triggerType === 'http-scheduler') {
+      const schedulerBefore = JSON.parse(run('gcloud', [
+        'scheduler', 'jobs', 'describe', target.schedulerJob,
+        `--location=${target.region}`, `--project=${validation.project}`, '--format=json'
+      ], { cwd: rootDir }));
+      assertSchedulerPreconditions(schedulerBefore, target, target.expectedSchedulerAttemptDeadline);
+    }
     process.stdout.write(`Projet: ${validation.project}\nCibles: ${validation.selectors.join(',')}\nCommit: ${validation.commit}\nTransport: gcloud-gen2\n`);
     const result = spawnSync('gcloud', buildGcloudGen2DeployArgs(validation), {
       cwd: rootDir,
@@ -511,7 +610,19 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
       stdio: 'inherit'
     });
     if (result.error) fail(result.error.message);
-    if (result.status !== 0) process.exitCode = result.status || 1;
+    if (result.status !== 0) {
+      process.exitCode = result.status || 1;
+      return;
+    }
+    if (target.triggerType === 'http-scheduler') {
+      const schedulerResult = spawnSync('gcloud', buildGcloudSchedulerUpdateArgs(validation), {
+        cwd: rootDir,
+        env: process.env,
+        stdio: 'inherit'
+      });
+      if (schedulerResult.error) fail(schedulerResult.error.message);
+      if (schedulerResult.status !== 0) process.exitCode = schedulerResult.status || 1;
+    }
     return;
   }
   if (validation.transport === 'gcloud-gen2-rollback') {
@@ -525,10 +636,18 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
     if (
       before.state !== 'ACTIVE' || before.serviceConfig?.revision !== args['expected-revision'] ||
       before.serviceConfig?.serviceAccountEmail !== target.runtimeServiceAccount ||
-      before.buildConfig?.serviceAccount !== target.buildServiceAccount ||
+      before.buildConfig?.serviceAccount !== target.buildServiceAccount
+    ) fail('Etat cloud Gen2 inattendu avant rollback');
+    if (target.triggerType === 'http-scheduler') {
+      const schedulerBefore = JSON.parse(run('gcloud', [
+        'scheduler', 'jobs', 'describe', target.schedulerJob,
+        `--location=${target.region}`, `--project=${validation.project}`, '--format=json'
+      ], { cwd: rootDir }));
+      assertSchedulerPreconditions(schedulerBefore, target, target.schedulerAttemptDeadline);
+    } else if (
       before.eventTrigger?.serviceAccountEmail !== target.triggerServiceAccount ||
       before.eventTrigger?.retryPolicy !== 'RETRY_POLICY_RETRY'
-    ) fail('Etat cloud Gen2 inattendu avant rollback');
+    ) fail('Trigger cloud Gen2 inattendu avant rollback');
     const rollbackObject = JSON.parse(run('gcloud', [
       'storage', 'objects', 'describe', rollback.source,
       `--project=${validation.project}`, '--format=json'
@@ -545,7 +664,19 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
       stdio: 'inherit'
     });
     if (result.error) fail(result.error.message);
-    if (result.status !== 0) process.exitCode = result.status || 1;
+    if (result.status !== 0) {
+      process.exitCode = result.status || 1;
+      return;
+    }
+    if (target.triggerType === 'http-scheduler') {
+      const schedulerResult = spawnSync('gcloud', buildGcloudSchedulerUpdateArgs(validation, { rollback: true }), {
+        cwd: rootDir,
+        env: process.env,
+        stdio: 'inherit'
+      });
+      if (schedulerResult.error) fail(schedulerResult.error.message);
+      if (schedulerResult.status !== 0) process.exitCode = schedulerResult.status || 1;
+    }
     return;
   }
   const firebaseCli = path.join(rootDir, 'node_modules/.bin/firebase');

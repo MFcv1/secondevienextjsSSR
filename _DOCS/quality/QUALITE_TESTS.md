@@ -111,6 +111,13 @@ controle dirty, lease, build non stable, erreur courante ou revision historique
 non supersedee. Les tests G2-A/G2-B imposent une cle semantique basee sur
 `updateTime` et interdisent le retour a un ledger indexe seulement par
 `event.id`.
+Pour le scheduler catalogue, `functions:plan-catalog-reconciler:g2b` verifie en
+lecture seule controle, trois pointeurs, Function HTTP et job OIDC. La commande
+`functions:configure-catalog-reconciler-iam:g2b` exige commit, operateur et
+approbation litterale avant d'ajouter uniquement Service Usage Consumer et
+ActAs au runtime `catalog-builder`. `test:functions-g0` verrouille le transport
+HTTP Scheduler et son rollback; `test:functions-g2a` couvre la reprise bornee
+des conflits `RECONCILE_STATE_ADVANCED`.
 
 `npm run functions:restore-verify:g1` compare la base nommee au snapshot PITR
 exact et produit uniquement comptages/digests; `npm run

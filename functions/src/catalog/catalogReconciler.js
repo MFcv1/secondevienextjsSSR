@@ -22,9 +22,10 @@ const {
 } = require('./snapshotStorage');
 const { createFullImpactPlan, validateImpactPlan } = require('./impactPlan');
 const { catalogLog } = require('./structuredLog');
-const { CATALOG_ENQUEUER_SERVICE_ACCOUNT, CATALOG_SNAPSHOT_BUCKET } = require('./catalogConfig');
+const { CATALOG_BUILDER_SERVICE_ACCOUNT, CATALOG_SNAPSHOT_BUCKET } = require('./catalogConfig');
 
 const RECONCILER_REGION = 'europe-west1';
+const MAX_STATE_ADVANCE_ATTEMPTS = 3;
 
 async function enqueueNamed(queueName, data, id) {
     const queue = getFunctions().taskQueue(`locations/${RECONCILER_REGION}/functions/${queueName}`);
@@ -529,6 +530,25 @@ async function reconcileCatalog(dependencies) {
     return { result: repairs.length ? 'repaired' : 'healthy', repairs };
 }
 
+async function reconcileCatalogWithStateRetry(dependencies, options = {}) {
+    const reconcile = options.reconcile || reconcileCatalog;
+    const maxAttempts = Number(options.maxAttempts || MAX_STATE_ADVANCE_ATTEMPTS);
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        try {
+            return await reconcile(dependencies);
+        } catch (error) {
+            if (error?.code !== 'RECONCILE_STATE_ADVANCED' || attempt === maxAttempts) throw error;
+            (dependencies.logger || catalogLog)('warn', {
+                phase: 'reconcile',
+                result: 'state_advanced_retry',
+                attempt,
+                maxAttempts
+            });
+        }
+    }
+    throw new Error('RECONCILE_STATE_RETRY_EXHAUSTED');
+}
+
 function serverTimestamp() {
     return admin.firestore.FieldValue.serverTimestamp();
 }
@@ -537,16 +557,16 @@ const catalogReconciler = onSchedule(
     {
         schedule: 'every 5 minutes',
         region: RECONCILER_REGION,
-        serviceAccount: CATALOG_ENQUEUER_SERVICE_ACCOUNT,
+        serviceAccount: CATALOG_BUILDER_SERVICE_ACCOUNT,
         cpu: 1,
         concurrency: 1,
         minInstances: 0,
         maxInstances: 1,
-        timeoutSeconds: 120,
-        memory: '256MiB',
+        timeoutSeconds: 540,
+        memory: '512MiB',
         retryCount: 0
     },
-    async () => reconcileCatalog({
+    async () => reconcileCatalogWithStateRetry({
         db: admin.firestore(),
         bucket: admin.storage().bucket(CATALOG_SNAPSHOT_BUCKET)
     })
@@ -557,5 +577,6 @@ module.exports = {
     catalogReconciler,
     enqueueNamed,
     inspectCatalogPointer,
-    reconcileCatalog
+    reconcileCatalog,
+    reconcileCatalogWithStateRetry
 };

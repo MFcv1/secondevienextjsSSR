@@ -29,6 +29,9 @@ const {
     mutationKeyFor,
     timestampKey
 } = require('../functions/src/catalog/onCatalogSourceWrite');
+const {
+    reconcileCatalogWithStateRetry
+} = require('../functions/src/catalog/catalogReconciler');
 
 function order(overrides = {}) {
     return {
@@ -276,6 +279,75 @@ test('G2-A catalogue: les trois cibles a IAM deja dedie ont des limites source c
     ]) {
         assert.match(fs.readFileSync(path.join(ROOT, relativePath), 'utf8'), /retryCount:\s*0/);
     }
+});
+
+test('G2-B scheduler catalogue: runtime de reprise et conflits de version sont explicites et bornes', async () => {
+    const source = fs.readFileSync(path.join(ROOT, 'functions/src/catalog/catalogReconciler.js'), 'utf8');
+    for (const expected of [
+        /serviceAccount:\s*CATALOG_BUILDER_SERVICE_ACCOUNT/,
+        /timeoutSeconds:\s*540/,
+        /memory:\s*['"]512MiB['"]/,
+        /retryCount:\s*0/,
+        /MAX_STATE_ADVANCE_ATTEMPTS\s*=\s*3/,
+        /error\?\.code\s*!==\s*'RECONCILE_STATE_ADVANCED'/
+    ]) assert.match(source, expected);
+
+    let attempts = 0;
+    const logs = [];
+    const result = await reconcileCatalogWithStateRetry({
+        logger: (severity, entry) => logs.push({ severity, ...entry })
+    }, {
+        reconcile: async () => {
+            attempts += 1;
+            if (attempts < 3) {
+                const error = new Error('RECONCILE_STATE_ADVANCED');
+                error.code = 'RECONCILE_STATE_ADVANCED';
+                throw error;
+            }
+            return { result: 'healthy' };
+        }
+    });
+    assert.deepEqual(result, { result: 'healthy' });
+    assert.equal(attempts, 3);
+    assert.equal(logs.length, 2);
+
+    await assert.rejects(() => reconcileCatalogWithStateRetry({}, {
+        reconcile: async () => {
+            const error = new Error('CATALOG_POINTER_INVALID');
+            error.code = 'CATALOG_POINTER_INVALID';
+            throw error;
+        }
+    }), /CATALOG_POINTER_INVALID/);
+});
+
+test('G2-B scheduler catalogue: preflight et IAM restent fail-closed et sans suppression', () => {
+    const planner = fs.readFileSync(
+        path.join(ROOT, 'scripts/plan-functions-gen2-g2b-catalog-reconciler.mjs'),
+        'utf8'
+    );
+    const iam = fs.readFileSync(
+        path.join(ROOT, 'scripts/configure-functions-gen2-g2b-catalog-reconciler-iam.mjs'),
+        'utf8'
+    );
+    for (const expected of [
+        /G2B_CATALOG_RECONCILER_READ_ONLY_ONLY/,
+        /G2B_CATALOG_RECONCILER_CREDENTIAL_PROJECT_MISMATCH/,
+        /catalogreconciler-00009-luf/,
+        /SCHEDULER_OIDC_DRIFT/,
+        /CATALOG_POINTER_UNHEALTHY/,
+        /deploymentAllowed:\s*false/
+    ]) assert.match(planner, expected);
+    assert.doesNotMatch(planner, /runTransaction|\.set\(|\.update\(|\.delete\(/);
+    for (const expected of [
+        /G2B_CONFIGURE_CATALOG_RECONCILER_IAM/,
+        /G2B_CATALOG_RECONCILER_IAM_COMMIT_MISMATCH/,
+        /roles\/serviceusage\.serviceUsageConsumer/,
+        /roles\/storage\.objectAdmin/,
+        /roles\/run\.invoker/,
+        /publicInvoker/,
+        /noUserManagedKeys/
+    ]) assert.match(iam, expected);
+    assert.doesNotMatch(iam, /remove-iam-policy-binding|service-accounts keys create|roles\/(?:editor|owner)/i);
 });
 
 test('G2-B catalogue: la deduplication de mutation ne depend plus de event.id', () => {
