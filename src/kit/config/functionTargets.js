@@ -5,7 +5,7 @@ const FUNCTION_TARGETS = Object.freeze({
   initLiveSession: 'initLiveSession',
   syncSession: 'syncSession',
   syncSessionBeacon: 'syncSessionBeacon',
-  trackAdminIP: 'trackAdminIP',
+  trackAdminIP: 'trackAdminIPGen2',
   updateUserSessions: 'updateUserSessions',
 });
 

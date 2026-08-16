@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "environment": "sandbox",
+    "wave": "G4-A1",
+    "generatedAt": "2026-08-16T18:31:00Z",
+    "operator": "matthis.fradin2@gmail.com",
+    "preparedFromCommit": "7e689d3614a0af37c2d400046459ea1c368b06dd"
+  },
+  "inventory": {
+    "sourceExports": 158,
+    "sourceBaselineExports": 157,
+    "cloudFunctions": 153,
+    "cloudGen1": 139,
+    "cloudGen2": 14,
+    "cloudGen1Encoding": "environment field omitted by gcloud functions list"
+  },
+  "function": {
+    "target": "trackAdminIPGen2",
+    "legacyOwnerPreserved": "trackAdminIP",
+    "state": "ACTIVE",
+    "generation": 2,
+    "region": "europe-west1",
+    "runtime": "nodejs22",
+    "revision": "trackadminipgen2-00001-goj",
+    "updateTime": "2026-08-16T18:23:56.372279964Z",
+    "sourceGeneration": "1786904573589276",
+    "runtimeServiceAccount": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "cpu": "167m",
+    "memory": "256Mi",
+    "timeoutSeconds": 60,
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "ingress": "ALLOW_ALL",
+    "transportInvoker": "allUsers",
+    "appCheck": "ENFORCED",
+    "secrets": []
+  },
+  "runtimeIam": {
+    "roles": [
+      "roles/datastore.user",
+      "roles/logging.logWriter",
+      "roles/serviceusage.serviceUsageConsumer"
+    ],
+    "secretAccessor": false,
+    "userManagedKeys": 0
+  },
+  "probe": {
+    "timestamp": "2026-08-16T18:24:43.969419Z",
+    "type": "callable POST with deliberately invalid App Check token",
+    "httpStatus": 401,
+    "handlerReached": false,
+    "dataBefore": {
+      "document": "sys_metadata/admin_ips",
+      "updateTime": "2026-08-13T11:10:39.346Z",
+      "entries": 52
+    },
+    "dataAfter": {
+      "document": "sys_metadata/admin_ips",
+      "updateTime": "2026-08-13T11:10:39.346Z",
+      "entries": 52
+    }
+  },
+  "clientRegistry": {
+    "clearAllAffiliateClicks": "clearAllAffiliateClicks",
+    "clearAllSessions": "clearAllSessions",
+    "deleteSession": "deleteSession",
+    "initLiveSession": "initLiveSession",
+    "syncSession": "syncSession",
+    "syncSessionBeacon": "syncSessionBeacon",
+    "trackAdminIP": "trackAdminIPGen2",
+    "updateUserSessions": "updateUserSessions"
+  },
+  "gates": {
+    "exactProject": true,
+    "targetActive": true,
+    "configurationExplicit": true,
+    "runtimeIamReady": true,
+    "appCheckRejectionProved": true,
+    "probeDataUnchanged": true,
+    "legacyOwnerPreserved": true,
+    "singleClientTargetChanged": true,
+    "clientCutoverAuthorized": true,
+    "observationHoursRequired": 48
+  },
+  "holds": {
+    "clearAllAffiliateClicks": "HOLD_G11_DESTRUCTIVE_PRECONDITIONS",
+    "clearAllSessions": "HOLD_G11_DESTRUCTIVE_PRECONDITIONS",
+    "deleteSession": "HOLD_G11_DESTRUCTIVE_PRECONDITIONS",
+    "instagram": "HOLD_META_RECONCILIATION"
+  },
+  "rollback": {
+    "appHostingBackend": "secondevie-next-sandbox",
+    "appHostingRegion": "europe-west4",
+    "appHostingBuild": "build-2026-08-13-002",
+    "sourceChange": "restore trackAdminIP: 'trackAdminIP' in src/kit/config/functionTargets.js",
+    "functionAction": "none; preserve both trackAdminIP and trackAdminIPGen2",
+    "dataAction": "none",
+    "secretsIamAction": "none"
+  }
+}

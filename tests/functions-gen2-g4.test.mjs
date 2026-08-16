@@ -18,6 +18,7 @@ import {
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-track-admin-ip.json');
 const DIGEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-track-admin-ip-digest.json');
+const CUTOVER_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-track-admin-ip-cutover.json');
 const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
 
@@ -71,12 +72,19 @@ test('le beacon accepte le content-type reel sans relacher origine, taille ou to
   assert.match(client, /'Content-Type': 'text\/plain;charset=UTF-8'/);
 });
 
-test('le registre client reste sur Gen1 avant cutover', () => {
+test('le registre client bascule seulement trackAdminIP vers la cible Gen2 autorisee', () => {
   const registry = read('src/kit/config/functionTargets.js');
-  assert.match(registry, /trackAdminIP:\s*'trackAdminIP'/);
-  assert.doesNotMatch(registry, /trackAdminIP:\s*'trackAdminIPGen2'/);
+  const cutover = JSON.parse(fs.readFileSync(CUTOVER_PATH, 'utf8'));
+  assert.match(registry, /trackAdminIP:\s*'trackAdminIPGen2'/);
   assert.match(read('src/kit/config/firebaseLazy.js'), /getFunctionTarget\(name\)/);
-  assert.equal(manifest.functions[0].clientRegistry.cutoverAllowed, false);
+  assert.equal(cutover.gates.clientCutoverAuthorized, true);
+  assert.equal(cutover.function.target, 'trackAdminIPGen2');
+  assert.equal(cutover.function.legacyOwnerPreserved, 'trackAdminIP');
+  assert.equal(cutover.rollback.appHostingBuild, 'build-2026-08-13-002');
+  for (const [logicalName, target] of Object.entries(cutover.clientRegistry)) {
+    if (logicalName === 'trackAdminIP') assert.equal(target, 'trackAdminIPGen2');
+    else assert.equal(target, logicalName);
+  }
 });
 
 test('le wrapper de creation G4 est une cible unique, explicite et publique seulement au transport', () => {
