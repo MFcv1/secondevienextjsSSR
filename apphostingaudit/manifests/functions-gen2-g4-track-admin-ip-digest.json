@@ -4,6 +4,6 @@
   "codebase": "main",
   "baselineCommit": "18117840dedfa72b88bdfb019d86fd77aeac2acd",
   "files": {
-    "apphostingaudit/manifests/functions-gen2-g4-track-admin-ip.json": "ba29e62d867dbdaf3849f4474704ff5257cc641f43629ba1b6696ab7ffb6facb"
+    "apphostingaudit/manifests/functions-gen2-g4-track-admin-ip.json": "af5b5b69329e78fc3f2a431a62c717df7746db7f2ec146f54af63f7aa366dbea"
   }
 }

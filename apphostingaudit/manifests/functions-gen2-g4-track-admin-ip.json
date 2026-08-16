@@ -122,10 +122,12 @@
   "gates": {
     "localTestsRequired": ["test:functions-g0", "test:functions-g2a", "test:functions-g3", "test:functions-g4", "test:analytics", "appcheck:audit", "lint:functions"],
     "runtimeIamRequired": true,
+    "runtimeIamReady": true,
+    "runtimeIamManifest": "apphostingaudit/manifests/functions-gen2-g4-analytics-iam.json",
     "targetMustBeAbsentBeforeCreate": true,
     "unauthenticatedProbeMustFail": true,
     "clientCutoverInThisManifest": false,
     "observationHoursAfterCutover": 48,
-    "deploymentAllowed": false
+    "deploymentAllowed": true
   }
 }

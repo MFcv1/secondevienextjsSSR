@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T18:21:09.363Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "commit": "27a7910299e3d0abf923ce1571645ea2fc4e8b8c",
+  "operator": "matthis.fradin2@gmail.com",
+  "serviceAccount": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+  "existedBefore": false,
+  "existsAfter": true,
+  "requiredRoles": [
+    "roles/datastore.user",
+    "roles/logging.logWriter",
+    "roles/serviceusage.serviceUsageConsumer"
+  ],
+  "observedRoles": [
+    "roles/datastore.user",
+    "roles/logging.logWriter",
+    "roles/serviceusage.serviceUsageConsumer"
+  ],
+  "forbiddenRoles": [],
+  "userManagedKeyCount": 0,
+  "secretAccessor": false,
+  "ready": true,
+  "rollback": "Si aucune Function ne l'utilise, retirer les trois bindings puis supprimer uniquement analytics-runtime apres verification des references; aucune donnee n'est touchee. Apres deploiement, conserver le compte jusqu'a G12-B."
+}

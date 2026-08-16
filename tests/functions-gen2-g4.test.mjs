@@ -99,17 +99,9 @@ test('le wrapper de creation G4 est une cible unique, explicite et publique seul
     activeFirebaseProject: 'secondevienextjsssr',
     baselineIsAncestor: true
   };
-  assert.equal(manifest.gates.deploymentAllowed, false);
-  assert.throws(() => validateDeploymentRequest(request), /bloquee par la gate du manifeste/);
-  const validation = {
-    project: 'secondevienextjsssr',
-    codebase: 'main',
-    commit: currentCommit,
-    allowlist: ['trackAdminIPGen2'],
-    entries: manifest.functions,
-    selectors: ['functions:main:trackAdminIPGen2'],
-    transport: 'gcloud-gen2-create'
-  };
+  assert.equal(manifest.gates.deploymentAllowed, true);
+  assert.equal(manifest.gates.runtimeIamReady, true);
+  const validation = validateDeploymentRequest(request);
   const args = buildGcloudGen2DeployArgs(validation);
   for (const expected of [
     'functions', 'deploy', 'trackAdminIPGen2',
@@ -139,4 +131,9 @@ test('la configuration IAM G4 est bornee, sans secret ni cle utilisateur', () =>
   ]) assert.match(source, expected);
   assert.doesNotMatch(source, /roles\/editor|roles\/owner/i);
   assert.match(source, /secretAccessor:\s*roles\.includes\('roles\/secretmanager\.secretAccessor'\)/);
+  const iam = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g4-analytics-iam.json'));
+  assert.equal(iam.ready, true);
+  assert.deepEqual(iam.observedRoles, iam.requiredRoles);
+  assert.equal(iam.userManagedKeyCount, 0);
+  assert.equal(iam.secretAccessor, false);
 });

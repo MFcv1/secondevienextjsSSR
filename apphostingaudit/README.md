@@ -321,9 +321,12 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
   min 0, max 1, 256 MiB, 60 s, App Check, SA futur `analytics-runtime`;
 - registre client ajoute mais encore pointe sur `trackAdminIP` Gen1;
 - wrapper `gcloud-gen2-create` refuse cible existante, mauvais projet,
-  manifeste bloque ou plus d'une cible; deploy encore interdit par la gate;
+  manifeste bloque ou plus d'une cible;
+- IAM applique: `analytics-runtime` porte exactement datastore user, log writer
+  et service usage consumer, sans secret, cle, Editor ou Owner; gate de
+  creation de la cible unique levee;
 - tests locaux: G4 7/7, G0 21/21, analytics, App Check et lint verts;
-- cloud: lectures uniquement; IAM, Function, App Hosting et donnees inchanges.
+- cloud: IAM runtime cree; Function, App Hosting et donnees inchanges.
 
 ## 9. Conditions d'arret immediat
 
@@ -346,9 +349,8 @@ Arreter la vague au premier:
 
 ## 10. Point de reprise
 
-La reprise courante continue par la creation auditee du compte runtime G4
-`analytics-runtime`, puis seulement par la levee de la gate et la creation
-cible unique `trackAdminIPGen2` dans
+La reprise courante continue par la creation cible unique
+`trackAdminIPGen2`, maintenant que l'IAM `analytics-runtime` est prouve, dans
 [AUDIT_MIGRATION_FUNCTIONS_GEN2.md](AUDIT_MIGRATION_FUNCTIONS_GEN2.md), apres
 lecture de la derniere entree du Journal et regeneration read-only de la
 baseline. Le registre client ne bascule qu'apres verification de la nouvelle
