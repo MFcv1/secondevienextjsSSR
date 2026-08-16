@@ -379,6 +379,11 @@ vide, sans invocation metier, e-mail, warning, erreur ou drift. Aucun faux
 e-mail de qualification n'est cree. Le rollback exact restaure le bundle
 `onordercreated-00028-dov`, le runtime/trigger compute, concurrence 80,
 max 20 et retry off; la TTL, les secrets et les IAM dedies restent preserves.
+G2-B11 applique ensuite la meme configuration a `onOrderUpdated` en revision
+`onorderupdated-00029-moj`, avec le filtre update exact `orders/{orderId}`.
+La quiet-window passive de 307 secondes reste sans invocation metier, ledger,
+e-mail, warning ou erreur. Son rollback restaure la revision 28 et les limites
+precedentes sans retirer la TTL, les secrets ou les IAM dedies.
 
 ## 13. Limites et production
 

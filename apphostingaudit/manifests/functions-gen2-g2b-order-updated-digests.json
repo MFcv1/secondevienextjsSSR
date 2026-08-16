@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "target": "onOrderUpdated",
+  "sourceCommit": "9b938f04014d4a4d688bcaf034a808090f584f8d",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g2b-order-updated-iam.json": "a4e49dd772983a0f2988d3f9fea43ad3c69cef3dac9846cf1fef210c2480dcbd",
+    "apphostingaudit/manifests/functions-gen2-g2b-order-updated-reconciliation.json": "e32b3e404bd8eea86ce31b82bace38081d2920845aee95b3e365588e3b388d88",
+    "apphostingaudit/manifests/functions-gen2-g2b-order-updated-rollout.json": "86cb831f0fb2741021fd9a55d02c3b7c25d918b0e64923d03bc31ce6fd19caf7"
+  },
+  "rollbackSource": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onOrderUpdated/onorderupdated-00028-hoc-function-source.zip",
+    "generation": "1786900674512452",
+    "size": "397275",
+    "sha256": "bce7ff79ecfc2308ae744ee61cb889cd02fba781b466d16a383fa610b7d91880",
+    "temporaryHold": true
+  }
+}

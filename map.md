@@ -969,6 +969,10 @@ runtime `legacy-order-email-worker`, builder/Eventarc dedies, concurrence/max
 passive ferme 314 secondes avec zero ledger et zero e-mail. Le rollback restaure
 la revision 28, son runtime/trigger compute, concurrence 80/max 20/retry off,
 sans retirer secrets, IAM ou TTL.
+Le lot G2-B11 applique la meme isolation a `onOrderUpdated` en revision
+`onorderupdated-00029-moj`, avec le filtre Firestore update exact, retry actif
+et quiet-window passive de 307 secondes sans ledger ni e-mail. Le rollback
+revision 28 conserve TTL, secrets et IAM.
 
 | Domaine | Exports |
 | --- | --- |

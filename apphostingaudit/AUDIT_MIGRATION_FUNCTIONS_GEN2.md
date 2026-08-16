@@ -1928,6 +1928,14 @@ transport Eventarc sur `onorderupdated`; les roles runtime et secrets restent
 strictement ceux deja verifies pour G2-B10. Aucun e-mail ou ordre n'est cree
 pendant ce preflight.
 
+Le commit `9b938f04014d4a4d688bcaf034a808090f584f8d` deploie uniquement
+`onOrderUpdated` en revision `onorderupdated-00029-moj`. La configuration
+effective correspond au manifeste et les 7 triggers Eventarc restent
+reconcilies. La quiet-window passive de 307 secondes conserve zero ledger,
+invocation metier, e-mail, warning ou erreur. Les inventaires restent 157/152,
+139 Gen1, 13 Gen2, 8 schedulers et 2 queues. G2-B compte onze cibles fermees
+sur treize. Verdict: `G2B11_COMPLETE_NO_EMAIL_SENT`.
+
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
 1. deployer une seule des treize cibles a la fois, depuis l'allowlist G0;
