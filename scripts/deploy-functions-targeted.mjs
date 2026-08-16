@@ -101,6 +101,13 @@ const GCLOUD_GEN2_TARGETS = Object.freeze({
     ingressSettings: 'all'
   })
 });
+const G2B_STATS_ROLLBACK = Object.freeze({
+  approval: 'G2B_ROLLBACK_ON_ORDER_STATS_WRITE',
+  source: 'gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onOrderStatsWrite/onorderstatswrite-00025-nac-function-source.zip',
+  sourceGeneration: '1786883731057943',
+  sourceSize: '345983',
+  sourceSha256: 'fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92'
+});
 
 function fail(message) {
   throw new Error(message);
@@ -218,7 +225,7 @@ export function validateDeploymentRequest({
   const transport = args.transport || 'firebase';
   if (project !== EXPECTED_PROJECT) fail(`Projet interdit: ${project}`);
   if (codebase !== EXPECTED_CODEBASE) fail(`Codebase interdite: ${codebase}`);
-  if (!['firebase', 'gcloud-gen1', 'gcloud-gen2'].includes(transport)) fail(`Transport interdit: ${transport}`);
+  if (!['firebase', 'gcloud-gen1', 'gcloud-gen2', 'gcloud-gen2-rollback'].includes(transport)) fail(`Transport interdit: ${transport}`);
   if (activeFirebaseProject !== EXPECTED_PROJECT) fail(`Projet Firebase effectif different: ${activeFirebaseProject || 'absent'}`);
   if (readFirebaseProject(rootDir) !== EXPECTED_PROJECT) fail('Alias Firebase local different du sandbox attendu');
   if (manifest.metadata?.project !== EXPECTED_PROJECT || manifest.metadata?.codebase !== EXPECTED_CODEBASE) fail('Manifeste projet/codebase invalide');
@@ -251,6 +258,18 @@ export function validateDeploymentRequest({
     }
     if (entries[0].cloud?.generation !== 2 || entries[0].decision?.classification !== 'KEEP_GEN2') {
       fail('Transport gcloud Gen2 exige une cible Gen2 existante KEEP_GEN2');
+    }
+  }
+  if (transport === 'gcloud-gen2-rollback') {
+    if (allowlist.length !== 1 || allowlist[0] !== 'onOrderStatsWrite') {
+      fail('Rollback gcloud Gen2 limite a onOrderStatsWrite');
+    }
+    if (args.approval !== G2B_STATS_ROLLBACK.approval) fail('Approbation rollback G2-B invalide');
+    if (!/^onorderstatswrite-[0-9]{5}-[a-z0-9]{3}$/.test(args['expected-revision'] || '')) {
+      fail('Revision Gen2 courante obligatoire pour rollback');
+    }
+    if (args['rollback-source-sha256'] !== G2B_STATS_ROLLBACK.sourceSha256) {
+      fail('Digest source rollback G2-B invalide');
     }
   }
   return { project, codebase, commit, allowlist, selectors, entries, transport };
@@ -321,6 +340,35 @@ export function buildGcloudGen2DeployArgs(validation) {
     '--retry',
     `--ingress-settings=${target.ingressSettings}`,
     '--no-allow-unauthenticated',
+    `--update-labels=deployment-tool=codex-targeted,migration-source-commit=${validation.commit}`,
+    '--quiet'
+  ];
+}
+
+export function buildGcloudGen2RollbackArgs(validation) {
+  const target = GCLOUD_GEN2_TARGETS.onOrderStatsWrite;
+  if (validation.transport !== 'gcloud-gen2-rollback' || validation.allowlist[0] !== 'onOrderStatsWrite') {
+    fail('Rollback gcloud Gen2 non autorise');
+  }
+  return [
+    'functions', 'deploy', 'onOrderStatsWrite',
+    `--project=${validation.project}`,
+    `--region=${target.region}`,
+    '--gen2',
+    `--runtime=${target.runtime}`,
+    `--source=${G2B_STATS_ROLLBACK.source}`,
+    `--entry-point=${target.entryPoint}`,
+    `--trigger-event-filters=${target.eventFilters}`,
+    `--trigger-event-filters-path-pattern=${target.eventPathPattern}`,
+    `--trigger-location=${target.triggerLocation}`,
+    `--trigger-service-account=${target.triggerServiceAccount}`,
+    `--run-service-account=${target.runtimeServiceAccount}`,
+    `--build-service-account=${target.buildServiceAccount}`,
+    '--memory=256Mi', '--cpu=1', '--timeout=60s', '--concurrency=80',
+    '--min-instances=0', '--max-instances=20', '--no-retry',
+    `--ingress-settings=${target.ingressSettings}`,
+    '--no-allow-unauthenticated',
+    '--update-labels=deployment-tool=codex-targeted,migration-rollback-source=onorderstatswrite-00025-nac',
     '--quiet'
   ];
 }
@@ -415,6 +463,38 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
     assertGcloudGen2Preconditions(before, validation);
     process.stdout.write(`Projet: ${validation.project}\nCibles: ${validation.selectors.join(',')}\nCommit: ${validation.commit}\nTransport: gcloud-gen2\n`);
     const result = spawnSync('gcloud', buildGcloudGen2DeployArgs(validation), {
+      cwd: rootDir,
+      env: process.env,
+      stdio: 'inherit'
+    });
+    if (result.error) fail(result.error.message);
+    if (result.status !== 0) process.exitCode = result.status || 1;
+    return;
+  }
+  if (validation.transport === 'gcloud-gen2-rollback') {
+    const target = GCLOUD_GEN2_TARGETS.onOrderStatsWrite;
+    const before = JSON.parse(run('gcloud', [
+      'functions', 'describe', 'onOrderStatsWrite', '--gen2',
+      `--region=${target.region}`, `--project=${validation.project}`, '--format=json'
+    ], { cwd: rootDir }));
+    if (
+      before.state !== 'ACTIVE' || before.serviceConfig?.revision !== args['expected-revision'] ||
+      before.serviceConfig?.serviceAccountEmail !== target.runtimeServiceAccount ||
+      before.buildConfig?.serviceAccount !== target.buildServiceAccount ||
+      before.eventTrigger?.serviceAccountEmail !== target.triggerServiceAccount ||
+      before.eventTrigger?.retryPolicy !== 'RETRY_POLICY_RETRY'
+    ) fail('Etat cloud Gen2 inattendu avant rollback');
+    const rollbackObject = JSON.parse(run('gcloud', [
+      'storage', 'objects', 'describe', G2B_STATS_ROLLBACK.source,
+      `--project=${validation.project}`, '--format=json'
+    ], { cwd: rootDir }));
+    if (
+      String(rollbackObject.generation) !== G2B_STATS_ROLLBACK.sourceGeneration ||
+      String(rollbackObject.size) !== G2B_STATS_ROLLBACK.sourceSize ||
+      rollbackObject.temporary_hold !== true
+    ) fail('Objet source rollback G2-B inattendu');
+    process.stdout.write(`Projet: ${validation.project}\nCible: functions:main:onOrderStatsWrite\nCommit wrapper: ${validation.commit}\nRevision remplacee: ${args['expected-revision']}\nTransport: gcloud-gen2-rollback\n`);
+    const result = spawnSync('gcloud', buildGcloudGen2RollbackArgs(validation), {
       cwd: rootDir,
       env: process.env,
       stdio: 'inherit'

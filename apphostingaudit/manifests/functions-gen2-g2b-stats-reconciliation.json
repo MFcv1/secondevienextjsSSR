@@ -1,0 +1,643 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T12:41:32.294Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "mode": "read-only",
+  "verdict": "G2_A_STATS_BASELINE_READY",
+  "deploymentAllowed": false,
+  "sourceOrders": 126,
+  "legacyOrders": 26,
+  "ledger": {
+    "collection": "order_stats_projections",
+    "existing": 26,
+    "missing": 0,
+    "retention": "same-as-order",
+    "clientAccess": false
+  },
+  "runtimeTarget": {
+    "generation": 2,
+    "region": "europe-west1",
+    "cpu": 1,
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "memoryMiB": 256,
+    "timeoutSeconds": 60,
+    "retry": true,
+    "runtimeServiceAccount": "order-stats-projector@secondevienextjsssr.iam.gserviceaccount.com"
+  },
+  "reconciliation": {
+    "dashboard": {
+      "exists": true,
+      "expected": {
+        "totalRevenue": 5665,
+        "totalOrders": 24,
+        "paidOrders": 6,
+        "shippedOrders": 0,
+        "pendingOrders": 18,
+        "cancelledOrders": 2
+      },
+      "actual": {
+        "totalRevenue": 5665,
+        "totalOrders": 24,
+        "paidOrders": 6,
+        "shippedOrders": 0,
+        "pendingOrders": 18,
+        "cancelledOrders": 2
+      },
+      "deltaActualMinusExpected": {}
+    },
+    "dailyDriftCount": 0,
+    "daily": [
+      {
+        "dateKey": "2026-06-15",
+        "exists": true,
+        "expected": {
+          "totalRevenue": 2305,
+          "totalOrders": 3,
+          "paidOrders": 2,
+          "shippedOrders": 0,
+          "pendingOrders": 1,
+          "cancelledOrders": 0
+        },
+        "actual": {
+          "totalRevenue": 2305,
+          "totalOrders": 3,
+          "paidOrders": 2,
+          "shippedOrders": 0,
+          "pendingOrders": 1,
+          "cancelledOrders": 0
+        },
+        "deltaActualMinusExpected": {}
+      },
+      {
+        "dateKey": "2026-06-18",
+        "exists": true,
+        "expected": {
+          "totalRevenue": 1420,
+          "totalOrders": 7,
+          "paidOrders": 1,
+          "shippedOrders": 0,
+          "pendingOrders": 6,
+          "cancelledOrders": 0
+        },
+        "actual": {
+          "totalRevenue": 1420,
+          "totalOrders": 7,
+          "paidOrders": 1,
+          "shippedOrders": 0,
+          "pendingOrders": 6,
+          "cancelledOrders": 0
+        },
+        "deltaActualMinusExpected": {}
+      },
+      {
+        "dateKey": "2026-06-19",
+        "exists": true,
+        "expected": {
+          "totalRevenue": 560,
+          "totalOrders": 4,
+          "paidOrders": 0,
+          "shippedOrders": 0,
+          "pendingOrders": 4,
+          "cancelledOrders": 0
+        },
+        "actual": {
+          "totalRevenue": 560,
+          "totalOrders": 4,
+          "paidOrders": 0,
+          "shippedOrders": 0,
+          "pendingOrders": 4,
+          "cancelledOrders": 0
+        },
+        "deltaActualMinusExpected": {}
+      },
+      {
+        "dateKey": "2026-06-22",
+        "exists": true,
+        "expected": {
+          "totalRevenue": 140,
+          "totalOrders": 1,
+          "paidOrders": 0,
+          "shippedOrders": 0,
+          "pendingOrders": 1,
+          "cancelledOrders": 0
+        },
+        "actual": {
+          "totalRevenue": 140,
+          "totalOrders": 1,
+          "paidOrders": 0,
+          "shippedOrders": 0,
+          "pendingOrders": 1,
+          "cancelledOrders": 0
+        },
+        "deltaActualMinusExpected": {}
+      },
+      {
+        "dateKey": "2026-06-24",
+        "exists": true,
+        "expected": {
+          "totalRevenue": 560,
+          "totalOrders": 4,
+          "paidOrders": 2,
+          "shippedOrders": 0,
+          "pendingOrders": 2,
+          "cancelledOrders": 2
+        },
+        "actual": {
+          "totalRevenue": 560,
+          "totalOrders": 4,
+          "paidOrders": 2,
+          "shippedOrders": 0,
+          "pendingOrders": 2,
+          "cancelledOrders": 2
+        },
+        "deltaActualMinusExpected": {}
+      },
+      {
+        "dateKey": "2026-06-27",
+        "exists": true,
+        "expected": {
+          "totalRevenue": 280,
+          "totalOrders": 2,
+          "paidOrders": 0,
+          "shippedOrders": 0,
+          "pendingOrders": 2,
+          "cancelledOrders": 0
+        },
+        "actual": {
+          "totalRevenue": 280,
+          "totalOrders": 2,
+          "paidOrders": 0,
+          "shippedOrders": 0,
+          "pendingOrders": 2,
+          "cancelledOrders": 0
+        },
+        "deltaActualMinusExpected": {}
+      },
+      {
+        "dateKey": "2026-07-02",
+        "exists": true,
+        "expected": {
+          "totalRevenue": 280,
+          "totalOrders": 2,
+          "paidOrders": 1,
+          "shippedOrders": 0,
+          "pendingOrders": 1,
+          "cancelledOrders": 0
+        },
+        "actual": {
+          "totalRevenue": 280,
+          "totalOrders": 2,
+          "paidOrders": 1,
+          "shippedOrders": 0,
+          "pendingOrders": 1,
+          "cancelledOrders": 0
+        },
+        "deltaActualMinusExpected": {}
+      },
+      {
+        "dateKey": "2026-07-17",
+        "exists": true,
+        "expected": {
+          "totalRevenue": 120,
+          "totalOrders": 1,
+          "paidOrders": 0,
+          "shippedOrders": 0,
+          "pendingOrders": 1,
+          "cancelledOrders": 0
+        },
+        "actual": {
+          "totalRevenue": 120,
+          "totalOrders": 1,
+          "paidOrders": 0,
+          "shippedOrders": 0,
+          "pendingOrders": 1,
+          "cancelledOrders": 0
+        },
+        "deltaActualMinusExpected": {}
+      }
+    ]
+  },
+  "lines": [
+    {
+      "orderIdHash": "02da33c9c6c81d0854bb3099f69b057a36800d8f7fa2e0c26eceb37017e7b030",
+      "sourceUpdateTime": "2026-06-27T16:02:57.135Z",
+      "sourceHash": "cbae8f8bd257e96d3689d9b99791f5faa9108840f3db51198b309baac85507f0",
+      "dateKey": "2026-06-27",
+      "summary": {
+        "totalRevenue": 140,
+        "totalOrders": 1,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 1,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "058410639ab84887588d4a941ea3672f5111d4fb628ed45e260d13659414f042",
+      "sourceUpdateTime": "2026-06-15T14:49:03.495Z",
+      "sourceHash": "4753e66dece95959c3362ad4e7b7faa190c7e186865d53b17059f17147574f31",
+      "dateKey": "2026-06-15",
+      "summary": {
+        "totalRevenue": 125,
+        "totalOrders": 1,
+        "paidOrders": 1,
+        "shippedOrders": 0,
+        "pendingOrders": 0,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "1561282f79cbbc63e08bae38bf3014690585b9e5bbcbfac39dbb3b70f107387d",
+      "sourceUpdateTime": "2026-06-24T20:50:46.199Z",
+      "sourceHash": "9ac74fc632f5683e0cb0e74b6b0278f242bb1a94a1787a75328c27606328f37b",
+      "dateKey": "2026-06-24",
+      "summary": {
+        "totalRevenue": 140,
+        "totalOrders": 1,
+        "paidOrders": 1,
+        "shippedOrders": 0,
+        "pendingOrders": 0,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "20e6008b50fb1128d2ac3258dc521ffa7df44075e587fd8407587c083ec7e5c2",
+      "sourceUpdateTime": "2026-06-27T16:25:05.140Z",
+      "sourceHash": "d0306d2c21209400e6bea78e1db0ef0a86983a81199b32b5cc8b6e7468174bd9",
+      "dateKey": "2026-06-27",
+      "summary": {
+        "totalRevenue": 140,
+        "totalOrders": 1,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 1,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "215390cffa8c513dd7534a8980c3e16cb0daaff9d4916cba8448921a8e28dd46",
+      "sourceUpdateTime": "2026-06-19T14:16:48.342Z",
+      "sourceHash": "bd15cf9c89c47ccc1d4124d27c8dc530712229fcfb7606aac72a3bbae4eb949d",
+      "dateKey": "2026-06-19",
+      "summary": {
+        "totalRevenue": 140,
+        "totalOrders": 1,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 1,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "267195a84c7be0373457b7597c6f07cda30ac7d6035ea6963268f862008f5507",
+      "sourceUpdateTime": "2026-06-18T19:26:30.665Z",
+      "sourceHash": "bab42cb00bb31ea248b4b709cb1555fe51ac497f92293a611e42ed98dd7de144",
+      "dateKey": "2026-06-18",
+      "summary": {
+        "totalRevenue": 350,
+        "totalOrders": 1,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 1,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "28af5766055282638d88e5c9cf69c6bf39546887007fb09e69cd816cb3750304",
+      "sourceUpdateTime": "2026-06-18T23:55:29.361Z",
+      "sourceHash": "57bb1d0d49e1567f0a91b1af27fed19c0027dd720c0852ee04c4d1201cbf8626",
+      "dateKey": "2026-06-18",
+      "summary": {
+        "totalRevenue": 140,
+        "totalOrders": 1,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 1,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "353b37318e3b7b7d14fbd008c4e59ba6f3a8c7040b73ffd0e77c5cd8fef068f9",
+      "sourceUpdateTime": "2026-06-15T18:41:34.576Z",
+      "sourceHash": "9dea25e37f165f52f75f75e97e1a7f240a17ea6ac7bd3f7adf75c525eacf9853",
+      "dateKey": "2026-06-15",
+      "summary": {
+        "totalRevenue": 1940,
+        "totalOrders": 1,
+        "paidOrders": 1,
+        "shippedOrders": 0,
+        "pendingOrders": 0,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "3a8309d85bc10f60e481c7b73f10c88760bbfb4edcf1d24cc9641be76c639415",
+      "sourceUpdateTime": "2026-06-24T17:13:59.873Z",
+      "sourceHash": "8b87fb9b3852685def9186baf7980ff892bb264820307fbb8376bab6db2f5fbd",
+      "dateKey": "2026-06-24",
+      "summary": {
+        "totalRevenue": 0,
+        "totalOrders": 0,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 0,
+        "cancelledOrders": 1
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "494c17030b38e1890f8a7cfd12484f5bbc9a66517b5c3b147b742b526d90fc17",
+      "sourceUpdateTime": "2026-06-18T23:54:32.046Z",
+      "sourceHash": "584dd7bf7969cc40793adc6f72b5c4609ca028656f5e2e95cd5e0d3ead4165ae",
+      "dateKey": "2026-06-18",
+      "summary": {
+        "totalRevenue": 150,
+        "totalOrders": 1,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 1,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "56d10bef910a142d0455c9312ca7615085f0fd685371c88ecf971acb77e87094",
+      "sourceUpdateTime": "2026-06-18T16:56:02.678Z",
+      "sourceHash": "9536dcf6a9f5f76cdd519d6759a6aedde49124495612f095be3ba3868e0b9d06",
+      "dateKey": "2026-06-18",
+      "summary": {
+        "totalRevenue": 130,
+        "totalOrders": 1,
+        "paidOrders": 1,
+        "shippedOrders": 0,
+        "pendingOrders": 0,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "5ae98ce77757779a54fb215782b6d6d88888ca6aa26edbeb692fbb4e3d8d20a0",
+      "sourceUpdateTime": "2026-06-18T18:25:04.963Z",
+      "sourceHash": "83118b06024944d4340557f8cccb8bc90a51f1eea2e1aae6c81ded8527751acf",
+      "dateKey": "2026-06-18",
+      "summary": {
+        "totalRevenue": 150,
+        "totalOrders": 1,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 1,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "66335eeca927a3cdaf0d00ea37c5cc79c84187ff2612f4bcd965a3d80b1d50de",
+      "sourceUpdateTime": "2026-07-18T00:20:13.994Z",
+      "sourceHash": "4c60b5723e3743f4f6876f0aed9ec061a6befa09ba6270e9c6e25b5c82a739ce",
+      "dateKey": "2026-07-17",
+      "summary": {
+        "totalRevenue": 120,
+        "totalOrders": 1,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 1,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "706212591d981a771ec4fc1fbfd6599c64ea528d7b2c0d37fb06abd3c51475ce",
+      "sourceUpdateTime": "2026-06-24T20:47:27.256Z",
+      "sourceHash": "ad5b5e502caf18ba9f9d6ee2b14747d6752bd5f85dfff406dd9c76d98f806157",
+      "dateKey": "2026-06-24",
+      "summary": {
+        "totalRevenue": 140,
+        "totalOrders": 1,
+        "paidOrders": 1,
+        "shippedOrders": 0,
+        "pendingOrders": 0,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "ad2cc3aa215d124f2ca3e7b3bd2791de9d3955ea713dea681363750c854e97bb",
+      "sourceUpdateTime": "2026-06-19T15:43:16.964Z",
+      "sourceHash": "288e10f8a4d00bee26d28a33f9a45c9e86dcfe80fb464ff54ead95575cb25e1e",
+      "dateKey": "2026-06-19",
+      "summary": {
+        "totalRevenue": 140,
+        "totalOrders": 1,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 1,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "aef65d45ac5d36f0f7c0518fd4e11db60caf4a82691948761f74b82cb8590d34",
+      "sourceUpdateTime": "2026-07-02T13:03:56.566Z",
+      "sourceHash": "73390a62c53180a3f0ed2d716f04eda746e2b400af34ef1c0bf87c5dc208072e",
+      "dateKey": "2026-07-02",
+      "summary": {
+        "totalRevenue": 140,
+        "totalOrders": 1,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 1,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "b0af2f2572794bdc3c1e45d43eafb73d912e8ccb09608ad0af1e8ef5afa26225",
+      "sourceUpdateTime": "2026-06-17T15:54:04.768Z",
+      "sourceHash": "d9b195f0dff777690b08ec7b759b6f65fda36ee4cf353e1e98fb19718ae1d4bf",
+      "dateKey": "2026-06-15",
+      "summary": {
+        "totalRevenue": 240,
+        "totalOrders": 1,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 1,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "b924209d70fec3d6bd30dffb5bd6473ad3e6ebee0972c3f5ce52fd5fb29ed803",
+      "sourceUpdateTime": "2026-06-18T19:26:39.713Z",
+      "sourceHash": "fe6d7f43ec2c312a5eab3e36178fd897e4a23f25ac2f348cb278849cafaf13af",
+      "dateKey": "2026-06-18",
+      "summary": {
+        "totalRevenue": 350,
+        "totalOrders": 1,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 1,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "ba262045534598d66d952bad0934341c4e2752b745c17b561ad7cf5ac5d0898a",
+      "sourceUpdateTime": "2026-06-22T14:37:19.028Z",
+      "sourceHash": "d45c06b60fedeec8fba0540f611dc4a32f5c9dec3cf9f0b61a8124abadea301f",
+      "dateKey": "2026-06-22",
+      "summary": {
+        "totalRevenue": 140,
+        "totalOrders": 1,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 1,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "c293902f17793ea8906ec8688f5bd4a49f2b21b4ed6f35a7a06bc212af0d697e",
+      "sourceUpdateTime": "2026-07-02T12:53:52.657Z",
+      "sourceHash": "6462d7f7d87cb4dc781356934b09c1cbf0c4f954072cfe3673904648d0d23c3d",
+      "dateKey": "2026-07-02",
+      "summary": {
+        "totalRevenue": 140,
+        "totalOrders": 1,
+        "paidOrders": 1,
+        "shippedOrders": 0,
+        "pendingOrders": 0,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "c329c50a0c6244ee96346348633e53db2ba129e6b36150e60fb57b4a24126184",
+      "sourceUpdateTime": "2026-06-24T20:51:40.574Z",
+      "sourceHash": "3bda840696f9bf3006172e86695b2241e017b57636cfe81ef90f0f46ef0c6cc3",
+      "dateKey": "2026-06-24",
+      "summary": {
+        "totalRevenue": 0,
+        "totalOrders": 0,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 0,
+        "cancelledOrders": 1
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "c573777ca3aa373dd397a734b08aba2929039763aeaf01fdf129877654701334",
+      "sourceUpdateTime": "2026-06-19T15:44:21.699Z",
+      "sourceHash": "58da56fdafcbdcd3f85f35bb69afd4aa5cd243ba7a3c1d07e71b130919597e5f",
+      "dateKey": "2026-06-19",
+      "summary": {
+        "totalRevenue": 140,
+        "totalOrders": 1,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 1,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "c5c7cacd43b69d841be3f02b08529931734f0354c948239389619e83d733ab6a",
+      "sourceUpdateTime": "2026-06-24T20:55:23.147Z",
+      "sourceHash": "6ed89f2ec45f4b73b079de2e63e99738c2ac6edd289c79d6f84968fa88a5d544",
+      "dateKey": "2026-06-24",
+      "summary": {
+        "totalRevenue": 140,
+        "totalOrders": 1,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 1,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "d6911a08c454cfac55018e477368789c48df56f32c124db1be0869cb422d8364",
+      "sourceUpdateTime": "2026-06-18T18:23:01.448Z",
+      "sourceHash": "e2f9b531e1126b0853eec83586a2b302bcf9736818d5b3e1b2dc7691d5ead931",
+      "dateKey": "2026-06-18",
+      "summary": {
+        "totalRevenue": 150,
+        "totalOrders": 1,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 1,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "e178309f8674998f9b775d1a7412503d5c50f207b0a5e03170ef511083f9c282",
+      "sourceUpdateTime": "2026-06-24T20:54:14.427Z",
+      "sourceHash": "bfc9eec536fa52ce81949e53fbeb65e10d2be2a4f53134dc7101a88284726bc4",
+      "dateKey": "2026-06-24",
+      "summary": {
+        "totalRevenue": 140,
+        "totalOrders": 1,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 1,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    },
+    {
+      "orderIdHash": "fd8496cc9e3f83d7826c9728df48c4a7a33973d5853eecf432261a52071dd2b5",
+      "sourceUpdateTime": "2026-06-19T15:39:19.382Z",
+      "sourceHash": "7c3a3a4122817ad45e956be0f8c5020a02e3ceba7b343f6ecc3f048bb04e3d7e",
+      "dateKey": "2026-06-19",
+      "summary": {
+        "totalRevenue": 140,
+        "totalOrders": 1,
+        "paidOrders": 0,
+        "shippedOrders": 0,
+        "pendingOrders": 1,
+        "cancelledOrders": 0
+      },
+      "projectionExists": true,
+      "projectionUpdateTime": "2026-08-16T12:34:15.158Z"
+    }
+  ],
+  "nextGate": "Create the dedicated no-key runtime SA and seed every missing ledger in one bounded preconditioned G2-B bootstrap only after approval; reconcile aggregates before deploying onOrderStatsWrite.",
+  "rollback": "Before Function deploy, restore aggregate snapshots and remove only ledger documents created by the approved bootstrap with exact updateTime preconditions; requires destructive approval. After deploy, targeted redeploy of the previous onOrderStatsWrite source while preserving IAM and trigger."
+}

@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T12:33:44.258Z",
+  "project": "secondevienextjsssr",
+  "projectNumber": "231220287936",
+  "environment": "sandbox",
+  "mode": "apply",
+  "actor": "matthis.fradin2@gmail.com",
+  "commit": "7045bd63a0f3f1e2ce367ba37daaf409d1fe6e44",
+  "serviceAccounts": {
+    "runtime": "CREATED",
+    "build": "CREATED",
+    "trigger": "CREATED"
+  },
+  "changes": {
+    "projectBindings": [
+      {
+        "email": "order-stats-projector@secondevienextjsssr.iam.gserviceaccount.com",
+        "role": "roles/datastore.user",
+        "state": "CREATED"
+      },
+      {
+        "email": "order-stats-projector@secondevienextjsssr.iam.gserviceaccount.com",
+        "role": "roles/logging.logWriter",
+        "state": "CREATED"
+      },
+      {
+        "email": "order-stats-projector@secondevienextjsssr.iam.gserviceaccount.com",
+        "role": "roles/serviceusage.serviceUsageConsumer",
+        "state": "CREATED"
+      },
+      {
+        "email": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+        "role": "roles/logging.logWriter",
+        "state": "CREATED"
+      },
+      {
+        "email": "functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com",
+        "role": "roles/eventarc.eventReceiver",
+        "state": "CREATED"
+      }
+    ],
+    "actAs": {
+      "order-stats-projector@secondevienextjsssr.iam.gserviceaccount.com": "CREATED",
+      "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com": "CREATED",
+      "functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com": "CREATED"
+    },
+    "artifactWriter": "CREATED",
+    "sourceViewers": {
+      "gcf-v2-sources-231220287936-europe-west1": "CREATED",
+      "gcf-v2-uploads-231220287936.europe-west1.cloudfunctions.appspot.com": "CREATED"
+    },
+    "runInvoker": "CREATED"
+  },
+  "identities": {
+    "order-stats-projector@secondevienextjsssr.iam.gserviceaccount.com": {
+      "expectedProjectRoles": [
+        "roles/datastore.user",
+        "roles/logging.logWriter",
+        "roles/serviceusage.serviceUsageConsumer"
+      ],
+      "projectRoles": [
+        "roles/datastore.user",
+        "roles/logging.logWriter",
+        "roles/serviceusage.serviceUsageConsumer"
+      ],
+      "projectRolesExact": true,
+      "actorCanActAs": true,
+      "keys": {
+        "userManaged": 0,
+        "systemManaged": 2
+      }
+    },
+    "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com": {
+      "expectedProjectRoles": [
+        "roles/logging.logWriter"
+      ],
+      "projectRoles": [
+        "roles/logging.logWriter"
+      ],
+      "projectRolesExact": true,
+      "actorCanActAs": true,
+      "keys": {
+        "userManaged": 0,
+        "systemManaged": 2
+      }
+    },
+    "functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com": {
+      "expectedProjectRoles": [
+        "roles/eventarc.eventReceiver"
+      ],
+      "projectRoles": [
+        "roles/eventarc.eventReceiver"
+      ],
+      "projectRolesExact": true,
+      "actorCanActAs": true,
+      "keys": {
+        "userManaged": 0,
+        "systemManaged": 2
+      }
+    }
+  },
+  "resourceChecks": {
+    "artifactWriter": true,
+    "sourceViewers": {
+      "gcf-v2-sources-231220287936-europe-west1": true,
+      "gcf-v2-uploads-231220287936.europe-west1.cloudfunctions.appspot.com": true
+    },
+    "runInvoker": true
+  },
+  "forbidden": {
+    "defaultRuntimeServiceAccount": false,
+    "defaultBuildServiceAccount": false,
+    "projectWideRunInvoker": false,
+    "publicInvoker": false,
+    "userManagedKeys": false
+  },
+  "verdict": "G2B_STATS_IAM_VERIFIED",
+  "rollback": "Retain hardened IAM during the Function rollback window; removal is a distinct G12-B cleanup only.",
+  "manifestDigest": "c5d9b216ba510d0ca246e1515d7c26e8f600e45a32efac0422fde1704558df9d"
+}

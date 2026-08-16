@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T12:42:40Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "phase": "G2-B1",
+  "verdict": "G2B1_COMPLETE",
+  "deployment": {
+    "count": 1,
+    "target": "onOrderStatsWrite",
+    "codebase": "main",
+    "generation": 2,
+    "region": "europe-west1",
+    "sourceCommit": "7045bd63a0f3f1e2ce367ba37daaf409d1fe6e44",
+    "build": "projects/231220287936/locations/europe-west1/builds/4a6a7b8f-ed94-438a-9d29-4b92b530eb85",
+    "source": {
+      "bucket": "gcf-v2-sources-231220287936-europe-west1",
+      "object": "onOrderStatsWrite/function-source.zip",
+      "generation": "1786883768652223",
+      "sha256": "8e7e00464184d367fea17dfcda26b5acb314941124f508e0105e696d81043915"
+    },
+    "previousRevision": "onorderstatswrite-00025-nac",
+    "revision": "onorderstatswrite-00026-cec",
+    "trafficPercent": 100,
+    "state": "ACTIVE",
+    "ready": true,
+    "runtime": {
+      "runtime": "nodejs22",
+      "cpu": 1,
+      "memoryMiB": 256,
+      "timeoutSeconds": 60,
+      "concurrency": 1,
+      "minInstances": 0,
+      "maxInstances": 1,
+      "retry": true,
+      "ingress": "ALLOW_ALL"
+    },
+    "identities": {
+      "runtime": "order-stats-projector@secondevienextjsssr.iam.gserviceaccount.com",
+      "build": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+      "trigger": "functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com",
+      "publicInvoker": false
+    },
+    "trigger": {
+      "eventType": "google.cloud.firestore.document.v1.written",
+      "database": "(default)",
+      "namespace": "(default)",
+      "documentPathPattern": "orders/{orderId}",
+      "triggerRegion": "eur3",
+      "resource": "projects/secondevienextjsssr/locations/eur3/triggers/onorderstatswrite-838473"
+    }
+  },
+  "dataBootstrap": {
+    "writes": 26,
+    "onlyCollection": "order_stats_projections",
+    "ordersWritten": 0,
+    "aggregatesWritten": 0,
+    "stockWritten": 0,
+    "financeWritten": 0,
+    "existing": 26,
+    "missing": 0,
+    "dashboardDrift": {},
+    "dailyDriftCount": 0,
+    "manifest": "functions-gen2-g2b-stats-bootstrap.json",
+    "sha256": "d59500a05cf634bde098777af7e14d4068ae587aaa62b0170084e8685fac2016"
+  },
+  "iam": {
+    "verdict": "G2B_STATS_IAM_VERIFIED",
+    "manifest": "functions-gen2-g2b-stats-iam.json",
+    "sha256": "68aca81f8074642aeaafc45eebcbf441f221d74c437aad674934e5cb9c8ca1ce",
+    "userManagedKeys": 0,
+    "defaultRuntime": false,
+    "defaultBuild": false,
+    "projectWideInvoker": false
+  },
+  "platformReconciliation": {
+    "sourceExports": 157,
+    "cloudFunctions": 152,
+    "cloudGen1": 139,
+    "cloudGen2": 13,
+    "schedulers": 8,
+    "schedulerStates": {
+      "ENABLED": 8
+    },
+    "queues": 2,
+    "queueStates": {
+      "RUNNING": 2
+    },
+    "eventarc": 7,
+    "instagramHold": 5,
+    "authGen1Kept": 3,
+    "unexplainedDrift": 0
+  },
+  "observation": {
+    "revisionLogEntries": 11,
+    "revisionErrorEntries": 3,
+    "controlledProbe": {
+      "malformedAttempts": 2,
+      "malformedHttp500": 2,
+      "classification": "OPERATOR_PROBE_PAYLOAD_ERROR_NOT_EVENTARC_OR_DATA_FAILURE",
+      "successfulAttempts": 1,
+      "successfulHttpStatus": 204,
+      "outcome": "no_change",
+      "dailyWrites": 0,
+      "dataReconciliationAfterProbe": "ZERO_DRIFT"
+    },
+    "commerceHealth": "healthy",
+    "openIncidents": 0,
+    "publicInvoker": false,
+    "quietWindowComplete": true,
+    "quietWindow": {
+      "startedAt": "2026-08-16T12:37:52.727678534Z",
+      "closedAt": "2026-08-16T12:54:03Z",
+      "durationSeconds": 970,
+      "errorsAfterSuccessfulProbe": 0,
+      "http5xxAfterSuccessfulProbe": 0,
+      "organicEventarcEventsObserved": 0,
+      "coverage": "ACTIVE Eventarc trigger/subscription plus authenticated CloudEvent no-data probe; no Firestore order was created or mutated"
+    },
+    "nextGate": "Regenerate target-specific cloud/source/data/IAM preconditions before selecting the next single G2-B target."
+  },
+  "documentedDrifts": [
+    {
+      "field": "eventarc.trigger.name",
+      "before": "onorderstatswrite-930307",
+      "after": "onorderstatswrite-838473",
+      "classification": "EXPECTED_REPLACEMENT_SAME_FILTER_OWNER"
+    },
+    {
+      "field": "labels.firebase-functions-hash",
+      "value": "36e148d156e03c184042cd98733471845985903b",
+      "classification": "STALE_FIREBASE_LABEL_PRESERVED_BY_GCLOUD",
+      "resolution": "The deployed build/source generation and SHA-256 are authoritative; the targeted wrapper now writes a migration commit label on future deploys."
+    },
+    {
+      "field": "revision.errorLogs",
+      "value": "3 severity ERROR entries and 2 HTTP 500",
+      "classification": "CONTROLLED_MALFORMED_DIRECT_PROBE",
+      "resolution": "Two operator probes lacked valid Firestore CloudEvent encoding. The corrected authenticated no-data probe returned 204/no_change; the post-probe ledger and aggregate reconciliation stayed exact."
+    }
+  ],
+  "rollback": {
+    "automatic": false,
+    "approval": "G2B_ROLLBACK_ON_ORDER_STATS_WRITE",
+    "wrapperTransport": "gcloud-gen2-rollback",
+    "expectedRevision": "onorderstatswrite-00026-cec",
+    "source": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onOrderStatsWrite/onorderstatswrite-00025-nac-function-source.zip",
+    "sourceGeneration": "1786883731057943",
+    "sourceSize": 345983,
+    "sourceSha256": "fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92",
+    "sourceTemporaryHold": true,
+    "restore": {
+      "runtimeServiceAccount": "order-stats-projector@secondevienextjsssr.iam.gserviceaccount.com",
+      "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+      "triggerServiceAccount": "functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com",
+      "cpu": 1,
+      "memoryMiB": 256,
+      "timeoutSeconds": 60,
+      "concurrency": 80,
+      "minInstances": 0,
+      "maxInstances": 20,
+      "retry": false
+    },
+    "retain": [
+      "26 order_stats_projections ledgers",
+      "runtime/build/trigger IAM",
+      "endpoint",
+      "Eventarc filter",
+      "monitoring and alerts",
+      "both source archives"
+    ],
+    "dataDeletion": "FORBIDDEN_WITHOUT_SEPARATE_DESTRUCTIVE_APPROVAL"
+  }
+}

@@ -101,6 +101,11 @@ functions:plan-stats:g2a -- --report=apphostingaudit/manifests/functions-gen2-g2
 recompte en lecture seule les commandes legacy, le dashboard, les rollups
 journaliers et les ledgers; il refuse tout `--apply` et laisse
 `deploymentAllowed: false` tant que le bootstrap n'est pas approuve et prouve.
+Le lot G2-B stats utilise `functions:bootstrap-stats:g2b` avec digest manifeste,
+commit et approbation litterale, puis `functions:configure-stats-iam:g2b` pour
+les trois identites sans cle. `test:functions-g0` couvre le transport gcloud
+Gen2 cible et son rollback; `test:functions-g2a` couvre le bootstrap
+transactionnel, ses preconditions et l'absence d'ecriture hors ledger.
 
 `npm run functions:restore-verify:g1` compare la base nommee au snapshot PITR
 exact et produit uniquement comptages/digests; `npm run

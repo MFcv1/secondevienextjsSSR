@@ -1,8 +1,8 @@
 # Audit et plan d'execution de la migration Cloud Functions Gen2
 
-Derniere contre-verification: 2026-08-15
+Derniere contre-verification: 2026-08-16
 
-Statut: `PLAN_TEMPORAIRE_REVALIDE - G1_TERMINEE - G2_A_LOCAL_EN_COURS`
+Statut: `PLAN_TEMPORAIRE_REVALIDE - G2_B1_STATS_TERMINE`
 
 Proprietaire: mainteneur Seconde Vie et agent charge de la migration
 
@@ -1591,6 +1591,63 @@ ledgers stats, la creation/verification des identites sans cle, le TTL
 `purgeAt` du ledger e-mail et une regeneration source/cloud juste avant chaque
 deploiement cible. Aucun deploiement Gen2, rules, IAM ou TTL n'a ete applique
 pendant G2-A.
+
+#### Execution G2-B1 - stats cible unique
+
+Le 2026-08-16, le seed fail-closed a revalide les 126 commandes et les 26
+legacy par hash et `updateTime`, puis cree atomiquement exactement 26 documents
+dans `order_stats_projections`. Il n'a ecrit aucune commande, aucun agregat,
+stock ou fait financier. Le rapprochement suivant retrouve 26/26 ledgers,
+zero drift dashboard et zero drift sur les huit rollups. Le backup eur3
+`6c33ce73-dfe5-4081-8112-9369ae8b3af8` reste `READY`.
+
+Trois identites sans cle ont ete creees et verifiees: runtime
+`order-stats-projector`, build `functions-gen2-builder` et transport
+`functions-eventarc-invoker`. Le runtime n'a que Datastore User, Log Writer et
+Service Usage Consumer; le build a Log Writer au projet, Writer sur le seul
+depot `gcf-artifacts` et Object Viewer sur les deux buckets source; Eventarc a
+Receiver au projet et Run Invoker uniquement sur `onorderstatswrite`. Aucun
+compte compute/appspot, invoker public, Editor, Owner ou cle utilisateur.
+
+Le wrapper cible a deploye uniquement `onOrderStatsWrite` depuis le commit
+`7045bd63a0f3f1e2ce367ba37daaf409d1fe6e44`. La revision
+`onorderstatswrite-00026-cec` est `ACTIVE` et `Ready`, a 100 %, avec CPU 1,
+256 MiB, timeout 60 s, concurrence 1, min 0, max 1 et retry actif. Le filtre
+reste `orders/{orderId}` sur `(default)` eur3; le remplacement attendu du
+trigger `930307` par `838473` conserve un seul proprietaire. La plateforme
+reste a 152 Functions (139 Gen1, 13 Gen2), huit schedulers `ENABLED`, deux
+queues `RUNNING` et sept triggers Eventarc. Le demarrage ne porte aucune erreur
+et la sante commerce reste `healthy` sans incident. Deux premieres probes
+directes de l'operateur ont volontairement evite toute commande mais encode un
+CloudEvent Firestore invalide: elles ont produit deux HTTP 500 et trois entrees
+`ERROR`, classes comme erreur de probe et non comme panne Eventarc/data. La
+probe corrigee, authentifiee par le SA Eventarc et ciblee sur un identifiant
+inexistant, a retourne 204 avec `outcome: no_change`, zero ecriture, puis le
+rapprochement est reste strictement identique.
+
+L'archive exacte de la revision precedente a ete copiee en prive dans
+`g2b-rollback/onOrderStatsWrite/onorderstatswrite-00025-nac-function-source.zip`
+(generation `1786883731057943`, SHA-256
+`fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92`). Le
+fichier porte un temporary hold Storage et le wrapper le verifie avant usage.
+Le
+transport fail-closed `gcloud-gen2-rollback` exige la revision courante, ce
+digest et l'approbation `G2B_ROLLBACK_ON_ORDER_STATS_WRITE`; il restaure le
+code/config precedent tout en conservant les IAM durcies, le endpoint, les
+alertes et les ledgers. Aucune suppression de ledger n'appartient a ce
+rollback. Le hash Firebase historique reste un label stale conserve par
+gcloud; build, generation source et SHA-256 sont autoritaires et le wrapper
+ajoute desormais un label de commit aux rollouts suivants.
+
+Manifestes: `functions-gen2-g2b-stats-bootstrap.json`,
+`functions-gen2-g2b-stats-iam.json`,
+`functions-gen2-g2b-stats-reconciliation.json` et
+`functions-gen2-g2b-stats-rollout.json`, scelles par
+`functions-gen2-g2b-stats-digests.json`. Apres 970 secondes, la quiet-window
+est fermee: aucun 5xx apres la probe valide, IAM et revision stables, 26/26
+ledgers, zero drift et sante `healthy`. Verdict: `G2B1_COMPLETE`. La cible
+suivante exige une regeneration target-specific; elle n'est pas autorisee par
+ce seul verdict.
 
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 

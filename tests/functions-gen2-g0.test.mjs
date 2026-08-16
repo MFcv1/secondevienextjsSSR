@@ -18,6 +18,7 @@ import {
   buildFirebaseDeployArgs,
   buildGcloudGen1DeployArgs,
   buildGcloudGen2DeployArgs,
+  buildGcloudGen2RollbackArgs,
   parseDeployArgs,
   validateDeploymentRequest
 } from '../scripts/deploy-functions-targeted.mjs';
@@ -300,11 +301,45 @@ test('le transport gcloud Gen2 est limite au premier lot stats et explicite IAM 
     '--build-service-account=projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
     '--memory=256Mi', '--cpu=1', '--timeout=60s', '--concurrency=1',
     '--min-instances=0', '--max-instances=1', '--retry',
-    '--ingress-settings=all', '--no-allow-unauthenticated', '--quiet'
+    '--ingress-settings=all', '--no-allow-unauthenticated',
+    `--update-labels=deployment-tool=codex-targeted,migration-source-commit=${manifest.metadata.baselineCommit}`,
+    '--quiet'
   ]) assert.ok(args.includes(expected), expected);
   assert.throws(() => validate({
     ...validationArgs({ allowlist: 'getCatalogPublicationStatus', transport: 'gcloud-gen2' })
   }), /limite a la cible G2-B approuvee/);
+});
+
+test('le rollback G2-B est borne a la revision et a l archive source preservee', () => {
+  const request = validate({
+    ...validationArgs({
+      allowlist: 'onOrderStatsWrite',
+      transport: 'gcloud-gen2-rollback',
+      approval: 'G2B_ROLLBACK_ON_ORDER_STATS_WRITE',
+      'expected-revision': 'onorderstatswrite-00026-cec',
+      'rollback-source-sha256': 'fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92'
+    })
+  });
+  const args = buildGcloudGen2RollbackArgs(request);
+  for (const expected of [
+    '--source=gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onOrderStatsWrite/onorderstatswrite-00025-nac-function-source.zip',
+    '--run-service-account=order-stats-projector@secondevienextjsssr.iam.gserviceaccount.com',
+    '--build-service-account=projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    '--trigger-service-account=functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com',
+    '--concurrency=80', '--max-instances=20', '--no-retry',
+    '--update-labels=deployment-tool=codex-targeted,migration-rollback-source=onorderstatswrite-00025-nac'
+  ]) assert.ok(args.includes(expected), expected);
+  assert.match(
+    fs.readFileSync(path.join(ROOT, 'scripts/deploy-functions-targeted.mjs'), 'utf8'),
+    /rollbackObject\.temporary_hold\s*!==\s*true/
+  );
+  assert.throws(() => validate({
+    ...validationArgs({
+      allowlist: 'onOrderStatsWrite', transport: 'gcloud-gen2-rollback',
+      approval: 'WRONG', 'expected-revision': 'onorderstatswrite-00026-cec',
+      'rollback-source-sha256': 'fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92'
+    })
+  }), /Approbation rollback/);
 });
 
 test('les trois workers G1 epinglent runtime, secrets et limites explicites', () => {

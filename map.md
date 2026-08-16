@@ -907,9 +907,12 @@ delete. Le manifeste est
 Les plans read-only P1/P2 sont dans
 `apphostingaudit/manifests/functions-gen2-g1-data-plan.json`. G2-A local est
 fermee pour les treize Gen2; son runtime/IAM/retry/data/rollback consolide est
-dans `apphostingaudit/manifests/functions-gen2-g2a-plan.json`. G2-B reste
-bloquee sur seed stats, IAM dedie et TTL e-mail, avec autorisation cloud
-distincte et une seule cible a la fois.
+dans `apphostingaudit/manifests/functions-gen2-g2a-plan.json`. Le premier lot
+G2-B stats a seed 26 `order_stats_projections` sans toucher aux agregats puis
+deploie uniquement `onOrderStatsWrite`; preuves IAM/data/rollout dans les
+manifestes `functions-gen2-g2b-stats-*.json`. Sa quiet-window est fermee avec
+zero drift; TTL e-mail et IAM/data de chaque lot restent des gates distinctes,
+avec preflight et une seule cible a la fois.
 
 | Domaine | Exports |
 | --- | --- |

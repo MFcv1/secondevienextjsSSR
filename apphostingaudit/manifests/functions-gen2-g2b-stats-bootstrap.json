@@ -1,0 +1,285 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T12:34:13.316Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "mode": "apply",
+  "verdict": "G2B_STATS_BOOTSTRAP_APPLIED",
+  "actor": "matthis.fradin2@gmail.com",
+  "commit": "7045bd63a0f3f1e2ce367ba37daaf409d1fe6e44",
+  "manifest": "apphostingaudit/manifests/functions-gen2-g2a-stats.json",
+  "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad",
+  "writes": 26,
+  "collectionsWritten": [
+    "order_stats_projections"
+  ],
+  "orderIdHashes": [
+    "02da33c9c6c81d0854bb3099f69b057a36800d8f7fa2e0c26eceb37017e7b030",
+    "058410639ab84887588d4a941ea3672f5111d4fb628ed45e260d13659414f042",
+    "1561282f79cbbc63e08bae38bf3014690585b9e5bbcbfac39dbb3b70f107387d",
+    "20e6008b50fb1128d2ac3258dc521ffa7df44075e587fd8407587c083ec7e5c2",
+    "215390cffa8c513dd7534a8980c3e16cb0daaff9d4916cba8448921a8e28dd46",
+    "267195a84c7be0373457b7597c6f07cda30ac7d6035ea6963268f862008f5507",
+    "28af5766055282638d88e5c9cf69c6bf39546887007fb09e69cd816cb3750304",
+    "353b37318e3b7b7d14fbd008c4e59ba6f3a8c7040b73ffd0e77c5cd8fef068f9",
+    "3a8309d85bc10f60e481c7b73f10c88760bbfb4edcf1d24cc9641be76c639415",
+    "494c17030b38e1890f8a7cfd12484f5bbc9a66517b5c3b147b742b526d90fc17",
+    "56d10bef910a142d0455c9312ca7615085f0fd685371c88ecf971acb77e87094",
+    "5ae98ce77757779a54fb215782b6d6d88888ca6aa26edbeb692fbb4e3d8d20a0",
+    "66335eeca927a3cdaf0d00ea37c5cc79c84187ff2612f4bcd965a3d80b1d50de",
+    "706212591d981a771ec4fc1fbfd6599c64ea528d7b2c0d37fb06abd3c51475ce",
+    "ad2cc3aa215d124f2ca3e7b3bd2791de9d3955ea713dea681363750c854e97bb",
+    "aef65d45ac5d36f0f7c0518fd4e11db60caf4a82691948761f74b82cb8590d34",
+    "b0af2f2572794bdc3c1e45d43eafb73d912e8ccb09608ad0af1e8ef5afa26225",
+    "b924209d70fec3d6bd30dffb5bd6473ad3e6ebee0972c3f5ce52fd5fb29ed803",
+    "ba262045534598d66d952bad0934341c4e2752b745c17b561ad7cf5ac5d0898a",
+    "c293902f17793ea8906ec8688f5bd4a49f2b21b4ed6f35a7a06bc212af0d697e",
+    "c329c50a0c6244ee96346348633e53db2ba129e6b36150e60fb57b4a24126184",
+    "c573777ca3aa373dd397a734b08aba2929039763aeaf01fdf129877654701334",
+    "c5c7cacd43b69d841be3f02b08529931734f0354c948239389619e83d733ab6a",
+    "d6911a08c454cfac55018e477368789c48df56f32c124db1be0869cb422d8364",
+    "e178309f8674998f9b775d1a7412503d5c50f207b0a5e03170ef511083f9c282",
+    "fd8496cc9e3f83d7826c9728df48c4a7a33973d5853eecf432261a52071dd2b5"
+  ],
+  "projections": [
+    {
+      "orderIdHash": "02da33c9c6c81d0854bb3099f69b057a36800d8f7fa2e0c26eceb37017e7b030",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1782576177135,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "058410639ab84887588d4a941ea3672f5111d4fb628ed45e260d13659414f042",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1781534943494,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "1561282f79cbbc63e08bae38bf3014690585b9e5bbcbfac39dbb3b70f107387d",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1782334246198,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "20e6008b50fb1128d2ac3258dc521ffa7df44075e587fd8407587c083ec7e5c2",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1782577505139,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "215390cffa8c513dd7534a8980c3e16cb0daaff9d4916cba8448921a8e28dd46",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1781878608342,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "267195a84c7be0373457b7597c6f07cda30ac7d6035ea6963268f862008f5507",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1781810790664,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "28af5766055282638d88e5c9cf69c6bf39546887007fb09e69cd816cb3750304",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1781826929361,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "353b37318e3b7b7d14fbd008c4e59ba6f3a8c7040b73ffd0e77c5cd8fef068f9",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1781548894576,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "3a8309d85bc10f60e481c7b73f10c88760bbfb4edcf1d24cc9641be76c639415",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1782321239872,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "494c17030b38e1890f8a7cfd12484f5bbc9a66517b5c3b147b742b526d90fc17",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1781826872046,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "56d10bef910a142d0455c9312ca7615085f0fd685371c88ecf971acb77e87094",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1781801762678,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "5ae98ce77757779a54fb215782b6d6d88888ca6aa26edbeb692fbb4e3d8d20a0",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1781807104963,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "66335eeca927a3cdaf0d00ea37c5cc79c84187ff2612f4bcd965a3d80b1d50de",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1784334013993,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "706212591d981a771ec4fc1fbfd6599c64ea528d7b2c0d37fb06abd3c51475ce",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1782334047256,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "ad2cc3aa215d124f2ca3e7b3bd2791de9d3955ea713dea681363750c854e97bb",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1781883796963,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "aef65d45ac5d36f0f7c0518fd4e11db60caf4a82691948761f74b82cb8590d34",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1782997436566,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "b0af2f2572794bdc3c1e45d43eafb73d912e8ccb09608ad0af1e8ef5afa26225",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1781711644767,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "b924209d70fec3d6bd30dffb5bd6473ad3e6ebee0972c3f5ce52fd5fb29ed803",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1781810799713,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "ba262045534598d66d952bad0934341c4e2752b745c17b561ad7cf5ac5d0898a",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1782139039027,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "c293902f17793ea8906ec8688f5bd4a49f2b21b4ed6f35a7a06bc212af0d697e",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1782996832656,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "c329c50a0c6244ee96346348633e53db2ba129e6b36150e60fb57b4a24126184",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1782334300574,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "c573777ca3aa373dd397a734b08aba2929039763aeaf01fdf129877654701334",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1781883861699,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "c5c7cacd43b69d841be3f02b08529931734f0354c948239389619e83d733ab6a",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1782334523146,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "d6911a08c454cfac55018e477368789c48df56f32c124db1be0869cb422d8364",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1781806981447,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "e178309f8674998f9b775d1a7412503d5c50f207b0a5e03170ef511083f9c282",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1782334454427,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    },
+    {
+      "orderIdHash": "fd8496cc9e3f83d7826c9728df48c4a7a33973d5853eecf432261a52071dd2b5",
+      "updateTime": {
+        "seconds": "1786883655",
+        "nanoseconds": 158009000
+      },
+      "sourceUpdateTime": 1781883559382,
+      "manifestDigest": "55df0a9689203aa818ed36bbb11ea6228d5cffd80756882d65e1f07c428973ad"
+    }
+  ],
+  "rollback": {
+    "action": "delete only the 26 order_stats_projections matched by these hashes",
+    "preconditions": "separate destructive approval, backup READY, source hash match, projection bootstrap manifestDigest match, exact projection updateTime manifest, dry-run",
+    "automatic": false
+  }
+}
