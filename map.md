@@ -948,6 +948,9 @@ Le preflight du worker `processProductPublicationImage` trouve zero session et
 zero erreur. Son replay d'une image deja prete conserve maintenant le slot si
 la seule finalisation metier echoue; le reconciler reprend cette finalisation.
 Runtime, build et Eventarc `us-central1` sont dedies avant rollout cible.
+La revision `processproductpublicationimage-00004-nep` est active; sa probe
+non canonique retourne 204 et la quiet-window de 686 secondes conserve zero
+session, zero ecriture ou suppression et aucun drift.
 
 | Domaine | Exports |
 | --- | --- |

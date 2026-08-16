@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T15:26:36Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "target": "processProductPublicationImage",
+  "deployment": {
+    "deployed": true,
+    "sourceCommit": "c3d6b57371d1d175ab742e8933c699f5db09daf4",
+    "allowlist": [
+      "processProductPublicationImage"
+    ],
+    "revision": "processproductpublicationimage-00004-nep",
+    "build": "8f0a97cf-1ec6-48aa-93d9-fdbdbf265345",
+    "buildStatus": "SUCCESS",
+    "sourceGeneration": "1786893170871719",
+    "sourceSize": "373563",
+    "sourceSha256": "db9dfe95472f8d7e8674b04964c4c19f11c22975a0dfa24fc28538ce782ad2cd",
+    "state": "ACTIVE",
+    "trafficPercent": 100
+  },
+  "runtime": {
+    "runtimeServiceAccount": "product-publication-worker@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "triggerServiceAccount": "functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com",
+    "cpu": 1,
+    "memoryMiB": 1024,
+    "timeoutSeconds": 540,
+    "concurrency": 4,
+    "minInstances": 0,
+    "maxInstances": 4,
+    "retry": true,
+    "publicInvoker": false
+  },
+  "trigger": {
+    "id": "processproductpublicationimage-781620",
+    "location": "us-central1",
+    "eventType": "google.cloud.storage.object.v1.finalized",
+    "bucket": "secondevienextjsssr.firebasestorage.app",
+    "totalEventarcAfter": 7,
+    "singleOwner": true
+  },
+  "probe": {
+    "id": "g2b-publication-image-safe-probe-1",
+    "objectPath": "g2b-probe/non-canonical-object.txt",
+    "objectCreated": false,
+    "result": "ignored_non_canonical_path",
+    "httpStatus": 204,
+    "serverLatencySeconds": 0.057312692,
+    "firestoreWrites": 0,
+    "storageWrites": 0
+  },
+  "dataAfter": {
+    "sessionCollection": "product_publication_sessions",
+    "sessionsBefore": 0,
+    "sessionsAfter": 0,
+    "storageWrites": 0,
+    "storageDeletes": 0,
+    "productWrites": 0,
+    "stockWrites": 0
+  },
+  "quietWindow": {
+    "start": "2026-08-16T15:15:09.883561Z",
+    "end": "2026-08-16T15:26:36Z",
+    "durationSeconds": 686,
+    "errors": 0,
+    "http5xx": 0,
+    "sessionDrift": 0,
+    "iamOrTriggerDrift": false
+  },
+  "rollback": {
+    "approval": "G2B_ROLLBACK_PROCESS_PRODUCT_PUBLICATION_IMAGE",
+    "expectedCurrentRevision": "processproductpublicationimage-00004-nep",
+    "sourceRevision": "processproductpublicationimage-00003-por",
+    "source": "gs://gcf-v2-sources-231220287936-us-central1/g2b-rollback/processProductPublicationImage/processproductpublicationimage-00003-por-function-source.zip",
+    "sourceGeneration": "1786892844065661",
+    "sourceSize": "397275",
+    "sourceSha256": "bce7ff79ecfc2308ae744ee61cb889cd02fba781b466d16a383fa610b7d91880",
+    "temporaryHold": true,
+    "restoredConcurrency": 4,
+    "restoredMaxInstances": 20,
+    "restoredRetry": true,
+    "preserved": [
+      "dedicated runtime/build/trigger IAM",
+      "Storage trigger filter and endpoint",
+      "sessions, product, stock and Storage data",
+      "logs and alerts"
+    ],
+    "dataDeletion": false
+  },
+  "inventory": {
+    "sourceExports": 157,
+    "cloudFunctions": 152,
+    "cloudGen1": 139,
+    "cloudGen2": 13,
+    "enabledSchedulers": 8,
+    "runningQueues": 2,
+    "eventarc": 7
+  },
+  "verdict": "G2B7_COMPLETE_NO_DATA_WRITE"
+}

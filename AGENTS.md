@@ -154,7 +154,7 @@ Plan temporaire de reprise explicitement demande:
   ferme G0 a G13 de migration progressive Gen1 vers Gen2 et prerequis de
   fiabilite hors Functions; G0/G1 et G2-A fermes, lots G2-B stats, trigger
   catalogue, scheduler catalogue, GC catalogue fail-closed et triggers artefact
-  update/delete deployes, reconcilies et observes sur le sandbox sans suppression,
+  update/delete et worker image deployes, reconcilies et observes sur le sandbox sans suppression,
   autres lots bloques sur leurs
   IAM/data/TTL et gates propres, trois
   triggers Auth Gen1 conserves par limitation Firebase et cinq exports

@@ -1800,7 +1800,7 @@ eligible, sans ecriture ou suppression, erreur, 5xx, drift IAM ou trigger.
 L'inventaire reste 157/152, 139 Gen1, 13 Gen2, huit schedulers, deux queues et
 sept Eventarc. Verdict: `G2B6_COMPLETE_NON_DESTRUCTIVE`.
 
-#### Preflight G2-B7 - worker image de publication cible unique
+#### Execution G2-B7 - worker image de publication cible unique
 
 `processProductPublicationImage` reste seul proprietaire du trigger Storage
 `us-central1`. Les 443 requetes observees depuis le 1er aout sont HTTP 204,
@@ -1814,8 +1814,15 @@ Le SA runtime sans cle `product-publication-worker` porte seulement Datastore
 User, Log Writer, Service Usage Consumer et Object Admin sur le seul bucket
 media. Build et Eventarc sont dedies, y compris le repository et le bucket
 source `us-central1`; aucun invoker public. La revision 3 est archivee sous
-temporary hold. Verdict: `G2B_PUBLICATION_IMAGE_PREFLIGHT_READY`; rollout non
-encore ferme.
+temporary hold.
+
+Le commit `c3d6b57371d1d175ab742e8933c699f5db09daf4` a deploye uniquement la
+revision `processproductpublicationimage-00004-nep`: CPU 1, concurrence/max 4,
+min 0, 1 GiB, 540 s et retry actif. Le trigger conserve le bucket exact et le
+total Eventarc reste sept. La probe authentifiee sur un chemin objet non
+canonique a retourne HTTP 204 en 57 ms sans creer d'objet ni de session. Apres
+686 secondes, la collection reste vide, sans ecriture produit/stock/Storage,
+erreur, 5xx, drift IAM ou trigger. Verdict: `G2B7_COMPLETE_NO_DATA_WRITE`.
 
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
