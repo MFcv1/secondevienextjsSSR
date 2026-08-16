@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T16:31:43Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "target": "cleanupProductPublicationSessions",
+  "mode": "apply-and-verify",
+  "actor": "matthis.fradin2@gmail.com",
+  "sourceCommit": "300ada925299455e56e3ca27ecabdb0d68999646",
+  "changes": [
+    "granted product-publication-worker Run Invoker on only cleanupproductpublicationsessions"
+  ],
+  "runtimeProjectRoles": [
+    "roles/datastore.user",
+    "roles/logging.logWriter",
+    "roles/serviceusage.serviceUsageConsumer"
+  ],
+  "buildProjectRoles": [
+    "roles/logging.logWriter"
+  ],
+  "resourceRoles": {
+    "runtimeMediaBucket": "roles/storage.objectAdmin",
+    "runtimeTargetService": "roles/run.invoker",
+    "buildArtifactRepositoryEuropeWest1": "roles/artifactregistry.writer",
+    "buildSourceBucketsEuropeWest1": "roles/storage.objectViewer"
+  },
+  "checks": {
+    "runtimeRolesExact": true,
+    "runtimeActAs": true,
+    "runtimeMediaBucketObjectAdmin": true,
+    "schedulerServiceAgent": true,
+    "schedulerRunInvokerTargetOnly": true,
+    "buildRolesExact": true,
+    "buildActAs": true,
+    "buildArtifactWriter": true,
+    "buildSourceViewers": true,
+    "publicInvoker": false,
+    "runtimeUserManagedKeys": 0,
+    "buildUserManagedKeys": 0,
+    "defaultComputeInvokerRetainedForRollback": true
+  },
+  "rollback": "Retain the dedicated runtime/build grants and the former compute Run Invoker through G12-B; restore the archived source, old runtime identity and old scheduler OIDC identity without removing IAM.",
+  "verdict": "G2B_PUBLICATION_CLEANUP_IAM_VERIFIED"
+}
