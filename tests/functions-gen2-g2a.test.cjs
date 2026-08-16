@@ -565,6 +565,16 @@ test('G2-A artefacts: les deux triggers sont bornes et ne suppriment plus les so
     assert.doesNotMatch(deleted, /batch\.delete|deleteSubCollection|\.delete\(/);
 });
 
+test('le modele social legacy est absent de tout code Functions executable', () => {
+    const sourceRoot = path.join(ROOT, 'functions/src');
+    const files = fs.readdirSync(sourceRoot, { recursive: true })
+        .filter((entry) => typeof entry === 'string' && entry.endsWith('.js'));
+    const executableSource = files
+        .map((entry) => fs.readFileSync(path.join(sourceRoot, entry), 'utf8'))
+        .join('\n');
+    assert.doesNotMatch(executableSource, /\b(?:likes|comments|likeCount|shareCount)\b/);
+});
+
 test('G2-B GC catalogue: aucune suppression planifiee sans kill-switch explicite', () => {
     const source = fs.readFileSync(path.join(ROOT, 'functions/src/catalog/mediaGarbageCollection.js'), 'utf8');
     const logSource = fs.readFileSync(path.join(ROOT, 'functions/src/catalog/structuredLog.js'), 'utf8');

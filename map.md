@@ -936,11 +936,11 @@ eligible; aucun stockage ne peut etre supprime par ce trigger.
 La revision `onartifactupdated-00024-cuj` est active; la probe valide hors
 namespace retourne 204 et laisse les 672 intents inchanges. La quiet-window de
 330 secondes est fermee sans erreur ni drift.
-Le preflight de `onArtifactDeleted` a retrouve en cloud l'ancien effacement des
-sous-collections sociales, absent de la source locale. Cette archive est
+Le preflight de `onArtifactDeleted` a retrouve en cloud l'ancien effacement de
+sous-collections sociales sans appelant, rule ou donnee sandbox. Cette archive est
 conservee uniquement comme preuve; le rollback pointe vers un bundle sur qui
 restaure seulement les limites d'infrastructure. Le futur rollout n'ecrit que
-la quarantaine media et ne supprime ni `likes`, ni `comments`, ni objet Storage.
+la quarantaine media et ne supprime aucune donnee sociale ni objet Storage.
 La revision `onartifactdeleted-00024-roh` active desormais cette source sure;
 la probe hors namespace retourne 204 et la quiet-window de 377 secondes se
 ferme avec le ledger 672/672 `pending`, sans suppression ni drift.

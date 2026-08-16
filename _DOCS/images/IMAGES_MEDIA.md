@@ -138,10 +138,10 @@ Le catalogue materialise ajoute une contrainte: une URL reste protegee tant qu'e
 Depuis le lot local G2-A6, l'enqueue de quarantaine converge par chemin et
 generation: un replay du meme evenement ne repousse pas la grace et ne remet
 pas les tentatives a zero, tandis qu'une nouvelle generation du meme chemin
-cree bien un nouveau cycle. Le futur `onArtifactDeleted` ne supprime plus
-directement `likes` ou `comments`; cette suppression de donnees devra suivre
-une campagne distincte avec backup READY, restore drill, dry-run, manifeste,
-preconditions, rollback et approbation destructive.
+cree bien un nouveau cycle. L'ancien modele social associe aux produits n'a
+aucun appelant, aucune rule et aucune donnee sandbox; ses references ont ete
+retirees du code executable. `onArtifactDeleted` ne gere que la quarantaine
+media.
 
 ## 7. Medias statiques sensibles
 

@@ -119,7 +119,7 @@ const plans = [
     name, source: `functions/src/triggers/${name}.js`, owner: 'catalog-media-quarantine',
     runtime: runtime(mediaEnqueuer, { timeoutSeconds: 300, retry: true }),
     iam: { projectRoles: ['roles/datastore.user', 'roles/logging.logWriter', 'roles/serviceusage.serviceUsageConsumer'], secrets: [], bucketRoles: ['roles/storage.objectViewer:product-media-bucket'] },
-    data: { reads: ['artifact before/after', 'Storage generation', 'sys_catalog_media_gc'], writes: ['sys_catalog_media_gc'], forbiddenWrites: ['likes', 'comments', 'Storage delete'] },
+    data: { reads: ['artifact before/after', 'Storage generation', 'sys_catalog_media_gc'], writes: ['sys_catalog_media_gc'], forbiddenWrites: ['unrelated product subcollections', 'Storage delete'] },
     idempotence: 'media-path-hash-plus-generation-transaction', overlap: 'at-least-once/generation-owner', blockers: []
   }))
 ];

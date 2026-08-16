@@ -184,11 +184,11 @@ explicites dans la source; aucun changement de queue ou de Function cloud n'a
 ete applique.
 
 Le lot G2-A6 rend la quarantaine media idempotente par chemin et generation.
-`onArtifactUpdated` et `onArtifactDeleted` ciblent localement le futur SA
+`onArtifactUpdated` et `onArtifactDeleted` ciblent le SA
 `catalog-media-enqueuer`, avec CPU/concurrence 1, min 0, max 1, 256 MiB,
-timeout 300 s et retry actif. Le trigger de suppression ne supprime plus les
-sous-collections `likes`/`comments`: elles restent conservees jusqu'a une
-procedure de donnees distincte avec backup, dry-run et approbation destructive.
+timeout 300 s et retry actif. Le modele social historique des produits n'existe
+plus dans le code executable: aucun appelant, aucune rule et zero document sur
+le sandbox. Le trigger de suppression ne gere que la quarantaine media.
 
 ### 4.1 Catalogue public materialise
 

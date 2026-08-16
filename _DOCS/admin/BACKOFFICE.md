@@ -784,8 +784,10 @@ Etat Gate 0B:
   authentification, lecture ou mutation;
 - leurs boutons rapides ne sont plus proposes par Stats et l'onglet Maintenance
   est read-only;
-- leur ancien corps reste temporairement en source pour historique et future
-  reconstruction, mais il est inaccessible tant que le hard-stop est en place.
+- leurs parties encore utiles au rollback restent temporairement en source,
+  mais sont inaccessibles tant que le hard-stop est en place; le reset social
+  sans appelant et les nettoyages associes ont ete retires, car ce modele ne
+  porte aucune donnee sandbox et n'appartient pas a Seconde Vie.
 
 Gate 7A fournit un cleanup fixture run-scoped, borne et audite. Il ne supprime
 ni commandes, ni faits financiers, ni mouvements, ni audits; seuls les

@@ -1800,6 +1800,13 @@ eligible, sans ecriture ou suppression, erreur, 5xx, drift IAM ou trigger.
 L'inventaire reste 157/152, 139 Gen1, 13 Gen2, huit schedulers, deux queues et
 sept Eventarc. Verdict: `G2B6_COMPLETE_NON_DESTRUCTIVE`.
 
+Le controle complementaire confirme que ce modele social etait du code mort:
+aucune UI, rule ou ecriture actuelle et zero document dans les deux anciens
+groupes de collections sur le sandbox. Leurs references sont retirees de tout
+code Functions executable, notamment des outils de maintenance hard-stoppes.
+Les noms restent uniquement dans les manifestes et paragraphes historiques
+necessaires pour prouver le drift de la revision 23.
+
 #### Execution G2-B7 - worker image de publication cible unique
 
 `processProductPublicationImage` reste seul proprietaire du trigger Storage

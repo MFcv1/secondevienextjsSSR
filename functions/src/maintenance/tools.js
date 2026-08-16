@@ -21,37 +21,9 @@ const db = admin.firestore();
 
 // --- RESET STATS (Compteurs produits) ---
 exports.resetAllStats = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+    void data;
+    void context;
     assertLegacyMutationBlocked(functions, 'resetAllStats');
-    await checkActiveStrongSuperAdmin(context);
-    assertConfirmText(data, 'RESET STATS', 'reset stats');
-    let totalOp = 0;
-    try {
-        for (const colName of PRODUCT_COLLECTIONS) {
-            const itemsRef = db.collection(`artifacts/${APP_ID}/public/data/${colName}`);
-            const itemsSnap = await itemsRef.get();
-            const itemPromises = itemsSnap.docs.map(async (itemDoc) => {
-                const batch = db.batch();
-                let opCount = 0;
-                const subCollections = ['likes', 'comments'];
-                for (const sub of subCollections) {
-                    const subSnap = await itemDoc.ref.collection(sub).get();
-                    subSnap.forEach(d => { batch.delete(d.ref); opCount++; });
-                }
-                batch.update(itemDoc.ref, {
-                    likeCount: 0, shareCount: 0
-                });
-                if (opCount > 0) { await batch.commit(); return opCount; }
-                return 0;
-            });
-            const results = await Promise.all(itemPromises);
-            totalOp += results.reduce((acc, curr) => acc + curr, 0);
-        }
-        await writeSecurityAudit('maintenance.reset_all_stats', context, { count: totalOp });
-        return { success: true, count: totalOp };
-    } catch (error) {
-        console.error("Erreur Reset Stats:", error);
-        throw new functions.https.HttpsError('internal', "Erreur lors du nettoyage.");
-    }
 });
 
 // --- GARBAGE COLLECTOR (Storage orphelin) ---
@@ -73,18 +45,8 @@ exports.runGarbageCollector = regionalFunctions().runWith({ enforceAppCheck: tru
                 if (chunk.length === 0) continue;
                 const snaps = await db.getAll(...chunk);
                 for (const snap of snaps) {
-                    if (!snap.exists) {
-                        const subs = ['likes', 'comments'];
-                        let ops = 0;
-                        const batch = db.batch();
-                        for (const sub of subs) {
-                            const subDocs = await snap.ref.collection(sub).get();
-                            subDocs.forEach(d => { batch.delete(d.ref); ops++; });
-                        }
-                        if (ops > 0) { await batch.commit(); stats.ghostDocsDeleted++; }
-                    } else {
-                        collectStoragePaths(snap.data()).forEach(path => activeImagePaths.add(path));
-                    }
+                    if (!snap.exists) continue;
+                    collectStoragePaths(snap.data()).forEach(path => activeImagePaths.add(path));
                 }
             }
         }
@@ -205,24 +167,13 @@ exports.purgeAllProducts = regionalFunctions().runWith({ enforceAppCheck: true, 
                     } catch (e) { if (e.code !== 404) console.error(`Erreur image:`, e.message); }
                 }
 
-                // 2. Supprimer les sous-collections
-                const subCollections = ['likes', 'comments'];
-                for (const sub of subCollections) {
-                    const subSnap = await doc.ref.collection(sub).get();
-                    if (!subSnap.empty) {
-                        const batch = db.batch();
-                        subSnap.forEach(d => batch.delete(d.ref));
-                        await batch.commit();
-                    }
-                }
-
-                // 3. Supprimer le document produit lui-même
+                // 2. Supprimer le document produit lui-même
                 await doc.ref.delete();
                 totalDocsDeleted++;
             }
         }
 
-        // 4. Nettoyage final: supprimer tout fichier restant dans les dossiers Storage
+        // 3. Nettoyage final: supprimer tout fichier restant dans les dossiers Storage
         for (const colName of PRODUCT_COLLECTIONS) {
             const [files] = await bucket.getFiles({ prefix: `${colName}/` });
             for (const file of files) {
