@@ -2009,6 +2009,31 @@ ouvrir une fenetre d'observation. Il ne supprime jamais encore Function cloud,
 code de rollback, secret, alerte, dashboard ou script de diagnostic. Leur
 retrait atomique et cible n'arrive qu'en G12.
 
+Execution du 2026-08-16: G3 est fermee pour les six cibles qui lui etaient
+affectees. `e2eCheckoutProof`, `e2eStripeHardeningProof`,
+`getProductPublicationSessionAdmin`,
+`reportProductPublicationClientErrorAdmin`,
+`retryProductPublicationFinalizationAdmin` et
+`startProductPublicationAdmin` sont toutes classees `RETIRE_G12_A`; aucune
+nouvelle cible Gen2 n'est justifiee. Les deux preuves Stripe sont desactivees
+dans le runtime (`E2E_PROOF_ENABLED` absent), sans appelant applicatif, et leurs
+commandes package echouent desormais immediatement `DO_NOT_RUN`. Les scripts
+historiques, endpoints Gen1, IAM et versions de secrets restent conserves.
+
+L'interface admin executable publie par `createPublishedProductAdmin` et
+n'importe aucun des quatre appels historiques du module de reprise. La lecture
+aggregate read-only retrouve zero document dans
+`product_publication_sessions`. Les activites du 11 aout sur `start` et
+`report` appartiennent a l'ancienne fenetre de test/deploiement; aucune des six
+cibles n'a d'execution plus recente. Les quatre callables restent toutefois
+protegees par App Check, administrateur fort et owner UID jusqu'a leur retrait.
+La suppression G12-A devra aussi revoir atomiquement les trois workers Gen2 de
+session devenus sans producteur; elle exigera quiet-window, archive deployable
+par digest et rollback cible. Le manifeste machine
+`manifests/functions-gen2-g3-decisions.json` porte les configurations, IAM,
+secrets, trafic, drifts G0 resolus et rollbacks. Aucun deploy, changement IAM,
+ecriture de donnees, paiement, refund, restock ou suppression n'a eu lieu.
+
 ### G4 - Analytics actives
 
 Ordre: callables admin, `trackAdminIP`/`updateUserSessions`,

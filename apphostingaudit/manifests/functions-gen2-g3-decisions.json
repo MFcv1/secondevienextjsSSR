@@ -1,0 +1,243 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T18:02:15Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "baselineCommit": "82b356a93a8fd817f897a4e749d1954b12e9cb10",
+  "operator": "matthis.fradin2@gmail.com",
+  "toolchain": {
+    "node": "v22.22.3",
+    "pnpmObserved": "11.19.0",
+    "pnpmDeclared": "11.7.0",
+    "firebaseCli": "15.26.0",
+    "gcloud": "578.0.0"
+  },
+  "targetGuard": {
+    "requestedProject": "secondevienextjsssr",
+    "effectiveProject": "secondevienextjsssr",
+    "gcloudGlobalProject": "vibefx-v2",
+    "explicitProjectOnEveryCloudRead": true,
+    "projectMatch": true
+  },
+  "verdict": "G3_COMPLETE_RETIRE_IN_G12_A_NO_CLOUD_REMOVAL",
+  "deploymentAllowed": false,
+  "cloudDeletionAllowed": false,
+  "dataDeletionAllowed": false,
+  "stripeExecutionAllowed": false,
+  "observations": {
+    "windowDays": 30,
+    "windowEnd": "2026-08-16T18:02:15Z",
+    "inventory": {
+      "localExports": 157,
+      "cloudFunctions": 152,
+      "cloudGen1": 139,
+      "cloudGen2": 13,
+      "schedulers": 8,
+      "queues": 2,
+      "eventarc": 7,
+      "drift": false
+    },
+    "productPublicationSessionCount": 0,
+    "productPublicationSessionReadOnlyAggregate": true,
+    "currentAdminPublicationOwner": "createPublishedProductAdmin",
+    "historicalPublicationClientReachableFromAdminForm": false,
+    "e2eProofEnabledPresent": false
+  },
+  "decisions": [
+    {
+      "name": "e2eCheckoutProof",
+      "source": "functions/src/commerce/e2eCheckoutProof.js",
+      "region": "us-central1",
+      "generation": 1,
+      "runtime": "nodejs22",
+      "revision": "19",
+      "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "buildServiceAccount": "231220287936-compute@developer.gserviceaccount.com",
+      "invokerIam": [{ "role": "roles/cloudfunctions.invoker", "members": ["allUsers"] }],
+      "secrets": [
+        { "name": "STRIPE_SECRET_KEY", "version": "4" },
+        { "name": "E2E_PROOF_TOKEN", "version": "2" }
+      ],
+      "runtimeConfig": { "cpu": "gcf_gen1", "memoryMiB": 256, "timeoutSeconds": 60, "concurrency": 1, "minInstances": 0, "maxInstances": null, "retry": false },
+      "callerEvidence": {
+        "direct": ["scripts/e2e-hosted-stripe-checkout.mjs"],
+        "packageCommand": "e2e:hosted-stripe",
+        "packageCommandState": "QUARANTINED_FAIL_CLOSED",
+        "currentApplicationCaller": false
+      },
+      "dataAccess": { "reads": ["orders", "furniture", "Stripe payment intents/events"], "writes": [] },
+      "protections": ["sandbox project equality", "E2E_PROOF_ENABLED=true", "POST only", "timing-safe E2E_PROOF_TOKEN"],
+      "traffic30d": { "executionIds": 3, "lastExecutionAt": "2026-08-11T17:15:17.605563468Z", "finishedStatusCodes": { "403": 3 } },
+      "decision": "RETIRE_G12_A",
+      "reason": "Preuve diagnostique interdite, desactivee dans le runtime et sans appelant applicatif.",
+      "owner": "G12_A_DIAGNOSTIC_COHORT",
+      "overlap": "NONE_CURRENTLY",
+      "rollbackNow": "Restaurer la commande package depuis le commit G3; Function, endpoint, secrets et IAM restent inchanges.",
+      "g12Prerequisites": ["quiet-window confirmee", "archive deployable par digest", "suppression cible unique", "preuve qu'aucun appelant n'existe"]
+    },
+    {
+      "name": "e2eStripeHardeningProof",
+      "source": "functions/src/commerce/e2eStripeHardeningProof.js",
+      "region": "us-central1",
+      "generation": 1,
+      "runtime": "nodejs22",
+      "revision": "17",
+      "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "buildServiceAccount": "231220287936-compute@developer.gserviceaccount.com",
+      "invokerIam": [{ "role": "roles/cloudfunctions.invoker", "members": ["allUsers"] }],
+      "secrets": [
+        { "name": "STRIPE_SECRET_KEY", "version": "4" },
+        { "name": "E2E_PROOF_TOKEN", "version": "2" }
+      ],
+      "runtimeConfig": { "cpu": "gcf_gen1", "memoryMiB": 512, "timeoutSeconds": 180, "concurrency": 1, "minInstances": 0, "maxInstances": null, "retry": false },
+      "callerEvidence": {
+        "direct": [],
+        "packageCommand": "e2e:refund-stripe",
+        "packageCommandState": "QUARANTINED_FAIL_CLOSED",
+        "currentApplicationCaller": false
+      },
+      "dataAccess": { "reads": ["orders", "furniture", "Stripe objects/events"], "writesIfUncontained": ["orders", "inventory", "Stripe test objects"] },
+      "protections": ["sandbox project equality", "E2E_PROOF_ENABLED=true", "unconditional legacy mutation containment before Stripe client", "POST only", "timing-safe E2E_PROOF_TOKEN"],
+      "traffic30d": { "executionIds": 2, "lastExecutionAt": "2026-08-11T15:48:51.393330Z", "finishedStatusCodes": { "403": 1, "500": 1 }, "status500Classification": "EXPECTED_COMMERCE_READ_ONLY_CONTAINMENT" },
+      "decision": "RETIRE_G12_A",
+      "reason": "Aucun appelant, runtime desactive et mutation legacy rendue impossible avant creation du client Stripe.",
+      "owner": "G12_A_DIAGNOSTIC_COHORT",
+      "overlap": "NONE_CURRENTLY",
+      "rollbackNow": "Restaurer la commande package depuis le commit G3; Function, endpoint, secrets et IAM restent inchanges.",
+      "g12Prerequisites": ["quiet-window confirmee", "archive deployable par digest", "suppression cible unique", "preuve qu'aucun appelant n'existe"]
+    },
+    {
+      "name": "getProductPublicationSessionAdmin",
+      "source": "functions/src/publication/productPublication.js",
+      "region": "europe-west1",
+      "generation": 1,
+      "runtime": "nodejs22",
+      "revision": "4",
+      "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "buildServiceAccount": "231220287936-compute@developer.gserviceaccount.com",
+      "invokerIam": [{ "role": "roles/cloudfunctions.invoker", "members": ["allUsers"] }],
+      "secrets": [],
+      "runtimeConfig": { "cpu": "gcf_gen1", "memoryMiB": 256, "timeoutSeconds": 60, "concurrency": 1, "minInstances": 0, "maxInstances": null, "retry": false },
+      "callerEvidence": { "sourceModule": "src/kit/admin/productPublicationClient.js", "reachableFromAdminForm": false, "currentAdminPath": "createPublishedProductAdmin" },
+      "dataAccess": { "reads": ["product_publication_sessions/{sessionId}"], "writes": [] },
+      "protections": ["callable protocol", "enforceAppCheck", "active strong admin", "owner UID"],
+      "traffic30d": { "executionIds": 0, "lastExecutionAt": null },
+      "decision": "RETIRE_G12_A",
+      "reason": "Client historique non importe par l'UI executable et aucune session durable presente.",
+      "owner": "G12_A_PRODUCT_PUBLICATION_COHORT",
+      "overlap": "ATOMIC_WITH_OTHER_THREE_PUBLICATION_CALLABLES",
+      "rollbackNow": "Aucun changement cloud; conserver module client, source Function et endpoint jusqu'a G12-A.",
+      "g12Prerequisites": ["quiet-window confirmee", "session count zero", "archive deployable par digest", "revue des trois workers Gen2 de session"]
+    },
+    {
+      "name": "reportProductPublicationClientErrorAdmin",
+      "source": "functions/src/publication/productPublication.js",
+      "region": "europe-west1",
+      "generation": 1,
+      "runtime": "nodejs22",
+      "revision": "3",
+      "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "buildServiceAccount": "231220287936-compute@developer.gserviceaccount.com",
+      "invokerIam": [{ "role": "roles/cloudfunctions.invoker", "members": ["allUsers"] }],
+      "secrets": [],
+      "runtimeConfig": { "cpu": "gcf_gen1", "memoryMiB": 256, "timeoutSeconds": 60, "concurrency": 1, "minInstances": 0, "maxInstances": null, "retry": false },
+      "callerEvidence": { "sourceModule": "src/kit/admin/productPublicationClient.js", "reachableFromAdminForm": false, "currentAdminPath": "createPublishedProductAdmin" },
+      "dataAccess": { "reads": ["product_publication_sessions/{sessionId}"], "writes": ["product_publication_sessions/{sessionId}"] },
+      "protections": ["callable protocol", "enforceAppCheck", "active strong admin", "owner UID", "transaction"],
+      "traffic30d": { "executionIds": 15, "lastExecutionAt": "2026-08-11T16:02:20.745562Z", "finishedStatusCodes": { "200": 7, "204": 8 }, "classification": "PREVIOUS_TEST_OR_ROLLOUT_WINDOW_NO_CURRENT_CALLER" },
+      "decision": "RETIRE_G12_A",
+      "reason": "Activite historique anterieure au cutover; client non joignable et collection vide.",
+      "owner": "G12_A_PRODUCT_PUBLICATION_COHORT",
+      "overlap": "ATOMIC_WITH_OTHER_THREE_PUBLICATION_CALLABLES",
+      "rollbackNow": "Aucun changement cloud; conserver module client, source Function et endpoint jusqu'a G12-A.",
+      "g12Prerequisites": ["quiet-window confirmee", "session count zero", "archive deployable par digest", "revue des trois workers Gen2 de session"]
+    },
+    {
+      "name": "retryProductPublicationFinalizationAdmin",
+      "source": "functions/src/publication/productPublication.js",
+      "region": "europe-west1",
+      "generation": 1,
+      "runtime": "nodejs22",
+      "revision": "4",
+      "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "buildServiceAccount": "231220287936-compute@developer.gserviceaccount.com",
+      "invokerIam": [{ "role": "roles/cloudfunctions.invoker", "members": ["allUsers"] }],
+      "secrets": [],
+      "runtimeConfig": { "cpu": "gcf_gen1", "memoryMiB": 512, "timeoutSeconds": 120, "concurrency": 1, "minInstances": 0, "maxInstances": null, "retry": false },
+      "callerEvidence": { "sourceModule": "src/kit/admin/productPublicationClient.js", "reachableFromAdminForm": false, "currentAdminPath": "createPublishedProductAdmin" },
+      "dataAccess": { "reads": ["product_publication_sessions/{sessionId}"], "writes": ["product_publication_sessions/{sessionId}", "furniture", "catalog queues", "media quarantine"] },
+      "protections": ["callable protocol", "enforceAppCheck", "active strong admin", "owner UID", "finalization lease", "commerce command idempotence"],
+      "traffic30d": { "executionIds": 0, "lastExecutionAt": null },
+      "decision": "RETIRE_G12_A",
+      "reason": "Finaliseur historique sans session ni appelant executable.",
+      "owner": "G12_A_PRODUCT_PUBLICATION_COHORT",
+      "overlap": "ATOMIC_WITH_OTHER_THREE_PUBLICATION_CALLABLES",
+      "rollbackNow": "Aucun changement cloud; conserver module client, source Function et endpoint jusqu'a G12-A.",
+      "g12Prerequisites": ["quiet-window confirmee", "session count zero", "archive deployable par digest", "revue des trois workers Gen2 de session"]
+    },
+    {
+      "name": "startProductPublicationAdmin",
+      "source": "functions/src/publication/productPublication.js",
+      "region": "europe-west1",
+      "generation": 1,
+      "runtime": "nodejs22",
+      "revision": "4",
+      "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "buildServiceAccount": "231220287936-compute@developer.gserviceaccount.com",
+      "invokerIam": [{ "role": "roles/cloudfunctions.invoker", "members": ["allUsers"] }],
+      "secrets": [],
+      "runtimeConfig": { "cpu": "gcf_gen1", "memoryMiB": 512, "timeoutSeconds": 120, "concurrency": 1, "minInstances": 0, "maxInstances": null, "retry": false },
+      "callerEvidence": { "sourceModule": "src/kit/admin/productPublicationClient.js", "reachableFromAdminForm": false, "currentAdminPath": "createPublishedProductAdmin" },
+      "dataAccess": { "reads": ["product_publication_sessions/{sessionId}", "furniture"], "writes": ["product_publication_sessions/{sessionId}", "furniture draft command"] },
+      "protections": ["callable protocol", "enforceAppCheck", "active strong admin", "owner UID", "stable command ID", "create-only session"],
+      "traffic30d": { "executionIds": 19, "lastExecutionAt": "2026-08-11T16:07:30.320365Z", "finishedStatusCodes": { "200": 12, "204": 7 }, "classification": "PREVIOUS_TEST_OR_ROLLOUT_WINDOW_NO_CURRENT_CALLER" },
+      "decision": "RETIRE_G12_A",
+      "reason": "Ancien chemin remplace par createPublishedProductAdmin; aucun appelant UI ni session residuelle.",
+      "owner": "G12_A_PRODUCT_PUBLICATION_COHORT",
+      "overlap": "ATOMIC_WITH_OTHER_THREE_PUBLICATION_CALLABLES",
+      "rollbackNow": "Aucun changement cloud; conserver module client, source Function et endpoint jusqu'a G12-A.",
+      "g12Prerequisites": ["quiet-window confirmee", "session count zero", "archive deployable par digest", "revue des trois workers Gen2 de session"]
+    }
+  ],
+  "documentaryDrifts": [
+    {
+      "field": "G0.dataAccess.publicationCallables",
+      "previous": "empty static overapproximation",
+      "resolved": "Exact product_publication_sessions/furniture/catalog/media reads and writes recorded per handler in G3."
+    },
+    {
+      "field": "G0.callers.productPublicationClient",
+      "previous": "module reference treated as active caller",
+      "resolved": "AdminForm imports only cleanup/descriptor/catalog polling exports; the four callable paths are unreachable."
+    },
+    {
+      "field": "G0.target",
+      "previous": "six speculative Gen2 suffix targets",
+      "resolved": "All six classified RETIRE_G12_A; no replacement Gen2 target will be created."
+    },
+    {
+      "field": "G2 existing publication workers",
+      "previous": "KEEP_GEN2",
+      "resolved": "Still retained; G12-A must review processProductPublicationImage, cleanupProductPublicationSessions and reconcileProductPublicationSessions as the same now-orphaned session cohort."
+    },
+    {
+      "field": "local pnpm",
+      "previous": "repository declares 11.7.0",
+      "resolved": "Operator binary observed at 11.19.0; no package installation or lockfile rewrite was performed and G3 tests ran through Node/npm."
+    }
+  ],
+  "rollback": {
+    "g3Local": "Revert only the G3 package-command neutralization commit; cloud and data were not changed.",
+    "cloud": "Not applicable in G3: no Function, IAM, secret, endpoint or data was changed.",
+    "futureG12": "Delete one named target at a time only after an exact deployable archive/digest and quiet-window; redeploy the preserved Gen1 source with the same region, runtime, runtime/build SA, IAM and secret versions if rollback is required."
+  },
+  "forbiddenActionsObserved": {
+    "deployment": false,
+    "cloudDeletion": false,
+    "dataWrite": false,
+    "stripeE2e": false,
+    "refund": false,
+    "restock": false,
+    "production": false
+  }
+}

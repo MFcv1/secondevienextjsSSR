@@ -986,6 +986,12 @@ controle 295/295/295 valide/observe, sans appel signe ni ecriture. Les 13/13
 Gen2 initiales sont stabilisees; le manifeste de cloture G2-B porte la reprise
 G3 sans retrait cloud automatique.
 
+G3 classe `e2eCheckoutProof`, `e2eStripeHardeningProof` et les quatre callables
+historiques de `productPublicationClient` en `RETIRE_G12_A`. L'admin executable
+utilise `createPublishedProductAdmin`, aucune session historique ne subsiste et
+les deux commandes package Stripe sont fail-closed. Les sources, endpoints,
+IAM et secrets restent conserves jusqu'a G12; G4 analytics est la reprise.
+
 | Domaine | Exports |
 | --- | --- |
 | commerce | `createOrder`, `stripeWebhook`, `stripeConnectWebhook`, `cancelOrderClient`, `getOrderStatusClient` |

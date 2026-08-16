@@ -2,7 +2,7 @@
 
 Derniere mise a jour: 2026-08-16
 
-Statut: `CENTRE_DE_SUIVI_ACTIF - G1_TERMINEE - G2_TERMINEE - G3_A_FAIRE`
+Statut: `CENTRE_DE_SUIVI_ACTIF - G1_TERMINEE - G2_TERMINEE - G3_TERMINEE - G4_A_FAIRE`
 
 Proprietaire: mainteneur Seconde Vie et agent d'execution des phases validees
 
@@ -90,7 +90,7 @@ Valeurs autorisees:
 | G0 | baseline 152/157, manifeste, hold Meta et wrapper de deploiement | `TERMINEE` | projet explicite, zero ecart, deploy global fail-closed, cinq Instagram en hold | manifestes `apphostingaudit/manifests/functions-*-g0.json`, journal section 8 |
 | G1 | alertes, DR/restore, sante/incident et preuve des workers | `TERMINEE` | quatre P0 fermes; Stripe test borne uniquement | manifestes `functions-gen2-g1-*.json`, journal G1 |
 | G2 | socle Gen2 puis stabilisation ciblee des 13 Gen2 actuelles | `TERMINEE` | 13/13 Gen2 deployees et observees, inventaire sans drift, rollback conserve | `functions-gen2-g2b-closeout.json` |
-| G3 | decisions retrait/migration legacy, E2E, maintenance, publication historique | `A_FAIRE` | decision et observation reversibles; aucune suppression prematuree | a renseigner |
+| G3 | decisions retrait/migration legacy, E2E, maintenance, publication historique | `TERMINEE` | six retraits differes G12-A, commandes Stripe fail-closed, zero suppression | `functions-gen2-g3-decisions.json` |
 | G4 | analytics | `A_FAIRE` | parite, App Check, caches concurrents, 48 h observees | a renseigner |
 | G5 | Auth callables, OTP et passkeys | `A_FAIRE` | Auth complete, parcours sandbox et rollback client | a renseigner |
 | G6 | catalogue admin, devis, newsletter, e-mail et factures | `A_FAIRE` | writers/readers et trigger devis sans double effet | a renseigner |
@@ -120,8 +120,8 @@ pas une presentation cliente du sandbox en Stripe test, bornee et surveillee.
 Les P1/P2 ne doivent pas retarder la demo par eux-memes.
 
 Un statut partiel dans cette section ne signifie pas qu'une phase ulterieure a
-commence: seul le journal d'execution fait foi. G1 est fermee; G2-A local est
-la prochaine phase et G2-B requiert toujours sa gate cloud distincte.
+commence: seul le journal d'execution fait foi. G1, G2 et G3 sont fermees; la
+prochaine phase est G4 analytics.
 
 ## 7. Fiche obligatoire pour chaque vague
 
@@ -286,6 +286,28 @@ cibles et porte le verdict
 `deploymentAllowed: false`. G2-A est donc fermee localement; la prochaine
 action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
 
+### G3 - decisions legacy sans retrait cloud
+
+- projet effectif: `secondevienextjsssr` sur toutes les lectures; projet
+  gcloud global `vibefx-v2` ignore par garde explicite;
+- six Functions Gen1 actives reconciliees avec runtime, revision, IAM,
+  compte runtime/build, secrets et 30 jours de logs;
+- decision: six `RETIRE_G12_A`, zero cible Gen2 a creer et zero suppression;
+- publication historique: aucun des quatre appels n'est importe par
+  `AdminForm`, qui utilise `createPublishedProductAdmin`; collection
+  `product_publication_sessions` a zero document;
+- Stripe: `E2E_PROOF_ENABLED` absent, preuves desactivees; commandes
+  `e2e:hosted-stripe` et `e2e:refund-stripe` remplacees par un refus
+  fail-closed, scripts historiques conserves;
+- activite: aucune execution apres le 11 aout; le 500 de
+  `e2eStripeHardeningProof` est le containment `COMMERCE_READ_ONLY` attendu;
+- rollback G3: revert local de la neutralisation package; aucune restauration
+  cloud ou donnees car aucune ecriture cloud n'a eu lieu;
+- manifeste: `manifests/functions-gen2-g3-decisions.json`;
+- tests: `test:functions-g3` 4/4, `test:functions-g0` 21/21,
+  `test:functions-g2a` 26/26, lint Functions et inventaire
+  157/152/139/13 + 8 schedulers/2 queues/7 Eventarc verts.
+
 ## 9. Conditions d'arret immediat
 
 Arreter la vague au premier:
@@ -307,8 +329,8 @@ Arreter la vague au premier:
 
 ## 10. Point de reprise
 
-La reprise courante commence par la classification read-only G3 dans
+La reprise courante commence par le preflight G4 analytics dans
 [AUDIT_MIGRATION_FUNCTIONS_GEN2.md](AUDIT_MIGRATION_FUNCTIONS_GEN2.md), apres
 lecture de la derniere entree du Journal et regeneration read-only de la
-baseline. G3 decide conserver, migrer ou retirer chaque legacy sans suppression
-cloud; les retraits n'appartiennent toujours qu'a G12-A apres observation.
+baseline. Les six retraits decides en G3 restent differes a G12-A; aucun
+nettoyage cloud ne doit etre anticipe.
