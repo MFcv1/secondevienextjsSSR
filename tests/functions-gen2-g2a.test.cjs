@@ -575,6 +575,12 @@ test('le modele social legacy est absent de tout code Functions executable', () 
     assert.doesNotMatch(executableSource, /\b(?:likes|comments|likeCount|shareCount)\b/);
 });
 
+test('G2-B publication cleanup: la suppression exige la version Firestore observee', () => {
+    const source = fs.readFileSync(path.join(ROOT, 'functions/src/publication/productPublication.js'), 'utf8');
+    assert.match(source, /sessionSnapshot\.ref\.delete\(\{\s*lastUpdateTime:\s*sessionSnapshot\.updateTime\s*\}\)/);
+    assert.match(source, /product_publication_cleanup_concurrent_update/);
+});
+
 test('G2-B GC catalogue: aucune suppression planifiee sans kill-switch explicite', () => {
     const source = fs.readFileSync(path.join(ROOT, 'functions/src/catalog/mediaGarbageCollection.js'), 'utf8');
     const logSource = fs.readFileSync(path.join(ROOT, 'functions/src/catalog/structuredLog.js'), 'utf8');

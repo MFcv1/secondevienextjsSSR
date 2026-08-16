@@ -1807,6 +1807,12 @@ code Functions executable, notamment des outils de maintenance hard-stoppes.
 Les noms restent uniquement dans les manifestes et paragraphes historiques
 necessaires pour prouver le drift de la revision 23.
 
+Le preflight G2-B8 du scheduler de cleanup retrouve zero document dans
+`product_publication_sessions`, dont zero expire. L'ancienne suppression sans
+precondition est durcie localement: le delete exige l'`updateTime` lu par la
+requete et une mise a jour concurrente conserve la session avec un warning
+structure. Aucun cleanup n'est invoque manuellement.
+
 #### Execution G2-B7 - worker image de publication cible unique
 
 `processProductPublicationImage` reste seul proprietaire du trigger Storage

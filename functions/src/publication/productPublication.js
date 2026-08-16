@@ -575,7 +575,17 @@ const cleanupProductPublicationSessions = onSchedule({
             productId: sessionSnapshot.data()?.productId || null
         });
         queued += result.queued;
-        await sessionSnapshot.ref.delete();
+        try {
+            await sessionSnapshot.ref.delete({ lastUpdateTime: sessionSnapshot.updateTime });
+        } catch (error) {
+            if (error?.code === 9 || error?.code === 'failed-precondition') {
+                logger.warn('product_publication_cleanup_concurrent_update', {
+                    sessionId: sessionSnapshot.id
+                });
+                continue;
+            }
+            throw error;
+        }
     }
     return { inspected: expired.size, queued };
 });

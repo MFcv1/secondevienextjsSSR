@@ -231,6 +231,28 @@ const GCLOUD_GEN2_TARGETS = Object.freeze({
     minInstances: '0',
     maxInstances: '4',
     ingressSettings: 'all'
+  }),
+  cleanupProductPublicationSessions: Object.freeze({
+    triggerType: 'http-scheduler',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'cleanupProductPublicationSessions',
+    functionUrl: 'https://europe-west1-secondevienextjsssr.cloudfunctions.net/cleanupProductPublicationSessions',
+    schedulerJob: 'firebase-schedule-cleanupProductPublicationSessions-europe-west1',
+    schedule: 'every 24 hours',
+    timeZone: 'UTC',
+    schedulerServiceAccount: 'product-publication-worker@secondevienextjsssr.iam.gserviceaccount.com',
+    schedulerAttemptDeadline: '540s',
+    expectedSchedulerAttemptDeadline: '540s',
+    runtimeServiceAccount: 'product-publication-worker@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '512Mi',
+    cpu: '1',
+    timeout: '540s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all'
   })
 });
 const G2B_ROLLBACKS = Object.freeze({
@@ -315,6 +337,21 @@ const G2B_ROLLBACKS = Object.freeze({
     concurrency: '4',
     maxInstances: '20',
     retry: true
+  }),
+  cleanupProductPublicationSessions: Object.freeze({
+    approval: 'G2B_ROLLBACK_CLEANUP_PRODUCT_PUBLICATION_SESSIONS',
+    sourceRevision: 'cleanupproductpublicationsessions-00002-qih',
+    source: 'gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/cleanupProductPublicationSessions/cleanupproductpublicationsessions-00002-qih-function-source.zip',
+    sourceGeneration: '1786897745771107',
+    sourceSize: '397275',
+    sourceSha256: 'bce7ff79ecfc2308ae744ee61cb889cd02fba781b466d16a383fa610b7d91880',
+    runtimeServiceAccount: '231220287936-compute@developer.gserviceaccount.com',
+    memory: '512Mi',
+    timeout: '540s',
+    concurrency: '80',
+    maxInstances: '20',
+    schedulerAttemptDeadline: '540s',
+    retry: false
   })
 });
 

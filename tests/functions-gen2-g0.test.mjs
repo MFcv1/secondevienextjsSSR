@@ -402,6 +402,23 @@ test('le transport gcloud Gen2 est limite au premier lot stats et explicite IAM 
     '--min-instances=0', '--max-instances=4', '--retry'
   ]) assert.ok(imageArgs.includes(expected), expected);
   assert.equal(imageArgs.some((arg) => arg.startsWith('--trigger-event-filters-path-pattern=')), false);
+
+  const publicationCleanupRequest = validate({
+    ...validationArgs({ allowlist: 'cleanupProductPublicationSessions', transport: 'gcloud-gen2' })
+  });
+  const publicationCleanupArgs = buildGcloudGen2DeployArgs(publicationCleanupRequest);
+  for (const expected of [
+    '--entry-point=cleanupProductPublicationSessions', '--trigger-http',
+    '--run-service-account=product-publication-worker@secondevienextjsssr.iam.gserviceaccount.com',
+    '--memory=512Mi', '--timeout=540s', '--concurrency=1', '--max-instances=1'
+  ]) assert.ok(publicationCleanupArgs.includes(expected), expected);
+  const publicationCleanupJobArgs = buildGcloudSchedulerUpdateArgs(publicationCleanupRequest);
+  for (const expected of [
+    'firebase-schedule-cleanupProductPublicationSessions-europe-west1',
+    '--schedule=every 24 hours',
+    '--oidc-service-account-email=product-publication-worker@secondevienextjsssr.iam.gserviceaccount.com',
+    '--attempt-deadline=540s', '--max-retry-attempts=0'
+  ]) assert.ok(publicationCleanupJobArgs.includes(expected), expected);
 });
 
 test('le rollback G2-B est borne a la revision et a l archive source preservee', () => {
@@ -530,6 +547,25 @@ test('le rollback G2-B est borne a la revision et a l archive source preservee',
     '--concurrency=4', '--max-instances=20', '--retry',
     '--update-labels=deployment-tool=codex-targeted,migration-rollback-source=processproductpublicationimage-00003-por'
   ]) assert.ok(imageArgs.includes(expected), expected);
+
+  const publicationCleanupRequest = validate({
+    ...validationArgs({
+      allowlist: 'cleanupProductPublicationSessions', transport: 'gcloud-gen2-rollback',
+      approval: 'G2B_ROLLBACK_CLEANUP_PRODUCT_PUBLICATION_SESSIONS',
+      'expected-revision': 'cleanupproductpublicationsessions-00003-abc',
+      'rollback-source-sha256': 'bce7ff79ecfc2308ae744ee61cb889cd02fba781b466d16a383fa610b7d91880'
+    })
+  });
+  const publicationCleanupArgs = buildGcloudGen2RollbackArgs(publicationCleanupRequest);
+  for (const expected of [
+    '--source=gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/cleanupProductPublicationSessions/cleanupproductpublicationsessions-00002-qih-function-source.zip',
+    '--trigger-http',
+    '--run-service-account=231220287936-compute@developer.gserviceaccount.com',
+    '--memory=512Mi', '--timeout=540s', '--concurrency=80', '--max-instances=20',
+    '--update-labels=deployment-tool=codex-targeted,migration-rollback-source=cleanupproductpublicationsessions-00002-qih'
+  ]) assert.ok(publicationCleanupArgs.includes(expected), expected);
+  const publicationCleanupJobArgs = buildGcloudSchedulerUpdateArgs(publicationCleanupRequest, { rollback: true });
+  assert.ok(publicationCleanupJobArgs.includes('--attempt-deadline=540s'));
 });
 
 test('les trois workers G1 epinglent runtime, secrets et limites explicites', () => {
