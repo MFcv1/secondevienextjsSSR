@@ -1694,7 +1694,7 @@ porte aucune erreur ni 5xx, IAM est encore exacte, la sante reste `healthy`,
 le controle reste publie 295/295 et aucun ledger/build n'a derive. Verdict:
 `G2B2_COMPLETE`.
 
-#### Preflight G2-B3 - scheduler catalogue cible unique
+#### Execution G2-B3 - scheduler catalogue cible unique
 
 Le preflight de `catalogReconciler` a resolu un drift entre le code/cloud et le
 manifeste G2-A. Le reconciler peut reparer le pointeur Storage `previous`
@@ -1703,7 +1703,7 @@ Viewer, ne pouvait pas executer cette branche. La source cible desormais
 `catalog-builder`, deja Object Admin sur le seul bucket catalogue, avec 512
 MiB et 540 s comme le plan G2-A. Le job conserve son identite OIDC distincte
 `catalog-enqueuer`, sa cadence cinq minutes UTC et zero retry; son deadline
-sera aligne a 540 s dans la meme operation ciblee.
+a ete aligne a 540 s dans la meme operation ciblee.
 
 Les conflits transactionnels historiques `RECONCILE_STATE_ADVANCED` ont
 produit des 500 jusqu'au 8 aout, puis aucun sur la fenetre recente. Ils sont
@@ -1711,9 +1711,19 @@ maintenant repris en interne au plus trois fois, sans rendre Scheduler
 retryable. Le controle catalogue est stable en revision 295, sans dirty,
 lease ou erreur; `current`, `previous` et `last-known-good` sont verifies avec
 leurs generations et digests. La revision 9 est archivee sous temporary hold
-dans `g2b-rollback/catalogReconciler/`, sans suppression. Verdict pre-deploy:
-`G2B_CATALOG_RECONCILER_PREFLIGHT_READY`; le rollout et sa quiet-window restent
-a fermer avant `G2B3_COMPLETE`.
+dans `g2b-rollback/catalogReconciler/`, sans suppression.
+
+Le commit `66536d468e92c990387d079aeac8742e559bd389` a deploye uniquement
+`catalogReconciler` en revision `catalogreconciler-00010-dob`, avec build
+dedie reussi, CPU/concurrence/max 1, min 0, 512 MiB et timeout 540 s. Le job
+existant est reste `ENABLED`, cinq minutes UTC, OIDC `catalog-enqueuer`, zero
+retry et deadline 540 s. Deux executions naturelles ont retourne HTTP 200 en
+2,618 s puis 1,169 s avec resultat `healthy`, sans 5xx, retry interne, lease,
+ecriture ou drift: controle 295/295/295 et hash public inchanges. La
+quiet-window couvre 584 secondes. Les inventaires restent 157/152, 139 Gen1,
+13 Gen2, huit schedulers, deux queues et sept Eventarc. Manifestes:
+`functions-gen2-g2b-catalog-reconciler-{reconciliation,iam,inventory,rollout}.json`,
+scelles par leur manifeste de digests. Verdict: `G2B3_COMPLETE`.
 
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 

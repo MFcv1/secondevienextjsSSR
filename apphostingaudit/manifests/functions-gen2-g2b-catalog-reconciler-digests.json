@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "target": "catalogReconciler",
+  "sourceCommit": "66536d468e92c990387d079aeac8742e559bd389",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g2b-catalog-reconciler-reconciliation.json": "e1b2d822bb43549a6cc35074ac6c0678e4eee5cb49ce4637af700b14f917857a",
+    "apphostingaudit/manifests/functions-gen2-g2b-catalog-reconciler-iam.json": "033168b44cfb2b3e2307ba5df9b64c6d708a1afa89b9c4574da99a6fb626869a",
+    "apphostingaudit/manifests/functions-gen2-g2b-catalog-reconciler-inventory.json": "5bf37c2a9c3eb96379eed77e0f2259b62502bdbdc46ad16c1e2ab8509b8f47d1",
+    "apphostingaudit/manifests/functions-gen2-g2b-catalog-reconciler-rollout.json": "0254ebe66bad312858138c1d7efa8d14f854104a9fe6ae881c63eeabe40249cc"
+  },
+  "rollbackSource": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/catalogReconciler/catalogreconciler-00009-luf-function-source.zip",
+    "generation": "1786888563692570",
+    "size": "345983",
+    "sha256": "fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92",
+    "temporaryHold": true
+  }
+}

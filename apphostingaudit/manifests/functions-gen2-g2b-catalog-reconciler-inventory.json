@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T14:18:26Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "branch": "codex/functions-gen2-migration",
+  "sourceCommit": "66536d468e92c990387d079aeac8742e559bd389",
+  "operator": "matthis.fradin2@gmail.com",
+  "tools": {
+    "node": "v22.22.3",
+    "pnpm": "11.19.0",
+    "firebaseCli": "15.26.0",
+    "globalGcloudProject": "vibefx-v2",
+    "everyCloudCommandUsedExplicitProject": "secondevienextjsssr"
+  },
+  "source": {
+    "exports": 157,
+    "uniqueExports": 157
+  },
+  "cloud": {
+    "functions": 152,
+    "gen1": 139,
+    "gen2": 13,
+    "schedulers": 8,
+    "enabledSchedulers": 8,
+    "queues": 2,
+    "runningQueues": 2,
+    "eventarc": 7
+  },
+  "target": {
+    "name": "catalogReconciler",
+    "generation": 2,
+    "state": "ACTIVE",
+    "region": "europe-west1",
+    "runtime": "nodejs22",
+    "codebase": "main",
+    "runtimeServiceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "schedulerServiceAccount": "catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com",
+    "uri": "https://europe-west1-secondevienextjsssr.cloudfunctions.net/catalogReconciler"
+  },
+  "classification": {
+    "decision": "KEEP_GEN2_STABILIZE_IN_PLACE",
+    "wave": "G2-B_ONE_TARGET_AT_A_TIME",
+    "metaHoldUnchanged": 5,
+    "authGen1ExceptionsUnchanged": 3
+  },
+  "verdict": "SOURCE_CLOUD_PLATFORM_COUNTS_RECONCILED"
+}

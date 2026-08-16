@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T14:18:26Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "target": "catalogReconciler",
+  "deployment": {
+    "deployed": true,
+    "sourceCommit": "66536d468e92c990387d079aeac8742e559bd389",
+    "transport": "gcloud-gen2 via fail-closed targeted wrapper",
+    "allowlist": [
+      "catalogReconciler"
+    ],
+    "revision": "catalogreconciler-00010-dob",
+    "build": "a6ba1f6e-b211-463b-ab92-68a7ea8b6b3e",
+    "buildStatus": "SUCCESS",
+    "sourceGeneration": "1786889164515403",
+    "state": "ACTIVE",
+    "trafficPercent": 100,
+    "labels": {
+      "deployment-scheduled": "true",
+      "migration-source-commit": "66536d468e92c990387d079aeac8742e559bd389"
+    }
+  },
+  "runtime": {
+    "generation": 2,
+    "region": "europe-west1",
+    "runtime": "nodejs22",
+    "runtimeServiceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "cpu": 1,
+    "memoryMiB": 512,
+    "timeoutSeconds": 540,
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "ingress": "ALLOW_ALL",
+    "publicInvoker": false
+  },
+  "scheduler": {
+    "name": "firebase-schedule-catalogReconciler-europe-west1",
+    "state": "ENABLED",
+    "schedule": "every 5 minutes",
+    "timeZone": "UTC",
+    "method": "POST",
+    "uri": "https://europe-west1-secondevienextjsssr.cloudfunctions.net/catalogReconciler",
+    "oidcServiceAccount": "catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com",
+    "oidcAudience": "https://europe-west1-secondevienextjsssr.cloudfunctions.net/catalogReconciler",
+    "attemptDeadlineSeconds": 540,
+    "retryMaxAttemptsEffective": 0
+  },
+  "driftsResolved": [
+    "Runtime changed from catalog-enqueuer/Object Viewer to catalog-builder/Object Admin because rollback recovery can rewrite the previous pointer.",
+    "Function memory/timeout and Scheduler attempt deadline aligned from 256 MiB/120 s/180 s to the G2-A plan at 512 MiB/540 s/540 s.",
+    "RECONCILE_STATE_ADVANCED is retried internally at most three times; Scheduler retry remains zero."
+  ],
+  "quietWindow": {
+    "start": "2026-08-16T14:07:21.943228178Z",
+    "end": "2026-08-16T14:17:05.629782Z",
+    "durationSeconds": 584,
+    "naturalSchedulerAttempts": [
+      {
+        "timestamp": "2026-08-16T14:12:00.885612Z",
+        "httpStatus": 200,
+        "latencySeconds": 2.618388279,
+        "result": "healthy"
+      },
+      {
+        "timestamp": "2026-08-16T14:17:04.450571Z",
+        "httpStatus": 200,
+        "latencySeconds": 1.169134855,
+        "result": "healthy"
+      }
+    ],
+    "errors": 0,
+    "http5xx": 0,
+    "stateAdvancedRetries": 0
+  },
+  "dataAfter": {
+    "catalogControlStateVersion": 14068,
+    "mode": "active",
+    "dirty": false,
+    "buildState": "published",
+    "desiredRevision": 295,
+    "publishedRevision": 295,
+    "revalidatedRevision": 295,
+    "activeLease": false,
+    "lastErrorPresent": false,
+    "pendingEventLedgers": 0,
+    "unresolvedBuildsAheadOfPublished": 0,
+    "publicCatalogRevision": 295,
+    "publicAggregateSha256": "5b5e0724dd0fe73299d939286f96878962acc2d752edc200dc23e550513367c1",
+    "writesCausedByObservation": 0
+  },
+  "iam": {
+    "verdict": "G2B_CATALOG_RECONCILER_IAM_VERIFIED",
+    "runtimeRolesExact": true,
+    "runtimeCatalogObjectAdmin": true,
+    "schedulerRunInvokerTargetOnly": true,
+    "buildRolesExact": true,
+    "publicInvoker": false,
+    "userManagedKeys": 0
+  },
+  "rollback": {
+    "approval": "G2B_ROLLBACK_CATALOG_RECONCILER",
+    "expectedCurrentRevision": "catalogreconciler-00010-dob",
+    "sourceRevision": "catalogreconciler-00009-luf",
+    "source": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/catalogReconciler/catalogreconciler-00009-luf-function-source.zip",
+    "sourceGeneration": "1786888563692570",
+    "sourceSize": "345983",
+    "sourceSha256": "fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92",
+    "temporaryHold": true,
+    "restoredRuntimeServiceAccount": "catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com",
+    "restoredMemoryMiB": 256,
+    "restoredTimeoutSeconds": 120,
+    "restoredConcurrency": 80,
+    "restoredMaxInstances": 20,
+    "restoredSchedulerAttemptDeadlineSeconds": 180,
+    "preserved": [
+      "endpoint",
+      "scheduler cadence and OIDC identity",
+      "IAM grants",
+      "catalog data and pointers",
+      "logs and alerts"
+    ],
+    "dataDeletion": false
+  },
+  "inventory": {
+    "sourceExports": 157,
+    "cloudFunctions": 152,
+    "cloudGen1": 139,
+    "cloudGen2": 13,
+    "enabledSchedulers": 8,
+    "runningQueues": 2,
+    "eventarc": 7
+  },
+  "verdict": "G2B3_COMPLETE"
+}
