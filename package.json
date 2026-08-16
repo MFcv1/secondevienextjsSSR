@@ -18,6 +18,7 @@
     "start:prod": "node scripts/with-env.mjs .env.production next start",
     "dashboard": "node deploy/dashboard.mjs",
     "functions:deploy": "node scripts/deploy-functions-targeted.mjs",
+    "apphosting:deploy:sandbox": "node scripts/firebase-apphosting-sandbox.cjs deploy --only apphosting:secondevie-next-sandbox --project secondevienextjsssr --non-interactive",
     "functions:inventory:g0": "node scripts/functions-gen2-inventory.mjs",
     "functions:audit:g1": "node scripts/with-env.mjs .env.sandbox node scripts/audit-functions-gen2-g1.mjs --project=secondevienextjsssr --env=sandbox",
     "functions:prove-reservation-expiry:g1": "node scripts/with-env.mjs .env.sandbox node scripts/prove-commerce-reservation-expiry-g1.mjs --project=secondevienextjsssr --env=sandbox",

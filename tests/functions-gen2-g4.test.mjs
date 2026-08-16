@@ -145,3 +145,21 @@ test('la configuration IAM G4 est bornee, sans secret ni cle utilisateur', () =>
   assert.equal(iam.userManagedKeyCount, 0);
   assert.equal(iam.secretAccessor, false);
 });
+
+test('le lanceur App Hosting de cutover est borne au sandbox et ne persiste aucun jeton', () => {
+  const source = read('scripts/firebase-apphosting-sandbox.cjs');
+  for (const expected of [
+    /PROJECT = 'secondevienextjsssr'/,
+    /BACKEND = 'secondevie-next-sandbox'/,
+    /OPERATOR = 'matthis\.fradin2@gmail\.com'/,
+    /setDefaultResultOrder\('ipv4first'\)/,
+    /APPHOSTING_SANDBOX_\$\{code\}/,
+    /COMMAND_NOT_ALLOWLISTED/,
+    /PROJECT_MISMATCH/,
+    /OPERATOR_MISMATCH/,
+    /auth', 'print-access-token'/,
+    /setAccessToken\(token\)/,
+    /gcloud-access-token-preloaded-in-memory/
+  ]) assert.match(source, expected);
+  assert.doesNotMatch(source, /writeFile|appendFile|console\.log\(token\)|process\.env\.[A-Z_]+\s*=\s*token/);
+});
