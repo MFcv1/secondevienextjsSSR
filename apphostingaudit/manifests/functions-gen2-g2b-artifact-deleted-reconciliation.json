@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T14:50:31Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "mode": "read-only",
+  "target": "onArtifactDeleted",
+  "cloudBaseline": {
+    "revision": "onartifactdeleted-00023-juh",
+    "state": "ACTIVE",
+    "region": "europe-west1",
+    "runtime": "nodejs22",
+    "runtimeServiceAccount": "231220287936-compute@developer.gserviceaccount.com",
+    "buildServiceAccount": "231220287936-compute@developer.gserviceaccount.com",
+    "triggerServiceAccount": "231220287936-compute@developer.gserviceaccount.com",
+    "eventType": "google.cloud.firestore.document.v1.deleted",
+    "documentPattern": "artifacts/{appId}/public/data/{collection}/{docId}",
+    "triggerLocation": "eur3",
+    "retry": false,
+    "cpu": 1,
+    "memoryMiB": 256,
+    "timeoutSeconds": 300,
+    "concurrency": 80,
+    "minInstances": 0,
+    "maxInstances": 20
+  },
+  "sourceDrift": {
+    "cloudRevisionDeletesSocialSubcollections": true,
+    "localSourceDeletesSocialSubcollections": false,
+    "cloudDeletionLogsSince2026_08_01": 0,
+    "resolution": "Deploy the non-destructive local source. Preserve the old source under hold for forensic evidence only; prohibit it as rollback input.",
+    "unsafeForensicArchive": {
+      "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onArtifactDeleted/unsafe-cloud-revision-00023-juh-function-source.zip",
+      "generation": "1786891719760934",
+      "size": "345983",
+      "sha256": "fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92",
+      "temporaryHold": true,
+      "deployable": false
+    }
+  },
+  "desired": {
+    "runtimeServiceAccount": "catalog-media-enqueuer@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "triggerServiceAccount": "functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com",
+    "retry": true,
+    "cpu": 1,
+    "memoryMiB": 256,
+    "timeoutSeconds": 300,
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1
+  },
+  "data": {
+    "ledgerCollection": "sys_catalog_media_gc",
+    "ledgerDocuments": 672,
+    "states": {
+      "pending": 672
+    },
+    "eligibleForGcNow": 0,
+    "allowedWrites": [
+      "sys_catalog_media_gc"
+    ],
+    "forbiddenWrites": [
+      "likes",
+      "comments",
+      "Storage objects"
+    ],
+    "probe": "Use a valid authenticated CloudEvent in a non-secondevie appId; handler returns before reading event data or writing."
+  },
+  "historicalHealth": {
+    "since": "2026-08-01T00:00:00Z",
+    "requests": 31,
+    "http200": 31,
+    "http5xx": 0,
+    "subcollectionDeletionLogs": 0
+  },
+  "idempotence": "media path hash plus Storage generation inside a Firestore transaction",
+  "blockers": [],
+  "deploymentAllowed": false,
+  "verdict": "G2B_ARTIFACT_DELETED_PREFLIGHT_READY_WITH_SAFE_ROLLBACK"
+}

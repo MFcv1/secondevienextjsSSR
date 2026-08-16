@@ -1773,6 +1773,23 @@ retourne HTTP 204 en 6 ms. Le ledger reste strictement a 672 documents
 aucune erreur ni 5xx supplementaire, drift ledger, IAM ou trigger n'est
 observe. Verdict: `G2B5_COMPLETE`.
 
+#### Preflight G2-B6 - trigger artefact delete cible unique
+
+`onArtifactDeleted` presente un drift fonctionnel important: la revision cloud
+23 conserve encore l'ancien effacement par lots des sous-collections `likes`
+et `comments`, alors que la source locale les conserve et n'ecrit plus que le
+ledger `sys_catalog_media_gc`. Les 31 requetes observees depuis le 1er aout
+sont HTTP 200 et aucun log ne prouve une suppression effective, mais ce code
+historique reste incompatible avec les preconditions destructives du chantier.
+
+L'archive cloud historique est donc placee sous temporary hold comme preuve
+forensique et explicitement interdite au rollback. Le rollback autorise utilise
+le bundle source sur et deja deploye avec `onArtifactUpdated`, lui aussi sous
+hold; il peut restaurer concurrence 80, max 20 et retry off sans jamais
+reactiver l'effacement social. Le runtime, le build, Object Viewer et Eventarc
+sont dedies, sans cle ni invoker public. Les 672 intents restent `pending` et
+zero est eligible. Verdict: `G2B_ARTIFACT_DELETED_PREFLIGHT_READY_WITH_SAFE_ROLLBACK`.
+
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
 1. deployer une seule des treize cibles a la fois, depuis l'allowlist G0;

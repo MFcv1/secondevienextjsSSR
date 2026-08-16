@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T14:50:31Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "target": "onArtifactDeleted",
+  "mode": "verify-and-bind-target-only",
+  "changes": [
+    "reused the keyless catalog-media-enqueuer runtime identity",
+    "verified exact runtime project roles",
+    "verified Object Viewer on only the product media bucket",
+    "verified operator ActAs on only the runtime identity",
+    "granted shared Eventarc identity Run Invoker on only onartifactdeleted"
+  ],
+  "runtimeProjectRoles": [
+    "roles/datastore.user",
+    "roles/logging.logWriter",
+    "roles/serviceusage.serviceUsageConsumer"
+  ],
+  "resourceRoles": {
+    "runtimeMediaBucket": "roles/storage.objectViewer",
+    "triggerTargetService": "roles/run.invoker",
+    "buildArtifactRepository": "roles/artifactregistry.writer",
+    "buildSourceBuckets": "roles/storage.objectViewer"
+  },
+  "checks": {
+    "runtimeRolesExact": true,
+    "runtimeActAs": true,
+    "runtimeMediaBucketViewer": true,
+    "triggerEventarcReceiver": true,
+    "triggerRunInvokerTargetOnly": true,
+    "buildRolesExact": true,
+    "publicInvoker": false,
+    "userManagedKeys": 0,
+    "defaultComputeOrAppspotUsedAfterRollout": false
+  },
+  "rollback": "Retain dedicated runtime/build/trigger IAM during safe infrastructure rollback; remove nothing before G12-B.",
+  "verdict": "G2B_ARTIFACT_DELETED_IAM_VERIFIED"
+}

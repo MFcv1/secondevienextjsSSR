@@ -188,6 +188,27 @@ const GCLOUD_GEN2_TARGETS = Object.freeze({
     minInstances: '0',
     maxInstances: '1',
     ingressSettings: 'all'
+  }),
+  onArtifactDeleted: Object.freeze({
+    triggerType: 'event',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'onArtifactDeleted',
+    eventType: 'google.cloud.firestore.document.v1.deleted',
+    eventFilters: 'type=google.cloud.firestore.document.v1.deleted,database=(default),namespace=(default)',
+    documentPathPattern: 'artifacts/{appId}/public/data/{collection}/{docId}',
+    eventPathPattern: 'document=artifacts/{appId}/public/data/{collection}/{docId}',
+    triggerLocation: 'eur3',
+    triggerServiceAccount: 'functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com',
+    runtimeServiceAccount: 'catalog-media-enqueuer@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '256Mi',
+    cpu: '1',
+    timeout: '300s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all'
   })
 });
 const G2B_ROLLBACKS = Object.freeze({
@@ -247,6 +268,17 @@ const G2B_ROLLBACKS = Object.freeze({
     sourceGeneration: '1786890722830853',
     sourceSize: '345983',
     sourceSha256: 'fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92',
+    concurrency: '80',
+    maxInstances: '20',
+    retry: false
+  }),
+  onArtifactDeleted: Object.freeze({
+    approval: 'G2B_ROLLBACK_ON_ARTIFACT_DELETED_SAFE_INFRA_ONLY',
+    sourceRevision: 'safe-baseline-d385c3c',
+    source: 'gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onArtifactDeleted/safe-baseline-d385c3c-function-source.zip',
+    sourceGeneration: '1786891730471054',
+    sourceSize: '373502',
+    sourceSha256: '15f6b946217a9b90a967abc9214bff741e8b8b6cd5b5be5601080ed525afc1bf',
     concurrency: '80',
     maxInstances: '20',
     retry: false

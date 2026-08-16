@@ -376,6 +376,18 @@ test('le transport gcloud Gen2 est limite au premier lot stats et explicite IAM 
     '--run-service-account=catalog-media-enqueuer@secondevienextjsssr.iam.gserviceaccount.com',
     '--memory=256Mi', '--timeout=300s', '--concurrency=1', '--max-instances=1', '--retry'
   ]) assert.ok(artifactArgs.includes(expected), expected);
+  const artifactDeleteRequest = validate({
+    ...validationArgs({ allowlist: 'onArtifactDeleted', transport: 'gcloud-gen2' })
+  });
+  const artifactDeleteArgs = buildGcloudGen2DeployArgs(artifactDeleteRequest);
+  for (const expected of [
+    '--entry-point=onArtifactDeleted',
+    '--trigger-event-filters=type=google.cloud.firestore.document.v1.deleted,database=(default),namespace=(default)',
+    '--trigger-event-filters-path-pattern=document=artifacts/{appId}/public/data/{collection}/{docId}',
+    '--trigger-service-account=functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com',
+    '--run-service-account=catalog-media-enqueuer@secondevienextjsssr.iam.gserviceaccount.com',
+    '--memory=256Mi', '--timeout=300s', '--concurrency=1', '--max-instances=1', '--retry'
+  ]) assert.ok(artifactDeleteArgs.includes(expected), expected);
 });
 
 test('le rollback G2-B est borne a la revision et a l archive source preservee', () => {
@@ -473,6 +485,22 @@ test('le rollback G2-B est borne a la revision et a l archive source preservee',
     '--run-service-account=catalog-media-enqueuer@secondevienextjsssr.iam.gserviceaccount.com',
     '--concurrency=80', '--max-instances=20', '--no-retry'
   ]) assert.ok(artifactArgs.includes(expected), expected);
+  const artifactDeleteRequest = validate({
+    ...validationArgs({
+      allowlist: 'onArtifactDeleted', transport: 'gcloud-gen2-rollback',
+      approval: 'G2B_ROLLBACK_ON_ARTIFACT_DELETED_SAFE_INFRA_ONLY',
+      'expected-revision': 'onartifactdeleted-00024-abc',
+      'rollback-source-sha256': '15f6b946217a9b90a967abc9214bff741e8b8b6cd5b5be5601080ed525afc1bf'
+    })
+  });
+  const artifactDeleteArgs = buildGcloudGen2RollbackArgs(artifactDeleteRequest);
+  for (const expected of [
+    '--source=gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onArtifactDeleted/safe-baseline-d385c3c-function-source.zip',
+    '--run-service-account=catalog-media-enqueuer@secondevienextjsssr.iam.gserviceaccount.com',
+    '--concurrency=80', '--max-instances=20', '--no-retry',
+    '--update-labels=deployment-tool=codex-targeted,migration-rollback-source=safe-baseline-d385c3c'
+  ]) assert.ok(artifactDeleteArgs.includes(expected), expected);
+  assert.equal(artifactDeleteArgs.some((arg) => arg.includes('unsafe-cloud-revision')), false);
 });
 
 test('les trois workers G1 epinglent runtime, secrets et limites explicites', () => {
