@@ -20,6 +20,7 @@ import {
   buildGcloudGen2DeployArgs,
   buildGcloudGen2RollbackArgs,
   buildGcloudSchedulerUpdateArgs,
+  assertTaskQueuePreconditions,
   parseDeployArgs,
   validateDeploymentRequest
 } from '../scripts/deploy-functions-targeted.mjs';
@@ -468,6 +469,39 @@ test('le transport gcloud Gen2 est limite au premier lot stats et explicite IAM 
     '--memory=256Mi', '--timeout=60s', '--concurrency=1', '--max-instances=1', '--retry',
     '--set-secrets=GMAIL_EMAIL=GMAIL_EMAIL:2,GMAIL_PASSWORD=GMAIL_PASSWORD:5,RESEND_API_KEY=RESEND_API_KEY:1'
   ]) assert.ok(orderUpdatedArgs.includes(expected), expected);
+
+  const catalogBuildRequest = validate({
+    ...validationArgs({ allowlist: 'dispatchCatalogBuild', transport: 'gcloud-gen2' })
+  });
+  const catalogBuildArgs = buildGcloudGen2DeployArgs(catalogBuildRequest);
+  for (const expected of [
+    '--entry-point=dispatchCatalogBuild', '--trigger-http',
+    '--run-service-account=catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    '--build-service-account=projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    '--memory=512Mi', '--timeout=300s', '--concurrency=1', '--max-instances=1',
+    '--update-labels=deployment-tool=codex-targeted,migration-source-commit=f80dc7213a8d738fb1edde11a926028bcb57ab28,deployment-taskqueue=true'
+  ]) assert.ok(catalogBuildArgs.includes(expected), expected);
+  assert.equal(catalogBuildArgs.includes('--retry'), false);
+  assert.doesNotThrow(() => assertTaskQueuePreconditions({
+    name: 'projects/secondevienextjsssr/locations/europe-west1/queues/dispatchCatalogBuild',
+    state: 'RUNNING',
+    rateLimits: { maxConcurrentDispatches: 1, maxDispatchesPerSecond: 1, maxBurstSize: 10 },
+    retryConfig: { maxAttempts: 10, minBackoff: '5s', maxBackoff: '300s', maxDoublings: 5 }
+  }, {
+    queueName: 'dispatchCatalogBuild', queueMaxConcurrentDispatches: 1,
+    queueMaxDispatchesPerSecond: 1, queueMaxBurstSize: 10, queueMaxAttempts: 10,
+    queueMinBackoff: '5s', queueMaxBackoff: '300s', queueMaxDoublings: 5
+  }, []));
+  assert.throws(() => assertTaskQueuePreconditions({
+    name: 'projects/secondevienextjsssr/locations/europe-west1/queues/dispatchCatalogBuild',
+    state: 'RUNNING',
+    rateLimits: { maxConcurrentDispatches: 1, maxDispatchesPerSecond: 1, maxBurstSize: 10 },
+    retryConfig: { maxAttempts: 10, minBackoff: '5s', maxBackoff: '300s', maxDoublings: 5 }
+  }, {
+    queueName: 'dispatchCatalogBuild', queueMaxConcurrentDispatches: 1,
+    queueMaxDispatchesPerSecond: 1, queueMaxBurstSize: 10, queueMaxAttempts: 10,
+    queueMinBackoff: '5s', queueMaxBackoff: '300s', queueMaxDoublings: 5
+  }, [{ name: 'task-in-flight' }]), /Cloud Tasks en vol/);
 });
 
 test('le rollback G2-B est borne a la revision et a l archive source preservee', () => {
@@ -666,6 +700,24 @@ test('le rollback G2-B est borne a la revision et a l archive source preservee',
     '--set-secrets=GMAIL_EMAIL=GMAIL_EMAIL:2,GMAIL_PASSWORD=GMAIL_PASSWORD:5,RESEND_API_KEY=RESEND_API_KEY:1',
     '--update-labels=deployment-tool=codex-targeted,migration-rollback-source=onorderupdated-00028-hoc'
   ]) assert.ok(orderUpdatedArgs.includes(expected), expected);
+
+  const catalogBuildRequest = validate({
+    ...validationArgs({
+      allowlist: 'dispatchCatalogBuild', transport: 'gcloud-gen2-rollback',
+      approval: 'G2B_ROLLBACK_DISPATCH_CATALOG_BUILD',
+      'expected-revision': 'dispatchcatalogbuild-00013-abc',
+      'rollback-source-sha256': '3c9a44606a3098c774be1d80be6f0af82e54c0bbe3b63534e4a28fb81e8674b4'
+    })
+  });
+  const catalogBuildArgs = buildGcloudGen2RollbackArgs(catalogBuildRequest);
+  for (const expected of [
+    '--source=gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/dispatchCatalogBuild/dispatchcatalogbuild-00012-coh-function-source.zip',
+    '--trigger-http', '--run-service-account=catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    '--memory=256Mi', '--timeout=60s', '--concurrency=80', '--max-instances=20',
+    '--update-labels=deployment-tool=codex-targeted,migration-rollback-source=dispatchcatalogbuild-00012-coh,deployment-taskqueue=true'
+  ]) assert.ok(catalogBuildArgs.includes(expected), expected);
+  assert.equal(catalogBuildArgs.includes('--retry'), false);
+  assert.equal(catalogBuildArgs.includes('--no-retry'), false);
 });
 
 test('les trois workers G1 epinglent runtime, secrets et limites explicites', () => {

@@ -329,6 +329,31 @@ const GCLOUD_GEN2_TARGETS = Object.freeze({
     minInstances: '0',
     maxInstances: '1',
     ingressSettings: 'all'
+  }),
+  dispatchCatalogBuild: Object.freeze({
+    triggerType: 'http-task',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'dispatchCatalogBuild',
+    functionUrl: 'https://europe-west1-secondevienextjsssr.cloudfunctions.net/dispatchCatalogBuild',
+    queueName: 'dispatchCatalogBuild',
+    queueLocation: 'europe-west1',
+    queueMaxConcurrentDispatches: 1,
+    queueMaxDispatchesPerSecond: 1,
+    queueMaxBurstSize: 10,
+    queueMaxAttempts: 10,
+    queueMinBackoff: '5s',
+    queueMaxBackoff: '300s',
+    queueMaxDoublings: 5,
+    runtimeServiceAccount: 'catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '512Mi',
+    cpu: '1',
+    timeout: '300s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all'
   })
 });
 const G2B_ROLLBACKS = Object.freeze({
@@ -466,6 +491,20 @@ const G2B_ROLLBACKS = Object.freeze({
     sourceSize: '397275',
     sourceSha256: 'bce7ff79ecfc2308ae744ee61cb889cd02fba781b466d16a383fa610b7d91880',
     runtimeServiceAccount: '231220287936-compute@developer.gserviceaccount.com',
+    memory: '256Mi',
+    timeout: '60s',
+    concurrency: '80',
+    maxInstances: '20',
+    retry: false
+  }),
+  dispatchCatalogBuild: Object.freeze({
+    approval: 'G2B_ROLLBACK_DISPATCH_CATALOG_BUILD',
+    sourceRevision: 'dispatchcatalogbuild-00012-coh',
+    source: 'gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/dispatchCatalogBuild/dispatchcatalogbuild-00012-coh-function-source.zip',
+    sourceGeneration: '1786901457941111',
+    sourceSize: '372482',
+    sourceSha256: '3c9a44606a3098c774be1d80be6f0af82e54c0bbe3b63534e4a28fb81e8674b4',
+    runtimeServiceAccount: 'catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
     memory: '256Mi',
     timeout: '60s',
     concurrency: '80',
@@ -682,7 +721,8 @@ export function buildGcloudGen2DeployArgs(validation) {
   if (validation.transport !== 'gcloud-gen2' || validation.allowlist.length !== 1 || !target) {
     fail('Transport gcloud Gen2 non autorise');
   }
-  const triggerArgs = target.triggerType === 'http-scheduler'
+  const httpTrigger = ['http-scheduler', 'http-task'].includes(target.triggerType);
+  const triggerArgs = httpTrigger
     ? ['--trigger-http']
     : [
         `--trigger-event-filters=${target.eventFilters}`,
@@ -690,7 +730,7 @@ export function buildGcloudGen2DeployArgs(validation) {
         `--trigger-location=${target.triggerLocation}`,
         `--trigger-service-account=${target.triggerServiceAccount}`
       ];
-  const retryArgs = target.triggerType === 'http-scheduler' ? [] : ['--retry'];
+  const retryArgs = httpTrigger ? [] : ['--retry'];
   const args = [
     'functions', 'deploy', name,
     `--project=${validation.project}`,
@@ -711,7 +751,7 @@ export function buildGcloudGen2DeployArgs(validation) {
     ...retryArgs,
     `--ingress-settings=${target.ingressSettings}`,
     '--no-allow-unauthenticated',
-    `--update-labels=deployment-tool=codex-targeted,migration-source-commit=${validation.commit}`,
+    `--update-labels=deployment-tool=codex-targeted,migration-source-commit=${validation.commit}${target.triggerType === 'http-task' ? ',deployment-taskqueue=true' : ''}`,
     '--quiet'
   ];
   if (target.secrets?.length) args.push(`--set-secrets=${target.secrets.join(',')}`);
@@ -748,7 +788,8 @@ export function buildGcloudGen2RollbackArgs(validation) {
   if (validation.transport !== 'gcloud-gen2-rollback' || !target || !rollback) {
     fail('Rollback gcloud Gen2 non autorise');
   }
-  const triggerArgs = target.triggerType === 'http-scheduler'
+  const httpTrigger = ['http-scheduler', 'http-task'].includes(target.triggerType);
+  const triggerArgs = httpTrigger
     ? ['--trigger-http']
     : [
         `--trigger-event-filters=${target.eventFilters}`,
@@ -772,10 +813,10 @@ export function buildGcloudGen2RollbackArgs(validation) {
     `--max-instances=${rollback.maxInstances}`,
     `--ingress-settings=${target.ingressSettings}`,
     '--no-allow-unauthenticated',
-    `--update-labels=deployment-tool=codex-targeted,migration-rollback-source=${rollback.sourceRevision}`,
+    `--update-labels=deployment-tool=codex-targeted,migration-rollback-source=${rollback.sourceRevision}${target.triggerType === 'http-task' ? ',deployment-taskqueue=true' : ''}`,
     '--quiet'
   ];
-  if (target.triggerType !== 'http-scheduler') {
+  if (!httpTrigger) {
     args.splice(args.indexOf(`--ingress-settings=${target.ingressSettings}`), 0, rollback.retry ? '--retry' : '--no-retry');
   }
   if (target.secrets?.length) args.push(`--set-secrets=${target.secrets.join(',')}`);
@@ -795,7 +836,7 @@ function assertGcloudGen2Preconditions(before, validation) {
     before.serviceConfig?.revision !== manifestEntry.cloud?.revision ||
     before.serviceConfig?.serviceAccountEmail !== manifestEntry.identities?.runtimeServiceAccount
   ) fail('Etat cloud Gen2 inattendu avant deploiement');
-  if (target.triggerType === 'http-scheduler') {
+  if (['http-scheduler', 'http-task'].includes(target.triggerType)) {
     if (before.eventTrigger || before.url !== target.functionUrl) fail('Transport HTTP Scheduler Gen2 inattendu avant deploiement');
     return;
   }
@@ -814,6 +855,20 @@ function assertGcloudGen2Preconditions(before, validation) {
     before.eventTrigger?.serviceAccountEmail !== manifestEntry.trigger?.transportServiceAccount ||
     !filtersMatch
   ) fail('Trigger cloud Gen2 inattendu avant deploiement');
+}
+
+export function assertTaskQueuePreconditions(queue, target, tasks) {
+  if (
+    queue.name?.split('/').at(-1) !== target.queueName || queue.state !== 'RUNNING' ||
+    Number(queue.rateLimits?.maxConcurrentDispatches) !== target.queueMaxConcurrentDispatches ||
+    Number(queue.rateLimits?.maxDispatchesPerSecond) !== target.queueMaxDispatchesPerSecond ||
+    Number(queue.rateLimits?.maxBurstSize) !== target.queueMaxBurstSize ||
+    Number(queue.retryConfig?.maxAttempts) !== target.queueMaxAttempts ||
+    queue.retryConfig?.minBackoff !== target.queueMinBackoff ||
+    queue.retryConfig?.maxBackoff !== target.queueMaxBackoff ||
+    Number(queue.retryConfig?.maxDoublings) !== target.queueMaxDoublings
+  ) fail('Configuration Cloud Tasks inattendue avant deploiement');
+  if (!Array.isArray(tasks) || tasks.length !== 0) fail('Cloud Tasks en vol avant deploiement');
 }
 
 function assertSchedulerPreconditions(
@@ -897,6 +952,17 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
       '--format=json'
     ], { cwd: rootDir }));
     assertGcloudGen2Preconditions(before, validation);
+    if (target.triggerType === 'http-task') {
+      const queueBefore = JSON.parse(run('gcloud', [
+        'tasks', 'queues', 'describe', target.queueName,
+        `--location=${target.queueLocation}`, `--project=${validation.project}`, '--format=json'
+      ], { cwd: rootDir }));
+      const tasksBefore = JSON.parse(run('gcloud', [
+        'tasks', 'list', `--queue=${target.queueName}`,
+        `--location=${target.queueLocation}`, `--project=${validation.project}`, '--format=json'
+      ], { cwd: rootDir }));
+      assertTaskQueuePreconditions(queueBefore, target, tasksBefore);
+    }
     if (target.triggerType === 'http-scheduler') {
       const schedulerBefore = JSON.parse(run('gcloud', [
         'scheduler', 'jobs', 'describe', target.schedulerJob,
