@@ -354,6 +354,34 @@ const GCLOUD_GEN2_TARGETS = Object.freeze({
     minInstances: '0',
     maxInstances: '1',
     ingressSettings: 'all'
+  }),
+  dispatchCatalogRevalidation: Object.freeze({
+    triggerType: 'http-task',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'dispatchCatalogRevalidation',
+    functionUrl: 'https://europe-west1-secondevienextjsssr.cloudfunctions.net/dispatchCatalogRevalidation',
+    queueName: 'dispatchCatalogRevalidation',
+    queueLocation: 'europe-west1',
+    queueMaxConcurrentDispatches: 1,
+    queueMaxDispatchesPerSecond: 1,
+    queueMaxBurstSize: 10,
+    queueMaxAttempts: 10,
+    queueMinBackoff: '5s',
+    queueMaxBackoff: '300s',
+    queueMaxDoublings: 5,
+    runtimeServiceAccount: 'catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    secrets: Object.freeze([
+      'CATALOG_REVALIDATION_HMAC_SECRET=CATALOG_REVALIDATION_HMAC_SECRET:3'
+    ]),
+    memory: '256Mi',
+    cpu: '1',
+    timeout: '300s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all'
   })
 });
 const G2B_ROLLBACKS = Object.freeze({
@@ -504,6 +532,20 @@ const G2B_ROLLBACKS = Object.freeze({
     sourceGeneration: '1786901457941111',
     sourceSize: '372482',
     sourceSha256: '3c9a44606a3098c774be1d80be6f0af82e54c0bbe3b63534e4a28fb81e8674b4',
+    runtimeServiceAccount: 'catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '256Mi',
+    timeout: '60s',
+    concurrency: '80',
+    maxInstances: '20',
+    retry: false
+  }),
+  dispatchCatalogRevalidation: Object.freeze({
+    approval: 'G2B_ROLLBACK_DISPATCH_CATALOG_REVALIDATION',
+    sourceRevision: 'dispatchcatalogrevalidation-00011-her',
+    source: 'gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/dispatchCatalogRevalidation/dispatchcatalogrevalidation-00011-her-function-source.zip',
+    sourceGeneration: '1786902244545236',
+    sourceSize: '402090',
+    sourceSha256: '309254de3352ec0c6395b3e125adf41072bf85be9d9facaaf56bedffbfc995bd',
     runtimeServiceAccount: 'catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
     memory: '256Mi',
     timeout: '60s',

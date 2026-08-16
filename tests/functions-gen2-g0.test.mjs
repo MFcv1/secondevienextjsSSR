@@ -502,6 +502,20 @@ test('le transport gcloud Gen2 est limite au premier lot stats et explicite IAM 
     queueMaxDispatchesPerSecond: 1, queueMaxBurstSize: 10, queueMaxAttempts: 10,
     queueMinBackoff: '5s', queueMaxBackoff: '300s', queueMaxDoublings: 5
   }, [{ name: 'task-in-flight' }]), /Cloud Tasks en vol/);
+
+  const catalogRevalidationRequest = validate({
+    ...validationArgs({ allowlist: 'dispatchCatalogRevalidation', transport: 'gcloud-gen2' })
+  });
+  const catalogRevalidationArgs = buildGcloudGen2DeployArgs(catalogRevalidationRequest);
+  for (const expected of [
+    '--entry-point=dispatchCatalogRevalidation', '--trigger-http',
+    '--run-service-account=catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    '--build-service-account=projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    '--memory=256Mi', '--timeout=300s', '--concurrency=1', '--max-instances=1',
+    '--set-secrets=CATALOG_REVALIDATION_HMAC_SECRET=CATALOG_REVALIDATION_HMAC_SECRET:3',
+    '--update-labels=deployment-tool=codex-targeted,migration-source-commit=f80dc7213a8d738fb1edde11a926028bcb57ab28,deployment-taskqueue=true'
+  ]) assert.ok(catalogRevalidationArgs.includes(expected), expected);
+  assert.equal(catalogRevalidationArgs.includes('--retry'), false);
 });
 
 test('le rollback G2-B est borne a la revision et a l archive source preservee', () => {
@@ -718,6 +732,25 @@ test('le rollback G2-B est borne a la revision et a l archive source preservee',
   ]) assert.ok(catalogBuildArgs.includes(expected), expected);
   assert.equal(catalogBuildArgs.includes('--retry'), false);
   assert.equal(catalogBuildArgs.includes('--no-retry'), false);
+
+  const catalogRevalidationRequest = validate({
+    ...validationArgs({
+      allowlist: 'dispatchCatalogRevalidation', transport: 'gcloud-gen2-rollback',
+      approval: 'G2B_ROLLBACK_DISPATCH_CATALOG_REVALIDATION',
+      'expected-revision': 'dispatchcatalogrevalidation-00012-abc',
+      'rollback-source-sha256': '309254de3352ec0c6395b3e125adf41072bf85be9d9facaaf56bedffbfc995bd'
+    })
+  });
+  const catalogRevalidationArgs = buildGcloudGen2RollbackArgs(catalogRevalidationRequest);
+  for (const expected of [
+    '--source=gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/dispatchCatalogRevalidation/dispatchcatalogrevalidation-00011-her-function-source.zip',
+    '--trigger-http', '--run-service-account=catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    '--memory=256Mi', '--timeout=60s', '--concurrency=80', '--max-instances=20',
+    '--set-secrets=CATALOG_REVALIDATION_HMAC_SECRET=CATALOG_REVALIDATION_HMAC_SECRET:3',
+    '--update-labels=deployment-tool=codex-targeted,migration-rollback-source=dispatchcatalogrevalidation-00011-her,deployment-taskqueue=true'
+  ]) assert.ok(catalogRevalidationArgs.includes(expected), expected);
+  assert.equal(catalogRevalidationArgs.includes('--retry'), false);
+  assert.equal(catalogRevalidationArgs.includes('--no-retry'), false);
 });
 
 test('les trois workers G1 epinglent runtime, secrets et limites explicites', () => {
