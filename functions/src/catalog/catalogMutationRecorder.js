@@ -13,6 +13,15 @@ function hashEventId(eventId) {
     return crypto.createHash('sha256').update(String(eventId || '')).digest('hex');
 }
 
+function mutationKeyFor({ appId, productId, mutationVersion }) {
+    if (!appId || !productId || !mutationVersion) {
+        throw new Error('CATALOG_MUTATION_VERSION_REQUIRED');
+    }
+    return crypto.createHash('sha256')
+        .update(`${appId}\n${productId}\n${mutationVersion}`)
+        .digest('hex');
+}
+
 function taskIdForRevision(revision, quietUntil) {
     return `catalog-build-r${revision}-q${quietUntil.getTime()}`;
 }
@@ -20,13 +29,14 @@ function taskIdForRevision(revision, quietUntil) {
 async function recordCatalogMutation(dependencies, input) {
     const { db, now = () => new Date(), enqueue, logger = catalogLog } = dependencies;
     if (typeof enqueue !== 'function') throw new TypeError('Catalog mutation enqueue dependency is required');
-    const { eventId, appId, productId, before, after } = input;
+    const { eventId, appId, productId, mutationVersion, before, after } = input;
     if (appId !== 'secondevie') return { result: 'ignored_app' };
     const classification = classifyCatalogMutation({ productId, before, after });
     if (!classification.publicImpact && !classification.inventoryImpact) return { result: 'ignored_no_impact', classification };
 
     const eventHash = hashEventId(eventId);
-    const ledgerRef = db.doc(`sys_catalog_publication_events/${eventHash}`);
+    const mutationHash = mutationKeyFor({ appId, productId, mutationVersion });
+    const ledgerRef = db.doc(`sys_catalog_publication_events/${mutationHash}`);
     const controlRef = db.doc(CONTROL_DOCUMENT);
     const transactionResult = await db.runTransaction(async (transaction) => {
         const [ledgerSnap, controlSnap] = await Promise.all([
@@ -57,6 +67,8 @@ async function recordCatalogMutation(dependencies, input) {
         const ledger = {
             schemaVersion: 1,
             eventHash,
+            mutationHash,
+            mutationVersion,
             appId,
             collection: 'furniture',
             productId,
@@ -97,7 +109,7 @@ async function recordCatalogMutation(dependencies, input) {
         scheduledAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
     logger('info', {
-        phase: 'trigger', eventHash, targetRevision: transactionResult.revision,
+        phase: 'trigger', eventHash, mutationHash, targetRevision: transactionResult.revision,
         taskName: transactionResult.taskId,
         result: transactionResult.duplicate ? 'duplicate' : (enqueueResult.alreadyExists ? 'already_exists' : 'scheduled')
     });
@@ -105,9 +117,10 @@ async function recordCatalogMutation(dependencies, input) {
         result: transactionResult.duplicate ? 'duplicate' : 'scheduled',
         revision: transactionResult.revision,
         eventHash,
+        mutationHash,
         classification,
         enqueueResult
     };
 }
 
-module.exports = { hashEventId, recordCatalogMutation, taskIdForRevision };
+module.exports = { hashEventId, mutationKeyFor, recordCatalogMutation, taskIdForRevision };

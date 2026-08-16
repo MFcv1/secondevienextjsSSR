@@ -1,12 +1,24 @@
 const admin = require('firebase-admin');
 const { getFunctions } = require('firebase-admin/functions');
 const { onDocumentWritten } = require('firebase-functions/v2/firestore');
-const { hashEventId, recordCatalogMutation, taskIdForRevision } = require('./catalogMutationRecorder');
+const { hashEventId, mutationKeyFor, recordCatalogMutation, taskIdForRevision } = require('./catalogMutationRecorder');
 const { CATALOG_ENQUEUER_SERVICE_ACCOUNT } = require('./catalogConfig');
 
 const TRIGGER_REGION = 'europe-west1';
 const SOURCE_PATTERN = 'artifacts/{appId}/public/data/furniture/{productId}';
 const BUILD_TASK = `locations/${TRIGGER_REGION}/functions/dispatchCatalogBuild`;
+
+function timestampKey(timestamp) {
+    if (!timestamp) return null;
+    if (Number.isInteger(timestamp.seconds) && Number.isInteger(timestamp.nanoseconds)) {
+        return `${timestamp.seconds}:${timestamp.nanoseconds}`;
+    }
+    if (typeof timestamp.toMillis === 'function') {
+        const millis = timestamp.toMillis();
+        return `${Math.floor(millis / 1000)}:${(millis % 1000) * 1000000}`;
+    }
+    return null;
+}
 
 async function enqueueCatalogBuild({ revision, quietUntil, taskId }) {
     const queue = getFunctions().taskQueue(BUILD_TASK);
@@ -42,6 +54,9 @@ const onCatalogSourceWrite = onDocumentWritten(
         eventId: event.id,
         appId: event.params.appId,
         productId: event.params.productId,
+        mutationVersion: timestampKey(
+            event.data?.after?.exists ? event.data.after.updateTime : event.data?.before?.updateTime
+        ),
         before: event.data?.before?.exists ? event.data.before.data() : null,
         after: event.data?.after?.exists ? event.data.after.data() : null
     })
@@ -52,7 +67,9 @@ module.exports = {
     TRIGGER_REGION,
     enqueueCatalogBuild,
     hashEventId,
+    mutationKeyFor,
     onCatalogSourceWrite,
     recordCatalogMutation,
-    taskIdForRevision
+    taskIdForRevision,
+    timestampKey
 };

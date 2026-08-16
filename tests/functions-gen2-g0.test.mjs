@@ -308,6 +308,17 @@ test('le transport gcloud Gen2 est limite au premier lot stats et explicite IAM 
   assert.throws(() => validate({
     ...validationArgs({ allowlist: 'getCatalogPublicationStatus', transport: 'gcloud-gen2' })
   }), /limite a la cible G2-B approuvee/);
+  const catalogRequest = validate({
+    ...validationArgs({ allowlist: 'onCatalogSourceWrite', transport: 'gcloud-gen2' })
+  });
+  const catalogArgs = buildGcloudGen2DeployArgs(catalogRequest);
+  for (const expected of [
+    '--entry-point=onCatalogSourceWrite',
+    '--trigger-event-filters-path-pattern=document=artifacts/{appId}/public/data/furniture/{productId}',
+    '--run-service-account=catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com',
+    '--trigger-service-account=functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com',
+    '--concurrency=1', '--max-instances=1', '--retry'
+  ]) assert.ok(catalogArgs.includes(expected), expected);
 });
 
 test('le rollback G2-B est borne a la revision et a l archive source preservee', () => {
@@ -340,6 +351,23 @@ test('le rollback G2-B est borne a la revision et a l archive source preservee',
       'rollback-source-sha256': 'fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92'
     })
   }), /Approbation rollback/);
+  const catalogRequest = validate({
+    ...validationArgs({
+      allowlist: 'onCatalogSourceWrite',
+      transport: 'gcloud-gen2-rollback',
+      approval: 'G2B_ROLLBACK_ON_CATALOG_SOURCE_WRITE',
+      'expected-revision': 'oncatalogsourcewrite-00011-abc',
+      'rollback-source-sha256': '3c9a44606a3098c774be1d80be6f0af82e54c0bbe3b63534e4a28fb81e8674b4'
+    })
+  });
+  const catalogArgs = buildGcloudGen2RollbackArgs(catalogRequest);
+  for (const expected of [
+    '--source=gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onCatalogSourceWrite/oncatalogsourcewrite-00010-gis-function-source.zip',
+    '--run-service-account=catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com',
+    '--trigger-service-account=functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com',
+    '--concurrency=80', '--max-instances=20', '--retry',
+    '--update-labels=deployment-tool=codex-targeted,migration-rollback-source=oncatalogsourcewrite-00010-gis'
+  ]) assert.ok(catalogArgs.includes(expected), expected);
 });
 
 test('les trois workers G1 epinglent runtime, secrets et limites explicites', () => {

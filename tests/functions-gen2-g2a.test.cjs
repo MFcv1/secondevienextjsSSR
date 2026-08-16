@@ -25,6 +25,10 @@ const {
     failureState
 } = require('../functions/src/email/legacyOrderEmailDelivery');
 const { enqueueMediaCandidates } = require('../functions/src/catalog/mediaGarbageCollection');
+const {
+    mutationKeyFor,
+    timestampKey
+} = require('../functions/src/catalog/onCatalogSourceWrite');
 
 function order(overrides = {}) {
     return {
@@ -272,6 +276,66 @@ test('G2-A catalogue: les trois cibles a IAM deja dedie ont des limites source c
     ]) {
         assert.match(fs.readFileSync(path.join(ROOT, relativePath), 'utf8'), /retryCount:\s*0/);
     }
+});
+
+test('G2-B catalogue: la deduplication de mutation ne depend plus de event.id', () => {
+    const input = {
+        appId: 'secondevie',
+        productId: 'product-a',
+        mutationVersion: '1786884000:123456789'
+    };
+    assert.equal(mutationKeyFor(input), mutationKeyFor(input));
+    assert.notEqual(mutationKeyFor(input), mutationKeyFor({ ...input, productId: 'product-b' }));
+    assert.notEqual(mutationKeyFor(input), mutationKeyFor({ ...input, mutationVersion: '1786884001:0' }));
+    assert.throws(
+        () => mutationKeyFor({ ...input, mutationVersion: null }),
+        /CATALOG_MUTATION_VERSION_REQUIRED/
+    );
+    assert.equal(timestampKey({ seconds: 1786884000, nanoseconds: 123456789 }), input.mutationVersion);
+    assert.equal(timestampKey({ toMillis: () => 1786884000123 }), '1786884000:123000000');
+    const recorder = fs.readFileSync(
+        path.join(ROOT, 'functions/src/catalog/catalogMutationRecorder.js'),
+        'utf8'
+    );
+    assert.match(recorder, /sys_catalog_publication_events\/\$\{mutationHash\}/);
+    assert.doesNotMatch(recorder, /sys_catalog_publication_events\/\$\{eventHash\}/);
+});
+
+test('G2-B catalogue: le preflight cloud est strictement read-only et fail-closed', () => {
+    const planner = fs.readFileSync(
+        path.join(ROOT, 'scripts/plan-functions-gen2-g2b-catalog.mjs'),
+        'utf8'
+    );
+    for (const expected of [
+        /G2B_CATALOG_READ_ONLY_ONLY/,
+        /HOLD_G2B_CATALOG_PREFLIGHT/,
+        /G2B_CATALOG_PREFLIGHT_READY/,
+        /CATALOG_CONTROL_DIRTY/,
+        /CATALOG_LEASE_ACTIVE/,
+        /CATALOG_LAST_ERROR_PRESENT/,
+        /deploymentAllowed:\s*false/,
+        /functions-eventarc-invoker@/,
+        /functions-gen2-builder@/
+    ]) assert.match(planner, expected);
+    assert.doesNotMatch(planner, /runTransaction|writeBatch|transaction\.(?:set|update|delete)|document\.(?:set|update|delete)/);
+});
+
+test('G2-B catalogue: IAM ajoute seulement les droits manquants et conserve le rollback', () => {
+    const iam = fs.readFileSync(
+        path.join(ROOT, 'scripts/configure-functions-gen2-g2b-catalog-iam.mjs'),
+        'utf8'
+    );
+    for (const expected of [
+        /G2B_CONFIGURE_CATALOG_IAM/,
+        /roles\/serviceusage\.serviceUsageConsumer/,
+        /roles\/iam\.serviceAccountUser/,
+        /roles\/run\.invoker/,
+        /rollbackRuntimeInvokerRetained/,
+        /noUserManagedKeys/,
+        /publicInvoker:\s*false/
+    ]) assert.match(iam, expected);
+    assert.doesNotMatch(iam, /remove-iam-policy-binding|roles\/(?:editor|owner|storage\.admin)/i);
+    assert.doesNotMatch(iam, /service-accounts keys create/);
 });
 
 test('G2-A publication: worker image rejette les pannes retryables et les trois runtimes sont bornes', () => {

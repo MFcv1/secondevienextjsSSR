@@ -87,6 +87,7 @@ const GCLOUD_GEN2_TARGETS = Object.freeze({
     entryPoint: 'onOrderStatsWrite',
     eventType: 'google.cloud.firestore.document.v1.written',
     eventFilters: 'type=google.cloud.firestore.document.v1.written,database=(default),namespace=(default)',
+    documentPathPattern: 'orders/{orderId}',
     eventPathPattern: 'document=orders/{orderId}',
     triggerLocation: 'eur3',
     triggerServiceAccount: 'functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com',
@@ -99,14 +100,51 @@ const GCLOUD_GEN2_TARGETS = Object.freeze({
     minInstances: '0',
     maxInstances: '1',
     ingressSettings: 'all'
+  }),
+  onCatalogSourceWrite: Object.freeze({
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'onCatalogSourceWrite',
+    eventType: 'google.cloud.firestore.document.v1.written',
+    eventFilters: 'type=google.cloud.firestore.document.v1.written,database=(default),namespace=(default)',
+    documentPathPattern: 'artifacts/{appId}/public/data/furniture/{productId}',
+    eventPathPattern: 'document=artifacts/{appId}/public/data/furniture/{productId}',
+    triggerLocation: 'eur3',
+    triggerServiceAccount: 'functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com',
+    runtimeServiceAccount: 'catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '256Mi',
+    cpu: '1',
+    timeout: '60s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all'
   })
 });
-const G2B_STATS_ROLLBACK = Object.freeze({
-  approval: 'G2B_ROLLBACK_ON_ORDER_STATS_WRITE',
-  source: 'gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onOrderStatsWrite/onorderstatswrite-00025-nac-function-source.zip',
-  sourceGeneration: '1786883731057943',
-  sourceSize: '345983',
-  sourceSha256: 'fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92'
+const G2B_ROLLBACKS = Object.freeze({
+  onOrderStatsWrite: Object.freeze({
+    approval: 'G2B_ROLLBACK_ON_ORDER_STATS_WRITE',
+    sourceRevision: 'onorderstatswrite-00025-nac',
+    source: 'gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onOrderStatsWrite/onorderstatswrite-00025-nac-function-source.zip',
+    sourceGeneration: '1786883731057943',
+    sourceSize: '345983',
+    sourceSha256: 'fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92',
+    concurrency: '80',
+    maxInstances: '20',
+    retry: false
+  }),
+  onCatalogSourceWrite: Object.freeze({
+    approval: 'G2B_ROLLBACK_ON_CATALOG_SOURCE_WRITE',
+    sourceRevision: 'oncatalogsourcewrite-00010-gis',
+    source: 'gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onCatalogSourceWrite/oncatalogsourcewrite-00010-gis-function-source.zip',
+    sourceGeneration: '1786885189999864',
+    sourceSize: '372482',
+    sourceSha256: '3c9a44606a3098c774be1d80be6f0af82e54c0bbe3b63534e4a28fb81e8674b4',
+    concurrency: '80',
+    maxInstances: '20',
+    retry: true
+  })
 });
 
 function fail(message) {
@@ -261,14 +299,14 @@ export function validateDeploymentRequest({
     }
   }
   if (transport === 'gcloud-gen2-rollback') {
-    if (allowlist.length !== 1 || allowlist[0] !== 'onOrderStatsWrite') {
-      fail('Rollback gcloud Gen2 limite a onOrderStatsWrite');
-    }
-    if (args.approval !== G2B_STATS_ROLLBACK.approval) fail('Approbation rollback G2-B invalide');
-    if (!/^onorderstatswrite-[0-9]{5}-[a-z0-9]{3}$/.test(args['expected-revision'] || '')) {
+    const rollback = allowlist.length === 1 ? G2B_ROLLBACKS[allowlist[0]] : null;
+    if (!rollback) fail('Rollback gcloud Gen2 limite aux cibles G2-B approuvees');
+    if (args.approval !== rollback.approval) fail('Approbation rollback G2-B invalide');
+    const revisionPrefix = allowlist[0].toLowerCase();
+    if (!new RegExp(`^${revisionPrefix}-[0-9]{5}-[a-z0-9]{3}$`).test(args['expected-revision'] || '')) {
       fail('Revision Gen2 courante obligatoire pour rollback');
     }
-    if (args['rollback-source-sha256'] !== G2B_STATS_ROLLBACK.sourceSha256) {
+    if (args['rollback-source-sha256'] !== rollback.sourceSha256) {
       fail('Digest source rollback G2-B invalide');
     }
   }
@@ -346,17 +384,19 @@ export function buildGcloudGen2DeployArgs(validation) {
 }
 
 export function buildGcloudGen2RollbackArgs(validation) {
-  const target = GCLOUD_GEN2_TARGETS.onOrderStatsWrite;
-  if (validation.transport !== 'gcloud-gen2-rollback' || validation.allowlist[0] !== 'onOrderStatsWrite') {
+  const name = validation.allowlist[0];
+  const target = GCLOUD_GEN2_TARGETS[name];
+  const rollback = G2B_ROLLBACKS[name];
+  if (validation.transport !== 'gcloud-gen2-rollback' || !target || !rollback) {
     fail('Rollback gcloud Gen2 non autorise');
   }
-  return [
-    'functions', 'deploy', 'onOrderStatsWrite',
+  const args = [
+    'functions', 'deploy', name,
     `--project=${validation.project}`,
     `--region=${target.region}`,
     '--gen2',
     `--runtime=${target.runtime}`,
-    `--source=${G2B_STATS_ROLLBACK.source}`,
+    `--source=${rollback.source}`,
     `--entry-point=${target.entryPoint}`,
     `--trigger-event-filters=${target.eventFilters}`,
     `--trigger-event-filters-path-pattern=${target.eventPathPattern}`,
@@ -364,13 +404,16 @@ export function buildGcloudGen2RollbackArgs(validation) {
     `--trigger-service-account=${target.triggerServiceAccount}`,
     `--run-service-account=${target.runtimeServiceAccount}`,
     `--build-service-account=${target.buildServiceAccount}`,
-    '--memory=256Mi', '--cpu=1', '--timeout=60s', '--concurrency=80',
-    '--min-instances=0', '--max-instances=20', '--no-retry',
+    `--memory=${target.memory}`, `--cpu=${target.cpu}`, `--timeout=${target.timeout}`,
+    `--concurrency=${rollback.concurrency}`, '--min-instances=0',
+    `--max-instances=${rollback.maxInstances}`,
     `--ingress-settings=${target.ingressSettings}`,
     '--no-allow-unauthenticated',
-    '--update-labels=deployment-tool=codex-targeted,migration-rollback-source=onorderstatswrite-00025-nac',
+    `--update-labels=deployment-tool=codex-targeted,migration-rollback-source=${rollback.sourceRevision}`,
     '--quiet'
   ];
+  args.splice(args.indexOf(`--ingress-settings=${target.ingressSettings}`), 0, rollback.retry ? '--retry' : '--no-retry');
+  return args;
 }
 
 function assertGcloudGen2Preconditions(before, validation) {
@@ -392,7 +435,7 @@ function assertGcloudGen2Preconditions(before, validation) {
     before.eventTrigger?.serviceAccountEmail !== manifestEntry.trigger?.transportServiceAccount ||
     filters.get('database') !== 'exact:(default)' ||
     filters.get('namespace') !== 'exact:(default)' ||
-    filters.get('document') !== 'match-path-pattern:orders/{orderId}'
+    filters.get('document') !== `match-path-pattern:${target.documentPathPattern}`
   ) fail('Etat cloud Gen2 inattendu avant deploiement');
 }
 
@@ -472,9 +515,11 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
     return;
   }
   if (validation.transport === 'gcloud-gen2-rollback') {
-    const target = GCLOUD_GEN2_TARGETS.onOrderStatsWrite;
+    const name = validation.allowlist[0];
+    const target = GCLOUD_GEN2_TARGETS[name];
+    const rollback = G2B_ROLLBACKS[name];
     const before = JSON.parse(run('gcloud', [
-      'functions', 'describe', 'onOrderStatsWrite', '--gen2',
+      'functions', 'describe', name, '--gen2',
       `--region=${target.region}`, `--project=${validation.project}`, '--format=json'
     ], { cwd: rootDir }));
     if (
@@ -485,15 +530,15 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
       before.eventTrigger?.retryPolicy !== 'RETRY_POLICY_RETRY'
     ) fail('Etat cloud Gen2 inattendu avant rollback');
     const rollbackObject = JSON.parse(run('gcloud', [
-      'storage', 'objects', 'describe', G2B_STATS_ROLLBACK.source,
+      'storage', 'objects', 'describe', rollback.source,
       `--project=${validation.project}`, '--format=json'
     ], { cwd: rootDir }));
     if (
-      String(rollbackObject.generation) !== G2B_STATS_ROLLBACK.sourceGeneration ||
-      String(rollbackObject.size) !== G2B_STATS_ROLLBACK.sourceSize ||
+      String(rollbackObject.generation) !== rollback.sourceGeneration ||
+      String(rollbackObject.size) !== rollback.sourceSize ||
       rollbackObject.temporary_hold !== true
     ) fail('Objet source rollback G2-B inattendu');
-    process.stdout.write(`Projet: ${validation.project}\nCible: functions:main:onOrderStatsWrite\nCommit wrapper: ${validation.commit}\nRevision remplacee: ${args['expected-revision']}\nTransport: gcloud-gen2-rollback\n`);
+    process.stdout.write(`Projet: ${validation.project}\nCible: functions:main:${name}\nCommit wrapper: ${validation.commit}\nRevision remplacee: ${args['expected-revision']}\nTransport: gcloud-gen2-rollback\n`);
     const result = spawnSync('gcloud', buildGcloudGen2RollbackArgs(validation), {
       cwd: rootDir,
       env: process.env,
