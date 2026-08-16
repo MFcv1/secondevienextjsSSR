@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "target": "cleanupProductPublicationSessions",
+  "sourceCommit": "b992b6db4bce220f0782bddecfa18dcb9e3f0ecb",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g2b-publication-cleanup-iam.json": "18c9288183e381b7b2233663d60dfcb1f32ccebfaf78e73777a8c8f82a16a8af",
+    "apphostingaudit/manifests/functions-gen2-g2b-publication-cleanup-reconciliation.json": "3d92aae2c20527396ae66ea997717a5610647066e25f5bcbe8e64453c5fb19a7",
+    "apphostingaudit/manifests/functions-gen2-g2b-publication-cleanup-rollout.json": "bddf46b62bc126a358e3eaa14bf30e4332ab6752c3b84e6c0a7f5145e0bde4e0"
+  },
+  "rollbackSource": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/cleanupProductPublicationSessions/cleanupproductpublicationsessions-00002-qih-function-source.zip",
+    "generation": "1786897745771107",
+    "size": "397275",
+    "sha256": "bce7ff79ecfc2308ae744ee61cb889cd02fba781b466d16a383fa610b7d91880",
+    "temporaryHold": true
+  }
+}

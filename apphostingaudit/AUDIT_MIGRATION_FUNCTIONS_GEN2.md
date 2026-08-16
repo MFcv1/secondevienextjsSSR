@@ -1811,7 +1811,7 @@ Le preflight G2-B8 du scheduler de cleanup retrouve zero document dans
 `product_publication_sessions`, dont zero expire. L'ancienne suppression sans
 precondition est durcie localement: le delete exige l'`updateTime` lu par la
 requete et une mise a jour concurrente conserve la session avec un warning
-structure. Aucun cleanup n'est invoque manuellement.
+structure. Le preflight n'invoque aucun cleanup.
 
 #### Execution G2-B7 - worker image de publication cible unique
 
@@ -1836,6 +1836,32 @@ total Eventarc reste sept. La probe authentifiee sur un chemin objet non
 canonique a retourne HTTP 204 en 57 ms sans creer d'objet ni de session. Apres
 686 secondes, la collection reste vide, sans ecriture produit/stock/Storage,
 erreur, 5xx, drift IAM ou trigger. Verdict: `G2B7_COMPLETE_NO_DATA_WRITE`.
+
+#### Execution G2-B8 - cleanup publication produit cible unique
+
+`cleanupProductPublicationSessions` reste seul proprietaire du job quotidien
+`europe-west1`. Le preflight compte zero session et zero session expiree; le
+dernier passage de l'ancienne revision etait HTTP 200. Le delete exige
+desormais l'`updateTime` Firestore observe et conserve toute session modifiee
+concurremment. L'ancienne revision 2 est archivee sous temporary hold avec son
+digest; le rollback restaure exactement source, runtime, scheduler OIDC,
+concurrence 80 et max 20 sans retirer l'IAM dedie.
+
+Le wrapper a d'abord refuse le rollout avant build parce que sa precondition
+confondait l'identite Scheduler courante avec l'identite desiree. Ce controle
+est desormais explicite pour les deux etats. Le commit
+`b992b6db4bce220f0782bddecfa18dcb9e3f0ecb` a ensuite deploye uniquement la
+revision `cleanupproductpublicationsessions-00003-hig`: runtime et build dedies,
+CPU/concurrence/max 1, min 0, 512 MiB, 540 s, aucun secret et retry Scheduler
+zero. Le job conserve sa cadence quotidienne et utilise le runtime dedie pour
+son jeton OIDC.
+
+Une execution Scheduler controlee unique n'a ete autorisee qu'apres un nouveau
+comptage strictement nul. Elle retourne HTTP 200 en 0,914 s; le compteur reste
+nul, sans suppression Firestore/Storage, erreur, 5xx, IAM public ou drift
+d'inventaire apres une quiet-window de 321 secondes. G2-B compte huit cibles
+fermees sur treize. Verdict:
+`G2B8_COMPLETE_NO_DATA_WRITE`.
 
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 

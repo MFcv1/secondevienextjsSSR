@@ -951,6 +951,12 @@ Runtime, build et Eventarc `us-central1` sont dedies avant rollout cible.
 La revision `processproductpublicationimage-00004-nep` est active; sa probe
 non canonique retourne 204 et la quiet-window de 686 secondes conserve zero
 session, zero ecriture ou suppression et aucun drift.
+Le scheduler `cleanupProductPublicationSessions` est actif en revision
+`00003-hig` avec runtime/build dedies, concurrence/max 1 et retry zero. Le job
+quotidien utilise le meme compte dedie en OIDC. Sa probe Scheduler est lancee
+uniquement apres un comptage nul et retourne 200 sans ecriture, suppression ou
+drift apres 321 secondes; le rollback exact de la revision 2 reste sous
+temporary hold.
 
 | Domaine | Exports |
 | --- | --- |
