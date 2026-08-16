@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "target": "onArtifactDeleted",
+  "sourceCommit": "8c2d32af157adb01c82579746858579a0b6d1b7d",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g2b-artifact-deleted-reconciliation.json": "368162a7351ba58d2dc51b39bea285d7c0280ed956423aae3dbf1666c5363c27",
+    "apphostingaudit/manifests/functions-gen2-g2b-artifact-deleted-iam.json": "3a3c301599474d87fde6b4e363b997a06b48e1ea3619627e502d4fd2aca8f3a0",
+    "apphostingaudit/manifests/functions-gen2-g2b-artifact-deleted-rollout.json": "6163037eb7b81571cec3909b54daaf1f3922e7559ab0bfaafa6c4569415426c1"
+  },
+  "safeRollbackSource": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onArtifactDeleted/safe-baseline-d385c3c-function-source.zip",
+    "generation": "1786891730471054",
+    "size": "373502",
+    "sha256": "15f6b946217a9b90a967abc9214bff741e8b8b6cd5b5be5601080ed525afc1bf",
+    "temporaryHold": true
+  },
+  "unsafeForensicSource": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onArtifactDeleted/unsafe-cloud-revision-00023-juh-function-source.zip",
+    "generation": "1786891719760934",
+    "size": "345983",
+    "sha256": "fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92",
+    "temporaryHold": true,
+    "deployable": false
+  }
+}

@@ -1773,7 +1773,7 @@ retourne HTTP 204 en 6 ms. Le ledger reste strictement a 672 documents
 aucune erreur ni 5xx supplementaire, drift ledger, IAM ou trigger n'est
 observe. Verdict: `G2B5_COMPLETE`.
 
-#### Preflight G2-B6 - trigger artefact delete cible unique
+#### Execution G2-B6 - trigger artefact delete cible unique
 
 `onArtifactDeleted` presente un drift fonctionnel important: la revision cloud
 23 conserve encore l'ancien effacement par lots des sous-collections `likes`
@@ -1789,6 +1789,16 @@ hold; il peut restaurer concurrence 80, max 20 et retry off sans jamais
 reactiver l'effacement social. Le runtime, le build, Object Viewer et Eventarc
 sont dedies, sans cle ni invoker public. Les 672 intents restent `pending` et
 zero est eligible. Verdict: `G2B_ARTIFACT_DELETED_PREFLIGHT_READY_WITH_SAFE_ROLLBACK`.
+
+Le commit `8c2d32af157adb01c82579746858579a0b6d1b7d` a deploye uniquement la
+revision `onartifactdeleted-00024-roh`. Le bundle actif et le rollback sur ont
+le meme SHA-256; aucun ne contient l'ancien effacement social. CPU,
+concurrence et max valent 1, min 0, 256 MiB, 300 s et retry actif, avec les
+trois identites dediees. La probe Eventarc authentifiee hors namespace a
+retourne HTTP 204. Apres 377 secondes, le ledger reste 672/672 `pending`, zero
+eligible, sans ecriture ou suppression, erreur, 5xx, drift IAM ou trigger.
+L'inventaire reste 157/152, 139 Gen1, 13 Gen2, huit schedulers, deux queues et
+sept Eventarc. Verdict: `G2B6_COMPLETE_NON_DESTRUCTIVE`.
 
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 

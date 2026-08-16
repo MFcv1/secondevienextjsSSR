@@ -941,6 +941,9 @@ sous-collections sociales, absent de la source locale. Cette archive est
 conservee uniquement comme preuve; le rollback pointe vers un bundle sur qui
 restaure seulement les limites d'infrastructure. Le futur rollout n'ecrit que
 la quarantaine media et ne supprime ni `likes`, ni `comments`, ni objet Storage.
+La revision `onartifactdeleted-00024-roh` active desormais cette source sure;
+la probe hors namespace retourne 204 et la quiet-window de 377 secondes se
+ferme avec le ledger 672/672 `pending`, sans suppression ni drift.
 
 | Domaine | Exports |
 | --- | --- |

@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T15:02:17Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "target": "onArtifactDeleted",
+  "deployment": {
+    "deployed": true,
+    "sourceCommit": "8c2d32af157adb01c82579746858579a0b6d1b7d",
+    "allowlist": [
+      "onArtifactDeleted"
+    ],
+    "revision": "onartifactdeleted-00024-roh",
+    "build": "6e3fe3d9-8d8b-49d6-965d-d0360c4ca37b",
+    "buildStatus": "SUCCESS",
+    "sourceGeneration": "1786891934524340",
+    "sourceSha256": "15f6b946217a9b90a967abc9214bff741e8b8b6cd5b5be5601080ed525afc1bf",
+    "state": "ACTIVE",
+    "trafficPercent": 100
+  },
+  "runtime": {
+    "runtimeServiceAccount": "catalog-media-enqueuer@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "triggerServiceAccount": "functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com",
+    "cpu": 1,
+    "memoryMiB": 256,
+    "timeoutSeconds": 300,
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "retry": true,
+    "publicInvoker": false
+  },
+  "trigger": {
+    "id": "onartifactdeleted-737440",
+    "location": "eur3",
+    "eventType": "google.cloud.firestore.document.v1.deleted",
+    "database": "(default)",
+    "namespace": "(default)",
+    "documentPattern": "artifacts/{appId}/public/data/{collection}/{docId}",
+    "totalEventarcAfter": 7,
+    "singleOwner": true
+  },
+  "probe": {
+    "id": "g2b-artifact-deleted-safe-probe-1",
+    "targetNamespace": "g2b-probe",
+    "result": "ignored_app",
+    "httpStatus": 204,
+    "serverLatencySeconds": 0.06929701,
+    "dataWrites": 0
+  },
+  "dataAfter": {
+    "ledgerCollection": "sys_catalog_media_gc",
+    "documentsBefore": 672,
+    "documentsAfter": 672,
+    "pendingBefore": 672,
+    "pendingAfter": 672,
+    "eligibleForGcNow": 0,
+    "storageWrites": 0,
+    "storageDeletes": 0,
+    "likesOrCommentsWrites": 0,
+    "likesOrCommentsDeletes": 0
+  },
+  "quietWindow": {
+    "start": "2026-08-16T14:55:59.556221Z",
+    "end": "2026-08-16T15:02:17Z",
+    "durationSeconds": 377,
+    "errors": 0,
+    "http5xx": 0,
+    "ledgerDrift": 0,
+    "iamOrTriggerDrift": false
+  },
+  "rollback": {
+    "approval": "G2B_ROLLBACK_ON_ARTIFACT_DELETED_SAFE_INFRA_ONLY",
+    "expectedCurrentRevision": "onartifactdeleted-00024-roh",
+    "sourceRevision": "safe-baseline-d385c3c",
+    "source": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onArtifactDeleted/safe-baseline-d385c3c-function-source.zip",
+    "sourceGeneration": "1786891730471054",
+    "sourceSize": "373502",
+    "sourceSha256": "15f6b946217a9b90a967abc9214bff741e8b8b6cd5b5be5601080ed525afc1bf",
+    "temporaryHold": true,
+    "restoredConcurrency": 80,
+    "restoredMaxInstances": 20,
+    "restoredRetry": false,
+    "preserved": [
+      "non-destructive source behavior",
+      "dedicated runtime/build/trigger IAM",
+      "endpoint and Firestore filter",
+      "ledger and Storage data",
+      "logs and alerts"
+    ],
+    "dataDeletion": false
+  },
+  "forensicArchive": {
+    "sourceRevision": "onartifactdeleted-00023-juh",
+    "source": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onArtifactDeleted/unsafe-cloud-revision-00023-juh-function-source.zip",
+    "sourceGeneration": "1786891719760934",
+    "sourceSize": "345983",
+    "sourceSha256": "fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92",
+    "temporaryHold": true,
+    "deployable": false,
+    "reason": "Contains unaudited likes/comments batch deletion."
+  },
+  "inventory": {
+    "sourceExports": 157,
+    "cloudFunctions": 152,
+    "cloudGen1": 139,
+    "cloudGen2": 13,
+    "enabledSchedulers": 8,
+    "runningQueues": 2,
+    "eventarc": 7
+  },
+  "verdict": "G2B6_COMPLETE_NON_DESTRUCTIVE"
+}
