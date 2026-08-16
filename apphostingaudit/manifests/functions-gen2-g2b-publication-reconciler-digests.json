@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "target": "reconcileProductPublicationSessions",
+  "sourceCommit": "d1e46ba422e7bce243035fcbbbe62e56656c2d82",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g2b-publication-reconciler-iam.json": "a4afbe8fdadb0094fdebb8a1cdfe8c12b9592798d209a833514faa775037499e",
+    "apphostingaudit/manifests/functions-gen2-g2b-publication-reconciler-reconciliation.json": "8dbaf96e42f1a3b1a2d08b44473ab74d1dba4c126f1f0e827e283d7ac985587a",
+    "apphostingaudit/manifests/functions-gen2-g2b-publication-reconciler-rollout.json": "75c5efe1841e103cdfd4ff20ec560ca3b05862ee208bab93d983d85ce3660a00"
+  },
+  "rollbackSource": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/reconcileProductPublicationSessions/reconcileproductpublicationsessions-00003-bit-function-source.zip",
+    "generation": "1786898581695277",
+    "size": "397275",
+    "sha256": "bce7ff79ecfc2308ae744ee61cb889cd02fba781b466d16a383fa610b7d91880",
+    "temporaryHold": true
+  }
+}

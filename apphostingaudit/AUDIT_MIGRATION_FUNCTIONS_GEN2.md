@@ -1870,6 +1870,17 @@ un snapshot potentiellement ancien; il relit maintenant statut, expiration et
 fraicheur dans une transaction avant toute ecriture, afin de ne jamais annoter
 une session qui vient d'avancer.
 
+La revision 3 est archivee sous temporary hold avec digest et rollback exact.
+Le commit `d1e46ba422e7bce243035fcbbbe62e56656c2d82` deploie uniquement la
+revision `reconcileproductpublicationsessions-00004-pip`: runtime/build dedies,
+CPU/concurrence/max 1, min 0, 512 MiB, timeout 540 s, aucun secret et retry
+Scheduler zero. Le job conserve sa cadence de quinze minutes et bascule son
+OIDC sur le runtime dedie. Une execution controlee, precedee d'un compteur nul,
+retourne HTTP 200 en 1,070 s. Apres 327 secondes, la collection reste vide,
+sans ecriture produit/stock/Storage, warning, erreur, IAM public ou drift
+d'inventaire. G2-B compte neuf cibles fermees sur treize. Verdict:
+`G2B9_COMPLETE_NO_DATA_WRITE`.
+
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
 1. deployer une seule des treize cibles a la fois, depuis l'allowlist G0;

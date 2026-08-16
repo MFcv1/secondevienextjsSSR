@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T16:46:58Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "target": "reconcileProductPublicationSessions",
+  "inventory": {
+    "sourceExports": 157,
+    "cloudFunctions": 152,
+    "cloudGen1": 139,
+    "cloudGen2": 13,
+    "schedulers": 8,
+    "queues": 2,
+    "eventarc": 7,
+    "drift": false
+  },
+  "function": {
+    "generation": 2,
+    "region": "europe-west1",
+    "runtime": "nodejs22",
+    "state": "ACTIVE",
+    "revision": "reconcileproductpublicationsessions-00004-pip",
+    "runtimeServiceAccount": "product-publication-worker@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "cpu": 1,
+    "memory": "512Mi",
+    "timeoutSeconds": 540,
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "publicInvoker": false,
+    "secrets": []
+  },
+  "scheduler": {
+    "name": "firebase-schedule-reconcileProductPublicationSessions-europe-west1",
+    "state": "ENABLED",
+    "schedule": "every 15 minutes",
+    "timeZone": "UTC",
+    "attemptDeadline": "540s",
+    "retryCount": 0,
+    "oidcServiceAccount": "product-publication-worker@secondevienextjsssr.iam.gserviceaccount.com",
+    "targetUri": "https://europe-west1-secondevienextjsssr.cloudfunctions.net/reconcileProductPublicationSessions",
+    "lastAttemptStatus": 200
+  },
+  "data": {
+    "collection": "product_publication_sessions",
+    "before": 0,
+    "after": 0,
+    "writes": 0,
+    "storageWrites": 0,
+    "stalledUpdateFence": "fresh-transactional-status-expiry-and-updatedAt"
+  },
+  "iam": {
+    "runtimeProjectRolesExact": true,
+    "runtimeBucketRoleExact": true,
+    "schedulerTargetInvoker": true,
+    "buildRolesExact": true,
+    "userManagedKeys": 0,
+    "publicInvoker": false,
+    "rollbackIamPreserved": true
+  },
+  "observation": {
+    "quietWindowSeconds": 327,
+    "closedAt": "2026-08-16T16:52:02Z",
+    "httpStatuses": [
+      200
+    ],
+    "errors": 0,
+    "warnings": 0
+  },
+  "rollbackReady": true,
+  "verdict": "G2B9_RECONCILED_NO_DRIFT"
+}

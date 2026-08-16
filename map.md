@@ -957,6 +957,11 @@ quotidien utilise le meme compte dedie en OIDC. Sa probe Scheduler est lancee
 uniquement apres un comptage nul et retourne 200 sans ecriture, suppression ou
 drift apres 321 secondes; le rollback exact de la revision 2 reste sous
 temporary hold.
+Le scheduler `reconcileProductPublicationSessions` est actif en revision
+`00004-pip` avec runtime/build dedies, concurrence/max 1 et OIDC dedie. Le
+marquage `attention_required` relit l'etat courant en transaction. Sa probe
+Scheduler retourne 200 et la quiet-window de 327 secondes conserve zero
+session, ecriture, warning, erreur ou drift; la revision 3 reste sous hold.
 
 | Domaine | Exports |
 | --- | --- |
