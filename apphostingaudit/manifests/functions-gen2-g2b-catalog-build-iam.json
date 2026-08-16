@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T17:32:50Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "target": "dispatchCatalogBuild",
+  "mode": "verify-only",
+  "actor": "matthis.fradin2@gmail.com",
+  "sourceCommit": "81a6aef70d9031b46f09919cbf7b6950b78c374c",
+  "changes": [],
+  "runtimeProjectRoles": [
+    "roles/cloudtasks.enqueuer",
+    "roles/datastore.user",
+    "roles/logging.logWriter",
+    "roles/serviceusage.serviceUsageConsumer"
+  ],
+  "runtimeBucketBindings": {
+    "gs://secondevienextjsssr-catalog-europe-west4": "roles/storage.objectAdmin"
+  },
+  "invokerMembers": [
+    "serviceAccount:catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "serviceAccount:catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com"
+  ],
+  "checks": {
+    "runtimeRolesExact": true,
+    "runtimeBucketRoleExact": true,
+    "runtimeActAs": true,
+    "invokersExact": true,
+    "buildRolesExact": true,
+    "buildActAs": true,
+    "publicInvoker": false,
+    "runtimeUserManagedKeys": 0,
+    "buildUserManagedKeys": 0,
+    "queueRunning": true,
+    "queueEmpty": true,
+    "queueLimitsExact": true,
+    "rollbackIamPreserved": true
+  },
+  "rollback": "Retain runtime, build, invoker and bucket IAM; restore the held revision-12 source and former runtime limits without mutating the queue.",
+  "verdict": "G2B_CATALOG_BUILD_IAM_QUEUE_VERIFIED"
+}

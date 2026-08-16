@@ -1936,6 +1936,24 @@ invocation metier, e-mail, warning ou erreur. Les inventaires restent 157/152,
 139 Gen1, 13 Gen2, 8 schedulers et 2 queues. G2-B compte onze cibles fermees
 sur treize. Verdict: `G2B11_COMPLETE_NO_EMAIL_SENT`.
 
+Le preflight G2-B12 de `dispatchCatalogBuild` retrouve une queue RUNNING et
+vide, concurrence/debit 1, dix tentatives, backoff 5-300 s et cinq doublements.
+Le controle publication est exact a la revision 295: desired, published et
+revalidated alignes, `published/accepted/valid`, `dirty=false`, aucun lease ni
+erreur courante. Les 21 reponses 500 des trente derniers jours sont toutes
+`BUILD_OBSOLETE`: une revision plus recente a pris possession du flux et le
+dernier cas est suivi d'une publication 285 reussie. Les dix 403 sont des
+probes historiques du 18 juillet, anterieurs a la revision active.
+
+La source revision 12 est archivee sous temporary hold avec digest. Runtime et
+IAM catalogue etaient deja dedies et exacts; aucun droit n'est ajoute. Le
+wrapper distingue maintenant `http-task` d'un HTTP generique: il exige queue
+RUNNING et vide, limites/retries exacts, conserve le label taskqueue, deploie
+le seul endpoint prive et ne reecrit jamais la queue. La cible source fixe
+CPU/concurrence/max 1, min 0, 512 MiB et timeout/deadline 300 s. Le rollback
+restaure la source revision 12, 256 MiB, 60 s, concurrence 80 et max 20 sans
+modifier queue, IAM, endpoint ou pointeurs.
+
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
 1. deployer une seule des treize cibles a la fois, depuis l'allowlist G0;
