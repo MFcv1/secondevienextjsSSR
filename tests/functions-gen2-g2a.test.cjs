@@ -157,6 +157,94 @@ test('G2-A stats: le plan cloud reste read-only et le ledger est interdit aux cl
     assert.match(rules, /allow read, write: if false/);
 });
 
+test('G2-B stats: le bootstrap est borne, transactionnel et fail-closed', () => {
+    const bootstrap = fs.readFileSync(
+        path.join(ROOT, 'scripts/bootstrap-functions-gen2-g2b-stats.mjs'),
+        'utf8'
+    );
+    for (const expected of [
+        /EXPECTED_LEGACY_ORDERS\s*=\s*26/,
+        /G2B_SEED_26_ORDER_STATS_LEDGERS/,
+        /G2B_STATS_PROJECT_REQUIRED/,
+        /G2B_STATS_COMMIT_MISMATCH/,
+        /G2B_STATS_MANIFEST_DIGEST_MISMATCH/,
+        /G2B_STATS_SOURCE_PRECONDITION_DRIFT/,
+        /G2B_STATS_LEDGER_ALREADY_EXISTS/,
+        /db\.runTransaction/,
+        /transaction\.create\(db\.doc\(`order_stats_projections\/\$\{document\.id\}`\)/,
+        /maxAttempts:\s*1/,
+        /snapshot\.updateTime\.nanoseconds/,
+        /collectionsWritten:\s*apply\s*\?\s*\['order_stats_projections'\]\s*:\s*\[\]/
+    ]) assert.match(bootstrap, expected);
+    assert.doesNotMatch(bootstrap, /transaction\.(?:set|update|delete)\(/);
+    assert.doesNotMatch(bootstrap, /db\.doc\(`(?:orders|dashboard_stats|sales_stats_daily)\//);
+});
+
+test('G2-B stats: le bootstrap refuse projet et approbation incorrects avant credentials', () => {
+    const script = path.join(ROOT, 'scripts/bootstrap-functions-gen2-g2b-stats.mjs');
+    const base = [
+        script,
+        '--project=wrong-project',
+        '--env=sandbox',
+        `--commit=${'0'.repeat(40)}`,
+        '--manifest=apphostingaudit/manifests/functions-gen2-g2a-stats.json',
+        `--manifest-sha256=${'0'.repeat(64)}`,
+        '--actor=test@example.invalid'
+    ];
+    const wrongProject = spawnSync(process.execPath, base, {
+        cwd: ROOT,
+        encoding: 'utf8',
+        env: { ...process.env, FIREBASE_SERVICE_ACCOUNT_JSON: '' }
+    });
+    assert.notEqual(wrongProject.status, 0);
+    assert.match(wrongProject.stderr, /G2B_STATS_PROJECT_REQUIRED/);
+
+    const wrongApproval = spawnSync(process.execPath, [
+        script,
+        '--project=secondevienextjsssr',
+        '--env=sandbox',
+        `--commit=${spawnSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).stdout.trim()}`,
+        '--manifest=apphostingaudit/manifests/functions-gen2-g2a-stats.json',
+        `--manifest-sha256=${'0'.repeat(64)}`,
+        '--actor=test@example.invalid',
+        '--apply=true',
+        '--approval=WRONG'
+    ], {
+        cwd: ROOT,
+        encoding: 'utf8',
+        env: { ...process.env, FIREBASE_SERVICE_ACCOUNT_JSON: '' }
+    });
+    assert.notEqual(wrongApproval.status, 0);
+    assert.match(wrongApproval.stderr, /G2B_STATS_APPLY_APPROVAL_REQUIRED/);
+});
+
+test('G2-B stats: IAM dediee sans cle, compte par defaut ni invoker public', () => {
+    const iam = fs.readFileSync(
+        path.join(ROOT, 'scripts/configure-functions-gen2-g2b-stats-iam.mjs'),
+        'utf8'
+    );
+    for (const expected of [
+        /G2B_CONFIGURE_STATS_IAM/,
+        /order-stats-projector@/,
+        /functions-gen2-builder@/,
+        /functions-eventarc-invoker@/,
+        /roles\/datastore\.user/,
+        /roles\/logging\.logWriter/,
+        /roles\/serviceusage\.serviceUsageConsumer/,
+        /roles\/artifactregistry\.writer/,
+        /roles\/storage\.objectViewer/,
+        /roles\/eventarc\.eventReceiver/,
+        /roles\/run\.invoker/,
+        /roles\/iam\.serviceAccountUser/,
+        /userManaged:\s*keys\.filter/,
+        /projectWideRunInvoker:\s*false/,
+        /publicInvoker:\s*false/
+    ]) assert.match(iam, expected);
+    assert.doesNotMatch(iam, /roles\/(?:editor|owner|storage\.admin)/i);
+    assert.doesNotMatch(iam, /service-accounts keys create/);
+    assert.doesNotMatch(iam, /allUsers|allAuthenticatedUsers/);
+});
+
 test('G2-A catalogue: les trois cibles a IAM deja dedie ont des limites source completes', () => {
     for (const relativePath of [
         'functions/src/catalog/onCatalogSourceWrite.js',

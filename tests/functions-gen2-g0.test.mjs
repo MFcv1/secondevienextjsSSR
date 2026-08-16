@@ -17,6 +17,7 @@ import {
   buildFirebaseCliEnv,
   buildFirebaseDeployArgs,
   buildGcloudGen1DeployArgs,
+  buildGcloudGen2DeployArgs,
   parseDeployArgs,
   validateDeploymentRequest
 } from '../scripts/deploy-functions-targeted.mjs';
@@ -276,6 +277,34 @@ test('le fallback gcloud Gen1 reste limite au reconciler et explicite toute sa c
   assert.throws(() => validate({
     ...validationArgs({ allowlist: 'commerceOperationsReconciler', transport: 'direct-rest' })
   }), /Transport interdit/);
+});
+
+test('le transport gcloud Gen2 est limite au premier lot stats et explicite IAM et limites', () => {
+  const request = validate({
+    ...validationArgs({ allowlist: 'onOrderStatsWrite', transport: 'gcloud-gen2' })
+  });
+  const args = buildGcloudGen2DeployArgs(request);
+  assert.deepEqual(args.slice(0, 3), ['functions', 'deploy', 'onOrderStatsWrite']);
+  for (const expected of [
+    '--project=secondevienextjsssr',
+    '--region=europe-west1',
+    '--gen2',
+    '--runtime=nodejs22',
+    '--source=functions',
+    '--entry-point=onOrderStatsWrite',
+    '--trigger-event-filters=type=google.cloud.firestore.document.v1.written,database=(default),namespace=(default)',
+    '--trigger-event-filters-path-pattern=document=orders/{orderId}',
+    '--trigger-location=eur3',
+    '--trigger-service-account=functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com',
+    '--run-service-account=order-stats-projector@secondevienextjsssr.iam.gserviceaccount.com',
+    '--build-service-account=projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    '--memory=256Mi', '--cpu=1', '--timeout=60s', '--concurrency=1',
+    '--min-instances=0', '--max-instances=1', '--retry',
+    '--ingress-settings=all', '--no-allow-unauthenticated', '--quiet'
+  ]) assert.ok(args.includes(expected), expected);
+  assert.throws(() => validate({
+    ...validationArgs({ allowlist: 'getCatalogPublicationStatus', transport: 'gcloud-gen2' })
+  }), /limite a la cible G2-B approuvee/);
 });
 
 test('les trois workers G1 epinglent runtime, secrets et limites explicites', () => {
