@@ -1863,6 +1863,13 @@ d'inventaire apres une quiet-window de 321 secondes. G2-B compte huit cibles
 fermees sur treize. Verdict:
 `G2B8_COMPLETE_NO_DATA_WRITE`.
 
+Le preflight G2-B9 retrouve zero session et 288 passages HTTP 200 sur trente
+jours, sans erreur ou warning. La finalisation est deja protegee par lease et
+commandes deterministes. Le marquage `attention_required` utilisait toutefois
+un snapshot potentiellement ancien; il relit maintenant statut, expiration et
+fraicheur dans une transaction avant toute ecriture, afin de ne jamais annoter
+une session qui vient d'avancer.
+
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
 1. deployer une seule des treize cibles a la fois, depuis l'allowlist G0;

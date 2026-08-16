@@ -613,22 +613,29 @@ const reconcileProductPublicationSessions = onSchedule({
             .limit(50)
             .get()
     ]);
-    const stalledBefore = Date.now() - STALLED_UPLOAD_MS;
+    const now = Date.now();
+    const stalledBefore = now - STALLED_UPLOAD_MS;
     let attentionRequired = 0;
     for (const snapshot of uploadCandidates.docs) {
-        const session = snapshot.data();
-        const updatedAt = session?.updatedAt?.toDate?.() || new Date(session?.updatedAt || 0);
-        const expiresAt = session?.expiresAt?.toDate?.() || new Date(session?.expiresAt || 0);
-        if (
-            session?.clientState === 'attention_required' ||
-            updatedAt.getTime() > stalledBefore ||
-            expiresAt.getTime() <= Date.now()
-        ) continue;
-        await snapshot.ref.set({
-            clientState: 'attention_required',
-            lastError: session.lastError || 'PRODUCT_PUBLICATION_UPLOAD_STALLED'
-        }, { merge: true });
-        attentionRequired += 1;
+        const marked = await db.runTransaction(async (transaction) => {
+            const fresh = await transaction.get(snapshot.ref);
+            if (!fresh.exists) return false;
+            const session = fresh.data();
+            const updatedAt = session?.updatedAt?.toDate?.() || new Date(session?.updatedAt || 0);
+            const expiresAt = session?.expiresAt?.toDate?.() || new Date(session?.expiresAt || 0);
+            if (
+                !['uploading', 'processing'].includes(session?.status) ||
+                session?.clientState === 'attention_required' ||
+                updatedAt.getTime() > stalledBefore ||
+                expiresAt.getTime() <= now
+            ) return false;
+            transaction.set(snapshot.ref, {
+                clientState: 'attention_required',
+                lastError: session.lastError || 'PRODUCT_PUBLICATION_UPLOAD_STALLED'
+            }, { merge: true });
+            return true;
+        });
+        if (marked) attentionRequired += 1;
     }
     let resumed = 0;
     for (const snapshot of candidates.docs) {

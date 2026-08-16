@@ -581,6 +581,13 @@ test('G2-B publication cleanup: la suppression exige la version Firestore observ
     assert.match(source, /product_publication_cleanup_concurrent_update/);
 });
 
+test('G2-B publication reconciler: le marquage stalled relit le statut en transaction', () => {
+    const source = fs.readFileSync(path.join(ROOT, 'functions/src/publication/productPublication.js'), 'utf8');
+    assert.match(source, /const marked = await db\.runTransaction\(async \(transaction\) =>/);
+    assert.match(source, /!\['uploading', 'processing'\]\.includes\(session\?\.status\)/);
+    assert.doesNotMatch(source, /await snapshot\.ref\.set\(\{\s*clientState: 'attention_required'/);
+});
+
 test('G2-B GC catalogue: aucune suppression planifiee sans kill-switch explicite', () => {
     const source = fs.readFileSync(path.join(ROOT, 'functions/src/catalog/mediaGarbageCollection.js'), 'utf8');
     const logSource = fs.readFileSync(path.join(ROOT, 'functions/src/catalog/structuredLog.js'), 'utf8');
