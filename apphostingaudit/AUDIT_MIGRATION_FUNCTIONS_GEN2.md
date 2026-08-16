@@ -1749,6 +1749,20 @@ plus un job deja conforme, ce qui evite ce drift a l'avenir. Inventaires:
 157/152, 139 Gen1, 13 Gen2, huit schedulers, deux queues, sept Eventarc.
 Verdict: `G2B4_COMPLETE_NO_DELETION`.
 
+#### Preflight G2-B5 - trigger artefact update cible unique
+
+`onArtifactUpdated` ne traite que `secondevie/furniture`, calcule les chemins
+media retires puis ecrit uniquement le ledger backend
+`sys_catalog_media_gc`; il ne supprime aucun objet ni sous-collection. Les 672
+entrees actuelles sont `pending` mais aucune n'est eligible avant la grace de
+90 jours. Les 32 requetes observees depuis le 1er aout sont HTTP 200.
+L'identite runtime sans cle `catalog-media-enqueuer` a ete creee avec
+Datastore User, Log Writer, Service Usage Consumer et Object Viewer sur le
+seul bucket media. Le build et le transport Eventarc partages restent dedies;
+Run Invoker est borne au seul service et aucun invoker public n'existe.
+L'archive revision 23 est sous temporary hold. Verdict:
+`G2B_ARTIFACT_UPDATED_PREFLIGHT_READY`; rollout non encore ferme.
+
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
 1. deployer une seule des treize cibles a la fois, depuis l'allowlist G0;

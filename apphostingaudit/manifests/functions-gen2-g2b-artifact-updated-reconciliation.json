@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T14:33:52Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "mode": "read-only",
+  "target": "onArtifactUpdated",
+  "cloudBaseline": {
+    "revision": "onartifactupdated-00023-riw",
+    "state": "ACTIVE",
+    "region": "europe-west1",
+    "runtime": "nodejs22",
+    "runtimeServiceAccount": "231220287936-compute@developer.gserviceaccount.com",
+    "buildServiceAccount": "231220287936-compute@developer.gserviceaccount.com",
+    "triggerServiceAccount": "231220287936-compute@developer.gserviceaccount.com",
+    "eventType": "google.cloud.firestore.document.v1.updated",
+    "documentPattern": "artifacts/{appId}/public/data/{collection}/{docId}",
+    "triggerLocation": "eur3",
+    "retry": false,
+    "cpu": 1,
+    "memoryMiB": 256,
+    "timeoutSeconds": 300,
+    "concurrency": 80,
+    "minInstances": 0,
+    "maxInstances": 20
+  },
+  "desired": {
+    "runtimeServiceAccount": "catalog-media-enqueuer@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "triggerServiceAccount": "functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com",
+    "retry": true,
+    "cpu": 1,
+    "memoryMiB": 256,
+    "timeoutSeconds": 300,
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1
+  },
+  "data": {
+    "ledgerCollection": "sys_catalog_media_gc",
+    "ledgerDocuments": 672,
+    "states": {
+      "pending": 672
+    },
+    "eligibleForGcNow": 0,
+    "allowedWrites": [
+      "sys_catalog_media_gc"
+    ],
+    "forbiddenWrites": [
+      "likes",
+      "comments",
+      "Storage objects"
+    ],
+    "probe": "Use a valid authenticated CloudEvent in a non-secondevie appId; handler returns before reading event data or writing."
+  },
+  "historicalHealth": {
+    "since": "2026-08-01T00:00:00Z",
+    "requests": 32,
+    "http200": 32,
+    "http5xx": 0
+  },
+  "idempotence": "media path hash plus Storage generation inside a Firestore transaction",
+  "blockers": [],
+  "deploymentAllowed": false,
+  "verdict": "G2B_ARTIFACT_UPDATED_PREFLIGHT_READY"
+}

@@ -929,6 +929,10 @@ mesure read-only retrouve zero candidat media/release; aucune suppression
 n'appartient au rollout de configuration. La revision
 `catalogmediagarbagecollector-00010-zen` est fermee apres une execution
 manuelle `dry_run`, zero ecriture et zero suppression.
+Le preflight G2-B5 de `onArtifactUpdated` borne les ecritures au seul ledger
+`sys_catalog_media_gc`, utilise le runtime sans cle `catalog-media-enqueuer`
+et le transport Eventarc partage. Les 672 intents restent en grace et zero est
+eligible; aucun stockage ne peut etre supprime par ce trigger.
 
 | Domaine | Exports |
 | --- | --- |

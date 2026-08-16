@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T14:33:52Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "target": "onArtifactUpdated",
+  "mode": "apply-and-verify",
+  "changes": [
+    "created catalog-media-enqueuer without user-managed key",
+    "granted exact runtime project roles",
+    "granted Object Viewer on only the product media bucket",
+    "granted operator ActAs on only the runtime identity",
+    "granted shared Eventarc identity Run Invoker on only onartifactupdated"
+  ],
+  "runtimeProjectRoles": [
+    "roles/datastore.user",
+    "roles/logging.logWriter",
+    "roles/serviceusage.serviceUsageConsumer"
+  ],
+  "resourceRoles": {
+    "runtimeMediaBucket": "roles/storage.objectViewer",
+    "triggerTargetService": "roles/run.invoker",
+    "buildArtifactRepository": "roles/artifactregistry.writer",
+    "buildSourceBuckets": "roles/storage.objectViewer"
+  },
+  "checks": {
+    "runtimeRolesExact": true,
+    "runtimeActAs": true,
+    "runtimeMediaBucketViewer": true,
+    "triggerEventarcReceiver": true,
+    "triggerRunInvokerTargetOnly": true,
+    "buildRolesExact": true,
+    "publicInvoker": false,
+    "userManagedKeys": 0,
+    "defaultComputeOrAppspotUsedAfterRollout": false
+  },
+  "rollback": "Retain dedicated runtime/build/trigger IAM during rollback; remove nothing before G12-B.",
+  "verdict": "G2B_ARTIFACT_UPDATED_IAM_VERIFIED"
+}
