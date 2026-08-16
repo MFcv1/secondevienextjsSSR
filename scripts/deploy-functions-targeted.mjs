@@ -303,6 +303,32 @@ const GCLOUD_GEN2_TARGETS = Object.freeze({
     minInstances: '0',
     maxInstances: '1',
     ingressSettings: 'all'
+  }),
+  onOrderUpdated: Object.freeze({
+    triggerType: 'event',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'onOrderUpdated',
+    eventType: 'google.cloud.firestore.document.v1.updated',
+    eventFilters: 'type=google.cloud.firestore.document.v1.updated,database=(default),namespace=(default)',
+    documentPathPattern: 'orders/{orderId}',
+    eventPathPattern: 'document=orders/{orderId}',
+    triggerLocation: 'eur3',
+    triggerServiceAccount: 'functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com',
+    runtimeServiceAccount: 'legacy-order-email-worker@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    secrets: Object.freeze([
+      'GMAIL_EMAIL=GMAIL_EMAIL:2',
+      'GMAIL_PASSWORD=GMAIL_PASSWORD:5',
+      'RESEND_API_KEY=RESEND_API_KEY:1'
+    ]),
+    memory: '256Mi',
+    cpu: '1',
+    timeout: '60s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all'
   })
 });
 const G2B_ROLLBACKS = Object.freeze({
@@ -423,6 +449,20 @@ const G2B_ROLLBACKS = Object.freeze({
     sourceRevision: 'onordercreated-00028-dov',
     source: 'gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onOrderCreated/onordercreated-00028-dov-function-source.zip',
     sourceGeneration: '1786899705938033',
+    sourceSize: '397275',
+    sourceSha256: 'bce7ff79ecfc2308ae744ee61cb889cd02fba781b466d16a383fa610b7d91880',
+    runtimeServiceAccount: '231220287936-compute@developer.gserviceaccount.com',
+    memory: '256Mi',
+    timeout: '60s',
+    concurrency: '80',
+    maxInstances: '20',
+    retry: false
+  }),
+  onOrderUpdated: Object.freeze({
+    approval: 'G2B_ROLLBACK_ON_ORDER_UPDATED',
+    sourceRevision: 'onorderupdated-00028-hoc',
+    source: 'gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onOrderUpdated/onorderupdated-00028-hoc-function-source.zip',
+    sourceGeneration: '1786900674512452',
     sourceSize: '397275',
     sourceSha256: 'bce7ff79ecfc2308ae744ee61cb889cd02fba781b466d16a383fa610b7d91880',
     runtimeServiceAccount: '231220287936-compute@developer.gserviceaccount.com',
