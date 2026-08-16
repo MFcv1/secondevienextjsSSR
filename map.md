@@ -973,6 +973,12 @@ Le lot G2-B11 applique la meme isolation a `onOrderUpdated` en revision
 `onorderupdated-00029-moj`, avec le filtre Firestore update exact, retry actif
 et quiet-window passive de 307 secondes sans ledger ni e-mail. Le rollback
 revision 28 conserve TTL, secrets et IAM.
+Le lot G2-B12 active `dispatchCatalogBuild` en revision
+`dispatchcatalogbuild-00013-rij`: queue Cloud Tasks privee inchangée,
+runtime/build dedies, 512 MiB, timeout/deadline 300 s, concurrence/max 1. La
+quiet-window de 316 secondes conserve queue vide et controle catalogue
+295/295/295 valide, sans lease ni ecriture. Le rollback revision 12 ne modifie
+ni queue, IAM, endpoint ou pointeurs.
 
 | Domaine | Exports |
 | --- | --- |

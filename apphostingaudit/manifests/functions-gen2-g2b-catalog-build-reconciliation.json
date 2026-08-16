@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T17:40:11Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "target": "dispatchCatalogBuild",
+  "inventory": {
+    "sourceExports": 157,
+    "cloudFunctions": 152,
+    "cloudGen1": 139,
+    "cloudGen2": 13,
+    "schedulers": 8,
+    "queues": 2,
+    "eventarc": 7,
+    "drift": false
+  },
+  "function": {
+    "generation": 2,
+    "region": "europe-west1",
+    "runtime": "nodejs22",
+    "state": "ACTIVE",
+    "revision": "dispatchcatalogbuild-00013-rij",
+    "runtimeServiceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "cpu": 1,
+    "memory": "512Mi",
+    "timeoutSeconds": 300,
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "publicInvoker": false,
+    "secrets": []
+  },
+  "queue": {
+    "name": "dispatchCatalogBuild",
+    "state": "RUNNING",
+    "tasks": 0,
+    "limitsAndRetryExact": true,
+    "deadlineAlignedSeconds": 300,
+    "invokersExact": true
+  },
+  "catalogControl": {
+    "desiredRevision": 295,
+    "publishedRevision": 295,
+    "revalidatedRevision": 295,
+    "buildState": "published",
+    "invalidationState": "accepted",
+    "integrityState": "valid",
+    "dirty": false,
+    "activeLease": false,
+    "lastError": null
+  },
+  "historicalErrors": {
+    "http500": 21,
+    "classification": "BUILD_OBSOLETE_EXPECTED_NEWER_REVISION_OWNER",
+    "latest": "2026-08-12T16:48:46.218308Z",
+    "latestFollowedBySuccessfulRevision": 285,
+    "http403": 10,
+    "http403Classification": "HISTORICAL_PROBES_2026_07_18"
+  },
+  "iam": {
+    "runtimeProjectRolesExact": true,
+    "runtimeBucketRoleExact": true,
+    "invokersExact": true,
+    "buildRolesExact": true,
+    "userManagedKeys": 0,
+    "publicInvoker": false,
+    "rollbackIamPreserved": true
+  },
+  "observation": {
+    "quietWindowSeconds": 316,
+    "closedAt": "2026-08-16T17:40:11Z",
+    "businessInvocations": 0,
+    "errors": 0,
+    "warnings": 0,
+    "writes": 0
+  },
+  "rollbackReady": true,
+  "verdict": "G2B12_RECONCILED_NO_DRIFT_EMPTY_QUEUE"
+}

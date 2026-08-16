@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "target": "dispatchCatalogBuild",
+  "sourceCommit": "8d35eb086ccdc5417bc399d649be17e073f02e19",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g2b-catalog-build-iam.json": "b3ce03ad6c5dd614f39bcb434133feda701341cd85db7e404f08cc1874288910",
+    "apphostingaudit/manifests/functions-gen2-g2b-catalog-build-reconciliation.json": "69bf4dd79f5714a2e71ebc5a894510379dc4e00f4bf1925c860774d37e23d8e9",
+    "apphostingaudit/manifests/functions-gen2-g2b-catalog-build-rollout.json": "18ca956304db90a81bb284a2fbf0bf52bab249f6277adb26aa7aa8cf98690d96"
+  },
+  "rollbackSource": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/dispatchCatalogBuild/dispatchcatalogbuild-00012-coh-function-source.zip",
+    "generation": "1786901457941111",
+    "size": "372482",
+    "sha256": "3c9a44606a3098c774be1d80be6f0af82e54c0bbe3b63534e4a28fb81e8674b4",
+    "temporaryHold": true
+  }
+}

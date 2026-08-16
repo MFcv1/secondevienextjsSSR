@@ -1954,6 +1954,14 @@ CPU/concurrence/max 1, min 0, 512 MiB et timeout/deadline 300 s. Le rollback
 restaure la source revision 12, 256 MiB, 60 s, concurrence 80 et max 20 sans
 modifier queue, IAM, endpoint ou pointeurs.
 
+Le commit `8d35eb086ccdc5417bc399d649be17e073f02e19` deploie uniquement
+`dispatchCatalogBuild` en revision `dispatchcatalogbuild-00013-rij`. La queue,
+ses deux invokers et ses limites restent inchanges. Apres 316 secondes, elle
+reste vide et le controle catalogue demeure 295/295/295 valide, sans lease,
+invocation, warning, erreur, ecriture Firestore/Storage ou drift d'inventaire.
+G2-B compte douze cibles fermees sur treize. Verdict:
+`G2B12_COMPLETE_EMPTY_QUEUE_NO_WRITE`.
+
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
 1. deployer une seule des treize cibles a la fois, depuis l'allowlist G0;
