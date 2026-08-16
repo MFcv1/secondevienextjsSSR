@@ -1725,7 +1725,7 @@ quiet-window couvre 584 secondes. Les inventaires restent 157/152, 139 Gen1,
 `functions-gen2-g2b-catalog-reconciler-{reconciliation,iam,inventory,rollout}.json`,
 scelles par leur manifeste de digests. Verdict: `G2B3_COMPLETE`.
 
-#### Preflight G2-B4 - GC catalogue cible unique
+#### Execution G2-B4 - GC catalogue cible unique
 
 Le preflight de `catalogMediaGarbageCollector` trouve zero candidat media
 eligible, dix releases toutes retenues, zero release et zero objet candidat a
@@ -1736,8 +1736,18 @@ etaient retires des logs structures. Avant rollout, le kill-switch
 l'absence de variable runtime; les logs exposent desormais candidats et
 comptes supprimes sans chemin d'objet. Aucune suppression n'est autorisee par
 ce lot. Runtime, Scheduler OIDC, deux buckets cibles et IAM sont deja dedies et
-sans invoker public; l'archive revision 9 est sous temporary hold. Verdict:
-`G2B_CATALOG_MEDIA_GC_PREFLIGHT_READY`; rollout non encore ferme.
+sans invoker public; l'archive revision 9 est sous temporary hold.
+
+Le commit `5fd6fc04d23d7efc5d12105abf198e91ef4245ab` a deploye uniquement la
+revision `catalogmediagarbagecollector-00010-zen`, CPU/concurrence/max 1,
+512 MiB et 540 s. Une seconde precondition a encore retrouve zero candidat,
+puis l'execution manuelle du seul job a retourne HTTP 200 en 1,587 s,
+`dry_run`, `mediaResult: noop`, zero release/objet supprime, zero ecriture et
+zero erreur. La cadence reste toutes les 24 heures UTC; sa reecriture inutile
+a reancre la prochaine execution a 14:28 UTC. Le wrapper ne modifie desormais
+plus un job deja conforme, ce qui evite ce drift a l'avenir. Inventaires:
+157/152, 139 Gen1, 13 Gen2, huit schedulers, deux queues, sept Eventarc.
+Verdict: `G2B4_COMPLETE_NO_DELETION`.
 
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 

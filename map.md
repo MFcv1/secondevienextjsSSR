@@ -926,7 +926,9 @@ fermee apres deux executions naturelles `healthy` et zero drift.
 Le preflight G2-B4 rend `catalogMediaGarbageCollector` fail-closed: un seul
 kill-switch couvre medias et releases et reste `false` sur le sandbox. La
 mesure read-only retrouve zero candidat media/release; aucune suppression
-n'appartient au rollout de configuration.
+n'appartient au rollout de configuration. La revision
+`catalogmediagarbagecollector-00010-zen` est fermee apres une execution
+manuelle `dry_run`, zero ecriture et zero suppression.
 
 | Domaine | Exports |
 | --- | --- |

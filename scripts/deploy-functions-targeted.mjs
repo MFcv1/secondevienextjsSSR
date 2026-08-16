@@ -157,6 +157,7 @@ const GCLOUD_GEN2_TARGETS = Object.freeze({
     schedulerServiceAccount: 'catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
     schedulerAttemptDeadline: '540s',
     expectedSchedulerAttemptDeadline: '540s',
+    schedulerUpdateRequired: false,
     runtimeServiceAccount: 'catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
     buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
     memory: '512Mi',
@@ -648,7 +649,7 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
       process.exitCode = result.status || 1;
       return;
     }
-    if (target.triggerType === 'http-scheduler') {
+    if (target.triggerType === 'http-scheduler' && target.schedulerUpdateRequired !== false) {
       const schedulerResult = spawnSync('gcloud', buildGcloudSchedulerUpdateArgs(validation), {
         cwd: rootDir,
         env: process.env,
@@ -702,7 +703,7 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
       process.exitCode = result.status || 1;
       return;
     }
-    if (target.triggerType === 'http-scheduler') {
+    if (target.triggerType === 'http-scheduler' && target.schedulerUpdateRequired !== false) {
       const schedulerResult = spawnSync('gcloud', buildGcloudSchedulerUpdateArgs(validation, { rollback: true }), {
         cwd: rootDir,
         env: process.env,

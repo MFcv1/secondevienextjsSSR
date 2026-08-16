@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T14:29:30Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "target": "catalogMediaGarbageCollector",
+  "deployment": {
+    "deployed": true,
+    "sourceCommit": "5fd6fc04d23d7efc5d12105abf198e91ef4245ab",
+    "allowlist": [
+      "catalogMediaGarbageCollector"
+    ],
+    "revision": "catalogmediagarbagecollector-00010-zen",
+    "build": "51c322dd-49da-4c91-bb96-2ae85098df08",
+    "sourceGeneration": "1786890330943400",
+    "state": "ACTIVE",
+    "trafficPercent": 100
+  },
+  "runtime": {
+    "runtimeServiceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "cpu": 1,
+    "memoryMiB": 512,
+    "timeoutSeconds": 540,
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "publicInvoker": false,
+    "catalogMediaGcCommitPresent": false,
+    "effectiveMode": "dry_run"
+  },
+  "scheduler": {
+    "name": "firebase-schedule-catalogMediaGarbageCollector-europe-west1",
+    "state": "ENABLED",
+    "schedule": "every 24 hours",
+    "timeZone": "UTC",
+    "attemptDeadlineSeconds": 540,
+    "retryMaxAttemptsEffective": 0,
+    "oidcServiceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "manualProofAttempt": "2026-08-16T14:28:14.927294Z",
+    "nextScheduleTime": "2026-08-17T14:28:02.472684Z",
+    "anchorDrift": {
+      "before": "18:26 UTC",
+      "after": "14:28 UTC",
+      "classification": "NON_FUNCTIONAL_INTERVAL_REANCHOR",
+      "resolution": "Cadence every 24 hours and UTC are unchanged; wrapper now skips Scheduler updates when the existing job is already exact."
+    }
+  },
+  "proof": {
+    "preconditionChecks": 2,
+    "eligibleMediaCandidatesBefore": 0,
+    "candidateReleasesBefore": 0,
+    "candidateObjectsBefore": 0,
+    "totalReleases": 10,
+    "httpStatus": 200,
+    "latencySeconds": 1.587021698,
+    "result": "dry_run",
+    "mediaResult": "noop",
+    "releaseResult": "dry_run",
+    "inspectedMedia": 0,
+    "candidateReleasesObserved": 0,
+    "deletedReleases": 0,
+    "deletedObjects": 0,
+    "errors": 0,
+    "http5xx": 0,
+    "firestoreWrites": 0
+  },
+  "inventory": {
+    "sourceExports": 157,
+    "cloudFunctions": 152,
+    "cloudGen1": 139,
+    "cloudGen2": 13,
+    "enabledSchedulers": 8,
+    "runningQueues": 2,
+    "eventarc": 7
+  },
+  "rollback": {
+    "approval": "G2B_ROLLBACK_CATALOG_MEDIA_GC",
+    "expectedCurrentRevision": "catalogmediagarbagecollector-00010-zen",
+    "sourceRevision": "catalogmediagarbagecollector-00009-geb",
+    "source": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/catalogMediaGarbageCollector/catalogmediagarbagecollector-00009-geb-function-source.zip",
+    "sourceGeneration": "1786890156516126",
+    "sourceSize": "345983",
+    "sourceSha256": "fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92",
+    "temporaryHold": true,
+    "restoredConcurrency": 80,
+    "restoredMaxInstances": 20,
+    "preserved": [
+      "runtime and Scheduler identities",
+      "endpoint and daily cadence",
+      "IAM",
+      "Storage and Firestore data",
+      "logs and alerts"
+    ],
+    "dataDeletion": false
+  },
+  "verdict": "G2B4_COMPLETE_NO_DELETION"
+}

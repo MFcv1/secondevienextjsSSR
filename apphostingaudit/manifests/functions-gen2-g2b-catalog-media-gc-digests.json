@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "target": "catalogMediaGarbageCollector",
+  "sourceCommit": "5fd6fc04d23d7efc5d12105abf198e91ef4245ab",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g2b-catalog-media-gc-reconciliation.json": "b827f3ec01213ab61886d9e53d85331fc167a85cb2fa034d5824b63b04d210d9",
+    "apphostingaudit/manifests/functions-gen2-g2b-catalog-media-gc-iam.json": "a3753c1f6867aad6d312a687ddb3eda34240caf89ee59f68296bbcf7b968bab5",
+    "apphostingaudit/manifests/functions-gen2-g2b-catalog-media-gc-rollout.json": "916f9153c8af9efa10cdd6b8ecff514eb7c35cfc486b7ba046e76757149c9fc8"
+  },
+  "rollbackSource": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/catalogMediaGarbageCollector/catalogmediagarbagecollector-00009-geb-function-source.zip",
+    "generation": "1786890156516126",
+    "size": "345983",
+    "sha256": "fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92",
+    "temporaryHold": true
+  }
+}
