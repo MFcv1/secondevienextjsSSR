@@ -1912,6 +1912,22 @@ runtime/trigger compute, concurrence 80, max 20 et retry off tout en conservant
 TTL, secrets et IAM jusqu'a G12-B. G2-B compte dix cibles fermees sur treize.
 Verdict: `G2B10_COMPLETE_NO_EMAIL_SENT`.
 
+Le preflight G2-B11 de `onOrderUpdated` retrouve la revision 28 active avec
+280 reponses HTTP 200 sur trente jours, zero erreur/warning et un dernier
+evenement le 15 aout. Le ledger partage reste vide, sa TTL ACTIVE et les trois
+versions de secrets ENABLED. Les transitions `pending_payment -> paid`,
+`shipped` et `completed` utilisent des kinds distincts et le meme claim
+deterministe que G2-B10; un replay ne renvoie pas une livraison terminale.
+
+La source active est archivee sous temporary hold avec generation, taille et
+digest. Le wrapper autorise desormais uniquement le filtre update exact
+`orders/{orderId}`, runtime/build/Eventarc dedies, retry actif,
+concurrence/max 1 et rollback revision 28 sur runtime/trigger compute,
+concurrence 80, max 20 et retry off. IAM ajoute seulement Run Invoker au
+transport Eventarc sur `onorderupdated`; les roles runtime et secrets restent
+strictement ceux deja verifies pour G2-B10. Aucun e-mail ou ordre n'est cree
+pendant ce preflight.
+
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
 1. deployer une seule des treize cibles a la fois, depuis l'allowlist G0;
