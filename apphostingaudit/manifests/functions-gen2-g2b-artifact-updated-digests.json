@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "target": "onArtifactUpdated",
+  "sourceCommit": "d385c3c79549f72ec7ecfe5c660b0642c1738e93",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g2b-artifact-updated-reconciliation.json": "24a0d2da36768195dae516657ee1adb6051c66b819ae036aedb09db8cb96ea06",
+    "apphostingaudit/manifests/functions-gen2-g2b-artifact-updated-iam.json": "376f48bd41a4594930643b7135187589ee20128ef73c387a3d908432582b3989",
+    "apphostingaudit/manifests/functions-gen2-g2b-artifact-updated-rollout.json": "8b39b1fe1625a72dd5c2be5dfe07eb760a4e815bf9543d7b7c3fce511bc8190a"
+  },
+  "rollbackSource": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onArtifactUpdated/onartifactupdated-00023-riw-function-source.zip",
+    "generation": "1786890722830853",
+    "size": "345983",
+    "sha256": "fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92",
+    "temporaryHold": true
+  }
+}

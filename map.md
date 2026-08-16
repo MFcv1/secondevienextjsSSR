@@ -933,6 +933,9 @@ Le preflight G2-B5 de `onArtifactUpdated` borne les ecritures au seul ledger
 `sys_catalog_media_gc`, utilise le runtime sans cle `catalog-media-enqueuer`
 et le transport Eventarc partage. Les 672 intents restent en grace et zero est
 eligible; aucun stockage ne peut etre supprime par ce trigger.
+La revision `onartifactupdated-00024-cuj` est active; la probe valide hors
+namespace retourne 204 et laisse les 672 intents inchanges. La quiet-window de
+330 secondes est fermee sans erreur ni drift.
 
 | Domaine | Exports |
 | --- | --- |

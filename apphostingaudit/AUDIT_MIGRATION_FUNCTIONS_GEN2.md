@@ -1749,7 +1749,7 @@ plus un job deja conforme, ce qui evite ce drift a l'avenir. Inventaires:
 157/152, 139 Gen1, 13 Gen2, huit schedulers, deux queues, sept Eventarc.
 Verdict: `G2B4_COMPLETE_NO_DELETION`.
 
-#### Preflight G2-B5 - trigger artefact update cible unique
+#### Execution G2-B5 - trigger artefact update cible unique
 
 `onArtifactUpdated` ne traite que `secondevie/furniture`, calcule les chemins
 media retires puis ecrit uniquement le ledger backend
@@ -1760,8 +1760,18 @@ L'identite runtime sans cle `catalog-media-enqueuer` a ete creee avec
 Datastore User, Log Writer, Service Usage Consumer et Object Viewer sur le
 seul bucket media. Le build et le transport Eventarc partages restent dedies;
 Run Invoker est borne au seul service et aucun invoker public n'existe.
-L'archive revision 23 est sous temporary hold. Verdict:
-`G2B_ARTIFACT_UPDATED_PREFLIGHT_READY`; rollout non encore ferme.
+L'archive revision 23 est sous temporary hold.
+
+Le commit `d385c3c79549f72ec7ecfe5c660b0642c1738e93` a deploye uniquement la
+revision `onartifactupdated-00024-cuj`, avec CPU/concurrence/max 1, 256 MiB,
+300 s et retry actif. Eventarc conserve un seul proprietaire et sept triggers
+au total. Une premiere probe operateur, sans `ce-datacontenttype`, a ete
+rejetee avant le handler avec HTTP 500 et zero ecriture. La probe corrigee,
+authentifiee par le SA Eventarc et bornee a un `appId` hors `secondevie`, a
+retourne HTTP 204 en 6 ms. Le ledger reste strictement a 672 documents
+`pending`; aucune ecriture Storage, likes ou comments. Apres 330 secondes,
+aucune erreur ni 5xx supplementaire, drift ledger, IAM ou trigger n'est
+observe. Verdict: `G2B5_COMPLETE`.
 
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 

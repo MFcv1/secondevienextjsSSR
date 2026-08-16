@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T14:40:00Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "target": "onArtifactUpdated",
+  "deployment": {
+    "deployed": true,
+    "sourceCommit": "d385c3c79549f72ec7ecfe5c660b0642c1738e93",
+    "allowlist": [
+      "onArtifactUpdated"
+    ],
+    "revision": "onartifactupdated-00024-cuj",
+    "build": "317036c1-63ae-446c-b3c9-d1950996959c",
+    "sourceGeneration": "1786890913279082",
+    "state": "ACTIVE",
+    "trafficPercent": 100
+  },
+  "runtime": {
+    "runtimeServiceAccount": "catalog-media-enqueuer@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "triggerServiceAccount": "functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com",
+    "cpu": 1,
+    "memoryMiB": 256,
+    "timeoutSeconds": 300,
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "retry": true,
+    "publicInvoker": false
+  },
+  "trigger": {
+    "id": "onartifactupdated-751792",
+    "location": "eur3",
+    "eventType": "google.cloud.firestore.document.v1.updated",
+    "database": "(default)",
+    "namespace": "(default)",
+    "documentPattern": "artifacts/{appId}/public/data/{collection}/{docId}",
+    "totalEventarcAfter": 7,
+    "singleOwner": true
+  },
+  "probes": [
+    {
+      "id": "g2b-artifact-updated-safe-probe-1",
+      "targetNamespace": "g2b-probe",
+      "result": "operator_probe_invalid",
+      "httpStatus": 500,
+      "cause": "ce-datacontenttype header omitted; Firebase rejected the envelope before handler execution.",
+      "dataWrites": 0
+    },
+    {
+      "id": "g2b-artifact-updated-safe-probe-2",
+      "targetNamespace": "g2b-probe",
+      "result": "ignored_app",
+      "httpStatus": 204,
+      "latencySeconds": 0.006122761,
+      "dataWrites": 0
+    }
+  ],
+  "dataAfter": {
+    "ledgerCollection": "sys_catalog_media_gc",
+    "documentsBefore": 672,
+    "documentsAfter": 672,
+    "pendingBefore": 672,
+    "pendingAfter": 672,
+    "storageWrites": 0,
+    "storageDeletes": 0,
+    "likesOrCommentsWrites": 0
+  },
+  "quietWindow": {
+    "start": "2026-08-16T14:36:51.200836463Z",
+    "end": "2026-08-16T14:42:21Z",
+    "durationSeconds": 330,
+    "errorsAfterValidProbe": 0,
+    "http5xxAfterValidProbe": 0,
+    "ledgerDrift": 0,
+    "iamOrTriggerDrift": false
+  },
+  "rollback": {
+    "approval": "G2B_ROLLBACK_ON_ARTIFACT_UPDATED",
+    "expectedCurrentRevision": "onartifactupdated-00024-cuj",
+    "sourceRevision": "onartifactupdated-00023-riw",
+    "source": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onArtifactUpdated/onartifactupdated-00023-riw-function-source.zip",
+    "sourceGeneration": "1786890722830853",
+    "sourceSize": "345983",
+    "sourceSha256": "fd96218906ece6f8f97be3ca31ca69388bac38ac510494eb0e0e368465971d92",
+    "temporaryHold": true,
+    "restoredConcurrency": 80,
+    "restoredMaxInstances": 20,
+    "restoredRetry": false,
+    "preserved": [
+      "dedicated runtime/build/trigger IAM",
+      "endpoint and Firestore filter",
+      "ledger and Storage data",
+      "logs and alerts"
+    ],
+    "dataDeletion": false
+  },
+  "inventory": {
+    "sourceExports": 157,
+    "cloudFunctions": 152,
+    "cloudGen1": 139,
+    "cloudGen2": 13,
+    "enabledSchedulers": 8,
+    "runningQueues": 2,
+    "eventarc": 7
+  },
+  "verdict": "G2B5_COMPLETE"
+}
