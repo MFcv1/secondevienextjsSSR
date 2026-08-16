@@ -2048,8 +2048,8 @@ Preflight du 2026-08-16: les trois callables destructives
 du lot G4 et placees sous `HOLD_G11_DESTRUCTIVE_PRECONDITIONS`; elles ne seront
 ni appelees ni dupliquees tant que backup, dry-run, manifeste, preconditions,
 rollback et approbation destructive ne sont pas reunis. Le premier lot est
-reduit a `trackAdminIPGen2`, nouveau nom Gen2 unique. La Gen1 et le registre
-client restent proprietaires avant le cutover.
+reduit a `trackAdminIPGen2`, nouveau nom Gen2 unique. La Gen1 reste preservee
+pendant tout le cutover et sa fenetre de rollback.
 
 Le preflight a egalement trouve 66 reponses 415 de `syncSessionBeacon` sur 30
 jours: `sendBeacon` et son fallback envoient `text/plain`, alors que le serveur
@@ -2058,10 +2058,25 @@ deux content-types sans retirer les controles d'origine, taille 64 KiB et token
 de session. `trackAdminIP` utilise desormais une transaction Firestore au lieu
 d'un read/set concurrent de la carte complete. La cible parallele porte
 `cpu: gcf_gen1`, concurrence 1, min 0, max 1, 256 MiB, 60 s, App Check et le
-futur SA `analytics-runtime`; aucun secret n'est requis. Le registre client
-centralise les huit noms G4 mais pointe encore sur toutes les Gen1. Le manifeste
-`manifests/functions-gen2-g4-track-admin-ip.json` bloque le deploy tant que
-l'IAM dedie n'est pas cree et verifie.
+SA dedie `analytics-runtime`; aucun secret n'est requis. Le registre client
+centralise les huit noms G4 et ne bascule que `trackAdminIP`. Le manifeste
+`manifests/functions-gen2-g4-track-admin-ip.json` a bloque le deploy jusqu'a
+creation et verification de l'IAM dedie.
+
+Cutover du 2026-08-16: `trackAdminIPGen2` est ACTIVE en revision
+`trackadminipgen2-00001-goj`, CPU 167m, concurrence/max 1, min 0, 256 MiB,
+60 s, App Check et comptes runtime/build dedies. La probe invalide retourne
+401 sans atteindre le handler ni modifier les 52 entrees de
+`sys_metadata/admin_ips`. App Hosting sert a 100 % le build
+`build-2026-08-16-001`; `/` et `/admin` repondent 200 et le bundle servi porte
+`trackAdminIP -> trackAdminIPGen2`. L'inventaire courant 158/153 s'explique
+exactement par ce nom parallele: 139 Gen1, 14 Gen2, 8 schedulers, 2 queues et
+7 Eventarc. La quiet-window de 48 h est ouverte jusqu'au
+2026-08-18T19:16:52Z, l'ancien onglet reste a verifier et aucun autre target
+cloud n'est autorise avant sa fermeture. Le rollback exact rebascule App
+Hosting sur le build READY `build-2026-08-13-002`; les deux Functions, IAM,
+source, endpoint et donnees restent intacts. La preuve complete est dans
+`manifests/functions-gen2-g4-track-admin-ip-rollout.json`.
 
 ### G5 - Auth callables, OTP et passkeys
 

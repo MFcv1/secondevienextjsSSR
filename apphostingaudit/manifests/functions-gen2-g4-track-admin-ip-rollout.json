@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "environment": "sandbox",
+    "wave": "G4-A1",
+    "operator": "matthis.fradin2@gmail.com",
+    "sourceCommit": "722489ddbeee9ea9b6849a358d72e724ace64ce4",
+    "recordedAt": "2026-08-16T19:18:00Z"
+  },
+  "reconciliation": {
+    "sourceExports": 158,
+    "sourceBaselineExports": 157,
+    "parallelMigrationExports": ["trackAdminIPGen2"],
+    "cloudFunctions": 153,
+    "cloudGen1": 139,
+    "cloudGen2": 14,
+    "cloudGen1Encoding": "environment field omitted by gcloud functions list",
+    "schedulers": 8,
+    "schedulerRegions": { "europe-west1": 4, "us-central1": 4 },
+    "queues": 2,
+    "eventarcTriggers": 7,
+    "drift": "EXPECTED_SINGLE_PARALLEL_TARGET"
+  },
+  "function": {
+    "name": "trackAdminIPGen2",
+    "legacyOwnerPreserved": "trackAdminIP",
+    "state": "ACTIVE",
+    "generation": 2,
+    "region": "europe-west1",
+    "revision": "trackadminipgen2-00001-goj",
+    "runtime": "nodejs22",
+    "sourceGeneration": "1786904573589276",
+    "runtimeServiceAccount": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "cpu": "167m",
+    "memory": "256Mi",
+    "timeoutSeconds": 60,
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "retry": false,
+    "transportInvoker": "allUsers",
+    "appCheck": "ENFORCED",
+    "secrets": []
+  },
+  "appHosting": {
+    "backend": "secondevie-next-sandbox",
+    "region": "europe-west4",
+    "previousBuild": "build-2026-08-13-002",
+    "previousTrafficPercent": 100,
+    "sourceArchive": {
+      "uri": "gs://firebaseapphosting-sources-231220287936-europe-west4/secondevie-next-sandbox--36755-YwpgjGpC1c0y-.zip",
+      "size": 96933171,
+      "sha256": "87389c4fae5f165d95a9e4799e0966c9cf63c6907500b3e596d2d96406a35359",
+      "md5Base64": "9evcpLM3X+bz7SEpeFX2MA==",
+      "generation": "1786907424064816"
+    },
+    "build": {
+      "name": "build-2026-08-16-001",
+      "state": "READY",
+      "createTime": "2026-08-16T19:10:58.537232035Z",
+      "updateTime": "2026-08-16T19:15:11.454858Z",
+      "labels": {
+        "deployment-tool": "codex-targeted",
+        "migration-source-commit": "722489ddbeee9ea9b6849a358d72e724ace64ce4"
+      }
+    },
+    "rollout": {
+      "name": "build-2026-08-16-001",
+      "validateOnlyStatus": 200,
+      "state": "SUCCEEDED",
+      "createTime": "2026-08-16T19:16:47.140326886Z",
+      "updateTime": "2026-08-16T19:16:52.793799Z",
+      "trafficPercent": 100,
+      "reconciling": false
+    },
+    "servedChecks": {
+      "homeStatus": 200,
+      "adminStatus": 200,
+      "deploymentId": "sv-msw6m0hb-1d344fdf7d2c",
+      "bundleRegistryEvidence": "trackAdminIP:\"trackAdminIPGen2\""
+    }
+  },
+  "dataAndLogs": {
+    "adminIpsBefore": {
+      "updateTime": "2026-08-13T11:10:39.345531Z",
+      "entries": 52
+    },
+    "adminIpsAfter": {
+      "updateTime": "2026-08-13T11:10:39.345531Z",
+      "entries": 52
+    },
+    "unauthenticatedProbe": {
+      "timestamp": "2026-08-16T18:24:43.969419Z",
+      "status": 401,
+      "handlerReached": false
+    },
+    "postCutover": {
+      "from": "2026-08-16T19:16:52.793799Z",
+      "snapshotAt": "2026-08-16T19:26:04Z",
+      "logEntries": 0,
+      "http5xx": 0,
+      "errors": 0
+    }
+  },
+  "deploymentAttempts": {
+    "firebaseAdc": "REFUSED_BEFORE_UPLOAD_BY_OAUTH_REFRESH",
+    "firebaseReauth": "REFUSED_BEFORE_LOGIN_BY_AUTH_ATTEST_ENDPOINT",
+    "firebaseTargetedUpload": "INTERRUPTED_BEFORE_BUILD_AFTER_STALLED_STORAGE_PUT",
+    "gcloudResumableUpload": "COMPLETED_SAME_OBJECT_AND_SESSION_WITH_BOUNDED_CHUNKS",
+    "duplicateBuilds": 0,
+    "duplicateRollouts": 0,
+    "effectiveIamDrift": false
+  },
+  "observation": {
+    "state": "OPEN",
+    "start": "2026-08-16T19:16:52.793799Z",
+    "requiredEndNotBefore": "2026-08-18T19:16:52.793799Z",
+    "oldTabCheck": "PENDING",
+    "nextCloudTargetAllowed": false
+  },
+  "holds": {
+    "clearAllAffiliateClicks": "HOLD_G11_DESTRUCTIVE_PRECONDITIONS",
+    "clearAllSessions": "HOLD_G11_DESTRUCTIVE_PRECONDITIONS",
+    "deleteSession": "HOLD_G11_DESTRUCTIVE_PRECONDITIONS",
+    "instagram": "HOLD_META_RECONCILIATION"
+  },
+  "rollback": {
+    "trigger": "any project, Auth, App Check, IAM, data, health, idempotence or client regression during the observation window",
+    "exactAction": "create a validated App Hosting rollout on backend secondevie-next-sandbox in europe-west4 referencing existing READY build build-2026-08-13-002, then verify 100 percent traffic and served registry trackAdminIP -> trackAdminIP",
+    "functionAction": "none; preserve trackAdminIP and trackAdminIPGen2",
+    "dataAction": "none",
+    "iamSecretsAction": "none",
+    "sourceFollowUp": "restore trackAdminIP: 'trackAdminIP' in src/kit/config/functionTargets.js before any later sandbox rollout",
+    "g12Action": "none before G12-A approval and completed observation"
+  },
+  "verdict": "CUTOVER_SUCCEEDED_OBSERVATION_OPEN"
+}

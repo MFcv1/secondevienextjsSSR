@@ -992,12 +992,15 @@ utilise `createPublishedProductAdmin`, aucune session historique ne subsiste et
 les deux commandes package Stripe sont fail-closed. Les sources, endpoints,
 IAM et secrets restent conserves jusqu'a G12; G4 analytics est la reprise.
 
-G4-A1 ajoute le registre `src/kit/config/functionTargets.js`, encore pointe
-sur les noms Gen1, et l'export parallele local `trackAdminIPGen2`. Son handler
-partage met a jour `sys_metadata/admin_ips` en transaction; le nouveau runtime
-sera `analytics-runtime`, CPU Gen1/concurrence 1. Les trois callables de
-suppression analytics sont sous hold G11 et aucun deploy/cutover n'est encore
-autorise.
+G4-A1 ajoute le registre `src/kit/config/functionTargets.js` et l'export
+parallele `trackAdminIPGen2`. Seul le nom logique `trackAdminIP` pointe
+desormais sur cette Gen2; les sept autres noms restent Gen1. Son handler met a
+jour `sys_metadata/admin_ips` en transaction sur le runtime dedie
+`analytics-runtime`, CPU Gen1/concurrence 1. App Hosting sert le build
+`build-2026-08-16-001`; la Gen1 et le build precedent restent preserves pour
+rollback pendant la quiet-window jusqu'au 2026-08-18T19:16:52Z. Les trois
+callables de suppression analytics restent sous hold G11 et aucun autre target
+cloud n'est autorise avant fermeture de l'observation.
 
 | Domaine | Exports |
 | --- | --- |

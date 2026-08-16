@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "sourceCommit": "722489ddbeee9ea9b6849a358d72e724ace64ce4",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g4-track-admin-ip-cutover.json": "bc6696400008801187b2b809f3ceacf72e0525fae2c2b10270e10cbdf85b5260",
+    "apphostingaudit/manifests/functions-gen2-g4-track-admin-ip-rollout.json": "e456b6295cb29aef1570d8b83d9c680117dfff8add69b6ddb8a96fa58c01a0c7"
+  }
+}

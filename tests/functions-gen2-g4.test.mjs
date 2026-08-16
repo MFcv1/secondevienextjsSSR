@@ -19,6 +19,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-track-admin-ip.json');
 const DIGEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-track-admin-ip-digest.json');
 const CUTOVER_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-track-admin-ip-cutover.json');
+const ROLLOUT_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-track-admin-ip-rollout.json');
 const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
 
@@ -162,4 +163,21 @@ test('le lanceur App Hosting de cutover est borne au sandbox et ne persiste aucu
     /gcloud-access-token-preloaded-in-memory/
   ]) assert.match(source, expected);
   assert.doesNotMatch(source, /writeFile|appendFile|console\.log\(token\)|process\.env\.[A-Z_]+\s*=\s*token/);
+});
+
+test('le rollout G4 conserve la Gen1 et bloque la cible suivante pendant 48 h', () => {
+  const rollout = JSON.parse(fs.readFileSync(ROLLOUT_PATH, 'utf8'));
+  assert.equal(rollout.metadata.project, 'secondevienextjsssr');
+  assert.equal(rollout.reconciliation.cloudFunctions, 153);
+  assert.equal(rollout.reconciliation.cloudGen1, 139);
+  assert.equal(rollout.reconciliation.cloudGen2, 14);
+  assert.equal(rollout.function.legacyOwnerPreserved, 'trackAdminIP');
+  assert.equal(rollout.appHosting.build.state, 'READY');
+  assert.equal(rollout.appHosting.rollout.state, 'SUCCEEDED');
+  assert.equal(rollout.appHosting.rollout.trafficPercent, 100);
+  assert.equal(rollout.dataAndLogs.adminIpsAfter.updateTime, rollout.dataAndLogs.adminIpsBefore.updateTime);
+  assert.equal(rollout.dataAndLogs.adminIpsAfter.entries, rollout.dataAndLogs.adminIpsBefore.entries);
+  assert.equal(rollout.observation.state, 'OPEN');
+  assert.equal(rollout.observation.nextCloudTargetAllowed, false);
+  assert.equal(rollout.rollback.functionAction, 'none; preserve trackAdminIP and trackAdminIPGen2');
 });
