@@ -1962,6 +1962,22 @@ invocation, warning, erreur, ecriture Firestore/Storage ou drift d'inventaire.
 G2-B compte douze cibles fermees sur treize. Verdict:
 `G2B12_COMPLETE_EMPTY_QUEUE_NO_WRITE`.
 
+Le preflight G2-B13 de `dispatchCatalogRevalidation` retrouve queue RUNNING et
+vide, limites/retries exacts, invokers prives exacts et secret HMAC version 3
+ENABLED avec acces limite au runtime `catalog-builder`. Les 4 876 reponses 500
+des trente derniers jours appartiennent presque toutes aux revisions 5 a 10:
+les revisions 9-10 bouclaient surtout sur route publique 404/stale avant les
+correctifs du 12 aout. La revision active 11 porte seulement deux
+`CATALOG_SERVED_VERSION_STALE` le 15 aout, puis reussit `revalidated` pour la
+revision 295 vingt secondes plus tard. Queue, controle et sante actuels sont
+donc reconcilies; aucun retry ou incident courant n'est masque.
+
+La source revision 11 est archivee sous temporary hold avec digest. Le wrapper
+Cloud Tasks reutilise la gate queue vide et epingle le secret version 3, CPU 1,
+256 MiB, timeout/deadline 300 s, concurrence/max 1 et builder dedie. Le
+rollback restaure source revision 11, timeout 60 s, concurrence 80 et max 20
+sans modifier queue, IAM, secret, endpoint, signature ou pointeurs.
+
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
 1. deployer une seule des treize cibles a la fois, depuis l'allowlist G0;

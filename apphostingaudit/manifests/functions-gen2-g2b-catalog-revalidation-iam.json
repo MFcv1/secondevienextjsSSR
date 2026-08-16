@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T17:45:00Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "target": "dispatchCatalogRevalidation",
+  "mode": "verify-only",
+  "actor": "matthis.fradin2@gmail.com",
+  "sourceCommit": "e93656158988b724654402a9ada3923fea320e8b",
+  "changes": [],
+  "runtimeProjectRoles": [
+    "roles/cloudtasks.enqueuer",
+    "roles/datastore.user",
+    "roles/logging.logWriter",
+    "roles/serviceusage.serviceUsageConsumer"
+  ],
+  "runtimeSecretBindings": {
+    "CATALOG_REVALIDATION_HMAC_SECRET": "roles/secretmanager.secretAccessor"
+  },
+  "invokerMembers": [
+    "serviceAccount:catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "serviceAccount:catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com"
+  ],
+  "checks": {
+    "runtimeRolesExact": true,
+    "runtimeSecretRoleExact": true,
+    "secretVersion3Enabled": true,
+    "runtimeActAs": true,
+    "invokersExact": true,
+    "buildRolesExact": true,
+    "buildActAs": true,
+    "publicInvoker": false,
+    "runtimeUserManagedKeys": 0,
+    "buildUserManagedKeys": 0,
+    "queueRunning": true,
+    "queueEmpty": true,
+    "queueLimitsExact": true,
+    "rollbackIamPreserved": true
+  },
+  "rollback": "Retain runtime, build, invoker and secret IAM; restore the held revision-11 source and former runtime limits without mutating the queue or HMAC version.",
+  "verdict": "G2B_CATALOG_REVALIDATION_IAM_QUEUE_SECRET_VERIFIED"
+}
