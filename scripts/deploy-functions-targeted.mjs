@@ -241,6 +241,7 @@ const GCLOUD_GEN2_TARGETS = Object.freeze({
     schedulerJob: 'firebase-schedule-cleanupProductPublicationSessions-europe-west1',
     schedule: 'every 24 hours',
     timeZone: 'UTC',
+    expectedSchedulerServiceAccount: '231220287936-compute@developer.gserviceaccount.com',
     schedulerServiceAccount: 'product-publication-worker@secondevienextjsssr.iam.gserviceaccount.com',
     schedulerAttemptDeadline: '540s',
     expectedSchedulerAttemptDeadline: '540s',
@@ -694,13 +695,18 @@ function assertGcloudGen2Preconditions(before, validation) {
   ) fail('Trigger cloud Gen2 inattendu avant deploiement');
 }
 
-function assertSchedulerPreconditions(job, target, expectedAttemptDeadline) {
+function assertSchedulerPreconditions(
+  job,
+  target,
+  expectedAttemptDeadline,
+  expectedServiceAccount = target.schedulerServiceAccount
+) {
   if (
     job.name?.split('/').at(-1) !== target.schedulerJob || job.state !== 'ENABLED' ||
     job.schedule !== target.schedule || job.timeZone !== target.timeZone ||
     job.httpTarget?.httpMethod !== 'POST' || job.httpTarget?.uri !== target.functionUrl ||
     job.httpTarget?.oidcToken?.audience !== target.functionUrl ||
-    job.httpTarget?.oidcToken?.serviceAccountEmail !== target.schedulerServiceAccount ||
+    job.httpTarget?.oidcToken?.serviceAccountEmail !== expectedServiceAccount ||
     job.attemptDeadline !== expectedAttemptDeadline
   ) fail('Etat Cloud Scheduler inattendu avant deploiement');
 }
@@ -775,7 +781,12 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
         'scheduler', 'jobs', 'describe', target.schedulerJob,
         `--location=${target.region}`, `--project=${validation.project}`, '--format=json'
       ], { cwd: rootDir }));
-      assertSchedulerPreconditions(schedulerBefore, target, target.expectedSchedulerAttemptDeadline);
+      assertSchedulerPreconditions(
+        schedulerBefore,
+        target,
+        target.expectedSchedulerAttemptDeadline,
+        target.expectedSchedulerServiceAccount || target.schedulerServiceAccount
+      );
     }
     process.stdout.write(`Projet: ${validation.project}\nCibles: ${validation.selectors.join(',')}\nCommit: ${validation.commit}\nTransport: gcloud-gen2\n`);
     const result = spawnSync('gcloud', buildGcloudGen2DeployArgs(validation), {

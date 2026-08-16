@@ -419,6 +419,10 @@ test('le transport gcloud Gen2 est limite au premier lot stats et explicite IAM 
     '--oidc-service-account-email=product-publication-worker@secondevienextjsssr.iam.gserviceaccount.com',
     '--attempt-deadline=540s', '--max-retry-attempts=0'
   ]) assert.ok(publicationCleanupJobArgs.includes(expected), expected);
+  assert.match(
+    fs.readFileSync(path.join(ROOT, 'scripts/deploy-functions-targeted.mjs'), 'utf8'),
+    /expectedSchedulerServiceAccount:\s*'231220287936-compute@developer\.gserviceaccount\.com'/
+  );
 });
 
 test('le rollback G2-B est borne a la revision et a l archive source preservee', () => {
