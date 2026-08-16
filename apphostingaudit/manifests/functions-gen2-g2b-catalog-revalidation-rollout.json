@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T17:52:15Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "target": "dispatchCatalogRevalidation",
+  "sourceCommit": "73f19a312c2cf3579c5348d6b4b181d2885971f7",
+  "selector": "functions:main:dispatchCatalogRevalidation",
+  "transport": "gcloud-gen2-through-fail-closed-wrapper",
+  "before": {
+    "revision": "dispatchcatalogrevalidation-00011-her",
+    "runtimeServiceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com",
+    "cpu": 1, "memory": "256Mi", "timeoutSeconds": 60,
+    "concurrency": 80, "minInstances": 0, "maxInstances": 20,
+    "secret": "CATALOG_REVALIDATION_HMAC_SECRET:3"
+  },
+  "after": {
+    "revision": "dispatchcatalogrevalidation-00012-zer",
+    "build": "projects/231220287936/locations/europe-west1/builds/c9757b6b-508d-4999-a13a-a406b4301e0f",
+    "source": "gs://gcf-v2-sources-231220287936-europe-west1/dispatchCatalogRevalidation/function-source.zip",
+    "sourceGeneration": "1786902350000419",
+    "sourceSize": 373354,
+    "sourceSha256": "022ca0943c2cca5f59a8f4f032f943a0edbe1805904f9ac6daf57046bfed789d",
+    "runtimeServiceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "cpu": 1, "memory": "256Mi", "timeoutSeconds": 300,
+    "concurrency": 1, "minInstances": 0, "maxInstances": 1,
+    "secret": "CATALOG_REVALIDATION_HMAC_SECRET:3"
+  },
+  "queue": {
+    "name": "dispatchCatalogRevalidation", "location": "europe-west1",
+    "state": "RUNNING", "tasksBefore": 0, "tasksAfter": 0,
+    "maxConcurrentDispatches": 1, "maxDispatchesPerSecond": 1,
+    "maxBurstSize": 10, "maxAttempts": 10,
+    "minBackoff": "5s", "maxBackoff": "300s", "maxDoublings": 5,
+    "mutatedByRollout": false
+  },
+  "observation": {
+    "kind": "passive-empty-queue-no-signed-probe",
+    "startedAt": "2026-08-16T17:46:55Z", "closedAt": "2026-08-16T17:52:15Z",
+    "quietWindowSeconds": 320, "businessInvocations": 0,
+    "errors": 0, "warnings": 0,
+    "catalogRevisionBefore": 295, "catalogRevisionAfter": 295,
+    "dataWrite": false, "signedEndpointCall": false
+  },
+  "rollback": {
+    "approval": "G2B_ROLLBACK_DISPATCH_CATALOG_REVALIDATION",
+    "expectedCurrentRevision": "dispatchcatalogrevalidation-00012-zer",
+    "sourceRevision": "dispatchcatalogrevalidation-00011-her",
+    "source": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/dispatchCatalogRevalidation/dispatchcatalogrevalidation-00011-her-function-source.zip",
+    "sourceGeneration": "1786902244545236", "sourceSize": 402090,
+    "sourceSha256": "309254de3352ec0c6395b3e125adf41072bf85be9d9facaaf56bedffbfc995bd",
+    "temporaryHold": true,
+    "restoredRuntimeServiceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "restoredMemory": "256Mi", "restoredTimeoutSeconds": 60,
+    "restoredConcurrency": 80, "restoredMaxInstances": 20,
+    "queueIamSecretEndpointSignatureAndPointersRetained": true,
+    "dataRollback": "not-required-no-write"
+  },
+  "verdict": "G2B13_ROLLOUT_STABLE_EMPTY_QUEUE"
+}

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T17:52:15Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "phase": "G2-B",
+  "status": "COMPLETE",
+  "inventory": {
+    "sourceExports": 157, "cloudFunctions": 152, "cloudGen1": 139,
+    "cloudGen2": 13, "schedulers": 8, "queues": 2, "eventarc": 7,
+    "drift": false
+  },
+  "targets": [
+    {"name":"onOrderStatsWrite","revision":"onorderstatswrite-00026-cec"},
+    {"name":"onCatalogSourceWrite","revision":"oncatalogsourcewrite-00011-kaj"},
+    {"name":"catalogReconciler","revision":"catalogreconciler-00010-dob"},
+    {"name":"catalogMediaGarbageCollector","revision":"catalogmediagarbagecollector-00010-zen"},
+    {"name":"onArtifactUpdated","revision":"onartifactupdated-00024-cuj"},
+    {"name":"onArtifactDeleted","revision":"onartifactdeleted-00024-roh"},
+    {"name":"processProductPublicationImage","revision":"processproductpublicationimage-00004-nep"},
+    {"name":"cleanupProductPublicationSessions","revision":"cleanupproductpublicationsessions-00003-hig"},
+    {"name":"reconcileProductPublicationSessions","revision":"reconcileproductpublicationsessions-00004-pip"},
+    {"name":"onOrderCreated","revision":"onordercreated-00029-zul"},
+    {"name":"onOrderUpdated","revision":"onorderupdated-00029-moj"},
+    {"name":"dispatchCatalogBuild","revision":"dispatchcatalogbuild-00013-rij"},
+    {"name":"dispatchCatalogRevalidation","revision":"dispatchcatalogrevalidation-00012-zer"}
+  ],
+  "holds": {
+    "instagram": "HOLD_META_RECONCILIATION",
+    "authGen1": ["grantAdminOnAuth","onRegisteredUserCreated","onRegisteredUserDeleted"]
+  },
+  "productionCreated": false, "stripeLiveUsed": false,
+  "forbiddenE2eRun": false, "dataDeleted": false,
+  "rollbackArchivesHeld": 13,
+  "nextPhase": "G3",
+  "verdict": "G2_COMPLETE_13_OF_13_STABILIZED_NO_INVENTORY_DRIFT"
+}

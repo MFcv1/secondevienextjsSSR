@@ -979,6 +979,12 @@ runtime/build dedies, 512 MiB, timeout/deadline 300 s, concurrence/max 1. La
 quiet-window de 316 secondes conserve queue vide et controle catalogue
 295/295/295 valide, sans lease ni ecriture. Le rollback revision 12 ne modifie
 ni queue, IAM, endpoint ou pointeurs.
+Le lot G2-B13 active `dispatchCatalogRevalidation` en revision
+`dispatchcatalogrevalidation-00012-zer`, HMAC v3, timeout/deadline 300 s et
+concurrence/max 1. La quiet-window de 320 secondes conserve queue vide et
+controle 295/295/295 valide/observe, sans appel signe ni ecriture. Les 13/13
+Gen2 initiales sont stabilisees; le manifeste de cloture G2-B porte la reprise
+G3 sans retrait cloud automatique.
 
 | Domaine | Exports |
 | --- | --- |

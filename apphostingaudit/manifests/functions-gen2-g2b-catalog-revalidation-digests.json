@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "target": "dispatchCatalogRevalidation",
+  "sourceCommit": "73f19a312c2cf3579c5348d6b4b181d2885971f7",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g2b-catalog-revalidation-iam.json": "522603c837749f55b20d7ca89a3b8cb49db6750e6ec9637409d6ed754d897f33",
+    "apphostingaudit/manifests/functions-gen2-g2b-catalog-revalidation-reconciliation.json": "64270e3c83d62bc671a22e5876a0c5c0f554a2f7edb32959db8a255168b6f026",
+    "apphostingaudit/manifests/functions-gen2-g2b-catalog-revalidation-rollout.json": "682adabf786d3a15609fc554f0ba95e6c90c9a33d3677a2491242504ac2d30aa",
+    "apphostingaudit/manifests/functions-gen2-g2b-closeout.json": "1764d8cb96847dd036d97a5b308c28527f8273feb6ba7318debf53d74e2e6475"
+  },
+  "rollbackSource": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/dispatchCatalogRevalidation/dispatchcatalogrevalidation-00011-her-function-source.zip",
+    "generation": "1786902244545236",
+    "size": "402090",
+    "sha256": "309254de3352ec0c6395b3e125adf41072bf85be9d9facaaf56bedffbfc995bd",
+    "temporaryHold": true
+  }
+}

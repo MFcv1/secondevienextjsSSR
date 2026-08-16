@@ -1978,6 +1978,14 @@ Cloud Tasks reutilise la gate queue vide et epingle le secret version 3, CPU 1,
 rollback restaure source revision 11, timeout 60 s, concurrence 80 et max 20
 sans modifier queue, IAM, secret, endpoint, signature ou pointeurs.
 
+Le commit `73f19a312c2cf3579c5348d6b4b181d2885971f7` deploie uniquement
+`dispatchCatalogRevalidation` en revision `dispatchcatalogrevalidation-00012-zer`.
+Apres 320 secondes, queue et logs restent vides, HMAC v3 et IAM prives sont
+inchanges, et le controle catalogue demeure 295/295/295
+`published/accepted/valid/observed`. Aucun appel signe ni ecriture n'est
+provoque. G2-B ferme les treize cibles sans drift. Verdict:
+`G2_COMPLETE_13_OF_13_STABILIZED_NO_INVENTORY_DRIFT`.
+
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
 1. deployer une seule des treize cibles a la fois, depuis l'allowlist G0;

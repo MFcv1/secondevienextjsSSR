@@ -152,11 +152,9 @@ Plan temporaire de reprise explicitement demande:
 - [AUDIT_MIGRATION_FUNCTIONS_GEN2.md](apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md):
   contre-audit read-only des 152 Functions cloud et 157 exports locaux, plan
   ferme G0 a G13 de migration progressive Gen1 vers Gen2 et prerequis de
-  fiabilite hors Functions; G0/G1 et G2-A fermes, lots G2-B stats, trigger
-  catalogue, scheduler catalogue, GC catalogue fail-closed et triggers artefact
-  update/delete et worker image deployes, reconcilies et observes sur le sandbox sans suppression,
-  autres lots bloques sur leurs
-  IAM/data/TTL et gates propres, trois
+  fiabilite hors Functions; G0/G1/G2 fermes, les treize Gen2 initiales sont
+  deployees, reconciliees et observees sur le sandbox sans suppression,
+  G3 reprend par classification read-only des legacy, trois
   triggers Auth Gen1 conserves par limitation Firebase et cinq exports
   Instagram sous `HOLD_META_RECONCILIATION`; paiements reels bloques avant DR,
   alertes, sante financiere et preuve des workers; revue au plus tard le
