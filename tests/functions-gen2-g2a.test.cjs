@@ -485,6 +485,25 @@ test('G2-A e-mail: Gmail ambigu devient delivery_unknown et les deux runtimes so
         nowMillis: 0
     });
     assert.equal(gmailFailure.status, 'delivery_unknown');
+    const gmailLeaseExpired = claimDeliveryState({
+        provider: 'gmail',
+        status: 'processing',
+        attemptCount: 1,
+        leaseToken: 'lease-token-a',
+        processingUntil: 10_000
+    }, {
+        orderId: 'order-sensitive-id',
+        kind: 'order-created-client',
+        provider: 'gmail',
+        leaseToken: 'lease-token-b',
+        now: new Date(20_000),
+        nowMillis: 20_000,
+        retentionMs: 90_000
+    });
+    assert.equal(gmailLeaseExpired.action, 'skip');
+    assert.equal(gmailLeaseExpired.state.status, 'delivery_unknown');
+    assert.equal(gmailLeaseExpired.state.processingUntil, null);
+    assert.equal(gmailLeaseExpired.state.purgeAt.getTime(), 110_000);
 
     const source = fs.readFileSync(path.join(ROOT, 'functions/src/email/orderEmails.js'), 'utf8');
     const rules = fs.readFileSync(path.join(ROOT, 'firestore.rules'), 'utf8');

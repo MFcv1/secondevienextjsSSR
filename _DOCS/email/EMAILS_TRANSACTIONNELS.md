@@ -363,11 +363,16 @@ ledger backend-only `legacy_order_email_deliveries`, identifiant derive par
 hash commande/type, claim transactionnel, lease, huit tentatives au maximum et
 etats `sent`, `failed`, `dead_letter` ou `delivery_unknown`. Une erreur Gmail
 ambigue n'est jamais renvoyee automatiquement; Resend conserve sa cle
-idempotente fournisseur. Chaque trigger est borne a concurrence/max 1 et vise
+idempotente fournisseur. Un lease Gmail expire devient aussi
+`delivery_unknown`: un crash apres acceptation fournisseur ne peut donc pas
+declencher un second envoi automatique. Chaque trigger est borne a
+concurrence/max 1 et vise
 le futur SA `legacy-order-email-worker`, avec acces aux trois secrets nommes
 uniquement. Le ledger porte `purgeAt` a 90 jours; sa policy TTL, l'identite et
-le code ne deviennent actifs qu'en G2-B ciblee. Aucun e-mail n'a ete envoye par
-ce lot local.
+le code ne deviennent actifs qu'en G2-B ciblee. La policy TTL `purgeAt` est
+ACTIVE depuis G2-B10, apres preuve que le ledger contenait zero document et
+zero expiration; son activation n'a donc supprime aucune donnee. Aucun e-mail
+n'a ete envoye pendant cette preparation.
 
 ## 13. Limites et production
 

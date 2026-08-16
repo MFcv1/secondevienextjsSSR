@@ -1881,6 +1881,22 @@ sans ecriture produit/stock/Storage, warning, erreur, IAM public ou drift
 d'inventaire. G2-B compte neuf cibles fermees sur treize. Verdict:
 `G2B9_COMPLETE_NO_DATA_WRITE`.
 
+Le preflight G2-B10 de `onOrderCreated` retrouve zero document dans le ledger
+e-mail et aucune policy TTL, ce qui bloque le rollout. Les 101 invocations
+observees sur trente jours sont HTTP 200, sans erreur ou warning; les trois
+versions de secrets actuellement epinglees sont ENABLED. La revue ferme aussi
+le dernier cas de double envoi Gmail: un lease `processing` expire devient
+desormais `delivery_unknown` et est persiste sans nouvel appel fournisseur.
+Resend reste retryable avec sa cle d'idempotence deterministe. Aucun e-mail
+n'est emis pendant ce preflight.
+
+La policy TTL `purgeAt` est ensuite passee `ACTIVE` sur le seul collection
+group `legacy_order_email_deliveries`, apres double comptage zero document et
+zero document expire. L'operation n'a supprime aucune donnee et reste conservee
+pendant le rollback code. Le premier filtre de verification locale attendait a
+tort un champ court `field`; le schema CLI expose le nom de ressource complet.
+La verification corrigee exige le suffixe `/fields/purgeAt` et l'etat `ACTIVE`.
+
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
 1. deployer une seule des treize cibles a la fois, depuis l'allowlist G0;

@@ -440,6 +440,20 @@ test('le transport gcloud Gen2 est limite au premier lot stats et explicite IAM 
     '--oidc-service-account-email=product-publication-worker@secondevienextjsssr.iam.gserviceaccount.com',
     '--attempt-deadline=540s', '--max-retry-attempts=0'
   ]) assert.ok(publicationReconcilerJobArgs.includes(expected), expected);
+
+  const orderCreatedRequest = validate({
+    ...validationArgs({ allowlist: 'onOrderCreated', transport: 'gcloud-gen2' })
+  });
+  const orderCreatedArgs = buildGcloudGen2DeployArgs(orderCreatedRequest);
+  for (const expected of [
+    '--entry-point=onOrderCreated',
+    '--trigger-event-filters=type=google.cloud.firestore.document.v1.created,database=(default),namespace=(default)',
+    '--trigger-event-filters-path-pattern=document=orders/{orderId}',
+    '--trigger-service-account=functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com',
+    '--run-service-account=legacy-order-email-worker@secondevienextjsssr.iam.gserviceaccount.com',
+    '--memory=256Mi', '--timeout=60s', '--concurrency=1', '--max-instances=1', '--retry',
+    '--set-secrets=GMAIL_EMAIL=GMAIL_EMAIL:2,GMAIL_PASSWORD=GMAIL_PASSWORD:5,RESEND_API_KEY=RESEND_API_KEY:1'
+  ]) assert.ok(orderCreatedArgs.includes(expected), expected);
 });
 
 test('le rollback G2-B est borne a la revision et a l archive source preservee', () => {
@@ -604,6 +618,23 @@ test('le rollback G2-B est borne a la revision et a l archive source preservee',
     '--concurrency=80', '--max-instances=20',
     '--update-labels=deployment-tool=codex-targeted,migration-rollback-source=reconcileproductpublicationsessions-00003-bit'
   ]) assert.ok(publicationReconcilerArgs.includes(expected), expected);
+
+  const orderCreatedRequest = validate({
+    ...validationArgs({
+      allowlist: 'onOrderCreated', transport: 'gcloud-gen2-rollback',
+      approval: 'G2B_ROLLBACK_ON_ORDER_CREATED',
+      'expected-revision': 'onordercreated-00029-abc',
+      'rollback-source-sha256': 'bce7ff79ecfc2308ae744ee61cb889cd02fba781b466d16a383fa610b7d91880'
+    })
+  });
+  const orderCreatedArgs = buildGcloudGen2RollbackArgs(orderCreatedRequest);
+  for (const expected of [
+    '--source=gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onOrderCreated/onordercreated-00028-dov-function-source.zip',
+    '--run-service-account=231220287936-compute@developer.gserviceaccount.com',
+    '--concurrency=80', '--max-instances=20', '--no-retry',
+    '--set-secrets=GMAIL_EMAIL=GMAIL_EMAIL:2,GMAIL_PASSWORD=GMAIL_PASSWORD:5,RESEND_API_KEY=RESEND_API_KEY:1',
+    '--update-labels=deployment-tool=codex-targeted,migration-rollback-source=onordercreated-00028-dov'
+  ]) assert.ok(orderCreatedArgs.includes(expected), expected);
 });
 
 test('les trois workers G1 epinglent runtime, secrets et limites explicites', () => {

@@ -37,6 +37,21 @@ function claimDeliveryState(current, input) {
     if (existing.status === 'processing' && Number(existing.processingUntil || 0) > nowMillis) {
         return { action: 'skip', state: existing };
     }
+    if (existing.status === 'processing' && existing.provider === 'gmail') {
+        return {
+            action: 'skip',
+            state: {
+                ...existing,
+                status: 'delivery_unknown',
+                leaseToken: null,
+                processingUntil: null,
+                nextAttemptAt: null,
+                purgeAt: new Date(nowMillis + retentionMs),
+                lastError: 'GMAIL_LEASE_EXPIRED_AFTER_AMBIGUOUS_DELIVERY',
+                updatedAt: input.now
+            }
+        };
+    }
     if (existing.status === 'failed' && Number(existing.nextAttemptAt || 0) > nowMillis) {
         return { action: 'retry_later', state: existing };
     }
@@ -142,7 +157,7 @@ function createLegacyOrderEmailDelivery({
                 now,
                 nowMillis: clock.nowMillis()
             });
-            if (next.action === 'send' || next.state.status === 'dead_letter') {
+            if (next.action === 'send' || ['dead_letter', 'delivery_unknown'].includes(next.state.status)) {
                 transaction.set(reference, next.state, { merge: true });
             }
             return next;

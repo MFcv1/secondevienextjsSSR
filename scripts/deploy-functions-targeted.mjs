@@ -277,6 +277,32 @@ const GCLOUD_GEN2_TARGETS = Object.freeze({
     minInstances: '0',
     maxInstances: '1',
     ingressSettings: 'all'
+  }),
+  onOrderCreated: Object.freeze({
+    triggerType: 'event',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'onOrderCreated',
+    eventType: 'google.cloud.firestore.document.v1.created',
+    eventFilters: 'type=google.cloud.firestore.document.v1.created,database=(default),namespace=(default)',
+    documentPathPattern: 'orders/{orderId}',
+    eventPathPattern: 'document=orders/{orderId}',
+    triggerLocation: 'eur3',
+    triggerServiceAccount: 'functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com',
+    runtimeServiceAccount: 'legacy-order-email-worker@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    secrets: Object.freeze([
+      'GMAIL_EMAIL=GMAIL_EMAIL:2',
+      'GMAIL_PASSWORD=GMAIL_PASSWORD:5',
+      'RESEND_API_KEY=RESEND_API_KEY:1'
+    ]),
+    memory: '256Mi',
+    cpu: '1',
+    timeout: '60s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all'
   })
 });
 const G2B_ROLLBACKS = Object.freeze({
@@ -390,6 +416,20 @@ const G2B_ROLLBACKS = Object.freeze({
     concurrency: '80',
     maxInstances: '20',
     schedulerAttemptDeadline: '540s',
+    retry: false
+  }),
+  onOrderCreated: Object.freeze({
+    approval: 'G2B_ROLLBACK_ON_ORDER_CREATED',
+    sourceRevision: 'onordercreated-00028-dov',
+    source: 'gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onOrderCreated/onordercreated-00028-dov-function-source.zip',
+    sourceGeneration: '1786899705938033',
+    sourceSize: '397275',
+    sourceSha256: 'bce7ff79ecfc2308ae744ee61cb889cd02fba781b466d16a383fa610b7d91880',
+    runtimeServiceAccount: '231220287936-compute@developer.gserviceaccount.com',
+    memory: '256Mi',
+    timeout: '60s',
+    concurrency: '80',
+    maxInstances: '20',
     retry: false
   })
 });
@@ -611,7 +651,7 @@ export function buildGcloudGen2DeployArgs(validation) {
         `--trigger-service-account=${target.triggerServiceAccount}`
       ];
   const retryArgs = target.triggerType === 'http-scheduler' ? [] : ['--retry'];
-  return [
+  const args = [
     'functions', 'deploy', name,
     `--project=${validation.project}`,
     `--region=${target.region}`,
@@ -634,6 +674,8 @@ export function buildGcloudGen2DeployArgs(validation) {
     `--update-labels=deployment-tool=codex-targeted,migration-source-commit=${validation.commit}`,
     '--quiet'
   ];
+  if (target.secrets?.length) args.push(`--set-secrets=${target.secrets.join(',')}`);
+  return args;
 }
 
 export function buildGcloudSchedulerUpdateArgs(validation, options = {}) {
@@ -696,6 +738,7 @@ export function buildGcloudGen2RollbackArgs(validation) {
   if (target.triggerType !== 'http-scheduler') {
     args.splice(args.indexOf(`--ingress-settings=${target.ingressSettings}`), 0, rollback.retry ? '--retry' : '--no-retry');
   }
+  if (target.secrets?.length) args.push(`--set-secrets=${target.secrets.join(',')}`);
   return args;
 }
 
