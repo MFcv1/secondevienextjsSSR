@@ -1,21 +1,22 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-16T14:02:32.976Z",
+  "generatedAt": "2026-08-16T14:05:05.241Z",
   "project": "secondevienextjsssr",
   "environment": "sandbox",
   "target": "catalogReconciler",
-  "mode": "dry-run",
+  "mode": "apply",
   "actor": "matthis.fradin2@gmail.com",
-  "commit": "69dc69f3722f012dcb2a6b39896242cd4568200d",
+  "commit": "0485a53086bfa1ef7cd2de60c167eeac53375e0e",
   "changes": {
-    "runtimeServiceUsage": "PLANNED",
-    "runtimeActAs": "PLANNED"
+    "runtimeServiceUsage": "CREATED",
+    "runtimeActAs": "CREATED"
   },
   "roles": {
     "runtime": [
       "roles/cloudtasks.enqueuer",
       "roles/datastore.user",
-      "roles/logging.logWriter"
+      "roles/logging.logWriter",
+      "roles/serviceusage.serviceUsageConsumer"
     ],
     "build": [
       "roles/logging.logWriter"
@@ -33,9 +34,9 @@
     "gcf-v2-uploads-231220287936.europe-west1.cloudfunctions.appspot.com": true
   },
   "checks": {
-    "runtimeRolesExact": false,
+    "runtimeRolesExact": true,
     "runtimeCatalogObjectAdmin": true,
-    "runtimeActAs": false,
+    "runtimeActAs": true,
     "buildProjectRolesExact": true,
     "buildActAs": true,
     "buildArtifactWriter": true,
@@ -45,6 +46,6 @@
     "publicInvoker": false,
     "noUserManagedKeys": true
   },
-  "verdict": "G2B_CATALOG_RECONCILER_IAM_PLANNED",
+  "verdict": "G2B_CATALOG_RECONCILER_IAM_VERIFIED",
   "rollback": "Retain catalog-enqueuer scheduler Run Invoker, catalog-builder runtime grants and build grants through G12-B; rollback changes runtime only and removes no IAM."
 }
