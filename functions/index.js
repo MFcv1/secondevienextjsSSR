@@ -343,7 +343,7 @@ const {
     clearAllSessions,
     clearAllAffiliateClicks
 } = require('./src/analytics/sessions');
-const { trackAdminIP } = require('./src/analytics/adminIP');
+const { trackAdminIP, trackAdminIPGen2 } = require('./src/analytics/adminIP');
 const { updateUserSessions } = require('./src/analytics/updateUserSessions');
 const { onOrderStatsWrite } = require('./src/commerce/orderStats');
 
@@ -354,6 +354,7 @@ exports.deleteSession = deleteSession;
 exports.clearAllSessions = clearAllSessions;
 exports.clearAllAffiliateClicks = clearAllAffiliateClicks;
 exports.trackAdminIP = trackAdminIP;
+exports.trackAdminIPGen2 = trackAdminIPGen2;
 exports.updateUserSessions = updateUserSessions;
 exports.onOrderStatsWrite = onOrderStatsWrite;
 

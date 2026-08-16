@@ -155,7 +155,9 @@ Plan temporaire de reprise explicitement demande:
   fiabilite hors Functions; G0/G1/G2/G3 fermes, les treize Gen2 initiales sont
   deployees, reconciliees et observees sur le sandbox sans suppression; six
   legacy sont decidees `RETIRE_G12_A` avec commandes Stripe fail-closed et
-  zero retrait cloud, G4 analytics est la prochaine phase, trois
+  zero retrait cloud; G4 analytics est en cours sur un premier lot local
+  `trackAdminIPGen2`, avec trois suppressions placees sous hold G11 et aucun
+  deploy/cutover avant IAM dedie, trois
   triggers Auth Gen1 conserves par limitation Firebase et cinq exports
   Instagram sous `HOLD_META_RECONCILIATION`; paiements reels bloques avant DR,
   alertes, sante financiere et preuve des workers; revue au plus tard le

@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "baselineCommit": "18117840dedfa72b88bdfb019d86fd77aeac2acd",
+    "generatedAt": "2026-08-16T18:42:00Z",
+    "operator": "matthis.fradin2@gmail.com",
+    "wave": "G4-A1"
+  },
+  "deploymentPolicy": {
+    "exactProject": "secondevienextjsssr",
+    "exactCodebase": "main",
+    "maxBatchSize": 1,
+    "forbiddenTargets": [
+      "clearAllAffiliateClicksGen2",
+      "clearAllSessionsGen2",
+      "deleteSessionGen2",
+      "disconnectInstagramConnectionAdmin",
+      "getInstagramConnectionStatusAdmin",
+      "instagramOAuthCallback",
+      "startInstagramOAuthAdmin",
+      "verifyInstagramConnectionAdmin"
+    ],
+    "forbiddenGlobalSelector": "functions"
+  },
+  "preflight": {
+    "projectMatch": true,
+    "sourceExportsBeforeParallel": 157,
+    "sourceExportsWithParallel": 158,
+    "cloudFunctions": 152,
+    "cloudGen1": 139,
+    "cloudGen2": 13,
+    "analyticsSessions": 345,
+    "activeAnalyticsSessions": 148,
+    "affiliateClicks": 0,
+    "adminIpEntries": 52,
+    "legacyTraffic30d": {
+      "executionIds": 561,
+      "lastExecutionAt": "2026-08-13T11:10:39.364604603Z",
+      "statusCodes": { "200": 289, "204": 267, "401": 2, "403": 3 }
+    },
+    "destructiveTargets": {
+      "clearAllAffiliateClicks": "HOLD_G11_DESTRUCTIVE_PRECONDITIONS",
+      "clearAllSessions": "HOLD_G11_DESTRUCTIVE_PRECONDITIONS",
+      "deleteSession": "HOLD_G11_DESTRUCTIVE_PRECONDITIONS"
+    },
+    "beaconDrift": {
+      "status415Count30d": 66,
+      "cause": "sendBeacon/fetch emits text/plain while Gen1 accepted application/json only",
+      "localFix": "accept bounded text/plain JSON behind the existing origin, size and sync-token checks"
+    }
+  },
+  "functions": [
+    {
+      "name": "trackAdminIPGen2",
+      "source": {
+        "export": "trackAdminIPGen2",
+        "file": "functions/src/analytics/adminIP.js",
+        "sharedHandler": "trackAdminIPHandler"
+      },
+      "trigger": {
+        "type": "callable",
+        "filter": null,
+        "retry": false
+      },
+      "cloud": {
+        "present": false,
+        "project": "secondevienextjsssr",
+        "codebase": "main",
+        "generation": 2,
+        "region": "europe-west1",
+        "runtime": "nodejs22",
+        "revision": null
+      },
+      "runtime": {
+        "sourceCpu": "gcf_gen1",
+        "deployCpu": "167m",
+        "memoryMiB": 256,
+        "timeoutSeconds": 60,
+        "concurrency": 1,
+        "minInstances": 0,
+        "maxInstances": 1,
+        "retry": false,
+        "ingress": "ALLOW_ALL"
+      },
+      "identities": {
+        "runtimeServiceAccount": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+        "invokerIam": [{ "role": "roles/cloudfunctions.invoker", "members": ["allUsers"] }],
+        "runtimeProjectRoles": [
+          "roles/datastore.user",
+          "roles/logging.logWriter",
+          "roles/serviceusage.serviceUsageConsumer"
+        ]
+      },
+      "secrets": [],
+      "appCheck": "ENFORCED",
+      "authorization": "active strong admin plus owner registry",
+      "dataAccess": {
+        "reads": ["sys_admin_access/{uid}", "sys_metadata/admin_ips"],
+        "writes": ["sys_metadata/admin_ips"],
+        "transactional": true,
+        "idempotence": "same IP converges; concurrent map updates serialized by Firestore transaction"
+      },
+      "callers": ["src/kit/admin/AdminIPTracker.jsx"],
+      "clientRegistry": {
+        "logicalName": "trackAdminIP",
+        "currentTarget": "trackAdminIP",
+        "cutoverTarget": "trackAdminIPGen2",
+        "cutoverAllowed": false
+      },
+      "decision": {
+        "classification": "MIGRATION_PARALLEL",
+        "target": "trackAdminIPGen2",
+        "wave": "G4-A1",
+        "deploymentMaxBatchSize": 1,
+        "rollback": "Avant cutover, supprimer seulement la nouvelle cible si necessaire; apres cutover, remettre le registre client sur trackAdminIP et redeployer uniquement App Hosting sandbox. La Gen1, sa source, son endpoint et son IAM restent preserves jusqu'a G12-A."
+      }
+    }
+  ],
+  "gates": {
+    "localTestsRequired": ["test:functions-g0", "test:functions-g2a", "test:functions-g3", "test:functions-g4", "test:analytics", "appcheck:audit", "lint:functions"],
+    "runtimeIamRequired": true,
+    "targetMustBeAbsentBeforeCreate": true,
+    "unauthenticatedProbeMustFail": true,
+    "clientCutoverInThisManifest": false,
+    "observationHoursAfterCutover": 48,
+    "deploymentAllowed": false
+  }
+}

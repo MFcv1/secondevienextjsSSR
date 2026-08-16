@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions, functionsRegion } from '../config/firebase';
+import { getFunctionTarget } from '../config/functionTargets';
 import { useAuth } from '../contexts/AuthContext';
 import {
     ANALYTICS_EVENT_NAME,
@@ -235,7 +236,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
         lastSyncAtRef.current = Date.now();
 
         try {
-            await httpsCallable(functions, 'syncSession')({
+            await httpsCallable(functions, getFunctionTarget('syncSession'))({
                 sessionId: sessionIdRef.current,
                 syncToken: syncTokenRef.current,
                 duration: getTrackedDuration(),
@@ -294,7 +295,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
             }
 
             try {
-                const initRes = await httpsCallable(functions, 'initLiveSession')(userInfo);
+                const initRes = await httpsCallable(functions, getFunctionTarget('initLiveSession'))(userInfo);
                 if (initRes.data.success && isMounted) {
                     sessionIdRef.current = initRes.data.sessionId;
                     syncTokenRef.current = initRes.data.syncToken || null;
@@ -387,7 +388,8 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
             }
 
             const totalDuration = getTrackedDuration();
-            const url = `https://${functionsRegion}-${functions.app.options.projectId}.cloudfunctions.net/syncSessionBeacon`;
+            const beaconTarget = getFunctionTarget('syncSessionBeacon');
+            const url = `https://${functionsRegion}-${functions.app.options.projectId}.cloudfunctions.net/${beaconTarget}`;
             const chunk = [...journeyToSend.current];
             if (!isActive) journeyToSend.current = [];
             lastBeaconAtRef.current = now;

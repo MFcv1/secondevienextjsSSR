@@ -1,4 +1,5 @@
 import { app, functionsRegion } from './firebaseCore';
+import { getFunctionTarget } from './functionTargets';
 
 let firestoreModulePromise = null;
 let functionsModulePromise = null;
@@ -127,7 +128,7 @@ export const getCallableFunction = async (name) => {
     loadFunctionsModule(),
     getFunctionsInstance(),
   ]);
-  const callable = httpsCallable(functions, name);
+  const callable = httpsCallable(functions, getFunctionTarget(name));
   return async (payload) => {
     try {
       return await callable(payload);

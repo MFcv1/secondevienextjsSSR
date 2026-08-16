@@ -10,6 +10,7 @@ import {
   HOLD_META_RECONCILIATION,
   KEEP_GEN1_AUTH,
   KEEP_GEN2,
+  PARALLEL_MIGRATION_EXPORTS,
   classificationFor,
   extractLocalExports
 } from '../scripts/functions-gen2-inventory.mjs';
@@ -56,10 +57,15 @@ function validate(args) {
   });
 }
 
-test('inventaire source: 157 exports uniques et sources resolues', () => {
+test('inventaire source: baseline 157 plus exports paralleles de migration, uniques et resolus', () => {
   const exports = extractLocalExports(ROOT);
-  assert.equal(exports.length, EXPECTED_SOURCE_COUNT);
-  assert.equal(new Set(exports.map(({ name }) => name)).size, EXPECTED_SOURCE_COUNT);
+  const expectedCurrentCount = EXPECTED_SOURCE_COUNT + PARALLEL_MIGRATION_EXPORTS.size;
+  assert.equal(exports.length, expectedCurrentCount);
+  assert.equal(new Set(exports.map(({ name }) => name)).size, expectedCurrentCount);
+  assert.deepEqual(
+    exports.filter(({ name }) => PARALLEL_MIGRATION_EXPORTS.has(name)).map(({ name }) => name).sort(),
+    [...PARALLEL_MIGRATION_EXPORTS].sort()
+  );
   for (const entry of exports) {
     assert.ok(entry.sourceFile);
     assert.ok(fs.existsSync(path.join(ROOT, entry.sourceFile)), `${entry.name}: source absente`);

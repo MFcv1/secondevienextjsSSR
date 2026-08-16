@@ -21,7 +21,8 @@ test('H6 keeps the browser and unload beacon on the configured private region', 
 
   assert.match(appHosting, /NEXT_PUBLIC_FIREBASE_FUNCTIONS_REGION[\s\S]*?value:\s*"europe-west1"/);
   assert.match(analyticsProvider, /functionsRegion/);
-  assert.match(analyticsProvider, /https:\/\/\$\{functionsRegion\}-\$\{functions\.app\.options\.projectId\}\.cloudfunctions\.net\/syncSessionBeacon/);
+  assert.match(analyticsProvider, /const beaconTarget = getFunctionTarget\('syncSessionBeacon'\)/);
+  assert.match(analyticsProvider, /https:\/\/\$\{functionsRegion\}-\$\{functions\.app\.options\.projectId\}\.cloudfunctions\.net\/\$\{beaconTarget\}/);
   assert.doesNotMatch(analyticsProvider, /us-central1-[^`]*syncSessionBeacon/);
 });
 

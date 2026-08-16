@@ -81,6 +81,22 @@ const GCLOUD_GEN1_TARGETS = Object.freeze({
   })
 });
 const GCLOUD_GEN2_TARGETS = Object.freeze({
+  trackAdminIPGen2: Object.freeze({
+    create: true,
+    triggerType: 'http-callable',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'trackAdminIPGen2',
+    runtimeServiceAccount: 'analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '256Mi',
+    cpu: '167m',
+    timeout: '60s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all'
+  }),
   onOrderStatsWrite: Object.freeze({
     triggerType: 'event',
     region: 'europe-west1',
@@ -671,7 +687,7 @@ export function validateDeploymentRequest({
   const transport = args.transport || 'firebase';
   if (project !== EXPECTED_PROJECT) fail(`Projet interdit: ${project}`);
   if (codebase !== EXPECTED_CODEBASE) fail(`Codebase interdite: ${codebase}`);
-  if (!['firebase', 'gcloud-gen1', 'gcloud-gen2', 'gcloud-gen2-rollback'].includes(transport)) fail(`Transport interdit: ${transport}`);
+  if (!['firebase', 'gcloud-gen1', 'gcloud-gen2', 'gcloud-gen2-create', 'gcloud-gen2-rollback'].includes(transport)) fail(`Transport interdit: ${transport}`);
   if (activeFirebaseProject !== EXPECTED_PROJECT) fail(`Projet Firebase effectif different: ${activeFirebaseProject || 'absent'}`);
   if (readFirebaseProject(rootDir) !== EXPECTED_PROJECT) fail('Alias Firebase local different du sandbox attendu');
   if (manifest.metadata?.project !== EXPECTED_PROJECT || manifest.metadata?.codebase !== EXPECTED_CODEBASE) fail('Manifeste projet/codebase invalide');
@@ -704,6 +720,14 @@ export function validateDeploymentRequest({
     }
     if (entries[0].cloud?.generation !== 2 || entries[0].decision?.classification !== 'KEEP_GEN2') {
       fail('Transport gcloud Gen2 exige une cible Gen2 existante KEEP_GEN2');
+    }
+  }
+  if (transport === 'gcloud-gen2-create') {
+    const target = allowlist.length === 1 ? GCLOUD_GEN2_TARGETS[allowlist[0]] : null;
+    if (!target?.create) fail('Creation gcloud Gen2 limitee a la cible parallele approuvee');
+    if (manifest.gates?.deploymentAllowed !== true) fail('Creation gcloud Gen2 bloquee par la gate du manifeste');
+    if (entries[0].cloud?.present !== false || entries[0].decision?.classification !== 'MIGRATION_PARALLEL') {
+      fail('Creation gcloud Gen2 exige une cible parallele absente du cloud');
     }
   }
   if (transport === 'gcloud-gen2-rollback') {
@@ -760,10 +784,10 @@ export function buildGcloudGen1DeployArgs(validation) {
 export function buildGcloudGen2DeployArgs(validation) {
   const name = validation.allowlist[0];
   const target = GCLOUD_GEN2_TARGETS[name];
-  if (validation.transport !== 'gcloud-gen2' || validation.allowlist.length !== 1 || !target) {
+  if (!['gcloud-gen2', 'gcloud-gen2-create'].includes(validation.transport) || validation.allowlist.length !== 1 || !target) {
     fail('Transport gcloud Gen2 non autorise');
   }
-  const httpTrigger = ['http-scheduler', 'http-task'].includes(target.triggerType);
+  const httpTrigger = ['http-callable', 'http-scheduler', 'http-task'].includes(target.triggerType);
   const triggerArgs = httpTrigger
     ? ['--trigger-http']
     : [
@@ -792,7 +816,7 @@ export function buildGcloudGen2DeployArgs(validation) {
     `--max-instances=${target.maxInstances}`,
     ...retryArgs,
     `--ingress-settings=${target.ingressSettings}`,
-    '--no-allow-unauthenticated',
+    target.triggerType === 'http-callable' ? '--allow-unauthenticated' : '--no-allow-unauthenticated',
     `--update-labels=deployment-tool=codex-targeted,migration-source-commit=${validation.commit}${target.triggerType === 'http-task' ? ',deployment-taskqueue=true' : ''}`,
     '--quiet'
   ];
@@ -1037,6 +1061,26 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
       if (schedulerResult.error) fail(schedulerResult.error.message);
       if (schedulerResult.status !== 0) process.exitCode = schedulerResult.status || 1;
     }
+    return;
+  }
+  if (validation.transport === 'gcloud-gen2-create') {
+    const name = validation.allowlist[0];
+    const target = GCLOUD_GEN2_TARGETS[name];
+    const before = spawnSync('gcloud', [
+      'functions', 'describe', name, '--gen2',
+      `--region=${target.region}`, `--project=${validation.project}`, '--format=json'
+    ], { cwd: rootDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    if (before.status === 0 || !/NOT_FOUND|not found/i.test(`${before.stderr || ''}${before.stdout || ''}`)) {
+      fail('Creation Gen2 refusee: la cible existe deja ou son absence ne peut pas etre prouvee');
+    }
+    process.stdout.write(`Projet: ${validation.project}\nCible: functions:main:${name}\nCommit: ${validation.commit}\nTransport: gcloud-gen2-create\n`);
+    const result = spawnSync('gcloud', buildGcloudGen2DeployArgs(validation), {
+      cwd: rootDir,
+      env: process.env,
+      stdio: 'inherit'
+    });
+    if (result.error) fail(result.error.message);
+    if (result.status !== 0) process.exitCode = result.status || 1;
     return;
   }
   if (validation.transport === 'gcloud-gen2-rollback') {

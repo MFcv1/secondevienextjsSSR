@@ -11,6 +11,10 @@ export const EXPECTED_CODEBASE = 'main';
 export const EXPECTED_SOURCE_COUNT = 157;
 export const EXPECTED_CLOUD_COUNT = 152;
 
+export const PARALLEL_MIGRATION_EXPORTS = new Set([
+  'trackAdminIPGen2'
+]);
+
 export const KEEP_GEN2 = new Set([
   'catalogMediaGarbageCollector',
   'catalogReconciler',
@@ -224,7 +228,8 @@ export function extractLocalExports(rootDir) {
       sourceFile: imports.get(match[2]) ? path.posix.join('functions', imports.get(match[2]).replace(/^\.\//, '')) : null
     }));
   const names = new Set(exports.map(({ name }) => name));
-  if (exports.length !== EXPECTED_SOURCE_COUNT || names.size !== EXPECTED_SOURCE_COUNT) {
+  const expectedCurrentSourceCount = EXPECTED_SOURCE_COUNT + PARALLEL_MIGRATION_EXPORTS.size;
+  if (exports.length !== expectedCurrentSourceCount || names.size !== expectedCurrentSourceCount) {
     throw new Error(`Inventaire source inattendu: ${exports.length} exports, ${names.size} uniques`);
   }
   if (exports.some(({ sourceFile }) => !sourceFile)) {
@@ -234,6 +239,7 @@ export function extractLocalExports(rootDir) {
 }
 
 export function classificationFor(name) {
+  if (PARALLEL_MIGRATION_EXPORTS.has(name)) return 'MIGRATION_PARALLEL';
   if (KEEP_GEN2.has(name)) return 'KEEP_GEN2';
   if (KEEP_GEN1_AUTH.has(name)) return 'KEEP_GEN1_AUTH';
   if (HOLD_META_RECONCILIATION.has(name)) return 'HOLD_META_RECONCILIATION';
@@ -242,6 +248,7 @@ export function classificationFor(name) {
 }
 
 export function waveFor(name, classification) {
+  if (classification === 'MIGRATION_PARALLEL') return 'G4';
   if (classification === 'KEEP_GEN1_AUTH') return 'EXCEPTION_AUTH_GEN1';
   if (classification === 'MIGRATE_OR_RETIRE' && name.includes('ProductPublication')) return 'G3';
   if (classification === 'MIGRATE_OR_RETIRE' && ['e2eCheckoutProof', 'e2eStripeHardeningProof'].includes(name)) return 'G3';
@@ -510,7 +517,9 @@ export function buildInventory({ rootDir, firebaseRows, gcloudRows, iamPolicies,
       ownership: overlapFor(local.name, trigger),
       decision: {
         classification,
-        target: classification === 'KEEP_GEN2' ? local.name : (classification === 'KEEP_GEN1_AUTH' ? local.name : `${local.name}Gen2`),
+        target: ['KEEP_GEN2', 'KEEP_GEN1_AUTH', 'MIGRATION_PARALLEL'].includes(classification)
+          ? local.name
+          : `${local.name}Gen2`,
         wave: waveFor(local.name, classification),
         deploymentMaxBatchSize: deploymentMax,
         rollback: rollbackFor(local.name, classification, trigger)
@@ -518,7 +527,7 @@ export function buildInventory({ rootDir, firebaseRows, gcloudRows, iamPolicies,
     };
   });
   const projectIamByServiceAccount = projectRolesFor(projectIam, serviceAccounts);
-  const counts = Object.fromEntries(['KEEP_GEN2', 'KEEP_GEN1_AUTH', 'MIGRATE', 'MIGRATE_OR_RETIRE', 'HOLD_META_RECONCILIATION']
+  const counts = Object.fromEntries(['KEEP_GEN2', 'KEEP_GEN1_AUTH', 'MIGRATE', 'MIGRATE_OR_RETIRE', 'HOLD_META_RECONCILIATION', 'MIGRATION_PARALLEL']
     .map((classification) => [classification, functions.filter((entry) => entry.decision.classification === classification).length]));
   return {
     schemaVersion: 1,

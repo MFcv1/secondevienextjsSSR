@@ -2043,6 +2043,26 @@ Gates: Auth/App Check/origine, parite sessions/journey/UID-IP, concurrence des
 caches, cout Firestore, rollback registre client, ancien onglet et 48 heures
 d'observation. Les collections historiques P2 ne sont pas purgees ici.
 
+Preflight du 2026-08-16: les trois callables destructives
+`clearAllAffiliateClicks`, `clearAllSessions` et `deleteSession` sont sorties
+du lot G4 et placees sous `HOLD_G11_DESTRUCTIVE_PRECONDITIONS`; elles ne seront
+ni appelees ni dupliquees tant que backup, dry-run, manifeste, preconditions,
+rollback et approbation destructive ne sont pas reunis. Le premier lot est
+reduit a `trackAdminIPGen2`, nouveau nom Gen2 unique. La Gen1 et le registre
+client restent proprietaires avant le cutover.
+
+Le preflight a egalement trouve 66 reponses 415 de `syncSessionBeacon` sur 30
+jours: `sendBeacon` et son fallback envoient `text/plain`, alors que le serveur
+n'acceptait que `application/json`. La source partagee accepte maintenant ces
+deux content-types sans retirer les controles d'origine, taille 64 KiB et token
+de session. `trackAdminIP` utilise desormais une transaction Firestore au lieu
+d'un read/set concurrent de la carte complete. La cible parallele porte
+`cpu: gcf_gen1`, concurrence 1, min 0, max 1, 256 MiB, 60 s, App Check et le
+futur SA `analytics-runtime`; aucun secret n'est requis. Le registre client
+centralise les huit noms G4 mais pointe encore sur toutes les Gen1. Le manifeste
+`manifests/functions-gen2-g4-track-admin-ip.json` bloque le deploy tant que
+l'IAM dedie n'est pas cree et verifie.
+
 ### G5 - Auth callables, OTP et passkeys
 
 Conserver les trois triggers Auth Gen1. Migrer les quatorze callables par

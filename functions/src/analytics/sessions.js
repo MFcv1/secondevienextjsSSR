@@ -317,7 +317,10 @@ exports.syncSessionBeacon = regionalFunctions().https.onRequest(async (req, res)
     if (!originAllowed) { res.status(403).send('Origin denied'); return; }
     if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
     if (req.method !== 'POST') { res.status(405).send('Method not allowed'); return; }
-    if (!/^application\/json(?:\s*;|$)/i.test(req.headers['content-type'] || '')) {
+    const contentType = String(req.headers['content-type'] || '');
+    const hasJsonBody = /^application\/json(?:\s*;|$)/i.test(contentType);
+    const hasBeaconTextBody = /^text\/plain(?:\s*;|$)/i.test(contentType);
+    if (!hasJsonBody && !hasBeaconTextBody) {
         res.status(415).send('JSON required');
         return;
     }

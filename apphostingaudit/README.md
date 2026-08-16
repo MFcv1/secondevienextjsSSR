@@ -2,7 +2,7 @@
 
 Derniere mise a jour: 2026-08-16
 
-Statut: `CENTRE_DE_SUIVI_ACTIF - G1_TERMINEE - G2_TERMINEE - G3_TERMINEE - G4_A_FAIRE`
+Statut: `CENTRE_DE_SUIVI_ACTIF - G1_TERMINEE - G2_TERMINEE - G3_TERMINEE - G4_EN_COURS`
 
 Proprietaire: mainteneur Seconde Vie et agent d'execution des phases validees
 
@@ -91,7 +91,7 @@ Valeurs autorisees:
 | G1 | alertes, DR/restore, sante/incident et preuve des workers | `TERMINEE` | quatre P0 fermes; Stripe test borne uniquement | manifestes `functions-gen2-g1-*.json`, journal G1 |
 | G2 | socle Gen2 puis stabilisation ciblee des 13 Gen2 actuelles | `TERMINEE` | 13/13 Gen2 deployees et observees, inventaire sans drift, rollback conserve | `functions-gen2-g2b-closeout.json` |
 | G3 | decisions retrait/migration legacy, E2E, maintenance, publication historique | `TERMINEE` | six retraits differes G12-A, commandes Stripe fail-closed, zero suppression | `functions-gen2-g3-decisions.json` |
-| G4 | analytics | `A_FAIRE` | parite, App Check, caches concurrents, 48 h observees | a renseigner |
+| G4 | analytics | `EN_COURS` | parite, App Check, caches concurrents, 48 h observees | preflight `functions-gen2-g4-track-admin-ip.json`; IAM/deploy/cutover non executes |
 | G5 | Auth callables, OTP et passkeys | `A_FAIRE` | Auth complete, parcours sandbox et rollback client | a renseigner |
 | G6 | catalogue admin, devis, newsletter, e-mail et factures | `A_FAIRE` | writers/readers et trigger devis sans double effet | a renseigner |
 | G7 | Meta et reconciliation Instagram | `A_FAIRE` | hold leve par preuves, OAuth/secrets/rollback valides | a renseigner |
@@ -308,6 +308,23 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
   `test:functions-g2a` 26/26, lint Functions et inventaire
   157/152/139/13 + 8 schedulers/2 queues/7 Eventarc verts.
 
+### G4-A1 - preflight trackAdminIP Gen2
+
+- huit Gen1 analytics reconciliees; 345 sessions dont 148 marquees actives,
+  zero clic affilie et 52 entrees IP admin, en lecture seule;
+- trois suppressions admin placees sous
+  `HOLD_G11_DESTRUCTIVE_PRECONDITIONS`, aucune invocation ou cible Gen2;
+- drift corrige localement: 66 fermetures beacon en 415 car le client envoie
+  `text/plain`; origine, taille et token restent obligatoires;
+- course corrigee localement: mise a jour `admin_ips` transactionnelle;
+- cible locale unique `trackAdminIPGen2`, CPU `gcf_gen1`, concurrence 1,
+  min 0, max 1, 256 MiB, 60 s, App Check, SA futur `analytics-runtime`;
+- registre client ajoute mais encore pointe sur `trackAdminIP` Gen1;
+- wrapper `gcloud-gen2-create` refuse cible existante, mauvais projet,
+  manifeste bloque ou plus d'une cible; deploy encore interdit par la gate;
+- tests locaux: G4 7/7, G0 21/21, analytics, App Check et lint verts;
+- cloud: lectures uniquement; IAM, Function, App Hosting et donnees inchanges.
+
 ## 9. Conditions d'arret immediat
 
 Arreter la vague au premier:
@@ -329,8 +346,10 @@ Arreter la vague au premier:
 
 ## 10. Point de reprise
 
-La reprise courante commence par le preflight G4 analytics dans
+La reprise courante continue par la creation auditee du compte runtime G4
+`analytics-runtime`, puis seulement par la levee de la gate et la creation
+cible unique `trackAdminIPGen2` dans
 [AUDIT_MIGRATION_FUNCTIONS_GEN2.md](AUDIT_MIGRATION_FUNCTIONS_GEN2.md), apres
 lecture de la derniere entree du Journal et regeneration read-only de la
-baseline. Les six retraits decides en G3 restent differes a G12-A; aucun
-nettoyage cloud ne doit etre anticipe.
+baseline. Le registre client ne bascule qu'apres verification de la nouvelle
+cible; les six retraits G3 restent differes a G12-A.

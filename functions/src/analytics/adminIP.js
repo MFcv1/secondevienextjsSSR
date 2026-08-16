@@ -5,22 +5,34 @@
  * - isAdminIP: Vérifie si une IP appartient à un admin (helper interne)
  */
 const functions = require('firebase-functions/v1');
+const { onCall } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const { checkActiveStrongAdmin } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
+const { getClientIpInfo } = require('./ip');
 
 const db = admin.firestore();
 const ADMIN_IP_CACHE_MS = 5 * 60 * 1000;
+const ANALYTICS_RUNTIME_SERVICE_ACCOUNT = 'analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com';
+const TRACK_ADMIN_IP_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '256MiB',
+    timeoutSeconds: 60,
+    serviceAccount: ANALYTICS_RUNTIME_SERVICE_ACCOUNT,
+    enforceAppCheck: true
+});
 let adminIpCache = { expiresAt: 0, ips: null };
 
 // Mettre à jour les IPs des admins lorsqu'ils se connectent
-exports.trackAdminIP = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+const trackAdminIPHandler = async (_data, context) => {
     await checkActiveStrongAdmin(context);
 
     const email = String(context.auth.token.email || '').trim().toLowerCase();
-
-    const rawIp = context.rawRequest.headers['x-forwarded-for'] || context.rawRequest.connection.remoteAddress;
-    const ip = rawIp ? rawIp.split(',')[0].trim() : 'Unknown';
+    const ip = getClientIpInfo(context.rawRequest).ip;
 
     if (!ip || ip === 'Unknown') {
         return { success: false, message: 'IP non détectée' };
@@ -28,38 +40,44 @@ exports.trackAdminIP = regionalFunctions().runWith({ enforceAppCheck: true }).ht
 
     try {
         const adminIpsRef = db.doc('sys_metadata/admin_ips');
-        const docSnap = await adminIpsRef.get();
+        await db.runTransaction(async (transaction) => {
+            const docSnap = await transaction.get(adminIpsRef);
+            const currentIps = { ...(docSnap.exists ? docSnap.data()?.ips || {} : {}) };
+            const nowDate = new Date();
 
-        const currentData = docSnap.exists ? docSnap.data() : { ips: {} };
-        if (!currentData.ips) currentData.ips = {};
+            currentIps[ip] = {
+                adminEmail: email,
+                lastSeen: nowDate,
+                firstSeen: currentIps[ip]?.firstSeen || nowDate
+            };
 
-        const nowDate = new Date();
+            const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+            Object.keys(currentIps).forEach((key) => {
+                const lastSeen = currentIps[key]?.lastSeen;
+                const lastSeenDate = lastSeen?.toDate ? lastSeen.toDate() : new Date(lastSeen);
+                if (!Number.isFinite(lastSeenDate.getTime()) || lastSeenDate < ninetyDaysAgo) {
+                    delete currentIps[key];
+                }
+            });
 
-        // Ajouter ou mettre à jour l'IP
-        currentData.ips[ip] = {
-            adminEmail: email,
-            lastSeen: nowDate,
-            firstSeen: currentData.ips[ip]?.firstSeen || nowDate
-        };
-
-        // Nettoyer les anciennes IPs (plus de 90 jours)
-        const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-        Object.keys(currentData.ips).forEach(key => {
-            const lastSeen = currentData.ips[key].lastSeen;
-            const lastSeenDate = lastSeen?.toDate ? lastSeen.toDate() : new Date(lastSeen);
-            if (lastSeenDate < ninetyDaysAgo) {
-                delete currentData.ips[key];
-            }
+            transaction.set(adminIpsRef, { ips: currentIps }, { merge: true });
         });
-
-        await adminIpsRef.set(currentData);
         adminIpCache = { expiresAt: 0, ips: null };
         return { success: true };
     } catch (error) {
         console.error("Track Admin IP Error:", error);
         throw new functions.https.HttpsError('internal', 'Erreur lors du suivi IP');
     }
-});
+};
+
+exports.trackAdminIP = regionalFunctions()
+    .runWith({ enforceAppCheck: true })
+    .https.onCall(trackAdminIPHandler);
+
+exports.trackAdminIPGen2 = onCall(
+    TRACK_ADMIN_IP_GEN2_RUNTIME,
+    async (request) => trackAdminIPHandler(request.data, request)
+);
 
 // Vérifier si une IP appartient à un admin (helper interne)
 const isAdminIP = async (ip) => {
@@ -88,3 +106,5 @@ const isAdminIP = async (ip) => {
 };
 
 exports.isAdminIP = isAdminIP;
+exports.trackAdminIPHandler = trackAdminIPHandler;
+exports.TRACK_ADMIN_IP_GEN2_RUNTIME = TRACK_ADMIN_IP_GEN2_RUNTIME;

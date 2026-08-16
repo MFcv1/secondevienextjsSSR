@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../config/firebase';
+import { getFunctionTarget } from '../config/functionTargets';
 import { useAuth } from '../contexts/AuthContext';
 
 /**
@@ -15,7 +16,7 @@ const AdminIPTracker = () => {
         if (isAdmin && user && !user.isAnonymous) {
             const trackIP = async () => {
                 try {
-                    const trackAdminIPFn = httpsCallable(functions, 'trackAdminIP');
+                    const trackAdminIPFn = httpsCallable(functions, getFunctionTarget('trackAdminIP'));
                     await trackAdminIPFn();
                     console.log('Admin IP tracked successfully');
                 } catch (error) {

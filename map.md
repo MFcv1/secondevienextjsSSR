@@ -992,6 +992,13 @@ utilise `createPublishedProductAdmin`, aucune session historique ne subsiste et
 les deux commandes package Stripe sont fail-closed. Les sources, endpoints,
 IAM et secrets restent conserves jusqu'a G12; G4 analytics est la reprise.
 
+G4-A1 ajoute le registre `src/kit/config/functionTargets.js`, encore pointe
+sur les noms Gen1, et l'export parallele local `trackAdminIPGen2`. Son handler
+partage met a jour `sys_metadata/admin_ips` en transaction; le nouveau runtime
+sera `analytics-runtime`, CPU Gen1/concurrence 1. Les trois callables de
+suppression analytics sont sous hold G11 et aucun deploy/cutover n'est encore
+autorise.
+
 | Domaine | Exports |
 | --- | --- |
 | commerce | `createOrder`, `stripeWebhook`, `stripeConnectWebhook`, `cancelOrderClient`, `getOrderStatusClient` |
