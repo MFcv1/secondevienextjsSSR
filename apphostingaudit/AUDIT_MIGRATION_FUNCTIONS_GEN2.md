@@ -2,7 +2,7 @@
 
 Derniere contre-verification: 2026-08-16
 
-Statut: `PLAN_TEMPORAIRE_REVALIDE - G2_B1_STATS_TERMINE`
+Statut: `PLAN_TEMPORAIRE_REVALIDE - G2_B1_STATS_TERMINE - G2_B2_CATALOGUE_TERMINE`
 
 Proprietaire: mainteneur Seconde Vie et agent charge de la migration
 
@@ -1648,6 +1648,51 @@ est fermee: aucun 5xx apres la probe valide, IAM et revision stables, 26/26
 ledgers, zero drift et sante `healthy`. Verdict: `G2B1_COMPLETE`. La cible
 suivante exige une regeneration target-specific; elle n'est pas autorisee par
 ce seul verdict.
+
+#### Execution G2-B2 - trigger catalogue cible unique
+
+Le preflight a releve que le ledger historique de `onCatalogSourceWrite`
+utilisait uniquement `sha256(event.id)`, en contradiction avec l'invariant qui
+interdit `event.id` seul pendant un remplacement de trigger. Avant deploy, la
+cle a ete remplacee par un hash stable de `appId`, `productId` et de
+`updateTime` Firestore; l'ID evenement ne sert plus qu'a la correlation. Les
+tests unitaires, catalogue core 14/14, resilience 18/18 et lint Functions sont
+verts.
+
+Le controle catalogue est `active`, non dirty, sans lease ni erreur, avec
+desired/published/revalidated a 295. Les 26 ledgers historiques sont tous
+`scheduled`; les 21 builds `failed` sont supersedes (maximum 284) et aucun
+echec/prepared ne depasse la revision publiee. Le schema controle v1 est
+classe legacy compatible avec le lecteur actuel, sans migration data
+implicite.
+
+L'IAM ajoute uniquement Service Usage Consumer et ActAs au runtime deja dedie,
+puis Run Invoker au SA Eventarc sur le seul service. Le build commun reste
+borne a Artifact Registry et aux deux buckets source, sans cle. Les anciens
+droits Eventarc/Invoker de `catalog-enqueuer` restent conserves pour le
+rollback; aucune liaison n'est retiree en G2-B.
+
+Le commit `6d75cf3928374e597d09624f0350b0ebb8311c35` est deploye uniquement sur
+`onCatalogSourceWrite`. La revision `oncatalogsourcewrite-00011-kaj` est
+`ACTIVE`, CPU 1, 256 MiB, timeout 60 s, concurrence/max 1 et retry actif. Le
+trigger eur3 conserve exactement son filtre et devient `130316`; les 7
+triggers Eventarc restent presents. Le label `migration-source-commit` est
+correct. Une probe authentifiee dans un namespace hors `secondevie` retourne
+`ignored_app`/HTTP 200 sans ecriture; controle, ledgers et builds restent
+identiques et les logs ne portent ni erreur ni 5xx.
+
+L'archive precedente revision 10 est preservee avec temporary hold, generation
+`1786885189999864`, SHA-256
+`3c9a44606a3098c774be1d80be6f0af82e54c0bbe3b63534e4a28fb81e8674b4`.
+Le rollback cible exige `G2B_ROLLBACK_ON_CATALOG_SOURCE_WRITE`, restaure
+concurrence 80/max 20/retry actif et conserve IAM, trigger, endpoint et data.
+Manifestes: `functions-gen2-g2b-catalog-iam.json`,
+`functions-gen2-g2b-catalog-reconciliation.json` et
+`functions-gen2-g2b-catalog-rollout.json`, scelles par
+`functions-gen2-g2b-catalog-digests.json`. Apres 935 secondes, la revision ne
+porte aucune erreur ni 5xx, IAM est encore exacte, la sante reste `healthy`,
+le controle reste publie 295/295 et aucun ledger/build n'a derive. Verdict:
+`G2B2_COMPLETE`.
 
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 

@@ -913,6 +913,10 @@ deploie uniquement `onOrderStatsWrite`; preuves IAM/data/rollout dans les
 manifestes `functions-gen2-g2b-stats-*.json`. Sa quiet-window est fermee avec
 zero drift; TTL e-mail et IAM/data de chaque lot restent des gates distinctes,
 avec preflight et une seule cible a la fois.
+Le lot G2-B2 catalogue remplace localement la cle `event.id` du ledger par la
+cle semantique document + `updateTime`, puis deploie seulement
+`onCatalogSourceWrite`; preuves dans `functions-gen2-g2b-catalog-*.json` et
+quiet-window fermee sans drift.
 
 | Domaine | Exports |
 | --- | --- |

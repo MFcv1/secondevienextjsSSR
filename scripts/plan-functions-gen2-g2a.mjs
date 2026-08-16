@@ -63,7 +63,7 @@ const plans = [
     runtime: runtime(catalogEnqueuer, { retry: true }),
     iam: { projectRoles: ['roles/datastore.user', 'roles/cloudtasks.enqueuer', 'roles/logging.logWriter', 'roles/serviceusage.serviceUsageConsumer'], secrets: [] },
     data: { reads: ['sys_catalog_publication_events'], writes: ['sys_catalog_publication_events', 'sys_catalog_publication'] },
-    idempotence: 'event-hash-ledger-plus-deterministic-task-id', overlap: 'at-least-once/ledger-owner', blockers: []
+    idempotence: 'document-updateTime semantic ledger plus event-hash correlation and deterministic task id', overlap: 'at-least-once/ledger-owner', blockers: []
   },
   {
     name: 'catalogReconciler', source: 'functions/src/catalog/catalogReconciler.js', owner: 'catalog-reconciler-scheduler',

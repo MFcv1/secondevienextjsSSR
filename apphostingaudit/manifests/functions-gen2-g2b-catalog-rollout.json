@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T13:21:58Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "phase": "G2-B2",
+  "verdict": "G2B2_COMPLETE",
+  "deployment": {
+    "count": 1,
+    "target": "onCatalogSourceWrite",
+    "codebase": "main",
+    "generation": 2,
+    "region": "europe-west1",
+    "sourceCommit": "6d75cf3928374e597d09624f0350b0ebb8311c35",
+    "build": "projects/231220287936/locations/europe-west1/builds/bbdd82b9-dc02-469b-92d3-4d2fc7700ff7",
+    "source": {
+      "bucket": "gcf-v2-sources-231220287936-europe-west1",
+      "object": "onCatalogSourceWrite/function-source.zip",
+      "generation": "1786885471478280",
+      "sha256": "581f1ee47d220015016eff34cf8f01b08959ca8b58aa28112a2335444bc1d958"
+    },
+    "previousRevision": "oncatalogsourcewrite-00010-gis",
+    "revision": "oncatalogsourcewrite-00011-kaj",
+    "trafficPercent": 100,
+    "state": "ACTIVE",
+    "runtime": {
+      "runtime": "nodejs22",
+      "cpu": 1,
+      "memoryMiB": 256,
+      "timeoutSeconds": 60,
+      "concurrency": 1,
+      "minInstances": 0,
+      "maxInstances": 1,
+      "retry": true
+    },
+    "identities": {
+      "runtime": "catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com",
+      "build": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+      "trigger": "functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com",
+      "publicInvoker": false,
+      "rollbackRuntimeInvokerRetained": true
+    },
+    "trigger": {
+      "before": "projects/secondevienextjsssr/locations/eur3/triggers/oncatalogsourcewrite-417743",
+      "after": "projects/secondevienextjsssr/locations/eur3/triggers/oncatalogsourcewrite-130316",
+      "eventType": "google.cloud.firestore.document.v1.written",
+      "documentPathPattern": "artifacts/{appId}/public/data/furniture/{productId}",
+      "database": "(default)",
+      "namespace": "(default)",
+      "triggerRegion": "eur3"
+    }
+  },
+  "idempotence": {
+    "before": "sha256(event.id)",
+    "after": "sha256(appId + productId + Firestore document updateTime)",
+    "eventIdUse": "correlation only",
+    "semanticLedgerCountBeforeFirstRealEvent": 0,
+    "legacyLedgerCount": 26,
+    "pendingLedgerCount": 0
+  },
+  "catalogReconciliation": {
+    "controlSchemaVersion": 1,
+    "controlSchemaClassification": "LEGACY_V1_COMPATIBLE_WITH_CURRENT_READER",
+    "mode": "active",
+    "dirty": false,
+    "buildState": "published",
+    "desiredRevision": 295,
+    "publishedRevision": 295,
+    "revalidatedRevision": 295,
+    "activeLease": false,
+    "consecutiveFailures": 0,
+    "lastErrorPresent": false,
+    "historicalFailedBuilds": 21,
+    "maxHistoricalFailedRevision": 284,
+    "unresolvedFailedAheadOfPublished": 0,
+    "historicalPreparedBuilds": 20,
+    "unresolvedPreparedAheadOfPublished": 0,
+    "manifest": "functions-gen2-g2b-catalog-reconciliation.json",
+    "sha256": "721fa16676bf949de9754c13bab1dcdaaeedbeb6388895e8a046b9b6afc0f40e"
+  },
+  "iam": {
+    "verdict": "G2B_CATALOG_IAM_VERIFIED",
+    "manifest": "functions-gen2-g2b-catalog-iam.json",
+    "sha256": "7f1d7a359926957e10a0a762aea9036b0171ab3cac85a28184939f0495d6106c",
+    "userManagedKeys": 0,
+    "publicInvoker": false,
+    "removedBindings": 0
+  },
+  "platformReconciliation": {
+    "sourceExports": 157,
+    "cloudFunctions": 152,
+    "cloudGen1": 139,
+    "cloudGen2": 13,
+    "schedulers": 8,
+    "queues": 2,
+    "eventarc": 7,
+    "instagramHold": 5,
+    "authGen1Kept": 3,
+    "unexplainedDrift": 0
+  },
+  "probe": {
+    "authenticatedAs": "functions-eventarc-invoker",
+    "targetAppId": "non-production probe namespace",
+    "httpStatus": 200,
+    "result": "ignored_app",
+    "catalogWrites": 0,
+    "controlRevisionBefore": 295,
+    "controlRevisionAfter": 295,
+    "ledgerCountBefore": 26,
+    "ledgerCountAfter": 26,
+    "revisionErrors": 0,
+    "http5xx": 0
+  },
+  "observation": {
+    "quietWindowComplete": true,
+    "startedAt": "2026-08-16T13:06:22.893929237Z",
+    "closedAt": "2026-08-16T13:21:58Z",
+    "durationSeconds": 935,
+    "revisionLogEntries": 1,
+    "severityErrors": 0,
+    "http5xx": 0,
+    "health": "healthy",
+    "openIncidents": 0,
+    "iam": "G2B_CATALOG_IAM_VERIFIED",
+    "catalog": "PUBLISHED_295_ZERO_DRIFT",
+    "nextGate": "Regenerate target-specific preconditions before selecting the next single G2-B target."
+  },
+  "rollback": {
+    "automatic": false,
+    "approval": "G2B_ROLLBACK_ON_CATALOG_SOURCE_WRITE",
+    "wrapperTransport": "gcloud-gen2-rollback",
+    "expectedRevision": "oncatalogsourcewrite-00011-kaj",
+    "source": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onCatalogSourceWrite/oncatalogsourcewrite-00010-gis-function-source.zip",
+    "sourceGeneration": "1786885189999864",
+    "sourceSize": 372482,
+    "sourceSha256": "3c9a44606a3098c774be1d80be6f0af82e54c0bbe3b63534e4a28fb81e8674b4",
+    "sourceTemporaryHold": true,
+    "restoreConcurrency": 80,
+    "restoreMaxInstances": 20,
+    "restoreRetry": true,
+    "retain": [
+      "runtime/build/trigger IAM",
+      "old and new Run Invoker bindings",
+      "Eventarc filter and endpoint",
+      "catalog ledgers and control",
+      "monitoring and alerts",
+      "both source archives"
+    ],
+    "dataDeletion": "FORBIDDEN"
+  }
+}

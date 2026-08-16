@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "phase": "G2-B2",
+  "sourceCommit": "6d75cf3928374e597d09624f0350b0ebb8311c35",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g2b-catalog-iam.json": "7f1d7a359926957e10a0a762aea9036b0171ab3cac85a28184939f0495d6106c",
+    "apphostingaudit/manifests/functions-gen2-g2b-catalog-reconciliation.json": "721fa16676bf949de9754c13bab1dcdaaeedbeb6388895e8a046b9b6afc0f40e",
+    "apphostingaudit/manifests/functions-gen2-g2b-catalog-rollout.json": "3ea6f12f0875e1caa7fe1b36a0aa3d4689997d109f8a8d599553b9ae2f2bab20"
+  },
+  "verdict": "G2B2_COMPLETE"
+}

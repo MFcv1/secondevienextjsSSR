@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T13:21:49.597Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "mode": "read-only",
+  "target": "onCatalogSourceWrite",
+  "verdict": "G2B_CATALOG_PREFLIGHT_READY",
+  "deploymentAllowed": false,
+  "blockers": [],
+  "control": {
+    "schemaVersion": 1,
+    "schemaCompatibility": "LEGACY_V1_OR_CURRENT_V2_COMPATIBLE",
+    "stateVersion": 14068,
+    "mode": "active",
+    "dirty": false,
+    "buildState": "published",
+    "desiredRevision": 295,
+    "publishedRevision": 295,
+    "revalidatedRevision": 295,
+    "activeLease": false,
+    "leaseExpiresAt": null,
+    "consecutiveFailures": 0,
+    "lastErrorPresent": false,
+    "updatedAt": "2026-08-15T23:19:39.941Z"
+  },
+  "eventLedger": {
+    "count": 26,
+    "dispatchStates": {
+      "scheduled": 26
+    },
+    "pending": 0,
+    "legacyEventIdKeys": 26,
+    "semanticMutationKeys": 0,
+    "expired": 0
+  },
+  "builds": {
+    "count": 166,
+    "states": {
+      "failed": 21,
+      "prepared": 20,
+      "published": 125
+    },
+    "maxFailedRevision": 284,
+    "maxPreparedRevision": 22,
+    "unresolvedFailedAheadOfPublished": 0,
+    "unresolvedPreparedAheadOfPublished": 0
+  },
+  "plannedRuntime": {
+    "generation": 2,
+    "region": "europe-west1",
+    "cpu": 1,
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "memoryMiB": 256,
+    "timeoutSeconds": 60,
+    "retry": true,
+    "runtimeServiceAccount": "catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "triggerServiceAccount": "functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com"
+  },
+  "nextGate": "Resolve every blocker, verify queue/IAM/rollback archive, then commit and deploy only onCatalogSourceWrite."
+}

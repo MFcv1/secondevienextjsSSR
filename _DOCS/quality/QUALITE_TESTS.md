@@ -106,6 +106,11 @@ commit et approbation litterale, puis `functions:configure-stats-iam:g2b` pour
 les trois identites sans cle. `test:functions-g0` couvre le transport gcloud
 Gen2 cible et son rollback; `test:functions-g2a` couvre le bootstrap
 transactionnel, ses preconditions et l'absence d'ecriture hors ledger.
+Pour G2-B catalogue, `functions:plan-catalog:g2b` reste read-only et refuse
+controle dirty, lease, build non stable, erreur courante ou revision historique
+non supersedee. Les tests G2-A/G2-B imposent une cle semantique basee sur
+`updateTime` et interdisent le retour a un ledger indexe seulement par
+`event.id`.
 
 `npm run functions:restore-verify:g1` compare la base nommee au snapshot PITR
 exact et produit uniquement comptages/digests; `npm run

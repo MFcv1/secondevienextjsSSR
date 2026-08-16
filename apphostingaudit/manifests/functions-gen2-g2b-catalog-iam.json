@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T13:04:01.859Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "target": "onCatalogSourceWrite",
+  "mode": "apply",
+  "actor": "matthis.fradin2@gmail.com",
+  "commit": "6d75cf3928374e597d09624f0350b0ebb8311c35",
+  "changes": {
+    "runtimeServiceUsage": "CREATED",
+    "runtimeActAs": "CREATED",
+    "triggerRunInvoker": "CREATED"
+  },
+  "roles": {
+    "runtime": [
+      "roles/cloudtasks.enqueuer",
+      "roles/datastore.user",
+      "roles/eventarc.eventReceiver",
+      "roles/logging.logWriter",
+      "roles/serviceusage.serviceUsageConsumer"
+    ],
+    "build": [
+      "roles/logging.logWriter"
+    ],
+    "trigger": [
+      "roles/eventarc.eventReceiver"
+    ]
+  },
+  "sourceViewers": {
+    "gcf-v2-sources-231220287936-europe-west1": true,
+    "gcf-v2-uploads-231220287936.europe-west1.cloudfunctions.appspot.com": true
+  },
+  "keys": {
+    "runtime": {
+      "userManaged": 0,
+      "systemManaged": 2
+    },
+    "build": {
+      "userManaged": 0,
+      "systemManaged": 2
+    },
+    "trigger": {
+      "userManaged": 0,
+      "systemManaged": 2
+    }
+  },
+  "checks": {
+    "runtimeRolesExact": true,
+    "buildProjectRolesExact": true,
+    "triggerProjectRolesExact": true,
+    "runtimeActAs": true,
+    "buildActAs": true,
+    "triggerActAs": true,
+    "buildArtifactWriter": true,
+    "buildSourceViewers": true,
+    "triggerRunInvoker": true,
+    "rollbackRuntimeInvokerRetained": true,
+    "publicInvoker": false,
+    "noUserManagedKeys": true
+  },
+  "verdict": "G2B_CATALOG_IAM_VERIFIED",
+  "rollback": "Retain catalog-enqueuer Eventarc Receiver and Run Invoker plus all new IAM until G12-B; no IAM removal in G2-B."
+}
