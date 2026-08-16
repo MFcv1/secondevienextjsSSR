@@ -1897,6 +1897,21 @@ pendant le rollback code. Le premier filtre de verification locale attendait a
 tort un champ court `field`; le schema CLI expose le nom de ressource complet.
 La verification corrigee exige le suffixe `/fields/purgeAt` et l'etat `ACTIVE`.
 
+Le commit `7840e8a1e92a1181c8b40f8e12e021b090254001` deploie uniquement
+`onOrderCreated` en revision `onordercreated-00029-zul`. Runtime, builder et
+Eventarc sont dedies; CPU 1, 256 MiB, timeout 60 s, concurrence/max 1, min 0,
+retry actif et les trois versions de secrets restent explicites. Le filtre
+Firestore reste exactement create `orders/{orderId}`. La source de la revision
+28 est archivee sous temporary hold avec son digest et son rollback complet.
+
+La qualification reste volontairement passive pour ne creer ni commande ni
+e-mail artificiel. Apres 314 secondes, le ledger reste a zero, sans invocation
+metier, e-mail, warning, erreur, IAM public ou drift des 157/152, 13 Gen2,
+8 schedulers, 2 queues et 7 triggers Eventarc. Le rollback restaure source,
+runtime/trigger compute, concurrence 80, max 20 et retry off tout en conservant
+TTL, secrets et IAM jusqu'a G12-B. G2-B compte dix cibles fermees sur treize.
+Verdict: `G2B10_COMPLETE_NO_EMAIL_SENT`.
+
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
 1. deployer une seule des treize cibles a la fois, depuis l'allowlist G0;

@@ -962,6 +962,13 @@ Le scheduler `reconcileProductPublicationSessions` est actif en revision
 marquage `attention_required` relit l'etat courant en transaction. Sa probe
 Scheduler retourne 200 et la quiet-window de 327 secondes conserve zero
 session, ecriture, warning, erreur ou drift; la revision 3 reste sous hold.
+Le lot G2-B10 e-mail active `onOrderCreated` en revision
+`onordercreated-00029-zul`: Firestore create `orders/{orderId}`, retry actif,
+runtime `legacy-order-email-worker`, builder/Eventarc dedies, concurrence/max
+1 et TTL `purgeAt` ACTIVE sur `legacy_order_email_deliveries`. La quiet-window
+passive ferme 314 secondes avec zero ledger et zero e-mail. Le rollback restaure
+la revision 28, son runtime/trigger compute, concurrence 80/max 20/retry off,
+sans retirer secrets, IAM ou TTL.
 
 | Domaine | Exports |
 | --- | --- |

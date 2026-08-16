@@ -372,7 +372,13 @@ uniquement. Le ledger porte `purgeAt` a 90 jours; sa policy TTL, l'identite et
 le code ne deviennent actifs qu'en G2-B ciblee. La policy TTL `purgeAt` est
 ACTIVE depuis G2-B10, apres preuve que le ledger contenait zero document et
 zero expiration; son activation n'a donc supprime aucune donnee. Aucun e-mail
-n'a ete envoye pendant cette preparation.
+n'a ete envoye pendant cette preparation. Le rollout cible G2-B10 active
+`onordercreated-00029-zul` avec runtime/build/Eventarc dedies, retry actif et
+concurrence/max 1. La quiet-window passive de 314 secondes conserve un ledger
+vide, sans invocation metier, e-mail, warning, erreur ou drift. Aucun faux
+e-mail de qualification n'est cree. Le rollback exact restaure le bundle
+`onordercreated-00028-dov`, le runtime/trigger compute, concurrence 80,
+max 20 et retry off; la TTL, les secrets et les IAM dedies restent preserves.
 
 ## 13. Limites et production
 

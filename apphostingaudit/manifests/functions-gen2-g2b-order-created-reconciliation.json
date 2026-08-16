@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T17:12:54Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "target": "onOrderCreated",
+  "inventory": {
+    "sourceExports": 157,
+    "cloudFunctions": 152,
+    "cloudGen1": 139,
+    "cloudGen2": 13,
+    "schedulers": 8,
+    "queues": 2,
+    "eventarc": 7,
+    "drift": false
+  },
+  "function": {
+    "generation": 2,
+    "region": "europe-west1",
+    "runtime": "nodejs22",
+    "state": "ACTIVE",
+    "revision": "onordercreated-00029-zul",
+    "runtimeServiceAccount": "legacy-order-email-worker@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "triggerServiceAccount": "functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com",
+    "cpu": 1,
+    "memory": "256Mi",
+    "timeoutSeconds": 60,
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "retry": true,
+    "publicInvoker": false,
+    "secrets": [
+      "GMAIL_EMAIL:2",
+      "GMAIL_PASSWORD:5",
+      "RESEND_API_KEY:1"
+    ]
+  },
+  "eventarc": {
+    "name": "onordercreated-021926",
+    "location": "eur3",
+    "eventType": "google.cloud.firestore.document.v1.created",
+    "database": "(default)",
+    "namespace": "(default)",
+    "documentPathPattern": "orders/{orderId}",
+    "retry": true,
+    "serviceAccount": "functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com"
+  },
+  "ledger": {
+    "collectionGroup": "legacy_order_email_deliveries",
+    "documentsBefore": 0,
+    "documentsAfter": 0,
+    "ttlField": "purgeAt",
+    "ttlState": "ACTIVE",
+    "writes": 0,
+    "gmailExpiredLeasePolicy": "delivery_unknown-no-provider-retry",
+    "resendIdempotency": "deterministic-provider-key"
+  },
+  "iam": {
+    "runtimeProjectRolesExact": true,
+    "runtimeSecretRolesExact": true,
+    "triggerProjectRolesExact": true,
+    "triggerTargetInvoker": true,
+    "buildRolesExact": true,
+    "runtimeUserManagedKeys": 0,
+    "publicInvoker": false,
+    "rollbackIamPreserved": true
+  },
+  "observation": {
+    "quietWindowSeconds": 314,
+    "closedAt": "2026-08-16T17:12:54Z",
+    "businessInvocations": 0,
+    "emailsSent": 0,
+    "errors": 0,
+    "warnings": 0
+  },
+  "rollbackReady": true,
+  "verdict": "G2B10_RECONCILED_NO_DRIFT_NO_EMAIL_SENT"
+}

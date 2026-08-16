@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "target": "onOrderCreated",
+  "sourceCommit": "7840e8a1e92a1181c8b40f8e12e021b090254001",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g2b-email-ttl.json": "d25fcfd190fc97149bc1303367678d84616079db819f576b798d4533c0810c9c",
+    "apphostingaudit/manifests/functions-gen2-g2b-order-created-iam.json": "09ad2fe6fe9aee95f3f5a239d7928d4eb4a9478eb6baa77335c596963856383b",
+    "apphostingaudit/manifests/functions-gen2-g2b-order-created-reconciliation.json": "f9462f2e8fc7e20009af58bfc09661695131eed63caecef1625e9ff99a25d78d",
+    "apphostingaudit/manifests/functions-gen2-g2b-order-created-rollout.json": "3203809b22b21bc69a31ec8d8e5ea6c229140fc73c318559bad01a50c2c58c80"
+  },
+  "rollbackSource": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g2b-rollback/onOrderCreated/onordercreated-00028-dov-function-source.zip",
+    "generation": "1786899705938033",
+    "size": "397275",
+    "sha256": "bce7ff79ecfc2308ae744ee61cb889cd02fba781b466d16a383fa610b7d91880",
+    "temporaryHold": true
+  }
+}
