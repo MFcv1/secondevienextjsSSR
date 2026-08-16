@@ -209,6 +209,28 @@ const GCLOUD_GEN2_TARGETS = Object.freeze({
     minInstances: '0',
     maxInstances: '1',
     ingressSettings: 'all'
+  }),
+  processProductPublicationImage: Object.freeze({
+    triggerType: 'event',
+    region: 'us-central1',
+    runtime: 'nodejs22',
+    entryPoint: 'processProductPublicationImage',
+    eventType: 'google.cloud.storage.object.v1.finalized',
+    eventFilters: 'type=google.cloud.storage.object.v1.finalized,bucket=secondevienextjsssr.firebasestorage.app',
+    expectedEventFilters: Object.freeze({
+      bucket: 'secondevienextjsssr.firebasestorage.app'
+    }),
+    triggerLocation: 'us-central1',
+    triggerServiceAccount: 'functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com',
+    runtimeServiceAccount: 'product-publication-worker@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '1024Mi',
+    cpu: '1',
+    timeout: '540s',
+    concurrency: '4',
+    minInstances: '0',
+    maxInstances: '4',
+    ingressSettings: 'all'
   })
 });
 const G2B_ROLLBACKS = Object.freeze({
@@ -282,6 +304,17 @@ const G2B_ROLLBACKS = Object.freeze({
     concurrency: '80',
     maxInstances: '20',
     retry: false
+  }),
+  processProductPublicationImage: Object.freeze({
+    approval: 'G2B_ROLLBACK_PROCESS_PRODUCT_PUBLICATION_IMAGE',
+    sourceRevision: 'processproductpublicationimage-00003-por',
+    source: 'gs://gcf-v2-sources-231220287936-us-central1/g2b-rollback/processProductPublicationImage/processproductpublicationimage-00003-por-function-source.zip',
+    sourceGeneration: '1786892844065661',
+    sourceSize: '397275',
+    sourceSha256: 'bce7ff79ecfc2308ae744ee61cb889cd02fba781b466d16a383fa610b7d91880',
+    concurrency: '4',
+    maxInstances: '20',
+    retry: true
   })
 });
 
@@ -497,7 +530,7 @@ export function buildGcloudGen2DeployArgs(validation) {
     ? ['--trigger-http']
     : [
         `--trigger-event-filters=${target.eventFilters}`,
-        `--trigger-event-filters-path-pattern=${target.eventPathPattern}`,
+        ...(target.eventPathPattern ? [`--trigger-event-filters-path-pattern=${target.eventPathPattern}`] : []),
         `--trigger-location=${target.triggerLocation}`,
         `--trigger-service-account=${target.triggerServiceAccount}`
       ];
@@ -561,7 +594,7 @@ export function buildGcloudGen2RollbackArgs(validation) {
     ? ['--trigger-http']
     : [
         `--trigger-event-filters=${target.eventFilters}`,
-        `--trigger-event-filters-path-pattern=${target.eventPathPattern}`,
+        ...(target.eventPathPattern ? [`--trigger-event-filters-path-pattern=${target.eventPathPattern}`] : []),
         `--trigger-location=${target.triggerLocation}`,
         `--trigger-service-account=${target.triggerServiceAccount}`
       ];
@@ -609,13 +642,18 @@ function assertGcloudGen2Preconditions(before, validation) {
   }
   const filters = new Map((before.eventTrigger?.eventFilters || []).map((entry) =>
     [entry.attribute, `${entry.operator || 'exact'}:${entry.value}`]));
+  const expectedFilters = target.expectedEventFilters || {
+    database: '(default)',
+    namespace: '(default)',
+    document: target.documentPathPattern
+  };
+  const filtersMatch = Object.entries(expectedFilters).every(([attribute, value]) =>
+    filters.get(attribute) === `${attribute === 'document' ? 'match-path-pattern' : 'exact'}:${value}`);
   if (
     before.eventTrigger?.eventType !== target.eventType ||
     before.eventTrigger?.triggerRegion !== target.triggerLocation ||
     before.eventTrigger?.serviceAccountEmail !== manifestEntry.trigger?.transportServiceAccount ||
-    filters.get('database') !== 'exact:(default)' ||
-    filters.get('namespace') !== 'exact:(default)' ||
-    filters.get('document') !== `match-path-pattern:${target.documentPathPattern}`
+    !filtersMatch
   ) fail('Trigger cloud Gen2 inattendu avant deploiement');
 }
 

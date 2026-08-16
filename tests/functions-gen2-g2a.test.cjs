@@ -423,6 +423,11 @@ test('G2-A publication: worker image rejette les pannes retryables et les trois 
     assert.equal((source.match(/retryCount:\s*0/g) || []).length, 2);
     assert.match(source, /concurrency:\s*4,[\s\S]*maxInstances:\s*4,[\s\S]*retry:\s*true/);
     assert.match(source, /product_publication_image_failed[\s\S]*throw error;/);
+    assert.match(
+        source,
+        /processingDecision === 'finalize'[\s\S]*product_publication_finalize_retry_required[\s\S]*return;/
+    );
+    assert.equal((source.match(/product_publication_finalize_retry_required/g) || []).length, 2);
     assert.doesNotMatch(source, /231220287936-compute|appspot\.gserviceaccount\.com/);
 });
 

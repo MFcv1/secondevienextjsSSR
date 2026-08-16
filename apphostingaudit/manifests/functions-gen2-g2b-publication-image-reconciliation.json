@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T15:09:17Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "mode": "read-only",
+  "target": "processProductPublicationImage",
+  "cloudBaseline": {
+    "revision": "processproductpublicationimage-00003-por",
+    "state": "ACTIVE",
+    "region": "us-central1",
+    "runtime": "nodejs22",
+    "runtimeServiceAccount": "231220287936-compute@developer.gserviceaccount.com",
+    "buildServiceAccount": "231220287936-compute@developer.gserviceaccount.com",
+    "triggerServiceAccount": "231220287936-compute@developer.gserviceaccount.com",
+    "eventType": "google.cloud.storage.object.v1.finalized",
+    "bucket": "secondevienextjsssr.firebasestorage.app",
+    "triggerLocation": "us-central1",
+    "retry": true,
+    "cpu": 1,
+    "memoryMiB": 1024,
+    "timeoutSeconds": 540,
+    "concurrency": 4,
+    "minInstances": 0,
+    "maxInstances": 20
+  },
+  "desired": {
+    "runtimeServiceAccount": "product-publication-worker@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "triggerServiceAccount": "functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com",
+    "retry": true,
+    "cpu": 1,
+    "memoryMiB": 1024,
+    "timeoutSeconds": 540,
+    "concurrency": 4,
+    "minInstances": 0,
+    "maxInstances": 4
+  },
+  "data": {
+    "sessionCollection": "product_publication_sessions",
+    "documents": 0,
+    "statuses": {},
+    "expired": 0,
+    "stalled": 0,
+    "slots": 0,
+    "failedSlots": 0,
+    "probe": "Authenticated finalized-object CloudEvent with a non-canonical object path; handler returns before Firestore or Storage access."
+  },
+  "historicalHealth": {
+    "since": "2026-08-01T00:00:00Z",
+    "requests": 443,
+    "http204": 443,
+    "http5xx": 0,
+    "workerErrors": 0,
+    "p99ApproxSeconds": 4.134957486
+  },
+  "sourceCorrection": {
+    "issue": "A replay of an already-ready image could let a business finalization failure fall into the image-processing catch and mark the ready slot failed.",
+    "resolution": "Keep the ready generation and emit product_publication_finalize_retry_required so the reconciler resumes only business finalization.",
+    "storageDeletesAdded": false,
+    "businessWritesAdded": false
+  },
+  "idempotence": "session, slot and Storage generation state fence",
+  "blockers": [],
+  "deploymentAllowed": false,
+  "verdict": "G2B_PUBLICATION_IMAGE_PREFLIGHT_READY"
+}

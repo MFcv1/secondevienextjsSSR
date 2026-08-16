@@ -465,7 +465,16 @@ const processProductPublicationImage = onObjectFinalized({
             return 'process';
         });
         if (processingDecision === 'finalize') {
-            await finalizePublicationSession(sessionId);
+            try {
+                await finalizePublicationSession(sessionId);
+            } catch (finalizationError) {
+                // La generation est deja prete: conserver le slot et laisser le
+                // reconciler reprendre uniquement la finalisation metier.
+                logger.error('product_publication_finalize_retry_required', {
+                    sessionId,
+                    code: finalizationError?.reason || finalizationError?.code || 'unknown'
+                });
+            }
             return;
         }
         if (processingDecision !== 'process') return;

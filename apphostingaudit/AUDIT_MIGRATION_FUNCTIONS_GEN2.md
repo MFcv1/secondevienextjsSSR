@@ -1800,6 +1800,23 @@ eligible, sans ecriture ou suppression, erreur, 5xx, drift IAM ou trigger.
 L'inventaire reste 157/152, 139 Gen1, 13 Gen2, huit schedulers, deux queues et
 sept Eventarc. Verdict: `G2B6_COMPLETE_NON_DESTRUCTIVE`.
 
+#### Preflight G2-B7 - worker image de publication cible unique
+
+`processProductPublicationImage` reste seul proprietaire du trigger Storage
+`us-central1`. Les 443 requetes observees depuis le 1er aout sont HTTP 204,
+sans 5xx ni erreur worker; la collection de sessions est vide. La lecture du
+code a cependant trouve qu'un replay d'une generation deja `ready` pouvait
+laisser un echec de finalisation metier tomber dans le catch image et marquer
+le slot a tort en echec. Ce chemin conserve desormais le slot pret et remet la
+finalisation au reconciler, comme le chemin normal.
+
+Le SA runtime sans cle `product-publication-worker` porte seulement Datastore
+User, Log Writer, Service Usage Consumer et Object Admin sur le seul bucket
+media. Build et Eventarc sont dedies, y compris le repository et le bucket
+source `us-central1`; aucun invoker public. La revision 3 est archivee sous
+temporary hold. Verdict: `G2B_PUBLICATION_IMAGE_PREFLIGHT_READY`; rollout non
+encore ferme.
+
 **G2-B deploiement cible et observation, apres autorisation distincte:**
 
 1. deployer une seule des treize cibles a la fois, depuis l'allowlist G0;

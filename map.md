@@ -944,6 +944,10 @@ la quarantaine media et ne supprime ni `likes`, ni `comments`, ni objet Storage.
 La revision `onartifactdeleted-00024-roh` active desormais cette source sure;
 la probe hors namespace retourne 204 et la quiet-window de 377 secondes se
 ferme avec le ledger 672/672 `pending`, sans suppression ni drift.
+Le preflight du worker `processProductPublicationImage` trouve zero session et
+zero erreur. Son replay d'une image deja prete conserve maintenant le slot si
+la seule finalisation metier echoue; le reconciler reprend cette finalisation.
+Runtime, build et Eventarc `us-central1` sont dedies avant rollout cible.
 
 | Domaine | Exports |
 | --- | --- |

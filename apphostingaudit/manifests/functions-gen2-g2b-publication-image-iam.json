@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-16T15:09:17Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "target": "processProductPublicationImage",
+  "mode": "apply-and-verify",
+  "changes": [
+    "created product-publication-worker without user-managed key",
+    "granted exact runtime project roles",
+    "granted Object Admin on only the product media bucket",
+    "granted operator ActAs on only the runtime identity",
+    "granted shared Eventarc identity Run Invoker on only processproductpublicationimage",
+    "granted the dedicated build identity writer/viewer on only the us-central1 build repository and source bucket"
+  ],
+  "runtimeProjectRoles": [
+    "roles/datastore.user",
+    "roles/logging.logWriter",
+    "roles/serviceusage.serviceUsageConsumer"
+  ],
+  "resourceRoles": {
+    "runtimeMediaBucket": "roles/storage.objectAdmin",
+    "triggerTargetService": "roles/run.invoker",
+    "buildArtifactRepositoryUsCentral1": "roles/artifactregistry.writer",
+    "buildSourceBucketUsCentral1": "roles/storage.objectViewer"
+  },
+  "checks": {
+    "runtimeRolesExact": true,
+    "runtimeActAs": true,
+    "runtimeMediaBucketObjectAdmin": true,
+    "triggerEventarcReceiver": true,
+    "triggerRunInvokerTargetOnly": true,
+    "buildRolesExact": true,
+    "publicInvoker": false,
+    "runtimeUserManagedKeys": 0,
+    "buildUserManagedKeys": 0,
+    "defaultComputeOrAppspotUsedAfterRollout": false
+  },
+  "rollback": "Retain dedicated runtime/build/trigger IAM during rollback; remove nothing before G12-B.",
+  "verdict": "G2B_PUBLICATION_IMAGE_IAM_VERIFIED"
+}
