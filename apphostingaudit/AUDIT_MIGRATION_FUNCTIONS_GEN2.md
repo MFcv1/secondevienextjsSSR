@@ -2173,10 +2173,11 @@ cible unique est `initLiveSessionGen2`.
 Preparation locale G4-A3 du 2026-08-17: `initLiveSessionGen2` partage
 `initLiveSessionHandler` avec la Gen1 et porte App Check, CPU `gcf_gen1`,
 concurrence 1, min 0/max 1, 256 MiB, 60 s et `analytics-runtime`. La cible est
-absente du cloud; le manifeste/digest autorise uniquement sa creation apres
-13/13 tests G4, analytics, App Check et lint Functions verts. L'inventaire
-prepare est 160 exports locaux pour 154 cloud; le registre client reste sur la
-Gen1 avant le cutover.
+deployee seule apres 13/13 tests G4, analytics, App Check et lint Functions
+verts. La revision `initlivesessiongen2-00001-hoh` est ACTIVE; runtime, IAM et
+deux refus App Check 401 sont conformes. La reference Gen1 retourne 200 avec
+Auth/App Check valides. L'inventaire est 160 exports locaux pour 155 cloud,
+139 Gen1 et 16 Gen2; le registre est prepare sur la Gen2 pour le cutover.
 
 ### G5 - Auth callables, OTP et passkeys
 

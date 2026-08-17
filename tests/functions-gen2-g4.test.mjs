@@ -76,10 +76,13 @@ test('initLiveSession Gen2 partage le handler Gen1 et autorise une seule cible',
 
   assert.equal(prepared.functions.length, 1);
   assert.equal(prepared.functions[0].name, 'initLiveSessionGen2');
-  assert.equal(prepared.functions[0].cloud.present, false);
+  assert.equal(prepared.functions[0].cloud.present, true);
+  assert.equal(prepared.functions[0].cloud.revision, 'initlivesessiongen2-00001-hoh');
   assert.equal(prepared.gates.deploymentAllowed, true);
-  assert.equal(prepared.gates.clientCutoverAuthorized, false);
-  assert.match(read('src/kit/config/functionTargets.js'), /initLiveSession:\s*'initLiveSession'/);
+  assert.equal(prepared.gates.clientCutoverAuthorized, true);
+  assert.equal(prepared.gates.appCheckNegativeProbe.withoutTokenHttpStatus, 401);
+  assert.equal(prepared.gates.appCheckNegativeProbe.invalidTokenHttpStatus, 401);
+  assert.match(read('src/kit/config/functionTargets.js'), /initLiveSession:\s*'initLiveSessionGen2'/);
   assert.equal(target.entryPoint, 'initLiveSessionGen2');
   assert.equal(target.cpu, '167m');
   assert.equal(target.concurrency, '1');
@@ -233,6 +236,8 @@ test('le wrapper de creation G4 est une cible unique, explicite et publique seul
 
 test('le deploy initLiveSession Gen2 reste allowliste a une seule Function', () => {
   const prepared = JSON.parse(fs.readFileSync(INIT_LIVE_SESSION_MANIFEST_PATH, 'utf8'));
+  const preDeployManifest = structuredClone(prepared);
+  preDeployManifest.functions[0].cloud.present = false;
   const currentCommit = prepared.metadata.baselineCommit;
   const validation = validateDeploymentRequest({
     args: {
@@ -244,7 +249,7 @@ test('le deploy initLiveSession Gen2 reste allowliste a une seule Function', () 
       allowlist: 'initLiveSessionGen2',
       transport: 'gcloud-gen2-create'
     },
-    manifest: prepared,
+    manifest: preDeployManifest,
     rootDir: ROOT,
     manifestPath: INIT_LIVE_SESSION_MANIFEST_PATH,
     digestPath: INIT_LIVE_SESSION_DIGEST_PATH,

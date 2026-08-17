@@ -373,15 +373,17 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
   nouvel appel Gen1 apres cutover;
 - decision: G4-A2 fermee; prochaine cible unique `initLiveSessionGen2`.
 
-### G4-A3 - initLiveSession Gen2, preparation locale
+### G4-A3 - initLiveSession Gen2, revision active et cutover prepare
 
 - export parallele `initLiveSessionGen2` avec handler partage avec la Gen1;
 - runtime `analytics-runtime`, CPU Gen1, concurrence 1, min 0/max 1,
   256 MiB, 60 s, App Check, sans secret;
-- manifeste et digest bornent le deploy a cette seule Function; cible cloud
-  confirmee absente avant creation;
+- manifeste et digest ont borne le deploy a cette seule Function;
 - tests: G4 13/13, analytics, App Check et lint Functions verts;
-- inventaire prepare: 160 exports locaux, 154 cloud, 139 Gen1 et 15 Gen2;
+- revision `initlivesessiongen2-00001-hoh` ACTIVE, runtime/build/IAM conformes,
+  deux probes App Check 401 avant handler;
+- reference Gen1: HTTP 200, Auth et App Check valides;
+- inventaire: 160 exports locaux, 155 cloud, 139 Gen1 et 16 Gen2;
 - rollback futur: registre `initLiveSession` puis build
   `build-2026-08-17-001`; aucune suppression ou modification Gen1.
 

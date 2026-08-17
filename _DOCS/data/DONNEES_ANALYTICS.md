@@ -219,10 +219,11 @@ onglet admin sain et zero nouvel appel Gen1 apres cutover. Le rollout
 desormais la Gen2. La Gen1 et `build-2026-08-16-001` restent preserves comme
 rollback exact jusqu'a G12-A.
 
-La cible suivante `initLiveSessionGen2` est preparee sous un nouveau nom avec
+La cible suivante `initLiveSessionGen2` est ACTIVE sous un nouveau nom avec
 le meme handler que la Gen1, App Check, CPU Gen1, concurrence/max 1 et le
-runtime `analytics-runtime`. Le registre reste sur la Gen1 jusqu'au deploy
-allowliste et a la preuve creation/reprise d'une session sandbox.
+runtime `analytics-runtime`. Sa revision, IAM et deux refus App Check 401 sont
+conformes; le registre est prepare sur la Gen2 pour la preuve App Hosting de
+creation/reprise d'une session sandbox.
 
 Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. L'architecture haut trafic sera traitee dans une phase distincte demandee par l'utilisateur.
 

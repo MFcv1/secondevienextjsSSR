@@ -7,7 +7,7 @@
     "baselineCommit": "33d233855afa959c0c363173b4ad4119d1a702d6",
     "generatedAt": "2026-08-17T15:51:46Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G4-A3_DEPLOYMENT_AUTHORIZED"
+    "wave": "G4-A3_ACTIVE_CUTOVER_AUTHORIZED"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -29,12 +29,12 @@
     "projectMatch": true,
     "sourceExportsBeforePreparation": 159,
     "sourceExportsWithParallel": 160,
-    "cloudFunctions": 154,
+    "cloudFunctions": 155,
     "cloudGen1": 139,
-    "cloudGen2": 15,
+    "cloudGen2": 16,
     "legacyOwner": "initLiveSession",
     "legacyOwnerPreserved": true,
-    "currentClientTarget": "initLiveSession",
+    "currentClientTarget": "initLiveSessionGen2",
     "previousWave": "G4-A2_CLOSED_ACCELERATED_VALIDATION"
   },
   "functions": [
@@ -51,13 +51,13 @@
         "retry": false
       },
       "cloud": {
-        "present": false,
+        "present": true,
         "project": "secondevienextjsssr",
         "codebase": "main",
         "generation": 2,
         "region": "europe-west1",
         "runtime": "nodejs22",
-        "revision": null
+        "revision": "initlivesessiongen2-00001-hoh"
       },
       "runtime": {
         "sourceCpu": "gcf_gen1",
@@ -98,9 +98,9 @@
       "callers": ["src/kit/shared/AnalyticsProvider.jsx"],
       "clientRegistry": {
         "logicalName": "initLiveSession",
-        "currentTarget": "initLiveSession",
+        "currentTarget": "initLiveSessionGen2",
         "cutoverTarget": "initLiveSessionGen2",
-        "cutoverAllowed": false
+        "cutoverAllowed": true
       },
       "decision": {
         "classification": "MIGRATION_PARALLEL",
@@ -122,7 +122,7 @@
     "resumeParityRequired": true,
     "oldTabRequired": true,
     "clientCutoverPrepared": true,
-    "clientCutoverAuthorized": false,
+    "clientCutoverAuthorized": true,
     "tests": {
       "executedAt": "2026-08-17T15:51:46Z",
       "functionsG4": "13/13",
@@ -131,6 +131,22 @@
       "functionsLint": "PASS"
     },
     "targetAbsenceVerified": true,
+    "deployedRevisionVerified": true,
+    "runtimeConfigurationVerified": true,
+    "runtimeIamVerified": true,
+    "transportInvokerVerified": true,
+    "appCheckNegativeProbe": {
+      "executedAt": "2026-08-17T16:01:53Z",
+      "withoutTokenHttpStatus": 401,
+      "invalidTokenHttpStatus": 401,
+      "handlerReached": false
+    },
+    "gen1Baseline": {
+      "executedAt": "2026-08-17T16:03:17Z",
+      "httpStatus": 200,
+      "auth": "VALID",
+      "appCheck": "VALID"
+    },
     "deploymentAllowed": true,
     "deploymentAuthorization": "Deploy only initLiveSessionGen2 after G4-A2 accelerated closeout"
   },
@@ -142,5 +158,5 @@
     "iamSecretsAction": "none",
     "g12Action": "none before G12-A approval and completed observation"
   },
-  "verdict": "LOCAL_PREPARATION_GREEN_SINGLE_TARGET_DEPLOYMENT_ALLOWED"
+  "verdict": "FUNCTION_ACTIVE_RUNTIME_IAM_APPCHECK_GREEN_CLIENT_CUTOVER_AUTHORIZED"
 }
