@@ -438,6 +438,11 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
 - reference reelle Gen1: `text/plain` retourne le 415 deja documente, sans
   ecriture; registre source prepare sur la Gen2 pour prouver le correctif 200;
 - inventaire: 162 local, 157 cloud, 139 Gen1, 18 Gen2.
+- tentative de cutover: build `004` READY et ancien/nouvel onglet sains, mais
+  le beacon navigateur Gen2 valide retourne 403 et ne ferme pas la session;
+- rollback exact `g4a5-rollback-20260817t2004` SUCCEEDED vers build `003`,
+  routes `/` et `/admin` en 200, registre client restaure sur la Gen1;
+- G4-A5 reste ouverte; aucune nouvelle cible avant diagnostic borne du 403.
 
 ## 9. Conditions d'arret immediat
 
@@ -460,7 +465,8 @@ Arreter la vague au premier:
 
 ## 10. Point de reprise
 
-La reprise courante prepare uniquement `syncSessionBeaconGen2`. App Hosting
+La reprise courante bloque uniquement sur le 403 navigateur reel de
+`syncSessionBeaconGen2`. App Hosting
 sert `build-2026-08-17-003` avec `trackAdminIP`, `updateUserSessions`,
 `initLiveSession` et `syncSession` sur leurs cibles Gen2. Leurs Gen1,
 endpoints, IAM et code restent preserves; les six retraits G3 restent differes

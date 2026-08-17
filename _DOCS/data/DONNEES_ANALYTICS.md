@@ -257,6 +257,14 @@ sont conformes. La reference navigateur Gen1 reproduit le 415 `text/plain`
 deja documente, sans ecriture; le registre source est prepare sur la Gen2 afin
 de prouver la correction en 200.
 
+Le cutover `build-2026-08-17-004` a conserve ancien et nouvel onglets sains,
+mais le vrai beacon navigateur vers la Gen2 a retourne 403 et n'a pas modifie
+la session, restee active. Le rollback exact vers `build-2026-08-17-003` est
+SUCCEEDED, les routes publiques/admin repondent 200 et le registre client est
+revenu sur la Gen1. IAM Cloud Run reste public au transport; l'origine ou le
+jeton doit etre identifie comme cause exacte avant une nouvelle tentative.
+Aucune Function, IAM ou donnee n'a ete supprimee.
+
 Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. L'architecture haut trafic sera traitee dans une phase distincte demandee par l'utilisateur.
 
 Optimisation de cout locale au 2026-07-17: la cadence visible, le seuil live, le parcours et la securite de reprise restent inchanges. Le cache de hash et l'arbitrage des synchronisations visent uniquement les relectures et appels rapproches observes dans la fenetre Data Access. Leur gain exact doit etre mesure apres deploiement sandbox avec le protocole de [AUDIT_COUTS_FIRESTORE.md](AUDIT_COUTS_FIRESTORE.md).

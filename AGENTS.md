@@ -164,6 +164,10 @@ Plan temporaire de reprise explicitement demande:
   ancien/nouvel onglet, donnees conformes, six appels Gen2 sans erreur et zero
   trafic Gen1 apres fermeture. App Hosting sert `build-2026-08-17-003`; la
   prochaine cible unique est `syncSessionBeaconGen2`.
+  La premiere tentative G4-A5 sur `build-2026-08-17-004` a ete rollbackee:
+  le vrai beacon navigateur Gen2 a retourne 403. App Hosting sert de nouveau
+  `build-2026-08-17-003`, le registre client pointe sur la Gen1, et G4-A5 reste
+  ouverte sans suppression jusqu'au diagnostic origine/jeton.
   `updateUserSessionsGen2` est maintenant ACTIVE en revision
   `updateusersessionsgen2-00001-zoq`; l'inventaire compte 159 exports locaux et
   154 Functions cloud, dont 15 Gen2. Revision, limites, IAM et refus App Check

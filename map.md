@@ -1054,6 +1054,13 @@ La revision `syncsessionbeacongen2-00001-dih` est ACTIVE avec runtime/IAM
 conformes et refus origine/jeton en 403. Le vrai transport Gen1 reproduit le
 415 `text/plain` deja documente; le registre source est prepare sur la Gen2
 pour le cutover correctif et la preuve 200.
+Le cutover via `build-2026-08-17-004` a ete immediatement annule: ancien et
+nouvel onglets rendaient, mais le beacon navigateur Gen2 a retourne 403 et la
+session est restee active. Le rollback `g4a5-rollback-20260817t2004` sert de
+nouveau `build-2026-08-17-003`, `/` et `/admin` repondent 200, et le registre
+client pointe de nouveau sur `syncSessionBeacon` Gen1. La Gen2 reste ACTIVE,
+sans retrait ni changement IAM/donnee; G4-A5 est bloquee jusqu'au diagnostic
+borne origine/jeton.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.

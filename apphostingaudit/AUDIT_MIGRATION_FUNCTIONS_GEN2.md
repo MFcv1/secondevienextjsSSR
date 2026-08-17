@@ -68,13 +68,13 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | baseline avant le checkpoint Monitoring | `25daf810309dc3329cfeb0fb19be0f1790fe608a` |
 | worktree attendu a la reprise | propre; tout changement additionnel doit etre preserve et qualifie |
 | phases fermees | G0, G1, G2-A, G2-B 13/13 et G3 |
-| phase active | G4-A5 analytics, cutover autorise de `syncSessionBeaconGen2` |
+| phase active | G4-A5 analytics, rollback ferme apres beacon navigateur Gen2 refuse en 403 |
 | inventaire courant | 162 exports locaux, 157 cloud, 139 Gen1, 18 Gen2 |
 | cible parallele active | `trackAdminIPGen2`, revision `trackadminipgen2-00001-goj` |
 | cutover client | App Hosting `build-2026-08-17-001`, registres `trackAdminIP -> trackAdminIPGen2` et `updateUserSessions -> updateUserSessionsGen2` |
 | observation G4-A1 | fermee acceleree le `2026-08-17T12:28:01Z` apres levee explicite de la borne temporelle |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | basculer uniquement `syncSessionBeaconGen2`; rollback exact `build-2026-08-17-003` |
+| prochain lot | aucun: expliquer et corriger le 403 reel de `syncSessionBeaconGen2` avant toute nouvelle bascule |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -2245,6 +2245,19 @@ retourne 415 sur `text/plain`, reproduisant exactement le drift G4 deja
 documente et sans changement de donnee. Le registre source est prepare sur la
 Gen2 afin de prouver le correctif en 200; inventaire 162 local / 157 cloud /
 139 Gen1 / 18 Gen2.
+
+Tentative de cutover G4-A5: l'archive exacte du commit `28bf104` a produit
+`build-2026-08-17-004` READY puis le rollout
+`g4a5-beacon-20260817t2002` SUCCEEDED. Ancien onglet `003` et nouvel onglet
+`004` rendaient correctement, mais le vrai `navigator.sendBeacon` Gen2 a ete
+refuse en HTTP 403 au lieu de 200. La session est restee active, sans mutation
+apres son dernier heartbeat; aucun appel Gen1 n'est apparu pendant le cutover.
+IAM Cloud Run est encore `allUsers`, mais les logs ne tranchent pas entre le
+controle d'origine et le jeton. Le rollback exact
+`g4a5-rollback-20260817t2004` vers `build-2026-08-17-003` est SUCCEEDED,
+`/` et `/admin` repondent 200, le registre source est revenu sur la Gen1 et
+aucune Function, IAM ou donnee n'a ete supprimee. G4-A5 reste ouverte et toute
+nouvelle cible est bloquee jusqu'a explication et correction ciblee du 403.
 
 ### G5 - Auth callables, OTP et passkeys
 

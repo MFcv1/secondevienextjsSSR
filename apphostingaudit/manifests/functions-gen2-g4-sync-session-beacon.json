@@ -5,9 +5,9 @@
     "codebase": "main",
     "environment": "sandbox",
     "baselineCommit": "7bd381524a373da183406ea12082390c2bdbd52d",
-    "generatedAt": "2026-08-17T19:41:45Z",
+    "generatedAt": "2026-08-17T20:08:00Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G4-A5_ACTIVE_CUTOVER_AUTHORIZED"
+    "wave": "G4-A5_ROLLED_BACK_VALID_BEACON_403"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -34,7 +34,7 @@
     "cloudGen2": 17,
     "legacyOwner": "syncSessionBeacon",
     "legacyOwnerPreserved": true,
-    "currentClientTarget": "syncSessionBeaconGen2",
+    "currentClientTarget": "syncSessionBeacon",
     "previousWave": "G4-A4_CLOSED_ACCELERATED_VALIDATION",
     "targetAbsentBeforeCreate": true
   },
@@ -101,9 +101,9 @@
       "callers": ["src/kit/shared/AnalyticsProvider.jsx navigator.sendBeacon/fetch keepalive"],
       "clientRegistry": {
         "logicalName": "syncSessionBeacon",
-        "currentTarget": "syncSessionBeaconGen2",
+        "currentTarget": "syncSessionBeacon",
         "cutoverTarget": "syncSessionBeaconGen2",
-        "cutoverAllowed": true
+        "cutoverAllowed": false
       },
       "decision": {
         "classification": "MIGRATION_PARALLEL",
@@ -126,7 +126,7 @@
     "dataParityRequired": true,
     "oldTabRequired": true,
     "clientCutoverPrepared": true,
-    "clientCutoverAuthorized": true,
+    "clientCutoverAuthorized": false,
     "tests": {
       "executedAt": "2026-08-17T19:34:00Z",
       "functionsG4": "17/17",
@@ -152,16 +152,49 @@
       "dataChanged": false,
       "expectedGen2Result": 200
     },
-    "deploymentAllowed": true,
-    "deploymentAuthorization": "syncSessionBeaconGen2 deployed alone; client cutover authorized after runtime, IAM, origin/token probes and Gen1 baseline proofs passed"
+    "cutoverAttempt": {
+      "executedAt": "2026-08-17T20:01:30Z",
+      "sourceCommit": "28bf10415e3f55c20ac4aef06f792b111ca74cf8",
+      "sourceArchive": "gs://firebaseapphosting-sources-231220287936-europe-west4/secondevie-next-sandbox--g4a5-28bf104.zip",
+      "sourceArchiveBytes": 96956656,
+      "build": "build-2026-08-17-004",
+      "buildState": "READY",
+      "rollout": "g4a5-beacon-20260817t2002",
+      "rolloutState": "SUCCEEDED",
+      "oldTabRendered": true,
+      "newTabRendered": true,
+      "validBrowserBeaconHttpStatus": 403,
+      "expectedHttpStatus": 200,
+      "sessionBefore": {
+        "id": "MvdYPFWXnuwli8sJRidq",
+        "updateTime": "2026-08-17T20:02:47.220669Z",
+        "duration": 45,
+        "sessionActive": true,
+        "lastSyncReason": "heartbeat",
+        "analyticsVersion": 3
+      },
+      "sessionAfter": {
+        "updateTime": "2026-08-17T20:02:47.220669Z",
+        "dataChanged": false,
+        "sessionActive": true
+      },
+      "gen1RequestsDuringCutover": 0,
+      "classification": "VALID_BROWSER_BEACON_REJECTED_403_CAUSE_UNRESOLVED_ORIGIN_OR_TOKEN",
+      "result": "FAILED_ROLLBACK_REQUIRED"
+    },
+    "deploymentAllowed": false,
+    "deploymentAuthorization": "No further deployment or client cutover until the real-browser Gen2 403 is explained and a targeted reversible correction passes the same gate"
   },
   "rollback": {
     "functionAction": "none; preserve syncSessionBeacon and syncSessionBeaconGen2",
     "clientAction": "restore syncSessionBeacon: 'syncSessionBeacon' in src/kit/config/functionTargets.js",
-    "appHostingAction": "roll back to READY build build-2026-08-17-003",
+    "appHostingAction": "completed by rollout g4a5-rollback-20260817t2004 to READY build build-2026-08-17-003",
+    "completedAt": "2026-08-17T20:06:00Z",
+    "state": "SUCCEEDED",
+    "postRollbackHealth": { "rootHttpStatus": 200, "adminHttpStatus": 200 },
     "dataAction": "none",
     "iamSecretsAction": "none",
     "g12Action": "none before G12-A approval and completed observation"
   },
-  "verdict": "FUNCTION_ACTIVE_SECURITY_PROBES_GREEN_CLIENT_CUTOVER_AUTHORIZED"
+  "verdict": "FUNCTION_ACTIVE_CLIENT_GEN1_ROLLBACK_COMPLETE_G4_A5_BLOCKED_VALID_BEACON_403"
 }
