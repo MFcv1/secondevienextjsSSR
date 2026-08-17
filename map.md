@@ -1010,12 +1010,14 @@ la borne temporelle et G4-A1 est fermee par deux appels admin Gen2 reussis,
 zero erreur, mise a jour idempotente et zero trafic Gen1; la compatibilite
 ancien onglet est remplacee par la preuve que la Gen1 ACTIVE, son endpoint,
 son IAM et son code sont preserves.
-G4-A2 est preparee uniquement dans le source: `updateUserSessionsGen2` partage
+G4-A2 est deployee: `updateUserSessionsGen2` partage
 le handler de la Gen1, utilise `analytics-runtime`, CPU Gen1, concurrence 1,
 min 0/max 1 et App Check. Le registre client continue de cibler
-`updateUserSessions`; le manifeste autorise maintenant le deploy cible unique
-mais bloque encore le cutover jusqu'a preuve de revision. L'inventaire de travail est donc 159 exports locaux pour 153
-Functions cloud, 139 Gen1 et 14 Gen2.
+`updateUserSessionsGen2`; la revision `updateusersessionsgen2-00001-zoq`, les
+limites, IAM et refus App Check sont conformes. L'inventaire est donc de 159
+exports locaux pour 154 Functions cloud, 139 Gen1 et 15 Gen2. La Gen1 et son
+endpoint restent preserves; le rollback client revient au build App Hosting
+READY `build-2026-08-16-001`.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.

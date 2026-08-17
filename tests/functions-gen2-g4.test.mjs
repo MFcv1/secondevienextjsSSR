@@ -22,7 +22,6 @@ const DIGEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4
 const CUTOVER_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-track-admin-ip-cutover.json');
 const ROLLOUT_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-track-admin-ip-rollout.json');
 const UPDATE_USER_SESSIONS_MANIFEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-update-user-sessions.json');
-const UPDATE_USER_SESSIONS_DIGEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-update-user-sessions-digest.json');
 const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
 
@@ -69,7 +68,7 @@ test('updateUserSessions Gen2 partage exactement le handler Gen1 et borne son ru
   assert.doesNotMatch(source, /updateUserSessionsGen2[\s\S]*appspot\.gserviceaccount\.com/);
 });
 
-test('updateUserSessions Gen2 est autorisee seule apres fermeture acceleree G4-A1', () => {
+test('updateUserSessions Gen2 est active et autorisee pour le cutover cible', () => {
   const prepared = JSON.parse(fs.readFileSync(UPDATE_USER_SESSIONS_MANIFEST_PATH, 'utf8'));
   const registry = read('src/kit/config/functionTargets.js');
   const target = GCLOUD_GEN2_TARGETS.updateUserSessionsGen2;
@@ -77,13 +76,13 @@ test('updateUserSessions Gen2 est autorisee seule apres fermeture acceleree G4-A
   assert.equal(prepared.metadata.project, 'secondevienextjsssr');
   assert.equal(prepared.functions.length, 1);
   assert.equal(prepared.functions[0].name, 'updateUserSessionsGen2');
-  assert.equal(prepared.functions[0].cloud.present, false);
+  assert.equal(prepared.functions[0].cloud.present, true);
+  assert.equal(prepared.functions[0].cloud.revision, 'updateusersessionsgen2-00001-zoq');
   assert.equal(prepared.functions[0].decision.deploymentMaxBatchSize, 1);
   assert.equal(prepared.gates.deploymentAllowed, true);
-  assert.equal(prepared.gates.clientCutoverAuthorized, false);
+  assert.equal(prepared.gates.clientCutoverAuthorized, true);
   assert.equal(prepared.preflight.trackAdminIPObservationState, 'CLOSED_ACCELERATED_BY_USER');
-  assert.match(registry, /updateUserSessions:\s*'updateUserSessions'/);
-  assert.doesNotMatch(registry, /updateUserSessions:\s*'updateUserSessionsGen2'/);
+  assert.match(registry, /updateUserSessions:\s*'updateUserSessionsGen2'/);
   assert.deepEqual(target, {
     create: true,
     triggerType: 'http-callable',
@@ -101,31 +100,9 @@ test('updateUserSessions Gen2 est autorisee seule apres fermeture acceleree G4-A
     ingressSettings: 'all'
   });
 
-  const validation = validateDeploymentRequest({
-    args: {
-      project: 'secondevienextjsssr',
-      codebase: 'main',
-      commit: prepared.metadata.baselineCommit,
-      manifest: path.relative(ROOT, UPDATE_USER_SESSIONS_MANIFEST_PATH),
-      digest: path.relative(ROOT, UPDATE_USER_SESSIONS_DIGEST_PATH),
-      allowlist: 'updateUserSessionsGen2',
-      transport: 'gcloud-gen2-create'
-    },
-    manifest: prepared,
-    rootDir: ROOT,
-    manifestPath: UPDATE_USER_SESSIONS_MANIFEST_PATH,
-    digestPath: UPDATE_USER_SESSIONS_DIGEST_PATH,
-    currentCommit: prepared.metadata.baselineCommit,
-    activeFirebaseProject: 'secondevienextjsssr',
-    baselineIsAncestor: true
-  });
-  const deployArgs = buildGcloudGen2DeployArgs(validation);
-  assert.equal(validation.allowlist.length, 1);
-  assert.deepEqual(deployArgs.slice(0, 3), ['functions', 'deploy', 'updateUserSessionsGen2']);
-  assert.ok(deployArgs.includes('--project=secondevienextjsssr'));
-  assert.ok(deployArgs.includes('--entry-point=updateUserSessionsGen2'));
-  assert.ok(deployArgs.includes('--run-service-account=analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com'));
-  assert.ok(deployArgs.includes('--allow-unauthenticated'));
+  assert.equal(prepared.gates.appCheckNegativeProbe.withoutTokenHttpStatus, 401);
+  assert.equal(prepared.gates.appCheckNegativeProbe.invalidTokenHttpStatus, 401);
+  assert.equal(prepared.rollback.functionAction, 'none; preserve updateUserSessions and updateUserSessionsGen2');
 });
 
 test('trackAdminIP Gen2 conserve App Check/admin et serialise la carte IP', () => {

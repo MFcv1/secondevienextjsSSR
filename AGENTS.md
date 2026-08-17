@@ -161,10 +161,10 @@ Plan temporaire de reprise explicitement demande:
   temporelle du 2026-08-18 et G4-A1 a ete fermee par validation acceleree:
   deux appels admin Gen2 reussis, donnees idempotentes, zero erreur et zero
   trafic Gen1. Trois suppressions restent sous hold G11.
-  `updateUserSessionsGen2` est preparee localement comme cible suivante, ce qui
-  porte le source a 159 exports sans changer les 153 Functions cloud; son deploy
-  cible unique est autorise, mais le cutover client reste bloque jusqu'a preuve
-  de revision. Le
+  `updateUserSessionsGen2` est maintenant ACTIVE en revision
+  `updateusersessionsgen2-00001-zoq`; l'inventaire compte 159 exports locaux et
+  154 Functions cloud, dont 15 Gen2. Revision, limites, IAM et refus App Check
+  sont conformes; le registre client est prepare pour le cutover App Hosting. Le
   correctif Monitoring du 2026-08-17 a ferme la boucle
   recursive `Violation*`, conserve `loa.gto`/PubSub et severise les huit
   policies; trois

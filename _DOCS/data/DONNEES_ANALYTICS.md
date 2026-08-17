@@ -209,12 +209,11 @@ Exclusion admin:
 - les sessions `type == admin` sont exclues de tous les calculs du panneau Data;
 - l'e-mail proprietaire est lu depuis le secret serveur `SUPER_ADMIN_EMAIL`, jamais code en dur cote client.
 
-Migration Gen2 sandbox: `updateUserSessionsGen2` est preparee localement avec
-le meme handler que la Gen1, App Check et le runtime dedie `analytics-runtime`.
-Elle n'est pas encore deployee et le registre client continue d'appeler
-`updateUserSessions`. G4-A1 est fermee par validation acceleree; son deploy
-cible unique est autorise, mais la bascule attend encore la revision et les
-probes conformes.
+Migration Gen2 sandbox: `updateUserSessionsGen2` est ACTIVE avec le meme handler
+que la Gen1, App Check et le runtime dedie `analytics-runtime`. La revision
+`updateusersessionsgen2-00001-zoq`, les limites, IAM et deux refus App Check 401
+sont conformes. Le registre client est prepare pour la bascule App Hosting;
+la Gen1 reste preservee.
 
 Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. L'architecture haut trafic sera traitee dans une phase distincte demandee par l'utilisateur.
 

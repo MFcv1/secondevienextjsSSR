@@ -2,7 +2,7 @@
 
 Derniere contre-verification: 2026-08-17
 
-Statut: `PLAN_TEMPORAIRE_ACTIF - G0_G3_FERMES - G4_A1_FERMEE_ACCELEREE - G4_A2_DEPLOY_AUTORISE`
+Statut: `PLAN_TEMPORAIRE_ACTIF - G0_G3_FERMES - G4_A1_FERMEE_ACCELEREE - G4_A2_CUTOVER_PREPARE`
 
 Proprietaire: mainteneur Seconde Vie et agent charge de la migration
 
@@ -69,12 +69,12 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | worktree attendu a la reprise | propre; tout changement additionnel doit etre preserve et qualifie |
 | phases fermees | G0, G1, G2-A, G2-B 13/13 et G3 |
 | phase active | G4-A2 analytics |
-| inventaire courant | 159 exports locaux prepares, 153 cloud, 139 Gen1, 14 Gen2 |
+| inventaire courant | 159 exports locaux, 154 cloud, 139 Gen1, 15 Gen2 |
 | cible parallele active | `trackAdminIPGen2`, revision `trackadminipgen2-00001-goj` |
 | cutover client | App Hosting `build-2026-08-16-001`, registre `trackAdminIP -> trackAdminIPGen2` |
 | observation G4-A1 | fermee acceleree le `2026-08-17T12:28:01Z` apres levee explicite de la borne temporelle |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | deploy cible unique `updateUserSessionsGen2`; cutover seulement apres revision/probes conformes |
+| prochain lot | cutover App Hosting cible unique `updateUserSessionsGen2`, puis validation active acceleree |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -84,9 +84,10 @@ identite IAM, App Hosting ou configuration Stripe.
 Pour avancer sans raccourcir la preuve cloud, G4-A2 est preparee localement:
 `updateUserSessionsGen2` reutilise exactement le handler Gen1, epingle CPU
 `gcf_gen1`, concurrence 1, min 0/max 1, 256 MiB, 60 s, App Check et le runtime
-`analytics-runtime`. Apres fermeture acceleree autorisee de G4-A1, son manifeste
-autorise le deploy cible unique mais bloque encore le cutover. Le registre client reste sur la Gen1;
-aucune nouvelle Function, revision, IAM, donnee ou App Hosting n'a ete modifiee.
+`analytics-runtime`. Elle est ACTIVE en revision
+`updateusersessionsgen2-00001-zoq`; limites, IAM et deux refus App Check 401 sont
+conformes. Le registre source cible la Gen2 et attend son build App Hosting;
+la Gen1, son endpoint, son IAM, son code et les donnees restent intacts.
 
 Ordre de reprise obligatoire:
 
@@ -2147,8 +2148,13 @@ Preparation locale G4-A2 du 2026-08-17: le manifeste
 `manifests/functions-gen2-g4-update-user-sessions.json` decrit la cible unique,
 ses donnees, son IAM, son App Check, son idempotence et son rollback. Les tests
 G4/G0, analytics, App Check et lint Functions sont verts. `deploymentAllowed`
-est maintenant `true`, tandis que `clientCutoverAuthorized` reste `false`; la
-Gen1, son endpoint, son IAM et le registre client sont inchanges.
+est `true`. Le deploy allowliste unique a cree la revision ACTIVE
+`updateusersessionsgen2-00001-zoq`; CPU 167m, concurrence 1, min 0/max 1,
+256 MiB, 60 s, comptes runtime/build et invoker transport sont conformes. Les
+appels sans preuve App Check et avec preuve invalide sont refuses en 401 avant
+le handler. `clientCutoverAuthorized` est maintenant `true` et le registre
+source cible la Gen2; le build App Hosting precedent
+`build-2026-08-16-001` est le rollback exact. La Gen1 reste intacte.
 
 ### G5 - Auth callables, OTP et passkeys
 

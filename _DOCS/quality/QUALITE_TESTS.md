@@ -84,9 +84,9 @@ le canal secondaire par defaut. Ce test reste local et sans ecriture cloud.
 
 La gate `test:functions-g4` couvre aussi la preparation locale de
 `updateUserSessionsGen2`: handler partage avec la Gen1, limites runtime, App
-Check, compte dedie et cible unique du wrapper. Apres fermeture acceleree de
-G4-A1, elle autorise le deploy seul et maintient le cutover bloque jusqu'aux
-preuves cloud. La suite locale ne contacte pas le cloud.
+Check, compte dedie et cible unique du wrapper. Apres le deploy, elle exige la
+revision cloud attendue, le registre Gen2 et la preservation de la Gen1. La
+suite locale ne contacte pas le cloud.
 
 Pour G1, `npm run functions:audit:g1` et
 `npm run functions:data-plan:g1` sont des lectures sandbox fail-closed sur le
