@@ -81,6 +81,22 @@ const GCLOUD_GEN1_TARGETS = Object.freeze({
   })
 });
 export const GCLOUD_GEN2_TARGETS = Object.freeze({
+  syncSessionBeaconGen2: Object.freeze({
+    create: true,
+    triggerType: 'http-public',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'syncSessionBeaconGen2',
+    runtimeServiceAccount: 'analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '256Mi',
+    cpu: '167m',
+    timeout: '60s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all'
+  }),
   syncSessionGen2: Object.freeze({
     create: true,
     triggerType: 'http-callable',
@@ -835,7 +851,7 @@ export function buildGcloudGen2DeployArgs(validation) {
   if (!['gcloud-gen2', 'gcloud-gen2-create'].includes(validation.transport) || validation.allowlist.length !== 1 || !target) {
     fail('Transport gcloud Gen2 non autorise');
   }
-  const httpTrigger = ['http-callable', 'http-scheduler', 'http-task'].includes(target.triggerType);
+  const httpTrigger = ['http-callable', 'http-public', 'http-scheduler', 'http-task'].includes(target.triggerType);
   const triggerArgs = httpTrigger
     ? ['--trigger-http']
     : [
@@ -864,7 +880,7 @@ export function buildGcloudGen2DeployArgs(validation) {
     `--max-instances=${target.maxInstances}`,
     ...retryArgs,
     `--ingress-settings=${target.ingressSettings}`,
-    target.triggerType === 'http-callable' ? '--allow-unauthenticated' : '--no-allow-unauthenticated',
+    ['http-callable', 'http-public'].includes(target.triggerType) ? '--allow-unauthenticated' : '--no-allow-unauthenticated',
     `--update-labels=deployment-tool=codex-targeted,migration-source-commit=${validation.commit}${target.triggerType === 'http-task' ? ',deployment-taskqueue=true' : ''}`,
     '--quiet'
   ];

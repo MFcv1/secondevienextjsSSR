@@ -422,6 +422,18 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
 - decision: G4-A4 fermee sur `build-2026-08-17-003`; rollback exact `002` et
   prochaine cible unique `syncSessionBeaconGen2`.
 
+### G4-A5 - syncSessionBeacon Gen2, preparation cible unique
+
+- handler partage avec la Gen1 et endpoint HTTP sous nouveau nom;
+- origine exacte, jeton opaque, 64 KiB, POST/OPTIONS et JSON/text preserves;
+- App Check explicitement non applicable au transport `sendBeacon` sans header
+  personnalise; il ne remplace pas le jeton serveur;
+- CPU Gen1, concurrence 1, min 0/max 1, 256 MiB, 60 s,
+  `analytics-runtime`, sans secret;
+- cible cloud absente, Gen1 et registre client preserves;
+- tests G4 17/17, analytics, App Check et lint Functions verts;
+- rollback futur: registre Gen1 et `build-2026-08-17-003`.
+
 ## 9. Conditions d'arret immediat
 
 Arreter la vague au premier:

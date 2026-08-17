@@ -247,6 +247,12 @@ le dernier appel Gen1 de fermeture en 200, aucun nouveau trafic Gen1 n'est
 apparu. Les donnees avant/apres restent conformes. G4-A4 est fermee et la
 prochaine cible unique est `syncSessionBeaconGen2`.
 
+`syncSessionBeaconGen2` est preparee sous un nouveau nom avec le handler Gen1,
+origine exacte, jeton opaque, corps 64 KiB et JSON/text. App Check est
+explicitement non applicable au transport `sendBeacon`, qui ne peut pas
+ajouter son header; le jeton serveur reste obligatoire. CPU Gen1,
+concurrence/max 1, `analytics-runtime` et absence de secret sont explicites.
+
 Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. L'architecture haut trafic sera traitee dans une phase distincte demandee par l'utilisateur.
 
 Optimisation de cout locale au 2026-07-17: la cadence visible, le seuil live, le parcours et la securite de reprise restent inchanges. Le cache de hash et l'arbitrage des synchronisations visent uniquement les relectures et appels rapproches observes dans la fenetre Data Access. Leur gain exact doit etre mesure apres deploiement sandbox avec le protocole de [AUDIT_COUTS_FIRESTORE.md](AUDIT_COUTS_FIRESTORE.md).

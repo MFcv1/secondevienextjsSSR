@@ -7,7 +7,7 @@
  * - deleteSession / clearAllSessions: Admin cleanup
  */
 const { functions, regionalFunctions } = require('../../helpers/runtime');
-const { onCall } = require('firebase-functions/v2/https');
+const { onCall, onRequest } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 const { isAdminIP } = require('./adminIP');
@@ -35,6 +35,17 @@ const ANALYTICS_CALLABLE_GEN2_RUNTIME = Object.freeze({
     timeoutSeconds: 60,
     serviceAccount: ANALYTICS_RUNTIME_SERVICE_ACCOUNT,
     enforceAppCheck: true
+});
+const ANALYTICS_BEACON_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '256MiB',
+    timeoutSeconds: 60,
+    serviceAccount: ANALYTICS_RUNTIME_SERVICE_ACCOUNT,
+    cors: false
 });
 const MAX_SESSION_DURATION_SECONDS = 24 * 60 * 60;
 const MAX_JOURNEY_CHUNK = 25;
@@ -328,7 +339,7 @@ exports.syncSessionGen2 = onCall(
     async (request) => syncSessionHandler(request.data, request)
 );
 
-exports.syncSessionBeacon = regionalFunctions().https.onRequest(async (req, res) => {
+const syncSessionBeaconHandler = async (req, res) => {
     const configuredOrigin = (() => {
         try { return new URL(getSiteUrl()).origin; } catch { return ''; }
     })();
@@ -416,7 +427,14 @@ exports.syncSessionBeacon = regionalFunctions().https.onRequest(async (req, res)
         console.error("Beacon Sync Error:", error);
         res.status(500).send('Beacon sync failed');
     }
-});
+};
+
+exports.syncSessionBeacon = regionalFunctions().https.onRequest(syncSessionBeaconHandler);
+
+exports.syncSessionBeaconGen2 = onRequest(
+    ANALYTICS_BEACON_GEN2_RUNTIME,
+    syncSessionBeaconHandler
+);
 
 exports.deleteSession = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
     await checkActiveStrongAdmin(context);
@@ -481,4 +499,6 @@ exports.clearAllAffiliateClicks = regionalFunctions().runWith({ enforceAppCheck:
 
 exports.initLiveSessionHandler = initLiveSessionHandler;
 exports.syncSessionHandler = syncSessionHandler;
+exports.syncSessionBeaconHandler = syncSessionBeaconHandler;
 exports.ANALYTICS_CALLABLE_GEN2_RUNTIME = ANALYTICS_CALLABLE_GEN2_RUNTIME;
+exports.ANALYTICS_BEACON_GEN2_RUNTIME = ANALYTICS_BEACON_GEN2_RUNTIME;

@@ -1046,6 +1046,10 @@ cutover, nouvel onglet `003` sain, six appels `syncSessionGen2` reussis, zero
 erreur et zero trafic Gen1 apres l'appel final de fermeture. App Hosting sert
 `build-2026-08-17-003`; rollback exact `002`. Prochaine cible unique:
 `syncSessionBeaconGen2`.
+G4-A5 prepare `syncSessionBeaconGen2` avec le meme handler HTTP que la Gen1,
+origine exacte, jeton opaque, corps 64 KiB et content-types JSON/text. Le
+runtime Gen2 utilise CPU Gen1, concurrence/max 1 et `analytics-runtime`; la
+Gen1 et le registre restent intacts avant preuve cloud.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.

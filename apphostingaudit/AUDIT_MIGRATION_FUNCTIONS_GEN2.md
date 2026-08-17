@@ -2228,6 +2228,15 @@ donnees avant/apres conservent version 3, parcours borne, etat actif et raisons
 de sync attendues. G4-A4 est fermee; rollback exact
 `build-2026-08-17-002`, prochaine cible unique `syncSessionBeaconGen2`.
 
+Preparation locale G4-A5: `syncSessionBeaconGen2` partage exactement
+`syncSessionBeaconHandler` avec la Gen1. Son endpoint HTTP conserve origine
+exacte, methods POST/OPTIONS, corps 64 KiB, content-types JSON/text et jeton de
+session opaque; App Check est explicitement non applicable car `sendBeacon`
+ne peut pas porter son header personnalise. CPU `gcf_gen1`, concurrence 1,
+min 0/max 1, 256 MiB, 60 s, `analytics-runtime` et aucun secret sont bornes.
+La cible cloud est absente, Gen1 et registre client preserves; 17/17 tests G4,
+analytics, audit App Check et lint Functions sont verts.
+
 ### G5 - Auth callables, OTP et passkeys
 
 Conserver les trois triggers Auth Gen1. Migrer les quatorze callables par

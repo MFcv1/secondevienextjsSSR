@@ -341,6 +341,7 @@ const {
     syncSession,
     syncSessionGen2,
     syncSessionBeacon,
+    syncSessionBeaconGen2,
     deleteSession,
     clearAllSessions,
     clearAllAffiliateClicks
@@ -354,6 +355,7 @@ exports.initLiveSessionGen2 = initLiveSessionGen2;
 exports.syncSession = syncSession;
 exports.syncSessionGen2 = syncSessionGen2;
 exports.syncSessionBeacon = syncSessionBeacon;
+exports.syncSessionBeaconGen2 = syncSessionBeaconGen2;
 exports.deleteSession = deleteSession;
 exports.clearAllSessions = clearAllSessions;
 exports.clearAllAffiliateClicks = clearAllAffiliateClicks;

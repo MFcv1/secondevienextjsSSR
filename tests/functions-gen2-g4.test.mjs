@@ -26,6 +26,8 @@ const INIT_LIVE_SESSION_MANIFEST_PATH = path.join(ROOT, 'apphostingaudit/manifes
 const INIT_LIVE_SESSION_DIGEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-init-live-session-digest.json');
 const SYNC_SESSION_MANIFEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-sync-session.json');
 const SYNC_SESSION_DIGEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-sync-session-digest.json');
+const SYNC_SESSION_BEACON_MANIFEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-sync-session-beacon.json');
+const SYNC_SESSION_BEACON_DIGEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-sync-session-beacon-digest.json');
 const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
 
@@ -40,12 +42,13 @@ test('G4 garde les suppressions analytics hors migration', () => {
   }
 });
 
-test('G4 prepare quatre cibles paralleles sans masquer la baseline 157', () => {
+test('G4 prepare cinq cibles paralleles sans masquer la baseline 157', () => {
   const exports = extractLocalExports(ROOT);
-  assert.equal(exports.length, EXPECTED_SOURCE_COUNT + 4);
-  assert.deepEqual([...PARALLEL_MIGRATION_EXPORTS], ['initLiveSessionGen2', 'syncSessionGen2', 'trackAdminIPGen2', 'updateUserSessionsGen2']);
+  assert.equal(exports.length, EXPECTED_SOURCE_COUNT + 5);
+  assert.deepEqual([...PARALLEL_MIGRATION_EXPORTS], ['initLiveSessionGen2', 'syncSessionGen2', 'syncSessionBeaconGen2', 'trackAdminIPGen2', 'updateUserSessionsGen2']);
   assert.equal(classificationFor('initLiveSessionGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('syncSessionGen2'), 'MIGRATION_PARALLEL');
+  assert.equal(classificationFor('syncSessionBeaconGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('trackAdminIPGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('updateUserSessionsGen2'), 'MIGRATION_PARALLEL');
   assert.ok(exports.some(({ name }) => name === 'trackAdminIP'));
@@ -56,6 +59,39 @@ test('G4 prepare quatre cibles paralleles sans masquer la baseline 157', () => {
   assert.ok(exports.some(({ name }) => name === 'initLiveSessionGen2'));
   assert.ok(exports.some(({ name }) => name === 'syncSession'));
   assert.ok(exports.some(({ name }) => name === 'syncSessionGen2'));
+  assert.ok(exports.some(({ name }) => name === 'syncSessionBeacon'));
+  assert.ok(exports.some(({ name }) => name === 'syncSessionBeaconGen2'));
+});
+
+test('syncSessionBeacon Gen2 partage le handler Gen1 et conserve ses controles HTTP', () => {
+  const source = read('functions/src/analytics/sessions.js');
+  const prepared = JSON.parse(fs.readFileSync(SYNC_SESSION_BEACON_MANIFEST_PATH, 'utf8'));
+  const target = GCLOUD_GEN2_TARGETS.syncSessionBeaconGen2;
+  for (const expected of [
+    /const syncSessionBeaconHandler = async \(req, res\) =>/,
+    /exports\.syncSessionBeacon = regionalFunctions\(\)\.https\.onRequest\(syncSessionBeaconHandler\)/,
+    /exports\.syncSessionBeaconGen2 = onRequest\(/,
+    /ANALYTICS_BEACON_GEN2_RUNTIME/,
+    /cpu:\s*'gcf_gen1'/,
+    /concurrency:\s*1/,
+    /minInstances:\s*0/,
+    /maxInstances:\s*1/,
+    /memory:\s*'256MiB'/,
+    /timeoutSeconds:\s*60/,
+    /serviceAccount:\s*ANALYTICS_RUNTIME_SERVICE_ACCOUNT/,
+    /cors:\s*false/,
+    /originAllowed/,
+    /req\.rawBody\.length > 64 \* 1024/,
+    /verifySessionSyncToken/
+  ]) assert.match(source, expected);
+  assert.equal(prepared.functions.length, 1);
+  assert.equal(prepared.functions[0].name, 'syncSessionBeaconGen2');
+  assert.equal(prepared.functions[0].cloud.present, false);
+  assert.equal(prepared.gates.deploymentAllowed, true);
+  assert.equal(prepared.gates.clientCutoverAuthorized, false);
+  assert.equal(target.triggerType, 'http-public');
+  assert.equal(target.entryPoint, 'syncSessionBeaconGen2');
+  assert.match(read('src/kit/config/functionTargets.js'), /syncSessionBeacon:\s*'syncSessionBeacon'/);
 });
 
 test('syncSession Gen2 partage exactement le handler Gen1 et reste une cible unique', () => {
@@ -333,6 +369,37 @@ test('le deploy syncSession Gen2 reste allowliste a une seule Function', () => {
   assert.ok(args.includes('--project=secondevienextjsssr'));
   assert.ok(args.includes('--concurrency=1'));
   assert.ok(args.includes('--max-instances=1'));
+  assert.equal(args.includes('--set-secrets'), false);
+});
+
+test('le deploy syncSessionBeacon Gen2 reste public au transport mais borne par le handler', () => {
+  const prepared = JSON.parse(fs.readFileSync(SYNC_SESSION_BEACON_MANIFEST_PATH, 'utf8'));
+  const currentCommit = prepared.metadata.baselineCommit;
+  const validation = validateDeploymentRequest({
+    args: {
+      project: 'secondevienextjsssr',
+      codebase: 'main',
+      commit: currentCommit,
+      manifest: path.relative(ROOT, SYNC_SESSION_BEACON_MANIFEST_PATH),
+      digest: path.relative(ROOT, SYNC_SESSION_BEACON_DIGEST_PATH),
+      allowlist: 'syncSessionBeaconGen2',
+      transport: 'gcloud-gen2-create'
+    },
+    manifest: prepared,
+    rootDir: ROOT,
+    manifestPath: SYNC_SESSION_BEACON_MANIFEST_PATH,
+    digestPath: SYNC_SESSION_BEACON_DIGEST_PATH,
+    currentCommit,
+    activeFirebaseProject: 'secondevienextjsssr',
+    baselineIsAncestor: true
+  });
+  const args = buildGcloudGen2DeployArgs(validation);
+  assert.ok(args.includes('syncSessionBeaconGen2'));
+  assert.ok(args.includes('--entry-point=syncSessionBeaconGen2'));
+  assert.ok(args.includes('--project=secondevienextjsssr'));
+  assert.ok(args.includes('--trigger-http'));
+  assert.ok(args.includes('--allow-unauthenticated'));
+  assert.ok(args.includes('--concurrency=1'));
   assert.equal(args.includes('--set-secrets'), false);
 });
 
