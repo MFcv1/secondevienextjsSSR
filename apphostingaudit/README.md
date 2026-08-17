@@ -408,6 +408,10 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
   17 Gen2; registre source prepare sur la Gen2 pour le cutover App Hosting;
 - rollback futur: restaurer `syncSession` dans le registre et
   `build-2026-08-17-002`; aucune suppression ou modification de donnees.
+- cutover cloud bloque: premier upload interrompu avant creation de build apres
+  plus de 15 minutes, puis relance refusee par le preflight IAM Firebase;
+  aucun nouveau build/rollout, `build-2026-08-17-002` reste servi en 200 et le
+  client effectif continue d'appeler la Gen1.
 
 ## 9. Conditions d'arret immediat
 

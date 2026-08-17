@@ -1035,6 +1035,10 @@ la Gen1, App Check, `analytics-runtime`, CPU Gen1 et concurrence/max 1. La
 revision `syncsessiongen2-00001-zeg`, IAM et refus App Check sont conformes;
 le registre source est prepare sur la Gen2 pour le cutover reversible. La Gen1
 reste intacte.
+Le cutover App Hosting G4-A4 n'est pas effectif: aucun nouveau build n'a ete
+cree et une relance a echoue au preflight IAM Firebase. Le sandbox sert encore
+`build-2026-08-17-002`, donc le bundle effectif conserve `syncSession` Gen1;
+la cible Gen2 ACTIVE reste inutilisee et reversible.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.

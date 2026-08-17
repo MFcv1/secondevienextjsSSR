@@ -2206,6 +2206,14 @@ retourne 200 et mis a jour une session bornee; l'inventaire devient 161 exports
 locaux pour 156 cloud, 139 Gen1 et 17 Gen2. Le registre source est prepare sur
 la Gen2; le cutover App Hosting reste la prochaine operation unique.
 
+Tentative de cutover G4-A4: le premier envoi source est reste bloque plus de
+15 minutes avant creation d'un build et a ete interrompu sans rollout. La
+relance a echoue au preflight Firebase avec `Unexpected error occurred while
+testing for IAM service account permissions`. Aucun build ou rollout nouveau
+n'existe; le sandbox reste sain en 200 sur `build-2026-08-17-002` et utilise
+donc encore `syncSession` Gen1. Le rollback exact est deja effectif, sans
+suppression de Function ou donnee. Arret de vague sur ecart IAM, comme exige.
+
 ### G5 - Auth callables, OTP et passkeys
 
 Conserver les trois triggers Auth Gen1. Migrer les quatorze callables par
