@@ -88,10 +88,10 @@ test('syncSessionBeacon Gen2 partage le handler Gen1 et conserve ses controles H
   assert.equal(prepared.functions[0].name, 'syncSessionBeaconGen2');
   assert.equal(prepared.functions[0].cloud.present, true);
   assert.equal(prepared.gates.deploymentAllowed, false);
-  assert.equal(prepared.gates.clientCutoverAuthorized, false);
+  assert.equal(prepared.gates.clientCutoverAuthorized, true);
   assert.equal(target.triggerType, 'http-public');
   assert.equal(target.entryPoint, 'syncSessionBeaconGen2');
-  assert.match(read('src/kit/config/functionTargets.js'), /syncSessionBeacon:\s*'syncSessionBeacon'/);
+  assert.match(read('src/kit/config/functionTargets.js'), /syncSessionBeacon:\s*'syncSessionBeaconGen2'/);
 });
 
 test('syncSession Gen2 partage exactement le handler Gen1 et reste une cible unique', () => {
@@ -409,6 +409,8 @@ test('le deploy syncSessionBeacon Gen2 reste public au transport mais borne par 
 
 test('la remediation syncSessionBeacon Gen2 reste une mise a jour unique et manifestee', () => {
   const prepared = JSON.parse(fs.readFileSync(SYNC_SESSION_BEACON_MANIFEST_PATH, 'utf8'));
+  const remediationAuthorizedManifest = structuredClone(prepared);
+  remediationAuthorizedManifest.gates.remediationDeploymentAllowed = true;
   const currentCommit = prepared.metadata.baselineCommit;
   const validation = validateDeploymentRequest({
     args: {
@@ -420,7 +422,7 @@ test('la remediation syncSessionBeacon Gen2 reste une mise a jour unique et mani
       allowlist: 'syncSessionBeaconGen2',
       transport: 'gcloud-gen2-update'
     },
-    manifest: prepared,
+    manifest: remediationAuthorizedManifest,
     rootDir: ROOT,
     manifestPath: SYNC_SESSION_BEACON_MANIFEST_PATH,
     digestPath: SYNC_SESSION_BEACON_DIGEST_PATH,

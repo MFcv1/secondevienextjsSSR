@@ -4,7 +4,7 @@ const FUNCTION_TARGETS = Object.freeze({
   deleteSession: 'deleteSession',
   initLiveSession: 'initLiveSessionGen2',
   syncSession: 'syncSessionGen2',
-  syncSessionBeacon: 'syncSessionBeacon',
+  syncSessionBeacon: 'syncSessionBeaconGen2',
   trackAdminIP: 'trackAdminIPGen2',
   updateUserSessions: 'updateUserSessionsGen2',
 });

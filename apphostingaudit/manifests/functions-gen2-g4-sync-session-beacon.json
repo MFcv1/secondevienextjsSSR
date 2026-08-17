@@ -5,9 +5,9 @@
     "codebase": "main",
     "environment": "sandbox",
     "baselineCommit": "7bd381524a373da183406ea12082390c2bdbd52d",
-    "generatedAt": "2026-08-17T20:18:00Z",
+    "generatedAt": "2026-08-17T20:42:00Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G4-A5_ROOT_CAUSE_FOUND_REMEDIATION_DEPLOY_AUTHORIZED"
+    "wave": "G4-A5_REMEDIATED_CUTOVER_RETRY_AUTHORIZED"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -34,7 +34,7 @@
     "cloudGen2": 17,
     "legacyOwner": "syncSessionBeacon",
     "legacyOwnerPreserved": true,
-    "currentClientTarget": "syncSessionBeacon",
+    "currentClientTarget": "syncSessionBeaconGen2",
     "previousWave": "G4-A4_CLOSED_ACCELERATED_VALIDATION",
     "targetAbsentBeforeCreate": true
   },
@@ -58,7 +58,7 @@
         "generation": 2,
         "region": "europe-west1",
         "runtime": "nodejs22",
-        "revision": "syncsessionbeacongen2-00001-dih"
+        "revision": "syncsessionbeacongen2-00002-vec"
       },
       "runtime": {
         "sourceCpu": "gcf_gen1",
@@ -104,9 +104,9 @@
       "callers": ["src/kit/shared/AnalyticsProvider.jsx navigator.sendBeacon/fetch keepalive"],
       "clientRegistry": {
         "logicalName": "syncSessionBeacon",
-        "currentTarget": "syncSessionBeacon",
+        "currentTarget": "syncSessionBeaconGen2",
         "cutoverTarget": "syncSessionBeaconGen2",
-        "cutoverAllowed": false
+        "cutoverAllowed": true
       },
       "decision": {
         "classification": "MIGRATION_PARALLEL",
@@ -129,7 +129,7 @@
     "dataParityRequired": true,
     "oldTabRequired": true,
     "clientCutoverPrepared": true,
-    "clientCutoverAuthorized": false,
+    "clientCutoverAuthorized": true,
     "tests": {
       "executedAt": "2026-08-17T19:34:00Z",
       "functionsG4": "17/17",
@@ -186,7 +186,7 @@
       "result": "FAILED_ROLLBACK_REQUIRED"
     },
     "deploymentAllowed": false,
-    "remediationDeploymentAllowed": true,
+    "remediationDeploymentAllowed": false,
     "rootCause": {
       "classification": "GEN2_PROJECT_ENV_ABSENT_SITE_URL_FELL_BACK_TO_LOCALHOST",
       "evidence": "A POST with the exact sandbox Origin and a missing session body returned 403 Origin denied; deployed Cloud Run user env contains no SITE_URL, GCLOUD_PROJECT, GOOGLE_CLOUD_PROJECT or FIREBASE_CONFIG",
@@ -194,7 +194,17 @@
       "tokenExcluded": true,
       "correction": "Set exact SITE_URL only on syncSessionBeaconGen2 through the targeted deploy wrapper"
     },
-    "deploymentAuthorization": "Redeploy only syncSessionBeaconGen2 with SITE_URL explicit; keep App Hosting on build-2026-08-17-003 until exact-origin 400 and invalid-origin 403 probes pass"
+    "remediation": {
+      "sourceCommit": "86d12096244147a84d2ec8078be0fa6ed7392f1d",
+      "revision": "syncsessionbeacongen2-00002-vec",
+      "state": "ACTIVE",
+      "siteUrlVerified": true,
+      "exactOriginMissingSessionHttpStatus": 400,
+      "invalidOriginHttpStatus": 403,
+      "iamVerified": true,
+      "runtimeVerified": true
+    },
+    "deploymentAuthorization": "No Function deployment. Retry only the existing READY App Hosting build-2026-08-17-004; rollback remains build-2026-08-17-003"
   },
   "rollback": {
     "functionAction": "none; preserve syncSessionBeacon and syncSessionBeaconGen2",
@@ -207,5 +217,5 @@
     "iamSecretsAction": "none",
     "g12Action": "none before G12-A approval and completed observation"
   },
-  "verdict": "FUNCTION_ACTIVE_CLIENT_GEN1_ROOT_CAUSE_PROVEN_TARGETED_REMEDIATION_AUTHORIZED"
+  "verdict": "FUNCTION_REMEDIATED_SECURITY_PROBES_GREEN_CLIENT_CUTOVER_RETRY_AUTHORIZED"
 }
