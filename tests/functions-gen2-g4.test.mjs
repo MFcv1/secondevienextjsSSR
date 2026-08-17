@@ -22,6 +22,8 @@ const DIGEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4
 const CUTOVER_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-track-admin-ip-cutover.json');
 const ROLLOUT_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-track-admin-ip-rollout.json');
 const UPDATE_USER_SESSIONS_MANIFEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-update-user-sessions.json');
+const INIT_LIVE_SESSION_MANIFEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-init-live-session.json');
+const INIT_LIVE_SESSION_DIGEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-init-live-session-digest.json');
 const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
 
@@ -36,16 +38,52 @@ test('G4 garde les suppressions analytics hors migration', () => {
   }
 });
 
-test('G4 prepare deux cibles paralleles sans masquer la baseline 157', () => {
+test('G4 prepare trois cibles paralleles sans masquer la baseline 157', () => {
   const exports = extractLocalExports(ROOT);
-  assert.equal(exports.length, EXPECTED_SOURCE_COUNT + 2);
-  assert.deepEqual([...PARALLEL_MIGRATION_EXPORTS], ['trackAdminIPGen2', 'updateUserSessionsGen2']);
+  assert.equal(exports.length, EXPECTED_SOURCE_COUNT + 3);
+  assert.deepEqual([...PARALLEL_MIGRATION_EXPORTS], ['initLiveSessionGen2', 'trackAdminIPGen2', 'updateUserSessionsGen2']);
+  assert.equal(classificationFor('initLiveSessionGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('trackAdminIPGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('updateUserSessionsGen2'), 'MIGRATION_PARALLEL');
   assert.ok(exports.some(({ name }) => name === 'trackAdminIP'));
   assert.ok(exports.some(({ name }) => name === 'trackAdminIPGen2'));
   assert.ok(exports.some(({ name }) => name === 'updateUserSessions'));
   assert.ok(exports.some(({ name }) => name === 'updateUserSessionsGen2'));
+  assert.ok(exports.some(({ name }) => name === 'initLiveSession'));
+  assert.ok(exports.some(({ name }) => name === 'initLiveSessionGen2'));
+});
+
+test('initLiveSession Gen2 partage le handler Gen1 et autorise une seule cible', () => {
+  const source = read('functions/src/analytics/sessions.js');
+  const prepared = JSON.parse(fs.readFileSync(INIT_LIVE_SESSION_MANIFEST_PATH, 'utf8'));
+  const target = GCLOUD_GEN2_TARGETS.initLiveSessionGen2;
+
+  for (const expected of [
+    /const initLiveSessionHandler = async \(data = \{\}, context\) =>/,
+    /exports\.initLiveSession = regionalFunctions\(\)/,
+    /\.https\.onCall\(initLiveSessionHandler\)/,
+    /exports\.initLiveSessionGen2 = onCall\(/,
+    /initLiveSessionHandler\(request\.data, request\)/,
+    /cpu:\s*'gcf_gen1'/,
+    /concurrency:\s*1/,
+    /minInstances:\s*0/,
+    /maxInstances:\s*1/,
+    /memory:\s*'256MiB'/,
+    /timeoutSeconds:\s*60/,
+    /serviceAccount:\s*ANALYTICS_RUNTIME_SERVICE_ACCOUNT/,
+    /enforceAppCheck:\s*true/
+  ]) assert.match(source, expected);
+
+  assert.equal(prepared.functions.length, 1);
+  assert.equal(prepared.functions[0].name, 'initLiveSessionGen2');
+  assert.equal(prepared.functions[0].cloud.present, false);
+  assert.equal(prepared.gates.deploymentAllowed, true);
+  assert.equal(prepared.gates.clientCutoverAuthorized, false);
+  assert.match(read('src/kit/config/functionTargets.js'), /initLiveSession:\s*'initLiveSession'/);
+  assert.equal(target.entryPoint, 'initLiveSessionGen2');
+  assert.equal(target.cpu, '167m');
+  assert.equal(target.concurrency, '1');
+  assert.equal(target.maxInstances, '1');
 });
 
 test('updateUserSessions Gen2 partage exactement le handler Gen1 et borne son runtime', () => {
@@ -68,7 +106,7 @@ test('updateUserSessions Gen2 partage exactement le handler Gen1 et borne son ru
   assert.doesNotMatch(source, /updateUserSessionsGen2[\s\S]*appspot\.gserviceaccount\.com/);
 });
 
-test('updateUserSessions Gen2 reste active mais le registre est revenu en Gen1', () => {
+test('updateUserSessions Gen2 est active et son cutover accelere est ferme', () => {
   const prepared = JSON.parse(fs.readFileSync(UPDATE_USER_SESSIONS_MANIFEST_PATH, 'utf8'));
   const registry = read('src/kit/config/functionTargets.js');
   const target = GCLOUD_GEN2_TARGETS.updateUserSessionsGen2;
@@ -80,10 +118,9 @@ test('updateUserSessions Gen2 reste active mais le registre est revenu en Gen1',
   assert.equal(prepared.functions[0].cloud.revision, 'updateusersessionsgen2-00001-zoq');
   assert.equal(prepared.functions[0].decision.deploymentMaxBatchSize, 1);
   assert.equal(prepared.gates.deploymentAllowed, true);
-  assert.equal(prepared.gates.clientCutoverAuthorized, false);
+  assert.equal(prepared.gates.clientCutoverAuthorized, true);
   assert.equal(prepared.preflight.trackAdminIPObservationState, 'CLOSED_ACCELERATED_BY_USER');
-  assert.match(registry, /updateUserSessions:\s*'updateUserSessions'/);
-  assert.doesNotMatch(registry, /updateUserSessions:\s*'updateUserSessionsGen2'/);
+  assert.match(registry, /updateUserSessions:\s*'updateUserSessionsGen2'/);
   assert.deepEqual(target, {
     create: true,
     triggerType: 'http-callable',
@@ -105,6 +142,9 @@ test('updateUserSessions Gen2 reste active mais le registre est revenu en Gen1',
   assert.equal(prepared.gates.appCheckNegativeProbe.invalidTokenHttpStatus, 401);
   assert.equal(prepared.gates.appHostingCutoverAttempt.rollback.state, 'SUCCEEDED');
   assert.equal(prepared.gates.appHostingCutoverAttempt.rollback.build, 'build-2026-08-16-001');
+  assert.equal(prepared.gates.appHostingCutoverAttempt.acceleratedValidation.state, 'SUCCEEDED');
+  assert.equal(prepared.gates.appHostingCutoverAttempt.acceleratedValidation.gen2Result.httpStatus, 200);
+  assert.equal(prepared.gates.appHostingCutoverAttempt.acceleratedValidation.newGen1RequestsAfterCutover, 0);
   assert.equal(prepared.rollback.functionAction, 'none; preserve updateUserSessions and updateUserSessionsGen2');
 });
 
@@ -138,10 +178,11 @@ test('le beacon accepte le content-type reel sans relacher origine, taille ou to
   assert.match(client, /'Content-Type': 'text\/plain;charset=UTF-8'/);
 });
 
-test('le registre client bascule seulement trackAdminIP vers la cible Gen2 autorisee', () => {
+test('le registre client conserve les deux cutovers G4 fermes', () => {
   const registry = read('src/kit/config/functionTargets.js');
   const cutover = JSON.parse(fs.readFileSync(CUTOVER_PATH, 'utf8'));
   assert.match(registry, /trackAdminIP:\s*'trackAdminIPGen2'/);
+  assert.match(registry, /updateUserSessions:\s*'updateUserSessionsGen2'/);
   assert.match(read('src/kit/config/firebaseLazy.js'), /getFunctionTarget\(name\)/);
   assert.equal(cutover.gates.clientCutoverAuthorized, true);
   assert.equal(cutover.function.target, 'trackAdminIPGen2');
@@ -188,6 +229,36 @@ test('le wrapper de creation G4 est une cible unique, explicite et publique seul
   ]) assert.ok(args.includes(expected), expected);
   assert.equal(args.includes('--set-secrets'), false);
   assert.ok(manifest.deploymentPolicy.forbiddenTargets.includes('clearAllSessionsGen2'));
+});
+
+test('le deploy initLiveSession Gen2 reste allowliste a une seule Function', () => {
+  const prepared = JSON.parse(fs.readFileSync(INIT_LIVE_SESSION_MANIFEST_PATH, 'utf8'));
+  const currentCommit = prepared.metadata.baselineCommit;
+  const validation = validateDeploymentRequest({
+    args: {
+      project: 'secondevienextjsssr',
+      codebase: 'main',
+      commit: currentCommit,
+      manifest: path.relative(ROOT, INIT_LIVE_SESSION_MANIFEST_PATH),
+      digest: path.relative(ROOT, INIT_LIVE_SESSION_DIGEST_PATH),
+      allowlist: 'initLiveSessionGen2',
+      transport: 'gcloud-gen2-create'
+    },
+    manifest: prepared,
+    rootDir: ROOT,
+    manifestPath: INIT_LIVE_SESSION_MANIFEST_PATH,
+    digestPath: INIT_LIVE_SESSION_DIGEST_PATH,
+    currentCommit,
+    activeFirebaseProject: 'secondevienextjsssr',
+    baselineIsAncestor: true
+  });
+  const args = buildGcloudGen2DeployArgs(validation);
+  assert.ok(args.includes('initLiveSessionGen2'));
+  assert.ok(args.includes('--entry-point=initLiveSessionGen2'));
+  assert.ok(args.includes('--project=secondevienextjsssr'));
+  assert.ok(args.includes('--concurrency=1'));
+  assert.ok(args.includes('--max-instances=1'));
+  assert.equal(args.includes('--set-secrets'), false);
 });
 
 test('la configuration IAM G4 est bornee, sans secret ni cle utilisateur', () => {

@@ -337,6 +337,7 @@ exports.sendRefundStatusEmailAdmin = sendRefundStatusEmailAdmin;
 // ── ANALYTICS ────────────────────────────────────────────
 const {
     initLiveSession,
+    initLiveSessionGen2,
     syncSession,
     syncSessionBeacon,
     deleteSession,
@@ -348,6 +349,7 @@ const { updateUserSessions, updateUserSessionsGen2 } = require('./src/analytics/
 const { onOrderStatsWrite } = require('./src/commerce/orderStats');
 
 exports.initLiveSession = initLiveSession;
+exports.initLiveSessionGen2 = initLiveSessionGen2;
 exports.syncSession = syncSession;
 exports.syncSessionBeacon = syncSessionBeacon;
 exports.deleteSession = deleteSession;

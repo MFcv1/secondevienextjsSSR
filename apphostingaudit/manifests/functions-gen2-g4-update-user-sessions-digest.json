@@ -4,6 +4,6 @@
   "codebase": "main",
   "baselineCommit": "25f145bcb059370695ed4dc78852676200781f66",
   "files": {
-    "apphostingaudit/manifests/functions-gen2-g4-update-user-sessions.json": "d843916c33fa50b1d73984241744343aa0055827e0cddd8f7bc3f501f463aaa0"
+    "apphostingaudit/manifests/functions-gen2-g4-update-user-sessions.json": "6c7c6a80ed493f47227ef73eac802030303d28a87954769af72233d5d672e7b3"
   }
 }

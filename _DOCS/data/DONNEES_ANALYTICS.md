@@ -212,10 +212,17 @@ Exclusion admin:
 Migration Gen2 sandbox: `updateUserSessionsGen2` est ACTIVE avec le meme handler
 que la Gen1, App Check et le runtime dedie `analytics-runtime`. La revision
 `updateusersessionsgen2-00001-zoq`, les limites, IAM et deux refus App Check 401
-sont conformes. Le build Gen2 `build-2026-08-17-001` a ete READY et servi, mais
-la requalification Google a ete interrompue avant Auth. Le rollback exact
-`rollback-20260817-001` sert donc `build-2026-08-16-001`; le registre source et
-le client sont revenus sur la Gen1, qui reste preservee avec la Gen2.
+sont conformes. La requalification acceleree a compare une connexion admin
+Gen1 puis Gen2: HTTP 200, Auth et App Check valides, donnees conformes, ancien
+onglet admin sain et zero nouvel appel Gen1 apres cutover. Le rollout
+`g4-a2-cutover-20260817-002` sert `build-2026-08-17-001`; le registre cible
+desormais la Gen2. La Gen1 et `build-2026-08-16-001` restent preserves comme
+rollback exact jusqu'a G12-A.
+
+La cible suivante `initLiveSessionGen2` est preparee sous un nouveau nom avec
+le meme handler que la Gen1, App Check, CPU Gen1, concurrence/max 1 et le
+runtime `analytics-runtime`. Le registre reste sur la Gen1 jusqu'au deploy
+allowliste et a la preuve creation/reprise d'une session sandbox.
 
 Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. L'architecture haut trafic sera traitee dans une phase distincte demandee par l'utilisateur.
 

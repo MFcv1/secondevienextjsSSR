@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "baselineCommit": "33d233855afa959c0c363173b4ad4119d1a702d6",
+    "generatedAt": "2026-08-17T15:51:46Z",
+    "operator": "matthis.fradin2@gmail.com",
+    "wave": "G4-A3_DEPLOYMENT_AUTHORIZED"
+  },
+  "deploymentPolicy": {
+    "exactProject": "secondevienextjsssr",
+    "exactCodebase": "main",
+    "maxBatchSize": 1,
+    "forbiddenTargets": [
+      "clearAllAffiliateClicksGen2",
+      "clearAllSessionsGen2",
+      "deleteSessionGen2",
+      "disconnectInstagramConnectionAdmin",
+      "getInstagramConnectionStatusAdmin",
+      "instagramOAuthCallback",
+      "startInstagramOAuthAdmin",
+      "verifyInstagramConnectionAdmin"
+    ],
+    "forbiddenGlobalSelector": "functions"
+  },
+  "preflight": {
+    "projectMatch": true,
+    "sourceExportsBeforePreparation": 159,
+    "sourceExportsWithParallel": 160,
+    "cloudFunctions": 154,
+    "cloudGen1": 139,
+    "cloudGen2": 15,
+    "legacyOwner": "initLiveSession",
+    "legacyOwnerPreserved": true,
+    "currentClientTarget": "initLiveSession",
+    "previousWave": "G4-A2_CLOSED_ACCELERATED_VALIDATION"
+  },
+  "functions": [
+    {
+      "name": "initLiveSessionGen2",
+      "source": {
+        "export": "initLiveSessionGen2",
+        "file": "functions/src/analytics/sessions.js",
+        "sharedHandler": "initLiveSessionHandler"
+      },
+      "trigger": {
+        "type": "callable",
+        "filter": null,
+        "retry": false
+      },
+      "cloud": {
+        "present": false,
+        "project": "secondevienextjsssr",
+        "codebase": "main",
+        "generation": 2,
+        "region": "europe-west1",
+        "runtime": "nodejs22",
+        "revision": null
+      },
+      "runtime": {
+        "sourceCpu": "gcf_gen1",
+        "deployCpu": "167m",
+        "memoryMiB": 256,
+        "timeoutSeconds": 60,
+        "concurrency": 1,
+        "minInstances": 0,
+        "maxInstances": 1,
+        "retry": false,
+        "ingress": "ALLOW_ALL"
+      },
+      "identities": {
+        "runtimeServiceAccount": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+        "invokerIam": [{ "role": "roles/run.invoker", "members": ["allUsers"] }],
+        "runtimeProjectRoles": [
+          "roles/datastore.user",
+          "roles/logging.logWriter",
+          "roles/serviceusage.serviceUsageConsumer"
+        ]
+      },
+      "secrets": [],
+      "appCheck": "ENFORCED",
+      "authorization": "authenticated Firebase user, including the anonymous Firebase user created by the analytics provider",
+      "dataAccess": {
+        "reads": [
+          "analytics_sessions/{resumeSessionId} when resume is requested",
+          "sys_metadata/admin_ips through isAdminIP"
+        ],
+        "writes": [
+          "create one analytics_sessions document for a new session",
+          "update one analytics_sessions document when a valid session resumes"
+        ],
+        "parity": "Gen1 and Gen2 call the same initLiveSessionHandler",
+        "idempotence": "a valid resume token reuses the existing session; a new initialization intentionally creates one session"
+      },
+      "callers": ["src/kit/shared/AnalyticsProvider.jsx"],
+      "clientRegistry": {
+        "logicalName": "initLiveSession",
+        "currentTarget": "initLiveSession",
+        "cutoverTarget": "initLiveSessionGen2",
+        "cutoverAllowed": false
+      },
+      "decision": {
+        "classification": "MIGRATION_PARALLEL",
+        "target": "initLiveSessionGen2",
+        "wave": "G4-A3",
+        "deploymentMaxBatchSize": 1,
+        "rollback": "Keep initLiveSession Gen1 intact. Before client cutover the Gen2 target is unused. After cutover restore initLiveSession in the registry and roll App Hosting back to build-2026-08-17-001. Preserve both Functions, endpoints, IAM, source and session data until G12-A."
+      }
+    }
+  ],
+  "gates": {
+    "localTestsRequired": ["test:functions-g4", "test:analytics", "appcheck:audit", "lint:functions"],
+    "runtimeIamRequired": true,
+    "runtimeIamReady": true,
+    "runtimeIamManifest": "apphostingaudit/manifests/functions-gen2-g4-analytics-iam.json",
+    "targetWasAbsentBeforeCreate": true,
+    "unauthenticatedProbeMustFail": true,
+    "authenticatedAnonymousProbeRequired": true,
+    "resumeParityRequired": true,
+    "oldTabRequired": true,
+    "clientCutoverPrepared": true,
+    "clientCutoverAuthorized": false,
+    "tests": {
+      "executedAt": "2026-08-17T15:51:46Z",
+      "functionsG4": "13/13",
+      "analytics": "PASS",
+      "appCheckAudit": "PASS",
+      "functionsLint": "PASS"
+    },
+    "targetAbsenceVerified": true,
+    "deploymentAllowed": true,
+    "deploymentAuthorization": "Deploy only initLiveSessionGen2 after G4-A2 accelerated closeout"
+  },
+  "rollback": {
+    "functionAction": "none; preserve initLiveSession and initLiveSessionGen2",
+    "clientAction": "restore initLiveSession: 'initLiveSession' in src/kit/config/functionTargets.js",
+    "appHostingAction": "roll back to READY build build-2026-08-17-001",
+    "dataAction": "none",
+    "iamSecretsAction": "none",
+    "g12Action": "none before G12-A approval and completed observation"
+  },
+  "verdict": "LOCAL_PREPARATION_GREEN_SINGLE_TARGET_DEPLOYMENT_ALLOWED"
+}

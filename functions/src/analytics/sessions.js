@@ -7,6 +7,7 @@
  * - deleteSession / clearAllSessions: Admin cleanup
  */
 const { functions, regionalFunctions } = require('../../helpers/runtime');
+const { onCall } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 const { isAdminIP } = require('./adminIP');
@@ -23,6 +24,18 @@ const { createSessionAuthorizationCache } = require('./sessionAuthorizationCache
 const { ANALYTICS_SESSION_RETENTION_DAYS, timestampFromNow } = require('./constants');
 
 const db = admin.firestore();
+const ANALYTICS_RUNTIME_SERVICE_ACCOUNT = 'analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com';
+const INIT_LIVE_SESSION_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '256MiB',
+    timeoutSeconds: 60,
+    serviceAccount: ANALYTICS_RUNTIME_SERVICE_ACCOUNT,
+    enforceAppCheck: true
+});
 const MAX_SESSION_DURATION_SECONDS = 24 * 60 * 60;
 const MAX_JOURNEY_CHUNK = 25;
 const MAX_EVENT_PREVIEW = 16;
@@ -162,7 +175,7 @@ const sanitizeEventPreview = (events) => {
     }));
 };
 
-exports.initLiveSession = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data = {}, context) => {
+const initLiveSessionHandler = async (data = {}, context) => {
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'Auth required');
     }
@@ -250,7 +263,16 @@ exports.initLiveSession = regionalFunctions().runWith({ enforceAppCheck: true })
         console.error("Init Error:", error);
         throw new functions.https.HttpsError('internal', 'Init failed');
     }
-});
+};
+
+exports.initLiveSession = regionalFunctions()
+    .runWith({ enforceAppCheck: true })
+    .https.onCall(initLiveSessionHandler);
+
+exports.initLiveSessionGen2 = onCall(
+    INIT_LIVE_SESSION_GEN2_RUNTIME,
+    async (request) => initLiveSessionHandler(request.data, request)
+);
 
 exports.syncSession = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data = {}, context) => {
     if (!context.auth) return { success: false, unauthenticated: true };
@@ -447,3 +469,6 @@ exports.clearAllAffiliateClicks = regionalFunctions().runWith({ enforceAppCheck:
         throw new functions.https.HttpsError('internal', 'Clear failed');
     }
 });
+
+exports.initLiveSessionHandler = initLiveSessionHandler;
+exports.INIT_LIVE_SESSION_GEN2_RUNTIME = INIT_LIVE_SESSION_GEN2_RUNTIME;

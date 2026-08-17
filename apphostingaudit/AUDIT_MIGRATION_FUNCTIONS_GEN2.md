@@ -68,13 +68,13 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | baseline avant le checkpoint Monitoring | `25daf810309dc3329cfeb0fb19be0f1790fe608a` |
 | worktree attendu a la reprise | propre; tout changement additionnel doit etre preserve et qualifie |
 | phases fermees | G0, G1, G2-A, G2-B 13/13 et G3 |
-| phase active | G4-A2 analytics |
+| phase active | G4-A3 analytics |
 | inventaire courant | 159 exports locaux, 154 cloud, 139 Gen1, 15 Gen2 |
 | cible parallele active | `trackAdminIPGen2`, revision `trackadminipgen2-00001-goj` |
-| cutover client | App Hosting `build-2026-08-16-001`, registre `trackAdminIP -> trackAdminIPGen2` |
+| cutover client | App Hosting `build-2026-08-17-001`, registres `trackAdminIP -> trackAdminIPGen2` et `updateUserSessions -> updateUserSessionsGen2` |
 | observation G4-A1 | fermee acceleree le `2026-08-17T12:28:01Z` apres levee explicite de la borne temporelle |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | requalifier la reconnexion Google avant un nouveau cutover A2; rollback exact servi |
+| prochain lot | preparer uniquement `initLiveSessionGen2`; rollback exact `build-2026-08-16-001` |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -86,18 +86,19 @@ Pour avancer sans raccourcir la preuve cloud, G4-A2 est preparee localement:
 `gcf_gen1`, concurrence 1, min 0/max 1, 256 MiB, 60 s, App Check et le runtime
 `analytics-runtime`. Elle est ACTIVE en revision
 `updateusersessionsgen2-00001-zoq`; limites, IAM et deux refus App Check 401 sont
-conformes. Apres rollback, le registre source cible de nouveau la Gen1;
-la Gen1, son endpoint, son IAM, son code et les donnees restent intacts.
+conformes. Apres validation acceleree, le registre source cible la Gen2;
+la Gen1, son endpoint, son IAM et son code restent intacts.
 Le retry a reutilise l'archive uploadee et produit `build-2026-08-17-001` READY,
 SUCCEEDED et servi. La session admin persistante, `/`, `/admin`, la sante
-commerce et le registre Gen2 etaient conformes, mais la reconnexion Google a ete
-interrompue avant Auth. Le rollout `rollback-20260817-001` a donc restaure
-`build-2026-08-16-001` et le registre source Gen1, sans suppression de donnee.
+commerce et le registre Gen2 etaient conformes. Apres un premier retour Google
+interrompu, la reprise a reussi: le rollout `g4-a2-cutover-20260817-002` sert
+`build-2026-08-17-001`, avec HTTP 200, Auth/App Check valides, donnees
+conformes, ancien onglet admin sain et zero nouvel appel Gen1 apres cutover.
 
 Ordre de reprise obligatoire:
 
 1. preserver le diff existant et verifier le projet explicite
-   `secondevienextjsssr`, l'operateur et l'inventaire 159/153;
+   `secondevienextjsssr`, l'operateur et l'inventaire 159/154;
 2. ne deployer aucune nouvelle cible avant le terme de la quiet-window G4-A1;
 3. a son terme, verifier revision/IAM/App Check, logs, donnees avant/apres,
    absence de trafic Gen1 et compatibilite d'un ancien onglet;
@@ -2160,6 +2161,22 @@ appels sans preuve App Check et avec preuve invalide sont refuses en 401 avant
 le handler. `clientCutoverAuthorized` est maintenant `true` et le registre
 source cible la Gen2; le build App Hosting precedent
 `build-2026-08-16-001` est le rollback exact. La Gen1 reste intacte.
+
+Cloture G4-A2 du 2026-08-17: le rollout
+`g4-a2-cutover-20260817-002` est `SUCCEEDED` et sert
+`build-2026-08-17-001`. Une connexion admin Gen1 de reference puis la meme
+connexion sur Gen2 ont retourne 200 avec Auth et App Check valides. Le
+back-office et la sante commerce sont conformes, l'ancien onglet reste
+fonctionnel et la Gen1 ne recoit aucun nouvel appel apres cutover. La prochaine
+cible unique est `initLiveSessionGen2`.
+
+Preparation locale G4-A3 du 2026-08-17: `initLiveSessionGen2` partage
+`initLiveSessionHandler` avec la Gen1 et porte App Check, CPU `gcf_gen1`,
+concurrence 1, min 0/max 1, 256 MiB, 60 s et `analytics-runtime`. La cible est
+absente du cloud; le manifeste/digest autorise uniquement sa creation apres
+13/13 tests G4, analytics, App Check et lint Functions verts. L'inventaire
+prepare est 160 exports locaux pour 154 cloud; le registre client reste sur la
+Gen1 avant le cutover.
 
 ### G5 - Auth callables, OTP et passkeys
 

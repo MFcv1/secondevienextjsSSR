@@ -5,9 +5,9 @@
     "codebase": "main",
     "environment": "sandbox",
     "baselineCommit": "25f145bcb059370695ed4dc78852676200781f66",
-    "generatedAt": "2026-08-17T15:11:34Z",
+    "generatedAt": "2026-08-17T15:51:46Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G4-A2_ROLLED_BACK_AFTER_AUTH_GATE"
+    "wave": "G4-A2_CLOSED_ACCELERATED_VALIDATION"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -34,7 +34,7 @@
     "cloudGen2": 14,
     "legacyOwner": "updateUserSessions",
     "legacyOwnerPreserved": true,
-    "currentClientTarget": "updateUserSessions",
+    "currentClientTarget": "updateUserSessionsGen2",
     "trackAdminIPObservationState": "CLOSED_ACCELERATED_BY_USER",
     "trackAdminIPObservationEndNotBefore": "2026-08-18T19:16:52.793799Z"
   },
@@ -106,9 +106,9 @@
       "callers": ["src/kit/contexts/AuthContext.jsx"],
       "clientRegistry": {
         "logicalName": "updateUserSessions",
-        "currentTarget": "updateUserSessions",
+        "currentTarget": "updateUserSessionsGen2",
         "cutoverTarget": "updateUserSessionsGen2",
-        "cutoverAllowed": false
+        "cutoverAllowed": true
       },
       "decision": {
         "classification": "MIGRATION_PARALLEL",
@@ -135,7 +135,7 @@
     "authenticatedAdminAndClientProbesRequired": true,
     "oldTabRequired": true,
     "clientCutoverPrepared": true,
-    "clientCutoverAuthorized": false,
+    "clientCutoverAuthorized": true,
     "observationModeAfterCutover": "ACCELERATED_ACTIVE_VALIDATION",
     "deploymentAllowed": true,
     "deploymentAuthorizedAt": "2026-08-17T12:28:01Z",
@@ -193,6 +193,32 @@
         "rootHttpStatus": 200,
         "adminHttpStatus": 200,
         "sourceRegistryRestored": "updateUserSessions -> updateUserSessions"
+      },
+      "acceleratedValidation": {
+        "executedAt": "2026-08-17T15:51:46Z",
+        "rollout": "g4-a2-cutover-20260817-002",
+        "state": "SUCCEEDED",
+        "build": "build-2026-08-17-001",
+        "servedRegistryVerified": "updateUserSessions -> updateUserSessionsGen2",
+        "gen1Baseline": {
+          "httpStatus": 200,
+          "auth": "VALID",
+          "appCheck": "VALID",
+          "deletedCount": 1
+        },
+        "gen2Result": {
+          "revision": "updateusersessionsgen2-00001-zoq",
+          "httpStatus": 200,
+          "auth": "VALID",
+          "appCheck": "VALID"
+        },
+        "newGen1RequestsAfterCutover": 0,
+        "oldTab": "ADMIN_HEALTHY",
+        "commerceHealth": "healthy",
+        "openFinancialIncidents": 0,
+        "rootHttpStatus": 200,
+        "adminHttpStatus": 200,
+        "rollbackBuild": "build-2026-08-16-001"
       }
     }
   },
@@ -204,5 +230,5 @@
     "iamSecretsAction": "none",
     "g12Action": "none before G12-A approval and completed observation"
   },
-  "verdict": "FUNCTION_ACTIVE_CUTOVER_BUILT_AUTH_GATE_FAILED_EXACT_ROLLBACK_SUCCEEDED"
+  "verdict": "G4_A2_CLOSED_ACCELERATED_AUTH_APPCHECK_DATA_AND_OLD_TAB_GREEN"
 }

@@ -1010,18 +1010,22 @@ la borne temporelle et G4-A1 est fermee par deux appels admin Gen2 reussis,
 zero erreur, mise a jour idempotente et zero trafic Gen1; la compatibilite
 ancien onglet est remplacee par la preuve que la Gen1 ACTIVE, son endpoint,
 son IAM et son code sont preserves.
-G4-A2 est deployee: `updateUserSessionsGen2` partage
+G4-A2 est fermee: `updateUserSessionsGen2` partage
 le handler de la Gen1, utilise `analytics-runtime`, CPU Gen1, concurrence 1,
-min 0/max 1 et App Check. Le registre client continue de cibler
-`updateUserSessions`; la revision `updateusersessionsgen2-00001-zoq`, les
+min 0/max 1 et App Check. Le registre client cible maintenant
+`updateUserSessionsGen2`; la revision `updateusersessionsgen2-00001-zoq`, les
 limites, IAM et refus App Check sont conformes. L'inventaire est donc de 159
 exports locaux pour 154 Functions cloud, 139 Gen1 et 15 Gen2. La Gen1 et son
 endpoint restent preserves; le rollback client revient au build App Hosting
-READY `build-2026-08-16-001`. Le retry a cree le build READY
-`build-2026-08-17-001` et servi le registre Gen2; la session admin persistante,
-la sante commerce et les routes etaient conformes. La reconnexion Google a ete
-interrompue avant Auth, donc le rollout `rollback-20260817-001` a restaure le
-build precedent et le registre source Gen1, sans suppression de donnee.
+READY `build-2026-08-16-001`. Le rollout `g4-a2-cutover-20260817-002` sert
+`build-2026-08-17-001`. La comparaison Gen1/Gen2 a prouve HTTP 200,
+Auth/App Check valides, donnees conformes, ancien onglet admin sain et zero
+nouvel appel Gen1 apres cutover. La prochaine cible unique est
+`initLiveSessionGen2`.
+G4-A3 prepare localement `initLiveSessionGen2` avec le meme handler que la
+Gen1, App Check, `analytics-runtime`, CPU Gen1, concurrence/max 1 et aucune
+secret. Le registre reste sur `initLiveSession` jusqu'au deploy allowliste et
+a la preuve sandbox; la Gen1 reste le rollback.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.

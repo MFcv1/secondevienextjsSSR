@@ -342,7 +342,7 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
 - aucun ancien onglet pre-cutover ne subsistait dans Chrome; la preuve de
   compatibilite repose sur la Gen1 ACTIVE, version 9, endpoint/IAM/code preserves.
 
-### G4-A2 - updateUserSessions Gen2, revision active et cutover prepare
+### G4-A2 - updateUserSessions Gen2, cutover ferme
 
 - nouvel export local `updateUserSessionsGen2`; inventaire de travail 159
   exports locaux, cloud inchange a 153/139 Gen1/14 Gen2;
@@ -356,8 +356,8 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
 - revision: `updateusersessionsgen2-00001-zoq`, ACTIVE, CPU 167m, concurrence 1,
   min 0/max 1, 256 MiB, 60 s, runtime/build SA conformes;
 - App Check: appels sans jeton et avec jeton invalide refuses en 401 avant handler;
-- garde: `deploymentAllowed=true`, `clientCutoverAuthorized=false`, registre
-  source restaure `updateUserSessions -> updateUserSessions`;
+- garde: `deploymentAllowed=true`, `clientCutoverAuthorized=true`, registre
+  source `updateUserSessions -> updateUserSessionsGen2`;
 - validations: G4 11/11, G0 26/26, analytics, App Check et lint Functions verts;
 - inventaire: 159 exports locaux, 154 Functions cloud, 139 Gen1 et 15 Gen2;
 - rollback: Gen1 intacte et retour App Hosting exact au build READY
@@ -367,6 +367,23 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
   avant Auth;
 - rollback: `rollback-20260817-001` SUCCEEDED sert `build-2026-08-16-001`,
   `/` et `/admin` en 200, registre source Gen1, zero suppression de donnee.
+- validation acceleree: rollout `g4-a2-cutover-20260817-002` SUCCEEDED vers
+  `build-2026-08-17-001`; connexion admin Gen1 puis Gen2 en HTTP 200,
+  Auth/App Check valides, donnees conformes, ancien onglet admin sain et zero
+  nouvel appel Gen1 apres cutover;
+- decision: G4-A2 fermee; prochaine cible unique `initLiveSessionGen2`.
+
+### G4-A3 - initLiveSession Gen2, preparation locale
+
+- export parallele `initLiveSessionGen2` avec handler partage avec la Gen1;
+- runtime `analytics-runtime`, CPU Gen1, concurrence 1, min 0/max 1,
+  256 MiB, 60 s, App Check, sans secret;
+- manifeste et digest bornent le deploy a cette seule Function; cible cloud
+  confirmee absente avant creation;
+- tests: G4 13/13, analytics, App Check et lint Functions verts;
+- inventaire prepare: 160 exports locaux, 154 cloud, 139 Gen1 et 15 Gen2;
+- rollback futur: registre `initLiveSession` puis build
+  `build-2026-08-17-001`; aucune suppression ou modification Gen1.
 
 ## 9. Conditions d'arret immediat
 
@@ -389,8 +406,7 @@ Arreter la vague au premier:
 
 ## 10. Point de reprise
 
-La reprise courante requalifie d'abord la reconnexion Google sandbox, sans
-mutation analytics, avant de retenter le seul registre
-`updateUserSessions -> updateUserSessionsGen2`. La Gen1 et le build
-`build-2026-08-16-001` sont actuellement servis. Les six
+La reprise courante prepare uniquement `initLiveSessionGen2`. App Hosting sert
+`build-2026-08-17-001` avec `trackAdminIP` et `updateUserSessions` sur leurs
+cibles Gen2. Leurs Gen1, endpoints, IAM et code restent preserves; les six
 retraits G3 restent differes a G12-A.
