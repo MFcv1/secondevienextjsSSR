@@ -2400,6 +2400,14 @@ Avant toute action:
 - confirme l'inventaire attendu: 158 exports locaux, 153 Functions cloud,
   139 Gen1, 14 Gen2, 8 schedulers, 2 queues et 7 Eventarc.
 
+Discipline Git:
+- a la fermeture de chaque cible verte, cree un commit local borne regroupant
+  son code, son manifeste, ses tests utiles et sa documentation;
+- avant chaque commit, verifie `git status`, `git diff --check`, les tests
+  cibles et l'absence de secret ou de fichier sans rapport;
+- ne melange pas deux Functions ou deux cutovers dans le meme commit et ne
+  pousse/merge rien sans demande explicite.
+
 Objectif immediat:
 1. Ne deploie aucune nouvelle cible avant `2026-08-18T19:16:52Z`.
 2. Apres cette echeance, ferme proprement l'observation de
