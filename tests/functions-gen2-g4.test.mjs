@@ -403,7 +403,35 @@ test('le deploy syncSessionBeacon Gen2 reste public au transport mais borne par 
   assert.ok(args.includes('--trigger-http'));
   assert.ok(args.includes('--allow-unauthenticated'));
   assert.ok(args.includes('--concurrency=1'));
+  assert.ok(args.includes('--set-env-vars=SITE_URL=https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app'));
   assert.equal(args.includes('--set-secrets'), false);
+});
+
+test('la remediation syncSessionBeacon Gen2 reste une mise a jour unique et manifestee', () => {
+  const prepared = JSON.parse(fs.readFileSync(SYNC_SESSION_BEACON_MANIFEST_PATH, 'utf8'));
+  const currentCommit = prepared.metadata.baselineCommit;
+  const validation = validateDeploymentRequest({
+    args: {
+      project: 'secondevienextjsssr',
+      codebase: 'main',
+      commit: currentCommit,
+      manifest: path.relative(ROOT, SYNC_SESSION_BEACON_MANIFEST_PATH),
+      digest: path.relative(ROOT, SYNC_SESSION_BEACON_DIGEST_PATH),
+      allowlist: 'syncSessionBeaconGen2',
+      transport: 'gcloud-gen2-update'
+    },
+    manifest: prepared,
+    rootDir: ROOT,
+    manifestPath: SYNC_SESSION_BEACON_MANIFEST_PATH,
+    digestPath: SYNC_SESSION_BEACON_DIGEST_PATH,
+    currentCommit,
+    activeFirebaseProject: 'secondevienextjsssr',
+    baselineIsAncestor: true
+  });
+  const args = buildGcloudGen2DeployArgs(validation);
+  assert.deepEqual(validation.allowlist, ['syncSessionBeaconGen2']);
+  assert.ok(args.includes('--project=secondevienextjsssr'));
+  assert.ok(args.includes('--set-env-vars=SITE_URL=https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app'));
 });
 
 test('la configuration IAM G4 est bornee, sans secret ni cle utilisateur', () => {

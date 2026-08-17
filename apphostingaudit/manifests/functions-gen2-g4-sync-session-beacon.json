@@ -5,9 +5,9 @@
     "codebase": "main",
     "environment": "sandbox",
     "baselineCommit": "7bd381524a373da183406ea12082390c2bdbd52d",
-    "generatedAt": "2026-08-17T20:08:00Z",
+    "generatedAt": "2026-08-17T20:18:00Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G4-A5_ROLLED_BACK_VALID_BEACON_403"
+    "wave": "G4-A5_ROOT_CAUSE_FOUND_REMEDIATION_DEPLOY_AUTHORIZED"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -70,7 +70,10 @@
         "maxInstances": 1,
         "retry": false,
         "ingress": "ALLOW_ALL",
-        "cors": false
+        "cors": false,
+        "environmentVariables": {
+          "SITE_URL": "https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app"
+        }
       },
       "identities": {
         "runtimeServiceAccount": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com",
@@ -183,7 +186,15 @@
       "result": "FAILED_ROLLBACK_REQUIRED"
     },
     "deploymentAllowed": false,
-    "deploymentAuthorization": "No further deployment or client cutover until the real-browser Gen2 403 is explained and a targeted reversible correction passes the same gate"
+    "remediationDeploymentAllowed": true,
+    "rootCause": {
+      "classification": "GEN2_PROJECT_ENV_ABSENT_SITE_URL_FELL_BACK_TO_LOCALHOST",
+      "evidence": "A POST with the exact sandbox Origin and a missing session body returned 403 Origin denied; deployed Cloud Run user env contains no SITE_URL, GCLOUD_PROJECT, GOOGLE_CLOUD_PROJECT or FIREBASE_CONFIG",
+      "iamExcluded": true,
+      "tokenExcluded": true,
+      "correction": "Set exact SITE_URL only on syncSessionBeaconGen2 through the targeted deploy wrapper"
+    },
+    "deploymentAuthorization": "Redeploy only syncSessionBeaconGen2 with SITE_URL explicit; keep App Hosting on build-2026-08-17-003 until exact-origin 400 and invalid-origin 403 probes pass"
   },
   "rollback": {
     "functionAction": "none; preserve syncSessionBeacon and syncSessionBeaconGen2",
@@ -196,5 +207,5 @@
     "iamSecretsAction": "none",
     "g12Action": "none before G12-A approval and completed observation"
   },
-  "verdict": "FUNCTION_ACTIVE_CLIENT_GEN1_ROLLBACK_COMPLETE_G4_A5_BLOCKED_VALID_BEACON_403"
+  "verdict": "FUNCTION_ACTIVE_CLIENT_GEN1_ROOT_CAUSE_PROVEN_TARGETED_REMEDIATION_AUTHORIZED"
 }

@@ -95,7 +95,10 @@ export const GCLOUD_GEN2_TARGETS = Object.freeze({
     concurrency: '1',
     minInstances: '0',
     maxInstances: '1',
-    ingressSettings: 'all'
+    ingressSettings: 'all',
+    environmentVariables: [
+      'SITE_URL=https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app'
+    ]
   }),
   syncSessionGen2: Object.freeze({
     create: true,
@@ -751,7 +754,7 @@ export function validateDeploymentRequest({
   const transport = args.transport || 'firebase';
   if (project !== EXPECTED_PROJECT) fail(`Projet interdit: ${project}`);
   if (codebase !== EXPECTED_CODEBASE) fail(`Codebase interdite: ${codebase}`);
-  if (!['firebase', 'gcloud-gen1', 'gcloud-gen2', 'gcloud-gen2-create', 'gcloud-gen2-rollback'].includes(transport)) fail(`Transport interdit: ${transport}`);
+  if (!['firebase', 'gcloud-gen1', 'gcloud-gen2', 'gcloud-gen2-create', 'gcloud-gen2-update', 'gcloud-gen2-rollback'].includes(transport)) fail(`Transport interdit: ${transport}`);
   if (activeFirebaseProject !== EXPECTED_PROJECT) fail(`Projet Firebase effectif different: ${activeFirebaseProject || 'absent'}`);
   if (readFirebaseProject(rootDir) !== EXPECTED_PROJECT) fail('Alias Firebase local different du sandbox attendu');
   if (manifest.metadata?.project !== EXPECTED_PROJECT || manifest.metadata?.codebase !== EXPECTED_CODEBASE) fail('Manifeste projet/codebase invalide');
@@ -792,6 +795,14 @@ export function validateDeploymentRequest({
     if (manifest.gates?.deploymentAllowed !== true) fail('Creation gcloud Gen2 bloquee par la gate du manifeste');
     if (entries[0].cloud?.present !== false || entries[0].decision?.classification !== 'MIGRATION_PARALLEL') {
       fail('Creation gcloud Gen2 exige une cible parallele absente du cloud');
+    }
+  }
+  if (transport === 'gcloud-gen2-update') {
+    const target = allowlist.length === 1 ? GCLOUD_GEN2_TARGETS[allowlist[0]] : null;
+    if (!target?.create) fail('Mise a jour gcloud Gen2 limitee a une cible parallele approuvee');
+    if (manifest.gates?.remediationDeploymentAllowed !== true) fail('Remediation Gen2 bloquee par la gate du manifeste');
+    if (entries[0].cloud?.present !== true || entries[0].decision?.classification !== 'MIGRATION_PARALLEL') {
+      fail('Remediation Gen2 exige une cible parallele active dans le cloud');
     }
   }
   if (transport === 'gcloud-gen2-rollback') {
@@ -848,7 +859,7 @@ export function buildGcloudGen1DeployArgs(validation) {
 export function buildGcloudGen2DeployArgs(validation) {
   const name = validation.allowlist[0];
   const target = GCLOUD_GEN2_TARGETS[name];
-  if (!['gcloud-gen2', 'gcloud-gen2-create'].includes(validation.transport) || validation.allowlist.length !== 1 || !target) {
+  if (!['gcloud-gen2', 'gcloud-gen2-create', 'gcloud-gen2-update'].includes(validation.transport) || validation.allowlist.length !== 1 || !target) {
     fail('Transport gcloud Gen2 non autorise');
   }
   const httpTrigger = ['http-callable', 'http-public', 'http-scheduler', 'http-task'].includes(target.triggerType);
@@ -885,6 +896,7 @@ export function buildGcloudGen2DeployArgs(validation) {
     '--quiet'
   ];
   if (target.secrets?.length) args.push(`--set-secrets=${target.secrets.join(',')}`);
+  if (target.environmentVariables?.length) args.push(`--set-env-vars=${target.environmentVariables.join(',')}`);
   return args;
 }
 
@@ -968,6 +980,10 @@ function assertGcloudGen2Preconditions(before, validation) {
   ) fail('Etat cloud Gen2 inattendu avant deploiement');
   if (['http-scheduler', 'http-task'].includes(target.triggerType)) {
     if (before.eventTrigger || before.url !== target.functionUrl) fail('Transport HTTP Scheduler Gen2 inattendu avant deploiement');
+    return;
+  }
+  if (['http-callable', 'http-public'].includes(target.triggerType)) {
+    if (before.eventTrigger || !before.url) fail('Transport HTTP Gen2 inattendu avant deploiement');
     return;
   }
   const filters = new Map((before.eventTrigger?.eventFilters || []).map((entry) =>
@@ -1071,7 +1087,7 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
     if (result.status !== 0) process.exitCode = result.status || 1;
     return;
   }
-  if (validation.transport === 'gcloud-gen2') {
+  if (['gcloud-gen2', 'gcloud-gen2-update'].includes(validation.transport)) {
     const name = validation.allowlist[0];
     const target = GCLOUD_GEN2_TARGETS[name];
     const before = JSON.parse(run('gcloud', [
@@ -1105,7 +1121,7 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
         target.expectedSchedulerServiceAccount || target.schedulerServiceAccount
       );
     }
-    process.stdout.write(`Projet: ${validation.project}\nCibles: ${validation.selectors.join(',')}\nCommit: ${validation.commit}\nTransport: gcloud-gen2\n`);
+    process.stdout.write(`Projet: ${validation.project}\nCibles: ${validation.selectors.join(',')}\nCommit: ${validation.commit}\nTransport: ${validation.transport}\n`);
     const result = spawnSync('gcloud', buildGcloudGen2DeployArgs(validation), {
       cwd: rootDir,
       env: process.env,
