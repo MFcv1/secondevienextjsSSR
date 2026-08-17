@@ -77,7 +77,7 @@
     "test:analytics": "node scripts/verify-analytics-reliability.mjs",
     "test:retention": "node --test tests/data-retention-contract.test.cjs",
     "test:deployment-cache": "node --test tests/deployment-cache-contract.test.mjs",
-    "test:functions-g0": "node --test tests/functions-gen2-g0.test.mjs",
+    "test:functions-g0": "node --test tests/functions-gen2-g0.test.mjs tests/functions-gen2-monitoring.test.mjs",
     "test:functions-g2a": "node --test tests/functions-gen2-g2a.test.cjs",
     "test:functions-g3": "node --test tests/functions-gen2-g3.test.mjs",
     "test:functions-g4": "node --test tests/functions-gen2-g4.test.mjs",

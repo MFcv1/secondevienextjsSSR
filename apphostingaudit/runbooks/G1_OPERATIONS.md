@@ -1,6 +1,6 @@
 # Runbook G1 - fiabilite du sandbox Functions
 
-Derniere mise a jour: 2026-08-15
+Derniere mise a jour: 2026-08-17
 
 Statut: `G1_TERMINEE_G2_A_LOCAL_ONLY`
 
@@ -38,6 +38,22 @@ Pub/Sub a recu et acquitte un message d'ouverture et un message de resolution.
 Le service agent Monitoring ne porte `pubsub.publisher` que sur le topic G1;
 l'abonnement conserve les messages un jour et n'expire pas automatiquement.
 
+Correctif anti-boucle du 2026-08-17: les deux filtres initiaux cherchaient un
+mot dans tout le `LogEntry`. Les journaux internes
+`monitoring.googleapis.com/ViolationOpenEventv1` et
+`ViolationAutoResolveEventv1` reprenaient le nom de la metrique et etaient donc
+recomptes, ce qui entretenait artificiellement des cycles ouverture/resolution.
+Les metriques ne lisent desormais que `jsonPayload.message` ou `textPayload` et
+excluent explicitement ces deux logs Monitoring. Les policies worker/sante sont
+des `LogMatch` directs, respectivement `ERROR` et `WARNING`, limites a une
+notification par heure, ouverture seulement et auto-close apres six heures.
+Les deux policies erreurs runtime sont `ERROR` et les quatre autres policies
+operationnelles sont `WARNING`; aucun nouvel e-mail ne porte `No severity`.
+Le canal primaire reste la boite operationnelle sandbox `loa.gto`; le canal
+Pub/Sub reste obligatoire et configure par defaut. `G1_ALERT_PRIMARY_EMAIL`
+permet de decoupler cette destination de `SUPER_ADMIN_EMAIL` sans changer le
+comportement courant.
+
 Commande idempotente:
 
 ```bash
@@ -45,7 +61,8 @@ npm run functions:monitoring:g1
 npm run functions:monitoring:g1 -- --apply
 ```
 
-Test d'ouverture autorise: ecrire un seul log synthetique avec
+Test d'ouverture autorise, uniquement dans une fenetre de drill explicite:
+ecrire un seul log synthetique avec
 `message=commerce_worker_incomplete`, `worker=g1_alert_test`, `test=true`, sans
 identifiant metier. Verifier ensuite:
 
@@ -54,8 +71,16 @@ identifiant metier. Verifier ensuite:
 3. incident Monitoring ouvert;
 4. notification recue sur le canal primaire;
 5. acquittement documente;
-6. fermeture apres disparition du signal;
-7. repetition sur le canal secondaire lorsqu'il existe.
+6. aucune autre notification pendant une heure pour la meme policy;
+7. auto-close apres six heures sans nouveau signal;
+8. repetition sur le canal secondaire Pub/Sub.
+
+Ne pas utiliser un journal `Violation*` comme preuve applicative. La requete de
+diagnostic doit exclure ces logs et retrouver un payload applicatif structure.
+Si une regression `LogMatch` est constatee, le rollback operationnel consiste a
+desactiver uniquement les deux policies commerce par leur identifiant conserve,
+puis a diagnostiquer avec les metriques filtrees et le dashboard. Ne jamais
+restaurer les anciens filtres globaux, puisqu'ils recreeraient la boucle.
 
 En incident reel: geler le deploiement et la mutation touchee, relever policy,
 Function/revision, region, fenetre et compteurs sans PII, puis suivre le

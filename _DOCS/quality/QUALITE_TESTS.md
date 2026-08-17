@@ -76,6 +76,12 @@ digest incoherents, allowlist vide ou superieure a dix, cible inconnue, cinq
 Instagram sous hold et lot multiple finance/webhook/scheduler. Aucun test de
 cette suite n'appelle Firebase, Stripe ou un deploy.
 
+Depuis le 2026-08-17, la meme commande inclut le contrat Monitoring G1: les
+deux signaux commerce ne peuvent pas compter les logs internes `Violation*`,
+les alertes `LogMatch` sont limitees a une notification par heure avec
+auto-close six heures, les huit policies portent une severite et Pub/Sub reste
+le canal secondaire par defaut. Ce test reste local et sans ecriture cloud.
+
 Pour G1, `npm run functions:audit:g1` et
 `npm run functions:data-plan:g1` sont des lectures sandbox fail-closed sur le
 projet exact. Le second produit le plan des `inventoryVersion` et les

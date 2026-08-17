@@ -1,6 +1,6 @@
 # Cartographie du projet Seconde Vie Next
 
-Derniere verification: 2026-08-12
+Derniere verification: 2026-08-17
 Statut: `CARTE_CANONIQUE_ACTIVE`
 
 ## 1. Role et maintenance
@@ -904,6 +904,11 @@ test une annulation fournisseur avant liberation unique, stock fixture
 10 -> 9 -> 10, puis un second run sans effet; aucun refund, replay, restock ou
 delete. Le manifeste est
 `apphostingaudit/manifests/functions-gen2-g1-worker-rollout.json`.
+Le script `scripts/configure-functions-gen2-g1-monitoring.mjs` maintient les
+cinq metriques, huit policies et deux canaux G1. Les deux alertes commerce
+lisent uniquement les payloads applicatifs et excluent les logs `Violation*`;
+elles sont limitees a une notification par heure afin qu'une notification
+Monitoring ne puisse plus recreer son propre signal.
 Les plans read-only P1/P2 sont dans
 `apphostingaudit/manifests/functions-gen2-g1-data-plan.json`. G2-A local est
 fermee pour les treize Gen2; son runtime/IAM/retry/data/rollback consolide est
@@ -1001,6 +1006,9 @@ jour `sys_metadata/admin_ips` en transaction sur le runtime dedie
 rollback pendant la quiet-window jusqu'au 2026-08-18T19:16:52Z. Les trois
 callables de suppression analytics restent sous hold G11 et aucun autre target
 cloud n'est autorise avant fermeture de l'observation.
+Le checkpoint executable et le prompt de reprise courant sont les sections
+2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
+prompt G0 est obsolete et ne doit plus etre utilise.
 
 | Domaine | Exports |
 | --- | --- |

@@ -1,8 +1,8 @@
 # Audit et plan d'execution de la migration Cloud Functions Gen2
 
-Derniere contre-verification: 2026-08-16
+Derniere contre-verification: 2026-08-17
 
-Statut: `PLAN_TEMPORAIRE_REVALIDE - G2_B1_STATS_TERMINE - G2_B2_CATALOGUE_TERMINE`
+Statut: `PLAN_TEMPORAIRE_ACTIF - G0_G3_FERMES - G4_A1_OBSERVATION_OUVERTE`
 
 Proprietaire: mainteneur Seconde Vie et agent charge de la migration
 
@@ -57,7 +57,48 @@ seule modification effectuee pendant cette passe est documentaire.
 
 ## 2. Verdict executif
 
-### 2.1 Cible recommandee
+### 2.1 Checkpoint de reprise au 2026-08-17
+
+Ne pas reprendre G0, G1, G2 ou G3: ces phases sont fermees et leurs preuves
+sont conservees dans les manifestes `functions-gen2-*`.
+
+| Element | Etat de reprise |
+| --- | --- |
+| branche | `codex/functions-gen2-migration` |
+| baseline avant le checkpoint Monitoring | `25daf810309dc3329cfeb0fb19be0f1790fe608a` |
+| worktree attendu a la reprise | propre; tout changement additionnel doit etre preserve et qualifie |
+| phases fermees | G0, G1, G2-A, G2-B 13/13 et G3 |
+| phase active | G4-A1 analytics |
+| inventaire courant | 158 exports locaux, 153 cloud, 139 Gen1, 14 Gen2 |
+| cible parallele active | `trackAdminIPGen2`, revision `trackadminipgen2-00001-goj` |
+| cutover client | App Hosting `build-2026-08-16-001`, registre `trackAdminIP -> trackAdminIPGen2` |
+| observation | ouverte jusqu'au `2026-08-18T19:16:52Z`; ancien onglet encore `PENDING` |
+| retrait Gen1 | aucun avant G12-A |
+| prochain lot envisageable | `updateUserSessionsGen2`, seulement apres fermeture conforme de G4-A1 |
+
+Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
+metriques, huit policies severisees et deux canaux conformes; la boucle
+`Violation*` ne se reproduit plus. Il n'a modifie aucune Function, donnee,
+identite IAM, App Hosting ou configuration Stripe.
+
+Ordre de reprise obligatoire:
+
+1. preserver le diff existant et verifier le projet explicite
+   `secondevienextjsssr`, l'operateur et l'inventaire 158/153;
+2. ne deployer aucune nouvelle cible avant le terme de la quiet-window G4-A1;
+3. a son terme, verifier revision/IAM/App Check, logs, donnees avant/apres,
+   absence de trafic Gen1 et compatibilite d'un ancien onglet;
+4. si ces preuves sont vertes, fermer G4-A1 sans supprimer `trackAdminIP`;
+5. preparer puis migrer `updateUserSessions` sous le nouveau nom
+   `updateUserSessionsGen2`, avec parite Gen1, manifeste, rollback client et
+   une seule cible cloud;
+6. continuer ensuite les cibles G4 non destructives dans l'ordre du plan, avec
+   uniquement les tests proportionnes au flux touche; ne pas rejouer les
+   campagnes G0-G3 ni lancer des tests sans decision qu'ils prouvent;
+7. laisser les trois suppressions analytics sous
+   `HOLD_G11_DESTRUCTIVE_PRECONDITIONS`.
+
+### 2.2 Cible recommandee
 
 La cible correcte est:
 
@@ -67,19 +108,18 @@ La migration est recommandee pour la tranquillite a cinq ans, mais elle ne
 doit pas etre une conversion massive. Firebase permet la coexistence des deux
 generations et recommande une migration progressive, Function par Function.
 
-Etat mesure le 2026-08-15:
+Photographie G0 et progression actuelle:
 
-| Mesure | Valeur |
-| --- | ---: |
-| Functions cloud | 152 |
-| Functions cloud actives | 152 |
-| Gen1 cloud | 139 |
-| Gen2 cloud | 13 |
-| exports locaux | 157 |
-| exports locaux non deployes | 5 |
-| region `europe-west1` | 146 |
-| region `us-central1` | 6 |
-| runtime Gen1 | Node.js 22 |
+| Mesure | G0 2026-08-15 | G4-A1 2026-08-17 |
+| --- | ---: | ---: |
+| Functions cloud actives | 152 | 153 |
+| Gen1 cloud | 139 | 139 |
+| Gen2 cloud | 13 | 14 |
+| exports locaux | 157 | 158 |
+| exports locaux non deployes | 5 | 5 |
+| region `europe-west1` | 146 | 147 |
+| region `us-central1` | 6 | 6 |
+| runtime Gen1 | Node.js 22 | Node.js 22 |
 
 Repartition des declencheurs:
 
@@ -102,7 +142,7 @@ le maximum source deviendrait 154 Gen2 et 3 Gen1, soit 157 Functions avant
 retraits. Ce second nombre n'est pas l'etat cloud courant et ne vaut pas
 autorisation de deploiement.
 
-### 2.2 Verdict de la contre-revue
+### 2.3 Verdict de la contre-revue
 
 L'inventaire fonctionnel est suffisamment detaille pour commencer G0, mais la
 version initiale du plan n'etait pas encore executable telle quelle. La
@@ -1488,6 +1528,21 @@ Verdict G1 final: `G1_TERMINEE_G2_A_LOCAL_ONLY`. Les quatre P0 sont fermes; le
 budget Billing reste `NON_VERIFIE` et les plans P1/P2 restent sans ecriture,
 mais ne bloquent pas G2-A local. G2-B conserve son autorisation cloud distincte.
 
+Correctif d'exploitation du 2026-08-17, sans changement de phase: le spam
+Monitoring recu sur le canal sandbox `loa.gto` ne correspondait pas a une serie
+de pannes commerce. Les deux metriques logs commerce acceptaient les entrees
+internes `ViolationOpenEventv1`/`ViolationAutoResolveEventv1`, dont le contenu
+reprenait le nom de la metrique et alimentait une boucle de 2 231 ouvertures et
+autant de resolutions entre la creation des metriques et le correctif. Les
+filtres cloud et source ne lisent desormais que les payloads applicatifs
+structures et excluent ces logs. Les deux policies conservent leurs identifiants et leurs canaux
+e-mail/PubSub, deviennent des `LogMatch` directs `ERROR`/`WARNING`, notifient au
+plus une fois par heure et s'auto-ferment apres six heures. Le plan idempotent
+post-apply retrouve cinq metriques et huit policies conformes, toutes avec une
+severite `ERROR` ou `WARNING` au lieu de `No severity`. Aucune Function,
+revision, donnee, IAM, secret, Scheduler, queue, App Hosting ou configuration
+Stripe n'a ete modifiee; G4 reste dans sa quiet-window existante.
+
 ### G2 - Socle Gen2 et stabilisation des treize cibles existantes
 
 **G2-A local, sans deploiement:**
@@ -2319,75 +2374,77 @@ La migration est terminee uniquement si:
   utilise;
 - Node/runtime, docs canoniques et manifeste final ont un proprietaire/date.
 
-## 15. Prompt final pour lancer l'execution
+## 15. Prompt de reprise courant
 
-Copier ce prompt dans une nouvelle tache Codex. Il autorise exclusivement G0;
-les ecritures cloud des phases suivantes demanderont leur autorisation propre.
+Le prompt ci-dessous remplace l'ancien prompt G0. Il reprend au checkpoint
+G4-A1 et ne doit jamais refaire les phases fermees.
 
 ```text
-Tu travailles dans le depot Seconde Vie Next.
+Tu travailles dans le depot Seconde Vie Next sur la migration sandbox Firebase
+Functions Gen1 -> Gen2 suivie dans
+`apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`.
 
-Objectif: executer progressivement le plan sandbox Firebase Functions Gen1 ->
-Gen2 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`, sans confondre
-migration technique, fiabilite pre-live et creation d'une production.
-
-Commence uniquement par G0, en lecture seule cote cloud.
+Reprends au checkpoint G4-A1 du 2026-08-17. G0, G1, G2 et G3 sont fermes: ne
+les rejoue pas et ne regenere leurs preuves que si un drift concret l'exige.
 
 Avant toute action:
-1. lis completement `AGENTS.md`, `map.md`, le README et les deux audits du
-   dossier `apphostingaudit`, puis les chapitres canoniques cites;
-2. inspecte le code executable et regenere les inventaires local/cloud;
-3. preserve tous les changements utilisateur; identifie branche, commit,
-   Node, pnpm, Firebase CLI, operateur et cible; isole le chantier sur
-   `codex/functions-gen2-migration` sans ecraser le worktree existant;
-4. passe `--project secondevienextjsssr` aux controles cloud et echoue si le
-   projet effectif differe; la configuration gcloud globale peut viser
-   `vibefx-v2`;
-5. ne lance aucun deploiement, paiement, suppression, build ou ecriture pendant
-   G0.
+- lis completement `AGENTS.md`, `map.md`, le README et le checkpoint 2.1 ainsi
+  que G4 du plan; lis ensuite seulement les chapitres canoniques utiles;
+- preserve le worktree existant sur `codex/functions-gen2-migration`; le
+  correctif Monitoring/documentation du checkpoint est deja integre et tout
+  changement additionnel doit etre qualifie; aucun reset/clean;
+- identifie HEAD, Node, pnpm, Firebase CLI et operateur;
+- passe `--project secondevienextjsssr` a chaque commande cloud et echoue si le
+  projet effectif differe, meme si la configuration gcloud globale vaut
+  `vibefx-v2`;
+- confirme l'inventaire attendu: 158 exports locaux, 153 Functions cloud,
+  139 Gen1, 14 Gen2, 8 schedulers, 2 queues et 7 Eventarc.
 
-Livrables G0 obligatoires:
-- manifeste machine des 157 exports, rapproche aux 152 Functions cloud, avec
-  trigger/filtre, region, generation, runtime/build/invoker SA, IAM, secrets
-  noms/versions, CPU/memoire/timeout/concurrence/min-max/retry, appelants,
-  lectures/ecritures, idempotence, owner/overlap, cible, vague et rollback;
-- reconciliation source/cloud des 13 Gen2, queues, schedulers et Eventarc;
-- classification de chaque nom et resolution documentee des drifts;
-- decision `HOLD_META_RECONCILIATION` pour les cinq Instagram locaux;
-- remplacement du script global Functions par un wrapper fail-closed exigeant
-  projet, codebase, commit, manifeste et allowlist non vide de 10 noms maximum;
-  finance, webhook et scheduler restent a une cible;
-- tests du wrapper, de l'inventaire et de l'interdiction de nouveau Gen1 Auth
-  ou `functions.config()`;
-- proposition du premier lot local G2, sans le deployer.
+Objectif immediat:
+1. Ne deploie aucune nouvelle cible avant `2026-08-18T19:16:52Z`.
+2. Apres cette echeance, ferme proprement l'observation de
+   `trackAdminIPGen2`: revision/IAM/App Check conformes, ancien onglet, appel
+   admin sandbox reussi, donnees avant/apres, zero regression et absence de
+   trafic nouveau sur `trackAdminIP` Gen1.
+3. Au premier ecart, applique le rollback exact vers App Hosting
+   `build-2026-08-13-002`; ne supprime aucune Function ni donnee.
+4. Si G4-A1 est verte, marque-la fermee dans le manifeste, le plan, `map.md` et
+   le chapitre canonique, puis prepare `updateUserSessionsGen2` comme prochaine
+   cible unique.
+5. Pour `updateUserSessionsGen2`: nouveau nom, handler partage/parite Gen1,
+   `cpu: gcf_gen1`, concurrence 1, min 0, limites/IAM/App Check explicites,
+   manifeste machine, tests cibles, deploy allowliste d'une seule Function,
+   bascule client reversible, ancien onglet et quiet-window. Conserve la Gen1,
+   son endpoint, son code, son IAM et son rollback jusqu'a G12-A.
+6. Enchaine ensuite les seules cibles G4 non destructives dans l'ordre du plan,
+   une cible et un cutover a la fois. Utilise uniquement les tests qui prouvent
+   une gate du flux touche; ne transforme pas le chantier en campagne de tests.
+
+Autorisation:
+- les lectures cloud sandbox et les ecritures/deploiements strictement
+  necessaires aux cibles G4 non destructives sont autorises apres leurs
+  preconditions et quiet-windows;
+- tu peux corriger une faille technique directement liee au lot si le correctif
+  est borne, teste, documente et reversible;
+- ne t'arrete pas entre deux sous-etapes vertes d'une meme cible; arrete-toi au
+  premier ecart de projet, inventaire, Auth, App Check, IAM, donnees, sante,
+  idempotence, ancien onglet ou rollback.
 
 Interdictions permanentes:
-- jamais `firebase deploy --only functions` sans allowlist;
-- aucune production Firebase/App Hosting, aucun Stripe live, aucun secret live;
-- ne jamais supprimer/migrer `grantAdminOnAuth`,
-  `onRegisteredUserCreated`, `onRegisteredUserDeleted`;
-- ne jamais deployer les cinq Instagram tant que le hold n'est pas leve;
+- aucune production, aucun Stripe live, secret live, refund, replay financier,
+  restock ou suppression de donnee;
+- jamais de deploy Functions global ou sans allowlist;
+- ne jamais migrer/supprimer `grantAdminOnAuth`, `onRegisteredUserCreated` ou
+  `onRegisteredUserDeleted`;
+- ne jamais deployer les cinq Instagram sous `HOLD_META_RECONCILIATION`;
 - ne jamais lancer `e2e:hosted-stripe` ni `e2e:refund-stripe`;
-- aucune suppression de donnee sans backup READY, restore drill, dry-run,
-  manifeste, preconditions, rollback et approbation destructive;
-- ne jamais ouvrir les rules, reutiliser Editor/global appspot par defaut,
-  exposer un secret ou laisser CPU/concurrence/retry implicites;
-- ne jamais utiliser un `firebase deploy --dry-run` comme preuve read-only.
+- laisser `clearAllAffiliateClicks`, `clearAllSessions` et `deleteSession` sous
+  `HOLD_G11_DESTRUCTIVE_PRECONDITIONS`;
+- aucun retrait de Gen1 avant G12-A et aucun nettoyage IAM/secrets/code avant
+  G12-B.
 
-Ordre ulterieur obligatoire apres autorisation: G1, G2, G3, puis G4 a G13, une
-vague a la fois. Toute nouvelle cible remplaçant Gen1 commence en parite
-`cpu: gcf_gen1`, `concurrency: 1`, `minInstances: 0`; creer un nouveau nom
-suffixe Gen2, deployer au plus 10 cibles et une seule cible finance/webhook/
-scheduler, tester, basculer reversiblement, observer un ancien onglet et une
-quiet-window, puis retirer la cible cloud Gen1 seulement en G12-A. Conserve
-code, secrets, IAM, endpoint et alertes pendant la fenetre de rollback; leur
-nettoyage distinct n'arrive qu'en G12-B apres approbation.
-
-Arrete-toi au premier ecart de projet, inventaire, finance, stock, Auth,
-App Check, IAM, signature, donnees, sante, idempotence ou rollback.
-
-A la fin de G0, rends exactement: verdict de reconciliation, manifestes crees,
-decisions par Function, drifts documentaires, fichiers modifies, tests lances
-et non lances, deploiement oui/non, risques bloquants et premier lot propose
-avec rollback exact. Ne passe pas automatiquement a G1.
+Rends a chaque cible: changement de code concret, manifeste/decision, revision
+cloud, tests utiles seulement, preuve de cutover/observation, inventaire,
+rollback exact et prochaine cible. Mesure l'avancement par Functions réellement
+preparees/deployees/basculees, pas par le nombre de tests lances.
 ```

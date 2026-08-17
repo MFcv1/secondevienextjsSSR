@@ -160,7 +160,9 @@ Plan temporaire de reprise explicitement demande:
   `build-2026-08-16-001`; la Gen1 reste intacte et la fenetre d'observation de
   48 h est ouverte jusqu'au 2026-08-18T19:16:52Z. Trois suppressions restent
   sous hold G11 et aucun autre target cloud n'est autorise avant fermeture de
-  cette fenetre; trois
+  cette fenetre. Le correctif Monitoring du 2026-08-17 a ferme la boucle
+  recursive `Violation*`, conserve `loa.gto`/PubSub et severise les huit
+  policies; trois
   triggers Auth Gen1 conserves par limitation Firebase et cinq exports
   Instagram sous `HOLD_META_RECONCILIATION`; paiements reels bloques avant DR,
   alertes, sante financiere et preuve des workers; revue au plus tard le

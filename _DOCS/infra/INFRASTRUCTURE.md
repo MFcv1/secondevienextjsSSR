@@ -1,6 +1,6 @@
 # Infrastructure Firebase, Next.js et environnements
 
-Derniere mise a jour: 2026-08-12
+Derniere mise a jour: 2026-08-17
 Statut: `PREPROD_READY - PRODUCTION_DEFERRED`
 
 ## 1. Runtime et gestionnaire de paquets
@@ -134,15 +134,26 @@ cibles Instagram direct absentes du cloud et placees sous
 un deploiement global. Le detail machine est dans
 `apphostingaudit/manifests/functions-g0.json`.
 
+Etat G4-A1 du 2026-08-17: 158 exports locaux et 153 Functions cloud actives,
+soit toujours 139 Gen1 et desormais 14 Gen2. L'unique ajout est
+`trackAdminIPGen2` en `europe-west1`; la Gen1 `trackAdminIP` reste preservee
+pour rollback jusqu'a G12-A.
+
 Depuis G1 le 2026-08-15, Firestore `(default)` `eur3` porte delete protection,
 PITR sept jours, un backup quotidien conserve quatorze jours et un backup
 hebdomadaire dimanche UTC conserve quatorze semaines. Le premier backup est
 `READY` et le restore vers `restore-drill-20260815-a` est reconcilie sans drift
-de donnees/index; aucune nouvelle cible Gen2 ne peut etre deployee avant les
-preuves sante/workers restantes. Monitoring
+de donnees/index. Les preuves sante/workers G1 et la stabilisation G2-B des
+treize Gen2 initiales sont fermees. G4-A1 reste la gate active: aucune nouvelle
+cible cloud avant la fin de l'observation `trackAdminIPGen2` au
+`2026-08-18T19:16:52Z`. Monitoring
 porte cinq metriques logs, huit policies, un dashboard, un canal e-mail primaire
-et un canal Pub/Sub interne secondaire, tous deux testes en ouverture/
-resolution. L'IAM publisher du service agent est borne au topic G1.
+et un canal Pub/Sub interne secondaire. Le correctif du 2026-08-17 exclut les
+journaux internes d'incident des deux metriques commerce et utilise des alertes
+`LogMatch` directes avec severite, limitation a une notification par heure et
+auto-close six heures; il supprime une boucle ouverture/resolution sans changer
+le destinataire `loa.gto`. Les huit policies portent maintenant une severite
+`ERROR` ou `WARNING`. L'IAM publisher du service agent est borne au topic G1.
 
 Le drill mesure un RPO de 1 374 secondes et un RTO de restore de 1 064 secondes.
 Les deux TTL ne sont pas restaures par le backup et restent volontairement

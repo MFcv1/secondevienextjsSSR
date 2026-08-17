@@ -9,18 +9,35 @@ const PROJECT_ID = 'secondevienextjsssr';
 const ENVIRONMENT = 'sandbox';
 const DASHBOARD_NAME = 'Seconde Vie Sandbox - Functions Gen2 G1';
 const SECONDARY_PUBSUB_TOPIC = `projects/${PROJECT_ID}/topics/monitoring-g1-alerts`;
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const SCRIPT_PATH = fileURLToPath(import.meta.url);
+const ROOT = path.resolve(path.dirname(SCRIPT_PATH), '..');
+const POLICY_DOCUMENTATION = 'Runbook: apphostingaudit/runbooks/G1_OPERATIONS.md. Aucun secret ni identifiant metier dans les labels.';
+const LOG_ALERT_RATE_LIMIT = '3600s';
+const LOG_ALERT_AUTO_CLOSE = '21600s';
+const DEFAULT_SECONDARY_SOURCE = 'pubsub';
+const MONITORING_VIOLATION_LOGS = Object.freeze([
+  `projects/${PROJECT_ID}/logs/monitoring.googleapis.com%2FViolationOpenEventv1`,
+  `projects/${PROJECT_ID}/logs/monitoring.googleapis.com%2FViolationAutoResolveEventv1`
+]);
+
+function applicationLogFilter(message) {
+  return [
+    'resource.type="cloud_function"',
+    ...MONITORING_VIOLATION_LOGS.map((logName) => `logName!="${logName}"`),
+    `(jsonPayload.message="${message}" OR textPayload:"${message}")`
+  ].join(' ');
+}
 
 const LOG_METRICS = Object.freeze([
   {
     name: 'secondevie_commerce_worker_incomplete',
     description: 'Runs commerce incomplets, sans identifiant metier',
-    filter: 'resource.type="cloud_function" "commerce_worker_incomplete"'
+    filter: applicationLogFilter('commerce_worker_incomplete')
   },
   {
     name: 'secondevie_commerce_health_unhealthy',
     description: 'Sante commerce warning ou stop',
-    filter: 'resource.type="cloud_function" "commerce_health_unhealthy"'
+    filter: applicationLogFilter('commerce_health_unhealthy')
   },
   {
     name: 'secondevie_reservation_expiry_completed',
@@ -46,7 +63,8 @@ const POLICIES = Object.freeze([
     filter: 'metric.type="cloudfunctions.googleapis.com/function/execution_count" AND resource.type="cloud_function" AND metric.label."status"!="ok"',
     duration: '60s',
     predicate: '> 0',
-    aggregation: { alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_RATE' }
+    aggregation: { alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_RATE' },
+    severity: 'ERROR'
   },
   {
     displayName: 'G1 Sandbox - Cloud Run Gen2 5xx',
@@ -54,7 +72,8 @@ const POLICIES = Object.freeze([
     filter: 'metric.type="run.googleapis.com/request_count" AND resource.type="cloud_run_revision" AND metric.label."response_code_class"="5xx"',
     duration: '60s',
     predicate: '> 0',
-    aggregation: { alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_RATE' }
+    aggregation: { alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_RATE' },
+    severity: 'ERROR'
   },
   {
     displayName: 'G1 Sandbox - Cloud Tasks backlog',
@@ -62,23 +81,20 @@ const POLICIES = Object.freeze([
     filter: 'metric.type="cloudtasks.googleapis.com/queue/depth" AND resource.type="cloud_tasks_queue"',
     duration: '300s',
     predicate: '> 0',
-    aggregation: { alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_MAX' }
+    aggregation: { alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_MAX' },
+    severity: 'WARNING'
   },
   {
     displayName: 'G1 Sandbox - Commerce worker incomplete',
     conditionName: 'Run commerce incomplet',
-    filter: 'metric.type="logging.googleapis.com/user/secondevie_commerce_worker_incomplete" AND resource.type="cloud_function"',
-    duration: '0s',
-    predicate: '> 0',
-    aggregation: { alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_RATE' }
+    logMatchFilter: applicationLogFilter('commerce_worker_incomplete'),
+    severity: 'ERROR'
   },
   {
     displayName: 'G1 Sandbox - Commerce health unhealthy',
     conditionName: 'Sante commerce warning ou stop',
-    filter: 'metric.type="logging.googleapis.com/user/secondevie_commerce_health_unhealthy" AND resource.type="cloud_function"',
-    duration: '0s',
-    predicate: '> 0',
-    aggregation: { alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_RATE' }
+    logMatchFilter: applicationLogFilter('commerce_health_unhealthy'),
+    severity: 'WARNING'
   },
   {
     displayName: 'G1 Sandbox - Reservation expiry heartbeat absent',
@@ -86,7 +102,8 @@ const POLICIES = Object.freeze([
     filter: 'metric.type="logging.googleapis.com/user/secondevie_reservation_expiry_completed" AND resource.type="cloud_function"',
     duration: '360s',
     predicate: 'absent',
-    aggregation: { alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_RATE' }
+    aggregation: { alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_RATE' },
+    severity: 'WARNING'
   },
   {
     displayName: 'G1 Sandbox - Outbox heartbeat absent',
@@ -94,7 +111,8 @@ const POLICIES = Object.freeze([
     filter: 'metric.type="logging.googleapis.com/user/secondevie_outbox_completed" AND resource.type="cloud_function"',
     duration: '360s',
     predicate: 'absent',
-    aggregation: { alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_RATE' }
+    aggregation: { alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_RATE' },
+    severity: 'WARNING'
   },
   {
     displayName: 'G1 Sandbox - Payment links heartbeat absent',
@@ -102,7 +120,8 @@ const POLICIES = Object.freeze([
     filter: 'metric.type="logging.googleapis.com/user/secondevie_payment_link_expiry_completed" AND resource.type="cloud_function"',
     duration: '720s',
     predicate: 'absent',
-    aggregation: { alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_RATE' }
+    aggregation: { alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_RATE' },
+    severity: 'WARNING'
   }
 ]);
 
@@ -172,12 +191,12 @@ function ensurePubSubChannel({ apply, existing }) {
 }
 
 function ensureLogMetric(definition, apply) {
+  let current;
   try {
-    const current = gcloud(['logging', 'metrics', 'describe', definition.name, '--format=json'], { json: true });
-    if (current.filter !== definition.filter) fail(`G1_LOG_METRIC_DRIFT:${definition.name}`);
-    return { name: definition.name, state: 'EXISTING' };
+    current = gcloud(['logging', 'metrics', 'describe', definition.name, '--format=json'], { json: true });
   } catch (error) {
-    if (String(error?.message || '').includes('G1_LOG_METRIC_DRIFT')) throw error;
+    const diagnostic = `${error?.message || ''}\n${error?.stderr || ''}`;
+    if (!/NOT_FOUND|not found/i.test(diagnostic)) throw error;
     if (!apply) return { name: definition.name, state: 'PLANNED' };
     gcloud([
       'logging', 'metrics', 'create', definition.name,
@@ -187,18 +206,126 @@ function ensureLogMetric(definition, apply) {
     ]);
     return { name: definition.name, state: 'CREATED' };
   }
+  if (current.filter !== definition.filter) {
+    if (!apply) return { name: definition.name, state: 'NEEDS_FILTER_UPDATE' };
+    gcloud([
+      'logging', 'metrics', 'update', definition.name,
+      `--description=${definition.description}`,
+      `--log-filter=${definition.filter}`,
+      '--quiet'
+    ]);
+    return { name: definition.name, state: 'UPDATED_FILTER' };
+  }
+  return { name: definition.name, state: 'EXISTING' };
+}
+
+function buildLogMatchPolicy(definition, channels, name = undefined) {
+  return {
+    ...(name ? { name } : {}),
+    displayName: definition.displayName,
+    documentation: {
+      content: POLICY_DOCUMENTATION,
+      mimeType: 'text/markdown'
+    },
+    userLabels: {
+      environment: ENVIRONMENT,
+      owner: 'secondevie',
+      phase: 'g1'
+    },
+    conditions: [{
+      displayName: definition.conditionName,
+      conditionMatchedLog: {
+        filter: definition.logMatchFilter
+      }
+    }],
+    combiner: 'OR',
+    enabled: true,
+    notificationChannels: channels,
+    alertStrategy: {
+      notificationRateLimit: { period: LOG_ALERT_RATE_LIMIT },
+      notificationPrompts: ['OPENED'],
+      autoClose: LOG_ALERT_AUTO_CLOSE
+    },
+    severity: definition.severity
+  };
+}
+
+function sameValues(left = [], right = []) {
+  const sortedLeft = [...left].sort();
+  const sortedRight = [...right].sort();
+  return sortedLeft.length === sortedRight.length
+    && sortedLeft.every((value, index) => value === sortedRight[index]);
+}
+
+function logMatchPolicyIsCurrent(current, definition, channels) {
+  const condition = current.conditions?.length === 1 ? current.conditions[0] : null;
+  return current.enabled !== false
+    && current.severity === definition.severity
+    && condition?.displayName === definition.conditionName
+    && condition?.conditionMatchedLog?.filter === definition.logMatchFilter
+    && current.alertStrategy?.notificationRateLimit?.period === LOG_ALERT_RATE_LIMIT
+    && current.alertStrategy?.autoClose === LOG_ALERT_AUTO_CLOSE
+    && sameValues(current.notificationChannels || [], channels);
 }
 
 function ensurePolicy(definition, channels, apply, existing) {
   const current = existing.find((policy) => policy.displayName === definition.displayName);
-  if (current) {
-    const currentChannels = new Set(current.notificationChannels || []);
-    const channelsComplete = channels.every((channel) => currentChannels.has(channel));
-    if (channelsComplete) {
+  if (definition.logMatchFilter) {
+    if (current && logMatchPolicyIsCurrent(current, definition, channels)) {
       return { name: current.name, displayName: definition.displayName, state: 'EXISTING' };
     }
     if (!apply) {
-      return { name: current.name, displayName: definition.displayName, state: 'NEEDS_CHANNEL_UPDATE' };
+      return {
+        name: current?.name || null,
+        displayName: definition.displayName,
+        state: current ? 'NEEDS_POLICY_UPDATE' : 'PLANNED'
+      };
+    }
+    const policy = buildLogMatchPolicy(definition, channels, current?.name);
+    const operation = current ? 'update' : 'create';
+    const args = ['monitoring', 'policies', operation];
+    if (current) args.push(current.name);
+    args.push(`--policy=${JSON.stringify(policy)}`, '--format=json');
+    const updated = gcloud(args, { json: true });
+    return {
+      name: updated.name,
+      displayName: definition.displayName,
+      state: current ? 'UPDATED_POLICY' : 'CREATED'
+    };
+  }
+  if (current) {
+    const currentChannels = new Set(current.notificationChannels || []);
+    const channelsComplete = channels.every((channel) => currentChannels.has(channel));
+    const severityCurrent = current.severity === definition.severity;
+    if (channelsComplete && severityCurrent) {
+      return { name: current.name, displayName: definition.displayName, state: 'EXISTING' };
+    }
+    if (!apply) {
+      return {
+        name: current.name,
+        displayName: definition.displayName,
+        state: channelsComplete ? 'NEEDS_SEVERITY_UPDATE' : 'NEEDS_POLICY_UPDATE'
+      };
+    }
+    if (!severityCurrent) {
+      const policy = {
+        name: current.name,
+        displayName: current.displayName,
+        documentation: current.documentation,
+        userLabels: current.userLabels,
+        conditions: current.conditions,
+        combiner: current.combiner,
+        enabled: current.enabled !== false,
+        notificationChannels: channels,
+        ...(current.alertStrategy ? { alertStrategy: current.alertStrategy } : {}),
+        severity: definition.severity
+      };
+      const updated = gcloud([
+        'monitoring', 'policies', 'update', current.name,
+        `--policy=${JSON.stringify(policy)}`,
+        '--format=json'
+      ], { json: true });
+      return { name: updated.name, displayName: definition.displayName, state: 'UPDATED_POLICY' };
     }
     gcloud([
       'monitoring', 'policies', 'update', current.name,
@@ -219,7 +346,7 @@ function ensurePolicy(definition, channels, apply, existing) {
     '--trigger-count=1',
     '--combiner=OR',
     '--user-labels=environment=sandbox,owner=secondevie,phase=g1',
-    '--documentation=Runbook: apphostingaudit/runbooks/G1_OPERATIONS.md. Aucun secret ni identifiant metier dans les labels.',
+    `--documentation=${POLICY_DOCUMENTATION}`,
     '--format=json'
   ];
   if (channels.length) args.push(`--notification-channels=${channels.join(',')}`);
@@ -249,20 +376,21 @@ function main() {
   if (project.projectId !== PROJECT_ID) fail('G1_MONITORING_EFFECTIVE_PROJECT_INVALID');
 
   const channels = gcloud(['beta', 'monitoring', 'channels', 'list', '--format=json'], { json: true });
+  const primaryEmail = normalizeEmail(process.env.G1_ALERT_PRIMARY_EMAIL || process.env.SUPER_ADMIN_EMAIL);
   const primary = ensureEmailChannel({
-    email: normalizeEmail(process.env.SUPER_ADMIN_EMAIL),
+    email: primaryEmail,
     role: 'primary',
     apply,
     existing: channels
   });
-  const secondarySource = args.get('secondary-source');
-  if (secondarySource && !['gmail', 'pubsub'].includes(secondarySource)) {
+  const secondarySource = args.get('secondary-source') || DEFAULT_SECONDARY_SOURCE;
+  if (!['gmail', 'pubsub'].includes(secondarySource)) {
     fail('G1_MONITORING_SECONDARY_SOURCE_INVALID');
   }
   const secondaryEmail = normalizeEmail(
     process.env.G1_ALERT_SECONDARY_EMAIL || (secondarySource === 'gmail' ? process.env.GMAIL_EMAIL : null)
   );
-  if (secondaryEmail && secondaryEmail === normalizeEmail(process.env.SUPER_ADMIN_EMAIL)) {
+  if (secondaryEmail && secondaryEmail === primaryEmail) {
     fail('G1_MONITORING_SECONDARY_MUST_BE_DISTINCT');
   }
   const secondary = secondarySource === 'pubsub'
@@ -295,9 +423,23 @@ function main() {
   }, null, 2)}\n`);
 }
 
-try {
-  main();
-} catch (error) {
-  process.stderr.write(`${JSON.stringify({ ok: false, error: String(error?.message || error) })}\n`);
-  process.exitCode = 1;
+export {
+  DEFAULT_SECONDARY_SOURCE,
+  LOG_ALERT_AUTO_CLOSE,
+  LOG_ALERT_RATE_LIMIT,
+  LOG_METRICS,
+  MONITORING_VIOLATION_LOGS,
+  POLICIES,
+  applicationLogFilter,
+  buildLogMatchPolicy,
+  logMatchPolicyIsCurrent
+};
+
+if (process.argv[1] && path.resolve(process.argv[1]) === SCRIPT_PATH) {
+  try {
+    main();
+  } catch (error) {
+    process.stderr.write(`${JSON.stringify({ ok: false, error: String(error?.message || error) })}\n`);
+    process.exitCode = 1;
+  }
 }
