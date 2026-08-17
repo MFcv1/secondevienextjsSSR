@@ -5,9 +5,9 @@
     "codebase": "main",
     "environment": "sandbox",
     "baselineCommit": "7f0a80b8982d50feaade41437781b026cfb852b3",
-    "generatedAt": "2026-08-17T16:44:00Z",
+    "generatedAt": "2026-08-17T16:48:30Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G4-A4_PREPARED_DEPLOY_AUTHORIZED"
+    "wave": "G4-A4_ACTIVE_CUTOVER_AUTHORIZED"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -34,7 +34,7 @@
     "cloudGen2": 16,
     "legacyOwner": "syncSession",
     "legacyOwnerPreserved": true,
-    "currentClientTarget": "syncSession",
+    "currentClientTarget": "syncSessionGen2",
     "previousWave": "G4-A3_CLOSED_ACCELERATED_VALIDATION",
     "targetAbsentBeforeCreate": true
   },
@@ -52,13 +52,13 @@
         "retry": false
       },
       "cloud": {
-        "present": false,
+        "present": true,
         "project": "secondevienextjsssr",
         "codebase": "main",
         "generation": 2,
         "region": "europe-west1",
         "runtime": "nodejs22",
-        "revision": null
+        "revision": "syncsessiongen2-00001-zeg"
       },
       "runtime": {
         "sourceCpu": "gcf_gen1",
@@ -93,9 +93,9 @@
       "callers": ["src/kit/shared/AnalyticsProvider.jsx"],
       "clientRegistry": {
         "logicalName": "syncSession",
-        "currentTarget": "syncSession",
+        "currentTarget": "syncSessionGen2",
         "cutoverTarget": "syncSessionGen2",
-        "cutoverAllowed": false
+        "cutoverAllowed": true
       },
       "decision": {
         "classification": "MIGRATION_PARALLEL",
@@ -116,14 +116,39 @@
     "authenticatedAnonymousProbeRequired": true,
     "dataParityRequired": true,
     "oldTabRequired": true,
-    "clientCutoverPrepared": false,
-    "clientCutoverAuthorized": false,
+    "clientCutoverPrepared": true,
+    "clientCutoverAuthorized": true,
     "tests": {
       "executedAt": "2026-08-17T16:46:00Z",
       "functionsG4": "15/15",
       "analytics": "PASS",
       "appCheckAudit": "PASS",
       "functionsLint": "PASS"
+    },
+    "deployedRevisionVerified": true,
+    "runtimeConfigurationVerified": true,
+    "runtimeIamVerified": true,
+    "transportInvokerVerified": true,
+    "appCheckNegativeProbe": {
+      "executedAt": "2026-08-17T16:47:30Z",
+      "withoutTokenHttpStatus": 401,
+      "invalidTokenHttpStatus": 401,
+      "handlerReached": false
+    },
+    "gen1Baseline": {
+      "executedAt": "2026-08-17T16:48:06Z",
+      "httpStatus": 200,
+      "callableVerification": "PASSED",
+      "dataBefore": {
+        "updateTime": "2026-08-17T16:48:26.500Z",
+        "duration": 1200,
+        "sessionActive": true,
+        "analyticsVersion": 3,
+        "journeyCount": 1,
+        "eventPreviewCount": 0,
+        "lastSyncReason": "heartbeat",
+        "syncReasonKeys": ["heartbeat", "init"]
+      }
     },
     "deploymentAllowed": true,
     "deploymentAuthorization": "Deploy only syncSessionGen2; client cutover remains blocked until runtime, IAM, App Check and Gen1 baseline proofs pass"
@@ -136,5 +161,5 @@
     "iamSecretsAction": "none",
     "g12Action": "none before G12-A approval and completed observation"
   },
-  "verdict": "PREPARED_TARGETED_DEPLOY_AUTHORIZED_CLIENT_CUTOVER_BLOCKED"
+  "verdict": "FUNCTION_ACTIVE_RUNTIME_IAM_APPCHECK_GREEN_CLIENT_CUTOVER_AUTHORIZED"
 }

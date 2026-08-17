@@ -400,10 +400,13 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
 - export parallele `syncSessionGen2` avec handler partage avec la Gen1;
 - CPU Gen1, concurrence 1, min 0/max 1, 256 MiB, 60 s, App Check,
   `analytics-runtime`, sans secret;
-- cible cloud absente, Gen1 et registre client preserves;
+- revision `syncsessiongen2-00001-zeg` ACTIVE, runtime/IAM conformes et deux
+  refus App Check 401 avant handler;
 - manifeste machine et wrapper bornent le deploy a une seule Function;
 - tests: G4 15/15, analytics, App Check et lint Functions verts;
-- rollback futur: garder `syncSession` dans le registre et
+- reference Gen1 en HTTP 200 et inventaire 161 local / 156 cloud / 139 Gen1 /
+  17 Gen2; registre source prepare sur la Gen2 pour le cutover App Hosting;
+- rollback futur: restaurer `syncSession` dans le registre et
   `build-2026-08-17-002`; aucune suppression ou modification de donnees.
 
 ## 9. Conditions d'arret immediat

@@ -1030,10 +1030,11 @@ zero appel Gen1 suit le cutover final. Le reload pilote observe a ete reproduit
 sur Gen1 et n'est pas une regression Gen2. La Gen1 et
 `build-2026-08-17-001` restent le rollback; prochaine cible unique:
 `syncSessionGen2`.
-G4-A4 prepare `syncSessionGen2` sous un nouveau nom avec le meme handler que
+G4-A4 a deploye `syncSessionGen2` sous un nouveau nom avec le meme handler que
 la Gen1, App Check, `analytics-runtime`, CPU Gen1 et concurrence/max 1. La
-Gen1 et le registre `syncSession -> syncSession` restent intacts avant la
-preuve cloud et le cutover reversible.
+revision `syncsessiongen2-00001-zeg`, IAM et refus App Check sont conformes;
+le registre source est prepare sur la Gen2 pour le cutover reversible. La Gen1
+reste intacte.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.

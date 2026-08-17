@@ -2198,6 +2198,14 @@ explicites. La cible cloud est absente, la Gen1 et le registre client restent
 inchanges. Le manifeste machine borne le futur deploy a cette seule Function;
 15/15 tests G4, analytics, App Check et lint Functions sont verts.
 
+Deploiement G4-A4 du 2026-08-17: la cible unique `syncSessionGen2` est ACTIVE
+en revision `syncsessiongen2-00001-zeg`. CPU 167m, concurrence/max 1, min 0,
+256 MiB, 60 s, runtime/build IAM et invoker transport sont conformes. Deux
+probes App Check sont refusees en 401 avant handler. La reference Gen1 a
+retourne 200 et mis a jour une session bornee; l'inventaire devient 161 exports
+locaux pour 156 cloud, 139 Gen1 et 17 Gen2. Le registre source est prepare sur
+la Gen2; le cutover App Hosting reste la prochaine operation unique.
+
 ### G5 - Auth callables, OTP et passkeys
 
 Conserver les trois triggers Auth Gen1. Migrer les quatorze callables par

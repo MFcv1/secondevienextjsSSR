@@ -81,14 +81,14 @@ test('syncSession Gen2 partage exactement le handler Gen1 et reste une cible uni
 
   assert.equal(prepared.functions.length, 1);
   assert.equal(prepared.functions[0].name, 'syncSessionGen2');
-  assert.equal(prepared.functions[0].cloud.present, false);
+  assert.equal(prepared.functions[0].cloud.present, true);
   assert.equal(prepared.gates.deploymentAllowed, true);
-  assert.equal(prepared.gates.clientCutoverAuthorized, false);
+  assert.equal(prepared.gates.clientCutoverAuthorized, true);
   assert.equal(target.entryPoint, 'syncSessionGen2');
   assert.equal(target.cpu, '167m');
   assert.equal(target.concurrency, '1');
   assert.equal(target.maxInstances, '1');
-  assert.match(read('src/kit/config/functionTargets.js'), /syncSession:\s*'syncSession'/);
+  assert.match(read('src/kit/config/functionTargets.js'), /syncSession:\s*'syncSessionGen2'/);
 });
 
 test('initLiveSession Gen2 partage le handler Gen1 et autorise une seule cible', () => {
@@ -306,6 +306,8 @@ test('le deploy initLiveSession Gen2 reste allowliste a une seule Function', () 
 
 test('le deploy syncSession Gen2 reste allowliste a une seule Function', () => {
   const prepared = JSON.parse(fs.readFileSync(SYNC_SESSION_MANIFEST_PATH, 'utf8'));
+  const preDeployManifest = structuredClone(prepared);
+  preDeployManifest.functions[0].cloud.present = false;
   const currentCommit = prepared.metadata.baselineCommit;
   const validation = validateDeploymentRequest({
     args: {
@@ -317,7 +319,7 @@ test('le deploy syncSession Gen2 reste allowliste a une seule Function', () => {
       allowlist: 'syncSessionGen2',
       transport: 'gcloud-gen2-create'
     },
-    manifest: prepared,
+    manifest: preDeployManifest,
     rootDir: ROOT,
     manifestPath: SYNC_SESSION_MANIFEST_PATH,
     digestPath: SYNC_SESSION_DIGEST_PATH,

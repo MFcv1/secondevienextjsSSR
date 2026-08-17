@@ -229,10 +229,11 @@ final. Un reload pilote ayant cree une seconde session a ete reproduit de
 facon identique sur Gen1; le handler partage et `test:analytics` couvrent la
 parite de reprise. La prochaine cible unique est `syncSessionGen2`.
 
-`syncSessionGen2` est preparee localement avec le meme handler que la Gen1,
+`syncSessionGen2` est ACTIVE avec le meme handler que la Gen1,
 App Check, CPU Gen1, concurrence/max 1, `analytics-runtime` et aucun secret.
-La cible cloud est absente et le registre client reste sur la Gen1 jusqu'aux
-preuves runtime, IAM, App Check, donnees et rollback.
+La revision `syncsessiongen2-00001-zeg`, IAM et deux refus App Check 401 sont
+conformes. La reference Gen1 a retourne 200; le registre source est prepare
+sur la Gen2 pour le cutover App Hosting. La Gen1 reste intacte.
 
 Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. L'architecture haut trafic sera traitee dans une phase distincte demandee par l'utilisateur.
 
