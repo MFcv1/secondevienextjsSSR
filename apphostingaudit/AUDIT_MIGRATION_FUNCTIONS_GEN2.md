@@ -68,13 +68,13 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | baseline avant le checkpoint Monitoring | `25daf810309dc3329cfeb0fb19be0f1790fe608a` |
 | worktree attendu a la reprise | propre; tout changement additionnel doit etre preserve et qualifie |
 | phases fermees | G0, G1, G2-A, G2-B 13/13 et G3 |
-| phase active | G4-A5 analytics, preparation de `syncSessionBeaconGen2` |
-| inventaire courant | 160 exports locaux, 155 cloud, 139 Gen1, 16 Gen2 |
+| phase active | G4-A5 analytics, cutover autorise de `syncSessionBeaconGen2` |
+| inventaire courant | 162 exports locaux, 157 cloud, 139 Gen1, 18 Gen2 |
 | cible parallele active | `trackAdminIPGen2`, revision `trackadminipgen2-00001-goj` |
 | cutover client | App Hosting `build-2026-08-17-001`, registres `trackAdminIP -> trackAdminIPGen2` et `updateUserSessions -> updateUserSessionsGen2` |
 | observation G4-A1 | fermee acceleree le `2026-08-17T12:28:01Z` apres levee explicite de la borne temporelle |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | preparer uniquement `syncSessionBeaconGen2`; rollback exact `build-2026-08-17-002` |
+| prochain lot | basculer uniquement `syncSessionBeaconGen2`; rollback exact `build-2026-08-17-003` |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -2236,6 +2236,15 @@ ne peut pas porter son header personnalise. CPU `gcf_gen1`, concurrence 1,
 min 0/max 1, 256 MiB, 60 s, `analytics-runtime` et aucun secret sont bornes.
 La cible cloud est absente, Gen1 et registre client preserves; 17/17 tests G4,
 analytics, audit App Check et lint Functions sont verts.
+
+Deploiement G4-A5: `syncSessionBeaconGen2` est ACTIVE en revision
+`syncsessionbeacongen2-00001-dih`; CPU 167m, concurrence/max 1, min 0,
+256 MiB, 60 s, runtime/build IAM et invoker transport sont conformes. Origine
+invalide et jeton invalide sont refuses en 403. La reference navigateur Gen1
+retourne 415 sur `text/plain`, reproduisant exactement le drift G4 deja
+documente et sans changement de donnee. Le registre source est prepare sur la
+Gen2 afin de prouver le correctif en 200; inventaire 162 local / 157 cloud /
+139 Gen1 / 18 Gen2.
 
 ### G5 - Auth callables, OTP et passkeys
 

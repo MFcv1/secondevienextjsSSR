@@ -433,6 +433,11 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
 - cible cloud absente, Gen1 et registre client preserves;
 - tests G4 17/17, analytics, App Check et lint Functions verts;
 - rollback futur: registre Gen1 et `build-2026-08-17-003`.
+- revision `syncsessionbeacongen2-00001-dih` ACTIVE, runtime/IAM conformes,
+  origine et jeton invalides refuses en 403;
+- reference reelle Gen1: `text/plain` retourne le 415 deja documente, sans
+  ecriture; registre source prepare sur la Gen2 pour prouver le correctif 200;
+- inventaire: 162 local, 157 cloud, 139 Gen1, 18 Gen2.
 
 ## 9. Conditions d'arret immediat
 

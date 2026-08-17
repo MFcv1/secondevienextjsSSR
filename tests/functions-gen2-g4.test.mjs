@@ -86,12 +86,12 @@ test('syncSessionBeacon Gen2 partage le handler Gen1 et conserve ses controles H
   ]) assert.match(source, expected);
   assert.equal(prepared.functions.length, 1);
   assert.equal(prepared.functions[0].name, 'syncSessionBeaconGen2');
-  assert.equal(prepared.functions[0].cloud.present, false);
+  assert.equal(prepared.functions[0].cloud.present, true);
   assert.equal(prepared.gates.deploymentAllowed, true);
-  assert.equal(prepared.gates.clientCutoverAuthorized, false);
+  assert.equal(prepared.gates.clientCutoverAuthorized, true);
   assert.equal(target.triggerType, 'http-public');
   assert.equal(target.entryPoint, 'syncSessionBeaconGen2');
-  assert.match(read('src/kit/config/functionTargets.js'), /syncSessionBeacon:\s*'syncSessionBeacon'/);
+  assert.match(read('src/kit/config/functionTargets.js'), /syncSessionBeacon:\s*'syncSessionBeaconGen2'/);
 });
 
 test('syncSession Gen2 partage exactement le handler Gen1 et reste une cible unique', () => {
@@ -374,6 +374,8 @@ test('le deploy syncSession Gen2 reste allowliste a une seule Function', () => {
 
 test('le deploy syncSessionBeacon Gen2 reste public au transport mais borne par le handler', () => {
   const prepared = JSON.parse(fs.readFileSync(SYNC_SESSION_BEACON_MANIFEST_PATH, 'utf8'));
+  const preDeployManifest = structuredClone(prepared);
+  preDeployManifest.functions[0].cloud.present = false;
   const currentCommit = prepared.metadata.baselineCommit;
   const validation = validateDeploymentRequest({
     args: {
@@ -385,7 +387,7 @@ test('le deploy syncSessionBeacon Gen2 reste public au transport mais borne par 
       allowlist: 'syncSessionBeaconGen2',
       transport: 'gcloud-gen2-create'
     },
-    manifest: prepared,
+    manifest: preDeployManifest,
     rootDir: ROOT,
     manifestPath: SYNC_SESSION_BEACON_MANIFEST_PATH,
     digestPath: SYNC_SESSION_BEACON_DIGEST_PATH,

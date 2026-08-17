@@ -5,9 +5,9 @@
     "codebase": "main",
     "environment": "sandbox",
     "baselineCommit": "7bd381524a373da183406ea12082390c2bdbd52d",
-    "generatedAt": "2026-08-17T19:33:00Z",
+    "generatedAt": "2026-08-17T19:41:45Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G4-A5_PREPARED_DEPLOY_AUTHORIZED"
+    "wave": "G4-A5_ACTIVE_CUTOVER_AUTHORIZED"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -34,7 +34,7 @@
     "cloudGen2": 17,
     "legacyOwner": "syncSessionBeacon",
     "legacyOwnerPreserved": true,
-    "currentClientTarget": "syncSessionBeacon",
+    "currentClientTarget": "syncSessionBeaconGen2",
     "previousWave": "G4-A4_CLOSED_ACCELERATED_VALIDATION",
     "targetAbsentBeforeCreate": true
   },
@@ -52,13 +52,13 @@
         "retry": false
       },
       "cloud": {
-        "present": false,
+        "present": true,
         "project": "secondevienextjsssr",
         "codebase": "main",
         "generation": 2,
         "region": "europe-west1",
         "runtime": "nodejs22",
-        "revision": null
+        "revision": "syncsessionbeacongen2-00001-dih"
       },
       "runtime": {
         "sourceCpu": "gcf_gen1",
@@ -101,9 +101,9 @@
       "callers": ["src/kit/shared/AnalyticsProvider.jsx navigator.sendBeacon/fetch keepalive"],
       "clientRegistry": {
         "logicalName": "syncSessionBeacon",
-        "currentTarget": "syncSessionBeacon",
+        "currentTarget": "syncSessionBeaconGen2",
         "cutoverTarget": "syncSessionBeaconGen2",
-        "cutoverAllowed": false
+        "cutoverAllowed": true
       },
       "decision": {
         "classification": "MIGRATION_PARALLEL",
@@ -125,8 +125,8 @@
     "validBeaconProbeRequired": true,
     "dataParityRequired": true,
     "oldTabRequired": true,
-    "clientCutoverPrepared": false,
-    "clientCutoverAuthorized": false,
+    "clientCutoverPrepared": true,
+    "clientCutoverAuthorized": true,
     "tests": {
       "executedAt": "2026-08-17T19:34:00Z",
       "functionsG4": "17/17",
@@ -134,8 +134,26 @@
       "appCheckAudit": "PASS",
       "functionsLint": "PASS"
     },
+    "deployedRevisionVerified": true,
+    "runtimeConfigurationVerified": true,
+    "runtimeIamVerified": true,
+    "transportInvokerVerified": true,
+    "negativeProbes": {
+      "executedAt": "2026-08-17T19:39:20Z",
+      "invalidOriginHttpStatus": 403,
+      "invalidSyncTokenHttpStatus": 403,
+      "handlerSecurityResult": "PASS"
+    },
+    "gen1Baseline": {
+      "executedAt": "2026-08-17T19:41:42Z",
+      "realBrowserTransport": "navigator.sendBeacon text/plain",
+      "httpStatus": 415,
+      "classification": "KNOWN_G4_DRIFT_ALREADY_DOCUMENTED",
+      "dataChanged": false,
+      "expectedGen2Result": 200
+    },
     "deploymentAllowed": true,
-    "deploymentAuthorization": "Deploy only syncSessionBeaconGen2; client cutover remains blocked until runtime, IAM, origin/token probes and Gen1 baseline proofs pass"
+    "deploymentAuthorization": "syncSessionBeaconGen2 deployed alone; client cutover authorized after runtime, IAM, origin/token probes and Gen1 baseline proofs passed"
   },
   "rollback": {
     "functionAction": "none; preserve syncSessionBeacon and syncSessionBeaconGen2",
@@ -145,5 +163,5 @@
     "iamSecretsAction": "none",
     "g12Action": "none before G12-A approval and completed observation"
   },
-  "verdict": "PREPARED_TARGETED_DEPLOY_AUTHORIZED_CLIENT_CUTOVER_BLOCKED"
+  "verdict": "FUNCTION_ACTIVE_SECURITY_PROBES_GREEN_CLIENT_CUTOVER_AUTHORIZED"
 }

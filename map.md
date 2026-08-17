@@ -1050,6 +1050,10 @@ G4-A5 prepare `syncSessionBeaconGen2` avec le meme handler HTTP que la Gen1,
 origine exacte, jeton opaque, corps 64 KiB et content-types JSON/text. Le
 runtime Gen2 utilise CPU Gen1, concurrence/max 1 et `analytics-runtime`; la
 Gen1 et le registre restent intacts avant preuve cloud.
+La revision `syncsessionbeacongen2-00001-dih` est ACTIVE avec runtime/IAM
+conformes et refus origine/jeton en 403. Le vrai transport Gen1 reproduit le
+415 `text/plain` deja documente; le registre source est prepare sur la Gen2
+pour le cutover correctif et la preuve 200.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.

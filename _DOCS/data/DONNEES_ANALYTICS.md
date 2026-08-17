@@ -252,6 +252,10 @@ origine exacte, jeton opaque, corps 64 KiB et JSON/text. App Check est
 explicitement non applicable au transport `sendBeacon`, qui ne peut pas
 ajouter son header; le jeton serveur reste obligatoire. CPU Gen1,
 concurrence/max 1, `analytics-runtime` et absence de secret sont explicites.
+La revision `syncsessionbeacongen2-00001-dih`, IAM et refus origine/jeton 403
+sont conformes. La reference navigateur Gen1 reproduit le 415 `text/plain`
+deja documente, sans ecriture; le registre source est prepare sur la Gen2 afin
+de prouver la correction en 200.
 
 Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. L'architecture haut trafic sera traitee dans une phase distincte demandee par l'utilisateur.
 
