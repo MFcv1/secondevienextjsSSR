@@ -5,9 +5,9 @@
     "codebase": "main",
     "environment": "sandbox",
     "baselineCommit": "25f145bcb059370695ed4dc78852676200781f66",
-    "generatedAt": "2026-08-17T12:37:04Z",
+    "generatedAt": "2026-08-17T15:11:34Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G4-A2_CUTOVER_PREPARATION"
+    "wave": "G4-A2_ROLLED_BACK_AFTER_AUTH_GATE"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -34,7 +34,7 @@
     "cloudGen2": 14,
     "legacyOwner": "updateUserSessions",
     "legacyOwnerPreserved": true,
-    "currentClientTarget": "updateUserSessionsGen2",
+    "currentClientTarget": "updateUserSessions",
     "trackAdminIPObservationState": "CLOSED_ACCELERATED_BY_USER",
     "trackAdminIPObservationEndNotBefore": "2026-08-18T19:16:52.793799Z"
   },
@@ -106,9 +106,9 @@
       "callers": ["src/kit/contexts/AuthContext.jsx"],
       "clientRegistry": {
         "logicalName": "updateUserSessions",
-        "currentTarget": "updateUserSessionsGen2",
+        "currentTarget": "updateUserSessions",
         "cutoverTarget": "updateUserSessionsGen2",
-        "cutoverAllowed": true
+        "cutoverAllowed": false
       },
       "decision": {
         "classification": "MIGRATION_PARALLEL",
@@ -135,7 +135,7 @@
     "authenticatedAdminAndClientProbesRequired": true,
     "oldTabRequired": true,
     "clientCutoverPrepared": true,
-    "clientCutoverAuthorized": true,
+    "clientCutoverAuthorized": false,
     "observationModeAfterCutover": "ACCELERATED_ACTIVE_VALIDATION",
     "deploymentAllowed": true,
     "deploymentAuthorizedAt": "2026-08-17T12:28:01Z",
@@ -165,7 +165,35 @@
       "adminHttpStatus": 200,
       "gen2Requests": [401, 401],
       "gen1Requests": 0,
-      "dataAction": "none"
+      "dataAction": "none",
+      "retry": {
+        "archive": "gs://firebaseapphosting-sources-231220287936-europe-west4/secondevie-next-sandbox--22472-Ghu256K8KUik-.zip",
+        "archiveSize": 96944028,
+        "initialRolloutHttpStatus": 401,
+        "authWrapperCause": "sentinel refresh token could replace the valid gcloud access token after a long upload",
+        "authWrapperFix": "keep the short-lived gcloud token process-local for requireAuth",
+        "build": "build-2026-08-17-001",
+        "buildState": "READY",
+        "rolloutState": "SUCCEEDED",
+        "servedRegistryVerified": "updateUserSessions -> updateUserSessionsGen2",
+        "rootHttpStatus": 200,
+        "adminHttpStatus": 200,
+        "persistedAdminSessionLoaded": true,
+        "commerceHealth": "healthy",
+        "openFinancialIncidents": 0,
+        "googleRelogin": "INTERRUPTED_BEFORE_AUTHENTICATION",
+        "analyticsSessionsActiveOnAdminIpBeforeRelogin": 0,
+        "dataDeleted": 0
+      },
+      "rollback": {
+        "rollout": "rollback-20260817-001",
+        "state": "SUCCEEDED",
+        "build": "build-2026-08-16-001",
+        "updateTime": "2026-08-17T15:11:33.659089Z",
+        "rootHttpStatus": 200,
+        "adminHttpStatus": 200,
+        "sourceRegistryRestored": "updateUserSessions -> updateUserSessions"
+      }
     }
   },
   "rollback": {
@@ -176,5 +204,5 @@
     "iamSecretsAction": "none",
     "g12Action": "none before G12-A approval and completed observation"
   },
-  "verdict": "FUNCTION_ACTIVE_CUTOVER_UPLOAD_FAILED_ROLLBACK_BUILD_STILL_SERVING"
+  "verdict": "FUNCTION_ACTIVE_CUTOVER_BUILT_AUTH_GATE_FAILED_EXACT_ROLLBACK_SUCCEEDED"
 }

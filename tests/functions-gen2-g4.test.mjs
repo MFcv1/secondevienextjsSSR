@@ -68,7 +68,7 @@ test('updateUserSessions Gen2 partage exactement le handler Gen1 et borne son ru
   assert.doesNotMatch(source, /updateUserSessionsGen2[\s\S]*appspot\.gserviceaccount\.com/);
 });
 
-test('updateUserSessions Gen2 est active et autorisee pour le cutover cible', () => {
+test('updateUserSessions Gen2 reste active mais le registre est revenu en Gen1', () => {
   const prepared = JSON.parse(fs.readFileSync(UPDATE_USER_SESSIONS_MANIFEST_PATH, 'utf8'));
   const registry = read('src/kit/config/functionTargets.js');
   const target = GCLOUD_GEN2_TARGETS.updateUserSessionsGen2;
@@ -80,9 +80,10 @@ test('updateUserSessions Gen2 est active et autorisee pour le cutover cible', ()
   assert.equal(prepared.functions[0].cloud.revision, 'updateusersessionsgen2-00001-zoq');
   assert.equal(prepared.functions[0].decision.deploymentMaxBatchSize, 1);
   assert.equal(prepared.gates.deploymentAllowed, true);
-  assert.equal(prepared.gates.clientCutoverAuthorized, true);
+  assert.equal(prepared.gates.clientCutoverAuthorized, false);
   assert.equal(prepared.preflight.trackAdminIPObservationState, 'CLOSED_ACCELERATED_BY_USER');
-  assert.match(registry, /updateUserSessions:\s*'updateUserSessionsGen2'/);
+  assert.match(registry, /updateUserSessions:\s*'updateUserSessions'/);
+  assert.doesNotMatch(registry, /updateUserSessions:\s*'updateUserSessionsGen2'/);
   assert.deepEqual(target, {
     create: true,
     triggerType: 'http-callable',
@@ -102,6 +103,8 @@ test('updateUserSessions Gen2 est active et autorisee pour le cutover cible', ()
 
   assert.equal(prepared.gates.appCheckNegativeProbe.withoutTokenHttpStatus, 401);
   assert.equal(prepared.gates.appCheckNegativeProbe.invalidTokenHttpStatus, 401);
+  assert.equal(prepared.gates.appHostingCutoverAttempt.rollback.state, 'SUCCEEDED');
+  assert.equal(prepared.gates.appHostingCutoverAttempt.rollback.build, 'build-2026-08-16-001');
   assert.equal(prepared.rollback.functionAction, 'none; preserve updateUserSessions and updateUserSessionsGen2');
 });
 
@@ -221,10 +224,11 @@ test('le lanceur App Hosting de cutover est borne au sandbox et ne persiste aucu
     /PROJECT_MISMATCH/,
     /OPERATOR_MISMATCH/,
     /auth', 'print-access-token'/,
-    /setAccessToken\(token\)/,
-    /gcloud-access-token-preloaded-in-memory/
+    /setAccessToken\(token\)/
   ]) assert.match(source, expected);
-  assert.doesNotMatch(source, /writeFile|appendFile|console\.log\(token\)|process\.env\.[A-Z_]+\s*=\s*token/);
+  assert.doesNotMatch(source, /writeFile|appendFile|console\.log\(token\)/);
+  assert.match(source, /process\.env\.FIREBASE_TOKEN = token/);
+  assert.doesNotMatch(source, /gcloud-access-token-preloaded-in-memory/);
 });
 
 test('le rollout G4 conserve la Gen1 et documente la fermeture acceleree', () => {

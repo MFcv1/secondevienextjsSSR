@@ -138,8 +138,8 @@ Etat G4-A1/G4-A2 local du 2026-08-17: 159 exports locaux prepares et 153 Functio
 soit toujours 139 Gen1 et desormais 14 Gen2. L'unique ajout est
 `trackAdminIPGen2` en `europe-west1`; la Gen1 `trackAdminIP` reste preservee
 pour rollback jusqu'a G12-A. Le second export parallele
-`updateUserSessionsGen2` existe seulement dans le source et son manifeste
-interdit encore deploy et cutover; la Gen1 et le registre client restent actifs.
+`updateUserSessionsGen2` est ACTIVE; apres rollback de sa gate Auth, la Gen1 et
+le registre client restent actifs.
 
 Depuis G1 le 2026-08-15, Firestore `(default)` `eur3` porte delete protection,
 PITR sept jours, un backup quotidien conserve quatorze jours et un backup
@@ -150,9 +150,10 @@ treize Gen2 initiales sont fermees. G4-A1 est fermee par validation acceleree
 apres levee explicite de la borne temporelle: deux appels admin reussis, zero
 erreur, donnees idempotentes et zero trafic Gen1. `updateUserSessionsGen2` est
 ACTIVE en revision `updateusersessionsgen2-00001-zoq`; limites, IAM et refus
-App Check sont conformes. Le premier upload du cutover App Hosting a echoue
-avant creation de build; `build-2026-08-16-001` reste READY, SUCCEEDED et servi,
-sans reconciliation active. Monitoring
+App Check sont conformes. Le retry a produit `build-2026-08-17-001` READY et
+SUCCEEDED, puis la gate de reconnexion Google a ete interrompue avant Auth.
+`rollback-20260817-001` sert de nouveau `build-2026-08-16-001`, sans
+reconciliation active. Monitoring
 porte cinq metriques logs, huit policies, un dashboard, un canal e-mail primaire
 et un canal Pub/Sub interne secondaire. Le correctif du 2026-08-17 exclut les
 journaux internes d'incident des deux metriques commerce et utilise des alertes

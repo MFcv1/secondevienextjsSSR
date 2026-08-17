@@ -2,7 +2,7 @@
 
 Derniere contre-verification: 2026-08-17
 
-Statut: `PLAN_TEMPORAIRE_ACTIF - G0_G3_FERMES - G4_A1_FERMEE_ACCELEREE - G4_A2_ROLLBACK_SERVI_APRES_ECHEC_UPLOAD`
+Statut: `PLAN_TEMPORAIRE_ACTIF - G0_G3_FERMES - G4_A1_FERMEE_ACCELEREE - G4_A2_ROLLBACK_APRES_GATE_AUTH`
 
 Proprietaire: mainteneur Seconde Vie et agent charge de la migration
 
@@ -74,7 +74,7 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | cutover client | App Hosting `build-2026-08-16-001`, registre `trackAdminIP -> trackAdminIPGen2` |
 | observation G4-A1 | fermee acceleree le `2026-08-17T12:28:01Z` apres levee explicite de la borne temporelle |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | reprendre le cutover App Hosting cible unique apres l'echec reseau borne; rollback deja servi |
+| prochain lot | requalifier la reconnexion Google avant un nouveau cutover A2; rollback exact servi |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -86,11 +86,13 @@ Pour avancer sans raccourcir la preuve cloud, G4-A2 est preparee localement:
 `gcf_gen1`, concurrence 1, min 0/max 1, 256 MiB, 60 s, App Check et le runtime
 `analytics-runtime`. Elle est ACTIVE en revision
 `updateusersessionsgen2-00001-zoq`; limites, IAM et deux refus App Check 401 sont
-conformes. Le registre source cible la Gen2 et attend son build App Hosting;
+conformes. Apres rollback, le registre source cible de nouveau la Gen1;
 la Gen1, son endpoint, son IAM, son code et les donnees restent intacts.
-Le premier upload App Hosting a echoue avant creation de build. Le backend n'est
-pas en reconciliation, `/` et `/admin` repondent 200 et le build READY
-`build-2026-08-16-001` reste servi; le rollback exact est donc deja effectif.
+Le retry a reutilise l'archive uploadee et produit `build-2026-08-17-001` READY,
+SUCCEEDED et servi. La session admin persistante, `/`, `/admin`, la sante
+commerce et le registre Gen2 etaient conformes, mais la reconnexion Google a ete
+interrompue avant Auth. Le rollout `rollback-20260817-001` a donc restaure
+`build-2026-08-16-001` et le registre source Gen1, sans suppression de donnee.
 
 Ordre de reprise obligatoire:
 

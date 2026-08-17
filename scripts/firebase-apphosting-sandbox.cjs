@@ -47,8 +47,10 @@ const apiv2Path = path.join(ROOT, 'node_modules/firebase-tools/lib/apiv2.js');
 const firebaseBin = path.join(ROOT, 'node_modules/firebase-tools/lib/bin/firebase.js');
 require(apiv2Path).setAccessToken(token);
 
-// This non-secret sentinel makes requireAuth skip its unavailable OAuth refresh.
-// API requests still use only the short-lived gcloud access token held in memory.
-process.env.FIREBASE_TOKEN = 'gcloud-access-token-preloaded-in-memory';
+// Keep the same short-lived gcloud token available to requireAuth. A sentinel
+// would be installed as a refresh token and can replace the valid token after a
+// long source upload, making the rollout POST fail with HTTP 401.
+// The token remains process-local and is never written or printed.
+process.env.FIREBASE_TOKEN = token;
 process.argv = [process.execPath, firebaseBin, ...cliArgs];
 require(firebaseBin);

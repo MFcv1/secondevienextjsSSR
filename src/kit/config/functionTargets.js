@@ -6,7 +6,7 @@ const FUNCTION_TARGETS = Object.freeze({
   syncSession: 'syncSession',
   syncSessionBeacon: 'syncSessionBeacon',
   trackAdminIP: 'trackAdminIPGen2',
-  updateUserSessions: 'updateUserSessionsGen2',
+  updateUserSessions: 'updateUserSessions',
 });
 
 export const getFunctionTarget = (logicalName) => FUNCTION_TARGETS[logicalName] || logicalName;

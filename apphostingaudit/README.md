@@ -91,7 +91,7 @@ Valeurs autorisees:
 | G1 | alertes, DR/restore, sante/incident et preuve des workers | `TERMINEE` | quatre P0 fermes; Stripe test borne uniquement | manifestes `functions-gen2-g1-*.json`, journal G1 |
 | G2 | socle Gen2 puis stabilisation ciblee des 13 Gen2 actuelles | `TERMINEE` | 13/13 Gen2 deployees et observees, inventaire sans drift, rollback conserve | `functions-gen2-g2b-closeout.json` |
 | G3 | decisions retrait/migration legacy, E2E, maintenance, publication historique | `TERMINEE` | six retraits differes G12-A, commandes Stripe fail-closed, zero suppression | `functions-gen2-g3-decisions.json` |
-| G4 | analytics | `EN_COURS` | parite, App Check, caches concurrents, observation acceleree autorisee | G4-A1 fermee; Function A2 ACTIVE, premier upload cutover echoue, rollback servi |
+| G4 | analytics | `EN_COURS` | parite, App Check, caches concurrents, observation acceleree autorisee | A2 ACTIVE; build Gen2 READY puis rollback exact apres gate Auth |
 | G5 | Auth callables, OTP et passkeys | `A_FAIRE` | Auth complete, parcours sandbox et rollback client | a renseigner |
 | G6 | catalogue admin, devis, newsletter, e-mail et factures | `A_FAIRE` | writers/readers et trigger devis sans double effet | a renseigner |
 | G7 | Meta et reconciliation Instagram | `A_FAIRE` | hold leve par preuves, OAuth/secrets/rollback valides | a renseigner |
@@ -356,14 +356,17 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
 - revision: `updateusersessionsgen2-00001-zoq`, ACTIVE, CPU 167m, concurrence 1,
   min 0/max 1, 256 MiB, 60 s, runtime/build SA conformes;
 - App Check: appels sans jeton et avec jeton invalide refuses en 401 avant handler;
-- garde: `deploymentAllowed=true`, `clientCutoverAuthorized=true`, registre
-  source `updateUserSessions -> updateUserSessionsGen2`;
+- garde: `deploymentAllowed=true`, `clientCutoverAuthorized=false`, registre
+  source restaure `updateUserSessions -> updateUserSessions`;
 - validations: G4 11/11, G0 26/26, analytics, App Check et lint Functions verts;
 - inventaire: 159 exports locaux, 154 Functions cloud, 139 Gen1 et 15 Gen2;
 - rollback: Gen1 intacte et retour App Hosting exact au build READY
   `build-2026-08-16-001` sans suppression ni changement IAM/donnee.
-- premier cutover: upload source echoue avant creation de build; backend sans
-  reconciliation, `/` et `/admin` en 200, build rollback toujours servi.
+- retry: `build-2026-08-17-001` READY/SUCCEEDED et registre Gen2 servi; session
+  admin persistante et sante conformes, mais reconnexion Google interrompue
+  avant Auth;
+- rollback: `rollback-20260817-001` SUCCEEDED sert `build-2026-08-16-001`,
+  `/` et `/admin` en 200, registre source Gen1, zero suppression de donnee.
 
 ## 9. Conditions d'arret immediat
 
@@ -386,8 +389,8 @@ Arreter la vague au premier:
 
 ## 10. Point de reprise
 
-La reprise courante bascule uniquement le registre
-`updateUserSessions -> updateUserSessionsGen2` par App Hosting sandbox, puis
-execute les probes sans suppression de donnee et l'observation active acceleree.
-La Gen1 et le build `build-2026-08-16-001` restent les rollbacks. Les six
+La reprise courante requalifie d'abord la reconnexion Google sandbox, sans
+mutation analytics, avant de retenter le seul registre
+`updateUserSessions -> updateUserSessionsGen2`. La Gen1 et le build
+`build-2026-08-16-001` sont actuellement servis. Les six
 retraits G3 restent differes a G12-A.

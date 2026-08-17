@@ -212,9 +212,10 @@ Exclusion admin:
 Migration Gen2 sandbox: `updateUserSessionsGen2` est ACTIVE avec le meme handler
 que la Gen1, App Check et le runtime dedie `analytics-runtime`. La revision
 `updateusersessionsgen2-00001-zoq`, les limites, IAM et deux refus App Check 401
-sont conformes. Le registre source est prepare pour la bascule App Hosting,
-mais le premier upload a echoue avant creation de build; le build precedent
-reste servi et la Gen1 reste preservee.
+sont conformes. Le build Gen2 `build-2026-08-17-001` a ete READY et servi, mais
+la requalification Google a ete interrompue avant Auth. Le rollback exact
+`rollback-20260817-001` sert donc `build-2026-08-16-001`; le registre source et
+le client sont revenus sur la Gen1, qui reste preservee avec la Gen2.
 
 Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. L'architecture haut trafic sera traitee dans une phase distincte demandee par l'utilisateur.
 

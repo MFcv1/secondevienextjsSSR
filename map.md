@@ -1013,13 +1013,15 @@ son IAM et son code sont preserves.
 G4-A2 est deployee: `updateUserSessionsGen2` partage
 le handler de la Gen1, utilise `analytics-runtime`, CPU Gen1, concurrence 1,
 min 0/max 1 et App Check. Le registre client continue de cibler
-`updateUserSessionsGen2`; la revision `updateusersessionsgen2-00001-zoq`, les
+`updateUserSessions`; la revision `updateusersessionsgen2-00001-zoq`, les
 limites, IAM et refus App Check sont conformes. L'inventaire est donc de 159
 exports locaux pour 154 Functions cloud, 139 Gen1 et 15 Gen2. La Gen1 et son
 endpoint restent preserves; le rollback client revient au build App Hosting
-READY `build-2026-08-16-001`. Le premier upload App Hosting a echoue avant
-creation de build: ce build precedent reste servi, `/` et `/admin` repondent
-200, sans trafic Gen1/Gen2 applicatif ni action sur les donnees.
+READY `build-2026-08-16-001`. Le retry a cree le build READY
+`build-2026-08-17-001` et servi le registre Gen2; la session admin persistante,
+la sante commerce et les routes etaient conformes. La reconnexion Google a ete
+interrompue avant Auth, donc le rollout `rollback-20260817-001` a restaure le
+build precedent et le registre source Gen1, sans suppression de donnee.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.
