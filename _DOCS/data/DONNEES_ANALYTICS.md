@@ -234,10 +234,12 @@ App Check, CPU Gen1, concurrence/max 1, `analytics-runtime` et aucun secret.
 La revision `syncsessiongen2-00001-zeg`, IAM et deux refus App Check 401 sont
 conformes. La reference Gen1 a retourne 200; le registre source est prepare
 sur la Gen2 pour le cutover App Hosting. La Gen1 reste intacte.
-Le cutover App Hosting n'est pas encore effectif: la tentative n'a cree aucun
-nouveau build et la relance a ete bloquee au preflight IAM Firebase. Le
-sandbox sert toujours `build-2026-08-17-002` en 200 et appelle donc encore la
-Gen1; aucune donnee ou Function n'a ete supprimee.
+Le cutover App Hosting n'est pas encore effectif. Apres deux echecs d'upload,
+`build-2026-08-17-003` a ete cree READY par transport Google Storage
+reprenable et son rollout a reussi. La session Chrome historique s'etant
+fermee avant la preuve ancien onglet, le rollback exact a remis
+`build-2026-08-17-002` en service. Le client appelle donc encore la Gen1;
+aucune donnee ou Function n'a ete supprimee.
 
 Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. L'architecture haut trafic sera traitee dans une phase distincte demandee par l'utilisateur.
 

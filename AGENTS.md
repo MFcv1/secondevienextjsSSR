@@ -160,6 +160,9 @@ Plan temporaire de reprise explicitement demande:
   `trackAdminIP`, `updateUserSessions` et `initLiveSession` sur leurs nouveaux
   noms Gen2; leurs Gen1 restent intactes. Trois suppressions restent sous hold
   G11 et la prochaine cible unique est `syncSessionGen2`.
+  `syncSessionGen2` est ACTIVE mais son cutover G4-A4 reste ouvert: le build
+  `build-2026-08-17-003` est READY, puis un rollback exact a remis
+  `build-2026-08-17-002` en service faute de preuve ancien onglet disponible.
   `updateUserSessionsGen2` est maintenant ACTIVE en revision
   `updateusersessionsgen2-00001-zoq`; l'inventaire compte 159 exports locaux et
   154 Functions cloud, dont 15 Gen2. Revision, limites, IAM et refus App Check

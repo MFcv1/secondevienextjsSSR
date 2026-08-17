@@ -151,15 +151,45 @@
       }
     },
     "appHostingCutoverAttempt": {
-      "executedAt": "2026-08-17T17:04:00Z",
-      "sourceUploadAttempt": "interrupted after more than 15 minutes before any build resource was created",
-      "retryState": "BLOCKED",
-      "retryError": "Unexpected error occurred while testing for IAM service account permissions",
-      "newBuildCreated": false,
-      "newRolloutCreated": false,
+      "executedAt": "2026-08-17T19:18:06Z",
+      "initialAttempts": [
+        "source upload interrupted after more than 15 minutes before any build resource was created",
+        "retry blocked while Firebase tested IAM service account permissions",
+        "second source upload failed after partial transfer to Google Storage"
+      ],
+      "resilientTransport": {
+        "packager": "firebase-tools createSourceDeployArchive with configured App Hosting ignore rules",
+        "archiveBytes": 96952338,
+        "userStorageUri": "gs://firebaseapphosting-sources-231220287936-europe-west4/secondevie-next-sandbox--g4a4-53f484e.zip",
+        "upload": "SUCCEEDED"
+      },
+      "build": {
+        "id": "build-2026-08-17-003",
+        "state": "READY",
+        "updateTime": "2026-08-17T19:17:50.905509Z"
+      },
+      "rollout": {
+        "id": "build-2026-08-17-003",
+        "state": "SUCCEEDED",
+        "updateTime": "2026-08-17T19:18:06.157123Z"
+      },
+      "rootHttpStatus": 200,
+      "adminHttpStatus": 200,
+      "oldTabProof": "UNAVAILABLE_BROWSER_SESSION_CLOSED_DURING_UPLOAD",
+      "positiveGen2Calls": 0,
+      "legacyCallsDuringCutoverWindow": 0,
+      "dataChanged": false,
+      "rollback": {
+        "id": "g4-a4-rollback-20260817-001",
+        "build": "build-2026-08-17-002",
+        "state": "SUCCEEDED",
+        "updateTime": "2026-08-17T19:23:16.852904Z"
+      },
+      "newBuildCreated": true,
+      "newRolloutCreated": true,
       "effectiveBuild": "build-2026-08-17-002",
       "effectiveClientTarget": "syncSession",
-      "rollbackRequired": false,
+      "rollbackRequired": true,
       "siteHttpStatus": 200
     },
     "deploymentAllowed": true,
@@ -173,5 +203,5 @@
     "iamSecretsAction": "none",
     "g12Action": "none before G12-A approval and completed observation"
   },
-  "verdict": "FUNCTION_ACTIVE_CLIENT_CUTOVER_BLOCKED_IAM_PREFLIGHT"
+  "verdict": "FUNCTION_ACTIVE_CLIENT_CUTOVER_ROLLED_BACK_OLD_TAB_PROOF_UNAVAILABLE"
 }

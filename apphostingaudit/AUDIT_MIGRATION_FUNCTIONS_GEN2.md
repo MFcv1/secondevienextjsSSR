@@ -2206,13 +2206,17 @@ retourne 200 et mis a jour une session bornee; l'inventaire devient 161 exports
 locaux pour 156 cloud, 139 Gen1 et 17 Gen2. Le registre source est prepare sur
 la Gen2; le cutover App Hosting reste la prochaine operation unique.
 
-Tentative de cutover G4-A4: le premier envoi source est reste bloque plus de
-15 minutes avant creation d'un build et a ete interrompu sans rollout. La
-relance a echoue au preflight Firebase avec `Unexpected error occurred while
-testing for IAM service account permissions`. Aucun build ou rollout nouveau
-n'existe; le sandbox reste sain en 200 sur `build-2026-08-17-002` et utilise
-donc encore `syncSession` Gen1. Le rollback exact est deja effectif, sans
-suppression de Function ou donnee. Arret de vague sur ecart IAM, comme exige.
+Tentative de cutover G4-A4: deux uploads Firebase ont echoue avant creation de
+build, le premier suivi d'un refus transitoire du preflight IAM. L'archive
+exacte de 96 952 338 octets a ensuite ete produite par le packager Firebase et
+envoyee par transport Google Storage reprenable. `build-2026-08-17-003` est
+READY et son rollout a ete SUCCEEDED; `/` et `/admin` repondaient 200. La
+session Chrome historique s'est toutefois fermee pendant le long upload, donc
+la preuve ancien onglet et l'appel positif Gen2 n'etaient plus possibles. Zero
+appel Gen1 ou Gen2 et zero changement de donnee ont ete observes pendant la
+fenetre. Le rollback exact `g4-a4-rollback-20260817-001` est SUCCEEDED vers
+`build-2026-08-17-002`. Aucune Function ou donnee n'a ete supprimee;
+`syncSession` effectif reste Gen1 et G4-A4 demeure ouverte.
 
 ### G5 - Auth callables, OTP et passkeys
 
