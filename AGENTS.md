@@ -157,12 +157,14 @@ Plan temporaire de reprise explicitement demande:
   legacy sont decidees `RETIRE_G12_A` avec commandes Stripe fail-closed et
   zero retrait cloud; G4 analytics est en cours sur `trackAdminIPGen2`, cible
   unique cloud active puis basculee par App Hosting sandbox au build
-  `build-2026-08-16-001`; la Gen1 reste intacte et la fenetre d'observation de
-  48 h est ouverte jusqu'au 2026-08-18T19:16:52Z. Trois suppressions restent
-  sous hold G11 et aucun autre target cloud n'est autorise avant fermeture de
-  cette fenetre. `updateUserSessionsGen2` est preparee localement comme cible
-  suivante, ce qui porte le source a 159 exports sans changer les 153 Functions
-  cloud; son manifeste reste fail-closed avec deploy et cutover interdits. Le
+  `build-2026-08-16-001`; la Gen1 reste intacte. L'utilisateur a leve la borne
+  temporelle du 2026-08-18 et G4-A1 a ete fermee par validation acceleree:
+  deux appels admin Gen2 reussis, donnees idempotentes, zero erreur et zero
+  trafic Gen1. Trois suppressions restent sous hold G11.
+  `updateUserSessionsGen2` est preparee localement comme cible suivante, ce qui
+  porte le source a 159 exports sans changer les 153 Functions cloud; son deploy
+  cible unique est autorise, mais le cutover client reste bloque jusqu'a preuve
+  de revision. Le
   correctif Monitoring du 2026-08-17 a ferme la boucle
   recursive `Violation*`, conserve `loa.gto`/PubSub et severise les huit
   policies; trois

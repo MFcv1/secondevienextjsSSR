@@ -212,8 +212,9 @@ Exclusion admin:
 Migration Gen2 sandbox: `updateUserSessionsGen2` est preparee localement avec
 le meme handler que la Gen1, App Check et le runtime dedie `analytics-runtime`.
 Elle n'est pas encore deployee et le registre client continue d'appeler
-`updateUserSessions`; la bascule reste bloquee jusqu'a la fermeture de
-l'observation `trackAdminIPGen2`.
+`updateUserSessions`. G4-A1 est fermee par validation acceleree; son deploy
+cible unique est autorise, mais la bascule attend encore la revision et les
+probes conformes.
 
 Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. L'architecture haut trafic sera traitee dans une phase distincte demandee par l'utilisateur.
 

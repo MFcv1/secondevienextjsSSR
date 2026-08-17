@@ -146,9 +146,10 @@ PITR sept jours, un backup quotidien conserve quatorze jours et un backup
 hebdomadaire dimanche UTC conserve quatorze semaines. Le premier backup est
 `READY` et le restore vers `restore-drill-20260815-a` est reconcilie sans drift
 de donnees/index. Les preuves sante/workers G1 et la stabilisation G2-B des
-treize Gen2 initiales sont fermees. G4-A1 reste la gate active: aucune nouvelle
-cible cloud avant la fin de l'observation `trackAdminIPGen2` au
-`2026-08-18T19:16:52Z`. Monitoring
+treize Gen2 initiales sont fermees. G4-A1 est fermee par validation acceleree
+apres levee explicite de la borne temporelle: deux appels admin reussis, zero
+erreur, donnees idempotentes et zero trafic Gen1. `updateUserSessionsGen2` est
+la seule cible cloud suivante autorisee. Monitoring
 porte cinq metriques logs, huit policies, un dashboard, un canal e-mail primaire
 et un canal Pub/Sub interne secondaire. Le correctif du 2026-08-17 exclut les
 journaux internes d'incident des deux metriques commerce et utilise des alertes

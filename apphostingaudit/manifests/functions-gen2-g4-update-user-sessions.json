@@ -4,8 +4,8 @@
     "project": "secondevienextjsssr",
     "codebase": "main",
     "environment": "sandbox",
-    "baselineCommit": "46659967b88fb5171b8c8a15101d18980751976c",
-    "generatedAt": "2026-08-17T11:56:43Z",
+    "baselineCommit": "25f145bcb059370695ed4dc78852676200781f66",
+    "generatedAt": "2026-08-17T12:28:01Z",
     "operator": "matthis.fradin2@gmail.com",
     "wave": "G4-A2_LOCAL_PREPARATION"
   },
@@ -35,7 +35,7 @@
     "legacyOwner": "updateUserSessions",
     "legacyOwnerPreserved": true,
     "currentClientTarget": "updateUserSessions",
-    "trackAdminIPObservationState": "OPEN",
+    "trackAdminIPObservationState": "CLOSED_ACCELERATED_BY_USER",
     "trackAdminIPObservationEndNotBefore": "2026-08-18T19:16:52.793799Z"
   },
   "functions": [
@@ -135,8 +135,9 @@
     "clientCutoverPrepared": true,
     "clientCutoverAuthorized": false,
     "observationHoursAfterCutover": 48,
-    "deploymentAllowed": false,
-    "deploymentBlocker": "Close G4-A1 trackAdminIPGen2 observation at or after 2026-08-18T19:16:52.793799Z with all gates green"
+    "deploymentAllowed": true,
+    "deploymentAuthorizedAt": "2026-08-17T12:28:01Z",
+    "deploymentAuthorization": "G4-A1 accelerated validation green after explicit user waiver; deploy only updateUserSessionsGen2"
   },
   "rollback": {
     "functionAction": "none; preserve updateUserSessions and updateUserSessionsGen2",
@@ -146,5 +147,5 @@
     "iamSecretsAction": "none",
     "g12Action": "none before G12-A approval and completed observation"
   },
-  "verdict": "LOCAL_PREPARATION_COMPLETE_DEPLOYMENT_BLOCKED_BY_G4_A1"
+  "verdict": "LOCAL_PREPARATION_COMPLETE_SINGLE_TARGET_DEPLOY_ALLOWED"
 }

@@ -2,7 +2,7 @@
 
 Derniere mise a jour: 2026-08-16
 
-Statut: `CENTRE_DE_SUIVI_ACTIF - G1_TERMINEE - G2_TERMINEE - G3_TERMINEE - G4_EN_OBSERVATION`
+Statut: `CENTRE_DE_SUIVI_ACTIF - G1_TERMINEE - G2_TERMINEE - G3_TERMINEE - G4_A2_EN_COURS`
 
 Proprietaire: mainteneur Seconde Vie et agent d'execution des phases validees
 
@@ -91,7 +91,7 @@ Valeurs autorisees:
 | G1 | alertes, DR/restore, sante/incident et preuve des workers | `TERMINEE` | quatre P0 fermes; Stripe test borne uniquement | manifestes `functions-gen2-g1-*.json`, journal G1 |
 | G2 | socle Gen2 puis stabilisation ciblee des 13 Gen2 actuelles | `TERMINEE` | 13/13 Gen2 deployees et observees, inventaire sans drift, rollback conserve | `functions-gen2-g2b-closeout.json` |
 | G3 | decisions retrait/migration legacy, E2E, maintenance, publication historique | `TERMINEE` | six retraits differes G12-A, commandes Stripe fail-closed, zero suppression | `functions-gen2-g3-decisions.json` |
-| G4 | analytics | `EN_OBSERVATION` | parite, App Check, caches concurrents, 48 h observees | `trackAdminIPGen2` basculee; `updateUserSessionsGen2` preparee localement et bloquee au deploy; fin au plus tot 2026-08-18T19:16:52Z |
+| G4 | analytics | `EN_COURS` | parite, App Check, caches concurrents, observation acceleree autorisee | G4-A1 fermee; `updateUserSessionsGen2` preparee et autorisee comme cible cloud unique |
 | G5 | Auth callables, OTP et passkeys | `A_FAIRE` | Auth complete, parcours sandbox et rollback client | a renseigner |
 | G6 | catalogue admin, devis, newsletter, e-mail et factures | `A_FAIRE` | writers/readers et trigger devis sans double effet | a renseigner |
 | G7 | Meta et reconciliation Instagram | `A_FAIRE` | hold leve par preuves, OAuth/secrets/rollback valides | a renseigner |
@@ -336,8 +336,11 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
   `build-2026-08-13-002` conserve pour rollback;
 - donnees: `sys_metadata/admin_ips` reste a 52 entrees et au meme updateTime;
   zero log/5xx Gen2 depuis la bascule initiale;
-- observation 48 h ouverte jusqu'au 2026-08-18T19:16:52Z; ancien onglet encore
-  a verifier et aucun autre target cloud G4 n'est autorise avant fermeture.
+- borne temporelle levee explicitement par l'utilisateur; validation acceleree
+  fermee avec deux appels admin Gen2 en 200, zero erreur, une IP attendue ajoutee
+  puis rafraichie idempotemment et zero trafic Gen1;
+- aucun ancien onglet pre-cutover ne subsistait dans Chrome; la preuve de
+  compatibilite repose sur la Gen1 ACTIVE, version 9, endpoint/IAM/code preserves.
 
 ### G4-A2 - updateUserSessions Gen2, preparation locale
 
@@ -350,11 +353,11 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
 - manifeste/digest:
   `functions-gen2-g4-update-user-sessions.json` et
   `functions-gen2-g4-update-user-sessions-digest.json`;
-- garde: `deploymentAllowed=false`, `clientCutoverAuthorized=false`, registre
+- garde: `deploymentAllowed=true`, `clientCutoverAuthorized=false`, registre
   client toujours `updateUserSessions -> updateUserSessions`;
 - validations: G4 11/11, G0 26/26, analytics, App Check et lint Functions verts;
-- cloud, IAM, donnees, App Hosting: aucun changement; reprise seulement apres
-  fermeture verte de G4-A1.
+- cloud, IAM, donnees, App Hosting: aucun changement pendant la preparation;
+  prochaine action: deploy allowliste de la seule Function.
 
 ## 9. Conditions d'arret immediat
 
@@ -377,10 +380,8 @@ Arreter la vague au premier:
 
 ## 10. Point de reprise
 
-La reprise courante ferme d'abord la fenetre d'observation de la cible unique
-`trackAdminIPGen2`, maintenant active et servie par App Hosting sandbox, dans
-[AUDIT_MIGRATION_FUNCTIONS_GEN2.md](AUDIT_MIGRATION_FUNCTIONS_GEN2.md), apres
-lecture de la derniere entree du Journal et regeneration read-only de la
-baseline. Aucun autre target cloud n'est permis avant le
-2026-08-18T19:16:52Z, la verification ancien onglet et une quiet-window sans
-drift; les six retraits G3 restent differes a G12-A.
+La reprise courante deploie uniquement `updateUserSessionsGen2`, maintenant
+preparee et autorisee apres fermeture acceleree de G4-A1. Elle verifie ensuite
+revision/IAM/App Check, execute les probes admin/client, bascule le registre
+App Hosting de facon reversible et ouvre sa propre observation. Les six
+retraits G3 restent differes a G12-A.

@@ -98,10 +98,31 @@
     },
     "postCutover": {
       "from": "2026-08-16T19:16:52.793799Z",
-      "snapshotAt": "2026-08-16T19:26:04Z",
-      "logEntries": 0,
+      "snapshotAt": "2026-08-17T12:28:01Z",
+      "logEntries": 8,
+      "http200": 2,
+      "http204": 2,
       "http5xx": 0,
       "errors": 0
+    },
+    "acceleratedAdminProbe": {
+      "authorizedAt": "2026-08-17T12:14:00Z",
+      "executedFrom": "2026-08-17T12:26:30.876618Z",
+      "executedUntil": "2026-08-17T12:27:15.407Z",
+      "authenticatedAdminPageLoads": 2,
+      "successfulCallableResponses": 2,
+      "adminIpsBefore": {
+        "updateTime": "2026-08-13T11:10:39.345531Z",
+        "entries": 52
+      },
+      "adminIpsAfter": {
+        "updateTime": "2026-08-17T12:27:15.407Z",
+        "entries": 53
+      },
+      "dataVerdict": "one expected current admin IP added, then idempotently refreshed",
+      "legacyTrafficAfterCutover": 0,
+      "browserRegression": false,
+      "appCheckVerdict": "enforced; both authenticated calls succeeded; one transient fetch warning did not recur after reload"
     }
   },
   "deploymentAttempts": {
@@ -114,11 +135,15 @@
     "effectiveIamDrift": false
   },
   "observation": {
-    "state": "OPEN",
+    "state": "CLOSED_ACCELERATED_BY_USER",
     "start": "2026-08-16T19:16:52.793799Z",
     "requiredEndNotBefore": "2026-08-18T19:16:52.793799Z",
-    "oldTabCheck": "PENDING",
-    "nextCloudTargetAllowed": false
+    "closedAt": "2026-08-17T12:28:01Z",
+    "timeGateWaivedAt": "2026-08-17T12:14:00Z",
+    "timeGateWaiver": "User explicitly lifted the 2026-08-18 deployment prohibition and authorized accelerated validation",
+    "oldTabCheck": "REPLACED_BY_PRESERVED_GEN1_COMPATIBILITY_PROOF",
+    "oldTabEvidence": "No pre-cutover sandbox tab remained open in Chrome; Gen1 source, ACTIVE endpoint, version 9 and public transport IAM remain intact, with zero post-cutover traffic",
+    "nextCloudTargetAllowed": true
   },
   "holds": {
     "clearAllAffiliateClicks": "HOLD_G11_DESTRUCTIVE_PRECONDITIONS",
@@ -135,5 +160,5 @@
     "sourceFollowUp": "restore trackAdminIP: 'trackAdminIP' in src/kit/config/functionTargets.js before any later sandbox rollout",
     "g12Action": "none before G12-A approval and completed observation"
   },
-  "verdict": "CUTOVER_SUCCEEDED_OBSERVATION_OPEN"
+  "verdict": "G4_A1_CLOSED_ACCELERATED_NEXT_TARGET_ALLOWED"
 }

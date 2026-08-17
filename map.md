@@ -1005,12 +1005,16 @@ jour `sys_metadata/admin_ips` en transaction sur le runtime dedie
 `build-2026-08-16-001`; la Gen1 et le build precedent restent preserves pour
 rollback pendant la quiet-window jusqu'au 2026-08-18T19:16:52Z. Les trois
 callables de suppression analytics restent sous hold G11 et aucun autre target
-cloud n'est autorise avant fermeture de l'observation.
+cloud n'etait autorise avant fermeture de l'observation. L'utilisateur a leve
+la borne temporelle et G4-A1 est fermee par deux appels admin Gen2 reussis,
+zero erreur, mise a jour idempotente et zero trafic Gen1; la compatibilite
+ancien onglet est remplacee par la preuve que la Gen1 ACTIVE, son endpoint,
+son IAM et son code sont preserves.
 G4-A2 est preparee uniquement dans le source: `updateUserSessionsGen2` partage
 le handler de la Gen1, utilise `analytics-runtime`, CPU Gen1, concurrence 1,
 min 0/max 1 et App Check. Le registre client continue de cibler
-`updateUserSessions`; le manifeste bloque deploy et cutover jusqu'a la fermeture
-verte de G4-A1. L'inventaire de travail est donc 159 exports locaux pour 153
+`updateUserSessions`; le manifeste autorise maintenant le deploy cible unique
+mais bloque encore le cutover jusqu'a preuve de revision. L'inventaire de travail est donc 159 exports locaux pour 153
 Functions cloud, 139 Gen1 et 14 Gen2.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien

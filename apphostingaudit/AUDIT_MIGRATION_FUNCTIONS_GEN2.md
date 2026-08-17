@@ -2,7 +2,7 @@
 
 Derniere contre-verification: 2026-08-17
 
-Statut: `PLAN_TEMPORAIRE_ACTIF - G0_G3_FERMES - G4_A1_OBSERVATION_OUVERTE`
+Statut: `PLAN_TEMPORAIRE_ACTIF - G0_G3_FERMES - G4_A1_FERMEE_ACCELEREE - G4_A2_DEPLOY_AUTORISE`
 
 Proprietaire: mainteneur Seconde Vie et agent charge de la migration
 
@@ -68,13 +68,13 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | baseline avant le checkpoint Monitoring | `25daf810309dc3329cfeb0fb19be0f1790fe608a` |
 | worktree attendu a la reprise | propre; tout changement additionnel doit etre preserve et qualifie |
 | phases fermees | G0, G1, G2-A, G2-B 13/13 et G3 |
-| phase active | G4-A1 analytics |
+| phase active | G4-A2 analytics |
 | inventaire courant | 159 exports locaux prepares, 153 cloud, 139 Gen1, 14 Gen2 |
 | cible parallele active | `trackAdminIPGen2`, revision `trackadminipgen2-00001-goj` |
 | cutover client | App Hosting `build-2026-08-16-001`, registre `trackAdminIP -> trackAdminIPGen2` |
-| observation | ouverte jusqu'au `2026-08-18T19:16:52Z`; ancien onglet encore `PENDING` |
+| observation G4-A1 | fermee acceleree le `2026-08-17T12:28:01Z` apres levee explicite de la borne temporelle |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | `updateUserSessionsGen2` preparee localement; deploy et cutover seulement apres fermeture conforme de G4-A1 |
+| prochain lot | deploy cible unique `updateUserSessionsGen2`; cutover seulement apres revision/probes conformes |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -84,8 +84,8 @@ identite IAM, App Hosting ou configuration Stripe.
 Pour avancer sans raccourcir la preuve cloud, G4-A2 est preparee localement:
 `updateUserSessionsGen2` reutilise exactement le handler Gen1, epingle CPU
 `gcf_gen1`, concurrence 1, min 0/max 1, 256 MiB, 60 s, App Check et le runtime
-`analytics-runtime`. Son manifeste machine bloque explicitement deploy et
-cutover tant que G4-A1 n'est pas fermee. Le registre client reste sur la Gen1;
+`analytics-runtime`. Apres fermeture acceleree autorisee de G4-A1, son manifeste
+autorise le deploy cible unique mais bloque encore le cutover. Le registre client reste sur la Gen1;
 aucune nouvelle Function, revision, IAM, donnee ou App Hosting n'a ete modifiee.
 
 Ordre de reprise obligatoire:
@@ -2134,9 +2134,11 @@ Cutover du 2026-08-16: `trackAdminIPGen2` est ACTIVE en revision
 `trackAdminIP -> trackAdminIPGen2`. Apres preparation locale de la cible
 suivante, l'inventaire de travail 159/153 s'explique par deux noms paralleles,
 dont un seul existe dans le cloud: 139 Gen1, 14 Gen2, 8 schedulers, 2 queues et
-7 Eventarc. La quiet-window de 48 h est ouverte jusqu'au
-2026-08-18T19:16:52Z, l'ancien onglet reste a verifier et aucun autre target
-cloud n'est autorise avant sa fermeture. Le rollback exact rebascule App
+7 Eventarc. L'utilisateur a leve la borne temporelle le 2026-08-17. Deux appels
+admin Gen2 ont reussi sans erreur, avec une ecriture attendue puis idempotente
+et zero trafic Gen1. Aucun ancien onglet pre-cutover ne subsistait; la Gen1
+ACTIVE, son endpoint, IAM et code preserves forment la preuve de compatibilite
+et le rollback exact rebascule App
 Hosting sur le build READY `build-2026-08-13-002`; les deux Functions, IAM,
 source, endpoint et donnees restent intacts. La preuve complete est dans
 `manifests/functions-gen2-g4-track-admin-ip-rollout.json`.
@@ -2145,8 +2147,8 @@ Preparation locale G4-A2 du 2026-08-17: le manifeste
 `manifests/functions-gen2-g4-update-user-sessions.json` decrit la cible unique,
 ses donnees, son IAM, son App Check, son idempotence et son rollback. Les tests
 G4/G0, analytics, App Check et lint Functions sont verts. `deploymentAllowed`
-et `clientCutoverAuthorized` restent `false`; la Gen1, son endpoint, son IAM et
-le registre client sont inchanges.
+est maintenant `true`, tandis que `clientCutoverAuthorized` reste `false`; la
+Gen1, son endpoint, son IAM et le registre client sont inchanges.
 
 ### G5 - Auth callables, OTP et passkeys
 

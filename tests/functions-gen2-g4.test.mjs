@@ -69,7 +69,7 @@ test('updateUserSessions Gen2 partage exactement le handler Gen1 et borne son ru
   assert.doesNotMatch(source, /updateUserSessionsGen2[\s\S]*appspot\.gserviceaccount\.com/);
 });
 
-test('updateUserSessions Gen2 est preparee mais reste bloquee avant fermeture G4-A1', () => {
+test('updateUserSessions Gen2 est autorisee seule apres fermeture acceleree G4-A1', () => {
   const prepared = JSON.parse(fs.readFileSync(UPDATE_USER_SESSIONS_MANIFEST_PATH, 'utf8'));
   const registry = read('src/kit/config/functionTargets.js');
   const target = GCLOUD_GEN2_TARGETS.updateUserSessionsGen2;
@@ -79,9 +79,9 @@ test('updateUserSessions Gen2 est preparee mais reste bloquee avant fermeture G4
   assert.equal(prepared.functions[0].name, 'updateUserSessionsGen2');
   assert.equal(prepared.functions[0].cloud.present, false);
   assert.equal(prepared.functions[0].decision.deploymentMaxBatchSize, 1);
-  assert.equal(prepared.gates.deploymentAllowed, false);
+  assert.equal(prepared.gates.deploymentAllowed, true);
   assert.equal(prepared.gates.clientCutoverAuthorized, false);
-  assert.match(prepared.gates.deploymentBlocker, /2026-08-18T19:16:52/);
+  assert.equal(prepared.preflight.trackAdminIPObservationState, 'CLOSED_ACCELERATED_BY_USER');
   assert.match(registry, /updateUserSessions:\s*'updateUserSessions'/);
   assert.doesNotMatch(registry, /updateUserSessions:\s*'updateUserSessionsGen2'/);
   assert.deepEqual(target, {
@@ -101,7 +101,7 @@ test('updateUserSessions Gen2 est preparee mais reste bloquee avant fermeture G4
     ingressSettings: 'all'
   });
 
-  assert.throws(() => validateDeploymentRequest({
+  const validation = validateDeploymentRequest({
     args: {
       project: 'secondevienextjsssr',
       codebase: 'main',
@@ -118,7 +118,14 @@ test('updateUserSessions Gen2 est preparee mais reste bloquee avant fermeture G4
     currentCommit: prepared.metadata.baselineCommit,
     activeFirebaseProject: 'secondevienextjsssr',
     baselineIsAncestor: true
-  }), /Creation gcloud Gen2 bloquee par la gate du manifeste/);
+  });
+  const deployArgs = buildGcloudGen2DeployArgs(validation);
+  assert.equal(validation.allowlist.length, 1);
+  assert.deepEqual(deployArgs.slice(0, 3), ['functions', 'deploy', 'updateUserSessionsGen2']);
+  assert.ok(deployArgs.includes('--project=secondevienextjsssr'));
+  assert.ok(deployArgs.includes('--entry-point=updateUserSessionsGen2'));
+  assert.ok(deployArgs.includes('--run-service-account=analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com'));
+  assert.ok(deployArgs.includes('--allow-unauthenticated'));
 });
 
 test('trackAdminIP Gen2 conserve App Check/admin et serialise la carte IP', () => {
@@ -243,7 +250,7 @@ test('le lanceur App Hosting de cutover est borne au sandbox et ne persiste aucu
   assert.doesNotMatch(source, /writeFile|appendFile|console\.log\(token\)|process\.env\.[A-Z_]+\s*=\s*token/);
 });
 
-test('le rollout G4 conserve la Gen1 et bloque la cible suivante pendant 48 h', () => {
+test('le rollout G4 conserve la Gen1 et documente la fermeture acceleree', () => {
   const rollout = JSON.parse(fs.readFileSync(ROLLOUT_PATH, 'utf8'));
   assert.equal(rollout.metadata.project, 'secondevienextjsssr');
   assert.equal(rollout.reconciliation.cloudFunctions, 153);
@@ -255,7 +262,9 @@ test('le rollout G4 conserve la Gen1 et bloque la cible suivante pendant 48 h', 
   assert.equal(rollout.appHosting.rollout.trafficPercent, 100);
   assert.equal(rollout.dataAndLogs.adminIpsAfter.updateTime, rollout.dataAndLogs.adminIpsBefore.updateTime);
   assert.equal(rollout.dataAndLogs.adminIpsAfter.entries, rollout.dataAndLogs.adminIpsBefore.entries);
-  assert.equal(rollout.observation.state, 'OPEN');
-  assert.equal(rollout.observation.nextCloudTargetAllowed, false);
+  assert.equal(rollout.observation.state, 'CLOSED_ACCELERATED_BY_USER');
+  assert.equal(rollout.observation.nextCloudTargetAllowed, true);
+  assert.equal(rollout.dataAndLogs.acceleratedAdminProbe.successfulCallableResponses, 2);
+  assert.equal(rollout.dataAndLogs.acceleratedAdminProbe.legacyTrafficAfterCutover, 0);
   assert.equal(rollout.rollback.functionAction, 'none; preserve trackAdminIP and trackAdminIPGen2');
 });
