@@ -149,6 +149,23 @@
       "withoutTokenHttpStatus": 401,
       "invalidTokenHttpStatus": 401,
       "handlerReached": false
+    },
+    "appHostingCutoverAttempt": {
+      "startedAt": "2026-08-17T12:40:10Z",
+      "failedAt": "2026-08-17T13:51:50Z",
+      "result": "FAILED_BEFORE_BUILD_CREATION",
+      "error": "Google Storage source upload request failed",
+      "newBuildCreated": false,
+      "trafficChanged": false,
+      "rollbackAlreadyServing": "build-2026-08-16-001",
+      "rollbackRolloutState": "SUCCEEDED",
+      "rollbackBuildState": "READY",
+      "backendReconciling": false,
+      "rootHttpStatus": 200,
+      "adminHttpStatus": 200,
+      "gen2Requests": [401, 401],
+      "gen1Requests": 0,
+      "dataAction": "none"
     }
   },
   "rollback": {
@@ -159,5 +176,5 @@
     "iamSecretsAction": "none",
     "g12Action": "none before G12-A approval and completed observation"
   },
-  "verdict": "FUNCTION_ACTIVE_CLIENT_CUTOVER_AUTHORIZED"
+  "verdict": "FUNCTION_ACTIVE_CUTOVER_UPLOAD_FAILED_ROLLBACK_BUILD_STILL_SERVING"
 }

@@ -150,7 +150,9 @@ treize Gen2 initiales sont fermees. G4-A1 est fermee par validation acceleree
 apres levee explicite de la borne temporelle: deux appels admin reussis, zero
 erreur, donnees idempotentes et zero trafic Gen1. `updateUserSessionsGen2` est
 ACTIVE en revision `updateusersessionsgen2-00001-zoq`; limites, IAM et refus
-App Check sont conformes, et le cutover App Hosting est la prochaine action. Monitoring
+App Check sont conformes. Le premier upload du cutover App Hosting a echoue
+avant creation de build; `build-2026-08-16-001` reste READY, SUCCEEDED et servi,
+sans reconciliation active. Monitoring
 porte cinq metriques logs, huit policies, un dashboard, un canal e-mail primaire
 et un canal Pub/Sub interne secondaire. Le correctif du 2026-08-17 exclut les
 journaux internes d'incident des deux metriques commerce et utilise des alertes

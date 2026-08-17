@@ -2,7 +2,7 @@
 
 Derniere contre-verification: 2026-08-17
 
-Statut: `PLAN_TEMPORAIRE_ACTIF - G0_G3_FERMES - G4_A1_FERMEE_ACCELEREE - G4_A2_CUTOVER_PREPARE`
+Statut: `PLAN_TEMPORAIRE_ACTIF - G0_G3_FERMES - G4_A1_FERMEE_ACCELEREE - G4_A2_ROLLBACK_SERVI_APRES_ECHEC_UPLOAD`
 
 Proprietaire: mainteneur Seconde Vie et agent charge de la migration
 
@@ -74,7 +74,7 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | cutover client | App Hosting `build-2026-08-16-001`, registre `trackAdminIP -> trackAdminIPGen2` |
 | observation G4-A1 | fermee acceleree le `2026-08-17T12:28:01Z` apres levee explicite de la borne temporelle |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | cutover App Hosting cible unique `updateUserSessionsGen2`, puis validation active acceleree |
+| prochain lot | reprendre le cutover App Hosting cible unique apres l'echec reseau borne; rollback deja servi |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -88,6 +88,9 @@ Pour avancer sans raccourcir la preuve cloud, G4-A2 est preparee localement:
 `updateusersessionsgen2-00001-zoq`; limites, IAM et deux refus App Check 401 sont
 conformes. Le registre source cible la Gen2 et attend son build App Hosting;
 la Gen1, son endpoint, son IAM, son code et les donnees restent intacts.
+Le premier upload App Hosting a echoue avant creation de build. Le backend n'est
+pas en reconciliation, `/` et `/admin` repondent 200 et le build READY
+`build-2026-08-16-001` reste servi; le rollback exact est donc deja effectif.
 
 Ordre de reprise obligatoire:
 

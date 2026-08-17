@@ -1017,7 +1017,9 @@ min 0/max 1 et App Check. Le registre client continue de cibler
 limites, IAM et refus App Check sont conformes. L'inventaire est donc de 159
 exports locaux pour 154 Functions cloud, 139 Gen1 et 15 Gen2. La Gen1 et son
 endpoint restent preserves; le rollback client revient au build App Hosting
-READY `build-2026-08-16-001`.
+READY `build-2026-08-16-001`. Le premier upload App Hosting a echoue avant
+creation de build: ce build precedent reste servi, `/` et `/admin` repondent
+200, sans trafic Gen1/Gen2 applicatif ni action sur les donnees.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.

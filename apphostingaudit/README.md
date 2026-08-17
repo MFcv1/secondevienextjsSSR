@@ -91,7 +91,7 @@ Valeurs autorisees:
 | G1 | alertes, DR/restore, sante/incident et preuve des workers | `TERMINEE` | quatre P0 fermes; Stripe test borne uniquement | manifestes `functions-gen2-g1-*.json`, journal G1 |
 | G2 | socle Gen2 puis stabilisation ciblee des 13 Gen2 actuelles | `TERMINEE` | 13/13 Gen2 deployees et observees, inventaire sans drift, rollback conserve | `functions-gen2-g2b-closeout.json` |
 | G3 | decisions retrait/migration legacy, E2E, maintenance, publication historique | `TERMINEE` | six retraits differes G12-A, commandes Stripe fail-closed, zero suppression | `functions-gen2-g3-decisions.json` |
-| G4 | analytics | `EN_COURS` | parite, App Check, caches concurrents, observation acceleree autorisee | G4-A1 fermee; `updateUserSessionsGen2` ACTIVE, cutover App Hosting prepare |
+| G4 | analytics | `EN_COURS` | parite, App Check, caches concurrents, observation acceleree autorisee | G4-A1 fermee; Function A2 ACTIVE, premier upload cutover echoue, rollback servi |
 | G5 | Auth callables, OTP et passkeys | `A_FAIRE` | Auth complete, parcours sandbox et rollback client | a renseigner |
 | G6 | catalogue admin, devis, newsletter, e-mail et factures | `A_FAIRE` | writers/readers et trigger devis sans double effet | a renseigner |
 | G7 | Meta et reconciliation Instagram | `A_FAIRE` | hold leve par preuves, OAuth/secrets/rollback valides | a renseigner |
@@ -362,6 +362,8 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
 - inventaire: 159 exports locaux, 154 Functions cloud, 139 Gen1 et 15 Gen2;
 - rollback: Gen1 intacte et retour App Hosting exact au build READY
   `build-2026-08-16-001` sans suppression ni changement IAM/donnee.
+- premier cutover: upload source echoue avant creation de build; backend sans
+  reconciliation, `/` et `/admin` en 200, build rollback toujours servi.
 
 ## 9. Conditions d'arret immediat
 

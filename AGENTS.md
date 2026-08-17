@@ -164,7 +164,9 @@ Plan temporaire de reprise explicitement demande:
   `updateUserSessionsGen2` est maintenant ACTIVE en revision
   `updateusersessionsgen2-00001-zoq`; l'inventaire compte 159 exports locaux et
   154 Functions cloud, dont 15 Gen2. Revision, limites, IAM et refus App Check
-  sont conformes; le registre client est prepare pour le cutover App Hosting. Le
+  sont conformes. Le premier upload App Hosting du cutover a echoue avant
+  creation de build; aucun trafic n'a change et le rollback READY
+  `build-2026-08-16-001` reste servi. Le
   correctif Monitoring du 2026-08-17 a ferme la boucle
   recursive `Violation*`, conserve `loa.gto`/PubSub et severise les huit
   policies; trois
