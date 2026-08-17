@@ -240,6 +240,12 @@ reprenable et son rollout a reussi. La session Chrome historique s'etant
 fermee avant la preuve ancien onglet, le rollback exact a remis
 `build-2026-08-17-002` en service. Le client appelle donc encore la Gen1;
 aucune donnee ou Function n'a ete supprimee.
+La requalification acceleree suivante a conserve un ancien onglet `002`
+pendant le rollout `g4-a4-cutover-20260817-002` vers `003`. Ancien et nouvel
+onglet ont rendu la galerie; six appels Gen2 ont reussi sans erreur et, apres
+le dernier appel Gen1 de fermeture en 200, aucun nouveau trafic Gen1 n'est
+apparu. Les donnees avant/apres restent conformes. G4-A4 est fermee et la
+prochaine cible unique est `syncSessionBeaconGen2`.
 
 Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. L'architecture haut trafic sera traitee dans une phase distincte demandee par l'utilisateur.
 

@@ -68,13 +68,13 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | baseline avant le checkpoint Monitoring | `25daf810309dc3329cfeb0fb19be0f1790fe608a` |
 | worktree attendu a la reprise | propre; tout changement additionnel doit etre preserve et qualifie |
 | phases fermees | G0, G1, G2-A, G2-B 13/13 et G3 |
-| phase active | G4-A4 analytics, preparation de `syncSessionGen2` |
+| phase active | G4-A5 analytics, preparation de `syncSessionBeaconGen2` |
 | inventaire courant | 160 exports locaux, 155 cloud, 139 Gen1, 16 Gen2 |
 | cible parallele active | `trackAdminIPGen2`, revision `trackadminipgen2-00001-goj` |
 | cutover client | App Hosting `build-2026-08-17-001`, registres `trackAdminIP -> trackAdminIPGen2` et `updateUserSessions -> updateUserSessionsGen2` |
 | observation G4-A1 | fermee acceleree le `2026-08-17T12:28:01Z` apres levee explicite de la borne temporelle |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | preparer uniquement `syncSessionGen2`; rollback exact `build-2026-08-17-002` |
+| prochain lot | preparer uniquement `syncSessionBeaconGen2`; rollback exact `build-2026-08-17-002` |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -2217,6 +2217,16 @@ appel Gen1 ou Gen2 et zero changement de donnee ont ete observes pendant la
 fenetre. Le rollback exact `g4-a4-rollback-20260817-001` est SUCCEEDED vers
 `build-2026-08-17-002`. Aucune Function ou donnee n'a ete supprimee;
 `syncSession` effectif reste Gen1 et G4-A4 demeure ouverte.
+
+Cloture acceleree G4-A4: un navigateur integre a charge un ancien onglet sur
+`build-2026-08-17-002`, puis le rollout `g4-a4-cutover-20260817-002` a remis
+`build-2026-08-17-003` en service. L'ancien onglet a continue de rendre la
+galerie apres cutover; le nouvel onglet a appele `syncSessionGen2` avec six
+succes et zero erreur. L'ancien onglet a emis un dernier appel Gen1 de
+fermeture en 200, puis la quiet-window compte zero nouvel appel Gen1. Les
+donnees avant/apres conservent version 3, parcours borne, etat actif et raisons
+de sync attendues. G4-A4 est fermee; rollback exact
+`build-2026-08-17-002`, prochaine cible unique `syncSessionBeaconGen2`.
 
 ### G5 - Auth callables, OTP et passkeys
 

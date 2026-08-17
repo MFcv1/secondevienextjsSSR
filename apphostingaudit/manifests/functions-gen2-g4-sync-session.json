@@ -5,9 +5,9 @@
     "codebase": "main",
     "environment": "sandbox",
     "baselineCommit": "7f0a80b8982d50feaade41437781b026cfb852b3",
-    "generatedAt": "2026-08-17T16:48:30Z",
+    "generatedAt": "2026-08-17T19:31:30Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G4-A4_ACTIVE_CUTOVER_AUTHORIZED"
+    "wave": "G4-A4_CLOSED_ACCELERATED_VALIDATION"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -36,7 +36,8 @@
     "legacyOwnerPreserved": true,
     "currentClientTarget": "syncSessionGen2",
     "previousWave": "G4-A3_CLOSED_ACCELERATED_VALIDATION",
-    "targetAbsentBeforeCreate": true
+    "targetAbsentBeforeCreate": true,
+    "nextUniqueTarget": "syncSessionBeaconGen2"
   },
   "functions": [
     {
@@ -185,11 +186,44 @@
         "state": "SUCCEEDED",
         "updateTime": "2026-08-17T19:23:16.852904Z"
       },
+      "acceleratedValidation": {
+        "rollout": "g4-a4-cutover-20260817-002",
+        "build": "build-2026-08-17-003",
+        "state": "SUCCEEDED",
+        "updateTime": "2026-08-17T19:28:50.763279Z",
+        "rootHttpStatus": 200,
+        "adminHttpStatus": 200,
+        "oldTab": {
+          "build": "build-2026-08-17-002",
+          "renderedAfterCutover": true,
+          "title": "Galerie de mobilier ancien restauré",
+          "finalLegacyCloseCallHttpStatus": 200,
+          "closedAt": "2026-08-17T19:30:09.929Z"
+        },
+        "newTab": {
+          "build": "build-2026-08-17-003",
+          "rendered": true,
+          "title": "Galerie de mobilier ancien restauré"
+        },
+        "gen2SuccessfulRequestsAfterQuietWindow": 6,
+        "gen2Errors": 0,
+        "legacyRequestsAfterCloseFlush": 0,
+        "dataAfter": {
+          "updateTime": "2026-08-17T19:31:23.273Z",
+          "duration": 120,
+          "sessionActive": true,
+          "analyticsVersion": 3,
+          "journeyCount": 1,
+          "lastSyncReason": "heartbeat",
+          "syncReasonKeys": ["heartbeat", "init"]
+        },
+        "result": "PASS"
+      },
       "newBuildCreated": true,
       "newRolloutCreated": true,
-      "effectiveBuild": "build-2026-08-17-002",
-      "effectiveClientTarget": "syncSession",
-      "rollbackRequired": true,
+      "effectiveBuild": "build-2026-08-17-003",
+      "effectiveClientTarget": "syncSessionGen2",
+      "rollbackRequired": false,
       "siteHttpStatus": 200
     },
     "deploymentAllowed": true,
@@ -203,5 +237,5 @@
     "iamSecretsAction": "none",
     "g12Action": "none before G12-A approval and completed observation"
   },
-  "verdict": "FUNCTION_ACTIVE_CLIENT_CUTOVER_ROLLED_BACK_OLD_TAB_PROOF_UNAVAILABLE"
+  "verdict": "G4_A4_CLOSED_ACCELERATED_VALIDATION"
 }

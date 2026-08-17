@@ -415,7 +415,12 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
   ancien onglet et appel positif Gen2 indisponibles; zero appel Gen1/Gen2 et
   zero changement de donnee pendant la fenetre;
 - rollback: `g4-a4-rollback-20260817-001` SUCCEEDED vers
-  `build-2026-08-17-002`; client effectif Gen1, Gen2 preservee et G4-A4 ouverte.
+  `build-2026-08-17-002`; Gen2 preservee;
+- requalification: ancien onglet `002` sain apres cutover, nouvel onglet `003`
+  sain, six appels Gen2 reussis, zero erreur, dernier appel de fermeture Gen1
+  en 200 puis zero nouveau trafic Gen1;
+- decision: G4-A4 fermee sur `build-2026-08-17-003`; rollback exact `002` et
+  prochaine cible unique `syncSessionBeaconGen2`.
 
 ## 9. Conditions d'arret immediat
 
@@ -438,7 +443,8 @@ Arreter la vague au premier:
 
 ## 10. Point de reprise
 
-La reprise courante prepare uniquement `syncSessionGen2`. App Hosting sert
-`build-2026-08-17-002` avec `trackAdminIP`, `updateUserSessions` et
-`initLiveSession` sur leurs cibles Gen2. Leurs Gen1, endpoints, IAM et code
-restent preserves; les six retraits G3 restent differes a G12-A.
+La reprise courante prepare uniquement `syncSessionBeaconGen2`. App Hosting
+sert `build-2026-08-17-003` avec `trackAdminIP`, `updateUserSessions`,
+`initLiveSession` et `syncSession` sur leurs cibles Gen2. Leurs Gen1,
+endpoints, IAM et code restent preserves; les six retraits G3 restent differes
+a G12-A.

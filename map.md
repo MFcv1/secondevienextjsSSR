@@ -1041,6 +1041,11 @@ mais la session Chrome historique s'est fermee avant la preuve ancien onglet.
 Le rollback `g4-a4-rollback-20260817-001` sert de nouveau
 `build-2026-08-17-002`; le bundle effectif conserve `syncSession` Gen1 et la
 cible Gen2 ACTIVE reste inutilisee et reversible.
+La requalification suivante a ferme G4-A4: ancien onglet `002` sain apres
+cutover, nouvel onglet `003` sain, six appels `syncSessionGen2` reussis, zero
+erreur et zero trafic Gen1 apres l'appel final de fermeture. App Hosting sert
+`build-2026-08-17-003`; rollback exact `002`. Prochaine cible unique:
+`syncSessionBeaconGen2`.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.
