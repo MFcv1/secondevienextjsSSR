@@ -209,6 +209,12 @@ Exclusion admin:
 - les sessions `type == admin` sont exclues de tous les calculs du panneau Data;
 - l'e-mail proprietaire est lu depuis le secret serveur `SUPER_ADMIN_EMAIL`, jamais code en dur cote client.
 
+Migration Gen2 sandbox: `updateUserSessionsGen2` est preparee localement avec
+le meme handler que la Gen1, App Check et le runtime dedie `analytics-runtime`.
+Elle n'est pas encore deployee et le registre client continue d'appeler
+`updateUserSessions`; la bascule reste bloquee jusqu'a la fermeture de
+l'observation `trackAdminIPGen2`.
+
 Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. L'architecture haut trafic sera traitee dans une phase distincte demandee par l'utilisateur.
 
 Optimisation de cout locale au 2026-07-17: la cadence visible, le seuil live, le parcours et la securite de reprise restent inchanges. Le cache de hash et l'arbitrage des synchronisations visent uniquement les relectures et appels rapproches observes dans la fenetre Data Access. Leur gain exact doit etre mesure apres deploiement sandbox avec le protocole de [AUDIT_COUTS_FIRESTORE.md](AUDIT_COUTS_FIRESTORE.md).

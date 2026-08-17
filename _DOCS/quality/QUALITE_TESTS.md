@@ -82,6 +82,11 @@ les alertes `LogMatch` sont limitees a une notification par heure avec
 auto-close six heures, les huit policies portent une severite et Pub/Sub reste
 le canal secondaire par defaut. Ce test reste local et sans ecriture cloud.
 
+La gate `test:functions-g4` couvre aussi la preparation locale de
+`updateUserSessionsGen2`: handler partage avec la Gen1, limites runtime, App
+Check, compte dedie, cible unique du wrapper et blocage deploy/cutover tant que
+G4-A1 reste ouverte. Elle ne contacte pas le cloud.
+
 Pour G1, `npm run functions:audit:g1` et
 `npm run functions:data-plan:g1` sont des lectures sandbox fail-closed sur le
 projet exact. Le second produit le plan des `inventoryVersion` et les

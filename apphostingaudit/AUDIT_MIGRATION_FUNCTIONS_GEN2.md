@@ -69,29 +69,36 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | worktree attendu a la reprise | propre; tout changement additionnel doit etre preserve et qualifie |
 | phases fermees | G0, G1, G2-A, G2-B 13/13 et G3 |
 | phase active | G4-A1 analytics |
-| inventaire courant | 158 exports locaux, 153 cloud, 139 Gen1, 14 Gen2 |
+| inventaire courant | 159 exports locaux prepares, 153 cloud, 139 Gen1, 14 Gen2 |
 | cible parallele active | `trackAdminIPGen2`, revision `trackadminipgen2-00001-goj` |
 | cutover client | App Hosting `build-2026-08-16-001`, registre `trackAdminIP -> trackAdminIPGen2` |
 | observation | ouverte jusqu'au `2026-08-18T19:16:52Z`; ancien onglet encore `PENDING` |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot envisageable | `updateUserSessionsGen2`, seulement apres fermeture conforme de G4-A1 |
+| prochain lot | `updateUserSessionsGen2` preparee localement; deploy et cutover seulement apres fermeture conforme de G4-A1 |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
 `Violation*` ne se reproduit plus. Il n'a modifie aucune Function, donnee,
 identite IAM, App Hosting ou configuration Stripe.
 
+Pour avancer sans raccourcir la preuve cloud, G4-A2 est preparee localement:
+`updateUserSessionsGen2` reutilise exactement le handler Gen1, epingle CPU
+`gcf_gen1`, concurrence 1, min 0/max 1, 256 MiB, 60 s, App Check et le runtime
+`analytics-runtime`. Son manifeste machine bloque explicitement deploy et
+cutover tant que G4-A1 n'est pas fermee. Le registre client reste sur la Gen1;
+aucune nouvelle Function, revision, IAM, donnee ou App Hosting n'a ete modifiee.
+
 Ordre de reprise obligatoire:
 
 1. preserver le diff existant et verifier le projet explicite
-   `secondevienextjsssr`, l'operateur et l'inventaire 158/153;
+   `secondevienextjsssr`, l'operateur et l'inventaire 159/153;
 2. ne deployer aucune nouvelle cible avant le terme de la quiet-window G4-A1;
 3. a son terme, verifier revision/IAM/App Check, logs, donnees avant/apres,
    absence de trafic Gen1 et compatibilite d'un ancien onglet;
 4. si ces preuves sont vertes, fermer G4-A1 sans supprimer `trackAdminIP`;
-5. preparer puis migrer `updateUserSessions` sous le nouveau nom
-   `updateUserSessionsGen2`, avec parite Gen1, manifeste, rollback client et
-   une seule cible cloud;
+5. verifier la preparation locale puis migrer `updateUserSessions` sous le
+   nouveau nom `updateUserSessionsGen2`, avec parite Gen1, manifeste, rollback
+   client et une seule cible cloud;
 6. continuer ensuite les cibles G4 non destructives dans l'ordre du plan, avec
    uniquement les tests proportionnes au flux touche; ne pas rejouer les
    campagnes G0-G3 ni lancer des tests sans decision qu'ils prouvent;
@@ -2124,14 +2131,22 @@ Cutover du 2026-08-16: `trackAdminIPGen2` est ACTIVE en revision
 401 sans atteindre le handler ni modifier les 52 entrees de
 `sys_metadata/admin_ips`. App Hosting sert a 100 % le build
 `build-2026-08-16-001`; `/` et `/admin` repondent 200 et le bundle servi porte
-`trackAdminIP -> trackAdminIPGen2`. L'inventaire courant 158/153 s'explique
-exactement par ce nom parallele: 139 Gen1, 14 Gen2, 8 schedulers, 2 queues et
+`trackAdminIP -> trackAdminIPGen2`. Apres preparation locale de la cible
+suivante, l'inventaire de travail 159/153 s'explique par deux noms paralleles,
+dont un seul existe dans le cloud: 139 Gen1, 14 Gen2, 8 schedulers, 2 queues et
 7 Eventarc. La quiet-window de 48 h est ouverte jusqu'au
 2026-08-18T19:16:52Z, l'ancien onglet reste a verifier et aucun autre target
 cloud n'est autorise avant sa fermeture. Le rollback exact rebascule App
 Hosting sur le build READY `build-2026-08-13-002`; les deux Functions, IAM,
 source, endpoint et donnees restent intacts. La preuve complete est dans
 `manifests/functions-gen2-g4-track-admin-ip-rollout.json`.
+
+Preparation locale G4-A2 du 2026-08-17: le manifeste
+`manifests/functions-gen2-g4-update-user-sessions.json` decrit la cible unique,
+ses donnees, son IAM, son App Check, son idempotence et son rollback. Les tests
+G4/G0, analytics, App Check et lint Functions sont verts. `deploymentAllowed`
+et `clientCutoverAuthorized` restent `false`; la Gen1, son endpoint, son IAM et
+le registre client sont inchanges.
 
 ### G5 - Auth callables, OTP et passkeys
 
@@ -2397,7 +2412,7 @@ Avant toute action:
 - passe `--project secondevienextjsssr` a chaque commande cloud et echoue si le
   projet effectif differe, meme si la configuration gcloud globale vaut
   `vibefx-v2`;
-- confirme l'inventaire attendu: 158 exports locaux, 153 Functions cloud,
+- confirme l'inventaire attendu: 159 exports locaux prepares, 153 Functions cloud,
   139 Gen1, 14 Gen2, 8 schedulers, 2 queues et 7 Eventarc.
 
 Discipline Git:

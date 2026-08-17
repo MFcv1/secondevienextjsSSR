@@ -134,10 +134,12 @@ cibles Instagram direct absentes du cloud et placees sous
 un deploiement global. Le detail machine est dans
 `apphostingaudit/manifests/functions-g0.json`.
 
-Etat G4-A1 du 2026-08-17: 158 exports locaux et 153 Functions cloud actives,
+Etat G4-A1/G4-A2 local du 2026-08-17: 159 exports locaux prepares et 153 Functions cloud actives,
 soit toujours 139 Gen1 et desormais 14 Gen2. L'unique ajout est
 `trackAdminIPGen2` en `europe-west1`; la Gen1 `trackAdminIP` reste preservee
-pour rollback jusqu'a G12-A.
+pour rollback jusqu'a G12-A. Le second export parallele
+`updateUserSessionsGen2` existe seulement dans le source et son manifeste
+interdit encore deploy et cutover; la Gen1 et le registre client restent actifs.
 
 Depuis G1 le 2026-08-15, Firestore `(default)` `eur3` porte delete protection,
 PITR sept jours, un backup quotidien conserve quatorze jours et un backup

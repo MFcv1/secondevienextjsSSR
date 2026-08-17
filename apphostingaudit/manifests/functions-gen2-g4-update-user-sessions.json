@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "baselineCommit": "46659967b88fb5171b8c8a15101d18980751976c",
+    "generatedAt": "2026-08-17T11:56:43Z",
+    "operator": "matthis.fradin2@gmail.com",
+    "wave": "G4-A2_LOCAL_PREPARATION"
+  },
+  "deploymentPolicy": {
+    "exactProject": "secondevienextjsssr",
+    "exactCodebase": "main",
+    "maxBatchSize": 1,
+    "forbiddenTargets": [
+      "clearAllAffiliateClicksGen2",
+      "clearAllSessionsGen2",
+      "deleteSessionGen2",
+      "disconnectInstagramConnectionAdmin",
+      "getInstagramConnectionStatusAdmin",
+      "instagramOAuthCallback",
+      "startInstagramOAuthAdmin",
+      "verifyInstagramConnectionAdmin"
+    ],
+    "forbiddenGlobalSelector": "functions"
+  },
+  "preflight": {
+    "projectMatch": true,
+    "sourceExportsBeforePreparation": 158,
+    "sourceExportsWithParallel": 159,
+    "cloudFunctions": 153,
+    "cloudGen1": 139,
+    "cloudGen2": 14,
+    "legacyOwner": "updateUserSessions",
+    "legacyOwnerPreserved": true,
+    "currentClientTarget": "updateUserSessions",
+    "trackAdminIPObservationState": "OPEN",
+    "trackAdminIPObservationEndNotBefore": "2026-08-18T19:16:52.793799Z"
+  },
+  "functions": [
+    {
+      "name": "updateUserSessionsGen2",
+      "source": {
+        "export": "updateUserSessionsGen2",
+        "file": "functions/src/analytics/updateUserSessions.js",
+        "sharedHandler": "updateUserSessionsHandler"
+      },
+      "trigger": {
+        "type": "callable",
+        "filter": null,
+        "retry": false
+      },
+      "cloud": {
+        "present": false,
+        "project": "secondevienextjsssr",
+        "codebase": "main",
+        "generation": 2,
+        "region": "europe-west1",
+        "runtime": "nodejs22",
+        "revision": null
+      },
+      "runtime": {
+        "sourceCpu": "gcf_gen1",
+        "deployCpu": "167m",
+        "memoryMiB": 256,
+        "timeoutSeconds": 60,
+        "concurrency": 1,
+        "minInstances": 0,
+        "maxInstances": 1,
+        "retry": false,
+        "ingress": "ALLOW_ALL"
+      },
+      "identities": {
+        "runtimeServiceAccount": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+        "invokerIam": [
+          {
+            "role": "roles/cloudfunctions.invoker",
+            "members": ["allUsers"]
+          }
+        ],
+        "runtimeProjectRoles": [
+          "roles/datastore.user",
+          "roles/logging.logWriter",
+          "roles/serviceusage.serviceUsageConsumer"
+        ]
+      },
+      "secrets": [],
+      "appCheck": "ENFORCED",
+      "authorization": "authenticated Firebase user; admin classification comes from active sys_admin_access registry",
+      "dataAccess": {
+        "reads": [
+          "sys_admin_access/{uid}",
+          "analytics_sessions filtered by canonical request IP, active state and client type"
+        ],
+        "writes": [
+          "delete recent active sessions for a confirmed admin IP",
+          "convert recent anonymous sessions to the authenticated client UID"
+        ],
+        "parity": "Gen1 and Gen2 call the same updateUserSessionsHandler",
+        "idempotence": "admin replay finds no already deleted session; client replay finds no session still typed anonymous"
+      },
+      "callers": ["src/kit/contexts/AuthContext.jsx"],
+      "clientRegistry": {
+        "logicalName": "updateUserSessions",
+        "currentTarget": "updateUserSessions",
+        "cutoverTarget": "updateUserSessionsGen2",
+        "cutoverAllowed": false
+      },
+      "decision": {
+        "classification": "MIGRATION_PARALLEL",
+        "target": "updateUserSessionsGen2",
+        "wave": "G4-A2",
+        "deploymentMaxBatchSize": 1,
+        "rollback": "Before client cutover, keep the new target unused. After cutover, restore updateUserSessions -> updateUserSessions in the client registry and roll App Hosting back to the exact preceding READY build. Preserve both Functions, endpoints, IAM, source and data until G12-A."
+      }
+    }
+  ],
+  "gates": {
+    "localTestsRequired": [
+      "test:functions-g0",
+      "test:functions-g4",
+      "test:analytics",
+      "appcheck:audit",
+      "lint:functions"
+    ],
+    "runtimeIamRequired": true,
+    "runtimeIamReady": true,
+    "runtimeIamManifest": "apphostingaudit/manifests/functions-gen2-g4-analytics-iam.json",
+    "targetMustBeAbsentBeforeCreate": true,
+    "unauthenticatedProbeMustFail": true,
+    "authenticatedAdminAndClientProbesRequired": true,
+    "oldTabRequired": true,
+    "clientCutoverPrepared": true,
+    "clientCutoverAuthorized": false,
+    "observationHoursAfterCutover": 48,
+    "deploymentAllowed": false,
+    "deploymentBlocker": "Close G4-A1 trackAdminIPGen2 observation at or after 2026-08-18T19:16:52.793799Z with all gates green"
+  },
+  "rollback": {
+    "functionAction": "none; preserve updateUserSessions and updateUserSessionsGen2",
+    "clientAction": "restore updateUserSessions: 'updateUserSessions' in src/kit/config/functionTargets.js",
+    "appHostingAction": "roll back to the exact READY build serving the preceding registry after validating the rollout",
+    "dataAction": "none",
+    "iamSecretsAction": "none",
+    "g12Action": "none before G12-A approval and completed observation"
+  },
+  "verdict": "LOCAL_PREPARATION_COMPLETE_DEPLOYMENT_BLOCKED_BY_G4_A1"
+}

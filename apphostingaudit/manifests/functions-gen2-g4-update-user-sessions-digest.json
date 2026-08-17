@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "codebase": "main",
+  "baselineCommit": "46659967b88fb5171b8c8a15101d18980751976c",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g4-update-user-sessions.json": "ac0a8ae6c1195afd174d17c5b5fd767ecaa9ebd7131c189394345733c7023f03"
+  }
+}

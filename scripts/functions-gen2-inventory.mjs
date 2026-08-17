@@ -12,7 +12,8 @@ export const EXPECTED_SOURCE_COUNT = 157;
 export const EXPECTED_CLOUD_COUNT = 152;
 
 export const PARALLEL_MIGRATION_EXPORTS = new Set([
-  'trackAdminIPGen2'
+  'trackAdminIPGen2',
+  'updateUserSessionsGen2'
 ]);
 
 export const KEEP_GEN2 = new Set([

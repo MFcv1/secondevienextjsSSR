@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   buildGcloudGen2DeployArgs,
+  GCLOUD_GEN2_TARGETS,
   validateDeploymentRequest
 } from '../scripts/deploy-functions-targeted.mjs';
 import {
@@ -20,6 +21,8 @@ const MANIFEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-
 const DIGEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-track-admin-ip-digest.json');
 const CUTOVER_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-track-admin-ip-cutover.json');
 const ROLLOUT_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-track-admin-ip-rollout.json');
+const UPDATE_USER_SESSIONS_MANIFEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-update-user-sessions.json');
+const UPDATE_USER_SESSIONS_DIGEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-update-user-sessions-digest.json');
 const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
 
@@ -34,13 +37,88 @@ test('G4 garde les suppressions analytics hors migration', () => {
   }
 });
 
-test('G4 ajoute une seule cible parallele sans masquer la baseline 157', () => {
+test('G4 prepare deux cibles paralleles sans masquer la baseline 157', () => {
   const exports = extractLocalExports(ROOT);
-  assert.equal(exports.length, EXPECTED_SOURCE_COUNT + 1);
-  assert.deepEqual([...PARALLEL_MIGRATION_EXPORTS], ['trackAdminIPGen2']);
+  assert.equal(exports.length, EXPECTED_SOURCE_COUNT + 2);
+  assert.deepEqual([...PARALLEL_MIGRATION_EXPORTS], ['trackAdminIPGen2', 'updateUserSessionsGen2']);
   assert.equal(classificationFor('trackAdminIPGen2'), 'MIGRATION_PARALLEL');
+  assert.equal(classificationFor('updateUserSessionsGen2'), 'MIGRATION_PARALLEL');
   assert.ok(exports.some(({ name }) => name === 'trackAdminIP'));
   assert.ok(exports.some(({ name }) => name === 'trackAdminIPGen2'));
+  assert.ok(exports.some(({ name }) => name === 'updateUserSessions'));
+  assert.ok(exports.some(({ name }) => name === 'updateUserSessionsGen2'));
+});
+
+test('updateUserSessions Gen2 partage exactement le handler Gen1 et borne son runtime', () => {
+  const source = read('functions/src/analytics/updateUserSessions.js');
+  for (const expected of [
+    /const updateUserSessionsHandler = async \(_data, context\) =>/,
+    /exports\.updateUserSessions = regionalFunctions\(\)/,
+    /\.https\.onCall\(updateUserSessionsHandler\)/,
+    /exports\.updateUserSessionsGen2 = onCall\(/,
+    /updateUserSessionsHandler\(request\.data, request\)/,
+    /cpu:\s*'gcf_gen1'/,
+    /concurrency:\s*1/,
+    /minInstances:\s*0/,
+    /maxInstances:\s*1/,
+    /memory:\s*'256MiB'/,
+    /timeoutSeconds:\s*60/,
+    /serviceAccount:\s*ANALYTICS_RUNTIME_SERVICE_ACCOUNT/,
+    /enforceAppCheck:\s*true/
+  ]) assert.match(source, expected);
+  assert.doesNotMatch(source, /updateUserSessionsGen2[\s\S]*appspot\.gserviceaccount\.com/);
+});
+
+test('updateUserSessions Gen2 est preparee mais reste bloquee avant fermeture G4-A1', () => {
+  const prepared = JSON.parse(fs.readFileSync(UPDATE_USER_SESSIONS_MANIFEST_PATH, 'utf8'));
+  const registry = read('src/kit/config/functionTargets.js');
+  const target = GCLOUD_GEN2_TARGETS.updateUserSessionsGen2;
+
+  assert.equal(prepared.metadata.project, 'secondevienextjsssr');
+  assert.equal(prepared.functions.length, 1);
+  assert.equal(prepared.functions[0].name, 'updateUserSessionsGen2');
+  assert.equal(prepared.functions[0].cloud.present, false);
+  assert.equal(prepared.functions[0].decision.deploymentMaxBatchSize, 1);
+  assert.equal(prepared.gates.deploymentAllowed, false);
+  assert.equal(prepared.gates.clientCutoverAuthorized, false);
+  assert.match(prepared.gates.deploymentBlocker, /2026-08-18T19:16:52/);
+  assert.match(registry, /updateUserSessions:\s*'updateUserSessions'/);
+  assert.doesNotMatch(registry, /updateUserSessions:\s*'updateUserSessionsGen2'/);
+  assert.deepEqual(target, {
+    create: true,
+    triggerType: 'http-callable',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'updateUserSessionsGen2',
+    runtimeServiceAccount: 'analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '256Mi',
+    cpu: '167m',
+    timeout: '60s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all'
+  });
+
+  assert.throws(() => validateDeploymentRequest({
+    args: {
+      project: 'secondevienextjsssr',
+      codebase: 'main',
+      commit: prepared.metadata.baselineCommit,
+      manifest: path.relative(ROOT, UPDATE_USER_SESSIONS_MANIFEST_PATH),
+      digest: path.relative(ROOT, UPDATE_USER_SESSIONS_DIGEST_PATH),
+      allowlist: 'updateUserSessionsGen2',
+      transport: 'gcloud-gen2-create'
+    },
+    manifest: prepared,
+    rootDir: ROOT,
+    manifestPath: UPDATE_USER_SESSIONS_MANIFEST_PATH,
+    digestPath: UPDATE_USER_SESSIONS_DIGEST_PATH,
+    currentCommit: prepared.metadata.baselineCommit,
+    activeFirebaseProject: 'secondevienextjsssr',
+    baselineIsAncestor: true
+  }), /Creation gcloud Gen2 bloquee par la gate du manifeste/);
 });
 
 test('trackAdminIP Gen2 conserve App Check/admin et serialise la carte IP', () => {

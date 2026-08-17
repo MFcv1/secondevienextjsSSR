@@ -5,12 +5,25 @@
  * - Pour les clients: convertit les sessions anonymes en sessions "client"
  */
 const functions = require('firebase-functions/v1');
+const { onCall } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const { regionalFunctions } = require('../../helpers/runtime');
 
 const db = admin.firestore();
+const ANALYTICS_RUNTIME_SERVICE_ACCOUNT = 'analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com';
+const UPDATE_USER_SESSIONS_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '256MiB',
+    timeoutSeconds: 60,
+    serviceAccount: ANALYTICS_RUNTIME_SERVICE_ACCOUNT,
+    enforceAppCheck: true
+});
 
-exports.updateUserSessions = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+const updateUserSessionsHandler = async (_data, context) => {
     if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Authentification requise.');
 
     const rawIp = context.rawRequest.headers['x-forwarded-for'] || context.rawRequest.connection.remoteAddress;
@@ -94,4 +107,16 @@ exports.updateUserSessions = regionalFunctions().runWith({ enforceAppCheck: true
         console.error("Update User Sessions Error:", error);
         throw new functions.https.HttpsError('internal', 'Erreur lors de la mise à jour des sessions');
     }
-});
+};
+
+exports.updateUserSessions = regionalFunctions()
+    .runWith({ enforceAppCheck: true })
+    .https.onCall(updateUserSessionsHandler);
+
+exports.updateUserSessionsGen2 = onCall(
+    UPDATE_USER_SESSIONS_GEN2_RUNTIME,
+    async (request) => updateUserSessionsHandler(request.data, request)
+);
+
+exports.updateUserSessionsHandler = updateUserSessionsHandler;
+exports.UPDATE_USER_SESSIONS_GEN2_RUNTIME = UPDATE_USER_SESSIONS_GEN2_RUNTIME;

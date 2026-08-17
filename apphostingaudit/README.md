@@ -91,7 +91,7 @@ Valeurs autorisees:
 | G1 | alertes, DR/restore, sante/incident et preuve des workers | `TERMINEE` | quatre P0 fermes; Stripe test borne uniquement | manifestes `functions-gen2-g1-*.json`, journal G1 |
 | G2 | socle Gen2 puis stabilisation ciblee des 13 Gen2 actuelles | `TERMINEE` | 13/13 Gen2 deployees et observees, inventaire sans drift, rollback conserve | `functions-gen2-g2b-closeout.json` |
 | G3 | decisions retrait/migration legacy, E2E, maintenance, publication historique | `TERMINEE` | six retraits differes G12-A, commandes Stripe fail-closed, zero suppression | `functions-gen2-g3-decisions.json` |
-| G4 | analytics | `EN_OBSERVATION` | parite, App Check, caches concurrents, 48 h observees | `trackAdminIPGen2` basculee; `functions-gen2-g4-track-admin-ip-rollout.json`; fin au plus tot 2026-08-18T19:16:52Z |
+| G4 | analytics | `EN_OBSERVATION` | parite, App Check, caches concurrents, 48 h observees | `trackAdminIPGen2` basculee; `updateUserSessionsGen2` preparee localement et bloquee au deploy; fin au plus tot 2026-08-18T19:16:52Z |
 | G5 | Auth callables, OTP et passkeys | `A_FAIRE` | Auth complete, parcours sandbox et rollback client | a renseigner |
 | G6 | catalogue admin, devis, newsletter, e-mail et factures | `A_FAIRE` | writers/readers et trigger devis sans double effet | a renseigner |
 | G7 | Meta et reconciliation Instagram | `A_FAIRE` | hold leve par preuves, OAuth/secrets/rollback valides | a renseigner |
@@ -328,7 +328,7 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
 - tests locaux avant et apres cutover: G4 9/9, G0 21/21, G2-A 26/26, G3 4/4,
   analytics, App Check et lint Functions verts;
 - cloud: `trackAdminIPGen2` revision `00001-goj`, App Check refuse la probe
-  invalide en 401 sans ecriture; inventaire courant 158 source / 153 cloud /
+  invalide en 401 sans ecriture; avant preparation G4-A2, inventaire 158 source / 153 cloud /
   139 Gen1 / 14 Gen2, 8 schedulers, 2 queues et 7 Eventarc;
 - App Hosting: build `build-2026-08-16-001` READY puis rollout SUCCEEDED,
   trafic 100 %, `/` et `/admin` 200, bundle servi
@@ -338,6 +338,23 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
   zero log/5xx Gen2 depuis la bascule initiale;
 - observation 48 h ouverte jusqu'au 2026-08-18T19:16:52Z; ancien onglet encore
   a verifier et aucun autre target cloud G4 n'est autorise avant fermeture.
+
+### G4-A2 - updateUserSessions Gen2, preparation locale
+
+- nouvel export local `updateUserSessionsGen2`; inventaire de travail 159
+  exports locaux, cloud inchange a 153/139 Gen1/14 Gen2;
+- handler unique partage avec `updateUserSessions` Gen1, donc logique Auth,
+  classification admin/client et mutations de sessions identiques;
+- runtime prepare: CPU `gcf_gen1`, concurrence 1, min 0/max 1, 256 MiB, 60 s,
+  App Check et compte `analytics-runtime`, sans secret;
+- manifeste/digest:
+  `functions-gen2-g4-update-user-sessions.json` et
+  `functions-gen2-g4-update-user-sessions-digest.json`;
+- garde: `deploymentAllowed=false`, `clientCutoverAuthorized=false`, registre
+  client toujours `updateUserSessions -> updateUserSessions`;
+- validations: G4 11/11, G0 26/26, analytics, App Check et lint Functions verts;
+- cloud, IAM, donnees, App Hosting: aucun changement; reprise seulement apres
+  fermeture verte de G4-A1.
 
 ## 9. Conditions d'arret immediat
 
