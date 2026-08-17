@@ -155,20 +155,19 @@ Plan temporaire de reprise explicitement demande:
   fiabilite hors Functions; G0/G1/G2/G3 fermes, les treize Gen2 initiales sont
   deployees, reconciliees et observees sur le sandbox sans suppression; six
   legacy sont decidees `RETIRE_G12_A` avec commandes Stripe fail-closed et
-  zero retrait cloud; G4 analytics est en cours sur `trackAdminIPGen2`, cible
-  unique cloud active puis basculee par App Hosting sandbox au build
-  `build-2026-08-16-001`; la Gen1 reste intacte. L'utilisateur a leve la borne
-  temporelle du 2026-08-18 et G4-A1 a ete fermee par validation acceleree:
-  deux appels admin Gen2 reussis, donnees idempotentes, zero erreur et zero
-  trafic Gen1. Trois suppressions restent sous hold G11.
+  zero retrait cloud; G4-A1, G4-A2 et G4-A3 analytics sont fermees en
+  validation acceleree. App Hosting sert `build-2026-08-17-002` avec
+  `trackAdminIP`, `updateUserSessions` et `initLiveSession` sur leurs nouveaux
+  noms Gen2; leurs Gen1 restent intactes. Trois suppressions restent sous hold
+  G11 et la prochaine cible unique est `syncSessionGen2`.
   `updateUserSessionsGen2` est maintenant ACTIVE en revision
   `updateusersessionsgen2-00001-zoq`; l'inventaire compte 159 exports locaux et
   154 Functions cloud, dont 15 Gen2. Revision, limites, IAM et refus App Check
   sont conformes. G4-A2 est fermee par validation acceleree: connexion admin
   Gen1 puis Gen2 en HTTP 200, Auth/App Check valides, donnees conformes, ancien
   onglet sain et zero trafic Gen1 nouveau apres cutover. Le rollout
-  `g4-a2-cutover-20260817-002` sert `build-2026-08-17-001`; la Gen1 et
-  `build-2026-08-16-001` restent le rollback exact jusqu'a G12-A. Le
+  `g4-a3-cutover-20260817-002` sert `build-2026-08-17-002`; les Gen1 et
+  `build-2026-08-17-001` restent le rollback exact jusqu'a G12-A. Le
   correctif Monitoring du 2026-08-17 a ferme la boucle
   recursive `Violation*`, conserve `loa.gto`/PubSub et severise les huit
   policies; trois

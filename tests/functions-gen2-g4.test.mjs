@@ -24,6 +24,8 @@ const ROLLOUT_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g
 const UPDATE_USER_SESSIONS_MANIFEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-update-user-sessions.json');
 const INIT_LIVE_SESSION_MANIFEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-init-live-session.json');
 const INIT_LIVE_SESSION_DIGEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-init-live-session-digest.json');
+const SYNC_SESSION_MANIFEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-sync-session.json');
+const SYNC_SESSION_DIGEST_PATH = path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g4-sync-session-digest.json');
 const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
 
@@ -38,11 +40,12 @@ test('G4 garde les suppressions analytics hors migration', () => {
   }
 });
 
-test('G4 prepare trois cibles paralleles sans masquer la baseline 157', () => {
+test('G4 prepare quatre cibles paralleles sans masquer la baseline 157', () => {
   const exports = extractLocalExports(ROOT);
-  assert.equal(exports.length, EXPECTED_SOURCE_COUNT + 3);
-  assert.deepEqual([...PARALLEL_MIGRATION_EXPORTS], ['initLiveSessionGen2', 'trackAdminIPGen2', 'updateUserSessionsGen2']);
+  assert.equal(exports.length, EXPECTED_SOURCE_COUNT + 4);
+  assert.deepEqual([...PARALLEL_MIGRATION_EXPORTS], ['initLiveSessionGen2', 'syncSessionGen2', 'trackAdminIPGen2', 'updateUserSessionsGen2']);
   assert.equal(classificationFor('initLiveSessionGen2'), 'MIGRATION_PARALLEL');
+  assert.equal(classificationFor('syncSessionGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('trackAdminIPGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('updateUserSessionsGen2'), 'MIGRATION_PARALLEL');
   assert.ok(exports.some(({ name }) => name === 'trackAdminIP'));
@@ -51,6 +54,41 @@ test('G4 prepare trois cibles paralleles sans masquer la baseline 157', () => {
   assert.ok(exports.some(({ name }) => name === 'updateUserSessionsGen2'));
   assert.ok(exports.some(({ name }) => name === 'initLiveSession'));
   assert.ok(exports.some(({ name }) => name === 'initLiveSessionGen2'));
+  assert.ok(exports.some(({ name }) => name === 'syncSession'));
+  assert.ok(exports.some(({ name }) => name === 'syncSessionGen2'));
+});
+
+test('syncSession Gen2 partage exactement le handler Gen1 et reste une cible unique', () => {
+  const source = read('functions/src/analytics/sessions.js');
+  const prepared = JSON.parse(fs.readFileSync(SYNC_SESSION_MANIFEST_PATH, 'utf8'));
+  const target = GCLOUD_GEN2_TARGETS.syncSessionGen2;
+
+  for (const expected of [
+    /const syncSessionHandler = async \(data = \{\}, context\) =>/,
+    /exports\.syncSession = regionalFunctions\(\)/,
+    /\.https\.onCall\(syncSessionHandler\)/,
+    /exports\.syncSessionGen2 = onCall\(/,
+    /syncSessionHandler\(request\.data, request\)/,
+    /cpu:\s*'gcf_gen1'/,
+    /concurrency:\s*1/,
+    /minInstances:\s*0/,
+    /maxInstances:\s*1/,
+    /memory:\s*'256MiB'/,
+    /timeoutSeconds:\s*60/,
+    /serviceAccount:\s*ANALYTICS_RUNTIME_SERVICE_ACCOUNT/,
+    /enforceAppCheck:\s*true/
+  ]) assert.match(source, expected);
+
+  assert.equal(prepared.functions.length, 1);
+  assert.equal(prepared.functions[0].name, 'syncSessionGen2');
+  assert.equal(prepared.functions[0].cloud.present, false);
+  assert.equal(prepared.gates.deploymentAllowed, true);
+  assert.equal(prepared.gates.clientCutoverAuthorized, false);
+  assert.equal(target.entryPoint, 'syncSessionGen2');
+  assert.equal(target.cpu, '167m');
+  assert.equal(target.concurrency, '1');
+  assert.equal(target.maxInstances, '1');
+  assert.match(read('src/kit/config/functionTargets.js'), /syncSession:\s*'syncSession'/);
 });
 
 test('initLiveSession Gen2 partage le handler Gen1 et autorise une seule cible', () => {
@@ -260,6 +298,36 @@ test('le deploy initLiveSession Gen2 reste allowliste a une seule Function', () 
   const args = buildGcloudGen2DeployArgs(validation);
   assert.ok(args.includes('initLiveSessionGen2'));
   assert.ok(args.includes('--entry-point=initLiveSessionGen2'));
+  assert.ok(args.includes('--project=secondevienextjsssr'));
+  assert.ok(args.includes('--concurrency=1'));
+  assert.ok(args.includes('--max-instances=1'));
+  assert.equal(args.includes('--set-secrets'), false);
+});
+
+test('le deploy syncSession Gen2 reste allowliste a une seule Function', () => {
+  const prepared = JSON.parse(fs.readFileSync(SYNC_SESSION_MANIFEST_PATH, 'utf8'));
+  const currentCommit = prepared.metadata.baselineCommit;
+  const validation = validateDeploymentRequest({
+    args: {
+      project: 'secondevienextjsssr',
+      codebase: 'main',
+      commit: currentCommit,
+      manifest: path.relative(ROOT, SYNC_SESSION_MANIFEST_PATH),
+      digest: path.relative(ROOT, SYNC_SESSION_DIGEST_PATH),
+      allowlist: 'syncSessionGen2',
+      transport: 'gcloud-gen2-create'
+    },
+    manifest: prepared,
+    rootDir: ROOT,
+    manifestPath: SYNC_SESSION_MANIFEST_PATH,
+    digestPath: SYNC_SESSION_DIGEST_PATH,
+    currentCommit,
+    activeFirebaseProject: 'secondevienextjsssr',
+    baselineIsAncestor: true
+  });
+  const args = buildGcloudGen2DeployArgs(validation);
+  assert.ok(args.includes('syncSessionGen2'));
+  assert.ok(args.includes('--entry-point=syncSessionGen2'));
   assert.ok(args.includes('--project=secondevienextjsssr'));
   assert.ok(args.includes('--concurrency=1'));
   assert.ok(args.includes('--max-instances=1'));

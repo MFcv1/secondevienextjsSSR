@@ -68,13 +68,13 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | baseline avant le checkpoint Monitoring | `25daf810309dc3329cfeb0fb19be0f1790fe608a` |
 | worktree attendu a la reprise | propre; tout changement additionnel doit etre preserve et qualifie |
 | phases fermees | G0, G1, G2-A, G2-B 13/13 et G3 |
-| phase active | G4-A3 analytics |
-| inventaire courant | 159 exports locaux, 154 cloud, 139 Gen1, 15 Gen2 |
+| phase active | G4-A4 analytics, preparation de `syncSessionGen2` |
+| inventaire courant | 160 exports locaux, 155 cloud, 139 Gen1, 16 Gen2 |
 | cible parallele active | `trackAdminIPGen2`, revision `trackadminipgen2-00001-goj` |
 | cutover client | App Hosting `build-2026-08-17-001`, registres `trackAdminIP -> trackAdminIPGen2` et `updateUserSessions -> updateUserSessionsGen2` |
 | observation G4-A1 | fermee acceleree le `2026-08-17T12:28:01Z` apres levee explicite de la borne temporelle |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | preparer uniquement `initLiveSessionGen2`; rollback exact `build-2026-08-16-001` |
+| prochain lot | preparer uniquement `syncSessionGen2`; rollback exact `build-2026-08-17-002` |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -2178,6 +2178,25 @@ verts. La revision `initlivesessiongen2-00001-hoh` est ACTIVE; runtime, IAM et
 deux refus App Check 401 sont conformes. La reference Gen1 retourne 200 avec
 Auth/App Check valides. L'inventaire est 160 exports locaux pour 155 cloud,
 139 Gen1 et 16 Gen2; le registre est prepare sur la Gen2 pour le cutover.
+
+Cloture G4-A3 du 2026-08-17: le rollout final
+`g4-a3-cutover-20260817-002` est `SUCCEEDED` et sert
+`build-2026-08-17-002`. La reference Gen1 puis la Gen2 ont retourne 200 avec
+Auth et App Check valides; les documents crees portent les memes champs
+metier, `/` et `/admin` repondent 200 et la Gen1 ne recoit aucun appel apres le
+cutover final. Une seconde session vue lors d'un reload pilote a declenche le
+rollback conservateur `g4-a3-rollback-20260817-001`; le meme comportement a
+ete reproduit sur Gen1. La parite de reprise est couverte par le handler
+partage et `test:analytics`. Aucune Function ni donnee n'a ete supprimee. Le
+rollback exact reste `build-2026-08-17-001`; prochaine cible unique:
+`syncSessionGen2`.
+
+Preparation locale G4-A4 du 2026-08-17: `syncSessionGen2` partage exactement
+`syncSessionHandler` avec la Gen1. CPU `gcf_gen1`, concurrence 1, min 0/max 1,
+256 MiB, 60 s, App Check, `analytics-runtime` et absence de secret sont
+explicites. La cible cloud est absente, la Gen1 et le registre client restent
+inchanges. Le manifeste machine borne le futur deploy a cette seule Function;
+15/15 tests G4, analytics, App Check et lint Functions sont verts.
 
 ### G5 - Auth callables, OTP et passkeys
 

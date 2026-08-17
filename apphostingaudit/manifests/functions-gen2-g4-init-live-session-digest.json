@@ -4,6 +4,6 @@
   "codebase": "main",
   "baselineCommit": "33d233855afa959c0c363173b4ad4119d1a702d6",
   "files": {
-    "apphostingaudit/manifests/functions-gen2-g4-init-live-session.json": "7502cb512a0d86de30ef3dc563718a8b72cb66b179e33a42d06d84370ec0a7e3"
+    "apphostingaudit/manifests/functions-gen2-g4-init-live-session.json": "42a6703fa0149be20336f4c17655ca7a7863690d1b9ae854bef55a490a2a68c0"
   }
 }

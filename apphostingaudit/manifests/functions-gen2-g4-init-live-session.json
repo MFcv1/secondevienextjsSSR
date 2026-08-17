@@ -5,9 +5,9 @@
     "codebase": "main",
     "environment": "sandbox",
     "baselineCommit": "33d233855afa959c0c363173b4ad4119d1a702d6",
-    "generatedAt": "2026-08-17T15:51:46Z",
+    "generatedAt": "2026-08-17T16:36:25Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G4-A3_ACTIVE_CUTOVER_AUTHORIZED"
+    "wave": "G4-A3_CLOSED_ACCELERATED_VALIDATION"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -35,7 +35,8 @@
     "legacyOwner": "initLiveSession",
     "legacyOwnerPreserved": true,
     "currentClientTarget": "initLiveSessionGen2",
-    "previousWave": "G4-A2_CLOSED_ACCELERATED_VALIDATION"
+    "previousWave": "G4-A2_CLOSED_ACCELERATED_VALIDATION",
+    "nextUniqueTarget": "syncSessionGen2"
   },
   "functions": [
     {
@@ -148,7 +149,42 @@
       "appCheck": "VALID"
     },
     "deploymentAllowed": true,
-    "deploymentAuthorization": "Deploy only initLiveSessionGen2 after G4-A2 accelerated closeout"
+    "deploymentAuthorization": "Deploy only initLiveSessionGen2 after G4-A2 accelerated closeout",
+    "clientCutover": {
+      "build": "build-2026-08-17-002",
+      "rollout": "g4-a3-cutover-20260817-002",
+      "state": "SUCCEEDED",
+      "completedAt": "2026-08-17T16:36:25.819512Z",
+      "rootHttpStatus": 200,
+      "adminHttpStatus": 200,
+      "servedDeploymentId": "sv-msxfzydx-cbe97e67cda9"
+    },
+    "positiveGen2Proof": {
+      "executedAt": "2026-08-17T16:27:27Z",
+      "httpStatus": 200,
+      "auth": "VALID",
+      "appCheck": "VALID",
+      "revision": "initlivesessiongen2-00001-hoh",
+      "legacyRequestsAfterFinalCutover": 0
+    },
+    "dataParity": {
+      "gen1ObservedAt": "2026-08-17T16:03:17Z",
+      "gen2ObservedAt": "2026-08-17T16:27:28Z",
+      "matchingFields": ["type", "authProvider", "sessionActive", "analyticsVersion", "heartbeat"],
+      "result": "PASS"
+    },
+    "resumeParity": {
+      "result": "PASS",
+      "proof": "Gen1 and Gen2 share initLiveSessionHandler; test:analytics covers immediate reload, token, UID and recent-activity resume gates.",
+      "browserControllerLimit": "The controlled browser did not preserve/use the sessionStorage resume state; the same second-session behavior was reproduced on Gen1 and is not a Gen2 regression."
+    },
+    "temporaryRollback": {
+      "rollout": "g4-a3-rollback-20260817-001",
+      "build": "build-2026-08-17-001",
+      "reason": "Conservative investigation of a browser reload observation, reproduced identically on Gen1.",
+      "functionDeleted": false,
+      "dataDeleted": false
+    }
   },
   "rollback": {
     "functionAction": "none; preserve initLiveSession and initLiveSessionGen2",
@@ -158,5 +194,5 @@
     "iamSecretsAction": "none",
     "g12Action": "none before G12-A approval and completed observation"
   },
-  "verdict": "FUNCTION_ACTIVE_RUNTIME_IAM_APPCHECK_GREEN_CLIENT_CUTOVER_AUTHORIZED"
+  "verdict": "G4_A3_CLOSED_ACCELERATED_VALIDATION"
 }

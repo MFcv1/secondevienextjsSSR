@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "baselineCommit": "7f0a80b8982d50feaade41437781b026cfb852b3",
+    "generatedAt": "2026-08-17T16:44:00Z",
+    "operator": "matthis.fradin2@gmail.com",
+    "wave": "G4-A4_PREPARED_DEPLOY_AUTHORIZED"
+  },
+  "deploymentPolicy": {
+    "exactProject": "secondevienextjsssr",
+    "exactCodebase": "main",
+    "maxBatchSize": 1,
+    "forbiddenTargets": [
+      "clearAllAffiliateClicksGen2",
+      "clearAllSessionsGen2",
+      "deleteSessionGen2",
+      "disconnectInstagramConnectionAdmin",
+      "getInstagramConnectionStatusAdmin",
+      "instagramOAuthCallback",
+      "startInstagramOAuthAdmin",
+      "verifyInstagramConnectionAdmin"
+    ],
+    "forbiddenGlobalSelector": "functions"
+  },
+  "preflight": {
+    "projectMatch": true,
+    "sourceExportsBeforePreparation": 160,
+    "sourceExportsWithParallel": 161,
+    "cloudFunctions": 155,
+    "cloudGen1": 139,
+    "cloudGen2": 16,
+    "legacyOwner": "syncSession",
+    "legacyOwnerPreserved": true,
+    "currentClientTarget": "syncSession",
+    "previousWave": "G4-A3_CLOSED_ACCELERATED_VALIDATION",
+    "targetAbsentBeforeCreate": true
+  },
+  "functions": [
+    {
+      "name": "syncSessionGen2",
+      "source": {
+        "export": "syncSessionGen2",
+        "file": "functions/src/analytics/sessions.js",
+        "sharedHandler": "syncSessionHandler"
+      },
+      "trigger": {
+        "type": "callable",
+        "filter": null,
+        "retry": false
+      },
+      "cloud": {
+        "present": false,
+        "project": "secondevienextjsssr",
+        "codebase": "main",
+        "generation": 2,
+        "region": "europe-west1",
+        "runtime": "nodejs22",
+        "revision": null
+      },
+      "runtime": {
+        "sourceCpu": "gcf_gen1",
+        "deployCpu": "167m",
+        "memoryMiB": 256,
+        "timeoutSeconds": 60,
+        "concurrency": 1,
+        "minInstances": 0,
+        "maxInstances": 1,
+        "retry": false,
+        "ingress": "ALLOW_ALL"
+      },
+      "identities": {
+        "runtimeServiceAccount": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+        "invokerIam": [{ "role": "roles/run.invoker", "members": ["allUsers"] }],
+        "runtimeProjectRoles": [
+          "roles/datastore.user",
+          "roles/logging.logWriter",
+          "roles/serviceusage.serviceUsageConsumer"
+        ]
+      },
+      "secrets": [],
+      "appCheck": "ENFORCED",
+      "authorization": "authenticated Firebase user plus per-session opaque sync token",
+      "dataAccess": {
+        "reads": ["analytics_sessions/{sessionId} authorization hash on cache miss"],
+        "writes": ["bounded update of analytics_sessions/{sessionId}"],
+        "parity": "Gen1 and Gen2 call the same syncSessionHandler",
+        "idempotence": "duration and active state are assignments; journey uses bounded arrayUnion; reason counters intentionally count accepted sync calls"
+      },
+      "callers": ["src/kit/shared/AnalyticsProvider.jsx"],
+      "clientRegistry": {
+        "logicalName": "syncSession",
+        "currentTarget": "syncSession",
+        "cutoverTarget": "syncSessionGen2",
+        "cutoverAllowed": false
+      },
+      "decision": {
+        "classification": "MIGRATION_PARALLEL",
+        "target": "syncSessionGen2",
+        "wave": "G4-A4",
+        "deploymentMaxBatchSize": 1,
+        "rollback": "Keep syncSession Gen1 intact. Before client cutover the Gen2 target is unused. After cutover restore syncSession in the registry and roll App Hosting back to build-2026-08-17-002. Preserve both Functions, endpoints, IAM, source and session data until G12-A."
+      }
+    }
+  ],
+  "gates": {
+    "localTestsRequired": ["test:functions-g4", "test:analytics", "appcheck:audit", "lint:functions"],
+    "runtimeIamRequired": true,
+    "runtimeIamReady": true,
+    "runtimeIamManifest": "apphostingaudit/manifests/functions-gen2-g4-analytics-iam.json",
+    "targetWasAbsentBeforeCreate": true,
+    "unauthenticatedProbeMustFail": true,
+    "authenticatedAnonymousProbeRequired": true,
+    "dataParityRequired": true,
+    "oldTabRequired": true,
+    "clientCutoverPrepared": false,
+    "clientCutoverAuthorized": false,
+    "tests": {
+      "executedAt": "2026-08-17T16:46:00Z",
+      "functionsG4": "15/15",
+      "analytics": "PASS",
+      "appCheckAudit": "PASS",
+      "functionsLint": "PASS"
+    },
+    "deploymentAllowed": true,
+    "deploymentAuthorization": "Deploy only syncSessionGen2; client cutover remains blocked until runtime, IAM, App Check and Gen1 baseline proofs pass"
+  },
+  "rollback": {
+    "functionAction": "none; preserve syncSession and syncSessionGen2",
+    "clientAction": "restore syncSession: 'syncSession' in src/kit/config/functionTargets.js",
+    "appHostingAction": "roll back to READY build build-2026-08-17-002",
+    "dataAction": "none",
+    "iamSecretsAction": "none",
+    "g12Action": "none before G12-A approval and completed observation"
+  },
+  "verdict": "PREPARED_TARGETED_DEPLOY_AUTHORIZED_CLIENT_CUTOVER_BLOCKED"
+}

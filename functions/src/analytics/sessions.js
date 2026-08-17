@@ -25,7 +25,7 @@ const { ANALYTICS_SESSION_RETENTION_DAYS, timestampFromNow } = require('./consta
 
 const db = admin.firestore();
 const ANALYTICS_RUNTIME_SERVICE_ACCOUNT = 'analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com';
-const INIT_LIVE_SESSION_GEN2_RUNTIME = Object.freeze({
+const ANALYTICS_CALLABLE_GEN2_RUNTIME = Object.freeze({
     region: 'europe-west1',
     cpu: 'gcf_gen1',
     concurrency: 1,
@@ -270,11 +270,11 @@ exports.initLiveSession = regionalFunctions()
     .https.onCall(initLiveSessionHandler);
 
 exports.initLiveSessionGen2 = onCall(
-    INIT_LIVE_SESSION_GEN2_RUNTIME,
+    ANALYTICS_CALLABLE_GEN2_RUNTIME,
     async (request) => initLiveSessionHandler(request.data, request)
 );
 
-exports.syncSession = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data = {}, context) => {
+const syncSessionHandler = async (data = {}, context) => {
     if (!context.auth) return { success: false, unauthenticated: true };
 
     const { sessionId, journey, lastEventPreview, duration, sessionActive, syncToken, reason } = data;
@@ -317,7 +317,16 @@ exports.syncSession = regionalFunctions().runWith({ enforceAppCheck: true }).htt
         console.error("Sync Error:", error);
         return { success: false };
     }
-});
+};
+
+exports.syncSession = regionalFunctions()
+    .runWith({ enforceAppCheck: true })
+    .https.onCall(syncSessionHandler);
+
+exports.syncSessionGen2 = onCall(
+    ANALYTICS_CALLABLE_GEN2_RUNTIME,
+    async (request) => syncSessionHandler(request.data, request)
+);
 
 exports.syncSessionBeacon = regionalFunctions().https.onRequest(async (req, res) => {
     const configuredOrigin = (() => {
@@ -471,4 +480,5 @@ exports.clearAllAffiliateClicks = regionalFunctions().runWith({ enforceAppCheck:
 });
 
 exports.initLiveSessionHandler = initLiveSessionHandler;
-exports.INIT_LIVE_SESSION_GEN2_RUNTIME = INIT_LIVE_SESSION_GEN2_RUNTIME;
+exports.syncSessionHandler = syncSessionHandler;
+exports.ANALYTICS_CALLABLE_GEN2_RUNTIME = ANALYTICS_CALLABLE_GEN2_RUNTIME;

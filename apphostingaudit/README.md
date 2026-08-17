@@ -373,7 +373,7 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
   nouvel appel Gen1 apres cutover;
 - decision: G4-A2 fermee; prochaine cible unique `initLiveSessionGen2`.
 
-### G4-A3 - initLiveSession Gen2, revision active et cutover prepare
+### G4-A3 - initLiveSession Gen2, cutover ferme
 
 - export parallele `initLiveSessionGen2` avec handler partage avec la Gen1;
 - runtime `analytics-runtime`, CPU Gen1, concurrence 1, min 0/max 1,
@@ -384,8 +384,27 @@ action n'est pas un deploy mais la preparation auditee des preconditions G2-B.
   deux probes App Check 401 avant handler;
 - reference Gen1: HTTP 200, Auth et App Check valides;
 - inventaire: 160 exports locaux, 155 cloud, 139 Gen1 et 16 Gen2;
-- rollback futur: registre `initLiveSession` puis build
+- cutover: `g4-a3-cutover-20260817-002` SUCCEEDED sert
+  `build-2026-08-17-002`; Gen1 et Gen2 ont retourne 200 avec Auth/App Check
+  valides, les donnees observees sont equivalentes et zero nouvel appel Gen1
+  suit le cutover final;
+- investigation: un reload pilote a cree une seconde session sur Gen2 puis de
+  facon identique sur Gen1; le handler partage et `test:analytics` prouvent la
+  parite de reprise, sans regression Gen2;
+- rollback exact: registre `initLiveSession` puis build
   `build-2026-08-17-001`; aucune suppression ou modification Gen1.
+- decision: G4-A3 fermee; prochaine cible unique `syncSessionGen2`.
+
+### G4-A4 - syncSession Gen2, preparation cible unique
+
+- export parallele `syncSessionGen2` avec handler partage avec la Gen1;
+- CPU Gen1, concurrence 1, min 0/max 1, 256 MiB, 60 s, App Check,
+  `analytics-runtime`, sans secret;
+- cible cloud absente, Gen1 et registre client preserves;
+- manifeste machine et wrapper bornent le deploy a une seule Function;
+- tests: G4 15/15, analytics, App Check et lint Functions verts;
+- rollback futur: garder `syncSession` dans le registre et
+  `build-2026-08-17-002`; aucune suppression ou modification de donnees.
 
 ## 9. Conditions d'arret immediat
 
@@ -408,7 +427,7 @@ Arreter la vague au premier:
 
 ## 10. Point de reprise
 
-La reprise courante prepare uniquement `initLiveSessionGen2`. App Hosting sert
-`build-2026-08-17-001` avec `trackAdminIP` et `updateUserSessions` sur leurs
-cibles Gen2. Leurs Gen1, endpoints, IAM et code restent preserves; les six
-retraits G3 restent differes a G12-A.
+La reprise courante prepare uniquement `syncSessionGen2`. App Hosting sert
+`build-2026-08-17-002` avec `trackAdminIP`, `updateUserSessions` et
+`initLiveSession` sur leurs cibles Gen2. Leurs Gen1, endpoints, IAM et code
+restent preserves; les six retraits G3 restent differes a G12-A.

@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "codebase": "main",
+  "baselineCommit": "7f0a80b8982d50feaade41437781b026cfb852b3",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g4-sync-session.json": "3748f0fc93add72584d32fc4a1900d0b5c89116c2777a802f64661e5dcf50077"
+  }
+}

@@ -1022,10 +1022,18 @@ READY `build-2026-08-16-001`. Le rollout `g4-a2-cutover-20260817-002` sert
 Auth/App Check valides, donnees conformes, ancien onglet admin sain et zero
 nouvel appel Gen1 apres cutover. La prochaine cible unique est
 `initLiveSessionGen2`.
-G4-A3 a deploye `initLiveSessionGen2` avec le meme handler que la
-Gen1, App Check, `analytics-runtime`, CPU Gen1, concurrence/max 1 et aucune
-secret. La revision `initlivesessiongen2-00001-hoh` est ACTIVE; le registre est
-prepare sur la Gen2 pour le cutover App Hosting. La Gen1 reste le rollback.
+G4-A3 est fermee: `initLiveSessionGen2` partage le handler Gen1, porte App
+Check, `analytics-runtime`, CPU Gen1, concurrence/max 1 et aucun secret. La
+revision `initlivesessiongen2-00001-hoh` est ACTIVE et App Hosting sert
+`build-2026-08-17-002`. Les appels Gen1/Gen2 et les donnees sont conformes,
+zero appel Gen1 suit le cutover final. Le reload pilote observe a ete reproduit
+sur Gen1 et n'est pas une regression Gen2. La Gen1 et
+`build-2026-08-17-001` restent le rollback; prochaine cible unique:
+`syncSessionGen2`.
+G4-A4 prepare `syncSessionGen2` sous un nouveau nom avec le meme handler que
+la Gen1, App Check, `analytics-runtime`, CPU Gen1 et concurrence/max 1. La
+Gen1 et le registre `syncSession -> syncSession` restent intacts avant la
+preuve cloud et le cutover reversible.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.

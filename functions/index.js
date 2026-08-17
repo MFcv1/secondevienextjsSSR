@@ -339,6 +339,7 @@ const {
     initLiveSession,
     initLiveSessionGen2,
     syncSession,
+    syncSessionGen2,
     syncSessionBeacon,
     deleteSession,
     clearAllSessions,
@@ -351,6 +352,7 @@ const { onOrderStatsWrite } = require('./src/commerce/orderStats');
 exports.initLiveSession = initLiveSession;
 exports.initLiveSessionGen2 = initLiveSessionGen2;
 exports.syncSession = syncSession;
+exports.syncSessionGen2 = syncSessionGen2;
 exports.syncSessionBeacon = syncSessionBeacon;
 exports.deleteSession = deleteSession;
 exports.clearAllSessions = clearAllSessions;

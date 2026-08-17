@@ -13,6 +13,7 @@ export const EXPECTED_CLOUD_COUNT = 152;
 
 export const PARALLEL_MIGRATION_EXPORTS = new Set([
   'initLiveSessionGen2',
+  'syncSessionGen2',
   'trackAdminIPGen2',
   'updateUserSessionsGen2'
 ]);
