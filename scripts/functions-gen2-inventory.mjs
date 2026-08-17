@@ -16,7 +16,8 @@ export const PARALLEL_MIGRATION_EXPORTS = new Set([
   'syncSessionGen2',
   'syncSessionBeaconGen2',
   'trackAdminIPGen2',
-  'updateUserSessionsGen2'
+  'updateUserSessionsGen2',
+  'getUserStatsGen2'
 ]);
 
 export const KEEP_GEN2 = new Set([

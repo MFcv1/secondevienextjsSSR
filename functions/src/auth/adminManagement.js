@@ -2,6 +2,7 @@
  * AUTH: Ajouter/Révoquer un admin + Log connexion + Stats utilisateurs
  */
 const functions = require('firebase-functions/v1');
+const { onCall } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const crypto = require('node:crypto');
 const {
@@ -20,6 +21,17 @@ const { timestampFromNow, SYSTEM_DOC_RETENTION_DAYS } = require('../analytics/co
 
 const db = admin.firestore();
 const ADMIN_ACCESS_COLLECTION = 'sys_admin_access';
+const AUTH_READER_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '512MiB',
+    timeoutSeconds: 300,
+    serviceAccount: 'auth-reader-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    enforceAppCheck: true
+});
 
 function hashAdminEmail(email) {
     return crypto.createHash('sha256').update(normalizeEmail(email)).digest('hex');
@@ -437,7 +449,7 @@ exports.logUserConnection = regionalFunctions().runWith({ enforceAppCheck: true 
 });
 
 // --- STATS UTILISATEURS (Admin) ---
-exports.getUserStats = regionalFunctions().runWith({ enforceAppCheck: true, timeoutSeconds: 300, memory: '512MB' }).https.onCall(async (data, context) => {
+const getUserStatsHandler = async (data, context) => {
     await checkActiveStrongAdmin(context);
 
     try {
@@ -506,4 +518,13 @@ exports.getUserStats = regionalFunctions().runWith({ enforceAppCheck: true, time
         console.error("❌ Erreur getUserStats:", error);
         throw new functions.https.HttpsError('internal', 'Statistiques utilisateurs indisponibles.');
     }
-});
+};
+
+exports.getUserStats = regionalFunctions().runWith({ enforceAppCheck: true, timeoutSeconds: 300, memory: '512MB' }).https.onCall(getUserStatsHandler);
+exports.getUserStatsGen2 = onCall(
+    AUTH_READER_GEN2_RUNTIME,
+    async (request) => getUserStatsHandler(request.data, request)
+);
+
+exports.getUserStatsHandler = getUserStatsHandler;
+exports.AUTH_READER_GEN2_RUNTIME = AUTH_READER_GEN2_RUNTIME;

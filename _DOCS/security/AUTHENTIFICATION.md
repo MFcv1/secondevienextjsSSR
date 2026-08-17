@@ -243,6 +243,13 @@ Le mot de passe Gmail ne doit jamais redevenir le secret HMAC OTP.
 
 ### 6.3 Administration et revocation
 
+La migration G5 commence par le lecteur `getUserStatsGen2`, sous nouveau nom
+et avec le meme handler que la Gen1. App Check, registre admin actif et AAL2
+restent obligatoires. Son identite dediee `auth-reader-runtime` ne porte que
+`firebaseauth.viewer`, Firestore user, logs et service usage; aucun role Auth
+admin ni cle utilisateur. La Gen1 et le registre client sont preserves jusqu'a
+la preuve cloud et au cutover reversible.
+
 - registre administrateur par UID;
 - entree active obligatoire pour les callables critiques;
 - retrait des claims lors d'une revocation;

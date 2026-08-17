@@ -42,10 +42,10 @@ test('G4 garde les suppressions analytics hors migration', () => {
   }
 });
 
-test('G4 prepare cinq cibles paralleles sans masquer la baseline 157', () => {
+test('G4 conserve ses cinq cibles et G5 ajoute un seul export parallele', () => {
   const exports = extractLocalExports(ROOT);
-  assert.equal(exports.length, EXPECTED_SOURCE_COUNT + 5);
-  assert.deepEqual([...PARALLEL_MIGRATION_EXPORTS], ['initLiveSessionGen2', 'syncSessionGen2', 'syncSessionBeaconGen2', 'trackAdminIPGen2', 'updateUserSessionsGen2']);
+  assert.equal(exports.length, EXPECTED_SOURCE_COUNT + 6);
+  assert.deepEqual([...PARALLEL_MIGRATION_EXPORTS], ['initLiveSessionGen2', 'syncSessionGen2', 'syncSessionBeaconGen2', 'trackAdminIPGen2', 'updateUserSessionsGen2', 'getUserStatsGen2']);
   assert.equal(classificationFor('initLiveSessionGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('syncSessionGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('syncSessionBeaconGen2'), 'MIGRATION_PARALLEL');

@@ -2281,6 +2281,14 @@ Gates: `test:auth`, 401/403, Google/OTP/passkey sandbox, custom token,
 ajout/retrait admin et revocation, compteur stable, aucun OTP dans les logs,
 rollback client et quiet-window de l'ancien nom.
 
+Preparation G5-A1: `getUserStatsGen2` est la cible unique. Elle partage le
+handler Gen1, conserve App Check et l'admin actif AAL2, CPU Gen1, concurrence
+1, min 0/max 1, 512 MiB et 300 s. L'identite dediee
+`auth-reader-runtime` porte uniquement Auth viewer, Firestore user, logs et
+service usage, sans cle utilisateur ni role Firebase Auth admin. La Gen1 et le
+registre client restent actifs. Gates: G5 2/2, Auth 77/77, App Check et lint
+verts; cible cloud absente et deploy unique autorise.
+
 ### G6 - Contenu, catalogue admin, devis, newsletter, e-mail et factures
 
 Lecteurs avant writers. Le claim/outbox de `onQuoteRequestSubmitted` doit etre

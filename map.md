@@ -1067,6 +1067,11 @@ et refuse toujours l'origine etrangere. Le retry build `004` est ferme: ancien
 et nouvel onglets sains, beacon 200, session fermee `beforeunload`, zero erreur
 Gen2 et zero nouvel appel Gen1. G4 est fermee; rollback exact build `003`,
 prochaine cible unique `getUserStatsGen2` en G5.
+G5-A1 prepare `getUserStatsGen2` sous nouveau nom avec le handler Gen1,
+App Check et admin actif AAL2 identiques. Le runtime `auth-reader-runtime`
+utilise Auth viewer et Firestore sans droit Auth admin; concurrence/max 1,
+min 0, 512 MiB et 300 s. La Gen1 et le registre client restent inchanges avant
+preuve cloud.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.

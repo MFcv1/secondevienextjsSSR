@@ -81,6 +81,7 @@
     "test:functions-g2a": "node --test tests/functions-gen2-g2a.test.cjs",
     "test:functions-g3": "node --test tests/functions-gen2-g3.test.mjs",
     "test:functions-g4": "node --test tests/functions-gen2-g4.test.mjs",
+    "test:functions-g5": "node --test tests/functions-gen2-g5.test.mjs",
     "test:billing-onboarding": "node --test tests/billing-onboarding-contract.test.cjs",
     "test:invoices": "node --test tests/invoicing/manual-invoices.test.cjs",
     "test:quotes": "node --test tests/quote-requests.test.cjs",
