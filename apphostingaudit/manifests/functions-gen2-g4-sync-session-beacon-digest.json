@@ -4,6 +4,6 @@
   "codebase": "main",
   "baselineCommit": "7bd381524a373da183406ea12082390c2bdbd52d",
   "files": {
-    "apphostingaudit/manifests/functions-gen2-g4-sync-session-beacon.json": "9e4954ce4bca82674f2f16a20b6e766a8779a75c8efadc3260e0167e14b5f289"
+    "apphostingaudit/manifests/functions-gen2-g4-sync-session-beacon.json": "544d92aa3613917553f9b6bede97f85a4e4a934cb98e4c71dc48983c65059692"
   }
 }

@@ -1061,6 +1061,12 @@ nouveau `build-2026-08-17-003`, `/` et `/admin` repondent 200, et le registre
 client pointe de nouveau sur `syncSessionBeacon` Gen1. La Gen2 reste ACTIVE,
 sans retrait ni changement IAM/donnee; G4-A5 est bloquee jusqu'au diagnostic
 borne origine/jeton.
+La cause a ensuite ete fermee par `SITE_URL` explicite sur la seule Function
+Gen2. La revision `syncsessionbeacongen2-00002-vec` accepte l'origine sandbox
+et refuse toujours l'origine etrangere. Le retry build `004` est ferme: ancien
+et nouvel onglets sains, beacon 200, session fermee `beforeunload`, zero erreur
+Gen2 et zero nouvel appel Gen1. G4 est fermee; rollback exact build `003`,
+prochaine cible unique `getUserStatsGen2` en G5.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.

@@ -168,6 +168,10 @@ Plan temporaire de reprise explicitement demande:
   le vrai beacon navigateur Gen2 a retourne 403. App Hosting sert de nouveau
   `build-2026-08-17-003`, le registre client pointe sur la Gen1, et G4-A5 reste
   ouverte sans suppression jusqu'au diagnostic origine/jeton.
+  La cause etait l'absence de l'URL site dans le runtime Gen2. La revision
+  `syncsessionbeacongen2-00002-vec` fixe `SITE_URL`; le retry build `004` a
+  prouve ancien/nouvel onglet, beacon 200, donnees conformes et zero trafic
+  Gen1 nouveau. G4 est fermee; G5 reprend sur `getUserStatsGen2` uniquement.
   `updateUserSessionsGen2` est maintenant ACTIVE en revision
   `updateusersessionsgen2-00001-zoq`; l'inventaire compte 159 exports locaux et
   154 Functions cloud, dont 15 Gen2. Revision, limites, IAM et refus App Check

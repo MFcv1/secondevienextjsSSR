@@ -5,9 +5,9 @@
     "codebase": "main",
     "environment": "sandbox",
     "baselineCommit": "7bd381524a373da183406ea12082390c2bdbd52d",
-    "generatedAt": "2026-08-17T20:42:00Z",
+    "generatedAt": "2026-08-17T20:49:36Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G4-A5_REMEDIATED_CUTOVER_RETRY_AUTHORIZED"
+    "wave": "G4-A5_CLOSED_ACCELERATED_VALIDATION"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -204,6 +204,50 @@
       "iamVerified": true,
       "runtimeVerified": true
     },
+    "retryObservation": {
+      "executedAt": "2026-08-17T20:49:36Z",
+      "appHostingBuild": "build-2026-08-17-004",
+      "rollout": "g4a5-retry-20260817t2043",
+      "rolloutState": "SUCCEEDED",
+      "oldBuild003TabRenderedAfterCutover": true,
+      "newBuild004TabRendered": true,
+      "validBrowserBeacon": {
+        "httpStatus": 200,
+        "revision": "syncsessionbeacongen2-00002-vec"
+      },
+      "sessionBefore": {
+        "id": "YNyIRKfipo8MGuU2YnLt",
+        "updateTime": "2026-08-17T20:41:41.153478Z",
+        "duration": 0,
+        "sessionActive": true,
+        "lastSyncReason": "init",
+        "analyticsVersion": 3
+      },
+      "sessionAfter": {
+        "updateTime": "2026-08-17T20:42:07.660247Z",
+        "duration": 20,
+        "sessionActive": false,
+        "lastSyncReason": "beforeunload",
+        "analyticsVersion": 3,
+        "beforeunloadCount": 1
+      },
+      "quietWindow": {
+        "gen2Successes": 1,
+        "gen2Errors": 0,
+        "newGen1Requests": 0
+      },
+      "health": { "rootHttpStatus": 200, "adminHttpStatus": 200 },
+      "inventory": {
+        "localExports": 162,
+        "cloudFunctions": 157,
+        "cloudGen1": 139,
+        "cloudGen2": 18,
+        "schedulers": 8,
+        "queues": 2,
+        "eventarc": 7
+      },
+      "result": "PASS"
+    },
     "deploymentAuthorization": "No Function deployment. Retry only the existing READY App Hosting build-2026-08-17-004; rollback remains build-2026-08-17-003"
   },
   "rollback": {
@@ -217,5 +261,5 @@
     "iamSecretsAction": "none",
     "g12Action": "none before G12-A approval and completed observation"
   },
-  "verdict": "FUNCTION_REMEDIATED_SECURITY_PROBES_GREEN_CLIENT_CUTOVER_RETRY_AUTHORIZED"
+  "verdict": "G4_A5_CLOSED_GEN2_BEACON_ACTIVE_GEN1_PRESERVED"
 }

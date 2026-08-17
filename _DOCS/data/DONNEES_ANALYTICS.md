@@ -265,6 +265,14 @@ revenu sur la Gen1. IAM Cloud Run reste public au transport; l'origine ou le
 jeton doit etre identifie comme cause exacte avant une nouvelle tentative.
 Aucune Function, IAM ou donnee n'a ete supprimee.
 
+La cause exacte etait l'absence de variable projet/site dans le runtime Gen2,
+qui faisait attendre localhost comme origine. `SITE_URL` est maintenant
+explicite sur `syncsessionbeacongen2-00002-vec`. Le retry build `004` est
+ferme: ancien/nouvel onglet sains, beacon navigateur 200, session fermee avec
+raison `beforeunload`, zero erreur Gen2 et zero nouvel appel Gen1. G4-A5/G4
+sont fermees; la Gen1 et le rollback build `003` restent preserves jusqu'a
+G12-A.
+
 Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. L'architecture haut trafic sera traitee dans une phase distincte demandee par l'utilisateur.
 
 Optimisation de cout locale au 2026-07-17: la cadence visible, le seuil live, le parcours et la securite de reprise restent inchanges. Le cache de hash et l'arbitrage des synchronisations visent uniquement les relectures et appels rapproches observes dans la fenetre Data Access. Leur gain exact doit etre mesure apres deploiement sandbox avec le protocole de [AUDIT_COUTS_FIRESTORE.md](AUDIT_COUTS_FIRESTORE.md).

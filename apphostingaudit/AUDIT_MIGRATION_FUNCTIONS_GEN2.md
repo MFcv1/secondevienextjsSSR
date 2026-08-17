@@ -68,13 +68,13 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | baseline avant le checkpoint Monitoring | `25daf810309dc3329cfeb0fb19be0f1790fe608a` |
 | worktree attendu a la reprise | propre; tout changement additionnel doit etre preserve et qualifie |
 | phases fermees | G0, G1, G2-A, G2-B 13/13 et G3 |
-| phase active | G4-A5 analytics, rollback ferme apres beacon navigateur Gen2 refuse en 403 |
+| phase active | G5 Auth, prochaine cible unique `getUserStatsGen2` |
 | inventaire courant | 162 exports locaux, 157 cloud, 139 Gen1, 18 Gen2 |
 | cible parallele active | `trackAdminIPGen2`, revision `trackadminipgen2-00001-goj` |
-| cutover client | App Hosting `build-2026-08-17-001`, registres `trackAdminIP -> trackAdminIPGen2` et `updateUserSessions -> updateUserSessionsGen2` |
+| cutover client | App Hosting `build-2026-08-17-004`; cinq registres analytics G4 pointent sur leurs cibles Gen2 |
 | observation G4-A1 | fermee acceleree le `2026-08-17T12:28:01Z` apres levee explicite de la borne temporelle |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | aucun: expliquer et corriger le 403 reel de `syncSessionBeaconGen2` avant toute nouvelle bascule |
+| prochain lot | preparer uniquement `getUserStatsGen2`; conserver les trois triggers Auth Gen1 |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -2258,6 +2258,18 @@ controle d'origine et le jeton. Le rollback exact
 `/` et `/admin` repondent 200, le registre source est revenu sur la Gen1 et
 aucune Function, IAM ou donnee n'a ete supprimee. G4-A5 reste ouverte et toute
 nouvelle cible est bloquee jusqu'a explication et correction ciblee du 403.
+
+Fermeture G4-A5: la cause etait l'absence des variables projet/site dans le
+runtime Gen2, qui faisait retomber `getSiteUrl()` sur localhost. Le redeploy
+cible unique a fixe `SITE_URL` explicitement et produit la revision
+`syncsessionbeacongen2-00002-vec`. L'origine sandbox franchit le controle,
+l'origine etrangere reste refusee 403. Le retry App Hosting
+`g4a5-retry-20260817t2043` sur build `004` est SUCCEEDED: ancien onglet `003`
+et nouvel onglet `004` sains, vrai beacon Gen2 en 200, session passee de
+active a fermee avec raison `beforeunload`, zero erreur Gen2 et zero nouvel
+appel Gen1. `/` et `/admin` repondent 200. Inventaire final: 162 local, 157
+cloud, 139 Gen1, 18 Gen2, 8 schedulers, 2 queues, 7 Eventarc. G4-A5 et G4 sont
+fermees; rollback exact `build-2026-08-17-003`, aucune Gen1 supprimee.
 
 ### G5 - Auth callables, OTP et passkeys
 
