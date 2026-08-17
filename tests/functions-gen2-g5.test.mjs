@@ -26,7 +26,7 @@ test('G5 prepare uniquement getUserStatsGen2 avec handler et securite partages',
   assert.equal(target.cpu, '167m');
   assert.equal(target.concurrency, '1');
   assert.equal(target.maxInstances, '1');
-  assert.match(read('src/kit/config/functionTargets.js'), /getUserStats:\s*'getUserStats'/);
+  assert.match(read('src/kit/config/functionTargets.js'), /getUserStats:\s*'getUserStatsGen2'/);
 });
 
 test('G5 garde les trois triggers Auth exclusivement en Gen1', () => {

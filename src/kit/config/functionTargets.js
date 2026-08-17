@@ -2,7 +2,7 @@ const FUNCTION_TARGETS = Object.freeze({
   clearAllAffiliateClicks: 'clearAllAffiliateClicks',
   clearAllSessions: 'clearAllSessions',
   deleteSession: 'deleteSession',
-  getUserStats: 'getUserStats',
+  getUserStats: 'getUserStatsGen2',
   initLiveSession: 'initLiveSessionGen2',
   syncSession: 'syncSessionGen2',
   syncSessionBeacon: 'syncSessionBeaconGen2',

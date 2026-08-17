@@ -5,9 +5,9 @@
     "codebase": "main",
     "environment": "sandbox",
     "baselineCommit": "6338114c028df68cb7c90530ba2fcf02ce661796",
-    "generatedAt": "2026-08-17T21:02:00Z",
+    "generatedAt": "2026-08-17T21:05:00Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G5_AUTH_READER_PREPARED_DEPLOY_AUTHORIZED"
+    "wave": "G5_AUTH_READER_ACTIVE_CUTOVER_AUTHORIZED"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -18,19 +18,19 @@
   "preflight": {
     "sourceExportsBeforePreparation": 162,
     "sourceExportsWithParallel": 163,
-    "cloudFunctions": 157,
+    "cloudFunctions": 158,
     "cloudGen1": 139,
-    "cloudGen2": 18,
+    "cloudGen2": 19,
     "legacyOwner": "getUserStats",
     "legacyOwnerPreserved": true,
-    "currentClientTarget": "getUserStats",
+    "currentClientTarget": "getUserStatsGen2",
     "targetAbsentBeforeCreate": true
   },
   "functions": [{
     "name": "getUserStatsGen2",
     "source": { "export": "getUserStatsGen2", "file": "functions/src/auth/adminManagement.js", "sharedHandler": "getUserStatsHandler" },
     "trigger": { "type": "callable", "appCheck": "ENFORCED", "auth": "active strong admin" },
-    "cloud": { "present": false, "project": "secondevienextjsssr", "generation": 2, "region": "europe-west1", "runtime": "nodejs22", "revision": null },
+    "cloud": { "present": true, "project": "secondevienextjsssr", "generation": 2, "region": "europe-west1", "runtime": "nodejs22", "revision": "getuserstatsgen2-00001-niv" },
     "runtime": { "sourceCpu": "gcf_gen1", "deployCpu": "167m", "memoryMiB": 512, "timeoutSeconds": 300, "concurrency": 1, "minInstances": 0, "maxInstances": 1 },
     "identities": {
       "runtimeServiceAccount": "auth-reader-runtime@secondevienextjsssr.iam.gserviceaccount.com",
@@ -38,7 +38,7 @@
       "runtimeProjectRoles": ["roles/datastore.user", "roles/firebaseauth.viewer", "roles/logging.logWriter", "roles/serviceusage.serviceUsageConsumer"]
     },
     "secrets": [],
-    "clientRegistry": { "logicalName": "getUserStats", "currentTarget": "getUserStats", "cutoverTarget": "getUserStatsGen2", "cutoverAllowed": false },
+    "clientRegistry": { "logicalName": "getUserStats", "currentTarget": "getUserStatsGen2", "cutoverTarget": "getUserStatsGen2", "cutoverAllowed": true },
     "decision": { "classification": "MIGRATION_PARALLEL", "target": "getUserStatsGen2", "wave": "G5", "deploymentMaxBatchSize": 1, "rollback": "Keep getUserStats Gen1, endpoint, IAM, source and data intact; restore registry and prior App Hosting build after cutover." }
   }],
   "gates": {
@@ -48,9 +48,13 @@
     "runtimeServiceAccountUserManagedKeys": 0,
     "tests": { "functionsG5": "2/2", "auth": "77/77", "appCheckAudit": "PASS", "functionsLint": "PASS" },
     "targetAbsentBeforeCreate": true,
-    "deploymentAllowed": true,
-    "clientCutoverAuthorized": false
+    "deploymentAllowed": false,
+    "deployedRevisionVerified": true,
+    "runtimeConfigurationVerified": true,
+    "transportInvokerVerified": true,
+    "negativeProbe": { "missingAuthAndAppCheckHttpStatus": 401 },
+    "clientCutoverAuthorized": true
   },
   "rollback": { "functionAction": "none", "clientAction": "keep getUserStats Gen1", "dataAction": "none", "g12Action": "none before G12-A" },
-  "verdict": "PREPARED_IAM_GREEN_TARGETED_DEPLOY_AUTHORIZED"
+  "verdict": "FUNCTION_ACTIVE_NEGATIVE_PROBE_GREEN_CLIENT_CUTOVER_AUTHORIZED"
 }
