@@ -150,38 +150,21 @@ Git conserve l'audit et la roadmap retires.
 Plan temporaire de reprise explicitement demande:
 
 - [AUDIT_MIGRATION_FUNCTIONS_GEN2.md](apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md):
-  contre-audit read-only des 152 Functions cloud et 157 exports locaux, plan
-  ferme G0 a G13 de migration progressive Gen1 vers Gen2 et prerequis de
-  fiabilite hors Functions. G0-G4 sont fermes; les treize Gen2 initiales et
-  les cinq cibles analytics paralleles sont deployees, reconciliees et
-  observees sans suppression. G5-A1 a G5-A5 sont fermees: App Hosting sert
-  `build-2026-08-18-004`; `getUserStatsGen2`, `logUserConnectionGen2`,
-  `ensureAdminAccessRegistryGen2`, `sendGuestCheckoutOtpGen2` puis
-  `verifyGuestCheckoutOtpGen2` ont passe leurs appels Auth/App Check en HTTP
-  200. L'ancien onglet `003` est reste authentifie apres le dernier cutover;
-  un seul e-mail OTP sandbox a ete lu uniquement en memoire, chiffre RSA-OAEP
-  puis verifie sans affichage ni persistance du code ou du jeton checkout.
-  La quiet-window n'a montre aucune erreur Gen2, aucun appel Gen1 et aucune
-  mutation supplementaire. Le rollback reel vers `003` puis la reactivation
-  finale de `004` ont reussi. Les Gen1 et leurs IAM restent intacts; rollback
-  exact `build-2026-08-18-003`. Le harnais
-  admin sandbox injecte des jetons Custom Token et App Check ephemeres dans les
-  seules requetes Auth/Functions, sans affichage, journalisation ni persistance.
-  La reprise continue automatiquement sur une seule cible G5 a la fois, dans
-  l'ordre logs/registre, OTP, options passkey, verification passkey et mutations
-  admin, sans redemander une autorisation de routine pour les operations sandbox
-  non destructives deja couvertes par la mission.
-  La prochaine cible unique est `sendCustomerLoginOtpGen2`.
-  Inventaire courant: 167 exports locaux, 162 Functions cloud, 139 Gen1,
-  23 Gen2, 8 schedulers, 2 queues et 7 Eventarc.
-  Six legacy sont decidees `RETIRE_G12_A` avec commandes Stripe fail-closed
-  et zero retrait cloud. Le correctif Monitoring du 2026-08-17 a ferme la boucle
-  recursive `Violation*`, conserve `loa.gto`/PubSub et severise les huit
-  policies. Trois triggers Auth Gen1 restent conserves par limitation Firebase,
-  cinq exports Instagram restent sous `HOLD_META_RECONCILIATION` et trois
-  suppressions analytics sous `HOLD_G11_DESTRUCTIVE_PRECONDITIONS`. Aucun
-  retrait Gen1 avant G12-A ni nettoyage IAM/secrets/code avant G12-B; revue au
-  plus tard le 2026-10-31, puis fusion canonique et suppression du plan.
+  plan ferme G0 a G13. G0-G4 et G5-A1 a G5-A5 sont fermes; App Hosting sert
+  `build-2026-08-18-004`. G5-A6 `sendCustomerLoginOtpGen2` est ACTIVE et
+  prouvee; son registre client est commite, mais le cutover App Hosting `005`
+  reste a terminer. Dernier inventaire prouve: 168 exports locaux, 163 cloud,
+  139 Gen1 et 24 Gen2. Reprendre directement au checkpoint court des sections
+  2.1 et 15 du plan, sans rejouer les preuves fermees ni un preflight global.
+  La suite s'execute par lots Auth coherents: deploiements Functions allowlistes
+  individuellement, puis un build, un cutover, un rollback et une observation
+  groupes par lot. Les tests sont lances une fois par lot et seulement pour les
+  flux touches. Les Custom Tokens et jetons App Check ephemeres du harnais
+  sandbox sont autorises sans confirmation intermediaire; ils ne sont ni
+  affiches, ni journalises, ni persistes. Aucun retrait Gen1 avant G12-A, aucun
+  nettoyage IAM/secrets/code avant G12-B, aucune production/Stripe live. Les
+  trois triggers Auth limites par Firebase restent Gen1; les holds Meta et G11
+  restent inchanges. Revue et fusion canonique au plus tard le 2026-10-31.
 - [STABILISATION_SECURITE_SANDBOX.md](_DOCS/security/STABILISATION_SECURITE_SANDBOX.md):
   campagne finale bornee S0 a S4 fermee sur le socle `05f4830`, statut
   `SANDBOX_SECURITY_STABILIZED`; production, domaine, Resend, Stripe live et

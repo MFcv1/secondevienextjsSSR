@@ -1118,8 +1118,15 @@ CPU 167m, 256 MiB, 60 s, concurrence/max 1, runtime
 reactivation finale: ancien onglet `003` authentifie, routes 200, compteur 34,
 verification OTP HTTP 200 par transport RSA-OAEP process-local, zero erreur
 Gen2, zero appel Gen1 et donnees stables. Aucune Gen1, IAM, secret ou donnee
-n'est retiree. Prochaine cible unique `sendCustomerLoginOtpGen2`. Inventaire:
-167 local, 162 cloud, 139 Gen1, 23 Gen2, 8 schedulers, 2 queues et 7 Eventarc.
+n'est retiree.
+G5-A6 `sendCustomerLoginOtpGen2` est ACTIVE en revision
+`sendcustomerloginotpgen2-00002-kod`, avec runtime et builder conformes, refus
+401 puis envoi sandbox 200 sans lecture de l'OTP. Le registre client est
+commite; App Hosting reste sur `build-2026-08-18-004` jusqu'au cutover `005`.
+Inventaire: 168 local, 163 cloud, 139 Gen1, 24 Gen2, 8 schedulers, 2 queues et
+7 Eventarc. Apres fermeture A6, A7-A9 sont prepares comme un lot Auth coherent:
+deploys Functions individuellement allowlistes, mais tests, build App Hosting,
+ancien onglet, cutover, rollback et quiet-window mutualises une seule fois.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.

@@ -57,7 +57,7 @@ seule modification effectuee pendant cette passe est documentaire.
 
 ## 2. Verdict executif
 
-### 2.1 Checkpoint de reprise au 2026-08-17
+### 2.1 Checkpoint de reprise au 2026-08-18
 
 Ne pas reprendre G0, G1, G2 ou G3: ces phases sont fermees et leurs preuves
 sont conservees dans les manifestes `functions-gen2-*`.
@@ -66,15 +66,15 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | --- | --- |
 | branche | `codex/functions-gen2-migration` |
 | baseline avant le checkpoint Monitoring | `25daf810309dc3329cfeb0fb19be0f1790fe608a` |
-| worktree attendu a la reprise | fermeture G5-A5 documentee; tout changement additionnel doit etre qualifie |
+| worktree attendu a la reprise | HEAD `25405d0`; preparation, preuve cloud et registre client G5-A6 commites; verifier le statut sans les rejouer |
 | phases fermees | G0, G1, G2-A, G2-B 13/13, G3 et G4 |
-| phase active | G5-A6 OTP, prochaine cible unique `sendCustomerLoginOtpGen2` |
-| inventaire courant | 167 exports locaux, 162 cloud, 139 Gen1, 23 Gen2, 8 schedulers, 2 queues, 7 Eventarc |
-| cibles paralleles actives | cinq analytics G4 et cinq Auth G5 basculees vers leurs Gen2; toutes les Gen1 restent intactes |
+| phase active | G5-A6: terminer le cutover App Hosting `005`, puis preparer le lot Auth A7-A9 |
+| inventaire courant | 168 exports locaux, 163 cloud, 139 Gen1, 24 Gen2, 8 schedulers, 2 queues, 7 Eventarc |
+| cibles paralleles actives | cinq analytics G4, cinq Auth G5 basculees et `sendCustomerLoginOtpGen2` ACTIVE; toutes les Gen1 restent intactes |
 | cutover client | App Hosting sert `build-2026-08-18-004`; rollback exact `build-2026-08-18-003`, deja prouve par drill reel |
 | observation G4 | G4-A1 a G4-A5 fermees en validation acceleree; Gen1 et rollbacks preserves |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | preparer puis migrer uniquement `sendCustomerLoginOtpGen2`; conserver les trois triggers Auth Gen1 |
+| prochain lot | finir A6 sans refaire son deploy/probe, puis grouper `verifyCustomerLoginOtpGen2` et les options/verifications passkey compatibles dans un seul cycle App Hosting |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -95,23 +95,33 @@ interrompu, la reprise a reussi: le rollout `g4-a2-cutover-20260817-002` sert
 `build-2026-08-17-001`, avec HTTP 200, Auth/App Check valides, donnees
 conformes, ancien onglet admin sain et zero nouvel appel Gen1 apres cutover.
 
-Ordre de reprise obligatoire:
+Ordre de reprise optimise et obligatoire:
 
-1. preserver les fermetures G5-A1/A2/A3/A4/A5 et le harnais, verifier le projet
-   explicite `secondevienextjsssr`, l'operateur et l'inventaire 167/162;
-2. ne pas redeployer les cinq cibles fermees: leurs Gen1 et le rollback `003`
-   restent preserves;
-3. preparer uniquement `sendCustomerLoginOtpGen2` avec handler partage, App Check,
-   runtime/IAM minimal, tests et manifeste machine;
-4. deployer une seule Function sous nouveau nom, prouver refus negatif puis
-   parite d'ecriture idempotente avec une session sandbox ephemere;
-5. basculer le seul registre client dans un build App Hosting reversible,
-   prouver ancien onglet, donnees/logs, zero erreur et zero nouvel appel Gen1;
-6. au premier ecart, restaurer exactement le registre/build precedent sans
-   retirer Function, endpoint, IAM, code ou donnee;
-7. si G5-A6 est verte, fermer son manifeste et poursuivre automatiquement une
-   seule cible G5 suivant l'ordre logs/registre, OTP, options passkey,
-   verification passkey, puis mutations admin.
+1. verifier uniquement HEAD, worktree, projet explicite et etat final des
+   ressources touchees depuis le dernier checkpoint; ne pas refaire les
+   inventaires, IAM, logs ou preuves historiques sans drift concret;
+2. G5-A6 est deja codee, testee, ACTIVE et prouvee. Reprendre a l'archive
+   `secondevie-next-sandbox--g5a6-25405d0.zip`, creer/valider `build-005`, puis
+   effectuer cutover, controle ancien onglet, rollback `004` et reactivation
+   `005`; ne pas renvoyer d'OTP pendant cette fermeture;
+3. fermer A6 en un commit borne, puis preparer ensemble le lot Auth A7-A9:
+   verification OTP client et options/verifications passkey compatibles;
+4. chaque Function conserve un nouveau nom, un handler partage, sa propre
+   allowlist de deploy et son manifeste. En revanche compiler/tests locaux,
+   build App Hosting, ancien onglet, cutover, rollback et quiet-window sont
+   groupes une seule fois pour le lot;
+5. une preuve positive et une preuve negative restent exigees par famille de
+   risque, pas par repetition mecanique du meme harnais. Aucun e-mail, OTP ou
+   mutation n'est repete si une preuve equivalente et fraiche existe;
+6. au premier ecart, restaurer le build precedent sans retirer Function,
+   endpoint, IAM, code ou donnee. Continuer automatiquement tant que les gates
+   du lot restent vertes.
+
+Cette optimisation remplace la politique historique « une Function = un build
+App Hosting = un rollback ». Les deploiements Functions restent cibles et
+reversibles; seuls les controles redondants et les cutovers client sont
+mutualises. Les cibles financieres, schedulers, triggers et mutations admin a
+fort impact conservent leurs gates individuelles.
 
 ### 2.2 Cible recommandee
 
@@ -2588,138 +2598,43 @@ La migration est terminee uniquement si:
   utilise;
 - Node/runtime, docs canoniques et manifeste final ont un proprietaire/date.
 
-## 15. Prompt de reprise courant
+## 15. Reprise optimisee
 
-Le prompt ci-dessous remplace le prompt G5-A5. Il reprend a G5-A6 et ne doit
-jamais refaire les phases G0-G4 ou les cibles G5-A1/A2/A3/A4/A5 fermees.
+Le prochain agent reprend directement G5-A6. Il ne relit pas le journal
+historique et ne rejoue aucune preuve fermee sans drift concret.
 
 ```text
-/goal Tu travailles dans le depot Seconde Vie Next sur la migration sandbox Firebase
-Functions Gen1 -> Gen2 suivie dans
-`apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`.
+Branche: codex/functions-gen2-migration.
+Dernier HEAD prouve: 25405d0.
+Projet cloud obligatoire: secondevienextjsssr.
+Operateur obligatoire: matthis.fradin2@gmail.com.
+Etat: build 004 actif; G5-A1 a A5 fermes. A6 sendCustomerLoginOtpGen2 est
+ACTIVE en revision sendcustomerloginotpgen2-00002-kod, runtime et builder
+conformes. Refus 401, appel positif 200, un seul e-mail et metadonnees
+Firestore sont deja prouves. Le registre client A6 est commite. Inventaire
+attendu: 168 local, 163 cloud, 139 Gen1, 24 Gen2.
 
-Reprends au checkpoint G5-A6 du 2026-08-18. G0, G1, G2, G3, G4 et G5-A1 a
-G5-A5 sont fermes: ne les rejoue pas et ne regenere leurs preuves que si un
-drift concret l'exige.
+Action immediate: ne redeploie pas A6 et ne renvoie pas OTP. Verifie seulement
+si l archive gs://firebaseapphosting-sources-231220287936-europe-west4/
+secondevie-next-sandbox--g5a6-25405d0.zip est finalisee. Sinon reprends son
+upload. Cree build-2026-08-18-005, valide sans rollout, coupe 004 vers 005,
+controle routes/session/logs/donnees, exerce un rollback reel 004, puis
+reactive 005 et ferme le manifeste A6.
 
-Avant toute action:
-- lis completement `AGENTS.md`, `map.md`, `apphostingaudit/README.md`, le
-  checkpoint 2.1 et G5 du plan, puis les chapitres canoniques Auth,
-  infrastructure, exploitation et qualite;
-- preserve le worktree existant sur `codex/functions-gen2-migration`, notamment
-  les fermetures G5-A1/A2/A3/A4/A5 et leurs manifestes; aucun
-  reset/clean/checkout destructif;
-- identifie HEAD, Node, pnpm, Firebase CLI et operateur;
-- passe `--project secondevienextjsssr` a chaque commande cloud et echoue si le
-  projet effectif differe, meme si la configuration gcloud globale vaut
-  `vibefx-v2`;
-- confirme l'inventaire attendu: 167 exports locaux, 162 Functions cloud,
-  139 Gen1, 23 Gen2, 8 schedulers, 2 queues et 7 Eventarc.
+Ensuite prepare le lot Auth A7-A9: verifyCustomerLoginOtpGen2 et les options/
+verifications passkey compatibles. Les deploys Functions restent individuels
+et allowlistes; mutualise tests locaux, build App Hosting, ancien onglet,
+cutover, rollback et quiet-window une seule fois pour le lot. Une preuve
+positive/negative par famille de risque suffit; ne repete ni OTP, ni e-mail,
+ni inventaire/IAM global sans drift.
 
-Etat deja prouve, a ne pas rejouer sans drift:
-- G4 et G5-A1 a G5-A5 sont fermees et App Hosting sert `build-2026-08-18-004`;
-- `getUserStatsGen2` est ACTIVE en revision
-  `getuserstatsgen2-00001-niv`, avec CPU 167m, 512 MiB, 300 s,
-  concurrence/max 1, min 0, runtime `auth-reader-runtime`, IAM borne et aucune
-  cle utilisateur;
-- `logUserConnectionGen2` est ACTIVE en revision
-  `loguserconnectiongen2-00001-fab`, avec CPU 167m, 256 MiB, 60 s,
-  concurrence/max 1, min 0, runtime `auth-session-runtime`, IAM borne et aucune
-  cle utilisateur;
-- `ensureAdminAccessRegistryGen2` est ACTIVE en revision
-  `ensureadminaccessregistrygen2-00001-lak`, runtime `auth-registry-runtime`,
-  secret `SUPER_ADMIN_EMAIL:3` borne, IAM minimal et aucune cle utilisateur;
-- `sendGuestCheckoutOtpGen2` est ACTIVE en revision
-  `sendguestcheckoutotpgen2-00001-neh`, runtime `auth-otp-email-runtime`,
-  Gmail et quatre secrets epingles, IAM minimal et aucune cle utilisateur;
-- `verifyGuestCheckoutOtpGen2` est ACTIVE en revision
-  `verifyguestcheckoutotpgen2-00001-wim`, runtime `auth-otp-verify-runtime`,
-  secret `OTP_HMAC_SECRET:1`, IAM minimal et aucune cle utilisateur;
-- les gates G5 17/17, G4 18/18, G0 26/26 et les preuves Auth/App Check sont vertes;
-- l'appel sans Auth/App Check est refuse en 401;
-- le rollout `g5-a1-cutover-20260818-001` sert le build `005`; ancien onglet
-  `004` sain, compteur 34, Gen2 HTTP 200, donnees inchangees, zero erreur et
-  zero nouvel appel Gen1;
-- le rollout `g5-a2-cutover-20260818-001` sert le build `001`; ancien onglet
-  `005` sain, appel Gen2 200, ecriture attendue, zero erreur et zero nouvel
-  appel Gen1;
-- le rollout `g5-a3-cutover-20260818-001` sert le build `002`; ancien onglet
-  `001` sain, appel 200 avec `migrated:false`, registre inchange, zero erreur
-  et zero appel Gen1;
-- le rollout `g5-a4-cutover-20260818-001` sert le build `003`; ancien onglet
-  `002` authentifie, un seul envoi OTP 200 sans lecture du code, donnees
-  stables, zero erreur et zero appel Gen1;
-- G5-A5 sert finalement le build `004`; verification OTP 200 par transport
-  RSA-OAEP process-local, ancien onglet `003` authentifie, donnees stables,
-  zero erreur et zero appel Gen1; le rollback reel `003` et la reactivation
-  finale `004` ont reussi;
-- le registre source du commit `224190f` cible les cinq Gen2 fermees; leurs
-  Gen1 et le rollback exact `003` restent preserves.
+Autonomie: les operations sandbox non destructives, Custom Tokens et jetons
+App Check ephemeres sont autorises sans confirmation. Ils restent en memoire,
+non affiches, non journalises et non persistants. Continue automatiquement
+tant que les gates sont vertes.
 
-Discipline Git:
-- a la fermeture de chaque cible verte, cree un commit local borne regroupant
-  son code, son manifeste, ses tests utiles et sa documentation;
-- avant chaque commit, verifie `git status`, `git diff --check`, les tests
-  cibles et l'absence de secret ou de fichier sans rapport;
-- ne melange pas deux Functions ou deux cutovers dans le meme commit et ne
-  pousse/merge rien sans demande explicite.
-
-Objectif immediat:
-1. Ne redeploie pas les cibles G5-A1/A2/A3/A4/A5; preserve leurs Gen1 et le rollback `003`.
-2. Prepare uniquement `sendCustomerLoginOtpGen2`: handler partage/parite Gen1,
-   App Check, runtime/IAM minimal, manifeste et tests G5.
-3. Deploie seulement cette Function sous nouveau nom, prouve le refus negatif
-   et un envoi OTP client sandbox borne sans afficher, journaliser ou
-   persister le code.
-4. Bascule seulement son registre dans un build App Hosting reversible; prouve
-   `/`, `/admin`, ancien onglet, donnees/logs, zero erreur Gen2 et zero nouvel
-   appel `sendCustomerLoginOtp` Gen1 pendant la quiet-window acceleree.
-5. Au premier ecart, rollback exact registre/build; ne supprime ni Function,
-   endpoint, IAM, source ou donnee.
-6. Si G5-A6 est verte, ferme son manifeste, le plan, `map.md` et les chapitres
-   canoniques. Enchaine ensuite une seule cible G5 suivant l'ordre du plan:
-   logs/registre, OTP, options passkey, verification passkey, puis mutations
-   admin.
-7. Pour chaque cible suivante: nouveau nom, handler partage/parite Gen1, CPU
-   `gcf_gen1`, concurrence 1, min 0, limites/IAM/App Check explicites,
-   manifeste machine, tests cibles, deploy allowliste d'une seule Function,
-   bascule client reversible, ancien onglet et quiet-window. Conserve chaque
-   Gen1, son endpoint, son code, son IAM et son rollback jusqu'a G12-A.
-8. Continue automatiquement les sous-etapes vertes de G5 sans demander une
-   confirmation de routine. Utilise uniquement les tests qui prouvent la gate
-   du flux touche; ne transforme pas la migration en campagne de tests.
-
-Autorisation:
-- les lectures cloud sandbox et les ecritures/deploiements strictement
-  necessaires aux cibles G5 non destructives sont autorises apres leurs
-  preconditions et quiet-windows;
-- tu peux corriger une faille technique directement liee au lot si le correctif
-  est borne, teste, documente et reversible;
-- tu peux creer le Custom Token Firebase et le jeton App Check ephemeres des
-  comptes de recette bornes, puis les injecter uniquement via le harnais
-  sandbox officiel; ils restent en memoire, ne sont jamais affiches,
-  journalises ou persistes, et cette operation ne demande plus de confirmation
-  intermediaire tant que projet, compte, destination et invariants ne changent
-  pas;
-- ne t'arrete pas entre deux sous-etapes vertes d'une meme cible; arrete-toi au
-  premier ecart de projet, inventaire, Auth, App Check, IAM, donnees, sante,
-  idempotence, ancien onglet ou rollback.
-
-Interdictions permanentes:
-- aucune production, aucun Stripe live, secret live, refund, replay financier,
-  restock ou suppression de donnee;
-- jamais de deploy Functions global ou sans allowlist;
-- ne jamais migrer/supprimer `grantAdminOnAuth`, `onRegisteredUserCreated` ou
-  `onRegisteredUserDeleted`;
-- ne jamais deployer les cinq Instagram sous `HOLD_META_RECONCILIATION`;
-- ne jamais lancer `e2e:hosted-stripe` ni `e2e:refund-stripe`;
-- laisser `clearAllAffiliateClicks`, `clearAllSessions` et `deleteSession` sous
-  `HOLD_G11_DESTRUCTIVE_PRECONDITIONS`;
-- aucun retrait de Gen1 avant G12-A et aucun nettoyage IAM/secrets/code avant
-  G12-B.
-
-Rends a chaque cible: changement de code concret, manifeste/decision, revision
-cloud, tests utiles seulement, preuve de cutover/observation, inventaire,
-rollback exact et prochaine cible. Mesure l'avancement par Functions réellement
-preparees/deployees/basculees, pas par le nombre de tests lances.
+Interdits: production, Stripe live, deploy Functions global, suppression Gen1,
+nettoyage IAM/secrets/code, triggers Auth limites, cibles Meta/G11 sous HOLD,
+ou scripts Stripe DO_NOT_RUN. Au premier drift reel, rollback du build touche
+et diagnostic borne; ne recommence pas toute la migration.
 ```
