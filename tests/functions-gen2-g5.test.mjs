@@ -29,6 +29,50 @@ test('G5 prepare uniquement getUserStatsGen2 avec handler et securite partages',
   assert.match(read('src/kit/config/functionTargets.js'), /getUserStats:\s*'getUserStatsGen2'/);
 });
 
+test('G5-A2 prepare logUserConnectionGen2 sans basculer le registre client', () => {
+  const source = read('functions/src/auth/adminManagement.js');
+  const exports = extractLocalExports(ROOT);
+  const target = GCLOUD_GEN2_TARGETS.logUserConnectionGen2;
+  assert.ok(exports.some(({ name }) => name === 'logUserConnection'));
+  assert.ok(exports.some(({ name }) => name === 'logUserConnectionGen2'));
+  assert.equal(classificationFor('logUserConnectionGen2'), 'MIGRATION_PARALLEL');
+  assert.match(source, /const logUserConnectionHandler = async \(data, context\) =>/);
+  assert.match(source, /exports\.logUserConnection = regionalFunctions\(\)[\s\S]*?onCall\(logUserConnectionHandler\)/);
+  assert.match(source, /exports\.logUserConnectionGen2 = onCall\(/);
+  assert.match(source, /enforceAppCheck:\s*true/);
+  assert.equal(target.runtimeServiceAccount, 'auth-session-runtime@secondevienextjsssr.iam.gserviceaccount.com');
+  assert.equal(target.cpu, '167m');
+  assert.equal(target.concurrency, '1');
+  assert.equal(target.maxInstances, '1');
+  assert.doesNotMatch(read('src/kit/config/functionTargets.js'), /logUserConnection:\s*'logUserConnectionGen2'/);
+});
+
+test('G5-A2 borne la creation IAM du runtime de session Auth', () => {
+  const iam = read('scripts/configure-functions-gen2-g5-auth-session-iam.mjs');
+  for (const expected of [
+    /G5_CREATE_AUTH_SESSION_RUNTIME/,
+    /SERVICE_ACCOUNT_ID = 'auth-session-runtime'/,
+    /roles\/datastore\.user/,
+    /roles\/logging\.logWriter/,
+    /roles\/serviceusage\.serviceUsageConsumer/,
+    /userManagedKeys\.length === 0/,
+    /G5_IAM_EFFECTIVE_PROJECT_MISMATCH/,
+    /G5_IAM_COMMIT_MISMATCH/,
+  ]) assert.match(iam, expected);
+  assert.doesNotMatch(iam, /roles\/(?:editor|owner|firebaseauth\.admin)/i);
+});
+
+test('G5-A2 bloque deploy et cutover avant IAM', () => {
+  const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-log-user-connection.json'));
+  assert.equal(manifest.preflight.sourceExportsWithParallel, 164);
+  assert.equal(manifest.preflight.targetAbsentBeforeCreate, true);
+  assert.equal(manifest.functions[0].name, 'logUserConnectionGen2');
+  assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'logUserConnection');
+  assert.equal(manifest.gates.runtimeIamReady, false);
+  assert.equal(manifest.gates.deploymentAllowed, false);
+  assert.equal(manifest.gates.clientCutoverAuthorized, false);
+});
+
 test('G5 garde les trois triggers Auth exclusivement en Gen1', () => {
   const index = read('functions/index.js');
   for (const name of ['grantAdminOnAuth', 'onRegisteredUserCreated', 'onRegisteredUserDeleted']) {

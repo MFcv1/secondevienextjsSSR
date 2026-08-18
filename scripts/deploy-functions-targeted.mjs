@@ -81,6 +81,22 @@ const GCLOUD_GEN1_TARGETS = Object.freeze({
   })
 });
 export const GCLOUD_GEN2_TARGETS = Object.freeze({
+  logUserConnectionGen2: Object.freeze({
+    create: true,
+    triggerType: 'http-callable',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'logUserConnectionGen2',
+    runtimeServiceAccount: 'auth-session-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '256Mi',
+    cpu: '167m',
+    timeout: '60s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all'
+  }),
   getUserStatsGen2: Object.freeze({
     create: true,
     triggerType: 'http-callable',

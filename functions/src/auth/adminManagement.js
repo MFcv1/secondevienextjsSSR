@@ -32,6 +32,17 @@ const AUTH_READER_GEN2_RUNTIME = Object.freeze({
     serviceAccount: 'auth-reader-runtime@secondevienextjsssr.iam.gserviceaccount.com',
     enforceAppCheck: true
 });
+const AUTH_SESSION_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '256MiB',
+    timeoutSeconds: 60,
+    serviceAccount: 'auth-session-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    enforceAppCheck: true
+});
 
 function hashAdminEmail(email) {
     return crypto.createHash('sha256').update(normalizeEmail(email)).digest('hex');
@@ -409,7 +420,7 @@ exports.removeAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, s
 });
 
 // --- LOG CONNEXION (IP + Device) ---
-exports.logUserConnection = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+const logUserConnectionHandler = async (data, context) => {
     if (!context.auth) return { success: false, message: "Unauthenticated" };
 
     const userId = context.auth.uid;
@@ -446,7 +457,13 @@ exports.logUserConnection = regionalFunctions().runWith({ enforceAppCheck: true 
         console.error("❌ Erreur LogConnection:", error);
         return { success: false, error: 'connection_log_failed' };
     }
-});
+};
+
+exports.logUserConnection = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(logUserConnectionHandler);
+exports.logUserConnectionGen2 = onCall(
+    AUTH_SESSION_GEN2_RUNTIME,
+    async (request) => logUserConnectionHandler(request.data, request)
+);
 
 // --- STATS UTILISATEURS (Admin) ---
 const getUserStatsHandler = async (data, context) => {
@@ -528,3 +545,5 @@ exports.getUserStatsGen2 = onCall(
 
 exports.getUserStatsHandler = getUserStatsHandler;
 exports.AUTH_READER_GEN2_RUNTIME = AUTH_READER_GEN2_RUNTIME;
+exports.logUserConnectionHandler = logUserConnectionHandler;
+exports.AUTH_SESSION_GEN2_RUNTIME = AUTH_SESSION_GEN2_RUNTIME;

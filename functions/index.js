@@ -227,7 +227,7 @@ exports.verifyMetaConnectionAdmin = verifyMetaConnectionAdmin;
 // ── AUTH ──────────────────────────────────────────────────
 const { grantAdminOnAuth } = require('./src/auth/grantAdmin');
 const { onRegisteredUserCreated, onRegisteredUserDeleted } = require('./src/auth/userStats');
-const { addAdminUser, removeAdminUser, logUserConnection, getUserStats, getUserStatsGen2, syncSuperAdminClaim, ensureAdminAccessRegistry } = require('./src/auth/adminManagement');
+const { addAdminUser, removeAdminUser, logUserConnection, logUserConnectionGen2, getUserStats, getUserStatsGen2, syncSuperAdminClaim, ensureAdminAccessRegistry } = require('./src/auth/adminManagement');
 const { sendGuestCheckoutOtp, verifyGuestCheckoutOtp } = require('./src/auth/guestCheckoutOtp');
 const { sendCustomerLoginOtp, verifyCustomerLoginOtp } = require('./src/auth/customerLoginOtp');
 const {
@@ -243,6 +243,7 @@ exports.onRegisteredUserDeleted = onRegisteredUserDeleted;
 exports.addAdminUser = addAdminUser;
 exports.removeAdminUser = removeAdminUser;
 exports.logUserConnection = logUserConnection;
+exports.logUserConnectionGen2 = logUserConnectionGen2;
 exports.getUserStats = getUserStats;
 exports.getUserStatsGen2 = getUserStatsGen2;
 exports.syncSuperAdminClaim = syncSuperAdminClaim;

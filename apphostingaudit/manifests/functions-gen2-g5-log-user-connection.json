@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "baselineCommit": "11abf44f385af6ff239e22707405ab21f36b4f47",
+    "generatedAt": "2026-08-18T09:43:49Z",
+    "operator": "matthis.fradin2@gmail.com",
+    "wave": "G5_A2_AUTH_SESSION_LOG_PREPARED"
+  },
+  "deploymentPolicy": {
+    "exactProject": "secondevienextjsssr",
+    "exactCodebase": "main",
+    "maxBatchSize": 1,
+    "forbiddenGlobalSelector": "functions"
+  },
+  "preflight": {
+    "sourceExportsBeforePreparation": 163,
+    "sourceExportsWithParallel": 164,
+    "cloudFunctions": 158,
+    "cloudGen1": 139,
+    "cloudGen2": 19,
+    "legacyOwner": "logUserConnection",
+    "legacyVersion": "9",
+    "legacyOwnerPreserved": true,
+    "targetAbsentBeforeCreate": true,
+    "currentClientTarget": "logUserConnection"
+  },
+  "functions": [{
+    "name": "logUserConnectionGen2",
+    "source": {
+      "export": "logUserConnectionGen2",
+      "file": "functions/src/auth/adminManagement.js",
+      "sharedHandler": "logUserConnectionHandler"
+    },
+    "trigger": {
+      "type": "callable",
+      "appCheck": "ENFORCED",
+      "auth": "authenticated Firebase user"
+    },
+    "runtime": {
+      "sourceCpu": "gcf_gen1",
+      "deployCpu": "167m",
+      "memoryMiB": 256,
+      "timeoutSeconds": 60,
+      "concurrency": 1,
+      "minInstances": 0,
+      "maxInstances": 1
+    },
+    "identities": {
+      "runtimeServiceAccount": "auth-session-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+      "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+      "requiredRuntimeRoles": [
+        "roles/datastore.user",
+        "roles/logging.logWriter",
+        "roles/serviceusage.serviceUsageConsumer"
+      ]
+    },
+    "secrets": [],
+    "dataAccess": {
+      "reads": ["sys_ratelimit/log_{uid}"],
+      "writes": ["sys_ratelimit/log_{uid}", "users/{uid}"],
+      "sensitiveProofRule": "record updateTime and field presence only; never persist IP, user agent, ID token, Custom Token or App Check token"
+    },
+    "clientRegistry": {
+      "logicalName": "logUserConnection",
+      "currentTarget": "logUserConnection",
+      "cutoverTarget": "logUserConnectionGen2",
+      "cutoverAllowed": false
+    },
+    "decision": {
+      "classification": "MIGRATION_PARALLEL",
+      "target": "logUserConnectionGen2",
+      "wave": "G5-A2",
+      "deploymentMaxBatchSize": 1,
+      "rollback": "Keep logUserConnection Gen1, endpoint, IAM, source and data intact; restore registry and prior App Hosting build after cutover."
+    }
+  }],
+  "gates": {
+    "localTestsRequired": ["test:functions-g5", "test:functions-g0", "lint:functions"],
+    "tests": {
+      "functionsG5": "7/7",
+      "functionsG0": "26/26",
+      "functionsLint": "PASS"
+    },
+    "runtimeIamReady": false,
+    "targetAbsentBeforeCreate": true,
+    "deploymentAllowed": false,
+    "clientCutoverAuthorized": false
+  },
+  "rollback": {
+    "functionAction": "none; preserve logUserConnection and logUserConnectionGen2",
+    "clientAction": "keep logUserConnection Gen1 until explicit cutover manifest",
+    "dataAction": "none",
+    "g12Action": "none before G12-A"
+  },
+  "verdict": "SOURCE_PREPARED_IAM_AND_DEPLOYMENT_PENDING"
+}

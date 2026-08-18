@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "codebase": "main",
+  "baselineCommit": "11abf44f385af6ff239e22707405ab21f36b4f47",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g5-log-user-connection.json": "613e1645eb686766c6c99ad42f39185d70f3f01ab0d6ac041552b8fe9face245"
+  }
+}
