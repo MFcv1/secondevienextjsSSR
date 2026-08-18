@@ -7,7 +7,7 @@
     "baselineCommit": "b8c936796cc8a5df4eae866df7653cf07db1b7dd",
     "generatedAt": "2026-08-18T15:42:00Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G5_A3_AUTH_REGISTRY_PREPARED_IAM_PENDING"
+    "wave": "G5_A3_AUTH_REGISTRY_DEPLOY_AUTHORIZED"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -101,7 +101,7 @@
     "runtimeIamVerified": true,
     "runtimeIamManifest": "apphostingaudit/manifests/functions-gen2-g5-auth-registry-iam.json",
     "targetAbsentBeforeCreate": true,
-    "deploymentAllowed": false,
+    "deploymentAllowed": true,
     "clientCutoverAllowed": false
   },
   "rollback": {
@@ -111,5 +111,5 @@
     "secretAction": "none",
     "g12Action": "none before G12-A"
   },
-  "verdict": "PREPARED_IAM_READY_DEPLOYMENT_NOT_YET_ALLOWED"
+  "verdict": "PREPARED_IAM_READY_SINGLE_TARGET_DEPLOYMENT_ALLOWED"
 }

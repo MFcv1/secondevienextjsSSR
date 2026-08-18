@@ -101,7 +101,7 @@ test('G5-A3 borne IAM au runtime registre et au seul secret proprietaire', () =>
   assert.match(read('package.json'), /configure-functions-gen2-g5-auth-registry-iam\.mjs --project secondevienextjsssr --env sandbox/);
 });
 
-test('G5-A3 reste fail-closed avant IAM et deploy cible', () => {
+test('G5-A3 autorise uniquement le deploy cible apres IAM conforme', () => {
   const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-ensure-admin-access-registry.json'));
   assert.equal(manifest.preflight.sourceExportsWithParallel, 165);
   assert.equal(manifest.preflight.cloudFunctions, 159);
@@ -109,7 +109,7 @@ test('G5-A3 reste fail-closed avant IAM et deploy cible', () => {
   assert.equal(manifest.functions[0].cloud.present, false);
   assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'ensureAdminAccessRegistry');
   assert.equal(manifest.gates.runtimeIamReady, true);
-  assert.equal(manifest.gates.deploymentAllowed, false);
+  assert.equal(manifest.gates.deploymentAllowed, true);
   assert.equal(manifest.gates.clientCutoverAllowed, false);
   const iam = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-auth-registry-iam.json'));
   assert.equal(iam.ready, true);
