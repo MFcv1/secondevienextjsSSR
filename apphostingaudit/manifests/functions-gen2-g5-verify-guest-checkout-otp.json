@@ -82,7 +82,8 @@
     },
     "clientRegistry": {
       "logicalName": "verifyGuestCheckoutOtp",
-      "currentTarget": "verifyGuestCheckoutOtp",
+      "currentTarget": "verifyGuestCheckoutOtpGen2",
+      "hostedBuildTarget": "verifyGuestCheckoutOtp",
       "cutoverTarget": "verifyGuestCheckoutOtpGen2",
       "cutoverAllowed": true
     },
@@ -150,7 +151,7 @@
   },
   "rollback": {
     "functionAction": "none; preserve verifyGuestCheckoutOtp Gen1 and any parallel Gen2 target",
-    "clientAction": "cut over only the verifyGuestCheckoutOtp logical registry target, then restore the prior App Hosting build after the bounded observation",
+    "clientAction": "the source registry now targets verifyGuestCheckoutOtpGen2; publish only through the bounded App Hosting build, then restore the prior build after observation",
     "dataAction": "none",
     "secretAction": "none",
     "g12Action": "none before G12-A"

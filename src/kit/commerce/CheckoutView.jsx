@@ -729,7 +729,7 @@ const CheckoutView = ({
         const startedAt = startClientPerf();
 
         try {
-            const verifyOtp = httpsCallable(functions, 'verifyGuestCheckoutOtp');
+            const verifyOtp = httpsCallable(functions, getFunctionTarget('verifyGuestCheckoutOtp'));
             const result = await verifyOtp({
                 email: normalizedCheckoutEmail,
                 code

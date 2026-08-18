@@ -163,7 +163,8 @@ test('G5-A5 prepare uniquement verifyGuestCheckoutOtpGen2 avec handler et secret
   assert.equal(target.concurrency, '1');
   assert.equal(target.maxInstances, '1');
   assert.deepEqual(target.secrets, ['OTP_HMAC_SECRET=OTP_HMAC_SECRET:1']);
-  assert.doesNotMatch(read('src/kit/config/functionTargets.js'), /verifyGuestCheckoutOtp:\s*'verifyGuestCheckoutOtpGen2'/);
+  assert.match(read('src/kit/config/functionTargets.js'), /verifyGuestCheckoutOtp:\s*'verifyGuestCheckoutOtpGen2'/);
+  assert.match(read('src/kit/commerce/CheckoutView.jsx'), /getFunctionTarget\('verifyGuestCheckoutOtp'\)/);
 });
 
 test('G5-A5 borne IAM au runtime de verification OTP et au seul secret HMAC', () => {
@@ -191,7 +192,8 @@ test('G5-A5 prouve le runtime OTP et autorise seulement le cutover client', () =
   assert.equal(manifest.functions[0].name, 'verifyGuestCheckoutOtpGen2');
   assert.equal(manifest.functions[0].cloud.present, true);
   assert.equal(manifest.functions[0].cloud.revision, 'verifyguestcheckoutotpgen2-00001-wim');
-  assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'verifyGuestCheckoutOtp');
+  assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'verifyGuestCheckoutOtpGen2');
+  assert.equal(manifest.functions[0].clientRegistry.hostedBuildTarget, 'verifyGuestCheckoutOtp');
   assert.equal(manifest.gates.runtimeIamReady, true);
   assert.equal(manifest.gates.runtimeIamVerified, true);
   assert.deepEqual(manifest.iamEvidence.forbiddenProjectRoles, []);
