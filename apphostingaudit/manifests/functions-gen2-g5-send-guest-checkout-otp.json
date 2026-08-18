@@ -7,7 +7,7 @@
     "baselineCommit": "1702b9001ff313573b9c3a3028ed93ff334a64e3",
     "generatedAt": "2026-08-18T16:24:55Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G5_A4_GUEST_OTP_SEND_PREPARED_IAM_PENDING"
+    "wave": "G5_A4_GUEST_OTP_SEND_IAM_READY_DEPLOY_PENDING"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -99,6 +99,23 @@
       "rollback": "Keep sendGuestCheckoutOtp Gen1, endpoint, IAM, secrets, source and rate-limit data intact; restore client target and prior App Hosting build after cutover."
     }
   }],
+  "iamEvidence": {
+    "verifiedAt": "2026-08-18T16:26:36.328Z",
+    "serviceAccountCreated": true,
+    "observedProjectRoles": [
+      "roles/datastore.user",
+      "roles/logging.logWriter",
+      "roles/serviceusage.serviceUsageConsumer"
+    ],
+    "forbiddenProjectRoles": [],
+    "userManagedKeyCount": 0,
+    "secretBindingsVerified": [
+      "GMAIL_EMAIL:2",
+      "GMAIL_PASSWORD:5",
+      "OTP_HMAC_SECRET:1",
+      "RESEND_API_KEY:1"
+    ]
+  },
   "gates": {
     "localTestsRequired": ["test:functions-g5", "test:functions-g4", "test:functions-g0", "test:auth", "lint:functions"],
     "localTestsPassed": {
@@ -109,8 +126,8 @@
       "lint:functions": "PASS",
       "gitDiffCheck": "PASS"
     },
-    "runtimeIamReady": false,
-    "runtimeIamVerified": false,
+    "runtimeIamReady": true,
+    "runtimeIamVerified": true,
     "targetAbsentBeforeCreate": true,
     "deploymentAllowed": false,
     "clientCutoverAllowed": false,
@@ -123,5 +140,5 @@
     "secretAction": "none",
     "g12Action": "none before G12-A"
   },
-  "verdict": "PREPARED_IAM_AND_DEPLOYMENT_NOT_YET_ALLOWED"
+  "verdict": "IAM_READY_DEPLOYMENT_NOT_YET_ALLOWED"
 }
