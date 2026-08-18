@@ -269,6 +269,9 @@ test('G5 injecte le jeton App Check ephemere dans Auth et Functions pendant la r
   assert.match(harness, /role: \['owner', 'admin'\]\.includes\(callablePayload\?\.result\?\.role\)/);
   assert.match(harness, /Clients inscrits en cours de chargement/);
   assert.match(harness, /userCountVerified: expectedUserCount \? Number\(expectedUserCount\) : null/);
+  assert.match(harness, /CHECKPOINT_READY/);
+  assert.match(harness, /sessionStillAuthenticated: true/);
+  assert.match(harness, /\/tmp\\\/secondevie-/);
   assert.doesNotMatch(harness, /console\.(?:log|info)\([^\n]*customToken/);
 });
 

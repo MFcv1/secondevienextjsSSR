@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { existsSync } from 'node:fs';
 import admin from 'firebase-admin';
 import { chromium, expect } from '@playwright/test';
 
@@ -21,6 +22,7 @@ const probeCallable = readArg('probe-callable').trim();
 const baseUrl = readArg('base-url', process.env.NEXT_BASE_URL || SANDBOX_URL).replace(/\/$/, '');
 const headed = process.argv.includes('--headed');
 const keepOpen = process.argv.includes('--keep-open');
+const checkpointFile = readArg('checkpoint-file').trim();
 const projectId = process.env.FIREBASE_PROJECT_ID
   || process.env.VITE_FIREBASE_PROJECT_ID
   || SANDBOX_PROJECT_ID;
@@ -60,6 +62,12 @@ if (expectedUserCount && !/^\d{1,9}$/.test(expectedUserCount)) {
 }
 if (keepOpen && !headed) {
   throw new Error('--keep-open exige --headed.');
+}
+if (checkpointFile && !/^\/tmp\/secondevie-[a-z0-9-]+\.signal$/.test(checkpointFile)) {
+  throw new Error('Chemin checkpoint sandbox invalide.');
+}
+if (checkpointFile && keepOpen) {
+  throw new Error('--checkpoint-file et --keep-open sont exclusifs.');
 }
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
@@ -227,7 +235,26 @@ try {
     quoteVerified: Boolean(expectedQuote),
   }, null, 2));
 
-  if (keepOpen) {
+  if (checkpointFile) {
+    process.stdout.write('\nCHECKPOINT_READY\n');
+    while (!existsSync(checkpointFile)) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+    if (role === 'admin') {
+      await expect(page.getByRole('complementary', { name: "Navigation de l'administration" })).toBeVisible({ timeout: 15_000 });
+    } else {
+      await expect(page.getByRole('complementary', { name: 'Navigation de l’espace client' })).toBeVisible({ timeout: 15_000 });
+    }
+    const deploymentHref = await page.locator('link[href*="dpl="]').first().getAttribute('href');
+    process.stdout.write(`\n${JSON.stringify({
+      checkpoint: 'passed',
+      role,
+      target: page.url(),
+      deploymentHref,
+      sessionStillAuthenticated: true,
+    }, null, 2)}\n`);
+    await context.close();
+  } else if (keepOpen) {
     process.stdout.write('\nSession ouverte. Fermez la fenetre pour terminer.\n');
     await new Promise((resolve) => browser.on('disconnected', resolve));
   } else {
