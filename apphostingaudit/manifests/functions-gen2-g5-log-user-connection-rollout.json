@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "wave": "G5-A2_CLOSED_ACCELERATED_VALIDATION",
+    "operator": "matthis.fradin2@gmail.com",
+    "sourceCommit": "4fbd3bc",
+    "recordedAt": "2026-08-18T15:34:00Z"
+  },
+  "reconciliation": {
+    "sourceExports": 164,
+    "cloudFunctions": 159,
+    "cloudGen1": 139,
+    "cloudGen2": 20,
+    "schedulers": 8,
+    "queues": 2,
+    "eventarcTriggers": 7,
+    "drift": "EXPECTED_SEVEN_PARALLEL_TARGETS"
+  },
+  "function": {
+    "name": "logUserConnectionGen2",
+    "legacyOwnerPreserved": "logUserConnection",
+    "state": "ACTIVE",
+    "generation": 2,
+    "region": "europe-west1",
+    "revision": "loguserconnectiongen2-00001-fab",
+    "runtime": "nodejs22",
+    "runtimeServiceAccount": "auth-session-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "cpu": "167m",
+    "memory": "256Mi",
+    "timeoutSeconds": 60,
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "transportInvoker": "allUsers",
+    "appCheck": "ENFORCED",
+    "secrets": []
+  },
+  "appHosting": {
+    "backend": "secondevie-next-sandbox",
+    "region": "europe-west4",
+    "previousBuild": "build-2026-08-17-005",
+    "build": {
+      "name": "build-2026-08-18-001",
+      "state": "READY",
+      "createTime": "2026-08-18T15:24:46.158521301Z",
+      "updateTime": "2026-08-18T15:28:28.933943Z",
+      "sourceArchive": "gs://firebaseapphosting-sources-231220287936-europe-west4/secondevie-next-sandbox--g5a2-4fbd3bc.zip",
+      "sourceArchiveSize": 96971659,
+      "labels": {
+        "migration-wave": "g5-a2",
+        "source-commit": "4fbd3bc",
+        "target": "loguserconnectiongen2"
+      }
+    },
+    "rollout": {
+      "name": "g5-a2-cutover-20260818-001",
+      "validateOnly": true,
+      "state": "SUCCEEDED",
+      "createTime": "2026-08-18T15:29:53.179172999Z",
+      "updateTime": "2026-08-18T15:29:58.878749Z",
+      "trafficPercent": 100
+    },
+    "servedChecks": {
+      "homeStatus": 200,
+      "adminStatus": 200,
+      "oldBuild005DeploymentId": "sv-msxqbcz5-d910c597cda1",
+      "newBuild001DeploymentId": "sv-msytecz9-47321381101b",
+      "oldBuild005TabRenderedAfterCutover": true,
+      "newBuild001AdminRendered": true
+    }
+  },
+  "authentication": {
+    "account": "loa.gto15@gmail.com",
+    "session": "ephemeral Firebase Custom Token with AAL2 passkey claims",
+    "appCheck": "ephemeral Admin App Check token injected only in Auth and Functions requests",
+    "tokenDisplayed": false,
+    "tokenLogged": false,
+    "tokenPersisted": false,
+    "realLoginCeremonyTested": false,
+    "postCutoverAdminSession": "PASS",
+    "registeredUsers": 34
+  },
+  "dataAndLogs": {
+    "userDocumentBefore": {
+      "updateTime": "2026-08-18T09:55:30.559Z",
+      "lastLoginAtPresent": true,
+      "securityDataPresent": true
+    },
+    "userDocumentAfter": {
+      "updateTime": "2026-08-18T15:31:02.723906Z",
+      "lastLoginAtPresent": true,
+      "securityDataPresent": true,
+      "sensitiveValuesPrinted": false
+    },
+    "positiveProbe": {
+      "executedAt": "2026-08-18T15:31:02Z",
+      "callable": "logUserConnectionGen2",
+      "httpStatus": 200,
+      "success": true,
+      "result": "PASS"
+    },
+    "quietWindow": {
+      "from": "2026-08-18T15:29:58Z",
+      "snapshotAt": "2026-08-18T15:33:00Z",
+      "gen2LogEntries": 4,
+      "gen2Http200": 1,
+      "gen2Errors": 0,
+      "newGen1LogEntries": 0,
+      "result": "PASS"
+    }
+  },
+  "gates": {
+    "functionsG5": "7/7",
+    "functionsG0": "26/26",
+    "adminCustomTokenPostCutover": "PASS",
+    "oldTabCompatible": true,
+    "homeAndAdminHttp200": true,
+    "gen2PositiveCall": true,
+    "expectedWriteObserved": true,
+    "gen2ErrorsZero": true,
+    "legacyTrafficAfterCutoverZero": true,
+    "nextCloudTargetAllowed": true
+  },
+  "rollback": {
+    "exactAppHostingBuild": "build-2026-08-17-005",
+    "exactAction": "create a validated App Hosting rollout on backend secondevie-next-sandbox in europe-west4 referencing existing READY build build-2026-08-17-005",
+    "sourceChange": "restore logUserConnection: 'logUserConnection' in src/kit/config/functionTargets.js before any later sandbox rollout",
+    "functionAction": "none; preserve logUserConnection and logUserConnectionGen2",
+    "dataAction": "none",
+    "iamSecretsAction": "none",
+    "g12Action": "none before G12-A"
+  },
+  "verdict": "G5_A2_CLOSED_GEN2_SESSION_LOGGER_ACTIVE_GEN1_PRESERVED_NEXT_TARGET_ALLOWED"
+}

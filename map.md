@@ -1079,8 +1079,17 @@ nouvel appel Gen1. Le rollback exact est `build-2026-08-17-004`; aucune Gen1,
 IAM ou donnee ne doit etre retiree. Le harnais admin sandbox cree Custom Token
 et App Check en memoire et injecte App Check sur Auth et Functions sans
 persister de jeton. La prochaine cible unique G5 est
-`logUserConnectionGen2`. Inventaire: 163 local, 158 cloud, 139 Gen1, 19 Gen2,
-8 schedulers, 2 queues et 7 Eventarc.
+`logUserConnectionGen2`.
+G5-A2 a ferme `logUserConnectionGen2` sous nouveau nom avec le handler Gen1,
+App Check, CPU 167m, 256 MiB, 60 s, concurrence/max 1 et le runtime minimal
+`auth-session-runtime`. La revision `loguserconnectiongen2-00001-fab` est
+ACTIVE. Le rollout `g5-a2-cutover-20260818-001` sert
+`build-2026-08-18-001`: ancien onglet `005` sain, `/` et `/admin` en 200,
+appel Gen2 200, ecriture `lastLoginAt` observee, zero erreur Gen2 et zero
+nouvel appel Gen1. Rollback exact `build-2026-08-17-005`; aucune Gen1, IAM ou
+donnee retiree. Prochaine cible unique `ensureAdminAccessRegistryGen2`.
+Inventaire: 164 local, 159 cloud, 139 Gen1, 20 Gen2, 8 schedulers, 2 queues et
+7 Eventarc.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.

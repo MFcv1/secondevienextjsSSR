@@ -115,13 +115,15 @@
       "sensitiveValuesPersistedInManifest": false
     },
     "logs": { "entries": 10, "http200": 1, "http401": 1, "errors": 0 },
-    "clientCutoverAuthorized": true
+    "clientCutoverAuthorized": true,
+    "clientCutoverCompleted": true,
+    "rolloutManifest": "apphostingaudit/manifests/functions-gen2-g5-log-user-connection-rollout.json"
   },
   "rollback": {
     "functionAction": "none; preserve logUserConnection and logUserConnectionGen2",
-    "clientAction": "keep logUserConnection Gen1 until explicit cutover manifest",
+    "clientAction": "rollback exactly to build-2026-08-17-005 and restore the logical registry target to logUserConnection",
     "dataAction": "none",
     "g12Action": "none before G12-A"
   },
-  "verdict": "FUNCTION_ACTIVE_PROBES_GREEN_CLIENT_CUTOVER_AUTHORIZED"
+  "verdict": "FUNCTION_ACTIVE_CLIENT_CUTOVER_CLOSED_GEN1_PRESERVED"
 }

@@ -254,6 +254,16 @@ retourne 34, l'ancien onglet `004` reste fonctionnel, les donnees sont
 inchangees et la quiet-window compte zero erreur Gen2 et zero appel Gen1. La
 Gen1 et son IAM sont preserves; rollback client exact vers `004`.
 
+G5-A2 ferme aussi `logUserConnectionGen2` avec le handler Gen1 et App Check
+identiques. Son runtime `auth-session-runtime` porte uniquement Firestore,
+logs et service usage, sans cle utilisateur ni acces secret. La revision
+`loguserconnectiongen2-00001-fab` est ACTIVE et le rollout
+`g5-a2-cutover-20260818-001` sert le build `001`. L'ancien onglet `005` reste
+fonctionnel, l'appel ephemere retourne 200, `lastLoginAt` est mis a jour,
+les erreurs Gen2 et les nouveaux appels Gen1 valent zero. La Gen1 reste
+intacte; rollback client exact vers `005`. Prochaine cible unique:
+`ensureAdminAccessRegistryGen2`.
+
 - registre administrateur par UID;
 - entree active obligatoire pour les callables critiques;
 - retrait des claims lors d'une revocation;

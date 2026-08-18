@@ -92,7 +92,7 @@ Valeurs autorisees:
 | G2 | socle Gen2 puis stabilisation ciblee des 13 Gen2 actuelles | `TERMINEE` | 13/13 Gen2 deployees et observees, inventaire sans drift, rollback conserve | `functions-gen2-g2b-closeout.json` |
 | G3 | decisions retrait/migration legacy, E2E, maintenance, publication historique | `TERMINEE` | six retraits differes G12-A, commandes Stripe fail-closed, zero suppression | `functions-gen2-g3-decisions.json` |
 | G4 | analytics | `TERMINEE` | parite, App Check, caches concurrents, observation acceleree autorisee | cinq cibles Gen2 basculees; build `004`, rollback `003`, Gen1 preservees |
-| G5 | Auth callables, OTP et passkeys | `EN_COURS` | Auth complete, parcours sandbox et rollback client | A1 fermee sur build `005`; compteur 34, zero erreur/Gen1; A2 `logUserConnectionGen2` suivante |
+| G5 | Auth callables, OTP et passkeys | `EN_COURS` | Auth complete, parcours sandbox et rollback client | A1 et A2 fermees; build `001`, rollback `005`; A3 `ensureAdminAccessRegistryGen2` suivante |
 | G6 | catalogue admin, devis, newsletter, e-mail et factures | `A_FAIRE` | writers/readers et trigger devis sans double effet | a renseigner |
 | G7 | Meta et reconciliation Instagram | `A_FAIRE` | hold leve par preuves, OAuth/secrets/rollback valides | a renseigner |
 | G8 | commerce non financier, lectures et hygiene P1 | `A_FAIRE` | stock/prix/KPI/cohortes sans divergence | a renseigner |
@@ -471,15 +471,14 @@ Arreter la vague au premier:
 
 ## 10. Point de reprise
 
-G5-A1 est fermee. `getUserStatsGen2` est ACTIVE en revision
-`getuserstatsgen2-00001-niv` et le rollout `g5-a1-cutover-20260818-001` sert
-`build-2026-08-17-005`. L'ancien onglet `004` est reste sain, `/` et `/admin`
-retournent 200, le compteur admin Auth/App Check vaut 34, les donnees sont
-inchangees, les erreurs Gen2 et le trafic Gen1 post-cutover valent zero. Le
-harnais corrige injecte App Check sur Firebase Auth et Functions; Custom Token
-et App Check restent uniquement en memoire. Prochaine cible unique:
-`logUserConnectionGen2`. Au premier ecart, rollback exact vers
-`build-2026-08-17-004`; conserver
-les deux Functions, endpoints, IAM, sources et donnees. Inventaire courant:
-163 exports locaux, 158 cloud, 139 Gen1, 19 Gen2, 8 schedulers, 2 queues et
-7 Eventarc. Les six retraits G3 restent differes a G12-A.
+G5-A1 et G5-A2 sont fermees. `getUserStatsGen2` est ACTIVE en revision
+`getuserstatsgen2-00001-niv`; `logUserConnectionGen2` est ACTIVE en revision
+`loguserconnectiongen2-00001-fab`; `g5-a2-cutover-20260818-001` sert
+`build-2026-08-18-001`. Ancien onglet `005`, routes 200, appel Gen2 200,
+ecriture attendue, zero erreur et zero nouvel appel Gen1 sont conformes.
+Le harnais injecte App Check sur Firebase Auth et Functions; Custom Token et
+App Check restent uniquement en memoire.
+Rollback exact `build-2026-08-17-005`; conserver les deux Functions, IAM,
+sources et donnees. Prochaine cible unique `ensureAdminAccessRegistryGen2`.
+Inventaire courant: 164 exports locaux, 159 cloud, 139 Gen1, 20 Gen2,
+8 schedulers, 2 queues et 7 Eventarc. Les six retraits G3 restent differes a G12-A.

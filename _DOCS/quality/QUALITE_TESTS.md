@@ -90,12 +90,14 @@ gate Auth, elle exige aussi le registre client Gen1 et la preuve du build exact.
 La suite locale ne contacte pas le cloud.
 
 La gate G5 courante est bornee a `npm run test:functions-g5`, `npm run
-test:auth`, l'audit App Check et `npm run lint:functions`. G5-A1 est fermee:
-`test:functions-g5` porte 4/4 contrats, dont le harnais Auth/App Check et le
+test:auth`, l'audit App Check et `npm run lint:functions`. G5-A1 et G5-A2 sont
+fermees: `test:functions-g5` porte 7/7 contrats, dont le harnais Auth/App Check et le
 manifeste de rollout; les gates precedentes Auth 77/77, App Check et lint
 restent valides. Le rollout `005` a prouve ancien onglet, `/` et `/admin` 200,
 appel admin Gen2 200 avec compteur 34, donnees inchangees, zero erreur Gen2 et
-zero nouvel appel Gen1. Le Custom Token et le jeton App Check de recette sont
+zero nouvel appel Gen1. Le rollout G5-A2 `001` a ensuite prouve ancien onglet
+`005`, routes 200, appel `logUserConnectionGen2` 200, ecriture attendue, zero
+erreur et zero nouvel appel Gen1. Le Custom Token et le jeton App Check de recette sont
 crees et injectes uniquement en memoire; ils ne doivent jamais entrer dans les
 preuves ou les logs.
 
