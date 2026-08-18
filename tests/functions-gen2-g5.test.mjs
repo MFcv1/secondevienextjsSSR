@@ -108,9 +108,14 @@ test('G5-A3 reste fail-closed avant IAM et deploy cible', () => {
   assert.equal(manifest.functions[0].name, 'ensureAdminAccessRegistryGen2');
   assert.equal(manifest.functions[0].cloud.present, false);
   assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'ensureAdminAccessRegistry');
-  assert.equal(manifest.gates.runtimeIamReady, false);
+  assert.equal(manifest.gates.runtimeIamReady, true);
   assert.equal(manifest.gates.deploymentAllowed, false);
   assert.equal(manifest.gates.clientCutoverAllowed, false);
+  const iam = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-auth-registry-iam.json'));
+  assert.equal(iam.ready, true);
+  assert.deepEqual(iam.observedRoles, iam.requiredRoles);
+  assert.equal(iam.userManagedKeyCount, 0);
+  assert.deepEqual(iam.secretBindings, [{ secret: 'SUPER_ADMIN_EMAIL', version: '3', secretAccessor: true }]);
 });
 
 test('G5-A2 prouve le deploy et autorise uniquement le cutover client', () => {

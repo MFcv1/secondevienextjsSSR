@@ -97,8 +97,9 @@
       "functionsG0": "26/26",
       "functionsLint": "PASS"
     },
-    "runtimeIamReady": false,
-    "runtimeIamVerified": false,
+    "runtimeIamReady": true,
+    "runtimeIamVerified": true,
+    "runtimeIamManifest": "apphostingaudit/manifests/functions-gen2-g5-auth-registry-iam.json",
     "targetAbsentBeforeCreate": true,
     "deploymentAllowed": false,
     "clientCutoverAllowed": false
@@ -110,5 +111,5 @@
     "secretAction": "none",
     "g12Action": "none before G12-A"
   },
-  "verdict": "PREPARED_IAM_AND_DEPLOYMENT_NOT_YET_ALLOWED"
+  "verdict": "PREPARED_IAM_READY_DEPLOYMENT_NOT_YET_ALLOWED"
 }
