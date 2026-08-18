@@ -35,3 +35,29 @@ test('G5 garde les trois triggers Auth exclusivement en Gen1', () => {
     assert.doesNotMatch(index, new RegExp(`${name}Gen2`));
   }
 });
+
+test('G5 injecte le jeton App Check ephemere dans Auth et Functions pendant la recette sandbox', () => {
+  const harness = read('scripts/e2e-sandbox-role-session.mjs');
+  assert.match(harness, /context\.route\('https:\/\/identitytoolkit\.googleapis\.com\/\*\*'/);
+  assert.match(harness, /context\.route\('\*\*\/\*\.cloudfunctions\.net\/\*\*'/);
+  assert.equal((harness.match(/'X-Firebase-AppCheck': appCheckToken\.token/g) || []).length, 2);
+  assert.match(harness, /readArg\('expect-user-count'\)/);
+  assert.match(harness, /Clients inscrits en cours de chargement/);
+  assert.match(harness, /userCountVerified: expectedUserCount \? Number\(expectedUserCount\) : null/);
+  assert.doesNotMatch(harness, /console\.(?:log|info)\([^\n]*customToken/);
+});
+
+test('G5-A1 ferme le cutover getUserStats sans retrait Gen1', () => {
+  const rollout = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-get-user-stats-rollout.json'));
+  assert.equal(rollout.metadata.project, 'secondevienextjsssr');
+  assert.equal(rollout.function.name, 'getUserStatsGen2');
+  assert.equal(rollout.function.legacyOwnerPreserved, 'getUserStats');
+  assert.equal(rollout.appHosting.previousBuild, 'build-2026-08-17-004');
+  assert.equal(rollout.appHosting.build.name, 'build-2026-08-17-005');
+  assert.equal(rollout.appHosting.rollout.state, 'SUCCEEDED');
+  assert.equal(rollout.dataAndLogs.positiveProbe.returnedCount, 34);
+  assert.equal(rollout.dataAndLogs.quietWindow.gen2Errors, 0);
+  assert.equal(rollout.dataAndLogs.quietWindow.newGen1LogEntries, 0);
+  assert.equal(rollout.authentication.tokenPersisted, false);
+  assert.equal(rollout.gates.nextCloudTargetAllowed, true);
+});

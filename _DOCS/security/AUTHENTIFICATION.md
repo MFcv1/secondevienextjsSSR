@@ -243,12 +243,16 @@ Le mot de passe Gmail ne doit jamais redevenir le secret HMAC OTP.
 
 ### 6.3 Administration et revocation
 
-La migration G5 commence par le lecteur `getUserStatsGen2`, sous nouveau nom
+La migration G5 a ferme le lecteur `getUserStatsGen2`, sous nouveau nom
 et avec le meme handler que la Gen1. App Check, registre admin actif et AAL2
 restent obligatoires. Son identite dediee `auth-reader-runtime` ne porte que
 `firebaseauth.viewer`, Firestore user, logs et service usage; aucun role Auth
-admin ni cle utilisateur. La Gen1 et le registre client sont preserves jusqu'a
-la preuve cloud et au cutover reversible.
+admin ni cle utilisateur. La revision `getuserstatsgen2-00001-niv` est ACTIVE
+et le refus sans Auth/App Check retourne 401. Le rollout
+`g5-a1-cutover-20260818-001` sert le build `005`; la recette admin ephemere a
+retourne 34, l'ancien onglet `004` reste fonctionnel, les donnees sont
+inchangees et la quiet-window compte zero erreur Gen2 et zero appel Gen1. La
+Gen1 et son IAM sont preserves; rollback client exact vers `004`.
 
 - registre administrateur par UID;
 - entree active obligatoire pour les callables critiques;
@@ -688,6 +692,8 @@ Le rail `scripts/e2e-sandbox-role-session.mjs` est fail-closed:
 - administrateur exact `loa.gto15@gmail.com`, refuse si le claim ou le registre
   actif manque;
 - Custom Token garde uniquement en memoire, jamais ecrit dans les preuves;
+- le harnais sandbox ajoute le jeton App Check ephemere aux echanges
+  `identitytoolkit.googleapis.com` et `cloudfunctions.net`, sans le journaliser;
 - ouverture via un hook navigateur expose seulement avec `e2e_run` sur le
   sandbox exact ou localhost;
 - aucune creation de compte, promotion admin, modification de mot de passe ou

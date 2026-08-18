@@ -66,15 +66,15 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | --- | --- |
 | branche | `codex/functions-gen2-migration` |
 | baseline avant le checkpoint Monitoring | `25daf810309dc3329cfeb0fb19be0f1790fe608a` |
-| worktree attendu a la reprise | propre; tout changement additionnel doit etre preserve et qualifie |
-| phases fermees | G0, G1, G2-A, G2-B 13/13 et G3 |
-| phase active | G5 Auth, prochaine cible unique `getUserStatsGen2` |
-| inventaire courant | 162 exports locaux, 157 cloud, 139 Gen1, 18 Gen2 |
-| cible parallele active | `trackAdminIPGen2`, revision `trackadminipgen2-00001-goj` |
-| cutover client | App Hosting `build-2026-08-17-004`; cinq registres analytics G4 pointent sur leurs cibles Gen2 |
-| observation G4-A1 | fermee acceleree le `2026-08-17T12:28:01Z` apres levee explicite de la borne temporelle |
+| worktree attendu a la reprise | fermeture G5-A1 et correctif du harnais sandbox non commites a preserver; tout changement additionnel doit etre qualifie |
+| phases fermees | G0, G1, G2-A, G2-B 13/13, G3 et G4 |
+| phase active | G5-A2 Auth, prochaine cible unique `logUserConnectionGen2` |
+| inventaire courant | 163 exports locaux, 158 cloud, 139 Gen1, 19 Gen2, 8 schedulers, 2 queues, 7 Eventarc |
+| cibles paralleles actives | cinq analytics G4 et `getUserStatsGen2` basculees vers leurs Gen2; toutes les Gen1 restent intactes |
+| cutover client | App Hosting sert `build-2026-08-17-005`; rollback exact `build-2026-08-17-004` |
+| observation G4 | G4-A1 a G4-A5 fermees en validation acceleree; Gen1 et rollbacks preserves |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | preparer uniquement `getUserStatsGen2`; conserver les trois triggers Auth Gen1 |
+| prochain lot | preparer puis migrer uniquement `logUserConnectionGen2`; conserver les trois triggers Auth Gen1 |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -97,20 +97,21 @@ conformes, ancien onglet admin sain et zero nouvel appel Gen1 apres cutover.
 
 Ordre de reprise obligatoire:
 
-1. preserver le diff existant et verifier le projet explicite
-   `secondevienextjsssr`, l'operateur et l'inventaire 159/154;
-2. ne deployer aucune nouvelle cible avant le terme de la quiet-window G4-A1;
-3. a son terme, verifier revision/IAM/App Check, logs, donnees avant/apres,
-   absence de trafic Gen1 et compatibilite d'un ancien onglet;
-4. si ces preuves sont vertes, fermer G4-A1 sans supprimer `trackAdminIP`;
-5. verifier la preparation locale puis migrer `updateUserSessions` sous le
-   nouveau nom `updateUserSessionsGen2`, avec parite Gen1, manifeste, rollback
-   client et une seule cible cloud;
-6. continuer ensuite les cibles G4 non destructives dans l'ordre du plan, avec
-   uniquement les tests proportionnes au flux touche; ne pas rejouer les
-   campagnes G0-G3 ni lancer des tests sans decision qu'ils prouvent;
-7. laisser les trois suppressions analytics sous
-   `HOLD_G11_DESTRUCTIVE_PRECONDITIONS`.
+1. preserver la fermeture G5-A1 et le correctif du harnais, verifier le projet
+   explicite `secondevienextjsssr`, l'operateur et l'inventaire 163/158;
+2. ne pas redeployer `getUserStatsGen2`: G5-A1 est fermee, sa Gen1 et son
+   rollback `004` restent preserves;
+3. preparer uniquement `logUserConnectionGen2` avec handler partage, App Check,
+   runtime/IAM minimal, tests et manifeste machine;
+4. deployer une seule Function sous nouveau nom, prouver refus negatif puis
+   parite d'ecriture idempotente avec une session sandbox ephemere;
+5. basculer le seul registre client dans un build App Hosting reversible,
+   prouver ancien onglet, donnees/logs, zero erreur et zero nouvel appel Gen1;
+6. au premier ecart, restaurer exactement le registre/build precedent sans
+   retirer Function, endpoint, IAM, code ou donnee;
+7. si G5-A2 est verte, fermer son manifeste et poursuivre automatiquement une
+   seule cible G5 suivant l'ordre logs/registre, OTP, options passkey,
+   verification passkey, puis mutations admin.
 
 ### 2.2 Cible recommandee
 
@@ -2281,13 +2282,22 @@ Gates: `test:auth`, 401/403, Google/OTP/passkey sandbox, custom token,
 ajout/retrait admin et revocation, compteur stable, aucun OTP dans les logs,
 rollback client et quiet-window de l'ancien nom.
 
-Preparation G5-A1: `getUserStatsGen2` est la cible unique. Elle partage le
+Fermeture G5-A1: `getUserStatsGen2` partage le
 handler Gen1, conserve App Check et l'admin actif AAL2, CPU Gen1, concurrence
 1, min 0/max 1, 512 MiB et 300 s. L'identite dediee
 `auth-reader-runtime` porte uniquement Auth viewer, Firestore user, logs et
-service usage, sans cle utilisateur ni role Firebase Auth admin. La Gen1 et le
-registre client restent actifs. Gates: G5 2/2, Auth 77/77, App Check et lint
-verts; cible cloud absente et deploy unique autorise.
+service usage, sans cle utilisateur ni role Firebase Auth admin. La revision
+`getuserstatsgen2-00001-niv` est ACTIVE; comptes runtime/build, invoker,
+limites et refus 401 sans Auth/App Check sont conformes. Le rollout
+`g5-a1-cutover-20260818-001` sert `build-2026-08-17-005`. Le harnais admin
+sandbox corrige transmet le jeton App Check ephemere sur Firebase Auth et
+Functions, sans afficher, journaliser ni persister Custom Token ou App Check.
+L'ancien onglet `004` reste sain, `/` et `/admin` retournent 200, l'appel Gen2
+retourne 34, le document `sys_user_stats/current` est inchange, les erreurs
+Gen2 et le trafic Gen1 post-cutover valent zero. Gates G5: 4/4; manifeste de
+fermeture: `functions-gen2-g5-get-user-stats-rollout.json`. Rollback exact
+`004`; conserver la Gen1, son endpoint, son IAM, son code et les donnees
+jusqu'a G12-A. Prochaine cible unique: `logUserConnectionGen2`.
 
 ### G6 - Contenu, catalogue admin, devis, newsletter, e-mail et factures
 
@@ -2522,29 +2532,45 @@ La migration est terminee uniquement si:
 
 ## 15. Prompt de reprise courant
 
-Le prompt ci-dessous remplace l'ancien prompt G0. Il reprend au checkpoint
-G4-A1 et ne doit jamais refaire les phases fermees.
+Le prompt ci-dessous remplace le prompt G5-A1. Il reprend a G5-A2 et ne doit
+jamais refaire les phases G0-G4 ou la cible G5-A1 fermees.
 
 ```text
-Tu travailles dans le depot Seconde Vie Next sur la migration sandbox Firebase
+/goal Tu travailles dans le depot Seconde Vie Next sur la migration sandbox Firebase
 Functions Gen1 -> Gen2 suivie dans
 `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`.
 
-Reprends au checkpoint G4-A1 du 2026-08-17. G0, G1, G2 et G3 sont fermes: ne
-les rejoue pas et ne regenere leurs preuves que si un drift concret l'exige.
+Reprends au checkpoint G5-A2 du 2026-08-18. G0, G1, G2, G3, G4 et G5-A1 sont
+fermes: ne les rejoue pas et ne regenere leurs preuves que si un drift concret
+l'exige.
 
 Avant toute action:
-- lis completement `AGENTS.md`, `map.md`, le README et le checkpoint 2.1 ainsi
-  que G4 du plan; lis ensuite seulement les chapitres canoniques utiles;
-- preserve le worktree existant sur `codex/functions-gen2-migration`; le
-  correctif Monitoring/documentation du checkpoint est deja integre et tout
-  changement additionnel doit etre qualifie; aucun reset/clean;
+- lis completement `AGENTS.md`, `map.md`, `apphostingaudit/README.md`, le
+  checkpoint 2.1 et G5 du plan, puis les chapitres canoniques Auth,
+  infrastructure, exploitation et qualite;
+- preserve le worktree existant sur `codex/functions-gen2-migration`, notamment
+  la fermeture G5-A1, son manifeste et le correctif du harnais non commites; aucun
+  reset/clean/checkout destructif;
 - identifie HEAD, Node, pnpm, Firebase CLI et operateur;
 - passe `--project secondevienextjsssr` a chaque commande cloud et echoue si le
   projet effectif differe, meme si la configuration gcloud globale vaut
   `vibefx-v2`;
-- confirme l'inventaire attendu: 159 exports locaux prepares, 153 Functions cloud,
-  139 Gen1, 14 Gen2, 8 schedulers, 2 queues et 7 Eventarc.
+- confirme l'inventaire attendu: 163 exports locaux, 158 Functions cloud,
+  139 Gen1, 19 Gen2, 8 schedulers, 2 queues et 7 Eventarc.
+
+Etat deja prouve, a ne pas rejouer sans drift:
+- G4 et G5-A1 sont fermees et App Hosting sert `build-2026-08-17-005`;
+- `getUserStatsGen2` est ACTIVE en revision
+  `getuserstatsgen2-00001-niv`, avec CPU 167m, 512 MiB, 300 s,
+  concurrence/max 1, min 0, runtime `auth-reader-runtime`, IAM borne et aucune
+  cle utilisateur;
+- les gates G5 4/4, Auth 77/77, audit App Check et lint Functions sont vertes;
+- l'appel sans Auth/App Check est refuse en 401;
+- le rollout `g5-a1-cutover-20260818-001` sert le build `005`; ancien onglet
+  `004` sain, compteur 34, Gen2 HTTP 200, donnees inchangees, zero erreur et
+  zero nouvel appel Gen1;
+- le registre source du commit `215fbdc` cible `getUserStatsGen2`; la Gen1 et
+  le rollback exact `004` restent preserves.
 
 Discipline Git:
 - a la fermeture de chaque cible verte, cree un commit local borne regroupant
@@ -2555,31 +2581,41 @@ Discipline Git:
   pousse/merge rien sans demande explicite.
 
 Objectif immediat:
-1. Ne deploie aucune nouvelle cible avant `2026-08-18T19:16:52Z`.
-2. Apres cette echeance, ferme proprement l'observation de
-   `trackAdminIPGen2`: revision/IAM/App Check conformes, ancien onglet, appel
-   admin sandbox reussi, donnees avant/apres, zero regression et absence de
-   trafic nouveau sur `trackAdminIP` Gen1.
-3. Au premier ecart, applique le rollback exact vers App Hosting
-   `build-2026-08-13-002`; ne supprime aucune Function ni donnee.
-4. Si G4-A1 est verte, marque-la fermee dans le manifeste, le plan, `map.md` et
-   le chapitre canonique, puis prepare `updateUserSessionsGen2` comme prochaine
-   cible unique.
-5. Pour `updateUserSessionsGen2`: nouveau nom, handler partage/parite Gen1,
-   `cpu: gcf_gen1`, concurrence 1, min 0, limites/IAM/App Check explicites,
+1. Ne redeploie pas `getUserStatsGen2`; preserve G5-A1 et son rollback `004`.
+2. Prepare uniquement `logUserConnectionGen2`: handler partage/parite Gen1,
+   App Check, runtime/IAM minimal, manifeste et tests G5.
+3. Deploie seulement cette Function sous nouveau nom, prouve le refus negatif
+   et une ecriture admin sandbox idempotente avec donnees avant/apres.
+4. Bascule seulement son registre dans un build App Hosting reversible; prouve
+   `/`, `/admin`, ancien onglet, donnees/logs, zero erreur Gen2 et zero nouvel
+   appel `logUserConnection` Gen1 pendant la quiet-window acceleree.
+5. Au premier ecart, rollback exact registre/build; ne supprime ni Function,
+   endpoint, IAM, source ou donnee.
+6. Si G5-A2 est verte, ferme son manifeste, le plan, `map.md` et les chapitres
+   canoniques. Enchaine ensuite une seule cible G5 suivant l'ordre du plan:
+   logs/registre, OTP, options passkey, verification passkey, puis mutations
+   admin.
+7. Pour chaque cible suivante: nouveau nom, handler partage/parite Gen1, CPU
+   `gcf_gen1`, concurrence 1, min 0, limites/IAM/App Check explicites,
    manifeste machine, tests cibles, deploy allowliste d'une seule Function,
-   bascule client reversible, ancien onglet et quiet-window. Conserve la Gen1,
-   son endpoint, son code, son IAM et son rollback jusqu'a G12-A.
-6. Enchaine ensuite les seules cibles G4 non destructives dans l'ordre du plan,
-   une cible et un cutover a la fois. Utilise uniquement les tests qui prouvent
-   une gate du flux touche; ne transforme pas le chantier en campagne de tests.
+   bascule client reversible, ancien onglet et quiet-window. Conserve chaque
+   Gen1, son endpoint, son code, son IAM et son rollback jusqu'a G12-A.
+8. Continue automatiquement les sous-etapes vertes de G5 sans demander une
+   confirmation de routine. Utilise uniquement les tests qui prouvent la gate
+   du flux touche; ne transforme pas la migration en campagne de tests.
 
 Autorisation:
 - les lectures cloud sandbox et les ecritures/deploiements strictement
-  necessaires aux cibles G4 non destructives sont autorises apres leurs
+  necessaires aux cibles G5 non destructives sont autorises apres leurs
   preconditions et quiet-windows;
 - tu peux corriger une faille technique directement liee au lot si le correctif
   est borne, teste, documente et reversible;
+- tu peux creer le Custom Token Firebase et le jeton App Check ephemeres des
+  comptes de recette bornes, puis les injecter uniquement via le harnais
+  sandbox officiel; ils restent en memoire, ne sont jamais affiches,
+  journalises ou persistes, et cette operation ne demande plus de confirmation
+  intermediaire tant que projet, compte, destination et invariants ne changent
+  pas;
 - ne t'arrete pas entre deux sous-etapes vertes d'une meme cible; arrete-toi au
   premier ecart de projet, inventaire, Auth, App Check, IAM, donnees, sante,
   idempotence, ancien onglet ou rollback.

@@ -152,42 +152,29 @@ Plan temporaire de reprise explicitement demande:
 - [AUDIT_MIGRATION_FUNCTIONS_GEN2.md](apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md):
   contre-audit read-only des 152 Functions cloud et 157 exports locaux, plan
   ferme G0 a G13 de migration progressive Gen1 vers Gen2 et prerequis de
-  fiabilite hors Functions; G0/G1/G2/G3 fermes, les treize Gen2 initiales sont
-  deployees, reconciliees et observees sur le sandbox sans suppression; six
-  legacy sont decidees `RETIRE_G12_A` avec commandes Stripe fail-closed et
-  zero retrait cloud; G4-A1, G4-A2 et G4-A3 analytics sont fermees en
-  validation acceleree. App Hosting sert `build-2026-08-17-002` avec
-  `trackAdminIP`, `updateUserSessions` et `initLiveSession` sur leurs nouveaux
-  noms Gen2; leurs Gen1 restent intactes. Trois suppressions restent sous hold
-  G11 et la prochaine cible unique est `syncSessionGen2`.
-  `syncSessionGen2` est ACTIVE et son cutover G4-A4 est ferme apres preuve
-  ancien/nouvel onglet, donnees conformes, six appels Gen2 sans erreur et zero
-  trafic Gen1 apres fermeture. App Hosting sert `build-2026-08-17-003`; la
-  prochaine cible unique est `syncSessionBeaconGen2`.
-  La premiere tentative G4-A5 sur `build-2026-08-17-004` a ete rollbackee:
-  le vrai beacon navigateur Gen2 a retourne 403. App Hosting sert de nouveau
-  `build-2026-08-17-003`, le registre client pointe sur la Gen1, et G4-A5 reste
-  ouverte sans suppression jusqu'au diagnostic origine/jeton.
-  La cause etait l'absence de l'URL site dans le runtime Gen2. La revision
-  `syncsessionbeacongen2-00002-vec` fixe `SITE_URL`; le retry build `004` a
-  prouve ancien/nouvel onglet, beacon 200, donnees conformes et zero trafic
-  Gen1 nouveau. G4 est fermee; G5 reprend sur `getUserStatsGen2` uniquement.
-  `updateUserSessionsGen2` est maintenant ACTIVE en revision
-  `updateusersessionsgen2-00001-zoq`; l'inventaire compte 159 exports locaux et
-  154 Functions cloud, dont 15 Gen2. Revision, limites, IAM et refus App Check
-  sont conformes. G4-A2 est fermee par validation acceleree: connexion admin
-  Gen1 puis Gen2 en HTTP 200, Auth/App Check valides, donnees conformes, ancien
-  onglet sain et zero trafic Gen1 nouveau apres cutover. Le rollout
-  `g4-a3-cutover-20260817-002` sert `build-2026-08-17-002`; les Gen1 et
-  `build-2026-08-17-001` restent le rollback exact jusqu'a G12-A. Le
-  correctif Monitoring du 2026-08-17 a ferme la boucle
+  fiabilite hors Functions. G0-G4 sont fermes; les treize Gen2 initiales et
+  les cinq cibles analytics paralleles sont deployees, reconciliees et
+  observees sans suppression. G5-A1 est fermee: App Hosting sert maintenant
+  `build-2026-08-17-005`; `getUserStatsGen2` a retourne 34 en HTTP 200 avec
+  Auth/App Check, l'ancien onglet `004` est reste sain, le document de stats est
+  inchange, aucune erreur Gen2 ni nouvel appel Gen1 n'a ete observe. La Gen1 et
+  son IAM restent intacts; rollback exact `build-2026-08-17-004`. Le harnais
+  admin sandbox injecte des jetons Custom Token et App Check ephemeres dans les
+  seules requetes Auth/Functions, sans affichage, journalisation ni persistance.
+  La reprise continue automatiquement sur une seule cible G5 a la fois, dans
+  l'ordre logs/registre, OTP, options passkey, verification passkey et mutations
+  admin, sans redemander une autorisation de routine pour les operations sandbox
+  non destructives deja couvertes par la mission.
+  Inventaire courant: 163 exports locaux, 158 Functions cloud, 139 Gen1,
+  19 Gen2, 8 schedulers, 2 queues et 7 Eventarc.
+  Six legacy sont decidees `RETIRE_G12_A` avec commandes Stripe fail-closed
+  et zero retrait cloud. Le correctif Monitoring du 2026-08-17 a ferme la boucle
   recursive `Violation*`, conserve `loa.gto`/PubSub et severise les huit
-  policies; trois
-  triggers Auth Gen1 conserves par limitation Firebase et cinq exports
-  Instagram sous `HOLD_META_RECONCILIATION`; paiements reels bloques avant DR,
-  alertes, sante financiere et preuve des workers; revue au plus tard le
-  2026-10-31, puis fusion des decisions durables dans les chapitres canoniques
-  et suppression du plan temporaire.
+  policies. Trois triggers Auth Gen1 restent conserves par limitation Firebase,
+  cinq exports Instagram restent sous `HOLD_META_RECONCILIATION` et trois
+  suppressions analytics sous `HOLD_G11_DESTRUCTIVE_PRECONDITIONS`. Aucun
+  retrait Gen1 avant G12-A ni nettoyage IAM/secrets/code avant G12-B; revue au
+  plus tard le 2026-10-31, puis fusion canonique et suppression du plan.
 - [STABILISATION_SECURITE_SANDBOX.md](_DOCS/security/STABILISATION_SECURITE_SANDBOX.md):
   campagne finale bornee S0 a S4 fermee sur le socle `05f4830`, statut
   `SANDBOX_SECURITY_STABILIZED`; production, domaine, Resend, Stripe live et

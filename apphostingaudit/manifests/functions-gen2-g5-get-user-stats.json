@@ -7,7 +7,7 @@
     "baselineCommit": "6338114c028df68cb7c90530ba2fcf02ce661796",
     "generatedAt": "2026-08-17T21:05:00Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G5_AUTH_READER_ACTIVE_CUTOVER_AUTHORIZED"
+    "wave": "G5_A1_CLOSED_ACCELERATED_VALIDATION"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -53,8 +53,13 @@
     "runtimeConfigurationVerified": true,
     "transportInvokerVerified": true,
     "negativeProbe": { "missingAuthAndAppCheckHttpStatus": 401 },
-    "clientCutoverAuthorized": true
+    "clientCutoverAuthorized": true,
+    "clientCutoverCompleted": true,
+    "clientCutoverManifest": "apphostingaudit/manifests/functions-gen2-g5-get-user-stats-rollout.json",
+    "positiveProbe": { "httpStatus": 200, "returnedCount": 34 },
+    "legacyTrafficAfterCutover": 0,
+    "nextCloudTargetAllowed": true
   },
-  "rollback": { "functionAction": "none", "clientAction": "keep getUserStats Gen1", "dataAction": "none", "g12Action": "none before G12-A" },
-  "verdict": "FUNCTION_ACTIVE_NEGATIVE_PROBE_GREEN_CLIENT_CUTOVER_AUTHORIZED"
+  "rollback": { "functionAction": "none", "clientAction": "restore build-2026-08-17-004 and getUserStats Gen1 registry", "dataAction": "none", "g12Action": "none before G12-A" },
+  "verdict": "G5_A1_CLOSED_GEN2_READER_ACTIVE_GEN1_PRESERVED_NEXT_TARGET_ALLOWED"
 }

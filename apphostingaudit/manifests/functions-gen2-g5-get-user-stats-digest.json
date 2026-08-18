@@ -4,6 +4,7 @@
   "codebase": "main",
   "baselineCommit": "6338114c028df68cb7c90530ba2fcf02ce661796",
   "files": {
-    "apphostingaudit/manifests/functions-gen2-g5-get-user-stats.json": "4ab572bbbc4420a419fe195369516536f9c4b2bb2b901a40ed4c305de469b622"
+    "apphostingaudit/manifests/functions-gen2-g5-get-user-stats.json": "0c4f25bf9b16c6de551f20ea40b34919fb0b9245afce0ffdb9794f6f4745fd1c",
+    "apphostingaudit/manifests/functions-gen2-g5-get-user-stats-rollout.json": "f04c1841a97b00bd032b34c85de9972a5710f5ddcfe9b8f11a5fe4b7b30abc10"
   }
 }

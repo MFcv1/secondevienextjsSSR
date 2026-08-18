@@ -16,6 +16,7 @@ const readArg = (name, fallback = '') => {
 
 const role = readArg('role').trim().toLowerCase();
 const expectedQuote = readArg('expect-quote').trim().toUpperCase();
+const expectedUserCount = readArg('expect-user-count').trim();
 const baseUrl = readArg('base-url', process.env.NEXT_BASE_URL || SANDBOX_URL).replace(/\/$/, '');
 const headed = process.argv.includes('--headed');
 const keepOpen = process.argv.includes('--keep-open');
@@ -41,6 +42,9 @@ if (!firebaseAppId) {
 }
 if (expectedQuote && !/^DEV-\d{8}-[A-Z0-9]{4,12}$/.test(expectedQuote)) {
   throw new Error('Reference devis invalide pour la recette.');
+}
+if (expectedUserCount && !/^\d{1,9}$/.test(expectedUserCount)) {
+  throw new Error('Compteur utilisateurs attendu invalide pour la recette.');
 }
 if (keepOpen && !headed) {
   throw new Error('--keep-open exige --headed.');
@@ -89,6 +93,14 @@ const browser = await chromium.launch({ headless: !headed });
 
 try {
   const context = await browser.newContext({ locale: 'fr-FR' });
+  await context.route('https://identitytoolkit.googleapis.com/**', async (route) => {
+    await route.continue({
+      headers: {
+        ...route.request().headers(),
+        'X-Firebase-AppCheck': appCheckToken.token,
+      },
+    });
+  });
   await context.route('**/*.cloudfunctions.net/**', async (route) => {
     await route.continue({
       headers: {
@@ -124,6 +136,13 @@ try {
     await expect(page.getByText('Acces admin refuse')).toHaveCount(0);
     await expect(page.getByText('Confirmez votre identite')).toHaveCount(0);
     await expect(page.getByRole('complementary', { name: "Navigation de l'administration" })).toBeVisible({ timeout: 45_000 });
+    if (expectedUserCount) {
+      const userCountLabel = page.getByText('Clients inscrits', { exact: true });
+      await expect(userCountLabel).toBeVisible({ timeout: 45_000 });
+      await expect(page.getByLabel('Clients inscrits en cours de chargement')).toHaveCount(0, { timeout: 45_000 });
+      const userCountCard = userCountLabel.locator('..').locator('..').locator('..');
+      await expect(userCountCard.getByText(expectedUserCount, { exact: true })).toBeVisible({ timeout: 15_000 });
+    }
     if (expectedQuote) {
       await page.getByRole('button', { name: 'Devis', exact: true }).click();
       await expect(page.getByRole('heading', { name: 'Demandes de restauration' })).toBeVisible({ timeout: 30_000 });
@@ -145,6 +164,7 @@ try {
     target: `${baseUrl}${targetPath}`,
     sessionType: 'ephemeral_custom_token',
     realLoginCeremonyTested: false,
+    userCountVerified: expectedUserCount ? Number(expectedUserCount) : null,
     quoteVerified: Boolean(expectedQuote),
   }, null, 2));
 
