@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "wave": "G5-A5_CLOSED_ACCELERATED_VALIDATION",
+    "operator": "matthis.fradin2@gmail.com",
+    "sourceCommit": "224190fb6be2726a2b0f5eee7d14019f56f47777",
+    "recordedAt": "2026-08-18T18:03:00Z"
+  },
+  "reconciliation": {
+    "sourceExports": 167,
+    "cloudFunctions": 162,
+    "cloudGen1": 139,
+    "cloudGen2": 23,
+    "schedulers": 8,
+    "queues": 2,
+    "eventarcTriggers": 7,
+    "drift": "EXPECTED_TEN_PARALLEL_TARGETS"
+  },
+  "function": {
+    "name": "verifyGuestCheckoutOtpGen2",
+    "legacyOwnerPreserved": "verifyGuestCheckoutOtp",
+    "legacyOwnerState": "ACTIVE",
+    "state": "ACTIVE",
+    "generation": 2,
+    "region": "europe-west1",
+    "revision": "verifyguestcheckoutotpgen2-00001-wim",
+    "runtime": "nodejs22",
+    "runtimeServiceAccount": "auth-otp-verify-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "cpu": "167m",
+    "memory": "256Mi",
+    "timeoutSeconds": 60,
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "transportInvoker": "allUsers",
+    "appCheck": "ENFORCED",
+    "secrets": [{ "name": "OTP_HMAC_SECRET", "version": "1" }]
+  },
+  "appHosting": {
+    "backend": "secondevie-next-sandbox",
+    "region": "europe-west4",
+    "previousBuild": "build-2026-08-18-003",
+    "activeBuild": "build-2026-08-18-004",
+    "build": {
+      "name": "build-2026-08-18-004",
+      "state": "READY",
+      "createTime": "2026-08-18T17:47:36.500386274Z",
+      "updateTime": "2026-08-18T17:51:39.419117Z",
+      "sourceArchive": "gs://firebaseapphosting-sources-231220287936-europe-west4/secondevie-next-sandbox--g5a5-224190f.zip",
+      "sourceArchiveSize": 97001333,
+      "sourceArchiveSha256": "c7cd80a32236147d89c468d1384324b956d224600b399790526c4cd8d72ea2c8",
+      "sourceArchiveMd5Base64": "qRc6o5gsdygx+9ugorzCPQ=="
+    },
+    "cutover": {
+      "name": "g5-a5-cutover-20260818-001",
+      "validateOnly": true,
+      "state": "SUCCEEDED",
+      "createTime": "2026-08-18T17:52:15.290373840Z",
+      "updateTime": "2026-08-18T17:52:20.965337Z",
+      "trafficPercent": 100
+    },
+    "rollbackDrill": {
+      "name": "g5-a5-rollback-20260818-001",
+      "validateOnly": true,
+      "state": "SUCCEEDED",
+      "build": "build-2026-08-18-003",
+      "createTime": "2026-08-18T17:56:25.964777018Z",
+      "updateTime": "2026-08-18T17:57:26.649275Z",
+      "trafficPercent": 100
+    },
+    "finalActivation": {
+      "name": "g5-a5-reapply-20260818-001",
+      "validateOnly": true,
+      "state": "SUCCEEDED",
+      "build": "build-2026-08-18-004",
+      "createTime": "2026-08-18T17:59:04.725141181Z",
+      "updateTime": "2026-08-18T18:02:37.334131Z",
+      "trafficPercent": 100
+    },
+    "servedChecks": {
+      "homeStatus": 200,
+      "adminStatus": 200,
+      "oldBuild003DeploymentId": "sv-msywre1e-0ac9312dec38",
+      "newBuild004DeploymentId": "sv-msyyi4ll-f2c626f7e9ef",
+      "oldBuild003TabRenderedAfterCutover": true,
+      "oldBuild003SessionStillAuthenticated": true,
+      "newBuild004AdminRendered": true
+    }
+  },
+  "authentication": {
+    "account": "loa.gto15@gmail.com",
+    "session": "ephemeral Firebase Custom Token with AAL2 passkey claims",
+    "tokenDisplayed": false,
+    "tokenLogged": false,
+    "tokenPersisted": false,
+    "realLoginCeremonyTested": false,
+    "postActivationAdminSession": "PASS",
+    "registeredUsers": 34
+  },
+  "dataAndLogs": {
+    "positiveProbe": {
+      "executedAt": "2026-08-18T17:27:23.002Z",
+      "sendCallable": "sendGuestCheckoutOtpGen2",
+      "verifyCallable": "verifyGuestCheckoutOtpGen2",
+      "sendHttpStatus": 200,
+      "verifyHttpStatus": 200,
+      "success": true,
+      "boundedEmailCount": 1,
+      "otpTransport": "RSA-OAEP encrypted in memory",
+      "otpDisplayed": false,
+      "checkoutTokenDisplayed": false,
+      "sensitiveValuePersistedByHarness": false
+    },
+    "rateLimitDocument": {
+      "updateTime": "2026-08-18T17:27:23.002Z",
+      "attempts": 0,
+      "otpHashPresent": false,
+      "verifiedTokenHashPresent": true,
+      "verifiedUidMatchesFixture": true,
+      "unchangedDuringQuietWindow": true
+    },
+    "quietWindow": {
+      "from": "2026-08-18T17:53:41Z",
+      "to": "2026-08-18T17:56:13Z",
+      "gen2Errors": 0,
+      "newGen1LogEntries": 0,
+      "dataChanged": false,
+      "result": "PASS"
+    }
+  },
+  "gates": {
+    "functionsG5": "17/17",
+    "functionsG4": "18/18",
+    "functionsG0": "26/26",
+    "auth": "77/77",
+    "adminCustomTokenPostActivation": "PASS",
+    "oldTabCompatible": true,
+    "homeAndAdminHttp200": true,
+    "singleBoundedOtpEmail": true,
+    "gen2ErrorsZero": true,
+    "legacyTrafficAfterCutoverZero": true,
+    "rollbackDrillPassed": true,
+    "finalActivationPassed": true,
+    "nextCloudTargetAllowed": true
+  },
+  "rollback": {
+    "exactAppHostingBuild": "build-2026-08-18-003",
+    "exactAction": "create a validated App Hosting rollout on backend secondevie-next-sandbox in europe-west4 referencing existing READY build build-2026-08-18-003",
+    "sourceChange": "restore verifyGuestCheckoutOtp: 'verifyGuestCheckoutOtp' in src/kit/config/functionTargets.js and the direct Gen1 target in CheckoutView before any later sandbox rollout",
+    "functionAction": "none; preserve verifyGuestCheckoutOtp and verifyGuestCheckoutOtpGen2",
+    "dataAction": "none",
+    "iamSecretsAction": "none",
+    "g12Action": "none before G12-A"
+  },
+  "verdict": "G5_A5_CLOSED_GEN2_GUEST_OTP_VERIFY_ACTIVE_GEN1_PRESERVED_NEXT_TARGET_ALLOWED"
+}

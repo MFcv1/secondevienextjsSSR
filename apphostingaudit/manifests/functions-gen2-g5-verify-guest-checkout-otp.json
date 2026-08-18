@@ -83,7 +83,7 @@
     "clientRegistry": {
       "logicalName": "verifyGuestCheckoutOtp",
       "currentTarget": "verifyGuestCheckoutOtpGen2",
-      "hostedBuildTarget": "verifyGuestCheckoutOtp",
+      "hostedBuildTarget": "verifyGuestCheckoutOtpGen2",
       "cutoverTarget": "verifyGuestCheckoutOtpGen2",
       "cutoverAllowed": true
     },
@@ -135,7 +135,7 @@
   "gates": {
     "localTestsRequired": ["test:functions-g5", "test:functions-g4", "test:functions-g0", "test:auth", "lint:functions"],
     "localTestsPassed": {
-      "test:functions-g5": "16/16",
+      "test:functions-g5": "17/17",
       "test:functions-g4": "18/18",
       "test:functions-g0": "26/26",
       "test:auth": "77/77",
@@ -156,5 +156,5 @@
     "secretAction": "none",
     "g12Action": "none before G12-A"
   },
-  "verdict": "SINGLE_TARGET_GEN2_RUNTIME_PROVEN_CLIENT_CUTOVER_ALLOWED"
+  "verdict": "G5_A5_CLOSED_GEN2_ACTIVE_GEN1_PRESERVED"
 }

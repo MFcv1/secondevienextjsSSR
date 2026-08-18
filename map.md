@@ -1110,6 +1110,16 @@ HTTP 200 sans lecture du code, zero erreur Gen2 et zero nouvel appel Gen1.
 Rollback exact `build-2026-08-18-002`; aucune Gen1, IAM, secret ou donnee
 retiree. Prochaine cible unique `verifyGuestCheckoutOtpGen2`. Inventaire:
 166 local, 161 cloud, 139 Gen1, 22 Gen2, 8 schedulers, 2 queues et 7 Eventarc.
+G5-A5 a ferme `verifyGuestCheckoutOtpGen2` avec le handler Gen1, App Check,
+CPU 167m, 256 MiB, 60 s, concurrence/max 1, runtime
+`auth-otp-verify-runtime` et `OTP_HMAC_SECRET:1`. La revision
+`verifyguestcheckoutotpgen2-00001-wim` est ACTIVE. Le build
+`build-2026-08-18-004` est servi apres cutover, rollback reel vers `003` et
+reactivation finale: ancien onglet `003` authentifie, routes 200, compteur 34,
+verification OTP HTTP 200 par transport RSA-OAEP process-local, zero erreur
+Gen2, zero appel Gen1 et donnees stables. Aucune Gen1, IAM, secret ou donnee
+n'est retiree. Prochaine cible unique `sendCustomerLoginOtpGen2`. Inventaire:
+167 local, 162 cloud, 139 Gen1, 23 Gen2, 8 schedulers, 2 queues et 7 Eventarc.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.

@@ -193,7 +193,7 @@ test('G5-A5 prouve le runtime OTP et autorise seulement le cutover client', () =
   assert.equal(manifest.functions[0].cloud.present, true);
   assert.equal(manifest.functions[0].cloud.revision, 'verifyguestcheckoutotpgen2-00001-wim');
   assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'verifyGuestCheckoutOtpGen2');
-  assert.equal(manifest.functions[0].clientRegistry.hostedBuildTarget, 'verifyGuestCheckoutOtp');
+  assert.equal(manifest.functions[0].clientRegistry.hostedBuildTarget, 'verifyGuestCheckoutOtpGen2');
   assert.equal(manifest.gates.runtimeIamReady, true);
   assert.equal(manifest.gates.runtimeIamVerified, true);
   assert.deepEqual(manifest.iamEvidence.forbiddenProjectRoles, []);
@@ -217,6 +217,29 @@ test('G5-A5 prouve le runtime OTP et autorise seulement le cutover client', () =
   assert.match(proof, /checkoutTokenDisplayed: false/);
   assert.match(proof, /ttlMillis: 30 \* 60 \* 1000/);
   assert.doesNotMatch(proof, /console\.(?:log|info)\([^\n]*(?:otp|checkoutOtpToken)/i);
+});
+
+test('G5-A5 ferme le cutover, le rollback reel et la reactivation finale', () => {
+  const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-verify-guest-checkout-otp-rollout.json'));
+  assert.equal(manifest.reconciliation.sourceExports, 167);
+  assert.equal(manifest.reconciliation.cloudFunctions, 162);
+  assert.equal(manifest.reconciliation.cloudGen1, 139);
+  assert.equal(manifest.reconciliation.cloudGen2, 23);
+  assert.equal(manifest.function.name, 'verifyGuestCheckoutOtpGen2');
+  assert.equal(manifest.function.legacyOwnerState, 'ACTIVE');
+  assert.equal(manifest.appHosting.activeBuild, 'build-2026-08-18-004');
+  assert.equal(manifest.appHosting.cutover.state, 'SUCCEEDED');
+  assert.equal(manifest.appHosting.rollbackDrill.build, 'build-2026-08-18-003');
+  assert.equal(manifest.appHosting.rollbackDrill.state, 'SUCCEEDED');
+  assert.equal(manifest.appHosting.finalActivation.state, 'SUCCEEDED');
+  assert.equal(manifest.appHosting.servedChecks.oldBuild003SessionStillAuthenticated, true);
+  assert.equal(manifest.authentication.registeredUsers, 34);
+  assert.equal(manifest.dataAndLogs.positiveProbe.otpDisplayed, false);
+  assert.equal(manifest.dataAndLogs.positiveProbe.checkoutTokenDisplayed, false);
+  assert.equal(manifest.dataAndLogs.quietWindow.gen2Errors, 0);
+  assert.equal(manifest.dataAndLogs.quietWindow.newGen1LogEntries, 0);
+  assert.equal(manifest.dataAndLogs.quietWindow.dataChanged, false);
+  assert.equal(manifest.gates.nextCloudTargetAllowed, true);
 });
 
 test('G5-A4 prouve le deploy et autorise uniquement le cutover client', () => {

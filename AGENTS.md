@@ -154,23 +154,26 @@ Plan temporaire de reprise explicitement demande:
   ferme G0 a G13 de migration progressive Gen1 vers Gen2 et prerequis de
   fiabilite hors Functions. G0-G4 sont fermes; les treize Gen2 initiales et
   les cinq cibles analytics paralleles sont deployees, reconciliees et
-  observees sans suppression. G5-A1 a G5-A4 sont fermees: App Hosting sert
-  `build-2026-08-18-003`; `getUserStatsGen2`, `logUserConnectionGen2`,
-  `ensureAdminAccessRegistryGen2` puis `sendGuestCheckoutOtpGen2` ont passe
-  leurs appels Auth/App Check en HTTP 200. L'ancien onglet `002` est reste sain
-  apres le dernier cutover, le registre administrateur est reste strictement
-  inchange et un seul e-mail OTP sandbox borne a ete emis sans lecture du code,
-  aucune erreur Gen2 ni nouvel appel Gen1 n'a ete observe. Les Gen1 et leurs IAM
-  restent intacts; rollback exact `build-2026-08-18-002`. Le harnais
+  observees sans suppression. G5-A1 a G5-A5 sont fermees: App Hosting sert
+  `build-2026-08-18-004`; `getUserStatsGen2`, `logUserConnectionGen2`,
+  `ensureAdminAccessRegistryGen2`, `sendGuestCheckoutOtpGen2` puis
+  `verifyGuestCheckoutOtpGen2` ont passe leurs appels Auth/App Check en HTTP
+  200. L'ancien onglet `003` est reste authentifie apres le dernier cutover;
+  un seul e-mail OTP sandbox a ete lu uniquement en memoire, chiffre RSA-OAEP
+  puis verifie sans affichage ni persistance du code ou du jeton checkout.
+  La quiet-window n'a montre aucune erreur Gen2, aucun appel Gen1 et aucune
+  mutation supplementaire. Le rollback reel vers `003` puis la reactivation
+  finale de `004` ont reussi. Les Gen1 et leurs IAM restent intacts; rollback
+  exact `build-2026-08-18-003`. Le harnais
   admin sandbox injecte des jetons Custom Token et App Check ephemeres dans les
   seules requetes Auth/Functions, sans affichage, journalisation ni persistance.
   La reprise continue automatiquement sur une seule cible G5 a la fois, dans
   l'ordre logs/registre, OTP, options passkey, verification passkey et mutations
   admin, sans redemander une autorisation de routine pour les operations sandbox
   non destructives deja couvertes par la mission.
-  La prochaine cible unique est `verifyGuestCheckoutOtpGen2`.
-  Inventaire courant: 166 exports locaux, 161 Functions cloud, 139 Gen1,
-  22 Gen2, 8 schedulers, 2 queues et 7 Eventarc.
+  La prochaine cible unique est `sendCustomerLoginOtpGen2`.
+  Inventaire courant: 167 exports locaux, 162 Functions cloud, 139 Gen1,
+  23 Gen2, 8 schedulers, 2 queues et 7 Eventarc.
   Six legacy sont decidees `RETIRE_G12_A` avec commandes Stripe fail-closed
   et zero retrait cloud. Le correctif Monitoring du 2026-08-17 a ferme la boucle
   recursive `Violation*`, conserve `loa.gto`/PubSub et severise les huit
