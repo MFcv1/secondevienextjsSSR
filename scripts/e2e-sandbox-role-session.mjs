@@ -134,7 +134,8 @@ if (probeCallable) {
   );
   const callablePayload = await callableResponse.json().catch(() => null);
   if (!callableResponse.ok || callablePayload?.result?.success !== true) {
-    throw new Error('Callable de probe sandbox refuse.');
+    const callableStatus = String(callablePayload?.error?.status || 'UNKNOWN').replace(/[^A-Z_]/g, '');
+    throw new Error(`Callable de probe sandbox refuse (${callableResponse.status}/${callableStatus}).`);
   }
   callableProbe = {
     name: probeCallable,
