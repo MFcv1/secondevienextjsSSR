@@ -212,7 +212,7 @@ try {
       await expect(page.getByText(/RECETTE SANDBOX/).last()).toBeVisible({ timeout: 30_000 });
     }
   } else {
-    await expect(page.getByRole('heading', { name: 'Vos commandes, simplement.' })).toBeVisible({ timeout: 45_000 });
+    await expect(page.getByRole('complementary', { name: 'Navigation de l’espace client' })).toBeVisible({ timeout: 45_000 });
   }
 
   process.stdout.write(JSON.stringify({

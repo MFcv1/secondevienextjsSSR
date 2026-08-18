@@ -147,20 +147,25 @@ test('G5-A4 borne IAM au runtime OTP et aux quatre secrets epingles', () => {
   assert.match(read('package.json'), /configure-functions-gen2-g5-auth-otp-email-iam\.mjs --project secondevienextjsssr --env sandbox/);
 });
 
-test('G5-A4 prouve IAM et autorise seulement le deploy cible avant envoi OTP', () => {
+test('G5-A4 prouve le deploy et autorise uniquement le cutover client', () => {
   const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-send-guest-checkout-otp.json'));
   assert.equal(manifest.preflight.sourceExportsWithParallel, 166);
-  assert.equal(manifest.preflight.cloudFunctions, 160);
+  assert.equal(manifest.preflight.cloudFunctions, 161);
   assert.equal(manifest.functions[0].name, 'sendGuestCheckoutOtpGen2');
-  assert.equal(manifest.functions[0].cloud.present, false);
+  assert.equal(manifest.functions[0].cloud.present, true);
+  assert.equal(manifest.functions[0].cloud.revision, 'sendguestcheckoutotpgen2-00001-neh');
   assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'sendGuestCheckoutOtp');
   assert.equal(manifest.gates.runtimeIamReady, true);
   assert.equal(manifest.gates.runtimeIamVerified, true);
   assert.deepEqual(manifest.iamEvidence.forbiddenProjectRoles, []);
   assert.equal(manifest.iamEvidence.userManagedKeyCount, 0);
-  assert.equal(manifest.gates.deploymentAllowed, true);
-  assert.equal(manifest.gates.clientCutoverAllowed, false);
-  assert.equal(manifest.gates.realOtpSent, false);
+  assert.equal(manifest.gates.deploymentAllowed, false);
+  assert.equal(manifest.gates.clientCutoverAllowed, true);
+  assert.equal(manifest.gates.realOtpSent, true);
+  assert.equal(manifest.deploymentEvidence.positiveProbe.emailCount, 1);
+  assert.equal(manifest.deploymentEvidence.positiveProbe.otpRead, false);
+  assert.equal(manifest.deploymentEvidence.logs.gen2ErrorCount, 0);
+  assert.equal(manifest.deploymentEvidence.logs.newLegacyEntriesSinceDeploy, 0);
   const sandboxHarness = read('scripts/e2e-sandbox-role-session.mjs');
   assert.match(sandboxHarness, /'sendGuestCheckoutOtpGen2'/);
   assert.match(sandboxHarness, /\? \{ email: ROLE_EMAILS\.client \}/);
