@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "codebase": "main",
+  "baselineCommit": "b8c936796cc8a5df4eae866df7653cf07db1b7dd",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g5-ensure-admin-access-registry.json": "db334bee2e35369a98da282f503e5a179eb1eafadcfb90d0d4be00fb6f2cf8cb",
+    "apphostingaudit/manifests/functions-gen2-g5-auth-registry-iam.json": "0050eef1dfd757982876ad0ea2212bcd6dbefc66697c0fc25669d02f0c5e1864"
+  }
+}
