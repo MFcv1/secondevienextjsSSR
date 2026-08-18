@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-18T19:44:16.368Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "commit": "49ec399516bf6c7fa48dfdcea66a5d49c064c15b",
+  "operator": "matthis.fradin2@gmail.com",
+  "serviceAccount": "auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+  "existedBefore": false,
+  "existsAfter": true,
+  "requiredProjectRoles": [
+    "roles/datastore.user",
+    "roles/firebaseauth.admin",
+    "roles/logging.logWriter",
+    "roles/serviceusage.serviceUsageConsumer"
+  ],
+  "observedProjectRoles": [
+    "roles/datastore.user",
+    "roles/firebaseauth.admin",
+    "roles/logging.logWriter",
+    "roles/serviceusage.serviceUsageConsumer"
+  ],
+  "forbiddenProjectRoles": [],
+  "requiredSelfRole": "roles/iam.serviceAccountTokenCreator",
+  "observedSelfRoles": ["roles/iam.serviceAccountTokenCreator"],
+  "forbiddenSelfRoles": [],
+  "userManagedKeyCount": 0,
+  "secretBindings": [{ "secret": "OTP_HMAC_SECRET", "version": "1", "secretAccessor": true }],
+  "ready": true
+}

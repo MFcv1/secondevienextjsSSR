@@ -23,10 +23,15 @@
       "sharedHandler": "verifyPasskeyAuthenticationHandler"
     },
     "cloud": {
-      "present": false,
+      "present": true,
       "project": "secondevienextjsssr",
       "generation": 2,
-      "region": "europe-west1"
+      "region": "europe-west1",
+      "runtime": "nodejs22",
+      "state": "ACTIVE",
+      "revision": "verifypasskeyauthenticationgen2-00001-geb",
+      "createTime": "2026-08-18T19:47:57.387780036Z",
+      "updateTime": "2026-08-18T19:48:58.135870228Z"
     },
     "trigger": { "type": "callable", "appCheck": "ENFORCED" },
     "identities": {
@@ -45,7 +50,20 @@
     "localTestsPassed": { "functionsG5": "21/21", "functionsG4": "18/18", "functionsG0": "26/26", "auth": "77/77", "lintFunctions": "PASS" },
     "targetAbsentBeforeCreate": true,
     "runtimeIamReady": true,
-    "deploymentAllowed": true,
-    "remediationDeploymentAllowed": false
-  }
+    "deploymentAllowed": false,
+    "remediationDeploymentAllowed": false,
+    "negativeWithoutAppCheckHttpStatus": 401,
+    "invalidAssertionHttpStatus": 403,
+    "invalidAssertionErrorStatus": "PERMISSION_DENIED",
+    "clientCutoverAllowed": true
+  },
+  "runtimeEvidence": {
+    "sharedChallengeFromA8": true,
+    "invalidAssertionRejected": true,
+    "challengeFixtureCleaned": true,
+    "sensitiveValuesDisplayed": false,
+    "errors": 0,
+    "newLegacyEntries": 0
+  },
+  "postDeploymentInventory": { "sourceExports": 171, "cloudFunctions": 166, "cloudGen1": 139, "cloudGen2": 27 }
 }

@@ -4,6 +4,6 @@
   "codebase": "main",
   "baselineCommit": "d95f87dafd10df382c16a8e82662f19ad9ee0442",
   "files": {
-    "apphostingaudit/manifests/functions-gen2-g5-verify-passkey-authentication.json": "07878ff54a3890e08f5b08e1041a6a75fd7c2aa81db37cc799bfb42fc22ebf80"
+    "apphostingaudit/manifests/functions-gen2-g5-verify-passkey-authentication.json": "01967519c44ef72093ab80145a17698c6e2f443e803535555d64f1036e326574"
   }
 }

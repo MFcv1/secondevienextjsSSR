@@ -23,10 +23,15 @@
       "sharedHandler": "verifyCustomerLoginOtpHandler"
     },
     "cloud": {
-      "present": false,
+      "present": true,
       "project": "secondevienextjsssr",
       "generation": 2,
-      "region": "europe-west1"
+      "region": "europe-west1",
+      "runtime": "nodejs22",
+      "state": "ACTIVE",
+      "revision": "verifycustomerloginotpgen2-00001-kew",
+      "createTime": "2026-08-18T19:44:37.506167707Z",
+      "updateTime": "2026-08-18T19:45:50.643481787Z"
     },
     "trigger": { "type": "callable", "appCheck": "ENFORCED" },
     "identities": {
@@ -46,7 +51,23 @@
     "localTestsPassed": { "functionsG5": "21/21", "functionsG4": "18/18", "functionsG0": "26/26", "auth": "77/77", "lintFunctions": "PASS" },
     "targetAbsentBeforeCreate": true,
     "runtimeIamReady": true,
-    "deploymentAllowed": true,
-    "remediationDeploymentAllowed": false
-  }
+    "deploymentAllowed": false,
+    "remediationDeploymentAllowed": false,
+    "negativeWithoutAppCheckHttpStatus": 401,
+    "positiveVerifyHttpStatus": 200,
+    "customTokenExchangePassed": true,
+    "clientCutoverAllowed": true
+  },
+  "runtimeEvidence": {
+    "otpEmailSent": false,
+    "fixtureHmacComputedInMemory": true,
+    "otpHashDeleted": true,
+    "responseHashPresent": true,
+    "tokenIssueCount": 1,
+    "sensitiveValuesDisplayed": false,
+    "fixtureStateRestored": true,
+    "errors": 0,
+    "newLegacyEntries": 0
+  },
+  "postDeploymentInventory": { "sourceExports": 171, "cloudFunctions": 166, "cloudGen1": 139, "cloudGen2": 27 }
 }
