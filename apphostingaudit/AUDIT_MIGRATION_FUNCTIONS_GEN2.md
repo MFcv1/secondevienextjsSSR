@@ -66,15 +66,15 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | --- | --- |
 | branche | `codex/functions-gen2-migration` |
 | baseline avant le checkpoint Monitoring | `25daf810309dc3329cfeb0fb19be0f1790fe608a` |
-| worktree attendu a la reprise | HEAD `25405d0`; preparation, preuve cloud et registre client G5-A6 commites; verifier le statut sans les rejouer |
+| worktree attendu a la reprise | baseline prouvee `fbf5e9e`; fermeture A7-A9 portee par le checkpoint courant; verifier le statut sans rejouer |
 | phases fermees | G0, G1, G2-A, G2-B 13/13, G3 et G4 |
-| phase active | G5-A7-A9: lot Auth OTP verification et passkey en preparation |
-| inventaire courant | 168 exports locaux, 163 cloud, 139 Gen1, 24 Gen2, 8 schedulers, 2 queues, 7 Eventarc |
-| cibles paralleles actives | cinq analytics G4, cinq Auth G5 basculees et `sendCustomerLoginOtpGen2` ACTIVE; toutes les Gen1 restent intactes |
-| cutover client | App Hosting sert `build-2026-08-18-005`; rollback exact `build-2026-08-18-004`, prouve par drill reel |
+| phase active | G5-A10-A11: options et verification d'inscription passkey |
+| inventaire courant | 171 exports locaux, 166 cloud, 139 Gen1, 27 Gen2, 8 schedulers, 2 queues, 7 Eventarc |
+| cibles paralleles actives | cinq analytics G4 et neuf Auth G5 basculees; toutes les Gen1 restent intactes |
+| cutover client | App Hosting sert `build-2026-08-18-006`; rollback exact `build-2026-08-18-005`, prouve par drill reel |
 | observation G4 | G4-A1 a G4-A5 fermees en validation acceleree; Gen1 et rollbacks preserves |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | A6 est fermee; grouper `verifyCustomerLoginOtpGen2` et les options/verifications passkey compatibles dans un seul cycle App Hosting |
+| prochain lot | preparer ensemble `generatePasskeyRegistrationOptionsGen2` et `verifyPasskeyRegistrationGen2`; deploys individuels, cycle App Hosting groupe |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -100,12 +100,11 @@ Ordre de reprise optimise et obligatoire:
 1. verifier uniquement HEAD, worktree, projet explicite et etat final des
    ressources touchees depuis le dernier checkpoint; ne pas refaire les
    inventaires, IAM, logs ou preuves historiques sans drift concret;
-2. G5-A6 est deja codee, testee, ACTIVE et prouvee. Reprendre a l'archive
-   `secondevie-next-sandbox--g5a6-25405d0.zip`, creer/valider `build-005`, puis
-   effectuer cutover, controle ancien onglet, rollback `004` et reactivation
-   `005`; ne pas renvoyer d'OTP pendant cette fermeture;
-3. fermer A6 en un commit borne, puis preparer ensemble le lot Auth A7-A9:
-   verification OTP client et options/verifications passkey compatibles;
+2. G5-A6 et le lot G5-A7-A9 sont fermes. Ne pas redeployer leurs Functions,
+   reconstruire `005`/`006`, renvoyer d'OTP ou rejouer les ceremonies passkey
+   sans drift concret;
+3. preparer ensemble G5-A10-A11: options et verification d'inscription
+   passkey, sous nouveaux noms et handlers partages;
 4. chaque Function conserve un nouveau nom, un handler partage, sa propre
    allowlist de deploy et son manifeste. En revanche compiler/tests locaux,
    build App Hosting, ancien onglet, cutover, rollback et quiet-window sont
@@ -2600,33 +2599,35 @@ La migration est terminee uniquement si:
 
 ## 15. Reprise optimisee
 
-Le prochain agent reprend directement G5-A6. Il ne relit pas le journal
+Le prochain agent reprend directement G5-A10-A11. Il ne relit pas le journal
 historique et ne rejoue aucune preuve fermee sans drift concret.
 
 ```text
 Branche: codex/functions-gen2-migration.
-Dernier HEAD prouve: 25405d0.
+Derniere baseline runtime prouvee: fbf5e9e; la fermeture A7-A9 est portee par
+le commit courant de ce checkpoint.
 Projet cloud obligatoire: secondevienextjsssr.
 Operateur obligatoire: matthis.fradin2@gmail.com.
-Etat: build 004 actif; G5-A1 a A5 fermes. A6 sendCustomerLoginOtpGen2 est
-ACTIVE en revision sendcustomerloginotpgen2-00002-kod, runtime et builder
-conformes. Refus 401, appel positif 200, un seul e-mail et metadonnees
-Firestore sont deja prouves. Le registre client A6 est commite. Inventaire
-attendu: 168 local, 163 cloud, 139 Gen1, 24 Gen2.
+Etat: build 006 actif; G5-A1 a A9 fermes. A7-A9 sont ACTIVE en revisions
+verifycustomerloginotpgen2-00001-kew,
+generatepasskeyauthenticationoptionsgen2-00001-mam et
+verifypasskeyauthenticationgen2-00001-geb. Le runtime auth-login-runtime,
+les refus App Check 401, la verification OTP sans e-mail, les options passkey,
+le refus d assertion invalide, l ancien onglet 005, le rollback 005 et la
+quiet-window sont deja prouves. Inventaire attendu: 171 local, 166 cloud,
+139 Gen1, 27 Gen2.
 
-Action immediate: ne redeploie pas A6 et ne renvoie pas OTP. Verifie seulement
-si l archive gs://firebaseapphosting-sources-231220287936-europe-west4/
-secondevie-next-sandbox--g5a6-25405d0.zip est finalisee. Sinon reprends son
-upload. Cree build-2026-08-18-005, valide sans rollout, coupe 004 vers 005,
-controle routes/session/logs/donnees, exerce un rollback reel 004, puis
-reactive 005 et ferme le manifeste A6.
+Action immediate: ne redeploie pas A6-A9, ne reconstruis pas build 005/006 et
+ne rejoue ni OTP ni passkey sans drift. Verifie uniquement HEAD, worktree,
+projet et etat final build 006 / trois revisions A7-A9. Puis prepare ensemble
+G5-A10-A11: generatePasskeyRegistrationOptionsGen2 et
+verifyPasskeyRegistrationGen2.
 
-Ensuite prepare le lot Auth A7-A9: verifyCustomerLoginOtpGen2 et les options/
-verifications passkey compatibles. Les deploys Functions restent individuels
-et allowlistes; mutualise tests locaux, build App Hosting, ancien onglet,
-cutover, rollback et quiet-window une seule fois pour le lot. Une preuve
-positive/negative par famille de risque suffit; ne repete ni OTP, ni e-mail,
-ni inventaire/IAM global sans drift.
+Les deploys Functions A10-A11 restent individuels et allowlistes; mutualise
+tests locaux, build App Hosting, ancien onglet, cutover, rollback et
+quiet-window une seule fois pour le lot. Une preuve positive/negative par
+famille de risque suffit et la ceremony humaine ne doit pas etre repetee si
+la parite de handler et une preuve equivalente fraiche couvrent le risque.
 
 Budget d execution: lis une seule fois les sections utiles de map.md et du
 chapitre Auth, prepare tout le code du lot avant de lancer les tests, puis lance

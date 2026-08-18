@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "wave": "G5_A7_A9_CLOSED_OPTIMIZED_BATCH",
+    "operator": "matthis.fradin2@gmail.com",
+    "sourceCommit": "fbf5e9e148963d3295cfa58bc30b6ceee53b0b51",
+    "recordedAt": "2026-08-18T20:32:00Z"
+  },
+  "functions": [
+    { "name": "verifyCustomerLoginOtpGen2", "legacyOwnerPreserved": "verifyCustomerLoginOtp", "revision": "verifycustomerloginotpgen2-00001-kew", "state": "ACTIVE" },
+    { "name": "generatePasskeyAuthenticationOptionsGen2", "legacyOwnerPreserved": "generatePasskeyAuthenticationOptions", "revision": "generatepasskeyauthenticationoptionsgen2-00001-mam", "state": "ACTIVE" },
+    { "name": "verifyPasskeyAuthenticationGen2", "legacyOwnerPreserved": "verifyPasskeyAuthentication", "revision": "verifypasskeyauthenticationgen2-00001-geb", "state": "ACTIVE" }
+  ],
+  "runtimeIdentity": {
+    "serviceAccount": "auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+    "projectRoles": ["roles/datastore.user", "roles/firebaseauth.admin", "roles/logging.logWriter", "roles/serviceusage.serviceUsageConsumer"],
+    "selfRole": "roles/iam.serviceAccountTokenCreator",
+    "secretBindings": [{ "secret": "OTP_HMAC_SECRET", "version": "1" }],
+    "forbiddenRoles": [],
+    "userManagedKeyCount": 0
+  },
+  "runtimeProofs": {
+    "withoutAppCheckHttpStatus": { "verifyCustomerOtp": 401, "generatePasskeyOptions": 401, "verifyPasskey": 401 },
+    "customerOtp": { "emailSent": false, "httpStatus": 200, "customTokenExchanged": true, "otpHashDeleted": true, "responseHashPresent": true, "tokenIssueCount": 1, "fixtureStateRestored": true },
+    "passkey": { "optionsHttpStatus": 200, "userVerification": "required", "challengeStored": true, "invalidAssertionHttpStatus": 403, "invalidAssertionErrorStatus": "PERMISSION_DENIED", "challengeFixtureCleaned": true },
+    "sensitiveValuesDisplayed": false,
+    "sensitiveValuesPersistedByHarness": false,
+    "gen2Errors": 0,
+    "newGen1Entries": 0
+  },
+  "appHosting": {
+    "backend": "secondevie-next-sandbox",
+    "region": "europe-west4",
+    "previousBuild": "build-2026-08-18-005",
+    "activeBuild": "build-2026-08-18-006",
+    "build": {
+      "state": "READY",
+      "createTime": "2026-08-18T20:13:01.470046878Z",
+      "updateTime": "2026-08-18T20:17:24.617092Z",
+      "sourceArchive": "gs://firebaseapphosting-sources-231220287936-europe-west4/secondevie-next-sandbox--g5a7a9-fbf5e9e.zip",
+      "sourceArchiveSize": 97019307
+    },
+    "cutover": { "name": "g5-a7-a9-cutover-20260818-001", "state": "SUCCEEDED", "createTime": "2026-08-18T20:18:35.327245592Z", "updateTime": "2026-08-18T20:18:41.011010Z" },
+    "rollbackDrill": { "name": "g5-a7-a9-rollback-20260818-001", "state": "SUCCEEDED", "build": "build-2026-08-18-005", "createTime": "2026-08-18T20:19:35.742446845Z", "updateTime": "2026-08-18T20:23:46.685226Z" },
+    "finalActivation": { "name": "g5-a7-a9-reapply-20260818-001", "state": "SUCCEEDED", "build": "build-2026-08-18-006", "createTime": "2026-08-18T20:24:12.368244166Z", "updateTime": "2026-08-18T20:28:52.353286Z" },
+    "servedChecks": {
+      "homeStatus": 200,
+      "adminStatus": 200,
+      "oldBuild005DeploymentId": "sv-msz1t20g-7e8775898e9c",
+      "newBuild006DeploymentId": "sv-msz3p5iq-10c6eb3987a7",
+      "oldBuild005SessionStillAuthenticated": true,
+      "registeredUsers": 34
+    }
+  },
+  "quietWindow": {
+    "from": "2026-08-18T20:29:16Z",
+    "to": "2026-08-18T20:31:36Z",
+    "gen2Errors": 0,
+    "newGen1LogEntries": 0,
+    "result": "PASS"
+  },
+  "inventory": { "sourceExports": 171, "cloudFunctions": 166, "cloudGen1": 139, "cloudGen2": 27, "schedulers": 8, "queues": 2, "eventarcTriggers": 7 },
+  "rollback": {
+    "exactAppHostingBuild": "build-2026-08-18-005",
+    "functionAction": "none; preserve all three Gen1 and Gen2 endpoints",
+    "dataAction": "none",
+    "iamSecretsAction": "none",
+    "g12Action": "none before G12-A"
+  },
+  "verdict": "G5_A7_A9_CLOSED_GEN2_AUTH_LOGIN_BATCH_ACTIVE_GEN1_PRESERVED"
+}

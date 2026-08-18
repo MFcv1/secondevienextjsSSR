@@ -274,6 +274,22 @@ strictement inchange, les erreurs Gen2 et les appels Gen1 valent zero. La Gen1
 et le secret restent intacts; rollback exact `001`. Prochaine cible unique:
 `sendGuestCheckoutOtpGen2`.
 
+G5-A7 a A9 ferment le lot de connexion client sous trois nouveaux noms:
+`verifyCustomerLoginOtpGen2`, `generatePasskeyAuthenticationOptionsGen2` et
+`verifyPasskeyAuthenticationGen2`. Les handlers Gen1 restent partages et les
+trois endpoints historiques restent actifs. Le runtime dedie
+`auth-login-runtime` porte Firestore, Firebase Auth admin, logs, service usage,
+la signature de Custom Token sur sa propre identite et l'acces au seul secret
+`OTP_HMAC_SECRET:1`; il ne possede aucune cle utilisateur ni role parasite.
+Les revisions `verifycustomerloginotpgen2-00001-kew`,
+`generatepasskeyauthenticationoptionsgen2-00001-mam` et
+`verifypasskeyauthenticationgen2-00001-geb` sont ACTIVE. App Hosting sert
+`build-2026-08-18-006` apres cutover groupe, rollback reel `005` et
+reactivation. L'ancien onglet `005` est reste authentifie, les routes sont 200
+et la quiet-window compte zero erreur Gen2 et zero appel Gen1. La preuve OTP
+n'a envoye aucun e-mail et a restaure sa fixture; la preuve passkey a confirme
+`userVerification=required` puis le refus d'une assertion invalide.
+
 - registre administrateur par UID;
 - entree active obligatoire pour les callables critiques;
 - retrait des claims lors d'une revocation;

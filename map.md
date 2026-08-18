@@ -1125,10 +1125,14 @@ G5-A6 `sendCustomerLoginOtpGen2` est fermee en revision
 `build-2026-08-18-005` apres cutover, rollback reel `004` et reactivation;
 une session admin ouverte sous `004` est restee authentifiee apres le retour
 sur `005`, sans nouvel appel Gen1 ni mutation de la donnee OTP.
-Inventaire: 168 local, 163 cloud, 139 Gen1, 24 Gen2, 8 schedulers, 2 queues et
-7 Eventarc. Apres fermeture A6, A7-A9 sont prepares comme un lot Auth coherent:
-deploys Functions individuellement allowlistes, mais tests, build App Hosting,
-ancien onglet, cutover, rollback et quiet-window mutualises une seule fois.
+Inventaire: 171 local, 166 cloud, 139 Gen1, 27 Gen2, 8 schedulers, 2 queues et
+7 Eventarc. G5-A7-A9 ferment `verifyCustomerLoginOtpGen2`,
+`generatePasskeyAuthenticationOptionsGen2` et
+`verifyPasskeyAuthenticationGen2` sous le runtime borne `auth-login-runtime`.
+Les trois deploys Functions ont ete allowlistes individuellement; le build
+App Hosting `006`, l'ancien onglet `005`, le cutover, le rollback et la
+quiet-window ont ete mutualises une seule fois. Prochain lot: A10-A11 pour
+l'inscription passkey.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.
