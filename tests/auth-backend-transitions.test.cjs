@@ -108,6 +108,7 @@ test('valid customer OTP is consumed once before minting its Firebase custom tok
     entryPath: customerLoginOtpPath,
     mocks: {
       'firebase-admin': adminMock,
+      'firebase-functions/v2/https': { onCall: (_options, handler) => handler },
       '../../helpers/runtime': { functions, regionalFunctions, logFunctionPerf: () => 0 },
       '../../helpers/secrets': {
         GMAIL_EMAIL: { value: () => 'fixture@example.test' },
@@ -209,6 +210,7 @@ test('customer OTP resumes one failed token mint without storing a token', async
     entryPath: customerLoginOtpPath,
     mocks: {
       'firebase-admin': adminMock,
+      'firebase-functions/v2/https': { onCall: (_options, handler) => handler },
       '../../helpers/runtime': { functions, regionalFunctions: () => functions, logFunctionPerf: () => 0 },
       '../../helpers/secrets': {
         GMAIL_EMAIL: { value: () => 'fixture@example.test' },
@@ -317,6 +319,7 @@ test('customer OTP resumes after a transient user lookup failure', async () => {
     entryPath: customerLoginOtpPath,
     mocks: {
       'firebase-admin': adminMock,
+      'firebase-functions/v2/https': { onCall: (_options, handler) => handler },
       '../../helpers/runtime': { functions, regionalFunctions: () => functions, logFunctionPerf: () => 0 },
       '../../helpers/secrets': {
         GMAIL_EMAIL: { value: () => 'fixture@example.test' },

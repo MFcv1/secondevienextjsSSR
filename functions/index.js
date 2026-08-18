@@ -234,7 +234,7 @@ const {
   verifyGuestCheckoutOtp,
   verifyGuestCheckoutOtpGen2,
 } = require('./src/auth/guestCheckoutOtp');
-const { sendCustomerLoginOtp, verifyCustomerLoginOtp } = require('./src/auth/customerLoginOtp');
+const { sendCustomerLoginOtp, sendCustomerLoginOtpGen2, verifyCustomerLoginOtp } = require('./src/auth/customerLoginOtp');
 const {
     generatePasskeyRegistrationOptions,
     verifyPasskeyRegistration,
@@ -259,6 +259,7 @@ exports.sendGuestCheckoutOtpGen2 = sendGuestCheckoutOtpGen2;
 exports.verifyGuestCheckoutOtp = verifyGuestCheckoutOtp;
 exports.verifyGuestCheckoutOtpGen2 = verifyGuestCheckoutOtpGen2;
 exports.sendCustomerLoginOtp = sendCustomerLoginOtp;
+exports.sendCustomerLoginOtpGen2 = sendCustomerLoginOtpGen2;
 exports.verifyCustomerLoginOtp = verifyCustomerLoginOtp;
 exports.generatePasskeyRegistrationOptions = generatePasskeyRegistrationOptions;
 exports.verifyPasskeyRegistration = verifyPasskeyRegistration;

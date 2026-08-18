@@ -242,6 +242,39 @@ test('G5-A5 ferme le cutover, le rollback reel et la reactivation finale', () =>
   assert.equal(manifest.gates.nextCloudTargetAllowed, true);
 });
 
+test('G5-A6 prepare uniquement sendCustomerLoginOtpGen2 avec runtime OTP reutilise', () => {
+  const source = read('functions/src/auth/customerLoginOtp.js');
+  const exports = extractLocalExports(ROOT);
+  const target = GCLOUD_GEN2_TARGETS.sendCustomerLoginOtpGen2;
+  const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-send-customer-login-otp.json'));
+  assert.ok(exports.some(({ name }) => name === 'sendCustomerLoginOtp'));
+  assert.ok(exports.some(({ name }) => name === 'sendCustomerLoginOtpGen2'));
+  assert.equal(classificationFor('sendCustomerLoginOtpGen2'), 'MIGRATION_PARALLEL');
+  assert.match(source, /const sendCustomerLoginOtpHandler = async \(data, context\) =>/);
+  assert.match(source, /exports\.sendCustomerLoginOtp = regionalFunctions\(\)[\s\S]*?onCall\(sendCustomerLoginOtpHandler\)/);
+  assert.match(source, /exports\.sendCustomerLoginOtpGen2 = onCall\(/);
+  assert.match(source, /CUSTOMER_OTP_SEND_GEN2_RUNTIME[\s\S]*?enforceAppCheck:\s*true[\s\S]*?secrets:\s*\[\.\.\.TRANSACTIONAL_EMAIL_SECRETS, OTP_HMAC_SECRET\]/);
+  assert.equal(target.runtimeServiceAccount, 'auth-otp-email-runtime@secondevienextjsssr.iam.gserviceaccount.com');
+  assert.equal(target.cpu, '167m');
+  assert.equal(target.concurrency, '1');
+  assert.equal(target.maxInstances, '1');
+  assert.deepEqual(target.secrets, [
+    'GMAIL_EMAIL=GMAIL_EMAIL:2',
+    'GMAIL_PASSWORD=GMAIL_PASSWORD:5',
+    'RESEND_API_KEY=RESEND_API_KEY:1',
+    'OTP_HMAC_SECRET=OTP_HMAC_SECRET:1'
+  ]);
+  assert.equal(manifest.preflight.sourceExportsWithParallel, 168);
+  assert.equal(manifest.preflight.cloudFunctions, 162);
+  assert.equal(manifest.functions[0].cloud.present, false);
+  assert.equal(manifest.iamEvidence.reusedRuntimeFrom, 'G5-A4 sendGuestCheckoutOtpGen2');
+  assert.deepEqual(manifest.iamEvidence.forbiddenProjectRoles, []);
+  assert.equal(manifest.iamEvidence.userManagedKeyCount, 0);
+  assert.equal(manifest.gates.deploymentAllowed, true);
+  assert.equal(manifest.gates.clientCutoverAllowed, false);
+  assert.doesNotMatch(read('src/kit/config/functionTargets.js'), /sendCustomerLoginOtp:\s*'sendCustomerLoginOtpGen2'/);
+});
+
 test('G5-A4 prouve le deploy et autorise uniquement le cutover client', () => {
   const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-send-guest-checkout-otp.json'));
   assert.equal(manifest.preflight.sourceExportsWithParallel, 166);

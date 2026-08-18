@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const admin = require('firebase-admin');
+const { onCall } = require('firebase-functions/v2/https');
 const { functions, regionalFunctions, logFunctionPerf } = require('../../helpers/runtime');
 const { getRateLimitClientIp } = require('../../helpers/clientIp');
 const { OTP_HMAC_SECRET } = require('../../helpers/secrets');
@@ -20,6 +21,18 @@ const MAX_IP_SENDS_PER_HOUR = 20;
 const MAX_VERIFY_ATTEMPTS = 5;
 const OPERATION_LEASE_MS = 30 * 1000;
 const MAX_OPERATION_RETRIES = 1;
+const CUSTOMER_OTP_SEND_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '256MiB',
+    timeoutSeconds: 60,
+    serviceAccount: 'auth-otp-email-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    enforceAppCheck: true,
+    secrets: [...TRANSACTIONAL_EMAIL_SECRETS, OTP_HMAC_SECRET]
+});
 
 function normalizeEmail(email) {
     const normalized = String(email || '').trim().toLowerCase();
@@ -163,9 +176,7 @@ async function getOrCreateCustomerUser(email) {
     return userRecord;
 }
 
-exports.sendCustomerLoginOtp = regionalFunctions()
-    .runWith({ enforceAppCheck: true, secrets: [...TRANSACTIONAL_EMAIL_SECRETS, OTP_HMAC_SECRET] })
-    .https.onCall(async (data, context) => {
+const sendCustomerLoginOtpHandler = async (data, context) => {
         const startedAt = Date.now();
         const email = normalizeEmail(data?.email);
         const emailHash = sha256(email);
@@ -264,7 +275,15 @@ exports.sendCustomerLoginOtp = regionalFunctions()
             emailHash
         });
         return { success: true, expiresInSeconds: Math.floor(OTP_TTL_MS / 1000), resendAfterSeconds: Math.floor(MIN_RESEND_MS / 1000) };
-    });
+};
+
+exports.sendCustomerLoginOtp = regionalFunctions()
+    .runWith({ enforceAppCheck: true, secrets: [...TRANSACTIONAL_EMAIL_SECRETS, OTP_HMAC_SECRET] })
+    .https.onCall(sendCustomerLoginOtpHandler);
+exports.sendCustomerLoginOtpGen2 = onCall(
+    CUSTOMER_OTP_SEND_GEN2_RUNTIME,
+    async (request) => sendCustomerLoginOtpHandler(request.data, request)
+);
 
 exports.verifyCustomerLoginOtp = regionalFunctions()
     .runWith({ enforceAppCheck: true, secrets: [OTP_HMAC_SECRET] })
@@ -412,3 +431,6 @@ exports.verifyCustomerLoginOtp = regionalFunctions()
         });
         return { success: true, token };
     });
+
+module.exports.sendCustomerLoginOtpHandler = sendCustomerLoginOtpHandler;
+module.exports.CUSTOMER_OTP_SEND_GEN2_RUNTIME = CUSTOMER_OTP_SEND_GEN2_RUNTIME;

@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "baselineCommit": "b96aa21e870db0e7bbad40d7adfc09a30a400573",
+    "generatedAt": "2026-08-18T18:06:00Z",
+    "operator": "matthis.fradin2@gmail.com",
+    "wave": "G5_A6_CUSTOMER_LOGIN_OTP_SEND_DEPLOY_AUTHORIZED"
+  },
+  "deploymentPolicy": {
+    "exactProject": "secondevienextjsssr",
+    "exactCodebase": "main",
+    "maxBatchSize": 1,
+    "forbiddenGlobalSelector": "functions"
+  },
+  "preflight": {
+    "sourceExportsBeforePreparation": 167,
+    "sourceExportsWithParallel": 168,
+    "cloudFunctions": 162,
+    "cloudGen1": 139,
+    "cloudGen2": 23,
+    "legacyOwner": "sendCustomerLoginOtp",
+    "legacyVersion": "11",
+    "legacyOwnerPreserved": true,
+    "targetAbsentBeforeCreate": true,
+    "currentClientTarget": "sendCustomerLoginOtp",
+    "currentAppHostingBuild": "build-2026-08-18-004",
+    "rollbackAppHostingBuild": "build-2026-08-18-003",
+    "verifiedAt": "2026-08-18T18:06:00Z",
+    "effectiveOperator": "matthis.fradin2@gmail.com",
+    "explicitProjectVerified": "secondevienextjsssr",
+    "nodeObserved": "v26.7.0",
+    "nodeBaselinePreserved": "22.x",
+    "secretVersionsState": "ENABLED"
+  },
+  "functions": [{
+    "name": "sendCustomerLoginOtpGen2",
+    "source": {
+      "export": "sendCustomerLoginOtpGen2",
+      "file": "functions/src/auth/customerLoginOtp.js",
+      "sharedHandler": "sendCustomerLoginOtpHandler"
+    },
+    "cloud": {
+      "present": false,
+      "project": "secondevienextjsssr",
+      "generation": 2,
+      "region": "europe-west1",
+      "runtime": "nodejs22"
+    },
+    "trigger": {
+      "type": "callable",
+      "appCheck": "ENFORCED",
+      "auth": "unauthenticated or authenticated Firebase client"
+    },
+    "runtime": {
+      "sourceCpu": "gcf_gen1",
+      "deployCpu": "167m",
+      "memoryMiB": 256,
+      "timeoutSeconds": 60,
+      "concurrency": 1,
+      "minInstances": 0,
+      "maxInstances": 1,
+      "environment": {
+        "TRANSACTIONAL_EMAIL_PROVIDER": "gmail",
+        "SITE_URL": "https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app"
+      }
+    },
+    "identities": {
+      "runtimeServiceAccount": "auth-otp-email-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+      "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+      "requiredRuntimeRoles": [
+        "roles/datastore.user",
+        "roles/logging.logWriter",
+        "roles/serviceusage.serviceUsageConsumer"
+      ]
+    },
+    "secrets": [
+      { "name": "GMAIL_EMAIL", "version": "2" },
+      { "name": "GMAIL_PASSWORD", "version": "5" },
+      { "name": "OTP_HMAC_SECRET", "version": "1" },
+      { "name": "RESEND_API_KEY", "version": "1" }
+    ],
+    "dataAndEffects": {
+      "readsWrites": [
+        "sys_ratelimit/customer_login_otp_{emailHash}",
+        "sys_ratelimit/customer_login_otp_ip_{ipHash}"
+      ],
+      "externalEffect": "one Gmail login OTP message for the bounded sandbox client fixture",
+      "proofRule": "never display, log, screenshot or persist the OTP, HMAC secret, SMTP password, ID token, Custom Token or App Check token"
+    },
+    "clientRegistry": {
+      "logicalName": "sendCustomerLoginOtp",
+      "currentTarget": "sendCustomerLoginOtp",
+      "cutoverTarget": "sendCustomerLoginOtpGen2",
+      "cutoverAllowed": false
+    },
+    "decision": {
+      "classification": "MIGRATION_PARALLEL",
+      "target": "sendCustomerLoginOtpGen2",
+      "wave": "G5-A6",
+      "deploymentMaxBatchSize": 1,
+      "rollback": "Keep sendCustomerLoginOtp Gen1, endpoint, IAM, secrets, source and rate-limit data intact; restore client target and prior App Hosting build after cutover."
+    }
+  }],
+  "iamEvidence": {
+    "verifiedAt": "2026-08-18T18:06:00Z",
+    "reusedRuntimeFrom": "G5-A4 sendGuestCheckoutOtpGen2",
+    "observedProjectRoles": [
+      "roles/datastore.user",
+      "roles/logging.logWriter",
+      "roles/serviceusage.serviceUsageConsumer"
+    ],
+    "forbiddenProjectRoles": [],
+    "userManagedKeyCount": 0,
+    "secretBindingsVerified": [
+      "GMAIL_EMAIL:2",
+      "GMAIL_PASSWORD:5",
+      "OTP_HMAC_SECRET:1",
+      "RESEND_API_KEY:1"
+    ]
+  },
+  "gates": {
+    "localTestsRequired": ["test:functions-g5", "test:functions-g4", "test:functions-g0", "test:auth", "lint:functions"],
+    "localTestsPassed": {
+      "test:functions-g5": "18/18",
+      "test:functions-g4": "18/18",
+      "test:functions-g0": "26/26",
+      "test:auth": "77/77",
+      "lint:functions": "PASS",
+      "gitDiffCheck": "PASS"
+    },
+    "runtimeIamReady": true,
+    "runtimeIamVerified": true,
+    "targetAbsentBeforeCreate": true,
+    "deploymentAllowed": true,
+    "clientCutoverAllowed": false,
+    "boundedOtpSendExecuted": false
+  },
+  "rollback": {
+    "functionAction": "none; preserve sendCustomerLoginOtp Gen1 and any parallel Gen2 target",
+    "clientAction": "keep sendCustomerLoginOtp on Gen1 until a green runtime proof",
+    "dataAction": "none",
+    "secretAction": "none",
+    "g12Action": "none before G12-A"
+  },
+  "verdict": "SINGLE_TARGET_GEN2_DEPLOYMENT_ALLOWED"
+}

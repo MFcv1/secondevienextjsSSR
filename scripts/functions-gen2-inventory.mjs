@@ -21,6 +21,7 @@ export const PARALLEL_MIGRATION_EXPORTS = new Set([
   'getUserStatsGen2',
   'logUserConnectionGen2',
   'sendGuestCheckoutOtpGen2',
+  'sendCustomerLoginOtpGen2',
   'verifyGuestCheckoutOtpGen2'
 ]);
 
