@@ -5,6 +5,7 @@ import { KeyRound, Loader2, Mail, RotateCcw, ShieldCheck, X } from 'lucide-react
 import { httpsCallable } from 'firebase/functions';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { functions } from '../config/firebase';
+import { getFunctionTarget } from '../config/functionTargets';
 import { getFirebaseAuth, loadAuthModule } from '../config/firebaseLazy';
 import { getGoogleAuthErrorMessage } from '../auth/googleAuthDiagnostics';
 import { logClientPerf, startClientPerf } from '../shared/clientPerf';
@@ -581,7 +582,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     }, 320);
     const startedAt = startClientPerf();
     try {
-      const sendOtp = httpsCallable(functions, 'sendCustomerLoginOtp');
+      const sendOtp = httpsCallable(functions, getFunctionTarget('sendCustomerLoginOtp'));
       const result = await sendOtp({ email });
       logClientPerf('auth.email.sendCustomerLoginOtp', startedAt, { phase: 'success' });
       setResendAfter(Number(result.data?.resendAfterSeconds || 60));

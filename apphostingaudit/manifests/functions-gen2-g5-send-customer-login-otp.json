@@ -96,7 +96,8 @@
     },
     "clientRegistry": {
       "logicalName": "sendCustomerLoginOtp",
-      "currentTarget": "sendCustomerLoginOtp",
+      "currentTarget": "sendCustomerLoginOtpGen2",
+      "hostedBuildTarget": "sendCustomerLoginOtp",
       "cutoverTarget": "sendCustomerLoginOtpGen2",
       "cutoverAllowed": true
     },
@@ -178,7 +179,7 @@
   },
   "rollback": {
     "functionAction": "none; preserve sendCustomerLoginOtp Gen1 and any parallel Gen2 target",
-    "clientAction": "cut over only the sendCustomerLoginOtp logical registry target through a reversible App Hosting build",
+    "clientAction": "the source registry now targets sendCustomerLoginOtpGen2; publish only through a reversible App Hosting build",
     "dataAction": "none",
     "secretAction": "none",
     "g12Action": "none before G12-A"

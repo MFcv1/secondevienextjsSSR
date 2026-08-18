@@ -7,6 +7,7 @@ const FUNCTION_TARGETS = Object.freeze({
   initLiveSession: 'initLiveSessionGen2',
   logUserConnection: 'logUserConnectionGen2',
   sendGuestCheckoutOtp: 'sendGuestCheckoutOtpGen2',
+  sendCustomerLoginOtp: 'sendCustomerLoginOtpGen2',
   verifyGuestCheckoutOtp: 'verifyGuestCheckoutOtpGen2',
   syncSession: 'syncSessionGen2',
   syncSessionBeacon: 'syncSessionBeaconGen2',

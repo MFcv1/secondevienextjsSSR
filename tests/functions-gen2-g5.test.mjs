@@ -288,7 +288,8 @@ test('G5-A6 prepare uniquement sendCustomerLoginOtpGen2 avec runtime OTP reutili
   assert.equal(manifest.runtimeEvidence.newLegacyEntriesSinceRemediation, 0);
   assert.equal(manifest.postDeploymentInventory.cloudFunctions, 163);
   assert.equal(manifest.postDeploymentInventory.cloudGen2, 24);
-  assert.doesNotMatch(read('src/kit/config/functionTargets.js'), /sendCustomerLoginOtp:\s*'sendCustomerLoginOtpGen2'/);
+  assert.match(read('src/kit/config/functionTargets.js'), /sendCustomerLoginOtp:\s*'sendCustomerLoginOtpGen2'/);
+  assert.match(read('src/kit/marketplace/LegacyLoginModalFullIsland.jsx'), /getFunctionTarget\('sendCustomerLoginOtp'\)/);
 });
 
 test('G5-A4 prouve le deploy et autorise uniquement le cutover client', () => {
