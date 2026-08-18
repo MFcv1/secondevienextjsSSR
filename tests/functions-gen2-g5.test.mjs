@@ -60,6 +60,7 @@ test('G5-A2 borne la creation IAM du runtime de session Auth', () => {
     /G5_IAM_COMMIT_MISMATCH/,
   ]) assert.match(iam, expected);
   assert.doesNotMatch(iam, /roles\/(?:editor|owner|firebaseauth\.admin)/i);
+  assert.match(read('package.json'), /configure-functions-gen2-g5-auth-session-iam\.mjs --project secondevienextjsssr --env sandbox/);
 });
 
 test('G5-A2 bloque deploy et cutover avant IAM', () => {
