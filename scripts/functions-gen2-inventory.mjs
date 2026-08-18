@@ -24,6 +24,8 @@ export const PARALLEL_MIGRATION_EXPORTS = new Set([
   'sendCustomerLoginOtpGen2',
   'verifyGuestCheckoutOtpGen2',
   'verifyCustomerLoginOtpGen2',
+  'generatePasskeyRegistrationOptionsGen2',
+  'verifyPasskeyRegistrationGen2',
   'generatePasskeyAuthenticationOptionsGen2',
   'verifyPasskeyAuthenticationGen2'
 ]);

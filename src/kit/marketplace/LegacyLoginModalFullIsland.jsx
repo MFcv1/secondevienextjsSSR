@@ -115,7 +115,7 @@ const preparePasskeyRegistration = async () => {
   const supportMessage = await getPasskeySupportMessage({ registration: true });
   if (supportMessage) throw new Error(supportMessage);
 
-  const generateOptions = httpsCallable(functions, 'generatePasskeyRegistrationOptions');
+  const generateOptions = httpsCallable(functions, getFunctionTarget('generatePasskeyRegistrationOptions'));
   const generateStartedAt = startClientPerf();
   const [{ startRegistration }, optionsResult] = await Promise.all([
     import('@simplewebauthn/browser'),
@@ -137,7 +137,7 @@ const registerPasskey = async (preparedRegistration = null, onStepChange = null)
     onStepChange?.('preparing');
     return preparePasskeyRegistration();
   })();
-  const verifyRegistration = httpsCallable(functions, 'verifyPasskeyRegistration');
+  const verifyRegistration = httpsCallable(functions, getFunctionTarget('verifyPasskeyRegistration'));
 
   onStepChange?.('confirming');
   const response = await registration.startRegistration({ optionsJSON: registration.options });

@@ -334,6 +334,48 @@ test('G5-A8-A9 preparent les deux endpoints passkey de connexion avec handler pa
   assert.match(modal, /getFunctionTarget\('verifyPasskeyAuthentication'\)/);
 });
 
+test('G5-A10-A11 preparent les deux endpoints passkey d inscription avec handler partage', () => {
+  const source = read('functions/src/auth/passkeys.js');
+  const exports = extractLocalExports(ROOT);
+  for (const name of ['generatePasskeyRegistrationOptionsGen2', 'verifyPasskeyRegistrationGen2']) {
+    assert.ok(exports.some(({ name: exported }) => exported === name));
+    assert.equal(classificationFor(name), 'MIGRATION_PARALLEL');
+    const target = GCLOUD_GEN2_TARGETS[name];
+    assert.equal(target.runtimeServiceAccount, 'auth-passkey-runtime@secondevienextjsssr.iam.gserviceaccount.com');
+    assert.equal(target.cpu, '167m');
+    assert.equal(target.concurrency, '1');
+    assert.equal(target.maxInstances, '1');
+  }
+  assert.match(source, /const generatePasskeyRegistrationOptionsHandler = async \(data, context\) =>/);
+  assert.match(source, /const verifyPasskeyRegistrationHandler = async \(data, context\) =>/);
+  assert.match(source, /exports\.generatePasskeyRegistrationOptionsGen2 = onCall\(/);
+  assert.match(source, /exports\.verifyPasskeyRegistrationGen2 = onCall\(/);
+  assert.match(source, /PASSKEY_REGISTRATION_GEN2_RUNTIME[\s\S]*?enforceAppCheck:\s*true/);
+  const registry = read('src/kit/config/functionTargets.js');
+  assert.match(registry, /generatePasskeyRegistrationOptions:\s*'generatePasskeyRegistrationOptionsGen2'/);
+  assert.match(registry, /verifyPasskeyRegistration:\s*'verifyPasskeyRegistrationGen2'/);
+  const modal = read('src/kit/marketplace/LegacyLoginModalFullIsland.jsx');
+  assert.match(modal, /getFunctionTarget\('generatePasskeyRegistrationOptions'\)/);
+  assert.match(modal, /getFunctionTarget\('verifyPasskeyRegistration'\)/);
+});
+
+test('G5-A10-A11 bornent IAM au runtime d inscription passkey', () => {
+  const iam = read('scripts/configure-functions-gen2-g5-auth-passkey-iam.mjs');
+  for (const expected of [
+    /G5_CREATE_AUTH_PASSKEY_RUNTIME/,
+    /SERVICE_ACCOUNT_ID = 'auth-passkey-runtime'/,
+    /roles\/datastore\.user/,
+    /roles\/logging\.logWriter/,
+    /roles\/serviceusage\.serviceUsageConsumer/,
+    /userManagedKeys\.length === 0/,
+    /G5_PASSKEY_IAM_EFFECTIVE_PROJECT_MISMATCH/,
+    /G5_PASSKEY_IAM_COMMIT_MISMATCH/,
+  ]) assert.match(iam, expected);
+  const requiredRoles = iam.slice(iam.indexOf('const REQUIRED_ROLES'), iam.indexOf(']);', iam.indexOf('const REQUIRED_ROLES')));
+  assert.doesNotMatch(requiredRoles, /roles\/(?:editor|owner|firebaseauth\.admin|secretmanager\.secretAccessor)/i);
+  assert.match(read('package.json'), /configure-functions-gen2-g5-auth-passkey-iam\.mjs --project secondevienextjsssr --env sandbox/);
+});
+
 test('G5-A7-A9 bornent IAM au runtime de connexion Auth', () => {
   const iam = read('scripts/configure-functions-gen2-g5-auth-login-iam.mjs');
   for (const expected of [

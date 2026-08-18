@@ -237,7 +237,9 @@ const {
 const { sendCustomerLoginOtp, sendCustomerLoginOtpGen2, verifyCustomerLoginOtp, verifyCustomerLoginOtpGen2 } = require('./src/auth/customerLoginOtp');
 const {
     generatePasskeyRegistrationOptions,
+    generatePasskeyRegistrationOptionsGen2,
     verifyPasskeyRegistration,
+    verifyPasskeyRegistrationGen2,
     generatePasskeyAuthenticationOptions,
     generatePasskeyAuthenticationOptionsGen2,
     verifyPasskeyAuthentication,
@@ -265,7 +267,9 @@ exports.sendCustomerLoginOtpGen2 = sendCustomerLoginOtpGen2;
 exports.verifyCustomerLoginOtp = verifyCustomerLoginOtp;
 exports.verifyCustomerLoginOtpGen2 = verifyCustomerLoginOtpGen2;
 exports.generatePasskeyRegistrationOptions = generatePasskeyRegistrationOptions;
+exports.generatePasskeyRegistrationOptionsGen2 = generatePasskeyRegistrationOptionsGen2;
 exports.verifyPasskeyRegistration = verifyPasskeyRegistration;
+exports.verifyPasskeyRegistrationGen2 = verifyPasskeyRegistrationGen2;
 exports.generatePasskeyAuthenticationOptions = generatePasskeyAuthenticationOptions;
 exports.generatePasskeyAuthenticationOptionsGen2 = generatePasskeyAuthenticationOptionsGen2;
 exports.verifyPasskeyAuthentication = verifyPasskeyAuthentication;

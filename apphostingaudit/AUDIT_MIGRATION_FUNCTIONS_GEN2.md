@@ -116,6 +116,29 @@ Ordre de reprise optimise et obligatoire:
    endpoint, IAM, code ou donnee. Continuer automatiquement tant que les gates
    du lot restent vertes.
 
+Garde-fous de consommation obligatoires pour toutes les reprises suivantes:
+
+- borner chaque recherche aux fichiers ou repertoires du flux touche et exclure
+  `node_modules`, `.next`, les logs et les archives; une recherche globale du
+  depot n'est permise que si la recherche bornee ne localise pas la reference;
+- borner aussi la sortie des commandes (`rg`, `sed`, `head`, filtres JSON) et ne
+  jamais charger un log, un manifeste ou un document complet quand quelques
+  lignes ciblees suffisent;
+- ne pas ouvrir de navigateur ni chercher un ancien onglet par exploration si
+  le harnais ou la session deja identifiee couvre la gate; une ceremony humaine
+  n'est lancee que lorsqu'elle prouve un risque impossible a couvrir autrement;
+- preparer et verifier localement toutes les fixtures avant l'action externe;
+  utiliser les secrets de test octet pour octet, sans `trim`, normalisation ou
+  transformation implicite, et ne retenter qu'apres correction de la cause;
+- un upload, build ou poll lent se reprend dans sa session existante. Ne pas
+  relancer une commande encore active, ne pas creer d'upload doublon et espacer
+  les polls; un seul constat frais suffit par transition reelle;
+- aucun sous-agent, scan large, recherche web, test generaliste ou nouvelle
+  preuve n'est lance sans besoin direct du lot. Les tests verts ne sont rejoues
+  qu'apres une modification du code qu'ils couvrent;
+- terminer le lot annonce jusqu'a sa gate de fermeture ou un blocage reel, puis
+  s'arreter. Ne pas consommer le quota restant pour anticiper le lot suivant.
+
 Cette optimisation remplace la politique historique « une Function = un build
 App Hosting = un rollback ». Les deploiements Functions restent cibles et
 reversibles; seuls les controles redondants et les cutovers client sont
@@ -2636,6 +2659,13 @@ Pour le cloud, fais un controle frais au debut et un a chaque transition reelle;
 reutilise les uploads et sessions de poll existants. N emets pas de checkpoints
 repetitifs: communique uniquement une progression concrete, un drift ou la
 fermeture du lot.
+
+Garde-fous quota: applique strictement la liste de la section 2.1. Recherches
+bornees avec exclusions, sorties de commandes plafonnees, aucun navigateur si
+le harnais suffit, fixtures validees avant appel externe et secrets utilises
+sans transformation, aucun doublon d upload/build/poll, aucun sous-agent ou
+scan large. Un retry n est autorise qu apres identification et correction de sa
+cause. Ferme A10-A11 completement, puis arrete-toi sans anticiper A12.
 
 Autonomie: les operations sandbox non destructives, Custom Tokens et jetons
 App Check ephemeres sont autorises sans confirmation. Ils restent en memoire,

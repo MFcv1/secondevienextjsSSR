@@ -28,6 +28,17 @@ const PASSKEY_AUTH_GEN2_RUNTIME = Object.freeze({
     serviceAccount: 'auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com',
     enforceAppCheck: true
 });
+const PASSKEY_REGISTRATION_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '256MiB',
+    timeoutSeconds: 60,
+    serviceAccount: 'auth-passkey-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    enforceAppCheck: true
+});
 
 function mapWebAuthnVerificationError(error, ceremony) {
     const details = String(error?.message || '');
@@ -260,7 +271,7 @@ function assertActiveChallenge(challengeSnap, expectedChallenge = null) {
     return challenge;
 }
 
-exports.generatePasskeyRegistrationOptions = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+const generatePasskeyRegistrationOptionsHandler = async (data, context) => {
     const startedAt = Date.now();
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'Connexion requise.');
@@ -307,9 +318,15 @@ exports.generatePasskeyRegistrationOptions = regionalFunctions().runWith({ enfor
 
     logFunctionPerf('generatePasskeyRegistrationOptions', startedAt, { phase: 'success' });
     return { options };
-});
+};
 
-exports.verifyPasskeyRegistration = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+exports.generatePasskeyRegistrationOptions = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(generatePasskeyRegistrationOptionsHandler);
+exports.generatePasskeyRegistrationOptionsGen2 = onCall(
+    PASSKEY_REGISTRATION_GEN2_RUNTIME,
+    async (request) => generatePasskeyRegistrationOptionsHandler(request.data, request)
+);
+
+const verifyPasskeyRegistrationHandler = async (data, context) => {
     const startedAt = Date.now();
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'Connexion requise.');
@@ -370,7 +387,13 @@ exports.verifyPasskeyRegistration = regionalFunctions().runWith({ enforceAppChec
     });
     logFunctionPerf('verifyPasskeyRegistration', startedAt, { phase: 'success' });
     return { success: true };
-});
+};
+
+exports.verifyPasskeyRegistration = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(verifyPasskeyRegistrationHandler);
+exports.verifyPasskeyRegistrationGen2 = onCall(
+    PASSKEY_REGISTRATION_GEN2_RUNTIME,
+    async (request) => verifyPasskeyRegistrationHandler(request.data, request)
+);
 
 const generatePasskeyAuthenticationOptionsHandler = async (data, context) => {
     const startedAt = Date.now();
@@ -551,4 +574,7 @@ exports.verifyPasskeyAuthenticationGen2 = onCall(
 
 module.exports.generatePasskeyAuthenticationOptionsHandler = generatePasskeyAuthenticationOptionsHandler;
 module.exports.verifyPasskeyAuthenticationHandler = verifyPasskeyAuthenticationHandler;
+module.exports.generatePasskeyRegistrationOptionsHandler = generatePasskeyRegistrationOptionsHandler;
+module.exports.verifyPasskeyRegistrationHandler = verifyPasskeyRegistrationHandler;
 module.exports.PASSKEY_AUTH_GEN2_RUNTIME = PASSKEY_AUTH_GEN2_RUNTIME;
+module.exports.PASSKEY_REGISTRATION_GEN2_RUNTIME = PASSKEY_REGISTRATION_GEN2_RUNTIME;

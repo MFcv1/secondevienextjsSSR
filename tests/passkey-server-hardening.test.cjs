@@ -7,6 +7,8 @@ const source = fs.readFileSync(path.resolve(__dirname, '../functions/src/auth/pa
 
 test('all four passkey callables enforce App Check', () => {
   assert.equal((source.match(/runWith\(\{ enforceAppCheck: true \}\)\.https\.onCall/g) || []).length, 4);
+  assert.match(source, /PASSKEY_AUTH_GEN2_RUNTIME[\s\S]*enforceAppCheck:\s*true/);
+  assert.match(source, /PASSKEY_REGISTRATION_GEN2_RUNTIME[\s\S]*enforceAppCheck:\s*true/);
 });
 
 test('registration and authentication require local user verification', () => {

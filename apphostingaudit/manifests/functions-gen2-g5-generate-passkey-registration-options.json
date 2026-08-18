@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "baselineCommit": "30353e67e6d316cc204ace33844674097bb206ff",
+    "generatedAt": "2026-08-18T23:27:49Z",
+    "operator": "matthis.fradin2@gmail.com",
+    "wave": "G5_A10_PASSKEY_REGISTRATION_OPTIONS_PREDEPLOY"
+  },
+  "deploymentPolicy": {
+    "exactProject": "secondevienextjsssr",
+    "exactCodebase": "main",
+    "maxBatchSize": 1,
+    "forbiddenGlobalSelector": "functions",
+    "forbiddenTargets": []
+  },
+  "gates": {
+    "targetAbsentBeforeCreate": true,
+    "runtimeIamRequired": "auth-passkey-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+    "deploymentAllowed": true,
+    "remediationDeploymentAllowed": false,
+    "clientCutoverAllowed": false
+  },
+  "functions": [
+    {
+      "name": "generatePasskeyRegistrationOptionsGen2",
+      "source": {
+        "export": "generatePasskeyRegistrationOptionsGen2",
+        "file": "functions/src/auth/passkeys.js",
+        "sharedHandler": "generatePasskeyRegistrationOptionsHandler"
+      },
+      "cloud": {
+        "present": false,
+        "project": "secondevienextjsssr",
+        "generation": 2,
+        "region": "europe-west1"
+      },
+      "trigger": {
+        "type": "callable",
+        "appCheck": "ENFORCED"
+      },
+      "identities": {
+        "runtimeServiceAccount": "auth-passkey-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com"
+      },
+      "decision": {
+        "classification": "MIGRATION_PARALLEL",
+        "target": "generatePasskeyRegistrationOptionsGen2",
+        "wave": "G5-A10",
+        "deploymentMaxBatchSize": 1,
+        "rollback": "Preserve generatePasskeyRegistrationOptions Gen1, endpoint, IAM, source and challenges; restore build 006 on client rollback."
+      }
+    }
+  ]
+}

@@ -162,7 +162,13 @@ Plan temporaire de reprise explicitement demande:
   flux touches. A la reprise, ne relire que le checkpoint et les sections
   code/documentation directement touchees; ne pas recharger le journal complet.
   Un etat cloud frais par transition suffit; reutiliser les sessions de poll et
-  ne pas relancer un test vert sans changement du code concerne. Les Custom
+  ne pas relancer un test vert sans changement du code concerne. Les
+  recherches sont bornees au flux touche avec `node_modules`, `.next`, logs et
+  archives exclus; sorties de commandes plafonnees, navigateur seulement si le
+  harnais ne couvre pas la gate, fixtures validees avant appel externe et
+  secrets utilises sans transformation. Aucun doublon d'upload/build/poll,
+  sous-agent, scan large ou retry sans cause corrigee. Le lot annonce est ferme
+  avant l'arret, puis le lot suivant n'est pas anticipe. Les Custom
   Tokens et jetons App Check ephemeres du harnais
   sandbox sont autorises sans confirmation intermediaire; ils ne sont ni
   affiches, ni journalises, ni persistes. Aucun retrait Gen1 avant G12-A, aucun
