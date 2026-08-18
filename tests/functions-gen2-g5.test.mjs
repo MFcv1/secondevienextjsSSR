@@ -63,6 +63,56 @@ test('G5-A2 borne la creation IAM du runtime de session Auth', () => {
   assert.match(read('package.json'), /configure-functions-gen2-g5-auth-session-iam\.mjs --project secondevienextjsssr --env sandbox/);
 });
 
+test('G5-A3 prepare uniquement ensureAdminAccessRegistryGen2 avec parite et secret epingle', () => {
+  const source = read('functions/src/auth/adminManagement.js');
+  const exports = extractLocalExports(ROOT);
+  const target = GCLOUD_GEN2_TARGETS.ensureAdminAccessRegistryGen2;
+  assert.ok(exports.some(({ name }) => name === 'ensureAdminAccessRegistry'));
+  assert.ok(exports.some(({ name }) => name === 'ensureAdminAccessRegistryGen2'));
+  assert.equal(classificationFor('ensureAdminAccessRegistryGen2'), 'MIGRATION_PARALLEL');
+  assert.match(source, /const ensureAdminAccessRegistryHandler = async \(_data, context\) =>/);
+  assert.match(source, /exports\.ensureAdminAccessRegistry = regionalFunctions\(\)[\s\S]*?onCall\(ensureAdminAccessRegistryHandler\)/);
+  assert.match(source, /exports\.ensureAdminAccessRegistryGen2 = onCall\(/);
+  assert.match(source, /AUTH_REGISTRY_GEN2_RUNTIME[\s\S]*?enforceAppCheck:\s*true[\s\S]*?secrets:\s*\[SUPER_ADMIN_EMAIL_SECRET\]/);
+  assert.equal(target.runtimeServiceAccount, 'auth-registry-runtime@secondevienextjsssr.iam.gserviceaccount.com');
+  assert.equal(target.cpu, '167m');
+  assert.equal(target.concurrency, '1');
+  assert.equal(target.maxInstances, '1');
+  assert.deepEqual(target.secrets, ['SUPER_ADMIN_EMAIL=SUPER_ADMIN_EMAIL:3']);
+  assert.doesNotMatch(read('src/kit/config/functionTargets.js'), /ensureAdminAccessRegistry:\s*'ensureAdminAccessRegistryGen2'/);
+});
+
+test('G5-A3 borne IAM au runtime registre et au seul secret proprietaire', () => {
+  const iam = read('scripts/configure-functions-gen2-g5-auth-registry-iam.mjs');
+  for (const expected of [
+    /G5_CREATE_AUTH_REGISTRY_RUNTIME/,
+    /SERVICE_ACCOUNT_ID = 'auth-registry-runtime'/,
+    /SECRET = 'SUPER_ADMIN_EMAIL'/,
+    /roles\/datastore\.user/,
+    /roles\/logging\.logWriter/,
+    /roles\/serviceusage\.serviceUsageConsumer/,
+    /secrets', 'add-iam-policy-binding'/,
+    /roles\/secretmanager\.secretAccessor/,
+    /userManagedKeys\.length === 0/,
+    /G5_REGISTRY_IAM_EFFECTIVE_PROJECT_MISMATCH/,
+    /G5_REGISTRY_IAM_COMMIT_MISMATCH/,
+  ]) assert.match(iam, expected);
+  assert.doesNotMatch(iam, /roles\/(?:editor|owner|firebaseauth\.admin)/i);
+  assert.match(read('package.json'), /configure-functions-gen2-g5-auth-registry-iam\.mjs --project secondevienextjsssr --env sandbox/);
+});
+
+test('G5-A3 reste fail-closed avant IAM et deploy cible', () => {
+  const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-ensure-admin-access-registry.json'));
+  assert.equal(manifest.preflight.sourceExportsWithParallel, 165);
+  assert.equal(manifest.preflight.cloudFunctions, 159);
+  assert.equal(manifest.functions[0].name, 'ensureAdminAccessRegistryGen2');
+  assert.equal(manifest.functions[0].cloud.present, false);
+  assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'ensureAdminAccessRegistry');
+  assert.equal(manifest.gates.runtimeIamReady, false);
+  assert.equal(manifest.gates.deploymentAllowed, false);
+  assert.equal(manifest.gates.clientCutoverAllowed, false);
+});
+
 test('G5-A2 prouve le deploy et autorise uniquement le cutover client', () => {
   const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-log-user-connection.json'));
   assert.equal(manifest.preflight.sourceExportsWithParallel, 164);
@@ -108,7 +158,7 @@ test('G5 injecte le jeton App Check ephemere dans Auth et Functions pendant la r
   assert.match(harness, /context\.route\('\*\*\/\*\.cloudfunctions\.net\/\*\*'/);
   assert.equal((harness.match(/'X-Firebase-AppCheck': appCheckToken\.token/g) || []).length, 4);
   assert.match(harness, /readArg\('expect-user-count'\)/);
-  assert.match(harness, /probeCallable !== 'logUserConnectionGen2'/);
+  assert.match(harness, /'logUserConnectionGen2', 'ensureAdminAccessRegistryGen2'/);
   assert.match(harness, /accounts:signInWithCustomToken/);
   assert.match(harness, /cloudfunctions\.net\/\$\{probeCallable\}/);
   assert.match(harness, /callableProbe = \{ name: probeCallable, httpStatus: callableResponse\.status, success: true \}/);

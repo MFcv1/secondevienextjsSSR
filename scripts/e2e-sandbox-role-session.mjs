@@ -42,7 +42,7 @@ if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
 if (!firebaseAppId) {
   throw new Error('VITE_FIREBASE_APP_ID manque pour le jeton App Check de recette.');
 }
-if (probeCallable && probeCallable !== 'logUserConnectionGen2') {
+if (probeCallable && !['logUserConnectionGen2', 'ensureAdminAccessRegistryGen2'].includes(probeCallable)) {
   throw new Error('Callable de probe sandbox non autorise.');
 }
 if (probeCallable && !firebaseApiKey) {

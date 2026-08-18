@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "baselineCommit": "b8c936796cc8a5df4eae866df7653cf07db1b7dd",
+    "generatedAt": "2026-08-18T15:42:00Z",
+    "operator": "matthis.fradin2@gmail.com",
+    "wave": "G5_A3_AUTH_REGISTRY_PREPARED_IAM_PENDING"
+  },
+  "deploymentPolicy": {
+    "exactProject": "secondevienextjsssr",
+    "exactCodebase": "main",
+    "maxBatchSize": 1,
+    "forbiddenGlobalSelector": "functions"
+  },
+  "preflight": {
+    "sourceExportsBeforePreparation": 164,
+    "sourceExportsWithParallel": 165,
+    "cloudFunctions": 159,
+    "cloudGen1": 139,
+    "cloudGen2": 20,
+    "legacyOwner": "ensureAdminAccessRegistry",
+    "legacyVersion": "11",
+    "legacySecret": "SUPER_ADMIN_EMAIL:3",
+    "legacyOwnerPreserved": true,
+    "targetAbsentBeforeCreate": true,
+    "currentClientTarget": "ensureAdminAccessRegistry"
+  },
+  "functions": [{
+    "name": "ensureAdminAccessRegistryGen2",
+    "source": {
+      "export": "ensureAdminAccessRegistryGen2",
+      "file": "functions/src/auth/adminManagement.js",
+      "sharedHandler": "ensureAdminAccessRegistryHandler"
+    },
+    "cloud": {
+      "present": false,
+      "project": "secondevienextjsssr",
+      "generation": 2,
+      "region": "europe-west1",
+      "runtime": "nodejs22"
+    },
+    "trigger": {
+      "type": "callable",
+      "appCheck": "ENFORCED",
+      "auth": "strong Firebase admin identity"
+    },
+    "runtime": {
+      "sourceCpu": "gcf_gen1",
+      "deployCpu": "167m",
+      "memoryMiB": 256,
+      "timeoutSeconds": 60,
+      "concurrency": 1,
+      "minInstances": 0,
+      "maxInstances": 1
+    },
+    "identities": {
+      "runtimeServiceAccount": "auth-registry-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+      "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+      "requiredRuntimeRoles": [
+        "roles/datastore.user",
+        "roles/logging.logWriter",
+        "roles/serviceusage.serviceUsageConsumer"
+      ]
+    },
+    "secrets": [{
+      "name": "SUPER_ADMIN_EMAIL",
+      "version": "3",
+      "binding": "secret-scoped accessor only"
+    }],
+    "dataAccess": {
+      "reads": ["sys_admin_access/{uid}", "sys_metadata/admin_users"],
+      "conditionalWrites": ["sys_admin_access/{uid}", "sys_security_audit/{event}"],
+      "idempotence": "an existing active registry entry returns migrated=false and performs no write"
+    },
+    "clientRegistry": {
+      "logicalName": "ensureAdminAccessRegistry",
+      "currentTarget": "ensureAdminAccessRegistry",
+      "cutoverTarget": "ensureAdminAccessRegistryGen2",
+      "cutoverAllowed": false
+    },
+    "decision": {
+      "classification": "MIGRATION_PARALLEL",
+      "target": "ensureAdminAccessRegistryGen2",
+      "wave": "G5-A3",
+      "deploymentMaxBatchSize": 1,
+      "rollback": "Keep ensureAdminAccessRegistry Gen1, endpoint, IAM, source, secret and data intact; restore registry and prior App Hosting build after cutover."
+    }
+  }],
+  "gates": {
+    "localTestsRequired": ["test:functions-g5", "test:functions-g4", "test:functions-g0", "lint:functions"],
+    "tests": {
+      "functionsG5": "10/10",
+      "functionsG4": "18/18",
+      "functionsG0": "26/26",
+      "functionsLint": "PASS"
+    },
+    "runtimeIamReady": false,
+    "runtimeIamVerified": false,
+    "targetAbsentBeforeCreate": true,
+    "deploymentAllowed": false,
+    "clientCutoverAllowed": false
+  },
+  "rollback": {
+    "functionAction": "none; preserve ensureAdminAccessRegistry Gen1 and any parallel Gen2 target",
+    "clientAction": "keep ensureAdminAccessRegistry on Gen1 until a green cutover manifest",
+    "dataAction": "none",
+    "secretAction": "none",
+    "g12Action": "none before G12-A"
+  },
+  "verdict": "PREPARED_IAM_AND_DEPLOYMENT_NOT_YET_ALLOWED"
+}

@@ -43,6 +43,18 @@ const AUTH_SESSION_GEN2_RUNTIME = Object.freeze({
     serviceAccount: 'auth-session-runtime@secondevienextjsssr.iam.gserviceaccount.com',
     enforceAppCheck: true
 });
+const AUTH_REGISTRY_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '256MiB',
+    timeoutSeconds: 60,
+    serviceAccount: 'auth-registry-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    enforceAppCheck: true,
+    secrets: [SUPER_ADMIN_EMAIL_SECRET]
+});
 
 function hashAdminEmail(email) {
     return crypto.createHash('sha256').update(normalizeEmail(email)).digest('hex');
@@ -93,10 +105,7 @@ async function migrateLegacyAdminAccess(legacyUsers, activatedByUid) {
     return results.filter(Boolean).length;
 }
 
-exports.ensureAdminAccessRegistry = regionalFunctions().runWith({
-    enforceAppCheck: true,
-    secrets: [SUPER_ADMIN_EMAIL_SECRET]
-}).https.onCall(async (_data, context) => {
+const ensureAdminAccessRegistryHandler = async (_data, context) => {
     checkStrongAdmin(context);
     const accessRef = db.collection(ADMIN_ACCESS_COLLECTION).doc(context.auth.uid);
     const accessSnap = await accessRef.get();
@@ -144,7 +153,16 @@ exports.ensureAdminAccessRegistry = regionalFunctions().runWith({
         migrated: true,
         role: legacyRecord.role === 'owner' ? 'owner' : 'admin'
     };
-});
+};
+
+exports.ensureAdminAccessRegistry = regionalFunctions().runWith({
+    enforceAppCheck: true,
+    secrets: [SUPER_ADMIN_EMAIL_SECRET]
+}).https.onCall(ensureAdminAccessRegistryHandler);
+exports.ensureAdminAccessRegistryGen2 = onCall(
+    AUTH_REGISTRY_GEN2_RUNTIME,
+    async (request) => ensureAdminAccessRegistryHandler(request.data, request)
+);
 
 exports.syncSuperAdminClaim = regionalFunctions().runWith({ enforceAppCheck: true, secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
     checkConfiguredSuperAdminBootstrap(context);
@@ -547,3 +565,5 @@ exports.getUserStatsHandler = getUserStatsHandler;
 exports.AUTH_READER_GEN2_RUNTIME = AUTH_READER_GEN2_RUNTIME;
 exports.logUserConnectionHandler = logUserConnectionHandler;
 exports.AUTH_SESSION_GEN2_RUNTIME = AUTH_SESSION_GEN2_RUNTIME;
+exports.ensureAdminAccessRegistryHandler = ensureAdminAccessRegistryHandler;
+exports.AUTH_REGISTRY_GEN2_RUNTIME = AUTH_REGISTRY_GEN2_RUNTIME;

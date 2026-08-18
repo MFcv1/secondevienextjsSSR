@@ -42,15 +42,16 @@ test('G4 garde les suppressions analytics hors migration', () => {
   }
 });
 
-test('G4 conserve ses cinq cibles et G5 ajoute un seul export parallele', () => {
+test('G4 conserve ses cinq cibles et G5 ses trois exports paralleles courants', () => {
   const exports = extractLocalExports(ROOT);
-  assert.equal(exports.length, EXPECTED_SOURCE_COUNT + 6);
-  assert.deepEqual([...PARALLEL_MIGRATION_EXPORTS], ['initLiveSessionGen2', 'syncSessionGen2', 'syncSessionBeaconGen2', 'trackAdminIPGen2', 'updateUserSessionsGen2', 'getUserStatsGen2', 'logUserConnectionGen2']);
+  assert.equal(exports.length, EXPECTED_SOURCE_COUNT + 8);
+  assert.deepEqual([...PARALLEL_MIGRATION_EXPORTS], ['ensureAdminAccessRegistryGen2', 'initLiveSessionGen2', 'syncSessionGen2', 'syncSessionBeaconGen2', 'trackAdminIPGen2', 'updateUserSessionsGen2', 'getUserStatsGen2', 'logUserConnectionGen2']);
   assert.equal(classificationFor('initLiveSessionGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('syncSessionGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('syncSessionBeaconGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('trackAdminIPGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('updateUserSessionsGen2'), 'MIGRATION_PARALLEL');
+  assert.equal(classificationFor('ensureAdminAccessRegistryGen2'), 'MIGRATION_PARALLEL');
   assert.ok(exports.some(({ name }) => name === 'trackAdminIP'));
   assert.ok(exports.some(({ name }) => name === 'trackAdminIPGen2'));
   assert.ok(exports.some(({ name }) => name === 'updateUserSessions'));
