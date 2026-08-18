@@ -1090,6 +1090,16 @@ nouvel appel Gen1. Rollback exact `build-2026-08-17-005`; aucune Gen1, IAM ou
 donnee retiree. Prochaine cible unique `ensureAdminAccessRegistryGen2`.
 Inventaire: 164 local, 159 cloud, 139 Gen1, 20 Gen2, 8 schedulers, 2 queues et
 7 Eventarc.
+G5-A3 a ferme `ensureAdminAccessRegistryGen2` avec le handler Gen1, App Check,
+CPU 167m, 256 MiB, 60 s, concurrence/max 1, runtime
+`auth-registry-runtime` et secret `SUPER_ADMIN_EMAIL:3`. La revision
+`ensureadminaccessregistrygen2-00001-lak` est ACTIVE. Le rollout
+`g5-a3-cutover-20260818-001` sert `build-2026-08-18-002`: ancien onglet `001`
+sain, routes 200, appel Gen2 200 avec `migrated:false`, registre inchange, zero
+erreur Gen2 et zero nouvel appel Gen1. Rollback exact
+`build-2026-08-18-001`; aucune Gen1, IAM, secret ou donnee retiree. Prochaine
+cible unique `sendGuestCheckoutOtpGen2`. Inventaire: 165 local, 160 cloud,
+139 Gen1, 21 Gen2, 8 schedulers, 2 queues et 7 Eventarc.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.

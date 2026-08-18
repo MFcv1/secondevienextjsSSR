@@ -264,6 +264,16 @@ les erreurs Gen2 et les nouveaux appels Gen1 valent zero. La Gen1 reste
 intacte; rollback client exact vers `005`. Prochaine cible unique:
 `ensureAdminAccessRegistryGen2`.
 
+G5-A3 ferme ce registre sous nouveau nom avec le handler Gen1, App Check et
+AAL2 identiques. Le runtime `auth-registry-runtime` porte Firestore, logs,
+service usage et un acces borne au seul secret `SUPER_ADMIN_EMAIL:3`, sans cle
+utilisateur. La revision `ensureadminaccessregistrygen2-00001-lak` est ACTIVE;
+le rollout `g5-a3-cutover-20260818-001` sert build `002`. L'ancien onglet `001`
+reste sain, l'appel retourne 200 avec `migrated:false`, le registre est
+strictement inchange, les erreurs Gen2 et les appels Gen1 valent zero. La Gen1
+et le secret restent intacts; rollback exact `001`. Prochaine cible unique:
+`sendGuestCheckoutOtpGen2`.
+
 - registre administrateur par UID;
 - entree active obligatoire pour les callables critiques;
 - retrait des claims lors d'une revocation;

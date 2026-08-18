@@ -121,14 +121,16 @@
     },
     "logs": { "entries": 10, "http200": 1, "http401": 1, "errors": 0, "newGen1Entries": 0 },
     "inventoryAfterDeploy": { "source": 165, "cloud": 160, "gen1": 139, "gen2": 21 },
-    "clientCutoverAllowed": true
+    "clientCutoverAllowed": true,
+    "clientCutoverCompleted": true,
+    "rolloutManifest": "apphostingaudit/manifests/functions-gen2-g5-ensure-admin-access-registry-rollout.json"
   },
   "rollback": {
     "functionAction": "none; preserve ensureAdminAccessRegistry Gen1 and any parallel Gen2 target",
-    "clientAction": "keep ensureAdminAccessRegistry on Gen1 until a green cutover manifest",
+    "clientAction": "rollback exactly to build-2026-08-18-001 and restore the logical registry target to ensureAdminAccessRegistry",
     "dataAction": "none",
     "secretAction": "none",
     "g12Action": "none before G12-A"
   },
-  "verdict": "FUNCTION_ACTIVE_PROBES_GREEN_CLIENT_CUTOVER_AUTHORIZED"
+  "verdict": "FUNCTION_ACTIVE_CLIENT_CUTOVER_CLOSED_GEN1_PRESERVED"
 }

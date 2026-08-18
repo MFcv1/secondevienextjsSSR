@@ -4,7 +4,7 @@
   "codebase": "main",
   "baselineCommit": "b8c936796cc8a5df4eae866df7653cf07db1b7dd",
   "files": {
-    "apphostingaudit/manifests/functions-gen2-g5-ensure-admin-access-registry.json": "9558a8871a7e604f319f402ac814556c8c7f2f3e913f5257864104a0584fd140",
+    "apphostingaudit/manifests/functions-gen2-g5-ensure-admin-access-registry.json": "667522d0278e01ee22bef96fd8a59f77b3db061557a8a9b62f39c38afb429109",
     "apphostingaudit/manifests/functions-gen2-g5-auth-registry-iam.json": "0050eef1dfd757982876ad0ea2212bcd6dbefc66697c0fc25669d02f0c5e1864"
   }
 }

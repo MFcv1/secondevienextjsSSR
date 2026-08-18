@@ -66,15 +66,15 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | --- | --- |
 | branche | `codex/functions-gen2-migration` |
 | baseline avant le checkpoint Monitoring | `25daf810309dc3329cfeb0fb19be0f1790fe608a` |
-| worktree attendu a la reprise | fermeture G5-A2 documentee; tout changement additionnel doit etre qualifie |
+| worktree attendu a la reprise | fermeture G5-A3 documentee; tout changement additionnel doit etre qualifie |
 | phases fermees | G0, G1, G2-A, G2-B 13/13, G3 et G4 |
-| phase active | G5-A3 Auth, prochaine cible unique `ensureAdminAccessRegistryGen2` |
-| inventaire courant | 164 exports locaux, 159 cloud, 139 Gen1, 20 Gen2, 8 schedulers, 2 queues, 7 Eventarc |
-| cibles paralleles actives | cinq analytics G4, `getUserStatsGen2` et `logUserConnectionGen2` basculees vers leurs Gen2; toutes les Gen1 restent intactes |
-| cutover client | App Hosting sert `build-2026-08-18-001`; rollback exact `build-2026-08-17-005` |
+| phase active | G5-A4 OTP, prochaine cible unique `sendGuestCheckoutOtpGen2` |
+| inventaire courant | 165 exports locaux, 160 cloud, 139 Gen1, 21 Gen2, 8 schedulers, 2 queues, 7 Eventarc |
+| cibles paralleles actives | cinq analytics G4 et trois Auth G5 basculees vers leurs Gen2; toutes les Gen1 restent intactes |
+| cutover client | App Hosting sert `build-2026-08-18-002`; rollback exact `build-2026-08-18-001` |
 | observation G4 | G4-A1 a G4-A5 fermees en validation acceleree; Gen1 et rollbacks preserves |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | preparer puis migrer uniquement `ensureAdminAccessRegistryGen2`; conserver les trois triggers Auth Gen1 |
+| prochain lot | preparer puis migrer uniquement `sendGuestCheckoutOtpGen2`; conserver les trois triggers Auth Gen1 |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -97,11 +97,11 @@ conformes, ancien onglet admin sain et zero nouvel appel Gen1 apres cutover.
 
 Ordre de reprise obligatoire:
 
-1. preserver les fermetures G5-A1/A2 et le harnais, verifier le projet
-   explicite `secondevienextjsssr`, l'operateur et l'inventaire 164/159;
-2. ne pas redeployer les deux cibles fermees: leurs Gen1 et le rollback `005`
+1. preserver les fermetures G5-A1/A2/A3 et le harnais, verifier le projet
+   explicite `secondevienextjsssr`, l'operateur et l'inventaire 165/160;
+2. ne pas redeployer les trois cibles fermees: leurs Gen1 et le rollback `001`
    restent preserves;
-3. preparer uniquement `ensureAdminAccessRegistryGen2` avec handler partage, App Check,
+3. preparer uniquement `sendGuestCheckoutOtpGen2` avec handler partage, App Check,
    runtime/IAM minimal, tests et manifeste machine;
 4. deployer une seule Function sous nouveau nom, prouver refus negatif puis
    parite d'ecriture idempotente avec une session sandbox ephemere;
@@ -109,7 +109,7 @@ Ordre de reprise obligatoire:
    prouver ancien onglet, donnees/logs, zero erreur et zero nouvel appel Gen1;
 6. au premier ecart, restaurer exactement le registre/build precedent sans
    retirer Function, endpoint, IAM, code ou donnee;
-7. si G5-A3 est verte, fermer son manifeste et poursuivre automatiquement une
+7. si G5-A4 est verte, fermer son manifeste et poursuivre automatiquement une
    seule cible G5 suivant l'ordre logs/registre, OTP, options passkey,
    verification passkey, puis mutations admin.
 
@@ -2312,6 +2312,19 @@ de fermeture: `functions-gen2-g5-log-user-connection-rollout.json`. Rollback
 exact `005`; conserver Gen1, endpoint, IAM, source et donnees jusqu'a G12-A.
 Prochaine cible unique: `ensureAdminAccessRegistryGen2`.
 
+Fermeture G5-A3: `ensureAdminAccessRegistryGen2` partage exactement le handler
+Gen1 et conserve App Check/AAL2. Le runtime `auth-registry-runtime` porte
+Firestore, logs, service usage et l'acces borne au seul secret
+`SUPER_ADMIN_EMAIL:3`, sans cle utilisateur. La revision
+`ensureadminaccessregistrygen2-00001-lak` est ACTIVE; refus sans Auth/App Check
+401, appel admin 200 avec `migrated:false`. Le rollout
+`g5-a3-cutover-20260818-001` sert `build-2026-08-18-002`: ancien onglet `001`
+reste rendu, routes 200, registre strictement inchange, zero erreur Gen2 et
+zero nouvel appel Gen1. Gates G5: 10/10; manifeste de fermeture:
+`functions-gen2-g5-ensure-admin-access-registry-rollout.json`. Rollback exact
+`001`; conserver Gen1, endpoint, IAM, secret, source et donnees jusqu'a G12-A.
+Prochaine cible unique: `sendGuestCheckoutOtpGen2`.
+
 ### G6 - Contenu, catalogue admin, devis, newsletter, e-mail et factures
 
 Lecteurs avant writers. Le claim/outbox de `onQuoteRequestSubmitted` doit etre
@@ -2545,16 +2558,16 @@ La migration est terminee uniquement si:
 
 ## 15. Prompt de reprise courant
 
-Le prompt ci-dessous remplace le prompt G5-A2. Il reprend a G5-A3 et ne doit
-jamais refaire les phases G0-G4 ou les cibles G5-A1/A2 fermees.
+Le prompt ci-dessous remplace le prompt G5-A3. Il reprend a G5-A4 et ne doit
+jamais refaire les phases G0-G4 ou les cibles G5-A1/A2/A3 fermees.
 
 ```text
 /goal Tu travailles dans le depot Seconde Vie Next sur la migration sandbox Firebase
 Functions Gen1 -> Gen2 suivie dans
 `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`.
 
-Reprends au checkpoint G5-A3 du 2026-08-18. G0, G1, G2, G3, G4, G5-A1 et
-G5-A2 sont fermes: ne les rejoue pas et ne regenere leurs preuves que si un
+Reprends au checkpoint G5-A4 du 2026-08-18. G0, G1, G2, G3, G4 et G5-A1 a
+G5-A3 sont fermes: ne les rejoue pas et ne regenere leurs preuves que si un
 drift concret l'exige.
 
 Avant toute action:
@@ -2562,17 +2575,17 @@ Avant toute action:
   checkpoint 2.1 et G5 du plan, puis les chapitres canoniques Auth,
   infrastructure, exploitation et qualite;
 - preserve le worktree existant sur `codex/functions-gen2-migration`, notamment
-  les fermetures G5-A1/A2 et leurs manifestes; aucun
+  les fermetures G5-A1/A2/A3 et leurs manifestes; aucun
   reset/clean/checkout destructif;
 - identifie HEAD, Node, pnpm, Firebase CLI et operateur;
 - passe `--project secondevienextjsssr` a chaque commande cloud et echoue si le
   projet effectif differe, meme si la configuration gcloud globale vaut
   `vibefx-v2`;
-- confirme l'inventaire attendu: 164 exports locaux, 159 Functions cloud,
-  139 Gen1, 20 Gen2, 8 schedulers, 2 queues et 7 Eventarc.
+- confirme l'inventaire attendu: 165 exports locaux, 160 Functions cloud,
+  139 Gen1, 21 Gen2, 8 schedulers, 2 queues et 7 Eventarc.
 
 Etat deja prouve, a ne pas rejouer sans drift:
-- G4, G5-A1 et G5-A2 sont fermees et App Hosting sert `build-2026-08-18-001`;
+- G4 et G5-A1 a G5-A3 sont fermees et App Hosting sert `build-2026-08-18-002`;
 - `getUserStatsGen2` est ACTIVE en revision
   `getuserstatsgen2-00001-niv`, avec CPU 167m, 512 MiB, 300 s,
   concurrence/max 1, min 0, runtime `auth-reader-runtime`, IAM borne et aucune
@@ -2581,7 +2594,10 @@ Etat deja prouve, a ne pas rejouer sans drift:
   `loguserconnectiongen2-00001-fab`, avec CPU 167m, 256 MiB, 60 s,
   concurrence/max 1, min 0, runtime `auth-session-runtime`, IAM borne et aucune
   cle utilisateur;
-- les gates G5 7/7, G0 26/26 et les preuves Auth/App Check sont vertes;
+- `ensureAdminAccessRegistryGen2` est ACTIVE en revision
+  `ensureadminaccessregistrygen2-00001-lak`, runtime `auth-registry-runtime`,
+  secret `SUPER_ADMIN_EMAIL:3` borne, IAM minimal et aucune cle utilisateur;
+- les gates G5 10/10, G4 18/18, G0 26/26 et les preuves Auth/App Check sont vertes;
 - l'appel sans Auth/App Check est refuse en 401;
 - le rollout `g5-a1-cutover-20260818-001` sert le build `005`; ancien onglet
   `004` sain, compteur 34, Gen2 HTTP 200, donnees inchangees, zero erreur et
@@ -2589,8 +2605,11 @@ Etat deja prouve, a ne pas rejouer sans drift:
 - le rollout `g5-a2-cutover-20260818-001` sert le build `001`; ancien onglet
   `005` sain, appel Gen2 200, ecriture attendue, zero erreur et zero nouvel
   appel Gen1;
-- le registre source du commit `4fbd3bc` cible les deux Gen2 fermees; leurs
-  Gen1 et le rollback exact `005` restent preserves.
+- le rollout `g5-a3-cutover-20260818-001` sert le build `002`; ancien onglet
+  `001` sain, appel 200 avec `migrated:false`, registre inchange, zero erreur
+  et zero appel Gen1;
+- le registre source du commit `27bd27b` cible les trois Gen2 fermees; leurs
+  Gen1 et le rollback exact `001` restent preserves.
 
 Discipline Git:
 - a la fermeture de chaque cible verte, cree un commit local borne regroupant
@@ -2601,17 +2620,17 @@ Discipline Git:
   pousse/merge rien sans demande explicite.
 
 Objectif immediat:
-1. Ne redeploie pas les cibles G5-A1/A2; preserve leurs Gen1 et le rollback `005`.
-2. Prepare uniquement `ensureAdminAccessRegistryGen2`: handler partage/parite Gen1,
+1. Ne redeploie pas les cibles G5-A1/A2/A3; preserve leurs Gen1 et le rollback `001`.
+2. Prepare uniquement `sendGuestCheckoutOtpGen2`: handler partage/parite Gen1,
    App Check, runtime/IAM minimal, manifeste et tests G5.
 3. Deploie seulement cette Function sous nouveau nom, prouve le refus negatif
-   et une reconciliation de registre admin sandbox idempotente avec donnees avant/apres.
+   et un envoi OTP sandbox borne sans exposer le code ni doubler l'e-mail.
 4. Bascule seulement son registre dans un build App Hosting reversible; prouve
    `/`, `/admin`, ancien onglet, donnees/logs, zero erreur Gen2 et zero nouvel
-   appel `ensureAdminAccessRegistry` Gen1 pendant la quiet-window acceleree.
+   appel `sendGuestCheckoutOtp` Gen1 pendant la quiet-window acceleree.
 5. Au premier ecart, rollback exact registre/build; ne supprime ni Function,
    endpoint, IAM, source ou donnee.
-6. Si G5-A3 est verte, ferme son manifeste, le plan, `map.md` et les chapitres
+6. Si G5-A4 est verte, ferme son manifeste, le plan, `map.md` et les chapitres
    canoniques. Enchaine ensuite une seule cible G5 suivant l'ordre du plan:
    logs/registre, OTP, options passkey, verification passkey, puis mutations
    admin.

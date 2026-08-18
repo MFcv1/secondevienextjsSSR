@@ -118,6 +118,18 @@ test('G5-A3 prouve le deploy et autorise uniquement le cutover client', () => {
   assert.equal(manifest.gates.logs.errors, 0);
   assert.equal(manifest.gates.logs.newGen1Entries, 0);
   assert.equal(manifest.gates.clientCutoverAllowed, true);
+  assert.equal(manifest.gates.clientCutoverCompleted, true);
+  const rollout = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-ensure-admin-access-registry-rollout.json'));
+  assert.equal(rollout.function.legacyOwnerPreserved, 'ensureAdminAccessRegistry');
+  assert.equal(rollout.appHosting.previousBuild, 'build-2026-08-18-001');
+  assert.equal(rollout.appHosting.build.name, 'build-2026-08-18-002');
+  assert.equal(rollout.appHosting.rollout.state, 'SUCCEEDED');
+  assert.equal(rollout.dataAndLogs.positiveProbe.migrated, false);
+  assert.equal(rollout.dataAndLogs.registryAfter.updateTime, rollout.dataAndLogs.registryBefore.updateTime);
+  assert.equal(rollout.dataAndLogs.quietWindow.gen2Errors, 0);
+  assert.equal(rollout.dataAndLogs.quietWindow.newGen1LogEntries, 0);
+  assert.equal(rollout.authentication.tokenPersisted, false);
+  assert.equal(rollout.gates.nextCloudTargetAllowed, true);
   const iam = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-auth-registry-iam.json'));
   assert.equal(iam.ready, true);
   assert.deepEqual(iam.observedRoles, iam.requiredRoles);
