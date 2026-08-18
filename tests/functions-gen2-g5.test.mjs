@@ -184,14 +184,17 @@ test('G5-A5 borne IAM au runtime de verification OTP et au seul secret HMAC', ()
   assert.match(read('package.json'), /configure-functions-gen2-g5-auth-otp-verify-iam\.mjs --project secondevienextjsssr --env sandbox/);
 });
 
-test('G5-A5 reste fail-closed avant IAM, deploy et verification OTP', () => {
+test('G5-A5 prouve IAM puis reste fail-closed avant deploy et verification OTP', () => {
   const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-verify-guest-checkout-otp.json'));
   assert.equal(manifest.preflight.sourceExportsWithParallel, 167);
   assert.equal(manifest.preflight.cloudFunctions, 161);
   assert.equal(manifest.functions[0].name, 'verifyGuestCheckoutOtpGen2');
   assert.equal(manifest.functions[0].cloud.present, false);
   assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'verifyGuestCheckoutOtp');
-  assert.equal(manifest.gates.runtimeIamReady, false);
+  assert.equal(manifest.gates.runtimeIamReady, true);
+  assert.equal(manifest.gates.runtimeIamVerified, true);
+  assert.deepEqual(manifest.iamEvidence.forbiddenProjectRoles, []);
+  assert.equal(manifest.iamEvidence.userManagedKeyCount, 0);
   assert.equal(manifest.gates.deploymentAllowed, false);
   assert.equal(manifest.gates.clientCutoverAllowed, false);
   assert.equal(manifest.gates.boundedOtpVerificationExecuted, false);
