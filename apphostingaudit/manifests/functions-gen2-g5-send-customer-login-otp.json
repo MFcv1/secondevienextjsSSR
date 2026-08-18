@@ -7,7 +7,7 @@
     "baselineCommit": "b96aa21e870db0e7bbad40d7adfc09a30a400573",
     "generatedAt": "2026-08-18T18:06:00Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G5_A6_CUSTOMER_LOGIN_OTP_SEND_DEPLOY_AUTHORIZED"
+    "wave": "G5_A6_CUSTOMER_LOGIN_OTP_SEND_BUILD_IDENTITY_REMEDIATION_AUTHORIZED"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -43,11 +43,15 @@
       "sharedHandler": "sendCustomerLoginOtpHandler"
     },
     "cloud": {
-      "present": false,
+      "present": true,
       "project": "secondevienextjsssr",
       "generation": 2,
       "region": "europe-west1",
-      "runtime": "nodejs22"
+      "runtime": "nodejs22",
+      "state": "ACTIVE",
+      "revision": "sendcustomerloginotpgen2-00001-dex",
+      "createTime": "2026-08-18T18:12:11.959971587Z",
+      "updateTime": "2026-08-18T18:13:23.911187799Z"
     },
     "trigger": {
       "type": "callable",
@@ -69,7 +73,8 @@
     },
     "identities": {
       "runtimeServiceAccount": "auth-otp-email-runtime@secondevienextjsssr.iam.gserviceaccount.com",
-      "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+      "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com",
+      "desiredBuildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
       "requiredRuntimeRoles": [
         "roles/datastore.user",
         "roles/logging.logWriter",
@@ -134,7 +139,9 @@
     "runtimeIamReady": true,
     "runtimeIamVerified": true,
     "targetAbsentBeforeCreate": true,
-    "deploymentAllowed": true,
+    "deploymentAllowed": false,
+    "remediationDeploymentAllowed": true,
+    "negativeProbeHttpStatus": 401,
     "clientCutoverAllowed": false,
     "boundedOtpSendExecuted": false
   },
@@ -145,5 +152,5 @@
     "secretAction": "none",
     "g12Action": "none before G12-A"
   },
-  "verdict": "SINGLE_TARGET_GEN2_DEPLOYMENT_ALLOWED"
+  "verdict": "SINGLE_TARGET_GEN2_BUILD_IDENTITY_REMEDIATION_ALLOWED"
 }

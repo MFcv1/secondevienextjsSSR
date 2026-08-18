@@ -4,6 +4,6 @@
   "codebase": "main",
   "baselineCommit": "b96aa21e870db0e7bbad40d7adfc09a30a400573",
   "files": {
-    "apphostingaudit/manifests/functions-gen2-g5-send-customer-login-otp.json": "6709d9dee1d7e92170a935dc049d8c8b703f286f5976118ea874d7968ddeb91d"
+    "apphostingaudit/manifests/functions-gen2-g5-send-customer-login-otp.json": "bf43388a6529fa941a8a40e2485d5bf3de4f1b2d6d0fc256d3afae0936297d61"
   }
 }

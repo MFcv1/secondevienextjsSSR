@@ -266,11 +266,15 @@ test('G5-A6 prepare uniquement sendCustomerLoginOtpGen2 avec runtime OTP reutili
   ]);
   assert.equal(manifest.preflight.sourceExportsWithParallel, 168);
   assert.equal(manifest.preflight.cloudFunctions, 162);
-  assert.equal(manifest.functions[0].cloud.present, false);
+  assert.equal(manifest.functions[0].cloud.present, true);
+  assert.equal(manifest.functions[0].cloud.revision, 'sendcustomerloginotpgen2-00001-dex');
   assert.equal(manifest.iamEvidence.reusedRuntimeFrom, 'G5-A4 sendGuestCheckoutOtpGen2');
   assert.deepEqual(manifest.iamEvidence.forbiddenProjectRoles, []);
   assert.equal(manifest.iamEvidence.userManagedKeyCount, 0);
-  assert.equal(manifest.gates.deploymentAllowed, true);
+  assert.equal(manifest.functions[0].identities.buildServiceAccount, 'projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com');
+  assert.equal(manifest.functions[0].identities.desiredBuildServiceAccount, 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com');
+  assert.equal(manifest.gates.deploymentAllowed, false);
+  assert.equal(manifest.gates.remediationDeploymentAllowed, true);
   assert.equal(manifest.gates.clientCutoverAllowed, false);
   assert.doesNotMatch(read('src/kit/config/functionTargets.js'), /sendCustomerLoginOtp:\s*'sendCustomerLoginOtpGen2'/);
 });
