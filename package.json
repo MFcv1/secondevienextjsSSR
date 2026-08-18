@@ -38,6 +38,7 @@
     "functions:configure-analytics-iam:g4": "node scripts/configure-functions-gen2-g4-analytics-iam.mjs --project=secondevienextjsssr --env=sandbox",
     "functions:configure-auth-session-iam:g5": "node scripts/configure-functions-gen2-g5-auth-session-iam.mjs --project secondevienextjsssr --env sandbox",
     "functions:configure-auth-registry-iam:g5": "node scripts/configure-functions-gen2-g5-auth-registry-iam.mjs --project secondevienextjsssr --env sandbox",
+    "functions:configure-auth-otp-email-iam:g5": "node scripts/configure-functions-gen2-g5-auth-otp-email-iam.mjs --project secondevienextjsssr --env sandbox",
     "functions:monitoring:g1": "node scripts/with-env.mjs .env.sandbox node scripts/configure-functions-gen2-g1-monitoring.mjs --project=secondevienextjsssr --env=sandbox",
     "commerce:incident:triage:g1": "node scripts/with-env.mjs .env.sandbox node scripts/triage-commerce-incident-g1.mjs --project=secondevienextjsssr --env=sandbox",
     "commerce:incident:resolve:g1": "node scripts/with-env.mjs .env.sandbox node scripts/resolve-commerce-incident-g1.mjs --project=secondevienextjsssr --env=sandbox",

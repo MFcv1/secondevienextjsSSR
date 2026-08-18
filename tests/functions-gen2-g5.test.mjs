@@ -101,6 +101,65 @@ test('G5-A3 borne IAM au runtime registre et au seul secret proprietaire', () =>
   assert.match(read('package.json'), /configure-functions-gen2-g5-auth-registry-iam\.mjs --project secondevienextjsssr --env sandbox/);
 });
 
+test('G5-A4 prepare uniquement sendGuestCheckoutOtpGen2 avec handler et secrets epingles', () => {
+  const source = read('functions/src/auth/guestCheckoutOtp.js');
+  const exports = extractLocalExports(ROOT);
+  const target = GCLOUD_GEN2_TARGETS.sendGuestCheckoutOtpGen2;
+  assert.ok(exports.some(({ name }) => name === 'sendGuestCheckoutOtp'));
+  assert.ok(exports.some(({ name }) => name === 'sendGuestCheckoutOtpGen2'));
+  assert.equal(classificationFor('sendGuestCheckoutOtpGen2'), 'MIGRATION_PARALLEL');
+  assert.match(source, /const sendGuestCheckoutOtpHandler = async \(data, context\) =>/);
+  assert.match(source, /exports\.sendGuestCheckoutOtp = regionalFunctions\(\)[\s\S]*?onCall\(sendGuestCheckoutOtpHandler\)/);
+  assert.match(source, /exports\.sendGuestCheckoutOtpGen2 = onCall\(/);
+  assert.match(source, /GUEST_OTP_SEND_GEN2_RUNTIME[\s\S]*?enforceAppCheck:\s*true[\s\S]*?secrets:\s*\[\.\.\.TRANSACTIONAL_EMAIL_SECRETS, OTP_HMAC_SECRET\]/);
+  assert.equal(target.runtimeServiceAccount, 'auth-otp-email-runtime@secondevienextjsssr.iam.gserviceaccount.com');
+  assert.equal(target.cpu, '167m');
+  assert.equal(target.concurrency, '1');
+  assert.equal(target.maxInstances, '1');
+  assert.deepEqual(target.secrets, [
+    'GMAIL_EMAIL=GMAIL_EMAIL:2',
+    'GMAIL_PASSWORD=GMAIL_PASSWORD:5',
+    'RESEND_API_KEY=RESEND_API_KEY:1',
+    'OTP_HMAC_SECRET=OTP_HMAC_SECRET:1'
+  ]);
+  assert.ok(target.environmentVariables.includes('TRANSACTIONAL_EMAIL_PROVIDER=gmail'));
+  assert.doesNotMatch(read('src/kit/config/functionTargets.js'), /sendGuestCheckoutOtp:\s*'sendGuestCheckoutOtpGen2'/);
+});
+
+test('G5-A4 borne IAM au runtime OTP et aux quatre secrets epingles', () => {
+  const iam = read('scripts/configure-functions-gen2-g5-auth-otp-email-iam.mjs');
+  for (const expected of [
+    /G5_CREATE_AUTH_OTP_EMAIL_RUNTIME/,
+    /SERVICE_ACCOUNT_ID = 'auth-otp-email-runtime'/,
+    /GMAIL_EMAIL', version: '2'/,
+    /GMAIL_PASSWORD', version: '5'/,
+    /OTP_HMAC_SECRET', version: '1'/,
+    /RESEND_API_KEY', version: '1'/,
+    /roles\/datastore\.user/,
+    /roles\/logging\.logWriter/,
+    /roles\/serviceusage\.serviceUsageConsumer/,
+    /roles\/secretmanager\.secretAccessor/,
+    /userManagedKeys\.length === 0/,
+    /G5_OTP_IAM_EFFECTIVE_PROJECT_MISMATCH/,
+    /G5_OTP_IAM_COMMIT_MISMATCH/,
+  ]) assert.match(iam, expected);
+  assert.doesNotMatch(iam, /roles\/(?:editor|owner|firebaseauth\.admin)/i);
+  assert.match(read('package.json'), /configure-functions-gen2-g5-auth-otp-email-iam\.mjs --project secondevienextjsssr --env sandbox/);
+});
+
+test('G5-A4 reste fail-closed avant IAM, deploy et envoi OTP', () => {
+  const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-send-guest-checkout-otp.json'));
+  assert.equal(manifest.preflight.sourceExportsWithParallel, 166);
+  assert.equal(manifest.preflight.cloudFunctions, 160);
+  assert.equal(manifest.functions[0].name, 'sendGuestCheckoutOtpGen2');
+  assert.equal(manifest.functions[0].cloud.present, false);
+  assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'sendGuestCheckoutOtp');
+  assert.equal(manifest.gates.runtimeIamReady, false);
+  assert.equal(manifest.gates.deploymentAllowed, false);
+  assert.equal(manifest.gates.clientCutoverAllowed, false);
+  assert.equal(manifest.gates.realOtpSent, false);
+});
+
 test('G5-A3 prouve le deploy et autorise uniquement le cutover client', () => {
   const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-ensure-admin-access-registry.json'));
   assert.equal(manifest.preflight.sourceExportsWithParallel, 165);

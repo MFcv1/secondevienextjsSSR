@@ -19,7 +19,8 @@ export const PARALLEL_MIGRATION_EXPORTS = new Set([
   'trackAdminIPGen2',
   'updateUserSessionsGen2',
   'getUserStatsGen2',
-  'logUserConnectionGen2'
+  'logUserConnectionGen2',
+  'sendGuestCheckoutOtpGen2'
 ]);
 
 export const KEEP_GEN2 = new Set([

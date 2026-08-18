@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const admin = require('firebase-admin');
+const { onCall } = require('firebase-functions/v2/https');
 const { functions, regionalFunctions, logFunctionPerf } = require('../../helpers/runtime');
 const { getRateLimitClientIp } = require('../../helpers/clientIp');
 const { OTP_HMAC_SECRET } = require('../../helpers/secrets');
@@ -19,6 +20,18 @@ const MIN_RESEND_MS = 60 * 1000;
 const MAX_EMAIL_SENDS_PER_HOUR = 5;
 const MAX_IP_SENDS_PER_HOUR = 20;
 const MAX_VERIFY_ATTEMPTS = 5;
+const GUEST_OTP_SEND_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '256MiB',
+    timeoutSeconds: 60,
+    serviceAccount: 'auth-otp-email-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    enforceAppCheck: true,
+    secrets: [...TRANSACTIONAL_EMAIL_SECRETS, OTP_HMAC_SECRET]
+});
 
 function normalizeEmail(email) {
     const normalized = String(email || '').trim().toLowerCase();
@@ -113,12 +126,10 @@ function mapMailError(error) {
     );
 }
 
-exports.sendGuestCheckoutOtp = regionalFunctions()
-    .runWith({ enforceAppCheck: true, secrets: [...TRANSACTIONAL_EMAIL_SECRETS, OTP_HMAC_SECRET] })
-    .https.onCall(async (data, context) => {
-        const startedAt = Date.now();
-        const email = normalizeEmail(data?.email);
-        const emailHash = sha256(email);
+const sendGuestCheckoutOtpHandler = async (data, context) => {
+    const startedAt = Date.now();
+    const email = normalizeEmail(data?.email);
+    const emailHash = sha256(email);
         let emailRuntime;
         try {
             emailRuntime = getTransactionalEmailRuntime();
@@ -210,8 +221,16 @@ exports.sendGuestCheckoutOtp = regionalFunctions()
             phase: 'success',
             emailHash
         });
-        return { success: true, expiresInSeconds: Math.floor(OTP_TTL_MS / 1000), resendAfterSeconds: Math.floor(MIN_RESEND_MS / 1000) };
-    });
+    return { success: true, expiresInSeconds: Math.floor(OTP_TTL_MS / 1000), resendAfterSeconds: Math.floor(MIN_RESEND_MS / 1000) };
+};
+
+exports.sendGuestCheckoutOtp = regionalFunctions()
+    .runWith({ enforceAppCheck: true, secrets: [...TRANSACTIONAL_EMAIL_SECRETS, OTP_HMAC_SECRET] })
+    .https.onCall(sendGuestCheckoutOtpHandler);
+exports.sendGuestCheckoutOtpGen2 = onCall(
+    GUEST_OTP_SEND_GEN2_RUNTIME,
+    async (request) => sendGuestCheckoutOtpHandler(request.data, request)
+);
 
 exports.verifyGuestCheckoutOtp = regionalFunctions()
     .runWith({ enforceAppCheck: true, secrets: [OTP_HMAC_SECRET] })
@@ -306,3 +325,5 @@ async function assertGuestCheckoutOtpVerified(uid, email, checkoutOtpToken) {
 
 module.exports.assertGuestCheckoutOtpVerified = assertGuestCheckoutOtpVerified;
 module.exports.normalizeGuestCheckoutEmail = normalizeEmail;
+module.exports.sendGuestCheckoutOtpHandler = sendGuestCheckoutOtpHandler;
+module.exports.GUEST_OTP_SEND_GEN2_RUNTIME = GUEST_OTP_SEND_GEN2_RUNTIME;
