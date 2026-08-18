@@ -34,6 +34,14 @@
       "file": "functions/src/auth/adminManagement.js",
       "sharedHandler": "logUserConnectionHandler"
     },
+    "cloud": {
+      "present": false,
+      "project": "secondevienextjsssr",
+      "generation": 2,
+      "region": "europe-west1",
+      "runtime": "nodejs22",
+      "revision": null
+    },
     "trigger": {
       "type": "callable",
       "appCheck": "ENFORCED",

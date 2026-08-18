@@ -4,7 +4,7 @@
   "codebase": "main",
   "baselineCommit": "11abf44f385af6ff239e22707405ab21f36b4f47",
   "files": {
-    "apphostingaudit/manifests/functions-gen2-g5-log-user-connection.json": "460e09190cf38a07efce85663c3f4181c12d2f67a798320ecd7ea6c826bc676f",
+    "apphostingaudit/manifests/functions-gen2-g5-log-user-connection.json": "3d5c7fd170435f1c01c4a9cf32fdc144be999ebeddcc5a0266c3374a4bdea2b5",
     "apphostingaudit/manifests/functions-gen2-g5-auth-session-iam.json": "36f79a829a840b84c9d302fda4ec24f693621bb960b6201caf5282c465a1efe5"
   }
 }

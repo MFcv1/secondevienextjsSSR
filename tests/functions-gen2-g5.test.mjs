@@ -68,6 +68,7 @@ test('G5-A2 autorise uniquement le deploy apres IAM et bloque encore le cutover'
   assert.equal(manifest.preflight.sourceExportsWithParallel, 164);
   assert.equal(manifest.preflight.targetAbsentBeforeCreate, true);
   assert.equal(manifest.functions[0].name, 'logUserConnectionGen2');
+  assert.equal(manifest.functions[0].cloud.present, false);
   assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'logUserConnection');
   assert.equal(manifest.gates.runtimeIamReady, true);
   assert.equal(manifest.gates.deploymentAllowed, true);
