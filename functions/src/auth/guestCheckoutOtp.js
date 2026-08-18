@@ -32,6 +32,18 @@ const GUEST_OTP_SEND_GEN2_RUNTIME = Object.freeze({
     enforceAppCheck: true,
     secrets: [...TRANSACTIONAL_EMAIL_SECRETS, OTP_HMAC_SECRET]
 });
+const GUEST_OTP_VERIFY_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '256MiB',
+    timeoutSeconds: 60,
+    serviceAccount: 'auth-otp-verify-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    enforceAppCheck: true,
+    secrets: [OTP_HMAC_SECRET]
+});
 
 function normalizeEmail(email) {
     const normalized = String(email || '').trim().toLowerCase();
@@ -232,9 +244,7 @@ exports.sendGuestCheckoutOtpGen2 = onCall(
     async (request) => sendGuestCheckoutOtpHandler(request.data, request)
 );
 
-exports.verifyGuestCheckoutOtp = regionalFunctions()
-    .runWith({ enforceAppCheck: true, secrets: [OTP_HMAC_SECRET] })
-    .https.onCall(async (data, context) => {
+const verifyGuestCheckoutOtpHandler = async (data, context) => {
         const startedAt = Date.now();
         const email = normalizeEmail(data?.email);
         const emailHash = sha256(email);
@@ -296,8 +306,16 @@ exports.verifyGuestCheckoutOtp = regionalFunctions()
             phase: 'success',
             emailHash
         });
-        return { success: true, checkoutOtpToken, verifiedForSeconds: Math.floor(VERIFIED_TTL_MS / 1000) };
-    });
+    return { success: true, checkoutOtpToken, verifiedForSeconds: Math.floor(VERIFIED_TTL_MS / 1000) };
+};
+
+exports.verifyGuestCheckoutOtp = regionalFunctions()
+    .runWith({ enforceAppCheck: true, secrets: [OTP_HMAC_SECRET] })
+    .https.onCall(verifyGuestCheckoutOtpHandler);
+exports.verifyGuestCheckoutOtpGen2 = onCall(
+    GUEST_OTP_VERIFY_GEN2_RUNTIME,
+    async (request) => verifyGuestCheckoutOtpHandler(request.data, request)
+);
 
 async function assertGuestCheckoutOtpVerified(uid, email, checkoutOtpToken) {
     const normalizedEmail = normalizeEmail(email);
@@ -327,3 +345,5 @@ module.exports.assertGuestCheckoutOtpVerified = assertGuestCheckoutOtpVerified;
 module.exports.normalizeGuestCheckoutEmail = normalizeEmail;
 module.exports.sendGuestCheckoutOtpHandler = sendGuestCheckoutOtpHandler;
 module.exports.GUEST_OTP_SEND_GEN2_RUNTIME = GUEST_OTP_SEND_GEN2_RUNTIME;
+module.exports.verifyGuestCheckoutOtpHandler = verifyGuestCheckoutOtpHandler;
+module.exports.GUEST_OTP_VERIFY_GEN2_RUNTIME = GUEST_OTP_VERIFY_GEN2_RUNTIME;

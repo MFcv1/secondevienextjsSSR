@@ -147,6 +147,56 @@ test('G5-A4 borne IAM au runtime OTP et aux quatre secrets epingles', () => {
   assert.match(read('package.json'), /configure-functions-gen2-g5-auth-otp-email-iam\.mjs --project secondevienextjsssr --env sandbox/);
 });
 
+test('G5-A5 prepare uniquement verifyGuestCheckoutOtpGen2 avec handler et secret epingle', () => {
+  const source = read('functions/src/auth/guestCheckoutOtp.js');
+  const exports = extractLocalExports(ROOT);
+  const target = GCLOUD_GEN2_TARGETS.verifyGuestCheckoutOtpGen2;
+  assert.ok(exports.some(({ name }) => name === 'verifyGuestCheckoutOtp'));
+  assert.ok(exports.some(({ name }) => name === 'verifyGuestCheckoutOtpGen2'));
+  assert.equal(classificationFor('verifyGuestCheckoutOtpGen2'), 'MIGRATION_PARALLEL');
+  assert.match(source, /const verifyGuestCheckoutOtpHandler = async \(data, context\) =>/);
+  assert.match(source, /exports\.verifyGuestCheckoutOtp = regionalFunctions\(\)[\s\S]*?onCall\(verifyGuestCheckoutOtpHandler\)/);
+  assert.match(source, /exports\.verifyGuestCheckoutOtpGen2 = onCall\(/);
+  assert.match(source, /GUEST_OTP_VERIFY_GEN2_RUNTIME[\s\S]*?enforceAppCheck:\s*true[\s\S]*?secrets:\s*\[OTP_HMAC_SECRET\]/);
+  assert.equal(target.runtimeServiceAccount, 'auth-otp-verify-runtime@secondevienextjsssr.iam.gserviceaccount.com');
+  assert.equal(target.cpu, '167m');
+  assert.equal(target.concurrency, '1');
+  assert.equal(target.maxInstances, '1');
+  assert.deepEqual(target.secrets, ['OTP_HMAC_SECRET=OTP_HMAC_SECRET:1']);
+  assert.doesNotMatch(read('src/kit/config/functionTargets.js'), /verifyGuestCheckoutOtp:\s*'verifyGuestCheckoutOtpGen2'/);
+});
+
+test('G5-A5 borne IAM au runtime de verification OTP et au seul secret HMAC', () => {
+  const iam = read('scripts/configure-functions-gen2-g5-auth-otp-verify-iam.mjs');
+  for (const expected of [
+    /G5_CREATE_AUTH_OTP_VERIFY_RUNTIME/,
+    /SERVICE_ACCOUNT_ID = 'auth-otp-verify-runtime'/,
+    /OTP_HMAC_SECRET', version: '1'/,
+    /roles\/datastore\.user/,
+    /roles\/logging\.logWriter/,
+    /roles\/serviceusage\.serviceUsageConsumer/,
+    /roles\/secretmanager\.secretAccessor/,
+    /userManagedKeys\.length === 0/,
+    /G5_OTP_VERIFY_IAM_EFFECTIVE_PROJECT_MISMATCH/,
+    /G5_OTP_VERIFY_IAM_COMMIT_MISMATCH/,
+  ]) assert.match(iam, expected);
+  assert.doesNotMatch(iam, /roles\/(?:editor|owner|firebaseauth\.admin)/i);
+  assert.match(read('package.json'), /configure-functions-gen2-g5-auth-otp-verify-iam\.mjs --project secondevienextjsssr --env sandbox/);
+});
+
+test('G5-A5 reste fail-closed avant IAM, deploy et verification OTP', () => {
+  const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-verify-guest-checkout-otp.json'));
+  assert.equal(manifest.preflight.sourceExportsWithParallel, 167);
+  assert.equal(manifest.preflight.cloudFunctions, 161);
+  assert.equal(manifest.functions[0].name, 'verifyGuestCheckoutOtpGen2');
+  assert.equal(manifest.functions[0].cloud.present, false);
+  assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'verifyGuestCheckoutOtp');
+  assert.equal(manifest.gates.runtimeIamReady, false);
+  assert.equal(manifest.gates.deploymentAllowed, false);
+  assert.equal(manifest.gates.clientCutoverAllowed, false);
+  assert.equal(manifest.gates.boundedOtpVerificationExecuted, false);
+});
+
 test('G5-A4 prouve le deploy et autorise uniquement le cutover client', () => {
   const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-send-guest-checkout-otp.json'));
   assert.equal(manifest.preflight.sourceExportsWithParallel, 166);

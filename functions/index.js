@@ -228,7 +228,12 @@ exports.verifyMetaConnectionAdmin = verifyMetaConnectionAdmin;
 const { grantAdminOnAuth } = require('./src/auth/grantAdmin');
 const { onRegisteredUserCreated, onRegisteredUserDeleted } = require('./src/auth/userStats');
 const { addAdminUser, removeAdminUser, logUserConnection, logUserConnectionGen2, getUserStats, getUserStatsGen2, syncSuperAdminClaim, ensureAdminAccessRegistry, ensureAdminAccessRegistryGen2 } = require('./src/auth/adminManagement');
-const { sendGuestCheckoutOtp, sendGuestCheckoutOtpGen2, verifyGuestCheckoutOtp } = require('./src/auth/guestCheckoutOtp');
+const {
+  sendGuestCheckoutOtp,
+  sendGuestCheckoutOtpGen2,
+  verifyGuestCheckoutOtp,
+  verifyGuestCheckoutOtpGen2,
+} = require('./src/auth/guestCheckoutOtp');
 const { sendCustomerLoginOtp, verifyCustomerLoginOtp } = require('./src/auth/customerLoginOtp');
 const {
     generatePasskeyRegistrationOptions,
@@ -252,6 +257,7 @@ exports.ensureAdminAccessRegistryGen2 = ensureAdminAccessRegistryGen2;
 exports.sendGuestCheckoutOtp = sendGuestCheckoutOtp;
 exports.sendGuestCheckoutOtpGen2 = sendGuestCheckoutOtpGen2;
 exports.verifyGuestCheckoutOtp = verifyGuestCheckoutOtp;
+exports.verifyGuestCheckoutOtpGen2 = verifyGuestCheckoutOtpGen2;
 exports.sendCustomerLoginOtp = sendCustomerLoginOtp;
 exports.verifyCustomerLoginOtp = verifyCustomerLoginOtp;
 exports.generatePasskeyRegistrationOptions = generatePasskeyRegistrationOptions;

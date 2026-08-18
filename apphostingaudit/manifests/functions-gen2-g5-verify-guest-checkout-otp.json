@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "baselineCommit": "968c40073d3c4f134780d6d05da0c9797a9d79b2",
+    "generatedAt": "2026-08-18T17:12:11Z",
+    "operator": "matthis.fradin2@gmail.com",
+    "wave": "G5_A5_GUEST_OTP_VERIFY_PREPARED_IAM_PENDING"
+  },
+  "deploymentPolicy": {
+    "exactProject": "secondevienextjsssr",
+    "exactCodebase": "main",
+    "maxBatchSize": 1,
+    "forbiddenGlobalSelector": "functions"
+  },
+  "preflight": {
+    "sourceExportsBeforePreparation": 166,
+    "sourceExportsWithParallel": 167,
+    "cloudFunctions": 161,
+    "cloudGen1": 139,
+    "cloudGen2": 22,
+    "legacyOwner": "verifyGuestCheckoutOtp",
+    "legacyVersion": "9",
+    "legacyOwnerPreserved": true,
+    "targetAbsentBeforeCreate": true,
+    "currentClientTarget": "verifyGuestCheckoutOtp",
+    "currentAppHostingBuild": "build-2026-08-18-003",
+    "rollbackAppHostingBuild": "build-2026-08-18-002",
+    "verifiedAt": "2026-08-18T17:13:47Z",
+    "effectiveOperator": "matthis.fradin2@gmail.com",
+    "explicitProjectVerified": "secondevienextjsssr",
+    "otpHmacSecretVersionState": "ENABLED"
+  },
+  "functions": [{
+    "name": "verifyGuestCheckoutOtpGen2",
+    "source": {
+      "export": "verifyGuestCheckoutOtpGen2",
+      "file": "functions/src/auth/guestCheckoutOtp.js",
+      "sharedHandler": "verifyGuestCheckoutOtpHandler"
+    },
+    "cloud": {
+      "present": false,
+      "project": "secondevienextjsssr",
+      "generation": 2,
+      "region": "europe-west1",
+      "runtime": "nodejs22"
+    },
+    "trigger": {
+      "type": "callable",
+      "appCheck": "ENFORCED",
+      "auth": "guest or authenticated Firebase client"
+    },
+    "runtime": {
+      "sourceCpu": "gcf_gen1",
+      "deployCpu": "167m",
+      "memoryMiB": 256,
+      "timeoutSeconds": 60,
+      "concurrency": 1,
+      "minInstances": 0,
+      "maxInstances": 1
+    },
+    "identities": {
+      "runtimeServiceAccount": "auth-otp-verify-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+      "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+      "requiredRuntimeRoles": [
+        "roles/datastore.user",
+        "roles/logging.logWriter",
+        "roles/serviceusage.serviceUsageConsumer"
+      ]
+    },
+    "secrets": [{ "name": "OTP_HMAC_SECRET", "version": "1" }],
+    "dataAndEffects": {
+      "readsWrites": ["sys_ratelimit/guest_checkout_otp_{emailHash}"],
+      "successEffect": "delete otpHash, persist only the checkout token hash and a bounded verification lease",
+      "proofRule": "never display, log, screenshot or persist the OTP, checkout token, HMAC secret, ID token, Custom Token or App Check token"
+    },
+    "clientRegistry": {
+      "logicalName": "verifyGuestCheckoutOtp",
+      "currentTarget": "verifyGuestCheckoutOtp",
+      "cutoverTarget": "verifyGuestCheckoutOtpGen2",
+      "cutoverAllowed": false
+    },
+    "decision": {
+      "classification": "MIGRATION_PARALLEL",
+      "target": "verifyGuestCheckoutOtpGen2",
+      "wave": "G5-A5",
+      "deploymentMaxBatchSize": 1,
+      "rollback": "Keep verifyGuestCheckoutOtp Gen1, endpoint, IAM, secret, source and rate-limit data intact; restore client target and prior App Hosting build after cutover."
+    }
+  }],
+  "gates": {
+    "localTestsRequired": ["test:functions-g5", "test:functions-g4", "test:functions-g0", "test:auth", "lint:functions"],
+    "localTestsPassed": {
+      "test:functions-g5": "16/16",
+      "test:functions-g4": "18/18",
+      "test:functions-g0": "26/26",
+      "test:auth": "77/77",
+      "lint:functions": "PASS",
+      "gitDiffCheck": "PASS"
+    },
+    "runtimeIamReady": false,
+    "runtimeIamVerified": false,
+    "targetAbsentBeforeCreate": true,
+    "deploymentAllowed": false,
+    "clientCutoverAllowed": false,
+    "boundedOtpVerificationExecuted": false
+  },
+  "rollback": {
+    "functionAction": "none; preserve verifyGuestCheckoutOtp Gen1 and any parallel Gen2 target",
+    "clientAction": "keep verifyGuestCheckoutOtp on Gen1 until a green cutover manifest",
+    "dataAction": "none",
+    "secretAction": "none",
+    "g12Action": "none before G12-A"
+  },
+  "verdict": "PREPARED_IAM_AND_DEPLOYMENT_NOT_YET_ALLOWED"
+}

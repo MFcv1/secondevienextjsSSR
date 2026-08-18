@@ -20,7 +20,8 @@ export const PARALLEL_MIGRATION_EXPORTS = new Set([
   'updateUserSessionsGen2',
   'getUserStatsGen2',
   'logUserConnectionGen2',
-  'sendGuestCheckoutOtpGen2'
+  'sendGuestCheckoutOtpGen2',
+  'verifyGuestCheckoutOtpGen2'
 ]);
 
 export const KEEP_GEN2 = new Set([
