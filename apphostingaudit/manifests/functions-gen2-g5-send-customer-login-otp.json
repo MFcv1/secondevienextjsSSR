@@ -5,9 +5,9 @@
     "codebase": "main",
     "environment": "sandbox",
     "baselineCommit": "b96aa21e870db0e7bbad40d7adfc09a30a400573",
-    "generatedAt": "2026-08-18T18:06:00Z",
+    "generatedAt": "2026-08-18T18:17:52Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G5_A6_CUSTOMER_LOGIN_OTP_SEND_BUILD_IDENTITY_REMEDIATION_AUTHORIZED"
+    "wave": "G5_A6_CUSTOMER_LOGIN_OTP_SEND_RUNTIME_PROVEN"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -49,9 +49,9 @@
       "region": "europe-west1",
       "runtime": "nodejs22",
       "state": "ACTIVE",
-      "revision": "sendcustomerloginotpgen2-00001-dex",
+      "revision": "sendcustomerloginotpgen2-00002-kod",
       "createTime": "2026-08-18T18:12:11.959971587Z",
-      "updateTime": "2026-08-18T18:13:23.911187799Z"
+      "updateTime": "2026-08-18T18:16:37.994865917Z"
     },
     "trigger": {
       "type": "callable",
@@ -73,8 +73,7 @@
     },
     "identities": {
       "runtimeServiceAccount": "auth-otp-email-runtime@secondevienextjsssr.iam.gserviceaccount.com",
-      "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com",
-      "desiredBuildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+      "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
       "requiredRuntimeRoles": [
         "roles/datastore.user",
         "roles/logging.logWriter",
@@ -99,7 +98,7 @@
       "logicalName": "sendCustomerLoginOtp",
       "currentTarget": "sendCustomerLoginOtp",
       "cutoverTarget": "sendCustomerLoginOtpGen2",
-      "cutoverAllowed": false
+      "cutoverAllowed": true
     },
     "decision": {
       "classification": "MIGRATION_PARALLEL",
@@ -126,6 +125,38 @@
       "RESEND_API_KEY:1"
     ]
   },
+  "runtimeEvidence": {
+    "verifiedAt": "2026-08-18T18:17:52Z",
+    "initialRevision": "sendcustomerloginotpgen2-00001-dex",
+    "initialBuildIdentityDrift": "default compute service account observed after Firebase CLI create",
+    "remediationTransport": "gcloud-gen2-update",
+    "remediatedRevision": "sendcustomerloginotpgen2-00002-kod",
+    "buildIdentityRemediated": true,
+    "negativeUnauthenticatedWithoutAppCheckHttpStatus": 401,
+    "positiveSendHttpStatus": 200,
+    "positiveSendSuccess": true,
+    "boundedEmailCount": 1,
+    "emailRead": false,
+    "otpDisplayed": false,
+    "otpPersistedByHarness": false,
+    "rateLimitDocument": {
+      "updateTime": "2026-08-18T18:17:19.810Z",
+      "sendCount": 1,
+      "attempts": 0,
+      "status": "active",
+      "otpHashPresent": true,
+      "responseHashPresent": false,
+      "tokenIssueCount": 0
+    },
+    "gen2ErrorCount": 0,
+    "newLegacyEntriesSinceRemediation": 0
+  },
+  "postDeploymentInventory": {
+    "sourceExports": 168,
+    "cloudFunctions": 163,
+    "cloudGen1": 139,
+    "cloudGen2": 24
+  },
   "gates": {
     "localTestsRequired": ["test:functions-g5", "test:functions-g4", "test:functions-g0", "test:auth", "lint:functions"],
     "localTestsPassed": {
@@ -140,17 +171,17 @@
     "runtimeIamVerified": true,
     "targetAbsentBeforeCreate": true,
     "deploymentAllowed": false,
-    "remediationDeploymentAllowed": true,
+    "remediationDeploymentAllowed": false,
     "negativeProbeHttpStatus": 401,
-    "clientCutoverAllowed": false,
-    "boundedOtpSendExecuted": false
+    "clientCutoverAllowed": true,
+    "boundedOtpSendExecuted": true
   },
   "rollback": {
     "functionAction": "none; preserve sendCustomerLoginOtp Gen1 and any parallel Gen2 target",
-    "clientAction": "keep sendCustomerLoginOtp on Gen1 until a green runtime proof",
+    "clientAction": "cut over only the sendCustomerLoginOtp logical registry target through a reversible App Hosting build",
     "dataAction": "none",
     "secretAction": "none",
     "g12Action": "none before G12-A"
   },
-  "verdict": "SINGLE_TARGET_GEN2_BUILD_IDENTITY_REMEDIATION_ALLOWED"
+  "verdict": "SINGLE_TARGET_GEN2_RUNTIME_PROVEN_CLIENT_CUTOVER_ALLOWED"
 }

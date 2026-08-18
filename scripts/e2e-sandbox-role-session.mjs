@@ -48,6 +48,7 @@ if (probeCallable && ![
   'logUserConnectionGen2',
   'ensureAdminAccessRegistryGen2',
   'sendGuestCheckoutOtpGen2',
+  'sendCustomerLoginOtpGen2',
 ].includes(probeCallable)) {
   throw new Error('Callable de probe sandbox non autorise.');
 }
@@ -134,7 +135,7 @@ if (probeCallable) {
         'X-Firebase-AppCheck': appCheckToken.token,
       },
       body: JSON.stringify({
-        data: probeCallable === 'sendGuestCheckoutOtpGen2'
+        data: ['sendGuestCheckoutOtpGen2', 'sendCustomerLoginOtpGen2'].includes(probeCallable)
           ? { email: ROLE_EMAILS.client }
           : {},
       }),

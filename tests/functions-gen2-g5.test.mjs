@@ -267,15 +267,27 @@ test('G5-A6 prepare uniquement sendCustomerLoginOtpGen2 avec runtime OTP reutili
   assert.equal(manifest.preflight.sourceExportsWithParallel, 168);
   assert.equal(manifest.preflight.cloudFunctions, 162);
   assert.equal(manifest.functions[0].cloud.present, true);
-  assert.equal(manifest.functions[0].cloud.revision, 'sendcustomerloginotpgen2-00001-dex');
+  assert.equal(manifest.functions[0].cloud.revision, 'sendcustomerloginotpgen2-00002-kod');
   assert.equal(manifest.iamEvidence.reusedRuntimeFrom, 'G5-A4 sendGuestCheckoutOtpGen2');
   assert.deepEqual(manifest.iamEvidence.forbiddenProjectRoles, []);
   assert.equal(manifest.iamEvidence.userManagedKeyCount, 0);
-  assert.equal(manifest.functions[0].identities.buildServiceAccount, 'projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com');
-  assert.equal(manifest.functions[0].identities.desiredBuildServiceAccount, 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com');
+  assert.equal(manifest.functions[0].identities.buildServiceAccount, 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com');
   assert.equal(manifest.gates.deploymentAllowed, false);
-  assert.equal(manifest.gates.remediationDeploymentAllowed, true);
-  assert.equal(manifest.gates.clientCutoverAllowed, false);
+  assert.equal(manifest.gates.remediationDeploymentAllowed, false);
+  assert.equal(manifest.gates.clientCutoverAllowed, true);
+  assert.equal(manifest.gates.boundedOtpSendExecuted, true);
+  assert.equal(manifest.runtimeEvidence.buildIdentityRemediated, true);
+  assert.equal(manifest.runtimeEvidence.negativeUnauthenticatedWithoutAppCheckHttpStatus, 401);
+  assert.equal(manifest.runtimeEvidence.positiveSendHttpStatus, 200);
+  assert.equal(manifest.runtimeEvidence.boundedEmailCount, 1);
+  assert.equal(manifest.runtimeEvidence.emailRead, false);
+  assert.equal(manifest.runtimeEvidence.otpDisplayed, false);
+  assert.equal(manifest.runtimeEvidence.rateLimitDocument.sendCount, 1);
+  assert.equal(manifest.runtimeEvidence.rateLimitDocument.attempts, 0);
+  assert.equal(manifest.runtimeEvidence.gen2ErrorCount, 0);
+  assert.equal(manifest.runtimeEvidence.newLegacyEntriesSinceRemediation, 0);
+  assert.equal(manifest.postDeploymentInventory.cloudFunctions, 163);
+  assert.equal(manifest.postDeploymentInventory.cloudGen2, 24);
   assert.doesNotMatch(read('src/kit/config/functionTargets.js'), /sendCustomerLoginOtp:\s*'sendCustomerLoginOtpGen2'/);
 });
 
@@ -309,7 +321,8 @@ test('G5-A4 prouve le deploy et autorise uniquement le cutover client', () => {
   assert.equal(rollout.dataAndLogs.quietWindow.newGen1LogEntries, 0);
   const sandboxHarness = read('scripts/e2e-sandbox-role-session.mjs');
   assert.match(sandboxHarness, /'sendGuestCheckoutOtpGen2'/);
-  assert.match(sandboxHarness, /\? \{ email: ROLE_EMAILS\.client \}/);
+  assert.match(sandboxHarness, /'sendCustomerLoginOtpGen2'/);
+  assert.match(sandboxHarness, /includes\(probeCallable\)[\s\S]*?\? \{ email: ROLE_EMAILS\.client \}/);
   const clientRegistry = read('src/kit/config/functionTargets.js');
   const checkout = read('src/kit/commerce/CheckoutView.jsx');
   assert.match(clientRegistry, /sendGuestCheckoutOtp: 'sendGuestCheckoutOtpGen2'/);
@@ -402,6 +415,7 @@ test('G5 injecte le jeton App Check ephemere dans Auth et Functions pendant la r
     'logUserConnectionGen2',
     'ensureAdminAccessRegistryGen2',
     'sendGuestCheckoutOtpGen2',
+    'sendCustomerLoginOtpGen2',
   ]) assert.match(harness, new RegExp(`'${callable}'`));
   assert.match(harness, /accounts:signInWithCustomToken/);
   assert.match(harness, /cloudfunctions\.net\/\$\{probeCallable\}/);
