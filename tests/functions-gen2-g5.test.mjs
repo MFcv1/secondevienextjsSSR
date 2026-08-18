@@ -161,6 +161,9 @@ test('G5-A4 prouve IAM et autorise seulement le deploy cible avant envoi OTP', (
   assert.equal(manifest.gates.deploymentAllowed, true);
   assert.equal(manifest.gates.clientCutoverAllowed, false);
   assert.equal(manifest.gates.realOtpSent, false);
+  const sandboxHarness = read('scripts/e2e-sandbox-role-session.mjs');
+  assert.match(sandboxHarness, /'sendGuestCheckoutOtpGen2'/);
+  assert.match(sandboxHarness, /\? \{ email: ROLE_EMAILS\.client \}/);
 });
 
 test('G5-A3 prouve le deploy et autorise uniquement le cutover client', () => {
@@ -244,7 +247,11 @@ test('G5 injecte le jeton App Check ephemere dans Auth et Functions pendant la r
   assert.match(harness, /context\.route\('\*\*\/\*\.cloudfunctions\.net\/\*\*'/);
   assert.equal((harness.match(/'X-Firebase-AppCheck': appCheckToken\.token/g) || []).length, 4);
   assert.match(harness, /readArg\('expect-user-count'\)/);
-  assert.match(harness, /'logUserConnectionGen2', 'ensureAdminAccessRegistryGen2'/);
+  for (const callable of [
+    'logUserConnectionGen2',
+    'ensureAdminAccessRegistryGen2',
+    'sendGuestCheckoutOtpGen2',
+  ]) assert.match(harness, new RegExp(`'${callable}'`));
   assert.match(harness, /accounts:signInWithCustomToken/);
   assert.match(harness, /cloudfunctions\.net\/\$\{probeCallable\}/);
   assert.match(harness, /migrated: typeof callablePayload\?\.result\?\.migrated === 'boolean'/);

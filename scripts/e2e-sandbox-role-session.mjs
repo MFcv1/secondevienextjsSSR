@@ -42,7 +42,11 @@ if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
 if (!firebaseAppId) {
   throw new Error('VITE_FIREBASE_APP_ID manque pour le jeton App Check de recette.');
 }
-if (probeCallable && !['logUserConnectionGen2', 'ensureAdminAccessRegistryGen2'].includes(probeCallable)) {
+if (probeCallable && ![
+  'logUserConnectionGen2',
+  'ensureAdminAccessRegistryGen2',
+  'sendGuestCheckoutOtpGen2',
+].includes(probeCallable)) {
   throw new Error('Callable de probe sandbox non autorise.');
 }
 if (probeCallable && !firebaseApiKey) {
@@ -121,7 +125,11 @@ if (probeCallable) {
         'content-type': 'application/json',
         'X-Firebase-AppCheck': appCheckToken.token,
       },
-      body: JSON.stringify({ data: {} }),
+      body: JSON.stringify({
+        data: probeCallable === 'sendGuestCheckoutOtpGen2'
+          ? { email: ROLE_EMAILS.client }
+          : {},
+      }),
     },
   );
   const callablePayload = await callableResponse.json().catch(() => null);
