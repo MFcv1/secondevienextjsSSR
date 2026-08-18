@@ -68,13 +68,13 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | baseline avant le checkpoint Monitoring | `25daf810309dc3329cfeb0fb19be0f1790fe608a` |
 | worktree attendu a la reprise | HEAD `25405d0`; preparation, preuve cloud et registre client G5-A6 commites; verifier le statut sans les rejouer |
 | phases fermees | G0, G1, G2-A, G2-B 13/13, G3 et G4 |
-| phase active | G5-A6: terminer le cutover App Hosting `005`, puis preparer le lot Auth A7-A9 |
+| phase active | G5-A7-A9: lot Auth OTP verification et passkey en preparation |
 | inventaire courant | 168 exports locaux, 163 cloud, 139 Gen1, 24 Gen2, 8 schedulers, 2 queues, 7 Eventarc |
 | cibles paralleles actives | cinq analytics G4, cinq Auth G5 basculees et `sendCustomerLoginOtpGen2` ACTIVE; toutes les Gen1 restent intactes |
-| cutover client | App Hosting sert `build-2026-08-18-004`; rollback exact `build-2026-08-18-003`, deja prouve par drill reel |
+| cutover client | App Hosting sert `build-2026-08-18-005`; rollback exact `build-2026-08-18-004`, prouve par drill reel |
 | observation G4 | G4-A1 a G4-A5 fermees en validation acceleree; Gen1 et rollbacks preserves |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | finir A6 sans refaire son deploy/probe, puis grouper `verifyCustomerLoginOtpGen2` et les options/verifications passkey compatibles dans un seul cycle App Hosting |
+| prochain lot | A6 est fermee; grouper `verifyCustomerLoginOtpGen2` et les options/verifications passkey compatibles dans un seul cycle App Hosting |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle

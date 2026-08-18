@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "wave": "G5-A6_CLOSED_OPTIMIZED_VALIDATION",
+    "operator": "matthis.fradin2@gmail.com",
+    "sourceCommit": "25405d0",
+    "recordedAt": "2026-08-18T19:36:00Z"
+  },
+  "function": {
+    "name": "sendCustomerLoginOtpGen2",
+    "legacyOwnerPreserved": "sendCustomerLoginOtp",
+    "state": "ACTIVE",
+    "revision": "sendcustomerloginotpgen2-00002-kod",
+    "runtime": "nodejs22"
+  },
+  "appHosting": {
+    "backend": "secondevie-next-sandbox",
+    "region": "europe-west4",
+    "previousBuild": "build-2026-08-18-004",
+    "activeBuild": "build-2026-08-18-005",
+    "build": {
+      "name": "build-2026-08-18-005",
+      "state": "READY",
+      "createTime": "2026-08-18T19:20:04.238868984Z",
+      "updateTime": "2026-08-18T19:24:07.202049Z",
+      "sourceArchive": "gs://firebaseapphosting-sources-231220287936-europe-west4/secondevie-next-sandbox--g5a6-25405d0.zip"
+    },
+    "cutover": {
+      "name": "g5-a6-cutover-20260818-001",
+      "state": "SUCCEEDED",
+      "createTime": "2026-08-18T19:24:40.772432719Z",
+      "updateTime": "2026-08-18T19:24:46.716595Z"
+    },
+    "rollbackDrill": {
+      "name": "g5-a6-rollback-20260818-001",
+      "state": "SUCCEEDED",
+      "build": "build-2026-08-18-004",
+      "createTime": "2026-08-18T19:26:33.643714688Z",
+      "updateTime": "2026-08-18T19:29:52.406944Z"
+    },
+    "finalActivation": {
+      "name": "g5-a6-reapply-20260818-001",
+      "state": "SUCCEEDED",
+      "build": "build-2026-08-18-005",
+      "createTime": "2026-08-18T19:31:01.516906471Z",
+      "updateTime": "2026-08-18T19:34:58.026255Z"
+    },
+    "servedChecks": {
+      "homeStatus": 200,
+      "adminStatus": 200,
+      "oldBuild004DeploymentId": "sv-msyyi4ll-f2c626f7e9ef",
+      "newBuild005DeploymentId": "sv-msz1t20g-7e8775898e9c",
+      "oldBuild004TabRenderedAfterReactivation": true,
+      "oldBuild004SessionStillAuthenticated": true,
+      "registeredUsers": 34
+    }
+  },
+  "dataAndLogs": {
+    "quietWindowFrom": "2026-08-18T19:24:40Z",
+    "gen2Errors": 0,
+    "newGen1LogEntries": 0,
+    "rateLimitDocument": {
+      "updateTime": "2026-08-18T18:17:19.810Z",
+      "sendCount": 1,
+      "attempts": 0,
+      "status": "active",
+      "otpHashPresent": true,
+      "responseHashPresent": false,
+      "tokenIssueCount": 0,
+      "unchangedDuringCutover": true
+    }
+  },
+  "gates": {
+    "functionDeployReplayed": false,
+    "otpSendReplayed": false,
+    "buildValidateOnlyPassed": true,
+    "homeAndAdminHttp200": true,
+    "oldTabCompatible": true,
+    "rollbackDrillPassed": true,
+    "finalActivationPassed": true,
+    "nextAuthBatchAllowed": true
+  },
+  "rollback": {
+    "exactAppHostingBuild": "build-2026-08-18-004",
+    "functionAction": "none; preserve sendCustomerLoginOtp and sendCustomerLoginOtpGen2",
+    "dataAction": "none",
+    "iamSecretsAction": "none",
+    "g12Action": "none before G12-A"
+  },
+  "verdict": "G5_A6_CLOSED_GEN2_CUSTOMER_OTP_SEND_ACTIVE_GEN1_PRESERVED_A7_A9_ALLOWED"
+}

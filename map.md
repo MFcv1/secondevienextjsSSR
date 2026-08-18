@@ -1119,10 +1119,12 @@ reactivation finale: ancien onglet `003` authentifie, routes 200, compteur 34,
 verification OTP HTTP 200 par transport RSA-OAEP process-local, zero erreur
 Gen2, zero appel Gen1 et donnees stables. Aucune Gen1, IAM, secret ou donnee
 n'est retiree.
-G5-A6 `sendCustomerLoginOtpGen2` est ACTIVE en revision
+G5-A6 `sendCustomerLoginOtpGen2` est fermee en revision
 `sendcustomerloginotpgen2-00002-kod`, avec runtime et builder conformes, refus
-401 puis envoi sandbox 200 sans lecture de l'OTP. Le registre client est
-commite; App Hosting reste sur `build-2026-08-18-004` jusqu'au cutover `005`.
+401 puis envoi sandbox 200 sans lecture de l'OTP. App Hosting sert
+`build-2026-08-18-005` apres cutover, rollback reel `004` et reactivation;
+une session admin ouverte sous `004` est restee authentifiee apres le retour
+sur `005`, sans nouvel appel Gen1 ni mutation de la donnee OTP.
 Inventaire: 168 local, 163 cloud, 139 Gen1, 24 Gen2, 8 schedulers, 2 queues et
 7 Eventarc. Apres fermeture A6, A7-A9 sont prepares comme un lot Auth coherent:
 deploys Functions individuellement allowlistes, mais tests, build App Hosting,
