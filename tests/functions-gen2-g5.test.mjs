@@ -123,7 +123,7 @@ test('G5-A4 prepare uniquement sendGuestCheckoutOtpGen2 avec handler et secrets 
     'OTP_HMAC_SECRET=OTP_HMAC_SECRET:1'
   ]);
   assert.ok(target.environmentVariables.includes('TRANSACTIONAL_EMAIL_PROVIDER=gmail'));
-  assert.doesNotMatch(read('src/kit/config/functionTargets.js'), /sendGuestCheckoutOtp:\s*'sendGuestCheckoutOtpGen2'/);
+  assert.match(read('src/kit/config/functionTargets.js'), /sendGuestCheckoutOtp:\s*'sendGuestCheckoutOtpGen2'/);
 });
 
 test('G5-A4 borne IAM au runtime OTP et aux quatre secrets epingles', () => {
@@ -154,7 +154,8 @@ test('G5-A4 prouve le deploy et autorise uniquement le cutover client', () => {
   assert.equal(manifest.functions[0].name, 'sendGuestCheckoutOtpGen2');
   assert.equal(manifest.functions[0].cloud.present, true);
   assert.equal(manifest.functions[0].cloud.revision, 'sendguestcheckoutotpgen2-00001-neh');
-  assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'sendGuestCheckoutOtp');
+  assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'sendGuestCheckoutOtpGen2');
+  assert.equal(manifest.functions[0].clientRegistry.hostedBuildTarget, 'sendGuestCheckoutOtp');
   assert.equal(manifest.gates.runtimeIamReady, true);
   assert.equal(manifest.gates.runtimeIamVerified, true);
   assert.deepEqual(manifest.iamEvidence.forbiddenProjectRoles, []);
@@ -169,6 +170,11 @@ test('G5-A4 prouve le deploy et autorise uniquement le cutover client', () => {
   const sandboxHarness = read('scripts/e2e-sandbox-role-session.mjs');
   assert.match(sandboxHarness, /'sendGuestCheckoutOtpGen2'/);
   assert.match(sandboxHarness, /\? \{ email: ROLE_EMAILS\.client \}/);
+  const clientRegistry = read('src/kit/config/functionTargets.js');
+  const checkout = read('src/kit/commerce/CheckoutView.jsx');
+  assert.match(clientRegistry, /sendGuestCheckoutOtp: 'sendGuestCheckoutOtpGen2'/);
+  assert.match(checkout, /httpsCallable\(functions, getFunctionTarget\('sendGuestCheckoutOtp'\)\)/);
+  assert.doesNotMatch(checkout, /httpsCallable\(functions, 'sendGuestCheckoutOtp'\)/);
 });
 
 test('G5-A3 prouve le deploy et autorise uniquement le cutover client', () => {

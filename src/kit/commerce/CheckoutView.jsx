@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { ArrowLeft, CreditCard, Truck, AlertCircle, Landmark, Wallet, Loader2, TicketPercent, Check, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { functions, db } from '../config/firebase';
+import { getFunctionTarget } from '../config/functionTargets';
 import KIT_CONFIG from '../config/constants';
 import { httpsCallable } from 'firebase/functions';
 import { doc, getDoc } from 'firebase/firestore';
@@ -687,7 +688,7 @@ const CheckoutView = ({
 
         const startedAt = startClientPerf();
         try {
-            const sendOtp = httpsCallable(functions, 'sendGuestCheckoutOtp');
+            const sendOtp = httpsCallable(functions, getFunctionTarget('sendGuestCheckoutOtp'));
             await sendOtp({ email: normalizedCheckoutEmail });
             logClientPerf('checkout.guest.sendGuestCheckoutOtp', startedAt, { phase: 'success' });
             setGuestOtp(prev => ({

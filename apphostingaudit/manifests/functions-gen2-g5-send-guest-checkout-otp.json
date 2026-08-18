@@ -89,7 +89,8 @@
     },
     "clientRegistry": {
       "logicalName": "sendGuestCheckoutOtp",
-      "currentTarget": "sendGuestCheckoutOtp",
+      "currentTarget": "sendGuestCheckoutOtpGen2",
+      "hostedBuildTarget": "sendGuestCheckoutOtp",
       "cutoverTarget": "sendGuestCheckoutOtpGen2",
       "cutoverAllowed": true
     },
@@ -177,5 +178,5 @@
     "secretAction": "none",
     "g12Action": "none before G12-A"
   },
-  "verdict": "GEN2_GREEN_CLIENT_CUTOVER_ALLOWED"
+  "verdict": "GEN2_GREEN_SOURCE_CUTOVER_PREPARED_BUILD_PENDING"
 }
