@@ -155,7 +155,7 @@ test('G5-A4 prouve le deploy et autorise uniquement le cutover client', () => {
   assert.equal(manifest.functions[0].cloud.present, true);
   assert.equal(manifest.functions[0].cloud.revision, 'sendguestcheckoutotpgen2-00001-neh');
   assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'sendGuestCheckoutOtpGen2');
-  assert.equal(manifest.functions[0].clientRegistry.hostedBuildTarget, 'sendGuestCheckoutOtp');
+  assert.equal(manifest.functions[0].clientRegistry.hostedBuildTarget, 'sendGuestCheckoutOtpGen2');
   assert.equal(manifest.gates.runtimeIamReady, true);
   assert.equal(manifest.gates.runtimeIamVerified, true);
   assert.deepEqual(manifest.iamEvidence.forbiddenProjectRoles, []);
@@ -167,6 +167,14 @@ test('G5-A4 prouve le deploy et autorise uniquement le cutover client', () => {
   assert.equal(manifest.deploymentEvidence.positiveProbe.otpRead, false);
   assert.equal(manifest.deploymentEvidence.logs.gen2ErrorCount, 0);
   assert.equal(manifest.deploymentEvidence.logs.newLegacyEntriesSinceDeploy, 0);
+  assert.equal(manifest.appHostingCutover.build, 'build-2026-08-18-003');
+  assert.equal(manifest.appHostingCutover.previousBuild, 'build-2026-08-18-002');
+  assert.equal(manifest.appHostingCutover.quietWindowGen2Errors, 0);
+  const rollout = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-send-guest-checkout-otp-rollout.json'));
+  assert.equal(rollout.appHosting.rollout.state, 'SUCCEEDED');
+  assert.equal(rollout.appHosting.servedChecks.oldBuild002TabRenderedAfterCutover, true);
+  assert.equal(rollout.dataAndLogs.positiveProbe.boundedEmailCount, 1);
+  assert.equal(rollout.dataAndLogs.quietWindow.newGen1LogEntries, 0);
   const sandboxHarness = read('scripts/e2e-sandbox-role-session.mjs');
   assert.match(sandboxHarness, /'sendGuestCheckoutOtpGen2'/);
   assert.match(sandboxHarness, /\? \{ email: ROLE_EMAILS\.client \}/);

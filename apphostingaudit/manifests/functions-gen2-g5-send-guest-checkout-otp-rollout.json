@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "wave": "G5-A4_CLOSED_ACCELERATED_VALIDATION",
+    "operator": "matthis.fradin2@gmail.com",
+    "sourceCommit": "0fd99afe1e329965c6b7421cf7ab2713870b795d",
+    "recordedAt": "2026-08-18T17:07:00Z"
+  },
+  "reconciliation": {
+    "sourceExports": 166,
+    "cloudFunctions": 161,
+    "cloudGen1": 139,
+    "cloudGen2": 22,
+    "schedulers": 8,
+    "queues": 2,
+    "eventarcTriggers": 7,
+    "drift": "EXPECTED_NINE_PARALLEL_TARGETS"
+  },
+  "function": {
+    "name": "sendGuestCheckoutOtpGen2",
+    "legacyOwnerPreserved": "sendGuestCheckoutOtp",
+    "state": "ACTIVE",
+    "generation": 2,
+    "region": "europe-west1",
+    "revision": "sendguestcheckoutotpgen2-00001-neh",
+    "runtime": "nodejs22",
+    "runtimeServiceAccount": "auth-otp-email-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "cpu": "167m",
+    "memory": "256Mi",
+    "timeoutSeconds": 60,
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "transportInvoker": "allUsers",
+    "appCheck": "ENFORCED",
+    "emailProvider": "gmail",
+    "secrets": [
+      { "name": "GMAIL_EMAIL", "version": "2" },
+      { "name": "GMAIL_PASSWORD", "version": "5" },
+      { "name": "OTP_HMAC_SECRET", "version": "1" },
+      { "name": "RESEND_API_KEY", "version": "1" }
+    ]
+  },
+  "appHosting": {
+    "backend": "secondevie-next-sandbox",
+    "region": "europe-west4",
+    "previousBuild": "build-2026-08-18-002",
+    "build": {
+      "name": "build-2026-08-18-003",
+      "state": "READY",
+      "createTime": "2026-08-18T16:58:54.293572928Z",
+      "updateTime": "2026-08-18T17:02:57.201067Z",
+      "sourceArchive": "gs://firebaseapphosting-sources-231220287936-europe-west4/secondevie-next-sandbox--g5a4-0fd99af.zip",
+      "sourceArchiveSize": 96990075,
+      "sourceArchiveSha256": "9d929aef36e6a9ce56dfc4e432f5596a254236f95e8c6d62544085d774cc60f8"
+    },
+    "rollout": {
+      "name": "g5-a4-cutover-20260818-001",
+      "validateOnly": true,
+      "state": "SUCCEEDED",
+      "createTime": "2026-08-18T17:03:55.095836152Z",
+      "updateTime": "2026-08-18T17:04:05.817634Z",
+      "trafficPercent": 100
+    },
+    "servedChecks": {
+      "homeStatus": 200,
+      "adminStatus": 200,
+      "oldBuild002DeploymentId": "sv-msyuycqj-98f66ae1f18c",
+      "newBuild003DeploymentId": "sv-msywre1e-0ac9312dec38",
+      "oldBuild002TabRenderedAfterCutover": true,
+      "oldBuild002SessionStillAuthenticated": true,
+      "newBuild003AdminRendered": true
+    }
+  },
+  "authentication": {
+    "account": "loa.gto15@gmail.com",
+    "session": "ephemeral Firebase Custom Token with AAL2 passkey claims",
+    "tokenDisplayed": false,
+    "tokenLogged": false,
+    "tokenPersisted": false,
+    "realLoginCeremonyTested": false,
+    "postCutoverAdminSession": "PASS",
+    "registeredUsers": 34
+  },
+  "dataAndLogs": {
+    "positiveProbe": {
+      "executedAt": "2026-08-18T16:33:10Z",
+      "callable": "sendGuestCheckoutOtpGen2",
+      "httpStatus": 200,
+      "success": true,
+      "boundedEmailCount": 1,
+      "otpRead": false,
+      "sensitiveValuePersisted": false
+    },
+    "rateLimitDocument": {
+      "updateTime": "2026-08-18T16:33:10.371Z",
+      "sendCount": 1,
+      "attempts": 0,
+      "unchangedAfterCutover": true,
+      "otpRead": false
+    },
+    "quietWindow": {
+      "from": "2026-08-18T17:03:55Z",
+      "snapshotAt": "2026-08-18T17:06:38.517Z",
+      "gen2LogEntries": 0,
+      "gen2Errors": 0,
+      "newGen1LogEntries": 0,
+      "newGen1Errors": 0,
+      "result": "PASS"
+    }
+  },
+  "gates": {
+    "functionsG5": "13/13",
+    "functionsG4": "18/18",
+    "functionsG0": "26/26",
+    "auth": "77/77",
+    "adminCustomTokenPostCutover": "PASS",
+    "oldTabCompatible": true,
+    "homeAndAdminHttp200": true,
+    "singleBoundedOtpEmail": true,
+    "gen2ErrorsZero": true,
+    "legacyTrafficAfterCutoverZero": true,
+    "nextCloudTargetAllowed": true
+  },
+  "rollback": {
+    "exactAppHostingBuild": "build-2026-08-18-002",
+    "exactAction": "create a validated App Hosting rollout on backend secondevie-next-sandbox in europe-west4 referencing existing READY build build-2026-08-18-002",
+    "sourceChange": "restore sendGuestCheckoutOtp: 'sendGuestCheckoutOtp' in src/kit/config/functionTargets.js and the direct Gen1 target in CheckoutView before any later sandbox rollout",
+    "functionAction": "none; preserve sendGuestCheckoutOtp and sendGuestCheckoutOtpGen2",
+    "dataAction": "none",
+    "iamSecretsAction": "none",
+    "g12Action": "none before G12-A"
+  },
+  "verdict": "G5_A4_CLOSED_GEN2_GUEST_OTP_SEND_ACTIVE_GEN1_PRESERVED_NEXT_TARGET_ALLOWED"
+}

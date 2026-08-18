@@ -471,13 +471,14 @@ Arreter la vague au premier:
 
 ## 10. Point de reprise
 
-G5-A1 a G5-A3 sont fermees. `getUserStatsGen2` est ACTIVE en revision
+G5-A1 a G5-A4 sont fermees. `getUserStatsGen2` est ACTIVE en revision
 `getuserstatsgen2-00001-niv`; `logUserConnectionGen2` est ACTIVE en revision
 `loguserconnectiongen2-00001-fab`; `ensureAdminAccessRegistryGen2` est ACTIVE en revision
-`ensureadminaccessregistrygen2-00001-lak`; `g5-a3-cutover-20260818-001` sert
-build `002`. Ancien onglet `001`, routes et appel 200, registre inchange, zero
-erreur et zero appel Gen1 sont conformes. Rollback exact `001`; prochaine cible
-unique `sendGuestCheckoutOtpGen2`. Le harnais injecte App Check sur Firebase
+`ensureadminaccessregistrygen2-00001-lak`; `sendGuestCheckoutOtpGen2` est ACTIVE
+en revision `sendguestcheckoutotpgen2-00001-neh`; `g5-a4-cutover-20260818-001`
+sert build `003`. Ancien onglet `002`, routes 200, compteur 34, unique envoi OTP
+sandbox sans lecture du code, zero erreur et zero appel Gen1 sont conformes.
+Rollback exact `002`; prochaine cible unique `verifyGuestCheckoutOtpGen2`. Le harnais injecte App Check sur Firebase
 Auth et Functions; Custom Token et App Check restent uniquement en memoire.
-Inventaire courant: 165 exports locaux, 160 cloud, 139 Gen1, 21 Gen2,
+Inventaire courant: 166 exports locaux, 161 cloud, 139 Gen1, 22 Gen2,
 8 schedulers, 2 queues et 7 Eventarc. Les six retraits G3 restent differes a G12-A.

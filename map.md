@@ -1100,6 +1100,16 @@ erreur Gen2 et zero nouvel appel Gen1. Rollback exact
 `build-2026-08-18-001`; aucune Gen1, IAM, secret ou donnee retiree. Prochaine
 cible unique `sendGuestCheckoutOtpGen2`. Inventaire: 165 local, 160 cloud,
 139 Gen1, 21 Gen2, 8 schedulers, 2 queues et 7 Eventarc.
+G5-A4 a ferme `sendGuestCheckoutOtpGen2` avec le handler Gen1, App Check,
+CPU 167m, 256 MiB, 60 s, concurrence/max 1, runtime
+`auth-otp-email-runtime`, Gmail et les quatre versions de secrets epinglees.
+La revision `sendguestcheckoutotpgen2-00001-neh` est ACTIVE. Le rollout
+`g5-a4-cutover-20260818-001` sert `build-2026-08-18-003`: ancien onglet `002`
+authentifie et rendu, routes 200, compteur admin 34, un seul envoi OTP sandbox
+HTTP 200 sans lecture du code, zero erreur Gen2 et zero nouvel appel Gen1.
+Rollback exact `build-2026-08-18-002`; aucune Gen1, IAM, secret ou donnee
+retiree. Prochaine cible unique `verifyGuestCheckoutOtpGen2`. Inventaire:
+166 local, 161 cloud, 139 Gen1, 22 Gen2, 8 schedulers, 2 queues et 7 Eventarc.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.

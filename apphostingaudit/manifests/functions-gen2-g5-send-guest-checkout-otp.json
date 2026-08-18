@@ -7,7 +7,7 @@
     "baselineCommit": "1702b9001ff313573b9c3a3028ed93ff334a64e3",
     "generatedAt": "2026-08-18T16:24:55Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G5_A4_GUEST_OTP_SEND_DEPLOYED_CUTOVER_ALLOWED"
+    "wave": "G5_A4_GUEST_OTP_SEND_CLOSED"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -90,7 +90,7 @@
     "clientRegistry": {
       "logicalName": "sendGuestCheckoutOtp",
       "currentTarget": "sendGuestCheckoutOtpGen2",
-      "hostedBuildTarget": "sendGuestCheckoutOtp",
+      "hostedBuildTarget": "sendGuestCheckoutOtpGen2",
       "cutoverTarget": "sendGuestCheckoutOtpGen2",
       "cutoverAllowed": true
     },
@@ -171,6 +171,18 @@
     "clientCutoverAllowed": true,
     "realOtpSent": true
   },
+  "appHostingCutover": {
+    "build": "build-2026-08-18-003",
+    "rollout": "g5-a4-cutover-20260818-001",
+    "state": "SUCCEEDED",
+    "trafficPercent": 100,
+    "previousBuild": "build-2026-08-18-002",
+    "oldTabCompatible": true,
+    "homeAndAdminHttp200": true,
+    "postCutoverAdminUserCount": 34,
+    "quietWindowGen2Errors": 0,
+    "quietWindowNewGen1Entries": 0
+  },
   "rollback": {
     "functionAction": "none; preserve sendGuestCheckoutOtp Gen1 and any parallel Gen2 target",
     "clientAction": "keep sendGuestCheckoutOtp on Gen1 until a green cutover manifest",
@@ -178,5 +190,5 @@
     "secretAction": "none",
     "g12Action": "none before G12-A"
   },
-  "verdict": "GEN2_GREEN_SOURCE_CUTOVER_PREPARED_BUILD_PENDING"
+  "verdict": "G5_A4_CLOSED_GEN2_ACTIVE_GEN1_PRESERVED"
 }

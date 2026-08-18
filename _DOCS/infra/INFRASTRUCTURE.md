@@ -134,7 +134,7 @@ cibles Instagram direct absentes du cloud et placees sous
 un deploiement global. Le detail machine est dans
 `apphostingaudit/manifests/functions-g0.json`.
 
-Etat courant du chantier Gen2 au 2026-08-18: G4 analytics et G5-A1 a G5-A3 sont fermees.
+Etat courant du chantier Gen2 au 2026-08-18: G4 analytics et G5-A1 a G5-A4 sont fermees.
 G5-A1 ajoute
 `getUserStatsGen2`, ACTIVE en revision `getuserstatsgen2-00001-niv`, avec
 runtime `auth-reader-runtime`, CPU 167m, 512 MiB, 300 s, concurrence/max 1 et
@@ -154,7 +154,14 @@ G5-A3 ajoute `ensureAdminAccessRegistryGen2`, ACTIVE en revision
 `002`: ancien onglet `001` sain, routes et appel Gen2 200, registre inchange,
 zero erreur et zero appel Gen1. Inventaire: 165 local, 160 cloud, 139 Gen1,
 21 Gen2, 8 schedulers, 2 queues et 7 Eventarc. Rollback exact `001`; aucune
-Gen1, IAM, secret ou donnee n'est retiree avant G12-A.
+Gen1, IAM, secret ou donnee n'est retiree avant G12-A. G5-A4 ajoute ensuite
+`sendGuestCheckoutOtpGen2`, ACTIVE en revision
+`sendguestcheckoutotpgen2-00001-neh`, runtime `auth-otp-email-runtime`, Gmail,
+App Check et quatre secrets epingles. Le rollout
+`g5-a4-cutover-20260818-001` sert `build-2026-08-18-003`: ancien onglet `002`
+sain, routes 200, un seul OTP sandbox emis sans lecture du code, zero erreur et
+zero appel Gen1 pendant la quiet-window. Inventaire: 166 local, 161 cloud,
+139 Gen1, 22 Gen2, 8 schedulers, 2 queues et 7 Eventarc. Rollback exact `002`.
 
 Depuis G1 le 2026-08-15, Firestore `(default)` `eur3` porte delete protection,
 PITR sept jours, un backup quotidien conserve quatorze jours et un backup
