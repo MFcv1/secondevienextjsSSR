@@ -2628,6 +2628,14 @@ cutover, rollback et quiet-window une seule fois pour le lot. Une preuve
 positive/negative par famille de risque suffit; ne repete ni OTP, ni e-mail,
 ni inventaire/IAM global sans drift.
 
+Budget d execution: lis une seule fois les sections utiles de map.md et du
+chapitre Auth, prepare tout le code du lot avant de lancer les tests, puis lance
+les suites ciblees une fois. Ne les relance qu apres un correctif pertinent.
+Pour le cloud, fais un controle frais au debut et un a chaque transition reelle;
+reutilise les uploads et sessions de poll existants. N emets pas de checkpoints
+repetitifs: communique uniquement une progression concrete, un drift ou la
+fermeture du lot.
+
 Autonomie: les operations sandbox non destructives, Custom Tokens et jetons
 App Check ephemeres sont autorises sans confirmation. Ils restent en memoire,
 non affiches, non journalises et non persistants. Continue automatiquement

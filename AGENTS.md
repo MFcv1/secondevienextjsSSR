@@ -159,7 +159,11 @@ Plan temporaire de reprise explicitement demande:
   La suite s'execute par lots Auth coherents: deploiements Functions allowlistes
   individuellement, puis un build, un cutover, un rollback et une observation
   groupes par lot. Les tests sont lances une fois par lot et seulement pour les
-  flux touches. Les Custom Tokens et jetons App Check ephemeres du harnais
+  flux touches. A la reprise, ne relire que le checkpoint et les sections
+  code/documentation directement touchees; ne pas recharger le journal complet.
+  Un etat cloud frais par transition suffit; reutiliser les sessions de poll et
+  ne pas relancer un test vert sans changement du code concerne. Les Custom
+  Tokens et jetons App Check ephemeres du harnais
   sandbox sont autorises sans confirmation intermediaire; ils ne sont ni
   affiches, ni journalises, ni persistes. Aucun retrait Gen1 avant G12-A, aucun
   nettoyage IAM/secrets/code avant G12-B, aucune production/Stripe live. Les
