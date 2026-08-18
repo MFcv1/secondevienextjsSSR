@@ -17,6 +17,7 @@ const readArg = (name, fallback = '') => {
 const role = readArg('role').trim().toLowerCase();
 const expectedQuote = readArg('expect-quote').trim().toUpperCase();
 const expectedUserCount = readArg('expect-user-count').trim();
+const probeCallable = readArg('probe-callable').trim();
 const baseUrl = readArg('base-url', process.env.NEXT_BASE_URL || SANDBOX_URL).replace(/\/$/, '');
 const headed = process.argv.includes('--headed');
 const keepOpen = process.argv.includes('--keep-open');
@@ -24,6 +25,7 @@ const projectId = process.env.FIREBASE_PROJECT_ID
   || process.env.VITE_FIREBASE_PROJECT_ID
   || SANDBOX_PROJECT_ID;
 const firebaseAppId = process.env.VITE_FIREBASE_APP_ID || process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '';
+const firebaseApiKey = process.env.VITE_FIREBASE_API_KEY || process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '';
 
 if (!Object.hasOwn(ROLE_EMAILS, role)) {
   throw new Error('Role requis: --role=client ou --role=admin.');
@@ -39,6 +41,12 @@ if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
 }
 if (!firebaseAppId) {
   throw new Error('VITE_FIREBASE_APP_ID manque pour le jeton App Check de recette.');
+}
+if (probeCallable && probeCallable !== 'logUserConnectionGen2') {
+  throw new Error('Callable de probe sandbox non autorise.');
+}
+if (probeCallable && !firebaseApiKey) {
+  throw new Error('VITE_FIREBASE_API_KEY manque pour la probe Auth sandbox.');
 }
 if (expectedQuote && !/^DEV-\d{8}-[A-Z0-9]{4,12}$/.test(expectedQuote)) {
   throw new Error('Reference devis invalide pour la recette.');
@@ -87,6 +95,41 @@ const developerClaims = role === 'admin'
   : { authMethod: 'email_otp', authAssurance: 'aal1', userVerified: false };
 const customToken = await auth.createCustomToken(user.uid, developerClaims);
 const appCheckToken = await admin.appCheck().createToken(firebaseAppId, { ttlMillis: 30 * 60 * 1000 });
+let callableProbe = null;
+if (probeCallable) {
+  const probeCustomToken = await auth.createCustomToken(user.uid, developerClaims);
+  const authResponse = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${firebaseApiKey}`,
+    {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'X-Firebase-AppCheck': appCheckToken.token,
+      },
+      body: JSON.stringify({ token: probeCustomToken, returnSecureToken: true }),
+    },
+  );
+  if (!authResponse.ok) throw new Error('Echange Custom Token de probe refuse.');
+  const authPayload = await authResponse.json();
+  if (!authPayload?.idToken) throw new Error('ID Token de probe absent.');
+  const callableResponse = await fetch(
+    `https://europe-west1-${SANDBOX_PROJECT_ID}.cloudfunctions.net/${probeCallable}`,
+    {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${authPayload.idToken}`,
+        'content-type': 'application/json',
+        'X-Firebase-AppCheck': appCheckToken.token,
+      },
+      body: JSON.stringify({ data: {} }),
+    },
+  );
+  const callablePayload = await callableResponse.json().catch(() => null);
+  if (!callableResponse.ok || callablePayload?.result?.success !== true) {
+    throw new Error('Callable de probe sandbox refuse.');
+  }
+  callableProbe = { name: probeCallable, httpStatus: callableResponse.status, success: true };
+}
 const runId = `sandbox_role_${role}_${crypto.randomUUID()}`;
 const targetPath = role === 'admin' ? '/admin' : '/mes-commandes';
 const browser = await chromium.launch({ headless: !headed });
@@ -164,6 +207,7 @@ try {
     target: `${baseUrl}${targetPath}`,
     sessionType: 'ephemeral_custom_token',
     realLoginCeremonyTested: false,
+    callableProbe,
     userCountVerified: expectedUserCount ? Number(expectedUserCount) : null,
     quoteVerified: Boolean(expectedQuote),
   }, null, 2));

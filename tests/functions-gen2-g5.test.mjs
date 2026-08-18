@@ -63,16 +63,20 @@ test('G5-A2 borne la creation IAM du runtime de session Auth', () => {
   assert.match(read('package.json'), /configure-functions-gen2-g5-auth-session-iam\.mjs --project secondevienextjsssr --env sandbox/);
 });
 
-test('G5-A2 autorise uniquement le deploy apres IAM et bloque encore le cutover', () => {
+test('G5-A2 prouve le deploy et autorise uniquement le cutover client', () => {
   const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-log-user-connection.json'));
   assert.equal(manifest.preflight.sourceExportsWithParallel, 164);
   assert.equal(manifest.preflight.targetAbsentBeforeCreate, true);
   assert.equal(manifest.functions[0].name, 'logUserConnectionGen2');
-  assert.equal(manifest.functions[0].cloud.present, false);
+  assert.equal(manifest.functions[0].cloud.present, true);
+  assert.equal(manifest.functions[0].cloud.revision, 'loguserconnectiongen2-00001-fab');
   assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'logUserConnection');
   assert.equal(manifest.gates.runtimeIamReady, true);
-  assert.equal(manifest.gates.deploymentAllowed, true);
-  assert.equal(manifest.gates.clientCutoverAuthorized, false);
+  assert.equal(manifest.gates.deploymentAllowed, false);
+  assert.equal(manifest.gates.negativeProbe.missingAuthAndAppCheckHttpStatus, 401);
+  assert.equal(manifest.gates.positiveProbe.httpStatus, 200);
+  assert.equal(manifest.gates.logs.errors, 0);
+  assert.equal(manifest.gates.clientCutoverAuthorized, true);
   const iam = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-auth-session-iam.json'));
   assert.equal(iam.ready, true);
   assert.deepEqual(iam.observedRoles, iam.requiredRoles);
@@ -91,8 +95,12 @@ test('G5 injecte le jeton App Check ephemere dans Auth et Functions pendant la r
   const harness = read('scripts/e2e-sandbox-role-session.mjs');
   assert.match(harness, /context\.route\('https:\/\/identitytoolkit\.googleapis\.com\/\*\*'/);
   assert.match(harness, /context\.route\('\*\*\/\*\.cloudfunctions\.net\/\*\*'/);
-  assert.equal((harness.match(/'X-Firebase-AppCheck': appCheckToken\.token/g) || []).length, 2);
+  assert.equal((harness.match(/'X-Firebase-AppCheck': appCheckToken\.token/g) || []).length, 4);
   assert.match(harness, /readArg\('expect-user-count'\)/);
+  assert.match(harness, /probeCallable !== 'logUserConnectionGen2'/);
+  assert.match(harness, /accounts:signInWithCustomToken/);
+  assert.match(harness, /cloudfunctions\.net\/\$\{probeCallable\}/);
+  assert.match(harness, /callableProbe = \{ name: probeCallable, httpStatus: callableResponse\.status, success: true \}/);
   assert.match(harness, /Clients inscrits en cours de chargement/);
   assert.match(harness, /userCountVerified: expectedUserCount \? Number\(expectedUserCount\) : null/);
   assert.doesNotMatch(harness, /console\.(?:log|info)\([^\n]*customToken/);

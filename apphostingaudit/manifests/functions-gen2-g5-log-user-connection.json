@@ -7,7 +7,7 @@
     "baselineCommit": "11abf44f385af6ff239e22707405ab21f36b4f47",
     "generatedAt": "2026-08-18T09:43:49Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G5_A2_AUTH_SESSION_LOG_PREPARED"
+    "wave": "G5_A2_AUTH_SESSION_LOG_ACTIVE_CUTOVER_AUTHORIZED"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -35,12 +35,14 @@
       "sharedHandler": "logUserConnectionHandler"
     },
     "cloud": {
-      "present": false,
+      "present": true,
       "project": "secondevienextjsssr",
       "generation": 2,
       "region": "europe-west1",
       "runtime": "nodejs22",
-      "revision": null
+      "revision": "loguserconnectiongen2-00001-fab",
+      "state": "ACTIVE",
+      "updateTime": "2026-08-18T09:54:18.523910881Z"
     },
     "trigger": {
       "type": "callable",
@@ -75,7 +77,7 @@
       "logicalName": "logUserConnection",
       "currentTarget": "logUserConnection",
       "cutoverTarget": "logUserConnectionGen2",
-      "cutoverAllowed": false
+      "cutoverAllowed": true
     },
     "decision": {
       "classification": "MIGRATION_PARALLEL",
@@ -97,8 +99,23 @@
     "runtimeIamManifest": "apphostingaudit/manifests/functions-gen2-g5-auth-session-iam.json",
     "runtimeServiceAccountUserManagedKeys": 0,
     "targetAbsentBeforeCreate": true,
-    "deploymentAllowed": true,
-    "clientCutoverAuthorized": false
+    "deploymentAllowed": false,
+    "deployedRevisionVerified": true,
+    "runtimeConfigurationVerified": true,
+    "transportInvokerVerified": true,
+    "negativeProbe": { "missingAuthAndAppCheckHttpStatus": 401 },
+    "positiveProbe": { "httpStatus": 200, "success": true },
+    "dataProbe": {
+      "userDocumentBeforeUpdateTime": "2026-08-12T20:35:56.661Z",
+      "userDocumentAfterUpdateTime": "2026-08-18T09:55:30.559Z",
+      "rateLimitCreated": true,
+      "expiryPresent": true,
+      "lastLoginPresent": true,
+      "securityDataPresent": true,
+      "sensitiveValuesPersistedInManifest": false
+    },
+    "logs": { "entries": 10, "http200": 1, "http401": 1, "errors": 0 },
+    "clientCutoverAuthorized": true
   },
   "rollback": {
     "functionAction": "none; preserve logUserConnection and logUserConnectionGen2",
@@ -106,5 +123,5 @@
     "dataAction": "none",
     "g12Action": "none before G12-A"
   },
-  "verdict": "SOURCE_AND_IAM_READY_SINGLE_FUNCTION_DEPLOYMENT_ALLOWED"
+  "verdict": "FUNCTION_ACTIVE_PROBES_GREEN_CLIENT_CUTOVER_AUTHORIZED"
 }
