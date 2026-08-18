@@ -7,7 +7,7 @@
     "baselineCommit": "968c40073d3c4f134780d6d05da0c9797a9d79b2",
     "generatedAt": "2026-08-18T17:12:11Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G5_A5_GUEST_OTP_VERIFY_IAM_READY_DEPLOY_PENDING"
+    "wave": "G5_A5_GUEST_OTP_VERIFY_DEPLOY_AUTHORIZED"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -117,7 +117,7 @@
     "runtimeIamReady": true,
     "runtimeIamVerified": true,
     "targetAbsentBeforeCreate": true,
-    "deploymentAllowed": false,
+    "deploymentAllowed": true,
     "clientCutoverAllowed": false,
     "boundedOtpVerificationExecuted": false
   },
@@ -128,5 +128,5 @@
     "secretAction": "none",
     "g12Action": "none before G12-A"
   },
-  "verdict": "IAM_READY_DEPLOYMENT_NOT_YET_ALLOWED"
+  "verdict": "SINGLE_TARGET_GEN2_DEPLOYMENT_ALLOWED"
 }
