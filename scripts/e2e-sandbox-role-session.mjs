@@ -128,7 +128,13 @@ if (probeCallable) {
   if (!callableResponse.ok || callablePayload?.result?.success !== true) {
     throw new Error('Callable de probe sandbox refuse.');
   }
-  callableProbe = { name: probeCallable, httpStatus: callableResponse.status, success: true };
+  callableProbe = {
+    name: probeCallable,
+    httpStatus: callableResponse.status,
+    success: true,
+    migrated: typeof callablePayload?.result?.migrated === 'boolean' ? callablePayload.result.migrated : null,
+    role: ['owner', 'admin'].includes(callablePayload?.result?.role) ? callablePayload.result.role : null,
+  };
 }
 const runId = `sandbox_role_${role}_${crypto.randomUUID()}`;
 const targetPath = role === 'admin' ? '/admin' : '/mes-commandes';

@@ -79,7 +79,7 @@ test('G5-A3 prepare uniquement ensureAdminAccessRegistryGen2 avec parite et secr
   assert.equal(target.concurrency, '1');
   assert.equal(target.maxInstances, '1');
   assert.deepEqual(target.secrets, ['SUPER_ADMIN_EMAIL=SUPER_ADMIN_EMAIL:3']);
-  assert.doesNotMatch(read('src/kit/config/functionTargets.js'), /ensureAdminAccessRegistry:\s*'ensureAdminAccessRegistryGen2'/);
+  assert.match(read('src/kit/config/functionTargets.js'), /ensureAdminAccessRegistry:\s*'ensureAdminAccessRegistryGen2'/);
 });
 
 test('G5-A3 borne IAM au runtime registre et au seul secret proprietaire', () => {
@@ -101,16 +101,23 @@ test('G5-A3 borne IAM au runtime registre et au seul secret proprietaire', () =>
   assert.match(read('package.json'), /configure-functions-gen2-g5-auth-registry-iam\.mjs --project secondevienextjsssr --env sandbox/);
 });
 
-test('G5-A3 autorise uniquement le deploy cible apres IAM conforme', () => {
+test('G5-A3 prouve le deploy et autorise uniquement le cutover client', () => {
   const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-ensure-admin-access-registry.json'));
   assert.equal(manifest.preflight.sourceExportsWithParallel, 165);
   assert.equal(manifest.preflight.cloudFunctions, 159);
   assert.equal(manifest.functions[0].name, 'ensureAdminAccessRegistryGen2');
-  assert.equal(manifest.functions[0].cloud.present, false);
-  assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'ensureAdminAccessRegistry');
+  assert.equal(manifest.functions[0].cloud.present, true);
+  assert.equal(manifest.functions[0].cloud.revision, 'ensureadminaccessregistrygen2-00001-lak');
+  assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'ensureAdminAccessRegistryGen2');
   assert.equal(manifest.gates.runtimeIamReady, true);
-  assert.equal(manifest.gates.deploymentAllowed, true);
-  assert.equal(manifest.gates.clientCutoverAllowed, false);
+  assert.equal(manifest.gates.deploymentAllowed, false);
+  assert.equal(manifest.gates.negativeProbe.missingAuthAndAppCheckHttpStatus, 401);
+  assert.equal(manifest.gates.positiveProbe.httpStatus, 200);
+  assert.equal(manifest.gates.positiveProbe.migrated, false);
+  assert.equal(manifest.gates.dataProbe.registryAfterUpdateTime, manifest.gates.dataProbe.registryBeforeUpdateTime);
+  assert.equal(manifest.gates.logs.errors, 0);
+  assert.equal(manifest.gates.logs.newGen1Entries, 0);
+  assert.equal(manifest.gates.clientCutoverAllowed, true);
   const iam = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-auth-registry-iam.json'));
   assert.equal(iam.ready, true);
   assert.deepEqual(iam.observedRoles, iam.requiredRoles);
@@ -166,7 +173,8 @@ test('G5 injecte le jeton App Check ephemere dans Auth et Functions pendant la r
   assert.match(harness, /'logUserConnectionGen2', 'ensureAdminAccessRegistryGen2'/);
   assert.match(harness, /accounts:signInWithCustomToken/);
   assert.match(harness, /cloudfunctions\.net\/\$\{probeCallable\}/);
-  assert.match(harness, /callableProbe = \{ name: probeCallable, httpStatus: callableResponse\.status, success: true \}/);
+  assert.match(harness, /migrated: typeof callablePayload\?\.result\?\.migrated === 'boolean'/);
+  assert.match(harness, /role: \['owner', 'admin'\]\.includes\(callablePayload\?\.result\?\.role\)/);
   assert.match(harness, /Clients inscrits en cours de chargement/);
   assert.match(harness, /userCountVerified: expectedUserCount \? Number\(expectedUserCount\) : null/);
   assert.doesNotMatch(harness, /console\.(?:log|info)\([^\n]*customToken/);

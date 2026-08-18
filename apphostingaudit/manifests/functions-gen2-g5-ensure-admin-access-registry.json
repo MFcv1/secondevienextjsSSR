@@ -5,9 +5,9 @@
     "codebase": "main",
     "environment": "sandbox",
     "baselineCommit": "b8c936796cc8a5df4eae866df7653cf07db1b7dd",
-    "generatedAt": "2026-08-18T15:42:00Z",
+    "generatedAt": "2026-08-18T15:50:00Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G5_A3_AUTH_REGISTRY_DEPLOY_AUTHORIZED"
+    "wave": "G5_A3_AUTH_REGISTRY_ACTIVE_CUTOVER_AUTHORIZED"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -36,11 +36,15 @@
       "sharedHandler": "ensureAdminAccessRegistryHandler"
     },
     "cloud": {
-      "present": false,
+      "present": true,
       "project": "secondevienextjsssr",
       "generation": 2,
       "region": "europe-west1",
-      "runtime": "nodejs22"
+      "runtime": "nodejs22",
+      "revision": "ensureadminaccessregistrygen2-00001-lak",
+      "state": "ACTIVE",
+      "createTime": "2026-08-18T15:45:55.702991778Z",
+      "updateTime": "2026-08-18T15:47:26.705079441Z"
     },
     "trigger": {
       "type": "callable",
@@ -77,9 +81,9 @@
     },
     "clientRegistry": {
       "logicalName": "ensureAdminAccessRegistry",
-      "currentTarget": "ensureAdminAccessRegistry",
+      "currentTarget": "ensureAdminAccessRegistryGen2",
       "cutoverTarget": "ensureAdminAccessRegistryGen2",
-      "cutoverAllowed": false
+      "cutoverAllowed": true
     },
     "decision": {
       "classification": "MIGRATION_PARALLEL",
@@ -101,8 +105,23 @@
     "runtimeIamVerified": true,
     "runtimeIamManifest": "apphostingaudit/manifests/functions-gen2-g5-auth-registry-iam.json",
     "targetAbsentBeforeCreate": true,
-    "deploymentAllowed": true,
-    "clientCutoverAllowed": false
+    "deploymentAllowed": false,
+    "deployedRevisionVerified": true,
+    "runtimeConfigurationVerified": true,
+    "transportInvokerVerified": true,
+    "negativeProbe": { "missingAuthAndAppCheckHttpStatus": 401 },
+    "positiveProbe": { "httpStatus": 200, "success": true, "migrated": false, "role": "admin" },
+    "dataProbe": {
+      "registryBeforeUpdateTime": "2026-07-13T15:55:57.996678Z",
+      "registryAfterUpdateTime": "2026-07-13T15:55:57.996678Z",
+      "activeBeforeAndAfter": true,
+      "roleBeforeAndAfter": "admin",
+      "uidPersistedInManifest": false,
+      "sensitiveValuesPersistedInManifest": false
+    },
+    "logs": { "entries": 10, "http200": 1, "http401": 1, "errors": 0, "newGen1Entries": 0 },
+    "inventoryAfterDeploy": { "source": 165, "cloud": 160, "gen1": 139, "gen2": 21 },
+    "clientCutoverAllowed": true
   },
   "rollback": {
     "functionAction": "none; preserve ensureAdminAccessRegistry Gen1 and any parallel Gen2 target",
@@ -111,5 +130,5 @@
     "secretAction": "none",
     "g12Action": "none before G12-A"
   },
-  "verdict": "PREPARED_IAM_READY_SINGLE_TARGET_DEPLOYMENT_ALLOWED"
+  "verdict": "FUNCTION_ACTIVE_PROBES_GREEN_CLIENT_CUTOVER_AUTHORIZED"
 }
