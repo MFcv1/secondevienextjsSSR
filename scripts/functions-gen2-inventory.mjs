@@ -22,7 +22,10 @@ export const PARALLEL_MIGRATION_EXPORTS = new Set([
   'logUserConnectionGen2',
   'sendGuestCheckoutOtpGen2',
   'sendCustomerLoginOtpGen2',
-  'verifyGuestCheckoutOtpGen2'
+  'verifyGuestCheckoutOtpGen2',
+  'verifyCustomerLoginOtpGen2',
+  'generatePasskeyAuthenticationOptionsGen2',
+  'verifyPasskeyAuthenticationGen2'
 ]);
 
 export const KEEP_GEN2 = new Set([

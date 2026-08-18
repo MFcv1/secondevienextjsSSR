@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const admin = require('firebase-admin');
+const { onCall } = require('firebase-functions/v2/https');
 const { functions, regionalFunctions, logFunctionPerf } = require('../../helpers/runtime');
 const { getRateLimitClientIp } = require('../../helpers/clientIp');
 const {
@@ -16,6 +17,17 @@ const RP_NAME = 'Seconde Vie';
 const CHALLENGE_TTL_MS = 5 * 60 * 1000;
 const MAX_PASSKEYS_PER_USER = 10;
 const USER_VERIFICATION_REQUIRED_MESSAGE = 'Confirmez votre identite avec Windows Hello, Face ID ou le code de votre appareil.';
+const PASSKEY_AUTH_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '256MiB',
+    timeoutSeconds: 60,
+    serviceAccount: 'auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    enforceAppCheck: true
+});
 
 function mapWebAuthnVerificationError(error, ceremony) {
     const details = String(error?.message || '');
@@ -360,7 +372,7 @@ exports.verifyPasskeyRegistration = regionalFunctions().runWith({ enforceAppChec
     return { success: true };
 });
 
-exports.generatePasskeyAuthenticationOptions = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+const generatePasskeyAuthenticationOptionsHandler = async (data, context) => {
     const startedAt = Date.now();
     const email = normalizeEmail(data?.email);
     const emailHash = hash(email);
@@ -416,9 +428,15 @@ exports.generatePasskeyAuthenticationOptions = regionalFunctions().runWith({ enf
         emailHash
     });
     return { options };
-});
+};
 
-exports.verifyPasskeyAuthentication = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
+exports.generatePasskeyAuthenticationOptions = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(generatePasskeyAuthenticationOptionsHandler);
+exports.generatePasskeyAuthenticationOptionsGen2 = onCall(
+    PASSKEY_AUTH_GEN2_RUNTIME,
+    async (request) => generatePasskeyAuthenticationOptionsHandler(request.data, request)
+);
+
+const verifyPasskeyAuthenticationHandler = async (data, context) => {
     const startedAt = Date.now();
     const challenge = assertBase64Url(data?.challenge, 'Challenge passkey', 1024);
     const challengeRef = db.doc(`sys_ratelimit/passkey_auth_${hash(challenge)}`);
@@ -523,4 +541,14 @@ exports.verifyPasskeyAuthentication = regionalFunctions().runWith({ enforceAppCh
 
     logFunctionPerf('verifyPasskeyAuthentication', startedAt, { phase: 'success' });
     return { success: true, token };
-});
+};
+
+exports.verifyPasskeyAuthentication = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(verifyPasskeyAuthenticationHandler);
+exports.verifyPasskeyAuthenticationGen2 = onCall(
+    PASSKEY_AUTH_GEN2_RUNTIME,
+    async (request) => verifyPasskeyAuthenticationHandler(request.data, request)
+);
+
+module.exports.generatePasskeyAuthenticationOptionsHandler = generatePasskeyAuthenticationOptionsHandler;
+module.exports.verifyPasskeyAuthenticationHandler = verifyPasskeyAuthenticationHandler;
+module.exports.PASSKEY_AUTH_GEN2_RUNTIME = PASSKEY_AUTH_GEN2_RUNTIME;

@@ -157,7 +157,7 @@ const preparePasskeyAuthentication = async (email) => {
     throw new Error('Saisissez votre email avant la connexion rapide.');
   }
 
-  const generateOptions = httpsCallable(functions, 'generatePasskeyAuthenticationOptions');
+  const generateOptions = httpsCallable(functions, getFunctionTarget('generatePasskeyAuthenticationOptions'));
   const generateStartedAt = startClientPerf();
   const [{ startAuthentication }, optionsResult] = await Promise.all([
     import('@simplewebauthn/browser'),
@@ -184,7 +184,7 @@ const loginWithPasskey = async (email, preparedAuthentication = null, onStepChan
     ? preparedAuthentication
     : await preparePasskeyAuthentication(normalizedEmail);
 
-  const verifyAuthentication = httpsCallable(functions, 'verifyPasskeyAuthentication');
+  const verifyAuthentication = httpsCallable(functions, getFunctionTarget('verifyPasskeyAuthentication'));
   onStepChange?.('biometric');
   const response = await prepared.startAuthentication({ optionsJSON: prepared.options });
   onStepChange?.('verifying');
@@ -622,7 +622,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     try {
       let customToken = otpCustomTokenRef.current;
       if (!customToken) {
-        const verifyOtp = httpsCallable(functions, 'verifyCustomerLoginOtp');
+        const verifyOtp = httpsCallable(functions, getFunctionTarget('verifyCustomerLoginOtp'));
         const result = await verifyOtp({ email, code });
         logClientPerf('auth.email.verifyCustomerLoginOtp', verifyStartedAt, { phase: 'success' });
         if (!result.data?.token) throw new Error('Token de connexion manquant.');

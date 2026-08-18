@@ -42,10 +42,10 @@ test('G4 garde les suppressions analytics hors migration', () => {
   }
 });
 
-test('G4 conserve ses cinq cibles et G5 ses six exports paralleles courants', () => {
+test('G4 conserve ses cinq cibles et G5 ses exports paralleles courants', () => {
   const exports = extractLocalExports(ROOT);
-  assert.equal(exports.length, EXPECTED_SOURCE_COUNT + 11);
-  assert.deepEqual([...PARALLEL_MIGRATION_EXPORTS], ['ensureAdminAccessRegistryGen2', 'initLiveSessionGen2', 'syncSessionGen2', 'syncSessionBeaconGen2', 'trackAdminIPGen2', 'updateUserSessionsGen2', 'getUserStatsGen2', 'logUserConnectionGen2', 'sendGuestCheckoutOtpGen2', 'sendCustomerLoginOtpGen2', 'verifyGuestCheckoutOtpGen2']);
+  assert.equal(exports.length, EXPECTED_SOURCE_COUNT + 14);
+  assert.deepEqual([...PARALLEL_MIGRATION_EXPORTS], ['ensureAdminAccessRegistryGen2', 'initLiveSessionGen2', 'syncSessionGen2', 'syncSessionBeaconGen2', 'trackAdminIPGen2', 'updateUserSessionsGen2', 'getUserStatsGen2', 'logUserConnectionGen2', 'sendGuestCheckoutOtpGen2', 'sendCustomerLoginOtpGen2', 'verifyGuestCheckoutOtpGen2', 'verifyCustomerLoginOtpGen2', 'generatePasskeyAuthenticationOptionsGen2', 'verifyPasskeyAuthenticationGen2']);
   assert.equal(classificationFor('initLiveSessionGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('syncSessionGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('syncSessionBeaconGen2'), 'MIGRATION_PARALLEL');
@@ -55,6 +55,9 @@ test('G4 conserve ses cinq cibles et G5 ses six exports paralleles courants', ()
   assert.equal(classificationFor('sendGuestCheckoutOtpGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('sendCustomerLoginOtpGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('verifyGuestCheckoutOtpGen2'), 'MIGRATION_PARALLEL');
+  assert.equal(classificationFor('verifyCustomerLoginOtpGen2'), 'MIGRATION_PARALLEL');
+  assert.equal(classificationFor('generatePasskeyAuthenticationOptionsGen2'), 'MIGRATION_PARALLEL');
+  assert.equal(classificationFor('verifyPasskeyAuthenticationGen2'), 'MIGRATION_PARALLEL');
   assert.ok(exports.some(({ name }) => name === 'trackAdminIP'));
   assert.ok(exports.some(({ name }) => name === 'trackAdminIPGen2'));
   assert.ok(exports.some(({ name }) => name === 'updateUserSessions'));

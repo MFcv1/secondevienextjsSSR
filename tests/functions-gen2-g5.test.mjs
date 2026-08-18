@@ -292,6 +292,67 @@ test('G5-A6 prepare uniquement sendCustomerLoginOtpGen2 avec runtime OTP reutili
   assert.match(read('src/kit/marketplace/LegacyLoginModalFullIsland.jsx'), /getFunctionTarget\('sendCustomerLoginOtp'\)/);
 });
 
+test('G5-A7 prepare verifyCustomerLoginOtpGen2 avec handler partage et runtime login', () => {
+  const source = read('functions/src/auth/customerLoginOtp.js');
+  const exports = extractLocalExports(ROOT);
+  const target = GCLOUD_GEN2_TARGETS.verifyCustomerLoginOtpGen2;
+  assert.ok(exports.some(({ name }) => name === 'verifyCustomerLoginOtp'));
+  assert.ok(exports.some(({ name }) => name === 'verifyCustomerLoginOtpGen2'));
+  assert.equal(classificationFor('verifyCustomerLoginOtpGen2'), 'MIGRATION_PARALLEL');
+  assert.match(source, /const verifyCustomerLoginOtpHandler = async \(data, _context\) =>/);
+  assert.match(source, /exports\.verifyCustomerLoginOtp = regionalFunctions\(\)[\s\S]*?onCall\(verifyCustomerLoginOtpHandler\)/);
+  assert.match(source, /exports\.verifyCustomerLoginOtpGen2 = onCall\(/);
+  assert.match(source, /CUSTOMER_OTP_VERIFY_GEN2_RUNTIME[\s\S]*?enforceAppCheck:\s*true[\s\S]*?secrets:\s*\[OTP_HMAC_SECRET\]/);
+  assert.equal(target.runtimeServiceAccount, 'auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com');
+  assert.deepEqual(target.secrets, ['OTP_HMAC_SECRET=OTP_HMAC_SECRET:1']);
+  assert.match(read('src/kit/config/functionTargets.js'), /verifyCustomerLoginOtp:\s*'verifyCustomerLoginOtpGen2'/);
+  assert.match(read('src/kit/marketplace/LegacyLoginModalFullIsland.jsx'), /getFunctionTarget\('verifyCustomerLoginOtp'\)/);
+});
+
+test('G5-A8-A9 preparent les deux endpoints passkey de connexion avec handler partage', () => {
+  const source = read('functions/src/auth/passkeys.js');
+  const exports = extractLocalExports(ROOT);
+  for (const name of ['generatePasskeyAuthenticationOptionsGen2', 'verifyPasskeyAuthenticationGen2']) {
+    assert.ok(exports.some(({ name: exported }) => exported === name));
+    assert.equal(classificationFor(name), 'MIGRATION_PARALLEL');
+    const target = GCLOUD_GEN2_TARGETS[name];
+    assert.equal(target.runtimeServiceAccount, 'auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com');
+    assert.equal(target.cpu, '167m');
+    assert.equal(target.concurrency, '1');
+    assert.equal(target.maxInstances, '1');
+  }
+  assert.match(source, /const generatePasskeyAuthenticationOptionsHandler = async \(data, context\) =>/);
+  assert.match(source, /const verifyPasskeyAuthenticationHandler = async \(data, context\) =>/);
+  assert.match(source, /exports\.generatePasskeyAuthenticationOptionsGen2 = onCall\(/);
+  assert.match(source, /exports\.verifyPasskeyAuthenticationGen2 = onCall\(/);
+  assert.match(source, /PASSKEY_AUTH_GEN2_RUNTIME[\s\S]*?enforceAppCheck:\s*true/);
+  const registry = read('src/kit/config/functionTargets.js');
+  assert.match(registry, /generatePasskeyAuthenticationOptions:\s*'generatePasskeyAuthenticationOptionsGen2'/);
+  assert.match(registry, /verifyPasskeyAuthentication:\s*'verifyPasskeyAuthenticationGen2'/);
+  const modal = read('src/kit/marketplace/LegacyLoginModalFullIsland.jsx');
+  assert.match(modal, /getFunctionTarget\('generatePasskeyAuthenticationOptions'\)/);
+  assert.match(modal, /getFunctionTarget\('verifyPasskeyAuthentication'\)/);
+});
+
+test('G5-A7-A9 bornent IAM au runtime de connexion Auth', () => {
+  const iam = read('scripts/configure-functions-gen2-g5-auth-login-iam.mjs');
+  for (const expected of [
+    /G5_CREATE_AUTH_LOGIN_RUNTIME/,
+    /SERVICE_ACCOUNT_ID = 'auth-login-runtime'/,
+    /roles\/datastore\.user/,
+    /roles\/firebaseauth\.admin/,
+    /roles\/logging\.logWriter/,
+    /roles\/serviceusage\.serviceUsageConsumer/,
+    /roles\/iam\.serviceAccountTokenCreator/,
+    /OTP_HMAC_SECRET', version: '1'/,
+    /userManagedKeys\.length === 0/,
+    /G5_AUTH_LOGIN_IAM_EFFECTIVE_PROJECT_MISMATCH/,
+    /G5_AUTH_LOGIN_IAM_COMMIT_MISMATCH/,
+  ]) assert.match(iam, expected);
+  assert.doesNotMatch(iam, /roles\/(?:editor|owner)/i);
+  assert.match(read('package.json'), /configure-functions-gen2-g5-auth-login-iam\.mjs --project secondevienextjsssr --env sandbox/);
+});
+
 test('G5-A4 prouve le deploy et autorise uniquement le cutover client', () => {
   const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-send-guest-checkout-otp.json'));
   assert.equal(manifest.preflight.sourceExportsWithParallel, 166);

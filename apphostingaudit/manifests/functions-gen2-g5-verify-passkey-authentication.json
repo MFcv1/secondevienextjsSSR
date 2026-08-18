@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "baselineCommit": "d95f87dafd10df382c16a8e82662f19ad9ee0442",
+    "generatedAt": "2026-08-18T19:45:00Z",
+    "operator": "matthis.fradin2@gmail.com",
+    "wave": "G5_A9_PASSKEY_AUTH_VERIFY_PREPARED"
+  },
+  "deploymentPolicy": {
+    "exactProject": "secondevienextjsssr",
+    "exactCodebase": "main",
+    "maxBatchSize": 1,
+    "forbiddenGlobalSelector": "functions"
+  },
+  "functions": [{
+    "name": "verifyPasskeyAuthenticationGen2",
+    "source": {
+      "export": "verifyPasskeyAuthenticationGen2",
+      "file": "functions/src/auth/passkeys.js",
+      "sharedHandler": "verifyPasskeyAuthenticationHandler"
+    },
+    "cloud": {
+      "present": false,
+      "project": "secondevienextjsssr",
+      "generation": 2,
+      "region": "europe-west1"
+    },
+    "trigger": { "type": "callable", "appCheck": "ENFORCED" },
+    "identities": {
+      "runtimeServiceAccount": "auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+      "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com"
+    },
+    "decision": {
+      "classification": "MIGRATION_PARALLEL",
+      "target": "verifyPasskeyAuthenticationGen2",
+      "wave": "G5-A9",
+      "deploymentMaxBatchSize": 1,
+      "rollback": "Preserve verifyPasskeyAuthentication Gen1, endpoint, IAM, source, passkeys and challenge operations; restore build 005 on client rollback."
+    }
+  }],
+  "gates": {
+    "localTestsPassed": { "functionsG5": "21/21", "functionsG4": "18/18", "functionsG0": "26/26", "auth": "77/77", "lintFunctions": "PASS" },
+    "targetAbsentBeforeCreate": true,
+    "runtimeIamReady": true,
+    "deploymentAllowed": true,
+    "remediationDeploymentAllowed": false
+  }
+}

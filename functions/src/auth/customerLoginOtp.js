@@ -33,6 +33,18 @@ const CUSTOMER_OTP_SEND_GEN2_RUNTIME = Object.freeze({
     enforceAppCheck: true,
     secrets: [...TRANSACTIONAL_EMAIL_SECRETS, OTP_HMAC_SECRET]
 });
+const CUSTOMER_OTP_VERIFY_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '256MiB',
+    timeoutSeconds: 60,
+    serviceAccount: 'auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    enforceAppCheck: true,
+    secrets: [OTP_HMAC_SECRET]
+});
 
 function normalizeEmail(email) {
     const normalized = String(email || '').trim().toLowerCase();
@@ -285,9 +297,7 @@ exports.sendCustomerLoginOtpGen2 = onCall(
     async (request) => sendCustomerLoginOtpHandler(request.data, request)
 );
 
-exports.verifyCustomerLoginOtp = regionalFunctions()
-    .runWith({ enforceAppCheck: true, secrets: [OTP_HMAC_SECRET] })
-    .https.onCall(async (data) => {
+const verifyCustomerLoginOtpHandler = async (data, _context) => {
         const startedAt = Date.now();
         const email = normalizeEmail(data?.email);
         const emailHash = sha256(email);
@@ -430,7 +440,17 @@ exports.verifyCustomerLoginOtp = regionalFunctions()
             resumed: verificationResult.resumed === true
         });
         return { success: true, token };
-    });
+};
+
+exports.verifyCustomerLoginOtp = regionalFunctions()
+    .runWith({ enforceAppCheck: true, secrets: [OTP_HMAC_SECRET] })
+    .https.onCall(verifyCustomerLoginOtpHandler);
+exports.verifyCustomerLoginOtpGen2 = onCall(
+    CUSTOMER_OTP_VERIFY_GEN2_RUNTIME,
+    async (request) => verifyCustomerLoginOtpHandler(request.data, request)
+);
 
 module.exports.sendCustomerLoginOtpHandler = sendCustomerLoginOtpHandler;
 module.exports.CUSTOMER_OTP_SEND_GEN2_RUNTIME = CUSTOMER_OTP_SEND_GEN2_RUNTIME;
+module.exports.verifyCustomerLoginOtpHandler = verifyCustomerLoginOtpHandler;
+module.exports.CUSTOMER_OTP_VERIFY_GEN2_RUNTIME = CUSTOMER_OTP_VERIFY_GEN2_RUNTIME;

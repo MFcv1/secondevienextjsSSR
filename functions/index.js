@@ -234,12 +234,14 @@ const {
   verifyGuestCheckoutOtp,
   verifyGuestCheckoutOtpGen2,
 } = require('./src/auth/guestCheckoutOtp');
-const { sendCustomerLoginOtp, sendCustomerLoginOtpGen2, verifyCustomerLoginOtp } = require('./src/auth/customerLoginOtp');
+const { sendCustomerLoginOtp, sendCustomerLoginOtpGen2, verifyCustomerLoginOtp, verifyCustomerLoginOtpGen2 } = require('./src/auth/customerLoginOtp');
 const {
     generatePasskeyRegistrationOptions,
     verifyPasskeyRegistration,
     generatePasskeyAuthenticationOptions,
-    verifyPasskeyAuthentication
+    generatePasskeyAuthenticationOptionsGen2,
+    verifyPasskeyAuthentication,
+    verifyPasskeyAuthenticationGen2
 } = require('./src/auth/passkeys');
 
 exports.grantAdminOnAuth = grantAdminOnAuth;
@@ -261,10 +263,13 @@ exports.verifyGuestCheckoutOtpGen2 = verifyGuestCheckoutOtpGen2;
 exports.sendCustomerLoginOtp = sendCustomerLoginOtp;
 exports.sendCustomerLoginOtpGen2 = sendCustomerLoginOtpGen2;
 exports.verifyCustomerLoginOtp = verifyCustomerLoginOtp;
+exports.verifyCustomerLoginOtpGen2 = verifyCustomerLoginOtpGen2;
 exports.generatePasskeyRegistrationOptions = generatePasskeyRegistrationOptions;
 exports.verifyPasskeyRegistration = verifyPasskeyRegistration;
 exports.generatePasskeyAuthenticationOptions = generatePasskeyAuthenticationOptions;
+exports.generatePasskeyAuthenticationOptionsGen2 = generatePasskeyAuthenticationOptionsGen2;
 exports.verifyPasskeyAuthentication = verifyPasskeyAuthentication;
+exports.verifyPasskeyAuthenticationGen2 = verifyPasskeyAuthenticationGen2;
 
 // â”€â”€ ONBOARDING FACTURATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const {

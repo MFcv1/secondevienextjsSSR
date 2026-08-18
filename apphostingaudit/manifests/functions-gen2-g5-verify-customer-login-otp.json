@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "baselineCommit": "d95f87dafd10df382c16a8e82662f19ad9ee0442",
+    "generatedAt": "2026-08-18T19:45:00Z",
+    "operator": "matthis.fradin2@gmail.com",
+    "wave": "G5_A7_CUSTOMER_LOGIN_OTP_VERIFY_PREPARED"
+  },
+  "deploymentPolicy": {
+    "exactProject": "secondevienextjsssr",
+    "exactCodebase": "main",
+    "maxBatchSize": 1,
+    "forbiddenGlobalSelector": "functions"
+  },
+  "functions": [{
+    "name": "verifyCustomerLoginOtpGen2",
+    "source": {
+      "export": "verifyCustomerLoginOtpGen2",
+      "file": "functions/src/auth/customerLoginOtp.js",
+      "sharedHandler": "verifyCustomerLoginOtpHandler"
+    },
+    "cloud": {
+      "present": false,
+      "project": "secondevienextjsssr",
+      "generation": 2,
+      "region": "europe-west1"
+    },
+    "trigger": { "type": "callable", "appCheck": "ENFORCED" },
+    "identities": {
+      "runtimeServiceAccount": "auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+      "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com"
+    },
+    "secrets": [{ "name": "OTP_HMAC_SECRET", "version": "1" }],
+    "decision": {
+      "classification": "MIGRATION_PARALLEL",
+      "target": "verifyCustomerLoginOtpGen2",
+      "wave": "G5-A7",
+      "deploymentMaxBatchSize": 1,
+      "rollback": "Preserve verifyCustomerLoginOtp Gen1, endpoint, IAM, source and OTP data; restore build 005 on client rollback."
+    }
+  }],
+  "gates": {
+    "localTestsPassed": { "functionsG5": "21/21", "functionsG4": "18/18", "functionsG0": "26/26", "auth": "77/77", "lintFunctions": "PASS" },
+    "targetAbsentBeforeCreate": true,
+    "runtimeIamReady": true,
+    "deploymentAllowed": true,
+    "remediationDeploymentAllowed": false
+  }
+}

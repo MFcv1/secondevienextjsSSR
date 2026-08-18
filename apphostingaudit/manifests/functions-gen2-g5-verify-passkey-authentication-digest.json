@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "codebase": "main",
+  "baselineCommit": "d95f87dafd10df382c16a8e82662f19ad9ee0442",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g5-verify-passkey-authentication.json": "07878ff54a3890e08f5b08e1041a6a75fd7c2aa81db37cc799bfb42fc22ebf80"
+  }
+}

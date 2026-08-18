@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "codebase": "main",
+  "baselineCommit": "d95f87dafd10df382c16a8e82662f19ad9ee0442",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g5-verify-customer-login-otp.json": "9118801dac6b667a2523803a7c41c058a51912a8aa7d442b279df2afa4daf309"
+  }
+}

@@ -81,6 +81,58 @@ const GCLOUD_GEN1_TARGETS = Object.freeze({
   })
 });
 export const GCLOUD_GEN2_TARGETS = Object.freeze({
+  verifyPasskeyAuthenticationGen2: Object.freeze({
+    create: true,
+    triggerType: 'http-callable',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'verifyPasskeyAuthenticationGen2',
+    runtimeServiceAccount: 'auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '256Mi',
+    cpu: '167m',
+    timeout: '60s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all'
+  }),
+  generatePasskeyAuthenticationOptionsGen2: Object.freeze({
+    create: true,
+    triggerType: 'http-callable',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'generatePasskeyAuthenticationOptionsGen2',
+    runtimeServiceAccount: 'auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '256Mi',
+    cpu: '167m',
+    timeout: '60s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all',
+    environmentVariables: [
+      'SITE_URL=https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app'
+    ]
+  }),
+  verifyCustomerLoginOtpGen2: Object.freeze({
+    create: true,
+    triggerType: 'http-callable',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'verifyCustomerLoginOtpGen2',
+    runtimeServiceAccount: 'auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '256Mi',
+    cpu: '167m',
+    timeout: '60s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all',
+    secrets: ['OTP_HMAC_SECRET=OTP_HMAC_SECRET:1']
+  }),
   sendCustomerLoginOtpGen2: Object.freeze({
     create: true,
     triggerType: 'http-callable',
