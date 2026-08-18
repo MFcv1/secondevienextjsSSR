@@ -5,9 +5,9 @@
     "codebase": "main",
     "environment": "sandbox",
     "baselineCommit": "968c40073d3c4f134780d6d05da0c9797a9d79b2",
-    "generatedAt": "2026-08-18T17:12:11Z",
+    "generatedAt": "2026-08-18T17:28:00Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G5_A5_GUEST_OTP_VERIFY_DEPLOY_AUTHORIZED"
+    "wave": "G5_A5_GUEST_OTP_VERIFY_RUNTIME_PROVEN"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -41,11 +41,15 @@
       "sharedHandler": "verifyGuestCheckoutOtpHandler"
     },
     "cloud": {
-      "present": false,
+      "present": true,
       "project": "secondevienextjsssr",
       "generation": 2,
       "region": "europe-west1",
-      "runtime": "nodejs22"
+      "runtime": "nodejs22",
+      "revision": "verifyguestcheckoutotpgen2-00001-wim",
+      "state": "ACTIVE",
+      "createTime": "2026-08-18T17:16:18.089Z",
+      "updateTime": "2026-08-18T17:17:29.684Z"
     },
     "trigger": {
       "type": "callable",
@@ -80,7 +84,7 @@
       "logicalName": "verifyGuestCheckoutOtp",
       "currentTarget": "verifyGuestCheckoutOtp",
       "cutoverTarget": "verifyGuestCheckoutOtpGen2",
-      "cutoverAllowed": false
+      "cutoverAllowed": true
     },
     "decision": {
       "classification": "MIGRATION_PARALLEL",
@@ -104,6 +108,29 @@
     "userManagedKeyCount": 0,
     "secretBindingsVerified": ["OTP_HMAC_SECRET:1"]
   },
+  "runtimeEvidence": {
+    "verifiedAt": "2026-08-18T17:27:23.002Z",
+    "negativeUnauthenticatedWithoutAppCheckHttpStatus": 401,
+    "positiveVerifyHttpStatus": 200,
+    "positiveVerificationSuccess": true,
+    "boundedEmailCount": 1,
+    "sendTarget": "sendGuestCheckoutOtpGen2",
+    "verifyTarget": "verifyGuestCheckoutOtpGen2",
+    "attemptsAfter": 0,
+    "otpHashDeleted": true,
+    "verifiedTokenHashPresent": true,
+    "verifiedUidMatchesFixture": true,
+    "otpDisplayed": false,
+    "checkoutTokenDisplayed": false,
+    "tokenPersistedByHarness": false,
+    "secretTransport": "OTP read only from the bounded Gmail fixture, encrypted in memory with RSA-OAEP and cleared after verification"
+  },
+  "postDeploymentInventory": {
+    "sourceExports": 167,
+    "cloudFunctions": 162,
+    "cloudGen1": 139,
+    "cloudGen2": 23
+  },
   "gates": {
     "localTestsRequired": ["test:functions-g5", "test:functions-g4", "test:functions-g0", "test:auth", "lint:functions"],
     "localTestsPassed": {
@@ -117,16 +144,16 @@
     "runtimeIamReady": true,
     "runtimeIamVerified": true,
     "targetAbsentBeforeCreate": true,
-    "deploymentAllowed": true,
-    "clientCutoverAllowed": false,
-    "boundedOtpVerificationExecuted": false
+    "deploymentAllowed": false,
+    "clientCutoverAllowed": true,
+    "boundedOtpVerificationExecuted": true
   },
   "rollback": {
     "functionAction": "none; preserve verifyGuestCheckoutOtp Gen1 and any parallel Gen2 target",
-    "clientAction": "keep verifyGuestCheckoutOtp on Gen1 until a green cutover manifest",
+    "clientAction": "cut over only the verifyGuestCheckoutOtp logical registry target, then restore the prior App Hosting build after the bounded observation",
     "dataAction": "none",
     "secretAction": "none",
     "g12Action": "none before G12-A"
   },
-  "verdict": "SINGLE_TARGET_GEN2_DEPLOYMENT_ALLOWED"
+  "verdict": "SINGLE_TARGET_GEN2_RUNTIME_PROVEN_CLIENT_CUTOVER_ALLOWED"
 }

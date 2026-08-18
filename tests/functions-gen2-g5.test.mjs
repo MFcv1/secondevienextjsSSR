@@ -184,26 +184,36 @@ test('G5-A5 borne IAM au runtime de verification OTP et au seul secret HMAC', ()
   assert.match(read('package.json'), /configure-functions-gen2-g5-auth-otp-verify-iam\.mjs --project secondevienextjsssr --env sandbox/);
 });
 
-test('G5-A5 prouve IAM et autorise seulement le deploy cible avant verification OTP', () => {
+test('G5-A5 prouve le runtime OTP et autorise seulement le cutover client', () => {
   const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-verify-guest-checkout-otp.json'));
   assert.equal(manifest.preflight.sourceExportsWithParallel, 167);
   assert.equal(manifest.preflight.cloudFunctions, 161);
   assert.equal(manifest.functions[0].name, 'verifyGuestCheckoutOtpGen2');
-  assert.equal(manifest.functions[0].cloud.present, false);
+  assert.equal(manifest.functions[0].cloud.present, true);
+  assert.equal(manifest.functions[0].cloud.revision, 'verifyguestcheckoutotpgen2-00001-wim');
   assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'verifyGuestCheckoutOtp');
   assert.equal(manifest.gates.runtimeIamReady, true);
   assert.equal(manifest.gates.runtimeIamVerified, true);
   assert.deepEqual(manifest.iamEvidence.forbiddenProjectRoles, []);
   assert.equal(manifest.iamEvidence.userManagedKeyCount, 0);
-  assert.equal(manifest.gates.deploymentAllowed, true);
-  assert.equal(manifest.gates.clientCutoverAllowed, false);
-  assert.equal(manifest.gates.boundedOtpVerificationExecuted, false);
+  assert.equal(manifest.gates.deploymentAllowed, false);
+  assert.equal(manifest.gates.clientCutoverAllowed, true);
+  assert.equal(manifest.gates.boundedOtpVerificationExecuted, true);
+  assert.equal(manifest.runtimeEvidence.negativeUnauthenticatedWithoutAppCheckHttpStatus, 401);
+  assert.equal(manifest.runtimeEvidence.positiveVerifyHttpStatus, 200);
+  assert.equal(manifest.runtimeEvidence.otpHashDeleted, true);
+  assert.equal(manifest.runtimeEvidence.verifiedTokenHashPresent, true);
+  assert.equal(manifest.runtimeEvidence.otpDisplayed, false);
+  assert.equal(manifest.runtimeEvidence.checkoutTokenDisplayed, false);
+  assert.equal(manifest.postDeploymentInventory.cloudFunctions, 162);
+  assert.equal(manifest.postDeploymentInventory.cloudGen2, 23);
   const proof = read('scripts/prove-guest-otp-verification-g5.mjs');
   assert.match(proof, /SEND_TARGET = 'sendGuestCheckoutOtpGen2'/);
   assert.match(proof, /VERIFY_TARGET = 'verifyGuestCheckoutOtpGen2'/);
   assert.match(proof, /RSA_PKCS1_OAEP_PADDING/);
   assert.match(proof, /otpHashDeleted: !afterData\.otpHash/);
   assert.match(proof, /checkoutTokenDisplayed: false/);
+  assert.match(proof, /ttlMillis: 30 \* 60 \* 1000/);
   assert.doesNotMatch(proof, /console\.(?:log|info)\([^\n]*(?:otp|checkoutOtpToken)/i);
 });
 

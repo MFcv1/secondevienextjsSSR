@@ -31,7 +31,7 @@ if (claims.admin === true || claims.superAdmin === true || adminAccess.data()?.a
   throw new Error('FIXTURE_CLIENT_ROLE_CONTAMINATED');
 }
 
-const appCheck = await admin.appCheck().createToken(firebaseAppId, { ttlMillis: 20 * 60 * 1000 });
+const appCheck = await admin.appCheck().createToken(firebaseAppId, { ttlMillis: 30 * 60 * 1000 });
 const customToken = await auth.createCustomToken(user.uid, {
   authMethod: 'email_otp',
   authAssurance: 'aal1',
