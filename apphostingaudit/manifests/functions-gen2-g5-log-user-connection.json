@@ -75,7 +75,7 @@
     },
     "clientRegistry": {
       "logicalName": "logUserConnection",
-      "currentTarget": "logUserConnection",
+      "currentTarget": "logUserConnectionGen2",
       "cutoverTarget": "logUserConnectionGen2",
       "cutoverAllowed": true
     },

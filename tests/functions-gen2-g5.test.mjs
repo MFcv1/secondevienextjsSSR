@@ -29,7 +29,7 @@ test('G5 prepare uniquement getUserStatsGen2 avec handler et securite partages',
   assert.match(read('src/kit/config/functionTargets.js'), /getUserStats:\s*'getUserStatsGen2'/);
 });
 
-test('G5-A2 prepare logUserConnectionGen2 sans basculer le registre client', () => {
+test('G5-A2 prepare et bascule uniquement logUserConnectionGen2 dans le registre client', () => {
   const source = read('functions/src/auth/adminManagement.js');
   const exports = extractLocalExports(ROOT);
   const target = GCLOUD_GEN2_TARGETS.logUserConnectionGen2;
@@ -44,7 +44,7 @@ test('G5-A2 prepare logUserConnectionGen2 sans basculer le registre client', () 
   assert.equal(target.cpu, '167m');
   assert.equal(target.concurrency, '1');
   assert.equal(target.maxInstances, '1');
-  assert.doesNotMatch(read('src/kit/config/functionTargets.js'), /logUserConnection:\s*'logUserConnectionGen2'/);
+  assert.match(read('src/kit/config/functionTargets.js'), /logUserConnection:\s*'logUserConnectionGen2'/);
 });
 
 test('G5-A2 borne la creation IAM du runtime de session Auth', () => {
@@ -70,7 +70,7 @@ test('G5-A2 prouve le deploy et autorise uniquement le cutover client', () => {
   assert.equal(manifest.functions[0].name, 'logUserConnectionGen2');
   assert.equal(manifest.functions[0].cloud.present, true);
   assert.equal(manifest.functions[0].cloud.revision, 'loguserconnectiongen2-00001-fab');
-  assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'logUserConnection');
+  assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'logUserConnectionGen2');
   assert.equal(manifest.gates.runtimeIamReady, true);
   assert.equal(manifest.gates.deploymentAllowed, false);
   assert.equal(manifest.gates.negativeProbe.missingAuthAndAppCheckHttpStatus, 401);
