@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "codebase": "main",
+  "baselineCommit": "1702b9001ff313573b9c3a3028ed93ff334a64e3",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g5-send-guest-checkout-otp.json": "efb380246b8b087db1ca527c37ebf58b6c2b1e5f04460c75dcbfa15e7d61aa28"
+  }
+}

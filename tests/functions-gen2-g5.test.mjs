@@ -147,7 +147,7 @@ test('G5-A4 borne IAM au runtime OTP et aux quatre secrets epingles', () => {
   assert.match(read('package.json'), /configure-functions-gen2-g5-auth-otp-email-iam\.mjs --project secondevienextjsssr --env sandbox/);
 });
 
-test('G5-A4 prouve IAM puis reste fail-closed avant deploy et envoi OTP', () => {
+test('G5-A4 prouve IAM et autorise seulement le deploy cible avant envoi OTP', () => {
   const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-send-guest-checkout-otp.json'));
   assert.equal(manifest.preflight.sourceExportsWithParallel, 166);
   assert.equal(manifest.preflight.cloudFunctions, 160);
@@ -158,7 +158,7 @@ test('G5-A4 prouve IAM puis reste fail-closed avant deploy et envoi OTP', () => 
   assert.equal(manifest.gates.runtimeIamVerified, true);
   assert.deepEqual(manifest.iamEvidence.forbiddenProjectRoles, []);
   assert.equal(manifest.iamEvidence.userManagedKeyCount, 0);
-  assert.equal(manifest.gates.deploymentAllowed, false);
+  assert.equal(manifest.gates.deploymentAllowed, true);
   assert.equal(manifest.gates.clientCutoverAllowed, false);
   assert.equal(manifest.gates.realOtpSent, false);
 });
