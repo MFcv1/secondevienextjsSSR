@@ -198,6 +198,13 @@ test('G5-A5 prouve IAM et autorise seulement le deploy cible avant verification 
   assert.equal(manifest.gates.deploymentAllowed, true);
   assert.equal(manifest.gates.clientCutoverAllowed, false);
   assert.equal(manifest.gates.boundedOtpVerificationExecuted, false);
+  const proof = read('scripts/prove-guest-otp-verification-g5.mjs');
+  assert.match(proof, /SEND_TARGET = 'sendGuestCheckoutOtpGen2'/);
+  assert.match(proof, /VERIFY_TARGET = 'verifyGuestCheckoutOtpGen2'/);
+  assert.match(proof, /RSA_PKCS1_OAEP_PADDING/);
+  assert.match(proof, /otpHashDeleted: !afterData\.otpHash/);
+  assert.match(proof, /checkoutTokenDisplayed: false/);
+  assert.doesNotMatch(proof, /console\.(?:log|info)\([^\n]*(?:otp|checkoutOtpToken)/i);
 });
 
 test('G5-A4 prouve le deploy et autorise uniquement le cutover client', () => {
