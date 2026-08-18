@@ -63,15 +63,20 @@ test('G5-A2 borne la creation IAM du runtime de session Auth', () => {
   assert.match(read('package.json'), /configure-functions-gen2-g5-auth-session-iam\.mjs --project secondevienextjsssr --env sandbox/);
 });
 
-test('G5-A2 bloque deploy et cutover avant IAM', () => {
+test('G5-A2 autorise uniquement le deploy apres IAM et bloque encore le cutover', () => {
   const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-log-user-connection.json'));
   assert.equal(manifest.preflight.sourceExportsWithParallel, 164);
   assert.equal(manifest.preflight.targetAbsentBeforeCreate, true);
   assert.equal(manifest.functions[0].name, 'logUserConnectionGen2');
   assert.equal(manifest.functions[0].clientRegistry.currentTarget, 'logUserConnection');
-  assert.equal(manifest.gates.runtimeIamReady, false);
-  assert.equal(manifest.gates.deploymentAllowed, false);
+  assert.equal(manifest.gates.runtimeIamReady, true);
+  assert.equal(manifest.gates.deploymentAllowed, true);
   assert.equal(manifest.gates.clientCutoverAuthorized, false);
+  const iam = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-auth-session-iam.json'));
+  assert.equal(iam.ready, true);
+  assert.deepEqual(iam.observedRoles, iam.requiredRoles);
+  assert.equal(iam.userManagedKeyCount, 0);
+  assert.equal(iam.secretAccessor, false);
 });
 
 test('G5 garde les trois triggers Auth exclusivement en Gen1', () => {

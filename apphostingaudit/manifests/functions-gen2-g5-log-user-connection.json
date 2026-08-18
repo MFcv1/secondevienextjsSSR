@@ -84,9 +84,12 @@
       "functionsG0": "26/26",
       "functionsLint": "PASS"
     },
-    "runtimeIamReady": false,
+    "runtimeIamReady": true,
+    "runtimeIamVerified": true,
+    "runtimeIamManifest": "apphostingaudit/manifests/functions-gen2-g5-auth-session-iam.json",
+    "runtimeServiceAccountUserManagedKeys": 0,
     "targetAbsentBeforeCreate": true,
-    "deploymentAllowed": false,
+    "deploymentAllowed": true,
     "clientCutoverAuthorized": false
   },
   "rollback": {
@@ -95,5 +98,5 @@
     "dataAction": "none",
     "g12Action": "none before G12-A"
   },
-  "verdict": "SOURCE_PREPARED_IAM_AND_DEPLOYMENT_PENDING"
+  "verdict": "SOURCE_AND_IAM_READY_SINGLE_FUNCTION_DEPLOYMENT_ALLOWED"
 }

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-18T09:51:16.282Z",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "commit": "d02ab8759343c27515124a3ef633b0b1ba8c4246",
+  "operator": "matthis.fradin2@gmail.com",
+  "serviceAccount": "auth-session-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+  "existedBefore": false,
+  "existsAfter": true,
+  "requiredRoles": [
+    "roles/datastore.user",
+    "roles/logging.logWriter",
+    "roles/serviceusage.serviceUsageConsumer"
+  ],
+  "observedRoles": [
+    "roles/datastore.user",
+    "roles/logging.logWriter",
+    "roles/serviceusage.serviceUsageConsumer"
+  ],
+  "forbiddenRoles": [],
+  "userManagedKeyCount": 0,
+  "secretAccessor": false,
+  "ready": true
+}
