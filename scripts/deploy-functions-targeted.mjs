@@ -18,6 +18,56 @@ const G6_EMAIL_SECRETS = Object.freeze([
   'RESEND_API_KEY=RESEND_API_KEY:1'
 ]);
 const G6_FIREBASE_CONFIG = 'FIREBASE_CONFIG={"storageBucket":"secondevienextjsssr.firebasestorage.app"}';
+const G7_RUNTIME_SERVICE_ACCOUNT = 'meta-runtime@secondevienextjsssr.iam.gserviceaccount.com';
+const G7_META_SECRETS = Object.freeze([
+  'META_APP_ID=META_APP_ID:1',
+  'META_APP_SECRET=META_APP_SECRET:1',
+  'META_OAUTH_REDIRECT_URI=META_OAUTH_REDIRECT_URI:1',
+  'META_TOKEN_ENCRYPTION_KEY=META_TOKEN_ENCRYPTION_KEY:1'
+]);
+const G7_INSTAGRAM_SECRETS = Object.freeze([
+  'INSTAGRAM_APP_ID=INSTAGRAM_APP_ID:1',
+  'INSTAGRAM_APP_SECRET=INSTAGRAM_APP_SECRET:1',
+  'INSTAGRAM_OAUTH_REDIRECT_URI=INSTAGRAM_OAUTH_REDIRECT_URI:1',
+  'META_TOKEN_ENCRYPTION_KEY=META_TOKEN_ENCRYPTION_KEY:1'
+]);
+const G7_PUBLICATION_SECRETS = Object.freeze([
+  'META_TOKEN_ENCRYPTION_KEY=META_TOKEN_ENCRYPTION_KEY:1'
+]);
+const g7Http = ({ name, triggerType = 'http-callable', memory = '256Mi', timeout = '60s', secrets = [] }) => Object.freeze({
+  create: true,
+  g7: true,
+  triggerType,
+  region: 'europe-west1',
+  runtime: 'nodejs22',
+  entryPoint: name,
+  runtimeServiceAccount: G7_RUNTIME_SERVICE_ACCOUNT,
+  buildServiceAccount: G6_BUILD_SERVICE_ACCOUNT,
+  memory,
+  cpu: '167m',
+  timeout,
+  concurrency: '1',
+  minInstances: '0',
+  maxInstances: '1',
+  ingressSettings: 'all',
+  secrets
+});
+const G7_GEN2_TARGETS = Object.freeze({
+  disconnectInstagramConnectionAdminGen2: g7Http({ name: 'disconnectInstagramConnectionAdminGen2', secrets: G7_PUBLICATION_SECRETS }),
+  disconnectMetaConnectionAdminGen2: g7Http({ name: 'disconnectMetaConnectionAdminGen2', secrets: G7_PUBLICATION_SECRETS }),
+  getInstagramConnectionStatusAdminGen2: g7Http({ name: 'getInstagramConnectionStatusAdminGen2', secrets: G7_PUBLICATION_SECRETS }),
+  getMetaConnectionStatusAdminGen2: g7Http({ name: 'getMetaConnectionStatusAdminGen2', secrets: G7_PUBLICATION_SECRETS }),
+  getSocialPublicationStatusAdminGen2: g7Http({ name: 'getSocialPublicationStatusAdminGen2' }),
+  instagramOAuthCallbackGen2: g7Http({ name: 'instagramOAuthCallbackGen2', triggerType: 'http-public', secrets: G7_INSTAGRAM_SECRETS }),
+  metaOAuthCallbackGen2: g7Http({ name: 'metaOAuthCallbackGen2', triggerType: 'http-public', secrets: G7_META_SECRETS }),
+  prepareSocialPublicationAdminGen2: g7Http({ name: 'prepareSocialPublicationAdminGen2', memory: '512Mi', timeout: '300s', secrets: G7_PUBLICATION_SECRETS }),
+  runSocialPublicationAdminGen2: g7Http({ name: 'runSocialPublicationAdminGen2', memory: '512Mi', timeout: '300s', secrets: G7_PUBLICATION_SECRETS }),
+  selectMetaAssetAdminGen2: g7Http({ name: 'selectMetaAssetAdminGen2', secrets: G7_PUBLICATION_SECRETS }),
+  startInstagramOAuthAdminGen2: g7Http({ name: 'startInstagramOAuthAdminGen2', secrets: G7_INSTAGRAM_SECRETS }),
+  startMetaOAuthAdminGen2: g7Http({ name: 'startMetaOAuthAdminGen2', secrets: G7_META_SECRETS }),
+  verifyInstagramConnectionAdminGen2: g7Http({ name: 'verifyInstagramConnectionAdminGen2', secrets: G7_PUBLICATION_SECRETS }),
+  verifyMetaConnectionAdminGen2: g7Http({ name: 'verifyMetaConnectionAdminGen2', secrets: G7_PUBLICATION_SECRETS })
+});
 const g6Callable = ({ name, serviceAccount, memory = '256Mi', timeout = '60s', secrets = [], environmentVariables = [], environmentVariableNames = [] }) => Object.freeze({
   create: true,
   g6: true,
@@ -160,6 +210,7 @@ const GCLOUD_GEN1_TARGETS = Object.freeze({
 });
 export const GCLOUD_GEN2_TARGETS = Object.freeze({
   ...G6_GEN2_TARGETS,
+  ...G7_GEN2_TARGETS,
   removeAdminUserGen2: Object.freeze({
     create: true,
     triggerType: 'http-callable',
@@ -1131,16 +1182,17 @@ export function validateDeploymentRequest({
     if (entries[0].cloud?.present !== false || entries[0].decision?.classification !== 'MIGRATION_PARALLEL') {
       fail('Creation gcloud Gen2 exige une cible parallele absente du cloud');
     }
-    if (target.g6) {
+    if (target.g6 || target.g7) {
       const sourceUri = required(args, 'source-uri');
       const sourceSha256 = required(args, 'source-sha256');
       const sourceGeneration = required(args, 'source-generation');
-      if (!/^gs:\/\/gcf-v2-sources-231220287936-europe-west1\/g6\/[0-9a-f]{64}\/function-source\.zip$/.test(sourceUri)) {
-        fail('Archive source G6 immutable invalide');
+      const wave = target.g7 ? 'g7' : 'g6';
+      if (!new RegExp(`^gs://gcf-v2-sources-231220287936-europe-west1/${wave}/[0-9a-f]{64}/function-source\\.zip$`).test(sourceUri)) {
+        fail(`Archive source ${wave.toUpperCase()} immutable invalide`);
       }
-      if (!/^[0-9a-f]{64}$/.test(sourceSha256)) fail('SHA-256 source G6 invalide');
-      if (!/^[1-9][0-9]+$/.test(sourceGeneration)) fail('Generation source G6 invalide');
-      if (!sourceUri.includes(`/g6/${sourceSha256}/`)) fail('URI et SHA-256 source G6 divergents');
+      if (!/^[0-9a-f]{64}$/.test(sourceSha256)) fail(`SHA-256 source ${wave.toUpperCase()} invalide`);
+      if (!/^[1-9][0-9]+$/.test(sourceGeneration)) fail(`Generation source ${wave.toUpperCase()} invalide`);
+      if (!sourceUri.includes(`/${wave}/${sourceSha256}/`)) fail(`URI et SHA-256 source ${wave.toUpperCase()} divergents`);
     }
   }
   if (transport === 'gcloud-gen2-update') {
@@ -1235,7 +1287,7 @@ export function buildGcloudGen2DeployArgs(validation) {
     `--region=${target.region}`,
     '--gen2',
     `--runtime=${target.runtime}`,
-    `--source=${target.g6 ? validation.sourceUri : 'functions'}`,
+    `--source=${target.g6 || target.g7 ? validation.sourceUri : 'functions'}`,
     `--entry-point=${target.entryPoint}`,
     ...triggerArgs,
     `--run-service-account=${target.runtimeServiceAccount}`,

@@ -194,35 +194,63 @@ exports.startProductPublicationAdmin = startProductPublicationAdmin;
 // ── PUBLICATION META (OAuth + Instagram/Facebook) ───────
 const {
     disconnectInstagramConnectionAdmin,
+    disconnectInstagramConnectionAdminGen2,
     disconnectMetaConnectionAdmin,
+    disconnectMetaConnectionAdminGen2,
     getInstagramConnectionStatusAdmin,
+    getInstagramConnectionStatusAdminGen2,
     getMetaConnectionStatusAdmin,
+    getMetaConnectionStatusAdminGen2,
     getSocialPublicationStatusAdmin,
+    getSocialPublicationStatusAdminGen2,
     instagramOAuthCallback,
+    instagramOAuthCallbackGen2,
     metaOAuthCallback,
+    metaOAuthCallbackGen2,
     prepareSocialPublicationAdmin,
+    prepareSocialPublicationAdminGen2,
     runSocialPublicationAdmin,
+    runSocialPublicationAdminGen2,
     selectMetaAssetAdmin,
+    selectMetaAssetAdminGen2,
     startInstagramOAuthAdmin,
+    startInstagramOAuthAdminGen2,
     startMetaOAuthAdmin,
+    startMetaOAuthAdminGen2,
     verifyInstagramConnectionAdmin,
-    verifyMetaConnectionAdmin
+    verifyInstagramConnectionAdminGen2,
+    verifyMetaConnectionAdmin,
+    verifyMetaConnectionAdminGen2
 } = require('./src/integrations/meta');
 
 exports.disconnectInstagramConnectionAdmin = disconnectInstagramConnectionAdmin;
+exports.disconnectInstagramConnectionAdminGen2 = disconnectInstagramConnectionAdminGen2;
 exports.disconnectMetaConnectionAdmin = disconnectMetaConnectionAdmin;
+exports.disconnectMetaConnectionAdminGen2 = disconnectMetaConnectionAdminGen2;
 exports.getInstagramConnectionStatusAdmin = getInstagramConnectionStatusAdmin;
+exports.getInstagramConnectionStatusAdminGen2 = getInstagramConnectionStatusAdminGen2;
 exports.getMetaConnectionStatusAdmin = getMetaConnectionStatusAdmin;
+exports.getMetaConnectionStatusAdminGen2 = getMetaConnectionStatusAdminGen2;
 exports.getSocialPublicationStatusAdmin = getSocialPublicationStatusAdmin;
+exports.getSocialPublicationStatusAdminGen2 = getSocialPublicationStatusAdminGen2;
 exports.instagramOAuthCallback = instagramOAuthCallback;
+exports.instagramOAuthCallbackGen2 = instagramOAuthCallbackGen2;
 exports.metaOAuthCallback = metaOAuthCallback;
+exports.metaOAuthCallbackGen2 = metaOAuthCallbackGen2;
 exports.prepareSocialPublicationAdmin = prepareSocialPublicationAdmin;
+exports.prepareSocialPublicationAdminGen2 = prepareSocialPublicationAdminGen2;
 exports.runSocialPublicationAdmin = runSocialPublicationAdmin;
+exports.runSocialPublicationAdminGen2 = runSocialPublicationAdminGen2;
 exports.selectMetaAssetAdmin = selectMetaAssetAdmin;
+exports.selectMetaAssetAdminGen2 = selectMetaAssetAdminGen2;
 exports.startInstagramOAuthAdmin = startInstagramOAuthAdmin;
+exports.startInstagramOAuthAdminGen2 = startInstagramOAuthAdminGen2;
 exports.startMetaOAuthAdmin = startMetaOAuthAdmin;
+exports.startMetaOAuthAdminGen2 = startMetaOAuthAdminGen2;
 exports.verifyInstagramConnectionAdmin = verifyInstagramConnectionAdmin;
+exports.verifyInstagramConnectionAdminGen2 = verifyInstagramConnectionAdminGen2;
 exports.verifyMetaConnectionAdmin = verifyMetaConnectionAdmin;
+exports.verifyMetaConnectionAdminGen2 = verifyMetaConnectionAdminGen2;
 
 // ── AUTH ──────────────────────────────────────────────────
 const { grantAdminOnAuth } = require('./src/auth/grantAdmin');

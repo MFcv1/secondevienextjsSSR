@@ -3,6 +3,7 @@
 const crypto = require('node:crypto');
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
+const { onCall, onRequest } = require('firebase-functions/v2/https');
 const {
     checkActiveStrongAdmin,
     checkActiveStrongSuperAdmin,
@@ -1040,6 +1041,25 @@ async function getSocialPublicationStatusHandler(data, context) {
 
 const callableRuntime = { enforceAppCheck: true, secrets: META_SECRETS, timeoutSeconds: 60, memory: '256MB' };
 const publicationRuntime = { enforceAppCheck: true, secrets: PUBLICATION_SECRETS, timeoutSeconds: 300, memory: '512MB' };
+const META_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    timeoutSeconds: 60,
+    memory: '256MiB',
+    serviceAccount: 'meta-runtime@secondevienextjsssr.iam.gserviceaccount.com'
+});
+const META_GEN2_CALLABLE_RUNTIME = Object.freeze({
+    ...META_GEN2_RUNTIME,
+    enforceAppCheck: true
+});
+const META_GEN2_PUBLICATION_RUNTIME = Object.freeze({
+    ...META_GEN2_CALLABLE_RUNTIME,
+    timeoutSeconds: 300,
+    memory: '512MiB'
+});
 
 const startMetaOAuthAdmin = regionalFunctions().runWith(callableRuntime).https.onCall(startMetaOAuthHandler);
 const metaOAuthCallback = regionalFunctions().runWith({ secrets: META_SECRETS, timeoutSeconds: 60, memory: '256MB' }).https.onRequest(metaOAuthCallbackHandler);
@@ -1058,17 +1078,73 @@ const getSocialPublicationStatusAdmin = regionalFunctions().runWith({ enforceApp
 
 module.exports = {
     disconnectInstagramConnectionAdmin,
+    disconnectInstagramConnectionAdminGen2: onCall(
+        { ...META_GEN2_CALLABLE_RUNTIME, secrets: PUBLICATION_SECRETS },
+        async (request) => disconnectInstagramConnectionHandler(request.data, request)
+    ),
     disconnectMetaConnectionAdmin,
+    disconnectMetaConnectionAdminGen2: onCall(
+        { ...META_GEN2_CALLABLE_RUNTIME, secrets: PUBLICATION_SECRETS },
+        async (request) => disconnectMetaConnectionHandler(request.data, request)
+    ),
     getInstagramConnectionStatusAdmin,
+    getInstagramConnectionStatusAdminGen2: onCall(
+        { ...META_GEN2_CALLABLE_RUNTIME, secrets: PUBLICATION_SECRETS },
+        async (request) => getInstagramConnectionStatusHandler(request.data, request)
+    ),
     getMetaConnectionStatusAdmin,
+    getMetaConnectionStatusAdminGen2: onCall(
+        { ...META_GEN2_CALLABLE_RUNTIME, secrets: PUBLICATION_SECRETS },
+        async (request) => getMetaConnectionStatusHandler(request.data, request)
+    ),
     getSocialPublicationStatusAdmin,
+    getSocialPublicationStatusAdminGen2: onCall(
+        META_GEN2_CALLABLE_RUNTIME,
+        async (request) => getSocialPublicationStatusHandler(request.data, request)
+    ),
     instagramOAuthCallback,
+    instagramOAuthCallbackGen2: onRequest(
+        { ...META_GEN2_RUNTIME, secrets: INSTAGRAM_SECRETS, cors: false },
+        instagramOAuthCallbackHandler
+    ),
     metaOAuthCallback,
+    metaOAuthCallbackGen2: onRequest(
+        { ...META_GEN2_RUNTIME, secrets: META_SECRETS, cors: false },
+        metaOAuthCallbackHandler
+    ),
     prepareSocialPublicationAdmin,
+    prepareSocialPublicationAdminGen2: onCall(
+        { ...META_GEN2_PUBLICATION_RUNTIME, secrets: PUBLICATION_SECRETS },
+        async (request) => prepareSocialPublicationHandler(request.data, request)
+    ),
     runSocialPublicationAdmin,
+    runSocialPublicationAdminGen2: onCall(
+        { ...META_GEN2_PUBLICATION_RUNTIME, secrets: PUBLICATION_SECRETS },
+        async (request) => runSocialPublicationHandler(request.data, request)
+    ),
     selectMetaAssetAdmin,
+    selectMetaAssetAdminGen2: onCall(
+        { ...META_GEN2_CALLABLE_RUNTIME, secrets: PUBLICATION_SECRETS },
+        async (request) => selectMetaAssetHandler(request.data, request)
+    ),
     startInstagramOAuthAdmin,
+    startInstagramOAuthAdminGen2: onCall(
+        { ...META_GEN2_CALLABLE_RUNTIME, secrets: INSTAGRAM_SECRETS },
+        async (request) => startInstagramOAuthHandler(request.data, request)
+    ),
     startMetaOAuthAdmin,
+    startMetaOAuthAdminGen2: onCall(
+        { ...META_GEN2_CALLABLE_RUNTIME, secrets: META_SECRETS },
+        async (request) => startMetaOAuthHandler(request.data, request)
+    ),
     verifyInstagramConnectionAdmin,
-    verifyMetaConnectionAdmin
+    verifyInstagramConnectionAdminGen2: onCall(
+        { ...META_GEN2_CALLABLE_RUNTIME, secrets: PUBLICATION_SECRETS },
+        async (request) => verifyInstagramConnectionHandler(request.data, request)
+    ),
+    verifyMetaConnectionAdmin,
+    verifyMetaConnectionAdminGen2: onCall(
+        { ...META_GEN2_CALLABLE_RUNTIME, secrets: PUBLICATION_SECRETS },
+        async (request) => verifyMetaConnectionHandler(request.data, request)
+    )
 };
