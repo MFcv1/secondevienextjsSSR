@@ -23,7 +23,7 @@ if (!admin.apps.length) admin.initializeApp({ credential: admin.credential.cert(
 
 const db = admin.firestore();
 const auth = admin.auth();
-const storage = admin.storage().bucket();
+const storage = admin.storage().bucket('secondevienextjsssr.firebasestorage.app');
 const ownerAccess = await db.collection('sys_admin_access').where('active', '==', true).where('role', '==', 'owner').limit(2).get();
 if (ownerAccess.size !== 1) fail('G6_PROOF_OWNER_AMBIGUOUS');
 const owner = await auth.getUser(ownerAccess.docs[0].id);
