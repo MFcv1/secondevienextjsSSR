@@ -1125,10 +1125,12 @@ export function validateDeploymentRequest({
     if (target.g6) {
       const sourceUri = required(args, 'source-uri');
       const sourceSha256 = required(args, 'source-sha256');
-      if (!/^gs:\/\/gcf-v2-sources-231220287936-europe-west1\/g6\/[0-9a-f]{64}\/function-source\.zip#[0-9]+$/.test(sourceUri)) {
+      const sourceGeneration = required(args, 'source-generation');
+      if (!/^gs:\/\/gcf-v2-sources-231220287936-europe-west1\/g6\/[0-9a-f]{64}\/function-source\.zip$/.test(sourceUri)) {
         fail('Archive source G6 immutable invalide');
       }
       if (!/^[0-9a-f]{64}$/.test(sourceSha256)) fail('SHA-256 source G6 invalide');
+      if (!/^[1-9][0-9]+$/.test(sourceGeneration)) fail('Generation source G6 invalide');
       if (!sourceUri.includes(`/g6/${sourceSha256}/`)) fail('URI et SHA-256 source G6 divergents');
     }
   }
@@ -1161,7 +1163,8 @@ export function validateDeploymentRequest({
     entries,
     transport,
     sourceUri: args['source-uri'] || null,
-    sourceSha256: args['source-sha256'] || null
+    sourceSha256: args['source-sha256'] || null,
+    sourceGeneration: args['source-generation'] || null
   };
 }
 

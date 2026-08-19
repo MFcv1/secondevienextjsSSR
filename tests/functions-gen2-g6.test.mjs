@@ -61,7 +61,7 @@ test('G6 deployment definitions use six bounded runtime families', () => {
 
 test('G6 deploy requires one immutable remote archive and never local source', () => {
   const digest = 'a'.repeat(64);
-  const sourceUri = `gs://gcf-v2-sources-231220287936-europe-west1/g6/${digest}/function-source.zip#123`;
+  const sourceUri = `gs://gcf-v2-sources-231220287936-europe-west1/g6/${digest}/function-source.zip`;
   const targetName = 'getCatalogPublicationStatusGen2';
   const manifest = {
     metadata: { project: 'secondevienextjsssr', codebase: 'main', baselineCommit: 'f5886ba3f36610a2e990b342bec6ff97c9d3d228' },
@@ -72,7 +72,8 @@ test('G6 deploy requires one immutable remote archive and never local source', (
   const validation = validateDeploymentRequest({
     args: {
       project: 'secondevienextjsssr', codebase: 'main', commit: 'f5886ba3f36610a2e990b342bec6ff97c9d3d228',
-      allowlist: targetName, transport: 'gcloud-gen2-create', 'source-uri': sourceUri, 'source-sha256': digest
+      allowlist: targetName, transport: 'gcloud-gen2-create', 'source-uri': sourceUri,
+      'source-sha256': digest, 'source-generation': '123'
     },
     manifest,
     rootDir: root,
