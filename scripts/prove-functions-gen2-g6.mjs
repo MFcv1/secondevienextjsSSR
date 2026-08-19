@@ -12,7 +12,7 @@ const SERVICE_ACCOUNT_JSON = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 const PHASE = process.argv.find((value) => value.startsWith('--phase='))?.split('=')[1];
 const fail = (code) => { throw new Error(code); };
 
-if (!['callables', 'callables-resume', 'trigger'].includes(PHASE)) fail('G6_PROOF_PHASE_INVALID');
+if (!['callables', 'callables-resume', 'callables-after-invoice-failure', 'trigger'].includes(PHASE)) fail('G6_PROOF_PHASE_INVALID');
 if ((process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID) !== PROJECT) fail('G6_PROOF_PROJECT_MISMATCH');
 if (!APP_ID || !API_KEY || !SERVICE_ACCOUNT_JSON) fail('G6_PROOF_FIXTURE_MISSING');
 const serviceAccount = JSON.parse(SERVICE_ACCOUNT_JSON);
@@ -333,6 +333,11 @@ if (PHASE === 'callables') {
   await proveManualEmail();
   await proveNewsletter();
   process.stdout.write(`${JSON.stringify({ project: PROJECT, phase: PHASE, runtimeRefusalsReused: true, catalogDrillReused: true, catalog, fixturesRestored: true, realEmailCount: 4, tokensPersisted: false }, null, 2)}\n`);
+} else if (PHASE === 'callables-after-invoice-failure') {
+  await proveManualInvoice();
+  await proveManualEmail();
+  await proveNewsletter();
+  process.stdout.write(`${JSON.stringify({ project: PROJECT, phase: PHASE, priorProofsReused: true, fixturesRestored: true, realEmailCount: 4, tokensPersisted: false }, null, 2)}\n`);
 } else {
   await proveQuoteTrigger();
   process.stdout.write(`${JSON.stringify({ project: PROJECT, phase: PHASE, quoteFixtureRestored: true, coexistenceEmailCount: 1, tokensPersisted: false }, null, 2)}\n`);
