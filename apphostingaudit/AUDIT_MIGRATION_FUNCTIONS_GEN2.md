@@ -2642,7 +2642,7 @@ zero entree Gen1 correspondante. Inventaire final: 251 exports locaux, 246
 cloud, 139 Gen1 et 107 Gen2. Toutes les Gen1, donnees, IAM, secrets, endpoints
 et possibilites de rollback restent intacts. G9 n'est pas ouvert.
 
-Correctifs locaux post-audit du 2026-08-19, sans mutation cloud: le worker
+Correctifs post-audit du 2026-08-19: le worker
 outbox neutralise tout document portant le `testContext` de la fixture avant
 l'appel provider; le harnais retente son cleanup, controle la propriete de ses
 documents et ne publie son succes qu'apres absence verifiee des residus. Le
@@ -2650,9 +2650,12 @@ wrapper de creation compare au manifeste URI, SHA-256, generation et taille,
 puis rehache les octets Storage avant deploy. L'inventaire recalcule les 251
 exports/246 cibles et refuse une vague parallele inconnue. Enfin, le dry-run P1
 porte les dix `lastUpdateTime`, hashes de preuve et leur digest deterministe;
-aucune ecriture `inventoryVersion` n'a ete faite. Ces protections de runtime
-ne sont effectives dans le sandbox qu'apres un deploiement explicitement
-autorise; ne pas rejouer la fixture distante avant celui du dispatcher.
+aucune ecriture `inventoryVersion` n'a ete faite. Le commit `0f09dc8` a ete
+integre sur `main`, puis le seul `commerceOutboxDispatcher` a ete deploye en
+Gen1 version 12, build `43c90da7-3738-4058-85cf-a0045d953009`. La Function est
+`ACTIVE`, le Scheduler reste `ENABLED` et le premier run post-deploiement a
+termine `ok` en 1,702 s sans backlog traite ni erreur. G9 reste ferme tant que
+sa reprise distincte n'est pas lancee.
 
 ### G9 - Checkout, Connect, refunds, schedulers et workers
 

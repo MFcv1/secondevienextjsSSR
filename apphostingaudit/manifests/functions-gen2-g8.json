@@ -79,12 +79,23 @@
     "testCommand": "npm run test:functions-g8",
     "testResult": "89 tests plus 5 Firestore rules checks passed after bounded extractor corrections",
     "functionsLint": "passed once",
-    "postAuditLocalValidation": {
+    "postAuditValidation": {
       "date": "2026-08-19",
       "testResult": "115 tests plus 5 Firestore rules checks passed",
       "functionsLint": "passed",
-      "cloudMutation": false,
-      "deployment": false
+      "integrationBranch": "main",
+      "sourceCommit": "0f09dc84b2051f3351f5331d820a5a531a3f6948",
+      "inventoryVersionWrite": false,
+      "deployment": {
+        "target": "commerceOutboxDispatcher",
+        "generation": 1,
+        "versionId": "12",
+        "status": "ACTIVE",
+        "buildId": "43c90da7-3738-4058-85cf-a0045d953009",
+        "schedulerState": "ENABLED",
+        "firstRunStatus": "ok",
+        "firstRunDurationMs": 1702
+      }
     },
     "fixtureCommand": "npm run functions:prove-commerce:g8",
     "fixture": {

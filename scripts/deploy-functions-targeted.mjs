@@ -232,7 +232,7 @@ const GCLOUD_GEN1_TARGETS = Object.freeze({
     timeout: '300s',
     maxInstances: '1',
     ingressSettings: 'all',
-    expectedVersion: '11',
+    expectedVersion: '12',
     expectedServiceAccount: 'commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com',
     secrets: [
       'GMAIL_EMAIL=GMAIL_EMAIL:2',

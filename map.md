@@ -885,8 +885,9 @@ bascule les 35 cibles fixes ainsi que `createOrder` et
 Les garde-fous locaux post-audit recalculent strictement 251/246, refusent une
 vague parallele inconnue, lient l'archive a URI/SHA-256/generation/taille et
 neutralisent les outboxes `testContext` avant le provider. Le harnais G8 ne
-declare le succes qu'apres verification de son cleanup; ces correctifs restent
-non deployes tant qu'aucun deploiement explicite n'est autorise.
+declare le succes qu'apres verification de son cleanup. Ils sont integres sur
+`main`; le dispatcher Gen1 est `ACTIVE` en version 12 depuis le commit source
+`0f09dc8`, Scheduler conserve et premier run post-deploiement `ok`.
 Les decisions par nom, appelants, acces donnees, IAM, secrets et rollback sont dans
 `apphostingaudit/manifests/functions-g0.json`; la reconciliation des 13 Gen2,
 Schedulers, queues et Eventarc est dans

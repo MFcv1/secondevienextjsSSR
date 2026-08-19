@@ -139,6 +139,9 @@ toute vague parallele inconnue. Pour les creations G6-G8, le wrapper refuse
 desormais toute archive dont l'URI, le SHA-256, la generation ou la taille ne
 correspond pas exactement au manifeste signe; il relit et rehache aussi les
 octets Storage avant le lancement de `gcloud functions deploy`.
+Le correctif outbox post-audit a ete deploye seul depuis `main` au commit
+`0f09dc8`: `commerceOutboxDispatcher` Gen1 version 12 est `ACTIVE`, build
+`43c90da7-3738-4058-85cf-a0045d953009`, avec le Scheduler `ENABLED` conserve.
 
 Etat courant du chantier Gen2 au 2026-08-19: G0-G8 sont fermes; App Hosting
 sert `build-2026-08-19-005` apres rollback reel vers `004` et reactivation.
