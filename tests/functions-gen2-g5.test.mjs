@@ -553,7 +553,7 @@ test('G5-A12-A14 borne la preuve admin a un compte jetable restaure', () => {
     /syncSuperAdminClaimGen2/,
     /addAdminUserGen2/,
     /removeAdminUserGen2/,
-    /OWNER_SECRET_BYTES_MISMATCH/,
+    /OWNER_SECRET_BYTES_INVALID/,
     /SYNC_WOULD_MIGRATE_LEGACY_ADMIN/,
     /confirmText: 'AJOUTER ADMIN'/,
     /confirmText: 'RETIRER ADMIN'/,
@@ -561,6 +561,9 @@ test('G5-A12-A14 borne la preuve admin a un compte jetable restaure', () => {
     /tokensValidAfterTime === tokensValidBefore/,
     /restoreSnapshot\(ownerAccessRef, ownerAccessBefore\)/,
     /auth\.deleteUser\(temporaryUser\.uid\)/,
+    /--reconcile-since/,
+    /\.limit\(30\)/,
+    /RECONCILE_FIXTURE_REMAINS/,
     /fixturesRestored: true/,
   ]) assert.match(proof, expected);
   assert.doesNotMatch(proof, /console\.(?:log|info)\([^\n]*(?:Token|temporaryEmail|OWNER_EMAIL)/);
