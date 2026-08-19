@@ -34,6 +34,57 @@ const G7_INSTAGRAM_SECRETS = Object.freeze([
 const G7_PUBLICATION_SECRETS = Object.freeze([
   'META_TOKEN_ENCRYPTION_KEY=META_TOKEN_ENCRYPTION_KEY:1'
 ]);
+const G8_BUILD_SERVICE_ACCOUNT = G6_BUILD_SERVICE_ACCOUNT;
+const G8_RUNTIME_SERVICE_ACCOUNT = 'secondevienextjsssr@appspot.gserviceaccount.com';
+const G8_STRIPE_SECRET = Object.freeze(['STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:4']);
+const G8_CREATE_ORDER_SECRETS = Object.freeze([
+  'GMAIL_EMAIL=GMAIL_EMAIL:2',
+  'GMAIL_PASSWORD=GMAIL_PASSWORD:5',
+  'STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:4'
+]);
+const g8Callable = ({ name, memory = '256Mi', secrets = [] }) => Object.freeze({
+  create: true,
+  g8: true,
+  triggerType: 'http-callable',
+  region: 'europe-west1',
+  runtime: 'nodejs22',
+  entryPoint: name,
+  runtimeServiceAccount: G8_RUNTIME_SERVICE_ACCOUNT,
+  buildServiceAccount: G8_BUILD_SERVICE_ACCOUNT,
+  memory,
+  cpu: '167m',
+  timeout: '60s',
+  concurrency: '1',
+  minInstances: '0',
+  maxInstances: '1',
+  ingressSettings: 'all',
+  secrets
+});
+const G8_LOGICAL_NAMES = Object.freeze([
+  'adjustInventoryAdmin', 'archiveOrderAdmin', 'cancelReturnAdmin', 'createOrder',
+  'createProductAdmin', 'createPromotionCodeAdmin', 'createPublishedProductAdmin',
+  'decideCustomerReturnRequestAdmin', 'deleteProductAdmin', 'getDeliveryPolicyAdmin',
+  'getOrderStatusClient', 'getOrderTimelineAdminV2', 'listCustomerReturnRequestsAdminV2',
+  'listMyOrdersV2', 'listOrdersAdminV2', 'listPromotionCodesAdmin', 'listReturnsAdminV2',
+  'markOrderDeliveredAdmin', 'markOrderPickedUpAdmin', 'markOrderPreparingAdmin',
+  'markOrderReadyForPickupAdmin', 'markOrderShippedAdmin', 'markReturnReceivedAdmin',
+  'openReturnAdmin', 'preflightProductMutationAdmin', 'prepareCommerceDocumentDelivery',
+  'previewPromotionCodeV2', 'publishProductAdmin', 'requestCustomerReturn',
+  'requestOrderCancellation', 'resolveReturnAdmin', 'restockReturnLinesAdmin',
+  'saveDeliveryPolicyAdmin', 'setPromotionCodeStatusAdmin', 'updateOrderTrackingAdmin',
+  'updateProductOfferAdmin', 'writeOffReturnLinesAdmin'
+]);
+const G8_GEN2_TARGETS = Object.freeze(Object.fromEntries(G8_LOGICAL_NAMES.map((name) => {
+  const targetName = `${name}Gen2`;
+  const secrets = name === 'createOrder'
+    ? G8_CREATE_ORDER_SECRETS
+    : (['decideCustomerReturnRequestAdmin', 'requestOrderCancellation'].includes(name) ? G8_STRIPE_SECRET : []);
+  return [targetName, g8Callable({
+    name: targetName,
+    memory: name === 'prepareCommerceDocumentDelivery' ? '512Mi' : '256Mi',
+    secrets
+  })];
+})));
 const g7Http = ({ name, triggerType = 'http-callable', memory = '256Mi', timeout = '60s', secrets = [] }) => Object.freeze({
   create: true,
   g7: true,
@@ -211,6 +262,7 @@ const GCLOUD_GEN1_TARGETS = Object.freeze({
 export const GCLOUD_GEN2_TARGETS = Object.freeze({
   ...G6_GEN2_TARGETS,
   ...G7_GEN2_TARGETS,
+  ...G8_GEN2_TARGETS,
   removeAdminUserGen2: Object.freeze({
     create: true,
     triggerType: 'http-callable',
@@ -1182,11 +1234,11 @@ export function validateDeploymentRequest({
     if (entries[0].cloud?.present !== false || entries[0].decision?.classification !== 'MIGRATION_PARALLEL') {
       fail('Creation gcloud Gen2 exige une cible parallele absente du cloud');
     }
-    if (target.g6 || target.g7) {
+    if (target.g6 || target.g7 || target.g8) {
       const sourceUri = required(args, 'source-uri');
       const sourceSha256 = required(args, 'source-sha256');
       const sourceGeneration = required(args, 'source-generation');
-      const wave = target.g7 ? 'g7' : 'g6';
+      const wave = target.g8 ? 'g8' : (target.g7 ? 'g7' : 'g6');
       if (!new RegExp(`^gs://gcf-v2-sources-231220287936-europe-west1/${wave}/[0-9a-f]{64}/function-source\\.zip$`).test(sourceUri)) {
         fail(`Archive source ${wave.toUpperCase()} immutable invalide`);
       }
@@ -1287,7 +1339,7 @@ export function buildGcloudGen2DeployArgs(validation) {
     `--region=${target.region}`,
     '--gen2',
     `--runtime=${target.runtime}`,
-    `--source=${target.g6 || target.g7 ? validation.sourceUri : 'functions'}`,
+    `--source=${target.g6 || target.g7 || target.g8 ? validation.sourceUri : 'functions'}`,
     `--entry-point=${target.entryPoint}`,
     ...triggerArgs,
     `--run-service-account=${target.runtimeServiceAccount}`,

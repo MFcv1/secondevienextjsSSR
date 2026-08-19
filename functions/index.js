@@ -172,6 +172,84 @@ exports.resumeAdminPaymentLinkPayment = resumeAdminPaymentLinkPayment;
 exports.getDeliveryPolicyAdmin = getDeliveryPolicyAdmin;
 exports.saveDeliveryPolicyAdmin = saveDeliveryPolicyAdmin;
 
+// ── COMMERCE G8 — PARALLELES GEN2 REVERSIBLES ──────────
+const {
+    adjustInventoryAdminGen2,
+    archiveOrderAdminGen2,
+    cancelReturnAdminGen2,
+    createOrderGen2,
+    createProductAdminGen2,
+    createPromotionCodeAdminGen2,
+    createPublishedProductAdminGen2,
+    decideCustomerReturnRequestAdminGen2,
+    deleteProductAdminGen2,
+    getDeliveryPolicyAdminGen2,
+    getOrderStatusClientGen2,
+    getOrderTimelineAdminV2Gen2,
+    listCustomerReturnRequestsAdminV2Gen2,
+    listMyOrdersV2Gen2,
+    listOrdersAdminV2Gen2,
+    listPromotionCodesAdminGen2,
+    listReturnsAdminV2Gen2,
+    markOrderDeliveredAdminGen2,
+    markOrderPickedUpAdminGen2,
+    markOrderPreparingAdminGen2,
+    markOrderReadyForPickupAdminGen2,
+    markOrderShippedAdminGen2,
+    markReturnReceivedAdminGen2,
+    openReturnAdminGen2,
+    preflightProductMutationAdminGen2,
+    prepareCommerceDocumentDeliveryGen2,
+    previewPromotionCodeV2Gen2,
+    publishProductAdminGen2,
+    requestCustomerReturnGen2,
+    requestOrderCancellationGen2,
+    resolveReturnAdminGen2,
+    restockReturnLinesAdminGen2,
+    saveDeliveryPolicyAdminGen2,
+    setPromotionCodeStatusAdminGen2,
+    updateOrderTrackingAdminGen2,
+    updateProductOfferAdminGen2,
+    writeOffReturnLinesAdminGen2
+} = require('./src/commerce/gen2G8');
+exports.adjustInventoryAdminGen2 = adjustInventoryAdminGen2;
+exports.archiveOrderAdminGen2 = archiveOrderAdminGen2;
+exports.cancelReturnAdminGen2 = cancelReturnAdminGen2;
+exports.createOrderGen2 = createOrderGen2;
+exports.createProductAdminGen2 = createProductAdminGen2;
+exports.createPromotionCodeAdminGen2 = createPromotionCodeAdminGen2;
+exports.createPublishedProductAdminGen2 = createPublishedProductAdminGen2;
+exports.decideCustomerReturnRequestAdminGen2 = decideCustomerReturnRequestAdminGen2;
+exports.deleteProductAdminGen2 = deleteProductAdminGen2;
+exports.getDeliveryPolicyAdminGen2 = getDeliveryPolicyAdminGen2;
+exports.getOrderStatusClientGen2 = getOrderStatusClientGen2;
+exports.getOrderTimelineAdminV2Gen2 = getOrderTimelineAdminV2Gen2;
+exports.listCustomerReturnRequestsAdminV2Gen2 = listCustomerReturnRequestsAdminV2Gen2;
+exports.listMyOrdersV2Gen2 = listMyOrdersV2Gen2;
+exports.listOrdersAdminV2Gen2 = listOrdersAdminV2Gen2;
+exports.listPromotionCodesAdminGen2 = listPromotionCodesAdminGen2;
+exports.listReturnsAdminV2Gen2 = listReturnsAdminV2Gen2;
+exports.markOrderDeliveredAdminGen2 = markOrderDeliveredAdminGen2;
+exports.markOrderPickedUpAdminGen2 = markOrderPickedUpAdminGen2;
+exports.markOrderPreparingAdminGen2 = markOrderPreparingAdminGen2;
+exports.markOrderReadyForPickupAdminGen2 = markOrderReadyForPickupAdminGen2;
+exports.markOrderShippedAdminGen2 = markOrderShippedAdminGen2;
+exports.markReturnReceivedAdminGen2 = markReturnReceivedAdminGen2;
+exports.openReturnAdminGen2 = openReturnAdminGen2;
+exports.preflightProductMutationAdminGen2 = preflightProductMutationAdminGen2;
+exports.prepareCommerceDocumentDeliveryGen2 = prepareCommerceDocumentDeliveryGen2;
+exports.previewPromotionCodeV2Gen2 = previewPromotionCodeV2Gen2;
+exports.publishProductAdminGen2 = publishProductAdminGen2;
+exports.requestCustomerReturnGen2 = requestCustomerReturnGen2;
+exports.requestOrderCancellationGen2 = requestOrderCancellationGen2;
+exports.resolveReturnAdminGen2 = resolveReturnAdminGen2;
+exports.restockReturnLinesAdminGen2 = restockReturnLinesAdminGen2;
+exports.saveDeliveryPolicyAdminGen2 = saveDeliveryPolicyAdminGen2;
+exports.setPromotionCodeStatusAdminGen2 = setPromotionCodeStatusAdminGen2;
+exports.updateOrderTrackingAdminGen2 = updateOrderTrackingAdminGen2;
+exports.updateProductOfferAdminGen2 = updateProductOfferAdminGen2;
+exports.writeOffReturnLinesAdminGen2 = writeOffReturnLinesAdminGen2;
+
 // ── PUBLICATION PRODUIT DURABLE ──────────────────────────
 const {
     cleanupProductPublicationSessions,

@@ -5,6 +5,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { getStripePromise, isStripeConfigured } from '../config/stripe';
 import { db, functions } from '../config/firebase';
+import { getFunctionTarget } from '../config/functionTargets';
 import CheckoutPaymentStep from './CheckoutPaymentStep';
 import { COMMERCE_V2_CONSUMERS_ENABLED } from './commerceV2Client';
 import { adaptCommerceOrder } from './orderAdapter';
@@ -12,7 +13,7 @@ import { adaptCommerceOrder } from './orderAdapter';
 const isTerminalPaymentFailure = (status) => ['payment_failed', 'canceled', 'cancelled', 'cancelled_by_client'].includes(status);
 
 const waitForPaidOrderViaFunction = ({ orderId, email, checkoutOtpToken }, timeoutMs = 45000) => new Promise((resolve, reject) => {
-    const getOrderStatusClient = httpsCallable(functions, 'getOrderStatusClient');
+    const getOrderStatusClient = httpsCallable(functions, getFunctionTarget('getOrderStatusClient'));
     const startedAt = Date.now();
 
     const tick = async () => {

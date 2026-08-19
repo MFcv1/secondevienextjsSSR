@@ -870,7 +870,7 @@ const CheckoutView = ({
                 });
                 return;
             }
-            const createOrder = httpsCallable(functions, 'createOrder');
+            const createOrder = httpsCallable(functions, getFunctionTarget('createOrder'));
 
             const result = await createOrder({
                 orderData: {

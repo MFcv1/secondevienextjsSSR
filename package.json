@@ -92,6 +92,7 @@
     "test:functions-g5": "node --test tests/functions-gen2-g5.test.mjs",
     "test:functions-g6": "node --test tests/functions-gen2-g6.test.mjs tests/billing-onboarding-contract.test.cjs tests/invoicing/manual-invoices.test.cjs tests/quote-requests.test.cjs tests/newsletter-rewards.test.cjs tests/catalog/resilience.test.cjs tests/commerce/domain/gate5-consumers.test.cjs",
     "test:functions-g7": "node --test tests/functions-gen2-g7.test.mjs tests/meta-oauth-contract.test.cjs",
+    "test:functions-g8": "node --test tests/functions-gen2-g8.test.mjs tests/commerce/domain/delivery-policy-admin.test.cjs tests/commerce/domain/gate4-commands-returns.test.cjs tests/commerce/domain/gate5-consumers.test.cjs tests/commerce/domain/document-delivery.test.cjs tests/commerce/domain/customer-return-requests.test.cjs tests/commerce/domain/promotion-code.test.cjs tests/commerce/domain/property.test.cjs tests/commerce/faults/idempotency.test.cjs tests/commerce/faults/gate4-refund.test.cjs && node tests/commerce/run-rules-containment.cjs --suite rules-v2",
     "test:billing-onboarding": "node --test tests/billing-onboarding-contract.test.cjs",
     "test:invoices": "node --test tests/invoicing/manual-invoices.test.cjs",
     "test:quotes": "node --test tests/quote-requests.test.cjs",
