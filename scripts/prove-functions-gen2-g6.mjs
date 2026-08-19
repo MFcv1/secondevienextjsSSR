@@ -125,6 +125,24 @@ async function proveCatalog() {
 }
 
 async function proveBilling() {
+  if (process.env.BILLING_GUIDE_MODE === 'disabled') {
+    const [status, operator] = await Promise.all([
+      result('getBillingGuideStatusGen2', {}),
+      result('getBillingGuideOperatorStatusGen2', {})
+    ]);
+    if (status.mode !== 'disabled' || status.required !== false || operator.mode !== 'disabled' || operator.journey !== null) {
+      fail('G6_PROOF_BILLING_DISABLED_READ_INVALID');
+    }
+    for (const [target, data] of [
+      ['saveBillingGuideProgressGen2', { stepId: 'google_billing', confirmations: { billingCreated: true } }],
+      ['completeBillingGuideAdminGen2', { targetUid: owner.uid, confirmText: 'VALIDER LA FACTURATION' }],
+      ['resetBillingGuideTestGen2', { targetUid: owner.uid, confirmText: 'REINITIALISER LE TEST' }]
+    ]) {
+      const denied = await call(target, data);
+      if (![400, 403].includes(denied.status)) fail(`G6_PROOF_BILLING_DISABLED_MUTATION_ALLOWED:${target}`);
+    }
+    return;
+  }
   if (process.env.BILLING_GUIDE_MODE !== 'test' || !process.env.BILLING_GUIDE_TEST_UID) fail('G6_PROOF_BILLING_MODE_INVALID');
   const targetUid = process.env.BILLING_GUIDE_TEST_UID;
   const targetUser = await auth.getUser(targetUid);
